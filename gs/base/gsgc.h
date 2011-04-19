@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -70,13 +70,13 @@ typedef struct vm_spaces_s vm_spaces;
 struct vm_spaces_s {
     vm_reclaim_proc((*vm_reclaim));
     union {
-	gs_ref_memory_t *indexed[4 /*1 << r_space_bits */ ];
-	struct _ssn {
-	    gs_ref_memory_t *foreign;
-	    gs_ref_memory_t *system;
-	    gs_ref_memory_t *global;
-	    gs_ref_memory_t *local;
-	} named;
+        gs_ref_memory_t *indexed[4 /*1 << r_space_bits */ ];
+        struct _ssn {
+            gs_ref_memory_t *foreign;
+            gs_ref_memory_t *system;
+            gs_ref_memory_t *global;
+            gs_ref_memory_t *local;
+        } named;
     } memories;
 };
 

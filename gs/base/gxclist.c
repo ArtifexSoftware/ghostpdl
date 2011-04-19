@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,7 +35,7 @@ extern dev_proc_open_device(pattern_clist_open_device);
 /*  Where is the GC information for the common objects that are
     shared between the reader and writer.  I see pointers in
     there, but they don't seem to be GC.  This is why I have
-    put the icc_table and the link cache in the reader and the 
+    put the icc_table and the link cache in the reader and the
     writer rather than the common.   fixme: Also, if icc_cache_cl is not
     included in the writer, 64bit builds will seg fault */
 
@@ -113,7 +113,6 @@ public_st_device_clist();
 private_st_clist_writer_cropping_buffer();
 private_st_clist_icctable_entry();
 private_st_clist_icctable();
-
 
 /* Forward declarations of driver procedures */
 dev_proc_open_device(clist_open);
@@ -204,9 +203,9 @@ const gx_device_procs gs_clist_device_procs = {
 const clist_io_procs_t *clist_io_procs_file_global = NULL;
 const clist_io_procs_t *clist_io_procs_memory_global = NULL;
 
-void 
+void
 clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
-{   
+{
     if (in_memory || clist_io_procs_file_global == NULL)
         pclist_dev->common.page_info.io_procs = clist_io_procs_memory_global;
     else
@@ -386,16 +385,16 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
 
-    /* the clist writer has its own color info that depends upon the 
+    /* the clist writer has its own color info that depends upon the
        transparency group color space (if transparency exists).  The data that is
-       used in the clist writing. Here it is initialized with 
+       used in the clist writing. Here it is initialized with
        the target device color info.  The values will be pushed and popped
        in a stack if we have changing color spaces in the transparency groups. */
 
     cdev->clist_color_info.depth = dev->color_info.depth;
     cdev->clist_color_info.polarity = dev->color_info.polarity;
     cdev->clist_color_info.num_components = dev->color_info.num_components;
-    
+
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));
     /* HACK - if the buffer device can't do copy_alpha, disallow */
@@ -413,7 +412,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 
         if (gdev_mem_data_size(&bdev, band_width, band_height, &band_data_size) < 0 ||
             band_data_size >= band_space) {
-            if (pbdev->finalize) 
+            if (pbdev->finalize)
                 pbdev->finalize(pbdev);
             return_error(gs_error_rangecheck);
         }
@@ -428,7 +427,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
         band_height = gdev_mem_max_height(&bdev, band_width,
                           band_space - bits_size, page_uses_transparency);
         if (band_height == 0) {
-            if (pbdev->finalize) 
+            if (pbdev->finalize)
                 pbdev->finalize(pbdev);
             return_error(gs_error_rangecheck);
         }
@@ -436,7 +435,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     cdev->ins_count = 0;
     code = clist_init_tile_cache(dev, data, bits_size);
     if (code < 0) {
-        if (pbdev->finalize) 
+        if (pbdev->finalize)
             pbdev->finalize(pbdev);
         return code;
     }
@@ -445,12 +444,12 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     size -= bits_size;
     code = clist_init_bands(dev, &bdev, size, band_width, band_height);
     if (code < 0) {
-        if (pbdev->finalize) 
+        if (pbdev->finalize)
             pbdev->finalize(pbdev);
         return code;
     }
 
-    if (pbdev->finalize) 
+    if (pbdev->finalize)
         pbdev->finalize(pbdev);
 
     return clist_init_states(dev, data, data_size - bits_size);
@@ -706,7 +705,7 @@ clist_close(gx_device *dev)
         &((gx_device_clist *)dev)->writer;
 
     if (cdev->do_not_open_or_close_bandfiles)
-        return 0;       
+        return 0;
     if (cdev->procs.open_device == pattern_clist_open_device) {
         gs_free_object(cdev->bandlist_memory, cdev->data, "clist_close");
         cdev->data = NULL;
@@ -740,7 +739,7 @@ clist_finish_page(gx_device *dev, bool flush)
     /* Also free the icc_table at this time and the icc_cache */
     if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
        /* Free the icc table associated with this device.
-           The threads that may have pointed to this were destroyed in 
+           The threads that may have pointed to this were destroyed in
            the above call to clist_teardown_render_threads.  Since they
            all maintained a copy of the cache and the table there should not
            be any issues. */
@@ -829,11 +828,11 @@ clist_end_page(gx_device_clist_writer * cldev)
     return 0;
 }
 
-/* Compute the set of used colors in the page_info structure. 
+/* Compute the set of used colors in the page_info structure.
  *
  * NB: Area for improvement, move states[band] and page_info to clist
- * rather than writer device, or remove completely as this is used by the old planar devices 
- * to operate on a plane at a time.  
+ * rather than writer device, or remove completely as this is used by the old planar devices
+ * to operate on a plane at a time.
  */
 
 void
@@ -904,7 +903,7 @@ clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
     /* If the device has the ability to render partial pages, flush
      * out the bandlist, and reset the writing state. Then, get the
      * device to render this band. When done, see if there's now enough
-     * memory to satisfy the minimum low-memory guarantees. If not, 
+     * memory to satisfy the minimum low-memory guarantees. If not,
      * get the device to render some more. If there's nothing left to
      * render & still insufficient memory, declare an error condition.
      */
@@ -926,7 +925,7 @@ clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
         cldev->permanent_error = reset_code;
         cldev->error_is_retryable = 0;
     }
- 
+
     code = (reset_code < 0 ? reset_code : free_code < 0 ? old_error_code : 0);
     if_debug1('L', "[L]hard flush of command list, status: %d\n", code);
     return code;
@@ -981,7 +980,7 @@ clist_get_band(gx_device * dev, int y, int *band_start)
 /* copy constructor if from != NULL
  * default constructor if from == NULL
  */
-void 
+void
 clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from)
 {
     if (from) {
@@ -999,10 +998,9 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
     }
 }
 
-
 /* ICC table operations.  See gxclist.h for details */
 /* This checks the table for a hash code entry */
-bool 
+bool
 clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 {
     clist_icctable_t *icc_table = cdev->icc_table;
@@ -1021,7 +1019,7 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 }
 
 /* Free the table */
-int 
+int
 clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
 {
 
@@ -1041,7 +1039,6 @@ clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
     gs_free_object(memory, icc_table, "clist_icc_freetable");
     return(0);
 }
-
 
 /* This serializes the ICC table and writes it out for maxband+1 */
 int
@@ -1090,7 +1087,7 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
 int64_t
 clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, int *size)
 {
-    
+
     clist_file_ptr cfile = cldev->page_cfile;
     int64_t fileposit;
     gsicc_serialized_profile_t profile_data;
@@ -1123,7 +1120,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
 
     /* If the hash code is not valid then compute it now */
     if (icc_profile->hash_is_valid == false) {
-        gsicc_get_icc_buff_hash(icc_profile->buffer, &hashcode, 
+        gsicc_get_icc_buff_hash(icc_profile->buffer, &hashcode,
                                 icc_profile->buffer_size);
         icc_profile->hashcode = hashcode;
         icc_profile->hash_is_valid = true;
@@ -1131,10 +1128,10 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         hashcode = hashcode_in;
     }
     if ( icc_table == NULL ) {
-        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory, 
+        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory,
                     clist_icctable_entry_t,
                     &st_clist_icctable_entry, "clist_icc_addentry");
-        if (entry == NULL) 
+        if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
         entry->next = NULL;
         entry->serial_data.hashcode = hashcode;
@@ -1142,17 +1139,17 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
         rc_increment(icc_profile);
-        icc_table = gs_alloc_struct(cdev->memory, 
+        icc_table = gs_alloc_struct(cdev->memory,
                 clist_icctable_t,
                 &st_clist_icctable, "clist_icc_addentry");
 
-        if (icc_table == NULL) 
+        if (icc_table == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate icc table");
         icc_table->tablesize = 1;
         icc_table->head = entry;
         icc_table->final = entry;
 
-        /* For now, we are just going to put the icc_table itself 
+        /* For now, we are just going to put the icc_table itself
             at band_range_max + 1.  The ICC profiles are written
             in the cfile at the current stored file position*/
         cdev->icc_table = icc_table;
@@ -1167,10 +1164,10 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         }
 
          /* Add a new ICC profile */
-        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory, 
+        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory,
                     clist_icctable_entry_t,
                     &st_clist_icctable_entry, "clist_icc_addentry");
-        if (entry == NULL) 
+        if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
         entry->next = NULL;
         entry->serial_data.hashcode = hashcode;
@@ -1185,10 +1182,10 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
     return(0);
 }
 
-int 
+int
 clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
 {
-    clist_writer_cropping_buffer_t *buf = gs_alloc_struct(cdev->memory, 
+    clist_writer_cropping_buffer_t *buf = gs_alloc_struct(cdev->memory,
                 clist_writer_cropping_buffer_t,
                 &st_clist_writer_cropping_buffer, "clist_writer_transparency_push");
 
@@ -1205,11 +1202,11 @@ clist_writer_push_no_cropping(gx_device_clist_writer *cdev)
     return 0;
 }
 
-int 
+int
 clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight)
 {
     int code = clist_writer_push_no_cropping(cdev);
-    
+
     if (code < 0)
         return 0;
     cdev->cropping_min = max(cdev->cropping_min, ry);
@@ -1217,7 +1214,7 @@ clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight)
     return 0;
 }
 
-int 
+int
 clist_writer_pop_cropping(gx_device_clist_writer *cdev)
 {
     clist_writer_cropping_buffer_t *buf = cdev->cropping_stack;
@@ -1235,7 +1232,7 @@ clist_writer_pop_cropping(gx_device_clist_writer *cdev)
     return 0;
 }
 
-int 
+int
 clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev)
 {
     if (cdev->cropping_stack != NULL) {
@@ -1299,4 +1296,3 @@ clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *
        when the buffer is not fully written, except with an error. */
     return pinfo->io_procs->fwrite_chars(buf, length, pfile);
 }
-

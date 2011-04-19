@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,7 +31,7 @@ typedef struct gs_cmap_s gs_cmap_t;
  * Create an Identity CMap.
  */
 int gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
-			    gs_memory_t *mem);
+                            gs_memory_t *mem);
 
 /*
  * Create an Identity CMap where each entry varies only in the lowest byte,
@@ -39,7 +39,7 @@ int gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
  * (This is suitable for use as a ToUnicode CMap, for example.)
  */
 int gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes,
-				 int wmode, gs_memory_t *mem);
+                                 int wmode, gs_memory_t *mem);
 
 /*
  * Decode a character from a string using a CMap, updating the index.
@@ -48,14 +48,14 @@ int gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes,
  * *pchr.  For undefined characters, set *pglyph = gs_no_glyph and return 0.
  */
 int gs_cmap_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
-			uint *pindex, uint *pfidx,
-			gs_char *pchr, gs_glyph *pglyph);
+                        uint *pindex, uint *pfidx,
+                        gs_char *pchr, gs_glyph *pglyph);
 
 /*
  * Allocate and initialize a ToUnicode CMap.
  */
-int gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, 
-			    gs_cmap_t **ppcmap);
+int gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size,
+                            gs_cmap_t **ppcmap);
 
 /*
  * Write a code pair to ToUnicode CMap.

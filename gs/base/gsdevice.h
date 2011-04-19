@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,24 +51,24 @@ int gs_copydevice(gx_device **, const gx_device *, gs_memory_t *);
  * copydevice is equivalent to copydevice2 with keep_open = false.
  */
 int gs_copydevice2(gx_device **pnew_dev, const gx_device *dev,
-		   bool keep_open, gs_memory_t *mem);
+                   bool keep_open, gs_memory_t *mem);
 
 #define gs_makeimagedevice(pdev, pmat, w, h, colors, colors_size, mem)\
   gs_makewordimagedevice(pdev, pmat, w, h, colors, colors_size, false, true, mem)
 int gs_makewordimagedevice(gx_device ** pnew_dev, const gs_matrix * pmat,
-			   uint width, uint height,
-			   const byte * colors, int num_colors,
-			   bool word_oriented, bool page_device,
-			   gs_memory_t * mem);
+                           uint width, uint height,
+                           const byte * colors, int num_colors,
+                           bool word_oriented, bool page_device,
+                           gs_memory_t * mem);
 
 #define gs_initialize_imagedevice(mdev, pmat, w, h, colors, colors_size, mem)\
   gs_initialize_wordimagedevice(mdev, pmat, w, h, colors, color_size, false, true, mem)
 int gs_initialize_wordimagedevice(gx_device_memory * new_dev,
-				  const gs_matrix * pmat,
-				  uint width, uint height,
-				  const byte * colors, int colors_size,
-				  bool word_oriented, bool page_device,
-				  gs_memory_t * mem);
+                                  const gs_matrix * pmat,
+                                  uint width, uint height,
+                                  const byte * colors, int colors_size,
+                                  bool word_oriented, bool page_device,
+                                  gs_memory_t * mem);
 const char *gs_devicename(const gx_device *);
 void gs_deviceinitialmatrix(gx_device *, gs_matrix *);
 
@@ -92,7 +92,7 @@ typedef struct gs_imager_state_s gs_imager_state;
 #endif
 
 int gs_imager_putdeviceparams(gs_imager_state *pis, gx_device *dev,
-			      gs_param_list *plist);
+                              gs_param_list *plist);
 
 /* Device procedures involving a graphics state. */
 
@@ -107,7 +107,7 @@ int gs_output_page(gs_state *, int, int);
 int gs_nulldevice(gs_state *);
 int gs_setdevice(gs_state *, gx_device *);
 int gs_setdevice_no_erase(gs_state *, gx_device *);		/* returns 1 */
-						/* if erasepage required */
+                                                /* if erasepage required */
 int gs_setdevice_no_init(gs_state *, gx_device *);
 gx_device *gs_currentdevice(const gs_state *);
 

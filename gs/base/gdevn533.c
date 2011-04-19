@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -48,12 +48,12 @@ static gx_device_procs nwp533_procs =
 
 const gx_device_printer far_data gs_nwp533_device =
   prn_device(nwp533_procs, "nwp533",
-	PAPER_XDOTS * 10.0 / DPI,	/* width_10ths */
-	PAPER_YDOTS * 10.0 / DPI,	/* height_10ths */
-	DPI,				/* x_dpi */
-	DPI,				/* y_dpi */
-	0,0,0,0,			/* margins */
-	1, nwp533_print_page);
+        PAPER_XDOTS * 10.0 / DPI,	/* width_10ths */
+        PAPER_YDOTS * 10.0 / DPI,	/* height_10ths */
+        DPI,				/* x_dpi */
+        DPI,				/* y_dpi */
+        0,0,0,0,			/* margins */
+        1, nwp533_print_page);
 
 /* return True if should retry - False if should quit */
 static int
@@ -79,46 +79,46 @@ analyze_error(int printer_file)
     {
       /* Is there an error */
       if(status.stat[0] & (ST0_CALL | ST0_REPRINT_REQ | ST0_WAIT | ST0_PAUSE))
-	{
-	  if(status.stat[1] & ST1_NO_CARTRIGE)/* mispelled? */
-	    detail = "No cartridge - waiting";
-	  else if(status.stat[1] & ST1_NO_PAPER)
-	    detail = "Out of paper - waiting";
-	  else if(status.stat[1] & ST1_JAM)
-	    detail = "Paper jam - waiting";
-	  else if(status.stat[1] & ST1_OPEN)
-	    detail = "Door open - waiting";
-	  else if(status.stat[1] & ST1_TEST)
-	    detail = "Test printing - waiting";
-	  else {
-	    waiting = FALSE;
-	    retry_after_return = FALSE;
-	    
-	    if(status.stat[2] & ST2_FIXER)
-	      detail = "Fixer trouble - quiting";
-	    else if(status.stat[2] & ST2_SCANNER)
-	      detail = "Scanner trouble - quiting";
-	    else if(status.stat[2] & ST2_MOTOR)
-	      detail = "Scanner motor trouble - quiting";
-	    else if(status.stat[5] & ST5_NO_TONER)
-	      detail = "No toner - quiting";
-	  }
-	}
+        {
+          if(status.stat[1] & ST1_NO_CARTRIGE)/* mispelled? */
+            detail = "No cartridge - waiting";
+          else if(status.stat[1] & ST1_NO_PAPER)
+            detail = "Out of paper - waiting";
+          else if(status.stat[1] & ST1_JAM)
+            detail = "Paper jam - waiting";
+          else if(status.stat[1] & ST1_OPEN)
+            detail = "Door open - waiting";
+          else if(status.stat[1] & ST1_TEST)
+            detail = "Test printing - waiting";
+          else {
+            waiting = FALSE;
+            retry_after_return = FALSE;
+
+            if(status.stat[2] & ST2_FIXER)
+              detail = "Fixer trouble - quiting";
+            else if(status.stat[2] & ST2_SCANNER)
+              detail = "Scanner trouble - quiting";
+            else if(status.stat[2] & ST2_MOTOR)
+              detail = "Scanner motor trouble - quiting";
+            else if(status.stat[5] & ST5_NO_TONER)
+              detail = "No toner - quiting";
+          }
+        }
       else
-	{
-	  waiting = FALSE;
-	}
+        {
+          waiting = FALSE;
+        }
       if(detail != NULL && detail != old_detail)
-	{
-	  perror(detail);
-	  old_detail = detail;
-	}
+        {
+          perror(detail);
+          old_detail = detail;
+        }
       if(waiting)
-	{
-	  ioctl(1, LBIOCRESET, 0);
-	  sleep(5);
-	  ioctl(1, LBIOCSTATUS, &status);
-	}
+        {
+          ioctl(1, LBIOCRESET, 0);
+          sleep(5);
+          ioctl(1, LBIOCSTATUS, &status);
+        }
     }
   while(waiting);
   return retry_after_return;
@@ -142,16 +142,16 @@ nwp533_close(gx_device *dev)
   if (((gx_device_printer *) dev)->file != NULL)
     {
       int printer_file;
-      
+
       printer_file = fileno(((gx_device_printer *) dev)->file);
     restart2:
       if(ioctl(printer_file, LBIOCSTOP, 0) < 0)
-	{
-	  if(analyze_error(printer_file))
-	    goto restart2;
-	  perror("Waiting for device");
-	  return_error(gs_error_ioerror);
-	}
+        {
+          if(analyze_error(printer_file))
+            goto restart2;
+          perror("Waiting for device");
+          return_error(gs_error_ioerror);
+        }
     }
   return gdev_prn_close(dev);
 }
@@ -165,7 +165,7 @@ nwp533_print_page(gx_device_printer *dev, FILE *prn_stream)
   byte *in;
   int printer_file;
   printer_file = fileno(prn_stream);
-  
+
   if (line_size % 4 != 0)
     {
       line_size += 4 - (line_size % 4);
@@ -175,26 +175,26 @@ nwp533_print_page(gx_device_printer *dev, FILE *prn_stream)
   if(ioctl(printer_file, LBIOCSTOP, 0) < 0)
     {
       if(analyze_error(printer_file))
-	goto restart;
+        goto restart;
       perror("Waiting for device");
       return_error(gs_error_ioerror);
     }
   lseek(printer_file, 0, 0);
-  
+
   for ( lnum = 0; lnum < dev->height; lnum++)
     {
       gdev_prn_copy_scan_lines(prn_dev, lnum, in, line_size);
       if(write(printer_file, in, line_size) != line_size)
-	{
-	  perror("Writting to output");
-	  return_error(gs_error_ioerror);
-	}
+        {
+          perror("Writting to output");
+          return_error(gs_error_ioerror);
+        }
     }
  retry:
   if(ioctl(printer_file, LBIOCSTART, 0) < 0)
     {
       if(analyze_error(printer_file))
-	goto retry;
+        goto retry;
       perror("Starting print");
       return_error(gs_error_ioerror);
     }

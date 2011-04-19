@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,8 +20,8 @@
 
 /* Common state */
 #define stream_RL_state_common\
-	stream_state_common;\
-	bool EndOfData		/* true if 128 = EOD */
+        stream_state_common;\
+        bool EndOfData		/* true if 128 = EOD */
 
 /* RunLengthEncode */
 typedef struct stream_RLE_state_s {

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -58,18 +58,18 @@ typedef struct gx_dda_int_s {
 } gx_dda_int_t;
 
 /* DDA with fixed Q and (unsigned) integer N */
-typedef 
+typedef
 dda_state_struct(_a, fixed, uint) gx_dda_state_fixed;
      typedef dda_step_struct(_e, fixed, uint) gx_dda_step_fixed;
      typedef struct gx_dda_fixed_s {
-	 gx_dda_state_fixed state;
-	 gx_dda_step_fixed step;
+         gx_dda_state_fixed state;
+         gx_dda_step_fixed step;
      } gx_dda_fixed;
 /*
  * Define a pair of DDAs for iterating along an arbitrary line.
  */
      typedef struct gx_dda_fixed_point_s {
-	 gx_dda_fixed x, y;
+         gx_dda_fixed x, y;
      } gx_dda_fixed_point;
 /*
  * Initialize a DDA.  The sign test is needed only because C doesn't
@@ -151,5 +151,5 @@ dda_state_struct(_a, fixed, uint) gx_dda_state_fixed;
   ((dstate).Q += (delta))
 #define dda_translate(dda, delta)\
   dda_state_translate((dda).state, delta)
-  
+
 #endif /* gxdda_INCLUDED */

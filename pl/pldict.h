@@ -84,7 +84,7 @@ bool pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize,
 int pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize,
                 void *value);
 
-/* 
+/*
  * When a dictionary entry is created, it can be designated as being a
  * synonym or alias of an existing entry, rather than having a value
  * of its own.  All entries in a synonym group are equivalent: there
@@ -153,7 +153,7 @@ bool pl_dict_enum_next(pl_dict_enum_t *penum, gs_const_string *pkey,
  */
 void pl_dict_release(pl_dict_t *pdict);
 
-/* 
+/*
  * Delete an entry that is a synonym or a canonical entry that has
  * related synonyms.  The entire group of entries is deleted.  Note
  * that this routine should be used in liueu of pl_dict_undef() if

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,9 +39,9 @@
 static int cs_next_packed_value(shade_coord_stream_t *, int, uint *);
 static int cs_next_array_value(shade_coord_stream_t *, int, uint *);
 static int cs_next_packed_decoded(shade_coord_stream_t *, int,
-				   const float[2], float *);
+                                   const float[2], float *);
 static int cs_next_array_decoded(shade_coord_stream_t *, int,
-				  const float[2], float *);
+                                  const float[2], float *);
 static void cs_packed_align(shade_coord_stream_t *cs, int radix);
 static void cs_array_align(shade_coord_stream_t *cs, int radix);
 static bool cs_eod(const shade_coord_stream_t * cs);
@@ -49,36 +49,36 @@ static bool cs_eod(const shade_coord_stream_t * cs);
 /* Initialize a packed value stream. */
 void
 shade_next_init(shade_coord_stream_t * cs,
-		const gs_shading_mesh_params_t * params,
-		const gs_imager_state * pis)
+                const gs_shading_mesh_params_t * params,
+                const gs_imager_state * pis)
 {
     cs->params = params;
     cs->pctm = &pis->ctm;
     if (data_source_is_stream(params->DataSource)) {
-	/*
-	 * Rewind the data stream iff it is reusable -- either a reusable
-	 * file or a reusable string.
-	 */
-	stream *s = cs->s = params->DataSource.data.strm;
+        /*
+         * Rewind the data stream iff it is reusable -- either a reusable
+         * file or a reusable string.
+         */
+        stream *s = cs->s = params->DataSource.data.strm;
 
-	if ((s->file != 0 && s->file_limit != max_long) ||
-	    (s->file == 0 && s->strm == 0)
-	    )
-	    sseek(s, 0);
+        if ((s->file != 0 && s->file_limit != max_long) ||
+            (s->file == 0 && s->strm == 0)
+            )
+            sseek(s, 0);
     } else {
-	s_init(&cs->ds, NULL);
+        s_init(&cs->ds, NULL);
         sread_string(&cs->ds, params->DataSource.data.str.data,
-		     params->DataSource.data.str.size);
-	cs->s = &cs->ds;
+                     params->DataSource.data.str.size);
+        cs->s = &cs->ds;
     }
     if (data_source_is_array(params->DataSource)) {
-	cs->get_value = cs_next_array_value;
-	cs->get_decoded = cs_next_array_decoded;
-	cs->align = cs_array_align;
+        cs->get_value = cs_next_array_value;
+        cs->get_decoded = cs_next_array_decoded;
+        cs->align = cs_array_align;
     } else {
-	cs->get_value = cs_next_packed_value;
-	cs->get_decoded = cs_next_packed_decoded;
-	cs->align = cs_packed_align;
+        cs->get_value = cs_next_packed_value;
+        cs->get_decoded = cs_next_packed_decoded;
+        cs->align = cs_packed_align;
     }
     cs->is_eod = cs_eod;
     cs->left = 0;
@@ -101,37 +101,37 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     int left = cs->left;
 
     if (left >= num_bits) {
-	/* We can satisfy this request with the current buffered bits. */
-	cs->left = left -= num_bits;
-	*pvalue = (bits >> left) & ((1 << num_bits) - 1);
+        /* We can satisfy this request with the current buffered bits. */
+        cs->left = left -= num_bits;
+        *pvalue = (bits >> left) & ((1 << num_bits) - 1);
     } else {
-	/* We need more bits. */
-	int needed = num_bits - left;
-	uint value = bits & ((1 << left) - 1);	/* all the remaining bits */
+        /* We need more bits. */
+        int needed = num_bits - left;
+        uint value = bits & ((1 << left) - 1);	/* all the remaining bits */
 
-	for (; needed >= 8; needed -= 8) {
-	    int b = sgetc(cs->s);
+        for (; needed >= 8; needed -= 8) {
+            int b = sgetc(cs->s);
 
-	    if (b < 0) {
-	        cs->ds_EOF = true;
-		return_error(gs_error_rangecheck);
-	    }
-	    value = (value << 8) + b;
-	}
-	if (needed == 0) {
-	    cs->left = 0;
-	    *pvalue = value;
-	} else {
-	    int b = sgetc(cs->s);
+            if (b < 0) {
+                cs->ds_EOF = true;
+                return_error(gs_error_rangecheck);
+            }
+            value = (value << 8) + b;
+        }
+        if (needed == 0) {
+            cs->left = 0;
+            *pvalue = value;
+        } else {
+            int b = sgetc(cs->s);
 
-	    if (b < 0) {
-	        cs->ds_EOF = true;
-		return_error(gs_error_rangecheck);
-	    }
-	    cs->bits = b;
-	    cs->left = left = 8 - needed;
-	    *pvalue = (value << needed) + (b >> left);
-	}
+            if (b < 0) {
+                cs->ds_EOF = true;
+                return_error(gs_error_rangecheck);
+            }
+            cs->bits = b;
+            cs->left = left = 8 - needed;
+            *pvalue = (value << needed) + (b >> left);
+        }
     }
     return 0;
 }
@@ -147,15 +147,15 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     uint read;
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
-	read != sizeof(float)) {
-	cs->ds_EOF = true;
-	return_error(gs_error_rangecheck);
+        read != sizeof(float)) {
+        cs->ds_EOF = true;
+        return_error(gs_error_rangecheck);
     }
     if (value < 0 || (num_bits != 0 && num_bits < sizeof(uint) * 8 &&
-	 value >= (1 << num_bits)) ||
-	value != (uint)value
-	)
-	return_error(gs_error_rangecheck);
+         value >= (1 << num_bits)) ||
+        value != (uint)value
+        )
+        return_error(gs_error_rangecheck);
     *pvalue = (uint) value;
     return 0;
 }
@@ -163,34 +163,34 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 /* Get the next decoded floating point value. */
 static int
 cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
-		       const float decode[2], float *pvalue)
+                       const float decode[2], float *pvalue)
 {
     uint value;
     int code = cs->get_value(cs, num_bits, &value);
     double max_value = (double)(uint)
-	(num_bits == sizeof(uint) * 8 ? ~0 : ((1 << num_bits) - 1));
+        (num_bits == sizeof(uint) * 8 ? ~0 : ((1 << num_bits) - 1));
 
     if (code < 0)
-	return code;
+        return code;
     *pvalue =
-	(decode == 0 ? value / max_value :
-	 decode[0] + value * (decode[1] - decode[0]) / max_value);
+        (decode == 0 ? value / max_value :
+         decode[0] + value * (decode[1] - decode[0]) / max_value);
     return 0;
 }
 
 /* Get the next floating point value from an array, without decoding. */
 static int
 cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
-		      const float decode[2], float *pvalue)
+                      const float decode[2], float *pvalue)
 {
     float value;
     uint read;
 
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
-	read != sizeof(float)
+        read != sizeof(float)
     ) {
-	cs->ds_EOF = true;
-	return_error(gs_error_rangecheck);
+        cs->ds_EOF = true;
+        return_error(gs_error_rangecheck);
     }
     *pvalue = value;
     return 0;
@@ -223,7 +223,7 @@ shade_next_flag(shade_coord_stream_t * cs, int BitsPerFlag)
 /* Get one or more coordinate pairs. */
 int
 shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
-		  int num_points)
+                  int num_points)
 {
     int num_bits = cs->params->BitsPerCoordinate;
     const float *decode = cs->params->Decode;
@@ -231,13 +231,13 @@ shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
     int i;
 
     for (i = 0; i < num_points; ++i) {
-	float x, y;
+        float x, y;
 
-	if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
-	    (code = cs->get_decoded(cs, num_bits, decode + 2, &y)) < 0 ||
-	    (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
-	    )
-	    break;
+        if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
+            (code = cs->get_decoded(cs, num_bits, decode + 2, &y)) < 0 ||
+            (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
+            )
+            break;
     }
     return code;
 }
@@ -252,42 +252,42 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
     int num_bits = cs->params->BitsPerComponent;
 
     if (index == gs_color_space_index_Indexed) {
-	int ncomp = gs_color_space_num_components(gs_cspace_base_space(pcs));
-	int ci;
+        int ncomp = gs_color_space_num_components(gs_cspace_base_space(pcs));
+        int ci;
         float cf;
-	int code = cs->get_decoded(cs, num_bits, decode, &cf);
+        int code = cs->get_decoded(cs, num_bits, decode, &cf);
         gs_client_color cc;
-	int i;
+        int i;
 
-	if (code < 0)
-	    return code;
-	if (cf < 0)
-	    return_error(gs_error_rangecheck);
-	ci = (int)cf;
+        if (code < 0)
+            return code;
+        if (cf < 0)
+            return_error(gs_error_rangecheck);
+        ci = (int)cf;
         if (ci >= gs_cspace_indexed_num_entries(pcs))
-	    return_error(gs_error_rangecheck);
-	code = gs_cspace_indexed_lookup(pcs, ci, &cc);
-	if (code < 0)
-	    return code;
-	for (i = 0; i < ncomp; ++i)
-	    pc[i] = cc.paint.values[i];
+            return_error(gs_error_rangecheck);
+        code = gs_cspace_indexed_lookup(pcs, ci, &cc);
+        if (code < 0)
+            return code;
+        for (i = 0; i < ncomp; ++i)
+            pc[i] = cc.paint.values[i];
     } else {
-	int i, code;
-	int ncomp = (cs->params->Function != 0 ? 1 :
-		     gs_color_space_num_components(pcs));
+        int i, code;
+        int ncomp = (cs->params->Function != 0 ? 1 :
+                     gs_color_space_num_components(pcs));
 
-	for (i = 0; i < ncomp; ++i) {
-	    if ((code = cs->get_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
-		return code;
-	    if (cs->params->Function) {
-		gs_function_params_t *params = &cs->params->Function->params;
+        for (i = 0; i < ncomp; ++i) {
+            if ((code = cs->get_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
+                return code;
+            if (cs->params->Function) {
+                gs_function_params_t *params = &cs->params->Function->params;
 
-		if (pc[i] < params->Domain[i + i])
-		    pc[i] = params->Domain[i + i];
-		else if (pc[i] > params->Domain[i + i + 1])
-		    pc[i] = params->Domain[i + i + 1];
-	    }
-	}
+                if (pc[i] < params->Domain[i + i])
+                    pc[i] = params->Domain[i + i];
+                else if (pc[i] > params->Domain[i + i + 1])
+                    pc[i] = params->Domain[i + i + 1];
+            }
+        }
     }
     return 0;
 }
@@ -299,9 +299,9 @@ shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_co
     int code = shade_next_coords(cs, &vertex->p, 1);
 
     if (code >= 0)
-	code = shade_next_color(cs, c->cc.paint.values);
+        code = shade_next_color(cs, c->cc.paint.values);
     if (code >= 0)
-	cs->align(cs, 8); /* CET 09-47J.PS SpecialTestI04Test01. */
+        cs->align(cs, 8); /* CET 09-47J.PS SpecialTestI04Test01. */
     return code;
 }
 
@@ -310,7 +310,7 @@ shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_co
 /* Initialize the common parts of the recursion state. */
 void
 shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
-		      gx_device * dev, gs_imager_state * pis)
+                      gx_device * dev, gs_imager_state * pis)
 {
     const gs_color_space *pcs = psh->params.ColorSpace;
     float max_error = min(pis->smoothness, MAX_SMOOTHNESS);
@@ -322,7 +322,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
      * colors times the number of halftone levels.
      */
     long num_colors =
-	max(dev->color_info.max_gray, dev->color_info.max_color) + 1;
+        max(dev->color_info.max_gray, dev->color_info.max_color) + 1;
     const gs_range *ranges = 0;
     int ci;
     gsicc_rendering_param_t rendering_params;
@@ -333,46 +333,46 @@ top:
     pfs->direct_space = pcs;
     pfs->num_components = gs_color_space_num_components(pcs);
     switch ( gs_color_space_get_index(pcs) )
-	{
-	case gs_color_space_index_Indexed:
-	    pcs = gs_cspace_base_space(pcs);
-	    goto top;
-	case gs_color_space_index_CIEDEFG:
-	    ranges = pcs->params.defg->RangeDEFG.ranges;
-	    break;
-	case gs_color_space_index_CIEDEF:
-	    ranges = pcs->params.def->RangeDEF.ranges;
-	    break;
-	case gs_color_space_index_CIEABC:
-	    ranges = pcs->params.abc->RangeABC.ranges;
-	    break;
-	case gs_color_space_index_CIEA:
-	    ranges = &pcs->params.a->RangeA;
-	    break;
+        {
+        case gs_color_space_index_Indexed:
+            pcs = gs_cspace_base_space(pcs);
+            goto top;
+        case gs_color_space_index_CIEDEFG:
+            ranges = pcs->params.defg->RangeDEFG.ranges;
+            break;
+        case gs_color_space_index_CIEDEF:
+            ranges = pcs->params.def->RangeDEF.ranges;
+            break;
+        case gs_color_space_index_CIEABC:
+            ranges = pcs->params.abc->RangeABC.ranges;
+            break;
+        case gs_color_space_index_CIEA:
+            ranges = &pcs->params.a->RangeA;
+            break;
         case gs_color_space_index_ICC:
             ranges = pcs->cmm_icc_profile_data->Range.ranges;
             break;
         default:
-	    break;
-	}
+            break;
+        }
     if (num_colors <= 32) {
-	gx_ht_order_component *components = pis->dev_ht->components;
-	if (components && components[0].corder.wts)
-	    num_colors = 256;
-	else
-	    /****** WRONG FOR MULTI-PLANE HALFTONES ******/
-	    num_colors *= pis->dev_ht->components[0].corder.num_levels;
+        gx_ht_order_component *components = pis->dev_ht->components;
+        if (components && components[0].corder.wts)
+            num_colors = 256;
+        else
+            /****** WRONG FOR MULTI-PLANE HALFTONES ******/
+            num_colors *= pis->dev_ht->components[0].corder.num_levels;
     }
     if (psh->head.type == 2 || psh->head.type == 3) {
-	max_error *= 0.25;
-	num_colors *= 2;
+        max_error *= 0.25;
+        num_colors *= 2;
     }
     if (max_error < 1.0 / num_colors)
-	max_error = 1.0 / num_colors;
+        max_error = 1.0 / num_colors;
     for (ci = 0; ci < pfs->num_components; ++ci)
-	pfs->cc_max_error[ci] =
-	    (ranges == 0 ? max_error :
-	     max_error * (ranges[ci].rmax - ranges[ci].rmin));
+        pfs->cc_max_error[ci] =
+            (ranges == 0 ? max_error :
+             max_error * (ranges[ci].rmax - ranges[ci].rmin));
     if (pis->has_transparency && pis->trans_device != NULL) {
         pfs->trans_device = pis->trans_device;
     } else {
@@ -388,14 +388,14 @@ top:
     rendering_params.rendering_intent = pis->renderingintent;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
-        pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL, 
+        pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
                                         &rendering_params, pis->memory, false);
     } else {
         if (pcs->icc_equivalent != NULL ) {
-            /* We have a PS equivalent ICC profile.  We may need to go 
+            /* We have a PS equivalent ICC profile.  We may need to go
                through special range adjustments in this case */
-            pfs->icclink = gsicc_get_link(pis, pis->trans_device, 
-                                          pcs->icc_equivalent, NULL, 
+            pfs->icclink = gsicc_get_link(pis, pis->trans_device,
+                                          pcs->icc_equivalent, NULL,
                                           &rendering_params, pis->memory, false);
         } else {
             pfs->icclink = NULL;
@@ -406,7 +406,7 @@ top:
 /* Fill one piece of a shading. */
 int
 shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
-		gx_device_color * pdevc, const gs_fixed_point *fill_adjust)
+                gx_device_color * pdevc, const gs_fixed_point *fill_adjust)
 {
     gx_fill_params params;
 
@@ -414,5 +414,5 @@ shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
     params.adjust = *fill_adjust;
     params.flatness = 0;	/* irrelevant */
     return (*dev_proc(pfs->dev, fill_path)) (pfs->dev, pfs->pis, ppath,
-					     &params, pdevc, NULL);
+                                             &params, pdevc, NULL);
 }

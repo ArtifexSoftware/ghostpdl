@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -85,7 +85,7 @@ typedef struct gx_device_halftone_s gx_device_halftone;
  * about the equality of the two device colors.
  */
 bool gx_device_color_equal(const gx_device_color *pdevc1,
-			   const gx_device_color *pdevc2);
+                           const gx_device_color *pdevc2);
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file, plus the ones
@@ -266,41 +266,41 @@ struct gx_device_color_s {
      * members even when it's unambiguous.
      */
     union _c {
-	gx_color_index pure;
-	struct _bin {
-	    const gx_device_halftone *b_ht;
-	    gx_color_index color[2];
-	    uint b_level;
-	    int b_index;
-	    gx_ht_tile *b_tile;
-	} binary;
-	struct _col {
-	    gx_device_halftone *c_ht; /* non-const for setting cache ptr */
-	    ushort num_components;
-	    byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    ushort /*gx_color_value */ alpha;
+        gx_color_index pure;
+        struct _bin {
+            const gx_device_halftone *b_ht;
+            gx_color_index color[2];
+            uint b_level;
+            int b_index;
+            gx_ht_tile *b_tile;
+        } binary;
+        struct _col {
+            gx_device_halftone *c_ht; /* non-const for setting cache ptr */
+            ushort num_components;
+            byte c_base[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            uint c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            ushort /*gx_color_value */ alpha;
 #if GX_DEVICE_COLOR_MAX_COMPONENTS <= ARCH_SIZEOF_SHORT * 8
-	    ushort plane_mask;
+            ushort plane_mask;
 #else
 #if GX_DEVICE_COLOR_MAX_COMPONENTS <= ARCH_SIZEOF_INT * 8
-	    uint plane_mask;
+            uint plane_mask;
 #else
-	    gx_color_index plane_mask;
+            gx_color_index plane_mask;
 #endif
 #endif
-	} colored;
-	struct _wts {
-	    const gx_device_halftone *w_ht;
-	    wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    ushort num_components;
+        } colored;
+        struct _wts {
+            const gx_device_halftone *w_ht;
+            wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
+            ushort num_components;
 
-	    /* plane_mask and base_color would be an optimization */
-	    gx_color_index plane_vector[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	} wts;
-	struct _pat {
-	    gx_color_tile *p_tile;
-	} /*(colored) */ pattern;
+            /* plane_mask and base_color would be an optimization */
+            gx_color_index plane_vector[GX_DEVICE_COLOR_MAX_COMPONENTS];
+        } wts;
+        struct _pat {
+            gx_color_tile *p_tile;
+        } /*(colored) */ pattern;
     } colors;
     gs_int_point phase;
     /*
@@ -320,11 +320,11 @@ struct gx_device_color_s {
     gs_client_color ccolor;
 
     struct _mask {
-	struct mp_ {
-	    short x, y;
-	} m_phase;
-	gx_bitmap_id id;
-	gx_color_tile *m_tile;
+        struct mp_ {
+            short x, y;
+        } m_phase;
+        gx_bitmap_id id;
+        gx_color_tile *m_tile;
     } mask;
 };
 
@@ -388,18 +388,17 @@ struct gx_device_color_saved_s {
         struct _swts {
             wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
         }               wts;
-	struct _pattern {
-	    gs_id id;
-	    gs_int_point phase;
-	}		pattern;
-	struct _pattern2 {
-	    gs_id id;
-	    bool shfill;
-	}		pattern2;
+        struct _pattern {
+            gs_id id;
+            gs_int_point phase;
+        }		pattern;
+        struct _pattern2 {
+            gs_id id;
+            bool shfill;
+        }		pattern2;
     }                       colors;
     gs_int_point            phase;
 };
-
 
 /*
  * Define the standard device color types.
@@ -419,10 +418,10 @@ extern const gx_device_color_type_t *const gx_dc_type_null;	/* gxdcolor.c */
 #ifndef gx_dc_type_pure
 extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
 #endif
-		/*
-		 * We don't declare gx_dc_pattern here, so as not to create
-		 * a spurious external reference in Level 1 systems.
-		 */
+                /*
+                 * We don't declare gx_dc_pattern here, so as not to create
+                 * a spurious external reference in Level 1 systems.
+                 */
 #ifndef gx_dc_type_pattern
 /*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
 #endif

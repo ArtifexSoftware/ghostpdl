@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -73,18 +73,18 @@ struct gs_context_s {
     ctx_status_t status;
     ctx_index_t index;		/* > 0 */
     bool detach;		/* true if a detach has been */
-				/* executed for this context */
+                                /* executed for this context */
     bool saved_local_vm;	/* (see above) */
     bool visible;		/* during GC, true if visible; */
-				/* otherwise, always true */
+                                /* otherwise, always true */
     ctx_index_t next_index;	/* next context with same status */
-				/* (active, waiting on same lock, */
-				/* waiting on same condition, */
-				/* waiting to be destroyed) */
+                                /* (active, waiting on same lock, */
+                                /* waiting on same condition, */
+                                /* waiting to be destroyed) */
     ctx_index_t joiner_index;	/* context waiting on a join */
-				/* for this one */
+                                /* for this one */
     gs_context_t *table_next;	/* hash table chain -- this must be a real */
-				/* pointer, for looking up indices */
+                                /* pointer, for looking up indices */
 };
 static inline bool
 context_is_visible(const gs_context_t *pctx)
@@ -98,7 +98,7 @@ visible_context(gs_context_t *pctx)
 }
 
 /* GC descriptor */
-static 
+static
 CLEAR_MARKS_PROC(context_clear_marks)
 {
     gs_context_t *const pctx = vptr;
@@ -106,7 +106,7 @@ CLEAR_MARKS_PROC(context_clear_marks)
     (*st_context_state.clear_marks)
         (cmem, &pctx->state, sizeof(pctx->state), &st_context_state);
 }
-static 
+static
 ENUM_PTRS_WITH(context_enum_ptrs, gs_context_t *pctx)
 ENUM_PREFIX(st_context_state, 2);
 case 0: return ENUM_OBJ(pctx->scheduler);
@@ -115,7 +115,7 @@ case 1: {
     const gs_context_t *next = pctx->table_next;
 
     while (next && !next->visible)
-	next = next->table_next;
+        next = next->table_next;
     return ENUM_OBJ(next);
 }
 ENUM_PTRS_END
@@ -125,7 +125,7 @@ static RELOC_PTRS_WITH(context_reloc_ptrs, gs_context_t *pctx)
     /* Don't relocate table_next -- the scheduler object handles that. */
 RELOC_PTRS_END
 gs_private_st_complex_only(st_context, gs_context_t, "gs_context_t",
-	     context_clear_marks, context_enum_ptrs, context_reloc_ptrs, 0);
+             context_clear_marks, context_enum_ptrs, context_reloc_ptrs, 0);
 
 /*
  * Context list structure.  Note that this uses context indices, not
@@ -145,12 +145,12 @@ gs_private_st_simple(st_condition, gs_condition_t, "conditiontype");
 /* Lock structure */
 typedef struct gs_lock_s {
     ctx_list_t waiting;		/* contexts waiting for this lock, */
-				/* must be first for subclassing */
+                                /* must be first for subclassing */
     ctx_index_t holder_index;	/* context holding the lock, if any */
     gs_scheduler_t *scheduler;
 } gs_lock_t;
 gs_private_st_ptrs1(st_lock, gs_lock_t, "locktype",
-		    lock_enum_ptrs, lock_reloc_ptrs, scheduler);
+                    lock_enum_ptrs, lock_reloc_ptrs, scheduler);
 
 /* Global state */
 /*typedef struct gs_scheduler_s gs_scheduler_t; *//* (above) */
@@ -171,16 +171,16 @@ index_context(const gs_scheduler_t *psched, long index)
     gs_context_t *pctx;
 
     if (index == 0)
-	return 0;
+        return 0;
     pctx = psched->table[index % CTX_TABLE_SIZE];
     while (pctx != 0 && pctx->index != index)
-	pctx = pctx->table_next;
+        pctx = pctx->table_next;
     return pctx;
 }
 
 /* Structure definition */
 gs_private_st_composite(st_scheduler, gs_scheduler_t, "gs_scheduler",
-			scheduler_enum_ptrs, scheduler_reloc_ptrs);
+                        scheduler_enum_ptrs, scheduler_reloc_ptrs);
 /*
  * The only cross-local-VM pointers in the context machinery are the
  * table_next pointers in contexts, and the current and table[] pointers
@@ -190,11 +190,11 @@ static ENUM_PTRS_WITH(scheduler_enum_ptrs, gs_scheduler_t *psched)
 {
     index -= 1;
     if (index < CTX_TABLE_SIZE) {
-	gs_context_t *pctx = psched->table[index];
+        gs_context_t *pctx = psched->table[index];
 
-	while (pctx && !pctx->visible)
-	    pctx = pctx->table_next;
-	return ENUM_OBJ(pctx);
+        while (pctx && !pctx->visible)
+            pctx = pctx->table_next;
+        return ENUM_OBJ(pctx);
     }
     return 0;
 }
@@ -203,20 +203,20 @@ ENUM_PTRS_END
 static RELOC_PTRS_WITH(scheduler_reloc_ptrs, gs_scheduler_t *psched)
 {
     if (psched->current->visible)
-	RELOC_VAR(psched->current);
+        RELOC_VAR(psched->current);
     {
-	int i;
+        int i;
 
-	for (i = 0; i < CTX_TABLE_SIZE; ++i) {
-	    gs_context_t **ppctx = &psched->table[i];
-	    gs_context_t **pnext;
+        for (i = 0; i < CTX_TABLE_SIZE; ++i) {
+            gs_context_t **ppctx = &psched->table[i];
+            gs_context_t **pnext;
 
-	    for (; *ppctx; ppctx = pnext) {
-		pnext = &(*ppctx)->table_next;
-		if ((*ppctx)->visible)
-		    RELOC_VAR(*ppctx);
-	    }
-	}
+            for (; *ppctx; ppctx = pnext) {
+                pnext = &(*ppctx)->table_next;
+                if ((*ppctx)->visible)
+                    RELOC_VAR(*ppctx);
+            }
+        }
     }
 }
 RELOC_PTRS_END
@@ -243,17 +243,17 @@ context_reclaim(vm_spaces * pspaces, bool global)
     chunk_locator_t loc;
 
     for (i = countof(pspaces->memories.indexed) - 1; psched == 0 && i > 0; --i) {
-	gs_ref_memory_t *mem = pspaces->memories.indexed[i];
-	const gs_gc_root_t *root = mem->roots;
+        gs_ref_memory_t *mem = pspaces->memories.indexed[i];
+        const gs_gc_root_t *root = mem->roots;
 
-	for (; root; root = root->next) {
-	    if (gs_object_type((gs_memory_t *)mem, *root->p) == &st_context) {
-		pctx = *root->p;
-		psched = pctx->scheduler;
-		lmem = mem;
-		break;
-	    }
-	}
+        for (; root; root = root->next) {
+            if (gs_object_type((gs_memory_t *)mem, *root->p) == &st_context) {
+                pctx = *root->p;
+                psched = pctx->scheduler;
+                lmem = mem;
+                break;
+            }
+        }
     }
 
     /* Hide all contexts in other (local) VMs. */
@@ -264,13 +264,13 @@ context_reclaim(vm_spaces * pspaces, bool global)
     loc.memory = (gs_ref_memory_t *)gs_memory_stable((gs_memory_t *)lmem);
     loc.cp = 0;
     for (i = 0; i < CTX_TABLE_SIZE; ++i)
-	for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
-	    pctx->visible = chunk_locate_ptr(pctx, &loc);
+        for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
+            pctx->visible = chunk_locate_ptr(pctx, &loc);
 
 #ifdef DEBUG
     if (!psched->current->visible) {
-	lprintf("Current context is invisible!\n");
-	gs_abort((gs_memory_t *)lmem);
+        lprintf("Current context is invisible!\n");
+        gs_abort((gs_memory_t *)lmem);
     }
 #endif
 
@@ -279,15 +279,14 @@ context_reclaim(vm_spaces * pspaces, bool global)
 
     /* Make all contexts visible again. */
     for (i = 0; i < CTX_TABLE_SIZE; ++i)
-	for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
-	    pctx->visible = true;
+        for (pctx = psched->table[i]; pctx; pctx = pctx->table_next)
+            pctx->visible = true;
 }
-
 
 /* Forward references */
 static int context_create(gs_scheduler_t *, gs_context_t **,
-			   const gs_dual_memory_t *,
-			   const gs_context_state_t *, bool);
+                           const gs_dual_memory_t *,
+                           const gs_context_state_t *, bool);
 static long context_usertime(void);
 static int context_param(const gs_scheduler_t *, os_ptr, gs_context_t **);
 static void context_destroy(gs_context_t *);
@@ -320,9 +319,9 @@ add_last(const gs_scheduler_t *psched, ctx_list_t *pl, gs_context_t *pc)
 {
     pc->next_index = 0;
     if (pl->head_index == 0)
-	pl->head_index = pc->index;
+        pl->head_index = pc->index;
     else
-	index_context(psched, pl->tail_index)->next_index = pc->index;
+        index_context(psched, pl->tail_index)->next_index = pc->index;
     pl->tail_index = pc->index;
 }
 
@@ -350,8 +349,8 @@ ctx_initialize(i_ctx_t **pi_ctx_p)
     i_ctx_t *i_ctx_p = *pi_ctx_p; /* for gs_imemory */
     gs_ref_memory_t *imem = iimemory_system;
     gs_scheduler_t *psched =
-	gs_alloc_struct_immovable((gs_memory_t *) imem, gs_scheduler_t,
-				  &st_scheduler, "gs_scheduler");
+        gs_alloc_struct_immovable((gs_memory_t *) imem, gs_scheduler_t,
+                                  &st_scheduler, "gs_scheduler");
 
     psched->current = 0;
     psched->active.head_index = psched->active.tail_index = 0;
@@ -361,8 +360,8 @@ ctx_initialize(i_ctx_t **pi_ctx_p)
     memset(psched->table, 0, sizeof(psched->table));
     /* Create an initial context. */
     if (context_create(psched, &psched->current, &gs_imemory, *pi_ctx_p, true) < 0) {
-	lprintf("Can't create initial context!");
-	gs_abort(imemory);
+        lprintf("Can't create initial context!");
+        gs_abort(imemory);
     }
     psched->current->scheduler = psched;
     /* Hook into the interpreter. */
@@ -386,73 +385,73 @@ ctx_reschedule(i_ctx_t **pi_ctx_p)
 
 #ifdef DEBUG
     if (*pi_ctx_p != &current->state) {
-	lprintf2("current->state = 0x%lx, != i_ctx_p = 0x%lx!\n",
-		 (ulong)&current->state, (ulong)*pi_ctx_p);
+        lprintf2("current->state = 0x%lx, != i_ctx_p = 0x%lx!\n",
+                 (ulong)&current->state, (ulong)*pi_ctx_p);
     }
 #endif
     /* If there are any dead contexts waiting to be released, */
     /* take care of that now. */
     while (psched->dead_index != 0) {
-	gs_context_t *dead = index_context(psched, psched->dead_index);
-	long next_index = dead->next_index;
+        gs_context_t *dead = index_context(psched, psched->dead_index);
+        long next_index = dead->next_index;
 
-	if (current == dead) {
-	    if_debug1('"', "[\"]storing dead %ld\n", current->index);
-	    context_state_store(&current->state);
-	    current = 0;
-	}
-	context_destroy(dead);
-	psched->dead_index = next_index;
+        if (current == dead) {
+            if_debug1('"', "[\"]storing dead %ld\n", current->index);
+            context_state_store(&current->state);
+            current = 0;
+        }
+        context_destroy(dead);
+        psched->dead_index = next_index;
     }
     /* Update saved_local_vm.  See above for the invariant. */
     if (current != 0)
-	current->saved_local_vm =
-	    current->state.memory.space_local->saved != 0;
+        current->saved_local_vm =
+            current->state.memory.space_local->saved != 0;
     /* Run the first ready context, taking the 'save' lock into account. */
     {
-	gs_context_t *prev = 0;
-	gs_context_t *ready;
+        gs_context_t *prev = 0;
+        gs_context_t *ready;
 
-	for (ready = index_context(psched, psched->active.head_index);;
-	     prev = ready, ready = index_context(psched, ready->next_index)
-	    ) {
-	    if (ready == 0) {
-		if (current != 0)
-		    context_store(psched, current);
-		lprintf("No context to run!");
-		return_error(e_Fatal);
-	    }
-	    /* See above for an explanation of the following test. */
-	    if (ready->state.memory.space_local->saved != 0 &&
-		!ready->saved_local_vm
-		)
-		continue;
-	    /* Found a context to run. */
-	    {
-		ctx_index_t next_index = ready->next_index;
+        for (ready = index_context(psched, psched->active.head_index);;
+             prev = ready, ready = index_context(psched, ready->next_index)
+            ) {
+            if (ready == 0) {
+                if (current != 0)
+                    context_store(psched, current);
+                lprintf("No context to run!");
+                return_error(e_Fatal);
+            }
+            /* See above for an explanation of the following test. */
+            if (ready->state.memory.space_local->saved != 0 &&
+                !ready->saved_local_vm
+                )
+                continue;
+            /* Found a context to run. */
+            {
+                ctx_index_t next_index = ready->next_index;
 
-		if (prev)
-		    prev->next_index = next_index;
-		else
-		    psched->active.head_index = next_index;
-		if (!next_index)
-		    psched->active.tail_index = (prev ? prev->index : 0);
-	    }
-	    break;
-	}
-	if (ready == current)
-	    return 0;		/* no switch */
-	/*
-	 * Save the state of the current context in psched->current,
-	 * if any context is current.
-	 */
-	if (current != 0)
-	    context_store(psched, current);
-	psched->current = ready;
-	/* Load the state of the new current context. */
-	context_load(psched, ready);
-	/* Switch the interpreter's context state pointer. */
-	*pi_ctx_p = &ready->state;
+                if (prev)
+                    prev->next_index = next_index;
+                else
+                    psched->active.head_index = next_index;
+                if (!next_index)
+                    psched->active.tail_index = (prev ? prev->index : 0);
+            }
+            break;
+        }
+        if (ready == current)
+            return 0;		/* no switch */
+        /*
+         * Save the state of the current context in psched->current,
+         * if any context is current.
+         */
+        if (current != 0)
+            context_store(psched, current);
+        psched->current = ready;
+        /* Load the state of the new current context. */
+        context_load(psched, ready);
+        /* Switch the interpreter's context state pointer. */
+        *pi_ctx_p = &ready->state;
     }
     return 0;
 }
@@ -465,7 +464,7 @@ ctx_time_slice(i_ctx_t **pi_ctx_p)
     gs_scheduler_t *psched = ((gs_context_t *)*pi_ctx_p)->scheduler;
 
     if (psched->active.head_index == 0)
-	return 0;
+        return 0;
     if_debug0('"', "[\"]time-slice\n");
     add_last(psched, &psched->active, psched->current);
     return ctx_reschedule(pi_ctx_p);
@@ -495,17 +494,17 @@ zdetach(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = context_param(psched, op, &pctx)) < 0)
-	return code;
+        return code;
     if_debug2('\'', "[']detach %ld, status = %d\n",
-	      pctx->index, pctx->status);
+              pctx->index, pctx->status);
     if (pctx->joiner_index != 0 || pctx->detach)
-	return_error(e_invalidcontext);
+        return_error(e_invalidcontext);
     switch (pctx->status) {
-	case cs_active:
-	    pctx->detach = true;
-	    break;
-	case cs_done:
-	    context_destroy(pctx);
+        case cs_active:
+            pctx->detach = true;
+            break;
+        case cs_done:
+            context_destroy(pctx);
     }
     pop(1);
     return 0;
@@ -513,9 +512,9 @@ zdetach(i_ctx_t *i_ctx_p)
 
 static int
     do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin,
-	    const ref * pstdout, uint mcount, bool local),
+            const ref * pstdout, uint mcount, bool local),
     values_older_than(const ref_stack_t * pstack, uint first, uint last,
-		      int max_space);
+                      int max_space);
 static int
     fork_done(i_ctx_t *),
     fork_done_with_error(i_ctx_t *),
@@ -533,7 +532,7 @@ zfork(i_ctx_t *i_ctx_p)
     ref rnull;
 
     if (mcount == 0)
-	return_error(e_unmatchedmark);
+        return_error(e_unmatchedmark);
     make_null(&rnull);
     return do_fork(i_ctx_p, op, &rnull, &rnull, mcount, false);
 }
@@ -545,13 +544,13 @@ zlocalfork(i_ctx_t *i_ctx_p)
     int code;
 
     if (mcount == 0)
-	return_error(e_unmatchedmark);
+        return_error(e_unmatchedmark);
     code = values_older_than(&o_stack, 1, mcount - 1, avm_local);
     if (code < 0)
-	return code;
+        return code;
     code = do_fork(i_ctx_p, op - 2, op - 1, op, mcount - 2, true);
     if (code < 0)
-	return code;
+        return code;
     op = osp;
     op[-2] = *op;
     pop(2);
@@ -561,7 +560,7 @@ zlocalfork(i_ctx_t *i_ctx_p)
 /* Internal procedure to actually do the fork operation. */
 static int
 do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
-	uint mcount, bool local)
+        uint mcount, bool local)
 {
     gs_context_t *pcur = (gs_context_t *)i_ctx_p;
     gs_scheduler_t *psched = pcur->scheduler;
@@ -573,98 +572,98 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 
     check_proc(*op);
     if (iimemory_local->save_level)
-	return_error(e_invalidcontext);
+        return_error(e_invalidcontext);
     if (r_has_type(pstdout, t_null)) {
-	code = zget_stdout(i_ctx_p, &s);
-	if (code < 0)
-	    return code;
-	pstdout = &ref_stdio[1];
+        code = zget_stdout(i_ctx_p, &s);
+        if (code < 0)
+            return code;
+        pstdout = &ref_stdio[1];
     } else
-	check_read_file(i_ctx_p, s, pstdout);
+        check_read_file(i_ctx_p, s, pstdout);
     if (r_has_type(pstdin, t_null)) {
-	code = zget_stdin(i_ctx_p, &s);
-	if (code < 0)
-	    return code;
-	pstdin = &ref_stdio[0];
+        code = zget_stdin(i_ctx_p, &s);
+        if (code < 0)
+            return code;
+        pstdin = &ref_stdio[0];
     } else
-	check_read_file(i_ctx_p, s, pstdin);
+        check_read_file(i_ctx_p, s, pstdin);
     dmem = gs_imemory;
     if (local) {
-	/* Share global VM, private local VM. */
-	ref *puserdict;
-	uint userdict_size;
-	gs_memory_t *parent = iimemory_local->non_gc_memory;
-	gs_ref_memory_t *lmem;
-	gs_ref_memory_t *lmem_stable;
+        /* Share global VM, private local VM. */
+        ref *puserdict;
+        uint userdict_size;
+        gs_memory_t *parent = iimemory_local->non_gc_memory;
+        gs_ref_memory_t *lmem;
+        gs_ref_memory_t *lmem_stable;
 
-	if (dict_find_string(systemdict, "userdict", &puserdict) <= 0 ||
-	    !r_has_type(puserdict, t_dictionary)
-	    )
-	    return_error(e_Fatal);
-	old_userdict = *puserdict;
-	userdict_size = dict_maxlength(&old_userdict);
-	lmem = ialloc_alloc_state(parent, iimemory_local->chunk_size);
-	lmem_stable = ialloc_alloc_state(parent, iimemory_local->chunk_size);
-	if (lmem == 0 || lmem_stable == 0) {
-	    gs_free_object(parent, lmem_stable, "do_fork");
-	    gs_free_object(parent, lmem, "do_fork");
-	    return_error(e_VMerror);
-	}
-	lmem->space = avm_local;
-	lmem_stable->space = avm_local;
-	lmem->stable_memory = (gs_memory_t *)lmem_stable;
-	dmem.space_local = lmem;
-	code = context_create(psched, &pctx, &dmem, &pcur->state, false);
-	if (code < 0) {
-	    /****** FREE lmem ******/
-	    return code;
-	}
-	/*
-	 * Create a new userdict.  PostScript code will take care of
-	 * the rest of the initialization of the new context.
-	 */
-	code = dict_alloc(lmem, userdict_size, &new_userdict);
-	if (code < 0) {
-	    context_destroy(pctx);
-	    /****** FREE lmem ******/
-	    return code;
-	}
+        if (dict_find_string(systemdict, "userdict", &puserdict) <= 0 ||
+            !r_has_type(puserdict, t_dictionary)
+            )
+            return_error(e_Fatal);
+        old_userdict = *puserdict;
+        userdict_size = dict_maxlength(&old_userdict);
+        lmem = ialloc_alloc_state(parent, iimemory_local->chunk_size);
+        lmem_stable = ialloc_alloc_state(parent, iimemory_local->chunk_size);
+        if (lmem == 0 || lmem_stable == 0) {
+            gs_free_object(parent, lmem_stable, "do_fork");
+            gs_free_object(parent, lmem, "do_fork");
+            return_error(e_VMerror);
+        }
+        lmem->space = avm_local;
+        lmem_stable->space = avm_local;
+        lmem->stable_memory = (gs_memory_t *)lmem_stable;
+        dmem.space_local = lmem;
+        code = context_create(psched, &pctx, &dmem, &pcur->state, false);
+        if (code < 0) {
+            /****** FREE lmem ******/
+            return code;
+        }
+        /*
+         * Create a new userdict.  PostScript code will take care of
+         * the rest of the initialization of the new context.
+         */
+        code = dict_alloc(lmem, userdict_size, &new_userdict);
+        if (code < 0) {
+            context_destroy(pctx);
+            /****** FREE lmem ******/
+            return code;
+        }
     } else {
-	/* Share global and local VM. */
-	code = context_create(psched, &pctx, &dmem, &pcur->state, false);
-	if (code < 0) {
-	    /****** FREE lmem ******/
-	    return code;
-	}
-	/*
-	 * Copy the gstate stack.  The current method is not elegant;
-	 * in fact, I'm not entirely sure it works.
-	 */
-	{
-	    int n;
-	    const gs_state *old;
-	    gs_state *new;
+        /* Share global and local VM. */
+        code = context_create(psched, &pctx, &dmem, &pcur->state, false);
+        if (code < 0) {
+            /****** FREE lmem ******/
+            return code;
+        }
+        /*
+         * Copy the gstate stack.  The current method is not elegant;
+         * in fact, I'm not entirely sure it works.
+         */
+        {
+            int n;
+            const gs_state *old;
+            gs_state *new;
 
-	    for (n = 0, old = igs; old != 0; old = gs_state_saved(old))
-		++n;
-	    for (old = pctx->state.pgs; old != 0; old = gs_state_saved(old))
-		--n;
-	    for (; n > 0 && code >= 0; --n)
-		code = gs_gsave(pctx->state.pgs);
-	    if (code < 0) {
+            for (n = 0, old = igs; old != 0; old = gs_state_saved(old))
+                ++n;
+            for (old = pctx->state.pgs; old != 0; old = gs_state_saved(old))
+                --n;
+            for (; n > 0 && code >= 0; --n)
+                code = gs_gsave(pctx->state.pgs);
+            if (code < 0) {
 /****** FREE lmem & GSTATES ******/
-		return code;
-	    }
-	    for (old = igs, new = pctx->state.pgs;
-		 old != 0 /* (== new != 0) */  && code >= 0;
-		 old = gs_state_saved(old), new = gs_state_saved(new)
-		)
-		code = gs_setgstate(new, old);
-	    if (code < 0) {
+                return code;
+            }
+            for (old = igs, new = pctx->state.pgs;
+                 old != 0 /* (== new != 0) */  && code >= 0;
+                 old = gs_state_saved(old), new = gs_state_saved(new)
+                )
+                code = gs_setgstate(new, old);
+            if (code < 0) {
 /****** FREE lmem & GSTATES ******/
-		return code;
-	    }
-	}
+                return code;
+            }
+        }
     }
     pctx->state.op_array_table_global = i_ctx_p->op_array_table_global;
     pctx->state.op_array_table_local  = i_ctx_p->op_array_table_local;
@@ -676,39 +675,39 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
     pctx->state.stdio[2] = pcur->state.stdio[2];
     /* Initialize the interpreter stacks. */
     {
-	ref_stack_t *dstack = (ref_stack_t *)&pctx->state.dict_stack;
-	uint count = ref_stack_count(&d_stack);
-	uint copy = (local ? min_dstack_size : count);
+        ref_stack_t *dstack = (ref_stack_t *)&pctx->state.dict_stack;
+        uint count = ref_stack_count(&d_stack);
+        uint copy = (local ? min_dstack_size : count);
 
-	ref_stack_push(dstack, copy);
-	stack_copy(dstack, &d_stack, copy, count - copy);
-	if (local) {
-	    /* Substitute the new userdict for the old one. */
-	    long i;
+        ref_stack_push(dstack, copy);
+        stack_copy(dstack, &d_stack, copy, count - copy);
+        if (local) {
+            /* Substitute the new userdict for the old one. */
+            long i;
 
-	    for (i = 0; i < copy; ++i) {
-		ref *pdref = ref_stack_index(dstack, i);
+            for (i = 0; i < copy; ++i) {
+                ref *pdref = ref_stack_index(dstack, i);
 
-		if (obj_eq(imemory, pdref, &old_userdict))
-		    *pdref = new_userdict;
-	    }
-	}
+                if (obj_eq(imemory, pdref, &old_userdict))
+                    *pdref = new_userdict;
+            }
+        }
     }
     {
-	ref_stack_t *estack = (ref_stack_t *)&pctx->state.exec_stack;
+        ref_stack_t *estack = (ref_stack_t *)&pctx->state.exec_stack;
 
-	ref_stack_push(estack, 3);
-	/* fork_done must be executed in both normal and error cases. */
-	make_mark_estack(estack->p - 2, es_other, fork_done_with_error);
-	make_oper(estack->p - 1, 0, fork_done);
-	*estack->p = *op;
+        ref_stack_push(estack, 3);
+        /* fork_done must be executed in both normal and error cases. */
+        make_mark_estack(estack->p - 2, es_other, fork_done_with_error);
+        make_oper(estack->p - 1, 0, fork_done);
+        *estack->p = *op;
     }
     {
-	ref_stack_t *ostack = (ref_stack_t *)&pctx->state.op_stack;
-	uint count = mcount - 2;
+        ref_stack_t *ostack = (ref_stack_t *)&pctx->state.op_stack;
+        uint count = mcount - 2;
 
-	ref_stack_push(ostack, count);
-	stack_copy(ostack, &o_stack, count, osp - op + 1);
+        ref_stack_push(ostack, count);
+        stack_copy(ostack, &o_stack, count, osp - op + 1);
     }
     pctx->state.binary_object_format = pcur->state.binary_object_format;
     add_last(psched, &psched->active, pctx);
@@ -724,13 +723,13 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
  */
 static int
 values_older_than(const ref_stack_t * pstack, uint first, uint last,
-		  int next_space)
+                  int next_space)
 {
     uint i;
 
     for (i = first; i <= last; ++i)
-	if (r_space(ref_stack_index(pstack, (long)i)) >= next_space)
-	    return_error(e_invalidaccess);
+        if (r_space(ref_stack_index(pstack, (long)i)) >= next_space)
+            return_error(e_invalidaccess);
     return 0;
 }
 
@@ -745,7 +744,7 @@ fork_done(i_ctx_t *i_ctx_p)
     gs_scheduler_t *psched = pcur->scheduler;
 
     if_debug2('\'', "[']done %ld%s\n", pcur->index,
-	      (pcur->detach ? ", detached" : ""));
+              (pcur->detach ? ", detached" : ""));
     /*
      * Clear the context's dictionary, execution and graphics stacks
      * now, to retain as little as possible in case of a garbage
@@ -761,42 +760,42 @@ fork_done(i_ctx_t *i_ctx_p)
      * result in an error termination.
      */
     if (iimemory_local->save_level) {
-	ref *prestore;
+        ref *prestore;
 
-	if (dict_find_string(systemdict, "restore", &prestore) <= 0) {
-	    lprintf("restore not found in systemdict!");
-	    return_error(e_Fatal);
-	}
-	if (pcur->detach) {
-	    ref_stack_clear(&o_stack);	/* help avoid invalidrestore */
-	    op = osp;
-	}
-	push(1);
-	make_tv(op, t_save, saveid, alloc_save_current_id(&gs_imemory));
-	push_op_estack(fork_done);
-	++esp;
-	ref_assign(esp, prestore);
-	return o_push_estack;
+        if (dict_find_string(systemdict, "restore", &prestore) <= 0) {
+            lprintf("restore not found in systemdict!");
+            return_error(e_Fatal);
+        }
+        if (pcur->detach) {
+            ref_stack_clear(&o_stack);	/* help avoid invalidrestore */
+            op = osp;
+        }
+        push(1);
+        make_tv(op, t_save, saveid, alloc_save_current_id(&gs_imemory));
+        push_op_estack(fork_done);
+        ++esp;
+        ref_assign(esp, prestore);
+        return o_push_estack;
     }
     if (pcur->detach) {
-	/*
-	 * We would like to free the context's memory, but we can't do
-	 * it yet, because the interpreter still has references to it.
-	 * Instead, queue the context to be freed the next time we
-	 * reschedule.  We can, however, clear its operand stack now.
-	 */
-	ref_stack_clear(&o_stack);
-	context_store(psched, pcur);
-	pcur->next_index = psched->dead_index;
-	psched->dead_index = pcur->index;
-	psched->current = 0;
+        /*
+         * We would like to free the context's memory, but we can't do
+         * it yet, because the interpreter still has references to it.
+         * Instead, queue the context to be freed the next time we
+         * reschedule.  We can, however, clear its operand stack now.
+         */
+        ref_stack_clear(&o_stack);
+        context_store(psched, pcur);
+        pcur->next_index = psched->dead_index;
+        psched->dead_index = pcur->index;
+        psched->current = 0;
     } else {
-	gs_context_t *pctx = index_context(psched, pcur->joiner_index);
+        gs_context_t *pctx = index_context(psched, pcur->joiner_index);
 
-	pcur->status = cs_done;
-	/* Schedule the context waiting to join this one, if any. */
-	if (pctx != 0)
-	    add_last(psched, &psched->active, pctx);
+        pcur->status = cs_done;
+        /* Schedule the context waiting to join this one, if any. */
+        if (pctx != 0)
+            add_last(psched, &psched->active, pctx);
     }
     return o_reschedule;
 }
@@ -822,50 +821,50 @@ zjoin(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = context_param(psched, op, &pctx)) < 0)
-	return code;
+        return code;
     if_debug2('\'', "[']join %ld, status = %d\n",
-	      pctx->index, pctx->status);
+              pctx->index, pctx->status);
     /*
      * It doesn't seem logically necessary, but the Red Book says that
      * the context being joined must share both global and local VM with
      * the current context.
      */
     if (pctx->joiner_index != 0 || pctx->detach || pctx == current ||
-	pctx->state.memory.space_global !=
-	  current->state.memory.space_global ||
-	pctx->state.memory.space_local !=
-	  current->state.memory.space_local ||
-	iimemory_local->save_level != 0
-	)
-	return_error(e_invalidcontext);
+        pctx->state.memory.space_global !=
+          current->state.memory.space_global ||
+        pctx->state.memory.space_local !=
+          current->state.memory.space_local ||
+        iimemory_local->save_level != 0
+        )
+        return_error(e_invalidcontext);
     switch (pctx->status) {
-	case cs_active:
-	    /*
-	     * We need to re-execute the join after the joined
-	     * context is done.  Since we can't return both
-	     * o_push_estack and o_reschedule, we push a call on
-	     * reschedule_now, which accomplishes the latter.
-	     */
-	    check_estack(2);
-	    push_op_estack(finish_join);
-	    push_op_estack(reschedule_now);
-	    pctx->joiner_index = current->index;
-	    return o_push_estack;
-	case cs_done:
-	    {
-		const ref_stack_t *ostack =
-		    (ref_stack_t *)&pctx->state.op_stack;
-		uint count = ref_stack_count(ostack);
+        case cs_active:
+            /*
+             * We need to re-execute the join after the joined
+             * context is done.  Since we can't return both
+             * o_push_estack and o_reschedule, we push a call on
+             * reschedule_now, which accomplishes the latter.
+             */
+            check_estack(2);
+            push_op_estack(finish_join);
+            push_op_estack(reschedule_now);
+            pctx->joiner_index = current->index;
+            return o_push_estack;
+        case cs_done:
+            {
+                const ref_stack_t *ostack =
+                    (ref_stack_t *)&pctx->state.op_stack;
+                uint count = ref_stack_count(ostack);
 
-		push(count);
-		{
-		    ref *rp = ref_stack_index(&o_stack, count);
+                push(count);
+                {
+                    ref *rp = ref_stack_index(&o_stack, count);
 
-		    make_mark(rp);
-		}
-		stack_copy(&o_stack, ostack, count, 0);
-		context_destroy(pctx);
-	    }
+                    make_mark(rp);
+                }
+                stack_copy(&o_stack, ostack, count, 0);
+                context_destroy(pctx);
+            }
     }
     return 0;
 }
@@ -881,11 +880,11 @@ finish_join(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = context_param(psched, op, &pctx)) < 0)
-	return code;
+        return code;
     if_debug2('\'', "[']finish_join %ld, status = %d\n",
-	      pctx->index, pctx->status);
+              pctx->index, pctx->status);
     if (pctx->joiner_index != current->index)
-	return_error(e_invalidcontext);
+        return_error(e_invalidcontext);
     pctx->joiner_index = 0;
     return zjoin(i_ctx_p);
 }
@@ -905,7 +904,7 @@ zyield(i_ctx_t *i_ctx_p)
     gs_scheduler_t *psched = current->scheduler;
 
     if (psched->active.head_index == 0)
-	return 0;
+        return 0;
     if_debug0('"', "[\"]yield\n");
     add_last(psched, &psched->active, current);
     return o_reschedule;
@@ -926,10 +925,10 @@ zcondition(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_condition_t *pcond =
-	ialloc_struct(gs_condition_t, &st_condition, "zcondition");
+        ialloc_struct(gs_condition_t, &st_condition, "zcondition");
 
     if (pcond == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     pcond->waiting.head_index = pcond->waiting.tail_index = 0;
     push(1);
     make_istruct(op, a_all, pcond);
@@ -944,7 +943,7 @@ zlock(i_ctx_t *i_ctx_p)
     gs_lock_t *plock = ialloc_struct(gs_lock_t, &st_lock, "zlock");
 
     if (plock == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     plock->holder_index = 0;
     plock->waiting.head_index = plock->waiting.tail_index = 0;
     push(1);
@@ -968,12 +967,12 @@ zmonitor(i_ctx_t *i_ctx_p)
     pctx = index_context(current->scheduler, plock->holder_index);
     if_debug1('\'', "[']monitor 0x%lx\n", (ulong) plock);
     if (pctx != 0) {
-	if (pctx == current ||
-	    (iimemory_local->save_level != 0 &&
-	     pctx->state.memory.space_local ==
-	     current->state.memory.space_local)
-	    )
-	    return_error(e_invalidcontext);
+        if (pctx == current ||
+            (iimemory_local->save_level != 0 &&
+             pctx->state.memory.space_local ==
+             current->state.memory.space_local)
+            )
+            return_error(e_invalidcontext);
     }
     /*
      * We push on the e-stack:
@@ -986,8 +985,8 @@ zmonitor(i_ctx_t *i_ctx_p)
     check_estack(4);
     code = lock_acquire(op - 1, current);
     if (code != 0) {		/* We didn't acquire the lock.  Re-execute this later. */
-	push_op_estack(zmonitor);
-	return code;		/* o_reschedule */
+        push_op_estack(zmonitor);
+        return code;		/* o_reschedule */
     }
     *++esp = op[-1];
     push_mark_estack(es_other, monitor_cleanup);
@@ -1003,7 +1002,7 @@ monitor_cleanup(i_ctx_t *i_ctx_p)
     int code = lock_release(esp);
 
     if (code < 0)
-	return code;
+        return code;
     --esp;
     return o_pop_estack;
 }
@@ -1014,7 +1013,7 @@ monitor_release(i_ctx_t *i_ctx_p)
     int code = lock_release(esp - 1);
 
     if (code < 0)
-	return code;
+        return code;
     esp -= 2;
     return o_pop_estack;
 }
@@ -1033,7 +1032,7 @@ znotify(i_ctx_t *i_ctx_p)
     pop(1);
     op--;
     if (pcond->waiting.head_index == 0)	/* nothing to do */
-	return 0;
+        return 0;
     activate_waiting(current->scheduler, &pcond->waiting);
     return zyield(i_ctx_p);
 }
@@ -1054,13 +1053,13 @@ zwait(i_ctx_t *i_ctx_p)
     check_stype(*op, st_condition);
     pcond = r_ptr(op, gs_condition_t);
     if_debug2('"', "[\"]wait lock 0x%lx, condition 0x%lx\n",
-	      (ulong) plock, (ulong) pcond);
+              (ulong) plock, (ulong) pcond);
     pctx = index_context(psched, plock->holder_index);
     if (pctx == 0 || pctx != psched->current ||
-	(iimemory_local->save_level != 0 &&
-	 (r_space(op - 1) == avm_local || r_space(op) == avm_local))
-	)
-	return_error(e_invalidcontext);
+        (iimemory_local->save_level != 0 &&
+         (r_space(op - 1) == avm_local || r_space(op) == avm_local))
+        )
+        return_error(e_invalidcontext);
     check_estack(1);
     lock_release(op - 1);
     add_last(psched, &pcond->waiting, pctx);
@@ -1076,8 +1075,8 @@ await_lock(i_ctx_t *i_ctx_p)
     int code = lock_acquire(op - 1, current);
 
     if (code == 0) {
-	pop(2);
-	return 0;
+        pop(2);
+        return 0;
     }
     /* We didn't acquire the lock.  Re-execute the wait. */
     push_op_estack(await_lock);
@@ -1092,8 +1091,8 @@ activate_waiting(gs_scheduler_t *psched, ctx_list_t * pcl)
     gs_context_t *next;
 
     for (; pctx != 0; pctx = next) {
-	next = index_context(psched, pctx->next_index);
-	add_last(psched, &psched->active, pctx);
+        next = index_context(psched, pctx->next_index);
+        add_last(psched, &psched->active, pctx);
     }
     pcl->head_index = pcl->tail_index = 0;
 }
@@ -1111,15 +1110,15 @@ zusertime_context(i_ctx_t *i_ctx_p)
 
     push(1);
     if (!current->state.keep_usertime) {
-	/*
-	 * This is the first time this context has executed usertime:
-	 * we must track its execution time from now on.
-	 */
-	psched->usertime_initial = utime;
-	current->state.keep_usertime = true;
+        /*
+         * This is the first time this context has executed usertime:
+         * we must track its execution time from now on.
+         */
+        psched->usertime_initial = utime;
+        current->state.keep_usertime = true;
     }
     make_int(op, current->state.usertime_total + utime -
-	     psched->usertime_initial);
+             psched->usertime_initial);
     return 0;
 }
 
@@ -1128,8 +1127,8 @@ zusertime_context(i_ctx_t *i_ctx_p)
 /* Create a context. */
 static int
 context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
-	       const gs_dual_memory_t * dmem,
-	       const gs_context_state_t *i_ctx_p, bool copy_state)
+               const gs_dual_memory_t * dmem,
+               const gs_context_state_t *i_ctx_p, bool copy_state)
 {
     /*
      * Contexts are always created at the outermost save level, so they do
@@ -1147,17 +1146,17 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
 
     pctx = gs_alloc_struct(mem, gs_context_t, &st_context, "context_create");
     if (pctx == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     if (copy_state) {
-	pctx->state = *i_ctx_p;
+        pctx->state = *i_ctx_p;
     } else {
-	gs_context_state_t *pctx_st = &pctx->state;
+        gs_context_state_t *pctx_st = &pctx->state;
 
-	code = context_state_alloc(&pctx_st, systemdict, dmem);
-	if (code < 0) {
-	    gs_free_object(mem, pctx, "context_create");
-	    return code;
-	}
+        code = context_state_alloc(&pctx_st, systemdict, dmem);
+        if (code < 0) {
+            gs_free_object(mem, pctx, "context_create");
+            return code;
+        }
     }
     ctx_index = gs_next_ids(mem, 1);
     pctx->scheduler = psched;
@@ -1173,7 +1172,7 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
     *pte = pctx;
     *ppctx = pctx;
     if (gs_debug_c('\'') | gs_debug_c('"'))
-	dlprintf2("[']create %ld at 0x%lx\n", ctx_index, (ulong) pctx);
+        dlprintf2("[']create %ld at 0x%lx\n", ctx_index, (ulong) pctx);
     return 0;
 }
 
@@ -1186,7 +1185,7 @@ context_param(const gs_scheduler_t * psched, os_ptr op, gs_context_t ** ppctx)
     check_type(*op, t_integer);
     pctx = index_context(psched, op->value.intval);
     if (pctx == 0)
-	return_error(e_invalidcontext);
+        return_error(e_invalidcontext);
     *ppctx = pctx;
     return 0;
 }
@@ -1210,13 +1209,13 @@ context_destroy(gs_context_t * pctx)
     gs_context_t **ppctx = &psched->table[pctx->index % CTX_TABLE_SIZE];
 
     while (*ppctx != pctx)
-	ppctx = &(*ppctx)->table_next;
+        ppctx = &(*ppctx)->table_next;
     *ppctx = (*ppctx)->table_next;
     if (gs_debug_c('\'') | gs_debug_c('"'))
-	dlprintf3("[']destroy %ld at 0x%lx, status = %d\n",
-		  pctx->index, (ulong) pctx, pctx->status);
+        dlprintf3("[']destroy %ld at 0x%lx, status = %d\n",
+                  pctx->index, (ulong) pctx, pctx->status);
     if (!context_state_free(&pctx->state))
-	gs_free_object((gs_memory_t *) mem, pctx, "context_destroy");
+        gs_free_object((gs_memory_t *) mem, pctx, "context_destroy");
 }
 
 /* Copy the top elements of one stack to another. */
@@ -1224,12 +1223,12 @@ context_destroy(gs_context_t * pctx)
 /* the destination stack must have enough space preallocated. */
 static void
 stack_copy(ref_stack_t * to, const ref_stack_t * from, uint count,
-	   uint from_index)
+           uint from_index)
 {
     long i;
 
     for (i = (long)count - 1; i >= 0; --i)
-	*ref_stack_index(to, i) = *ref_stack_index(from, i + from_index);
+        *ref_stack_index(to, i) = *ref_stack_index(from, i + from_index);
 }
 
 /* Acquire a lock.  Return 0 if acquired, o_reschedule if not. */
@@ -1239,9 +1238,9 @@ lock_acquire(os_ptr op, gs_context_t * pctx)
     gs_lock_t *plock = r_ptr(op, gs_lock_t);
 
     if (plock->holder_index == 0) {
-	plock->holder_index = pctx->index;
-	plock->scheduler = pctx->scheduler;
-	return 0;
+        plock->holder_index = pctx->index;
+        plock->scheduler = pctx->scheduler;
+        return 0;
     }
     add_last(pctx->scheduler, &plock->waiting, pctx);
     return o_reschedule;
@@ -1256,9 +1255,9 @@ lock_release(ref * op)
     gs_context_t *pctx = index_context(psched, plock->holder_index);
 
     if (pctx != 0 && pctx == psched->current) {
-	plock->holder_index = 0;
-	activate_waiting(psched, &plock->waiting);
-	return 0;
+        plock->holder_index = 0;
+        activate_waiting(psched, &plock->waiting);
+        return 0;
     }
     return_error(e_invalidcontext);
 }
@@ -1278,13 +1277,13 @@ const op_def zcontext1_op_defs[] = {
     {"1notify", znotify},
     {"2wait", zwait},
     {"0yield", zyield},
-		/* Note that the following replace prior definitions */
-		/* in the indicated files: */
+                /* Note that the following replace prior definitions */
+                /* in the indicated files: */
     {"0usertime", zusertime_context},	/* zmisc.c */
     op_def_end(0)
 };
 const op_def zcontext2_op_defs[] = {
-		/* Internal operators */
+                /* Internal operators */
     {"0%fork_done", fork_done},
     {"1%finish_join", finish_join},
     {"0%monitor_cleanup", monitor_cleanup},

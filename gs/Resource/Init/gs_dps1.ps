@@ -1,12 +1,12 @@
 %    Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -57,7 +57,7 @@ level2dict begin
     { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
    ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
  } .bind odef		% must bind .forceput and .setglobal
-			% even if NOBIND in effect
+                        % even if NOBIND in effect
 % Don't just copy (load) the definition of .setglobal:
 % it gets redefined for LL3.
 /setshared { /.setglobal .systemvar exec } odef
@@ -84,11 +84,11 @@ level2dict begin
       if
     }
     {		% Current mode is local; if there was a shadowed global
-		% definition, copy it into the local directory.
+                % definition, copy it into the local directory.
       //systemdict /SharedFontDirectory .knownget
        { 1 index .knownget
-	  { .FontDirectory 2 index 3 -1 roll { put } //superexec } % readonly
-	 if
+          { .FontDirectory 2 index 3 -1 roll { put } //superexec } % readonly
+         if
        }
       if
     }
@@ -107,26 +107,26 @@ level2dict begin
    /LocalFontDirectory .systemvar
    FAKEFONTS
     { mark
-		% We want to delete a fake font from the local directory
-		% iff the global directory now has no definition for it,
-		% or a non-fake definition.
+                % We want to delete a fake font from the local directory
+                % iff the global directory now has no definition for it,
+                % or a non-fake definition.
       1 index dup
        {		% Stack: lfd mark lfd key ... lfd key value
-	 length 1 gt
-	  {		% This is a real local definition; don't do anything.
-	    pop
-	  }
-	  {		% This is a fake local definition, check for global.
-	    //SharedFontDirectory 1 index .knownget
-	     {		% A global definition exists, check for fake.
-	       length 1 eq { pop } { 1 index } ifelse
-	     }
-	     {		% No global definition, delete the local one.
-	       1 index
-	     }
-	    ifelse
-	  }
-	 ifelse
+         length 1 gt
+          {		% This is a real local definition; don't do anything.
+            pop
+          }
+          {		% This is a fake local definition, check for global.
+            //SharedFontDirectory 1 index .knownget
+             {		% A global definition exists, check for fake.
+               length 1 eq { pop } { 1 index } ifelse
+             }
+             {		% No global definition, delete the local one.
+               1 index
+             }
+            ifelse
+          }
+         ifelse
        } forall
       pop counttomark 2 idiv { .forceundef } repeat pop		% readonly
     }

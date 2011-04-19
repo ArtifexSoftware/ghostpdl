@@ -1,12 +1,12 @@
 %    Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -32,7 +32,7 @@ languagelevel dup 2 .max .setlanguagelevel
 /settrapparams dup {		% <paramdict> settrapparams -
   /.trapparams .uservar dup length dict .copydict
   dup 2 index {
-			% Stack: paramdict olddict olddict key value
+                        % Stack: paramdict olddict olddict key value
     2 index 2 index known { put dup } { pop pop } ifelse
   } forall pop
   dup .settrapparams	% Let the operator check parameter validity.
@@ -57,7 +57,7 @@ languagelevel dup 2 .max .setlanguagelevel
 } bind .makeoperator
 
 /settrapzone dup {		% - settrapzone -
-	% ****** DUMMY ******
+        % ****** DUMMY ******
   newpath
 } bind .makeoperator
 

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -144,7 +144,6 @@ typedef struct pdf_encoding_element_s {
     "pdf_encoding_element_t[]", pdf_encoding_elt_enum_ptrs,\
     pdf_encoding_elt_reloc_ptrs, st_pdf_encoding1)
 
-
 struct pdf_base_font_s {
     /*
      * For the standard 14 fonts, copied == complete is a complete copy
@@ -160,9 +159,9 @@ struct pdf_base_font_s {
     gs_font_base *copied;
     gs_font_base *complete;
     enum {
-	DO_SUBSET_UNKNOWN = 0,
-	DO_SUBSET_NO,
-	DO_SUBSET_YES
+        DO_SUBSET_UNKNOWN = 0,
+        DO_SUBSET_NO,
+        DO_SUBSET_YES
     } do_subset;
     bool is_standard;
     /*
@@ -186,7 +185,6 @@ BASIC_PTRS(pdf_base_font_ptrs) {\
     GC_STRING_ELT(pdf_base_font_t, font_name)\
 }
 
-
 typedef struct {
     gs_id id;
     pdf_resource_type_t type;
@@ -204,7 +202,7 @@ struct pdf_font_resource_s {
     pdf_font_write_contents_proc_t write_contents;
     gs_string BaseFont;		/* (not used for Type 3) */
     pdf_font_descriptor_t *FontDescriptor; /* (not used for Type 0, Type 3, */
-				/* or standard 14 fonts) */
+                                /* or standard 14 fonts) */
     /*
      * The base_font member is only used for
      * the standard 14 fonts, which do not have a FontDescriptor.
@@ -213,88 +211,88 @@ struct pdf_font_resource_s {
     uint count;			/* # of chars/CIDs */
     double *Widths;		/* [count] (not used for Type 0) */
     byte *used;			/* [ceil(count/8)] bitmap of chars/CIDs used */
-				/* (not used for Type 0 or Type 3) */
+                                /* (not used for Type 0 or Type 3) */
     pdf_resource_t *res_ToUnicode; /* CMap (not used for CIDFonts) */
     gs_cmap_t *cmap_ToUnicode;	   /* CMap (not used for CIDFonts) */
     gs_glyph_mark_proc_t mark_glyph;
     void *mark_glyph_data;	/* closure data */
     union {
 
-	struct /*type0*/ {
+        struct /*type0*/ {
 
-	    pdf_font_resource_t *DescendantFont; /* CIDFont */
-	    /*
-	     * The Encoding_name must be long enough to hold either the
-	     * longest standard CMap name defined in the PDF Reference,
-	     * or the longest reference to an embedded CMap (# 0 R).
-	     */
-	    char Encoding_name[max( /* standard name or <id> 0 R */
-		      17,	/* /UniJIS-UCS2-HW-H */
-		      sizeof(long) * 8 / 3 + 1 + 4 /* <id> 0 R */
-		      ) + 1	/* \0 terminator */
-	    ];
-	    gs_const_string CMapName; /* copied from the original CMap, */
-				/* or references the table of standard names */
-	    uint font_index;	/* The index of the descendent font in the source CMap. */
-	    bool cmap_is_standard;
-	    int WMode;		/* of CMap */
+            pdf_font_resource_t *DescendantFont; /* CIDFont */
+            /*
+             * The Encoding_name must be long enough to hold either the
+             * longest standard CMap name defined in the PDF Reference,
+             * or the longest reference to an embedded CMap (# 0 R).
+             */
+            char Encoding_name[max( /* standard name or <id> 0 R */
+                      17,	/* /UniJIS-UCS2-HW-H */
+                      sizeof(long) * 8 / 3 + 1 + 4 /* <id> 0 R */
+                      ) + 1	/* \0 terminator */
+            ];
+            gs_const_string CMapName; /* copied from the original CMap, */
+                                /* or references the table of standard names */
+            uint font_index;	/* The index of the descendent font in the source CMap. */
+            bool cmap_is_standard;
+            int WMode;		/* of CMap */
 
-	} type0;
+        } type0;
 
-	struct /*cidfont*/ {
+        struct /*cidfont*/ {
 
-	    /* [D]W[2] is Widths. */
-	    long CIDSystemInfo_id; /* (written when font is allocated) */
-	    ushort *CIDToGIDMap; /* (CIDFontType 2 only) [count] */
- 	    gs_id glyphshow_font_id;
-	    double *Widths2;	/* [count * 2] (x, y) */
-	    double *v;		/* [count] */
-	    byte *used2;	/* [(count + 7) / 8] */
-	    pdf_font_resource_t *parent;
+            /* [D]W[2] is Widths. */
+            long CIDSystemInfo_id; /* (written when font is allocated) */
+            ushort *CIDToGIDMap; /* (CIDFontType 2 only) [count] */
+            gs_id glyphshow_font_id;
+            double *Widths2;	/* [count * 2] (x, y) */
+            double *v;		/* [count] */
+            byte *used2;	/* [(count + 7) / 8] */
+            pdf_font_resource_t *parent;
 
-	} cidfont;
+        } cidfont;
 
-	struct /*simple*/ {
+        struct /*simple*/ {
 
-	    int FirstChar, LastChar; /* 0 <= FirstChar <= LastChar <= 255 */
-	    /*
-	     * The BaseEncoding can only be ENCODING_INDEX_WINANSI,
-	     * ENCODING_INDEX_MACROMAN, ENCODING_INDEX_MACEXPERT, or -1.
-	     */
-	    gs_encoding_index_t BaseEncoding;
-	    gs_encoding_index_t preferred_encoding_index;
-	    pdf_encoding_element_t *Encoding; /* [256], not for Type 3 */
-	    gs_point *v; /* [256], glyph origin for WMode 1 */
-	    int last_reserved_char; /* Except for synthesised Type 3, 
-					   which stores such data in LastChar */
+            int FirstChar, LastChar; /* 0 <= FirstChar <= LastChar <= 255 */
+            /*
+             * The BaseEncoding can only be ENCODING_INDEX_WINANSI,
+             * ENCODING_INDEX_MACROMAN, ENCODING_INDEX_MACEXPERT, or -1.
+             */
+            gs_encoding_index_t BaseEncoding;
+            gs_encoding_index_t preferred_encoding_index;
+            pdf_encoding_element_t *Encoding; /* [256], not for Type 3 */
+            gs_point *v; /* [256], glyph origin for WMode 1 */
+            int last_reserved_char; /* Except for synthesised Type 3,
+                                           which stores such data in LastChar */
 
-	    union {
+            union {
 
-		struct /*type1*/ {
-		    bool is_MM_instance;
-		} type1;
+                struct /*type1*/ {
+                    bool is_MM_instance;
+                } type1;
 
-		struct /*truetype*/ {
-		    /*
-		     * No extra info needed, but the ANSI standard doesn't
-		     * allow empty structs.
-		     */
-		    int _dummy;
-		} truetype;
+                struct /*truetype*/ {
+                    /*
+                     * No extra info needed, but the ANSI standard doesn't
+                     * allow empty structs.
+                     */
+                    int _dummy;
+                } truetype;
 
-		struct /*type3*/ {
-		    gs_rect FontBBox;
-		    gs_matrix FontMatrix;
-		    pdf_char_proc_ownership_t *char_procs;
-		    int max_y_offset;
-		    bool bitmap_font;
-		    cos_dict_t *Resources;
-		    byte *cached;
-		} type3;
+                struct /*type3*/ {
+                    gs_rect FontBBox;
+                    gs_matrix FontMatrix;
+                    pdf_char_proc_ownership_t *char_procs;
+                    int max_y_offset;
+                    bool bitmap_font;
+                    cos_dict_t *Resources;
+                    byte *cached;
+                } type3;
 
-	    } s;
+            } s;
 
-	} simple;
+        } simple;
 
     } u;
 };
@@ -376,26 +374,26 @@ int pdf_free_font_cache(gx_device_pdf *pdev);
  * Allocate specific types of font resource.
  */
 int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			 gs_id rid, pdf_font_resource_t *DescendantFont,
-			 const gs_const_string *CMapName);
+                         gs_id rid, pdf_font_resource_t *DescendantFont,
+                         const gs_const_string *CMapName);
 int pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			 pdf_font_write_contents_proc_t write_contents);
+                         pdf_font_write_contents_proc_t write_contents);
 int pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		   bool is_original, gs_id rid, gs_font_base *pfont, int index);
+                   bool is_original, gs_id rid, gs_font_base *pfont, int index);
 int pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			  gs_id rid, pdf_font_descriptor_t *pfd);
+                          gs_id rid, pdf_font_descriptor_t *pfd);
 int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			   gs_id rid, pdf_font_descriptor_t *pfd);
-int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
-		    int wmode, double **w, double **w0, double **v);
+                           gs_id rid, pdf_font_descriptor_t *pfd);
+int pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
+                    int wmode, double **w, double **w0, double **v);
 int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-			    gs_id rid, font_type ftype,
-			    pdf_font_write_contents_proc_t write_contents);
+                            gs_id rid, font_type ftype,
+                            pdf_font_write_contents_proc_t write_contents);
 int pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 /* Resize font resource arrays. */
-int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, 
-	int chars_count);
+int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres,
+        int chars_count);
 
 /*
  * Return the (copied, subset or complete) font associated with a font resource.
@@ -411,8 +409,8 @@ gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool com
  * (pindex and/or psame may be NULL.)
  */
 pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
-				       int *pindex,
-				       pdf_char_glyph_pair_t *pairs, int num_glyphs);
+                                       int *pindex,
+                                       pdf_char_glyph_pair_t *pairs, int num_glyphs);
 
 /*
  * Compute the BaseFont of a font according to the algorithm described
@@ -442,7 +440,7 @@ int pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_
  * Allocate a CMap resource.
  */
 int pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-		   pdf_resource_t **ppres /* CMap */, int font_index_only);
+                   pdf_resource_t **ppres /* CMap */, int font_index_only);
 
 /*
  * Add a CID-to-GID mapping to a CIDFontType 2 font resource.

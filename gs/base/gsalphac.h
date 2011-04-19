@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -54,7 +54,7 @@ typedef struct gs_composite_alpha_params_s {
 
 /* Create an alpha-compositing object. */
 int gs_create_composite_alpha(gs_composite_t ** ppcte,
-			      const gs_composite_alpha_params_t * params,
-			      gs_memory_t * mem);
+                              const gs_composite_alpha_params_t * params,
+                              gs_memory_t * mem);
 
 #endif /* gsalphac_INCLUDED */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -102,7 +102,7 @@ int gs_pattern2_set_shfill(gs_client_color * pcc);
 
 /* Transform a shading bounding box into device space. */
 int gx_dc_pattern2_shade_bbox_transform2fixed(const gs_rect * rect,
-	const gs_imager_state * pis, gs_fixed_rect * rfixed);
+        const gs_imager_state * pis, gs_fixed_rect * rfixed);
 
 /* Get a shading bbox. Returns 1 on success. */
 int gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox);
@@ -114,8 +114,8 @@ int gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc);
 int gx_dc_pattern2_clip_with_bbox(const gx_device_color * pdevc, gx_device * pdev,
                                   gx_clip_path *cpath_local, const gx_clip_path **cpath1);
 /* Intersect a clipping path a shading BBox. */
-int gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * pdev, 
-				  gx_clip_path *cpath);
+int gx_dc_pattern2_clip_with_bbox_simple(const gx_device_color * pdevc, gx_device * pdev,
+                                  gx_clip_path *cpath);
 /* Check whether color is a shading with BBox. */
 int gx_dc_pattern2_is_rectangular_cell(const gx_device_color * pdevc, gx_device * pdev, gs_fixed_rect *rect);
 

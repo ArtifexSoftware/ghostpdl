@@ -19,7 +19,6 @@
 
 #include "pcstate.h"
 
-
 /* Recompute the font from the parameters if necessary. */
 /* This is used by both PCL and HP-GL/2. */
 int pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intenal_only);
@@ -34,8 +33,7 @@ int pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
 
 /* set font parameters after an id selection */
 void
-pcl_set_id_parameters(const pcl_state_t *pcs, 
-		      pcl_font_selection_t *pfs, pl_font_t *fp, uint id);
-
+pcl_set_id_parameters(const pcl_state_t *pcs,
+                      pcl_font_selection_t *pfs, pl_font_t *fp, uint id);
 
 #endif				/* pcfsel_INCLUDED */

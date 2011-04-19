@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,7 +63,7 @@ struct gs_main_instance_s {
     int user_errors;		/* define what to do with errors */
     bool search_here_first;	/* if true, make '.' first lib dir */
     bool run_start;		/* if true, run 'start' after */
-				/* processing command line */
+                                /* processing command line */
     gs_file_path lib_path;	/* library search list (GS_LIB) */
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */

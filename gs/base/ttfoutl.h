@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -57,14 +57,14 @@ typedef signed int  F26Dot6;
 #error "No appropriate type for Fixed 26.6 Floats"
 #endif
 
-typedef struct { 
+typedef struct {
     F26Dot6 x;
     F26Dot6 y;
 } F26Dot6Point;
 
 /* Define an abstract class for accessing memory managers from the TT interpreter. */
 typedef struct ttfMemory_s ttfMemory;
-struct ttfMemory_s {   
+struct ttfMemory_s {
     void *(*alloc_bytes)(ttfMemory *, int size,  const char *cname);
     void *(*alloc_struct)(ttfMemory *, const ttfMemoryDescriptor *,  const char *cname);
     void (*free)(ttfMemory *, void *p,  const char *cname);
@@ -106,8 +106,8 @@ struct ttfReader_s {
     bool   (*Error)(ttfReader *);
     int    (*LoadGlyph)(ttfReader *, int nIndex, const byte **, int *);
     void   (*ReleaseGlyph)(ttfReader *, int nIndex);
-    int    (*get_metrics)(const ttfReader *ttf, uint glyph_index, bool bVertical, 
-			  short *sideBearing, unsigned short *nAdvance);
+    int    (*get_metrics)(const ttfReader *ttf, uint glyph_index, bool bVertical,
+                          short *sideBearing, unsigned short *nAdvance);
 };
 
 /* Define an auxiliary structure for ttfFont. */
@@ -115,7 +115,7 @@ typedef struct {
     int nPos, nLen;
 } ttfPtrElem;
 
-/* Define a capsule for a TT face. 
+/* Define a capsule for a TT face.
    Diue to historical reason the name is some misleading.
    It should be ttfFace. */
 #ifndef ttfFont_DEFINED
@@ -153,14 +153,14 @@ struct ttfFont_s {
     const gs_memory_t *DebugMem;
 };
 
-void ttfFont__init(ttfFont *this, ttfMemory *mem, 
-		   void (*DebugRepaint)(ttfFont *),
-		   int (*DebugPrint)(ttfFont *, const char *s, ...),
+void ttfFont__init(ttfFont *this, ttfMemory *mem,
+                   void (*DebugRepaint)(ttfFont *),
+                   int (*DebugPrint)(ttfFont *, const char *s, ...),
                    const gs_memory_t *);
 void ttfFont__finit(ttfFont *this);
-FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
-			unsigned int nTTC, float w, float h, 
-			bool design_grid);
+FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r,
+                        unsigned int nTTC, float w, float h,
+                        bool design_grid);
 
 /* Define an abstract class for exporting outlines from the TT interpreter. */
 typedef struct ttfExport_s ttfExport;
@@ -179,7 +179,7 @@ int ttfInterpreter__obtain(ttfMemory *mem, ttfInterpreter **ptti);
 void ttfInterpreter__release(ttfInterpreter **ptti);
 
 /* Define an class for outline description. */
-typedef struct { 
+typedef struct {
     bool    bCompound;
     int     contourCount;
     uint    pointCount;
@@ -203,10 +203,10 @@ typedef struct {
     FloatMatrix post_transform;
 } ttfOutliner;
 
-void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp, 
-			bool bOutline, bool bFirst, bool bVertical);
+void ttfOutliner__init(ttfOutliner *, ttfFont *f, ttfReader *r, ttfExport *exp,
+                        bool bOutline, bool bFirst, bool bVertical);
 FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
-	float orig_x, float orig_y, FloatMatrix *m1);
+        float orig_x, float orig_y, FloatMatrix *m1);
 void ttfOutliner__DrawGlyphOutline(ttfOutliner *this);
 
 #endif

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -42,7 +42,7 @@
 
 /*
  * For comments upon the client API for working with the custom client
- * callback logic see the section labeled:  "CLIENT COLOR CALLBACK 
+ * callback logic see the section labeled:  "CLIENT COLOR CALLBACK
  * APPLICATION INTERFACE" below.
  *
  * Also see the comments at the start of src/gsnamecl.c
@@ -110,7 +110,7 @@ int custom_color_callback_get_params(gs_state * pgs, gs_param_list * plist);
  * Separation color space.
  */
 bool custom_color_callback_install_Separation(gs_color_space * pcs,
-	       						gs_state * pgs);
+                                                        gs_state * pgs);
 
 /*
  * Check if we want to use the custom client callback processing logic for the
@@ -123,16 +123,16 @@ bool custom_color_callback_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
  * client callback.
  */
 int gx_remap_concrete_custom_color_Separation(const frac * pconc,
-	const gs_color_space * pcs, gx_device_color * pdc,
-       	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
+        const gs_color_space * pcs, gx_device_color * pdc,
+        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
 
 /*
  * Convert a DeviceN color into device colorants using the custom client
  * client callback.
  */
 int gx_remap_concrete_custom_color_DeviceN(const frac * pconc,
-	const gs_color_space * pcs, gx_device_color * pdc,
-       	const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
+        const gs_color_space * pcs, gx_device_color * pdc,
+        const gs_imager_state * pis, gx_device * dev, gs_color_select_t select);
 
 /* "CLIENT COLOR CALLBACK APPLICATION INTERFACE" */
 /*
@@ -158,7 +158,6 @@ typedef struct client_custom_color_params_s {
 } client_custom_color_params_t;
 #endif
 
-
 /*
  * Define a base type for client color space data.  Most clients will
  * overload this type with a structure of their own.  That type must
@@ -166,7 +165,7 @@ typedef struct client_custom_color_params_s {
  * reference count.
  */
 typedef struct client_color_space_data_s {
-	cs_proc_adjust_client_cspace_count((*client_adjust_cspace_count));
+        cs_proc_adjust_client_cspace_count((*client_adjust_cspace_count));
 } client_color_space__data_t;
 
 /*
@@ -177,70 +176,70 @@ typedef struct client_custom_color_procs_s {
      * Install a DeviceGray color space.
      */
     bool (* install_DeviceGray)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a DeviceGray color into device color.
      */
     int (* remap_DeviceGray)(client_custom_color_params_t * pparams,
-	    const frac * pconc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const frac * pconc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Install a DeviceRGB color space.
      */
     bool (* install_DeviceRGB)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a DeviceRGB color into device color.
      */
     int (* remap_DeviceRGB)(client_custom_color_params_t * pparams,
-	    const frac * pconc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const frac * pconc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Install a DeviceCMYK color space.
      */
     bool (* install_DeviceCMYK)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a DeviceGray color into device color.
      */
     int (* remap_DeviceCMYK)(client_custom_color_params_t * pparams,
-	    const frac * pconc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const frac * pconc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given Separation color space.
      */
     bool (* install_Separation)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a Separation color into device color.
      */
     int (* remap_Separation)(client_custom_color_params_t * pparams,
-	    const frac * pconc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const frac * pconc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given DeviceN color space.
      */
     bool (* install_DeviceN)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a DeviceN color into device color.
      */
     int (* remap_DeviceN)(client_custom_color_params_t * pparams,
-	    const frac * pconc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const frac * pconc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedA color space.
      */
     bool (* install_CIEBasedA)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Please note that the 'complex' color spaces (CIEBasedA, CIEBasedABC,
      * CIEBasedDEF, CIEBasedDEFG, and ICCBased) have a different prototype,
@@ -251,62 +250,62 @@ typedef struct client_custom_color_procs_s {
      * Convert a CIEBasedA color into device color.
      */
     int (* remap_CIEBasedA)(client_custom_color_params_t * pparams,
-	    const gs_client_color * pc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const gs_client_color * pc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedABC color space.
      */
     bool (* install_CIEBasedABC)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a CIEBasedABC color into device color.
      */
     int (* remap_CIEBasedABC)(client_custom_color_params_t * pparams,
-	    const gs_client_color * pc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const gs_client_color * pc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedDEF color space.
      */
     bool (* install_CIEBasedDEF)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a CIEBasedDEF color into device color.
      */
     int (* remap_CIEBasedDEF)(client_custom_color_params_t * pparams,
-	    const gs_client_color * pc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const gs_client_color * pc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given CIEBasedDEFG color space.
      */
     bool (* install_CIEBasedDEFG)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a CIEBasedDEFG color into device color.
      */
     int (* remap_CIEBasedDEFG)(client_custom_color_params_t * pparams,
-	    const gs_client_color * pc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const gs_client_color * pc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
     /*
      * Check if we want to use the callback color processing logic for the
      * given ICCBased color space.
      */
     bool (* install_ICCBased)(client_custom_color_params_t * pparams,
-	    gs_color_space * pcs, gs_state * pgs);
+            gs_color_space * pcs, gs_state * pgs);
     /*
      * Convert a ICCBased color into device color.
      */
     int (* remap_ICCBased)(client_custom_color_params_t * pparams,
-	    const gs_client_color * pc, const gs_color_space * pcs,
-	    gx_device_color * pdc, const gs_imager_state * pis,
-	    gx_device * dev, gs_color_select_t select);
+            const gs_client_color * pc, const gs_color_space * pcs,
+            gx_device_color * pdc, const gs_imager_state * pis,
+            gx_device * dev, gs_color_select_t select);
 
 } client_custom_color_procs_t;
-    
+
 #endif		/* ifndef gsnamecl_INCLUDED */

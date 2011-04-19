@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,13 +25,13 @@ bool gs_param_string_eq(const gs_param_string *pcs, const char *str);
  * the previous accumulated error code.
  */
 int param_put_enum(gs_param_list * plist, gs_param_name param_name,
-		   int *pvalue, const char *const pnames[], int ecode);
+                   int *pvalue, const char *const pnames[], int ecode);
 int param_put_bool(gs_param_list * plist, gs_param_name param_name,
-		   bool * pval, int ecode);
+                   bool * pval, int ecode);
 int param_put_int(gs_param_list * plist, gs_param_name param_name,
-		  int * pval, int ecode);
+                  int * pval, int ecode);
 int param_put_long(gs_param_list * plist, gs_param_name param_name,
-		   long * pval, int ecode);
+                   long * pval, int ecode);
 
 /* Copy one parameter list to another, recursively if necessary. */
 int param_list_copy(gs_param_list *plto, gs_param_list *plfrom);

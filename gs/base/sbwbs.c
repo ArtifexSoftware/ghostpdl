@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -52,7 +52,7 @@ s_buffered_block_init(stream_state * st)
     s_buffered_no_block_init(st);
     ss->buffer = gs_alloc_bytes(st->memory, ss->BlockSize, "buffer");
     if (ss->buffer == 0)
-	return ERRC;
+        return ERRC;
 /****** WRONG ******/
     return 0;
 }
@@ -72,17 +72,17 @@ s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
     uint left = ss->bsize - ss->bpos;
 
     if (!ss->filling)
-	return 1;
+        return 1;
     if (left < count)
-	count = left;
+        count = left;
     if_debug3('w', "[w]buffering %d bytes to position %d, last = %s\n",
-	      count, ss->bpos, (last ? "true" : "false"));
+              count, ss->bpos, (last ? "true" : "false"));
     memcpy(ss->buffer + ss->bpos, p + 1, count);
     pr->ptr = p += count;
     ss->bpos += count;
     if (ss->bpos == ss->bsize || (p == rlimit && last)) {
-	ss->filling = false;
-	return 1;
+        ss->filling = false;
+        return 1;
     }
     return 0;
 }
@@ -121,12 +121,12 @@ bwbs_init(stream_state * st, uint osize)
     ss->bsize = ss->BlockSize;
     code = s_buffered_block_init(st);
     if (code != 0)
-	return code;
+        return code;
     ss->offsets = (void *)gs_alloc_bytes(st->memory, osize,
-					 "BWBlockSort offsets");
+                                         "BWBlockSort offsets");
     if (ss->offsets == 0) {
-	s_BWBS_release(st);
-	return ERRC;
+        s_BWBS_release(st);
+        return ERRC;
 /****** WRONG ******/
     }
     ss->I = -1;			/* haven't read I yet */
@@ -167,29 +167,29 @@ bwbs_compare_rotations(const void *p1, const void *p2)
     int swap;
 
     if (*s1 != *s2)
-	return (*s1 < *s2 ? -1 : 1);
+        return (*s1 < *s2 ? -1 : 1);
     if (s1 < s2)
-	swap = 1;
+        swap = 1;
     else {
-	const byte *t = s1;
+        const byte *t = s1;
 
-	s1 = s2;
-	s2 = t;
-	swap = -1;
+        s1 = s2;
+        s2 = t;
+        swap = -1;
     }
     start1 = s1;
     end = buffer + bwbs_compare_ss->N;
     for (s1++, s2++; s2 < end; s1++, s2++)
-	if (*s1 != *s2)
-	    return (*s1 < *s2 ? -swap : swap);
+        if (*s1 != *s2)
+            return (*s1 < *s2 ? -swap : swap);
     s2 = buffer;
     for (; s1 < end; s1++, s2++)
-	if (*s1 != *s2)
-	    return (*s1 < *s2 ? -swap : swap);
+        if (*s1 != *s2)
+            return (*s1 < *s2 ? -swap : swap);
     s1 = buffer;
     for (; s1 < start1; s1++, s2++)
-	if (*s1 != *s2)
-	    return (*s1 < *s2 ? -swap : swap);
+        if (*s1 != *s2)
+            return (*s1 < *s2 ? -swap : swap);
     return 0;
 }
 /* Sort the strings. */
@@ -204,28 +204,28 @@ bwbse_sort(const byte * buffer, uint * indices, int N)
 
     memset(C, 0, sizeof(Cs));
     for (j = 0; j < N; j++)
-	C[buffer[j]]++;
+        C[buffer[j]]++;
     for (ch = 0; ch <= 255; ch++) {
-	sum += C[ch];
-	C[ch] = sum - C[ch];
+        sum += C[ch];
+        C[ch] = sum - C[ch];
     }
     for (j = 0; j < N; j++)
-	indices[C[buffer[j]]++] = j;
+        indices[C[buffer[j]]++] = j;
     /* Now C[ch] = the number of strings that start */
     /* with a character less than or equal to ch. */
     sum = 0;
     /* qsort each bucket produced by the radix sort. */
     for (ch = 0; ch <= 255; sum = C[ch], ch++)
-	qsort(indices + sum, C[ch] - sum,
-	      sizeof(*indices),
-	      bwbs_compare_rotations);
+        qsort(indices + sum, C[ch] - sum,
+              sizeof(*indices),
+              bwbs_compare_rotations);
 #undef C
 }
 
 /* Encode a buffer */
 static int
 s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
-		stream_cursor_write * pw, bool last)
+                stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     register byte *q = pw->ptr;
@@ -234,56 +234,56 @@ s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
     uint *indices = ss->offsets;
 
     if (ss->filling) {
-	int status, j, N;
-	byte *buffer = ss->buffer;
-	if (wcount < sizeof(int) * 2)
-	        return 1;
+        int status, j, N;
+        byte *buffer = ss->buffer;
+        if (wcount < sizeof(int) * 2)
+                return 1;
 
-	/* Continue filling the buffer. */
-	status = s_buffered_process(st, pr, last);
-	if (!status)
-	    return 0;
-	ss->N = N = ss->bpos;
-	/* We reverse the string before encoding it, */
-	/* so it will come out of the decoder correctly. */
-	for (j = N / 2 - 1; j >= 0; j--) {
-	    byte *p0 = &buffer[j];
-	    byte *p1 = &buffer[N - 1 - j];
-	    byte b = *p0;
+        /* Continue filling the buffer. */
+        status = s_buffered_process(st, pr, last);
+        if (!status)
+            return 0;
+        ss->N = N = ss->bpos;
+        /* We reverse the string before encoding it, */
+        /* so it will come out of the decoder correctly. */
+        for (j = N / 2 - 1; j >= 0; j--) {
+            byte *p0 = &buffer[j];
+            byte *p1 = &buffer[N - 1 - j];
+            byte b = *p0;
 
-	    *p0 = *p1;
-	    *p1 = b;
-	}
-	/* Save st in a static, because that's the only way */
-	/* we can pass it to the comparison procedure (ugh). */
-	bwbs_compare_ss = ss;
-	/* Sort the strings. */
-	bwbse_sort(buffer, indices, N);
-	/* Find the unrotated string. */
-	for (j = 0; j < N; j++)
-	    if (indices[j] == 0) {
-		ss->I = j;
-		break;
-	    }
-	for (j = sizeof(int); --j >= 0;)
-	    *++q = (byte) (N >> (j * 8));
-	for (j = sizeof(int); --j >= 0;)
-	    *++q = (byte) (ss->I >> (j * 8));
-	ss->bpos = 0;
+            *p0 = *p1;
+            *p1 = b;
+        }
+        /* Save st in a static, because that's the only way */
+        /* we can pass it to the comparison procedure (ugh). */
+        bwbs_compare_ss = ss;
+        /* Sort the strings. */
+        bwbse_sort(buffer, indices, N);
+        /* Find the unrotated string. */
+        for (j = 0; j < N; j++)
+            if (indices[j] == 0) {
+                ss->I = j;
+                break;
+            }
+        for (j = sizeof(int); --j >= 0;)
+            *++q = (byte) (N >> (j * 8));
+        for (j = sizeof(int); --j >= 0;)
+            *++q = (byte) (ss->I >> (j * 8));
+        ss->bpos = 0;
     }
     /* We're reading out of the buffer, writing the permuted string. */
     while (q < wlimit && ss->bpos < ss->N) {
-	int i = indices[ss->bpos++];
+        int i = indices[ss->bpos++];
 
-	*++q = ss->buffer[(i == 0 ? ss->N - 1 : i - 1)];
+        *++q = ss->buffer[(i == 0 ? ss->N - 1 : i - 1)];
     }
     if (ss->bpos == ss->N) {
-	ss->filling = true;
-	ss->bpos = 0;
+        ss->filling = true;
+        ss->bpos = 0;
     }
     pw->ptr = q;
     if (q == wlimit)
-	return 1;
+        return 1;
     return 0;
 }
 
@@ -320,7 +320,7 @@ const stream_template s_BWBSE_template = {
  * P[i] + C[S[i]], where C[c] is the sum of O(0,N) ... O(c-1,N),
  * we add C[c] into P2[k,c] for all k.
  */
-							/*typedef struct { uint v[256]; } offsets_full; *//* in sbwbs.h */
+                                                        /*typedef struct { uint v[256]; } offsets_full; *//* in sbwbs.h */
 typedef struct {
     bits16 v[256];
 } offsets_4k;
@@ -359,7 +359,7 @@ s_BWBSD_init(stream_state * st)
 
 static void
 bwbsd_construct_offsets(stream_BWBS_state * sst, offsets_full * po64k,
-			offsets_4k * po4k, byte * po1, int N)
+                        offsets_4k * po4k, byte * po1, int N)
 {
     offsets_full Cs;
 
@@ -372,46 +372,46 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, offsets_full * po64k,
 
     memset(C, 0, sizeof(Cs));
     for (i1 = 0; i1 < ceil_4k(N); i1++, p1++) {
-	int j;
+        int j;
 
-	if (!(i1 & 15))
-	    *++p2 = Cs;
-	for (j = 0; j < 256; j++)
-	    p1->v[j] = C[j] - p2->v[j];
-	j = (N + 1 - (i1 << 12)) >> 1;
-	if (j > 4096 / 2)
-	    j = 4096 / 2;
-	for (; j > 0; j--, b += 2, p0 += 3) {
-	    byte b0 = b[0];
-	    uint d0 = C[b0]++ - (p1->v[b0] + p2->v[b0]);
-	    byte b1 = b[1];
-	    uint d1 = C[b1]++ - (p1->v[b1] + p2->v[b1]);
+        if (!(i1 & 15))
+            *++p2 = Cs;
+        for (j = 0; j < 256; j++)
+            p1->v[j] = C[j] - p2->v[j];
+        j = (N + 1 - (i1 << 12)) >> 1;
+        if (j > 4096 / 2)
+            j = 4096 / 2;
+        for (; j > 0; j--, b += 2, p0 += 3) {
+            byte b0 = b[0];
+            uint d0 = C[b0]++ - (p1->v[b0] + p2->v[b0]);
+            byte b1 = b[1];
+            uint d1 = C[b1]++ - (p1->v[b1] + p2->v[b1]);
 
-	    p0[0] = d0 >> 4;
-	    p0[1] = (byte) ((d0 << 4) + (d1 >> 8));
-	    p0[2] = (byte) d1;
-	}
+            p0[0] = d0 >> 4;
+            p0[1] = (byte) ((d0 << 4) + (d1 >> 8));
+            p0[2] = (byte) d1;
+        }
     }
     /* If the block length is odd, discount the extra byte. */
     if (N & 1)
-	C[sst->buffer[N]]--;
+        C[sst->buffer[N]]--;
     /* Compute the cumulative totals in C. */
     {
-	int sum = 0, ch;
+        int sum = 0, ch;
 
-	for (ch = 0; ch <= 255; ch++) {
-	    sum += C[ch];
-	    C[ch] = sum - C[ch];
-	}
+        for (ch = 0; ch <= 255; ch++) {
+            sum += C[ch];
+            C[ch] = sum - C[ch];
+        }
     }
     /* Add the C values back into the 64K table, */
     /* which saves an addition of C[b] in the decoding loop. */
     {
-	int i2, ch;
+        int i2, ch;
 
-	for (p2 = po64k, i2 = ceil_64k(N); i2 > 0; p2++, i2--)
-	    for (ch = 0; ch < 256; ch++)
-		p2->v[ch] += C[ch];
+        for (p2 = po64k, i2 = ceil_64k(N); i2 > 0; p2++, i2--)
+            for (ch = 0; ch < 256; ch++)
+                p2->v[ch] += C[ch];
     }
 #undef C
 }
@@ -430,19 +430,19 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 
     memset(C, 0, sizeof(Cs));
     for (i = 0; i < N; i++, p++, b++)
-	*p = C[*b]++;
+        *p = C[*b]++;
     /* Compute the cumulative totals in C. */
     {
-	int sum = 0, ch;
+        int sum = 0, ch;
 
-	for (ch = 0; ch <= 255; ch++) {
-	    sum += C[ch];
-	    C[ch] = sum - C[ch];
-	}
+        for (ch = 0; ch <= 255; ch++) {
+            sum += C[ch];
+            C[ch] = sum - C[ch];
+        }
     }
     /* Add the C values back into the offsets. */
     for (i = 0, b = sst->buffer, p = po; i < N; i++, b++, p++)
-	*p += C[*b];
+        *p += C[*b];
 #undef C
 }
 
@@ -451,7 +451,7 @@ bwbsd_construct_offsets(stream_BWBS_state * sst, int *po, int N)
 /* Decode a buffer */
 static int
 s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
-		stream_cursor_write * pw, bool last)
+                stream_cursor_write * pw, bool last)
 {
     stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     register const byte *p = pr->ptr;
@@ -472,68 +472,68 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 #endif /* (!)SHORT_OFFSETS */
 
     if (ss->I < 0) {		/* Read block parameters */
-	int I, N, j;
-	if (count < sizeof(int) * 2)
-	        return 0;
-	for (N = 0, j = 0; j < sizeof(int); j++)
+        int I, N, j;
+        if (count < sizeof(int) * 2)
+                return 0;
+        for (N = 0, j = 0; j < sizeof(int); j++)
 
-	    N = (N << 8) + *++p;
-	for (I = 0, j = 0; j < sizeof(int); j++)
+            N = (N << 8) + *++p;
+        for (I = 0, j = 0; j < sizeof(int); j++)
 
-	    I = (I << 8) + *++p;
-	ss->N = N;
-	ss->I = I;
-	if_debug2('w', "[w]N=%d I=%d\n", N, I);
-	pr->ptr = p;
-	if (N < 0 || N > ss->BlockSize || I < 0 || I >= N)
-	    return ERRC;
-	if (N == 0)
-	    return EOFC;
-	count -= sizeof(int) * 2;
+            I = (I << 8) + *++p;
+        ss->N = N;
+        ss->I = I;
+        if_debug2('w', "[w]N=%d I=%d\n", N, I);
+        pr->ptr = p;
+        if (N < 0 || N > ss->BlockSize || I < 0 || I >= N)
+            return ERRC;
+        if (N == 0)
+            return EOFC;
+        count -= sizeof(int) * 2;
 
-	ss->bpos = 0;
-	ss->bsize = N;
+        ss->bpos = 0;
+        ss->bsize = N;
     }
     if (ss->filling) {		/* Continue filling the buffer. */
-	if (!s_buffered_process(st, pr, last))
-	    return 0;
-	/* Construct the inverse sort order. */
+        if (!s_buffered_process(st, pr, last))
+            return 0;
+        /* Construct the inverse sort order. */
 #ifdef SHORT_OFFSETS
-	bwbsd_construct_offsets(ss, po64k, po4k, po1, ss->bsize);
+        bwbsd_construct_offsets(ss, po64k, po4k, po1, ss->bsize);
 #else /* !SHORT_OFFSETS */
-	bwbsd_construct_offsets(ss, po, ss->bsize);
+        bwbsd_construct_offsets(ss, po, ss->bsize);
 #endif /* (!)SHORT_OFFSETS */
-	ss->bpos = 0;
-	ss->i = ss->I;
+        ss->bpos = 0;
+        ss->i = ss->I;
     }
     /* We're reading out of the buffer. */
     while (q < wlimit && ss->bpos < ss->bsize) {
-	int i = ss->i;
-	byte b = ss->buffer[i];
+        int i = ss->i;
+        byte b = ss->buffer[i];
 
 #ifdef SHORT_OFFSETS
-	uint d;
-	const byte *pd = &po1[(i >> 1) + i];
+        uint d;
+        const byte *pd = &po1[(i >> 1) + i];
 
-	*++q = b;
-	if (!(i & 1))
-	    d = ((uint) pd[0] << 4) + (pd[1] >> 4);
-	else
-	    d = ((pd[0] & 0xf) << 8) + pd[1];
-	ss->i = po64k[i >> 16].v[b] + po4k[i >> 12].v[b] + d;
+        *++q = b;
+        if (!(i & 1))
+            d = ((uint) pd[0] << 4) + (pd[1] >> 4);
+        else
+            d = ((pd[0] & 0xf) << 8) + pd[1];
+        ss->i = po64k[i >> 16].v[b] + po4k[i >> 12].v[b] + d;
 #else /* !SHORT_OFFSETS */
-	*++q = b;
-	ss->i = po[i];
+        *++q = b;
+        ss->i = po[i];
 #endif /* (!)SHORT_OFFSETS */
-	ss->bpos++;
+        ss->bpos++;
     }
     if (ss->bpos == ss->bsize) {
-	ss->I = -1;
-	ss->filling = true;
+        ss->I = -1;
+        ss->filling = true;
     }
     pw->ptr = q;
     if (q == wlimit)
-	return 1;
+        return 1;
     return 0;
 }
 

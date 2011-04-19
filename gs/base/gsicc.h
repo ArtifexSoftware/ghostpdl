@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,14 +19,14 @@
 #  define gsicc_INCLUDED
 
 #include "gscie.h"
-#include "gxcspace.h"		
+#include "gxcspace.h"
 /*
  * Build an ICCBased color space.
  *
  */
 extern  int     gs_cspace_build_ICC( gs_color_space **   ppcspace,
-					void *              client_data,
-					gs_memory_t *       pmem );
+                                        void *              client_data,
+                                        gs_memory_t *       pmem );
 
 extern const gs_color_space_type gs_color_space_type_ICC;
 

@@ -1,5 +1,5 @@
 /* Allocator for languages (pcl, xps, etc.), simply uses the chunk
-   memory manager see gsmchunk.c */ 
+   memory manager see gsmchunk.c */
 
 /*$Id$*/
 
@@ -16,7 +16,7 @@ pl_alloc_init()
     gs_memory_t *pl_mem;
     int code;
 
-    if (mem == NULL) 
+    if (mem == NULL)
         return NULL;
 
 #ifdef HEAP_ALLOCATOR_ONLY

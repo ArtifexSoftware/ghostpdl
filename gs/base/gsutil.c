@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,8 +26,6 @@
 #include "gzstate.h"
 #include "gxdcolor.h"
 
-
-
 /* ------ Unique IDs ------ */
 
 ulong
@@ -50,35 +48,35 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
     uint aceg, bdfh;
 
     {
-	const byte *ptr4 = inp + (line_size << 2);
-	const int ls2 = line_size << 1;
+        const byte *ptr4 = inp + (line_size << 2);
+        const int ls2 = line_size << 1;
 
-	aceg = ((uint)*inp) | ((uint)inp[ls2] << 8) |
-	    ((uint)*ptr4 << 16) | ((uint)ptr4[ls2] << 24);
-	inp += line_size, ptr4 += line_size;
-	bdfh = ((uint)*inp) | ((uint)inp[ls2] << 8) |
-	    ((uint)*ptr4 << 16) | ((uint)ptr4[ls2] << 24);
+        aceg = ((uint)*inp) | ((uint)inp[ls2] << 8) |
+            ((uint)*ptr4 << 16) | ((uint)ptr4[ls2] << 24);
+        inp += line_size, ptr4 += line_size;
+        bdfh = ((uint)*inp) | ((uint)inp[ls2] << 8) |
+            ((uint)*ptr4 << 16) | ((uint)ptr4[ls2] << 24);
     }
 
     /* Check for all 8 bytes being the same. */
     /* This is especially worth doing for the case where all are zero. */
     if (aceg == bdfh && (aceg >> 8) == (aceg & 0xffffff)) {
-	if (aceg == 0 || aceg == 0xffffffff)
-	    goto store;
-	*outp = (byte)-(int)((aceg >> 7) & 1);
-	outp[dist] = (byte)-(int)((aceg >> 6) & 1);
-	outp += dist << 1;
-	*outp = (byte)-(int)((aceg >> 5) & 1);
-	outp[dist] = (byte)-(int)((aceg >> 4) & 1);
-	outp += dist << 1;
-	*outp = (byte)-(int)((aceg >> 3) & 1);
-	outp[dist] = (byte)-(int)((aceg >> 2) & 1);
-	outp += dist << 1;
-	*outp = (byte)-(int)((aceg >> 1) & 1);
-	outp[dist] = (byte)-(int)(aceg & 1);
-	return;
+        if (aceg == 0 || aceg == 0xffffffff)
+            goto store;
+        *outp = (byte)-(int)((aceg >> 7) & 1);
+        outp[dist] = (byte)-(int)((aceg >> 6) & 1);
+        outp += dist << 1;
+        *outp = (byte)-(int)((aceg >> 5) & 1);
+        outp[dist] = (byte)-(int)((aceg >> 4) & 1);
+        outp += dist << 1;
+        *outp = (byte)-(int)((aceg >> 3) & 1);
+        outp[dist] = (byte)-(int)((aceg >> 2) & 1);
+        outp += dist << 1;
+        *outp = (byte)-(int)((aceg >> 1) & 1);
+        outp[dist] = (byte)-(int)(aceg & 1);
+        return;
     } {
-	register uint temp;
+        register uint temp;
 
 /* Transpose a block of bits between registers. */
 #define TRANSPOSE(r,s,mask,shift)\
@@ -86,15 +84,15 @@ memflip8x8(const byte * inp, int line_size, byte * outp, int dist)
    s ^= temp << shift)
 
 /* Transpose blocks of 4 x 4 */
-	TRANSPOSE(aceg, aceg, 0x00000f0f, 20);
-	TRANSPOSE(bdfh, bdfh, 0x00000f0f, 20);
+        TRANSPOSE(aceg, aceg, 0x00000f0f, 20);
+        TRANSPOSE(bdfh, bdfh, 0x00000f0f, 20);
 
 /* Transpose blocks of 2 x 2 */
-	TRANSPOSE(aceg, aceg, 0x00330033, 10);
-	TRANSPOSE(bdfh, bdfh, 0x00330033, 10);
+        TRANSPOSE(aceg, aceg, 0x00330033, 10);
+        TRANSPOSE(bdfh, bdfh, 0x00330033, 10);
 
 /* Transpose blocks of 1 x 1 */
-	TRANSPOSE(aceg, bdfh, 0x55555555, 1);
+        TRANSPOSE(aceg, bdfh, 0x55555555, 1);
 
 #undef TRANSPOSE
     }
@@ -131,14 +129,14 @@ bytes_compare(const byte * s1, uint len1, const byte * s2, uint len2)
     register uint len = len1;
 
     if (len2 < len)
-	len = len2;
+        len = len2;
     {
-	register const byte *p1 = s1;
-	register const byte *p2 = s2;
+        register const byte *p1 = s1;
+        register const byte *p2 = s2;
 
-	while (len--)
-	    if (*p1++ != *p2++)
-		return (p1[-1] < p2[-1] ? -1 : 1);
+        while (len--)
+            if (*p1++ != *p2++)
+                return (p1[-1] < p2[-1] ? -1 : 1);
     }
     /* Now check for differing lengths */
     return (len1 == len2 ? 0 : len1 < len2 ? -1 : 1);
@@ -152,7 +150,7 @@ const string_match_params string_match_params_default = {
 
 bool
 string_match(const byte * str, uint len, const byte * pstr, uint plen,
-	     register const string_match_params * psmp)
+             register const string_match_params * psmp)
 {
     const byte *pback = 0;
     const byte *spback = 0;	/* initialized only to pacify gcc */
@@ -160,48 +158,48 @@ string_match(const byte * str, uint len, const byte * pstr, uint plen,
     const byte *sp = str, *spend = str + len;
 
     if (psmp == 0)
-	psmp = &string_match_params_default;
+        psmp = &string_match_params_default;
   again:while (p < pend) {
-	register byte ch = *p;
+        register byte ch = *p;
 
-	if (ch == psmp->any_substring) {
-	    pback = ++p, spback = sp;
-	    continue;
-	} else if (ch == psmp->any_char) {
-	    if (sp == spend)
-		return false;	/* str too short */
-	    p++, sp++;
-	    continue;
-	} else if (ch == psmp->quote_next) {
-	    if (++p == pend)
-		return true;	/* bad pattern */
-	    ch = *p;
-	}
-	if (sp == spend)
-	    return false;	/* str too short */
-	if (*sp == ch ||
-	    (psmp->ignore_case && (*sp ^ ch) == 0x20 &&
-	     (ch &= ~0x20) >= 0x41 && ch <= 0x5a) ||
-	     (psmp->slash_equiv && ((ch == '\\' && *sp == '/') ||
-	     (ch == '/' && *sp == '\\')))
-	    )
-	    p++, sp++;
-	else if (pback == 0)
-	    return false;	/* no * to back up to */
-	else {
-	    sp = ++spback;
-	    p = pback;
-	}
+        if (ch == psmp->any_substring) {
+            pback = ++p, spback = sp;
+            continue;
+        } else if (ch == psmp->any_char) {
+            if (sp == spend)
+                return false;	/* str too short */
+            p++, sp++;
+            continue;
+        } else if (ch == psmp->quote_next) {
+            if (++p == pend)
+                return true;	/* bad pattern */
+            ch = *p;
+        }
+        if (sp == spend)
+            return false;	/* str too short */
+        if (*sp == ch ||
+            (psmp->ignore_case && (*sp ^ ch) == 0x20 &&
+             (ch &= ~0x20) >= 0x41 && ch <= 0x5a) ||
+             (psmp->slash_equiv && ((ch == '\\' && *sp == '/') ||
+             (ch == '/' && *sp == '\\')))
+            )
+            p++, sp++;
+        else if (pback == 0)
+            return false;	/* no * to back up to */
+        else {
+            sp = ++spback;
+            p = pback;
+        }
     }
     if (sp < spend) {		/* We got a match, but there are chars left over. */
-	/* If we can back up, back up to the only place that */
-	/* could produce a complete match, otherwise fail. */
-	if (pback == 0)
-	    return false;
-	p = pback;
-	pback = 0;
-	sp = spend - (pend - p);
-	goto again;
+        /* If we can back up, back up to the only place that */
+        /* could produce a complete match, otherwise fail. */
+        if (pback == 0)
+            return false;
+        p = pback;
+        pback = 0;
+        sp = spend - (pend - p);
+        goto again;
     }
     return true;
 }
@@ -214,13 +212,13 @@ bool
 uid_equal(register const gs_uid * puid1, register const gs_uid * puid2)
 {
     if (puid1->id != puid2->id)
-	return false;
+        return false;
     if (puid1->id >= 0)
-	return true;		/* UniqueID */
+        return true;		/* UniqueID */
     return
-	!memcmp((const char *)puid1->xvalues,
-		(const char *)puid2->xvalues,
-		(uint) - (puid1->id) * sizeof(long));
+        !memcmp((const char *)puid1->xvalues,
+                (const char *)puid2->xvalues,
+                (uint) - (puid1->id) * sizeof(long));
 }
 
 /* Copy the XUID data for a uid, if needed, updating the uid in place. */
@@ -228,14 +226,14 @@ int
 uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
 {
     if (uid_is_XUID(puid)) {
-	uint xsize = uid_XUID_size(puid);
-	long *xvalues = (long *)
-	    gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
+        uint xsize = uid_XUID_size(puid);
+        long *xvalues = (long *)
+            gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
 
-	if (xvalues == 0)
-	    return_error(gs_error_VMerror);
-	memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
-	puid->xvalues = xvalues;
+        if (xvalues == 0)
+            return_error(gs_error_VMerror);
+        memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
+        puid->xvalues = xvalues;
     }
     return 0;
 }
@@ -249,35 +247,35 @@ uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
  */
 int
 int_rect_difference(gs_int_rect * outer, const gs_int_rect * inner,
-		    gs_int_rect * diffs /*[4] */ )
+                    gs_int_rect * diffs /*[4] */ )
 {
     int x0 = outer->p.x, y0 = outer->p.y;
     int x1 = outer->q.x, y1 = outer->q.y;
     int count = 0;
 
     if (y0 < inner->p.y) {
-	diffs[0].p.x = x0, diffs[0].p.y = y0;
-	diffs[0].q.x = x1, diffs[0].q.y = min(y1, inner->p.y);
-	outer->p.y = y0 = diffs[0].q.y;
-	++count;
+        diffs[0].p.x = x0, diffs[0].p.y = y0;
+        diffs[0].q.x = x1, diffs[0].q.y = min(y1, inner->p.y);
+        outer->p.y = y0 = diffs[0].q.y;
+        ++count;
     }
     if (y1 > inner->q.y) {
-	diffs[count].p.x = x0, diffs[count].p.y = max(y0, inner->q.y);
-	diffs[count].q.x = x1, diffs[count].q.y = y1;
-	outer->q.y = y1 = diffs[count].p.y;
-	++count;
+        diffs[count].p.x = x0, diffs[count].p.y = max(y0, inner->q.y);
+        diffs[count].q.x = x1, diffs[count].q.y = y1;
+        outer->q.y = y1 = diffs[count].p.y;
+        ++count;
     }
     if (x0 < inner->p.x) {
-	diffs[0].p.x = x0, diffs[0].p.y = y0;
-	diffs[0].q.x = min(x1, inner->p.x), diffs[0].q.y = y1;
-	outer->p.x = x0 = diffs[count].q.x;
-	++count;
+        diffs[0].p.x = x0, diffs[0].p.y = y0;
+        diffs[0].q.x = min(x1, inner->p.x), diffs[0].q.y = y1;
+        outer->p.x = x0 = diffs[count].q.x;
+        ++count;
     }
     if (x1 > inner->q.x) {
-	diffs[count].p.x = max(x0, inner->q.x), diffs[count].p.y = y0;
-	diffs[count].q.x = x1, diffs[count].q.y = y1;
-	outer->q.x = x1 = diffs[count].p.x;
-	++count;
+        diffs[count].p.x = max(x0, inner->q.x), diffs[count].p.y = y0;
+        diffs[count].q.x = x1, diffs[count].q.y = y1;
+        outer->q.x = x1 = diffs[count].p.x;
+        ++count;
     }
     return count;
 }
@@ -294,7 +292,7 @@ gs_set_object_tag(gs_imager_state * pis, const gs_object_tag_type_t tag)
 {
     if (pis->memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
         pis->object_tag = tag;
-        /* mkromfs breaks this dependance 
+        /* mkromfs breaks this dependance
            NB: needs to be fixed.
            gx_unset_dev_color(pgs);
          **/
@@ -310,4 +308,3 @@ gs_current_object_tag(gs_memory_t * mem)
 {
     return mem->gs_lib_ctx->BITTAG;
 }
-

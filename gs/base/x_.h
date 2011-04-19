@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -111,7 +111,7 @@
 #    define XtToolkitInitialize		xttoolkitinitialize
 
 #    define CADDR_T		/* Without this DEFINE, VAX GNUC    */
-					/* gets trashed reading Intrinsic.h */
+                                        /* gets trashed reading Intrinsic.h */
 #else
 #include <vms_x_fix.h>
 #   endif			/* ifdef __GNUC__ */

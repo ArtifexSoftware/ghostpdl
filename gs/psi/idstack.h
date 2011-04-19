@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -52,9 +52,9 @@ ref *dstack_find_name_by_index(dict_stack_t *, uint);
  */
 #define if_dstack_find_name_by_index_top(pds,nidx,htemp,pvslot)\
   if ( (((pds)->top_keys[htemp = dict_hash_mod_inline(dict_name_index_hash(nidx),\
-	 (pds)->top_npairs) + 1] == pt_tag(pt_literal_name) + (nidx)) ?\
-	((pvslot) = (pds)->top_values + (htemp), 1) :\
-	0)\
+         (pds)->top_npairs) + 1] == pt_tag(pt_literal_name) + (nidx)) ?\
+        ((pvslot) = (pds)->top_values + (htemp), 1) :\
+        0)\
      )
 
 #endif /* idstack_INCLUDED */

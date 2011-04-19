@@ -596,7 +596,6 @@ pnm_begin_typed_image(gx_device *dev,
                                            pdcolor, pcpath, memory, pinfo);
 }
 
-
 /* ------ Internal routines ------ */
 
 /* NOP row processing function used when no output */

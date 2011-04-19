@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,30 +37,30 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
     int code = 0, i;
 
     if (pca == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     for (i = 0; i < n; ++i) {
-	floatp rmin = prange[i].rmin, rmax = prange[i].rmax;
+        floatp rmin = prange[i].rmin, rmax = prange[i].rmax;
 
-	if (clamp) {
-	    if (rmin < 0) rmin = 0;
-	    if (rmax > 1) rmax = 1;
-	}
-	if ((code = cos_array_add_real(pca, rmin)) < 0 ||
-	    (code = cos_array_add_real(pca, rmax)) < 0
-	    )
-	    break;
+        if (clamp) {
+            if (rmin < 0) rmin = 0;
+            if (rmax > 1) rmax = 1;
+        }
+        if ((code = cos_array_add_real(pca, rmin)) < 0 ||
+            (code = cos_array_add_real(pca, rmax)) < 0
+            )
+            break;
     }
     if (code >= 0)
-	code = cos_dict_put_c_key_object(pcd, "/Range", COS_OBJECT(pca));
+        code = cos_dict_put_c_key_object(pcd, "/Range", COS_OBJECT(pca));
     if (code < 0)
-	COS_FREE(pca, "pdf_cie_add_ranges");
+        COS_FREE(pca, "pdf_cie_add_ranges");
     return code;
 }
 
 /* Transform a CIEBased color to XYZ. */
 static int
 cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
-	   const gs_imager_state *pis, const gs_cie_common *pciec)
+           const gs_imager_state *pis, const gs_cie_common *pciec)
 {
     gs_client_color cc;
     frac xyz[3];
@@ -76,10 +76,10 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
     dev.device_icc_profile = pcs->cmm_icc_profile_data;
 
     for (i = 0; i < ncomp; ++i)
-	cc.paint.values[i] = in[i];
+        cc.paint.values[i] = in[i];
 
     /* The standard concretization makes use of the equivalent ICC profile
-       to ensure that all color management is handled by the CMM. 
+       to ensure that all color management is handled by the CMM.
        Unfortunately, we can't do that here since we have no access to the
        icc manager.  Also the PDF write outputs have restrictions on the
        ICC profiles that can be embedded so we must use this older form.
@@ -133,9 +133,9 @@ static double
 lab_g_inverse(double v)
 {
     if (v >= (6.0 * 6.0 * 6.0) / (29 * 29 * 29))
-	return pow(v, 1.0 / 3);	/* use cbrt if available? */
+        return pow(v, 1.0 / 3);	/* use cbrt if available? */
     else
-	return (v * (841.0 / 108) + 4.0 / 29);
+        return (v * (841.0 / 108) + 4.0 / 29);
 }
 static void
 xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
@@ -147,9 +147,9 @@ xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
     L = lab_g_inverse(xyz[1] / pWhitePoint->v) * 116 - 16;
     /* Clamp L* to the PDF range [0..100]. */
     if (L < 0)
-	L = 0;
+        L = 0;
     else if (L > 100)
-	L = 100;
+        L = 100;
     lab[1] = L;
     lunit = (L + 16) / 116;
 
@@ -161,8 +161,8 @@ xyz_to_lab(const double xyz[3], double lab[3], const gs_cie_common *pciec)
 /* Create a PDF Lab color space corresponding to a CIEBased color space. */
 static int
 lab_range(gs_range range_out[3] /* only [1] and [2] used */,
-	  const gs_color_space *pcs, const gs_cie_common *pciec,
-	  const gs_range *ranges, gs_memory_t *mem)
+          const gs_color_space *pcs, const gs_cie_common *pciec,
+          const gs_range *ranges, gs_memory_t *mem)
 {
     /*
      * Determine the range of a* and b* by evaluating the color space
@@ -174,23 +174,23 @@ lab_range(gs_range range_out[3] /* only [1] and [2] used */,
     int i, j;
 
     if (code < 0)
-	return code;
+        return code;
     for (j = 1; j < 3; ++j)
-	range_out[j].rmin = 1000.0, range_out[j].rmax = -1000.0;
+        range_out[j].rmin = 1000.0, range_out[j].rmax = -1000.0;
     for (i = 0; i < 1 << ncomp; ++i) {
-	double in[4], xyz[3];
+        double in[4], xyz[3];
 
-	for (j = 0; j < ncomp; ++j)
-	    in[j] = (i & (1 << j) ? ranges[j].rmax : ranges[j].rmin);
-	if (cie_to_xyz(in, xyz, pcs, pis, pciec) >= 0) {
-	    double lab[3];
+        for (j = 0; j < ncomp; ++j)
+            in[j] = (i & (1 << j) ? ranges[j].rmax : ranges[j].rmin);
+        if (cie_to_xyz(in, xyz, pcs, pis, pciec) >= 0) {
+            double lab[3];
 
-	    xyz_to_lab(xyz, lab, pciec);
-	    for (j = 1; j < 3; ++j) {
-		range_out[j].rmin = min(range_out[j].rmin, lab[j]);
-		range_out[j].rmax = max(range_out[j].rmax, lab[j]);
-	    }
-	}
+            xyz_to_lab(xyz, lab, pciec);
+            for (j = 1; j < 3; ++j) {
+                range_out[j].rmin = min(range_out[j].rmin, lab[j]);
+                range_out[j].rmax = max(range_out[j].rmax, lab[j]);
+            }
+        }
     }
     gx_cie_to_xyz_free(pis);
     return 0;
@@ -201,13 +201,13 @@ lab_range(gs_range range_out[3] /* only [1] and [2] used */,
  */
 int
 pdf_put_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
-			const gs_range ranges[3] /* only [1] and [2] used */)
+                        const gs_range ranges[3] /* only [1] and [2] used */)
 {
     int code;
     cos_value_t v;
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, "/Lab"))) >= 0)
-	code = pdf_cie_add_ranges(pcd, ranges + 1, 2, false);
+        code = pdf_cie_add_ranges(pcd, ranges + 1, 2, false);
     return code;
 }
 
@@ -217,8 +217,8 @@ pdf_put_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
  */
 static int
 pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
-		       const gs_color_space *pcs,
-		       const gs_cie_common *pciec, const gs_range *prange)
+                       const gs_color_space *pcs,
+                       const gs_cie_common *pciec, const gs_range *prange)
 {
     cos_dict_t *pcd;
     gs_range ranges[3];
@@ -228,12 +228,12 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
     if (1) return_error(gs_error_rangecheck);
     pcd = cos_dict_alloc(pdev, "pdf_convert_cie_to_lab(dict)");
     if (pcd == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if ((code = lab_range(ranges, pcs, pciec, prange, pdev->pdf_memory)) < 0 ||
-	(code = pdf_put_lab_color_space(pca, pcd, ranges)) < 0 ||
-	(code = pdf_finish_cie_space(pca, pcd, pciec)) < 0
-	)
-	COS_FREE(pcd, "pdf_convert_cie_to_lab(dict)");
+        (code = pdf_put_lab_color_space(pca, pcd, ranges)) < 0 ||
+        (code = pdf_finish_cie_space(pca, pcd, pciec)) < 0
+        )
+        COS_FREE(pcd, "pdf_convert_cie_to_lab(dict)");
     return code;
 }
 
@@ -245,10 +245,10 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
  */
 static int
 pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
-		  const gs_range *prange /*[4]*/,
-		  const gs_color_space *pcs_alt,
-		  cos_stream_t **ppcstrm,
-		  const gs_range_t **pprange /* if scaling is needed */)
+                  const gs_range *prange /*[4]*/,
+                  const gs_color_space *pcs_alt,
+                  cos_stream_t **ppcstrm,
+                  const gs_range_t **pprange /* if scaling is needed */)
 
 {
     cos_value_t v;
@@ -261,19 +261,19 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 
     /* Check the ranges. */
     if (pprange)
-	*pprange = 0;
+        *pprange = 0;
     for (i = 0; i < ncomps; ++i) {
-	double rmin = prange[i].rmin, rmax = prange[i].rmax;
+        double rmin = prange[i].rmin, rmax = prange[i].rmax;
 
-	if (rmin < 0.0 || rmax > 1.0) {
-	    /* We'll have to scale the inputs.  :-( */
-	    if (pprange == 0)
-		return_error(gs_error_rangecheck); /* scaling not allowed */
-	    *pprange = prange;
-	    scale_inputs = true;
-	}
-	else if (rmin > 0.0 || rmax < 1.0)
-	    std_ranges = false;
+        if (rmin < 0.0 || rmax > 1.0) {
+            /* We'll have to scale the inputs.  :-( */
+            if (pprange == 0)
+                return_error(gs_error_rangecheck); /* scaling not allowed */
+            *pprange = prange;
+            scale_inputs = true;
+        }
+        else if (rmin > 0.0 || rmax < 1.0)
+            std_ranges = false;
     }
 
     /* Range values are a bit tricky to check.
@@ -286,24 +286,24 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 
     /* ICCBased color spaces are essentially copied to the output. */
     if ((code = cos_array_add(pca, cos_c_string_value(&v, "/ICCBased"))) < 0)
-	return code;
+        return code;
 
     /* Create a stream for the output. */
     if ((pcstrm = cos_stream_alloc(pdev, "pdf_make_iccbased(stream)")) == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto fail;
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
     }
 
     /* Indicate the number of components. */
     code = cos_dict_put_c_key_int(cos_stream_dict(pcstrm), "/N", ncomps);
     if (code < 0)
-	goto fail;
+        goto fail;
 
     /* Indicate the range, if needed. */
     if (!std_ranges && !scale_inputs) {
-	code = pdf_cie_add_ranges(cos_stream_dict(pcstrm), prange, ncomps, true);
-	if (code < 0)
-	    goto fail;
+        code = pdf_cie_add_ranges(cos_stream_dict(pcstrm), prange, ncomps, true);
+        if (code < 0)
+            goto fail;
     }
 
     /* In the new design there may not be a specified alternate color space */
@@ -314,28 +314,28 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
         case gs_color_space_index_DeviceGray:
         case gs_color_space_index_DeviceRGB:
         case gs_color_space_index_DeviceCMYK:
-	    break;			/* implicit (default) */
+            break;			/* implicit (default) */
         default:
-	    if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
-				        &pdf_color_space_names, false, NULL, 0)) < 0 ||
-	        (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
-				           &v)) < 0
-	        )
-	        goto fail;
+            if ((code = pdf_color_space_named(pdev, &v, NULL, pcs_alt,
+                                        &pdf_color_space_names, false, NULL, 0)) < 0 ||
+                (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
+                                           &v)) < 0
+                )
+                goto fail;
         }
 
     }
 
     /* Wrap up. */
     if ((code = cos_array_add_object(pca, COS_OBJECT(pcstrm))) < 0)
-	goto fail;
+        goto fail;
     *ppcstrm = pcstrm;
     return code;
  fail:
     if (prngca)
-	COS_FREE(prngca, "pdf_make_iccbased(Range)");
+        COS_FREE(prngca, "pdf_make_iccbased(Range)");
     if (pcstrm)
-	COS_FREE(pcstrm, "pdf_make_iccbased(stream)");
+        COS_FREE(pcstrm, "pdf_make_iccbased(stream)");
     return code;
 }
 /*
@@ -365,14 +365,14 @@ struct profile_table_s {
     const byte *data;
     uint length;
     uint data_length;		/* may be < length if write != 0 */
-    int (*write)(cos_stream_t *, const profile_table_t *, gs_memory_t *, 
+    int (*write)(cos_stream_t *, const profile_table_t *, gs_memory_t *,
                  const gs_cie_common *pciec);
     const void *write_data;
     const gs_range_t *ranges;
 };
 static profile_table_t *
 add_table(profile_table_t **ppnt, const char *tag, const byte *data,
-	  uint length)
+          uint length)
 {
     profile_table_t *pnt = (*ppnt)++;
 
@@ -398,7 +398,7 @@ set_XYZ(byte bytes[4], floatp value)
 }
 static void
 add_table_xyz3(profile_table_t **ppnt, const char *tag, byte bytes[20],
-	       const gs_vector3 *pv)
+               const gs_vector3 *pv)
 {
     memcpy(bytes, "XYZ \000\000\000\000", 8);
     set_XYZ(bytes + 8, pv->u);
@@ -412,9 +412,9 @@ set_sample16(byte *p, floatp v)
     int value = (int)(v * 65535);
 
     if (value < 0)
-	value = 0;
+        value = 0;
     else if (value > 65535)
-	value = 65535;
+        value = 65535;
     p[0] = (byte)(value >> 8);
     p[1] = (byte)value;
 }
@@ -423,7 +423,7 @@ static int write_trc_abc(cos_stream_t *, const profile_table_t *, gs_memory_t *,
 static int write_trc_lmn(cos_stream_t *, const profile_table_t *, gs_memory_t *, const gs_cie_common *);
 static profile_table_t *
 add_trc(profile_table_t **ppnt, const char *tag, byte bytes[12],
-	const gs_cie_common *pciec, cie_cache_one_step_t one_step)
+        const gs_cie_common *pciec, cie_cache_one_step_t one_step)
 {
     const int count = gx_cie_cache_size;
     profile_table_t *pnt;
@@ -451,15 +451,15 @@ cache_arg(int i, int denom, const gs_range_t *range)
     double arg = i / (double)denom;
 
     if (range) {
-	/* Sample over the range [range->rmin .. range->rmax]. */
-	arg = arg * (range->rmax - range->rmin) + range->rmin;
+        /* Sample over the range [range->rmin .. range->rmax]. */
+        arg = arg * (range->rmax - range->rmin) + range->rmin;
     }
     return arg;
 }
 
 static int
 write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	      gs_memory_t *ignore_mem, const gs_cie_common *unused)
+              gs_memory_t *ignore_mem, const gs_cie_common *unused)
 {
     /* Write the curve table from DecodeABC. */
     const gs_cie_abc *pabc = pnt->write_data;
@@ -470,13 +470,13 @@ write_trc_abc(cos_stream_t *pcstrm, const profile_table_t *pnt,
     int i;
 
     for (i = 0; i < gx_cie_cache_size; ++i, p += 2)
-	set_sample16(p, proc(cache_arg(i, gx_cie_cache_size - 1, pnt->ranges),
-			     pabc));
+        set_sample16(p, proc(cache_arg(i, gx_cie_cache_size - 1, pnt->ranges),
+                             pabc));
     return cos_stream_add_bytes(pcstrm, samples, gx_cie_cache_size * 2);
 }
 static int
 write_trc_lmn(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	      gs_memory_t *ignore_mem, const gs_cie_common *unused)
+              gs_memory_t *ignore_mem, const gs_cie_common *unused)
 {
     const gs_cie_common *pciec = pnt->write_data;
     int ci = rgb_to_index(pnt);
@@ -487,8 +487,8 @@ write_trc_lmn(cos_stream_t *pcstrm, const profile_table_t *pnt,
 
     /* Write the curve table from DecodeLMN. */
     for (i = 0; i < gx_cie_cache_size; ++i, p += 2)
-	set_sample16(p, proc(cache_arg(i, gx_cie_cache_size - 1, pnt->ranges),
-			     pciec));
+        set_sample16(p, proc(cache_arg(i, gx_cie_cache_size - 1, pnt->ranges),
+                             pciec));
     return cos_stream_add_bytes(pcstrm, samples, gx_cie_cache_size * 2);
 }
 /* Create and write an a2b0 lookup table. */
@@ -505,20 +505,20 @@ static int write_a2b0(cos_stream_t *, const profile_table_t *, gs_memory_t *,
                       const gs_cie_common *pciec);
 static profile_table_t *
 add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
-	 const gs_color_space *pcs)
+         const gs_color_space *pcs)
 {
     static const byte a2b0_data[sizeof(pa2b->header)] = {
-	'm', 'f', 't', '2',		/* type signature */
-	0, 0, 0, 0,			/* reserved, 0 */
-	0,				/* # of input channels **VARIABLE** */
-	3,				/* # of output channels */
-	0,				/* # of CLUT points **VARIABLE** */
-	0,				/* reserved, padding */
-	0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /* matrix column 0 */
-	0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0, /* matrix column 1 */
-	0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0, /* matrix column 2 */
-	0, NUM_IN_ENTRIES,		/* # of input table entries */
-	0, NUM_OUT_ENTRIES		/* # of output table entries */
+        'm', 'f', 't', '2',		/* type signature */
+        0, 0, 0, 0,			/* reserved, 0 */
+        0,				/* # of input channels **VARIABLE** */
+        3,				/* # of output channels */
+        0,				/* # of CLUT points **VARIABLE** */
+        0,				/* reserved, padding */
+        0, 1, 0, 0,  0, 0, 0, 0,  0, 0, 0, 0, /* matrix column 0 */
+        0, 0, 0, 0,  0, 1, 0, 0,  0, 0, 0, 0, /* matrix column 1 */
+        0, 0, 0, 0,  0, 0, 0, 0,  0, 1, 0, 0, /* matrix column 2 */
+        0, NUM_IN_ENTRIES,		/* # of input table entries */
+        0, NUM_OUT_ENTRIES		/* # of output table entries */
     };
     int num_points = (int)floor(pow(MAX_CLUT_ENTRIES, 1.0 / ncomps));
     profile_table_t *pnt;
@@ -531,11 +531,11 @@ add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
     pa2b->num_points = num_points;
     pa2b->count = (int)pow(num_points, ncomps);
     pnt = add_table(ppnt, "A2B0", pa2b->header,
-		    sizeof(pa2b->header) +
-		    ncomps * 2 * NUM_IN_ENTRIES + /* in */
-		    pa2b->count * (3 * 2) + /* clut: XYZ, 16-bit values */
-		    3 * 2 * NUM_OUT_ENTRIES /* out */
-		    );
+                    sizeof(pa2b->header) +
+                    ncomps * 2 * NUM_IN_ENTRIES + /* in */
+                    pa2b->count * (3 * 2) + /* clut: XYZ, 16-bit values */
+                    3 * 2 * NUM_OUT_ENTRIES /* out */
+                    );
     pnt->data_length = sizeof(pa2b->header); /* only write fixed part */
     pnt->write = write_a2b0;
     pnt->write_data = pa2b;
@@ -543,7 +543,7 @@ add_a2b0(profile_table_t **ppnt, icc_a2b0_t *pa2b, int ncomps,
 }
 static int
 write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
-	   gs_memory_t *mem, const gs_cie_common *pciec)
+           gs_memory_t *mem, const gs_cie_common *pciec)
 {
     const icc_a2b0_t *pa2b = pnt->write_data;
     const gs_color_space *pcs = pa2b->pcs;
@@ -552,7 +552,7 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
     int i;
 #define MAX_NCOMPS 4		/* CIEBasedDEFG */
     static const byte v01[MAX_NCOMPS * 2 * 2] = {
-	0,0, 255,255,   0,0, 255,255,   0,0, 255,255,   0,0, 255,255
+        0,0, 255,255,   0,0, 255,255,   0,0, 255,255,   0,0, 255,255
     };
     gs_imager_state *pis;
     int code;
@@ -560,41 +560,41 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
     /* Write the input table. */
 
     if ((code = cos_stream_add_bytes(pcstrm, v01, ncomps * 4)) < 0
-	)
-	return code;
+        )
+        return code;
 
     /* Write the lookup table. */
 
     code = gx_cie_to_xyz_alloc(&pis, pcs, mem);
     if (code < 0)
-	return code;
+        return code;
     for (i = 0; i < pa2b->count; ++i) {
-	double in[MAX_NCOMPS], xyz[3];
-	byte entry[3 * 2];
-	byte *p = entry;
-	int n, j;
+        double in[MAX_NCOMPS], xyz[3];
+        byte entry[3 * 2];
+        byte *p = entry;
+        int n, j;
 
-	for (n = i, j = ncomps - 1; j >= 0; --j, n /= num_points)
-	    in[j] = cache_arg(n % num_points, num_points - 1,
-			      (pnt->ranges ? pnt->ranges + j : NULL));
-	cie_to_xyz(in, xyz, pcs, pis, pciec);
-	/*
-	 * NOTE: Due to an obscure provision of the ICC Profile
-	 * specification, values in a2b0 lookup tables do *not* represent
-	 * the range [0 .. 1], but rather the range [0
-	 * .. MAX_ICC_XYZ_VALUE].  This caused us a lot of grief before we
-	 * figured it out!
-	 */
+        for (n = i, j = ncomps - 1; j >= 0; --j, n /= num_points)
+            in[j] = cache_arg(n % num_points, num_points - 1,
+                              (pnt->ranges ? pnt->ranges + j : NULL));
+        cie_to_xyz(in, xyz, pcs, pis, pciec);
+        /*
+         * NOTE: Due to an obscure provision of the ICC Profile
+         * specification, values in a2b0 lookup tables do *not* represent
+         * the range [0 .. 1], but rather the range [0
+         * .. MAX_ICC_XYZ_VALUE].  This caused us a lot of grief before we
+         * figured it out!
+         */
 #define MAX_ICC_XYZ_VALUE (1 + 32767.0/32768)
-	for (j = 0; j < 3; ++j, p += 2)
-	    set_sample16(p, xyz[j] / MAX_ICC_XYZ_VALUE);
+        for (j = 0; j < 3; ++j, p += 2)
+            set_sample16(p, xyz[j] / MAX_ICC_XYZ_VALUE);
 #undef MAX_ICC_XYZ_VALUE
-	if ((code = cos_stream_add_bytes(pcstrm, entry, sizeof(entry))) < 0)
-	    break;
+        if ((code = cos_stream_add_bytes(pcstrm, entry, sizeof(entry))) < 0)
+            break;
     }
     gx_cie_to_xyz_free(pis);
     if (code < 0)
-	return code;
+        return code;
 
     /* Write the output table. */
 
@@ -603,7 +603,7 @@ write_a2b0(cos_stream_t *pcstrm, const profile_table_t *pnt,
 
 /* XYZ wp mapping for now.  Will replace later with Bradford or other */
 static void
-adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in, 
+adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in,
           gs_vector3 *color_out, const gs_vector3 *wp_out)
 {
     color_out->u = color_in->u * wp_out->u / wp_in->u;
@@ -613,10 +613,10 @@ adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in,
 
 static int
 pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
-			    const gs_color_space *pcs, const char *dcsname,
-			    const gs_cie_common *pciec, const gs_range *prange,
-			    cie_cache_one_step_t one_step,
-			    const gs_matrix3 *pmat, const gs_range_t **pprange)
+                            const gs_color_space *pcs, const char *dcsname,
+                            const gs_cie_common *pciec, const gs_range *prange,
+                            cie_cache_one_step_t one_step,
+                            const gs_matrix3 *pmat, const gs_range_t **pprange)
 {
     /*
      * We have two options for creating an ICCBased color space to represent
@@ -639,41 +639,41 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     /* Header */
     byte header[128];
     static const byte header_data[] = {
-	0, 0, 0, 0,			/* profile size **VARIABLE** */
-	0, 0, 0, 0,			/* CMM type signature */
-	0x02, 0x20, 0, 0,		/* profile version number */
-	's', 'c', 'n', 'r',		/* profile class signature */
-	0, 0, 0, 0,			/* data color space **VARIABLE** */
-	'X', 'Y', 'Z', ' ',		/* connection color space */
-	2002 / 256, 2002 % 256, 0, 1, 0, 1, /* date (1/1/2002) */
-	0, 0, 0, 0, 0, 0,		/* time */
-	'a', 'c', 's', 'p',		/* profile file signature */
-	0, 0, 0, 0,			/* primary platform signature */
-	0, 0, 0, 3,			/* profile flags (embedded use only) */
-	0, 0, 0, 0, 0, 0, 0, 0,		/* device manufacturer */
-	0, 0, 0, 0,			/* device model */
-	0, 0, 0, 0, 0, 0, 0, 2		/* device attributes */
-	/* Remaining fields are zero or variable. */
-	/* [4] */			/* rendering intent */
-	/* 3 * [4] */			/* illuminant */
+        0, 0, 0, 0,			/* profile size **VARIABLE** */
+        0, 0, 0, 0,			/* CMM type signature */
+        0x02, 0x20, 0, 0,		/* profile version number */
+        's', 'c', 'n', 'r',		/* profile class signature */
+        0, 0, 0, 0,			/* data color space **VARIABLE** */
+        'X', 'Y', 'Z', ' ',		/* connection color space */
+        2002 / 256, 2002 % 256, 0, 1, 0, 1, /* date (1/1/2002) */
+        0, 0, 0, 0, 0, 0,		/* time */
+        'a', 'c', 's', 'p',		/* profile file signature */
+        0, 0, 0, 0,			/* primary platform signature */
+        0, 0, 0, 3,			/* profile flags (embedded use only) */
+        0, 0, 0, 0, 0, 0, 0, 0,		/* device manufacturer */
+        0, 0, 0, 0,			/* device model */
+        0, 0, 0, 0, 0, 0, 0, 2		/* device attributes */
+        /* Remaining fields are zero or variable. */
+        /* [4] */			/* rendering intent */
+        /* 3 * [4] */			/* illuminant */
     };
     /* Description */
 #define DESC_LENGTH 5		/* "adhoc" */
     byte desc[12 + DESC_LENGTH + 1 + 11 + 67];
     static const byte desc_data[] = {
-	'd', 'e', 's', 'c',		/* type signature */
-	0, 0, 0, 0,			/* reserved, 0 */
-	0, 0, 0, DESC_LENGTH + 1,	/* ASCII description length */
-	'a', 'd', 'h', 'o', 'c', 0,	/* ASCII description */
-	/* Remaining fields are zero. */
+        'd', 'e', 's', 'c',		/* type signature */
+        0, 0, 0, 0,			/* reserved, 0 */
+        0, 0, 0, DESC_LENGTH + 1,	/* ASCII description length */
+        'a', 'd', 'h', 'o', 'c', 0,	/* ASCII description */
+        /* Remaining fields are zero. */
     };
     /* White point */
     byte wtpt[20];
     /* Copyright (useless, but required by icclib) */
     static const byte cprt_data[] = {
-	't', 'e', 'x', 't',	/* type signature */
-	0, 0, 0, 0,		/* reserved, 0 */
-	'n', 'o', 'n', 'e', 0	/* must be null-terminated (!) */
+        't', 'e', 'x', 't',	/* type signature */
+        0, 0, 0, 0,		/* reserved, 0 */
+        'n', 'o', 'n', 'e', 0	/* must be null-terminated (!) */
     };
     /* Lookup table */
     icc_a2b0_t a2b0;
@@ -693,10 +693,10 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 
     pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
     code = pdf_make_iccbased(pdev, pca, ncomps, prange, alt_space,
-			     &pcstrm, pprange);
+                             &pcstrm, pprange);
     rc_decrement_cs(alt_space, "pdf_convert_cie_to_iccbased");
     if (code < 0)
-	return code;
+        return code;
 
     /* Fill in most of the header, except for the total size. */
 
@@ -721,69 +721,69 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
 
     /* Use TRC + XYZ if possible, otherwise AToB. */
     if ((one_step == ONE_STEP_ABC || one_step == ONE_STEP_LMN) && pmat != 0) {
-	/* Use TRC + XYZ. */
-	profile_table_t *tr =
-	    add_trc(&next_table, "rTRC", rTRC, pciec, one_step);
-	profile_table_t *tg =
-	    add_trc(&next_table, "gTRC", gTRC, pciec, one_step);
-	profile_table_t *tb =
-	    add_trc(&next_table, "bTRC", bTRC, pciec, one_step);
+        /* Use TRC + XYZ. */
+        profile_table_t *tr =
+            add_trc(&next_table, "rTRC", rTRC, pciec, one_step);
+        profile_table_t *tg =
+            add_trc(&next_table, "gTRC", gTRC, pciec, one_step);
+        profile_table_t *tb =
+            add_trc(&next_table, "bTRC", bTRC, pciec, one_step);
 
-	if (*pprange) {
-	    tr->ranges = *pprange;
-	    tg->ranges = *pprange + 1;
-	    tb->ranges = *pprange + 2;
-	}
+        if (*pprange) {
+            tr->ranges = *pprange;
+            tg->ranges = *pprange + 1;
+            tb->ranges = *pprange + 2;
+        }
         /* These values need to be adjusted to D50.  Again
            use XYZ wp mapping for now.  Later we will add in
            the bradford stuff */
         adjust_wp(&(pmat->cu), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
-	add_table_xyz3(&next_table, "rXYZ", rXYZ, &temp_xyz);
+        add_table_xyz3(&next_table, "rXYZ", rXYZ, &temp_xyz);
         adjust_wp(&(pmat->cv), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
-	add_table_xyz3(&next_table, "gXYZ", gXYZ, &temp_xyz);
+        add_table_xyz3(&next_table, "gXYZ", gXYZ, &temp_xyz);
         adjust_wp(&(pmat->cw), &(pciec->points.WhitePoint), &temp_xyz, &white_d50);
-	add_table_xyz3(&next_table, "bXYZ", bXYZ, &temp_xyz);
+        add_table_xyz3(&next_table, "bXYZ", bXYZ, &temp_xyz);
     } else {
-	/* General case, use a lookup table. */
-	/* AToB (mft2) */
-	profile_table_t *pnt = add_a2b0(&next_table, &a2b0, ncomps, pcs);
+        /* General case, use a lookup table. */
+        /* AToB (mft2) */
+        profile_table_t *pnt = add_a2b0(&next_table, &a2b0, ncomps, pcs);
 
-	pnt->ranges = *pprange;
+        pnt->ranges = *pprange;
     }
 
     /* Write the profile. */
     {
-	byte bytes[4 + MAX_NUM_TABLES * 12];
-	int num_tables = next_table - tables;
-	int i;
-	byte *p;
-	uint table_size = 4 + num_tables * 12;
-	uint offset = sizeof(header) + table_size;
+        byte bytes[4 + MAX_NUM_TABLES * 12];
+        int num_tables = next_table - tables;
+        int i;
+        byte *p;
+        uint table_size = 4 + num_tables * 12;
+        uint offset = sizeof(header) + table_size;
 
-	set_uint32(bytes, next_table - tables);
-	for (i = 0, p = bytes + 4; i < num_tables; ++i, p += 12) {
-	    memcpy(p, tables[i].tag, 4);
-	    set_uint32(p + 4, offset);
-	    set_uint32(p + 8, tables[i].length);
-	    offset += round_up(tables[i].length, 4);
-	}
-	set_uint32(header, offset);
-	if ((code = cos_stream_add_bytes(pcstrm, header, sizeof(header))) < 0 ||
-	    (code = cos_stream_add_bytes(pcstrm, bytes, table_size)) < 0
-	    )
-	    return code;
-	for (i = 0; i < num_tables; ++i) {
-	    uint len = tables[i].data_length;
-	    static const byte pad[3] = {0, 0, 0};
+        set_uint32(bytes, next_table - tables);
+        for (i = 0, p = bytes + 4; i < num_tables; ++i, p += 12) {
+            memcpy(p, tables[i].tag, 4);
+            set_uint32(p + 4, offset);
+            set_uint32(p + 8, tables[i].length);
+            offset += round_up(tables[i].length, 4);
+        }
+        set_uint32(header, offset);
+        if ((code = cos_stream_add_bytes(pcstrm, header, sizeof(header))) < 0 ||
+            (code = cos_stream_add_bytes(pcstrm, bytes, table_size)) < 0
+            )
+            return code;
+        for (i = 0; i < num_tables; ++i) {
+            uint len = tables[i].data_length;
+            static const byte pad[3] = {0, 0, 0};
 
-	    if ((code = cos_stream_add_bytes(pcstrm, tables[i].data, len)) < 0 ||
-		(tables[i].write != 0 &&
-		 (code = tables[i].write(pcstrm, &tables[i], pdev->pdf_memory, pciec)) < 0) ||
-		(code = cos_stream_add_bytes(pcstrm, pad, 
-			-(int)(tables[i].length) & 3)) < 0
-		)
-		return code;
-	}
+            if ((code = cos_stream_add_bytes(pcstrm, tables[i].data, len)) < 0 ||
+                (tables[i].write != 0 &&
+                 (code = tables[i].write(pcstrm, &tables[i], pdev->pdf_memory, pciec)) < 0) ||
+                (code = cos_stream_add_bytes(pcstrm, pad,
+                        -(int)(tables[i].length) & 3)) < 0
+                )
+                return code;
+        }
     }
 
     return pdf_finish_iccbased(pcstrm);
@@ -797,7 +797,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
  */
 int
 pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
-			 const gs_color_space *pcs, cos_array_t *pca)
+                         const gs_color_space *pcs, cos_array_t *pca)
 {
     /*
      * This would arise only in a pdf ==> pdf translation, but we
@@ -805,21 +805,21 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      */
     cos_stream_t * pcstrm;
     int code =
-	pdf_make_iccbased(pdev, pca, pcs->cmm_icc_profile_data->num_comps,
-			  pcs->cmm_icc_profile_data->Range.ranges,
-			  pcs->base_space,
-			  &pcstrm, NULL);
+        pdf_make_iccbased(pdev, pca, pcs->cmm_icc_profile_data->num_comps,
+                          pcs->cmm_icc_profile_data->Range.ranges,
+                          pcs->base_space,
+                          &pcstrm, NULL);
 
     if (code < 0)
-	return code;
+        return code;
 
     /* Transfer the buffer data  */
 
-    code = cos_stream_add_bytes(pcstrm, pcs->cmm_icc_profile_data->buffer, 
+    code = cos_stream_add_bytes(pcstrm, pcs->cmm_icc_profile_data->buffer,
         pcs->cmm_icc_profile_data->buffer_size);
 
     if (code >= 0)
-	code = pdf_finish_iccbased(pcstrm);
+        code = pdf_finish_iccbased(pcstrm);
     /*
      * The stream has been added to the array: in case of failure, the
      * caller will free the array, so there is no need to free the stream
@@ -831,16 +831,16 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 /* Convert a CIEBased space to Lab or ICCBased. */
 int
 pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
-		      const gs_color_space *pcs, const char *dcsname,
-		      const gs_cie_common *pciec, const gs_range *prange,
-		      cie_cache_one_step_t one_step, const gs_matrix3 *pmat,
-		      const gs_range_t **pprange)
+                      const gs_color_space *pcs, const char *dcsname,
+                      const gs_cie_common *pciec, const gs_range *prange,
+                      cie_cache_one_step_t one_step, const gs_matrix3 *pmat,
+                      const gs_range_t **pprange)
 {
     return (pdev->CompatibilityLevel < 1.3 ?
-	    /* PDF 1.2 or earlier, use a Lab space. */
-	    pdf_convert_cie_to_lab(pdev, pca, pcs, pciec, prange) :
-	    /* PDF 1.3 or later, use an ICCBased space. */
-	    pdf_convert_cie_to_iccbased(pdev, pca, pcs, dcsname, pciec, prange,
-					one_step, pmat, pprange)
-	    );
+            /* PDF 1.2 or earlier, use a Lab space. */
+            pdf_convert_cie_to_lab(pdev, pca, pcs, pciec, prange) :
+            /* PDF 1.3 or later, use an ICCBased space. */
+            pdf_convert_cie_to_iccbased(pdev, pca, pcs, dcsname, pciec, prange,
+                                        one_step, pmat, pprange)
+            );
 }

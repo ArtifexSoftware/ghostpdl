@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -123,7 +123,7 @@ typedef enum {
 } cgm_op_index;
 
 /* Define the state of the CGM writer. */
-						/*typedef struct cgm_state_s cgm_state; *//* in gdevcgml.h */
+                                                /*typedef struct cgm_state_s cgm_state; *//* in gdevcgml.h */
 struct cgm_state_s {
     /* The following are set at initialization time. */
     FILE *file;

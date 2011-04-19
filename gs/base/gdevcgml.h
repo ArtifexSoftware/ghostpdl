@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -104,7 +104,7 @@ typedef enum {
 } cgm_clip_indicator;
 typedef struct cgm_precision_s {
     enum {
-	cgm_representation_floating, cgm_representation_fixed
+        cgm_representation_floating, cgm_representation_fixed
     } representation;
     int exponent_or_whole_width;
     int fraction_width;
@@ -273,7 +273,7 @@ typedef struct cgm_metafile_elements_s {
 cgm_result
     cgm_BEGIN_METAFILE(cgm_state *, const char *, uint),
     cgm_set_metafile_elements(cgm_state *,
-			      const cgm_metafile_elements *, long),
+                              const cgm_metafile_elements *, long),
     cgm_END_METAFILE(cgm_state *);
 
 /* ---------------- Picture elements ---------------- */
@@ -300,7 +300,7 @@ typedef struct cgm_picture_elements_s {
 cgm_result
     cgm_BEGIN_PICTURE(cgm_state *, const char *, uint),
     cgm_set_picture_elements(cgm_state *,
-			     const cgm_picture_elements *, long),
+                             const cgm_picture_elements *, long),
     cgm_BEGIN_PICTURE_BODY(cgm_state *),
     cgm_END_PICTURE(cgm_state *);
 
@@ -322,39 +322,39 @@ cgm_result
     cgm_POLYMARKER(cgm_state *, const cgm_point *, int),
     cgm_TEXT(cgm_state *, const cgm_point *, bool, const char *, uint),
     cgm_RESTRICTED_TEXT(cgm_state *, const cgm_vdc *, const cgm_vdc *,
-			const cgm_point *, bool, const char *, uint),
+                        const cgm_point *, bool, const char *, uint),
     cgm_APPEND_TEXT(cgm_state *, bool, const char *, uint),
     cgm_POLYGON(cgm_state *, const cgm_point *, int),
     cgm_POLYGON_SET(cgm_state *, const cgm_polygon_edge *, int),
     cgm_CELL_ARRAY(cgm_state *, const cgm_point * /*[3] */ , cgm_int,
-		   cgm_int, cgm_int, cgm_cell_representation_mode,
-		   const byte *, uint, uint),
+                   cgm_int, cgm_int, cgm_cell_representation_mode,
+                   const byte *, uint, uint),
     cgm_RECTANGLE(cgm_state *, const cgm_point *, const cgm_point *),
     cgm_CIRCLE(cgm_state *, const cgm_point *, const cgm_vdc *),
     cgm_CIRCULAR_ARC_3_POINT(cgm_state *, const cgm_point *,
-			     const cgm_point *, const cgm_point *),
+                             const cgm_point *, const cgm_point *),
     cgm_CIRCULAR_ARC_3_POINT_CLOSE(cgm_state *, const cgm_point *,
-				   const cgm_point *,
-				   const cgm_point *, cgm_arc_closure),
+                                   const cgm_point *,
+                                   const cgm_point *, cgm_arc_closure),
     cgm_CIRCULAR_ARC_CENTER(cgm_state *, const cgm_point *,
-			    const cgm_vdc *, const cgm_vdc *,
-			    const cgm_vdc *, const cgm_vdc *,
-			    const cgm_vdc *),
+                            const cgm_vdc *, const cgm_vdc *,
+                            const cgm_vdc *, const cgm_vdc *,
+                            const cgm_vdc *),
     cgm_CIRCULAR_ARC_CENTER_CLOSE(cgm_state *, const cgm_point *,
-				  const cgm_vdc *, const cgm_vdc *,
-				  const cgm_vdc *, const cgm_vdc *,
-				  const cgm_vdc *, cgm_arc_closure),
+                                  const cgm_vdc *, const cgm_vdc *,
+                                  const cgm_vdc *, const cgm_vdc *,
+                                  const cgm_vdc *, cgm_arc_closure),
     cgm_ELLIPSE(cgm_state *, const cgm_point *, const cgm_point *,
-		const cgm_point *),
+                const cgm_point *),
     cgm_ELLIPTICAL_ARC(cgm_state *, const cgm_point *,
-		       const cgm_point *, const cgm_point *,
-		       const cgm_vdc *, const cgm_vdc *,
-		       const cgm_vdc *, const cgm_vdc *),
+                       const cgm_point *, const cgm_point *,
+                       const cgm_vdc *, const cgm_vdc *,
+                       const cgm_vdc *, const cgm_vdc *),
     cgm_ELLIPTICAL_ARC_CLOSE(cgm_state *, const cgm_point *,
-			     const cgm_point *, const cgm_point *,
-			     const cgm_vdc *, const cgm_vdc *,
-			     const cgm_vdc *, const cgm_vdc *,
-			     cgm_arc_closure);
+                             const cgm_point *, const cgm_point *,
+                             const cgm_vdc *, const cgm_vdc *,
+                             const cgm_vdc *, const cgm_vdc *,
+                             cgm_arc_closure);
 
 /* ---------------- Attribute elements ---------------- */
 
@@ -375,11 +375,11 @@ cgm_result
     cgm_TEXT_COLOR(cgm_state *, const cgm_color *),
     cgm_CHARACTER_HEIGHT(cgm_state *, const cgm_vdc *),
     cgm_CHARACTER_ORIENTATION(cgm_state *, const cgm_vdc *,
-			      const cgm_vdc *, const cgm_vdc *,
-			      const cgm_vdc *),
+                              const cgm_vdc *, const cgm_vdc *,
+                              const cgm_vdc *),
     cgm_TEXT_PATH(cgm_state *, cgm_text_path),
     cgm_TEXT_ALIGNMENT(cgm_state *, cgm_text_alignment_horizontal,
-		       cgm_text_alignment_vertical, cgm_real, cgm_real),
+                       cgm_text_alignment_vertical, cgm_real, cgm_real),
     cgm_CHARACTER_SET_INDEX(cgm_state *, cgm_int),
     /* The following should be cgm_ALTERNATE_..., but the VAX DEC C */
     /* compiler gives an error for names longer than 31 characters. */
@@ -397,7 +397,7 @@ cgm_result
     cgm_FILL_REFERENCE_POINT(cgm_state *, const cgm_point *),
     /* PATTERN_TABLE */
     cgm_PATTERN_SIZE(cgm_state *, const cgm_vdc *, const cgm_vdc *,
-		     const cgm_vdc *, const cgm_vdc *),
+                     const cgm_vdc *, const cgm_vdc *),
     cgm_COLOR_TABLE(cgm_state *, cgm_int, const cgm_color *, int),
     cgm_ASPECT_SOURCE_FLAGS(cgm_state *, const cgm_aspect_source_flag *, int);
 

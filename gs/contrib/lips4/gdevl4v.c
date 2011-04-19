@@ -28,7 +28,6 @@
    Hi-level bitmap imaging の仕様が変わっています。
    Ghostscript 6.0 では更に text_begin という API が追加されるようです。
 
-
    ○Ghostscript 5.10/5.50 のバグについて
 
    Ghostscript 5.10/5.50 の Vector driver の setlinewidth 関数には
@@ -46,7 +45,6 @@
    fill_trapezoid、fill_parallelogram、fill_triangle
    の関数の挙動が変になることがあったのでこれらは使っていません。
 
-
    ○ LIPS IV のバグについて
 
    このドライバは開発中に発見した次の LIPS IV のバグを回避しています。
@@ -57,7 +55,6 @@
    1. は 1 dot のイメージを矩形にして回避しました。
    2. はイメージ領域確保命令で分割を指定することにより回避しました。
    3. はクリッピング命令を使わないことにして回避しました。
-
 
    ○ LIPS IV の仕様について
 
@@ -101,7 +98,6 @@ static dev_proc_get_params(lips4v_get_params);
 static dev_proc_fill_mask(lips4v_fill_mask);
 static dev_proc_begin_image(lips4v_begin_image);
 
-
 #define X_DPI 600
 #define Y_DPI 600
 
@@ -136,9 +132,9 @@ typedef struct gx_device_lips4v_s
 gx_device_lips4v;
 
 gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
-			       "gx_device_lips4v", device_lips4v_enum_ptrs,
-			       device_lips4v_reloc_ptrs, gx_device_finalize,
-			       st_device_vector);
+                               "gx_device_lips4v", device_lips4v_enum_ptrs,
+                               device_lips4v_reloc_ptrs, gx_device_finalize,
+                               st_device_vector);
 
 #define lips_device_full_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, ncomp, depth, mg, mc, dg, dc, lm, bm, rm, tm)\
         std_device_part1_(dtype, pprocs, dname, stype, open_init_closed),\
@@ -149,55 +145,54 @@ gs_public_st_suffix_add0_final(st_device_lips4v, gx_device_lips4v,
 
 #define lips4v_device_body\
   lips_device_full_body(gx_device_lips4v, 0, "lips4v",\
-			&st_device_lips4v,\
-			DEFAULT_WIDTH_10THS * X_DPI / 10,\
-			DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
-			X_DPI, Y_DPI,\
-			1, 8, 1000, 1000, 5, 2,\
-			LIPS4_LEFT_MARGIN_DEFAULT,\
-			LIPS4_BOTTOM_MARGIN_DEFAULT,\
-			LIPS4_RIGHT_MARGIN_DEFAULT,\
-			LIPS4_TOP_MARGIN_DEFAULT)
-
+                        &st_device_lips4v,\
+                        DEFAULT_WIDTH_10THS * X_DPI / 10,\
+                        DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
+                        X_DPI, Y_DPI,\
+                        1, 8, 1000, 1000, 5, 2,\
+                        LIPS4_LEFT_MARGIN_DEFAULT,\
+                        LIPS4_BOTTOM_MARGIN_DEFAULT,\
+                        LIPS4_RIGHT_MARGIN_DEFAULT,\
+                        LIPS4_TOP_MARGIN_DEFAULT)
 
 #define lips4v_procs\
-	{	lips4v_open,\
-		gx_upright_get_initial_matrix,\
-		NULL,			/* sync_output */\
-		lips4v_output_page,\
-		lips4v_close,\
-		gx_default_gray_map_rgb_color,\
-		gx_default_gray_map_color_rgb,\
-		gdev_vector_fill_rectangle,\
-		NULL,			/* tile_rectangle */\
-		lips4v_copy_mono,\
-		lips4v_copy_color,\
-		NULL,			/* draw_line */\
-		NULL,			/* get_bits */\
-		lips4v_get_params,\
-		lips4v_put_params,\
-		NULL,			/* map_cmyk_color */\
-		NULL,			/* get_xfont_procs */\
-		NULL,			/* get_xfont_device */\
-		NULL,			/* map_rgb_alpha_color */\
-		gx_page_device_get_page_device,\
-		NULL,			/* get_alpha_bits */\
-		NULL,			/* copy_alpha */\
-		NULL,			/* get_band */\
-		NULL,			/* copy_rop */\
-		gdev_vector_fill_path,\
-		gdev_vector_stroke_path,\
-		lips4v_fill_mask,\
-		gdev_vector_fill_trapezoid,\
-		gdev_vector_fill_parallelogram,\
-		gdev_vector_fill_triangle,\
-		NULL /****** WRONG ******/,	/* draw_thin_line */\
-		lips4v_begin_image,\
-		NULL,\
-		NULL,\
-		NULL,			/* strip_tile_rectangle */\
-		NULL/******strip_copy_rop******/\
-	}
+        {	lips4v_open,\
+                gx_upright_get_initial_matrix,\
+                NULL,			/* sync_output */\
+                lips4v_output_page,\
+                lips4v_close,\
+                gx_default_gray_map_rgb_color,\
+                gx_default_gray_map_color_rgb,\
+                gdev_vector_fill_rectangle,\
+                NULL,			/* tile_rectangle */\
+                lips4v_copy_mono,\
+                lips4v_copy_color,\
+                NULL,			/* draw_line */\
+                NULL,			/* get_bits */\
+                lips4v_get_params,\
+                lips4v_put_params,\
+                NULL,			/* map_cmyk_color */\
+                NULL,			/* get_xfont_procs */\
+                NULL,			/* get_xfont_device */\
+                NULL,			/* map_rgb_alpha_color */\
+                gx_page_device_get_page_device,\
+                NULL,			/* get_alpha_bits */\
+                NULL,			/* copy_alpha */\
+                NULL,			/* get_band */\
+                NULL,			/* copy_rop */\
+                gdev_vector_fill_path,\
+                gdev_vector_stroke_path,\
+                lips4v_fill_mask,\
+                gdev_vector_fill_trapezoid,\
+                gdev_vector_fill_parallelogram,\
+                gdev_vector_fill_triangle,\
+                NULL /****** WRONG ******/,	/* draw_thin_line */\
+                lips4v_begin_image,\
+                NULL,\
+                NULL,\
+                NULL,			/* strip_tile_rectangle */\
+                NULL/******strip_copy_rop******/\
+        }
 
 gx_device_lips4v far_data gs_lips4v_device = {
     lips4v_device_body,
@@ -233,69 +228,69 @@ gx_device_lips4v far_data gs_lips4v_device = {
 #if GS_VERSION_MAJOR >= 8
 static int lips4v_beginpage(gx_device_vector * vdev);
 static int lips4v_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
-				   						const gx_drawing_color * pdc);
+                                                                                const gx_drawing_color * pdc);
 static int lips4v_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
-				     					const gx_drawing_color * pdc);
+                                                                        const gx_drawing_color * pdc);
 static int lips4v_setdash(gx_device_vector * vdev, const float *pattern,
-			      uint count, floatp offset);
+                              uint count, floatp offset);
 static int lips4v_setflat(gx_device_vector * vdev, floatp flatness);
 static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
-		 gs_logical_operation_t diff);
-static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+                 gs_logical_operation_t diff);
+static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
                   const gx_drawing_color * pdc);
 static int
 
 lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type);
 static int
 lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	       floatp y, gx_path_type_t type);
+               floatp y, gx_path_type_t type);
 static int
 lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	       floatp y, gx_path_type_t type);
+               floatp y, gx_path_type_t type);
 static int
 lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
-		floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
-		gx_path_type_t type);
+                floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+                gx_path_type_t type);
 static int
 lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
-		  floatp y_start, gx_path_type_t type);
+                  floatp y_start, gx_path_type_t type);
 
 static int lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type);
 #else
 static int lips4v_beginpage(P1(gx_device_vector * vdev));
 static int lips4v_setfillcolor(P2(gx_device_vector * vdev,
-				   const gx_drawing_color * pdc));
+                                   const gx_drawing_color * pdc));
 static int lips4v_setstrokecolor(P2(gx_device_vector * vdev,
-				     const gx_drawing_color * pdc));
+                                     const gx_drawing_color * pdc));
 static int lips4v_setdash(P4(gx_device_vector * vdev, const float *pattern,
-			      uint count, floatp offset));
+                              uint count, floatp offset));
 static int lips4v_setflat(P2(gx_device_vector * vdev, floatp flatness));
 static int
 lips4v_setlogop(P3
 
-		(gx_device_vector * vdev, gs_logical_operation_t lop,
-		 gs_logical_operation_t diff));
+                (gx_device_vector * vdev, gs_logical_operation_t lop,
+                 gs_logical_operation_t diff));
 static int
 
 lips4v_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 static int
 lips4v_moveto(P6
-	      (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	       floatp y, gx_path_type_t type));
+              (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
+               floatp y, gx_path_type_t type));
 static int
 lips4v_lineto(P6
-	      (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	       floatp y, gx_path_type_t type));
+              (gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
+               floatp y, gx_path_type_t type));
 static int
 lips4v_curveto(P10
-	       (gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
-		floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
-		gx_path_type_t type));
+               (gx_device_vector * vdev, floatp x0, floatp y0, floatp x1,
+                floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+                gx_path_type_t type));
 static int
 lips4v_closepath(P6
-		 (gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
-		  floatp y_start, gx_path_type_t type));
+                 (gx_device_vector * vdev, floatp x, floatp y, floatp x_start,
+                  floatp y_start, gx_path_type_t type));
 
 static int lips4v_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 #endif
@@ -340,7 +335,6 @@ static const char *l4v_file_header2 = "@PJL SET LPARM : LIPS SW2 = ON\n";
 static const char *l4v_file_header3 = "@PJL ENTER LANGUAGE = LIPS\n";
 static const char *l4v_file_header4 = "\033%@\033P41;";
 
-
 static const char *l4vmono_file_header =
 
     ";1J" L4VMONO_STRING LIPS_VERSION "\033\\\033[0\"p\033<";
@@ -359,24 +353,24 @@ lips_param(int param, char *c)
 
     bSign = TRUE;
     if (param < 0) {
-	bSign = FALSE;
-	param = -param;
+        bSign = FALSE;
+        param = -param;
     }
     if (param < 16)
-	i = 1;
+        i = 1;
     else if (param < 1024)
-	i = 2;
+        i = 2;
     else if (param < 65536)
-	i = 3;
+        i = 3;
     else
-	i = 4;
+        i = 4;
 
     c[i] = '\0';
     c[i - 1] = (param & 0x0f) | 0x20 | (bSign ? 0x10 : 0x00);
     param >>= 4;
     for (j = i - 2; j >= 0; j--) {
-	c[j] = (param & 0x3f) | 0x40;
-	param >>= 6;
+        c[j] = (param & 0x3f) | 0x40;
+        param >>= 6;
     }
 }
 
@@ -388,7 +382,7 @@ sput_lips_int(stream * s, int param)
 
     lips_param(param, c);
     for (i = 0; i < strlen(c); i++)
-	sputc(s, c[i]);
+        sputc(s, c[i]);
 }
 
 /* Put a string on a stream.
@@ -430,28 +424,27 @@ lips4v_range_check(gx_device * dev)
 
     /* Paper Size Check */
     if (width <= height) {	/* portrait */
-	if ((width < LIPS_WIDTH_MIN || width > LIPS_WIDTH_MAX ||
-	     height < LIPS_HEIGHT_MIN || height > LIPS_HEIGHT_MAX) &&
-	    !(width == LIPS_LEDGER_WIDTH && height == LIPS_LEDGER_HEIGHT))
-	    return_error(gs_error_rangecheck);
+        if ((width < LIPS_WIDTH_MIN || width > LIPS_WIDTH_MAX ||
+             height < LIPS_HEIGHT_MIN || height > LIPS_HEIGHT_MAX) &&
+            !(width == LIPS_LEDGER_WIDTH && height == LIPS_LEDGER_HEIGHT))
+            return_error(gs_error_rangecheck);
     } else {			/* landscape */
-	if ((width < LIPS_HEIGHT_MIN || width > LIPS_HEIGHT_MAX ||
-	     height < LIPS_WIDTH_MIN || height > LIPS_WIDTH_MAX) &&
-	    !(width == LIPS_LEDGER_HEIGHT && height == LIPS_LEDGER_WIDTH))
-	    return_error(gs_error_rangecheck);
+        if ((width < LIPS_HEIGHT_MIN || width > LIPS_HEIGHT_MAX ||
+             height < LIPS_WIDTH_MIN || height > LIPS_WIDTH_MAX) &&
+            !(width == LIPS_LEDGER_HEIGHT && height == LIPS_LEDGER_WIDTH))
+            return_error(gs_error_rangecheck);
     }
 
     /* Resolution Check */
     if (xdpi != ydpi)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     else {
-	if ((xdpi < LIPS_DPI_MIN || xdpi > LIPS4_DPI_MAX)
-	    && xdpi != LIPS4_DPI_SUPERFINE) return_error(gs_error_rangecheck);
+        if ((xdpi < LIPS_DPI_MIN || xdpi > LIPS4_DPI_MAX)
+            && xdpi != LIPS4_DPI_SUPERFINE) return_error(gs_error_rangecheck);
     }
 
     return 0;
 }
-
 
 static void
 lips4v_set_cap(gx_device * dev, int x, int y)
@@ -463,20 +456,19 @@ lips4v_set_cap(gx_device * dev, int x, int y)
     int dx = x - pdev->prev_x;
     int dy = y - pdev->prev_y;
 
-
     if (dx > 0) {
-	sprintf(cap, "%c%da", LIPS_CSI, dx);
-	lputs(s, cap);
+        sprintf(cap, "%c%da", LIPS_CSI, dx);
+        lputs(s, cap);
     } else if (dx < 0) {
-	sprintf(cap, "%c%dj", LIPS_CSI, -dx);
-	lputs(s, cap);
+        sprintf(cap, "%c%dj", LIPS_CSI, -dx);
+        lputs(s, cap);
     }
     if (dy > 0) {
-	sprintf(cap, "%c%dk", LIPS_CSI, dy);
-	lputs(s, cap);
+        sprintf(cap, "%c%dk", LIPS_CSI, dy);
+        lputs(s, cap);
     } else if (dy < 0) {
-	sprintf(cap, "%c%de", LIPS_CSI, -dy);
-	lputs(s, cap);
+        sprintf(cap, "%c%de", LIPS_CSI, -dy);
+        lputs(s, cap);
     }
     pdev->prev_x = x;
     pdev->prev_y = y;
@@ -487,7 +479,7 @@ lips4v_set_cap(gx_device * dev, int x, int y)
 /* Font Downloading Routine */
 static int
 lips4v_copy_text_char(gx_device * dev, const byte * data,
-		      int raster, gx_bitmap_id id, int x, int y, int w, int h)
+                      int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
     stream *s = gdev_vector_stream((gx_device_vector *) dev);
@@ -500,132 +492,132 @@ lips4v_copy_text_char(gx_device * dev, const byte * data,
     bool download = TRUE;
 
     if (w > cell_length || h > cell_length || !pdev->FontDL)
-	return -1;
+        return -1;
 
     for (j = pdev->count - 1; j >= 0; j--) {
-	if (pdev->id_table[j] == id)
-	    /* font is found */
-	{
-	    download = FALSE;
-	    ccode = j;
-	    for (i = j; i < pdev->count - 1; i++) {
-		pdev->id_cache[i] = pdev->id_cache[i + 1];
-	    }
-	    pdev->id_cache[pdev->count - 1] = id;
-	    break;
-	}
+        if (pdev->id_table[j] == id)
+            /* font is found */
+        {
+            download = FALSE;
+            ccode = j;
+            for (i = j; i < pdev->count - 1; i++) {
+                pdev->id_cache[i] = pdev->id_cache[i + 1];
+            }
+            pdev->id_cache[pdev->count - 1] = id;
+            break;
+        }
     }
 
     if (download) {
-	if (pdev->count > max_cached_chars - 1) {
-	    gx_bitmap_id tmpid = pdev->id_cache[0];
+        if (pdev->count > max_cached_chars - 1) {
+            gx_bitmap_id tmpid = pdev->id_cache[0];
 
-	    for (j = pdev->count - 1; j >= 0; j--) {
-		if (pdev->id_table[j] == tmpid) {
-		    ccode = j;
-		    break;
-		}
-	    }
-	    for (i = j; i < pdev->count - 1; i++) {
-		pdev->id_cache[i] = pdev->id_cache[i + 1];
-	    }
-	    pdev->id_cache[pdev->count - 1] = tmpid;
-	} else {
-	    ccode = pdev->count;
-	    pdev->id_cache[pdev->count] = id;
-	}
+            for (j = pdev->count - 1; j >= 0; j--) {
+                if (pdev->id_table[j] == tmpid) {
+                    ccode = j;
+                    break;
+                }
+            }
+            for (i = j; i < pdev->count - 1; i++) {
+                pdev->id_cache[i] = pdev->id_cache[i + 1];
+            }
+            pdev->id_cache[pdev->count - 1] = tmpid;
+        } else {
+            ccode = pdev->count;
+            pdev->id_cache[pdev->count] = id;
+        }
     }
     if (pdev->TextMode == FALSE) {
-	/* Text mode */
-	lputs(s, "}p");
-	sput_lips_int(s, x);
-	sput_lips_int(s, y);
-	sputc(s, LIPS_IS2);
-	pdev->TextMode = TRUE;
-	pdev->prev_x = x;
-	pdev->prev_y = y;
+        /* Text mode */
+        lputs(s, "}p");
+        sput_lips_int(s, x);
+        sput_lips_int(s, y);
+        sputc(s, LIPS_IS2);
+        pdev->TextMode = TRUE;
+        pdev->prev_x = x;
+        pdev->prev_y = y;
     } else
-	lips4v_set_cap(dev, x, y);
+        lips4v_set_cap(dev, x, y);
 
     if (download) {
-	if (ccode % 128 == 0 && ccode == pdev->count) {
-	    /* 文字セット登録補助命令 */
-	    sprintf(cset_sub, "%c%dx%c", LIPS_DCS, ccode / 128, LIPS_ST);
-	    lputs(s, cset_sub);
-	    /* 文字セット登録命令 */
-	    sprintf(cset,
-		    "%c%d;1;0;0;3840;8;400;100;0;0;200;%d;%d;0;0;;;;;%d.p",
-		    LIPS_CSI,
-		    size + 9, cell_length,	/* Cell Width */
-		    cell_length,	/* Cell Height */
-		    (int)dev->x_pixels_per_inch);
-	    lputs(s, cset);
-	} else {
-	    /* 1文字登録命令 */
-	    sprintf(cset,
-		    "%c%d;%d;8;%d.q", LIPS_CSI,
-		    size + 9, ccode / 128, (int)dev->x_pixels_per_inch);
-	    lputs(s, cset);
-	}
+        if (ccode % 128 == 0 && ccode == pdev->count) {
+            /* 文字セット登録補助命令 */
+            sprintf(cset_sub, "%c%dx%c", LIPS_DCS, ccode / 128, LIPS_ST);
+            lputs(s, cset_sub);
+            /* 文字セット登録命令 */
+            sprintf(cset,
+                    "%c%d;1;0;0;3840;8;400;100;0;0;200;%d;%d;0;0;;;;;%d.p",
+                    LIPS_CSI,
+                    size + 9, cell_length,	/* Cell Width */
+                    cell_length,	/* Cell Height */
+                    (int)dev->x_pixels_per_inch);
+            lputs(s, cset);
+        } else {
+            /* 1文字登録命令 */
+            sprintf(cset,
+                    "%c%d;%d;8;%d.q", LIPS_CSI,
+                    size + 9, ccode / 128, (int)dev->x_pixels_per_inch);
+            lputs(s, cset);
+        }
 
-	/* ユーザ文字登録データ のヘッダ */
-	sputc(s, ccode % 128);	/* charcter code */
-	put_int(s, w);
-	put_int(s, 0);
-	put_int(s, h);
-	put_int(s, 0);
-	for (i = h - 1; i >= 0; --i) {
-	    put_bytes(s, data + i * raster, width_bytes);
-	}
+        /* ユーザ文字登録データ のヘッダ */
+        sputc(s, ccode % 128);	/* charcter code */
+        put_int(s, w);
+        put_int(s, 0);
+        put_int(s, h);
+        put_int(s, 0);
+        for (i = h - 1; i >= 0; --i) {
+            put_bytes(s, data + i * raster, width_bytes);
+        }
     }
     /* 文字セット・アサイン番号選択命令2 */
     if (download) {
-	if (pdev->current_font != ccode / 128) {
-	    sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
-	    lputs(s, cset_number);
-	    pdev->current_font = ccode / 128;
-	}
+        if (pdev->current_font != ccode / 128) {
+            sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
+            lputs(s, cset_number);
+            pdev->current_font = ccode / 128;
+        }
     } else {
-	if (pdev->current_font != ccode / 128) {
-	    sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
-	    lputs(s, cset_number);
-	    pdev->current_font = ccode / 128;
-	}
+        if (pdev->current_font != ccode / 128) {
+            sprintf(cset_number, "%c%d%%v", LIPS_CSI, ccode / 128);
+            lputs(s, cset_number);
+            pdev->current_font = ccode / 128;
+        }
     }
 
     /* カラー */
     if (pdev->current_color != pdev->prev_color) {
-	if (pdev->color_info.depth == 8) {
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "?10;2;");
-	    sprintf(text_color, "%d",
-		    (int)(pdev->color_info.max_gray - pdev->current_color));
-	} else {
-	    int r = (pdev->current_color >> 16) * 1000.0 / 255.0;
-	    int g = ((pdev->current_color >> 8) & 0xff) * 1000.0 / 255.0;
-	    int b = (pdev->current_color & 0xff) * 1000.0 / 255.0;
+        if (pdev->color_info.depth == 8) {
+            sputc(s, LIPS_CSI);
+            lputs(s, "?10;2;");
+            sprintf(text_color, "%d",
+                    (int)(pdev->color_info.max_gray - pdev->current_color));
+        } else {
+            int r = (pdev->current_color >> 16) * 1000.0 / 255.0;
+            int g = ((pdev->current_color >> 8) & 0xff) * 1000.0 / 255.0;
+            int b = (pdev->current_color & 0xff) * 1000.0 / 255.0;
 
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "?10;;");
-	    sprintf(text_color, "%d;%d;%d", r, g, b);
-	}
-	lputs(s, text_color);
-	lputs(s, "%p");
-	pdev->prev_color = pdev->current_color;
+            sputc(s, LIPS_CSI);
+            lputs(s, "?10;;");
+            sprintf(text_color, "%d;%d;%d", r, g, b);
+        }
+        lputs(s, text_color);
+        lputs(s, "%p");
+        pdev->prev_color = pdev->current_color;
     }
     /* 制御文字印字命令 */
     if (ccode % 128 == 0x00 ||
-	(ccode % 128 >= 0x07 && ccode % 128 <= 0x0F) ||
-	ccode % 128 == 0x1B) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "1.v");
+        (ccode % 128 >= 0x07 && ccode % 128 <= 0x0F) ||
+        ccode % 128 == 0x1B) {
+        sputc(s, LIPS_CSI);
+        lputs(s, "1.v");
     }
     sputc(s, ccode % 128);
 
     if (download) {
-	pdev->id_table[ccode] = id;
-	if (pdev->count < max_cached_chars - 1)
-	    pdev->count++;
+        pdev->id_table[ccode] = id;
+        if (pdev->count < max_cached_chars - 1)
+            pdev->count++;
     }
     return 0;
 }
@@ -636,64 +628,62 @@ reverse_buffer(byte * buf, int Len)
     int i;
 
     for (i = 0; i < Len; i++)
-	*(buf + i) = ~*(buf + i);
+        *(buf + i) = ~*(buf + i);
 }
 
 static void
 lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
-			int reverse)
+                        int reverse)
 {
     stream *s = gdev_vector_stream(vdev);
     byte *cbuf = gs_alloc_bytes(vdev->memory, tbyte * 3 / 2,
-				"lips4v_write_image_data(cbuf)");
+                                "lips4v_write_image_data(cbuf)");
     byte *cbuf_rle = gs_alloc_bytes(vdev->memory, tbyte * 3,
-				    "lips4v_write_image_data(cbuf_rle)");
+                                    "lips4v_write_image_data(cbuf_rle)");
     int Len, Len_rle;
 
     if (reverse)
-	reverse_buffer(buf, tbyte);
-
+        reverse_buffer(buf, tbyte);
 
     Len = lips_packbits_encode(buf, cbuf, tbyte);
     Len_rle = lips_rle_encode(buf, cbuf_rle, tbyte);
 
     if (Len > tbyte && Len_rle > tbyte) {
-	/* Not compress */
-	lputs(s, "0");
-	sput_lips_int(s, tbyte);
-	sputc(s, LIPS_IS2);
+        /* Not compress */
+        lputs(s, "0");
+        sput_lips_int(s, tbyte);
+        sputc(s, LIPS_IS2);
 
-	put_bytes(s, buf, tbyte);
+        put_bytes(s, buf, tbyte);
     } else if (Len > Len_rle) {
-	/* Use RunLength encode */
-	lputs(s, ":");
-	sput_lips_int(s, Len_rle);
-	sputc(s, LIPS_IS2);
+        /* Use RunLength encode */
+        lputs(s, ":");
+        sput_lips_int(s, Len_rle);
+        sputc(s, LIPS_IS2);
 
-	put_bytes(s, cbuf_rle, Len_rle);
+        put_bytes(s, cbuf_rle, Len_rle);
     } else {
-	/* Use PackBits encode */
-	lputs(s, ";");
-	sput_lips_int(s, Len);
-	sputc(s, LIPS_IS2);
+        /* Use PackBits encode */
+        lputs(s, ";");
+        sput_lips_int(s, Len);
+        sputc(s, LIPS_IS2);
 
-	put_bytes(s, cbuf, Len);
+        put_bytes(s, cbuf, Len);
     }
 
     gs_free_object(vdev->memory, cbuf, "lips4v_write_image_data(cbuf)");
     gs_free_object(vdev->memory, cbuf_rle,
-		   "lips4v_write_image_data(cbuf_rle)");
+                   "lips4v_write_image_data(cbuf_rle)");
 }
-
 
 /* ---------------- Vector device implementation ---------------- */
 
 static int
 lips4v_beginpage(gx_device_vector * vdev)
 {				/*
-				 * We can't use gdev_vector_stream here, because this may be called
-				 * from there before in_page is set.
-				 */
+                                 * We can't use gdev_vector_stream here, because this may be called
+                                 * from there before in_page is set.
+                                 */
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
     stream *s = vdev->strm;
     int dpi = vdev->x_pixels_per_inch;
@@ -704,10 +694,10 @@ lips4v_beginpage(gx_device_vector * vdev)
     char page_header[8], l4vmono_page_header[7], l4vcolor_page_header[7];
     char duplex_char[6], tumble_char[6], toner_d[26], toner_s[5],
 
-	nup_char[10];
+        nup_char[10];
     char username[6 + LIPS_USERNAME_MAX], feedmode[5], paper[16],
 
-	faceup_char[256];
+        faceup_char[256];
     bool dup = pdev->Duplex;
     int dupset = pdev->Duplex_set;
     bool tum = pdev->Tumble;
@@ -715,183 +705,183 @@ lips4v_beginpage(gx_device_vector * vdev)
     /* ベクタ・モード移行命令 CSI &} は頁ごとに発行する */
 
     if (pdev->first_page) {
-	if (pdev->pjl) {
-	    lputs(s, l4v_file_header1);
-	    if ((int)pdev->x_pixels_per_inch == 1200)
-		lputs(s, "@PJL SET RESOLUTION = SUPERFINE\n");
-	    else if ((int)pdev->x_pixels_per_inch == 600)
-		lputs(s, "@PJL SET RESOLUTION = FINE\n");
-	    else if ((int)pdev->x_pixels_per_inch == 300)
-		lputs(s, "@PJL SET RESOLUTION = QUICK\n");
-	    lputs(s, l4v_file_header2);
-	    if (pdev->toner_density) {
-		sprintf(toner_d, "@PJL SET TONER-DENSITY=%d\n",
-			pdev->toner_density);
-		lputs(s, toner_d);
-	    }
-	    if (pdev->toner_saving_set) {
-		lputs(s, "@PJL SET TONER-SAVING=");
-		if (pdev->toner_saving)
-		    sprintf(toner_s, "ON\n");
-		else
-		    sprintf(toner_s, "OFF\n");
-		lputs(s, toner_s);
-	    }
-	    lputs(s, l4v_file_header3);
-	}
-	lputs(s, l4v_file_header4);
+        if (pdev->pjl) {
+            lputs(s, l4v_file_header1);
+            if ((int)pdev->x_pixels_per_inch == 1200)
+                lputs(s, "@PJL SET RESOLUTION = SUPERFINE\n");
+            else if ((int)pdev->x_pixels_per_inch == 600)
+                lputs(s, "@PJL SET RESOLUTION = FINE\n");
+            else if ((int)pdev->x_pixels_per_inch == 300)
+                lputs(s, "@PJL SET RESOLUTION = QUICK\n");
+            lputs(s, l4v_file_header2);
+            if (pdev->toner_density) {
+                sprintf(toner_d, "@PJL SET TONER-DENSITY=%d\n",
+                        pdev->toner_density);
+                lputs(s, toner_d);
+            }
+            if (pdev->toner_saving_set) {
+                lputs(s, "@PJL SET TONER-SAVING=");
+                if (pdev->toner_saving)
+                    sprintf(toner_s, "ON\n");
+                else
+                    sprintf(toner_s, "OFF\n");
+                lputs(s, toner_s);
+            }
+            lputs(s, l4v_file_header3);
+        }
+        lputs(s, l4v_file_header4);
 
-	if (dpi > 9999)
-	    return_error(gs_error_rangecheck);
+        if (dpi > 9999)
+            return_error(gs_error_rangecheck);
 
-	/* set reaolution (dpi) */
-	sprintf(dpi_char, "%d", dpi);
-	lputs(s, dpi_char);
+        /* set reaolution (dpi) */
+        sprintf(dpi_char, "%d", dpi);
+        lputs(s, dpi_char);
 
-	if (pdev->color_info.depth == 8)
-	    lputs(s, l4vmono_file_header);
-	else
-	    lputs(s, l4vcolor_file_header);
+        if (pdev->color_info.depth == 8)
+            lputs(s, l4vmono_file_header);
+        else
+            lputs(s, l4vcolor_file_header);
 
-	/* username */
-	sprintf(username, "%c2y%s%c", LIPS_DCS, pdev->Username, LIPS_ST);
-	lputs(s, username);
+        /* username */
+        sprintf(username, "%c2y%s%c", LIPS_DCS, pdev->Username, LIPS_ST);
+        lputs(s, username);
     }
     if (strcmp(pdev->mediaType, "PlainPaper") == 0) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "20\'t");
+        sputc(s, LIPS_CSI);
+        lputs(s, "20\'t");
     }
     else if (strcmp(pdev->mediaType, "OHP") == 0 ||
-	     strcmp(pdev->mediaType, "TransparencyFilm") == 0) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "40\'t");	/* OHP mode (for LBP-2160) */
+             strcmp(pdev->mediaType, "TransparencyFilm") == 0) {
+        sputc(s, LIPS_CSI);
+        lputs(s, "40\'t");	/* OHP mode (for LBP-2160) */
     }
     else if (strcmp(pdev->mediaType, "CardBoard") == 0) {
         sputc(s, LIPS_CSI);
-	lputs(s, "30\'t");	/* CardBoard mode (for LBP-2160) */
+        lputs(s, "30\'t");	/* CardBoard mode (for LBP-2160) */
     }
     else if (strcmp(pdev->mediaType, "GlossyFilm") == 0) {
         sputc(s, LIPS_CSI);
-	lputs(s, "41\'t");	/* GlossyFilm mode (for LBP-2160) */
+        lputs(s, "41\'t");	/* GlossyFilm mode (for LBP-2160) */
     }
 
     /* 給紙モード */
     if (pdev->ManualFeed ||
-	(strcmp(pdev->mediaType, "PlainPaper") != 0
-	 && strcmp(pdev->mediaType, LIPS_MEDIATYPE_DEFAULT) != 0)) {
-	/* Use ManualFeed */
-	if (pdev->prev_feed_mode != 10) {
-	    sprintf(feedmode, "%c10q", LIPS_CSI);
-	    lputs(s, feedmode);
-	    pdev->prev_feed_mode = 10;
-	}
+        (strcmp(pdev->mediaType, "PlainPaper") != 0
+         && strcmp(pdev->mediaType, LIPS_MEDIATYPE_DEFAULT) != 0)) {
+        /* Use ManualFeed */
+        if (pdev->prev_feed_mode != 10) {
+            sprintf(feedmode, "%c10q", LIPS_CSI);
+            lputs(s, feedmode);
+            pdev->prev_feed_mode = 10;
+        }
     } else {
-	if (pdev->prev_feed_mode != pdev->cassetFeed) {
-	    sprintf(feedmode, "%c%dq", LIPS_CSI, pdev->cassetFeed);
-	    lputs(s, feedmode);
-	    pdev->prev_feed_mode = pdev->cassetFeed;
-	}
+        if (pdev->prev_feed_mode != pdev->cassetFeed) {
+            sprintf(feedmode, "%c%dq", LIPS_CSI, pdev->cassetFeed);
+            lputs(s, feedmode);
+            pdev->prev_feed_mode = pdev->cassetFeed;
+        }
     }
 
     paper_size = lips_media_selection(width, height);
 
     /* 用紙サイズ */
     if (pdev->prev_paper_size != paper_size) {
-	if (paper_size == USER_SIZE) {
-	    /* modified by shige 06/27 2003
-	    sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-	    /* modified by shige 11/09 2003
-	    sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-	    sprintf(paper, "%c80;%d;%dp", LIPS_CSI, 
-		    (height * 10 > LIPS_HEIGHT_MAX_720)? 
-		    LIPS_HEIGHT_MAX_720 : (height * 10),
-		    (width * 10 > LIPS_WIDTH_MAX_720)? 
-		    LIPS_WIDTH_MAX_720 : (width * 10));
-	    lputs(s, paper);
-	} else if (paper_size == USER_SIZE + LANDSCAPE) {
-	    /* modified by shige 06/27 2003
-	    sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-	    /* modified by shige 11/09 2003
-	    sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-	    sprintf(paper, "%c80;%d;%dp", LIPS_CSI, 
-		    (width * 10 > LIPS_HEIGHT_MAX_720)? 
-		    LIPS_HEIGHT_MAX_720 : (width * 10),
-		    (height * 10 > LIPS_WIDTH_MAX_720)? 
-		    LIPS_WIDTH_MAX_720 : (height * 10));
-	    lputs(s, paper);
-	} else {
-	    sprintf(paper, "%c%dp", LIPS_CSI, paper_size);
-	    lputs(s, paper);
-	}
+        if (paper_size == USER_SIZE) {
+            /* modified by shige 06/27 2003
+            sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+            /* modified by shige 11/09 2003
+            sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+            sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                    (height * 10 > LIPS_HEIGHT_MAX_720)?
+                    LIPS_HEIGHT_MAX_720 : (height * 10),
+                    (width * 10 > LIPS_WIDTH_MAX_720)?
+                    LIPS_WIDTH_MAX_720 : (width * 10));
+            lputs(s, paper);
+        } else if (paper_size == USER_SIZE + LANDSCAPE) {
+            /* modified by shige 06/27 2003
+            sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+            /* modified by shige 11/09 2003
+            sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+            sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                    (width * 10 > LIPS_HEIGHT_MAX_720)?
+                    LIPS_HEIGHT_MAX_720 : (width * 10),
+                    (height * 10 > LIPS_WIDTH_MAX_720)?
+                    LIPS_WIDTH_MAX_720 : (height * 10));
+            lputs(s, paper);
+        } else {
+            sprintf(paper, "%c%dp", LIPS_CSI, paper_size);
+            lputs(s, paper);
+        }
     } else if (paper_size == USER_SIZE) {
-	if (pdev->prev_paper_width != width ||
-	    pdev->prev_paper_height != height)
-	  	/* modified by shige 06/27 2003
-		sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-		/* modified by shige 11/09 2003
-		sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-		sprintf(paper, "%c80;%d;%dp", LIPS_CSI, 
-		    (height * 10 > LIPS_HEIGHT_MAX_720)? 
-		    LIPS_HEIGHT_MAX_720 : (height * 10),
-		    (width * 10 > LIPS_WIDTH_MAX_720)? 
-		    LIPS_WIDTH_MAX_720 : (width * 10));
-	lputs(s, paper);
+        if (pdev->prev_paper_width != width ||
+            pdev->prev_paper_height != height)
+                /* modified by shige 06/27 2003
+                sprintf(paper, "%c80;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+                /* modified by shige 11/09 2003
+                sprintf(paper, "%c80;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+                sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                    (height * 10 > LIPS_HEIGHT_MAX_720)?
+                    LIPS_HEIGHT_MAX_720 : (height * 10),
+                    (width * 10 > LIPS_WIDTH_MAX_720)?
+                    LIPS_WIDTH_MAX_720 : (width * 10));
+        lputs(s, paper);
     } else if (paper_size == USER_SIZE + LANDSCAPE) {
-	if (pdev->prev_paper_width != width ||
-	    pdev->prev_paper_height != height)
-		/* modified by shige 06/27 2003
-		sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
-	  	/* modified by shige 11/09 2003
-		sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
-		sprintf(paper, "%c80;%d;%dp", LIPS_CSI, 
-		    (width * 10 > LIPS_HEIGHT_MAX_720)? 
-		    LIPS_HEIGHT_MAX_720 : (width * 10),
-		    (height * 10 > LIPS_WIDTH_MAX_720)? 
-		    LIPS_WIDTH_MAX_720 : (height * 10));
-	lputs(s, paper);
+        if (pdev->prev_paper_width != width ||
+            pdev->prev_paper_height != height)
+                /* modified by shige 06/27 2003
+                sprintf(paper, "%c81;%d;%dp", LIPS_CSI, height * 10, width * 10); */
+                /* modified by shige 11/09 2003
+                sprintf(paper, "%c81;%d;%dp", LIPS_CSI, width * 10, height * 10); */
+                sprintf(paper, "%c80;%d;%dp", LIPS_CSI,
+                    (width * 10 > LIPS_HEIGHT_MAX_720)?
+                    LIPS_HEIGHT_MAX_720 : (width * 10),
+                    (height * 10 > LIPS_WIDTH_MAX_720)?
+                    LIPS_WIDTH_MAX_720 : (height * 10));
+        lputs(s, paper);
     }
     pdev->prev_paper_size = paper_size;
     pdev->prev_paper_width = width;
     pdev->prev_paper_height = height;
 
     if (pdev->faceup) {
-	sprintf(faceup_char, "%c11;12;12~", LIPS_CSI);
-	lputs(s, faceup_char);
+        sprintf(faceup_char, "%c11;12;12~", LIPS_CSI);
+        lputs(s, faceup_char);
     }
     /* N-up Printing Setting */
     if (pdev->first_page) {
-	if (pdev->nup != 1) {
-	    sprintf(nup_char, "%c%d1;;%do", LIPS_CSI, pdev->nup, paper_size);
-	    lputs(s, nup_char);
-	}
+        if (pdev->nup != 1) {
+            sprintf(nup_char, "%c%d1;;%do", LIPS_CSI, pdev->nup, paper_size);
+            lputs(s, nup_char);
+        }
     }
     /* Duplex Setting */
     if (dupset && dup) {
-	if (pdev->prev_duplex_mode == 0 || pdev->prev_duplex_mode == 1) {
-	    sprintf(duplex_char, "%c2;#x", LIPS_CSI);	/* duplex */
-	    lputs(s, duplex_char);
-	    if (!tum) {
-		/* long edge binding */
-		if (pdev->prev_duplex_mode != 2) {
-		    sprintf(tumble_char, "%c0;#w", LIPS_CSI);
-		    lputs(s, tumble_char);
-		}
-		pdev->prev_duplex_mode = 2;
-	    } else {
-		/* short edge binding */
-		if (pdev->prev_duplex_mode != 3) {
-		    sprintf(tumble_char, "%c2;#w", LIPS_CSI);
-		    lputs(s, tumble_char);
-		}
-		pdev->prev_duplex_mode = 3;
-	    }
-	}
+        if (pdev->prev_duplex_mode == 0 || pdev->prev_duplex_mode == 1) {
+            sprintf(duplex_char, "%c2;#x", LIPS_CSI);	/* duplex */
+            lputs(s, duplex_char);
+            if (!tum) {
+                /* long edge binding */
+                if (pdev->prev_duplex_mode != 2) {
+                    sprintf(tumble_char, "%c0;#w", LIPS_CSI);
+                    lputs(s, tumble_char);
+                }
+                pdev->prev_duplex_mode = 2;
+            } else {
+                /* short edge binding */
+                if (pdev->prev_duplex_mode != 3) {
+                    sprintf(tumble_char, "%c2;#w", LIPS_CSI);
+                    lputs(s, tumble_char);
+                }
+                pdev->prev_duplex_mode = 3;
+            }
+        }
     } else if (dupset && !dup) {
-	if (pdev->prev_duplex_mode != 1) {
-	    sprintf(duplex_char, "%c0;#x", LIPS_CSI);	/* simplex */
-	    lputs(s, duplex_char);
-	}
-	pdev->prev_duplex_mode = 1;
+        if (pdev->prev_duplex_mode != 1) {
+            sprintf(duplex_char, "%c0;#x", LIPS_CSI);	/* simplex */
+            lputs(s, duplex_char);
+        }
+        pdev->prev_duplex_mode = 1;
     }
     sputc(s, LIPS_CSI);
     lputs(s, "?1;4;5;6;14l");
@@ -912,20 +902,20 @@ lips4v_beginpage(gx_device_vector * vdev)
     sputc(s, LIPS_IS2);
 
     if (pdev->color_info.depth == 8) {
-	sprintf(l4vmono_page_header, "!13%c$%c", LIPS_IS2, LIPS_IS2);
-	lputs(s, l4vmono_page_header);
+        sprintf(l4vmono_page_header, "!13%c$%c", LIPS_IS2, LIPS_IS2);
+        lputs(s, l4vmono_page_header);
     } else {
-	sprintf(l4vcolor_page_header, "!11%c$%c", LIPS_IS2, LIPS_IS2);
-	lputs(s, l4vcolor_page_header);
+        sprintf(l4vcolor_page_header, "!11%c$%c", LIPS_IS2, LIPS_IS2);
+        lputs(s, l4vcolor_page_header);
     }
 
     lputs(s, "(00");
     sput_lips_int(s,
-		  ((width - dev_l_margin(vdev) - dev_r_margin(vdev)) * dpi) /
-		  72);
+                  ((width - dev_l_margin(vdev) - dev_r_margin(vdev)) * dpi) /
+                  72);
     sput_lips_int(s,
-		  ((height - dev_b_margin(vdev) - dev_t_margin(vdev)) * dpi) /
-		  72);
+                  ((height - dev_b_margin(vdev) - dev_t_margin(vdev)) * dpi) /
+                  72);
     sputc(s, LIPS_IS2);
 
     /* 原点移動命令 */
@@ -933,10 +923,10 @@ lips4v_beginpage(gx_device_vector * vdev)
     y0 = (dev_b_margin(vdev) - 5. / MMETER_PER_INCH) * dpi;
 
     if (x0 != 0 && y0 != 0) {
-	lputs(s, "}\"");
-	sput_lips_int(s, x0);
-	sput_lips_int(s, y0);
-	sputc(s, LIPS_IS2);
+        lputs(s, "}\"");
+        sput_lips_int(s, x0);
+        sput_lips_int(s, y0);
+        sputc(s, LIPS_IS2);
     }
     lputs(s, "I00");
     sputc(s, LIPS_IS2);
@@ -958,13 +948,11 @@ lips4v_beginpage(gx_device_vector * vdev)
     return 0;
 }
 
-
 static int
 lips4v_setlinewidth(gx_device_vector * vdev, floatp width)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
-
 
 #if 0
     /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
@@ -974,18 +962,18 @@ lips4v_setlinewidth(gx_device_vector * vdev, floatp width)
     yscale = fabs(igs->ctm.xy);
 
     if (xscale == 0 || yscale > xscale)	/* if portrait */
-	width = ceil(width * yscale);
+        width = ceil(width * yscale);
     else
-	width = ceil(width * xscale);
+        width = ceil(width * xscale);
 #endif
 
     if (pdev->TextMode) {
         sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     if (width < 1)
-	width = 1;
+        width = 1;
 
     lputs(s, "F1");
     sput_lips_int(s, width);
@@ -1003,21 +991,21 @@ lips4v_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
     int line_cap = 0;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     switch (cap) {
-	case 0:
-	case 3:
-	line_cap = 0;		/* butt */
-	break;
-	case 1:
-	line_cap = 1;		/* round */
-	break;
-	case 2:
-	line_cap = 2;		/* square */
-	break;
+        case 0:
+        case 3:
+        line_cap = 0;		/* butt */
+        break;
+        case 1:
+        line_cap = 1;		/* round */
+        break;
+        case 2:
+        line_cap = 2;		/* square */
+        break;
     }
     /* 線端形状指定命令 */
     sprintf(c, "}E%d%c", line_cap, LIPS_IS2);
@@ -1039,25 +1027,25 @@ lips4v_setlinejoin(gx_device_vector * vdev, gs_line_join join)
     int lips_join = 0;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
 
     switch (join) {
-	case 0:
-	lips_join = 2;		/* miter */
-	break;
-	case 1:
-	lips_join = 1;		/* round */
-	break;
-	case 2:
-	lips_join = 3;		/* bevel */
-	break;
-	case 3:
-	case 4:
-	lips_join = 0;		/* none */
-	break;
+        case 0:
+        lips_join = 2;		/* miter */
+        break;
+        case 1:
+        lips_join = 1;		/* round */
+        break;
+        case 2:
+        lips_join = 3;		/* bevel */
+        break;
+        case 3:
+        case 4:
+        lips_join = 0;		/* none */
+        break;
     }
 
     sprintf(c, "}F%d%c", lips_join, LIPS_IS2);
@@ -1074,9 +1062,9 @@ lips4v_setmiterlimit(gx_device_vector * vdev, floatp limit)
     floatp lips_miterlimit;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     lips_miterlimit = (16383.0 * 2.0) / limit;
 
@@ -1097,60 +1085,60 @@ lips4v_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
 
     if (!gx_dc_is_pure(pdc))
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     {
-	stream *s = gdev_vector_stream(vdev);
-	gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
-	gx_color_index color = gx_dc_pure_color(pdc);
-	int drawing_color;
-	float r, g, b;
+        stream *s = gdev_vector_stream(vdev);
+        gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
+        gx_color_index color = gx_dc_pure_color(pdc);
+        int drawing_color;
+        float r, g, b;
 
-	if (vdev->color_info.depth == 8) {
-	    drawing_color = vdev->color_info.max_gray - color;
-	} else {
-	    r = (color >> 16) * 1000.0 / 255.0;
-	    g = ((color >> 8) & 0xff) * 1000.0 / 255.0;
-	    b = (color & 0xff) * 1000.0 / 255.0;
-	}
+        if (vdev->color_info.depth == 8) {
+            drawing_color = vdev->color_info.max_gray - color;
+        } else {
+            r = (color >> 16) * 1000.0 / 255.0;
+            g = ((color >> 8) & 0xff) * 1000.0 / 255.0;
+            b = (color & 0xff) * 1000.0 / 255.0;
+        }
 
-	if (pdev->TextMode) {
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "&}");
-	    pdev->TextMode = FALSE;
-	}
-	pdev->current_color = color;
+        if (pdev->TextMode) {
+            sputc(s, LIPS_CSI);
+            lputs(s, "&}");
+            pdev->TextMode = FALSE;
+        }
+        pdev->current_color = color;
 
-	if (color == gx_no_color_index) {
-	    lputs(s, "I0");
-	    sputc(s, LIPS_IS2);
-	} else {
-	    lputs(s, "I1");
-	    sputc(s, LIPS_IS2);
-	}
+        if (color == gx_no_color_index) {
+            lputs(s, "I0");
+            sputc(s, LIPS_IS2);
+        } else {
+            lputs(s, "I1");
+            sputc(s, LIPS_IS2);
+        }
 
-	/* 塗りつぶしカラー指定命令 */
-	/* J {color} IS2 */
-	lputs(s, "J");
-	if (vdev->color_info.depth == 8) {
-	    sput_lips_int(s, drawing_color);
-	} else {
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	}
-	sputc(s, LIPS_IS2);
+        /* 塗りつぶしカラー指定命令 */
+        /* J {color} IS2 */
+        lputs(s, "J");
+        if (vdev->color_info.depth == 8) {
+            sput_lips_int(s, drawing_color);
+        } else {
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+        }
+        sputc(s, LIPS_IS2);
 
-	/* 単色イメージ・カラー指定命令 */
-	/* }T {color} IS2 */
-	lputs(s, "}T");
-	if (vdev->color_info.depth == 8) {
-	    sput_lips_int(s, drawing_color);
-	} else {
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	}
-	sputc(s, LIPS_IS2);
+        /* 単色イメージ・カラー指定命令 */
+        /* }T {color} IS2 */
+        lputs(s, "}T");
+        if (vdev->color_info.depth == 8) {
+            sput_lips_int(s, drawing_color);
+        } else {
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+        }
+        sputc(s, LIPS_IS2);
     }
     return 0;
 }
@@ -1164,35 +1152,35 @@ lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 #endif
 {
     if (!gx_dc_is_pure(pdc))
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     {
-	stream *s = gdev_vector_stream(vdev);
-	gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
-	gx_color_index color = gx_dc_pure_color(pdc);
-	float r, g, b;
+        stream *s = gdev_vector_stream(vdev);
+        gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
+        gx_color_index color = gx_dc_pure_color(pdc);
+        float r, g, b;
 
-	if (vdev->color_info.depth == 24) {
-	    r = (color >> 16) * 1000 / 255.0;
-	    g = ((color >> 8) & 0xff) * 1000 / 255.0;
-	    b = (color & 0xff) * 1000 / 255.0;
-	}
+        if (vdev->color_info.depth == 24) {
+            r = (color >> 16) * 1000 / 255.0;
+            g = ((color >> 8) & 0xff) * 1000 / 255.0;
+            b = (color & 0xff) * 1000 / 255.0;
+        }
 
-	if (pdev->TextMode) {
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "&}");
-	    pdev->TextMode = FALSE;
-	}
-	/* ラインカラー指定命令 */
-	/* G {color} IS2 */
-	lputs(s, "G");
-	if (vdev->color_info.depth == 8) {
-	    sput_lips_int(s, vdev->color_info.max_gray - color);
-	} else {
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	}
-	sputc(s, LIPS_IS2);
+        if (pdev->TextMode) {
+            sputc(s, LIPS_CSI);
+            lputs(s, "&}");
+            pdev->TextMode = FALSE;
+        }
+        /* ラインカラー指定命令 */
+        /* G {color} IS2 */
+        lputs(s, "G");
+        if (vdev->color_info.depth == 8) {
+            sput_lips_int(s, vdev->color_info.max_gray - color);
+        } else {
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+        }
+        sputc(s, LIPS_IS2);
     }
     return 0;
 }
@@ -1200,7 +1188,7 @@ lips4v_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 /* 線種指定命令 */
 static int
 lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
-	       floatp offset)
+               floatp offset)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
@@ -1208,9 +1196,9 @@ lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     float scale, xscale, yscale;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
 #if 0
     /* Scale を掛けているのは, Ghostscript 5.10/5.50 のバグのため */
@@ -1218,51 +1206,51 @@ lips4v_setdash(gx_device_vector * vdev, const float *pattern, uint count,
     yscale = fabs(igs->ctm.xy);
 
     if (xscale == 0)		/* if portrait */
-	scale = yscale;
+        scale = yscale;
     else
-	scale = xscale;
+        scale = xscale;
 #endif
 
     if (count == 0) {
-	lputs(s, "E10");
-	sputc(s, LIPS_IS2);
+        lputs(s, "E10");
+        sputc(s, LIPS_IS2);
     } else {
-	lputs(s, "}d");
-	sputc(s, 0x2c);
-	lputs(s, "1");
+        lputs(s, "}d");
+        sputc(s, 0x2c);
+        lputs(s, "1");
 #if 0
-	sput_lips_int(s, offset * scale / vdev->x_pixels_per_inch + 0.5);
+        sput_lips_int(s, offset * scale / vdev->x_pixels_per_inch + 0.5);
 #else
-	sput_lips_int(s, offset);
+        sput_lips_int(s, offset);
 #endif
-	for (i = 0; i < count; ++i) {
-	    if (pdev->linecap == 1 && count == 2 && pattern[0] == 0) {
-		if (i == 0) {
-		    sput_lips_int(s, 1);
-		} else {
+        for (i = 0; i < count; ++i) {
+            if (pdev->linecap == 1 && count == 2 && pattern[0] == 0) {
+                if (i == 0) {
+                    sput_lips_int(s, 1);
+                } else {
 #if 0
-		    sput_lips_int(s,
-				  pattern[i] * scale /
-				  vdev->x_pixels_per_inch - 0.5);
+                    sput_lips_int(s,
+                                  pattern[i] * scale /
+                                  vdev->x_pixels_per_inch - 0.5);
 #else
-		    sput_lips_int(s, pattern[i] - 1);
+                    sput_lips_int(s, pattern[i] - 1);
 #endif
-		}
-	    } else {
+                }
+            } else {
 #if 0
-		sput_lips_int(s,
-			      pattern[i] * scale / vdev->x_pixels_per_inch +
-			      0.5);
+                sput_lips_int(s,
+                              pattern[i] * scale / vdev->x_pixels_per_inch +
+                              0.5);
 #else
-		sput_lips_int(s, pattern[i]);
+                sput_lips_int(s, pattern[i]);
 #endif
-	    }
-	}
-	sputc(s, LIPS_IS2);
-	lputs(s, "E1");
-	sputc(s, 0x2c);
-	lputs(s, "0");
-	sputc(s, LIPS_IS2);
+            }
+        }
+        sputc(s, LIPS_IS2);
+        lputs(s, "E1");
+        sputc(s, 0x2c);
+        lputs(s, "0");
+        sputc(s, LIPS_IS2);
     }
 
     return 0;
@@ -1276,9 +1264,9 @@ lips4v_setflat(gx_device_vector * vdev, floatp flatness)
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     lputs(s, "Pf");
     sput_lips_int(s, flatness);
@@ -1289,7 +1277,7 @@ lips4v_setflat(gx_device_vector * vdev, floatp flatness)
 
 static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
-		gs_logical_operation_t diff)
+                gs_logical_operation_t diff)
 {
 /****** SHOULD AT LEAST DETECT SET-0 & SET-1 ******/
     return 0;
@@ -1298,7 +1286,7 @@ lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 #if GS_VERSION_MAJOR >= 8
 /*--- added for Ghostscritp 8.15 ---*/
 static int
-lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1, 
+lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis1,
               const gx_drawing_color * pdc)
 {
     return false; /* High level color is not implemented yet. */
@@ -1312,24 +1300,24 @@ lips4v_beginpath(gx_device_vector * vdev, gx_path_type_t type)
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     /* パス構築開始命令 */
     if (type & gx_path_type_clip) {
-	lputs(s, "P(10");
-	sputc(s, LIPS_IS2);
+        lputs(s, "P(10");
+        sputc(s, LIPS_IS2);
     } else
-	lputs(s, "P(00");
-	sputc(s, LIPS_IS2);
+        lputs(s, "P(00");
+        sputc(s, LIPS_IS2);
 
     return 0;
 }
 
 static int
 lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	      floatp y, gx_path_type_t type)
+              floatp y, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1344,15 +1332,15 @@ lips4v_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 
 static int
 lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
-	      floatp y, gx_path_type_t type)
+              floatp y, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
     gx_device_lips4v *const pdev = (gx_device_lips4v *) vdev;
 
     /* if round cap */
     if (pdev->linecap == 1) {
-	if ((x0 == x) && (y0 == y))
-	    x += 1;
+        if ((x0 == x) && (y0 == y))
+            x += 1;
     }
 
     /* パス・ポリライン命令 */
@@ -1366,8 +1354,8 @@ lips4v_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x,
 
 static int
 lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-	       floatp x1, floatp y1, floatp x2, floatp y2, floatp x3,
-	       floatp y3, gx_path_type_t type)
+               floatp x1, floatp y1, floatp x2, floatp y2, floatp x3,
+               floatp y3, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1386,7 +1374,7 @@ lips4v_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 
 static int
 lips4v_closepath(gx_device_vector * vdev, floatp x, floatp y,
-		 floatp x_start, floatp y_start, gx_path_type_t type)
+                 floatp x_start, floatp y_start, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
 
@@ -1403,30 +1391,30 @@ lips4v_endpath(gx_device_vector * vdev, gx_path_type_t type)
     lputs(s, "P)");
     sputc(s, LIPS_IS2);
     if (type & gx_path_type_rule) {
-	if (type & gx_path_type_winding_number) {
-	    lputs(s, "}I1");
-	    sputc(s, LIPS_IS2);
-	} else {
-	    lputs(s, "}I0");
-	    sputc(s, LIPS_IS2);
-	}
+        if (type & gx_path_type_winding_number) {
+            lputs(s, "}I1");
+            sputc(s, LIPS_IS2);
+        } else {
+            lputs(s, "}I0");
+            sputc(s, LIPS_IS2);
+        }
     }
     if (type & gx_path_type_fill) {
-	if (type & gx_path_type_stroke) {
-	    lputs(s, "P&00");
-	    sputc(s, LIPS_IS2);
-	} else {
-	    lputs(s, "PF00");
-	    sputc(s, LIPS_IS2);
-	}
+        if (type & gx_path_type_stroke) {
+            lputs(s, "P&00");
+            sputc(s, LIPS_IS2);
+        } else {
+            lputs(s, "PF00");
+            sputc(s, LIPS_IS2);
+        }
     }
     if (type & gx_path_type_stroke) {
-	lputs(s, "PS00");
-	sputc(s, LIPS_IS2);
+        lputs(s, "PS00");
+        sputc(s, LIPS_IS2);
     }
     if (type & gx_path_type_clip) {
-	lputs(s, "PC10");
-	sputc(s, LIPS_IS2);
+        lputs(s, "PC10");
+        sputc(s, LIPS_IS2);
     }
     return 0;
 }
@@ -1446,26 +1434,26 @@ lips4v_open(gx_device * dev)
 
     code = lips4v_range_check(dev);
     if (code < 0)
-	return code;
+        return code;
 
     vdev->v_memory = dev->memory;
 /****** WRONG ******/
     vdev->vec_procs = &lips4v_vector_procs;
 
 #if GS_VERSION_MAJOR >= 8
-      code = gdev_vector_open_file_options(vdev, 512, 
-			(VECTOR_OPEN_FILE_SEQUENTIAL|VECTOR_OPEN_FILE_BBOX));
+      code = gdev_vector_open_file_options(vdev, 512,
+                        (VECTOR_OPEN_FILE_SEQUENTIAL|VECTOR_OPEN_FILE_BBOX));
 #else
     code = gdev_vector_open_file_bbox(vdev, 512, true);
 #endif
     if (code < 0)
-	return code;
+        return code;
 
 #if GS_VERSION_MAJOR >= 8
-	if (pdev->bbox_device != NULL) {
-		if (pdev->bbox_device->memory == NULL)
-			pdev->bbox_device->memory = gs_memory_stable(dev->memory);
-	}
+        if (pdev->bbox_device != NULL) {
+                if (pdev->bbox_device->memory == NULL)
+                        pdev->bbox_device->memory = gs_memory_stable(dev->memory);
+        }
 #endif
 
     gdev_vector_init(vdev);
@@ -1484,9 +1472,9 @@ lips4v_output_page(gx_device * dev, int num_copies, int flush)
     char str[6];
 
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     lputs(s, "%");
     sputc(s, LIPS_IS2);
@@ -1494,11 +1482,11 @@ lips4v_output_page(gx_device * dev, int num_copies, int flush)
     sputc(s, LIPS_IS2);
 
     if (num_copies > 255)
-	num_copies = 255;
+        num_copies = 255;
     if (pdev->prev_num_copies != num_copies) {
-	sprintf(str, "%c%dv", LIPS_CSI, num_copies);
-	lputs(s, str);
-	pdev->prev_num_copies = num_copies;
+        sprintf(str, "%c%dv", LIPS_CSI, num_copies);
+        lputs(s, str);
+        pdev->prev_num_copies = num_copies;
     }
     sputc(s, LIPS_FF);
     sflush(s);
@@ -1517,10 +1505,10 @@ lips4v_close(gx_device * dev)
 
     fprintf(f, "%c0J%c", LIPS_DCS, LIPS_ST);
     if (pdev->pjl) {
-	fprintf(f, "%c%%-12345X@PJL SET LPARM : LIPS SW2 = OFF\n", LIPS_ESC);
-	fprintf(f,
-		"%c%%-12345X%c%%-12345X@PJL EOJ\n"
-		"%c%%-12345X", LIPS_ESC, LIPS_ESC, LIPS_ESC);
+        fprintf(f, "%c%%-12345X@PJL SET LPARM : LIPS SW2 = OFF\n", LIPS_ESC);
+        fprintf(f,
+                "%c%%-12345X%c%%-12345X@PJL EOJ\n"
+                "%c%%-12345X", LIPS_ESC, LIPS_ESC, LIPS_ESC);
     }
     gdev_vector_close_file(vdev);
 
@@ -1544,63 +1532,63 @@ lips4v_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_string pmedia;
 
     if (code < 0)
-	return code;
+        return code;
 
     if ((ncode = param_write_bool(plist, LIPS_OPTION_MANUALFEED,
-				  &pdev->ManualFeed)) < 0)
-	code = ncode;
+                                  &pdev->ManualFeed)) < 0)
+        code = ncode;
 
     if ((ncode = param_write_int(plist, LIPS_OPTION_CASSETFEED,
-				 &pdev->cassetFeed)) < 0)
-	code = ncode;
+                                 &pdev->cassetFeed)) < 0)
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, LIPS_OPTION_DUPLEX_TUMBLE,
-				  &pdev->Tumble)) < 0)
-	code = ncode;
+                                  &pdev->Tumble)) < 0)
+        code = ncode;
 
     if ((ncode = param_write_int(plist, LIPS_OPTION_NUP, &pdev->nup)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, LIPS_OPTION_PJL, &pdev->pjl)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_int(plist, LIPS_OPTION_TONERDENSITY,
-				 &pdev->toner_density)) < 0)
-	code = ncode;
+                                 &pdev->toner_density)) < 0)
+        code = ncode;
 
     if (pdev->toner_saving_set >= 0 &&
-	(code = (pdev->toner_saving_set ?
-		 param_write_bool(plist, LIPS_OPTION_TONERSAVING,
-				  &pdev->
-				  toner_saving) : param_write_null(plist,
-								   LIPS_OPTION_TONERSAVING)))
-	< 0)
-	code = ncode;
+        (code = (pdev->toner_saving_set ?
+                 param_write_bool(plist, LIPS_OPTION_TONERSAVING,
+                                  &pdev->
+                                  toner_saving) : param_write_null(plist,
+                                                                   LIPS_OPTION_TONERSAVING)))
+        < 0)
+        code = ncode;
 
     if (pdev->Duplex_set >= 0 &&
-	(ncode = (pdev->Duplex_set ?
-		  param_write_bool(plist, "Duplex", &pdev->Duplex) :
-		  param_write_null(plist, "Duplex"))) < 0)
-	code = ncode;
+        (ncode = (pdev->Duplex_set ?
+                  param_write_bool(plist, "Duplex", &pdev->Duplex) :
+                  param_write_null(plist, "Duplex"))) < 0)
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, LIPS_OPTION_FONTDOWNLOAD,
-				  &pdev->FontDL)) < 0)
-	code = ncode;
+                                  &pdev->FontDL)) < 0)
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, LIPS_OPTION_FACEUP,
-				  &pdev->faceup)) < 0) code = ncode;
+                                  &pdev->faceup)) < 0) code = ncode;
 
     pmedia.data = (const byte *)pdev->mediaType,
-	pmedia.size = strlen(pdev->mediaType), pmedia.persistent = false;
+        pmedia.size = strlen(pdev->mediaType), pmedia.persistent = false;
 
     if ((ncode = param_write_string(plist, LIPS_OPTION_MEDIATYPE,
-				    &pmedia)) < 0) code = ncode;
+                                    &pmedia)) < 0) code = ncode;
 
     if (code < 0)
-	return code;
+        return code;
 
     usern.data = (const byte *)pdev->Username,
-	usern.size = strlen(pdev->Username), usern.persistent = false;
+        usern.size = strlen(pdev->Username), usern.persistent = false;
 
     return param_write_string(plist, LIPS_OPTION_USER_NAME, &usern);
 }
@@ -1631,204 +1619,201 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
     int bpp = 0;
 
     if ((code = param_read_bool(plist,
-				(param_name = LIPS_OPTION_MANUALFEED),
-				&mf)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = LIPS_OPTION_MANUALFEED),
+                                &mf)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
     switch (code = param_read_int(plist,
-				  (param_name = LIPS_OPTION_CASSETFEED),
-				  &cass)) {
-	case 0:
-	if (cass < -1 || cass > 17 || (cass > 3 && cass < 10))
-	    ecode = gs_error_limitcheck;
-	else
-	    break;
-	goto casse;
-	default:
-	ecode = code;
+                                  (param_name = LIPS_OPTION_CASSETFEED),
+                                  &cass)) {
+        case 0:
+        if (cass < -1 || cass > 17 || (cass > 3 && cass < 10))
+            ecode = gs_error_limitcheck;
+        else
+            break;
+        goto casse;
+        default:
+        ecode = code;
       casse:param_signal_error(plist, param_name, ecode);
-	case 1:
-	break;
+        case 1:
+        break;
     }
 
     switch (code = param_read_string(plist,
-				     (param_name = LIPS_OPTION_MEDIATYPE),
-				     &pmedia)) {
-	case 0:
-	if (pmedia.size > LIPS_MEDIACHAR_MAX) {
-	    ecode = gs_error_limitcheck;
-	    goto pmediae;
-	} else {   /* Check the validity of ``MediaType'' characters */
-	    if (strcmp(pmedia.data, "PlainPaper") != 0 &&
-		strcmp(pmedia.data, "OHP") != 0 &&
-		strcmp(pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
-		strcmp(pmedia.data, "GlossyFilm") != 0 &&
-		strcmp(pmedia.data, "CardBoard") != 0) {
-		ecode = gs_error_rangecheck;
-		goto pmediae;
-	    }
-	}
-	break;
-	default:
-	ecode = code;
+                                     (param_name = LIPS_OPTION_MEDIATYPE),
+                                     &pmedia)) {
+        case 0:
+        if (pmedia.size > LIPS_MEDIACHAR_MAX) {
+            ecode = gs_error_limitcheck;
+            goto pmediae;
+        } else {   /* Check the validity of ``MediaType'' characters */
+            if (strcmp(pmedia.data, "PlainPaper") != 0 &&
+                strcmp(pmedia.data, "OHP") != 0 &&
+                strcmp(pmedia.data, "TransparencyFilm") != 0 &&	/* same as OHP */
+                strcmp(pmedia.data, "GlossyFilm") != 0 &&
+                strcmp(pmedia.data, "CardBoard") != 0) {
+                ecode = gs_error_rangecheck;
+                goto pmediae;
+            }
+        }
+        break;
+        default:
+        ecode = code;
       pmediae:param_signal_error(plist, param_name, ecode);
-	case 1:
-	pmedia.data = 0;
-	break;
+        case 1:
+        pmedia.data = 0;
+        break;
     }
 
     switch (code = param_read_string(plist,
-				     (param_name = LIPS_OPTION_USER_NAME),
-				     &usern)) {
-	case 0:
-	if (usern.size > LIPS_USERNAME_MAX) {
-	    ecode = gs_error_limitcheck;
-	    goto userne;
-	} else {    /* Check the validity of ``User Name'' characters */
-	    int i;
+                                     (param_name = LIPS_OPTION_USER_NAME),
+                                     &usern)) {
+        case 0:
+        if (usern.size > LIPS_USERNAME_MAX) {
+            ecode = gs_error_limitcheck;
+            goto userne;
+        } else {    /* Check the validity of ``User Name'' characters */
+            int i;
 
-	    for (i = 0; i < usern.size; i++)
-		if (usern.data[i] < 0x20 || usern.data[i] > 0x7e
-		    /*
-		       && usern.data[i] < 0xa0) ||
-		       usern.data[i] > 0xfe
-		     */
-		    ) {
-		    ecode = gs_error_rangecheck;
-		    goto userne;
-		}
-	}
-	break;
-	default:
-	ecode = code;
+            for (i = 0; i < usern.size; i++)
+                if (usern.data[i] < 0x20 || usern.data[i] > 0x7e
+                    /*
+                       && usern.data[i] < 0xa0) ||
+                       usern.data[i] > 0xfe
+                     */
+                    ) {
+                    ecode = gs_error_rangecheck;
+                    goto userne;
+                }
+        }
+        break;
+        default:
+        ecode = code;
       userne:param_signal_error(plist, param_name, ecode);
-	case 1:
-	usern.data = 0;
-	break;
+        case 1:
+        usern.data = 0;
+        break;
     }
 
-
     if ((code = param_read_bool(plist,
-				(param_name = LIPS_OPTION_DUPLEX_TUMBLE),
-				&tum)) < 0)
-	param_signal_error(plist, param_name, ecode = code);
-
+                                (param_name = LIPS_OPTION_DUPLEX_TUMBLE),
+                                &tum)) < 0)
+        param_signal_error(plist, param_name, ecode = code);
 
     switch (code = param_read_int(plist,
-				  (param_name = LIPS_OPTION_NUP), &nup)) {
-	case 0:
-	if (nup != 1 && nup != 2 && nup != 4)
-	    ecode = gs_error_rangecheck;
-	else
-	    break;
-	goto nupe;
-	default:
-	ecode = code;
+                                  (param_name = LIPS_OPTION_NUP), &nup)) {
+        case 0:
+        if (nup != 1 && nup != 2 && nup != 4)
+            ecode = gs_error_rangecheck;
+        else
+            break;
+        goto nupe;
+        default:
+        ecode = code;
       nupe:param_signal_error(plist, param_name, ecode);
-	case 1:
-	break;
+        case 1:
+        break;
     }
 
     if ((code = param_read_bool(plist,
-				(param_name = LIPS_OPTION_PJL), &pjl)) < 0)
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = LIPS_OPTION_PJL), &pjl)) < 0)
+        param_signal_error(plist, param_name, ecode = code);
 
     switch (code = param_read_int(plist,
-				  (param_name = LIPS_OPTION_TONERDENSITY),
-				  &toner_density)) {
-	case 0:
-	if (toner_density < 0 || toner_density > 8)
-	    ecode = gs_error_rangecheck;
-	else
-	    break;
-	goto tden;
-	default:
-	ecode = code;
+                                  (param_name = LIPS_OPTION_TONERDENSITY),
+                                  &toner_density)) {
+        case 0:
+        if (toner_density < 0 || toner_density > 8)
+            ecode = gs_error_rangecheck;
+        else
+            break;
+        goto tden;
+        default:
+        ecode = code;
       tden:param_signal_error(plist, param_name, ecode);
-	case 1:
-	break;
+        case 1:
+        break;
     }
 
     if (pdev->toner_saving_set >= 0)
-	switch (code =
-		param_read_bool(plist, (param_name = LIPS_OPTION_TONERSAVING),
-				&toner_saving)) {
-	    case 0:
-	    toner_saving_set = 1;
-	    break;
-	    default:
-	    if ((code = param_read_null(plist, param_name)) == 0) {
-		toner_saving_set = 0;
-		break;
-	    }
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	    case 1:
-	    break;
-	}
+        switch (code =
+                param_read_bool(plist, (param_name = LIPS_OPTION_TONERSAVING),
+                                &toner_saving)) {
+            case 0:
+            toner_saving_set = 1;
+            break;
+            default:
+            if ((code = param_read_null(plist, param_name)) == 0) {
+                toner_saving_set = 0;
+                break;
+            }
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+            case 1:
+            break;
+        }
 
     if (pdev->Duplex_set >= 0)	/* i.e., Duplex is supported */
-	switch (code = param_read_bool(plist, (param_name = "Duplex"),
-				       &duplex)) {
-	    case 0:
-	    duplex_set = 1;
-	    break;
-	    default:
-	    if ((code = param_read_null(plist, param_name)) == 0) {
-		duplex_set = 0;
-		break;
-	    }
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	    case 1:
-	    break;
-	}
+        switch (code = param_read_bool(plist, (param_name = "Duplex"),
+                                       &duplex)) {
+            case 0:
+            duplex_set = 1;
+            break;
+            default:
+            if ((code = param_read_null(plist, param_name)) == 0) {
+                duplex_set = 0;
+                break;
+            }
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+            case 1:
+            break;
+        }
     if ((code = param_read_bool(plist,
-				(param_name = LIPS_OPTION_FONTDOWNLOAD),
-				&fontdl)) < 0)
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = LIPS_OPTION_FONTDOWNLOAD),
+                                &fontdl)) < 0)
+        param_signal_error(plist, param_name, ecode = code);
 
     if ((code = param_read_bool(plist,
-				(param_name = LIPS_OPTION_FACEUP),
-				&faceup)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = LIPS_OPTION_FACEUP),
+                                &faceup)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
 
-
     switch (code = param_read_int(plist, (param_name = "BitsPerPixel"), &bpp)) {
-	case 0:
-	if (bpp != 8 && bpp != 24)
-	    ecode = gs_error_rangecheck;
-	else
-	    break;
-	goto bppe;
-	default:
-	ecode = code;
+        case 0:
+        if (bpp != 8 && bpp != 24)
+            ecode = gs_error_rangecheck;
+        else
+            break;
+        goto bppe;
+        default:
+        ecode = code;
       bppe:param_signal_error(plist, param_name, ecode);
-	case 1:
-	break;
+        case 1:
+        break;
     }
 
     if (bpp != 0) {
-	dev->color_info.depth = bpp;
-	dev->color_info.num_components = ((bpp == 8) ? 1 : 3);
-	dev->color_info.max_gray = (bpp > 8 ? 255 : 1000);
-	dev->color_info.max_color = (bpp > 8 ? 255 : 1000);
-	dev->color_info.dither_grays = (bpp > 8 ? 256 : 5);
-	dev->color_info.dither_colors = (bpp > 8 ? 256 : 2);
-	dev_proc(pdev, map_rgb_color) =
-	    ((bpp == 8) ? gx_default_gray_map_rgb_color :
-	     gx_default_rgb_map_rgb_color);
-	dev_proc(pdev, map_color_rgb) =
-	    ((bpp == 8) ? gx_default_gray_map_color_rgb :
-	     gx_default_rgb_map_color_rgb);
+        dev->color_info.depth = bpp;
+        dev->color_info.num_components = ((bpp == 8) ? 1 : 3);
+        dev->color_info.max_gray = (bpp > 8 ? 255 : 1000);
+        dev->color_info.max_color = (bpp > 8 ? 255 : 1000);
+        dev->color_info.dither_grays = (bpp > 8 ? 256 : 5);
+        dev->color_info.dither_colors = (bpp > 8 ? 256 : 2);
+        dev_proc(pdev, map_rgb_color) =
+            ((bpp == 8) ? gx_default_gray_map_rgb_color :
+             gx_default_rgb_map_rgb_color);
+        dev_proc(pdev, map_color_rgb) =
+            ((bpp == 8) ? gx_default_gray_map_color_rgb :
+             gx_default_rgb_map_color_rgb);
     }
 
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gdev_vector_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     pdev->ManualFeed = mf;
     pdev->cassetFeed = cass;
@@ -1842,25 +1827,25 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
     pdev->faceup = faceup;
 
     if (duplex_set >= 0) {
-	pdev->Duplex = duplex;
-	pdev->Duplex_set = duplex_set;
+        pdev->Duplex = duplex;
+        pdev->Duplex_set = duplex_set;
     }
     if (pmedia.data != 0 &&
-	bytes_compare(pmedia.data, pmedia.size,
-		      (const byte *)pdev->mediaType, strlen(pdev->mediaType))
-	) {
-	memcpy(pdev->mediaType, pmedia.data, pmedia.size);
-	pdev->mediaType[pmedia.size] = 0;
+        bytes_compare(pmedia.data, pmedia.size,
+                      (const byte *)pdev->mediaType, strlen(pdev->mediaType))
+        ) {
+        memcpy(pdev->mediaType, pmedia.data, pmedia.size);
+        pdev->mediaType[pmedia.size] = 0;
     }
     if (usern.data != 0 &&
-	bytes_compare(usern.data, usern.size,
-		      (const byte *)pdev->Username, strlen(pdev->Username))
-	) {
-	memcpy(pdev->Username, usern.data, usern.size);
-	pdev->Username[usern.size] = 0;
+        bytes_compare(usern.data, usern.size,
+                      (const byte *)pdev->Username, strlen(pdev->Username))
+        ) {
+        memcpy(pdev->Username, usern.data, usern.size);
+        pdev->Username[usern.size] = 0;
     }
     if (bpp != 0 && bpp != old_bpp && pdev->is_open)
-	return gs_closedevice(dev);
+        return gs_closedevice(dev);
     return 0;
 }
 
@@ -1868,8 +1853,8 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
 
 static int
 lips4v_copy_mono(gx_device * dev, const byte * data,
-		 int data_x, int raster, gx_bitmap_id id, int x, int y, int w,
-		 int h, gx_color_index zero, gx_color_index one)
+                 int data_x, int raster, gx_bitmap_id id, int x, int y, int w,
+                 int h, gx_color_index zero, gx_color_index one)
 {
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -1880,23 +1865,23 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
     floatp r, g, b;
 
     if (id != gs_no_id && zero == gx_no_color_index &&
-	one != gx_no_color_index && data_x == 0) {
-	gx_drawing_color dcolor;
+        one != gx_no_color_index && data_x == 0) {
+        gx_drawing_color dcolor;
 
-	color_set_pure(&dcolor, one);
+        color_set_pure(&dcolor, one);
 #if GS_VERSION_MAJOR >= 8
-	lips4v_setfillcolor(vdev, NULL, &dcolor);
+        lips4v_setfillcolor(vdev, NULL, &dcolor);
 #else
-	lips4v_setfillcolor(vdev, &dcolor);
+        lips4v_setfillcolor(vdev, &dcolor);
 #endif
 
-	if (lips4v_copy_text_char(dev, data, raster, id, x, y, w, h) >= 0)
-	    return 0;
+        if (lips4v_copy_text_char(dev, data, raster, id, x, y, w, h) >= 0)
+            return 0;
     }
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     /*
        (*dev_proc(vdev->bbox_device, copy_mono))
@@ -1904,100 +1889,100 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
        x, y, w, h, zero, one);
      */
     if (zero == gx_no_color_index) {
-	if (one == gx_no_color_index)
-	    return 0;
-	/* one 色に染め、透過にする */
-	if (pdev->MaskState != 1) {
-	    lputs(s, "}H1");
-	    sputc(s, LIPS_IS2);
-	    pdev->MaskState = 1;
-	}
-	if (pdev->color_info.depth == 8) {
-	    gx_color_index one_color = vdev->color_info.max_gray - one;
+        if (one == gx_no_color_index)
+            return 0;
+        /* one 色に染め、透過にする */
+        if (pdev->MaskState != 1) {
+            lputs(s, "}H1");
+            sputc(s, LIPS_IS2);
+            pdev->MaskState = 1;
+        }
+        if (pdev->color_info.depth == 8) {
+            gx_color_index one_color = vdev->color_info.max_gray - one;
 
-	    lputs(s, "}T");
-	    sput_lips_int(s, one_color);
-	    sputc(s, LIPS_IS2);
-	} else {
-	    r = (one >> 16) * 1000.0 / 255.0;
-	    g = ((one >> 8) & 0xff) * 1000.0 / 255.0;
-	    b = (one & 0xff) * 1000.0 / 255.0;
-	    lputs(s, "}T");
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	    sputc(s, LIPS_IS2);
-	}
+            lputs(s, "}T");
+            sput_lips_int(s, one_color);
+            sputc(s, LIPS_IS2);
+        } else {
+            r = (one >> 16) * 1000.0 / 255.0;
+            g = ((one >> 8) & 0xff) * 1000.0 / 255.0;
+            b = (one & 0xff) * 1000.0 / 255.0;
+            lputs(s, "}T");
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+            sputc(s, LIPS_IS2);
+        }
     } else if (one == gx_no_color_index)
-	/* 1bit は透明 ビット反転・zero 色に染める */
+        /* 1bit は透明 ビット反転・zero 色に染める */
     {
-	gx_color_index zero_color = vdev->color_info.max_gray - zero;
+        gx_color_index zero_color = vdev->color_info.max_gray - zero;
 
-	if (pdev->MaskState != 1) {
-	    lputs(s, "}H1");
-	    sputc(s, LIPS_IS2);
-	    pdev->MaskState = 1;
-	}
-	if (pdev->color_info.depth == 8) {
-	    lputs(s, "}T");
-	    sput_lips_int(s, zero_color);
-	    sputc(s, LIPS_IS2);
-	} else {
-	    r = (zero >> 16) * 1000.0 / 255.0;
-	    g = ((zero >> 8) & 0xff) * 1000.0 / 255.0;
-	    b = (zero & 0xff) * 1000.0 / 255.0;
-	    lputs(s, "}T");
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	    sputc(s, LIPS_IS2);
-	}
+        if (pdev->MaskState != 1) {
+            lputs(s, "}H1");
+            sputc(s, LIPS_IS2);
+            pdev->MaskState = 1;
+        }
+        if (pdev->color_info.depth == 8) {
+            lputs(s, "}T");
+            sput_lips_int(s, zero_color);
+            sputc(s, LIPS_IS2);
+        } else {
+            r = (zero >> 16) * 1000.0 / 255.0;
+            g = ((zero >> 8) & 0xff) * 1000.0 / 255.0;
+            b = (zero & 0xff) * 1000.0 / 255.0;
+            lputs(s, "}T");
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+            sputc(s, LIPS_IS2);
+        }
     } else if (one == vdev->white) {
-	/* ビット反転 白塗り  zero 色に染める */
-	gx_color_index zero_color = vdev->color_info.max_gray - zero;
+        /* ビット反転 白塗り  zero 色に染める */
+        gx_color_index zero_color = vdev->color_info.max_gray - zero;
 
-	if (pdev->MaskState != 0) {
-	    lputs(s, "}H0");
-	    sputc(s, LIPS_IS2);
-	    pdev->MaskState = 0;
-	}
-	if (pdev->color_info.depth == 8) {
-	    lputs(s, "}T");
-	    sput_lips_int(s, zero_color);
-	    sputc(s, LIPS_IS2);
-	} else {
-	    r = (zero >> 16) * 1000.0 / 255.0;
-	    g = ((zero >> 8) & 0xff) * 1000.0 / 255.0;
-	    b = (zero & 0xff) * 1000.0 / 255.0;
-	    lputs(s, "}T");
-	    sput_lips_int(s, r);
-	    sput_lips_int(s, g);
-	    sput_lips_int(s, b);
-	    sputc(s, LIPS_IS2);
-	}
+        if (pdev->MaskState != 0) {
+            lputs(s, "}H0");
+            sputc(s, LIPS_IS2);
+            pdev->MaskState = 0;
+        }
+        if (pdev->color_info.depth == 8) {
+            lputs(s, "}T");
+            sput_lips_int(s, zero_color);
+            sputc(s, LIPS_IS2);
+        } else {
+            r = (zero >> 16) * 1000.0 / 255.0;
+            g = ((zero >> 8) & 0xff) * 1000.0 / 255.0;
+            b = (zero & 0xff) * 1000.0 / 255.0;
+            lputs(s, "}T");
+            sput_lips_int(s, r);
+            sput_lips_int(s, g);
+            sput_lips_int(s, b);
+            sputc(s, LIPS_IS2);
+        }
     } else {
-	if (zero != gx_no_color_index) {
-	    code = (*dev_proc(dev, fill_rectangle)) (dev, x, y, w, h, zero);
-	    if (code < 0)
-		return code;
-	}
-	if (pdev->MaskState != 1) {
-	    lputs(s, "}H1");
-	    sputc(s, LIPS_IS2);
-	    pdev->MaskState = 1;
-	}
-	color_set_pure(&color, one);
+        if (zero != gx_no_color_index) {
+            code = (*dev_proc(dev, fill_rectangle)) (dev, x, y, w, h, zero);
+            if (code < 0)
+                return code;
+        }
+        if (pdev->MaskState != 1) {
+            lputs(s, "}H1");
+            sputc(s, LIPS_IS2);
+            pdev->MaskState = 1;
+        }
+        color_set_pure(&color, one);
 
 #if GS_VERSION_MAJOR >= 8
-	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     NULL, &color);
+        code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
+                                             NULL, &color);
 #else
-	code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
-					     &color);
+        code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
+                                             &color);
 #endif
     }
     if (code < 0)
-	return 0;
+        return 0;
     lputs(s, "}P");
     sput_lips_int(s, x);	/* Position X */
     sput_lips_int(s, y);	/* Position Y */
@@ -2011,41 +1996,40 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
     lputs(s, "}Q11");
 
     {
-	int i, j;
-	uint width_bytes = (w + 7) >> 3;
-	uint num_bytes = round_up(width_bytes, 4) * h;
-	byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
-				   "lips4v_copy_mono(buf)");
+        int i, j;
+        uint width_bytes = (w + 7) >> 3;
+        uint num_bytes = round_up(width_bytes, 4) * h;
+        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+                                   "lips4v_copy_mono(buf)");
 
-	if (data_x % 8 == 0) {
-	    for (i = 0; i < h; ++i) {
-		memcpy(buf + i * width_bytes,
-		       data + (data_x >> 3) + i * raster, width_bytes);
-	    }
-	} else {
-	    for (i = 0; i < h; ++i) {
-		for (j = 0; j < width_bytes; j++) {
-		    *(buf + i * width_bytes + j) =
-			*(data + (data_x >> 3) + i * raster +
-			  j) << (data_x % 8) | *(data + (data_x >> 3) +
-						 i * raster + j + 1) >> (8 -
-									 data_x
-									 % 8);
-		}
-	    }
-	}
+        if (data_x % 8 == 0) {
+            for (i = 0; i < h; ++i) {
+                memcpy(buf + i * width_bytes,
+                       data + (data_x >> 3) + i * raster, width_bytes);
+            }
+        } else {
+            for (i = 0; i < h; ++i) {
+                for (j = 0; j < width_bytes; j++) {
+                    *(buf + i * width_bytes + j) =
+                        *(data + (data_x >> 3) + i * raster +
+                          j) << (data_x % 8) | *(data + (data_x >> 3) +
+                                                 i * raster + j + 1) >> (8 -
+                                                                         data_x
+                                                                         % 8);
+                }
+            }
+        }
 
+        if (one == gx_no_color_index
+            || (one == vdev->white
+                && zero != gx_no_color_index)) lips4v_write_image_data(vdev,
+                                                                       buf,
+                                                                       num_bytes,
+                                                                       TRUE);
+        else
+            lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
-	if (one == gx_no_color_index
-	    || (one == vdev->white
-		&& zero != gx_no_color_index)) lips4v_write_image_data(vdev,
-								       buf,
-								       num_bytes,
-								       TRUE);
-	else
-	    lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
-
-	gs_free_object(vdev->memory, buf, "lips4v_copy_mono(buf)");
+        gs_free_object(vdev->memory, buf, "lips4v_copy_mono(buf)");
     }
 
     return 0;
@@ -2054,8 +2038,8 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
 /* Copy a color bitmap. */
 static int
 lips4v_copy_color(gx_device * dev,
-		  const byte * data, int data_x, int raster, gx_bitmap_id id,
-		  int x, int y, int w, int h)
+                  const byte * data, int data_x, int raster, gx_bitmap_id id,
+                  int x, int y, int w, int h)
 {
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -2066,30 +2050,29 @@ lips4v_copy_color(gx_device * dev,
     int num_components = (depth < 24 ? 1 : 3);
     uint width_bytes = w * num_components;
 
-
     if (dev->color_info.depth == 8) {
-	gx_drawing_color dcolor;
+        gx_drawing_color dcolor;
 
-	/* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
-	   影響されるので黒色を指定しなければならない。 */
-	color_set_pure(&dcolor, vdev->black);
+        /* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
+           影響されるので黒色を指定しなければならない。 */
+        color_set_pure(&dcolor, vdev->black);
 #if GS_VERSION_MAJOR >= 8
-	lips4v_setfillcolor(vdev, NULL, &dcolor);
+        lips4v_setfillcolor(vdev, NULL, &dcolor);
 #else
-	lips4v_setfillcolor(vdev, &dcolor);
+        lips4v_setfillcolor(vdev, &dcolor);
 #endif
     } else {
-	if (pdev->TextMode) {
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "&}");
-	    pdev->TextMode = FALSE;
-	}
+        if (pdev->TextMode) {
+            sputc(s, LIPS_CSI);
+            lputs(s, "&}");
+            pdev->TextMode = FALSE;
+        }
     }
 
     if (pdev->MaskState != 0) {
-	lputs(s, "}H0");	/* 論理描画設定命令 */
-	sputc(s, LIPS_IS2);
-	pdev->MaskState = 0;
+        lputs(s, "}H0");	/* 論理描画設定命令 */
+        sputc(s, LIPS_IS2);
+        pdev->MaskState = 0;
     }
     lputs(s, "}P");
     sput_lips_int(s, x);
@@ -2104,24 +2087,24 @@ lips4v_copy_color(gx_device * dev,
     sputc(s, LIPS_IS2);
 
     {
-	int i;
-	uint num_bytes = width_bytes * h;
-	byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
-				   "lips4v_copy_color(buf)");
+        int i;
+        uint num_bytes = width_bytes * h;
+        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+                                   "lips4v_copy_color(buf)");
 
-	lputs(s, "}Q11");
+        lputs(s, "}Q11");
 
-	for (i = 0; i < h; ++i) {
-	    memcpy(buf + i * width_bytes,
-		   data + ((data_x * depth) >> 3) + i * raster, width_bytes);
-	}
+        for (i = 0; i < h; ++i) {
+            memcpy(buf + i * width_bytes,
+                   data + ((data_x * depth) >> 3) + i * raster, width_bytes);
+        }
 
-	if (dev->color_info.depth == 8)
-	    lips4v_write_image_data(vdev, buf, num_bytes, TRUE);
-	else
-	    lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
+        if (dev->color_info.depth == 8)
+            lips4v_write_image_data(vdev, buf, num_bytes, TRUE);
+        else
+            lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
-	gs_free_object(vdev->memory, buf, "lips4v_copy_color(buf)");
+        gs_free_object(vdev->memory, buf, "lips4v_copy_color(buf)");
     }
 
     return 0;
@@ -2130,10 +2113,10 @@ lips4v_copy_color(gx_device * dev,
 /* Fill a mask. */
 static int
 lips4v_fill_mask(gx_device * dev,
-		 const byte * data, int data_x, int raster, gx_bitmap_id id,
-		 int x, int y, int w, int h,
-		 const gx_drawing_color * pdcolor, int depth,
-		 gs_logical_operation_t lop, const gx_clip_path * pcpath)
+                 const byte * data, int data_x, int raster, gx_bitmap_id id,
+                 int x, int y, int w, int h,
+                 const gx_drawing_color * pdcolor, int depth,
+                 gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
@@ -2141,36 +2124,36 @@ lips4v_fill_mask(gx_device * dev,
     int dpi = dev->x_pixels_per_inch;
 
     if (w <= 0 || h <= 0)
-	return 0;
+        return 0;
     if (depth > 1 ||
 #if GS_VERSION_MAJOR >= 8
-	gdev_vector_update_fill_color(vdev, NULL, pdcolor) < 0 ||
+        gdev_vector_update_fill_color(vdev, NULL, pdcolor) < 0 ||
 #else
-	gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
+        gdev_vector_update_fill_color(vdev, pdcolor) < 0 ||
 #endif
-	gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
-	gdev_vector_update_log_op(vdev, lop) < 0)
-	return gx_default_fill_mask(dev, data, data_x, raster, id,
-				    x, y, w, h, pdcolor, depth, lop, pcpath);
+        gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
+        gdev_vector_update_log_op(vdev, lop) < 0)
+        return gx_default_fill_mask(dev, data, data_x, raster, id,
+                                    x, y, w, h, pdcolor, depth, lop, pcpath);
 #if 1
     (*dev_proc(vdev->bbox_device, fill_mask))
-	((gx_device *) vdev->bbox_device, data, data_x, raster, id,
-	 x, y, w, h, pdcolor, depth, lop, pcpath);
+        ((gx_device *) vdev->bbox_device, data, data_x, raster, id,
+         x, y, w, h, pdcolor, depth, lop, pcpath);
 #endif
     if (id != gs_no_id && data_x == 0) {
-	if (lips4v_copy_text_char(dev, data, raster, id, x, y, w, h) >= 0)
-	    return 0;
+        if (lips4v_copy_text_char(dev, data, raster, id, x, y, w, h) >= 0)
+            return 0;
     }
     if (pdev->TextMode) {
-	sputc(s, LIPS_CSI);
-	lputs(s, "&}");
-	pdev->TextMode = FALSE;
+        sputc(s, LIPS_CSI);
+        lputs(s, "&}");
+        pdev->TextMode = FALSE;
     }
     /* 書きだし */
     if (pdev->MaskState != 1) {
-	lputs(s, "}H1");	/* 論理描画設定命令 */
-	sputc(s, LIPS_IS2);
-	pdev->MaskState = 1;
+        lputs(s, "}H1");	/* 論理描画設定命令 */
+        sputc(s, LIPS_IS2);
+        pdev->MaskState = 1;
     }
     lputs(s, "}P");
     sput_lips_int(s, x);
@@ -2185,20 +2168,20 @@ lips4v_fill_mask(gx_device * dev,
     lputs(s, "}Q11");
 
     {
-	int i;
-	uint width_bytes = (w + 7) >> 3;
-	uint num_bytes = round_up(width_bytes, 4) * h;
-	byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
-				   "lips4v_fill_mask(buf)");
+        int i;
+        uint width_bytes = (w + 7) >> 3;
+        uint num_bytes = round_up(width_bytes, 4) * h;
+        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+                                   "lips4v_fill_mask(buf)");
 
-	for (i = 0; i < h; ++i) {
-	    memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster,
-		   width_bytes);
-	}
+        for (i = 0; i < h; ++i) {
+            memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster,
+                   width_bytes);
+        }
 
-	lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
+        lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
-	gs_free_object(vdev->memory, buf, "lips4v_fill_mask(buf)");
+        gs_free_object(vdev->memory, buf, "lips4v_fill_mask(buf)");
     }
 
     return 0;
@@ -2215,195 +2198,195 @@ static const gx_image_enum_procs_t lips4v_image_enum_procs = {
 /* Start processing an image. */
 static int
 lips4v_begin_image(gx_device * dev,
-		   const gs_imager_state * pis, const gs_image_t * pim,
-		   gs_image_format_t format, const gs_int_rect * prect,
-		   const gx_drawing_color * pdcolor,
-		   const gx_clip_path * pcpath, gs_memory_t * mem,
-		   gx_image_enum_common_t ** pinfo)
+                   const gs_imager_state * pis, const gs_image_t * pim,
+                   gs_image_format_t format, const gs_int_rect * prect,
+                   const gx_drawing_color * pdcolor,
+                   const gx_clip_path * pcpath, gs_memory_t * mem,
+                   gx_image_enum_common_t ** pinfo)
 {
     gx_device_vector *const vdev = (gx_device_vector *) dev;
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
     gdev_vector_image_enum_t *pie =
-	gs_alloc_struct(mem, gdev_vector_image_enum_t,
-			&st_vector_image_enum, "lips4v_begin_image");
+        gs_alloc_struct(mem, gdev_vector_image_enum_t,
+                        &st_vector_image_enum, "lips4v_begin_image");
     const gs_color_space *pcs = pim->ColorSpace;
     gs_color_space_index index;
     int num_components = 1;
     bool can_do = prect == 0 &&
-	(pim->format == gs_image_format_chunky ||
+        (pim->format == gs_image_format_chunky ||
 
-	 pim->format == gs_image_format_component_planar);
+         pim->format == gs_image_format_component_planar);
 
     int code;
 
     if (pie == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     pie->memory = mem;
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
-				   pdcolor, pcpath, mem,
-				   &lips4v_image_enum_procs, pie);
+                                   pdcolor, pcpath, mem,
+                                   &lips4v_image_enum_procs, pie);
     if (code < 0)
-	return code;
+        return code;
     *pinfo = (gx_image_enum_common_t *) pie;
 
     if (!pim->ImageMask) {
-	index = gs_color_space_get_index(pcs);
-	num_components = gs_color_space_num_components(pcs);
+        index = gs_color_space_get_index(pcs);
+        num_components = gs_color_space_num_components(pcs);
 
-	if (pim->CombineWithColor)
-	    can_do = false;
-	else {
-	    switch (index) {
-		case gs_color_space_index_DeviceGray:
-		if ((pim->Decode[0] != 0 || pim->Decode[1] != 1)
-		    && (pim->Decode[0] != 1 || pim->Decode[1] != 0))
-		    can_do = false;
-		break;
-		case gs_color_space_index_DeviceRGB:
-		/* LIPS では RGB を反転することはできない */
-		if (pim->Decode[0] != 0 || pim->Decode[1] != 1 ||
-		    pim->Decode[2] != 0 || pim->Decode[3] != 1 ||
-		    pim->Decode[4] != 0)
-		    can_do = false;
-		break;
-		default:
-		/* 
-		   LIPS では L*a*b* 形式のカラースペースが使えます。
-		   CIEBasedABC を使って表現できないこともないのですが、
-		   動作確認できないので低レベルの関数にまかせることに
-		   しちゃいます。
-		   それよりも CMYK のカラースペースが欲しい...
-		 */
-		can_do = false;
-	    }
-	}
+        if (pim->CombineWithColor)
+            can_do = false;
+        else {
+            switch (index) {
+                case gs_color_space_index_DeviceGray:
+                if ((pim->Decode[0] != 0 || pim->Decode[1] != 1)
+                    && (pim->Decode[0] != 1 || pim->Decode[1] != 0))
+                    can_do = false;
+                break;
+                case gs_color_space_index_DeviceRGB:
+                /* LIPS では RGB を反転することはできない */
+                if (pim->Decode[0] != 0 || pim->Decode[1] != 1 ||
+                    pim->Decode[2] != 0 || pim->Decode[3] != 1 ||
+                    pim->Decode[4] != 0)
+                    can_do = false;
+                break;
+                default:
+                /*
+                   LIPS では L*a*b* 形式のカラースペースが使えます。
+                   CIEBasedABC を使って表現できないこともないのですが、
+                   動作確認できないので低レベルの関数にまかせることに
+                   しちゃいます。
+                   それよりも CMYK のカラースペースが欲しい...
+                 */
+                can_do = false;
+            }
+        }
     }
     if (!can_do)
-	return gx_default_begin_image(dev, pis, pim, format, prect,
-				      pdcolor, pcpath, mem,
-				      &pie->default_info);
+        return gx_default_begin_image(dev, pis, pim, format, prect,
+                                      pdcolor, pcpath, mem,
+                                      &pie->default_info);
     else if (index == gs_color_space_index_DeviceGray) {
-	gx_drawing_color dcolor;
+        gx_drawing_color dcolor;
 
-	/* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
-	   影響されるので黒色を明示的に指定しなければならない。 */
-	color_set_pure(&dcolor, vdev->black);
+        /* LIPS IV ではグレースケールも単色イメージ・カラー指定命令に
+           影響されるので黒色を明示的に指定しなければならない。 */
+        color_set_pure(&dcolor, vdev->black);
 #if GS_VERSION_MAJOR >= 8
-	lips4v_setfillcolor(vdev, NULL, &dcolor);
+        lips4v_setfillcolor(vdev, NULL, &dcolor);
 #else
-	lips4v_setfillcolor(vdev, &dcolor);
+        lips4v_setfillcolor(vdev, &dcolor);
 #endif
     }
     if (pim->ImageMask || (pim->BitsPerComponent == 1 && num_components == 1)) {
-	if (pim->Decode[0] > pim->Decode[1])
-	    pdev->MaskReverse = 1;
-	else
-	    pdev->MaskReverse = 0;
+        if (pim->Decode[0] > pim->Decode[1])
+            pdev->MaskReverse = 1;
+        else
+            pdev->MaskReverse = 0;
     }
     /* Write the image/colorimage/imagemask preamble. */
     {
-	stream *s = gdev_vector_stream((gx_device_vector *) pdev);
-	int ax, ay, bx, by, cx, cy, dx, dy;
-	int tbyte;
-	gs_matrix imat;
-	int interpolate = 0;
+        stream *s = gdev_vector_stream((gx_device_vector *) pdev);
+        int ax, ay, bx, by, cx, cy, dx, dy;
+        int tbyte;
+        gs_matrix imat;
+        int interpolate = 0;
 
-	if (pdev->TextMode) {
-	    sputc(s, LIPS_CSI);
-	    lputs(s, "&}");
-	    pdev->TextMode = FALSE;
-	}
-	gs_matrix_invert(&pim->ImageMatrix, &imat);
-	gs_matrix_multiply(&imat, &ctm_only(pis), &imat);
-	/*
-	   [xx xy yx yy tx ty]
-	   LIPS の座標系に変換を行なう。
+        if (pdev->TextMode) {
+            sputc(s, LIPS_CSI);
+            lputs(s, "&}");
+            pdev->TextMode = FALSE;
+        }
+        gs_matrix_invert(&pim->ImageMatrix, &imat);
+        gs_matrix_multiply(&imat, &ctm_only(pis), &imat);
+        /*
+           [xx xy yx yy tx ty]
+           LIPS の座標系に変換を行なう。
 
-	   }U{Ax}{Ay}{Bx}{By}{Cx}{Cy}{pie->height}{pie->width}
-	   {pim->BitsPerComponent}{0}{0}{1} LIPS_IS2
-	 */
+           }U{Ax}{Ay}{Bx}{By}{Cx}{Cy}{pie->height}{pie->width}
+           {pim->BitsPerComponent}{0}{0}{1} LIPS_IS2
+         */
 
-	/* }Q110{byte} LIPS_IS2 */
-	ax = imat.tx;
-	ay = imat.ty;
-	bx = imat.xx * pim->Width + imat.yx * pim->Height + imat.tx;
-	by = imat.xy * pim->Width + imat.yy * pim->Height + imat.ty;
-	cx = imat.yx * pim->Height + imat.tx;
-	cy = imat.yy * pim->Height + imat.ty;
-	dx = imat.xx * pim->Width + imat.tx;
-	dy = imat.xy * pim->Width + imat.ty;
+        /* }Q110{byte} LIPS_IS2 */
+        ax = imat.tx;
+        ay = imat.ty;
+        bx = imat.xx * pim->Width + imat.yx * pim->Height + imat.tx;
+        by = imat.xy * pim->Width + imat.yy * pim->Height + imat.ty;
+        cx = imat.yx * pim->Height + imat.tx;
+        cy = imat.yy * pim->Height + imat.ty;
+        dx = imat.xx * pim->Width + imat.tx;
+        dy = imat.xy * pim->Width + imat.ty;
 
-	if (pim->ImageMask) {
-	    tbyte =
-		(pie->width * pim->BitsPerComponent +
-		 7) / 8 * num_components * pie->height;
-	    pdev->ncomp = 1;
-	    if (tbyte == 1) {
-		/* LIPS IV では 1 dot のイメージを変形すると座標が狂うバグが
-		   ある。よって 1 dot のイメージは矩形として処理する。 */
-		pdev->OneBitMask = true;
-		/* Draw Rectangle */
-		lputs(s, "2");
-		sput_lips_int(s, ax);
-		sput_lips_int(s, ay);
-		sput_lips_int(s, cx - ax);
-		sput_lips_int(s, cy - ay);
-		sput_lips_int(s, bx - cx);
-		sput_lips_int(s, by - cy);
-		sput_lips_int(s, dx - bx);
-		sput_lips_int(s, dy - by);
-		sputc(s, LIPS_IS2);
-		return 0;
-	    } else {
-		/* 描画論理設定命令 - 透過 */
-		if (pdev->MaskState != 1) {
-		    lputs(s, "}H1");
-		    sputc(s, LIPS_IS2);
-		    pdev->MaskState = 1;
-		}
-	    }
-	} else {
-	    /* 描画論理設定命令 - 白塗り */
-	    if (pdev->MaskState != 0) {
-		lputs(s, "}H0");
-		sputc(s, LIPS_IS2);
-		pdev->MaskState = 0;
-	    }
-	    pdev->ncomp = num_components;
-	}
+        if (pim->ImageMask) {
+            tbyte =
+                (pie->width * pim->BitsPerComponent +
+                 7) / 8 * num_components * pie->height;
+            pdev->ncomp = 1;
+            if (tbyte == 1) {
+                /* LIPS IV では 1 dot のイメージを変形すると座標が狂うバグが
+                   ある。よって 1 dot のイメージは矩形として処理する。 */
+                pdev->OneBitMask = true;
+                /* Draw Rectangle */
+                lputs(s, "2");
+                sput_lips_int(s, ax);
+                sput_lips_int(s, ay);
+                sput_lips_int(s, cx - ax);
+                sput_lips_int(s, cy - ay);
+                sput_lips_int(s, bx - cx);
+                sput_lips_int(s, by - cy);
+                sput_lips_int(s, dx - bx);
+                sput_lips_int(s, dy - by);
+                sputc(s, LIPS_IS2);
+                return 0;
+            } else {
+                /* 描画論理設定命令 - 透過 */
+                if (pdev->MaskState != 1) {
+                    lputs(s, "}H1");
+                    sputc(s, LIPS_IS2);
+                    pdev->MaskState = 1;
+                }
+            }
+        } else {
+            /* 描画論理設定命令 - 白塗り */
+            if (pdev->MaskState != 0) {
+                lputs(s, "}H0");
+                sputc(s, LIPS_IS2);
+                pdev->MaskState = 0;
+            }
+            pdev->ncomp = num_components;
+        }
 
-	lputs(s, "}U");
-	sput_lips_int(s, ax);
-	sput_lips_int(s, ay);
-	sput_lips_int(s, bx);
-	sput_lips_int(s, by);
-	sput_lips_int(s, cx);
-	sput_lips_int(s, cy);
-	sput_lips_int(s, pie->height);
-	sput_lips_int(s, pie->width);
-	sput_lips_int(s, pim->BitsPerComponent);
+        lputs(s, "}U");
+        sput_lips_int(s, ax);
+        sput_lips_int(s, ay);
+        sput_lips_int(s, bx);
+        sput_lips_int(s, by);
+        sput_lips_int(s, cx);
+        sput_lips_int(s, cy);
+        sput_lips_int(s, pie->height);
+        sput_lips_int(s, pie->width);
+        sput_lips_int(s, pim->BitsPerComponent);
 
-	if (pim->Interpolate) {
-	    if (pim->BitsPerComponent * pie->num_planes == 1)
-		interpolate = 1;
-	    else
-		interpolate = 3;
-	}
-	if (pim->ImageMask) {	/* 1bit のとき */
-	    lputs(s, "0");
-	} else {
-	    if (index == gs_color_space_index_DeviceGray)
-		lputs(s, "0");
-	    else {
-		if (format == gs_image_format_chunky)	/* RGBRGBRGB... */
-		    sputc(s, 0x3a);
-		else		/* RRR...GGG...BBB... */
-		    sputc(s, 0x3b);
-	    }
-	}
-	if (interpolate > 0)
-	    sput_lips_int(s, interpolate);
-	sputc(s, LIPS_IS2);
+        if (pim->Interpolate) {
+            if (pim->BitsPerComponent * pie->num_planes == 1)
+                interpolate = 1;
+            else
+                interpolate = 3;
+        }
+        if (pim->ImageMask) {	/* 1bit のとき */
+            lputs(s, "0");
+        } else {
+            if (index == gs_color_space_index_DeviceGray)
+                lputs(s, "0");
+            else {
+                if (format == gs_image_format_chunky)	/* RGBRGBRGB... */
+                    sputc(s, 0x3a);
+                else		/* RRR...GGG...BBB... */
+                    sputc(s, 0x3b);
+            }
+        }
+        if (interpolate > 0)
+            sput_lips_int(s, interpolate);
+        sputc(s, LIPS_IS2);
     }
     return 0;
 }
@@ -2411,8 +2394,8 @@ lips4v_begin_image(gx_device * dev,
 /* Process the next piece of an image. */
 static int
 lips4v_image_plane_data(gx_image_enum_common_t * info,
-			const gx_image_plane_t * planes, int height,
-			int *rows_used)
+                        const gx_image_plane_t * planes, int height,
+                        int *rows_used)
 {
     gx_device *dev = info->dev;
     gx_device_vector *const vdev = (gx_device_vector *) dev;
@@ -2423,43 +2406,43 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
     int y;
 
     if (pdev->OneBitMask) {
-	/*
-	   lputs(s, "\200");
-	 */
-	pie->y += height;
-	return 1;
+        /*
+           lputs(s, "\200");
+         */
+        pie->y += height;
+        return 1;
     }
     if (pie->default_info)
-	return gx_image_plane_data(pie->default_info, planes, height);
+        return gx_image_plane_data(pie->default_info, planes, height);
     gx_image_plane_data(pie->bbox_info, planes, height);
     {
-	int plane;
-	int width_bytes, tbyte;
-	byte *buf;
+        int plane;
+        int width_bytes, tbyte;
+        byte *buf;
 
-	width_bytes =
-	    (pie->width * pie->bits_per_pixel / pdev->ncomp +
-	     7) / 8 * pdev->ncomp;
-	tbyte = width_bytes * height;
-	buf = gs_alloc_bytes(vdev->memory, tbyte, "lips4v_image_data(buf)");
+        width_bytes =
+            (pie->width * pie->bits_per_pixel / pdev->ncomp +
+             7) / 8 * pdev->ncomp;
+        tbyte = width_bytes * height;
+        buf = gs_alloc_bytes(vdev->memory, tbyte, "lips4v_image_data(buf)");
 
-	for (plane = 0; plane < pie->num_planes; ++plane)
-	    for (y = 0; y < height; ++y) {
-		memcpy(buf + y * width_bytes,
-		       planes[plane].data +
-		       ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
-		       + y * planes[plane].raster, width_bytes);
-	    }
+        for (plane = 0; plane < pie->num_planes; ++plane)
+            for (y = 0; y < height; ++y) {
+                memcpy(buf + y * width_bytes,
+                       planes[plane].data +
+                       ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
+                       + y * planes[plane].raster, width_bytes);
+            }
 
-	lputs(s, "}Q10");
+        lputs(s, "}Q10");
 
-	if ((pie->bits_per_pixel > 1 && pdev->ncomp == 1) ||
-	    pdev->MaskReverse == 0) {
-	    lips4v_write_image_data(vdev, buf, tbyte, TRUE);
-	} else
-	    lips4v_write_image_data(vdev, buf, tbyte, FALSE);
+        if ((pie->bits_per_pixel > 1 && pdev->ncomp == 1) ||
+            pdev->MaskReverse == 0) {
+            lips4v_write_image_data(vdev, buf, tbyte, TRUE);
+        } else
+            lips4v_write_image_data(vdev, buf, tbyte, FALSE);
 
-	gs_free_object(vdev->memory, buf, "lips4v_image_data(buf)");
+        gs_free_object(vdev->memory, buf, "lips4v_image_data(buf)");
 
     }
 
@@ -2477,14 +2460,14 @@ lips4v_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     int code;
 
     if (pdev->OneBitMask)
-	pdev->OneBitMask = false;
+        pdev->OneBitMask = false;
     else
-	lputs(s, "}Q1100");
-	sputc(s, LIPS_IS2);	/* End of Image */
+        lputs(s, "}Q1100");
+        sputc(s, LIPS_IS2);	/* End of Image */
 
     pdev->MaskReverse = -1;
 
     code = gdev_vector_end_image(vdev, (gdev_vector_image_enum_t *) pie,
-				 draw_last, pdev->white);
+                                 draw_last, pdev->white);
     return code;
 }

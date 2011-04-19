@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -24,23 +24,23 @@
  */
 
 int s_DCT_get_params(gs_param_list * plist, const stream_DCT_state * ss,
-		     const stream_DCT_state * defaults);
+                     const stream_DCT_state * defaults);
 int s_DCT_get_quantization_tables(gs_param_list * plist,
-				  const stream_DCT_state * pdct,
-				  const stream_DCT_state * defaults,
-				  bool is_encode);
+                                  const stream_DCT_state * pdct,
+                                  const stream_DCT_state * defaults,
+                                  bool is_encode);
 int s_DCT_get_huffman_tables(gs_param_list * plist,
-			     const stream_DCT_state * pdct,
-			     const stream_DCT_state * defaults,
-			     bool is_encode);
+                             const stream_DCT_state * pdct,
+                             const stream_DCT_state * defaults,
+                             bool is_encode);
 
 int s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
-		      int count, UINT8 * pvals);
+                      int count, UINT8 * pvals);
 int s_DCT_put_params(gs_param_list * plist, stream_DCT_state * pdct);
 int s_DCT_put_quantization_tables(gs_param_list * plist,
-				  stream_DCT_state * pdct,
-				  bool is_encode);
+                                  stream_DCT_state * pdct,
+                                  bool is_encode);
 int s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
-			     bool is_encode);
+                             bool is_encode);
 
 #endif /* sdcparam_INCLUDED */

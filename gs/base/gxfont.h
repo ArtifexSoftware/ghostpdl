@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -120,7 +120,7 @@ typedef struct gs_font_info_s {
     GC_CONST_STRING_ELT(gs_font_info_t, FullName)\
   };\
   gs_public_st_basic(st_gs_font_info, gs_font_info_t, "gs_font_info_t",\
-		     gs_font_info_ptrs, gs_font_info_data)
+                     gs_font_info_ptrs, gs_font_info_data)
 
 /*
  * Define the structure used to return information about a glyph.
@@ -151,9 +151,9 @@ typedef struct gs_glyph_info_s {
     int num_pieces;		/* # of pieces if composite, 0 if not */
 #define GLYPH_INFO_PIECES 16
     gs_glyph *pieces;		/* pieces are stored here: the caller must */
-				/* preset pieces if INFO_PIECES is set. */
+                                /* preset pieces if INFO_PIECES is set. */
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
-#define GLYPH_INFO_VVECTOR0 64	
+#define GLYPH_INFO_VVECTOR0 64
 #define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
 #define GLYPH_INFO_CDEVPROC 256	/* Allow CDevProc callout. */
 } gs_glyph_info_t;
@@ -193,7 +193,7 @@ typedef struct gs_font_procs_s {
 
 #define font_proc_font_info(proc)\
   int proc(gs_font *font, const gs_point *pscale, int members,\
-	   gs_font_info_t *info)
+           gs_font_info_t *info)
     font_proc_font_info((*font_info));
 
     /*
@@ -242,7 +242,7 @@ typedef struct gs_font_procs_s {
 
 #define font_proc_enumerate_glyph(proc)\
   int proc(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,\
-	   gs_glyph *pglyph)
+           gs_glyph *pglyph)
     font_proc_enumerate_glyph((*enumerate_glyph));
 
     /*
@@ -264,13 +264,13 @@ typedef struct gs_font_procs_s {
      * Currently we do not handle requests, in which GLYPH_INFO_VVECTOR0
      * is set, but GLYPH_INFO_WIDTH0 is not. Same for GLYPH_INFO_VVECTOR1
      * and GLYPH_INFO_WIDTH1. Also requests, in which both GLYPH_INFO_WIDTH0 and
-     * GLYPH_INFO_WIDTH1 are set, may work wrongly. Such requests look never used 
+     * GLYPH_INFO_WIDTH1 are set, may work wrongly. Such requests look never used
      * and debugged, and the implementation code requires improvements.
      */
 
 #define font_proc_glyph_info(proc)\
   int proc(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,\
-	   int members, gs_glyph_info_t *info)
+           int members, gs_glyph_info_t *info)
     font_proc_glyph_info((*glyph_info));
 
     /*
@@ -286,7 +286,7 @@ typedef struct gs_font_procs_s {
 
 #define font_proc_glyph_outline(proc)\
   int proc(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,\
-	   gx_path *ppath, double sbw[4])
+           gx_path *ppath, double sbw[4])
     font_proc_glyph_outline((*glyph_outline));
 
     /*
@@ -375,33 +375,33 @@ typedef struct gs_font_name_s {
  * ****** procedures are not automatically inherited.
  */
 #define gs_font_common\
-	gs_font *next, *prev;		/* chain for original font list or */\
-					/* scaled font cache */\
-	gs_memory_t *memory;		/* allocator for this font */\
-	gs_font_dir *dir;		/* directory where registered */\
-	bool is_resource;\
-	gs_notify_list_t notify_list;	/* clients to notify when freeing */\
-	gs_id id;			/* internal ID (no relation to UID) */\
-	gs_font *base;			/* original (unscaled) base font */\
-	void *client_data;		/* additional client data */\
-	gs_matrix FontMatrix;\
-	gs_matrix orig_FontMatrix;      /* The original font matrix or zeros. */\
-	font_type FontType;\
-	bool BitmapWidths;\
-	fbit_type ExactSize, InBetweenSize, TransformedChar;\
-	int WMode;			/* 0 or 1 */\
-	int PaintType;			/* PaintType for Type 1/4/42 fonts, */\
-					/* 0 for others */\
-	float StrokeWidth;		/* StrokeWidth for Type 1/4/42 */\
-					/* fonts (if present), 0 for others */\
-	bool is_cached;			/* Prevents redundant executions of */\
-					/* gs_purge_font_from_char_caches, */\
-					/* when it is called from 'font_restore' */\
-					/* and from gx_font_finalize. */\
-	gs_font_procs procs;\
-	/* We store both the FontDirectory key (key_name) and, */\
-	/* if present, the FontName (font_name). */\
-	gs_font_name key_name, font_name
+        gs_font *next, *prev;		/* chain for original font list or */\
+                                        /* scaled font cache */\
+        gs_memory_t *memory;		/* allocator for this font */\
+        gs_font_dir *dir;		/* directory where registered */\
+        bool is_resource;\
+        gs_notify_list_t notify_list;	/* clients to notify when freeing */\
+        gs_id id;			/* internal ID (no relation to UID) */\
+        gs_font *base;			/* original (unscaled) base font */\
+        void *client_data;		/* additional client data */\
+        gs_matrix FontMatrix;\
+        gs_matrix orig_FontMatrix;      /* The original font matrix or zeros. */\
+        font_type FontType;\
+        bool BitmapWidths;\
+        fbit_type ExactSize, InBetweenSize, TransformedChar;\
+        int WMode;			/* 0 or 1 */\
+        int PaintType;			/* PaintType for Type 1/4/42 fonts, */\
+                                        /* 0 for others */\
+        float StrokeWidth;		/* StrokeWidth for Type 1/4/42 */\
+                                        /* fonts (if present), 0 for others */\
+        bool is_cached;			/* Prevents redundant executions of */\
+                                        /* gs_purge_font_from_char_caches, */\
+                                        /* when it is called from 'font_restore' */\
+                                        /* and from gx_font_finalize. */\
+        gs_font_procs procs;\
+        /* We store both the FontDirectory key (key_name) and, */\
+        /* if present, the FontName (font_name). */\
+        gs_font_name key_name, font_name
 /*typedef struct gs_font_s gs_font; *//* in gsfont.h and other places */
 struct gs_font_s {
     gs_font_common;
@@ -428,8 +428,8 @@ extern_st(st_gs_font_ptr_element);
 /* Does not set: FontMatrix, FontType, key_name, font_name. */
 gs_font *
   gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
-		const gs_font_procs *procs, gs_font_dir *dir,
-		client_name_t cname);
+                const gs_font_procs *procs, gs_font_dir *dir,
+                client_name_t cname);
 
 /* Initialize the notification list for a font. */
 void gs_font_notify_init(gs_font *font);
@@ -440,9 +440,9 @@ void gs_font_notify_init(gs_font *font);
  * such client must unregister itself when *it* is freed.
  */
 int gs_font_notify_register(gs_font *font, gs_notify_proc_t proc,
-			    void *proc_data);
+                            void *proc_data);
 int gs_font_notify_unregister(gs_font *font, gs_notify_proc_t proc,
-			      void *proc_data);
+                              void *proc_data);
 
 #ifndef FAPI_server_DEFINED
 #define FAPI_server_DEFINED
@@ -451,14 +451,14 @@ typedef struct FAPI_server_s FAPI_server;
 
 /* Define a base (not composite) font. */
 #define gs_font_base_common\
-	gs_font_common;\
-	gs_rect FontBBox;\
-	gs_uid UID;\
-	FAPI_server *FAPI; \
+        gs_font_common;\
+        gs_rect FontBBox;\
+        gs_uid UID;\
+        FAPI_server *FAPI; \
         void *FAPI_font_data; \
-	gs_encoding_index_t encoding_index;\
-	gs_encoding_index_t nearest_encoding_index  /* (may be >= 0 even if */\
-						/* encoding_index = -1) */
+        gs_encoding_index_t encoding_index;\
+        gs_encoding_index_t nearest_encoding_index  /* (may be >= 0 even if */\
+                                                /* encoding_index = -1) */
 #ifndef gs_font_base_DEFINED
 #  define gs_font_base_DEFINED
 typedef struct gs_font_base_s gs_font_base;
@@ -478,8 +478,8 @@ extern_st(st_gs_font_base);
 /* Does not set: same elements as gs_alloc_font. */
 gs_font_base *
   gs_font_base_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
-		     const gs_font_procs *procs, gs_font_dir *dir,
-		     client_name_t cname);
+                     const gs_font_procs *procs, gs_font_dir *dir,
+                     client_name_t cname);
 
 /* Define a string to interact with unique_name in lib/pdf_font.ps .
    The string is used to resolve glyph name conflict while

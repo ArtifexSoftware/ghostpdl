@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -59,37 +59,35 @@
 
 HWND hwndtext;	/* used as identifier for the dll instance */
 
-
 char *
 mygetenv(const char * env)
 {
-	return (NULL);	
+        return (NULL);
 }
 
 void
 gp_init (void)
 {
-	extern char    *gs_lib_default_path;
-	extern char    *gs_init_file;
-	
+        extern char    *gs_lib_default_path;
+        extern char    *gs_init_file;
+
 #if 0
-	/*...Initialize Ghostscript's default library paths and initialization file...*/
+        /*...Initialize Ghostscript's default library paths and initialization file...*/
 
-	{
-		int			i;
-		char	  **p;
+        {
+                int			i;
+                char	  **p;
 
-
-		for (i = iGSLibPathStr, p = &gs_lib_default_path;
-			 i <= iGSInitFileStr;
-			 i++, p = &gs_init_file)
-		{
-			GetIndString (string, MACSTRS_RES_ID, i);
-			(void) PtoCstr (string);
-			*p = malloc ((size_t) (strlen ((char *) string) + 1));
-			strcpy (*p, (char *) string);
-		}
-	}
+                for (i = iGSLibPathStr, p = &gs_lib_default_path;
+                         i <= iGSInitFileStr;
+                         i++, p = &gs_init_file)
+                {
+                        GetIndString (string, MACSTRS_RES_ID, i);
+                        (void) PtoCstr (string);
+                        *p = malloc ((size_t) (strlen ((char *) string) + 1));
+                        strcpy (*p, (char *) string);
+                }
+        }
 #endif
 }
 
@@ -117,8 +115,8 @@ gettimeofday(struct timeval *tvp)
     long ticks;
 
     if (!offset) {
-	time(&offset);
-	offset -= (time((long *)&tms) / HZ);
+        time(&offset);
+        offset -= (time((long *)&tms) / HZ);
     }
     ticks = time((long *)&tms);
     tvp->tv_sec = ticks / HZ + offset;
@@ -137,10 +135,10 @@ gp_get_realtime(long *pdt)
 {
     struct timeval tp;
 
-	if (gettimeofday(&tp) == -1) {
-	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    gs_abort(NULL);
-	}
+        if (gettimeofday(&tp) == -1) {
+            lprintf("Ghostscript: gettimeofday failed!\n");
+            gs_abort(NULL);
+        }
 
     /* tp.tv_sec is #secs since Jan 1, 1970 */
     pdt[0] = tp.tv_sec;
@@ -148,10 +146,10 @@ gp_get_realtime(long *pdt)
     /* Some Unix systems (e.g., Interactive 3.2 r3.0) return garbage */
     /* in tp.tv_usec.  Try to filter out the worst of it here. */
     pdt[1] = tp.tv_usec >= 0 && tp.tv_usec < 1000000 ? tp.tv_usec * 1000 : 0;
-	
+
 #ifdef DEBUG_CLOCK
     printf("tp.tv_sec = %d  tp.tv_usec = %d  pdt[0] = %ld  pdt[1] = %ld\n",
-	   tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
+           tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
 #endif
 }
 
@@ -161,9 +159,8 @@ void
 gp_get_usertime(long *pdt)
 {
     gp_get_realtime(pdt);	/* Use an approximation on other hosts.  */
-	pdt[0] -= (char)rand(); // was needed, if used for random generator seed (g3 is too fast)
+        pdt[0] -= (char)rand(); // was needed, if used for random generator seed (g3 is too fast)
 }
-
 
 /*
  * Get the string corresponding to an OS error number.
@@ -172,9 +169,8 @@ gp_get_usertime(long *pdt)
  */
 const char *	gp_strerror(int)
 {
-	return NULL;
+        return NULL;
 }
-
 
 /* ------ Date and time ------ */
 
@@ -185,33 +181,32 @@ void
 gp_get_clock (long *pdt) {
 
    gp_get_realtime(pdt);	/* Use an approximation on other hosts.  */
-  
+
 }
 
 void
 gpp_get_clock (long *pdt)
 
 {
-	long				secs;
-	DateTimeRec			dateRec;
-	static DateTimeRec	baseDateRec = {1980, 1, 1, 0, 0, 0, 1};
-	long				pdtmp[2];
-	void 				do_get_clock (DateTimeRec *dateRec, long *pdt);
+        long				secs;
+        DateTimeRec			dateRec;
+        static DateTimeRec	baseDateRec = {1980, 1, 1, 0, 0, 0, 1};
+        long				pdtmp[2];
+        void 				do_get_clock (DateTimeRec *dateRec, long *pdt);
 
-
-	GetDateTime ((unsigned long *) &secs);
+        GetDateTime ((unsigned long *) &secs);
 //	SecsondsToDate (secs, &dateRec);
 
-	do_get_clock (&dateRec	  , pdt);
-	do_get_clock (&baseDateRec, pdtmp);
+        do_get_clock (&dateRec	  , pdt);
+        do_get_clock (&baseDateRec, pdtmp);
 
-	/* If the date is reasonable, subtract the days since Jan. 1, 1980 */
+        /* If the date is reasonable, subtract the days since Jan. 1, 1980 */
 
-	if (pdtmp[0] < pdt[0])
-		pdt[0] -= pdtmp[0];
+        if (pdtmp[0] < pdt[0])
+                pdt[0] -= pdtmp[0];
 
 #ifdef DEBUG_CLOCK
-	printf("pdt[0] = %ld  pdt[1] = %ld\n", pdt[0], pdt[1]);
+        printf("pdt[0] = %ld  pdt[1] = %ld\n", pdt[0], pdt[1]);
 #endif
 }
 
@@ -225,53 +220,49 @@ gpp_get_realtime (long *pdt)
 {
 
     UnsignedWide microTickCount,
-    	nMicroTickCount;
+        nMicroTickCount;
 
-	long idate;
-	static const int mstart[12] =
-	   { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
-	long				secs;
-	DateTimeRec			dateRec;
-	static DateTimeRec	baseDateRec = {1980, 1, 1, 0, 0, 0, 1};
-	void 				do_get_clock (DateTimeRec *dateRec, long *pdt);
-
+        long idate;
+        static const int mstart[12] =
+           { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+        long				secs;
+        DateTimeRec			dateRec;
+        static DateTimeRec	baseDateRec = {1980, 1, 1, 0, 0, 0, 1};
+        void 				do_get_clock (DateTimeRec *dateRec, long *pdt);
 
     if ((beginMicroTickCount.lo == 0)&&(beginMicroTickCount.hi == 0) )  {
-    	Microseconds(&beginMicroTickCount);
+        Microseconds(&beginMicroTickCount);
     }
-    	
 
-   	Microseconds(&microTickCount);
-    
+        Microseconds(&microTickCount);
+
     nMicroTickCount.lo = microTickCount.lo - beginMicroTickCount.lo;
     nMicroTickCount.hi = microTickCount.hi - beginMicroTickCount.hi;
-    
-	GetDateTime ((unsigned long *) &secs);
-	SecondsToDate (secs, &dateRec);
 
+        GetDateTime ((unsigned long *) &secs);
+        SecondsToDate (secs, &dateRec);
 
-	/* If the date is reasonable, subtract the days since Jan. 1, 1980 */
+        /* If the date is reasonable, subtract the days since Jan. 1, 1980 */
 
-	idate = ((long) dateRec.year - 1980) * 365 +	/* days per year */
-	  	(((long) dateRec.year - 1)/4 - 1979/4) +	/* intervening leap days */
-		(1979/100 - ((long) dateRec.year - 1)/100) +
-		(((long) dateRec.month - 1)/400 - 1979/400) +
-		mstart[dateRec.month - 1] +		/* month is 1-origin */
-		dateRec.day - 1;			/* day of month is 1-origin */
-	idate += (2 < dateRec.month
-		  && (dateRec.year % 4 == 0
-		      && (dateRec.year % 100 != 0 || dateRec.year % 400 == 0)));
-	pdt[0] = ((idate*24 + dateRec.hour) * 60 + dateRec.minute) * 60 + dateRec.second;
-	pdt[1] = nMicroTickCount.lo * 100;
+        idate = ((long) dateRec.year - 1980) * 365 +	/* days per year */
+                (((long) dateRec.year - 1)/4 - 1979/4) +	/* intervening leap days */
+                (1979/100 - ((long) dateRec.year - 1)/100) +
+                (((long) dateRec.month - 1)/400 - 1979/400) +
+                mstart[dateRec.month - 1] +		/* month is 1-origin */
+                dateRec.day - 1;			/* day of month is 1-origin */
+        idate += (2 < dateRec.month
+                  && (dateRec.year % 4 == 0
+                      && (dateRec.year % 100 != 0 || dateRec.year % 400 == 0)));
+        pdt[0] = ((idate*24 + dateRec.hour) * 60 + dateRec.minute) * 60 + dateRec.second;
+        pdt[1] = nMicroTickCount.lo * 100;
 
 //#define DEBUG_CLOCK 1
 #ifdef DEBUG_CLOCK
-	fprintf(stderr,"pdt[0] = %ld  pdt[1] = %ld\n", pdt[0], pdt[1]);
-	fprintf(stderr,"b hi[0] = %ld  lo[1] = %ld\n",  beginMicroTickCount.hi, beginMicroTickCount.lo);
-	fprintf(stderr,"m hi[0] = %ld  lo[1] = %ld\n", microTickCount.hi, microTickCount.lo);
+        fprintf(stderr,"pdt[0] = %ld  pdt[1] = %ld\n", pdt[0], pdt[1]);
+        fprintf(stderr,"b hi[0] = %ld  lo[1] = %ld\n",  beginMicroTickCount.hi, beginMicroTickCount.lo);
+        fprintf(stderr,"m hi[0] = %ld  lo[1] = %ld\n", microTickCount.hi, microTickCount.lo);
 #endif
 }
-
 
 static void
 do_get_clock (DateTimeRec *dateRec, long *pdt)
@@ -280,28 +271,27 @@ do_get_clock (DateTimeRec *dateRec, long *pdt)
 long idate;
 static const int mstart[12] =
    { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
-	/* This gets UTC, not local time */
-	/* We have no way of knowing the time zone correction */
-	idate = ((long) dateRec->year - 1980) * 365 +	/* days per year */
-	  	(((long) dateRec->year - 1)/4 - 1979/4) +	/* intervening leap days */
-		(1979/100 - ((long) dateRec->year - 1)/100) +
-		(((long) dateRec->month - 1)/400 - 1979/400) +
-		mstart[dateRec->month - 1] +		/* month is 1-origin */
-		dateRec->day - 1;			/* day of month is 1-origin */
-	idate += (2 < dateRec->month
-		  && (dateRec->year % 4 == 0
-		      && (dateRec->year % 100 != 0 || dateRec->year % 400 == 0)));
-	pdt[0] = ((idate*24 + dateRec->hour) * 60 + dateRec->minute) * 60 + dateRec->second;
-	pdt[1] = 0; //dateRec->milisecond * 1000000;
+        /* This gets UTC, not local time */
+        /* We have no way of knowing the time zone correction */
+        idate = ((long) dateRec->year - 1980) * 365 +	/* days per year */
+                (((long) dateRec->year - 1)/4 - 1979/4) +	/* intervening leap days */
+                (1979/100 - ((long) dateRec->year - 1)/100) +
+                (((long) dateRec->month - 1)/400 - 1979/400) +
+                mstart[dateRec->month - 1] +		/* month is 1-origin */
+                dateRec->day - 1;			/* day of month is 1-origin */
+        idate += (2 < dateRec->month
+                  && (dateRec->year % 4 == 0
+                      && (dateRec->year % 100 != 0 || dateRec->year % 400 == 0)));
+        pdt[0] = ((idate*24 + dateRec->hour) * 60 + dateRec->minute) * 60 + dateRec->second;
+        pdt[1] = 0; //dateRec->milisecond * 1000000;
 
 }
 
 void
 gpp_get_usertime(long *pdt)
 {
-	gp_get_realtime(pdt);	/* Use an approximation for now.  */
+        gp_get_realtime(pdt);	/* Use an approximation for now.  */
 }
-
 
 /* ------ Persistent data cache ------*/
 
@@ -320,7 +310,6 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     return -1;
 }
 
-
 /* ------ Screen management ------ */
 
 /* Initialize the console. */
@@ -330,19 +319,17 @@ gp_init_console(void)
 {
 }
 
-
 /* Write a string to the console. */
 
 void
 gp_console_puts (const char *str, uint size)
 {
 /*	fwrite (str, 1, size, stdout);*/
-	return;
+        return;
 }
 
 const char *
 gp_getenv_display(void)
 {
-	return NULL;
+        return NULL;
 }
-

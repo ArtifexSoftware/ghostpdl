@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -66,54 +66,54 @@ static int InitFont(Bitstream_server *server, FAPI_font *ff)
     {
         if (ff->is_type1)
         {
-	    type = ff->get_word(ff, FAPI_FONT_FEATURE_FontType, 0);
+            type = ff->get_word(ff, FAPI_FONT_FEATURE_FontType, 0);
 
-	    /* Tell the FAPI interface that we need to *not* decrypt the /Subrs data. */
-	    ff->need_decrypt = false;
+            /* Tell the FAPI interface that we need to *not* decrypt the /Subrs data. */
+            ff->need_decrypt = false;
 
-	    /*
-	       Serialise a type 1 font in PostScript source form, or
-	       a Type 2 font in binary form, so that FreeType can read it.
-	     */
-	    if (type == 1)
-	        length = FF_serialize_type1_font_complete(ff, NULL, 0);
-	    else
-	        length = FF_serialize_type2_font(ff, NULL, 0);
-	    own_font_data = gs_malloc(mem, 1, length, "Type 1 font copy");
-	    if (type == 1)
-		written = FF_serialize_type1_font_complete(ff, own_font_data, length);
-	    else
-		written = FF_serialize_type2_font(ff, own_font_data, length);
-	    if (written != length)
-		    return(e_unregistered); /* Must not happen. */
+            /*
+               Serialise a type 1 font in PostScript source form, or
+               a Type 2 font in binary form, so that FreeType can read it.
+             */
+            if (type == 1)
+                length = FF_serialize_type1_font_complete(ff, NULL, 0);
+            else
+                length = FF_serialize_type2_font(ff, NULL, 0);
+            own_font_data = gs_malloc(mem, 1, length, "Type 1 font copy");
+            if (type == 1)
+                written = FF_serialize_type1_font_complete(ff, own_font_data, length);
+            else
+                written = FF_serialize_type2_font(ff, own_font_data, length);
+            if (written != length)
+                    return(e_unregistered); /* Must not happen. */
         }
-	/* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
-	else 
-	{
-	    /* Get the length of the TrueType data. */
-	    long length = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
-	    if (length == 0)
-		return e_invalidfont;
+        /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
+        else
+        {
+            /* Get the length of the TrueType data. */
+            long length = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
+            if (length == 0)
+                return e_invalidfont;
 
-	    /* Load the TrueType data into a single buffer. */
-	    own_font_data = gs_malloc(mem, 1, length, "Type 42 fotn copy");
-	    if (!own_font_data)
-		return e_VMerror;
-	    if (ff->serialize_tt_font(ff, own_font_data, length))
-		return e_invalidfont;
-	}
+            /* Load the TrueType data into a single buffer. */
+            own_font_data = gs_malloc(mem, 1, length, "Type 42 fotn copy");
+            if (!own_font_data)
+                return e_VMerror;
+            if (ff->serialize_tt_font(ff, own_font_data, length))
+                return e_invalidfont;
+        }
     }
     face->font_data = own_font_data;
     face->Input = New_InputStream3(face->MemObject, own_font_data, length, &error);
     if (ff->is_type1) {
-	if (type == 1)
-	    face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_1, 1, face->Input, NULL, NULL, &error);
-	else
-	    face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_2, 1, face->Input, NULL, NULL, &error);
-    } 
-    else 
+        if (type == 1)
+            face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_1, 1, face->Input, NULL, NULL, &error);
+        else
+            face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_2, 1, face->Input, NULL, NULL, &error);
+    }
+    else
     {
-	face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_TT_OR_T2K, 1, face->Input, NULL, NULL, &error);
+        face->sfnt = FF_New_sfntClass(face->MemObject, FONT_TYPE_TT_OR_T2K, 1, face->Input, NULL, NULL, &error);
     }
     face->T2K = NewT2K(face->MemObject, face->sfnt, &error);
     face->Initialised = 1;
@@ -125,23 +125,23 @@ static FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, i
     return 0;
 }
 
-static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, 
+static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
          const FAPI_font_scale *font_scale, const char *xlatmap, FAPI_descendant_code dc)
 {
     Bitstream_server *Bserver = (Bitstream_server *)server;
     Bitstream_face *face = (Bitstream_face*)ff->server_font_data;
 
     if(face == NULL) {
-	gs_memory_t *mem = (gs_memory_t *)Bserver->client_mem.client_data;
-	int error;
+        gs_memory_t *mem = (gs_memory_t *)Bserver->client_mem.client_data;
+        int error;
 
-	face = (Bitstream_face *)gs_malloc(mem, 1, sizeof(Bitstream_face), "Bitstream_face alloc");
-	face->MemObject = tsi_NewMemhandler(&error);
-	if (error)
-	    return -1;
-	face->Initialised = 0;
-	ff->server_font_data = face;
-	Bserver->ff = ff;
+        face = (Bitstream_face *)gs_malloc(mem, 1, sizeof(Bitstream_face), "Bitstream_face alloc");
+        face->MemObject = tsi_NewMemhandler(&error);
+        if (error)
+            return -1;
+        face->Initialised = 0;
+        ff->server_font_data = face;
+        Bserver->ff = ff;
     }
     face->HRes = font_scale->HWResolution[0] >> 16;
     face->VRes = font_scale->HWResolution[1] >> 16;
@@ -202,11 +202,11 @@ static FAPI_retcode get_char_raster_metrics(FAPI_server *server, FAPI_font *ff, 
     int error;
 
     if(!face->Initialised)
-	InitFont((Bitstream_server *)server, ff);
+        InitFont((Bitstream_server *)server, ff);
 
     T2K_NewTransformation(face->T2K, 1, face->HRes, face->VRes, &face->trans, false, &error);
-    T2K_RenderGlyph(face->T2K, c->char_code, 0, 0, BLACK_AND_WHITE_BITMAP, 
-	T2K_NAT_GRID_FIT | T2K_RETURN_OUTLINES | T2K_SCAN_CONVERT, &error);
+    T2K_RenderGlyph(face->T2K, c->char_code, 0, 0, BLACK_AND_WHITE_BITMAP,
+        T2K_NAT_GRID_FIT | T2K_RETURN_OUTLINES | T2K_SCAN_CONVERT, &error);
 
     metrics->bbox_x0 = face->T2K->fLeft26Dot6 >> 6;
     metrics->bbox_y0 = 0;
@@ -262,11 +262,11 @@ static FAPI_retcode release_typeface(FAPI_server *server, void *font_data)
     gs_memory_t *mem = (gs_memory_t *)Bserver->client_mem.client_data;
 
     if(face->Initialised) {
-	DeleteT2K(face->T2K, &error);
-	FF_Delete_sfntClass(face->sfnt, &error);
-	Delete_InputStream(face->Input, &error);
-	gs_free(mem, face->font_data, 0, 0, "free font copy");
-	tsi_DeleteMemhandler(face->MemObject);
+        DeleteT2K(face->T2K, &error);
+        FF_Delete_sfntClass(face->sfnt, &error);
+        Delete_InputStream(face->Input, &error);
+        gs_free(mem, face->font_data, 0, 0, "free font copy");
+        tsi_DeleteMemhandler(face->MemObject);
     }
     return 0;
 }
@@ -283,7 +283,6 @@ static const i_plugin_descriptor bitstream_descriptor = {
     "BITSTREAM",
     gs_fapibstm_finit
 };
-
 
 static const FAPI_server If0 = {
     {   &bitstream_descriptor
@@ -315,24 +314,24 @@ static const FAPI_server If0 = {
 plugin_instantiation_proc(gs_fapibstm_instantiate);      /* check prototype */
 
 int gs_fapibstm_instantiate(i_plugin_client_memory *client_mem, i_plugin_instance **p_instance)
-{   
+{
     int error;
     tsiMemObject *mem = NULL;
     fapi_bitstream_server *r;
-    
+
     r = (fapi_bitstream_server *)client_mem->alloc(client_mem, sizeof(fapi_bitstream_server), "fapi_bitstream_server");
     if (r == 0)
         return e_VMerror;
     memset(r, 0, sizeof(*r));
     r->If = If0;
     r->client_mem = *client_mem;
-    *p_instance = &r->If.ig;    
+    *p_instance = &r->If.ig;
 
     return 0;
 }
 
 static void gs_fapibstm_finit(i_plugin_instance *this, i_plugin_client_memory *mem)
-{   
+{
     fapi_bitstream_server *r = (fapi_bitstream_server *)this;
 
     if (r->If.ig.d != &bitstream_descriptor)

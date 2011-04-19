@@ -305,7 +305,6 @@ do_horiz_motion(
     return;
 }
 
-
 static inline int
 do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul,
                  bool use_margins, bool by_row, bool by_row_command, bool truncate_arg)
@@ -418,7 +417,6 @@ pcl_updated_hmi(
     return pcs->hmi_cp = hmi - (hmi % pcs->uom_cp);
 }
 
-
 /* Commands */
 
 /*
@@ -506,7 +504,6 @@ set_line_termination(
         pcs->line_termination = ui;
     return 0;
 }
-
 
 /*
  * ESC & a <cols> C
@@ -600,7 +597,6 @@ cmd_HT(
     return 0;
 }
 
-
 /*
  * ESC & a <rows> R
  */
@@ -684,7 +680,6 @@ cmd_FF(
         pcl_do_CR(pcs);
     return pcl_do_FF(pcs);
 }
-
 
 /*
  * ESC & f <pp_enum> S

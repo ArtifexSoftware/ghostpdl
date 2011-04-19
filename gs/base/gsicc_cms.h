@@ -11,9 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /*  Header for the GS interface to littleCMS  */
-
 
 #ifndef gsicc_littlecms_INCLUDED
 #  define gsicc_littlecms_INCLUDED
@@ -72,4 +70,3 @@ int gscms_get_input_channel_count(gcmmhprofile_t profile);
 int gscms_get_output_channel_count(gcmmhprofile_t profile);
 
 #endif
-

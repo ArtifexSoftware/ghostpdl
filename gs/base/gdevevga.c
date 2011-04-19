@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -44,14 +44,14 @@ pcfb_get_state(pcfb_bios_state * pbs)
     regs.h.bh = 0;
     int86(0x10, &regs, &regs);
     switch (regs.rshort.cx) {
-	case 0x08:
-	    pbs->text_font = 0x1112;
-	    break;		/* 8 x 8 */
-	case 0x10:
-	    pbs->text_font = 0x1114;
-	    break;		/* 8 x 16 */
-	default:
-	    pbs->text_font = 0x1111;	/* 8 x 14 */
+        case 0x08:
+            pbs->text_font = 0x1112;
+            break;		/* 8 x 8 */
+        case 0x10:
+            pbs->text_font = 0x1114;
+            break;		/* 8 x 16 */
+        default:
+            pbs->text_font = 0x1111;	/* 8 x 14 */
     }
     regs.h.ah = 0x8;
     regs.h.bh = pbs->text_page;
@@ -61,16 +61,16 @@ pcfb_get_state(pcfb_bios_state * pbs)
     regs.rshort.ax = 0x1a00;
     int86(0x10, &regs, &regs);
     if (regs.h.al == 0x1a && regs.h.bl == 0x8) {
-	regs.rshort.ax = 0x1008;
-	int86(0x10, &regs, &regs);
-	pbs->border_color = regs.h.bh;
+        regs.rshort.ax = 0x1008;
+        int86(0x10, &regs, &regs);
+        pbs->border_color = regs.h.bh;
     }
     if (pbs->display_mode != 3) {
-	pbs->display_mode = 3;
-	pbs->text_font = 0x1112;
-	pbs->text_cursor_mode = 0x0607;
-	pbs->text_attribute = 7;
-	pbs->text_page = 0;
+        pbs->display_mode = 3;
+        pbs->text_font = 0x1112;
+        pbs->text_cursor_mode = 0x0607;
+        pbs->text_attribute = 7;
+        pbs->text_page = 0;
     }
 }
 

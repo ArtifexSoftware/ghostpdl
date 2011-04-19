@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -24,7 +24,6 @@ typedef struct gs_state_s gs_state;
 
 #endif
 #include "gscspace.h"
-
 
 /*
  * The interfaces in this file are for internal use only, primarily by the
@@ -60,15 +59,15 @@ typedef enum {
 /* Note that the 'from' argument of copy_for is not const. */
 /* This is deliberate -- some clients need this. */
 typedef int (*gs_state_copy_for_proc_t) (void *to, void *from,
-					 gs_state_copy_reason_t reason);
+                                         gs_state_copy_reason_t reason);
 typedef struct gs_state_client_procs_s {
     gs_state_alloc_proc_t alloc;
     gs_state_copy_proc_t copy;
     gs_state_free_proc_t free;
     gs_state_copy_for_proc_t copy_for;
 } gs_state_client_procs;
-void gs_state_set_client(gs_state *, void *, const gs_state_client_procs *, 
-			    bool client_has_pattern_streams);
+void gs_state_set_client(gs_state *, void *, const gs_state_client_procs *,
+                            bool client_has_pattern_streams);
 
 /* gzstate.h redefines the following: */
 #ifndef gs_state_client_data

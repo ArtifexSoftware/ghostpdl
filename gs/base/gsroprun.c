@@ -111,7 +111,7 @@ static void unrecord(int rop)
 static void invert_rop_run1(rop_run_op *op, byte *d, int len)
 {
     byte lmask, rmask;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -205,7 +205,7 @@ static void notT_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T;
     int         t_skew;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -281,7 +281,7 @@ static void dors_rop_run1_const_t(rop_run_op *op, byte *d, int len)
     const byte *s = op->s.b.ptr;
     byte        S, D;
     int         s_skew;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -361,7 +361,7 @@ static void dort_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T, D;
     int         t_skew;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -441,7 +441,7 @@ static void xor_rop_run1_const_s(rop_run_op *op, byte *d, int len)
     const byte *t = op->t.b.ptr;
     byte        T, D;
     int         t_skew;
-    
+
     len    = len * op->depth + op->dpos;
     /* lmask = the set of bits to alter in the output bitmap on the left
      * hand edge of the run. rmask = the set of bits NOT to alter in the
@@ -1394,7 +1394,7 @@ static void record_run(rop_run_op *op, byte *d, int len)
     local.flags   = op->flags;
     local.dpos    = op->dpos;
     local.release = op->release;
-    local.opaque  = op->opaque;    
+    local.opaque  = op->opaque;
 
     op->runswap(&local, d, len);
 }
@@ -1716,4 +1716,3 @@ void (rop_release_run_op)(rop_run_op *op)
 {
     rop_release_run_op(op);
 }
-

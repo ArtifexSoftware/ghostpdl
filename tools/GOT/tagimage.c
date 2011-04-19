@@ -53,7 +53,7 @@ int
 main(int argc, char *argv[]) {
 
     /* Source output should already have ppm header */
-    char line[128]; 
+    char line[128];
     int k;
     int len;
     char *infile;

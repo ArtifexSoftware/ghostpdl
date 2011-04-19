@@ -19,7 +19,6 @@
 #include "pcfont.h"
 #include "pcpatxfm.h"
 
-
 /*
  * The four rotation matrices used by PCL. Note that rotations in PCL are
  * always multiples of 90 degrees, and map the positive x-axis to the negative
@@ -35,10 +34,9 @@ static const gs_matrix rot_mtx[4] = {
     {  0.0,  1.0, -1.0,  0.0,  0.0,  0.0 }      /* 270 degrees */
 };
 
-
 /*
  * Inverst a diagonal 2-dimensional affine transformation. This is much simpler
- * than inverting a general 2-dimensional affine transformation, hence a 
+ * than inverting a general 2-dimensional affine transformation, hence a
  * separate routine is provided for this purpose.
  *
  * Note that both operands may point to the same matrix.
@@ -66,7 +64,7 @@ pcl_invert_mtx(
         pmtx2->yy = 0.0;
         pmtx2->tx = -ty / xy;
         pmtx2->ty = -tx / yx;
-        
+
     } else {
         float   yy = pmtx1->yy;
 
@@ -88,9 +86,9 @@ pcl_invert_mtx(
  */
 void
 pcl_transform_rect(const gs_memory_t *mem,
-		   const gs_rect *     prect1,
-		   gs_rect *           prect2,
-		   const gs_matrix *   pmtx
+                   const gs_rect *     prect1,
+                   gs_rect *           prect2,
+                   const gs_matrix *   pmtx
 )
 {
     gs_point_transform(prect1->p.x, prect1->p.y, pmtx, &(prect2->p));
@@ -275,7 +273,7 @@ pcl_xfm_pcl_set_pat_ref_pt(
                         );
     pcs->pat_ref_pt.x = floor(pcs->pat_ref_pt.x + 0.5);
     pcs->pat_ref_pt.y = floor(pcs->pat_ref_pt.y + 0.5);
-    pcs->pat_orient = (pxfmst->lp_orient 
+    pcs->pat_orient = (pxfmst->lp_orient
                        + (pcs->rotate_patterns ? pxfmst->print_dir : 0)) & 0x3;
 }
 
@@ -298,7 +296,6 @@ pcl_xfm_gl_set_pat_ref_pt(
     pcs->pat_ref_pt.y = floor(pcs->pat_ref_pt.y + 0.5);
     pcs->pat_orient = (pcs->xfm_state.lp_orient + (pcs->g.rotation / 90)) & 0x3;
 }
-
 
 /*
  * ESC * p # R
@@ -325,7 +322,6 @@ set_pat_ref_pt(
     }
     return 0;
 }
-
 
 /*
  * Initializaton and reset routines. There is currently no copy routine, as the

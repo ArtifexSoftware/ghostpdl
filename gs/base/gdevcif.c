@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -14,7 +14,7 @@
 /*
   CIF output driver
 
-   The `Fake bitmapped device to estimate rendering time' 
+   The `Fake bitmapped device to estimate rendering time'
    slightly modified to produce CIF files from PostScript.
    So anyone can put a nice logo free on its chip!
    Frederic Petrot, petrot@masi.ibp.fr */
@@ -33,37 +33,37 @@
 static dev_proc_print_page(cif_print_page);
 const gx_device_printer far_data gs_cif_device =
   prn_device(prn_std_procs, "cif",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,
-	1, cif_print_page);
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,
+        1, cif_print_page);
 
 /* Send the page to the output. */
 static int
 cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {	int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-	int lnum;
-	byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
-	char *s;
-	int scanline, scanbyte;
-	int length, start; /* length is the number of successive 1 bits, */
-			   /* start is the set of 1 bit start position */
+        int lnum;
+        byte *in = (byte *)gs_malloc(pdev->memory, line_size, 1, "cif_print_page(in)");
+        char *s;
+        int scanline, scanbyte;
+        int length, start; /* length is the number of successive 1 bits, */
+                           /* start is the set of 1 bit start position */
 
-	if (in == 0)
-		return_error(gs_error_VMerror);
+        if (in == 0)
+                return_error(gs_error_VMerror);
 
-	if ((s = strchr(pdev->fname, '.')) == NULL)
-		length = strlen(pdev->fname) + 1;
-	else
-		length = s - pdev->fname;
-	s = (char *)gs_malloc(pdev->memory, length, sizeof(char), "cif_print_page(s)");
+        if ((s = strchr(pdev->fname, '.')) == NULL)
+                length = strlen(pdev->fname) + 1;
+        else
+                length = s - pdev->fname;
+        s = (char *)gs_malloc(pdev->memory, length, sizeof(char), "cif_print_page(s)");
 
-	strncpy(s, pdev->fname, length);
-	*(s + length) = '\0';
-	fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
-	gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
+        strncpy(s, pdev->fname, length);
+        *(s + length) = '\0';
+        fprintf(prn_stream, "DS1 25 1;\n9 %s;\nLCP;\n", s);
+        gs_free(pdev->memory, s, length, 1, "cif_print_page(s)");
 
-   for (lnum = 0; lnum < pdev->height; lnum++) {   
+   for (lnum = 0; lnum < pdev->height; lnum++) {
       gdev_prn_copy_scan_lines(pdev, lnum, in, line_size);
       length = 0;
       for (scanline = 0; scanline < line_size; scanline++)
@@ -89,7 +89,7 @@ cif_print_page(gx_device_printer *pdev, FILE *prn_stream)
             }
 #endif
    }
-	fprintf(prn_stream, "DF;\nC1;\nE\n");
-	gs_free(pdev->memory, in, line_size, 1, "cif_print_page(in)");
-	return 0;
+        fprintf(prn_stream, "DF;\nC1;\nE\n");
+        gs_free(pdev->memory, in, line_size, 1, "cif_print_page(in)");
+        return 0;
 }

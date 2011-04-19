@@ -26,7 +26,7 @@ This code is subject to the GNU General Public License
 ulm 91-02-13 created as driver for gs 2.1.1
 ulm 91-07-23 adapted to gs 2.2
 ulm 91-08-21 changed memory allocation to gs_malloc,
-	     ported to VMS (contributed by Martin Stiftinger, TU Vienna)
+             ported to VMS (contributed by Martin Stiftinger, TU Vienna)
 lpd 91-11-24 sped up by removing multiplies from inner loop
 ijmp 92-04-14 add support for la75/la50 (macphed@dvinci.usask.ca)
 ulm 92-09-25 support letter size paper (8.5" x 11")
@@ -60,10 +60,10 @@ static gx_device_procs sixel_procs =
 #endif
 gx_device_printer gs_ln03_device =
     prn_device(sixel_procs, "ln03",
-	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	       300, 300,		/* x_dpi, y_dpi */
-	       0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */
-	       1, ln03_print_page);
+               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+               300, 300,		/* x_dpi, y_dpi */
+               0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */
+               1, ln03_print_page);
 
 /*
  * Initialization string: switch to graphics mode, 300 dpi
@@ -97,10 +97,10 @@ ln03_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static dev_proc_print_page(dl2100_print_page);
 gx_device_printer gs_dl2100_device =
     prn_device(sixel_procs, "dl2100",
-	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	       300, 300,		/* x_dpi, y_dpi */
-	       0, 0, 0, 0,	/* left, bottom, right, top margin */
-	       1, dl2100_print_page);
+               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+               300, 300,		/* x_dpi, y_dpi */
+               0, 0, 0, 0,	/* left, bottom, right, top margin */
+               1, dl2100_print_page);
 
 /*
  * Initialization string: same as for LN03, plus top/bottom margins.
@@ -122,11 +122,11 @@ dl2100_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static dev_proc_print_page(la50_print_page);
 gx_device_printer gs_la50_device =
     prn_device(sixel_procs, "la50",
-	       85,
-	       110,
-	       144, 72,
-	       0, 0, 0.5, 0,
-	       1, la50_print_page);
+               85,
+               110,
+               144, 72,
+               0, 0, 0.5, 0,
+               1, la50_print_page);
 /* LA50's use a very primitive form of initialization */
 
 #define LA50_INIT "\033Pq"
@@ -149,11 +149,11 @@ la50_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static dev_proc_print_page(la70_print_page);
 gx_device_printer gs_la70_device =
     prn_device(sixel_procs, "la70",
-	       85,
-	       110,
-	       144, 144,
-	       0, 0, 0.5, 0,
-	       1, la70_print_page);
+               85,
+               110,
+               144, 144,
+               0, 0, 0.5, 0,
+               1, la70_print_page);
 
 #define LA70_INIT "\033P0;0;0q\"1;1"
 
@@ -175,11 +175,11 @@ la70_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static dev_proc_print_page(la75_print_page);
 gx_device_printer gs_la75_device =
     prn_device(sixel_procs, "la75",
-	       85,
-	       110,
-	       144, 72,
-	       0, 0, 0.5, 0,
-	       1, la75_print_page);
+               85,
+               110,
+               144, 72,
+               0, 0, 0.5, 0,
+               1, la75_print_page);
 
 #define LA75_INIT "\033P0;0;0q"
 
@@ -262,9 +262,9 @@ sxlcrt_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static int
 sixel_output_page(gx_device *pdev, int num_copies, int flush)
 {	int code = gdev_prn_open_printer(pdev, 0);
-	if ( code < 0 )
-		return code;
-	return gdev_prn_output_page(pdev, num_copies, flush);
+        if ( code < 0 )
+                return code;
+        return gdev_prn_output_page(pdev, num_copies, flush);
 }
 
 /* Send the page to the printer. */
@@ -289,32 +289,32 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream,
 
     /* Print lines of graphics */
     for (lnum = lcount = 0; lnum < pdev->height; lnum+=6, lcount++) {
-	gdev_prn_copy_scan_lines(pdev, lnum, inp = in, line_size * 6);
+        gdev_prn_copy_scan_lines(pdev, lnum, inp = in, line_size * 6);
 
-	mask = 0200;
-	oldc = 077;
-	empty = 1;
+        mask = 0200;
+        oldc = 077;
+        empty = 1;
 
-	for (l = pdev->width, count = 0; --l >= 0; count++) {
-	    /* transpose 6*8 rectangle */
-	    register byte *iptr = inp;
-	    c = 077;
-	    if (*iptr & mask)
-		c += 1;
-	    if (*(iptr += line_size) & mask)
-		c += 2;
-	    if (*(iptr += line_size) & mask)
-		c += 4;
-	    if (*(iptr += line_size) & mask)
-		c += 010;
-	    if (*(iptr += line_size) & mask)
-		c += 020;
-	    if (*(iptr += line_size) & mask)
-		c += 040;
-	    if (!(mask >>= 1)) {
-		mask = 0200;
-		inp++;
-	    }
+        for (l = pdev->width, count = 0; --l >= 0; count++) {
+            /* transpose 6*8 rectangle */
+            register byte *iptr = inp;
+            c = 077;
+            if (*iptr & mask)
+                c += 1;
+            if (*(iptr += line_size) & mask)
+                c += 2;
+            if (*(iptr += line_size) & mask)
+                c += 4;
+            if (*(iptr += line_size) & mask)
+                c += 010;
+            if (*(iptr += line_size) & mask)
+                c += 020;
+            if (*(iptr += line_size) & mask)
+                c += 040;
+            if (!(mask >>= 1)) {
+                mask = 0200;
+                inp++;
+            }
 
             if (c != oldc) {
                 if (empty) {

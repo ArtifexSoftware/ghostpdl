@@ -34,13 +34,13 @@ typedef char pjl_envvar_t;	/* opaque decl */
  */
 /* return the current setting of a pjl environment variable.  The
    input parameter should be the exact string used in PJLTRM.
-   Sample Usage: 
+   Sample Usage:
          char *formlines = pjl_get_envvar(pst, "formlines");
-	 if (formlines) {
-	     int fl = atoi(formlines);
-	     .
-	     .
-	 }
+         if (formlines) {
+             int fl = atoi(formlines);
+             .
+             .
+         }
    Both variables and values are case insensitive.
 */
 typedef pjl_envvar_t * (*pjl_proc_get_envvar_t)(pl_interp_instance_t *pli, const char *pjl_var);
@@ -107,7 +107,7 @@ int pjl_proc_get_named_resource(pl_interp_instance_t *pli, char *name, byte *dat
  * Define a generic interpreter implementation
  */
 typedef struct pjl_implementation_s {
-  pl_interp_implementation_t               pl;   /* MUST BE FIRST generic impl */ 
+  pl_interp_implementation_t               pl;   /* MUST BE FIRST generic impl */
 
   /* PJL-specific procedure vector */
   pjl_proc_get_envvar_t                    proc_get_envvar;
@@ -122,9 +122,6 @@ typedef struct pjl_implementation_s {
   pjl_proc_get_named_resource_size_t       proc_get_named_resource_size;
   pjl_proc_get_named_resource_t            proc_get_named_resource;
 
-
 } pjl_implementation_t;
 
-
 #endif				/* pjtop_INCLUDED */
-

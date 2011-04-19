@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -55,19 +55,19 @@ gp_get_realtime(long *pdt)
 #define ti_sec h.dh
 #define ti_hund h.dl
     idate = (long)osdate.da_year * 365 +
-	(			/* intervening leap days */
-	    ((osdate.da_year + 1979) / 4 - 1979 / 4) +
-	    (1979 / 100 - (osdate.da_year + 1979) / 100) +
-	    ((osdate.da_year + 1979) / 400 - 1979 / 400) +
-	    mstart[osdate.da_mon - 1] +		/* month is 1-origin */
-	    osdate.da_day - 1);	/* day of month is 1-origin */
+        (			/* intervening leap days */
+            ((osdate.da_year + 1979) / 4 - 1979 / 4) +
+            (1979 / 100 - (osdate.da_year + 1979) / 100) +
+            ((osdate.da_year + 1979) / 400 - 1979 / 400) +
+            mstart[osdate.da_mon - 1] +		/* month is 1-origin */
+            osdate.da_day - 1);	/* day of month is 1-origin */
     idate += (2 < osdate.da_mon
-	      && (osdate.da_year % 4 == 0
-		  && ((osdate.da_year + 1980) % 100 != 0
-		      || (osdate.da_year + 1980) % 400 == 0)));
+              && (osdate.da_year % 4 == 0
+                  && ((osdate.da_year + 1980) % 100 != 0
+                      || (osdate.da_year + 1980) % 400 == 0)));
     pdt[0] =
-	((idate * 24 + ostime.ti_hour) * 60 + ostime.ti_min) * 60 +
-	ostime.ti_sec;
+        ((idate * 24 + ostime.ti_hour) * 60 + ostime.ti_min) * 60 +
+        ostime.ti_sec;
     pdt[1] = ostime.ti_hund * 10000000;
 }
 
@@ -92,10 +92,10 @@ gp_file_is_console(FILE * f)
 
 #ifdef __DLL__
     if (f == NULL)
-	return 1;
+        return 1;
 #else
     if (f == NULL)
-	return 0;
+        return 0;
 #endif
     regs.h.ah = 0x44;		/* ioctl */
     regs.h.al = 0;		/* get device info */

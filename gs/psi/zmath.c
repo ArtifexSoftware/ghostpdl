@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,9 +51,9 @@ zsqrt(i_ctx_t *i_ctx_p)
     int code = real_param(op, &num);
 
     if (code < 0)
-	return code;
+        return code;
     if (num < 0.0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     make_real(op, sqrt(num));
     return 0;
 }
@@ -67,7 +67,7 @@ zarccos(i_ctx_t *i_ctx_p)
     int code = real_param(op, &num);
 
     if (code < 0)
-	return code;
+        return code;
     result = acos(num) * radians_to_degrees;
     make_real(op, result);
     return 0;
@@ -82,7 +82,7 @@ zarcsin(i_ctx_t *i_ctx_p)
     int code = real_param(op, &num);
 
     if (code < 0)
-	return code;
+        return code;
     result = asin(num) * radians_to_degrees;
     make_real(op, result);
     return 0;
@@ -98,10 +98,10 @@ zatan(i_ctx_t *i_ctx_p)
     int code = num_params(op, 2, args);
 
     if (code < 0)
-	return code;
+        return code;
     code = gs_atan2_degrees(args[0], args[1], &result);
     if (code < 0)
-	return code;
+        return code;
     make_real(op - 1, result);
     pop(1);
     return 0;
@@ -116,7 +116,7 @@ zcos(i_ctx_t *i_ctx_p)
     int code = real_param(op, &angle);
 
     if (code < 0)
-	return code;
+        return code;
     make_real(op, gs_cos_degrees(angle));
     return 0;
 }
@@ -130,7 +130,7 @@ zsin(i_ctx_t *i_ctx_p)
     int code = real_param(op, &angle);
 
     if (code < 0)
-	return code;
+        return code;
     make_real(op, gs_sin_degrees(angle));
     return 0;
 }
@@ -146,13 +146,13 @@ zexp(i_ctx_t *i_ctx_p)
     int code = num_params(op, 2, args);
 
     if (code < 0)
-	return code;
+        return code;
     if (args[0] < 0.0 && modf(args[1], &ipart) != 0.0)
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     if (args[0] == 0.0 && args[1] == 0.0)
-	result = 1.0;		/* match Adobe; can't rely on C library */
+        result = 1.0;		/* match Adobe; can't rely on C library */
     else
-	result = pow(args[0], args[1]);
+        result = pow(args[0], args[1]);
     make_real(op - 1, result);
     pop(1);
     return 0;
@@ -167,9 +167,9 @@ zln(i_ctx_t *i_ctx_p)
     int code = real_param(op, &num);
 
     if (code < 0)
-	return code;
+        return code;
     if (num <= 0.0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     make_real(op, log(num));
     return 0;
 }
@@ -183,9 +183,9 @@ zlog(i_ctx_t *i_ctx_p)
     int code = real_param(op, &num);
 
     if (code < 0)
-	return code;
+        return code;
     if (num <= 0.0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     make_real(op, log10(num));
     return 0;
 }
@@ -196,13 +196,13 @@ zrand(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-	/*
-	 * We use an algorithm from CACM 31 no. 10, pp. 1192-1201,
-	 * October 1988.  According to a posting by Ed Taft on
-	 * comp.lang.postscript, Level 2 (Adobe) PostScript interpreters
-	 * use this algorithm too:
-	 *      x[n+1] = (16807 * x[n]) mod (2^31 - 1)
-	 */
+        /*
+         * We use an algorithm from CACM 31 no. 10, pp. 1192-1201,
+         * October 1988.  According to a posting by Ed Taft on
+         * comp.lang.postscript, Level 2 (Adobe) PostScript interpreters
+         * use this algorithm too:
+         *      x[n+1] = (16807 * x[n]) mod (2^31 - 1)
+         */
 #define A 16807
 #define M 0x7fffffff
 #define Q 127773		/* M / A */
@@ -210,7 +210,7 @@ zrand(i_ctx_t *i_ctx_p)
     zrand_state = A * (zrand_state % Q) - R * (zrand_state / Q);
     /* Note that zrand_state cannot be 0 here. */
     if (zrand_state <= 0)
-	zrand_state += M;
+        zrand_state += M;
 #undef A
 #undef M
 #undef Q
@@ -234,9 +234,9 @@ zsrand(i_ctx_t *i_ctx_p)
      * public information from Adobe describing their implementation.
      */
     if (state < 1)
-	state = -(state % 0x7ffffffe) + 1;
+        state = -(state % 0x7ffffffe) + 1;
     else if (state > 0x7ffffffe)
-	state = 0x7ffffffe;
+        state = 0x7ffffffe;
     zrand_state = state;
     pop(1);
     return 0;

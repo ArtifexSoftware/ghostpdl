@@ -43,7 +43,7 @@ bind def
    (    pxa) anchorsearch
     { pop ( = ) search
        { exch pop exch (,) search pop exch pop exch pop cvi
-	 3 -1 roll pop exch
+         3 -1 roll pop exch
        }
        { (,) search pop exch pop exch pop
        }
@@ -65,13 +65,13 @@ loop pop closefile
    (,) search { exch pop exch pop } if
    dup (    e) anchorsearch
     { pop pop token pop exch
-		% Stack: file value name rest
+                % Stack: file value name rest
       token
        {	% The token must be an '='.
-	 pop token pop exch pop 3 -1 roll pop exch
+         pop token pop exch pop 3 -1 roll pop exch
        }
       if
-		% Stack: file value name
+                % Stack: file value name
       1 index .defenum 1 add
     }
     { pop pop

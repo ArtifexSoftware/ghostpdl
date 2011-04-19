@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -67,7 +67,6 @@
 #include "ttcalc.h"
 #include "ttinterp.h"
 #include "ttfinp.h"
-
 
 #ifdef DEBUG
 #  define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
@@ -146,7 +145,6 @@ static int nInstrCount=0;
 /*                                                            */
 /*    - it's still open to later experimentation and tuning   */
 
-
 #ifndef TT_STATIC_INTERPRETER      /* indirect implementation */
 
 #define CUR (*exc)                 /* see ttobjs.h */
@@ -162,7 +160,6 @@ static int nInstrCount=0;
   /* four bytes addresses).                                         */
 
 #endif
-
 
 #define INS_ARG         EXEC_OPS PStorage args  /* see ttexec.h */
 
@@ -221,8 +218,6 @@ static int nInstrCount=0;
 /* The following macro is used to disable algorithms,
    which could cause Apple's patent infringement. */
 #define THROW_PATENTED longjmp(find_jmp_buf(CUR.trap), TT_Err_Invalid_Engine)
-
-
 
 /*********************************************************************/
 /*                                                                   */
@@ -524,7 +519,6 @@ static int nInstrCount=0;
     /*  MIRP[31]  */  2, 0
   };
 
-
 /*******************************************************************
  *
  *  Function    :  Norm
@@ -541,7 +535,6 @@ static int nInstrCount=0;
   {
     Int64       T1, T2;
 
-
     MUL_64( X, X, T1 );
     MUL_64( Y, Y, T2 );
 
@@ -549,7 +542,6 @@ static int nInstrCount=0;
 
     return (TT_F26Dot6)SQRT_64( T1 );
   }
-
 
 /*******************************************************************
  *
@@ -569,7 +561,6 @@ static int nInstrCount=0;
                          CUR.metrics.scale1,
                          CUR.metrics.scale2 );
   }
-
 
 /*******************************************************************
  *
@@ -600,7 +591,6 @@ static int nInstrCount=0;
     {
       Long  x, y;
 
-
       x = MulDiv_Round( CUR.GS.projVector.x, CUR.metrics.x_ratio, 0x4000 );
       y = MulDiv_Round( CUR.GS.projVector.y, CUR.metrics.y_ratio, 0x4000 );
       CUR.metrics.ratio = Norm( x, y );
@@ -609,24 +599,20 @@ static int nInstrCount=0;
     return CUR.metrics.ratio;
   }
 
-
   static Int  Current_Ppem( EXEC_OP )
   {
     return MulDiv_Round( CUR.metrics.ppem, CURRENT_Ratio(), 0x10000 );
   }
-
 
   static TT_F26Dot6  Read_CVT( EXEC_OPS Int  index )
   {
     return CUR.cvt[index];
   }
 
-
   static TT_F26Dot6  Read_CVT_Stretched( EXEC_OPS Int  index )
   {
     return MulDiv_Round( CUR.cvt[index], CURRENT_Ratio(), 0x10000 );
   }
-
 
   static void  Write_CVT( EXEC_OPS Int  index, TT_F26Dot6  value )
   {
@@ -644,7 +630,6 @@ static int nInstrCount=0;
     DBG_PRINT3(" cvt[%d]%d:=%d", index, ov, CUR.cvt[index]);
   }
 
-
   static void  Move_CVT( EXEC_OPS  Int index, TT_F26Dot6 value )
   {
     int ov=CUR.cvt[index];
@@ -660,7 +645,6 @@ static int nInstrCount=0;
     CUR.cvt[index] += MulDiv_Round( value, 0x10000, CURRENT_Ratio() );
     DBG_PRINT3(" cvt[%d]%d:=%d", index, ov, CUR.cvt[index]);
   }
-
 
 /******************************************************************
  *
@@ -725,7 +709,6 @@ static int nInstrCount=0;
     return SUCCESS;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  GetShortIns
@@ -749,7 +732,6 @@ static int nInstrCount=0;
              CUR.code[CUR.IP-1];
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Ins_Goto_CodeRange
@@ -768,7 +750,6 @@ static int nInstrCount=0;
   static Bool  Ins_Goto_CodeRange( EXEC_OPS Int  aRange, Int  aIP )
   {
     TCodeRange*  WITH;
-
 
     if ( aRange < 1 || aRange > 3 )
     {
@@ -802,7 +783,6 @@ static int nInstrCount=0;
     return SUCCESS;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Direct_Move
@@ -823,7 +803,6 @@ static int nInstrCount=0;
                                      TT_F26Dot6  distance )
   {
     TT_F26Dot6 v;
-
 
     v = CUR.GS.freeVector.x;
 
@@ -848,7 +827,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /******************************************************************/
 /*                                                                */
 /* The following versions are used whenever both vectors are both */
@@ -869,7 +847,6 @@ static int nInstrCount=0;
     zone->touch[point] |= TT_Flag_Touched_X;
   }
 
-
 /*******************************************************************
  * Direct_Move_Y
  *
@@ -882,7 +859,6 @@ static int nInstrCount=0;
     zone->cur_y[point] += distance;
     zone->touch[point] |= TT_Flag_Touched_Y;
   }
-
 
 /*******************************************************************
  *
@@ -923,7 +899,6 @@ static int nInstrCount=0;
     return val;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Round_To_Grid
@@ -957,10 +932,8 @@ static int nInstrCount=0;
         val = 0;
     }
 
-
     return  val;
   }
-
 
 /*******************************************************************
  *
@@ -998,7 +971,6 @@ static int nInstrCount=0;
     return val;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Round_Down_To_Grid
@@ -1034,7 +1006,6 @@ static int nInstrCount=0;
 
     return val;
   }
-
 
 /*******************************************************************
  *
@@ -1072,7 +1043,6 @@ static int nInstrCount=0;
     return val;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Round_To_Double_Grid
@@ -1109,7 +1079,6 @@ static int nInstrCount=0;
     return val;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Round_Super
@@ -1134,7 +1103,6 @@ static int nInstrCount=0;
   {
     TT_F26Dot6  val;
 
-
     if ( distance >= 0 )
     {
       val = (distance - CUR.phase + CUR.threshold + compensation) &
@@ -1154,7 +1122,6 @@ static int nInstrCount=0;
 
     return val;
   }
-
 
 /*******************************************************************
  *
@@ -1178,7 +1145,6 @@ static int nInstrCount=0;
   {
     TT_F26Dot6  val;
 
-
     if ( distance >= 0 )
     {
       val = ( (distance - CUR.phase + CUR.threshold + compensation) /
@@ -1198,7 +1164,6 @@ static int nInstrCount=0;
 
     return val;
   }
-
 
 /*******************************************************************
  * Compute_Round
@@ -1242,7 +1207,6 @@ static int nInstrCount=0;
       break;
     }
   }
-
 
 /*******************************************************************
  *
@@ -1328,7 +1292,6 @@ static int nInstrCount=0;
     return 0;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Dual_Project
@@ -1347,7 +1310,6 @@ static int nInstrCount=0;
     THROW_PATENTED;
     return 0;
   }
-
 
 /*******************************************************************
  *
@@ -1368,8 +1330,6 @@ static int nInstrCount=0;
     return 0;
   }
 
-
-
 /*******************************************************************
  *
  *  Function    :  Project_x
@@ -1387,7 +1347,6 @@ static int nInstrCount=0;
     return Vx;
   }
 
-
 /*******************************************************************
  *
  *  Function    :  Project_y
@@ -1404,7 +1363,6 @@ static int nInstrCount=0;
   { (void)exc; (void)Vx;
     return Vy;
   }
-
 
 /*******************************************************************
  *
@@ -1505,7 +1463,6 @@ static int nInstrCount=0;
     TT_F26Dot6  W;
     Bool        S1, S2;
 
-
     if ( ABS( Vx ) < 0x10000L && ABS( Vy ) < 0x10000L )
     {
       Vx *= 0x100;
@@ -1595,8 +1552,6 @@ static int nInstrCount=0;
     return SUCCESS;
   }
 
-
-
 /****************************************************************/
 /*                                                              */
 /* MANAGING THE STACK                                           */
@@ -1614,7 +1569,6 @@ static int nInstrCount=0;
     args[1] = args[0];
   }
 
-
 /*******************************************/
 /* POP[]     : POPs the stack's top elt.   */
 /* CodeRange : $21                         */
@@ -1624,7 +1578,6 @@ static int nInstrCount=0;
     /* nothing to do */
   }
 
-
 /*******************************************/
 /* CLEAR[]   : Clear the entire stack      */
 /* CodeRange : $22                         */
@@ -1633,7 +1586,6 @@ static int nInstrCount=0;
   { (void)args;
     CUR.new_top = 0;
   }
-
 
 /*******************************************/
 /* SWAP[]    : Swap the top two elements   */
@@ -1649,7 +1601,6 @@ static int nInstrCount=0;
     args[1] = L;
   }
 
-
 /*******************************************/
 /* DEPTH[]   : return the stack depth      */
 /* CodeRange : $24                         */
@@ -1659,7 +1610,6 @@ static int nInstrCount=0;
     args[0] = CUR.top;
   }
 
-
 /*******************************************/
 /* CINDEX[]  : copy indexed element        */
 /* CodeRange : $25                         */
@@ -1667,7 +1617,6 @@ static int nInstrCount=0;
   static void  Ins_CINDEX( INS_ARG )
   {
     Long  L;
-
 
     L = args[0];
 
@@ -1677,7 +1626,6 @@ static int nInstrCount=0;
       args[0] = CUR.stack[CUR.args - L];
   }
 
-
 /*******************************************/
 /* MINDEX[]  : move indexed element        */
 /* CodeRange : $26                         */
@@ -1686,11 +1634,10 @@ static int nInstrCount=0;
   {
     Long  L, K;
 
-
     L = args[0];
 
     if (L == 0)
-	return;
+        return;
 
     if ( L<0 || L > CUR.args )
     {
@@ -1706,7 +1653,6 @@ static int nInstrCount=0;
 
     CUR.stack[ CUR.args-1 ] = K;
   }
-
 
 /*******************************************/
 /* ROLL[]    : roll top three elements     */
@@ -1725,8 +1671,6 @@ static int nInstrCount=0;
     args[1] = A;
     args[0] = B;
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -1748,7 +1692,6 @@ static int nInstrCount=0;
     return FAILURE;
   }
 
-
 /*******************************************/
 /* IF[]      : IF test                     */
 /* CodeRange : $58                         */
@@ -1757,7 +1700,6 @@ static int nInstrCount=0;
   {
     Int   nIfs;
     Bool  Out;
-
 
     if ( args[0] != 0 )
       return;
@@ -1788,7 +1730,6 @@ static int nInstrCount=0;
     } while ( Out == 0 );
   }
 
-
 /*******************************************/
 /* ELSE[]    : ELSE                        */
 /* CodeRange : $1B                         */
@@ -1818,7 +1759,6 @@ static int nInstrCount=0;
     } while ( nIfs != 0 );
   }
 
-
 /*******************************************/
 /* EIF[]     : End IF                      */
 /* CodeRange : $59                         */
@@ -1827,7 +1767,6 @@ static int nInstrCount=0;
   { (void)exc; (void)args;
     /* nothing to do */
   }
-
 
 /*******************************************/
 /* JROT[]    : Jump Relative On True       */
@@ -1846,7 +1785,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /*******************************************/
 /* JMPR[]    : JuMP Relative               */
 /* CodeRange : $1C                         */
@@ -1860,13 +1798,12 @@ static int nInstrCount=0;
     /* The JPMR is meant to stop at the ENDF instruction to finish
      * the function. However the programmer made a mistake, and ended
      * up one byte too far. I suspect that some TT interpreters handle this
-     * by detecting that the IP has gone off the end of the function. We can 
+     * by detecting that the IP has gone off the end of the function. We can
      * allow for simple cases here by just checking the preceding byte.
      * Fonts with this problem are not uncommon.
      */
       CUR.IP -= 1;
   }
-
 
 /*******************************************/
 /* JROF[]    : Jump Relative On False      */
@@ -1884,8 +1821,6 @@ static int nInstrCount=0;
         CUR.IP -= 1;
     }
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -1907,7 +1842,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* LTEQ[]    : Less Than or EQual          */
 /* CodeRange : $51                         */
@@ -1919,7 +1853,6 @@ static int nInstrCount=0;
     else
       args[0] = 0;
   }
-
 
 /*******************************************/
 /* GT[]      : Greater Than                */
@@ -1933,7 +1866,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* GTEQ[]    : Greater Than or EQual       */
 /* CodeRange : $53                         */
@@ -1945,7 +1877,6 @@ static int nInstrCount=0;
     else
       args[0] = 0;
   }
-
 
 /*******************************************/
 /* EQ[]      : EQual                       */
@@ -1959,7 +1890,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* NEQ[]     : Not EQual                   */
 /* CodeRange : $55                         */
@@ -1971,7 +1901,6 @@ static int nInstrCount=0;
     else
       args[0] = 0;
   }
-
 
 /*******************************************/
 /* ODD[]     : Odd                         */
@@ -1985,7 +1914,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* EVEN[]    : Even                        */
 /* CodeRange : $57                         */
@@ -1997,7 +1925,6 @@ static int nInstrCount=0;
     else
       args[0] = 0;
   }
-
 
 /*******************************************/
 /* AND[]     : logical AND                 */
@@ -2011,7 +1938,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* OR[]      : logical OR                  */
 /* CodeRange : $5B                         */
@@ -2024,7 +1950,6 @@ static int nInstrCount=0;
       args[0] = 0;
   }
 
-
 /*******************************************/
 /* NOT[]     : logical NOT                 */
 /* CodeRange : $5C                         */
@@ -2036,8 +1961,6 @@ static int nInstrCount=0;
     else
       args[0] = 1;
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2056,7 +1979,6 @@ static int nInstrCount=0;
     args[0] += args[1];
   }
 
-
 /*******************************************/
 /* SUB[]     : SUBstract                   */
 /* CodeRange : $61                         */
@@ -2065,7 +1987,6 @@ static int nInstrCount=0;
   { (void)exc;
     args[0] -= args[1];
   }
-
 
 /*******************************************/
 /* DIV[]     : DIVide                      */
@@ -2083,7 +2004,6 @@ static int nInstrCount=0;
     DBG_PRINT1(" %d", args[0]);
   }
 
-
 /*******************************************/
 /* MUL[]     : MULtiply                    */
 /* CodeRange : $63                         */
@@ -2092,7 +2012,6 @@ static int nInstrCount=0;
   { (void)exc;
     args[0] = MulDiv_Round( args[0], args[1], 64L );
   }
-
 
 /*******************************************/
 /* ABS[]     : ABSolute value              */
@@ -2103,7 +2022,6 @@ static int nInstrCount=0;
     args[0] = ABS( args[0] );
   }
 
-
 /*******************************************/
 /* NEG[]     : NEGate                      */
 /* CodeRange : $65                         */
@@ -2112,7 +2030,6 @@ static int nInstrCount=0;
   { (void)exc;
     args[0] = -args[0];
   }
-
 
 /*******************************************/
 /* FLOOR[]   : FLOOR                       */
@@ -2123,7 +2040,6 @@ static int nInstrCount=0;
     args[0] &= -64;
   }
 
-
 /*******************************************/
 /* CEILING[] : CEILING                     */
 /* CodeRange : $67                         */
@@ -2132,7 +2048,6 @@ static int nInstrCount=0;
   { (void)exc;
     args[0] = (args[0] + 63) & (-64);
   }
-
 
 /*******************************************/
 /* MAX[]     : MAXimum                     */
@@ -2144,7 +2059,6 @@ static int nInstrCount=0;
       args[0] = args[1];
   }
 
-
 /*******************************************/
 /* MIN[]     : MINimum                     */
 /* CodeRange : $69                         */
@@ -2154,8 +2068,6 @@ static int nInstrCount=0;
     if ( args[1] < args[0] )
       args[0] = args[1];
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2175,7 +2087,6 @@ static int nInstrCount=0;
                               CUR.metrics.compensations[CUR.opcode - 0x68] );
   }
 
-
 /*******************************************/
 /* NROUND[ab]: No ROUNDing of value        */
 /* CodeRange : $6C-$6F                     */
@@ -2186,8 +2097,6 @@ static int nInstrCount=0;
                           args[0],
                           CUR.metrics.compensations[CUR.opcode - 0x6C] );
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2225,7 +2134,6 @@ static int nInstrCount=0;
   {
     PDefRecord  pRec;
 
-
     if ( BOUNDS( args[0], CUR.numFDefs ) )
     {
       CUR.error = TT_Err_Invalid_Reference;
@@ -2241,7 +2149,6 @@ static int nInstrCount=0;
 
     skip_FDEF(EXEC_ARG);
   }
-
 
 /*******************************************/
 /* ENDF[]    : END Function definition     */
@@ -2285,7 +2192,6 @@ static int nInstrCount=0;
     /*       the result of Ins_Goto_CodeRange() here!     */
   }
 
-
 /*******************************************/
 /* CALL[]    : CALL function               */
 /* CodeRange : $2B                         */
@@ -2293,7 +2199,6 @@ static int nInstrCount=0;
   static void  Ins_CALL( INS_ARG )
   {
     PCallRecord  pCrec;
-
 
     if ( BOUNDS( args[0], CUR.numFDefs ) || !CUR.FDefs[args[0]].Active )
     {
@@ -2323,7 +2228,6 @@ static int nInstrCount=0;
 
     CUR.step_ins = FALSE;
   }
-
 
 /*******************************************/
 /* LOOPCALL[]: LOOP and CALL function      */
@@ -2363,7 +2267,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /*******************************************/
 /* IDEF[]    : Instruction DEFinition      */
 /* CodeRange : $89                         */
@@ -2371,22 +2274,20 @@ static int nInstrCount=0;
   static void Ins_IDEF( INS_ARG )
   {
     if (CUR.countIDefs >= CUR.numIDefs || args[0] > 255)
-	CUR.error = TT_Err_Storage_Overflow;
-    else 
+        CUR.error = TT_Err_Storage_Overflow;
+    else
       {
-	PDefRecord  pTDR;
+        PDefRecord  pTDR;
 
-	CUR.IDefPtr[(Byte)(args[0])] = CUR.countIDefs;
-	pTDR = &CUR.IDefs[CUR.countIDefs++];
+        CUR.IDefPtr[(Byte)(args[0])] = CUR.countIDefs;
+        pTDR = &CUR.IDefs[CUR.countIDefs++];
         pTDR->Opc    = (Byte)(args[0]);
         pTDR->Start  = CUR.IP + 1;
         pTDR->Range  = CUR.curRange;
         pTDR->Active = TRUE;
-	skip_FDEF(EXEC_ARG);
+        skip_FDEF(EXEC_ARG);
       }
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2420,7 +2321,6 @@ static int nInstrCount=0;
     CUR.new_top += L;
   }
 
-
 /*******************************************/
 /* NPUSHW[]  : PUSH N Words                */
 /* CodeRange : $41                         */
@@ -2428,7 +2328,6 @@ static int nInstrCount=0;
   static void  Ins_NPUSHW( INS_ARG )
   {
     Int  L, K;
-
 
     L = (Int)CUR.code[CUR.IP + 1];
 
@@ -2448,7 +2347,6 @@ static int nInstrCount=0;
     CUR.step_ins = FALSE;
     CUR.new_top += L;
   }
-
 
 /*******************************************/
 /* PUSHB[abc]: PUSH Bytes                  */
@@ -2472,7 +2370,6 @@ static int nInstrCount=0;
       }
   }
 
-
 /*******************************************/
 /* PUSHW[abc]: PUSH Words                  */
 /* CodeRange : $B8-$BF                     */
@@ -2480,7 +2377,6 @@ static int nInstrCount=0;
   static void  Ins_PUSHW( INS_ARG )
   {
     Int  L, K;
-
 
     L = CUR.opcode - 0xB8 + 1;
 
@@ -2499,8 +2395,6 @@ static int nInstrCount=0;
 
     CUR.step_ins = FALSE;
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2525,7 +2419,6 @@ static int nInstrCount=0;
     args[0] = CUR.storage[args[0]];
   }
 
-
 /*******************************************/
 /* WS[]      : Write Store                 */
 /* CodeRange : $42                         */
@@ -2541,7 +2434,6 @@ static int nInstrCount=0;
     CUR.storage[args[0]] = args[1];
   }
 
-
 /*******************************************/
 /* WCVTP[]   : Write CVT in Pixel units    */
 /* CodeRange : $44                         */
@@ -2556,7 +2448,6 @@ static int nInstrCount=0;
 
     CUR_Func_write_cvt( args[0], args[1] );
   }
-
 
 /*******************************************/
 /* WCVTF[]   : Write CVT in FUnits         */
@@ -2577,7 +2468,6 @@ static int nInstrCount=0;
     DBG_PRINT3(" cvt[%d]%d:=%d", args[0], ov, CUR.cvt[args[0]]);
   }
 
-
 /*******************************************/
 /* RCVT[]    : Read CVT                    */
 /* CodeRange : $45                         */
@@ -2591,7 +2481,7 @@ static int nInstrCount=0;
       CUR.error = TT_Err_Invalid_Reference;
       return;
 #else
-      /* A workaround for the Ghostscript Bug 687604. 
+      /* A workaround for the Ghostscript Bug 687604.
          Ported from FreeType 2 : !FT_LOAD_PEDANTIC by default. */
       index=args[0];
       args[0] = 0;
@@ -2602,8 +2492,6 @@ static int nInstrCount=0;
     args[0] = CUR_Func_read_cvt( index );
     DBG_PRINT3(" cvt[%d]%d:%d", index, CUR.cvt[index], args[0]);
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -2640,7 +2528,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SPVTCA[a] : Set PVector to Axis         */
 /* CodeRange : $02-$03                     */
@@ -2665,7 +2552,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SFVTCA[a] : Set FVector to Axis         */
 /* CodeRange : $04-$05                     */
@@ -2687,7 +2573,6 @@ static int nInstrCount=0;
 
     COMPUTE_Funcs();
   }
-
 
   static Bool  Ins_SxVTL( EXEC_OPS  Int             aIdx1,
                                     Int             aIdx2,
@@ -2725,7 +2610,6 @@ static int nInstrCount=0;
     return SUCCESS;
   }
 
-
 /*******************************************/
 /* SPVTL[a]  : Set PVector to Line         */
 /* CodeRange : $06-$07                     */
@@ -2742,7 +2626,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SFVTL[a]  : Set FVector to Line         */
 /* CodeRange : $08-$09                     */
@@ -2758,7 +2641,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SFVTPV[]  : Set FVector to PVector      */
 /* CodeRange : $0E                         */
@@ -2769,7 +2651,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SDPVTL[a] : Set Dual PVector to Line    */
 /* CodeRange : $86-$87                     */
@@ -2778,7 +2659,6 @@ static int nInstrCount=0;
   {
     Long  A, B, C;
     Long  p1, p2;   /* was Int in pas type ERROR */
-
 
     p1 = args[1];
     p2 = args[0];
@@ -2819,7 +2699,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SPVFS[]   : Set PVector From Stack      */
 /* CodeRange : $0A                         */
@@ -2828,7 +2707,6 @@ static int nInstrCount=0;
   {
     Short  S;
     Long   X, Y;
-
 
     /* Only use low 16bits, then sign extend */
     S = (Short)args[1];
@@ -2844,7 +2722,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* SFVFS[]   : Set FVector From Stack      */
 /* CodeRange : $0B                         */
@@ -2853,7 +2730,6 @@ static int nInstrCount=0;
   {
     Short  S;
     Long   X, Y;
-
 
     /* Only use low 16bits, then sign extend */
     S = (Short)args[1];
@@ -2867,7 +2743,6 @@ static int nInstrCount=0;
     COMPUTE_Funcs();
   }
 
-
 /*******************************************/
 /* GPV[]     : Get Projection Vector       */
 /* CodeRange : $0C                         */
@@ -2877,7 +2752,6 @@ static int nInstrCount=0;
     args[0] = CUR.GS.projVector.x;
     args[1] = CUR.GS.projVector.y;
   }
-
 
 /*******************************************/
 /* GFV[]     : Get Freedom Vector          */
@@ -2889,7 +2763,6 @@ static int nInstrCount=0;
     args[1] = CUR.GS.freeVector.y;
   }
 
-
 /*******************************************/
 /* SRP0[]    : Set Reference Point 0       */
 /* CodeRange : $10                         */
@@ -2898,7 +2771,6 @@ static int nInstrCount=0;
   {
     CUR.GS.rp0 = (Int)(args[0]);
   }
-
 
 /*******************************************/
 /* SRP1[]    : Set Reference Point 1       */
@@ -2909,7 +2781,6 @@ static int nInstrCount=0;
     CUR.GS.rp1 = (Int)(args[0]);
   }
 
-
 /*******************************************/
 /* SRP2[]    : Set Reference Point 2       */
 /* CodeRange : $12                         */
@@ -2918,7 +2789,6 @@ static int nInstrCount=0;
   {
     CUR.GS.rp2 = (Int)(args[0]);
   }
-
 
 /*******************************************/
 /* SZP0[]    : Set Zone Pointer 0          */
@@ -2945,7 +2815,6 @@ static int nInstrCount=0;
     CUR.GS.gep0 = (Int)(args[0]);
   }
 
-
 /*******************************************/
 /* SZP1[]    : Set Zone Pointer 1          */
 /* CodeRange : $14                         */
@@ -2970,7 +2839,6 @@ static int nInstrCount=0;
     CUR.GS.gep1 = (Int)(args[0]);
   }
 
-
 /*******************************************/
 /* SZP2[]    : Set Zone Pointer 2          */
 /* CodeRange : $15                         */
@@ -2994,7 +2862,6 @@ static int nInstrCount=0;
 
     CUR.GS.gep2 = (Int)(args[0]);
   }
-
 
 /*******************************************/
 /* SZPS[]    : Set Zone Pointers           */
@@ -3025,7 +2892,6 @@ static int nInstrCount=0;
     CUR.GS.gep2 = (Int)(args[0]);
   }
 
-
 /*******************************************/
 /* RTHG[]    : Round To Half Grid          */
 /* CodeRange : $19                         */
@@ -3036,7 +2902,6 @@ static int nInstrCount=0;
 
     CUR.func_round = (TRound_Function)Round_To_Half_Grid;
   }
-
 
 /*******************************************/
 /* RTG[]     : Round To Grid               */
@@ -3049,7 +2914,6 @@ static int nInstrCount=0;
     CUR.func_round = (TRound_Function)Round_To_Grid;
   }
 
-
 /*******************************************/
 /* RTDG[]    : Round To Double Grid        */
 /* CodeRange : $3D                         */
@@ -3060,7 +2924,6 @@ static int nInstrCount=0;
 
     CUR.func_round = (TRound_Function)Round_To_Double_Grid;
   }
-
 
 /*******************************************/
 /* RUTG[]    : Round Up To Grid            */
@@ -3073,7 +2936,6 @@ static int nInstrCount=0;
     CUR.func_round = (TRound_Function)Round_Up_To_Grid;
   }
 
-
 /*******************************************/
 /* RDTG[]    : Round Down To Grid          */
 /* CodeRange : $7D                         */
@@ -3085,7 +2947,6 @@ static int nInstrCount=0;
     CUR.func_round = (TRound_Function)Round_Down_To_Grid;
   }
 
-
 /*******************************************/
 /* ROFF[]    : Round OFF                   */
 /* CodeRange : $7A                         */
@@ -3096,7 +2957,6 @@ static int nInstrCount=0;
 
     CUR.func_round = (TRound_Function)Round_None;
   }
-
 
 /*******************************************/
 /* SROUND[]  : Super ROUND                 */
@@ -3110,7 +2970,6 @@ static int nInstrCount=0;
     CUR.func_round = (TRound_Function)Round_Super;
   }
 
-
 /*******************************************/
 /* S45ROUND[]: Super ROUND 45 degrees      */
 /* CodeRange : $77                         */
@@ -3123,7 +2982,6 @@ static int nInstrCount=0;
     CUR.func_round = (TRound_Function)Round_Super_45;
   }
 
-
 /*******************************************/
 /* SLOOP[]   : Set LOOP variable           */
 /* CodeRange : $17                         */
@@ -3132,7 +2990,6 @@ static int nInstrCount=0;
   {
     CUR.GS.loop = args[0];
   }
-
 
 /*******************************************/
 /* SMD[]     : Set Minimum Distance        */
@@ -3143,7 +3000,6 @@ static int nInstrCount=0;
     CUR.GS.minimum_distance = args[0];
   }
 
-
 /*******************************************/
 /* INSTCTRL[]: INSTruction ConTRol         */
 /* CodeRange : $8e                         */
@@ -3151,7 +3007,6 @@ static int nInstrCount=0;
   static void  Ins_INSTCTRL( INS_ARG )
   {
     Long  K, L;
-
 
     K = args[1];
     L = args[0];
@@ -3165,7 +3020,6 @@ static int nInstrCount=0;
     CUR.GS.instruct_control = (Int)((CUR.GS.instruct_control & (~K)) | (L & K));
   }
 
-
 /*******************************************/
 /* SCANCTRL[]: SCAN ConTRol                */
 /* CodeRange : $85                         */
@@ -3173,7 +3027,6 @@ static int nInstrCount=0;
   static void  Ins_SCANCTRL( INS_ARG )
   {
     Int  A;
-
 
     /* Get Threshold */
     A = (Int)(args[0] & 0xFF);
@@ -3210,7 +3063,6 @@ static int nInstrCount=0;
       CUR.GS.scan_control = FALSE;
 }
 
-
 /*******************************************/
 /* SCANTYPE[]: SCAN TYPE                   */
 /* CodeRange : $8D                         */
@@ -3229,7 +3081,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /**********************************************/
 /* SCVTCI[]  : Set Control Value Table Cut In */
 /* CodeRange : $1D                            */
@@ -3239,7 +3090,6 @@ static int nInstrCount=0;
     CUR.GS.control_value_cutin = (TT_F26Dot6)args[0];
   }
 
-
 /**********************************************/
 /* SSWCI[]   : Set Single Width Cut In        */
 /* CodeRange : $1E                            */
@@ -3248,7 +3098,6 @@ static int nInstrCount=0;
   {
     CUR.GS.single_width_cutin = (TT_F26Dot6)args[0];
   }
-
 
 /**********************************************/
 /* SSW[]     : Set Single Width               */
@@ -3265,7 +3114,6 @@ static int nInstrCount=0;
     CUR.GS.single_width_value = (TT_F26Dot6)(args[0] >> 10);
   }
 
-
 /**********************************************/
 /* FLIPON[]  : Set Auto_flip to On            */
 /* CodeRange : $4D                            */
@@ -3274,7 +3122,6 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.auto_flip = TRUE;
   }
-
 
 /**********************************************/
 /* FLIPOFF[] : Set Auto_flip to Off           */
@@ -3285,7 +3132,6 @@ static int nInstrCount=0;
     CUR.GS.auto_flip = FALSE;
   }
 
-
 /**********************************************/
 /* SANGW[]   : Set Angle Weight               */
 /* CodeRange : $7E                            */
@@ -3294,7 +3140,6 @@ static int nInstrCount=0;
   { (void)exc; (void)args;
     /* instruction not supported anymore */
   }
-
 
 /**********************************************/
 /* SDB[]     : Set Delta Base                 */
@@ -3305,7 +3150,6 @@ static int nInstrCount=0;
     CUR.GS.delta_base = (Int)args[0];
   }
 
-
 /**********************************************/
 /* SDS[]     : Set Delta Shift                */
 /* CodeRange : $5F                            */
@@ -3314,7 +3158,6 @@ static int nInstrCount=0;
   {
     CUR.GS.delta_shift = (Int)args[0];
   }
-
 
 /**********************************************/
 /* GC[a]     : Get Coordinate projected onto  */
@@ -3326,7 +3169,6 @@ static int nInstrCount=0;
   static void  Ins_GC( INS_ARG )
   {
     Long  L;
-
 
     L = args[0];
 
@@ -3352,7 +3194,6 @@ static int nInstrCount=0;
     args[0] = L;
   }
 
-
 /**********************************************/
 /* SCFS[]    : Set Coordinate From Stack      */
 /* CodeRange : $48                            */
@@ -3366,7 +3207,6 @@ static int nInstrCount=0;
   {
     Long  K;
     Int   L;
-
 
     L = (Int)args[0];
 
@@ -3389,7 +3229,6 @@ static int nInstrCount=0;
       CUR.zp2.org_y[L] = CUR.zp2.cur_y[L];
     }
   }
-
 
 /**********************************************/
 /* MD[a]     : Measure Distance               */
@@ -3427,7 +3266,6 @@ static int nInstrCount=0;
     args[0] = D;
   }
 
-
 /**********************************************/
 /* MPPEM[]   : Measure Pixel Per EM           */
 /* CodeRange : $4B                            */
@@ -3438,7 +3276,6 @@ static int nInstrCount=0;
     DBG_PRINT1(" %d", args[0]);
   }
 
-
 /**********************************************/
 /* MPS[]     : Measure PointSize              */
 /* CodeRange : $4C                            */
@@ -3447,8 +3284,6 @@ static int nInstrCount=0;
   {
     args[0] = CUR.metrics.pointSize;
   }
-
-
 
 /****************************************************************/
 /*                                                              */
@@ -3494,7 +3329,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* FLIPRGON[]: FLIP RanGe ON                  */
 /* CodeRange : $81                            */
@@ -3502,7 +3336,6 @@ static int nInstrCount=0;
   static void  Ins_FLIPRGON( INS_ARG )
   {
     Long  I, K, L;
-
 
     K = args[1];
     L = args[0];
@@ -3518,7 +3351,6 @@ static int nInstrCount=0;
       CUR.pts.touch[I] |= TT_Flag_On_Curve;
   }
 
-
 /**********************************************/
 /* FLIPRGOFF : FLIP RanGe OFF                 */
 /* CodeRange : $82                            */
@@ -3526,7 +3358,6 @@ static int nInstrCount=0;
   static void  Ins_FLIPRGOFF( INS_ARG )
   {
     Long  I, K, L;
-
 
     K = args[1];
     L = args[0];
@@ -3542,7 +3373,6 @@ static int nInstrCount=0;
       CUR.pts.touch[I] &= ~TT_Flag_On_Curve;
 }
 
-
   static Bool  Compute_Point_Displacement( EXEC_OPS
                                            PCoordinates  x,
                                            PCoordinates  y,
@@ -3552,7 +3382,6 @@ static int nInstrCount=0;
     TGlyph_Zone  zp;
     Int          p;
     TT_F26Dot6   d;
-
 
     if ( CUR.opcode & 1 )
     {
@@ -3585,7 +3414,6 @@ static int nInstrCount=0;
     return SUCCESS;
   }
 
-
   static void  Move_Zp2_Point( EXEC_OPS
                                Long        point,
                                TT_F26Dot6  dx,
@@ -3606,7 +3434,6 @@ static int nInstrCount=0;
         CUR.zp2.touch[point] |= TT_Flag_Touched_Y;
     }
   }
-
 
 /**********************************************/
 /* SHP[a]    : SHift Point by the last point  */
@@ -3652,7 +3479,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* SHC[a]    : SHift Contour                  */
 /* CodeRange : $34-35                         */
@@ -3667,13 +3493,12 @@ static int nInstrCount=0;
     Long        contour, i;
     Int         first_point, last_point;
 
-
     contour = args[0];
 
     if ( BOUNDS( args[0], CUR.pts.n_contours ) )
     {
 #if 0
-      /* A workaround for the Ghostscript bug 688501. 
+      /* A workaround for the Ghostscript bug 688501.
        *  Ported from FreeType 2
        */
       CUR.error = TT_Err_Invalid_Reference;
@@ -3699,7 +3524,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /**********************************************/
 /* SHZ[a]    : SHift Zone                     */
 /* CodeRange : $36-37                         */
@@ -3713,7 +3537,6 @@ static int nInstrCount=0;
 
     Int  last_point;
     Long i;
-
 
     if ( BOUNDS( args[0], 2 ) )
     {
@@ -3734,7 +3557,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /**********************************************/
 /* SHPIX[]   : SHift points by a PIXel amount */
 /* CodeRange : $38                            */
@@ -3743,7 +3565,6 @@ static int nInstrCount=0;
   {
     TT_F26Dot6  dx, dy;
     Long        point;
-
 
     if ( CUR.top < CUR.GS.loop )
     {
@@ -3779,7 +3600,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* MSIRP[a]  : Move Stack Indirect Relative   */
 /* CodeRange : $3A-$3B                        */
@@ -3788,7 +3608,6 @@ static int nInstrCount=0;
   {
     Int         point;
     TT_F26Dot6  distance;
-
 
     point = (Int)args[0];
 
@@ -3822,7 +3641,6 @@ static int nInstrCount=0;
       CUR.GS.rp0 = point;
   }
 
-
 /**********************************************/
 /* MDAP[a]   : Move Direct Absolute Point     */
 /* CodeRange : $2E-$2F                        */
@@ -3832,7 +3650,6 @@ static int nInstrCount=0;
     Int         point;
     TT_F26Dot6  cur_dist,
                 distance;
-
 
     point = (Int)args[0];
 
@@ -3861,7 +3678,6 @@ static int nInstrCount=0;
     CUR.GS.rp1 = point;
   }
 
-
 /**********************************************/
 /* MIAP[a]   : Move Indirect Absolute Point   */
 /* CodeRange : $3E-$3F                        */
@@ -3872,18 +3688,17 @@ static int nInstrCount=0;
     TT_F26Dot6  distance,
                 org_dist;
 
-
     cvtEntry = (Int)args[1];
     point    = (Int)args[0];
 
     if ( BOUNDS( args[0], CUR.zp0.n_points ) ||
          BOUNDS( args[1], CUR.cvtSize )      )
     {
-	/* Ignore these errors, abort the instruction
-	 * and continue. This restores the FreeType 
-	 * behaviour when pedantic_hinting is false. For bug
-	 * #689471, see also Ins_SHC above and bug #688501.
-	 */
+        /* Ignore these errors, abort the instruction
+         * and continue. This restores the FreeType
+         * behaviour when pedantic_hinting is false. For bug
+         * #689471, see also Ins_SHC above and bug #688501.
+         */
       return;
     }
 
@@ -3941,7 +3756,6 @@ static int nInstrCount=0;
     CUR.GS.rp1 = point;
   }
 
-
 /**********************************************/
 /* MDRP[abcde] : Move Direct Relative Point   */
 /* CodeRange   : $C0-$DF                      */
@@ -3952,13 +3766,12 @@ static int nInstrCount=0;
     TT_F26Dot6  distance,
                 org_dist;
 
-
     point = (Int)args[0];
 
     if ( BOUNDS( args[0], CUR.zp1.n_points ) )
     {
-	/* Current version of FreeType silently ignores this out of bounds error
-	 * and drops the instruction, see bug #691121 
+        /* Current version of FreeType silently ignores this out of bounds error
+         * and drops the instruction, see bug #691121
       CUR.error = TT_Err_Invalid_Reference; */
       return;
     }
@@ -4023,7 +3836,6 @@ static int nInstrCount=0;
       CUR.GS.rp0 = point;
   }
 
-
 /**********************************************/
 /* MIRP[abcde] : Move Indirect Relative Point */
 /* CodeRange   : $E0-$FF                      */
@@ -4037,7 +3849,6 @@ static int nInstrCount=0;
                 distance,
                 cur_dist,
                 org_dist;
-
 
     point    = (Int)args[0];
     cvtEntry = (Int)args[1];
@@ -4149,7 +3960,6 @@ static int nInstrCount=0;
     CUR.GS.rp2 = point;
   }
 
-
 /**********************************************/
 /* ALIGNRP[]   : ALIGN Relative Point         */
 /* CodeRange   : $3C                          */
@@ -4191,7 +4001,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* AA[]        : Adjust Angle                 */
 /* CodeRange   : $7F                          */
@@ -4200,7 +4009,6 @@ static int nInstrCount=0;
   { (void)exc; (void)args;
     /* Intentional - no longer supported */
   }
-
 
 /**********************************************/
 /* ISECT[]     : moves point to InterSECTion  */
@@ -4221,7 +4029,6 @@ static int nInstrCount=0;
     TT_F26Dot6  val;
 
     TT_Vector   R;
-
 
     point = args[0];
 
@@ -4278,7 +4085,6 @@ static int nInstrCount=0;
     }
   }
 
-
 /**********************************************/
 /* ALIGNPTS[]  : ALIGN PoinTS                 */
 /* CodeRange   : $27                          */
@@ -4287,7 +4093,6 @@ static int nInstrCount=0;
   {
     Int         p1, p2;
     TT_F26Dot6  distance;
-
 
     p1 = (Int)args[0];
    p2 = (Int)args[1];
@@ -4308,7 +4113,6 @@ static int nInstrCount=0;
 
     CUR_Func_move( &CUR.zp0, p2, -distance );
   }
-
 
 /**********************************************/
 /* IP[]        : Interpolate Point            */
@@ -4384,7 +4188,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* UTP[a]      : UnTouch Point                */
 /* CodeRange   : $29                          */
@@ -4410,14 +4213,12 @@ static int nInstrCount=0;
     CUR.zp0.touch[args[0]] &= mask;
   }
 
-
   /* Local variables for Ins_IUP: */
   struct LOC_Ins_IUP
   {
     PCoordinates  orgs;   /* original and current coordinate */
     PCoordinates  curs;   /* arrays                          */
   };
-
 
   static void  Shift( Int  p1,
                       Int  p2,
@@ -4426,7 +4227,6 @@ static int nInstrCount=0;
   {
     Int         i;
     TT_F26Dot6  x;
-
 
     x = LINK->curs[p] - LINK->orgs[p];
 
@@ -4437,14 +4237,12 @@ static int nInstrCount=0;
       LINK->curs[i] += x;
   }
 
-
   static void  Interp( Int  p1, Int  p2,
                        Int  ref1, Int  ref2,
                        struct LOC_Ins_IUP*  LINK )
   {
     Long        i;
     TT_F26Dot6  x, x1, x2, d1, d2;
-
 
     if ( p1 > p2 )
       return;
@@ -4513,7 +4311,6 @@ static int nInstrCount=0;
       LINK->curs[i] = x;
     }
   }
-
 
 /**********************************************/
 /* IUP[a]      : Interpolate Untouched Points */
@@ -4601,7 +4398,6 @@ static int nInstrCount=0;
     } while ( contour < CUR.pts.n_contours );
   }
 
-
 /**********************************************/
 /* DELTAPn[]   : DELTA Exceptions P1, P2, P3  */
 /* CodeRange   : $5D,$71,$72                  */
@@ -4610,7 +4406,6 @@ static int nInstrCount=0;
   {
     Int   k;
     Long  A, B, C, nump;
-
 
     nump = args[0];
 
@@ -4670,7 +4465,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
 /**********************************************/
 /* DELTACn[]   : DELTA Exceptions C1, C2, C3  */
 /* CodeRange   : $73,$74,$75                  */
@@ -4679,7 +4473,6 @@ static int nInstrCount=0;
   {
     Long  nump, k;
     Long  A, B, C;
-
 
     nump = args[0];
 
@@ -4734,8 +4527,6 @@ static int nInstrCount=0;
     CUR.new_top = CUR.args;
   }
 
-
-
 /****************************************************************/
 /*                                                              */
 /* MISC. INSTRUCTIONS                                           */
@@ -4753,7 +4544,6 @@ static int nInstrCount=0;
     CUR.error = TT_Err_Debug_OpCode;
   }
 
-
 /**********************************************/
 /* GETINFO[]   : GET INFOrmation              */
 /* CodeRange   : $88                          */
@@ -4761,7 +4551,6 @@ static int nInstrCount=0;
   static void  Ins_GETINFO( INS_ARG )
   {
     Long  K;
-
 
     K = 0;
 
@@ -4781,30 +4570,28 @@ static int nInstrCount=0;
     args[0] = K;
   }
 
-
   static void  Ins_UNKNOWN( INS_ARG )
   { /* Rewritten by igorm. */
     Byte i;
     TDefRecord*  def;
     PCallRecord  call;
 
-#   if 0     /* The condition below appears always false 
-		due to limited range of data type
-		- skip it to quiet a compiler warning. */
+#   if 0     /* The condition below appears always false
+                due to limited range of data type
+                - skip it to quiet a compiler warning. */
     if (CUR.opcode > sizeof(CUR.IDefPtr) / sizeof(CUR.IDefPtr[0])) {
-	CUR.error = TT_Err_Invalid_Opcode;
-	return;
+        CUR.error = TT_Err_Invalid_Opcode;
+        return;
     }
 #   endif
     i = CUR.IDefPtr[(Byte)CUR.opcode];
 
-    if (i >= CUR.numIDefs) 
+    if (i >= CUR.numIDefs)
       {
-	CUR.error = TT_Err_Invalid_Opcode;
-	return;
+        CUR.error = TT_Err_Invalid_Opcode;
+        return;
       }
     def   = &CUR.IDefs[i];
-
 
     if ( CUR.callTop >= CUR.callSize )
     {
@@ -4824,7 +4611,6 @@ static int nInstrCount=0;
     CUR.step_ins = FALSE;
     return;
   }
-
 
   static struct { const char *sName; TInstruction_Function p; }  Instruct_Dispatch[256] =
   {
@@ -5104,8 +4890,6 @@ static int nInstrCount=0;
     ,{"  MIRP[31]  ",  Ins_MIRP       }
   };
 
-
-
 /****************************************************************/
 /*                                                              */
 /*                    RUN                                       */
@@ -5146,10 +4930,10 @@ static int nInstrCount=0;
     bool bFirst;
     bool dbg_prt = (DBG_PRT_FUN != NULL);
 #   ifdef DEBUG
-	ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
-	F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
+        ttfMemory *mem = exc->current_face->font->tti->ttf_memory;
+        F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
 
-	DBG_PRINT("\n%% *** Entering RunIns ***");
+        DBG_PRINT("\n%% *** Entering RunIns ***");
 #   endif
 
     (void)dbg_prt; /* Quiet compiler warning in release build. */
@@ -5181,15 +4965,15 @@ static int nInstrCount=0;
         save_cx = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cx), "RunIns");
         save_cy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cy), "RunIns");
         if (!save_ox || !save_oy || !save_cx || !save_cy)
-	  return TT_Err_Out_Of_Memory;
+          return TT_Err_Out_Of_Memory;
       } else
-	save_ox = save_oy = save_cx = save_cy = NULL;
+        save_ox = save_oy = save_cx = save_cy = NULL;
 #   endif
 
     Result = setjmp(find_jmp_buf(exc->trap));
     if (Result) {
-	CUR.error = Result;
-	goto _LExit;
+        CUR.error = Result;
+        goto _LExit;
     }
     bFirst = true;
 
@@ -5227,30 +5011,30 @@ static int nInstrCount=0;
 
 #     ifdef DEBUG
         DBG_PRINT3("\n%%n=%5d IP=%5d OP=%s            ", nInstrCount, CUR.IP, Instruct_Dispatch[CUR.opcode].sName);
-	/*
+        /*
         { for(int i=0;i<CUR.top;i++)
             DBG_PRINT1("% %d",CUR.stack[i]);
         }
-	*/
-	if (save_ox != NULL) {
+        */
+        if (save_ox != NULL) {
           memcpy(save_ox, CUR.pts.org_x, sizeof(CUR.pts.org_x[0]) * CUR.pts.n_points);
           memcpy(save_oy, CUR.pts.org_y, sizeof(CUR.pts.org_y[0]) * CUR.pts.n_points);
           memcpy(save_cx, CUR.pts.cur_x, sizeof(CUR.pts.cur_x[0]) * CUR.pts.n_points);
           memcpy(save_cy, CUR.pts.cur_y, sizeof(CUR.pts.cur_y[0]) * CUR.pts.n_points);
-	}
+        }
 #     endif
 
       Instruct_Dispatch[CUR.opcode].p( EXEC_ARGS &CUR.stack[CUR.args] );
 
 #     ifdef DEBUG
-      if (save_ox != NULL) { 
-	F26Dot6 *pp[4], *qq[4];
+      if (save_ox != NULL) {
+        F26Dot6 *pp[4], *qq[4];
         const char *ss[] = {"org.x", "org.y", "cur.x", "cur.y"};
         int l = 0, i, j;
 
-        pp[0] = save_ox, 
-        pp[1] = save_oy, 
-        pp[2] = save_cx, 
+        pp[0] = save_ox,
+        pp[1] = save_oy,
+        pp[2] = save_cx,
         pp[3] = save_cy;
         qq[0] = CUR.pts.org_x;
         qq[1] = CUR.pts.org_y;
@@ -5261,13 +5045,13 @@ static int nInstrCount=0;
           for(j = 0;j < CUR.pts.n_points; j++)
             { F26Dot6 *ppi = pp[i], *qqi = qq[i];
               if(ppi[j] != qqi[j] || bFirst)
-	      {
+              {
                 DBG_PRINT4("%%  %s[%d]%d:=%d", ss[i], j, pp[i][j], qq[i][j]);
                 if(++l > 3)
                   { l=0;
                     DBG_PRINT("\n");
                   }
-              }	       
+              }
             }
         nInstrCount++;
         bFirst=FALSE;

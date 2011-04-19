@@ -1,12 +1,12 @@
 % Copyright (C) 2004 Artifex Software, Inc. All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -15,9 +15,9 @@
 
 % $Id$
 
-% Generate a cidfmap file for substituting CID fonts with TrueType 
+% Generate a cidfmap file for substituting CID fonts with TrueType
 % fonts, based on fonts found in the directory FONTDIR.
-% 
+%
 % The directory FONTDIR is searched for fonts whose filename
 % matches a Path in the cidsubs dictionary.
 % Any matches are written out as a CID font substitution.
@@ -26,19 +26,18 @@
 % write out each alias that matches a substituted font.
 % Where multiple aliases are possible, use the first match.
 %
-% Note that the substitutions and aliases in this file were created 
-% by someone who doesn't understand Chinese, Japanese or Korean.  
+% Note that the substitutions and aliases in this file were created
+% by someone who doesn't understand Chinese, Japanese or Korean.
 % The initial list contains only font files found in Windows XP.
 % Please submit corrections and additions.
 %
 % See the end of file for references and further information.
 %
-% Font filenames must match case.  
+% Font filenames must match case.
 % All font filenames are currently lower case.
 %
 % Usage: gswin32c -q -dBATCH -sFONTDIR=c:/windows/fonts
 %                -sCIDFMAP=c:/gs/cidfmap mkcidfm.ps
-
 
 systemdict /FONTDIR known not { /FONTDIR (c:/windows/fonts) def } if
 
@@ -93,10 +92,9 @@ systemdict /CIDFMAP known { CIDFMAP } { (%stdout) } ifelse
 >>
 def
 
-
 % This dictionary contains a list of CID substitutions
 %  Many ttc's have an older ttf version - be sure to put the ttf entries later.
-/cidsubs 
+/cidsubs
 <<
   % Simplified Chinese
   /SimHei
@@ -539,7 +537,6 @@ def
 >>
 def
 
-
 % A dictionary for storing the names and paths of found fonts
 /foundfonts 50 dict def
 
@@ -570,7 +567,7 @@ def
       } for
 } def
 
-% Check if a font basename matches one of the possible cid substitutions.  
+% Check if a font basename matches one of the possible cid substitutions.
 % If it does, add the font and full path to the foundfonts dictionary
 /checkfont {
   dup basename
@@ -600,19 +597,18 @@ def
   /checkfont load 256 string filenameforall
 } def
 
-
 % Write out a cid substition, using the full font path
 % name is the font name, e.g. /MS-Mincho
 % path is the full path to the font file, e.g. (c:\windows\fonts\msmincho.ttc)
 % subs is the dictionary for CID font substition, from cidsubs
-/emitsubs { % name path subs -- 
+/emitsubs { % name path subs --
   3 -1 roll cidfmap exch write==only % name
   cidfmap ( << ) writestring
   % path subs
   {
    1 index /Path eq {pop 1 index} if % use full path, not basename
-   exch cidfmap exch write==only cidfmap ( ) writestring 
-   cidfmap exch write==only cidfmap ( ) writestring 
+   exch cidfmap exch write==only cidfmap ( ) writestring
+   cidfmap exch write==only cidfmap ( ) writestring
   } forall
   cidfmap (>> ;\n) writestring
   pop
@@ -639,19 +635,19 @@ def
 % Write out aliases for which the cid substituted font exists.
 /writealiases { % --
   cidfmap (\n% Aliases\n) writestring
-  fontaliases 
+  fontaliases
   {
     % name aliasarray
     {
       % name alias
       foundfonts 1 index known
       {
-	1 index cidfmap exch write==only cidfmap ( ) writestring 
-	cidfmap exch write==only cidfmap ( ;\n) writestring
-	exit % after first match
+        1 index cidfmap exch write==only cidfmap ( ) writestring
+        cidfmap exch write==only cidfmap ( ;\n) writestring
+        exit % after first match
       }
       {
-	pop % didn't find this name
+        pop % didn't find this name
       }
       ifelse
     } forall
@@ -660,7 +656,6 @@ def
   }
   forall
 } def
-
 
 % Write out a new cidfmap file to stdout
 /writecidfmap { % path --
@@ -671,7 +666,6 @@ def
   writesubs
   writealiases
 } def
-
 
 FONTDIR writecidfmap
 

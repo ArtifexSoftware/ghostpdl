@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,8 +27,8 @@
 struct gs_indexed_map_s {
     rc_header rc;
     union {
-	int (*lookup_index)(const gs_color_space *, int, float *);
-	int (*tint_transform)(const gs_separation_params *, floatp, float *);
+        int (*lookup_index)(const gs_color_space *, int, float *);
+        int (*tint_transform)(const gs_separation_params *, floatp, float *);
     } proc;
     void *proc_data;
     uint num_values;	/* base_space->type->num_components * (hival + 1) */
@@ -44,7 +44,7 @@ int lookup_indexed_map(const gs_color_space *, int, float *);
 /* Allocate an indexed map and its values. */
 /* The initial reference count is 1. */
 int alloc_indexed_map(gs_indexed_map ** ppmap, int num_values,
-		      gs_memory_t * mem, client_name_t cname);
+                      gs_memory_t * mem, client_name_t cname);
 
 /* Free an indexed map and its values when the reference count goes to 0. */
 rc_free_proc(free_indexed_map);
@@ -93,11 +93,10 @@ struct gs_pattern1_instance_s {
     "gs_pattern1_instance_t", pattern1_instance_enum_ptrs,\
     pattern1_instance_reloc_ptrs)
 
-/* This is used for the case where we have float outputs due to the use of a procedure in 
+/* This is used for the case where we have float outputs due to the use of a procedure in
    the indexed image, but we desire to have byte outputs.  Used with interpolated images. */
 
 #define float_color_to_byte_color(float_color) ( (0.0 < float_color && float_color < 1.0) ? \
     ((unsigned char) (float_color*255.0)) :  ( (float_color <= 0.0) ? 0x00 : 0xFF  ))
-
 
 #endif /* gxcolor2_INCLUDED */

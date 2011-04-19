@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -74,32 +74,32 @@ typedef struct x11_cman_s {
      * fewer bits than color_mask if the device is not using halftones.
      */
     struct cmm_ {
-	X_color_value red, green, blue;
+        X_color_value red, green, blue;
     } color_mask, match_mask;
 
 #if HaveStdCMap  /* Standard colormap stuff is only in X11R4 and later. */
 
     struct {
 
-	/*
-	 * map is the X standard colormap for the display and screen,
-	 * if one is available.
-	 */
-	XStandardColormap *map;
+        /*
+         * map is the X standard colormap for the display and screen,
+         * if one is available.
+         */
+        XStandardColormap *map;
 
-	/*
-	 * When possible, we precompute shift values and tables that replace
-	 * some multiplies and divides.
-	 */
-	bool fast;
-	x11_cmap_values_t red, green, blue;
+        /*
+         * When possible, we precompute shift values and tables that replace
+         * some multiplies and divides.
+         */
+        bool fast;
+        x11_cmap_values_t red, green, blue;
 
-	/*
-	 * If free_map is true, we allocated the map ourselves (to
-	 * represent a TrueColor or Static Gray visual), and must free it
-	 * when closing the device.
-	 */
-	bool free_map;
+        /*
+         * If free_map is true, we allocated the map ourselves (to
+         * represent a TrueColor or Static Gray visual), and must free it
+         * when closing the device.
+         */
+        bool free_map;
 
     } std_cmap;
 
@@ -111,8 +111,8 @@ typedef struct x11_cman_s {
      * through the standard colormap or query the server.
      */
     struct cmc_ {
-	int size;		/* min(1 << depth, 256) */
-	x11_rgb_t *values;	/* [color_to_rgb.size] */
+        int size;		/* min(1 << depth, 256) */
+        x11_rgb_t *values;	/* [color_to_rgb.size] */
     } color_to_rgb;
 
     /*
@@ -121,9 +121,9 @@ typedef struct x11_cman_s {
      * dithering.
      */
 #define CUBE_INDEX(r,g,b) (((r) * xdev->color_info.dither_colors + (g)) * \
-				  xdev->color_info.dither_colors + (b))
+                                  xdev->color_info.dither_colors + (b))
     x_pixel *dither_ramp;	/* [color_info.dither_colors^3] if color,
-				   [color_info.dither_grays] if gray */
+                                   [color_info.dither_grays] if gray */
 
     /*
      * For systems with writable colormaps, dynamic.colors is a chained
@@ -131,11 +131,11 @@ typedef struct x11_cman_s {
      * pixel values.  Entries are added dynamically.
      */
     struct cmd_ {
-	int size;
-	x11_color_t **colors;	/* [size] */
-	int shift;		/* 16 - log2(size) */
-	int used;
-	int max_used;
+        int size;
+        x11_color_t **colors;	/* [size] */
+        int shift;		/* 16 - log2(size) */
+        int used;
+        int max_used;
     } dynamic;
 
 } x11_cman_t;

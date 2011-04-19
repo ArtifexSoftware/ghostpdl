@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -13,7 +13,7 @@
 /* $Id$*/
 /* High-res 24Dot-matrix printer driver */
 
-/* Supported printers 
+/* Supported printers
  *  NEC P6 and similar, implemented by Andreas Schwab (schwab@ls5.informatik.uni-dortmund.de)
  *  Epson LQ850, implemented by Christian Felsch (felsch@tu-harburg.d400.de)
  */
@@ -24,21 +24,20 @@
 static dev_proc_print_page (necp6_print_page);
 const gx_device_printer far_data gs_necp6_device =
   prn_device (prn_std_procs, "necp6",
-	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	      360, 360,
-	      0, 0, 0.5, 0,	/* margins */
-	      1, necp6_print_page);
-
+              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+              360, 360,
+              0, 0, 0.5, 0,	/* margins */
+              1, necp6_print_page);
 
 /* Driver for Epson LQ850 */
 /* I've tested this driver on a BJ300 with LQ850 emulation and there it produce correct 360x360dpi output. */
 static dev_proc_print_page (lq850_print_page);
 const gx_device_printer gs_lq850_device =
   prn_device (prn_std_procs, "lq850",
-	      DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	      360, 360,
-	      0, 0, 0.5, 0,	/* margins */
-	      1, lq850_print_page);
+              DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+              360, 360,
+              0, 0, 0.5, 0,	/* margins */
+              1, lq850_print_page);
 
 /* ------ Internal routines ------ */
 
@@ -69,16 +68,16 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
   if (in == 0 || out == 0)
     {
       if (out)
-	gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
+        gs_free (pdev->memory, (char *) out, out_size, 1, "dot24_print_page (out)");
       if (in)
-	gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
+        gs_free (pdev->memory, (char *) in, in_size, 1, "dot24_print_page (in)");
       return_error (gs_error_VMerror);
     }
 
   /* Initialize the printer and reset the margins. */
   fwrite (init_string, init_len - 1, sizeof (char), prn_stream);
   fputc ((int) (pdev->width / pdev->x_pixels_per_inch * 10) + 2,
-	 prn_stream);
+         prn_stream);
 
   /* Print lines of graphics */
   while (lnum < pdev->height)
@@ -93,127 +92,127 @@ dot24_print_page (gx_device_printer *pdev, FILE *prn_stream, char *init_string, 
       /* Copy 1 scan line and test for all zero. */
       gdev_prn_copy_scan_lines (pdev, lnum, in, line_size);
       if (in[0] == 0
-	  && !memcmp ((char *) in, (char *) in + 1, line_size - 1))
-	{
-	  lnum++;
-	  skip += 2 - y_high;
-	  continue;
-	}
+          && !memcmp ((char *) in, (char *) in + 1, line_size - 1))
+        {
+          lnum++;
+          skip += 2 - y_high;
+          continue;
+        }
 
       /* Vertical tab to the appropriate position. */
       while ((skip >> 1) > 255)
-	{
-	  fputs ("\033J\377", prn_stream);
-	  skip -= 255 * 2;
-	}
+        {
+          fputs ("\033J\377", prn_stream);
+          skip -= 255 * 2;
+        }
 
       if (skip)
-	{
-	  if (skip >> 1)
-	    fprintf (prn_stream, "\033J%c", skip >> 1);
-	  if (skip & 1)
-	    fputc ('\n', prn_stream);
-	}
+        {
+          if (skip >> 1)
+            fprintf (prn_stream, "\033J%c", skip >> 1);
+          if (skip & 1)
+            fputc ('\n', prn_stream);
+        }
 
       /* Copy the rest of the scan lines. */
       if (y_high)
-	{
-	  inp = in + line_size;
-	  for (lcnt = 1; lcnt < 24; lcnt++, inp += line_size)
-	    if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2, inp,
-					   line_size))
-	      {
-		memset (inp, 0, (24 - lcnt) * line_size);
-		break;
-	      }
-	  inp = in + line_size * 24;
-	  for (lcnt = 0; lcnt < 24; lcnt++, inp += line_size)
-	    if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2 + 1, inp,
-					   line_size))
-	      {
-		memset (inp, 0, (24 - lcnt) * line_size);
-		break;
-	      }
-	}
+        {
+          inp = in + line_size;
+          for (lcnt = 1; lcnt < 24; lcnt++, inp += line_size)
+            if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2, inp,
+                                           line_size))
+              {
+                memset (inp, 0, (24 - lcnt) * line_size);
+                break;
+              }
+          inp = in + line_size * 24;
+          for (lcnt = 0; lcnt < 24; lcnt++, inp += line_size)
+            if (!gdev_prn_copy_scan_lines (pdev, lnum + lcnt * 2 + 1, inp,
+                                           line_size))
+              {
+                memset (inp, 0, (24 - lcnt) * line_size);
+                break;
+              }
+        }
       else
-	{
-	  lcnt = 1 + gdev_prn_copy_scan_lines (pdev, lnum + 1, in + line_size,
-					       in_size - line_size);
-	  if (lcnt < 24)
-	    /* Pad with lines of zeros. */
-	    memset (in + lcnt * line_size, 0, in_size - lcnt * line_size);
-	}
+        {
+          lcnt = 1 + gdev_prn_copy_scan_lines (pdev, lnum + 1, in + line_size,
+                                               in_size - line_size);
+          if (lcnt < 24)
+            /* Pad with lines of zeros. */
+            memset (in + lcnt * line_size, 0, in_size - lcnt * line_size);
+        }
 
       for (ypass = 0; ypass < y_passes; ypass++)
-	{
-	  out_end = out;
-	  inp = in;
-	  if (ypass)
-	    inp += line_size * 24;
-	  in_end = inp + line_size;
+        {
+          out_end = out;
+          inp = in;
+          if (ypass)
+            inp += line_size * 24;
+          in_end = inp + line_size;
 
-	  for (; inp < in_end; inp++, out_end += 24)
-	    {
-	      memflip8x8 (inp, line_size, out_end, 3);
-	      memflip8x8 (inp + line_size * 8, line_size, out_end + 1, 3);
-	      memflip8x8 (inp + line_size * 16, line_size, out_end + 2, 3);
-	    }
-	  /* Remove trailing 0s. */
-	  while (out_end - 3 >= out && out_end[-1] == 0
-		 && out_end[-2] == 0 && out_end[-3] == 0)
-	    out_end -= 3;
+          for (; inp < in_end; inp++, out_end += 24)
+            {
+              memflip8x8 (inp, line_size, out_end, 3);
+              memflip8x8 (inp + line_size * 8, line_size, out_end + 1, 3);
+              memflip8x8 (inp + line_size * 16, line_size, out_end + 2, 3);
+            }
+          /* Remove trailing 0s. */
+          while (out_end - 3 >= out && out_end[-1] == 0
+                 && out_end[-2] == 0 && out_end[-3] == 0)
+            out_end -= 3;
 
-	  for (out_blk = outp = out; outp < out_end;)
-	    {
-	      /* Skip a run of leading 0s. */
-	      /* At least 10 are needed to make tabbing worth it. */
+          for (out_blk = outp = out; outp < out_end;)
+            {
+              /* Skip a run of leading 0s. */
+              /* At least 10 are needed to make tabbing worth it. */
 
-	      if (outp[0] == 0 && outp + 12 <= out_end
-		  && outp[1] == 0 && outp[2] == 0
-		  && outp[3] == 0 && outp[4] == 0 && outp[5] == 0
-		  && outp[6] == 0 && outp[7] == 0 && outp[8] == 0
-		  && outp[9] == 0 && outp[10] == 0 && outp[11] == 0)
-		{
-		  byte *zp = outp;
-		  int tpos;
-		  byte *newp;
-		  outp += 12;
-		  while (outp + 3 <= out_end
-			 && outp[0] == 0 && outp[1] == 0 && outp[2] == 0)
-		    outp += 3;
-		  tpos = (outp - out) / bytes_per_space;
-		  newp = out + tpos * bytes_per_space;
-		  if (newp > zp + 10)
-		    {
-		      /* Output preceding bit data. */
-		      /* only false at beginning of line */
-		      if (zp > out_blk)
-			{
-			  if (x_high)
-			    dot24_improve_bitmap (out_blk, (int) (zp - out_blk));
-			  dot24_output_run (out_blk, (int) (zp - out_blk),
-					  x_high, prn_stream);
-			}
-		      /* Tab over to the appropriate position. */
-		      fprintf (prn_stream, "\033D%c%c\t", tpos, 0);
-		      out_blk = outp = newp;
-		    }
-		}
-	      else
-		outp += 3;
-	    }
-	  if (outp > out_blk)
-	    {
-	      if (x_high)
-		dot24_improve_bitmap (out_blk, (int) (outp - out_blk));
-	      dot24_output_run (out_blk, (int) (outp - out_blk), x_high,
-			      prn_stream);
-	    }
+              if (outp[0] == 0 && outp + 12 <= out_end
+                  && outp[1] == 0 && outp[2] == 0
+                  && outp[3] == 0 && outp[4] == 0 && outp[5] == 0
+                  && outp[6] == 0 && outp[7] == 0 && outp[8] == 0
+                  && outp[9] == 0 && outp[10] == 0 && outp[11] == 0)
+                {
+                  byte *zp = outp;
+                  int tpos;
+                  byte *newp;
+                  outp += 12;
+                  while (outp + 3 <= out_end
+                         && outp[0] == 0 && outp[1] == 0 && outp[2] == 0)
+                    outp += 3;
+                  tpos = (outp - out) / bytes_per_space;
+                  newp = out + tpos * bytes_per_space;
+                  if (newp > zp + 10)
+                    {
+                      /* Output preceding bit data. */
+                      /* only false at beginning of line */
+                      if (zp > out_blk)
+                        {
+                          if (x_high)
+                            dot24_improve_bitmap (out_blk, (int) (zp - out_blk));
+                          dot24_output_run (out_blk, (int) (zp - out_blk),
+                                          x_high, prn_stream);
+                        }
+                      /* Tab over to the appropriate position. */
+                      fprintf (prn_stream, "\033D%c%c\t", tpos, 0);
+                      out_blk = outp = newp;
+                    }
+                }
+              else
+                outp += 3;
+            }
+          if (outp > out_blk)
+            {
+              if (x_high)
+                dot24_improve_bitmap (out_blk, (int) (outp - out_blk));
+              dot24_output_run (out_blk, (int) (outp - out_blk), x_high,
+                              prn_stream);
+            }
 
-	  fputc ('\r', prn_stream);
-	  if (ypass < y_passes - 1)
-	    fputc ('\n', prn_stream);
-	}
+          fputc ('\r', prn_stream);
+          if (ypass < y_passes - 1)
+            fputc ('\n', prn_stream);
+        }
       skip = 48 - y_high;
       lnum += bits_per_column;
     }
@@ -251,32 +250,29 @@ dot24_improve_bitmap (byte *data, int count)
   register byte *p = data + 6;
 
       for (i = 6; i < count; i += 3, p += 3)
-	{
-	  p[-6] &= ~(~p[0] & p[-3]);
-	  p[-5] &= ~(~p[1] & p[-2]);
-	  p[-4] &= ~(~p[2] & p[-1]);
-	}
+        {
+          p[-6] &= ~(~p[0] & p[-3]);
+          p[-5] &= ~(~p[1] & p[-2]);
+          p[-4] &= ~(~p[2] & p[-1]);
+        }
       p[-6] &= ~p[-3];
       p[-5] &= ~p[-2];
       p[-4] &= ~p[-1];
 
 }
 
-
 static int
 necp6_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   char necp6_init_string [] = "\033@\033P\033l\000\r\034\063\001\033Q";
-  
+
   return dot24_print_page(pdev, prn_stream, necp6_init_string, sizeof(necp6_init_string));
 }
-
 
 static int
 lq850_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
   char lq850_init_string [] = "\033@\033P\033l\000\r\033\053\001\033Q";
-  
+
   return dot24_print_page(pdev, prn_stream, lq850_init_string, sizeof(lq850_init_string));
 }
-

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,7 +64,6 @@
 
 /* Define if you have the basename function.  */
 #undef HAVE_BASENAME
-
 
 /* End of ft_conf.h */
 

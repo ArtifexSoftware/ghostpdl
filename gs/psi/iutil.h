@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,9 +23,9 @@
 /* Copy refs from one place to another. */
 /* (If we are copying to the stack, we can just use memcpy.) */
 void refcpy_to_new(ref * to, const ref * from, uint size,
-		   gs_dual_memory_t *dmem);
+                   gs_dual_memory_t *dmem);
 int refcpy_to_old(ref * aref, uint index, const ref * from, uint size,
-		  gs_dual_memory_t *dmem, client_name_t cname);
+                  gs_dual_memory_t *dmem, client_name_t cname);
 
 /*
  * Fill an array with nulls.
@@ -62,7 +62,7 @@ int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, 
  */
 #define CVP_MAX_STRING 200  /* strings are truncated here if full_print = 1 */
 int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
-	int full_print, uint start_pos, const gs_memory_t *mem, bool restart);
+        int full_print, uint start_pos, const gs_memory_t *mem, bool restart);
 
 /*
  * Create a printable representation of an object, a la cvs and =.  Return 0
@@ -78,7 +78,7 @@ int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
  * obj_string_data.
  */
 int obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
-	    const byte ** pchars);
+            const byte ** pchars);
 
 /* Get an element from an array (packed or not). */
 int array_get(const gs_memory_t *mem, const ref *, long, ref *);
@@ -142,7 +142,7 @@ int read_matrix(const gs_memory_t *mem, const ref *, gs_matrix *);
 /* If dmem is NULL, the array is guaranteed newly allocated in imem. */
 /* If dmem is not NULL, imem is ignored. */
 int write_matrix_in(ref *op, const gs_matrix *pmat, gs_dual_memory_t *dmem,
-		    gs_ref_memory_t *imem);
+                    gs_ref_memory_t *imem);
 #define write_matrix_new(op, pmat, imem)\
   write_matrix_in(op, pmat, NULL, imem)
 #define write_matrix(op, pmat)\

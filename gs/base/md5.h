@@ -28,7 +28,7 @@
 
   This code implements the MD5 Algorithm defined in RFC 1321, whose
   text is available at
-	http://www.ietf.org/rfc/rfc1321.txt
+        http://www.ietf.org/rfc/rfc1321.txt
   The code is derived from the text of the RFC, including the test suite
   (section A.5) but excluding the rest of Appendix A.  It does not include
   any code or documentation that is identified in the RFC as being
@@ -39,12 +39,12 @@
   that follows (in reverse chronological order):
 
   2002-04-13 lpd Removed support for non-ANSI compilers; removed
-	references to Ghostscript; clarified derivation from RFC 1321;
-	now handles byte order either statically or dynamically.
+        references to Ghostscript; clarified derivation from RFC 1321;
+        now handles byte order either statically or dynamically.
   1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
   1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5);
-	added conditionalization for C++ compilation from Martin
-	Purschke <purschke@bnl.gov>.
+        added conditionalization for C++ compilation from Martin
+        Purschke <purschke@bnl.gov>.
   1999-05-03 lpd Original version.
  */
 
@@ -72,7 +72,7 @@ typedef struct gs_md5_state_s {
 } gs_md5_state_t;
 
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 

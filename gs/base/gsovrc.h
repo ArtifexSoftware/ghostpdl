@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -59,7 +59,7 @@
  *     these devices both overprint and overprint mode require a form
  *     of mixing of the drawing color with any existing output. This
  *     mixing is mechanically similar to that required for transparency
- *     or raster op support, but differs from these because it affects 
+ *     or raster op support, but differs from these because it affects
  *     different color components differently (transparency and raster
  *     operations are applied uniformly to all color components).
  *
@@ -67,7 +67,7 @@
  * either trivial or essentially impossible (short of dealing with them
  * as low level devices), the discussion below is restricted to the
  * implementation for low level devices.
- * 
+ *
  * In principle, the effects of overprint and overprint mode are
  * modified by changes to the current color, the current color space,
  * and the process color model.
@@ -96,8 +96,8 @@
  * of two additional types of the devices for rendering. Forwarding
  * devices do not generate output of their own; they merely forward
  * rendering commands to a target device. Accumulating devices render
- * output to a special buffer (often part of clipping or a caching 
- * operation), which is subsequently sent to the primary output device 
+ * output to a special buffer (often part of clipping or a caching
+ * operation), which is subsequently sent to the primary output device
  * in a lower-level form.
  *
  * It is conceivable that a forwarding device could be dependent on the
@@ -129,7 +129,7 @@
  *    the high-level rendering methods (fill_path, etc.). Actual
  *    rendering is done with a separate marking device, an instance
  *    of which is created for each graphic object rendered. The
- *    marking device renders into the output buffer of the 
+ *    marking device renders into the output buffer of the
  *    gs_pdf14_device, which contains the results of prior rendering
  *    operations. Thus, overprint is significant to the marking
  *    device. The interaction of transparency and overprint are,
@@ -260,8 +260,8 @@ struct gs_overprint_params_s {
      */
     bool            retain_spot_comps;
 
-    /* 
-     * Don't we print anything with overprint ? 
+    /*
+     * Don't we print anything with overprint ?
      * This info may come from the clist reader.
      */
     bool idle;
@@ -296,8 +296,6 @@ typedef struct gs_overprint_s {
 #define private_st_gs_overprint_t()	/* In gsovrc.c */\
   gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t")
 
-
-
 /* some elementary macros for manipulating drawn_comps */
 #define gs_overprint_set_drawn_comp(drawn_comps, i) \
     ((drawn_comps) |= (gx_color_index)1 << (i))
@@ -311,7 +309,6 @@ typedef struct gs_overprint_s {
 #define gs_overprint_get_drawn_comp(drawn_comps, i)     \
     (((drawn_comps) & ((gx_color_index)1 << (i))) != 0)
 
-
 /*
  * In the unlikely event that the overprint parameters will ever be
  * allocated on the heap, we provide GC structure descriptors for
@@ -323,7 +320,6 @@ extern_st(st_overprint_params);
     gs_public_st_simple( st_overprint_params,               \
                          gs_overprint_params_t,             \
                          "gs_overprint_params_t" )
-
 
 /* create an overprint composition object */
 extern  int    gs_create_overprint(

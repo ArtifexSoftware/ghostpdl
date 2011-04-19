@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,21 +64,21 @@ int gs_show_use_glyph(gs_show_enum *, gs_glyph);
 /* a zero (successful completion) or negative (error) value. */
 /* Other values indicate the following situations: */
 
-	/* The client must render a character: obtain the code from */
-	/* gs_show_current_char, do whatever is necessary, and then */
-	/* call gs_show_next again. */
+        /* The client must render a character: obtain the code from */
+        /* gs_show_current_char, do whatever is necessary, and then */
+        /* call gs_show_next again. */
 #define gs_show_render TEXT_PROCESS_RENDER
 
-	/* The client has asked to intervene between characters (kshow). */
-	/* Obtain the previous and next codes from gs_kshow_previous_char */
-	/* and gs_kshow_next_char, do whatever is necessary, and then */
-	/* call gs_show_next again. */
+        /* The client has asked to intervene between characters (kshow). */
+        /* Obtain the previous and next codes from gs_kshow_previous_char */
+        /* and gs_kshow_next_char, do whatever is necessary, and then */
+        /* call gs_show_next again. */
 #define gs_show_kern TEXT_PROCESS_INTERVENE
 
-	/* The client has asked to handle characters individually */
-	/* (xshow, yshow, xyshow, cshow).  Obtain the current code */
-	/* from gs_show_current_char, do whatever is necessary, and then */
-	/* call gs_show_next again. */
+        /* The client has asked to handle characters individually */
+        /* (xshow, yshow, xyshow, cshow).  Obtain the current code */
+        /* from gs_show_current_char, do whatever is necessary, and then */
+        /* call gs_show_next again. */
 #define gs_show_move TEXT_PROCESS_INTERVENE
 
 int gs_show_next(gs_show_enum *);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -98,43 +98,43 @@ typedef struct gx_device_vector_procs_s {
     int (*beginpage) (gx_device_vector * vdev);
     /* The beginpage proc is actually called from gdev_vector_stream(),
        so this accessor must be used from all other procs that want
-       to be called after beginpage and *cannot* be used from within 
-       beginpage. in_page must also be set to false in the device's 
-       output_page method to request that beginpage be called again 
-       when drawing next occurs. */ 
+       to be called after beginpage and *cannot* be used from within
+       beginpage. in_page must also be set to false in the device's
+       output_page method to request that beginpage be called again
+       when drawing next occurs. */
     /* Imager state */
     int (*setlinewidth) (gx_device_vector * vdev, floatp width);
     int (*setlinecap) (gx_device_vector * vdev, gs_line_cap cap);
     int (*setlinejoin) (gx_device_vector * vdev, gs_line_join join);
     int (*setmiterlimit) (gx_device_vector * vdev, floatp limit);
     int (*setdash) (gx_device_vector * vdev, const float *pattern,
-		    uint count, floatp offset);
+                    uint count, floatp offset);
     int (*setflat) (gx_device_vector * vdev, floatp flatness);
     int (*setlogop) (gx_device_vector * vdev, gs_logical_operation_t lop,
-		     gs_logical_operation_t diff);
+                     gs_logical_operation_t diff);
     /* Other state */
-    bool (*can_handle_hl_color) (gx_device_vector * vdev, const gs_imager_state * pis, 
+    bool (*can_handle_hl_color) (gx_device_vector * vdev, const gs_imager_state * pis,
                          const gx_drawing_color * pdc);
-    int (*setfillcolor) (gx_device_vector * vdev, const gs_imager_state * pis, 
+    int (*setfillcolor) (gx_device_vector * vdev, const gs_imager_state * pis,
                          const gx_drawing_color * pdc);
     int (*setstrokecolor) (gx_device_vector * vdev, const gs_imager_state * pis,
                            const gx_drawing_color * pdc);
     /* Paths */
     /* dopath and dorect are normally defaulted */
     int (*dopath) (gx_device_vector * vdev, const gx_path * ppath,
-		   gx_path_type_t type, const gs_matrix *pmat);
+                   gx_path_type_t type, const gs_matrix *pmat);
     int (*dorect) (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-		   fixed y1, gx_path_type_t type);
+                   fixed y1, gx_path_type_t type);
     int (*beginpath) (gx_device_vector * vdev, gx_path_type_t type);
     int (*moveto) (gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x, floatp y, gx_path_type_t type);
+                   floatp x, floatp y, gx_path_type_t type);
     int (*lineto) (gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x, floatp y, gx_path_type_t type);
+                   floatp x, floatp y, gx_path_type_t type);
     int (*curveto) (gx_device_vector * vdev, floatp x0, floatp y0,
-		    floatp x1, floatp y1, floatp x2, floatp y2,
-		    floatp x3, floatp y3, gx_path_type_t type);
+                    floatp x1, floatp y1, floatp x2, floatp y2,
+                    floatp x3, floatp y3, gx_path_type_t type);
     int (*closepath) (gx_device_vector * vdev, floatp x0, floatp y0,
-		      floatp x_start, floatp y_start, gx_path_type_t type);
+                      floatp x_start, floatp y_start, gx_path_type_t type);
     int (*endpath) (gx_device_vector * vdev, gx_path_type_t type);
 } gx_device_vector_procs;
 
@@ -145,66 +145,66 @@ int gdev_vector_setflat(gx_device_vector * vdev, floatp flatness);
 /* dopath may call dorect, beginpath, moveto/lineto/curveto/closepath, */
 /* endpath */
 int gdev_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-		       gx_path_type_t type, const gs_matrix *pmat);
+                       gx_path_type_t type, const gs_matrix *pmat);
 
 /* dorect may call beginpath, moveto, lineto, closepath */
 int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
-		       fixed x1, fixed y1, gx_path_type_t type);
+                       fixed x1, fixed y1, gx_path_type_t type);
 
 /* Finally, define the extended device structure. */
 #define gx_device_vector_common\
-	gx_device_common;\
-	gs_memory_t *v_memory;\
-		/* Output element writing procedures */\
-	const gx_device_vector_procs *vec_procs;\
-		/* Output file */\
-	char fname[fname_size + 1];\
-	FILE *file;\
-	stream *strm;\
-	byte *strmbuf;\
-	uint strmbuf_size;\
-	int open_options;	/* see below */\
-		/* Graphics state */\
-	gs_imager_state state;\
-	float dash_pattern[max_dash];\
-	bool fill_used_process_color;\
-	bool stroke_used_process_color;\
-	gx_hl_saved_color saved_fill_color;\
-	gx_hl_saved_color saved_stroke_color;\
-	gs_id no_clip_path_id;	/* indicates no clipping */\
-	gs_id clip_path_id;\
-		/* Other state */\
-	gx_path_type_t fill_options, stroke_options;  /* optimize */\
-	gs_point scale;		/* device coords / scale => output coords */\
-	bool in_page;		/* true if any marks on this page */\
-	gx_device_bbox *bbox_device;	/* for tracking bounding box */\
-		/* Cached values */\
-	gx_color_index black, white
+        gx_device_common;\
+        gs_memory_t *v_memory;\
+                /* Output element writing procedures */\
+        const gx_device_vector_procs *vec_procs;\
+                /* Output file */\
+        char fname[fname_size + 1];\
+        FILE *file;\
+        stream *strm;\
+        byte *strmbuf;\
+        uint strmbuf_size;\
+        int open_options;	/* see below */\
+                /* Graphics state */\
+        gs_imager_state state;\
+        float dash_pattern[max_dash];\
+        bool fill_used_process_color;\
+        bool stroke_used_process_color;\
+        gx_hl_saved_color saved_fill_color;\
+        gx_hl_saved_color saved_stroke_color;\
+        gs_id no_clip_path_id;	/* indicates no clipping */\
+        gs_id clip_path_id;\
+                /* Other state */\
+        gx_path_type_t fill_options, stroke_options;  /* optimize */\
+        gs_point scale;		/* device coords / scale => output coords */\
+        bool in_page;		/* true if any marks on this page */\
+        gx_device_bbox *bbox_device;	/* for tracking bounding box */\
+                /* Cached values */\
+        gx_color_index black, white
 #define vdev_proc(vdev, p) ((vdev)->vec_procs->p)
 
 #define vector_initial_values\
-	0,		/* v_memory */\
-	0,		/* vec_procs */\
-	 { 0 },		/* fname */\
-	0,		/* file */\
-	0,		/* strm */\
-	0,		/* strmbuf */\
-	0,		/* strmbuf_size */\
-	0,		/* open_options */\
-	 { 0 },		/* state */\
-	 { 0 },		/* dash_pattern */\
-	true,		/* fill_used_process_color */\
-	true,		/* stroke_used_process_color */\
-	 { 0 },		/* fill_color ****** WRONG ****** */\
-	 { 0 },		/* stroke_color ****** WRONG ****** */\
-	gs_no_id,	/* clip_path_id */\
-	gs_no_id,	/* no_clip_path_id */\
-	0, 0,		/* fill/stroke_options */\
-	 { X_DPI/72.0, Y_DPI/72.0 },	/* scale */\
-	0/*false*/,	/* in_page */\
-	0,		/* bbox_device */\
-	gx_no_color_index,	/* black */\
-	gx_no_color_index	/* white */
+        0,		/* v_memory */\
+        0,		/* vec_procs */\
+         { 0 },		/* fname */\
+        0,		/* file */\
+        0,		/* strm */\
+        0,		/* strmbuf */\
+        0,		/* strmbuf_size */\
+        0,		/* open_options */\
+         { 0 },		/* state */\
+         { 0 },		/* dash_pattern */\
+        true,		/* fill_used_process_color */\
+        true,		/* stroke_used_process_color */\
+         { 0 },		/* fill_color ****** WRONG ****** */\
+         { 0 },		/* stroke_color ****** WRONG ****** */\
+        gs_no_id,	/* clip_path_id */\
+        gs_no_id,	/* no_clip_path_id */\
+        0, 0,		/* fill/stroke_options */\
+         { X_DPI/72.0, Y_DPI/72.0 },	/* scale */\
+        0/*false*/,	/* in_page */\
+        0,		/* bbox_device */\
+        gx_no_color_index,	/* black */\
+        gx_no_color_index	/* white */
 
 struct gx_device_vector_s {
     gx_device_vector_common;
@@ -235,13 +235,13 @@ void gdev_vector_reset(gx_device_vector * vdev);
 #define VECTOR_OPEN_FILE_ASCII 1	/* open file as text, not binary */
 #define VECTOR_OPEN_FILE_SEQUENTIAL 2	/* open as non-seekable */
 #define VECTOR_OPEN_FILE_SEQUENTIAL_OK 4  /* open as non-seekable if */
-					/* open as seekable fails */
+                                        /* open as seekable fails */
 #define VECTOR_OPEN_FILE_BBOX 8		/* also open bbox device */
 int gdev_vector_open_file_options(gx_device_vector * vdev,
-				  uint strmbuf_size, int open_options);
+                                  uint strmbuf_size, int open_options);
 #define gdev_vector_open_file_bbox(vdev, bufsize, bbox)\
   gdev_vector_open_file_options(vdev, bufsize,\
-				(bbox ? VECTOR_OPEN_FILE_BBOX : 0))
+                                (bbox ? VECTOR_OPEN_FILE_BBOX : 0))
 #define gdev_vector_open_file(vdev, strmbuf_size)\
   gdev_vector_open_file_bbox(vdev, strmbuf_size, false)
 
@@ -251,20 +251,20 @@ stream *gdev_vector_stream(gx_device_vector * vdev);
 /* Bring the logical operation up to date. */
 /* May call setlogop. */
 int gdev_vector_update_log_op(gx_device_vector * vdev,
-			      gs_logical_operation_t lop);
+                              gs_logical_operation_t lop);
 
 /* Bring the fill color up to date. */
 /* May call setfillcolor. */
 int gdev_vector_update_fill_color(gx_device_vector * vdev,
-				  const gs_imager_state * pis,
-				  const gx_drawing_color * pdcolor);
+                                  const gs_imager_state * pis,
+                                  const gx_drawing_color * pdcolor);
 
 /* Bring state up to date for filling. */
 /* May call setflat, setfillcolor, setlogop. */
 int gdev_vector_prepare_fill(gx_device_vector * vdev,
-			     const gs_imager_state * pis,
-			     const gx_fill_params * params,
-			     const gx_drawing_color * pdcolor);
+                             const gs_imager_state * pis,
+                             const gx_fill_params * params,
+                             const gx_drawing_color * pdcolor);
 
 /* Bring state up to date for stroking.  Note that we pass the scale */
 /* for the line width and dash offset explicitly. */
@@ -272,10 +272,10 @@ int gdev_vector_prepare_fill(gx_device_vector * vdev,
 /* setdash, setflat, setstrokecolor, setlogop. */
 /* Any of pis, params, and pdcolor may be NULL. */
 int gdev_vector_prepare_stroke(gx_device_vector * vdev,
-			       const gs_imager_state * pis,
-			       const gx_stroke_params * params,
-			       const gx_drawing_color * pdcolor,
-			       floatp scale);
+                               const gs_imager_state * pis,
+                               const gx_stroke_params * params,
+                               const gx_drawing_color * pdcolor,
+                               floatp scale);
 
 /*
  * Compute the scale for transforming the line width and dash pattern for a
@@ -284,8 +284,8 @@ int gdev_vector_prepare_stroke(gx_device_vector * vdev,
  * Return 0 if only scaling, 1 if a full matrix is needed.
  */
 int gdev_vector_stroke_scaling(const gx_device_vector *vdev,
-			       const gs_imager_state *pis,
-			       double *pscale, gs_matrix *pmat);
+                               const gs_imager_state *pis,
+                               double *pscale, gs_matrix *pmat);
 
 /* Prepare to write a path using the default implementation. */
 typedef struct gdev_vector_dopath_state_s {
@@ -299,35 +299,35 @@ typedef struct gdev_vector_dopath_state_s {
     gs_point prev;
 } gdev_vector_dopath_state_t;
 void gdev_vector_dopath_init(gdev_vector_dopath_state_t *state,
-			     gx_device_vector *vdev,
-			     gx_path_type_t type, const gs_matrix *pmat);
+                             gx_device_vector *vdev,
+                             gx_path_type_t type, const gs_matrix *pmat);
 
 /* Write a segment of a path using the default implementation. */
 int gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
-			       gs_fixed_point vs[3]);
+                               gs_fixed_point vs[3]);
 
 /* Write a polygon as part of a path (type = gx_path_type_none) */
 /* or as a path. */
 /* May call moveto, lineto, closepath (if close); */
 /* may call beginpath & endpath if type != none. */
 int gdev_vector_write_polygon(gx_device_vector * vdev,
-			      const gs_fixed_point * points, uint count,
-			      bool close, gx_path_type_t type);
+                              const gs_fixed_point * points, uint count,
+                              bool close, gx_path_type_t type);
 
 /* Write a rectangle.  This is just a special case of write_polygon. */
 int gdev_vector_write_rectangle(gx_device_vector * vdev,
-				fixed x0, fixed y0, fixed x1, fixed y1,
-				bool close, gx_rect_direction_t dir);
+                                fixed x0, fixed y0, fixed x1, fixed y1,
+                                bool close, gx_rect_direction_t dir);
 
 /* Write a clipping path by calling the path procedures. */
 /* May call the same procedures as writepath. */
 int gdev_vector_write_clip_path(gx_device_vector * vdev,
-				const gx_clip_path * pcpath);
+                                const gx_clip_path * pcpath);
 
 /* Bring the clipping state up to date. */
 /* May call write_rectangle (q.v.), write_clip_path (q.v.). */
 int gdev_vector_update_clip_path(gx_device_vector * vdev,
-				 const gx_clip_path * pcpath);
+                                 const gx_clip_path * pcpath);
 
 /* Close the output file and stream. */
 int gdev_vector_close_file(gx_device_vector * vdev);
@@ -336,15 +336,15 @@ int gdev_vector_close_file(gx_device_vector * vdev);
 
 /* Define a common set of state parameters for enumerating images. */
 #define gdev_vector_image_enum_common\
-	gx_image_enum_common;\
-		/* Set by begin_image */\
-	gx_image_enum_common_t *default_info;	/* non-0 iff using default implementation */\
-	gx_image_enum_common_t *bbox_info;	/* non-0 iff passing image data to bbox dev */\
-	int width, height;\
-	int bits_per_pixel;	/* (per plane) */\
-	uint bits_per_row;	/* (per plane) */\
-		/* Updated dynamically by image_data */\
-	int y			/* 0 <= y < height */
+        gx_image_enum_common;\
+                /* Set by begin_image */\
+        gx_image_enum_common_t *default_info;	/* non-0 iff using default implementation */\
+        gx_image_enum_common_t *bbox_info;	/* non-0 iff passing image data to bbox dev */\
+        int width, height;\
+        int bits_per_pixel;	/* (per plane) */\
+        uint bits_per_row;	/* (per plane) */\
+                /* Updated dynamically by image_data */\
+        int y			/* 0 <= y < height */
 typedef struct gdev_vector_image_enum_s {
     gdev_vector_image_enum_common;
 } gdev_vector_image_enum_t;
@@ -361,11 +361,11 @@ extern_st(st_vector_image_enum);
  * enumerator.
  */
 int gdev_vector_begin_image(gx_device_vector * vdev,
-			const gs_imager_state * pis, const gs_image_t * pim,
-			gs_image_format_t format, const gs_int_rect * prect,
-	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		    gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,
-			    gdev_vector_image_enum_t * pie);
+                        const gs_imager_state * pis, const gs_image_t * pim,
+                        gs_image_format_t format, const gs_int_rect * prect,
+              const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+                    gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,
+                            gdev_vector_image_enum_t * pie);
 
 /* End an image, optionally supplying any necessary blank padding rows. */
 /* Return 0 if we used the default implementation, 1 if not. */

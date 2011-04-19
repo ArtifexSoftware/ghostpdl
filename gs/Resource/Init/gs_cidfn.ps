@@ -1,12 +1,12 @@
 %    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -83,17 +83,17 @@ dup 0 {
     } forall
   } ifelse
   dup /FDArray get {
-		% Read the Subrs if necessary.
+                % Read the Subrs if necessary.
     dup /Private get dup /Subrs known not {
       dup /SubrCount .knownget {
-		% Stack: font Private SubrCount
-	currentglobal 3 1 roll 1 index gcheck setglobal
-	array 1 index /Subrs 3 -1 roll put
-		% Stack: font global Private
-	2 index begin begin .loadsubrs end end
-	setglobal
+                % Stack: font Private SubrCount
+        currentglobal 3 1 roll 1 index gcheck setglobal
+        array 1 index /Subrs 3 -1 roll put
+                % Stack: font global Private
+        2 index begin begin .loadsubrs end end
+        setglobal
       } {
-	pop
+        pop
       } ifelse readonly pop
     } {
       pop pop
@@ -119,15 +119,15 @@ dup 0 {
 /.loadsubrs {
   Subrs length 0 ne {
     SubrCache SubrMapOffset .knownget {
-		% We've already loaded some Subrs at this offset.
-		% Make sure we've got as many as we need.
+                % We've already loaded some Subrs at this offset.
+                % Make sure we've got as many as we need.
       dup length SubrCount lt {
-		% We need to load more.
-	SubrCount array exch 1 index copy length .readsubrs
-	SubrCache SubrMapOffset 2 index put
+                % We need to load more.
+        SubrCount array exch 1 index copy length .readsubrs
+        SubrCache SubrMapOffset 2 index put
       } if
     } {
-		% We haven't loaded any Subrs at this offset yet.
+                % We haven't loaded any Subrs at this offset yet.
       SubrCount array 0 .readsubrs
       SubrCache SubrMapOffset 2 index put
     } ifelse
@@ -154,55 +154,55 @@ pop		% .cidfonttypes
 % ---------------- Reading CIDFontType 0 files ---------------- %
 
 /StartData {		% <(Binary)|(Hex)> <datalength> StartData -
-			%   (currentdict is CID font dict)
-		% If we're loading a resource file and the data format is
-		% binary, we can just save a pointer to the data and load it
-		% incrementally.
+                        %   (currentdict is CID font dict)
+                % If we're loading a resource file and the data format is
+                % binary, we can just save a pointer to the data and load it
+                % incrementally.
   mark {
-		% Previous versions of this code made provisions for
-		% reading hex-encoded data incrementally.  Since hex data
-		% doesn't seem to be used in practice, we no longer bother.
+                % Previous versions of this code made provisions for
+                % reading hex-encoded data incrementally.  Since hex data
+                % doesn't seem to be used in practice, we no longer bother.
     2 index (Binary) ne { stop } if
     currentfile .currentresourcefile ne { stop } if
-		% Hack: the pdfwrite driver relies on finalization to write
-		% out fonts.  However, the font may be finalized after the
-		% resource file, in which case the resource file will be
-		% closed.  So if the current output device is pdfwrite,
-		% don't use incremental loading.
+                % Hack: the pdfwrite driver relies on finalization to write
+                % out fonts.  However, the font may be finalized after the
+                % resource file, in which case the resource file will be
+                % closed.  So if the current output device is pdfwrite,
+                % don't use incremental loading.
     currentdevice 1 dict dup /AllowIncrementalCFF dup put .getdeviceparams
     dup type /booleantype eq {{stop}if}if
     cleartomark
     currentfile fileposition
   } .internalstopped {
-		% File is not positionable, or uses hex data.
-		% Load the data now.
+                % File is not positionable, or uses hex data.
+                % Load the data now.
     cleartomark exch
     currentfile exch
     (Hex) eq { /ASCIIHexDecode filter } if
     exch
-		% Stack: file length
+                % Stack: file length
     dup 65400 le {
-		% readstring with a 0-length string causes a rangecheck,
-		% but a data length of 0 is allowed.
+                % readstring with a 0-length string causes a rangecheck,
+                % but a data length of 0 is allowed.
       string dup () ne { 1 index exch readstring pop } if
     } {
       mark 3 1 roll {
-		% Stack: mark str ... file length
-	dup 0 eq { pop exit } if
-	dup 65400 .min dup string 3 index exch readstring pop
-		% Stack: mark str ... file length newstrlen newstr
-	4 1 roll sub
+                % Stack: mark str ... file length
+        dup 0 eq { pop exit } if
+        dup 65400 .min dup string 3 index exch readstring pop
+                % Stack: mark str ... file length newstrlen newstr
+        4 1 roll sub
       } loop
       counttomark 1 add 1 roll ]
     } ifelse
     /GlyphData exch def
     dup currentfile eq { pop } { closefile } ifelse
   } {
-		% File is positionable and binary, just save a pointer.
-		% Stack: (Binary) length -mark- pos
+                % File is positionable and binary, just save a pointer.
+                % Stack: (Binary) length -mark- pos
     /GlyphData 0 def
     exch pop 3 -1 roll pop exch
-		% Stack: pos length
+                % Stack: pos length
     /DataSource currentfile 2 index () .subfiledecode //true .reusablestream def
     currentfile 3 1 roll add setfileposition
   } ifelse
@@ -225,39 +225,39 @@ pop		% .cidfonttypes
 % GlyphData in RAM).
 /ReadString {		% <pos> <string> ReadString <string>
   GlyphData 0 eq {
-	% Read from the file.
+        % Read from the file.
     DataSource 3 -1 roll setfileposition
     DataSource exch readstring pop
   } {
-	% Read from a string or an array of strings.
+        % Read from a string or an array of strings.
     GlyphData .stringsreadstring
   } ifelse
 } bind def
 /.stringsreadstring	% <pos> <string> <strings> .stringsreadstring
-			%   <vmstring>
+                        %   <vmstring>
 { dup type /stringtype eq
    { 3 1 roll length getinterval
    }
    {  {		% Stack: pos string glyphdata
-	dup 0 get length dup 4 index gt { exit } if
-	4 -1 roll exch sub 3 1 roll
-	dup length 1 sub 1 exch getinterval
+        dup 0 get length dup 4 index gt { exit } if
+        4 -1 roll exch sub 3 1 roll
+        dup length 1 sub 1 exch getinterval
       }
      loop
-		% Stack: pos string glyphdata glyphdata[0]length
-		% We know no request can span more than 2 strings.
+                % Stack: pos string glyphdata glyphdata[0]length
+                % We know no request can span more than 2 strings.
      3 index 3 index length add 1 index le
       {		% Request fits in a single string: just return a substring.
-	pop 0 get 3 1 roll length getinterval
+        pop 0 get 3 1 roll length getinterval
       }
       {		% Request spans 2 strings.  Copy the first part.
-	1 index 0 get 4 index 3 -1 roll 1 index sub getinterval
-	2 index copy
-		% Copy the second part.
-		% Stack: pos str glyphdata str1
-	length exch 1 get 0 3 index length
-	3 index sub getinterval 2 index 3 1 roll putinterval
-	exch pop
+        1 index 0 get 4 index 3 -1 roll 1 index sub getinterval
+        2 index copy
+                % Copy the second part.
+                % Stack: pos str glyphdata str1
+        length exch 1 get 0 3 index length
+        3 index sub getinterval 2 index 3 1 roll putinterval
+        exch pop
       }
      ifelse
    }
@@ -292,10 +292,10 @@ currentdict end
   .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
   dup .readglyphdata dup //null eq {
-		% Substitute CID 0. **** WRONG ****
+                % Substitute CID 0. **** WRONG ****
     pop pop 0 .readglyphdata
   } if
-		% Stack: cidfont cid subfont charstring
+                % Stack: cidfont cid subfont charstring
   dup //null eq { pop pop pop pop } {	%**** WRONG ****
     4 -1 roll pop
     3 1 roll exch dup 4 -1 roll 0 0 moveto
@@ -310,11 +310,11 @@ currentdict end
 % BuildGlyph procedure for CIDFontType 2.
 % The name %Type11BuildGlyph is known to the interpreter.
 (%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
-		% We must be prepared for out-of-range CIDs.
+                % We must be prepared for out-of-range CIDs.
   2 copy { .type11mapcid } .internalstopped {
     pop /CharStrings get /.notdef get
   } if
-			% Stack: cidfont cid glyphindex
+                        % Stack: cidfont cid glyphindex
   1 index exch .type42execchar
 } bind def
 
@@ -341,7 +341,7 @@ languagelevel exch 2 .setlanguagelevel
 % Type 32 (CIDFontType 4) fonts, the font can be registered in the Font
 % category with only a CIDFontType and no FontType.
 /.buildcidfont {		% <name> <fontdict> .buildcidfont
-				%   <name> <cidfont>
+                                %   <name> <cidfont>
   systemdict /ProvideUnicode .knownget not { //false } if {
     /FontEmulationProcs /ProcSet findresource
     /ProvideUnicodeDecoding get exec
@@ -394,8 +394,8 @@ dup /.LoadResource {
 
 /CIDMap /Generic /Category findresource dup length dict .copydict
 dup /.CheckResource {
-	% Allow a string, an array of strings, or (as of Adobe release 3011)
-	% a dictionary.
+        % Allow a string, an array of strings, or (as of Adobe release 3011)
+        % a dictionary.
   dup type dup dup /stringtype eq exch /dicttype eq or {
     pop //true
   } {

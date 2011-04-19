@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@
 /* Define the error name table */
 extern const char *const gs_error_names[];
 
-		/* ------ PostScript Level 1 errors ------ */
+                /* ------ PostScript Level 1 errors ------ */
 
 #define e_unknownerror (-1)	/* unknown error */
 #define e_dictfull (-2)
@@ -69,7 +69,7 @@ extern const char *const gs_error_names[];
  "stackunderflow", "syntaxerror", "timeout", "typecheck", "undefined",\
  "undefinedfilename", "undefinedresult", "unmatchedmark", "VMerror"
 
-	/* ------ Additional Level 2 errors (also in DPS) ------ */
+        /* ------ Additional Level 2 errors (also in DPS) ------ */
 
 #define e_configurationerror (-26)
 #define e_undefinedresource (-27)
@@ -78,7 +78,7 @@ extern const char *const gs_error_names[];
 #define LEVEL2_ERROR_NAMES\
  "configurationerror", "undefinedresource", "unregistered"
 
-	/* ------ Additional DPS errors ------ */
+        /* ------ Additional DPS errors ------ */
 
 #define e_invalidcontext (-29)
 /* invalidid is for the NeXT DPS extension. */
@@ -90,7 +90,7 @@ extern const char *const gs_error_names[];
 #define ERROR_NAMES\
  LEVEL1_ERROR_NAMES, LEVEL2_ERROR_NAMES, DPS_ERROR_NAMES
 
-	/* ------ Pseudo-errors used internally ------ */
+        /* ------ Pseudo-errors used internally ------ */
 
 /*
  * Internal code for a fatal error.

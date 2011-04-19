@@ -117,7 +117,6 @@ cmd_get_frac31(const byte * p, const byte ** rp)
     return val;
 }
 
-
 /*
  * Define the structure for keeping track of the command reading buffer.
  *
@@ -220,7 +219,6 @@ cmd_copy_value(void *pvar, int var_size, const byte *cbp)
 #define cmd_get_value(var, cbp)\
   cbp = cmd_copy_value(&var, sizeof(var), cbp)
 
-
 /*
  * Define a buffer structure to hold a serialized halftone. This is
  * used only if the serialized halftone is too large to fit into
@@ -275,7 +273,6 @@ static int clist_decode_segment(gx_path *, int, fixed[6],
 static int clist_do_polyfill(gx_device *, gx_path *,
                               const gx_drawing_color *,
                               gs_logical_operation_t);
-
 
 static inline void
 enqueue_compositor(gs_composite_t **ppcomp_first, gs_composite_t **ppcomp_last, gs_composite_t *pcomp)
@@ -2397,7 +2394,6 @@ read_ht_segment(
 
     return code;
 }
-
 
 static int
 read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)

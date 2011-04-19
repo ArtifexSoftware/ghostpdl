@@ -31,7 +31,7 @@
 #include "gxsync.h"
 #include "gzstate.h"
         /*
-	 *  Note that the the external memory used to maintain
+         *  Note that the the external memory used to maintain
          *  links in the CMS is generally not visible to GS.
          *  For most CMS's the  links are 33x33x33x33x4 bytes at worst
          *  for a CMYK to CMYK MLUT which is about 4.5Mb per link.
@@ -40,11 +40,10 @@
          *  memory used based upon how the CMS is configured.
          *  This will be done later.  For now, just limit the number
          *  of links.
-	 */
+         */
 #define ICC_CACHE_MAXLINKS 50
 
 /* Static prototypes */
-
 
 static gsicc_link_t * gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode);
 
@@ -72,17 +71,13 @@ static void rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_nam
 
 /* Structure pointer information */
 
-
-
 gs_private_st_ptrs4(st_icc_link, gsicc_link_t, "gsiccmanage_link",
-		    icc_link_enum_ptrs, icc_link_reloc_ptrs,
-		    contextptr, icc_link_cache, next, wait);
-
+                    icc_link_enum_ptrs, icc_link_reloc_ptrs,
+                    contextptr, icc_link_cache, next, wait);
 
 gs_private_st_ptrs3(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
-		    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs,
-		    head, lock, wait);
-
+                    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs,
+                    head, lock, wait);
 
 /* These are used to construct a hash for the ICC link based upon the
    render parameters */
@@ -104,14 +99,14 @@ gsicc_cache_new(gs_memory_t *memory)
     /* We want this to be maintained in stable_memory.  It should be be effected by the
        save and restores */
     result = gs_alloc_struct(memory->stable_memory, gsicc_link_cache_t, &st_icc_linkcache,
-			     "gsicc_cache_new");
+                             "gsicc_cache_new");
     if ( result == NULL )
         return(NULL);
     result->lock = gx_monitor_alloc(memory->stable_memory);
     result->wait = gx_semaphore_alloc(memory->stable_memory);
     if (result->lock == NULL || result->wait == NULL) {
-	gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
-	return(NULL);
+        gs_free_object(memory->stable_memory, result, "gsicc_cache_new");
+        return(NULL);
     }
     result->num_waiting = 0;
     rc_init_free(result, memory->stable_memory, 1, rc_gsicc_link_cache_free);
@@ -133,7 +128,7 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     }
 #ifdef DEBUG
     if (link_cache->num_links != 0) {
-	eprintf1("num_links is %d, should be 0.\n", link_cache->num_links);
+        eprintf1("num_links is %d, should be 0.\n", link_cache->num_links);
     }
 #endif
     gs_free_object(mem->stable_memory, link_cache->lock, "rc_gsicc_link_cache_free(lock)");
@@ -150,27 +145,27 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     /* The link has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory->stable_memory, gsicc_link_t, &st_icc_link,
-			     "gsicc_alloc_link");
+                             "gsicc_alloc_link");
     wait = gx_semaphore_alloc(memory->stable_memory);
     if (wait == NULL) {
-	gs_free_object(memory, result, "gsicc_alloc_link(wait)");
-	result = NULL;
+        gs_free_object(memory, result, "gsicc_alloc_link(wait)");
+        result = NULL;
     }
     if (result != NULL) {
-	/* set up placeholder values */
-	result->next = NULL;
-	result->contextptr = NULL;
-	result->link_handle = NULL;
-	result->hashcode.link_hashcode = hashcode.link_hashcode;
-	result->hashcode.des_hash = 0;
-	result->hashcode.src_hash = 0;
-	result->hashcode.rend_hash = 0;
-	result->ref_count = 1;		/* prevent it from being freed */
-	result->includes_softproof = 0;
-	result->is_identity = false;
-	result->valid = false;		/* not yet complete */
-	result->num_waiting = 0;
-	result->wait = wait;
+        /* set up placeholder values */
+        result->next = NULL;
+        result->contextptr = NULL;
+        result->link_handle = NULL;
+        result->hashcode.link_hashcode = hashcode.link_hashcode;
+        result->hashcode.des_hash = 0;
+        result->hashcode.src_hash = 0;
+        result->hashcode.rend_hash = 0;
+        result->ref_count = 1;		/* prevent it from being freed */
+        result->includes_softproof = 0;
+        result->is_identity = false;
+        result->valid = false;		/* not yet complete */
+        result->num_waiting = 0;
+        result->wait = wait;
     }
     return(result);
 }
@@ -196,8 +191,8 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
 
     /* Now release any tasks/threads waiting for these contents */
     while (icc_link->num_waiting > 0) {
-	gx_semaphore_signal(icc_link->wait);
-	icc_link->num_waiting--;
+        gx_semaphore_signal(icc_link->wait);
+        icc_link->num_waiting--;
     }
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
 }
@@ -210,8 +205,6 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
     gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
 }
 
-
-
 static void
 gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, int64_t *hash)
 {
@@ -219,17 +212,17 @@ gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, in
     const gs_color_space_type *pcst = colorspace->type;
 
       switch(pcst->index) {
-	case gs_color_space_index_DeviceGray:
+        case gs_color_space_index_DeviceGray:
             *hash =  icc_manager->default_gray->hashcode;
             break;
-	case gs_color_space_index_DeviceRGB:
+        case gs_color_space_index_DeviceRGB:
             *hash =  icc_manager->default_rgb->hashcode;
             break;
         case gs_color_space_index_DeviceCMYK:
             *hash =  icc_manager->default_cmyk->hashcode;
             break;
-	default:
-	    break;
+        default:
+            break;
     }
 }
 
@@ -312,7 +305,7 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
     } else {
         /* We need to compute for this color space */
         gsicc_get_icc_buff_hash(cmm_icc_profile_data->buffer, hash,
-				cmm_icc_profile_data->buffer_size);
+                                cmm_icc_profile_data->buffer_size);
         cmm_icc_profile_data->hashcode = *hash;
         cmm_icc_profile_data->hash_is_valid = true;
         return;
@@ -335,23 +328,23 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache, b
 
     while (curr != NULL ) {
         if (curr->hashcode.link_hashcode == hashcode && includes_proof == curr->includes_softproof) {
-	    /* move this one to the front of the list hoping we will use it again soon */
-	    if (prev != NULL) {		/* if prev == NULL, curr is already the head */
-		prev->next = curr->next;
-		curr->next = icc_link_cache->head;
-		icc_link_cache->head = curr;
-	    }
-	    curr->ref_count++;		/* bump the ref_count since we will be using this one */
-	    while (curr->valid == false) {
-		curr->num_waiting++;
-	    	gx_monitor_leave(icc_link_cache->lock);
-		gx_semaphore_wait(curr->wait);
-    		gx_monitor_enter(icc_link_cache->lock);	/* re-enter breifly */
-	    }
-	    gx_monitor_leave(icc_link_cache->lock);
+            /* move this one to the front of the list hoping we will use it again soon */
+            if (prev != NULL) {		/* if prev == NULL, curr is already the head */
+                prev->next = curr->next;
+                curr->next = icc_link_cache->head;
+                icc_link_cache->head = curr;
+            }
+            curr->ref_count++;		/* bump the ref_count since we will be using this one */
+            while (curr->valid == false) {
+                curr->num_waiting++;
+                gx_monitor_leave(icc_link_cache->lock);
+                gx_semaphore_wait(curr->wait);
+                gx_monitor_enter(icc_link_cache->lock);	/* re-enter breifly */
+            }
+            gx_monitor_leave(icc_link_cache->lock);
             return(curr);	/* success */
         }
-	prev = curr;
+        prev = curr;
         curr = curr->next;
     }
     gx_monitor_leave(icc_link_cache->lock);
@@ -378,8 +371,8 @@ gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache)
     curr = icc_link_cache->head;
     while (curr != NULL ) {
         if (curr->ref_count == 0) {
-	    curr->ref_count++;		/* we will use this one */
-	    break;
+            curr->ref_count++;		/* we will use this one */
+            break;
         }
         curr = curr->next;
     }
@@ -400,14 +393,14 @@ gsicc_remove_link(gsicc_link_t *link, gs_memory_t *memory)
 
     while (curr != NULL ) {
         if (curr == link) {
-	    /* remove this one from the list */
-	    if (prev == NULL)
-		icc_link_cache->head = curr->next;
-	    else
-		prev->next = curr->next;
+            /* remove this one from the list */
+            if (prev == NULL)
+                icc_link_cache->head = curr->next;
+            else
+                prev->next = curr->next;
             break;
         }
-	prev = curr;
+        prev = curr;
         curr = curr->next;
     }
     /* if curr != link we didn't find it: assert ? */
@@ -498,31 +491,31 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     gx_monitor_enter(icc_link_cache->lock);
     while (icc_link_cache->num_links >= ICC_CACHE_MAXLINKS) {
         /* If not, see if there is anything we can remove from cache. */
-	while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
-	    icc_link_cache->num_waiting++;
-	    /* safe to unlock since above will make sure semaphore is signalled */
-	    gx_monitor_leave(icc_link_cache->lock);
-	    /* we get signalled (released from wait) when a link goes to zero ref */
-	    gx_semaphore_wait(icc_link_cache->wait);
+        while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
+            icc_link_cache->num_waiting++;
+            /* safe to unlock since above will make sure semaphore is signalled */
+            gx_monitor_leave(icc_link_cache->lock);
+            /* we get signalled (released from wait) when a link goes to zero ref */
+            gx_semaphore_wait(icc_link_cache->wait);
 
-	    /* repeat the findcachelink to see if some other thread has	*/
-	    /*already started building the link	we need			*/
-	    found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+            /* repeat the findcachelink to see if some other thread has	*/
+            /*already started building the link	we need			*/
+            found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
 
-	    /* Got a hit, return link (ref_count for the link was already bumped */
-	    if (found_link != NULL)
-		return(found_link);  /* TO FIX: We are really not going to want to have the members
-				  of this object visible outside gsiccmange */
+            /* Got a hit, return link (ref_count for the link was already bumped */
+            if (found_link != NULL)
+                return(found_link);  /* TO FIX: We are really not going to want to have the members
+                                  of this object visible outside gsiccmange */
 
-	    gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
-	    /* we will re-test the num_links above while locked to insure */
-	    /* that some other thread didn't grab the slot and max us out */
-	}
-	/* Remove the zero ref_count link profile we found.		*/
-	/* Even if we remove this link, we may still be maxed out so	*/
-	/* the outermost 'while' will check to make sure some other	*/
-	/* thread did not grab the one we remove.			*/
-	gsicc_remove_link(link, cache_mem);
+            gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
+            /* we will re-test the num_links above while locked to insure */
+            /* that some other thread didn't grab the slot and max us out */
+        }
+        /* Remove the zero ref_count link profile we found.		*/
+        /* Even if we remove this link, we may still be maxed out so	*/
+        /* the outermost 'while' will check to make sure some other	*/
+        /* thread did not grab the one we remove.			*/
+        gsicc_remove_link(link, cache_mem);
         icc_link_cache->num_links--;
     }
     /* insert an empty link that we will reserve so we */
@@ -533,7 +526,7 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     icc_link_cache->head = link;
     icc_link_cache->num_links++;
     gx_monitor_leave(icc_link_cache->lock);	/* now that we own this link we can release */
-					/* the lock since it is not valid */
+                                        /* the lock since it is not valid */
 
     /* Now compute the link contents */
     cms_input_profile = gs_input_profile->profile_handle;
@@ -558,7 +551,7 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
                 /* Cant create the link.  No profile present,
                    nor any defaults to use for this.  Really
                    need to throw an error for this case. */
-		gsicc_remove_link(link, cache_mem);
+                gsicc_remove_link(link, cache_mem);
                 icc_link_cache->num_links--;
                 return(NULL);
             }
@@ -585,7 +578,7 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
                 /* Cant create the link.  No profile present,
                    nor any defaults to use for this.  Really
                    need to throw an error for this case. */
-		gsicc_remove_link(link, cache_mem);
+                gsicc_remove_link(link, cache_mem);
                 icc_link_cache->num_links--;
                 return(NULL);
             }
@@ -594,9 +587,9 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                     rendering_params);
     if (link_handle != NULL) {
-	gsicc_set_link_data(link, link_handle, contextptr, hash, icc_link_cache->lock);
+        gsicc_set_link_data(link, link_handle, contextptr, hash, icc_link_cache->lock);
     } else {
-	gsicc_remove_link(link, cache_mem);
+        gsicc_remove_link(link, cache_mem);
         icc_link_cache->num_links--;
         return(NULL);
     }
@@ -879,44 +872,43 @@ gsicc_release_link(gsicc_link_t *icclink)
     /* Decrement the reference count */
     if (--(icclink->ref_count) == 0) {
 
-	gsicc_link_t *curr, *prev;
+        gsicc_link_t *curr, *prev;
 
+        /* Find link in cache, and move it to the end of the list.  */
+        /* This way zero ref_count links are found LRU first	*/
+        curr = icc_link_cache->head;
+        prev = NULL;
+        while (curr != icclink) {
+            prev = curr;
+            curr = curr->next;
+        };
+        if (prev == NULL) {
+            /* this link was the head */
+            icc_link_cache->head = curr->next;
+        } else {
+            prev->next = curr->next;		/* de-link this one */
+        }
+        /* Find the first zero-ref entry on the list */
+        curr = icc_link_cache->head;
+        prev = NULL;
+        while (curr != NULL && curr->ref_count > 0) {
+            prev = curr;
+            curr = curr->next;
+        }
+        /* Found where to link this one into the tail of the list */
+        if (prev == NULL) {
+            icc_link_cache->head = icclink;
+            icclink->next = icc_link_cache->head->next;
+        } else {
+            /* link this one in here */
+            prev->next = icclink;
+            icclink->next = curr;
+        }
 
-	/* Find link in cache, and move it to the end of the list.  */
-	/* This way zero ref_count links are found LRU first	*/
-	curr = icc_link_cache->head;
-	prev = NULL;
-	while (curr != icclink) {
-	    prev = curr;
-	    curr = curr->next;
-	};
-	if (prev == NULL) {
-	    /* this link was the head */
-	    icc_link_cache->head = curr->next;
-	} else {
-	    prev->next = curr->next;		/* de-link this one */
-	}
-	/* Find the first zero-ref entry on the list */
-	curr = icc_link_cache->head;
-	prev = NULL;
-	while (curr != NULL && curr->ref_count > 0) {
-	    prev = curr;
-	    curr = curr->next;
-	}
-	/* Found where to link this one into the tail of the list */
-	if (prev == NULL) {
-	    icc_link_cache->head = icclink;
-	    icclink->next = icc_link_cache->head->next;
-	} else {
-	    /* link this one in here */
-	    prev->next = icclink;
-	    icclink->next = curr;
-	}
-
-	/* now release any tasks waiting for a cache slot */
+        /* now release any tasks waiting for a cache slot */
         while (icclink->icc_link_cache->num_waiting > 0) {
-	    gx_semaphore_signal(icclink->icc_link_cache->wait);
-	    icclink->icc_link_cache->num_waiting--;
+            gx_semaphore_signal(icclink->icc_link_cache->wait);
+            icclink->icc_link_cache->num_waiting--;
         }
     }
     gx_monitor_leave(icc_link_cache->lock);
@@ -943,4 +935,3 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
     buffer_desc->little_endian = true;
 
 }
-

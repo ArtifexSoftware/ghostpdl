@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,28 +41,28 @@ calendar_get_params(gx_io_device * iodev, gs_param_list * plist)
     struct tm *pltime;
     struct tm ltime;
     static const gs_param_item_t items[] = {
-	{"Year", gs_param_type_int, offset_of(struct tm, tm_year)},
-	{"Month", gs_param_type_int, offset_of(struct tm, tm_mon)},
-	{"Day", gs_param_type_int, offset_of(struct tm, tm_mday)},
-	{"Weekday", gs_param_type_int, offset_of(struct tm, tm_wday)},
-	{"Hour", gs_param_type_int, offset_of(struct tm, tm_hour)},
-	{"Minute", gs_param_type_int, offset_of(struct tm, tm_min)},
-	{"Second", gs_param_type_int, offset_of(struct tm, tm_sec)},
-	gs_param_item_end
+        {"Year", gs_param_type_int, offset_of(struct tm, tm_year)},
+        {"Month", gs_param_type_int, offset_of(struct tm, tm_mon)},
+        {"Day", gs_param_type_int, offset_of(struct tm, tm_mday)},
+        {"Weekday", gs_param_type_int, offset_of(struct tm, tm_wday)},
+        {"Hour", gs_param_type_int, offset_of(struct tm, tm_hour)},
+        {"Minute", gs_param_type_int, offset_of(struct tm, tm_min)},
+        {"Second", gs_param_type_int, offset_of(struct tm, tm_sec)},
+        gs_param_item_end
     };
     bool running;
 
     if (time(&t) == (time_t)-1 || (pltime = localtime(&t)) == 0) {
-	ltime.tm_sec = ltime.tm_min = ltime.tm_hour =
-	    ltime.tm_mday = ltime.tm_mon = ltime.tm_year = 0;
-	running = false;
+        ltime.tm_sec = ltime.tm_min = ltime.tm_hour =
+            ltime.tm_mday = ltime.tm_mon = ltime.tm_year = 0;
+        running = false;
     } else {
-	ltime = *pltime;
-	ltime.tm_year += 1900;
-	ltime.tm_mon++;		/* 1-origin */
-	running = true;
+        ltime = *pltime;
+        ltime.tm_year += 1900;
+        ltime.tm_mon++;		/* 1-origin */
+        running = true;
     }
     if ((code = gs_param_write_items(plist, &ltime, NULL, items)) < 0)
-	return code;
+        return code;
     return param_write_bool(plist, "Running", &running);
 }

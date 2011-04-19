@@ -471,7 +471,6 @@ gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
     return gs_grestore(pgs);
 }
 
-
 /* Restore to the bottommost graphics state (at this save level). */
 int
 gs_grestoreall(gs_state * pgs)
@@ -996,7 +995,6 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     gs_free_object(mem, pgs, cname);
     return 0;
 }
-
 
 /* Adjust reference counters for the whole clip stack */
 /* accessible from the given point */

@@ -17,7 +17,7 @@ typedef int bool;
 #define BMP_FILE_HEADER_SIZE 14
 #define BMP_INFO_HEADER_SIZE 40
 #define BMP_HEADER_SIZE ((BMP_FILE_HEADER_SIZE) + \
-				(BMP_INFO_HEADER_SIZE))
+                                (BMP_INFO_HEADER_SIZE))
 
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -84,22 +84,22 @@ image_get_rgb_scan_line (Image *image, uchar *buf)
   else if (image->n_chan == 1 && image->bpp == 8)
     {
       for (x = 0; x < width; x++)
-	{
-	  uchar g = image_buf[x];
-	  buf[x * 3] = g;
-	  buf[x * 3 + 1] = g;
-	  buf[x * 3 + 2] = g;
-	}
+        {
+          uchar g = image_buf[x];
+          buf[x * 3] = g;
+          buf[x * 3 + 1] = g;
+          buf[x * 3 + 2] = g;
+        }
     }
   else if (image->n_chan == 1 && image->bpp == 1)
     {
       for (x = 0; x < width; x++)
-	{
-	  uchar g = -!(image_buf[x >> 3] & (128 >> (x & 7)));
-	  buf[x * 3] = g;
-	  buf[x * 3 + 1] = g;
-	  buf[x * 3 + 2] = g;
-	}
+        {
+          uchar g = -!(image_buf[x >> 3] & (128 >> (x & 7)));
+          buf[x * 3] = g;
+          buf[x * 3 + 1] = g;
+          buf[x * 3 + 2] = g;
+        }
     }
   else
     code = -1;
@@ -112,8 +112,8 @@ image_get_rgb_scan_line_with_error (Image *image, uchar *buf, int image_index, i
     int code = image_get_rgb_scan_line (image, buf);
 
     if (code == 1) {
-	*rcode = 1;
-	printf("*** I/O error in file %d at y = %d\n", image_index, row_index);
+        *rcode = 1;
+        printf("*** I/O error in file %d at y = %d\n", image_index, row_index);
     }
     return code;
 }
@@ -129,7 +129,6 @@ no_seek(Image *self, int y)
 {
   return 0;
 }
-
 
 typedef struct _ImagePnm ImagePnm;
 
@@ -266,12 +265,12 @@ create_bmp_image(Image *templ, const char *path)
     if (linebuf == NULL) {
         printf ("Couldn't allocate dummy bmp line buffer; diff image may be corrupt.\n");
     } else {
-	int k;
+        int k;
 
         memset(linebuf, 0, raster);
 
-	for (k = 0; k < pnm->super.height; k++)
-	    fwrite(linebuf, 1, raster, pnm->f);
+        for (k = 0; k < pnm->super.height; k++)
+            fwrite(linebuf, 1, raster, pnm->f);
 
         free(linebuf);
     }
@@ -279,7 +278,6 @@ create_bmp_image(Image *templ, const char *path)
 
   return pnm;
 }
-
 
 static int
 image_pnm_get_scan_line (Image *self, uchar *buf)
@@ -348,7 +346,7 @@ open_pnm_image (ImagePnm *image)
   do
     {
       if (fgets (linebuf, sizeof(linebuf), image->f) == NULL)
-	  return 1;
+          return 1;
     }
   while (linebuf[0] == '#');
   if (sscanf (linebuf, "%d %d", &width, &height) != 2)
@@ -356,11 +354,11 @@ open_pnm_image (ImagePnm *image)
   while (!maxval)
     {
       if (fgets (linebuf, sizeof(linebuf), image->f) == NULL)
-	  return 1;
+          return 1;
       if (linebuf[0] == '#')
           continue;
       if (sscanf(linebuf, "%d", &maxval) != 1 || maxval <= 0 || maxval > 255)
-	  return 1;
+          return 1;
     }
   image->super.width = width;
   image->super.height = height;
@@ -433,8 +431,8 @@ roll_window (uchar **buf, int window_size)
 
 static bool
 check_window (uchar **buf1, uchar **buf2,
-	      const FuzzyParams *fparams,
-	      int x, int y, int width, int height)
+              const FuzzyParams *fparams,
+              int x, int y, int width, int height)
 {
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
@@ -451,26 +449,26 @@ check_window (uchar **buf1, uchar **buf2,
       const uchar *row1 = buf1[j + half_win];
       const uchar *row2 = buf2[j + half_win];
       for (i = -half_win; i <= half_win; i++)
-	if ((i != 0 || j != 0) &&
-	    x + i >= 0 && x + i < width &&
-	    y + j >= 0 && y + j < height)
-	  {
-	    if (abs (r1 - row2[(x + i) * 3]) <= tolerance &&
-		abs (g1 - row2[(x + i) * 3 + 1]) <= tolerance &&
-		abs (b1 - row2[(x + i) * 3 + 2]) <= tolerance)
-	      match1 = TRUE;
-	    if (abs (r2 - row1[(x + i) * 3]) <= tolerance &&
-		abs (g2 - row1[(x + i) * 3 + 1]) <= tolerance &&
-		abs (b2 - row1[(x + i) * 3 + 2]) <= tolerance)
-	      match2 = TRUE;
-	  }
+        if ((i != 0 || j != 0) &&
+            x + i >= 0 && x + i < width &&
+            y + j >= 0 && y + j < height)
+          {
+            if (abs (r1 - row2[(x + i) * 3]) <= tolerance &&
+                abs (g1 - row2[(x + i) * 3 + 1]) <= tolerance &&
+                abs (b1 - row2[(x + i) * 3 + 2]) <= tolerance)
+              match1 = TRUE;
+            if (abs (r2 - row1[(x + i) * 3]) <= tolerance &&
+                abs (g2 - row1[(x + i) * 3 + 1]) <= tolerance &&
+                abs (b2 - row1[(x + i) * 3 + 2]) <= tolerance)
+              match2 = TRUE;
+          }
     }
   return !(match1 && match2);
 }
 
 static int
 fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
-		   FuzzyReport *freport, ImagePnm *image_out)
+                   FuzzyReport *freport, ImagePnm *image_out)
 {
   int width = MIN(image1->width, image2->width);
   int height = MIN(image1->height, image2->height);
@@ -500,9 +498,9 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   for (y = 0; y < MIN(half_win, height); y++)
     {
        if (image_get_rgb_scan_line_with_error (image1, buf1[half_win - y], 1, y, &rcode))
-	    goto ex;
+            goto ex;
        if (image_get_rgb_scan_line_with_error (image2, buf2[half_win - y], 2, y, &rcode))
-	    goto ex;
+            goto ex;
     }
   /* Initialie remaining scanlines if height < half_win */
   for (; y < half_win; y++) {
@@ -529,100 +527,100 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 
       if (y < height - half_win)
         {
-	    if (image_get_rgb_scan_line_with_error (image1, row1, 1, y + half_win, &rcode))
-		goto ex;
-	    if (image_get_rgb_scan_line_with_error (image2, row2, 2, y + half_win, &rcode))
-		goto ex;
+            if (image_get_rgb_scan_line_with_error (image1, row1, 1, y + half_win, &rcode))
+                goto ex;
+            if (image_get_rgb_scan_line_with_error (image2, row2, 2, y + half_win, &rcode))
+                goto ex;
         }
       if (out_buf)
-	memset(out_buf, 0, out_buffer_size);
+        memset(out_buf, 0, out_buffer_size);
 
       if (memcmp(rowmid1, rowmid2, width * 3))
         {
           for (x = 0; x < width; x++)
-	    {
-	      if (rowmid1[x * 3] != rowmid2[x * 3] ||
-	          rowmid1[x * 3 + 1] != rowmid2[x * 3 + 1] ||
-	          rowmid1[x * 3 + 2] != rowmid2[x * 3 + 2])
-	        {
-	          freport->n_diff++;
-                  /* If max error is the largest it can be in a 3 band 
+            {
+              if (rowmid1[x * 3] != rowmid2[x * 3] ||
+                  rowmid1[x * 3 + 1] != rowmid2[x * 3 + 1] ||
+                  rowmid1[x * 3 + 2] != rowmid2[x * 3 + 2])
+                {
+                  freport->n_diff++;
+                  /* If max error is the largest it can be in a 3 band
                      unsigned char image, then stop collecting this
                      information since we are likely dealing with a half
                      tone image and the max color error is not of interest */
-                  if ( freport->max_color_error < 440) { 
+                  if ( freport->max_color_error < 440) {
                       diff[0] = rowmid1[x * 3] - rowmid2[x * 3];
                       diff[1] = rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1];
                       diff[2] = rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2];
-                      color_diff = sqrt(diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]); 
+                      color_diff = sqrt(diff[0]*diff[0] + diff[1]*diff[1] + diff[2]*diff[2]);
                       if (color_diff > freport->max_color_error) {
                         freport->max_color_error = color_diff;
                       }
-                      if( freport->n_diff == 1) {   
+                      if( freport->n_diff == 1) {
                         freport->avg_color_error = color_diff;
                       } else {
-                        freport->avg_color_error = 
-                            ( freport->avg_color_error*(freport->n_diff-1) + 
+                        freport->avg_color_error =
+                            ( freport->avg_color_error*(freport->n_diff-1) +
                               color_diff) / freport->n_diff;
                       }
                   }
-	          if (abs (rowmid1[x * 3] - rowmid2[x * 3]) > tolerance ||
-		      abs (rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1]) > tolerance ||
-		      abs (rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2]) > tolerance)
-		    {
-		      freport->n_outof_tolerance++;
-		      if (check_window (buf1, buf2, fparams, x, y, width, height)) {
-		        freport->n_outof_window++;
-		        if (out_buf && x < image1->width) {
-		          out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
-		          out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
-		          out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
-		        }
-		        if (fparams->report_coordinates &&
-			    (abs(x - x0) > 1 && y == y0 || y - y0 > 1))
-		          {
-		            /* fixme : a contiguity test wanted. */
-			    x0 = x; y0 = y;
-			    mc++;
-			    if (mc < mmax) {
-			        printf("diff: x=%d y=%d c1=%02X%02X%02X c2=%02X%02X%02X\n", x, y,
-			    	        rowmid1[x * 3], rowmid1[x * 3 + 1], rowmid1[x * 3 + 2],
-				        rowmid2[x * 3], rowmid2[x * 3 + 1], rowmid2[x * 3 + 2]);
-			    } else if (mc == mmax)
-			        printf("Won't report more differences.\n");
-		        }
-		      }
-		    }
-	        }
-	    }
+                  if (abs (rowmid1[x * 3] - rowmid2[x * 3]) > tolerance ||
+                      abs (rowmid1[x * 3 + 1] - rowmid2[x * 3 + 1]) > tolerance ||
+                      abs (rowmid1[x * 3 + 2] - rowmid2[x * 3 + 2]) > tolerance)
+                    {
+                      freport->n_outof_tolerance++;
+                      if (check_window (buf1, buf2, fparams, x, y, width, height)) {
+                        freport->n_outof_window++;
+                        if (out_buf && x < image1->width) {
+                          out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
+                          out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
+                          out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
+                        }
+                        if (fparams->report_coordinates &&
+                            (abs(x - x0) > 1 && y == y0 || y - y0 > 1))
+                          {
+                            /* fixme : a contiguity test wanted. */
+                            x0 = x; y0 = y;
+                            mc++;
+                            if (mc < mmax) {
+                                printf("diff: x=%d y=%d c1=%02X%02X%02X c2=%02X%02X%02X\n", x, y,
+                                        rowmid1[x * 3], rowmid1[x * 3 + 1], rowmid1[x * 3 + 2],
+                                        rowmid2[x * 3], rowmid2[x * 3 + 1], rowmid2[x * 3 + 2]);
+                            } else if (mc == mmax)
+                                printf("Won't report more differences.\n");
+                        }
+                      }
+                    }
+                }
+            }
         }
 
       roll_window (buf1, window_size);
       roll_window (buf2, window_size);
       if (out_buf) {
         if (image_out->super.seek(&image_out->super, y))
-	  {
-	    printf ("I/O Error seeking to the output image position.\n");
-	    free(out_buf);
-	    out_buf = NULL;
-	  }
-	else if (fwrite(out_buf, 1, out_buffer_size, image_out->f) != out_buffer_size)
-	  {
-	    printf ("I/O Error writing the output image.\n");
-	    free(out_buf);
-	    out_buf = NULL;
-	  }
+          {
+            printf ("I/O Error seeking to the output image position.\n");
+            free(out_buf);
+            out_buf = NULL;
+          }
+        else if (fwrite(out_buf, 1, out_buffer_size, image_out->f) != out_buffer_size)
+          {
+            printf ("I/O Error writing the output image.\n");
+            free(out_buf);
+            out_buf = NULL;
+          }
       }
     }
   y += half_win;
   for (; y < max_height; y++) {
       if (y < image1->height) {
-	    if (image_get_rgb_scan_line_with_error(image1, buf1[0], 1, y, &rcode))
-		goto ex;
+            if (image_get_rgb_scan_line_with_error(image1, buf1[0], 1, y, &rcode))
+                goto ex;
       }
       if (y < image2->height) {
-	    if (image_get_rgb_scan_line_with_error(image2, buf2[0], 2, y, &rcode))
-		goto ex;
+            if (image_get_rgb_scan_line_with_error(image2, buf2[0], 2, y, &rcode))
+                goto ex;
       }
   }
 ex:
@@ -642,9 +640,9 @@ get_arg (int argc, char **argv, int *pi, const char *arg)
     {
       (*pi)++;
       if (*pi == argc)
-	return NULL;
+        return NULL;
       else
-	return argv[*pi];
+        return argv[*pi];
     }
 }
 
@@ -676,31 +674,31 @@ main (int argc, char **argv)
       const char *arg = argv[i];
 
       if (arg[0] == '-')
-	{
-	  switch (arg[1])
-	    {
-	    case 'w':
-	      fparams.window_size = atoi (get_arg (argc, argv, &i, arg + 2));
-	      if ((fparams.window_size & 1) == 0)
-		{
-		  printf ("window size must be odd\n");
-		  return 1;
-		}
-	      break;
-	    case 't':
-	      fparams.tolerance = atoi (get_arg (argc, argv, &i, arg + 2));
-	      break;
-	    case 'c':
-	      fparams.report_coordinates = TRUE;
-	      break;
-	    default:
-	      return usage ();
-	    }
-	}
+        {
+          switch (arg[1])
+            {
+            case 'w':
+              fparams.window_size = atoi (get_arg (argc, argv, &i, arg + 2));
+              if ((fparams.window_size & 1) == 0)
+                {
+                  printf ("window size must be odd\n");
+                  return 1;
+                }
+              break;
+            case 't':
+              fparams.tolerance = atoi (get_arg (argc, argv, &i, arg + 2));
+              break;
+            case 'c':
+              fparams.report_coordinates = TRUE;
+              break;
+            default:
+              return usage ();
+            }
+        }
       else if (fn_idx < sizeof(fn)/sizeof(fn[0]))
-	fn[fn_idx++] = argv[i];
+        fn[fn_idx++] = argv[i];
       else
-	return usage ();
+        return usage ();
     }
 
   if (fn_idx < 2)
@@ -720,8 +718,8 @@ main (int argc, char **argv)
   if (fn[2]) {
       out_fn = malloc(strlen(fn[2]) + 5);
       if (out_fn == NULL) {
-	  printf("Can't alloc the output file name.\n");
-	  return 1;
+          printf("Can't alloc the output file name.\n");
+          return 1;
       }
   }
 
@@ -749,30 +747,30 @@ main (int argc, char **argv)
       return 1;
     }
     if (image1->width != image2->width) {
-	printf("Different image width for page %d\n", page);
-	rcode = MAX(rcode, 1);
+        printf("Different image width for page %d\n", page);
+        rcode = MAX(rcode, 1);
     }
     if (image1->height != image2->height) {
-	printf("Different image height for page %d\n", page);
-	rcode = MAX(rcode, 1);
+        printf("Different image height for page %d\n", page);
+        rcode = MAX(rcode, 1);
     }
     if (out_fn != NULL) {
       int l = strlen(fn[2]);
 
       strcpy(out_fn, fn[2]);
       for (i = l; i >= 0; i--) {
-	  if (out_fn[i] == '\\' || out_fn[i] == '/' || out_fn[i] == '.')
-	      break;
+          if (out_fn[i] == '\\' || out_fn[i] == '/' || out_fn[i] == '.')
+              break;
       }
       if (out_fn[i] == '.') {
-	  char c;
+          char c;
 
-	  memmove(out_fn + i + 4, out_fn + i, l + 1 - i);
-	  c = out_fn[i + 4];
-	  sprintf(out_fn + i, "-%03d", page);
-	  out_fn[i + 4] = c;
+          memmove(out_fn + i + 4, out_fn + i, l + 1 - i);
+          c = out_fn[i + 4];
+          sprintf(out_fn + i, "-%03d", page);
+          out_fn[i + 4] = c;
       } else
-	  sprintf(out_fn + l, "-%03d", page);
+          sprintf(out_fn + l, "-%03d", page);
       image_out =
        (!strcmp(fn[2]+ strlen(fn[2]) - 4, ".bmp") ? create_bmp_image
                                                   : create_pnm_image)
@@ -786,15 +784,15 @@ main (int argc, char **argv)
     freport.avg_color_error = 0;
     freport.max_color_error = 0;
     if (fuzzy_diff_images (image1, image2, &fparams, &freport, image_out))
-	return 1;
+        return 1;
     if (image_out)
       image_pnm_close (&image_out->super);
     image_out = NULL;
     if (freport.n_diff > 0)
     {
       printf ("%s: page %d: %d diff., %d out of tol., %d out of win., %3.2lf avg diff, %3.2lf max diff\n",
- 	      fn[0], page, freport.n_diff, freport.n_outof_tolerance,
-	      freport.n_outof_window,freport.avg_color_error, 
+              fn[0], page, freport.n_diff, freport.n_outof_tolerance,
+              freport.n_outof_window,freport.avg_color_error,
               freport.max_color_error);
       rcode = MAX(rcode, 1);
     }

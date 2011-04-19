@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -21,14 +21,14 @@
 #include "ttfmemd.h"
 #include "gsstruct.h"
 
-gs_public_st_ptrs5(st_TFace, TFace, "TFace", 
-    st_TFace_enum_ptrs, st_TFace_reloc_ptrs, 
+gs_public_st_ptrs5(st_TFace, TFace, "TFace",
+    st_TFace_enum_ptrs, st_TFace_reloc_ptrs,
     r, font, fontProgram, cvtProgram, cvt);
 
 gs_public_st_composite(st_TInstance, TInstance,
     "TInstance", TInstance_enum_ptrs, TInstance_reloc_ptrs);
 
-static 
+static
 ENUM_PTRS_BEGIN(TInstance_enum_ptrs) return 0;
     ENUM_PTR(0, TInstance, face);
     ENUM_PTR(1, TInstance, FDefs);
@@ -55,7 +55,7 @@ RELOC_PTRS_END
 gs_public_st_composite(st_TExecution_Context, TExecution_Context,
     "TExecution_Context", TExecution_Context_enum_ptrs, TExecution_Context_reloc_ptrs);
 
-static 
+static
 ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     ENUM_PTR(0, TExecution_Context, current_face);
     /* ENUM_PTR(1, TExecution_Context, code); // local, no gc invocations */
@@ -124,7 +124,7 @@ RELOC_PTRS_END
 gs_public_st_composite(st_ttfFont, ttfFont,
     "ttfFont", ttfFont_enum_ptrs, ttfFont_reloc_ptrs);
 
-static 
+static
 ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
     ENUM_PTR(0, ttfFont, face);
     ENUM_PTR(1, ttfFont, inst);
@@ -140,6 +140,6 @@ static RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
     DISCARD(mptr);
 RELOC_PTRS_END
 
-gs_public_st_ptrs3(st_ttfInterpreter, ttfInterpreter, "ttfInterpreter", 
-    st_ttfInterpreter_enum_ptrs, st_ttfInterpreter_reloc_ptrs, 
+gs_public_st_ptrs3(st_ttfInterpreter, ttfInterpreter, "ttfInterpreter",
+    st_ttfInterpreter_enum_ptrs, st_ttfInterpreter_reloc_ptrs,
     exec, usage, ttf_memory);

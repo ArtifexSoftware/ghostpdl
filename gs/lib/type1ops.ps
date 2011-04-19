@@ -1,12 +1,12 @@
 %    Copyright (C) 1992, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -26,7 +26,7 @@
 
 /Type1encode 70 dict
 
-	% Data types
+        % Data types
 
 dup /nulltype {
   pop ()
@@ -46,14 +46,14 @@ dup /integertype {
       1 4 -1 roll 255 and put
     } {
       (\377xxxx) 1 1 4 {
-	dup 8 mul 32 sub 3 index exch bitshift 255 and
-	2 index 3 1 roll put
+        dup 8 mul 32 sub 3 index exch bitshift 255 and
+        2 index 3 1 roll put
       } for exch pop
     } ifelse
   } ifelse
 } put
 
-	% Operators
+        % Operators
 
 % Identical or similar in Type 1 and Type 2.
 /c_hstem 1 def   dup /hstem <01> put
@@ -130,7 +130,7 @@ readonly def
 Type1encode {
   dup type /stringtype eq {
     dup length 1 eq { 0 get } { 1 get 256 add } ifelse
-		% stack: array key code
+                % stack: array key code
     exch 2 index 3 1 roll put
   } {
     pop pop

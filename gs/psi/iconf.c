@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,19 +63,19 @@ const uint build_function_type_table_count =
     countof(build_function_type_table) - 1;
 
 /* Initialize the operators. */
-	/* Declare the externs. */
+        /* Declare the externs. */
 #define oper_(xx_op_defs) extern const op_def xx_op_defs[];
 oper_(interp1_op_defs)		/* Interpreter operators */
 oper_(interp2_op_defs)		/* ibid. */
 #include "gconf.h"
 #undef oper_
- 
+
 const op_def *const op_defs_all[] = {
 #define oper_(defs) defs,
     oper_(interp1_op_defs)	/* Interpreter operators */
     oper_(interp2_op_defs)	/* ibid. */
 #include "gconf.h"
-#undef oper_ 
+#undef oper_
     0
 };
 const uint op_def_count = (countof(op_defs_all) - 1) * OP_DEFS_MAX_SIZE;

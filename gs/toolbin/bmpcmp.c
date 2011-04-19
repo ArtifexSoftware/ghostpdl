@@ -98,7 +98,6 @@ typedef void (DiffFn)(unsigned char *bmp,
                       BBox          *bbox,
                       Params        *params);
 
-
 static void *Malloc(size_t size) {
     void *block;
 
@@ -1342,7 +1341,6 @@ static int fuzzy_fast_exhaustive(FuzzyParams   *fuzzy_params,
     return ret;
 }
 
-
 static void fuzzy_diff(unsigned char *bmp,
                        unsigned char *bmp2,
                        unsigned char *map,
@@ -2295,7 +2293,6 @@ done:
 
     image_close(&image1);
     image_close(&image2);
-
 
     return EXIT_SUCCESS;
 }

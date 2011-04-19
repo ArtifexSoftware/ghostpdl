@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,13 +37,13 @@ typedef struct gx_device_run_s {
      * ones, for use with the uncompressed representation.
      */
     struct sp_ {
-	dev_proc_copy_mono((*copy_mono));
-	dev_proc_copy_color((*copy_color));
-	dev_proc_fill_rectangle((*fill_rectangle));
-	dev_proc_copy_alpha((*copy_alpha));
-	dev_proc_strip_tile_rectangle((*strip_tile_rectangle));
-	dev_proc_strip_copy_rop((*strip_copy_rop));
-	dev_proc_get_bits_rectangle((*get_bits_rectangle));
+        dev_proc_copy_mono((*copy_mono));
+        dev_proc_copy_color((*copy_color));
+        dev_proc_fill_rectangle((*fill_rectangle));
+        dev_proc_copy_alpha((*copy_alpha));
+        dev_proc_strip_tile_rectangle((*strip_tile_rectangle));
+        dev_proc_strip_copy_rop((*strip_copy_rop));
+        dev_proc_get_bits_rectangle((*get_bits_rectangle));
     } save_procs;
 } gx_device_run;
 

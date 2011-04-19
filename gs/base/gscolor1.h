@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,13 +30,13 @@ gs_mapping_proc gs_currentundercolorremoval(const gs_state *);
 
 /* Transfer function */
 int gs_setcolortransfer(gs_state *, gs_mapping_proc /*red */ ,
-			gs_mapping_proc /*green */ ,
-			gs_mapping_proc /*blue */ ,
-			gs_mapping_proc /*gray */ ),
+                        gs_mapping_proc /*green */ ,
+                        gs_mapping_proc /*blue */ ,
+                        gs_mapping_proc /*gray */ ),
     gs_setcolortransfer_remap(gs_state *, gs_mapping_proc /*red */ ,
-			      gs_mapping_proc /*green */ ,
-			      gs_mapping_proc /*blue */ ,
-			      gs_mapping_proc /*gray */ , bool);
+                              gs_mapping_proc /*green */ ,
+                              gs_mapping_proc /*blue */ ,
+                              gs_mapping_proc /*gray */ , bool);
 void gs_currentcolortransfer(const gs_state *, gs_mapping_proc[4]);
 
 #endif /* gscolor1_INCLUDED */

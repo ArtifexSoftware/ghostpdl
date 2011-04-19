@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -61,16 +61,16 @@ typedef struct ref_stack_block_s {
  * structure iff params is not NULL.
  */
 int ref_stack_init(ref_stack_t *pstack, const ref *pblock_array,
-		   uint bot_guard, uint top_guard,
-		   const ref *pguard_value, gs_ref_memory_t *mem,
-		   ref_stack_params_t *params);
+                   uint bot_guard, uint top_guard,
+                   const ref *pguard_value, gs_ref_memory_t *mem,
+                   ref_stack_params_t *params);
 
 /* Set whether a stack is allowed to expand.  The initial value is true. */
 void ref_stack_allow_expansion(ref_stack_t *pstack, bool expand);
 
 /* Set the error codes for under- and overflow.  The initial values are -1. */
 void ref_stack_set_error_codes(ref_stack_t *pstack, int underflow_error,
-			       int overflow_error);
+                               int overflow_error);
 
 /*
  * Set the maximum number of elements allowed on a stack.
@@ -111,7 +111,7 @@ uint ref_stack_counttomark(const ref_stack_t *pstack);
  * 'skip' elements below the top, into an array.  Return 0 or e_invalidaccess.
  */
 int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
-			  uint count, uint skip);
+                          uint count, uint skip);
 
 /*
  * Store the top 'count' elements of a stack, starting 'skip' elements below
@@ -124,8 +124,8 @@ int ref_stack_store_check(const ref_stack_t *pstack, ref *parray,
 typedef struct gs_dual_memory_s gs_dual_memory_t;
 #endif
 int ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
-		    uint skip, int age, bool check,
-		    gs_dual_memory_t *idmem, client_name_t cname);
+                    uint skip, int age, bool check,
+                    gs_dual_memory_t *idmem, client_name_t cname);
 
 /*
  * Pop the top N elements off a stack.

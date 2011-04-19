@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,10 +29,9 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 /* Render a color, possibly by halftoning. */
 /* Return as for gx_render_[device_]gray. */
 int gx_render_device_color_devn(P10(frac red, frac green, frac blue, frac white,
-			       bool cmyk, gx_color_value alpha,
-			       gx_device_color * pdevc, gx_device * dev,
-			       gx_device_halftone * pdht,
-			       const gs_int_point * ht_phase));
-
+                               bool cmyk, gx_color_value alpha,
+                               gx_device_color * pdevc, gx_device * dev,
+                               gx_device_halftone * pdht,
+                               const gs_int_point * ht_phase));
 
 #endif /* gxdevndi_INCLUDED */

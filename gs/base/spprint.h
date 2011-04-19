@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -42,12 +42,12 @@ int stream_puts(stream * s, const char *str);
 const char *pprintg1(stream * s, const char *format, floatp v);
 const char *pprintg2(stream * s, const char *format, floatp v1, floatp v2);
 const char *pprintg3(stream * s, const char *format,
-		     floatp v1, floatp v2, floatp v3);
+                     floatp v1, floatp v2, floatp v3);
 const char *pprintg4(stream * s, const char *format,
-		     floatp v1, floatp v2, floatp v3, floatp v4);
+                     floatp v1, floatp v2, floatp v3, floatp v4);
 const char *pprintg6(stream * s, const char *format,
-		     floatp v1, floatp v2, floatp v3, floatp v4,
-		     floatp v5, floatp v6);
+                     floatp v1, floatp v2, floatp v3, floatp v4,
+                     floatp v5, floatp v6);
 
 /*
  * The rest of these printing functions exist solely because the ANSI C
@@ -58,21 +58,21 @@ const char *pprintg6(stream * s, const char *format,
 const char *pprintd1(stream * s, const char *format, int v);
 const char *pprintd2(stream * s, const char *format, int v1, int v2);
 const char *pprintd3(stream * s, const char *format,
-		     int v1, int v2, int v3);
+                     int v1, int v2, int v3);
 const char *pprintd4(stream * s, const char *format,
-		     int v1, int v2, int v3, int v4);
+                     int v1, int v2, int v3, int v4);
 
 /* Print a long value using a format. */
 const char *pprintld1(stream * s, const char *format, long v);
 const char *pprintld2(stream * s, const char *format, long v1, long v2);
 const char *pprintld3(stream * s, const char *format,
-		      long v1, long v2, long v3);
+                      long v1, long v2, long v3);
 
 /* Print (a) string(s) using a format. */
 const char *pprints1(stream * s, const char *format, const char *str);
 const char *pprints2(stream * s, const char *format,
-		     const char *str1, const char *str2);
+                     const char *str1, const char *str2);
 const char *pprints3(stream * s, const char *format,
-		     const char *str1, const char *str2, const char *str3);
+                     const char *str1, const char *str2, const char *str3);
 
 #endif /* spprint_INCLUDED */

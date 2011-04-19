@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -86,7 +86,7 @@ image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
 /* Compute the source size of an ImageType 2 image. */
 static int
 gx_image2_source_size(const gs_imager_state * pis, const gs_image_common_t * pim,
-		      gs_int_point * psize)
+                      gs_int_point * psize)
 {
     image2_data_t idata;
 
@@ -101,10 +101,10 @@ gx_image2_source_size(const gs_imager_state * pis, const gs_image_common_t * pim
 /* this procedure does all the work. */
 static int
 gx_begin_image2(gx_device * dev,
-		const gs_imager_state * pis, const gs_matrix * pmat,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
-	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
+                const gs_imager_state * pis, const gs_matrix * pmat,
+                const gs_image_common_t * pic, const gs_int_rect * prect,
+              const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+                gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     const gs_image2_t *pim = (const gs_image2_t *)pic;
     gs_state *pgs = pim->DataSource;
@@ -137,180 +137,179 @@ gx_begin_image2(gx_device * dev,
     idata.image.Decode[6] = idata.image.Decode[8] = 0.0;
     idata.image.Decode[7] = idata.image.Decode[9] = 1.0;
     if (pmat == 0) {
-	gs_currentmatrix((const gs_state *)pis, &dmat);
-	pmat = &dmat;
+        gs_currentmatrix((const gs_state *)pis, &dmat);
+        pmat = &dmat;
     } else
-	dmat = *pmat;
+        dmat = *pmat;
     gs_currentmatrix(pgs, &smat);
     code = image2_set_data(pim, &idata);
     if (code < 0)
-	return code;
+        return code;
 /****** ONLY HANDLE SIMPLE CASES FOR NOW ******/
     if (idata.bbox.p.x != floor(idata.origin.x))
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (!(idata.bbox.p.y == floor(idata.origin.y) ||
-	  idata.bbox.q.y == ceil(idata.origin.y))
-	)
-	return_error(gs_error_rangecheck);
+          idata.bbox.q.y == ceil(idata.origin.y))
+        )
+        return_error(gs_error_rangecheck);
     source_size = (idata.image.Width * depth + 7) >> 3;
     row_size = max(3 * idata.image.Width, source_size);
     row = gs_alloc_bytes(mem, row_size, "gx_begin_image2");
     if (row == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if (pixel_copy) {
-	idata.image.BitsPerComponent = depth;
-	has_alpha = false;	/* no separate alpha channel */
+        idata.image.BitsPerComponent = depth;
+        has_alpha = false;	/* no separate alpha channel */
 
-	if ( pcpath == NULL ||
-	     gx_cpath_includes_rectangle(pcpath,
-				     int2fixed(idata.bbox.p.x),
-				     int2fixed(idata.bbox.p.y),
-				     int2fixed(idata.bbox.q.x),
-				     int2fixed(idata.bbox.q.y)) ) {
-	    gs_matrix mat;
+        if ( pcpath == NULL ||
+             gx_cpath_includes_rectangle(pcpath,
+                                     int2fixed(idata.bbox.p.x),
+                                     int2fixed(idata.bbox.p.y),
+                                     int2fixed(idata.bbox.q.x),
+                                     int2fixed(idata.bbox.q.y)) ) {
+            gs_matrix mat;
 
-
-	    /*
-	     * Figure 7.2 of the Adobe 3010 Supplement says that we should
-	     * compute CTM x ImageMatrix here, but I'm almost certain it
-	     * should be the other way around.  Also see gdevx.c.
-	     */
-	    gs_matrix_multiply(&idata.image.ImageMatrix, &smat, &mat);
-	    direct_copy =
-	        (is_xxyy(&dmat) || is_xyyx(&dmat)) &&
+            /*
+             * Figure 7.2 of the Adobe 3010 Supplement says that we should
+             * compute CTM x ImageMatrix here, but I'm almost certain it
+             * should be the other way around.  Also see gdevx.c.
+             */
+            gs_matrix_multiply(&idata.image.ImageMatrix, &smat, &mat);
+            direct_copy =
+                (is_xxyy(&dmat) || is_xyyx(&dmat)) &&
 #define eqe(e) mat.e == dmat.e
-	        eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy);
+                eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy);
 #undef eqe
         }
     } else {
-	idata.image.BitsPerComponent = 8;
+        idata.image.BitsPerComponent = 8;
 
-	/* Always use RGB source color for now.
+        /* Always use RGB source color for now.
          *
-	 * The source device has alpha if the same RGB values with
-	 * different alphas map to different pixel values.
-	 ****** THIS IS NOT GOOD ENOUGH: WE WANT TO SKIP TRANSFERRING
-	 ****** ALPHA IF THE SOURCE IS CAPABLE OF HAVING ALPHA BUT
-	 ****** DOESN'T CURRENTLY HAVE ANY ACTUAL ALPHA VALUES DIFFERENT
-	 ****** FROM 1.
-	 */
-	/*
-	 * Since the default implementation of map_rgb_alpha_color
-	 * premultiplies the color towards white, we can't just test
-	 * whether changing alpha has an effect on the color.
-	 */
-	{
-	    gx_color_index trans_black =
-	    (*dev_proc(sdev, map_rgb_alpha_color))
-	    (sdev, (gx_color_value) 0, (gx_color_value) 0,
-	     (gx_color_value) 0, (gx_color_value) 0);
+         * The source device has alpha if the same RGB values with
+         * different alphas map to different pixel values.
+         ****** THIS IS NOT GOOD ENOUGH: WE WANT TO SKIP TRANSFERRING
+         ****** ALPHA IF THE SOURCE IS CAPABLE OF HAVING ALPHA BUT
+         ****** DOESN'T CURRENTLY HAVE ANY ACTUAL ALPHA VALUES DIFFERENT
+         ****** FROM 1.
+         */
+        /*
+         * Since the default implementation of map_rgb_alpha_color
+         * premultiplies the color towards white, we can't just test
+         * whether changing alpha has an effect on the color.
+         */
+        {
+            gx_color_index trans_black =
+            (*dev_proc(sdev, map_rgb_alpha_color))
+            (sdev, (gx_color_value) 0, (gx_color_value) 0,
+             (gx_color_value) 0, (gx_color_value) 0);
 
-	    has_alpha =
-		trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
-		(sdev, (gx_color_value) 0, (gx_color_value) 0,
-		 (gx_color_value) 0, gx_max_color_value) &&
-		trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
-		(sdev, gx_max_color_value, gx_max_color_value,
-		 gx_max_color_value, gx_max_color_value);
-	}
+            has_alpha =
+                trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
+                (sdev, (gx_color_value) 0, (gx_color_value) 0,
+                 (gx_color_value) 0, gx_max_color_value) &&
+                trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
+                (sdev, gx_max_color_value, gx_max_color_value,
+                 gx_max_color_value, gx_max_color_value);
+        }
     }
     idata.image.Alpha =
-	(has_alpha ? gs_image_alpha_last : gs_image_alpha_none);
+        (has_alpha ? gs_image_alpha_last : gs_image_alpha_none);
     if (smat.yy < 0) {
-	/*
-	 * The source Y axis is reflected.  Reflect the mapping from
-	 * user space to source data.
-	 */
-	idata.image.ImageMatrix.ty += idata.image.Height *
-	    idata.image.ImageMatrix.yy;
-	idata.image.ImageMatrix.xy = -idata.image.ImageMatrix.xy;
-	idata.image.ImageMatrix.yy = -idata.image.ImageMatrix.yy;
+        /*
+         * The source Y axis is reflected.  Reflect the mapping from
+         * user space to source data.
+         */
+        idata.image.ImageMatrix.ty += idata.image.Height *
+            idata.image.ImageMatrix.yy;
+        idata.image.ImageMatrix.xy = -idata.image.ImageMatrix.xy;
+        idata.image.ImageMatrix.yy = -idata.image.ImageMatrix.yy;
     }
     if (!direct_copy)
-	code = (*dev_proc(dev, begin_typed_image))
-	    (dev, pis, pmat, (const gs_image_common_t *)&idata.image, NULL,
-	     pdcolor, pcpath, mem, &info);
+        code = (*dev_proc(dev, begin_typed_image))
+            (dev, pis, pmat, (const gs_image_common_t *)&idata.image, NULL,
+             pdcolor, pcpath, mem, &info);
     if (code >= 0) {
-	int y;
-	gs_int_rect rect;
-	gs_get_bits_params_t params;
-	const byte *data;
-	uint offset = row_size - source_size;
+        int y;
+        gs_int_rect rect;
+        gs_get_bits_params_t params;
+        const byte *data;
+        uint offset = row_size - source_size;
 
-	rect = idata.bbox;
-	for (y = 0; code >= 0 && y < idata.image.Height; ++y) {
-	    gs_int_rect *unread = 0;
-	    int num_unread;
+        rect = idata.bbox;
+        for (y = 0; code >= 0 && y < idata.image.Height; ++y) {
+            gs_int_rect *unread = 0;
+            int num_unread;
 
 /****** y COMPUTATION IS ROUNDED -- WRONG ******/
-	    rect.q.y = rect.p.y + 1;
-	    /* Insist on x_offset = 0 to simplify the conversion loop. */
-	    params.options =
-		GB_ALIGN_ANY | (GB_RETURN_COPY | GB_RETURN_POINTER) |
-		GB_OFFSET_0 | (GB_RASTER_STANDARD | GB_RASTER_ANY) |
-		GB_PACKING_CHUNKY;
-	    if (pixel_copy) {
-		params.options |= GB_COLORS_NATIVE;
-		params.data[0] = row + offset;
-		code = (*dev_proc(sdev, get_bits_rectangle))
-		    (sdev, &rect, &params, &unread);
-		if (code < 0)
-		    break;
-		num_unread = code;
-		data = params.data[0];
-		if (direct_copy) {
-		    /*
-		     * Copy the pixels directly to the destination.
-		     * We know that the transformation is only a translation,
-		     * but we must handle an inverted destination Y axis.
-		     */
-		    code = (*dev_proc(dev, copy_color))
-			(dev, data, 0, row_size, gx_no_bitmap_id,
-			 (int)(dmat.tx - idata.image.ImageMatrix.tx),
-			 (int)(dmat.ty - idata.image.ImageMatrix.ty +
-			       (dmat.yy < 0 ? ~y : y)),
-			 idata.image.Width, 1);
-		    continue;
-		}
-	    } else {
-		/*
-		 * Convert the pixels to pure colors.  This may be very
-		 * slow and painful.  Eventually we will use indexed color for
-		 * narrow pixels.
-		 */
-		/* Always use RGB source color for now. */
-		params.options |=
-		    GB_COLORS_RGB | GB_DEPTH_8 |
-		    (has_alpha ? GB_ALPHA_LAST : GB_ALPHA_NONE);
-		params.data[0] = row;
-		code = (*dev_proc(sdev, get_bits_rectangle))
-		    (sdev, &rect, &params, &unread);
-		if (code < 0)
-		    break;
-		num_unread = code;
-		data = params.data[0];
-	    }
-	    if (num_unread > 0 && pim->UnpaintedPath) {
-		/* Add the rectangle(s) to the unpainted path. */
-		int i;
+            rect.q.y = rect.p.y + 1;
+            /* Insist on x_offset = 0 to simplify the conversion loop. */
+            params.options =
+                GB_ALIGN_ANY | (GB_RETURN_COPY | GB_RETURN_POINTER) |
+                GB_OFFSET_0 | (GB_RASTER_STANDARD | GB_RASTER_ANY) |
+                GB_PACKING_CHUNKY;
+            if (pixel_copy) {
+                params.options |= GB_COLORS_NATIVE;
+                params.data[0] = row + offset;
+                code = (*dev_proc(sdev, get_bits_rectangle))
+                    (sdev, &rect, &params, &unread);
+                if (code < 0)
+                    break;
+                num_unread = code;
+                data = params.data[0];
+                if (direct_copy) {
+                    /*
+                     * Copy the pixels directly to the destination.
+                     * We know that the transformation is only a translation,
+                     * but we must handle an inverted destination Y axis.
+                     */
+                    code = (*dev_proc(dev, copy_color))
+                        (dev, data, 0, row_size, gx_no_bitmap_id,
+                         (int)(dmat.tx - idata.image.ImageMatrix.tx),
+                         (int)(dmat.ty - idata.image.ImageMatrix.ty +
+                               (dmat.yy < 0 ? ~y : y)),
+                         idata.image.Width, 1);
+                    continue;
+                }
+            } else {
+                /*
+                 * Convert the pixels to pure colors.  This may be very
+                 * slow and painful.  Eventually we will use indexed color for
+                 * narrow pixels.
+                 */
+                /* Always use RGB source color for now. */
+                params.options |=
+                    GB_COLORS_RGB | GB_DEPTH_8 |
+                    (has_alpha ? GB_ALPHA_LAST : GB_ALPHA_NONE);
+                params.data[0] = row;
+                code = (*dev_proc(sdev, get_bits_rectangle))
+                    (sdev, &rect, &params, &unread);
+                if (code < 0)
+                    break;
+                num_unread = code;
+                data = params.data[0];
+            }
+            if (num_unread > 0 && pim->UnpaintedPath) {
+                /* Add the rectangle(s) to the unpainted path. */
+                int i;
 
-		for (i = 0; code >= 0 && i < num_unread; ++i)
-		    code = gx_path_add_rectangle(pim->UnpaintedPath,
-						 int2fixed(unread[i].p.x),
-						 int2fixed(unread[i].p.y),
-						 int2fixed(unread[i].q.x),
-						 int2fixed(unread[i].q.y));
-		gs_free_object(dev->memory, unread, "UnpaintedPath unread");
-	    }
-	    code = gx_image_data(info, &data, 0, row_size, 1);
-	    rect.p.y = rect.q.y;
-	}
-	if (!direct_copy) {
-	    if (code >= 0)
-		code = gx_image_end(info, true);
-	    else
-		discard(gx_image_end(info, false));
-	}
+                for (i = 0; code >= 0 && i < num_unread; ++i)
+                    code = gx_path_add_rectangle(pim->UnpaintedPath,
+                                                 int2fixed(unread[i].p.x),
+                                                 int2fixed(unread[i].p.y),
+                                                 int2fixed(unread[i].q.x),
+                                                 int2fixed(unread[i].q.y));
+                gs_free_object(dev->memory, unread, "UnpaintedPath unread");
+            }
+            code = gx_image_data(info, &data, 0, row_size, 1);
+            rect.p.y = rect.q.y;
+        }
+        if (!direct_copy) {
+            if (code >= 0)
+                code = gx_image_end(info, true);
+            else
+                discard(gx_image_end(info, false));
+        }
     }
     gs_free_object(mem, row, "gx_begin_image2");
     return (code < 0 ? code : 1);

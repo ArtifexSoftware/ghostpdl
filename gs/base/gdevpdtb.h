@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -71,8 +71,8 @@ typedef struct pdf_base_font_s pdf_base_font_t;
  * a complete one, and adding glyphs or Encoding entries is not allowed.
  */
 int pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-		    gs_font_base *font, const gs_matrix *orig_matrix, 
-		    bool is_standard);
+                    gs_font_base *font, const gs_matrix *orig_matrix,
+                    bool is_standard);
 
 /*
  * Return a reference to the name of a base font.  This name is guaranteed
@@ -104,7 +104,7 @@ void pdf_base_font_drop_complete(pdf_base_font_t *pbfont);
  * will be the same.)
  */
 int pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
-			     gs_font_base *font);
+                             gs_font_base *font);
 
 /*
  * Determine whether a font is a subset font by examining the name.
@@ -114,14 +114,14 @@ bool pdf_has_subset_prefix(const byte *str, uint size);
 /*
  * Add the XXXXXX+ prefix for a subset font.
  */
-int pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, 
-			byte *used, int count);
+int pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr,
+                        byte *used, int count);
 
 /*
  * Determine whether a copied font should be subsetted.
  */
-bool pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, 
-			gs_id rid);
+bool pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
+                        gs_id rid);
 
 /*
  * Write the FontFile entry for an embedded font, /FontFile<n> # # R.
@@ -132,7 +132,7 @@ int pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
  * Write an embedded font, possibly subsetted.
  */
 int pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type FontType,
-			gs_int_rect *FontBBox, gs_id rid, cos_dict_t **ppcd);
+                        gs_int_rect *FontBBox, gs_id rid, cos_dict_t **ppcd);
 
 /*
  * Write the CharSet data for a subsetted font, as a PDF string.
@@ -143,7 +143,7 @@ int pdf_write_CharSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
  * Write the CIDSet object for a subsetted CIDFont.
  */
 int pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
-		     long *pcidset_id);
+                     long *pcidset_id);
 
 /*
  * Check whether a base font is standard.

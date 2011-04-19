@@ -30,15 +30,13 @@
 #include "pgfdata.h"
 #include "pgfont.h"
 
-
-
 /* The client always asks for a Unicode indexed chr.
  * The stick/arc fonts themselves use Roman-8 (8U) indexing.
  */
 extern const pl_symbol_map_t map_8U_unicode;
 static gs_glyph
 hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
-{	
+{
     int i;
     /* reverse map unicode back to roman 8 */
     for (i = 0; i < countof(map_8U_unicode.codes); i++) {
@@ -48,20 +46,20 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_use
     return (gs_glyph)0xffff;
 }
 
-/* The stick font is fixed-pitch. 
+/* The stick font is fixed-pitch.
  */
 static int
 hpgl_stick_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
-{	
+{
     /* first map uni_code to roman-8 */
     uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
 
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
-	pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_STICK_FONT);
+        pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_STICK_FONT);
     else
-	/* doesn't exist */
-	return 1;
+        /* doesn't exist */
+        return 1;
     return 0;
 }
 
@@ -76,28 +74,28 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code,
     metrics[0] = 0;
     /* just get the width */
     if ( (hpgl_stick_char_width(plfont, pgs, uni_code, &width)) == 1 )
-	/* doesn't exist */
-	return 1;
+        /* doesn't exist */
+        return 1;
     metrics[2] = width.x;
     return 0;
-}    
+}
 
 /* The arc font is proportionally spaced. */
 static int
 hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
-{	
+{
     /* first map uni_code to roman-8 */
     uni_code = (uint) hpgl_stick_arc_encode_char(NULL, uni_code, 0);
 
     /* NB need an interface function call to verify the character exists */
     if ( (uni_code >= 0x20)  && (uni_code <= 0xff) ) {
         pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT)
-	  / 1024.0  /* convert to ratio of cell size to be multiplied by point size */
-	  * 0.667;   /* TRM 23-18 cell is 2/3 of point size */
-    }      
+          / 1024.0  /* convert to ratio of cell size to be multiplied by point size */
+          * 0.667;   /* TRM 23-18 cell is 2/3 of point size */
+    }
     else
-	/* doesn't exist */
-	return 1;
+        /* doesn't exist */
+        return 1;
     return 0;
 }
 
@@ -111,17 +109,17 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, f
     metrics[0] = 0;
     /* just get the width */
     if ( (hpgl_arc_char_width(plfont, pgs, uni_code, &width)) == 1 )
-	/* doesn't exist */
-	return 1;
+        /* doesn't exist */
+        return 1;
     metrics[2] = width.x;
     return 0;
-}    
+}
 
 /* Add a symbol to the path. */
 static int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_glyph uni_code, hpgl_font_type_t font_type)
-{	
+{
     int width;
     gs_matrix save_ctm;
     int code;
@@ -140,14 +138,14 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     gs_moveto(pgs, 0.0, 0.0);
     code = hpgl_stick_arc_segments(pfont->memory, (void *)pgs, uni_code, font_type);
     if ( code < 0 )
-	return code;
+        return code;
     gs_setdefaultmatrix(pgs, NULL);
     gs_initmatrix(pgs);
     /* Set predictable join and cap styles. */
     gs_setlinejoin(pgs, gs_join_round);
     gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
     gs_setlinecap(pgs, gs_cap_round);
-    { 
+    {
         float pattern[1];
         gs_setdash(pgs, pattern, 0, 0);
     }
@@ -159,55 +157,55 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 static int
 hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
-{	
+{
    return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_STICK_FONT);
 }
 static int
 hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
 {	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_ARC_FONT);
-					 
+
 }
 
 /* Fill in stick/arc font boilerplate. */
 static void
 hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 {	/* The way the code is written requires FontMatrix = identity. */
-	gs_make_identity(&pfont->FontMatrix);
-	pfont->FontType = ft_user_defined;
-	pfont->PaintType = 1;		/* stroked fonts */
-	pfont->BitmapWidths = false;
-	pfont->ExactSize = fbit_use_outlines;
-	pfont->InBetweenSize = fbit_use_outlines;
-	pfont->TransformedChar = fbit_use_outlines;
-	pfont->procs.encode_char = hpgl_stick_arc_encode_char; /* FIX ME (void *) */
-	/* p.y of the FontBBox is a guess, because of descenders. */
-	/* Because of descenders, we have no real idea what the */
-	/* FontBBox should be. */
-	pfont->FontBBox.p.x = 0;
-	pfont->FontBBox.p.y = -0.333;
-	pfont->FontBBox.q.x = 0.667;
-	pfont->FontBBox.q.y = 0.667;
-	uid_set_UniqueID(&pfont->UID, unique_id);
-	pfont->encoding_index = 1;	/****** WRONG ******/
-	pfont->nearest_encoding_index = 1;	/****** WRONG ******/
+        gs_make_identity(&pfont->FontMatrix);
+        pfont->FontType = ft_user_defined;
+        pfont->PaintType = 1;		/* stroked fonts */
+        pfont->BitmapWidths = false;
+        pfont->ExactSize = fbit_use_outlines;
+        pfont->InBetweenSize = fbit_use_outlines;
+        pfont->TransformedChar = fbit_use_outlines;
+        pfont->procs.encode_char = hpgl_stick_arc_encode_char; /* FIX ME (void *) */
+        /* p.y of the FontBBox is a guess, because of descenders. */
+        /* Because of descenders, we have no real idea what the */
+        /* FontBBox should be. */
+        pfont->FontBBox.p.x = 0;
+        pfont->FontBBox.p.y = -0.333;
+        pfont->FontBBox.q.x = 0.667;
+        pfont->FontBBox.q.y = 0.667;
+        uid_set_UniqueID(&pfont->UID, unique_id);
+        pfont->encoding_index = 1;	/****** WRONG ******/
+        pfont->nearest_encoding_index = 1;	/****** WRONG ******/
 }
 void
 hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
 #define plfont ((pl_font_t *)pfont->client_data)
-	pfont->procs.build_char = hpgl_stick_build_char; /* FIX ME (void *) */
-	plfont->char_width = hpgl_stick_char_width;
-	plfont->char_metrics = hpgl_stick_char_metrics;
+        pfont->procs.build_char = hpgl_stick_build_char; /* FIX ME (void *) */
+        plfont->char_width = hpgl_stick_char_width;
+        plfont->char_metrics = hpgl_stick_char_metrics;
 #undef plfont
 }
 void
 hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
 #define plfont ((pl_font_t *)pfont->client_data)
-	pfont->procs.build_char = hpgl_arc_build_char; /* FIX ME (void *) */
-	plfont->char_width = hpgl_arc_char_width;
-	plfont->char_metrics = hpgl_arc_char_metrics;
+        pfont->procs.build_char = hpgl_arc_build_char; /* FIX ME (void *) */
+        plfont->char_width = hpgl_arc_char_width;
+        plfont->char_metrics = hpgl_arc_char_metrics;
 #undef plfont
 }
 
@@ -215,13 +213,13 @@ void
 hpgl_initialize_stick_fonts( hpgl_state_t *pcs )
 {
     pcs->g.stick_font[0][0].pfont =
-	pcs->g.stick_font[0][1].pfont =
-	pcs->g.stick_font[1][0].pfont =
-	pcs->g.stick_font[1][1].pfont = 0;
+        pcs->g.stick_font[0][1].pfont =
+        pcs->g.stick_font[1][0].pfont =
+        pcs->g.stick_font[1][1].pfont = 0;
 
     /* NB most of the pl_font structure is uninitialized! */
     pcs->g.stick_font[0][0].font_file =
-	pcs->g.stick_font[0][1].font_file =
-	pcs->g.stick_font[1][0].font_file =
-	pcs->g.stick_font[1][1].font_file = 0;
+        pcs->g.stick_font[0][1].font_file =
+        pcs->g.stick_font[1][0].font_file =
+        pcs->g.stick_font[1][1].font_file = 0;
 }

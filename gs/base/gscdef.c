@@ -25,25 +25,25 @@
 
 #ifndef GS_BUILDTIME
 #  define GS_BUILDTIME\
-	0			/* should be set in the makefile */
+        0			/* should be set in the makefile */
 #endif
 const long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 2010 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2010 Artifex Software, Inc.  All rights reserved."
 #endif
 const char *const gs_copyright = GS_COPYRIGHT;
 
 #ifndef GS_PRODUCTFAMILY
 #  define GS_PRODUCTFAMILY\
-	"GPL Ghostscript"
+        "GPL Ghostscript"
 #endif
 const char *const gs_productfamily = GS_PRODUCTFAMILY;
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-	GS_PRODUCTFAMILY " SVN PRERELEASE"
+        GS_PRODUCTFAMILY " SVN PRERELEASE"
 #endif
 const char *const gs_product = GS_PRODUCT;
 
@@ -67,7 +67,7 @@ const long gs_revisiondate = GS_REVISIONDATE;
 
 #ifndef GS_SERIALNUMBER
 #  define GS_SERIALNUMBER\
-	42			/* a famous number */
+        42			/* a famous number */
 #endif
 const long gs_serialnumber = GS_SERIALNUMBER;
 

@@ -23,7 +23,6 @@
 #include "gslib.h"
 #include "plplatf.h"
 
-
 /* ------------- Platform de/init --------- */
 void
 pl_platform_init(FILE *debug_out)
@@ -66,6 +65,5 @@ gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
 void
 gs_exit(int exit_status)
 {	pl_platform_dnit(exit_status);
-	pl_exit(exit_status);	/* must be implemeted by caller */
+        pl_exit(exit_status);	/* must be implemeted by caller */
 }
-

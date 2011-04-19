@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -13,10 +13,9 @@
 /*$Id$ */
 
 /* calling convention macros for windows style dlls.
- */ 
+ */
 #ifndef GS_DLL_CALL_H
 #define GS_DLL_CALL_H
-
 
 #ifdef __WINDOWS__
 #ifndef _Windows
@@ -64,7 +63,7 @@
 # define GSDLLCALLPTR * GSDLLCALL
 #else
 # define GSDLLAPIPTR GSDLLAPI *
-# define GSDLLCALLPTR GSDLLCALL * 
+# define GSDLLCALLPTR GSDLLCALL *
 #endif
 
 #endif /* GS_DLL_CALL_H */

@@ -21,21 +21,21 @@
 #include "gxfixed.h"
 #include "pccoord.h"
 
-/* 
+/*
  * Structure for paper size parameters. Note that these values are all coords
  * (centipoints).
  */
 typedef struct pcl_paper_size_s {
     coord   width, height;	/* physical page size */
     coord   offset_portrait;    /* offset of logical page left edge from
-			         * the physical page in portrait orientations */
+                                 * the physical page in portrait orientations */
     coord   offset_landscape;   /* ditto for landscape orientations */
 } pcl_paper_size_t;
 
 /*
  * Geometric transformation structure for PCL.
  *
- * Except for GL/2, PCL deals strictly in diagonal transformations: all 
+ * Except for GL/2, PCL deals strictly in diagonal transformations: all
  * transformations are compositions of 90 degree rotations, scaling, and
  * translations. Thus, maintaining a full matrix representation is overkill.
  * For the most part, however, any gains in performance from use of a simpler

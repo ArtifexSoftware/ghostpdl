@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,7 +40,7 @@ const gx_io_device gs_iodev_pipe = {
 
 static int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
-	   FILE ** pfile, char *rfname, uint rnamelen)
+           FILE ** pfile, char *rfname, uint rnamelen)
 {
     errno = 0;
     /*
@@ -48,16 +48,16 @@ pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
      * mode, even though pipes are not positionable.  Detect this here.
      */
     if (strchr(access, '+'))
-	return_error(gs_error_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     /*
      * The OSF/1 1.3 library doesn't include const in the
      * prototype for popen, so we have to break const here.
      */
     *pfile = popen((char *)fname, (char *)access);
     if (*pfile == NULL)
-	return_error(gs_fopen_errno_to_code(errno));
+        return_error(gs_fopen_errno_to_code(errno));
     if (rfname != NULL)
-	strcpy(rfname, fname);
+        strcpy(rfname, fname);
     return 0;
 }
 

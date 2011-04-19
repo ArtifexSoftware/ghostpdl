@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,7 +36,7 @@ zsetglobal(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     check_type(*op, t_boolean);
     ialloc_set_space(idmemory,
-		     (op->value.boolval ? avm_global : avm_local));
+                     (op->value.boolval ? avm_global : avm_local));
     pop(1);
     return 0;
 }
@@ -76,14 +76,14 @@ int
 set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
     if (val < -1)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     else if (val == -1)
-	val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
-	       DEFAULT_VM_THRESHOLD_LARGE);
+        val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
+               DEFAULT_VM_THRESHOLD_LARGE);
     else if (val < MIN_VM_THRESHOLD)
-	val = MIN_VM_THRESHOLD;
+        val = MIN_VM_THRESHOLD;
     else if (val > MAX_VM_THRESHOLD)
-	val = MAX_VM_THRESHOLD;
+        val = MAX_VM_THRESHOLD;
     gs_memory_set_vm_threshold(idmemory->space_global, val);
     gs_memory_set_vm_threshold(idmemory->space_local, val);
     return 0;
@@ -93,12 +93,12 @@ int
 set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 {
     if (val >= -2 && val <= 0) {
-	gs_memory_set_vm_reclaim(idmemory->space_system, (val >= -1));
-	gs_memory_set_vm_reclaim(idmemory->space_global, (val >= -1));
-	gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
-	return 0;
+        gs_memory_set_vm_reclaim(idmemory->space_system, (val >= -1));
+        gs_memory_set_vm_reclaim(idmemory->space_global, (val >= -1));
+        gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
+        return 0;
     } else
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
 }
 
 /*
@@ -114,9 +114,9 @@ zvmreclaim(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval == 1 || op->value.intval == 2) {
-	/* Force the interpreter to store its state and exit. */
-	/* The interpreter's caller will do the actual GC. */
-	return_error(e_VMreclaim);
+        /* Force the interpreter to store its state and exit. */
+        /* The interpreter's caller will do the actual GC. */
+        return_error(e_VMreclaim);
     }
     return_error(e_rangecheck);
 }
@@ -130,7 +130,7 @@ const op_def zvmem2_op_defs[] =
     {"0.currentglobal", zcurrentglobal},
     {"1.gcheck", zgcheck},
     {"1.setglobal", zsetglobal},
-		/* The rest of the operators are defined only in Level 2. */
+                /* The rest of the operators are defined only in Level 2. */
     op_def_begin_level2(),
     {"1.vmreclaim", zvmreclaim},
     op_def_end(0)

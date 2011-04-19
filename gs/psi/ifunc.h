@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,7 +22,7 @@
 /* Define build procedures for the various function types. */
 #define build_function_proc(proc)\
   int proc(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t *params, int depth,\
-	   gs_function_t **ppfn, gs_memory_t *mem)
+           gs_function_t **ppfn, gs_memory_t *mem)
 typedef build_function_proc((*build_function_proc_t));
 
 /* Define the table of build procedures, indexed by FunctionType. */
@@ -52,8 +52,8 @@ int buildfunction(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, int type);
  * returned is 0, the caller must check whether *pparray == 0.
  */
 int fn_build_float_array(const ref * op, const char *kstr, bool required,
-			 bool even, const float **pparray,
-			 gs_memory_t *mem);
+                         bool even, const float **pparray,
+                         gs_memory_t *mem);
 
 /*
  * Similar to fn_build_float_array() except
@@ -62,8 +62,7 @@ int fn_build_float_array(const ref * op, const char *kstr, bool required,
  */
 int
 fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
-		     const float **pparray, gs_memory_t *mem);
-
+                     const float **pparray, gs_memory_t *mem);
 
 /*
  * If a PostScript object is a Function procedure, return the function

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,7 +29,7 @@
 /* Define the binary halftone device color type. */
 /* The type descriptor must be public for Pattern types. */
 gs_public_st_composite(st_dc_ht_binary, gx_device_color, "dc_ht_binary",
-		       dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs);
+                       dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs);
 static dev_color_proc_save_dc(gx_dc_ht_binary_save_dc);
 static dev_color_proc_get_dev_halftone(gx_dc_ht_binary_get_dev_halftone);
 static dev_color_proc_load(gx_dc_ht_binary_load);
@@ -55,7 +55,7 @@ const gx_device_color_type_t *const gx_dc_type_ht_binary =
 
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
 /* GC procedures */
-static 
+static
 ENUM_PTRS_WITH(dc_ht_binary_enum_ptrs, gx_device_color *cptr) return 0;
 ENUM_PTR(0, gx_device_color, colors.binary.b_ht);
 case 1:
@@ -78,7 +78,7 @@ RELOC_PTRS_END
 
 /* Other GC procedures */
 private_st_ht_tiles();
-static 
+static
 ENUM_PTRS_BEGIN_PROC(ht_tiles_enum_ptrs)
 {
     return 0;
@@ -93,15 +93,15 @@ static RELOC_PTRS_BEGIN(ht_tiles_reloc_ptrs)
     uint diff;
 
     if (bits == 0)
-	return;
+        return;
     RELOC_VAR(bits);
     if (size == size_of(gx_ht_tile)) {	/* only 1 tile */
-	ht_tiles->tiles.data = bits;
-	return;
+        ht_tiles->tiles.data = bits;
+        return;
     }
     diff = ht_tiles[1].tiles.data - ht_tiles[0].tiles.data;
     for (; size; ht_tiles++, size -= size_of(gx_ht_tile), bits += diff) {
-	ht_tiles->tiles.data = bits;
+        ht_tiles->tiles.data = bits;
     }
 }
 RELOC_PTRS_END
@@ -113,7 +113,7 @@ gx_ht_cache_default_tiles(void)
 {
 #ifdef DEBUG
     return (gs_debug_c('.') ? max_ht_cached_tiles_SMALL :
-	    max_ht_cached_tiles);
+            max_ht_cached_tiles);
 #else
     return max_ht_cached_tiles;
 #endif
@@ -123,7 +123,7 @@ gx_ht_cache_default_bits_size(void)
 {
 #ifdef DEBUG
     return (gs_debug_c('.') ? max_ht_cache_bits_size_SMALL :
-	    max_ht_cache_bits_size);
+            max_ht_cache_bits_size);
 #else
     return max_ht_cache_bits_size;
 #endif
@@ -135,18 +135,18 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits_size)
 {
     gx_ht_cache *pcache =
     gs_alloc_struct(mem, gx_ht_cache, &st_ht_cache,
-		    "alloc_ht_cache(struct)");
+                    "alloc_ht_cache(struct)");
     byte *tbits =
-	gs_alloc_bytes(mem, max_bits_size, "alloc_ht_cache(bits)");
+        gs_alloc_bytes(mem, max_bits_size, "alloc_ht_cache(bits)");
     gx_ht_tile *ht_tiles =
-	gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
-			      "alloc_ht_cache(ht_tiles)");
+        gs_alloc_struct_array(mem, max_tiles, gx_ht_tile, &st_ht_tiles,
+                              "alloc_ht_cache(ht_tiles)");
 
     if (pcache == 0 || tbits == 0 || ht_tiles == 0) {
-	gs_free_object(mem, ht_tiles, "alloc_ht_cache(ht_tiles)");
-	gs_free_object(mem, tbits, "alloc_ht_cache(bits)");
-	gs_free_object(mem, pcache, "alloc_ht_cache(struct)");
-	return 0;
+        gs_free_object(mem, ht_tiles, "alloc_ht_cache(ht_tiles)");
+        gs_free_object(mem, tbits, "alloc_ht_cache(bits)");
+        gs_free_object(mem, pcache, "alloc_ht_cache(struct)");
+        return 0;
     }
     pcache->bits = tbits;
     pcache->bits_size = max_bits_size;
@@ -194,7 +194,7 @@ gx_check_tile_cache(const gs_imager_state * pis)
  */
 int
 gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
-		   gs_color_select_t select, int *ppx)
+                   gs_color_select_t select, int *ppx)
 {
     /* TO_DO_DEVICEN - this routine is no longer used - delete. */
     return -1;
@@ -202,7 +202,7 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 
 /* Render a given level into a halftone cache. */
 static int render_ht(gx_ht_tile *, int, const gx_ht_order *,
-		      gx_bitmap_id);
+                      gx_bitmap_id);
 static gx_ht_tile *
 gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {
@@ -211,15 +211,15 @@ gx_render_ht_default(gx_ht_cache * pcache, int b_level)
     gx_ht_tile *bt;
 
     if (pcache->num_cached < porder->num_levels )
-	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+        bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
     else
-	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
+        bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
 
     if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+        int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
-	if (code < 0)
-	    return 0;
+        if (code < 0)
+            return 0;
     }
     return bt;
 }
@@ -247,17 +247,17 @@ gx_dc_ht_binary_get_dev_halftone(const gx_device_color * pdevc)
 /* Load the device color into the halftone cache if needed. */
 static int
 gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
-		     gx_device * dev, gs_color_select_t select)
+                     gx_device * dev, gs_color_select_t select)
 {
     int component_index = pdevc->colors.binary.b_index;
     const gx_ht_order *porder =
-	(component_index < 0 ?
-	 &pdevc->colors.binary.b_ht->order :
-	 &pdevc->colors.binary.b_ht->components[component_index].corder);
+        (component_index < 0 ?
+         &pdevc->colors.binary.b_ht->order :
+         &pdevc->colors.binary.b_ht->components[component_index].corder);
     gx_ht_cache *pcache = porder->cache;
 
     if (pcache->order.bit_data != porder->bit_data)
-	gx_ht_init_cache(pis->memory, pcache, porder);
+        gx_ht_init_cache(pis->memory, pcache, porder);
     /*
      * We do not load the cache now.  Instead we wait until we are ready
      * to actually render the color.  This allows multiple colors to be
@@ -278,22 +278,22 @@ gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 {
     int component_index = pdevc->colors.binary.b_index;
     const gx_ht_order *porder =
-	 &pdevc->colors.binary.b_ht->components[component_index].corder;
+         &pdevc->colors.binary.b_ht->components[component_index].corder;
     gx_ht_cache *pcache = porder->cache;
     int b_level = pdevc->colors.binary.b_level;
     int level = porder->levels[b_level];
     gx_ht_tile *bt;
 
     if (pcache->num_cached < porder->num_levels )
-	bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
+        bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
     else
-	bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
+        bt =  &pcache->ht_tiles[b_level];	/* one tile per b_level */
 
     if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+        int code = render_ht(bt, level, porder, pcache->base_id + b_level);
 
-	if (code < 0)
-	    return_error(gs_error_Fatal);
+        if (code < 0)
+            return_error(gs_error_Fatal);
     }
     ((gx_device_color *)pdevc)->colors.binary.b_tile = bt;
     return 0;
@@ -303,8 +303,8 @@ gx_dc_ht_binary_load_cache(const gx_device_color * pdevc)
 /* Note that we treat this as "texture" for RasterOp. */
 static int
 gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
-			       const gx_rop_source_t * source)
+                  int w, int h, gx_device * dev, gs_logical_operation_t lop,
+                               const gx_rop_source_t * source)
 {
     gx_rop_source_t no_source;
 
@@ -317,33 +317,33 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
      * pixels are *not* opaque.
      */
     if (dev->color_info.depth > 1)
-	lop &= ~lop_T_transparent;
+        lop &= ~lop_T_transparent;
     if (source == NULL && lop_no_S_is_T(lop))
-	return (*dev_proc(dev, strip_tile_rectangle)) (dev,
-					&pdevc->colors.binary.b_tile->tiles,
-				  x, y, w, h, pdevc->colors.binary.color[0],
-					      pdevc->colors.binary.color[1],
-					    pdevc->phase.x, pdevc->phase.y);
+        return (*dev_proc(dev, strip_tile_rectangle)) (dev,
+                                        &pdevc->colors.binary.b_tile->tiles,
+                                  x, y, w, h, pdevc->colors.binary.color[0],
+                                              pdevc->colors.binary.color[1],
+                                            pdevc->phase.x, pdevc->phase.y);
     /* Adjust the logical operation per transparent colors. */
     if (pdevc->colors.binary.color[0] == gx_no_color_index)
-	lop = rop3_use_D_when_T_0(lop);
+        lop = rop3_use_D_when_T_0(lop);
     if (pdevc->colors.binary.color[1] == gx_no_color_index)
-	lop = rop3_use_D_when_T_1(lop);
+        lop = rop3_use_D_when_T_1(lop);
     if (source == NULL)
-	set_rop_no_source(source, no_source, dev);
+        set_rop_no_source(source, no_source, dev);
     return (*dev_proc(dev, strip_copy_rop)) (dev, source->sdata,
-			       source->sourcex, source->sraster, source->id,
-			     (source->use_scolors ? source->scolors : NULL),
-					&pdevc->colors.binary.b_tile->tiles,
-					     pdevc->colors.binary.color,
-				 x, y, w, h, pdevc->phase.x, pdevc->phase.y,
-					     lop);
+                               source->sourcex, source->sraster, source->id,
+                             (source->use_scolors ? source->scolors : NULL),
+                                        &pdevc->colors.binary.b_tile->tiles,
+                                             pdevc->colors.binary.color,
+                                 x, y, w, h, pdevc->phase.x, pdevc->phase.y,
+                                             lop);
 }
 
 static int
 gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
-	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		   gx_device * dev, gs_logical_operation_t lop, bool invert)
+        int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                   gx_device * dev, gs_logical_operation_t lop, bool invert)
 {
     /*
      * Load the halftone cache for the color.  We do not do it earlier
@@ -355,26 +355,25 @@ gx_dc_ht_binary_fill_masked(const gx_device_color * pdevc, const byte * data,
     int code = gx_dc_ht_binary_load_cache(pdevc);
 
     if (code < 0)
-	return code;
+        return code;
     return gx_dc_default_fill_masked(pdevc, data, data_x, raster, id,
-		    			x, y, w, h, dev, lop, invert);
+                                        x, y, w, h, dev, lop, invert);
 }
 
 /* Compare two binary halftones for equality. */
 static bool
 gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
-		      const gx_device_color * pdevc2)
+                      const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type &&
-	pdevc1->phase.x == pdevc2->phase.x &&
-	pdevc1->phase.y == pdevc2->phase.y &&
-	gx_dc_binary_color0(pdevc1) == gx_dc_binary_color0(pdevc2) &&
-	gx_dc_binary_color1(pdevc1) == gx_dc_binary_color1(pdevc2) &&
-	pdevc1->colors.binary.b_level == pdevc2->colors.binary.b_level;
+        pdevc1->phase.x == pdevc2->phase.x &&
+        pdevc1->phase.y == pdevc2->phase.y &&
+        gx_dc_binary_color0(pdevc1) == gx_dc_binary_color0(pdevc2) &&
+        gx_dc_binary_color1(pdevc1) == gx_dc_binary_color1(pdevc2) &&
+        pdevc1->colors.binary.b_level == pdevc2->colors.binary.b_level;
 }
 
-
-/* 
+/*
  * Flags to indicate the pieces of a binary halftone that are included
  * in its string representation. The first byte of the string holds this
  * set of flags.
@@ -387,7 +386,6 @@ static const int   dc_ht_binary_has_color1 = 0x02;
 static const int   dc_ht_binary_has_level = 0x04;
 static const int   dc_ht_binary_has_index = 0x08;
 
-
 /*
  * Serialize a binany halftone device color.
  *
@@ -397,7 +395,7 @@ static const int   dc_ht_binary_has_index = 0x08;
  *
  *  psdc        pointer ot saved version of last serialized color (for
  *              this band)
- *  
+ *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
  *
@@ -435,7 +433,7 @@ gx_dc_ht_binary_write(
     int                             code;
 
     if (offset != 0)
-	return_error(gs_error_unregistered); /* Not implemented yet. */
+        return_error(gs_error_unregistered); /* Not implemented yet. */
 
     /* check if operand and saved colors are the same type */
     if (psdc != 0 && psdc->type != pdevc->type)
@@ -566,7 +564,7 @@ gx_dc_ht_binary_read(
     int                     code, flag_bits;
 
     if (offset != 0)
-	return_error(gs_error_unregistered); /* Not implemented yet. */
+        return_error(gs_error_unregistered); /* Not implemented yet. */
 
     /* if prior information is available, use it */
     if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_binary)
@@ -619,12 +617,12 @@ gx_dc_ht_binary_read(
     if ((flag_bits & dc_ht_binary_has_index) != 0) {
         if (size == 0)
             return_error(gs_error_rangecheck);
-	--size;
+        --size;
         devc.colors.binary.b_index = *pdata++;
     }
 
     if (pis->dev_ht == NULL)
-	return_error(gs_error_unregistered); /* Must not happen. */
+        return_error(gs_error_unregistered); /* Must not happen. */
     /* set the phase as required (select value is arbitrary) */
     color_set_phase_mod( &devc,
                          pis->screen_phase[0].x,
@@ -636,7 +634,6 @@ gx_dc_ht_binary_read(
     *pdevc = devc;
     return pdata - pdata0;
 }
-
 
 /*
  * Get the nonzero components of a binary halftone. This is used to
@@ -677,7 +674,6 @@ gx_dc_ht_binary_get_nonzero_comps(
     return code;
 }
 
-
 /* Initialize the tile cache for a given screen. */
 /* Cache as many different levels as will fit. */
 void
@@ -699,40 +695,40 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
 
     /* Non-monotonic halftones may have more bits than size. */
     if (porder->num_bits >= size)
-	size = porder->num_bits + 1;
+        size = porder->num_bits + 1;
     /* Make sure num_cached is within bounds */
     num_cached = pcache->bits_size / tile_bytes;
     if (num_cached > size)
-	num_cached = size;
+        num_cached = size;
     if (num_cached > pcache->num_tiles)
-	num_cached = pcache->num_tiles;
+        num_cached = pcache->num_tiles;
     if (num_cached == size &&
-	tile_bytes * num_cached <= pcache->bits_size / 2
-	) {
-	/*
-	 * We can afford to replicate every tile in the cache,
-	 * which will reduce breakage when tiling.  Since
-	 * horizontal breakage is more expensive than vertical,
-	 * and since wide shallow fills are more common than
-	 * narrow deep fills, we replicate the tile horizontally.
-	 * We do have to be careful not to replicate the tile
-	 * to an absurdly large size, however.
-	 */
-	uint rep_raster =
-	((pcache->bits_size / num_cached) / height) &
-	~(align_bitmap_mod - 1);
-	uint rep_count = rep_raster * 8 / width;
+        tile_bytes * num_cached <= pcache->bits_size / 2
+        ) {
+        /*
+         * We can afford to replicate every tile in the cache,
+         * which will reduce breakage when tiling.  Since
+         * horizontal breakage is more expensive than vertical,
+         * and since wide shallow fills are more common than
+         * narrow deep fills, we replicate the tile horizontally.
+         * We do have to be careful not to replicate the tile
+         * to an absurdly large size, however.
+         */
+        uint rep_raster =
+        ((pcache->bits_size / num_cached) / height) &
+        ~(align_bitmap_mod - 1);
+        uint rep_count = rep_raster * 8 / width;
 
-	/*
-	 * There's no real value in replicating the tile
-	 * beyond the point where the byte width of the replicated
-	 * tile is a multiple of a long.
-	 */
-	if (rep_count > sizeof(ulong) * 8)
-	    rep_count = sizeof(ulong) * 8;
-	width_unit = width * rep_count;
-	raster = bitmap_raster(width_unit);
-	tile_bytes = raster * height;
+        /*
+         * There's no real value in replicating the tile
+         * beyond the point where the byte width of the replicated
+         * tile is a multiple of a long.
+         */
+        if (rep_count > sizeof(ulong) * 8)
+            rep_count = sizeof(ulong) * 8;
+        width_unit = width * rep_count;
+        raster = bitmap_raster(width_unit);
+        tile_bytes = raster * height;
     }
     pcache->base_id = gs_next_ids(mem, porder->num_levels + 1);
     pcache->order = *porder;
@@ -743,17 +739,17 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
     pcache->tiles_fit = -1;
     memset(tbits, 0, pcache->bits_size);
     for (i = 0; i < num_cached; i++, tbits += tile_bytes) {
-	register gx_ht_tile *bt = &pcache->ht_tiles[i];
+        register gx_ht_tile *bt = &pcache->ht_tiles[i];
 
-	bt->level = 0;
-	bt->index = i;
-	bt->tiles.data = tbits;
-	bt->tiles.raster = raster;
-	bt->tiles.size.x = width_unit;
-	bt->tiles.size.y = height_unit;
-	bt->tiles.rep_width = width;
-	bt->tiles.rep_height = height;
-	bt->tiles.shift = bt->tiles.rep_shift = shift;
+        bt->level = 0;
+        bt->index = i;
+        bt->tiles.data = tbits;
+        bt->tiles.raster = raster;
+        bt->tiles.size.x = width_unit;
+        bt->tiles.size.y = height_unit;
+        bt->tiles.rep_width = width;
+        bt->tiles.rep_height = height;
+        bt->tiles.shift = bt->tiles.rep_shift = shift;
     }
     pcache->render_ht = gx_render_ht_default;
 }
@@ -769,25 +765,25 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
  */
 static int
 render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
-	  const gx_ht_order * porder, gx_bitmap_id new_id)
+          const gx_ht_order * porder, gx_bitmap_id new_id)
 {
     byte *data = pbt->tiles.data;
     int code;
 
     if_debug7('H', "[H]Halftone cache slot 0x%lx: old=%d, new=%d, w=%d(%d), h=%d(%d):\n",
-	      (ulong) data, pbt->level, level,
-	      pbt->tiles.size.x, porder->width,
-	      pbt->tiles.size.y, porder->num_bits / porder->width);
+              (ulong) data, pbt->level, level,
+              pbt->tiles.size.x, porder->width,
+              pbt->tiles.size.y, porder->num_bits / porder->width);
 #ifdef DEBUG
     if (level < 0 || level > porder->num_bits) {
-	lprintf3("Error in render_ht: level=%d, old level=%d, num_bits=%d\n",
-		 level, pbt->level, porder->num_bits);
-	return_error(gs_error_Fatal);
+        lprintf3("Error in render_ht: level=%d, old level=%d, num_bits=%d\n",
+                 level, pbt->level, porder->num_bits);
+        return_error(gs_error_Fatal);
     }
 #endif
     code = porder->procs->render(pbt, level, porder);
     if (code < 0)
-	return code;
+        return code;
     pbt->level = level;
     pbt->tiles.id = new_id;
     /*
@@ -796,32 +792,32 @@ render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
      * in the cache, we only do it once per level, and it doesn't
      * have to be very efficient.
      */
-	/****** TEST IS WRONG if width > rep_width but tile.raster ==
-	 ****** order raster.
-	 ******/
+        /****** TEST IS WRONG if width > rep_width but tile.raster ==
+         ****** order raster.
+         ******/
     if (pbt->tiles.raster > porder->raster)
-	bits_replicate_horizontally(data, pbt->tiles.rep_width,
-				    pbt->tiles.rep_height, porder->raster,
-				    pbt->tiles.size.x, pbt->tiles.raster);
+        bits_replicate_horizontally(data, pbt->tiles.rep_width,
+                                    pbt->tiles.rep_height, porder->raster,
+                                    pbt->tiles.size.x, pbt->tiles.raster);
     if (pbt->tiles.size.y > pbt->tiles.rep_height &&
-	pbt->tiles.shift == 0
-	)
-	bits_replicate_vertically(data, pbt->tiles.rep_height,
-				  pbt->tiles.raster, pbt->tiles.size.y);
+        pbt->tiles.shift == 0
+        )
+        bits_replicate_vertically(data, pbt->tiles.rep_height,
+                                  pbt->tiles.raster, pbt->tiles.size.y);
 #ifdef DEBUG
     if (gs_debug_c('H')) {
-	const byte *p = pbt->tiles.data;
-	int wb = pbt->tiles.raster;
-	const byte *ptr = p + wb * pbt->tiles.size.y;
+        const byte *p = pbt->tiles.data;
+        int wb = pbt->tiles.raster;
+        const byte *ptr = p + wb * pbt->tiles.size.y;
 
-	while (p < ptr) {
-	    dprintf8(" %d%d%d%d%d%d%d%d",
-		     *p >> 7, (*p >> 6) & 1, (*p >> 5) & 1,
-		     (*p >> 4) & 1, (*p >> 3) & 1, (*p >> 2) & 1,
-		     (*p >> 1) & 1, *p & 1);
-	    if ((++p - data) % wb == 0)
-		dputc('\n');
-	}
+        while (p < ptr) {
+            dprintf8(" %d%d%d%d%d%d%d%d",
+                     *p >> 7, (*p >> 6) & 1, (*p >> 5) & 1,
+                     (*p >> 4) & 1, (*p >> 3) & 1, (*p >> 2) & 1,
+                     (*p >> 1) & 1, *p & 1);
+            if ((++p - data) % wb == 0)
+                dputc('\n');
+        }
     }
 #endif
     return 0;

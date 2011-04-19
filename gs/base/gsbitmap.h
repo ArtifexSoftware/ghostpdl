@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -166,29 +166,29 @@ extern_st(st_gs_tile_depth_bitmap);
 
 #define public_st_gs_tile_bitmap()  /* in gspcolor.c */ \
     gs_public_st_suffix_add0_local( st_gs_tile_bitmap,        \
-				    gs_tile_bitmap,           \
-				    "client tile bitmap",     \
-				    bitmap_enum_ptrs,    \
-				    bitmap_reloc_ptrs,   \
-				    st_gs_bitmap              \
-				    )
+                                    gs_tile_bitmap,           \
+                                    "client tile bitmap",     \
+                                    bitmap_enum_ptrs,    \
+                                    bitmap_reloc_ptrs,   \
+                                    st_gs_bitmap              \
+                                    )
 
 #define public_st_gs_depth_bitmap() /* in gspcolor.c */ \
     gs_public_st_suffix_add0_local( st_gs_depth_bitmap,       \
-				    gs_depth_bitmap,          \
-				    "client depth bitmap",    \
-				    bitmap_enum_ptrs,   \
-				    bitmap_reloc_ptrs,  \
-				    st_gs_bitmap              \
-				    )
+                                    gs_depth_bitmap,          \
+                                    "client depth bitmap",    \
+                                    bitmap_enum_ptrs,   \
+                                    bitmap_reloc_ptrs,  \
+                                    st_gs_bitmap              \
+                                    )
 
 #define public_st_gs_tile_depth_bitmap()/* in gspcolor.c */ \
     gs_public_st_suffix_add0_local( st_gs_tile_depth_bitmap,      \
-				    gs_tile_depth_bitmap,         \
-				    "client tile_depth bitmap",   \
-				    bitmap_enum_ptrs,  \
-				    bitmap_reloc_ptrs, \
-				    st_gs_tile_bitmap             \
-				    )
+                                    gs_tile_depth_bitmap,         \
+                                    "client tile_depth bitmap",   \
+                                    bitmap_enum_ptrs,  \
+                                    bitmap_reloc_ptrs, \
+                                    st_gs_tile_bitmap             \
+                                    )
 
 #endif /* gsbitmap_INCLUDED */

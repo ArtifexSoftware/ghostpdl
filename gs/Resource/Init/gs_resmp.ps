@@ -1,12 +1,12 @@
 %    Copyright (C) 2000 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -17,9 +17,9 @@
 % A procset to redefine a resource category with a resource map.
 
 % Public entries :
- 
+
 % Redefine - a procedure for redefining a resource category with a map.
-%    Methods for interpreting the resource map to be provided by client 
+%    Methods for interpreting the resource map to be provided by client
 %    in the argument dictionary.
 %
 %    Note that the procedure Redefine is idempotential :
@@ -32,7 +32,7 @@
 %    redefining any category. It provides a proper order of instances
 %    and proper stacks during resourceforall.
 
-% BindWithCurrentdict - a procedure for generating temporary procedures 
+% BindWithCurrentdict - a procedure for generating temporary procedures
 %    from templates, binding them with a local dictionary.
 
 % execstack_lookup - a procedure for communicating through the execution stack.
@@ -49,7 +49,7 @@ currentglobal //true setglobal
 currentpacking //false setpacking
 
 /InstanceEnumeratorPattern   %  - InstanceEnumeratorPattern ...
-{  
+{
   % This is a pattern for enumeration procedure to be built dynamically,
   % applying BindWithCurrentdict with a temporary dictionary.
   % The following names will be replaced with specific objects
@@ -65,10 +65,10 @@ currentpacking //false setpacking
   % to provide the <proc> to write to the underlying dictionary,
   % and put it back after the enumeration is completed.
   end
-  { 
+  {
     0 1 2 {
       en_local_dict exch /status exch put
-      InstancesStatus {                                            
+      InstancesStatus {
         en_local_dict /status get eq {
           scr cvs                           % ... (Font)
           proc exec                         %
@@ -90,7 +90,7 @@ currentpacking //false setpacking
 setpacking
 
 /BindWithCurrentdict     % <proc> BindWithCurrentdict <proc>
-{  
+{
   % Make a copy of the given procedure, binding in the values of all names
   % defined in currentdict.
   % Caution1 : this code cannot handle procedures that were already
@@ -99,7 +99,7 @@ setpacking
   %            intentionally for a termination of the procedure tree.
 
   dup length array copy
-  dup length 1 sub -1 0 {                      
+  dup length 1 sub -1 0 {
     2 copy get                            % {precopy} i {elem}
     dup dup type /arraytype eq exch xcheck and {
                                           % {precopy} i {elem}
@@ -108,9 +108,9 @@ setpacking
     } {
       dup dup type /nametype eq exch xcheck and {
                                           % {precopy} i {elem}
-        currentdict exch .knownget {            
+        currentdict exch .knownget {
           2 index 3 1 roll put            % {precopy}
-        } {                                            
+        } {
           pop
         } ifelse
       } {
@@ -217,7 +217,7 @@ currentpacking //false setpacking
     % Procedures in this dictionary really are patterns for new category methods.
     % The following names will be replaced with specific objects during BindWithCurrentdict :
     %   .map - the map dictionary;
-    %   DefineResource, ResourceStatus, ResourceFileName, FindResource, ResourceForAll 
+    %   DefineResource, ResourceStatus, ResourceFileName, FindResource, ResourceForAll
     %        - procedures from the original resource category.
 
     /FindResource  % <Name> FindResource <dict>
@@ -251,10 +251,10 @@ currentpacking //false setpacking
               pop
             } ifelse                       % Instance
           } {                              % /Name /Name <<record>>
-            pop pop FindResource exec            
+            pop pop FindResource exec
           } ifelse
         } {                                % /Name /Name
-          pop FindResource exec            
+          pop FindResource exec
         } ifelse
       } ifelse
       RESMPDEBUG { (resmp FindResource end) = } if
@@ -299,7 +299,7 @@ currentpacking //false setpacking
     { RESMPDEBUG { (resmp ResourceFileName beg ) print 1 index = } if
       exch                                                    % (scratch) /Name
       .map 1 index .knownget {                                % (scratch) /Name <<record>>
-      	RESMPDEBUG { (resmp ResourceFileName : have a map record.) = } if
+        RESMPDEBUG { (resmp ResourceFileName : have a map record.) = } if
         dup dup /RecordVirtualMethods get /IsActive get exec {
           RESMPDEBUG { (resmp ResourceFileName : record is active.) = } if
           dup /RecordVirtualMethods get /GetFilePath get exec % (string)
@@ -309,7 +309,7 @@ currentpacking //false setpacking
           pop exch ResourceFileName exec
           RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
         } ifelse
-      } { 
+      } {
         RESMPDEBUG { (resmp ResourceFileName : have NO map record.) = } if
         exch ResourceFileName exec
         RESMPDEBUG { (resmp ResourceFileName : retrieving ) print dup = } if
@@ -434,7 +434,7 @@ setpacking
     OldCategory /NewCategory exch def
   } {
     % Redefine with a new category instance.
-    OldCategory dup length dict 
+    OldCategory dup length dict
     dup /.PreprocessRecord 4 dict put
     copy /NewCategory exch def
   } ifelse
@@ -443,7 +443,7 @@ setpacking
   % to allow different record types to be mixed in a single map file.
   % We do this with building a dictionary of PreprocessRecord procedures,
   % which come from different calls to Redefine :
-  NewCategory /.PreprocessRecord get dup length % <<pr>> l  
+  NewCategory /.PreprocessRecord get dup length % <<pr>> l
   currentdict /PreprocessRecord get .growput
 
   currentdict /MapFileName known {
@@ -462,7 +462,7 @@ setpacking
       pop 0 dict                               % <<map>>
     } ifelse
   } {
-    currentdict /.map .knownget not { 
+    currentdict /.map .knownget not {
       0 dict                                   % <<map>>
     } if
   } ifelse
@@ -470,7 +470,7 @@ setpacking
   % Preprocess entries :
   dup NewCategory /.PreprocessRecord get       % <<map>> <<map>> <<pr>>
   3 1 roll {                                   % <<pr>> <<map>> /Name raw_record
-    //false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
+    //false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record
     4 index {                                  % <<pr>> <<map>> false /Name raw_record i {pr}
       exch pop                                 % <<pr>> <<map>> false /Name raw_record {pr}
       exec {                                   % <<pr>> <<map>> false /Name record
@@ -490,7 +490,6 @@ setpacking
   } forall                                     % <<pr>> <<map>>
   exch pop                                     % <<map>>
 
-
   % Add the map :
   OldCategory /.IsRedefinedWithMap known {     % <<map>>
     % Just add to the old map :
@@ -502,15 +501,15 @@ setpacking
   } ifelse
   OldCategory /.IsRedefinedWithMap known not {
     % Copy old methods to OptionsDict :
-    [ /DefineResource /ResourceStatus /ResourceFileName 
+    [ /DefineResource /ResourceStatus /ResourceFileName
       /FindResource /ResourceForAll
     ] {
       dup OldCategory exch get def
     } forall
-    
+
     % Build new methods :
     //MethodsToRedefine {
-      //BindWithCurrentdict exec NewCategory 3 1 roll put  
+      //BindWithCurrentdict exec NewCategory 3 1 roll put
     } forall
     CategoryName /CIDFont ne {
       NewCategory /GetCIDSystemInfoFromMap undef

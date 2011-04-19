@@ -38,8 +38,8 @@ lprn_procs(rpdl_open, gdev_prn_output_page, rpdl_close);
 
 gx_device_lprn far_data gs_rpdl_device =
 lprn_device(gx_device_lprn, rpdl_prn_procs, "rpdl",
-	    DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
-	    rpdl_print_page_copies, rpdl_image_out);
+            DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
+            rpdl_print_page_copies, rpdl_image_out);
 
 #define ppdev ((gx_device_printer *)pdev)
 
@@ -52,9 +52,9 @@ rpdl_open(gx_device * pdev)
 
     /* Resolution Check */
     if (xdpi != ydpi)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (xdpi != 240 && xdpi != 400 && xdpi != 600)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
 
     return gdev_prn_open(pdev);
 }
@@ -64,7 +64,7 @@ rpdl_close(gx_device * pdev)
 {
     gdev_prn_open_printer(pdev, 1);
     if (ppdev->Duplex && (pdev->PageCount & 1)) {
-	fprintf(ppdev->file, "\014"); /* Form Feed */
+        fprintf(ppdev->file, "\014"); /* Form Feed */
     }
     return gdev_prn_close(pdev);
 }
@@ -79,16 +79,16 @@ rpdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_coip
 
     /* printer initialize */
     if (pdev->PageCount == 0)
-	rpdl_printer_initialize(pdev, prn_stream, num_coipes);
+        rpdl_printer_initialize(pdev, prn_stream, num_coipes);
 
     if (!(lprn->CompBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl * 3 / 2 + 1, maxY, "rpdl_print_page_copies(CompBuf)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     lprn->NegativePrint = false; /* Not Support */
 
     code = lprn_print_image(pdev, prn_stream);
     if (code < 0)
-	return code;
+        return code;
 
     gs_free(gs_lib_ctx_get_non_gc_memory_t(), lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "rpdl_print_page_copies(CompBuf)");
 
@@ -108,24 +108,24 @@ rpdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
 
     if (Len < width / 8 * height) {
       if (pdev->x_pixels_per_inch == 240) {
-	/* Unit Size is 1/720 inch */
-	fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
-		width, height, x * 3, y * 3, Len);
+        /* Unit Size is 1/720 inch */
+        fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
+                width, height, x * 3, y * 3, Len);
       } else {
-	fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
-		width, height, x, y, Len);
+        fprintf(prn_stream, "\033\022G3,%d,%d,,4,%d,%d,%d@",
+                width, height, x, y, Len);
       }
       fwrite(lprn->CompBuf, 1, Len, prn_stream);
     } else { /* compression result is bad. So, raw data is used. */
       if (pdev->x_pixels_per_inch == 240) {
-	/* Unit Size is 1/720 inch */
-	fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
-		width, height, x * 3, y * 3);
-	fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+        /* Unit Size is 1/720 inch */
+        fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
+                width, height, x * 3, y * 3);
+        fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
       } else {
-	fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
-		width, height, x, y);
-	fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
+        fprintf(prn_stream, "\033\022G3,%d,%d,,,%d,%d@",
+                width, height, x, y);
+        fwrite(lprn->TmpBuf, 1, width / 8 * height, prn_stream);
       }
     }
 }
@@ -149,21 +149,21 @@ rpdl_printer_initialize(gx_device_printer * pdev, FILE * prn_stream, int num_cop
     fprintf(prn_stream, "\033\022YL,1 "); /* Top Margin - 0 mm */
     fprintf(prn_stream, "\033\022YM,1 "); /* 100 % */
     fprintf(prn_stream, "\033\022YQ,2 "); /* Page Length - Maximum */
-    
+
     /* Paper Size Selection */
     rpdl_paper_set(pdev, prn_stream);
 
     /* Option Setting */
     /* Duplex Setting */
     if (pdev->Duplex_set > 0) {
-	if (pdev->Duplex) {
-	    fprintf(prn_stream, "\033\02261,");
-	    if (lprn->Tumble == 0)
-		fprintf(prn_stream, "\033\022YA01,2 ");
-	    else
-		fprintf(prn_stream, "\033\022YA01,1 ");
-	} else
-	    fprintf(prn_stream, "\033\02260,");
+        if (pdev->Duplex) {
+            fprintf(prn_stream, "\033\02261,");
+            if (lprn->Tumble == 0)
+                fprintf(prn_stream, "\033\022YA01,2 ");
+            else
+                fprintf(prn_stream, "\033\022YA01,1 ");
+        } else
+            fprintf(prn_stream, "\033\02260,");
     }
 
     /* Resolution and Unit Setting */
@@ -236,15 +236,15 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
     height = pdev->MediaSize[1];
 
     if (width < height) {
-	w = width;
-	h = height;
-	wp = width / 72.0 * pdev->x_pixels_per_inch;
-	hp = height / 72.0 * pdev->y_pixels_per_inch;
+        w = width;
+        h = height;
+        wp = width / 72.0 * pdev->x_pixels_per_inch;
+        hp = height / 72.0 * pdev->y_pixels_per_inch;
     } else {
-	w = height;
-	h = width;
-	wp = height / 72.0 * pdev->y_pixels_per_inch;
-	hp = width / 72.0 * pdev->x_pixels_per_inch;
+        w = height;
+        h = width;
+        wp = height / 72.0 * pdev->y_pixels_per_inch;
+        hp = width / 72.0 * pdev->x_pixels_per_inch;
     }
 
     if (w == 1684 && h == 2380) /* A1 */
@@ -290,7 +290,7 @@ rpdl_paper_set(gx_device_printer * pdev, FILE * prn_stream)
       fprintf(prn_stream, "\033\02251@DLR\033 ");
     } else { /* Free Size (mm) */
       fprintf(prn_stream, "\033\022?5%d,%d\033 ",
-	      (int)((w * 25.4) / 72),
-	      (int)((h * 25.4) / 72));
+              (int)((w * 25.4) / 72),
+              (int)((h * 25.4) / 72));
     }
 }

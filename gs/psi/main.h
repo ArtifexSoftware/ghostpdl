@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -28,8 +28,7 @@
  */
 
 /* conditional out the entire file */
-#if 0 
-
+#if 0
 
 /* ================ Data elements ================ */
 
@@ -72,7 +71,7 @@
 
 #define gs_run_string_with_length(str, len, ue, pec, peo)\
   gs_main_run_string_with_length(gs_main_instance_default(),\
-				 str, len, ue, pec, peo)
+                                 str, len, ue, pec, peo)
 
 #define gs_run_file_open(fn, pfref)\
   gs_main_run_file_open(gs_main_instance_default(), fn, pfref)
@@ -82,7 +81,7 @@
 
 #define gs_run_string_continue(str, len, ue, pec, peo)\
   gs_main_run_string_continue(gs_main_instance_default(),\
-			      str, len, ue, pec, peo)
+                              str, len, ue, pec, peo)
 
 #define gs_run_string_end(ue, pec, peo)\
   gs_main_run_string_end(gs_main_instance_default(), ue, pec, peo)
@@ -100,7 +99,6 @@
 void gs_debug_dump_stack(int code, ref * perror_object);
 
 /* ---------------- Termination ---------------- */
-
 
 #endif /* full file conditional */
 

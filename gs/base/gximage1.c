@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,7 +49,7 @@ const gx_image_type_t gs_image_type_mask1 = {
 /* Define the procedures for initializing gs_image_ts to default values. */
 void
 gs_image_t_init_adjust(gs_image_t * pim, gs_color_space * color_space,
-		       bool adjust)
+                       bool adjust)
 {
     gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
     pim->ImageMask = (color_space == NULL);
@@ -63,36 +63,36 @@ gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)
 {
     gs_image_t_init(pim, NULL);
     if (write_1s)
-	pim->Decode[0] = 1, pim->Decode[1] = 0;
+        pim->Decode[0] = 1, pim->Decode[1] = 0;
     else
-	pim->Decode[0] = 0, pim->Decode[1] = 1;
+        pim->Decode[0] = 0, pim->Decode[1] = 1;
     pim->adjust = adjust;
 }
 
 /* Start processing an ImageType 1 image. */
 int
 gx_begin_image1(gx_device * dev,
-		const gs_imager_state * pis, const gs_matrix * pmat,
-		const gs_image_common_t * pic, const gs_int_rect * prect,
-		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
+                const gs_imager_state * pis, const gs_matrix * pmat,
+                const gs_image_common_t * pic, const gs_int_rect * prect,
+                const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+                gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     gx_image_enum *penum;
     const gs_image_t *pim = (const gs_image_t *)pic;
     int code = gx_image_enum_alloc(pic, prect, mem, &penum);
 
     if (code < 0)
-	return code;
+        return code;
     penum->alpha = pim->Alpha;
     penum->use_mask_color = false;
     penum->image_parent_type = pim->image_parent_type;
     penum->masked = pim->ImageMask;
     penum->adjust =
-	(pim->ImageMask && pim->adjust ? float2fixed(0.25) : fixed_0);
+        (pim->ImageMask && pim->adjust ? float2fixed(0.25) : fixed_0);
     code = gx_image_enum_begin(dev, pis, pmat, pic, pdcolor, pcpath, mem,
-			       penum);
+                               penum);
     if (code >= 0)
-	*pinfo = (gx_image_enum_common_t *)penum;
+        *pinfo = (gx_image_enum_common_t *)penum;
     return code;
 }
 
@@ -104,23 +104,23 @@ gx_begin_image1(gx_device * dev,
 
 static int
 gx_image1_sput(const gs_image_common_t *pic, stream *s,
-	       const gs_color_space **ppcs)
+               const gs_color_space **ppcs)
 {
     const gs_image_t *const pim = (const gs_image_t *)pic;
 
     return gx_pixel_image_sput((const gs_pixel_image_t *)pic, s, ppcs,
-			       (int)pim->Alpha);
+                               (int)pim->Alpha);
 }
 
 static int
 gx_image1_sget(gs_image_common_t *pic, stream *s,
-	       gs_color_space *pcs)
+               gs_color_space *pcs)
 {
     gs_image1_t *const pim = (gs_image1_t *)pic;
     int code = gx_pixel_image_sget((gs_pixel_image_t *)pim, s, pcs);
 
     if (code < 0)
-	return code;
+        return code;
     pim->type = &gs_image_type_1;
     pim->ImageMask = false;
     pim->Alpha = code;
@@ -153,46 +153,46 @@ gx_image1_sget(gs_image_common_t *pic, stream *s,
 
 static int
 gx_image1_mask_sput(const gs_image_common_t *pic, stream *s,
-		    const gs_color_space **ignore_ppcs)
+                    const gs_color_space **ignore_ppcs)
 {
     const gs_image_t *pim = (const gs_image_t *)pic;
     uint control =
-	(gx_image_matrix_is_default((const gs_data_image_t *)pim) ? 0 :
-	 MI_ImageMatrix) |
-	(pim->Decode[0] != 0 ? MI_Decode : 0) |
-	(pim->Interpolate ? MI_Interpolate : 0) |
-	(pim->adjust ? MI_adjust : 0) |
-	(pim->Alpha << MI_Alpha_SHIFT) |
-	((pim->BitsPerComponent - 1) << MI_BPC_SHIFT);
+        (gx_image_matrix_is_default((const gs_data_image_t *)pim) ? 0 :
+         MI_ImageMatrix) |
+        (pim->Decode[0] != 0 ? MI_Decode : 0) |
+        (pim->Interpolate ? MI_Interpolate : 0) |
+        (pim->adjust ? MI_adjust : 0) |
+        (pim->Alpha << MI_Alpha_SHIFT) |
+        ((pim->BitsPerComponent - 1) << MI_BPC_SHIFT);
 
     sput_variable_uint(s, control);
     sput_variable_uint(s, (uint)pim->Width);
     sput_variable_uint(s, (uint)pim->Height);
     if (control & MI_ImageMatrix)
-	sput_matrix(s, &pim->ImageMatrix);
+        sput_matrix(s, &pim->ImageMatrix);
     return 0;
 }
 
 static int
 gx_image1_mask_sget(gs_image_common_t *pic, stream *s,
-		    gs_color_space *ignore_pcs)
+                    gs_color_space *ignore_pcs)
 {
     gs_image1_t *const pim = (gs_image1_t *)pic;
     int code;
     uint control;
 
     if ((code = sget_variable_uint(s, &control)) < 0)
-	return code;
+        return code;
     gs_image_t_init_mask(pim, (control & MI_Decode) != 0);
     if ((code = sget_variable_uint(s, (uint *)&pim->Width)) < 0 ||
-	(code = sget_variable_uint(s, (uint *)&pim->Height)) < 0
-	)
-	return code;
+        (code = sget_variable_uint(s, (uint *)&pim->Height)) < 0
+        )
+        return code;
     if (control & MI_ImageMatrix) {
-	if ((code = sget_matrix(s, &pim->ImageMatrix)) < 0)
-	    return code;
+        if ((code = sget_matrix(s, &pim->ImageMatrix)) < 0)
+            return code;
     } else
-	gx_image_matrix_set_default((gs_data_image_t *)pim);
+        gx_image_matrix_set_default((gs_data_image_t *)pim);
     pim->Interpolate = (control & MI_Interpolate) != 0;
     pim->adjust = (control & MI_adjust) != 0;
     pim->Alpha = (control >> MI_Alpha_SHIFT) & MI_Alpha_MASK;
@@ -214,19 +214,19 @@ gx_image_free_enum(gx_image_enum_common_t **ppenum)
     gs_memory_t *mem = penum->memory;
 
      /* Bug 688845 comment #38 :
-        Adobe Illustrator creates a Postscript document, 
-	in which an image data procedure executes 'save',
-	and the corresponding 'restore' appears after the image end.
-	It causes this procedure is called at a higher save level than
-	at which the enumerator was allocated, so that gs_free_object below
-	works idle. Nevertheless we can't leave pointers in the structure,
-	because they may point to blocks already released
-	by the client's subclass method for end_image.
-	Leaving them uncleaned caused a real crash in the garbager - see bug 688845.
-	So we clean the entire subclassed enumerator here,
-	rather this is a generic function for base class.
-	Note the cleaning is neccessaryfor Postscript only,
-	because other languaged don't implement save-restore.
+        Adobe Illustrator creates a Postscript document,
+        in which an image data procedure executes 'save',
+        and the corresponding 'restore' appears after the image end.
+        It causes this procedure is called at a higher save level than
+        at which the enumerator was allocated, so that gs_free_object below
+        works idle. Nevertheless we can't leave pointers in the structure,
+        because they may point to blocks already released
+        by the client's subclass method for end_image.
+        Leaving them uncleaned caused a real crash in the garbager - see bug 688845.
+        So we clean the entire subclassed enumerator here,
+        rather this is a generic function for base class.
+        Note the cleaning is neccessaryfor Postscript only,
+        because other languaged don't implement save-restore.
      */
     memset(penum, 0, gs_object_size(mem, penum));
     gs_free_object(mem, penum, "gx_image_free_enum");

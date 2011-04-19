@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,9 +15,9 @@
 /* The following font names are taken from the Adobe webs site
    (http://www.adobe.com/type/browser/legal/embeddingeula.html)
    and comprise a list of font names for which permission is granted to embed
-   either for preview and print or fully editable. These names are used to 
+   either for preview and print or fully editable. These names are used to
    override the embedding flags in TrueType fonts for pdfwrite and ps2write.
-   
+
    Its not entirely clear whether the font names should include TM and R
    characters or not, and the only example font we have contains neither. For
    the moment the fonts are stored without TM and R characters but this may
@@ -500,29 +500,29 @@ static int whitelist_strncmp(const char *s1, const char *s2, int length)
     s1_index = s2_index = 0;
 
     while (s2_index < length && s1[s1_index] != 0x00) {
-	while (s1[s1_index] == ' ')
-	    s1_index++;
-	while (s2[s2_index] == ' ' && s2_index < length)
-	    s2_index++;
-	if (s2_index > length) {
-	    if (s1[s1_index] == 0x00)
-		return 0;
-	    return 1;
-	}
-	if (s1[s1_index] == 0x00) {
-	    if (s2_index > length)
-		return 0;
-	    return -1;
-	}
-	if (s1[s1_index] == s2[s2_index]) {
-	    s1_index++;
-	    s2_index++;
-	    continue;
-	}
-	if(s1[s1_index] < s2[s2_index])
-	    return -1;
-	if(s1[s1_index] > s2[s2_index])
-	    return 1;
+        while (s1[s1_index] == ' ')
+            s1_index++;
+        while (s2[s2_index] == ' ' && s2_index < length)
+            s2_index++;
+        if (s2_index > length) {
+            if (s1[s1_index] == 0x00)
+                return 0;
+            return 1;
+        }
+        if (s1[s1_index] == 0x00) {
+            if (s2_index > length)
+                return 0;
+            return -1;
+        }
+        if (s1[s1_index] == s2[s2_index]) {
+            s1_index++;
+            s2_index++;
+            continue;
+        }
+        if(s1[s1_index] < s2[s2_index])
+            return -1;
+        if(s1[s1_index] > s2[s2_index])
+            return 1;
     }
     return result;
 }
@@ -532,16 +532,16 @@ int IsInWhiteList (const char *Name, int size)
     int low = 0, mid, high = WHITE_LIST_SIZE, test;
 
     while (low < high) {
-	/* bisect current range */
-	mid = (low + high) / 2;
-	test = whitelist_strncmp(EmbeddingWhiteList[mid], Name, size);
-	if (test == 0)
-	    return 1;
-	/* Not a match, select either upper or lower group and try again */
-	if(test < 0)
-	    low = mid + 1;
-	else
-	high = mid - 1;
+        /* bisect current range */
+        mid = (low + high) / 2;
+        test = whitelist_strncmp(EmbeddingWhiteList[mid], Name, size);
+        if (test == 0)
+            return 1;
+        /* Not a match, select either upper or lower group and try again */
+        if(test < 0)
+            low = mid + 1;
+        else
+        high = mid - 1;
     }
     return 0;
 }

@@ -1,12 +1,12 @@
 %    Copyright (C) 1990-2003 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -128,8 +128,8 @@ userdict /Fontmap .FontDirectory maxlength dict put
        0 1 2 index length 1 sub {
          % stack: fontname filename fontnamestring addflag newstring index
          dup 4 index exch 2 mul get 0 ne {
-	   % High byte of pair is not \000
-	   pop pop //false exch
+           % High byte of pair is not \000
+           pop pop //false exch
            exit
          } if
          dup 4 index exch 2 mul 1 add get 2 index 3 1 roll put
@@ -366,7 +366,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 % of strings: what the system thinks is the ps name,
 % and the access path.
 /.setnativefontmapbuilt { % set whether we've been run
-  systemdict exch /.nativefontmapbuilt exch .forceput 
+  systemdict exch /.nativefontmapbuilt exch .forceput
 } .bind executeonly def
 systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
 /.buildnativefontmap {   % - .buildnativefontmap <bool>
@@ -382,13 +382,13 @@ systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
       % verify the font name ourselves
       dup 1 get (r) { file } stopped
       {
-        % skip the entry if we can't open the returned path 
+        % skip the entry if we can't open the returned path
         pop pop pop
       }{
         % we could open the font file
         .findfontname
         not { dup 0 get } if  % stack: (newname) [ (name) (path) ]
-        % DEBUG { (  found ) print dup print (\n) print flush } if 
+        % DEBUG { (  found ) print dup print (\n) print flush } if
         % add entry to the fontmap
         1 index exch 0 exch dup type /nametype ne {cvn} if put
         aload pop .definefontmap
@@ -425,7 +425,7 @@ buildfontdict 3 /.buildfont3 cvx put
     { dup wcheck not { dup maxlength dict .copydict } if
     }
    ifelse
- } bind def 
+ } bind def
 /.completefont {
   {             % Check for disabled platform fonts.
       NOPLATFONTS
@@ -879,7 +879,7 @@ $error /SubstituteFont { } put
                         % now and look for the font again.
     .scannextfontdir {
                         % Start over with an empty alias list.
-      counttomark 1 sub { pop } repeat    % mark <fontname> 
+      counttomark 1 sub { pop } repeat    % mark <fontname>
       .dofindfont
     } {
                         % No more directories to scan. Try building the native
@@ -907,7 +907,7 @@ $error /SubstituteFont { } put
                          %
                          % igorm: I guess the surrounding code assumes that .stdsubstfont
                          % must ADD an alias to allow .checkalias and .findfont to work properly.
-                         % Also I guess that a trailing recursion is 
+                         % Also I guess that a trailing recursion is
                          % used in .dofindfont and through .stdsubstfont
                          % just to represent a simple iteration,
                          % which accumulates the aliases after the mark.
@@ -979,7 +979,6 @@ $error /SubstituteFont { } put
   } ifelse
 } .bind odef % must be bound and hidden for .forceput
 
-
 % Attempt to load a font from a file.
 /.tryloadfont {         % <fontname> .tryloadfont <font> true
                         % <fontname> .tryloadfont false
@@ -1013,14 +1012,14 @@ $error /SubstituteFont { } put
          } if
 
         % check <libflag>
-        {  
+        {
           findlibfile not
         } {
           dup (r) { file } stopped {
             pop pop //true
           } {
             //false
-          } ifelse  
+          } ifelse
         } ifelse {
           QUIET not
             { (Can't find \(or can't open\) font file ) print dup print
@@ -1076,7 +1075,7 @@ $error /SubstituteFont { } put
                 % Check to make sure the font was actually loaded.
         dup 3 index .fontknownget
          { dup /PathLoad 4 index //.putgstringcopy exec
-           4 1 roll pop pop pop //true exit 
+           4 1 roll pop pop pop //true exit
          } if
 
                 % Maybe the file had a different FontName.

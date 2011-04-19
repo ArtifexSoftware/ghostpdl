@@ -774,4 +774,3 @@ gslt_measure_font_glyph(gslt_font_t *xf, int gid, gslt_glyph_metrics_t *mtx)
     return 0;
 }
 #endif
-

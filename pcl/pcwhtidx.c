@@ -211,7 +211,7 @@ remap_raster_ary(
 
         if (out_nbits > 8 * sizeof(ulong) - b_per_p) {
             while (out_nbits >= 8) {
-                
+
                 *outp++ = (out_accum >> (out_nbits - 8)) & 0xff;
                 out_nbits -= 8;
                 out_accum <<= 8;
@@ -267,7 +267,7 @@ pcl_cmap_map_raster(
     /* see if any remapping is necessary */
     *pout_pixinfo = *pin_pixinfo;
     if ( !build_remap_array( pindexed->palette.data,
-                             pindexed->num_entries, 
+                             pindexed->num_entries,
                              remap,
                              pfirst_white,
                              pix_depth,
@@ -383,5 +383,5 @@ pcl_cmap_int_apply_ary(
         remap_raster_ary8(prast, prast, npixels, b_per_p, (const byte *)vpmap);
     else
         remap_raster_ary(prast, prast, npixels, b_per_p, (const byte *)vpmap);
-    
+
 }

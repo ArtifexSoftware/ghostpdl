@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -53,19 +53,19 @@ rinkj_screen_eb_set (RinkjDevice *self, const char *config)
   for (p = config; (key = rinkj_config_keyval (p, &val, &next)); p = next)
     {
       if (!strcmp (key, "Dither"))
-	{
-	  if (!strcmp (val, "1"))
-	    z->bps = 1;
-	  else if (!strcmp (val, "2"))
-	    {
-	      z->bps = 2;
-	      rinkj_device_set_param_int (z->dev_out, "BitsPerSample", 2);
-	    }
-	}
+        {
+          if (!strcmp (val, "1"))
+            z->bps = 1;
+          else if (!strcmp (val, "2"))
+            {
+              z->bps = 2;
+              rinkj_device_set_param_int (z->dev_out, "BitsPerSample", 2);
+            }
+        }
       else if (!strcmp (key, "Aspect"))
-	{
-	  z->aspect = atoi (val);
-	}
+        {
+          z->aspect = atoi (val);
+        }
       free (key);
       free (val);
     }
@@ -180,52 +180,52 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
   for (; status >= 0 && z->yrem < z->height_out; z->yrem += z->height_in)
     {
       even_better_line (z->dither,
-			(unsigned char *)out_buf,
-			(unsigned char *)data_permuted);
+                        (unsigned char *)out_buf,
+                        (unsigned char *)data_permuted);
 
       for (i = 0; i < n_planes; i++)
-	{
-	  uchar *pd = out_data[permutation[i]];
-	  uchar *pb = out_buf[i];
-	  int x;
+        {
+          uchar *pd = out_data[permutation[i]];
+          uchar *pb = out_buf[i];
+          int x;
 
-	  if (z->bps == 2)
-	    {
-	      for (x = 0; x < xs - 3; x += 4)
-		{
-		  pd[x >> 2] = (pb[x] << 6) | (pb[x + 1] << 4) |
-		    (pb[x + 2] << 2) | pb[x + 3];
-		}
-	      if (x < xs)
-		{
-		  int j;
-		  uchar b = 0;
+          if (z->bps == 2)
+            {
+              for (x = 0; x < xs - 3; x += 4)
+                {
+                  pd[x >> 2] = (pb[x] << 6) | (pb[x + 1] << 4) |
+                    (pb[x + 2] << 2) | pb[x + 3];
+                }
+              if (x < xs)
+                {
+                  int j;
+                  uchar b = 0;
 
-		  for (j = 0; j < xs - x; j++)
-		    b |= pb[x + j] << ((3 - j) << 1);
-		  pd[x >> 2] = b;
-		}
-	    }
-	  else if (z->bps == 1)
-	    {
-	      for (x = 0; x < xs - 7; x += 8)
-		{
-		  pd[x >> 3] = (pb[x] << 7) | (pb[x + 1] << 6) |
-		    (pb[x + 2] << 5) | (pb[x + 3] << 4) |
-		    (pb[x + 4] << 3) | (pb[x + 5] << 2) |
-		    (pb[x + 6] << 1) | (pb[x + 7] << 0);
-		}
-	      if (x < xs)
-		{
-		  int j;
-		  uchar b = 0;
+                  for (j = 0; j < xs - x; j++)
+                    b |= pb[x + j] << ((3 - j) << 1);
+                  pd[x >> 2] = b;
+                }
+            }
+          else if (z->bps == 1)
+            {
+              for (x = 0; x < xs - 7; x += 8)
+                {
+                  pd[x >> 3] = (pb[x] << 7) | (pb[x + 1] << 6) |
+                    (pb[x + 2] << 5) | (pb[x + 3] << 4) |
+                    (pb[x + 4] << 3) | (pb[x + 5] << 2) |
+                    (pb[x + 6] << 1) | (pb[x + 7] << 0);
+                }
+              if (x < xs)
+                {
+                  int j;
+                  uchar b = 0;
 
-		  for (j = 0; j < xs - x; j++)
-		    b |= pb[x + j] << (7 - j);
-		  pd[x >> 3] = b;
-		}
-	    }
-	}
+                  for (j = 0; j < xs - x; j++)
+                    b |= pb[x + j] << (7 - j);
+                  pd[x >> 3] = b;
+                }
+            }
+        }
 
       status = rinkj_device_write (z->dev_out, (const char **)out_data);
     }

@@ -23,7 +23,7 @@
 
 /* Define an abstract type for a font directory. */
 #ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED	
+#  define gs_font_dir_DEFINED
 typedef struct gs_font_dir_s gs_font_dir;
 #endif
 
@@ -65,21 +65,21 @@ typedef struct px_media_s {
 struct px_state_s {
 
   gs_memory_t *memory;
-	/* Hook back to client data, for callback procedures */
+        /* Hook back to client data, for callback procedures */
   void *client_data;
   gs_id known_fonts_base_id;
 
-	/* Session state */
+        /* Session state */
 
   pxeMeasure_t measure;
   gs_point units_per_measure;
   pxeErrorReport_t error_report;
   bool useciecolor;
 
-	/* Pattern dictionary */
+        /* Pattern dictionary */
   px_dict_t session_pattern_dict;
 
-	/* Page state */
+        /* Page state */
 
   pxeOrientation_t orientation;
   pxeMediaSource_t media_source;
@@ -99,20 +99,20 @@ struct px_state_s {
   short media_width;
 
   int (*end_page)(px_state_t *pxs, int num_copies, int flush);
-	/* Pattern dictionary */
+        /* Pattern dictionary */
   px_dict_t page_pattern_dict;
-	/* Internal variables */
+        /* Internal variables */
   bool have_page;		/* true if anything has been written on page */
-	/* Cached values */
+        /* Cached values */
   gs_matrix initial_matrix;
 
-	/* Data source */
+        /* Data source */
 
   bool data_source_open;
   bool data_source_big_endian;
-	/* Stream dictionary */
+        /* Stream dictionary */
   px_dict_t stream_dict;
-	/* Stream reading state */
+        /* Stream reading state */
   gs_string stream_name;
   int stream_level; /* recursion depth */
   struct sd2_ {
@@ -120,25 +120,25 @@ struct px_state_s {
     uint size;
   } stream_def;
 
-	/* Font dictionary */
+        /* Font dictionary */
   px_dict_t font_dict;
   px_dict_t builtin_font_dict;
-	/* Font/character downloading state */
+        /* Font/character downloading state */
   px_font_t *download_font;
   int font_format;
-	/* Global structures */
+        /* Global structures */
   gs_font_dir *font_dir;
   px_font_t *error_page_font;
 
-	/* Graphics state */
+        /* Graphics state */
 
   gs_state *pgs;		/* PostScript graphics state */
   px_gstate_t *pxgs;
-	/* Image/pattern reading state */
+        /* Image/pattern reading state */
   px_image_enum_t *image_enum;
   px_pattern_enum_t *pattern_enum;
 
-	/* Miscellaneous */
+        /* Miscellaneous */
   bool interpolate; /* image interpolation */
 
   struct db_ {
@@ -151,8 +151,8 @@ struct px_state_s {
     double y0, y1;
   } scan_point;			/* position when reading scan lines */
 
-	/* We put the warning table and error line buffer at the end */
-	/* so that the offsets of the scalars will stay small. */
+        /* We put the warning table and error line buffer at the end */
+        /* so that the offsets of the scalars will stay small. */
 #define px_max_error_line 120
   char error_line[px_max_error_line + 1]; /* for errors with their own msg */
 #define px_max_warning_message 500

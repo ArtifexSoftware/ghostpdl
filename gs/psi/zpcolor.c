@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -57,9 +57,9 @@ static int
 zpcolor_init(i_ctx_t *i_ctx_p)
 {
     gstate_set_pattern_cache(igs,
-			     gx_pattern_alloc_cache(imemory_system,
-					       gx_pat_cache_default_tiles(),
-					      gx_pat_cache_default_bits()));
+                             gx_pattern_alloc_cache(imemory_system,
+                                               gx_pat_cache_default_tiles(),
+                                              gx_pat_cache_default_bits()));
     return 0;
 }
 
@@ -68,10 +68,10 @@ int
 int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
 {
     int_pattern *pdata =
-	gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
+        gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
 
     if (pdata == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     pdata->dict = *op;
     *ppdata = pdata;
     return 0;
@@ -111,7 +111,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType);
     if (code < 0)
         return code;
-    
+
     code = dict_bool_param(op1, ".pattern_uses_transparency", 0, &template.uses_transparency);
     if (code < 0)
         return code;
@@ -120,25 +120,25 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined); 
+       return_error(e_undefined);
 
     code = dict_float_param(op1, "XStep", 0.0, &template.XStep);
     if (code < 0)
         return code;
     if (code == 1)
-       return_error(e_undefined); 
-    
+       return_error(e_undefined);
+
     code = dict_float_param(op1, "YStep", 0.0, &template.YStep);
     if (code < 0)
         return code;
     if (code == 1)
-       return_error(e_undefined); 
-    
+       return_error(e_undefined);
+
     code = dict_find_string(op1, "PaintProc", &pPaintProc);
     if (code < 0)
         return code;
     if (code == 0)
-       return_error(e_undefined); 
+       return_error(e_undefined);
 
     check_proc(*pPaintProc);
 
@@ -154,12 +154,12 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     template.PaintProc = zPaintProc;
     code = int_pattern_alloc(&pdata, op1, imemory);
     if (code < 0)
-	return code;
+        return code;
     template.client_data = pdata;
     code = gs_makepattern(&cc_instance, &template, &mat, igs, imemory);
     if (code < 0) {
-	ifree_object(pdata, "int_pattern");
-	return code;
+        ifree_object(pdata, "int_pattern");
+        return code;
     }
     make_istruct(op, a_readonly, cc_instance.pattern);
     return code;
@@ -185,8 +185,8 @@ zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
-	  int_remap_color_info_t)->proc =
-	pattern_paint_prepare;
+          int_remap_color_info_t)->proc =
+        pattern_paint_prepare;
     return_error(e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
@@ -195,7 +195,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 {
     gs_state *pgs = igs;
     gs_pattern1_instance_t *pinst =
-	(gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
+        (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
     ref *pdict = &((int_pattern *) pinst->template.client_data)->dict;
     gx_device_forward *pdev = NULL;
     gx_device *cdev = gs_currentdevice_inline(igs);
@@ -205,76 +205,76 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 
     check_estack(6);
     if (pgs->have_pattern_streams) {
-	code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_can_accum,
-				pinst, pinst->id);
-	if (code < 0)
-	    return code;
-	internal_accum = (code == 0);
+        code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_can_accum,
+                                pinst, pinst->id);
+        if (code < 0)
+            return code;
+        internal_accum = (code == 0);
     }
     if (internal_accum) {
-	gs_memory_t *storage_memory = gstate_pattern_cache(pgs)->memory;
+        gs_memory_t *storage_memory = gstate_pattern_cache(pgs)->memory;
 
-	pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst, "pattern_paint_prepare");
-	if (pdev == 0)
-	    return_error(e_VMerror);
-	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
-	if (code < 0) {
-	    ifree_object(pdev, "pattern_paint_prepare");
-	    return code;
-	}
+        pdev = gx_pattern_accum_alloc(imemory, storage_memory, pinst, "pattern_paint_prepare");
+        if (pdev == 0)
+            return_error(e_VMerror);
+        code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);
+        if (code < 0) {
+            ifree_object(pdev, "pattern_paint_prepare");
+            return code;
+        }
     } else {
-	code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)igs, 
-		    pinst, cdev->color_info.depth);
-	if (code < 0)
-	    return code;
+        code = gx_pattern_cache_add_dummy_entry((gs_imager_state *)igs,
+                    pinst, cdev->color_info.depth);
+        if (code < 0)
+            return code;
     }
     code = gs_gsave(pgs);
     if (code < 0)
-	return code;
+        return code;
     code = gs_setgstate(pgs, pinst->saved);
     if (code < 0) {
-	gs_grestore(pgs);
-	return code;
+        gs_grestore(pgs);
+        return code;
     }
     /* gx_set_device_only(pgs, (gx_device *) pdev); */
     if (internal_accum) {
-	gs_setdevice_no_init(pgs, (gx_device *)pdev);
-	if (pinst->template.uses_transparency) {
-	    if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
-	    if ((code = gs_push_pdf14trans_device(pgs)) < 0)
-		return code;
-	} else { /* not transparent */
+        gs_setdevice_no_init(pgs, (gx_device *)pdev);
+        if (pinst->template.uses_transparency) {
+            if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
+            if ((code = gs_push_pdf14trans_device(pgs)) < 0)
+                return code;
+        } else { /* not transparent */
             if (pinst->template.PaintType == 1)
                 if ((code = gx_erase_colored_pattern(pgs)) < 0)
                     return code;
         }
     } else {
-	gs_matrix m;
-	gs_rect bbox;
-	gs_fixed_rect clip_box;
+        gs_matrix m;
+        gs_rect bbox;
+        gs_fixed_rect clip_box;
 
-	dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
-	gs_setmatrix(igs, &m);
-	code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(pgs), &bbox);
-	if (code < 0) {
-	    gs_grestore(pgs);
-	    return code;
-	}
-	clip_box.p.x = float2fixed(bbox.p.x);
-	clip_box.p.y = float2fixed(bbox.p.y);
-	clip_box.q.x = float2fixed(bbox.q.x);
-	clip_box.q.y = float2fixed(bbox.q.y);
-	code = gx_clip_to_rectangle(igs, &clip_box);
-	if (code < 0) {
-	    gs_grestore(pgs);
-	    return code;
-	}
-	code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_start_accum, 
-				pinst, pinst->id);
-	if (code < 0) {
-	    gs_grestore(pgs);
-	    return code;
-	}
+        dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
+        gs_setmatrix(igs, &m);
+        code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(pgs), &bbox);
+        if (code < 0) {
+            gs_grestore(pgs);
+            return code;
+        }
+        clip_box.p.x = float2fixed(bbox.p.x);
+        clip_box.p.y = float2fixed(bbox.p.y);
+        clip_box.q.x = float2fixed(bbox.q.x);
+        clip_box.q.y = float2fixed(bbox.q.y);
+        code = gx_clip_to_rectangle(igs, &clip_box);
+        if (code < 0) {
+            gs_grestore(pgs);
+            return code;
+        }
+        code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pattern_start_accum,
+                                pinst, pinst->id);
+        if (code < 0) {
+            gs_grestore(pgs);
+            return code;
+        }
     }
     push_mark_estack(es_other, pattern_paint_cleanup);
     ++esp;
@@ -295,31 +295,31 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     int o_stack_adjust = ref_stack_count(&o_stack) - esp->value.intval;
     gx_device_forward *pdev = r_ptr(esp - 1, gx_device_forward);
     gs_pattern1_instance_t *pinst =
-	(gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
+        (gs_pattern1_instance_t *)gs_currentcolor(igs->saved)->pattern;
     gx_device_pattern_accum const *padev = (const gx_device_pattern_accum *) pdev;
 
     if (pdev != NULL) {
-	gx_color_tile *ctile;
-	int code;
-	if (pinst->template.uses_transparency) {
-	    gs_state *pgs = igs;
-	    int code;
+        gx_color_tile *ctile;
+        int code;
+        if (pinst->template.uses_transparency) {
+            gs_state *pgs = igs;
+            int code;
             /* Get PDF14 buffer information */
             code = pdf14_get_buffer_information(pgs->device,padev->transbuff);
-            /* PDF14 device (and buffer) is destroyed when pattern cache 
+            /* PDF14 device (and buffer) is destroyed when pattern cache
                entry is removed */
-	    if (code < 0)
-		return code;
-	} 
-	code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
-	if (code < 0)
-	    return code;
+            if (code < 0)
+                return code;
+        }
+        code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
+        if (code < 0)
+            return code;
     }
     if (o_stack_adjust > 0) {
 #if 0
-	dlprintf1("PaintProc left %d extra on operator stack!\n", o_stack_adjust);
+        dlprintf1("PaintProc left %d extra on operator stack!\n", o_stack_adjust);
 #endif
-	pop(o_stack_adjust);
+        pop(o_stack_adjust);
     }
     esp -= 3;
     pattern_paint_cleanup(i_ctx_p);
@@ -330,23 +330,23 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
 static int
 pattern_paint_cleanup(i_ctx_t *i_ctx_p)
 {
-    gx_device_pattern_accum *const pdev = 
-	r_ptr(esp + 2, gx_device_pattern_accum);
+    gx_device_pattern_accum *const pdev =
+        r_ptr(esp + 2, gx_device_pattern_accum);
     int code;
 
     if (pdev != NULL) {
-	/* grestore will free the device, so close it first. */
-	(*dev_proc(pdev, close_device)) ((gx_device *) pdev);
+        /* grestore will free the device, so close it first. */
+        (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
     }
     code = gs_grestore(igs);
     gx_unset_dev_color(igs);	/* dev_color may need updating if GC ran */
     if (pdev == NULL) {
-	gx_device *cdev = gs_currentdevice_inline(igs);
-	int code1 = dev_proc(cdev, dev_spec_op)(cdev,
-			gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
-	
-	if (code == 0 && code1 < 0)
-	    code = code1;
+        gx_device *cdev = gs_currentdevice_inline(igs);
+        int code1 = dev_proc(cdev, dev_spec_op)(cdev,
+                        gxdso_pattern_finish_accum, NULL, gx_no_bitmap_id);
+
+        if (code == 0 && code1 < 0)
+            code = code1;
     }
     return code;
 }

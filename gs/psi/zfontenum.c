@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,10 +32,9 @@
 #include "store.h"
 #include "gp.h"
 
-
 typedef struct fontenum_s {
-	char *fontname, *path;
-	struct fontenum_s *next;
+        char *fontname, *path;
+        struct fontenum_s *next;
 } fontenum_t;
 
 /* .getnativefonts [ [<name> <path>] ... ] */
@@ -51,7 +50,7 @@ z_fontenum(i_ctx_t *i_ctx_p)
     ref array;
     uint length;
     byte *string;
-	
+
     enum_state = gp_enumerate_fonts_init(imemory);
     if (enum_state == NULL) {
       /* put false on the stack and return */
@@ -63,67 +62,66 @@ z_fontenum(i_ctx_t *i_ctx_p)
     r = results = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
     elements = 0;
     while((code = gp_enumerate_fonts_next(enum_state, &fontname, &path )) > 0) {
-	if (fontname == NULL || path == NULL) {
-	    gp_enumerate_fonts_free(enum_state);
-	    return_error(e_ioerror);
-	}
+        if (fontname == NULL || path == NULL) {
+            gp_enumerate_fonts_free(enum_state);
+            return_error(e_ioerror);
+        }
 
-	length = strlen(fontname) + 1;
-	r->fontname = gs_malloc(imemory->non_gc_memory, length, 1, "native font name");
-	memcpy(r->fontname, fontname, length);
+        length = strlen(fontname) + 1;
+        r->fontname = gs_malloc(imemory->non_gc_memory, length, 1, "native font name");
+        memcpy(r->fontname, fontname, length);
 
-	length = strlen(path) + 1;
-	    r->path = gs_malloc(imemory->non_gc_memory, length, 1, "native font path");
-	    memcpy(r->path, path, length);
+        length = strlen(path) + 1;
+            r->path = gs_malloc(imemory->non_gc_memory, length, 1, "native font path");
+            memcpy(r->path, path, length);
 
-	    r->next = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
-	    r = r->next;
-	    elements += 1;
-	}
-	
-	gp_enumerate_fonts_free(enum_state);
+            r->next = gs_malloc(imemory->non_gc_memory, 1, sizeof(fontenum_t), "fontenum list");
+            r = r->next;
+            elements += 1;
+        }
 
-	code = ialloc_ref_array(&array, a_all | icurrent_space, elements, "native fontmap");
+        gp_enumerate_fonts_free(enum_state);
 
-	r = results;
-	for (e = 0; e < elements; e++) {
-	    ref mapping;
-	
-	    code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping");
-		
-	    length = strlen(r->fontname);
-	    string = ialloc_string(length, "native font name");
-	    if (string == NULL)
-		return_error(e_VMerror);
-	    memcpy(string, r->fontname, length);
-	    make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
-	 	
-	    length = strlen(r->path);
-	    string = ialloc_string(length, "native font path");
-	    if (string == NULL)
-		return_error(e_VMerror);
-	    memcpy(string, r->path, length);
-	    make_string(&(mapping.value.refs[1]), a_all | icurrent_space, length, string);
-	 	
-	    ref_assign(&(array.value.refs[e]), &mapping);
-	    results = r;
-	    r = r->next;
+        code = ialloc_ref_array(&array, a_all | icurrent_space, elements, "native fontmap");
 
-	    gs_free(imemory->non_gc_memory, 
-		    results->fontname, strlen(results->fontname) + 1, 1, "native font name");
-	    gs_free(imemory->non_gc_memory, 
-		    results->path, strlen(results->path) + 1, 1, "native font path");
-	    gs_free(imemory->non_gc_memory, 
-		    results, 1, sizeof(fontenum_t), "fontenum list");
-	}
+        r = results;
+        for (e = 0; e < elements; e++) {
+            ref mapping;
 
-    push(2);   
+            code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping");
+
+            length = strlen(r->fontname);
+            string = ialloc_string(length, "native font name");
+            if (string == NULL)
+                return_error(e_VMerror);
+            memcpy(string, r->fontname, length);
+            make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
+
+            length = strlen(r->path);
+            string = ialloc_string(length, "native font path");
+            if (string == NULL)
+                return_error(e_VMerror);
+            memcpy(string, r->path, length);
+            make_string(&(mapping.value.refs[1]), a_all | icurrent_space, length, string);
+
+            ref_assign(&(array.value.refs[e]), &mapping);
+            results = r;
+            r = r->next;
+
+            gs_free(imemory->non_gc_memory,
+                    results->fontname, strlen(results->fontname) + 1, 1, "native font name");
+            gs_free(imemory->non_gc_memory,
+                    results->path, strlen(results->path) + 1, 1, "native font path");
+            gs_free(imemory->non_gc_memory,
+                    results, 1, sizeof(fontenum_t), "fontenum list");
+        }
+
+    push(2);
     ref_assign(op-1, &array);
     make_bool(op, true);
-	
+
     return code;
 }
-
 
 /* Match the above routines to their postscript filter names.
    This is how our static routines get called externally. */

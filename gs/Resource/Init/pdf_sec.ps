@@ -15,8 +15,8 @@
 % New versions of GS require explicit checks for /true, /false, and /null
 % in .decpdfrun. This fix is backward-compatible.
 
-% Modified by Raph Levien and Ralph Giles to use the new C 
-% implementations of md5 and arcfour in ghostscript 7.01, and to 
+% Modified by Raph Levien and Ralph Giles to use the new C
+% implementations of md5 and arcfour in ghostscript 7.01, and to
 % be compatible with PDF 1.4 128-bit encryption.
 
 % Modified by Ralph Giles for PDF 1.6 AES encryption.
@@ -98,7 +98,6 @@ pdfdict begin
   //false exch { 128 ge { pop //true exit } if } forall
 } bind def
 
-
 /pdf_padding_string
    <28bf4e5e4e758a41 64004e56fffa0108
     2e2e00b6d0683e80 2f0ca9fe6453697a>
@@ -154,7 +153,7 @@ def
     ()
     (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
   } ifelse
-  3 { concatstrings } repeat 
+  3 { concatstrings } repeat
   % We will finish step 5 after possibly including step 6.
 
   % The following only executed for /R equal to 3 or more
@@ -437,7 +436,7 @@ def
          % iconv nor the Windows MultiByteToWideChar function, then we
          % won't have the .locale_to_utf8 operator to convert passwords
          % from the locale character set to UTF-8.
-         % 
+         %
          % It's not a huge problem if you're missing either or both of
          % these.  ASCII passwords will work fine regardless, and even
          % Unicode passwords will often be okay.
@@ -493,7 +492,7 @@ def
     FileKey length 5 add string
     dup 0 FileKey putinterval
     exch
-		  % stack:  gen# string obj#
+                  % stack:  gen# string obj#
       2 copy 255 and FileKey length exch put
       2 copy -8 bitshift 255 and FileKey length 1 add exch put
       2 copy -16 bitshift 255 and FileKey length 2 add exch put
@@ -533,75 +532,75 @@ def
     { .pdftoken not { (%%EOF) cvn cvx } if
       dup xcheck
        { PDFDEBUG { dup //== exec flush } if
-	 3 -1 roll pop
-	 2 copy .knownget
-	  { exch pop exch pop exec
+         3 -1 roll pop
+         2 copy .knownget
+          { exch pop exch pop exec
           }
-	  { exch pop
+          { exch pop
             dup /true eq
               { pop //true
               }
               { dup /false eq
-                  { pop //false 
+                  { pop //false
                   }
                   { dup /null eq
                       { pop //null
                       }
-                      { (   **** Unknown operator: ) 
-	                exch =string cvs concatstrings (\n) concatstrings
-			pdfformaterror
+                      { (   **** Unknown operator: )
+                        exch =string cvs concatstrings (\n) concatstrings
+                        pdfformaterror
                       }
                     ifelse
                   }
                 ifelse
               }
             ifelse
-	  }
-	 ifelse
+          }
+         ifelse
        }
        { exch pop PDFDEBUG { dup ==only ( ) print flush } if
-	 dup type /stringtype eq
+         dup type /stringtype eq
           {
-	% Check if we have encrypted strings R>=4 allows for
-	% selection of encryption on streams and strings
+        % Check if we have encrypted strings R>=4 allows for
+        % selection of encryption on streams and strings
             Trailer /Encrypt oget	% Get encryption dictionary
             dup /R oget 4 lt		% only >=4 has selectable
              {				% R < 4 --> arc4 strings
-	       pop 1 index arc4decode	% Decrypt string
-	       PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
+               pop 1 index arc4decode	% Decrypt string
+               PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
              } {			% Else R >= 4
-	       /StrF knownoget		% Get StrF (if present)
-	        {			% If StrF is present ...
-		  dup /Identity eq not	% Check if StrF != Identity
-	  	   { /StdCF eq
-		       { Trailer /Encrypt oget /CF knownoget {
+               /StrF knownoget		% Get StrF (if present)
+                {			% If StrF is present ...
+                  dup /Identity eq not	% Check if StrF != Identity
+                   { /StdCF eq
+                       { Trailer /Encrypt oget /CF knownoget {
                            /StdCF oget /CFM oget
                            dup /AESV2 eq exch /AESV3 eq or
                          } {
                            //false
                          } ifelse {     % Decrypt string
-			   1 index aesdecode
+                           1 index aesdecode
                          } {
                            1 index arc4decode
                          } ifelse
-		       }
-		       { 1 index arc4decode }
-		     ifelse		% If StrF != StdCF
-		     PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
-		   }
-		   { pop }
-		  ifelse		% If StrF != identity
-		}
-	       if			% If StrF is known
-      	     }
-	    ifelse			% Ifelse R < 4
-	  } {
+                       }
+                       { 1 index arc4decode }
+                     ifelse		% If StrF != StdCF
+                     PDFDEBUG { (%Decrypted: ) print dup //== exec flush } if
+                   }
+                   { pop }
+                  ifelse		% If StrF != identity
+                }
+               if			% If StrF is known
+             }
+            ifelse			% Ifelse R < 4
+          } {
             dup type /nametype eq {
               .pdffixname
             } if
           }
          ifelse
-	 exch pop
+         exch pop
        }
       ifelse
     }
@@ -612,7 +611,7 @@ def
      //PDFScanRules_null { setuserparams } 0 get % reset PDF scannig mode if it was off
    } if
    /PDFsource PDFsource
-    { store { stop } if } aload pop .packtomark cvx 
+    { store { stop } if } aload pop .packtomark cvx
    /PDFsource 3 -1 roll store exec
  } bind def
 currentdict /PDFScanRules_true undef
@@ -625,55 +624,55 @@ currentdict /PDFScanRules_null undef
     2 copy computeobjkey dup 4 1 roll
     PDFfile exch resolveopdict .decpdfrun
     dup dup dup 5 2 roll
-	% stack: object object key object object
+        % stack: object object key object object
     {	% Use loop to provide an exitable context.
       xcheck exch type /dicttype eq and % Check if executable dictionary
       not {				% If object is not ...
         pop pop				% ignore object
         exit				% Exit 'loop' context
       } if				% If not possible stream
-	% Starting with PDF 1.4 (R = 3), there are some extra features
-	% which control encryption of streams.  The EncryptMetadata entry
-	% in the Encrypt dict controls the encryption of metadata streams.
+        % Starting with PDF 1.4 (R = 3), there are some extra features
+        % which control encryption of streams.  The EncryptMetadata entry
+        % in the Encrypt dict controls the encryption of metadata streams.
       Trailer /Encrypt oget		% Get encryption dictionary
       dup /R oget dup 3 lt		% Only PDF 1.4 and higher has options
       {					% R < 3 --> all streams encrypted
         pop pop /StreamKey exch put	% Insert StreamKey in dictionary
-	exit				% Exit 'loop' context
+        exit				% Exit 'loop' context
       } if
-	% Check EncryptMeta.  stack: object object key Encrypt R
+        % Check EncryptMeta.  stack: object object key Encrypt R
       exch dup /EncryptMetadata knownoget % Get EncryptMetadata (if present)
       not { //true } if			% If not present default = true
       not				% Check if EncryptMetadata = false
       {					% if false we need to check the stream type
-	3 index /Type knownoget		% Get stream type (if present)
-	not { //null } if		% If type not present use fake name
-	/Metadata eq			% Check if the type is Metadata
+        3 index /Type knownoget		% Get stream type (if present)
+        not { //null } if		% If type not present use fake name
+        /Metadata eq			% Check if the type is Metadata
         { pop pop pop pop		% Type == Metadata --> no encryption
-	  exit				% Exit 'loop' context
+          exit				% Exit 'loop' context
         } if
       } if
-    	% PDF 1.5 encryption (R == 4) has selectable encryption handlers.  If
-	% this is not PDF 1.5 encryption (R < 4) then we are done checking and
-	% we need to decrypt the stream.  stack: object object key R Encrypt
+        % PDF 1.5 encryption (R == 4) has selectable encryption handlers.  If
+        % this is not PDF 1.5 encryption (R < 4) then we are done checking and
+        % we need to decrypt the stream.  stack: object object key R Encrypt
       exch 4 lt				% Check for less than PDF 1.5
       { pop /StreamKey exch put		% Insert StreamKey in dictionary
-	exit				% Exit 'loop' context
+        exit				% Exit 'loop' context
       } if
-	% Check if the stream encryption handler (StmF) == Identity.
+        % Check if the stream encryption handler (StmF) == Identity.
       PDFDEBUG {
-	Trailer /Encrypt oget /CF knownoget {
+        Trailer /Encrypt oget /CF knownoget {
           /StdCF oget /CFM oget
-	  (Encrypt StmF is StdCF with CFM ) print =
+          (Encrypt StmF is StdCF with CFM ) print =
         } if
       } if
       /StmF knownoget			% Get StmF (if present)
       not { /Identity } if		% If StmF not present default = Identity
       /Identity eq			% Check if StmF == Identity
       { pop pop				% Identity --> no encryption
-	exit				% Exit 'loop' context
+        exit				% Exit 'loop' context
       } if
-      	% If we get here then we need to decrypt the stream.
+        % If we get here then we need to decrypt the stream.
       /StreamKey exch put		% Insert StreamKey into dictionary
       exit				% Exit 'loop' context, never loop
     } loop				% End of loop exitable context
@@ -688,20 +687,20 @@ currentdict /PDFScanRules_null undef
 /pdf_decrypt_stream
  { 3 index /StreamKey known	% Check if the file is encrypted
    {
-      exch 
-	% Stack: readdata? dict parms filternames file/string
+      exch
+        % Stack: readdata? dict parms filternames file/string
       3 index /StreamKey get
       Trailer /Encrypt oget
       dup /StmF knownoget
        {                        % stack: key Encrypt StmF
-	exch /CF knownoget {
-	  exch oget /CFM oget	% stack: key StmF-CFM
-	  dup /AESV2 eq exch /AESV3 eq or
+        exch /CF knownoget {
+          exch oget /CFM oget	% stack: key StmF-CFM
+          dup /AESV2 eq exch /AESV3 eq or
         } { pop //false } ifelse
-	 { aesdecodefilter }	% install the requested filter
-	 { arc4decodefilter }
-	ifelse
-       } 
+         { aesdecodefilter }	% install the requested filter
+         { arc4decodefilter }
+        ifelse
+       }
        { pop arc4decodefilter }	% fallback for no StmF
       ifelse
       exch

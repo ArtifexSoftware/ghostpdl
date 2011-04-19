@@ -11,7 +11,6 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Simple operators and place holding support for doing conversions on buffers
    of data.  These functions perform device (non CIE or ICC color conversions)
    on buffers of data. Eventually these will be replaced with functions for
@@ -27,8 +26,8 @@
 
 #define float_color_to_byte_color(float_color) ( \
     (0.0 < (float_color) && (float_color) < 1.0) ? \
-	((unsigned char) ((float_color) * 255.0)) : \
-	(((float_color) <= 0.0) ? 0x00 : 0xFF) \
+        ((unsigned char) ((float_color) * 255.0)) : \
+        (((float_color) <= 0.0) ? 0x00 : 0xFF) \
     )
 
 /* We could use the conversions that are defined in gxdcconv.c,
@@ -46,7 +45,7 @@ rgb_to_cmyk(byte rgb[],byte cmyk[])
     cmyk[2] = 255 - rgb[2];
 
     cmyk[3] = (cmyk[0] < cmyk[1]) ?
-	min(cmyk[0], cmyk[2]) : min(cmyk[1], cmyk[2]);
+        min(cmyk[0], cmyk[2]) : min(cmyk[1], cmyk[2]);
 
 }
 
@@ -82,7 +81,7 @@ cmyk_to_gray(byte cmyk[], byte gray[])
     float temp_value;
 
     temp_value = ((255 - cmyk[0])*0.3 +
-	          (255 - cmyk[1])*0.59 +
+                  (255 - cmyk[1])*0.59 +
                   (255 - cmyk[2]) * 0.11) * (255 - cmyk[3]);
     temp_value = temp_value * (1.0 / 65025.0 );
 
@@ -112,12 +111,11 @@ gray_to_rgb(byte gray[], byte rgb[])
 
 }
 
-
 void
 gs_transform_color_buffer_generic(byte *inputbuffer,
-	    int row_stride, int plane_stride,
+            int row_stride, int plane_stride,
             int input_num_color, gs_int_rect rect, byte *outputbuffer,
-	    int output_num_color, int num_noncolor_planes)
+            int output_num_color, int num_noncolor_planes)
 
 {
     int num_rows, num_cols, x, y, z;
@@ -200,7 +198,7 @@ gs_transform_color_buffer_generic(byte *inputbuffer,
     /* data is planar */
 
     max_num_channels = max(input_num_color, output_num_color) +
-	num_noncolor_planes;
+        num_noncolor_planes;
 
     for (z = 0; z < max_num_channels; z++)
        plane_offset[z] = z * plane_stride;

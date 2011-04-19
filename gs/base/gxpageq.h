@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,70 +32,66 @@
 /* --------------- Data type definitions --------------------- */
 
 /*	Action codes for each page queue entry. Each page that the interpreter
-	emits to the page queue can actually be broken down into a sequence of
-	one or more page queue entries. The general form for a given page's
-	sequence of page queue entries can be expressed as:
-		[PARTIAL_PAGE]... [COPY_PAGE [PARTIAL_PAGE]...]... FULL_PAGE
-	where elements in square brackets are optional, and ellipses show
-	repetition. NOTE that a single ACTION_TERMINATE (followed by nothing) can
-	also show up at any point in the page queue in lieu of page descriptions.
+        emits to the page queue can actually be broken down into a sequence of
+        one or more page queue entries. The general form for a given page's
+        sequence of page queue entries can be expressed as:
+                [PARTIAL_PAGE]... [COPY_PAGE [PARTIAL_PAGE]...]... FULL_PAGE
+        where elements in square brackets are optional, and ellipses show
+        repetition. NOTE that a single ACTION_TERMINATE (followed by nothing) can
+        also show up at any point in the page queue in lieu of page descriptions.
 
+        PARTIAL_PAGE: The interpreter emits a partial page when the bandlist is
+        too small to contain a page's full representation. Partial pages will
+        be emitted in out-of-memory situations *only* after the interpreter
+        has determined that no further page queue entries are in the page
+        queue, indicating that no further memory can be reclaimed by merely
+        waiting for queued pages to render and free their associated bandlist.
 
-	PARTIAL_PAGE: The interpreter emits a partial page when the bandlist is
-	too small to contain a page's full representation. Partial pages will
-	be emitted in out-of-memory situations *only* after the interpreter
-	has determined that no further page queue entries are in the page
-	queue, indicating that no further memory can be reclaimed by merely
-	waiting for queued pages to render and free their associated bandlist.
+        Note that num_copies is undefined for partial pages: the actual
+        number of pages to render will only be known when ...COPY_PAGE
+        or FULL_PAGE is emitted.
 
-	Note that num_copies is undefined for partial pages: the actual
-	number of pages to render will only be known when ...COPY_PAGE
-	or FULL_PAGE is emitted.
+        Partial pages are never imaged.
 
-	Partial pages are never imaged.
+        FULL_PAGE: The interpreter emits a full page when a page description
+        is complete (e.g. showpage), or trashed (e.g. setpagedevice). The
+        page's complete description consists of the FULL_PAGE plus all
+        PARTIAL_PAGEs that immediately precede it in the page queue (and
+        possibly preceding COPY_PAGEs) all the way back to the previous
+        FULL_PAGE (or up to the beginning of queue entries).
 
+        In the case of a trashed page, the page count will be 0. The page
+        queue may choose to not render the 0-count FULL_PAGE queue entry
+        for efficiency. If they have not been rendered, the page queue
+        may choose to also discard (and/or not render) any PARTIAL_PAGEs
+        leading up to the trashed page. The page queue must however take
+        care to not discard any entries leading up to a COPY_PAGE with
+        a non-0 page count that may precede the FULL_PAGE, since COPY_PAGE
+        must be rendered in that case. In any event, a 0-count page will
+        not be imaged.
 
-	FULL_PAGE: The interpreter emits a full page when a page description
-	is complete (e.g. showpage), or trashed (e.g. setpagedevice). The
-	page's complete description consists of the FULL_PAGE plus all
-	PARTIAL_PAGEs that immediately precede it in the page queue (and
-	possibly preceding COPY_PAGEs) all the way back to the previous
-	FULL_PAGE (or up to the beginning of queue entries).
+        In the case of a complete page, the page count will be 0 or greater.
+        The 0-count page is equivalent to a trashed page -- see above. The
+        renderer must ensure that all PARTIAL_PAGEs and COPY_PAGEs leading
+        up to the FULL_PAGE are rendered sequentially before rendering
+        and imaging the FULL_PAGE.
 
-	In the case of a trashed page, the page count will be 0. The page
-	queue may choose to not render the 0-count FULL_PAGE queue entry
-	for efficiency. If they have not been rendered, the page queue
-	may choose to also discard (and/or not render) any PARTIAL_PAGEs
-	leading up to the trashed page. The page queue must however take
-	care to not discard any entries leading up to a COPY_PAGE with
-	a non-0 page count that may precede the FULL_PAGE, since COPY_PAGE
-	must be rendered in that case. In any event, a 0-count page will
-	not be imaged.
+        COPY_PAGE: is similar to FULL_PAGE above, except that COPY_PAGE must
+        keep the rendered results, instead of clearing them. COPY_PAGE
+        differs from a partial page in that the page must be imaged, as well
+        as rasterized. This is to support PostScript language "copypage"
+        semantics.
 
-	In the case of a complete page, the page count will be 0 or greater.
-	The 0-count page is equivalent to a trashed page -- see above. The
-	renderer must ensure that all PARTIAL_PAGEs and COPY_PAGEs leading
-	up to the FULL_PAGE are rendered sequentially before rendering
-	and imaging the FULL_PAGE.
+        Note that a 0 page count here does not absolve the renderer from
+        rendering the page queue entries (unless all subsequent COPY_PAGEs
+        the the FULL_PAGE for this page also have a 0 page count), since
+        the results of COPY_PAGE must be available for subsequent pages.
 
-
-	COPY_PAGE: is similar to FULL_PAGE above, except that COPY_PAGE must
-	keep the rendered results, instead of clearing them. COPY_PAGE
-	differs from a partial page in that the page must be imaged, as well
-	as rasterized. This is to support PostScript language "copypage"
-	semantics.
-
-	Note that a 0 page count here does not absolve the renderer from
-	rendering the page queue entries (unless all subsequent COPY_PAGEs
-	the the FULL_PAGE for this page also have a 0 page count), since
-	the results of COPY_PAGE must be available for subsequent pages.
-
-
-	TERMINATE: This entry can appear at any time in the page queue. It
-	will be the last entry to ever appear in the queue. The semantics
-	of this entry require all prior non-zero-count COPY_PAGEs and 
-	FULL_PAGEs to be imaged. Any trailing PARTIAL_PAGEs may optionally
-	be rendered, but should not be imaged.
+        TERMINATE: This entry can appear at any time in the page queue. It
+        will be the last entry to ever appear in the queue. The semantics
+        of this entry require all prior non-zero-count COPY_PAGEs and
+        FULL_PAGEs to be imaged. Any trailing PARTIAL_PAGEs may optionally
+        be rendered, but should not be imaged.
  */
 typedef enum {
     GX_PAGE_QUEUE_ACTION_PARTIAL_PAGE,
@@ -232,7 +228,7 @@ int gx_page_queue_add_page(
     gx_page_queue_action_t action,		/* action code to queue */
     const gx_band_page_info_t * page_info,	/* bandinfo incl. bandlist */
     int page_count		/* # of copies to print if final "print," */
-				   /* 0 if partial page, -1 if cancel */
+                                   /* 0 if partial page, -1 if cancel */
     );
 
 /*
@@ -247,9 +243,9 @@ int gx_page_queue_add_page(
  * may free more memory.
  * Typically called by renderer thread loop, which looks like:
     do {
-	gx_page_queue_start_deqeueue(...);
-	render_retrieved_entry(...);
-	gx_page_queue_finish_dequeue(...);
+        gx_page_queue_start_deqeueue(...);
+        render_retrieved_entry(...);
+        gx_page_queue_finish_dequeue(...);
     } while (some condition);
  */
 gx_page_queue_entry_t *		/* removed entry */

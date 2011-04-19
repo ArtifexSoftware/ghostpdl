@@ -6,16 +6,14 @@
 % This assumes an ICC profile to reside in the file (ISO Coated sb.icc),
 % unless the user modifies the corresponding line below.
 
-
 systemdict /ProcessColorModel known {
   systemdict /ProcessColorModel get dup /DeviceGray ne exch /DeviceCMYK ne and
 } {
   true
-} ifelse 
+} ifelse
 { (ERROR: ProcessColorModel must be /DeviceGray or DeviceCMYK.)=
   /ProcessColorModel cvx /rangecheck signalerror
 } if
-
 
 % Define entries to the document Info dictionary :
 

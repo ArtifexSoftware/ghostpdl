@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -45,37 +45,36 @@ void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
-void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data, 
+void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
 int gsicc_init_device_profile(const gs_state *pgs, gx_device * dev);
-int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname, 
+int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
                       int namelen, gsicc_profile_t defaulttype);
-cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen, 
+cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
                                              gs_memory_t *mem);
 void gsicc_init_profile_info(cmm_profile_t *profile);
 gsicc_manager_t* gsicc_manager_new(gs_memory_t *memory);
-cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory, 
+cmm_profile_t* gsicc_profile_new(stream *s, gs_memory_t *memory,
                                  const char* pname, int namelen);
-int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile, 
+int gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
                            gs_memory_t * mem);
-cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace, 
+cmm_profile_t* gsicc_get_gscs_profile(gs_color_space *gs_colorspace,
                                       gsicc_manager_t *icc_manager);
 void gsicc_init_hash_cs(cmm_profile_t *picc_profile, gs_imager_state *pis);
-gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, 
+gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile,
                                               gs_memory_t *memory);
-gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer, 
+gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
                                                int profile_size);
-void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname, 
+void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
                              int namelen);
 gsicc_smask_t* gsicc_new_iccsmask(gs_memory_t *memory);
 int gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
 cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
-cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs, 
+cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
                                  gsicc_manager_t *icc_manager);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
 #endif
 #endif
-

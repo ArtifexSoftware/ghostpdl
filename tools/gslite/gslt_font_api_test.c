@@ -226,7 +226,6 @@ main(int argc, const char *argv[])
             continue;
         }
 
-
         printf("glyph %3d: v=%f,%f w=%f,%f ", gid, mtx.v[0], mtx.v[1], mtx.w[0], mtx.w[1]);
         printf(" -> %dx%d+(%d,%d) w=%f,%f\n",
                 slot.w, slot.h,
@@ -265,4 +264,3 @@ main(int argc, const char *argv[])
 
     return 0;
 }
-

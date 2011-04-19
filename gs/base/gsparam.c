@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,47 +25,47 @@ ENUM_PTRS_WITH(gs_param_typed_value_enum_ptrs, gs_param_typed_value *pvalue) ret
     case 0:
     switch (pvalue->type) {
     case gs_param_type_string:
-	return ENUM_STRING(&pvalue->value.s);
+        return ENUM_STRING(&pvalue->value.s);
     case gs_param_type_name:
-	return ENUM_STRING(&pvalue->value.n);
+        return ENUM_STRING(&pvalue->value.n);
     case gs_param_type_int_array:
-	return ENUM_OBJ(pvalue->value.ia.data);
+        return ENUM_OBJ(pvalue->value.ia.data);
     case gs_param_type_float_array:
-	return ENUM_OBJ(pvalue->value.fa.data);
+        return ENUM_OBJ(pvalue->value.fa.data);
     case gs_param_type_string_array:
-	return ENUM_OBJ(pvalue->value.sa.data);
+        return ENUM_OBJ(pvalue->value.sa.data);
     case gs_param_type_name_array:
-	return ENUM_OBJ(pvalue->value.na.data);
+        return ENUM_OBJ(pvalue->value.na.data);
     default:
-	return ENUM_OBJ(0);	/* don't stop early */
+        return ENUM_OBJ(0);	/* don't stop early */
     }
 ENUM_PTRS_END
 RELOC_PTRS_WITH(gs_param_typed_value_reloc_ptrs, gs_param_typed_value *pvalue) {
     switch (pvalue->type) {
     case gs_param_type_string:
     case gs_param_type_name: {
-	gs_const_string str;
+        gs_const_string str;
 
-	str.data = pvalue->value.s.data; /* n == s */
-	str.size = pvalue->value.s.size;
-	RELOC_CONST_STRING_VAR(str);
-	pvalue->value.s.data = str.data;
-	break;
+        str.data = pvalue->value.s.data; /* n == s */
+        str.size = pvalue->value.s.size;
+        RELOC_CONST_STRING_VAR(str);
+        pvalue->value.s.data = str.data;
+        break;
     }
     case gs_param_type_int_array:
-	RELOC_VAR(pvalue->value.ia.data);
-	break;
+        RELOC_VAR(pvalue->value.ia.data);
+        break;
     case gs_param_type_float_array:
-	RELOC_VAR(pvalue->value.fa.data);
-	break;
+        RELOC_VAR(pvalue->value.fa.data);
+        break;
     case gs_param_type_string_array:
-	RELOC_VAR(pvalue->value.sa.data);
-	break;
+        RELOC_VAR(pvalue->value.sa.data);
+        break;
     case gs_param_type_name_array:
-	RELOC_VAR(pvalue->value.na.data);
-	break;
+        RELOC_VAR(pvalue->value.na.data);
+        break;
     default:
-	break;
+        break;
     }
 }
 RELOC_PTRS_END
@@ -73,7 +73,7 @@ RELOC_PTRS_END
 /* Internal procedure to initialize the common part of a parameter list. */
 void
 gs_param_list_init(gs_param_list *plist, const gs_param_list_procs *procs,
-		   gs_memory_t *mem)
+                   gs_memory_t *mem)
 {
     plist->procs = procs;
     plist->memory = mem;
@@ -100,57 +100,57 @@ static const byte xfer_item_sizes[] = {
 };
 int
 gs_param_read_items(gs_param_list * plist, void *obj,
-		    const gs_param_item_t * items)
+                    const gs_param_item_t * items)
 {
     const gs_param_item_t *pi;
     int ecode = 0;
 
     for (pi = items; pi->key != 0; ++pi) {
-	const char *key = pi->key;
-	void *pvalue = (void *)((char *)obj + pi->offset);
-	gs_param_typed_value typed;
-	int code;
+        const char *key = pi->key;
+        void *pvalue = (void *)((char *)obj + pi->offset);
+        gs_param_typed_value typed;
+        int code;
 
-	typed.type = pi->type;
-	code = param_read_requested_typed(plist, key, &typed);
-	switch (code) {
-	    default:		/* < 0 */
-		ecode = code;
-	    case 1:
-		break;
-	    case 0:
-		if (typed.type != pi->type)	/* shouldn't happen! */
-		    ecode = gs_note_error(gs_error_typecheck);
-		else
-		    memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
-	}
+        typed.type = pi->type;
+        code = param_read_requested_typed(plist, key, &typed);
+        switch (code) {
+            default:		/* < 0 */
+                ecode = code;
+            case 1:
+                break;
+            case 0:
+                if (typed.type != pi->type)	/* shouldn't happen! */
+                    ecode = gs_note_error(gs_error_typecheck);
+                else
+                    memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
+        }
     }
     return ecode;
 }
 int
 gs_param_write_items(gs_param_list * plist, const void *obj,
-		     const void *default_obj, const gs_param_item_t * items)
+                     const void *default_obj, const gs_param_item_t * items)
 {
     const gs_param_item_t *pi;
     int ecode = 0;
 
     for (pi = items; pi->key != 0; ++pi) {
-	const char *key = pi->key;
-	const void *pvalue = (const void *)((const char *)obj + pi->offset);
-	int size = xfer_item_sizes[pi->type];
-	gs_param_typed_value typed;
-	int code;
+        const char *key = pi->key;
+        const void *pvalue = (const void *)((const char *)obj + pi->offset);
+        int size = xfer_item_sizes[pi->type];
+        gs_param_typed_value typed;
+        int code;
 
-	if (default_obj != 0 &&
-	    !memcmp((const void *)((const char *)default_obj + pi->offset),
-		    pvalue, size)
-	    )
-	    continue;
-	memcpy(&typed.value, pvalue, size);
-	typed.type = pi->type;
-	code = (*plist->procs->xmit_typed) (plist, key, &typed);
-	if (code < 0)
-	    ecode = code;
+        if (default_obj != 0 &&
+            !memcmp((const void *)((const char *)default_obj + pi->offset),
+                    pvalue, size)
+            )
+            continue;
+        memcpy(&typed.value, pvalue, size);
+        typed.type = pi->type;
+        code = (*plist->procs->xmit_typed) (plist, key, &typed);
+        if (code < 0)
+            ecode = code;
     }
     return ecode;
 }
@@ -159,10 +159,10 @@ gs_param_write_items(gs_param_list * plist, const void *obj,
 /* If mem != 0, we can coerce int arrays to float arrays. */
 int
 param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
-		   gs_memory_t * mem)
+                   gs_memory_t * mem)
 {
     if (req_type == gs_param_type_any || pvalue->type == req_type)
-	return 0;
+        return 0;
     /*
      * Look for coercion opportunities.  It would be wonderful if we
      * could convert int/float arrays and name/string arrays, but
@@ -170,85 +170,85 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
      * will satisfy a request for any specific type.
      */
     switch (pvalue->type /* actual type */ ) {
-	case gs_param_type_int:
-	    switch (req_type) {
-		case gs_param_type_long:
-		    pvalue->value.l = pvalue->value.i;
-		    goto ok;
-		case gs_param_type_float:
-		    pvalue->value.f = (float)pvalue->value.l;
-		    goto ok;
-		default:
-		    break;
-	    }
-	    break;
-	case gs_param_type_long:
-	    switch (req_type) {
-		case gs_param_type_int:
+        case gs_param_type_int:
+            switch (req_type) {
+                case gs_param_type_long:
+                    pvalue->value.l = pvalue->value.i;
+                    goto ok;
+                case gs_param_type_float:
+                    pvalue->value.f = (float)pvalue->value.l;
+                    goto ok;
+                default:
+                    break;
+            }
+            break;
+        case gs_param_type_long:
+            switch (req_type) {
+                case gs_param_type_int:
 #if arch_sizeof_int < arch_sizeof_long
-		    if (pvalue->value.l != (int)pvalue->value.l)
-			return_error(gs_error_rangecheck);
+                    if (pvalue->value.l != (int)pvalue->value.l)
+                        return_error(gs_error_rangecheck);
 #endif
-		    pvalue->value.i = (int)pvalue->value.l;
-		    goto ok;
-		case gs_param_type_float:
-		    pvalue->value.f = (float)pvalue->value.l;
-		    goto ok;
-		default:
-		    break;
-	    }
-	    break;
-	case gs_param_type_string:
-	    if (req_type == gs_param_type_name)
-		goto ok;
-	    break;
-	case gs_param_type_name:
-	    if (req_type == gs_param_type_string)
-		goto ok;
-	    break;
-	case gs_param_type_int_array:
-	    switch (req_type) {
-		case gs_param_type_float_array:{
-			uint size = pvalue->value.ia.size;
-			float *fv;
-			uint i;
+                    pvalue->value.i = (int)pvalue->value.l;
+                    goto ok;
+                case gs_param_type_float:
+                    pvalue->value.f = (float)pvalue->value.l;
+                    goto ok;
+                default:
+                    break;
+            }
+            break;
+        case gs_param_type_string:
+            if (req_type == gs_param_type_name)
+                goto ok;
+            break;
+        case gs_param_type_name:
+            if (req_type == gs_param_type_string)
+                goto ok;
+            break;
+        case gs_param_type_int_array:
+            switch (req_type) {
+                case gs_param_type_float_array:{
+                        uint size = pvalue->value.ia.size;
+                        float *fv;
+                        uint i;
 
-			if (mem == 0)
-			    break;
-			fv = (float *)gs_alloc_byte_array(mem, size, sizeof(float),
-						"int array => float array");
+                        if (mem == 0)
+                            break;
+                        fv = (float *)gs_alloc_byte_array(mem, size, sizeof(float),
+                                                "int array => float array");
 
-			if (fv == 0)
-			    return_error(gs_error_VMerror);
-			for (i = 0; i < size; ++i)
-			    fv[i] = (float)pvalue->value.ia.data[i];
-			pvalue->value.fa.data = fv;
-			pvalue->value.fa.persistent = false;
-			goto ok;
-		    }
-		default:
-		    break;
-	    }
-	    break;
-	case gs_param_type_string_array:
-	    if (req_type == gs_param_type_name_array)
-		goto ok;
-	    break;
-	case gs_param_type_name_array:
-	    if (req_type == gs_param_type_string_array)
-		goto ok;
-	    break;
-	case gs_param_type_array:
-	    if (pvalue->value.d.size == 0 &&
-		(req_type == gs_param_type_int_array ||
-		 req_type == gs_param_type_float_array ||
-		 req_type == gs_param_type_string_array ||
-		 req_type == gs_param_type_name_array)
-		)
-		goto ok;
-	    break;
-	default:
-	    break;
+                        if (fv == 0)
+                            return_error(gs_error_VMerror);
+                        for (i = 0; i < size; ++i)
+                            fv[i] = (float)pvalue->value.ia.data[i];
+                        pvalue->value.fa.data = fv;
+                        pvalue->value.fa.persistent = false;
+                        goto ok;
+                    }
+                default:
+                    break;
+            }
+            break;
+        case gs_param_type_string_array:
+            if (req_type == gs_param_type_name_array)
+                goto ok;
+            break;
+        case gs_param_type_name_array:
+            if (req_type == gs_param_type_string_array)
+                goto ok;
+            break;
+        case gs_param_type_array:
+            if (pvalue->value.d.size == 0 &&
+                (req_type == gs_param_type_int_array ||
+                 req_type == gs_param_type_float_array ||
+                 req_type == gs_param_type_string_array ||
+                 req_type == gs_param_type_name_array)
+                )
+                goto ok;
+            break;
+        default:
+            break;
     }
     return_error(gs_error_typecheck);
   ok:pvalue->type = req_type;
@@ -256,16 +256,15 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 }
 int
 param_read_requested_typed(gs_param_list * plist, gs_param_name pkey,
-			   gs_param_typed_value * pvalue)
+                           gs_param_typed_value * pvalue)
 {
     gs_param_type req_type = pvalue->type;
     int code = (*plist->procs->xmit_typed) (plist, pkey, pvalue);
 
     if (code != 0)
-	return code;
+        return code;
     return param_coerce_typed(pvalue, req_type, plist->memory);
 }
-
 
 /* ---------------- Fixed-type reading procedures ---------------- */
 
@@ -309,37 +308,37 @@ param_read_float(gs_param_list * plist, gs_param_name pkey, float *pvalue)
 }
 int
 param_read_string(gs_param_list * plist, gs_param_name pkey,
-		  gs_param_string * pvalue)
+                  gs_param_string * pvalue)
 {
     RETURN_READ_TYPED(s, gs_param_type_string);
 }
 int
 param_read_name(gs_param_list * plist, gs_param_name pkey,
-		gs_param_string * pvalue)
+                gs_param_string * pvalue)
 {
     RETURN_READ_TYPED(n, gs_param_type_string);
 }
 int
 param_read_int_array(gs_param_list * plist, gs_param_name pkey,
-		     gs_param_int_array * pvalue)
+                     gs_param_int_array * pvalue)
 {
     RETURN_READ_TYPED(ia, gs_param_type_int_array);
 }
 int
 param_read_float_array(gs_param_list * plist, gs_param_name pkey,
-		       gs_param_float_array * pvalue)
+                       gs_param_float_array * pvalue)
 {
     RETURN_READ_TYPED(fa, gs_param_type_float_array);
 }
 int
 param_read_string_array(gs_param_list * plist, gs_param_name pkey,
-			gs_param_string_array * pvalue)
+                        gs_param_string_array * pvalue)
 {
     RETURN_READ_TYPED(sa, gs_param_type_string_array);
 }
 int
 param_read_name_array(gs_param_list * plist, gs_param_name pkey,
-		      gs_param_string_array * pvalue)
+                      gs_param_string_array * pvalue)
 {
     RETURN_READ_TYPED(na, gs_param_type_name_array);
 }
@@ -380,31 +379,31 @@ param_write_long(gs_param_list * plist, gs_param_name pkey, const long *pvalue)
 }
 int
 param_write_float(gs_param_list * plist, gs_param_name pkey,
-		  const float *pvalue)
+                  const float *pvalue)
 {
     RETURN_WRITE_TYPED(f, gs_param_type_float);
 }
 int
 param_write_string(gs_param_list * plist, gs_param_name pkey,
-		   const gs_param_string * pvalue)
+                   const gs_param_string * pvalue)
 {
     RETURN_WRITE_TYPED(s, gs_param_type_string);
 }
 int
 param_write_name(gs_param_list * plist, gs_param_name pkey,
-		 const gs_param_string * pvalue)
+                 const gs_param_string * pvalue)
 {
     RETURN_WRITE_TYPED(n, gs_param_type_name);
 }
 int
 param_write_int_array(gs_param_list * plist, gs_param_name pkey,
-		      const gs_param_int_array * pvalue)
+                      const gs_param_int_array * pvalue)
 {
     RETURN_WRITE_TYPED(ia, gs_param_type_int_array);
 }
 int
 param_write_int_values(gs_param_list * plist, gs_param_name pkey,
-		       const int *values, uint size, bool persistent)
+                       const int *values, uint size, bool persistent)
 {
     gs_param_int_array ia;
 
@@ -413,13 +412,13 @@ param_write_int_values(gs_param_list * plist, gs_param_name pkey,
 }
 int
 param_write_float_array(gs_param_list * plist, gs_param_name pkey,
-			const gs_param_float_array * pvalue)
+                        const gs_param_float_array * pvalue)
 {
     RETURN_WRITE_TYPED(fa, gs_param_type_float_array);
 }
 int
 param_write_float_values(gs_param_list * plist, gs_param_name pkey,
-			 const float *values, uint size, bool persistent)
+                         const float *values, uint size, bool persistent)
 {
     gs_param_float_array fa;
 
@@ -428,13 +427,13 @@ param_write_float_values(gs_param_list * plist, gs_param_name pkey,
 }
 int
 param_write_string_array(gs_param_list * plist, gs_param_name pkey,
-			 const gs_param_string_array * pvalue)
+                         const gs_param_string_array * pvalue)
 {
     RETURN_WRITE_TYPED(sa, gs_param_type_string_array);
 }
 int
 param_write_name_array(gs_param_list * plist, gs_param_name pkey,
-		       const gs_param_string_array * pvalue)
+                       const gs_param_string_array * pvalue)
 {
     RETURN_WRITE_TYPED(na, gs_param_type_name_array);
 }

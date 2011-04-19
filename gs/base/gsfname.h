@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -44,11 +44,11 @@ int gs_parse_file_name(gs_parsed_file_name_t *, const char *, uint,
 
 /* Parse a real (non-device) file name and convert to a C string. */
 int gs_parse_real_file_name(gs_parsed_file_name_t *, const char *, uint,
-			    gs_memory_t *, client_name_t);
+                            gs_memory_t *, client_name_t);
 
 /* Convert a file name to a C string by adding a null terminator. */
 int gs_terminate_file_name(gs_parsed_file_name_t *, gs_memory_t *,
-			   client_name_t);
+                           client_name_t);
 
 /* Free a file name that was copied to a C string. */
 void gs_free_file_name(gs_parsed_file_name_t *, client_name_t);

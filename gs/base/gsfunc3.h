@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -83,21 +83,21 @@ typedef struct gs_function_AdOt_params_s {
 
 /* Allocate and initialize functions of specific types. */
 int gs_function_ElIn_init(gs_function_t ** ppfn,
-			  const gs_function_ElIn_params_t * params,
-			  gs_memory_t * mem);
+                          const gs_function_ElIn_params_t * params,
+                          gs_memory_t * mem);
 int gs_function_1ItSg_init(gs_function_t ** ppfn,
-			   const gs_function_1ItSg_params_t * params,
-			   gs_memory_t * mem);
+                           const gs_function_1ItSg_params_t * params,
+                           gs_memory_t * mem);
 int gs_function_AdOt_init(gs_function_t ** ppfn,
-			  const gs_function_AdOt_params_t * params,
-			  gs_memory_t * mem);
+                          const gs_function_AdOt_params_t * params,
+                          gs_memory_t * mem);
 
 /* Free parameters of specific types. */
 void gs_function_ElIn_free_params(gs_function_ElIn_params_t * params,
-				  gs_memory_t * mem);
+                                  gs_memory_t * mem);
 void gs_function_1ItSg_free_params(gs_function_1ItSg_params_t * params,
-				   gs_memory_t * mem);
+                                   gs_memory_t * mem);
 void gs_function_AdOt_free_params(gs_function_AdOt_params_t * params,
-				  gs_memory_t * mem);
+                                  gs_memory_t * mem);
 
 #endif /* gsfunc3_INCLUDED */

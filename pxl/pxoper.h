@@ -79,7 +79,7 @@ typedef struct px_parser_state_s px_parser_state_t;
 typedef struct px_args_s {
   struct ds_ {
     ulong position;		/* position in data block, initially 0, */
-				/* provided for the operator's convenience */
+                                /* provided for the operator's convenience */
     uint count;			/* another variable for the operators */
     uint available;		/* amount of data available in block */
     bool phase;                 /* upon first call of the operator this will be 0. */

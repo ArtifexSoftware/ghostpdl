@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,8 +35,8 @@
 
 static const byte *
 sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
-		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
-		 int ignore_num_components_per_plane)
+                 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
+                 int ignore_num_components_per_plane)
 {
     /* Assuming an identity map for all components. */
     register frac *bufp = (frac *) bptr;
@@ -47,11 +47,11 @@ sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
     int left = dsize - dskip;
 
     while (left > 2) {
-	sample = ((uint) psrc[0] << 8) + psrc[1];
-	*bufp = (frac)((frac_1 * (sample + 1)) >> 16);
-	inc_bufp(bufp, spread);
-	psrc += 2;
-	left -= 2;
+        sample = ((uint) psrc[0] << 8) + psrc[1];
+        *bufp = (frac)((frac_1 * (sample + 1)) >> 16);
+        inc_bufp(bufp, spread);
+        psrc += 2;
+        left -= 2;
     }
     *pdata_x = 0;
     return bptr;
@@ -59,8 +59,8 @@ sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
 
 static const byte *
 sample_unpackicc_16(byte * bptr, int *pdata_x, const byte * data,
-		 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
-		 int ignore_num_components_per_plane)
+                 int data_x, uint dsize, const sample_map *ignore_smap, int spread,
+                 int ignore_num_components_per_plane)
 {
     /* Assuming an identity map for all components. */
     register unsigned short *bufp = (unsigned short *) bptr;
@@ -71,11 +71,11 @@ sample_unpackicc_16(byte * bptr, int *pdata_x, const byte * data,
     int left = dsize - dskip;
 
     while (left >= 2) {
-	sample = ((uint) psrc[0] << 8) + psrc[1];
-	*bufp = (unsigned short)(sample);
-	inc_bufp16(bufp, spread);
-	psrc += 2;
-	left -= 2;
+        sample = ((uint) psrc[0] << 8) + psrc[1];
+        *bufp = (unsigned short)(sample);
+        inc_bufp16(bufp, spread);
+        psrc += 2;
+        left -= 2;
     }
     *pdata_x = 0;
     return bptr;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,4 +30,3 @@ int gx_fill_trapezoid_cf_nd(gx_device * dev, const gs_fixed_edge * left,
     const gx_device_color * pdevc, gs_logical_operation_t lop);
 
 #endif /* gdevddrw_INCLUDED */
-

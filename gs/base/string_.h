@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,7 +29,7 @@
 #  endif
 #  include <string.h>
 #  if defined(THINK_C)
-	/* Patch strlen to return a uint rather than a size_t. */
+        /* Patch strlen to return a uint rather than a size_t. */
 #    define strlen (uint)strlen
 #  endif
 #  ifdef MEMORY__NEED_MEMMOVE

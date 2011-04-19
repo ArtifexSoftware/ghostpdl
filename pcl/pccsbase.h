@@ -25,7 +25,6 @@
 #include "pccid.h"
 #include "pclookup.h"
 
-
 /*
  * The client data structure for use with color-metric RGB, CIE L*a*b*, and
  * luminanace-chrominance color spaces.
@@ -104,7 +103,6 @@ typedef struct pcl_cs_base_s {
 
 #define pcl_cs_base_release(pbase)              \
     rc_decrement(pbase, "pcl_cs_base_release")
-
 
 /*
  * Build a PCL base color space. In principle this may be invoked at any time,

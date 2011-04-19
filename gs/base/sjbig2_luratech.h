@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,7 +23,7 @@
 
 /* See zfjbig2.c for details. */
 typedef struct s_jbig2_global_data_s {
-	void *data;
+        void *data;
 } s_jbig2_global_data_t;
 
 /* JBIG2Decode internal stream state */
@@ -58,7 +58,6 @@ s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gs);
 void
 s_jbig2decode_free_global_data(void *data);
 
-
 /* JBIG2 encoder internal state */
 typedef struct stream_jbig2encode_state_s
 {
@@ -70,9 +69,9 @@ typedef struct stream_jbig2encode_state_s
     unsigned char *line;	/* single line working buffer */
     unsigned long linefill;	/* bytes in the working buffer */
     unsigned char *outbuf;	/* output data buffer */
-    unsigned long outsize;	/* bytes available in the buffer */ 
-    unsigned long outfill;	/* bytes written to the buffer */ 
-    unsigned long offset;	/* bytes written from the buffer */ 
+    unsigned long outsize;	/* bytes available in the buffer */
+    unsigned long outfill;	/* bytes written to the buffer */
+    unsigned long offset;	/* bytes written from the buffer */
 
 } stream_jbig2encode_state;
 

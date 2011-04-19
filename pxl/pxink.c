@@ -412,7 +412,6 @@ fraction_value(const px_value_t *pv, int i)
         return (v < 0 ? 0 : v / int_type_max(type));
 }
 
-
 /* we use an enumeration instead of index numbers improve readability in this
    "very busy" routine */
 typedef enum {
@@ -859,4 +858,3 @@ pxSetAdaptiveHalftoning(px_args_t *par, px_state_t *pxs)
 {
     return 0;
 }
-

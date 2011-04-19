@@ -109,12 +109,11 @@ static const byte  bi_data_array[(PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PA
     0x38, 0x1c,   0x70, 0x0e,   0xe0, 0x07,   0xc0, 0x03
 };
 
-
 #define make_pixmap(indx)                                           \
     { (byte *)(bi_data_array + indx * 2 * 16), 2, {16, 16}, 0, 1, 1 }
 
 static const gs_depth_bitmap   bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
-					        PCL_NUM_SHADE_PATTERNS] = {
+                                                PCL_NUM_SHADE_PATTERNS] = {
     make_pixmap(0),
     make_pixmap(1),
     make_pixmap(2),
@@ -222,7 +221,7 @@ pcl_pattern_clear_bi_patterns(pcl_state_t *pcs)
     }
 }
 
-/* 
+/*
  * pcl patterns are always always 300 dpi but we use the device
  * resolution on devices lower than 300 dpi so we can at least see the
  * patterns on screen resolution devices.  We also provide a #define
@@ -240,19 +239,19 @@ pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
     pattern_res->y = 300;
     /* get the current resolutions based on the device. */
     {
-	gs_point device_res;
-	gx_device *pdev = gs_currentdevice(pcs->pgs);
-	device_res.x = pdev->HWResolution[0];
-	device_res.y = pdev->HWResolution[1];
+        gs_point device_res;
+        gx_device *pdev = gs_currentdevice(pcs->pgs);
+        device_res.x = pdev->HWResolution[0];
+        device_res.y = pdev->HWResolution[1];
 #ifdef DEVICE_RES_PATTERNS
-	pattern_res->x = device_res.x;
-	pattern_res->y = device_res.y;
+        pattern_res->x = device_res.x;
+        pattern_res->y = device_res.y;
 #else
-	/* if both are less than 300 dpi override the 300 dpi default. */
-	if ( (device_res.x < 300) && (device_res.y < 300) ) {
-	    pattern_res->x = device_res.x;
-	    pattern_res->y = device_res.y;
-	}
+        /* if both are less than 300 dpi override the 300 dpi default. */
+        if ( (device_res.x < 300) && (device_res.y < 300) ) {
+            pattern_res->x = device_res.x;
+            pattern_res->y = device_res.y;
+        }
 #endif
     }
     return 0;
@@ -265,13 +264,13 @@ pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
 get_bi_pattern(pcl_state_t *pcs, int indx)
 {
     if (pcs->bi_pattern_array[indx] == 0) {
-	gs_point pattern_res;
-	pcl_get_pattern_resolution(pcs, &pattern_res);
+        gs_point pattern_res;
+        pcl_get_pattern_resolution(pcs, &pattern_res);
         (void)pcl_pattern_build_pattern( &(pcs->bi_pattern_array[indx]),
                                          &(bi_pixmap_array[indx]),
                                          pcl_pattern_uncolored,
-					 pattern_res.x,
-					 pattern_res.y,
+                                         pattern_res.x,
+                                         pattern_res.y,
                                          pcs->memory
                                          );
         pcs->bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
@@ -289,21 +288,21 @@ pcl_pattern_get_shade(pcl_state_t *pcs, int inten)
 {
     pcl_pattern_t *shade = 0;
     if (inten <= 0)
-	shade = 0;
+        shade = 0;
     else if (inten <= 2)
-	shade = get_bi_pattern(pcs, 0);
+        shade = get_bi_pattern(pcs, 0);
     else if (inten <= 10)
-	shade = get_bi_pattern(pcs, 1);
+        shade = get_bi_pattern(pcs, 1);
     else if (inten <= 20)
-	shade = get_bi_pattern(pcs, 2);
+        shade = get_bi_pattern(pcs, 2);
     else if (inten <= 35)
-	shade = get_bi_pattern(pcs, 3);
+        shade = get_bi_pattern(pcs, 3);
     else if (inten <= 55)
-	shade = get_bi_pattern(pcs, 4);
+        shade = get_bi_pattern(pcs, 4);
     else if (inten <= 80)
-	shade = get_bi_pattern(pcs, 5);
+        shade = get_bi_pattern(pcs, 5);
     else if (inten <= 99)
-	shade = get_bi_pattern(pcs, 6);
+        shade = get_bi_pattern(pcs, 6);
     return shade;
 }
 
@@ -328,8 +327,8 @@ pcl_pattern_get_cross(pcl_state_t *pcs, int indx)
 pcl_pattern_get_solid_pattern(pcl_state_t *pcs)
 {
     if (pcs->psolid_pattern == 0) {
-	gs_point pattern_res;
-	pcl_get_pattern_resolution(pcs, &pattern_res);
+        gs_point pattern_res;
+        pcl_get_pattern_resolution(pcs, &pattern_res);
         (void)pcl_pattern_build_pattern( &(pcs->psolid_pattern),
                                          &solid_pattern_pixmap,
                                          pcl_pattern_uncolored,
@@ -349,8 +348,8 @@ pcl_pattern_get_solid_pattern(pcl_state_t *pcs)
 pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs)
 {
     if (pcs->punsolid_pattern == 0) {
-	gs_point pattern_res;
-	pcl_get_pattern_resolution(pcs, &pattern_res);
+        gs_point pattern_res;
+        pcl_get_pattern_resolution(pcs, &pattern_res);
         (void)pcl_pattern_build_pattern( &(pcs->punsolid_pattern),
                                          &unsolid_pattern_pixmap,
                                          pcl_pattern_uncolored,
@@ -362,5 +361,3 @@ pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs)
     }
     return pcs->punsolid_pattern;
 }
-
-

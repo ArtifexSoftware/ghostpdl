@@ -1,12 +1,12 @@
 % (C) 2002 Artifex, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -99,7 +99,6 @@
 %      handling is required in this case.)
 %
 
-
 %
 % Create a dictionary of operators for specific image and image mask types.
 % Each of these will always handle ImageType 1. Additional types are added
@@ -120,7 +119,7 @@ def
 end
 .setglobal
 
-% 
+%
 % Build a dictionary of utility procedures and constants for use in
 % impelementing the image operators. This dictionary is in global VM but
 % is maintained (during initialization) in userdict. It should be pushed
@@ -133,7 +132,6 @@ end
 .currentglobal //true .setglobal
 userdict /img_utils_dict 30 dict put
 img_utils_dict begin
-
 
 %
 % Some useful local data structures:
@@ -183,7 +181,6 @@ def
 /img_mask_unbuild_ary
  //img_mask_check_ary 2 1 index length 2 sub getinterval
 def
-
 
 %
 %   <?any?>  <array>   img_check_keys   <?any?>  <bool>
@@ -432,7 +429,6 @@ currentdict /good_image_types .undef
   }
 .bind def
 
-
 %
 %   <width>  <height>  <polarity>  <matrix>  <dsrc>
 %   img_unbuild_imagemask_dict
@@ -485,11 +481,10 @@ currentdict /good_image_types .undef
   }
 .bind def
 
-
 %
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc_0> ...
 %   <multi>  <ncomp>  <has_alpha>
-%   .colorimage 
+%   .colorimage
 %   -
 %
 % Convert the image/colorimage operator from their traditional form to
@@ -526,18 +521,18 @@ currentdict /good_image_types .undef
     % execute .image1 in a stopped context
       {
         gsave
-	% The CET test file 12-02.ps creates colorimages with a width and
-	% height of 0.  Ignore these since that is what the CET expects.
-	1 index dup /Height get 0 eq exch /Width get 0 eq or
+        % The CET test file 12-02.ps creates colorimages with a width and
+        % height of 0.  Ignore these since that is what the CET expects.
+        1 index dup /Height get 0 eq exch /Width get 0 eq or
           { pop pop }	% Ignore colorimage.  Pop bool and dict
-	  {
+          {
             0 .setoverprintmode             % disable overprint mode for images
             //img_csary 2 index /IMG_NComps get get setcolorspace
               { .alphaimage }
               { .image1 }
             ifelse
-	  }
-	ifelse
+          }
+        ifelse
       }
     stopped
     grestore
@@ -550,11 +545,10 @@ currentdict /good_image_types .undef
   }
 .bind def
 
-
-% 
+%
 %   <width>  <height>  <bits/component>  <matrix>  <dsrc_0> ...
 %   <multi>  <ncomp>
-%   colorimage 
+%   colorimage
 %   -
 %
 % Build the colorimage pseudo-operator only if setcolorscreen is visible.
@@ -563,7 +557,7 @@ systemdict /setcolorscreen .knownget
   {
     type /operatortype eq
       {
-        /colorimage 
+        /colorimage
           {
              //false
                //.colorimage
@@ -577,10 +571,9 @@ systemdict /setcolorscreen .knownget
   }
 if
 
-
 %
 %   width  height  bits_per_component  matrix  data_src   image   -
-%   
+%
 %   <dict>   image   -
 %
 % Some special handling is required for ImageType 2 (Display PostScript
@@ -590,7 +583,7 @@ if
 /image
   {
     dup type /dicttype eq .languagelevel 2 ge and
-      { 
+      {
         dup /ImageType get dup 2 eq
           {
             % verify the ImageType 2 is supported
@@ -609,7 +602,7 @@ if
                 % should be used.
                 %
                 % The mechanism to determine depth for the DevicePixel
-                % color space when BitsPerPixel is not available is 
+                % color space when BitsPerPixel is not available is
                 % somewhat of a hack.
                 %
                 gsave
@@ -656,14 +649,14 @@ if
               }
               {
                 /image .systemvar exch type /integertype eq
-                  { /rangecheck } { /typecheck } 
+                  { /rangecheck } { /typecheck }
                 ifelse signalerror
               }
             ifelse
           }
         ifelse
       }
-      { 
+      {
         //false 1 //false
           //.colorimage
         stopped
@@ -689,7 +682,6 @@ if
    2 gt % arbitrary
 } .bind def
 
-
 %
 %   width  height  polarity  matrix  datasrc   imagemask   -
 %
@@ -703,25 +695,25 @@ if
         //.imagemasktypes exch .knownget
           { 1 index //.is_low_resolution exec
             2 index /ImageType get 1 eq and
-	    2 index /BitsPerComponent get 1 eq and
-	    2 index /Interpolate .knownget not { //false } if and
-	    //filterdict /ImscaleDecode known and {
-	      % Apply interpolated imagemask scaling filter
-	      exch .currentglobal exch dup .gcheck .setglobal
+            2 index /BitsPerComponent get 1 eq and
+            2 index /Interpolate .knownget not { //false } if and
+            //filterdict /ImscaleDecode known and {
+              % Apply interpolated imagemask scaling filter
+              exch .currentglobal exch dup .gcheck .setglobal
               dup length dict .copydict
-	      dup dup /DataSource get
+              dup dup /DataSource get
               dup type /stringtype eq {
                 1 array astore cvx        % image.* operators read strings repeatesly
               } if
-       	      mark /Width 3 index /Width get /Height 5 index /Height get .dicttomark
-	      /ImscaleDecode filter /DataSource exch put
-	      dup dup /Width get 4 mul /Width exch put
-	      dup dup /Height get 4 mul /Height exch put
-	      dup dup /ImageMatrix get
+              mark /Width 3 index /Width get /Height 5 index /Height get .dicttomark
+              /ImscaleDecode filter /DataSource exch put
+              dup dup /Width get 4 mul /Width exch put
+              dup dup /Height get 4 mul /Height exch put
+              dup dup /ImageMatrix get
               { 4 0 0 4 0 0 } matrix concatmatrix /ImageMatrix exch put
-	      3 1 roll .setglobal
-	    } if
-	    exec
+              3 1 roll .setglobal
+            } if
+            exec
           }
           { % CET 12-08b.ps wants /typecheck
             /imagemask .systemvar /typecheck signalerror
@@ -768,7 +760,7 @@ currentdict /NOTERPOLATE known or not {
         //false .setglobal
         9 dict begin                      % w h bit [] {}...{} multi ncomp glob
         2 .argindex { 1 index 7 add } { 8 } ifelse
-	dup .argindex pop		  % check # of arguments
+        dup .argindex pop		  % check # of arguments
         copy gsave pop                    % preserve the arguments
         { 0 /DeviceGray 0 /DeviceRGB /DeviceCMYK }
         1 index get setcolorspace         % ... glob w h bit [] {}...{} multi ncomp
@@ -782,7 +774,7 @@ currentdict /NOTERPOLATE known or not {
         /ImageMatrix exch def             % ... glob w h bit
         /BitsPerComponent exch def        % ... glob w h
         /Height exch def                  % ... glob w
-        /Width exch def                   % ... glob 
+        /Width exch def                   % ... glob
         /ImageType 1 def
         /Interpolate //true def
         .setglobal currentdict end        % ... <<>>
@@ -799,19 +791,19 @@ currentdict /NOTERPOLATE known or not {
   { dup type /dicttype eq
       { dup /ImageType get 3 eq
           { .currentglobal //false .setglobal exch
-            dup length dict copy begin .setglobal 
+            dup length dict copy begin .setglobal
             /DataDict DataDict .interpolate def
             /MaskDict MaskDict .interpolate def
             currentdict end
           }
-          { .interpolate 
+          { .interpolate
           }
         ifelse
         image
       }
       { /INTERPOLATE .systemvar
           { 4 .argindex pop		% check # of args
-	    .currentglobal //false .setglobal
+            .currentglobal //false .setglobal
             8 dict begin .setglobal
             /ImageType 1 def
             /DataSource 1 index def

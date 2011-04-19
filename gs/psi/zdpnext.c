@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -54,9 +54,9 @@ zsetalpha(i_ctx_t *i_ctx_p)
     int code;
 
     if (real_param(op, &alpha) < 0)
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     if ((code = gs_setalpha(igs, alpha)) < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -109,22 +109,22 @@ zcompositerect(i_ctx_t *i_ctx_p)
     int code = xywh_param(op - 1, dest_rect);
 
     if (code < 0)
-	return code;
+        return code;
     check_int_leu(*op, compositerect_last);
     cstate.params.op = (gs_composite_op_t) op->value.intval;
     code = begin_composite(i_ctx_p, &cstate);
     if (code < 0)
-	return code;
+        return code;
     {
-	gs_rect rect;
+        gs_rect rect;
 
-	rect.q.x = (rect.p.x = dest_rect[0]) + dest_rect[2];
-	rect.q.y = (rect.p.y = dest_rect[1]) + dest_rect[3];
-	code = gs_rectfill(igs, &rect, 1);
+        rect.q.x = (rect.p.x = dest_rect[0]) + dest_rect[2];
+        rect.q.y = (rect.p.y = dest_rect[1]) + dest_rect[3];
+        code = gs_rectfill(igs, &rect, 1);
     }
     end_composite(i_ctx_p, &cstate);
     if (code >= 0)
-	pop(5);
+        pop(5);
     return code;
 }
 
@@ -143,15 +143,15 @@ composite_image(i_ctx_t *i_ctx_p, const gs_composite_alpha_params_t * params)
     cstate.params = *params;
     gs_image2_t_init(&image);
     if (code < 0 ||
-	(code = num_params(op - 1, 2, dest_pt)) < 0
-	)
-	return code;
+        (code = num_params(op - 1, 2, dest_pt)) < 0
+        )
+        return code;
     if (r_has_type(op - 3, t_null))
-	image.DataSource = igs;
+        image.DataSource = igs;
     else {
-	check_stype(op[-3], st_igstate_obj);
-	check_read(op[-3]);
-	image.DataSource = igstate_ptr(op - 3);
+        check_stype(op[-3], st_igstate_obj);
+        check_read(op[-3]);
+        image.DataSource = igstate_ptr(op - 3);
     }
     image.XOrigin = src_rect[0];
     image.YOrigin = src_rect[1];
@@ -163,17 +163,17 @@ composite_image(i_ctx_t *i_ctx_p, const gs_composite_alpha_params_t * params)
     gs_translate(igs, dest_pt[0], dest_pt[1]);
     gs_make_identity(&image.ImageMatrix);
     if (image.DataSource == igs) {
-	image.XOrigin -= dest_pt[0];
-	image.YOrigin -= dest_pt[1];
+        image.XOrigin -= dest_pt[0];
+        image.YOrigin -= dest_pt[1];
     }
     code = begin_composite(i_ctx_p, &cstate);
     if (code >= 0) {
-	code = process_non_source_image(i_ctx_p,
-					(const gs_image_common_t *)&image,
-					"composite_image");
-	end_composite(i_ctx_p, &cstate);
-	if (code >= 0)
-	    pop(8);
+        code = process_non_source_image(i_ctx_p,
+                                        (const gs_image_common_t *)&image,
+                                        "composite_image");
+        end_composite(i_ctx_p, &cstate);
+        if (code >= 0)
+            pop(8);
     }
     gs_setmatrix(igs, &save_ctm);
     return code;
@@ -203,9 +203,9 @@ zdissolve(i_ctx_t *i_ctx_p)
     int code = real_param(op, &delta);
 
     if (code < 0)
-	return code;
+        return code;
     if (delta < 0 || delta > 1)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     params.op = composite_Dissolve;
     params.delta = delta;
     return composite_image(i_ctx_p, &params);
@@ -264,7 +264,7 @@ zsizeimagebox(i_ctx_t *i_ctx_p)
     mat.ty -= rect.p.y;
     code = write_matrix(op, &mat);
     if (code < 0)
-	return code;
+        return code;
     make_int(op - 4, rect.p.x);
     make_int(op - 3, rect.p.y);
     make_int(op - 2, w);
@@ -275,14 +275,14 @@ static void
 box_confine(int *pp, int *pq, int wh)
 {
     if ( *pq <= 0 )
-	*pp = *pq = 0;
+        *pp = *pq = 0;
     else if ( *pp >= wh )
-	*pp = *pq = wh;
+        *pp = *pq = wh;
     else {
-	if ( *pp < 0 )
-	    *pp = 0;
-	if ( *pq > wh )
-	    *pq = wh;
+        if ( *pp < 0 )
+            *pp = 0;
+        if ( *pq > wh )
+            *pq = wh;
     }
 }
 
@@ -297,25 +297,25 @@ zsizeimageparams(i_ctx_t *i_ctx_p)
 
     push(3);
     if (device_is_true_color(dev))
-	bps = dev->color_info.depth / ncomp;
+        bps = dev->color_info.depth / ncomp;
     else {
-	/*
-	 * Set bps to the smallest allowable number of bits that is
-	 * sufficient to represent the number of different colors.
-	 */
-	gx_color_value max_value =
-	    (dev->color_info.num_components == 1 ?
-	     dev->color_info.max_gray :
-	     max(dev->color_info.max_gray, dev->color_info.max_color));
-	static const gx_color_value sizes[] = {
-	    1, 2, 4, 8, 12, sizeof(gx_max_color_value) * 8
-	};
-	int i;
+        /*
+         * Set bps to the smallest allowable number of bits that is
+         * sufficient to represent the number of different colors.
+         */
+        gx_color_value max_value =
+            (dev->color_info.num_components == 1 ?
+             dev->color_info.max_gray :
+             max(dev->color_info.max_gray, dev->color_info.max_color));
+        static const gx_color_value sizes[] = {
+            1, 2, 4, 8, 12, sizeof(gx_max_color_value) * 8
+        };
+        int i;
 
-	for (i = 0;; ++i)
-	    if (max_value <= ((ulong) 1 << sizes[i]) - 1)
-		break;
-	bps = sizes[i];
+        for (i = 0;; ++i)
+            if (max_value <= ((ulong) 1 << sizes[i]) - 1)
+                break;
+        bps = sizes[i];
     }
     make_int(op - 2, bps);
     make_false(op - 1);
@@ -347,11 +347,11 @@ xywh_param(os_ptr op, double rect[4])
     int code = num_params(op, 4, rect);
 
     if (code < 0)
-	return code;
+        return code;
     if (rect[2] < 0)
-	rect[0] += rect[2], rect[2] = -rect[2];
+        rect[0] += rect[2], rect[2] = -rect[2];
     if (rect[3] < 0)
-	rect[1] += rect[3], rect[3] = -rect[3];
+        rect[1] += rect[3], rect[3] = -rect[3];
     return code;
 }
 
@@ -361,16 +361,16 @@ begin_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 {
     gx_device *dev = gs_currentdevice(igs);
     int code =
-	gs_create_composite_alpha(&pcp->pcte, &pcp->params, imemory);
+        gs_create_composite_alpha(&pcp->pcte, &pcp->params, imemory);
 
     if (code < 0)
-	return code;
+        return code;
     pcp->orig_dev = pcp->cdev = dev;	/* for end_composite */
     code = (*dev_proc(dev, create_compositor))
-	(dev, &pcp->cdev, pcp->pcte, (gs_imager_state *)igs, imemory, NULL);
+        (dev, &pcp->cdev, pcp->pcte, (gs_imager_state *)igs, imemory, NULL);
     if (code < 0) {
-	end_composite(i_ctx_p, pcp);
-	return code;
+        end_composite(i_ctx_p, pcp);
+        return code;
     }
     gs_setdevice_no_init(igs, pcp->cdev);
     return 0;
@@ -382,8 +382,8 @@ end_composite(i_ctx_t *i_ctx_p, alpha_composite_state_t * pcp)
 {
     /* Close and free the compositor and the compositing object. */
     if (pcp->cdev != pcp->orig_dev) {
-	gs_closedevice(pcp->cdev);	/* also frees the device */
-	gs_setdevice_no_init(igs, pcp->orig_dev);
+        gs_closedevice(pcp->cdev);	/* also frees the device */
+        gs_setdevice_no_init(igs, pcp->orig_dev);
     }
     ifree_object(pcp->pcte, "end_composite(gs_composite_t)");
 }
@@ -406,52 +406,52 @@ device_is_true_color(gx_device * dev)
 
     /****** DOESN'T HANDLE INVERSION YET ******/
     switch (ncomp) {
-	case 1:		/* gray-scale */
-	    max_v = dev->color_info.max_gray;
-	    if (max_v != (1 << depth) - 1)
-		return 0;
-	    for (i = 0; i <= max_v; ++i) {
-		gx_color_value v[3];
+        case 1:		/* gray-scale */
+            max_v = dev->color_info.max_gray;
+            if (max_v != (1 << depth) - 1)
+                return 0;
+            for (i = 0; i <= max_v; ++i) {
+                gx_color_value v[3];
                 v[0] = v[1] = v[2] = CV(i);
-		if ((*dev_proc(dev, map_rgb_color)) (dev, v) != i)
-		    return 0;
-	    }
-	    return true;
-	case 3:		/* RGB */
-	    max_v = dev->color_info.max_color;
-	    if (depth % 3 != 0 || max_v != (1 << (depth / 3)) - 1)
-		return false;
-	    {
-		const int gs = depth / 3, rs = gs * 2;
+                if ((*dev_proc(dev, map_rgb_color)) (dev, v) != i)
+                    return 0;
+            }
+            return true;
+        case 3:		/* RGB */
+            max_v = dev->color_info.max_color;
+            if (depth % 3 != 0 || max_v != (1 << (depth / 3)) - 1)
+                return false;
+            {
+                const int gs = depth / 3, rs = gs * 2;
 
-		for (i = 0; i <= max_v; ++i) {
-		    gx_color_value red[3];
+                for (i = 0; i <= max_v; ++i) {
+                    gx_color_value red[3];
                     gx_color_value green[3];
                     gx_color_value blue[3];
                     red[0] = CV(i); red[1] = CV0, red[2] = CV0;
                     green[0] = CV0; green[1] = CV(i); green[2] = CV0;
                     blue[0] = CV0; blue[1] = CV0; blue[2] = CV(i);
-		    if ((*dev_proc(dev, map_rgb_color)) (dev, red) !=
-			i << rs ||
-			(*dev_proc(dev, map_rgb_color)) (dev, green) !=
-			i << gs ||
-			(*dev_proc(dev, map_rgb_color)) (dev, blue) !=
-			i	/*<< bs */
-			)
-			return 0;
-		}
-	    }
-	    return true;
-	case 4:		/* CMYK */
-	    max_v = dev->color_info.max_color;
-	    if ((depth & 3) != 0 || max_v != (1 << (depth / 4)) - 1)
-		return false;
-	    {
-		const int ys = depth / 4, ms = ys * 2, cs = ys * 3;
+                    if ((*dev_proc(dev, map_rgb_color)) (dev, red) !=
+                        i << rs ||
+                        (*dev_proc(dev, map_rgb_color)) (dev, green) !=
+                        i << gs ||
+                        (*dev_proc(dev, map_rgb_color)) (dev, blue) !=
+                        i	/*<< bs */
+                        )
+                        return 0;
+                }
+            }
+            return true;
+        case 4:		/* CMYK */
+            max_v = dev->color_info.max_color;
+            if ((depth & 3) != 0 || max_v != (1 << (depth / 4)) - 1)
+                return false;
+            {
+                const int ys = depth / 4, ms = ys * 2, cs = ys * 3;
 
-		for (i = 0; i <= max_v; ++i) {
-                    
-		    gx_color_value cyan[4];
+                for (i = 0; i <= max_v; ++i) {
+
+                    gx_color_value cyan[4];
                     gx_color_value magenta[4];
                     gx_color_value yellow[4];
                     gx_color_value black[4];
@@ -459,21 +459,21 @@ device_is_true_color(gx_device * dev)
                     magenta[1] = CV(i); magenta[0] = magenta[2] = magenta[3] = CV0;
                     yellow[2] = CV(i); yellow[0] = yellow[1] = yellow[3] = CV0;
                     black[3] = CV(i); black[0] = black[1] = black[2] = CV0;
-		    if ((*dev_proc(dev, map_cmyk_color)) (dev, cyan) !=
-			i << cs ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, magenta) !=
-			i << ms ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, yellow) !=
-			i << ys ||
-			(*dev_proc(dev, map_cmyk_color)) (dev, black) !=
-			i	/*<< ks */
-			)
-			return 0;
-		}
-	    }
-	    return 1;
-	default:
-	    return 0;		/* DeviceN */
+                    if ((*dev_proc(dev, map_cmyk_color)) (dev, cyan) !=
+                        i << cs ||
+                        (*dev_proc(dev, map_cmyk_color)) (dev, magenta) !=
+                        i << ms ||
+                        (*dev_proc(dev, map_cmyk_color)) (dev, yellow) !=
+                        i << ys ||
+                        (*dev_proc(dev, map_cmyk_color)) (dev, black) !=
+                        i	/*<< ks */
+                        )
+                        return 0;
+                }
+            }
+            return 1;
+        default:
+            return 0;		/* DeviceN */
     }
 #undef CV
 #undef CV0

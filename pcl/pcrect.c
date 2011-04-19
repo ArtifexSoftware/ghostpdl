@@ -26,12 +26,10 @@
 #include "gspaint.h"
 #include "gsrop.h"
 
-
-
 /*
  * The graphic library is, unfortunately, not equipped to produce accurate
  * PCL rectangles on its own. These rectangles must always be rendered with
- * the same pixel dimensions, regardless of location (ignoring clipping), 
+ * the same pixel dimensions, regardless of location (ignoring clipping),
  * in the "grid intersection" pixel placement mode, must always add one
  * additional pixel in the "right" and "down" directions, relative to print
  * direction 0.
@@ -231,37 +229,37 @@ pcrect_do_registration(
     DEFINE_CLASS('*')
     {
         'c', 'H',
-	PCL_COMMAND( "Horizontal Rectangle Size Decipoints",
-		     pcl_horiz_rect_size_decipoints,
-		     pca_neg_error | pca_big_error | pca_in_rtl
+        PCL_COMMAND( "Horizontal Rectangle Size Decipoints",
+                     pcl_horiz_rect_size_decipoints,
+                     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'A',
-	PCL_COMMAND( "Horizontal Rectangle Size Units",
-		      pcl_horiz_rect_size_units,
-		      pca_neg_error | pca_big_error | pca_in_rtl
+        PCL_COMMAND( "Horizontal Rectangle Size Units",
+                      pcl_horiz_rect_size_units,
+                      pca_neg_error | pca_big_error | pca_in_rtl
                       )
     },
     {
         'c', 'V',
-	PCL_COMMAND( "Vertical Rectangle Size Decipoint",
-		     pcl_vert_rect_size_decipoints,
-		     pca_neg_error | pca_big_error | pca_in_rtl
+        PCL_COMMAND( "Vertical Rectangle Size Decipoint",
+                     pcl_vert_rect_size_decipoints,
+                     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'B',
-	PCL_COMMAND( "Vertical Rectangle Size Units",
-		     pcl_vert_rect_size_units,
-		     pca_neg_error | pca_big_error | pca_in_rtl
+        PCL_COMMAND( "Vertical Rectangle Size Units",
+                     pcl_vert_rect_size_units,
+                     pca_neg_error | pca_big_error | pca_in_rtl
                      )
     },
     {
         'c', 'P',
         PCL_COMMAND( "Fill Rectangular Area",
                      pcl_fill_rect_area,
-		     pca_neg_ignore | pca_big_ignore | pca_in_rtl
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS
@@ -278,8 +276,8 @@ pcrect_do_reset(
                                 | pcl_reset_printer
                                 | pcl_reset_overlay );
     if ((type & mask) != 0) {
-	pcs->rectangle.x = 0;
-	pcs->rectangle.y = 0;
+        pcs->rectangle.x = 0;
+        pcs->rectangle.y = 0;
     }
 }
 

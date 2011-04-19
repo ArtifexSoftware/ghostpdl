@@ -1,12 +1,12 @@
 %  Copyright (C) 2000 Artifex Software Inc.   All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -17,8 +17,8 @@
 %  Postscript interface routines to DSC parser
 
 /send_orientation {			% <orientation> send_orientation -
-	% .parse_dsc_comments returns -1 for an Orientation key with an
-	% unrecognized value.
+        % .parse_dsc_comments returns -1 for an Orientation key with an
+        % unrecognized value.
   dup 0 ge {
     << /Orientation 2 index >> setpagedevice
   } if pop
@@ -30,8 +30,8 @@
 /DSCparseprocs mark
    /Orientation { dup /Orientation get send_orientation } bind
    /PageOrientation { dup /PageOrientation .knownget { send_orientation }
-		      { dup /Orientation .knownget { send_orientation } if }
-		      ifelse } bind
+                      { dup /Orientation .knownget { send_orientation } if }
+                      ifelse } bind
    /Page { dup /Orientation .knownget { send_orientation } if } bind
    /NOP { } bind
 .dicttomark readonly def
@@ -39,8 +39,8 @@
 % This procedure is called whenever a DSC comment is found by the interpreter
 /do_parse_dsc //false def
 /parse_dsc {				% <file> <DSC string> [<prev proc>]
-					%   parse_dsc -
-	% Run any previously installed parser.
+                                        %   parse_dsc -
+        % Run any previously installed parser.
   0 get dup //null eq { pop } { 3 copy exec pop } ifelse
 
   do_parse_dsc {			% Check if this parser is enabled
@@ -56,7 +56,6 @@
   } if
   pop pop				% remove file, dict
 } bind def
-
 
 % Check whether the currently installed parser is the one defined in this file.
 /.using_parse_dsc {			% - .using_parse_dsc <proc> <using?>
@@ -78,11 +77,11 @@ userdict /dsc_dict //null put
   /dsc_dict 50 dict store		% Size must be large enough for all DSC values
   dsc_dict .initialize_dsc_parser
   .using_parse_dsc {
-	% Already using this parser.
+        % Already using this parser.
     pop
   } {
-	% Encapsulate the previous parser.  We know it is in global VM:
-	% allocate the new one in global VM as well.
+        % Encapsulate the previous parser.  We know it is in global VM:
+        % allocate the new one in global VM as well.
     1 array astore
     /parse_dsc load /exec load 3 array astore cvx readonly
     << /ProcessDSCComment 3 -1 roll >>
@@ -91,7 +90,6 @@ userdict /dsc_dict //null put
   setglobal
   /do_parse_dsc //true def
 } bind def
-
 
 % Enable the DSC parser defined in this file.
 % - enable_dsc -
@@ -102,10 +100,10 @@ userdict /dsc_dict //null put
 % Disable the DSC parser defined in this file.
 % - disable_dsc -
 /disable_dsc {
-	% There might be another parser installed: if so, restore it.
-	% (If it has encapsulated our parser, we can't.)
+        % There might be another parser installed: if so, restore it.
+        % (If it has encapsulated our parser, we can't.)
   .using_parse_dsc {
-	% Restore the parser we encapsulated.
+        % Restore the parser we encapsulated.
     0 get 0 get
     currentglobal //true setglobal exch
     << /ProcessDSCComment 3 -1 roll >>
@@ -113,6 +111,6 @@ userdict /dsc_dict //null put
   } {
     pop
   } ifelse
-	% If we couldn't restore the old parser, at least disable ours.
+        % If we couldn't restore the old parser, at least disable ours.
   /do_parse_dsc //false def
 } bind def

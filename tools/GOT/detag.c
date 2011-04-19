@@ -6,7 +6,7 @@ int
 main(int argc, char *argv[]) {
 
     /* Source output should already have ppm header */
-    char line[128]; 
+    char line[128];
     int k,j;
     int len;
     char *infile;
@@ -53,4 +53,3 @@ main(int argc, char *argv[]) {
     fclose(fid_out);
     return 0;
 }
-

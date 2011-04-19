@@ -1,14 +1,14 @@
 /* COPYRIGHT (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
    Distributed by Free Software Foundation, Inc.
-   
+
    This file is part of Ghostscript.
-   
+
    Ghostscript is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
    to anyone for the consequences of using it or for whether it serves any
    particular purpose or works at all, unless he says so in writing.  Refer
    to the Ghostscript General Public License for full details.
-   
+
    Everyone is granted permission to copy, modify and redistribute
    Ghostscript, but only under the conditions described in the Ghostscript
    General Public License.  A copy of this license is supposed to have been
@@ -55,13 +55,13 @@ struct gx_device_dmprt_local_s {
 
   int x_offset;
   int y_offset;
-  
+
   int spec_width;
   int spec_height;
   int max_width;
   int max_height;
   int dev_margin[4]; /* left bottom right top */
-  
+
   int prtcfg_init_f;
   int verbose_f;
   int debug_f;
@@ -74,7 +74,7 @@ typedef struct gx_device_dmprt_s gx_device_dmprt;
 struct gx_device_dmprt_s {
   gx_device_common;
   gx_prn_device_common;
-  
+
   gx_device_dmprt_local dmprt;
 };
 
@@ -136,7 +136,7 @@ gx_device_dmprt gs_dmprt_device = {
     DEFAULT_DPI*DEFAULT_HEIGHT, /* specified height */
     -1,-1,			/* maximal width,height */
     { 0,0,0,0 },      /* margins */
-    
+
   /* status of the device */
       0,    /* printer configuration is not initialized */
       0,    /* verbose mode */
@@ -146,7 +146,6 @@ gx_device_dmprt gs_dmprt_device = {
 
 #define ppdev ((gx_device_printer *)pdev)
 #define pddev ((gx_device_dmprt *)pdev)
-
 
 typedef struct {
   char *name;
@@ -161,7 +160,6 @@ static dmprt_encoding gdev_dmprt_encode_list[] = {
   {0},
 };
 
-
 /* --- Get properties of printer device. --- */
 static int gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist);
 static int
@@ -173,30 +171,30 @@ gdev_dmprt_get_params(gx_device *pdev, gs_param_list *plist)
   int code;
   gs_param_dict dict;
   const char *param_name;
-  
+
   if (!pddev->dmprt.prtcfg_init_f)
     gdev_dmprt_init_printer_props(pddev);
 
   dict.size = 30;
   code = param_begin_write_dict(plist, (param_name = "DmprtParams"),
-				&dict, false);
+                                &dict, false);
   if (code < 0) return code;
   if (code == 0) {
     code = gdev_dmprt_get_dmprt_params(pdev, dict.list);
     param_end_write_dict(plist, param_name, &dict);
     if (code < 0) return code;
   }
-  
+
   dict.size = 30;
   code = param_begin_write_dict(plist, (param_name = "DviprtParams"),
-				&dict, false);
+                                &dict, false);
   if (code < 0) return code;
   if (code == 0) {
     code = gdev_dmprt_get_dviprt_params(pdev, dict.list);
     param_end_write_dict(plist, param_name, &dict);
     if (code < 0) return code;
   }
-  
+
   {
     int w = pddev->width;
     int h = pddev->height;
@@ -206,7 +204,7 @@ gdev_dmprt_get_params(gx_device *pdev, gs_param_list *plist)
     pddev->width = w;
     pddev->height = h;
   }
-  
+
   return code;
 }
 
@@ -219,7 +217,7 @@ gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist)
   bool vbool;
   gs_param_int_array vaint;
   int int_data[4];
-  
+
   vlong = DEVICE_VERSION;
   code = param_write_long(plist, "Version", &vlong);
   if (code < 0) return code;
@@ -227,7 +225,7 @@ gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist)
   vbool = pddev->dmprt.debug_f;
   code = param_write_bool(plist, "Debug", &vbool);
   if (code < 0) return code;
-  
+
   vbool = pddev->dmprt.verbose_f;
   code = param_write_bool(plist, "Verbose", &vbool);
   if (code < 0) return code;
@@ -247,7 +245,7 @@ gdev_dmprt_get_dmprt_params(gx_device *pdev, gs_param_list *plist)
   int_data[1] = pddev->dmprt.y_offset;
   code = param_write_int_array(plist, "Offsets", &vaint);
   if (code < 0) return code;
-  
+
   vaint.size = 4;
   vaint.data = int_data;
   vaint.persistent = false;
@@ -270,15 +268,15 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
   const char *vchar;
   int code;
   int i;
-  
+
   vlong = pprt->integer[CFG_PINS] * 8;
   code = param_write_long(plist,"Pins", &vlong);
   if (code < 0) return code;
   code = param_write_long(plist, "MinimalUnit",
-			  pprt->integer+CFG_MINIMAL_UNIT);
+                          pprt->integer+CFG_MINIMAL_UNIT);
   if (code < 0) return code;
   code = param_write_long(plist,"MaximalUnit",
-			  pprt->integer+CFG_MAXIMAL_UNIT);
+                          pprt->integer+CFG_MAXIMAL_UNIT);
   if (code < 0) return code;
   code = param_write_int(plist,"HDpi" , &pddev->dmprt.orig_x_dpi);
   if (code < 0) return code;
@@ -286,7 +284,7 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
   if (code < 0) return code;
   code = param_write_long(plist,"Constant", pprt->integer+CFG_CONSTANT);
   if (code < 0) return code;
-  
+
   vbool = pprt->integer[CFG_UPPER_POS] & CFG_NON_TRANSPOSE_BIT ? 0 : 1;
   code = param_write_bool(plist,"Transpose", &vbool);
   if (code < 0) return code;
@@ -301,7 +299,7 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
   param_string_from_string(vstr, vchar);
   code = param_write_string(plist, "Name", &vstr);
   if (code < 0) return code;
-  
+
   for (i=0;gdev_dmprt_encode_list[i].name;i++) {
     if (pprt->integer[CFG_ENCODE] == gdev_dmprt_encode_list[i].no)
       break;
@@ -310,7 +308,7 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
   param_string_from_string(vstr, gdev_dmprt_encode_list[i].name);
   code = param_write_string(plist, "Encoding", &vstr);
   if (code < 0) return code;
-  
+
 #define param_string_from_prt(ps, pprt, n) \
   ((ps).data = pprt->prtcode[n] ? pprt->prtcode[n] : (const byte*)"", \
   (ps).size = pprt->prtcode[n] ? pprt->prtcode_size[n] : 0, \
@@ -320,16 +318,16 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
   param_write_string(plist, name, &vstr))
 
   code = param_write_prt(plist, "BitImageMode",
-			 pprt, CFG_BIT_IMAGE_MODE);
+                         pprt, CFG_BIT_IMAGE_MODE);
   if (code < 0) return code;
   code = param_write_prt(plist, "SendBitImage",
-			 pprt, CFG_SEND_BIT_IMAGE);
+                         pprt, CFG_SEND_BIT_IMAGE);
   if (code < 0) return code;
   code = param_write_prt(plist, "BitRowHeader",
-			 pprt, CFG_BIT_ROW_HEADER);
+                         pprt, CFG_BIT_ROW_HEADER);
   if (code < 0) return code;
   code = param_write_prt(plist, "AfterBitImage",
-			 pprt, CFG_AFTER_BIT_IMAGE);
+                         pprt, CFG_AFTER_BIT_IMAGE);
   if (code < 0) return code;
   code = param_write_prt(plist, "LineFeed", pprt, CFG_LINE_FEED);
   if (code < 0) return code;
@@ -344,17 +342,16 @@ gdev_dmprt_get_dviprt_params(gx_device *pdev, gs_param_list *plist)
 }
 /* end of internal routines for get_params */
 
-
 /* --- Put properties of printer device. --- */
 static int gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist);
 static int
 gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist);
 static int gdev_dmprt_put_prt_code_param(gs_param_list *plist,
-					  dviprt_cfg_t *pprt,
-					  const char* name, int idx);
+                                          dviprt_cfg_t *pprt,
+                                          const char* name, int idx);
 static int
 gdev_dmprt_put_prt_string_param(gs_param_list *plist,
-				dviprt_cfg_t *pprt, const char* name, int idx);
+                                dviprt_cfg_t *pprt, const char* name, int idx);
 
 static int
 gdev_dmprt_put_params(gx_device *pdev, gs_param_list *plist)
@@ -362,35 +359,35 @@ gdev_dmprt_put_params(gx_device *pdev, gs_param_list *plist)
   int code = 0;
   const char *param_name;
   gs_param_dict dict;
-  
+
   if (!pddev->dmprt.prtcfg_init_f)
     gdev_dmprt_init_printer_props(pddev);
 
   /* dmprt parameters */
   code = param_begin_read_dict(plist, (param_name = "DmprtParams"),
-			       &dict, false);
+                               &dict, false);
   if (code < 0) return code;
   if (code == 0) {
     code = gdev_dmprt_put_dmprt_params(pdev, dict.list);
     param_end_read_dict(plist, param_name, &dict);
     if (code < 0) return code;
   }
-  
+
   /* dviprt parameters */
   code = param_begin_read_dict(plist, (param_name = "DviprtParams"),
-				&dict, false);
+                                &dict, false);
   if (code < 0) return code;
   if (code == 0) {
     code = gdev_dmprt_put_dviprt_params(pdev, dict.list);
     param_end_read_dict(plist, param_name, &dict);
     if (code < 0) return code;
   }
-  
+
   if (pdev->is_open && code) {
     int ccode = gs_closedevice(pdev);
     if (ccode < 0) return ccode;
   }
-  
+
   pddev->width = pddev->dmprt.spec_width;
   pddev->height = pddev->dmprt.spec_height;
   code = gdev_prn_put_params(pdev, plist);
@@ -399,14 +396,14 @@ gdev_dmprt_put_params(gx_device *pdev, gs_param_list *plist)
   pddev->width -= (pddev->dmprt.dev_margin[0] + pddev->dmprt.dev_margin[2]);
   pddev->height -= (pddev->dmprt.dev_margin[1] + pddev->dmprt.dev_margin[3]);
   if (code < 0) return code;
-  
+
   if (pddev->dmprt.max_width>0 && pddev->dmprt.max_width<pddev->width)
     pddev->width = pddev->dmprt.max_width;
   if (pddev->dmprt.max_height>0 && pddev->dmprt.max_height<pddev->height)
     pddev->height = pddev->dmprt.max_height;
-  
+
   dviprt_setmessagestream(pddev->dmprt.debug_f ? stderr : NULL);
-  
+
   return code;
 }
 
@@ -419,14 +416,14 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
   long vlong;
   bool vbool;
   gs_param_int_array vaint;
-  
+
   /* debug flag */
   code = param_read_bool(plist, "Debug", &vbool);
   if (code < 0) return code;
   if (code == 0) pddev->dmprt.debug_f = vbool;
-  
+
   dviprt_setmessagestream(pddev->dmprt.debug_f ? stderr : NULL);
-  
+
   code = param_read_bool(plist, "Verbose", &vbool);
   if (code < 0) return code;
   pddev->dmprt.verbose_f = vbool;
@@ -450,7 +447,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
     pddev->dmprt.x_offset = vaint.data[0];
     pddev->dmprt.y_offset = vaint.data[1];
   }
-  
+
   code = param_read_int_array(plist, "Margins", &vaint);
   if (code < 0) return code;
   if (code == 0) {
@@ -458,7 +455,7 @@ gdev_dmprt_put_dmprt_params(gx_device *pdev, gs_param_list *plist)
     if (vaint.size != 4) return e_typecheck;
     for (i=0;i<4;i++) pddev->dmprt.dev_margin[i] = vaint.data[i];
   }
-  
+
   return code;
 }
 
@@ -470,13 +467,13 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
   gs_param_string vstr;
   long vlong;
   bool vbool;
-  
+
   /* load .cfg/.src file */
   code = param_read_string(plist, "FileName", &vstr);
   if (code < 0) return code;
   if (code == 0) {
     char *filename = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), vstr.size + 1, 1,
-			       "gdev_dmprt_put_props(filename)");
+                               "gdev_dmprt_put_props(filename)");
     int ccode;
     if (filename == 0) return e_VMerror;
     strncpy(filename, (const char*)vstr.data, vstr.size);
@@ -509,7 +506,7 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
   code = param_read_long(plist, "Constant", &vlong);
   if (code < 0) return code;
   if (code == 0) pprt->integer[CFG_CONSTANT] = vlong;
-  
+
   {
     long tr = pprt->integer[CFG_UPPER_POS] & CFG_NON_TRANSPOSE_BIT;
     long rv = pprt->integer[CFG_UPPER_POS] & CFG_REVERSE_BIT;
@@ -527,32 +524,32 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
   }
 
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "BitImageMode",
-				       CFG_BIT_IMAGE_MODE);
+                                       CFG_BIT_IMAGE_MODE);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "SendBitImage",
-				       CFG_SEND_BIT_IMAGE);
+                                       CFG_SEND_BIT_IMAGE);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "BitRowHeader",
-				       CFG_BIT_ROW_HEADER);
+                                       CFG_BIT_ROW_HEADER);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "AfterBitImage",
-				       CFG_AFTER_BIT_IMAGE);
+                                       CFG_AFTER_BIT_IMAGE);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "LineFeed",
-				       CFG_LINE_FEED);
+                                       CFG_LINE_FEED);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "FormFeed",
-				       CFG_FORM_FEED);
+                                       CFG_FORM_FEED);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "NormalMode",
-				       CFG_NORMAL_MODE);
+                                       CFG_NORMAL_MODE);
   if (code < 0) return code;
   code = gdev_dmprt_put_prt_code_param(plist, pprt, "SkipSpaces",
-				       CFG_SKIP_SPACES);
+                                       CFG_SKIP_SPACES);
   if (code < 0) return code;
 
   code = gdev_dmprt_put_prt_string_param(plist, pprt, "Name",
-					 CFG_NAME);
+                                         CFG_NAME);
   if (code < 0) return code;
 
   code = param_read_string(plist, "Encoding", &vstr);
@@ -561,26 +558,26 @@ gdev_dmprt_put_dviprt_params(gx_device *pdev, gs_param_list *plist)
     int i;
     for (i=0; gdev_dmprt_encode_list[i].name ; i++) {
       if (strlen(gdev_dmprt_encode_list[i].name) == vstr.size) {
-	if (strncmp(gdev_dmprt_encode_list[i].name,
-		    vstr.data, vstr.size) == 0) {
-	  pprt->integer[CFG_ENCODE] = gdev_dmprt_encode_list[i].no;
-	  break;
-	}
+        if (strncmp(gdev_dmprt_encode_list[i].name,
+                    vstr.data, vstr.size) == 0) {
+          pprt->integer[CFG_ENCODE] = gdev_dmprt_encode_list[i].no;
+          break;
+        }
       }
     }
     if (gdev_dmprt_encode_list[i].name == 0)
       return e_rangecheck;
   }
-  
+
   return code;
 }
 
 static int
 gdev_dmprt_put_prt_code_param(gs_param_list *plist,
-			      dviprt_cfg_t *pprt, const char* name, int idx)
+                              dviprt_cfg_t *pprt, const char* name, int idx)
 {
   gs_param_string vstr;
-  
+
   int code = param_read_string(plist, name, &vstr);
   if (code == 0) {
     int ccode = gdev_dmprt_check_code_props(vstr.data, vstr.size);
@@ -599,10 +596,10 @@ gdev_dmprt_put_prt_code_param(gs_param_list *plist,
 
 static int
 gdev_dmprt_put_prt_string_param(gs_param_list *plist,
-				dviprt_cfg_t *pprt, const char* name, int idx)
+                                dviprt_cfg_t *pprt, const char* name, int idx)
 {
   gs_param_string vstr;
-  
+
   int code = param_read_string(plist, name, &vstr);
   if (code == 0) {
     byte *pbyte;
@@ -616,7 +613,6 @@ gdev_dmprt_put_prt_string_param(gs_param_list *plist,
   return code;
 }
 /* end of internal routines for put_params */
-
 
 /* --- Get initial matrix. --- */
 static void
@@ -637,7 +633,7 @@ gdev_dmprt_open(gx_device *pdev)
 
   pprint = &pddev->dmprt.prtinfo;
   pcfg = &pddev->dmprt.prtcfg;
-  
+
   if ((code = gdev_prn_open(pdev)) < 0)
     return code;
   pcfg->integer[CFG_DPI] = (int)ppdev->x_pixels_per_inch;
@@ -646,7 +642,7 @@ gdev_dmprt_open(gx_device *pdev)
   if (code < 0) return gdev_dmprt_error_no_dviprt_to_gs(code);
   code = dviprt_setbuffer(pprint,NULL);
   if (code < 0) return gdev_dmprt_error_no_dviprt_to_gs(code);
-  
+
   return 0;
 }
 
@@ -656,7 +652,7 @@ gdev_dmprt_close(gx_device *pdev)
 {
   int code;
   dviprt_print *pprint;
-  
+
   pprint = &pddev->dmprt.prtinfo;
 
   if (!strchr(pddev->fname,'%')) {
@@ -686,12 +682,12 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   int lnum = 0;
   ulong prev_bytes;
   byte *in;
-  
+
   /* get work buffer */
   in = (byte *)gs_malloc(pdev->memory->non_gc_memory, 1, i_buf_size ,"gdev_dmprt_print_page(in)");
   if ( in == 0 )
     return e_VMerror;
-  
+
   /* Initialize this printer driver */
   if (pdev->file_is_new) {
     code = dviprt_setstream(pprint,NULL,prn_stream);
@@ -711,30 +707,30 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   prev_bytes = dviprt_getoutputbytes(pprint);
   code = dviprt_beginpage(pprint);
   if (code < 0) return gdev_dmprt_error_no_dviprt_to_gs(code);
-  
+
   /* Transfer pixels to printer */
-  while ( lnum < pdev->height ) {   
+  while ( lnum < pdev->height ) {
     int num_lines;
-    
+
     num_lines = pdev->height-lnum;
     if (num_lines > pins)
       num_lines = pins;
-    
+
     code = gdev_prn_copy_scan_lines(pdev,lnum,in,line_size*num_lines);
     if (code < 0) goto error_ex;
-    
+
     lnum += num_lines;
     if (num_lines < pins) {
       memset(in+line_size*num_lines,0,line_size*(pins-num_lines));
     }
-    
+
     code = dviprt_outputscanlines(pprint,in);
     if (code < 0) {
       code = gdev_dmprt_error_no_dviprt_to_gs(code);
       goto error_ex;
     }
   }
-  
+
   /* Eject the page and set printer normal mode. */
   if (strchr(pdev->fname,'%')) {
     code = dviprt_endbitmap(pprint);
@@ -748,10 +744,9 @@ gdev_dmprt_print_page(gx_device_printer *pdev, FILE *prn_stream)
   }
 error_ex:
   gs_free(pdev->memory->non_gc_memory, (char *)in, 1, i_buf_size,"gdev_dmprt_print_page(in)");
-  
+
   return code;
 }
-
 
 /************************** Internal Routines **************************/
 
@@ -787,7 +782,7 @@ gdev_dmprt_init_printer_props(gx_device_dmprt *pdev)
   int i;
 
   pprt = &pdev->dmprt.prtcfg;
-  
+
   for (i=0;i<CFG_INTEGER_TYPE_COUNT;i++)
     pprt->integer[i] = 0;
   for (i=0;i<CFG_STRINGS_TYPE_COUNT;i++)
@@ -809,7 +804,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
 
   fname = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 256,1,"dviprt_lib_fname");
   if (fname == NULL) return e_VMerror;
-  
+
   fp = gdev_dmprt_dviprt_lib_fopen(fnamebase,fname);
   if (fp == NULL) {
     return e_undefinedfilename;
@@ -818,7 +813,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
     return e_ioerror;
   code = fgetc(fp);
   fclose(fp);
-  
+
   if (code == EOF)
     code = e_ioerror;
   else if (code == 0xff) {
@@ -827,7 +822,7 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
   else {
     code = dviprt_readsrc(fname,&cfg,NULL,0,NULL,0);
   }
-  
+
   if (code < 0) {
     code = gdev_dmprt_error_no_dviprt_to_gs(code);
   }
@@ -837,9 +832,9 @@ gdev_dmprt_get_printer_props(gx_device_dmprt *pdev,char *fnamebase)
     pddev->dmprt.orig_y_dpi =
       cfg.integer[CFG_Y_DPI] > 0 ? cfg.integer[CFG_Y_DPI] : pddev->dmprt.orig_x_dpi;
   }
-  
+
   gs_free(gs_lib_ctx_get_non_gc_memory_t(), fname,256,1,"dviprt_lib_fname");
-  
+
   return code;
 }
 

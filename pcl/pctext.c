@@ -40,7 +40,6 @@
 /* pseudo-"dots" (actually 1/300" units) used in underline only */
 #define dots(n)     ((float)(7200 / 300 * n))
 
-
 /*
  * Install a font in the graphic state.
  */
@@ -60,7 +59,6 @@ pcl_downloaded_and_bound(pl_font_t *plfont)
 {
     return (plfont->storage != pcds_internal && pl_font_is_bound(plfont));
 }
-
 
 /* uncomment the following definition to treat map type 0 as defined
    in the specification.  The default is to use the behavior we have
@@ -312,11 +310,11 @@ get_next_char(
     *pchr = 0xffff;
     return 0;
 }
-/* 
- * return length of multibyte sequence from starting byte 
+/*
+ * return length of multibyte sequence from starting byte
  * replacement of macro pcl_char_is_2_byte, UTF-8 sequence length may be up to 6 bytes
  *
- * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence 
+ * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence
  */
 int
 pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
@@ -324,71 +322,71 @@ pcl_char_bytelen(byte ch, pcl_text_parsing_method_t tpm)
 
     int bytelen = 1;
 
-	switch(tpm) {
-	default:
-		/* byte length defaults to 1 */
-		break;
+        switch(tpm) {
+        default:
+                /* byte length defaults to 1 */
+                break;
 
-	case tpm_21_DBCS7:
-		/* 0x21-0xff are double-byte */
-		bytelen = (ch < 0x21) ? 1 : 2;
-		break;
+        case tpm_21_DBCS7:
+                /* 0x21-0xff are double-byte */
+                bytelen = (ch < 0x21) ? 1 : 2;
+                break;
 
-	case tpm_31_sjis:
-		/* 0x81-0x9f, 0xe0-0xfc are double-byte */
-		bytelen = (ch < 0x81 || (ch > 0x9f && ch < 0xe0) || ch > 0xfc) ? 1 : 2;
-		break;
+        case tpm_31_sjis:
+                /* 0x81-0x9f, 0xe0-0xfc are double-byte */
+                bytelen = (ch < 0x81 || (ch > 0x9f && ch < 0xe0) || ch > 0xfc) ? 1 : 2;
+                break;
 
-	case tpm_38_DBCS8:
-		/* 0x80-0xff are double-byte */
-		bytelen = (ch < 0x80) ? 1 : 2;
-		break;
+        case tpm_38_DBCS8:
+                /* 0x80-0xff are double-byte */
+                bytelen = (ch < 0x80) ? 1 : 2;
+                break;
         case tpm_83_utf8:
         case tpm_1008_utf8:
-	    if (ch < 0x80) {
-		/* 0xxxxxxx */
-	        bytelen = 1;
-		break;
-	    }
-	    if (ch < 0xc2) {
-	        bytelen = 0;	/* illegal */
-		break;
-	    }
-	    if (ch < 0xe0) {
-		/* 110XXXXx 10xxxxxx */
-	        bytelen = 2;
-		break;
-	    }
-	    if (ch < 0xf0) {
-	        /* 1110XXXX 10Xxxxxx 10xxxxxx */
-	        bytelen = 3;
-		break;
-	    }
-	    if (ch < 0xf8) {
-		/* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-	        bytelen = 4;
-		break;
-	    }
-	    if (ch < 0xfc) {
-		/* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-	        bytelen = 5;
-		break;
-	    }
-	    if (ch < 0xfe) {
-		/* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-	        bytelen = 6;
-		break;
-	    }
-	    bytelen = 0;	/* illegal */
-	    break;
-	}
-	return bytelen;
+            if (ch < 0x80) {
+                /* 0xxxxxxx */
+                bytelen = 1;
+                break;
+            }
+            if (ch < 0xc2) {
+                bytelen = 0;	/* illegal */
+                break;
+            }
+            if (ch < 0xe0) {
+                /* 110XXXXx 10xxxxxx */
+                bytelen = 2;
+                break;
+            }
+            if (ch < 0xf0) {
+                /* 1110XXXX 10Xxxxxx 10xxxxxx */
+                bytelen = 3;
+                break;
+            }
+            if (ch < 0xf8) {
+                /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+                bytelen = 4;
+                break;
+            }
+            if (ch < 0xfc) {
+                /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+                bytelen = 5;
+                break;
+            }
+            if (ch < 0xfe) {
+                /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+                bytelen = 6;
+                break;
+            }
+            bytelen = 0;	/* illegal */
+            break;
+        }
+        return bytelen;
 }
-/* 
+/*
  * convert multibyte sequence to unicode (16-bit)
  * Both the string pointer and the length are modified.
  *
- * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence 
+ * Returns 0 for invalid byte, byte length > 0 of multibyte character sequence
  */
 gs_char
 pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc, int src_len)
@@ -404,66 +402,66 @@ pcl_char_get_char(pcl_text_parsing_method_t tpm, const byte ** psrc, int src_len
     switch(tpm) {
     default:
         chr = src[0];
-	break;
+        break;
 
     case tpm_21_DBCS7:
-	/* 0x21-0xff are double-byte */
-	chr = (src[0] < 0x21) ? src[0] : (src[0] << 8 | src[1]);
-	break;
+        /* 0x21-0xff are double-byte */
+        chr = (src[0] < 0x21) ? src[0] : (src[0] << 8 | src[1]);
+        break;
 
     case tpm_31_sjis:
-	/* 0x81-0x9f, 0xe0-0xfc are double-byte */
-	chr = (src[0] < 0x81 || (src[0] > 0x9f && src[0] < 0xe0) || src[0] > 0xfc) ? src[0] : (src[0] << 8 | src[1]);
-	break;
+        /* 0x81-0x9f, 0xe0-0xfc are double-byte */
+        chr = (src[0] < 0x81 || (src[0] > 0x9f && src[0] < 0xe0) || src[0] > 0xfc) ? src[0] : (src[0] << 8 | src[1]);
+        break;
 
     case tpm_38_DBCS8:
-	/* 0x80-0xff are double-byte */
-	chr = (src[0] < 0x80) ? src[0] : (src[0] << 8 | src[1]);
-	break;
+        /* 0x80-0xff are double-byte */
+        chr = (src[0] < 0x80) ? src[0] : (src[0] << 8 | src[1]);
+        break;
     case tpm_83_utf8:
     case tpm_1008_utf8:
-	if (src[0] < 0x80) {
-	    /* 0xxxxxxx */
-	    chr = src[0];
-	    break;
-	}
-	if (src[0] < 0xc2) {
+        if (src[0] < 0x80) {
+            /* 0xxxxxxx */
+            chr = src[0];
+            break;
+        }
+        if (src[0] < 0xc2) {
             chr = INVALID_UC;
-	    break;
-	}
-	if (src[0] < 0xe0) {
-	    /* 110XXXXx 10xxxxxx */
-	    chr = (src[0] & 0x1f);
-	    chr = (chr << 6) | (src[1] & 0x3f);
-	    break;
-	}
-	if (src[0] < 0xf0) {
-	    /* 1110XXXX 10Xxxxxx 10xxxxxx */
-	    chr = (src[0] & 0x0f);
-	    chr = (chr << 6) | (src[1] & 0x3f);
-	    chr = (chr << 6) | (src[2] & 0x3f);
-	    break;
-	}
-	if (src[0] < 0xf8) {
-	    /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
-	    /* chr is 16 bit: overflow */
+            break;
+        }
+        if (src[0] < 0xe0) {
+            /* 110XXXXx 10xxxxxx */
+            chr = (src[0] & 0x1f);
+            chr = (chr << 6) | (src[1] & 0x3f);
+            break;
+        }
+        if (src[0] < 0xf0) {
+            /* 1110XXXX 10Xxxxxx 10xxxxxx */
+            chr = (src[0] & 0x0f);
+            chr = (chr << 6) | (src[1] & 0x3f);
+            chr = (chr << 6) | (src[2] & 0x3f);
+            break;
+        }
+        if (src[0] < 0xf8) {
+            /* 11110XXX 10XXxxxx 10xxxxxx 10xxxxxx */
+            /* chr is 16 bit: overflow */
             chr = INVALID_UC;
-	    break;
-	}
-	if (src[0] < 0xfc) {
-	    /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-	    /* chr is 16 bit: overflow */
+            break;
+        }
+        if (src[0] < 0xfc) {
+            /* 111110XX 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+            /* chr is 16 bit: overflow */
             chr = INVALID_UC;
-	    break;
-	}
-	if (src[0] < 0xfe) {
-	    /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
-	    /* chr is 16 bit: overflow */
+            break;
+        }
+        if (src[0] < 0xfe) {
+            /* 1111110X 10XXxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx */
+            /* chr is 16 bit: overflow */
             chr = INVALID_UC;
-	    break;
-	}
-	chr = INVALID_UC;
-	break;
+            break;
+        }
+        chr = INVALID_UC;
+        break;
     }
     *psrc += bytelen;
     return chr;
@@ -974,7 +972,6 @@ pcl_text(
     else
         pcs->font->allow_vertical_substitutes = false;
 
-
     /* Print remaining characters, restore the ctm */
     code = pcl_show_chars_slow(pcs, &scale, str, size, literal);
     gs_setmatrix(pgs, &user_ctm);
@@ -1254,10 +1251,10 @@ pctext_do_reset(
 
     if ((type & mask) != 0) {
         pcs->underline_enabled = false;
-	pcs->last_was_BS = false;
-	pcs->last_width = inch2coord(1.0 / 10.0);
+        pcs->last_was_BS = false;
+        pcs->last_width = inch2coord(1.0 / 10.0);
         pcs->text_parsing_method = tpm_0_SBCS;
-	pcs->text_path = 0;
+        pcs->text_path = 0;
     }
 }
 

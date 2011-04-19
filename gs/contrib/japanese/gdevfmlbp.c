@@ -1,4 +1,4 @@
-/* Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.  
+/* Copyright (C) 1991 Aladdin Enterprises.  All rights reserved.
    Distributed by Free Software Foundation, Inc.
 
 This file is part of Ghostscript.
@@ -64,11 +64,11 @@ fmlbp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 
 gx_device_printer gs_fmlbp_device =
   prn_device(PRNFMLBP, "fmlbp",
-	DEFAULT_WIDTH_10THS_A4,		/* width_10ths, 8.3" */
-	DEFAULT_HEIGHT_10THS_A4,	/* height_10ths, 11.7" */
-	X_DPI, Y_DPI,
-	0.20, 0.35, 0.21, 0.20,		/* left,bottom,right,top margins */
-	1, fmlbp_print_page);
+        DEFAULT_WIDTH_10THS_A4,		/* width_10ths, 8.3" */
+        DEFAULT_HEIGHT_10THS_A4,	/* height_10ths, 11.7" */
+        X_DPI, Y_DPI,
+        0.20, 0.35, 0.21, 0.20,		/* left,bottom,right,top margins */
+        1, fmlbp_print_page);
 
 /* ------ Internal routines ------ */
 
@@ -122,12 +122,11 @@ gdev_fmlbp_paper_size(gx_device_printer *dev)
      height_inches >=  7.6 ? PAPER_SIZE_A5 : PAPER_SIZE_HAGAKI), landscape);
 #ifdef	FMLBP_DEBUG
   dprintf5("w=%d(%f) x h=%d(%f) -> %s\n",
-	   dev->width, width_inches, dev->height, height_inches, paper);
+           dev->width, width_inches, dev->height, height_inches, paper);
 #endif/*FMLBP_DEBUG*/
   return paper;
 }
 #endif/*FMLBP_NOPAPERSIZE*/
-
 
 /* move down and move across */
 static void goto_xy(FILE *prn_stream,int x,int y)
@@ -140,20 +139,20 @@ static void goto_xy(FILE *prn_stream,int x,int y)
     sprintf(buff,"%d",x);
     while (*p)
       {
-	if (!*(p+1)) fputc((*p)+0x30,prn_stream);
-	else
-	  fputc((*p)-0x10,prn_stream);
-	p++;
+        if (!*(p+1)) fputc((*p)+0x30,prn_stream);
+        else
+          fputc((*p)-0x10,prn_stream);
+        p++;
       }
 
     p=buff;
     sprintf(buff,"%d",y);
     while (*p)
       {
-	if (!*(p+1)) fputc((*p)+0x40,prn_stream);
-	else
-	  fputc((*p)-0x10,prn_stream);
-	p++;
+        if (!*(p+1)) fputc((*p)+0x40,prn_stream);
+        else
+          fputc((*p)-0x10,prn_stream);
+        p++;
       }
   }
 
@@ -174,49 +173,49 @@ fmlbp_print_page(gx_device_printer *pdev, FILE *prn_stream)
   fprintf(prn_stream, "%c%c%d!I", PU1, 0);	/* 100% */
 #ifndef	OLD_FMLBP_400DPI
   fprintf(prn_stream, "%c%c%d!A", PU1,
-	  (int)(pdev->x_pixels_per_inch));	/* 240dpi or 400dpi */
+          (int)(pdev->x_pixels_per_inch));	/* 240dpi or 400dpi */
 #endif/*!OLD_FMLBP_400DPI*/
 #ifndef	FMLBP_NOPAPERSIZE
   fprintf(prn_stream, "%c%c%s!F", PU1,
-	  gdev_fmlbp_paper_size(pdev));		/* Paper size */
+          gdev_fmlbp_paper_size(pdev));		/* Paper size */
 #endif/*!FMLBP_NOPAPERSIZE*/
 
   /* Send each scan line in turn */
   {	int lnum;
-	byte rmask = (byte)(0xff << (-pdev->width & 7));
+        byte rmask = (byte)(0xff << (-pdev->width & 7));
 
-	for ( lnum = 0; lnum < pdev->height; lnum++ )
-	  {	byte *end_data = data + line_size;
-		int s = gdev_prn_copy_scan_lines(pdev, lnum,
-						(byte *)data, line_size);
-		if(s < 0) return_error(s);
-		/* Mask off 1-bits beyond the line width. */
-		end_data[-1] &= rmask;
-		/* Remove trailing 0s. */
-		while ( end_data > data && end_data[-1] == 0 )
-		  end_data--;
-		if ( end_data != data ) {	
-		  int num_cols = 0;
-		  int out_count = 0;
-		  byte *out_data = data;
-		  
-		  while(out_data < end_data && *out_data == 0) {
-		    num_cols += 8;
-		    out_data++;
-		  }
-		  out_count = end_data - out_data;
+        for ( lnum = 0; lnum < pdev->height; lnum++ )
+          {	byte *end_data = data + line_size;
+                int s = gdev_prn_copy_scan_lines(pdev, lnum,
+                                                (byte *)data, line_size);
+                if(s < 0) return_error(s);
+                /* Mask off 1-bits beyond the line width. */
+                end_data[-1] &= rmask;
+                /* Remove trailing 0s. */
+                while ( end_data > data && end_data[-1] == 0 )
+                  end_data--;
+                if ( end_data != data ) {
+                  int num_cols = 0;
+                  int out_count = 0;
+                  byte *out_data = data;
 
-		  /* move down */ /* move across */
-		  goto_xy(prn_stream, num_cols, lnum);
+                  while(out_data < end_data && *out_data == 0) {
+                    num_cols += 8;
+                    out_data++;
+                  }
+                  out_count = end_data - out_data;
 
-		  /* transfer raster graphics */
-		  fprintf(prn_stream, "%c%c%d;%d;0!a",
-			  PU1, out_count, out_count*8 );
+                  /* move down */ /* move across */
+                  goto_xy(prn_stream, num_cols, lnum);
 
-		  /* send the row */
-		  fwrite(out_data, sizeof(byte), out_count, prn_stream);
-		}
-	      }
+                  /* transfer raster graphics */
+                  fprintf(prn_stream, "%c%c%d;%d;0!a",
+                          PU1, out_count, out_count*8 );
+
+                  /* send the row */
+                  fwrite(out_data, sizeof(byte), out_count, prn_stream);
+                }
+              }
       }
   /* eject page */
   fputc(0x0c,prn_stream);

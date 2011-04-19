@@ -24,8 +24,8 @@ pjl_proc_get_envvar(
   const char             *pjl_var
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_get_envvar(pli, pjl_var);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_get_envvar(pli, pjl_var);
 }
 
 /* compare a pjl environment variable to a string values. */
@@ -36,8 +36,8 @@ pjl_proc_compare(
   const char             *s2
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_compare(pli, s1, s2);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_compare(pli, s1, s2);
 }
 
 /* map a pjl symbol set name to a pcl integer */
@@ -47,8 +47,8 @@ pjl_proc_map_pjl_sym_to_pcl_sym(
   const pjl_envvar_t     *symname
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_map_pjl_sym_to_pcl_sym(pli, symname);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_map_pjl_sym_to_pcl_sym(pli, symname);
 }
 
 /* pjl environment variable to integer. */
@@ -58,8 +58,8 @@ pjl_proc_vartoi(
   const pjl_envvar_t     *s
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_vartoi(pli, s);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_vartoi(pli, s);
 }
 
 /* pjl envioronment variable to float. */
@@ -69,8 +69,8 @@ pjl_proc_vartof(
   const pjl_envvar_t     *s
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_vartof(pli, s);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_vartof(pli, s);
 }
 
 /* convert a pjl designated fontsource to a subdirectory pathname. */
@@ -80,8 +80,8 @@ pjl_proc_fontsource_to_path(
   const pjl_envvar_t     *fontsource
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_fontsource_to_path(pli, fontsource);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_fontsource_to_path(pli, fontsource);
 }
 
 /* Change to next highest priority font source. */
@@ -90,8 +90,8 @@ pjl_proc_set_next_fontsource(
   pl_interp_instance_t   *pli
 )
 {
-	((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_set_next_fontsource(pli);
+        ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_set_next_fontsource(pli);
 }
 
 /* tell pjl that a soft font is being deleted. */
@@ -101,8 +101,8 @@ pjl_proc_register_permanent_soft_font_deletion(
   int                     font_number
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_register_permanent_soft_font_deletion(pli, font_number);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_register_permanent_soft_font_deletion(pli, font_number);
 }
 
 /* request that pjl add a soft font and return a pjl font number for the font. */
@@ -111,20 +111,20 @@ pjl_proc_register_permanent_soft_font_addition(
   pl_interp_instance_t   *pli
 )
 {
-	return ((pjl_implementation_t *)pli->interp->implementation)
-	 ->proc_register_permanent_soft_font_addition(pli);
+        return ((pjl_implementation_t *)pli->interp->implementation)
+         ->proc_register_permanent_soft_font_addition(pli);
 }
 
 long int
 pjl_proc_get_named_resource_size(pl_interp_instance_t *pli, char *name)
 {
     return ((pjl_implementation_t *)pli->interp->implementation)
-	->proc_get_named_resource_size(pli, name);
+        ->proc_get_named_resource_size(pli, name);
 }
 
 int
 pjl_proc_get_named_resource(pl_interp_instance_t *pli, char *name, byte *data)
 {
     return ((pjl_implementation_t *)pli->interp->implementation)
-	->proc_get_named_resource(pli, name, data);
+        ->proc_get_named_resource(pli, name, data);
 }

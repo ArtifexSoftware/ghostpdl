@@ -1,6 +1,6 @@
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,7 +25,7 @@ make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 #endif /* zfrsd_INCLUDED */
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 

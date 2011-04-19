@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,16 +40,16 @@ static dc_entry dynamic_colors[dc_hash_size + 1];
 
 /* Procedure records */
 #define svga_procs(open) {\
-	open, NULL /*get_initial_matrix*/,\
-	NULL /*sync_output*/, NULL /*output_page*/, svga_close,\
-	svga_map_rgb_color, svga_map_color_rgb,\
-	svga_fill_rectangle, NULL /*tile_rectangle*/,\
-	svga_copy_mono, svga_copy_color, NULL /*draw_line*/,\
-	svga_get_bits, NULL /*get_params*/, svga_put_params,\
-	NULL /*map_cmyk_color*/, NULL /*get_xfont_procs*/,\
-	NULL /*get_xfont_device*/, NULL /*map_rgb_alpha_color*/,\
-	gx_page_device_get_page_device, NULL /*get_alpha_bits*/,\
-	svga_copy_alpha\
+        open, NULL /*get_initial_matrix*/,\
+        NULL /*sync_output*/, NULL /*output_page*/, svga_close,\
+        svga_map_rgb_color, svga_map_color_rgb,\
+        svga_fill_rectangle, NULL /*tile_rectangle*/,\
+        svga_copy_mono, svga_copy_color, NULL /*draw_line*/,\
+        svga_get_bits, NULL /*get_params*/, svga_put_params,\
+        NULL /*map_cmyk_color*/, NULL /*get_xfont_procs*/,\
+        NULL /*get_xfont_device*/, NULL /*map_rgb_alpha_color*/,\
+        gx_page_device_get_page_device, NULL /*get_alpha_bits*/,\
+        svga_copy_alpha\
 }
 
 /* Save the controller mode */
@@ -64,10 +64,10 @@ static int svga_save_mode = -1;
 /* We know that y is within bounds. */
 #define set_pixel_ptr(ptr, fbdev, x, y, wnum)\
 {	ulong index = (ulong)(y) * fbdev->raster + (uint)(x);\
-	if ( (uint)(index >> 16) != fbdev->current_page )\
-	   {	(*fbdev->set_page)(fbdev, (fbdev->current_page = index >> 16), wnum);\
-	   }\
-	ptr = (fb_ptr)MK_PTR(regen, (ushort)index);\
+        if ( (uint)(index >> 16) != fbdev->current_page )\
+           {	(*fbdev->set_page)(fbdev, (fbdev->current_page = index >> 16), wnum);\
+           }\
+        ptr = (fb_ptr)MK_PTR(regen, (ushort)index);\
 }
 #define set_pixel_write_ptr(ptr, fbdev, x, y)\
   set_pixel_ptr(ptr, fbdev, x, y, fbdev->wnum_write)
@@ -81,15 +81,15 @@ int
 svga_find_mode(gx_device * dev, const mode_info * mip)
 {
     for (;; mip++) {
-	if (mip->width >= fb_dev->width &&
-	    mip->height >= fb_dev->height ||
-	    mip[1].mode < 0
-	    ) {
-	    fb_dev->mode = mip;
-	    gx_device_adjust_resolution(dev, mip->width, mip->height, 1);
-	    fb_dev->raster = fb_dev->width;
-	    return 0;
-	}
+        if (mip->width >= fb_dev->width &&
+            mip->height >= fb_dev->height ||
+            mip[1].mode < 0
+            ) {
+            fb_dev->mode = mip;
+            gx_device_adjust_resolution(dev, mip->width, mip->height, 1);
+            fb_dev->raster = fb_dev->width;
+            return 0;
+        }
     }
     return_error(gs_error_rangecheck);
 }
@@ -110,11 +110,11 @@ void
 svga_init_colors(gx_device * dev)
 {
     if (fb_dev->fixed_colors)
-	next_dc_index = num_colors;
+        next_dc_index = num_colors;
     else {
-	memset(dynamic_colors, 0,
-	       (dc_hash_size + 1) * sizeof(dc_entry));
-	next_dc_index = first_dc_index;
+        memset(dynamic_colors, 0,
+               (dc_hash_size + 1) * sizeof(dc_entry));
+        next_dc_index = first_dc_index;
     }
 }
 
@@ -126,20 +126,20 @@ svga_load_colors(gx_device * dev)
 
     svga_dac_set_write_index(0);
     if (fb_dev->fixed_colors)
-	for (ci = 0; ci < num_colors; ci++) {
-	    gx_color_value rgb[3];
+        for (ci = 0; ci < num_colors; ci++) {
+            gx_color_value rgb[3];
 
-	    pc_8bit_map_color_rgb(dev, (gx_color_index) ci, rgb);
-	    svga_dac_write(cv_bits(rgb[0], 6), cv_bits(rgb[1], 6),
-			   cv_bits(rgb[2], 6));
+            pc_8bit_map_color_rgb(dev, (gx_color_index) ci, rgb);
+            svga_dac_write(cv_bits(rgb[0], 6), cv_bits(rgb[1], 6),
+                           cv_bits(rgb[2], 6));
     } else
-	for (ci = 0; ci < 64; ci++) {
-	    static const byte c2[10] =
-	    {0, 42, 0, 0, 0, 0, 0, 0, 21, 63};
+        for (ci = 0; ci < 64; ci++) {
+            static const byte c2[10] =
+            {0, 42, 0, 0, 0, 0, 0, 0, 21, 63};
 
-	    svga_dac_write(c2[(ci >> 2) & 9], c2[(ci >> 1) & 9],
-			   c2[ci & 9]);
-	}
+            svga_dac_write(c2[(ci >> 2) & 9], c2[(ci >> 1) & 9],
+                           c2[ci & 9]);
+        }
 }
 
 /* Initialize the device structure and the DACs. */
@@ -147,11 +147,11 @@ int
 svga_open(gx_device * dev)
 {
     fb_dev->x_pixels_per_inch =
-	fb_dev->y_pixels_per_inch =
-	fb_dev->height / PAGE_HEIGHT_INCHES;
+        fb_dev->y_pixels_per_inch =
+        fb_dev->height / PAGE_HEIGHT_INCHES;
     /* Set the display mode. */
     if (svga_save_mode < 0)
-	svga_save_mode = (*fb_dev->get_mode) ();
+        svga_save_mode = (*fb_dev->get_mode) ();
     (*fb_dev->set_mode) (fb_dev->mode->mode);
     svga_init_colors(dev);
     svga_load_colors(dev);
@@ -164,7 +164,7 @@ int
 svga_close(gx_device * dev)
 {
     if (svga_save_mode >= 0)
-	(*fb_dev->set_mode) (svga_save_mode);
+        (*fb_dev->set_mode) (svga_save_mode);
     svga_save_mode = -1;
     return 0;
 }
@@ -180,57 +180,57 @@ svga_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     gx_color_value r = cv[0], g = cv[1], b = cv[2];
 
     if (fb_dev->fixed_colors) {
-	gx_color_index ci = pc_8bit_map_rgb_color(dev, cv);
+        gx_color_index ci = pc_8bit_map_rgb_color(dev, cv);
 
-	/* Here is where we should permute the index to match */
-	/* the old color map... but we don't yet. */
-	return ci;
+        /* Here is where we should permute the index to match */
+        /* the old color map... but we don't yet. */
+        return ci;
     } {
-	ushort r5 = cv_bits(r, 5), g5 = cv_bits(g, 5), b5 = cv_bits(b, 5);
-	static const byte cube_bits[32] =
-	{0, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-	 8, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-	 1, 128, 128, 128, 128, 128, 128, 128, 128, 128,
-	 9
-	};
-	uint cx = ((uint) cube_bits[r5] << 2) +
-	((uint) cube_bits[g5] << 1) +
-	(uint) cube_bits[b5];
+        ushort r5 = cv_bits(r, 5), g5 = cv_bits(g, 5), b5 = cv_bits(b, 5);
+        static const byte cube_bits[32] =
+        {0, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+         8, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+         1, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+         9
+        };
+        uint cx = ((uint) cube_bits[r5] << 2) +
+        ((uint) cube_bits[g5] << 1) +
+        (uint) cube_bits[b5];
 
-	/* Check for a color on the cube. */
-	if (cx < 64)
-	    return (gx_color_index) cx;
-	/* Not on the cube, check the dynamic color table. */
-	rgb = (r5 << 10) + (g5 << 5) + b5;
+        /* Check for a color on the cube. */
+        if (cx < 64)
+            return (gx_color_index) cx;
+        /* Not on the cube, check the dynamic color table. */
+        rgb = (r5 << 10) + (g5 << 5) + b5;
     }
     {
-	register dc_entry *pdc;
+        register dc_entry *pdc;
 
-	for (pdc = &dynamic_colors[rgb % dc_hash_size];
-	     pdc->rgb != 0; pdc++
-	    )
-	    if (pdc->rgb == rgb)
-		return (gx_color_index) (pdc->index);
-	if (pdc == &dynamic_colors[dc_hash_size]) {	/* Wraparound */
-	    for (pdc = &dynamic_colors[0]; pdc->rgb != 0; pdc++)
-		if (pdc->rgb == rgb)
-		    return (gx_color_index) (pdc->index);
-	}
-	if (next_dc_index == num_colors) {	/* No space left, report failure. */
-	    return gx_no_color_index;
-	}
-	/* Not on the cube, and not in the dynamic table. */
-	/* Put in the dynamic table if space available. */
-	{
-	    int i = next_dc_index++;
+        for (pdc = &dynamic_colors[rgb % dc_hash_size];
+             pdc->rgb != 0; pdc++
+            )
+            if (pdc->rgb == rgb)
+                return (gx_color_index) (pdc->index);
+        if (pdc == &dynamic_colors[dc_hash_size]) {	/* Wraparound */
+            for (pdc = &dynamic_colors[0]; pdc->rgb != 0; pdc++)
+                if (pdc->rgb == rgb)
+                    return (gx_color_index) (pdc->index);
+        }
+        if (next_dc_index == num_colors) {	/* No space left, report failure. */
+            return gx_no_color_index;
+        }
+        /* Not on the cube, and not in the dynamic table. */
+        /* Put in the dynamic table if space available. */
+        {
+            int i = next_dc_index++;
 
-	    pdc->rgb = rgb;
-	    pdc->index = i;
-	    svga_dac_set_write_index(i);
-	    svga_dac_write(cv_bits(r, 6), cv_bits(g, 6),
-			   cv_bits(b, 6));
-	    return (gx_color_index) i;
-	}
+            pdc->rgb = rgb;
+            pdc->index = i;
+            svga_dac_set_write_index(i);
+            svga_dac_write(cv_bits(r, 6), cv_bits(g, 6),
+                           cv_bits(b, 6));
+            return (gx_color_index) i;
+        }
     }
 }
 
@@ -239,7 +239,7 @@ svga_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 /* Since this is practically never used, we just read the DAC. */
 int
 svga_map_color_rgb(gx_device * dev, gx_color_index color,
-		   gx_color_value prgb[3])
+                   gx_color_value prgb[3])
 {
     uint cval;
 
@@ -257,7 +257,7 @@ svga_map_color_rgb(gx_device * dev, gx_color_index color,
 /* Fill a rectangle. */
 int
 svga_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		    gx_color_index color)
+                    gx_color_index color)
 {
     uint raster = fb_dev->raster;
     ushort limit = (ushort) - raster;
@@ -269,61 +269,61 @@ svga_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     /* Most fills are very small and don't cross a page boundary. */
     yi = h;
     switch (w) {
-	case 0:
-	    return 0;		/* no-op */
-	case 1:
-	    while (--yi >= 0 && PTR_OFF(ptr) < limit)
-		ptr[0] = (byte) color,
-		    ptr += raster;
-	    if (!++yi)
-		return 0;
-	    break;
-	case 2:
-	    while (--yi >= 0 && PTR_OFF(ptr) < limit)
-		ptr[0] = ptr[1] = (byte) color,
-		    ptr += raster;
-	    if (!++yi)
-		return 0;
-	    break;
-	case 3:
-	    while (--yi >= 0 && PTR_OFF(ptr) < limit)
-		ptr[0] = ptr[1] = ptr[2] = (byte) color,
-		    ptr += raster;
-	    if (!++yi)
-		return 0;
-	    break;
-	case 4:
-	    while (--yi >= 0 && PTR_OFF(ptr) < limit)
-		ptr[0] = ptr[1] = ptr[2] = ptr[3] = (byte) color,
-		    ptr += raster;
-	    if (!++yi)
-		return 0;
-	    break;
-	default:
-	    if (w < 0)
-		return 0;
-	    /* Check for erasepage. */
-	    if (w == dev->width && h == dev->height &&
-		color < first_dc_index
-		)
-		svga_init_colors(dev);
+        case 0:
+            return 0;		/* no-op */
+        case 1:
+            while (--yi >= 0 && PTR_OFF(ptr) < limit)
+                ptr[0] = (byte) color,
+                    ptr += raster;
+            if (!++yi)
+                return 0;
+            break;
+        case 2:
+            while (--yi >= 0 && PTR_OFF(ptr) < limit)
+                ptr[0] = ptr[1] = (byte) color,
+                    ptr += raster;
+            if (!++yi)
+                return 0;
+            break;
+        case 3:
+            while (--yi >= 0 && PTR_OFF(ptr) < limit)
+                ptr[0] = ptr[1] = ptr[2] = (byte) color,
+                    ptr += raster;
+            if (!++yi)
+                return 0;
+            break;
+        case 4:
+            while (--yi >= 0 && PTR_OFF(ptr) < limit)
+                ptr[0] = ptr[1] = ptr[2] = ptr[3] = (byte) color,
+                    ptr += raster;
+            if (!++yi)
+                return 0;
+            break;
+        default:
+            if (w < 0)
+                return 0;
+            /* Check for erasepage. */
+            if (w == dev->width && h == dev->height &&
+                color < first_dc_index
+                )
+                svga_init_colors(dev);
     }
     while (--yi >= 0) {
-	if (PTR_OFF(ptr) < limit) {
-	    memset(ptr, (byte) color, w);
-	    ptr += raster;
-	} else if (PTR_OFF(ptr) <= (ushort) (-w)) {
-	    memset(ptr, (byte) color, w);
-	    if (yi > 0)
-		set_pixel_write_ptr(ptr, fb_dev, x, y + h - yi);
-	} else {
-	    uint left = (uint) 0x10000 - PTR_OFF(ptr);
+        if (PTR_OFF(ptr) < limit) {
+            memset(ptr, (byte) color, w);
+            ptr += raster;
+        } else if (PTR_OFF(ptr) <= (ushort) (-w)) {
+            memset(ptr, (byte) color, w);
+            if (yi > 0)
+                set_pixel_write_ptr(ptr, fb_dev, x, y + h - yi);
+        } else {
+            uint left = (uint) 0x10000 - PTR_OFF(ptr);
 
-	    memset(ptr, (byte) color, left);
-	    set_pixel_write_ptr(ptr, fb_dev, x + left, y + h - 1 - yi);
-	    memset(ptr, (byte) color, w - left);
-	    ptr += raster - left;
-	}
+            memset(ptr, (byte) color, left);
+            set_pixel_write_ptr(ptr, fb_dev, x + left, y + h - 1 - yi);
+            memset(ptr, (byte) color, w - left);
+            ptr += raster - left;
+        }
     }
     return 0;
 }
@@ -332,7 +332,7 @@ svga_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Color = gx_no_color_index means transparent (no effect on the image). */
 int
 svga_copy_mono(gx_device * dev,
-	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+               const byte * base, int sourcex, int sraster, gx_bitmap_id id,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone)
 {
     uint raster = fb_dev->raster;
@@ -351,68 +351,68 @@ svga_copy_mono(gx_device * dev,
 #define izero (int)czero
 #define ione (int)cone
     if (ione == no_color) {
-	gx_color_index temp;
+        gx_color_index temp;
 
-	if (izero == no_color)
-	    return 0;		/* no-op */
-	temp = czero;
-	czero = cone;
-	cone = temp;
-	invert = ~0;
+        if (izero == no_color)
+            return 0;		/* no-op */
+        temp = czero;
+        czero = cone;
+        cone = temp;
+        invert = ~0;
     } else
-	invert = 0;
+        invert = 0;
     /* Pre-filling saves us a test in the loop, */
     /* and since tiling is uncommon, we come out ahead. */
     if (izero != no_color)
-	svga_fill_rectangle(dev, x, y, w, h, czero);
+        svga_fill_rectangle(dev, x, y, w, h, czero);
     for (yi = 0; yi < h; yi++) {
-	const byte *sptr = srow;
-	uint bits;
-	int bitno = sourcex & 7;
+        const byte *sptr = srow;
+        uint bits;
+        int bitno = sourcex & 7;
 
-	wi = w;
-	if (PTR_OFF(ptr) <= skip) {
-	    set_pixel_write_ptr(ptr, fb_dev, x, y + yi);
-	} else if (PTR_OFF(ptr) > limit) {	/* We're crossing a page boundary. */
-	    /* This is extremely rare, so it doesn't matter */
-	    /* how slow it is. */
-	    int xi = (ushort) - PTR_OFF(ptr);
+        wi = w;
+        if (PTR_OFF(ptr) <= skip) {
+            set_pixel_write_ptr(ptr, fb_dev, x, y + yi);
+        } else if (PTR_OFF(ptr) > limit) {	/* We're crossing a page boundary. */
+            /* This is extremely rare, so it doesn't matter */
+            /* how slow it is. */
+            int xi = (ushort) - PTR_OFF(ptr);
 
-	    svga_copy_mono(dev, srow, sourcex & 7, sraster,
-			   gx_no_bitmap_id, x, y + yi, xi, 1,
-			   gx_no_color_index, cone);
-	    set_pixel_write_ptr(ptr, fb_dev, x + xi, y + yi);
-	    sptr = srow - (sourcex >> 3) + ((sourcex + xi) >> 3);
-	    bitno = (sourcex + xi) & 7;
-	    wi -= xi;
-	}
-	bits = *sptr ^ invert;
-	switch (bitno) {
+            svga_copy_mono(dev, srow, sourcex & 7, sraster,
+                           gx_no_bitmap_id, x, y + yi, xi, 1,
+                           gx_no_color_index, cone);
+            set_pixel_write_ptr(ptr, fb_dev, x + xi, y + yi);
+            sptr = srow - (sourcex >> 3) + ((sourcex + xi) >> 3);
+            bitno = (sourcex + xi) & 7;
+            wi -= xi;
+        }
+        bits = *sptr ^ invert;
+        switch (bitno) {
 #define ifbit(msk)\
   if ( bits & msk ) *ptr = (byte)ione;\
   if ( !--wi ) break; ptr++
-	    case 0:
-	      bit0:ifbit(0x80);
-	    case 1:
-		ifbit(0x40);
-	    case 2:
-		ifbit(0x20);
-	    case 3:
-		ifbit(0x10);
-	    case 4:
-		ifbit(0x08);
-	    case 5:
-		ifbit(0x04);
-	    case 6:
-		ifbit(0x02);
-	    case 7:
-		ifbit(0x01);
+            case 0:
+              bit0:ifbit(0x80);
+            case 1:
+                ifbit(0x40);
+            case 2:
+                ifbit(0x20);
+            case 3:
+                ifbit(0x10);
+            case 4:
+                ifbit(0x08);
+            case 5:
+                ifbit(0x04);
+            case 6:
+                ifbit(0x02);
+            case 7:
+                ifbit(0x01);
 #undef ifbit
-		bits = *++sptr ^ invert;
-		goto bit0;
-	}
-	ptr += skip;
-	srow += sraster;
+                bits = *++sptr ^ invert;
+                goto bit0;
+        }
+        ptr += skip;
+        srow += sraster;
     }
 #undef izero
 #undef ione
@@ -423,8 +423,8 @@ svga_copy_mono(gx_device * dev,
 /* except that each pixel takes 8 bits instead of 1. */
 int
 svga_copy_color(gx_device * dev,
-		const byte * base, int sourcex, int sraster, gx_bitmap_id id,
-		int x, int y, int w, int h)
+                const byte * base, int sourcex, int sraster, gx_bitmap_id id,
+                int x, int y, int w, int h)
 {
     int xi, yi;
     int skip;
@@ -435,13 +435,13 @@ svga_copy_color(gx_device * dev,
     skip = sraster - w;
     sptr = base + sourcex;
     for (yi = y; yi - y < h; yi++) {
-	ptr = 0;
-	for (xi = x; xi - x < w; xi++) {
-	    if (PTR_OFF(ptr) == 0)
-		set_pixel_write_ptr(ptr, fb_dev, xi, yi);
-	    *ptr++ = *sptr++;
-	}
-	sptr += skip;
+        ptr = 0;
+        for (xi = x; xi - x < w; xi++) {
+            if (PTR_OFF(ptr) == 0)
+                set_pixel_write_ptr(ptr, fb_dev, xi, yi);
+            *ptr++ = *sptr++;
+        }
+        sptr += skip;
     }
     return 0;
 }
@@ -455,8 +455,8 @@ svga_put_params(gx_device * dev, gs_param_list * plist)
     const char *param_name;
 
     if ((code = ecode) < 0 ||
-	(code = gx_default_put_params(dev, plist)) < 0
-	) {
+        (code = gx_default_put_params(dev, plist)) < 0
+        ) {
     }
     return code;
 }
@@ -470,20 +470,20 @@ svga_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
     fb_ptr src;
 
     if (y < 0 || y >= dev->height)
-	return gs_error_rangecheck;
+        return gs_error_rangecheck;
     set_pixel_read_ptr(src, fb_dev, 0, y);
     /* The logic here is similar to fill_rectangle. */
     if (PTR_OFF(src) <= limit)
-	memcpy(data, src, bytes_per_row);
+        memcpy(data, src, bytes_per_row);
     else {
-	uint left = (uint) 0x10000 - PTR_OFF(src);
+        uint left = (uint) 0x10000 - PTR_OFF(src);
 
-	memcpy(data, src, left);
-	set_pixel_read_ptr(src, fb_dev, left, y);
-	memcpy(data + left, src, bytes_per_row - left);
+        memcpy(data, src, left);
+        set_pixel_read_ptr(src, fb_dev, left, y);
+        memcpy(data + left, src, bytes_per_row - left);
     }
     if (actual_data != 0)
-	*actual_data = data;
+        *actual_data = data;
     return 0;
 }
 
@@ -491,8 +491,8 @@ svga_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 /* Depth is 1, 2, or 4. */
 static int
 svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
-		int sraster, gx_bitmap_id id, int x, int y, int w, int h,
-		gx_color_index color, int depth)
+                int sraster, gx_bitmap_id id, int x, int y, int w, int h,
+                gx_color_index color, int depth)
 {
     int xi, yi;
     int skip;
@@ -509,56 +509,56 @@ svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     shades[0] = (byte) svga_map_rgb_color(dev, gx_max_color_value,
-					  gx_max_color_value,
-					  gx_max_color_value);
+                                          gx_max_color_value,
+                                          gx_max_color_value);
     shades[n1] = (byte) color;
     if (n1 > 1) {
-	memset(shades + 1, 255, n1 - 1);
-	svga_map_color_rgb(dev, color, rgb);
+        memset(shades + 1, 255, n1 - 1);
+        svga_map_color_rgb(dev, color, rgb);
     }
     skip = sraster - ((w * depth) >> 3);
     sptr = base + (sourcex >> (3 - log2_depth));
     mask = n1;
     ishift = (~sourcex & (7 >> log2_depth)) << log2_depth;
     for (yi = y; yi - y < h; yi++) {
-	fb_ptr ptr = 0;
-	int shift = ishift;
+        fb_ptr ptr = 0;
+        int shift = ishift;
 
-	for (xi = x; xi - x < w; xi++, ptr++) {
-	    uint a = (*sptr >> shift) & mask;
+        for (xi = x; xi - x < w; xi++, ptr++) {
+            uint a = (*sptr >> shift) & mask;
 
-	    if (PTR_OFF(ptr) == 0)
-		set_pixel_write_ptr(ptr, fb_dev, xi, yi);
-	  map:if (a != 0) {
-		byte ci = shades[a];
+            if (PTR_OFF(ptr) == 0)
+                set_pixel_write_ptr(ptr, fb_dev, xi, yi);
+          map:if (a != 0) {
+                byte ci = shades[a];
 
-		if (ci == 255) {	/* Map the color now. */
+                if (ci == 255) {	/* Map the color now. */
 #define make_shade(v, alpha, n1)\
   (gx_max_color_value -\
    ((ulong)(gx_max_color_value - (v)) * (alpha) / (n1)))
-		    gx_color_value r =
-		    make_shade(rgb[0], a, n1);
-		    gx_color_value g =
-		    make_shade(rgb[1], a, n1);
-		    gx_color_value b =
-		    make_shade(rgb[2], a, n1);
-		    gx_color_index sci =
-		    svga_map_rgb_color(dev, r, g, b);
+                    gx_color_value r =
+                    make_shade(rgb[0], a, n1);
+                    gx_color_value g =
+                    make_shade(rgb[1], a, n1);
+                    gx_color_value b =
+                    make_shade(rgb[2], a, n1);
+                    gx_color_index sci =
+                    svga_map_rgb_color(dev, r, g, b);
 
-		    if (sci == gx_no_color_index) {
-			a += (n1 + 1 - a) >> 1;
-			goto map;
-		    }
-		    shades[a] = ci = (byte) sci;
-		}
-		*ptr = ci;
-	    }
-	    if (shift == 0)
-		shift = 8 - depth, sptr++;
-	    else
-		shift -= depth;
-	}
-	sptr += skip;
+                    if (sci == gx_no_color_index) {
+                        a += (n1 + 1 - a) >> 1;
+                        goto map;
+                    }
+                    shades[a] = ci = (byte) sci;
+                }
+                *ptr = ci;
+            }
+            if (shift == 0)
+                shift = 8 - depth, sptr++;
+            else
+                shift -= depth;
+        }
+        sptr += skip;
     }
     return 0;
 }
@@ -658,14 +658,14 @@ vesa_get_info(int mode, vesa_info _ss * info)
     int86x(0x10, &regs, &regs, &sregs);
 #ifdef DEBUG
     if (regs.h.ah == 0 && regs.h.al == 0x4f)
-	dlprintf8("vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
-		  mode, info->mode_attributes,
-		  info->win_a_attributes, info->win_b_attributes,
-		  info->win_granularity, info->win_size,
-		  info->win_a_segment, info->win_b_segment);
+        dlprintf8("vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
+                  mode, info->mode_attributes,
+                  info->win_a_attributes, info->win_b_attributes,
+                  info->win_granularity, info->win_size,
+                  info->win_a_segment, info->win_b_segment);
     else
-	dlprintf3("vesa_get_info(%x) failed: ah=%x al=%x\n",
-		  mode, regs.h.ah, regs.h.al);
+        dlprintf3("vesa_get_info(%x) failed: ah=%x al=%x\n",
+                  mode, regs.h.ah, regs.h.al);
 #endif
     return (regs.h.ah == 0 && regs.h.al == 0x4f ? 0 : -1);
 }
@@ -679,44 +679,44 @@ vesa_find_mode(gx_device * dev, const mode_info * mode_table)
     const mode_info *mip;
 
     for (mip = mode_table; mip->mode >= 0; mip++) {
-	if (mip->width >= fb_dev->width &&
-	    mip->height >= fb_dev->height &&
-	    vesa_get_info(mip->mode, &info) >= 0 &&
-	    bits_include(info.mode_attributes,
-			 m_supported | m_graphics) &&
-	    info.win_granularity <= 64 &&
-	    (info.win_granularity & (info.win_granularity - 1)) == 0 &&
-	    info.win_size == 64 &&
-	    bits_include(info.win_a_attributes,
-			 w_supported) &&
-	    info.win_a_segment == regen
-	    ) {			/* Make sure we can both read & write. */
-	    /* Initialize for the default case. */
-	    fb_dev->wnum_read = 0;
-	    fb_dev->wnum_write = 0;
-	    if (bits_include(info.win_a_attributes,
-			     w_readable | w_writable)
-		)
-		break;
-	    else if (info.win_b_segment == regen &&
-		     bits_include(info.win_b_attributes,
-				  w_supported) &&
-		     bits_include(info.win_a_attributes |
-				  info.win_b_attributes,
-				  w_readable | w_writable)
-		) {		/* Two superimposed windows. */
-		if (!bits_include(info.win_a_attributes,
-				  w_writable)
-		    )
-		    fb_dev->wnum_write = 1;
-		else
-		    fb_dev->wnum_read = 1;
-	    }
-	    break;
-	}
+        if (mip->width >= fb_dev->width &&
+            mip->height >= fb_dev->height &&
+            vesa_get_info(mip->mode, &info) >= 0 &&
+            bits_include(info.mode_attributes,
+                         m_supported | m_graphics) &&
+            info.win_granularity <= 64 &&
+            (info.win_granularity & (info.win_granularity - 1)) == 0 &&
+            info.win_size == 64 &&
+            bits_include(info.win_a_attributes,
+                         w_supported) &&
+            info.win_a_segment == regen
+            ) {			/* Make sure we can both read & write. */
+            /* Initialize for the default case. */
+            fb_dev->wnum_read = 0;
+            fb_dev->wnum_write = 0;
+            if (bits_include(info.win_a_attributes,
+                             w_readable | w_writable)
+                )
+                break;
+            else if (info.win_b_segment == regen &&
+                     bits_include(info.win_b_attributes,
+                                  w_supported) &&
+                     bits_include(info.win_a_attributes |
+                                  info.win_b_attributes,
+                                  w_readable | w_writable)
+                ) {		/* Two superimposed windows. */
+                if (!bits_include(info.win_a_attributes,
+                                  w_writable)
+                    )
+                    fb_dev->wnum_write = 1;
+                else
+                    fb_dev->wnum_read = 1;
+            }
+            break;
+        }
     }
     if (mip->mode < 0)
-	return_error(gs_error_rangecheck);	/* mode not available */
+        return_error(gs_error_rangecheck);	/* mode not available */
     fb_dev->mode = mip;
     gx_device_adjust_resolution(dev, mip->width, mip->height, 1);
     fb_dev->info.vesa.bios_set_page = info.win_func_ptr;
@@ -730,17 +730,17 @@ vesa_open(gx_device * dev)
 {
     static const mode_info mode_table[] =
     {
-	{640, 400, 0x100},
-	{640, 480, 0x101},
-	{800, 600, 0x103},
-	{1024, 768, 0x105},
-	{1280, 1024, 0x107},
-	{-1, -1, -1}
+        {640, 400, 0x100},
+        {640, 480, 0x101},
+        {800, 600, 0x103},
+        {1024, 768, 0x105},
+        {1280, 1024, 0x107},
+        {-1, -1, -1}
     };
     int code = vesa_find_mode(dev, mode_table);
 
     if (code < 0)
-	return code;
+        return code;
     return svga_open(dev);
 }
 
@@ -794,20 +794,20 @@ static int
 atiw_open(gx_device * dev)
 {				/* Select the proper video mode */
     {
-	static const mode_info mode_table[] =
-	{
-	    {640, 400, 0x61},
-	    {640, 480, 0x62},
-	    {800, 600, 0x63},
-	    {1024, 768, 0x64},
-	    {-1, -1, -1}
-	};
-	int code = svga_find_mode(dev, mode_table);
+        static const mode_info mode_table[] =
+        {
+            {640, 400, 0x61},
+            {640, 480, 0x62},
+            {800, 600, 0x63},
+            {1024, 768, 0x64},
+            {-1, -1, -1}
+        };
+        int code = svga_find_mode(dev, mode_table);
 
-	if (code < 0)
-	    return code;	/* mode not available */
-	fb_dev->info.atiw.select_reg = *(int *)MK_PTR(0xc000, 0x10);
-	return svga_open(dev);
+        if (code < 0)
+            return code;	/* mode not available */
+        fb_dev->info.atiw.select_reg = *(int *)MK_PTR(0xc000, 0x10);
+        return svga_open(dev);
     }
 }
 
@@ -844,19 +844,19 @@ tvga_open(gx_device * dev)
     fb_dev->wnum_write = 0;
     /* Select the proper video mode */
     {
-	static const mode_info mode_table[] =
-	{
-	    {640, 400, 0x5c},
-	    {640, 480, 0x5d},
-	    {800, 600, 0x5e},
-	    {1024, 768, 0x62},
-	    {-1, -1, -1}
-	};
-	int code = svga_find_mode(dev, mode_table);
+        static const mode_info mode_table[] =
+        {
+            {640, 400, 0x5c},
+            {640, 480, 0x5d},
+            {800, 600, 0x5e},
+            {1024, 768, 0x62},
+            {-1, -1, -1}
+        };
+        int code = svga_find_mode(dev, mode_table);
 
-	if (code < 0)
-	    return code;	/* mode not available */
-	return svga_open(dev);
+        if (code < 0)
+            return code;	/* mode not available */
+        return svga_open(dev);
     }
 }
 
@@ -893,32 +893,32 @@ tseng_open(gx_device * dev)
     fb_dev->wnum_write = 0;
     /* Select the proper video mode */
     {
-	static const mode_info mode_table[] =
-	{
-	    {640, 350, 0x2d},
-	    {640, 480, 0x2e},
-	    {800, 600, 0x30},
-	    {1024, 768, 0x38},
-	    {-1, -1, -1}
-	};
-	int code = svga_find_mode(dev, mode_table);
-	volatile_fb_ptr p0 = (volatile_fb_ptr) MK_PTR(regen, 0);
+        static const mode_info mode_table[] =
+        {
+            {640, 350, 0x2d},
+            {640, 480, 0x2e},
+            {800, 600, 0x30},
+            {1024, 768, 0x38},
+            {-1, -1, -1}
+        };
+        int code = svga_find_mode(dev, mode_table);
+        volatile_fb_ptr p0 = (volatile_fb_ptr) MK_PTR(regen, 0);
 
-	if (code < 0)
-	    return code;	/* mode not available */
-	code = svga_open(dev);
-	if (code < 0)
-	    return 0;
-	/* Figure out whether we have an ET3000 or an ET4000 */
-	/* by playing with the segment register. */
-	outportb(0x3cd, 0x44);
-	*p0 = 4;		/* byte 0, page 4 */
-	outportb(0x3cd, 0x40);
-	*p0 = 3;		/* byte 0, page 0 */
-	fb_dev->info.tseng.et_model = *p0;
-	/* read page 0 if ET3000, */
-	/* page 4 if ET4000 */
-	return 0;
+        if (code < 0)
+            return code;	/* mode not available */
+        code = svga_open(dev);
+        if (code < 0)
+            return 0;
+        /* Figure out whether we have an ET3000 or an ET4000 */
+        /* by playing with the segment register. */
+        outportb(0x3cd, 0x44);
+        *p0 = 4;		/* byte 0, page 4 */
+        outportb(0x3cd, 0x40);
+        *p0 = 3;		/* byte 0, page 0 */
+        fb_dev->info.tseng.et_model = *p0;
+        /* read page 0 if ET3000, */
+        /* page 4 if ET4000 */
+        return 0;
     }
 }
 
@@ -931,7 +931,7 @@ tseng_set_page(gx_device_svga * dev, int pn, int wnum)
     int mask = (1 << shift) - 1;
 
     if (wnum)
-	pn <<= shift, mask <<= shift;
+        pn <<= shift, mask <<= shift;
     outportb(0x3cd, (inportb(0x3cd) & ~mask) + pn);
 }
 /* ------ The Cirrus device (CL-GD54XX) ------ */
@@ -954,23 +954,23 @@ cirr_open(gx_device * dev)
     fb_dev->wnum_write = 0;
     /* Select the proper video mode */
     {
-	static const mode_info mode_table[] =
-	{
-	    {640, 400, 0x5e},
-	    {640, 480, 0x5f},
-	    {800, 600, 0x5c},
-	    {1024, 768, 0x60},
-	    {-1, -1, -1}
-	};
-	int code = svga_find_mode(dev, mode_table);
+        static const mode_info mode_table[] =
+        {
+            {640, 400, 0x5e},
+            {640, 480, 0x5f},
+            {800, 600, 0x5c},
+            {1024, 768, 0x60},
+            {-1, -1, -1}
+        };
+        int code = svga_find_mode(dev, mode_table);
 
-	if (code < 0)
-	    return code;	/* mode not available */
-	outportb(0x3c4, 0x06);
-	outportb(0x3c5, 0x12);
-	outportb(0x3ce, 0x0b);
-	outportb(0x3cf, (inportb(0x3cf) & 0xde));
-	return svga_open(dev);
+        if (code < 0)
+            return code;	/* mode not available */
+        outportb(0x3c4, 0x06);
+        outportb(0x3c5, 0x12);
+        outportb(0x3ce, 0x0b);
+        outportb(0x3cf, (inportb(0x3cf) & 0xde));
+        return svga_open(dev);
     }
 }
 
@@ -995,7 +995,7 @@ static void ali_set_page(gx_device_svga *, int, int);
 /* The 256-color Avance Logic device */
 gx_device_svga gs_ali_device =
 svga_device(ali_procs, "ali", atiw_get_mode, atiw_set_mode,
-	    ali_set_page);
+            ali_set_page);
 
 /* Initialize the graphics mode. */
 static int
@@ -1005,19 +1005,19 @@ ali_open(gx_device * dev)
     fb_dev->wnum_write = 0;
     /* Select the proper video mode */
     {
-	static const mode_info mode_table[] =
-	{
-	    {640, 400, 0x29},
-	    {640, 480, 0x2a},
-	    {800, 600, 0x2c},
-	    {1024, 768, 0x31},
-	    {-1, -1, -1}
-	};
-	int code = svga_find_mode(dev, mode_table);
+        static const mode_info mode_table[] =
+        {
+            {640, 400, 0x29},
+            {640, 480, 0x2a},
+            {800, 600, 0x2c},
+            {1024, 768, 0x31},
+            {-1, -1, -1}
+        };
+        int code = svga_find_mode(dev, mode_table);
 
-	if (code < 0)
-	    return code;	/* mode not available */
-	return svga_open(dev);
+        if (code < 0)
+            return code;	/* mode not available */
+        return svga_open(dev);
     }
 
 }

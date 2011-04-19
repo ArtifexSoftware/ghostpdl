@@ -41,7 +41,7 @@ set_color_comp_1(
 )
 {
     if ( pcs->personality == pcl5e )
-	return 0;
+        return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[0] = float_arg(pargs);
     return 0;
@@ -57,7 +57,7 @@ set_color_comp_2(
 )
 {
     if ( pcs->personality == pcl5e )
-	return 0;
+        return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[1] = float_arg(pargs);
     return 0;
@@ -73,7 +73,7 @@ set_color_comp_3(
 )
 {
     if ( pcs->personality == pcl5e )
-	return 0;
+        return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[2] = float_arg(pargs);
     return 0;
@@ -88,7 +88,7 @@ set_color_comp_3(
  * will not affect the palette, but will reset the color component registers.
  * This matches the behavior of the HP Color Laser Jet 5/5M, but not that of
  * the HP DeskJet 1600C/CM. For the latter, negative indices are ignored and
- * the color component registers are NOT cleared, while positive indices are 
+ * the color component registers are NOT cleared, while positive indices are
  * interpreted modulo the palette size.
  */
   static int
@@ -100,7 +100,7 @@ assign_color_index(
     int             indx = int_arg(pargs);
 
     if ( pcs->personality == pcl5e )
-	return 0;
+        return 0;
     if (!pcs->raster_state.graphics_mode) {
         if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
             pcl_palette_set_color(pcs, indx, pcs->color_comps);
@@ -124,30 +124,30 @@ color_do_registration(
     DEFINE_CLASS('*')
     {
         'v', 'A',
-	PCL_COMMAND( "Color Component 1",
+        PCL_COMMAND( "Color Component 1",
                      set_color_comp_1,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
+                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'B',
-	PCL_COMMAND( "Color Component 2",
+        PCL_COMMAND( "Color Component 2",
                      set_color_comp_2,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
+                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'C',
         PCL_COMMAND( "Color Component 3",
                      set_color_comp_3,
-		     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
+                     pca_neg_ok | pca_big_error | pca_raster_graphics | pca_in_rtl
                      )
     },
     {
         'v', 'I',
         PCL_COMMAND( "Assign Color Index",
                      assign_color_index,
-		     pca_neg_ok | pca_big_ignore | pca_raster_graphics | pca_in_rtl
+                     pca_neg_ok | pca_big_ignore | pca_raster_graphics | pca_in_rtl
                      )
     },
     END_CLASS

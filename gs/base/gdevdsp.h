@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -50,7 +50,7 @@
  *  - after preclose
  * If opening the device fails, you might see the following:
  *  open, presize, memalloc, memfree, close
- * 
+ *
  */
 
 #define DISPLAY_VERSION_MAJOR 2
@@ -82,8 +82,8 @@ typedef enum {
 } DISPLAY_FORMAT_ALPHA;
 #define DISPLAY_ALPHA_MASK 0x00f0L
 
-/* Define the depth per component for DISPLAY_COLORS_GRAY, 
- * DISPLAY_COLORS_RGB and DISPLAY_COLORS_CMYK, 
+/* Define the depth per component for DISPLAY_COLORS_GRAY,
+ * DISPLAY_COLORS_RGB and DISPLAY_COLORS_CMYK,
  * or the depth per pixel for DISPLAY_COLORS_NATIVE
  * DISPLAY_DEPTH_2 and DISPLAY_DEPTH_12 have not been tested.
  */
@@ -99,8 +99,7 @@ typedef enum {
 } DISPLAY_FORMAT_DEPTH;
 #define DISPLAY_DEPTH_MASK 0xff00L
 
-
-/* Define whether Red/Cyan should come first, 
+/* Define whether Red/Cyan should come first,
  * or whether Blue/Black should come first
  */
 typedef enum {
@@ -116,7 +115,6 @@ typedef enum {
 } DISPLAY_FORMAT_FIRSTROW;
 #define DISPLAY_FIRSTROW_MASK 0x00020000L
 
-
 /* Define whether packing RGB in 16-bits should use 555
  * or 565 (extra bit for green)
  */
@@ -128,8 +126,8 @@ typedef enum {
 
 /* Define the row alignment, which must be equal to or greater than
  * the size of a pointer.
- * The default (DISPLAY_ROW_ALIGN_DEFAULT) is the size of a pointer, 
- * 4 bytes (DISPLAY_ROW_ALIGN_4) on 32-bit systems or 8 bytes 
+ * The default (DISPLAY_ROW_ALIGN_DEFAULT) is the size of a pointer,
+ * 4 bytes (DISPLAY_ROW_ALIGN_4) on 32-bit systems or 8 bytes
  * (DISPLAY_ROW_ALIGN_8) on 64-bit systems.
  */
 typedef enum {
@@ -144,14 +142,13 @@ typedef enum {
 } DISPLAY_FORMAT_ROW_ALIGN;
 #define DISPLAY_ROW_ALIGN_MASK 0x00700000L
 
-
 #ifndef display_callback_DEFINED
 #define display_callback_DEFINED
 typedef struct display_callback_s display_callback;
 #endif
 
 /*
- * Note that for Windows, the display callback functions are 
+ * Note that for Windows, the display callback functions are
  * cdecl, not stdcall.  This differs from those in iapi.h.
  */
 
@@ -187,12 +184,12 @@ struct display_callback_s {
     /* Resize will only occur if this function returns 0. */
     /* raster is byte count of a row. */
     int (*display_presize)(void *handle, void *device,
-	int width, int height, int raster, unsigned int format);
-   
+        int width, int height, int raster, unsigned int format);
+
     /* Device has been resized. */
     /* New pointer to raster returned in pimage */
-    int (*display_size)(void *handle, void *device, int width, int height, 
-	int raster, unsigned int format, unsigned char *pimage);
+    int (*display_size)(void *handle, void *device, int width, int height,
+        int raster, unsigned int format, unsigned char *pimage);
 
     /* flushpage */
     int (*display_sync)(void *handle, void *device);
@@ -206,14 +203,14 @@ struct display_callback_s {
      * progressive update of the display.
      * This function pointer may be set to NULL if not required.
      */
-    int (*display_update)(void *handle, void *device, int x, int y, 
-	int w, int h);
+    int (*display_update)(void *handle, void *device, int x, int y,
+        int w, int h);
 
     /* Allocate memory for bitmap */
     /* This is provided in case you need to create memory in a special
-     * way, e.g. shared.  If this is NULL, the Ghostscript memory device 
+     * way, e.g. shared.  If this is NULL, the Ghostscript memory device
      * allocates the bitmap. This will only called to allocate the
-     * image buffer. The first row will be placed at the address 
+     * image buffer. The first row will be placed at the address
      * returned by display_memalloc.
      */
     void *(*display_memalloc)(void *handle, void *device, unsigned long size);
@@ -221,7 +218,7 @@ struct display_callback_s {
     /* Free memory for bitmap */
     /* If this is NULL, the Ghostscript memory device will free the bitmap */
     int (*display_memfree)(void *handle, void *device, void *mem);
-   
+
     /* Added in V2 */
     /* When using separation color space (DISPLAY_COLORS_SEPARATION),
      * give a mapping for one separation component.
@@ -236,9 +233,9 @@ struct display_callback_s {
      * This function pointer may be set to NULL if not required.
      */
     int (*display_separation)(void *handle, void *device,
-	int component, const char *component_name,
-	unsigned short c, unsigned short m, 
-	unsigned short y, unsigned short k);
+        int component, const char *component_name,
+        unsigned short c, unsigned short m,
+        unsigned short y, unsigned short k);
 };
 
 /* This is the V1 structure, before separation format was added */
@@ -250,13 +247,13 @@ struct display_callback_v1_s {
     int (*display_preclose)(void *handle, void *device);
     int (*display_close)(void *handle, void *device);
     int (*display_presize)(void *handle, void *device,
-	int width, int height, int raster, unsigned int format);
-    int (*display_size)(void *handle, void *device, int width, int height, 
-	int raster, unsigned int format, unsigned char *pimage);
+        int width, int height, int raster, unsigned int format);
+    int (*display_size)(void *handle, void *device, int width, int height,
+        int raster, unsigned int format, unsigned char *pimage);
     int (*display_sync)(void *handle, void *device);
     int (*display_page)(void *handle, void *device, int copies, int flush);
-    int (*display_update)(void *handle, void *device, int x, int y, 
-	int w, int h);
+    int (*display_update)(void *handle, void *device, int x, int y,
+        int w, int h);
     void *(*display_memalloc)(void *handle, void *device, unsigned long size);
     int (*display_memfree)(void *handle, void *device, void *mem);
 };

@@ -62,25 +62,25 @@ gslt_read_cff_real(byte *p, byte *e, float *val)
 
     while (txt < buf + (sizeof buf) - 3 && p < e)
     {
-	int b, n;
+        int b, n;
 
-	b = *p++;
+        b = *p++;
 
-	n = (b >> 4) & 0xf;
-	if (n < 0xA) { *txt++ = n + '0'; }
-	else if (n == 0xA) { *txt++ = '.'; }
-	else if (n == 0xB) { *txt++ = 'E'; }
-	else if (n == 0xC) { *txt++ = 'E'; *txt++ = '-'; }
-	else if (n == 0xE) { *txt++ = '-'; }
-	else if (n == 0xF) { break; }
+        n = (b >> 4) & 0xf;
+        if (n < 0xA) { *txt++ = n + '0'; }
+        else if (n == 0xA) { *txt++ = '.'; }
+        else if (n == 0xB) { *txt++ = 'E'; }
+        else if (n == 0xC) { *txt++ = 'E'; *txt++ = '-'; }
+        else if (n == 0xE) { *txt++ = '-'; }
+        else if (n == 0xF) { break; }
 
-	n = b & 0xf;
-	if (n < 0xA) { *txt++ = n + '0'; }
-	else if (n == 0xA) { *txt++ = '.'; }
-	else if (n == 0xB) { *txt++ = 'E'; }
-	else if (n == 0xC) { *txt++ = 'E'; *txt++ = '-'; }
-	else if (n == 0xE) { *txt++ = '-'; }
-	else if (n == 0xF) { break; }
+        n = b & 0xf;
+        if (n < 0xA) { *txt++ = n + '0'; }
+        else if (n == 0xA) { *txt++ = '.'; }
+        else if (n == 0xB) { *txt++ = 'E'; }
+        else if (n == 0xC) { *txt++ = 'E'; *txt++ = '-'; }
+        else if (n == 0xE) { *txt++ = '-'; }
+        else if (n == 0xF) { break; }
     }
 
     *txt = 0;
@@ -97,55 +97,55 @@ gslt_read_cff_integer(byte *p, byte *e, int b0, int *val)
 
     if (b0 == 28)
     {
-	if (p + 2 > e)
-	{
-	    gs_throw(-1, "corrupt dictionary (integer)");
-	    return 0;
-	}
-	b1 = *p++;
-	b2 = *p++;
-	*val = (b1 << 8) | b2;
+        if (p + 2 > e)
+        {
+            gs_throw(-1, "corrupt dictionary (integer)");
+            return 0;
+        }
+        b1 = *p++;
+        b2 = *p++;
+        *val = (b1 << 8) | b2;
     }
 
     else if (b0 == 29)
     {
-	if (p + 4 > e)
-	{
-	    gs_throw(-1, "corrupt dictionary (integer)");
-	    return 0;
-	}
-	b1 = *p++;
-	b2 = *p++;
-	b3 = *p++;
-	b4 = *p++;
-	*val = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+        if (p + 4 > e)
+        {
+            gs_throw(-1, "corrupt dictionary (integer)");
+            return 0;
+        }
+        b1 = *p++;
+        b2 = *p++;
+        b3 = *p++;
+        b4 = *p++;
+        *val = (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
     }
 
     else if (b0 < 247)
     {
-	*val = b0 - 139;
+        *val = b0 - 139;
     }
 
     else if (b0 < 251)
     {
-	if (p + 1 > e)
-	{
-	    gs_throw(-1, "corrupt dictionary (integer)");
-	    return 0;
-	}
-	b1 = *p++;
-	*val = (b0 - 247) * 256 + b1 + 108;
+        if (p + 1 > e)
+        {
+            gs_throw(-1, "corrupt dictionary (integer)");
+            return 0;
+        }
+        b1 = *p++;
+        *val = (b0 - 247) * 256 + b1 + 108;
     }
 
     else
     {
-	if (p + 1 > e)
-	{
-	    gs_throw(-1, "corrupt dictionary (integer)");
-	    return 0;
-	}
-	b1 = *p++;
-	*val = -(b0 - 251) * 256 - b1 - 108;
+        if (p + 1 > e)
+        {
+            gs_throw(-1, "corrupt dictionary (integer)");
+            return 0;
+        }
+        b1 = *p++;
+        *val = -(b0 - 251) * 256 - b1 - 108;
     }
 
     return p;
@@ -168,191 +168,191 @@ gslt_read_cff_dict(byte *p, byte *e, gslt_font_t *fontobj, gs_font_type1 *pt1)
     n = 0;
     while (p < e)
     {
-	b0 = *p++;
+        b0 = *p++;
 
-	if (b0 < 22)
-	{
-	    if (b0 == 12)
-	    {
-		if (p + 1 > e)
-		{
-		    return gs_throw(-1, "corrupt dictionary (operator)");
-		}
-		b0 = 0x100 | *p++;
-	    }
+        if (b0 < 22)
+        {
+            if (b0 == 12)
+            {
+                if (p + 1 > e)
+                {
+                    return gs_throw(-1, "corrupt dictionary (operator)");
+                }
+                b0 = 0x100 | *p++;
+            }
 
-	    /* some CFF file offsets */
+            /* some CFF file offsets */
 
-	    if (b0 == 17)
-	    {
-		fontobj->charstrings = fontobj->cffdata + args[0].ival;
-	    }
+            if (b0 == 17)
+            {
+                fontobj->charstrings = fontobj->cffdata + args[0].ival;
+            }
 
-	    if (b0 == 18)
-	    {
-		privatelen = args[0].ival;
-		privateofs = args[1].ival;
-	    }
+            if (b0 == 18)
+            {
+                privatelen = args[0].ival;
+                privateofs = args[1].ival;
+            }
 
-	    if (b0 == 19)
-	    {
-		fontobj->subrs = fontobj->cffdata + offset + args[0].ival;
-	    }
+            if (b0 == 19)
+            {
+                fontobj->subrs = fontobj->cffdata + offset + args[0].ival;
+            }
 
-	    if (b0 == (256 | 36))
-		errprintf("warning: cid cff fonts not supported yet");
-	    if (b0 == (256 | 37))
-		errprintf("warning: cid cff fonts not supported yet");
+            if (b0 == (256 | 36))
+                errprintf("warning: cid cff fonts not supported yet");
+            if (b0 == (256 | 37))
+                errprintf("warning: cid cff fonts not supported yet");
 
-	    /* Type1 stuff that need to be set for the pt1 struct */
+            /* Type1 stuff that need to be set for the pt1 struct */
 
-	    if (b0 == (256 | 6))
-	    {
-		if (args[0].ival == 1)
-		{
-		    pt1->data.interpret = gs_type1_interpret;
-		    pt1->data.lenIV = -1; // FIXME
-		}
-	    }
+            if (b0 == (256 | 6))
+            {
+                if (args[0].ival == 1)
+                {
+                    pt1->data.interpret = gs_type1_interpret;
+                    pt1->data.lenIV = -1; // FIXME
+                }
+            }
 
-	    if (b0 == (256 | 7))
-	    {
-		pt1->FontMatrix.xx = args[0].fval * 1000;
-		pt1->FontMatrix.xy = args[1].fval * 1000;
-		pt1->FontMatrix.yx = args[2].fval * 1000;
-		pt1->FontMatrix.yy = args[3].fval * 1000;
-		pt1->FontMatrix.tx = args[4].fval * 1000;
-		pt1->FontMatrix.ty = args[5].fval * 1000;
-	    }
+            if (b0 == (256 | 7))
+            {
+                pt1->FontMatrix.xx = args[0].fval * 1000;
+                pt1->FontMatrix.xy = args[1].fval * 1000;
+                pt1->FontMatrix.yx = args[2].fval * 1000;
+                pt1->FontMatrix.yy = args[3].fval * 1000;
+                pt1->FontMatrix.tx = args[4].fval * 1000;
+                pt1->FontMatrix.ty = args[5].fval * 1000;
+            }
 
-	    if (b0 == 5)
-	    {
-		pt1->FontBBox.p.x = args[0].fval;
-		pt1->FontBBox.p.y = args[1].fval;
-		pt1->FontBBox.q.x = args[2].fval;
-		pt1->FontBBox.q.y = args[3].fval;
-	    }
+            if (b0 == 5)
+            {
+                pt1->FontBBox.p.x = args[0].fval;
+                pt1->FontBBox.p.y = args[1].fval;
+                pt1->FontBBox.q.x = args[2].fval;
+                pt1->FontBBox.q.y = args[3].fval;
+            }
 
-	    if (b0 == 20)
-		pt1->data.defaultWidthX = float2fixed(args[0].fval);
+            if (b0 == 20)
+                pt1->data.defaultWidthX = float2fixed(args[0].fval);
 
-	    if (b0 == 21)
-		pt1->data.nominalWidthX = float2fixed(args[0].fval);
+            if (b0 == 21)
+                pt1->data.nominalWidthX = float2fixed(args[0].fval);
 
-	    if (b0 == (256 | 19))
-		pt1->data.initialRandomSeed = args[0].ival;
+            if (b0 == (256 | 19))
+                pt1->data.initialRandomSeed = args[0].ival;
 
-	    /* Monday morning blues */
+            /* Monday morning blues */
 
-	    if (b0 == 6)
-	    {
-		pt1->data.BlueValues.count = n / 2;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.BlueValues.values[i] = f;
-	    }
+            if (b0 == 6)
+            {
+                pt1->data.BlueValues.count = n / 2;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.BlueValues.values[i] = f;
+            }
 
-	    if (b0 == 7)
-	    {
-		pt1->data.OtherBlues.count = n / 2;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.OtherBlues.values[i] = f;
-	    }
+            if (b0 == 7)
+            {
+                pt1->data.OtherBlues.count = n / 2;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.OtherBlues.values[i] = f;
+            }
 
-	    if (b0 == 8)
-	    {
-		pt1->data.FamilyBlues.count = n / 2;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.FamilyBlues.values[i] = f;
-	    }
+            if (b0 == 8)
+            {
+                pt1->data.FamilyBlues.count = n / 2;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.FamilyBlues.values[i] = f;
+            }
 
-	    if (b0 == 9)
-	    {
-		pt1->data.FamilyOtherBlues.count = n / 2;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.FamilyOtherBlues.values[i] = f;
-	    }
+            if (b0 == 9)
+            {
+                pt1->data.FamilyOtherBlues.count = n / 2;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.FamilyOtherBlues.values[i] = f;
+            }
 
-	    if (b0 == 10)
-	    {
-		pt1->data.StdHW.count = 1;
-		pt1->data.StdHW.values[0] = args[0].fval;
-	    }
+            if (b0 == 10)
+            {
+                pt1->data.StdHW.count = 1;
+                pt1->data.StdHW.values[0] = args[0].fval;
+            }
 
-	    if (b0 == 11)
-	    {
-		pt1->data.StdVW.count = 1;
-		pt1->data.StdVW.values[0] = args[0].fval;
-	    }
+            if (b0 == 11)
+            {
+                pt1->data.StdVW.count = 1;
+                pt1->data.StdVW.values[0] = args[0].fval;
+            }
 
-	    if (b0 == (256 | 9))
-		pt1->data.BlueScale = args[0].fval;
+            if (b0 == (256 | 9))
+                pt1->data.BlueScale = args[0].fval;
 
-	    if (b0 == (256 | 10))
-		pt1->data.BlueShift = args[0].fval;
+            if (b0 == (256 | 10))
+                pt1->data.BlueShift = args[0].fval;
 
-	    if (b0 == (256 | 11))
-		pt1->data.BlueFuzz = args[0].fval;
+            if (b0 == (256 | 11))
+                pt1->data.BlueFuzz = args[0].fval;
 
-	    if (b0 == (256 | 12))
-	    {
-		pt1->data.StemSnapH.count = n;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.StemSnapH.values[i] = f;
-	    }
+            if (b0 == (256 | 12))
+            {
+                pt1->data.StemSnapH.count = n;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.StemSnapH.values[i] = f;
+            }
 
-	    if (b0 == (256 | 13))
-	    {
-		pt1->data.StemSnapV.count = n;
-		for (f = 0, i = 0; i < n; f += args[i].fval, i++)
-		    pt1->data.StemSnapV.values[i] = f;
-	    }
+            if (b0 == (256 | 13))
+            {
+                pt1->data.StemSnapV.count = n;
+                for (f = 0, i = 0; i < n; f += args[i].fval, i++)
+                    pt1->data.StemSnapV.values[i] = f;
+            }
 
-	    if (b0 == (256 | 14))
-		pt1->data.ForceBold = args[0].ival;
+            if (b0 == (256 | 14))
+                pt1->data.ForceBold = args[0].ival;
 
-	    if (b0 == (256 | 17))
-		pt1->data.LanguageGroup = args[0].ival;
+            if (b0 == (256 | 17))
+                pt1->data.LanguageGroup = args[0].ival;
 
-	    if (b0 == (256 | 18))
-		pt1->data.ExpansionFactor = args[0].fval;
+            if (b0 == (256 | 18))
+                pt1->data.ExpansionFactor = args[0].fval;
 
-	    n = 0;
-	}
+            n = 0;
+        }
 
-	else
-	{
-	    if (b0 == 30)
-	    {
-		p = gslt_read_cff_real(p, e, &args[n].fval);
-		if (!p)
-		    return gs_throw(-1, "corrupt dictionary operand");
-		args[n].ival = (int) args[n].fval;
-		n++;
-	    }
-	    else if (b0 == 28 || b0 == 29 || (b0 >= 32 && b0 <= 254))
-	    {
-		p = gslt_read_cff_integer(p, e, b0, &args[n].ival);
-		if (!p)
-		    return gs_throw(-1, "corrupt dictionary operand");
-		args[n].fval = (float) args[n].ival;
-		n++;
-	    }
-	    else
-	    {
-		return gs_throw1(-1, "corrupt dictionary operand (b0 = %d)", b0);
-	    }
-	}
+        else
+        {
+            if (b0 == 30)
+            {
+                p = gslt_read_cff_real(p, e, &args[n].fval);
+                if (!p)
+                    return gs_throw(-1, "corrupt dictionary operand");
+                args[n].ival = (int) args[n].fval;
+                n++;
+            }
+            else if (b0 == 28 || b0 == 29 || (b0 >= 32 && b0 <= 254))
+            {
+                p = gslt_read_cff_integer(p, e, b0, &args[n].ival);
+                if (!p)
+                    return gs_throw(-1, "corrupt dictionary operand");
+                args[n].fval = (float) args[n].ival;
+                n++;
+            }
+            else
+            {
+                return gs_throw1(-1, "corrupt dictionary operand (b0 = %d)", b0);
+            }
+        }
     }
 
     /* recurse for the private dictionary */
     if (privatelen)
     {
-	int code = gslt_read_cff_dict(
-		fontobj->cffdata + privateofs,
-		fontobj->cffdata + privateofs + privatelen,
-		fontobj, pt1);
-	if (code < 0)
-	    return gs_rethrow(code, "cannot read private dictionary");
+        int code = gslt_read_cff_dict(
+                fontobj->cffdata + privateofs,
+                fontobj->cffdata + privateofs + privatelen,
+                fontobj, pt1);
+        if (code < 0)
+            return gs_rethrow(code, "cannot read private dictionary");
     }
 
     return 0;
@@ -370,28 +370,28 @@ gslt_count_cff_index(byte *p, byte *e, int *countp)
 
     if (p + 3 > e)
     {
-	gs_throw(-1, "not enough data for index header");
-	return 0;
+        gs_throw(-1, "not enough data for index header");
+        return 0;
     }
 
     count = u16(p); p += 2;
     *countp = count;
 
     if (count == 0)
-	return p;
+        return p;
 
     offsize = *p++;
 
     if (offsize < 1 || offsize > 4)
     {
-	gs_throw(-1, "corrupt index header");
-	return 0;
+        gs_throw(-1, "corrupt index header");
+        return 0;
     }
 
     if (p + count * offsize > e)
     {
-	gs_throw(-1, "not enough data for index offset table");
-	return 0;
+        gs_throw(-1, "not enough data for index offset table");
+        return 0;
     }
 
     p += count * offsize;
@@ -401,8 +401,8 @@ gslt_count_cff_index(byte *p, byte *e, int *countp)
 
     if (p + last > e)
     {
-	gs_throw(-1, "not enough data for index data");
-	return 0;
+        gs_throw(-1, "not enough data for index data");
+        return 0;
     }
 
     p += last;
@@ -423,32 +423,32 @@ gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep)
 
     if (p + 3 > e)
     {
-	gs_throw(-1, "not enough data for index header");
-	return 0;
+        gs_throw(-1, "not enough data for index header");
+        return 0;
     }
 
     count = u16(p); p += 2;
     if (count == 0)
-	return 0;
+        return 0;
 
     offsize = *p++;
 
     if (offsize < 1 || offsize > 4)
     {
-	gs_throw(-1, "corrupt index header");
-	return 0;
+        gs_throw(-1, "corrupt index header");
+        return 0;
     }
 
     if (p + count * offsize > e)
     {
-	gs_throw(-1, "not enough data for index offset table");
-	return 0;
+        gs_throw(-1, "not enough data for index offset table");
+        return 0;
     }
 
     if (idx < 0 || idx >= count)
     {
-	gs_throw(-1, "tried to access non-existing index item");
-	return 0;
+        gs_throw(-1, "tried to access non-existing index item");
+        return 0;
     }
 
     sofs = uofs(p + idx * offsize, offsize);
@@ -461,14 +461,14 @@ gslt_find_cff_index(byte *p, byte *e, int idx, byte **pp, byte **ep)
 
     if (p + last > e)
     {
-	gs_throw(-1, "not enough data for index data");
-	return 0;
+        gs_throw(-1, "not enough data for index data");
+        return 0;
     }
 
     if (sofs < 0 || eofs < 0 || sofs > eofs || eofs > last)
     {
-	gs_throw(-1, "corrupt index offset table");
-	return 0;
+        gs_throw(-1, "corrupt index offset table");
+        return 0;
     }
 
     *pp = p + sofs;
@@ -494,66 +494,66 @@ gslt_read_cff_file(gslt_font_t *fontobj, gs_font_type1 *pt1)
 
     /* CFF header */
     {
-	int major, minor, hdrsize, offsize;
+        int major, minor, hdrsize, offsize;
 
-	if (p + 4 > e)
-	    return gs_throw(-1, "not enough data for header");
+        if (p + 4 > e)
+            return gs_throw(-1, "not enough data for header");
 
-	major = *p++;
-	minor = *p++;
-	hdrsize = *p++;
-	offsize = *p++;
+        major = *p++;
+        minor = *p++;
+        hdrsize = *p++;
+        offsize = *p++;
 
-	if (major != 1 || minor != 0)
-	    return gs_throw(-1, "not a CFF 1.0 file");
+        if (major != 1 || minor != 0)
+            return gs_throw(-1, "not a CFF 1.0 file");
 
-	if (p + hdrsize - 4 > e)
-	    return gs_throw(-1, "not enough data for extended header");
+        if (p + hdrsize - 4 > e)
+            return gs_throw(-1, "not enough data for extended header");
     }
 
     /* Name INDEX */
     p = gslt_count_cff_index(p, e, &count);
     if (!p)
-	return gs_throw(-1, "cannot read name index");
+        return gs_throw(-1, "cannot read name index");
     if (count != 1)
-	return gs_throw(-1, "file did not contain exactly one font");
+        return gs_throw(-1, "file did not contain exactly one font");
 
     /* Top Dict INDEX */
     p = gslt_find_cff_index(p, e, 0, &dictp, &dicte);
     if (!p)
-	return gs_throw(-1, "cannot read top dict index");
+        return gs_throw(-1, "cannot read top dict index");
 
     /* String index */
     p = gslt_count_cff_index(p, e, &count);
     if (!p)
-	return gs_throw(-1, "cannot read string index");
+        return gs_throw(-1, "cannot read string index");
 
     /* Global Subr INDEX */
     fontobj->gsubrs = p;
     p = gslt_count_cff_index(p, e, &ngsubrs);
     if (!p)
-	return gs_throw(-1, "cannot read gsubr index");
+        return gs_throw(-1, "cannot read gsubr index");
 
     /* Read the top and private dictionaries */
     code = gslt_read_cff_dict(dictp, dicte, fontobj, pt1);
     if (code < 0)
-	return gs_rethrow(code, "cannot read top dictionary");
+        return gs_rethrow(code, "cannot read top dictionary");
 
     /* Check the subrs index */
     nsubrs = 0;
     if (fontobj->subrs)
     {
-	p = gslt_count_cff_index(fontobj->subrs, e, &nsubrs);
-	if (!p)
-	    return gs_rethrow(-1, "cannot read subrs index");
+        p = gslt_count_cff_index(fontobj->subrs, e, &nsubrs);
+        if (!p)
+            return gs_rethrow(-1, "cannot read subrs index");
     }
 
     /* Check the charstrings index */
     if (fontobj->charstrings)
     {
-	p = gslt_count_cff_index(fontobj->charstrings, e, &count);
-	if (!p)
-	    return gs_rethrow(-1, "cannot read charstrings index");
+        p = gslt_count_cff_index(fontobj->charstrings, e, &count);
+        if (!p)
+            return gs_rethrow(-1, "cannot read charstrings index");
     }
 
     pt1->data.subroutineNumberBias = subrbias(nsubrs);
@@ -562,7 +562,6 @@ gslt_read_cff_file(gslt_font_t *fontobj, gs_font_type1 *pt1)
 
     return 0;
 }
-
 
 /*
  *
@@ -575,7 +574,7 @@ gslt_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc
     int value;
     value = gslt_encode_font_char(xf, chr);
     if (value == 0)
-	return gs_no_glyph;
+        return gs_no_glyph;
     return value;
 }
 
@@ -593,14 +592,14 @@ gslt_post_callback_glyph_name(gs_font *pf, gs_glyph glyph, gs_const_string *pstr
 
 static int
 gslt_post_callback_glyph_info(gs_font *font, gs_glyph glyph,
-	const gs_matrix *pmat, int members, gs_glyph_info_t *info)
+        const gs_matrix *pmat, int members, gs_glyph_info_t *info)
 {
     return -1;
 }
 
 static int
 gslt_post_callback_glyph_outline(gs_font *font, int wmode, gs_glyph glyph,
-	const gs_matrix *pmat, gx_path *ppath, double sbw[4])
+        const gs_matrix *pmat, gx_path *ppath, double sbw[4])
 {
     dprintf2("glyph_outline wmode=%d glyph=%d\n", wmode, glyph);
     return -1;
@@ -637,7 +636,7 @@ gslt_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_da
 
     p = gslt_find_cff_index(fontobj->charstrings, fontobj->cffend, glyph, &s, &e);
     if (!p)
-	return gs_rethrow(-1, "cannot find charstring");
+        return gs_rethrow(-1, "cannot find charstring");
 
     gs_glyph_data_from_string(pgd, s, e - s, NULL);
 
@@ -646,7 +645,7 @@ gslt_post_callback_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_da
 
 static int
 gslt_post_callback_subr_data(gs_font_type1 * pfont,
-	int subr_num, bool global, gs_glyph_data_t *pgd)
+        int subr_num, bool global, gs_glyph_data_t *pgd)
 {
     gslt_font_t *fontobj = pfont->client_data;
     byte *s, *e;
@@ -656,15 +655,15 @@ gslt_post_callback_subr_data(gs_font_type1 * pfont,
 
     if (global)
     {
-	p = gslt_find_cff_index(fontobj->gsubrs, fontobj->cffend, subr_num, &s, &e);
-	if (!p)
-	    return gs_rethrow(-1, "cannot find gsubr");
+        p = gslt_find_cff_index(fontobj->gsubrs, fontobj->cffend, subr_num, &s, &e);
+        if (!p)
+            return gs_rethrow(-1, "cannot find gsubr");
     }
     else
     {
-	p = gslt_find_cff_index(fontobj->subrs, fontobj->cffend, subr_num, &s, &e);
-	if (!p)
-	    return gs_rethrow(-1, "cannot find subr");
+        p = gslt_find_cff_index(fontobj->subrs, fontobj->cffend, subr_num, &s, &e);
+        if (!p)
+            return gs_rethrow(-1, "cannot find subr");
     }
 
     gs_glyph_data_from_string(pgd, s, e - s, NULL);
@@ -674,7 +673,7 @@ gslt_post_callback_subr_data(gs_font_type1 * pfont,
 
 static int
 gslt_post_callback_seac_data(gs_font_type1 * pfont, int ccode, gs_glyph * pglyph,
-	gs_const_string *gstr, gs_glyph_data_t *pgd)
+        gs_const_string *gstr, gs_glyph_data_t *pgd)
 {
     return gs_throw(-1, "seac is deprecated in CFF fonts");
 }
@@ -690,7 +689,6 @@ gslt_post_callback_pop(void *callback_data, fixed *value)
 {
     return gs_throw(-1, "pop not implemented");;
 }
-
 
 static int
 gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
@@ -708,7 +706,7 @@ gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
     // get charstring data
     code = gslt_post_callback_glyph_data(pt1, glyph, pgd);
     if (code < 0)
-	return gs_rethrow(code, "cannot get glyph data");
+        return gs_rethrow(code, "cannot get glyph data");
 
     mtx.xx = ctm_only(pgs).xx;
     mtx.xy = ctm_only(pgs).xy;
@@ -722,7 +720,7 @@ gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 
     code = gs_type1_interp_init(&cxs.cis, pgis, pgs->path, NULL, NULL, donthint, 0, pt1);
     if (code < 0)
-	return gs_throw(code, "cannot init type1 interpreter");
+        return gs_throw(code, "cannot init type1 interpreter");
 
     gs_type1_set_callback_data(pcis, &cxs);
 
@@ -734,26 +732,26 @@ gslt_cff_append(gs_state *pgs, gs_font_type1 *pt1, gs_glyph glyph, int donthint)
 
     while (1)
     {
-	code = pt1->data.interpret(pcis, pgd, &value);
-	switch (code)
-	{
-	case type1_result_callothersubr: /* unknown OtherSubr */
-	    return_error(-15); /* can't handle it */
-	case type1_result_sbw: /* [h]sbw, just continue */
-	    type1_cis_get_metrics(pcis, cxs.sbw);
-	    type1_cis_get_metrics(pcis, sbw);
-	    pgd = 0;
-	    break;
-	case 0: /* all done */
-	default: /* code < 0, error */
-	    return code;
-	}
+        code = pt1->data.interpret(pcis, pgd, &value);
+        switch (code)
+        {
+        case type1_result_callothersubr: /* unknown OtherSubr */
+            return_error(-15); /* can't handle it */
+        case type1_result_sbw: /* [h]sbw, just continue */
+            type1_cis_get_metrics(pcis, cxs.sbw);
+            type1_cis_get_metrics(pcis, sbw);
+            pgd = 0;
+            break;
+        case 0: /* all done */
+        default: /* code < 0, error */
+            return code;
+        }
     }
 }
 
 static int
 gslt_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
-	gs_font *pfont, gs_char chr, gs_glyph glyph)
+        gs_font *pfont, gs_char chr, gs_glyph glyph)
 {
     gs_show_enum *penum = (gs_show_enum*)ptextenum;
     gs_font_type1 *pt1 = (gs_font_type1*)pfont;
@@ -776,32 +774,32 @@ gslt_post_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs,
     /* Expand the bbox when stroking */
     if ( pfont->PaintType )
     {
-	float expand = max(1.415, gs_currentmiterlimit(pgs)) * gs_currentlinewidth(pgs) / 2;
-	w2[2] -= expand, w2[3] -= expand;
-	w2[4] += expand, w2[5] += expand;
+        float expand = max(1.415, gs_currentmiterlimit(pgs)) * gs_currentlinewidth(pgs) / 2;
+        w2[2] -= expand, w2[3] -= expand;
+        w2[4] += expand, w2[5] += expand;
     }
 
     if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
-	return code;
-            
+        return code;
+
     if ( (code = gs_setcachedevice(penum, pgs, w2)) < 0 )
-	return code;
+        return code;
 
     code = gslt_cff_append(pgs, pt1, glyph,
-	    gs_show_in_charpath(penum) != cpm_show);
+            gs_show_in_charpath(penum) != cpm_show);
     if (code < 0)
-	return code;
+        return code;
 
     code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
     if (code < 0)
-	return code;
+        return code;
 
     return 0;
 }
 
 int
 gslt_init_postscript_font(gs_memory_t *mem,
-	gs_font_dir *fontdir, gslt_font_t *fontobj)
+        gs_font_dir *fontdir, gslt_font_t *fontobj)
 {
     gs_font_type1 *pt1;
     int cffofs;
@@ -815,23 +813,23 @@ gslt_init_postscript_font(gs_memory_t *mem,
 #if 0
     gs_glyph_data_t;
     gs_type1_data_procs_t {
-	z1_glyph_data, z1_subr_data, z1_seac_data, z1_push, z1_pop
+        z1_glyph_data, z1_subr_data, z1_seac_data, z1_push, z1_pop
     };
     gs_type1_data_s { procs;  ...;
-	subroutineNumberBias;
-	gsubrNumberBias;
-	defaultWidthX;
-	nominalWidthX;
+        subroutineNumberBias;
+        gsubrNumberBias;
+        defaultWidthX;
+        nominalWidthX;
     }
     gs_font_type1 { font_base_common; data }
 #endif
 
     cffofs = gslt_find_sfnt_table(fontobj, "CFF ", &cfflen);
     if (cffofs < 0)
-	return gs_throw(-1, "cannot find CFF table");
+        return gs_throw(-1, "cannot find CFF table");
 
     if (cfflen < 0 || cffofs + cfflen > fontobj->length)
-	return gs_throw(-1, "corrupt CFF table location");
+        return gs_throw(-1, "corrupt CFF table location");
 
     fontobj->cffdata = fontobj->data + cffofs;
     fontobj->cffend = fontobj->data + cffofs + cfflen;
@@ -842,7 +840,7 @@ gslt_init_postscript_font(gs_memory_t *mem,
 
     pt1 = (void*) gs_alloc_struct(mem, gs_font_type1, &st_gs_font_type1, "gslt_font type1");
     if (!pt1)
-	return gs_throw(-1, "out of memory");
+        return gs_throw(-1, "out of memory");
 
     fontobj->font = (void*) pt1;
 
@@ -891,7 +889,7 @@ gslt_init_postscript_font(gs_memory_t *mem,
     pt1->procs.make_font = gs_no_make_font;
     pt1->procs.font_info = gs_default_font_info;
     // same_font
-    pt1->procs.encode_char = gslt_post_callback_encode_char; 
+    pt1->procs.encode_char = gslt_post_callback_encode_char;
     pt1->procs.decode_glyph = gslt_post_callback_decode_glyph;
     // enumerate_glyph
     pt1->procs.glyph_info = gslt_post_callback_glyph_info;;
@@ -960,12 +958,11 @@ gslt_init_postscript_font(gs_memory_t *mem,
     code = gslt_read_cff_file(fontobj, pt1);
     if (code < 0)
     {
-	// TODO free pt1 here?
-	return gs_rethrow(code, "cannot read cff file structure");
+        // TODO free pt1 here?
+        return gs_rethrow(code, "cannot read cff file structure");
     }
 
     gs_definefont(fontdir, fontobj->font);
 
     return 0;
 }
-

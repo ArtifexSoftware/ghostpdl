@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,7 @@
 
 /* Forward references */
 static int common_arc(i_ctx_t *,
-	  int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp));
+          int (*)(gs_state *, floatp, floatp, floatp, floatp, floatp));
 static int common_arct(i_ctx_t *, float *);
 
 /* <x> <y> <r> <ang1> <ang2> arc - */
@@ -53,10 +53,10 @@ common_arc(i_ctx_t *i_ctx_p,
     int code = num_params(op, 5, xyra);
 
     if (code < 0)
-	return code;
+        return code;
     code = (*aproc)(igs, xyra[0], xyra[1], xyra[2], xyra[3], xyra[4]);
     if (code >= 0)
-	pop(5);
+        pop(5);
     return code;
 }
 
@@ -67,7 +67,7 @@ zarct(i_ctx_t *i_ctx_p)
     int code = common_arct(i_ctx_p, (float *)0);
 
     if (code < 0)
-	return code;
+        return code;
     pop(5);
     return 0;
 }
@@ -81,7 +81,7 @@ zarcto(i_ctx_t *i_ctx_p)
     int code = common_arct(i_ctx_p, tanxy);
 
     if (code < 0)
-	return code;
+        return code;
     make_real(op - 4, tanxy[0]);
     make_real(op - 3, tanxy[1]);
     make_real(op - 2, tanxy[2]);
@@ -99,7 +99,7 @@ common_arct(i_ctx_t *i_ctx_p, float *tanxy)
     int code = num_params(op, 5, args);
 
     if (code < 0)
-	return code;
+        return code;
     return gs_arcto(igs, args[0], args[1], args[2], args[3], args[4], tanxy);
 }
 
@@ -149,7 +149,7 @@ z1pathbbox(i_ctx_t *i_ctx_p)
     check_type(*op, t_boolean);
     code = gs_upathbbox(igs, &box, op->value.boolval);
     if (code < 0)
-	return code;
+        return code;
     push(3);
     make_real(op - 3, box.p.x);
     make_real(op - 2, box.p.y);
@@ -173,7 +173,7 @@ zpathbbox(i_ctx_t *i_ctx_p)
     make_false(op);
     code = z1pathbbox(i_ctx_p);
     if (code < 0) {
-	pop(1);			/* remove the Boolean */
+        pop(1);			/* remove the Boolean */
     }
     return code;
 }
@@ -194,11 +194,11 @@ zpathforall(i_ctx_t *i_ctx_p)
     check_proc(*op);
     check_estack(8);
     if ((penum = gs_path_enum_alloc(imemory, "pathforall")) == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     code = gs_path_enum_init(penum, igs);
     if (code < 0) {
-	ifree_object(penum, "path_cleanup");
-	return code;
+        ifree_object(penum, "path_cleanup");
+        return code;
     }
     /* Push a mark, the four procedures, and the path enumerator. */
     push_mark_estack(es_for, path_cleanup);	/* iterator */
@@ -224,27 +224,27 @@ path_continue(i_ctx_t *i_ctx_p)
     check_ostack(6);		/* 3 points for curveto */
     code = gs_path_enum_next(penum, ppts);
     switch (code) {
-	case 0:		/* all done */
-	    esp -= 6;
-	    path_cleanup(i_ctx_p);
-	    return o_pop_estack;
-	default:		/* error */
-	    return code;
-	case gs_pe_moveto:
-	    esp[2] = esp[-4];	/* moveto proc */
-	    pf_push(i_ctx_p, ppts, 1);
-	    break;
-	case gs_pe_lineto:
-	    esp[2] = esp[-3];	/* lineto proc */
-	    pf_push(i_ctx_p, ppts, 1);
-	    break;
-	case gs_pe_curveto:
-	    esp[2] = esp[-2];	/* curveto proc */
-	    pf_push(i_ctx_p, ppts, 3);
-	    break;
-	case gs_pe_closepath:
-	    esp[2] = esp[-1];	/* closepath proc */
-	    break;
+        case 0:		/* all done */
+            esp -= 6;
+            path_cleanup(i_ctx_p);
+            return o_pop_estack;
+        default:		/* error */
+            return code;
+        case gs_pe_moveto:
+            esp[2] = esp[-4];	/* moveto proc */
+            pf_push(i_ctx_p, ppts, 1);
+            break;
+        case gs_pe_lineto:
+            esp[2] = esp[-3];	/* lineto proc */
+            pf_push(i_ctx_p, ppts, 1);
+            break;
+        case gs_pe_curveto:
+            esp[2] = esp[-2];	/* curveto proc */
+            pf_push(i_ctx_p, ppts, 3);
+            break;
+        case gs_pe_closepath:
+            esp[2] = esp[-1];	/* closepath proc */
+            break;
     }
     push_op_estack(path_continue);
     ++esp;			/* include pushed procedure */
@@ -257,10 +257,10 @@ pf_push(i_ctx_t *i_ctx_p, gs_point * ppts, int n)
     os_ptr op = osp;
 
     while (n--) {
-	op += 2;
-	make_real(op - 1, ppts->x);
-	make_real(op, ppts->y);
-	ppts++;
+        op += 2;
+        make_real(op - 1, ppts->x);
+        make_real(op, ppts->y);
+        ppts++;
     }
     osp = op;
 }
@@ -291,7 +291,7 @@ const op_def zpath1_op_defs[] =
     {"0strokepath", zstrokepath},
     {"1.pathbbox", z1pathbbox},
     {"0pathbbox", zpathbbox},
-		/* Internal operators */
+                /* Internal operators */
     {"0%path_continue", path_continue},
     op_def_end(0)
 };

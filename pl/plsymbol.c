@@ -681,7 +681,6 @@ static const pl_symbol_map_t map_9J_unicode = {
     }
 };
 
-
 /**************************************
  * ISO 8859/1 Latin 1 Unicode mapping *
  **************************************/
@@ -856,7 +855,7 @@ static const pl_symbol_map_t map_10U_unicode = {
         0x03b1, 0x00df, 0x0393, 0x03c0, 0x03a3, 0x03c3, 0x00b5, 0x03c4,
         0x03a6, 0x0398, 0x03a9, 0x03b4, 0x221e, 0x03c6, 0x03b5, 0x2229,
         /*0xf0*/
-        0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248, 
+        0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248,
         0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25aa, 0x00a0
     }
 };
@@ -1321,7 +1320,6 @@ static const pl_symbol_map_t map_17U_unicode = {
     }
 };
 
-
 /************************************
  * PC-Turkish  (PT) Unicode mapping *
  ************************************/
@@ -1374,7 +1372,7 @@ static const pl_symbol_map_t map_9T_unicode = {
         0x03b1, 0x00df, 0x0393, 0x03c0, 0x03a3, 0x03c3, 0x00b5, 0x03c4,
         0x03a6, 0x0398, 0x03a9, 0x03b4, 0x221e, 0x03c6, 0x03b5, 0x2229,
         /*0xf0*/
-        0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248, 
+        0x2261, 0x00b1, 0x2265, 0x2264, 0x2320, 0x2321, 0x00f7, 0x2248,
         0x00b0, 0x2219, 0x2219, 0x221a, 0x207f, 0x00b2, 0x25aa, 0x00a0
     }
 };
@@ -1493,7 +1491,6 @@ static const pl_symbol_map_t map_9E_unicode = {
         0x0159, 0x016f, 0x00fa, 0x0171, 0x00fc, 0x00fd, 0x0163, 0x02d9,
     }
 };
-
 
 /* NB The following 3 symbols sets need to be formatted consistently
    with the other symbol sets. */
@@ -2023,7 +2020,7 @@ static const pl_symbol_map_t map_9G_unicode = {
       0x03cc,
       0x03cd,
       0x03ce,
-      0xffff 
+      0xffff
   }
 };
 /********************************************
@@ -2032,7 +2029,7 @@ static const pl_symbol_map_t map_9G_unicode = {
 static const pl_symbol_map_t map_9V_unicode = {
   map_header(9, 'V', plgv_Unicode, 2, 0, 0, 0, 0, 0xc0, 0, 0, 0, PLGV_U2M_MAPPING),
   {
-      0x0000, 
+      0x0000,
       0x0001,
       0x0002,
       0x0003,
@@ -2287,7 +2284,7 @@ static const pl_symbol_map_t map_9V_unicode = {
       0x00fc,
       0x200e,
       0x200f,
-      0x06d2 
+      0x06d2
   }
 };
 
@@ -3567,7 +3564,6 @@ const pl_symbol_map_t *pl_built_in_symbol_maps[] = {
 const int pl_built_in_symbol_map_count =
     countof(pl_built_in_symbol_maps) - 1;
 
-
 ulong
 pl_map_symbol(const pl_symbol_map_t *psm,
               uint chr, bool is_resident_font, bool is_MSL,
@@ -3586,12 +3582,12 @@ pl_map_symbol(const pl_symbol_map_t *psm,
      */
 
     if (psm == 0) {
-	if (is_resident_font && !is_590)
-	    return chr + 0xf000;
+        if (is_resident_font && !is_590)
+            return chr + 0xf000;
         else
             return chr;
     }
-     
+
     if (pl_get_uint16(psm->id) == 590)	{
         return chr;
     }
@@ -3599,7 +3595,7 @@ pl_map_symbol(const pl_symbol_map_t *psm,
     first_code = pl_get_uint16(psm->first_code);
     last_code = pl_get_uint16(psm->last_code);
     if ((chr < first_code) || (chr > last_code))
-	code = ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
+        code = ((last_code <= 0xff) && (chr > 0xff) ? chr : 0xffff);
     else
         code = psm->codes[chr - first_code];
     /* we do not provide many of the symbol sets in MSL format.

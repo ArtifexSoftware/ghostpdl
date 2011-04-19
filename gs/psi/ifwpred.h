@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,7 +19,7 @@
 
 /* Exported by zfilter2.c for zfzlib.c */
 int filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
-			   const stream_template * template,
-			   stream_state * st);
+                           const stream_template * template,
+                           stream_state * st);
 
 #endif /* ifwpred_INCLUDED */

@@ -26,8 +26,8 @@
  * PCL pattern types.
  *
  * There are two types of patterns used in PCL, colored and uncolored. In
- * order to support transparency, both types are implemented as colored 
- * patterns in the graphics library (which does not support opaque 
+ * order to support transparency, both types are implemented as colored
+ * patterns in the graphics library (which does not support opaque
  * uncolored patterns).
  *
  * The values used are defined by HP.
@@ -95,8 +95,6 @@ typedef struct pcl_pattern_data_s {
 #define pcl_pattern_data_release(ppat_data)             \
     rc_decrement(ppat_data, "pcl_pattern_data_release")
 
-
-
 /* forward declaration */
 #ifndef pcl_ccolor_DEFINED
 #define pcl_ccolor_DEFINED
@@ -111,7 +109,7 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  * instances. There are potentially two rendered instances of a pattern,
  * one as a mask (uncolored) pattern and one as a colored pattern.
  *
- * A "colored" pattern in the PCL sense will never have a mask rendering, but 
+ * A "colored" pattern in the PCL sense will never have a mask rendering, but
  * an "uncolored" PCL pattern may have both a mask and a colored rendering,
  * because mask patterns in the graphic library cannot be opaque, and cannot
  * use a halftone or color redering dictionary that differs from that being
@@ -130,7 +128,7 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  *        the range 0 to 3.
  *
  *    The pen field applies only to the colored pattern rendering and is used
- *        only for patterns that are uncolored in the PCL sense and rendered 
+ *        only for patterns that are uncolored in the PCL sense and rendered
  *        from GL/2. The pen field indicates the palette entry used as the
  *        foreground for the pattern. For PCL colored patterns or uncolored
  *        patterns rendered from PCL, this field will be 0. The value 0 is
@@ -175,7 +173,6 @@ typedef struct pcl_pattern_t {
                          pmask_ccolor               \
                          )
 
-
 /*
  * The PCL structure corresponding to the graphic library's client color
  * structure. The latter potentially contains a client data structure pointer
@@ -205,7 +202,7 @@ typedef struct pcl_pattern_t {
  *
  *      one of pindexed or pbase points to the base color space of the
  *          pattern color space (the other is NULL)
- * 
+ *
  *      ccolor.paint.values[0] or ccolor.paint.values[0..2] holds the
  *         color values to be use for the pattern foreground
  *
@@ -243,7 +240,7 @@ typedef enum {
 struct  pcl_ccolor_s {
     rc_header               rc;
     pcl_ccolor_type_t       type;
-    pcl_pattern_data_t *    ppat_data;  
+    pcl_pattern_data_t *    ppat_data;
     pcl_cs_indexed_t *      pindexed;
     pcl_cs_base_t *         pbase;
     const byte *            prast;
@@ -283,7 +280,6 @@ struct  pcl_ccolor_s {
 #define pcl_ccolor_release(pccolor)             \
     rc_decrement(pccolor, "pcl_ccolor_release")
 
-
 /*
  * Create a colored pcl_pattern_t object from a gs_depth_bitmap object. This
  * object will be considered "temporary" in the sense of a PCL resource, and
@@ -317,8 +313,8 @@ int pcl_pattern_RF(
  * the graphic state in different situations. The chart below characterizes
  * what the operands are interpreted to mean, and what the source of the
  * (graphic state) color space, color, color rendering dictionary, and
- * halftone (including transfer function) are for each case. Note in 
- * particular that uncolored patterns (including the built-in shades and 
+ * halftone (including transfer function) are for each case. Note in
+ * particular that uncolored patterns (including the built-in shades and
  * cross-hatch patterns) must be handled separately for PCL and GL.
  *
  *    solid white (PCL or GL)
@@ -329,7 +325,7 @@ int pcl_pattern_RF(
  *
  *        cspace            DeviceGray (irrespective of current space)
  *        color             1,0 (irrespective of current color)
- *        CRD               unchanged (irrelevant since DeviceGray is 
+ *        CRD               unchanged (irrelevant since DeviceGray is
  *                          the color space)
  *        halftone          Fixed halftone with null transfer function
  *
@@ -367,17 +363,17 @@ int pcl_pattern_RF(
  *        pattern source    built-in shade patterns
  *
  *        cspace            Pattern color space without base color space
- *        color             Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *        color             Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current foreground and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the foreground color. The color rendering 
- *                          dictionary and halftone also are taken from 
+ *                          palette contains the canonical white color and
+ *                          the foreground color. The color rendering
+ *                          dictionary and halftone also are taken from
  *                          the current color.
- *        CRD               from current foreground (only relevant for 
+ *        CRD               from current foreground (only relevant for
  *                          pattern rendering)
- *        halftone          from current foreground (only relevant for 
+ *        halftone          from current foreground (only relevant for
  *                          pattern rendering).
  *
  *    shade pattern (GL only)
@@ -387,17 +383,17 @@ int pcl_pattern_RF(
  *        pattern source    built-in shade patterns
  *
  *        cspace            Pattern color space without base color space
- *        color             Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *        color             Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current palette and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the color corresponding to the given pen. The 
- *                          color rendering dictionary and halftone are 
+ *                          palette contains the canonical white color and
+ *                          the color corresponding to the given pen. The
+ *                          color rendering dictionary and halftone are
  *                          taken from the given palette.
- *        CRD               from current palette (only relevant for 
+ *        CRD               from current palette (only relevant for
  *                          pattern rendering)
- *        halftone          from current palette (only relevant for 
+ *        halftone          from current palette (only relevant for
  *                          pattern rendering).
  *
  *    cross-hatch pattern (PCL only)
@@ -407,17 +403,17 @@ int pcl_pattern_RF(
  *        pattern-source    built-in cross-hatch patterns
  *
  *        cspace            Pattern color space without base color space
- *        color             Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *        color             Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current foreground and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the foreground color. The color rendering 
- *                          dictionary and halftone also are taken from the 
+ *                          palette contains the canonical white color and
+ *                          the foreground color. The color rendering
+ *                          dictionary and halftone also are taken from the
  *                          current color.
- *        CRD               from current foreground (only relevant for 
+ *        CRD               from current foreground (only relevant for
  *                          pattern rendering)
- *        halftone          from current foreground (only relevant for 
+ *        halftone          from current foreground (only relevant for
  *                          pattern rendering).
  *
  *    cross-hatch pattern (GL only)
@@ -427,17 +423,17 @@ int pcl_pattern_RF(
  *        pattern source    built-in cross-hatch patterns
  *
  *        cspace            Pattern color space without base color space
- *        color             Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *        color             Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current palette und and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the color corresponding to the given pen. The 
- *                          color rendering dictionary and halftone are 
+ *                          palette contains the canonical white color and
+ *                          the color corresponding to the given pen. The
+ *                          color rendering dictionary and halftone are
  *                          taken from the given palette.
- *        CRD               from current palette (only relevant for 
+ *        CRD               from current palette (only relevant for
  *                          pattern rendering)
- *        halftone          from current palette (only relevant for 
+ *        halftone          from current palette (only relevant for
  *                          pattern rendering).
  *
  *    PCL user-defined pattern (PCL only)
@@ -448,31 +444,31 @@ int pcl_pattern_RF(
  *
  *        Handling depends on the pattern type. For uncolored patterns, the
  *        settings are:
- *    
+ *
  *          cspace          Pattern color space without base color space
- *          color           Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *          color           Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current foreground and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the foreground color. The color rendering 
- *                          dictionary and halftone also are taken from the 
+ *                          palette contains the canonical white color and
+ *                          the foreground color. The color rendering
+ *                          dictionary and halftone also are taken from the
  *                          current color.
- *          CRD             from current foreground (only relevant for 
+ *          CRD             from current foreground (only relevant for
  *                          pattern rendering)
- *          halftone        from current foreground (only relevant for 
+ *          halftone        from current foreground (only relevant for
  *                          pattern rendering).
  *
  *        For colored patterns, the settings are:
  *
  *          cspace          Pattern color space without base color space
- *          color           Colored pattern generated from the pixmap data 
- *                          provided and the indexed color space in the 
- *                          current palette, along with the halftone and 
+ *          color           Colored pattern generated from the pixmap data
+ *                          provided and the indexed color space in the
+ *                          current palette, along with the halftone and
  *                          color rendering dictionary in the current palette
- *          CRD             from current palette (only relevant for 
+ *          CRD             from current palette (only relevant for
  *                          pattern rendering)
- *          halftone        from current palette (only relevant for color 
+ *          halftone        from current palette (only relevant for color
  *                          generation)
  *
  *    PCL user-defined pattern (GL only)
@@ -483,31 +479,31 @@ int pcl_pattern_RF(
  *
  *        Handling depends on the pattern type. For uncolored patterns, the
  *        settings are:
- *    
+ *
  *          cspace          Pattern color space without base color space
- *          color           Colored pattern generated from the pixmap data 
- *                          provided and a special indexed color space 
- *                          which utilizes the base color space in the 
+ *          color           Colored pattern generated from the pixmap data
+ *                          provided and a special indexed color space
+ *                          which utilizes the base color space in the
  *                          current palette and a 2-entry palette. The
- *                          palette contains the canonical white color and 
- *                          the color corresponding to the given pen. The 
- *                          color rendering dictionary and halftone are 
+ *                          palette contains the canonical white color and
+ *                          the color corresponding to the given pen. The
+ *                          color rendering dictionary and halftone are
  *                          taken from the given palette.
- *          CRD             from current palette (only relevant for 
+ *          CRD             from current palette (only relevant for
  *                          pattern rendering)
- *          halftone        from current palette (only relevant for 
+ *          halftone        from current palette (only relevant for
  *                          pattern rendering).
- * 
+ *
  *        For colored patterns, the settings are:
  *
  *          cspace          Pattern color space without base color space
- *          color           Colored pattern generated from the pixmap data 
- *                          provided and the indexed color space in the 
- *                          current palette, along with the halftone and 
+ *          color           Colored pattern generated from the pixmap data
+ *                          provided and the indexed color space in the
+ *                          current palette, along with the halftone and
  *                          color rendering dictionary in the current palette
- *          CRD             from current palette (only relevant for 
+ *          CRD             from current palette (only relevant for
  *                          pattern rendering)
- *          halftone        from current palette (only relevant for color 
+ *          halftone        from current palette (only relevant for color
  *                          generation)
  *
  *    RF pattern (GL only)
@@ -517,13 +513,13 @@ int pcl_pattern_RF(
  *        pattern source    GL user defined patterns
  *
  *        cspace            Pattern color space without base color space
- *        color             Colored pattern generated from the pixmap data 
- *                          provided and the indexed color space in the 
- *                          current palette, along with the halftone and 
+ *        color             Colored pattern generated from the pixmap data
+ *                          provided and the indexed color space in the
+ *                          current palette, along with the halftone and
  *                          color rendering dictionary in the current palette
- *        CRD               from current palette (only relevant for 
+ *        CRD               from current palette (only relevant for
  *                          pattern rendering)
- *        halftone          from current palette (only relevant for color 
+ *        halftone          from current palette (only relevant for color
  *                          generation)
  *
  * These routines will also set the pattern reference point appropriatel for

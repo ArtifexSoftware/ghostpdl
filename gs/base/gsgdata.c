@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@ static RELOC_PTRS_WITH(gs_glyph_data_reloc_ptrs, gs_glyph_data_t *pgd)
     RELOC_OBJ_VAR(pgd->proc_data);
 } RELOC_PTRS_END
 gs_public_st_composite(st_glyph_data, gs_glyph_data_t, "gs_glyph_data_t",
-		       gs_glyph_data_enum_ptrs, gs_glyph_data_reloc_ptrs);
+                       gs_glyph_data_enum_ptrs, gs_glyph_data_reloc_ptrs);
 
 /* ------ Client facilities ------ */
 
@@ -42,7 +42,7 @@ int
 gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size)
 {
     if (offset > pgd->bits.size || size > pgd->bits.size - offset)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     return pgd->procs->substring(pgd, offset, size);
 }
 
@@ -51,9 +51,9 @@ void
 gs_glyph_data_free(gs_glyph_data_t *pgd, client_name_t cname)
 {
     if (pgd != 0) {
-	if (pgd->procs != 0)
-	    pgd->procs->free(pgd, cname);
-	gs_glyph_data_from_null(pgd);
+        if (pgd->procs != 0)
+            pgd->procs->free(pgd, cname);
+        gs_glyph_data_from_null(pgd);
     }
 }
 
@@ -70,14 +70,14 @@ glyph_data_substring_permanent(gs_glyph_data_t *pgd, uint offset, uint size)
     pgd->bits.data += offset;
     pgd->bits.size = size;
     return 0;
-}			       
+}
 
 /* Manage the glyph data using the font's allocator. */
 static void
 glyph_data_free_by_font(gs_glyph_data_t *pgd, client_name_t cname)
 {
     gs_free_const_bytestring(((gs_font *)pgd->proc_data)->memory,
-			     &pgd->bits, cname);
+                             &pgd->bits, cname);
 }
 static int
 glyph_data_substring_by_font(gs_glyph_data_t *pgd, uint offset, uint size)
@@ -86,15 +86,15 @@ glyph_data_substring_by_font(gs_glyph_data_t *pgd, uint offset, uint size)
     byte *data = (byte *)pgd->bits.data; /* break const */
 
     if (pgd->bits.bytes)	/* object, not string */
-	return glyph_data_substring_permanent(pgd, offset, size);
+        return glyph_data_substring_permanent(pgd, offset, size);
     if (offset > 0)
-	memmove(data, data + offset, size);
-    pgd->bits.data = 
-	gs_resize_string(font->memory, data, pgd->bits.size, size,
-			 "glyph_data_substring"); /* shortening, can't fail */
+        memmove(data, data + offset, size);
+    pgd->bits.data =
+        gs_resize_string(font->memory, data, pgd->bits.size, size,
+                         "glyph_data_substring"); /* shortening, can't fail */
     pgd->bits.size = size;
     return 0;
-}			       
+}
 
 static const gs_glyph_data_procs_t no_free_procs = {
     glyph_data_free_permanent, glyph_data_substring_permanent
@@ -112,7 +112,7 @@ static const gs_glyph_data_procs_t free_by_font_procs = {
  */
 void
 gs_glyph_data_from_string(gs_glyph_data_t *pgd, const byte *data,
-			  uint size, gs_font *font)
+                          uint size, gs_font *font)
 {
     gs_bytestring_from_string(&pgd->bits, data, size);
     pgd->proc_data = font;
@@ -120,7 +120,7 @@ gs_glyph_data_from_string(gs_glyph_data_t *pgd, const byte *data,
 }
 void
 gs_glyph_data_from_bytes(gs_glyph_data_t *pgd, const byte *bytes,
-			 uint offset, uint size, gs_font *font)
+                         uint offset, uint size, gs_font *font)
 {
     gs_bytestring_from_bytes(&pgd->bits, bytes, offset, size);
     pgd->proc_data = font;

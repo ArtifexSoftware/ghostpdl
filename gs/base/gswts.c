@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -173,45 +173,45 @@ wts_vec_gcd3(wts_vec_t *a, wts_vec_t *b, wts_vec_t *c)
     wts_vec_set(&d, 0, 0, 0, 0);
     wts_vec_set(&e, 0, 0, 0, 0);
     for (;;) {
-	ra = wts_vec_smag(a);
-	rb = wts_vec_smag(b);
-	rc = wts_vec_smag(c);
-	wts_vec_sub(&d, a, b);
-	wts_vec_add(&e, a, b);
-	rd = wts_vec_smag(&d);
-	re = wts_vec_smag(&e);
-	if (re && re < rd) {
-	    d = e;
-	    rd = re;
-	}
-	if (rd && rd < ra && ra >= rb) *a = d;
-	else if (rd < rb && rb > ra) *b = d;
-	else {
-	    wts_vec_sub(&d, a, c);
-	    wts_vec_add(&e, a, c);
-	    rd = wts_vec_smag(&d);
-	    re = wts_vec_smag(&e);
-	    if (re < rd) {
-		d = e;
-		rd = re;
-	    }
-	    if (rd && rd < ra && ra >= rc) *a = d;
-	    else if (rd < rc && rc > ra) *c = d;
-	    else {
-		wts_vec_sub(&d, b, c);
-		wts_vec_add(&e, b, c);
-		rd = wts_vec_smag(&d);
-		re = wts_vec_smag(&e);
-		if (re < rd) {
-		    d = e;
-		    rd = re;
-		}
-		if (rd && rd < rb && rb >= rc) *b = d;
-		else if (rd < rc && rc > rb) *c = d;
-		else
-		    break;
-	    }
-	}
+        ra = wts_vec_smag(a);
+        rb = wts_vec_smag(b);
+        rc = wts_vec_smag(c);
+        wts_vec_sub(&d, a, b);
+        wts_vec_add(&e, a, b);
+        rd = wts_vec_smag(&d);
+        re = wts_vec_smag(&e);
+        if (re && re < rd) {
+            d = e;
+            rd = re;
+        }
+        if (rd && rd < ra && ra >= rb) *a = d;
+        else if (rd < rb && rb > ra) *b = d;
+        else {
+            wts_vec_sub(&d, a, c);
+            wts_vec_add(&e, a, c);
+            rd = wts_vec_smag(&d);
+            re = wts_vec_smag(&e);
+            if (re < rd) {
+                d = e;
+                rd = re;
+            }
+            if (rd && rd < ra && ra >= rc) *a = d;
+            else if (rd < rc && rc > ra) *c = d;
+            else {
+                wts_vec_sub(&d, b, c);
+                wts_vec_add(&e, b, c);
+                rd = wts_vec_smag(&d);
+                re = wts_vec_smag(&e);
+                if (re < rd) {
+                    d = e;
+                    rd = re;
+                }
+                if (rd && rd < rb && rb >= rc) *b = d;
+                else if (rd < rc && rc > rb) *c = d;
+                else
+                    break;
+            }
+        }
     }
 }
 
@@ -247,12 +247,12 @@ static void
 wts_vec_modkls(wts_vec_t *a, int m, int i, int s)
 {
     while (a->l < 0) {
-	a->l += i;
-	a->k -= s;
+        a->l += i;
+        a->k -= s;
     }
     while (a->l >= i) {
-	a->l -= i;
-	a->k += s;
+        a->l -= i;
+        a->k += s;
     }
     while (a->k < 0) a->k += m;
     while (a->k >= m) a->k -= m;
@@ -260,7 +260,7 @@ wts_vec_modkls(wts_vec_t *a, int m, int i, int s)
 
 static void
 wts_set_mat(gx_wts_cell_params_t *wcp, double sratiox, double sratioy,
-	    double sangledeg)
+            double sangledeg)
 {
     double sangle = sangledeg * M_PI / 180;
 
@@ -269,7 +269,6 @@ wts_set_mat(gx_wts_cell_params_t *wcp, double sratiox, double sratioy,
     wcp->uslow = sin(sangle) / sratioy;
     wcp->vslow = cos(sangle) / sratioy;
 }
-
 
 /**
  * Calculate Screen H cell sizes.
@@ -286,32 +285,32 @@ wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
     e1 = 1e5;
     e2 = 1e5;
     for (uacc = (int)ceil(minrep * inc); uacc <= floor(2 * minrep * inc); uacc++) {
-	int mt;
-	double et;
+        int mt;
+        double et;
 
-	mt = (int)floor(uacc / inc + 1e-5);
-	et = uacc / inc - mt + mt * 0.001;
-	if (et < e1) {
-	    e1 = et;
-	    m1 = mt;
-	}
-	mt = (int)ceil(uacc / inc - 1e-5);
-	et = mt - uacc / inc + mt * 0.001;
-	if (et < e2) {
-	    e2 = et;
-	    m2 = mt;
-	}
+        mt = (int)floor(uacc / inc + 1e-5);
+        et = uacc / inc - mt + mt * 0.001;
+        if (et < e1) {
+            e1 = et;
+            m1 = mt;
+        }
+        mt = (int)ceil(uacc / inc - 1e-5);
+        et = mt - uacc / inc + mt * 0.001;
+        if (et < e2) {
+            e2 = et;
+            m2 = mt;
+        }
     }
     if (m1 == m2) {
-	*px1 = m1;
-	*pxwidth = m1;
-	*pp1 = 1.0;
+        *px1 = m1;
+        *pxwidth = m1;
+        *pp1 = 1.0;
     } else {
-	*px1 = m1;
-	*pxwidth = m1 + m2;
-	e1 = fabs(m1 * inc - floor(0.5 + m1 * inc));
-	e2 = fabs(m2 * inc - floor(0.5 + m2 * inc));
-	*pp1 = e2 / (e1 + e2);
+        *px1 = m1;
+        *pxwidth = m1 + m2;
+        e1 = fabs(m1 * inc - floor(0.5 + m1 * inc));
+        e2 = fabs(m2 * inc - floor(0.5 + m2 * inc));
+        *pp1 = e2 / (e1 + e2);
     }
 }
 
@@ -319,27 +318,27 @@ wts_cell_calc_h(double inc, int *px1, int *pxwidth, double *pp1, double memw)
    rotations. */
 static gx_wts_cell_params_t *
 wts_pick_cell_size_h(double sratiox, double sratioy, double sangledeg,
-		     double memw)
+                     double memw)
 {
     gx_wts_cell_params_h_t *wcph;
     double xinc, yinc;
 
     wcph = malloc(sizeof(gx_wts_cell_params_h_t));
     if (wcph == NULL)
-	return NULL;
+        return NULL;
 
     wcph->base.t = WTS_SCREEN_H;
     wts_set_mat(&wcph->base, sratiox, sratioy, sangledeg);
 
     xinc = fabs(wcph->base.ufast);
     if (xinc == 0)
-	xinc = fabs(wcph->base.vfast);
+        xinc = fabs(wcph->base.vfast);
 
     wts_cell_calc_h(xinc, &wcph->x1, &wcph->base.width, &wcph->px, memw);
 
     yinc = fabs(wcph->base.uslow);
     if (yinc == 0)
-	yinc = fabs(wcph->base.vslow);
+        yinc = fabs(wcph->base.vslow);
     wts_cell_calc_h(yinc, &wcph->y1, &wcph->base.height, &wcph->py, memw);
 
     return &wcph->base;
@@ -358,17 +357,17 @@ wts_qart(double r, double rbase, double p, double pbase)
 #ifdef VERBOSE
 static void
 wts_print_j_jump(const gx_wts_cell_params_j_t *wcpj, const char *name,
-		 double pa, int xa, int ya)
+                 double pa, int xa, int ya)
 {
     dlprintf6("jump %s: (%d, %d) %f, actual (%f, %f)\n",
-	      name, xa, ya, pa,
-	      wcpj->ufast_a * xa + wcpj->uslow_a * ya,
-	      wcpj->vfast_a * xa + wcpj->vslow_a * ya);
+              name, xa, ya, pa,
+              wcpj->ufast_a * xa + wcpj->uslow_a * ya,
+              wcpj->vfast_a * xa + wcpj->vslow_a * ya);
 }
 
 static void
-wts_j_add_jump(const gx_wts_cell_params_j_t *wcpj, double *pu, double *pv, 
-	       double pa, int xa, int ya)
+wts_j_add_jump(const gx_wts_cell_params_j_t *wcpj, double *pu, double *pv,
+               double pa, int xa, int ya)
 {
     double jump_u = wcpj->ufast_a * xa + wcpj->uslow_a * ya;
     double jump_v = wcpj->vfast_a * xa + wcpj->vslow_a * ya;
@@ -385,7 +384,7 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
     double us, vs;
 
     dlprintf3("cell = %d x %d, shift = %d\n",
-	      wcpj->base.width, wcpj->base.height, wcpj->shift);
+              wcpj->base.width, wcpj->base.height, wcpj->shift);
     wts_print_j_jump(wcpj, "a", wcpj->pa, wcpj->xa, wcpj->ya);
     wts_print_j_jump(wcpj, "b", wcpj->pb, wcpj->xb, wcpj->yb);
     wts_print_j_jump(wcpj, "c", wcpj->pc, wcpj->xc, wcpj->yc);
@@ -399,13 +398,13 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
     wts_j_add_jump(wcpj, &us, &vs, wcpj->pc, wcpj->xc, wcpj->yc);
     wts_j_add_jump(wcpj, &us, &vs, wcpj->pd, wcpj->xd, wcpj->yd);
     dlprintf6("d: %f, %f; a: %f, %f; err: %g, %g\n",
-	    wcpj->base.ufast, wcpj->base.vfast,
-	    wcpj->ufast_a, wcpj->vfast_a,
-	    wcpj->base.ufast - uf, wcpj->base.vfast - vf);
+            wcpj->base.ufast, wcpj->base.vfast,
+            wcpj->ufast_a, wcpj->vfast_a,
+            wcpj->base.ufast - uf, wcpj->base.vfast - vf);
     dlprintf6("d: %f, %f; a: %f, %f; err: %g, %g\n",
-	    wcpj->base.uslow, wcpj->base.vslow,
-	    wcpj->uslow_a, wcpj->vslow_a,
-	    wcpj->base.uslow - us, wcpj->base.vslow - vs);
+            wcpj->base.uslow, wcpj->base.vslow,
+            wcpj->uslow_a, wcpj->vslow_a,
+            wcpj->base.uslow - us, wcpj->base.vslow - vs);
 }
 #endif
 
@@ -425,7 +424,7 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
  **/
 static double
 wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
-		    double jmem)
+                    double jmem)
 {
     const double uf = wcpj->base.ufast;
     const double vf = wcpj->base.vfast;
@@ -446,8 +445,8 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 
     wts_vec_set(&a, (int)floor(uf * m + 0.5), (int)floor(vf * m + 0.5), 1, 0);
     if (a.u == 0 && a.v == 0)
-	return qb + 1;
-	
+        return qb + 1;
+
     ufj = a.u / (double)m;
     vfj = a.v / (double)m;
     /* (ufj, vfj) = movement in UV space from (0, 1) in XY space */
@@ -461,12 +460,12 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
     pa = (b.u * vg - ug * b.v) * pp;
     pb = (ug * a.v - a.u * vg) * pp;
     if (pa < 0) {
-	wts_vec_neg(&a);
-	pa = -pa;
+        wts_vec_neg(&a);
+        pa = -pa;
     }
     if (pb < 0) {
-	wts_vec_neg(&b);
-	pb = -pb;
+        wts_vec_neg(&b);
+        pb = -pb;
     }
     wts_vec_modk(&a, m);
     wts_vec_modk(&b, m);
@@ -484,18 +483,18 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
     ra = sqrt(xa * xa + 0.0625 * ya * ya);
     rb = sqrt(xb * xb + 0.0625 * yb * yb);
     qx = 0.5 * (wts_qart(ra, rbase, pa, pbase) +
-		wts_qart(rb, rbase, pb, pbase));
+                wts_qart(rb, rbase, pb, pbase));
     if (qx < 1.0 / 4000.0)
-	qx *= 0.25;
+        qx *= 0.25;
     else
-	qx -= 0.75 / 4000.0;
+        qx -= 0.75 / 4000.0;
     if (m < 7500)
-	qw = 0;
+        qw = 0;
     else
-	qw = 0.00025; /* cache penalty */
+        qw = 0.00025; /* cache penalty */
     qxl = qx + qw;
     if (qxl > qb)
-	return qxl;
+        return qxl;
 
     /* width is ok, now try heights */
 
@@ -505,165 +504,165 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 
     qbi = qb;
     for (i = 1; qxl + m * i * jmem < qbi; i++) {
-	int s = m * i;
-	int ca, cb;
-	double usj, vsj;
-	double usg, vsg;
-	wts_vec_t a1, b1, a2, b2;
-	double pc, pd;
-	int ck;
-	double qy, qm;
+        int s = m * i;
+        int ca, cb;
+        double usj, vsj;
+        double usg, vsg;
+        wts_vec_t a1, b1, a2, b2;
+        double pc, pd;
+        int ck;
+        double qy, qm;
 
-	ca = (int)floor(i * pya + 0.5);
-	cb = (int)floor(i * pyb + 0.5);
-	wts_vec_set(&c, ca * a.u + cb * b.u, ca * a.v + cb * b.v, 0, 1);
-	usj = c.u / (double)s;
-	vsj = c.v / (double)s;
-	usg = (us - usj);
-	vsg = (vs - vsj);
+        ca = (int)floor(i * pya + 0.5);
+        cb = (int)floor(i * pyb + 0.5);
+        wts_vec_set(&c, ca * a.u + cb * b.u, ca * a.v + cb * b.v, 0, 1);
+        usj = c.u / (double)s;
+        vsj = c.v / (double)s;
+        usg = (us - usj);
+        vsg = (vs - vsj);
 
-	a1 = a;
-	b1 = b;
-	a1.u *= i;
-	a1.v *= i;
-	b1.u *= i;
-	b1.v *= i;
-	wts_vec_gcd3(&a1, &b1, &c);
-	a2 = a1;
-	b2 = b1;
-	pp = s / (double)wts_vec_cross(&b1, &a1);
-	pc = (b1.u * vsg - usg * b1.v) * pp;
-	pd = (usg * a1.v - a1.u * vsg) * pp;
-	if (pc < 0) {
-	    wts_vec_neg(&a1);
-	    pc = -pc;
-	}
-	if (pd < 0) {
-	    wts_vec_neg(&b1);
-	    pd = -pd;
-	}
-	ck = ca * a.k + cb * b.k;
-	while (ck < 0) ck += m;
-	while (ck >= m) ck -= m;
-	wts_vec_modkls(&a1, m, i, ck);
-	wts_vec_modkls(&b1, m, i, ck);
-	rf = (us * us - vs * vs) * s;
-	xa = (a1.u * us + a1.v * vs) / rf;
-	ya = (a1.v * us - a1.u * vs) / rf;
-	xb = (b1.u * us + b1.v * vs) / rf;
-	yb = (b1.v * us - b1.u * vs) / rf;
-	ra = sqrt(xa * xa + 0.0625 * ya * ya);
-	rb = sqrt(xb * xb + 0.0625 * yb * yb);
-	qy = 0.5 * (wts_qart(ra, rbase, pc, pbase) +
-		    wts_qart(rb, rbase, pd, pbase));
-	if (qy < 1.0 / 100.0)
-	    qy *= 0.025;
-	else
-	    qy -= 0.75 / 100.0;
-	qm = s * jmem;
+        a1 = a;
+        b1 = b;
+        a1.u *= i;
+        a1.v *= i;
+        b1.u *= i;
+        b1.v *= i;
+        wts_vec_gcd3(&a1, &b1, &c);
+        a2 = a1;
+        b2 = b1;
+        pp = s / (double)wts_vec_cross(&b1, &a1);
+        pc = (b1.u * vsg - usg * b1.v) * pp;
+        pd = (usg * a1.v - a1.u * vsg) * pp;
+        if (pc < 0) {
+            wts_vec_neg(&a1);
+            pc = -pc;
+        }
+        if (pd < 0) {
+            wts_vec_neg(&b1);
+            pd = -pd;
+        }
+        ck = ca * a.k + cb * b.k;
+        while (ck < 0) ck += m;
+        while (ck >= m) ck -= m;
+        wts_vec_modkls(&a1, m, i, ck);
+        wts_vec_modkls(&b1, m, i, ck);
+        rf = (us * us - vs * vs) * s;
+        xa = (a1.u * us + a1.v * vs) / rf;
+        ya = (a1.v * us - a1.u * vs) / rf;
+        xb = (b1.u * us + b1.v * vs) / rf;
+        yb = (b1.v * us - b1.u * vs) / rf;
+        ra = sqrt(xa * xa + 0.0625 * ya * ya);
+        rb = sqrt(xb * xb + 0.0625 * yb * yb);
+        qy = 0.5 * (wts_qart(ra, rbase, pc, pbase) +
+                    wts_qart(rb, rbase, pd, pbase));
+        if (qy < 1.0 / 100.0)
+            qy *= 0.025;
+        else
+            qy -= 0.75 / 100.0;
+        qm = s * jmem;
 
-	/* first try a and b jumps within the scanline */
-	q = qm + qw + qx + qy;
-	if (q < qbi && jumpok) {
+        /* first try a and b jumps within the scanline */
+        q = qm + qw + qx + qy;
+        if (q < qbi && jumpok) {
 #ifdef VERBOSE
-	    dlprintf7("m = %d, n = %d, q = %d, qx = %d, qy = %d, qm = %d, qw = %d\n",
-		      m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw * 1e6));
+            dlprintf7("m = %d, n = %d, q = %d, qx = %d, qy = %d, qm = %d, qw = %d\n",
+                      m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw * 1e6));
 #endif
-	    qbi = q;
-	    wcpj->base.width = m;
-	    wcpj->base.height = i;
-	    wcpj->shift = ck;
-	    wcpj->ufast_a = ufj;
-	    wcpj->vfast_a = vfj;
-	    wcpj->uslow_a = usj;
-	    wcpj->vslow_a = vsj;
-	    wcpj->xa = a.k;
-	    wcpj->ya = 0;
-	    wcpj->xb = b.k;
-	    wcpj->yb = 0;
-	    wcpj->xc = a1.k;
-	    wcpj->yc = a1.l;
-	    wcpj->xd = b1.k;
-	    wcpj->yd = b1.l;
-	    wcpj->pa = pa;
-	    wcpj->pb = pb;
-	    wcpj->pc = pc;
-	    wcpj->pd = pd;
+            qbi = q;
+            wcpj->base.width = m;
+            wcpj->base.height = i;
+            wcpj->shift = ck;
+            wcpj->ufast_a = ufj;
+            wcpj->vfast_a = vfj;
+            wcpj->uslow_a = usj;
+            wcpj->vslow_a = vsj;
+            wcpj->xa = a.k;
+            wcpj->ya = 0;
+            wcpj->xb = b.k;
+            wcpj->yb = 0;
+            wcpj->xc = a1.k;
+            wcpj->yc = a1.l;
+            wcpj->xd = b1.k;
+            wcpj->yd = b1.l;
+            wcpj->pa = pa;
+            wcpj->pb = pb;
+            wcpj->pc = pc;
+            wcpj->pd = pd;
 #ifdef VERBOSE
-	    wts_print_j(wcpj);
+            wts_print_j(wcpj);
 #endif
-	}
+        }
 
-	/* then try unconstrained a and b jumps */
-	if (i > 1) {
-	    double pa2, pb2, pp2;
-	    double qx2, qw2, q2;
+        /* then try unconstrained a and b jumps */
+        if (i > 1) {
+            double pa2, pb2, pp2;
+            double qx2, qw2, q2;
 
-	    pp2 = pp;
-	    pa2 = (b2.u * vg - ug * b2.v) * pp2;
-	    pb2 = (ug * a2.v - a2.u * vg) * pp2;
-	    rf = (uf * uf + vf * vf) * s;
-	    xa = (a2.u * uf + a2.v * vf) / rf;
-	    ya = (a2.v * uf - a2.u * vf) / rf;
-	    xb = (b2.u * uf + b2.v * vf) / rf;
-	    yb = (b2.v * uf - b2.u * vf) / rf;
-	    ra = sqrt(xa * xa + 0.0625 * ya * ya);
-	    rb = sqrt(xb * xb + 0.0625 * yb * yb);
-	    if (pa2 < 0) {
-		pa2 = -pa2;
-		wts_vec_neg(&a2);
-	    }
-	    if (pb2 < 0) {
-		pb2 = -pb2;
-		wts_vec_neg(&b2);
-	    }
-	    wts_vec_modkls(&a2, m, i, ck);
-	    wts_vec_modkls(&b2, m, i, ck);
-	    qx2 = 0.5 * (wts_qart(ra, rbase, pa2, pbase) +
-			 wts_qart(rb, rbase, pb2, pbase));
-	    if (qx2 < 1.0 / 4000.0)
-		qx2 *= 0.25;
-	    else
-		qx2 -= 0.75 / 4000.0;
-	    if (s < 7500)
-		qw2 = 0;
-	    else
-		qw2 = 0.00025; /* cache penalty */
-	    q2 = qm + qw2 + qx2 + qy;
-	    if (q2 < qbi) {
+            pp2 = pp;
+            pa2 = (b2.u * vg - ug * b2.v) * pp2;
+            pb2 = (ug * a2.v - a2.u * vg) * pp2;
+            rf = (uf * uf + vf * vf) * s;
+            xa = (a2.u * uf + a2.v * vf) / rf;
+            ya = (a2.v * uf - a2.u * vf) / rf;
+            xb = (b2.u * uf + b2.v * vf) / rf;
+            yb = (b2.v * uf - b2.u * vf) / rf;
+            ra = sqrt(xa * xa + 0.0625 * ya * ya);
+            rb = sqrt(xb * xb + 0.0625 * yb * yb);
+            if (pa2 < 0) {
+                pa2 = -pa2;
+                wts_vec_neg(&a2);
+            }
+            if (pb2 < 0) {
+                pb2 = -pb2;
+                wts_vec_neg(&b2);
+            }
+            wts_vec_modkls(&a2, m, i, ck);
+            wts_vec_modkls(&b2, m, i, ck);
+            qx2 = 0.5 * (wts_qart(ra, rbase, pa2, pbase) +
+                         wts_qart(rb, rbase, pb2, pbase));
+            if (qx2 < 1.0 / 4000.0)
+                qx2 *= 0.25;
+            else
+                qx2 -= 0.75 / 4000.0;
+            if (s < 7500)
+                qw2 = 0;
+            else
+                qw2 = 0.00025; /* cache penalty */
+            q2 = qm + qw2 + qx2 + qy;
+            if (q2 < qbi) {
 #ifdef VERBOSE
-		dlprintf7("m = %d, n = %d, q = %d, qx2 = %d, qy = %d, qm = %d, qw2 = %d\n",
-			  m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw2 * 1e6));
+                dlprintf7("m = %d, n = %d, q = %d, qx2 = %d, qy = %d, qm = %d, qw2 = %d\n",
+                          m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw2 * 1e6));
 #endif
-		if (qxl > qw2 + qx2)
-		    qxl = qw2 + qx2;
-		qbi = q2;
-		wcpj->base.width = m;
-		wcpj->base.height = i;
-		wcpj->shift = ck;
-		wcpj->ufast_a = ufj;
-		wcpj->vfast_a = vfj;
-		wcpj->uslow_a = usj;
-		wcpj->vslow_a = vsj;
-		wcpj->xa = a2.k;
-		wcpj->ya = a2.l;
-		wcpj->xb = b2.k;
-		wcpj->yb = a2.l;
-		wcpj->xc = a1.k;
-		wcpj->yc = a1.l;
-		wcpj->xd = b1.k;
-		wcpj->yd = b1.l;
-		wcpj->pa = pa2;
-		wcpj->pb = pb2;
-		wcpj->pc = pc;
-		wcpj->pd = pd;
+                if (qxl > qw2 + qx2)
+                    qxl = qw2 + qx2;
+                qbi = q2;
+                wcpj->base.width = m;
+                wcpj->base.height = i;
+                wcpj->shift = ck;
+                wcpj->ufast_a = ufj;
+                wcpj->vfast_a = vfj;
+                wcpj->uslow_a = usj;
+                wcpj->vslow_a = vsj;
+                wcpj->xa = a2.k;
+                wcpj->ya = a2.l;
+                wcpj->xb = b2.k;
+                wcpj->yb = a2.l;
+                wcpj->xc = a1.k;
+                wcpj->yc = a1.l;
+                wcpj->xd = b1.k;
+                wcpj->yd = b1.l;
+                wcpj->pa = pa2;
+                wcpj->pb = pb2;
+                wcpj->pc = pc;
+                wcpj->pd = pd;
 #ifdef VERBOSE
-		wts_print_j(wcpj);
+                wts_print_j(wcpj);
 #endif
-	    }
-	} /* if (i > 1) */
-	if (qx > 10 * qy)
-	    break;
+            }
+        } /* if (i > 1) */
+        if (qx > 10 * qy)
+            break;
     }
     return qbi;
 }
@@ -672,7 +671,7 @@ static int
 wts_double_to_int_cap(double d)
 {
     if (d > 0x7fffffff)
-	return 0x7fffffff;
+        return 0x7fffffff;
     else return (int)d;
 }
 
@@ -707,18 +706,18 @@ wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
     qb = 1.0;
     imax = wts_double_to_int_cap(qb / jmem);
     for (i = 1; i <= imax; i++) {
-	if (i > 1) {
-	    q = wts_set_scr_jxi_try(wcpj, i, qb, jmem);
-	    if (q < qb) {
-		qb = q;
-		imax = wts_double_to_int_cap(q / jmem);
-		if (imax >= 7500)
-		    imax = wts_double_to_int_cap((q - 0.00025) / jmem);
-		if (imax < 7500) {
-		    imax = 7500;
-		}
-	    }
-	}
+        if (i > 1) {
+            q = wts_set_scr_jxi_try(wcpj, i, qb, jmem);
+            if (q < qb) {
+                qb = q;
+                imax = wts_double_to_int_cap(q / jmem);
+                if (imax >= 7500)
+                    imax = wts_double_to_int_cap((q - 0.00025) / jmem);
+                if (imax < 7500) {
+                    imax = 7500;
+                }
+            }
+        }
     }
     return qb;
 }
@@ -726,22 +725,22 @@ wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
 /* Implementation for Screen J. This is optimized for general angles. */
 static gx_wts_cell_params_t *
 wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
-		     double memw)
+                     double memw)
 {
     gx_wts_cell_params_j_t *wcpj;
     double code;
 
     wcpj = malloc(sizeof(gx_wts_cell_params_j_t));
     if (wcpj == NULL)
-	return NULL;
+        return NULL;
 
     wcpj->base.t = WTS_SCREEN_J;
     wts_set_mat(&wcpj->base, sratiox, sratioy, sangledeg);
 
     code = wts_set_scr_jxi(wcpj, pow(0.1, memw));
     if (code < 0) {
-	free(wcpj);
-	return NULL;
+        free(wcpj);
+        return NULL;
     }
 
     return &wcpj->base;
@@ -799,51 +798,51 @@ wts_pick_cell_size(gs_screen_halftone *ph, const gs_matrix *pmat)
 
     /* try persistent cache */
     if (sangledeg == 45.0) {
-	int srxi, sryi;
+        int srxi, sryi;
 
-	srxi = (int)floor(sratiox / sqrt(2) + 0.5);
-	sryi = (int)floor(sratioy / sqrt(2) + 0.5);
-	if (fabs(srxi * sqrt(2) - sratiox) < 2e-6 &&
-	    fabs(sryi * sqrt(2) - sratioy) < 2e-6) {
-	    store_be32(intkey, (int)sangledeg);
-	    store_be32(intkey + 4, srxi);
-	    store_be32(intkey + 8, sryi);
-	    keyptr = intkey;
-	    keysize = sizeof(intkey);
-	}
+        srxi = (int)floor(sratiox / sqrt(2) + 0.5);
+        sryi = (int)floor(sratioy / sqrt(2) + 0.5);
+        if (fabs(srxi * sqrt(2) - sratiox) < 2e-6 &&
+            fabs(sryi * sqrt(2) - sratioy) < 2e-6) {
+            store_be32(intkey, (int)sangledeg);
+            store_be32(intkey + 4, srxi);
+            store_be32(intkey + 8, sryi);
+            keyptr = intkey;
+            keysize = sizeof(intkey);
+        }
     }
     if (keyptr == NULL) {
-	key.sratiox = sratiox;
-	key.sratioy = sratioy;
-	key.sangledeg = sangledeg;
-	key.memw = memw;
-	keyptr = (byte *)&key;
-	keysize = sizeof(key);
+        key.sratiox = sratiox;
+        key.sratioy = sratioy;
+        key.sangledeg = sangledeg;
+        key.memw = memw;
+        keyptr = (byte *)&key;
+        keysize = sizeof(key);
     }
     len = gp_cache_query(GP_CACHE_TYPE_WTS_SIZE, keyptr, keysize,
-			 (void **)&result, wts_cache_alloc_callback, NULL);
+                         (void **)&result, wts_cache_alloc_callback, NULL);
     if (len >= 0)
-	return result;
+        return result;
 
     if (fabs(octangle) < 1e-4)
-	result = wts_pick_cell_size_h(sratiox, sratioy, sangledeg, memw);
+        result = wts_pick_cell_size_h(sratiox, sratioy, sangledeg, memw);
     else
-	result = wts_pick_cell_size_j(sratiox, sratioy, sangledeg, memw);
+        result = wts_pick_cell_size_j(sratiox, sratioy, sangledeg, memw);
 
     if (result != NULL) {
-	int resultsize = 0;
+        int resultsize = 0;
 
-	/* insert computed cell size into cache */
-	if (result->t == WTS_SCREEN_H)
-	    resultsize = sizeof(gx_wts_cell_params_h_t);
-	else if (result->t == WTS_SCREEN_J)
-	    resultsize = sizeof(gx_wts_cell_params_j_t);
-	if (resultsize)
-	    gp_cache_insert(GP_CACHE_TYPE_WTS_SIZE, (byte *)&key, sizeof(key),
-			    (void *)result, resultsize);
+        /* insert computed cell size into cache */
+        if (result->t == WTS_SCREEN_H)
+            resultsize = sizeof(gx_wts_cell_params_h_t);
+        else if (result->t == WTS_SCREEN_J)
+            resultsize = sizeof(gx_wts_cell_params_j_t);
+        if (resultsize)
+            gp_cache_insert(GP_CACHE_TYPE_WTS_SIZE, (byte *)&key, sizeof(key),
+                            (void *)result, resultsize);
 
-	ph->actual_frequency = ph->frequency;
-	ph->actual_angle = ph->angle;
+        ph->actual_frequency = ph->frequency;
+        ph->actual_angle = ph->angle;
     }
     return result;
 }
@@ -893,16 +892,16 @@ gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
 
 static int
 gs_wts_screen_enum_j_currentpoint(gs_wts_screen_enum_t *self,
-				  gs_point *ppt)
+                                  gs_point *ppt)
 {
     gs_wts_screen_enum_j_t *z = (gs_wts_screen_enum_j_t *)self;
     const gx_wts_cell_params_j_t *wcpj = z->wcpj;
-    
+
     int x, y;
     double u, v;
 
     if (z->base.idx == z->base.size) {
-	return 1;
+        return 1;
     }
     x = z->base.idx % wcpj->base.width;
     y = z->base.idx / wcpj->base.width;
@@ -937,14 +936,14 @@ gs_wts_screen_enum_h_new(gx_wts_cell_params_t *wcp)
     wseh->ufast1 = floor(0.5 + wcp->ufast * x1) / x1;
     wseh->vfast1 = floor(0.5 + wcp->vfast * x1) / x1;
     if (x2 > 0) {
-	wseh->ufast2 = floor(0.5 + wcp->ufast * x2) / x2;
-	wseh->vfast2 = floor(0.5 + wcp->vfast * x2) / x2;
+        wseh->ufast2 = floor(0.5 + wcp->ufast * x2) / x2;
+        wseh->vfast2 = floor(0.5 + wcp->vfast * x2) / x2;
     }
     wseh->uslow1 = floor(0.5 + wcp->uslow * y1) / y1;
     wseh->vslow1 = floor(0.5 + wcp->vslow * y1) / y1;
     if (y2 > 0) {
-	wseh->uslow2 = floor(0.5 + wcp->uslow * y2) / y2;
-	wseh->vslow2 = floor(0.5 + wcp->vslow * y2) / y2;
+        wseh->uslow2 = floor(0.5 + wcp->uslow * y2) / y2;
+        wseh->vslow2 = floor(0.5 + wcp->vslow * y2) / y2;
     }
 
     return &wseh->base;
@@ -952,32 +951,32 @@ gs_wts_screen_enum_h_new(gx_wts_cell_params_t *wcp)
 
 static int
 gs_wts_screen_enum_h_currentpoint(gs_wts_screen_enum_t *self,
-				  gs_point *ppt)
+                                  gs_point *ppt)
 {
     gs_wts_screen_enum_h_t *z = (gs_wts_screen_enum_h_t *)self;
     const gx_wts_cell_params_h_t *wcph = z->wcph;
-    
+
     int x, y;
     double u, v;
 
     if (self->idx == self->size) {
-	return 1;
+        return 1;
     }
     x = self->idx % wcph->base.width;
     y = self->idx / wcph->base.width;
     if (x < wcph->x1) {
-	u = z->ufast1 * x;
-	v = z->vfast1 * x;
+        u = z->ufast1 * x;
+        v = z->vfast1 * x;
     } else {
-	u = z->ufast2 * (x - wcph->x1);
-	v = z->vfast2 * (x - wcph->x1);
+        u = z->ufast2 * (x - wcph->x1);
+        v = z->vfast2 * (x - wcph->x1);
     }
     if (y < wcph->y1) {
-	u += z->uslow1 * y;
-	v += z->vslow1 * y;
+        u += z->uslow1 * y;
+        v += z->vslow1 * y;
     } else {
-	u += z->uslow2 * (y - wcph->y1);
-	v += z->vslow2 * (y - wcph->y1);
+        u += z->uslow2 * (y - wcph->y1);
+        v += z->vslow2 * (y - wcph->y1);
     }
     u -= floor(u);
     v -= floor(v);
@@ -990,22 +989,22 @@ gs_wts_screen_enum_t *
 gs_wts_screen_enum_new(gx_wts_cell_params_t *wcp)
 {
     if (wcp->t == WTS_SCREEN_J)
-	return gs_wts_screen_enum_j_new(wcp);
+        return gs_wts_screen_enum_j_new(wcp);
     else if (wcp->t == WTS_SCREEN_H)
-	return gs_wts_screen_enum_h_new(wcp);
+        return gs_wts_screen_enum_h_new(wcp);
     else
-	return NULL;
+        return NULL;
 }
 
 int
 gs_wts_screen_enum_currentpoint(gs_wts_screen_enum_t *wse, gs_point *ppt)
 {
     if (wse->t == WTS_SCREEN_J)
-	return gs_wts_screen_enum_j_currentpoint(wse, ppt);
+        return gs_wts_screen_enum_j_currentpoint(wse, ppt);
     if (wse->t == WTS_SCREEN_H)
-	return gs_wts_screen_enum_h_currentpoint(wse, ppt);
+        return gs_wts_screen_enum_h_currentpoint(wse, ppt);
     else
-	return -1;
+        return -1;
 }
 
 int
@@ -1014,7 +1013,7 @@ gs_wts_screen_enum_next(gs_wts_screen_enum_t *wse, floatp value)
     bits32 sample;
 
     if (value < -1.0 || value > 1.0)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     sample = (bits32) ((value + 1) * 0x7fffffff);
     wse->cell[wse->idx] = sample;
     wse->idx++;
@@ -1031,11 +1030,11 @@ wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
     floatp spot;
 
     for (;;) {
-	code = gs_wts_screen_enum_currentpoint(wse, &pt);
-	if (code)
-	    break;
-	spot = 0.5 * (cos(pt.x * M_PI) + cos(pt.y * M_PI));
-	gs_wts_screen_enum_next(wse, spot);
+        code = gs_wts_screen_enum_currentpoint(wse, &pt);
+        if (code)
+            break;
+        spot = 0.5 * (cos(pt.x * M_PI) + cos(pt.y * M_PI));
+        gs_wts_screen_enum_next(wse, spot);
     }
 }
 #endif /* UNIT_TEST */
@@ -1062,12 +1061,12 @@ wts_sort_cell(gs_wts_screen_enum_t *wse)
 
     pcell = malloc(size * sizeof(bits32 *));
     if (pcell == NULL)
-	return -1;
+        return -1;
     for (i = 0; i < size; i++)
-	pcell[i] = &cell[i];
+        pcell[i] = &cell[i];
     qsort(pcell, size, sizeof(bits32 *), wts_sample_cmp);
     for (i = 0; i < size; i++)
-	*pcell[i] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
+        *pcell[i] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
     free(pcell);
     return 0;
 }
@@ -1094,22 +1093,22 @@ wts_blue_bump(const gs_wts_screen_enum_t *wse)
     int x, y;
 
     if (wse->t == WTS_SCREEN_J) {
-	gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
-	shift = wsej->wcpj->shift;
-	wcp = &wsej->wcpj->base;
+        gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
+        shift = wsej->wcpj->shift;
+        wcp = &wsej->wcpj->base;
     } else if (wse->t == WTS_SCREEN_H) {
-	gs_wts_screen_enum_h_t *wseh = (gs_wts_screen_enum_h_t *)wse;
-	shift = 0;
-	wcp = &wseh->wcph->base;
+        gs_wts_screen_enum_h_t *wseh = (gs_wts_screen_enum_h_t *)wse;
+        shift = 0;
+        wcp = &wseh->wcph->base;
     } else
-	return NULL;
+        return NULL;
 
     bump = (bits32 *)malloc(size * sizeof(bits32));
     if (bump == NULL)
-	return NULL;
+        return NULL;
 
     for (i = 0; i < size; i++)
-	bump[i] = 0;
+        bump[i] = 0;
     /* todo: more intelligence for anisotropic scaling */
     uf = wcp->ufast;
     vf = wcp->vfast;
@@ -1121,24 +1120,24 @@ wts_blue_bump(const gs_wts_screen_enum_t *wse)
     x0 = -(z / width) * shift - z;
     y0 = -(z % width);
     while (y0 < 0) {
-	x0 -= shift;
-	y0 += height;
+        x0 -= shift;
+        y0 += height;
     }
     while (x0 < 0) x0 += width;
     for (y = -z; y <= z; y++) {
-	int x1 = x0;
-	for (x = -z; x <= z; x++) {
-	    bump[y0 * width + x1] += (bits32)(eg * exp (-am * (x * x + y * y)));
-	    x1++;
-	    if (x1 == width)
-		x1 = 0;
-	}
-	y0++;
-	if (y0 == height) {
-	    x0 += shift;
-	    if (x0 >= width) x0 -= width;
-	    y0 = 0;
-	}
+        int x1 = x0;
+        for (x = -z; x <= z; x++) {
+            bump[y0 * width + x1] += (bits32)(eg * exp (-am * (x * x + y * y)));
+            x1++;
+            if (x1 == width)
+                x1 = 0;
+        }
+        y0++;
+        if (y0 == height) {
+            x0 += shift;
+            if (x0 >= width) x0 -= width;
+            y0 = 0;
+        }
     }
     return bump;
 }
@@ -1160,90 +1159,90 @@ wts_sort_blue(const gs_wts_screen_enum_t *wse)
     int i;
 
     if (wse->t == WTS_SCREEN_J) {
-	gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
-	shift = wsej->wcpj->shift;
+        gs_wts_screen_enum_j_t *wsej = (gs_wts_screen_enum_j_t *)wse;
+        shift = wsej->wcpj->shift;
     } else
-	shift = 0;
+        shift = 0;
 
     ref = (bits32 *)malloc(size * sizeof(bits32));
     pcell = (bits32 **)malloc(size * sizeof(bits32 *));
     bump = wts_blue_bump(wse);
     if (ref == NULL || pcell == NULL || bump == NULL) {
-	free(ref);
-	free(pcell);
-	free(bump);
-	return -1;
+        free(ref);
+        free(pcell);
+        free(bump);
+        return -1;
     }
     for (i = 0; i < size; i++)
-	pcell[i] = &cell[i];
+        pcell[i] = &cell[i];
     qsort(pcell, size, sizeof(bits32 *), wts_sample_cmp);
     /* set ref to sorted cell; pcell will now point to ref */
     for (i = 0; i < size; i++) {
-	pcell[i] = (pcell[i] - cell) + ref;
-	*pcell[i] = (bits32)floor((1 << 24) * (i + 0.5) / size);
-	cell[i] = 0;
+        pcell[i] = (pcell[i] - cell) + ref;
+        *pcell[i] = (bits32)floor((1 << 24) * (i + 0.5) / size);
+        cell[i] = 0;
     }
 
     for (i = 0; i < size; i++) {
-	bits32 gmin = *pcell[i];
-	int j;
-	int j_end = i + 5000;
-	int jmin = i;
-	int ix;
-	int x0, y0;
-	int x, y;
-	int ref_ix, bump_ix;
+        bits32 gmin = *pcell[i];
+        int j;
+        int j_end = i + 5000;
+        int jmin = i;
+        int ix;
+        int x0, y0;
+        int x, y;
+        int ref_ix, bump_ix;
 
-	/* find minimum cell value, but prune search */
-	if (j_end > size) j_end = size;
-	for (j = i + 1; j < j_end; j++) {
-	    if (*pcell[j] < gmin) {
-		gmin = *pcell[j];
-		jmin = j;
-	    }
-	}
-	ix = pcell[jmin] - ref;
-	pcell[jmin] = pcell[i];
-	cell[ix] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
+        /* find minimum cell value, but prune search */
+        if (j_end > size) j_end = size;
+        for (j = i + 1; j < j_end; j++) {
+            if (*pcell[j] < gmin) {
+                gmin = *pcell[j];
+                jmin = j;
+            }
+        }
+        ix = pcell[jmin] - ref;
+        pcell[jmin] = pcell[i];
+        cell[ix] = (bits32)floor(WTS_SORTED_MAX * (i + 0.5) / size);
 
-	x0 = ix % width;
-	y0 = ix / width;
+        x0 = ix % width;
+        y0 = ix / width;
 
-	/* Add in bump, centered at (x0, y0) */
-	ref_ix = y0 * width;
-	bump_ix = 0;
-	for (y = 0; y < height; y++) {
-	    for (x = x0; x < width; x++)
-		ref[ref_ix + x] += bump[bump_ix++];
-	    for (x = 0; x < x0; x++)
-		ref[ref_ix + x] += bump[bump_ix++];
-	    ref_ix += width;
-	    y0++;
-	    if (y0 == height) {
-		x0 += shift;
-		if (x0 >= width) x0 -= width;
-		y0 = 0;
-		ref_ix = 0;
-	    }
-	}
+        /* Add in bump, centered at (x0, y0) */
+        ref_ix = y0 * width;
+        bump_ix = 0;
+        for (y = 0; y < height; y++) {
+            for (x = x0; x < width; x++)
+                ref[ref_ix + x] += bump[bump_ix++];
+            for (x = 0; x < x0; x++)
+                ref[ref_ix + x] += bump[bump_ix++];
+            ref_ix += width;
+            y0++;
+            if (y0 == height) {
+                x0 += shift;
+                if (x0 >= width) x0 -= width;
+                y0 = 0;
+                ref_ix = 0;
+            }
+        }
 
-	/* Remove DC component to avoid integer overflow. */
-	if ((i & 255) == 255 && i + 1 < size) {
-	    bits32 gmin = *pcell[i + 1];
-	    int j;
+        /* Remove DC component to avoid integer overflow. */
+        if ((i & 255) == 255 && i + 1 < size) {
+            bits32 gmin = *pcell[i + 1];
+            int j;
 
-	    for (j = i + 2; j < size; j++) {
-		if (*pcell[j] < gmin) {
-		    gmin = *pcell[j];
-		}
-	    }
+            for (j = i + 2; j < size; j++) {
+                if (*pcell[j] < gmin) {
+                    gmin = *pcell[j];
+                }
+            }
 #ifdef VERBOSE
-	    if_debug1('h', "[h]gmin = %d\n", gmin);
+            if_debug1('h', "[h]gmin = %d\n", gmin);
 #endif
-	    for (j = i + 1; j < size; j++)
-		*pcell[j] -= gmin;
-	    
-	}
+            for (j = i + 1; j < size; j++)
+                *pcell[j] -= gmin;
+
+        }
     }
 
     free(ref);
@@ -1283,14 +1282,14 @@ wts_screen_from_enum_j(const gs_wts_screen_enum_t *wse)
     samples = malloc(sizeof(wts_screen_sample_t) * size);
     wsj->base.samples = samples;
     for (i = 0; i < size; i++) {
-	samples[i] = wsej->base.cell[i] >> WTS_EXTRA_SORT_BITS;
+        samples[i] = wsej->base.cell[i] >> WTS_EXTRA_SORT_BITS;
     }
 
 #ifdef WTS_CACHE_SIZE_X
     for (i = 0; i < WTS_CACHE_SIZE_X; i++)
-	wsj->xcache[i].tag = -1;
+        wsj->xcache[i].tag = -1;
     for (i = 0; i < WTS_CACHE_SIZE_Y; i++)
-	wsj->ycache[i].tag = -1;
+        wsj->ycache[i].tag = -1;
 #endif
 
     return &wsj->base;
@@ -1320,7 +1319,7 @@ wts_screen_from_enum_h(const gs_wts_screen_enum_t *wse)
     samples = malloc(sizeof(wts_screen_sample_t) * size);
     wsh->base.samples = samples;
     for (i = 0; i < size; i++) {
-	samples[i] = wseh->base.cell[i] >> WTS_EXTRA_SORT_BITS;
+        samples[i] = wseh->base.cell[i] >> WTS_EXTRA_SORT_BITS;
     }
 
     return &wsh->base;
@@ -1349,62 +1348,62 @@ wts_screen_from_enum(const gs_wts_screen_enum_t *wse)
     byte *cell_result;
 
     if (wse->t == WTS_SCREEN_J) {
-	wts_key_j k;
-	k.t = wse->t;
-	k.width = wse->width;
-	k.height = wse->height;
-	cell_off = sizeof(k);
+        wts_key_j k;
+        k.t = wse->t;
+        k.width = wse->width;
+        k.height = wse->height;
+        cell_off = sizeof(k);
 
-	key_size = cell_off + wse->size * sizeof(bits32);
-	key = (byte *)malloc(key_size);
-	/* todo: more params */
-	memcpy(key, &k, cell_off);
-	memcpy(key + cell_off, wse->cell, wse->size * sizeof(bits32));
+        key_size = cell_off + wse->size * sizeof(bits32);
+        key = (byte *)malloc(key_size);
+        /* todo: more params */
+        memcpy(key, &k, cell_off);
+        memcpy(key + cell_off, wse->cell, wse->size * sizeof(bits32));
     } else if (wse->t == WTS_SCREEN_H) {
-	wts_key_h k;
-	k.t = wse->t;
-	k.width = wse->width;
-	k.height = wse->height;
-	key_size = sizeof(k);
-	key = (byte *)malloc(key_size);
-	/* todo: more params */
-	memcpy(key, &k, key_size);
+        wts_key_h k;
+        k.t = wse->t;
+        k.width = wse->width;
+        k.height = wse->height;
+        key_size = sizeof(k);
+        key = (byte *)malloc(key_size);
+        /* todo: more params */
+        memcpy(key, &k, key_size);
     }
 
     if (key != NULL)
-	cell_len = gp_cache_query(GP_CACHE_TYPE_WTS_CELL, key, key_size,
-				  (void **)&cell_result,
-				  wts_cache_alloc_callback, NULL);
+        cell_len = gp_cache_query(GP_CACHE_TYPE_WTS_CELL, key, key_size,
+                                  (void **)&cell_result,
+                                  wts_cache_alloc_callback, NULL);
     if (cell_len >= 0) {
-	memcpy(wse->cell, cell_result, cell_len);
-	free(cell_result);
+        memcpy(wse->cell, cell_result, cell_len);
+        free(cell_result);
     } else {
-	wts_sort_blue(wse);
-	cell_len = wse->size * sizeof(bits32);
-	gp_cache_insert(GP_CACHE_TYPE_WTS_CELL, key, key_size,
-			(void *)wse->cell, cell_len);
+        wts_sort_blue(wse);
+        cell_len = wse->size * sizeof(bits32);
+        gp_cache_insert(GP_CACHE_TYPE_WTS_CELL, key, key_size,
+                        (void *)wse->cell, cell_len);
     }
     free(key);
 
     if (wse->t == WTS_SCREEN_J)
-	result = wts_screen_from_enum_j(wse);
+        result = wts_screen_from_enum_j(wse);
     else if (wse->t == WTS_SCREEN_H)
-	result = wts_screen_from_enum_h(wse);
+        result = wts_screen_from_enum_h(wse);
 
 #ifdef DUMP_WTS
     {
-	static int dump_idx = 0;
-	char dump_fn[128];
-	int dump_fd;
-	byte *buf;
-	int size;
+        static int dump_idx = 0;
+        char dump_fn[128];
+        int dump_fd;
+        byte *buf;
+        int size;
 
-	size = gs_wts_to_buf(result, &buf);
-	sprintf(dump_fn, "wts_dump_%d", dump_idx++);
-	dump_fd = open(dump_fn, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-	write(dump_fd, buf, size);
-	close(dump_fd);
-	free(buf);
+        size = gs_wts_to_buf(result, &buf);
+        sprintf(dump_fn, "wts_dump_%d", dump_idx++);
+        dump_fd = open(dump_fn, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+        write(dump_fd, buf, size);
+        close(dump_fd);
+        free(buf);
     }
 #endif
 
@@ -1443,11 +1442,11 @@ wts_size(const wts_screen_t *ws)
     int type = le_s32(&ws->type);
 
     if (type == WTS_SCREEN_RAT) {
-	size = sizeof(wts_screen_t);
+        size = sizeof(wts_screen_t);
     } else if (type == WTS_SCREEN_J) {
-	size = sizeof(wts_screen_j_t);
+        size = sizeof(wts_screen_j_t);
     } else if (type == WTS_SCREEN_H) {
-	size = sizeof(wts_screen_h_t);
+        size = sizeof(wts_screen_h_t);
     }
     return size;
 }
@@ -1463,12 +1462,12 @@ gs_wts_from_buf(const byte *buf, int bufsize)
 
     result = (wts_screen_t *)malloc(size);
     if (result == NULL)
-	return NULL;
+        return NULL;
 
     hdr_size = offset_of(wts_screen_t, samples) + sizeof(int);
     if (bufsize < hdr_size ) {
-	free(result);
-	return NULL;
+        free(result);
+        return NULL;
     }
     result->type        = le_s32(&ws->type);
     result->cell_width  = le_s32(&ws->cell_width);
@@ -1476,60 +1475,60 @@ gs_wts_from_buf(const byte *buf, int bufsize)
     result->cell_shift  = le_s32(&ws->cell_shift);
     result->samples     = NULL;
     if (result->type == WTS_SCREEN_J) {
-	wts_screen_j_t *wsj = (wts_screen_j_t *)result;
-	const int *wsj_params = (const int *)((const byte *)ws + hdr_size);
+        wts_screen_j_t *wsj = (wts_screen_j_t *)result;
+        const int *wsj_params = (const int *)((const byte *)ws + hdr_size);
 
-	hdr_size += sizeof(int) * 12;
-	if (bufsize < hdr_size ) {
-	    free(result);
-	    return NULL;
-	}
-	wsj->pa         = le_s32(&wsj_params[0]);
-	wsj->pb         = le_s32(&wsj_params[1]);
-	wsj->pc         = le_s32(&wsj_params[2]);
-	wsj->pd         = le_s32(&wsj_params[3]);
-	wsj->XA         = le_s32(&wsj_params[4]);
-	wsj->YA         = le_s32(&wsj_params[5]);
-	wsj->XB         = le_s32(&wsj_params[6]);
-	wsj->YB         = le_s32(&wsj_params[7]);
-	wsj->XC         = le_s32(&wsj_params[8]);
-	wsj->YC         = le_s32(&wsj_params[9]);
-	wsj->XD         = le_s32(&wsj_params[10]);
-	wsj->YD         = le_s32(&wsj_params[11]);
-	/* 20090929:mu: In last version, we didn't copied these entries unless 
-	   WTS_SCREEN_J_SIZE_NOCACHE has been defined.
-	   But, judging from gs_wts_to_buf() code below, 
-	   those are written into file even WTS_SCREEN_J_SIZE_NOCACHE haven't defined
-	   and thereofore I think these should be read. */
+        hdr_size += sizeof(int) * 12;
+        if (bufsize < hdr_size ) {
+            free(result);
+            return NULL;
+        }
+        wsj->pa         = le_s32(&wsj_params[0]);
+        wsj->pb         = le_s32(&wsj_params[1]);
+        wsj->pc         = le_s32(&wsj_params[2]);
+        wsj->pd         = le_s32(&wsj_params[3]);
+        wsj->XA         = le_s32(&wsj_params[4]);
+        wsj->YA         = le_s32(&wsj_params[5]);
+        wsj->XB         = le_s32(&wsj_params[6]);
+        wsj->YB         = le_s32(&wsj_params[7]);
+        wsj->XC         = le_s32(&wsj_params[8]);
+        wsj->YC         = le_s32(&wsj_params[9]);
+        wsj->XD         = le_s32(&wsj_params[10]);
+        wsj->YD         = le_s32(&wsj_params[11]);
+        /* 20090929:mu: In last version, we didn't copied these entries unless
+           WTS_SCREEN_J_SIZE_NOCACHE has been defined.
+           But, judging from gs_wts_to_buf() code below,
+           those are written into file even WTS_SCREEN_J_SIZE_NOCACHE haven't defined
+           and thereofore I think these should be read. */
     }
     /* 20090929:mu: This code doesn't care about WTS_SCREEN_H type file.
        If you attenpt to read such files, probably end up with errors. */
     cell_size = result->cell_width * result->cell_height * sizeof(wts_screen_sample_t);
 
     if (bufsize < (cell_size + hdr_size) ||
-	(result->samples = (wts_screen_sample_t *)malloc(cell_size)) == NULL) {
-	free(result);
-	return NULL;
+        (result->samples = (wts_screen_sample_t *)malloc(cell_size)) == NULL) {
+        free(result);
+        return NULL;
     }
 #ifdef WTS_SCREEN_J_SIZE_NOCACHE
     if (ws->type == WTS_SCREEN_J) {
-	wts_screen_j_t *wsj = (wts_screen_j_t *)result;
-	int i;
+        wts_screen_j_t *wsj = (wts_screen_j_t *)result;
+        int i;
 
-	for (i = 0; i < WTS_CACHE_SIZE_X; i++)
-	    wsj->xcache[i].tag = -1;
-	for (i = 0; i < WTS_CACHE_SIZE_Y; i++)
-	    wsj->ycache[i].tag = -1;
+        for (i = 0; i < WTS_CACHE_SIZE_X; i++)
+            wsj->xcache[i].tag = -1;
+        for (i = 0; i < WTS_CACHE_SIZE_Y; i++)
+            wsj->ycache[i].tag = -1;
     }
 #endif
     { /* 20090929:mu: memcpy(result->samples, buf + hdr_size, cell_size); */
-	/* assuming wts_screen_sample_t == ushort */
-	wts_screen_sample_t *p = result->samples, *q = (wts_screen_sample_t *)(buf + hdr_size);
-	int i = result->cell_width * result->cell_height;
-	for ( ; i > 0; i-- ) {
-		*p++ = le_u16(q);
-		q++;
-	}
+        /* assuming wts_screen_sample_t == ushort */
+        wts_screen_sample_t *p = result->samples, *q = (wts_screen_sample_t *)(buf + hdr_size);
+        int i = result->cell_width * result->cell_height;
+        for ( ; i > 0; i-- ) {
+                *p++ = le_u16(q);
+                q++;
+        }
     }
 
     return result;
@@ -1546,7 +1545,7 @@ gs_wts_to_buf(const wts_screen_t *ws, byte **pbuf)
 
     buf = (byte *)malloc(size + cell_size);
     if (buf == NULL)
-	return -1;
+        return -1;
     memcpy(buf, ws, size);
     ((wts_screen_t *)buf)->samples = NULL;
     memcpy(buf + size, ws->samples, cell_size);
@@ -1570,21 +1569,21 @@ dump_thresh(const wts_screen_t *ws, int width, int height)
 
     printf("P5\n%d %d\n255\n", width, height);
     for (y = 0; y < height; y++) {
-	for (x = 0; x < width;) {
-	    wts_screen_sample_t *samples;
-	    int n_samples, i;
+        for (x = 0; x < width;) {
+            wts_screen_sample_t *samples;
+            int n_samples, i;
 
-	    wts_get_samples(ws, x, y, &cx, &cy, &n_samples);
-	    samples = ws->samples + cy * ws->cell_width + cx;
+            wts_get_samples(ws, x, y, &cx, &cy, &n_samples);
+            samples = ws->samples + cy * ws->cell_width + cx;
 #if 1
-	    for (i = 0; x + i < width && i < n_samples; i++)
-		fputc(samples[i] >> 7, stdout);
+            for (i = 0; x + i < width && i < n_samples; i++)
+                fputc(samples[i] >> 7, stdout);
 #else
-	    printf("(%d, %d): %d samples at %d\n",
-		   x, y, n_samples, samples - s0);
+            printf("(%d, %d): %d samples at %d\n",
+                   x, y, n_samples, samples - s0);
 #endif
-	    x += n_samples;
-	}
+            x += n_samples;
+        }
     }
     return 0;
 }

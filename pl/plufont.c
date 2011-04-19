@@ -56,7 +56,7 @@ extern void pl_init_fc(
     bool                width_request);
 
 /* ---------------- Library callbacks ---------------- */
-	
+
 /* Fill in AGFA MicroType font boilerplate. */
 void
 pl_fill_in_mt_font(gs_font_base *pfont, SW16 data, long unique_id)
@@ -79,14 +79,14 @@ pl_fill_in_mt_font(gs_font_base *pfont, SW16 data, long unique_id)
 int
 pl_load_mt_font(SW16 handle, gs_font_dir *pdir, gs_memory_t *mem,
        long unique_id, pl_font_t **pplfont)
-{         
-	  gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base, 
-	  	&st_gs_font_base, "pl_mt_load_font(gs_font_base)");
-	  pl_font_t *plfont = pl_alloc_font(mem, "pl_mt_load_font(pl_font_t)");
+{
+          gs_font_base *pfont = gs_alloc_struct(mem, gs_font_base,
+                &st_gs_font_base, "pl_mt_load_font(gs_font_base)");
+          pl_font_t *plfont = pl_alloc_font(mem, "pl_mt_load_font(pl_font_t)");
           int code;
 
-	  if ( pfont == 0 || plfont == 0 )
-	    code = gs_note_error(gs_error_VMerror);
+          if ( pfont == 0 || plfont == 0 )
+            code = gs_note_error(gs_error_VMerror);
           else
           {   /* Initialize general font boilerplate. */
               code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");

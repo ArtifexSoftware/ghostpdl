@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,8 +23,8 @@ int
 gs_setalpha(gs_state * pgs, floatp alpha)
 {
     pgs->alpha =
-	(gx_color_value) (alpha < 0 ? 0 : alpha > 1 ? gx_max_color_value :
-			  alpha * gx_max_color_value);
+        (gx_color_value) (alpha < 0 ? 0 : alpha > 1 ? gx_max_color_value :
+                          alpha * gx_max_color_value);
     gx_unset_dev_color(pgs);
     return 0;
 }

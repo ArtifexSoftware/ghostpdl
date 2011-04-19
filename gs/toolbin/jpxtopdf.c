@@ -158,7 +158,7 @@ void box_print(box_t *box)
     box_ihdr_t *ihdr = box->rez;
     if (ihdr)
         fprintf(stderr, " %ux%u %u component image with %d bit %s samples",
-	ihdr->width, ihdr->height, ihdr->nc,
+        ihdr->width, ihdr->height, ihdr->nc,
         ihdr->bpc, ihdr->sign ? "signed" : "unsigned");
     else
       fprintf(stderr, " no parse result");
@@ -180,7 +180,7 @@ static int jpx_read_imagedata(imagedata * jpx)
   in = fopen(jpx->filename, "rb");
   if (in == NULL) {
     fprintf(stderr, "Error: could not open input file '%s'\n",
-	jpx->filename);
+        jpx->filename);
     return FALSE;
   }
 
@@ -210,14 +210,14 @@ static int jpx_read_imagedata(imagedata * jpx)
       if (!memcmp(box->type, "jp2h", 4)) {
         box->next = box_read(buf + offset + 8, box->size);
         if (box->next) {
-	  box_ihdr_t *ihdr = box->next->rez;
+          box_ihdr_t *ihdr = box->next->rez;
 #ifdef DEBUG
           box_print(box->next);
 #endif
-	  jpx->width = ihdr->width;
-	  jpx->height = ihdr->height;
-	  jpx->numcmpts = ihdr->nc;
-	  jpx->depth = ihdr->bpc;
+          jpx->width = ihdr->width;
+          jpx->height = ihdr->height;
+          jpx->numcmpts = ihdr->nc;
+          jpx->depth = ihdr->bpc;
           box_free(box->next);
           header = TRUE;
         }
@@ -235,136 +235,135 @@ static int jpx_read_imagedata(imagedata * jpx)
   }
 
   fprintf(stderr,
-	"Note on file '%s': %dx%d pixel, %d color component%s, dpi %lf\n",
-		jpx->filename, jpx->width, jpx->height,
-		jpx->numcmpts, (jpx->numcmpts == 1 ? "" : "s"),
-		jpx->dpi);
+        "Note on file '%s': %dx%d pixel, %d color component%s, dpi %lf\n",
+                jpx->filename, jpx->width, jpx->height,
+                jpx->numcmpts, (jpx->numcmpts == 1 ? "" : "s"),
+                jpx->dpi);
 
   if (jpx->dpi == 0.0)
-	jpx->dpi = 100.0;
+        jpx->dpi = 100.0;
 
   return TRUE;
 }
 
 static int jpx_pdf(imagedata * jpx, FILE * out)
 {
-	FILE *in;
-	unsigned char buf[BUFSIZE];
-	int n;
-	double scale;
+        FILE *in;
+        unsigned char buf[BUFSIZE];
+        int n;
+        double scale;
 
-	if ( !jpx_read_imagedata(jpx) ) return -1;
+        if ( !jpx_read_imagedata(jpx) ) return -1;
 
-	in = fopen(jpx->filename, "rb");
-	if (in == NULL) {
-		fprintf(stderr, "Error: unable to open input file '%s'\n", jpx->filename);
-		return -1;
-	}
-	fseek(in, 0, SEEK_END);
-	jpx->filesize = ftell(in);
-	fseek(in, 0, SEEK_SET);
+        in = fopen(jpx->filename, "rb");
+        if (in == NULL) {
+                fprintf(stderr, "Error: unable to open input file '%s'\n", jpx->filename);
+                return -1;
+        }
+        fseek(in, 0, SEEK_END);
+        jpx->filesize = ftell(in);
+        fseek(in, 0, SEEK_SET);
 
-	xref[nxref++] = ftell(out);
-	fprintf(out, "%d 0 obj\n", nxref);
-	fprintf(out, "<</Type/XObject/Subtype/Image\n");
-	fprintf(out, "/Width %d /Height %d\n", jpx->width, jpx->height);
-	fprintf(out, "/ColorSpace/%s\n", jpx->numcmpts == 1 ? "DeviceGray" : "DeviceRGB");
-	fprintf(out, "/BitsPerComponent %d\n", jpx->depth);
-	fprintf(out, "/Length %d\n", jpx->filesize);
-	fprintf(out, "/Filter/JPXDecode\n");
-	fprintf(out, ">>\n");
-	fprintf(out, "stream\n");
+        xref[nxref++] = ftell(out);
+        fprintf(out, "%d 0 obj\n", nxref);
+        fprintf(out, "<</Type/XObject/Subtype/Image\n");
+        fprintf(out, "/Width %d /Height %d\n", jpx->width, jpx->height);
+        fprintf(out, "/ColorSpace/%s\n", jpx->numcmpts == 1 ? "DeviceGray" : "DeviceRGB");
+        fprintf(out, "/BitsPerComponent %d\n", jpx->depth);
+        fprintf(out, "/Length %d\n", jpx->filesize);
+        fprintf(out, "/Filter/JPXDecode\n");
+        fprintf(out, ">>\n");
+        fprintf(out, "stream\n");
 
-	/* copy data from jpx file */
-	while ((n = fread(buf, 1, sizeof(buf), in)) != 0)
-		fwrite(buf, 1, n, out);
+        /* copy data from jpx file */
+        while ((n = fread(buf, 1, sizeof(buf), in)) != 0)
+                fwrite(buf, 1, n, out);
 
-	fprintf(out, "endstream\n");
-	fprintf(out, "endobj\n");
-	fprintf(out, "\n");
+        fprintf(out, "endstream\n");
+        fprintf(out, "endobj\n");
+        fprintf(out, "\n");
 
-	fclose(in);
+        fclose(in);
 
-	scale = 72.0 / jpx->dpi;
-	sprintf((char *)buf, "%d 0 0 %d 0 0 cm /x%d Do\n",
-		(int)ceil(jpx->width * scale),
-		(int)ceil(jpx->height * scale),
-		nxref);
+        scale = 72.0 / jpx->dpi;
+        sprintf((char *)buf, "%d 0 0 %d 0 0 cm /x%d Do\n",
+                (int)ceil(jpx->width * scale),
+                (int)ceil(jpx->height * scale),
+                nxref);
 
-	xref[nxref++] = ftell(out);
-	fprintf(out, "%d 0 obj\n<</Length %lu>>\n",
-		nxref, (unsigned long)strlen((char*)buf));
-	fprintf(out, "stream\n");
-	fprintf(out, "%s", buf);
-	fprintf(out, "endstream\n");
-	fprintf(out, "endobj\n");
-	fprintf(out, "\n");
+        xref[nxref++] = ftell(out);
+        fprintf(out, "%d 0 obj\n<</Length %lu>>\n",
+                nxref, (unsigned long)strlen((char*)buf));
+        fprintf(out, "stream\n");
+        fprintf(out, "%s", buf);
+        fprintf(out, "endstream\n");
+        fprintf(out, "endobj\n");
+        fprintf(out, "\n");
 
-	xref[nxref++] = ftell(out);
-	fprintf(out, "%d 0 obj\n", nxref);
-	fprintf(out, "<</Type/Page/Parent 3 0 R\n");
-	fprintf(out, "/Resources << /XObject << /x%d %d 0 R >> >>\n", nxref-2, nxref-2);
-	fprintf(out, "/MediaBox [0 0 %d %d]\n",
-		(int)ceil(jpx->width * scale),
-		(int)ceil(jpx->height * scale));
-	fprintf(out, "/Contents %d 0 R\n", nxref-1);
-	fprintf(out, ">>\n");
-	fprintf(out, "endobj\n");
-	fprintf(out, "\n");
+        xref[nxref++] = ftell(out);
+        fprintf(out, "%d 0 obj\n", nxref);
+        fprintf(out, "<</Type/Page/Parent 3 0 R\n");
+        fprintf(out, "/Resources << /XObject << /x%d %d 0 R >> >>\n", nxref-2, nxref-2);
+        fprintf(out, "/MediaBox [0 0 %d %d]\n",
+                (int)ceil(jpx->width * scale),
+                (int)ceil(jpx->height * scale));
+        fprintf(out, "/Contents %d 0 R\n", nxref-1);
+        fprintf(out, ">>\n");
+        fprintf(out, "endobj\n");
+        fprintf(out, "\n");
 
-	return nxref;
+        return nxref;
 }
 
 int main(int argc, char **argv)
 {
-	imagedata image;
-	FILE *outfile;
-	int i;
-	int startxref;
+        imagedata image;
+        FILE *outfile;
+        int i;
+        int startxref;
 
-	image.filename = NULL;
+        image.filename = NULL;
 
-	outfile = fopen("out.pdf", "w");
+        outfile = fopen("out.pdf", "w");
 
-	fprintf(outfile, "%%PDF-1.5\n\n");
+        fprintf(outfile, "%%PDF-1.5\n\n");
 
-	xref[nxref++] = ftell(outfile);
-	fprintf(outfile, "1 0 obj\n");
-	fprintf(outfile, "<</Type/Catalog/Pages 3 0 R>>\n");
-	fprintf(outfile, "endobj\n\n");
+        xref[nxref++] = ftell(outfile);
+        fprintf(outfile, "1 0 obj\n");
+        fprintf(outfile, "<</Type/Catalog/Pages 3 0 R>>\n");
+        fprintf(outfile, "endobj\n\n");
 
-	xref[nxref++] = ftell(outfile);
-	fprintf(outfile, "2 0 obj\n");
-	fprintf(outfile, "<</Creator(jpxtopdf)/Title(%s)>>\n", getenv("TITLE"));
-	fprintf(outfile, "endobj\n\n");
+        xref[nxref++] = ftell(outfile);
+        fprintf(outfile, "2 0 obj\n");
+        fprintf(outfile, "<</Creator(jpxtopdf)/Title(%s)>>\n", getenv("TITLE"));
+        fprintf(outfile, "endobj\n\n");
 
-	/* delay obj #3 (pages) until later */
-	nxref++;
+        /* delay obj #3 (pages) until later */
+        nxref++;
 
-	for (i = 1; i < argc; i++) {
-	  image.filename = argv[i];
+        for (i = 1; i < argc; i++) {
+          image.filename = argv[i];
 
-	  /* copy the jpx stream wrapped in a pdf object */
-	  pages[npages++] = jpx_pdf(&image, outfile);
-	}
+          /* copy the jpx stream wrapped in a pdf object */
+          pages[npages++] = jpx_pdf(&image, outfile);
+        }
 
-	xref[2] = ftell(outfile);
-	fprintf(outfile, "3 0 obj\n");
-	fprintf(outfile, "<</Type/Pages/Count %d/Kids[\n", npages);
-	for (i = 0; i < npages; i++)
-		fprintf(outfile, "%d 0 R\n", pages[i]);
-	fprintf(outfile, "]>>\nendobj\n\n");
+        xref[2] = ftell(outfile);
+        fprintf(outfile, "3 0 obj\n");
+        fprintf(outfile, "<</Type/Pages/Count %d/Kids[\n", npages);
+        for (i = 0; i < npages; i++)
+                fprintf(outfile, "%d 0 R\n", pages[i]);
+        fprintf(outfile, "]>>\nendobj\n\n");
 
-	startxref = ftell(outfile);
-	fprintf(outfile, "xref\n0 %d\n", nxref + 1);
-	fprintf(outfile, "0000000000 65535 f \n");
-	for (i = 0; i < nxref; i++)
-		fprintf(outfile, "%010d 00000 n \n", xref[i]);
-	fprintf(outfile, "trailer\n<< /Size %d /Root 1 0 R /Info 2 0 R >>\n", nxref + 1);
-	fprintf(outfile, "startxref\n%d\n%%%%EOF\n", startxref);
+        startxref = ftell(outfile);
+        fprintf(outfile, "xref\n0 %d\n", nxref + 1);
+        fprintf(outfile, "0000000000 65535 f \n");
+        for (i = 0; i < nxref; i++)
+                fprintf(outfile, "%010d 00000 n \n", xref[i]);
+        fprintf(outfile, "trailer\n<< /Size %d /Root 1 0 R /Info 2 0 R >>\n", nxref + 1);
+        fprintf(outfile, "startxref\n%d\n%%%%EOF\n", startxref);
 
-	fclose(outfile);
+        fclose(outfile);
 
-	return 0;
+        return 0;
 }
-

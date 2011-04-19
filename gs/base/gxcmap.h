@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,22 +34,22 @@ typedef struct gx_device_color_s gx_device_color;
 
 #define cmap_proc_gray(proc)\
   void proc(frac, gx_device_color *, const gs_imager_state *,\
-	    gx_device *, gs_color_select_t)
+            gx_device *, gs_color_select_t)
 #define cmap_proc_rgb(proc)\
   void proc(frac, frac, frac, gx_device_color *, const gs_imager_state *,\
-	    gx_device *, gs_color_select_t)
+            gx_device *, gs_color_select_t)
 #define cmap_proc_cmyk(proc)\
   void proc(frac, frac, frac, frac, gx_device_color *,\
-	    const gs_imager_state *, gx_device *, gs_color_select_t)
+            const gs_imager_state *, gx_device *, gs_color_select_t)
 #define cmap_proc_rgb_alpha(proc)\
   void proc(frac, frac, frac, frac, gx_device_color *,\
-	       const gs_imager_state *, gx_device *, gs_color_select_t)
+               const gs_imager_state *, gx_device *, gs_color_select_t)
 #define cmap_proc_separation(proc)\
   void proc(frac, gx_device_color *, const gs_imager_state *,\
-	       gx_device *, gs_color_select_t)
+               gx_device *, gs_color_select_t)
 #define cmap_proc_devicen(proc)\
   void proc(const frac *, gx_device_color *, const gs_imager_state *, \
-	       gx_device *, gs_color_select_t)
+               gx_device *, gs_color_select_t)
 #define cmap_proc_is_halftoned(proc)\
   bool proc(const gs_imager_state *, gx_device *)
 
@@ -63,7 +63,7 @@ typedef struct gx_device_color_s gx_device_color;
 
 #define cm_map_proc_rgb(proc) \
     void proc (gx_device * dev, \
-	      const gs_imager_state *pis, \
+              const gs_imager_state *pis, \
               frac r, frac g, frac b, \
               frac * out)
 
@@ -180,7 +180,6 @@ extern cm_map_proc_gray(gx_error_gray_cs_to_cmyk_cm);
 extern cm_map_proc_rgb(gx_error_rgb_cs_to_cmyk_cm);
 extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
 
-
 /*
   Get the mapping procedures appropriate for the currently set
   color model.
@@ -228,8 +227,6 @@ extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
 
 #define dev_proc_decode_color(proc) \
     dev_t_proc_decode_color(proc, gx_device)
-
-
 
 /*
  * These are the default routines for translating a color component
@@ -285,7 +282,7 @@ dev_proc_decode_color(gx_default_decode_color);
  */
 frac gx_unit_frac(float fvalue);
 /* Determine if the device is using the standard color mapping procs.  In
-   such a case, we can make use of the faster icc color conversions for 
+   such a case, we can make use of the faster icc color conversions for
    images */
 bool gx_device_uses_std_cmap_procs(gx_device * dev);
 bool fwd_uses_fwd_cmap_procs(gx_device * dev);
@@ -293,6 +290,6 @@ const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
 void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, bool has_transfer,
      bool has_halftone, gs_color_select_t select);
-void cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, 
+void cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis,
                    gx_device * dev);
 #endif /* gxcmap_INCLUDED */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -57,57 +57,56 @@ gp_semaphore_sizeof(void)
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_semaphore_open(
-		  gp_semaphore * sema	/* create semaphore here */
+                  gp_semaphore * sema	/* create semaphore here */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     if (winSema) {
-	winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
-	return
-	    (winSema->handle != NULL ? 0 :
-	     gs_note_error(gs_error_unknownerror));
+        winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
+        return
+            (winSema->handle != NULL ? 0 :
+             gs_note_error(gs_error_unknownerror));
     } else
-	return 0;		/* Win32 semaphores handles may be moved */
+        return 0;		/* Win32 semaphores handles may be moved */
 }
 
 int
 gp_semaphore_close(
-		   gp_semaphore * sema	/* semaphore to affect */
+                   gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     if (winSema->handle != NULL)
-	CloseHandle(winSema->handle);
+        CloseHandle(winSema->handle);
     winSema->handle = NULL;
     return 0;
 }
 
 int				/* rets 0 ok, -ve error */
 gp_semaphore_wait(
-		  gp_semaphore * sema	/* semaphore to affect */
+                  gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     return
-	(WaitForSingleObject(winSema->handle, INFINITE) == WAIT_OBJECT_0
-	 ? 0 : gs_error_unknownerror);
+        (WaitForSingleObject(winSema->handle, INFINITE) == WAIT_OBJECT_0
+         ? 0 : gs_error_unknownerror);
 }
 
 int				/* rets 0 ok, -ve error */
 gp_semaphore_signal(
-		    gp_semaphore * sema	/* semaphore to affect */
+                    gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     return
-	(ReleaseSemaphore(winSema->handle, 1, NULL) ? 0 :
-	 gs_error_unknownerror);
+        (ReleaseSemaphore(winSema->handle, 1, NULL) ? 0 :
+         gs_error_unknownerror);
 }
-
 
 /* Monitor supports enter/leave semantics */
 
@@ -123,21 +122,21 @@ gp_monitor_sizeof(void)
 
 int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_monitor_open(
-		gp_monitor * mon	/* create monitor here */
+                gp_monitor * mon	/* create monitor here */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
 
     if (mon) {
-	InitializeCriticalSection(&winMon->lock);	/* returns no status */
-	return 0;
+        InitializeCriticalSection(&winMon->lock);	/* returns no status */
+        return 0;
     } else
-	return 1;		/* Win32 critical sections mutsn't be moved */
+        return 1;		/* Win32 critical sections mutsn't be moved */
 }
 
 int
 gp_monitor_close(
-		 gp_monitor * mon	/* monitor to affect */
+                 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -148,7 +147,7 @@ gp_monitor_close(
 
 int				/* rets 0 ok, -ve error */
 gp_monitor_enter(
-		 gp_monitor * mon	/* monitor to affect */
+                 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -159,7 +158,7 @@ gp_monitor_enter(
 
 int				/* rets 0 ok, -ve error */
 gp_monitor_leave(
-		 gp_monitor * mon	/* monitor to affect */
+                 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -178,7 +177,7 @@ typedef struct gp_thread_creation_closure_s {
 /* Origin of new threads started by gp_create_thread */
 static void
 gp_thread_begin_wrapper(
-			void *thread_data	/* gp_thread_creation_closure passed as magic data */
+                        void *thread_data	/* gp_thread_creation_closure passed as magic data */
 )
 {
     gp_thread_creation_closure closure;
@@ -192,16 +191,16 @@ gp_thread_begin_wrapper(
 /* Call a function on a brand new thread */
 int				/* 0 ok, -ve error */
 gp_create_thread(
-		 gp_thread_creation_callback_t function,	/* function to start */
-		 void *data	/* magic data to pass to thread fn */
+                 gp_thread_creation_callback_t function,	/* function to start */
+                 void *data	/* magic data to pass to thread fn */
 )
 {
     /* Create the magic closure that thread_wrapper gets passed */
     gp_thread_creation_closure *closure =
-	(gp_thread_creation_closure *)malloc(sizeof(*closure));
+        (gp_thread_creation_closure *)malloc(sizeof(*closure));
 
     if (!closure)
-	return gs_error_VMerror;
+        return gs_error_VMerror;
     closure->function = function;
     closure->data = data;
 
@@ -219,7 +218,7 @@ gp_create_thread(
     if (~BEGIN_THREAD(gp_thread_begin_wrapper, 128*1024, closure) != 0)
     {
         free(closure);
-	return 0;
+        return 0;
     }
     return_error(gs_error_unknownerror);
 }

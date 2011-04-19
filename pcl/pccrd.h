@@ -29,11 +29,11 @@
 
 /*
  * In PCL, color rendering dictionaries are set by the device, but the
- * default white point is specified by the language, and the white point 
+ * default white point is specified by the language, and the white point
  * may be modified by the language via the "View Illuminant" command.
  *
  * Though trivial in principle, this arrangement is a bit awkward for the
- * graphic library as there is no make-unique functionality provided 
+ * graphic library as there is no make-unique functionality provided
  * for color rendering dictionaries (none is necessary for PostScript as
  * color rendering dictionaries may not be modified once they are set).
  *
@@ -42,13 +42,13 @@
  */
 
 /*
- * The PCL id exists to provide an identifier for a color rendering 
- * dictionary. Having such an identifier is important to avoid the need 
- * to repeatedly re-insert the color rendering dictionary into the 
+ * The PCL id exists to provide an identifier for a color rendering
+ * dictionary. Having such an identifier is important to avoid the need
+ * to repeatedly re-insert the color rendering dictionary into the
  * graphic state.
  *
  * The is_dflt_illum flag is used to optimize the case in which a CRD that
- * already uses the default view illuminant is once again set to use this 
+ * already uses the default view illuminant is once again set to use this
  * view illuminant.
  */
 struct pcl_crd_s {

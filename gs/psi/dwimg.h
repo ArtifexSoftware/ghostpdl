@@ -15,7 +15,6 @@
 #ifndef dwimg_INCLUDED
 #  define dwimg_INCLUDED
 
-
 /* Windows Image Window structure */
 
 typedef struct IMAGE_DEVICEN_S IMAGE_DEVICEN;
@@ -93,6 +92,5 @@ void image_updatesize(IMAGE *img);
 
 /* To be called during initialization after the text window has been created */
 void image_textwindow(HWND hwnd);
-
 
 #endif /* dwimg_INCLUDED */

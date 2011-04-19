@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,30 +27,30 @@
 /* Create a Type 0 wrapper for a CIDFont/CMap pair. */
 static int
 type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
-			gs_cmap_t *pcmap, int wmode, const gs_matrix *psmat,
-			gs_memory_t *mem)
+                        gs_cmap_t *pcmap, int wmode, const gs_matrix *psmat,
+                        gs_memory_t *mem)
 {
     gs_font_type0 *font0 = (gs_font_type0 *)
-	gs_font_alloc(mem, &st_gs_font_type0, &gs_font_procs_default, NULL,
-		      "gs_type0_from_cidfont(font)");
+        gs_font_alloc(mem, &st_gs_font_type0, &gs_font_procs_default, NULL,
+                      "gs_type0_from_cidfont(font)");
     /* We allocate Encoding dynamically only for the sake of the GC. */
     uint *encoding = (uint *)
-	gs_alloc_bytes(mem, sizeof(uint), "gs_type0_from_cidfont(Encoding)");
+        gs_alloc_bytes(mem, sizeof(uint), "gs_type0_from_cidfont(Encoding)");
     gs_font **fdep =
-	gs_alloc_struct_array(mem, 1, gs_font *, &st_gs_font_ptr_element,
-			      "gs_type0_from_cidfont(FDepVector)");
+        gs_alloc_struct_array(mem, 1, gs_font *, &st_gs_font_ptr_element,
+                              "gs_type0_from_cidfont(FDepVector)");
     int code;
 
     if (font0 == 0 || encoding == 0 || fdep == 0) {
-	gs_free_object(mem, fdep, "gs_type0_from_cidfont(FDepVector)");
-	gs_free_object(mem, encoding, "gs_type0_from_cidfont(Encoding)");
-	gs_free_object(mem, font0, "gs_type0_from_cidfont(font)");
-	return_error(gs_error_VMerror);
+        gs_free_object(mem, fdep, "gs_type0_from_cidfont(FDepVector)");
+        gs_free_object(mem, encoding, "gs_type0_from_cidfont(Encoding)");
+        gs_free_object(mem, font0, "gs_type0_from_cidfont(font)");
+        return_error(gs_error_VMerror);
     }
     if (psmat)
-	font0->FontMatrix = *psmat;
+        font0->FontMatrix = *psmat;
     else
-	gs_make_identity(&font0->FontMatrix);
+        gs_make_identity(&font0->FontMatrix);
     font0->FontType = ft_composite;
     font0->procs.init_fstack = gs_type0_init_fstack;
     font0->procs.define_font = gs_no_define_font;
@@ -70,7 +70,7 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
     font0->data.SubsVector.size = 0;
     code = gs_definefont(font->dir, (gs_font *)font0);
     if (code < 0)
-	return code;
+        return code;
     *ppfont0 = font0;
     return 0;
 }
@@ -80,17 +80,17 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
 /* Create a Type 0 wrapper for a CIDFont. */
 int
 gs_font_type0_from_cidfont(gs_font_type0 **ppfont0, gs_font *font, int wmode,
-			   const gs_matrix *psmat, gs_memory_t *mem)
+                           const gs_matrix *psmat, gs_memory_t *mem)
 {
     gs_cmap_t *pcmap;
     int code = gs_cmap_create_identity(&pcmap, 2, wmode, mem);
 
     if (code < 0)
-	return code;
+        return code;
     code = type0_from_cidfont_cmap(ppfont0, font, pcmap, wmode, psmat, mem);
     if (code < 0) {
-	gs_free_object(mem, pcmap, "gs_font_type0_from_cidfont(CMap)");
-	/****** FREE SUBSTRUCTURES -- HOW? ******/
+        gs_free_object(mem, pcmap, "gs_font_type0_from_cidfont(CMap)");
+        /****** FREE SUBSTRUCTURES -- HOW? ******/
     }
     return code;
 }
@@ -102,30 +102,30 @@ gs_font_type0_from_cidfont(gs_font_type0 **ppfont0, gs_font *font, int wmode,
  */
 int
 gs_font_type0_from_type42(gs_font_type0 **ppfont0, gs_font_type42 *pfont42,
-			  int wmode, bool use_cmap, gs_memory_t *mem)
+                          int wmode, bool use_cmap, gs_memory_t *mem)
 {
     gs_font_cid2 *pfcid;
     gs_font_type0 *pfont0;
     int code = gs_font_cid2_from_type42(&pfcid, pfont42, wmode, mem);
 
     if (code < 0)
-	return code;
+        return code;
     if (use_cmap) {
-	gs_cmap_t *pcmap;
+        gs_cmap_t *pcmap;
 
-	code = gs_cmap_from_type42_cmap(&pcmap, pfont42, wmode, mem);
-	if (code < 0)
-	    return code;
-	code = type0_from_cidfont_cmap(&pfont0, (gs_font *)pfcid, pcmap,
-				       wmode, NULL, mem);
+        code = gs_cmap_from_type42_cmap(&pcmap, pfont42, wmode, mem);
+        if (code < 0)
+            return code;
+        code = type0_from_cidfont_cmap(&pfont0, (gs_font *)pfcid, pcmap,
+                                       wmode, NULL, mem);
     } else {
-	code = gs_font_type0_from_cidfont(&pfont0, (gs_font *)pfcid, wmode,
-					  NULL, mem);
+        code = gs_font_type0_from_cidfont(&pfont0, (gs_font *)pfcid, wmode,
+                                          NULL, mem);
     }
     if (code < 0) {
-	gs_free_object(mem, pfcid, "gs_type0_from_type42(CIDFont)");
-	/****** FREE SUBSTRUCTURES -- HOW? ******/
-	return code;
+        gs_free_object(mem, pfcid, "gs_type0_from_type42(CIDFont)");
+        /****** FREE SUBSTRUCTURES -- HOW? ******/
+        return code;
     }
 
     *ppfont0 = pfont0;

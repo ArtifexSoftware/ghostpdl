@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,8 +37,8 @@ typedef float (*gs_mapping_proc) (floatp, const gx_transfer_map *);
  * closure:
  */
 typedef float (*gs_mapping_closure_proc_t) (floatp value,
-					    const gx_transfer_map * pmap,
-					    const void *proc_data);
+                                            const gx_transfer_map * pmap,
+                                            const void *proc_data);
 typedef struct gs_mapping_closure_s {
     gs_mapping_closure_proc_t proc;
     const void *data;

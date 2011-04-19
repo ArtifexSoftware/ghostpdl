@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,7 +23,7 @@ int
 gs_setrasterop(gs_state * pgs, gs_rop3_t rop)
 {
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+        return_error(gs_error_undefined);
     pgs->log_op = (rop & rop3_1) | (pgs->log_op & ~rop3_1);
     return 0;
 }
@@ -40,10 +40,10 @@ int
 gs_setsourcetransparent(gs_state * pgs, bool transparent)
 {
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+        return_error(gs_error_undefined);
     pgs->log_op =
-	(transparent ? pgs->log_op | lop_S_transparent :
-	 pgs->log_op & ~lop_S_transparent);
+        (transparent ? pgs->log_op | lop_S_transparent :
+         pgs->log_op & ~lop_S_transparent);
     return 0;
 }
 
@@ -59,10 +59,10 @@ int
 gs_settexturetransparent(gs_state * pgs, bool transparent)
 {
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+        return_error(gs_error_undefined);
     pgs->log_op =
-	(transparent ? pgs->log_op | lop_T_transparent :
-	 pgs->log_op & ~lop_T_transparent);
+        (transparent ? pgs->log_op | lop_T_transparent :
+         pgs->log_op & ~lop_T_transparent);
     return 0;
 }
 

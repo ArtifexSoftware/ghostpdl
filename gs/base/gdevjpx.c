@@ -19,7 +19,6 @@
 #include "strimpl.h"
 #include "sjpx_luratech.h"
 
-
 /* Structure for the JPX-writing device. */
 typedef struct gx_device_jpx_s {
     gx_device_common;
@@ -44,35 +43,35 @@ static dev_proc_print_page(jpx_print_page);
 /* 24 bit RGB default */
 static const gx_device_procs jpxrgb_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		       gx_default_rgb_map_rgb_color,
-		       gx_default_rgb_map_color_rgb);
+                       gx_default_rgb_map_rgb_color,
+                       gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_jpxrgb_device = {
     prn_device_std_body(gx_device_jpx, jpxrgb_procs, "jpx",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,	/* resolution */
-	0, 0, 0, 0,	/* margins */
-	24,		/* bits per pixel */
-	jpx_print_page)
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,	/* resolution */
+        0, 0, 0, 0,	/* margins */
+        24,		/* bits per pixel */
+        jpx_print_page)
 };
 
 /* 8 bit Grayscale */
 static const gx_device_procs jpxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		       gx_default_gray_map_rgb_color,
-		       gx_default_gray_map_color_rgb);
+                       gx_default_gray_map_rgb_color,
+                       gx_default_gray_map_color_rgb);
 const gx_device_printer gs_jpxgray_device = {
     prn_device_body(gx_device_jpx, jpxgray_procs, "jpxgray",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,	/* resolution */
-	0, 0, 0, 0,	/* margins */
-	1, 8, 255, 0, 256, 0, /* components, depth and min/max values */
-	jpx_print_page)
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,	/* resolution */
+        0, 0, 0, 0,	/* margins */
+        1, 8, 255, 0, 256, 0, /* components, depth and min/max values */
+        jpx_print_page)
 };
 
 /* 32 bit CMKY */
 static dev_proc_map_color_rgb(jpx_cmyk_map_color_rgb);
 static dev_proc_map_cmyk_color(jpx_cmyk_map_cmyk_color);
-static const gx_device_procs jpxcmyk_procs = 
+static const gx_device_procs jpxcmyk_procs =
 {       gdev_prn_open,
         gx_default_get_initial_matrix,
         NULL,   /* sync_output */
@@ -86,7 +85,7 @@ static const gx_device_procs jpxcmyk_procs =
         NULL,   /* copy_color */
         NULL,   /* draw_line */
         NULL,   /* get_bits */
-	gdev_prn_get_params,
+        gdev_prn_get_params,
         gdev_prn_put_params,
         jpx_cmyk_map_cmyk_color,
         NULL,   /* get_xfont_procs */
@@ -96,14 +95,14 @@ static const gx_device_procs jpxcmyk_procs =
 };
 const gx_device_printer gs_jpxcmyk_device = {
     prn_device_std_body(gx_device_jpx, jpxcmyk_procs, "jpxcmyk",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,	/* resolution */
-	0, 0, 0, 0,	/* margins */
-	32,		/* bits per pixel */
-	jpx_print_page)
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,	/* resolution */
+        0, 0, 0, 0,	/* margins */
+        32,		/* bits per pixel */
+        jpx_print_page)
 };
 
-/* private color conversion routines; 
+/* private color conversion routines;
    we don't seem to have defaults for cmyk. */
 static int
 jpx_cmyk_map_color_rgb(gx_device * dev, gx_color_index color,
@@ -132,7 +131,6 @@ jpx_cmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
-
 /* Send the page to the file. */
 static int
 jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
@@ -151,23 +149,23 @@ jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream fstrm, cstrm;
 
     if (in == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto fail;
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
     }
     /* Create the jpx encoder state. */
     s_init_state((stream_state *)&state, &s_jpxe_template, 0);
     if (state.template->set_defaults)
-	(*state.template->set_defaults) ((stream_state *) & state);
+        (*state.template->set_defaults) ((stream_state *) & state);
     state.width = jdev->width;
     state.height = jdev->height;
     switch (jdev->color_info.depth) {
-	case 32: state.colorspace = gs_jpx_cs_cmyk; break;
-	case 24: state.colorspace = gs_jpx_cs_rgb; break;
-	case  8: state.colorspace = gs_jpx_cs_gray; break;
-	default:
-	    state.colorspace = gs_jpx_cs_gray; /* safest option */
-	    dlprintf1("unexpected color_info depth %d\n",
-					jdev->color_info.depth);
+        case 32: state.colorspace = gs_jpx_cs_cmyk; break;
+        case 24: state.colorspace = gs_jpx_cs_rgb; break;
+        case  8: state.colorspace = gs_jpx_cs_gray; break;
+        default:
+            state.colorspace = gs_jpx_cs_gray; /* safest option */
+            dlprintf1("unexpected color_info depth %d\n",
+                                        jdev->color_info.depth);
     }
     state.bpc = 8; /* currently only 8 bits per component is supported */
 
@@ -180,33 +178,33 @@ jpx_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fbuf_size = max(512 /* arbitrary */ , state.template->min_out_size);
     jbuf_size = state.template->min_in_size;
     if ((fbuf = gs_alloc_bytes(mem, fbuf_size, "jpx_print_page(fbuf)")) == 0 ||
-	(jbuf = gs_alloc_bytes(mem, jbuf_size, "jpx_print_page(jbuf)")) == 0
-	) {
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        (jbuf = gs_alloc_bytes(mem, jbuf_size, "jpx_print_page(jbuf)")) == 0
+        ) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
     s_init(&fstrm, mem);
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);
     s_init(&cstrm, mem);
     s_std_init(&cstrm, jbuf, jbuf_size, &s_filter_write_procs,
-	       s_mode_write);
+               s_mode_write);
     cstrm.state = (stream_state *) & state;
     cstrm.procs.process = state.template->process;
     cstrm.strm = &fstrm;
     if (state.template->init)
-	(*state.template->init) (cstrm.state);
+        (*state.template->init) (cstrm.state);
 
     /* Copy the data to the output. */
     for (lnum = 0; lnum < jdev->height; ++lnum) {
-	byte *data;
-	uint ignore_used;
+        byte *data;
+        uint ignore_used;
 
         if (cstrm.end_status) {
-	    code = gs_note_error(gs_error_ioerror);
+            code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-	gdev_prn_get_bits(pdev, lnum, in, &data);
-	sputs(&cstrm, data, state.stride, &ignore_used);
+        gdev_prn_get_bits(pdev, lnum, in, &data);
+        sputs(&cstrm, data, state.stride, &ignore_used);
     }
 
     /* Wrap up. */

@@ -44,12 +44,12 @@ extern /*const*/ gx_color_map_procs *const cmap_procs_default;
 static
 ENUM_PTRS_WITH(line_params_enum_ptrs, gx_line_params *plp) return 0;
     case 0: return ENUM_OBJ((plp->dash.pattern_size == 0 ?
-			     NULL : plp->dash.pattern));
+                             NULL : plp->dash.pattern));
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(line_params_reloc_ptrs, gx_line_params *plp)
 {
     if (plp->dash.pattern_size)
-	RELOC_VAR(plp->dash.pattern);
+        RELOC_VAR(plp->dash.pattern);
 } RELOC_PTRS_END
 private_st_line_params();
 
@@ -94,7 +94,6 @@ static RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
     }
 } RELOC_PTRS_END
 
-
 /* Initialize an imager state, other than the parts covered by */
 /* gs_imager_state_initial. */
 int
@@ -108,10 +107,10 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     /* Color rendering state */
     pis->halftone = 0;
     {
-	int i;
+        int i;
 
-	for (i = 0; i < gs_color_select_count; ++i)
-	    pis->screen_phase[i].x = pis->screen_phase[i].y = 0;
+        for (i = 0; i < gs_color_select_count; ++i)
+            pis->screen_phase[i].x = pis->screen_phase[i].y = 0;
     }
     pis->dev_ht = 0;
     pis->cie_render = 0;
@@ -120,17 +119,17 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     pis->undercolor_removal = 0;
     /* Allocate an initial transfer map. */
     rc_alloc_struct_n(pis->set_transfer.gray,
-		      gx_transfer_map, &st_transfer_map,
-		      mem, return_error(gs_error_VMerror),
-		      "gs_imager_state_init(transfer)", 1);
+                      gx_transfer_map, &st_transfer_map,
+                      mem, return_error(gs_error_VMerror),
+                      "gs_imager_state_init(transfer)", 1);
     pis->set_transfer.gray->proc = gs_identity_transfer;
     pis->set_transfer.gray->id = gs_next_ids(pis->memory, 1);
     pis->set_transfer.gray->values[0] = frac_0;
     pis->set_transfer.red =
-	pis->set_transfer.green =
-	pis->set_transfer.blue = NULL;
+        pis->set_transfer.green =
+        pis->set_transfer.blue = NULL;
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
-	pis->effective_transfer[i] = pis->set_transfer.gray;
+        pis->effective_transfer[i] = pis->set_transfer.gray;
     pis->cie_joint_caches = NULL;
     pis->cie_joint_caches_alt = NULL;
     pis->cmap_procs = cmap_procs_default;
@@ -153,12 +152,12 @@ gs_imager_state *
 gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem)
 {
     gs_imager_state *pis_copy =
-	gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
-			"gs_imager_state_copy");
+        gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
+                        "gs_imager_state_copy");
 
     if (pis_copy) {
-	*pis_copy = *pis;
-	pis_copy->transparency_stack = 0;
+        *pis_copy = *pis;
+        pis_copy->transparency_stack = 0;
     }
     return pis_copy;
 }
@@ -236,7 +235,7 @@ gs_imager_state_release(gs_imager_state * pis)
      * dependent structures as well.
      */
     if (pdht != 0 && pdht->rc.ref_count == 1) {
-	gx_device_halftone_release(pdht, pdht->rc.memory);
+        gx_device_halftone_release(pdht, pdht->rc.memory);
     }
     RCDECR(dev_ht);
     RCDECR(halftone);

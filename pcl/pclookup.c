@@ -53,7 +53,7 @@ set_lookup_tbl(
     int                 code = 0;
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     /* check for clearing of lookup tables, and for incorrect size */
     if (len == 0)
@@ -122,7 +122,7 @@ set_gamma_correction(
     float               gamma = float_arg(pargs);
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
     if ((gamma < 0.0) || (gamma > (float)((1L << 15) - 1)))
         return 0;
     else

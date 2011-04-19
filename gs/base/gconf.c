@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -91,7 +91,7 @@ static const gs_composite_type_t *const gx_compositor_list[] = {
 static const gx_device *gx_device_list[1024] = {
   /* as shared library are adding drivers here, so removed constness */
 #include "gconf.h"
-	 0
+         0
 };
 #undef device2_
 #undef device_
@@ -168,18 +168,18 @@ gs_find_compositor(int comp_id)
 extern_gs_lib_device_list();
 int
 gs_lib_device_list(const gx_device * const **plist,
-		   gs_memory_struct_type_t ** pst)
+                   gs_memory_struct_type_t ** pst)
 {
     int i;
 
     if (plist != 0)
-	*plist = gx_device_list;
+        *plist = gx_device_list;
     if (pst != 0)
-	*pst = NULL;
+        *pst = NULL;
 
     for (i = 0; i < countof(gx_device_list) - 1; ++i)
       if (!gx_device_list[i])
-	break;
+        break;
     return i;
 }
 

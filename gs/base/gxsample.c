@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,7 +18,6 @@
 #include "gxfixed.h"
 #include "gximage.h"
 /* #include "gxsamplp.h" Do not remove - this file is included below. */
-
 
 /* ---------------- Lookup tables ---------------- */
 
@@ -84,8 +83,8 @@ const bits32 lookup4x1to32_inverted[16] = {
 
 const byte *
 sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
-		uint dsize, const sample_map *ignore_smap, int spread,
-		int ignore_num_components_per_plane)
+                uint dsize, const sample_map *ignore_smap, int spread,
+                int ignore_num_components_per_plane)
 {				/* We're going to use the data right away, so no copying is needed. */
     *pdata_x = data_x;
     return data;
@@ -104,7 +103,6 @@ sample_unpack_copy(byte * bptr, int *pdata_x, const byte * data, int data_x,
 #undef TEMPLATE_sample_unpack_2
 #undef TEMPLATE_sample_unpack_4
 #undef TEMPLATE_sample_unpack_8
-
 
 #define MULTIPLE_MAPS 1
 #define TEMPLATE_sample_unpack_1 sample_unpack_1_interleaved

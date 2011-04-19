@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,12 +23,12 @@
 private_st_device_rop_texture();
 static ENUM_PTRS_BEGIN(device_rop_texture_enum_ptrs) {
     if (index < st_device_color_max_ptrs) {
-	gs_ptr_type_t ptype =
-	    ENUM_SUPER_ELT(gx_device_rop_texture, st_device_color, texture, 0);
+        gs_ptr_type_t ptype =
+            ENUM_SUPER_ELT(gx_device_rop_texture, st_device_color, texture, 0);
 
-	if (ptype)
-	    return ptype;
-	return ENUM_OBJ(NULL);	/* don't stop early */
+        if (ptype)
+            return ptype;
+        return ENUM_OBJ(NULL);	/* don't stop early */
     }
     ENUM_PREFIX(st_device_forward, st_device_color_max_ptrs);
 } ENUM_PTRS_END
@@ -45,7 +45,7 @@ static dev_proc_copy_color(rop_texture_copy_color);
 /* The device descriptor. */
 static const gx_device_rop_texture gs_rop_texture_device = {
     std_device_std_body(gx_device_rop_texture, 0, "rop source",
-			0, 0, 1, 1),
+                        0, 0, 1, 1),
     {NULL,				/* open_device */
      gx_forward_get_initial_matrix,
      NULL,				/* default_sync_output */
@@ -121,21 +121,21 @@ static const gx_device_rop_texture gs_rop_texture_device = {
 /* Create a RasterOp source device. */
 int
 gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
-			    client_name_t cname)
+                            client_name_t cname)
 {
     *prsdev = gs_alloc_struct(mem, gx_device_rop_texture,
-			      &st_device_rop_texture, cname);
+                              &st_device_rop_texture, cname);
     return (*prsdev == 0 ? gs_note_error(gs_error_VMerror) : 0);
 }
 
 /* Initialize a RasterOp source device. */
 void
 gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
-	     gs_logical_operation_t log_op, const gx_device_color * texture)
+             gs_logical_operation_t log_op, const gx_device_color * texture)
 {
     gx_device_init((gx_device *) dev,
-		   (const gx_device *)&gs_rop_texture_device,
-		   (target ? target->memory : NULL), true);
+                   (const gx_device *)&gs_rop_texture_device,
+                   (target ? target->memory : NULL), true);
     gx_device_set_target((gx_device_forward *)dev, target);
     /* Drawing operations are defaulted, non-drawing are forwarded. */
     check_device_separable((gx_device *) dev);
@@ -148,7 +148,7 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
 /* Fill a rectangle */
 static int
 rop_texture_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-			   gx_color_index color)
+                           gx_color_index color)
 {
     gx_device_rop_texture *const rtdev = (gx_device_rop_texture *)dev;
     gx_rop_source_t source;
@@ -160,16 +160,16 @@ rop_texture_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     source.scolors[0] = source.scolors[1] = color;
     source.use_scolors = true;
     return gx_device_color_fill_rectangle(&rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  rtdev->log_op, &source);
+                                          x, y, w, h, rtdev->target,
+                                          rtdev->log_op, &source);
 }
 
 /* Copy a monochrome rectangle */
 static int
 rop_texture_copy_mono(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		      int x, int y, int w, int h,
-		      gx_color_index color0, gx_color_index color1)
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                      int x, int y, int w, int h,
+                      gx_color_index color0, gx_color_index color1)
 {
     gx_device_rop_texture *const rtdev = (gx_device_rop_texture *)dev;
     gx_rop_source_t source;
@@ -184,19 +184,19 @@ rop_texture_copy_mono(gx_device * dev,
     source.use_scolors = true;
     /* Adjust the logical operation per transparent colors. */
     if (color0 == gx_no_color_index)
-	lop = rop3_use_D_when_S_0(lop);
+        lop = rop3_use_D_when_S_0(lop);
     else if (color1 == gx_no_color_index)
-	lop = rop3_use_D_when_S_1(lop);
+        lop = rop3_use_D_when_S_1(lop);
     return gx_device_color_fill_rectangle(&rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  lop, &source);
+                                          x, y, w, h, rtdev->target,
+                                          lop, &source);
 }
 
 /* Copy a color rectangle */
 static int
 rop_texture_copy_color(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		       int x, int y, int w, int h)
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                       int x, int y, int w, int h)
 {
     gx_device_rop_texture *const rtdev = (gx_device_rop_texture *)dev;
     gx_rop_source_t source;
@@ -208,6 +208,6 @@ rop_texture_copy_color(gx_device * dev,
     source.scolors[0] = source.scolors[1] = gx_no_color_index;
     source.use_scolors = false;
     return gx_device_color_fill_rectangle(&rtdev->texture,
-					  x, y, w, h, rtdev->target,
-					  rtdev->log_op, &source);
+                                          x, y, w, h, rtdev->target,
+                                          rtdev->log_op, &source);
 }

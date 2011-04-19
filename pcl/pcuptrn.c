@@ -53,7 +53,7 @@ free_pattern_data(
 }
 
 /*
- * Build a pattern data structure. This routine is static as pattern 
+ * Build a pattern data structure. This routine is static as pattern
  * data structures may only be built as part of a pattern.
  *
  * All pattern data structure are built as "temporary". Routines that build
@@ -99,7 +99,7 @@ build_pattern_data(
  */
 static void
 free_pattern_rendering(const gs_memory_t *mem,
-		       pcl_pattern_t * pptrn
+                       pcl_pattern_t * pptrn
 )
 {
     if (pptrn->pcol_ccolor != 0) {
@@ -260,7 +260,7 @@ delete_all_pcl_ptrns(
     pl_dict_t *     pdict[2];
     int             i;
 
-    pdict[0] = &pcs->pcl_patterns; 
+    pdict[0] = &pcs->pcl_patterns;
     pdict[1] = &pcs->gl_patterns;
 
     for (i = 0; i < 2; i++) {
@@ -330,17 +330,17 @@ pcl_pattern_RF(
     if (ppixmap != 0) {
         pcl_pattern_type_t  type = ( ppixmap->pix_depth == 1
                                            ? pcl_pattern_uncolored
-				           : pcl_pattern_colored );
-	/* RF appears to use the resolution of the device contrary to
+                                           : pcl_pattern_colored );
+        /* RF appears to use the resolution of the device contrary to
            what the pcl documentation implies */
-	gx_device *pdev = gs_currentdevice(pcs->pgs);
+        gx_device *pdev = gs_currentdevice(pcs->pgs);
         int code = pcl_pattern_build_pattern( &pptrn,
-					      ppixmap,
-					      type,
-					      pdev->HWResolution[0],
-					      pdev->HWResolution[1],
-					      pcs->memory
-					      );
+                                              ppixmap,
+                                              type,
+                                              pdev->HWResolution[0],
+                                              pdev->HWResolution[1],
+                                              pcs->memory
+                                              );
 
         if (code < 0)
             return code;
@@ -361,7 +361,6 @@ pcl_pattern_RF(
 
     return 0;
 }
-
 
 /*
  * The PCL user-define pattern type. For memory management reasons, this has
@@ -415,7 +414,7 @@ download_pcl_pattern(
     int                     code = 0;
 
     if (count < 8)
-	return e_Range;
+        return e_Range;
 
     format = puptrn0->format;
     /* non data size - the size of the parameters that describe the data */
@@ -449,7 +448,6 @@ download_pcl_pattern(
     if (pixinfo.data == 0)
         return e_Memory;
 
-                
     if (format == 20) {
         pcl_upattern1_t *   puptrn1 = (pcl_upattern1_t *)puptrn0;
 
@@ -465,7 +463,7 @@ download_pcl_pattern(
     /* build the pattern */
     code = pcl_pattern_build_pattern( &(pptrn),
                                       &pixinfo,
-                                      (format == 1 ? pcl_pattern_colored 
+                                      (format == 1 ? pcl_pattern_colored
                                                    : pcl_pattern_uncolored),
                                       xres,
                                       yres,
@@ -540,7 +538,7 @@ pattern_control(
 static int
 upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
   pcl_copy_operation_t operation)
-{	
+{
     int i;
     /* copy back any patterns created during macro invocation. */
     if ((operation & pcl_copy_after) != 0) {
@@ -560,7 +558,7 @@ upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
 
 /*
  * Initialization and reset routines.
- */ 
+ */
   static int
 upattern_do_registration(
     pcl_parser_state_t *pcl_parser_state,
@@ -574,7 +572,7 @@ upattern_do_registration(
     },
     {
         'c', 'Q',
-        PCL_COMMAND( "Pattern Control", 
+        PCL_COMMAND( "Pattern Control",
                      pattern_control,
                      pca_neg_ignore | pca_big_ignore
                      )

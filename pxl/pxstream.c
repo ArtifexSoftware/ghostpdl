@@ -102,14 +102,14 @@ const byte apxRemoveStream[] = {
 
 int
 pxRemoveStream(px_args_t *par, px_state_t *pxs)
-{       
+{
     gs_string str;
     void *def;
     int code = tag_stream_name(par->pv[0], &str, pxs->memory,
                                "pxExecStream(name)");
     if ( code < 0 )
         return code;
-    { 
+    {
         bool found = pl_dict_find(&pxs->stream_dict, str.data, str.size,
                                   &def);
         if ( !found )
@@ -167,7 +167,7 @@ pxExecStream(px_args_t *par, px_state_t *pxs)
            )
           return_error(errorUnsupportedClassName);
         /* support protocol level 1, 2 and 3 */
-        if ( strncmp((const char *)def_data + 11, ";1;", 3) && 
+        if ( strncmp((const char *)def_data + 11, ";1;", 3) &&
              strncmp((const char *)def_data + 11, ";2;", 3) &&
              strncmp((const char *)def_data + 11, ";3;", 3) )
             return_error(errorUnsupportedProtocol);

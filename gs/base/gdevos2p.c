@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -83,9 +83,8 @@ int os2prn_get_printer(OS2QL * ql);
 
 static gx_device_procs os2prn_procs =
 prn_color_params_procs(os2prn_open, gdev_prn_output_page, os2prn_close,
-		       os2prn_map_rgb_color, os2prn_map_color_rgb,
-		       os2prn_get_params, os2prn_put_params);
-
+                       os2prn_map_rgb_color, os2prn_map_color_rgb,
+                       os2prn_get_params, os2prn_put_params);
 
 /* The device descriptor */
 struct gx_device_os2prn_s {
@@ -105,9 +104,9 @@ struct gx_device_os2prn_s {
 gx_device_os2prn far_data gs_os2prn_device =
 {
     prn_device_std_body(gx_device_os2prn, os2prn_procs, "os2prn",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
-			0, 0, 0, 0,
-			0, os2prn_print_page),	/* depth = 0 */
+                        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
+                        0, 0, 0, 0,
+                        0, os2prn_print_page),	/* depth = 0 */
     0,				/* hab */
     0,				/* hdc */
     0,				/* hps */
@@ -143,69 +142,69 @@ os2prn_open(gx_device * dev)
     oprn = opdev;
 
     if (DosGetInfoBlocks(&pptib, &pppib)) {
-	errprintf(dev->memory, "\nos2prn_open: Couldn't get pid\n");
-	return gs_error_limitcheck;
+        errprintf(dev->memory, "\nos2prn_open: Couldn't get pid\n");
+        return gs_error_limitcheck;
     }
     if (pppib->pib_ultype != 3) {
-	/* if caller is not PM app */
-	errprintf(dev->memory, "os2prn device can only be used from a PM application\n");
-	return gs_error_limitcheck;
+        /* if caller is not PM app */
+        errprintf(dev->memory, "os2prn device can only be used from a PM application\n");
+        return gs_error_limitcheck;
     }
     opdev->hab = WinQueryAnchorBlock(hwndtext);
     opdev->newframe = 0;
 
     if (os2prn_get_queue_list(dev->memory, &opdev->ql))
-	return gs_error_limitcheck;
+        return gs_error_limitcheck;
 
     if (opdev->queue_name[0] == '\0') {
-	/* obtain printer name from filename */
-	p = opdev->fname;
-	for (i = 0; i < 8; i++) {
-	    if (prefix[i] == '\\') {
-		if ((*p != '\\') && (*p != '/'))
-		    break;
-	    } else if (tolower(*p) != prefix[i])
-		break;
-	    p++;
-	}
-	if (i == 8 && (strlen(p) != 0))
-	    strcpy(opdev->queue_name, p);
+        /* obtain printer name from filename */
+        p = opdev->fname;
+        for (i = 0; i < 8; i++) {
+            if (prefix[i] == '\\') {
+                if ((*p != '\\') && (*p != '/'))
+                    break;
+            } else if (tolower(*p) != prefix[i])
+                break;
+            p++;
+        }
+        if (i == 8 && (strlen(p) != 0))
+            strcpy(opdev->queue_name, p);
     }
     pprq = NULL;
     if (opdev->queue_name[0] != '\0') {
-	for (i = 0; i < opdev->ql.nqueues; i++) {
-	    if (strcmp(opdev->ql.prq[i].pszName, opdev->queue_name) == 0) {
-		pprq = &(opdev->ql.prq[i]);
-		break;
-	    }
-	}
+        for (i = 0; i < opdev->ql.nqueues; i++) {
+            if (strcmp(opdev->ql.prq[i].pszName, opdev->queue_name) == 0) {
+                pprq = &(opdev->ql.prq[i]);
+                break;
+            }
+        }
     } else {
-	/* use default queue */
-	pprq = &(opdev->ql.prq[opdev->ql.defqueue]);
+        /* use default queue */
+        pprq = &(opdev->ql.prq[opdev->ql.defqueue]);
     }
     if (pprq == (PRQINFO3 *) NULL) {
-	errprintf(opdev->memory, "Invalid os2prn queue  name -sOS2QUEUE=\042%s\042\n", opdev->queue_name);
-	errprintf(opdev->memory, "Valid device names are:\n");
-	for (i = 0; i < opdev->ql.nqueues; i++) {
-	    errprintf(opdev->memory, "  -sOS2QUEUE=\042%s\042\n", opdev->ql.prq[i].pszName);
-	}
-	return gs_error_rangecheck;
+        errprintf(opdev->memory, "Invalid os2prn queue  name -sOS2QUEUE=\042%s\042\n", opdev->queue_name);
+        errprintf(opdev->memory, "Valid device names are:\n");
+        for (i = 0; i < opdev->ql.nqueues; i++) {
+            errprintf(opdev->memory, "  -sOS2QUEUE=\042%s\042\n", opdev->ql.prq[i].pszName);
+        }
+        return gs_error_rangecheck;
     }
     /* open printer device */
     memset(&dop, 0, sizeof(dop));
     dop.pszLogAddress = pprq->pszName;	/* queue name */
     p = strchr(pprq->pszDriverName, '.');
     if (p != (char *)NULL)
-	*p = '\0';
+        *p = '\0';
     dop.pszDriverName = pprq->pszDriverName;
     dop.pszDataType = "PM_Q_STD";
     dop.pdriv = pprq->pDriverData;
     opdev->hdc = DevOpenDC(opdev->hab, OD_QUEUED, "*", 9L, (PDEVOPENDATA) & dop, (HDC) NULL);
     if (opdev->hdc == DEV_ERROR) {
-	ERRORID eid = WinGetLastError(opdev->hab);
+        ERRORID eid = WinGetLastError(opdev->hab);
 
-	errprintf(opdev->memory, "DevOpenDC for printer error 0x%x\n", eid);
-	return gs_error_limitcheck;
+        errprintf(opdev->memory, "DevOpenDC for printer error 0x%x\n", eid);
+        return gs_error_limitcheck;
     }
     os2prn_free_queue_list(dev->memory, &opdev->ql);
 
@@ -219,9 +218,9 @@ os2prn_open(gx_device * dev)
     /* these are returned in millimetres */
     nforms = DevQueryHardcopyCaps(opdev->hdc, 0, 0, &hcinfo);
     for (i = 0; i < nforms; i++) {
-	DevQueryHardcopyCaps(opdev->hdc, i, 1, &hcinfo);
-	if (hcinfo.flAttributes & HCAPS_CURRENT)
-	    break;		/* this is the default page size */
+        DevQueryHardcopyCaps(opdev->hdc, i, 1, &hcinfo);
+        if (hcinfo.flAttributes & HCAPS_CURRENT)
+            break;		/* this is the default page size */
     }
     /* GS size is in pixels */
     dev->width = hcinfo.cx * caps[0] / 1000;
@@ -242,50 +241,50 @@ os2prn_open(gx_device * dev)
     sizlPage.cx = dev->width;
     sizlPage.cy = dev->height;
     opdev->hps = GpiCreatePS(opdev->hab, opdev->hdc, &sizlPage,
-			 PU_PELS | GPIF_DEFAULT | GPIT_NORMAL | GPIA_ASSOC);
+                         PU_PELS | GPIF_DEFAULT | GPIT_NORMAL | GPIA_ASSOC);
 
     depth = dev->color_info.depth;
     if (depth == 0) {
-	/* Set parameters that were unknown before opening device */
-	/* Find out if the device supports color */
-	/* We recognize 1 bit monochrome and 24 bit color devices */
-	DevQueryCaps(opdev->hdc, CAPS_COLOR_PLANES, 2, caps);
-	/* caps[0] is #color planes, caps[1] is #bits per plane */
-	depth = caps[0] * caps[1];
-	if (depth > 1)
-	    depth = 24;
+        /* Set parameters that were unknown before opening device */
+        /* Find out if the device supports color */
+        /* We recognize 1 bit monochrome and 24 bit color devices */
+        DevQueryCaps(opdev->hdc, CAPS_COLOR_PLANES, 2, caps);
+        /* caps[0] is #color planes, caps[1] is #bits per plane */
+        depth = caps[0] * caps[1];
+        if (depth > 1)
+            depth = 24;
     }
     os2prn_set_bpp(dev, depth);
 
     /* create a memory DC compatible with printer */
     opdev->hdcMem = DevOpenDC(opdev->hab, OD_MEMORY, "*", 0L, NULL, opdev->hdc);
     if (opdev->hdcMem == DEV_ERROR) {
-	ERRORID eid = WinGetLastError(opdev->hab);
+        ERRORID eid = WinGetLastError(opdev->hab);
 
-	errprintf(opdev->memory, "DevOpenDC for memory error 0x%x\n", eid);
-	return gs_error_limitcheck;
+        errprintf(opdev->memory, "DevOpenDC for memory error 0x%x\n", eid);
+        return gs_error_limitcheck;
     }
     sizlPage.cx = dev->width;
     sizlPage.cy = dev->height;
     opdev->hpsMem = GpiCreatePS(opdev->hab, opdev->hdcMem, &sizlPage,
-			 PU_PELS | GPIF_DEFAULT | GPIT_NORMAL | GPIA_ASSOC);
+                         PU_PELS | GPIF_DEFAULT | GPIT_NORMAL | GPIA_ASSOC);
     if (opdev->hpsMem == GPI_ERROR) {
-	ERRORID eid = WinGetLastError(opdev->hab);
+        ERRORID eid = WinGetLastError(opdev->hab);
 
-	errprintf(opdev->memory, "GpiCreatePS for memory error 0x%x\n", eid);
-	return gs_error_limitcheck;
+        errprintf(opdev->memory, "GpiCreatePS for memory error 0x%x\n", eid);
+        return gs_error_limitcheck;
     }
     if (DevEscape(opdev->hdc, DEVESC_STARTDOC, (LONG) strlen(gs_product),
-		  (char *)gs_product, NULL, NULL) == DEVESC_ERROR) {
-	ERRORID eid = WinGetLastError(opdev->hab);
+                  (char *)gs_product, NULL, NULL) == DEVESC_ERROR) {
+        ERRORID eid = WinGetLastError(opdev->hab);
 
-	errprintf(opdev->memory, "DEVESC_STARTDOC error 0x%x\n", eid);
-	return gs_error_limitcheck;
+        errprintf(opdev->memory, "DEVESC_STARTDOC error 0x%x\n", eid);
+        return gs_error_limitcheck;
     }
     /* gdev_prn_open opens a temporary file which we don't want */
     /* so we specify the name now so we can delete it later */
     pfile = gp_open_scratch_file(opdev->memory, gp_scratch_file_name_prefix,
-				 opdev->fname, "wb");
+                                 opdev->fname, "wb");
     fclose(pfile);
     code = gdev_prn_open(dev);
 
@@ -308,9 +307,9 @@ os2prn_close(gx_device * dev)
     DevCloseDC(opdev->hdc);
 
     if (opdev->hpsMem != GPI_ERROR)
-	GpiDestroyPS(opdev->hpsMem);
+        GpiDestroyPS(opdev->hpsMem);
     if (opdev->hdcMem != DEV_ERROR)
-	DevCloseDC(opdev->hdcMem);
+        DevCloseDC(opdev->hdcMem);
 
     code = gdev_prn_close(dev);
     /* delete unwanted temporary file */
@@ -326,13 +325,11 @@ os2prn_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_string qs;
 
     qs.data = opdev->queue_name, qs.size = strlen(qs.data),
-	qs.persistent = false;
+        qs.persistent = false;
     code < 0 ||
-	(code = param_write_string(plist, "OS2QUEUE", &qs)) < 0;
+        (code = param_write_string(plist, "OS2QUEUE", &qs)) < 0;
     return code;
 }
-
-
 
 /* We implement this ourselves so that we can change BitsPerPixel */
 /* before the device is opened */
@@ -346,55 +343,53 @@ os2prn_put_params(gx_device * dev, gs_param_list * plist)
 
     /* Handle extra parameters */
     switch (code = param_read_string(plist, "OS2QUEUE", &qs)) {
-	case 0:
-	    if (qs.size == strlen(opdev->queue_name) &&
-		!memcmp(opdev->queue_name, qs.data, qs.size)
-		) {
-		qs.data = 0;
-		break;
-	    }
-	    if (dev->is_open)
-		ecode = gs_error_rangecheck;
-	    else if (qs.size >= sizeof(opdev->queue_name))
-		ecode = gs_error_limitcheck;
-	    else
-		break;
-	    goto qe;
-	default:
-	    ecode = code;
-	  qe:param_signal_error(plist, "OS2QUEUE", ecode);
-	case 1:
-	    qs.data = 0;
-	    break;
+        case 0:
+            if (qs.size == strlen(opdev->queue_name) &&
+                !memcmp(opdev->queue_name, qs.data, qs.size)
+                ) {
+                qs.data = 0;
+                break;
+            }
+            if (dev->is_open)
+                ecode = gs_error_rangecheck;
+            else if (qs.size >= sizeof(opdev->queue_name))
+                ecode = gs_error_limitcheck;
+            else
+                break;
+            goto qe;
+        default:
+            ecode = code;
+          qe:param_signal_error(plist, "OS2QUEUE", ecode);
+        case 1:
+            qs.data = 0;
+            break;
     }
 
     switch (code = param_read_int(plist, "BitsPerPixel", &bpp)) {
-	case 0:
-	    if (dev->is_open)
-		ecode = gs_error_rangecheck;
-	    else {		/* change dev->color_info is valid before device is opened */
-		os2prn_set_bpp(dev, bpp);
-		break;
-	    }
-	    goto bppe;
-	default:
-	    ecode = code;
-	  bppe:param_signal_error(plist, "BitsPerPixel", ecode);
-	case 1:
-	    break;
+        case 0:
+            if (dev->is_open)
+                ecode = gs_error_rangecheck;
+            else {		/* change dev->color_info is valid before device is opened */
+                os2prn_set_bpp(dev, bpp);
+                break;
+            }
+            goto bppe;
+        default:
+            ecode = code;
+          bppe:param_signal_error(plist, "BitsPerPixel", ecode);
+        case 1:
+            break;
     }
 
     if (ecode >= 0)
-	ecode = gdev_prn_put_params(dev, plist);
+        ecode = gdev_prn_put_params(dev, plist);
 
     if ((ecode >= 0) && (qs.data != 0)) {
-	memcpy(opdev->queue_name, qs.data, qs.size);
-	opdev->queue_name[qs.size] = 0;
+        memcpy(opdev->queue_name, qs.data, qs.size);
+        opdev->queue_name[qs.size] = 0;
     }
     return ecode;
 }
-
-
 
 /* ------ Internal routines ------ */
 
@@ -403,9 +398,7 @@ os2prn_put_params(gx_device * dev, gs_param_list * plist)
 
 /************************************************/
 
-
 /* ------ Private definitions ------ */
-
 
 /* new os2prn_print_page routine */
 
@@ -433,18 +426,18 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
     int yslice;
 
     struct bmi_s {
-	BITMAPINFOHEADER2 h;
-	RGB2 pal[256];
+        BITMAPINFOHEADER2 h;
+        RGB2 pal[256];
     } bmi;
 
     yslice = 65535 / bmp_raster;
     bmp_raster_multi = bmp_raster * yslice;
     row = (byte *) gs_malloc(pdev->memory, bmp_raster_multi, 1, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     if (opdev->newframe)
-	DevEscape(opdev->hdc, DEVESC_NEWFRAME, 0L, NULL, NULL, NULL);
+        DevEscape(opdev->hdc, DEVESC_NEWFRAME, 0L, NULL, NULL, NULL);
     opdev->newframe = 1;
 
     /* Write the info header. */
@@ -460,24 +453,24 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
     /* Write the palette. */
 
     if (depth <= 8) {
-	int i;
-	gx_color_value rgb[3];
-	PRGB2 pq;
+        int i;
+        gx_color_value rgb[3];
+        PRGB2 pq;
 
-	bmi.h.cclrUsed = 1 << depth;
-	bmi.h.cclrImportant = 1 << depth;
-	for (i = 0; i != 1 << depth; i++) {
-	    (*dev_proc(pdev, map_color_rgb)) ((gx_device *) pdev,
-					      (gx_color_index) i, rgb);
-	    pq = &bmi.pal[i];
-	    pq->bRed = gx_color_value_to_byte(rgb[0]);
-	    pq->bGreen = gx_color_value_to_byte(rgb[1]);
-	    pq->bBlue = gx_color_value_to_byte(rgb[2]);
-	    pq->fcOptions = 0;
-	}
+        bmi.h.cclrUsed = 1 << depth;
+        bmi.h.cclrImportant = 1 << depth;
+        for (i = 0; i != 1 << depth; i++) {
+            (*dev_proc(pdev, map_color_rgb)) ((gx_device *) pdev,
+                                              (gx_color_index) i, rgb);
+            pq = &bmi.pal[i];
+            pq->bRed = gx_color_value_to_byte(rgb[0]);
+            pq->bGreen = gx_color_value_to_byte(rgb[1]);
+            pq->bBlue = gx_color_value_to_byte(rgb[2]);
+            pq->fcOptions = 0;
+        }
     } else {
-	bmi.h.cclrUsed = 0;
-	bmi.h.cclrImportant = 0;
+        bmi.h.cclrUsed = 0;
+        bmi.h.cclrImportant = 0;
     }
 
     /* for GpiDrawBits */
@@ -509,45 +502,45 @@ os2prn_print_page(gx_device_printer * pdev, FILE * file)
     yend = opdev->clipbox[1];
     y = ystart;
     while (y > yend) {
-	/* create a bitmap for the memory DC */
-	hbmp = GpiCreateBitmap(opdev->hpsMem, &bmi.h, 0L, NULL, NULL);
-	if (hbmp == GPI_ERROR)
-	    goto bmp_done;
-	hbmr = GpiSetBitmap(opdev->hpsMem, hbmp);
+        /* create a bitmap for the memory DC */
+        hbmp = GpiCreateBitmap(opdev->hpsMem, &bmi.h, 0L, NULL, NULL);
+        if (hbmp == GPI_ERROR)
+            goto bmp_done;
+        hbmr = GpiSetBitmap(opdev->hpsMem, hbmp);
 
-	/* copy slice to memory bitmap */
-	if (y > yend + yslice)
-	    lines = yslice;
-	else
-	    lines = y - yend;
-	y -= lines;
-	for (i = lines - 1; i >= 0; i--)
-	    gdev_prn_copy_scan_lines(pdev, ystart - 1 - (y + i), row + (bmp_raster * i), raster);
-	apts[0].y = 0;		/* target */
-	apts[1].y = lines;
-	apts[3].y = lines - 1;	/* source */
-	/* copy DIB bitmap to memory bitmap */
-	rc = GpiDrawBits(opdev->hpsMem, row, (BITMAPINFO2 *) & bmi, 4, apts,
-			 (depth != 1) ? ROP_SRCCOPY : ROP_NOTSRCCOPY, 0);
+        /* copy slice to memory bitmap */
+        if (y > yend + yslice)
+            lines = yslice;
+        else
+            lines = y - yend;
+        y -= lines;
+        for (i = lines - 1; i >= 0; i--)
+            gdev_prn_copy_scan_lines(pdev, ystart - 1 - (y + i), row + (bmp_raster * i), raster);
+        apts[0].y = 0;		/* target */
+        apts[1].y = lines;
+        apts[3].y = lines - 1;	/* source */
+        /* copy DIB bitmap to memory bitmap */
+        rc = GpiDrawBits(opdev->hpsMem, row, (BITMAPINFO2 *) & bmi, 4, apts,
+                         (depth != 1) ? ROP_SRCCOPY : ROP_NOTSRCCOPY, 0);
 
-	/* copy slice to printer */
-	aptsb[0].y = y;
-	aptsb[1].y = y + lines;
-	aptsb[3].y = lines;
-	rc = GpiBitBlt(opdev->hps, opdev->hpsMem, 4, aptsb, ROP_SRCCOPY, BBO_IGNORE);
+        /* copy slice to printer */
+        aptsb[0].y = y;
+        aptsb[1].y = y + lines;
+        aptsb[3].y = lines;
+        rc = GpiBitBlt(opdev->hps, opdev->hpsMem, 4, aptsb, ROP_SRCCOPY, BBO_IGNORE);
 
-	/* delete bitmap */
-	if (hbmr != HBM_ERROR)
-	    GpiSetBitmap(opdev->hpsMem, (ULONG) 0);
-	hbmr = HBM_ERROR;
-	if (hbmp != GPI_ERROR)
-	    GpiDeleteBitmap(hbmp);
-	hbmp = GPI_ERROR;
+        /* delete bitmap */
+        if (hbmr != HBM_ERROR)
+            GpiSetBitmap(opdev->hpsMem, (ULONG) 0);
+        hbmr = HBM_ERROR;
+        if (hbmp != GPI_ERROR)
+            GpiDeleteBitmap(hbmp);
+        hbmp = GPI_ERROR;
     }
 
   bmp_done:
     if (row)
-	gs_free(pdev->memory, (char *)row, bmp_raster_multi, 1, "bmp file buffer");
+        gs_free(pdev->memory, (char *)row, bmp_raster_multi, 1, "bmp file buffer");
 
     return code;
 }
@@ -565,14 +558,14 @@ os2prn_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     gx_color_value g = cv[1];
     gx_color_value b = cv[2];
     return gx_color_value_to_byte(r) +
-		((uint) gx_color_value_to_byte(g) << 8) +
-		((ulong) gx_color_value_to_byte(b) << 16);
+                ((uint) gx_color_value_to_byte(g) << 8) +
+                ((ulong) gx_color_value_to_byte(b) << 16);
 }
 
 /* Decode a color index to a r-g-b color. */
 static int
 os2prn_map_color_rgb(gx_device * dev, gx_color_index color,
-		     gx_color_value prgb[3])
+                     gx_color_value prgb[3])
 {
     prgb[2] = gx_color_value_from_byte(color >> 16);
     prgb[1] = gx_color_value_from_byte((color >> 8) & 0xff);
@@ -587,21 +580,21 @@ os2prn_set_bpp(gx_device * dev, int depth)
     static const gx_device_color_info os2prn_dci_rgb = dci_std_color(24);
     static const gx_device_color_info os2prn_dci_mono = dci_black_and_white;
     if (depth == 24) {
-	dci = os2prn_dci_rgb;
-	dev->procs.get_color_mapping_procs = gx_default_DevRGB_get_color_mapping_procs;
-	dev->procs.get_color_comp_index = gx_default_DevRGB_get_color_comp_index;
-	dev->procs.map_rgb_color = dev->procs.encode_color = 
-		os2prn_map_rgb_color;
-	dev->procs.map_color_rgb = dev->procs.decode_color = 
-		os2prn_map_color_rgb;
+        dci = os2prn_dci_rgb;
+        dev->procs.get_color_mapping_procs = gx_default_DevRGB_get_color_mapping_procs;
+        dev->procs.get_color_comp_index = gx_default_DevRGB_get_color_comp_index;
+        dev->procs.map_rgb_color = dev->procs.encode_color =
+                os2prn_map_rgb_color;
+        dev->procs.map_color_rgb = dev->procs.decode_color =
+                os2prn_map_color_rgb;
     } else {	/* default is black and white */
-	dci = os2prn_dci_mono;
-	dev->procs.get_color_mapping_procs = gx_default_DevGray_get_color_mapping_procs;
-	dev->procs.get_color_comp_index = gx_default_DevGray_get_color_comp_index;
-	dev->procs.map_rgb_color = dev->procs.encode_color = 
-		gx_default_b_w_map_rgb_color;
-	dev->procs.map_color_rgb = dev->procs.decode_color = 
-		gx_default_b_w_map_color_rgb;
+        dci = os2prn_dci_mono;
+        dev->procs.get_color_mapping_procs = gx_default_DevGray_get_color_mapping_procs;
+        dev->procs.get_color_comp_index = gx_default_DevGray_get_color_comp_index;
+        dev->procs.map_rgb_color = dev->procs.encode_color =
+                gx_default_b_w_map_rgb_color;
+        dev->procs.map_color_rgb = dev->procs.decode_color =
+                gx_default_b_w_map_color_rgb;
     }
     /* restore old anti_alias info */
     dci.anti_alias = dev->color_info.anti_alias;
@@ -630,41 +623,40 @@ os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql)
     ulLevel = 3L;
     pszComputerName = (PSZ) NULL;
     splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, 0L,	/* cbBuf */
-			  &cReturned, &cTotal,
-			  &cbNeeded, NULL);
+                          &cReturned, &cTotal,
+                          &cbNeeded, NULL);
     if (splerr == ERROR_MORE_DATA || splerr == NERR_BufTooSmall) {
-	pBuf = gs_malloc(mem, cbNeeded, 1, "OS/2 printer device info buffer");
-	ql->prq = (PRQINFO3 *) pBuf;
-	if (ql->prq != (PRQINFO3 *) NULL) {
-	    ql->len = cbNeeded;
-	    cbBuf = cbNeeded;
-	    splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, cbBuf,
-				  &cReturned, &cTotal,
-				  &cbNeeded, NULL);
-	    if (splerr == NO_ERROR) {
-		/* Set pointer to point to the beginning of the buffer.           */
-		prq = (PPRQINFO3) pBuf;
-		/* cReturned has the count of the number of PRQINFO3 structures.  */
-		ql->nqueues = cReturned;
-		ql->defqueue = 0;
-		for (i = 0; i < cReturned; i++) {
-		    if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
-			ql->defqueue = i;
-		    prq++;
-		}		/*endfor cReturned */
-	    }
-	}
+        pBuf = gs_malloc(mem, cbNeeded, 1, "OS/2 printer device info buffer");
+        ql->prq = (PRQINFO3 *) pBuf;
+        if (ql->prq != (PRQINFO3 *) NULL) {
+            ql->len = cbNeeded;
+            cbBuf = cbNeeded;
+            splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, cbBuf,
+                                  &cReturned, &cTotal,
+                                  &cbNeeded, NULL);
+            if (splerr == NO_ERROR) {
+                /* Set pointer to point to the beginning of the buffer.           */
+                prq = (PPRQINFO3) pBuf;
+                /* cReturned has the count of the number of PRQINFO3 structures.  */
+                ql->nqueues = cReturned;
+                ql->defqueue = 0;
+                for (i = 0; i < cReturned; i++) {
+                    if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
+                        ql->defqueue = i;
+                    prq++;
+                }		/*endfor cReturned */
+            }
+        }
     } else {
-	/* If we are here we had a bad error code. Print it and some other info. */
-	emprintf4(mem,
+        /* If we are here we had a bad error code. Print it and some other info. */
+        emprintf4(mem,
                  "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
-		 splerr, cTotal, cReturned, cbNeeded);
+                 splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)
-	return splerr;
+        return splerr;
     return 0;
 }
-
 
 static void
 os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql)

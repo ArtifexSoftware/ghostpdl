@@ -154,7 +154,6 @@ typedef struct gs_memory_s gs_memory_t;
 #define init_proc(proc)\
   int proc(gs_memory_t *)
 
-
 /* dpf and epf may be redefined */
 #define dpf errprintf_nomem
 #define epf errprintf_nomem

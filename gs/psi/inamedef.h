@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,7 +36,7 @@
 #  undef EXTEND_NAMES
 #  define EXTEND_NAMES max_name_extension_bits
 #endif
-/*       
+/*
  * We capture the small algorithmic differences between these two
  * configurations entirely in this header file;
  * the implementation doesn't need any conditionals on EXTEND_NAMES.
@@ -61,7 +61,7 @@ struct name_s {
 /*      pvalue != pv_no_defn, pvalue != pv_other: pvalue is valid */
 #define pv_valid(pvalue) ((unsigned long)(pvalue) > 1)
     ref *pvalue;		/* if only defined in systemdict or */
-				/* userdict, this points to the value */
+                                /* userdict, this points to the value */
 };
 
 /*typedef struct name_s name; *//* in iref.h */
@@ -93,9 +93,9 @@ typedef struct name_sub_table_s {
  */
 struct name_table_s {
     uint free;			/* head of free list, which is sorted in */
-				/* increasing count (not index) order */
+                                /* increasing count (not index) order */
     uint sub_next;		/* index of next sub-table to allocate */
-				/* if not already allocated */
+                                /* if not already allocated */
     uint perm_count;		/* # of permanent (read-only) strings */
     uint sub_count;		/* index of highest allocated sub-table +1 */
     uint max_sub_count;		/* max allowable value of sub_count */
@@ -103,8 +103,8 @@ struct name_table_s {
     gs_memory_t *memory;
     uint hash[NT_HASH_SIZE];
     struct sub_ {		/* both ptrs are 0 or both are non-0 */
-	name_sub_table *names;
-	name_string_sub_table_t *strings;
+        name_sub_table *names;
+        name_string_sub_table_t *strings;
     } sub[max_name_index / nt_sub_size + 1];
 };
 /*typedef struct name_table_s name_table; *//* in inames.h */
@@ -115,27 +115,27 @@ struct name_table_s {
  * Convert between names, indices, and strings.  Note that the inline
  * versions, but not the procedure versions, take a name_table argument.
  */
-		/* index => string */
+                /* index => string */
 #define names_index_string_inline(nt, nidx)\
   ((nt)->sub[(nidx) >> nt_log2_sub_size].strings->strings +\
    ((nidx) & nt_sub_index_mask))
-		/* ref => string */
+                /* ref => string */
 #define names_string_inline(nt, pnref)\
   names_index_string_inline(nt, names_index_inline(nt, pnref))
-		/* ref => index */
+                /* ref => index */
 #if EXTEND_NAMES
 #  define names_index_inline(nt_ignored, pnref)\
      ( ((const name_sub_table *)\
-	((pnref)->value.pname - (r_size(pnref) & nt_sub_index_mask)))->high_index + r_size(pnref) )
+        ((pnref)->value.pname - (r_size(pnref) & nt_sub_index_mask)))->high_index + r_size(pnref) )
 #else
 #  define names_index_inline(nt_ignored, pnref) r_size(pnref)
 #endif
 #define names_index(nt_ignored, pnref) names_index_inline(nt_ignored, pnref)
-		/* index => name */
+                /* index => name */
 #define names_index_ptr_inline(nt, nidx)\
   ((nt)->sub[(nidx) >> nt_log2_sub_size].names->names +\
    ((nidx) & nt_sub_index_mask))
-		/* index => ref */
+                /* index => ref */
 #define names_index_ref_inline(nt, nidx, pnref)\
   make_name(pnref, nidx, names_index_ptr_inline(nt, nidx));
 /* Backward compatibility */
@@ -143,7 +143,7 @@ struct name_table_s {
 #define name_index_ptr_inline(nt, pnref) names_index_ptr_inline(nt, pnref)
 #define name_index_ref_inline(nt, nidx, pnref)\
   names_index_ref_inline(nt, nidx, pnref)
-		/* name => ref */
+                /* name => ref */
 /* We have to set the space to system so that the garbage collector */
 /* won't think names are foreign and therefore untraceable. */
 #define make_name(pnref, nidx, pnm)\

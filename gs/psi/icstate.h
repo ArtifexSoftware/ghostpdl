@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,7 +40,6 @@ typedef struct gs_context_state_s gs_context_state_t;
 typedef struct gs_file_path_s *gs_file_path_ptr;
 #endif
 
-
 struct gs_context_state_s {
     gs_state *pgs;
     gs_dual_memory_t memory;
@@ -49,7 +48,7 @@ struct gs_context_state_s {
     ref binary_object_format;	/* t_integer */
     long rand_state;		/* (not in Red Book) */
     long usertime_total;	/* total accumulated usertime, */
-				/* not counting current time if running */
+                                /* not counting current time if running */
     bool keep_usertime;		/* true if context ever executed usertime */
     int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */

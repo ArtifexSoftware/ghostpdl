@@ -1,12 +1,12 @@
 % Copyright (C) 2000, 2001 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -29,7 +29,7 @@
 % All array entries start from the new byte boundary.
 %
 
-/table_width 79 def 
+/table_width 79 def
 /col1_width  66 def
 
 % Skip bits to the next byte boundary
@@ -49,13 +49,13 @@
 /bitread {		% <bstream> <width> bitwrite <value>
   exch begin
   0                     %  bit val
-  { 
+  {
     1 index N .min      %  bit val m
-    dup 3 1 roll        %  bit m val m 
+    dup 3 1 roll        %  bit m val m
     bitshift            %  bit m val<<m
     B 2 index N sub     %  bit m val<<m B m-N
     bitshift add        %  bit m val<<m+B>>(N-m)
-    3 -1 roll           %  m val' bit 
+    3 -1 roll           %  m val' bit
     2 index sub         %  m val' bit'
     3 -1 roll           %  val' bit' m
     N exch sub dup      %  val' bit' N' N'
@@ -97,7 +97,7 @@
     getinterval         % (s) (v)
   } {
     dup                 % (s) (s)
-  } ifelse                  
+  } ifelse
   (\n) search {
     4 1 roll            % (pre) (s) (post) (match)
     pop pop             % (pre) (s)
@@ -121,9 +121,9 @@
   exch print            % () n len
   exch =string cvs      % () len (n)
   dup length            % () len (n) len2
-  3 -1 roll add         % () (n) len+len2 
+  3 -1 roll add         % () (n) len+len2
   //table_width         % () (n) len+len2 78
-  exch sub              % () (n) 78-len+len2 
+  exch sub              % () (n) 78-len+len2
   ( ) multiprint        % () (n)
   =                     % ()
   { dup length 0 eq { exit } if
@@ -196,7 +196,7 @@
 % Analyze the page offset hint table.
 /dump_page_offset_table {  % - dump_page_offset_table -
   hint_stream
-    
+
   dup 32 bitread
   dup /hint_minnop exch def
   (1. The least number of objects in a page.) two_column
@@ -219,7 +219,7 @@
 
   dup 32 bitread
   dup /hint_minsco exch def
-  (6. Least start of Contents offset. ) 
+  (6. Least start of Contents offset. )
   1 index 0 ne { (\n*** Acrobat expects 0 ***) concatstrings } if
   two_column
 
@@ -251,7 +251,7 @@
   dup /hint_denf exch def
   (13. Denominator of fraction.) two_column
 
-  pop 
+  pop
 
   LinearizationParams /N get
 
@@ -353,9 +353,9 @@
 } bind def
 
 % Analyze tha shared object hint table
-/dump_shared_object_table { 
+/dump_shared_object_table {
   hint_stream
-    
+
   dup 32 bitread
   dup /shint_1st_obj_id exch def
   (1. Object number of the first object in the shared objects section) two_column
@@ -399,7 +399,7 @@
   (2. MD5 signature flag) array_header
     hint_stream bytealign
     /shint_md5_flags
-    [ shint_all_shared 
+    [ shint_all_shared
       { hint_stream 1 bitread
       } repeat
     ] readonly def
@@ -407,7 +407,7 @@
     shint_md5_flags dump_array
 
     (3. MD5 signature string) array_header
-    false shint_md5_flags { 0 ne or } forall { 
+    false shint_md5_flags { 0 ne or } forall {
       shint_md5_flags {
         0 eq {
           (<>)=
@@ -419,7 +419,7 @@
           } { pop (Error reading nd5 string.) ==
           } ifelse
         } ifelse
-      } forall   
+      } forall
     } {
       () = (none) =
     } ifelse
@@ -526,8 +526,8 @@
 } bind def
 
 % Analyze the generic hint table.
-% The hint field names are re-used. 
-/dump_generic_table { 
+% The hint field names are re-used.
+/dump_generic_table {
   hint_stream
 
   dup 32 bitread
@@ -578,7 +578,7 @@
   dup /ihint_shared_obj_bits exch def
   (6. Bits for the max shared object id used by the interactive form or the logical structure hierarchy.)
   1 index hint_sobits ne {
-    (\n*** This fiels is not equal to max shared object ID bits ***) concatstrings 
+    (\n*** This fiels is not equal to max shared object ID bits ***) concatstrings
   } if
 
   pop
@@ -612,7 +612,7 @@
     (T, Thumbnail hint table) table_header
     hint_stream exch set_align
     dump_thumbnail_table
-  } if   
+  } if
 
   dup /O .knownget {
     (O, Outline hint table) table_header
@@ -621,7 +621,7 @@
   } if
 
   dup /A .knownget {
-    (A, Thread information hint table) table_header 
+    (A, Thread information hint table) table_header
     hint_stream exch set_align
     dump_generic_table
   } if
@@ -659,11 +659,10 @@
     pop
 } bind def
 
-
 % Load PDF file and extract the hint stream.
 /pdf_dump_hints {                             % <infile> pdf_dump_hints -
   dup (r) file                                % fname
-  false exch                                  % fname F file 
+  false exch                                  % fname F file
   {
     dup 7 string readstring pop               % fname F file ()
     (%PDF-1.) ne { pop exit } if              % fname F file
@@ -696,10 +695,10 @@
         LinearizationParams /H get
         dup length 2 eq {
           0 get PDFoffset add PDFfile exch setfileposition
-          PDFfile token pop 
+          PDFfile token pop
           PDFfile token pop
           resolveR dup true resolvestream
-          /ReusableStreamDecode filter 
+          /ReusableStreamDecode filter
           bitstream dup bytealign
           /hint_stream exch def
 
@@ -730,7 +729,7 @@
     exch pop
     save exch
     3000000 setvmthreshold
-    pdfoptdict begin 
+    pdfoptdict begin
     pdf_dump_hints
     end
     restore

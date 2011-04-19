@@ -808,7 +808,6 @@ cleanup:
     return code;
 }
 
-
 static struct compression_string {
     uint16 id;
     const char *str;
@@ -856,4 +855,3 @@ int tiff_compression_allowed(uint16 compression, byte depth)
                           compression != COMPRESSION_CCITTFAX4);
 
 }
-

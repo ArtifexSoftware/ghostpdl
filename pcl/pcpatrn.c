@@ -31,8 +31,6 @@
 #include "pcuptrn.h"
 #include "pcpatxfm.h"
 
-
-
 /*
  * The base color space for setting the color white. Unlike all other color
  * spaces in PCL, this uses the DeviceGray color space in the graphic library.
@@ -46,7 +44,6 @@ static const gs_paint_color    white_paint = {{ 1.0, 0.0, 0.0, 0.0 }};
 
 /* GC routines */
 private_st_ccolor_t();
-
 
 /*
  * Convert a color value specified as a three-element byte array, or an index
@@ -123,7 +120,6 @@ set_ht_crd_from_foreground(
         code = pcl_crd_set_crd(&(pfrgrnd->pcrd), pcs);
     return code;
 }
-
 
 /*
  * Free a PCL client color structure.
@@ -218,7 +214,7 @@ unshare_ccolor(
 }
 
 /*
- * Set a solid color (unpattered) color. This is handled separately from 
+ * Set a solid color (unpattered) color. This is handled separately from
  * patterns as it will usually not be necessary to build a PCL client color
  * structure in this case.
  *
@@ -237,9 +233,9 @@ set_unpatterned_color(
     pcl_ccolor_type_t       type;
 
     if ( pcur != 0 )
-	type = pcur->type;
+        type = pcur->type;
     else
-	type = pcl_ccolor_unpatterned;
+        type = pcl_ccolor_unpatterned;
 
     if ( (pcur != 0)                                         &&
          (type == pcl_ccolor_unpatterned)                    &&
@@ -301,7 +297,7 @@ set_patterned_color(
         if ( (pnew->pindexed != 0)                              &&
              ((pcur == 0) || (pcur->pindexed != pnew->pindexed))  )
             code = pcl_cs_indexed_install(&(pnew->pindexed), pcs);
-             
+
         if ( (pnew->pbase != 0)                           &&
              ((pcur == 0) || (pcur->pbase != pnew->pbase))  )
             code = pcl_cs_base_install(&(pnew->pbase), pcs);
@@ -440,7 +436,7 @@ render_pattern(
             pcl_ccolor_release(pptrn->pmask_ccolor);
             pptrn->pmask_ccolor = 0;
         }
-    } 
+    }
 
     /* un-share, or allocate, the appropriate client color */
     if (type == pcl_ccolor_mask_pattern) {
@@ -485,9 +481,9 @@ render_pattern(
         pixinfo = pptrn->ppat_data->pixinfo;
 
     if (pcspace != 0)
-	code = pcl_cs_indexed_install(&pindexed, pcs);
+        code = pcl_cs_indexed_install(&pindexed, pcs);
     if ( code < 0 )
-	return code;
+        return code;
 
     /* the following is placed here until we have time to properly
        address this.  The makepixmappattern() procedure detects a
@@ -728,7 +724,7 @@ set_colored_pattern(
  *                          Note that this routine does NOT set the current
  *                          line width (it does not have sufficient
  *                          information to convert the dimensions).
- *                              
+ *
  *    pattern_set_frgrnd    One additional operands. Sets currect base
  *                          color space as the color space, and the
  *                          foreground color as the current color.
@@ -755,12 +751,12 @@ set_colored_pattern(
  *                          foreground.
  *
  *                          Special considerations apply if the pattern is
- *                          being set to render a PCL raster. See the 
+ *                          being set to render a PCL raster. See the
  *                          paragraphs at the bottom of this comment for
  *                          additional information.
  *
  *    pattern_set_shade_gl  Two additional operands; the first provides
- *                          the pattern intensity, the latter the pen 
+ *                          the pattern intensity, the latter the pen
  *                          number to be be used as the foreground color.
  *                          This routine generates the pattern using a two
  *                          entry palette consisting of canonical white in
@@ -917,8 +913,8 @@ pattern_set_pen(
 
     /* put the pen number in the proper range */
     if ( (pen >= num_entries)                            &&
-	 ((pen = (pen % num_entries) + 1) == num_entries)  )
-	pen = 1;
+         ((pen = (pen % num_entries) + 1) == num_entries)  )
+        pen = 1;
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
 
@@ -926,7 +922,7 @@ pattern_set_pen(
         /* Optimization for a special case where we don't need the
            unsolid pattern, drawing an opaque white rectangle with
            simple rops (we only check for 2 common rops).  */
-        if (!pcs->g.source_transparent && 
+        if (!pcs->g.source_transparent &&
             (pcs->logical_op == rop3_default || pcs->logical_op == rop3_T))
             goto skip_unsolid;
         else
@@ -962,25 +958,25 @@ pattern_set_frgrnd(
 
     /* check if a solid pattern should be substituted */
     if ( for_image ) {
-	if ((pfrgrnd->pht != ppalet->pht)  ||
-	    (pfrgrnd->pcrd != ppalet->pcrd)  ) {
-	    code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
-	    if (code >= 0)
-		code = set_ht_crd_from_palette(pcs);
-	    return code;
-	} 
-	else if ( (ppalet->pindexed->original_cspace == 1 && !pfrgrnd->is_cmy ) || 
-		  (ppalet->pindexed->original_cspace != 1 &&  pfrgrnd->is_cmy ) ) {
-	    const byte blk[] = {0, 0, 0};
-	    gs_paint_color  paint;
-	    
-	    /* NB: HP forces black foreground, as they can't handle different 
-	     * colorspaces in foreground and raster palette 
-	     */
-	    convert_color_to_paint(blk, &paint);
-	    code = set_unpatterned_color(pcs, NULL, pfrgrnd->pbase, &paint);
-	    return code;
-	}
+        if ((pfrgrnd->pht != ppalet->pht)  ||
+            (pfrgrnd->pcrd != ppalet->pcrd)  ) {
+            code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
+            if (code >= 0)
+                code = set_ht_crd_from_palette(pcs);
+            return code;
+        }
+        else if ( (ppalet->pindexed->original_cspace == 1 && !pfrgrnd->is_cmy ) ||
+                  (ppalet->pindexed->original_cspace != 1 &&  pfrgrnd->is_cmy ) ) {
+            const byte blk[] = {0, 0, 0};
+            gs_paint_color  paint;
+
+            /* NB: HP forces black foreground, as they can't handle different
+             * colorspaces in foreground and raster palette
+             */
+            convert_color_to_paint(blk, &paint);
+            code = set_unpatterned_color(pcs, NULL, pfrgrnd->pbase, &paint);
+            return code;
+        }
     }
     {
         gs_paint_color  paint;
@@ -1009,7 +1005,7 @@ pattern_set_shade_pcl(
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         code = set_frgrnd_pattern(pcs, pptrn, for_image);
-    
+
         if (for_image && (code >= 0))
             code = set_ht_crd_from_palette(pcs);
         return code;
@@ -1031,7 +1027,7 @@ pattern_set_shade_gl(
     else if (pptrn == 0)
         return ( inten > 0 ? pattern_set_pen(pcs, pen, false)
                            : pattern_set_white(pcs, 0, 0)   );
-    
+
     pcl_xfm_gl_set_pat_ref_pt(pcs);
     return set_uncolored_palette_pattern(pcs, pptrn, pen);
 }
@@ -1117,7 +1113,7 @@ pattern_set_user_gl(
         pcl_xfm_gl_set_pat_ref_pt(pcs);
         if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
 
-	    /* check if the current pen is white */
+            /* check if the current pen is white */
             if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
                 pptrn = pcl_pattern_get_unsolid_pattern(pcs);
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
@@ -1159,7 +1155,6 @@ pattern_set_gl_RF(
             return set_colored_pattern(pcs, pptrn);
     }
 }
-
 
 /*
  * Return the appropriate "set" procedure, given a PCL pattern type.
@@ -1225,7 +1220,6 @@ pcl_pattern_get_proc_SV(
     else
         return 0;
 }
-
 
 /*
  * ESC * c <#/id> G
@@ -1310,7 +1304,7 @@ select_current_pattern(
  * that we are parsing the command correctly.  The lightness and
  * saturation parameters are not documented so we do not believe this
  * command will be used by an application or driver.
- * 
+ *
  */
 
 typedef struct driver_configuration_s {
@@ -1329,42 +1323,42 @@ set_driver_configuration(
     driver_configuration_t *driver = (driver_configuration_t *)arg_data(pargs);
 
     if ( pcs->personality == pcl5e )
-	return 0;
+        return 0;
 
     if ( count != sizeof(driver_configuration_t) )
-	return e_Range;
+        return e_Range;
 
     /* the only device known to support this command */
-    if ( ( driver->device_id < 6 )   /* 6 == hp color laserjet */ 
-         ||                          /* 7 == hp clj 5 */ 
+    if ( ( driver->device_id < 6 )   /* 6 == hp color laserjet */
+         ||                          /* 7 == hp clj 5 */
          ( driver->device_id > 8 ) ) /* 8 == hp 4500 - 4550 */ {
         dprintf1("unknown device id %d\n", driver->device_id );
-	return e_Range;
+        return e_Range;
     }
 
     switch (driver->function_index) {
     case 0: /* lightness */
-	{
-	    int code;
-	    if ( driver->arguments < -100 || driver->arguments > 100 )
-		return e_Range;
-	    /* map -100..100 to gamma setting 0.05..4.05 */
-	    code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
-	    if ( code < 0 )
-		return code;
-	}
-	break;
+        {
+            int code;
+            if ( driver->arguments < -100 || driver->arguments > 100 )
+                return e_Range;
+            /* map -100..100 to gamma setting 0.05..4.05 */
+            code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
+            if ( code < 0 )
+                return code;
+        }
+        break;
     case 1: /* saturation */
-	{
-	    int code;
-	    if ( driver->arguments < -100 || driver->arguments > 100 )
-		return e_Range;
-	    /* map -100..100 to gamma setting 0.05..4.05 */
-	    code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
-	    if ( code < 0 )
-		return code;
-	}
-	break;
+        {
+            int code;
+            if ( driver->arguments < -100 || driver->arguments > 100 )
+                return e_Range;
+            /* map -100..100 to gamma setting 0.05..4.05 */
+            code = pcl_palette_set_gamma(pcs, ((driver->arguments + 100.0) / 200.0) + 0.05);
+            if ( code < 0 )
+                return code;
+        }
+        break;
     case 4:
         /* driver arguments 3 & 6 are parsed, but not implemented.  In
            our model where all data is treated as sRGB and color
@@ -1382,11 +1376,10 @@ set_driver_configuration(
             return e_Range;
         break;
     default:
-	return e_Range;
+        return e_Range;
     }
     return 0;
 }
-
 
 /*
  * Initialization and reset routines.
@@ -1435,7 +1428,7 @@ pattern_do_registration(
     },
     END_CLASS
     return 0;
- 
+
 }
 
   static void
@@ -1464,11 +1457,11 @@ pattern_do_reset(
             gs_state *pgs = pcs->pgs;
 
             (gstate_pattern_cache(pgs)->free_all)(gstate_pattern_cache(pgs));
-            gs_free_object(pcs->memory, 
-                           gstate_pattern_cache(pgs)->tiles, 
+            gs_free_object(pcs->memory,
+                           gstate_pattern_cache(pgs)->tiles,
                            "pattern_do_reset(tiles)");
-            gs_free_object(pcs->memory, 
-                           gstate_pattern_cache(pgs), 
+            gs_free_object(pcs->memory,
+                           gstate_pattern_cache(pgs),
                            "pattern_do_reset(struct)");
             while (pgs) {
                 gstate_set_pattern_cache(pgs, 0);

@@ -37,7 +37,7 @@ hpgl_PC(
     int32           npen = pcl_palette_get_num_entries(pgls->ppalet);
 
     if ( pgls->personality == pcl5e )
-	return 0;
+        return 0;
 
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
@@ -46,25 +46,25 @@ hpgl_PC(
         hpgl_real_t primary[3];
 
         if ((pen < 0) || (pen >= npen))
-	    return e_Range;
+            return e_Range;
 
-	if (hpgl_arg_c_real(pgls->memory, pargs, &primary[0])) {
+        if (hpgl_arg_c_real(pgls->memory, pargs, &primary[0])) {
             float       comps[3];
 
-	    if ( !hpgl_arg_c_real(pgls->memory, pargs, &primary[1]) ||
-		 !hpgl_arg_c_real(pgls->memory, pargs, &primary[2])   )
-		return e_Range;
+            if ( !hpgl_arg_c_real(pgls->memory, pargs, &primary[1]) ||
+                 !hpgl_arg_c_real(pgls->memory, pargs, &primary[2])   )
+                return e_Range;
             comps[0] = primary[0];
             comps[1] = primary[1];
             comps[2] = primary[2];
             return pcl_palette_set_color(pgls, pen, comps);
         } else
-	    return pcl_palette_set_default_color(pgls, pen);
+            return pcl_palette_set_default_color(pgls, pen);
     } else {
         int     i;
         int     code;
 
-	for (i = 0; i < npen; ++i) {
+        for (i = 0; i < npen; ++i) {
             if ((code = pcl_palette_set_default_color(pgls, i)) < 0)
                 return code;
         }
@@ -85,13 +85,13 @@ hpgl_NP(
     int32           n = 8;
 
     if ( pgls->personality == pcl5e )
-	return 0;
+        return 0;
 
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
     if ( hpgl_arg_int(pgls->memory, pargs, &n) && ((n < 2) || (n > 32768)) )
-	return e_Range;
+        return e_Range;
     return pcl_palette_NP(pgls, n);
 }
 
@@ -124,8 +124,6 @@ hpgl_CR(
     else /* no args - default references */
         return pcl_palette_CR(pgls, 255, 255, 255, 0, 0, 0);
 }
-            
-    
 
 /*
  * Initialization. There is no reset or copy command, as those operations are

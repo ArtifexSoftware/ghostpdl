@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,7 +34,7 @@
 /*
  * The original version of this driver was restricted to producing a single
  * page per file.  If for some reason you want to reinstate this
- * restriction, uncomment the next line. 
+ * restriction, uncomment the next line.
  * NOTE: Even though the logic for multi-page files is straightforward,
  * it results in a file that most programs that process BMP format cannot
  * handle. Most programs will only display the first page.
@@ -81,10 +81,10 @@ static const gx_device_procs bmpamono_procs =
   prn_procs(bmpa_writer_open, gdev_prn_output_page, gdev_prn_close);
 const gx_device_async gs_bmpamono_device =
   async_device(bmpamono_procs, "bmpamono",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	1, default_print_page);
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        1, default_print_page);
 
 /* 1-bit-per-plane separated CMYK color. */
 
@@ -96,28 +96,28 @@ const gx_device_async gs_bmpamono_device =
 
 static const gx_device_procs bmpasep1_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_1bit_map_color_rgb,
-		    cmyk_1bit_map_cmyk_color)
+                    cmyk_1bit_map_cmyk_color)
 };
 const gx_device_async gs_bmpasep1_device = {
   prn_device_body(gx_device_async, bmpasep1_procs, "bmpasep1",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	4, 4, 1, 1, 2, 2, default_print_page)
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        4, 4, 1, 1, 2, 2, default_print_page)
 };
 
 /* 8-bit-per-plane separated CMYK color. */
 
 static const gx_device_procs bmpasep8_procs = {
     bmpa_cmyk_procs(bmpa_cmyk_writer_open, cmyk_8bit_map_color_rgb,
-		    cmyk_8bit_map_cmyk_color)
+                    cmyk_8bit_map_cmyk_color)
 };
 const gx_device_async gs_bmpasep8_device = {
   prn_device_body(gx_device_async, bmpasep8_procs, "bmpasep8",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	4, 32, 255, 255, 256, 256, default_print_page)
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        4, 32, 255, 255, 256, 256, default_print_page)
 };
 
 /* 4-bit (EGA/VGA-style) color. */
@@ -127,10 +127,10 @@ static const gx_device_procs bmpa16_procs =
     pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_async gs_bmpa16_device =
   async_device(bmpa16_procs, "bmpa16",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	4, default_print_page);
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        4, default_print_page);
 
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
@@ -140,10 +140,10 @@ static const gx_device_procs bmpa256_procs =
     pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_async gs_bmpa256_device =
   async_device(bmpa256_procs, "bmpa256",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	8, default_print_page);
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        8, default_print_page);
 
 /* 24-bit color. */
 
@@ -152,23 +152,23 @@ static const gx_device_procs bmpa16m_procs =
     bmp_map_16m_rgb_color, bmp_map_16m_color_rgb);
 const gx_device_async gs_bmpa16m_device =
   async_device(bmpa16m_procs, "bmpa16m",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,			/* margins */
-	24, default_print_page);
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,			/* margins */
+        24, default_print_page);
 
 /* 32-bit CMYK color (outside the BMP specification). */
 
 static const gx_device_procs bmpa32b_procs = {
     bmpa_cmyk_procs(bmpa_writer_open, gx_default_map_color_rgb,
-		    gx_default_cmyk_map_cmyk_color)
+                    gx_default_cmyk_map_cmyk_color)
 };
 const gx_device_async gs_bmpa32b_device =
   async_device(bmpa32b_procs, "bmpa32b",
-	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	       X_DPI, Y_DPI,
-	       0, 0, 0, 0,		/* margins */
-	       32, default_print_page);
+               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+               X_DPI, Y_DPI,
+               0, 0, 0, 0,		/* margins */
+               32, default_print_page);
 
 /* --------- Forward declarations ---------- */
 
@@ -179,8 +179,8 @@ static void bmpa_reader_thread(void *);
 /* Writer's open procedure */
 static int
 bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
-		 dev_proc_print_page_copies((*reader_print_page_copies)),
-		 prn_dev_proc_buffer_page((*reader_buffer_page)))
+                 dev_proc_print_page_copies((*reader_print_page_copies)),
+                 prn_dev_proc_buffer_page((*reader_buffer_page)))
 {
     gx_device_async * const pwdev = (gx_device_async *)pdev;
     int max_width;
@@ -193,15 +193,15 @@ bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
      * there are no convenient macros for setting them up in static template.
      */
     init_async_render_procs(pwdev, bmpa_reader_start_render_thread,
-			    reader_buffer_page,
-			    reader_print_page_copies);
+                            reader_buffer_page,
+                            reader_print_page_copies);
     set_dev_proc(pdev, get_params, bmpa_get_params);	/* because not all device-init macros allow this to be defined */
     set_dev_proc(pdev, put_params, bmpa_put_params);	/* ibid. */
     set_dev_proc(pdev, get_hardware_params, bmpa_get_hardware_params);
     set_dev_proc(pdev, output_page, bmpa_reader_output_page);	/* hack */
     pwdev->printer_procs.get_space_params = bmpa_get_space_params;
     pwdev->printer_procs.open_render_device =
-	bmpa_reader_open_render_device;	/* Included for tutorial value */
+        bmpa_reader_open_render_device;	/* Included for tutorial value */
 
     /*
      * Determine MAXIMUM parameters this device will have to support over
@@ -214,25 +214,25 @@ bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
 
     /* Set to planar buffering mode if appropriate. */
     if (pwdev->UsePlanarBuffer)
-	gdev_prn_set_procs_planar(pdev);
+        gdev_prn_set_procs_planar(pdev);
 
     /* Special writer open routine for async interpretation */
     /* Starts render thread */
     return gdev_prn_async_write_open((gx_device_printer *)pdev,
-				     max_raster, min_band_height,
-				     max_src_image_row);
+                                     max_raster, min_band_height,
+                                     max_src_image_row);
 }
 static int
 bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
 {
     return bmpa_open_writer(pdev, bmpa_reader_print_page_copies,
-			    bmpa_reader_buffer_page);
+                            bmpa_reader_buffer_page);
 }
 static int
 bmpa_cmyk_writer_open(gx_device *pdev  /* Driver instance to open */)
 {
     return bmpa_open_writer(pdev, bmpa_cmyk_reader_print_copies,
-			    bmpa_cmyk_reader_buffer_page);
+                            bmpa_cmyk_reader_buffer_page);
 }
 
 /* -------------- Renderer instance procedures ----------*/
@@ -240,11 +240,11 @@ bmpa_cmyk_writer_open(gx_device *pdev  /* Driver instance to open */)
 /* Forward declarations */
 static int
     bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *prn_stream,
-			      int num_copies, int first_plane,
-			      int last_plane, int raster);
+                              int num_copies, int first_plane,
+                              int last_plane, int raster);
 
 /* Thread to do rendering, started by bmpa_reader_start_render_thread */
-static void 
+static void
 bmpa_reader_thread(void *params)
 {
     gdev_prn_async_render_thread((gdev_prn_start_render_params *)params);
@@ -279,18 +279,18 @@ bmpa_reader_output_page(gx_device *pdev, int num_copies, int flush)
      * we need to seek back & forth to support partial rendering.
      */
     if ( num_copies > 0 || !flush ) {
-	int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
+        int code = gdev_prn_open_printer_positionable(pdev, 1, 1);
 
-	if ( code < 0 )
-	    return code;
+        if ( code < 0 )
+            return code;
     }
     return gdev_prn_output_page(pdev, num_copies, flush);
 }
 
 static int
 bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
-			 int num_copies, int first_plane, int last_plane,
-			 int raster)
+                         int num_copies, int first_plane, int last_plane,
+                         int raster)
 {
     gx_device_async * const prdev = (gx_device_async *)pdev;
     /* BMP scan lines are padded to 32 bits. */
@@ -303,56 +303,56 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 
     /* If there's data in buffer, need to process w/overlays */
     if (prdev->buffered_page_exists) {
-	code = bmpa_reader_buffer_planes(pdev, prn_stream, num_copies,
-					 first_plane, last_plane, raster);
-	goto done;
+        code = bmpa_reader_buffer_planes(pdev, prn_stream, num_copies,
+                                         first_plane, last_plane, raster);
+        goto done;
     }
 #ifdef SINGLE_PAGE
     /* BMP format is single page, so discard all but 1st printable page */
     /* Since the OutputFile may have a %d, we use ftell to determine if */
     /* this is a zero length file, which is legal to write		*/
     if (ftell(prn_stream) != 0)
-	return 0;
+        return 0;
 #endif
     row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     for (plane = first_plane; plane <= last_plane; ++plane) {
-	gx_render_plane_t render_plane;
+        gx_render_plane_t render_plane;
 
-	/* Write header & seek to its end */
-	code =
-	    (first_plane < 0 ? write_bmp_header(pdev, prn_stream) :
-	     write_bmp_separated_header(pdev, prn_stream));
-	if (code < 0)
-	    goto done;
-	/* Save the file offset where data begins */
-	if ((prdev->file_offset_to_data[plane - first_plane] =
-	     ftell(prn_stream)) == -1L) {
-	    code = gs_note_error(gs_error_ioerror);
-	    goto done;
-	}
+        /* Write header & seek to its end */
+        code =
+            (first_plane < 0 ? write_bmp_header(pdev, prn_stream) :
+             write_bmp_separated_header(pdev, prn_stream));
+        if (code < 0)
+            goto done;
+        /* Save the file offset where data begins */
+        if ((prdev->file_offset_to_data[plane - first_plane] =
+             ftell(prn_stream)) == -1L) {
+            code = gs_note_error(gs_error_ioerror);
+            goto done;
+        }
 
-	/*
-	 * Write out the bands top to bottom.  Finish the job even if
-	 * num_copies == 0, to avoid invalid output file.
-	 */
-	if (plane >= 0)
-	    gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
-	for (y = prdev->height - 1; y >= 0; y--) {
-	    uint actual_raster;
+        /*
+         * Write out the bands top to bottom.  Finish the job even if
+         * num_copies == 0, to avoid invalid output file.
+         */
+        if (plane >= 0)
+            gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
+        for (y = prdev->height - 1; y >= 0; y--) {
+            uint actual_raster;
 
-	    code = gdev_prn_get_lines(pdev, y, 1, row, bmp_raster,
-				      &raster_data, &actual_raster,
-				      (plane < 0 ? NULL : &render_plane));
-	    if (code < 0)
-		goto done;
-	    if (fwrite((const char *)raster_data, actual_raster, 1, prn_stream) < 1) {
-		code = gs_error_ioerror;
-		goto done;
-	    }
-	}
+            code = gdev_prn_get_lines(pdev, y, 1, row, bmp_raster,
+                                      &raster_data, &actual_raster,
+                                      (plane < 0 ? NULL : &render_plane));
+            if (code < 0)
+                goto done;
+            if (fwrite((const char *)raster_data, actual_raster, 1, prn_stream) < 1) {
+                code = gs_error_ioerror;
+                goto done;
+            }
+        }
     }
 done:
     gs_free_object(pdev->memory, row, "bmp file buffer");
@@ -361,10 +361,10 @@ done:
 }
 static int
 bmpa_reader_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
-			      int num_copies)
+                              int num_copies)
 {
     return bmpa_reader_print_planes(pdev, prn_stream, num_copies, -1, -1,
-				    gdev_prn_raster(pdev));
+                                    gdev_prn_raster(pdev));
 }
 static int
 bmpa_cmyk_plane_raster(gx_device_printer *pdev)
@@ -373,16 +373,16 @@ bmpa_cmyk_plane_raster(gx_device_printer *pdev)
 }
 static int
 bmpa_cmyk_reader_print_copies(gx_device_printer *pdev, FILE *prn_stream,
-			      int num_copies)
+                              int num_copies)
 {
     return bmpa_reader_print_planes(pdev, prn_stream, num_copies, 0, 3,
-				    bmpa_cmyk_plane_raster(pdev));
+                                    bmpa_cmyk_plane_raster(pdev));
 }
 
 /* Buffer a (partial) rasterized page & optionally print result multiple times. */
 static int
 bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
-			  int first_plane, int last_plane, int raster)
+                          int first_plane, int last_plane, int raster)
 {
     gx_device_async * const prdev = (gx_device_async *)pdev;
     gx_device * const dev = (gx_device *)pdev;
@@ -390,9 +390,9 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 
     /* If there's no data in buffer, no need to do any overlays */
     if (!prdev->buffered_page_exists) {
-	code = bmpa_reader_print_planes(pdev, file, num_copies,
-					first_plane, last_plane, raster);
-	goto done;
+        code = bmpa_reader_print_planes(pdev, file, num_copies,
+                                        first_plane, last_plane, raster);
+        goto done;
     }
 
     /*
@@ -412,106 +412,106 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
      */
 
     {
-	byte *raster_data;
-	gx_device_clist_reader *const crdev =
-	    (gx_device_clist_reader *)pdev;
-	int raster = gx_device_raster(dev, 1);
-	int padding = -raster & 3; /* BMP scan lines are padded to 32 bits. */
-	int bmp_raster = raster + padding;
-	int plane;
+        byte *raster_data;
+        gx_device_clist_reader *const crdev =
+            (gx_device_clist_reader *)pdev;
+        int raster = gx_device_raster(dev, 1);
+        int padding = -raster & 3; /* BMP scan lines are padded to 32 bits. */
+        int bmp_raster = raster + padding;
+        int plane;
 
-	/*
-	 * Get the address of the renderer's band buffer.  In the future,
-	 * it will be possible to suppress the allocation of this buffer,
-	 * and to use only buffers provided the driver itself (e.g., a
-	 * hardware buffer).
-	 */
-	if (!pdev->buffer_space) {
-	    /* Not banding.  Can't happen. */
-	    code = gs_note_error(gs_error_Fatal);
-	    goto done;
-	}
-	raster_data = crdev->data;
+        /*
+         * Get the address of the renderer's band buffer.  In the future,
+         * it will be possible to suppress the allocation of this buffer,
+         * and to use only buffers provided the driver itself (e.g., a
+         * hardware buffer).
+         */
+        if (!pdev->buffer_space) {
+            /* Not banding.  Can't happen. */
+            code = gs_note_error(gs_error_Fatal);
+            goto done;
+        }
+        raster_data = crdev->data;
 
-	for (plane = first_plane; plane <= last_plane; ++plane) {
-	    gx_render_plane_t render_plane;
-	    gx_device *bdev;
-	    int y, band_base_line;
+        for (plane = first_plane; plane <= last_plane; ++plane) {
+            gx_render_plane_t render_plane;
+            gx_device *bdev;
+            int y, band_base_line;
 
-	    /* Seek to beginning of data portion of file */
-	    if (fseek(file, prdev->file_offset_to_data[plane - first_plane],
-		      SEEK_SET)) {
-		code = gs_note_error(gs_error_ioerror);
-		goto done;
-	    }
+            /* Seek to beginning of data portion of file */
+            if (fseek(file, prdev->file_offset_to_data[plane - first_plane],
+                      SEEK_SET)) {
+                code = gs_note_error(gs_error_ioerror);
+                goto done;
+            }
 
-	    if (plane >= 0)
-		gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
-	    else
-		render_plane.index = -1;
+            if (plane >= 0)
+                gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
+            else
+                render_plane.index = -1;
 
-	    /* Set up the buffer device. */
-	    code = gdev_create_buf_device(crdev->buf_procs.create_buf_device,
-					  &bdev, crdev->target, 0, &render_plane,
-					  dev->memory, NULL);
-	    if (code < 0)
-		goto done;
+            /* Set up the buffer device. */
+            code = gdev_create_buf_device(crdev->buf_procs.create_buf_device,
+                                          &bdev, crdev->target, 0, &render_plane,
+                                          dev->memory, NULL);
+            if (code < 0)
+                goto done;
 
-	    /*
-	     * Iterate thru bands from top to bottom.  As noted above, we
-	     * do this an entire band at a time for efficiency.
-	     */
-	    for (y = dev->height - 1; y >= 0; y = band_base_line - 1) {
-		int band_height =
-		    dev_proc(dev, get_band)(dev, y, &band_base_line);
-		int line;
-		gs_int_rect band_rect;
+            /*
+             * Iterate thru bands from top to bottom.  As noted above, we
+             * do this an entire band at a time for efficiency.
+             */
+            for (y = dev->height - 1; y >= 0; y = band_base_line - 1) {
+                int band_height =
+                    dev_proc(dev, get_band)(dev, y, &band_base_line);
+                int line;
+                gs_int_rect band_rect;
 
-		/* Set up the buffer device for this band. */
-		code = crdev->buf_procs.setup_buf_device
-		    (bdev, raster_data, bmp_raster, NULL, 0, band_height,
-		     band_height);
-		if (code < 0)
-		    goto done;
+                /* Set up the buffer device for this band. */
+                code = crdev->buf_procs.setup_buf_device
+                    (bdev, raster_data, bmp_raster, NULL, 0, band_height,
+                     band_height);
+                if (code < 0)
+                    goto done;
 
-		/* Fill in the buffer with a band from the BMP file. */
-		/* Need to do this backward since BMP is top to bottom. */
-		for (line = band_height - 1; line >= 0; --line)
-		    if (fread(raster_data + line * bmp_raster,
-			      raster, 1, file) < 1 ||
-			fseek(file, padding, SEEK_CUR)
-			) {
-			code = gs_note_error(gs_error_ioerror);
-			goto done;
-		    }
+                /* Fill in the buffer with a band from the BMP file. */
+                /* Need to do this backward since BMP is top to bottom. */
+                for (line = band_height - 1; line >= 0; --line)
+                    if (fread(raster_data + line * bmp_raster,
+                              raster, 1, file) < 1 ||
+                        fseek(file, padding, SEEK_CUR)
+                        ) {
+                        code = gs_note_error(gs_error_ioerror);
+                        goto done;
+                    }
 
-		/* Continue rendering on top of the existing bits. */
-		band_rect.p.x = 0;
-		band_rect.p.y = band_base_line;
-		band_rect.q.x = pdev->width;
-		band_rect.q.y = band_base_line + band_height;
-		if ((code = clist_render_rectangle((gx_device_clist *)pdev,
-						   &band_rect, bdev,
-						   &render_plane, false)) < 0)
-		    goto done;
+                /* Continue rendering on top of the existing bits. */
+                band_rect.p.x = 0;
+                band_rect.p.y = band_base_line;
+                band_rect.q.x = pdev->width;
+                band_rect.q.y = band_base_line + band_height;
+                if ((code = clist_render_rectangle((gx_device_clist *)pdev,
+                                                   &band_rect, bdev,
+                                                   &render_plane, false)) < 0)
+                    goto done;
 
-		/* Rewind & write out the updated buffer. */
-		if (fseek(file, -bmp_raster * band_height, SEEK_CUR)) {
-		    code = gs_note_error(gs_error_ioerror);
-		    goto done;
-		}
-		for (line = band_height - 1; line >= 0; --line) {
-		    if (fwrite(raster_data + line * bmp_raster,
-			       bmp_raster, 1, file) < 1 ||
-			fseek(file, padding, SEEK_CUR)
-			) {
-			code = gs_note_error(gs_error_ioerror);
-			goto done;
-		    }
-		}
-	    }
-	    crdev->buf_procs.destroy_buf_device(bdev);
-	}
+                /* Rewind & write out the updated buffer. */
+                if (fseek(file, -bmp_raster * band_height, SEEK_CUR)) {
+                    code = gs_note_error(gs_error_ioerror);
+                    goto done;
+                }
+                for (line = band_height - 1; line >= 0; --line) {
+                    if (fwrite(raster_data + line * bmp_raster,
+                               bmp_raster, 1, file) < 1 ||
+                        fseek(file, padding, SEEK_CUR)
+                        ) {
+                        code = gs_note_error(gs_error_ioerror);
+                        goto done;
+                    }
+                }
+            }
+            crdev->buf_procs.destroy_buf_device(bdev);
+        }
     }
 
  done:
@@ -520,17 +520,17 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 }
 static int
 bmpa_reader_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
-			int num_copies)
+                        int num_copies)
 {
     return bmpa_reader_buffer_planes(pdev, prn_stream, num_copies, -1, -1,
-				     gdev_prn_raster(pdev));
+                                     gdev_prn_raster(pdev));
 }
 static int
 bmpa_cmyk_reader_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
-			     int num_copies)
+                             int num_copies)
 {
     return bmpa_reader_buffer_planes(pdev, prn_stream, num_copies, 0, 3,
-				     bmpa_cmyk_plane_raster(pdev));
+                                     bmpa_cmyk_plane_raster(pdev));
 }
 
 /*------------ Procedures common to writer & renderer -------- */
@@ -598,7 +598,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
      *
      * The moral of the story is that you should never make a band
      * so small that its buffer limits the command buffer excessively.
-     * Again, Max image row bytes = band buffer size - # bands * 72. 
+     * Again, Max image row bytes = band buffer size - # bands * 72.
      *
      * In the overlapped case, everything is exactly as above, except that
      * two identical devices, each with an identical buffer, are allocated:
@@ -632,7 +632,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
      * Note: per the comments in gxclmem.c, the banding logic will perform
      * better with 1MB or better for the command list.
      */
-    
+
     /* This will give us a very "ungenerous" buffer. */
     /* Here, my arbitrary rule for min image row is: twice the dest width */
     /* in full CMYK. */
@@ -641,21 +641,21 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     const int tile_cache_space = 50 * 1024;
     const int min_image_rows = 2;
     int min_row_space =
-	min_image_rows * (  4 * ( pdev->width + sizeof(int) - 1 )  );
+        min_image_rows * (  4 * ( pdev->width + sizeof(int) - 1 )  );
     int min_band_height = max(1, pdev->height / 100);	/* make bands >= 1% of total */
 
     space_params->band.BandWidth = pdev->width;
     space_params->band.BandHeight = min_band_height;
 
     gdev_mem_data_size( (const gx_device_memory *)pdev, space_params->band.BandWidth,
-			space_params->band.BandHeight, &render_space );
+                        space_params->band.BandHeight, &render_space );
     /* need to include minimal writer requirements to satisfy rasterizer init */
     writer_space = 	/* add 5K slop for good measure */
-	5000 + (72 + 8) * ( (pdev->height / space_params->band.BandHeight) + 1 );
+        5000 + (72 + 8) * ( (pdev->height / space_params->band.BandHeight) + 1 );
     space_params->band.BandBufferSpace =
-	max(render_space, writer_space) + tile_cache_space;
+        max(render_space, writer_space) + tile_cache_space;
     space_params->BufferSpace =
-	max(render_space, writer_space + min_row_space) + tile_cache_space;
+        max(render_space, writer_space + min_row_space) + tile_cache_space;
     /**************** HACK HACK HACK ****************/
     /* Override this computation to force reader & writer to match */
     space_params->BufferSpace = space_params->band.BandBufferSpace;
@@ -700,10 +700,10 @@ bmpa_get_hardware_params(gx_device *dev, gs_param_list *plist)
     int code = 0;
 
     if ( param_requested(plist, test_name) ) {
-	gs_param_string param_str;
+        gs_param_string param_str;
 
-	param_string_from_string(param_str, test_value); /* value must be persistent to use this macro */
-	code = param_write_string(plist, test_name, &param_str);
+        param_string_from_string(param_str, test_value); /* value must be persistent to use this macro */
+        code = param_write_string(plist, test_name, &param_str);
     }
     return code;
 }

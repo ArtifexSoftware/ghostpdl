@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,7 +27,7 @@ struct ref_stack_params_s {
     uint block_size;		/* size of each block */
     uint data_size;		/* # of data slots in each block */
     ref guard_value;		/* t__invalid or t_operator, */
-				/* bottom guard value */
+                                /* bottom guard value */
     int underflow_error;	/* error code for underflow */
     int overflow_error;		/* error code for overflow */
     bool allow_expansion;	/* if false, don't expand */

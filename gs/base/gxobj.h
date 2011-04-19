@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,9 +27,9 @@
 
 /*
  * Object headers have the form:
-	-l- -mark/back-
-	-size-
-	-type/reloc-
+        -l- -mark/back-
+        -size-
+        -type/reloc-
  * l (aLone) is a single bit.  Mark/back is 1 bit shorter than a uint.  We
  * round the header size up to the next multiple of the most severe
  * alignment restriction (4 or 8 bytes).
@@ -77,20 +77,20 @@
 #define obj_back_scale (1 << obj_back_shift)
 typedef struct obj_header_data_s {
     union _f {
-	struct _h {
-	    unsigned alone:1;
-	} h;
-	struct _m {
-	    unsigned _:1, smark:obj_mb_bits;
-	} m;
-	struct _b {
-	    unsigned _:1, back:obj_mb_bits;
-	} b;
+        struct _h {
+            unsigned alone:1;
+        } h;
+        struct _m {
+            unsigned _:1, smark:obj_mb_bits;
+        } m;
+        struct _b {
+            unsigned _:1, back:obj_mb_bits;
+        } b;
     } f;
     uint size;
     union _t {
-	gs_memory_type_ptr_t type;
-	uint reloc;
+        gs_memory_type_ptr_t type;
+        uint reloc;
     } t;
 #   if IGC_PTR_STABILITY_CHECK
     unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
@@ -132,8 +132,8 @@ typedef struct obj_header_data_s {
 /* Define the real object header type, taking alignment into account. */
 struct obj_header_s {		/* must be a struct because of forward reference */
     union _d {
-	obj_header_data_t o;
-	byte _pad[ROUND_UP(sizeof(obj_header_data_t), obj_align_mod)];
+        obj_header_data_t o;
+        byte _pad[ROUND_UP(sizeof(obj_header_data_t), obj_align_mod)];
     }
     d;
 };

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,17 +43,17 @@ struct vm_save_s {
 };
 
 gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
-		    vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
+                    vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
 
 /* Clean up the stacks and validate storage. */
 static void
 ivalidate_clean_spaces(i_ctx_t *i_ctx_p)
 {
     if (gs_debug_c('?')) {
-	ref_stack_cleanup(&d_stack);
-	ref_stack_cleanup(&e_stack);
-	ref_stack_cleanup(&o_stack);
-	ivalidate_spaces();
+        ref_stack_cleanup(&d_stack);
+        ref_stack_cleanup(&e_stack);
+        ref_stack_cleanup(&o_stack);
+        ivalidate_spaces();
     }
 }
 
@@ -69,32 +69,32 @@ zsave(i_ctx_t *i_ctx_p)
     gs_state *prev;
 
     if (I_VALIDATE_BEFORE_SAVE)
-	ivalidate_clean_spaces(i_ctx_p);
+        ivalidate_clean_spaces(i_ctx_p);
     ialloc_set_space(idmemory, avm_local);
     vmsave = ialloc_struct(vm_save_t, &st_vm_save, "zsave");
     ialloc_set_space(idmemory, space);
     if (vmsave == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     code = alloc_save_state(idmemory, vmsave, &sid);
     if (code < 0)
-	return code;
+        return code;
     if (sid == 0) {
-	ifree_object(vmsave, "zsave");
-	return_error(e_VMerror);
+        ifree_object(vmsave, "zsave");
+        return_error(e_VMerror);
     }
     if_debug2('u', "[u]vmsave 0x%lx, id = %lu\n",
-	      (ulong) vmsave, (ulong) sid);
+              (ulong) vmsave, (ulong) sid);
     code = gs_gsave_for_save(igs, &prev);
     if (code < 0)
-	return code;
+        return code;
     code = gs_gsave(igs);
     if (code < 0)
-	return code;
+        return code;
     vmsave->gsave = prev;
     push(1);
     make_tav(op, t_save, 0, saveid, sid);
     if (I_VALIDATE_AFTER_SAVE)
-	ivalidate_clean_spaces(i_ctx_p);
+        ivalidate_clean_spaces(i_ctx_p);
     return 0;
 }
 
@@ -112,24 +112,24 @@ zrestore(i_ctx_t *i_ctx_p)
     int code = restore_check_operand(op, &asave, idmemory);
 
     if (code < 0)
-	return code;
+        return code;
     if_debug2('u', "[u]vmrestore 0x%lx, id = %lu\n",
-	      (ulong) alloc_save_client_data(asave),
-	      (ulong) op->value.saveid);
+              (ulong) alloc_save_client_data(asave),
+              (ulong) op->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
-	ivalidate_clean_spaces(i_ctx_p);
+        ivalidate_clean_spaces(i_ctx_p);
     /* Check the contents of the stacks. */
     osp--;
     {
-	int code;
+        int code;
 
-	if ((code = restore_check_stack(i_ctx_p, &o_stack, asave, false)) < 0 ||
-	    (code = restore_check_stack(i_ctx_p, &e_stack, asave, true)) < 0 ||
-	    (code = restore_check_stack(i_ctx_p, &d_stack, asave, false)) < 0
-	    ) {
-	    osp++;
-	    return code;
-	}
+        if ((code = restore_check_stack(i_ctx_p, &o_stack, asave, false)) < 0 ||
+            (code = restore_check_stack(i_ctx_p, &e_stack, asave, true)) < 0 ||
+            (code = restore_check_stack(i_ctx_p, &d_stack, asave, false)) < 0
+            ) {
+            osp++;
+            return code;
+        }
     }
     /* Reset l_new in all stack entries if the new save level is zero. */
     /* Also do some special fixing on the e-stack. */
@@ -139,35 +139,35 @@ zrestore(i_ctx_t *i_ctx_p)
     /* Iteratively restore the state of memory, */
     /* also doing a grestoreall at each step. */
     do {
-	vmsave = alloc_save_client_data(alloc_save_current(idmemory));
-	/* Restore the graphics state. */
-	gs_grestoreall_for_restore(igs, vmsave->gsave);
-	/*
-	 * If alloc_save_space decided to do a second save, the vmsave
-	 * object was allocated one save level less deep than the
-	 * current level, so ifree_object won't actually free it;
-	 * however, it points to a gsave object that definitely
-	 * *has* been freed.  In order not to trip up the garbage
-	 * collector, we clear the gsave pointer now.
-	 */
-	vmsave->gsave = 0;
-	/* Now it's safe to restore the state of memory. */
-	code = alloc_restore_step_in(idmemory, asave);
-	if (code < 0)
-	    return code;
-	last = code;
+        vmsave = alloc_save_client_data(alloc_save_current(idmemory));
+        /* Restore the graphics state. */
+        gs_grestoreall_for_restore(igs, vmsave->gsave);
+        /*
+         * If alloc_save_space decided to do a second save, the vmsave
+         * object was allocated one save level less deep than the
+         * current level, so ifree_object won't actually free it;
+         * however, it points to a gsave object that definitely
+         * *has* been freed.  In order not to trip up the garbage
+         * collector, we clear the gsave pointer now.
+         */
+        vmsave->gsave = 0;
+        /* Now it's safe to restore the state of memory. */
+        code = alloc_restore_step_in(idmemory, asave);
+        if (code < 0)
+            return code;
+        last = code;
     }
     while (!last);
     {
-	uint space = icurrent_space;
+        uint space = icurrent_space;
 
-	ialloc_set_space(idmemory, avm_local);
-	ifree_object(vmsave, "zrestore");
-	ialloc_set_space(idmemory, space);
+        ialloc_set_space(idmemory, avm_local);
+        ifree_object(vmsave, "zrestore");
+        ialloc_set_space(idmemory, space);
     }
     dict_set_top();		/* reload dict stack cache */
     if (I_VALIDATE_AFTER_RESTORE)
-	ivalidate_clean_spaces(i_ctx_p);
+        ivalidate_clean_spaces(i_ctx_p);
     /* If the i_ctx_p LockFilePermissions is true, but the userparams */
     /* we just restored is false, we need to make sure that we do not */
     /* cause an 'invalidaccess' in setuserparams. Temporarily set     */
@@ -179,7 +179,7 @@ zrestore(i_ctx_t *i_ctx_p)
 /* Check the operand of a restore. */
 static int
 restore_check_operand(os_ptr op, alloc_save_t ** pasave,
-		      gs_dual_memory_t *idmem)
+                      gs_dual_memory_t *idmem)
 {
     vm_save_t *vmsave;
     ulong sid;
@@ -188,110 +188,110 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     check_type(*op, t_save);
     vmsave = r_ptr(op, vm_save_t);
     if (vmsave == 0)		/* invalidated save */
-	return_error(e_invalidrestore);
+        return_error(e_invalidrestore);
     sid = op->value.saveid;
     asave = alloc_find_save(idmem, sid);
     if (asave == 0)
-	return_error(e_invalidrestore);
+        return_error(e_invalidrestore);
     *pasave = asave;
     return 0;
 }
 /* Check a stack to make sure all its elements are older than a save. */
 static int
 restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t * pstack,
-		    const alloc_save_t * asave, bool is_estack)
+                    const alloc_save_t * asave, bool is_estack)
 {
     ref_stack_enum_t rsenum;
 
     ref_stack_enum_begin(&rsenum, pstack);
     do {
-	const ref *stkp = rsenum.ptr;
-	uint size = rsenum.size;
+        const ref *stkp = rsenum.ptr;
+        uint size = rsenum.size;
 
-	for (; size; stkp++, size--) {
-	    const void *ptr;
+        for (; size; stkp++, size--) {
+            const void *ptr;
 
-	    switch (r_type(stkp)) {
-		case t_array:
-		    /*
-		     * Zero-length arrays are a special case: see the
-		     * t_*array case (label rr:) in igc.c:gc_trace.
-		     */
-		    if (r_size(stkp) == 0) {
-			/*stkp->value.refs = (void *)0;*/
-			continue;
-		    }
-		    ptr = stkp->value.refs;
-		    break;
-		case t_dictionary:
-		    ptr = stkp->value.pdict;
-		    break;
-		case t_file:
-		    /* Don't check executable or closed literal */
-		    /* files on the e-stack. */
-		    {
-			stream *s;
+            switch (r_type(stkp)) {
+                case t_array:
+                    /*
+                     * Zero-length arrays are a special case: see the
+                     * t_*array case (label rr:) in igc.c:gc_trace.
+                     */
+                    if (r_size(stkp) == 0) {
+                        /*stkp->value.refs = (void *)0;*/
+                        continue;
+                    }
+                    ptr = stkp->value.refs;
+                    break;
+                case t_dictionary:
+                    ptr = stkp->value.pdict;
+                    break;
+                case t_file:
+                    /* Don't check executable or closed literal */
+                    /* files on the e-stack. */
+                    {
+                        stream *s;
 
-			if (is_estack &&
-			    (r_has_attr(stkp, a_executable) ||
-			     file_is_invalid(s, stkp))
-			    )
-			    continue;
-		    }
-		    ptr = stkp->value.pfile;
-		    break;
-		case t_name:
-		    /* Names are special because of how they are allocated. */
-		    if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
-						 stkp, asave))
-			return_error(e_invalidrestore);
-		    continue;
-		case t_string:
-		    /* Don't check empty executable strings */
-		    /* on the e-stack. */
-		    if (r_size(stkp) == 0 &&
-			r_has_attr(stkp, a_executable) && is_estack
-			)
-			continue;
-		    ptr = stkp->value.bytes;
-		    break;
-		case t_mixedarray:
-		case t_shortarray:
-		    /* See the t_array case above. */
-		    if (r_size(stkp) == 0) {
-			/*stkp->value.packed = (void *)0;*/
-			continue;
-		    }
-		    ptr = stkp->value.packed;
-		    break;
-		case t_device:
-		    ptr = stkp->value.pdevice;
-		    break;
-		case t_fontID:
-		case t_struct:
-		case t_astruct:
-		    ptr = stkp->value.pstruct;
-		    break;
-		case t_save:
-		    /* See the comment in isave.h regarding the following. */
-		    if (i_ctx_p->language_level <= 2)
-			continue;
-		    ptr = alloc_find_save(&gs_imemory, stkp->value.saveid);
-		    /*
-		     * Invalid save objects aren't supposed to be possible
-		     * in LL3, but just in case....
-		     */
-		    if (ptr == 0)
-			return_error(e_invalidrestore);
-		    if (ptr == asave)
-			continue;
-		    break;
-		default:
-		    continue;
-	    }
-	    if (alloc_is_since_save(ptr, asave))
-		return_error(e_invalidrestore);
-	}
+                        if (is_estack &&
+                            (r_has_attr(stkp, a_executable) ||
+                             file_is_invalid(s, stkp))
+                            )
+                            continue;
+                    }
+                    ptr = stkp->value.pfile;
+                    break;
+                case t_name:
+                    /* Names are special because of how they are allocated. */
+                    if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
+                                                 stkp, asave))
+                        return_error(e_invalidrestore);
+                    continue;
+                case t_string:
+                    /* Don't check empty executable strings */
+                    /* on the e-stack. */
+                    if (r_size(stkp) == 0 &&
+                        r_has_attr(stkp, a_executable) && is_estack
+                        )
+                        continue;
+                    ptr = stkp->value.bytes;
+                    break;
+                case t_mixedarray:
+                case t_shortarray:
+                    /* See the t_array case above. */
+                    if (r_size(stkp) == 0) {
+                        /*stkp->value.packed = (void *)0;*/
+                        continue;
+                    }
+                    ptr = stkp->value.packed;
+                    break;
+                case t_device:
+                    ptr = stkp->value.pdevice;
+                    break;
+                case t_fontID:
+                case t_struct:
+                case t_astruct:
+                    ptr = stkp->value.pstruct;
+                    break;
+                case t_save:
+                    /* See the comment in isave.h regarding the following. */
+                    if (i_ctx_p->language_level <= 2)
+                        continue;
+                    ptr = alloc_find_save(&gs_imemory, stkp->value.saveid);
+                    /*
+                     * Invalid save objects aren't supposed to be possible
+                     * in LL3, but just in case....
+                     */
+                    if (ptr == 0)
+                        return_error(e_invalidrestore);
+                    if (ptr == asave)
+                        continue;
+                    break;
+                default:
+                    continue;
+            }
+            if (alloc_is_since_save(ptr, asave))
+                return_error(e_invalidrestore);
+        }
     } while (ref_stack_enum_next(&rsenum));
     return 0;		/* OK */
 }
@@ -313,41 +313,41 @@ restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t * pstack,
 
     ref_stack_enum_begin(&rsenum, pstack);
     do {
-	ref *stkp = rsenum.ptr;
-	uint size = rsenum.size;
+        ref *stkp = rsenum.ptr;
+        uint size = rsenum.size;
 
-	for (; size; stkp++, size--) {
-	    r_clear_attrs(stkp, l_new);		/* always do it, no harm */
-	    if (is_estack) {
-		ref ofile;
+        for (; size; stkp++, size--) {
+            r_clear_attrs(stkp, l_new);		/* always do it, no harm */
+            if (is_estack) {
+                ref ofile;
 
-		ref_assign(&ofile, stkp);
-		switch (r_type(stkp)) {
-		    case t_string:
-			if (r_size(stkp) == 0 &&
-			    alloc_is_since_save(stkp->value.bytes,
-						asave)
-			    ) {
-			    make_empty_const_string(stkp,
-						    avm_foreign);
-			    break;
-			}
-			continue;
-		    case t_file:
-			if (alloc_is_since_save(stkp->value.pfile,
-						asave)
-			    ) {
-			    make_invalid_file(i_ctx_p, stkp);
-			    break;
-			}
-			continue;
-		    default:
-			continue;
-		}
-		r_copy_attrs(stkp, a_all | a_executable,
-			     &ofile);
-	    }
-	}
+                ref_assign(&ofile, stkp);
+                switch (r_type(stkp)) {
+                    case t_string:
+                        if (r_size(stkp) == 0 &&
+                            alloc_is_since_save(stkp->value.bytes,
+                                                asave)
+                            ) {
+                            make_empty_const_string(stkp,
+                                                    avm_foreign);
+                            break;
+                        }
+                        continue;
+                    case t_file:
+                        if (alloc_is_since_save(stkp->value.pfile,
+                                                asave)
+                            ) {
+                            make_invalid_file(i_ctx_p, stkp);
+                            break;
+                        }
+                        continue;
+                    default:
+                        continue;
+                }
+                r_copy_attrs(stkp, a_all | a_executable,
+                             &ofile);
+            }
+        }
     } while (ref_stack_enum_next(&rsenum));
 }
 
@@ -360,11 +360,11 @@ zvmstatus(i_ctx_t *i_ctx_p)
 
     gs_memory_status(imemory, &mstat);
     if (imemory == imemory_global) {
-	gs_memory_status_t sstat;
+        gs_memory_status_t sstat;
 
-	gs_memory_status(imemory_system, &sstat);
-	mstat.allocated += sstat.allocated;
-	mstat.used += sstat.used;
+        gs_memory_status(imemory_system, &sstat);
+        mstat.allocated += sstat.allocated;
+        mstat.used += sstat.used;
     }
     gs_memory_status(imemory->non_gc_memory, &dstat);
     push(3);
@@ -386,7 +386,7 @@ zforgetsave(i_ctx_t *i_ctx_p)
     int code = restore_check_operand(op, &asave, idmemory);
 
     if (code < 0)
-	return 0;
+        return 0;
     vmsave = alloc_save_client_data(asave);
     /* Reset l_new in all stack entries if the new save level is zero. */
     restore_fix_stack(i_ctx_p, &o_stack, asave, false);
@@ -398,27 +398,27 @@ zforgetsave(i_ctx_t *i_ctx_p)
      * concatenating the stacks together.
      */
     {
-	gs_state *pgs = igs;
-	gs_state *last;
+        gs_state *pgs = igs;
+        gs_state *last;
 
-	while (gs_state_saved(last = gs_state_saved(pgs)) != 0)
-	    pgs = last;
-	gs_state_swap_saved(last, vmsave->gsave);
-	gs_grestore(last);
-	gs_grestore(last);
+        while (gs_state_saved(last = gs_state_saved(pgs)) != 0)
+            pgs = last;
+        gs_state_swap_saved(last, vmsave->gsave);
+        gs_grestore(last);
+        gs_grestore(last);
     }
     /* Forget the save in the memory manager. */
     code = alloc_forget_save_in(idmemory, asave);
     if (code < 0)
-	return code;
+        return code;
     {
-	uint space = icurrent_space;
+        uint space = icurrent_space;
 
-	ialloc_set_space(idmemory, avm_local);
-	/* See above for why we clear the gsave pointer here. */
-	vmsave->gsave = 0;
-	ifree_object(vmsave, "zrestore");
-	ialloc_set_space(idmemory, space);
+        ialloc_set_space(idmemory, avm_local);
+        /* See above for why we clear the gsave pointer here. */
+        vmsave->gsave = 0;
+        ifree_object(vmsave, "zrestore");
+        ialloc_set_space(idmemory, space);
     }
     pop(1);
     return 0;

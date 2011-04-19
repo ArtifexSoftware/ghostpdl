@@ -60,7 +60,7 @@ gslt_image_decode_jpeg(gs_memory_t *mem, byte *buf, int len)
 
     if ((code = gs_jpeg_create_decompress(&state)) < 0) {
         error = gs_throw(-1, "cannot gs_jpeg_create_decompress");
-	return NULL;
+        return NULL;
     }
 
     s_DCTD_template.init((stream_state*)&state);
@@ -74,16 +74,16 @@ gslt_image_decode_jpeg(gs_memory_t *mem, byte *buf, int len)
 
     code = s_DCTD_template.process((stream_state*)&state, &rp, &wp, true);
     if (code != 1) {
-	error = gs_throw(-1, "premature EOF or error in jpeg");
-	return NULL;
+        error = gs_throw(-1, "premature EOF or error in jpeg");
+        return NULL;
     }
 
     image = gs_alloc_struct_immovable(mem, gslt_image_t,
-	&st_gslt_image, "jpeg gslt_image");
+        &st_gslt_image, "jpeg gslt_image");
     if (image == NULL) {
-	error = gs_throw(-1, "unable to allocate jpeg gslt_image");
-	gs_jpeg_destroy(&state);
-	return NULL;
+        error = gs_throw(-1, "unable to allocate jpeg gslt_image");
+        gs_jpeg_destroy(&state);
+        return NULL;
     }
 
     image->width = jddp.dinfo.output_width;
@@ -119,9 +119,9 @@ gslt_image_decode_jpeg(gs_memory_t *mem, byte *buf, int len)
     wbuf = gs_alloc_bytes(mem, wlen, "decodejpeg");
     if (!wbuf) {
         error = gs_throw1(-1, "out of memory allocating samples: %d", wlen);
-	gs_free_object(mem, image, "free jpeg gslt_image");
-	gs_jpeg_destroy(&state);
-	return NULL;
+        gs_free_object(mem, image, "free jpeg gslt_image");
+        gs_jpeg_destroy(&state);
+        return NULL;
     }
     image->samples = wbuf;
 
@@ -132,9 +132,9 @@ gslt_image_decode_jpeg(gs_memory_t *mem, byte *buf, int len)
     if (code != EOFC) {
         error = gs_throw1(-1, "error in jpeg (code = %d)", code);
 #ifndef DEBUG /* return whatever we got when debugging */
-	gs_free_object(mem, image, "free jpeg gslt_image");
-	gs_jpeg_destroy(&state);
-	return NULL;
+        gs_free_object(mem, image, "free jpeg gslt_image");
+        gs_jpeg_destroy(&state);
+        return NULL;
 #endif
     }
 

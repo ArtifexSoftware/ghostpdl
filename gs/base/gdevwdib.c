@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -96,8 +96,8 @@ static const gx_device_procs win_dib_procs =
 gx_device_win_dib far_data gs_mswindll_device =
 {
     std_device_std_body(gx_device_win_dib, &win_dib_procs, "mswindll",
-			INITIAL_WIDTH, INITIAL_HEIGHT,/* win_open() fills these in later */
-			INITIAL_RESOLUTION, INITIAL_RESOLUTION	/* win_open() fills these in later */
+                        INITIAL_WIDTH, INITIAL_HEIGHT,/* win_open() fills these in later */
+                        INITIAL_RESOLUTION, INITIAL_RESOLUTION	/* win_open() fills these in later */
     ),
     {0},			/* std_procs */
     0,				/* BitsPerPixel */
@@ -111,7 +111,6 @@ gx_device_win_dib far_data gs_mswindll_device =
 static HGLOBAL win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy);
 static int win_dib_lock_device(unsigned char *device, int flag);
 
-
 /* Open the win_dib driver */
 static int
 win_dib_open(gx_device * dev)
@@ -119,27 +118,27 @@ win_dib_open(gx_device * dev)
     int code = win_open(dev);
 
     if (code < 0)
-	return code;
+        return code;
 
 #ifdef __WIN32__
     if (!is_win32s)
-	wdev->hmtx = CreateMutex(NULL, FALSE, NULL);	/* unnamed mutex, initially unowned */
+        wdev->hmtx = CreateMutex(NULL, FALSE, NULL);	/* unnamed mutex, initially unowned */
 #endif
     if (gdev_mem_device_for_bits(dev->color_info.depth) == 0) {
-	win_close(dev);
-	return gs_error_rangecheck;
+        win_close(dev);
+        return gs_error_rangecheck;
     }
     code = win_dib_alloc_bitmap((gx_device_win *) dev, dev);
     if (code < 0) {
-	win_close(dev);
-	return code;
+        win_close(dev);
+        return code;
     }
     /* notify caller about new device */
     if (pgsdll_callback) {
-	(*pgsdll_callback) (GSDLL_DEVICE, (unsigned char *)dev, 1);
-	(*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
-			(dev->width & 0xffff) +
-			((ulong) (dev->height & 0xffff) << 16));
+        (*pgsdll_callback) (GSDLL_DEVICE, (unsigned char *)dev, 1);
+        (*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
+                        (dev->width & 0xffff) +
+                        ((ulong) (dev->height & 0xffff) << 16));
     }
     return code;
 }
@@ -166,12 +165,12 @@ win_dib_close(gx_device * dev)
     /* wait until bitmap is not being used by caller */
     win_dib_lock_device((unsigned char *)dev, 1);
     if (pgsdll_callback)
-	(*pgsdll_callback) (GSDLL_DEVICE, (unsigned char *)dev, 0);
+        (*pgsdll_callback) (GSDLL_DEVICE, (unsigned char *)dev, 0);
     win_dib_lock_device((unsigned char *)dev, 0);
     win_dib_free_bitmap((gx_device_win *) dev);
 #ifdef __WIN32__
     if (!is_win32s)
-	CloseHandle(wdev->hmtx);
+        CloseHandle(wdev->hmtx);
 #endif
     code = win_close(dev);
     return code;
@@ -190,11 +189,11 @@ win_dib_close(gx_device * dev)
 
 #define BEGIN_BLOCKS\
 {	int by, bh, left = h;\
-	for ( by = y; left > 0; by += bh, left -= bh )\
-	{	bh = wdev->y_block - (by & wdev->y_mask);\
-		if ( bh > left ) bh = left;
+        for ( by = y; left > 0; by += bh, left -= bh )\
+        {	bh = wdev->y_block - (by & wdev->y_mask);\
+                if ( bh > left ) bh = left;
 #define END_BLOCKS\
-	}\
+        }\
 }
 
 #endif /* (!)USE_SEGMENTS */
@@ -202,15 +201,15 @@ win_dib_close(gx_device * dev)
 /* Fill a rectangle. */
 static int
 win_dib_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		       gx_color_index color)
+                       gx_color_index color)
 {
 #if USE_SEGMENTS
     if (single_block(y, h)) {
-	wmproc(fill_rectangle) (wmdev, x, y, w, h, color);
+        wmproc(fill_rectangle) (wmdev, x, y, w, h, color);
     } else {			/* Divide the transfer into blocks. */
-	BEGIN_BLOCKS
-	    wmproc(fill_rectangle) (wmdev, x, by, w, bh, color);
-	END_BLOCKS
+        BEGIN_BLOCKS
+            wmproc(fill_rectangle) (wmdev, x, by, w, bh, color);
+        END_BLOCKS
     }
 #else
     wmproc(fill_rectangle) (wmdev, x, y, w, h, color);
@@ -222,27 +221,27 @@ win_dib_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Color = gx_no_color_index means transparent (no effect on the image). */
 static int
 win_dib_copy_mono(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		  int x, int y, int w, int h,
-		  gx_color_index zero, gx_color_index one)
+                const byte * base, int sourcex, int raster, gx_bitmap_id id,
+                  int x, int y, int w, int h,
+                  gx_color_index zero, gx_color_index one)
 {
 #if USE_SEGMENTS
     if (single_block(y, h)) {
-	wmproc(copy_mono) (wmdev, base, sourcex, raster, id,
-			   x, y, w, h, zero, one);
+        wmproc(copy_mono) (wmdev, base, sourcex, raster, id,
+                           x, y, w, h, zero, one);
     } else {			/* Divide the transfer into blocks. */
-	const byte *source = base;
+        const byte *source = base;
 
-	BEGIN_BLOCKS
-	    wmproc(copy_mono) (wmdev, source, sourcex, raster,
-			       gx_no_bitmap_id, x, by, w, bh,
-			       zero, one);
-	source += bh * raster;
-	END_BLOCKS
+        BEGIN_BLOCKS
+            wmproc(copy_mono) (wmdev, source, sourcex, raster,
+                               gx_no_bitmap_id, x, by, w, bh,
+                               zero, one);
+        source += bh * raster;
+        END_BLOCKS
     }
 #else
     wmproc(copy_mono) (wmdev, base, sourcex, raster, id,
-		       x, y, w, h, zero, one);
+                       x, y, w, h, zero, one);
 #endif
     return 0;
 }
@@ -251,25 +250,25 @@ win_dib_copy_mono(gx_device * dev,
 /* each pixel takes 8 or 4 bits instead of 1 when device driver has color. */
 static int
 win_dib_copy_color(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		   int x, int y, int w, int h)
+                const byte * base, int sourcex, int raster, gx_bitmap_id id,
+                   int x, int y, int w, int h)
 {
 #if USE_SEGMENTS
     if (single_block(y, h)) {
-	wmproc(copy_color) (wmdev, base, sourcex, raster, id,
-			    x, y, w, h);
+        wmproc(copy_color) (wmdev, base, sourcex, raster, id,
+                            x, y, w, h);
     } else {			/* Divide the transfer into blocks. */
-	const byte *source = base;
+        const byte *source = base;
 
-	BEGIN_BLOCKS
-	    wmproc(copy_color) (wmdev, source, sourcex, raster,
-				gx_no_bitmap_id, x, by, w, bh);
-	source += by * raster;
-	END_BLOCKS
+        BEGIN_BLOCKS
+            wmproc(copy_color) (wmdev, source, sourcex, raster,
+                                gx_no_bitmap_id, x, by, w, bh);
+        source += by * raster;
+        END_BLOCKS
     }
 #else
     wmproc(copy_color) (wmdev, base, sourcex, raster, id,
-			x, y, w, h);
+                        x, y, w, h);
 #endif
     return 0;
 }
@@ -301,7 +300,7 @@ gsdll_copy_dib(unsigned char *device)
     gx_device_win_dib *dev = (gx_device_win_dib *) device;
 
     if (!dev || !dev->is_open || dev->mdev.width == 0 || dev->mdev.height == 0)
-	return (HGLOBAL) NULL;
+        return (HGLOBAL) NULL;
     return win_dib_make_dib((gx_device_win *) dev, 0, 0, dev->width, dev->height);
 }
 
@@ -313,9 +312,9 @@ gsdll_copy_palette(unsigned char *device)
     gx_device_win_dib *dev = (gx_device_win_dib *) device;
 
     if (!dev || !dev->is_open || dev->mdev.width == 0 || dev->mdev.height == 0)
-	return (HPALETTE) NULL;
+        return (HPALETTE) NULL;
     if (wdev->nColors > 0)
-	return CreatePalette(dev->limgpalette);
+        return CreatePalette(dev->limgpalette);
     return (HPALETTE) NULL;
 }
 
@@ -330,37 +329,36 @@ gsdll_draw(unsigned char *device, HDC hdc, LPRECT dest, LPRECT src)
     HPALETTE oldpalette;
 
     if (!dev || !dev->is_open || dev->mdev.width == 0 || dev->mdev.height == 0)
-	return;
+        return;
     if (dev->nColors > 0) {
-	oldpalette = SelectPalette(hdc, dev->himgpalette, FALSE);
-	RealizePalette(hdc);
+        oldpalette = SelectPalette(hdc, dev->himgpalette, FALSE);
+        RealizePalette(hdc);
     }
     win_dib_repaint((gx_device_win *) dev, hdc, dest->left, dest->top,
-		    dest->right - dest->left, dest->bottom - dest->top,
-		    src->left, src->top);
+                    dest->right - dest->left, dest->bottom - dest->top,
+                    src->left, src->top);
     if (dev->nColors > 0) {
-	SelectPalette(hdc, oldpalette, FALSE);
+        SelectPalette(hdc, oldpalette, FALSE);
     }
     return;
 }
 
 /* ------ Windows-specific device procedures ------ */
 
-
 /* Repaint a section of the window. */
 static void
 win_dib_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
-		int sx, int sy)
+                int sx, int sy)
 {
     struct bmi_s {
-	BITMAPINFOHEADER h;
-	ushort pal_index[256];
+        BITMAPINFOHEADER h;
+        ushort pal_index[256];
     } bmi;
     int i;
     UINT which_colors;
 
     memset(&bmi.h, 0, sizeof(bmi.h));
-    
+
     bmi.h.biSize = sizeof(bmi.h);
     bmi.h.biWidth = wdev->mdev.width;
     bmi.h.biHeight = wy;
@@ -370,31 +368,31 @@ win_dib_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
     bmi.h.biSizeImage = 0;	/* default */
     bmi.h.biXPelsPerMeter = 0;	/* default */
     bmi.h.biYPelsPerMeter = 0;	/* default */
-    
+
     if (dev->BitsPerPixel <= 8) {
-	bmi.h.biClrUsed = wdev->nColors;
-	bmi.h.biClrImportant = wdev->nColors;
-	for (i = 0; i < wdev->nColors; i++)
-	    bmi.pal_index[i] = i;
-	which_colors = DIB_PAL_COLORS;
+        bmi.h.biClrUsed = wdev->nColors;
+        bmi.h.biClrImportant = wdev->nColors;
+        for (i = 0; i < wdev->nColors; i++)
+            bmi.pal_index[i] = i;
+        which_colors = DIB_PAL_COLORS;
     } else if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
-	DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
-	bmi.h.biCompression = BI_BITFIELDS;
-	bmi_colors[0] = 0x7c00;
-	bmi_colors[1] = 0x03e0;
-	bmi_colors[2] = 0x001f;
-	which_colors = DIB_RGB_COLORS;
+        DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
+        bmi.h.biCompression = BI_BITFIELDS;
+        bmi_colors[0] = 0x7c00;
+        bmi_colors[1] = 0x03e0;
+        bmi_colors[2] = 0x001f;
+        which_colors = DIB_RGB_COLORS;
     } else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
-	DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
-	bmi.h.biCompression = BI_BITFIELDS;
-	bmi_colors[0] = 0xf800;
-	bmi_colors[1] = 0x07e0;
-	bmi_colors[2] = 0x001f;
-	which_colors = DIB_RGB_COLORS;
+        DWORD* bmi_colors = (DWORD*)(&bmi.pal_index[0]);
+        bmi.h.biCompression = BI_BITFIELDS;
+        bmi_colors[0] = 0xf800;
+        bmi_colors[1] = 0x07e0;
+        bmi_colors[2] = 0x001f;
+        which_colors = DIB_RGB_COLORS;
     } else {
-	bmi.h.biClrUsed = 0;
-	bmi.h.biClrImportant = 0;
-	which_colors = DIB_RGB_COLORS;
+        bmi.h.biClrUsed = 0;
+        bmi.h.biClrImportant = 0;
+        which_colors = DIB_RGB_COLORS;
     }
     /*
      * Windows apparently limits the size of a single transfer
@@ -403,19 +401,19 @@ win_dib_repaint(gx_device_win * dev, HDC hdc, int dx, int dy, int wx, int wy,
      */
 #define max_transfer 2000000
     if (wdev->mdev.raster > 0) {	/* just in case! */
-	long ny = max_transfer / wdev->mdev.raster;
+        long ny = max_transfer / wdev->mdev.raster;
 
-	for (; wy > ny; dy += ny, wy -= ny, sy += ny)
-	    SetDIBitsToDevice(hdc, dx, dy, wx, ny,
-			      sx, 0, 0, ny,
-			      wdev->mdev.line_ptrs[wdev->height - (sy + ny)],
-			      (BITMAPINFO FAR *) & bmi, which_colors);
+        for (; wy > ny; dy += ny, wy -= ny, sy += ny)
+            SetDIBitsToDevice(hdc, dx, dy, wx, ny,
+                              sx, 0, 0, ny,
+                              wdev->mdev.line_ptrs[wdev->height - (sy + ny)],
+                              (BITMAPINFO FAR *) & bmi, which_colors);
     }
 #undef max_transfer
     SetDIBitsToDevice(hdc, dx, dy, wx, wy,
-		      sx, 0, 0, wy,
-		      wdev->mdev.line_ptrs[wdev->height - (sy + wy)],
-		      (BITMAPINFO FAR *) & bmi, which_colors);
+                      sx, 0, 0, wy,
+                      wdev->mdev.line_ptrs[wdev->height - (sy + wy)],
+                      (BITMAPINFO FAR *) & bmi, which_colors);
 }
 
 /* This makes a DIB that contains all or part of the bitmap. */
@@ -442,31 +440,31 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
 #endif
 
     if (orgx + wx > wdev->width)
-	wx = wdev->width - orgx;
+        wx = wdev->width - orgx;
     if (orgy + wy > wdev->height)
-	wy = wdev->height - orgy;
+        wy = wdev->height - orgy;
 
     loffset = orgx * wdev->color_info.depth / 8;
     lwidth = ((wx * wdev->color_info.depth + 31) & ~31) >> 3;
     bitmapsize = (long)lwidth *wy;
 
     if (wdev->color_info.depth > 16)
-	palcount = 0;
+        palcount = 0;
     else if (wdev->color_info.depth > 8)
-	palcount = 3;		/* 16-bit BI_BITFIELDS */
+        palcount = 3;		/* 16-bit BI_BITFIELDS */
     else
-	palcount = wdev->nColors;
+        palcount = wdev->nColors;
 
     hglobal = GlobalAlloc(GHND | GMEM_SHARE, sizeof(BITMAPINFOHEADER)
-			  + sizeof(RGBQUAD) * palcount + bitmapsize);
+                          + sizeof(RGBQUAD) * palcount + bitmapsize);
     if (hglobal == (HGLOBAL) NULL) {
-	MessageBeep(-1);
-	return (HGLOBAL) NULL;
+        MessageBeep(-1);
+        return (HGLOBAL) NULL;
     }
     pDIB = (BYTE FAR *) GlobalLock(hglobal);
     if (pDIB == (BYTE FAR *) NULL) {
-	MessageBeep(-1);
-	return (HGLOBAL) NULL;
+        MessageBeep(-1);
+        return (HGLOBAL) NULL;
     }
     pbmih = (BITMAPINFOHEADER FAR *) (pDIB);
     pColors = (RGBQUAD FAR *) (pDIB + sizeof(BITMAPINFOHEADER));
@@ -485,50 +483,49 @@ win_dib_make_dib(gx_device_win * dev, int orgx, int orgy, int wx, int wy)
     pbmih->biClrImportant = palcount;
 
     if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
-	DWORD* bmi_colors = (DWORD*)(pColors);
+        DWORD* bmi_colors = (DWORD*)(pColors);
         pbmih->biCompression = BI_BITFIELDS;
-	bmi_colors[0] = 0x7c00;
-	bmi_colors[1] = 0x03e0;
-	bmi_colors[2] = 0x001f;
-    } 
+        bmi_colors[0] = 0x7c00;
+        bmi_colors[1] = 0x03e0;
+        bmi_colors[2] = 0x001f;
+    }
     else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
-	DWORD* bmi_colors = (DWORD*)(pColors);
+        DWORD* bmi_colors = (DWORD*)(pColors);
         pbmih->biCompression = BI_BITFIELDS;
-	bmi_colors[0] = 0xf800;
-	bmi_colors[1] = 0x07e0;
-	bmi_colors[2] = 0x001f;
-    } 
+        bmi_colors[0] = 0xf800;
+        bmi_colors[1] = 0x07e0;
+        bmi_colors[2] = 0x001f;
+    }
     else {
     for (i = 0; i < palcount; i++) {
-	win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
-	pColors[i].rgbRed = win_color_value(prgb[0]);
-	pColors[i].rgbGreen = win_color_value(prgb[1]);
-	pColors[i].rgbBlue = win_color_value(prgb[2]);
-	pColors[i].rgbReserved = 0;
+        win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
+        pColors[i].rgbRed = win_color_value(prgb[0]);
+        pColors[i].rgbGreen = win_color_value(prgb[1]);
+        pColors[i].rgbBlue = win_color_value(prgb[2]);
+        pColors[i].rgbReserved = 0;
     }
     }
 
     pLine = pBits;
     for (i = orgy; i < orgy + wy; i++) {
 #if USE_SEGMENTS
-	/* Window 3.1 has hmemcpy, but 3.0 doesn't */
-	lseg = (UINT) (-OFFSETOF(pLine));	/* remaining bytes in this segment */
-	if (lseg >= lwidth) {
-	    _fmemcpy(pLine, xwdev->mdev.line_ptrs[i] + loffset, lwidth);
-	} else {		/* break up transfer to avoid crossing segment boundary */
-	    _fmemcpy(pLine, xwdev->mdev.line_ptrs[i] + loffset, lseg);
-	    _fmemcpy(pLine + lseg, xwdev->mdev.line_ptrs[i] + loffset + lseg, lwidth - lseg);
-	}
+        /* Window 3.1 has hmemcpy, but 3.0 doesn't */
+        lseg = (UINT) (-OFFSETOF(pLine));	/* remaining bytes in this segment */
+        if (lseg >= lwidth) {
+            _fmemcpy(pLine, xwdev->mdev.line_ptrs[i] + loffset, lwidth);
+        } else {		/* break up transfer to avoid crossing segment boundary */
+            _fmemcpy(pLine, xwdev->mdev.line_ptrs[i] + loffset, lseg);
+            _fmemcpy(pLine + lseg, xwdev->mdev.line_ptrs[i] + loffset + lseg, lwidth - lseg);
+        }
 #else
-	memcpy(pLine, xwdev->mdev.line_ptrs[i], lwidth);
+        memcpy(pLine, xwdev->mdev.line_ptrs[i], lwidth);
 #endif
-	pLine += lwidth;
+        pLine += lwidth;
     }
 
     GlobalUnlock(hglobal);
     return hglobal;
 }
-
 
 /* Allocate the backing bitmap. */
 static int
@@ -549,21 +546,21 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
 #ifdef __WIN32__
     if (is_win32s) {
 #endif
-	/* Round up the width so that the scan line size is a power of 2. */
-	if (dev->color_info.depth == 24) {
-	    width = param_dev->width * 3 - 1;
-	    while (width & (width + 1))
-		width |= width >> 1;
-	    width = (width + 1) / 3;
-	} else {
-	    width = param_dev->width - 1;
-	    while (width & (width + 1))
-		width |= width >> 1;
-	    width++;
-	}
+        /* Round up the width so that the scan line size is a power of 2. */
+        if (dev->color_info.depth == 24) {
+            width = param_dev->width * 3 - 1;
+            while (width & (width + 1))
+                width |= width >> 1;
+            width = (width + 1) / 3;
+        } else {
+            width = param_dev->width - 1;
+            while (width & (width + 1))
+                width |= width >> 1;
+            width++;
+        }
 #ifdef __WIN32__
     } else {			/* don't have to worry about segments so use less memory */
-	width = param_dev->width;
+        width = param_dev->width;
     }
 #endif
 
@@ -578,7 +575,7 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
     ptr_size = sizeof(byte **) * mdev.height;
     hmdata = GlobalAlloc(0, raster + data_size + ptr_size * 2);
     if (hmdata == 0) {
-	return win_nomemory();
+        return win_nomemory();
     }
     /* Nothing can go wrong now.... */
 
@@ -590,24 +587,23 @@ win_dib_alloc_bitmap(gx_device_win * dev, gx_device * param_dev)
     base += (-PTR_OFF(base) & (raster - 1));
     ptr_base = base + data_size;
     if (PTR_OFF(ptr_base + ptr_size) < ptr_size)
-	base += (uint) - PTR_OFF(ptr_base);
+        base += (uint) - PTR_OFF(ptr_base);
     wdev->y_block = 0x10000L / raster;
     wdev->y_mask = wdev->y_block - 1;
     if ((wdev->y_base = PTR_OFF(base)) != 0)
-	wdev->y_base = -(PTR_OFF(base) / raster);
+        wdev->y_base = -(PTR_OFF(base) / raster);
 #endif
     wdev->mdev = mdev;
     wdev->mdev.base = (byte *) base;
     wmproc(open_device) ((gx_device *) & wdev->mdev);
 
     if (wdev->is_open && pgsdll_callback)
-	(*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
-			    (dev->width & 0xffff) +
-			    ((ulong) (dev->height & 0xffff) << 16));
+        (*pgsdll_callback) (GSDLL_SIZE, (unsigned char *)dev,
+                            (dev->width & 0xffff) +
+                            ((ulong) (dev->height & 0xffff) << 16));
 
     return 0;
 }
-
 
 /* Free the backing bitmap. */
 static void
@@ -629,21 +625,21 @@ win_dib_lock_device(unsigned char *device, int flag)
 
 #ifdef __WIN32__
     if (!is_win32s) {
-	if (flag) {
-	    if (WaitForSingleObject(wdev->hmtx, 60000) == WAIT_TIMEOUT)
-		return 2;
-	    return 1;
-	}
-	ReleaseMutex(wdev->hmtx);
-	return 0;
+        if (flag) {
+            if (WaitForSingleObject(wdev->hmtx, 60000) == WAIT_TIMEOUT)
+                return 2;
+            return 1;
+        }
+        ReleaseMutex(wdev->hmtx);
+        return 0;
     }
 #endif
     if (flag)
-	wdev->lock_count++;
+        wdev->lock_count++;
     else
-	wdev->lock_count--;
+        wdev->lock_count--;
     if (wdev->lock_count < 0)
-	wdev->lock_count = 0;
+        wdev->lock_count = 0;
     return wdev->lock_count;
 }
 
@@ -652,7 +648,6 @@ gsdll_lock_device(unsigned char *device, int flag)
 {
     return win_dib_lock_device(device, flag);
 }
-
 
 /* Copy bitmap
  * If pbmih nonzero, copy the BITMAPINFOHEADER.
@@ -673,7 +668,7 @@ gsdll_lock_device(unsigned char *device, int flag)
  */
 int GSDLLAPI _export
 gsdll_get_bitmap_row(unsigned char *device, LPBITMAPINFOHEADER pbmih,
-		     LPRGBQUAD prgbquad, LPBYTE * ppbyte, unsigned int row)
+                     LPRGBQUAD prgbquad, LPBYTE * ppbyte, unsigned int row)
 {
     int palcount;
     gx_device_win_dib *dev = (gx_device_win_dib *) device;
@@ -681,57 +676,57 @@ gsdll_get_bitmap_row(unsigned char *device, LPBITMAPINFOHEADER pbmih,
     palcount = (dev->color_info.depth == 24) ? 0 : dev->nColors;
 
     if (pbmih) {
-	pbmih->biSize = sizeof(BITMAPINFOHEADER);
-	pbmih->biWidth = dev->width;
-	pbmih->biHeight = dev->mdev.height;
-	pbmih->biPlanes = 1;
-	pbmih->biBitCount = dev->color_info.depth;
-	if ((dev->BitsPerPixel == 15) || (dev->BitsPerPixel == 16))
+        pbmih->biSize = sizeof(BITMAPINFOHEADER);
+        pbmih->biWidth = dev->width;
+        pbmih->biHeight = dev->mdev.height;
+        pbmih->biPlanes = 1;
+        pbmih->biBitCount = dev->color_info.depth;
+        if ((dev->BitsPerPixel == 15) || (dev->BitsPerPixel == 16))
             pbmih->biCompression = BI_BITFIELDS;
-	else
-	pbmih->biCompression = 0;
-	pbmih->biSizeImage = 0;	/* default */
-	pbmih->biXPelsPerMeter = (DWORD) (dev->x_pixels_per_inch / 25.4 * 1000);
-	pbmih->biYPelsPerMeter = (DWORD) (dev->y_pixels_per_inch / 25.4 * 1000);
-	pbmih->biClrUsed = palcount;
-	pbmih->biClrImportant = palcount;
+        else
+        pbmih->biCompression = 0;
+        pbmih->biSizeImage = 0;	/* default */
+        pbmih->biXPelsPerMeter = (DWORD) (dev->x_pixels_per_inch / 25.4 * 1000);
+        pbmih->biYPelsPerMeter = (DWORD) (dev->y_pixels_per_inch / 25.4 * 1000);
+        pbmih->biClrUsed = palcount;
+        pbmih->biClrImportant = palcount;
     }
     if (prgbquad) {
-	int i;
-	gx_color_value prgb[3];
+        int i;
+        gx_color_value prgb[3];
 
-	if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
-	    DWORD* bmi_colors = (DWORD*)(prgbquad);
-	    pbmih->biCompression = BI_BITFIELDS;
-	    bmi_colors[0] = 0x7c00;
-	    bmi_colors[1] = 0x03e0;
-	    bmi_colors[2] = 0x001f;
-	} 
-	else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
-	    DWORD* bmi_colors = (DWORD*)(prgbquad);
-	    pbmih->biCompression = BI_BITFIELDS;
-	    bmi_colors[0] = 0xf800;
-	    bmi_colors[1] = 0x07e0;
-	    bmi_colors[2] = 0x001f;
-	} 
-	else {
-	for (i = 0; i < palcount; i++) {
-	    win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
-	    prgbquad[i].rgbRed = win_color_value(prgb[0]);
-	    prgbquad[i].rgbGreen = win_color_value(prgb[1]);
-	    prgbquad[i].rgbBlue = win_color_value(prgb[2]);
-	    prgbquad[i].rgbReserved = 0;
-	    }
-	}
+        if (dev->BitsPerPixel == 15) { /* 5-5-5 RGB mode */
+            DWORD* bmi_colors = (DWORD*)(prgbquad);
+            pbmih->biCompression = BI_BITFIELDS;
+            bmi_colors[0] = 0x7c00;
+            bmi_colors[1] = 0x03e0;
+            bmi_colors[2] = 0x001f;
+        }
+        else if (dev->BitsPerPixel == 16) { /* 5-6-5 RGB mode */
+            DWORD* bmi_colors = (DWORD*)(prgbquad);
+            pbmih->biCompression = BI_BITFIELDS;
+            bmi_colors[0] = 0xf800;
+            bmi_colors[1] = 0x07e0;
+            bmi_colors[2] = 0x001f;
+        }
+        else {
+        for (i = 0; i < palcount; i++) {
+            win_map_color_rgb((gx_device *) wdev, (gx_color_index) i, prgb);
+            prgbquad[i].rgbRed = win_color_value(prgb[0]);
+            prgbquad[i].rgbGreen = win_color_value(prgb[1]);
+            prgbquad[i].rgbBlue = win_color_value(prgb[2]);
+            prgbquad[i].rgbReserved = 0;
+            }
+        }
     }
     if (ppbyte) {
-	if (row < dev->mdev.height)
-	    *ppbyte = dev->mdev.line_ptrs[row];
-	else
-	    *ppbyte = NULL;
+        if (row < dev->mdev.height)
+            *ppbyte = dev->mdev.line_ptrs[row];
+        else
+            *ppbyte = NULL;
     }
     if ((pbmih == NULL) && (prgbquad == NULL) && (ppbyte == NULL))
-	return sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)
-	    + gdev_mem_raster(&(dev->mdev));
+        return sizeof(BITMAPINFOHEADER) + 256 * sizeof(RGBQUAD)
+            + gdev_mem_raster(&(dev->mdev));
     return 0;
 }

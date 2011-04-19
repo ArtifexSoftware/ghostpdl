@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,22 +25,22 @@
 #include "iapi.h"
 
 typedef struct GSDLL_S {
-	HINSTANCE hmodule;	/* DLL module handle */
-	PFN_gsapi_revision revision;
-	PFN_gsapi_new_instance new_instance;
-	PFN_gsapi_delete_instance delete_instance;
-	PFN_gsapi_set_stdio set_stdio;
-	PFN_gsapi_set_poll set_poll;
-	PFN_gsapi_set_display_callback set_display_callback;
-	PFN_gsapi_init_with_args init_with_args;
-	PFN_gsapi_run_string run_string;
-	PFN_gsapi_exit exit;
+        HINSTANCE hmodule;	/* DLL module handle */
+        PFN_gsapi_revision revision;
+        PFN_gsapi_new_instance new_instance;
+        PFN_gsapi_delete_instance delete_instance;
+        PFN_gsapi_set_stdio set_stdio;
+        PFN_gsapi_set_poll set_poll;
+        PFN_gsapi_set_display_callback set_display_callback;
+        PFN_gsapi_init_with_args init_with_args;
+        PFN_gsapi_run_string run_string;
+        PFN_gsapi_exit exit;
         PFN_gsapi_set_visual_tracer set_visual_tracer;
 } GSDLL;
 
 /* Load the Ghostscript DLL.
  * Return 0 on success.
- * Return non-zero on error and store error message 
+ * Return non-zero on error and store error message
  * to last_error of length len
  */
 int load_dll(GSDLL *gsdll, char *last_error, int len);

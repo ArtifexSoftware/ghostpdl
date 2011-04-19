@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,25 +39,25 @@
 /* GC descriptors */
 private_st_pdf_page();
 gs_private_st_element(st_pdf_page_element, pdf_page_t, "pdf_page_t[]",
-		      pdf_page_elt_enum_ptrs, pdf_page_elt_reloc_ptrs,
-		      st_pdf_page);
+                      pdf_page_elt_enum_ptrs, pdf_page_elt_reloc_ptrs,
+                      st_pdf_page);
 private_st_device_pdfwrite();
 private_st_pdf_substream_save();
 private_st_pdf_substream_save_element();
 
 /* GC procedures */
-static 
+static
 ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
 {
     index -= gx_device_pdf_num_ptrs + gx_device_pdf_num_param_strings;
     if (index < NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS)
-	ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
+        ENUM_RETURN(pdev->resources[index / NUM_RESOURCE_CHAINS].chains[index % NUM_RESOURCE_CHAINS]);
     index -= NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS;
     if (index <= pdev->outline_depth)
-	ENUM_RETURN(pdev->outline_levels[index].first.action);
+        ENUM_RETURN(pdev->outline_levels[index].first.action);
     index -= pdev->outline_depth + 1;
     if (index <= pdev->outline_depth)
-	ENUM_RETURN(pdev->outline_levels[index].last.action);
+        ENUM_RETURN(pdev->outline_levels[index].last.action);
     index -= pdev->outline_depth + 1;
     ENUM_PREFIX(st_device_psdf, 0);
 }
@@ -68,7 +68,7 @@ gx_device_pdf_do_ptrs(e1)
 gx_device_pdf_do_param_strings(e1)
 #undef e1
 #define e1(i,elt) ENUM_STRING_PTR(i + gx_device_pdf_num_ptrs + gx_device_pdf_num_param_strings,\
-				 gx_device_pdf, elt);
+                                 gx_device_pdf, elt);
 gx_device_pdf_do_const_strings(e1)
 #undef e1
 ENUM_PTRS_END
@@ -79,21 +79,21 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
     gx_device_pdf_do_ptrs(r1)
 #undef r1
 #define r1(i,elt) RELOC_PARAM_STRING_PTR(gx_device_pdf,elt);
-	gx_device_pdf_do_param_strings(r1)
+        gx_device_pdf_do_param_strings(r1)
 #undef r1
 #define r1(i,elt) RELOC_CONST_STRING_PTR(gx_device_pdf,elt);
-	gx_device_pdf_do_const_strings(r1)
+        gx_device_pdf_do_const_strings(r1)
 #undef r1
     {
-	int i, j;
+        int i, j;
 
-	for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
-	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
-		RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
-	for (i = 0; i <= pdev->outline_depth; ++i) {
-	    RELOC_PTR(gx_device_pdf, outline_levels[i].first.action);
-	    RELOC_PTR(gx_device_pdf, outline_levels[i].last.action);
-	}
+        for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
+            for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
+                RELOC_PTR(gx_device_pdf, resources[i].chains[j]);
+        for (i = 0; i <= pdev->outline_depth; ++i) {
+            RELOC_PTR(gx_device_pdf, outline_levels[i].first.action);
+            RELOC_PTR(gx_device_pdf, outline_levels[i].last.action);
+        }
     }
 }
 RELOC_PTRS_END
@@ -159,27 +159,27 @@ pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
      * might not be open if it was finalized before the device was closed.
      */
     if (ptf->strm) {
-	if (s_is_valid(ptf->strm)) {
-	    sflush(ptf->strm);
-	    /* Prevent freeing the stream from closing the file. */
-	    ptf->strm->file = 0;
-	} else
-	    ptf->file = file = 0;	/* file was closed by finalization */
-	gs_free_object(pdev->pdf_memory, ptf->strm_buf,
-		       "pdf_close_temp_file(strm_buf)");
-	ptf->strm_buf = 0;
-	gs_free_object(pdev->pdf_memory, ptf->strm,
-		       "pdf_close_temp_file(strm)");
-	ptf->strm = 0;
+        if (s_is_valid(ptf->strm)) {
+            sflush(ptf->strm);
+            /* Prevent freeing the stream from closing the file. */
+            ptf->strm->file = 0;
+        } else
+            ptf->file = file = 0;	/* file was closed by finalization */
+        gs_free_object(pdev->pdf_memory, ptf->strm_buf,
+                       "pdf_close_temp_file(strm_buf)");
+        ptf->strm_buf = 0;
+        gs_free_object(pdev->pdf_memory, ptf->strm,
+                       "pdf_close_temp_file(strm)");
+        ptf->strm = 0;
     }
     if (file) {
-	err = ferror(file) | fclose(file);
-	unlink(ptf->file_name);
-	ptf->file = 0;
+        err = ferror(file) | fclose(file);
+        unlink(ptf->file_name);
+        ptf->file = 0;
     }
     ptf->save_strm = 0;
     return
-	(code < 0 ? code : err != 0 ? gs_note_error(gs_error_ioerror) : code);
+        (code < 0 ? code : err != 0 ? gs_note_error(gs_error_ioerror) : code);
 }
 static int
 pdf_close_files(gx_device_pdf * pdev, int code)
@@ -211,7 +211,7 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
     char fmode[4];
 
     if (strlen(gp_fmode_binary_suffix) > 2)
-	return_error(gs_error_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
 
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
@@ -220,7 +220,7 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
                                      ptf->file_name,
                                      fmode);
     if (ptf->file == 0)
-	return_error(gs_error_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     return 0;
 }
 static int
@@ -229,17 +229,17 @@ pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
     int code = pdf_open_temp_file(pdev, ptf);
 
     if (code < 0)
-	return code;
+        return code;
     ptf->strm = s_alloc(pdev->pdf_memory, "pdf_open_temp_stream(strm)");
     if (ptf->strm == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     ptf->strm_buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
-				   "pdf_open_temp_stream(strm_buf)");
+                                   "pdf_open_temp_stream(strm_buf)");
     if (ptf->strm_buf == 0) {
-	gs_free_object(pdev->pdf_memory, ptf->strm,
-		       "pdf_open_temp_stream(strm)");
-	ptf->strm = 0;
-	return_error(gs_error_VMerror);
+        gs_free_object(pdev->pdf_memory, ptf->strm,
+                       "pdf_open_temp_stream(strm)");
+        ptf->strm = 0;
+        return_error(gs_error_VMerror);
     }
     swrite_file(ptf->strm, ptf->file, ptf->strm_buf, sbuf_size);
     return 0;
@@ -263,11 +263,11 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     param_string_from_string(nstr, "{DocInfo}");
     pdf_create_named_dict(pdev, &nstr, &pdev->Info, 0L);
     {
-	char buf[PDF_MAX_PRODUCER];
+        char buf[PDF_MAX_PRODUCER];
 
-	pdf_store_default_Producer(buf);
-	cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
-				  strlen(buf));
+        pdf_store_default_Producer(buf);
+        cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
+                                  strlen(buf));
     }
     /*
      * Acrobat Distiller sets CreationDate and ModDate to the current
@@ -276,28 +276,28 @@ pdf_initialize_ids(gx_device_pdf * pdev)
      */
     {
         struct tm tms;
-	time_t t;
+        time_t t;
         char buf[1+2+4+2+2+2+2+2+1+2+1+2+1+1+1]; /* (D:yyyymmddhhmmssZhh'mm')\0 */
-	int timeoffset;
+        int timeoffset;
         char timesign;
 
-	time(&t);
-	tms = *gmtime(&t);
+        time(&t);
+        tms = *gmtime(&t);
         tms.tm_isdst = -1;
-	timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
+        timeoffset = (int)difftime(t, mktime(&tms)); /* tz+dst in seconds */
         timesign = (timeoffset == 0 ? 'Z' : timeoffset < 0 ? '-' : '+');
-	timeoffset = any_abs(timeoffset) / 60;
+        timeoffset = any_abs(timeoffset) / 60;
         tms = *localtime(&t);
 
-	sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
-	    tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-	    tms.tm_hour, tms.tm_min, tms.tm_sec,
-	    timesign, timeoffset / 60, timeoffset % 60);
+        sprintf(buf, "(D:%04d%02d%02d%02d%02d%02d%c%02d\'%02d\')",
+            tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+            tms.tm_hour, tms.tm_min, tms.tm_sec,
+            timesign, timeoffset / 60, timeoffset % 60);
 
-	cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
-				  strlen(buf));
-	cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,
-				  strlen(buf));
+        cos_dict_put_c_key_string(pdev->Info, "/CreationDate", (byte *)buf,
+                                  strlen(buf));
+        cos_dict_put_c_key_string(pdev->Info, "/ModDate", (byte *)buf,
+                                  strlen(buf));
     }
 
     /* Allocate the root of the pages tree. */
@@ -311,7 +311,7 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     /* We compute a file identifier when beginning a document
        to allow its usage with PDF encryption. Due to that,
        in contradiction to the Adobe recommendation, our
-       ID doesn't depend on the document size. 
+       ID doesn't depend on the document size.
     */
     gs_memory_t *mem = pdev->pdf_memory;
     stream *strm = pdev->strm;
@@ -322,7 +322,7 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     uint KeyLength = pdev->KeyLength;
 
     if (s == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     pdev->KeyLength = 0; /* Disable encryption. Not so important though. */
     gp_get_usertime(secs_ns);
     sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
@@ -332,7 +332,7 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     pdev->strm = strm;
     pdev->KeyLength = KeyLength;
     if (code < 0)
-	return code;
+        return code;
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
 #if 0
@@ -341,17 +341,17 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     return 0;
 }
 
-static const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 
-			       0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
-			       0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
-			       0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A};
+static const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41,
+                               0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+                               0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+                               0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A};
 
 static inline void
 copy_padded(byte buf[32], gs_param_string *str)
 {
     memcpy(buf, str->data, min(str->size, 32));
     if (32 > str->size)
-	memcpy(buf + str->size, pad, 32 - str->size);
+        memcpy(buf + str->size, pad, 32 - str->size);
 }
 
 static void
@@ -361,9 +361,9 @@ Adobe_magic_loop_50(byte digest[16], int key_length)
     int i;
 
     for (i = 0; i < 50; i++) {
-	gs_md5_init(&md5);
-	gs_md5_append(&md5, digest, key_length);
-	gs_md5_finish(&md5, digest);
+        gs_md5_init(&md5);
+        gs_md5_append(&md5, digest, key_length);
+        gs_md5_finish(&md5, digest);
     }
 }
 
@@ -375,10 +375,10 @@ Adobe_magic_loop_19(byte *data, int data_size, const byte *key, int key_size)
     int i, j;
 
     for (i = 1; i <= 19; i++) {
-	for (j = 0; j < key_size; j++)
-	    key_buf[j] = key[j] ^ (byte)i;
-	s_arcfour_set_key(&sarc4, key_buf, key_size);
-	s_arcfour_process_buffer(&sarc4, data, data_size);
+        for (j = 0; j < key_size; j++)
+            key_buf[j] = key[j] ^ (byte)i;
+        s_arcfour_set_key(&sarc4, key_buf, key_size);
+        s_arcfour_process_buffer(&sarc4, data, data_size);
     }
 }
 
@@ -390,53 +390,53 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     stream_arcfour_state sarc4;
 
     if (pdev->PDFX && pdev->KeyLength != 0) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "Encryption is not allowed in a PDF/X doucment.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength == 0)
-	pdev->KeyLength = 40;
+        pdev->KeyLength = 40;
     if (pdev->EncryptionV == 0 && pdev->KeyLength == 40)
-	pdev->EncryptionV = 1;	
+        pdev->EncryptionV = 1;
     if (pdev->EncryptionV == 0 && pdev->KeyLength > 40)
-	pdev->EncryptionV = 2;	
+        pdev->EncryptionV = 2;
     if (pdev->EncryptionV > 1 && pdev->CompatibilityLevel < 1.4) {
-	emprintf(pdev->memory, "PDF 1.3 only supports 40 bits keys.\n");
-	return_error(gs_error_rangecheck);
+        emprintf(pdev->memory, "PDF 1.3 only supports 40 bits keys.\n");
+        return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 0)
-	pdev->EncryptionR = 2;
+        pdev->EncryptionR = 2;
     if (pdev->EncryptionR < 2 || pdev->EncryptionR > 3) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "Encryption revisions 2 and 3 are only supported.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR > 2 && pdev->CompatibilityLevel < 1.4) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "PDF 1.3 only supports the encryption revision 2.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength > 128) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "The maximal length of PDF encryption key is 128 bits.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength % 8) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "PDF encryption key length must be a multiple of 8.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 2 &&
-	((pdev->Permissions & (0xFFFFFFC3)) != 0xFFFFFFC0)) {
-	emprintf(pdev->memory,
+        ((pdev->Permissions & (0xFFFFFFC3)) != 0xFFFFFFC0)) {
+        emprintf(pdev->memory,
                  "Some of Permissions are not allowed with R=2.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionV == 2 && pdev->EncryptionR == 2 && pdev->KeyLength > 40) {
-	emprintf(pdev->memory, "Encryption version 2 revision 2 with "
+        emprintf(pdev->memory, "Encryption version 2 revision 2 with "
                  "KeyLength > 40 appears incompatible to some viewers. With "
                  "long keys use revision 3.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     /* Compute O : */
     gs_md5_init(&md5);
@@ -444,12 +444,12 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     gs_md5_append(&md5, buf, sizeof(buf));
     gs_md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
-	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
+        Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     copy_padded(buf, &pdev->UserPassword);
     s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
     s_arcfour_process_buffer(&sarc4, buf, sizeof(buf));
     if (pdev->EncryptionR == 3)
-	Adobe_magic_loop_19(buf, sizeof(buf), digest, pdev->KeyLength / 8);
+        Adobe_magic_loop_19(buf, sizeof(buf), digest, pdev->KeyLength / 8);
     memcpy(pdev->EncryptionO, buf, sizeof(pdev->EncryptionO));
     /* Compute Key : */
     gs_md5_init(&md5);
@@ -462,31 +462,31 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     t = (byte)(pdev->Permissions >> 24);  gs_md5_append(&md5, &t, 1);
     gs_md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
     if (pdev->EncryptionR == 3)
-	if (!pdev->EncryptMetadata) {
-	    const byte v[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+        if (!pdev->EncryptMetadata) {
+            const byte v[4] = {0xFF, 0xFF, 0xFF, 0xFF};
 
-	    gs_md5_append(&md5, v, 4);
-	}
+            gs_md5_append(&md5, v, 4);
+        }
     gs_md5_finish(&md5, digest);
     if (pdev->EncryptionR == 3)
-	Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
+        Adobe_magic_loop_50(digest, pdev->KeyLength / 8);
     memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
     /* Compute U : */
     if (pdev->EncryptionR == 3) {
-	gs_md5_init(&md5);
-	gs_md5_append(&md5, pad, sizeof(pad));
-	gs_md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
-	gs_md5_finish(&md5, digest);
-	s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
-	s_arcfour_process_buffer(&sarc4, digest, sizeof(digest));
-	Adobe_magic_loop_19(digest, sizeof(digest), pdev->EncryptionKey, pdev->KeyLength / 8);
-	memcpy(pdev->EncryptionU, digest, sizeof(digest));
-	memcpy(pdev->EncryptionU + sizeof(digest), pad, 
-		sizeof(pdev->EncryptionU) - sizeof(digest));
+        gs_md5_init(&md5);
+        gs_md5_append(&md5, pad, sizeof(pad));
+        gs_md5_append(&md5, pdev->fileID, sizeof(pdev->fileID));
+        gs_md5_finish(&md5, digest);
+        s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
+        s_arcfour_process_buffer(&sarc4, digest, sizeof(digest));
+        Adobe_magic_loop_19(digest, sizeof(digest), pdev->EncryptionKey, pdev->KeyLength / 8);
+        memcpy(pdev->EncryptionU, digest, sizeof(digest));
+        memcpy(pdev->EncryptionU + sizeof(digest), pad,
+                sizeof(pdev->EncryptionU) - sizeof(digest));
     } else {
-	memcpy(pdev->EncryptionU, pad, sizeof(pdev->EncryptionU));
-	s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
-	s_arcfour_process_buffer(&sarc4, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+        memcpy(pdev->EncryptionU, pad, sizeof(pdev->EncryptionU));
+        s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
+        s_arcfour_process_buffer(&sarc4, pdev->EncryptionU, sizeof(pdev->EncryptionU));
     }
     return 0;
 }
@@ -512,10 +512,10 @@ pdf_set_process_color_model(gx_device_pdf * pdev, int index)
 {
 
     const static gx_device_color_info pcm_color_info[] = {
-	dci_values(1, 8, 255, 0, 256, 0),		/* Gray */
-	dci_values(3, 24, 255, 255, 256, 256),		/* RGB */
-	dci_values(4, 32, 255, 255, 256, 256),		/* CMYK */
-	dci_values(4, 32, 255, 255, 256, 256)	/* Treat DeviceN like CMYK */
+        dci_values(1, 8, 255, 0, 256, 0),		/* Gray */
+        dci_values(3, 24, 255, 255, 256, 256),		/* RGB */
+        dci_values(4, 32, 255, 255, 256, 256),		/* CMYK */
+        dci_values(4, 32, 255, 255, 256, 256)	/* Treat DeviceN like CMYK */
     };
 
     pdev->pcm_color_info_index = index;
@@ -528,49 +528,49 @@ pdf_set_process_color_model(gx_device_pdf * pdev, int index)
      * Particularly it should not change representation of colors.
      * Perhaps due to historical reasons the source color information
      * sometimes isn't accessible from device methods, and
-     * therefore they perform a mapping of colors to 
+     * therefore they perform a mapping of colors to
      * an output color model. Here we handle some color models,
      * which were selected almost due to antique reasons.
      */
     switch (index) {
-	case 0:		/* DeviceGray */
-	    set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
-	    set_dev_proc(pdev, map_color_rgb, gx_default_gray_map_color_rgb);
-	    set_dev_proc(pdev, map_cmyk_color, NULL);
-	    set_dev_proc(pdev, get_color_mapping_procs,
-			gx_default_DevGray_get_color_mapping_procs);
-	    set_dev_proc(pdev, get_color_comp_index,
-			gx_default_DevGray_get_color_comp_index);
-	    set_dev_proc(pdev, encode_color, gx_default_gray_encode);
-	    set_dev_proc(pdev, decode_color, gx_default_decode_color);
-	    break;
-	case 1:		/* DeviceRGB */
-	    set_dev_proc(pdev, map_rgb_color, gx_default_rgb_map_rgb_color);
-	    set_dev_proc(pdev, map_color_rgb, gx_default_rgb_map_color_rgb);
-	    set_dev_proc(pdev, map_cmyk_color, NULL);
-	    set_dev_proc(pdev, get_color_mapping_procs,
-			gx_default_DevRGB_get_color_mapping_procs);
-	    set_dev_proc(pdev, get_color_comp_index,
-			gx_default_DevRGB_get_color_comp_index);
-	    set_dev_proc(pdev, encode_color, gx_default_rgb_map_rgb_color);
-	    set_dev_proc(pdev, decode_color, gx_default_rgb_map_color_rgb);
-	    break;
-	case 3:		/* DeviceN - treat like DeviceCMYK except for cm_name */
-	    pdev->color_info.cm_name = "DeviceN";
-	case 2:		/* DeviceCMYK */
-	    set_dev_proc(pdev, map_rgb_color, NULL);
-	    set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
-	   /* possible problems with aliassing on next statement */
-	    set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
-	    set_dev_proc(pdev, get_color_mapping_procs,
-			gx_default_DevCMYK_get_color_mapping_procs);
-	    set_dev_proc(pdev, get_color_comp_index,
-			gx_default_DevCMYK_get_color_comp_index);
-	    set_dev_proc(pdev, encode_color, cmyk_8bit_map_cmyk_color);
-	    set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_rgb);
-	    break;
-	default:	/* can't happen - see the call from gdev_pdf_put_params. */
-	    DO_NOTHING;
+        case 0:		/* DeviceGray */
+            set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
+            set_dev_proc(pdev, map_color_rgb, gx_default_gray_map_color_rgb);
+            set_dev_proc(pdev, map_cmyk_color, NULL);
+            set_dev_proc(pdev, get_color_mapping_procs,
+                        gx_default_DevGray_get_color_mapping_procs);
+            set_dev_proc(pdev, get_color_comp_index,
+                        gx_default_DevGray_get_color_comp_index);
+            set_dev_proc(pdev, encode_color, gx_default_gray_encode);
+            set_dev_proc(pdev, decode_color, gx_default_decode_color);
+            break;
+        case 1:		/* DeviceRGB */
+            set_dev_proc(pdev, map_rgb_color, gx_default_rgb_map_rgb_color);
+            set_dev_proc(pdev, map_color_rgb, gx_default_rgb_map_color_rgb);
+            set_dev_proc(pdev, map_cmyk_color, NULL);
+            set_dev_proc(pdev, get_color_mapping_procs,
+                        gx_default_DevRGB_get_color_mapping_procs);
+            set_dev_proc(pdev, get_color_comp_index,
+                        gx_default_DevRGB_get_color_comp_index);
+            set_dev_proc(pdev, encode_color, gx_default_rgb_map_rgb_color);
+            set_dev_proc(pdev, decode_color, gx_default_rgb_map_color_rgb);
+            break;
+        case 3:		/* DeviceN - treat like DeviceCMYK except for cm_name */
+            pdev->color_info.cm_name = "DeviceN";
+        case 2:		/* DeviceCMYK */
+            set_dev_proc(pdev, map_rgb_color, NULL);
+            set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+           /* possible problems with aliassing on next statement */
+            set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+            set_dev_proc(pdev, get_color_mapping_procs,
+                        gx_default_DevCMYK_get_color_mapping_procs);
+            set_dev_proc(pdev, get_color_comp_index,
+                        gx_default_DevCMYK_get_color_comp_index);
+            set_dev_proc(pdev, encode_color, cmyk_8bit_map_cmyk_color);
+            set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_rgb);
+            break;
+        default:	/* can't happen - see the call from gdev_pdf_put_params. */
+            DO_NOTHING;
     }
 }
 #ifdef __DECC
@@ -595,20 +595,20 @@ pdf_open(gx_device * dev)
     int code;
 
     if ((code = pdf_open_temp_file(pdev, &pdev->xref)) < 0 ||
-	(code = pdf_open_temp_stream(pdev, &pdev->asides)) < 0 ||
-	(code = pdf_open_temp_stream(pdev, &pdev->streams)) < 0 ||
-	(code = pdf_open_temp_stream(pdev, &pdev->pictures)) < 0
-	)
-	goto fail;
+        (code = pdf_open_temp_stream(pdev, &pdev->asides)) < 0 ||
+        (code = pdf_open_temp_stream(pdev, &pdev->streams)) < 0 ||
+        (code = pdf_open_temp_stream(pdev, &pdev->pictures)) < 0
+        )
+        goto fail;
     code = gdev_vector_open_file((gx_device_vector *) pdev, sbuf_size);
     if (code < 0)
-	goto fail;
+        goto fail;
     if (pdev->ComputeDocumentDigest) {
-	stream *s = s_MD5C_make_stream(pdev->pdf_memory, pdev->strm);
+        stream *s = s_MD5C_make_stream(pdev->pdf_memory, pdev->strm);
 
-	if (s == NULL)
-	    return_error(gs_error_VMerror);
-	pdev->strm = s;
+        if (s == NULL)
+            return_error(gs_error_VMerror);
+        pdev->strm = s;
     }
     gdev_vector_init((gx_device_vector *) pdev);
     gp_get_realtime(pdev->uuid_time);
@@ -622,53 +622,53 @@ pdf_open(gx_device * dev)
      * initialize the named objects dictionary now.
      */
     pdev->local_named_objects =
-	pdev->global_named_objects =
-	cos_dict_alloc(pdev, "pdf_open(global_named_objects)");
+        pdev->global_named_objects =
+        cos_dict_alloc(pdev, "pdf_open(global_named_objects)");
     /* Initialize internal structures that don't have IDs. */
     pdev->NI_stack = cos_array_alloc(pdev, "pdf_open(NI stack)");
     pdev->Namespace_stack = cos_array_alloc(pdev, "pdf_open(Namespace stack)");
     pdf_initialize_ids(pdev);
     code = pdf_compute_fileID(pdev);
     if (code < 0)
-	goto fail;
+        goto fail;
     if (pdev->OwnerPassword.size > 0) {
-	code = pdf_compute_encryption_data(pdev);
-	if (code < 0)
-	    goto fail;
+        code = pdf_compute_encryption_data(pdev);
+        if (code < 0)
+            goto fail;
     } else if(pdev->UserPassword.size > 0) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "User password is specified. Need an Owner password or both.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     } else if (pdev->KeyLength) {
-	emprintf(pdev->memory,
+        emprintf(pdev->memory,
                  "Can't accept encryption options without a password.\n");
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     }
     /* Now create a new dictionary for the local named objects. */
     pdev->local_named_objects =
-	cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
+        cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
     pdev->sbstack_size = count_of(pdev->vgstack); /* Overestimated a few. */
     pdev->sbstack = gs_alloc_struct_array(mem, pdev->sbstack_size, pdf_substream_save,
-				 &st_pdf_substream_save_element, "pdf_open");
+                                 &st_pdf_substream_save_element, "pdf_open");
     pdev->pages =
-	gs_alloc_struct_array(mem, initial_num_pages, pdf_page_t,
-			      &st_pdf_page_element, "pdf_open(pages)");
+        gs_alloc_struct_array(mem, initial_num_pages, pdf_page_t,
+                              &st_pdf_page_element, "pdf_open(pages)");
     if (pdev->text == 0 || pdev->pages == 0 || pdev->sbstack == 0) {
-	code = gs_error_VMerror;
-	goto fail;
+        code = gs_error_VMerror;
+        goto fail;
     }
     memset(pdev->sbstack, 0, pdev->sbstack_size * sizeof(pdf_substream_save));
     memset(pdev->pages, 0, initial_num_pages * sizeof(pdf_page_t));
     pdev->num_pages = initial_num_pages;
     {
-	int i, j;
+        int i, j;
 
-	for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
-	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
-		pdev->resources[i].chains[j] = 0;
+        for (i = 0; i < NUM_RESOURCE_TYPES; ++i)
+            for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
+                pdev->resources[i].chains[j] = 0;
     }
     pdev->outline_levels[0].first.id = 0;
     pdev->outline_levels[0].left = max_int;
@@ -702,8 +702,8 @@ pdf_ferror(gx_device_pdf *pdev)
     sflush(pdev->streams.strm);
     sflush(pdev->pictures.strm);
     return ferror(pdev->file) || ferror(pdev->xref.file) ||
-	ferror(pdev->asides.file) || ferror(pdev->streams.file) ||
-	ferror(pdev->pictures.file);
+        ferror(pdev->asides.file) || ferror(pdev->streams.file) ||
+        ferror(pdev->pictures.file);
 }
 
 /* Compute the dominant text orientation of a page. */
@@ -715,10 +715,10 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     static const int angles[] = { pdf_text_rotation_angle_values };
 
     for (i = 0; i < countof(ptr->counts); ++i) {
-	long count = ptr->counts[i];
+        long count = ptr->counts[i];
 
-	if (count > max_count)
-	    imax = i, max_count = count;
+        if (count > max_count)
+            imax = i, max_count = count;
     }
     return (imax < 0 ? imax : angles[imax]);
 }
@@ -732,68 +732,67 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
     const pdf_page_dsc_info_t *ppdi;
 
     if (pdev->params.AutoRotatePages == arp_None)
-	return; /* Not requested. */
+        return; /* Not requested. */
 
     ppdi = (page != NULL ? &page->dsc_info : &pdev->doc_dsc_info);
 
     /* Determine DSC orientation : */
     if (ppdi->viewing_orientation >= 0)
-	dsc_orientation = ppdi->viewing_orientation;
+        dsc_orientation = ppdi->viewing_orientation;
     else if (ppdi->orientation >= 0)
-	dsc_orientation = ppdi->orientation;
+        dsc_orientation = ppdi->orientation;
     if ((page == NULL && pdev->params.AutoRotatePages == arp_All) || /* document */
         (page != NULL && page->text_rotation.Rotate >= 0) || /* page */
-	dsc_orientation >= 0 /* have DSC */) {
-        const pdf_text_rotation_t *ptr = 
-	    (page != NULL ? &page->text_rotation : &pdev->text_rotation);
-	int angle = -1;
+        dsc_orientation >= 0 /* have DSC */) {
+        const pdf_text_rotation_t *ptr =
+            (page != NULL ? &page->text_rotation : &pdev->text_rotation);
+        int angle = -1;
 
 #define Bug687800
 #ifndef Bug687800 	/* Bug 687800 together with Bug687489.ps . */
-	const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
+        const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
 
-	if (dsc_orientation >= 0 && pbox->x > pbox->y) {
-	    /* The page is in landscape format. Adjust the rotation accordingly. */
-	    dsc_orientation ^= 1;
-	}
+        if (dsc_orientation >= 0 && pbox->x > pbox->y) {
+            /* The page is in landscape format. Adjust the rotation accordingly. */
+            dsc_orientation ^= 1;
+        }
 #endif
 
-	/* Combine DSC rotation with text rotation : */
-	if (dsc_orientation == 0) {
-	    if (ptr->Rotate == 0 || ptr->Rotate == 180)
-		angle = ptr->Rotate;
-	} else if (dsc_orientation == 1) {
-	    if (ptr->Rotate == 90 || ptr->Rotate == 270)
-		angle = ptr->Rotate;
-	    else 
-		angle = 90;
-	}
+        /* Combine DSC rotation with text rotation : */
+        if (dsc_orientation == 0) {
+            if (ptr->Rotate == 0 || ptr->Rotate == 180)
+                angle = ptr->Rotate;
+        } else if (dsc_orientation == 1) {
+            if (ptr->Rotate == 90 || ptr->Rotate == 270)
+                angle = ptr->Rotate;
+            else
+                angle = 90;
+        }
 
-	if (angle < 0) {
+        if (angle < 0) {
 #define Bug688793
 #ifdef  Bug688793
-	/* If not combinable, prefer dsc rotation : */
-	    if (dsc_orientation >= 0)
-		angle = dsc_orientation * 90;
-	    else
-		angle = ptr->Rotate;
+        /* If not combinable, prefer dsc rotation : */
+            if (dsc_orientation >= 0)
+                angle = dsc_orientation * 90;
+            else
+                angle = ptr->Rotate;
 #else
-	/* If not combinable, prefer text rotation : */
-	    if (ptr->Rotate >= 0)
-		angle = ptr->Rotate;
+        /* If not combinable, prefer text rotation : */
+            if (ptr->Rotate >= 0)
+                angle = ptr->Rotate;
 #ifdef Bug687800
-	    else
-		angle = dsc_orientation * 90;
+            else
+                angle = dsc_orientation * 90;
 #endif
 #endif
-	}
+        }
 
-	/* If got some, write it out : */
-	if (angle >= 0)
-	    pprintd1(s, "/Rotate %d", angle);
+        /* If got some, write it out : */
+        if (angle >= 0)
+            pprintd1(s, "/Rotate %d", angle);
     }
 }
-
 
 /* Close the current page. */
 static int
@@ -810,22 +809,22 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
 
     code = pdf_open_document(pdev);
     if (code < 0)
-	return code;
+        return code;
     if (pdev->ForOPDFRead && pdev->context == PDF_IN_NONE) {
-	/* Must create a context stream for empty pages. */
-	code = pdf_open_contents(pdev, PDF_IN_STREAM);
-	if (code < 0)
-	    return code;
+        /* Must create a context stream for empty pages. */
+        code = pdf_open_contents(pdev, PDF_IN_STREAM);
+        if (code < 0)
+            return code;
     }
     pdf_close_contents(pdev, true);
 
     if (!pdev->DoNumCopies)
-	num_copies = 1;
+        num_copies = 1;
 
     for(i=0;i<num_copies;i++) {
-	bool clear_resource_use = i < num_copies - 1 ? 0 : 1;
+        bool clear_resource_use = i < num_copies - 1 ? 0 : 1;
 
-	page_num = ++(pdev->next_page);
+        page_num = ++(pdev->next_page);
         /*
          * We can't write the page object or the annotations array yet, because
          * later pdfmarks might add elements to them.  Write the other objects
@@ -844,73 +843,73 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
         /* pdf_store_page_resources sets procsets, resource_ids[]. */
         code = pdf_store_page_resources(pdev, page, clear_resource_use);
         if (code < 0)
-	    return code;
+            return code;
 
         /* Write the Functions. */
 
         code = pdf_write_resource_objects(pdev, resourceFunction);
         if (code < 0)
-	    return code;
+            return code;
 
         /* Save viewer's memory with cleaning resources. */
 
         if (pdev->MaxViewerMemorySize < 10000000) {
-	    /* fixme: the condition above and the cleaning algorithm
-		may be improved with counting stored resource size
-		and creating multiple streams per page. */
+            /* fixme: the condition above and the cleaning algorithm
+                may be improved with counting stored resource size
+                and creating multiple streams per page. */
 
-	    if (pdev->ForOPDFRead) {
-		pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
-	    
-		if (pres != NULL) {
-		    code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
-		    if (code < 0)
-			return code;
-		}
-	    }
-	    code = pdf_close_text_document(pdev);
-	    if (code < 0)
-		return code;
-	    code = pdf_write_and_free_all_resource_objects(pdev);
-	    if (code < 0)
-		return code;
-	}
+            if (pdev->ForOPDFRead) {
+                pdf_resource_t *pres = pdf_find_resource_by_resource_id(pdev, resourcePage, pdev->contents_id);
+
+                if (pres != NULL) {
+                    code = cos_dict_put_c_strings((cos_dict_t *)pres->object, "/.CleanResources", "/All");
+                    if (code < 0)
+                        return code;
+                }
+            }
+            code = pdf_close_text_document(pdev);
+            if (code < 0)
+                return code;
+            code = pdf_write_and_free_all_resource_objects(pdev);
+            if (code < 0)
+                return code;
+        }
 
         /* Close use of text on the page. */
 
         pdf_close_text_page(pdev);
 
-	/* Accumulate text rotation. */
+        /* Accumulate text rotation. */
 
-	page->text_rotation.Rotate =
-	    (pdev->params.AutoRotatePages == arp_PageByPage ?
-	    pdf_dominant_rotation(&page->text_rotation) : -1);
-	{
-	    int i;
+        page->text_rotation.Rotate =
+            (pdev->params.AutoRotatePages == arp_PageByPage ?
+            pdf_dominant_rotation(&page->text_rotation) : -1);
+        {
+            int i;
 
-	    for (i = 0; i < countof(page->text_rotation.counts); ++i)
-		pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
-	}
+            for (i = 0; i < countof(page->text_rotation.counts); ++i)
+                pdev->text_rotation.counts[i] += page->text_rotation.counts[i];
+        }
 
-	/* Record information from DSC comments. */
+        /* Record information from DSC comments. */
 
-	page->dsc_info = pdev->page_dsc_info;
-	if (page->dsc_info.orientation < 0)
-	    page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
+        page->dsc_info = pdev->page_dsc_info;
+        if (page->dsc_info.orientation < 0)
+            page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
 #ifdef Bug688793
-	if (page->dsc_info.viewing_orientation < 0)
-	page->dsc_info.viewing_orientation =
+        if (page->dsc_info.viewing_orientation < 0)
+        page->dsc_info.viewing_orientation =
            pdev->doc_dsc_info.viewing_orientation;
 #endif
-	if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
-	    page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
-	    )
-	    page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
+        if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
+            page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
+            )
+            page->dsc_info.bounding_box = pdev->doc_dsc_info.bounding_box;
 
-	/* Finish up. */
+        /* Finish up. */
 
-	if(pdf_ferror(pdev))
-	    return(gs_note_error(gs_error_ioerror));
+        if(pdf_ferror(pdev))
+            return(gs_note_error(gs_error_ioerror));
     }
     pdf_reset_page(pdev);
     return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
@@ -935,100 +934,100 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     pdf_open_obj(pdev, page_id, resourcePage);
     s = pdev->strm;
     pprintg2(s, "<</Type/Page/MediaBox [0 0 %g %g]\n",
-		mediabox[2], mediabox[3]);
+                mediabox[2], mediabox[3]);
     if (pdev->PDFX) {
-	const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
-	floatp trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
-	bool print_bleedbox = false;
+        const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
+        floatp trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
+        bool print_bleedbox = false;
 
-	trimbox[2] = bleedbox[2] = mediabox[2];
-	trimbox[3] = bleedbox[3] = mediabox[3];
-	/* Offsets are [left right top bottom] according to the Acrobat 7.0 
-	   distiller parameters manual, 12/7/2004, pp. 102-103. */
-	if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
-	    const byte *p = v_trimbox->contents.chars.data;
-	    char buf[100];
-	    int l = min (v_trimbox->contents.chars.size, sizeof(buf) - 1);
-	    float temp[4]; /* the type is float for sscanf. */
+        trimbox[2] = bleedbox[2] = mediabox[2];
+        trimbox[3] = bleedbox[3] = mediabox[3];
+        /* Offsets are [left right top bottom] according to the Acrobat 7.0
+           distiller parameters manual, 12/7/2004, pp. 102-103. */
+        if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
+            const byte *p = v_trimbox->contents.chars.data;
+            char buf[100];
+            int l = min (v_trimbox->contents.chars.size, sizeof(buf) - 1);
+            float temp[4]; /* the type is float for sscanf. */
 
-	    memcpy(buf, p, l);
-	    buf[l] = 0;
-	    if (sscanf(buf, "[ %g %g %g %g ]", 
-		    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
-		trimbox[0] = temp[0];
-		trimbox[1] = temp[1];
-		trimbox[2] = temp[2];
-		trimbox[3] = temp[3];
-	    }
-	} else if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
-		pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
-	    trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
-	    trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
-	    trimbox[2] = mediabox[2] - pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
-	    trimbox[3] = mediabox[3] - pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
-	}
-	if (pdev->PDFXSetBleedBoxToMediaBox)
-	    print_bleedbox = true;
-	else if (pdev->PDFXBleedBoxToTrimBoxOffset.size >= 4 &&
-		pdev->PDFXBleedBoxToTrimBoxOffset.data[0] >= 0 &&
-		pdev->PDFXBleedBoxToTrimBoxOffset.data[1] >= 0 &&
-		pdev->PDFXBleedBoxToTrimBoxOffset.data[2] >= 0 &&
-		pdev->PDFXBleedBoxToTrimBoxOffset.data[3] >= 0) {
-	    bleedbox[0] = trimbox[0] - pdev->PDFXBleedBoxToTrimBoxOffset.data[0];
-	    bleedbox[1] = trimbox[1] - pdev->PDFXBleedBoxToTrimBoxOffset.data[3];
-	    bleedbox[2] = trimbox[2] + pdev->PDFXBleedBoxToTrimBoxOffset.data[1];
-	    bleedbox[3] = trimbox[3] + pdev->PDFXBleedBoxToTrimBoxOffset.data[2];
-	    print_bleedbox = true;
-	}
-	if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
-	    cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
-	    pprintg4(s, "/TrimBox [%g %g %g %g]\n",
-	        trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
-	if (print_bleedbox &&
-	    cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
-	    pprintg4(s, "/BleedBox [%g %g %g %g]\n",
-	        bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
+            memcpy(buf, p, l);
+            buf[l] = 0;
+            if (sscanf(buf, "[ %g %g %g %g ]",
+                    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+                trimbox[0] = temp[0];
+                trimbox[1] = temp[1];
+                trimbox[2] = temp[2];
+                trimbox[3] = temp[3];
+            }
+        } else if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
+                pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
+                pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
+                pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
+                pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
+            trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
+            trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
+            trimbox[2] = mediabox[2] - pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
+            trimbox[3] = mediabox[3] - pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
+        }
+        if (pdev->PDFXSetBleedBoxToMediaBox)
+            print_bleedbox = true;
+        else if (pdev->PDFXBleedBoxToTrimBoxOffset.size >= 4 &&
+                pdev->PDFXBleedBoxToTrimBoxOffset.data[0] >= 0 &&
+                pdev->PDFXBleedBoxToTrimBoxOffset.data[1] >= 0 &&
+                pdev->PDFXBleedBoxToTrimBoxOffset.data[2] >= 0 &&
+                pdev->PDFXBleedBoxToTrimBoxOffset.data[3] >= 0) {
+            bleedbox[0] = trimbox[0] - pdev->PDFXBleedBoxToTrimBoxOffset.data[0];
+            bleedbox[1] = trimbox[1] - pdev->PDFXBleedBoxToTrimBoxOffset.data[3];
+            bleedbox[2] = trimbox[2] + pdev->PDFXBleedBoxToTrimBoxOffset.data[1];
+            bleedbox[3] = trimbox[3] + pdev->PDFXBleedBoxToTrimBoxOffset.data[2];
+            print_bleedbox = true;
+        }
+        if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
+            cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
+            pprintg4(s, "/TrimBox [%g %g %g %g]\n",
+                trimbox[0], trimbox[1], trimbox[2], trimbox[3]);
+        if (print_bleedbox &&
+            cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
+            pprintg4(s, "/BleedBox [%g %g %g %g]\n",
+                bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
     }
     pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
     if (pdev->ForOPDFRead) {
-	if (page->NumCopies_set)
-	    pprintld1(s, "/NumCopies %ld\n", page->NumCopies);
+        if (page->NumCopies_set)
+            pprintld1(s, "/NumCopies %ld\n", page->NumCopies);
     }
     if (page->group_id > 0) {
-	pprintld1(s, "/Group %ld 0 R\n", page->group_id);
+        pprintld1(s, "/Group %ld 0 R\n", page->group_id);
     }
     stream_puts(s, "/Resources<</ProcSet[/PDF");
     if (page->procsets & ImageB)
-	stream_puts(s, " /ImageB");
+        stream_puts(s, " /ImageB");
     if (page->procsets & ImageC)
-	stream_puts(s, " /ImageC");
+        stream_puts(s, " /ImageC");
     if (page->procsets & ImageI)
-	stream_puts(s, " /ImageI");
+        stream_puts(s, " /ImageI");
     if (page->procsets & Text)
-	stream_puts(s, " /Text");
+        stream_puts(s, " /Text");
     stream_puts(s, "]\n");
     {
-	int i;
+        int i;
 
-	for (i = 0; i < countof(page->resource_ids); ++i)
-	    if (page->resource_ids[i] && pdf_resource_type_names[i]) {
-		stream_puts(s, pdf_resource_type_names[i]);
-		pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
-	    }
+        for (i = 0; i < countof(page->resource_ids); ++i)
+            if (page->resource_ids[i] && pdf_resource_type_names[i]) {
+                stream_puts(s, pdf_resource_type_names[i]);
+                pprintld1(s, " %ld 0 R\n", page->resource_ids[i]);
+            }
     }
     stream_puts(s, ">>\n");
 
     /* Write the annotations array if any. */
 
     if (page->Annots) {
-	stream_puts(s, "/Annots");
-	COS_WRITE(page->Annots, pdev);
-	COS_FREE(page->Annots, "pdf_write_page(Annots)");
-	page->Annots = 0;
+        stream_puts(s, "/Annots");
+        COS_WRITE(page->Annots, pdev);
+        COS_FREE(page->Annots, "pdf_write_page(Annots)");
+        page->Annots = 0;
     }
     /*
      * The PDF documentation allows, and this code formerly emitted,
@@ -1037,7 +1036,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
      * Fortunately, the Contents entry is optional.
      */
     if (page->contents_id != 0)
-	pprintld1(s, "/Contents %ld 0 R\n", page->contents_id);
+        pprintld1(s, "/Contents %ld 0 R\n", page->contents_id);
 
     /* Write any elements stored by pdfmarks. */
 
@@ -1056,8 +1055,8 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
     int code = pdf_close_page(pdev, num_copies);
 
     return (code < 0 ? code :
-	    pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) :
-	    gx_finish_output_page(dev, num_copies, flush));
+            pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) :
+            gx_finish_output_page(dev, num_copies, flush));
 }
 
 static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int resource_pos)
@@ -1066,21 +1065,21 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, i
 
     fseek(tfile, start_offset, SEEK_SET);
     {
-	long i, r;
+        long i, r;
 
-	for (i = start; i < pdev->next_id; ++i) {
-	    ulong pos;
+        for (i = start; i < pdev->next_id; ++i) {
+            ulong pos;
 
-	    r = fread(&pos, sizeof(pos), 1, tfile);
-	    if (r != 1)
-		return(gs_note_error(gs_error_ioerror));
-	    if (pos & ASIDES_BASE_POSITION)
-		pos += resource_pos - ASIDES_BASE_POSITION;
-	    pos -= pdev->OPDFRead_procset_length;
-	    if (pos == 0) {
-		return i;
-	    }
-	}
+            r = fread(&pos, sizeof(pos), 1, tfile);
+            if (r != 1)
+                return(gs_note_error(gs_error_ioerror));
+            if (pos & ASIDES_BASE_POSITION)
+                pos += resource_pos - ASIDES_BASE_POSITION;
+            pos -= pdev->OPDFRead_procset_length;
+            if (pos == 0) {
+                return i;
+            }
+        }
     }
     return pdev->next_id;
 }
@@ -1094,18 +1093,18 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int e
         long i, r;
 
         for (i = start; i < end; ++i) {
-	    ulong pos;
-	    char str[21];
+            ulong pos;
+            char str[21];
 
-	    r = fread(&pos, sizeof(pos), 1, tfile);
-	    if (r != 1)
-		return(gs_note_error(gs_error_ioerror));
-	    if (pos & ASIDES_BASE_POSITION)
-	        pos += resource_pos - ASIDES_BASE_POSITION;
-	    pos -= pdev->OPDFRead_procset_length;
-	    sprintf(str, "%010ld 00000 n \n", pos);
-	    stream_puts(pdev->strm, str);
-	}
+            r = fread(&pos, sizeof(pos), 1, tfile);
+            if (r != 1)
+                return(gs_note_error(gs_error_ioerror));
+            if (pos & ASIDES_BASE_POSITION)
+                pos += resource_pos - ASIDES_BASE_POSITION;
+            pos -= pdev->OPDFRead_procset_length;
+            sprintf(str, "%010ld 00000 n \n", pos);
+            stream_puts(pdev->strm, str);
+        }
     }
     return 0;
 }
@@ -1121,7 +1120,7 @@ pdf_close(gx_device * dev)
     long xref;
     long resource_pos;
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
-	Pages_id = pdev->Pages->id, Encrypt_id = 0;
+        Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, start_section, end_section, pagecount=0;
@@ -1134,199 +1133,199 @@ pdf_close(gx_device * dev)
      * marks.
      */
     if (pdev->next_page == 0) {
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
+        code = pdf_open_page(pdev, PDF_IN_STREAM);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
     }
     if (pdev->contents_id != 0)
-	pdf_close_page(pdev, 1);
+        pdf_close_page(pdev, 1);
 
     /* Write the page objects. */
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-	for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
-	    pdf_write_page(pdev, pagecount);
+        for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
+            pdf_write_page(pdev, pagecount);
     }
 
     if (pdev->PrintStatistics)
-	pdf_print_resource_statistics(pdev);
+        pdf_print_resource_statistics(pdev);
 
     /* Write the font resources and related resources. */
     code1 = pdf_write_resource_objects(pdev, resourceXObject);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceXObject);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_write_resource_objects(pdev, resourceGroup);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceGroup);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_write_resource_objects(pdev, resourceSoftMaskDict);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceSoftMaskDict);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_close_text_document(pdev);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_write_resource_objects(pdev, resourceCMap);
     if (code >= 0)
-	code = code1;
+        code = code1;
     code1 = pdf_free_resource_objects(pdev, resourceCMap);
     if (code >= 0)
-	code = code1;
+        code = code1;
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-	if (pdev->ResourcesBeforeUsage)
-	    pdf_reverse_resource_chain(pdev, resourcePage);
-	code1 = pdf_write_resource_objects(pdev, resourcePage);
-	if (code >= 0)
-	    code = code1;
-	code1 = pdf_free_resource_objects(pdev, resourcePage);
-	if (code >= 0)
-	    code = code1;
+        if (pdev->ResourcesBeforeUsage)
+            pdf_reverse_resource_chain(pdev, resourcePage);
+        code1 = pdf_write_resource_objects(pdev, resourcePage);
+        if (code >= 0)
+            code = code1;
+        code1 = pdf_free_resource_objects(pdev, resourcePage);
+        if (code >= 0)
+            code = code1;
     }
 
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
-	code = code1;
+        code = code1;
 
     /* Create the Pages tree. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-	pdf_open_obj(pdev, Pages_id, resourcePagesTree);
-	s = pdev->strm;
-	stream_puts(s, "<< /Type /Pages /Kids [\n");
-	/* Omit the last page if it was incomplete. */
-	if (partial_page)
-	    --(pdev->next_page);
-	{
-	    int i;
+        pdf_open_obj(pdev, Pages_id, resourcePagesTree);
+        s = pdev->strm;
+        stream_puts(s, "<< /Type /Pages /Kids [\n");
+        /* Omit the last page if it was incomplete. */
+        if (partial_page)
+            --(pdev->next_page);
+        {
+            int i;
 
-    	    for (i = 0; i < pdev->next_page; ++i) 
-		pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
-	}
-	pprintd1(s, "] /Count %d\n", pdev->next_page);
- 
-	/* If the last file was PostScript, its possible that DSC comments might be lying around
+            for (i = 0; i < pdev->next_page; ++i)
+                pprintld1(s, "%ld 0 R\n", pdev->pages[i].Page->id);
+        }
+        pprintd1(s, "] /Count %d\n", pdev->next_page);
+
+        /* If the last file was PostScript, its possible that DSC comments might be lying around
          * and pdf_print_orientation will use that if its present. So make sure we get rid of those
-	 * before considering the dominant page direction for the Pages tree.
-	 */
-	pdev->doc_dsc_info.viewing_orientation = pdev->doc_dsc_info.orientation = -1;
-	pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
-	pdf_print_orientation(pdev, NULL);
+         * before considering the dominant page direction for the Pages tree.
+         */
+        pdev->doc_dsc_info.viewing_orientation = pdev->doc_dsc_info.orientation = -1;
+        pdev->text_rotation.Rotate = pdf_dominant_rotation(&pdev->text_rotation);
+        pdf_print_orientation(pdev, NULL);
 
-	cos_dict_elements_write(pdev->Pages, pdev);
-	stream_puts(s, ">>\n");
-	pdf_end_obj(pdev, resourcePagesTree);
+        cos_dict_elements_write(pdev->Pages, pdev);
+        stream_puts(s, ">>\n");
+        pdf_end_obj(pdev, resourcePagesTree);
 
-	/* Close outlines and articles. */
+        /* Close outlines and articles. */
 
-	if (pdev->outlines_id != 0) {
-	    /* depth > 0 is only possible for an incomplete outline tree. */
-	    while (pdev->outline_depth > 0) {
-		code1 = pdfmark_close_outline(pdev);
-		if (code >= 0)
-		    code = code1;
-	    }
-	    code = pdfmark_close_outline(pdev);
-	    if (code >= 0)
-		code = code1;
-	    pdf_open_obj(pdev, pdev->outlines_id, resourceOutline);
-	    pprintd1(s, "<< /Count %d", pdev->outlines_open);
-	    pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
-		  pdev->outline_levels[0].first.id,
-		  pdev->outline_levels[0].last.id);
-	    pdf_end_obj(pdev, resourceOutline);
-	}
-	if (pdev->articles != 0) {
-	    pdf_article_t *part;
+        if (pdev->outlines_id != 0) {
+            /* depth > 0 is only possible for an incomplete outline tree. */
+            while (pdev->outline_depth > 0) {
+                code1 = pdfmark_close_outline(pdev);
+                if (code >= 0)
+                    code = code1;
+            }
+            code = pdfmark_close_outline(pdev);
+            if (code >= 0)
+                code = code1;
+            pdf_open_obj(pdev, pdev->outlines_id, resourceOutline);
+            pprintd1(s, "<< /Count %d", pdev->outlines_open);
+            pprintld2(s, " /First %ld 0 R /Last %ld 0 R >>\n",
+                  pdev->outline_levels[0].first.id,
+                  pdev->outline_levels[0].last.id);
+            pdf_end_obj(pdev, resourceOutline);
+        }
+        if (pdev->articles != 0) {
+            pdf_article_t *part;
 
-	    /* Write the remaining information for each article. */
-	    for (part = pdev->articles; part != 0; part = part->next)
-		pdfmark_write_article(pdev, part);
-	}
+            /* Write the remaining information for each article. */
+            for (part = pdev->articles; part != 0; part = part->next)
+                pdfmark_write_article(pdev, part);
+        }
 
-	/* Write named destinations.  (We can't free them yet.) */
+        /* Write named destinations.  (We can't free them yet.) */
 
-	if (pdev->Dests)
-	    COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
+        if (pdev->Dests)
+            COS_WRITE_OBJECT(pdev->Dests, pdev, resourceDests);
 
-	/* Write the PageLabel array */
-	pdfmark_end_pagelabels(pdev);
-	if (pdev->PageLabels) {
-	    COS_WRITE_OBJECT(pdev->PageLabels, pdev, resourceLabels);
-	}
+        /* Write the PageLabel array */
+        pdfmark_end_pagelabels(pdev);
+        if (pdev->PageLabels) {
+            COS_WRITE_OBJECT(pdev->PageLabels, pdev, resourceLabels);
+        }
 
-	/* Write the document metadata. */
-	code1 = pdf_document_metadata(pdev);
-	if (code >= 0)
-	    code = code1;
+        /* Write the document metadata. */
+        code1 = pdf_document_metadata(pdev);
+        if (code >= 0)
+            code = code1;
 
-	/* Write the Catalog. */
+        /* Write the Catalog. */
 
-	/*
-	 * The PDF specification requires Threads to be an indirect object.
-	 * Write the threads now, if any.
-	 */
-	if (pdev->articles != 0) {
-	    pdf_article_t *part;
+        /*
+         * The PDF specification requires Threads to be an indirect object.
+         * Write the threads now, if any.
+         */
+        if (pdev->articles != 0) {
+            pdf_article_t *part;
 
-	    Threads_id = pdf_begin_obj(pdev, resourceThread);
-	    s = pdev->strm;
-	    stream_puts(s, "[ ");
-	    while ((part = pdev->articles) != 0) {
-		pdev->articles = part->next;
-		pprintld1(s, "%ld 0 R\n", part->contents->id);
-		COS_FREE(part->contents, "pdf_close(article contents)");
-		gs_free_object(mem, part, "pdf_close(article)");
-	    }
-	    stream_puts(s, "]\n");
-	    pdf_end_obj(pdev, resourceThread);
-	}
-	pdf_open_obj(pdev, Catalog_id, resourceCatalog);
-	s = pdev->strm;
-	stream_puts(s, "<<");
-	pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
-	if (pdev->outlines_id != 0)
-	    pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
-	if (Threads_id)
-	    pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
-	if (pdev->Dests)
-	    pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
-	if (pdev->PageLabels)
-	    pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n", 
+            Threads_id = pdf_begin_obj(pdev, resourceThread);
+            s = pdev->strm;
+            stream_puts(s, "[ ");
+            while ((part = pdev->articles) != 0) {
+                pdev->articles = part->next;
+                pprintld1(s, "%ld 0 R\n", part->contents->id);
+                COS_FREE(part->contents, "pdf_close(article contents)");
+                gs_free_object(mem, part, "pdf_close(article)");
+            }
+            stream_puts(s, "]\n");
+            pdf_end_obj(pdev, resourceThread);
+        }
+        pdf_open_obj(pdev, Catalog_id, resourceCatalog);
+        s = pdev->strm;
+        stream_puts(s, "<<");
+        pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
+        if (pdev->outlines_id != 0)
+            pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
+        if (Threads_id)
+            pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
+        if (pdev->Dests)
+            pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
+        if (pdev->PageLabels)
+            pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n",
                   pdev->PageLabels->id);
-	cos_dict_elements_write(pdev->Catalog, pdev);
-	stream_puts(s, ">>\n");
-	pdf_end_obj(pdev, resourceCatalog);
-	if (pdev->Dests) {
-	    COS_FREE(pdev->Dests, "pdf_close(Dests)");
-	    pdev->Dests = 0;
-	}
-	if (pdev->PageLabels) {
-	    COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
-	    pdev->PageLabels = 0;
-	    pdev->PageLabels_current_label = 0;
-	}
+        cos_dict_elements_write(pdev->Catalog, pdev);
+        stream_puts(s, ">>\n");
+        pdf_end_obj(pdev, resourceCatalog);
+        if (pdev->Dests) {
+            COS_FREE(pdev->Dests, "pdf_close(Dests)");
+            pdev->Dests = 0;
+        }
+        if (pdev->PageLabels) {
+            COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
+            pdev->PageLabels = 0;
+            pdev->PageLabels_current_label = 0;
+        }
 
-	/* Prevent writing special named objects twice. */
+        /* Prevent writing special named objects twice. */
 
-	pdev->Catalog->id = 0;
-	/*pdev->Info->id = 0;*/	/* Info should get written */
-	pdev->Pages->id = 0;
-	{
-	    int i;
+        pdev->Catalog->id = 0;
+        /*pdev->Info->id = 0;*/	/* Info should get written */
+        pdev->Pages->id = 0;
+        {
+            int i;
 
-	    for (i = 0; i < pdev->num_pages; ++i)
-		if (pdev->pages[i].Page)
-		    pdev->pages[i].Page->id = 0;
-	}
+            for (i = 0; i < pdev->num_pages; ++i)
+                if (pdev->pages[i].Page)
+                    pdev->pages[i].Page->id = 0;
+        }
     } else {
-	pdev->Info->id = 0;	/* Don't write Info dict for DSC PostScript */
+        pdev->Info->id = 0;	/* Don't write Info dict for DSC PostScript */
     }
     /*
      * Write the definitions of the named objects.
@@ -1335,17 +1334,17 @@ pdf_close(gx_device * dev)
      */
 
     do {
-	cos_dict_objects_write(pdev->local_named_objects, pdev);
+        cos_dict_objects_write(pdev->local_named_objects, pdev);
     } while (pdf_pop_namespace(pdev) >= 0);
     cos_dict_objects_write(pdev->global_named_objects, pdev);
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	int pages;
+        int pages;
 
-	for (pages = 0; pages <= pdev->next_page; ++pages)
-	    ;
+        for (pages = 0; pages <= pdev->next_page; ++pages)
+            ;
 
-	code = ps2write_dsc_header(pdev, pages - 1);
+        code = ps2write_dsc_header(pdev, pages - 1);
     }
 
     /* Copy the resources into the main file. */
@@ -1354,125 +1353,125 @@ pdf_close(gx_device * dev)
     resource_pos = stell(s);
     sflush(pdev->asides.strm);
     {
-	FILE *rfile = pdev->asides.file;
-	long res_end = ftell(rfile);
+        FILE *rfile = pdev->asides.file;
+        long res_end = ftell(rfile);
 
-	fseek(rfile, 0L, SEEK_SET);
-	pdf_copy_data(s, rfile, res_end, NULL);
+        fseek(rfile, 0L, SEEK_SET);
+        pdf_copy_data(s, rfile, res_end, NULL);
     }
 
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
-	int j;
-	
-	code = 0;
-	pagecount = 1;
+        int j;
 
-	/* All resources and procsets written, end the prolog */
-	stream_puts(pdev->strm, "%%EndProlog\n");
+        code = 0;
+        pagecount = 1;
 
-	if (pdev->ResourcesBeforeUsage)
-	    pdf_reverse_resource_chain(pdev, resourcePage);
-	for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
-	    pdf_resource_t *pres = pdev->resources[resourcePage].chains[j];
+        /* All resources and procsets written, end the prolog */
+        stream_puts(pdev->strm, "%%EndProlog\n");
 
-	    for (; pres != 0; pres = pres->next)
-		if ((!pres->named || pdev->ForOPDFRead) 
-		    && !pres->object->written) {
-		    pdf_page_t *page = &pdev->pages[pagecount - 1];
+        if (pdev->ResourcesBeforeUsage)
+            pdf_reverse_resource_chain(pdev, resourcePage);
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourcePage].chains[j];
 
-		    pprintd2(pdev->strm, "%%%%Page: %d %d\n",
-			pagecount, pagecount);
-		    pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
-		    stream_puts(pdev->strm, "%%BeginPageSetup\n");
-		    stream_puts(pdev->strm, "/pagesave save def\n");
-		    pdf_write_page(pdev, pagecount++);
-		    stream_puts(pdev->strm, "%%EndPageSetup\n");
-		    pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
-		    code = cos_write(pres->object, pdev, pres->object->id);
-		    stream_puts(pdev->strm, "endobj\n");
-		    pres->object->written = true;
-		    stream_puts(pdev->strm, "pagesave restore\n%%PageTrailer\n");
-		}
-	}
-	code1 = pdf_free_resource_objects(pdev, resourcePage);
-	if (code >= 0)
-	    code = code1;
-	stream_puts(pdev->strm, "%%Trailer\n");
-	stream_puts(pdev->strm, "%%EOF\n");
+            for (; pres != 0; pres = pres->next)
+                if ((!pres->named || pdev->ForOPDFRead)
+                    && !pres->object->written) {
+                    pdf_page_t *page = &pdev->pages[pagecount - 1];
+
+                    pprintd2(pdev->strm, "%%%%Page: %d %d\n",
+                        pagecount, pagecount);
+                    pprintd2(pdev->strm, "%%%%PageBoundingBox: 0 0 %d %d\n", (int)page->MediaBox.x, (int)page->MediaBox.y);
+                    stream_puts(pdev->strm, "%%BeginPageSetup\n");
+                    stream_puts(pdev->strm, "/pagesave save def\n");
+                    pdf_write_page(pdev, pagecount++);
+                    stream_puts(pdev->strm, "%%EndPageSetup\n");
+                    pprintld1(pdev->strm, "%ld 0 obj\n", pres->object->id);
+                    code = cos_write(pres->object, pdev, pres->object->id);
+                    stream_puts(pdev->strm, "endobj\n");
+                    pres->object->written = true;
+                    stream_puts(pdev->strm, "pagesave restore\n%%PageTrailer\n");
+                }
+        }
+        code1 = pdf_free_resource_objects(pdev, resourcePage);
+        if (code >= 0)
+            code = code1;
+        stream_puts(pdev->strm, "%%Trailer\n");
+        stream_puts(pdev->strm, "%%EOF\n");
     }
 
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
-	/* Write Encrypt. */
-	if (pdev->OwnerPassword.size > 0) {
-	    Encrypt_id = pdf_obj_ref(pdev);
+        /* Write Encrypt. */
+        if (pdev->OwnerPassword.size > 0) {
+            Encrypt_id = pdf_obj_ref(pdev);
 
-	    pdf_open_obj(pdev, Encrypt_id, resourceEncrypt);
-	    s = pdev->strm;
-	    stream_puts(s, "<<");
-	    stream_puts(s, "/Filter /Standard ");
-	    pprintld1(s, "/V %ld ", pdev->EncryptionV);
-	    pprintld1(s, "/Length %ld ", pdev->KeyLength);
-	    pprintld1(s, "/R %ld ", pdev->EncryptionR);
-	    pprintld1(s, "/P %ld ", pdev->Permissions);
-	    stream_puts(s, "/O ");
-	    pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
-	    stream_puts(s, "\n/U ");
-	    pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
-	    stream_puts(s, ">>\n");
-	    pdf_end_obj(pdev, resourceEncrypt);
-	    s = pdev->strm;
-	}
+            pdf_open_obj(pdev, Encrypt_id, resourceEncrypt);
+            s = pdev->strm;
+            stream_puts(s, "<<");
+            stream_puts(s, "/Filter /Standard ");
+            pprintld1(s, "/V %ld ", pdev->EncryptionV);
+            pprintld1(s, "/Length %ld ", pdev->KeyLength);
+            pprintld1(s, "/R %ld ", pdev->EncryptionR);
+            pprintld1(s, "/P %ld ", pdev->Permissions);
+            stream_puts(s, "/O ");
+            pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+            stream_puts(s, "\n/U ");
+            pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+            stream_puts(s, ">>\n");
+            pdf_end_obj(pdev, resourceEncrypt);
+            s = pdev->strm;
+        }
 
-	/* Write the cross-reference section. */
+        /* Write the cross-reference section. */
 
-	start_section = pdev->FirstObjectNumber;
-	end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+        start_section = pdev->FirstObjectNumber;
+        end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
 
-	xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
-	if (pdev->FirstObjectNumber == 1)
-	    pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
-		  end_section);
-	else
-	    pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
-		  start_section,
-		  end_section - start_section);
+        xref = pdf_stell(pdev) - pdev->OPDFRead_procset_length;
+        if (pdev->FirstObjectNumber == 1)
+            pprintld1(s, "xref\n0 %ld\n0000000000 65535 f \n",
+                  end_section);
+        else
+            pprintld2(s, "xref\n0 1\n0000000000 65535 f \n%ld %ld\n",
+                  start_section,
+                  end_section - start_section);
 
-	do {
-	    write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
-	    if (end_section >= pdev->next_id)
-		break;
-	    start_section = end_section + 1;
-	    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
-	    pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
-	} while (1);
+        do {
+            write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
+            if (end_section >= pdev->next_id)
+                break;
+            start_section = end_section + 1;
+            end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+            pprintld2(s, "%ld %ld\n", start_section, end_section - start_section);
+        } while (1);
 
-	/* Write the trailer. */
+        /* Write the trailer. */
 
-	stream_puts(s, "trailer\n");
-	pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
-	      pdev->next_id, Catalog_id, Info_id);
-	stream_puts(s, "/ID [");
-	psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-	psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
-	stream_puts(s, "]\n");
-	if (pdev->OwnerPassword.size > 0) {
-	    pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
-	}
-	stream_puts(s, ">>\n");
-	pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
+        stream_puts(s, "trailer\n");
+        pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
+              pdev->next_id, Catalog_id, Info_id);
+        stream_puts(s, "/ID [");
+        psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+        psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+        stream_puts(s, "]\n");
+        if (pdev->OwnerPassword.size > 0) {
+            pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
+        }
+        stream_puts(s, ">>\n");
+        pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
     }
 
     /* Release the resource records. */
 
     {
-	pdf_resource_t *pres;
-	pdf_resource_t *prev;
+        pdf_resource_t *pres;
+        pdf_resource_t *prev;
 
-	for (prev = pdev->last_resource; (pres = prev) != 0;) {
-	    prev = pres->prev;
-	    gs_free_object(mem, pres, "pdf_resource_t");
-	}
-	pdev->last_resource = 0;
+        for (prev = pdev->last_resource; (pres = prev) != 0;) {
+            prev = pres->prev;
+            gs_free_object(mem, pres, "pdf_resource_t");
+        }
+        pdev->last_resource = 0;
     }
 
     /* Free named objects. */
@@ -1493,30 +1492,30 @@ pdf_close(gx_device * dev)
     if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */
-	int status;
-    
-	if (!pdev->ProduceDSC)
-	    stream_putc(s, 0x04);
-	while (s->strm) {
-	    s = s->strm;
-	}
-	status = s_close_filters(&pdev->strm, s);
-	if (status < 0 && code == 0)
-	    code = gs_error_ioerror;
+        int status;
+
+        if (!pdev->ProduceDSC)
+            stream_putc(s, 0x04);
+        while (s->strm) {
+            s = s->strm;
+        }
+        status = s_close_filters(&pdev->strm, s);
+        if (status < 0 && code == 0)
+            code = gs_error_ioerror;
     }
 
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
-	code = code1;
+        code = code1;
     if (pdev->max_referred_page >= pdev->next_page + 1) {
-        /* Note : pdev->max_referred_page counts from 1, 
-	   and pdev->next_page counts from 0. */
-	emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
+        /* Note : pdev->max_referred_page counts from 1,
+           and pdev->next_page counts from 0. */
+        emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
                   "points beyond the last page %d.\n",
                   pdev->max_referred_page, pdev->next_page);
 #if 0 /* Temporary disabled due to Bug 687686. */
-	if (code >= 0)
-	    code = gs_note_error(gs_error_rangecheck);
+        if (code >= 0)
+            code = gs_note_error(gs_error_rangecheck);
 #endif
     }
     return pdf_close_files(pdev, code);

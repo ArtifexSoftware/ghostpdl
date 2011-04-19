@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -184,19 +184,19 @@ typedef struct gx_ht_order_procs_s {
     /* Return the (x,y) coordinate of an element of bit_data. */
 
     int (*bit_index)(const gx_ht_order *order, uint index,
-		     gs_int_point *ppt);
+                     gs_int_point *ppt);
 
     /* Update a halftone cache tile to match this order. */
 
     int (*render)(gx_ht_tile *tile, int new_bit_level,
-		  const gx_ht_order *order);
+                  const gx_ht_order *order);
 
     /* Draw a halftone shade into a 1 bit deep buffer. */
     /* Note: this is a tentative design for a new method. I may not
        keep it. */
     int (*draw)(gx_ht_order *order, frac shade,
-		byte *data, int data_raster,
-		int x, int y, int w, int h);
+                byte *data, int data_raster,
+                int x, int y, int w, int h);
 
 } gx_ht_order_procs_t;
 /*

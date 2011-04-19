@@ -109,11 +109,11 @@ ijs_recv_read (IjsRecvChan *ch, char *buf, int size)
     {
       nbytes = read (ch->fd, buf + ix, size - ix);
       if (nbytes < 0)
-	return nbytes;
+        return nbytes;
       else if (nbytes == 0)
-	return ix;
+        return ix;
       else
-	ix += nbytes;
+        ix += nbytes;
     }
   while (ix < size);
   return ix;
@@ -136,7 +136,7 @@ ijs_recv_buf (IjsRecvChan *ch)
     {
       nbytes = ijs_recv_read (ch, ch->buf + 8, data_size);
       if (nbytes != data_size)
-	return IJS_EIO;
+        return IJS_EIO;
     }
   ch->buf_idx = 8;
   return 0;
@@ -164,12 +164,12 @@ ijs_recv_ack (IjsRecvChan *ch)
       int cmd = ijs_get_int (ch->buf);
 
       if (cmd == IJS_CMD_NAK)
-	{
-	  if (ch->buf_size != 12)
-	    status = IJS_EPROTO;
-	  else
-	    status = ijs_get_int (ch->buf + 8);
-	}
+        {
+          if (ch->buf_size != 12)
+            status = IJS_EPROTO;
+          else
+            status = ijs_get_int (ch->buf + 8);
+        }
     }
   return status;
 }

@@ -18,7 +18,6 @@
   functionality offered by ghostscript's 'prn' device was insufficient and
   should be extended, leading to this "extended prn device".
 
-
   Functionality
   =============
   The "eprn" device offers the following services to derived devices:
@@ -34,7 +33,6 @@
   - Flexible handling of size-specific hardware margins
   - Counting of pages printed across gs invocations by means of page count
     files
-
 
   Rendering Model
   ===============
@@ -53,7 +51,6 @@
 
   The derived device can obtain the resulting pixels by successively calling
   eprn_get_planes() from the page printing procedure.
-
 
   Device Coordinates
   ==================
@@ -89,7 +86,6 @@
   refer to you holding the sheet with the printed side towards you and the
   leading edge at the top. Units and directions are identical with pixmap
   device space.
-
 
   Page Descriptions
   =================
@@ -157,11 +153,11 @@
       - its media code will be made available to the derived device in the
         eprn device's 'code' field,
       - the hardware margins will be set from the page description (unless the
-	user has explicitly specified a value for the ".HWMargins" page device
-	parameter),
+        user has explicitly specified a value for the ".HWMargins" page device
+        parameter),
       - default user space will be configured based on sheet orientation
-	(transverse or not in device space) and page orientation (portrait or
-	landscape in default user space).
+        (transverse or not in device space) and page orientation (portrait or
+        landscape in default user space).
 
   Because the error message in step 6 has to report a mismatch on the flags
   and because the interpretation of the flags is fixed by the derived device,
@@ -222,7 +218,6 @@ typedef struct {
    /* Hardware margins (non-negative) in bp */
 } eprn_PageDescription;
 
-
 /* Custom page sizes */
 typedef struct {
   /*  The first two lines have the same meaning as for 'eprn_PageDescription'.
@@ -241,9 +236,9 @@ typedef struct {
   with 0.2 inches:
 
     const eprn_PageDescription page_description[] = {
-	{ms_A4,       5*BP_PER_MM,   5*BP_PER_MM,   5*BP_PER_MM,   5*BP_PER_MM},
-	{ms_Letter, 0.2*BP_PER_IN, 0.2*BP_PER_IN, 0.2*BP_PER_IN, 0.2*BP_PER_IN},
-	{ms_none, 0, 0, 0, 0}
+        {ms_A4,       5*BP_PER_MM,   5*BP_PER_MM,   5*BP_PER_MM,   5*BP_PER_MM},
+        {ms_Letter, 0.2*BP_PER_IN, 0.2*BP_PER_IN, 0.2*BP_PER_IN, 0.2*BP_PER_IN},
+        {ms_none, 0, 0, 0, 0}
       };
 
   The last entry is a sentinel value which will be required later.
@@ -324,8 +319,8 @@ typedef struct {
     const eprn_IntensityLevels bilevel[] = { {2, 2}, {0, 0}};
     const eprn_ResLev rl_600_2[] = { {sixhundred, bilevel}, {NULL, NULL}};
     const eprn_ColourInfo mono_600_2[] = {
-	{eprn_DeviceGray, {rl_600_2, NULL}},
-	{eprn_DeviceGray, {NULL, NULL}}
+        {eprn_DeviceGray, {rl_600_2, NULL}},
+        {eprn_DeviceGray, {NULL, NULL}}
       };
 
 ******************************************************************************/
@@ -368,7 +363,7 @@ typedef struct {
   To continue our series of examples, here is a complete printer description:
 
     const eprn_PrinterDescription description = {
-	"Wrzlbrnf printer", page_description, NULL, 0, mono_600_2
+        "Wrzlbrnf printer", page_description, NULL, 0, mono_600_2
       };
 
 ******************************************************************************/
@@ -397,7 +392,7 @@ struct s_eprn_Device;
  /* The preceding statement is needed in order to establish a forward
     declaration for "struct s_eprn_Device" at file scope. */
 typedef void (*eprn_FlagMismatchReporter)(const struct s_eprn_Device *dev,
-		bool no_match);
+                bool no_match);
 /*  A function of this kind will be called if the requested media flags cannot
     be satisfied by the printer although the size itself is supported for some
     (unspecified) set of flags. The parameter 'no_match' indicates whether the
@@ -457,10 +452,10 @@ typedef struct s_eprn_Device {
   int default_orientation;
    /* Direction of the positive y axis of default default user space (the
       requested PageSize had width <= height) as seen from pixmap device space:
-	  0	up
-	  1	left
-	  2	down
-	  3	right
+          0	up
+          1	left
+          2	down
+          3	right
       Hence the value is the number of +90 degrees rotations necessary to
       obtain the "up" direction of default default user space (positive y axis)
       from the "up" direction of pixmap device space (negative y axis).
@@ -477,22 +472,22 @@ typedef struct s_eprn_Device {
     right_shift,
     down_shift;
      /* Seen from pixmap device space, the top left corner of the sheet is at
-	(-right_shift, -down_shift). Both values are in bp and represent
-	hardware margins, i.e., the origin of pixmap device space is a corner
-	of the sheet's imageable area.
-	These parameters are logically superfluous and could be derived from
-	'HWMargins[]' and possibly other data (like 'default_orientation'),
-	provided one knows what the reference system for 'HWMargins[]' is.
-	This is not documented but it seems to be default user space. In order
-	to have values with a reliable interpretation and because the data are
-	originally given in pixmap device space anyway I have introduced these
-	variables. */
+        (-right_shift, -down_shift). Both values are in bp and represent
+        hardware margins, i.e., the origin of pixmap device space is a corner
+        of the sheet's imageable area.
+        These parameters are logically superfluous and could be derived from
+        'HWMargins[]' and possibly other data (like 'default_orientation'),
+        provided one knows what the reference system for 'HWMargins[]' is.
+        This is not documented but it seems to be default user space. In order
+        to have values with a reliable interpretation and because the data are
+        originally given in pixmap device space anyway I have introduced these
+        variables. */
   bool keep_margins;
      /* True iff margin information should be taken from 'HWMargins[]' instead
-	of from the printer description. */
+        of from the printer description. */
   bool soft_tumble;
      /* If this field is set, every second page will have its default user
-	coordinate system rotated by 180 degrees. */
+        coordinate system rotated by 180 degrees. */
 
   /* Colour */
   eprn_ColourModel
@@ -506,11 +501,11 @@ typedef struct s_eprn_Device {
   /* Page counting and other spooler support */
   char
     *pagecount_file;	/* gs_malloc()-allocated name of page count file.
-			   May be NULL. */
+                           May be NULL. */
   bool
     CUPS_accounting,	/* Send CUPS page accounting messages. */
     CUPS_messages;	/* Add CUPS message prefixes to error messages and
-			   warnings. */
+                           warnings. */
 
   /* Support for the standard page device parameter "MediaPosition" */
   bool media_position_set;
@@ -520,11 +515,11 @@ typedef struct s_eprn_Device {
       call to eprn_open(). */
   unsigned int
     bits_per_colorant;	/* Number of bits per colorant used in 'gx_color_index'
-			   values. Constant while the device is open. */
+                           values. Constant while the device is open. */
   eprn_OctetString
     scan_line,		/* 'str' is gs_malloc()-allocated */
     next_scan_line;	/* 'str' is gs_malloc()-allocated. Non-null only for
-			   Floyd-Steinberg error diffusion. */
+                           Floyd-Steinberg error diffusion. */
   unsigned int
     octets_per_line,	/* Constant while the device is open. */
     output_planes;	/* Constant while the device is open. */
@@ -534,7 +529,6 @@ typedef struct s_eprn_Device {
     present in 'next_scan_line' with its device coordinate being "next_y - 1",
     unless 'next_y' is zero in which case we have finished. */
 } eprn_Eprn;
-
 
 /* Macro for device structure type definitions. Note that in contrast to
    gx_prn_device_common this macro does include the inherited attributes. */
@@ -548,7 +542,6 @@ typedef struct {
   gx_eprn_device_common;
 } eprn_Device;
 
-
 /*  Macro for initializing device structure instances (device prototypes)
 
     This macro corresponds to the prn_device*() macros which are used when
@@ -557,28 +550,28 @@ typedef struct {
     The parameters are:
       dtype:	identifier of the device structure type
       procs:	pointer to static device procedure table
-		(const gx_device_procs *, not NULL)
+                (const gx_device_procs *, not NULL)
       dname:	name of the device (const char *, not NULL)
       xdpi:	horizontal resolution in ppi (float, positive)
       ydpi:	vertical resolution in ppi (float, positive)
       print_page:  page printing procedure to be called by
-		gdev_prn_output_page(), not NULL
+                gdev_prn_output_page(), not NULL
       cap:	pointer to printer capability description
-		(const eprn_PrinterDescription *, not NULL, the description may
-		not change until immediately before the next call to
-		eprn_init_device())
+                (const eprn_PrinterDescription *, not NULL, the description may
+                not change until immediately before the next call to
+                eprn_init_device())
       flag_desc  description of the non-standard flags the derived device
-		accepts (const ms_Flag *, may be NULL, otherwise terminated
-		with an entry having 'ms_none' for 'code')
+                accepts (const ms_Flag *, may be NULL, otherwise terminated
+                with an entry having 'ms_none' for 'code')
       desired	pattern of desired media flags (ms_MediaCode)
       optional	NULL or a list of optional media flags (const ms_MediaCode *)
-		terminated with an 'ms_none' value
+                terminated with an 'ms_none' value
       fmr	NULL or pointer to a flag mismatch reporting function
-		(eprn_FlagMismatchReporter)
+                (eprn_FlagMismatchReporter)
 
     All storage referred to by pointers remains under the control of the
     derived device and should not be modified during the lifetime of the
-    device unless explicitly permitted. 
+    device unless explicitly permitted.
 
     This macro assumes that it is dealing with a printer supporting at least
     DeviceGray with 2 intensity levels and the page size described by
@@ -629,7 +622,6 @@ typedef struct {
     0		/* next_y */		\
   }
 
-
 /*  For the calling conventions of the following functions consult the comments
     preceding each function's implementation. */
 
@@ -666,7 +658,6 @@ extern dev_proc_map_cmyk_color(eprn_map_cmyk_color);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_flex);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_max);
 extern dev_proc_map_cmyk_color(eprn_map_cmyk_color_glob);
-
 
 /*  Macro for initializing device procedure tables
 

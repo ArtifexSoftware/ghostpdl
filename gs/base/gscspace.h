@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -75,31 +75,30 @@
  *              uncolored: base_space dictionary + base space params
  */
 
-
 /* In moving to a pure ICC based color management every color space
    (or its base space) will be defined by an ICC profile.  All modern
-   CMMs provide a handle to a profile structure when handed an 
+   CMMs provide a handle to a profile structure when handed an
    ICC profile.  This handle will become a new member variable for
    ghostscripts color space structure.  When that profile is initialized
    depends upon the color space type.
 
-   a) If the color space is defined to be ICC based, then the profile handle 
-      will be obtained during the installation of this space.  
-      
+   a) If the color space is defined to be ICC based, then the profile handle
+      will be obtained during the installation of this space.
+
    b) If the color space is a defined as deviceRGB, CMYK or Gray color space, then
       the profile handle  will be populated with the handle for the ICC profile that
-      is in the ICC manager for that color space type.  
+      is in the ICC manager for that color space type.
 
    c) If the color space is defined as one of the Postscript or PDF CIE (nonICC)
       color spaces, then the profile handle will only be obtained once a request is made
-      to obtain a link that includes this color space.  At that point 
+      to obtain a link that includes this color space.  At that point
       we will convert the nonICC colorspace to an ICC color space.
 
    d) DevicePixel color space appears to only be used by the image3x code
       for the softmask.  Really this should be a Gray color space that is
-      never really linked as we do not want a pure alpha image to be 
-      colorimetrically managed.  Need to do a bit of code/history review to 
-      understand what this space is.  It may need to be specially managed.  It never 
+      never really linked as we do not want a pure alpha image to be
+      colorimetrically managed.  Need to do a bit of code/history review to
+      understand what this space is.  It may need to be specially managed.  It never
       is used in a linked transformation.
 
    e) DeviceN is related somewhat to the colorspaces in b) but a bit different.
@@ -107,7 +106,7 @@
       with an ICC profile.  XPS and OpenXPS do, and it is likely that SVG will
       do so too.  Also, it may become possible in future PDF versions to define
       DeviceN source colors with and ICC profile.
-      To support these cases when creating a deviceN color space, it 
+      To support these cases when creating a deviceN color space, it
       will need to be possible to include the ICC information related to that
       color space.  When it is provided, the handle for that color space will
       be obtained from the CMM similar to the ICC spaces in a) .  Note that the
@@ -118,7 +117,7 @@
    f) Indexed and Pattern.  These will not have an ICC CMM handle.  Their base
       space will however.
 
-   g) Separation.  These can have an ICC CMM handle.  The exact capabilities 
+   g) Separation.  These can have an ICC CMM handle.  The exact capabilities
       depend upon the form of the Named color structure that the CMM is going
       to use.  If it is using a traditional ICC named color profile and the entry
       for the color name is there, then we will have a handle to the named
@@ -267,8 +266,8 @@ typedef struct gs_indexed_params_s {
     int hival;			/* num_entries - 1 */
     int n_comps;
     union {
-	gs_const_string table;	/* size is implicit */
-	gs_indexed_map *map;
+        gs_const_string table;	/* size is implicit */
+        gs_indexed_map *map;
     } lookup;
     bool use_proc;		/* 0 = use table, 1 = use proc & map */
 } gs_indexed_params;
@@ -303,28 +302,27 @@ struct gs_color_space_s {
     client_color_space_data_t	*pclient_color_space_data;
     cmm_profile_t              *cmm_icc_profile_data;
     union {
-	gs_device_pixel_params   pixel;
-	gs_cie_defg *            defg;
-	gs_cie_def *             def;
-	gs_cie_abc *             abc;
-	gs_cie_a *               a;
-	gs_separation_params     separation;
-	gs_device_n_params       device_n;
-	gs_indexed_params        indexed;
-	gs_pattern_params        pattern;
+        gs_device_pixel_params   pixel;
+        gs_cie_defg *            defg;
+        gs_cie_def *             def;
+        gs_cie_abc *             abc;
+        gs_cie_a *               a;
+        gs_separation_params     separation;
+        gs_device_n_params       device_n;
+        gs_indexed_params        indexed;
+        gs_pattern_params        pattern;
 
     } params;
 };
 
-
-					/*extern_st(st_color_space); *//* in gxcspace.h */
+                                        /*extern_st(st_color_space); *//* in gxcspace.h */
 #define public_st_color_space()	/* in gscspace.c */  \
     gs_public_st_composite_final( st_color_space,         \
-				  gs_color_space,         \
-				  "gs_color_space",       \
-				  color_space_enum_ptrs,  \
-				  color_space_reloc_ptrs, \
-				  gs_cspace_final         \
+                                  gs_color_space,         \
+                                  "gs_color_space",       \
+                                  color_space_enum_ptrs,  \
+                                  color_space_reloc_ptrs, \
+                                  gs_cspace_final         \
                             )
 
 /* ---------------- Procedures ---------------- */
@@ -335,7 +333,6 @@ struct gs_color_space_s {
 gs_color_space *gs_cspace_new_DeviceGray(gs_memory_t *mem);
 gs_color_space *gs_cspace_new_DeviceRGB(gs_memory_t *mem);
 gs_color_space *gs_cspace_new_DeviceCMYK(gs_memory_t *mem);
-
 
 /* ------ Accessors ------ */
 
@@ -358,7 +355,7 @@ int gs_color_space_num_components(const gs_color_space *);
  * equal, while if it returns false, they might still be equivalent.
  */
 bool gs_color_space_equal(const gs_color_space *pcs1,
-			  const gs_color_space *pcs2);
+                          const gs_color_space *pcs2);
 
 /* Restrict a color to its legal range. */
 #ifndef gs_client_color_DEFINED
@@ -374,7 +371,7 @@ void gs_color_space_restrict_color(gs_client_color *, const gs_color_space *);
  */
 const gs_color_space *gs_cspace_base_space(const gs_color_space * pcspace);
 
-/* Abstract the rc_increment and rc_decrement for color spaces so that we also rc_increment 
+/* Abstract the rc_increment and rc_decrement for color spaces so that we also rc_increment
    the ICC profile if there is one associated with the color space */
 
 void rc_increment_cs(gs_color_space *pcs);

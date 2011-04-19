@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -77,11 +77,11 @@ const char *gp_strerror(int);
  * countries using the imperial system, and a4 for countries
  * using the metric system.
  *
- * If there is no default paper size, set *ptr = 0 (if *plen > 0), 
+ * If there is no default paper size, set *ptr = 0 (if *plen > 0),
  * set *plen = 1, and return 1.
  *
- * If there is a default paper size and the length len of the value 
- * (not counting the terminating \0) is less than *plen, 
+ * If there is a default paper size and the length len of the value
+ * (not counting the terminating \0) is less than *plen,
  * copy the value to ptr, set *plen = len + 1, and return 0.
  *
  * If there is a default paper size and len >= *plen, set *plen = len + 1,
@@ -128,9 +128,9 @@ int gp_readline_init(void **preadline_data, gs_memory_t *mem);
  * See srdline.h for the definition of sreadline_proc.
  */
 int gp_readline(stream *s_in, stream *s_out, void *readline_data,
-		gs_const_string *prompt, gs_string *buf,
-		gs_memory_t *bufmem, uint *pcount, bool *pin_eol,
-		bool (*is_stdin)(const stream *));
+                gs_const_string *prompt, gs_string *buf,
+                gs_memory_t *bufmem, uint *pcount, bool *pin_eol,
+                bool (*is_stdin)(const stream *));
 
 /*
  * Free a readline state.
@@ -144,7 +144,7 @@ void gp_readline_finit(void *readline_data);
  * Returns number of bytes read, or 0 if EOF, or -ve if error.
  * If unbuffered is NOT possible, fetch 1 byte if interactive
  * is non-zero, or up to len bytes otherwise.
- * If unbuffered is possible, fetch at least 1 byte (unless error or EOF) 
+ * If unbuffered is possible, fetch at least 1 byte (unless error or EOF)
  * and any additional bytes that are available without blocking.
  */
 int gp_stdin_read(char *buf, int len, int interactive, FILE *f);
@@ -204,14 +204,14 @@ extern const char gp_fmode_wb[];
  * an appropriate system directory, usually as determined from
  * gp_gettmpdir(), followed by a path as returned from a system call.
  *
- * Implementations should make sure that 
+ * Implementations should make sure that
  *
  * Return value: Opened file object, or NULL on error.
  **/
 FILE *gp_open_scratch_file(const gs_memory_t *mem,
                            const char        *prefix,
-			         char         fname[gp_file_name_sizeof],
-			   const char        *mode);
+                                 char         fname[gp_file_name_sizeof],
+                           const char        *mode);
 
 /* Open a file with the given name, as a stream of uninterpreted bytes. */
 FILE *gp_fopen(const char *fname, const char *mode);
@@ -228,13 +228,13 @@ typedef enum {
 
 /*
  * Combine a file name with a prefix.
- * Concatenates two paths and reduce parten references and current 
+ * Concatenates two paths and reduce parten references and current
  * directory references from the concatenation when possible.
  * The trailing zero byte is being added.
  * Various platforms may share this code.
  */
-gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
-	    const char *fname, uint flen, bool no_sibling, char *buffer, uint *blen);
+gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen,
+            const char *fname, uint flen, bool no_sibling, char *buffer, uint *blen);
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 /* Platforms, which do not call gp_file_name_combine_generic, */
@@ -307,14 +307,13 @@ bool gp_file_name_is_empty_item_meanful(void);
 /* 'type' and 16 bit 'id' in an extended attribute of a file. The is   */
 /* primarily for accessing fonts on MacOS, which classically used this */
 /* format. Presumedly a 'nop' on systems that don't support Apple HFS. */
-int gp_read_macresource(byte *buf, const char *fname, 
+int gp_read_macresource(byte *buf, const char *fname,
                                      const uint type, const ushort id);
-
 
 /* ------ persistent cache interface ------ */
 
 /*
- * This is used for access to data cached between invocations of 
+ * This is used for access to data cached between invocations of
  * Ghostscript. It is generally used for saving reusable data that
  * is expensive to compute. Concurrent access by multiple instances
  * is safe. Because of this care should be taken to use a new data
@@ -326,7 +325,7 @@ int gp_read_macresource(byte *buf, const char *fname,
  * A query if successful uses the passed callback to allocate a buffer
  * and fills it with the retrieved data. The caller is thus responsible
  * for the buffer's memory management.
- * 
+ *
  * See zmisc.c for postscript test operators and an example implementation.
  */
 
@@ -343,7 +342,6 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 #define GP_CACHE_TYPE_FONTMAP 1
 #define GP_CACHE_TYPE_WTS_SIZE 2
 #define GP_CACHE_TYPE_WTS_CELL 3
-
 
 /* ------ Printer accessing ------ */
 
@@ -395,7 +393,7 @@ typedef struct file_enum_s file_enum;
  * the pattern also, as a quoting character.
  */
 file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
-				   gs_memory_t * memory);
+                                   gs_memory_t * memory);
 
 /*
  * Return the next file name in the enumeration.  The client passes in
@@ -414,11 +412,10 @@ uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
  */
 void gp_enumerate_files_close(file_enum * pfen);
 
-
 /* ------ Font enumeration ------ */
 
-/* This is used to query the native os for a list of font names and 
- * corresponding paths. The general idea is to save the hassle of 
+/* This is used to query the native os for a list of font names and
+ * corresponding paths. The general idea is to save the hassle of
  * building a custom fontmap file
  */
 
@@ -431,7 +428,7 @@ void *gp_enumerate_fonts_init(gs_memory_t *mem);
    return C strings. The string 'name' is the font name, 'path'
    is the access path for the font resource. The returned strings
    are only safe to reference until until the next call.
-   Returns 0 when no more fonts are available, a positive value 
+   Returns 0 when no more fonts are available, a positive value
    on success, or negative value on error. */
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path);
 
@@ -441,7 +438,7 @@ void gp_enumerate_fonts_free(void *enum_state);
 /* --------- 64 bit file access ----------- */
 
 /* The following functions are analogues of ones with
-   same name without the "_64" suffix. 
+   same name without the "_64" suffix.
    They perform same function with allowing big files
    (over 4 gygabytes length).
 
@@ -454,15 +451,15 @@ void gp_enumerate_fonts_free(void *enum_state);
    because most files do not need 64 bits access.
    The upgrading of old code to the new 64 bits access
    to be done step by step on real necessity,
-   with replacing old function names with 
+   with replacing old function names with
    new function names through code,
-   together with providing the int64_t type for storing 
+   together with providing the int64_t type for storing
    file offsets in intermediate structures and variables.
 
    We assume that the result of 64 bits variant of 'ftell'
    can be represented in int64_t on all platforms,
    rather the result type of the native 64 bits function is
-   compiler dependent (__off_t on Linux, _off_t on Cygwin, 
+   compiler dependent (__off_t on Linux, _off_t on Cygwin,
    __int64 on Windows).
  */
 
@@ -482,7 +479,7 @@ int gp_fseek_64(FILE *strm, int64_t offset, int origin);
 
 /* We don't define gp_fread_64, gp_fwrite_64,
    because (1) known platforms allow regular fread, fwrite
-   to be applied to a file opened with O_LARGEFILE, 
+   to be applied to a file opened with O_LARGEFILE,
    fopen64, etc.; (2) Ghostscript code does not
    perform writing/reading a long (over 4gb) block
    in one operation.

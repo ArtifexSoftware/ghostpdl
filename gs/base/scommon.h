@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -157,11 +157,11 @@ stream_proc_report_error(s_no_report_error);
  */
 #define STREAM_MAX_ERROR_STRING 79
 #define stream_state_common\
-	const stream_template *template;\
-	gs_memory_t *memory;\
-	stream_proc_report_error((*report_error));\
+        const stream_template *template;\
+        gs_memory_t *memory;\
+        stream_proc_report_error((*report_error));\
         int min_left; /* required bytes for lookahead */ \
-	char error_string[STREAM_MAX_ERROR_STRING + 1]
+        char error_string[STREAM_MAX_ERROR_STRING + 1]
 struct stream_state_s {
     stream_state_common;
 };

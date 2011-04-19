@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,7 @@
  *
  *  This file is part of the FreeType project, and may only be used
  *  modified and distributed under the terms of the FreeType project
- *  license, LICENSE.TXT.  By continuing to use, modify, or distribute 
+ *  license, LICENSE.TXT.  By continuing to use, modify, or distribute
  *  this file you indicate that you have read the license and
  *  understand and accept it fully.
  *
@@ -56,7 +56,6 @@
     2147483647
   };
 
-
 #ifdef LONG64
 
   Int32  MulDiv( Int32  a, Int32  b, Int32  c )
@@ -71,7 +70,6 @@
     return ((s < 0) ? -a : a);
   }
 
-
   Int32  MulDiv_Round( Int32  a, Int32  b, Int32  c )
   {
     int  s;
@@ -84,7 +82,6 @@
     return ((s < 0) ? -a : a);
   }
 
-
   static Int  Order64( Int64  z )
   {
     int  j = 0;
@@ -95,7 +92,6 @@
     }
     return j - 1;
   }
-
 
   Int32  Sqrt64( Int64  l )
   {
@@ -133,7 +129,6 @@
     return ((s < 0) ? -a : a);
   }
 
-
   Int32  MulDiv_Round( Int32  a, Int32  b, Int32  c )
   {
     Int64  temp, temp2;
@@ -151,7 +146,6 @@
 
     return ((s < 0) ? -a : a);
   }
-
 
   static void  Neg64__( Int64*  x )
   {
@@ -173,7 +167,6 @@
     }
   }
 
-
   void  Add64( Int64*  x, Int64*  y, Int64*  z )
   {
     register Word32  lo, hi;
@@ -188,7 +181,6 @@
     z->hi = hi;
   }
 
-
   void  Sub64( Int64*  x, Int64*  y, Int64*  z )
   {
     register Word32  lo, hi;
@@ -201,7 +193,6 @@
     z->lo = lo;
     z->hi = hi;
   }
-
 
   void  MulTo64( Int32  x, Int32  y, Int64*  z )
   {
@@ -245,7 +236,6 @@
     if (s < 0) Neg64__( z );
   }
 
-
   Int32  Div64by32( Int64*  x, Int32  y )
   {
     Int32   s;
@@ -286,7 +276,6 @@
     return ( (s<0) ? -q : q );
   }
 
-
   Int  Order64( Int64*  z )
   {
     Word32  i;
@@ -310,7 +299,6 @@
     }
     return j-1;
   }
-
 
   Int32  Sqrt64( Int64*  l )
   {
@@ -352,7 +340,6 @@
     }
     return j - 1;
   }
-
 
   Int32  Sqrt32( Int32  l )
   {

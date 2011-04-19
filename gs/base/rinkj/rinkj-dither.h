@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,4 +26,3 @@ rinkj_dither_line (RinkjDither *self, unsigned char *dst, const unsigned char *s
 
 void
 rinkj_dither_close (RinkjDither *self);
-

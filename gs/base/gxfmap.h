@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -81,8 +81,8 @@ frac gx_color_frac_map(frac, const frac *);		/* in gxcmap.c */
 #  define byte_to_tmx(b) ((b) >> (8 - log2_transfer_map_size))
 #else
 #  define byte_to_tmx(b)\
-	(((b) << (log2_transfer_map_size - 8)) +\
-	 ((b) >> (16 - log2_transfer_map_size)))
+        (((b) << (log2_transfer_map_size - 8)) +\
+         ((b) >> (16 - log2_transfer_map_size)))
 #endif
 #define gx_map_color_frac_byte(pgs,b,m)\
  (pgs->m->values[byte_to_tmx(b)])

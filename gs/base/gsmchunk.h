@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,9 +22,9 @@
 /* ---------- Public constructors/destructors ---------- */
 
 /* Initialize a gs_memory_chunk_t */
-	/* -ve error code or 0 */
+        /* -ve error code or 0 */
 int gs_memory_chunk_wrap(gs_memory_t **wrapped,	/* chunk allocator init */
-		      gs_memory_t * target );	/* base allocator */
+                      gs_memory_t * target );	/* base allocator */
 
 /* Release a chunk memory manager and all of the memory it held */
 void gs_memory_chunk_release(gs_memory_t *cmem);

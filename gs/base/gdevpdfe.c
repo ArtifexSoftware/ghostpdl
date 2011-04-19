@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,12 +26,11 @@
 #include "gdevpdfo.h"
 #include "ConvertUTF.h"
 
-
-static void 
+static void
 copy_bytes(stream *s, const byte **data, int *data_length, int n)
 {
     while (n-- && (*data_length)--) {
-	stream_putc(s, *((*data)++));
+        stream_putc(s, *((*data)++));
     }
 }
 
@@ -43,35 +42,35 @@ pdf_xml_data_write(stream *s, const byte *data, int data_length)
     const byte *p = data;
 
     while (l > 0) {
-	switch (*p) {
-	    case '<' : stream_puts(s, "&lt;"); l--; p++; break;
-	    case '>' : stream_puts(s, "&gt;"); l--; p++; break;
-	    case '&' : stream_puts(s, "&amp;"); l--; p++; break;
-	    case '\'': stream_puts(s, "&apos;"); l--; p++; break;
-	    case '"' : stream_puts(s, "&quot;"); l--; p++; break;
-	    default:
-		if (*p < 32) {
-		    /* Not allowed in XML. */
-		    pprintd1(s, "&#%d;", *p);
-		    l--; p++;
-		} else if (*p >= 0x7F && *p <= 0x9f) {
-		    /* Control characters are discouraged in XML. */
-		    pprintd1(s, "&#%d;", *p);
-		    l--; p++;
-		} else if ((*p & 0xE0) == 0xC0) {
-		    /* A 2-byte UTF-8 sequence */
-		    copy_bytes(s, &p, &l, 2);
-		} else if ((*p & 0xF0) == 0xE0) {
-		    /* A 3-byte UTF-8 sequence */
-		    copy_bytes(s, &p, &l, 3);
-		} else if ((*p & 0xF0) == 0xF0) {
-		    /* A 4-byte UTF-8 sequence */
-		    copy_bytes(s, &p, &l, 4);
-		} else {
-		    stream_putc(s, *p);
-		    l--; p++;
-		}
-	}
+        switch (*p) {
+            case '<' : stream_puts(s, "&lt;"); l--; p++; break;
+            case '>' : stream_puts(s, "&gt;"); l--; p++; break;
+            case '&' : stream_puts(s, "&amp;"); l--; p++; break;
+            case '\'': stream_puts(s, "&apos;"); l--; p++; break;
+            case '"' : stream_puts(s, "&quot;"); l--; p++; break;
+            default:
+                if (*p < 32) {
+                    /* Not allowed in XML. */
+                    pprintd1(s, "&#%d;", *p);
+                    l--; p++;
+                } else if (*p >= 0x7F && *p <= 0x9f) {
+                    /* Control characters are discouraged in XML. */
+                    pprintd1(s, "&#%d;", *p);
+                    l--; p++;
+                } else if ((*p & 0xE0) == 0xC0) {
+                    /* A 2-byte UTF-8 sequence */
+                    copy_bytes(s, &p, &l, 2);
+                } else if ((*p & 0xF0) == 0xE0) {
+                    /* A 3-byte UTF-8 sequence */
+                    copy_bytes(s, &p, &l, 3);
+                } else if ((*p & 0xF0) == 0xF0) {
+                    /* A 4-byte UTF-8 sequence */
+                    copy_bytes(s, &p, &l, 4);
+                } else {
+                    stream_putc(s, *p);
+                    l--; p++;
+                }
+        }
     }
 }
 
@@ -177,7 +176,6 @@ pdf_xml_copy(stream *s, const char *data)
     stream_puts(s, data);
 }
 
-
 /* --------------------------------------------  */
 
 static int
@@ -191,8 +189,8 @@ pdf_xmp_time(char *buf, int buf_length)
     time(&t);
     tms = *localtime(&t);
     sprintf(buf1,
-	    "%04d-%02d-%02d",
-	    tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday);
+            "%04d-%02d-%02d",
+            tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday);
     strncpy(buf, buf1, buf_length);
     return strlen(buf);
 }
@@ -205,57 +203,57 @@ pdf_xmp_convert_time(char *dt, int dtl, char *buf, int bufl)
     int l = dtl;
 
     if (l > bufl)
-	l = bufl;
+        l = bufl;
     if (dt[0] == 'D' && dt[1] == ':') {
-	l -= 2;
-	memcpy(buf, dt + 2, l);
+        l -= 2;
+        memcpy(buf, dt + 2, l);
     } else
-	memcpy(buf, dt, l);
+        memcpy(buf, dt, l);
     memcpy(dt, buf, 4); /* year */
     if (l <= 4)
-	return 4;
+        return 4;
 
     dt[4] = '-';
     memcpy(dt + 5, buf + 4, 2); /* month */
     if (l <= 6)
-	return 7;
+        return 7;
 
     dt[7] = '-';
     memcpy(dt + 8, buf + 6, 2); /* day */
     if (l <= 8)
-	return 10;
+        return 10;
 
     dt[10] = 'T';
     memcpy(dt + 11, buf + 8, 2); /* hour */
     dt[13] = ':';
     memcpy(dt + 14, buf + 10, 2); /* minute */
     if (l <= 12) {
-	dt[16] = 'Z'; /* Default time zone 0. */
-	return 17;
+        dt[16] = 'Z'; /* Default time zone 0. */
+        return 17;
     }
 
     dt[16] = ':';
     memcpy(dt + 17, buf + 12, 2); /* second */
     if (l <= 14) {
-	dt[18] = 'Z'; /* Default time zone 0. */
-	return 19;
+        dt[18] = 'Z'; /* Default time zone 0. */
+        return 19;
     }
 
     dt[19] = buf[14]; /* designator */
     if (dt[19] == 'Z')
-	return 20;
+        return 20;
     if (l <= 15)
-	return 20;
+        return 20;
     memcpy(dt + 20, buf + 15, 2); /* Time zone hour difference. */
     if (l <= 17)
-	return 22;
+        return 22;
 
     dt[22] = ':';
     /* Skipping '\'' in 'buf'. */
     memcpy(dt + 23, buf + 18, 2); /* Time zone hour difference. */
     return 25;
 }
-	
+
 int
 pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_length)
 {
@@ -263,21 +261,21 @@ pdf_get_docinfo_item(gx_device_pdf *pdev, const char *key, char *buf, int buf_le
     int l;
     const byte *s;
 
-    if (v != NULL && (v->value_type == COS_VALUE_SCALAR || 
-			v->value_type == COS_VALUE_CONST)) {
-	if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(') {
-	    s = v->contents.chars.data + 1;
-	    l = v->contents.chars.size - 2;
-	} else {
-	    s = v->contents.chars.data;
-	    l = v->contents.chars.size;
-	}
+    if (v != NULL && (v->value_type == COS_VALUE_SCALAR ||
+                        v->value_type == COS_VALUE_CONST)) {
+        if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(') {
+            s = v->contents.chars.data + 1;
+            l = v->contents.chars.size - 2;
+        } else {
+            s = v->contents.chars.data;
+            l = v->contents.chars.size;
+        }
     } else
-	return 0;
+        return 0;
     if (l < 0)
-	l = 0;
+        l = 0;
     if (l > buf_length)
-	l = buf_length;
+        l = buf_length;
     memcpy(buf, s, l);
     return l;
 }
@@ -289,181 +287,181 @@ decode_escape(const byte *data, int data_length, int *index)
 
     (*index)++; /* skip '\' */
     if (*index >= data_length)
-	return 0; /* Must_not_happen, because the string is PS encoded. */
+        return 0; /* Must_not_happen, because the string is PS encoded. */
     c = data[*index];
     switch (c) {
-	case '(': return '(';
-	case ')': return ')';
-	case '\\': return '\\';
-	case 'n': return '\n';
-	case 'r': return '\r';
-	case 't': return '\t';
-	case 'b': return '\b';
-	case 'f': return '\f';
-	default:
-	    break;
+        case '(': return '(';
+        case ')': return ')';
+        case '\\': return '\\';
+        case 'n': return '\n';
+        case 'r': return '\r';
+        case 't': return '\t';
+        case 'b': return '\b';
+        case 'f': return '\f';
+        default:
+            break;
     }
     if (c >= '0' && c <= '7') {
-	int oct_loop;
-	/* octal */
-	byte v = c - '0';
+        int oct_loop;
+        /* octal */
+        byte v = c - '0';
 
-	/* Octal values should always be three digits, one is consumed above! */
-	for (oct_loop = 0;oct_loop < 2; oct_loop++) {
-	    (*index)++;
-	    if (*index >= data_length)
-		/* Ran out of data, return what we found */
-		return v;
-	    c = data[*index];
-	    if (c < '0' || c > '7') {
-		/* Ran out of numeric data, return what we found */
-		/* Need to 'unget' the non-numeric character */
-		(*index)--;
-		break;
-	    }
-	    v = v * 8 + (c - '0');
-	}
-	return v;	
+        /* Octal values should always be three digits, one is consumed above! */
+        for (oct_loop = 0;oct_loop < 2; oct_loop++) {
+            (*index)++;
+            if (*index >= data_length)
+                /* Ran out of data, return what we found */
+                return v;
+            c = data[*index];
+            if (c < '0' || c > '7') {
+                /* Ran out of numeric data, return what we found */
+                /* Need to 'unget' the non-numeric character */
+                (*index)--;
+                break;
+            }
+            v = v * 8 + (c - '0');
+        }
+        return v;
     }
     return c; /* A wrong escapement sequence. */
 }
 
 static int
 pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int data_length,
-			 void(*write)(stream *s, const byte *data, int data_length))
+                         void(*write)(stream *s, const byte *data, int data_length))
 {
     if (pdev->DSCEncodingToUnicode.data == 0) {
-	int i, j=0;
-	unsigned char *buf0;
+        int i, j=0;
+        unsigned char *buf0;
 
-	buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
-			"pdf_xmp_write_translated");
-	if (buf0 == NULL)
-	    return_error(gs_error_VMerror);
-	for (i = 0; i < data_length; i++) {
-	    byte c = data[i];
+        buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char),
+                        "pdf_xmp_write_translated");
+        if (buf0 == NULL)
+            return_error(gs_error_VMerror);
+        for (i = 0; i < data_length; i++) {
+            byte c = data[i];
 
-	    if (c == '\\') 
-		c = decode_escape(data, data_length, &i);
-	    buf0[j] = c;
-	    j++;
-	}
-	if (buf0[0] == 0xfe && buf0[1] == 0xff) {
-	    /* Its a Unicode (UTF-16BE) string, convert to UTF-8 */
-	    UTF16 *buf0b, U16;
-	    UTF8 *buf1, *buf1b;
+            if (c == '\\')
+                c = decode_escape(data, data_length, &i);
+            buf0[j] = c;
+            j++;
+        }
+        if (buf0[0] == 0xfe && buf0[1] == 0xff) {
+            /* Its a Unicode (UTF-16BE) string, convert to UTF-8 */
+            UTF16 *buf0b, U16;
+            UTF8 *buf1, *buf1b;
 
-	    buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char), 
-			"pdf_xmp_write_translated");
-	    if (buf1 == NULL)
-		return_error(gs_error_VMerror);
-	    buf1b = buf1;
-	    /* Skip the Byte Order Mark (0xfe 0xff) */
-	    buf0b = (UTF16 *)(buf0 + 2);
-	    /* ConvertUTF16to UTF8 expects a buffer of UTF16s in the local
-	     * endian-ness, but the data is big-endian. In case this is a little-endian
-	     * machine, process the buffer from big-endian to whatever is right for this platform.
-	     */
-	    for (i = 2; i < j; i+=2) {
-		U16 = (buf0[i] << 8) + buf0[i + 1];
-		*(buf0b++) = U16;
-	    }
-	    buf0b = (UTF16 *)(buf0 + 2);
-	    switch (ConvertUTF16toUTF8((const UTF16**)&buf0b, (UTF16 *)(buf0 + j),
-			     &buf1b, buf1 + (data_length * sizeof(unsigned char)), strictConversion)) {
-		case conversionOK:
-		    write(s, buf1, buf1b - buf1);
-		    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
-		    break;
-		case sourceExhausted:
-		case targetExhausted:
-		case sourceIllegal:
-		default:
-		    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
-		    return_error(gs_error_rangecheck);
-	    }
-	} else
-	    write(s, buf0, j);
-	gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
-	return 0;
+            buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char),
+                        "pdf_xmp_write_translated");
+            if (buf1 == NULL)
+                return_error(gs_error_VMerror);
+            buf1b = buf1;
+            /* Skip the Byte Order Mark (0xfe 0xff) */
+            buf0b = (UTF16 *)(buf0 + 2);
+            /* ConvertUTF16to UTF8 expects a buffer of UTF16s in the local
+             * endian-ness, but the data is big-endian. In case this is a little-endian
+             * machine, process the buffer from big-endian to whatever is right for this platform.
+             */
+            for (i = 2; i < j; i+=2) {
+                U16 = (buf0[i] << 8) + buf0[i + 1];
+                *(buf0b++) = U16;
+            }
+            buf0b = (UTF16 *)(buf0 + 2);
+            switch (ConvertUTF16toUTF8((const UTF16**)&buf0b, (UTF16 *)(buf0 + j),
+                             &buf1b, buf1 + (data_length * sizeof(unsigned char)), strictConversion)) {
+                case conversionOK:
+                    write(s, buf1, buf1b - buf1);
+                    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+                    break;
+                case sourceExhausted:
+                case targetExhausted:
+                case sourceIllegal:
+                default:
+                    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+                    return_error(gs_error_rangecheck);
+            }
+        } else
+            write(s, buf0, j);
+        gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+        return 0;
     } else {
-	UTF16 *buf0;
-	const UTF16 *buf0b;
-	UTF8 *buf1, *buf1b;
-	int i, j = 0;
+        UTF16 *buf0;
+        const UTF16 *buf0b;
+        UTF8 *buf1, *buf1b;
+        int i, j = 0;
 
-	buf0 = (UTF16 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(UTF16), 
-			"pdf_xmp_write_translated");
-	if (buf0 == NULL)
-	    return_error(gs_error_VMerror);
-	buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * 2, 
-			"pdf_xmp_write_translated");
-	if (buf1 == NULL) {
-	    gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
-	    return_error(gs_error_VMerror);
-	}
-	buf0b = buf0;
-	buf1b = buf1;
-	for (i = 0; i < data_length; i++) {
-	    byte c = data[i];
-	    int v;
+        buf0 = (UTF16 *)gs_alloc_bytes(pdev->memory, data_length * sizeof(UTF16),
+                        "pdf_xmp_write_translated");
+        if (buf0 == NULL)
+            return_error(gs_error_VMerror);
+        buf1 = (UTF8 *)gs_alloc_bytes(pdev->memory, data_length * 2,
+                        "pdf_xmp_write_translated");
+        if (buf1 == NULL) {
+            gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+            return_error(gs_error_VMerror);
+        }
+        buf0b = buf0;
+        buf1b = buf1;
+        for (i = 0; i < data_length; i++) {
+            byte c = data[i];
+            int v;
 
-	    if (c == '\\') 
-		c = decode_escape(data, data_length, &i);
-	    if (c > pdev->DSCEncodingToUnicode.size) {
-		gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
-		gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
-		return_error(gs_error_rangecheck);
-	    }
+            if (c == '\\')
+                c = decode_escape(data, data_length, &i);
+            if (c > pdev->DSCEncodingToUnicode.size) {
+                gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+                gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+                return_error(gs_error_rangecheck);
+            }
 
-	    v = pdev->DSCEncodingToUnicode.data[c];
-	    if (v == -1)
-		v = '?'; /* Arbitrary. */
-	    buf0[j] = v;
-	    j++;
-	}
-	switch (ConvertUTF16toUTF8(&buf0b, buf0 + j,
-			     &buf1b, buf1 + data_length * 2, strictConversion)) {
-	    case conversionOK:
-		write(s, buf1, buf1b - buf1);
-		break;
-	    case sourceExhausted:
-	    case targetExhausted:
-	    case sourceIllegal:
-	    default:
-		gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
-		gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
-		return_error(gs_error_rangecheck);
-	}
-	gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
-	gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
-	return 0;
+            v = pdev->DSCEncodingToUnicode.data[c];
+            if (v == -1)
+                v = '?'; /* Arbitrary. */
+            buf0[j] = v;
+            j++;
+        }
+        switch (ConvertUTF16toUTF8(&buf0b, buf0 + j,
+                             &buf1b, buf1 + data_length * 2, strictConversion)) {
+            case conversionOK:
+                write(s, buf1, buf1b - buf1);
+                break;
+            case sourceExhausted:
+            case targetExhausted:
+            case sourceIllegal:
+            default:
+                gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+                gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+                return_error(gs_error_rangecheck);
+        }
+        gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+        gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+        return 0;
     }
 }
 
 static int
 pdf_xmp_write_docinfo_item(gx_device_pdf *pdev, stream *s, const char *key, const char *default_value,
-			   void(*write)(stream *s, const byte *data, int data_length))
+                           void(*write)(stream *s, const byte *data, int data_length))
 {
     const cos_value_t *v = cos_dict_find(pdev->Info, (const byte *)key, strlen(key));
 
-    if (v != NULL && (v->value_type == COS_VALUE_SCALAR || 
-			v->value_type == COS_VALUE_CONST)) {
-	if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(')
-	    return pdf_xmp_write_translated(pdev, s, v->contents.chars.data + 1, 
-			v->contents.chars.size - 2, write);
-	else
-	    return pdf_xmp_write_translated(pdev, s, v->contents.chars.data, 
-			v->contents.chars.size, write);
+    if (v != NULL && (v->value_type == COS_VALUE_SCALAR ||
+                        v->value_type == COS_VALUE_CONST)) {
+        if (v->contents.chars.size > 2 && v->contents.chars.data[0] == '(')
+            return pdf_xmp_write_translated(pdev, s, v->contents.chars.data + 1,
+                        v->contents.chars.size - 2, write);
+        else
+            return pdf_xmp_write_translated(pdev, s, v->contents.chars.data,
+                        v->contents.chars.size, write);
     } else {
-	stream_puts(s, default_value);
-	return 0;
+        stream_puts(s, default_value);
+        return 0;
     }
 }
 
 static uint64_t
 pdf_uuid_time(gx_device_pdf *pdev)
-{   
+{
     long *dt = pdev->uuid_time; /* In seconds since Jan. 1, 1980 and fraction in nanoseconds. */
     uint64_t t;
 
@@ -481,12 +479,12 @@ static void writehex(char **p, ulong v, int l)
     static const char digit[] = "0123456789abcdef";
 
     for (; i--;)
-	*((*p)++) = digit[v >> (i * 4) & 15];
+        *((*p)++) = digit[v >> (i * 4) & 15];
 }
 
 static void
 pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf, int buf_length)
-{   
+{
     char b[40], *p = b;
     ulong  uuid_time_lo = (ulong)(uuid_time & 0xFFFFFFFF);       /* MSVC 7.1.3088           */
     ushort uuid_time_md = (ushort)((uuid_time >> 32) & 0xFFFF);  /* cannot compile this     */
@@ -515,12 +513,12 @@ static int
 pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->InstanceUUID.size) {
-	int l = min(buf_length - 1, pdev->InstanceUUID.size);
+        int l = min(buf_length - 1, pdev->InstanceUUID.size);
 
-	memcpy(buf, pdev->InstanceUUID.data, l);
-	buf[l] = 0;
+        memcpy(buf, pdev->InstanceUUID.data, l);
+        buf[l] = 0;
     } else
-	pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
+        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
     return 0;
 }
 
@@ -528,12 +526,12 @@ static int
 pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
     if (pdev->DocumentUUID.size) {
-	int l = min(buf_length - 1, pdev->DocumentUUID.size);
+        int l = min(buf_length - 1, pdev->DocumentUUID.size);
 
-	memcpy(buf, pdev->DocumentUUID.data, l);
-	buf[l] = 0;
+        memcpy(buf, pdev->DocumentUUID.data, l);
+        buf[l] = 0;
     } else
-	pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
+        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
     return 0;
 }
 
@@ -552,25 +550,25 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 
     code = pdf_make_instance_uuid(pdev, digest, instance_uuid, sizeof(instance_uuid));
     if (code < 0)
-	return code;
+        return code;
     code = pdf_make_document_uuid(pdev, digest, document_uuid, sizeof(document_uuid));
     if (code < 0)
-	return code;
+        return code;
 
     /* PDF/A XMP reference recommends setting UUID to empty. If not empty must be a URI */
-    if (pdev->PDFA) 
-	instance_uuid[0] = 0x00;
+    if (pdev->PDFA)
+        instance_uuid[0] = 0x00;
 
     cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
     if (!cre_date_time_len)
-	cre_date_time_len = pdf_xmp_time(cre_date_time, sizeof(cre_date_time));
+        cre_date_time_len = pdf_xmp_time(cre_date_time, sizeof(cre_date_time));
     else
-	cre_date_time_len = pdf_xmp_convert_time(cre_date_time, cre_date_time_len, date_time_buf, sizeof(date_time_buf));
+        cre_date_time_len = pdf_xmp_convert_time(cre_date_time, cre_date_time_len, date_time_buf, sizeof(date_time_buf));
     mod_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", mod_date_time, sizeof(mod_date_time));
     if (!mod_date_time_len)
-	mod_date_time_len = pdf_xmp_time(mod_date_time, sizeof(mod_date_time));
+        mod_date_time_len = pdf_xmp_time(mod_date_time, sizeof(mod_date_time));
     else
-	mod_date_time_len = pdf_xmp_convert_time(mod_date_time, mod_date_time_len, date_time_buf, sizeof(date_time_buf));
+        mod_date_time_len = pdf_xmp_convert_time(mod_date_time, mod_date_time_len, date_time_buf, sizeof(date_time_buf));
 
     pdf_xml_ins_beg(s, "xpacket");
     pdf_xml_attribute_name(s, "begin");
@@ -582,179 +580,179 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 
     pdf_xml_copy(s, "<?adobe-xap-filters esc=\"CRLF\"?>\n");
     pdf_xml_copy(s, "<x:xmpmeta xmlns:x='adobe:ns:meta/'"
-	                      " x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>\n");
+                              " x:xmptk='XMP toolkit 2.9.1-13, framework 1.6'>\n");
     {
-	pdf_xml_copy(s, "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' "
-	                         "xmlns:iX='http://ns.adobe.com/iX/1.0/'>\n");
-	{
+        pdf_xml_copy(s, "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#' "
+                                 "xmlns:iX='http://ns.adobe.com/iX/1.0/'>\n");
+        {
 
-    	    pdf_xml_tag_open_beg(s, "rdf:Description");
-	    pdf_xml_attribute_name(s, "rdf:about");
-	    pdf_xml_attribute_value(s, instance_uuid);
-	    pdf_xml_attribute_name(s, "xmlns:pdf");
-	    pdf_xml_attribute_value(s, "http://ns.adobe.com/pdf/1.3/");
+            pdf_xml_tag_open_beg(s, "rdf:Description");
+            pdf_xml_attribute_name(s, "rdf:about");
+            pdf_xml_attribute_value(s, instance_uuid);
+            pdf_xml_attribute_name(s, "xmlns:pdf");
+            pdf_xml_attribute_value(s, "http://ns.adobe.com/pdf/1.3/");
 
-	    if (cos_dict_find(pdev->Info, (const byte *)"/Keywords", 9)) {
-		pdf_xml_tag_end(s);
-		pdf_xml_tag_open_beg(s, "pdf:Producer");
-		pdf_xml_tag_end(s);
-		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
-			pdf_xml_data_write);
-		if (code < 0)
-		    return code;
-		pdf_xml_tag_close(s, "pdf:Producer");
-		pdf_xml_newline(s);
+            if (cos_dict_find(pdev->Info, (const byte *)"/Keywords", 9)) {
+                pdf_xml_tag_end(s);
+                pdf_xml_tag_open_beg(s, "pdf:Producer");
+                pdf_xml_tag_end(s);
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+                        pdf_xml_data_write);
+                if (code < 0)
+                    return code;
+                pdf_xml_tag_close(s, "pdf:Producer");
+                pdf_xml_newline(s);
 
-		pdf_xml_tag_open_beg(s, "pdf:Keywords");
-		pdf_xml_tag_end(s);
-		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Keywords", "Unknown", 
-			pdf_xml_data_write);
-		if (code < 0)
-		    return code;
-		pdf_xml_tag_close(s, "pdf:Keywords");
-		pdf_xml_newline(s);
+                pdf_xml_tag_open_beg(s, "pdf:Keywords");
+                pdf_xml_tag_end(s);
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Keywords", "Unknown",
+                        pdf_xml_data_write);
+                if (code < 0)
+                    return code;
+                pdf_xml_tag_close(s, "pdf:Keywords");
+                pdf_xml_newline(s);
 
-		pdf_xml_tag_close(s, "rdf:Description");
-		pdf_xml_newline(s);
-	    } else {
-		pdf_xml_attribute_name(s, "pdf:Producer");
-		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
-			pdf_xml_attribute_value_data);
-		if (code < 0)
-		    return code;
-		pdf_xml_tag_end_empty(s);
-		pdf_xml_newline(s);
-	    }
+                pdf_xml_tag_close(s, "rdf:Description");
+                pdf_xml_newline(s);
+            } else {
+                pdf_xml_attribute_name(s, "pdf:Producer");
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+                        pdf_xml_attribute_value_data);
+                if (code < 0)
+                    return code;
+                pdf_xml_tag_end_empty(s);
+                pdf_xml_newline(s);
+            }
 
-	    pdf_xml_tag_open_beg(s, "rdf:Description");
-	    pdf_xml_attribute_name(s, "rdf:about");
-	    pdf_xml_attribute_value(s, instance_uuid);
-	    pdf_xml_attribute_name(s, "xmlns:xmp");
-	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
-	    pdf_xml_tag_end(s);
-	    {
-		pdf_xml_tag_open_beg(s, "xmp:ModifyDate");
-		pdf_xml_tag_end(s);
-		mod_date_time[mod_date_time_len] = 0x00;
-		pdf_xml_copy(s, mod_date_time);
-		pdf_xml_tag_close(s, "xmp:ModifyDate");
-		pdf_xml_newline(s);
-	    }
-	    {
-		pdf_xml_tag_open_beg(s, "xmp:CreateDate");
-		pdf_xml_tag_end(s);
-		cre_date_time[cre_date_time_len] = 0x00;
-		pdf_xml_copy(s, cre_date_time);
-		pdf_xml_tag_close(s, "xmp:CreateDate");
-		pdf_xml_newline(s);
-	    }
-	    {
-		pdf_xml_tag_open_beg(s, "xmp:CreatorTool");
-		pdf_xml_tag_end(s);
-		code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "UnknownApplication",
-			pdf_xml_data_write);
-		if (code < 0)
-		    return code;
-		pdf_xml_tag_close(s, "xmp:CreatorTool");
-	    }
-	    pdf_xml_tag_close(s, "rdf:Description");
-	    pdf_xml_newline(s);
+            pdf_xml_tag_open_beg(s, "rdf:Description");
+            pdf_xml_attribute_name(s, "rdf:about");
+            pdf_xml_attribute_value(s, instance_uuid);
+            pdf_xml_attribute_name(s, "xmlns:xmp");
+            pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/");
+            pdf_xml_tag_end(s);
+            {
+                pdf_xml_tag_open_beg(s, "xmp:ModifyDate");
+                pdf_xml_tag_end(s);
+                mod_date_time[mod_date_time_len] = 0x00;
+                pdf_xml_copy(s, mod_date_time);
+                pdf_xml_tag_close(s, "xmp:ModifyDate");
+                pdf_xml_newline(s);
+            }
+            {
+                pdf_xml_tag_open_beg(s, "xmp:CreateDate");
+                pdf_xml_tag_end(s);
+                cre_date_time[cre_date_time_len] = 0x00;
+                pdf_xml_copy(s, cre_date_time);
+                pdf_xml_tag_close(s, "xmp:CreateDate");
+                pdf_xml_newline(s);
+            }
+            {
+                pdf_xml_tag_open_beg(s, "xmp:CreatorTool");
+                pdf_xml_tag_end(s);
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "UnknownApplication",
+                        pdf_xml_data_write);
+                if (code < 0)
+                    return code;
+                pdf_xml_tag_close(s, "xmp:CreatorTool");
+            }
+            pdf_xml_tag_close(s, "rdf:Description");
+            pdf_xml_newline(s);
 
-	    pdf_xml_tag_open_beg(s, "rdf:Description");
-	    pdf_xml_attribute_name(s, "rdf:about");
-	    pdf_xml_attribute_value(s, instance_uuid);
-	    pdf_xml_attribute_name(s, "xmlns:xapMM");
-	    pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/mm/");
-	    pdf_xml_attribute_name(s, "xapMM:DocumentID");
-	    pdf_xml_attribute_value(s, document_uuid);
-	    pdf_xml_tag_end_empty(s);
-	    pdf_xml_newline(s);
+            pdf_xml_tag_open_beg(s, "rdf:Description");
+            pdf_xml_attribute_name(s, "rdf:about");
+            pdf_xml_attribute_value(s, instance_uuid);
+            pdf_xml_attribute_name(s, "xmlns:xapMM");
+            pdf_xml_attribute_value(s, "http://ns.adobe.com/xap/1.0/mm/");
+            pdf_xml_attribute_name(s, "xapMM:DocumentID");
+            pdf_xml_attribute_value(s, document_uuid);
+            pdf_xml_tag_end_empty(s);
+            pdf_xml_newline(s);
 
-	    pdf_xml_tag_open_beg(s, "rdf:Description");
-	    pdf_xml_attribute_name(s, "rdf:about");
-	    pdf_xml_attribute_value(s, instance_uuid);
-	    pdf_xml_attribute_name(s, "xmlns:dc");
-	    pdf_xml_attribute_value(s, "http://purl.org/dc/elements/1.1/");
-	    pdf_xml_attribute_name(s, "dc:format");
-	    pdf_xml_attribute_value(s,"application/pdf");
-	    pdf_xml_tag_end(s);
-	    {
-		pdf_xml_tag_open(s, "dc:title");
-		{
-		    pdf_xml_tag_open(s, "rdf:Alt");
-		    {
-			pdf_xml_tag_open_beg(s, "rdf:li");
-			pdf_xml_attribute_name(s, "xml:lang");
-			pdf_xml_attribute_value(s, "x-default");
-			pdf_xml_tag_end(s);
-			{
-			   code = pdf_xmp_write_docinfo_item(pdev, s,  "/Title", "Untitled", 
-				    pdf_xml_data_write);
-			    if (code < 0)
-				return code;
-			}
-			pdf_xml_tag_close(s, "rdf:li");
-		    }
-		    pdf_xml_tag_close(s, "rdf:Alt");
-		}
-		pdf_xml_tag_close(s, "dc:title");
+            pdf_xml_tag_open_beg(s, "rdf:Description");
+            pdf_xml_attribute_name(s, "rdf:about");
+            pdf_xml_attribute_value(s, instance_uuid);
+            pdf_xml_attribute_name(s, "xmlns:dc");
+            pdf_xml_attribute_value(s, "http://purl.org/dc/elements/1.1/");
+            pdf_xml_attribute_name(s, "dc:format");
+            pdf_xml_attribute_value(s,"application/pdf");
+            pdf_xml_tag_end(s);
+            {
+                pdf_xml_tag_open(s, "dc:title");
+                {
+                    pdf_xml_tag_open(s, "rdf:Alt");
+                    {
+                        pdf_xml_tag_open_beg(s, "rdf:li");
+                        pdf_xml_attribute_name(s, "xml:lang");
+                        pdf_xml_attribute_value(s, "x-default");
+                        pdf_xml_tag_end(s);
+                        {
+                           code = pdf_xmp_write_docinfo_item(pdev, s,  "/Title", "Untitled",
+                                    pdf_xml_data_write);
+                            if (code < 0)
+                                return code;
+                        }
+                        pdf_xml_tag_close(s, "rdf:li");
+                    }
+                    pdf_xml_tag_close(s, "rdf:Alt");
+                }
+                pdf_xml_tag_close(s, "dc:title");
 
-		if (cos_dict_find(pdev->Info, (const byte *)"/Author", 7)) {
-		    pdf_xml_tag_open(s, "dc:creator");
-		    {   /* According to the PDF/A specification
-			   "it shall be represented by an ordered Text array of
-			   length one whose single entry shall consist 
-			   of one or more names". */
-			pdf_xml_tag_open(s, "rdf:Seq");
-			{
-			    pdf_xml_tag_open(s, "rdf:li");
-			    {
-    				code = pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "Unknown", 
-					    pdf_xml_data_write);
-				if (code < 0)
-				    return code;
-			    }
-			    pdf_xml_tag_close(s, "rdf:li");
-			}
-			pdf_xml_tag_close(s, "rdf:Seq");
-		    }
-		    pdf_xml_tag_close(s, "dc:creator");
-		}
-		if (cos_dict_find(pdev->Info, (const byte *)"/Subject", 8)) {
-		    pdf_xml_tag_open(s, "dc:description");
-		    {   
-			pdf_xml_tag_open(s, "rdf:Seq");
-			{
-			    pdf_xml_tag_open(s, "rdf:li");
-			    {
-    				code = pdf_xmp_write_docinfo_item(pdev, s,  "/Subject", "No Subject", 
-					    pdf_xml_data_write);
-				if (code < 0)
-				    return code;
-			    }
-			    pdf_xml_tag_close(s, "rdf:li");
-			}
-			pdf_xml_tag_close(s, "rdf:Seq");
-		    }
-		    pdf_xml_tag_close(s, "dc:description");
-		}
-	    }
-	    pdf_xml_tag_close(s, "rdf:Description");
-	    pdf_xml_newline(s);
-	    if (pdev->PDFA) {
-		pdf_xml_tag_open_beg(s, "rdf:Description");
-		pdf_xml_attribute_name(s, "rdf:about");
-		pdf_xml_attribute_value(s, instance_uuid);
-		pdf_xml_attribute_name(s, "xmlns:pdfaid");
-		pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id/");
-		pdf_xml_attribute_name(s, "pdfaid:part");
-		pdf_xml_attribute_value(s,"1");
-		pdf_xml_attribute_name(s, "pdfaid:conformance");
-		pdf_xml_attribute_value(s,"B");
-		pdf_xml_tag_end_empty(s);
-	   }
-	}
-	pdf_xml_copy(s, "</rdf:RDF>\n");
+                if (cos_dict_find(pdev->Info, (const byte *)"/Author", 7)) {
+                    pdf_xml_tag_open(s, "dc:creator");
+                    {   /* According to the PDF/A specification
+                           "it shall be represented by an ordered Text array of
+                           length one whose single entry shall consist
+                           of one or more names". */
+                        pdf_xml_tag_open(s, "rdf:Seq");
+                        {
+                            pdf_xml_tag_open(s, "rdf:li");
+                            {
+                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "Unknown",
+                                            pdf_xml_data_write);
+                                if (code < 0)
+                                    return code;
+                            }
+                            pdf_xml_tag_close(s, "rdf:li");
+                        }
+                        pdf_xml_tag_close(s, "rdf:Seq");
+                    }
+                    pdf_xml_tag_close(s, "dc:creator");
+                }
+                if (cos_dict_find(pdev->Info, (const byte *)"/Subject", 8)) {
+                    pdf_xml_tag_open(s, "dc:description");
+                    {
+                        pdf_xml_tag_open(s, "rdf:Seq");
+                        {
+                            pdf_xml_tag_open(s, "rdf:li");
+                            {
+                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Subject", "No Subject",
+                                            pdf_xml_data_write);
+                                if (code < 0)
+                                    return code;
+                            }
+                            pdf_xml_tag_close(s, "rdf:li");
+                        }
+                        pdf_xml_tag_close(s, "rdf:Seq");
+                    }
+                    pdf_xml_tag_close(s, "dc:description");
+                }
+            }
+            pdf_xml_tag_close(s, "rdf:Description");
+            pdf_xml_newline(s);
+            if (pdev->PDFA) {
+                pdf_xml_tag_open_beg(s, "rdf:Description");
+                pdf_xml_attribute_name(s, "rdf:about");
+                pdf_xml_attribute_value(s, instance_uuid);
+                pdf_xml_attribute_name(s, "xmlns:pdfaid");
+                pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id/");
+                pdf_xml_attribute_name(s, "pdfaid:part");
+                pdf_xml_attribute_value(s,"1");
+                pdf_xml_attribute_name(s, "pdfaid:conformance");
+                pdf_xml_attribute_value(s,"B");
+                pdf_xml_tag_end_empty(s);
+           }
+        }
+        pdf_xml_copy(s, "</rdf:RDF>\n");
     }
     pdf_xml_copy(s, "</x:xmpmeta>\n");
 
@@ -766,45 +764,44 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 
 int
 pdf_document_metadata(gx_device_pdf *pdev)
-{   
+{
     if (pdev->CompatibilityLevel < 1.4)
-	return 0;
+        return 0;
     if (pdev->ParseDSCCommentsForDocInfo || pdev->PreserveEPSInfo) {
-	pdf_resource_t *pres;
-	char buf[20];
-	byte digest[6];
-	int code;
-	int options = DATA_STREAM_NOT_BINARY;
+        pdf_resource_t *pres;
+        char buf[20];
+        byte digest[6];
+        int code;
+        int options = DATA_STREAM_NOT_BINARY;
 
-	sflush(pdev->strm);
-	s_MD5C_get_digest(pdev->strm, digest, sizeof(digest));
-	if (pdev->EncryptMetadata)
-	    options |= DATA_STREAM_ENCRYPT;
-	code = pdf_open_aside(pdev, resourceMetadata, gs_no_id, &pres, true, options);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Type", (const byte *)"/Metadata", 9);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Subtype", (const byte *)"/XML", 4);
-	if (code < 0)
-	    return code;
-	code = pdf_write_document_metadata(pdev, digest);
-	if (code < 0)
-	    return code;
-	code = pdf_close_aside(pdev);
-	if (code < 0)
-	    return code;
-	code = COS_WRITE_OBJECT(pres->object, pdev, resourceNone);
-	if (code < 0)
-	    return code;
-	sprintf(buf, "%ld 0 R", pres->object->id);
-	code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
-	if (code < 0)
-	    return code;
+        sflush(pdev->strm);
+        s_MD5C_get_digest(pdev->strm, digest, sizeof(digest));
+        if (pdev->EncryptMetadata)
+            options |= DATA_STREAM_ENCRYPT;
+        code = pdf_open_aside(pdev, resourceMetadata, gs_no_id, &pres, true, options);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Type", (const byte *)"/Metadata", 9);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_string((cos_dict_t *)pres->object, "/Subtype", (const byte *)"/XML", 4);
+        if (code < 0)
+            return code;
+        code = pdf_write_document_metadata(pdev, digest);
+        if (code < 0)
+            return code;
+        code = pdf_close_aside(pdev);
+        if (code < 0)
+            return code;
+        code = COS_WRITE_OBJECT(pres->object, pdev, resourceNone);
+        if (code < 0)
+            return code;
+        sprintf(buf, "%ld 0 R", pres->object->id);
+        code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
+        if (code < 0)
+            return code;
     }
     return 0;
 }
 
 /* --------------------------------------------  */
-

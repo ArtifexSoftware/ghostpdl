@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,11 +40,11 @@ typedef struct gx_device_mask_clip_s {
     gx_strip_bitmap tiles;
     gx_device_memory mdev;	/* for tile buffer for copy_mono */
     gs_int_point phase;		/* device space origin relative */
-				/* to tile (backwards from gstate phase) */
+                                /* to tile (backwards from gstate phase) */
     /* Ensure that the buffer is long-aligned. */
     union _b {
-	byte bytes[tile_clip_buffer_size];
-	ulong longs[tile_clip_buffer_size / arch_sizeof_long];
+        byte bytes[tile_clip_buffer_size];
+        ulong longs[tile_clip_buffer_size / arch_sizeof_long];
     } buffer;
 } gx_device_mask_clip;
 
@@ -60,9 +60,9 @@ extern_st(st_device_mask_clip);
  * Note that this procedure does not set cdev->tiles.
  */
 int gx_mask_clip_initialize(gx_device_mask_clip * cdev,
-			    const gx_device_mask_clip * proto,
-			    const gx_bitmap * bits, gx_device * tdev,
-			    int tx, int ty, gs_memory_t *mem);
+                            const gx_device_mask_clip * proto,
+                            const gx_bitmap * bits, gx_device * tdev,
+                            int tx, int ty, gs_memory_t *mem);
 
 /*
  * Prepare colors for a copy_mono operation.
@@ -70,31 +70,31 @@ int gx_mask_clip_initialize(gx_device_mask_clip * cdev,
  *   dev, data, sourcex, raster, id, x, y, w, y, color0, color1.
  */
 #define setup_mask_copy_mono(cdev, color, mcolor0, mcolor1)\
-	BEGIN\
-	  if ( cdev->mdev.base == 0 ) {\
-	    /*\
-	     * The tile was too large for us to buffer even one scan line.\
-	     * Punt to the very, very slow default implementation of\
-	     * copy_mono.\
-	     */\
-	    return gx_default_copy_mono(dev, data, sourcex, raster, id,\
-					x, y, w, h, color0, color1);\
-	  }\
-	  if ( color1 != gx_no_color_index ) {\
-	    if ( color0 != gx_no_color_index ) {\
-	      /* Pre-fill with color0. */\
-	      code =\
-		(*dev_proc(dev, fill_rectangle))(dev, x, y, w, h, color0);\
-	      if ( code < 0 )\
-		return code;\
-	    }\
-	    color = color1;\
-	    mcolor0 = 0, mcolor1 = gx_no_color_index;\
-	  } else if ( color0 != gx_no_color_index ) {\
-	    color = color0;\
-	    mcolor0 = gx_no_color_index, mcolor1 = 0;\
-	  } else\
-	    return 0;\
-	END
+        BEGIN\
+          if ( cdev->mdev.base == 0 ) {\
+            /*\
+             * The tile was too large for us to buffer even one scan line.\
+             * Punt to the very, very slow default implementation of\
+             * copy_mono.\
+             */\
+            return gx_default_copy_mono(dev, data, sourcex, raster, id,\
+                                        x, y, w, h, color0, color1);\
+          }\
+          if ( color1 != gx_no_color_index ) {\
+            if ( color0 != gx_no_color_index ) {\
+              /* Pre-fill with color0. */\
+              code =\
+                (*dev_proc(dev, fill_rectangle))(dev, x, y, w, h, color0);\
+              if ( code < 0 )\
+                return code;\
+            }\
+            color = color1;\
+            mcolor0 = 0, mcolor1 = gx_no_color_index;\
+          } else if ( color0 != gx_no_color_index ) {\
+            color = color0;\
+            mcolor0 = gx_no_color_index, mcolor1 = 0;\
+          } else\
+            return 0;\
+        END
 
 #endif /* gxmclip_INCLUDED */

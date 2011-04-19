@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -75,7 +75,7 @@
 
 /* Pointer arithmetic macros. */
 #define inc_ptr(ptr,delta)\
-	(ptr = (void *)((byte *)ptr + (delta)))
+        (ptr = (void *)((byte *)ptr + (delta)))
 
 /* Define macros for setting up left- and right-end masks. */
 /* These are used for monobit operations, and for filling */
@@ -87,20 +87,20 @@
 #if arch_is_big_endian
 #  define mono_copy_chunk uint
 #  define set_mono_right_mask(var, w)\
-	(var = ((w) == chunk_bits ? chunk_all_bits : chunk_hi_bits(w)))
+        (var = ((w) == chunk_bits ? chunk_all_bits : chunk_hi_bits(w)))
 /*
  * We have to split the following statement because of a bug in the Xenix C
  * compiler (it produces a signed rather than an unsigned shift if we don't
  * split).
  */
 #  define set_mono_thin_mask(var, w, bit)\
-	set_mono_right_mask(var, w), var >>= (bit)
+        set_mono_right_mask(var, w), var >>= (bit)
 /*
  * We have to split the following statement in two because of a bug
  * in the DEC VAX/VMS C compiler.
  */
 #  define set_mono_left_mask(var, bit)\
-	(var = chunk_all_bits, var >>= (bit))
+        (var = chunk_all_bits, var >>= (bit))
 #else
 #  define mono_copy_chunk bits16
 extern const bits16 mono_copy_masks[17];
@@ -116,11 +116,11 @@ extern const bits32 mono_fill_masks[33];
  * mono_copy_masks before using the following macros.
  */
 #  define set_mono_left_mask(var, bit)\
-	(var = mono_masks[bit])
+        (var = mono_masks[bit])
 #  define set_mono_thin_mask(var, w, bit)\
-	(var = ~mono_masks[(w) + (bit)] & mono_masks[bit])
+        (var = ~mono_masks[(w) + (bit)] & mono_masks[bit])
 #  define set_mono_right_mask(var, ebit)\
-	(var = ~mono_masks[ebit])
+        (var = ~mono_masks[ebit])
 #endif
 
 #endif /* gxbitops_INCLUDED */

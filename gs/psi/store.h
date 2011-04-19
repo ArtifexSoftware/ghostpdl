@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -72,23 +72,23 @@
  * if not too bad. And we're using GCC anyways on Debian.
  */
 #define ref_assign_inline(pto,pfrom)\
-	(*(pto) = *(pfrom))
+        (*(pto) = *(pfrom))
 #ifdef __TURBOC__
-	/*
-	 * Move the data in two 32-bit chunks, because
-	 * otherwise the compiler calls SCOPY@.
-	 * The cast to void is to discourage the compiler from
-	 * wanting to deliver the value of the expression.
-	 */
+        /*
+         * Move the data in two 32-bit chunks, because
+         * otherwise the compiler calls SCOPY@.
+         * The cast to void is to discourage the compiler from
+         * wanting to deliver the value of the expression.
+         */
 #  define ref_assign(pto,pfrom)\
-	discard(ref_assign_inline(pto, pfrom))
+        discard(ref_assign_inline(pto, pfrom))
 #else
-	/*
-	 * Trust the compiler and hope for the best.
-	 * The MIPS compiler doesn't like the cast to void.
-	 */
+        /*
+         * Trust the compiler and hope for the best.
+         * The MIPS compiler doesn't like the cast to void.
+         */
 #  define ref_assign(pto,pfrom)\
-	(*(pto) = *(pfrom))
+        (*(pto) = *(pfrom))
 #endif
 
 #define ialloc_new_mask (idmemory->new_mask)
@@ -107,7 +107,7 @@
   alloc_save_change(idmemory, pcont, (ref_packed *)(pto), cname)
 #define ref_save_in(mem, pcont, pto, cname)\
   discard((ref_must_save_in(mem, pto) ?\
-	   ref_do_save_in(mem, pcont, pto, cname) : 0))
+           ref_do_save_in(mem, pcont, pto, cname) : 0))
 #define ref_save(pcont, pto, cname)\
   discard((ref_must_save(pto) ? ref_do_save(pcont, pto, cname) : 0))
 #define ref_mark_new_in(mmem,pto)\
@@ -143,7 +143,7 @@
 #define DEADBEEF ((int)(((uint)0xdead << 16) | 0xbeef))
 #  define and_fill_sv(pref)\
     , (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
-			(pref)->value.intval = DEADBEEF) : 0)
+                        (pref)->value.intval = DEADBEEF) : 0)
 #else /* !DEBUG */
 #  define and_fill_s(pref)	/* */
 #  define and_fill_sv(pref)	/* */

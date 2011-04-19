@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,7 +20,7 @@
 int zscreen_params(os_ptr op, gs_screen_halftone * phs);
 
 int zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
-		      gs_screen_halftone * phs, ref * pproc, int npop,
-		      op_proc_t finish_proc, int space_index);
+                      gs_screen_halftone * phs, ref * pproc, int npop,
+                      op_proc_t finish_proc, int space_index);
 
 #endif /* iht_INCLUDED */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,17 +46,17 @@ zpackedarray(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     if (op->value.intval > op - osbot &&
-	op->value.intval >= ref_stack_count(&o_stack)
-	)
-	return_error(e_stackunderflow);
+        op->value.intval >= ref_stack_count(&o_stack)
+        )
+        return_error(e_stackunderflow);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
-			     idmemory, "packedarray");
+                             idmemory, "packedarray");
     osp++;
     if (code >= 0)
-	*osp = parr;
+        *osp = parr;
     return code;
 }
 
@@ -81,7 +81,7 @@ zsetpacking(i_ctx_t *i_ctx_p)
 #undef idmemory			/****** NOTA BENE ******/
 int
 make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
-		  gs_dual_memory_t *idmemory, client_name_t cname)
+                  gs_dual_memory_t *idmemory, client_name_t cname)
 {
     uint i;
     const ref *pref;
@@ -89,7 +89,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
     ref_packed *pbody;
     ref_packed *pdest;
     ref_packed *pshort;		/* points to start of */
-				/* last run of short elements */
+                                /* last run of short elements */
     gs_ref_memory_t *imem = idmemory->current;
     uint space = imemory_space(imem);
     int skip = 0, pad;
@@ -100,63 +100,63 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
     /* and to detect local-into-global stores. */
 
     for (i = size; i != 0; i--) {
-	pref = ref_stack_index(pstack, i - 1);
-	switch (r_btype(pref)) {	/* not r_type, opers are special */
-	    case t_name:
-	      if (name_index(imem, pref) >= packed_name_max_index)
-		    break;	/* can't pack */
-		idest++;
-		continue;
-	    case t_integer:
-		if (pref->value.intval < packed_min_intval ||
-		    pref->value.intval > packed_max_intval
-		    )
-		    break;
-		idest++;
-		continue;
-	    case t_oparray:
-		/* Check for local-into-global store. */
-		store_check_space(space, pref);
-		/* falls through */
-	    case t_operator:
-		{
-		    uint oidx;
+        pref = ref_stack_index(pstack, i - 1);
+        switch (r_btype(pref)) {	/* not r_type, opers are special */
+            case t_name:
+              if (name_index(imem, pref) >= packed_name_max_index)
+                    break;	/* can't pack */
+                idest++;
+                continue;
+            case t_integer:
+                if (pref->value.intval < packed_min_intval ||
+                    pref->value.intval > packed_max_intval
+                    )
+                    break;
+                idest++;
+                continue;
+            case t_oparray:
+                /* Check for local-into-global store. */
+                store_check_space(space, pref);
+                /* falls through */
+            case t_operator:
+                {
+                    uint oidx;
 
-		    if (!r_has_attr(pref, a_executable))
-			break;
-		    oidx = op_index(pref);
-		    if (oidx == 0 || oidx > packed_int_mask)
-			break;
-		}
-		idest++;
-		continue;
-	    default:
-		/* Check for local-into-global store. */
-		store_check_space(space, pref);
-	}
-	/* Can't pack this element, use a full ref. */
-	/* We may have to unpack up to align_packed_per_ref - 1 */
-	/* preceding short elements. */
-	/* If we are at the beginning of the array, however, */
-	/* we can just move the elements up. */
-	{
-	    int i = (idest - ishort) & (align_packed_per_ref - 1);
+                    if (!r_has_attr(pref, a_executable))
+                        break;
+                    oidx = op_index(pref);
+                    if (oidx == 0 || oidx > packed_int_mask)
+                        break;
+                }
+                idest++;
+                continue;
+            default:
+                /* Check for local-into-global store. */
+                store_check_space(space, pref);
+        }
+        /* Can't pack this element, use a full ref. */
+        /* We may have to unpack up to align_packed_per_ref - 1 */
+        /* preceding short elements. */
+        /* If we are at the beginning of the array, however, */
+        /* we can just move the elements up. */
+        {
+            int i = (idest - ishort) & (align_packed_per_ref - 1);
 
-	    if (ishort == 0)	/* first time */
-		idest += skip = -i & (align_packed_per_ref - 1);
-	    else
-		idest += (packed_per_ref - 1) * i;
-	}
-	ishort = idest += packed_per_ref;
+            if (ishort == 0)	/* first time */
+                idest += skip = -i & (align_packed_per_ref - 1);
+            else
+                idest += (packed_per_ref - 1) * i;
+        }
+        ishort = idest += packed_per_ref;
     }
     pad = -(int)idest & (packed_per_ref - 1);	/* padding at end */
 
     /* Now we can allocate the array. */
 
     code = gs_alloc_ref_array(imem, &rtemp, 0, (idest + pad) / packed_per_ref,
-			      cname);
+                              cname);
     if (code < 0)
-	return code;
+        return code;
     pbody = (ref_packed *) rtemp.value.refs;
 
     /* Make sure any initial skipped elements contain legal packed */
@@ -164,82 +164,82 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 
     pshort = pbody;
     for (; skip; skip--)
-	*pbody++ = pt_tag(pt_integer);
+        *pbody++ = pt_tag(pt_integer);
     pdest = pbody;
 
     for (i = size; i != 0; i--) {
-	pref = ref_stack_index(pstack, i - 1);
-	switch (r_btype(pref)) {	/* not r_type, opers are special */
-	    case t_name:
-		{
-		    uint nidx = name_index(imem, pref);
+        pref = ref_stack_index(pstack, i - 1);
+        switch (r_btype(pref)) {	/* not r_type, opers are special */
+            case t_name:
+                {
+                    uint nidx = name_index(imem, pref);
 
-		    if (nidx >= packed_name_max_index)
-			break;	/* can't pack */
-		    *pdest++ = nidx +
-			(r_has_attr(pref, a_executable) ?
-			 pt_tag(pt_executable_name) :
-			 pt_tag(pt_literal_name));
-		}
-		continue;
-	    case t_integer:
-		if (pref->value.intval < packed_min_intval ||
-		    pref->value.intval > packed_max_intval
-		    )
-		    break;
-		*pdest++ = pt_tag(pt_integer) +
-		    ((short)pref->value.intval - packed_min_intval);
-		continue;
-	    case t_oparray:
-	    case t_operator:
-		{
-		    uint oidx;
+                    if (nidx >= packed_name_max_index)
+                        break;	/* can't pack */
+                    *pdest++ = nidx +
+                        (r_has_attr(pref, a_executable) ?
+                         pt_tag(pt_executable_name) :
+                         pt_tag(pt_literal_name));
+                }
+                continue;
+            case t_integer:
+                if (pref->value.intval < packed_min_intval ||
+                    pref->value.intval > packed_max_intval
+                    )
+                    break;
+                *pdest++ = pt_tag(pt_integer) +
+                    ((short)pref->value.intval - packed_min_intval);
+                continue;
+            case t_oparray:
+            case t_operator:
+                {
+                    uint oidx;
 
-		    if (!r_has_attr(pref, a_executable))
-			break;
-		    oidx = op_index(pref);
-		    if (oidx == 0 || oidx > packed_int_mask)
-			break;
-		    *pdest++ = pt_tag(pt_executable_operator) + oidx;
-		}
-		continue;
-	}
-	/* Can't pack this element, use a full ref. */
-	/* We may have to unpack up to align_packed_per_ref - 1 */
-	/* preceding short elements. */
-	/* Note that if we are at the beginning of the array, */
-	/* 'skip' already ensures that we don't need to do this. */
-	{
-	    int i = (pdest - pshort) & (align_packed_per_ref - 1);
-	    const ref_packed *psrc = pdest;
-	    ref *pmove =
-	    (ref *) (pdest += (packed_per_ref - 1) * i);
+                    if (!r_has_attr(pref, a_executable))
+                        break;
+                    oidx = op_index(pref);
+                    if (oidx == 0 || oidx > packed_int_mask)
+                        break;
+                    *pdest++ = pt_tag(pt_executable_operator) + oidx;
+                }
+                continue;
+        }
+        /* Can't pack this element, use a full ref. */
+        /* We may have to unpack up to align_packed_per_ref - 1 */
+        /* preceding short elements. */
+        /* Note that if we are at the beginning of the array, */
+        /* 'skip' already ensures that we don't need to do this. */
+        {
+            int i = (pdest - pshort) & (align_packed_per_ref - 1);
+            const ref_packed *psrc = pdest;
+            ref *pmove =
+            (ref *) (pdest += (packed_per_ref - 1) * i);
 
-	    ref_assign_new(pmove, pref);
-	    while (--i >= 0) {
-		--psrc;
-		--pmove;
-		packed_get(imem->non_gc_memory, psrc, pmove);
-	    }
-	}
-	pshort = pdest += packed_per_ref;
+            ref_assign_new(pmove, pref);
+            while (--i >= 0) {
+                --psrc;
+                --pmove;
+                packed_get(imem->non_gc_memory, psrc, pmove);
+            }
+        }
+        pshort = pdest += packed_per_ref;
     }
 
     {
-	int atype =
-	(pdest == pbody + size ? t_shortarray : t_mixedarray);
+        int atype =
+        (pdest == pbody + size ? t_shortarray : t_mixedarray);
 
-	/* Pad with legal packed refs so that the garbage collector */
-	/* can scan storage. */
+        /* Pad with legal packed refs so that the garbage collector */
+        /* can scan storage. */
 
-	for (; pad; pad--)
-	    *pdest++ = pt_tag(pt_integer);
+        for (; pad; pad--)
+            *pdest++ = pt_tag(pt_integer);
 
-	/* Finally, make the array. */
+        /* Finally, make the array. */
 
-	ref_stack_pop(pstack, size);
-	make_tasv_new(parr, atype, a_readonly | space, size,
-		      packed, pbody + skip);
+        ref_stack_pop(pstack, size);
+        make_tasv_new(parr, atype, a_readonly | space, size,
+                      packed, pbody + skip);
     }
     return 0;
 }

@@ -55,13 +55,13 @@ int pjl_process(pjl_parser_state *pst, void *pstate,
 bool pjl_skip_to_uel(stream_cursor_read *pr);
 /* return the current setting of a pjl environment variable.  The
    input parameter should be the exact string used in PJLTRM.
-   Sample Usage: 
+   Sample Usage:
          char *formlines = pjl_get_envvar(pst, "formlines");
-	 if (formlines) {
-	     int fl = atoi(formlines);
-	     .
-	     .
-	 }
+         if (formlines) {
+             int fl = atoi(formlines);
+             .
+             .
+         }
    Both variables and values are case insensitive.
 */
 pjl_envvar_t *pjl_get_envvar(pjl_parser_state *pst, const char *pjl_var);

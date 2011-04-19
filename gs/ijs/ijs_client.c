@@ -68,8 +68,8 @@ ijs_invoke_server (const char *server_cmd)
     {
       nbytes = read (ctx->recv_chan.fd, resp_buf, sizeof(resp_buf));
       if (nbytes != sizeof(resp_buf) ||
-	  memcmp (resp_buf, exp_resp_buf, sizeof(resp_buf)))
-	ok = FALSE;
+          memcmp (resp_buf, exp_resp_buf, sizeof(resp_buf)))
+        ok = FALSE;
     }
 
   /* exchange version information with server */
@@ -84,7 +84,7 @@ ijs_invoke_server (const char *server_cmd)
   if (ok)
     {
       if (version > IJS_VERSION)
-	version = IJS_VERSION;
+        version = IJS_VERSION;
       ctx->version = version;
     }
 
@@ -141,7 +141,7 @@ ijs_client_send_cmd_wait (IjsClientCtx *ctx)
 /* This is the blocking version; it's not likely to be efficient */
 int
 ijs_client_send_data_wait (IjsClientCtx *ctx, IjsJobId job_id,
-			   const char *buf, int size)
+                           const char *buf, int size)
 {
   int status;
 
@@ -194,7 +194,7 @@ ijs_client_end_job (IjsClientCtx *ctx, IjsJobId job_id)
  **/
 int
 ijs_client_list_params (IjsClientCtx *ctx, IjsJobId job_id,
-		      char *value, int value_size)
+                      char *value, int value_size)
 {
   int status;
 
@@ -216,8 +216,8 @@ ijs_client_list_params (IjsClientCtx *ctx, IjsJobId job_id,
  **/
 int
 ijs_client_enum_param (IjsClientCtx *ctx, IjsJobId job_id,
-		      const char *key,
-		      char *value, int value_size)
+                      const char *key,
+                      char *value, int value_size)
 {
   int key_size = strlen (key);
   int status;
@@ -239,8 +239,8 @@ ijs_client_enum_param (IjsClientCtx *ctx, IjsJobId job_id,
 
 int
 ijs_client_set_param (IjsClientCtx *ctx, IjsJobId job_id,
-		      const char *key,
-		      const char *value, int value_size)
+                      const char *key,
+                      const char *value, int value_size)
 {
   int key_size = strlen (key);
   int status;
@@ -267,8 +267,8 @@ ijs_client_set_param (IjsClientCtx *ctx, IjsJobId job_id,
  **/
 int
 ijs_client_get_param (IjsClientCtx *ctx, IjsJobId job_id,
-		      const char *key,
-		      char *value, int value_size)
+                      const char *key,
+                      char *value, int value_size)
 {
   int key_size = strlen (key);
   int status;

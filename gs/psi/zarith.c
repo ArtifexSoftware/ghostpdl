@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,35 +38,35 @@ zop_add(register os_ptr op)
 {
     switch (r_type(op)) {
     default:
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     case t_real:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval += op->value.realval;
-	    break;
-	case t_integer:
-	    make_real(op - 1, (double)op[-1].value.intval + op->value.realval);
-	}
-	break;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval += op->value.realval;
+            break;
+        case t_integer:
+            make_real(op - 1, (double)op[-1].value.intval + op->value.realval);
+        }
+        break;
     case t_integer:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval += (double)op->value.intval;
-	    break;
-	case t_integer: {
-	    int int2 = op->value.intval;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval += (double)op->value.intval;
+            break;
+        case t_integer: {
+            int int2 = op->value.intval;
 
-	    if (((op[-1].value.intval += int2) ^ int2) < 0 &&
-		((op[-1].value.intval - int2) ^ int2) >= 0
-		) {			/* Overflow, convert to real */
-		make_real(op - 1, (double)(op[-1].value.intval - int2) + int2);
-	    }
-	}
-	}
+            if (((op[-1].value.intval += int2) ^ int2) < 0 &&
+                ((op[-1].value.intval - int2) ^ int2) >= 0
+                ) {			/* Overflow, convert to real */
+                make_real(op - 1, (double)(op[-1].value.intval - int2) + int2);
+            }
+        }
+        }
     }
     return 0;
 }
@@ -77,7 +77,7 @@ zadd(i_ctx_t *i_ctx_p)
     int code = zop_add(op);
 
     if (code == 0) {
-	pop(1);
+        pop(1);
     }
     return code;
 }
@@ -92,33 +92,33 @@ zdiv(i_ctx_t *i_ctx_p)
     /* We can't use the non_int_cases macro, */
     /* because we have to check explicitly for op == 0. */
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    if (op->value.realval == 0)
-		return_error(e_undefinedresult);
-	    switch (r_type(op1)) {
-		default:
-		    return_op_typecheck(op1);
-		case t_real:
-		    op1->value.realval /= op->value.realval;
-		    break;
-		case t_integer:
-		    make_real(op1, (double)op1->value.intval / op->value.realval);
-	    }
-	    break;
-	case t_integer:
-	    if (op->value.intval == 0)
-		return_error(e_undefinedresult);
-	    switch (r_type(op1)) {
-		default:
-		    return_op_typecheck(op1);
-		case t_real:
-		    op1->value.realval /= (double)op->value.intval;
-		    break;
-		case t_integer:
-		    make_real(op1, (double)op1->value.intval / (double)op->value.intval);
-	    }
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            if (op->value.realval == 0)
+                return_error(e_undefinedresult);
+            switch (r_type(op1)) {
+                default:
+                    return_op_typecheck(op1);
+                case t_real:
+                    op1->value.realval /= op->value.realval;
+                    break;
+                case t_integer:
+                    make_real(op1, (double)op1->value.intval / op->value.realval);
+            }
+            break;
+        case t_integer:
+            if (op->value.intval == 0)
+                return_error(e_undefinedresult);
+            switch (r_type(op1)) {
+                default:
+                    return_op_typecheck(op1);
+                case t_real:
+                    op1->value.realval /= (double)op->value.intval;
+                    break;
+                case t_integer:
+                    make_real(op1, (double)op1->value.intval / (double)op->value.intval);
+            }
     }
     pop(1);
     return 0;
@@ -132,35 +132,35 @@ zmul(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
     default:
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     case t_real:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval *= op->value.realval;
-	    break;
-	case t_integer:
-	    make_real(op - 1, (double)op[-1].value.intval * op->value.realval);
-	}
-	break;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval *= op->value.realval;
+            break;
+        case t_integer:
+            make_real(op - 1, (double)op[-1].value.intval * op->value.realval);
+        }
+        break;
     case t_integer:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval *= (double)op->value.intval;
-	    break;
-	case t_integer: {
-	    double ab = (double)op[-1].value.intval * op->value.intval;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval *= (double)op->value.intval;
+            break;
+        case t_integer: {
+            double ab = (double)op[-1].value.intval * op->value.intval;
             if (ab > 2147483647.)       /* (double)0x7fffffff */
                 make_real(op - 1, ab);
             else if (ab < -2147483648.) /* (double)(int)0x80000000 */
                 make_real(op - 1, ab);
             else
                 op[-1].value.intval = (int)ab;
-	}
-	}
+        }
+        }
     }
     pop(1);
     return 0;
@@ -174,35 +174,35 @@ zop_sub(register os_ptr op)
 {
     switch (r_type(op)) {
     default:
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     case t_real:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval -= op->value.realval;
-	    break;
-	case t_integer:
-	    make_real(op - 1, (double)op[-1].value.intval - op->value.realval);
-	}
-	break;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval -= op->value.realval;
+            break;
+        case t_integer:
+            make_real(op - 1, (double)op[-1].value.intval - op->value.realval);
+        }
+        break;
     case t_integer:
-	switch (r_type(op - 1)) {
-	default:
-	    return_op_typecheck(op - 1);
-	case t_real:
-	    op[-1].value.realval -= (double)op->value.intval;
-	    break;
-	case t_integer: {
-	    int int1 = op[-1].value.intval;
+        switch (r_type(op - 1)) {
+        default:
+            return_op_typecheck(op - 1);
+        case t_real:
+            op[-1].value.realval -= (double)op->value.intval;
+            break;
+        case t_integer: {
+            int int1 = op[-1].value.intval;
 
-	    if ((int1 ^ (op[-1].value.intval = int1 - op->value.intval)) < 0 &&
-		(int1 ^ op->value.intval) < 0
-		) {			/* Overflow, convert to real */
-		make_real(op - 1, (float)int1 - op->value.intval);
-	    }
-	}
-	}
+            if ((int1 ^ (op[-1].value.intval = int1 - op->value.intval)) < 0 &&
+                (int1 ^ op->value.intval) < 0
+                ) {			/* Overflow, convert to real */
+                make_real(op - 1, (float)int1 - op->value.intval);
+            }
+        }
+        }
     }
     return 0;
 }
@@ -213,7 +213,7 @@ zsub(i_ctx_t *i_ctx_p)
     int code = zop_sub(op);
 
     if (code == 0) {
-	pop(1);
+        pop(1);
     }
     return code;
 }
@@ -227,8 +227,8 @@ zidiv(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if ((op->value.intval == 0) || (op[-1].value.intval == MIN_INTVAL && op->value.intval == -1)) {
-	/* Anomalous boundary case: -MININT / -1, fail. */
-	return_error(e_undefinedresult);
+        /* Anomalous boundary case: -MININT / -1, fail. */
+        return_error(e_undefinedresult);
     }
     op[-1].value.intval /= op->value.intval;
     pop(1);
@@ -244,7 +244,7 @@ zmod(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     op[-1].value.intval %= op->value.intval;
     pop(1);
     return 0;
@@ -257,16 +257,16 @@ zneg(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    op->value.realval = -op->value.realval;
-	    break;
-	case t_integer:
-	    if (op->value.intval == MIN_INTVAL)
-		make_real(op, -(float)MIN_INTVAL);
-	    else
-		op->value.intval = -op->value.intval;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            op->value.realval = -op->value.realval;
+            break;
+        case t_integer:
+            if (op->value.intval == MIN_INTVAL)
+                make_real(op, -(float)MIN_INTVAL);
+            else
+                op->value.intval = -op->value.intval;
     }
     return 0;
 }
@@ -278,16 +278,16 @@ zabs(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    if (op->value.realval >= 0)
-		return 0;
-	    break;
-	case t_integer:
-	    if (op->value.intval >= 0)
-		return 0;
-	    break;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            if (op->value.realval >= 0)
+                return 0;
+            break;
+        case t_integer:
+            if (op->value.intval >= 0)
+                return 0;
+            break;
     }
     return zneg(i_ctx_p);
 }
@@ -299,11 +299,11 @@ zceiling(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    op->value.realval = ceil(op->value.realval);
-	case t_integer:;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            op->value.realval = ceil(op->value.realval);
+        case t_integer:;
     }
     return 0;
 }
@@ -315,11 +315,11 @@ zfloor(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    op->value.realval = floor(op->value.realval);
-	case t_integer:;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            op->value.realval = floor(op->value.realval);
+        case t_integer:;
     }
     return 0;
 }
@@ -331,11 +331,11 @@ zround(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    op->value.realval = floor(op->value.realval + 0.5);
-	case t_integer:;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            op->value.realval = floor(op->value.realval + 0.5);
+        case t_integer:;
     }
     return 0;
 }
@@ -347,14 +347,14 @@ ztruncate(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     switch (r_type(op)) {
-	default:
-	    return_op_typecheck(op);
-	case t_real:
-	    op->value.realval =
-		(op->value.realval < 0.0 ?
-		 ceil(op->value.realval) :
-		 floor(op->value.realval));
-	case t_integer:;
+        default:
+            return_op_typecheck(op);
+        case t_real:
+            op->value.realval =
+                (op->value.realval < 0.0 ?
+                 ceil(op->value.realval) :
+                 floor(op->value.realval));
+        case t_integer:;
     }
     return 0;
 }

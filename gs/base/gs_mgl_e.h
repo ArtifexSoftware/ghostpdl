@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -14,9 +14,9 @@
 /* $Id: gs_mgl_e.h 11951 2010-12-15 08:22:58Z ken */
 /* Originally stored in gs/Resource/Init as gs_mgl_e.ps and built into
  * the ROM file system, this file was referenced by ps2write when
- * writing PostScript output. With the inclusion of ps2write in the 
+ * writing PostScript output. With the inclusion of ps2write in the
  * PCL and XPS interpreters we can no longer rely on the PostScript
- * resources being present, and so this file has been converted to 
+ * resources being present, and so this file has been converted to
  * 'C' and included as a header. The original file is now stored
  * in gs/lib with the comments intact.
  */

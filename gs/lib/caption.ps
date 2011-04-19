@@ -1,13 +1,13 @@
 %!
 %    Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -31,13 +31,13 @@ gsave
   initgraphics
   clippath pathbbox
   pop exch 36 add /by exch def
-		% We can't use stringwidth, so we have to show and measure.
+                % We can't use stringwidth, so we have to show and measure.
   gsave
     0 0 0 0 rectclip
     0 0 moveto caption currentpoint pop /bw exch def
   grestore
   add bw sub 2 div /bx exch def
-		% We don't have the font bbox available, so we guess.
+                % We don't have the font bbox available, so we guess.
   /bh captionsize 1.05 mul def
 grestore
 /showcaption

@@ -23,7 +23,7 @@
 /* Warning : the language switch project doesn't guarantee
    that this function is called when switching
    to another interpreter. Therefore each interpreter must take
-   care for its own callback methods before they 
+   care for its own callback methods before they
    may be called by UFST.
  */
  /* Warning : this function may cause a reentrancy problem
@@ -76,6 +76,5 @@ int FAPIU_feof (FILE *s);
 int FAPIU_ferror (FILE *s);
 int FAPIU_fclose (FILE *s);
 int FAPIU_close (void *s);
-
 
 #endif /* gxfapiu_INCLUDED */

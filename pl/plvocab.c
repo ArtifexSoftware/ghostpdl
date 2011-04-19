@@ -234,7 +234,7 @@ static const pl_glyph_mapping_t pl_map_m2u[] = {
     {206, 0x2666}, /* Solid Diamond */
     {207, 0x2663}, /* Solid Club */
     {208, 0x2660}, /* Solid Spade */
-    {209, 0x2022}, /* Medium Solid Bullet */ /* (PC), 0x25CF (other) */ 
+    {209, 0x2022}, /* Medium Solid Bullet */ /* (PC), 0x25CF (other) */
     {210, 0x25D8}, /* Large Solid Sq/Open Dot */
     {211, 0x25CB}, /* Large Open Bullet */		/* (PC only) */
     {212, 0x25D9}, /* Large Solid Sq/Open Ring */
@@ -344,7 +344,7 @@ static const pl_glyph_mapping_t pl_map_m2u[] = {
     {317, 0x02CA}, /* Uppercase Acute */
     {318, 0x02CB}, /* Uppercase Grave */
     {319, 0x02C6}, /* Uppercase Circumflex */
-    {320, 0x00A8}, /* Uppercase Dieresis */ 
+    {320, 0x00A8}, /* Uppercase Dieresis */
     {321, 0x02DC}, /* Uppercase Tilde */
     {322, 0x02C7}, /* Uppercase Hacek */
     {323, 0x02DA}, /* Uppercase Ring */
@@ -500,7 +500,7 @@ static const pl_glyph_mapping_t pl_map_m2u[] = {
     {555, 0x21D5}, /* Up/Dn Arrow Dbl Stroke */
     {556, 0x21D4}, /* Lft/Rt Arrow Dbl Stroke */
     {557, 0x21C4}, /* Right Over Left Arrow */
-    {558, 0x21C6}, /* Left Over Right Arrow */ 
+    {558, 0x21C6}, /* Left Over Right Arrow */
     {559, 0xEFE9}, /* Vector Symbol */
     {560, 0xEFEA}, /* Overline, Composite */
     {561, 0x2200}, /* For All Symbol */
@@ -641,7 +641,7 @@ static const pl_glyph_mapping_t pl_map_m2u[] = {
     {1036, 0x211E}, /* Prescription Sign */
     {1040, 0xF001}, /* Lowercase FI Ligature */  /* u */
     {1041, 0xF002}, /* Lowercase FL Ligature */  /* u */
-    {1042, 0xFB00}, /* Lowercase FF Ligature */ 
+    {1042, 0xFB00}, /* Lowercase FF Ligature */
     {1043, 0xFB03}, /* Lowercase FFI Ligature */
     {1044, 0xFB04}, /* Lowercase ffl Ligature */
     {1045, 0x02DD}, /* Uppercase Dbl Acute */
@@ -1157,7 +1157,7 @@ static const pl_glyph_mapping_t pl_map_u2m[] = {
     {0x0143,     446}, /* Nacute        */
     {0x0144,     447}, /* nacute        */
     {0x0145,     450}, /* Ncomma (NEW)  */
-    {0x0146,     451}, /* ncomma (NEW)  */      
+    {0x0146,     451}, /* ncomma (NEW)  */
     {0x0147,     448}, /* Ncaron        */
     {0x0148,     449}, /* ncaron        */
     {0x0149,     309}, /* apostrophe_n  */
@@ -1679,7 +1679,6 @@ static const pl_glyph_mapping_t pl_map_u2m[] = {
     {0x27BD,    2104}, /* a190          */
     {0x27BE,    2212}, /* a191          */
 
-
     {0x301A,     643}, /* (NEW) */
     {0x301B,     645}, /* (NEW) */
 
@@ -1768,7 +1767,6 @@ static const pl_glyph_mapping_t pl_map_u2m[] = {
     {0xEFFB,     661}, /* (NEW) */
     {0xEFFC,     653}, /* (NEW) */
     {0xEFFD,     211}, /* (NEW) */
-
 
     {0xEFFE,     640}, /* (NEW) */
     {0xEFFF,     623}, /* (NEW) */

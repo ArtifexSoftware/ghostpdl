@@ -1,13 +1,13 @@
 %!
 %   Copyright (C) 1989, 1990, 1992, 1994, 1996 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -55,14 +55,14 @@ gsave
    {0 1 2}			% line join
     { setlinejoin gsave
       { {currentpoint lineto}
-	{3 7 lineto}
-	{3 7 lineto 5 1 lineto}
-	{3 7 lineto 6 3 lineto closepath}
+        {3 7 lineto}
+        {3 7 lineto 5 1 lineto}
+        {3 7 lineto 6 3 lineto closepath}
       }
        { gsave 0 0 moveto exec
          gsave stroke grestore
-	 0.5 setlinewidth 1 0 0 setrgbcolor stroke
-	 grestore 8 0 translate
+         0.5 setlinewidth 1 0 0 setrgbcolor stroke
+         grestore 8 0 translate
        } forall
       grestore 35 0 translate
     } forall
@@ -141,7 +141,7 @@ gsave
  { newpath gsave
    gsave 0.5 setgray 0 0 rad 0 360 arc stroke grestore
    0 90 359
-    { rotate 
+    { rotate
       0 3 14 { ray } for
       15 15 89 { ray } for
     } for

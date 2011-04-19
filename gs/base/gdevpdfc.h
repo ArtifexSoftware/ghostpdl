@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,7 +30,7 @@ typedef enum {
  * Finish creating a CIE-based color space (Calxxx or Lab.)
  */
 int pdf_finish_cie_space(cos_array_t *pca, cos_dict_t *pcd,
-			 const gs_cie_common *pciec);
+                         const gs_cie_common *pciec);
 
 /* ------ Exported by gdevpdfk.c for gdevpdfc.c ------ */
 
@@ -39,21 +39,21 @@ int pdf_finish_cie_space(cos_array_t *pca, cos_dict_t *pcd,
  * broken out only for readability.
  */
 int pdf_iccbased_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
-			     const gs_color_space *pcs, cos_array_t *pca);
+                             const gs_color_space *pcs, cos_array_t *pca);
 
 /*
  * Convert a CIEBased space to Lab or ICCBased.
  */
 int pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
-			  const gs_color_space *pcs, const char *dcsname,
-			  const gs_cie_common *pciec, const gs_range *prange,
-			  cie_cache_one_step_t one_step,
-			  const gs_matrix3 *pmat, const gs_range_t **pprange);
+                          const gs_color_space *pcs, const char *dcsname,
+                          const gs_cie_common *pciec, const gs_range *prange,
+                          cie_cache_one_step_t one_step,
+                          const gs_matrix3 *pmat, const gs_range_t **pprange);
 
 /*
  * Create a Lab color space object.
  */
 int pdf_put_lab_color_space(cos_array_t *pca, cos_dict_t *pcd,
-			    const gs_range ranges[3] /* only [1] and [2] used */);
+                            const gs_range ranges[3] /* only [1] and [2] used */);
 
 #endif /* gdevpdfc_INCLUDED */

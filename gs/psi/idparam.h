@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,17 +41,17 @@ typedef struct gs_uid_s gs_uid;
  * name return 2 if the parameter is null, without setting *pvalue.
  */
 int dict_bool_param(const ref * pdict, const char *kstr,
-		    bool defaultval, bool * pvalue);
+                    bool defaultval, bool * pvalue);
 int dict_int_param(const ref * pdict, const char *kstr,
-		   int minval, int maxval, int defaultval, int *pvalue);
+                   int minval, int maxval, int defaultval, int *pvalue);
 int dict_int_null_param(const ref * pdict, const char *kstr,
-			int minval, int maxval, int defaultval,
-			int *pvalue);
+                        int minval, int maxval, int defaultval,
+                        int *pvalue);
 int dict_uint_param(const ref * pdict, const char *kstr,
-		    uint minval, uint maxval, uint defaultval,
-		    uint * pvalue);
+                    uint minval, uint maxval, uint defaultval,
+                    uint * pvalue);
 int dict_float_param(const ref * pdict, const char *kstr,
-		     floatp defaultval, float *pvalue);
+                     floatp defaultval, float *pvalue);
 /*
  * There are 3 variants of the procedures for getting array parameters.
  * All return the element count if the parameter is present and of the
@@ -77,26 +77,25 @@ int dict_ints_param(const gs_memory_t *mem, const ref * pdict,
  * (max)len.
  */
 int dict_float_array_check_param(const gs_memory_t *mem,
-				 const ref * pdict, const char *kstr,
-				 uint len, float *fvec,
-				 const float *defaultvec,
-				 int under_error, int over_error);
+                                 const ref * pdict, const char *kstr,
+                                 uint len, float *fvec,
+                                 const float *defaultvec,
+                                 int under_error, int over_error);
 int dict_float_array_param(const gs_memory_t *mem,
-			   const ref * pdict, const char *kstr,
-			   uint maxlen, float *fvec,
-			   const float *defaultvec);
+                           const ref * pdict, const char *kstr,
+                           uint maxlen, float *fvec,
+                           const float *defaultvec);
 int dict_floats_param(const gs_memory_t *mem,
-		      const ref * pdict, const char *kstr,
-		      uint len, float *fvec,
-		      const float *defaultvec);
+                      const ref * pdict, const char *kstr,
+                      uint len, float *fvec,
+                      const float *defaultvec);
 /* Do dict_floats_param() and store [/key any] array in $error.errorinfo
  * on failure. The key must be a permanently allocated C string.
  */
 int
 dict_floats_param_errorinfo(i_ctx_t *i_ctx_p,
-		  const ref * pdict, const char *kstr,
-		  uint maxlen, float *fvec, const float *defaultvec);
-
+                  const ref * pdict, const char *kstr,
+                  uint maxlen, float *fvec, const float *defaultvec);
 
 /*
  * For dict_proc_param,
@@ -105,16 +104,15 @@ dict_floats_param_errorinfo(i_ctx_t *i_ctx_p,
  * In either case, return 1.
  */
 int dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
-		    bool defaultval);
-int dict_matrix_param(const gs_memory_t *mem, 
-		      const ref * pdict, const char *kstr,
-		      gs_matrix * pmat);
+                    bool defaultval);
+int dict_matrix_param(const gs_memory_t *mem,
+                      const ref * pdict, const char *kstr,
+                      gs_matrix * pmat);
 int dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
-		   gs_memory_t * mem, const i_ctx_t *i_ctx_p);
+                   gs_memory_t * mem, const i_ctx_t *i_ctx_p);
 
 /* Check that a UID in a dictionary is equal to an existing, valid UID. */
 bool dict_check_uid_param(const ref * pdict, const gs_uid * puid);
-
 
 /* Create and store [/key any] array in $error.errorinfo.
  * The key must be a permanently allocated C string.

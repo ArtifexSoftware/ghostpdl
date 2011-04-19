@@ -48,7 +48,6 @@ typedef enum {
       Set Number of Planes per Row and Set Raster Graphics Resolution */
 } pcl_Level;
 
-
 /* Test macros */
 #define pcl_use_oldERG(level)		(level <= pcl_level_3plus_DJ500)
 #define pcl_use_oldquality(level)	(level <= pcl_level_3plus_S5)
@@ -74,36 +73,36 @@ typedef enum {
     HP documentation but does agree with the actual behaviour of the DJ 850C.
 
     (1) The Page Orientation command has no influence on the orientation of
-	raster graphics data.
+        raster graphics data.
     (2) Therefore it is possible to define, independent of the Page Orientation
-	setting, a coordinate system on the medium by reference to the printing
-	of raster lines ("rows"): the order of pixels within a row defines what
-	is left and right, and the order in which successive rows are printed
-	distinguishes between up and down. I call this the "raster space"
-	coordinate system. (Its units are irrelevant, but we need the
-	directions.)
+        setting, a coordinate system on the medium by reference to the printing
+        of raster lines ("rows"): the order of pixels within a row defines what
+        is left and right, and the order in which successive rows are printed
+        distinguishes between up and down. I call this the "raster space"
+        coordinate system. (Its units are irrelevant, but we need the
+        directions.)
     (3) Because of the way DeskJet printers are constructed (limited memory!),
-	raster space is fixed with respect to the feeding direction: the "up"
-	edge of a sheet in raster space is the one entering the printer first
-	(the leading edge).
+        raster space is fixed with respect to the feeding direction: the "up"
+        edge of a sheet in raster space is the one entering the printer first
+        (the leading edge).
     (4) Hence the media orientation in raster space depends only on the
-	input orientation: short edge first leads to portrait and long edge
-	first to landscape orientation in raster space.
+        input orientation: short edge first leads to portrait and long edge
+        first to landscape orientation in raster space.
     (5) Among other effects, the Page Size command sets in particular the
-	printable region for the media size requested.
+        printable region for the media size requested.
     (6) For raster graphics data, clipping occurs at the edge of the printable
-	region. This happens at the right edge in raster space.
+        region. This happens at the right edge in raster space.
     (7) It is not possible in PCL to specify the input orientation one has
-	chosen. In particular, the sign of a Page Size code has no influence on
-	the printable region as seen in raster space.
+        chosen. In particular, the sign of a Page Size code has no influence on
+        the printable region as seen in raster space.
     (8) Some Page Size codes do modify the orientation for text printing on
-	some printers, but this can be overridden with a subsequent Page
-	Orientation command.
+        some printers, but this can be overridden with a subsequent Page
+        Orientation command.
     (9) The Page Size command usually sets up the printable region under the
-	assumption of portrait orientation in raster space (i.e., the input
-	orientation is short edge first). Exceptions occur with envelope sizes
-	(Env10 and EnvDL) on older DeskJet printers (500 and 500C, possibly
-	also 400) where envelopes have to be fed long edge first.
+        assumption of portrait orientation in raster space (i.e., the input
+        orientation is short edge first). Exceptions occur with envelope sizes
+        (Env10 and EnvDL) on older DeskJet printers (500 and 500C, possibly
+        also 400) where envelopes have to be fed long edge first.
 
     The key conclusion to be drawn from this is that the layer represented by
     the functions in this interface does not have any information on the media
@@ -116,7 +115,6 @@ typedef enum {
     the term "physical page" used in the PCL documentation. The latter is not
     made sufficiently precise, and for printing raster data as done here the
     first concept is the one required.
-
 
     Two Page Size codes are marked "PS3". These are from Adobe's "LanguageLevel
     3 Specification and Adobe PostScript 3 Version 3010 Product Supplement"
@@ -138,13 +136,13 @@ typedef enum {
   pcl_ps_Letter = 2,	/* US Letter (8.5 x 11 in) */
   pcl_ps_Legal = 3,	/* US Legal (8.5 x 14 in) */
   pcl_ps_Tabloid = 6,	/* US Tabloid (11 x 17 in) or Ledger (17 x 11 in)
-			   (DJ1120C). The designation as Tabloid versus Ledger
-			   is not always consistent. I'm following PPD 4.3. */
+                           (DJ1120C). The designation as Tabloid versus Ledger
+                           is not always consistent. I'm following PPD 4.3. */
   pcl_ps_Statement = 15, /* US Statement (5.5 x 8.5 in) (DJ1120C) */
   pcl_ps_HPSuperB = 16,	/* Super B (13 x 19 in (330 x 483 mm) according to
-			   DJ1120C, while 305 x 487 mm according to PPD 4.3).
-			   Not supported in PCL 3 according to BPD07645
-			   (HP 2500C). */
+                           DJ1120C, while 305 x 487 mm according to PPD 4.3).
+                           Not supported in PCL 3 according to BPD07645
+                           (HP 2500C). */
   pcl_ps_A6 = 24,	/* ISO/JIS A6 (105 x 148 mm) */
   pcl_ps_A5 = 25,	/* ISO/JIS A5 (148 x 210 mm) */
   pcl_ps_A4 = 26,	/* ISO/JIS A4 (210 x 297 mm) */
@@ -153,11 +151,11 @@ typedef enum {
   pcl_ps_JISB4 = 46,	/* JIS B4 (257 x 364 mm) (DJ1120C, BPL02327) */
   pcl_ps_Postcard = 71,	/* Japanese Hagaki postcard (100 x 148 mm) */
   pcl_ps_DoublePostcard = 72,	/* Japanese Oufuko-Hagaki postcard
-			   (148 x 200 mm) (DJ6/8) */
+                           (148 x 200 mm) (DJ6/8) */
   pcl_ps_A6Card = 73,	/* "ISO and JIS A6 card" (DJ6/8, DJ1120C). This is the
-			   value given for most DeskJets supporting A6. I do
-			   not know what the difference between this value and
-			   pcl_ps_A6 (24) is. */
+                           value given for most DeskJets supporting A6. I do
+                           not know what the difference between this value and
+                           pcl_ps_A6 (24) is. */
   pcl_ps_Index4x6in = 74,  /* US Index card (4 x 6 in) */
   pcl_ps_Index5x8in = 75,  /* US Index card (5 x 8 in) */
   pcl_ps_Index3x5in = 78,  /* US Index card (3 x 5 in) */
@@ -177,9 +175,9 @@ typedef enum {
   pcl_ps_CustomPageSize = 101,  /* Custom page size */
   pcl_ps_EnvUS_A2 = 109,  /* US A2 envelope (4.375 x 5.75 in) */
   pcl_ps_EnvChou3 = 110, /* Japanese long Envelope #3 (120 mm x 235 mm)
-			    (DJ1120C) */
+                            (DJ1120C) */
   pcl_ps_EnvChou4 = 111, /* Japanese long envelope #4 (90 mm x 205 mm)
-			    (DJ1120C) */
+                            (DJ1120C) */
   pcl_ps_EnvKaku2 = 113	/* Kaku envelope (240 x 332 mm) (DJ1120C) */
 } pcl_PageSize;
 
@@ -190,7 +188,7 @@ typedef enum {
   pcl_cm_none = 0,	/* Unencoded, non-compressed method */
   pcl_cm_rl = 1,	/* Run-Length Encoding */
   pcl_cm_tiff = 2,	/* Tagged Image File Format (TIFF) revision 4.0
-			   "packbits" encoding */
+                           "packbits" encoding */
   pcl_cm_delta = 3,	/* Delta Row Compression */
   pcl_cm_adaptive = 5,	/* Adaptive Compression */
   pcl_cm_crdr = 9	/* Compressed Replacement Delta Row Encoding */
@@ -219,7 +217,6 @@ typedef int pcl_bool;
 #endif	/* TRUE == 0 */
 #endif	/* TRUE */
 
-
 /* Palette (process colour model) */
 typedef enum {
   pcl_no_palette,	/* Don't send Number of Planes per Row */
@@ -228,9 +225,8 @@ typedef enum {
   pcl_CMYK,
   pcl_RGB,		/* Using the RGB palette is discouraged by HP. */
   pcl_any_palette	/* Don't use this value unless you know what you are
-			   doing. */
+                           doing. */
 } pcl_Palette;
-
 
 /* Information per colorant for raster images */
 typedef struct {
@@ -281,14 +277,14 @@ typedef struct {
     media_type,
     media_source,	/* 0: don't request a particular media source */
     media_destination,	/* 0: don't request a particular media destination.
-			   Not based on HP documentation. */
+                           Not based on HP documentation. */
     duplex;		/* -1: don't request anything in this respect,
       0: simplex, 1: duplex long-edge binding, 2: duplex short-edge binding
       (BPL02705). I assume the correct interpretation of the duplex values to
       be:
-	1: duplex, print back side with the same top edge in raster space
-	2: duplex, print back side with top and bottom edges exchanged in
-	   raster space
+        1: duplex, print back side with the same top edge in raster space
+        2: duplex, print back side with top and bottom edges exchanged in
+           raster space
       */
   pcl_bool manual_feed;
 
@@ -338,37 +334,37 @@ typedef struct {
     using an RGB palette unless you have reliable data on the clipping
     boundary. The value should probably always be a multiple of 8. */
   pcl_FileData *global;		/* must point to the data used in the last call
-				   to pcl3_init_file() */
+                                   to pcl3_init_file() */
   pcl_OctetString
     *previous, *next;
     /*  These variables point to the sequences of bit planes for the old and
         the new strip group. The total number of bit planes per group can be
-	obtained in the 'number_of_bitplanes' parameter in '*global'.
+        obtained in the 'number_of_bitplanes' parameter in '*global'.
 
-	The order of bit planes within a strip group is as follows:
-	- Each strip group consists of a number of "colorant strips", one for
-	  each colorant. All strips in such a group cover the same region on
-	  the page. Except for 'pcl_RGB', colorant strips are ordered in the
-	  sequence (K)(CMY), independent of 'order_CMYK'. For an RGB palette,
-	  the order is (of course) RGB.
-	- Each colorant strip contains a number of pixel lines for this
+        The order of bit planes within a strip group is as follows:
+        - Each strip group consists of a number of "colorant strips", one for
+          each colorant. All strips in such a group cover the same region on
+          the page. Except for 'pcl_RGB', colorant strips are ordered in the
+          sequence (K)(CMY), independent of 'order_CMYK'. For an RGB palette,
+          the order is (of course) RGB.
+        - Each colorant strip contains a number of pixel lines for this
           colorant. If there is more than one line, the lines are ordered from
-	  top to bottom as seen from raster space. The number of lines is
-	  the ratio of that colorant's vertical resolution to the smallest
-	  vertical resolution.
-	- Within each pixel line for a colorant, bit planes are ordered from
-	  least to most significant. The number of bit planes within a line is
-	  pcl3_levels_to_planes(levels) for this colorant.
-	  When bit planes are again combined into lines for a particular
-	  colorant, the resulting value per pixel denotes the intensity for
-	  that colorant. A value of zero denotes absence of that colorant.
-	'previous' will be ignored (and may then be NULL) unless a differential
-	compression method is requested (pcl_cm_is_differential()).
+          top to bottom as seen from raster space. The number of lines is
+          the ratio of that colorant's vertical resolution to the smallest
+          vertical resolution.
+        - Within each pixel line for a colorant, bit planes are ordered from
+          least to most significant. The number of bit planes within a line is
+          pcl3_levels_to_planes(levels) for this colorant.
+          When bit planes are again combined into lines for a particular
+          colorant, the resulting value per pixel denotes the intensity for
+          that colorant. A value of zero denotes absence of that colorant.
+        'previous' will be ignored (and may then be NULL) unless a differential
+        compression method is requested (pcl_cm_is_differential()).
 
-	When using an RGB palette you should always send bit planes extending
-	over the whole 'width' because shorter bit planes are implicitly
-	extended with null octets and a pixel value of zero denotes black in an
-	RGB palette which is not usually desired.
+        When using an RGB palette you should always send bit planes extending
+        over the whole 'width' because shorter bit planes are implicitly
+        extended with null octets and a pixel value of zero denotes black in an
+        RGB palette which is not usually desired.
     */
   pcl_Octet *workspace[2];
     /* Storage for the use of these routines. workspace[0] must be non-NULL,
@@ -415,7 +411,6 @@ extern int pcl3_set_mediatype(pcl_FileData *data, int mediatype);
 extern int pcl3_set_oldquality(pcl_FileData *data);
 extern int pcl_compress(pcl_Compression method, const pcl_OctetString *in,
   const pcl_OctetString *prev, pcl_OctetString *out);
-
 
 /* File and page functions */
 extern int pcl3_init_file(FILE *out, pcl_FileData *global);

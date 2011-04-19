@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -59,7 +59,7 @@ struct win_xfont_s {
 };
 
 gs_private_st_dev_ptrs1(st_win_xfont, win_xfont, "win_xfont",
-			win_xfont_enum_ptrs, win_xfont_reloc_ptrs, dev);
+                        win_xfont_enum_ptrs, win_xfont_reloc_ptrs, dev);
 #define wxf ((win_xfont *)xf)
 
 /* Forward references */
@@ -133,8 +133,8 @@ static const font_entry font_names[] =
 static int /*bool */ map_logical_font(HDC, win_xfont *);
 gx_xfont *
 win_lookup_font(gx_device * dev, const byte * fname, uint len,
-	    int encoding_index, const gs_uid * puid, const gs_matrix * pmat,
-		gs_memory_t * mem)
+            int encoding_index, const gs_uid * puid, const gs_matrix * pmat,
+                gs_memory_t * mem)
 {
     win_xfont f;
     win_xfont *wf;
@@ -144,26 +144,26 @@ win_lookup_font(gx_device * dev, const byte * fname, uint len,
 
     /* Only handle simple cases for now. */
     if (pmat->xy != 0 || pmat->yx != 0 || pmat->xx <= 0 ||
-	fabs(fabs(pmat->yy) - pmat->xx) > 0.00002
-	)
-	return NULL;
+        fabs(fabs(pmat->yy) - pmat->xx) > 0.00002
+        )
+        return NULL;
     f.lf.lfHeight = (long)(pmat->xx * 1000);
     /* Don't trust Windows with very small sizes. */
     if (f.lf.lfHeight < 6 || f.lf.lfHeight >= 36)
-	return NULL;
+        return NULL;
     f.lf.lfWidth = 0;
     f.lf.lfEscapement = 0;
     f.lf.lfOrientation = 0;
     f.lf.lfWeight =
-	(string_match(fname, len, "*Bold*", 6, NULL) ?
-	 FW_BOLD : FW_REGULAR);
+        (string_match(fname, len, "*Bold*", 6, NULL) ?
+         FW_BOLD : FW_REGULAR);
     f.lf.lfItalic =
-	string_match(fname, len, "*Italic*", 8, NULL) ||
-	string_match(fname, len, "*Oblique*", 9, NULL);
+        string_match(fname, len, "*Italic*", 8, NULL) ||
+        string_match(fname, len, "*Oblique*", 9, NULL);
     f.lf.lfUnderline = 0;
     f.lf.lfStrikeOut = 0;
     f.lf.lfCharSet =
-	(encoding_index == 2 ? SYMBOL_CHARSET : ANSI_CHARSET);
+        (encoding_index == 2 ? SYMBOL_CHARSET : ANSI_CHARSET);
     f.lf.lfOutPrecision = OUT_CHARACTER_PRECIS;
     f.lf.lfClipPrecision = CLIP_STROKE_PRECIS;
     f.lf.lfQuality = PROOF_QUALITY;
@@ -171,35 +171,35 @@ win_lookup_font(gx_device * dev, const byte * fname, uint len,
     f.invert_y = pmat->yy >= 0;
     hdc = win_get_dc(wdev);
     if (hdc == NULL)
-	return NULL;
+        return NULL;
     for (pfe = font_names; pfe != &font_names[countof(font_names)]; pfe++)
-	if (!strncmp(pfe->key, fname, strlen(pfe->key))) {	/* Found a match. */
-	    strcpy(f.lf.lfFaceName, pfe->value);
-	    f.lf.lfPitchAndFamily = pfe->pitchAndFamily;
-	    if (map_logical_font(hdc, &f))
-		break;
-	}
+        if (!strncmp(pfe->key, fname, strlen(pfe->key))) {	/* Found a match. */
+            strcpy(f.lf.lfFaceName, pfe->value);
+            f.lf.lfPitchAndFamily = pfe->pitchAndFamily;
+            if (map_logical_font(hdc, &f))
+                break;
+        }
     if (f.hFont == 0) {		/* No matches in the table, try with the given name. */
-	uint len;
+        uint len;
 
-	memcpy(f.lf.lfFaceName, fname, name_len);	/* default */
-	for (len = 0; len < name_len; len++)
-	    if (!isalnum(fname[len]))
-		break;
-	f.lf.lfFaceName[len] = 0;
-	f.lf.lfPitchAndFamily = 0;	/* default */
-	if (!map_logical_font(hdc, &f)) {
-	    win_release_dc(wdev, hdc);
-	    return NULL;
-	}
+        memcpy(f.lf.lfFaceName, fname, name_len);	/* default */
+        for (len = 0; len < name_len; len++)
+            if (!isalnum(fname[len]))
+                break;
+        f.lf.lfFaceName[len] = 0;
+        f.lf.lfPitchAndFamily = 0;	/* default */
+        if (!map_logical_font(hdc, &f)) {
+            win_release_dc(wdev, hdc);
+            return NULL;
+        }
     }
     GetTextMetrics(hdc, &f.tm);
     win_release_dc(wdev, hdc);
     f.y_offset = (!f.invert_y ? f.tm.tmAscent : f.tm.tmDescent);
     wf = gs_alloc_struct(mem, win_xfont, &st_win_xfont, "win_lookup_font");
     if (wf == 0) {
-	DeleteObject(f.hFont);
-	return NULL;
+        DeleteObject(f.hFont);
+        return NULL;
     }
     f.common.procs = &win_xfont_procs;
     f.dev = wdev;
@@ -214,12 +214,12 @@ map_logical_font(HDC hdc, win_xfont * xf)
 
     xf->hFont = CreateFontIndirect(&xf->lf);
     if (xf->hFont == 0)
-	return 0;
+        return 0;
     /* Check the face name */
     SelectObject(hdc, xf->hFont);
     GetTextFace(hdc, sizeof(szFaceName), szFaceName);
     if (!strncmp(xf->lf.lfFaceName, szFaceName, strlen(xf->lf.lfFaceName)))
-	return 1;
+        return 1;
     DeleteObject(xf->hFont);
     xf->hFont = 0;
     return 0;
@@ -228,87 +228,87 @@ map_logical_font(HDC hdc, win_xfont * xf)
 /* Convert a character name or index to an xglyph code. */
 gx_xglyph
 win_char_xglyph(gx_xfont * xf, gs_char chr, int encoding_index,
-		gs_glyph glyph, const gs_const_string *glyph_name)
+                gs_glyph glyph, const gs_const_string *glyph_name)
 {
     if (chr == gs_no_char)
-	return gx_no_xglyph;	/* can't look up names yet */
+        return gx_no_xglyph;	/* can't look up names yet */
     if (encoding_index == 0) {	/* Map StandardEncoding to ISOLatin1Encoding. */
-	/* We lose a couple of characters that exist in both */
-	/* StandardEncoding and the Windows OEM encoding but not in */
-	/* the ISOLatin1Encoding; we won't worry about this */
-	/* for now. */
-	chr = gs_map_std_to_iso[chr];
-	encoding_index = 1;
+        /* We lose a couple of characters that exist in both */
+        /* StandardEncoding and the Windows OEM encoding but not in */
+        /* the ISOLatin1Encoding; we won't worry about this */
+        /* for now. */
+        chr = gs_map_std_to_iso[chr];
+        encoding_index = 1;
     }
     if (wxf->hFont == NULL) {	/* TEXTMETRICS not filled in yet */
-	HDC hdc = win_get_dc(wxf->dev);
-	int code;
+        HDC hdc = win_get_dc(wxf->dev);
+        int code;
 
-	if (hdc == NULL)
-	    return gx_no_xglyph;
-	code = win_select_font(hdc, wxf);
-	win_release_dc(wxf->dev, hdc);
-	if (code < 0)
-	    return gx_no_xglyph;
+        if (hdc == NULL)
+            return gx_no_xglyph;
+        code = win_select_font(hdc, wxf);
+        win_release_dc(wxf->dev, hdc);
+        if (code < 0)
+            return gx_no_xglyph;
     }
     switch (wxf->tm.tmCharSet) {
-	case ANSI_CHARSET:
-	    if (encoding_index == 1 && (chr < 0x7f || chr > 0x9f ||
-					chr == 0x91 || chr == 0x92)
-		)
-		break;
-	    return gx_no_xglyph;
-	case OEM_CHARSET:
-	    switch (encoding_index) {
-		case 1:	/* ISOLatin1 */
-		    chr = gs_map_iso_to_oem[chr];
-		    break;
-		case 2:	/* Symbol */
-		    chr = gs_map_symbol_to_oem[chr];
-		    break;
-		default:
-		    return gx_no_xglyph;
-	    }
-	    break;
-	default:
-	    return gx_no_xglyph;
+        case ANSI_CHARSET:
+            if (encoding_index == 1 && (chr < 0x7f || chr > 0x9f ||
+                                        chr == 0x91 || chr == 0x92)
+                )
+                break;
+            return gx_no_xglyph;
+        case OEM_CHARSET:
+            switch (encoding_index) {
+                case 1:	/* ISOLatin1 */
+                    chr = gs_map_iso_to_oem[chr];
+                    break;
+                case 2:	/* Symbol */
+                    chr = gs_map_symbol_to_oem[chr];
+                    break;
+                default:
+                    return gx_no_xglyph;
+            }
+            break;
+        default:
+            return gx_no_xglyph;
     }
     return (chr != 0 && chr >= wxf->tm.tmFirstChar &&
-	    chr <= wxf->tm.tmLastChar ?
-	    (gx_xglyph) chr : gx_no_xglyph);
+            chr <= wxf->tm.tmLastChar ?
+            (gx_xglyph) chr : gx_no_xglyph);
 }
 
 /* Get the metrics for a character. */
 int
 win_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
-		 gs_point * pwidth, gs_int_rect * pbbox)
+                 gs_point * pwidth, gs_int_rect * pbbox)
 {
     int code;
     HDC hdc;
     char chr = (char)xg;
 
     if (wmode != 0)
-	return gs_error_undefined;
+        return gs_error_undefined;
     hdc = win_get_dc(wxf->dev);
     if (hdc == NULL)
-	return gs_error_limitcheck;
+        return gs_error_limitcheck;
     if ((code = win_select_font(hdc, wxf)) < 0) {
-	win_release_dc(wxf->dev, hdc);
-	return code;
+        win_release_dc(wxf->dev, hdc);
+        return code;
     }
 #ifdef __WIN32__
     {
-	SIZE sz;
+        SIZE sz;
 
-	GetTextExtentPoint(hdc, &chr, 1, &sz);
-	pwidth->x = sz.cx;
+        GetTextExtentPoint(hdc, &chr, 1, &sz);
+        pwidth->x = sz.cx;
     }
 #else
     {
-	DWORD extent;
+        DWORD extent;
 
-	extent = GetTextExtent(hdc, &chr, 1);
-	pwidth->x = LOWORD(extent);
+        extent = GetTextExtent(hdc, &chr, 1);
+        pwidth->x = LOWORD(extent);
     }
 #endif
     win_release_dc(wxf->dev, hdc);
@@ -316,11 +316,11 @@ win_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
     pbbox->p.x = 0;
     pbbox->q.x = (int)pwidth->x;
     if (wxf->invert_y) {
-	pbbox->p.y = -wxf->tm.tmDescent;
-	pbbox->q.y = wxf->tm.tmAscent;
+        pbbox->p.y = -wxf->tm.tmDescent;
+        pbbox->q.y = wxf->tm.tmAscent;
     } else {
-	pbbox->p.y = -wxf->tm.tmAscent;
-	pbbox->q.y = wxf->tm.tmDescent;
+        pbbox->p.y = -wxf->tm.tmAscent;
+        pbbox->q.y = wxf->tm.tmDescent;
     }
     return 0;
 }
@@ -328,85 +328,85 @@ win_char_metrics(gx_xfont * xf, gx_xglyph xg, int wmode,
 /* Render a character. */
 int
 win_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
-		int xo, int yo, gx_color_index color, int required)
+                int xo, int yo, gx_color_index color, int required)
 {
     char chr = (char)xg;
     int code;
 
 #ifdef NOTUSED			/* we don't own any windows so we can no longer do this */
     if (dev->dname == gs_mswin_device.dname &&
-	wdev->hdctext != NULL && !wxf->invert_y
-	) {			/* Display the character directly */
-	HDC hdc = wdev->hdctext;
-	PALETTEENTRY *pal = &wdev->limgpalette->palPalEntry[color];
+        wdev->hdctext != NULL && !wxf->invert_y
+        ) {			/* Display the character directly */
+        HDC hdc = wdev->hdctext;
+        PALETTEENTRY *pal = &wdev->limgpalette->palPalEntry[color];
 
-	if ((code = win_select_font(hdc, wxf)) < 0)
-	    return code;
-	SetTextColor(hdc, RGB(pal->peRed, pal->peGreen, pal->peBlue));
-	SetBkMode(hdc, TRANSPARENT);
-	TextOut(hdc, xo, yo - wxf->y_offset, &chr, 1);
+        if ((code = win_select_font(hdc, wxf)) < 0)
+            return code;
+        SetTextColor(hdc, RGB(pal->peRed, pal->peGreen, pal->peBlue));
+        SetBkMode(hdc, TRANSPARENT);
+        TextOut(hdc, xo, yo - wxf->y_offset, &chr, 1);
     } else
 #endif
     if (!required)
-	code = -1;		/* too hard */
+        code = -1;		/* too hard */
     else {			/* Display on an intermediate bitmap, then copy the bits. */
-	gs_point wxy;
-	gs_int_rect bbox;
-	int w, h, wbm, raster;
-	gx_device_win *fdev = wxf->dev;
-	HBITMAP hbm;
-	byte *bits;
+        gs_point wxy;
+        gs_int_rect bbox;
+        int w, h, wbm, raster;
+        gx_device_win *fdev = wxf->dev;
+        HBITMAP hbm;
+        byte *bits;
 
-	code = (*xf->common.procs->char_metrics) (xf, xg, 0,
-						  &wxy, &bbox);
-	if (code < 0)
-	    return code;
-	w = bbox.q.x - bbox.p.x;
-	h = bbox.q.y - bbox.p.y;
-	wbm = ROUND_UP(w, align_bitmap_mod * 8);
-	raster = wbm >> 3;
-	bits = gs_malloc(dev->memory, h, raster, "win_render_char");
-	if (bits == 0)
-	    return gs_error_limitcheck;
-	hbm = CreateBitmap(wbm, h, 1, 1, NULL);
-	if (hbm == NULL) {
-	    code = gs_error_limitcheck;
-	} else {
-	    HDC hdcwin = win_get_dc(fdev);
-	    HDC hdcbit = CreateCompatibleDC(hdcwin);
+        code = (*xf->common.procs->char_metrics) (xf, xg, 0,
+                                                  &wxy, &bbox);
+        if (code < 0)
+            return code;
+        w = bbox.q.x - bbox.p.x;
+        h = bbox.q.y - bbox.p.y;
+        wbm = ROUND_UP(w, align_bitmap_mod * 8);
+        raster = wbm >> 3;
+        bits = gs_malloc(dev->memory, h, raster, "win_render_char");
+        if (bits == 0)
+            return gs_error_limitcheck;
+        hbm = CreateBitmap(wbm, h, 1, 1, NULL);
+        if (hbm == NULL) {
+            code = gs_error_limitcheck;
+        } else {
+            HDC hdcwin = win_get_dc(fdev);
+            HDC hdcbit = CreateCompatibleDC(hdcwin);
 
-	    dev_proc_copy_mono((*copy_mono)) =
-		dev_proc(dev, copy_mono);
-	    int y = yo - wxf->y_offset;
+            dev_proc_copy_mono((*copy_mono)) =
+                dev_proc(dev, copy_mono);
+            int y = yo - wxf->y_offset;
 
-	    SetMapMode(hdcbit, GetMapMode(hdcwin));
-	    win_select_font(hdcbit, wxf);
-	    SelectObject(hdcbit, hbm);
-	    PatBlt(hdcbit, 0, 0, wbm, h, rop_write_0s);
-	    SetTextColor(hdcbit, 0xffffffL);	/* 1 */
-	    SetBkMode(hdcbit, TRANSPARENT);
-	    TextOut(hdcbit, 0, 0, &chr, 1);
-	    GetBitmapBits(hbm, (DWORD) raster * h, bits);
-	    DeleteDC(hdcbit);
-	    win_release_dc(fdev, hdcwin);
-	    DeleteObject(hbm);
-	    if (!wxf->invert_y)
-		code = (*copy_mono) (dev, bits, 0,
-				     raster, gx_no_bitmap_id,
-				     xo, y, w, h,
-				     gx_no_color_index, color);
-	    else {		/* Copy scan lines in reverse order. */
-		int i;
+            SetMapMode(hdcbit, GetMapMode(hdcwin));
+            win_select_font(hdcbit, wxf);
+            SelectObject(hdcbit, hbm);
+            PatBlt(hdcbit, 0, 0, wbm, h, rop_write_0s);
+            SetTextColor(hdcbit, 0xffffffL);	/* 1 */
+            SetBkMode(hdcbit, TRANSPARENT);
+            TextOut(hdcbit, 0, 0, &chr, 1);
+            GetBitmapBits(hbm, (DWORD) raster * h, bits);
+            DeleteDC(hdcbit);
+            win_release_dc(fdev, hdcwin);
+            DeleteObject(hbm);
+            if (!wxf->invert_y)
+                code = (*copy_mono) (dev, bits, 0,
+                                     raster, gx_no_bitmap_id,
+                                     xo, y, w, h,
+                                     gx_no_color_index, color);
+            else {		/* Copy scan lines in reverse order. */
+                int i;
 
-		y += h - 1;
-		for (i = 0; i < h; i++)
-		    (*copy_mono) (dev, bits + i * raster,
-				  0, raster, gx_no_bitmap_id,
-				  xo, y - i, w, 1,
-				  gx_no_color_index, color);
-	    }
-	}
-	gs_free(dev->memory, bits, h, raster, "win_render_char");
+                y += h - 1;
+                for (i = 0; i < h; i++)
+                    (*copy_mono) (dev, bits + i * raster,
+                                  0, raster, gx_no_bitmap_id,
+                                  xo, y - i, w, 1,
+                                  gx_no_color_index, color);
+            }
+        }
+        gs_free(dev->memory, bits, h, raster, "win_render_char");
     }
     return (code < 0 ? code : 0);
 }
@@ -416,11 +416,11 @@ static int
 win_release(gx_xfont * xf, gs_memory_t * mem)
 {
     if (wxf->hFont) {
-	DeleteObject(wxf->hFont);
-	wxf->hFont = 0;
+        DeleteObject(wxf->hFont);
+        wxf->hFont = 0;
     }
     if (mem != NULL)
-	gs_free_object(mem, xf, "win_release");
+        gs_free_object(mem, xf, "win_release");
     return 0;
 }
 
@@ -452,10 +452,10 @@ win_select_font(HDC hdc, win_xfont * wxf)
     HFONT hFont = wxf->hFont;
 
     if (hFont == NULL) {	/* The font was released to free up resources. */
-	/* Re-acquire it now. */
-	wxf->hFont = CreateFontIndirect(&wxf->lf);
-	if (wxf->hFont == NULL)
-	    return gs_error_limitcheck;
+        /* Re-acquire it now. */
+        wxf->hFont = CreateFontIndirect(&wxf->lf);
+        if (wxf->hFont == NULL)
+            return gs_error_limitcheck;
     }
     SelectObject(hdc, wxf->hFont);
     return 0;

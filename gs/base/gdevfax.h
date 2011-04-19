@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,10 +33,10 @@ typedef struct gx_device_fax_s {
 
 #define FAX_DEVICE_BODY(dtype, procs, dname, print_page)\
     prn_device_std_body(dtype, procs, dname,\
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
-			X_DPI, Y_DPI,\
-			0, 0, 0, 0,	/* margins */\
-			1, print_page),\
+                        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
+                        X_DPI, Y_DPI,\
+                        0, 0, 0, 0,	/* margins */\
+                        1, print_page),\
     1,				/* AdjustWidth */\
     0                           /* MinFeatureSize */
 
@@ -51,12 +51,12 @@ extern const gx_device_procs gdev_fax_std_procs;
 /* Other procedures */
 void gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev);
 void gdev_fax_init_fax_state(stream_CFE_state *ss,
-			     const gx_device_fax *fdev);
+                             const gx_device_fax *fdev);
 int gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
-			 const stream_template * temp, stream_state * ss,
-			 int width, int row_first,
-			 int row_end /* last + 1 */);
+                         const stream_template * temp, stream_state * ss,
+                         int width, int row_first,
+                         int row_end /* last + 1 */);
 int gdev_fax_print_page(gx_device_printer *pdev, FILE *prn_stream,
-			stream_CFE_state *ss);
+                        stream_CFE_state *ss);
 
 #endif /* gdevfax_INCLUDED */

@@ -20,7 +20,7 @@
  *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111
  *   U.S.A.
  */
- 
+
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This program may also be distributed as part of AFPL Ghostscript, under the
@@ -79,7 +79,6 @@ BJL_command BJL_command_set[] = {
     { BJL_CMC_AP "Off=Disable", BJC_BJL_OFF_DISABLE,   39},
     { NULL }
 };
-
 
 /* String parameter definitions */
 
@@ -215,22 +214,21 @@ static media_t media_codes[] = {
 
 static const gx_device_procs bjcmono_procs =
 prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		 NULL, NULL,
-		 gdev_bjc_get_params, gdev_bjc_put_params);
+                 NULL, NULL,
+                 gdev_bjc_get_params, gdev_bjc_put_params);
 
 const gx_device_bjc_printer gs_bjcmono_device =
 bjc_device(bjcmono_procs, "bjcmono",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
            (3.4 / 25.4), (7.0 / 25.4), (3.4 / 25.4), (3.0 / 25.4),
-	   1,                   /* num components */
-	   1,                   /* depth  */
-	   1,                   /* max gray */
-	   0,                   /* max color */
-	   2,                   /* dither gray */
+           1,                   /* num components */
+           1,                   /* depth  */
+           1,                   /* max gray */
+           0,                   /* max color */
+           2,                   /* dither gray */
            0,                   /* dither color */
            bjc_print_page_mono, INK_K);  /* printer rutin, default ink */
-
 
 /***************************************************************************/
 /* -------------------------- 8 bit Grayscale ---------------------------- */
@@ -238,72 +236,65 @@ bjc_device(bjcmono_procs, "bjcmono",
 
 static const gx_device_procs bjcgray_procs =
 prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
-		 gdev_bjc_get_params, gdev_bjc_put_params);
+                 gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb,
+                 gdev_bjc_get_params, gdev_bjc_put_params);
 
 const gx_device_bjc_printer gs_bjcgray_device =
 bjc_device(bjcgray_procs, "bjcgray",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
            (3.4 / 25.4), (7.0 / 25.4), (3.4 / 25.4), (3.0 / 25.4),
-	   1,                   /* num components */
-	   8,                   /* depth  */
-	   255,                 /* max gray */
-	   0,                   /* max color */
-	   256,                 /* dither gray */
-	   0,                   /* dither color */
-	   bjc_print_page_gray, INK_K);
-
+           1,                   /* num components */
+           8,                   /* depth  */
+           255,                 /* max gray */
+           0,                   /* max color */
+           256,                 /* dither gray */
+           0,                   /* dither color */
+           bjc_print_page_gray, INK_K);
 
 /***************************************************************************/
 /* --------------------------- 3 bit CMYK Color -------------------------- */
 /***************************************************************************/
 
-
-
 static const gx_device_procs bjc_cmykcolor_procs =
 bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                      cmyk_1bit_map_color_rgb, cmyk_1bit_map_cmyk_color,
-	             gdev_bjc_get_params, gdev_bjc_put_params);
+                     gdev_bjc_get_params, gdev_bjc_put_params);
 
 const gx_device_bjc_printer gs_bjccmyk_device =
 bjc_device(bjc_cmykcolor_procs, "bjccmyk",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
            (3.4 / 25.4), (7.0 / 25.4), (3.4 / 25.4), (3.0 / 25.4),
-	   4,                   /* num components */
-	   4,                   /* depth  */
-	   1,                   /* max gray */
-	   1,                   /* max color */
-	   2,                   /* dither gray */
-	   2,                   /* dither color */
-	   bjc_print_page_cmyk, (INK_K|INK_C|INK_M|INK_Y));
-
+           4,                   /* num components */
+           4,                   /* depth  */
+           1,                   /* max gray */
+           1,                   /* max color */
+           2,                   /* dither gray */
+           2,                   /* dither color */
+           bjc_print_page_cmyk, (INK_K|INK_C|INK_M|INK_Y));
 
 /***************************************************************************/
 /* --------------------------- 24 bit TrueColor -------------------------- */
 /***************************************************************************/
 
-
-
 static const gx_device_procs bjc_truecolor_procs =
 bjc_cmyk_param_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                      cmyk_8bit_map_color_rgb, cmyk_8bit_map_cmyk_color,
-	             gdev_bjc_get_params, gdev_bjc_put_params);
+                     gdev_bjc_get_params, gdev_bjc_put_params);
 
 const gx_device_bjc_printer gs_bjccolor_device =
 bjc_device(bjc_truecolor_procs, "bjccolor",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
            (3.4 / 25.4), (7.0 / 25.4), (3.4 / 25.4), (3.0 / 25.4),
-	   4,                   /* num components */
-	   32,                  /* depth  */
-	   255,                 /* max gray */
-	   255,                 /* max color */
-	   256,                 /* dither gray */
-	   256,                 /* dither color */
-	   bjc_print_page_color, (INK_K|INK_C|INK_M|INK_Y));
-
+           4,                   /* num components */
+           32,                  /* depth  */
+           255,                 /* max gray */
+           255,                 /* max color */
+           256,                 /* dither gray */
+           256,                 /* dither color */
+           bjc_print_page_color, (INK_K|INK_C|INK_M|INK_Y));
 
 /***************************************************************************/
 /* ---------------------------Print a page routine------------------------ */
@@ -324,21 +315,19 @@ bjc_print_page(gx_device_printer * pdev, FILE * file)
     char alma[512];
 
     sprintf(alma, "\nNumC: %d, Depth: %d, Mgray: %d, Mrgb: %d\n"
-	    "Dgray: %d, Drgb: %d", pdev->color_info.num_components,
-	    pdev->color_info.depth,
-	    pdev->color_info.max_gray,
-	    pdev->color_info.max_color,
-	    pdev->color_info.dither_grays,
-	    pdev->color_info.dither_colors
-	   );
+            "Dgray: %d, Drgb: %d", pdev->color_info.num_components,
+            pdev->color_info.depth,
+            pdev->color_info.max_gray,
+            pdev->color_info.max_color,
+            pdev->color_info.dither_grays,
+            pdev->color_info.dither_colors
+           );
 
-    if (row == 0)     
-	return_error(gs_error_VMerror);
-
+    if (row == 0)
+        return_error(gs_error_VMerror);
 
 done:
     gs_free_object(pdev->memory, row, "bjc file buffer");
-
 
     fwrite((const char *) alma, 512, 1, file);
     return code;
@@ -352,16 +341,14 @@ bjc_put_bjl_command(FILE * file, int bjl_command)
 {
     BJL_command *command = BJL_command_set;
     for( ; command->string; command++)
-	if(command->numeric == bjl_command) break;
+        if(command->numeric == bjl_command) break;
     if(command->string) {
       fwrite((const char *)"\033[K\002\000\000\037BJLSTART\012", 16, 1, file);
       fwrite(command->string, command->length, 1, file);
       fwrite((const char *)"\012BJLEND\012", 8, 1, file); }
 }
 
-
 /* ------ Get/put parameters ------ */
-
 
 /* Functions for manipulation params strings */
 
@@ -370,9 +357,9 @@ paramValueToParam(const stringParamDescription * params, int value)
 {
 
     for (; params->p_string.data; ++params) {
-	if (params->p_value == value) {
-	    return params;
-	}
+        if (params->p_value == value) {
+            return params;
+        }
     }
 
     return (stringParamDescription *) NULL;
@@ -380,19 +367,18 @@ paramValueToParam(const stringParamDescription * params, int value)
 
 const stringParamDescription *
 paramStringToParam(const stringParamDescription * params,
-    		   const char * name, uint len)
+                   const char * name, uint len)
 {
     for (; params->p_string.data; ++params) {
         if (len == params->p_string.size)
-	    if (!(strncmp((const char *)params->p_string.data,
-			  name, len))) {
-		return params;
-	    }
+            if (!(strncmp((const char *)params->p_string.data,
+                          name, len))) {
+                return params;
+            }
     }
 
     return (stringParamDescription *) NULL;
 }
-
 
 /* Get parameters.  BJC printer devices add several more parameters */
 /* to the default set. */
@@ -403,33 +389,33 @@ gdev_bjc_get_params(gx_device * pdev, gs_param_list * plist)
 
     int code = gdev_prn_get_params(pdev, plist);
     if (code < 0 ||
-	(code = param_write_string(plist, "PrinterType",
-		 &paramValueToParam(strPrinterType, ppdev->printerType)->p_string)) < 0 ||
-	(code = param_write_string(plist, "Feeder",
-		 &paramValueToParam(strFeeder, ppdev->feeder)->p_string)) < 0 ||
-	(code = param_write_string(plist, "Media",
-		 &paramValueToParam(strMedia, ppdev->mediaType)->p_string)) < 0 ||
-	(code = param_write_string(plist, "Quality",
-		 &paramValueToParam(strQuality, ppdev->quality)->p_string)) < 0 ||
-	(code = param_write_string(plist, "InkColor",
-		 &paramValueToParam(strInk, ppdev->ink)->p_string)) < 0 ||
+        (code = param_write_string(plist, "PrinterType",
+                 &paramValueToParam(strPrinterType, ppdev->printerType)->p_string)) < 0 ||
+        (code = param_write_string(plist, "Feeder",
+                 &paramValueToParam(strFeeder, ppdev->feeder)->p_string)) < 0 ||
+        (code = param_write_string(plist, "Media",
+                 &paramValueToParam(strMedia, ppdev->mediaType)->p_string)) < 0 ||
+        (code = param_write_string(plist, "Quality",
+                 &paramValueToParam(strQuality, ppdev->quality)->p_string)) < 0 ||
+        (code = param_write_string(plist, "InkColor",
+                 &paramValueToParam(strInk, ppdev->ink)->p_string)) < 0 ||
 
-	(code = param_write_bool(plist, "Inverse", &ppdev->inverse)) < 0 ||
-	(code = param_write_bool(plist, "Smooth", &ppdev->smooth)) < 0 ||
-	(code = param_write_bool(plist, "Compress", &ppdev->compress)) < 0 ||
-	(code = param_write_bool(plist, "LimitCheck", &ppdev->limit)) < 0 ||
-	(code = param_write_bool(plist, "DecomposeK", &ppdev->compose)) < 0 ||
+        (code = param_write_bool(plist, "Inverse", &ppdev->inverse)) < 0 ||
+        (code = param_write_bool(plist, "Smooth", &ppdev->smooth)) < 0 ||
+        (code = param_write_bool(plist, "Compress", &ppdev->compress)) < 0 ||
+        (code = param_write_bool(plist, "LimitCheck", &ppdev->limit)) < 0 ||
+        (code = param_write_bool(plist, "DecomposeK", &ppdev->compose)) < 0 ||
 
-	(code = param_write_int(plist, "PaperRed", &ppdev->paperColor.red)) < 0 ||
-	(code = param_write_int(plist, "PaperGreen", &ppdev->paperColor.green)) < 0 ||
-	(code = param_write_int(plist, "PaperBlue", &ppdev->paperColor.blue)) < 0 ||
-	(code = param_write_int(plist, "Random", &ppdev->rnd)) < 0 ||
+        (code = param_write_int(plist, "PaperRed", &ppdev->paperColor.red)) < 0 ||
+        (code = param_write_int(plist, "PaperGreen", &ppdev->paperColor.green)) < 0 ||
+        (code = param_write_int(plist, "PaperBlue", &ppdev->paperColor.blue)) < 0 ||
+        (code = param_write_int(plist, "Random", &ppdev->rnd)) < 0 ||
 
-	(code = param_write_float(plist, "Gamma", &ppdev->gamma)) < 0 ||
-	(code = param_write_float(plist, "RedGamma", &ppdev->redGamma)) < 0 ||
-	(code = param_write_float(plist, "GreenGamma", &ppdev->greenGamma)) < 0 ||
-	(code = param_write_float(plist, "BlueGamma", &ppdev->blueGamma)) < 0)
-	return code;
+        (code = param_write_float(plist, "Gamma", &ppdev->gamma)) < 0 ||
+        (code = param_write_float(plist, "RedGamma", &ppdev->redGamma)) < 0 ||
+        (code = param_write_float(plist, "GreenGamma", &ppdev->greenGamma)) < 0 ||
+        (code = param_write_float(plist, "BlueGamma", &ppdev->blueGamma)) < 0)
+        return code;
     return code;
 
 }
@@ -448,118 +434,118 @@ gdev_bjc_put_params(gx_device * pdev, gs_param_list * plist)
 
 #define CHECK_PARAM_CASES(good, label)			\
     case 1:						\
-	break;						\
+        break;						\
     case 0:						\
         if ( good ) break;				\
-    	ecode = gs_error_rangecheck; goto label;	\
+        ecode = gs_error_rangecheck; goto label;	\
     default:						\
-	ecode = code;					\
+        ecode = code;					\
 label:							\
-	param_signal_error(plist, param_name, ecode)
+        param_signal_error(plist, param_name, ecode)
 
 #define CHECK_str_PARAM_CASES(set, str, label)     	\
     case 1:						\
-	break;						\
+        break;						\
     case 0:						\
         parsize = tmppar.size;                          \
         tmpstr = paramStringToParam(str,                \
-			 (const char *)tmppar.data,     \
-			  parsize);                     \
+                         (const char *)tmppar.data,     \
+                          parsize);                     \
         if ( tmpstr ) { set = tmpstr->p_value; break;}	\
-    	ecode = gs_error_rangecheck; goto label;	\
+        ecode = gs_error_rangecheck; goto label;	\
     default:						\
-	ecode = code;					\
+        ecode = code;					\
 label:							\
-	param_signal_error(plist, param_name, ecode)
+        param_signal_error(plist, param_name, ecode)
 
     switch ( code = param_read_string(plist, (param_name = "PrinterType"),
-				     &tmppar)) {
-	CHECK_str_PARAM_CASES(ppdev->printerType, strPrinterType, label_Type);
+                                     &tmppar)) {
+        CHECK_str_PARAM_CASES(ppdev->printerType, strPrinterType, label_Type);
     }
     switch (code = param_read_string(plist, (param_name = "Feeder"),
-				  &tmppar)) {
-	CHECK_str_PARAM_CASES(ppdev->feeder, strFeeder, label_Feeder);
+                                  &tmppar)) {
+        CHECK_str_PARAM_CASES(ppdev->feeder, strFeeder, label_Feeder);
     }
     switch (code = param_read_string(plist, (param_name = "Media"),
-				  &tmppar)) {
-	CHECK_str_PARAM_CASES(ppdev->mediaType, strMedia, label_Paper);
+                                  &tmppar)) {
+        CHECK_str_PARAM_CASES(ppdev->mediaType, strMedia, label_Paper);
     }
     switch (code = param_read_string(plist, (param_name = "Quality"),
-				  &tmppar)) {
-	CHECK_str_PARAM_CASES(ppdev->quality, strQuality, label_Quality);
+                                  &tmppar)) {
+        CHECK_str_PARAM_CASES(ppdev->quality, strQuality, label_Quality);
     }
     switch (code = param_read_string(plist, (param_name = "InkColor"),
-				  &tmppar)) {
-	CHECK_str_PARAM_CASES(ppdev->ink, strInk, label_Ink);
+                                  &tmppar)) {
+        CHECK_str_PARAM_CASES(ppdev->ink, strInk, label_Ink);
     }
 
     switch (code = param_read_bool(plist, (param_name = "Inverse"),
-				  &ppdev->inverse)) {
-	CHECK_PARAM_CASES( ppdev->inverse == true ||
-			   ppdev->inverse == false , label_Inverse);
+                                  &ppdev->inverse)) {
+        CHECK_PARAM_CASES( ppdev->inverse == true ||
+                           ppdev->inverse == false , label_Inverse);
     }
     switch (code = param_read_bool(plist, (param_name = "Compress"),
-				  &ppdev->compress)) {
-	CHECK_PARAM_CASES( ppdev->compress == true ||
-			   ppdev->compress == false , label_Compress);
+                                  &ppdev->compress)) {
+        CHECK_PARAM_CASES( ppdev->compress == true ||
+                           ppdev->compress == false , label_Compress);
     }
     switch (code = param_read_bool(plist, (param_name = "Smooth"),
-				  &ppdev->smooth)) {
-	CHECK_PARAM_CASES( ppdev->smooth == true ||
-			   ppdev->smooth == false , label_Smooth);
+                                  &ppdev->smooth)) {
+        CHECK_PARAM_CASES( ppdev->smooth == true ||
+                           ppdev->smooth == false , label_Smooth);
     }
 
     switch (code = param_read_bool(plist, (param_name = "LimitCheck"),
-				  &ppdev->limit)) {
-	CHECK_PARAM_CASES( ppdev->limit == true ||
-			   ppdev->limit == false , label_Limit);
+                                  &ppdev->limit)) {
+        CHECK_PARAM_CASES( ppdev->limit == true ||
+                           ppdev->limit == false , label_Limit);
     }
 
     switch (code = param_read_bool(plist, (param_name = "DecomposeK"),
-				  &ppdev->compose)) {
-	CHECK_PARAM_CASES( ppdev->compose == true ||
-			   ppdev->compose == false , label_Compose);
+                                  &ppdev->compose)) {
+        CHECK_PARAM_CASES( ppdev->compose == true ||
+                           ppdev->compose == false , label_Compose);
     }
 
     switch (code = param_read_int(plist, (param_name = "PaperRed"),
-				  &ppdev->paperColor.red)) {
-	CHECK_PARAM_CASES( ppdev->paperColor.red >= 0 &&
-			   ppdev->paperColor.red <= 255 , label_Red);
+                                  &ppdev->paperColor.red)) {
+        CHECK_PARAM_CASES( ppdev->paperColor.red >= 0 &&
+                           ppdev->paperColor.red <= 255 , label_Red);
     }
     switch (code = param_read_int(plist, (param_name = "PaperGreen"),
-				  &ppdev->paperColor.green)) {
-	CHECK_PARAM_CASES(ppdev->paperColor.green >= 0 &&
-			  ppdev->paperColor.green <= 255 , label_Green);
+                                  &ppdev->paperColor.green)) {
+        CHECK_PARAM_CASES(ppdev->paperColor.green >= 0 &&
+                          ppdev->paperColor.green <= 255 , label_Green);
     }
     switch (code = param_read_int(plist, (param_name = "PaperBlue"),
-				  &ppdev->paperColor.blue)) {
-	CHECK_PARAM_CASES(ppdev->paperColor.blue >= 0 &&
-			  ppdev->paperColor.blue <= 255  , label_Blue);
+                                  &ppdev->paperColor.blue)) {
+        CHECK_PARAM_CASES(ppdev->paperColor.blue >= 0 &&
+                          ppdev->paperColor.blue <= 255  , label_Blue);
     }
     switch (code = param_read_int(plist, (param_name = "Random"),
-				  &ppdev->rnd)) {
-	CHECK_PARAM_CASES(ppdev->rnd >= 0 &&
-			  ppdev->rnd <= 100  , label_Random);
+                                  &ppdev->rnd)) {
+        CHECK_PARAM_CASES(ppdev->rnd >= 0 &&
+                          ppdev->rnd <= 100  , label_Random);
     }
     switch (code = param_read_float(plist, (param_name = "Gamma"),
-				  &ppdev->gamma)) {
-	CHECK_PARAM_CASES(ppdev->gamma >= 0.0 &&
-			  ppdev->gamma <= 10.0  , label_Gamma);
+                                  &ppdev->gamma)) {
+        CHECK_PARAM_CASES(ppdev->gamma >= 0.0 &&
+                          ppdev->gamma <= 10.0  , label_Gamma);
     }
     switch (code = param_read_float(plist, (param_name = "RedGamma"),
-				  &ppdev->redGamma)) {
-	CHECK_PARAM_CASES(ppdev->redGamma >= 0.0 &&
-			  ppdev->redGamma <= 10.0  , label_Rgamma);
+                                  &ppdev->redGamma)) {
+        CHECK_PARAM_CASES(ppdev->redGamma >= 0.0 &&
+                          ppdev->redGamma <= 10.0  , label_Rgamma);
     }
     switch (code = param_read_float(plist, (param_name = "GreenGamma"),
-				  &ppdev->greenGamma)) {
-	CHECK_PARAM_CASES(ppdev->greenGamma >= 0.0 &&
-			  ppdev->greenGamma <= 10.0  , label_Ggamma);
+                                  &ppdev->greenGamma)) {
+        CHECK_PARAM_CASES(ppdev->greenGamma >= 0.0 &&
+                          ppdev->greenGamma <= 10.0  , label_Ggamma);
     }
     switch (code = param_read_float(plist, (param_name = "BlueGamma"),
-				  &ppdev->blueGamma)) {
-	CHECK_PARAM_CASES(ppdev->blueGamma >= 0.0 &&
-			  ppdev->blueGamma <= 10.0  , label_Bgamma);
+                                  &ppdev->blueGamma)) {
+        CHECK_PARAM_CASES(ppdev->blueGamma >= 0.0 &&
+                          ppdev->blueGamma <= 10.0  , label_Bgamma);
     }
     if (ecode < 0) return ecode;
 
@@ -577,12 +563,12 @@ bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
     uint cmplen;
     byte *row = gs_alloc_bytes(pdev->memory, raster, "bjc mono file buffer");
     byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
-			       "bjc mono comp buffer"); /*worst case */
+                               "bjc mono comp buffer"); /*worst case */
     byte *outrow; /* misc variable for send a row */
     int y;
     int skip;    /* empty raster lines */
     char color = (ppdev->smooth == true ? 0x12 :       /* smooted black */
-		  ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
+                  ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
     char ink   = 0x01; /* regular ink type */
     char compress = (ppdev->compress == true ? 0x01 : 0x00); /* compression or not */
     int x_resolution = pdev->HWResolution[0];
@@ -593,7 +579,7 @@ bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
     byte lastmask = mask_array[pdev->width % 8];
 
     if (row == 0 || cmp == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     /* Write the setup data. */
 
@@ -605,25 +591,24 @@ bjc_print_page_mono(gx_device_printer * pdev, FILE * file)
     bjc_put_set_compression(file, compress);
     bjc_put_image_format(file, 0, 0, ink);   /* normal ink */
 
-
     /* Write the contents of the image. */
     skip = 0;
     for (y = 0; y < pdev->height ; y++) {
       gdev_prn_copy_scan_lines(pdev, y, row, raster);
       if (bjc_invert_bytes(row, raster, ppdev->inverse, lastmask)) /* black -> K and check empty line*/
        {  /* empty line raster */
-	if (skip) bjc_put_raster_skip(file, skip);
-	skip = 1;
-	if(compress) cmplen = bjc_compress(row, raster, cmp), outrow = cmp;
+        if (skip) bjc_put_raster_skip(file, skip);
+        skip = 1;
+        if(compress) cmplen = bjc_compress(row, raster, cmp), outrow = cmp;
         else outrow = row, cmplen = raster;  /* compress or not */
         if(inkc & INK_K) bjc_put_cmyk_image(file, CMYK_K, outrow, cmplen),
-	        bjc_put_CR(file);
+                bjc_put_CR(file);
         if(inkc & INK_C) bjc_put_cmyk_image(file, CMYK_C, outrow, cmplen),
-        	bjc_put_CR(file);
+                bjc_put_CR(file);
         if(inkc & INK_M) bjc_put_cmyk_image(file, CMYK_M, outrow, cmplen),
-	        bjc_put_CR(file);
+                bjc_put_CR(file);
         if(inkc & INK_Y) bjc_put_cmyk_image(file, CMYK_Y, outrow, cmplen),
-	        bjc_put_CR(file); /* use the needed ink(s) */
+                bjc_put_CR(file); /* use the needed ink(s) */
        }
       else skip++; /* +1 empty line */
     }
@@ -651,12 +636,12 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
     byte *row = gs_alloc_bytes(pdev->memory, width, "bjc gray file buffer");
     byte *dit = gs_alloc_bytes(pdev->memory, raster, "bjc gray dither buffer");
     byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
-			       "bjc gray comp buffer"); /*worst case */
+                               "bjc gray comp buffer"); /*worst case */
     byte *out; /* misc variable for send a row */
     int y;
     int skip;    /* empty raster lines */
     char color = (ppdev->smooth == true ? 0x12 :       /* smooted black */
-		  ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
+                  ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
     char ink   = 0x01; /* regular ink type */
     char compress = (ppdev->compress == true ? 0x01 : 0x00); /* compression or not */
     int x_resolution = pdev->HWResolution[0];
@@ -668,7 +653,7 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
 
     if (row == 0 || cmp == 0 ||
        dit == 0 )		/* can't allocate row buffers */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     /* Write the setup data. */
 
@@ -682,31 +667,30 @@ bjc_print_page_gray(gx_device_printer * pdev, FILE * file)
     bjc_put_set_compression(file, compress);
     bjc_put_image_format(file, 0, 0, ink);   /* normal ink */
 
-
     /* Write the contents of the image. */
     skip = 0;
     if(FloydSteinbergInitG(pdev) == -1)
-	        return_error(gs_error_VMerror);   /* initiate the dithering */
+                return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
      gdev_prn_copy_scan_lines(pdev, y, row, width);   /* image -> row */
      FloydSteinbergDitheringG(row, dit, width, raster, ppdev->limit); /* gray */
       if (bjc_invert_bytes(dit, raster, ppdev->inverse, lastmask)) /* black -> K and check empty line*/
        {  /* end of empty lines */
-	if (skip) bjc_put_raster_skip(file, skip);
-	skip = 1;
+        if (skip) bjc_put_raster_skip(file, skip);
+        skip = 1;
 
-	  if(compress) cmplen = bjc_compress(dit, raster, cmp), out = cmp;
+          if(compress) cmplen = bjc_compress(dit, raster, cmp), out = cmp;
           else cmplen = raster, out = dit;  /* compress or not */
 
-	  if(inkc & INK_K) bjc_put_cmyk_image(file, CMYK_K, out, cmplen),
-	        bjc_put_CR(file);
+          if(inkc & INK_K) bjc_put_cmyk_image(file, CMYK_K, out, cmplen),
+                bjc_put_CR(file);
           if(inkc & INK_C) bjc_put_cmyk_image(file, CMYK_C, out, cmplen),
-        	bjc_put_CR(file);
+                bjc_put_CR(file);
           if(inkc & INK_M) bjc_put_cmyk_image(file, CMYK_M, out, cmplen),
-	        bjc_put_CR(file);
+                bjc_put_CR(file);
           if(inkc & INK_Y) bjc_put_cmyk_image(file, CMYK_Y, out, cmplen),
-	        bjc_put_CR(file); /* use the needed ink(s) */
+                bjc_put_CR(file); /* use the needed ink(s) */
 
        } else skip++; /* +1 empty line */
     }
@@ -734,9 +718,9 @@ bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
     uint a_raster;                             /* a tmp variable */
     uint cmplen;
     byte *row = gs_alloc_bytes(pdev->memory, raster*4,
-			       "bjc cmyk file buffer"); /* one for each component */
+                               "bjc cmyk file buffer"); /* one for each component */
     byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
-			       "bjc cmyk comp buffer"); /*worst case */
+                               "bjc cmyk comp buffer"); /*worst case */
     byte *rows[4];
     byte *outrow; /* misc variable for send a row */
     int y;
@@ -757,7 +741,7 @@ bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
     gx_render_plane_t render_plane;
 
     if (row == 0 || cmp == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     /* Write the setup data. */
 
@@ -768,7 +752,6 @@ bjc_print_page_cmyk(gx_device_printer * pdev, FILE * file)
     bjc_put_page_margins(file, length, lm, rm, top);
     bjc_put_set_compression(file, compress);
     bjc_put_image_format(file, 0, 0, ink);   /* normal ink */
-
 
     /* Write the contents of the image. */
     skip = 0;
@@ -853,11 +836,11 @@ bjc_print_page_color(gx_device_printer * pdev, FILE * file)
     uint raster = (pdev->width >> 3) + ( (pdev->width % 8) ? 1:0);
     uint cmplen;
     byte *row = gs_alloc_bytes(pdev->memory, width*4,
-			       "bjc true file buffer"); /* one for each component */
+                               "bjc true file buffer"); /* one for each component */
     byte *dit = gs_alloc_bytes(pdev->memory, raster*4,
                                "bjc true dither buffer");
     byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
-			       "bjc true comp buffer"); /*worst case */
+                               "bjc true comp buffer"); /*worst case */
     byte *rowC = dit;                 /*C*/
     byte *rowM = dit + raster;        /*M*/
     byte *rowY = dit + 2*raster;      /*Y*/
@@ -880,7 +863,7 @@ bjc_print_page_color(gx_device_printer * pdev, FILE * file)
     float bgamma = ppdev->gamma != 1.0 ? ppdev->gamma:ppdev->blueGamma;
 
     if (row == 0 || cmp == 0 || dit == 0)     /* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     bjc_build_gamma_table(rgamma, CMYK_C); /* set up the gamma table */
     bjc_build_gamma_table(ggamma, CMYK_M); /* set up the gamma table */
@@ -896,16 +879,15 @@ bjc_print_page_color(gx_device_printer * pdev, FILE * file)
     bjc_put_set_compression(file, compress);
     bjc_put_image_format(file, 0, 0, ink);   /* normal ink */
 
-
     /* Write the contents of the image. */
     skip = 0;
 
     if(FloydSteinbergInitC(pdev) == -1)
-	        return_error(gs_error_VMerror);   /* initiate the dithering */
+                return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
         gdev_prn_copy_scan_lines(pdev, y, row, gdev_prn_raster(pdev));
-	/* image -> row */
+        /* image -> row */
         FloydSteinbergDitheringC(row, dit, width, raster, ppdev->limit,
                                  ppdev->compose);
 

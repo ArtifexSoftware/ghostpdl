@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -92,7 +92,7 @@
  * there simply because it is being used as a terminator for the file name.
  * It could easily be eliminated by adding a zero as the name terminator.
  * The only disadvantage is that the file is no longer totally printable ascii.
- */ 
+ */
 
 #include "errno_.h"
 #include "string_.h"
@@ -185,7 +185,7 @@ static int
 iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     diskn_state * pstate = gs_alloc_struct(mem, diskn_state, &st_diskn_state,
-			   			"iodev_diskn_init(state)");
+                                                "iodev_diskn_init(state)");
     if (!pstate)
         return gs_error_VMerror;
     pstate->root_size = 0;
@@ -195,14 +195,13 @@ iodev_diskn_init(gx_io_device * iodev, gs_memory_t * mem)
     return 0;
 }
 
-
 static int
 iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
-	       FILE ** pfile, char *rfname, uint rnamelen)
+               FILE ** pfile, char *rfname, uint rnamelen)
 {
     char realname[gp_file_name_sizeof];
     diskn_state * pstate = (diskn_state *)iodev->state;
-    
+
     /* Exit if we do not have a root location */
     if (!pstate->root)
         return_error(gs_error_undefinedfilename);
@@ -211,9 +210,9 @@ iodev_diskn_fopen(gx_io_device * iodev, const char *fname, const char *access,
     if (!map_file_name_get((char *)pstate->root, fname, realname)) {
         if (strchr(access, 'w')) {
             map_file_name_add(pstate->root, fname);
-    	    map_file_name_get(pstate->root, fname, realname);
-	}
-	else
+            map_file_name_get(pstate->root, fname, realname);
+        }
+        else
             return_error(gs_error_undefinedfilename);
     }
 
@@ -225,7 +224,7 @@ diskn_delete(gx_io_device * iodev, const char *fname)
 {
     char realname[gp_file_name_sizeof];
     diskn_state * pstate = (diskn_state *)iodev->state;
-    
+
     /* Exit if we do not have a root location */
     if (!pstate->root)
         return_error(gs_error_undefinedfilename);
@@ -244,7 +243,7 @@ diskn_rename(gx_io_device * iodev, const char *from, const char *to)
     char toreal[gp_file_name_sizeof];
     int code = 0;
     diskn_state * pstate = (diskn_state *)iodev->state;
-    
+
     /* Exit if we do not have a root location */
     if (!pstate->root)
         return_error(gs_error_undefinedfilename);
@@ -258,7 +257,7 @@ diskn_rename(gx_io_device * iodev, const char *from, const char *to)
      */
     if (map_file_name_get((char *)pstate->root, to, toreal)) {
         map_file_name_del((char *)pstate->root, to);
-	code = unlink(toreal) == 0 ? 0 : gs_error_ioerror;
+        code = unlink(toreal) == 0 ? 0 : gs_error_ioerror;
     }
 
     map_file_name_ren((char *)pstate->root, from, to);
@@ -270,7 +269,7 @@ diskn_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {
     char realname[gp_file_name_sizeof];
     diskn_state * pstate = (diskn_state *)iodev->state;
-    
+
     /* Exit if we do not have a root location */
     if (!pstate->root)
         return_error(gs_error_undefinedfilename);
@@ -284,7 +283,7 @@ diskn_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 
 static file_enum *
 diskn_enumerate_files_init(gx_io_device * iodev, const char *pat, uint patlen,
-	     gs_memory_t * mem)
+             gs_memory_t * mem)
 {
     char patstr[gp_file_name_sizeof];
     diskn_state * pstate = (diskn_state *)iodev->state;
@@ -331,18 +330,18 @@ diskn_get_params(gx_io_device * iodev, gs_param_list * plist)
     Free = LogicalSize * 3 / 4;			/* about 1.5 Gb */
 
     if (
-	(code = param_write_bool(plist, "HasNames", &btrue)) < 0 ||
-	(code = param_write_int(plist, "BlockSize", &BlockSize)) < 0 ||
-	(code = param_write_long(plist, "Free", &Free)) < 0 ||
-	(code = param_write_int(plist, "InitializeAction", &i0)) < 0 ||
-	(code = param_write_bool(plist, "Mounted", &bsearch)) < 0 ||
-	(code = param_write_bool(plist, "Removable", &bfalse)) < 0 ||
-	(code = param_write_bool(plist, "Searchable", &bsearch)) < 0 ||
-	(code = param_write_int(plist, "SearchOrder", &so)) < 0 ||
-	(code = param_write_bool(plist, "Writeable", &bsearch)) < 0 ||
-	(code = param_write_long(plist, "LogicalSize", &LogicalSize)) < 0
-	)
-	return code;
+        (code = param_write_bool(plist, "HasNames", &btrue)) < 0 ||
+        (code = param_write_int(plist, "BlockSize", &BlockSize)) < 0 ||
+        (code = param_write_long(plist, "Free", &Free)) < 0 ||
+        (code = param_write_int(plist, "InitializeAction", &i0)) < 0 ||
+        (code = param_write_bool(plist, "Mounted", &bsearch)) < 0 ||
+        (code = param_write_bool(plist, "Removable", &bfalse)) < 0 ||
+        (code = param_write_bool(plist, "Searchable", &bsearch)) < 0 ||
+        (code = param_write_int(plist, "SearchOrder", &so)) < 0 ||
+        (code = param_write_bool(plist, "Writeable", &bsearch)) < 0 ||
+        (code = param_write_long(plist, "LogicalSize", &LogicalSize)) < 0
+        )
+        return code;
 
     if (pstate->root) {
         rootstring.data = (const byte *)pstate->root;
@@ -361,15 +360,15 @@ diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
     gs_param_string rootstr;
     int code;
     diskn_state * pstate = (diskn_state *)iodev->state;
-  
+
     switch (code = param_read_string(plist, "Root", &rootstr)) {
-	case 0:
-	    break;
-	default:
-	    param_signal_error(plist, "Root", code);
-	case 1:
-	    rootstr.data = 0;
-	    break;
+        case 0:
+            break;
+        default:
+            param_signal_error(plist, "Root", code);
+        case 1:
+            rootstr.data = 0;
+            break;
     }
 
     /* Process the other device parameters */
@@ -380,21 +379,21 @@ diskn_put_params(gx_io_device *iodev, gs_param_list *plist)
     /* Process parameter changes */
 
     if (rootstr.data) {
-	/* Make sure that we have room for the root string */
-	if (!pstate->root || pstate->root_size <= rootstr.size) {
-	    if (pstate->root)	/* The current storge is too small */
-		gs_free_object(pstate->memory, pstate->root, "diskn(rootdir)");
-	    pstate->root = (char *)gs_alloc_byte_array(pstate->memory,
-	    		gp_file_name_sizeof, sizeof(char), "diskn(rootdir)");
-	    if (!pstate->root)
-		return gs_error_VMerror;
-	    pstate->root_size = rootstr.size + 1;
-	    /* Now allow enumeration of files on the disk */
-	    iodev->procs.enumerate_files = diskn_enumerate_files_init;
-	}
+        /* Make sure that we have room for the root string */
+        if (!pstate->root || pstate->root_size <= rootstr.size) {
+            if (pstate->root)	/* The current storge is too small */
+                gs_free_object(pstate->memory, pstate->root, "diskn(rootdir)");
+            pstate->root = (char *)gs_alloc_byte_array(pstate->memory,
+                        gp_file_name_sizeof, sizeof(char), "diskn(rootdir)");
+            if (!pstate->root)
+                return gs_error_VMerror;
+            pstate->root_size = rootstr.size + 1;
+            /* Now allow enumeration of files on the disk */
+            iodev->procs.enumerate_files = diskn_enumerate_files_init;
+        }
 
-	memcpy(pstate->root, rootstr.data, rootstr.size);
-	pstate->root[rootstr.size] = 0;
+        memcpy(pstate->root, rootstr.data, rootstr.size);
+        pstate->root[rootstr.size] = 0;
     }
     return 0;
 }
@@ -433,12 +432,12 @@ MapFileReadVersion(FILE * mapfile, int * value)
 
     /* Skip comment on version line. */
     do {
-	c = fgetc(mapfile);
+        c = fgetc(mapfile);
     } while (c != EOF && c != '\n' && c != '\r');
 
     /* Clean up any trailing linefeeds or carriage returns */
     while (c != EOF && (c == '\n' || c == '\r')) {
-	c = fgetc(mapfile);
+        c = fgetc(mapfile);
     }
     return code;
 }
@@ -453,8 +452,8 @@ static void
 MapFileWriteVersion(FILE * mapfile, int value)
 {
     fprintf(mapfile,
-    	"FileVersion\t%d\tThis file is machine generated.  Do not edit.\n",
-    	value);
+        "FileVersion\t%d\tThis file is machine generated.  Do not edit.\n",
+        value);
 }
 
 /*
@@ -473,17 +472,17 @@ MapFileRead(FILE * mapfile, char * namebuf, int * value)
 
     /* Get the file number */
     if (fscanf(mapfile, "%d\t", value) != 1)
-    	return 0;
-    
+        return 0;
+
     /* Get the file name */
     do {
-	namebuf[count++] = c = fgetc(mapfile);
+        namebuf[count++] = c = fgetc(mapfile);
     } while (count < BUFFER_LENGTH && c != EOF && c != '\n' && c != '\r');
     namebuf[--count] = 0;    /* Terminate file name */
 
     /* Clean up any trailing linefeeds or carriage returns */
     while (c != EOF && (c == '\n' || c == '\r')) {
-	c = fgetc(mapfile);
+        c = fgetc(mapfile);
     }
 
     return count != 0 ? 1: 0;
@@ -503,7 +502,7 @@ MapFileWrite(FILE * mapfile, const char * namebuf, int value)
 }
 
 /*
- * Remove the specified file 
+ * Remove the specified file
  *
  * rootpath - Path to base disk location.
  * filename - File name string
@@ -565,13 +564,13 @@ MapToFile(const char* rootpath, const char* name)
     /* Verify the mapping file version number */
 
     if (MapFileReadVersion(mapfile, &file_version)
-    	&& file_version == MAP_FILE_VERSION) {
+        && file_version == MAP_FILE_VERSION) {
 
         /* Scan the file looking for the given name */
 
         while (MapFileRead(mapfile, filename, &d)) {
             if (strcmp(filename, name) == 0)
-    	        break;
+                break;
             d = -1;
         }
     }
@@ -594,7 +593,7 @@ map_file_enum_init(gs_memory_t * mem, const char * root_name, const char * searc
 {
     int file_version;
     map_file_enum * mapfileenum = gs_alloc_struct(mem, map_file_enum, &st_map_file_enum,
-			   				"diskn:enum_init(file_enum)");
+                                                        "diskn:enum_init(file_enum)");
 
     if (mapfileenum == NULL)
         return NULL;
@@ -603,18 +602,18 @@ map_file_enum_init(gs_memory_t * mem, const char * root_name, const char * searc
 
     if (search_pattern) {
         mapfileenum->pattern = (char *)gs_alloc_bytes(mem, strlen(search_pattern) + 1,
-							"diskn:enum_init(pattern)");
+                                                        "diskn:enum_init(pattern)");
         if (mapfileenum->pattern == NULL) {
-	    map_file_enum_close((file_enum *) mapfileenum);
+            map_file_enum_close((file_enum *) mapfileenum);
             return NULL;
         }
         strcpy(mapfileenum->pattern, search_pattern);
     }
 
-    mapfileenum->root = (char *)gs_alloc_bytes(mem, strlen(root_name) + 1, 
-    						"diskn:enum_init(root)");
+    mapfileenum->root = (char *)gs_alloc_bytes(mem, strlen(root_name) + 1,
+                                                "diskn:enum_init(root)");
     if (mapfileenum->root == NULL) {
-	map_file_enum_close((file_enum *) mapfileenum);
+        map_file_enum_close((file_enum *) mapfileenum);
         return NULL;
     }
 
@@ -625,9 +624,9 @@ map_file_enum_init(gs_memory_t * mem, const char * root_name, const char * searc
 
     /* Check the mapping file version number */
     if (mapfileenum->stream != NULL
-	&& (!MapFileReadVersion(mapfileenum->stream, &file_version)
-	    || file_version != MAP_FILE_VERSION)) {
-	fclose(mapfileenum->stream);   /* Invalid file version */
+        && (!MapFileReadVersion(mapfileenum->stream, &file_version)
+            || file_version != MAP_FILE_VERSION)) {
+        fclose(mapfileenum->stream);   /* Invalid file version */
         mapfileenum->stream = NULL;
     }
 
@@ -647,20 +646,20 @@ map_file_enum_next(void * enum_mem, char* target)
     map_file_enum * mapfileenum;
 
     if (enum_mem == NULL)
-	return false;
+        return false;
 
     mapfileenum = (map_file_enum*)enum_mem;
     if (mapfileenum->stream == NULL)
-	return false;
+        return false;
 
     if (mapfileenum->pattern) {
         /*  Search for next entry that matches pattern */
         while (MapFileRead(mapfileenum->stream, target, &d)) {
             if (string_match((byte *)target, strlen(target),
-			     (byte *)mapfileenum->pattern,
-			     strlen(mapfileenum->pattern), 0))
-		return true;
-	}
+                             (byte *)mapfileenum->pattern,
+                             strlen(mapfileenum->pattern), 0))
+                return true;
+        }
     }
     else {
         /*  Just get next */
@@ -670,7 +669,7 @@ map_file_enum_next(void * enum_mem, char* target)
     return false;
 }
 
-/* 
+/*
  * map_file_enum_close
  *
  * cleans up after an enumeration, this may only be called
@@ -687,7 +686,7 @@ map_file_enum_close(void * enum_mem)
     if (mapfileenum->root)
         gs_free_object(mem, mapfileenum->root, "diskn_enum_init(root)");
     if (mapfileenum->pattern)
-	gs_free_object(mem, mapfileenum->pattern, "diskn_enum_init(pattern)");
+        gs_free_object(mem, mapfileenum->pattern, "diskn_enum_init(pattern)");
     gs_free_object(mem, mapfileenum, "diskn_enum_init(mapfileenum)");
 }
 
@@ -708,11 +707,11 @@ map_file_name_get(const char * root_name, const char * Fname, char * osname)
     int d = MapToFile(root_name, Fname);
 
     if (d != -1) {
-	/* 20 characters are enough for even a 64 bit integer */
+        /* 20 characters are enough for even a 64 bit integer */
         if ((strlen(root_name) + 20) < BUFFER_LENGTH) {
-	    sprintf(osname, "%s%d", root_name, d);
-	    return true;
-	}
+            sprintf(osname, "%s%d", root_name, d);
+            return true;
+        }
     }
 
     *osname = 0;
@@ -739,25 +738,25 @@ map_file_name_del(const char * root_name, const char * Fname)
         FILE*   newMap;
         FILE*   oldMap;
 
-	/* Open current map file and a working file */
+        /* Open current map file and a working file */
 
         MapFileUnlink(root_name, TEMP_FILE_NAME );
         newMap = MapFileOpen(root_name, TEMP_FILE_NAME, "w");
         if (newMap == NULL)
-	    return;
+            return;
         oldMap = MapFileOpen(root_name, MAP_FILE_NAME, "r");
         if (oldMap != NULL && (!MapFileReadVersion(oldMap, &file_version)
-	    || file_version != MAP_FILE_VERSION)) {
+            || file_version != MAP_FILE_VERSION)) {
             fclose(oldMap);
-	    oldMap= NULL;
-	}
+            oldMap= NULL;
+        }
         if (oldMap == NULL) {
             fclose(newMap);
             MapFileUnlink(root_name, TEMP_FILE_NAME);
-	    return;
+            return;
         }
 
-	/* Copy every line of the map file except the one with given name */
+        /* Copy every line of the map file except the one with given name */
 
         MapFileWriteVersion(newMap, MAP_FILE_VERSION);
         while (MapFileRead(oldMap, name, &d))
@@ -781,7 +780,7 @@ map_file_name_del(const char * root_name, const char * Fname)
 static void
 map_file_name_add(const char * root_name, const char * Fname)
 {
-    /* 
+    /*
      * add entry to map file
      * entry number is one greater than biggest number
      */
@@ -791,17 +790,17 @@ map_file_name_add(const char * root_name, const char * Fname)
     int file_version;
     FILE*   newMap;
     FILE*   oldMap;
-    
+
     oldMap = MapFileOpen(root_name, MAP_FILE_NAME, "r");
     if (oldMap != NULL && (!MapFileReadVersion(oldMap, &file_version)
-	|| file_version != MAP_FILE_VERSION)) {
+        || file_version != MAP_FILE_VERSION)) {
         fclose(oldMap);
-	oldMap = NULL;
+        oldMap = NULL;
     }
     if (oldMap == NULL) {
         oldMap = MapFileOpen(root_name, MAP_FILE_NAME, "w");
-	if (!oldMap) 
-	    return;
+        if (!oldMap)
+            return;
         MapFileWriteVersion(oldMap, MAP_FILE_VERSION);
         MapFileWrite(oldMap, Fname, InitialNumber);
         fclose(oldMap);
@@ -812,7 +811,7 @@ map_file_name_add(const char * root_name, const char * Fname)
         if (newMap != NULL) {
             MapFileWriteVersion(newMap, MAP_FILE_VERSION);
             while (MapFileRead(oldMap, name, &d)) {
-        	MapFileWrite(newMap, name, d);
+                MapFileWrite(newMap, name, d);
                 if (dmax < d)
                     dmax = d;
             }
@@ -838,7 +837,7 @@ map_file_name_add(const char * root_name, const char * Fname)
  */
 static void
 map_file_name_ren(const char* root_name, const char * oldname, const char * newname)
-{   
+{
     /*  search for target entry */
 
     int d = MapToFile(root_name, oldname);
@@ -848,26 +847,26 @@ map_file_name_ren(const char* root_name, const char * oldname, const char * newn
         char    name[BUFFER_LENGTH];
         FILE*   newMap;
         FILE*   oldMap;
-        
-	/* Open current map file and a working file */
+
+        /* Open current map file and a working file */
 
         MapFileUnlink(root_name, TEMP_FILE_NAME );
         newMap = MapFileOpen(root_name, TEMP_FILE_NAME, "w");
         if (newMap == NULL)
-	    return;
+            return;
         oldMap = MapFileOpen(root_name, MAP_FILE_NAME, "r");
         if (oldMap != NULL && (!MapFileReadVersion(oldMap, &file_version)
-	    || file_version != MAP_FILE_VERSION)) {
+            || file_version != MAP_FILE_VERSION)) {
             fclose(oldMap);
-	    oldMap= NULL;
-	}
+            oldMap= NULL;
+        }
         if (oldMap == NULL) {
             fclose(newMap);
             MapFileUnlink(root_name, TEMP_FILE_NAME);
-	    return;
+            return;
         }
 
-	/* Now copy data from old to new, change file name when found */
+        /* Now copy data from old to new, change file name when found */
 
         MapFileWriteVersion(newMap, MAP_FILE_VERSION);  /* Copy the version number */
         while (MapFileRead(oldMap, name, &d))

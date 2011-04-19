@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -82,71 +82,71 @@ rinkj_escp_set (RinkjDevice *self, const char *config)
   for (p = config; (key = rinkj_config_keyval (p, &val, &next)); p = next)
     {
       if (!strcmp (key, "Resolution"))
-	{
-	  char *p;
+        {
+          char *p;
 
-	  z->xres = atoi (val);
-	  p = strchr (val, 'x');
-	  if (p != NULL)
-	    z->yres = atoi (p + 1);
-	  else
-	    z->yres = z->xres;
+          z->xres = atoi (val);
+          p = strchr (val, 'x');
+          if (p != NULL)
+            z->yres = atoi (p + 1);
+          else
+            z->yres = z->xres;
 #ifdef VERBOSE
-	  fprintf (stderr, "Resolution = %d x %d\n", z->xres, z->yres);
+          fprintf (stderr, "Resolution = %d x %d\n", z->xres, z->yres);
 #endif
-	}
+        }
       else if (!strcmp (key, "Manufacturer"))
-	{
-	  if (z->manufacturer)
-	    free (z->manufacturer);
-	  z->manufacturer = val;
-	  val = NULL;
-	}
+        {
+          if (z->manufacturer)
+            free (z->manufacturer);
+          z->manufacturer = val;
+          val = NULL;
+        }
       else if (!strcmp (key, "Model"))
-	{
-	  if (z->model)
-	    free (z->model);
-	  z->model = val;
-	  val = NULL;
-	}
+        {
+          if (z->model)
+            free (z->model);
+          z->model = val;
+          val = NULL;
+        }
       else if (!strcmp (key, "BitsPerSample"))
-	{
-	  z->bps = atoi (val);
+        {
+          z->bps = atoi (val);
 #ifdef VERBOSE
-	  fprintf (stderr, "BitsPerSample = %d\n", z->bps);
+          fprintf (stderr, "BitsPerSample = %d\n", z->bps);
 #endif
-	}
+        }
       else if (!strcmp (key, "NumChan"))
-	{
-	  /* This is in params, but should become a setting. */
-	  z->num_chan = atoi (val);
+        {
+          /* This is in params, but should become a setting. */
+          z->num_chan = atoi (val);
 #ifdef VERBOSE
-	  fprintf (stderr, "NumChan = %d\n", z->num_chan);
+          fprintf (stderr, "NumChan = %d\n", z->num_chan);
 #endif
-	}
+        }
       else if (!strcmp (key, "PrinterWeave"))
-	{
-	  z->printer_weave = atoi (val);
-	}
+        {
+          z->printer_weave = atoi (val);
+        }
       else if (!strcmp (key, "Microdot"))
-	{
-	  z->microdot = atoi (val);
-	}
+        {
+          z->microdot = atoi (val);
+        }
       else if (!strcmp (key, "Unidirectional"))
-	{
-	  z->unidir = atoi (val);
-	}
+        {
+          z->unidir = atoi (val);
+        }
       else if (!strcmp (key, "AutoCut"))
-	{
-	  z->autocut = atoi (val);
-	}
+        {
+          z->autocut = atoi (val);
+        }
       else if (!strcmp (key, "BlankSkip"))
-	{
-	  z->blankskip = atoi (val);
-	}
+        {
+          z->blankskip = atoi (val);
+        }
       free (key);
       if (val)
-	free (val);
+        free (val);
     }
   return 0;
 }
@@ -214,19 +214,19 @@ static int
 rinkj_epson_headres (RinkjEscp *z, int baseres)
 {
   return rinkj_byte_stream_printf (z->out, "\033(D\004%c%c%c%c%c", 0,
-				   baseres & 255, baseres >> 8,
-				   baseres / z->head_yres,
-				   baseres / z->head_xres);
+                                   baseres & 255, baseres >> 8,
+                                   baseres / z->head_yres,
+                                   baseres / z->head_xres);
 }
 
 static int
 rinkj_epson_units (RinkjEscp *z, int xres, int yres, int baseres)
 {
   return rinkj_byte_stream_printf (z->out, "\033(U\005%c%c%c%c%c%c", 0,
-				   baseres / yres,
-				   baseres / yres,
-				   baseres / xres,
-				   baseres & 255, baseres >> 8);
+                                   baseres / yres,
+                                   baseres / yres,
+                                   baseres / xres,
+                                   baseres & 255, baseres >> 8);
 }
 
 static int
@@ -237,7 +237,7 @@ rinkj_epson_set_common (RinkjEscp *z)
   if (z->printer_weave >= 0)
     /* set microweave */
     status = rinkj_byte_stream_printf (z->out, "\033(i\001%c%c", 0,
-				       z->printer_weave);
+                                       z->printer_weave);
 
   if (status == 0 && z->unidir >= 0)
     /* set unidirectional */
@@ -246,7 +246,7 @@ rinkj_epson_set_common (RinkjEscp *z)
   if (status == 0 && z->microdot >= 0)
     /* set dot size */
     status = rinkj_byte_stream_printf (z->out, "\033(e\002%c%c%c", 0, 0,
-				       z->microdot);
+                                       z->microdot);
 
   return status;
 }
@@ -261,7 +261,7 @@ rinkj_epson870_init (RinkjDevice *self, const RinkjDeviceParams *params)
   RinkjEscp *z = (RinkjEscp *)self;
 
   rinkj_byte_stream_printf (z->out,
-			    "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
+                            "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
   rinkj_byte_stream_printf (z->out, "@EJL     \n\033@\033@");
 
   /* remote string goes here, but is probably optional */
@@ -301,17 +301,17 @@ rinkj_epson2200_init (RinkjDevice *self, const RinkjDeviceParams *params)
   RinkjEscp *z = (RinkjEscp *)self;
 
   rinkj_byte_stream_printf (z->out,
-			    "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
+                            "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
   rinkj_byte_stream_printf (z->out, "@EJL     \n\033@\033@");
 
   /* remote string */
   rinkj_byte_stream_printf( z->out,
-			    "\033(R%c%c%cREMOTE1", 8, 0, 0);
+                            "\033(R%c%c%cREMOTE1", 8, 0, 0);
   rinkj_byte_stream_printf( z->out,
-			    "PP\003%c%c\002%cPH\002%c%c\001SN\003%c%c\004k",
-			    0, 0, 0, 0, 0, 0, 0);
+                            "PP\003%c%c\002%cPH\002%c%c\001SN\003%c%c\004k",
+                            0, 0, 0, 0, 0, 0, 0);
   rinkj_byte_stream_printf( z->out,
-			    "\033%c%c%c", 0, 0, 0);
+                            "\033%c%c%c", 0, 0, 0);
 
   /* set graphics mode */
   rinkj_byte_stream_printf (z->out, "\033(G\001%c\001", 0);
@@ -348,7 +348,7 @@ rinkj_epson7600_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
 #if 0
   rinkj_byte_stream_printf (z->out,
-			    "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
+                            "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
   rinkj_byte_stream_printf (z->out, "@EJL     \n");
 #endif
   rinkj_byte_stream_printf (z->out, "\033@\033@");
@@ -356,7 +356,7 @@ rinkj_epson7600_init (RinkjDevice *self, const RinkjDeviceParams *params)
 #if 1
   /* remote string */
   rinkj_byte_stream_printf( z->out,
-			    "\033(R%c%c%cREMOTE1", 8, 0, 0);
+                            "\033(R%c%c%cREMOTE1", 8, 0, 0);
   rinkj_byte_stream_printf( z->out, "SN%c%c%c%c%c", 3, 0, 0, 1, 0);
   rinkj_byte_stream_printf( z->out, "SN%c%c%c%c%c", 3, 0, 0, 2, 6);
   rinkj_byte_stream_printf( z->out, "SN%c%c%c%c%c", 3, 0, 0, 3, 0);
@@ -381,7 +381,7 @@ rinkj_epson7600_init (RinkjDevice *self, const RinkjDeviceParams *params)
   rinkj_byte_stream_printf( z->out, "IK%c%c%c%c", 2, 0, 0, 1);
   rinkj_byte_stream_printf( z->out, "EX%c%c%c%c%c%c%c%c", 6, 0, 0, 0, 0, 0, 20, 0);
   rinkj_byte_stream_printf( z->out,
-			    "\033%c%c%c", 0, 0, 0);
+                            "\033%c%c%c", 0, 0, 0);
 #endif
 
   /* set graphics mode */
@@ -395,12 +395,12 @@ rinkj_epson7600_init (RinkjDevice *self, const RinkjDeviceParams *params)
   pl = z->height * 720 / z->yres + 180;
   /* set page length to page height + 1/4 inch */
   rinkj_byte_stream_printf (z->out, "\033(S\010%c%c%c%c%c%c%c%c%c", 0,
-			    pw & 255, (pw >> 8) & 255, (pw >> 16) & 255, pw >> 24,
-			    pl & 255, (pl >> 8) & 255, (pl >> 16) & 255, pl >> 24);
+                            pw & 255, (pw >> 8) & 255, (pw >> 16) & 255, pw >> 24,
+                            pl & 255, (pl >> 8) & 255, (pl >> 16) & 255, pl >> 24);
 
   rinkj_byte_stream_printf (z->out, "\033(c\010%c%c%c%c%c%c%c%c%c", 0,
-			    0, 0, 0, 0,
-			    pl & 255, (pl >> 8) & 255, (pl >> 16) & 255, pl >> 24);
+                            0, 0, 0, 0,
+                            pl & 255, (pl >> 8) & 255, (pl >> 16) & 255, pl >> 24);
 
   rinkj_epson_headres (z, 2880);
 
@@ -420,7 +420,7 @@ rinkj_epsonc80_init (RinkjDevice *self, const RinkjDeviceParams *params)
   RinkjEscp *z = (RinkjEscp *)self;
 
   rinkj_byte_stream_printf (z->out,
-			    "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
+                            "%c%c%c\033\001@EJL 1284.4\n", 0, 0, 0);
   rinkj_byte_stream_printf (z->out, "@EJL     \n\033@\033@");
 
   /* remote string goes here, but is probably optional */
@@ -438,7 +438,7 @@ rinkj_epsonc80_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
   /* set margins (magic) */
   rinkj_byte_stream_printf (z->out, "\033(c\010%c\040\376\377\377\376\036%c%c",
-			    0, 0, 0);
+                            0, 0, 0);
 
   /* ESC ( c */
 
@@ -481,7 +481,7 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
 #ifdef VERBOSE
   fprintf (stderr, "Manufacturer: %s; Model; %s\n", z->manufacturer,
-	   z->model);
+           z->model);
 #endif
 
   if (z->model && !strcmp (z->model, "Stylus Photo 870"))
@@ -498,10 +498,10 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
       z->head_yres = 180;
       z->head_bps = 2;
       if (z->xres == 2880)
-	{
-	  z->head_xres = 720;
-	  z->head_bps = 1;
-	}
+        {
+          z->head_xres = 720;
+          z->head_bps = 1;
+        }
       z->n_pins = 96;
       z->printer_weave = 0;
       z->plane_offsets[3] = z->yres / 360;
@@ -564,7 +564,7 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
   /* todo: error checking */
   return 0;
-    
+
 }
 
 /**
@@ -593,7 +593,7 @@ rinkj_escp_shuffle_dblx (char *dst, const char *src, int pass, int n_bytes)
       s0 = src[i * 2] << pass;
       s1 = src[i * 2 + 1] << pass;
       dst[i] = (s0 & 0x80) | ((s0 & 0x20) << 1) | ((s0 & 8) << 2) | ((s0 & 2) << 3) |
-	((s1 & 0x80) >> 4) | ((s1 & 0x20) >> 3) | ((s1 & 8) >> 2) | ((s1 & 2) >> 1);
+        ((s1 & 0x80) >> 4) | ((s1 & 0x20) >> 3) | ((s1 & 8) >> 2) | ((s1 & 2) >> 1);
     }
   if (n_bytes & 1)
     {
@@ -629,19 +629,19 @@ rinkj_escp_shuffle_4pass_1bit (char *dst, const char *src, int pass, int n_bytes
       s2 = src[i * 4 + 2] << shift;
       s3 = src[i * 4 + 3] << shift;
       dst[i] = (s0 & 0x80) | ((s0 & 8) << 3) |
-	((s1 & 0x80) >> 2) | ((s1 & 8) << 1) |
-	((s2 & 0x80) >> 4) | ((s2 & 8) >> 1) |
-	((s3 & 0x80) >> 6) | ((s3 & 8) >> 3);
+        ((s1 & 0x80) >> 2) | ((s1 & 8) << 1) |
+        ((s2 & 0x80) >> 4) | ((s2 & 8) >> 1) |
+        ((s3 & 0x80) >> 6) | ((s3 & 8) >> 3);
     }
   if (n_bytes & 3)
     {
       char d = 0;
 
       for (i = 0; i < (n_bytes & 3); i++)
-	{
-	  s0 = src[n_dst * 4 + i] << shift;
-	  d |= ((s0 & 0x80) | ((s0 & 8) << 3)) >> (i << 1);
-	}
+        {
+          s0 = src[n_dst * 4 + i] << shift;
+          d |= ((s0 & 0x80) | ((s0 & 8) << 3)) >> (i << 1);
+        }
       dst[n_dst] = d;
     }
 }
@@ -671,7 +671,7 @@ rinkj_escp_shuffle_2pass_2bit (char *dst, const char *src, int pass, int n_bytes
       s0 = src[i * 2] << shift;
       s1 = src[i * 2 + 1] << shift;
       dst[i] = (s0 & 0xc0) | ((s0 & 0x0c) << 2) |
-	((s1 & 0xc0) >> 4) | ((s1 & 0x0c) >> 2);
+        ((s1 & 0xc0) >> 4) | ((s1 & 0x0c) >> 2);
     }
   if (n_bytes & 1)
     {
@@ -707,14 +707,14 @@ rinkj_escp_shuffle_4pass_2bit (char *dst, const char *src, int pass, int n_bytes
       s2 = src[i * 4 + 2] << shift;
       s3 = src[i * 4 + 3] << shift;
       dst[i] = (s0 & 0xc0) | ((s1 & 0xc0) >> 2) |
-	((s2 & 0xc0) >> 4) | ((s3 & 0xc0) >> 6);
+        ((s2 & 0xc0) >> 4) | ((s3 & 0xc0) >> 6);
     }
   if (n_bytes & 3)
     {
       char d = 0;
 
       for (i = 0; i < (n_bytes & 3); i++)
-	d |= ((src[n_dst * 4 + i] << shift) & 0xc0) >> (i << 1);
+        d |= ((src[n_dst * 4 + i] << shift) & 0xc0) >> (i << 1);
       dst[n_dst] = d;
     }
 }
@@ -731,9 +731,9 @@ rinkj_escp_1pass_dblx (char *dst, const char *src, int n_bytes)
     {
       unsigned char s = src[i];
       dst[i * 2] = (((s & 0x80) >> 1) | ((s & 0x40) >> 2) |
-		    ((s & 0x20) >> 3) | ((s & 0x10) >> 4)) * DOT;
+                    ((s & 0x20) >> 3) | ((s & 0x10) >> 4)) * DOT;
       dst[i * 2 + 1] = (((s & 8) << 3) | ((s & 4) << 2) |
-		    ((s & 2) << 1) | (s & 1)) * DOT;
+                    ((s & 2) << 1) | (s & 1)) * DOT;
     }
 }
 
@@ -759,7 +759,7 @@ rinkj_escp_sel_shuffle_dblx (char *dst, const char *src, int pass, int n_bytes)
       s0 = src[i * 2] << pass;
       s1 = src[i * 2 + 1] << pass;
       dst[i] = (((s0 & 0x80) >> 1) | ((s0 & 8) << 1) |
-	((s1 & 0x80) >> 5) | ((s1 & 0x8) >> 3)) * DOT;
+        ((s1 & 0x80) >> 5) | ((s1 & 0x8) >> 3)) * DOT;
     }
   if (n_bytes & 1)
     {
@@ -770,34 +770,34 @@ rinkj_escp_sel_shuffle_dblx (char *dst, const char *src, int pass, int n_bytes)
 
 static void
 rinkj_escp_shuffle (char *dst, const char *src, int pass, int n_bytes,
-		    int passes_per_scan, int bps, int head_bps)
+                    int passes_per_scan, int bps, int head_bps)
 {
   if (bps == 2 && head_bps == 2)
     {
       if (passes_per_scan == 1)
-	memcpy (dst, src, n_bytes);
+        memcpy (dst, src, n_bytes);
       else if (passes_per_scan == 2)
-	rinkj_escp_shuffle_2pass_2bit (dst, src, pass, n_bytes);
+        rinkj_escp_shuffle_2pass_2bit (dst, src, pass, n_bytes);
       else if (passes_per_scan == 4)
-	rinkj_escp_shuffle_4pass_2bit (dst, src, pass, n_bytes);
+        rinkj_escp_shuffle_4pass_2bit (dst, src, pass, n_bytes);
     }
   else if (bps == 1 && head_bps == 2)
     {
       if (passes_per_scan == 1)
-	rinkj_escp_1pass_dblx (dst, src, n_bytes);
+        rinkj_escp_1pass_dblx (dst, src, n_bytes);
       if (passes_per_scan == 2)
-	rinkj_escp_select_dblx (dst, src, pass, n_bytes);
+        rinkj_escp_select_dblx (dst, src, pass, n_bytes);
       else if (passes_per_scan == 4)
-	rinkj_escp_sel_shuffle_dblx (dst, src, pass, n_bytes);
+        rinkj_escp_sel_shuffle_dblx (dst, src, pass, n_bytes);
     }
   else if (bps == 1 && head_bps == 1)
     {
       if (passes_per_scan == 1)
-	memcpy (dst, src, n_bytes);
+        memcpy (dst, src, n_bytes);
       else if (passes_per_scan == 2)
-	rinkj_escp_shuffle_dblx (dst, src, pass, n_bytes);
+        rinkj_escp_shuffle_dblx (dst, src, pass, n_bytes);
       else if (passes_per_scan == 4)
-	rinkj_escp_shuffle_4pass_1bit (dst, src, pass, n_bytes);
+        rinkj_escp_shuffle_4pass_1bit (dst, src, pass, n_bytes);
     }
 }
 
@@ -824,26 +824,26 @@ rinkj_escp_compress_rle (char *dst, const char *src, int n)
     {
       b = src[i];
       for (run = 1; run < 129 && i + run < n; run++)
-	if (b != src[i + run])
-	  break;
+        if (b != src[i + run])
+          break;
       if (run > 2)
-	{
-	  dst[j++] = 257 - run;
-	  dst[j++] = b;
-	}
+        {
+          dst[j++] = 257 - run;
+          dst[j++] = b;
+        }
       else
-	{
-	  for (run = 1; run < 128 && i + run < n; run++)
-	    {
-	      b = src[i + run];
-	      if (i + run + 2 < n &&
-		  b == src[i + run + 1] && b == src[i + run + 2])
-		break;
-	    }
-	  dst[j++] = run - 1;
-	  memcpy (dst + j, src + i, run);
-	  j += run;
-	}
+        {
+          for (run = 1; run < 128 && i + run < n; run++)
+            {
+              b = src[i + run];
+              if (i + run + 2 < n &&
+                  b == src[i + run + 1] && b == src[i + run + 2])
+                break;
+            }
+          dst[j++] = run - 1;
+          memcpy (dst + j, src + i, run);
+          j += run;
+        }
     }
 
   return j;
@@ -872,7 +872,7 @@ rinkj_escp_flush (RinkjEscp *z)
 
 #ifdef VERBOSE
   fprintf (stderr, "flush pass %d: ytop = %d (= %d mod %d), x_pass = %d\n",
-	   z->pass, ytop, ytop % z->spacing, z->spacing, x_pass);
+           z->pass, ytop, ytop % z->spacing, z->spacing, x_pass);
 #endif
 
   xsb = (z->width * z->bps + 7) >> 3;
@@ -887,12 +887,12 @@ rinkj_escp_flush (RinkjEscp *z)
   ysc = ytop;
   if (z->vertpos == -1)
     status = rinkj_byte_stream_printf (z->out, "\033(V%c%c%c%c",
-				       2, 0, ysc & 0xff, (ysc >> 8) & 0xff);
+                                       2, 0, ysc & 0xff, (ysc >> 8) & 0xff);
   else
     {
       int yrel = ysc - z->vertpos;
       status = rinkj_byte_stream_printf (z->out, "\033(v%c%c%c%c%c%c",
-					 4, 0, yrel & 0xff, (yrel >> 8) & 0xff, (yrel >> 16) & 0xff, (yrel >> 24) & 0xff);
+                                         4, 0, yrel & 0xff, (yrel >> 8) & 0xff, (yrel >> 16) & 0xff, (yrel >> 24) & 0xff);
     }
 
   z->vertpos = ysc;
@@ -905,61 +905,61 @@ rinkj_escp_flush (RinkjEscp *z)
 
       m = (z->y - ytop + z->spacing - 1 - plane_off) / z->spacing;
       if (m > z->n_pins)
-	m = z->n_pins;
+        m = z->n_pins;
 
       if (m <= 0)
-	continue;
+        continue;
 
       if (1)
-	{
-	  /* todo: make this calculation fully agile */
-	  int x = (x_pass & 3);
-	  status = rinkj_byte_stream_printf (z->out, "\033($\4%c%c%c%c%c",
-					     0, x & 0xff,
-					     (x >> 8) & 0xff,
-					     (x >> 16) & 0xff,
-					     (x >> 24) & 0xff);
+        {
+          /* todo: make this calculation fully agile */
+          int x = (x_pass & 3);
+          status = rinkj_byte_stream_printf (z->out, "\033($\4%c%c%c%c%c",
+                                             0, x & 0xff,
+                                             (x >> 8) & 0xff,
+                                             (x >> 16) & 0xff,
+                                             (x >> 24) & 0xff);
 
-	  if (status < 0) return status;
-	}
+          if (status < 0) return status;
+        }
 
       status = rinkj_byte_stream_printf (z->out, "\033i%c%c%c%c%c%c%c",
-					 color[i],
-					 rle,
-					 z->head_bps,
-					 xsb_out & 0xff,
-					 (xsb_out >> 8) & 0xff,
-					 m & 0xff, m >> 8);
+                                         color[i],
+                                         rle,
+                                         z->head_bps,
+                                         xsb_out & 0xff,
+                                         (xsb_out >> 8) & 0xff,
+                                         m & 0xff, m >> 8);
       if (status < 0) return status;
       for (j = 0; j < m; j++)
-	{
-	  const char *line;
+        {
+          const char *line;
 
-	  bufy = (ytop + j * z->spacing + plane_off) % z->bufheight;
-	  line = z->buf + bufy * z->rowstride + plane[i] * z->planestride;
-	  if (z->buf_linevalid[bufy * z->num_chan + i] & pass_mask)
-	    rinkj_escp_shuffle (thisbuf, line, x_pass, xsb,
-				z->passes_per_scan, z->bps, z->head_bps);
-	  else
-	    memset (thisbuf, 0, xsb_out);
-	  z->buf_linevalid[bufy * z->num_chan + i] &= ~pass_mask;
+          bufy = (ytop + j * z->spacing + plane_off) % z->bufheight;
+          line = z->buf + bufy * z->rowstride + plane[i] * z->planestride;
+          if (z->buf_linevalid[bufy * z->num_chan + i] & pass_mask)
+            rinkj_escp_shuffle (thisbuf, line, x_pass, xsb,
+                                z->passes_per_scan, z->bps, z->head_bps);
+          else
+            memset (thisbuf, 0, xsb_out);
+          z->buf_linevalid[bufy * z->num_chan + i] &= ~pass_mask;
 #ifdef VERBOSE
-	  if (i == 0 && j == 0)
-	    {
-	      fprintf (stderr, "flush line[0] = %d shuffled[0] = %d\n",
-		       line[0], thisbuf[0]);
-	    }
+          if (i == 0 && j == 0)
+            {
+              fprintf (stderr, "flush line[0] = %d shuffled[0] = %d\n",
+                       line[0], thisbuf[0]);
+            }
 #endif
-	  if (rle)
-	    {
-	      int nbytes;
+          if (rle)
+            {
+              int nbytes;
 
-	      nbytes = rinkj_escp_compress_rle (compress_buf, thisbuf, xsb_out);
-	      status = rinkj_byte_stream_write (z->out, compress_buf, nbytes);
-	    }
-	  else
-	    status = rinkj_byte_stream_write (z->out, thisbuf, xsb_out);
-	}
+              nbytes = rinkj_escp_compress_rle (compress_buf, thisbuf, xsb_out);
+              status = rinkj_byte_stream_write (z->out, compress_buf, nbytes);
+            }
+          else
+            status = rinkj_byte_stream_write (z->out, thisbuf, xsb_out);
+        }
       if (status < 0) return status;
 #if 0
       status = rinkj_byte_stream_puts (z->out, "\r");
@@ -984,10 +984,10 @@ rinkj_escp_flush_bottom (RinkjEscp *z)
     {
       ytop = rinkj_escp_ytop (z, z->pass, NULL);
       if (ytop >= z->y)
-	break;
+        break;
       status = rinkj_escp_flush (z);
       if (status != 0)
-	return status;
+        return status;
     }
   return 0;
 }

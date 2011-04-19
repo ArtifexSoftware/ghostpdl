@@ -38,15 +38,14 @@
 #define fontnames(agfascreenfontname, agfaname, urwname) urwname
 #endif
 
-
 const font_resident_t resident_table[] = {
 #define C(b) ((byte)((b) ^ 0xff))
 #define cc_alphabetic\
-	  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
+          { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
 #define cc_symbol\
-	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
+          { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
 #define cc_dingbats\
-	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
+          { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
     /*
      * Per TRM 23-87, PCL5 printers are supposed to have Univers
      * and CG Times fonts.  Substitute Arial for Univers and
@@ -56,7 +55,7 @@ const font_resident_t resident_table[] = {
 #define agfa (4096)
     /* definition for style word as defined on 11-19 PCLTRM */
 #define style_word(posture, width, structure) \
-	  ((posture) + (4 * (width)) + (32 * (structure)))
+          ((posture) + (4 * (width)) + (32 * (structure)))
 #define REGULAR         (style_word(0, 0, 0))
 #define ITALIC          (style_word(1, 0, 0))
 #define CONDENSEDITALIC (style_word(1, 1, 0))
@@ -146,21 +145,21 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("UniversMedium", "Univers-Medium", "U001-Reg"), 
+        fontnames("UniversMedium", "Univers-Medium", "U001-Reg"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','M','d'},
         {0, 1, {332.0, 720000.0/332.0}, 0, REGULAR, NOBOLD, 4148, 11},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("UniversBold", "Univers-Bold", "U001-Bol"), 
+        fontnames("UniversBold", "Univers-Bold", "U001-Bol"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {332.0, 720000.0/332.0}, 0, REGULAR, BOLD, 4148, 12},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("UniversMediumItalic", "Univers-MediumItalic", "U001-Ita"), 
+        fontnames("UniversMediumItalic", "Univers-MediumItalic", "U001-Ita"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','M','d','I','t'},
         {0, 1, {332.0, 720000.0/332.0}, 0, ITALIC, NOBOLD, 4148, 13},
         cc_alphabetic, plft_Unicode
@@ -172,9 +171,9 @@ const font_resident_t resident_table[] = {
         {0, 1, {332.0, 720000.0/332.0}, 0, ITALIC, BOLD, 4148, 14},
         cc_alphabetic, plft_Unicode
     },
-    
+
     {
-        fontnames("UniversCondensedMedium", "Univers-Condensed-Medium", "U001Con-Reg"), 
+        fontnames("UniversCondensedMedium", "Univers-Condensed-Medium", "U001Con-Reg"),
         {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','C','d','M','d'},
         {0, 1, {221.0, 720000.0/221.0}, 0, CONDENSED, NOBOLD, 4148, 15},
         cc_alphabetic, plft_Unicode
@@ -188,33 +187,33 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("UniversCondensedMediumItalic", "Univers-Condensed-MediumItalic", "U001Con-Ita"), 
+        fontnames("UniversCondensedMediumItalic", "Univers-Condensed-MediumItalic", "U001Con-Ita"),
         {'U','n','i','v','e','r','s',' ',' ',' ','C','d','M','d','I','t'},
         {0, 1, {221.0, 720000.0/221.0}, 0, CONDENSEDITALIC, NOBOLD, 4148, 17},
         cc_alphabetic, plft_Unicode
     },
-    
+
     {
-        fontnames("UniversCondensedBoldItalic", "Univers-Condensed-BoldItalic", "U001Con-BolIta"), 
+        fontnames("UniversCondensedBoldItalic", "Univers-Condensed-BoldItalic", "U001Con-BolIta"),
         {'U','n','i','v','e','r','s',' ',' ',' ','C','d','B','d','I','t'},
         {0, 1, {221.0, 720000.0/221.0}, 0, CONDENSEDITALIC, BOLD, 4148, 18},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("AntiqueOlive", "AntiqueOlive", "AntiqueOlive-Reg"), 
+        fontnames("AntiqueOlive", "AntiqueOlive", "AntiqueOlive-Reg"),
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ',' ',' '},
         {0, 1, {295.0, 720000.0/295.0}, 0, REGULAR, NOBOLD, 4168, 19},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("AntiqueOliveBold", "AntiqueOlive-Bold", "AntiqueOlive-Bol"), 
+        fontnames("AntiqueOliveBold", "AntiqueOlive-Bold", "AntiqueOlive-Bol"),
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','B','d'},
         {0, 1, {332.0, 720000.0/332.0}, 0, REGULAR, BOLD, 4168, 20},
         cc_alphabetic, plft_Unicode
     },
-    
+
     {
         fontnames("AntiqueOliveItalic", "AntiqueOlive-Italic", "AntiqueOlive-Ita"),
         {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','I','t'},
@@ -223,7 +222,7 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("GaramondAntiqua", "Garamond-Antiqua", "GaramondNo8-Reg"), 
+        fontnames("GaramondAntiqua", "Garamond-Antiqua", "GaramondNo8-Reg"),
         {'G','a','r','a','m','o','n','d',' ','A','n','t','i','q','u','a'},
         {0, 1, {258.0, 720000.0/258.0}, 0, REGULAR, NOBOLD, 4197, 22},
         cc_alphabetic, plft_Unicode
@@ -244,49 +243,49 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("GaramondKursivHalbfett", "Garamond-KursivHalbfett", "GaramondNo8-MedIta"), 
+        fontnames("GaramondKursivHalbfett", "Garamond-KursivHalbfett", "GaramondNo8-MedIta"),
         {'G','a','r','a','m','o','n','d',' ','K','r','s','v','H','l','b'},
         {0, 1, {258.0, 720000.0/258.0}, 0, ITALIC, BOLD, 4197, 25},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Marigold", "Marigold", "Mauritius-Reg"), 
+        fontnames("Marigold", "Marigold", "Mauritius-Reg"),
         {'M','a','r','i','g','o','l','d',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {221.0, 720000.0/221.0}, 0, REGULAR, NOBOLD, 4297, 26},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("AlbertusMedium", "Albertus-Medium", "A028-Med"), 
+        fontnames("AlbertusMedium", "Albertus-Medium", "A028-Med"),
         {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','M','d'},
         {0, 1, {313.0, 720000.0/313.0}, 0, REGULAR, MEDIUMBOLD, 4362, 27},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("AlbertusExtraBold", "Albertus-ExtraBold", "A028-Ext"), 
+        fontnames("AlbertusExtraBold", "Albertus-ExtraBold", "A028-Ext"),
         {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','X','b'},
         {0, 1, {369.0, 720000.0/369.0}, 0, REGULAR, EXBOLD, 4362, 28},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Arial", "Arial", "A030-Reg"), 
+        fontnames("Arial", "Arial", "A030-Reg"),
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {278.0, 720000.0/278.0}, 0, REGULAR, NOBOLD, 16602, 29},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Arial-BoldMT", "Arial-Bold", "A030-Bol"), 
+        fontnames("Arial-BoldMT", "Arial-Bold", "A030-Bol"),
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {278.0, 720000.0/278.0}, 0, REGULAR, BOLD, 16602, 30},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Arial-ItalicMT", "Arial-Italic", "A030-Ita"), 
+        fontnames("Arial-ItalicMT", "Arial-Italic", "A030-Ita"),
         {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {278.0, 720000.0/278.0}, 0, ITALIC, NOBOLD, 16602, 31},
         cc_alphabetic, plft_Unicode
@@ -300,7 +299,7 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("TimesNewRoman", "TimesNewRoman", "NimbusRomanNo9-Reg"), 
+        fontnames("TimesNewRoman", "TimesNewRoman", "NimbusRomanNo9-Reg"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ',' ',' '},
         {0, 1, {250.0, 720000.0/250.0}, 0, REGULAR, NOBOLD, 16901, 33},
         cc_alphabetic, plft_Unicode
@@ -321,21 +320,21 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic", "NimbusRomanNo9-MedIta"), 
+        fontnames("TimesNewRoman-BoldItalic", "TimesNewRoman-BoldItalic", "NimbusRomanNo9-MedIta"),
         {'T','i','m','e','s','N','e','w','R','m','n',' ','B','d','I','t'},
         {0, 1, {250.0, 720000.0/250.0}, 0, ITALIC, BOLD, 16901, 35},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Helvetica", "Helvetica", "NimbusSanL-Regu"), 
+        fontnames("Helvetica", "Helvetica", "NimbusSanL-Regu"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ',' ',' '},
         {0, 1, {278.0, 720000.0/278.0}, 0, REGULAR, NOBOLD, 24580, 37},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Helvetica-Bold", "Helvetica-Bold", "NimbusSanL-Bold"), 
+        fontnames("Helvetica-Bold", "Helvetica-Bold", "NimbusSanL-Bold"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {278.0, 720000.0/278.0}, 0, REGULAR, BOLD, 24580, 38},
         cc_alphabetic, plft_Unicode
@@ -363,14 +362,14 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("Helvetica-Narrow-BoldOblique", "Helvetica-Narrow-BoldOblique", "NimbusSanL-BoldCondItal"), 
+        fontnames("Helvetica-Narrow-BoldOblique", "Helvetica-Narrow-BoldOblique", "NimbusSanL-BoldCondItal"),
         {'H','e','l','v','e','t','i','c','a',' ','N','r','B','d','O','b'},
         {0, 1, {228.0, 720000.0/228.0}, 0, CONDENSEDITALIC, BOLD, 24580, 44},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Helvetica-Narrow-Oblique", "Helvetica-Narrow-Oblique", "NimbusSanL-ReguCondItal"), 
+        fontnames("Helvetica-Narrow-Oblique", "Helvetica-Narrow-Oblique", "NimbusSanL-ReguCondItal"),
         {'H','e','l','v','e','t','i','c','a',' ',' ',' ','N','r','O','b'},
         {0, 1, {228.0, 720000.0/228.0}, 0, CONDENSEDITALIC, NOBOLD, 24580, 43},
         cc_alphabetic, plft_Unicode
@@ -391,21 +390,21 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("Palatino-Italic", "Palatino-Italic", "URWPalladioL-Ital"), 
+        fontnames("Palatino-Italic", "Palatino-Italic", "URWPalladioL-Ital"),
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {250.0, 720000.0/250.0}, 0, ITALIC, NOBOLD, 24591, 47},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Palatino-Bold", "Palatino-Bold", "URWPalladioL-Bold"), 
+        fontnames("Palatino-Bold", "Palatino-Bold", "URWPalladioL-Bold"),
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ',' ',' ','B','d'},
         {0, 1, {250.0, 720000.0/250.0}, 0, REGULAR, BOLD, 24591, 46},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Palatino-BoldItalic", "Palatino-BoldItalic", "URWPalladioL-BoldItal"), 
+        fontnames("Palatino-BoldItalic", "Palatino-BoldItalic", "URWPalladioL-BoldItal"),
         {'P','a','l','a','t','i','n','o',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {250.0, 720000.0/250.0}, 0, ITALIC, BOLD, 24591, 48},
         cc_alphabetic, plft_Unicode
@@ -468,28 +467,28 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("NewCenturySchlbk-Bold", "NewCenturySchlbk-Bold", "CenturySchL-Bold"), 
+        fontnames("NewCenturySchlbk-Bold", "NewCenturySchlbk-Bold", "CenturySchL-Bold"),
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','B','d'},
         {0, 1, {287.0, 720000.0/287.0}, 0, REGULAR, BOLD, 24703, 58},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("NewCenturySchlbk-BoldItalic", "NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal"), 
+        fontnames("NewCenturySchlbk-BoldItalic", "NewCenturySchlbk-BoldItalic", "CenturySchL-BoldItal"),
         {'N','w','C','e','n','t','S','c','h','l','b','k','B','d','I','t'},
         {0, 1, {287.0, 720000.0/287.0}, 0, ITALIC, BOLD, 24703, 60},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("NewCenturySchlbk-Italic", "NewCenturySchlbk-Italic", "CenturySchL-Ital"), 
+        fontnames("NewCenturySchlbk-Italic", "NewCenturySchlbk-Italic", "CenturySchL-Ital"),
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ',' ','I','t'},
         {0, 1, {278.0, 720000.0/278.0}, 0, ITALIC, NOBOLD, 24703, 59},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("NewCenturySchlbk-Roman", "NewCenturySchlbk-Roman", "CenturySchL-Roma"), 
+        fontnames("NewCenturySchlbk-Roman", "NewCenturySchlbk-Roman", "CenturySchL-Roma"),
         {'N','w','C','e','n','t','S','c','h','l','b','k',' ','R','m','n'},
         {0, 1, {278.0, 720000.0/278.0}, 0, REGULAR, NOBOLD, 24703, 57},
         cc_alphabetic, plft_Unicode
@@ -510,14 +509,14 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("Times-Italic", "Times-Italic", "NimbusRomNo9L-ReguItal"), 
+        fontnames("Times-Italic", "Times-Italic", "NimbusRomNo9L-ReguItal"),
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 1, {250.0, 720000.0/250.0}, 0, ITALIC, NOBOLD, 25093, 63},
         cc_alphabetic, plft_Unicode
     },
 
     {
-        fontnames("Times-BoldItalic", "Times-BoldItalic", "NimbusRomNo9L-MediItal"), 
+        fontnames("Times-BoldItalic", "Times-BoldItalic", "NimbusRomNo9L-MediItal"),
         {'T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
         {0, 1, {250.0, 720000.0/250.0}, 0, ITALIC, BOLD, 25093, 64},
         cc_alphabetic, plft_Unicode
@@ -526,10 +525,10 @@ const font_resident_t resident_table[] = {
     {
         fontnames("ZapfChancery-MediumItalic", "ZapfChancery-MediumItalic", "URWChanceryL-MediItal"),
         {'Z','a','p','f','C','h','a','n','c','e','r','y','M','d','I','t'},
-        {0, 1, {220.0, 720000.0/220.0},0, ITALIC, NOBOLD, 45099, 65}, 
+        {0, 1, {220.0, 720000.0/220.0},0, ITALIC, NOBOLD, 45099, 65},
         cc_alphabetic, plft_Unicode
     },
- 
+
     {
         fontnames("SymbolMT", "Symbol", "StandardSymL"),
         {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
@@ -555,25 +554,24 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("ZapfDingbats", "ZapfDingbats", "Dingbats"), 
+        fontnames("ZapfDingbats", "ZapfDingbats", "Dingbats"),
         {'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '},
         {460, 1, {280.0, 720000.0/280.0},0, REGULAR, NOBOLD, 45101, 69},
         cc_dingbats, plft_8bit
     },
 
     {
-        fontnames("CourierBold", "CourierMT-Bold", "NimbusMono-Bol"), 
+        fontnames("CourierBold", "CourierMT-Bold", "NimbusMono-Bol"),
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','B','d'},
-        {0, 0, {600.0, 720000.0/600.0}, 0, REGULAR, BOLD, 4099, 70}, 
-        cc_alphabetic, plft_Unicode 
+        {0, 0, {600.0, 720000.0/600.0}, 0, REGULAR, BOLD, 4099, 70},
+        cc_alphabetic, plft_Unicode
     },
-
 
     {
         fontnames("CourierItalic", "CourierMT-Italic", "NimbusMono-Ita"),
         {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','I','t'},
         {0, 0, {600.0, 720000.0/600.0}, 0, ITALIC, NOBOLD, 4099, 71},
-        cc_alphabetic, plft_Unicode 
+        cc_alphabetic, plft_Unicode
     },
 
     {
@@ -584,12 +582,12 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("LetterGothic", "LetterGothic", "LetterGothic-Reg"), 
+        fontnames("LetterGothic", "LetterGothic", "LetterGothic-Reg"),
         {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ',' ',' '},
         {0, 0, {500.0, 720000.0/500.0}, 0, REGULAR, NOBOLD, 4102, 73},
         cc_alphabetic, plft_Unicode
     },
-    
+
     {
         fontnames("LetterGothicBold", "LetterGothic-Bold", "LetterGothic-Bol"),
         {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ','B','d'},
@@ -603,7 +601,6 @@ const font_resident_t resident_table[] = {
         {0, 0, {500.0, 720000.0/500.0}, 0, ITALIC, NOBOLD, 4102, 75},
         cc_alphabetic, plft_Unicode
     },
-
 
     {
         fontnames("Courier", "Courier", "NimbusMonL-Regu"),

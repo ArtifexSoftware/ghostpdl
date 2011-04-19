@@ -153,7 +153,7 @@ typedef struct pcl__lookup_tbl_s {
  * The pcl_lookup_t structure provides a reference-count header for a lookup
  * table. This is necessary because there is a way that lookup tables can
  * shared between PCL base color spaces (this could occur in the case of a
- * luminance-chrominance color space, which might have an instantiation with 
+ * luminance-chrominance color space, which might have an instantiation with
  * two color tables that shares one of these color tables with another
  * instantiation).
  */

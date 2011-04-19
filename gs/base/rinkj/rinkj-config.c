@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -66,29 +66,29 @@ rinkj_config_get (const char *config, const char *key)
 
       p_nl = strchr (config + ix, '\n');
       if (p_nl == NULL)
-	{
-	  /* last line not \n terminated */
-	  ix_eol = strlen (config + ix);
-	  ix_next = ix_eol;
-	}
+        {
+          /* last line not \n terminated */
+          ix_eol = strlen (config + ix);
+          ix_next = ix_eol;
+        }
       else
-	{
-	  ix_eol = ix + p_nl - config;
-	  ix_next = ix_eol + 1;
-	}
+        {
+          ix_eol = ix + p_nl - config;
+          ix_next = ix_eol + 1;
+        }
 
       for (key_ix = 0; ix + key_ix < ix_eol; key_ix++)
-	{
-	  if (key[key_ix] == 0 && config[ix + key_ix] == ':')
-	    {
-	      ix += key_ix + 1;
-	      while (ix < ix_eol && isspace (config[ix]))
-		ix++;
-	      return rinkj_strdup_size (config + ix, ix_eol - ix);
-	    }
-	  else if (key[key_ix] != config[ix + key_ix])
-	    break;
-	}
+        {
+          if (key[key_ix] == 0 && config[ix + key_ix] == ':')
+            {
+              ix += key_ix + 1;
+              while (ix < ix_eol && isspace (config[ix]))
+                ix++;
+              return rinkj_strdup_size (config + ix, ix_eol - ix);
+            }
+          else if (key[key_ix] != config[ix + key_ix])
+            break;
+        }
     }
   return NULL;
 }
@@ -120,32 +120,32 @@ rinkj_config_keyval (const char *config, char **p_val, const char **p_next)
 
       p_nl = strchr (config + ix, '\n');
       if (p_nl == NULL)
-	{
-	  /* last line not \n terminated */
-	  ix_eol = strlen (config + ix);
-	  ix_next = ix_eol;
-	}
+        {
+          /* last line not \n terminated */
+          ix_eol = strlen (config + ix);
+          ix_next = ix_eol;
+        }
       else
-	{
-	  ix_eol = ix + p_nl - config;
-	  ix_next = ix_eol + 1;
-	}
+        {
+          ix_eol = ix + p_nl - config;
+          ix_next = ix_eol + 1;
+        }
 
       for (key_ix = 0; ix + key_ix < ix_eol; key_ix++)
-	{
-	  if (config[ix + key_ix] == ':')
-	    {
-	      key = rinkj_strdup_size (config + ix, key_ix);
-	      ix += key_ix + 1;
-	      while (ix < ix_eol && isspace (config[ix]))
-		ix++;
-	      if (p_val != NULL)
-		*p_val = rinkj_strdup_size (config + ix, ix_eol - ix);
-	      if (p_next != NULL)
-		*p_next = config + ix_next;
-	      return key;
-	    }
-	}
+        {
+          if (config[ix + key_ix] == ':')
+            {
+              key = rinkj_strdup_size (config + ix, key_ix);
+              ix += key_ix + 1;
+              while (ix < ix_eol && isspace (config[ix]))
+                ix++;
+              if (p_val != NULL)
+                *p_val = rinkj_strdup_size (config + ix, ix_eol - ix);
+              if (p_next != NULL)
+                *p_next = config + ix_next;
+              return key;
+            }
+        }
     }
   return NULL;
 }

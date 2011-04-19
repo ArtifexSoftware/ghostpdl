@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,12 +34,10 @@
 #include "sjpx_luratech.h"
 #endif
 
-
-
 /* Define a (bogus) GC descriptor for gs_param_string. */
 /* The only ones we use are GC-able and not persistent. */
 gs_private_st_composite(st_gs_param_string, gs_param_string, "gs_param_string",
-			param_string_enum_ptrs, param_string_reloc_ptrs);
+                        param_string_enum_ptrs, param_string_reloc_ptrs);
 static
 ENUM_PTRS_WITH(param_string_enum_ptrs, gs_param_string *pstr) return 0;
 case 0: return ENUM_CONST_STRING(pstr);
@@ -55,9 +53,8 @@ RELOC_PTRS_WITH(param_string_reloc_ptrs, gs_param_string *pstr)
 }
 RELOC_PTRS_END
 gs_private_st_element(st_param_string_element, gs_param_string,
-		      "gs_param_string[]", param_string_elt_enum_ptrs,
-		      param_string_elt_reloc_ptrs, st_gs_param_string);
-
+                      "gs_param_string[]", param_string_elt_enum_ptrs,
+                      param_string_elt_reloc_ptrs, st_gs_param_string);
 
 /* ---------------- Get/put Distiller parameters ---------------- */
 
@@ -124,9 +121,9 @@ typedef struct psdf_image_param_names_s {
     const char *Filter;
     const char *AutoFilterStrategy;
     gs_param_item_t items[9];	/* AutoFilter (not used for mono), */
-				/* AntiAlias, */
-				/* Depth, Downsample, DownsampleThreshold, */
-				/* Encode, Resolution, AutoFilterStrategy, end marker */
+                                /* AntiAlias, */
+                                /* Depth, Downsample, DownsampleThreshold, */
+                                /* Encode, Resolution, AutoFilterStrategy, end marker */
 } psdf_image_param_names_t;
 #define pi(key, type, memb) { key, type, offset_of(psdf_image_params, memb) }
 #define psdf_image_param_names(acs, aa, af, de, di, ds, dt, dst, dstd, e, f, fns, r, afs)\
@@ -144,52 +141,52 @@ typedef struct psdf_image_param_names_s {
 
 static const psdf_image_param_names_t Color_names = {
     psdf_image_param_names(
-	"ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
-	"ColorImageDepth", "ColorImageDict",
-	"DownsampleColorImages", "ColorImageDownsampleType",
-	"ColorImageDownsampleThreshold", 1.5,
-	"EncodeColorImages", "ColorImageFilter", Poly_filters,
-	"ColorImageResolution", 0
+        "ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
+        "ColorImageDepth", "ColorImageDict",
+        "DownsampleColorImages", "ColorImageDownsampleType",
+        "ColorImageDownsampleThreshold", 1.5,
+        "EncodeColorImages", "ColorImageFilter", Poly_filters,
+        "ColorImageResolution", 0
     )
 };
 static const psdf_image_param_names_t Gray_names = {
     psdf_image_param_names(
-	"GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
-	"GrayImageDepth", "GrayImageDict",
-	"DownsampleGrayImages", "GrayImageDownsampleType",
-	"GrayImageDownsampleThreshold", 2.0,
-	"EncodeGrayImages", "GrayImageFilter", Poly_filters,
-	"GrayImageResolution", 0
+        "GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
+        "GrayImageDepth", "GrayImageDict",
+        "DownsampleGrayImages", "GrayImageDownsampleType",
+        "GrayImageDownsampleThreshold", 2.0,
+        "EncodeGrayImages", "GrayImageFilter", Poly_filters,
+        "GrayImageResolution", 0
     )
 };
 static const psdf_image_param_names_t Mono_names = {
     psdf_image_param_names(
-	0, "AntiAliasMonoImages", 0,
-	"MonoImageDepth", "MonoImageDict",
-	"DownsampleMonoImages", "MonoImageDownsampleType",
-	"MonoImageDownsampleThreshold", 2.0,
-	"EncodeMonoImages", "MonoImageFilter", Mono_filters,
-	"MonoImageResolution", 0
+        0, "AntiAliasMonoImages", 0,
+        "MonoImageDepth", "MonoImageDict",
+        "DownsampleMonoImages", "MonoImageDownsampleType",
+        "MonoImageDownsampleThreshold", 2.0,
+        "EncodeMonoImages", "MonoImageFilter", Mono_filters,
+        "MonoImageResolution", 0
     )
 };
 static const psdf_image_param_names_t Color_names15 = {
     psdf_image_param_names(
-	"ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
-	"ColorImageDepth", "ColorImageDict",
-	"DownsampleColorImages", "ColorImageDownsampleType",
-	"ColorImageDownsampleThreshold", 1.5,
-	"EncodeColorImages", "ColorImageFilter", Poly_filters,
-	"ColorImageResolution", "ColorAutoFilterStrategy"
+        "ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
+        "ColorImageDepth", "ColorImageDict",
+        "DownsampleColorImages", "ColorImageDownsampleType",
+        "ColorImageDownsampleThreshold", 1.5,
+        "EncodeColorImages", "ColorImageFilter", Poly_filters,
+        "ColorImageResolution", "ColorAutoFilterStrategy"
     )
 };
 static const psdf_image_param_names_t Gray_names15 = {
     psdf_image_param_names(
-	"GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
-	"GrayImageDepth", "GrayImageDict",
-	"DownsampleGrayImages", "GrayImageDownsampleType",
-	"GrayImageDownsampleThreshold", 2.0,
-	"EncodeGrayImages", "GrayImageFilter", Poly_filters,
-	"GrayImageResolution", "GrayAutoFilterStrategy"
+        "GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
+        "GrayImageDepth", "GrayImageDict",
+        "DownsampleGrayImages", "GrayImageDownsampleType",
+        "GrayImageDownsampleThreshold", 2.0,
+        "EncodeGrayImages", "GrayImageFilter", Poly_filters,
+        "GrayImageResolution", "GrayAutoFilterStrategy"
     )
 };
 #undef pi
@@ -270,7 +267,7 @@ psdf_write_name(gs_param_list *plist, const char *key, const char *str)
 
 static int
 psdf_write_string_param(gs_param_list *plist, const char *key,
-			const gs_const_string *pstr)
+                        const gs_const_string *pstr)
 {
     gs_param_string ps;
 
@@ -286,19 +283,19 @@ psdf_write_string_param(gs_param_list *plist, const char *key,
  */
 static int
 psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
-			  gs_c_param_list *plvalue)
+                          gs_c_param_list *plvalue)
 {
     gs_param_dict dict;
     int code;
 
     if (pname == 0)
-	return 0;
+        return 0;
     dict.size = 12;		/* enough for all param dicts we know about */
     if ((code = param_begin_write_dict(plist, pname, &dict, false)) < 0)
-	return code;
+        return code;
     if (plvalue != 0) {
-	gs_c_param_list_read(plvalue);
-	code = param_list_copy(dict.list, (gs_param_list *)plvalue);
+        gs_c_param_list_read(plvalue);
+        code = param_list_copy(dict.list, (gs_param_list *)plvalue);
     }
     param_end_write_dict(plist, pname, &dict);
     return code;
@@ -307,11 +304,11 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 /* Get a set of image-related parameters. */
 static int
 psdf_get_image_params(gs_param_list * plist,
-	  const psdf_image_param_names_t * pnames, psdf_image_params * params)
+          const psdf_image_param_names_t * pnames, psdf_image_params * params)
 {
     /* Skip AutoFilter for mono images. */
     const gs_param_item_t *items =
-	(pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
+        (pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
     int code;
 
     /*
@@ -320,45 +317,45 @@ psdf_get_image_params(gs_param_list * plist,
      * from the command line.
      */
     if (
-	   (code = gs_param_write_items(plist, params, NULL, items)) < 0 ||
-	   (code = psdf_get_image_dict_param(plist, pnames->ACSDict,
-					     params->ACSDict)) < 0 ||
-	   /* (AntiAlias) */
-	   /* (AutoFilter) */
-	   /* (Depth) */
-	   (code = psdf_get_image_dict_param(plist, pnames->Dict,
-					     params->Dict)) < 0 ||
-	   /* (Downsample) */
-	   (code = psdf_write_name(plist, pnames->DownsampleType,
-		DownsampleType_names[params->DownsampleType])) < 0 ||
-	   /* (DownsampleThreshold) */
-	   /* (Encode) */
-	   (code = psdf_write_name(plist, pnames->Filter,
-				   (params->Filter == 0 ?
-				    pnames->filter_names[0].pname :
-				    params->Filter))) < 0
-	   /* (Resolution) */
+           (code = gs_param_write_items(plist, params, NULL, items)) < 0 ||
+           (code = psdf_get_image_dict_param(plist, pnames->ACSDict,
+                                             params->ACSDict)) < 0 ||
+           /* (AntiAlias) */
+           /* (AutoFilter) */
+           /* (Depth) */
+           (code = psdf_get_image_dict_param(plist, pnames->Dict,
+                                             params->Dict)) < 0 ||
+           /* (Downsample) */
+           (code = psdf_write_name(plist, pnames->DownsampleType,
+                DownsampleType_names[params->DownsampleType])) < 0 ||
+           /* (DownsampleThreshold) */
+           /* (Encode) */
+           (code = psdf_write_name(plist, pnames->Filter,
+                                   (params->Filter == 0 ?
+                                    pnames->filter_names[0].pname :
+                                    params->Filter))) < 0
+           /* (Resolution) */
 #ifdef USE_LWF_JP2
-	   || 
-	   (pnames->AutoFilterStrategy != 0 &&
-	   (code = psdf_write_name(plist, pnames->AutoFilterStrategy,
-				   (params->AutoFilterStrategy == 0 ?
-				   "JPEG2000" : params->AutoFilterStrategy))) < 0)
+           ||
+           (pnames->AutoFilterStrategy != 0 &&
+           (code = psdf_write_name(plist, pnames->AutoFilterStrategy,
+                                   (params->AutoFilterStrategy == 0 ?
+                                   "JPEG2000" : params->AutoFilterStrategy))) < 0)
 #endif
-	)
-	DO_NOTHING;
+        )
+        DO_NOTHING;
     return code;
 }
 
 /* Get a font embedding parameter. */
 static int
 psdf_get_embed_param(gs_param_list *plist, gs_param_name allpname,
-		     const gs_param_string_array *psa)
+                     const gs_param_string_array *psa)
 {
     int code = param_write_name_array(plist, allpname, psa);
 
     if (code >= 0)
-	code = param_write_name_array(plist, allpname + 1, psa);
+        code = param_write_name_array(plist, allpname + 1, psa);
     return code;
 }
 
@@ -370,56 +367,56 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
     int code = gdev_vector_get_params(dev, plist);
 
     if (
-	code < 0 ||
-	(code = gs_param_write_items(plist, &pdev->params, NULL, psdf_param_items)) < 0 ||
+        code < 0 ||
+        (code = gs_param_write_items(plist, &pdev->params, NULL, psdf_param_items)) < 0 ||
 
     /* General parameters */
 
-	(code = psdf_write_name(plist, "AutoRotatePages",
-		AutoRotatePages_names[(int)pdev->params.AutoRotatePages])) < 0 ||
-	(code = psdf_write_name(plist, "Binding",
-		Binding_names[(int)pdev->params.Binding])) < 0 ||
-	(code = psdf_write_name(plist, "DefaultRenderingIntent",
-		DefaultRenderingIntent_names[(int)pdev->params.DefaultRenderingIntent])) < 0 ||
-	(code = psdf_write_name(plist, "TransferFunctionInfo",
-		TransferFunctionInfo_names[(int)pdev->params.TransferFunctionInfo])) < 0 ||
-	(code = psdf_write_name(plist, "UCRandBGInfo",
-		UCRandBGInfo_names[(int)pdev->params.UCRandBGInfo])) < 0 ||
+        (code = psdf_write_name(plist, "AutoRotatePages",
+                AutoRotatePages_names[(int)pdev->params.AutoRotatePages])) < 0 ||
+        (code = psdf_write_name(plist, "Binding",
+                Binding_names[(int)pdev->params.Binding])) < 0 ||
+        (code = psdf_write_name(plist, "DefaultRenderingIntent",
+                DefaultRenderingIntent_names[(int)pdev->params.DefaultRenderingIntent])) < 0 ||
+        (code = psdf_write_name(plist, "TransferFunctionInfo",
+                TransferFunctionInfo_names[(int)pdev->params.TransferFunctionInfo])) < 0 ||
+        (code = psdf_write_name(plist, "UCRandBGInfo",
+                UCRandBGInfo_names[(int)pdev->params.UCRandBGInfo])) < 0 ||
 
     /* Color sampled image parameters */
 
-    (code = psdf_get_image_params(plist, 
-			(pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names), 
-			&pdev->params.ColorImage)) < 0 ||
-	(code = psdf_write_name(plist, "ColorConversionStrategy",
-		ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy])) < 0 ||
-	(code = psdf_write_string_param(plist, "CalCMYKProfile",
-					&pdev->params.CalCMYKProfile)) < 0 ||
-	(code = psdf_write_string_param(plist, "CalGrayProfile",
-					&pdev->params.CalGrayProfile)) < 0 ||
-	(code = psdf_write_string_param(plist, "CalRGBProfile",
-					&pdev->params.CalRGBProfile)) < 0 ||
-	(code = psdf_write_string_param(plist, "sRGBProfile",
-					&pdev->params.sRGBProfile)) < 0 ||
+    (code = psdf_get_image_params(plist,
+                        (pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names),
+                        &pdev->params.ColorImage)) < 0 ||
+        (code = psdf_write_name(plist, "ColorConversionStrategy",
+                ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy])) < 0 ||
+        (code = psdf_write_string_param(plist, "CalCMYKProfile",
+                                        &pdev->params.CalCMYKProfile)) < 0 ||
+        (code = psdf_write_string_param(plist, "CalGrayProfile",
+                                        &pdev->params.CalGrayProfile)) < 0 ||
+        (code = psdf_write_string_param(plist, "CalRGBProfile",
+                                        &pdev->params.CalRGBProfile)) < 0 ||
+        (code = psdf_write_string_param(plist, "sRGBProfile",
+                                        &pdev->params.sRGBProfile)) < 0 ||
 
     /* Gray sampled image parameters */
 
-	(code = psdf_get_image_params(plist,
-			(pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names), 
-			&pdev->params.GrayImage)) < 0 ||
+        (code = psdf_get_image_params(plist,
+                        (pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names),
+                        &pdev->params.GrayImage)) < 0 ||
 
     /* Mono sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Mono_names, &pdev->params.MonoImage)) < 0 ||
+        (code = psdf_get_image_params(plist, &Mono_names, &pdev->params.MonoImage)) < 0 ||
 
     /* Font embedding parameters */
 
-	(code = psdf_get_embed_param(plist, ".AlwaysEmbed", &pdev->params.AlwaysEmbed)) < 0 ||
-	(code = psdf_get_embed_param(plist, ".NeverEmbed", &pdev->params.NeverEmbed)) < 0 ||
-	(code = psdf_write_name(plist, "CannotEmbedFontPolicy",
-		CannotEmbedFontPolicy_names[(int)pdev->params.CannotEmbedFontPolicy])) < 0
-	)
-	DO_NOTHING;
+        (code = psdf_get_embed_param(plist, ".AlwaysEmbed", &pdev->params.AlwaysEmbed)) < 0 ||
+        (code = psdf_get_embed_param(plist, ".NeverEmbed", &pdev->params.NeverEmbed)) < 0 ||
+        (code = psdf_write_name(plist, "CannotEmbedFontPolicy",
+                CannotEmbedFontPolicy_names[(int)pdev->params.CannotEmbedFontPolicy])) < 0
+        )
+        DO_NOTHING;
     return code;
 }
 
@@ -431,27 +428,27 @@ typedef stream_state_proc_put_params((*ss_put_params_t), stream_state);
 
 static int
 psdf_read_string_param(gs_param_list *plist, const char *key,
-		       gs_const_string *pstr, gs_memory_t *mem, int ecode)
+                       gs_const_string *pstr, gs_memory_t *mem, int ecode)
 {
     gs_param_string ps;
     int code;
 
     switch (code = param_read_string(plist, key, &ps)) {
     case 0: {
-	uint size = ps.size;
-	byte *data = gs_alloc_string(mem, size, "psdf_read_string_param");
+        uint size = ps.size;
+        byte *data = gs_alloc_string(mem, size, "psdf_read_string_param");
 
-	if (data == 0)
-	    return_error(gs_error_VMerror);
-	memcpy(data, ps.data, size);
-	pstr->data = data;
-	pstr->size = size;
-	break;
+        if (data == 0)
+            return_error(gs_error_VMerror);
+        memcpy(data, ps.data, size);
+        pstr->data = data;
+        pstr->size = size;
+        break;
     }
     default:
-	ecode = code;
+        ecode = code;
     case 1:
-	break;
+        break;
     }
     return ecode;
 }
@@ -462,7 +459,7 @@ psdf_read_string_param(gs_param_list *plist, const char *key,
  */
 static int
 psdf_put_enum(gs_param_list *plist, const char *key, int value,
-	      const char *const pnames[], int *pecode)
+              const char *const pnames[], int *pecode)
 {
     *pecode = param_put_enum(plist, key, &value, pnames, *pecode);
     return value;
@@ -483,24 +480,24 @@ static int
 psdf_DCT_put_params(gs_param_list * plist, stream_state * st)
 {
     return psdf_DCT_filter(plist, st, 8 /*nominal*/, 8 /*ibid.*/, 3 /*ibid.*/,
-			   NULL);
+                           NULL);
 }
 
 /* Put [~](Always|Never)Embed parameters. */
 /* Returns 0 = OK, 1 = no paramewter specified, <0 = error. */
 static int
 param_read_embed_array(gs_param_list * plist, gs_param_name pname,
-		       gs_param_string_array * psa)
+                       gs_param_string_array * psa)
 {
     int code;
 
     psa->data = 0, psa->size = 0;
     switch (code = param_read_name_array(plist, pname, psa)) {
-	default:
-	    param_signal_error(plist, pname, code);
-	case 0:
-	case 1:
-	    break;
+        default:
+            param_signal_error(plist, pname, code);
+        case 0:
+        case 1:
+            break;
     }
     return code;
 }
@@ -511,79 +508,79 @@ param_string_eq(const gs_param_string *ps1, const gs_param_string *ps2)
 }
 static int
 add_embed(gs_param_string_array *prsa, const gs_param_string_array *psa,
-	  gs_memory_t *mem)
+          gs_memory_t *mem)
 {
     uint i;
     gs_param_string *const rdata =
-	(gs_param_string *)prsa->data; /* break const */
+        (gs_param_string *)prsa->data; /* break const */
     uint count = prsa->size;
 
     for (i = 0; i < psa->size; ++i) {
-	uint j;
+        uint j;
 
-	for (j = 0; j < count; ++j)
-	    if (param_string_eq(&psa->data[i], &rdata[j]))
-		    break;
-	if (j == count) {
-	    uint size = psa->data[i].size;
-	    byte *data = gs_alloc_string(mem, size, "add_embed");
+        for (j = 0; j < count; ++j)
+            if (param_string_eq(&psa->data[i], &rdata[j]))
+                    break;
+        if (j == count) {
+            uint size = psa->data[i].size;
+            byte *data = gs_alloc_string(mem, size, "add_embed");
 
-	    if (data == 0)
-		return_error(gs_error_VMerror);
-	    memcpy(data, psa->data[i].data, size);
-	    rdata[count].data = data;
-	    rdata[count].size = size;
-	    rdata[count].persistent = false;
-	    count++;
-	}
+            if (data == 0)
+                return_error(gs_error_VMerror);
+            memcpy(data, psa->data[i].data, size);
+            rdata[count].data = data;
+            rdata[count].size = size;
+            rdata[count].persistent = false;
+            count++;
+        }
     }
     prsa->size = count;
     return 0;
 }
 static void
 delete_embed(gs_param_string_array *prsa, const gs_param_string_array *pnsa,
-	     gs_memory_t *mem)
+             gs_memory_t *mem)
 {
     uint i;
     gs_param_string *const rdata =
-	(gs_param_string *)prsa->data; /* break const */
+        (gs_param_string *)prsa->data; /* break const */
     uint count = prsa->size;
 
     for (i = pnsa->size; i-- > 0;) {
-	uint j;
+        uint j;
 
-	for (j = count; j-- > 0;)
-	    if (param_string_eq(&pnsa->data[i], &rdata[j]))
-		break;
-	if (j + 1 != 0) {
-	    gs_free_const_string(mem, rdata[j].data, rdata[j].size,
-				 "delete_embed");
-	    rdata[j] = rdata[--count];
-	}
+        for (j = count; j-- > 0;)
+            if (param_string_eq(&pnsa->data[i], &rdata[j]))
+                break;
+        if (j + 1 != 0) {
+            gs_free_const_string(mem, rdata[j].data, rdata[j].size,
+                                 "delete_embed");
+            rdata[j] = rdata[--count];
+        }
     }
     prsa->size = count;
 }
-static int merge_embed(gs_param_string_array * psa, gs_param_string_array * asa, 
-		     gs_memory_t *mem)
+static int merge_embed(gs_param_string_array * psa, gs_param_string_array * asa,
+                     gs_memory_t *mem)
 {
     gs_param_string_array rsa;
     gs_param_string *rdata;
     int code;
 
     rdata = gs_alloc_struct_array(mem, psa->size + asa->size,
-				  gs_param_string,
-				  &st_param_string_element,
-				  "psdf_put_embed_param(update)");
+                                  gs_param_string,
+                                  &st_param_string_element,
+                                  "psdf_put_embed_param(update)");
     if (rdata == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     memcpy(rdata, psa->data, psa->size * sizeof(*psa->data));
     rsa.data = rdata;
     rsa.size = psa->size;
     rsa.persistent = false;
     code = add_embed(&rsa, asa, mem);
     if (code < 0) {
-	gs_free_object(mem, rdata, "psdf_put_embed_param(update)");
-	return code;
+        gs_free_object(mem, rdata, "psdf_put_embed_param(update)");
+        return code;
     }
     gs_free_const_object(mem, psa->data, "psdf_put_embed_param(free)");
     *psa = rsa;
@@ -592,8 +589,8 @@ static int merge_embed(gs_param_string_array * psa, gs_param_string_array * asa,
 
 static int
 psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
-		     gs_param_name pname, gs_param_string_array * psa,
-		     gs_memory_t *mem, int ecode)
+                     gs_param_name pname, gs_param_string_array * psa,
+                     gs_memory_t *mem, int ecode)
 {
     gs_param_name allpname = pname + 1;
     gs_param_string_array sa, nsa, asa;
@@ -602,52 +599,52 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
     mem = gs_memory_stable(mem);
     code  = param_read_embed_array(plist, pname, &sa);
     if (code < 0)
-	return code;
+        return code;
     if (code == 0) {
-	/* Optimize for sa == *psa. */
-	int i;
+        /* Optimize for sa == *psa. */
+        int i;
 
-	if (sa.size == psa->size) {
-	    for (i = 0; i < sa.size; ++i) {
-		if (!param_string_eq(&sa.data[i], &psa->data[i]))
-		    break;
+        if (sa.size == psa->size) {
+            for (i = 0; i < sa.size; ++i) {
+                if (!param_string_eq(&sa.data[i], &psa->data[i]))
+                    break;
      }
-	} else
-	    i = -1;
-	if (i == sa.size) {
-	    /* equal, no-op. */
-	} else {
-	    delete_embed(psa, psa, mem);
-	    code = merge_embed(psa, &sa, mem);
-	    if (code < 0)
-		return code;
-	}
+        } else
+            i = -1;
+        if (i == sa.size) {
+            /* equal, no-op. */
+        } else {
+            delete_embed(psa, psa, mem);
+            code = merge_embed(psa, &sa, mem);
+            if (code < 0)
+                return code;
+        }
     }
     code = param_read_embed_array(plist, notpname, &nsa);
     if (code < 0)
-	return code;
+        return code;
     if (nsa.data != 0)
-	delete_embed(psa, &nsa, mem);
+        delete_embed(psa, &nsa, mem);
     code = param_read_embed_array(plist, allpname, &asa);
     if (code < 0)
-	return code;
+        return code;
     if (asa.data != 0) {
-	code = merge_embed(psa, &asa, mem);
-	if (code < 0)
-	    return code;
+        code = merge_embed(psa, &asa, mem);
+        if (code < 0)
+            return code;
     }
     if (psa->data)
-	psa->data = gs_resize_object(mem, (gs_param_string *)psa->data, psa->size,
-					"psdf_put_embed_param(resize)");
+        psa->data = gs_resize_object(mem, (gs_param_string *)psa->data, psa->size,
+                                        "psdf_put_embed_param(resize)");
     return 0;
 }
 
 /* Put an image Dict parameter. */
 static int
 psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
-			  gs_c_param_list **pplvalue,
-			  const stream_template * template,
-			  ss_put_params_t put_params, gs_memory_t * mem)
+                          gs_c_param_list **pplvalue,
+                          const stream_template * template,
+                          ss_put_params_t put_params, gs_memory_t * mem)
 {
     gs_param_dict dict;
     gs_c_param_list *plvalue = *pplvalue;
@@ -655,47 +652,47 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 
     mem = gs_memory_stable(mem);
     switch (code = param_begin_read_dict(plist, pname, &dict, false)) {
-	default:
-	    param_signal_error(plist, pname, code);
-	    return code;
-	case 1:
-	    return 0;
-	case 0: {
-	    /* Check the parameter values now. */
-	    stream_state *ss = s_alloc_state(mem, template->stype, pname);
+        default:
+            param_signal_error(plist, pname, code);
+            return code;
+        case 1:
+            return 0;
+        case 0: {
+            /* Check the parameter values now. */
+            stream_state *ss = s_alloc_state(mem, template->stype, pname);
 
-	    if (ss == 0)
-		return_error(gs_error_VMerror);
-	    ss->template = template;
-	    if (template->set_defaults)
-		template->set_defaults(ss);
-	    code = put_params(dict.list, ss);
-	    if (template->release)
-		template->release(ss);
-	    gs_free_object(mem, ss, pname);
-	    if (code < 0) {
-		param_signal_error(plist, pname, code);
-	    } else {
-		plvalue = gs_c_param_list_alloc(mem, pname);
-		if (plvalue == 0)
-		    return_error(gs_error_VMerror);
-		gs_c_param_list_write(plvalue, mem);
-		code = param_list_copy((gs_param_list *)plvalue,
-				       dict.list);
-		if (code < 0) {
-		    gs_c_param_list_release(plvalue);
-		    gs_free_object(mem, plvalue, pname);
-		    plvalue = *pplvalue;
-		}
-	    }
-	}
-	param_end_read_dict(plist, pname, &dict);
-	break;
+            if (ss == 0)
+                return_error(gs_error_VMerror);
+            ss->template = template;
+            if (template->set_defaults)
+                template->set_defaults(ss);
+            code = put_params(dict.list, ss);
+            if (template->release)
+                template->release(ss);
+            gs_free_object(mem, ss, pname);
+            if (code < 0) {
+                param_signal_error(plist, pname, code);
+            } else {
+                plvalue = gs_c_param_list_alloc(mem, pname);
+                if (plvalue == 0)
+                    return_error(gs_error_VMerror);
+                gs_c_param_list_write(plvalue, mem);
+                code = param_list_copy((gs_param_list *)plvalue,
+                                       dict.list);
+                if (code < 0) {
+                    gs_c_param_list_release(plvalue);
+                    gs_free_object(mem, plvalue, pname);
+                    plvalue = *pplvalue;
+                }
+            }
+        }
+        param_end_read_dict(plist, pname, &dict);
+        break;
     }
     if (plvalue != *pplvalue) {
-	if (*pplvalue)
-	    gs_c_param_list_release(*pplvalue);
-	*pplvalue = plvalue;
+        if (*pplvalue)
+            gs_c_param_list_release(*pplvalue);
+        *pplvalue = plvalue;
     }
     return code;
 }
@@ -703,8 +700,8 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 /* Put a set of image-related parameters. */
 static int
 psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
-		      const psdf_image_param_names_t * pnames,
-		      psdf_image_params * params, int ecode)
+                      const psdf_image_param_names_t * pnames,
+                      psdf_image_params * params, int ecode)
 {
     gs_param_string fs;
     /*
@@ -715,116 +712,116 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
     gs_param_name pname;
     /* Skip AutoFilter for mono images. */
     const gs_param_item_t *items =
-	(pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
+        (pnames->items[0].key == 0 ? pnames->items + 1 : pnames->items);
     int code = gs_param_read_items(plist, params, items);
 
     if ((pname = pnames->ACSDict) != 0) {
-	code = psdf_put_image_dict_param(plist, pname, &params->ACSDict,
-					 &s_DCTE_template,
-					 psdf_DCT_put_params, mem);
-	if (code < 0)
-	    ecode = code;
+        code = psdf_put_image_dict_param(plist, pname, &params->ACSDict,
+                                         &s_DCTE_template,
+                                         psdf_DCT_put_params, mem);
+        if (code < 0)
+            ecode = code;
     }
     /* (AntiAlias) */
     /* (AutoFilter) */
     /* (Depth) */
     if ((pname = pnames->Dict) != 0) {
-	const stream_template *template;
-	ss_put_params_t put_params;
+        const stream_template *template;
+        ss_put_params_t put_params;
 
-	/* Hack to determine what kind of a Dict we want: */
-	if (pnames->Dict[0] == 'M')
-	    template = &s_CFE_template,
-		put_params = psdf_CF_put_params;
-	else
-	    template = &s_DCTE_template,
-		put_params = psdf_DCT_put_params;
-	code = psdf_put_image_dict_param(plist, pname, &params->Dict,
-					 template, put_params, mem);
-	if (code < 0)
-	    ecode = code;
+        /* Hack to determine what kind of a Dict we want: */
+        if (pnames->Dict[0] == 'M')
+            template = &s_CFE_template,
+                put_params = psdf_CF_put_params;
+        else
+            template = &s_DCTE_template,
+                put_params = psdf_DCT_put_params;
+        code = psdf_put_image_dict_param(plist, pname, &params->Dict,
+                                         template, put_params, mem);
+        if (code < 0)
+            ecode = code;
     }
     /* (Downsample) */
     params->DownsampleType = (enum psdf_downsample_type)
-	psdf_put_enum(plist, pnames->DownsampleType,
-		      (int)params->DownsampleType, DownsampleType_names,
-		      &ecode);
+        psdf_put_enum(plist, pnames->DownsampleType,
+                      (int)params->DownsampleType, DownsampleType_names,
+                      &ecode);
     /* (DownsampleThreshold) */
     /* (Encode) */
 #ifdef USE_LWF_JP2
-    /* Process AutoFilterStrategy before Filter, because it sets defaults 
+    /* Process AutoFilterStrategy before Filter, because it sets defaults
        for the latter. */
     if (pnames->AutoFilterStrategy != NULL) {
-	switch (code = param_read_string(plist, pnames->AutoFilterStrategy, &fs)) {
-	    case 0:
-		{
-		    const psdf_image_filter_name *pn = pnames->filter_names;
-		    const char *param_name = 0;
+        switch (code = param_read_string(plist, pnames->AutoFilterStrategy, &fs)) {
+            case 0:
+                {
+                    const psdf_image_filter_name *pn = pnames->filter_names;
+                    const char *param_name = 0;
 
-		    if (gs_param_string_eq(&fs, "/JPEG")) {
-			params->AutoFilterStrategy = "/JPEG";
-			param_name = "DCTEncode";
-		    } if (gs_param_string_eq(&fs, "/JPEG2000")) {
-			params->AutoFilterStrategy = "/JPEG2000";
-			param_name = "JPXEncode";
-		    } else {
-			ecode = gs_error_rangecheck;
-			goto ipe1;
-		    }
-		    while (pn->pname != 0 && !gs_param_string_eq(&fs, param_name))
-			pn++;
-		    if (pn->pname != 0 && pn->min_version <= pdev->version) {
-			params->Filter = pn->pname;
-			params->filter_template = pn->template;
-		    }
-		    break;
-		}
-	    default:
-		ecode = code;
-	    ipe1:param_signal_error(plist, pnames->AutoFilterStrategy, ecode);
-	    case 1:
-		break;
+                    if (gs_param_string_eq(&fs, "/JPEG")) {
+                        params->AutoFilterStrategy = "/JPEG";
+                        param_name = "DCTEncode";
+                    } if (gs_param_string_eq(&fs, "/JPEG2000")) {
+                        params->AutoFilterStrategy = "/JPEG2000";
+                        param_name = "JPXEncode";
+                    } else {
+                        ecode = gs_error_rangecheck;
+                        goto ipe1;
+                    }
+                    while (pn->pname != 0 && !gs_param_string_eq(&fs, param_name))
+                        pn++;
+                    if (pn->pname != 0 && pn->min_version <= pdev->version) {
+                        params->Filter = pn->pname;
+                        params->filter_template = pn->template;
+                    }
+                    break;
+                }
+            default:
+                ecode = code;
+            ipe1:param_signal_error(plist, pnames->AutoFilterStrategy, ecode);
+            case 1:
+                break;
         }
     }
 #endif
     switch (code = param_read_string(plist, pnames->Filter, &fs)) {
-	case 0:
-	    {
-		const psdf_image_filter_name *pn = pnames->filter_names;
+        case 0:
+            {
+                const psdf_image_filter_name *pn = pnames->filter_names;
 
-		while (pn->pname != 0 && !gs_param_string_eq(&fs, pn->pname))
-		    pn++;
-		if (pn->pname == 0 || pn->min_version > pdev->version) {
-		    ecode = gs_error_rangecheck;
-		    goto ipe;
-		}
-		params->Filter = pn->pname;
-		params->filter_template = pn->template;
-		break;
-	    }
-	default:
-	    ecode = code;
-	  ipe:param_signal_error(plist, pnames->Filter, ecode);
-	case 1:
-	    break;
+                while (pn->pname != 0 && !gs_param_string_eq(&fs, pn->pname))
+                    pn++;
+                if (pn->pname == 0 || pn->min_version > pdev->version) {
+                    ecode = gs_error_rangecheck;
+                    goto ipe;
+                }
+                params->Filter = pn->pname;
+                params->filter_template = pn->template;
+                break;
+            }
+        default:
+            ecode = code;
+          ipe:param_signal_error(plist, pnames->Filter, ecode);
+        case 1:
+            break;
     }
     /* (Resolution) */
     if (ecode >= 0) {		/* Force parameters to acceptable values. */
-	if (params->Resolution < 1)
-	    params->Resolution = 1;
-	if (params->DownsampleThreshold < 1 ||
-	    params->DownsampleThreshold > 10)
-	    params->DownsampleThreshold = pnames->DownsampleThreshold_default;
-	switch (params->Depth) {
-	    default:
-		params->Depth = -1;
-	    case 1:
-	    case 2:
-	    case 4:
-	    case 8:
-	    case -1:
-		break;
-	}
+        if (params->Resolution < 1)
+            params->Resolution = 1;
+        if (params->DownsampleThreshold < 1 ||
+            params->DownsampleThreshold > 10)
+            params->DownsampleThreshold = pnames->DownsampleThreshold_default;
+        switch (params->Depth) {
+            default:
+                params->Depth = -1;
+            case 1:
+            case 2:
+            case 4:
+            case 8:
+            case -1:
+                break;
+        }
     }
     return ecode;
 }
@@ -835,7 +832,7 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_psdf *pdev = (gx_device_psdf *) dev;
     gs_memory_t *mem =
-	(pdev->v_memory ? pdev->v_memory : dev->memory);
+        (pdev->v_memory ? pdev->v_memory : dev->memory);
     int ecode, code;
     psdf_distiller_params params;
 
@@ -847,79 +844,79 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
      * standard device parameters.
      */
     ecode = code = param_read_bool(plist, "LockDistillerParams",
-  				   &params.LockDistillerParams);
+                                   &params.LockDistillerParams);
     if (!(pdev->params.LockDistillerParams && params.LockDistillerParams)) {
-  
-	/* General parameters. */
 
-	code = gs_param_read_items(plist, &params, psdf_param_items);
-	if (code < 0)
-	    ecode = code;
-	params.AutoRotatePages = (enum psdf_auto_rotate_pages)
-	    psdf_put_enum(plist, "AutoRotatePages", (int)params.AutoRotatePages,
-			  AutoRotatePages_names, &ecode);
-	params.Binding = (enum psdf_binding)
-	    psdf_put_enum(plist, "Binding", (int)params.Binding,
-			  Binding_names, &ecode);
-	params.DefaultRenderingIntent = (enum psdf_default_rendering_intent)
-	    psdf_put_enum(plist, "DefaultRenderingIntent",
-			  (int)params.DefaultRenderingIntent,
-			  DefaultRenderingIntent_names, &ecode);
-	params.TransferFunctionInfo = (enum psdf_transfer_function_info)
-	    psdf_put_enum(plist, "TransferFunctionInfo",
-			  (int)params.TransferFunctionInfo,
-			  TransferFunctionInfo_names, &ecode);
-	params.UCRandBGInfo = (enum psdf_ucr_and_bg_info)
-	    psdf_put_enum(plist, "UCRandBGInfo", (int)params.UCRandBGInfo,
-			  UCRandBGInfo_names, &ecode);
-	ecode = param_put_bool(plist, "UseFlateCompression",
-			       &params.UseFlateCompression, ecode);
+        /* General parameters. */
 
-	/* Color sampled image parameters */
+        code = gs_param_read_items(plist, &params, psdf_param_items);
+        if (code < 0)
+            ecode = code;
+        params.AutoRotatePages = (enum psdf_auto_rotate_pages)
+            psdf_put_enum(plist, "AutoRotatePages", (int)params.AutoRotatePages,
+                          AutoRotatePages_names, &ecode);
+        params.Binding = (enum psdf_binding)
+            psdf_put_enum(plist, "Binding", (int)params.Binding,
+                          Binding_names, &ecode);
+        params.DefaultRenderingIntent = (enum psdf_default_rendering_intent)
+            psdf_put_enum(plist, "DefaultRenderingIntent",
+                          (int)params.DefaultRenderingIntent,
+                          DefaultRenderingIntent_names, &ecode);
+        params.TransferFunctionInfo = (enum psdf_transfer_function_info)
+            psdf_put_enum(plist, "TransferFunctionInfo",
+                          (int)params.TransferFunctionInfo,
+                          TransferFunctionInfo_names, &ecode);
+        params.UCRandBGInfo = (enum psdf_ucr_and_bg_info)
+            psdf_put_enum(plist, "UCRandBGInfo", (int)params.UCRandBGInfo,
+                          UCRandBGInfo_names, &ecode);
+        ecode = param_put_bool(plist, "UseFlateCompression",
+                               &params.UseFlateCompression, ecode);
 
-	ecode = psdf_put_image_params(pdev, plist,
-			(pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names), 
-				      &params.ColorImage, ecode);
-	params.ColorConversionStrategy = (enum psdf_color_conversion_strategy)
-	    psdf_put_enum(plist, "ColorConversionStrategy",
-			  (int)params.ColorConversionStrategy,
-			  ColorConversionStrategy_names, &ecode);
-	ecode = psdf_read_string_param(plist, "CalCMYKProfile",
-				       &params.CalCMYKProfile, mem, ecode);
-	ecode = psdf_read_string_param(plist, "CalGrayProfile",
-				       &params.CalGrayProfile, mem, ecode);
-	ecode = psdf_read_string_param(plist, "CalRGBProfile",
-				       &params.CalRGBProfile, mem, ecode);
-	ecode = psdf_read_string_param(plist, "sRGBProfile",
-				       &params.sRGBProfile, mem, ecode);
+        /* Color sampled image parameters */
 
-	/* Gray sampled image parameters */
+        ecode = psdf_put_image_params(pdev, plist,
+                        (pdev->ParamCompatibilityLevel >= 1.5 ? &Color_names15 : &Color_names),
+                                      &params.ColorImage, ecode);
+        params.ColorConversionStrategy = (enum psdf_color_conversion_strategy)
+            psdf_put_enum(plist, "ColorConversionStrategy",
+                          (int)params.ColorConversionStrategy,
+                          ColorConversionStrategy_names, &ecode);
+        ecode = psdf_read_string_param(plist, "CalCMYKProfile",
+                                       &params.CalCMYKProfile, mem, ecode);
+        ecode = psdf_read_string_param(plist, "CalGrayProfile",
+                                       &params.CalGrayProfile, mem, ecode);
+        ecode = psdf_read_string_param(plist, "CalRGBProfile",
+                                       &params.CalRGBProfile, mem, ecode);
+        ecode = psdf_read_string_param(plist, "sRGBProfile",
+                                       &params.sRGBProfile, mem, ecode);
 
-	ecode = psdf_put_image_params(pdev, plist,
-			(pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names), 
-				      &params.GrayImage, ecode);
+        /* Gray sampled image parameters */
 
-	/* Mono sampled image parameters */
+        ecode = psdf_put_image_params(pdev, plist,
+                        (pdev->ParamCompatibilityLevel >= 1.5 ? &Gray_names15 : &Gray_names),
+                                      &params.GrayImage, ecode);
 
-	ecode = psdf_put_image_params(pdev, plist, &Mono_names,
-				      &params.MonoImage, ecode);
+        /* Mono sampled image parameters */
 
-	/* Font embedding parameters */
+        ecode = psdf_put_image_params(pdev, plist, &Mono_names,
+                                      &params.MonoImage, ecode);
 
-	ecode = psdf_put_embed_param(plist, "~AlwaysEmbed", ".AlwaysEmbed",
-				     &params.AlwaysEmbed, mem, ecode);
-	ecode = psdf_put_embed_param(plist, "~NeverEmbed", ".NeverEmbed",
-				     &params.NeverEmbed, mem, ecode);
-	params.CannotEmbedFontPolicy = (enum psdf_cannot_embed_font_policy)
-	    psdf_put_enum(plist, "CannotEmbedFontPolicy",
-			  (int)params.CannotEmbedFontPolicy,
-			  CannotEmbedFontPolicy_names, &ecode);
+        /* Font embedding parameters */
+
+        ecode = psdf_put_embed_param(plist, "~AlwaysEmbed", ".AlwaysEmbed",
+                                     &params.AlwaysEmbed, mem, ecode);
+        ecode = psdf_put_embed_param(plist, "~NeverEmbed", ".NeverEmbed",
+                                     &params.NeverEmbed, mem, ecode);
+        params.CannotEmbedFontPolicy = (enum psdf_cannot_embed_font_policy)
+            psdf_put_enum(plist, "CannotEmbedFontPolicy",
+                          (int)params.CannotEmbedFontPolicy,
+                          CannotEmbedFontPolicy_names, &ecode);
     }
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gdev_vector_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     pdev->params = params;	/* OK to update now */
     return 0;

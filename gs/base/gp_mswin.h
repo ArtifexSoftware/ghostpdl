@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,7 +16,6 @@
 
 #ifndef gp_mswin_INCLUDED
 #  define gp_mswin_INCLUDED
-
 
 #define GSTEXT_ICON	50
 #define GSIMAGE_ICON	51
@@ -38,7 +37,7 @@
 #define _export
 #endif
 
-/* 
+/*
 extern HWND hwndtext;
 extern HWND hDlgModeless;
 */

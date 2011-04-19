@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,6 +23,6 @@
  * Note that scan_number does not mark the result ref as "new".
  */
 int scan_number(const byte * sp, const byte * end, int sign, ref * pref,
-		const byte ** psp, int scanner_options);
+                const byte ** psp, int scanner_options);
 
 #endif /* iscannum_INCLUDED */

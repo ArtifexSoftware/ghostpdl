@@ -59,14 +59,14 @@ typedef struct px_parser_state_s px_parser_state_t;
 #endif
 #define max_stack max_px_args		/* must not exceed 256 */
 struct px_parser_state_s {
-	/* Set at initialization */
+        /* Set at initialization */
   gs_memory_t *memory;
   bool big_endian;
-	/* Updated dynamically, for error reporting only */
+        /* Updated dynamically, for error reporting only */
   long operator_count;
   long parent_operator_count;
   int /*px_tag_t*/ last_operator;	/* pxtNull if none */
-	/* Updated dynamically */
+        /* Updated dynamically */
   int saved_count;		/* amount of leftover input in saved */
   uint data_left;		/* amount left to read of data or array */
   uint macro_state;		/* mask for macro-state */
@@ -97,7 +97,7 @@ void px_process_init(px_parser_state_t *st, bool big_endian);
 
 /* Process a buffer of PCL XL commands. */
 int px_process(px_parser_state_t *st, px_state_t *pxs,
-		  stream_cursor_read *pr);
+                  stream_cursor_read *pr);
 
 /* unfortunately we have to export this for pass through mode, other
    commands do not need to know how much data is left to parse. */

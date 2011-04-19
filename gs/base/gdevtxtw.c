@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 artofcode LLC.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,10 +64,10 @@ const gx_device_txtwrite_t gs_txtwrite_device =
 {
     /* Define the device as 8-bit gray scale to avoid computing halftones. */
     std_device_dci_body(gx_device_txtwrite_t, 0, "txtwrite",
-			DEFAULT_WIDTH_10THS * X_DPI / 10,
-			DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-			X_DPI, Y_DPI,
-			1, 8, 255, 0, 256, 1),
+                        DEFAULT_WIDTH_10THS * X_DPI / 10,
+                        DEFAULT_HEIGHT_10THS * Y_DPI / 10,
+                        X_DPI, Y_DPI,
+                        1, 8, 255, 0, 256, 1),
     {txtwrite_open_device,
      gx_upright_get_initial_matrix,
      gx_default_sync_output,
@@ -139,7 +139,7 @@ txtwrite_open_device(gx_device * dev)
     if (tdev->fname[0] == 0)
         return_error(gs_error_undefinedfilename);
     code = gx_device_open_output_file(dev, tdev->fname,
-		true, false, &tdev->file); /* binary, sequential */
+                true, false, &tdev->file); /* binary, sequential */
     if (code < 0)
         return code;
     return 0;
@@ -165,30 +165,30 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
 
 static int
 txtwrite_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		    gx_color_index color)
+                    gx_color_index color)
 {
     return 0;
 }
 
 static int
 txtwrite_copy_alpha(gx_device * dev, const byte * data, int data_x,
-		int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		gx_color_index color, int depth)
+                int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                gx_color_index color, int depth)
 {
     return 0;
 }
 
 static int
 txtwrite_copy_mono(gx_device * dev, const byte * data, int dx, int raster,
-	       gx_bitmap_id id, int x, int y, int w, int h,
-	       gx_color_index zero, gx_color_index one)
+               gx_bitmap_id id, int x, int y, int w, int h,
+               gx_color_index zero, gx_color_index one)
 {
     return 0;
 }
 static int
 txtwrite_copy_color(gx_device * dev, const byte * data,
-		int data_x, int raster, gx_bitmap_id id,
-		int x, int y, int width, int height)
+                int data_x, int raster, gx_bitmap_id id,
+                int x, int y, int width, int height)
 {
     return 0;
 }
@@ -196,20 +196,20 @@ txtwrite_copy_color(gx_device * dev, const byte * data,
 static int
 txtwrite_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
-			  int px, int py)
+                          int px, int py)
 {
     return 0;
 }
 
 static int
 txtwrite_strip_copy_rop(gx_device * dev,
-		    const byte * sdata, int sourcex, uint sraster,
-		    gx_bitmap_id id,
-		    const gx_color_index * scolors,
-		    const gx_strip_bitmap * textures,
-		    const gx_color_index * tcolors,
-		    int x, int y, int w, int h,
-		    int phase_x, int phase_y, gs_logical_operation_t lop)
+                    const byte * sdata, int sourcex, uint sraster,
+                    gx_bitmap_id id,
+                    const gx_color_index * scolors,
+                    const gx_strip_bitmap * textures,
+                    const gx_color_index * tcolors,
+                    int x, int y, int w, int h,
+                    int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return 0;
 }
@@ -247,42 +247,42 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string ofs;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
-	case 0:
-	    if (dev->LockSafetyParams &&
-		    bytes_compare(ofs.data, ofs.size,
-			(const byte *)tdev->fname, strlen(tdev->fname))) {
-	        ecode = gs_note_error(gs_error_invalidaccess);
-		goto ofe;
-	    }
-	    if (ofs.size >= gp_file_name_sizeof)
-		ecode = gs_error_limitcheck;
-	    else
-		break;
-	    goto ofe;
-	default:
-	    ecode = code;
-	  ofe:param_signal_error(plist, param_name, ecode);
-	case 1:
-	    ofs.data = 0;
-	    break;
+        case 0:
+            if (dev->LockSafetyParams &&
+                    bytes_compare(ofs.data, ofs.size,
+                        (const byte *)tdev->fname, strlen(tdev->fname))) {
+                ecode = gs_note_error(gs_error_invalidaccess);
+                goto ofe;
+            }
+            if (ofs.size >= gp_file_name_sizeof)
+                ecode = gs_error_limitcheck;
+            else
+                break;
+            goto ofe;
+        default:
+            ecode = code;
+          ofe:param_signal_error(plist, param_name, ecode);
+        case 1:
+            ofs.data = 0;
+            break;
     }
 
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gx_default_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     if (ofs.data != 0) {	/* Close the file if it's open. */
-	if (tdev->file != 0) {
-	    fclose(tdev->file);
-	    tdev->file = 0;
-	}
-	memcpy(tdev->fname, ofs.data, ofs.size);
-	tdev->fname[ofs.size] = 0;
-	tdev->file = fopen(tdev->fname, "wb");
-	if (tdev->file == 0)
-	    return_error(gs_error_ioerror);
+        if (tdev->file != 0) {
+            fclose(tdev->file);
+            tdev->file = 0;
+        }
+        memcpy(tdev->fname, ofs.data, ofs.size);
+        tdev->fname[ofs.size] = 0;
+        tdev->file = fopen(tdev->fname, "wb");
+        if (tdev->file == 0)
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -291,35 +291,35 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
 
 static int
 txtwrite_fill_trapezoid(gx_device * dev,
-		    const gs_fixed_edge * left, const gs_fixed_edge * right,
-		    fixed ybot, fixed ytop, bool swap_axes,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop)
+                    const gs_fixed_edge * left, const gs_fixed_edge * right,
+                    fixed ybot, fixed ytop, bool swap_axes,
+                    const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     return 0;
 }
 
 static int
 txtwrite_fill_parallelogram(gx_device * dev,
-			fixed px, fixed py, fixed ax, fixed ay,
-			fixed bx, fixed by, const gx_device_color * pdevc,
-			gs_logical_operation_t lop)
+                        fixed px, fixed py, fixed ax, fixed ay,
+                        fixed bx, fixed by, const gx_device_color * pdevc,
+                        gs_logical_operation_t lop)
 {
     return 0;
 }
 
 static int
 txtwrite_fill_triangle(gx_device * dev,
-		   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
-		   const gx_device_color * pdevc, gs_logical_operation_t lop)
+                   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
+                   const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     return 0;
 }
 
 static int
 txtwrite_draw_thin_line(gx_device * dev,
-		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop,
-		    fixed adjustx, fixed adjusty)
+                    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
+                    const gx_device_color * pdevc, gs_logical_operation_t lop,
+                    fixed adjustx, fixed adjusty)
 {
     return 0;
 }
@@ -328,37 +328,37 @@ txtwrite_draw_thin_line(gx_device * dev,
 
 static int
 txtwrite_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
-	       const gx_fill_params * params, const gx_device_color * pdevc,
-	       const gx_clip_path * pcpath)
+               const gx_fill_params * params, const gx_device_color * pdevc,
+               const gx_clip_path * pcpath)
 {
-	return 0;
+        return 0;
 }
 
 static int
 txtwrite_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
-		 const gx_stroke_params * params,
-		 const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
+                 const gx_stroke_params * params,
+                 const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
 {
     return 0;
 }
 
 static int
 txtwrite_fill_mask(gx_device * dev,
-	       const byte * data, int dx, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h,
-	       const gx_drawing_color * pdcolor, int depth,
-	       gs_logical_operation_t lop, const gx_clip_path * pcpath)
+               const byte * data, int dx, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h,
+               const gx_drawing_color * pdcolor, int depth,
+               gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     return 0;
 }
 
 static int
 txtwrite_begin_typed_image(gx_device * dev,
-		       const gs_imager_state * pis, const gs_matrix * pmat,
-		   const gs_image_common_t * pic, const gs_int_rect * prect,
-		       const gx_drawing_color * pdcolor,
-		       const gx_clip_path * pcpath,
-		       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+                       const gs_imager_state * pis, const gs_matrix * pmat,
+                   const gs_image_common_t * pic, const gs_int_rect * prect,
+                       const gx_drawing_color * pdcolor,
+                       const gx_clip_path * pcpath,
+                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
     return 0;
 }
@@ -367,14 +367,13 @@ txtwrite_begin_typed_image(gx_device * dev,
 
 static int
 txtwrite_text_begin(gx_device * dev, gs_imager_state * pis,
-		const gs_text_params_t * text, gs_font * font,
-		gx_path * path, const gx_device_color * pdcolor,
-		const gx_clip_path * pcpath,
-		gs_memory_t * memory, gs_text_enum_t ** ppenum)
+                const gs_text_params_t * text, gs_font * font,
+                gx_path * path, const gx_device_color * pdcolor,
+                const gx_clip_path * pcpath,
+                gs_memory_t * memory, gs_text_enum_t ** ppenum)
 {
     int code = gx_default_text_begin(dev, pis, text, font, path, pdcolor,
-				     pcpath, memory, ppenum);
+                                     pcpath, memory, ppenum);
 
     return code;
 }
-

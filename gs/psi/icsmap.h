@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,8 +34,8 @@
  * a Separation or DeviceN space.
  */
 int zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
-		  const ref * pproc, int num_entries,
-		  const gs_color_space * base_space,
-		  op_proc_t map1);
+                  const ref * pproc, int num_entries,
+                  const gs_color_space * base_space,
+                  op_proc_t map1);
 
 #endif /* icsmap_INCLUDED */

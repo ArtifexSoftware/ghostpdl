@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,18 +16,18 @@
 #include "strimpl.h"
 #include "scfx.h"
 #include "gdevfax.h"
- 
+
 /* The device descriptor */
 static dev_proc_print_page(cfax_print_page);
 static dev_proc_close_device(cfax_prn_close);
 
 /* Define procedures for cfax. For sff multipage documents  */
 /* a special close procedure is required because sff needs  */
-/* an additional "end of document" signature after the last */ 
+/* an additional "end of document" signature after the last */
 /* "end page" signature */
 static const gx_device_procs gdev_cfax_std_procs =
     prn_params_procs(gdev_prn_open, gdev_prn_output_page, cfax_prn_close,
-		     gdev_fax_get_params, gdev_fax_put_params);
+                     gdev_fax_get_params, gdev_fax_put_params);
 
 const gx_device_fax gs_cfax_device = {
     FAX_DEVICE_BODY(gx_device_fax, gdev_cfax_std_procs, "cfax", cfax_print_page)
@@ -98,8 +98,8 @@ cfax_doc_end(FILE * file)
 /* Send the page to the printer. */
 static int
 cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
-			     const stream_template * temp, stream_state * ss, 
-               		     int width)
+                             const stream_template * temp, stream_state * ss,
+                             int width)
 {
     gs_memory_t *mem = pdev->memory;
     int code = 0;
@@ -124,52 +124,52 @@ cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
     ss->memory = mem;
 
     /* Allocate the buffers. */
-    in = gs_alloc_bytes(mem, temp->min_in_size + max_size + 1, 
-    	"cfax_stream_print_page(in)");
+    in = gs_alloc_bytes(mem, temp->min_in_size + max_size + 1,
+        "cfax_stream_print_page(in)");
 
 #define OUT_SIZE 1000
     out = gs_alloc_bytes(mem, OUT_SIZE, "cfax_stream_print_page(out)");
     if (in == 0 || out == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
 
-    /* Process the image */ 
+    /* Process the image */
     for (lnum = 0; lnum < pdev->height; lnum++) {
-	/* Initialize read and write pointer each time, because they're getting modified */
-	r.ptr = in - 1;
-    	r.limit = in + col_size;
-    	w.ptr = out - 1;
-    	w.limit = w.ptr + OUT_SIZE;
-	/* Decoder must encode line for line, so init it for each line */
-	code = (*temp->init) (ss);
-	if (code < 0)
-	    return_error(gs_error_limitcheck);
-	/* Now, get the bits and encode them */
-	gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
-	if (col_size > in_size) {
-	    memset(in + in_size , 0, col_size - in_size);
+        /* Initialize read and write pointer each time, because they're getting modified */
+        r.ptr = in - 1;
+        r.limit = in + col_size;
+        w.ptr = out - 1;
+        w.limit = w.ptr + OUT_SIZE;
+        /* Decoder must encode line for line, so init it for each line */
+        code = (*temp->init) (ss);
+        if (code < 0)
+            return_error(gs_error_limitcheck);
+        /* Now, get the bits and encode them */
+        gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+        if (col_size > in_size) {
+            memset(in + in_size , 0, col_size - in_size);
         }
-	code = (*temp->process) (ss, &r, &w, 1 /* always last line */);
-	nbytes = w.ptr - out + 1;
-	if (!nul) {
-	    if (nbytes > 0) {
-		if (nbytes < 217) {
-		    cfax_byte(nbytes, prn_stream);
-		    for (i = 0; i < nbytes; i++)
-			  cfax_byte(out[i], prn_stream);
-		} else {
-		    cfax_byte(0, prn_stream);
-		    cfax_word(nbytes, prn_stream);
-		    for (i = 0; i < nbytes; i++)
-			  cfax_byte(out[i], prn_stream);
-		}
-	    } else {
-		cfax_byte(218, prn_stream);
-	    }
-	} 
-	if (temp->release != 0)
-	    (*temp->release) (ss);
+        code = (*temp->process) (ss, &r, &w, 1 /* always last line */);
+        nbytes = w.ptr - out + 1;
+        if (!nul) {
+            if (nbytes > 0) {
+                if (nbytes < 217) {
+                    cfax_byte(nbytes, prn_stream);
+                    for (i = 0; i < nbytes; i++)
+                          cfax_byte(out[i], prn_stream);
+                } else {
+                    cfax_byte(0, prn_stream);
+                    cfax_word(nbytes, prn_stream);
+                    for (i = 0; i < nbytes; i++)
+                          cfax_byte(out[i], prn_stream);
+                }
+            } else {
+                cfax_byte(218, prn_stream);
+            }
+        }
+        if (temp->release != 0)
+            (*temp->release) (ss);
     }
 #undef OUT_SIZE
 
@@ -188,7 +188,7 @@ cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
 
     pdev->width = width;
     if (gdev_prn_file_is_new(pdev)) {
-	cfax_doc_hdr(fp);
+        cfax_doc_hdr(fp);
     }
     cfax_page_hdr(pdev, fp);
 
@@ -211,7 +211,7 @@ cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
     state.K = 0;
 
     cfax_begin_page(pdev, prn_stream, state.Columns);
-    code = cfax_stream_print_page_width(pdev, prn_stream, 
+    code = cfax_stream_print_page_width(pdev, prn_stream,
       &s_CFE_template, (stream_state *) &state, state.Columns);
     return code;
 }

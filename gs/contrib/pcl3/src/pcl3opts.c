@@ -1,8 +1,8 @@
 /******************************************************************************
   File:     $Id: pcl3opts.c,v 1.17 2001/05/31 15:19:16 Martin Rel $
   Contents: Program to convert information in PCL-3+ files into options to be
-	    used for the ghostscript device "pcl3" in order to produce a
-	    file using a similar configuration
+            used for the ghostscript device "pcl3" in order to produce a
+            file using a similar configuration
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany; e-mail: Martin.Lottermoser@t-online.de.
 
@@ -178,15 +178,15 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
   if (different_resolutions || different_non_black_levels) {
     imessage(ip->out, 11,
       "I've found a raster data section which uses a combination of "
-	"resolutions\n"
+        "resolutions\n"
       "and intensity levels which pcl3 cannot reproduce:\n");
     for (j = 0; j < ip->fdata.number_of_colorants; j++)
       imessage(ip->out, 12, "    colorant %d: %4d x %4d ppi %2d levels\n",
-	j + 1,
-	ip->fdata.colorant_array[j].hres, ip->fdata.colorant_array[j].vres,
-	ip->fdata.colorant_array[j].levels);
+        j + 1,
+        ip->fdata.colorant_array[j].hres, ip->fdata.colorant_array[j].vres,
+        ip->fdata.colorant_array[j].levels);
     if (ip->fdata.palette == pcl_CMYK &&
-	non_black_levels > 2 && black_levels < 4)
+        non_black_levels > 2 && black_levels < 4)
       black_levels = 4;
   }
 
@@ -269,19 +269,19 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     ll += fprintf(ip->out, " -sColourModel=");
     switch (ip->fdata.palette) {
       case pcl_black:
-	ll += fprintf(ip->out, "Gray"); break;
+        ll += fprintf(ip->out, "Gray"); break;
       case pcl_RGB:
-	ll += fprintf(ip->out, "RGB"); break;
+        ll += fprintf(ip->out, "RGB"); break;
       case pcl_CMY:
-	ll += fprintf(ip->out, "CMY"); break;
+        ll += fprintf(ip->out, "CMY"); break;
       case pcl_CMYK:
-	if (ip->seen_new_quality || ip->seen_CRD)	/* Guess */
-	  ll += fprintf(ip->out, "CMYK");
-	else
-	  ll += fprintf(ip->out, "CMY+K");
-	break;
+        if (ip->seen_new_quality || ip->seen_CRD)	/* Guess */
+          ll += fprintf(ip->out, "CMYK");
+        else
+          ll += fprintf(ip->out, "CMY+K");
+        break;
       default:
-	assert(0);	/* bug guard */
+        assert(0);	/* bug guard */
     }
   }
 
@@ -309,13 +309,13 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     ll += fprintf(ip->out, " -sPrintQuality=");
     switch (ip->fdata.print_quality) {
       case -1:
-	ll += fprintf(ip->out, "draft"); break;
+        ll += fprintf(ip->out, "draft"); break;
       case 0:
-	ll += fprintf(ip->out, "normal"); break;
+        ll += fprintf(ip->out, "normal"); break;
       case 1:
-	ll += fprintf(ip->out, "presentation"); break;
+        ll += fprintf(ip->out, "presentation"); break;
       default:
-	ll += fprintf(ip->out, "%d", ip->fdata.print_quality);
+        ll += fprintf(ip->out, "%d", ip->fdata.print_quality);
     }
 
     check_line_length(ip->out, &ll,
@@ -323,21 +323,21 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     ll += fprintf(ip->out, " -sMedium=");
     switch (ip->fdata.media_type) {
       case 0:
-	ll += fprintf(ip->out, "plain"); break;
+        ll += fprintf(ip->out, "plain"); break;
       case 1:
-	ll += fprintf(ip->out, "bond"); break;
+        ll += fprintf(ip->out, "bond"); break;
       case 2:
-	ll += fprintf(ip->out, "Premium"); break;
+        ll += fprintf(ip->out, "Premium"); break;
       case 3:
-	ll += fprintf(ip->out, "glossy"); break;
+        ll += fprintf(ip->out, "glossy"); break;
       case 4:
-	ll += fprintf(ip->out, "transparency"); break;
+        ll += fprintf(ip->out, "transparency"); break;
       case 5:
-	ll += fprintf(ip->out, "'quick dry glossy'"); break;
+        ll += fprintf(ip->out, "'quick dry glossy'"); break;
       case 6:
-	ll += fprintf(ip->out, "'quick dry transparency'"); break;
+        ll += fprintf(ip->out, "'quick dry transparency'"); break;
       default:
-	ll += fprintf(ip->out, "%d", ip->fdata.media_type);
+        ll += fprintf(ip->out, "%d", ip->fdata.media_type);
     }
   }
   else if (ip->seen_old_quality) {
@@ -351,9 +351,9 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     }
     if (ip->fdata.raster_graphics_quality != -1) {
       check_line_length(ip->out, &ll,
-	sizeof("-dRasterGraphicsQuality=") + 2);
+        sizeof("-dRasterGraphicsQuality=") + 2);
       ll += fprintf(ip->out, " -dRasterGraphicsQuality=%d",
-	ip->fdata.raster_graphics_quality);
+        ip->fdata.raster_graphics_quality);
     }
   }
 
@@ -368,11 +368,11 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
   if (ip->fdata.palette == pcl_CMYK && !ip->seen_first_colorant) {
     imessage(ip->out, 70,
       "Although the colour model in this file is declared as CMYK, "
-	"the file does not\n"
+        "the file does not\n"
       "use the black colorant. If you find that the printer does not accept "
-	"a file\n"
+        "a file\n"
       "generated with the command line above, "
-	"try the CMY colour model instead.\n\n");
+        "try the CMY colour model instead.\n\n");
   }
 
   if (ip->fdata.size != 0) {
@@ -380,28 +380,28 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     const ms_SizeDescription *size = ms_find_size_from_code(media_code);
     if (size == NULL)
       imessage(ip->out, 14,
-	"This file uses a PCL page size code (%d) which is unknown to pcl3.\n",
-	(int)ip->fdata.size);
+        "This file uses a PCL page size code (%d) which is unknown to pcl3.\n",
+        (int)ip->fdata.size);
     else {
       imessage(ip->out, 15, "The page size is set to %s", size->name);
        /* I'm using the size specification as an indication of the PCL Page Size
-	  code used, hence I'm adding the card flag if present. Note that
-	  adding "Big" is not useful. */
+          code used, hence I'm adding the card flag if present. Note that
+          adding "Big" is not useful. */
       if (media_code & PCL_CARD_FLAG) fputs(PCL_CARD_STRING, ip->out);
       if (size->dimen[0] > 0) {
-	const char *unit = catgets(catd, 2, 16, "mm");
+        const char *unit = catgets(catd, 2, 16, "mm");
 
-	fputs(" (", ip->out);
-	if (strcmp(unit, "bp") == 0)
-	  fprintf(ip->out, "%.0f x %.0f bp", size->dimen[0],
-	    size->dimen[1]);
-	else if (strcmp(unit, "in") == 0)
-	  fprintf(ip->out, "%.1f x %.1f in", size->dimen[0]/BP_PER_IN,
-	    size->dimen[1]/BP_PER_IN);
-	else
-	  fprintf(ip->out, "%.0f x %.0f mm", size->dimen[0]/BP_PER_MM,
-	    size->dimen[1]/BP_PER_MM);
-	fputc(')', ip->out);
+        fputs(" (", ip->out);
+        if (strcmp(unit, "bp") == 0)
+          fprintf(ip->out, "%.0f x %.0f bp", size->dimen[0],
+            size->dimen[1]);
+        else if (strcmp(unit, "in") == 0)
+          fprintf(ip->out, "%.1f x %.1f in", size->dimen[0]/BP_PER_IN,
+            size->dimen[1]/BP_PER_IN);
+        else
+          fprintf(ip->out, "%.0f x %.0f mm", size->dimen[0]/BP_PER_MM,
+            size->dimen[1]/BP_PER_MM);
+        fputc(')', ip->out);
       }
       fputs(".\n", ip->out);
     }
@@ -417,7 +417,7 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
       ip->fdata.media_destination != 0)
     imessage(ip->out, 18,
       "To be able to select a media position (input or output) you will have "
-	"to\n"
+        "to\n"
       "configure the `InputAttributes' or `OutputAttributes' dictionaries\n"
       "appropriately. See the manual page gs-pcl3(1).\n");
 
@@ -505,7 +505,7 @@ static int action_duplex(FILE *in, const pcl_Command *cmd, void *i)
 /******************************************************************************
 
   Function to check "@PJL" prefix
-  
+
   Return codes:
    0: starts correctly, prefix has been read,
    1: starts wrong, read characters have been pushed back,
@@ -535,12 +535,12 @@ static int check_prefix(FILE *in)
     while (j > 0) {
       j--;
       if (ungetc(prefix[j], in) == EOF) {
-	emessage(80,
-	  "Error trying to push back characters while parsing PJL:\n  %s.\n",
-	  strerror(errno));
-	/* This should only happen for unprofessional PJL, i.e., without a
-	   terminating ENTER LANGUAGE. */
-	return -1;
+        emessage(80,
+          "Error trying to push back characters while parsing PJL:\n  %s.\n",
+          strerror(errno));
+        /* This should only happen for unprofessional PJL, i.e., without a
+           terminating ENTER LANGUAGE. */
+        return -1;
       }
     }
 
@@ -587,13 +587,13 @@ static int action_UEL(FILE *in, const pcl_Command *cmd, void *i)
       /* Read up to EOL or EOF */
       used = 0;
       while ((c = fgetc(in)) != EOF && c != '\n') {
-	if (used >= allocated - 1) {
-	  allocated += TILE_SIZE;
-	  buffer = (pcl_Octet *)realloc(buffer, allocated);
-	  check(buffer);
-	}
-	buffer[used] = c;
-	used++;
+        if (used >= allocated - 1) {
+          allocated += TILE_SIZE;
+          buffer = (pcl_Octet *)realloc(buffer, allocated);
+          check(buffer);
+        }
+        buffer[used] = c;
+        used++;
       }
       /* Remove an optional trailing CR */
       if (used > 0 && buffer[used-1] == 'r') used--;
@@ -604,59 +604,59 @@ static int action_UEL(FILE *in, const pcl_Command *cmd, void *i)
       while (PJL_ws(*s)) s++;
 
       if (PJL_letter(*s)) {
-	pcl_Octet *t;
-	int l;
+        pcl_Octet *t;
+        int l;
 
-	/* Isolate command and convert to upper case. Note that we're running
-	   in an internationalized environment, hence we can't use toupper(). */
-	t = s;
-	do {
-	  if ('a' <= *t && *t <= 'z') *t -= 'a' - 'A';
-	  t++;
-	} while (*t != '\0' && !PJL_ws(*t));
+        /* Isolate command and convert to upper case. Note that we're running
+           in an internationalized environment, hence we can't use toupper(). */
+        t = s;
+        do {
+          if ('a' <= *t && *t <= 'z') *t -= 'a' - 'A';
+          t++;
+        } while (*t != '\0' && !PJL_ws(*t));
 
-	/* Identify command */
-	l = t - s;
+        /* Identify command */
+        l = t - s;
 #if 0
-	fprintf(stderr, "Command (length %d): `", l);
-	fwrite(s, 1, l, stderr);
-	fprintf(stderr, "'.\n");
+        fprintf(stderr, "Command (length %d): `", l);
+        fwrite(s, 1, l, stderr);
+        fprintf(stderr, "'.\n");
 #endif
-	if (l == sizeof("ENTER") - 1 && strncmp(s, "ENTER", l) == 0 &&
-	    PJL_ws(*t)) {
-	  /* Check for "LANGUAGE" */
-	  s = t + 1;
-	  while (PJL_ws(*s)) s++;
-	  t = s;
-	  while (*t != '\0' && !PJL_ws(*t) && *t != '=') {
-	    if ('a' <= *t && *t <= 'z') *t -= 'a' - 'A';
-	    t++;
-	  }
-	  l = t - s;
-	  if (l == sizeof("LANGUAGE") - 1 && strncmp(s, "LANGUAGE", t - s) == 0
-	      && (PJL_ws(*t) || *t == '=')) {
-	    s = strchr(t, '=');	/* again assuming legal PJL */
-	    if (s != NULL) {
-	      s++;
-	      while (PJL_ws(*s)) s++;
-	      if (PJL_letter(*s)){
-		t = s + 1;
-		while (*t != '\0' && !PJL_ws(*t)) t++;
-		ip->fdata.PJL_language = (char *)malloc(t - s + 1);
-		check(ip->fdata.PJL_language);
-		strncpy(ip->fdata.PJL_language, s, t - s);
-		ip->fdata.PJL_language[t - s] = '\0';
-	      }
-	    }
-	    c = EOF;	/* exit PJL and this loop */
-	  }
-	}
-	else if (l == 3 && strncmp(s, "JOB", 3) == 0) {
-	  /* Don't bother to identify the job name; let the user create an
-	     unnamed job. */
-	  static char jobname[] = "";
-	  ip->fdata.PJL_job = jobname;
-	}
+        if (l == sizeof("ENTER") - 1 && strncmp(s, "ENTER", l) == 0 &&
+            PJL_ws(*t)) {
+          /* Check for "LANGUAGE" */
+          s = t + 1;
+          while (PJL_ws(*s)) s++;
+          t = s;
+          while (*t != '\0' && !PJL_ws(*t) && *t != '=') {
+            if ('a' <= *t && *t <= 'z') *t -= 'a' - 'A';
+            t++;
+          }
+          l = t - s;
+          if (l == sizeof("LANGUAGE") - 1 && strncmp(s, "LANGUAGE", t - s) == 0
+              && (PJL_ws(*t) || *t == '=')) {
+            s = strchr(t, '=');	/* again assuming legal PJL */
+            if (s != NULL) {
+              s++;
+              while (PJL_ws(*s)) s++;
+              if (PJL_letter(*s)){
+                t = s + 1;
+                while (*t != '\0' && !PJL_ws(*t)) t++;
+                ip->fdata.PJL_language = (char *)malloc(t - s + 1);
+                check(ip->fdata.PJL_language);
+                strncpy(ip->fdata.PJL_language, s, t - s);
+                ip->fdata.PJL_language[t - s] = '\0';
+              }
+            }
+            c = EOF;	/* exit PJL and this loop */
+          }
+        }
+        else if (l == 3 && strncmp(s, "JOB", 3) == 0) {
+          /* Don't bother to identify the job name; let the user create an
+             unnamed job. */
+          static char jobname[] = "";
+          ip->fdata.PJL_job = jobname;
+        }
       }
     }
   }
@@ -669,7 +669,7 @@ static int action_UEL(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-								/* NLS: 20 */
+                                                                /* NLS: 20 */
 static int action_compression(FILE *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
@@ -678,8 +678,8 @@ static int action_compression(FILE *in, const pcl_Command *cmd, void *i)
       cmd->i != pcl_cm_delta && cmd->i != pcl_cm_crdr) {
     if (!ip->seen_unknown_compression)
       imessage(ip->out, 20,
-	"This file uses at least one compression method for raster data (%d)\n"
-	"which pcl3 does not know.\n", cmd->i);
+        "This file uses at least one compression method for raster data (%d)\n"
+        "which pcl3 does not know.\n", cmd->i);
     ip->seen_unknown_compression = TRUE;
   }
   else {
@@ -765,35 +765,35 @@ static int action_CRD(FILE *in, const pcl_Command *cmd, void *i) /* NLS: 30 */
 
       ip->fdata.number_of_colorants = buffer[1];
       switch (ip->fdata.number_of_colorants) {
-	case 1:
-	  ip->fdata.palette = pcl_black; break;
-	case 3:
-	  ip->fdata.palette = pcl_CMY; break;
-	case 4:
-	  ip->fdata.palette = pcl_CMYK; break;
+        case 1:
+          ip->fdata.palette = pcl_black; break;
+        case 3:
+          ip->fdata.palette = pcl_CMY; break;
+        case 4:
+          ip->fdata.palette = pcl_CMYK; break;
       }
 
       for (j = 0; j < ip->fdata.number_of_colorants; j++) {
-	ip->fdata.colorant_array[j].hres = two_octets(2 + 6*j);
-	ip->fdata.colorant_array[j].vres = two_octets(4 + 6*j);
-	ip->fdata.colorant_array[j].levels = two_octets(6 + 6*j);
+        ip->fdata.colorant_array[j].hres = two_octets(2 + 6*j);
+        ip->fdata.colorant_array[j].vres = two_octets(4 + 6*j);
+        ip->fdata.colorant_array[j].levels = two_octets(6 + 6*j);
       }
 
       {
-	int power = 1;
-	ip->first_colorant_planes = 0;
+        int power = 1;
+        ip->first_colorant_planes = 0;
 
-	while (power < ip->fdata.colorant_array[0].levels) {
-	  power *= 2;
-	  ip->first_colorant_planes++;
-	}
+        while (power < ip->fdata.colorant_array[0].levels) {
+          power *= 2;
+          ip->first_colorant_planes++;
+        }
       }
     }
     else {
       emessage(31,
-	"This file contains a Configure Raster Data command with an\n"
-	"  illegal number of colorants (%d) and the following data:\n",
-	buffer[1]);
+        "This file contains a Configure Raster Data command with an\n"
+        "  illegal number of colorants (%d) and the following data:\n",
+        buffer[1]);
       print_CRD(stderr, buffer);
       errors++;
     }
@@ -846,7 +846,7 @@ static int action_quality(FILE *in, const pcl_Command *cmd, void *i)
 
 /*****************************************************************************/
 
-								/* NLS: 40 */
+                                                                /* NLS: 40 */
 static int action_colour(FILE *in, const pcl_Command *cmd, void *i)
 {
   CollectedInfo *ip = i;
@@ -854,21 +854,21 @@ static int action_colour(FILE *in, const pcl_Command *cmd, void *i)
   if (!ip->CRD_active) {
     switch (cmd->i) {
       case -4:
-	ip->fdata.palette = pcl_CMYK; break;
+        ip->fdata.palette = pcl_CMYK; break;
       case -3:
-	ip->fdata.palette = pcl_CMY; break;
+        ip->fdata.palette = pcl_CMY; break;
       case -1:
-	/*FALLTHROUGH*/
+        /*FALLTHROUGH*/
       case 0:
-	/*FALLTHROUGH*/
+        /*FALLTHROUGH*/
       case 1:
-	ip->fdata.palette = pcl_black; break;
+        ip->fdata.palette = pcl_black; break;
       case 3:
-	ip->fdata.palette = pcl_RGB; break;
+        ip->fdata.palette = pcl_RGB; break;
       default:
-	emessage(41, "This file uses a palette (%d) not supported by pcl3.\n",
-	  cmd->i);
-	return -1;
+        emessage(41, "This file uses a palette (%d) not supported by pcl3.\n",
+          cmd->i);
+        return -1;
     }
     ip->fdata.number_of_colorants = abs(cmd->i);
 
@@ -876,9 +876,9 @@ static int action_colour(FILE *in, const pcl_Command *cmd, void *i)
       int j;
 
       for (j = 0; j < ip->fdata.number_of_colorants; j++) {
-	ip->fdata.colorant_array[j].hres = ip->fdata.colorant_array[j].vres =
-	  ip->fdata.colorant_array[0].hres;
-	ip->fdata.colorant_array[j].levels = 2;
+        ip->fdata.colorant_array[j].hres = ip->fdata.colorant_array[j].vres =
+          ip->fdata.colorant_array[0].hres;
+        ip->fdata.colorant_array[j].levels = 2;
       }
     }
 
@@ -901,7 +901,7 @@ static int action_resolution(FILE *in, const pcl_Command *cmd, void *i)
 
     for (j = 0; j < ip->fdata.number_of_colorants; j++) {
       ip->fdata.colorant_array[j].hres =
-	ip->fdata.colorant_array[j].vres = cmd->i;
+        ip->fdata.colorant_array[j].vres = cmd->i;
       ip->fdata.colorant_array[j].levels = 2;
     }
   }
@@ -976,8 +976,8 @@ static int analyzer(FILE *in, const pcl_Command *cmd, void *i)
   /* Control codes */
   if (cmd->kind == 1) {
     if (cmd->chars[0] == '\0' &&
-	/* Guard against NULs somewhere else except initially */
-	!ip->seen_RGR && !ip->seen_CRD)
+        /* Guard against NULs somewhere else except initially */
+        !ip->seen_RGR && !ip->seen_CRD)
       ip->fdata.NULs_to_send = cmd->i;
     return 0;
   }
@@ -987,27 +987,27 @@ static int analyzer(FILE *in, const pcl_Command *cmd, void *i)
     switch (cmd->chars[0]) {
     case 'E':	/* Printer Reset */
       {
-	/* Preserve some global data (mostly PJL state) across PCL Reset
-	   invocations */
-	unsigned int NULs_to_send = ip->fdata.NULs_to_send;
-	char *PJL_language = ip->fdata.PJL_language;
-	char *PJL_job = ip->fdata.PJL_job;
+        /* Preserve some global data (mostly PJL state) across PCL Reset
+           invocations */
+        unsigned int NULs_to_send = ip->fdata.NULs_to_send;
+        char *PJL_language = ip->fdata.PJL_language;
+        char *PJL_job = ip->fdata.PJL_job;
 
-	ip->CRD_active = FALSE;
-	ip->seen_raster_data = FALSE;
-	memset(&ip->fdata, 0, sizeof(pcl_FileData));
-	ip->fdata.colorant_array[0].hres =
-	  ip->fdata.colorant_array[0].vres = 75;
-	ip->fdata.colorant_array[0].levels = 2;
-	ip->fdata.number_of_colorants = 1;
-	ip->fdata.duplex = -1;
-	ip->fdata.dry_time = -1;
-	ip->fdata.raster_graphics_quality = -1;
-	ip->fdata.shingling = -1;
+        ip->CRD_active = FALSE;
+        ip->seen_raster_data = FALSE;
+        memset(&ip->fdata, 0, sizeof(pcl_FileData));
+        ip->fdata.colorant_array[0].hres =
+          ip->fdata.colorant_array[0].vres = 75;
+        ip->fdata.colorant_array[0].levels = 2;
+        ip->fdata.number_of_colorants = 1;
+        ip->fdata.duplex = -1;
+        ip->fdata.dry_time = -1;
+        ip->fdata.raster_graphics_quality = -1;
+        ip->fdata.shingling = -1;
 
-	ip->fdata.NULs_to_send = NULs_to_send;
-	ip->fdata.PJL_language = PJL_language;
-	ip->fdata.PJL_job = PJL_job;
+        ip->fdata.NULs_to_send = NULs_to_send;
+        ip->fdata.PJL_language = PJL_language;
+        ip->fdata.PJL_job = PJL_job;
       }
       break;
     default:
@@ -1130,7 +1130,7 @@ int main(int argc, char **argv)
     outfile = fopen(outfile_name, "w");
     if (outfile == NULL) {
       emessage(2, "The file `%s' could not be opened for writing:\n  %s.\n",
-	outfile_name, strerror(errno));
+        outfile_name, strerror(errno));
       exit(EXIT_FAILURE);
     }
   }
@@ -1146,7 +1146,7 @@ int main(int argc, char **argv)
     infile = fopen(infile_name, "rb");
     if (infile == NULL) {
       emessage(3, "Could not open the input file `%s':\n  %s.\n",
-	infile_name, strerror(errno));
+        infile_name, strerror(errno));
       exit(EXIT_FAILURE);
     }
 
@@ -1156,7 +1156,7 @@ int main(int argc, char **argv)
     /* Close */
     if (fclose(infile) != 0) {
       emessage(4, "Error closing `%s':\n  %s.\n",
-	infile_name, strerror(errno));
+        infile_name, strerror(errno));
       errors++;
     }
     optind++;

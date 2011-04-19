@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,11 +34,11 @@ gp_set_file_binary(int prnfno, bool binary)
     regs.rshort.bx = prnfno;
     intdos(&regs, &regs);
     if (regs.rshort.cflag != 0 || !(regs.h.dl & 0x80))
-	return;			/* error, or not a device */
+        return;			/* error, or not a device */
     if (binary)
-	regs.h.dl |= 0x20;	/* binary (no ^Z intervention) */
+        regs.h.dl |= 0x20;	/* binary (no ^Z intervention) */
     else
-	regs.h.dl &= ~0x20;	/* text */
+        regs.h.dl &= ~0x20;	/* text */
     regs.h.dh = 0;
     regs.h.ah = 0x44;		/* ioctl */
     regs.h.al = 1;		/* set device info */
@@ -72,36 +72,36 @@ const char gp_fmode_wb[] = "wb";
 
 uint gp_file_name_root(const char *fname, uint len)
 {   int i = 0;
-    
-    if (len == 0)
-	return 0;
-    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
-	/* A network path: "\\server\share\" */
-	int k = 0;
 
-	for (i = 2; i < len; i++)
-	    if (fname[i] == '\\' || fname[i] == '/')
-		if (k++) {
-		    i++;
-		    break;
-		}
+    if (len == 0)
+        return 0;
+    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
+        /* A network path: "\\server\share\" */
+        int k = 0;
+
+        for (i = 2; i < len; i++)
+            if (fname[i] == '\\' || fname[i] == '/')
+                if (k++) {
+                    i++;
+                    break;
+                }
     } else if (fname[0] == '/' || fname[0] == '\\') {
-	/* Absolute with no drive. */
-	i = 1;
+        /* Absolute with no drive. */
+        i = 1;
     } else if (len > 1 && fname[1] == ':') {
-	/* Absolute with a drive. */
-	i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
+        /* Absolute with a drive. */
+        i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
     }
     return i;
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
-	if (fname[0] == '/' || fname[0] == '\\')
-	    return 1;
+        if (fname[0] == '/' || fname[0] == '\\')
+            return 1;
     } else if (len < 0) {
-	if (fname[-1] == '/' || fname[-1] == '\\')
-	    return 1;
+        if (fname[-1] == '/' || fname[-1] == '\\')
+            return 1;
     }
     return 0;
 }
@@ -139,9 +139,9 @@ bool gp_file_name_is_empty_item_meanful(void)
 }
 
 gp_file_name_combine_result
-gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_sibling, char *buffer, uint *blen)
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen,
+                    bool no_sibling, char *buffer, uint *blen)
 {
-    return gp_file_name_combine_generic(prefix, plen, 
-	    fname, flen, no_sibling, buffer, blen);
+    return gp_file_name_combine_generic(prefix, plen,
+            fname, flen, no_sibling, buffer, blen);
 }

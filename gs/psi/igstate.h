@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,12 +63,12 @@ typedef struct ref_device_n_params_s {
 /* CIE transformation procedures */
 typedef struct ref_cie_procs_s {
     union {
-	ref DEFG;
-	ref DEF;
+        ref DEFG;
+        ref DEF;
     } PreDecode;
     union {
-	ref ABC;
-	ref A;
+        ref ABC;
+        ref A;
     } Decode;
     ref DecodeLMN;
 } ref_cie_procs;
@@ -90,20 +90,20 @@ typedef struct ref_separation_params_s {
 typedef struct ref_color_procs_s {
     ref_cie_procs cie;
     union {
-	ref_device_n_params device_n;
-	ref_separation_params separation;
-	ref index_proc;
+        ref_device_n_params device_n;
+        ref_separation_params separation;
+        ref index_proc;
     } special;
 } ref_color_procs;
 typedef struct ref_colorspace_s {
     ref array;			/* color space (array), only relevant if */
-				/* the current color space has parameters */
-				/* associated with it. */
+                                /* the current color space has parameters */
+                                /* associated with it. */
     ref_color_procs procs;	/* associated procedures/parameters, */
-				/* only relevant for DeviceN, CIE, */
-				/* Separation, Indexed/CIE, */
-				/* Indexed with procedure, or a Pattern */
-				/* with one of these. */
+                                /* only relevant for DeviceN, CIE, */
+                                /* Separation, Indexed/CIE, */
+                                /* Indexed with procedure, or a Pattern */
+                                /* with one of these. */
 } ref_colorspace;
 
 #ifndef int_remap_color_info_DEFINED
@@ -117,7 +117,7 @@ typedef struct int_gstate_s {
     /* executed more recently than sethalftone */
     /* (for this graphics context). */
     struct {
-	ref red, green, blue, gray;
+        ref red, green, blue, gray;
     } screen_procs,		/* halftone screen procedures */
           transfer_procs;	/* transfer procedures */
     ref black_generation;	/* (procedure) */
@@ -129,8 +129,8 @@ typedef struct int_gstate_s {
      */
     ref pattern[2];		/* pattern (dictionary) */
     struct {
-	ref dict;		/* CIE color rendering dictionary */
-	ref_cie_render_procs procs;	/* (see above) */
+        ref dict;		/* CIE color rendering dictionary */
+        ref_cie_render_procs procs;	/* (see above) */
     } colorrendering;
     /*
      * Use_cie_color tracks the UseCIEColor parameter of the page

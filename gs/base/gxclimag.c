@@ -481,20 +481,20 @@ clist_begin_typed_image(gx_device * dev,
             /* Get the hash code of the ICC space */
             if ( base_index == gs_color_space_index_ICC ) {
                 if (!indexed) {
-                    pie->color_space.icc_info.icc_hash = 
+                    pie->color_space.icc_info.icc_hash =
                         pim->ColorSpace->cmm_icc_profile_data->hashcode;
-                    pie->color_space.icc_info.icc_num_components = 
+                    pie->color_space.icc_info.icc_num_components =
                         pim->ColorSpace->cmm_icc_profile_data->num_comps;
-                    pie->color_space.icc_info.is_lab = 
+                    pie->color_space.icc_info.is_lab =
                         pim->ColorSpace->cmm_icc_profile_data->islab;
                     clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode,
                         pim->ColorSpace->cmm_icc_profile_data);
                 } else {
-                    pie->color_space.icc_info.icc_hash = 
+                    pie->color_space.icc_info.icc_hash =
                         pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
-                    pie->color_space.icc_info.icc_num_components = 
+                    pie->color_space.icc_info.icc_num_components =
                         pim->ColorSpace->base_space->cmm_icc_profile_data->num_comps;
-                    pie->color_space.icc_info.is_lab = 
+                    pie->color_space.icc_info.is_lab =
                         pim->ColorSpace->base_space->cmm_icc_profile_data->islab;
                     clist_icc_addentry(cdev, pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode,
                         pim->ColorSpace->base_space->cmm_icc_profile_data);
@@ -962,7 +962,7 @@ clist_create_compositor(gx_device * dev,
         return code;
 
     cropping_op = code;
-   
+
     if (cropping_op == PUSHCROP || cropping_op == SAMEAS_PUSHCROP_BUTNOPUSH) {
         first_band = ry / band_height;
         last_band = (ry + rheight + band_height - 1) / band_height;

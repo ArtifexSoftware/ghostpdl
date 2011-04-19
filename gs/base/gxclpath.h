@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -58,21 +58,21 @@ typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
     /* obsolete */
     /* cmd_opv_set_color = 0xd0, */	/* Used if base values do not fit into 1 bit */
-    				/* #flags,#base[0],...#base[num_comp-1] if flags */
-				/* colored halftone with base colors a,b,c,d */
+                                /* #flags,#base[0],...#base[num_comp-1] if flags */
+                                /* colored halftone with base colors a,b,c,d */
     /* obsolete */
     /* cmd_opv_set_color_short = 0xd1, */ /* Used if base values fit into 1 bit */
-    					/* If num_comp <= 4 then use: */
-    					/* pqrsabcd, where a = base[0] */
-					/* b = base[1], c= base[2], d = base[3] */
-					/* p = level[0], q = level[1] */
-					/* r = level[2], s = level[3] */
-    					/* If num_comp > 4 then use: */
-					/* #flags, #bases */
+                                        /* If num_comp <= 4 then use: */
+                                        /* pqrsabcd, where a = base[0] */
+                                        /* b = base[1], c= base[2], d = base[3] */
+                                        /* p = level[0], q = level[1] */
+                                        /* r = level[2], s = level[3] */
+                                        /* If num_comp > 4 then use: */
+                                        /* #flags, #bases */
     cmd_opv_set_fill_adjust = 0xd2,	/* adjust_x/y(fixed) */
     cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
     cmd_opv_set_color_space = 0xd4,	/* base(4)Indexed?(2)0(2) */
-				/* [, hival#, table|map] */
+                                /* [, hival#, table|map] */
     /*
      * cmd_opv_set_misc2_value is followed by a mask (a variable-length
      * integer), and then by parameter values for the parameters selected
@@ -89,22 +89,22 @@ typedef enum {
     /* alpha: <<verbatim copy from imager state>> */
     cmd_opv_set_misc2 = 0xd5,	/* mask#, selected parameters */
     cmd_opv_set_dash = 0xd6,	/* adapt(1)abs.dot(1)n(6), dot */
-				/* length(float), offset(float), */
-				/* n x (float) */
+                                /* length(float), offset(float), */
+                                /* n x (float) */
     cmd_opv_enable_clip = 0xd7,	/* (nothing) */
     cmd_opv_disable_clip = 0xd8,	/* (nothing) */
     cmd_opv_begin_clip = 0xd9,	/* (nothing) */
     cmd_opv_end_clip = 0xda,	/* (nothing) */
     cmd_opv_begin_image_rect = 0xdb, /* same as begin_image, followed by */
-				/* x0#, w-x1#, y0#, h-y1# */
+                                /* x0#, w-x1#, y0#, h-y1# */
     cmd_opv_begin_image = 0xdc,	/* image_type_table index, */
-				/* [per image type] */
+                                /* [per image type] */
     cmd_opv_image_data = 0xdd,	/* height# (premature EOD if 0), */
-				/* raster#, <data> */
+                                /* raster#, <data> */
     cmd_opv_image_plane_data = 0xde, /* height# (premature EOD if 0), */
-				/* flags# (0 = same raster & data_x, */
-				/* 1 = new raster & data_x, lsb first), */
-				/* [raster#, [data_x#,]]* <data> */
+                                /* flags# (0 = same raster & data_x, */
+                                /* 1 = new raster & data_x, lsb first), */
+                                /* [raster#, [data_x#,]]* <data> */
     cmd_opv_extend = 0xdf,	/* command, varies */
     cmd_op_segment = 0xe0,	/* (see below) */
     cmd_opv_rmoveto = 0xe0,	/* dx%, dy% */
@@ -114,7 +114,7 @@ typedef enum {
     cmd_opv_rmlineto = 0xe4,	/* dx1%,dy1%, dx2%,dy2% */
     cmd_opv_rm2lineto = 0xe5,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
     cmd_opv_rm3lineto = 0xe6,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3%, */
-				/* [-dx2,-dy2 implicit] */
+                                /* [-dx2,-dy2 implicit] */
     cmd_opv_rrcurveto = 0xe7,	/* dx1%,dy1%, dx2%,dy2%, dx3%,dy3% */
       cmd_opv_min_curveto = cmd_opv_rrcurveto,
     cmd_opv_hvcurveto = 0xe8,	/* dx1%, dx2%,dy2%, dy3% */
@@ -122,14 +122,14 @@ typedef enum {
     cmd_opv_nrcurveto = 0xea,	/* dx2%,dy2%, dx3%,dy3% */
     cmd_opv_rncurveto = 0xeb,	/* dx1%,dy1%, dx2%,dy2% */
     cmd_opv_vqcurveto = 0xec,	/* dy1%, dx2%[,dy2=dx2 with sign */
-				/* of dy1, dx3=dy1 with sign of dx2] */
+                                /* of dy1, dx3=dy1 with sign of dx2] */
     cmd_opv_hqcurveto = 0xed,	/* dx1%, [dx2=dy2 with sign */
-				/* of dx1,]%dy2, [dy3=dx1 with sign */
-				/* of dy2] */
+                                /* of dx1,]%dy2, [dy3=dx1 with sign */
+                                /* of dy2] */
     cmd_opv_scurveto = 0xee,	/* all implicit: previous op must have been */
-				/* *curveto with one or more of dx/y1/3 = 0. */
-				/* If h*: -dx3,dy3, -dx2,dy2, -dx1,dy1. */
-				/* If v*: dx3,-dy3, dx2,-dy2, dx1,-dy1. */
+                                /* *curveto with one or more of dx/y1/3 = 0. */
+                                /* If h*: -dx3,dy3, -dx2,dy2, -dx1,dy1. */
+                                /* If v*: dx3,-dy3, dx2,-dy2, dx1,-dy1. */
       cmd_opv_max_curveto = cmd_opv_scurveto,
     cmd_opv_closepath = 0xef,	/* (nothing) */
     cmd_op_path = 0xf0,		/* (see below) */
@@ -225,7 +225,7 @@ dev_proc_fill_triangle(clist_fill_triangle);
 
 /* Compute the colors used by a drawing color. */
 gx_color_index cmd_drawing_colors_used(gx_device_clist_writer *cldev,
-				       const gx_drawing_color *pdcolor);
+                                       const gx_drawing_color *pdcolor);
 
 /*
  * Compute whether a drawing operation will require the slow (full-pixel)
@@ -233,14 +233,14 @@ gx_color_index cmd_drawing_colors_used(gx_device_clist_writer *cldev,
  * the RasterOp.
  */
 bool cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
-		  const gx_drawing_color *pdcolor);
+                  const gx_drawing_color *pdcolor);
 
 /* Write out the color for filling, stroking, or masking. */
 /* Return a cmd_dc_type. */
 int cmd_put_drawing_color(gx_device_clist_writer * cldev,
-			  gx_clist_state * pcls,
-			  const gx_drawing_color * pdcolor,
-			  cmd_rects_enum_t *pre);
+                          gx_clist_state * pcls,
+                          const gx_drawing_color * pdcolor,
+                          cmd_rects_enum_t *pre);
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */
@@ -257,10 +257,10 @@ int cmd_write_ctm(const gs_matrix *m, byte *dp, int len);
   ( ~(pcls)->known & (must_know) ?\
     cmd_write_unknown(cldev, pcls, must_know) : 0 )
 int cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-		      uint must_know);
+                      uint must_know);
 
 /* Check whether we need to change the clipping path in the device. */
 bool cmd_check_clip_path(gx_device_clist_writer * cldev,
-			 const gx_clip_path * pcpath);
+                         const gx_clip_path * pcpath);
 
 #endif /* gxclpath_INCLUDED */

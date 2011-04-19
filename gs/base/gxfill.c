@@ -92,9 +92,7 @@ stats_fill_t stats_fill;
 /* we are inside if the winding number is odd. */
 #define INSIDE_PATH_P(inside, rule) ((inside & rule) != 0)
 
-
 /* ---------------- Active line management ---------------- */
-
 
 /*
  * Define the ordering criterion for active lines that overlap in Y.
@@ -213,7 +211,6 @@ static void insert_x_new(active_line *, line_list *);
 static int  end_x_line(active_line *, const line_list *, bool);
 static int step_al(active_line *alp, bool move_iterator);
 
-
 #define FILL_LOOP_PROC(proc) int proc(line_list *, fixed band_mask)
 static FILL_LOOP_PROC(spot_into_scan_lines);
 static FILL_LOOP_PROC(spot_into_trapezoids);
@@ -256,7 +253,6 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
     INCR(fill);
 }
-
 
 /* Unlink any line_close segments added temporarily. */
 static inline void
@@ -1117,7 +1113,6 @@ add_y_list(gx_path * ppath, line_list *ll)
     return close_count;
 }
 
-
 static int
 step_al(active_line *alp, bool move_iterator)
 {
@@ -1245,7 +1240,6 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
     insert_y_line(ll, alp);
     return 0;
 }
-
 
 /* ---------------- Filling loop utilities ---------------- */
 
@@ -1735,7 +1729,6 @@ loop_fill_trap_np(const line_list *ll, const gs_fixed_edge *le, const gs_fixed_e
 #undef TEMPLATE_slant_into_trapezoids
 #undef FILL_DIRECT
 
-
 #define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
     (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
 
@@ -1826,7 +1819,6 @@ coord_weight(const active_line *alp)
 {
     return 1 + min(any_abs((int)((int64_t)alp->diff.y * 8 / alp->diff.x)), 256);
 }
-
 
 /* Find intersections of active lines within the band.
    Intersect and reorder them, and correct the bund top. */

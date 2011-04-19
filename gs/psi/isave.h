@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -119,6 +119,5 @@ int  font_restore(const alloc_save_t * save);
 /* Accessor to get a memory pointer from the saved state for the
    express purpose of getting the library context. */
 gs_memory_t *gs_save_any_memory(const alloc_save_t *save);
-
 
 #endif /* isave_INCLUDED */

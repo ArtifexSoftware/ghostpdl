@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -112,9 +112,9 @@ image_proc_release(gx_image_default_release); /* just free the params */
  * Note that these procedures take different parameters.
  */
 int gx_pixel_image_sput(const gs_pixel_image_t *pic, stream *s,
-			const gs_color_space **ppcs, int extra);
+                        const gs_color_space **ppcs, int extra);
 int gx_pixel_image_sget(gs_pixel_image_t *pic, stream *s,
-			gs_color_space *pcs);
+                        gs_color_space *pcs);
 void gx_pixel_image_release(gs_pixel_image_t *pic, gs_memory_t *mem);
 
 /* Internal procedures for use in sput/sget implementations. */
@@ -144,7 +144,7 @@ typedef struct gx_image_enum_procs_s {
 
 #define image_enum_proc_plane_data(proc)\
   int proc(gx_image_enum_common_t *info, const gx_image_plane_t *planes,\
-	   int height, int *rows_used)
+           int height, int *rows_used)
 
     image_enum_proc_plane_data((*plane_data));
 
@@ -188,7 +188,7 @@ typedef struct gx_image_enum_procs_s {
      * By default, all data planes are always wanted; however, ImageType 3
      * images with separate mask and image data sources may want mask data
      * before image data or vice versa.
-     * 
+     *
      * This procedure is optional (may be 0).
      */
 
@@ -210,15 +210,15 @@ typedef struct gx_image_enum_procs_s {
  * be in progress simultaneously.
  */
 #define gx_image_enum_common\
-	const gx_image_type_t *image_type;\
-	const gx_image_enum_procs_t *procs;\
-	gx_device *dev;\
-	gs_memory_t *memory;	/* from begin_image */\
-	gs_id id;\
-	bool skipping; /* don't render, just consume image streams. */\
-	int num_planes;\
-	int plane_depths[GS_IMAGE_MAX_COMPONENTS]; /* [num_planes] */\
-	int plane_widths[GS_IMAGE_MAX_COMPONENTS]  /* [num_planes] */
+        const gx_image_type_t *image_type;\
+        const gx_image_enum_procs_t *procs;\
+        gx_device *dev;\
+        gs_memory_t *memory;	/* from begin_image */\
+        gs_id id;\
+        bool skipping; /* don't render, just consume image streams. */\
+        int num_planes;\
+        int plane_depths[GS_IMAGE_MAX_COMPONENTS]; /* [num_planes] */\
+        int plane_widths[GS_IMAGE_MAX_COMPONENTS]  /* [num_planes] */
 struct gx_image_enum_common_s {
     gx_image_enum_common;
 };
@@ -233,10 +233,10 @@ extern_st(st_gx_image_enum_common);
  * Initialize the common part of an image enumerator.
  */
 int gx_image_enum_common_init(gx_image_enum_common_t * piec,
-			      const gs_data_image_t * pic,
-			      const gx_image_enum_procs_t * piep,
-			      gx_device * dev, int num_components,
-			      gs_image_format_t format);
+                              const gs_data_image_t * pic,
+                              const gx_image_enum_procs_t * piep,
+                              gx_device * dev, int num_components,
+                              gs_image_format_t format);
 
 /*
  * Define image_plane_data and end_image procedures for image types that

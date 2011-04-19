@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,7 +19,7 @@
 
 #include "gsmatrix.h"
 
-/* The following switch is for developmenty purpose only. 
+/* The following switch is for developmenty purpose only.
    PRECISE_CURRENTPOINT 0 must not go to production due to no clamping. */
 #define PRECISE_CURRENTPOINT 1 /* Old code compatible with dropped clamping = 0, new code = 1 */
 
@@ -46,12 +46,12 @@ int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);
 
 /* Coordinate transformations to fixed point. */
 int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
-			     gs_fixed_point *);
+                             gs_fixed_point *);
 int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
-				gs_fixed_point *);
+                                gs_fixed_point *);
 #if PRECISE_CURRENTPOINT
 int gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
-			 floatp x, floatp y, gs_fixed_point * ppt);
+                         floatp x, floatp y, gs_fixed_point * ppt);
 #endif
 
 /*

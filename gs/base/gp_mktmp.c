@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,22 +23,22 @@ mktemp(char *fname)
     struct stat fst;
     int len = strlen(fname);
     char *end = fname + len - 6;
-    
+
     if (len < 6 || strcmp(end, "XXXXXX"))
-	return (char *)0;	/* invalid  */
+        return (char *)0;	/* invalid  */
     strcpy(end, "AA.AAA");
 
     while (stat(fname, &fst) == 0) {
-	char *inc = fname + len - 1;
+        char *inc = fname + len - 1;
 
-	while (*inc == 'Z' || *inc == '.') {
-	    if (inc == end)
-		return (char *)0;	/* failure */
-	    if (*inc == 'Z')
-		*inc = 'A';
-	    --inc;
-	}
-	++*inc;
+        while (*inc == 'Z' || *inc == '.') {
+            if (inc == end)
+                return (char *)0;	/* failure */
+            if (*inc == 'Z')
+                *inc = 'A';
+            --inc;
+        }
+        ++*inc;
     }
     return fname;
 }

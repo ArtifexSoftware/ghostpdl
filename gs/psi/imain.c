@@ -111,7 +111,6 @@ get_local_op_array(const gs_memory_t *mem)
     return &minst->i_ctx_p->op_array_table_local;
 }
 
-
 /* ------ Forward references ------ */
 
 static int gs_run_init_file(gs_main_instance *, int *, ref *);
@@ -935,4 +934,3 @@ gs_main_dump_stack(gs_main_instance *minst, int code, ref * perror_object)
     debug_dump_stack(minst->heap, &e_stack, "Execution stack");
     debug_dump_stack(minst->heap, &d_stack, "Dictionary stack");
 }
-

@@ -42,7 +42,7 @@ hpgl_AC(
 
     if (hpgl_arg_units(pgls->memory, pargs, &x)) {
         if (!hpgl_arg_units(pgls->memory, pargs, &y))
-	    return e_Range;
+            return e_Range;
     } else {
         x = 0.0;
         y = 0.0;
@@ -80,102 +80,102 @@ hpgl_FT(
 
       case hpgl_FT_pattern_solid_pen1:	/* 1 */
       case hpgl_FT_pattern_solid_pen2: /* 2 */
-	/* Default all the parameters. */
-	pgls->g.fill.param.hatch.spacing = 0;
-	pgls->g.fill.param.hatch.angle = 0;
-	pgls->g.fill.param.crosshatch.spacing = 0;
-	pgls->g.fill.param.crosshatch.angle = 0;
-	pgls->g.fill.param.shading = 100;
-	pgls->g.fill.param.user_defined.pattern_index = 1;
+        /* Default all the parameters. */
+        pgls->g.fill.param.hatch.spacing = 0;
+        pgls->g.fill.param.hatch.angle = 0;
+        pgls->g.fill.param.crosshatch.spacing = 0;
+        pgls->g.fill.param.crosshatch.angle = 0;
+        pgls->g.fill.param.shading = 100;
+        pgls->g.fill.param.user_defined.pattern_index = 1;
         pgls->g.fill.param.user_defined.use_current_pen = false;
-	pgls->g.fill.param.pattern_type = 1;  /****** NOT SURE ******/
-	pgls->g.fill.param.pattern_id = 0;  /****** NOT SURE ******/
-	break;
+        pgls->g.fill.param.pattern_type = 1;  /****** NOT SURE ******/
+        pgls->g.fill.param.pattern_id = 0;  /****** NOT SURE ******/
+        break;
 
       case hpgl_FT_pattern_one_line:	/* 3 */
-	params = &pgls->g.fill.param.hatch;
-	goto hatch;
+        params = &pgls->g.fill.param.hatch;
+        goto hatch;
 
       case hpgl_FT_pattern_two_lines: /* 4 */
-	params = &pgls->g.fill.param.crosshatch;
+        params = &pgls->g.fill.param.crosshatch;
 hatch:
-	{
+        {
             hpgl_real_t spacing = params->spacing;
-	    hpgl_real_t angle = params->angle;
+            hpgl_real_t angle = params->angle;
 
-	    if (hpgl_arg_real(pgls->memory, pargs, &spacing)) {
+            if (hpgl_arg_real(pgls->memory, pargs, &spacing)) {
                 if (spacing < 0)
-		    return e_Range;
-		hpgl_arg_real(pgls->memory, pargs, &angle);
-	    }
+                    return e_Range;
+                hpgl_arg_real(pgls->memory, pargs, &angle);
+            }
 
-	    /*
-	     * If the specified spacing is 0, we use 1% of the P1/P2
-	     * diagonal distance.  We handle this when performing the
-	     * fill, not here, because this distance may change
-	     * depending on the position of P1 and P2.
-	     */
-	    params->spacing = spacing;
-	    params->angle = angle;
-	}
-	break;
+            /*
+             * If the specified spacing is 0, we use 1% of the P1/P2
+             * diagonal distance.  We handle this when performing the
+             * fill, not here, because this distance may change
+             * depending on the position of P1 and P2.
+             */
+            params->spacing = spacing;
+            params->angle = angle;
+        }
+        break;
 
       case hpgl_FT_pattern_shading: /* 10 */
-	{
+        {
             int     level;
 
-	    if (hpgl_arg_c_int(pgls->memory, pargs, &level)) {
+            if (hpgl_arg_c_int(pgls->memory, pargs, &level)) {
                 if ((level < 0) || (level > 100))
-		    return e_Range;
-		pgls->g.fill.param.shading = level;
-	    }
-	}
-	break;
+                    return e_Range;
+                pgls->g.fill.param.shading = level;
+            }
+        }
+        break;
 
       case hpgl_FT_pattern_RF: /* 11 */
-	{
+        {
             int     index, mode;
 
             /* contrary to the documentation, option 2 is used */
-	    if (!hpgl_arg_int(pgls->memory, pargs, &index))
+            if (!hpgl_arg_int(pgls->memory, pargs, &index))
                 index = pgls->g.fill.param.user_defined.pattern_index;
             else if ((index < 1) || (index > 8))
                 return e_Range;
-	    if (!hpgl_arg_c_int(pgls->memory, pargs, &mode))
-		mode = pgls->g.fill.param.user_defined.use_current_pen;
+            if (!hpgl_arg_c_int(pgls->memory, pargs, &mode))
+                mode = pgls->g.fill.param.user_defined.use_current_pen;
             else if ((mode & ~1) != 0)
-		 return e_Range;
-	    pgls->g.fill.param.user_defined.pattern_index = index;
-	    pgls->g.fill.param.user_defined.use_current_pen = mode;
-	}
-	break;
+                 return e_Range;
+            pgls->g.fill.param.user_defined.pattern_index = index;
+            pgls->g.fill.param.user_defined.use_current_pen = mode;
+        }
+        break;
 
       case hpgl_FT_pattern_cross_hatch: /* 21 */
-	{
+        {
             int     pattern;
 
-	    if (hpgl_arg_c_int(pgls->memory, pargs, &pattern)) {
+            if (hpgl_arg_c_int(pgls->memory, pargs, &pattern)) {
                 if ((pattern < 1) || (pattern > 6))
-		    return e_Range;
-		pgls->g.fill.param.pattern_type = pattern;
-	    }
-	}
-	break;
+                    return e_Range;
+                pgls->g.fill.param.pattern_type = pattern;
+            }
+        }
+        break;
 
       case hpgl_FT_pattern_user_defined: /* 22 */
-	{
+        {
             int32   id;
 
-	    if (hpgl_arg_int(pgls->memory, pargs, &id)) {
-		if ((id < 0) || (id > 0xffff))
-		    return e_Range;
-		pgls->g.fill.param.pattern_id = id;
-	    }
-	}
-	break;
+            if (hpgl_arg_int(pgls->memory, pargs, &id)) {
+                if ((id < 0) || (id > 0xffff))
+                    return e_Range;
+                pgls->g.fill.param.pattern_id = id;
+            }
+        }
+        break;
 
       default:
-	return e_Range;
+        return e_Range;
     }
     pgls->g.fill.type = (hpgl_FT_pattern_source_t)type;
     return 0;
@@ -203,44 +203,44 @@ hpgl_LA(
     int             kind;
 
     while (hpgl_arg_c_int(pgls->memory, pargs, &kind)) {
-	no_args=false;
-	switch (kind) {
+        no_args=false;
+        switch (kind) {
 
-	  case 1:		/* line ends */
-	    if ( !hpgl_arg_c_int(pgls->memory, pargs, &cap) || (cap < 1) || (cap > 4) )
-		return e_Range;
-	    break;
+          case 1:		/* line ends */
+            if ( !hpgl_arg_c_int(pgls->memory, pargs, &cap) || (cap < 1) || (cap > 4) )
+                return e_Range;
+            break;
 
-	  case 2:		/* line joins */
-	    if ( !hpgl_arg_c_int(pgls->memory, pargs, &join) || (join < 1) || (join > 6) )
-		return e_Range;
-	    break;
+          case 2:		/* line joins */
+            if ( !hpgl_arg_c_int(pgls->memory, pargs, &join) || (join < 1) || (join > 6) )
+                return e_Range;
+            break;
 
-	  case 3:		/* miter limit */
-	    if ( !hpgl_arg_c_real(pgls->memory, pargs, &miter_limit) )
-		return e_Range;
-	    if (miter_limit < 1)
-		miter_limit = 1;
-	    break;
+          case 3:		/* miter limit */
+            if ( !hpgl_arg_c_real(pgls->memory, pargs, &miter_limit) )
+                return e_Range;
+            if (miter_limit < 1)
+                miter_limit = 1;
+            break;
 
-	  default:
-	    return e_Range;
-	}
+          default:
+            return e_Range;
+        }
     }
 
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
     /* LA1,1,2,1,3,5 is the same as LA */
     if (no_args) {
-	hpgl_args_setup(pargs);
-	hpgl_args_add_int(pargs, 1);
-	hpgl_args_add_int(pargs, 1);
-	hpgl_args_add_int(pargs, 2);
-	hpgl_args_add_int(pargs, 1);
-	hpgl_args_add_int(pargs, 3);
-	hpgl_args_add_real(pargs, 5.0);
-	hpgl_LA(pargs, pgls);
-	return 0;
+        hpgl_args_setup(pargs);
+        hpgl_args_add_int(pargs, 1);
+        hpgl_args_add_int(pargs, 1);
+        hpgl_args_add_int(pargs, 2);
+        hpgl_args_add_int(pargs, 1);
+        hpgl_args_add_int(pargs, 3);
+        hpgl_args_add_real(pargs, 5.0);
+        hpgl_LA(pargs, pgls);
+        return 0;
     }
 
     pgls->g.line.cap = cap;
@@ -281,13 +281,13 @@ hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
     pgls->g.line.current.is_solid = true;
     pgls->g.line.current.type = 0;
     memcpy( &pgls->g.fixed_line_type,
-	    &hpgl_fixed_pats,
-	    sizeof(hpgl_fixed_pats)
-	    );
+            &hpgl_fixed_pats,
+            sizeof(hpgl_fixed_pats)
+            );
     memcpy( &pgls->g.adaptive_line_type,
-	    &hpgl_adaptive_pats,
-	    sizeof(hpgl_adaptive_pats)
-	    );
+            &hpgl_adaptive_pats,
+            sizeof(hpgl_adaptive_pats)
+            );
 
     /* initialize the current pattern offset - this is not part of the
        command but is used internally to modulate the phase of the
@@ -299,14 +299,14 @@ hpgl_set_line_pattern_defaults(hpgl_state_t *pgls)
  * LT type[,length[,mode]];
  * LT99;
  * LT;
- * NB - needs reorganizing 
+ * NB - needs reorganizing
  */
   int
 hpgl_LT(
     hpgl_args_t *   pargs,
     hpgl_state_t *  pgls
 )
-{	
+{
     int             type;
 
     /* Draw the current path for any LT command irrespective of
@@ -319,11 +319,11 @@ hpgl_LT(
        since type 99 can only be invoked if the current line is solid
        (i.e. the 99 pattern only needs to be saved here */
     if ( !hpgl_arg_c_int(pgls->memory, pargs, &type) ) {
-	pgls->g.line.saved = pgls->g.line.current;
+        pgls->g.line.saved = pgls->g.line.current;
         pgls->g.line.saved.pos.x = pgls->g.pos.x;
         pgls->g.line.saved.pos.y = pgls->g.pos.y;
-	pgls->g.line.current.is_solid = true;
-	return 0;
+        pgls->g.line.current.is_solid = true;
+        return 0;
     }
 
     /* 99 restores the previous line type if a solid line type is the
@@ -331,50 +331,50 @@ hpgl_LT(
        type is in effect, of course the previous line may have been a
        solid line resulting in nop. */
     if ( type == 99 && pgls->g.line.current.is_solid == true &&
-	 pgls->g.line.saved.pos.x == pgls->g.pos.x &&
-	 pgls->g.line.saved.pos.y == pgls->g.pos.y ) {
-	pgls->g.line.current = pgls->g.line.saved;
-	return 0;
+         pgls->g.line.saved.pos.x == pgls->g.pos.x &&
+         pgls->g.line.saved.pos.y == pgls->g.pos.y ) {
+        pgls->g.line.current = pgls->g.line.saved;
+        return 0;
     }
-	
+
     /* check line type range */
     if ( type < -8 || type > 8 )
-	return e_Range;
+        return e_Range;
     /* Initialize, get and check pattern length and mode.  If the mode
        is relative (0) the units are a % of the distance from P1 to P2
        for the absolute mode units are millimeters */
     {
-	/* initialize pattern lengths to current state values */
-	hpgl_real_t length = pgls->g.line.current.pattern_length;
-	int mode = pgls->g.line.current.pattern_length_relative;
+        /* initialize pattern lengths to current state values */
+        hpgl_real_t length = pgls->g.line.current.pattern_length;
+        int mode = pgls->g.line.current.pattern_length_relative;
 
-	/* get/check the pattern length and mode */
-	if ( hpgl_arg_c_real(pgls->memory, pargs, &length) ) {
-	    if ( length <= 0 )
-		return e_Range;
-	    if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) )
-		if ( (mode != 0) && (mode != 1) )
-		    return e_Range;
-	}
+        /* get/check the pattern length and mode */
+        if ( hpgl_arg_c_real(pgls->memory, pargs, &length) ) {
+            if ( length <= 0 )
+                return e_Range;
+            if ( hpgl_arg_c_int(pgls->memory, pargs, &mode) )
+                if ( (mode != 0) && (mode != 1) )
+                    return e_Range;
+        }
 
-	/* if we are here this is a non-solid line and we should be
+        /* if we are here this is a non-solid line and we should be
            able to set the rest of the line parameter state values.
            NB have not checked if some of these get set if there is a
            range error for pattern length or mode.  An experiment for
            another day... */
 
-	if ( type == 0 ) { 
-	    /* Spec says this is for dots, on clj4550 its solid line type!
-	     * NB: need multiple device testing as its likely to be device specific.
-	     * fts 1435 1451 1830 1833.      */
-	    pgls->g.line.current.is_solid = true;
-	}
-	else
-	    pgls->g.line.current.is_solid = false;
+        if ( type == 0 ) {
+            /* Spec says this is for dots, on clj4550 its solid line type!
+             * NB: need multiple device testing as its likely to be device specific.
+             * fts 1435 1451 1830 1833.      */
+            pgls->g.line.current.is_solid = true;
+        }
+        else
+            pgls->g.line.current.is_solid = false;
         pgls->g.line.current.type = type;
-	pgls->g.line.current.pattern_length = length;
-	pgls->g.line.current.pattern_length_relative = mode;
-	pgls->g.line.current.type = type;
+        pgls->g.line.current.pattern_length = length;
+        pgls->g.line.current.pattern_length_relative = mode;
+        pgls->g.line.current.type = type;
     }
     return 0;
 }
@@ -387,17 +387,17 @@ hpgl_MC(
     hpgl_args_t *   pargs,
     hpgl_state_t *  pgls
 )
-{	
+{
     int             mode = 0, opcode;
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode) && ((mode & ~1) != 0))
-	return e_Range;
+        return e_Range;
     opcode = mode ? 168 : 252;
     if ((mode != 0) && hpgl_arg_c_int(pgls->memory, pargs, &opcode)) {
-	if ((opcode < 0) || (opcode > 255)) {
-	    pgls->logical_op = 252;
-	    return e_Range;
-	}
+        if ((opcode < 0) || (opcode > 255)) {
+            pgls->logical_op = 252;
+            return e_Range;
+        }
     }
     pgls->logical_op = opcode;
     return 0;
@@ -415,8 +415,8 @@ hpgl_PP(
     int             mode = 0;
 
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode)) {
-	if ((mode < 0) || (mode > 1))
-	    return e_Range;
+        if ((mode < 0) || (mode > 1))
+            return e_Range;
     }
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->pp_mode = mode;
@@ -431,7 +431,7 @@ hpgl_PW(
     hpgl_args_t *   pargs,
     hpgl_state_t *  pgls
 )
-{	
+{
     /*
      * we initialize the parameter to be parsed to either .1 which
      * is a % of the magnitude of P1 P2 or .35 MM WU sets up how
@@ -449,8 +449,8 @@ hpgl_PW(
      */
     if (hpgl_arg_c_real(pgls->memory, pargs, &param)) {
         if (hpgl_arg_c_int(pgls->memory, pargs, &pmin)) {
-	    if ((pmin < 0) || (pmin > pmax))
-		return e_Range;
+            if ((pmin < 0) || (pmin > pmax))
+                return e_Range;
             pmax = pmin;
         }
     }
@@ -476,12 +476,12 @@ hpgl_PW(
      * the line width in PU not MM.
      */
     if (pgls->g.pen.width_relative)
-	width_plu *= pf_factor;
+        width_plu *= pf_factor;
 
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     {
-	int   i;
-	for (i = pmin; i <= pmax; ++i)
+        int   i;
+        for (i = pmin; i <= pmax; ++i)
             pcl_palette_PW(pgls, i, width_plu);
     }
     return 0;
@@ -497,7 +497,7 @@ hpgl_PW(
  * pattern.
  */
 
-/* 
+/*
  * RF helper procedure to construct a mask if the input is only 1's
  * and 0's.  Note we store the original pattern in a dictionary keyed
  * on the index, the mask is stored simultaneously keyed on the
@@ -567,58 +567,58 @@ hpgl_RF(
 
     if (pargs->phase == 0) {
 
-	if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&index)) {
-	    hpgl_default_all_fill_patterns(pgls);
-	    return 0;
-	}
-	if ((index < 1) || (index > 8))
-	    return e_Range;
-
-	if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&width)) {
-	    pcl_pattern_RF(index, NULL, pgls);
+        if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&index)) {
+            hpgl_default_all_fill_patterns(pgls);
             return 0;
-	}
-	if ( (width < 1)                            ||
+        }
+        if ((index < 1) || (index > 8))
+            return e_Range;
+
+        if (!hpgl_arg_c_int(pgls->memory, pargs, (int *)&width)) {
+            pcl_pattern_RF(index, NULL, pgls);
+            return 0;
+        }
+        if ( (width < 1)                            ||
              (width > 255)                          ||
-	     !hpgl_arg_c_int(pgls->memory, pargs, (int *)&height) ||
-	     (height < 1)                           ||
+             !hpgl_arg_c_int(pgls->memory, pargs, (int *)&height) ||
+             (height < 1)                           ||
              (height > 255)                           )
-	      return e_Range;
+              return e_Range;
 
         /* allocate enough memory for pattern header and data */
         data = gs_alloc_bytes(pgls->memory, width * height, "hpgl raster fill");
         if (data == 0)
-	    return e_Memory;
+            return e_Memory;
 
         /*
          * All variables must be saved in globals since the parser
          * the parser reinvokes hpgl_RF() while processing data
          * (hpgl_arg_c_int can execute a longjmp).
          */
-	pgls->g.raster_fill.width = width;
-	pgls->g.raster_fill.height = height;
+        pgls->g.raster_fill.width = width;
+        pgls->g.raster_fill.height = height;
         pgls->g.raster_fill.data = data;
         pgls->g.raster_fill.is_mask = is_mask;
-	pgls->g.raster_fill.index = index;
+        pgls->g.raster_fill.index = index;
         /* set bitmap to 0, as not all pens need be provided */
-	memset(data, 0, width * height);
-	/* prepare to read the pixel values */
-	hpgl_next_phase(pargs);
+        memset(data, 0, width * height);
+        /* prepare to read the pixel values */
+        hpgl_next_phase(pargs);
 
     } else {
         width = pgls->g.raster_fill.width;
         height = pgls->g.raster_fill.height;
         data = pgls->g.raster_fill.data;
         is_mask = pgls->g.raster_fill.is_mask;
-	index = pgls->g.raster_fill.index;
+        index = pgls->g.raster_fill.index;
     }
 
     while ((pargs->phase - 1) < width * height) {
-	int     pixel;
+        int     pixel;
 
-	if (!hpgl_arg_c_int(pgls->memory, pargs, &pixel))
-	    break;
-	if (pixel != 0) {
+        if (!hpgl_arg_c_int(pgls->memory, pargs, &pixel))
+            break;
+        if (pixel != 0) {
             data[pargs->phase - 1] = pixel;
             if (pixel != 1)
                 is_mask = false;
@@ -627,7 +627,7 @@ hpgl_RF(
     }
 
     if ( pgls->personality == pcl5e )
-	is_mask = true; /* always for a monochrome configuration */
+        is_mask = true; /* always for a monochrome configuration */
 
     /* if the pattern is uncolored, collapse it to 1-bit per pixel */
     if (is_mask) {
@@ -673,31 +673,31 @@ hpgl_SM(
     for (;;) {
         if (p >= rlimit) {
             pargs->source.ptr = p;
-	    return e_NeedData;
-	}
-	++p;
-	if (*p == ' ')
-	    continue;		/* ignore initial spaces */
-	else if (*p == ';') {
+            return e_NeedData;
+        }
+        ++p;
+        if (*p == ' ')
+            continue;		/* ignore initial spaces */
+        else if (*p == ';') {
             pgls->g.symbol_mode = 0;
-	    break;
-	}
+            break;
+        }
 
-	/*
-	 * p. 22-44 of the PCL5 manual says that the allowable codes
-	 * are 33-58, 60-126, 161 and 254.  This is surely an error:
-	 * it must be 161-254.
-	 */
-	else if ( ((*p >= 33) && (*p <= 126)) || ((*p >= 161) && (*p <= 254)) ) {
-	    pgls->g.symbol_mode = *p;
-	    return 0;
+        /*
+         * p. 22-44 of the PCL5 manual says that the allowable codes
+         * are 33-58, 60-126, 161 and 254.  This is surely an error:
+         * it must be 161-254.
+         */
+        else if ( ((*p >= 33) && (*p <= 126)) || ((*p >= 161) && (*p <= 254)) ) {
+            pgls->g.symbol_mode = *p;
+            return 0;
         } else
-	    return e_Range;
+            return e_Range;
     }
     return 0;
 }
 
-/* 
+/*
  * SP [pen];
  */
   int
@@ -714,15 +714,15 @@ hpgl_SP(
     if (hpgl_arg_c_int(pgls->memory, pargs, &pen)) {
         if (pen < 0)
             return e_Range;
-	while ( pen > max_pen )
-	    pen = pen - max_pen;
+        while ( pen > max_pen )
+            pen = pen - max_pen;
     }
 
     if (pen == pgls->g.pen.selected)
         return 0;
 
     if ( !pgls->g.polygon_mode )
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+        hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->g.pen.selected = pen;
     return 0;
 }
@@ -747,70 +747,70 @@ hpgl_SV(
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pgls->memory, pargs, &type)) {
 
-	switch (type) {
+        switch (type) {
 
-	  case hpgl_SV_pattern_solid_pen: /* 0 */
+          case hpgl_SV_pattern_solid_pen: /* 0 */
             pgls->g.screen.param.shading = 100;
             pgls->g.screen.param.user_defined.pattern_index = 1;
             pgls->g.screen.param.user_defined.use_current_pen = false;
             pgls->g.screen.param.pattern_type = 1;
             pgls->g.screen.param.pattern_id = 0;
-	    break;
+            break;
 
-	  case hpgl_SV_pattern_shade: /* 1 */
-	    {
+          case hpgl_SV_pattern_shade: /* 1 */
+            {
                 int     level;
 
-	        if ( !hpgl_arg_c_int(pgls->memory, pargs, &level) ||
+                if ( !hpgl_arg_c_int(pgls->memory, pargs, &level) ||
                      (level < 0)                    ||
                      (level > 100)                    )
-		    return e_Range;
-		pgls->g.screen.param.shading = level;
-	    }
-	    break;
+                    return e_Range;
+                pgls->g.screen.param.shading = level;
+            }
+            break;
 
-	  case hpgl_SV_pattern_RF:	/* 2 */
-	    {
+          case hpgl_SV_pattern_RF:	/* 2 */
+            {
                 int     index, mode;
 
-		if (!hpgl_arg_int(pgls->memory, pargs, &index))
+                if (!hpgl_arg_int(pgls->memory, pargs, &index))
                     index = pgls->g.screen.param.user_defined.pattern_index;
                 else if ((index < 1) || (index > 8))
                     return e_Range;
-		if (!hpgl_arg_c_int(pgls->memory, pargs, &mode))
-		    mode = pgls->g.screen.param.user_defined.use_current_pen;
+                if (!hpgl_arg_c_int(pgls->memory, pargs, &mode))
+                    mode = pgls->g.screen.param.user_defined.use_current_pen;
                 else if ((mode & ~1) != 0)
-		    return e_Range;
-		pgls->g.screen.param.user_defined.pattern_index = index;
-		pgls->g.screen.param.user_defined.use_current_pen = mode;
-	    }
-	    break;
+                    return e_Range;
+                pgls->g.screen.param.user_defined.pattern_index = index;
+                pgls->g.screen.param.user_defined.use_current_pen = mode;
+            }
+            break;
 
-	  case hpgl_SV_pattern_cross_hatch: /* 21 */
-	    {
+          case hpgl_SV_pattern_cross_hatch: /* 21 */
+            {
                 int     pattern;
 
-	        if ( !hpgl_arg_c_int(pgls->memory, pargs, &pattern) ||
-		     (pattern < 1)                    ||
+                if ( !hpgl_arg_c_int(pgls->memory, pargs, &pattern) ||
+                     (pattern < 1)                    ||
                      (pattern > 6)                      )
-		    return e_Range;
-		pgls->g.screen.param.pattern_type = pattern;
-	    }
-	    break;
+                    return e_Range;
+                pgls->g.screen.param.pattern_type = pattern;
+            }
+            break;
 
-	  case hpgl_SV_pattern_user_defined: /* 22 */
-	    {
+          case hpgl_SV_pattern_user_defined: /* 22 */
+            {
                 int32   id;
 
-	        if (!hpgl_arg_int(pgls->memory, pargs, &id) || (id < 0) || (id > 0xffff))
-		    return e_Range;
-		pgls->g.screen.param.pattern_id = id;
-	    }
-	    break;
+                if (!hpgl_arg_int(pgls->memory, pargs, &id) || (id < 0) || (id > 0xffff))
+                    return e_Range;
+                pgls->g.screen.param.pattern_id = id;
+            }
+            break;
 
-	  default:
-	    return e_Range;
-	}
+          default:
+            return e_Range;
+        }
     }
 
     pgls->g.screen.type = (hpgl_SV_pattern_source_t)type;
@@ -838,7 +838,7 @@ hpgl_TR(
     int             mode = 1;
 
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode) && ((mode & ~1) != 0))
-	return e_Range;
+        return e_Range;
 
     pgls->g.source_transparent = (mode != 0);
     return 0;
@@ -856,36 +856,36 @@ hpgl_UL(
     int             index;
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pgls->memory, pargs, &index)) {
-	hpgl_real_t gap[20];
+        hpgl_real_t gap[20];
         double      total = 0;
         int         i, k;
 
         if ((index < -8) || (index > 8) || (index == 0))
-	    return e_Range;
-	for (i = 0; (i < 20) && hpgl_arg_c_real(pgls->memory, pargs, &gap[i]); ++i ) {
+            return e_Range;
+        for (i = 0; (i < 20) && hpgl_arg_c_real(pgls->memory, pargs, &gap[i]); ++i ) {
             if (gap[i] < 0)
-		return e_Range;
-	    total += gap[i];
-	}
-	if (total == 0)
-	    return e_Range;
+                return e_Range;
+            total += gap[i];
+        }
+        if (total == 0)
+            return e_Range;
 
-	for (k = 0; k < i; k++)
-	    gap[k] /= total;
+        for (k = 0; k < i; k++)
+            gap[k] /= total;
 
-	{
-            hpgl_line_type_t *  fixed_plt = 
+        {
+            hpgl_line_type_t *  fixed_plt =
                  &pgls->g.fixed_line_type[(index < 0 ? -index : index) - 1];
             hpgl_line_type_t *  adaptive_plt =
-		 &pgls->g.adaptive_line_type[(index < 0 ? -index : index) - 1];
+                 &pgls->g.adaptive_line_type[(index < 0 ? -index : index) - 1];
 
-	    fixed_plt->count = adaptive_plt->count = i;
-	    memcpy(fixed_plt->gap, gap, i * sizeof(hpgl_real_t));
-	    memcpy(adaptive_plt->gap, gap, i * sizeof(hpgl_real_t));
-	}
+            fixed_plt->count = adaptive_plt->count = i;
+            memcpy(fixed_plt->gap, gap, i * sizeof(hpgl_real_t));
+            memcpy(adaptive_plt->gap, gap, i * sizeof(hpgl_real_t));
+        }
 
     } else {
-	hpgl_set_line_pattern_defaults(pgls);
+        hpgl_set_line_pattern_defaults(pgls);
     }
     return 0;
 }
@@ -902,8 +902,8 @@ hpgl_WU(
     int             mode = 0;
 
     if (hpgl_arg_c_int(pgls->memory, pargs, &mode)) {
-	if ((mode != 0) && (mode != 1))
-	    return e_Range;
+        if ((mode != 0) && (mode != 1))
+            return e_Range;
     }
     pgls->g.pen.width_relative = mode;
     hpgl_args_setup(pargs);
@@ -936,7 +936,7 @@ pglfill_do_registration(
      * in polygon mode itself.`
      */
     HPGL_COMMAND('S', 'M', hpgl_SM, hpgl_cdf_pcl_rtl_both),
-    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both), 
+    HPGL_COMMAND('S', 'P', hpgl_SP, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('S', 'V', hpgl_SV, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('T', 'R', hpgl_TR, hpgl_cdf_pcl_rtl_both),
     HPGL_COMMAND('U', 'L', hpgl_UL, hpgl_cdf_pcl_rtl_both),

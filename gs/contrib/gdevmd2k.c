@@ -1,13 +1,13 @@
 /* Copyright (C) 1991, 1995-1999 Aladdin Enterprises.  All rights reserved.
-  
+
   This file is part of Aladdin Ghostscript.
-  
+
   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
   or distributor accepts any responsibility for the consequences of using it,
   or for whether it serves any particular purpose or works at all, unless he
   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
   License (the "License") for full details.
-  
+
   Every copy of Aladdin Ghostscript must include a copy of the License,
   normally in a plain ASCII text file named PUBLIC.  The License grants you
   the right to copy, modify and redistribute Aladdin Ghostscript, but only
@@ -44,7 +44,6 @@ static dev_proc_map_cmyk_color(alps_map_cmyk_color);
 static dev_proc_map_cmyk_color(alps_map_cmy_color);
 static dev_proc_map_rgb_color(alps_map_rgb_color);
 static dev_proc_map_color_rgb(alps_map_color_rgb);
-
 
 struct gx_device_alps_s {
     gx_device_common;
@@ -91,10 +90,10 @@ static gx_device_procs alps_procs = {
 #define alps_device(dname, print_page) \
 {\
     prn_device_body(gx_device_alps, alps_procs, dname,\
-		    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
-		    600, 600,\
-		    0, 0, 0, 0, /* margin */\
-		    4, 0, 0, 0, 0, 0, print_page),\
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,\
+                    600, 600,\
+                    0, 0, 0, 0, /* margin */\
+                    4, 0, 0, 0, 0, 0, print_page),\
     true, false, false, false, false, 0, 1024, 1024, 1024, 1024\
 }
 
@@ -108,17 +107,16 @@ typedef enum {
     MD5000
 } alps_printer_type;
 
-
 static int
 alps_open(gx_device *pdev)
 {
     int xdpi = pdev->x_pixels_per_inch;
     int ydpi = pdev->y_pixels_per_inch;
     const float margins[4] = {
-	LEFT_MARGIN,
-	BOTTOM_MARGIN,
-	RIGHT_MARGIN,
-	TOP_MARGIN
+        LEFT_MARGIN,
+        BOTTOM_MARGIN,
+        RIGHT_MARGIN,
+        TOP_MARGIN
     };
     float density;
 
@@ -128,7 +126,7 @@ alps_open(gx_device *pdev)
     if ((ydpi != 300 || xdpi != 300)
      && (ydpi != 600 || xdpi != 600)
      && (ydpi != 600 || xdpi != 1200))
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
 
     density = (xdpi == 300 ? 0.75 : xdpi == 600 ? 0.44 : 0.4);
     dev_alps->cyan    *= density;
@@ -139,62 +137,61 @@ alps_open(gx_device *pdev)
     return gdev_prn_open(pdev);
 }
 
-
 static int
 alps_get_params(gx_device *pdev, gs_param_list *plist)
 {
     gs_param_string mediaType = { "", 1, false };
     int code = gdev_prn_get_params(pdev, plist);
     if (code < 0 ||
-	(code = param_write_bool(plist, "Color",   &dev_alps->color))   < 0 ||
-	(code = param_write_bool(plist, "Dither",  &dev_alps->dither))  < 0 ||
-	(code = param_write_bool(plist, "ManualFeed",
-				        &dev_alps->manualFeed))         < 0 ||
-	(code = param_write_bool(plist, "ReverseSide",
-				        &dev_alps->reverseSide))        < 0 ||
-	(code = param_write_bool(plist, "EcoBlack",
-				        &dev_alps->ecoBlack))           < 0 ||
-	(code = param_write_int (plist, "Cyan",	   &dev_alps->cyan))    < 0 ||
-	(code = param_write_int (plist, "Magenta", &dev_alps->magenta)) < 0 ||
-	(code = param_write_int (plist, "Yellow",  &dev_alps->yellow))  < 0 ||
-	(code = param_write_int (plist, "Black",   &dev_alps->black))   < 0 ||
-	(code = param_write_string(plist, "MediaType", &mediaType))     < 0)
-	return code;
+        (code = param_write_bool(plist, "Color",   &dev_alps->color))   < 0 ||
+        (code = param_write_bool(plist, "Dither",  &dev_alps->dither))  < 0 ||
+        (code = param_write_bool(plist, "ManualFeed",
+                                        &dev_alps->manualFeed))         < 0 ||
+        (code = param_write_bool(plist, "ReverseSide",
+                                        &dev_alps->reverseSide))        < 0 ||
+        (code = param_write_bool(plist, "EcoBlack",
+                                        &dev_alps->ecoBlack))           < 0 ||
+        (code = param_write_int (plist, "Cyan",	   &dev_alps->cyan))    < 0 ||
+        (code = param_write_int (plist, "Magenta", &dev_alps->magenta)) < 0 ||
+        (code = param_write_int (plist, "Yellow",  &dev_alps->yellow))  < 0 ||
+        (code = param_write_int (plist, "Black",   &dev_alps->black))   < 0 ||
+        (code = param_write_string(plist, "MediaType", &mediaType))     < 0)
+        return code;
 
     return code;
 }
 
 static int
 alps_put_param_bool(gs_param_list *plist, gs_param_name pname, int *pvalue,
-		   int ecode)
+                   int ecode)
 {
     int code, value;
     switch (code = param_read_bool(plist, pname, &value)) {
     default:
-	return code;
+        return code;
     case 1:
-	return ecode;
+        return ecode;
     case 0:
-	*pvalue = value;
-	return (ecode < 0 ? ecode : 1);
+        *pvalue = value;
+        return (ecode < 0 ? ecode : 1);
     }
 }
 
 static int
 alps_put_param_int(gs_param_list *plist, gs_param_name pname, int *pvalue,
-		   int minval, int maxval, int ecode)
+                   int minval, int maxval, int ecode)
 {
     int code, value;
     switch (code = param_read_int(plist, pname, &value)) {
     default:
-	return code;
+        return code;
     case 1:
-	return ecode;
+        return ecode;
     case 0:
-	if (value < minval || value > maxval)
-	    param_signal_error(plist, pname, gs_error_rangecheck);
-	*pvalue = value;
-	return (ecode < 0 ? ecode : 1);
+        if (value < minval || value > maxval)
+            param_signal_error(plist, pname, gs_error_rangecheck);
+        *pvalue = value;
+        return (ecode < 0 ? ecode : 1);
     }
 }
 
@@ -228,34 +225,34 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
 
 #define mediaTypeCmp(mname) strncmp(mediaType.data, mname, mediaType.size)
     if (param_read_string(plist, "MediaType", &mediaType) == 0) {
-	dev_alps->mediaType
-	    = (! mediaTypeCmp("PlainPaper"      ) ? 0
-	     : ! mediaTypeCmp("OHP_MD2000"      ) ? 1
-	     : ! mediaTypeCmp("IronSeal"        ) ? 2
-	     : ! mediaTypeCmp("RebecaFree"      ) ? 3
-	     : ! mediaTypeCmp("CardBoard"       ) ? 5
-	     : ! mediaTypeCmp("PostCard"        ) ? 6
-	     : ! mediaTypeCmp("FinePaper"       ) ? 7
-	     : ! mediaTypeCmp("CoatedFilm"      ) ? 9
-	     : ! mediaTypeCmp("GlossyPaper"     ) ? 15
-	     : ! mediaTypeCmp("TransparencyFilm") ? 0x108
-	     : ! mediaTypeCmp("OHP"             ) ? 0x108 : -1);
-	switch (dev_alps->mediaType) {
-	case -1:
-	    param_signal_error(plist, "MediaType", code = gs_error_rangecheck);
-	    break;
-	case 1:			/* MD-2000 transparency mode */
-	    dev_proc(pdev, map_cmyk_color) = alps_map_cmy_color;
-	    break;
-	case 6:			/* hagaki */
-	    pdev->MediaSize[0] = 284;
-	    pdev->MediaSize[1] = 419;
-	default:
-	    break;
-	}
+        dev_alps->mediaType
+            = (! mediaTypeCmp("PlainPaper"      ) ? 0
+             : ! mediaTypeCmp("OHP_MD2000"      ) ? 1
+             : ! mediaTypeCmp("IronSeal"        ) ? 2
+             : ! mediaTypeCmp("RebecaFree"      ) ? 3
+             : ! mediaTypeCmp("CardBoard"       ) ? 5
+             : ! mediaTypeCmp("PostCard"        ) ? 6
+             : ! mediaTypeCmp("FinePaper"       ) ? 7
+             : ! mediaTypeCmp("CoatedFilm"      ) ? 9
+             : ! mediaTypeCmp("GlossyPaper"     ) ? 15
+             : ! mediaTypeCmp("TransparencyFilm") ? 0x108
+             : ! mediaTypeCmp("OHP"             ) ? 0x108 : -1);
+        switch (dev_alps->mediaType) {
+        case -1:
+            param_signal_error(plist, "MediaType", code = gs_error_rangecheck);
+            break;
+        case 1:			/* MD-2000 transparency mode */
+            dev_proc(pdev, map_cmyk_color) = alps_map_cmy_color;
+            break;
+        case 6:			/* hagaki */
+            pdev->MediaSize[0] = 284;
+            pdev->MediaSize[1] = 419;
+        default:
+            break;
+        }
     }
     if (code < 0)
-	return code;
+        return code;
 
     dev_alps->color       = color;
     dev_alps->dither      = dither;
@@ -268,16 +265,16 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
     dev_alps->black    	  = black;
 
     if (bpp)
-	/* Only valid bits-per-pixel are 1, 4, 8, 32 */
-	bpp = (bpp < 4 ? 1 : bpp < 8 ? 4 : bpp > 8 ? 32 : 8);
+        /* Only valid bits-per-pixel are 1, 4, 8, 32 */
+        bpp = (bpp < 4 ? 1 : bpp < 8 ? 4 : bpp > 8 ? 32 : 8);
     else
-	bpp = (color ? 4 : 1) * (dither ? 8 : 1);
-    
+        bpp = (color ? 4 : 1) * (dither ? 8 : 1);
+
     if (ecoBlack && ! strcmp(pdev->dname, "md5k"))
-	bpp = 1;
+        bpp = 1;
 
     if (bpp == 1 || bpp == 8)
-	dev_proc(pdev, map_rgb_color) = alps_map_rgb_color;
+        dev_proc(pdev, map_rgb_color) = alps_map_rgb_color;
 
     pdev->color_info.depth = bpp;
     pdev->color_info.num_components = (bpp == 1 || bpp == 8 ? 1 : 4);
@@ -289,7 +286,6 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
     gdev_prn_put_params(pdev, plist);
     return 0;
 }
-
 
 /*
  * these F/S dithering macros are based on gdevcdj.c
@@ -315,8 +311,8 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
     Err = (*errP + ((Err * 7 + C) >> 4) + (*inP << SHIFT));\
     inP += Offset;\
     if (Err > THRESHOLD) {\
-	out |= Bit;\
-	Err -= MAXVALUE;\
+        out |= Bit;\
+        Err -= MAXVALUE;\
     }\
     errP[-Offset] += ((Err * 3 + C) >> 4);\
     *errP++ = ((Err * 5 + oldErr + C) >> 4);
@@ -330,8 +326,8 @@ alps_put_params(gx_device *pdev, gs_param_list *plist)
         for (c = j = 0; j < 8; j++) {\
             FSdither(dp, c, ep, Err, bitmask, n);\
             bitmask >>= 1;\
-	}\
-	*outP++ = c;\
+        }\
+        *outP++ = c;\
     }\
 }
 /* END MACROS FOR DITHERING */
@@ -351,21 +347,20 @@ cmyk_to_bit(byte *out, byte *in, int length, int c_comp)
     mask2 = mask1 >> 4;
 
     while(p_in < p_end) {
-	int i; 
+        int i;
 
-	out_data = 0;
-	for(i = 0; i < 4; i ++) {
-	    in_data = (p_in < p_end ? *p_in++ : 0);
-	    out_data <<= 2;
-	    out_data |= (in_data & mask1) >> (6-c_comp)
-		| (in_data & mask2) >> (3-c_comp);
-	}
-	*p_out ++ = out_data;
+        out_data = 0;
+        for(i = 0; i < 4; i ++) {
+            in_data = (p_in < p_end ? *p_in++ : 0);
+            out_data <<= 2;
+            out_data |= (in_data & mask1) >> (6-c_comp)
+                | (in_data & mask2) >> (3-c_comp);
+        }
+        *p_out ++ = out_data;
     }
 
     return p_out - out;
 }
-
 
 /*
  * run-length compression
@@ -379,34 +374,33 @@ runlength(byte *out, byte *in, int length)
     p_end = p_in + length;
 
     while(p_in < p_end) {
-	/* loop until 3 same data found */
-	count = 0;
-	climit = min(128, p_end - p_in);
-	for( ; count < climit; count++, p_in ++) {
-	    contflag = (*p_in == *(p_in+1) && *p_in == *(p_in+2));
-	    if (contflag)
-		break;
-	}
-	if (count > 0) {
-	    *p_out ++ = count - 1;
-	    memcpy(p_out, p_in - count, count);
-	    p_out += count;
-	}
+        /* loop until 3 same data found */
+        count = 0;
+        climit = min(128, p_end - p_in);
+        for( ; count < climit; count++, p_in ++) {
+            contflag = (*p_in == *(p_in+1) && *p_in == *(p_in+2));
+            if (contflag)
+                break;
+        }
+        if (count > 0) {
+            *p_out ++ = count - 1;
+            memcpy(p_out, p_in - count, count);
+            p_out += count;
+        }
 
-	if (contflag) {
-	    climit = min(129, p_end - p_in);
-	    p_in += 3;
-	    count = 3;
-	    for( ; count < climit && *(p_in-1) == *p_in; count++, p_in++);
+        if (contflag) {
+            climit = min(129, p_end - p_in);
+            p_in += 3;
+            count = 3;
+            for( ; count < climit && *(p_in-1) == *p_in; count++, p_in++);
 
-	    *p_out ++ = (byte) (0x101 - count);
-	    *p_out ++ = *(p_in-1);
-	}
+            *p_out ++ = (byte) (0x101 - count);
+            *p_out ++ = *(p_in-1);
+        }
     }
 
     return p_out - out;
 }
-
 
 #define write_short(data, stream) { \
     fputc((unsigned char) (data), stream); \
@@ -423,32 +417,32 @@ static void
 alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
 {
     short height;		/* page height (unit: dots) */
-    
+
     fwrite  ("\033\145"
-	     "\033\045\200\101"
-	     "\033\032\0\0\114", 1, 11, prn_stream);
+             "\033\045\200\101"
+             "\033\032\0\0\114", 1, 11, prn_stream);
     /* paper feed (auto=1, manual=2) */
     alps_cmd("\033\046\154", (dev_alps->manualFeed ? 2 : 1), 0110, prn_stream);
     /* media type */
     alps_cmd("\033\046\154", dev_alps->mediaType, 0115, prn_stream);
-    
+
     /* paper size */
     alps_cmd("\033\046\154", (pdev->MediaSize[0] == 612) ? 2 :    /* letter */
-	                     (pdev->MediaSize[0] >= 595 &&
-	                      pdev->MediaSize[0] <= 598) ? 4 :    /* A4 */
-	                     (pdev->MediaSize[0] == 516 ||
-			      pdev->MediaSize[0] == 501) ? 5 :    /* B5 */
-	                     (pdev->MediaSize[0] == 284) ? 6 : 0, /* hagaki */
-	     0101, prn_stream);
+                             (pdev->MediaSize[0] >= 595 &&
+                              pdev->MediaSize[0] <= 598) ? 4 :    /* A4 */
+                             (pdev->MediaSize[0] == 516 ||
+                              pdev->MediaSize[0] == 501) ? 5 :    /* B5 */
+                             (pdev->MediaSize[0] == 284) ? 6 : 0, /* hagaki */
+             0101, prn_stream);
 
     /* monocrome=0, eco black=1, CMYK=4, CMYK(MD-5000)=8 */
     fwrite("\033\052\162", 1, 3, prn_stream);
     fputc((dev_alps->mediaType == 1 ? 4 :
-	   pdev->color_info.num_components == 1 ? dev_alps->ecoBlack ? 1 : 0
-	                                        : ptype == MD5000    ? 8 : 4),
-	  prn_stream);
+           pdev->color_info.num_components == 1 ? dev_alps->ecoBlack ? 1 : 0
+                                                : ptype == MD5000    ? 8 : 4),
+          prn_stream);
     fputc(0125, prn_stream);
-   
+
     /* set resolution (300dpi = 2, 600dpi = 3, 1200x600dpi = 4) */
     fwrite("\033\052\164", 1, 3, prn_stream);
     fputc((pdev->x_pixels_per_inch == 300 ? 2
@@ -456,7 +450,7 @@ alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
     fputc(0122, prn_stream);
 
     height = (pdev->MediaSize[1] - pdev->HWMargins[1] - pdev->HWMargins[3])
-	    * pdev->y_pixels_per_inch / 72.;
+            * pdev->y_pixels_per_inch / 72.;
     alps_cmd("\033\046\154", height, 0120, prn_stream);
 
     /* if -dReverseSide ... */
@@ -465,26 +459,26 @@ alps_init(gx_device_printer *pdev, FILE *prn_stream, alps_printer_type ptype)
     fwrite("\0\101",   1, 2, prn_stream);
 
     if (ptype == MD5000) {
-	if (dev_alps->ecoBlack) {
-	    fwrite("\033\032\001\0\103",         1, 5, prn_stream);
-	    fwrite("\033\046\154\001\0\103\027", 1, 7, prn_stream);
-	} else if (pdev->color_info.num_components == 1)
-	    fwrite("\033\046\154\001\0\103\0",   1, 7, prn_stream);
-	else
-	    fwrite("\033\046\154\004\0\103\003\002\001\0", 1, 10, prn_stream);
-	fwrite("\033\032\0\0\125",     1, 5, prn_stream);
-	fwrite("\033\052\162\1\101",   1, 5, prn_stream);
-	fwrite("\033\052\142\0\0\115", 1, 6, prn_stream);
+        if (dev_alps->ecoBlack) {
+            fwrite("\033\032\001\0\103",         1, 5, prn_stream);
+            fwrite("\033\046\154\001\0\103\027", 1, 7, prn_stream);
+        } else if (pdev->color_info.num_components == 1)
+            fwrite("\033\046\154\001\0\103\0",   1, 7, prn_stream);
+        else
+            fwrite("\033\046\154\004\0\103\003\002\001\0", 1, 10, prn_stream);
+        fwrite("\033\032\0\0\125",     1, 5, prn_stream);
+        fwrite("\033\052\162\1\101",   1, 5, prn_stream);
+        fwrite("\033\052\142\0\0\115", 1, 6, prn_stream);
     } else {
-	fwrite("\033\052\162\0\101",   1, 5, prn_stream);
-	fwrite("\033\052\142\2\0\115", 1, 6, prn_stream);
+        fwrite("\033\052\162\0\101",   1, 5, prn_stream);
+        fwrite("\033\052\142\2\0\115", 1, 6, prn_stream);
     }
 }
 
 /* Send the page to the printer. */
 static int
 alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
-		alps_printer_type ptype)
+                alps_printer_type ptype)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     byte *in, *out, *work, *dp, *outP;
@@ -496,106 +490,106 @@ alps_print_page(gx_device_printer *pdev, FILE *prn_stream,
 
     /* allocate memory */
     work = (byte *)gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), 3+sizeof(int), line_size,
-			     "alps_print_page(work)");
+                             "alps_print_page(work)");
     if (work == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     in = work + line_size;
     out = in + line_size;
     error = (int *)(out + line_size);
 
     /* initialize printer */
     alps_init(pdev, prn_stream, ptype);
-    
+
     for(c_comp = 0; c_comp < n_comp; c_comp ++) {
-	int yskip = 0;
-	int color_weight;
+        int yskip = 0;
+        int color_weight;
 
-	for(i = 0; i < line_size; i ++)
-	    error[i] = RANDOM();
+        for(i = 0; i < line_size; i ++)
+            error[i] = RANDOM();
 
-	if (n_comp == 1)
-	    color_weight = dev_alps->black;
-	else
-	    color_weight = (c_comp < 2
-		? c_comp == 0 ? dev_alps->cyan   : dev_alps->magenta
-		: c_comp == 2 ? dev_alps->yellow : dev_alps->black);
+        if (n_comp == 1)
+            color_weight = dev_alps->black;
+        else
+            color_weight = (c_comp < 2
+                ? c_comp == 0 ? dev_alps->cyan   : dev_alps->magenta
+                : c_comp == 2 ? dev_alps->yellow : dev_alps->black);
 
-	/* select color (black=0, cyan=1, magenta=2, yellow=3,
-	                 gold=4, metalic red=5, metalic blue=6, silver=7,
-			 rebeca black=8, rebeca red=9, rebeca blue=10,
-			 white=11, glossy=14) */
-	fwrite("\033\032", 1, 2, prn_stream);
-	fputc((n_comp == 1 ? dev_alps->ecoBlack ? 026 : 0 : (c_comp+1) % 4),
-	      prn_stream);
-	fputc((c_comp == n_comp-1 && ptype == MD5000 ? 0200 : 0),
-	      prn_stream);
-	fputc(0162, prn_stream);
+        /* select color (black=0, cyan=1, magenta=2, yellow=3,
+                         gold=4, metalic red=5, metalic blue=6, silver=7,
+                         rebeca black=8, rebeca red=9, rebeca blue=10,
+                         white=11, glossy=14) */
+        fwrite("\033\032", 1, 2, prn_stream);
+        fputc((n_comp == 1 ? dev_alps->ecoBlack ? 026 : 0 : (c_comp+1) % 4),
+              prn_stream);
+        fputc((c_comp == n_comp-1 && ptype == MD5000 ? 0200 : 0),
+              prn_stream);
+        fputc(0162, prn_stream);
 
-	for(y = 0; y < y_height; y ++) {
-	    uint len = line_size;
+        for(y = 0; y < y_height; y ++) {
+            uint len = line_size;
 
-	    gdev_prn_get_bits(pdev, y, in, &dp);
+            gdev_prn_get_bits(pdev, y, in, &dp);
 
-	    switch (pdev->color_info.depth) {
-	    case 4:
-		/* get a component of CMYK from raster data */
-		len = cmyk_to_bit(work, dp, len, c_comp);
-		dp = work;
-	    case 1:
-		/* remove trailing 0s */
-		for( ; len > 0 && dp[len-1] == 0; len --);
-		break;
-	    case 32:
-		dp += c_comp;
-	    case 8:
-		outP = work;
-		ep = error;
+            switch (pdev->color_info.depth) {
+            case 4:
+                /* get a component of CMYK from raster data */
+                len = cmyk_to_bit(work, dp, len, c_comp);
+                dp = work;
+            case 1:
+                /* remove trailing 0s */
+                for( ; len > 0 && dp[len-1] == 0; len --);
+                break;
+            case 32:
+                dp += c_comp;
+            case 8:
+                outP = work;
+                ep = error;
 
-		/* remove trailing 0s */
-		for( ; len > 0 && dp[len-num_comp] == 0; len -= num_comp);
-		
-		for(i = 0; i < len; i += num_comp)
-		    dp[i] = (dp[i] * color_weight) >> 10;
-		len = (len / num_comp + 7) >> 3;
+                /* remove trailing 0s */
+                for( ; len > 0 && dp[len-num_comp] == 0; len -= num_comp);
 
-		FSDline(i, j, len, outP, num_comp);
-		dp = work;
-		break;
-	    }
+                for(i = 0; i < len; i += num_comp)
+                    dp[i] = (dp[i] * color_weight) >> 10;
+                len = (len / num_comp + 7) >> 3;
 
-	    if (len == 0)
-		yskip ++;
-	    else {
-		if (yskip) {
-		    alps_cmd("\033\052\142", yskip, 0131, prn_stream);
-		    yskip = 0;
-		}
-		if (ptype == MD5000) {
-		    int xskip = 0;
+                FSDline(i, j, len, outP, num_comp);
+                dp = work;
+                break;
+            }
 
-		    /* Count pre print skip octets */
-		    for( ; len > 0 && *dp == 0; len --, dp ++, xskip ++);
+            if (len == 0)
+                yskip ++;
+            else {
+                if (yskip) {
+                    alps_cmd("\033\052\142", yskip, 0131, prn_stream);
+                    yskip = 0;
+                }
+                if (ptype == MD5000) {
+                    int xskip = 0;
 
-		    alps_cmd("\033\052\142", len, 0124, prn_stream);
-		    write_short(xskip, prn_stream);
-		    fwrite(dp, 1, len, prn_stream);
-		} else {
-		    len = runlength(out, dp, len);
-		    alps_cmd("\033\052\142", len, 0127, prn_stream);
-		    fwrite(out, 1, len, prn_stream);
-		}
-	    }
-	}
+                    /* Count pre print skip octets */
+                    for( ; len > 0 && *dp == 0; len --, dp ++, xskip ++);
 
-	/* rewind */
-	if (c_comp + 1 < n_comp)
-	    fwrite("\033\032\0\0\014", 1, 5, prn_stream);
+                    alps_cmd("\033\052\142", len, 0124, prn_stream);
+                    write_short(xskip, prn_stream);
+                    fwrite(dp, 1, len, prn_stream);
+                } else {
+                    len = runlength(out, dp, len);
+                    alps_cmd("\033\052\142", len, 0127, prn_stream);
+                    fwrite(out, 1, len, prn_stream);
+                }
+            }
+        }
+
+        /* rewind */
+        if (c_comp + 1 < n_comp)
+            fwrite("\033\032\0\0\014", 1, 5, prn_stream);
     }
-    
+
     /* end of print */
     fwrite("\014"
-	   "\033\052\162\103"
-	   "\033\045\0\130", 1, 9, prn_stream);
+           "\033\052\162\103"
+           "\033\045\0\130", 1, 9, prn_stream);
 
     gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)work, 3+sizeof(int), line_size, "alps_print_page(work)");
     return 0;
@@ -612,7 +606,6 @@ md5k_print_page(gx_device_printer *pdev, FILE *prn_stream)
 {
     return alps_print_page(pdev, prn_stream, MD5000);
 }
-
 
 /* functions below are mainly based on gdevcdj.c */
 /*
@@ -639,7 +632,7 @@ md5k_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
 static gx_color_index
 alps_map_cmyk_color(gx_device* pdev,
-		    const gx_color_value cv[])
+                    const gx_color_value cv[])
 {
     gx_color_index color;
     gx_color_value c, m, y, k;
@@ -647,28 +640,28 @@ alps_map_cmyk_color(gx_device* pdev,
     c = cv[0]; m = cv[1]; y = cv[2]; k = cv[3];
     switch (pdev->color_info.depth) {
     case 1:
-	color = ((c | m | y | k) > gx_max_color_value / 2 ?
-		 (gx_color_index) 1 : (gx_color_index) 0);
-	break;
+        color = ((c | m | y | k) > gx_max_color_value / 2 ?
+                 (gx_color_index) 1 : (gx_color_index) 0);
+        break;
 
     default:
     {
-	int nbits = pdev->color_info.depth;
-	ulong weight;
+        int nbits = pdev->color_info.depth;
+        ulong weight;
 
-	ulong black = (c <= y ? c <= m ? c : m : m <= y ? m : y);
-	weight = (black < gx_max_color_value
-		  ? (gx_max_color_value << 10) / (gx_max_color_value - black)
-		  : 0);
-	c = ((c - black) * weight) >> 10;
-	m = ((m - black) * weight) >> 10;
-	y = ((y - black) * weight) >> 10;
+        ulong black = (c <= y ? c <= m ? c : m : m <= y ? m : y);
+        weight = (black < gx_max_color_value
+                  ? (gx_max_color_value << 10) / (gx_max_color_value - black)
+                  : 0);
+        c = ((c - black) * weight) >> 10;
+        m = ((m - black) * weight) >> 10;
+        y = ((y - black) * weight) >> 10;
 
-	black += k;
-	k = (gx_color_index) (black <= gx_max_color_value
-			      ? black : gx_max_color_value);
+        black += k;
+        k = (gx_color_index) (black <= gx_max_color_value
+                              ? black : gx_max_color_value);
 
-	color = gx_cmyk_value_bits(c, m, y, k, nbits >> 2);
+        color = gx_cmyk_value_bits(c, m, y, k, nbits >> 2);
     }
     }
 
@@ -677,7 +670,7 @@ alps_map_cmyk_color(gx_device* pdev,
 
 static gx_color_index
 alps_map_cmy_color(gx_device* pdev,
-		   const gx_color_value cv[])
+                   const gx_color_value cv[])
 {
     int nbits = pdev->color_info.depth;
     gx_color_value c = cv[0], m = cv[1], y = cv[2], k = cv[3];
@@ -696,7 +689,7 @@ alps_map_cmy_color(gx_device* pdev,
 
 static gx_color_index
 alps_map_rgb_color(gx_device *pdev,
-		   const gx_color_value cv[])
+                   const gx_color_value cv[])
 {
   gx_color_value r, g, b;
 
@@ -710,19 +703,19 @@ alps_map_rgb_color(gx_device *pdev,
 
       switch (pdev->color_info.depth) {
       case 1:
-	  return ((c | m | y) > gx_max_color_value / 2 ?
-		  (gx_color_index) 1 : (gx_color_index) 0);
-	  break;
+          return ((c | m | y) > gx_max_color_value / 2 ?
+                  (gx_color_index) 1 : (gx_color_index) 0);
+          break;
 
       case 8:
 #define red_weight 306
 #define green_weight 601
 #define blue_weight 117
-	  return ((ulong)c * red_weight
-		+ (ulong)m * green_weight
-		+ (ulong)y * blue_weight)
-		    >> (gx_color_value_bits + 2);
-	  break;
+          return ((ulong)c * red_weight
+                + (ulong)m * green_weight
+                + (ulong)y * blue_weight)
+                    >> (gx_color_value_bits + 2);
+          break;
       }
   }
 
@@ -733,56 +726,56 @@ alps_map_rgb_color(gx_device *pdev,
 
 static int
 alps_map_color_rgb(gx_device *pdev,
-		   gx_color_index color, gx_color_value prgb[3])
+                   gx_color_index color, gx_color_value prgb[3])
 {
     switch (pdev->color_info.depth) {
     case 1:
-	prgb[0] = prgb[1] = prgb[2] = gx_max_color_value * (1 - color);
-	break;
+        prgb[0] = prgb[1] = prgb[2] = gx_max_color_value * (1 - color);
+        break;
 
     case 8:
-	if (pdev->color_info.num_components == 1) {
-	    gx_color_value value = (gx_color_value) color ^ 0xff;
+        if (pdev->color_info.num_components == 1) {
+            gx_color_value value = (gx_color_value) color ^ 0xff;
 
-	    prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
+            prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
 
-	    break;
-	}
+            break;
+        }
 
     default:
     {
-	unsigned long bcyan, bmagenta, byellow, black;
-	int nbits = pdev->color_info.depth;
+        unsigned long bcyan, bmagenta, byellow, black;
+        int nbits = pdev->color_info.depth;
 
-	gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
-			   nbits >> 2);
+        gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
+                           nbits >> 2);
 
 #ifdef USE_ADOBE_CMYK_RGB
 
-	/* R = 1.0 - min(1.0, C + K), etc. */
+        /* R = 1.0 - min(1.0, C + K), etc. */
 
-	bcyan += black, bmagenta += black, byellow += black;
-	prgb[0] = (bcyan > gx_max_color_value ? (gx_color_value) 0 :
-		   gx_max_color_value - bcyan);
-	prgb[1] = (bmagenta > gx_max_color_value ? (gx_color_value) 0 :
-		   gx_max_color_value - bmagenta);
-	prgb[2] = (byellow > gx_max_color_value ? (gx_color_value) 0 :
-		   gx_max_color_value - byellow);
+        bcyan += black, bmagenta += black, byellow += black;
+        prgb[0] = (bcyan > gx_max_color_value ? (gx_color_value) 0 :
+                   gx_max_color_value - bcyan);
+        prgb[1] = (bmagenta > gx_max_color_value ? (gx_color_value) 0 :
+                   gx_max_color_value - bmagenta);
+        prgb[2] = (byellow > gx_max_color_value ? (gx_color_value) 0 :
+                   gx_max_color_value - byellow);
 
 #else
 
-	    /* R = (1.0 - C) * (1.0 - K), etc. */
+            /* R = (1.0 - C) * (1.0 - K), etc. */
 
-	prgb[0] = (gx_color_value)
-	    ((ulong)(gx_max_color_value - bcyan) *
-	     (gx_max_color_value - black) / gx_max_color_value);
-	prgb[1] = (gx_color_value)
-	    ((ulong)(gx_max_color_value - bmagenta) *
-	     (gx_max_color_value - black) / gx_max_color_value);
-	prgb[2] = (gx_color_value)
-	    ((ulong)(gx_max_color_value - byellow) *
-	     (gx_max_color_value - black) / gx_max_color_value);
-	
+        prgb[0] = (gx_color_value)
+            ((ulong)(gx_max_color_value - bcyan) *
+             (gx_max_color_value - black) / gx_max_color_value);
+        prgb[1] = (gx_color_value)
+            ((ulong)(gx_max_color_value - bmagenta) *
+             (gx_max_color_value - black) / gx_max_color_value);
+        prgb[2] = (gx_color_value)
+            ((ulong)(gx_max_color_value - byellow) *
+             (gx_max_color_value - black) / gx_max_color_value);
+
 #endif
 
     }

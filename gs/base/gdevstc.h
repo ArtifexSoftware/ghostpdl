@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -82,7 +82,6 @@ typedef struct stc_s {
    int             buf_y;      /* Next line 2b loaded into the buffer */
    int             prt_scans;  /* number of lines printed */
 
-
    int            *prt_width;  /* Width of buffered lines */
    byte          **prt_data;   /* Buffered printer-lines */
    byte           *escp_data;  /* Buffer for ESC/P2-Data */
@@ -93,8 +92,8 @@ typedef struct stc_s {
 /*** Main-Device Structure ***/
 
 typedef struct stcolor_device_s {
-	gx_device_common;
-	gx_prn_device_common;
+        gx_device_common;
+        gx_prn_device_common;
         stc_t stc;
 } stcolor_device;
 
@@ -176,7 +175,6 @@ stc_proc_dither(stc_fscmyk);  /* resides in gdevstc2.c too */
 stc_proc_dither(stc_gsrgb);   /* resides in gdevstc3.c */
 stc_proc_dither(stc_fs2);     /* resides in gdevstc4.c */
 
-
 /* Values used to assemble flags */
 #define DeviceGray  1 /* ProcessColorModel = DeviceGray  */
 #define DeviceRGB   3 /* ProcessColorModel = DeviceRGB   */
@@ -215,11 +213,10 @@ stc_proc_dither(stc_fs2);     /* resides in gdevstc4.c */
 {"fs2", stc_fs2, \
   DeviceRGB |STC_BYTE|STC_WHITE|1*STC_SCAN,0,{0.0,255.0}},
 
-
 #ifndef   X_DPI
 #define   X_DPI   360
 #endif /* X_DPI */
-#ifndef   Y_DPI 
+#ifndef   Y_DPI
 #define   Y_DPI   360
 #endif /* Y_DPI */
 

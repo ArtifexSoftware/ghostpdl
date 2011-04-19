@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,11 +40,11 @@ typedef struct gs_font_s gs_font;
 /* Initialization */
 /* These procedures return 0 if they fail. */
 gs_font_dir *gs_font_dir_alloc2(gs_memory_t * struct_mem,
-				gs_memory_t * bits_mem);
+                                gs_memory_t * bits_mem);
 gs_font_dir *gs_font_dir_alloc2_limits(gs_memory_t * struct_mem,
-				       gs_memory_t * bits_mem,
-				       uint smax, uint bmax, uint mmax,
-				       uint cmax, uint upper);
+                                       gs_memory_t * bits_mem,
+                                       uint smax, uint bmax, uint mmax,
+                                       uint cmax, uint upper);
 
 /* Backward compatibility */
 #define gs_font_dir_alloc(mem) gs_font_dir_alloc2(mem, mem)
@@ -56,8 +56,8 @@ gs_font_dir *gs_font_dir_alloc2_limits(gs_memory_t * struct_mem,
 int gs_definefont(gs_font_dir *, gs_font *);
 
 /* Find a sililar registered font of same type. */
-int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont, 
-			   int (*similar)(const gs_font *, const gs_font *));
+int gs_font_find_similar(const gs_font_dir * pdir, const gs_font **ppfont,
+                           int (*similar)(const gs_font *, const gs_font *));
 
 /* gs_scalefont and gs_makefont return 0 if the scaled font */
 /* was already in the cache, 1 if a new font was created. */

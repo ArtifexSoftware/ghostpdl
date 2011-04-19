@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,9 +22,9 @@
 
 typedef struct gx_device_clj_s gx_device_clj;
 struct gx_device_clj_s {
-	gx_device_common;
-	gx_prn_device_common;
-	bool rotated;
+        gx_device_common;
+        gx_prn_device_common;
+        bool rotated;
 };
 
 #define pclj ((gx_device_clj *)pdev)
@@ -101,11 +101,9 @@ static const clj_paper_size    clj_paper_sizes[] = {
  */
 static const float supported_resolutions[] = { 75.0, 100.0, 150.0, 300.0 };
 
-
 /* indicate the maximum supported resolution and scan-line length (pts) */
 #define CLJ_MAX_RES        300.0
 #define CLJ_MAX_SCANLINE   (12.0 * 72.0)
-
 
 /*
  * Determine a requested resolution pair is supported.
@@ -184,15 +182,15 @@ clj_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
     /* This shouldn't be possible since clj_put_params rejects   */
     /* unknown media sizes.					 */
     if (psize == 0) {
-	pmat->xx = fs_res;
-	pmat->xy = 0.0;
-	pmat->yx = 0.0;
-	pmat->yy = -ss_res;
-	pmat->tx = 0.0;
-	pmat->ty = pdev->MediaSize[1] * ss_res;
-	return;
+        pmat->xx = fs_res;
+        pmat->xy = 0.0;
+        pmat->yx = 0.0;
+        pmat->yy = -ss_res;
+        pmat->tx = 0.0;
+        pmat->ty = pdev->MediaSize[1] * ss_res;
+        return;
     }
-  
+
     if (pclj->rotated) {
         pmat->xx = 0.0;
         pmat->xy = ss_res;
@@ -225,18 +223,18 @@ clj_get_params(gx_device *pdev, gs_param_list *plist)
 
     code = gdev_begin_input_media(plist, &mdict, countof(clj_paper_sizes));
     if (code < 0)
-	ecode = code;
+        ecode = code;
     else {
-	for (i = 0; i < countof(clj_paper_sizes); ++i) {
-	    code = gdev_write_input_page_size(i, &mdict,
-					      clj_paper_sizes[i].width,
-					      clj_paper_sizes[i].height);
-	    if (code < 0)
-		ecode = code;
-	}
-	code = gdev_end_input_media(plist, &mdict);
-	if (code < 0)
-	    ecode = code;
+        for (i = 0; i < countof(clj_paper_sizes); ++i) {
+            code = gdev_write_input_page_size(i, &mdict,
+                                              clj_paper_sizes[i].width,
+                                              clj_paper_sizes[i].height);
+            if (code < 0)
+                ecode = code;
+        }
+        code = gdev_end_input_media(plist, &mdict);
+        if (code < 0)
+            ecode = code;
     }
     return ecode;
 }
@@ -255,20 +253,20 @@ clj_media_size(float mediasize[2], gs_param_list *plist)
     int have_pagesize = 0;
 
     if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
-          !is_supported_resolution(fres.data) ) 
+          !is_supported_resolution(fres.data) )
         return_error(gs_error_rangecheck);
 
     if ( (param_read_float_array(plist, "PageSize", &fsize) == 0) ||
          (param_read_float_array(plist, ".MediaSize", &fsize) == 0) ) {
-	mediasize[0] = fsize.data[0];
-	mediasize[1] = fsize.data[1];
-	have_pagesize = 1;
+        mediasize[0] = fsize.data[0];
+        mediasize[1] = fsize.data[1];
+        have_pagesize = 1;
     }
 
     if (param_read_int_array(plist, "HWSize", &hwsize) == 0) {
         mediasize[0] = ((float)hwsize.data[0]) * 72 / fres.data[0];
         mediasize[1] = ((float)hwsize.data[1]) * 72 / fres.data[1];
-	have_pagesize = 1;
+        have_pagesize = 1;
     }
 
     return have_pagesize;
@@ -289,10 +287,10 @@ clj_put_params(
     int                     have_pagesize = clj_media_size(mediasize, plist);
 
     if (have_pagesize < 0)
-	return have_pagesize;
+        return have_pagesize;
     if (have_pagesize) {
-	if (get_paper_size(mediasize, &rotate) == 0 || rotate)
-	    return_error(gs_error_rangecheck);
+        if (get_paper_size(mediasize, &rotate) == 0 || rotate)
+            return_error(gs_error_rangecheck);
     }
     return gdev_prn_put_params(pdev, plist);
 }
@@ -434,17 +432,16 @@ clj_print_page(
     cdata[1] = cdata[0] + clsize;
     cdata[2] = cdata[1] + clsize;
 
-
     /* Imageable area is without the margins. Note that the actual rotation
      * of page size into pdev->width & height has been done. We just use
      * rotate to access the correct offsets. */
     if (pclj->rotated) {
-    	imageable_width = pdev->width - (2 * psize->offsets.x) * fs_res;
-    	imageable_height = pdev->height - (2 * psize->offsets.y) * ss_res;
+        imageable_width = pdev->width - (2 * psize->offsets.x) * fs_res;
+        imageable_height = pdev->height - (2 * psize->offsets.y) * ss_res;
     }
     else {
-    	imageable_width = pdev->width - (2 * psize->offsets.y) * ss_res;
-    	imageable_height = pdev->height - (2 * psize->offsets.x) * fs_res;
+        imageable_width = pdev->width - (2 * psize->offsets.y) * ss_res;
+        imageable_height = pdev->height - (2 * psize->offsets.x) * fs_res;
     }
 
     /* start the page.  The pcl origin (0, 150 dots by default, y
@@ -455,7 +452,7 @@ clj_print_page(
     fprintf( prn_stream,
              "\033E\033&u300D\033&l%da1x%dO\033*p0x0y+50x-100Y\033*t%dR"
 #ifdef USE_FAST_MODE
-	     "\033*r-3U"
+             "\033*r-3U"
 #else
              "\033*v6W\001\002\003\001\001\001"
 #endif
@@ -473,8 +470,8 @@ clj_print_page(
 
         gdev_prn_copy_scan_lines(pdev, i, data, lsize);
 
-	/* The 'lsize' bytes of data have the blank margin area at the end due	*/
-	/* to the 'initial_matrix' offsets that are applied.			*/
+        /* The 'lsize' bytes of data have the blank margin area at the end due	*/
+        /* to the 'initial_matrix' offsets that are applied.			*/
         pack_and_compress_scanline(data, imageable_width, cdata, clen);
         if ((clen[0] == 0) && (clen[1] == 0) && (clen[2] == 0))
             ++blank_lines;
@@ -578,14 +575,14 @@ clj_pr_get_params( gx_device *pdev, gs_param_list *plist )
     /* First un-rotate the MediaSize, etc. if we were in a rotated mode		*/
     if (pclj->rotated) {
         float ftmp;
-	int   itmp;
+        int   itmp;
 
-	ftmp = pdev->MediaSize[0];
-	pdev->MediaSize[0] = pdev->MediaSize[1];
-	pdev->MediaSize[1] = ftmp;
-	itmp = pdev->width;
-	pdev->width = pdev->height;
-	pdev->height = itmp;
+        ftmp = pdev->MediaSize[0];
+        pdev->MediaSize[0] = pdev->MediaSize[1];
+        pdev->MediaSize[1] = ftmp;
+        itmp = pdev->width;
+        pdev->width = pdev->height;
+        pdev->height = itmp;
     }
 
     /* process the parameter list */
@@ -594,14 +591,14 @@ clj_pr_get_params( gx_device *pdev, gs_param_list *plist )
     /* Now re-rotate the page size if needed */
     if (pclj->rotated) {
         float ftmp;
-	int   itmp;
+        int   itmp;
 
-	ftmp = pdev->MediaSize[0];
-	pdev->MediaSize[0] = pdev->MediaSize[1];
-	pdev->MediaSize[1] = ftmp;
-	itmp = pdev->width;
-	pdev->width = pdev->height;
-	pdev->height = itmp;
+        ftmp = pdev->MediaSize[0];
+        pdev->MediaSize[0] = pdev->MediaSize[1];
+        pdev->MediaSize[1] = ftmp;
+        itmp = pdev->width;
+        pdev->width = pdev->height;
+        pdev->height = itmp;
     }
 
     return code;
@@ -626,39 +623,39 @@ clj_pr_put_params(
     int                     have_pagesize = clj_media_size(mediasize, plist);
 
     if (have_pagesize < 0)
-	return have_pagesize;
+        return have_pagesize;
     if (have_pagesize) {
-	if (get_paper_size(mediasize, &rotate) == 0)
-	    return_error(gs_error_rangecheck);
-	if (rotate) {
-	    /* We need to rotate the requested page size, so synthesize a new	*/
-	    /* parameter list in front of the requestor's list to force the	*/
-	    /* rotated page size.						*/
-	    gs_param_float_array	pf_array;
-	    gs_c_param_list		alist;
-	    float			ftmp = mediasize[0];
+        if (get_paper_size(mediasize, &rotate) == 0)
+            return_error(gs_error_rangecheck);
+        if (rotate) {
+            /* We need to rotate the requested page size, so synthesize a new	*/
+            /* parameter list in front of the requestor's list to force the	*/
+            /* rotated page size.						*/
+            gs_param_float_array	pf_array;
+            gs_c_param_list		alist;
+            float			ftmp = mediasize[0];
 
-	    mediasize[0] = mediasize[1];
-	    mediasize[1] = ftmp;
-	    pf_array.data = mediasize;
-	    pf_array.size = 2;
-	    pf_array.persistent = false;
+            mediasize[0] = mediasize[1];
+            mediasize[1] = ftmp;
+            pf_array.data = mediasize;
+            pf_array.size = 2;
+            pf_array.persistent = false;
 
-	    gs_c_param_list_write(&alist, pdev->memory);
-	    code = param_write_float_array((gs_param_list *)&alist, ".MediaSize", &pf_array);
-	    gs_c_param_list_read(&alist);
+            gs_c_param_list_write(&alist, pdev->memory);
+            code = param_write_float_array((gs_param_list *)&alist, ".MediaSize", &pf_array);
+            gs_c_param_list_read(&alist);
 
-	    /* stick this synthesized parameter on the front of the existing list */
-	    gs_c_param_list_set_target(&alist, plist);
-	    if ((code = gdev_prn_put_params(pdev, (gs_param_list *)&alist)) >= 0)
-		pclj->rotated = true;
-	    gs_c_param_list_release(&alist);
-	} else {
-	    if ((code = gdev_prn_put_params(pdev, plist)) >= 0)
-		pclj->rotated = false;
-	}
-    } else 
-	code = gdev_prn_put_params(pdev, plist);
+            /* stick this synthesized parameter on the front of the existing list */
+            gs_c_param_list_set_target(&alist, plist);
+            if ((code = gdev_prn_put_params(pdev, (gs_param_list *)&alist)) >= 0)
+                pclj->rotated = true;
+            gs_c_param_list_release(&alist);
+        } else {
+            if ((code = gdev_prn_put_params(pdev, plist)) >= 0)
+                pclj->rotated = false;
+        }
+    } else
+        code = gdev_prn_put_params(pdev, plist);
 
     return code;
 }

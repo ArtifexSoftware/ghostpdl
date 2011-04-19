@@ -73,21 +73,21 @@
   (#include "gstypes.h") =
   (#include "gscedata.h") =
 
-	% Write the name strings, sorted by increasing length, and
-	% alphabetically increasing within the same length.
+        % Write the name strings, sorted by increasing length, and
+        % alphabetically increasing within the same length.
   (
 const char gs_c_known_encoding_chars[] = {) =
   1 1 maxlen {
     /len exch def
     /noff 0 def
-	% Collect and sort names of this length.
+        % Collect and sort names of this length.
     [ estrs {
       pop dup length len ne { pop } { .namestring } ifelse
     } forall ] /lt load .sort
-	% Output the names.
+        % Output the names.
     {
       dup {
-	(') print (x) dup 0 4 -1 roll put print (',) print
+        (') print (x) dup 0 4 -1 roll put print (',) print
       } forall
       (  /*N\() print len =only (,) print noff =only (\)*/) =
       estrs exch get noff ne {
@@ -101,7 +101,7 @@ const char gs_c_known_encoding_chars[] = {) =
 const int gs_c_known_encoding_total_chars = ) print
   offset =only (;) =
 
-	% Write the starting offsets of the names of each length.
+        % Write the starting offsets of the names of each length.
   /numchars 0 estrs { pop length add } forall def
   (
 const int gs_c_known_encoding_max_length = ) print
@@ -113,7 +113,7 @@ const ushort gs_c_known_encoding_offsets[] = {) =
   } for
   numchars =only (};) =
 
-	% Write the encodings themselves.
+        % Write the encodings themselves.
   (
 const int gs_c_known_encoding_count = ) print
   encodings length =only (;) =
@@ -152,7 +152,7 @@ const int gs_c_known_encoding_count = ) print
   /i i 1 add def
   } forall
 
-	% Write the table of pointers to the encodings.
+        % Write the table of pointers to the encodings.
   (
 const ushort *const gs_c_known_encodings[] = {) =
   0 1 encodings length 1 sub {
@@ -168,8 +168,7 @@ const ushort *const gs_c_known_encodings[] = {) =
   } for (    0
   };) =
 
-
-	% Write the table of encoding lengths.
+        % Write the table of encoding lengths.
   (
 const ushort gs_c_known_encoding_lengths[] = {) =
   0 1 encodings length 1 sub {
@@ -297,11 +296,11 @@ lbase 0 0 put
   /len exch def
   lbase len offset put
   /noff 0 def
-	% Collect and sort names of this length.
+        % Collect and sort names of this length.
   [ estrs {
   pop dup length len ne { pop } { .namestring } ifelse
   } forall ] /lt load .sort
-	% Output the names.
+        % Output the names.
   {
     estrs exch noff put
     /noff noff len add def

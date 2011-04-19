@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,9 +23,9 @@
 #include "gdevpccm.h"
 
 /**************** Future optimizations:
-	Do tile_rectangle with pattern
-	Keep track of painted area,
-	  do masked copy_mono with cell array if possible
+        Do tile_rectangle with pattern
+        Keep track of painted area,
+          do masked copy_mono with cell array if possible
  ****************/
 
 typedef struct gx_device_cgm_s {
@@ -38,8 +38,8 @@ typedef struct gx_device_cgm_s {
 
 /* GC descriptor */
 gs_private_st_suffix_add1_final(st_device_cgm, gx_device_cgm,
-	       "gx_device_cgm", device_cgm_enum_ptrs, device_cgm_reloc_ptrs,
-				gx_device_finalize, st_device, st);
+               "gx_device_cgm", device_cgm_enum_ptrs, device_cgm_reloc_ptrs,
+                                gx_device_finalize, st_device, st);
 
 /* Device procedures */
 static dev_proc_open_device(cgm_open);
@@ -63,40 +63,40 @@ static dev_proc_put_params(cgm_put_params);
 /* very concerned about performance. */
 #define cgm_device(dname, depth, max_value, dither, map_rgb_color, map_color_rgb)\
 {	std_device_color_stype_body(gx_device_cgm, 0, dname, &st_device_cgm,\
-	  850, 1100, 100, 100, depth, max_value, dither),\
-	{	cgm_open,\
-		NULL,			/* get_initial_matrix */\
-		NULL,			/* sync_output */\
-		cgm_output_page,\
-		cgm_close,\
-		map_rgb_color,\
-		map_color_rgb,\
-		cgm_fill_rectangle,\
-		cgm_tile_rectangle,\
-		cgm_copy_mono,\
-		cgm_copy_color,\
-		NULL,			/* draw_line */\
-		NULL,			/* get_bits */\
-		cgm_get_params,\
-		cgm_put_params\
-	},\
-	 { 0 },		/* fname */\
-	0,		/* file */\
-	0,		/* st */\
-	0 /*false*/	/* in_picture */\
+          850, 1100, 100, 100, depth, max_value, dither),\
+        {	cgm_open,\
+                NULL,			/* get_initial_matrix */\
+                NULL,			/* sync_output */\
+                cgm_output_page,\
+                cgm_close,\
+                map_rgb_color,\
+                map_color_rgb,\
+                cgm_fill_rectangle,\
+                cgm_tile_rectangle,\
+                cgm_copy_mono,\
+                cgm_copy_color,\
+                NULL,			/* draw_line */\
+                NULL,			/* get_bits */\
+                cgm_get_params,\
+                cgm_put_params\
+        },\
+         { 0 },		/* fname */\
+        0,		/* file */\
+        0,		/* st */\
+        0 /*false*/	/* in_picture */\
 }
 
 gx_device_cgm gs_cgmmono_device =
 cgm_device("cgmmono", 1, 1, 2,
-	   gx_default_map_rgb_color, gx_default_w_b_map_color_rgb);
+           gx_default_map_rgb_color, gx_default_w_b_map_color_rgb);
 
 gx_device_cgm gs_cgm8_device =
 cgm_device("cgm8", 8, 5, 6,
-	   pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
+           pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 
 gx_device_cgm gs_cgm24_device =
 cgm_device("cgm24", 24, 255, 255,
-	   gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+           gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
 /* Define allocator procedures for the CGM library. */
 static void *
@@ -121,13 +121,13 @@ static int
 cgm_error_code(cgm_result result)
 {
     switch (result) {
-	default:
-	case cgm_result_wrong_state:
-	    return gs_error_unknownerror;
-	case cgm_result_out_of_range:
-	    return gs_error_rangecheck;
-	case cgm_result_io_error:
-	    return gs_error_ioerror;
+        default:
+        case cgm_result_wrong_state:
+            return gs_error_unknownerror;
+        case cgm_result_out_of_range:
+            return gs_error_rangecheck;
+        case cgm_result_io_error:
+            return gs_error_ioerror;
     }
 }
 #define check_result(result)\
@@ -148,13 +148,13 @@ cgm_open(gx_device * dev)
 
     cdev->file = fopen(cdev->fname, "wb");
     if (cdev->file == 0)
-	return_error(gs_error_ioerror);
+        return_error(gs_error_ioerror);
     cal.private_data = cdev;
     cal.alloc = cgm_gs_alloc;
     cal.free = cgm_gs_free;
     cdev->st = cgm_initialize(cdev->file, &cal);
     if (cdev->st == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     result = cgm_BEGIN_METAFILE(cdev->st, "", 0);
     check_result(result);
     meta.metafile_version = 1;
@@ -166,16 +166,16 @@ cgm_open(gx_device * dev)
     meta.color_index_precision = 8;
     meta.maximum_color_index = (1L << cdev->color_info.depth) - 1;
     meta.metafile_element_list = elements,
-	meta.metafile_element_list_count = countof(elements) / 2;
+        meta.metafile_element_list_count = countof(elements) / 2;
     result = cgm_set_metafile_elements(cdev->st, &meta,
-				       cgm_set_METAFILE_VERSION |
-				       cgm_set_VDC_TYPE |
-				       cgm_set_INTEGER_PRECISION |
-				       cgm_set_INDEX_PRECISION |
-				       cgm_set_COLOR_PRECISION |
-				       cgm_set_COLOR_INDEX_PRECISION |
-				       cgm_set_MAXIMUM_COLOR_INDEX |
-				       cgm_set_METAFILE_ELEMENT_LIST);
+                                       cgm_set_METAFILE_VERSION |
+                                       cgm_set_VDC_TYPE |
+                                       cgm_set_INTEGER_PRECISION |
+                                       cgm_set_INDEX_PRECISION |
+                                       cgm_set_COLOR_PRECISION |
+                                       cgm_set_COLOR_INDEX_PRECISION |
+                                       cgm_set_MAXIMUM_COLOR_INDEX |
+                                       cgm_set_METAFILE_ELEMENT_LIST);
     check_result(result);
     cdev->in_picture = false;
     return 0;
@@ -188,11 +188,11 @@ cgm_output_page(gx_device * dev, int num_copies, int flush)
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
 
     if (cdev->in_picture) {
-	cgm_result result = cgm_END_PICTURE(cdev->st);
+        cgm_result result = cgm_END_PICTURE(cdev->st);
 
-	check_result(result);
-	cdev->in_picture = false;
-	return gx_finish_output_page(dev, num_copies, flush);
+        check_result(result);
+        cdev->in_picture = false;
+        return gx_finish_output_page(dev, num_copies, flush);
     }
     return 0;
 }
@@ -206,7 +206,7 @@ cgm_close(gx_device * dev)
     cgm_result result;
 
     if (code < 0)
-	return code;
+        return code;
     result = cgm_END_METAFILE(cdev->st);
     check_result(result);
     result = cgm_terminate(cdev->st);
@@ -226,10 +226,10 @@ cgm_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_string ofns;
 
     if (code < 0)
-	return code;
+        return code;
     ofns.data = (const byte *)cdev->fname,
-	ofns.size = strlen(cdev->fname),
-	ofns.persistent = false;
+        ofns.size = strlen(cdev->fname),
+        ofns.persistent = false;
     return param_write_string(plist, "OutputFile", &ofns);
 }
 
@@ -244,42 +244,42 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string ofs;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
-	case 0:
-	    if (dev->LockSafetyParams &&
-		    bytes_compare(ofs.data, ofs.size,
-			(const byte *)cdev->fname, strlen(cdev->fname))) {
-	        ecode = gs_note_error(gs_error_invalidaccess);
-		goto ofe;
-	    }
-	    if (ofs.size >= gp_file_name_sizeof)
-		ecode = gs_error_limitcheck;
-	    else
-		break;
-	    goto ofe;
-	default:
-	    ecode = code;
-	  ofe:param_signal_error(plist, param_name, ecode);
-	case 1:
-	    ofs.data = 0;
-	    break;
+        case 0:
+            if (dev->LockSafetyParams &&
+                    bytes_compare(ofs.data, ofs.size,
+                        (const byte *)cdev->fname, strlen(cdev->fname))) {
+                ecode = gs_note_error(gs_error_invalidaccess);
+                goto ofe;
+            }
+            if (ofs.size >= gp_file_name_sizeof)
+                ecode = gs_error_limitcheck;
+            else
+                break;
+            goto ofe;
+        default:
+            ecode = code;
+          ofe:param_signal_error(plist, param_name, ecode);
+        case 1:
+            ofs.data = 0;
+            break;
     }
 
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gx_default_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     if (ofs.data != 0) {	/* Close the file if it's open. */
-	if (cdev->file != 0) {
-	    fclose(cdev->file);
-	    cdev->file = 0;
-	}
-	memcpy(cdev->fname, ofs.data, ofs.size);
-	cdev->fname[ofs.size] = 0;
-	cdev->file = fopen(cdev->fname, "wb");
-	if (cdev->file == 0)
-	    return_error(gs_error_ioerror);
+        if (cdev->file != 0) {
+            fclose(cdev->file);
+            cdev->file = 0;
+        }
+        memcpy(cdev->fname, ofs.data, ofs.size);
+        cdev->fname[ofs.size] = 0;
+        cdev->file = fopen(cdev->fname, "wb");
+        if (cdev->file == 0)
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -316,48 +316,48 @@ cgm_begin_picture(gx_device_cgm * cdev)
     check_result(result);
     pic.scaling_mode = cgm_scaling_abstract;
     pic.color_selection_mode =
-	(cdev->color_info.depth <= 8 ?
-	 cgm_color_selection_indexed :
-	 cgm_color_selection_direct);
+        (cdev->color_info.depth <= 8 ?
+         cgm_color_selection_indexed :
+         cgm_color_selection_direct);
     pic.line_width_specification_mode = cgm_line_marker_absolute;
     pic.edge_width_specification_mode = cgm_line_marker_absolute;
     cgm_set_rect(pic.vdc_extent, 0, 0, cdev->width, cdev->height);
     result = cgm_set_picture_elements(cdev->st, &pic,
-				      cgm_set_SCALING_MODE |
-				      cgm_set_COLOR_SELECTION_MODE |
-				      cgm_set_LINE_WIDTH_SPECIFICATION_MODE |
-				      cgm_set_EDGE_WIDTH_SPECIFICATION_MODE |
-				      cgm_set_VDC_EXTENT);
+                                      cgm_set_SCALING_MODE |
+                                      cgm_set_COLOR_SELECTION_MODE |
+                                      cgm_set_LINE_WIDTH_SPECIFICATION_MODE |
+                                      cgm_set_EDGE_WIDTH_SPECIFICATION_MODE |
+                                      cgm_set_VDC_EXTENT);
     check_result(result);
     result = cgm_BEGIN_PICTURE_BODY(cdev->st);
     check_result(result);
     result = cgm_VDC_INTEGER_PRECISION(cdev->st,
-				       (cdev->width <= 0x7fff &&
-					cdev->height <= 0x7fff ?
-					16 : sizeof(cdev->width) * 8));
+                                       (cdev->width <= 0x7fff &&
+                                        cdev->height <= 0x7fff ?
+                                        16 : sizeof(cdev->width) * 8));
     check_result(result);
     edge.absolute.integer = 0;
     result = cgm_EDGE_WIDTH(cdev->st, &edge);
     check_result(result);
     if (cdev->color_info.depth <= 8) {
-	cgm_color colors[256];
-	int i;
+        cgm_color colors[256];
+        int i;
 
-	for (i = 0; i < (1 << cdev->color_info.depth); i++) {
-	    gx_color_value rgb[3];
+        for (i = 0; i < (1 << cdev->color_info.depth); i++) {
+            gx_color_value rgb[3];
 
-	    (*dev_proc(cdev, map_color_rgb)) ((gx_device *) cdev,
-					      (gx_color_index) i, rgb);
-	    colors[i].rgb.r =
-		rgb[0] >> (gx_color_value_bits - 8);
-	    colors[i].rgb.g =
-		rgb[1] >> (gx_color_value_bits - 8);
-	    colors[i].rgb.b =
-		rgb[2] >> (gx_color_value_bits - 8);
-	}
-	result = cgm_COLOR_TABLE(cdev->st, 0, colors,
-				 1 << cdev->color_info.depth);
-	check_result(result);
+            (*dev_proc(cdev, map_color_rgb)) ((gx_device *) cdev,
+                                              (gx_color_index) i, rgb);
+            colors[i].rgb.r =
+                rgb[0] >> (gx_color_value_bits - 8);
+            colors[i].rgb.g =
+                rgb[1] >> (gx_color_value_bits - 8);
+            colors[i].rgb.b =
+                rgb[2] >> (gx_color_value_bits - 8);
+        }
+        result = cgm_COLOR_TABLE(cdev->st, 0, colors,
+                                 1 << cdev->color_info.depth);
+        check_result(result);
     }
     cdev->in_picture = true;
     return 0;
@@ -366,34 +366,34 @@ cgm_begin_picture(gx_device_cgm * cdev)
 /* Convert a gx_color_index to a CGM color. */
 static void
 cgm_color_from_color_index(cgm_color * pcc, const gx_device_cgm * cdev,
-			   gx_color_index color)
+                           gx_color_index color)
 {
     if (cdev->color_info.depth <= 8)
-	pcc->index = color;
+        pcc->index = color;
     else {
-	pcc->rgb.r = color >> 16;
-	pcc->rgb.g = (color >> 8) & 255;
-	pcc->rgb.b = color & 255;
+        pcc->rgb.r = color >> 16;
+        pcc->rgb.g = (color >> 8) & 255;
+        pcc->rgb.b = color & 255;
     }
 }
 
 /* Fill a rectangle. */
 static int
 cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		   gx_color_index color)
+                   gx_color_index color)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
     cgm_color fill_color;
     cgm_point points[2];
     cgm_result result;
-    
+
     fit_fill(dev, x, y, w, h);
     if (!cdev->in_picture) {	/* Check for erasepage. */
-	gx_color_value blank[3] = {gx_max_color_value, gx_max_color_value, 
-				   gx_max_color_value};
-	if (color == (*dev_proc(dev, encode_color)) (dev, blank))
-	    return 0;
-	cgm_begin_picture(cdev);
+        gx_color_value blank[3] = {gx_max_color_value, gx_max_color_value,
+                                   gx_max_color_value};
+        if (color == (*dev_proc(dev, encode_color)) (dev, blank))
+            return 0;
+        cgm_begin_picture(cdev);
     }
     cgm_color_from_color_index(&fill_color, cdev, color);
     result = cgm_FILL_COLOR(cdev->st, &fill_color);
@@ -410,8 +410,8 @@ cgm_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Tile a rectangle.  We should do this with a pattern if possible. */
 static int
 cgm_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one,
-		   int px, int py)
+        int x, int y, int w, int h, gx_color_index zero, gx_color_index one,
+                   int px, int py)
 {
 }
 #endif
@@ -425,8 +425,8 @@ cgm_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 /* for the case where we don't know the background color or it isn't white. */
 static int
 cgm_copy_mono(gx_device * dev,
-	      const byte * base, int sourcex, int raster, gx_bitmap_id id,
-	int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
+              const byte * base, int sourcex, int raster, gx_bitmap_id id,
+        int x, int y, int w, int h, gx_color_index zero, gx_color_index one)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
 
@@ -438,33 +438,33 @@ cgm_copy_mono(gx_device * dev,
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     begin_picture(cdev);
     if (zero == 0 && one == 1 && cdev->color_info.depth == 1) {
-	cgm_point pqr[3];
+        cgm_point pqr[3];
 
-	cgm_set_cell_points(pqr, x, y, w, h);
-	result = cgm_CELL_ARRAY(cdev->st, pqr, w, h, 1,
-				cgm_cell_mode_packed,
-				base, sourcex, raster);
-	check_result(result);
+        cgm_set_cell_points(pqr, x, y, w, h);
+        result = cgm_CELL_ARRAY(cdev->st, pqr, w, h, 1,
+                                cgm_cell_mode_packed,
+                                base, sourcex, raster);
+        check_result(result);
     } else {
-	result = cgm_INTERIOR_STYLE(cdev->st, cgm_interior_style_solid);
-	check_result(result);
-	for (iy = 0; iy < h; iy++)
-	    for (ix = 0; ix < w; ix++) {
-		int px = ix + sourcex;
-		const byte *pixel = &base[iy * raster + (px >> 3)];
-		byte mask = 0x80 >> (px & 7);
-		gx_color_index color = (*pixel & mask ? one : zero);
+        result = cgm_INTERIOR_STYLE(cdev->st, cgm_interior_style_solid);
+        check_result(result);
+        for (iy = 0; iy < h; iy++)
+            for (ix = 0; ix < w; ix++) {
+                int px = ix + sourcex;
+                const byte *pixel = &base[iy * raster + (px >> 3)];
+                byte mask = 0x80 >> (px & 7);
+                gx_color_index color = (*pixel & mask ? one : zero);
 
-		if (color != gx_no_color_index) {
-		    cgm_color fill_color;
-		    cgm_point points[2];
+                if (color != gx_no_color_index) {
+                    cgm_color fill_color;
+                    cgm_point points[2];
 
-		    cgm_color_from_color_index(&fill_color, cdev, color);
-		    cgm_set_rect(points, x, y, 1, 1);
-		    result = cgm_RECTANGLE(cdev->st, &points[0], &points[1]);
-		    check_result(result);
-		}
-	    }
+                    cgm_color_from_color_index(&fill_color, cdev, color);
+                    cgm_set_rect(points, x, y, 1, 1);
+                    result = cgm_RECTANGLE(cdev->st, &points[0], &points[1]);
+                    check_result(result);
+                }
+            }
     }
     return 0;
 }
@@ -472,8 +472,8 @@ cgm_copy_mono(gx_device * dev,
 /* Copy a color bitmap. */
 static int
 cgm_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h)
+               const byte * base, int sourcex, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h)
 {
     gx_device_cgm *cdev = (gx_device_cgm *) dev;
     int depth = cdev->color_info.depth;
@@ -482,14 +482,14 @@ cgm_copy_color(gx_device * dev,
     cgm_result result;
 
     if (depth == 1)
-	return cgm_copy_mono(dev, base, sourcex, raster, id,
-			     x, y, w, h,
-			     (gx_color_index) 0, (gx_color_index) 1);
+        return cgm_copy_mono(dev, base, sourcex, raster, id,
+                             x, y, w, h,
+                             (gx_color_index) 0, (gx_color_index) 1);
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     begin_picture(cdev);
     cgm_set_cell_points(pqr, x, y, w, h);
     result = cgm_CELL_ARRAY(cdev->st, pqr, w, h, 0, cgm_cell_mode_packed,
-			    base, source_bit, raster);
+                            base, source_bit, raster);
     check_result(result);
     return 0;
 }

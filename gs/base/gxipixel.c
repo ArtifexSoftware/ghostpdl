@@ -123,7 +123,6 @@ static RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 }
 RELOC_PTRS_END
 
-
 /* Forward declarations */
 static int color_draws_b_w(gx_device * dev,
                             const gx_drawing_color * pdcolor);

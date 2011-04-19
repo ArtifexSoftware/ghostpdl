@@ -40,7 +40,6 @@ static const char
 
 static nl_catd catd = (nl_catd)-1;	/* NLS catalogue descriptor */
 
-
 static void message(int id, const char *s)
 {
   if (catd != (nl_catd)-1) s = catgets(catd, 1, id, s);
@@ -90,7 +89,6 @@ static int cmp_strings(const void *a, const void *b)
   return strncmp((const char *)a, (const char *)b, 3);
 }
 
-
 static int default_interpreter(FILE *in, const pcl_Command *cmd)
 {
   /* Skip over arguments for those commands which are known to have them */
@@ -100,37 +98,37 @@ static int default_interpreter(FILE *in, const pcl_Command *cmd)
       int c;
 
       do {
-	c = fgetc(in);
-	if (c != '@') break;
-	do c = fgetc(in); while (c != EOF && c != '\n');
+        c = fgetc(in);
+        if (c != '@') break;
+        do c = fgetc(in); while (c != EOF && c != '\n');
       } while (c != EOF);
       if (c != EOF) ungetc(c, in);
     }
     else if (cmd->i > 0) {
       static const char with_args[][4] = {
-	/* Must be sorted with respect to cmp_strings() */
-	"&bW",
-	"&iW",
-	"&pX",	/* Transparent Print Mode */
-	"(sW",	/* Download Character */
-	")sW",	/* Create Font */
-	"*bV",	/* Transfer Raster Graphics Data by Plane */
-	"*bW",	/* Transfer Raster Graphics Data by Row */
-	"*dW",	/* Palette Configuration */
-	"*gW",	/* Configure Raster Data */
-	"*oW"};
+        /* Must be sorted with respect to cmp_strings() */
+        "&bW",
+        "&iW",
+        "&pX",	/* Transparent Print Mode */
+        "(sW",	/* Download Character */
+        ")sW",	/* Create Font */
+        "*bV",	/* Transfer Raster Graphics Data by Plane */
+        "*bW",	/* Transfer Raster Graphics Data by Row */
+        "*dW",	/* Palette Configuration */
+        "*gW",	/* Configure Raster Data */
+        "*oW"};
 
       if (bsearch(cmd->chars, with_args,
-	  sizeof(with_args)/sizeof(with_args[0]), sizeof(with_args[0]),
-	  &cmp_strings) != NULL) {
-	int j;
+          sizeof(with_args)/sizeof(with_args[0]), sizeof(with_args[0]),
+          &cmp_strings) != NULL) {
+        int j;
 
-	j = cmd->i;
-	while (j > 0 && fgetc(in) != EOF) j--;
-	if (j > 0) {
-	  message(1, "Premature EOF on input.");
-	  return -1;
-	}
+        j = cmd->i;
+        while (j > 0 && fgetc(in) != EOF) j--;
+        if (j > 0) {
+          message(1, "Premature EOF on input.");
+          return -1;
+        }
       }
     }
   }
@@ -199,7 +197,7 @@ int pcl_scan(FILE *in, pcl_CommandInterpreter interpreter, void *idata,
   catd = catopen("pcltools", 0);
   if (catd == (nl_catd)(-1) && errno != ENOENT)
      /* A system returning ENOENT if no catalogue is available is for example
-	Sun Solaris 2.5. */
+        Sun Solaris 2.5. */
     fprintf(stderr,
       "?-W pclscan: Error trying to open message catalogue: %s.\n",
       strerror(errno));
@@ -210,97 +208,97 @@ int pcl_scan(FILE *in, pcl_CommandInterpreter interpreter, void *idata,
       pcl_Command command;
 
       if ((c = fgetc(in)) == EOF) {
-	rc = -1;
-	message(1, "Premature EOF on input.");
-	break;
+        rc = -1;
+        message(1, "Premature EOF on input.");
+        break;
       }
       command.chars[0] = c;
       if (48 <= c && c <= 126) {
-	/* Two-character escape sequence */
-	command.kind = 2;
-	if (interpreter == NULL ||
-	    (rc = (*interpreter)(in, &command, idata)) > 0)
-	  rc = default_interpreter(in, &command);
+        /* Two-character escape sequence */
+        command.kind = 2;
+        if (interpreter == NULL ||
+            (rc = (*interpreter)(in, &command, idata)) > 0)
+          rc = default_interpreter(in, &command);
       }
       else {
-	int continued;
+        int continued;
 
-	/* Parameterized escape sequence or garbage. The character we've just
-	   read is the "parameterized character" and it should be in the range
-	   33-47. */
+        /* Parameterized escape sequence or garbage. The character we've just
+           read is the "parameterized character" and it should be in the range
+           33-47. */
 
-	/* Now the group character (should be in the range 96-126, but HP uses
-	   sometimes at least '-', which has the value 45) */
-	if ((c = fgetc(in)) == EOF) {
-	  rc = -1;
-	  message(1, "Premature EOF on input.");
-	  break;
-	}
-	command.chars[1] = c;
+        /* Now the group character (should be in the range 96-126, but HP uses
+           sometimes at least '-', which has the value 45) */
+        if ((c = fgetc(in)) == EOF) {
+          rc = -1;
+          message(1, "Premature EOF on input.");
+          break;
+        }
+        command.chars[1] = c;
 
-	continued = 0;
-	do {
-	  /* Now for the value */
-	  if ((c = fgetc(in)) == EOF) {
-	    rc = -1;
-	    message(1, "Premature EOF on input.");
-	    break;
-	  }
-	  if (c == '+' || c == '-' || '0' <= c && c <= '9') {
-	    if (c == '+' || c == '-') command.prefix = c;
-	    else command.prefix = ' ';
-	    ungetc(c, in);
-	    if (fscanf(in, "%d", &command.i) != 1) {
-	      rc = -1;
-	      message(2, "Syntax error in value field.");
-	      break;
-	    }
+        continued = 0;
+        do {
+          /* Now for the value */
+          if ((c = fgetc(in)) == EOF) {
+            rc = -1;
+            message(1, "Premature EOF on input.");
+            break;
+          }
+          if (c == '+' || c == '-' || '0' <= c && c <= '9') {
+            if (c == '+' || c == '-') command.prefix = c;
+            else command.prefix = ' ';
+            ungetc(c, in);
+            if (fscanf(in, "%d", &command.i) != 1) {
+              rc = -1;
+              message(2, "Syntax error in value field.");
+              break;
+            }
 
-	    /* Decimal point? */
-	    if ((c = fgetc(in)) == EOF) {
-	      rc = -1;
-	      message(1, "Premature EOF on input.");
-	      break;
-	    }
-	    command.scale = 0;
-	    command.fraction = 0;
-	    if (c == '.') {
-	      command.scale = 1;
-	      while ((c = fgetc(in)) != EOF && '0' <= c && c <= '9') {
-		command.fraction = command.fraction*10 + (c - '0');
-		command.scale *= 10;
-	      }
-	      if (c == EOF) {
-		rc = -1;
-		message(1, "Premature EOF on input.");
-		break;
-	      }
-	      if (command.prefix == '-') command.fraction = -command.fraction;
-	    }
-	  }
-	  else {
-	    command.prefix = '\0'; /* no value given */
-	    command.i = 0;
-	  }
+            /* Decimal point? */
+            if ((c = fgetc(in)) == EOF) {
+              rc = -1;
+              message(1, "Premature EOF on input.");
+              break;
+            }
+            command.scale = 0;
+            command.fraction = 0;
+            if (c == '.') {
+              command.scale = 1;
+              while ((c = fgetc(in)) != EOF && '0' <= c && c <= '9') {
+                command.fraction = command.fraction*10 + (c - '0');
+                command.scale *= 10;
+              }
+              if (c == EOF) {
+                rc = -1;
+                message(1, "Premature EOF on input.");
+                break;
+              }
+              if (command.prefix == '-') command.fraction = -command.fraction;
+            }
+          }
+          else {
+            command.prefix = '\0'; /* no value given */
+            command.i = 0;
+          }
 
-	  /* Final character */
-	  if (96 <= c && c <= 126) {
-	    /* Parameter character */
-	    command.chars[2] = c - ('a' - 'A');
-	    command.kind = (continued? 6: 4);
-	    continued = 1;
-	  }
-	  else {
-	    /* Termination character (should be in the range 64-94) */
-	    command.chars[2] = c;
-	    command.kind = (continued? 5: 3);
-	    continued = 0;
-	  }
+          /* Final character */
+          if (96 <= c && c <= 126) {
+            /* Parameter character */
+            command.chars[2] = c - ('a' - 'A');
+            command.kind = (continued? 6: 4);
+            continued = 1;
+          }
+          else {
+            /* Termination character (should be in the range 64-94) */
+            command.chars[2] = c;
+            command.kind = (continued? 5: 3);
+            continued = 0;
+          }
 
-	  if (interpreter == NULL ||
-	      (rc = (*interpreter)(in, &command, idata)) > 0)
-	    rc = default_interpreter(in, &command);
-	} while (rc == 0 && continued);
+          if (interpreter == NULL ||
+              (rc = (*interpreter)(in, &command, idata)) > 0)
+            rc = default_interpreter(in, &command);
+        } while (rc == 0 && continued);
       }
     }
     else if (pcl_is_control_code(c)) {
@@ -314,13 +312,13 @@ int pcl_scan(FILE *in, pcl_CommandInterpreter interpreter, void *idata,
       if (c != EOF) ungetc(c, in);
 
       if (interpreter == NULL ||
-	  (rc = (*interpreter)(in, &command, idata)) > 0)
-	rc = default_interpreter(in, &command);
+          (rc = (*interpreter)(in, &command, idata)) > 0)
+        rc = default_interpreter(in, &command);
     }
     else {
       ungetc(c, in);
       if (handler == NULL || (rc = (*handler)(in, hdata)) > 0)
-	rc = default_handler(in);
+        rc = default_handler(in);
     }
   }
 

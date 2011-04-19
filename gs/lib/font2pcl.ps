@@ -1,12 +1,12 @@
 %    Copyright (C) 1993, 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -23,10 +23,10 @@
 % The current transformation matrix defines the font size and orientation.
 
 /WriteResolution? false def	% true=use "resolution bound font" format,
-				% false=use older format
+                                % false=use older format
 
 /LJ4 false def			% true=use LJ4 Typeface code
-				% false=use LJIIP/IID/IIIx Typeface code
+                                % false=use LJIIP/IID/IIIx Typeface code
 
 pcldict begin		% internal procedures
 
@@ -34,8 +34,8 @@ pcldict begin		% internal procedures
  { search { pop pop pop true } { pop false } ifelse
  } def
 
-	% Determine which set of keywords is present in a string.
-	% The last keyword set must be empty.
+        % Determine which set of keywords is present in a string.
+        % The last keyword set must be empty.
 
 /keysearch	% <string> <array of arrays of keywords> keysearch <index>
  { 0 1 2 index length 1 sub
@@ -52,7 +52,7 @@ pcldict begin		% internal procedures
    exch pop length	% invalid index if missing
  } def
 
-	% Determine the device height of a string in quarter-dots.
+        % Determine the device height of a string in quarter-dots.
 
 /charheight		% <string> charheight <int>
  { gsave newpath 0 0 moveto false charpath
@@ -60,7 +60,7 @@ pcldict begin		% internal procedures
    dtransform add abs 4 mul cvi
  } def
 
-	% Compute an integer version of the transformed FontBBox.
+        % Compute an integer version of the transformed FontBBox.
 
 /inflate		% <num> inflate <num>
  { dup 0 gt { ceiling } { floor } ifelse
@@ -71,12 +71,12 @@ pcldict begin		% internal procedures
    4 2 roll transform exch inflate cvi exch inflate cvi
  } def
 
-	% Determine the original font of a possibly transformed font.
-	% Since some badly behaved PostScript files construct transformed
-	% fonts "by hand", we can't just rely on the OrigFont pointers.
-	% Instead, if a font with the given name exists, and if its
-	% entries for FontType and UniqueID match those of the font we
-	% obtain by following the OrigFont chain, we use that font.
+        % Determine the original font of a possibly transformed font.
+        % Since some badly behaved PostScript files construct transformed
+        % fonts "by hand", we can't just rely on the OrigFont pointers.
+        % Instead, if a font with the given name exists, and if its
+        % entries for FontType and UniqueID match those of the font we
+        % obtain by following the OrigFont chain, we use that font.
 
 /origfont
  {  { dup /OrigFont known not { exit } if /OrigFont get } loop
@@ -84,21 +84,20 @@ pcldict begin		% internal procedures
     {		% Stack: origfont namedfont
       1 index /FontType get 1 index /FontType get eq
        { 1 index /UniqueID .knownget
-	  { 1 index /UniqueID .knownget
-	     { eq { exch } if }
-	     { pop }
+          { 1 index /UniqueID .knownget
+             { eq { exch } if }
+             { pop }
             ifelse
-	  }
-	 if
+          }
+         if
        }
       if pop
     }
    if
  } def
 
-
-	% Determine the bounding box of the current device's image.
-	% Free variables: row, zerow.
+        % Determine the bounding box of the current device's image.
+        % Free variables: row, zerow.
 
 /devbbox		% <rw> <rh> devbbox <ymin> <ymax1> <xmin> <xmax1>
  {		% Find top and bottom whitespace.
@@ -116,21 +115,21 @@ pcldict begin		% internal procedures
     }
    loop		% ymin
    exch
-		% Find left and right whitespace.
+                % Find left and right whitespace.
    3 index 0
-		% Stack: rw rh ymin ymax1 xmin xmax1
+                % Stack: rw rh ymin ymax1 xmin xmax1
    3 index 1 4 index 1 sub
     { currentdevice exch row copyscanlines .findzeros
       exch 4 1 roll .max 3 1 roll .min exch
     }
    for		% xmin xmax1
-		% Special check: xmin > xmax1 if height = 0
+                % Special check: xmin > xmax1 if height = 0
    2 copy gt { exch pop dup } if
    6 -2 roll pop pop
 
  } def
 
-	% Write values on outfile.
+        % Write values on outfile.
 
  /w1 { 255 and outfile exch write } def
  /w2 { dup -8 bitshift w1 w1 } def
@@ -211,7 +210,6 @@ pcldict begin		% internal procedures
 
 currentdict readonly end pop		% pcldict
 
-
 % Convert and write a PCL font for the current font and transformation.
 
 % Write the font header.  We split this off only to avoid overflowing
@@ -240,7 +238,7 @@ currentdict readonly end pop		% pcldict
    orientation (Orientation) wbyte
    FontInfo /isFixedPitch .knownget not { false } if
     { 0 } { 1 } ifelse (Spacing) wbyte
-	% Use loop/exit to fake a multiple-exit block.
+        % Use loop/exit to fake a multiple-exit block.
     { Encoding StandardEncoding eq { 10 (J) exit } if
       Encoding ISOLatin1Encoding eq { 11 (J) exit } if
       Encoding SymbolEncoding eq { 19 (M) exit } if
@@ -264,7 +262,7 @@ currentdict readonly end pop		% pcldict
      dup vendor.initials exch get 0 eq
       {		% No vendor in FullName, try Notice
         pop Copyright vendor.keys keysearch
-	dup vendor.initials exch get 0 eq { pop vendor.default.index } if
+        dup vendor.initials exch get 0 eq { pop vendor.default.index } if
       }
      if
      /vendor.index exch def
@@ -326,7 +324,7 @@ currentdict readonly end pop		% pcldict
      /outfile exch def
    matrix currentmatrix dup 4 0 put dup 5 0 put setmatrix
 
-	% Supply some default values so we don't have to check later.
+        % Supply some default values so we don't have to check later.
 
    currentfont /FontInfo known not { /FontInfo 1 dict def } if
    currentfont /FontName known not { /FontName () def } if
@@ -336,7 +334,7 @@ currentdict readonly end pop		% pcldict
       { FontName dup length string cvs }
      if def
 
-	% Determine the original font, and its relationship to this one.
+        % Determine the original font, and its relationship to this one.
 
    /OrigFont currentfont origfont def
    /OrigMatrix OrigFont /FontMatrix get def
@@ -356,7 +354,7 @@ currentdict readonly end pop		% pcldict
    def
    /negY flipY { {neg} } { {} } ifelse def
 
-	% Print debugging information.
+        % Print debugging information.
 
    /CDEBUG where { pop } { /CDEBUG false def } ifelse
    /VDEBUG where { pop } { /VDEBUG false def } ifelse
@@ -374,13 +372,13 @@ currentdict readonly end pop		% pcldict
        } if
       currentfont /ScaleMatrix .knownget { (ScaleMatrix: ) print == } if
       gsave
-	FontMatrix concat
-	(combined matrix: ) print matrix currentmatrix ==
+        FontMatrix concat
+        (combined matrix: ) print matrix currentmatrix ==
       grestore
       flush
     } if
 
-	% Determine the orientation.
+        % Determine the orientation.
 
    ScaleMatrix matrix currentmatrix dup concatmatrix
    0 1 3
@@ -408,8 +406,8 @@ currentdict readonly end pop		% pcldict
     }
    if pop
 
-	% Determine the font metrics, in the PCL character coordinate system,
-	% which has +Y going towards the top of the page.
+        % Determine the font metrics, in the PCL character coordinate system,
+        % which has +Y going towards the top of the page.
 
    gsave
    FontMatrix concat
@@ -433,7 +431,7 @@ currentdict readonly end pop		% pcldict
      /uw uurx ullx sub def
      /uh uury ully sub def
    grestore
-   DEBUG 
+   DEBUG
     { (rmatrix: ) print matrix currentmatrix ==
       (rFontBBox: ) print [rllx rlly rurx rury] ==
       (uFontBBox: ) print [ullx ully uurx uury] ==
@@ -441,29 +439,29 @@ currentdict readonly end pop		% pcldict
     } if
    grestore
 
-	% Disable the character cache, to avoid excessive allocation
-	% and memory sandbars.
+        % Disable the character cache, to avoid excessive allocation
+        % and memory sandbars.
 
    mark cachestatus   /upper exch def
    cleartomark 0 setcachelimit
-   
-	% Write the font header.
+
+        % Write the font header.
 
    writefontheader
 
-	% Establish an image device for rasterizing characters.
+        % Establish an image device for rasterizing characters.
 
    matrix currentmatrix
      dup 4 rminx neg put
      dup 5 rminy neg put
-	% Round the width up to a multiple of 8
-	% so we don't get garbage bits in the last byte of each row.
+        % Round the width up to a multiple of 8
+        % so we don't get garbage bits in the last byte of each row.
    rw 7 add -8 and rh <ff 00> makeimagedevice
      /cdevice exch def
    nulldevice			% prevent page device switching
    cdevice setdevice
 
-	% Rasterize each character in turn.
+        % Rasterize each character in turn.
 
    /raster   rw 7 add 8 idiv   def
    /row   raster string   def
@@ -473,88 +471,88 @@ currentdict readonly end pop		% pcldict
       Encoding cindex get /.notdef ne
        { VDEBUG { Encoding cindex get == flush } if
          erasepage initgraphics
-	 0 0 moveto currentpoint transform add
-	 ( ) dup 0 cindex put show
-	 currentpoint transform add exch sub round cvi
-	   /cwidth exch abs def
-	 rw rh devbbox
-	 VDEBUG
-	  { (image bbox: ) print 4 copy 4 2 roll 4 array astore == flush
-	  } if
-		% Save the device bounding box.
-		% Note that this is in current device coordinates,
-		% not PCL (right-handed) coordinates.
-	 /bqx exch def  /bpx exch def  /bqy exch def  /bpy exch def
-		% Re-render with the character justified to (0,0).
-		% This may be either the lower left or the upper left corner.
-	 bpx neg bpy neg idtransform moveto
-	 erasepage
-	 VDEBUG { (show point: ) print [ currentpoint transform ] == flush } if
-	 ( ) dup 0 cindex put show
-		% Find the bounding box.  Note that xmin and ymin are now 0,
-		% xmax1 = xw, and ymax1 = yh.
-	 rw rh devbbox
-	   /xw exch def
-		% xmin or ymin can be non-zero only if the character is blank.
-	   xw 0 eq
-	    { pop }
-	    { dup 0 ne { (Non-zero xmin! ) print = } { pop } ifelse }
-	   ifelse
-	   /yh exch def
-	   yh 0 eq
-	    { pop }
-	    { dup 0 ne { (Non-zero ymin! ) print = } { pop } ifelse }
-	   ifelse
+         0 0 moveto currentpoint transform add
+         ( ) dup 0 cindex put show
+         currentpoint transform add exch sub round cvi
+           /cwidth exch abs def
+         rw rh devbbox
+         VDEBUG
+          { (image bbox: ) print 4 copy 4 2 roll 4 array astore == flush
+          } if
+                % Save the device bounding box.
+                % Note that this is in current device coordinates,
+                % not PCL (right-handed) coordinates.
+         /bqx exch def  /bpx exch def  /bqy exch def  /bpy exch def
+                % Re-render with the character justified to (0,0).
+                % This may be either the lower left or the upper left corner.
+         bpx neg bpy neg idtransform moveto
+         erasepage
+         VDEBUG { (show point: ) print [ currentpoint transform ] == flush } if
+         ( ) dup 0 cindex put show
+                % Find the bounding box.  Note that xmin and ymin are now 0,
+                % xmax1 = xw, and ymax1 = yh.
+         rw rh devbbox
+           /xw exch def
+                % xmin or ymin can be non-zero only if the character is blank.
+           xw 0 eq
+            { pop }
+            { dup 0 ne { (Non-zero xmin! ) print = } { pop } ifelse }
+           ifelse
+           /yh exch def
+           yh 0 eq
+            { pop }
+            { dup 0 ne { (Non-zero ymin! ) print = } { pop } ifelse }
+           ifelse
 
-	 /xbw xw 7 add 8 idiv def
-	 /xright raster 8 mul xw sub def
-		% Write the Character Code command.
-	 outfile (\033*c) writestring
-	 outfile cindex write==only
-	 outfile (E) writestring
-	 	% Write the Character Definition command.
-	 outfile (\033\(s) writestring
-	 yh xbw mul 16 add
-	 outfile exch write=only
-		% Record the character position for the .PCM file.
-	 /cfpos outfile fileposition 1 add def
-	 outfile (W\004\000\016\001) writestring
-	 orientation (Orientation) wbyte 0 (Reserved) wbyte
-	 rminx bpx add r0x sub (Left Offset) wword
-	 flipY { rminy bpy add neg } { rminy bqy add } ifelse r0y sub
-	   (Top Offset) wword
-	 xw (Character Width) wword
-	 yh (Character Height) wword
-	 cwidth orientation 2 ge { neg } if 4 mul (Delta X) wword
-		% Write the character data.
-	 flipY { 0 1 yh 1 sub } { yh 1 sub -1 0 } ifelse
-	  { cdevice exch row copyscanlines
-	    0 xbw getinterval
-	    CDEBUG
-	     { dup
-	        { 8
-		   { dup 128 ge { (+) } { (.) } ifelse print
-		     127 and 1 bitshift
-		   }
-		  repeat pop
-	        }
-	       forall (\n) print
-	     }
-	    if
-	    outfile exch writestring
-	  }
-	 for
+         /xbw xw 7 add 8 idiv def
+         /xright raster 8 mul xw sub def
+                % Write the Character Code command.
+         outfile (\033*c) writestring
+         outfile cindex write==only
+         outfile (E) writestring
+                % Write the Character Definition command.
+         outfile (\033\(s) writestring
+         yh xbw mul 16 add
+         outfile exch write=only
+                % Record the character position for the .PCM file.
+         /cfpos outfile fileposition 1 add def
+         outfile (W\004\000\016\001) writestring
+         orientation (Orientation) wbyte 0 (Reserved) wbyte
+         rminx bpx add r0x sub (Left Offset) wword
+         flipY { rminy bpy add neg } { rminy bqy add } ifelse r0y sub
+           (Top Offset) wword
+         xw (Character Width) wword
+         yh (Character Height) wword
+         cwidth orientation 2 ge { neg } if 4 mul (Delta X) wword
+                % Write the character data.
+         flipY { 0 1 yh 1 sub } { yh 1 sub -1 0 } ifelse
+          { cdevice exch row copyscanlines
+            0 xbw getinterval
+            CDEBUG
+             { dup
+                { 8
+                   { dup 128 ge { (+) } { (.) } ifelse print
+                     127 and 1 bitshift
+                   }
+                  repeat pop
+                }
+               forall (\n) print
+             }
+            if
+            outfile exch writestring
+          }
+         for
        }
        { /bpx 0 def   /bpy 0 def   /bqx 0 def   /bqy 0 def
-	 /cwidth 0 def
-	 /cfpos 0 def
+         /cwidth 0 def
+         /cfpos 0 def
        }
       ifelse
 
     }
    for
 
-	% Wrap up.
+        % Wrap up.
 
    upper setcachelimit
    outfile closefile

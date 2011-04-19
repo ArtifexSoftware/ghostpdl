@@ -1,12 +1,12 @@
 %    Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -63,9 +63,9 @@ systemdict /.setsafe known { .setsafe } if
 % scan through for media sizes, keep them in the dictionary
    FirstPage 1 LastPage {
       pdfgetpage /MediaBox pget pop   % MediaBox is a required attribute
-      aload pop 
+      aload pop
       3 -1 roll sub 3 1 roll exch sub exch
-      2 array astore 
+      2 array astore
       aload 3 1 roll 10 string cvs exch 10 string cvs
       (x) 3 -1 roll concatstrings concatstrings cvn
       MediaTypes 3 1 roll exch put
@@ -91,13 +91,13 @@ systemdict /.setsafe known { .setsafe } if
    if
    % This is really supposed to be sorted by frequency of usage...
    (%%DocumentMedia: )
-   MediaTypes { 
+   MediaTypes {
       exch pop
       1 index puts
       (y) puts dup 1 get DSCstring cvs puts
-      (x) puts dup 0 get DSCstring cvs puts 
+      (x) puts dup 0 get DSCstring cvs puts
       ( ) puts dup 0 get DSCstring cvs puts
-      ( ) puts 1 get DSCstring cvs puts 
+      ( ) puts 1 get DSCstring cvs puts
       ( 70 white ()\n) puts
       pop (%%+ )
    } forall
@@ -222,9 +222,9 @@ systemdict /.setsafe known { .setsafe } if
        dup pdfgetpage
        dup /MediaBox pget pop
          (%%PageMedia: y) puts
-	 aload pop 3 -1 roll sub DSCstring cvs puts
-	 (x) puts exch sub DSCstring cvs puts
-	 (\n) puts
+         aload pop 3 -1 roll sub DSCstring cvs puts
+         (x) puts exch sub DSCstring cvs puts
+         (\n) puts
        dup /CropBox pget {
          (%%PageBoundingBox: ) puts
          {DSCfile exch write=only ( ) puts} forall

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -52,10 +52,10 @@
 
 /* If pcs is NULL, it means undo any substitution. */
 int gs_setsubstitutecolorspace(gs_state *pgs, gs_color_space_index csi,
-			       const gs_color_space *pcs);
+                               const gs_color_space *pcs);
 const gs_color_space *
     gs_currentsubstitutecolorspace(const gs_state *pgs,
-				   gs_color_space_index csi);
+                                   gs_color_space_index csi);
 
 /*
  * The following procedures are primarily for internal use, to provide

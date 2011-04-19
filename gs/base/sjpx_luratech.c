@@ -145,7 +145,7 @@ s_jpxd_write_data(unsigned char * pucData,
             if (state->bpc == 4) {
                 int even = ulNum & ~1;
                 dst = &state->image[state->stride * ulRow + ulStart/2];
-                for (i = 0; i < even; i += 2) 
+                for (i = 0; i < even; i += 2)
                     *dst++ = pucData[i] << 4 | pucData[i+1];
                 if (ulNum & 1)
                     *dst++ = pucData[ulNum - 1] << 4;
@@ -172,8 +172,8 @@ s_jpxd_write_data(unsigned char * pucData,
             int i;
             unsigned char *dst = &state->image[state->stride * ulRow + ulStart/2];
             int even = ulNum & ~1;
-            
-            for (i = 0; i < even; i+=2) 
+
+            for (i = 0; i < even; i+=2)
                 *dst++ = pucData[i] << 4 | pucData[i+1];
                 if (ulNum & 1)
                     *dst++ = pucData[ulNum - 1] << 4;
@@ -225,7 +225,7 @@ s_jpxd_write_data(unsigned char * pucData,
 }
 
 /* convert state->image from YCrCb to RGBa */
-static int 
+static int
 s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
 {
     int i, y, x;
@@ -353,7 +353,7 @@ s_jpxd_init(stream_state * ss)
 static int
 s_jpxd_set_defaults(stream_state * ss) {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
-   
+
     state->alpha = false;
     state->image_is_indexed = false;
     return 0;
@@ -597,7 +597,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
                 state->stride = (state->width * max(1, state->ncomp) * real_bpc + 7) / 8;
                 state->image = malloc(state->stride*state->height);
             }
-            if (state->image == NULL) 
+            if (state->image == NULL)
                 return ERRC;
             if (state->ncomp == 0) /* make fully opaque mask */
                 memset(state->image, 255, state->stride*state->height);
@@ -639,9 +639,9 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
             pw->ptr += available;
             /* more output to deliver? */
             if (state->offset == state->stride*state->height)
-		return EOFC;
-	    else
-		return 1;
+                return EOFC;
+            else
+                return 1;
         }
     }
 
@@ -676,8 +676,6 @@ const stream_template s_jpxd_template = {
     s_jpxd_release,
     s_jpxd_set_defaults
 };
-
-
 
 /*** encode support **/
 
@@ -954,7 +952,6 @@ s_jpxe_process(stream_state *ss, stream_cursor_read *pr,
         dlprintf1("Luratech JP2 error %d setting compressed output callback parameter.\n", (int)err);
         return ERRC;
     }
-
 
     if (in_size > 0) {
         /* allocate our input buffer if necessary */

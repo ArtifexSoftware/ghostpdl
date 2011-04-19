@@ -116,9 +116,9 @@ typedef struct gs_client_order_ht_procs_s {
      */
 
     int (*create_order) (gx_ht_order * porder,
-			 gs_state * pgs,
-			 const gs_client_order_halftone * phcop,
-			 gs_memory_t * mem);
+                         gs_state * pgs,
+                         const gs_client_order_halftone * phcop,
+                         gs_memory_t * mem);
 
 } gs_client_order_ht_procs_t;
 struct gs_client_order_halftone_s {
@@ -138,10 +138,10 @@ typedef struct gs_halftone_component_s {
     int cname;
     gs_halftone_type type;
     union {
-	gs_spot_halftone spot;	/* Type 1 */
-	gs_threshold_halftone threshold;	/* Type 3 */
-	gs_threshold2_halftone threshold2;	/* Extended Type 3 */
-	gs_client_order_halftone client_order;	/* client order */
+        gs_spot_halftone spot;	/* Type 1 */
+        gs_threshold_halftone threshold;	/* Type 3 */
+        gs_threshold2_halftone threshold2;	/* Extended Type 3 */
+        gs_client_order_halftone client_order;	/* client order */
     } params;
 } gs_halftone_component;
 
@@ -164,7 +164,7 @@ typedef struct gs_multiple_halftone_s {
     gs_halftone_component *components;
     uint num_comp;
     int (*get_colorname_string)(const gs_memory_t *mem, gs_separation_name colorname_index,
-		unsigned char **ppstr, unsigned int *pname_size);
+                unsigned char **ppstr, unsigned int *pname_size);
 } gs_multiple_halftone;
 
 #define st_multiple_halftone_max_ptrs 1
@@ -182,13 +182,13 @@ struct gs_halftone_s {
     gs_halftone_type type;
     rc_header rc;
     union {
-	gs_screen_halftone screen;	/* setscreen */
-	gs_colorscreen_halftone colorscreen;	/* setcolorscreen */
-	gs_spot_halftone spot;	/* Type 1 */
-	gs_threshold_halftone threshold;	/* Type 3 */
-	gs_threshold2_halftone threshold2;	/* Extended Type 3 */
-	gs_client_order_halftone client_order;	/* client order */
-	gs_multiple_halftone multiple;	/* Type 5 */
+        gs_screen_halftone screen;	/* setscreen */
+        gs_colorscreen_halftone colorscreen;	/* setcolorscreen */
+        gs_spot_halftone spot;	/* Type 1 */
+        gs_threshold_halftone threshold;	/* Type 3 */
+        gs_threshold2_halftone threshold2;	/* Extended Type 3 */
+        gs_client_order_halftone client_order;	/* client order */
+        gs_multiple_halftone multiple;	/* Type 5 */
     } params;
 };
 
@@ -199,8 +199,8 @@ extern_st(st_halftone);
 #define st_halftone_max_ptrs\
   max(max(st_screen_halftone_max_ptrs, st_colorscreen_halftone_max_ptrs),\
       max(max(st_spot_halftone_max_ptrs, st_threshold_halftone_max_ptrs),\
-	  max(st_client_order_halftone_max_ptrs,\
-	      st_multiple_halftone_max_ptrs)))
+          max(st_client_order_halftone_max_ptrs,\
+              st_multiple_halftone_max_ptrs)))
 
 /* Procedural interface for AccurateScreens */
 
@@ -218,7 +218,7 @@ bool gs_currentusewts(gs_memory_t *);
 
 /* Initiate screen sampling with optional AccurateScreens. */
 int gs_screen_init_memory(gs_screen_enum *, gs_state *,
-			  gs_screen_halftone *, bool, gs_memory_t *);
+                          gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_init_accurate(penum, pgs, phsp, accurate)\
   gs_screen_init_memory(penum, pgs, phsp, accurate, pgs->memory)

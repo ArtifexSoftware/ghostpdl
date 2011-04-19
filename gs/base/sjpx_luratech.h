@@ -76,9 +76,9 @@ typedef struct stream_jpxe_state_s {
 
     /* the following members can be optionally set by the caller: */
     unsigned int quality;       /* compressed image quality target; 1-100
-					leave unset for the default */
+                                        leave unset for the default */
     int lossless;		/* set to 1 to specify lossless image
-					compression; overrides quality */
+                                        compression; overrides quality */
 
     /* the remainder are handled internally: */
     unsigned int components;	/* number of image channels */

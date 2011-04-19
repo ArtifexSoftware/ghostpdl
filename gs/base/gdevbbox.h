@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -95,16 +95,16 @@ dev_bbox_proc_add_rect(bbox_default_add_rect);
 dev_bbox_proc_in_rect(bbox_default_in_rect);
 
 #define gx_device_bbox_common\
-	gx_device_forward_common;\
-	bool free_standing;\
-	bool forward_open_close;\
-	gx_device_bbox_procs_t box_procs;\
-	void *box_proc_data;\
-	bool white_is_opaque;\
-	/* The following are updated dynamically. */\
-	gs_fixed_rect bbox;\
-	gx_color_index black, white;\
-	gx_color_index transparent /* white or gx_no_color_index */
+        gx_device_forward_common;\
+        bool free_standing;\
+        bool forward_open_close;\
+        gx_device_bbox_procs_t box_procs;\
+        void *box_proc_data;\
+        bool white_is_opaque;\
+        /* The following are updated dynamically. */\
+        gs_fixed_rect bbox;\
+        gx_color_index black, white;\
+        gx_color_index transparent /* white or gx_no_color_index */
 typedef struct gx_device_bbox_s gx_device_bbox;
 #define gx_device_bbox_common_initial(fs, foc, wio)\
   0 /* target */,\
@@ -125,11 +125,11 @@ void gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *
 
 /* Set whether a bounding box device propagates open/close to its target. */
 void gx_device_bbox_fwd_open_close(gx_device_bbox * dev,
-				   bool forward_open_close);
+                                   bool forward_open_close);
 
 /* Set whether a bounding box device considers white to be opaque. */
 void gx_device_bbox_set_white_opaque(gx_device_bbox *dev,
-				     bool white_is_opaque);
+                                     bool white_is_opaque);
 
 /* Read back the bounding box in 1/72" units. */
 void gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox);

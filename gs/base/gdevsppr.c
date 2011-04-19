@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -60,13 +60,13 @@ prn_device(prn_sparc_procs,
 static int
 sparc_open(gx_device *pdev)
 {	/* Change the margins according to the paper size. */
-	const float *m;
-	static const float m_a4[4] = { SPARC_MARGINS_A4 };
-	static const float m_letter[4] = { SPARC_MARGINS_LETTER };
+        const float *m;
+        static const float m_a4[4] = { SPARC_MARGINS_A4 };
+        static const float m_letter[4] = { SPARC_MARGINS_LETTER };
 
-	m = (pdev->height / pdev->y_pixels_per_inch >= 11.1 ? m_a4 : m_letter);
-	gx_device_set_margins(pdev, m, true);
-	return gdev_prn_open(pdev);
+        m = (pdev->height / pdev->y_pixels_per_inch >= 11.1 ? m_a4 : m_letter);
+        gx_device_set_margins(pdev, m, true);
+        return gdev_prn_open(pdev);
 }
 
 char *errmsg[]={
@@ -140,38 +140,38 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
     switch (lpvierr.err_type)
       {
       case 0:
-	if (warning==0)
+        if (warning==0)
           {
           errprintf(pdev->memory,
                     "sparc_print_page: Printer Problem with unknown reason...");
           dflush();
           warning=1;
           }
-	sleep(5);
-	break;
+        sleep(5);
+        break;
       case ENGWARN:
-	errprintf(pdev->memory,
+        errprintf(pdev->memory,
                   "sparc_print_page: Printer-Warning: %s...",
                   err_code_string(lpvierr.err_code));
-	dflush();
-	warning=1;
-	sleep(5);
-	break;
+        dflush();
+        warning=1;
+        sleep(5);
+        break;
       case ENGFATL:
-	errprintf(pdev->memory,
+        errprintf(pdev->memory,
                   "sparc_print_page: Printer-Fatal: %s\n",
                   err_code_string(lpvierr.err_code));
-	return -1;
+        return -1;
       case EDRVR:
-	errprintf(pdev->memory,
+        errprintf(pdev->memory,
                   "sparc_print_page: Interface/driver error: %s\n",
                   err_code_string(lpvierr.err_code));
-	return -1;
+        return -1;
       default:
-	errprintf(pdev->memory,
+        errprintf(pdev->memory,
                   "sparc_print_page: Unknown err_type=%d(err_code=%d)\n",
                   lpvierr.err_type,lpvierr.err_code);
-	return -1;
+        return -1;
       }
     }
   if (warning==1)

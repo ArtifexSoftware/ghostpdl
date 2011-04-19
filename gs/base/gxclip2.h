@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,9 +36,9 @@ typedef gx_device_mask_clip gx_device_tile_clip;
  * We supply an explicit phase.
  */
 int tile_clip_initialize(gx_device_tile_clip * cdev,
-			 const gx_strip_bitmap * tiles,
-			 gx_device * tdev, int px, int py,
-			 gs_memory_t *mem);
+                         const gx_strip_bitmap * tiles,
+                         gx_device * tdev, int px, int py,
+                         gs_memory_t *mem);
 
 /*
  * Set the phase of the tile -- used in the tiling loop when

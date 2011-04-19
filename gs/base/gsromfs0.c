@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -17,4 +17,4 @@
 #include "stdint_.h"
 
     uint32_t *gs_romfs[] = {
-	0 };
+        0 };

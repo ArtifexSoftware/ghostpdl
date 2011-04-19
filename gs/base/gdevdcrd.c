@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,7 +37,7 @@ static const gs_range3 bit_RangePQR = {
 static const float dent_PQR = 1.0;
 static int
 bit_TransformPQR_proc(int index, floatp in, const gs_cie_wbsd * pwbsd,
-		      gs_cie_render * pcrd, float *out)
+                      gs_cie_render * pcrd, float *out)
 {
     *out = DENT(in, dent_PQR);
     return 0;
@@ -105,68 +105,68 @@ static const gs_cie_render_table_t bit_RenderTable = {	/* dummy */
  */
 int
 sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
-			     const char *crd_param_name)
+                             const char *crd_param_name)
 {
     int ecode = 0;
 
     if (param_requested(plist, "CRDName") > 0) {
-	gs_param_string cns;
-	int code;
+        gs_param_string cns;
+        int code;
 
-	cns.data = (const byte *)crd_param_name;
-	cns.size = strlen(crd_param_name);
-	cns.persistent = true;
-	code = param_write_string(plist, "CRDName", &cns);
-	if (code < 0)
-	    ecode = code;
+        cns.data = (const byte *)crd_param_name;
+        cns.size = strlen(crd_param_name);
+        cns.persistent = true;
+        code = param_write_string(plist, "CRDName", &cns);
+        if (code < 0)
+            ecode = code;
     }
     if (param_requested(plist, crd_param_name) > 0) {
-	gs_cie_render *pcrd;
-	int code = gs_cie_render1_build(&pcrd, pdev->memory,
-					"sample_device_crd_get_params");
-	if (code >= 0) {
-	    gs_cie_transform_proc3 tpqr;
+        gs_cie_render *pcrd;
+        int code = gs_cie_render1_build(&pcrd, pdev->memory,
+                                        "sample_device_crd_get_params");
+        if (code >= 0) {
+            gs_cie_transform_proc3 tpqr;
 
-	    tpqr = bit_TransformPQR;
-	    tpqr.driver_name = pdev->dname;
-	    code = gs_cie_render1_initialize(pdev->memory, pcrd, NULL,
-			&bit_WhitePoint, NULL /*BlackPoint*/,
-			NULL /*MatrixPQR*/, &bit_RangePQR, &tpqr,
-			NULL /*MatrixLMN*/, &bit_EncodeLMN, &bit_RangeLMN,
-			&bit_MatrixABC, &bit_EncodeABC, NULL /*RangeABC*/,
-			&bit_RenderTable);
-	    if (code >= 0) {
-		code = param_write_cie_render1(plist, crd_param_name, pcrd,
-					       pdev->memory);
-	    }
-	    rc_decrement(pcrd, "sample_device_crd_get_params"); /* release */
-	}
-	if (code < 0)
-	    ecode = code;
+            tpqr = bit_TransformPQR;
+            tpqr.driver_name = pdev->dname;
+            code = gs_cie_render1_initialize(pdev->memory, pcrd, NULL,
+                        &bit_WhitePoint, NULL /*BlackPoint*/,
+                        NULL /*MatrixPQR*/, &bit_RangePQR, &tpqr,
+                        NULL /*MatrixLMN*/, &bit_EncodeLMN, &bit_RangeLMN,
+                        &bit_MatrixABC, &bit_EncodeABC, NULL /*RangeABC*/,
+                        &bit_RenderTable);
+            if (code >= 0) {
+                code = param_write_cie_render1(plist, crd_param_name, pcrd,
+                                               pdev->memory);
+            }
+            rc_decrement(pcrd, "sample_device_crd_get_params"); /* release */
+        }
+        if (code < 0)
+            ecode = code;
     }
     if (param_requested(plist, bit_TransformPQR.proc_name) > 0) {
-	/*
-	 * We definitely do not recommend the following use of a static
-	 * to hold the address: this is a shortcut.
-	 */
-	gs_cie_transform_proc my_proc = bit_TransformPQR_proc;
-	byte *my_addr = gs_alloc_string(pdev->memory, sizeof(my_proc),
-					"sd_crd_get_params(proc)");
-	int code;
+        /*
+         * We definitely do not recommend the following use of a static
+         * to hold the address: this is a shortcut.
+         */
+        gs_cie_transform_proc my_proc = bit_TransformPQR_proc;
+        byte *my_addr = gs_alloc_string(pdev->memory, sizeof(my_proc),
+                                        "sd_crd_get_params(proc)");
+        int code;
 
-	if (my_addr == 0)
-	    code = gs_note_error(gs_error_VMerror);
-	else {
-	    gs_param_string as;
+        if (my_addr == 0)
+            code = gs_note_error(gs_error_VMerror);
+        else {
+            gs_param_string as;
 
-	    memcpy(my_addr, &my_proc, sizeof(my_proc));
-	    as.data = my_addr;
-	    as.size = sizeof(my_proc);
-	    as.persistent = true;
-	    code = param_write_string(plist, bit_TransformPQR.proc_name, &as);
-	}
-	if (code < 0)
-	    ecode = code;
+            memcpy(my_addr, &my_proc, sizeof(my_proc));
+            as.data = my_addr;
+            as.size = sizeof(my_proc);
+            as.persistent = true;
+            code = param_write_string(plist, bit_TransformPQR.proc_name, &as);
+        }
+        if (code < 0)
+            ecode = code;
     }
     return ecode;
 }

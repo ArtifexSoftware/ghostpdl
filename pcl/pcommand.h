@@ -35,7 +35,7 @@ typedef ulong uint32;
 
 typedef enum {
   pcv_none = 0,
-	/* The following masks merge together: */
+        /* The following masks merge together: */
   pcv_int = 1,
   pcv_float = 2,
   pcv_neg = 4,
@@ -50,9 +50,9 @@ typedef enum {
 #define value_is_signed(pv)\
   ((pv)->type & (pcv_neg | pcv_pos))
 typedef struct pcl_value_s {
-	pcl_value_type_t type;
-	uint i;			/* integer part */
-	float fraction;
+        pcl_value_type_t type;
+        uint i;			/* integer part */
+        float fraction;
 } pcl_value_t;
 #define value_set_uint(pv, ui)\
   ((pv)->type = pcv_int, (pv)->i = (ui))
@@ -235,12 +235,12 @@ typedef enum {
 } pcl_copy_operation_t;
 /* Define the structure for per-module implementation procedures. */
 typedef struct pcl_init_s {
-	/* Register commands */
+        /* Register commands */
     int (*do_registration)(pcl_parser_state_t *pcl_parser_state,
                            gs_memory_t *mem);
-	/* Initialize state at startup, printer reset, and other times. */
+        /* Initialize state at startup, printer reset, and other times. */
     void (*do_reset)(pcl_state_t *pcs, pcl_reset_type_t type);
-	/* Partially copy the state for macro call, overlay, and exit. */
+        /* Partially copy the state for macro call, overlay, and exit. */
     int (*do_copy)(pcl_state_t *psaved, const pcl_state_t *pcs,
                    pcl_copy_operation_t operation);
 } pcl_init_t;

@@ -72,7 +72,6 @@ clist_setup_render_threads(gx_device *dev, int y)
         return_error(gs_error_VMerror);
     }
 
-
     memset(crdev->render_threads, 0, crdev->num_render_threads *
             sizeof(clist_render_thread_control_t));
     crdev->main_thread_data = cdev->data;               /* save data area */
@@ -154,7 +153,7 @@ clist_setup_render_threads(gx_device *dev, int y)
             code = devn_copy_params(dev, (gx_device*) ncdev);
             if (code < 0) return_error(gs_error_VMerror);
         }
-        /* A question is, can the clist instances share the device profile.  
+        /* A question is, can the clist instances share the device profile.
            Only doing reads of this from different threads */
         ncdev->device_icc_profile = cdev->device_icc_profile;
         rc_increment(ncdev->device_icc_profile);
@@ -298,7 +297,7 @@ clist_teardown_render_threads(gx_device *dev)
             gdev_prn_free_memory((gx_device *)thread_cdev);
             /* Decrement the rc count on the icc profile */
             rc_decrement(thread_cdev->device_icc_profile,"clist_teardown_render_threads");
-            /* Free the device copy this thread used.  Note that the 
+            /* Free the device copy this thread used.  Note that the
                deviceN stuff if was allocated and copied earlier for the device
                will be freed with this call */
             gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");

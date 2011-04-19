@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,13 +16,13 @@
 
 /***
      This file holds a byte-Implementation of the Floyd-Steinberg error
-     diffusion-algorithm. This algorithm is an alternative for high quality 
+     diffusion-algorithm. This algorithm is an alternative for high quality
      printing in conjunction with the PostScript-Header stcolor.ps:
 
           gs -sDEVICE=stcolor -sDithering=fs2 <other options> stcolor.ps ...
 
      THIS ALGORIHM WAS WRITTEN BY STEVEN SINGER (S.Singer@ph.surrey.ac.uk)
-     AS PART OF escp2cfs2. 
+     AS PART OF escp2cfs2.
      THIS IMPLEMENTATION INCORPORATES ONLY FEW CHANGES TO THE ORIGINAL CODE.
 
  ***/
@@ -30,7 +30,7 @@
 #include "gdevstc.h"
 
 /*
- * escp2c_pick best scans for best matching color 
+ * escp2c_pick best scans for best matching color
  */
 static byte *
 escp2c_pick_best(byte *col)
@@ -60,15 +60,15 @@ escp2c_pick_best(byte *col)
     z = col[2];
     for(n=8; n--; )
     {
-	dx = x - colour[n][0];
-	dy = y - colour[n][1];
-	dz = z - colour[n][2];
-	d = dx*(dx-(dy>>1)) + dy*(dy-(dz>>1)) + dz*(dz-(dx>>1));
-	if (d < md)
-	{
-	    md = d;
-	    p = n;
-	}
+        dx = x - colour[n][0];
+        dy = y - colour[n][1];
+        dz = z - colour[n][2];
+        d = dx*(dx-(dy>>1)) + dy*(dy-(dz>>1)) + dz*(dz-(dx>>1));
+        if (d < md)
+        {
+            md = d;
+            p = n;
+        }
     }
 */
 
@@ -120,7 +120,6 @@ escp2c_conv_stc(byte *p, byte *q, int i)
         *q++ = (*p & RED) | (p[1] & GREEN) | (p[2] & BLUE);
 }
 
-
 /*
  * Limit byte-values
  */
@@ -130,7 +129,7 @@ escp2c_conv_stc(byte *p, byte *q, int i)
 /*
  * Main routine of the algorithm
  */
-int 
+int
 stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
 {
    int fullcolor_line_size = npixel*3;
@@ -155,117 +154,115 @@ stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
     p = buf;
     if (*p != 0 || memcmp((char *) p, (char *) p + 1, fullcolor_line_size - 1))
     {
-	for(p = in, q=buf, i=fullcolor_line_size;
-	    i--; p++, q++ )
-	{
-	    j = *p + ((*q & 128) ? *q - 256 : *q);
-	    LIMIT(j);
-	    *p = j;
-	}
+        for(p = in, q=buf, i=fullcolor_line_size;
+            i--; p++, q++ )
+        {
+            j = *p + ((*q & 128) ? *q - 256 : *q);
+            LIMIT(j);
+            *p = j;
+        }
     }
 
     p = in;
 
-	fb = below[2];
-	b = below[1];
-	bb = below[0];
-	*b = b[1] = b[2] = *bb = bb[1] = bb[2] = 0;
+        fb = below[2];
+        b = below[1];
+        bb = below[0];
+        *b = b[1] = b[2] = *bb = bb[1] = bb[2] = 0;
 
-	if (dir)
-	{
-	    for(p = in, q=buf-3,
-		i=fullcolor_line_size; i; i-=3)
-	    {
-		cp = escp2c_pick_best(p);
-		for(i2=3; i2--; p++, q++, fb++, b++, bb++)
-		{
-		    j = *p;
-		    *p = *cp++;
-		    j -= *p;
-		    if (j != 0)
-		    {
-			l = (e = (j>>1)) - (*fb = (j>>4));
-			if (i > 2)
-			{
-			    k = p[3] + l;
-			    LIMIT(k);
-			    p[3] = k;
-			}
-			*b += e - (l = (j>>2) - *fb);
-			if (i < fullcolor_line_size)
-			{
-			    l += *bb;
-			    LIMIT2(l);
-			    *q = l;
-			}
-		    }
-		    else
-			*fb = 0;
-		}
-		tb = bb-3;
-		bb = b-3;
-		b = fb-3;
-		fb = tb;
-	    }
-	    *q = *bb;
-	    q[1] = bb[1];
-	    q[2] = bb[2];
-	    dir = 0;
-	}
-	else
-	{
-	    for(p = in+fullcolor_line_size-1,
-		q = buf+fullcolor_line_size+2, i=fullcolor_line_size; 
+        if (dir)
+        {
+            for(p = in, q=buf-3,
+                i=fullcolor_line_size; i; i-=3)
+            {
+                cp = escp2c_pick_best(p);
+                for(i2=3; i2--; p++, q++, fb++, b++, bb++)
+                {
+                    j = *p;
+                    *p = *cp++;
+                    j -= *p;
+                    if (j != 0)
+                    {
+                        l = (e = (j>>1)) - (*fb = (j>>4));
+                        if (i > 2)
+                        {
+                            k = p[3] + l;
+                            LIMIT(k);
+                            p[3] = k;
+                        }
+                        *b += e - (l = (j>>2) - *fb);
+                        if (i < fullcolor_line_size)
+                        {
+                            l += *bb;
+                            LIMIT2(l);
+                            *q = l;
+                        }
+                    }
+                    else
+                        *fb = 0;
+                }
+                tb = bb-3;
+                bb = b-3;
+                b = fb-3;
+                fb = tb;
+            }
+            *q = *bb;
+            q[1] = bb[1];
+            q[2] = bb[2];
+            dir = 0;
+        }
+        else
+        {
+            for(p = in+fullcolor_line_size-1,
+                q = buf+fullcolor_line_size+2, i=fullcolor_line_size;
                 i; i-=3)
-	    {
-		cp = escp2c_pick_best(p-2) + 2;
-		for(i2=3; i2--; p--, q--, fb++, b++, bb++)
-		{
-		    j = *p;
-		    *p = *cp--;
-		    j -= *p;
-		    if (j != 0)
-		    {
-			l = (e = (j>>1)) - (*fb = (j>>4));
-			if (i > 2)
-			{
-			    k = p[-3] + l;
-			    LIMIT(k);
-			    p[-3] = k;
-			}
-			*b += e - (l = (j>>2) - *fb);
-			if (i < fullcolor_line_size)
-			{
-			    l += *bb;
-			    LIMIT2(l);
-			    *q = l;
-			}
-		    }
-		    else
-			*fb = 0;
-		}
-		tb = bb-3;
-		bb = b-3;
-		b = fb-3;
-		fb = tb;
-	    }
-	    *q = *bb;
-	    q[1] = bb[1];
-	    q[2] = bb[2];
-	    dir = 1;
-	}
-	
+            {
+                cp = escp2c_pick_best(p-2) + 2;
+                for(i2=3; i2--; p--, q--, fb++, b++, bb++)
+                {
+                    j = *p;
+                    *p = *cp--;
+                    j -= *p;
+                    if (j != 0)
+                    {
+                        l = (e = (j>>1)) - (*fb = (j>>4));
+                        if (i > 2)
+                        {
+                            k = p[-3] + l;
+                            LIMIT(k);
+                            p[-3] = k;
+                        }
+                        *b += e - (l = (j>>2) - *fb);
+                        if (i < fullcolor_line_size)
+                        {
+                            l += *bb;
+                            LIMIT2(l);
+                            *q = l;
+                        }
+                    }
+                    else
+                        *fb = 0;
+                }
+                tb = bb-3;
+                bb = b-3;
+                b = fb-3;
+                fb = tb;
+            }
+            *q = *bb;
+            q[1] = bb[1];
+            q[2] = bb[2];
+            dir = 1;
+        }
+
     escp2c_conv_stc(in, out, fullcolor_line_size);
 
 /*    ------------------------------------------------------------------- */
       }                        /* buffer-reset | dithering                */
 /*    ------------------------------------------------------------------- */
 
-
 /* ============================================================= */
    } else {          /* npixel <= 0 -> initialisation            */
 /* ============================================================= */
-
 
 /*
  * check wether the number of components is valid

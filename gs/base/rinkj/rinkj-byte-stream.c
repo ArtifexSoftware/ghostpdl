@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -48,7 +48,6 @@ rinkj_byte_stream_printf (RinkjByteStream *bs, const char *fmt, ...)
   return rinkj_byte_stream_write (bs, str, len);
 }
 
-
 int
 rinkj_byte_stream_close (RinkjByteStream *bs)
 {
@@ -87,9 +86,9 @@ rinkj_byte_stream_file_write (RinkjByteStream *self, const char *buf, int size)
 #endif
       status = fwrite (buf, 1, size, z->f);
       if (status == size)
-	return 0;
+        return 0;
       else
-	return -1;
+        return -1;
     }
 }
 

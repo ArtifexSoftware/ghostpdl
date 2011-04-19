@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Miscellaneous utilities for Ghostscript library */
 
-
 /*
  * In order to capture the original definition of sqrt, which might be
  * either a procedure or a macro and might not have an ANSI-compliant
@@ -253,7 +252,6 @@ gs_return_check_interrupt(const gs_memory_t *mem, int code)
     }
 }
 
-
 int gs_throw_imp(const char *func, const char *file, int line, int op, int code, const char *fmt, ...)
 {
     char msg[1024];
@@ -271,7 +269,6 @@ int gs_throw_imp(const char *func, const char *file, int line, int op, int code,
            * return code;
            */
     }
-
 
     /* throw */
     if (op == 0)
@@ -315,7 +312,6 @@ const char *gs_errstr(int code)
     case gs_error_Fatal: return "Fatal";
     }
 }
-
 
 /* ------ Substitutes for missing C library functions ------ */
 

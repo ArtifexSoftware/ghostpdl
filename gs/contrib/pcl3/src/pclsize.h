@@ -1,7 +1,7 @@
 /******************************************************************************
   File:     $Id: pclsize.h,v 1.7 2000/11/19 07:05:17 Martin Rel $
   Contents: Header file for maps between PCL Page Size codes and size
-	    information
+            information
   Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
             Germany. E-mail: Martin.Lottermoser@t-online.de.
 

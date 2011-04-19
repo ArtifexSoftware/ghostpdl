@@ -1,12 +1,12 @@
 %    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -55,20 +55,20 @@
       pop pop
     } {
       dup type /dicttype eq {
-		% Save a copy of this dictionary in global VM.
-	dup maxlength dict .copydict readonly
+                % Save a copy of this dictionary in global VM.
+        dup maxlength dict .copydict readonly
       } {
-	pop pop
+        pop pop
       } ifelse
     } ifelse
   } forall .dicttomark readonly put
-		% Create localdicts for the current context.
+                % Create localdicts for the current context.
   //false .setglobal
   userdict /localdicts mark savedlocaldicts {
     pop dup load
   } forall /internaldict dup load
   .dicttomark readonly put
-		% Save a copy of the initial gstate.
+                % Save a copy of the initial gstate.
   //true .setglobal
   //systemdict /savedinitialgstate gstate readonly put
   .setglobal
@@ -79,8 +79,8 @@
 % having systemdict point to dictionaries that are in a non-current
 % local VM.  Because of this, we turn off garbage collection temporarily.
 /.copylocal {		% <name> <dict> .copylocal <name> <dict'>
-		% Copy a dictionary to the current (local) VM,
-		% and make it read-only if its current definition is.
+                % Copy a dictionary to the current (local) VM,
+                % and make it read-only if its current definition is.
   dup maxlength dict .copydict
   1 index load wcheck not { readonly } if
 } .bind def
@@ -90,41 +90,41 @@
   -2 vmreclaim
   .currentglobal //systemdict begin
   //false .setglobal
-		% Since localdicts doesn't exist yet, references from
-		% systemdict to local objects won't get restored if
-		% a context switch happens in this code.  Therefore,
-		% until localdicts is defined, we have to keep all our
-		% state on the operand stack.
+                % Since localdicts doesn't exist yet, references from
+                % systemdict to local objects won't get restored if
+                % a context switch happens in this code.  Therefore,
+                % until localdicts is defined, we have to keep all our
+                % state on the operand stack.
 
-		% Acquire userdict.
-		%****** WRONG IF NON-STANDARD INITIAL DSTACK ******
+                % Acquire userdict.
+                %****** WRONG IF NON-STANDARD INITIAL DSTACK ******
   countdictstack array dictstack
    { dup gcheck not { exit } if pop } forall
-		% Create localdicts with a local copy of each dictionary,
-		% except for userdict and userparams, which just need
-		% to be filled in.
+                % Create localdicts with a local copy of each dictionary,
+                % except for userdict and userparams, which just need
+                % to be filled in.
   mark savedlocaldicts {
     1 index /userdict eq {
-		% Stack: userdict mark ... /userdict inituserdict
+                % Stack: userdict mark ... /userdict inituserdict
       counttomark 1 add index .copydict
     } {
       1 index /userparams eq {
-		% Stack: userdict mark ... /userparams inituserparams
-	userparams .copydict
+                % Stack: userdict mark ... /userparams inituserparams
+        userparams .copydict
       } {
-	.copylocal
+        .copylocal
       } ifelse
     } ifelse
   } forall /internaldict dup .makeinternaldict .makeoperator
   .dicttomark readonly /localdicts exch put
-		% localdicts is now defined in userdict.
-		% Copy the definitions into systemdict.
+                % localdicts is now defined in userdict.
+                % Copy the definitions into systemdict.
   localdicts { .forcedef } forall
-		% Set the user parameters.
+                % Set the user parameters.
   userparams readonly .setuserparams
-		% Establish the initial gstate(s).
+                % Establish the initial gstate(s).
   /savedinitialgstate .systemvar setgstate gsave
-		% Wrap up.
+                % Wrap up.
   end .setglobal
 } odef
 
@@ -138,8 +138,8 @@
 % The .localfork operator does all the work, but we must ensure that
 % .initlocaldicts gets called when the new context starts up.
 /localfork {			% <mark> <obj1> ... <objN> <proc>
-				%   <stdin|null> <stdout|null>
-				%   localfork <context>
+                                %   <stdin|null> <stdout|null>
+                                %   localfork <context>
   .currentglobal //true .setglobal 3 index
   dup .proccheck not {
     pop .setglobal /localfork .systemvar /typecheck signalerror
@@ -153,7 +153,7 @@
 % userparams dictionary for the context, but we still need to initialize
 % this dictionary when the new context starts up.
 /.postfork {		% - .postfork -
-	% Initialize the user parameters.
+        % Initialize the user parameters.
   savedlocaldicts /userparams get userparams .copydict readonly pop
 } odef
 /fork {			% <mark> <obj1> ... <objN> <proc> fork <context>
@@ -219,6 +219,6 @@ currentdict /.wtdict .undef
 % ------ View clipping ------ %
 
 /rectviewclip {			% <x> <y> <width> <height> rectviewclip -
-				% <numarray|numstring> rectviewclip -
+                                % <numarray|numstring> rectviewclip -
   newpath .rectappend viewclip
 } odef

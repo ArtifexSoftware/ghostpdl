@@ -19,9 +19,9 @@ static void svg_fill(svg_context_t *ctx)
 {
     svg_set_fill_color(ctx);
     if (ctx->fill_rule == 0)
-	gs_eofill(ctx->pgs);
+        gs_eofill(ctx->pgs);
     else
-	gs_fill(ctx->pgs);
+        gs_fill(ctx->pgs);
 }
 
 static void svg_stroke(svg_context_t *ctx)
@@ -58,37 +58,37 @@ svg_parse_rect(svg_context_t *ctx, svg_item_t *node)
     if (ry_att) ry = svg_parse_length(ry_att, ctx->viewbox_height, 12);
 
     if (rx_att && !ry_att)
-	ry = rx;
+        ry = rx;
     if (ry_att && !rx_att)
-	rx = ry;
+        rx = ry;
     if (rx > w * 0.5)
-	rx = w * 0.5;
+        rx = w * 0.5;
     if (ry > h * 0.5)
-	ry = h * 0.5;
+        ry = h * 0.5;
 
     if (w <= 0 || h <= 0)
-	return 0;
+        return 0;
 
     /* TODO: we need elliptical arcs to draw rounded corners */
 
     if (ctx->fill_is_set)
     {
-	gs_moveto(ctx->pgs, x, y);
-	gs_lineto(ctx->pgs, x + w, y);
-	gs_lineto(ctx->pgs, x + w, y + h);
-	gs_lineto(ctx->pgs, x, y + h);
-	gs_closepath(ctx->pgs);
-	svg_fill(ctx);
+        gs_moveto(ctx->pgs, x, y);
+        gs_lineto(ctx->pgs, x + w, y);
+        gs_lineto(ctx->pgs, x + w, y + h);
+        gs_lineto(ctx->pgs, x, y + h);
+        gs_closepath(ctx->pgs);
+        svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	gs_moveto(ctx->pgs, x, y);
-	gs_lineto(ctx->pgs, x + w, y);
-	gs_lineto(ctx->pgs, x + w, y + h);
-	gs_lineto(ctx->pgs, x, y + h);
-	gs_closepath(ctx->pgs);
-	svg_stroke(ctx);
+        gs_moveto(ctx->pgs, x, y);
+        gs_lineto(ctx->pgs, x + w, y);
+        gs_lineto(ctx->pgs, x + w, y + h);
+        gs_lineto(ctx->pgs, x, y + h);
+        gs_closepath(ctx->pgs);
+        svg_stroke(ctx);
     }
 
     return 0;
@@ -112,28 +112,28 @@ svg_parse_circle(svg_context_t *ctx, svg_item_t *node)
     if (r_att) r = svg_parse_length(r_att, ctx->viewbox_size, 12);
 
     if (r <= 0)
-	return 0;
+        return 0;
 
     if (ctx->fill_is_set)
     {
-	gs_moveto(ctx->pgs, cx + r, cy);
-	gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
-	gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
-	gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
-	gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
-	gs_closepath(ctx->pgs);
-	svg_fill(ctx);
+        gs_moveto(ctx->pgs, cx + r, cy);
+        gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
+        gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
+        gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
+        gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
+        gs_closepath(ctx->pgs);
+        svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	gs_moveto(ctx->pgs, cx + r, cy);
-	gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
-	gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
-	gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
-	gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
-	gs_closepath(ctx->pgs);
-	svg_stroke(ctx);
+        gs_moveto(ctx->pgs, cx + r, cy);
+        gs_arcn(ctx->pgs, cx, cy, r, 0, 90);
+        gs_arcn(ctx->pgs, cx, cy, r, 90, 180);
+        gs_arcn(ctx->pgs, cx, cy, r, 180, 270);
+        gs_arcn(ctx->pgs, cx, cy, r, 270, 360);
+        gs_closepath(ctx->pgs);
+        svg_stroke(ctx);
     }
 
     return 0;
@@ -160,19 +160,19 @@ svg_parse_ellipse(svg_context_t *ctx, svg_item_t *node)
     if (ry_att) ry = svg_parse_length(ry_att, ctx->viewbox_height, 12);
 
     if (rx <= 0 || ry <= 0)
-	return 0;
+        return 0;
 
     /* TODO: we need elliptic arcs */
 
 #if 0
     if (ctx->fill_is_set)
     {
-	svg_fill(ctx);
+        svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	svg_stroke(ctx);
+        svg_stroke(ctx);
     }
 #endif
 
@@ -201,10 +201,10 @@ svg_parse_line(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->stroke_is_set)
     {
-	gs_moveto(ctx->pgs, x1, y1);
-	gs_lineto(ctx->pgs, x2, y2);
+        gs_moveto(ctx->pgs, x1, y1);
+        gs_lineto(ctx->pgs, x2, y2);
 
-	svg_stroke(ctx);
+        svg_stroke(ctx);
     }
 
     return 0;
@@ -221,38 +221,38 @@ svg_parse_polygon_imp(svg_context_t *ctx, svg_item_t *node, int doclose)
     int isfirst;
 
     if (!str)
-	return 0;
+        return 0;
 
     isfirst = 1;
     nargs = 0;
 
     while (*str)
     {
-	while (svg_is_whitespace_or_comma(*str))
-	    str ++;
+        while (svg_is_whitespace_or_comma(*str))
+            str ++;
 
-	if (svg_is_digit(*str))
-	{
-	    numberlen = 0;
-	    while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
-		number[numberlen++] = *str++;
-	    number[numberlen] = 0;
-	    args[nargs++] = atof(number);
-	}
+        if (svg_is_digit(*str))
+        {
+            numberlen = 0;
+            while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
+                number[numberlen++] = *str++;
+            number[numberlen] = 0;
+            args[nargs++] = atof(number);
+        }
 
-	if (nargs == 2)
-	{
-	    if (isfirst)
-	    {
-		gs_moveto(ctx->pgs, args[0], args[1]);
-		isfirst = 0;
-	    }
-	    else
-	    {
-		gs_lineto(ctx->pgs, args[0], args[1]);
-	    }
-	    nargs = 0;
-	}
+        if (nargs == 2)
+        {
+            if (isfirst)
+            {
+                gs_moveto(ctx->pgs, args[0], args[1]);
+                isfirst = 0;
+            }
+            else
+            {
+                gs_lineto(ctx->pgs, args[0], args[1]);
+            }
+            nargs = 0;
+        }
     }
 
     return 0;
@@ -265,8 +265,8 @@ svg_parse_polyline(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->stroke_is_set)
     {
-	svg_parse_polygon_imp(ctx, node, 0);
-	svg_stroke(ctx);
+        svg_parse_polygon_imp(ctx, node, 0);
+        svg_stroke(ctx);
     }
 
     return 0;
@@ -279,14 +279,14 @@ svg_parse_polygon(svg_context_t *ctx, svg_item_t *node)
 
     if (ctx->fill_is_set)
     {
-	svg_parse_polygon_imp(ctx, node, 1);
-	svg_fill(ctx);
+        svg_parse_polygon_imp(ctx, node, 1);
+        svg_fill(ctx);
     }
 
     if (ctx->stroke_is_set)
     {
-	svg_parse_polygon_imp(ctx, node, 1);
-	svg_stroke(ctx);
+        svg_parse_polygon_imp(ctx, node, 1);
+        svg_stroke(ctx);
     }
 
     return 0;
@@ -316,264 +316,263 @@ svg_parse_path_data(svg_context_t *ctx, char *str)
 
     while (*str)
     {
-	while (svg_is_whitespace_or_comma(*str))
-	    str ++;
+        while (svg_is_whitespace_or_comma(*str))
+            str ++;
 
-	if (svg_is_digit(*str))
-	{
-	    numberlen = 0;
-	    while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
-		number[numberlen++] = *str++;
-	    number[numberlen] = 0;
-	    if (nargs == 6)
-		return gs_throw(-1, "stack overflow in path data");
-	    args[nargs++] = atof(number);
-	}
-	else if (svg_is_alpha(*str))
-	{
-	    cmd = *str++;
-	}
-	else if (*str == 0)
-	{
-	    return 0;
-	}
-	else
-	{
-	    return gs_throw1(-1, "syntax error in path data: '%c'", *str);
-	}
+        if (svg_is_digit(*str))
+        {
+            numberlen = 0;
+            while (svg_is_digit(*str) && numberlen < sizeof(number) - 1)
+                number[numberlen++] = *str++;
+            number[numberlen] = 0;
+            if (nargs == 6)
+                return gs_throw(-1, "stack overflow in path data");
+            args[nargs++] = atof(number);
+        }
+        else if (svg_is_alpha(*str))
+        {
+            cmd = *str++;
+        }
+        else if (*str == 0)
+        {
+            return 0;
+        }
+        else
+        {
+            return gs_throw1(-1, "syntax error in path data: '%c'", *str);
+        }
 
-	if (reset_smooth)
-	{
-	    smooth_x = 0.0;
-	    smooth_y = 0.0;
-	}
+        if (reset_smooth)
+        {
+            smooth_x = 0.0;
+            smooth_y = 0.0;
+        }
 
-	reset_smooth = 1;
+        reset_smooth = 1;
 
-	switch (cmd)
-	{
-	case 'M':
-	    if (nargs == 2)
-	    {
-		// dprintf2("moveto %g %g\n", args[0], args[1]);
-		gs_moveto(ctx->pgs, args[0], args[1]);
-		nargs = 0;
-		cmd = 'L'; /* implicit lineto after */
-	    }
-	    break;
+        switch (cmd)
+        {
+        case 'M':
+            if (nargs == 2)
+            {
+                // dprintf2("moveto %g %g\n", args[0], args[1]);
+                gs_moveto(ctx->pgs, args[0], args[1]);
+                nargs = 0;
+                cmd = 'L'; /* implicit lineto after */
+            }
+            break;
 
-	case 'm':
-	    if (nargs == 2)
-	    {
-		// dprintf2("rmoveto %g %g\n", args[0], args[1]);
-		gs_rmoveto(ctx->pgs, args[0], args[1]);
-		nargs = 0;
-		cmd = 'l'; /* implicit lineto after */
-	    }
-	    break;
+        case 'm':
+            if (nargs == 2)
+            {
+                // dprintf2("rmoveto %g %g\n", args[0], args[1]);
+                gs_rmoveto(ctx->pgs, args[0], args[1]);
+                nargs = 0;
+                cmd = 'l'; /* implicit lineto after */
+            }
+            break;
 
+        case 'Z':
+        case 'z':
+            if (nargs == 0)
+            {
+                // dprintf("closepath\n");
+                gs_closepath(ctx->pgs);
+            }
+            break;
 
-	case 'Z':
-	case 'z':
-	    if (nargs == 0)
-	    {
-		// dprintf("closepath\n");
-		gs_closepath(ctx->pgs);
-	    }
-	    break;
+        case 'L':
+            if (nargs == 2)
+            {
+                // dprintf2("lineto %g %g\n", args[0], args[1]);
+                gs_lineto(ctx->pgs, args[0], args[1]);
+                nargs = 0;
+            }
+            break;
 
-	case 'L':
-	    if (nargs == 2)
-	    {
-		// dprintf2("lineto %g %g\n", args[0], args[1]);
-		gs_lineto(ctx->pgs, args[0], args[1]);
-		nargs = 0;
-	    }
-	    break;
+        case 'l':
+            if (nargs == 2)
+            {
+                // dprintf2("rlineto %g %g\n", args[0], args[1]);
+                gs_rlineto(ctx->pgs, args[0], args[1]);
+                nargs = 0;
+            }
+            break;
 
-	case 'l':
-	    if (nargs == 2)
-	    {
-		// dprintf2("rlineto %g %g\n", args[0], args[1]);
-		gs_rlineto(ctx->pgs, args[0], args[1]);
-		nargs = 0;
-	    }
-	    break;
+        case 'H':
+            if (nargs == 1)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                // dprintf1("hlineto %g\n", args[0]);
+                gs_lineto(ctx->pgs, args[0], pt.y);
+                nargs = 0;
+            }
+            break;
 
-	case 'H':
-	    if (nargs == 1)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		// dprintf1("hlineto %g\n", args[0]);
-		gs_lineto(ctx->pgs, args[0], pt.y);
-		nargs = 0;
-	    }
-	    break;
+        case 'h':
+            if (nargs == 1)
+            {
+                // dprintf1("rhlineto %g\n", args[0]);
+                gs_rlineto(ctx->pgs, args[0], 0.0);
+                nargs = 0;
+            }
+            break;
 
-	case 'h':
-	    if (nargs == 1)
-	    {
-		// dprintf1("rhlineto %g\n", args[0]);
-		gs_rlineto(ctx->pgs, args[0], 0.0);
-		nargs = 0;
-	    }
-	    break;
+        case 'V':
+            if (nargs == 1)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                // dprintf1("vlineto %g\n", args[0]);
+                gs_lineto(ctx->pgs, pt.x, args[0]);
+                nargs = 0;
+            }
+            break;
 
-	case 'V':
-	    if (nargs == 1)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		// dprintf1("vlineto %g\n", args[0]);
-		gs_lineto(ctx->pgs, pt.x, args[0]);
-		nargs = 0;
-	    }
-	    break;
+        case 'v':
+            if (nargs == 1)
+            {
+                // dprintf1("rvlineto %g\n", args[0]);
+                gs_rlineto(ctx->pgs, 0.0, args[0]);
+                nargs = 0;
+            }
+            break;
 
-	case 'v':
-	    if (nargs == 1)
-	    {
-		// dprintf1("rvlineto %g\n", args[0]);
-		gs_rlineto(ctx->pgs, 0.0, args[0]);
-		nargs = 0;
-	    }
-	    break;
+        case 'C':
+            reset_smooth = 0;
+            if (nargs == 6)
+            {
+                gs_curveto(ctx->pgs, args[0], args[1], args[2], args[3], args[4], args[5]);
+                smooth_x = args[4] - args[2];
+                smooth_y = args[5] - args[3];
+                nargs = 0;
+            }
+            break;
 
-	case 'C':
-	    reset_smooth = 0;
-	    if (nargs == 6)
-	    {
-		gs_curveto(ctx->pgs, args[0], args[1], args[2], args[3], args[4], args[5]);
-		smooth_x = args[4] - args[2];
-		smooth_y = args[5] - args[3];
-		nargs = 0;
-	    }
-	    break;
+        case 'c':
+            reset_smooth = 0;
+            if (nargs == 6)
+            {
+                gs_rcurveto(ctx->pgs, args[0], args[1], args[2], args[3], args[4], args[5]);
+                smooth_x = args[4] - args[2];
+                smooth_y = args[5] - args[3];
+                nargs = 0;
+            }
+            break;
 
-	case 'c':
-	    reset_smooth = 0;
-	    if (nargs == 6)
-	    {
-		gs_rcurveto(ctx->pgs, args[0], args[1], args[2], args[3], args[4], args[5]);
-		smooth_x = args[4] - args[2];
-		smooth_y = args[5] - args[3];
-		nargs = 0;
-	    }
-	    break;
+        case 'S':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                gs_curveto(ctx->pgs,
+                        pt.x + smooth_x, pt.y + smooth_y,
+                        args[0], args[1],
+                        args[2], args[3]);
+                smooth_x = args[2] - args[0];
+                smooth_y = args[3] - args[1];
+                nargs = 0;
+            }
+            break;
 
-	case 'S':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		gs_curveto(ctx->pgs,
-			pt.x + smooth_x, pt.y + smooth_y,
-			args[0], args[1],
-			args[2], args[3]);
-		smooth_x = args[2] - args[0];
-		smooth_y = args[3] - args[1];
-		nargs = 0;
-	    }
-	    break;
+        case 's':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                gs_curveto(ctx->pgs,
+                        pt.x + smooth_x, pt.y + smooth_y,
+                        pt.x + args[0], pt.y + args[1],
+                        pt.x + args[2], pt.y + args[3]);
+                smooth_x = args[2] - args[0];
+                smooth_y = args[3] - args[1];
+                nargs = 0;
+            }
+            break;
 
-	case 's':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		gs_curveto(ctx->pgs,
-			pt.x + smooth_x, pt.y + smooth_y,
-			pt.x + args[0], pt.y + args[1],
-			pt.x + args[2], pt.y + args[3]);
-		smooth_x = args[2] - args[0];
-		smooth_y = args[3] - args[1];
-		nargs = 0;
-	    }
-	    break;
+        case 'Q':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = args[0];
+                y1 = args[1];
+                x2 = args[2];
+                y2 = args[3];
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+                nargs = 0;
+            }
+            break;
 
-	case 'Q':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		x1 = args[0];
-		y1 = args[1];
-		x2 = args[2];
-		y2 = args[3];
-		gs_curveto(ctx->pgs,
-			(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-			(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-			x2, y2);
-		smooth_x = x2 - x1;
-		smooth_y = y2 - y1;
-		nargs = 0;
-	    }
-	    break;
+        case 'q':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = args[0] + pt.x;
+                y1 = args[1] + pt.y;
+                x2 = args[2] + pt.x;
+                y2 = args[3] + pt.y;
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+                nargs = 0;
+            }
+            break;
 
-	case 'q':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		x1 = args[0] + pt.x;
-		y1 = args[1] + pt.y;
-		x2 = args[2] + pt.x;
-		y2 = args[3] + pt.y;
-		gs_curveto(ctx->pgs,
-			(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-			(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-			x2, y2);
-		smooth_x = x2 - x1;
-		smooth_y = y2 - y1;
-		nargs = 0;
-	    }
-	    break;
+        case 'T':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = pt.x + smooth_x;
+                y1 = pt.y + smooth_y;
+                x2 = args[0];
+                y2 = args[1];
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+                nargs = 0;
+            }
+            break;
 
-	case 'T':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		x1 = pt.x + smooth_x;
-		y1 = pt.y + smooth_y;
-		x2 = args[0];
-		y2 = args[1];
-		gs_curveto(ctx->pgs,
-			(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-			(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-			x2, y2);
-		smooth_x = x2 - x1;
-		smooth_y = y2 - y1;
-		nargs = 0;
-	    }
-	    break;
+        case 't':
+            reset_smooth = 0;
+            if (nargs == 4)
+            {
+                gs_currentpoint(ctx->pgs, &pt);
+                x1 = pt.x + smooth_x;
+                y1 = pt.y + smooth_y;
+                x2 = args[0] + pt.x;
+                y2 = args[1] + pt.y;
+                gs_curveto(ctx->pgs,
+                        (pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
+                        (x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
+                        x2, y2);
+                smooth_x = x2 - x1;
+                smooth_y = y2 - y1;
+                nargs = 0;
+            }
+            break;
 
-	case 't':
-	    reset_smooth = 0;
-	    if (nargs == 4)
-	    {
-		gs_currentpoint(ctx->pgs, &pt);
-		x1 = pt.x + smooth_x;
-		y1 = pt.y + smooth_y;
-		x2 = args[0] + pt.x;
-		y2 = args[1] + pt.y;
-		gs_curveto(ctx->pgs,
-			(pt.x + 2 * x1) / 3, (pt.y + 2 * y1) / 3,
-			(x2 + 2 * x1) / 3, (y2 + 2 * y1) / 3,
-			x2, y2);
-		smooth_x = x2 - x1;
-		smooth_y = y2 - y1;
-		nargs = 0;
-	    }
-	    break;
+        case 0:
+            if (nargs != 0)
+                return gs_throw(-1, "path data must begin with a command");
+            break;
 
-	case 0:
-	    if (nargs != 0)
-		return gs_throw(-1, "path data must begin with a command");
-	    break;
-
-	default:
-	    return gs_throw1(-1, "unrecognized command in path data: '%c'", cmd);
-	}
+        default:
+            return gs_throw1(-1, "unrecognized command in path data: '%c'", cmd);
+        }
     }
 
     return 0;
@@ -589,17 +588,17 @@ svg_parse_path(svg_context_t *ctx, svg_item_t *node)
 
     if (d_att)
     {
-	if (ctx->fill_is_set)
-	{
-	    svg_parse_path_data(ctx, d_att);
-	    svg_fill(ctx);
-	}
+        if (ctx->fill_is_set)
+        {
+            svg_parse_path_data(ctx, d_att);
+            svg_fill(ctx);
+        }
 
-	if (ctx->stroke_is_set)
-	{
-	    svg_parse_path_data(ctx, d_att);
-	    svg_stroke(ctx);
-	}
+        if (ctx->stroke_is_set)
+        {
+            svg_parse_path_data(ctx, d_att);
+            svg_stroke(ctx);
+        }
     }
 
     return 0;

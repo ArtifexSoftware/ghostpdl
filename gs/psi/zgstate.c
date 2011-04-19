@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,10 +40,10 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
     int code = real_param(op, &param);
 
     if (code < 0)
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     code = set_proc(igs, param);
     if (!code)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -114,11 +114,11 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
     gs_state *pgs = gs_state_alloc((gs_memory_t *)lmem);
 
     iigs = gs_alloc_struct((gs_memory_t *)lmem, int_gstate, &st_int_gstate,
-			   "int_gstate_alloc(int_gstate)");
+                           "int_gstate_alloc(int_gstate)");
     int_gstate_map_refs(iigs, make_null);
     make_empty_array(&iigs->dash_pattern_array, a_all);
     gs_alloc_ref_array(lmem, &proc0, a_readonly + a_executable, 2,
-		       "int_gstate_alloc(proc0)");
+                       "int_gstate_alloc(proc0)");
     make_oper(proc0.value.refs, 0, zpop);
     make_real(proc0.value.refs + 1, 0.0);
     iigs->black_generation = proc0;
@@ -130,8 +130,8 @@ int_gstate_alloc(const gs_dual_memory_t * dmem)
      * global VM so that the gstate can be copied into global VM.
      */
     prci = gs_alloc_struct((gs_memory_t *)gmem, int_remap_color_info_t,
-			   &st_int_remap_color_info,
-			   "int_gstate_alloc(remap color info)");
+                           &st_int_remap_color_info,
+                           "int_gstate_alloc(remap color info)");
     make_struct(&iigs->remap_color_info, imemory_space(gmem), prci);
     clear_pagedevice(iigs);
     gs_state_set_client(pgs, iigs, &istate_procs, true);
@@ -185,19 +185,19 @@ static int
 zsetlinewidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-	/*
-	 * The Red Book doesn't say anything about this, but Adobe
-	 * interpreters return (or perhaps store) the absolute value
-	 * of the width.
-	 */
+        /*
+         * The Red Book doesn't say anything about this, but Adobe
+         * interpreters return (or perhaps store) the absolute value
+         * of the width.
+         */
     double width;
     int code = real_param(op, &width);
 
     if (code < 0)
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     code = gs_setlinewidth(igs, fabs(width));
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -221,7 +221,7 @@ zsetlinecap(i_ctx_t *i_ctx_p)
     int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinecap(igs, (gs_line_cap) param)) < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -246,7 +246,7 @@ zsetlinejoin(i_ctx_t *i_ctx_p)
     int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinejoin(igs, (gs_line_join) param)) < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -293,30 +293,30 @@ zsetdash(i_ctx_t *i_ctx_p)
     float *pattern;
 
     if (code < 0)
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     if (!r_is_array(op1))
-	return_op_typecheck(op1);
+        return_op_typecheck(op1);
     /* Adobe interpreters apparently don't check the array for */
     /* read access, so we won't either. */
     /*check_read(*op1); */
     /* Unpack the dash pattern and check it */
     n = r_size(op1);
     pattern =
-	(float *)gs_alloc_byte_array(mem, n, sizeof(float), "setdash");
+        (float *)gs_alloc_byte_array(mem, n, sizeof(float), "setdash");
 
     if (pattern == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     for (i = 0, code = 0; i < n && code >= 0; ++i) {
-	ref element;
+        ref element;
 
-	array_get(mem, op1, (long)i, &element);
-	code = float_param(&element, &pattern[i]);
+        array_get(mem, op1, (long)i, &element);
+        code = float_param(&element, &pattern[i]);
     }
     if (code >= 0)
-	code = gs_setdash(igs, pattern, n, offset);
+        code = gs_setdash(igs, pattern, n, offset);
     gs_free_object(mem, pattern, "setdash");	/* gs_setdash copies this */
     if (code < 0)
-	return code;
+        return code;
     ref_assign(&istate->dash_pattern_array, op1);
     pop(2);
     return code;
@@ -377,10 +377,10 @@ zsetcurvejoin(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < -1 || op->value.intval > max_int)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     code = gs_setcurvejoin(igs, (int)op->value.intval);
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -405,10 +405,10 @@ zsetfilladjust2(i_ctx_t *i_ctx_p)
     int code = num_params(op, 2, adjust);
 
     if (code < 0)
-	return code;
+        return code;
     code = gs_setfilladjust(igs, adjust[0], adjust[1]);
     if (code < 0)
-	return code;
+        return code;
     pop(2);
     return 0;
 }
@@ -450,11 +450,11 @@ zsetdotlength(i_ctx_t *i_ctx_p)
     int code = real_param(op - 1, &length);
 
     if (code < 0)
-	return code;
+        return code;
     check_type(*op, t_boolean);
     code = gs_setdotlength(igs, length, op->value.boolval);
     if (code < 0)
-	return code;
+        return code;
     pop(2);
     return 0;
 }

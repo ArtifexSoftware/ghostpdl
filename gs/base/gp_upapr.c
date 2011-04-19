@@ -1,6 +1,6 @@
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,7 @@
 /* ------ Default paper size ------ */
 
 /* Get the default paper size.  See gp_paper.h for details. */
-int 
+int
 gp_defaultpapersize(char *ptr, int *plen)
 {
 #ifdef USE_LIBPAPER
@@ -36,38 +36,36 @@ gp_defaultpapersize(char *ptr, int *plen)
     paperinit();
 
     paper = systempapername();
-    if (paper) 
+    if (paper)
         is_systempaper =  true;
     else {
         paper = defaultpapername();
         is_systempaper =  false;
     }
-    
-    if (paper) {
-	int rc, len = strlen(paper);
 
-	if (len < *plen) {
-	    /* string fits */
-	    strcpy(ptr, paper);
-	    rc = 0;
-	} else {
-	    /* string doesn't fit */
-	    rc = -1;
-	}
-	*plen = len + 1;
-	paperdone();
-	if (is_systempaper)
+    if (paper) {
+        int rc, len = strlen(paper);
+
+        if (len < *plen) {
+            /* string fits */
+            strcpy(ptr, paper);
+            rc = 0;
+        } else {
+            /* string doesn't fit */
+            rc = -1;
+        }
+        *plen = len + 1;
+        paperdone();
+        if (is_systempaper)
             free(paper);
-	return rc;
+        return rc;
     }
 #endif
 
     /* No default paper size */
 
     if (*plen > 0)
-	*ptr = 0;
+        *ptr = 0;
     *plen = 1;
     return 1;
 }
-
-

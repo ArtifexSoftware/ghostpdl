@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,7 +51,7 @@
    ( ((params)->operation & TEXT_FROM_ANY_SINGLE) && ((params)->size != 1) )\
    )
 
-	/* Define the representation of the text itself. */
+        /* Define the representation of the text itself. */
 #define TEXT_FROM_STRING          0x00001
 #define TEXT_FROM_BYTES           0x00002
 #define TEXT_FROM_CHARS           0x00004
@@ -63,13 +63,13 @@
 #define TEXT_FROM_ANY	/* only for testing and masking */\
   (TEXT_FROM_STRING | TEXT_FROM_BYTES | TEXT_FROM_CHARS | TEXT_FROM_GLYPHS |\
    TEXT_FROM_ANY_SINGLE)
-	/* Define how to compute escapements. */
+        /* Define how to compute escapements. */
 #define TEXT_ADD_TO_ALL_WIDTHS    0x00040
 #define TEXT_ADD_TO_SPACE_WIDTH   0x00080
 #define TEXT_ADD_ANY	/* only for testing and masking */\
   (TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH)
 #define TEXT_REPLACE_WIDTHS       0x00100
-	/* Define what result should be produced. */
+        /* Define what result should be produced. */
 #define TEXT_DO_NONE              0x00200	/* stringwidth or cshow only */
 #define TEXT_DO_DRAW              0x00400
 #define TEXT_DO_CHARWIDTH         0x00800	/* rmoveto by width */
@@ -82,11 +82,11 @@
    TEXT_DO_FALSE_CHARBOXPATH | TEXT_DO_TRUE_CHARBOXPATH)
 #define TEXT_DO_ANY	/* only for testing and masking */\
   (TEXT_DO_NONE | TEXT_DO_DRAW | TEXT_DO_ANY_CHARPATH)
-	/* Define whether the client intervenes between characters. */
+        /* Define whether the client intervenes between characters. */
 #define TEXT_INTERVENE            0x10000
-	/* Define whether to return the width. */
+        /* Define whether to return the width. */
 #define TEXT_RETURN_WIDTH         0x20000
-	/* PDF mode "3 Tr" */
+        /* PDF mode "3 Tr" */
 #define TEXT_RENDER_MODE_3        0x40000
 
 /*
@@ -98,20 +98,20 @@ typedef struct gs_text_params_s {
     /* The client must set the following in all cases. */
     uint operation;		/* TEXT_xxx mask */
     union sd_ {
-	const byte *bytes;	/* FROM_STRING, FROM_BYTES */
-	const gs_char *chars;	/* FROM_CHARS */
-	const gs_glyph *glyphs;	/* FROM_GLYPHS */
-	gs_char d_char;		/* FROM_SINGLE_CHAR */
-	gs_glyph d_glyph;	/* FROM_SINGLE_GLYPH */
+        const byte *bytes;	/* FROM_STRING, FROM_BYTES */
+        const gs_char *chars;	/* FROM_CHARS */
+        const gs_glyph *glyphs;	/* FROM_GLYPHS */
+        gs_char d_char;		/* FROM_SINGLE_CHAR */
+        gs_glyph d_glyph;	/* FROM_SINGLE_GLYPH */
     } data;
     uint size;			/* number of data elements, */
-				/* must be 1 if FROM_SINGLE */
+                                /* must be 1 if FROM_SINGLE */
     /* The following are used only in the indicated cases. */
     gs_point delta_all;		/* ADD_TO_ALL_WIDTHS */
     gs_point delta_space;	/* ADD_TO_SPACE_WIDTH */
     union s_ {
-	gs_char s_char;		/* ADD_TO_SPACE_WIDTH & !FROM_GLYPHS */
-	gs_glyph s_glyph;	/* ADD_TO_SPACE_WIDTH & FROM_GLYPHS */
+        gs_char s_char;		/* ADD_TO_SPACE_WIDTH & !FROM_GLYPHS */
+        gs_glyph s_glyph;	/* ADD_TO_SPACE_WIDTH & FROM_GLYPHS */
     } space;
     /*
      * If x_widths == y_widths, widths are taken in pairs; note that in this
@@ -131,7 +131,7 @@ typedef struct gs_text_params_s {
 
 /* Assuming REPLACE_WIDTHS is set, return the width of the i'th character. */
 int gs_text_replaced_width(const gs_text_params_t *text, uint index,
-			   gs_point *pwidth);
+                           gs_point *pwidth);
 
 /*
  * Define the abstract type for the structure that tracks the state of text
@@ -197,7 +197,7 @@ dev_proc_text_begin(gx_device_text_begin);
 typedef struct gs_state_s gs_state;
 #endif
 int gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
-		  gs_memory_t * mem, gs_text_enum_t ** ppenum);
+                  gs_memory_t * mem, gs_text_enum_t ** ppenum);
 
 /*
  * Update the device color to be used with text (because a kshow or
@@ -205,44 +205,42 @@ int gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
  */
 int gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte);
 
-
 /* Begin the PostScript-equivalent text operators. */
 int
 gs_show_begin(gs_state *, const byte *, uint,
-	      gs_memory_t *, gs_text_enum_t **),
+              gs_memory_t *, gs_text_enum_t **),
     gs_ashow_begin(gs_state *, floatp, floatp, const byte *, uint,
-		   gs_memory_t *, gs_text_enum_t **),
+                   gs_memory_t *, gs_text_enum_t **),
     gs_widthshow_begin(gs_state *, floatp, floatp, gs_char,
-		       const byte *, uint,
-		       gs_memory_t *, gs_text_enum_t **),
+                       const byte *, uint,
+                       gs_memory_t *, gs_text_enum_t **),
     gs_awidthshow_begin(gs_state *, floatp, floatp, gs_char,
-			floatp, floatp, const byte *, uint,
-			gs_memory_t *, gs_text_enum_t **),
+                        floatp, floatp, const byte *, uint,
+                        gs_memory_t *, gs_text_enum_t **),
     gs_kshow_begin(gs_state *, const byte *, uint,
-		   gs_memory_t *, gs_text_enum_t **),
+                   gs_memory_t *, gs_text_enum_t **),
     gs_xyshow_begin(gs_state *, const byte *, uint,
-		    const float *, const float *, uint,
-		    gs_memory_t *, gs_text_enum_t **),
+                    const float *, const float *, uint,
+                    gs_memory_t *, gs_text_enum_t **),
     gs_glyphshow_begin(gs_state *, gs_glyph,
-		       gs_memory_t *, gs_text_enum_t **),
+                       gs_memory_t *, gs_text_enum_t **),
     gs_cshow_begin(gs_state *, const byte *, uint,
-		   gs_memory_t *, gs_text_enum_t **),
+                   gs_memory_t *, gs_text_enum_t **),
     gs_stringwidth_begin(gs_state *, const byte *, uint,
-			 gs_memory_t *, gs_text_enum_t **),
+                         gs_memory_t *, gs_text_enum_t **),
     gs_charpath_begin(gs_state *, const byte *, uint, bool,
-		      gs_memory_t *, gs_text_enum_t **),
+                      gs_memory_t *, gs_text_enum_t **),
     gs_glyphpath_begin(gs_state *, gs_glyph, bool,
-		       gs_memory_t *, gs_text_enum_t **),
+                       gs_memory_t *, gs_text_enum_t **),
     gs_glyphwidth_begin(gs_state *, gs_glyph,
-			gs_memory_t *, gs_text_enum_t **),
+                        gs_memory_t *, gs_text_enum_t **),
     gs_charboxpath_begin(gs_state *, const byte *, uint, bool,
-			 gs_memory_t *, gs_text_enum_t **);
+                         gs_memory_t *, gs_text_enum_t **);
 
 /* Compute the number of characters in a text. */
 int gs_text_size(gs_state * pgs, gs_text_params_t *text, gs_memory_t * mem);
 /* Retrieve text params from enumerator. */
 gs_text_params_t *gs_get_text_params(gs_text_enum_t *pte);
-
 
 /*
  * Restart text processing with new parameters.
@@ -260,27 +258,27 @@ int gs_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom);
  * negative (error) value.
  */
 
-	/*
-	 * The client must render a character: obtain the code from
-	 * gs_text_current_char/glyph, do whatever is necessary, and then
-	 * call gs_text_process again.
-	 */
+        /*
+         * The client must render a character: obtain the code from
+         * gs_text_current_char/glyph, do whatever is necessary, and then
+         * call gs_text_process again.
+         */
 #define TEXT_PROCESS_RENDER 1
 
-	/*
-	 * The client has asked to intervene between characters.
-	 * Obtain the current and next codes from gs_text_current_char/glyph
-	 * and gs_text_next_char, do whatever is necessary, and then
-	 * call gs_text_process again.
-	 */
+        /*
+         * The client has asked to intervene between characters.
+         * Obtain the current and next codes from gs_text_current_char/glyph
+         * and gs_text_next_char, do whatever is necessary, and then
+         * call gs_text_process again.
+         */
 #define TEXT_PROCESS_INTERVENE 2
 
-	/*
-	 * The device has asked to execute CDevProc.
-	 * Obtain the current codes from gs_text_current_char/glyph,
-	 * do whatever is necessary and put CDevProc results to pte->cdevproc_result, 
-	 * and then call gs_text_process again with pte->cdevproc_result_valid=true.
-	 */
+        /*
+         * The device has asked to execute CDevProc.
+         * Obtain the current codes from gs_text_current_char/glyph,
+         * do whatever is necessary and put CDevProc results to pte->cdevproc_result,
+         * and then call gs_text_process again with pte->cdevproc_result_valid=true.
+         */
 #define TEXT_PROCESS_CDEVPROC 3
 
 /* Process text after 'begin'. */
@@ -316,7 +314,7 @@ typedef enum {
 } gs_text_cache_control_t;
 int
     gs_text_set_cache(gs_text_enum_t *pte, const double *values,
-		      gs_text_cache_control_t control),
+                      gs_text_cache_control_t control),
     gs_text_setcharwidth(gs_text_enum_t *pte, const double wxy[2]),
     gs_text_setcachedevice(gs_text_enum_t *pte, const double wbox[6]),
     gs_text_setcachedevice2(gs_text_enum_t *pte, const double wbox2[10]);

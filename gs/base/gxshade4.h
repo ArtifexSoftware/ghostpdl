@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,7 +32,7 @@
    to the path adjustment in the filling algorithm.
    The expansion is an emulation of Adobe's trapping.
    The value specifies the width of paddings.
-   We did some testing of Adobe RIP, and it looks as applying 
+   We did some testing of Adobe RIP, and it looks as applying
    same logicks as for clipping - any part of pixel inside.
    Therefore the expansion should be half pixel size.
  */
@@ -46,7 +46,7 @@
 /* This mode delays creating wedges for a boundary until
    both neoghbour areas are painted. At that moment we can know
    all subdivision points for both right and left areas,
-   and skip wedges for common points. Therefore the number of wadges 
+   and skip wedges for common points. Therefore the number of wadges
    dramatically reduces, causing a significant speedup.
    The LAZY_WEDGES 0 mode was not systematically tested.
  */
@@ -87,10 +87,10 @@ struct wedge_vertex_list_elem_s {
 };
 typedef struct {
     bool last_side;
-    wedge_vertex_list_elem_t *beg, *end;    
+    wedge_vertex_list_elem_t *beg, *end;
 } wedge_vertex_list_t;
 
-#define LAZY_WEDGES_MAX_LEVEL 9 /* memory consumption is 
+#define LAZY_WEDGES_MAX_LEVEL 9 /* memory consumption is
     sizeof(wedge_vertex_list_elem_t) * LAZY_WEDGES_MAX_LEVEL * (1 << LAZY_WEDGES_MAX_LEVEL) */
 
 #define SHADING_COLOR_STACK_SIZE 200; /* Should be enough for max 64 decomposition levels. */
@@ -172,24 +172,24 @@ typedef struct {
 
 /* Initialize the fill state for triangle shading. */
 int mesh_init_fill_state(mesh_fill_state_t * pfs,
-			  const gs_shading_mesh_t * psh,
-			  const gs_fixed_rect * rect_clip,
-			  gx_device * dev, gs_imager_state * pis);
+                          const gs_shading_mesh_t * psh,
+                          const gs_fixed_rect * rect_clip,
+                          gx_device * dev, gs_imager_state * pis);
 
 int init_patch_fill_state(patch_fill_state_t *pfs);
 bool term_patch_fill_state(patch_fill_state_t *pfs);
 int gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_memory_t *memory);
 
-int mesh_triangle(patch_fill_state_t *pfs, 
+int mesh_triangle(patch_fill_state_t *pfs,
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
 
-int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
-	    const patch_color_t *c0, const patch_color_t *c1);
+int mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1,
+            const patch_color_t *c0, const patch_color_t *c1);
 
 int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
-	   const gs_fixed_point interior[4],
-	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
-			      const gs_fixed_point[4], floatp, floatp));
+           const gs_fixed_point interior[4],
+           void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+                              const gs_fixed_point[4], floatp, floatp));
 
 int constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting);
 
@@ -198,11 +198,11 @@ void wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs);
 
 void patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs);
 
-int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect, 
-	const gx_device_color *pdevc, gs_logical_operation_t log_op);
+int gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect,
+        const gx_device_color *pdevc, gs_logical_operation_t log_op);
 
-int patch_color_to_device_color(const patch_fill_state_t *pfs, 
-	const patch_color_t *c, gx_device_color *pdevc);
+int patch_color_to_device_color(const patch_fill_state_t *pfs,
+        const patch_color_t *c, gx_device_color *pdevc);
 
 byte *reserve_colors(patch_fill_state_t *pfs, patch_color_t *c0[], int n);
 void release_colors(patch_fill_state_t *pfs, byte *ptr, int n);

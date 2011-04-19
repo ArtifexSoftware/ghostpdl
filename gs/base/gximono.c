@@ -229,7 +229,6 @@ image_set_gray(byte sample_value, const bool masked, uint mask_base,
     return(0);
 }
 
-
 /*
  * Rendering procedure for general mono-component images, dealing with
  * multiple bit-per-sample images, general transformations, arbitrary
@@ -998,6 +997,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     /* Apply threshold array to image data */
 flush:
     code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
-                             thresh_align, contone_align, contone_stride, dev); 
+                             thresh_align, contone_align, contone_stride, dev);
     return code;
 }

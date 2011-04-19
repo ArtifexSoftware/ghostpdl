@@ -61,8 +61,6 @@ float global_char_bold_value;
 void pxpcl_release(void);
 void pxpcl_pagestatereset(void);
 
-
-
 /* NB: tests for this function are used to flag pxl snippet mode
  */
 static int
@@ -274,7 +272,6 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     }
 }
 
-
 void
 pxpcl_pagestatereset()
 {
@@ -399,7 +396,6 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
 
     {
         pl_font_t *plf = global_pcs->font;
-
 
         /* unfortunately the storage identifier is inconsistent
            between PCL and PCL XL, NB we should use the pxfont.h

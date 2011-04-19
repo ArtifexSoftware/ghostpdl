@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -108,15 +108,15 @@ extern const stream_template s_IE_template;
 
 /* Downsample, possibly with anti-aliasing. */
 #define stream_Downsample_state_common\
-	stream_state_common;\
-		/* The client sets the following before initialization. */\
-	int Colors;\
-	int WidthIn, HeightIn;\
-	int XFactor, YFactor;\
-	bool AntiAlias;\
-	bool padX, padY;	/* keep excess samples */\
-		/* The following are updated dynamically. */\
-	int x, y		/* position within input image */
+        stream_state_common;\
+                /* The client sets the following before initialization. */\
+        int Colors;\
+        int WidthIn, HeightIn;\
+        int XFactor, YFactor;\
+        bool AntiAlias;\
+        bool padX, padY;	/* keep excess samples */\
+                /* The following are updated dynamically. */\
+        int x, y		/* position within input image */
 #define s_Downsample_set_defaults_inline(ss)\
   ((ss)->AntiAlias = (ss)->padX = (ss)->padY = false)
 typedef struct stream_Downsample_state_s {
@@ -167,8 +167,8 @@ extern const stream_template s_compr_chooser_template;
 
 /* Set image dimensions. */
 int
-s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width, 
-			       int height, int depth, int bits_per_sample);
+s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width,
+                               int height, int depth, int bits_per_sample);
 
 /* Get choice */
 uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
@@ -215,14 +215,14 @@ struct stream_image_colors_state_s {
 
 extern const stream_template s_image_colors_template;
 
-void s_image_colors_set_dimensions(stream_image_colors_state * st, 
-			       int width, int height, int depth, int bits_per_sample);
+void s_image_colors_set_dimensions(stream_image_colors_state * st,
+                               int width, int height, int depth, int bits_per_sample);
 
 void s_image_colors_set_mask_colors(stream_image_colors_state * ss, uint *MaskColor);
 
 void s_image_colors_set_color_space(stream_image_colors_state * ss, gx_device *pdev,
-			       const gs_color_space *pcs, const gs_imager_state *pis,
-			       float *Decode);
+                               const gs_color_space *pcs, const gs_imager_state *pis,
+                               float *Decode);
 
 extern const stream_template s__image_colors_template;
 

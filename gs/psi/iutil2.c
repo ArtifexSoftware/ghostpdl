@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,23 +37,23 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
     int code = param_read_string(plist, kstr, &ps);
 
     switch (code) {
-	case 0:		/* OK */
-	    if (ps.size > MAX_PASSWORD)
-		return_error(e_limitcheck);
-	    /* Copy the data back. */
-	    memcpy(ppass->data, ps.data, ps.size);
-	    ppass->size = ps.size;
-	    return 0;
-	case 1:		/* key is missing */
-	    return 1;
+        case 0:		/* OK */
+            if (ps.size > MAX_PASSWORD)
+                return_error(e_limitcheck);
+            /* Copy the data back. */
+            memcpy(ppass->data, ps.data, ps.size);
+            ppass->size = ps.size;
+            return 0;
+        case 1:		/* key is missing */
+            return 1;
     }
     /* We might have gotten a typecheck because */
     /* the supplied password was an integer. */
     if (code != e_typecheck)
-	return code;
+        return code;
     code = param_read_long(plist, kstr, &ipass);
     if (code != 0)		/* error or missing */
-	return code;
+        return code;
     sprintf((char *)ppass->data, "%ld", ipass);
     ppass->size = strlen((char *)ppass->data);
     return 0;
@@ -61,14 +61,14 @@ param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
 /* Write a password to a parameter list. */
 int
 param_write_password(gs_param_list * plist, const char *kstr,
-		     const password * ppass)
+                     const password * ppass)
 {
     gs_param_string ps;
 
     ps.data = (const byte *)ppass->data, ps.size = ppass->size,
-	ps.persistent = false;
+        ps.persistent = false;
     if (ps.size > MAX_PASSWORD)
-	return_error(e_limitcheck);
+        return_error(e_limitcheck);
     return param_write_string(plist, kstr, &ps);
 }
 
@@ -78,17 +78,17 @@ int
 param_check_password(gs_param_list * plist, const password * ppass)
 {
     if (ppass->size != 0) {
-	password pass;
-	int code = param_read_password(plist, "Password", &pass);
+        password pass;
+        int code = param_read_password(plist, "Password", &pass);
 
-	if (code)
-	    return code;
-	if (pass.size != ppass->size ||
-	    bytes_compare(&pass.data[0], pass.size,
-			  &ppass->data[0],
-			  ppass->size) != 0
-	    )
-	    return 1;
+        if (code)
+            return code;
+        if (pass.size != ppass->size ||
+            bytes_compare(&pass.data[0], pass.size,
+                          &ppass->data[0],
+                          ppass->size) != 0
+            )
+            return 1;
     }
     return 0;
 }
@@ -101,12 +101,12 @@ dict_find_password(ref ** ppvalue, const ref * pdref, const char *kstr)
     ref *pvalue;
 
     if (dict_find_string(pdref, kstr, &pvalue) <= 0)
-	return_error(e_undefined);
+        return_error(e_undefined);
     if (!r_has_type(pvalue, t_string) ||
-	r_has_attrs(pvalue, a_read) ||
-	pvalue->value.const_bytes[0] >= r_size(pvalue)
-	)
-	return_error(e_rangecheck);
+        r_has_attrs(pvalue, a_read) ||
+        pvalue->value.const_bytes[0] >= r_size(pvalue)
+        )
+        return_error(e_rangecheck);
     *ppvalue = pvalue;
     return 0;
 }
@@ -117,29 +117,29 @@ dict_read_password(password * ppass, const ref * pdref, const char *pkey)
     int code = dict_find_password(&pvalue, pdref, pkey);
 
     if (code < 0)
-	return code;
+        return code;
     if (pvalue->value.const_bytes[0] > MAX_PASSWORD)
-	return_error(e_rangecheck);	/* limitcheck? */
+        return_error(e_rangecheck);	/* limitcheck? */
     memcpy(ppass->data, pvalue->value.const_bytes + 1,
-	   (ppass->size = pvalue->value.const_bytes[0]));
+           (ppass->size = pvalue->value.const_bytes[0]));
     return 0;
 }
 int
 dict_write_password(const password * ppass, ref * pdref, const char *pkey,
-			bool change_allowed)
+                        bool change_allowed)
 {
     ref *pvalue;
     int code = dict_find_password(&pvalue, pdref, pkey);
 
     if (code < 0)
-	return code;
+        return code;
     if (ppass->size >= r_size(pvalue))
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     if (!change_allowed &&
-    	bytes_compare(pvalue->value.bytes + 1, pvalue->value.bytes[0],
-	    ppass->data, ppass->size) != 0)
-	return_error(e_invalidaccess);
+        bytes_compare(pvalue->value.bytes + 1, pvalue->value.bytes[0],
+            ppass->data, ppass->size) != 0)
+        return_error(e_invalidaccess);
     memcpy(pvalue->value.bytes + 1, ppass->data,
-	   (pvalue->value.bytes[0] = ppass->size));
+           (pvalue->value.bytes[0] = ppass->size));
     return 0;
 }

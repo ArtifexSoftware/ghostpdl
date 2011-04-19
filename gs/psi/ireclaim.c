@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,45 +51,45 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     gs_ref_memory_t *mem;
 
     if (space < 0) {
-	/* Determine which allocator exceeded the limit. */
-	int i;
+        /* Determine which allocator exceeded the limit. */
+        int i;
 
-	mem = dmem->space_global;	/* just in case */
-	for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
-	    mem = dmem->spaces_indexed[i];
-	    if (mem == 0)
-		continue;
-	    if (mem->gc_status.requested > 0 ||
-		((gs_ref_memory_t *)mem->stable_memory)->gc_status.requested > 0
-		)
-		break;
-	}
+        mem = dmem->space_global;	/* just in case */
+        for (i = 0; i < countof(dmem->spaces_indexed); ++i) {
+            mem = dmem->spaces_indexed[i];
+            if (mem == 0)
+                continue;
+            if (mem->gc_status.requested > 0 ||
+                ((gs_ref_memory_t *)mem->stable_memory)->gc_status.requested > 0
+                )
+                break;
+        }
     } else {
-	mem = dmem->spaces_indexed[space >> r_space_shift];
+        mem = dmem->spaces_indexed[space >> r_space_shift];
     }
     if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
-	      space, mem->space, (long)mem->gc_status.requested);
+              space, mem->space, (long)mem->gc_status.requested);
     global = mem->space != avm_local;
     /* Since dmem may move, reset the request now. */
     ialloc_reset_requested(dmem);
     gs_vmreclaim(dmem, global);
     ialloc_set_limit(mem);
     if (space < 0) {
-	gs_memory_status_t stats;
-	ulong allocated;
+        gs_memory_status_t stats;
+        ulong allocated;
 
-	/* If the ammount still allocated after the GC is complete */
-	/* exceeds the max_vm setting, then return a VMerror       */
-	gs_memory_status((gs_memory_t *) mem, &stats);
-	allocated = stats.allocated;
-	if (mem->stable_memory != (gs_memory_t *)mem) {
-	    gs_memory_status(mem->stable_memory, &stats);
-	    allocated += stats.allocated;
-	}
-	if (allocated >= mem->gc_status.max_vm) {
-	    /* We can't satisfy this request within max_vm. */
-	    return_error(e_VMerror);
-	}
+        /* If the ammount still allocated after the GC is complete */
+        /* exceeds the max_vm setting, then return a VMerror       */
+        gs_memory_status((gs_memory_t *) mem, &stats);
+        allocated = stats.allocated;
+        if (mem->stable_memory != (gs_memory_t *)mem) {
+            gs_memory_status(mem->stable_memory, &stats);
+            allocated += stats.allocated;
+        }
+        if (allocated >= mem->gc_status.max_vm) {
+            /* We can't satisfy this request within max_vm. */
+            return_error(e_VMerror);
+        }
     }
     return 0;
 }
@@ -100,7 +100,7 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
 {
     /* HACK: we know the gs_dual_memory_t is embedded in a context state. */
     i_ctx_t *i_ctx_p =
-	(i_ctx_t *)((char *)dmem - offset_of(i_ctx_t, memory));
+        (i_ctx_t *)((char *)dmem - offset_of(i_ctx_t, memory));
     gs_ref_memory_t *lmem = dmem->space_local;
     int code = context_state_store(i_ctx_p);
     gs_ref_memory_t *memories[5];
@@ -111,49 +111,49 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
     memories[1] = mem = dmem->space_global;
     nmem = 2;
     if (lmem != dmem->space_global)
-	memories[nmem++] = lmem;
+        memories[nmem++] = lmem;
     for (i = nmem; --i >= 0;) {
-	mem = memories[i];
-	if (mem->stable_memory != (gs_memory_t *)mem)
-	    memories[nmem++] = (gs_ref_memory_t *)mem->stable_memory;
+        mem = memories[i];
+        if (mem->stable_memory != (gs_memory_t *)mem)
+            memories[nmem++] = (gs_ref_memory_t *)mem->stable_memory;
     }
 
     /****** ABORT IF code < 0 ******/
     for (i = nmem; --i >= 0; )
-	alloc_close_chunk(memories[i]);
+        alloc_close_chunk(memories[i]);
 
     /* Prune the file list so it won't retain potentially collectible */
     /* files. */
 
     for (i = (global ? i_vm_system : i_vm_local);
-	 i < countof(dmem->spaces_indexed);
-	 ++i
-	 ) {
-	gs_ref_memory_t *mem = dmem->spaces_indexed[i];
+         i < countof(dmem->spaces_indexed);
+         ++i
+         ) {
+        gs_ref_memory_t *mem = dmem->spaces_indexed[i];
 
-	if (mem == 0 || (i > 0 && mem == dmem->spaces_indexed[i - 1]))
-	    continue;
-	if (mem->stable_memory != (gs_memory_t *)mem)
-	    ialloc_gc_prepare((gs_ref_memory_t *)mem->stable_memory);
-	for (;; mem = &mem->saved->state) {
-	    ialloc_gc_prepare(mem);
-	    if (mem->saved == 0)
-		break;
-	}
+        if (mem == 0 || (i > 0 && mem == dmem->spaces_indexed[i - 1]))
+            continue;
+        if (mem->stable_memory != (gs_memory_t *)mem)
+            ialloc_gc_prepare((gs_ref_memory_t *)mem->stable_memory);
+        for (;; mem = &mem->saved->state) {
+            ialloc_gc_prepare(mem);
+            if (mem->saved == 0)
+                break;
+        }
     }
 
     /* Do the actual collection. */
 
     {
-	void *ctxp = i_ctx_p;
-	gs_gc_root_t context_root;
+        void *ctxp = i_ctx_p;
+        gs_gc_root_t context_root;
 
-	gs_register_struct_root((gs_memory_t *)lmem, &context_root,
-				&ctxp, "i_ctx_p root");
-	GS_RECLAIM(&dmem->spaces, global);
-	gs_unregister_root((gs_memory_t *)lmem, &context_root, "i_ctx_p root");
-	i_ctx_p = ctxp;
-	dmem = &i_ctx_p->memory;
+        gs_register_struct_root((gs_memory_t *)lmem, &context_root,
+                                &ctxp, "i_ctx_p root");
+        GS_RECLAIM(&dmem->spaces, global);
+        gs_unregister_root((gs_memory_t *)lmem, &context_root, "i_ctx_p root");
+        i_ctx_p = ctxp;
+        dmem = &i_ctx_p->memory;
     }
 
     /* Update caches not handled by context_state_load. */
@@ -167,12 +167,12 @@ gs_vmreclaim(gs_dual_memory_t *dmem, bool global)
     /* Reopen the active chunks. */
 
     for (i = 0; i < nmem; ++i)
-	alloc_open_chunk(memories[i]);
+        alloc_open_chunk(memories[i]);
 
     /* Reload the context state.  Note this should be done
        AFTER the chunks are reopened, since the context state
-       load could do allocations that must remain.   
-       If it were done while the chunks were still closed, 
+       load could do allocations that must remain.
+       If it were done while the chunks were still closed,
        we would lose those allocations when the chunks were opened */
 
     code = context_state_load(i_ctx_p);

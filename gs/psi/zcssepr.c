@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -91,7 +91,7 @@ zsetoverprintmode(i_ctx_t *i_ctx_p)
     int code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }

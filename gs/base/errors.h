@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,7 +16,7 @@
 #  define errors_INCLUDED
 
 /* This file used to contain error codes for the Ghostscript client api.
- * It has been renamed ierrors.h to reduce the risk of namespace collision 
+ * It has been renamed ierrors.h to reduce the risk of namespace collision
  * and to be consistent with iapi.h.
  */
 

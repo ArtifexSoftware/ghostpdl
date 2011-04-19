@@ -1,12 +1,12 @@
 %    Copyright (C) 2000 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -53,7 +53,7 @@ languagelevel 2 .setlanguagelevel
   } bind def
 
   /GetCSI   % <record> GetCSI null
-  	    % <record> GetCSI dict
+            % <record> GetCSI dict
   { % We know that currentdict is the category.
     RESMPDEBUG { (cidfm GetCSI beg ) = } if
     /Substitute get			% /Name
@@ -122,7 +122,7 @@ currentdict end def
   } ifelse
 } bind def
 
-currentdict end 
+currentdict end
 
 /MappedCategoryRedefiner /ProcSet findresource /Redefine get exec
 

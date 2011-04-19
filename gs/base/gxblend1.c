@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,13 +38,13 @@
  */
 void
 pdf14_unpack_additive(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out)
+                                pdf14_device * p14dev, byte * out)
 {
     int i;
 
     for (i = num_comp - 1; i >= 0; i--) {
-	out[i] = (byte)(color & 0xff);
-	color >>= 8;
+        out[i] = (byte)(color & 0xff);
+        color >>= 8;
     }
 }
 
@@ -57,13 +57,13 @@ pdf14_unpack_additive(int num_comp, gx_color_index color,
  */
 void
 pdf14_unpack_subtractive(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out)
+                                pdf14_device * p14dev, byte * out)
 {
     int i;
 
     for (i = num_comp - 1; i >= 0; i--) {
-	out[i] = 0xff - (byte)(color & 0xff);
-	color >>= 8;
+        out[i] = 0xff - (byte)(color & 0xff);
+        color >>= 8;
     }
 }
 
@@ -77,18 +77,18 @@ pdf14_unpack_subtractive(int num_comp, gx_color_index color,
  */
 void
 pdf14_unpack_compressed(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out)
+                                pdf14_device * p14dev, byte * out)
 {
     int comp_num;
 
     if (p14dev->devn_params.compressed_color_list == NULL) {
         /*
          * For 'uncompressed' data we simply have to unpack the gx_color_index
-	 * value directly.
+         * value directly.
          */
         for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
-	    out[comp_num] = 0xff - (byte)(color & 0xff);
-	    color >>= 8;
+            out[comp_num] = 0xff - (byte)(color & 0xff);
+            color >>= 8;
         }
     }
     else {
@@ -96,26 +96,26 @@ pdf14_unpack_compressed(int num_comp, gx_color_index color,
         comp_bit_map_list_t * pbitmap;
         gx_color_value solid_color = 0xff;
 
-    	pbitmap = find_bit_map(color,
-		       	p14dev->devn_params.compressed_color_list);
-	bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
-	bit_mask = (1 << bit_count) - 1;
-	factor = comp_bit_factor[pbitmap->num_non_solid_comp];
-	if (pbitmap->solid_not_100) {
-	    solid_color = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
-	    color >>= bit_count;
-	}
+        pbitmap = find_bit_map(color,
+                        p14dev->devn_params.compressed_color_list);
+        bit_count = num_comp_bits[pbitmap->num_non_solid_comp];
+        bit_mask = (1 << bit_count) - 1;
+        factor = comp_bit_factor[pbitmap->num_non_solid_comp];
+        if (pbitmap->solid_not_100) {
+            solid_color = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
+            color >>= bit_count;
+        }
         for (comp_num = 0; comp_num < num_comp; comp_num++) {
-	    if (colorant_present(pbitmap, colorants, comp_num)) {
-		if (colorant_present(pbitmap, solid_colorants, comp_num))
-       		    *out++ = (byte)solid_color;
-		else {
-            	    *out++ = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
-	    	    color >>= bit_count;
-		}
-	    }
-	    else
-            	*out++ = 0xff;
+            if (colorant_present(pbitmap, colorants, comp_num)) {
+                if (colorant_present(pbitmap, solid_colorants, comp_num))
+                    *out++ = (byte)solid_color;
+                else {
+                    *out++ = 0xff - ((factor * ((int)color & bit_mask)) >> 16);
+                    color >>= bit_count;
+                }
+            }
+            else
+                *out++ = 0xff;
         }
     }
 }
@@ -127,7 +127,7 @@ pdf14_unpack_compressed(int num_comp, gx_color_index color,
  */
 void
 pdf14_unpack_custom(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out)
+                                pdf14_device * p14dev, byte * out)
 {
     int i;
     gx_device * tdev = p14dev->target;
@@ -135,7 +135,7 @@ pdf14_unpack_custom(int num_comp, gx_color_index color,
 
     dev_proc(tdev, decode_color)(tdev, color, cm_values);
     for (i = 0; i < num_comp; i++)
-	out[i] = 0xff - gx_color_value_to_byte(cm_values[i]);
+        out[i] = 0xff - gx_color_value_to_byte(cm_values[i]);
 }
 
 #if RAW_DUMP
@@ -152,26 +152,26 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
     int y1 = min(buf->rect.q.y, tos->rect.q.y);
 
     if (x0 < x1 && y0 < y1) {
-	int width = x1 - x0;
-	byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
-	byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
-	int i;
-	/*int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);*/
+        int width = x1 - x0;
+        byte *buf_plane = buf->data + x0 - buf->rect.p.x + (y0 - buf->rect.p.y) * buf->rowstride;
+        byte *tos_plane = tos->data + x0 - tos->rect.p.x + (y0 - tos->rect.p.y) * tos->rowstride;
+        int i;
+        /*int n_chan_copy = buf->n_chan + (tos->has_shape ? 1 : 0);*/
         int n_chan_copy = tos->n_chan + (tos->has_shape ? 1 : 0) + (tos->has_tags ? 1 : 0);
 
-	for (i = 0; i < n_chan_copy; i++) {
-	    byte *buf_ptr = buf_plane;
-	    byte *tos_ptr = tos_plane;
-	    int y;
+        for (i = 0; i < n_chan_copy; i++) {
+            byte *buf_ptr = buf_plane;
+            byte *tos_ptr = tos_plane;
+            int y;
 
-	    for (y = y0; y < y1; ++y) {
-		    memcpy (buf_ptr, tos_ptr, width); 
-		    buf_ptr += buf->rowstride;
-		    tos_ptr += tos->rowstride;
-	    }
-	    buf_plane += buf->planestride;
-	    tos_plane += tos->planestride;
-	}
+            for (y = y0; y < y1; ++y) {
+                    memcpy (buf_ptr, tos_ptr, width);
+                    buf_ptr += buf->rowstride;
+                    tos_ptr += tos->rowstride;
+            }
+            buf_plane += buf->planestride;
+            tos_plane += tos->planestride;
+        }
         if (has_shape && !tos->has_shape) {
             if (tos->has_tags) {
                 buf_plane -= buf->planestride;
@@ -181,10 +181,10 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
     }
 #if RAW_DUMP
     if (x0 < x1 && y0 < y1) {
-        byte *buf_plane = buf->data + x0 - buf->rect.p.x + 
+        byte *buf_plane = buf->data + x0 - buf->rect.p.x +
             (y0 - buf->rect.p.y) * buf->rowstride;
         dump_raw_buffer(y1-y0, x1 - x0, buf->n_planes,
-                    buf->planestride, buf->rowstride, 
+                    buf->planestride, buf->rowstride,
                     "BackDropInit",buf_plane);
         global_index++;
     }
@@ -192,18 +192,18 @@ pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape)
 }
 
 void
-pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf, 
-	      int x0, int x1, int y0, int y1, int n_chan, bool additive,
-	      const pdf14_nonseparable_blending_procs_t * pblend_procs)
+pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
+              int x0, int x1, int y0, int y1, int n_chan, bool additive,
+              const pdf14_nonseparable_blending_procs_t * pblend_procs)
 {
     int num_comp = n_chan - 1;
     byte alpha = tos->alpha;
     byte shape = tos->shape;
     byte blend_mode = tos->blend_mode;
     byte *tos_ptr = tos->data + x0 - tos->rect.p.x +
-	(y0 - tos->rect.p.y) * tos->rowstride;
+        (y0 - tos->rect.p.y) * tos->rowstride;
     byte *nos_ptr = nos->data + x0 - nos->rect.p.x +
-	(y0 - nos->rect.p.y) * nos->rowstride;
+        (y0 - nos->rect.p.y) * nos->rowstride;
     byte *mask_ptr = NULL;
     int tos_planestride = tos->planestride;
     int nos_planestride = nos->planestride;
@@ -234,21 +234,20 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     rect_merge(nos->bbox, tos->bbox);
 
     if_debug6('v', "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
-			y0, y1, width, alpha, shape, blend_mode);
+                        y0, y1, width, alpha, shape, blend_mode);
     if (nos->has_alpha_g)
-	nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
+        nos_alpha_g_ptr = nos_ptr + n_chan * nos_planestride;
     else
-	nos_alpha_g_ptr = NULL;
+        nos_alpha_g_ptr = NULL;
 
+    if (maskbuf != NULL) {
 
-    if (maskbuf != NULL) { 
-       
         mask_tr_fn = maskbuf->transfer_fn;
 
         if (maskbuf->data != NULL) {
 
-	    mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
-		    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
+            mask_ptr = maskbuf->data + x0 - maskbuf->rect.p.x +
+                    (y0 - maskbuf->rect.p.y) * maskbuf->rowstride;
             mask_planestride = maskbuf->planestride;
 
         } else {
@@ -268,151 +267,146 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 
         }
 
-
-    } 
-
+    }
 
 #if RAW_DUMP
 
     composed_ptr = nos_ptr;
 
     dump_raw_buffer(y1-y0, width, tos->n_planes,
-            tos_planestride, tos->rowstride, 
+            tos_planestride, tos->rowstride,
             "ImageTOS",tos_ptr);
 
     dump_raw_buffer(y1-y0, width, nos->n_planes,
-                nos_planestride, nos->rowstride, 
+                nos_planestride, nos->rowstride,
                 "ImageNOS",nos_ptr);
 
     if(mask_ptr != NULL){
 
         dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
-                        maskbuf->planestride, maskbuf->rowstride, 
+                        maskbuf->planestride, maskbuf->rowstride,
                         "Mask",mask_ptr);
     }
 
 #endif
 
     for (y = y0; y < y1; ++y) {
-	for (x = 0; x < width; ++x) {
-	    byte pix_alpha = alpha;
+        for (x = 0; x < width; ++x) {
+            byte pix_alpha = alpha;
 
-	    /* Complement the components for subtractive color spaces */
-	    if (additive) {
-		for (i = 0; i < n_chan; ++i) {
-		    tos_pixel[i] = tos_ptr[x + i * tos_planestride];
-		    nos_pixel[i] = nos_ptr[x + i * nos_planestride];
-		}
-	    } else {
-		for (i = 0; i < num_comp; ++i) {
-		    tos_pixel[i] = 255 - tos_ptr[x + i * tos_planestride];
-		    nos_pixel[i] = 255 - nos_ptr[x + i * nos_planestride];
-		}
-		tos_pixel[num_comp] = tos_ptr[x + num_comp * tos_planestride];
-		nos_pixel[num_comp] = nos_ptr[x + num_comp * nos_planestride];
-	    }
+            /* Complement the components for subtractive color spaces */
+            if (additive) {
+                for (i = 0; i < n_chan; ++i) {
+                    tos_pixel[i] = tos_ptr[x + i * tos_planestride];
+                    nos_pixel[i] = nos_ptr[x + i * nos_planestride];
+                }
+            } else {
+                for (i = 0; i < num_comp; ++i) {
+                    tos_pixel[i] = 255 - tos_ptr[x + i * tos_planestride];
+                    nos_pixel[i] = 255 - nos_ptr[x + i * nos_planestride];
+                }
+                tos_pixel[num_comp] = tos_ptr[x + num_comp * tos_planestride];
+                nos_pixel[num_comp] = nos_ptr[x + num_comp * nos_planestride];
+            }
 
-	    if (mask_ptr != NULL) {
+            if (mask_ptr != NULL) {
 
                 byte mask = mask_ptr[x];
 
-		mask = mask_tr_fn[mask];
-		tmp = pix_alpha * mask + 0x80;
-		pix_alpha = (tmp + (tmp >> 8)) >> 8;
+                mask = mask_tr_fn[mask];
+                tmp = pix_alpha * mask + 0x80;
+                pix_alpha = (tmp + (tmp >> 8)) >> 8;
 #		    if VD_PAINT_MASK
-		    vd_pixel(int2fixed(x), int2fixed(y), mask);
+                    vd_pixel(int2fixed(x), int2fixed(y), mask);
 #		    endif
-            } 
+            }
 
-	    if (nos_knockout) {
-		byte *nos_shape_ptr = nos_has_shape ?
-		    &nos_ptr[x + nos_shape_offset] : NULL;
+            if (nos_knockout) {
+                byte *nos_shape_ptr = nos_has_shape ?
+                    &nos_ptr[x + nos_shape_offset] : NULL;
                 byte *nos_tag_ptr = nos_has_tag ?
                     &nos_ptr[x + nos_tag_offset] : NULL;
-		byte tos_shape = tos_ptr[x + tos_shape_offset];
-		byte tos_tag = tos_ptr[x + tos_tag_offset];
-		art_pdf_composite_knockout_isolated_8(nos_pixel,
-						    nos_shape_ptr,
+                byte tos_shape = tos_ptr[x + tos_shape_offset];
+                byte tos_tag = tos_ptr[x + tos_tag_offset];
+                art_pdf_composite_knockout_isolated_8(nos_pixel,
+                                                    nos_shape_ptr,
                                                     nos_tag_ptr,
-						    tos_pixel,
-						    n_chan - 1,
-						    tos_shape,
+                                                    tos_pixel,
+                                                    n_chan - 1,
+                                                    tos_shape,
                                                     tos_tag,
-						    pix_alpha, shape);
+                                                    pix_alpha, shape);
             } else {
                 if (tos_isolated) {
-		    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
-				        tos_pixel, n_chan - 1,
-				        pix_alpha, blend_mode, pblend_procs);
-	        } else {
-		    byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
-		    art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
-				        tos_pixel, tos_alpha_g, n_chan - 1,
-				        pix_alpha, blend_mode, pblend_procs);
-	        }
+                    art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+                                        tos_pixel, n_chan - 1,
+                                        pix_alpha, blend_mode, pblend_procs);
+                } else {
+                    byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
+                    art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
+                                        tos_pixel, tos_alpha_g, n_chan - 1,
+                                        pix_alpha, blend_mode, pblend_procs);
+                }
                 if (tos_has_tag) {
                     if (pix_alpha == 255) {
-                        nos_ptr[x + nos_tag_offset] = tos_ptr[x + tos_tag_offset];     
-                    } else if (pix_alpha != 0 && tos_ptr[x + tos_tag_offset] != 
-                               GS_UNTOUCHED_TAG) {  
-                        nos_ptr[x + nos_tag_offset] = 
-                            (nos_ptr[x + nos_tag_offset] | 
+                        nos_ptr[x + nos_tag_offset] = tos_ptr[x + tos_tag_offset];
+                    } else if (pix_alpha != 0 && tos_ptr[x + tos_tag_offset] !=
+                               GS_UNTOUCHED_TAG) {
+                        nos_ptr[x + nos_tag_offset] =
+                            (nos_ptr[x + nos_tag_offset] |
                             tos_ptr[x + tos_tag_offset]) &
-                            ~GS_UNTOUCHED_TAG;     
+                            ~GS_UNTOUCHED_TAG;
                     }
                 }
             }
-	    if (nos_has_shape) {
-		nos_ptr[x + nos_shape_offset] =
-		    art_pdf_union_mul_8 (nos_ptr[x + nos_shape_offset],
-					    tos_ptr[x + tos_shape_offset],
-					    shape);
+            if (nos_has_shape) {
+                nos_ptr[x + nos_shape_offset] =
+                    art_pdf_union_mul_8 (nos_ptr[x + nos_shape_offset],
+                                            tos_ptr[x + tos_shape_offset],
+                                            shape);
 
-            }         
-	    /* Complement the results for subtractive color spaces */
-	    if (additive) {
-		for (i = 0; i < n_chan; ++i) {
-		    nos_ptr[x + i * nos_planestride] = nos_pixel[i];
-		}
-	    } else {
-		for (i = 0; i < num_comp; ++i)
-		    nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
-		nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
-	    }
+            }
+            /* Complement the results for subtractive color spaces */
+            if (additive) {
+                for (i = 0; i < n_chan; ++i) {
+                    nos_ptr[x + i * nos_planestride] = nos_pixel[i];
+                }
+            } else {
+                for (i = 0; i < num_comp; ++i)
+                    nos_ptr[x + i * nos_planestride] = 255 - nos_pixel[i];
+                nos_ptr[x + num_comp * nos_planestride] = nos_pixel[num_comp];
+            }
 #		if VD_PAINT_COLORS
-		vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ? 
-		    (nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
-		    (nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
+                vd_pixel(int2fixed(x), int2fixed(y), n_chan == 1 ?
+                    (nos_pixel[0] << 16) + (nos_pixel[0] << 8) + nos_pixel[0] :
+                    (nos_pixel[0] << 16) + (nos_pixel[1] << 8) + nos_pixel[2]);
 #		endif
 #		if VD_PAINT_ALPHA
-		vd_pixel(int2fixed(x), int2fixed(y),
-		    (nos_pixel[n_chan - 1] << 16) + (nos_pixel[n_chan - 1] << 8) + 
-		     nos_pixel[n_chan - 1]);
+                vd_pixel(int2fixed(x), int2fixed(y),
+                    (nos_pixel[n_chan - 1] << 16) + (nos_pixel[n_chan - 1] << 8) +
+                     nos_pixel[n_chan - 1]);
 #		endif
-	    if (nos_alpha_g_ptr != NULL)
-		++nos_alpha_g_ptr;
-	}
-	tos_ptr += tos->rowstride;
-	nos_ptr += nos->rowstride;
-	if (nos_alpha_g_ptr != NULL)
-	    nos_alpha_g_ptr += nos->rowstride - width;
-	if (mask_ptr != NULL)
-	    mask_ptr += maskbuf->rowstride;
+            if (nos_alpha_g_ptr != NULL)
+                ++nos_alpha_g_ptr;
+        }
+        tos_ptr += tos->rowstride;
+        nos_ptr += nos->rowstride;
+        if (nos_alpha_g_ptr != NULL)
+            nos_alpha_g_ptr += nos->rowstride - width;
+        if (mask_ptr != NULL)
+            mask_ptr += maskbuf->rowstride;
     }
-
 
     /* Lets look at composed result */
 
-
 #if RAW_DUMP
 
-	/* The group alpha should disappear */
+        /* The group alpha should disappear */
     dump_raw_buffer(y1-y0, width, tos->n_planes - tos->has_alpha_g - tos->has_shape,
-                nos_planestride, nos->rowstride, 
+                nos_planestride, nos->rowstride,
                 "Composed",composed_ptr);
 
     global_index++;
-
 
 #endif
 
@@ -430,15 +424,15 @@ pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
     int ncomp = dev->color_info.num_components;
 
     for (i = 0; i < ncomp; i++) {
-	color <<= 8;
-	color |= (colors[i] >> drop);
+        color <<= 8;
+        color |= (colors[i] >> drop);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
 /*
  * Encode a list of colorant values into a gx_color_index_value.
-   Stick the tag information at the end.  
+   Stick the tag information at the end.
  */
 gx_color_index
 pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
@@ -452,8 +446,8 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
     /* Add in the tag information */
     color = gs_current_object_tag(dev->memory);
     for (i = 0; i < ncomp; i++) {
-	color <<= 8;
-	color |= (colors[i] >> drop);
+        color <<= 8;
+        color |= (colors[i] >> drop);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -468,8 +462,8 @@ pdf14_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
     int ncomp = dev->color_info.num_components;
 
     for (i = 0; i < ncomp; i++) {
-	out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
-	color >>= 8;
+        out[ncomp - i - 1] = (gx_color_value) ((color & 0xff) * 0x101);
+        color >>= 8;
     }
     return 0;
 }
@@ -485,16 +479,16 @@ pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
     gs_devn_params *pdevn_params = NULL;
 
     if (dev->procs.ret_devn_params != NULL)
-	pdevn_params = dev_proc(dev, ret_devn_params)(dev);
+        pdevn_params = dev_proc(dev, ret_devn_params)(dev);
     /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
     if (pdevn_params == NULL) {
 #ifdef DEBUG
-	if (strncmp(dev->dname, "pdf14", 5))
+        if (strncmp(dev->dname, "pdf14", 5))
             emprintf1(dev->memory,
                       "pdf14_compressed_encode_color devn_params not from pdf14 device, device = '%s'\n",
                       dev->dname);
 #endif
-    	pdevn_params = &(((pdf14_device *)dev)->devn_params);
+        pdevn_params = &(((pdf14_device *)dev)->devn_params);
     }
     return devn_encode_compressed_color(dev, colors, pdevn_params);
 }
@@ -506,21 +500,21 @@ pdf14_compressed_encode_color(gx_device *dev, const gx_color_value colors[])
  */
 int
 pdf14_compressed_decode_color(gx_device * dev, gx_color_index color,
-	       						gx_color_value * out)
+                                                        gx_color_value * out)
 {
     gs_devn_params *pdevn_params = NULL;
 
     if (dev->procs.ret_devn_params != NULL)
-	pdevn_params = dev_proc(dev, ret_devn_params)(dev);
+        pdevn_params = dev_proc(dev, ret_devn_params)(dev);
     /* If there was no dev_proc or it returned NULL, assume pdf14 device devn_params */
     if (pdevn_params == NULL) {
 #ifdef DEBUG
-	if (strncmp(dev->dname, "pdf14", 5))
+        if (strncmp(dev->dname, "pdf14", 5))
             emprintf1(dev->memory,
                       "pdf14_compressed_decode_color devn_params not from pdf14 device, device = '%s'\n",
                       dev->dname);
 #endif
-    	pdevn_params = &(((pdf14_device *)dev)->devn_params);
+        pdevn_params = &(((pdf14_device *)dev)->devn_params);
     }
     return devn_decode_compressed_color(dev, color, out, pdevn_params);
 }
@@ -533,7 +527,7 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
     out[0] = out[1] = out[2] = frac_0;
     out[3] = frac_1 - gray;
     for (--num_comp; num_comp > 3; num_comp--)
-	out[num_comp] = 0;
+        out[num_comp] = 0;
 }
 
 /*
@@ -553,7 +547,7 @@ pdf14_gray_cs_to_cmyk_cm(gx_device * dev, frac gray, frac out[])
  */
 void
 pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
-  			   frac r, frac g, frac b, frac out[])
+                           frac r, frac g, frac b, frac out[])
 {
     int num_comp = dev->color_info.num_components;
 
@@ -569,7 +563,7 @@ pdf14_rgb_cs_to_cmyk_cm(gx_device * dev, const gs_imager_state *pis,
         out[3] = k;
     }
     for (--num_comp; num_comp > 3; num_comp--)
-	out[num_comp] = 0;
+        out[num_comp] = 0;
 }
 
 void
@@ -582,7 +576,7 @@ pdf14_cmyk_cs_to_cmyk_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac o
     out[2] = y;
     out[3] = k;
     for (--num_comp; num_comp > 3; num_comp--)
-	out[num_comp] = 0;
+        out[num_comp] = 0;
 }
 
 #ifdef DUMP_TO_PNG
@@ -611,21 +605,21 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     int y;
 
     if (buf->data == NULL)
-	return 0;
+        return 0;
 
     file = fopen ("c:\\temp\\tmp.png", "wb");
 
     if_debug0('v', "[v]pnga_output_page\n");
 
     if (row == 0 || png_ptr == 0 || info_ptr == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
     /* set error handling */
     if (setjmp(png_ptr->jmpbuf)) {
-	/* If we get here, we had a problem reading the file */
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        /* If we get here, we had a problem reading the file */
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
 
     code = 0;			/* for normal path */
@@ -637,9 +631,9 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
     info_ptr->height = height;
     /* resolution is in pixels per meter vs. dpi */
     info_ptr->x_pixels_per_unit =
-	(png_uint_32) (96.0 * (100.0 / 2.54));
+        (png_uint_32) (96.0 * (100.0 / 2.54));
     info_ptr->y_pixels_per_unit =
-	(png_uint_32) (96.0 * (100.0 / 2.54));
+        (png_uint_32) (96.0 * (100.0 / 2.54));
     info_ptr->phys_unit_type = PNG_RESOLUTION_METER;
     info_ptr->valid |= PNG_INFO_pHYs;
 
@@ -649,7 +643,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
     /* add comment */
     sprintf(software_text, "%s %d.%02d", gs_product,
-	    (int)(gs_revision / 100), (int)(gs_revision % 100));
+            (int)(gs_revision / 100), (int)(gs_revision % 100));
     text_png.compression = -1;	/* uncompressed */
     text_png.key = (char *)software_key;	/* not const, unfortunately */
     text_png.text = software_text;
@@ -666,16 +660,16 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 
     /* Write the contents of the image. */
     for (y = 0; y < height; ++y) {
-	int x;
+        int x;
 
-	for (x = 0; x < width; ++x) {
-	    row[(x << 2)] = buf_ptr[x];
-	    row[(x << 2) + 1] = buf_ptr[x + planestride];
-	    row[(x << 2) + 2] = buf_ptr[x + planestride * 2];
-	    row[(x << 2) + 3] = buf_ptr[x + planestride * 3];
-	}
-	png_write_row(png_ptr, row);
-	buf_ptr += rowstride;
+        for (x = 0; x < width; ++x) {
+            row[(x << 2)] = buf_ptr[x];
+            row[(x << 2) + 1] = buf_ptr[x + planestride];
+            row[(x << 2) + 2] = buf_ptr[x + planestride * 2];
+            row[(x << 2) + 3] = buf_ptr[x + planestride * 3];
+        }
+        png_write_row(png_ptr, row);
+        buf_ptr += rowstride;
     }
 
     /* write the rest of the file */
@@ -692,40 +686,40 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 #endif
 
 void
-gx_build_blended_image_row(byte *buf_ptr, int y, int planestride, 
-			   int width, int num_comp, byte bg, byte *linebuf)
+gx_build_blended_image_row(byte *buf_ptr, int y, int planestride,
+                           int width, int num_comp, byte bg, byte *linebuf)
 {
     int x;
     for (x = 0; x < width; x++) {
-	byte comp, a;
-	int tmp, comp_num;
+        byte comp, a;
+        int tmp, comp_num;
 
-	/* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-	a = buf_ptr[x + planestride * num_comp];
+        /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+        a = buf_ptr[x + planestride * num_comp];
 
-	if ((a + 1) & 0xfe) {
-	    a ^= 0xff;
-	    for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		comp  = buf_ptr[x + planestride * comp_num];
-		tmp = ((bg - comp) * a) + 0x80;
-		comp += (tmp + (tmp >> 8)) >> 8;
-		linebuf[x * num_comp + comp_num] = comp;
-	    }
-	} else if (a == 0) {
-	    for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		linebuf[x * num_comp + comp_num] = bg;
-	    }
-	} else {
-	    for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		comp = buf_ptr[x + planestride * comp_num];
-		linebuf[x * num_comp + comp_num] = comp;
-	    }
-	}
+        if ((a + 1) & 0xfe) {
+            a ^= 0xff;
+            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                comp  = buf_ptr[x + planestride * comp_num];
+                tmp = ((bg - comp) * a) + 0x80;
+                comp += (tmp + (tmp >> 8)) >> 8;
+                linebuf[x * num_comp + comp_num] = comp;
+            }
+        } else if (a == 0) {
+            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                linebuf[x * num_comp + comp_num] = bg;
+            }
+        } else {
+            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                comp = buf_ptr[x + planestride * comp_num];
+                linebuf[x * num_comp + comp_num] = comp;
+            }
+        }
     }
 }
 
 void
-gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride, 
+gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
                       int planestride, int num_comp, byte bg)
 {
     int x, y;
@@ -736,31 +730,31 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
     for (y = 0; y < height; y++) {
         position = y * rowstride;
         for (x = 0; x < width; x++) {
-	    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
             a = buf_ptr[position + planestride * num_comp];
-	    if ((a + 1) & 0xfe) {
-	        a ^= 0xff;
-	        for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		    comp  = buf_ptr[position + planestride * comp_num];
-		    tmp = ((bg - comp) * a) + 0x80;
-		    comp += (tmp + (tmp >> 8)) >> 8;
-		    buf_ptr[position + planestride * comp_num] = comp;
-	        }
-	    } else if (a == 0) {
-	        for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		    buf_ptr[position + planestride * comp_num] = bg;
-	        }
-	    }
+            if ((a + 1) & 0xfe) {
+                a ^= 0xff;
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp  = buf_ptr[position + planestride * comp_num];
+                    tmp = ((bg - comp) * a) + 0x80;
+                    comp += (tmp + (tmp >> 8)) >> 8;
+                    buf_ptr[position + planestride * comp_num] = comp;
+                }
+            } else if (a == 0) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    buf_ptr[position + planestride * comp_num] = bg;
+                }
+            }
             position+=1;
         }
     }
 }
 
 int
-gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr, 
-		      int planestride, int rowstride,
-		      int x0, int y0, int width, int height, int num_comp, byte bg,
-		      gs_separations * pseparations)
+gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
+                      int planestride, int rowstride,
+                      int x0, int y0, int width, int height, int num_comp, byte bg,
+                      gs_separations * pseparations)
 {
     int code = 0;
     int x, y, tmp, comp_num, output_comp_num;
@@ -784,74 +778,74 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
      */
     /* Check if target processes CMYK colorants. */
     for (comp_num = 0; comp_num < 4; comp_num++) {
-	const char * pcomp_name = (const char *)DeviceCMYKComponents[comp_num]; 
+        const char * pcomp_name = (const char *)DeviceCMYKComponents[comp_num];
 
-	output_comp_num = dev_proc(target, get_color_comp_index)
-		(target, pcomp_name, strlen(pcomp_name), NO_COMP_NAME_TYPE);
-	if (output_comp_num >=0 &&
-	     	output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
-	    output_map[num_known_comp] = output_comp_num;
-	    input_map[num_known_comp++] = comp_num;
-	}
+        output_comp_num = dev_proc(target, get_color_comp_index)
+                (target, pcomp_name, strlen(pcomp_name), NO_COMP_NAME_TYPE);
+        if (output_comp_num >=0 &&
+                output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
+            output_map[num_known_comp] = output_comp_num;
+            input_map[num_known_comp++] = comp_num;
+        }
     }
     /* Check if target processes our spot colorants. */
     for (comp_num = 0; comp_num < num_sep; comp_num++) {
-	output_comp_num = dev_proc(target, get_color_comp_index)
-	       (target, (const char *)(pseparations->names[comp_num].data),
-	       	pseparations->names[comp_num].size,  NO_COMP_NAME_TYPE);
-	if (output_comp_num >= 0 &&
-	     	output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
-	    output_map[num_known_comp] = output_comp_num;
-	    input_map[num_known_comp++] = comp_num + 4;
-	}
+        output_comp_num = dev_proc(target, get_color_comp_index)
+               (target, (const char *)(pseparations->names[comp_num].data),
+                pseparations->names[comp_num].size,  NO_COMP_NAME_TYPE);
+        if (output_comp_num >= 0 &&
+                output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
+            output_map[num_known_comp] = output_comp_num;
+            input_map[num_known_comp++] = comp_num + 4;
+        }
     }
 
     /* Clear all output colorants first */
     for (comp_num = 0; comp_num < output_num_comp; comp_num++)
-	cv[comp_num] = 0;
+        cv[comp_num] = 0;
 
     /* Send pixel data to the target device. */
     for (y = 0; y < height; y++) {
-	for (x = 0; x < width; x++) {
+        for (x = 0; x < width; x++) {
 
-	    /* composite CMYKA, etc. pixel with over solid background */
-	    a = buf_ptr[x + planestride * num_comp];
+            /* composite CMYKA, etc. pixel with over solid background */
+            a = buf_ptr[x + planestride * num_comp];
 
-	    if ((a + 1) & 0xfe) {
-		/* a ^= 0xff; */  /* No inversion here! Bug 689895 */
-		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-		    comp  = buf_ptr[x + planestride * input_map[comp_num]];
-		    tmp = ((comp - bg) * a) + 0x80;
-		    comp += tmp + (tmp >> 8);
-		    cv[output_map[comp_num]] = comp;
-		}
-	    } else if (a == 0) {
-		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-		    cv[output_map[comp_num]] = bg;
-		}
-	    } else {
-		for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
-		    comp = buf_ptr[x + planestride * input_map[comp_num]];
-		    cv[output_map[comp_num]] = (comp << 8) + comp;
-		}
-	    }
-	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x + x0, 
-							    y + y0, 1, 1, color);
-	    if (code < 0)
-		return code;
-	}
+            if ((a + 1) & 0xfe) {
+                /* a ^= 0xff; */  /* No inversion here! Bug 689895 */
+                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                    comp  = buf_ptr[x + planestride * input_map[comp_num]];
+                    tmp = ((comp - bg) * a) + 0x80;
+                    comp += tmp + (tmp >> 8);
+                    cv[output_map[comp_num]] = comp;
+                }
+            } else if (a == 0) {
+                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                    cv[output_map[comp_num]] = bg;
+                }
+            } else {
+                for (comp_num = 0; comp_num < num_known_comp; comp_num++) {
+                    comp = buf_ptr[x + planestride * input_map[comp_num]];
+                    cv[output_map[comp_num]] = (comp << 8) + comp;
+                }
+            }
+            color = dev_proc(target, encode_color)(target, cv);
+            code = dev_proc(target, fill_rectangle)(target, x + x0,
+                                                            y + y0, 1, 1, color);
+            if (code < 0)
+                return code;
+        }
 
-	buf_ptr += rowstride;
+        buf_ptr += rowstride;
     }
 
     return code;
 }
 
 int
-gx_put_blended_image_custom(gx_device *target, byte *buf_ptr, 
-		      int planestride, int rowstride,
-		      int x0, int y0, int width, int height, int num_comp, byte bg)
+gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
+                      int planestride, int rowstride,
+                      int x0, int y0, int width, int height, int num_comp, byte bg)
 {
     int code = 0;
     int x, y, tmp, comp_num;
@@ -860,38 +854,37 @@ gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
     gx_color_value comp;
     byte a;
 
-
     /* Send pixel data to the target device. */
     for (y = 0; y < height; y++) {
-	for (x = 0; x < width; x++) {
+        for (x = 0; x < width; x++) {
 
-	    /* composite CMYKA, etc. pixel with over solid background */
-	    a = buf_ptr[x + planestride * num_comp];
+            /* composite CMYKA, etc. pixel with over solid background */
+            a = buf_ptr[x + planestride * num_comp];
 
-	    if ((a + 1) & 0xfe) {
-		a ^= 0xff;
-		for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		    comp  = buf_ptr[x + planestride * comp_num];
-		    tmp = ((bg - comp) * a) + 0x80;
-		    comp += tmp + (tmp >> 8);
-		    cv[comp_num] = comp;
-		}
-	    } else if (a == 0) {
-		for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		    cv[comp_num] = bg;
-		}
-	    } else {
-		for (comp_num = 0; comp_num < num_comp; comp_num++) {
-		    comp = buf_ptr[x + planestride * comp_num];
-		    cv[comp_num] = (comp << 8) + comp;
-		}
-	    }
-	    color = dev_proc(target, encode_color)(target, cv);
-	    code = dev_proc(target, fill_rectangle)(target, x + x0, 
-							    y + y0, 1, 1, color);
-	}
+            if ((a + 1) & 0xfe) {
+                a ^= 0xff;
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp  = buf_ptr[x + planestride * comp_num];
+                    tmp = ((bg - comp) * a) + 0x80;
+                    comp += tmp + (tmp >> 8);
+                    cv[comp_num] = comp;
+                }
+            } else if (a == 0) {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    cv[comp_num] = bg;
+                }
+            } else {
+                for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                    comp = buf_ptr[x + planestride * comp_num];
+                    cv[comp_num] = (comp << 8) + comp;
+                }
+            }
+            color = dev_proc(target, encode_color)(target, cv);
+            code = dev_proc(target, fill_rectangle)(target, x + x0,
+                                                            y + y0, 1, 1, color);
+        }
 
-	buf_ptr += rowstride;
+        buf_ptr += rowstride;
     }
 
     return code;

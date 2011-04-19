@@ -20,7 +20,7 @@
  *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111
  *   U.S.A.
  */
- 
+
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This program may also be distributed as part of AFPL Ghostscript, under the
@@ -136,13 +136,13 @@ bjc_put_print_method_short(FILE *file, char color)
 }
 void
 bjc_put_print_method(FILE *file, char color, char media, char quality,
-		     char density)
+                     char density)
 {
     bjc_put_command(file, 'c', 2 + (density != 0));
     fputc(color, file);
     fputc(media | quality, file);
-    if (density) 
-	fputc(density, file);
+    if (density)
+        fputc(density, file);
 }
 
 /* Set raster resolution (ESC ( d <count> <y_res> [<x_res>]) */
@@ -150,10 +150,10 @@ void
 bjc_put_raster_resolution(FILE *file, int x_resolution, int y_resolution)
 {
     if (x_resolution == y_resolution) {
-	bjc_put_command(file, 'd', 2);
+        bjc_put_command(file, 'd', 2);
     } else {
-	bjc_put_command(file, 'd', 4);
-	bjc_put_hi_lo(file, y_resolution);
+        bjc_put_command(file, 'd', 4);
+        bjc_put_hi_lo(file, y_resolution);
     }
     bjc_put_hi_lo(file, x_resolution);
 }
@@ -190,7 +190,7 @@ bjc_put_media_supply(FILE *file, char supply, char type)
 /* Identify ink cartridge (ESC ( m <count> <type>) */ /*
 void
 bjc_put_identify_cartridge(FILE *file,
-			   bjc_identify_cartridge_command_t command)
+                           bjc_identify_cartridge_command_t command)
 {
     bjc_put_command(s, 'm', 1);
     spputc(s, command);
@@ -199,7 +199,7 @@ bjc_put_identify_cartridge(FILE *file,
 /* CMYK raster image (ESC ( A <count> <color>) */
 void
 bjc_put_cmyk_image(FILE *file, char component,
-		   const char *data, int count)
+                   const char *data, int count)
 {
     bjc_put_command(file, 'A', count + 1);
     fputc(component, file);
@@ -272,7 +272,6 @@ bjc_put_indexed_image(FILE *file, int dot_rows, int dot_cols, int layers)
     fputc(layers, file);
 }
 
-
 /* ------------------------------------------------------------------ */
 
 /* Invert a raster line ( we need it for Black -> K ) */
@@ -281,10 +280,10 @@ bjc_invert_bytes(byte *row, uint raster, bool inverse, byte lastmask)
 {   bool ret=false;
 
     for(; raster > 1; row++, raster--) {
-	if(!(inverse)) *row = ~(*row);
-	if(*row) ret = true;
+        if(!(inverse)) *row = ~(*row);
+        if(*row) ret = true;
     }
-	if(!(inverse)) *row ^= 0xff;
+        if(!(inverse)) *row ^= 0xff;
                        *row &= lastmask;
     return ret;
 }
@@ -302,11 +301,11 @@ bjc_invert_cmyk_bytes(byte *rowC, byte *rowM, byte *rowY, byte *rowK,
     skip->skipK=false;
 
     for(; raster > 1; rowC++, rowM++, rowY++, rowK++, raster--) {
-	if(inverse) {
-	              tmpC = ~(*rowC|*rowK);
-	              tmpM = ~(*rowM|*rowK);
-		      tmpY = ~(*rowY|*rowK);
-		     *rowK = ~(*rowC|*rowM|*rowY|*rowK);
+        if(inverse) {
+                      tmpC = ~(*rowC|*rowK);
+                      tmpM = ~(*rowM|*rowK);
+                      tmpY = ~(*rowY|*rowK);
+                     *rowK = ~(*rowC|*rowM|*rowY|*rowK);
                      *rowC = tmpC;
                      *rowM = tmpM;
                      *rowY = tmpY;
@@ -315,7 +314,7 @@ bjc_invert_cmyk_bytes(byte *rowC, byte *rowM, byte *rowY, byte *rowK,
         if(*rowM) skip->skipM=true;
         if(*rowY) skip->skipY=true;
         if(*rowK) skip->skipK=true;
-	if(*rowC|*rowM|*rowY|*rowK) ret = true;
+        if(*rowC|*rowM|*rowY|*rowK) ret = true;
     }
     return ret;
 }
@@ -332,7 +331,7 @@ bjc_compress(const byte *row, uint raster, byte *compressed)
   const byte *end_row = row;
   register const byte *exam = row;
   register byte *cptr = compressed; /* output pointer into compressed bytes */
-  
+
   end_row += raster;
 
   while ( exam < end_row ) {
@@ -347,26 +346,23 @@ bjc_compress(const byte *row, uint raster, byte *compressed)
     while ( exam < end_row ) {
       test2 = *++exam;
       if ( test == test2 )
-	  break;
+          break;
       test = test2;
     }
-    
 
     /* Find out how long the run is */
     end_dis = exam - 1;
     if ( exam == end_row ) { /* no run */
       next = --end_row;
-    } else { 
+    } else {
 
       next = exam + 1;
       while ( next < end_row && *next == test ) next++;
     }
-    
 
     /* Now [compr..end_dis) should be encoded as dissimilar, */
     /* and [end_dis..next) should be encoded as similar. */
     /* Note that either of these ranges may be empty. */
-    
 
     for ( ; ; ) {	/* Encode up to 128 dissimilar bytes */
       uint count = end_dis - compr; /* uint for faster switch */
@@ -377,32 +373,31 @@ bjc_compress(const byte *row, uint raster, byte *compressed)
       case 3: cptr[3] = compr[2];
       case 2: cptr[2] = compr[1];
       case 1: cptr[1] = compr[0];
-	*cptr = count - 1;
-	cptr += count + 1;
+        *cptr = count - 1;
+        cptr += count + 1;
       case 0: /* all done */
-	break;
+        break;
       default:
-	if ( count > 128 ) count = 128;
-	*cptr++ = count - 1;
-	memcpy(cptr, compr, count);
-	cptr += count, compr += count;
-	continue;
+        if ( count > 128 ) count = 128;
+        *cptr++ = count - 1;
+        memcpy(cptr, compr, count);
+        cptr += count, compr += count;
+        continue;
       }
       break;
     }
-    
 
     {	/* Encode up to 128 similar bytes. */
       /* Note that count may be <0 at end of row. */
       int count = next - end_dis;
       if (next < end_row || test != 0)
-	while ( count > 0 ) { 
+        while ( count > 0 ) {
 
-	  int this = (count > 128 ? 128 : count);
-	  *cptr++ = 257 - this;
-	  *cptr++ = (byte)test;
-	  count -= this;
-	}
+          int this = (count > 128 ? 128 : count);
+          *cptr++ = 257 - this;
+          *cptr++ = (byte)test;
+          count -= this;
+        }
       exam = next;
     }
   }
@@ -417,7 +412,7 @@ void bjc_rgb_to_cmy(byte r, byte g, byte b,
 }
 
 void bjc_rgb_to_gray(byte r, byte g, byte b,
-		     int *k)
+                     int *k)
 {
     *k = ( (int)r * 77 + (int)g * 151 + (int)b * 28) >> 8;
 }
@@ -433,14 +428,14 @@ void bjc_build_gamma_table(float gamma, char color)
 
     switch(color) {
     case CMYK_C:
-	table = bjc_gamma_tableC;
-	break;
+        table = bjc_gamma_tableC;
+        break;
     case CMYK_M:
-	table = bjc_gamma_tableM;
-	break;
+        table = bjc_gamma_tableM;
+        break;
     case CMYK_Y:
-	table = bjc_gamma_tableY;
-	break;
+        table = bjc_gamma_tableY;
+        break;
     case CMYK_K:
     default:
         table = bjc_gamma_tableK;
@@ -475,7 +470,6 @@ uint bjc_rand(void)
     return ret & 0x03ff;
 }                                             /* random numbers 0-1023 */
 
-
 void bjc_init_tresh(int rnd)
 {
     int i=(int)(time(NULL) & 0x0ff);
@@ -484,7 +478,6 @@ void bjc_init_tresh(int rnd)
     for(i=-512; i<512; i++) bjc_treshold[i+512] =
                                 (int)(delta * i / 1024.0 + 2040);
 }                      /* init treshold array ~rnd% around halfway (127*16) */
-
 
 /* Declarations for Floyd-Steinberg dithering.
  *
@@ -530,14 +523,14 @@ FloydSteinbergErrorsG = (int *) gs_alloc_bytes(pdev->memory,
                                               sizeof(int)*(pdev->width+3),
                                               "bjc error buffer");
 if (FloydSteinbergErrorsG == 0)		/* can't allocate error buffer */
-	return -1;
+        return -1;
 FloydSteinbergDirectionForward=true;
 
 for (i=0; i < pdev->width+3; i++) FloydSteinbergErrorsG[i] = 0;
                                                               /* clear */
 bjc_rgb_to_gray(ppdev->paperColor.red,
-		ppdev->paperColor.green,
-		ppdev->paperColor.blue,
+                ppdev->paperColor.green,
+                ppdev->paperColor.blue,
                 &FloydSteinbergG);
 FloydSteinbergG = (255 - FloydSteinbergG) << 4;  /* Maybe */
 bjc_init_tresh(ppdev->rnd);
@@ -547,8 +540,8 @@ return 0;
 
 void
 FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
-			uint raster, bool limit_extr)
-{ 
+                        uint raster, bool limit_extr)
+{
     byte byteG=0, bitmask = 0x80; /* first bit */
     int i;
     int error = 0, delta;
@@ -559,10 +552,10 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
         /* First  point */
         err_vect = FloydSteinbergErrorsG + 1;
 
-	for( i=width; i>0; i--, row++, err_vect++) { /* i, sample, error */
-	    err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
+        for( i=width; i>0; i--, row++, err_vect++) { /* i, sample, error */
+            err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
             if(err_corr > 4080 && limit_extr) err_corr = 4080;
-	    error += err_corr + *(err_vect+1);     /* the error in 1/16 */
+            error += err_corr + *(err_vect+1);     /* the error in 1/16 */
 
             if(error > bjc_treshold[bjc_rand()])  {
                 error -=  4080;
@@ -588,7 +581,7 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
                 *dithered = byteG;
             }
             else bitmask >>= 1;
-	}
+        }
         FloydSteinbergDirectionForward=false;
     }
     else {
@@ -597,8 +590,8 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
         bitmask = 1 << ((raster << 3 ) - width) ;
         err_vect = FloydSteinbergErrorsG + width + 1;
 
-	for( i=width; i>0; i--, row--, err_vect--) {
-	    err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
+        for( i=width; i>0; i--, row--, err_vect--) {
+            err_corr = bjc_gamma_tableK[255-(*row)] + FloydSteinbergG;
             if(err_corr > 4080 && limit_extr) err_corr = 4080;
 
             error += err_corr + *(err_vect - 1);
@@ -626,7 +619,7 @@ FloydSteinbergDitheringG(byte *row, byte *dithered, uint width,
                 *dithered = byteG;
             }
             else bitmask <<= 1;
-	}
+        }
         FloydSteinbergDirectionForward=true;
     }
 }
@@ -645,16 +638,16 @@ FloydSteinbergErrorsC = (int *) gs_alloc_bytes(pdev->memory,
                                             3*sizeof(int)*(pdev->width+3),
                                               "bjc CMY error buffer");
 if (FloydSteinbergErrorsC == 0 )      	/* can't allocate error buffer */
-	return -1;
+        return -1;
 
 for (i=0; i < 3 * (pdev->width+3); i++) FloydSteinbergErrorsC[i] = 0;
 
 FloydSteinbergDirectionForward=true;
 bjc_rgb_to_cmy(ppdev->paperColor.red,
-	       ppdev->paperColor.green,
-	       ppdev->paperColor.blue,
-	       &FloydSteinbergC,
-	       &FloydSteinbergM,
+               ppdev->paperColor.green,
+               ppdev->paperColor.blue,
+               &FloydSteinbergC,
+               &FloydSteinbergM,
                &FloydSteinbergY);
 
 FloydSteinbergC <<= 4;
@@ -667,7 +660,7 @@ return 0;
 
 void
 FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
-			uint raster, bool limit_extr, bool composeK)
+                        uint raster, bool limit_extr, bool composeK)
 {   byte byteC=0, byteM=0, byteY=0, byteK=0, bitmask = 0x80; /* first bit */
     int i;
     int errorC = 0, errorM = 0, errorY = 0, delta;
@@ -676,7 +669,7 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
 
     if (FloydSteinbergDirectionForward) {
         err_vect = FloydSteinbergErrorsC + 3;         /* errCMY */
-	/* First  point */
+        /* First  point */
 
         for( i=width; i>0; i--, row+=4, err_vect+=3) { /*separate components */
 
@@ -770,12 +763,12 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
         FloydSteinbergDirectionForward=false;
     }
     else {
-	row += (width << 2) - 4;   /* point to the end of the row */
+        row += (width << 2) - 4;   /* point to the end of the row */
         dithered += raster - 1;
         err_vect = FloydSteinbergErrorsC + 3 * width + 3;       /* errCMY */
         bitmask = 1 << ((raster << 3 ) - width) ;
 
-	for( i=width; i>0; i--, row-=4, err_vect-=3) {
+        for( i=width; i>0; i--, row-=4, err_vect-=3) {
 
             err_corrC = bjc_gamma_tableC[  (*row)   + (*(row+3))]
                           + FloydSteinbergC;
@@ -861,7 +854,7 @@ FloydSteinbergDitheringC(byte *row, byte *dithered, uint width,
                 *(dithered+2*raster) = byteY;
                 *(dithered+3*raster) = byteK;
             }
-	    else bitmask <<= 1;
+            else bitmask <<= 1;
         }
         FloydSteinbergDirectionForward=true;
     }

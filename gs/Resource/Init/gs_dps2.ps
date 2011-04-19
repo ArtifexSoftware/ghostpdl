@@ -1,12 +1,12 @@
 %    Copyright (C) 1990, 1996, 1997, 1998, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -28,36 +28,36 @@ level2dict begin
 % ------ Halftones ------ %
 
 /.makestackdict
-	{ { counttomark -1 roll } forall .dicttomark
-	} bind def
+        { { counttomark -1 roll } forall .dicttomark
+        } bind def
 /currenthalftone		% - currenthalftone <dict>
-	{ mark .currenthalftone
-	   { { exch pop }		% halftone
-	     { /HalftoneType 1		% screen
-		{ /Frequency /Angle /SpotFunction }
-	       .makestackdict readonly
-	     }
-	     { /HalftoneType 2		% colorscreen
-		{ /RedFrequency /RedAngle /RedSpotFunction
-		  /GreenFrequency /GreenAngle /GreenSpotFunction
-		  /BlueFrequency /BlueAngle /BlueSpotFunction
-		  /GrayFrequency /GrayAngle /GraySpotFunction
-		}
-	       .makestackdict readonly
-	     }
-	   }
-	  exch get exec
-	} odef
+        { mark .currenthalftone
+           { { exch pop }		% halftone
+             { /HalftoneType 1		% screen
+                { /Frequency /Angle /SpotFunction }
+               .makestackdict readonly
+             }
+             { /HalftoneType 2		% colorscreen
+                { /RedFrequency /RedAngle /RedSpotFunction
+                  /GreenFrequency /GreenAngle /GreenSpotFunction
+                  /BlueFrequency /BlueAngle /BlueSpotFunction
+                  /GrayFrequency /GrayAngle /GraySpotFunction
+                }
+               .makestackdict readonly
+             }
+           }
+          exch get exec
+        } odef
 % Define sethalftone so it converts types 1-4 to type 5.
 /.makehalftoneRGBV {	% <dict> <type> <keys> <keysRGBV>
   4 -1 roll exch { 1 index exch get exch } forall 15 1 roll
   14 -2 roll mark 15 1 roll { /Gray /Blue /Green /Red } {
-		% stack: v0 v1 v2 type keys comp
+                % stack: v0 v1 v2 type keys comp
     mark
     2 index 0 get 8 -1 roll
     4 index 1 get 9 -1 roll
     6 index 2 get 10 -1 roll
-		% stack: type keys comp mark k0 v0 k1 v1 k2 v2
+                % stack: type keys comp mark k0 v0 k1 v1 k2 v2
     /HalftoneType 10 index .dicttomark
     counttomark 2 roll
   } forall pop pop
@@ -96,29 +96,29 @@ systemdict begin
   5 {
     pop dup length dict copy
     mark 1 index {
-		% Even HalftoneType 5 dictionaries have entries other than
-		% subsidiary halftone dictionaries.
+                % Even HalftoneType 5 dictionaries have entries other than
+                % subsidiary halftone dictionaries.
       dup type /dicttype ne {
-	0
+        0
       } {
-	dup /HalftoneType .knownget not { 0 } if
+        dup /HalftoneType .knownget not { 0 } if
       } ifelse dup 5 gt {
-		% Stack: dict mark ... keyN dictN httypeN
-		% Assume that all HalftoneTypes > 5 convert to 5.
-	1 index 3 1 roll
-	//.halftonetypes exch get exec pop /Default get
-		% Stack: dict mark ... keyN setdict'N htdict'N
-	counttomark 1 add index 3 index 4 -1 roll put
+                % Stack: dict mark ... keyN dictN httypeN
+                % Assume that all HalftoneTypes > 5 convert to 5.
+        1 index 3 1 roll
+        //.halftonetypes exch get exec pop /Default get
+                % Stack: dict mark ... keyN setdict'N htdict'N
+        counttomark 1 add index 3 index 4 -1 roll put
       } {
-	pop
+        pop
       } ifelse
     } forall .dicttomark { .sethalftone5 }
   } bind def
 end
 end
 /sethalftone {		% <dict> sethalftone -
-	% We must create the new dictionary in the same VM as the
-	% operand; otherwise, invalidaccess errors may occur.
+        % We must create the new dictionary in the same VM as the
+        % operand; otherwise, invalidaccess errors may occur.
   .currentglobal 1 .argindex dup gcheck .setglobal
   dup //.halftonetypes 1 index /HalftoneType get
   dup type /integertype ne {
@@ -134,7 +134,7 @@ end
 % and to insert the Frequency and Angle into Type 1 halftones, per
 % Adobe TN 5085.
 /.fixsethalftonescreen		% <freq> <angle> <dict> .fix...screen
-				%   <freq> <angle> <dict> <dict'>
+                                %   <freq> <angle> <dict> <dict'>
  { dup dup /HalftoneType get 1 eq
     { dup wcheck not { dup length dict .copydict } if
       dup /Frequency 5 index put
@@ -144,17 +144,17 @@ end
    if
  } bind def
 /setscreen		% <ignore*2> <dict> setscreen -
-	{ dup type /dicttype eq
-	   { .fixsethalftonescreen sethalftone pop pop pop }
-	   { //setscreen }
-	  ifelse
-	} .bind odef
+        { dup type /dicttype eq
+           { .fixsethalftonescreen sethalftone pop pop pop }
+           { //setscreen }
+          ifelse
+        } .bind odef
 /setcolorscreen		% <ignore*11> <dict> setcolorscreen -
-	{ dup type /dicttype eq
-	   { .fixsethalftonescreen sethalftone 12 { pop } repeat }
-	   { //setcolorscreen }
-	  ifelse
-	} .bind odef
+        { dup type /dicttype eq
+           { .fixsethalftonescreen sethalftone 12 { pop } repeat }
+           { //setcolorscreen }
+          ifelse
+        } .bind odef
 % Redefine currentscreen and currentcolorscreen to extract the Frequency
 % and Angle from Type 1 halftones, per Adobe TN 5085.
 /.fixcurrenthalftonescreen	% <dict> .fix... <freq> <angle> <proc>
@@ -164,22 +164,22 @@ end
    ifelse 3 2 roll
  } bind def
 /currentscreen		% - currentscreen 60 0 <dict>
-	{ .currenthalftone
-	   { { .fixcurrenthalftonescreen }	% halftone
-	     { }				% screen
-	     { 12 3 roll 9 { pop } repeat	% colorscreen
-	       dup type /dicttype eq { .fixcurrenthalftonescreen } if
-	     }
-	   }
-	  exch get exec
-	} odef
+        { .currenthalftone
+           { { .fixcurrenthalftonescreen }	% halftone
+             { }				% screen
+             { 12 3 roll 9 { pop } repeat	% colorscreen
+               dup type /dicttype eq { .fixcurrenthalftonescreen } if
+             }
+           }
+          exch get exec
+        } odef
 /currentcolorscreen	% - currentcolorscreen (60 0 <dict>)*4
 { .currenthalftone
    { { .fixcurrenthalftonescreen 3 copy 6 copy }	% halftone
      {					% screen
-	 % The procedure might not be readable....
-	 dup rcheck { dup length array copy cvx } if
-	 3 copy 6 copy
+         % The procedure might not be readable....
+         dup rcheck { dup length array copy cvx } if
+         3 copy 6 copy
      }
      { }				% colorscreen
    }
@@ -198,11 +198,11 @@ end
 /defineuserobject {		% <index> <value> defineuserobject -
   1 index 65535 gt {
     % .localvmarray throws limitcheck but CET 31-02 wants rangecheck
-    /defineuserobject .systemvar /rangecheck signalerror 
+    /defineuserobject .systemvar /rangecheck signalerror
   } if
   .UserObjects .knownget {
     length dup 3 .argindex le {
-		% Stack: index value len
+                % Stack: index value len
       2 index eq { 1 index 2 mul } { 1 index 1 add } ifelse
       .localvmarray .UserObjects get
       1 index copy pop
@@ -217,14 +217,14 @@ end
 } odef
 /execuserobject {		% <index> execuserobject -
   dup type /integertype ne {
-    % Adobe validates the argument before accessing UserObjects - CET 31-03 
-    /execuserobject .systemvar /typecheck signalerror 
+    % Adobe validates the argument before accessing UserObjects - CET 31-03
+    /execuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex get exch pop exec
 } odef
 /undefineuserobject {		% <index> undefineuserobject -
   dup type /integertype ne {
-    % Adobe validates the argument before accessing UserObjects - CET 31-11 
+    % Adobe validates the argument before accessing UserObjects - CET 31-11
     /undefineuserobject .systemvar /typecheck signalerror
   } if
   .UserObjects get 1 .argindex //null put pop
@@ -235,12 +235,12 @@ end
 % Dummy definitions for cache control operators
 
 /ucachestatus {			% - ucachestatus -mark- ? ? ? ? <size>
-	mark 0 0 0 0 /MaxUPathItem getuserparam
+        mark 0 0 0 0 /MaxUPathItem getuserparam
 } odef
 /setucacheparams {		% -mark- ... <size> setucacheparams -
-		% Provoke an appropriate error if needed.
-	counttomark 1 lt { () 0 get } if
-	dup 0 or /MaxUPathItem getuserparam .max
+                % Provoke an appropriate error if needed.
+        counttomark 1 lt { () 0 get } if
+        dup 0 or /MaxUPathItem getuserparam .max
         1 dict dup /MaxUPathItem 4 -1 roll put setuserparams cleartomark
 } odef
 

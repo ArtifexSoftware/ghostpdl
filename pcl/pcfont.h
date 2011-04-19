@@ -38,7 +38,7 @@ int pcl_recompute_font(pcl_state_t * pcs, bool internal_only);
 #define	pcl_break_underline(pcs)   \
     BEGIN                           \
     if (pcs->underline_enabled)    \
-	pcl_do_underline(pcs);     \
+        pcl_do_underline(pcs);     \
     END
 
 /* ...and then, after repositioning, restart underlining if necessary... */

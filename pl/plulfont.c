@@ -38,13 +38,11 @@
 #include "shareinc.h"
 #include "gxfapiu.h"
 
-
 /* the line printer font NB FIXME use a header file. */
 #include "plulp.c"
 /* global warning.  ufst state structure passed to each ufst function */
 IF_STATE IFS;
 PIF_STATE pIFS = &IFS;
-
 
 /* GLOBAL Warning! NB fix me */
 /*
@@ -55,7 +53,6 @@ static bool  plugins_opened = false;
 
 /* NB fixme - we might as well require an environment variable for the
    fco names and plugins, these change every UFST release */
-
 
 /* defaults for locations of font collection objects (fco's) and
    plugins the root data directory.  These are internally separated with
@@ -71,7 +68,7 @@ const char *UFSTPLUGINS="mtfonts/pcl45/mt3/plug__xi.fco";
 /* return a null terminated array of strings on the heap from
    str0:str1:str:.  Use gs separator */
 
-static 
+static
 char **build_strs(gs_memory_t *mem, char *str, char separator)
 {
     int i;
@@ -90,7 +87,7 @@ char **build_strs(gs_memory_t *mem, char *str, char separator)
         /* reallocate the list that holds the string pointers */
         if ( i == 0 )
             /* first time */
-            list = 
+            list =
                 (char **)gs_alloc_bytes(mem,
                                         ((i+1) + 1) /* terminating null */ * sizeof(char *),
                                         "build_strs");
@@ -107,10 +104,10 @@ char **build_strs(gs_memory_t *mem, char *str, char separator)
         /* terminate the list of strings */
         list[i + 1] = (char *)NULL;
         /* allocate space for the string */
-        list[i] = gs_alloc_bytes(mem, 
+        list[i] = gs_alloc_bytes(mem,
                                  end_path - start_path + 1 /* NULL term */,
                                  "build_strs");
-        
+
         if ( list[i] == NULL ) {
             /* NB no fall back or freeing of memory already consumed */
             dprintf("Fatal System Failure\n" );
@@ -147,7 +144,6 @@ free_strs(gs_memory_t *mem, char **str_of_strs)
 }
 
 #define MAXPATHLEN 1024
-
 
 /* these are lists of fco's and plugins relative to the root directory
    they can be set by an environment variable or defaults.  */
@@ -190,8 +186,8 @@ pl_check_fonts(pl_dict_t *pfontdict, bool use_unicode_names_for_keys)
                                  &value, true, NULL) /* return data ignored */ ) {
                 int i;
                 dprintf("Font with unicode key: ");
-                for (i = 0; 
-                     i < sizeof(resident_table[j].unicode_fontname)/sizeof(resident_table[j].unicode_fontname[0]); 
+                for (i = 0;
+                     i < sizeof(resident_table[j].unicode_fontname)/sizeof(resident_table[j].unicode_fontname[0]);
                      i++) {
                     dprintf1("%c", (char)resident_table[j].unicode_fontname[i]);
                 }
@@ -215,7 +211,7 @@ pl_check_fonts(pl_dict_t *pfontdict, bool use_unicode_names_for_keys)
 
 int
 pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontdict,
-		       gs_font_dir *pdir, int storage, bool use_unicode_names_for_keys)
+                       gs_font_dir *pdir, int storage, bool use_unicode_names_for_keys)
 {
     int                 i, k;
     UW16                bSize, status = 0;
@@ -226,7 +222,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     char                 **plugins;
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
-	return true;
+        return true;
 
     pl_ufst_root_dir(ufst_root_dir, sizeof(ufst_root_dir));
 
@@ -234,7 +230,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     if (!plugins_opened) {
 
-	gx_UFST_close_static_fcos();
+        gx_UFST_close_static_fcos();
         plugins = pl_ufst_get_list(mem, "UFSTPLUGINS", UFSTPLUGINS);
         for (k = 0; plugins[k]; k++) {
             strcpy((char *)pthnm, ufst_root_dir);
@@ -265,15 +261,15 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
      */
     fcos = pl_ufst_get_list(mem, "UFSTFCOS", UFSTFCOS);
     for (k = 0; fcos[k]; k++) {
-	SW16 fcoHandle;
+        SW16 fcoHandle;
         /* build and open (get handle) for the k'th fco file name */
         strcpy((char *)pthnm, ufst_root_dir);
         strcat((char *)pthnm, fcos[k]);
-	
-	fcoHandle = gx_UFST_find_fco_handle_by_name(pthnm);
 
-	if (fcoHandle == 0 && 
-	    (status = gx_UFST_open_static_fco(pthnm, &fcoHandle)) != 0) {
+        fcoHandle = gx_UFST_find_fco_handle_by_name(pthnm);
+
+        if (fcoHandle == 0 &&
+            (status = gx_UFST_open_static_fco(pthnm, &fcoHandle)) != 0) {
             dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
             continue;
         }
@@ -324,7 +320,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 #endif
                         /* Record the differing points per inch value
                            for Intellifont derived fonts. */
-                        
+
                         if (pfDesc->scaleFactor == 8782) {
                             plfont->pts_per_inch = 72.307;
                             pitch_cp = (pfDesc->spaceBand * 100 * 72.0)
@@ -372,9 +368,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 #endif
     return TRUE;
 }
-  
+
 int
-pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir, 
+pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pdir,
                          int storage, bool use_unicode_names_for_keys)
 {
     int i;
@@ -392,11 +388,10 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
                 return -1;
             if (pl_fill_in_font(pfont, pplfont, pdir, mem, "lineprinter fonts") < 0)
                 return -1;
-           
+
             pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
             pplfont->params = resident_table[i].params;
             memcpy(pplfont->character_complement, resident_table[i].character_complement, 8);
-
 
             if ( use_unicode_names_for_keys )
                 pl_dict_put(pfontdict, resident_table[i].unicode_fontname, 32, pplfont );
@@ -414,13 +409,13 @@ pl_load_ufst_lineprinter(gs_memory_t *mem, pl_dict_t *pfontdict, gs_font_dir *pd
             pplfont->is_xl_format = false;
             pplfont->resolution.x = pplfont->resolution.y = 300;
 
-            code = pl_font_alloc_glyph_table(pplfont, 256, mem, 
+            code = pl_font_alloc_glyph_table(pplfont, 256, mem,
                                              "pl_load_ufst_lineprinter pplfont (glyph table)");
             if ( code < 0 )
                 return code;
 
             while (1) {
-	
+
                 uint width = pl_get_uint16(char_data + 12);
                 uint height = pl_get_uint16(char_data + 14);
                 uint ccode_plus_header_plus_data = 2 + 16 + (((width + 7) >> 3) * height);

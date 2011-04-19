@@ -23,35 +23,33 @@
 
 #endif /* ALLOW64 */
 
-
-
 /* Machine/Language architectural specifications */
 typedef struct {
-	int bits;		/* Bits in this data type */
-	char *name;		/* Name used to specify this type */
-	int align;		/* Non-zero if this type should be accessed aligned */
+        int bits;		/* Bits in this data type */
+        char *name;		/* Name used to specify this type */
+        int align;		/* Non-zero if this type should be accessed aligned */
 } dtypes;
 
 #define MXDTYPES 6
 
 typedef struct {
-	int bigend;		/* Non-zero if this is a bigendian architecture */
-	int uwa;		/* Use wide memory access */
+        int bigend;		/* Non-zero if this is a bigendian architecture */
+        int uwa;		/* Use wide memory access */
 
-	int    pbits;	/* Number of bits in a pointer */
+        int    pbits;	/* Number of bits in a pointer */
 
-	int    nords;	/* Number of ord types */
-	dtypes ords[MXDTYPES];		/* Ordinal types, in size order */
-	int    natord;	/* Index of natural machine ordinal */
+        int    nords;	/* Number of ord types */
+        dtypes ords[MXDTYPES];		/* Ordinal types, in size order */
+        int    natord;	/* Index of natural machine ordinal */
 
-	int    nints;	/* Number of int types */
-	dtypes ints[MXDTYPES];		/* Integer types, in size order */
-	int    natint;	/* Index of natural machine integer */
+        int    nints;	/* Number of int types */
+        dtypes ints[MXDTYPES];		/* Integer types, in size order */
+        int    natint;	/* Index of natural machine integer */
 
-	/* Optimisation settings */
-	int    shfm;	/* Non-zero to use shifts for masking */
-	int    oscale;	/* Maximum power of 2 scaled indexing mode, 0 for none. */
-	int    smmul;	/* Has fast small multiply for index scaling */
+        /* Optimisation settings */
+        int    shfm;	/* Non-zero to use shifts for masking */
+        int    oscale;	/* Maximum power of 2 scaled indexing mode, 0 for none. */
+        int    smmul;	/* Has fast small multiply for index scaling */
 
 } mach_arch;
 

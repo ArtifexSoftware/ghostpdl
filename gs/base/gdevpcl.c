@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -52,10 +52,10 @@ gdev_pcl_paper_size(gx_device * dev)
     new_width_difference = w - width_inches;					\
     new_height_difference = h - height_inches;					\
     if ((new_width_difference > -0.01) && (new_height_difference > -0.01) &&	\
-	((width_difference == -1.0) ||						\
-	 (new_width_difference < width_difference) ||				\
-	 ((new_width_difference == width_difference) &&				\
-	  (new_height_difference < height_difference)))) {			\
+        ((width_difference == -1.0) ||						\
+         (new_width_difference < width_difference) ||				\
+         ((new_width_difference == width_difference) &&				\
+          (new_height_difference < height_difference)))) {			\
       width_difference = new_width_difference;					\
       height_difference = new_height_difference;				\
       code = c;									\
@@ -106,7 +106,7 @@ gdev_pcl_3bit_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 /* Map the printer color back to RGB. */
 int
 gdev_pcl_3bit_map_color_rgb(gx_device * dev, gx_color_index color,
-			    gx_color_value prgb[3])
+                            gx_color_value prgb[3])
 {
     ushort cc = (ushort) color ^ 7;
 
@@ -132,107 +132,107 @@ gdev_pcl_3bit_map_color_rgb(gx_device * dev, gx_color_index color,
  */
 int
 gdev_pcl_mode2compress_padded(const word * row, const word * end_row,
-			      byte * compressed, bool pad)
+                              byte * compressed, bool pad)
 {
     register const word *exam = row;	/* word being examined in the row to compress */
     register byte *cptr = compressed;	/* output pointer into compressed bytes */
 
     while (exam < end_row) {	/* Search ahead in the input looking for a run */
-	/* of at least 4 identical bytes. */
-	const byte *compr = (const byte *)exam;
-	const byte *end_dis;
-	const word *next;
-	register word test = *exam;
+        /* of at least 4 identical bytes. */
+        const byte *compr = (const byte *)exam;
+        const byte *end_dis;
+        const word *next;
+        register word test = *exam;
 
-	while (((test << 8) ^ test) > 0xff) {
-	    if (++exam >= end_row)
-		break;
-	    test = *exam;
-	}
+        while (((test << 8) ^ test) > 0xff) {
+            if (++exam >= end_row)
+                break;
+            test = *exam;
+        }
 
-	/* Find out how long the run is */
-	end_dis = (const byte *)exam;
-	if (exam == end_row) {	/* no run */
-	    /* See if any of the last 3 "dissimilar" bytes are 0. */
-	    if (!pad && end_dis > compr && end_dis[-1] == 0) {
-		if (end_dis[-2] != 0)
-		    end_dis--;
-		else if (end_dis[-3] != 0)
-		    end_dis -= 2;
-		else
-		    end_dis -= 3;
-	    }
-	    next = --end_row;
-	} else {
-	    next = exam + 1;
-	    while (next < end_row && *next == test)
-		next++;
-	    /* See if any of the last 3 "dissimilar" bytes */
-	    /* are the same as the repeated byte. */
-	    if (end_dis > compr && end_dis[-1] == (byte) test) {
-		if (end_dis[-2] != (byte) test)
-		    end_dis--;
-		else if (end_dis[-3] != (byte) test)
-		    end_dis -= 2;
-		else
-		    end_dis -= 3;
-	    }
-	}
+        /* Find out how long the run is */
+        end_dis = (const byte *)exam;
+        if (exam == end_row) {	/* no run */
+            /* See if any of the last 3 "dissimilar" bytes are 0. */
+            if (!pad && end_dis > compr && end_dis[-1] == 0) {
+                if (end_dis[-2] != 0)
+                    end_dis--;
+                else if (end_dis[-3] != 0)
+                    end_dis -= 2;
+                else
+                    end_dis -= 3;
+            }
+            next = --end_row;
+        } else {
+            next = exam + 1;
+            while (next < end_row && *next == test)
+                next++;
+            /* See if any of the last 3 "dissimilar" bytes */
+            /* are the same as the repeated byte. */
+            if (end_dis > compr && end_dis[-1] == (byte) test) {
+                if (end_dis[-2] != (byte) test)
+                    end_dis--;
+                else if (end_dis[-3] != (byte) test)
+                    end_dis -= 2;
+                else
+                    end_dis -= 3;
+            }
+        }
 
-	/* Now [compr..end_dis) should be encoded as dissimilar, */
-	/* and [end_dis..next) should be encoded as similar. */
-	/* Note that either of these ranges may be empty. */
+        /* Now [compr..end_dis) should be encoded as dissimilar, */
+        /* and [end_dis..next) should be encoded as similar. */
+        /* Note that either of these ranges may be empty. */
 
-	for (;;) {		/* Encode up to 127 dissimilar bytes */
-	    uint count = end_dis - compr;	/* uint for faster switch */
+        for (;;) {		/* Encode up to 127 dissimilar bytes */
+            uint count = end_dis - compr;	/* uint for faster switch */
 
-	    switch (count) {	/* Use memcpy only if it's worthwhile. */
-		case 6:
-		    cptr[6] = compr[5];
-		case 5:
-		    cptr[5] = compr[4];
-		case 4:
-		    cptr[4] = compr[3];
-		case 3:
-		    cptr[3] = compr[2];
-		case 2:
-		    cptr[2] = compr[1];
-		case 1:
-		    cptr[1] = compr[0];
-		    *cptr = count - 1;
-		    cptr += count + 1;
-		case 0:	/* all done */
-		    break;
-		default:
-		    if (count > 127)
-			count = 127;
-		    *cptr++ = count - 1;
-		    memcpy(cptr, compr, count);
-		    cptr += count, compr += count;
-		    continue;
-	    }
-	    break;
-	}
+            switch (count) {	/* Use memcpy only if it's worthwhile. */
+                case 6:
+                    cptr[6] = compr[5];
+                case 5:
+                    cptr[5] = compr[4];
+                case 4:
+                    cptr[4] = compr[3];
+                case 3:
+                    cptr[3] = compr[2];
+                case 2:
+                    cptr[2] = compr[1];
+                case 1:
+                    cptr[1] = compr[0];
+                    *cptr = count - 1;
+                    cptr += count + 1;
+                case 0:	/* all done */
+                    break;
+                default:
+                    if (count > 127)
+                        count = 127;
+                    *cptr++ = count - 1;
+                    memcpy(cptr, compr, count);
+                    cptr += count, compr += count;
+                    continue;
+            }
+            break;
+        }
 
-	{			/* Encode up to 127 similar bytes. */
-	    /* Note that count may be <0 at end of row. */
-	    int count = (const byte *)next - end_dis;
+        {			/* Encode up to 127 similar bytes. */
+            /* Note that count may be <0 at end of row. */
+            int count = (const byte *)next - end_dis;
 
-	    while (count > 0) {
-		int this = (count > 127 ? 127 : count);
+            while (count > 0) {
+                int this = (count > 127 ? 127 : count);
 
-		*cptr++ = 257 - this;
-		*cptr++ = (byte) test;
-		count -= this;
-	    }
-	    exam = next;
-	}
+                *cptr++ = 257 - this;
+                *cptr++ = (byte) test;
+                count -= this;
+            }
+            exam = next;
+        }
     }
     return (cptr - compressed);
 }
 int
 gdev_pcl_mode2compress(const word * row, const word * end_row,
-		       byte * compressed)
+                       byte * compressed)
 {
     return gdev_pcl_mode2compress_padded(row, end_row, compressed, false);
 }
@@ -253,41 +253,41 @@ gdev_pcl_mode3compress(int bytecount, const byte * current, byte * previous, byt
     const byte *end = current + bytecount;
 
     while (cur < end) {		/* Detect a maximum run of unchanged bytes. */
-	const byte *run = cur;
-	register const byte *diff;
-	const byte *stop;
-	int offset, cbyte;
+        const byte *run = cur;
+        register const byte *diff;
+        const byte *stop;
+        int offset, cbyte;
 
-	while (cur < end && *cur == *prev) {
-	    cur++, prev++;
-	}
-	if (cur == end)
-	    break;		/* rest of row is unchanged */
-	/* Detect a run of up to 8 changed bytes. */
-	/* We know that *cur != *prev. */
-	diff = cur;
-	stop = (end - cur > 8 ? cur + 8 : end);
-	do {
-	    *prev++ = *cur++;
-	}
-	while (cur < stop && *cur != *prev);
-	/* Now [run..diff) are unchanged, and */
-	/* [diff..cur) are changed. */
-	/* Generate the command byte(s). */
-	offset = diff - run;
-	cbyte = (cur - diff - 1) << 5;
-	if (offset < 31)
-	    *out++ = cbyte + offset;
-	else {
-	    *out++ = cbyte + 31;
-	    offset -= 31;
-	    while (offset >= 255)
-		*out++ = 255, offset -= 255;
-	    *out++ = offset;
-	}
-	/* Copy the changed data. */
-	while (diff < cur)
-	    *out++ = *diff++;
+        while (cur < end && *cur == *prev) {
+            cur++, prev++;
+        }
+        if (cur == end)
+            break;		/* rest of row is unchanged */
+        /* Detect a run of up to 8 changed bytes. */
+        /* We know that *cur != *prev. */
+        diff = cur;
+        stop = (end - cur > 8 ? cur + 8 : end);
+        do {
+            *prev++ = *cur++;
+        }
+        while (cur < stop && *cur != *prev);
+        /* Now [run..diff) are unchanged, and */
+        /* [diff..cur) are changed. */
+        /* Generate the command byte(s). */
+        offset = diff - run;
+        cbyte = (cur - diff - 1) << 5;
+        if (offset < 31)
+            *out++ = cbyte + offset;
+        else {
+            *out++ = cbyte + 31;
+            offset -= 31;
+            while (offset >= 255)
+                *out++ = 255, offset -= 255;
+            *out++ = offset;
+        }
+        /* Copy the changed data. */
+        while (diff < cur)
+            *out++ = *diff++;
     }
     return out - compressed;
 }
@@ -301,7 +301,7 @@ gdev_pcl_mode3compress(int bytecount, const byte * current, byte * previous, byt
  */
 int
 gdev_pcl_mode9compress(int bytecount, const byte *current,
-		       const byte *previous, byte *compressed)
+                       const byte *previous, byte *compressed)
 {
     register const byte *cur = current;
     register const byte *prev = previous;
@@ -309,120 +309,120 @@ gdev_pcl_mode9compress(int bytecount, const byte *current,
     const byte *end = current + bytecount;
 
     while (cur < end) {		/* Detect a run of unchanged bytes. */
-	const byte *run = cur;
-	register const byte *diff;
-	int offset;
+        const byte *run = cur;
+        register const byte *diff;
+        int offset;
 
-	while (cur < end && *cur == *prev) {
-	    cur++, prev++;
-	}
-	if (cur == end)
-	    break;		/* rest of row is unchanged */
-	/* Detect a run of changed bytes. */
-	/* We know that *cur != *prev. */
-	diff = cur;
-	do {
-	    prev++;
-	    cur++;
-	}
-	while (cur < end && *cur != *prev);
-	/* Now [run..diff) are unchanged, and */
-	/* [diff..cur) are changed. */
-	offset = diff - run;
-	{
-	    const byte *stop_test = cur - 4;
-	    int dissimilar, similar;
+        while (cur < end && *cur == *prev) {
+            cur++, prev++;
+        }
+        if (cur == end)
+            break;		/* rest of row is unchanged */
+        /* Detect a run of changed bytes. */
+        /* We know that *cur != *prev. */
+        diff = cur;
+        do {
+            prev++;
+            cur++;
+        }
+        while (cur < end && *cur != *prev);
+        /* Now [run..diff) are unchanged, and */
+        /* [diff..cur) are changed. */
+        offset = diff - run;
+        {
+            const byte *stop_test = cur - 4;
+            int dissimilar, similar;
 
-	    while (diff < cur) {
-		const byte *compr = diff;
-		const byte *next;	/* end of run */
-		byte value = 0;
+            while (diff < cur) {
+                const byte *compr = diff;
+                const byte *next;	/* end of run */
+                byte value = 0;
 
-		while (diff <= stop_test &&
-		       ((value = *diff) != diff[1] ||
-			value != diff[2] ||
-			value != diff[3]))
-		    diff++;
+                while (diff <= stop_test &&
+                       ((value = *diff) != diff[1] ||
+                        value != diff[2] ||
+                        value != diff[3]))
+                    diff++;
 
-		/* Find out how long the run is */
-		if (diff > stop_test)	/* no run */
-		    next = diff = cur;
-		else {
-		    next = diff + 4;
-		    while (next < cur && *next == value)
-			next++;
-		}
+                /* Find out how long the run is */
+                if (diff > stop_test)	/* no run */
+                    next = diff = cur;
+                else {
+                    next = diff + 4;
+                    while (next < cur && *next == value)
+                        next++;
+                }
 
 #define MAXOFFSETU 15
 #define MAXCOUNTU 7
-		/* output 'dissimilar' bytes, uncompressed */
-		if ((dissimilar = diff - compr)) {
-		    int temp, i;
+                /* output 'dissimilar' bytes, uncompressed */
+                if ((dissimilar = diff - compr)) {
+                    int temp, i;
 
-		    if ((temp = --dissimilar) > MAXCOUNTU)
-			temp = MAXCOUNTU;
-		    if (offset < MAXOFFSETU)
-			*out++ = (offset << 3) | (byte) temp;
-		    else {
-			*out++ = (MAXOFFSETU << 3) | (byte) temp;
-			offset -= MAXOFFSETU;
-			while (offset >= 255) {
-			    *out++ = 255;
-			    offset -= 255;
-			}
-			*out++ = offset;
-		    }
-		    if (temp == MAXCOUNTU) {
-			temp = dissimilar - MAXCOUNTU;
-			while (temp >= 255) {
-			    *out++ = 255;
-			    temp -= 255;
-			}
-			*out++ = (byte) temp;
-		    }
-		    for (i = 0; i <= dissimilar; i++)
-			*out++ = *compr++;
-		    offset = 0;
-		}		/* end uncompressed */
+                    if ((temp = --dissimilar) > MAXCOUNTU)
+                        temp = MAXCOUNTU;
+                    if (offset < MAXOFFSETU)
+                        *out++ = (offset << 3) | (byte) temp;
+                    else {
+                        *out++ = (MAXOFFSETU << 3) | (byte) temp;
+                        offset -= MAXOFFSETU;
+                        while (offset >= 255) {
+                            *out++ = 255;
+                            offset -= 255;
+                        }
+                        *out++ = offset;
+                    }
+                    if (temp == MAXCOUNTU) {
+                        temp = dissimilar - MAXCOUNTU;
+                        while (temp >= 255) {
+                            *out++ = 255;
+                            temp -= 255;
+                        }
+                        *out++ = (byte) temp;
+                    }
+                    for (i = 0; i <= dissimilar; i++)
+                        *out++ = *compr++;
+                    offset = 0;
+                }		/* end uncompressed */
 #undef MAXOFFSETU
 #undef MAXCOUNTU
 
 #define MAXOFFSETC 3
 #define MAXCOUNTC 31
-		/* output 'similar' bytes, run-length encoded */
-		if ((similar = next - diff)) {
-		    int temp;
+                /* output 'similar' bytes, run-length encoded */
+                if ((similar = next - diff)) {
+                    int temp;
 
-		    if ((temp = (similar -= 2)) > MAXCOUNTC)
-			temp = MAXCOUNTC;
-		    if (offset < MAXOFFSETC)
-			*out++ = 0x80 | (offset << 5) | (byte) temp;
-		    else {
-			*out++ = 0x80 | (MAXOFFSETC << 5) | (byte) temp;
-			offset -= MAXOFFSETC;
-			while (offset >= 255) {
-			    *out++ = 255;
-			    offset -= 255;
-			}
-			*out++ = offset;
-		    }
-		    if (temp == MAXCOUNTC) {
-			temp = similar - MAXCOUNTC;
-			while (temp >= 255) {
-			    *out++ = 255;
-			    temp -= 255;
-			}
-			*out++ = (byte) temp;
-		    }
-		    *out++ = value;
-		    offset = 0;
-		}		/* end compressed */
+                    if ((temp = (similar -= 2)) > MAXCOUNTC)
+                        temp = MAXCOUNTC;
+                    if (offset < MAXOFFSETC)
+                        *out++ = 0x80 | (offset << 5) | (byte) temp;
+                    else {
+                        *out++ = 0x80 | (MAXOFFSETC << 5) | (byte) temp;
+                        offset -= MAXOFFSETC;
+                        while (offset >= 255) {
+                            *out++ = 255;
+                            offset -= 255;
+                        }
+                        *out++ = offset;
+                    }
+                    if (temp == MAXCOUNTC) {
+                        temp = similar - MAXCOUNTC;
+                        while (temp >= 255) {
+                            *out++ = 255;
+                            temp -= 255;
+                        }
+                        *out++ = (byte) temp;
+                    }
+                    *out++ = value;
+                    offset = 0;
+                }		/* end compressed */
 #undef MAXOFFSETC
 #undef MAXCOUNTC
 
-		diff = next;
-	    }
-	}
+                diff = next;
+            }
+        }
     }
     return out - compressed;
 }

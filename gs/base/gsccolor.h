@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,7 +38,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 /* Paint (non-Pattern) colors */
 typedef struct gs_paint_color_s {
     float values[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    /* CAUTION: The shading decomposition algorithm may allocate 
+    /* CAUTION: The shading decomposition algorithm may allocate
        a smaller space when a small number of color components is in use.
     */
 } gs_paint_color;
@@ -52,8 +52,8 @@ typedef struct gs_client_color_s gs_client_color;
 struct gs_client_color_s {
     gs_pattern_instance_t *pattern;
     gs_paint_color paint;	/* also color for uncolored pattern */
-    /* CAUTION: gs_paint_color structure must be the last field in 
-       gs_client_color_s to allow allocating a smaller space when 
+    /* CAUTION: gs_paint_color structure must be the last field in
+       gs_client_color_s to allow allocating a smaller space when
        a small number of color components is in use.
     */
 };
@@ -78,6 +78,5 @@ typedef enum {
     UNKNOWN,
     OTHER
 } gs_transparency_color_t;
-
 
 #endif /* gsccolor_INCLUDED */

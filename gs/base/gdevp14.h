@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -50,19 +50,18 @@ typedef struct {
      * execution time.
      */
     void (* unpack_color)(int num_comp, gx_color_index color,
-			       	pdf14_device * p14dev, byte * out);
+                                pdf14_device * p14dev, byte * out);
     /*
      * This procedure sends the final rasterized transparency data to the
      * output device as an image.
      */
     int (* put_image)(gx_device * dev,
-		    gs_imager_state * pis, gx_device * target);
+                    gs_imager_state * pis, gx_device * target);
 } pdf14_procs_s;
-
 
 typedef pdf14_procs_s pdf14_procs_t;
 
-/* A stack structure for the softmask buffers. 
+/* A stack structure for the softmask buffers.
    The mask will be pdf14 buffers that are wrapped
    in a refernce counted structure.  We need this to
    be referenced counted since we need to be able to push
@@ -77,7 +76,7 @@ struct pdf14_rcmask_s {
     pdf14_buf   *mask_buf;
     rc_header rc;
     gs_memory_t *memory;
-     
+
 };
 
 typedef struct pdf14_mask_s pdf14_mask_t;
@@ -87,9 +86,8 @@ struct pdf14_mask_s {
     pdf14_rcmask_t *rc_mask;
     pdf14_mask_t *previous;
     gs_memory_t *memory;
- 
-};
 
+};
 
 /* A structure to hold information
  * about the parent color related
@@ -112,11 +110,11 @@ struct pdf14_parent_color_s {
     uint max_gray;  /* Used to determine if device halftones */
     uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_imager_state *,
-						     const gx_device *);
+                                                     const gx_device *);
     const gx_cm_color_map_procs *(*parent_color_mapping_procs)(const gx_device *);
     gx_color_index (*encode)(gx_device *, const gx_color_value value[]);
     int (*decode)(gx_device *, gx_color_index, gx_color_value *);
-    int (*parent_color_comp_index)(gx_device *, const char *, int, int); 
+    int (*parent_color_comp_index)(gx_device *, const char *, int, int);
     const pdf14_procs_t * unpack_procs;
     const pdf14_nonseparable_blending_procs_t * parent_blending_procs;
     cmm_profile_t *icc_profile;  /* Opaque to GC.  Allocated in non-gc memory */
@@ -175,7 +173,7 @@ struct pdf14_ctx_s {
     bool additive;
     int n_chan;
     int smask_depth;  /* used to catch smasks embedded in smasks.  bug691803 */
-    bool smask_blend; 
+    bool smask_blend;
 };
 
 #ifndef gs_devn_params_DEFINED
@@ -203,8 +201,6 @@ typedef struct gs_pdf14trans_params_s gs_pdf14trans_params_t;
 typedef struct pdf14_device_s pdf14_device;
 #endif
 
-
-
 /*
  * Define the default post-clist (clist reader) PDF 1.4 compositing device.
  * We actually use the same structure for both the clist writer and reader
@@ -230,7 +226,7 @@ typedef struct pdf14_device_s {
     gx_device * pclist_device;
     bool free_devicen;                  /* Used to avoid freeing a deviceN parameter from target clist device */
     const gx_color_map_procs *(*save_get_cmap_procs)(const gs_imager_state *,
-						     const gx_device *);
+                                                     const gx_device *);
     gx_device_color_info saved_target_color_info;
     dev_proc_encode_color(*saved_target_encode_color);
     dev_proc_decode_color(*saved_target_decode_color);
@@ -240,7 +236,7 @@ typedef struct pdf14_device_s {
     dev_proc_decode_color(*my_decode_color);
     dev_proc_get_color_mapping_procs(*my_get_color_mapping_procs);
     dev_proc_get_color_comp_index(*my_get_color_comp_index);
-    
+
     pdf14_parent_color_t *trans_group_parent_cmap_procs;
 
 } pdf14_device_t;
@@ -271,7 +267,7 @@ int send_pdf14trans(gs_imager_state * pis, gx_device * dev,
  */
 int
 pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
-	       				gs_param_list * plist);
+                                        gs_param_list * plist);
 
 /* Used to passed along information about the buffer created by the
    pdf14 device.  This is used by the pattern accumulator when the

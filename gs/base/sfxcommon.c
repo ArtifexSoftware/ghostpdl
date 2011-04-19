@@ -1,6 +1,6 @@
 /* Copyright (C) 2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,7 +35,7 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
     stream *s;
     s = s_alloc(mem, cname);
     if (s == 0)
-	return 0;
+        return 0;
     s_init_ids(s);
     s->is_temp = 0;		/* not a temp stream */
     s->foreign = 0;
@@ -57,30 +57,30 @@ file_alloc_stream(gs_memory_t * mem, client_name_t cname)
 /* but don't open an OS file or initialize the stream. */
 int
 file_open_stream(const char *fname, uint len, const char *file_access,
-		 uint buffer_size, stream ** ps, gx_io_device *iodev,
-		 iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
+                 uint buffer_size, stream ** ps, gx_io_device *iodev,
+                 iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
 {
     int code;
     FILE *file;
     char fmode[4];  /* r/w/a, [+], [b], null */
 
     if (!iodev)
-	iodev = iodev_default(mem);
+        iodev = iodev_default(mem);
     code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, mem);
     if (code < 0)
-	return code;
+        return code;
     if (fname == 0)
-	return 0;
+        return 0;
     if (fname[0] == 0)		/* fopen_proc gets NUL terminated string, not len */
-	return 0;		/* so this is the same as len == 0, so return NULL */
+        return 0;		/* so this is the same as len == 0, so return NULL */
     code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
-			 (char *)(*ps)->cbuf, (*ps)->bsize);
+                         (char *)(*ps)->cbuf, (*ps)->bsize);
     if (code < 0) {
-	/* discard the stuff we allocated to keep from accumulating stuff needing GC */
-	gs_free_object(mem, (*ps)->cbuf, "file_close(buffer)");
-	gs_free_object(mem, *ps, "file_prepare_stream(stream)");
-	*ps = NULL;
-	return code;
+        /* discard the stuff we allocated to keep from accumulating stuff needing GC */
+        gs_free_object(mem, (*ps)->cbuf, "file_close(buffer)");
+        gs_free_object(mem, *ps, "file_prepare_stream(stream)");
+        *ps = NULL;
+        return code;
     }
     file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize);
     return 0;
@@ -96,7 +96,7 @@ file_close_file(stream * s)
     int code = file_close_disable(s);
 
     if (code)
-	return code;
+        return code;
     /*
      * Check for temporary streams created for filters.
      * There may be more than one in the case of a procedure-based filter,
@@ -105,19 +105,19 @@ file_close_file(stream * s)
      * allocated by file_alloc_stream, so we mustn't free them.
      */
     while (stemp != 0 && stemp->is_temp != 0) {
-	stream *snext = stemp->strm;
+        stream *snext = stemp->strm;
 
-	mem = stemp->memory;
-	if (stemp->is_temp > 1)
-	    gs_free_object(mem, stemp->cbuf,
-			   "file_close(temp stream buffer)");
-	s_disable(stemp);
-	stemp = snext;
+        mem = stemp->memory;
+        if (stemp->is_temp > 1)
+            gs_free_object(mem, stemp->cbuf,
+                           "file_close(temp stream buffer)");
+        s_disable(stemp);
+        stemp = snext;
     }
     mem = s->memory;
     gs_free_object(mem, s->cbuf, "file_close(buffer)");
     if (s->close_strm && stemp != 0)
-	return sclose(stemp);
+        return sclose(stemp);
     return 0;
 }
 
@@ -127,27 +127,27 @@ file_close_file(stream * s)
  */
 void
 file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
-		 uint buffer_size)
+                 uint buffer_size)
 {
     switch (fmode[0]) {
     case 'a':
-	sappend_file(s, file, buffer, buffer_size);
-	break;
+        sappend_file(s, file, buffer, buffer_size);
+        break;
     case 'r':
-	/* Defeat buffering for terminals. */
-	{
-	    struct stat rstat;
+        /* Defeat buffering for terminals. */
+        {
+            struct stat rstat;
 
-	    fstat(fileno(file), &rstat);
-	    sread_file(s, file, buffer,
-		       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
-	}
-	break;
+            fstat(fileno(file), &rstat);
+            sread_file(s, file, buffer,
+                       (S_ISCHR(rstat.st_mode) ? 1 : buffer_size));
+        }
+        break;
     case 'w':
-	swrite_file(s, file, buffer, buffer_size);
+        swrite_file(s, file, buffer, buffer_size);
     }
     if (fmode[1] == '+')
-	s->file_modes |= s_mode_read | s_mode_write;
+        s->file_modes |= s_mode_read | s_mode_write;
     s->save_close = s->procs.close;
     s->procs.close = file_close_file;
 }
@@ -157,8 +157,8 @@ file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
 /* On a successful return, the C file name is in the stream buffer. */
 /* If fname==0, set up stream, and buffer. */
 int
-file_prepare_stream(const char *fname, uint len, const char *file_access, 
-		 uint buffer_size, stream ** ps, char fmode[4], gs_memory_t *mem)
+file_prepare_stream(const char *fname, uint len, const char *file_access,
+                 uint buffer_size, stream ** ps, char fmode[4], gs_memory_t *mem)
 {
     byte *buffer;
     register stream *s;
@@ -167,23 +167,23 @@ file_prepare_stream(const char *fname, uint len, const char *file_access,
     strcpy(fmode, file_access);
     strcat(fmode, gp_fmode_binary_suffix);
     if (buffer_size == 0)
-	buffer_size = file_default_buffer_size;
+        buffer_size = file_default_buffer_size;
     if (len >= buffer_size)    /* we copy the file name into the buffer */
-	return_error(gs_error_limitcheck);
+        return_error(gs_error_limitcheck);
     /* Allocate the stream first, since it persists */
     /* even after the file has been closed. */
     s = file_alloc_stream(mem, "file_prepare_stream");
     if (s == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     /* Allocate the buffer. */
     buffer = gs_alloc_bytes(mem, buffer_size, "file_prepare_stream(buffer)");
     if (buffer == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if (fname != 0) {
-	memcpy(buffer, fname, len);
-	buffer[len] = 0;	/* terminate string */
+        memcpy(buffer, fname, len);
+        buffer[len] = 0;	/* terminate string */
     } else
-	buffer[0] = 0;	/* safety */
+        buffer[0] = 0;	/* safety */
     s->cbuf = buffer;
     s->bsize = s->cbsize = buffer_size;
     s->save_close = 0;	    /* in case this stream gets disabled before init finishes */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,20 +39,20 @@ static int double_result(i_ctx_t *, int, double);
 static int double_unary(i_ctx_t *, double (*)(double));
 
 #define dbegin_unary()\
-	os_ptr op = osp;\
-	double num;\
-	int code = double_params_result(op, 1, &num);\
+        os_ptr op = osp;\
+        double num;\
+        int code = double_params_result(op, 1, &num);\
 \
-	if ( code < 0 )\
-	  return code
+        if ( code < 0 )\
+          return code
 
 #define dbegin_binary()\
-	os_ptr op = osp;\
-	double num[2];\
-	int code = double_params_result(op, 2, num);\
+        os_ptr op = osp;\
+        double num[2];\
+        int code = double_params_result(op, 2, num);\
 \
-	if ( code < 0 )\
-	  return code
+        if ( code < 0 )\
+          return code
 
 /* ------ Arithmetic ------ */
 
@@ -70,7 +70,7 @@ zddiv(i_ctx_t *i_ctx_p)
 {
     dbegin_binary();
     if (num[1] == 0.0)
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     return double_result(i_ctx_p, 2, num[0] / num[1]);
 }
 
@@ -135,7 +135,7 @@ zdsqrt(i_ctx_t *i_ctx_p)
 {
     dbegin_unary();
     if (num < 0.0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     return double_result(i_ctx_p, 1, sqrt(num));
 }
 
@@ -176,13 +176,13 @@ zdatan(i_ctx_t *i_ctx_p)
 
     dbegin_binary();
     if (num[0] == 0) {		/* on X-axis, special case */
-	if (num[1] == 0)
-	    return_error(e_undefinedresult);
-	result = (num[1] < 0 ? 180 : 0);
+        if (num[1] == 0)
+            return_error(e_undefinedresult);
+        result = (num[1] < 0 ? 180 : 0);
     } else {
-	result = atan2(num[0], num[1]) * radians_to_degrees;
-	if (result < 0)
-	    result += 360;
+        result = atan2(num[0], num[1]) * radians_to_degrees;
+        if (result < 0)
+            result += 360;
     }
     return double_result(i_ctx_p, 2, result);
 }
@@ -202,9 +202,9 @@ zdexp(i_ctx_t *i_ctx_p)
 
     dbegin_binary();
     if (num[0] == 0.0 && num[1] == 0.0)
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     if (num[0] < 0.0 && modf(num[1], &ipart) != 0.0)
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     return double_result(i_ctx_p, 2, pow(num[0], num[1]));
 }
 
@@ -213,7 +213,7 @@ dlog(i_ctx_t *i_ctx_p, double (*lfunc)(double))
 {
     dbegin_unary();
     if (num <= 0.0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     return double_result(i_ctx_p, 1, (*lfunc)(num));
 }
 /* <dposnum> <dresult> .dln <dresult> */
@@ -246,10 +246,10 @@ dcompare(i_ctx_t *i_ctx_p, int mask)
     int code = double_params(op, 2, num);
 
     if (code < 0)
-	return code;
+        return code;
     make_bool(op - 1,
-	      (mask & (num[0] < num[1] ? 1 : num[0] > num[1] ? 4 : 2))
-	      != 0);
+              (mask & (num[0] < num[1] ? 1 : num[0] > num[1] ? 4 : 2))
+              != 0);
     pop(1);
     return 0;
 }
@@ -316,11 +316,11 @@ zcvsd(i_ctx_t *i_ctx_p)
     char end;
 
     if (code < 0)
-	return code;
+        return code;
     check_read_type(op[-1], t_string);
     len = r_size(op - 1);
     if (len > MAX_CHARS)
-	return_error(e_limitcheck);
+        return_error(e_limitcheck);
     sprintf(buf, "%f", 1.5);
     dot = buf[1]; /* locale-dependent */
     memcpy(str, op[-1].value.bytes, len);
@@ -331,12 +331,12 @@ zcvsd(i_ctx_t *i_ctx_p)
      * the scanned number is a $.
      */
     while (len > 0 && isspace(*str))
-	++str, --len;
+        ++str, --len;
     while (len > 0 && isspace(str[len - 1]))
-	--len;
+        --len;
     str[len] = 0;
     if (strspn(str, "0123456789+-.dDeE") != len)
-	return_error(e_syntaxerror);
+        return_error(e_syntaxerror);
     strcat(str, "$");
     if (dot != '.') {
         char *pdot = strchr(str, '.');
@@ -344,7 +344,7 @@ zcvsd(i_ctx_t *i_ctx_p)
             *pdot = dot;
     }
     if (sscanf(str, "%lf%c", &num, &end) != 2 || end != '$')
-	return_error(e_syntaxerror);
+        return_error(e_syntaxerror);
     return double_result(i_ctx_p, 1, num);
 }
 
@@ -361,10 +361,10 @@ zdcvi(i_ctx_t *i_ctx_p)
     int code = double_params(op, 1, &num);
 
     if (code < 0)
-	return code;
+        return code;
 
     if (num < min_int_real || num > max_int_real)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     make_int(op, (long)num);	/* truncates toward 0 */
     return 0;
 }
@@ -384,9 +384,9 @@ zdcvr(i_ctx_t *i_ctx_p)
     int code = double_params(op, 1, &num);
 
     if (code < 0)
-	return code;
+        return code;
     if (num < min_real || num > max_real)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     make_real(op, (float)num);
     return 0;
 }
@@ -402,7 +402,7 @@ zdcvs(i_ctx_t *i_ctx_p)
     int len;
 
     if (code < 0)
-	return code;
+        return code;
     check_write_type(*op, t_string);
     sprintf(str, "%f", 1.5);
     dot = str[1]; /* locale-dependent */
@@ -416,19 +416,19 @@ zdcvs(i_ctx_t *i_ctx_p)
      * using %.16g.
      */
     {
-	double scanned;
+        double scanned;
 
-	sprintf(str, "%g", num);
-	sscanf(str, "%lf", &scanned);
-	if (scanned != num)
-	    sprintf(str, "%.16g", num);
+        sprintf(str, "%g", num);
+        sscanf(str, "%lf", &scanned);
+        if (scanned != num)
+            sprintf(str, "%.16g", num);
     }
     len = strlen(str);
     if (len > r_size(op))
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     /* Juggling locales isn't thread-safe. Posix me harder. */
     if (dot != '.') {
-        char *pdot = strchr(str, dot); 
+        char *pdot = strchr(str, dot);
         if (pdot)
             *pdot = '.';
     }
@@ -443,19 +443,19 @@ zdcvs(i_ctx_t *i_ctx_p)
 
 /* We need to split the table because of the 16-element limit. */
 const op_def zdouble1_op_defs[] = {
-		/* Arithmetic */
+                /* Arithmetic */
     {"3.dadd", zdadd},
     {"3.ddiv", zddiv},
     {"3.dmul", zdmul},
     {"3.dsub", zdsub},
-		/* Comparison */
+                /* Comparison */
     {"2.deq", zdeq},
     {"2.dge", zdge},
     {"2.dgt", zdgt},
     {"2.dle", zdle},
     {"2.dlt", zdlt},
     {"2.dne", zdne},
-		/* Conversion */
+                /* Conversion */
     {"2.cvd", zcvd},
     {"2.cvsd", zcvsd},
     {"1.dcvi", zdcvi},
@@ -464,7 +464,7 @@ const op_def zdouble1_op_defs[] = {
     op_def_end(0)
 };
 const op_def zdouble2_op_defs[] = {
-		/* Simple functions */
+                /* Simple functions */
     {"2.dabs", zdabs},
     {"2.dceiling", zdceiling},
     {"2.dfloor", zdfloor},
@@ -472,7 +472,7 @@ const op_def zdouble2_op_defs[] = {
     {"2.dround", zdround},
     {"2.dsqrt", zdsqrt},
     {"2.dtruncate", zdtruncate},
-		/* Transcendental functions */
+                /* Transcendental functions */
     {"2.darccos", zdarccos},
     {"2.darcsin", zdarcsin},
     {"3.datan", zdatan},
@@ -492,27 +492,27 @@ double_params(os_ptr op, int count, double *pval)
 {
     pval += count;
     while (--count >= 0) {
-	switch (r_type(op)) {
-	    case t_real:
-		*--pval = op->value.realval;
-		break;
-	    case t_integer:
-		*--pval = op->value.intval;
-		break;
-	    case t_string:
-		if (!r_has_attr(op, a_read) ||
-		    r_size(op) != sizeof(double)
-		)
-		           return_error(e_typecheck);
-		--pval;
-		memcpy(pval, op->value.bytes, sizeof(double));
-		break;
-	    case t__invalid:
-		return_error(e_stackunderflow);
-	    default:
-		return_error(e_typecheck);
-	}
-	op--;
+        switch (r_type(op)) {
+            case t_real:
+                *--pval = op->value.realval;
+                break;
+            case t_integer:
+                *--pval = op->value.intval;
+                break;
+            case t_string:
+                if (!r_has_attr(op, a_read) ||
+                    r_size(op) != sizeof(double)
+                )
+                           return_error(e_typecheck);
+                --pval;
+                memcpy(pval, op->value.bytes, sizeof(double));
+                break;
+            case t__invalid:
+                return_error(e_stackunderflow);
+            default:
+                return_error(e_typecheck);
+        }
+        op--;
     }
     return 0;
 }
@@ -523,7 +523,7 @@ double_params_result(os_ptr op, int count, double *pval)
 {
     check_write_type(*op, t_string);
     if (r_size(op) != sizeof(double))
-	return_error(e_typecheck);
+        return_error(e_typecheck);
     return double_params(op - 1, count, pval);
 }
 

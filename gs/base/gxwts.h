@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,7 +22,7 @@ typedef struct wts_screen_s wts_screen_t;
 #endif
 
 /* We cache intermediate results for wts_get_samples_j. In general, if these
-   are set so that a band fits, then the hit rate will be excellent. */ 
+   are set so that a band fits, then the hit rate will be excellent. */
 #define WTS_CACHE_SIZE_X 512
 #define WTS_CACHE_SIZE_Y 512
 
@@ -88,6 +88,6 @@ typedef struct {
 
 int
 wts_get_samples(wts_screen_t *ws, int x, int y,
-		int *pcellx, int *pcelly, int *p_nsamples);
+                int *pcellx, int *pcelly, int *p_nsamples);
 
 #endif

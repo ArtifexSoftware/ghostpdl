@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,7 +38,7 @@ typedef struct stream_arcfour_state_s stream_arcfour_state;
 #endif
 
 int s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
-		      int keylength);
+                      int keylength);
 
 #define private_st_arcfour_state()	/* used in sarc4.c */\
   gs_private_st_simple(st_arcfour_state, stream_arcfour_state,\

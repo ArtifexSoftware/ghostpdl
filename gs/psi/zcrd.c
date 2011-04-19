@@ -34,10 +34,10 @@
 /* Forward references */
 static int zcrd1_proc_params(const gs_memory_t *mem, os_ptr op, ref_cie_render_procs * pcprocs);
 static int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
-			 ref_cie_render_procs * pcprocs, gs_memory_t * mem);
+                         ref_cie_render_procs * pcprocs, gs_memory_t * mem);
 static int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
-				  const ref_cie_render_procs * pcprocs,
-				  gs_ref_memory_t * imem);
+                                  const ref_cie_render_procs * pcprocs,
+                                  gs_ref_memory_t * imem);
 
 /* - currentcolorrendering <dict> */
 static int
@@ -65,15 +65,15 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
     check_dict_read(*op);
     code = gs_cie_render1_build(&pcrd, mem, ".buildcolorrendering1");
     if (code < 0)
-	return code;
+        return code;
     code = zcrd1_params(op, pcrd, &procs, mem);
     if (code < 0 ||
     (code = cache_colorrendering1(i_ctx_p, pcrd, &procs,
-				  (gs_ref_memory_t *) mem)) < 0
-	) {
-	rc_free_struct(pcrd, ".buildcolorrendering1");
-	esp = ep;
-	return code;
+                                  (gs_ref_memory_t *) mem)) < 0
+        ) {
+        rc_free_struct(pcrd, ".buildcolorrendering1");
+        esp = ep;
+        return code;
     }
     /****** FIX refct ******/
     /*rc_decrement(pcrd, ".buildcolorrendering1"); *//* build sets rc = 1 */
@@ -95,20 +95,20 @@ zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
-	return code;
+        return code;
     code = gs_cie_render1_build(&pcrd, mem, ".builddevicecolorrendering1");
     if (code >= 0) {
-	code = param_get_cie_render1(pcrd, (gs_param_list *) & list,
-				     gs_currentdevice(igs));
-	if (code >= 0) {
-	    /****** FIX refct ******/
-	    /*rc_decrement(pcrd, ".builddevicecolorrendering1"); *//* build sets rc = 1 */
-	}
+        code = param_get_cie_render1(pcrd, (gs_param_list *) & list,
+                                     gs_currentdevice(igs));
+        if (code >= 0) {
+            /****** FIX refct ******/
+            /*rc_decrement(pcrd, ".builddevicecolorrendering1"); *//* build sets rc = 1 */
+        }
     }
     iparam_list_release(&list);
     if (code < 0) {
-	rc_free_struct(pcrd, ".builddevicecolorrendering1");
-	return code;
+        rc_free_struct(pcrd, ".builddevicecolorrendering1");
+        return code;
     }
     istate->colorrendering.dict = *op;
     make_istruct_new(op, a_readonly, pcrd);
@@ -128,14 +128,14 @@ zsetcolorrendering1(i_ctx_t *i_ctx_p)
     check_stype(*op, st_cie_render1);
     code = zcrd1_proc_params(imemory, op - 1, &procs);
     if (code < 0)
-	return code;
+        return code;
     code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
     if (code < 0)
-	return code;
+        return code;
     if (gs_cie_cs_common(igs) != 0 &&
-	(code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
-	)
-	return code;
+        (code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
+        )
+        return code;
     istate->colorrendering.dict = op[-1];
     istate->colorrendering.procs = procs;
     pop(2);
@@ -154,15 +154,15 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
     check_stype(*op, st_cie_render1);
     code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
     if (code < 0)
-	return code;
+        return code;
     refset_null((ref *)&procs, sizeof(procs) / sizeof(ref));
     if (gs_cie_cs_common(igs) != 0 &&
-	(code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
-	)
-	return code;
+        (code = cie_cache_joint(i_ctx_p, &procs, gs_cie_cs_common(igs), igs)) < 0
+        )
+        return code;
     istate->colorrendering.dict = op[-1];
     refset_null((ref *)&istate->colorrendering.procs,
-		sizeof(istate->colorrendering.procs) / sizeof(ref));
+                sizeof(istate->colorrendering.procs) / sizeof(ref));
     pop(2);
     return 0;
 }
@@ -170,7 +170,7 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 /* Get ColorRenderingType 1 procedures from the PostScript dictionary. */
 static int
 zcrd1_proc_params(const gs_memory_t *mem,
-		  os_ptr op, ref_cie_render_procs * pcprocs)
+                  os_ptr op, ref_cie_render_procs * pcprocs)
 {
     int code;
     ref *pRT;
@@ -185,30 +185,30 @@ zcrd1_proc_params(const gs_memory_t *mem,
     if (code < 0)
         return code;
     if (code == 1)
-	return gs_note_error(e_undefined);
+        return gs_note_error(e_undefined);
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
-	const ref *prte;
-	int size;
-	int i;
+        const ref *prte;
+        int size;
+        int i;
 
-	check_read_type(*pRT, t_array);
-	size = r_size(pRT);
-	if (size < 5)
-	    return_error(e_rangecheck);
-	prte = pRT->value.const_refs;
-	for (i = 5; i < size; i++)
-	    check_proc_only(prte[i]);
-	make_const_array(&pcprocs->RenderTableT, a_readonly | r_space(pRT),
-			 size - 5, prte + 5);
+        check_read_type(*pRT, t_array);
+        size = r_size(pRT);
+        if (size < 5)
+            return_error(e_rangecheck);
+        prte = pRT->value.const_refs;
+        for (i = 5; i < size; i++)
+            check_proc_only(prte[i]);
+        make_const_array(&pcprocs->RenderTableT, a_readonly | r_space(pRT),
+                         size - 5, prte + 5);
     } else
-	make_null(&pcprocs->RenderTableT);
+        make_null(&pcprocs->RenderTableT);
     return 0;
 }
 
 /* Get ColorRenderingType 1 parameters from the PostScript dictionary. */
 static int
 zcrd1_params(os_ptr op, gs_cie_render * pcrd,
-	     ref_cie_render_procs * pcprocs, gs_memory_t * mem)
+             ref_cie_render_procs * pcprocs, gs_memory_t * mem)
 {
     int code;
     int ignore;
@@ -216,32 +216,32 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
     ref *pRT;
 
     if ((code = dict_int_param(op, "ColorRenderingType", 1, 1, 0, &ignore)) < 0 ||
-	(code = zcrd1_proc_params(mem, op, pcprocs)) < 0 ||
-	(code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
-	(code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
-	(code = dict_matrix3_param(mem, op, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
-	(code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0 ||
-	(code = cie_points_param(mem, op, &pcrd->points)) < 0 ||
-	(code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
-	(code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0
-	)
-	return code;
+        (code = zcrd1_proc_params(mem, op, pcprocs)) < 0 ||
+        (code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
+        (code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
+        (code = dict_matrix3_param(mem, op, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
+        (code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0 ||
+        (code = cie_points_param(mem, op, &pcrd->points)) < 0 ||
+        (code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
+        (code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0
+        )
+        return code;
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
-	const ref *prte = pRT->value.const_refs;
+        const ref *prte = pRT->value.const_refs;
 
-	/* Finish unpacking and checking the RenderTable parameter. */
-	check_type_only(prte[4], t_integer);
-	if (!(prte[4].value.intval == 3 || prte[4].value.intval == 4))
-	    return_error(e_rangecheck);
-	prtl->n = 3;
-	prtl->m = prte[4].value.intval;
-	if (r_size(pRT) != prtl->m + 5)
-	    return_error(e_rangecheck);
-	code = cie_table_param(pRT, prtl, mem);
-	if (code < 0)
-	    return code;
+        /* Finish unpacking and checking the RenderTable parameter. */
+        check_type_only(prte[4], t_integer);
+        if (!(prte[4].value.intval == 3 || prte[4].value.intval == 4))
+            return_error(e_rangecheck);
+        prtl->n = 3;
+        prtl->m = prte[4].value.intval;
+        if (r_size(pRT) != prtl->m + 5)
+            return_error(e_rangecheck);
+        code = cie_table_param(pRT, prtl, mem);
+        if (code < 0)
+            return code;
     } else {
-	prtl->table = 0;
+        prtl->table = 0;
     }
     pcrd->EncodeLMN = Encode_default;
     pcrd->EncodeABC = Encode_default;
@@ -254,41 +254,41 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 static int cie_cache_render_finish(i_ctx_t *);
 static int
 cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
-		      const ref_cie_render_procs * pcrprocs,
-		      gs_ref_memory_t * imem)
+                      const ref_cie_render_procs * pcrprocs,
+                      gs_ref_memory_t * imem)
 {
     es_ptr ep = esp;
     int code = gs_cie_render_init(pcrd);	/* sets Domain values */
     int i;
 
     if (code < 0 ||
-	(code = cie_cache_push_finish(i_ctx_p, cie_cache_render_finish, imem, pcrd)) < 0 ||
-	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, pcrd->caches.EncodeLMN.caches, pcrd, imem, "Encode.LMN")) < 0 ||
-	(code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
-	) {
-	esp = ep;
-	return code;
+        (code = cie_cache_push_finish(i_ctx_p, cie_cache_render_finish, imem, pcrd)) < 0 ||
+        (code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, pcrd->caches.EncodeLMN.caches, pcrd, imem, "Encode.LMN")) < 0 ||
+        (code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
+        ) {
+        esp = ep;
+        return code;
     }
     if (pcrd->RenderTable.lookup.table != 0) {
-	bool is_identity = true;
+        bool is_identity = true;
 
-	for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
-	    if (r_size(pcrprocs->RenderTableT.value.const_refs + i) != 0) {
-		is_identity = false;
-		break;
-	    }
-	pcrd->caches.RenderTableT_is_identity = is_identity;
-	if (!is_identity)
-	    for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
-		if ((code =
-		     cie_prepare_cache(i_ctx_p, Range4_default.ranges,
-				pcrprocs->RenderTableT.value.const_refs + i,
-				       &pcrd->caches.RenderTableT[i].floats,
-				       pcrd, imem, "RenderTable.T")) < 0
-		    ) {
-		    esp = ep;
-		    return code;
-		}
+        for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
+            if (r_size(pcrprocs->RenderTableT.value.const_refs + i) != 0) {
+                is_identity = false;
+                break;
+            }
+        pcrd->caches.RenderTableT_is_identity = is_identity;
+        if (!is_identity)
+            for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
+                if ((code =
+                     cie_prepare_cache(i_ctx_p, Range4_default.ranges,
+                                pcrprocs->RenderTableT.value.const_refs + i,
+                                       &pcrd->caches.RenderTableT[i].floats,
+                                       pcrd, imem, "RenderTable.T")) < 0
+                    ) {
+                    esp = ep;
+                    return code;
+                }
     }
     return o_push_estack;
 }
@@ -302,14 +302,14 @@ cie_cache_render_finish(i_ctx_t *i_ctx_p)
     int code;
 
     if (pcrd->RenderTable.lookup.table != 0 &&
-	!pcrd->caches.RenderTableT_is_identity
-	) {
-	/* Convert the RenderTableT cache from floats to fracs. */
-	int j;
+        !pcrd->caches.RenderTableT_is_identity
+        ) {
+        /* Convert the RenderTableT cache from floats to fracs. */
+        int j;
 
-	for (j = 0; j < pcrd->RenderTable.lookup.m; j++)
-	    gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j].floats,
-				  &pcrd->caches.RenderTableT[j].fracs);
+        for (j = 0; j < pcrd->RenderTable.lookup.m; j++)
+            gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j].floats,
+                                  &pcrd->caches.RenderTableT[j].fracs);
     }
     pcrd->status = CIE_RENDER_STATUS_SAMPLED;
     pcrd->EncodeLMN = EncodeLMN_from_cache;
@@ -317,7 +317,7 @@ cie_cache_render_finish(i_ctx_t *i_ctx_p)
     pcrd->RenderTable.T = RenderTableT_from_cache;
     code = gs_cie_render_complete(pcrd);
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -331,7 +331,7 @@ static int
     cie_tpqr_finish(i_ctx_t *);
 int
 cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
-		const gs_cie_common *pcie, gs_state * pgs)
+                const gs_cie_common *pcie, gs_state * pgs)
 {
     const gs_cie_render *pcrd = gs_currentcolorrendering(pgs);
     gx_cie_joint_caches *pjc = gx_unshare_cie_caches(pgs);
@@ -342,44 +342,44 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
     int i;
 
     if (pcrd == 0)		/* cache is not set up yet */
-	return 0;
+        return 0;
     if (pjc == 0)		/* must already be allocated */
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     if (r_has_type(&pcrprocs->TransformPQR, t_null)) {
-	/*
-	 * This CRD came from a driver, not from a PostScript dictionary.
-	 * Resample TransformPQR in C code.
-	 */
-	return gs_cie_cs_complete(pgs, true);
+        /*
+         * This CRD came from a driver, not from a PostScript dictionary.
+         * Resample TransformPQR in C code.
+         */
+        return gs_cie_cs_complete(pgs, true);
     }
     gs_cie_compute_points_sd(pjc, pcie, pcrd);
     code = ialloc_ref_array(&pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
-			    "cie_cache_common");
+                            "cie_cache_common");
     if (code < 0)
-	return code;
+        return code;
     /* When we're done, deallocate the procs and complete the caches. */
     check_estack(3);
     cie_cache_push_finish(i_ctx_p, cie_tpqr_finish, imem, pgs);
     *++esp = pqr_procs;
     space = r_space(&pqr_procs);
     for (i = 0; i < 3; i++) {
-	ref *p = pqr_procs.value.refs + 3 + (4 + 4 * 6) * i;
-	const float *ppt = (float *)&pjc->points_sd;
-	int j;
+        ref *p = pqr_procs.value.refs + 3 + (4 + 4 * 6) * i;
+        const float *ppt = (float *)&pjc->points_sd;
+        int j;
 
-	make_array(pqr_procs.value.refs + i, a_readonly | a_executable | space,
-		   4, p);
-	make_array(p, a_readonly | space, 4 * 6, p + 4);
-	p[1] = pcrprocs->TransformPQR.value.refs[i];
-	make_oper(p + 2, 0, cie_exec_tpqr);
-	make_oper(p + 3, 0, cie_post_exec_tpqr);
-	for (j = 0, p += 4; j < 4 * 6; j++, p++, ppt++)
-	    make_real(p, *ppt);
+        make_array(pqr_procs.value.refs + i, a_readonly | a_executable | space,
+                   4, p);
+        make_array(p, a_readonly | space, 4 * 6, p + 4);
+        p[1] = pcrprocs->TransformPQR.value.refs[i];
+        make_oper(p + 2, 0, cie_exec_tpqr);
+        make_oper(p + 3, 0, cie_post_exec_tpqr);
+        for (j = 0, p += 4; j < 4 * 6; j++, p++, ppt++)
+            make_real(p, *ppt);
     }
     return cie_prepare_cache3(i_ctx_p, &pcrd->RangePQR,
-			      pqr_procs.value.const_refs,
-			      pjc->TransformPQR.caches,
-			      pjc, imem, "Transform.PQR");
+                              pqr_procs.value.const_refs,
+                              pjc->TransformPQR.caches,
+                              pjc, imem, "Transform.PQR");
 }
 
 /* Private operator to shuffle arguments for the TransformPQR procedure: */
@@ -397,8 +397,8 @@ cie_exec_tpqr(i_ctx_t *i_ctx_p)
     *op = op[-4];		/* proc */
     op[-1] = op[-6];		/* v */
     for (i = 0; i < 4; i++)
-	make_const_array(op - 5 + i, a_readonly | space,
-			 6, ppt + i * 6);
+        make_const_array(op - 5 + i, a_readonly | space,
+                         6, ppt + i * 6);
     make_mark(op - 6);
     return zexec(i_ctx_p);
 }
@@ -413,7 +413,7 @@ cie_post_exec_tpqr(i_ctx_t *i_ctx_p)
     ref vref;
 
     if (count < 2)
-	return_error(e_unmatchedmark);
+        return_error(e_unmatchedmark);
     vref = *op;
     ref_stack_pop(&o_stack, count - 1);
     *osp = vref;
@@ -427,7 +427,7 @@ cie_tpqr_finish(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_state *pgs = r_ptr(op, gs_state);
     gs_cie_render *pcrd =
-	(gs_cie_render *)gs_currentcolorrendering(pgs);  /* break const */
+        (gs_cie_render *)gs_currentcolorrendering(pgs);  /* break const */
     int code;
 
     ifree_ref_array(op - 1, "cie_tpqr_finish");
@@ -458,16 +458,16 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
     if (code < 0) return code;
 
     for (i = 0; i < 4; i++) {
-	ref tmp;
+        ref tmp;
 
-	code = array_get(imemory, op - 4 + i, idx, &tmp);
-	if (code >= 0)
-	    code = real_param(&tmp, &a[i]);
-	if (code < 0) return code;
+        code = array_get(imemory, op - 4 + i, idx, &tmp);
+        if (code >= 0)
+            code = real_param(&tmp, &a[i]);
+        if (code < 0) return code;
     }
 
     if (a[0] == a[1])
-	return_error(e_undefinedresult);
+        return_error(e_undefinedresult);
     result = a[3] + (a[2] - a[3]) * (Ps - a[1]) / (a[0] - a[1]);
     make_real(op - 4, result);
     pop(4);
@@ -505,7 +505,7 @@ const op_def zcrd_l2_op_defs[] =
     {"2.setdevicecolorrendering1", zsetdevicecolorrendering1},
     {"1.buildcolorrendering1", zbuildcolorrendering1},
     {"1.builddevicecolorrendering1", zbuilddevicecolorrendering1},
-		/* Internal "operators" */
+                /* Internal "operators" */
     {"1%cie_render_finish", cie_cache_render_finish},
     {"3%cie_exec_tpqr", cie_exec_tpqr},
     {"2%cie_post_exec_tpqr", cie_post_exec_tpqr},

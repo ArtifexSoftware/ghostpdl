@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,6 +20,6 @@
 
 /* Construct a new DevicePixel color space. */
 int gs_cspace_new_DevicePixel(gs_memory_t *mem, gs_color_space **ppcs,
-			      int depth);
+                              int depth);
 
 #endif /* gscpixel_INCLUDED */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,7 +22,6 @@
 dev_proc_map_rgb_color(mgr_8bit_map_rgb_color);
 dev_proc_map_color_rgb(mgr_8bit_map_color_rgb);
 
-
 /* extract from dump.h */
 
 /*
@@ -30,13 +29,13 @@ dev_proc_map_color_rgb(mgr_8bit_map_color_rgb);
  */
 
 #define B_PUTHDR8(hdr, w, h, d) (			\
-	(hdr)->magic[0]  = 'y', (hdr)->magic[1] = 'z',  \
-	(hdr)->h_wide    = (((w) >> 6) & 0x3f) + ' ',	\
-	(hdr)->l_wide    = ((w) & 0x3f) + ' ',		\
-	(hdr)->h_high    = (((h) >> 6) & 0x3f) + ' ',	\
-	(hdr)->l_high    = ((h) & 0x3f) + ' ',		\
-	(hdr)->depth     = ((d) & 0x3f) + ' ',		\
-	(hdr)->_reserved = ' ' )
+        (hdr)->magic[0]  = 'y', (hdr)->magic[1] = 'z',  \
+        (hdr)->h_wide    = (((w) >> 6) & 0x3f) + ' ',	\
+        (hdr)->l_wide    = ((w) & 0x3f) + ' ',		\
+        (hdr)->h_high    = (((h) >> 6) & 0x3f) + ' ',	\
+        (hdr)->l_high    = ((h) & 0x3f) + ' ',		\
+        (hdr)->depth     = ((d) & 0x3f) + ' ',		\
+        (hdr)->_reserved = ' ' )
 
 struct b_header {
   char magic[2];           /* magics */
@@ -55,7 +54,6 @@ struct nclut {
   unsigned short colnum;
   unsigned short red, green, blue;
 } ;
-
 
 /* extract from color.h */
 

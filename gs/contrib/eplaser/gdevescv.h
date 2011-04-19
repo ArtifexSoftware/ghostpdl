@@ -109,15 +109,14 @@
 #define ESCPAGE_DEVICENAME_COLOR                "eplcolor"
 #define ESCPAGE_DEVICENAME_MONO                 "eplmono"
 
-
 /* ---------------- Device definition ---------------- */
 
 typedef struct gx_device_escv_s {
   gx_device_vector_common;
 
   int           colormode;      /* 0=ESC/Page(Monochrome), 1=ESC/Page-Color */
-  bool          manualFeed;     /* Use manual feed */ 
-  int           cassetFeed;     /* Input Casset */ 
+  bool          manualFeed;     /* Use manual feed */
+  int           cassetFeed;     /* Input Casset */
   bool          RITOff;         /* RIT Control */
   bool          Collate;
   int           toner_density;
@@ -191,7 +190,6 @@ typedef struct paper_candidate_s {
   bool isminw;                  /* best fit width? */
   bool isminh;                  /* best fit height? */
 } paper_candidate;
-
 
 #endif /* gdevescv_INCLUDED */
 

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,21 +29,21 @@ void gx_sort_ht_order(gx_ht_bit *, uint);
 
 /* (Internal) procedures for constructing halftone orders. */
 int gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
-			 uint num_levels, uint num_bits, uint strip_shift,
-			 const gx_ht_order_procs_t *procs,
-			 gs_memory_t * mem);
+                         uint num_levels, uint num_bits, uint strip_shift,
+                         const gx_ht_order_procs_t *procs,
+                         gs_memory_t * mem);
 int gx_ht_alloc_order(gx_ht_order * porder, uint width, uint height,
-		      uint strip_shift, uint num_levels, gs_memory_t *mem);
+                      uint strip_shift, uint num_levels, gs_memory_t *mem);
 int gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width,
-				uint height, uint num_levels,
-				gs_memory_t * mem);
+                                uint height, uint num_levels,
+                                gs_memory_t * mem);
 int gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
-			     uint num_levels, uint num_bits, gs_memory_t * mem);
+                             uint num_levels, uint num_bits, gs_memory_t * mem);
 void gx_ht_construct_spot_order(gx_ht_order *);
 int gx_ht_construct_threshold_order(gx_ht_order *, const byte *);
 void gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num);
 void gx_ht_construct_bits(gx_ht_order *);
-int gx_ht_construct_threshold(gx_ht_order *d_order, gx_device *dev, 
+int gx_ht_construct_threshold(gx_ht_order *d_order, gx_device *dev,
                               const gs_imager_state * pis, int plane_index);
 
 /* Halftone enumeration structure */
@@ -64,13 +64,13 @@ struct gs_screen_enum_s {
 
 /* Prepare a device halftone for installation, but don't install it. */
 int gs_sethalftone_prepare(gs_state *, gs_halftone *,
-			   gx_device_halftone *);
+                           gx_device_halftone *);
 
 /* Allocate and initialize a spot screen. */
 /* This is the first half of gs_screen_init_accurate/memory. */
 int gs_screen_order_alloc(gx_ht_order *, gs_memory_t *);
 int gs_screen_order_init_memory(gx_ht_order *, const gs_state *,
-				gs_screen_halftone *, bool, gs_memory_t *);
+                                gs_screen_halftone *, bool, gs_memory_t *);
 
 #define gs_screen_order_init(porder, pgs, phsp, accurate)\
   gs_screen_order_init_memory(porder, pgs, phsp, accurate, pgs->memory)
@@ -78,16 +78,16 @@ int gs_screen_order_init_memory(gx_ht_order *, const gs_state *,
 /* Prepare to sample a spot screen. */
 /* This is the second half of gs_screen_init_accurate/memory. */
 int gs_screen_enum_init_memory(gs_screen_enum *, const gx_ht_order *,
-			       gs_state *, const gs_screen_halftone *,
-			       gs_memory_t *);
+                               gs_state *, const gs_screen_halftone *,
+                               gs_memory_t *);
 
 #define gs_screen_enum_init(penum, porder, pgs, phsp)\
   gs_screen_enum_init_memory(penum, porder, pgs, phsp, pgs->memory)
 
 /* Process an entire screen plane. */
 int gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
-				gs_screen_halftone * phsp, bool accurate,
-				gs_memory_t * mem);
+                                gs_screen_halftone * phsp, bool accurate,
+                                gs_memory_t * mem);
 
 #define gx_ht_process_screen(penum, pgs, phsp, accurate)\
   gx_ht_process_screen_memory(penum, pgs, phsp, accurate, pgs->memory)
@@ -120,16 +120,16 @@ struct gx_ht_cache_s {
     int num_cached;		/* actual # of cached tiles */
     int levels_per_tile;	/* # of levels per cached tile */
     int tiles_fit;		/* -1 if not determined, 0 if no fit, */
-				/* 1 if fit */
+                                /* 1 if fit */
     gx_bitmap_id base_id;	/* the base id, to which */
-				/* we add the halftone level */
+                                /* we add the halftone level */
     gx_ht_tile *(*render_ht)(gx_ht_cache *, int); /* rendering procedure */
 };
 
 /* Define the sizes of the halftone cache. */
 #define max_ht_cached_tiles_LARGE 8192
 #define max_ht_cache_bits_size_LARGE (1024*1024) /* enough for 256 levels 167x167 */
-					   /* see ht_stocht.ps */
+                                           /* see ht_stocht.ps */
 #define max_ht_cached_tiles_SMALL 256
 #define max_ht_cache_bits_size_SMALL 8192	/* enough for 256 levels 8x8 */
 
@@ -187,7 +187,7 @@ bool gx_check_tile_cache(const gs_imager_state *);
 /* from the beginning of the tile, and set *ppx to the x phase offset */
 /* within the tile; if not, return -1. */
 int gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
-		       gs_color_select_t select, int *ppx);
+                       gs_color_select_t select, int *ppx);
 
 /* Make a given level current in a halftone cache. */
 #define gx_render_ht(pcache, b_level)\
@@ -204,9 +204,9 @@ void gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cach
  * read or update the client halftone.
  */
 int gx_imager_dev_ht_install(gs_imager_state * pis,
-			     gx_device_halftone * pdht,
-			     gs_halftone_type type,
-			     const gx_device * dev);
+                             gx_device_halftone * pdht,
+                             gs_halftone_type type,
+                             const gx_device * dev);
 
 /*
  * Install a new halftone in the graphics state.  Note that we copy the top
@@ -238,7 +238,7 @@ void gx_set_effective_transfer(gs_state * pgs);
  * A negative value is returned if the color name is not found.
  */
 int gs_color_name_component_number(gx_device * dev, const char * pname,
-				int name_size, int halftonetype);
+                                int name_size, int halftonetype);
 /*
  * See gs_color_name_component_number for main description.
  *
@@ -246,5 +246,5 @@ int gs_color_name_component_number(gx_device * dev, const char * pname,
  * then call gs_color_name_component_number.
  */
 int gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
-				 int halftonetype);
+                                 int halftonetype);
 #endif /* gzht_INCLUDED */

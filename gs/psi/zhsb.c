@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,9 +41,9 @@ zsethsbcolor(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = num_params(op, 3, par)) < 0 ||
-	(code = gs_sethsbcolor(igs, par[0], par[1], par[2])) < 0
-	)
-	return code;
+        (code = gs_sethsbcolor(igs, par[0], par[1], par[2])) < 0
+        )
+        return code;
     make_null(&istate->colorspace.array);
     pop(3);
     return 0;

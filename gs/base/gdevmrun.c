@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -95,7 +95,7 @@ typedef struct const_run_ptr_s {
  */
 typedef struct run_line_s {
     gx_color_index zero;	/* device white if line not initialized, */
-				/* gx_no_color_index if initialized */
+                                /* gx_no_color_index if initialized */
     uint xcur;			/* x value at cursor position */
     run_ptr rpcur;		/* cursor */
     run_index free;		/* head of free list */
@@ -122,7 +122,7 @@ rp_insert_next(run_ptr *prpc, run *data, run_line *line, run_ptr *prpn)
     run *prnew = data + new;
 
     if (new == 0)
-	return -1;
+        return -1;
     RP_TO_NEXT(*prpc, data, *prpn);
     RP_NEXT(*prpc) = new;
     RP_PREV(*prpn) = new;
@@ -140,7 +140,7 @@ rp_insert_prev(run_ptr *prpc, run *data, run_line *line, run_ptr *prpp)
     run *prnew = data + new;
 
     if (new == 0)
-	return -1;
+        return -1;
     RP_TO_PREV(*prpc, data, *prpp);
     RP_NEXT(*prpp) = new;
     RP_PREV(*prpc) = new;
@@ -169,8 +169,8 @@ int
 gdev_run_from_mem(gx_device_run *rdev, gx_device_memory *mdev)
 {
     int runs_per_line =
-	(bitmap_raster(mdev->width * mdev->color_info.depth) -
-	 sizeof(run_line)) / sizeof(run);
+        (bitmap_raster(mdev->width * mdev->color_info.depth) -
+         sizeof(run_line)) / sizeof(run);
     /*
      * We use the scan lines of the memory device for storing runs.  We need
      * ceil(width / MAX_RUN_LENGTH) runs to represent a line where all
@@ -182,13 +182,13 @@ gdev_run_from_mem(gx_device_run *rdev, gx_device_memory *mdev)
 
     rdev->md = *mdev;
     if (runs_per_line > MAX_RUNS)
-	runs_per_line = MAX_RUNS;
+        runs_per_line = MAX_RUNS;
     if (runs_per_line < min_runs)
-	return 0;		/* just use the memory device as-is */
+        return 0;		/* just use the memory device as-is */
     for (i = 0; i < mdev->height; ++i) {
-	run_line *line = RDEV_LINE(rdev, i);
+        run_line *line = RDEV_LINE(rdev, i);
 
-	line->zero = white;
+        line->zero = white;
     }
     rdev->runs_per_line = runs_per_line;
     rdev->umin = 0;
@@ -230,21 +230,21 @@ run_expand(gx_device_run *rdev, int y)
     gx_color_index value[MAX_RUNS];
 
     if (line->zero != gx_no_color_index) {
-	rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
-					0, y, rdev->md.width, 1, line->zero);
-	return 0;
+        rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
+                                        0, y, rdev->md.width, 1, line->zero);
+        return 0;
     }
     /* Copy the runs into local storage to avoid stepping on our own toes. */
     for (n = 0, RP_TO_START(rp, data); !RP_AT_END(rp);
-	 ++n, RP_TO_NEXT(rp, data, rp)
-	) {
-	length[n] = RP_LENGTH(rp);
-	value[n] = RP_VALUE(rp);
+         ++n, RP_TO_NEXT(rp, data, rp)
+        ) {
+        length[n] = RP_LENGTH(rp);
+        value[n] = RP_VALUE(rp);
     }
     for (x = 0, n = 0; x < rdev->md.width; x += w, ++n) {
-	w = length[n];
-	rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
-					x, y, w, 1, value[n]);
+        w = length[n];
+        rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
+                                        x, y, w, 1, value[n]);
     }
     return 0;
 }
@@ -261,97 +261,97 @@ run_standardize(gx_device_run *rdev, int y, int h)
     fit_fill_h(&rdev->md, y, h);
     ye = y + h;
     if (y < rdev->smin) {
-	if (ye > rdev->smax1)
-	    run_standardize(rdev, rdev->smax1, ye - rdev->smax1);
-	if (ye < rdev->smin)
-	    ye = rdev->smin;
-	rdev->smin = y;
+        if (ye > rdev->smax1)
+            run_standardize(rdev, rdev->smax1, ye - rdev->smax1);
+        if (ye < rdev->smin)
+            ye = rdev->smin;
+        rdev->smin = y;
     } else if (ye > rdev->smax1) {
-	if (y > rdev->smax1)
-	    y = rdev->smax1;
-	rdev->smax1 = ye;
+        if (y > rdev->smax1)
+            y = rdev->smax1;
+        rdev->smax1 = ye;
     } else
-	return 0;
+        return 0;
     for (iy = y; iy < ye; ++iy)
-	run_expand(rdev, iy);
+        run_expand(rdev, iy);
     return 0;
 }
 
 /* Trampoline rendering procedures */
 static int
 run_copy_mono(gx_device * dev, const byte * data, int dx, int raster,
-	      gx_bitmap_id id, int x, int y, int w, int h,
-	      gx_color_index zero, gx_color_index one)
+              gx_bitmap_id id, int x, int y, int w, int h,
+              gx_color_index zero, gx_color_index one)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
     return rdev->save_procs.copy_mono((gx_device *)&rdev->md,
-				      data, dx, raster, id,
-				      x, y, w, h, zero, one);
+                                      data, dx, raster, id,
+                                      x, y, w, h, zero, one);
 }
 static int
 run_copy_color(gx_device * dev, const byte * data,
-	       int data_x, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h)
+               int data_x, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
     return rdev->save_procs.copy_color((gx_device *)&rdev->md,
-				       data, data_x, raster, id,
-				       x, y, w, h);
+                                       data, data_x, raster, id,
+                                       x, y, w, h);
 }
 static int
 run_copy_alpha(gx_device * dev, const byte * data, int data_x, int raster,
-	       gx_bitmap_id id, int x, int y, int w, int h,
-	       gx_color_index color, int depth)
+               gx_bitmap_id id, int x, int y, int w, int h,
+               gx_color_index color, int depth)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
     return rdev->save_procs.copy_alpha((gx_device *)&rdev->md,
-				       data, data_x, raster, id,
-				       x, y, w, h, color, depth);
+                                       data, data_x, raster, id,
+                                       x, y, w, h, color, depth);
 }
 static int
 run_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
-				int px, int py)
+                                int px, int py)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
     return rdev->save_procs.strip_tile_rectangle((gx_device *)&rdev->md,
-						 tiles, x, y, w, h,
-						 color0, color1, px, py);
+                                                 tiles, x, y, w, h,
+                                                 color0, color1, px, py);
 }
 static int
 run_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
-		   uint sraster, gx_bitmap_id id,
-		   const gx_color_index * scolors,
-		   const gx_strip_bitmap * textures,
-		   const gx_color_index * tcolors,
-		   int x, int y, int w, int h, int px, int py,
-		   gs_logical_operation_t lop)
+                   uint sraster, gx_bitmap_id id,
+                   const gx_color_index * scolors,
+                   const gx_strip_bitmap * textures,
+                   const gx_color_index * tcolors,
+                   int x, int y, int w, int h, int px, int py,
+                   gs_logical_operation_t lop)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, y, h);
     return rdev->save_procs.strip_copy_rop((gx_device *)&rdev->md,
-					   sdata, sourcex, sraster,
-					   id, scolors, textures, tcolors,
-					   x, y, w, h, px, py, lop);
+                                           sdata, sourcex, sraster,
+                                           id, scolors, textures, tcolors,
+                                           x, y, w, h, px, py, lop);
 }
 static int
 run_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
-		       gs_get_bits_params_t * params, gs_int_rect **unread)
+                       gs_get_bits_params_t * params, gs_int_rect **unread)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
 
     run_standardize(rdev, prect->p.y, prect->q.y - prect->p.y);
     return rdev->save_procs.get_bits_rectangle((gx_device *)&rdev->md,
-					       prect, params, unread);
+                                               prect, params, unread);
 }
 
 /* Finish initializing a line.  This is a separate procedure only */
@@ -373,10 +373,10 @@ run_line_initialize(gx_device_run *rdev, int y)
     data[1].next = 2;
     rcur = data + index;
     for (; left > 0; index++, rcur++, left -= MAX_RUN_LENGTH) {
-	rcur->length = min(left, MAX_RUN_LENGTH);
-	rcur->value = 0;
-	rcur->prev = index - 1;
-	rcur->next = index + 1;
+        rcur->length = min(left, MAX_RUN_LENGTH);
+        rcur->value = 0;
+        rcur->prev = index - 1;
+        rcur->next = index + 1;
     }
     rcur->next = 0;
     data[0].prev = index - 1;
@@ -385,13 +385,13 @@ run_line_initialize(gx_device_run *rdev, int y)
     line->rpcur.index = 2;
     line->free = index;
     for (; index < rdev->runs_per_line; ++index)
-	data[index].next = index + 1;
+        data[index].next = index + 1;
     data[index - 1].next = 0;
     if (y >= rdev->umin && y < rdev->umax1) {
-	if (y > (rdev->umin + rdev->umax1) >> 1)
-	    rdev->umax1 = y;
-	else
-	    rdev->umin = y + 1;
+        if (y > (rdev->umin + rdev->umax1) >> 1)
+            rdev->umax1 = y;
+        else
+            rdev->umin = y + 1;
     }
 }
 
@@ -415,11 +415,11 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
     /* Find the run that contains xo. */
 
     if (xo < xc) {
-	while (xo < xc)
-	    RP_TO_PREV(rpc, data, rpc), xc -= RP_LENGTH(rpc);
+        while (xo < xc)
+            RP_TO_PREV(rpc, data, rpc), xc -= RP_LENGTH(rpc);
     } else {
-	while (xo >= xc + RP_LENGTH(rpc))
-	    xc += RP_LENGTH(rpc), RP_TO_NEXT(rpc, data, rpc);
+        while (xo >= xc + RP_LENGTH(rpc))
+            xc += RP_LENGTH(rpc), RP_TO_NEXT(rpc, data, rpc);
     }
 
     /*
@@ -429,16 +429,16 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
      */
 
     for (; !RP_AT_END(rpc) && RP_VALUE(rpc) == new;
-	 RP_TO_NEXT(rpc, data, rpc)
-	)
-	if ((xo = xc += RP_LENGTH(rpc)) >= xe)
-	    return 0;
+         RP_TO_NEXT(rpc, data, rpc)
+        )
+        if ((xo = xc += RP_LENGTH(rpc)) >= xe)
+            return 0;
     x0 = xc, rp0 = rpc;
 
     /* Find the run that contains xe-1. */
 
     while (xe > xc + RP_LENGTH(rpc))
-	xc += RP_LENGTH(rpc), RP_TO_NEXT(rpc, data, rpc);
+        xc += RP_LENGTH(rpc), RP_TO_NEXT(rpc, data, rpc);
 
     /*
      * Skip runs below xe that already contain the new value.
@@ -447,7 +447,7 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
      */
 
     while (RP_TO_PREV(rpc, data, rpc), RP_VALUE(rpc) == new)
-	xe = xc -= RP_LENGTH(rpc);
+        xe = xc -= RP_LENGTH(rpc);
     RP_TO_NEXT(rpc, data, rpc);
 
     /*
@@ -462,49 +462,49 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
     /* Split off any unaffected prefix of the run at rp0. */
 
     if (x0 < xo) {
-	uint diff = xo - x0;
-	run_value v0 = RP_VALUE(rp0);
-	run_ptr rpp;
+        uint diff = xo - x0;
+        run_value v0 = RP_VALUE(rp0);
+        run_ptr rpp;
 
-	RP_TO_PREV(rp0, data, rpp);
-	if (RP_VALUE(rpp) == v0 && RP_LENGTH(rpp) + diff <= MAX_RUN_LENGTH)
-	    RP_LENGTH(rpp) += diff;
-	else {
-	    code = rp_insert_prev(&rp0, data, line, &rpp);
-	    if (code < 0)
-		return code;
-	    RP_LENGTH(rpp) = diff;
-	    RP_VALUE(rpp) = v0;
-	}
-	RP_LENGTH(rp0) -= diff;
+        RP_TO_PREV(rp0, data, rpp);
+        if (RP_VALUE(rpp) == v0 && RP_LENGTH(rpp) + diff <= MAX_RUN_LENGTH)
+            RP_LENGTH(rpp) += diff;
+        else {
+            code = rp_insert_prev(&rp0, data, line, &rpp);
+            if (code < 0)
+                return code;
+            RP_LENGTH(rpp) = diff;
+            RP_VALUE(rpp) = v0;
+        }
+        RP_LENGTH(rp0) -= diff;
     }
 
     /* Split off any unaffected suffix of the run at rpc. */
 
     x1 = xc + RP_LENGTH(rpc);
     if (x1 > xe) {
-	uint diff = x1 - xe;
-	run_value vc = RP_VALUE(rpc);
-	run_ptr rpn;
+        uint diff = x1 - xe;
+        run_value vc = RP_VALUE(rpc);
+        run_ptr rpn;
 
-	RP_TO_NEXT(rpc, data, rpn);
-	if (RP_VALUE(rpn) == vc && RP_LENGTH(rpn) + diff <= MAX_RUN_LENGTH)
-	    RP_LENGTH(rpn) += diff;
-	else {
-	    code = rp_insert_next(&rpc, data, line, &rpn);
-	    if (code < 0)
-		return code;
-	    RP_LENGTH(rpn) = diff;
-	    RP_VALUE(rpn) = vc;
-	}
-	RP_LENGTH(rpc) -= diff;
+        RP_TO_NEXT(rpc, data, rpn);
+        if (RP_VALUE(rpn) == vc && RP_LENGTH(rpn) + diff <= MAX_RUN_LENGTH)
+            RP_LENGTH(rpn) += diff;
+        else {
+            code = rp_insert_next(&rpc, data, line, &rpn);
+            if (code < 0)
+                return code;
+            RP_LENGTH(rpn) = diff;
+            RP_VALUE(rpn) = vc;
+        }
+        RP_LENGTH(rpc) -= diff;
     }
 
     /* Delete all runs from rp0 through rpc. */
 
     RP_TO_PREV(rp0, data, rp0);
     while (RP_NEXT(rp0) != RP_NEXT(rpc))
-	rp_delete_next(&rp0, data, line);
+        rp_delete_next(&rp0, data, line);
 
     /*
      * Finally, insert new runs with the new value.
@@ -515,44 +515,44 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
      */
 
     {
-	uint left = xe - xo;
+        uint left = xe - xo;
 
-	if (xo == x0 && RP_VALUE(rp0) == new &&
-	    RP_LENGTH(rp0) + left <= MAX_RUN_LENGTH
-	    )
-	    RP_LENGTH(rp0) += left;
-	else {
-	    /*
-	     * If we need more than one run, we divide up the length to
-	     * create more runs with length less than MAX_RUN_LENGTH in
-	     * order to improve the chances of a later merge.  However,
-	     * we still guarantee that we won't create more runs than
-	     * the minimum number required to represent the length.
-	     */
-	    run_length len;
+        if (xo == x0 && RP_VALUE(rp0) == new &&
+            RP_LENGTH(rp0) + left <= MAX_RUN_LENGTH
+            )
+            RP_LENGTH(rp0) += left;
+        else {
+            /*
+             * If we need more than one run, we divide up the length to
+             * create more runs with length less than MAX_RUN_LENGTH in
+             * order to improve the chances of a later merge.  However,
+             * we still guarantee that we won't create more runs than
+             * the minimum number required to represent the length.
+             */
+            run_length len;
 
-	    if (left <= MAX_RUN_LENGTH)
-		len = left;
-	    else {
-		/*len = ceil(left / ceil(left / MAX_RUN_LENGTH))*/
-		int pieces = left + (MAX_RUN_LENGTH - 1) / MAX_RUN_LENGTH;
+            if (left <= MAX_RUN_LENGTH)
+                len = left;
+            else {
+                /*len = ceil(left / ceil(left / MAX_RUN_LENGTH))*/
+                int pieces = left + (MAX_RUN_LENGTH - 1) / MAX_RUN_LENGTH;
 
-		len = (left + pieces - 1) / pieces;
-	    }
-	    do {
-		run_ptr rpn;
+                len = (left + pieces - 1) / pieces;
+            }
+            do {
+                run_ptr rpn;
 
-		/*
-		 * The allocation in rp_insert_next can't fail, because
-		 * we just deleted at least as many runs as we're going
-		 * to insert.
-		 */
-		rp_insert_next(&rp0, data, line, &rpn);
-		RP_LENGTH(rpn) = min(left, len);
-		RP_VALUE(rpn) = new;
-	    }
-	    while ((left -= len) > 0);
-	}
+                /*
+                 * The allocation in rp_insert_next can't fail, because
+                 * we just deleted at least as many runs as we're going
+                 * to insert.
+                 */
+                rp_insert_next(&rp0, data, line, &rpn);
+                RP_LENGTH(rpn) = min(left, len);
+                RP_VALUE(rpn) = new;
+            }
+            while ((left -= len) > 0);
+        }
     }
 
     return 0;
@@ -561,7 +561,7 @@ run_fill_interval(run_line *line, int xo, int xe, run_value new)
 /* Replace a rectangle with a new value. */
 static int
 run_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
-		   gx_color_index color)
+                   gx_color_index color)
 {
     gx_device_run *const rdev = (gx_device_run *)dev;
     int xe, ye;
@@ -575,43 +575,42 @@ run_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
      * we can skip the entire operation.
      */
     if (y >= rdev->umin && ye <= rdev->umax1 &&
-	color == RDEV_LINE(rdev, y)->zero
-	)
-	return 0;
+        color == RDEV_LINE(rdev, y)->zero
+        )
+        return 0;
 
     /*
      * Hand off any parts of the operation that fall within the area
      * already in standard form.
      */
     if (y < rdev->smax1 && ye > rdev->smin) {
-	/* Some part of the operation must be handed off. */
-	if (y < rdev->smin) {
-	    run_fill_rectangle(dev, x, y, w, rdev->smin - y, color);
-	    y = rdev->smin;
-	}
-	/* Now rdev->smin <= y < ye. */
-	rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
-					x, y, w, min(ye, rdev->smax1) - y,
-					color);
-	if (ye <= rdev->smax1)
-	    return 0;
-	y = rdev->smax1;
+        /* Some part of the operation must be handed off. */
+        if (y < rdev->smin) {
+            run_fill_rectangle(dev, x, y, w, rdev->smin - y, color);
+            y = rdev->smin;
+        }
+        /* Now rdev->smin <= y < ye. */
+        rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
+                                        x, y, w, min(ye, rdev->smax1) - y,
+                                        color);
+        if (ye <= rdev->smax1)
+            return 0;
+        y = rdev->smax1;
     }
     xe = x + w;
     for (iy = y; iy < ye; ++iy) {
-	run_line *line = RDEV_LINE(rdev, iy);
+        run_line *line = RDEV_LINE(rdev, iy);
 
-	if (color != line->zero) {
-	    if (line->zero != gx_no_color_index)
-		run_line_initialize(rdev, iy);
-	    if (run_fill_interval(line, x, xe, color) < 0) {
-		/* We ran out of runs.  Convert to expanded form. */
-		run_standardize(rdev, iy, 1);
-		rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
-						x, iy, w, 1, color);
-	    }
-	}
+        if (color != line->zero) {
+            if (line->zero != gx_no_color_index)
+                run_line_initialize(rdev, iy);
+            if (run_fill_interval(line, x, xe, color) < 0) {
+                /* We ran out of runs.  Convert to expanded form. */
+                run_standardize(rdev, iy, 1);
+                rdev->save_procs.fill_rectangle((gx_device *)&rdev->md,
+                                                x, iy, w, 1, color);
+            }
+        }
     }
     return 0;
 }
-

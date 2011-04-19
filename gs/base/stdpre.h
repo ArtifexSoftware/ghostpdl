@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -181,9 +181,9 @@ extern_inline int xyz(<<parameters>>)
 
 /*
  * Some versions of gcc have a bug such that after
-	byte *p;
-	...
-	x = *(long *)p;
+        byte *p;
+        ...
+        x = *(long *)p;
  * the compiler then thinks that p always points to long-aligned data.
  * Detect this here so it can be handled appropriately in the few places
  * that (we think) matter.

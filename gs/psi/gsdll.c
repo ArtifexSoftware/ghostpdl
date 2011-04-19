@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -12,13 +12,11 @@
 */
 /* Portions Copyright (C) 1994-2000 Ghostgum Software Pty Ltd.  All rights reserved. */
 
-
 /* $Id$ */
 /* Dynamic Link Library interface for OS/2 and MS-Windows Ghostscript */
 /* front end to gs.c */
 
 /* This has been reimplemented to call the new DLL interface in iapi.h */
-
 
 #ifdef _Windows
 #include <windows.h>
@@ -55,9 +53,7 @@ GSDLL_CALLBACK pgsdll_callback = NULL;	/* callback for messages and stdio to cal
 
 static gs_main_instance *pgs_minst = NULL;
 
-
 /****** SINGLE-INSTANCE HACK ******/
-
 
 /* local functions */
 static int GSDLLCALL gsdll_old_stdin(void *caller_handle, char *buf, int len);
@@ -65,11 +61,10 @@ static int GSDLLCALL gsdll_old_stdout(void *caller_handle, const char *str, int 
 static int GSDLLCALL gsdll_old_stderr(void *caller_handle, const char *str, int len);
 static int GSDLLCALL gsdll_old_poll(void *caller_handle);
 
-
 /* ---------- DLL exported functions ---------- */
 
 /* arguments are:
- * 1. callback function for stdio and for notification of 
+ * 1. callback function for stdio and for notification of
  *   sync_output, output_page and resize events
  * 2. window handle, used as parent.  Use NULL if you have no window.
  * 3. argc
@@ -81,16 +76,16 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
     int code;
 
     if ((code = gsapi_new_instance(&pgs_minst, (void *)1)) < 0)
-	return -1;
+        return -1;
 
-    gsapi_set_stdio(pgs_minst, 
-	gsdll_old_stdin, gsdll_old_stdout, gsdll_old_stderr);
+    gsapi_set_stdio(pgs_minst,
+        gsdll_old_stdin, gsdll_old_stdout, gsdll_old_stderr);
     gsapi_set_poll(pgs_minst, gsdll_old_poll);
     /* ignore hwnd */
 
 /* rest of MacGSView compatibilty hack */
 #ifdef __MACOS__
-	hwndtext=hwnd;
+        hwndtext=hwnd;
 #endif
 
 /****** SINGLE-INSTANCE HACK ******/
@@ -99,8 +94,8 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
 
     code = gsapi_init_with_args(pgs_minst, argc, argv);
     if (code == e_Quit) {
-	gsapi_exit(pgs_minst);
-	return GSDLL_INIT_QUIT;
+        gsapi_exit(pgs_minst);
+        return GSDLL_INIT_QUIT;
     }
     return code;
 }
@@ -120,10 +115,10 @@ int GSDLLEXPORT GSDLLAPI
 gsdll_execute_cont(const char * str, int len)
 {
     int exit_code;
-    int code = gsapi_run_string_continue(pgs_minst, str, len, 
-	0, &exit_code);
+    int code = gsapi_run_string_continue(pgs_minst, str, len,
+        0, &exit_code);
     if (code == e_NeedInput)
-	code = 0;		/* this is not an error */
+        code = 0;		/* this is not an error */
     return code;
 }
 
@@ -150,19 +145,18 @@ gsdll_exit(void)
 /* This may be called before any other function. */
 int GSDLLEXPORT GSDLLAPI
 gsdll_revision(const char ** product, const char ** copyright,
-	       long * revision, long * revisiondate)
+               long * revision, long * revisiondate)
 {
     if (product)
-	*product = gs_product;
+        *product = gs_product;
     if (copyright)
-	*copyright = gs_copyright;
+        *copyright = gs_copyright;
     if (revision)
-	*revision = gs_revision;
+        *revision = gs_revision;
     if (revisiondate)
-	*revisiondate = gs_revisiondate;
+        *revisiondate = gs_revisiondate;
     return 0;
 }
-
 
 static int GSDLLCALL
 gsdll_old_stdin(void *caller_handle, char *buf, int len)

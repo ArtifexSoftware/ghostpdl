@@ -31,15 +31,15 @@ static dev_proc_print_page(fmpr_print_page);
 /* The device descriptor */
 gx_device_printer gs_fmpr_device =
   prn_device(prn_std_procs, "fmpr",
-	     DEFAULT_WIDTH_10THS,
-	     DEFAULT_HEIGHT_10THS,
-	     180,		/* x_dpi */
-	     180,		/* y_dpi */
-	     0, /* 0.35, */	/* left margins */
-	     0,			/* bottom margins */
-	     0, /* 0.84, */	/* top margins */
-	     0,			/* right margins */
-	     1, fmpr_print_page);
+             DEFAULT_WIDTH_10THS,
+             DEFAULT_HEIGHT_10THS,
+             180,		/* x_dpi */
+             180,		/* y_dpi */
+             0, /* 0.35, */	/* left margins */
+             0,			/* bottom margins */
+             0, /* 0.84, */	/* top margins */
+             0,			/* right margins */
+             1, fmpr_print_page);
 
 /* ---- Printer output routines ---- */
 
@@ -140,7 +140,7 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
       num_lines = bits_per_column;
 
     size = line_size * num_lines;
-    if(in[0] == 0 && 
+    if(in[0] == 0 &&
        !memcmp((char *)in, (char *)in + 1, size - 1)) {
       lnum += bits_per_column;
       prn_putc(pdev, '\n');
@@ -157,10 +157,10 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
       inp = in + line_size * 8 * y;
       outp = out + y;
       for(x = 0; x < line_size; x ++) {
-	fmpr_transpose_8x8(inp, line_size,
-			    outp, bytes_per_column);
-	inp ++;
-	outp += bits_per_column;
+        fmpr_transpose_8x8(inp, line_size,
+                            outp, bytes_per_column);
+        inp ++;
+        outp += bits_per_column;
       }
     }
 
@@ -168,7 +168,7 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
     out_end = out + chunk_size - 1;
     while(out_end >= out) {
       if(*out_end)
-	break;
+        break;
       out_end --;
     }
     size = (out_end - out) + 1;
@@ -179,13 +179,13 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
     out_beg = out;
     while(out_beg <= out_end) {
       if(*out_beg)
-	break;
+        break;
       out_beg ++;
     }
     out_beg -= (out_beg - out) % bytes_per_column;
 
-    sprintf(prn_buf, "\033[%da", 
-	    (out_beg - out) / bytes_per_column);
+    sprintf(prn_buf, "\033[%da",
+            (out_beg - out) / bytes_per_column);
     prn_puts(pdev, prn_buf);
 
     /* Dot graphics */
@@ -201,10 +201,10 @@ fmpr_print_page(gx_device_printer *pdev, FILE *prn_stream)
   prn_putc(pdev, '\f');
   prn_flush(pdev);
 
-  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)out, 
-	  bits_per_column, line_size, "fmpr_print_page(out)");
+  gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)out,
+          bits_per_column, line_size, "fmpr_print_page(out)");
   gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)in,
-	  bits_per_column, line_size, "fmpr_print_page(in)");
+          bits_per_column, line_size, "fmpr_print_page(in)");
 
   return 0;
 }

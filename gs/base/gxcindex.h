@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -106,30 +106,30 @@ typedef gx_color_index_data gx_color_index;
  * l_dbit.  Other code in the loop may use these variables.
  */
 #define DECLARE_LINE_ACCUM(line, bpp, xo)\
-	sample_store_declare_setup(l_dptr, l_dbit, l_dbyte, line, 0, bpp)
+        sample_store_declare_setup(l_dptr, l_dbit, l_dbyte, line, 0, bpp)
 #define LINE_ACCUM(color, bpp)\
-	sample_store_next_any(color, l_dptr, l_dbit, bpp, l_dbyte)
+        sample_store_next_any(color, l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_SKIP(bpp)\
-	sample_store_skip_next(l_dptr, l_dbit, bpp, l_dbyte)
+        sample_store_skip_next(l_dptr, l_dbit, bpp, l_dbyte)
 #define LINE_ACCUM_STORE(bpp)\
-	sample_store_flush(l_dptr, l_dbit, bpp, l_dbyte)
+        sample_store_flush(l_dptr, l_dbit, bpp, l_dbyte)
 /*
  * Declare additional macros for accumulating a scan line with copying
  * to a device.  Note that DECLARE_LINE_ACCUM_COPY also declares l_xprev.
  * LINE_ACCUM_COPY is called after the accumulation loop.
  */
 #define DECLARE_LINE_ACCUM_COPY(line, bpp, xo)\
-	DECLARE_LINE_ACCUM(line, bpp, xo);\
-	int l_xprev = (xo)
+        DECLARE_LINE_ACCUM(line, bpp, xo);\
+        int l_xprev = (xo)
 #define LINE_ACCUM_COPY(dev, line, bpp, xo, xe, raster, y)\
-	if ( (xe) > l_xprev ) {\
-	    int code;\
-	    LINE_ACCUM_STORE(bpp);\
-	    code = (*dev_proc(dev, copy_color))\
-	      (dev, line, l_xprev - (xo), raster,\
-	       gx_no_bitmap_id, l_xprev, y, (xe) - l_xprev, 1);\
-	    if ( code < 0 )\
-	      return code;\
-	}
+        if ( (xe) > l_xprev ) {\
+            int code;\
+            LINE_ACCUM_STORE(bpp);\
+            code = (*dev_proc(dev, copy_color))\
+              (dev, line, l_xprev - (xo), raster,\
+               gx_no_bitmap_id, l_xprev, y, (xe) - l_xprev, 1);\
+            if ( code < 0 )\
+              return code;\
+        }
 
 #endif /* gxcindex_INCLUDED */

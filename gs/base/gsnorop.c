@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,33 +40,33 @@ gs_set_logical_op(gs_state * pgs, gs_logical_operation_t lop)
 
 int
 mem_mono_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			int x, int y, int width, int height,
-			int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                        const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                        int x, int y, int width, int height,
+                        int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_rangecheck);
 }
 
 int
 mem_gray_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			int x, int y, int width, int height,
-			int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                        const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                        int x, int y, int width, int height,
+                        int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_rangecheck);
 }
 
 int
 mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			       const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			       int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                               const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                               int x, int y, int width, int height,
+                       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_rangecheck);
 }
@@ -75,33 +75,33 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 
 int
 gx_default_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-		    const gx_color_index * scolors,
-	     const gx_tile_bitmap * texture, const gx_color_index * tcolors,
-		    int x, int y, int width, int height,
-		    int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                    const gx_color_index * scolors,
+             const gx_tile_bitmap * texture, const gx_color_index * tcolors,
+                    int x, int y, int width, int height,
+                    int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 
 int
 gx_default_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			  const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			  int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                          const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                          int x, int y, int width, int height,
+                       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }
 
 int
 mem_default_strip_copy_rop(gx_device * dev,
-	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
-			  const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			  int x, int y, int width, int height,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                          const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                          int x, int y, int width, int height,
+                       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     return_error(gs_error_unknownerror);	/* not implemented */
 }
@@ -110,13 +110,13 @@ mem_default_strip_copy_rop(gx_device * dev,
 
 int
 gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
-			    client_name_t cname)
+                            client_name_t cname)
 {
     return_error(gs_error_rangecheck);
 }
 
 void
 gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
-	     gs_logical_operation_t log_op, const gx_device_color * texture)
+             gs_logical_operation_t log_op, const gx_device_color * texture)
 {				/* Never called. */
 }

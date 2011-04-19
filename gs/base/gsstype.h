@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,36 +39,36 @@ typedef struct enum_ptr_s {
 
 /* Define the procedures for structure types. */
 
-		/* Clear the marks of a structure. */
+                /* Clear the marks of a structure. */
 
 #define struct_proc_clear_marks(proc)\
   void proc(const gs_memory_t *cmem, void /*obj_header_t*/ *pre, uint size,\
     const gs_memory_struct_type_t *pstype)
 
-		/* Enumerate the pointers in a structure. */
+                /* Enumerate the pointers in a structure. */
 
 #define struct_proc_enum_ptrs(proc)\
   gs_ptr_type_t proc(const gs_memory_t *mem, EV_CONST void /*obj_header_t*/ *ptr, uint size,\
     int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype,\
     gc_state_t *gcst)
 
-		/* Relocate all the pointers in this structure. */
+                /* Relocate all the pointers in this structure. */
 
 #define struct_proc_reloc_ptrs(proc)\
   void proc(void /*obj_header_t*/ *ptr, uint size,\
     const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
 
-		/*
-		 * Finalize this structure just before freeing it.
-		 * Finalization procedures must not allocate or resize
-		 * any objects in any space managed by the allocator,
-		 * and must not assume that any objects in such spaces
-		 * referenced by this structure still exist.  However,
-		 * finalization procedures may free such objects, and
-		 * may allocate, free, and reference objects allocated
-		 * in other ways, such as objects allocated with malloc
-		 * by libraries.
-		 */
+                /*
+                 * Finalize this structure just before freeing it.
+                 * Finalization procedures must not allocate or resize
+                 * any objects in any space managed by the allocator,
+                 * and must not assume that any objects in such spaces
+                 * referenced by this structure still exist.  However,
+                 * finalization procedures may free such objects, and
+                 * may allocate, free, and reference objects allocated
+                 * in other ways, such as objects allocated with malloc
+                 * by libraries.
+                 */
 
 #define struct_proc_finalize(proc)\
   void proc(void /*obj_header_t*/ *ptr)
@@ -79,24 +79,24 @@ typedef struct enum_ptr_s {
 typedef struct struct_shared_procs_s struct_shared_procs_t;
 
 struct gs_memory_struct_type_s {
-	uint ssize;
-	struct_name_t sname;
+        uint ssize;
+        struct_name_t sname;
 
-	/* ------ Procedures shared among many structure types. ------ */
-	/* Note that this pointer is usually 0. */
+        /* ------ Procedures shared among many structure types. ------ */
+        /* Note that this pointer is usually 0. */
 
-	const struct_shared_procs_t *shared;
+        const struct_shared_procs_t *shared;
 
-	/* ------ Procedures specific to this structure type. ------ */
+        /* ------ Procedures specific to this structure type. ------ */
 
-	struct_proc_clear_marks((*clear_marks));
-	struct_proc_enum_ptrs((*enum_ptrs));
-	struct_proc_reloc_ptrs((*reloc_ptrs));
-	struct_proc_finalize((*finalize));
+        struct_proc_clear_marks((*clear_marks));
+        struct_proc_enum_ptrs((*enum_ptrs));
+        struct_proc_reloc_ptrs((*reloc_ptrs));
+        struct_proc_finalize((*finalize));
 
-	/* A pointer to additional data for the above procedures. */
+        /* A pointer to additional data for the above procedures. */
 
-	const void *proc_data;
+        const void *proc_data;
 };
 
 /*

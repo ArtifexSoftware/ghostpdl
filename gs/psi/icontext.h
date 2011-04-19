@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,8 +33,8 @@ extern int set_user_params(i_ctx_t *i_ctx_p, const ref * paramdict);
 /* Allocate the state of a context, always in local VM. */
 /* If *ppcst == 0, allocate the state object as well. */
 int context_state_alloc(gs_context_state_t ** ppcst,
-			const ref *psystem_dict,
-			const gs_dual_memory_t * dmem);
+                        const ref *psystem_dict,
+                        const gs_dual_memory_t * dmem);
 
 /* Load the state of the interpreter from a context. */
 /* The argument is not const because caches may be updated. */

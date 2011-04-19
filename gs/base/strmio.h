@@ -1,6 +1,6 @@
 /* Copyright (C) 2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,7 +40,7 @@ stream * sfopen(const char *path, const char *mode, gs_memory_t *mem);
  * Read a number of bytes from a stream, returning number read. Return count
  * will be less than count if EOF or error. Return count is number of elements.
  */
-int sfread(void *ptr, size_t size, size_t count, stream *s);	
+int sfread(void *ptr, size_t size, size_t count, stream *s);
 
 /*
  * Read a byte from a stream

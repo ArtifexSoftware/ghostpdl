@@ -42,35 +42,35 @@
   structure when it is being used for other imaging, specifically for
   imaging a command list).  While this criterion is somewhat fuzzy, it leads
   us to INCLUDE the following state elements:
-	line parameters: cap, join, miter limit, dash pattern
-	transformation matrix (CTM)
-	logical operation: RasterOp, transparency
-	color modification: alpha, rendering algorithm
-  	transparency information:
-  	    blend mode
-  	    (opacity + shape) (alpha + cached mask)
-  	    text knockout flag
-  	    rendering stack
-	overprint control: overprint flag, mode, and effective mode
-	rendering tweaks: flatness, fill adjustment, stroke adjust flag,
-	  accurate curves flag, shading smoothness
-	color rendering information:
-	    halftone, halftone phases
-	    transfer functions
-	    black generation, undercolor removal
-	    CIE rendering tables
-	    halftone and pattern caches
-  	shared (constant) device color spaces
+        line parameters: cap, join, miter limit, dash pattern
+        transformation matrix (CTM)
+        logical operation: RasterOp, transparency
+        color modification: alpha, rendering algorithm
+        transparency information:
+            blend mode
+            (opacity + shape) (alpha + cached mask)
+            text knockout flag
+            rendering stack
+        overprint control: overprint flag, mode, and effective mode
+        rendering tweaks: flatness, fill adjustment, stroke adjust flag,
+          accurate curves flag, shading smoothness
+        color rendering information:
+            halftone, halftone phases
+            transfer functions
+            black generation, undercolor removal
+            CIE rendering tables
+            halftone and pattern caches
+        shared (constant) device color spaces
   We EXCLUDE the following for reason #1 (drawing command parameters):
-	path
-	clipping path and stack
-	color specification: color, color space, substitute color spaces
-	font
-	device
+        path
+        clipping path and stack
+        color specification: color, color space, substitute color spaces
+        font
+        device
   We EXCLUDE the following for reason #2 (specific to PostScript):
-	graphics state stack
-	default CTM
-	clipping path stack
+        graphics state stack
+        default CTM
+        clipping path stack
   In retrospect, perhaps the device should have been included in the
   imager state, but we don't think this change is worth the trouble now.
  */
@@ -124,51 +124,51 @@ typedef struct gx_transfer_s {
 
 #define gs_color_rendering_state_common\
 \
-		/* Halftone screen: */\
+                /* Halftone screen: */\
 \
-	gs_halftone *halftone;			/* (RC) */\
-	gs_int_point screen_phase[gs_color_select_count];\
-		/* dev_ht depends on halftone and device resolution. */\
-	gx_device_halftone *dev_ht;		/* (RC) */\
+        gs_halftone *halftone;			/* (RC) */\
+        gs_int_point screen_phase[gs_color_select_count];\
+                /* dev_ht depends on halftone and device resolution. */\
+        gx_device_halftone *dev_ht;		/* (RC) */\
 \
-		/* Color (device-dependent): */\
+                /* Color (device-dependent): */\
 \
-	struct gs_cie_render_s *cie_render;	/* (RC) may be 0 */\
-	bool cie_to_xyz;			/* flag for conversion to XYZ, no CRD req'd */\
-	gx_transfer_map *black_generation;	/* (RC) may be 0 */\
-	gx_transfer_map *undercolor_removal;	/* (RC) may be 0 */\
-		/* set_transfer holds the transfer functions specified by */\
-		/* set[color]transfer; effective_transfer includes the */\
-		/* effects of overrides by TransferFunctions in halftone */\
-		/* dictionaries.  (In Level 1 systems, set_transfer and */\
-		/* effective_transfer are always the same.) */\
-	gx_transfer set_transfer;		/* members are (RC) */\
-	gx_transfer_map *effective_transfer[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* see below */\
-	int object_tag; /* */\
+        struct gs_cie_render_s *cie_render;	/* (RC) may be 0 */\
+        bool cie_to_xyz;			/* flag for conversion to XYZ, no CRD req'd */\
+        gx_transfer_map *black_generation;	/* (RC) may be 0 */\
+        gx_transfer_map *undercolor_removal;	/* (RC) may be 0 */\
+                /* set_transfer holds the transfer functions specified by */\
+                /* set[color]transfer; effective_transfer includes the */\
+                /* effects of overrides by TransferFunctions in halftone */\
+                /* dictionaries.  (In Level 1 systems, set_transfer and */\
+                /* effective_transfer are always the same.) */\
+        gx_transfer set_transfer;		/* members are (RC) */\
+        gx_transfer_map *effective_transfer[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* see below */\
+        int object_tag; /* */\
 \
-		/* Color caches: */\
+                /* Color caches: */\
 \
-		/* cie_joint_caches depend on cie_render and */\
-		/* the color space. */\
-	struct gx_cie_joint_caches_s *cie_joint_caches;		/* (RC) */\
-		/* cmap_procs depend on the device's color_info. */\
-	const struct gx_color_map_procs_s *cmap_procs;		/* static */\
-		/* DeviceN component map for current color space */\
-	gs_devicen_color_map color_component_map;\
-		/* The contents of pattern_cache depend on the */\
-		/* the color space and the device's color_info and */\
-		/* resolution. */\
-	struct gx_pattern_cache_s *pattern_cache;	/* (Shared) by all gstates */\
+                /* cie_joint_caches depend on cie_render and */\
+                /* the color space. */\
+        struct gx_cie_joint_caches_s *cie_joint_caches;		/* (RC) */\
+                /* cmap_procs depend on the device's color_info. */\
+        const struct gx_color_map_procs_s *cmap_procs;		/* static */\
+                /* DeviceN component map for current color space */\
+        gs_devicen_color_map color_component_map;\
+                /* The contents of pattern_cache depend on the */\
+                /* the color space and the device's color_info and */\
+                /* resolution. */\
+        struct gx_pattern_cache_s *pattern_cache;	/* (Shared) by all gstates */\
 \
-	/* Simple color spaces, stored here for easy access from */ 	\
-	/* gx_concrete_space_CIE */ \
-	gs_color_space *devicergb_cs;\
-	gs_color_space *devicecmyk_cs;\
+        /* Simple color spaces, stored here for easy access from */ 	\
+        /* gx_concrete_space_CIE */ \
+        gs_color_space *devicergb_cs;\
+        gs_color_space *devicecmyk_cs;\
 \
-	/* Stores for cached values which correspond to whichever */\
-	/* color isn't in force at the moment */\
-	struct gx_cie_joint_caches_s *cie_joint_caches_alt;\
-	gs_devicen_color_map          color_component_map_alt
+        /* Stores for cached values which correspond to whichever */\
+        /* color isn't in force at the moment */\
+        struct gx_cie_joint_caches_s *cie_joint_caches_alt;\
+        gs_devicen_color_map          color_component_map_alt
 
 /*
  * Enumerate the reference-counted pointers in a c.r. state.  Note that
@@ -204,7 +204,6 @@ typedef struct gx_transfer_s {
  */
 #define st_cr_state_num_ptrs 14
 
-
 typedef struct gs_devicen_color_map_s {
     bool use_alt_cspace;
     separation_type sep_type;
@@ -213,7 +212,6 @@ typedef struct gs_devicen_color_map_s {
     gs_id cspace_id;		/* Used to verify color space and map match */
     int color_map[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } gs_devicen_color_map;
-
 
 /* These flags are used to keep track of qQ
    combinations surrounding a graphic state
@@ -226,7 +224,6 @@ typedef struct gs_xstate_trans_flags {
     bool xstate_change;
 } gs_xstate_trans_flags_t;
 
-
 /* Define the imager state structure itself. */
 /*
  * Note that the ctm member is a gs_matrix_fixed.  As such, it cannot be
@@ -235,46 +232,46 @@ typedef struct gs_xstate_trans_flags {
  * than &pis->ctm.
  */
 #define gs_imager_state_common\
-	bool is_gstate;	/* is this imager state part of gstate ? */\
-	gs_memory_t *memory;\
-	void *client_data;\
-	gx_line_params line_params;\
-	gs_matrix_fixed ctm;\
-	bool current_point_valid;\
-	gs_point current_point;\
-	gs_point subpath_start;\
-	bool clamp_coordinates;\
-	gs_logical_operation_t log_op;\
-	gx_color_value alpha;\
-	gs_blend_mode_t blend_mode;\
-	gs_transparency_source_t opacity, shape;\
+        bool is_gstate;	/* is this imager state part of gstate ? */\
+        gs_memory_t *memory;\
+        void *client_data;\
+        gx_line_params line_params;\
+        gs_matrix_fixed ctm;\
+        bool current_point_valid;\
+        gs_point current_point;\
+        gs_point subpath_start;\
+        bool clamp_coordinates;\
+        gs_logical_operation_t log_op;\
+        gx_color_value alpha;\
+        gs_blend_mode_t blend_mode;\
+        gs_transparency_source_t opacity, shape;\
         gs_xstate_trans_flags_t trans_flags;\
-	gs_id soft_mask_id;\
-	bool text_knockout;\
-	uint text_rendering_mode;\
-	gs_transparency_state_t *transparency_stack;\
+        gs_id soft_mask_id;\
+        bool text_knockout;\
+        uint text_rendering_mode;\
+        gs_transparency_state_t *transparency_stack;\
         bool has_transparency;   /* used to keep from doing shading fills in device color space */\
         gx_device *trans_device;  /* trans device has all mappings to group color space */\
-	bool overprint;\
-	int overprint_mode;\
-	int effective_overprint_mode;\
-	bool overprint_alt;\
-	int overprint_mode_alt;\
-	int effective_overprint_mode_alt;\
-	float flatness;\
-	gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/\
-	bool stroke_adjust;\
-	bool accurate_curves;\
-	bool have_pattern_streams;\
-	float smoothness;\
-	int renderingintent; /* See gsstate.c */\
+        bool overprint;\
+        int overprint_mode;\
+        int effective_overprint_mode;\
+        bool overprint_alt;\
+        int overprint_mode_alt;\
+        int effective_overprint_mode_alt;\
+        float flatness;\
+        gs_fixed_point fill_adjust; /* A path expansion for fill; -1 = dropout prevention*/\
+        bool stroke_adjust;\
+        bool accurate_curves;\
+        bool have_pattern_streams;\
+        float smoothness;\
+        int renderingintent; /* See gsstate.c */\
         gsicc_manager_t *icc_manager; /* ICC color manager, profile */\
         gsicc_link_cache_t *icc_link_cache; /* ICC linked transforms */\
         gsicc_profile_cache_t *icc_profile_cache;  /* ICC profiles from PS. */\
-	CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
-	const gx_color_map_procs *\
-	  (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
-	gs_color_rendering_state_common
+        CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
+        const gx_color_map_procs *\
+          (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
+        gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
   (st_line_params_num_ptrs + st_cr_state_num_ptrs + 6)
 /* Access macros */
@@ -326,8 +323,7 @@ void gs_imager_state_copied(gs_imager_state * pis);
 
 /* Adjust reference counts before assigning one imager state to another. */
 void gs_imager_state_pre_assign(gs_imager_state *to,
-				const gs_imager_state *from);
-
+                                const gs_imager_state *from);
 
 /* Release an imager state. */
 void gs_imager_state_release(gs_imager_state * pis);

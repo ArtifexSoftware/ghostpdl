@@ -22,7 +22,6 @@ extern const pl_interp_implementation_t pcl_implementation;
 
 /* Zero-terminated list of pointers to implementations */
 pl_interp_implementation_t const * const pdl_implementation[] = {
-	&pcl_implementation,
-	0
+        &pcl_implementation,
+        0
 };
-

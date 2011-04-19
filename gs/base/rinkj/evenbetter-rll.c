@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -54,7 +54,7 @@ typedef struct _eb_srcbuf eb_srcbuf;
 
 int eb_test_sse2(void);
 int eb_sse2_core(eb_ctx_sse2 *ctx, unsigned char **out, eb_srcbuf *in,
-		 int offset);
+                 int offset);
 int eb_sse2_rev_rs(eb_ctx_sse2 *ctx, int offset);
 int eb_sse2_set_daz(void);
 void eb_sse2_restore_daz(int save_mxcsr);
@@ -156,7 +156,7 @@ eb_malloc_aligned(int size, int align)
     return 0;
   pad = (((int)alloced + 12) & 15) + 4;
   result = (void *)(pad + (char *)alloced);
-  ((int *)result)[-1] = pad;   
+  ((int *)result)[-1] = pad;
   return result;
 }
 
@@ -175,8 +175,8 @@ eb_compute_rbscale(const EvenBetterParams *params)
   if (rbscale == 0.0)
     {
       rbscale = params->aspect == 1 ? 0.95 :
-	params->aspect == 2 ? 1.8 :
-	params->aspect == 4 ? 3.6 : 1;
+        params->aspect == 2 ? 1.8 :
+        params->aspect == 4 ? 3.6 : 1;
     }
   return rbscale;
 }
@@ -191,17 +191,17 @@ eb_compute_randshift(int nl, int rs_base, int do_shadows, int levels)
        nl < (180 << (EVEN_SHIFT - 10))))
     rs--;
   else if (nl > (321 << (EVEN_SHIFT - 10)) &&
-	   nl < (361 << (EVEN_SHIFT - 10)))
+           nl < (361 << (EVEN_SHIFT - 10)))
     {
       rs--;
       if (nl > (331 << (EVEN_SHIFT - 10)) &&
-	  nl < (351 << (EVEN_SHIFT - 10)))
-	rs--;
+          nl < (351 << (EVEN_SHIFT - 10)))
+        rs--;
     }
   else if ((do_shadows ||
-	    nl == (levels - 1) << EVEN_SHIFT) &&
-	   nl > ((levels - 1) << EVEN_SHIFT) -
-	   (1 << (EVEN_SHIFT - 2)))
+            nl == (levels - 1) << EVEN_SHIFT) &&
+           nl > ((levels - 1) << EVEN_SHIFT) -
+           (1 << (EVEN_SHIFT - 2)))
     {
       /* don't add randomness in extreme shadows */
     }
@@ -272,22 +272,22 @@ eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
       ctx->luts[i - start_plane] = lut;
 
       for (j = 0; j < ET_SRC_MAX + 1; j++)
-	{
-	  double g = ((1 << 24) - params->luts[i][j]) * im_scale;
-	  int nl, rs;
+        {
+          double g = ((1 << 24) - params->luts[i][j]) * im_scale;
+          int nl, rs;
 
-	  lut[j * 3] = g;
-	  if (g == 0.0)
-	    lut[j * 3 + 1] = 0.5;
-	  else
-	    lut[j * 3 + 1] = 0.5 - r_mul * rbscale / g;
+          lut[j * 3] = g;
+          if (g == 0.0)
+            lut[j * 3 + 1] = 0.5;
+          else
+            lut[j * 3 + 1] = 0.5 - r_mul * rbscale / g;
 
-	  nl = (params->levels - 1 - g) * (1 << EVEN_SHIFT);
-	  rs = eb_compute_randshift(nl, rs_base,
-				    params->do_shadows, params->levels);
+          nl = (params->levels - 1 - g) * (1 << EVEN_SHIFT);
+          rs = eb_compute_randshift(nl, rs_base,
+                                    params->do_shadows, params->levels);
 
-	  lut[j * 3 + 2] = 1.0 / (1 << EVEN_SHIFT) / (1 << rs);
-	}
+          lut[j * 3 + 2] = 1.0 / (1 << EVEN_SHIFT) / (1 << rs);
+        }
     }
   for (i = i - start_plane; i < 4; i++)
     ctx->luts[i] = NULL;
@@ -370,10 +370,10 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
       imscale1 = (1 - k) * (params->levels - 1) * (256.0 / 255.0);
       imscale2 = k * (params->levels - 1) * sqrt(256.0 / 255.0);
       for (i = 0; i < 4; i++)
-	{
-	  ((float *)&ctx->imscale1)[i] = imscale1;
-	  ((float *)&ctx->imscale2)[i] = imscale2;
-	}
+        {
+          ((float *)&ctx->imscale1)[i] = imscale1;
+          ((float *)&ctx->imscale2)[i] = imscale2;
+        }
       f0 = vec_rsqrte(almostone);
       f0 = vec_madd(f0, almostone, (vector float)zero);
       f1 = vec_madd(f0, ctx->imscale2, (vector float)zero);
@@ -381,10 +381,10 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
       f1 = vec_nmsub(f0, ctx->imscale2, foff);
       f1 = vec_nmsub(almostone, ctx->imscale1, f1);
       if (vec_all_eq(f1, (vector float)zero))
-	{
-	  ctx->foff = foff;
-	  break;
-	}
+        {
+          ctx->foff = foff;
+          break;
+        }
       k += 1e-5;
     }
   rbmul = -r_mul * rbscale;
@@ -413,21 +413,21 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
       ctx->luts[i - start_plane] = lut;
 
       for (j = 0; j < ET_SRC_MAX + 1; j++)
-	{
-	  double g = ((1 << 24) - params->luts[i][j]) * im_scale;
-	  int nl, rs;
+        {
+          double g = ((1 << 24) - params->luts[i][j]) * im_scale;
+          int nl, rs;
 
-	  lut[j * 3] = g;
-	  if (g == 0.0)
-	    lut[j * 3 + 1] = 0.5;
-	  else
-	    lut[j * 3 + 1] = 0.5 - r_mul * rbscale / g;
-	  nl = (params->levels - 1 - g) * (1 << EVEN_SHIFT);
-	  rs = eb_compute_randshift(nl, rs_base,
-				    params->do_shadows, params->levels);
+          lut[j * 3] = g;
+          if (g == 0.0)
+            lut[j * 3 + 1] = 0.5;
+          else
+            lut[j * 3 + 1] = 0.5 - r_mul * rbscale / g;
+          nl = (params->levels - 1 - g) * (1 << EVEN_SHIFT);
+          rs = eb_compute_randshift(nl, rs_base,
+                                    params->do_shadows, params->levels);
 
-	  lut[j * 3 + 2] = 1.0 / (1 << EVEN_SHIFT) / (1 << rs);
-	}
+          lut[j * 3 + 2] = 1.0 / (1 << EVEN_SHIFT) / (1 << rs);
+        }
     }
   for (i = i - start_plane; i < 4; i++)
     ctx->luts[i] = NULL;
@@ -469,7 +469,7 @@ eb_ctx_avec_free(eb_ctx_avec *ctx)
 #ifdef USE_VECTOR
 static int
 even_better_line_vector(EvenBetterCtx *ebc, uchar **dest,
-		      const ET_Rll *const *src)
+                      const ET_Rll *const *src)
 {
   int n_planes = ebc->n_planes;
   int xd = ebc->dest_width;
@@ -483,7 +483,6 @@ even_better_line_vector(EvenBetterCtx *ebc, uchar **dest,
 #endif
 
   srcbuf = (eb_srcbuf *)(((int)&sb_alloc + 12) & -16);
-
 
   for (strip = 0; strip < n_planes; strip += 4)
     {
@@ -503,114 +502,114 @@ even_better_line_vector(EvenBetterCtx *ebc, uchar **dest,
 
       last_plane = n_planes - strip < 4 ? n_planes - strip : 4;
       for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-	{
-	  count[plane_idx] = 0;
-	  src_idx[plane_idx] = 0;
-	  destbufs[plane_idx] = dest[plane_idx + strip];
-	}
+        {
+          count[plane_idx] = 0;
+          src_idx[plane_idx] = 0;
+          destbufs[plane_idx] = dest[plane_idx + strip];
+        }
       for (; plane_idx < 4; plane_idx++)
-	{
-	  int j;
+        {
+          int j;
 
-	  for (j = 0; j < 16; j++)
-	    {
-	      ((float *)&srcbuf->im)[j * 4 + plane_idx] = 0.0;
-	      ((float *)&srcbuf->rb)[j * 4 + plane_idx] = 0.0;
-	      ((float *)&srcbuf->rs)[j * 4 + plane_idx] = 0.0;
-	    }
-	}
+          for (j = 0; j < 16; j++)
+            {
+              ((float *)&srcbuf->im)[j * 4 + plane_idx] = 0.0;
+              ((float *)&srcbuf->rb)[j * 4 + plane_idx] = 0.0;
+              ((float *)&srcbuf->rs)[j * 4 + plane_idx] = 0.0;
+            }
+        }
       for (i = 0; i < xd; i += 16)
-	{
-	  int jmax = (xd - i) > 16 ? 16 : xd - i;
-	  int skip = 1;
-	  int j;
+        {
+          int jmax = (xd - i) > 16 ? 16 : xd - i;
+          int skip = 1;
+          int j;
 
-	  for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-	    {
-	      if (count[plane_idx] < 16 || im[plane_idx] != 0.0)
-		{
-		  skip = 0;
-		  break;
-		}
-	    }
-	  ctx->skip_line[i >> 4] = skip;
+          for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
+            {
+              if (count[plane_idx] < 16 || im[plane_idx] != 0.0)
+                {
+                  skip = 0;
+                  break;
+                }
+            }
+          ctx->skip_line[i >> 4] = skip;
 
-	  if (skip)
-	    {
-	      /* all white */
+          if (skip)
+            {
+              /* all white */
 
-	      for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-		{
-		  uchar *dst_ptr = destbufs[plane_idx];
-		  if (jmax == 16)
-		    {
-		      ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
-		      ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
-		      ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
-		      ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
-		    }
-		  else
-		    {
-		      for (j = 0; j < jmax; j++)
-			dst_ptr[i + j] = 0;
-		    }
-		  count[plane_idx] -= jmax;
-		}
-	    }
-	  else
-	    {
-	      for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-		{
-		  const float *lut = ctx->luts[plane_idx];
-		  float imp = im[plane_idx];
-		  float rbp = rb[plane_idx];
-		  float rsp = rs[plane_idx];
- 		  for (j = 0; j < jmax; j++)
-		    {
-		      if (count[plane_idx] == 0)
-			{
-			  const ET_Rll *src_p = sbuf[plane_idx] +
-			    src_idx[plane_idx]++;
-			  ET_SrcPixel src_pixel = src_p->value;
-			  count[plane_idx] = src_p->length;
-			  imp = lut[src_pixel * 3];
-			  rbp = lut[src_pixel * 3 + 1];
-			  rsp = lut[src_pixel * 3 + 2];
-			}
-		      ((float *)&srcbuf->im)[j * 4 + plane_idx] = imp;
-		      ((float *)&srcbuf->rb)[j * 4 + plane_idx] = rbp;
-		      ((float *)&srcbuf->rs)[j * 4 + plane_idx] = rsp;
-		      count[plane_idx]--;
-		    }
-		  im[plane_idx] = imp;
-		  rb[plane_idx] = rbp;
-		  rs[plane_idx] = rsp;
-		}
-	      for (; plane_idx < 4; plane_idx++)
-		{
-		  destbufs[plane_idx] = dummy_dst - i;
-		}
+              for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
+                {
+                  uchar *dst_ptr = destbufs[plane_idx];
+                  if (jmax == 16)
+                    {
+                      ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
+                      ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
+                      ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
+                      ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
+                    }
+                  else
+                    {
+                      for (j = 0; j < jmax; j++)
+                        dst_ptr[i + j] = 0;
+                    }
+                  count[plane_idx] -= jmax;
+                }
+            }
+          else
+            {
+              for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
+                {
+                  const float *lut = ctx->luts[plane_idx];
+                  float imp = im[plane_idx];
+                  float rbp = rb[plane_idx];
+                  float rsp = rs[plane_idx];
+                  for (j = 0; j < jmax; j++)
+                    {
+                      if (count[plane_idx] == 0)
+                        {
+                          const ET_Rll *src_p = sbuf[plane_idx] +
+                            src_idx[plane_idx]++;
+                          ET_SrcPixel src_pixel = src_p->value;
+                          count[plane_idx] = src_p->length;
+                          imp = lut[src_pixel * 3];
+                          rbp = lut[src_pixel * 3 + 1];
+                          rsp = lut[src_pixel * 3 + 2];
+                        }
+                      ((float *)&srcbuf->im)[j * 4 + plane_idx] = imp;
+                      ((float *)&srcbuf->rb)[j * 4 + plane_idx] = rbp;
+                      ((float *)&srcbuf->rs)[j * 4 + plane_idx] = rsp;
+                      count[plane_idx]--;
+                    }
+                  im[plane_idx] = imp;
+                  rb[plane_idx] = rbp;
+                  rs[plane_idx] = rsp;
+                }
+              for (; plane_idx < 4; plane_idx++)
+                {
+                  destbufs[plane_idx] = dummy_dst - i;
+                }
 #ifdef USE_AVEC
-	      eb_avec_core(ctx, (vector unsigned char **)destbufs, srcbuf, i);
+              eb_avec_core(ctx, (vector unsigned char **)destbufs, srcbuf, i);
 #endif
 #ifdef USE_SSE2
-	      eb_sse2_core(ctx, destbufs, srcbuf, i);
+              eb_sse2_core(ctx, destbufs, srcbuf, i);
 #endif
-	    }
-	}
+            }
+        }
 
       for (i = xd & -16; i >= 0; i -= 16)
-	{
-	  if (!ctx->skip_line[i >> 4])
-	    {
+        {
+          if (!ctx->skip_line[i >> 4])
+            {
 #ifdef USE_AVEC
-	      eb_avec_rev_rs(ctx, i + 15);
+              eb_avec_rev_rs(ctx, i + 15);
 #endif
 #ifdef USE_SSE2
-	      eb_sse2_rev_rs(ctx, i + 15);
+              eb_sse2_rev_rs(ctx, i + 15);
 #endif
-	    }
-	}
+            }
+        }
     }
 #ifdef USE_SSE2
   eb_sse2_restore_daz(save_mxcsr);
@@ -622,7 +621,7 @@ even_better_line_vector(EvenBetterCtx *ebc, uchar **dest,
 #ifdef USE_AVEC
 static int
 even_better_line_fastprep(EvenBetterCtx *ebc, uchar **dest,
-			  const ET_SrcPixel *const *src)
+                          const ET_SrcPixel *const *src)
 {
   int n_planes = ebc->n_planes;
   int xd = ebc->dest_width;
@@ -649,47 +648,47 @@ even_better_line_fastprep(EvenBetterCtx *ebc, uchar **dest,
 
       last_plane = n_planes - strip < 4 ? n_planes - strip : 4;
       for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-	{
-	  destbufs[plane_idx] = dest[plane_idx + strip];
-	}
+        {
+          destbufs[plane_idx] = dest[plane_idx + strip];
+        }
       for (i = 0; i < xd; i += 16)
-	{
-	  int noskip;
-	  noskip = eb_avec_prep_srcbuf(ctx, last_plane, srcbuf, sbuf, i);
-	  ctx->skip_line[i >> 4] = noskip;
-	  if (noskip)
-	    {
-	      for (plane_idx = last_plane; plane_idx < 4; plane_idx++)
-		destbufs[plane_idx] = dummy_dst - i;
-	      eb_avec_core(ctx, (vector unsigned char **)destbufs, srcbuf, i);
-	    }
-	  else
-	    {
-	      /* all white */
+        {
+          int noskip;
+          noskip = eb_avec_prep_srcbuf(ctx, last_plane, srcbuf, sbuf, i);
+          ctx->skip_line[i >> 4] = noskip;
+          if (noskip)
+            {
+              for (plane_idx = last_plane; plane_idx < 4; plane_idx++)
+                destbufs[plane_idx] = dummy_dst - i;
+              eb_avec_core(ctx, (vector unsigned char **)destbufs, srcbuf, i);
+            }
+          else
+            {
+              /* all white */
 
-	      for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
-		{
-		  uchar *dst_ptr = destbufs[plane_idx];
-		  ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
-		}
-	    }
-	}
+              for (plane_idx = 0; plane_idx < last_plane; plane_idx++)
+                {
+                  uchar *dst_ptr = destbufs[plane_idx];
+                  ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
+                }
+            }
+        }
 
       for (i = xd & -16; i >= 0; i -= 16)
-	{
-	  if (ctx->skip_line[i >> 4])
-	    {
+        {
+          if (ctx->skip_line[i >> 4])
+            {
 #ifdef USE_AVEC
-	      eb_avec_rev_rs(ctx, i + 15);
+              eb_avec_rev_rs(ctx, i + 15);
 #endif
 #ifdef USE_SSE2
-	      eb_sse2_rev_rs(ctx, i + 15);
+              eb_sse2_rev_rs(ctx, i + 15);
 #endif
-	    }
-	}
+            }
+        }
     }
   return 0;
 }
@@ -701,7 +700,7 @@ even_better_line_fastprep(EvenBetterCtx *ebc, uchar **dest,
 
 static void
 even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
-		     const ET_Rll *const *src)
+                     const ET_Rll *const *src)
 {
   int a[M], b[M];
   int e_1_0[M], e_m1_1[M], e_0_1[M], e_1_1[M];
@@ -763,195 +762,195 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
       jmax = (xd - i) > 16 ? 16 : xd - i;
 
       for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
-	{
-	  EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
-	  int *wcl = ctx->white_count_line;
-	  if (count[plane_idx] >= 16 && iml[plane_idx] == 0)
-	    wcl[i >> 4]++;
-	  else
-	    wcl[i >> 4] = 0;
-	  if (wcl[i >> 4] > 15)
-	    {
-	      uchar *dst_ptr = dest[plane_idx];
-	      if (jmax == 16)
-		{
-		  ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
-		  ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
-		}
-	      else
-		{
-		  for (j = 0; j < jmax; j++)
-		    dst_ptr[i + j] = 0;
-		}
-	      count[plane_idx] -= jmax;
-	    }
-	  else
-	    {
-	      work_planes[n_work++] = plane_idx;
-	    }
-	}
+        {
+          EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
+          int *wcl = ctx->white_count_line;
+          if (count[plane_idx] >= 16 && iml[plane_idx] == 0)
+            wcl[i >> 4]++;
+          else
+            wcl[i >> 4] = 0;
+          if (wcl[i >> 4] > 15)
+            {
+              uchar *dst_ptr = dest[plane_idx];
+              if (jmax == 16)
+                {
+                  ((uint32 *)dst_ptr)[(i >> 2) + 0] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 1] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 2] = 0;
+                  ((uint32 *)dst_ptr)[(i >> 2) + 3] = 0;
+                }
+              else
+                {
+                  for (j = 0; j < jmax; j++)
+                    dst_ptr[i + j] = 0;
+                }
+              count[plane_idx] -= jmax;
+            }
+          else
+            {
+              work_planes[n_work++] = plane_idx;
+            }
+        }
 
       if (n_work == 0)
-	{
-	  /* all planes were white */
-	  i += jmax;
-	  continue;
-	}
+        {
+          /* all planes were white */
+          i += jmax;
+          continue;
+        }
 
       for (j = 0; j < jmax; j++)
-	{
+        {
 #ifdef FANCY_COUPLING
-	  coupling += c_line[i];
+          coupling += c_line[i];
 #else
-	  coupling = 0;
+          coupling = 0;
 #endif
-	  /* Lookup image data and compute R for all planes. */
-	  for (work_idx = 0; work_idx < n_work; work_idx++)
-	    {
-	      int plane_idx = work_planes[work_idx];
-	      EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
-	      ET_SrcPixel src_pixel;
-	      int new_r;
+          /* Lookup image data and compute R for all planes. */
+          for (work_idx = 0; work_idx < n_work; work_idx++)
+            {
+              int plane_idx = work_planes[work_idx];
+              EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
+              ET_SrcPixel src_pixel;
+              int new_r;
 
-	      pr = ctx->r_line;
-	      pa = ctx->a_line;
-	      pb = ctx->b_line;
-	      if (count[plane_idx] == 0)
-		{
-		  const ET_Rll *src_p = src[plane_idx] + src_idx[plane_idx]++;
-		  int *lut = ctx->lut;
-		  int *rblut = ctx->rb_lut;
-		  char *rslut = ctx->rs_lut;
+              pr = ctx->r_line;
+              pa = ctx->a_line;
+              pb = ctx->b_line;
+              if (count[plane_idx] == 0)
+                {
+                  const ET_Rll *src_p = src[plane_idx] + src_idx[plane_idx]++;
+                  int *lut = ctx->lut;
+                  int *rblut = ctx->rb_lut;
+                  char *rslut = ctx->rs_lut;
 
-		  count[plane_idx] = src_p->length;
-		  src_pixel = src_p->value;
-		  iml[plane_idx] = lut[src_pixel];
-		  rbl[plane_idx] = rblut[src_pixel];
-		  rs[plane_idx] = rslut[src_pixel];
-		}
-	      count[plane_idx]--;
+                  count[plane_idx] = src_p->length;
+                  src_pixel = src_p->value;
+                  iml[plane_idx] = lut[src_pixel];
+                  rbl[plane_idx] = rblut[src_pixel];
+                  rs[plane_idx] = rslut[src_pixel];
+                }
+              count[plane_idx]--;
 
-	      if (r[plane_idx] + a[plane_idx] < pr[i])
-		{
-		  r[plane_idx] += a[plane_idx];
-		  a[plane_idx] += 2;
-		}
-	      else
-		{
-		  a[plane_idx] = pa[i];
-		  b[plane_idx] = pb[i];
-		  r[plane_idx] = pr[i];
-		}
-	      if (iml[plane_idx] == 0)
-		{
-		  r_scratch[plane_idx] = 0;
-		}
-	      else
-		{
-		  int r_tmp;
-		  const int r_max = 0;
-		  new_r = r[plane_idx];
-		  if (new_r > even_rlimit)
-		    new_r = even_rlimit;
-		  /* Should we store back with the limit? */
+              if (r[plane_idx] + a[plane_idx] < pr[i])
+                {
+                  r[plane_idx] += a[plane_idx];
+                  a[plane_idx] += 2;
+                }
+              else
+                {
+                  a[plane_idx] = pa[i];
+                  b[plane_idx] = pb[i];
+                  r[plane_idx] = pr[i];
+                }
+              if (iml[plane_idx] == 0)
+                {
+                  r_scratch[plane_idx] = 0;
+                }
+              else
+                {
+                  int r_tmp;
+                  const int r_max = 0;
+                  new_r = r[plane_idx];
+                  if (new_r > even_rlimit)
+                    new_r = even_rlimit;
+                  /* Should we store back with the limit? */
 
-		  rg = new_r << (EVEN_SHIFT - even_c1);
-		  r_tmp = rg - rbl[plane_idx];
-		  if (r_tmp > r_max) r_tmp >>= 3;
-		  r_scratch[plane_idx] = r_tmp;
-		}
-	    }
+                  rg = new_r << (EVEN_SHIFT - even_c1);
+                  r_tmp = rg - rbl[plane_idx];
+                  if (r_tmp > r_max) r_tmp >>= 3;
+                  r_scratch[plane_idx] = r_tmp;
+                }
+            }
 
-	  /* Dither each plane. */
-	  for (work_idx = 0; work_idx < n_work; work_idx++)
-	    {
-	      int plane_idx = work_planes[work_idx];
-	      EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
-	      uchar *dst_ptr = dest[plane_idx];
-	      int new_e_1_0;
-	      int coupling_contribution;
+          /* Dither each plane. */
+          for (work_idx = 0; work_idx < n_work; work_idx++)
+            {
+              int plane_idx = work_planes[work_idx];
+              EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
+              uchar *dst_ptr = dest[plane_idx];
+              int new_e_1_0;
+              int coupling_contribution;
 
-	      pr = ctx->r_line;
-	      pa = ctx->a_line;
-	      pb = ctx->b_line;
-	      piir = ctx->iir_line;
+              pr = ctx->r_line;
+              pa = ctx->a_line;
+              pb = ctx->b_line;
+              piir = ctx->iir_line;
 
-	      im = iml[plane_idx];
-	      e_m1_1[plane_idx] = e_0_1[plane_idx];
-	      e_0_1[plane_idx] = e_1_1[plane_idx];
-	      e_1_1[plane_idx] = i == xd - 1 ? 0 : piir[i + 1];
-	      new_e_1_0 = ((e_1_0[plane_idx] * 7 + e_m1_1[plane_idx] * 3 +
-			    e_0_1[plane_idx] * 5 + e_1_1[plane_idx] * 1) >> 4);
-	      if (im == 0)
-		{
-		  dst_ptr[i] = 0;
-		}
-	      else
-		{
-		  int err;
-		  int imo;
+              im = iml[plane_idx];
+              e_m1_1[plane_idx] = e_0_1[plane_idx];
+              e_0_1[plane_idx] = e_1_1[plane_idx];
+              e_1_1[plane_idx] = i == xd - 1 ? 0 : piir[i + 1];
+              new_e_1_0 = ((e_1_0[plane_idx] * 7 + e_m1_1[plane_idx] * 3 +
+                            e_0_1[plane_idx] * 5 + e_1_1[plane_idx] * 1) >> 4);
+              if (im == 0)
+                {
+                  dst_ptr[i] = 0;
+                }
+              else
+                {
+                  int err;
+                  int imo;
 
-		  err = new_e_1_0;
+                  err = new_e_1_0;
 
-		  err += r_scratch[plane_idx];
+                  err += r_scratch[plane_idx];
 
-		  /* Add the two seeds together */
-		  sum = seed1 + seed2;
+                  /* Add the two seeds together */
+                  sum = seed1 + seed2;
 
-		  /* If the add generated a carry, increment
-		   * the result of the addition.
-		   */
-		  if (sum < seed1 || sum < seed2) sum++;
+                  /* If the add generated a carry, increment
+                   * the result of the addition.
+                   */
+                  if (sum < seed1 || sum < seed2) sum++;
 
-		  /* Seed2 becomes old seed1, seed1 becomes result */
-		  seed2 = seed1;
-		  seed1 = sum;
+                  /* Seed2 becomes old seed1, seed1 becomes result */
+                  seed2 = seed1;
+                  seed1 = sum;
 
-		  rand_shift = rs[plane_idx];
-		  err -= (sum >> rand_shift) - (0x80000000 >> rand_shift);
+                  rand_shift = rs[plane_idx];
+                  err -= (sum >> rand_shift) - (0x80000000 >> rand_shift);
 
-		  if (err < even_elo)
-		    err = even_elo;
+                  if (err < even_elo)
+                    err = even_elo;
 
-		  else if (err > even_ehi)
-		    err = even_ehi;
+                  else if (err > even_ehi)
+                    err = even_ehi;
 
 #if 1
-		  err += coupling;
+                  err += coupling;
 #endif
 
 #ifdef OLD_QUANT
-		  imo = ((err + im) * dith_mul) >> (EVEN_SHIFT + 8);
+                  imo = ((err + im) * dith_mul) >> (EVEN_SHIFT + 8);
 #else
-		  imo = ((err + im) * dith_mul + (1 << (EVEN_SHIFT + 7))) >> (EVEN_SHIFT + 8);
+                  imo = ((err + im) * dith_mul + (1 << (EVEN_SHIFT + 7))) >> (EVEN_SHIFT + 8);
 #endif
-		  if (imo < 0) imo = 0;
-		  else if (imo > levels - 1) imo = levels - 1;
-		  dst_ptr[i] = imo;
-		  coupling_contribution = im - ((imo * imo_mul) >> IMO_SHIFT);
-		  new_e_1_0 += coupling_contribution;
-		  coupling += (coupling_contribution * strengths[plane_idx]) >> 8;
-		}
-	      if (dst_ptr[i] != 0)
-		{
-		  a[plane_idx] = 1;
-		  b[plane_idx] = aspect2;
-		  r[plane_idx] = 0;
-		}
-	      pa[i] = a[plane_idx];
-	      pb[i] = b[plane_idx];
-	      pr[i] = r[plane_idx];
-	      piir[i] = new_e_1_0;
-	      e_1_0[plane_idx] = new_e_1_0;
-	    }
+                  if (imo < 0) imo = 0;
+                  else if (imo > levels - 1) imo = levels - 1;
+                  dst_ptr[i] = imo;
+                  coupling_contribution = im - ((imo * imo_mul) >> IMO_SHIFT);
+                  new_e_1_0 += coupling_contribution;
+                  coupling += (coupling_contribution * strengths[plane_idx]) >> 8;
+                }
+              if (dst_ptr[i] != 0)
+                {
+                  a[plane_idx] = 1;
+                  b[plane_idx] = aspect2;
+                  r[plane_idx] = 0;
+                }
+              pa[i] = a[plane_idx];
+              pb[i] = b[plane_idx];
+              pr[i] = r[plane_idx];
+              piir[i] = new_e_1_0;
+              e_1_0[plane_idx] = new_e_1_0;
+            }
 #ifdef FANCY_COUPLING
-	  coupling = coupling >> 1;
-	  c_line[i] = coupling;
+          coupling = coupling >> 1;
+          c_line[i] = coupling;
 #endif
-	  i++;
-	}
+          i++;
+        }
     }
 
   /* Note: this isn't white optimized, but the payoff is probably not
@@ -982,33 +981,33 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
       rv = 0;
       jmax = ((xd - 1) & 15) + 1;
       for (i = xd - 1; i >= 0;)
-	{
-	  if (wcl[i >> 4] < 16)
-	    {
-	      for (j = 0; j < jmax; j++)
-		{
-		  if (rv + bv + av < pr[i] + pb[i])
-		    {
-		      rv += av;
-		      av += 2;
-		    }
-		  else
-		    {
-		      rv = pr[i];
-		      av = pa[i];
-		      bv = pb[i];
-		    }
-		  if (rv > even_rlimit) rv = even_rlimit;
-		  pa[i] = av;
-		  pb[i] = bv + (aspect2 << 1);
-		  pr[i] = rv + bv;
-		  i--;
-		}
-	    }
-	  else
-	    i -= jmax;
-	  jmax = 16;
-	}
+        {
+          if (wcl[i >> 4] < 16)
+            {
+              for (j = 0; j < jmax; j++)
+                {
+                  if (rv + bv + av < pr[i] + pb[i])
+                    {
+                      rv += av;
+                      av += 2;
+                    }
+                  else
+                    {
+                      rv = pr[i];
+                      av = pa[i];
+                      bv = pb[i];
+                    }
+                  if (rv > even_rlimit) rv = even_rlimit;
+                  pa[i] = av;
+                  pb[i] = bv + (aspect2 << 1);
+                  pr[i] = rv + bv;
+                  i--;
+                }
+            }
+          else
+            i -= jmax;
+          jmax = 16;
+        }
     }
 
    ebc->seed1 = seed1;
@@ -1017,7 +1016,7 @@ even_better_line_hi (EvenBetterCtx *ebc, uchar **dest,
 
 static void
 even_better_line_both (EvenBetterCtx *ebc, uchar **dest,
-		       const ET_Rll *const *src)
+                       const ET_Rll *const *src)
 {
 #if 0
   int a[M], b[M];
@@ -1089,170 +1088,170 @@ even_better_line_both (EvenBetterCtx *ebc, uchar **dest,
 
       xrem += xs;
       if (xrem >= xd)
-	{
-	  for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
-	    {
-	      ps = src[plane_idx];
-	      imraw[plane_idx] = ps[src_idx];
-	    }
-	  src_idx++;
-	  xrem -= xd;
-	}
+        {
+          for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
+            {
+              ps = src[plane_idx];
+              imraw[plane_idx] = ps[src_idx];
+            }
+          src_idx++;
+          xrem -= xd;
+        }
 
       /* Lookup image data and compute R for all planes. */
       for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
-	{
-	  EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
-	  ET_SrcPixel src_pixel;
-	  int new_r;
+        {
+          EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
+          ET_SrcPixel src_pixel;
+          int new_r;
 
-	  pr = ctx->r_line;
-	  pa = ctx->a_line;
-	  pb = ctx->b_line;
-	  pr_sh = ctx->r_line_sh;
-	  pa_sh = ctx->a_line_sh;
-	  pb_sh = ctx->b_line_sh;
-	  lut = ctx->lut;
-	  rblut = ctx->rb_lut;
-	  src_pixel = imraw[plane_idx];
+          pr = ctx->r_line;
+          pa = ctx->a_line;
+          pb = ctx->b_line;
+          pr_sh = ctx->r_line_sh;
+          pa_sh = ctx->a_line_sh;
+          pb_sh = ctx->b_line_sh;
+          lut = ctx->lut;
+          rblut = ctx->rb_lut;
+          src_pixel = imraw[plane_idx];
 
-	  im = lut[src_pixel];
-	  iml[plane_idx] = im;
-	  rb = rblut[src_pixel];
-	  if (r[plane_idx] + a[plane_idx] < pr[i])
-	    {
-	      r[plane_idx] += a[plane_idx];
-	      a[plane_idx] += 2;
-	    }
-	  else
-	    {
-	      a[plane_idx] = pa[i];
-	      b[plane_idx] = pb[i];
-	      r[plane_idx] = pr[i];
-	    }
-	  if (r_sh[plane_idx] + a_sh[plane_idx] < pr_sh[i])
-	    {
-	      r_sh[plane_idx] += a_sh[plane_idx];
-	      a_sh[plane_idx] += 2;
-	    }
-	  else
-	    {
-	      a_sh[plane_idx] = pa_sh[i];
-	      b_sh[plane_idx] = pb_sh[i];
-	      r_sh[plane_idx] = pr_sh[i];
-	    }
-	  if (im == 0 || im == (1 << EVEN_SHIFT))
-	    {
-	      r_scratch[plane_idx] = 0;
-	    }
-	  else
-	    {
-	      new_r = r[plane_idx];
-	      if (new_r > even_rlimit)
-		new_r = even_rlimit;
-	      /* Should we store back with the limit? */
-	      rg = new_r << (EVEN_SHIFT - even_c1);
+          im = lut[src_pixel];
+          iml[plane_idx] = im;
+          rb = rblut[src_pixel];
+          if (r[plane_idx] + a[plane_idx] < pr[i])
+            {
+              r[plane_idx] += a[plane_idx];
+              a[plane_idx] += 2;
+            }
+          else
+            {
+              a[plane_idx] = pa[i];
+              b[plane_idx] = pb[i];
+              r[plane_idx] = pr[i];
+            }
+          if (r_sh[plane_idx] + a_sh[plane_idx] < pr_sh[i])
+            {
+              r_sh[plane_idx] += a_sh[plane_idx];
+              a_sh[plane_idx] += 2;
+            }
+          else
+            {
+              a_sh[plane_idx] = pa_sh[i];
+              b_sh[plane_idx] = pb_sh[i];
+              r_sh[plane_idx] = pr_sh[i];
+            }
+          if (im == 0 || im == (1 << EVEN_SHIFT))
+            {
+              r_scratch[plane_idx] = 0;
+            }
+          else
+            {
+              new_r = r[plane_idx];
+              if (new_r > even_rlimit)
+                new_r = even_rlimit;
+              /* Should we store back with the limit? */
+              rg = new_r << (EVEN_SHIFT - even_c1);
 
-	      new_r = r_sh[plane_idx];
-	      if (new_r > even_rlimit)
-		new_r = even_rlimit;
-	      rg -= new_r << (EVEN_SHIFT - even_c1);
-	      r_scratch[plane_idx] = rg - rb;
-	    }
-	}
+              new_r = r_sh[plane_idx];
+              if (new_r > even_rlimit)
+                new_r = even_rlimit;
+              rg -= new_r << (EVEN_SHIFT - even_c1);
+              r_scratch[plane_idx] = rg - rb;
+            }
+        }
 
       /* Dither each plane. */
       for (plane_idx = 0; plane_idx < n_planes; plane_idx++)
-	{
-	  EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
-	  uchar *dst_ptr = dest[plane_idx];
-	  int new_e_1_0;
-	  int coupling_contribution;
+        {
+          EBPlaneCtx *ctx = ebc->plane_ctx[plane_idx];
+          uchar *dst_ptr = dest[plane_idx];
+          int new_e_1_0;
+          int coupling_contribution;
 
-	  pr = ctx->r_line;
-	  pa = ctx->a_line;
-	  pb = ctx->b_line;
-	  pr_sh = ctx->r_line_sh;
-	  pa_sh = ctx->a_line_sh;
-	  pb_sh = ctx->b_line_sh;
-	  piir = ctx->iir_line;
+          pr = ctx->r_line;
+          pa = ctx->a_line;
+          pb = ctx->b_line;
+          pr_sh = ctx->r_line_sh;
+          pa_sh = ctx->a_line_sh;
+          pb_sh = ctx->b_line_sh;
+          piir = ctx->iir_line;
 
-	  im = iml[plane_idx];
-	  e_m1_1[plane_idx] = e_0_1[plane_idx];
-	  e_0_1[plane_idx] = e_1_1[plane_idx];
-	  e_1_1[plane_idx] = i == xd - 1 ? 0 : piir[i + 1];
-	  new_e_1_0 = ((e_1_0[plane_idx] * 7 + e_m1_1[plane_idx] * 3 +
-			e_0_1[plane_idx] * 5 + e_1_1[plane_idx] * 1) >> 4);
-	  if (im == 0)
-	    {
-	      dst_ptr[i] = 0;
-	    }
-	  else
-	    {
-	      int err;
-	      int imo;
+          im = iml[plane_idx];
+          e_m1_1[plane_idx] = e_0_1[plane_idx];
+          e_0_1[plane_idx] = e_1_1[plane_idx];
+          e_1_1[plane_idx] = i == xd - 1 ? 0 : piir[i + 1];
+          new_e_1_0 = ((e_1_0[plane_idx] * 7 + e_m1_1[plane_idx] * 3 +
+                        e_0_1[plane_idx] * 5 + e_1_1[plane_idx] * 1) >> 4);
+          if (im == 0)
+            {
+              dst_ptr[i] = 0;
+            }
+          else
+            {
+              int err;
+              int imo;
 
-	      err = new_e_1_0;
+              err = new_e_1_0;
 
-	      err += r_scratch[plane_idx];
+              err += r_scratch[plane_idx];
 
-	      /* Add the two seeds together */
-	      sum = seed1 + seed2;
+              /* Add the two seeds together */
+              sum = seed1 + seed2;
 
-	      /* If the add generated a carry, increment
-	       * the result of the addition.
-	       */
-	      if (sum < seed1 || sum < seed2) sum++;
+              /* If the add generated a carry, increment
+               * the result of the addition.
+               */
+              if (sum < seed1 || sum < seed2) sum++;
 
-	      /* Seed2 becomes old seed1, seed1 becomes result */
-	      seed2 = seed1;
-	      seed1 = sum;
+              /* Seed2 becomes old seed1, seed1 becomes result */
+              seed2 = seed1;
+              seed1 = sum;
 
-	      err -= (sum >> rand_shift) - (0x80000000 >> rand_shift);
+              err -= (sum >> rand_shift) - (0x80000000 >> rand_shift);
 
-	      if (err < even_elo)
-		err = even_elo;
+              if (err < even_elo)
+                err = even_elo;
 
-	      else if (err > even_ehi)
-		err = even_ehi;
+              else if (err > even_ehi)
+                err = even_ehi;
 
 #if 1
-	      err += coupling;
+              err += coupling;
 #endif
 
 #ifdef OLD_QUANT
-	      imo = ((err + im) * dith_mul) >> (EVEN_SHIFT + 8);
+              imo = ((err + im) * dith_mul) >> (EVEN_SHIFT + 8);
 #else
-	      imo = ((err + im) * dith_mul + (1 << (EVEN_SHIFT + 7))) >> (EVEN_SHIFT + 8);
+              imo = ((err + im) * dith_mul + (1 << (EVEN_SHIFT + 7))) >> (EVEN_SHIFT + 8);
 #endif
-	      if (imo < 0) imo = 0;
-	      else if (imo > levels - 1) imo = levels - 1;
-	      dst_ptr[i] = imo;
-	      coupling_contribution = im - ((imo * imo_mul) >> IMO_SHIFT);
-	      new_e_1_0 += coupling_contribution;
-	      coupling += (coupling_contribution * strengths[plane_idx]) >> 8;
-	    }
-	  if (dst_ptr[i] != 0)
-	    {
-	      a[plane_idx] = 1;
-	      b[plane_idx] = aspect2;
-	      r[plane_idx] = 0;
-	    }
-	  if (dst_ptr[i] != levels - 1)
-	    {
-	      a_sh[plane_idx] = 1;
-	      b_sh[plane_idx] = aspect2;
-	      r_sh[plane_idx] = 0;
-	    }
-	  pa[i] = a[plane_idx];
-	  pb[i] = b[plane_idx];
-	  pr[i] = r[plane_idx];
-	  pa_sh[i] = a_sh[plane_idx];
-	  pb_sh[i] = b_sh[plane_idx];
-	  pr_sh[i] = r_sh[plane_idx];
-	  piir[i] = new_e_1_0;
-	  e_1_0[plane_idx] = new_e_1_0;
-	}
+              if (imo < 0) imo = 0;
+              else if (imo > levels - 1) imo = levels - 1;
+              dst_ptr[i] = imo;
+              coupling_contribution = im - ((imo * imo_mul) >> IMO_SHIFT);
+              new_e_1_0 += coupling_contribution;
+              coupling += (coupling_contribution * strengths[plane_idx]) >> 8;
+            }
+          if (dst_ptr[i] != 0)
+            {
+              a[plane_idx] = 1;
+              b[plane_idx] = aspect2;
+              r[plane_idx] = 0;
+            }
+          if (dst_ptr[i] != levels - 1)
+            {
+              a_sh[plane_idx] = 1;
+              b_sh[plane_idx] = aspect2;
+              r_sh[plane_idx] = 0;
+            }
+          pa[i] = a[plane_idx];
+          pb[i] = b[plane_idx];
+          pr[i] = r[plane_idx];
+          pa_sh[i] = a_sh[plane_idx];
+          pb_sh[i] = b_sh[plane_idx];
+          pr_sh[i] = r_sh[plane_idx];
+          piir[i] = new_e_1_0;
+          e_1_0[plane_idx] = new_e_1_0;
+        }
 #ifdef FANCY_COUPLING
       coupling = coupling >> 1;
       c_line[i] = coupling;
@@ -1264,10 +1263,10 @@ even_better_line_both (EvenBetterCtx *ebc, uchar **dest,
   for (i = xd - 1; i >= 0; i--)
     {
       if (plane_idx == 0)
-	{
-	  coupling = (coupling + c_line[i]) >> 1;
-	  c_line[i] = (coupling - (coupling >> 4));
-	}
+        {
+          coupling = (coupling + c_line[i]) >> 1;
+          c_line[i] = (coupling - (coupling >> 4));
+        }
     }
 #endif
 
@@ -1292,39 +1291,39 @@ even_better_line_both (EvenBetterCtx *ebc, uchar **dest,
       bv_sh = 1;
       rv_sh = 0;
       for (i = xd - 1; i >= 0; i--)
-	{
-	  if (rv + bv + av < pr[i] + pb[i])
-	    {
-	      rv += av;
-	      av += 2;
-	    }
-	  else
-	    {
-	      rv = pr[i];
-	      av = pa[i];
-	      bv = pb[i];
-	    }
-	  if (rv > even_rlimit) rv = even_rlimit;
-	  pa[i] = av;
-	  pb[i] = bv + (aspect2 << 1);
-	  pr[i] = rv + bv;
+        {
+          if (rv + bv + av < pr[i] + pb[i])
+            {
+              rv += av;
+              av += 2;
+            }
+          else
+            {
+              rv = pr[i];
+              av = pa[i];
+              bv = pb[i];
+            }
+          if (rv > even_rlimit) rv = even_rlimit;
+          pa[i] = av;
+          pb[i] = bv + (aspect2 << 1);
+          pr[i] = rv + bv;
 
-	  if (rv_sh + bv_sh + av_sh < pr_sh[i] + pb_sh[i])
-	    {
-	      rv_sh += av_sh;
-	      av_sh += 2;
-	    }
-	  else
-	    {
-	      rv_sh = pr_sh[i];
-	      av_sh = pa_sh[i];
-	      bv_sh = pb_sh[i];
-	    }
-	  if (rv_sh > even_rlimit) rv_sh = even_rlimit;
-	  pa_sh[i] = av_sh;
-	  pb_sh[i] = bv_sh + (aspect2 << 1);
-	  pr_sh[i] = rv_sh + bv_sh;
-	}
+          if (rv_sh + bv_sh + av_sh < pr_sh[i] + pb_sh[i])
+            {
+              rv_sh += av_sh;
+              av_sh += 2;
+            }
+          else
+            {
+              rv_sh = pr_sh[i];
+              av_sh = pa_sh[i];
+              bv_sh = pb_sh[i];
+            }
+          if (rv_sh > even_rlimit) rv_sh = even_rlimit;
+          pa_sh[i] = av_sh;
+          pb_sh[i] = bv_sh + (aspect2 << 1);
+          pr_sh[i] = rv_sh + bv_sh;
+        }
     }
 
    ebc->seed1 = seed1;
@@ -1342,7 +1341,7 @@ even_better_line_both (EvenBetterCtx *ebc, uchar **dest,
  **/
 void
 even_better_line_rll (EvenBetterCtx *ebc, uchar **dest,
-		      const ET_Rll *const *src)
+                      const ET_Rll *const *src)
 {
 
   if (ebc->dump_file && ebc->dump_level >= EB_DUMP_INPUT)
@@ -1350,10 +1349,10 @@ even_better_line_rll (EvenBetterCtx *ebc, uchar **dest,
       int i;
 
       /* Note: we should calculate the actual number of runlength
-	 codes here. As it is, it will just waste storage a bit. */
+         codes here. As it is, it will just waste storage a bit. */
       for (i = 0; i < ebc->n_planes; i++)
-	fwrite (src[i], sizeof(ET_Rll), ebc->source_width,
-		ebc->dump_file);
+        fwrite (src[i], sizeof(ET_Rll), ebc->source_width,
+                ebc->dump_file);
     }
 #ifdef USE_VECTOR
   if (ebc->using_vectors)
@@ -1369,8 +1368,8 @@ even_better_line_rll (EvenBetterCtx *ebc, uchar **dest,
       int i;
 
       for (i = 0; i < ebc->n_planes; i++)
-	fwrite (dest[i], 1, ebc->dest_width,
-		ebc->dump_file);
+        fwrite (dest[i], 1, ebc->dest_width,
+                ebc->dump_file);
     }
 }
 
@@ -1384,7 +1383,7 @@ even_better_line_rll (EvenBetterCtx *ebc, uchar **dest,
  **/
 static int
 even_better_compress_rll (ET_Rll *dst, const ET_SrcPixel *src,
-			  int src_width, int dst_width)
+                          int src_width, int dst_width)
 {
   int rll_idx;
   int i;
@@ -1400,43 +1399,43 @@ even_better_compress_rll (ET_Rll *dst, const ET_SrcPixel *src,
   if (frac == 0)
     {
       for (i = 1; i < src_width; i++)
-	{
-	  ET_SrcPixel val = src[i];
-	  
-	  if (count > 0xffff - whole || val != last_val)
-	    {
-	      dst[rll_idx].length = count;
-	      dst[rll_idx].value = last_val;
-	      rll_idx++;
-	      last_val = val;
-	      count = 0;
-	    }
-	  count += whole;
-	}
+        {
+          ET_SrcPixel val = src[i];
+
+          if (count > 0xffff - whole || val != last_val)
+            {
+              dst[rll_idx].length = count;
+              dst[rll_idx].value = last_val;
+              rll_idx++;
+              last_val = val;
+              count = 0;
+            }
+          count += whole;
+        }
     }
   else
     {
       rem = frac;
       for (i = 1; i < src_width; i++)
-	{
-	  ET_SrcPixel val = src[i];
-	  
-	  if (count >= 0xffff - whole || val != last_val)
-	    {
-	      dst[rll_idx].length = count;
-	      dst[rll_idx].value = last_val;
-	      rll_idx++;
-	      last_val = val;
-	      count = 0;
-	    }
-	  count += whole;
-	  rem += frac;
-	  if (rem >= src_width)
-	    {
-	      count++;
-	      rem -= src_width;
-	    }
-	}
+        {
+          ET_SrcPixel val = src[i];
+
+          if (count >= 0xffff - whole || val != last_val)
+            {
+              dst[rll_idx].length = count;
+              dst[rll_idx].value = last_val;
+              rll_idx++;
+              last_val = val;
+              count = 0;
+            }
+          count += whole;
+          rem += frac;
+          if (rem >= src_width)
+            {
+              count++;
+              rem -= src_width;
+            }
+        }
     }
   dst[rll_idx].length = count;
   dst[rll_idx].value = last_val;
@@ -1454,7 +1453,7 @@ even_better_compress_rll (ET_Rll *dst, const ET_SrcPixel *src,
  **/
 void
 even_better_line (EvenBetterCtx *ebc, uchar **dest,
-		      const ET_SrcPixel *const *src)
+                      const ET_SrcPixel *const *src)
 {
   ET_Rll *rll_buf[M];
   int i;
@@ -1470,13 +1469,13 @@ even_better_line (EvenBetterCtx *ebc, uchar **dest,
 #endif
     {
       for (i = 0; i < ebc->n_planes; i++)
-	{
-	  rll_buf[i] = (ET_Rll *)malloc (source_width * sizeof(ET_Rll));
-	  even_better_compress_rll (rll_buf[i], src[i], source_width, dest_width);
-	}
+        {
+          rll_buf[i] = (ET_Rll *)malloc (source_width * sizeof(ET_Rll));
+          even_better_compress_rll (rll_buf[i], src[i], source_width, dest_width);
+        }
       even_better_line_rll (ebc, dest, (const ET_Rll * const *)rll_buf);
       for (i = 0; i < ebc->n_planes; i++)
-	free (rll_buf[i]);
+        free (rll_buf[i]);
     }
 }
 
@@ -1531,7 +1530,7 @@ even_log2 (int x)
  **/
 static EBPlaneCtx *
 even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
-		       int plane_idx)
+                       int plane_idx)
 {
   int source_width = params->source_width;
   int dest_width = params->dest_width;
@@ -1559,15 +1558,15 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
       int nli;
 
       if (lut == NULL)
-	{
+        {
 #if ET_SRC_MAX == 255
-	  nli = (i * 65793 + (i >> 7)) >> (24 - EVEN_SHIFT);
+          nli = (i * 65793 + (i >> 7)) >> (24 - EVEN_SHIFT);
 #else
-	  nli = (i * ((double) (1 << EVEN_SHIFT)) / ET_SRC_MAX) + 0.5;
+          nli = (i * ((double) (1 << EVEN_SHIFT)) / ET_SRC_MAX) + 0.5;
 #endif
-	}
+        }
       else
-	nli = lut[i] >> (24 - EVEN_SHIFT);
+        nli = lut[i] >> (24 - EVEN_SHIFT);
       new_lut[i] = (1 << EVEN_SHIFT) - nli;
     }
 
@@ -1584,32 +1583,32 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
       int rs;
 
       if (nl == 0)
-	rb = 0;
+        rb = 0;
       else
-	{
-	  rb = (rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl;
-	  if (rb > even_rlimit << (EVEN_SHIFT - even_c1))
-	    rb = even_rlimit << (EVEN_SHIFT - even_c1);
-	}
+        {
+          rb = (rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl;
+          if (rb > even_rlimit << (EVEN_SHIFT - even_c1))
+            rb = even_rlimit << (EVEN_SHIFT - even_c1);
+        }
 
       rs = eb_compute_randshift(nl, rs_base, do_shadows, params->levels);
       rs_lut[i] = rs;
 
       if (params->do_shadows)
-	{
-	  nl = ((1 << EVEN_SHIFT) - new_lut[i]) * (params->levels - 1);
+        {
+          nl = ((1 << EVEN_SHIFT) - new_lut[i]) * (params->levels - 1);
 
-	  if (nl == 0)
-	    rb = 0;
-	  else
-	    {
-	      int rb_sh;
-	      rb_sh = (rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl;
-	      if (rb_sh > even_rlimit << (EVEN_SHIFT - even_c1))
-		rb_sh = even_rlimit << (EVEN_SHIFT - even_c1);
-	      rb -= rb_sh;
-	    }
-	}
+          if (nl == 0)
+            rb = 0;
+          else
+            {
+              int rb_sh;
+              rb_sh = (rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl;
+              if (rb_sh > even_rlimit << (EVEN_SHIFT - even_c1))
+                rb_sh = even_rlimit << (EVEN_SHIFT - even_c1);
+              rb -= rb_sh;
+            }
+        }
       rb_lut[i] = rb;
 
     }
@@ -1642,10 +1641,10 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
       result->b_line[i] = 1;
       result->iir_line[i] = -((rand () & 0x7fff) << 6) >> (24 - EVEN_SHIFT);
       if (do_shadows)
-	{
-	  result->a_line_sh[i] = 1;
-	  result->b_line_sh[i] = 1;
-	}
+        {
+          result->a_line_sh[i] = 1;
+          result->b_line_sh[i] = 1;
+        }
     }
 
   return result;
@@ -1670,19 +1669,19 @@ even_better_new (const EvenBetterParams *params)
       header[3] = ET_SRC_MAX;
       header[4] = sizeof(ET_SrcPixel);
       fwrite (header, sizeof(int), sizeof(header) / sizeof(header[0]),
-	      params->dump_file);
+              params->dump_file);
       if (params->dump_level >= EB_DUMP_PARAMS)
-	{
+        {
 
-	  fwrite (params, 1, sizeof(EvenBetterParams), params->dump_file);
-	}
+          fwrite (params, 1, sizeof(EvenBetterParams), params->dump_file);
+        }
       if (params->dump_level >= EB_DUMP_LUTS)
-	{
-	  int i;
-	  for (i = 0; i < params->n_planes; i++)
-	    fwrite (params->luts[i], sizeof(int), ET_SRC_MAX + 1,
-		    params->dump_file);
-	}
+        {
+          int i;
+          for (i = 0; i < params->n_planes; i++)
+            fwrite (params->luts[i], sizeof(int), ET_SRC_MAX + 1,
+                    params->dump_file);
+        }
     }
 
   result->source_width = params->source_width;
@@ -1697,7 +1696,7 @@ even_better_new (const EvenBetterParams *params)
 
   result->strengths = (int *)malloc (sizeof(int) * n_planes);
   memcpy (result->strengths, params->strengths,
-	  sizeof(int) * n_planes);
+          sizeof(int) * n_planes);
 
   log2_levels = even_log2 (params->levels);
   log2_aspect = even_log2 (params->aspect);
@@ -1731,21 +1730,21 @@ even_better_new (const EvenBetterParams *params)
     {
 #ifdef USE_SSE2
       result->sse2_ctx = (eb_ctx_sse2 **)malloc(sizeof(eb_ctx_sse2 *) *
-						((n_planes + 3) >> 2));
+                                                ((n_planes + 3) >> 2));
       for (i = 0; i < n_planes; i += 4)
-	{
-	  int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
-	  result->sse2_ctx[i >> 2] = eb_ctx_sse2_new(params, i, end_plane);
-	}
+        {
+          int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
+          result->sse2_ctx[i >> 2] = eb_ctx_sse2_new(params, i, end_plane);
+        }
 #endif
 #ifdef USE_AVEC
       result->avec_ctx = (eb_ctx_avec **)malloc(sizeof(eb_ctx_avec *) *
-						((n_planes + 3) >> 2));
+                                                ((n_planes + 3) >> 2));
       for (i = 0; i < n_planes; i += 4)
-	{
-	  int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
-	  result->avec_ctx[i >> 2] = eb_ctx_avec_new(params, i, end_plane);
-	}
+        {
+          int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
+          result->avec_ctx[i >> 2] = eb_ctx_avec_new(params, i, end_plane);
+        }
 #endif
       result->plane_ctx = NULL;
     }
@@ -1753,7 +1752,7 @@ even_better_new (const EvenBetterParams *params)
     {
       result->plane_ctx = (EBPlaneCtx **)malloc(sizeof(EBPlaneCtx *) * n_planes);
       for (i = 0; i < n_planes; i++)
-	result->plane_ctx[i] = even_better_plane_new (params, result, i);
+        result->plane_ctx[i] = even_better_plane_new (params, result, i);
     }
   return result;
 }
@@ -1778,12 +1777,12 @@ even_better_free (EvenBetterCtx *ctx)
     {
 #ifdef USE_SSE2
       for (i = 0; i < n_planes; i += 4)
-	eb_ctx_sse2_free(ctx->sse2_ctx[i >> 2]);
+        eb_ctx_sse2_free(ctx->sse2_ctx[i >> 2]);
       free(ctx->sse2_ctx);
 #endif
 #ifdef USE_AVEC
       for (i = 0; i < n_planes; i += 4)
-	eb_ctx_avec_free(ctx->avec_ctx[i >> 2]);
+        eb_ctx_avec_free(ctx->avec_ctx[i >> 2]);
       free(ctx->avec_ctx);
 #endif
     }
@@ -1791,7 +1790,7 @@ even_better_free (EvenBetterCtx *ctx)
 #endif
     {
       for (i = 0; i < n_planes; i++)
-	even_better_plane_free (ctx->plane_ctx[i]);
+        even_better_plane_free (ctx->plane_ctx[i]);
       free(ctx->plane_ctx);
     }
   free (ctx->strengths);

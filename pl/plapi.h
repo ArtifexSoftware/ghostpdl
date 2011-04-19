@@ -18,17 +18,17 @@
 #  define plapi_INCLUDED
 
 /*
- * This API level is intended to hide everything behind 
+ * This API level is intended to hide everything behind
  * a simple main_like  argc, argv  interface
  */
 
 /* Exported functions may need different prefix
  *  GSDLLEXPORT marks functions as exported
- *  GSDLLAPI is the calling convention used on functions exported 
+ *  GSDLLAPI is the calling convention used on functions exported
  * When you include this header file in the caller, you may
  * need to change the definitions by defining these
  * before including this header file.
- * Make sure you get the calling convention correct, otherwise your 
+ * Make sure you get the calling convention correct, otherwise your
  * program will crash soon after returning due to stack corruption.
  */
 
@@ -68,16 +68,15 @@
 # define GSDLLAPIPTR GSDLLAPI *
 #endif
 
-
 /* Run this just like you would pcl6 on the command line.
  *
- * Returns:	  0	success		
- *		< 0	error code	
+ * Returns:	  0	success
+ *		< 0	error code
  */
-GSDLLEXPORT int GSDLLAPI 
+GSDLLEXPORT int GSDLLAPI
 pl_main(int argc, char *argv[]);
 
-GSDLLEXPORT int GSDLLAPI 
+GSDLLEXPORT int GSDLLAPI
 pl_main_aux(int argc, char *argv[], void *disp);
 
 #endif				/* plapi_INCLUDED */

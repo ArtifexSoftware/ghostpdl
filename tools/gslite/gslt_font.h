@@ -135,4 +135,3 @@ void gslt_release_font_glyph(gs_memory_t *mem, gslt_glyph_bitmap_t *slot);
  * Return -1 on failure.
  */
 int gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *font, int gid, gslt_glyph_metrics_t *mtx);
-

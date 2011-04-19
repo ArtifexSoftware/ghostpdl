@@ -28,7 +28,7 @@
 
 /*
    ************************
-   * This Library Options * 
+   * This Library Options *
    ************************
 
    -dTumble         : for Duplex
@@ -54,31 +54,31 @@ lprn_get_params(gx_device * dev, gs_param_list * plist)
     int ncode;
 
     if (code < 0)
-	return code;
+        return code;
 
     if ((ncode = param_write_bool(plist, "ManualFeed", &lprn->ManualFeed)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, "NegativePrint", &lprn->NegativePrint)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, "Tumble", &lprn->Tumble)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, "RITOff", &lprn->RITOff)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_int(plist, "BlockLine", &lprn->BlockLine)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_int(plist, "BlockWidth", &lprn->nBw)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_int(plist, "BlockHeight", &lprn->nBh)) < 0)
-	code = ncode;
+        code = ncode;
 
     if ((ncode = param_write_bool(plist, "ShowBubble", &lprn->ShowBubble)) < 0)
-	code = ncode;
+        code = ncode;
 
     return code;
 }
@@ -101,84 +101,84 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
     bool ShowBubble = lprn->ShowBubble;
 
     if ((code = param_read_bool(plist,
-				(param_name = "ManualFeed"),
-				&ManualFeed)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = "ManualFeed"),
+                                &ManualFeed)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
 
     if ((code = param_read_bool(plist,
-				(param_name = "NegativePrint"),
-				&NegativePrint)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = "NegativePrint"),
+                                &NegativePrint)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
     if ((code = param_read_bool(plist,
-				(param_name = "Tumble"),
-				&Tumble)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = "Tumble"),
+                                &Tumble)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
     if ((code = param_read_bool(plist,
-				(param_name = "RITOff"),
-				&RITOff)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = "RITOff"),
+                                &RITOff)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
     switch (code = param_read_int(plist,
-				  (param_name = "BlockWidth"),
-				  &BlockWidth)) {
-	case 0:
-	    if (BlockWidth < 0)
-		ecode = gs_error_rangecheck;
-	    else
-		break;
-	    goto bwidthe;
-	default:
-	    ecode = code;
-	  bwidthe:param_signal_error(plist, param_name, ecode = code);
-	case 1:
-	    break;
-    }
-
-    switch (code = param_read_int(plist,
-				  (param_name = "BlockLine"),
-				  &BlockLine)) {
-	case 0:
-	    if (BlockLine < 0)
-		ecode = gs_error_rangecheck;
-	    else
-		break;
-	    goto crowe;
-	default:
-	    ecode = code;
-	  crowe:param_signal_error(plist, param_name, ecode = code);
-	case 1:
-	    break;
+                                  (param_name = "BlockWidth"),
+                                  &BlockWidth)) {
+        case 0:
+            if (BlockWidth < 0)
+                ecode = gs_error_rangecheck;
+            else
+                break;
+            goto bwidthe;
+        default:
+            ecode = code;
+          bwidthe:param_signal_error(plist, param_name, ecode = code);
+        case 1:
+            break;
     }
 
     switch (code = param_read_int(plist,
-				  (param_name = "BlockHeight"),
-				  &BlockHeight)) {
-	case 0:
-	    if (BlockHeight < 0)
-		ecode = gs_error_rangecheck;
-	    else
-		break;
-	    goto bheighte;
-	default:
-	    ecode = code;
-	  bheighte:param_signal_error(plist, param_name, ecode = code);
-	case 1:
-	    break;
+                                  (param_name = "BlockLine"),
+                                  &BlockLine)) {
+        case 0:
+            if (BlockLine < 0)
+                ecode = gs_error_rangecheck;
+            else
+                break;
+            goto crowe;
+        default:
+            ecode = code;
+          crowe:param_signal_error(plist, param_name, ecode = code);
+        case 1:
+            break;
+    }
+
+    switch (code = param_read_int(plist,
+                                  (param_name = "BlockHeight"),
+                                  &BlockHeight)) {
+        case 0:
+            if (BlockHeight < 0)
+                ecode = gs_error_rangecheck;
+            else
+                break;
+            goto bheighte;
+        default:
+            ecode = code;
+          bheighte:param_signal_error(plist, param_name, ecode = code);
+        case 1:
+            break;
     }
 
     if ((code = param_read_bool(plist,
-				(param_name = "ShowBubble"),
-				&ShowBubble)) < 0) {
-	param_signal_error(plist, param_name, ecode = code);
+                                (param_name = "ShowBubble"),
+                                &ShowBubble)) < 0) {
+        param_signal_error(plist, param_name, ecode = code);
     }
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     lprn->ManualFeed = ManualFeed;
     lprn->NegativePrint = NegativePrint;
@@ -220,44 +220,44 @@ lprn_print_image(gx_device_printer * pdev, FILE * fp)
     maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
     if (!(lprn->ImageBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl, maxY, "lprn_print_image(ImageBuf)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if (!(lprn->TmpBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl, maxY, "lprn_print_iamge(TmpBuf)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if (!(lprn->bubbleTbl = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if (!(bubbleBuffer = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     for (i = 0; i < maxBx; i++)
-	lprn->bubbleTbl[i] = NULL;
+        lprn->bubbleTbl[i] = NULL;
     bbtbl = bubbleBuffer;
 
     for (i = 0; i < maxBx - 1; i++)
-	bbtbl[i].next = &bbtbl[i + 1];
+        bbtbl[i].next = &bbtbl[i + 1];
     bbtbl[i].next = NULL;
     lprn->freeBubbleList = &bbtbl[0];
 
     for (y = 0; y < maxBy; y++) {
-	if (num_y_blocks + lprn->nBh > maxY) {	/* bubble flush for next data */
-	    rmin = start_y_block + lprn->nBh;	/* process the data under rmin */
-	    for (i = 0; i < maxBx; i++) {
-		bbl = lprn->bubbleTbl[i];
-		if (bbl != NULL && bbl->brect.p.y < rmin)
-		    lprn_bubble_flush(pdev, fp, bbl);
-	    }
-	    num_y_blocks -= lprn->nBh;	/* data if keeps in [r:r+h] */
-	    start_y_block += lprn->nBh;
+        if (num_y_blocks + lprn->nBh > maxY) {	/* bubble flush for next data */
+            rmin = start_y_block + lprn->nBh;	/* process the data under rmin */
+            for (i = 0; i < maxBx; i++) {
+                bbl = lprn->bubbleTbl[i];
+                if (bbl != NULL && bbl->brect.p.y < rmin)
+                    lprn_bubble_flush(pdev, fp, bbl);
+            }
+            num_y_blocks -= lprn->nBh;	/* data if keeps in [r:r+h] */
+            start_y_block += lprn->nBh;
 
-	}
-	ri = start_y_block + num_y_blocks;	/* read position */
-	read_y = ri % maxY;	/* end of read position */
-	code = gdev_prn_copy_scan_lines(pdev, ri, lprn->ImageBuf + bpl * read_y, bpl * lprn->nBh);
-	if (code < 0)
-	    return code;
+        }
+        ri = start_y_block + num_y_blocks;	/* read position */
+        read_y = ri % maxY;	/* end of read position */
+        code = gdev_prn_copy_scan_lines(pdev, ri, lprn->ImageBuf + bpl * read_y, bpl * lprn->nBh);
+        if (code < 0)
+            return code;
 
-	num_y_blocks += lprn->nBh;
+        num_y_blocks += lprn->nBh;
 
-	lprn_process_line(pdev, fp, start_y_block, num_y_blocks);
+        lprn_process_line(pdev, fp, start_y_block, num_y_blocks);
     }
     lprn_bubble_flush_all(pdev, fp);	/* flush the rest of bubble */
 
@@ -268,7 +268,6 @@ lprn_print_image(gx_device_printer * pdev, FILE * fp)
 
     return code;
 }
-
 
 /*
  * epag_bubble_flush_all: Output the rect of bubble.
@@ -282,10 +281,10 @@ lprn_bubble_flush_all(gx_device_printer * pdev, FILE * fp)
     int maxBx = (bpl + lprn->nBw - 1) / lprn->nBw;
 
     for (i = 0; i < maxBx; i++) {
-	if (lprn->bubbleTbl[i] != NULL) {
-	    lprn_bubble_flush(pdev, fp, lprn->bubbleTbl[i]);
-	} else
-	    break;
+        if (lprn->bubbleTbl[i] != NULL) {
+            lprn_bubble_flush(pdev, fp, lprn->bubbleTbl[i]);
+        } else
+            break;
     }
 }
 
@@ -303,21 +302,21 @@ lprn_process_line(gx_device_printer * pdev, FILE * fp, int r, int h)
 
     bInBlack = 0;
     for (bx = 0; bx < maxBx; bx++) {
-	bBlack = lprn_is_black(pdev, r, h, bx);
-	if (!bInBlack) {
-	    if (bBlack) {
-		start = bx;
-		bInBlack = 1;
-	    }
-	} else {
-	    if (!bBlack) {
-		bInBlack = 0;
-		lprn_rect_add(pdev, fp, r, h, start, bx);
-	    }
-	}
+        bBlack = lprn_is_black(pdev, r, h, bx);
+        if (!bInBlack) {
+            if (bBlack) {
+                start = bx;
+                bInBlack = 1;
+            }
+        } else {
+            if (!bBlack) {
+                bInBlack = 0;
+                lprn_rect_add(pdev, fp, r, h, start, bx);
+            }
+        }
     }
     if (bInBlack)
-	lprn_rect_add(pdev, fp, r, h, start, bx - 1);
+        lprn_rect_add(pdev, fp, r, h, start, bx - 1);
 }
 
 /*   Search the bx line to make output */
@@ -334,10 +333,10 @@ lprn_is_black(gx_device_printer * pdev, int r, int h, int bx)
 
     y0 = (r + h - bh) % maxY;
     for (y = 0; y < bh; y++) {
-	p = &lprn->ImageBuf[(y0 + y) * bpl + bx * lprn->nBw];
-	for (x = 0; x < lprn->nBw; x++)
-	    if (p[x] != 0)
-		return 1;
+        p = &lprn->ImageBuf[(y0 + y) * bpl + bx * lprn->nBw];
+        for (x = 0; x < lprn->nBw; x++)
+            if (p[x] != 0)
+                return 1;
     }
     return 0;
 }
@@ -355,15 +354,15 @@ lprn_rect_add(gx_device_printer * pdev, FILE * fp, int r, int h, int start, int 
     Bubble *bbl;
 
     if ((bbl = lprn->bubbleTbl[start]) != NULL &&
-	bbl->brect.q.y == y0 - 1 &&
-	bbl->brect.p.x == x0 &&
-	bbl->brect.q.x == x1) {
-	bbl->brect.q.y = y1;
+        bbl->brect.q.y == y0 - 1 &&
+        bbl->brect.p.x == x0 &&
+        bbl->brect.q.x == x1) {
+        bbl->brect.q.y = y1;
     } else {
-	for (i = start; i <= end; i++)
-	    if (lprn->bubbleTbl[i] != NULL)
-		lprn_bubble_flush(pdev, fp, lprn->bubbleTbl[i]);
-	lprn_bubble_gen(pdev, x0, x1, y0, y1);
+        for (i = start; i <= end; i++)
+            if (lprn->bubbleTbl[i] != NULL)
+                lprn_bubble_flush(pdev, fp, lprn->bubbleTbl[i]);
+        lprn_bubble_gen(pdev, x0, x1, y0, y1);
     }
 }
 
@@ -389,8 +388,8 @@ lprn_bubble_gen(gx_device_printer * pdev, int x0, int x1, int y0, int y1)
     bx1 = (x1 + lprn->nBw - 1) / lprn->nBw;
 
     for (bx = bx0; bx <= bx1; bx++) {
-	assert(lprn->bubbleTbl[bx] == NULL);
-	lprn->bubbleTbl[bx] = bbl;
+        assert(lprn->bubbleTbl[bx] == NULL);
+        lprn->bubbleTbl[bx] = bbl;
     }
 }
 
@@ -411,21 +410,21 @@ lprn_bubble_flush(gx_device_printer * pdev, FILE * fp, Bubble * bbl)
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
     for (i = 0; i < height; i++) {
-	p = lprn->ImageBuf + ((i + y) % maxY) * bpl;
-	for (j = 0; j < width / 8; j++) {
-	    if (lprn->NegativePrint)
-		*(lprn->TmpBuf + i * width / 8 + j) = ~*(p + j + bbl->brect.p.x);
-	    else
-		*(lprn->TmpBuf + i * width / 8 + j) = *(p + j + bbl->brect.p.x);
-	}
+        p = lprn->ImageBuf + ((i + y) % maxY) * bpl;
+        for (j = 0; j < width / 8; j++) {
+            if (lprn->NegativePrint)
+                *(lprn->TmpBuf + i * width / 8 + j) = ~*(p + j + bbl->brect.p.x);
+            else
+                *(lprn->TmpBuf + i * width / 8 + j) = *(p + j + bbl->brect.p.x);
+        }
     }
 
     (*lprn->image_out) (pdev, fp, x, y, width, height);
 
     /* Initialize bubbleTbl */
     for (bx = bx0; bx <= bx1; bx++) {
-	assert(lprn->bubbleTbl[bx] == bbl);
-	lprn->bubbleTbl[bx] = NULL;
+        assert(lprn->bubbleTbl[bx] == bbl);
+        lprn->bubbleTbl[bx] = NULL;
     }
 
     bbl->next = lprn->freeBubbleList;

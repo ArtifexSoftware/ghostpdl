@@ -295,7 +295,6 @@ patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t *pfs)
     patch_resolve_color_inline(ppcr, pfs);
 }
 
-
 /*
  * Calculate the interpolated color at a given point.
  * Note that we must do this twice for bilinear interpolation.
@@ -1517,7 +1516,7 @@ is_color_linear(const patch_fill_state_t *pfs, const patch_color_t *c0, const pa
         if (s > pfs->smoothness)
             return 0;
         code = cs_is_linear(cs, pfs->pis, pfs->dev,
-		&c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s, pfs->icclink);
+                &c0->cc, &c1->cc, NULL, NULL, pfs->smoothness - s, pfs->icclink);
         if (code <= 0)
             return code;
         return 1;
@@ -2091,7 +2090,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
             s01 = max(s0, s1);
             s012 = max(s01, s2);
             code = cs_is_linear(cs, pfs->pis, pfs->dev,
-				&p0->c->cc, &p1->c->cc, &p2->c->cc, NULL, 
+                                &p0->c->cc, &p1->c->cc, &p2->c->cc, NULL,
                                 pfs->smoothness - s012, pfs->icclink);
             if (code < 0)
                 return code;
@@ -2557,7 +2556,6 @@ constant_color_triangle(patch_fill_state_t *pfs,
     release_colors_inline(pfs, color_stack_ptr, 2);
     return code;
 }
-
 
 static inline int
 constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p, bool self_intersecting,
@@ -3663,8 +3661,6 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     return code;
 }
 
-
-
 static inline void
 split_stripe(patch_fill_state_t *pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p, patch_color_t *c[2])
 {
@@ -4201,7 +4197,6 @@ gx_shade_background(gx_device *pdev, const gs_fixed_rect *rect,
     return dev_proc(pdev, fill_trapezoid)(pdev,
             &le, &re, le.start.y, le.end.y, false, pdevc, log_op);
 }
-
 
 int
 patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],

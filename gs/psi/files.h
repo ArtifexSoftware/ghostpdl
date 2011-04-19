@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,14 +64,14 @@ int file_switch_to_read(const ref *);
   BEGIN\
     svar = fptr(op);\
     if (svar->read_id != r_size(op)) {\
-	if (svar->read_id == 0 && svar->write_id == r_size(op)) {\
-	    int fcode = file_switch_to_read(op);\
+        if (svar->read_id == 0 && svar->write_id == r_size(op)) {\
+            int fcode = file_switch_to_read(op);\
 \
-	    if (fcode < 0)\
-		 error_return(fcode);\
-	} else {\
-	    invalid_action;	/* closed or reopened file */\
-	}\
+            if (fcode < 0)\
+                 error_return(fcode);\
+        } else {\
+            invalid_action;	/* closed or reopened file */\
+        }\
     }\
   END
 int file_switch_to_write(const ref *);
@@ -85,13 +85,13 @@ int file_switch_to_write(const ref *);
   BEGIN\
     svar = fptr(op);\
     if ( svar->write_id != r_size(op) )\
-	{	int fcode = file_switch_to_write(op);\
-		if ( fcode < 0 ) error_return(fcode);\
-	}\
+        {	int fcode = file_switch_to_write(op);\
+                if ( fcode < 0 ) error_return(fcode);\
+        }\
   END
 
 /* Data exported by zfile.c. */
-	/* for zfilter.c and ziodev.c */
+        /* for zfilter.c and ziodev.c */
 extern const uint file_default_buffer_size;
 
 #ifndef gs_file_path_ptr_DEFINED
@@ -100,51 +100,51 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 #endif
 
 /* Procedures exported by zfile.c. */
-	/* for imainarg.c */
+        /* for imainarg.c */
 FILE *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
-	/* for imain.c */
+        /* for imain.c */
 int
-lib_file_open(gs_file_path_ptr, const gs_memory_t *, i_ctx_t *,      
-		       const char *, uint, char *, int, uint *, ref *pfile);
+lib_file_open(gs_file_path_ptr, const gs_memory_t *, i_ctx_t *,
+                       const char *, uint, char *, int, uint *, ref *pfile);
 
-	/* for imain.c */
+        /* for imain.c */
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
 #endif
 int file_read_string(const byte *, uint, ref *, gs_ref_memory_t *);
 
-	/* for os_open in ziodev.c */
+        /* for os_open in ziodev.c */
 #ifdef iodev_proc_fopen		/* in gxiodev.h */
 int file_open_stream(const char *, uint, const char *, uint, stream **,
-		     gx_io_device *, iodev_proc_fopen_t, gs_memory_t *);
+                     gx_io_device *, iodev_proc_fopen_t, gs_memory_t *);
 #endif
 
-	/* for zfilter.c */
+        /* for zfilter.c */
 int filter_open(const char *, uint, ref *, const stream_procs *,
-		const stream_template *, const stream_state *,
-		gs_memory_t *);
+                const stream_template *, const stream_state *,
+                gs_memory_t *);
 
-	/* for zfileio.c */
+        /* for zfileio.c */
 void make_stream_file(ref *, stream *, const char *);
 
-	/* for ziodev.c */
+        /* for ziodev.c */
 int file_close_file(stream *);
 
-	/* for gsmain.c, interp.c */
+        /* for gsmain.c, interp.c */
 int file_close(ref *);
 
-	/* for zfproc.c, ziodev.c */
+        /* for zfproc.c, ziodev.c */
 stream *file_alloc_stream(gs_memory_t *, client_name_t);
 
 /* Procedures exported by zfileio.c. */
-	/* for ziodev.c */
+        /* for ziodev.c */
 int zreadline_from(stream *s, gs_string *buf, gs_memory_t *bufmem,
-		   uint *pcount, bool *pin_eol);
+                   uint *pcount, bool *pin_eol);
 
 /* Procedures exported by zfileio.c. */
-	/* for zfile.c */
+        /* for zfile.c */
 int zfilelineedit(i_ctx_t *i_ctx_p);
 
 #endif /* files_INCLUDED */

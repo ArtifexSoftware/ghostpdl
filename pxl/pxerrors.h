@@ -150,8 +150,8 @@ typedef enum {
   _e_(errorUnsupportedProtocol, "UnsupportedProtocol")
   _e_(errorIllegalStreamHeader, "IllegalStreamHeader")
 
-	/* We define a special "error" that EndSession returns */
-	/* to indicate that there were warnings to report. */
+        /* We define a special "error" that EndSession returns */
+        /* to indicate that there were warnings to report. */
 
   _e_(errorWarningsReported, "WarningsReported")
 

@@ -25,7 +25,6 @@
 #include "pcpatrn.h"
 #include "pcdraw.h"
 
-
 /*
  * Set all necessary graphics state parameters for PCL drawing
  * (currently only CTM and clipping region).
@@ -113,7 +112,7 @@ pcl_gsave(
     if (pids == 0)
         return e_Memory;
 
-    pids->pht = 0; 
+    pids->pht = 0;
     pids->pcrd = 0;
     pids->pccolor = 0;
 
@@ -177,4 +176,3 @@ pcl_free_gstate_stk(pcl_state_t *pcs)
 {
     gs_free_object(pcs->memory, pcs->pids, "PCL grestore");
 }
-		    

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,13 +35,13 @@ static dev_proc_print_page(pcxmono_print_page);
 /* Use the default RGB->color map, so we get black=0, white=1. */
 static const gx_device_procs pcxmono_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_map_rgb_color, gx_default_map_color_rgb);
+                gx_default_map_rgb_color, gx_default_map_color_rgb);
 const gx_device_printer gs_pcxmono_device =
 prn_device(pcxmono_procs, "pcxmono",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
-	   0, 0, 0, 0,		/* margins */
-	   1, pcxmono_print_page);
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
+           0, 0, 0, 0,		/* margins */
+           1, pcxmono_print_page);
 
 /* Chunky 8-bit gray scale. */
 
@@ -49,13 +49,13 @@ static dev_proc_print_page(pcx256_print_page);
 
 static const gx_device_procs pcxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 const gx_device_printer gs_pcxgray_device =
 {prn_device_body(gx_device_printer, pcxgray_procs, "pcxgray",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 1, 8, 255, 255, 256, 256, pcx256_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 1, 8, 255, 255, 256, 256, pcx256_print_page)
 };
 
 /* 4-bit planar (EGA/VGA-style) color. */
@@ -64,13 +64,13 @@ static dev_proc_print_page(pcx16_print_page);
 
 static const gx_device_procs pcx16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+                pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 const gx_device_printer gs_pcx16_device =
 {prn_device_body(gx_device_printer, pcx16_procs, "pcx16",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 3, 4, 1, 1, 2, 2, pcx16_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 4, 1, 1, 2, 2, pcx16_print_page)
 };
 
 /* Chunky 8-bit (SuperVGA-style) color. */
@@ -78,13 +78,13 @@ const gx_device_printer gs_pcx16_device =
 
 static const gx_device_procs pcx256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
+                pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 const gx_device_printer gs_pcx256_device =
 {prn_device_body(gx_device_printer, pcx256_procs, "pcx256",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 3, 8, 5, 5, 6, 6, pcx256_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 8, 5, 5, 6, 6, pcx256_print_page)
 };
 
 /* 24-bit color, 3 8-bit planes. */
@@ -93,13 +93,13 @@ static dev_proc_print_page(pcx24b_print_page);
 
 static const gx_device_procs pcx24b_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_printer gs_pcx24b_device =
 prn_device(pcx24b_procs, "pcx24b",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
-	   0, 0, 0, 0,		/* margins */
-	   24, pcx24b_print_page);
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
+           0, 0, 0, 0,		/* margins */
+           24, pcx24b_print_page);
 
 /* 4-bit chunky CMYK color. */
 
@@ -130,10 +130,10 @@ static const gx_device_procs pcxcmyk_procs =
 };
 const gx_device_printer gs_pcxcmyk_device =
 {prn_device_body(gx_device_printer, pcxcmyk_procs, "pcxcmyk",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 4, 4, 1, 1, 2, 2, pcxcmyk_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 4, 4, 1, 1, 2, 2, pcxcmyk_print_page)
 };
 
 /* ------ Private definitions ------ */
@@ -245,7 +245,7 @@ pcx16_print_page(gx_device_printer * pdev, FILE * file)
     header.nplanes = 4;
     /* Fill the EGA palette appropriately. */
     memcpy((byte *) header.palette, pcx_ega_palette,
-	   sizeof(pcx_ega_palette));
+           sizeof(pcx_ega_palette));
     return pcx_write_page(pdev, file, &header, true);
 }
 
@@ -261,12 +261,12 @@ pcx256_print_page(gx_device_printer * pdev, FILE * file)
     header.bpp = 8;
     header.nplanes = 1;
     assign_ushort(header.palinfo,
-		  (pdev->color_info.num_components > 1 ?
-		   palinfo_color : palinfo_gray));
+                  (pdev->color_info.num_components > 1 ?
+                   palinfo_color : palinfo_gray));
     code = pcx_write_page(pdev, file, &header, false);
     if (code >= 0) {		/* Write out the palette. */
-	fputc(0x0c, file);
-	code = pc_write_palette((gx_device *) pdev, 256, file);
+        fputc(0x0c, file);
+        code = pc_write_palette((gx_device *) pdev, 256, file);
     }
     return code;
 }
@@ -304,7 +304,7 @@ pcxcmyk_print_page(gx_device_printer * pdev, FILE * file)
     header.nplanes = 1;
     /* Fill the palette appropriately. */
     memcpy((byte *) header.palette, pcx_cmyk_palette,
-	   sizeof(pcx_cmyk_palette));
+           sizeof(pcx_cmyk_palette));
     return pcx_write_page(pdev, file, &header, false);
 }
 
@@ -313,7 +313,7 @@ pcxcmyk_print_page(gx_device_printer * pdev, FILE * file)
 /* The caller has set header->bpp, nplanes, and palette. */
 static int
 pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
-	       bool planar)
+               bool planar)
 {
     int raster = gdev_prn_raster(pdev);
     uint rsize = ROUND_UP((pdev->width * phdr->bpp + 7) >> 3, 2);	/* PCX format requires even */
@@ -326,7 +326,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     int code = 0;		/* return code */
 
     if (line == 0)		/* can't allocate line buffer */
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     /* Fill in the other variable entries in the header struct. */
 
@@ -335,80 +335,80 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     assign_ushort(phdr->hres, (int)pdev->x_pixels_per_inch);
     assign_ushort(phdr->vres, (int)pdev->y_pixels_per_inch);
     assign_ushort(phdr->bpl, (planar || depth == 1 ? rsize :
-			      raster + (raster & 1)));
+                              raster + (raster & 1)));
 
     /* Write the header. */
 
     if (fwrite((const char *)phdr, 1, 128, file) < 128) {
-	code = gs_error_ioerror;
-	goto pcx_done;
+        code = gs_error_ioerror;
+        goto pcx_done;
     }
     /* Write the contents of the image. */
     for (y = 0; y < height; y++) {
-	byte *row;
-	byte *end;
+        byte *row;
+        byte *end;
 
-	code = gdev_prn_get_bits(pdev, y, line, &row);
-	if (code < 0)
-	    break;
-	end = row + raster;
-	if (!planar) {		/* Just write the bits. */
-	    if (raster & 1) {	/* Round to even, with predictable padding. */
-		*end = end[-1];
-		++end;
-	    }
-	    pcx_write_rle(row, end, 1, file);
-	} else
-	    switch (depth) {
+        code = gdev_prn_get_bits(pdev, y, line, &row);
+        if (code < 0)
+            break;
+        end = row + raster;
+        if (!planar) {		/* Just write the bits. */
+            if (raster & 1) {	/* Round to even, with predictable padding. */
+                *end = end[-1];
+                ++end;
+            }
+            pcx_write_rle(row, end, 1, file);
+        } else
+            switch (depth) {
 
-		case 4:
-		    {
-			byte *pend = plane + rsize;
-			int shift;
+                case 4:
+                    {
+                        byte *pend = plane + rsize;
+                        int shift;
 
-			for (shift = 0; shift < 4; shift++) {
-			    register byte *from, *to;
-			    register int bright = 1 << shift;
-			    register int bleft = bright << 4;
+                        for (shift = 0; shift < 4; shift++) {
+                            register byte *from, *to;
+                            register int bright = 1 << shift;
+                            register int bleft = bright << 4;
 
-			    for (from = row, to = plane;
-				 from < end; from += 4
-				) {
-				*to++ =
-				    (from[0] & bleft ? 0x80 : 0) |
-				    (from[0] & bright ? 0x40 : 0) |
-				    (from[1] & bleft ? 0x20 : 0) |
-				    (from[1] & bright ? 0x10 : 0) |
-				    (from[2] & bleft ? 0x08 : 0) |
-				    (from[2] & bright ? 0x04 : 0) |
-				    (from[3] & bleft ? 0x02 : 0) |
-				    (from[3] & bright ? 0x01 : 0);
-			    }
-			    /* We might be one byte short of rsize. */
-			    if (to < pend)
-				*to = to[-1];
-			    pcx_write_rle(plane, pend, 1, file);
-			}
-		    }
-		    break;
+                            for (from = row, to = plane;
+                                 from < end; from += 4
+                                ) {
+                                *to++ =
+                                    (from[0] & bleft ? 0x80 : 0) |
+                                    (from[0] & bright ? 0x40 : 0) |
+                                    (from[1] & bleft ? 0x20 : 0) |
+                                    (from[1] & bright ? 0x10 : 0) |
+                                    (from[2] & bleft ? 0x08 : 0) |
+                                    (from[2] & bright ? 0x04 : 0) |
+                                    (from[3] & bleft ? 0x02 : 0) |
+                                    (from[3] & bright ? 0x01 : 0);
+                            }
+                            /* We might be one byte short of rsize. */
+                            if (to < pend)
+                                *to = to[-1];
+                            pcx_write_rle(plane, pend, 1, file);
+                        }
+                    }
+                    break;
 
-		case 24:
-		    {
-			int pnum;
+                case 24:
+                    {
+                        int pnum;
 
-			for (pnum = 0; pnum < 3; ++pnum) {
-			    pcx_write_rle(row + pnum, row + raster, 3, file);
-			    if (pdev->width & 1)
-				fputc(0, file);		/* pad to even */
-			}
-		    }
-		    break;
+                        for (pnum = 0; pnum < 3; ++pnum) {
+                            pcx_write_rle(row + pnum, row + raster, 3, file);
+                            if (pdev->width & 1)
+                                fputc(0, file);		/* pad to even */
+                        }
+                    }
+                    break;
 
-		default:
-		    code = gs_note_error(gs_error_rangecheck);
-		    goto pcx_done;
+                default:
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto pcx_done;
 
-	    }
+            }
     }
 
   pcx_done:
@@ -423,35 +423,35 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 static void
 pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
 {				/*
-				 * The PCX format theoretically allows encoding runs of 63
-				 * identical bytes, but some readers can't handle repetition
-				 * counts greater than 15.
-				 */
+                                 * The PCX format theoretically allows encoding runs of 63
+                                 * identical bytes, but some readers can't handle repetition
+                                 * counts greater than 15.
+                                 */
 #define MAX_RUN_COUNT 15
     int max_run = step * MAX_RUN_COUNT;
 
     while (from < end) {
-	byte data = *from;
+        byte data = *from;
 
-	from += step;
-	if (data != *from || from == end) {
-	    if (data >= 0xc0)
-		putc(0xc1, file);
-	} else {
-	    const byte *start = from;
+        from += step;
+        if (data != *from || from == end) {
+            if (data >= 0xc0)
+                putc(0xc1, file);
+        } else {
+            const byte *start = from;
 
-	    while ((from < end) && (*from == data))
-		from += step;
-	    /* Now (from - start) / step + 1 is the run length. */
-	    while (from - start >= max_run) {
-		putc(0xc0 + MAX_RUN_COUNT, file);
-		putc(data, file);
-		start += max_run;
-	    }
-	    if (from > start || data >= 0xc0)
-		putc((from - start) / step + 0xc1, file);
-	}
-	putc(data, file);
+            while ((from < end) && (*from == data))
+                from += step;
+            /* Now (from - start) / step + 1 is the run length. */
+            while (from - start >= max_run) {
+                putc(0xc0 + MAX_RUN_COUNT, file);
+                putc(data, file);
+                start += max_run;
+            }
+            if (from > start || data >= 0xc0)
+                putc((from - start) / step + 0xc1, file);
+        }
+        putc(data, file);
     }
 #undef MAX_RUN_COUNT
 }

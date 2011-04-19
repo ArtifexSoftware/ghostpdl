@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -218,37 +218,37 @@ struct gdev_prn_space_params_s {
 };
 
 #define gx_prn_device_common\
-	byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
-		  sizeof(gx_device) + sizeof(double) /* padding */];\
-	gx_printer_device_procs printer_procs;\
-		/* ------ Device parameters that must be set ------ */\
-		/* ------ before calling the device open routine. ------ */\
-	gdev_prn_space_params space_params;\
-	char fname[prn_fname_sizeof];	/* OutputFile */\
-		/* ------ Other device parameters ------ */\
-	bool OpenOutputFile;\
-	bool ReopenPerPage;\
+        byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
+                  sizeof(gx_device) + sizeof(double) /* padding */];\
+        gx_printer_device_procs printer_procs;\
+                /* ------ Device parameters that must be set ------ */\
+                /* ------ before calling the device open routine. ------ */\
+        gdev_prn_space_params space_params;\
+        char fname[prn_fname_sizeof];	/* OutputFile */\
+                /* ------ Other device parameters ------ */\
+        bool OpenOutputFile;\
+        bool ReopenPerPage;\
         bool page_uses_transparency; /* PDF 1.4 transparency is used on page */\
-	bool Duplex;\
-	  int Duplex_set;		/* -1 = not supported */\
-		/* ------ End of parameters ------ */\
-	bool file_is_new;		/* true iff file just opened */\
-	FILE *file;			/* output file */\
-	long buffer_space;	/* amount of space for clist buffer, */\
-					/* 0 means not using clist */\
-	byte *buf;			/* buffer for rendering */\
-		/* ---- Begin async rendering support --- */\
-	gs_memory_t *buffer_memory;	/* allocator for command list */\
-	gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
-	proc_free_up_bandlist_memory((*free_up_bandlist_memory));  	/* if nz, proc to free some bandlist memory */\
-	gx_page_queue_t *page_queue;	/* if <> 0,page queue for gdevprna NOT GC'd */\
-	bool is_async_renderer;		/* device is only the rendering part of async device */\
-	gx_device_printer *async_renderer;	/* in async writer, pointer to async renderer */\
-	uint clist_disable_mask;	/* mask of clist options to disable */\
-		/* ---- End async rendering support --- */\
-	int num_render_threads_requested;	/* for multiple band rendering threads */\
-	gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
-	gx_device_procs orig_procs	/* original (std_)procs */
+        bool Duplex;\
+          int Duplex_set;		/* -1 = not supported */\
+                /* ------ End of parameters ------ */\
+        bool file_is_new;		/* true iff file just opened */\
+        FILE *file;			/* output file */\
+        long buffer_space;	/* amount of space for clist buffer, */\
+                                        /* 0 means not using clist */\
+        byte *buf;			/* buffer for rendering */\
+                /* ---- Begin async rendering support --- */\
+        gs_memory_t *buffer_memory;	/* allocator for command list */\
+        gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
+        proc_free_up_bandlist_memory((*free_up_bandlist_memory));  	/* if nz, proc to free some bandlist memory */\
+        gx_page_queue_t *page_queue;	/* if <> 0,page queue for gdevprna NOT GC'd */\
+        bool is_async_renderer;		/* device is only the rendering part of async device */\
+        gx_device_printer *async_renderer;	/* in async writer, pointer to async renderer */\
+        uint clist_disable_mask;	/* mask of clist options to disable */\
+                /* ---- End async rendering support --- */\
+        int num_render_threads_requested;	/* for multiple band rendering threads */\
+        gx_device_procs save_procs_while_delaying_erasepage;	/* save device procs while delaying erasepage. */\
+        gx_device_procs orig_procs	/* original (std_)procs */
 
 /* The device descriptor */
 struct gx_device_printer_s {
@@ -293,50 +293,50 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
   prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params)
 /* See gdev_prn_open for explanation of the NULLs below. */
 #define prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params) {\
-	p_open,\
-	NULL,	/* get_initial_matrix */\
-	NULL,	/* sync_output */\
-	p_output_page,\
-	p_close,\
-	p_map_rgb_color,\
-	p_map_color_rgb,\
-	NULL,	/* fill_rectangle */\
-	NULL,	/* tile_rectangle */\
-	NULL,	/* copy_mono */\
-	NULL,	/* copy_color */\
-	NULL,	/* draw_line */\
-	NULL,	/* get_bits */\
-	p_get_params,\
-	p_put_params,\
-	NULL,	/* map_cmyk_color */\
-	NULL,	/* get_xfont_procs */\
-	NULL,	/* get_xfont_device */\
-	NULL,	/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device,\
-	NULL,	/* get_alpha_bits */\
-	NULL,	/* copy_alpha */\
-	NULL,	/* get_band */\
-	NULL,	/* copy_rop */\
-	NULL,	/* fill_path */\
-	NULL,	/* stroke_path */\
-	NULL,	/* fill_mask */\
-	NULL,	/* fill_trapezoid */\
-	NULL,	/* fill_parallelogram */\
-	NULL,	/* fill_triangle */\
-	NULL,	/* draw_thin_line */\
-	NULL,	/* begin_image */\
-	NULL,	/* image_data */\
-	NULL,	/* end_image */\
-	NULL,	/* strip_tile_rectangle */\
-	NULL,	/* strip_copy_rop, */\
-	NULL,	/* get_clipping_box */\
-	NULL,	/* begin_typed_image */\
-	NULL,	/* get_bits_rectangle */\
-	NULL,	/* map_color_rgb_alpha */\
-	NULL,	/* create_compositor */\
-	NULL,	/* get_hardware_params */\
-	NULL,	/* text_begin */\
-	NULL	/* finish_copydevice */\
+        p_open,\
+        NULL,	/* get_initial_matrix */\
+        NULL,	/* sync_output */\
+        p_output_page,\
+        p_close,\
+        p_map_rgb_color,\
+        p_map_color_rgb,\
+        NULL,	/* fill_rectangle */\
+        NULL,	/* tile_rectangle */\
+        NULL,	/* copy_mono */\
+        NULL,	/* copy_color */\
+        NULL,	/* draw_line */\
+        NULL,	/* get_bits */\
+        p_get_params,\
+        p_put_params,\
+        NULL,	/* map_cmyk_color */\
+        NULL,	/* get_xfont_procs */\
+        NULL,	/* get_xfont_device */\
+        NULL,	/* map_rgb_alpha_color */\
+        gx_page_device_get_page_device,\
+        NULL,	/* get_alpha_bits */\
+        NULL,	/* copy_alpha */\
+        NULL,	/* get_band */\
+        NULL,	/* copy_rop */\
+        NULL,	/* fill_path */\
+        NULL,	/* stroke_path */\
+        NULL,	/* fill_mask */\
+        NULL,	/* fill_trapezoid */\
+        NULL,	/* fill_parallelogram */\
+        NULL,	/* fill_triangle */\
+        NULL,	/* draw_thin_line */\
+        NULL,	/* begin_image */\
+        NULL,	/* image_data */\
+        NULL,	/* end_image */\
+        NULL,	/* strip_tile_rectangle */\
+        NULL,	/* strip_copy_rop, */\
+        NULL,	/* get_clipping_box */\
+        NULL,	/* begin_typed_image */\
+        NULL,	/* get_bits_rectangle */\
+        NULL,	/* map_color_rgb_alpha */\
+        NULL,	/* create_compositor */\
+        NULL,	/* get_hardware_params */\
+        NULL,	/* text_begin */\
+        NULL	/* finish_copydevice */\
 }
 
 /* The standard printer device procedures */
@@ -358,36 +358,36 @@ extern const gx_device_procs prn_std_procs;
  * Note that print_page and print_page_copies must not both be defaulted.
  */
 #define prn_device_body_rest2_(print_page, print_page_copies, duplex_set)\
-	 { 0 },		/* std_procs */\
-	 { 0 },		/* skip */\
-	 { print_page,\
-	   print_page_copies,\
-	   { gx_default_create_buf_device,\
-	     gx_default_size_buf_device,\
-	     gx_default_setup_buf_device,\
-	     gx_default_destroy_buf_device\
-	   },\
-	   gdev_prn_default_get_space_params,\
-	   gx_default_start_render_thread,\
-	   gx_default_open_render_device,\
-	   gx_default_close_render_device,\
-	   gx_default_buffer_page\
-	 },\
-	 { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-	     { BAND_PARAMS_INITIAL_VALUES },\
-	   0/*false*/,	/* params_are_read_only */\
-	   BandingAuto	/* banding_type */\
-	 },\
-	 { 0 },		/* fname */\
-	0/*false*/,	/* OpenOutputFile */\
-	0/*false*/,	/* ReopenPerPage */\
-	0/*false*/,	/* page_uses_transparency */\
-	0/*false*/, duplex_set,	/* Duplex[_set] */\
-	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
-	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
-	0, 		/* num_render_threads_requested */\
-	{ 0 },	/* save_procs_while_delaying_erasepage */\
-	{ 0 }	/* ... orig_procs */
+         { 0 },		/* std_procs */\
+         { 0 },		/* skip */\
+         { print_page,\
+           print_page_copies,\
+           { gx_default_create_buf_device,\
+             gx_default_size_buf_device,\
+             gx_default_setup_buf_device,\
+             gx_default_destroy_buf_device\
+           },\
+           gdev_prn_default_get_space_params,\
+           gx_default_start_render_thread,\
+           gx_default_open_render_device,\
+           gx_default_close_render_device,\
+           gx_default_buffer_page\
+         },\
+         { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
+             { BAND_PARAMS_INITIAL_VALUES },\
+           0/*false*/,	/* params_are_read_only */\
+           BandingAuto	/* banding_type */\
+         },\
+         { 0 },		/* fname */\
+        0/*false*/,	/* OpenOutputFile */\
+        0/*false*/,	/* ReopenPerPage */\
+        0/*false*/,	/* page_uses_transparency */\
+        0/*false*/, duplex_set,	/* Duplex[_set] */\
+        0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
+        0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
+        0, 		/* num_render_threads_requested */\
+        { 0 },	/* save_procs_while_delaying_erasepage */\
+        { 0 }	/* ... orig_procs */
 #define prn_device_body_rest_(print_page)\
   prn_device_body_rest2_(print_page, gx_default_print_page_copies, -1)
 #define prn_device_body_copies_rest_(print_page_copies)\
@@ -396,27 +396,27 @@ extern const gx_device_procs prn_std_procs;
 /* The Sun cc compiler won't allow \ within a macro argument list. */
 /* This accounts for the short parameter names here and below. */
 #define prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-	std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
-	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
-	  xdpi, ydpi,\
-	  ncomp, depth, mg, mc, dg, dc,\
-	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
-	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
-	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
-	),\
-	prn_device_body_rest_(print_page)
+        std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
+          (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+          (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+          xdpi, ydpi,\
+          ncomp, depth, mg, mc, dg, dc,\
+          (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+        prn_device_body_rest_(print_page)
 #define prn_device_margins_stype_body(dtype, procs, dname, stype, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-	std_device_full_body_type(dtype, &procs, dname, stype,\
-	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
-	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
-	  xdpi, ydpi,\
-	  ncomp, depth, mg, mc, dg, dc,\
-	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
-	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
-	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
-	),\
-	prn_device_body_rest_(print_page)
+        std_device_full_body_type(dtype, &procs, dname, stype,\
+          (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+          (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+          xdpi, ydpi,\
+          ncomp, depth, mg, mc, dg, dc,\
+          (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+        prn_device_body_rest_(print_page)
 
 #define prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
   prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
@@ -426,46 +426,46 @@ extern const gx_device_procs prn_std_procs;
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)
 
 #define prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
-	std_device_full_body_type_extended(dtype, &procs, dname, &st_device_printer,\
-	  (int)((long)(w10) * (xdpi) / 10),\
-	  (int)((long)(h10) * (ydpi) / 10),\
-	  xdpi, ydpi,\
-	  mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn,\
-	  -(lo) * (xdpi), -(to) * (ydpi),\
-	  (lm) * 72.0, (bm) * 72.0,\
-	  (rm) * 72.0, (tm) * 72.0\
-	),\
-	prn_device_body_rest_(print_page)
+        std_device_full_body_type_extended(dtype, &procs, dname, &st_device_printer,\
+          (int)((long)(w10) * (xdpi) / 10),\
+          (int)((long)(h10) * (ydpi) / 10),\
+          xdpi, ydpi,\
+          mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn,\
+          -(lo) * (xdpi), -(to) * (ydpi),\
+          (lm) * 72.0, (bm) * 72.0,\
+          (rm) * 72.0, (tm) * 72.0\
+        ),\
+        prn_device_body_rest_(print_page)
 
 #define prn_device_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)\
   prn_device_margins_body_extended(dtype, procs, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, mcomp, ncomp, pol, depth, gi, mg, mc, dg, dc, ef, cn, print_page)
 
 #define prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
-	std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
-	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
-	  xdpi, ydpi, color_bits,\
-	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
-	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
-	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
-	),\
-	prn_device_body_rest_(print_page)
+        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+          (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+          (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+          xdpi, ydpi, color_bits,\
+          (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+        prn_device_body_rest_(print_page)
 
 #define prn_device_std_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
   prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
 #define prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
-	std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
-	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
-	  xdpi, ydpi, color_bits,\
-	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
-	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
-	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
-	),\
-	prn_device_body_copies_rest_(print_page_copies)
+        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+          (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+          (int)((float)(h10) * (ydpi) / 10 + 0.5),\
+          xdpi, ydpi, color_bits,\
+          (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+        prn_device_body_copies_rest_(print_page_copies)
 
 #define prn_device_std_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
   prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi,\
@@ -499,7 +499,7 @@ extern const gx_device_procs prn_std_procs;
  */
 /* VMS limits procedure names to 31 characters. */
 int gdev_prn_open_printer_seekable(gx_device *dev, bool binary_mode,
-				   bool seekable);
+                                   bool seekable);
 /* BACKWARD COMPATIBILITY */
 #define gdev_prn_open_printer_positionable gdev_prn_open_printer_seekable
 /* open_printer defaults positionable = false */
@@ -530,17 +530,17 @@ bool gdev_prn_file_is_new(const gx_device_printer *pdev);
  * If the parameters are invalid, the procedure returns -1.
  */
 int gdev_prn_colors_used(gx_device *dev, int y, int height,
-			 gx_colors_used_t *colors_used,
-			 int *range_start);
+                         gx_colors_used_t *colors_used,
+                         int *range_start);
 /*
  * Determine the colors used in a saved page.  We still need the device
  * in order to know the total page height.
  */
 int gx_page_info_colors_used(const gx_device *dev,
-			     const gx_band_page_info_t *page_info,
-			     int y, int height,
-			     gx_colors_used_t *colors_used,
-			     int *range_start);
+                             const gx_band_page_info_t *page_info,
+                             int y, int height,
+                             gx_colors_used_t *colors_used,
+                             int *range_start);
 
 /*
  * Render a subrectangle of the page into a target device provided by the
@@ -565,10 +565,10 @@ int gx_page_info_colors_used(const gx_device *dev,
  * an error.
  */
 int gdev_prn_render_rectangle(gx_device_printer *pdev,
-			      const gs_int_rect *prect,
-			      gx_device *target,
-			      const gx_render_plane_t *render_plane,
-			      bool clear);
+                              const gs_int_rect *prect,
+                              gx_device *target,
+                              const gx_render_plane_t *render_plane,
+                              bool clear);
 
 /*
  * Read one or more rasterized scan lines for printing.
@@ -587,9 +587,9 @@ int gdev_prn_render_rectangle(gx_device_printer *pdev,
  * returned.
  */
 int gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
-		       byte *buffer, uint bytes_per_line,
-		       byte **actual_buffer, uint *actual_bytes_per_line,
-		       const gx_render_plane_t *render_plane);
+                       byte *buffer, uint bytes_per_line,
+                       byte **actual_buffer, uint *actual_bytes_per_line,
+                       const gx_render_plane_t *render_plane);
 
 /*
  * Read a rasterized scan line for sending to the printer.
@@ -597,7 +597,7 @@ int gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
  * except that it also calls gdev_prn_clear_trailing_bits.
  */
 int gdev_prn_get_bits(gx_device_printer *pdev, int y, byte *buffer,
-		      byte **actual_buffer);
+                      byte **actual_buffer);
 
 /*
  * Copy scan lines to send to the printer.  This is now DEPRECATED,
@@ -614,7 +614,7 @@ int gdev_prn_copy_scan_lines(gx_device_printer *, int, byte *, uint);
  * a printer device.
  */
 void gdev_prn_clear_trailing_bits(byte *data, uint raster, int height,
-				  const gx_device *dev);
+                                  const gx_device *dev);
 
 /*
  * Close the printer's output file.
@@ -638,11 +638,11 @@ int gdev_prn_print_scan_lines(gx_device *);
 
 /* Allocate / reallocate / free printer memory. */
 int gdev_prn_allocate_memory(gx_device *pdev,
-			     gdev_prn_space_params *space,
-			     int new_width, int new_height);
+                             gdev_prn_space_params *space,
+                             int new_width, int new_height);
 int gdev_prn_reallocate_memory(gx_device *pdev,
-			       gdev_prn_space_params *space,
-			       int new_width, int new_height);
+                               gdev_prn_space_params *space,
+                               int new_width, int new_height);
 int gdev_prn_free_memory(gx_device *pdev);
 
 /*
@@ -653,9 +653,9 @@ int gdev_prn_free_memory(gx_device *pdev);
  */
 typedef dev_proc_create_buf_device((*create_buf_device_proc_t));
 int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
-			   gx_device **pbdev, gx_device *target, int y,
-			   const gx_render_plane_t *render_plane,
-			   gs_memory_t *mem, gx_band_complexity_t *band_complexity);
+                           gx_device **pbdev, gx_device *target, int y,
+                           const gx_render_plane_t *render_plane,
+                           gs_memory_t *mem, gx_band_complexity_t *band_complexity);
 
 /* BACKWARD COMPATIBILITY */
 #define dev_print_scan_lines(dev)\
@@ -690,8 +690,8 @@ static dev_proc_print_page(pageproc);\
 static int \
 initproc(gx_device *dev)\
 {	int code = gdev_prn_initialize(dev, dname, pageproc);\
-	gdev_prn_init_color(dev, depth, rcproc, crproc);\
-	return code;\
+        gdev_prn_init_color(dev, depth, rcproc, crproc);\
+        return code;\
 }\
 device_type(dtname, st_prn_device, initproc)
 

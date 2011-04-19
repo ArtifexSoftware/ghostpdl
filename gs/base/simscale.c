@@ -1,6 +1,6 @@
 /* Copyright (C) 2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -8220,9 +8220,9 @@ const byte imasktab[] = {
 };
 
 gs_private_st_ptrs2(st_imscale_state, stream_imscale_state,
-		    "ImscaleDecode state",
-		    imscale_state_enum_ptrs, imscale_state_reloc_ptrs,
-		    window, dst);
+                    "ImscaleDecode state",
+                    imscale_state_enum_ptrs, imscale_state_reloc_ptrs,
+                    window, dst);
 
 static void
 s_imscale_release(stream_state *st)
@@ -8251,8 +8251,8 @@ s_imscale_init(stream_state *st)
     ss->dst_size = bytesout;
     ss->dst_offset = ss->dst_size;
     ss->window = (byte *)gs_alloc_byte_array(mem,
-					     bytesin + 2, 4,
-					     "imscale window");
+                                             bytesin + 2, 4,
+                                             "imscale window");
     ss->dst = (byte *)gs_alloc_bytes(mem, bytesout + 1, "imscale dst");
     memset(ss->window, 0xff, (bytesin + 2) * 4);
     return 0;
@@ -8268,106 +8268,106 @@ zoom_line(stream_imscale_state *ss)
     int i;
 
     for (i = 0; i < ss->dst_size + 1; i++) {
-	int iw = (i + 3) >> 2;
-	int iwshift = 11 - ((i + 3) & 3) * 2;
-	int oshift;
-	byte l0, l1, l2, l3;
-	byte t0, t1;
+        int iw = (i + 3) >> 2;
+        int iwshift = 11 - ((i + 3) & 3) * 2;
+        int oshift;
+        byte l0, l1, l2, l3;
+        byte t0, t1;
 
-	if (y < 2) {
-	    l3 = (((window[iw] << 8) | window[iw + 1]) >> iwshift) & 0x1f;
-	    l2 = (((window[w + iw] << 8) |
-			window[w + iw + 1]) >> iwshift) & 0x1f;
-	    l1 = (((window[w * 2 + iw] << 8) |
-			window[w * 2 + iw + 1]) >> iwshift) & 0x1f;
-	    l0 = (((window[w * 3 + iw] << 8) |
-			window[w * 3 + iw + 1]) >> iwshift) & 0x1f;
-	    oshift = 4 * (1 - y);
-	} else {
-	    l0 = (((window[iw] << 8) | window[iw + 1]) >> iwshift) & 0x1f;
-	    l1 = (((window[w + iw] << 8) |
-			window[w + iw + 1]) >> iwshift) & 0x1f;
-	    l2 = (((window[w * 2 + iw] << 8) |
-			window[w * 2 + iw + 1]) >> iwshift) & 0x1f;
-	    l3 = (((window[w * 3 + iw] << 8) |
-			window[w * 3 + iw + 1]) >> iwshift) & 0x1f;
-	    oshift = 4 * (y & 1);
-	}
-	t0 = imasktab[((l0 & 0x1e) << 11) |
-		      ((l1 & 0x1e) << 7) |
-		      ((l2 & 0x1e) << 3) |
-		      ((l3 & 0x1e) >> 1)];
-	t1 = imasktab[((l0 & 0xf) << 12) |
-		      ((l1 & 0xf) << 8) |
-		      ((l2 & 0xf) << 4) |
-		      (l3 & 0xf)];
-	dst[i] = (((t0 >> oshift) & 0xf) << 4) + ((t1 >> oshift) & 0xf);
+        if (y < 2) {
+            l3 = (((window[iw] << 8) | window[iw + 1]) >> iwshift) & 0x1f;
+            l2 = (((window[w + iw] << 8) |
+                        window[w + iw + 1]) >> iwshift) & 0x1f;
+            l1 = (((window[w * 2 + iw] << 8) |
+                        window[w * 2 + iw + 1]) >> iwshift) & 0x1f;
+            l0 = (((window[w * 3 + iw] << 8) |
+                        window[w * 3 + iw + 1]) >> iwshift) & 0x1f;
+            oshift = 4 * (1 - y);
+        } else {
+            l0 = (((window[iw] << 8) | window[iw + 1]) >> iwshift) & 0x1f;
+            l1 = (((window[w + iw] << 8) |
+                        window[w + iw + 1]) >> iwshift) & 0x1f;
+            l2 = (((window[w * 2 + iw] << 8) |
+                        window[w * 2 + iw + 1]) >> iwshift) & 0x1f;
+            l3 = (((window[w * 3 + iw] << 8) |
+                        window[w * 3 + iw + 1]) >> iwshift) & 0x1f;
+            oshift = 4 * (y & 1);
+        }
+        t0 = imasktab[((l0 & 0x1e) << 11) |
+                      ((l1 & 0x1e) << 7) |
+                      ((l2 & 0x1e) << 3) |
+                      ((l3 & 0x1e) >> 1)];
+        t1 = imasktab[((l0 & 0xf) << 12) |
+                      ((l1 & 0xf) << 8) |
+                      ((l2 & 0xf) << 4) |
+                      (l3 & 0xf)];
+        dst[i] = (((t0 >> oshift) & 0xf) << 4) + ((t1 >> oshift) & 0xf);
     }
     for (i = 0; i < ss->dst_size; i++)
-	dst[i] = (dst[i] << 2) + (dst[i + 1] >> 6);
+        dst[i] = (dst[i] << 2) + (dst[i + 1] >> 6);
 }
 
 static int
 s_imscale_process(stream_state *st, stream_cursor_read *pr,
-		stream_cursor_write *pw, bool last)
+                stream_cursor_write *pw, bool last)
 {
     stream_imscale_state *const ss = (stream_imscale_state *) st;
 
     while (1) {
-	/* deliver data from dst buffer */
-	if (ss->dst_offset < ss->dst_size) {
-	    uint ncopy = min(pw->limit - pw->ptr,
-			     ss->dst_size - ss->dst_offset);
+        /* deliver data from dst buffer */
+        if (ss->dst_offset < ss->dst_size) {
+            uint ncopy = min(pw->limit - pw->ptr,
+                             ss->dst_size - ss->dst_offset);
 
-	    if (ncopy == 0)
-		return 1;
-	    memcpy(pw->ptr + 1, (byte *)ss->dst + ss->dst_offset, ncopy);
-	    pw->ptr += ncopy;
-	    ss->dst_offset += ncopy;
-	}
+            if (ncopy == 0)
+                return 1;
+            memcpy(pw->ptr + 1, (byte *)ss->dst + ss->dst_offset, ncopy);
+            pw->ptr += ncopy;
+            ss->dst_offset += ncopy;
+        }
 
-	/* output a row, if possible */
-	if (ss->dst_offset == ss->dst_size &&
-	    ss->dst_y < ss->src_y * 4 - 6) {
-	    zoom_line(ss);
-	    ss->dst_offset = 0;
-	    ss->dst_y += 1;
-	}
+        /* output a row, if possible */
+        if (ss->dst_offset == ss->dst_size &&
+            ss->dst_y < ss->src_y * 4 - 6) {
+            zoom_line(ss);
+            ss->dst_offset = 0;
+            ss->dst_y += 1;
+        }
 
-	/* input into window */
-	if (ss->dst_y >= ss->src_y * 4 - 6) {
-	    int w = ss->src_size + 2;
-	    uint rleft = pr->limit - pr->ptr;
-	    uint ncopy = min(rleft, ss->src_size - ss->src_offset);
+        /* input into window */
+        if (ss->dst_y >= ss->src_y * 4 - 6) {
+            int w = ss->src_size + 2;
+            uint rleft = pr->limit - pr->ptr;
+            uint ncopy = min(rleft, ss->src_size - ss->src_offset);
 
-	    if (ss->src_y >= ss->params.HeightIn) {
-		last = true;
-		ncopy = 0;
-	    }
-	    if (rleft == 0 && !last)
-		return 0; /* need more input */
+            if (ss->src_y >= ss->params.HeightIn) {
+                last = true;
+                ncopy = 0;
+            }
+            if (rleft == 0 && !last)
+                return 0; /* need more input */
           /*  if (rleft == 0)
                 return EOFC;  */  /* end of file.  pass along in stream */
-	    if (ss->src_offset == 0) {
-		/* could maintain window as ring (y mod 4 addressing),
-		   but this is simpler */
-		memmove(ss->window, ss->window + w, 3 * w);
-	    }
-	    if (ncopy) {
-		memcpy(ss->window + 3 * w + ss->src_offset + 1,
-		       pr->ptr + 1,
-		       ncopy);
-		ss->src_offset += ncopy;
-		pr->ptr += ncopy;
-	    } else {
-		memset(ss->window + 3 * w, 0xff, w);
-		ss->src_offset += ss->src_size;
-	    }
-	    if (ss->src_offset == ss->src_size) {
-		ss->src_offset = 0;
-		ss->src_y += 1;
-	    }
-	}
+            if (ss->src_offset == 0) {
+                /* could maintain window as ring (y mod 4 addressing),
+                   but this is simpler */
+                memmove(ss->window, ss->window + w, 3 * w);
+            }
+            if (ncopy) {
+                memcpy(ss->window + 3 * w + ss->src_offset + 1,
+                       pr->ptr + 1,
+                       ncopy);
+                ss->src_offset += ncopy;
+                pr->ptr += ncopy;
+            } else {
+                memset(ss->window + 3 * w, 0xff, w);
+                ss->src_offset += ss->src_size;
+            }
+            if (ss->src_offset == ss->src_size) {
+                ss->src_offset = 0;
+                ss->src_y += 1;
+            }
+        }
     }
 }
 

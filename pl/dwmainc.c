@@ -10,7 +10,7 @@
 /*$Id: dwmain.c 11973 2010-12-22 19:16:02Z robin $ */
 
 /* dwmain.c */
-/* Windows version of the main program command-line interpreter for PCL interpreters 
+/* Windows version of the main program command-line interpreter for PCL interpreters
  */
 #include "string_.h"
 #include "gdebug.h"
@@ -82,7 +82,6 @@ HANDLE hthread;
 DWORD thread_id;
 HWND hwndforeground;	/* our best guess for our console window handle */
 
-
 /* This section copied in large part from the Ghostscript Windows client, to
  * support the Windows display device.
  */
@@ -114,38 +113,37 @@ static void winthread(void *arg)
     hthread = GetCurrentThread();
 
     while (!quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
-	switch (msg.message) {
-	    case DISPLAY_OPEN:
-		image_open((IMAGE *)msg.lParam);
-		break;
-	    case DISPLAY_CLOSE:
-		{
-		    HANDLE hmutex;
-		    IMAGE *img = (IMAGE *)msg.lParam; 
-		    hmutex = img->hmutex;
-		    image_close(img);
-		    CloseHandle(hmutex);
-		}
-		break;
-	    case DISPLAY_SIZE:
-		image_updatesize((IMAGE *)msg.lParam);
-		break;
-	    case DISPLAY_SYNC:
-		image_sync((IMAGE *)msg.lParam);
-		break;
-	    case DISPLAY_PAGE:
-		image_page((IMAGE *)msg.lParam);
-		break;
-	    case DISPLAY_UPDATE:
-		image_poll((IMAGE *)msg.lParam);
-		break;
-	    default:
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+        switch (msg.message) {
+            case DISPLAY_OPEN:
+                image_open((IMAGE *)msg.lParam);
+                break;
+            case DISPLAY_CLOSE:
+                {
+                    HANDLE hmutex;
+                    IMAGE *img = (IMAGE *)msg.lParam;
+                    hmutex = img->hmutex;
+                    image_close(img);
+                    CloseHandle(hmutex);
+                }
+                break;
+            case DISPLAY_SIZE:
+                image_updatesize((IMAGE *)msg.lParam);
+                break;
+            case DISPLAY_SYNC:
+                image_sync((IMAGE *)msg.lParam);
+                break;
+            case DISPLAY_PAGE:
+                image_page((IMAGE *)msg.lParam);
+                break;
+            case DISPLAY_UPDATE:
+                image_poll((IMAGE *)msg.lParam);
+                break;
+            default:
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+        }
     }
 }
-
 
 /* New device has been opened */
 /* Tell user to use another device */
@@ -158,7 +156,7 @@ int display_open(void *handle, void *device)
     img = image_new(handle, device);	/* create and add to list */
     img->hmutex = CreateMutex(NULL, FALSE, NULL);
     if (img)
-	PostThreadMessage(thread_id, DISPLAY_OPEN, 0, (LPARAM)img);
+        PostThreadMessage(thread_id, DISPLAY_OPEN, 0, (LPARAM)img);
     return 0;
 }
 
@@ -170,8 +168,8 @@ int display_preclose(void *handle, void *device)
 #endif
     img = image_find(handle, device);
     if (img) {
-	/* grab mutex to stop other thread using bitmap */
-	WaitForSingleObject(img->hmutex, 120000);
+        /* grab mutex to stop other thread using bitmap */
+        WaitForSingleObject(img->hmutex, 120000);
     }
     return 0;
 }
@@ -184,50 +182,50 @@ int display_close(void *handle, void *device)
 #endif
     img = image_find(handle, device);
     if (img) {
-	/* This is a hack to pass focus from image window to console */
-	if (GetForegroundWindow() == img->hwnd)
-	    SetForegroundWindow(hwndforeground);
+        /* This is a hack to pass focus from image window to console */
+        if (GetForegroundWindow() == img->hwnd)
+            SetForegroundWindow(hwndforeground);
 
-	image_delete(img);	/* remove from list, but don't free */
-	PostThreadMessage(thread_id, DISPLAY_CLOSE, 0, (LPARAM)img);
+        image_delete(img);	/* remove from list, but don't free */
+        PostThreadMessage(thread_id, DISPLAY_CLOSE, 0, (LPARAM)img);
     }
     return 0;
 }
 
-int display_presize(void *handle, void *device, int width, int height, 
-	int raster, unsigned int format)
+int display_presize(void *handle, void *device, int width, int height,
+        int raster, unsigned int format)
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
     fprintf(stdout, "display_presize(0x%x 0x%x, %d, %d, %d, %d, %ld)\n",
-	handle, device, width, height, raster, format);
+        handle, device, width, height, raster, format);
 #endif
     img = image_find(handle, device);
     if (img) {
-	/* grab mutex to stop other thread using bitmap */
-	WaitForSingleObject(img->hmutex, 120000);
+        /* grab mutex to stop other thread using bitmap */
+        WaitForSingleObject(img->hmutex, 120000);
     }
     return 0;
 }
-   
-int display_size(void *handle, void *device, int width, int height, 
-	int raster, unsigned int format, unsigned char *pimage)
+
+int display_size(void *handle, void *device, int width, int height,
+        int raster, unsigned int format, unsigned char *pimage)
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
     fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %d, %ld, 0x%x)\n",
-	handle, device, width, height, raster, format, pimage);
+        handle, device, width, height, raster, format, pimage);
 #endif
     img = image_find(handle, device);
     if (img) {
-	image_size(img, width, height, raster, format, pimage);
-	/* release mutex to allow other thread to use bitmap */
-	ReleaseMutex(img->hmutex);
-	PostThreadMessage(thread_id, DISPLAY_SIZE, 0, (LPARAM)img);
+        image_size(img, width, height, raster, format, pimage);
+        /* release mutex to allow other thread to use bitmap */
+        ReleaseMutex(img->hmutex);
+        PostThreadMessage(thread_id, DISPLAY_SIZE, 0, (LPARAM)img);
     }
     return 0;
 }
-   
+
 int display_sync(void *handle, void *device)
 {
     IMAGE *img;
@@ -236,8 +234,8 @@ int display_sync(void *handle, void *device)
 #endif
     img = image_find(handle, device);
     if (img && !img->pending_sync) {
-	img->pending_sync = 1;
-	PostThreadMessage(thread_id, DISPLAY_SYNC, 0, (LPARAM)img);
+        img->pending_sync = 1;
+        PostThreadMessage(thread_id, DISPLAY_SYNC, 0, (LPARAM)img);
     }
     return 0;
 }
@@ -246,23 +244,23 @@ int display_page(void *handle, void *device, int copies, int flush)
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_page(0x%x, 0x%x, copies=%d, flush=%d)\n", 
-	handle, device, copies, flush);
+    fprintf(stdout, "display_page(0x%x, 0x%x, copies=%d, flush=%d)\n",
+        handle, device, copies, flush);
 #endif
     img = image_find(handle, device);
     if (img)
-	PostThreadMessage(thread_id, DISPLAY_PAGE, 0, (LPARAM)img);
+        PostThreadMessage(thread_id, DISPLAY_PAGE, 0, (LPARAM)img);
     return 0;
 }
 
-int display_update(void *handle, void *device, 
+int display_update(void *handle, void *device,
     int x, int y, int w, int h)
 {
     IMAGE *img;
     img = image_find(handle, device);
     if (img && !img->pending_update && !img->pending_sync) {
-	img->pending_update = 1;
-	PostThreadMessage(thread_id, DISPLAY_UPDATE, 0, (LPARAM)img);
+        img->pending_update = 1;
+        PostThreadMessage(thread_id, DISPLAY_UPDATE, 0, (LPARAM)img);
     }
     return 0;
 }
@@ -276,8 +274,8 @@ void *display_memalloc(void *handle, void *device, unsigned long size)
 {
     void *mem;
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_memalloc(0x%x 0x%x %d)\n", 
-	handle, device, size);
+    fprintf(stdout, "display_memalloc(0x%x 0x%x %d)\n",
+        handle, device, size);
 #endif
     mem = malloc(size);
 #ifdef DISPLAY_DEBUG
@@ -289,23 +287,23 @@ void *display_memalloc(void *handle, void *device, unsigned long size)
 int display_memfree(void *handle, void *device, void *mem)
 {
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_memfree(0x%x, 0x%x, 0x%x)\n", 
-	handle, device, mem);
+    fprintf(stdout, "display_memfree(0x%x, 0x%x, 0x%x)\n",
+        handle, device, mem);
 #endif
     free(mem);
     return 0;
 }
 #endif
 
-int display_separation(void *handle, void *device, 
+int display_separation(void *handle, void *device,
    int comp_num, const char *name,
    unsigned short c, unsigned short m,
    unsigned short y, unsigned short k)
 {
     IMAGE *img;
 #ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n", 
-	handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
+    fprintf(stdout, "display_separation(0x%x, 0x%x, %d '%s' %d,%d,%d,%d)\n",
+        handle, device, comp_num, name, (int)c, (int)m, (int)y, (int)k);
 #endif
     img = image_find(handle, device);
     if (img)
@@ -313,8 +311,7 @@ int display_separation(void *handle, void *device,
     return 0;
 }
 
-
-display_callback display = { 
+display_callback display = {
     sizeof(display_callback),
     DISPLAY_VERSION_MAJOR,
     DISPLAY_VERSION_MINOR,
@@ -340,10 +337,9 @@ display_callback display = {
  * device
  */
 
-
 /*********************************************************************/
 
-/* Our 'main' routine sets up the separate thread to look after the 
+/* Our 'main' routine sets up the separate thread to look after the
  * display window, and inserts the relevant defaults for the display device.
  * If the user specifies a different device, or different parameters to
  * the display device, the later ones should take precedence.
@@ -363,46 +359,46 @@ int main(int argc, char *argv[])
     memset(buf, 0, sizeof(buf));
 
     if (_beginthread(winthread, 65535, NULL) == -1) {
-	wprintf(L"GUI thread creation failed\n");
+        wprintf(L"GUI thread creation failed\n");
     }
     else {
-	int n = 30;
-	/* wait for thread to start */
-	Sleep(0);
-	while (n && (hthread == INVALID_HANDLE_VALUE)) {
-	    n--;
-	    Sleep(100);
+        int n = 30;
+        /* wait for thread to start */
+        Sleep(0);
+        while (n && (hthread == INVALID_HANDLE_VALUE)) {
+            n--;
+            Sleep(100);
         }
-	while (n && (PostThreadMessage(thread_id, WM_USER, 0, 0) == 0)) {
-	    n--;
-	    Sleep(100);
-	}
-	if (n == 0)
-	    wprintf(L"Can't post message to GUI thread\n");
+        while (n && (PostThreadMessage(thread_id, WM_USER, 0, 0) == 0)) {
+            n--;
+            Sleep(100);
+        }
+        if (n == 0)
+            wprintf(L"Can't post message to GUI thread\n");
     }
 
-    {   int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | 
-		DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-	HDC hdc = GetDC(NULL);	/* get hdc for desktop */
-	int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
-	sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
+    {   int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
+                DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
+        HDC hdc = GetDC(NULL);	/* get hdc for desktop */
+        int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
+        sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
-	if (depth == 32)
- 	    format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST | 
-		DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-	else if (depth == 16)
- 	    format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | 
-		DISPLAY_DEPTH_16 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST |
-		DISPLAY_NATIVE_555;
-	else if (depth > 8)
- 	    format = DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE | 
-		DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-	else if (depth >= 8)
- 	    format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | 
-		DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
-	else if (depth >= 4)
- 	    format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE | 
-		DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
+        if (depth == 32)
+            format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST |
+                DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
+        else if (depth == 16)
+            format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
+                DISPLAY_DEPTH_16 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST |
+                DISPLAY_NATIVE_555;
+        else if (depth > 8)
+            format = DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE |
+                DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
+        else if (depth >= 8)
+            format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
+                DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
+        else if (depth >= 4)
+            format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
+                DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
     nargc = argc + 2;
@@ -417,24 +413,22 @@ int main(int argc, char *argv[])
     free(nargv);
 
     /* close other thread */
-    quitnow = TRUE; 
+    quitnow = TRUE;
     PostThreadMessage(thread_id, WM_QUIT, 0, (LPARAM)0);
     Sleep(0);
 
     exit_status = 0;
     switch (code) {
-	case 0:
-	case e_Info:
-	case e_Quit:
-	    break;
-	case e_Fatal:
-	    exit_status = 1;
-	    break;
-	default:
-	    exit_status = 255;
+        case 0:
+        case e_Info:
+        case e_Quit:
+            break;
+        case e_Fatal:
+            exit_status = 1;
+            break;
+        default:
+            exit_status = 255;
     }
-
 
     return exit_status;
 }
-

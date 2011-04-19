@@ -41,75 +41,75 @@ typedef struct {
 /* callbacks, lots of callbacks */
 
 typedef int IjsBeginJobCb (void *begin_cb_data,
-			   IjsServerCtx *ctx,
-			   IjsJobId job_id);
+                           IjsServerCtx *ctx,
+                           IjsJobId job_id);
 
 typedef int IjsEndJobCb (void *end_cb_data,
-			 IjsServerCtx *ctx,
-			 IjsJobId job_id);
+                         IjsServerCtx *ctx,
+                         IjsJobId job_id);
 
 typedef int IjsQueryStatusCb (void *status_cb_data,
-			      IjsServerCtx *ctx,
-			      IjsJobId job_id);
+                              IjsServerCtx *ctx,
+                              IjsJobId job_id);
 
 typedef int IjsListParamsCb (void *list_cb_data,
-			     IjsServerCtx *ctx,
-			     IjsJobId job_id,
-			     char *val_buf,
-			     int val_size);
+                             IjsServerCtx *ctx,
+                             IjsJobId job_id,
+                             char *val_buf,
+                             int val_size);
 
 typedef int IjsEnumParamCb (void *enum_cb_data,
-			    IjsServerCtx *ctx,
-			    IjsJobId job_id,
-			    const char *key,
-			    char *val_buf,
-			    int val_size);
+                            IjsServerCtx *ctx,
+                            IjsJobId job_id,
+                            const char *key,
+                            char *val_buf,
+                            int val_size);
 
 typedef int IjsSetParamCb (void *set_cb_data,
-			   IjsServerCtx *ctx,
-			   IjsJobId job_id,
-			   const char *key,
-			   const char *value,
-			   int value_size);
+                           IjsServerCtx *ctx,
+                           IjsJobId job_id,
+                           const char *key,
+                           const char *value,
+                           int value_size);
 
 typedef int IjsGetParamCb (void *get_cb_data,
-			   IjsServerCtx *ctx,
-			   IjsJobId job_id,
-			   const char *key,
-			   char *val_buf,
-			   int val_size);
+                           IjsServerCtx *ctx,
+                           IjsJobId job_id,
+                           const char *key,
+                           char *val_buf,
+                           int val_size);
 
 IjsServerCtx *
 ijs_server_init (void);
 
 int
 ijs_server_install_begin_cb (IjsServerCtx *ctx,
-			     IjsBeginJobCb *begin_cb, void *begin_cb_data);
+                             IjsBeginJobCb *begin_cb, void *begin_cb_data);
 
 int
 ijs_server_install_end_cb (IjsServerCtx *ctx,
-			   IjsEndJobCb *end_cb, void *end_cb_data);
+                           IjsEndJobCb *end_cb, void *end_cb_data);
 
 int
 ijs_server_install_status_cb (IjsServerCtx *ctx,
-			      IjsQueryStatusCb *status_cb,
-			      void *status_cb_data);
+                              IjsQueryStatusCb *status_cb,
+                              void *status_cb_data);
 
 int
 ijs_server_install_list_cb (IjsServerCtx *ctx,
-			    IjsListParamsCb *list_cb, void *list_cb_data);
+                            IjsListParamsCb *list_cb, void *list_cb_data);
 
 int
 ijs_server_install_enum_cb (IjsServerCtx *ctx,
-			    IjsEnumParamCb *enum_cb, void *enum_cb_data);
+                            IjsEnumParamCb *enum_cb, void *enum_cb_data);
 
 int
 ijs_server_install_set_cb (IjsServerCtx *ctx,
-			   IjsSetParamCb *set_cb, void *set_cb_data);
+                           IjsSetParamCb *set_cb, void *set_cb_data);
 
 int
 ijs_server_install_get_cb (IjsServerCtx *ctx,
-			   IjsGetParamCb *get_cb, void *get_cb_data);
+                           IjsGetParamCb *get_cb, void *get_cb_data);
 
 void
 ijs_server_done (IjsServerCtx *ctx);

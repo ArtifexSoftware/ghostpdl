@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,6 +27,5 @@ int pm_find_queue(const gs_memory_t *mem, char *queue_name, char *driver_name);
 /* Return 0 if successful, non-zero if error. */
 /* If filename is NULL, return 0 if spool queue is valid, non-zero if error */
 int pm_spool(const gs_memory_t *mem, char *filename, const char *queue);
-
 
 #endif /* gp_os2_INCLUDED */

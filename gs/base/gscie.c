@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,12 +36,12 @@
 
 /* Forward references */
 static int cie_joint_caches_init(gx_cie_joint_caches *,
-				  const gs_cie_common *,
-				  gs_cie_render *);
+                                  const gs_cie_common *,
+                                  gs_cie_render *);
 static void cie_joint_caches_complete(gx_cie_joint_caches *,
-				       const gs_cie_common *,
-				       const gs_cie_abc *,
-				       const gs_cie_render *);
+                                       const gs_cie_common *,
+                                       const gs_cie_abc *,
+                                       const gs_cie_render *);
 static void cie_cache_restrict(cie_cache_floats *, const gs_range *);
 static void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
 static void cie_matrix_init(gs_matrix3 *);
@@ -84,36 +84,36 @@ cache_is_linear(cie_linear_params_t *params, const cie_cache_floats *pcf)
     double test = origin + scale;
 
     for (i = 1; i < countof(pcf->values) - 1; ++i, test += scale)
-	if (fabs(pcf->values[i] - test) >= 0.5 / countof(pcf->values))
-	    return (params->is_linear = false);
+        if (fabs(pcf->values[i] - test) >= 0.5 / countof(pcf->values))
+            return (params->is_linear = false);
     params->origin = origin - pcf->params.base;
     params->scale =
-	diff * pcf->params.factor / (countof(pcf->values) - 1);
+        diff * pcf->params.factor / (countof(pcf->values) - 1);
     return (params->is_linear = true);
 }
 
 static void
 cache_set_linear(cie_cache_floats *pcf)
 {
-	if (pcf->params.is_identity) {
-	    if_debug1('c', "[c]is_linear(0x%lx) = true (is_identity)\n",
-		      (ulong)pcf);
-	    pcf->params.linear.is_linear = true;
-	    pcf->params.linear.origin = 0;
-	    pcf->params.linear.scale = 1;
-	} else if (cache_is_linear(&pcf->params.linear, pcf)) {
-	    if (pcf->params.linear.origin == 0 &&
-		fabs(pcf->params.linear.scale - 1) < 0.00001)
-		pcf->params.is_identity = true;
-	    if_debug4('c',
-		      "[c]is_linear(0x%lx) = true, origin = %g, scale = %g%s\n",
-		      (ulong)pcf, pcf->params.linear.origin,
-		      pcf->params.linear.scale,
-		      (pcf->params.is_identity ? " (=> is_identity)" : ""));
-	}
+        if (pcf->params.is_identity) {
+            if_debug1('c', "[c]is_linear(0x%lx) = true (is_identity)\n",
+                      (ulong)pcf);
+            pcf->params.linear.is_linear = true;
+            pcf->params.linear.origin = 0;
+            pcf->params.linear.scale = 1;
+        } else if (cache_is_linear(&pcf->params.linear, pcf)) {
+            if (pcf->params.linear.origin == 0 &&
+                fabs(pcf->params.linear.scale - 1) < 0.00001)
+                pcf->params.is_identity = true;
+            if_debug4('c',
+                      "[c]is_linear(0x%lx) = true, origin = %g, scale = %g%s\n",
+                      (ulong)pcf, pcf->params.linear.origin,
+                      pcf->params.linear.scale,
+                      (pcf->params.is_identity ? " (=> is_identity)" : ""));
+        }
 #ifdef DEBUG
-	else
-	    if_debug1('c', "[c]linear(0x%lx) = false\n", (ulong)pcf);
+        else
+            if_debug1('c', "[c]linear(0x%lx) = false\n", (ulong)pcf);
 #endif
 }
 static void
@@ -134,9 +134,9 @@ static void
 if_debug_matrix3(const char *str, const gs_matrix3 *mat)
 {
     if_debug10('c', "%s [%g %g %g] [%g %g %g] [%g %g %g]\n", str,
-	       mat->cu.u, mat->cu.v, mat->cu.w,
-	       mat->cv.u, mat->cv.v, mat->cv.w,
-	       mat->cw.u, mat->cw.v, mat->cw.w);
+               mat->cu.u, mat->cu.v, mat->cu.w,
+               mat->cv.u, mat->cv.v, mat->cv.w,
+               mat->cw.u, mat->cw.v, mat->cw.w);
 }
 #else
 #  define if_debug_vector3(str, vec) DO_NOTHING
@@ -257,7 +257,7 @@ gs_cie_cached_value(floatp in, const cie_cache_floats *pcache)
      * cache, so we need to round the index just a tiny bit.
      */
     int index =
-	(int)((in - pcache->params.base) * pcache->params.factor + 0.0001);
+        (int)((in - pcache->params.base) * pcache->params.factor + 0.0001);
 
     CIE_CLAMP_INDEX(index);
     return pcache->values[index];
@@ -323,9 +323,9 @@ static inline void
 cie_restrict(float *pv, const gs_range *range)
 {
     if (*pv <= range->rmin)
-	*pv = range->rmin;
+        *pv = range->rmin;
     else if (*pv >= range->rmax)
-	*pv = range->rmax;
+        *pv = range->rmax;
 }
 
 void
@@ -369,9 +369,9 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 /* ------ Install a CIE color space ------ */
 
 static void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
-			    const cie_cache_floats *, floatp);
+                            const cie_cache_floats *, floatp);
 static bool cie_cache_mult3(gx_cie_vector_cache3_t *,
-			     const gs_matrix3 *, floatp);
+                             const gs_matrix3 *, floatp);
 
 int
 gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
@@ -379,8 +379,8 @@ gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
     if_debug_matrix3("[c]CIE MatrixABC =", &pcie->MatrixABC);
     cie_matrix_init(&pcie->MatrixABC);
     CIE_LOAD_CACHE_BODY(pcie->caches.DecodeABC.caches, pcie->RangeABC.ranges,
-			&pcie->DecodeABC, DecodeABC_default, pcie,
-			"DecodeABC");
+                        &pcie->DecodeABC, DecodeABC_default, pcie,
+                        "DecodeABC");
     gx_cie_load_common_cache(&pcie->common, pgs);
     gs_cie_abc_complete(pcie);
     return gs_cie_cs_complete(pgs, true);
@@ -392,8 +392,8 @@ gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
     gs_cie_defg *pcie = pcs->params.defg;
 
     CIE_LOAD_CACHE_BODY(pcie->caches_defg.DecodeDEFG, pcie->RangeDEFG.ranges,
-			&pcie->DecodeDEFG, DecodeDEFG_default, pcie,
-			"DecodeDEFG");
+                        &pcie->DecodeDEFG, DecodeDEFG_default, pcie,
+                        "DecodeDEFG");
     return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
@@ -403,8 +403,8 @@ gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
     gs_cie_def *pcie = pcs->params.def;
 
     CIE_LOAD_CACHE_BODY(pcie->caches_def.DecodeDEF, pcie->RangeDEF.ranges,
-			&pcie->DecodeDEF, DecodeDEF_default, pcie,
-			"DecodeDEF");
+                        &pcie->DecodeDEF, DecodeDEF_default, pcie,
+                        "DecodeDEF");
     return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
@@ -422,13 +422,13 @@ gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
     int i;
 
     gs_cie_cache_init(&pcie->caches.DecodeA.floats.params, &lp,
-		      &pcie->RangeA, "DecodeA");
+                      &pcie->RangeA, "DecodeA");
     for (i = 0; i <= lp.N; ++i) {
-	float in = SAMPLE_LOOP_VALUE(i, lp);
+        float in = SAMPLE_LOOP_VALUE(i, lp);
 
-	pcie->caches.DecodeA.floats.values[i] = (*pcie->DecodeA)(in, pcie);
-	if_debug3('C', "[C]DecodeA[%d] = %g => %g\n",
-		  i, in, pcie->caches.DecodeA.floats.values[i]);
+        pcie->caches.DecodeA.floats.values[i] = (*pcie->DecodeA)(in, pcie);
+        if_debug3('C', "[C]DecodeA[%d] = %g => %g\n",
+                  i, in, pcie->caches.DecodeA.floats.values[i]);
     }
     gx_cie_load_common_cache(&pcie->common, pgs);
     gs_cie_a_complete(pcie);
@@ -443,8 +443,8 @@ gx_cie_load_common_cache(gs_cie_common * pcie, gs_state * pgs)
     if_debug_matrix3("[c]CIE MatrixLMN =", &pcie->MatrixLMN);
     cie_matrix_init(&pcie->MatrixLMN);
     CIE_LOAD_CACHE_BODY(pcie->caches.DecodeLMN, pcie->RangeLMN.ranges,
-			&pcie->DecodeLMN, DecodeLMN_default, pcie,
-			"DecodeLMN");
+                        &pcie->DecodeLMN, DecodeLMN_default, pcie,
+                        "DecodeLMN");
 }
 
 /* Complete loading the common caches. */
@@ -455,7 +455,7 @@ gx_cie_common_complete(gs_cie_common *pcie)
     int i;
 
     for (i = 0; i < 3; ++i)
-	cache_set_linear(&pcie->caches.DecodeLMN[i].floats);
+        cache_set_linear(&pcie->caches.DecodeLMN[i].floats);
 }
 
 /*
@@ -469,12 +469,12 @@ gs_cie_defx_scale(float *values, const gs_range *range, int dim)
     int i;
 
     for (i = 0; i < gx_cie_cache_size; ++i) {
-	float value = values[i];
+        float value = values[i];
 
-	values[i] =
-	    (value <= range->rmin ? 0 :
-	     value >= range->rmax ? dim - 1 :
-	     (value - range->rmin) * scale);
+        values[i] =
+            (value <= range->rmin ? 0 :
+             value >= range->rmax ? dim - 1 :
+             (value - range->rmin) * scale);
     }
 }
 
@@ -486,8 +486,8 @@ gs_cie_defg_complete(gs_cie_defg * pcie)
     int j;
 
     for (j = 0; j < 4; ++j)
-	gs_cie_defx_scale(pcie->caches_defg.DecodeDEFG[j].floats.values,
-			  &pcie->RangeHIJK.ranges[j], pcie->Table.dims[j]);
+        gs_cie_defx_scale(pcie->caches_defg.DecodeDEFG[j].floats.values,
+                          &pcie->RangeHIJK.ranges[j], pcie->Table.dims[j]);
     gs_cie_abc_complete((gs_cie_abc *)pcie);
 }
 
@@ -499,8 +499,8 @@ gs_cie_def_complete(gs_cie_def * pcie)
     int j;
 
     for (j = 0; j < 3; ++j)
-	gs_cie_defx_scale(pcie->caches_def.DecodeDEF[j].floats.values,
-			  &pcie->RangeHIJ.ranges[j], pcie->Table.dims[j]);
+        gs_cie_defx_scale(pcie->caches_def.DecodeDEF[j].floats.values,
+                          &pcie->RangeHIJ.ranges[j], pcie->Table.dims[j]);
     gs_cie_abc_complete((gs_cie_abc *)pcie);
 }
 
@@ -511,8 +511,8 @@ gs_cie_abc_complete(gs_cie_abc * pcie)
 {
     cache3_set_linear(&pcie->caches.DecodeABC);
     pcie->caches.skipABC =
-	cie_cache_mult3(&pcie->caches.DecodeABC, &pcie->MatrixABC,
-			CACHE_THRESHOLD);
+        cie_cache_mult3(&pcie->caches.DecodeABC, &pcie->MatrixABC,
+                        CACHE_THRESHOLD);
     gx_cie_common_complete((gs_cie_common *)pcie);
 }
 
@@ -522,8 +522,8 @@ void
 gs_cie_a_complete(gs_cie_a * pcie)
 {
     cie_cache_mult(&pcie->caches.DecodeA, &pcie->MatrixA,
-		   &pcie->caches.DecodeA.floats,
-		   CACHE_THRESHOLD);
+                   &pcie->caches.DecodeA.floats,
+                   CACHE_THRESHOLD);
     cache_set_linear(&pcie->caches.DecodeA.floats);
     gx_cie_common_complete((gs_cie_common *)pcie);
 }
@@ -538,15 +538,15 @@ typedef struct cie_cache_range_temp_s {
 } cie_cache_range_temp_t;
 static inline void
 check_interpolation_required(cie_cache_range_temp_t *pccr,
-			     cie_cached_value cur, int i, floatp threshold)
+                             cie_cached_value cur, int i, floatp threshold)
 {
     cie_cached_value prev = pccr->prev;
 
     if (cie_cached_abs(cur - prev) > threshold * min(cie_cached_abs(prev), cie_cached_abs(cur))) {
-	if (i - 1 < pccr->imin)
-	    pccr->imin = i - 1;
-	if (i > pccr->imax)
-	    pccr->imax = i;
+        if (i - 1 < pccr->imin)
+            pccr->imin = i - 1;
+        if (i > pccr->imax)
+            pccr->imax = i;
     }
     pccr->prev = cur;
 }
@@ -559,28 +559,28 @@ cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
     int i, j;
 
     for (j = 0; j < 3; ++j)
-	temp[j].imin = gx_cie_cache_size, temp[j].imax = -1;
+        temp[j].imin = gx_cie_cache_size, temp[j].imax = -1;
     temp[0].prev = pcache->vecs.values[0].u;
     temp[1].prev = pcache->vecs.values[0].v;
     temp[2].prev = pcache->vecs.values[0].w;
 
     for (i = 0; i < gx_cie_cache_size; ++i) {
-	check_interpolation_required(&temp[0], pcache->vecs.values[i].u, i,
-				     threshold);
-	check_interpolation_required(&temp[1], pcache->vecs.values[i].v, i,
-				     threshold);
-	check_interpolation_required(&temp[2], pcache->vecs.values[i].w, i,
-				     threshold);
+        check_interpolation_required(&temp[0], pcache->vecs.values[i].u, i,
+                                     threshold);
+        check_interpolation_required(&temp[1], pcache->vecs.values[i].v, i,
+                                     threshold);
+        check_interpolation_required(&temp[2], pcache->vecs.values[i].w, i,
+                                     threshold);
     }
 
     for (j = 0; j < 3; ++j) {
-	pcache->vecs.params.interpolation_ranges[j].rmin =
-	    base + (cie_cached_value)((double)temp[j].imin / factor);
-	pcache->vecs.params.interpolation_ranges[j].rmax =
-	    base + (cie_cached_value)((double)temp[j].imax / factor);
-	if_debug3('c', "[c]interpolation_ranges[%d] = %g, %g\n", j,
-		  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmin),
-		  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmax));
+        pcache->vecs.params.interpolation_ranges[j].rmin =
+            base + (cie_cached_value)((double)temp[j].imin / factor);
+        pcache->vecs.params.interpolation_ranges[j].rmax =
+            base + (cie_cached_value)((double)temp[j].imax / factor);
+        if_debug3('c', "[c]interpolation_ranges[%d] = %g, %g\n", j,
+                  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmin),
+                  cie_cached2float(pcache->vecs.params.interpolation_ranges[j].rmax));
     }
 
 }
@@ -592,7 +592,7 @@ cie_cache_set_interpolation(gx_cie_vector_cache *pcache, floatp threshold)
  */
 static void
 cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
-	       const cie_cache_floats * pcf, floatp threshold)
+               const cie_cache_floats * pcf, floatp threshold)
 {
     float u = pvec->u, v = pvec->v, w = pvec->w;
     int i;
@@ -600,14 +600,14 @@ cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
     pcache->vecs.params.base = float2cie_cached(pcf->params.base);
     pcache->vecs.params.factor = float2cie_cached(pcf->params.factor);
     pcache->vecs.params.limit =
-	float2cie_cached((gx_cie_cache_size - 1) / pcf->params.factor +
-			 pcf->params.base);
+        float2cie_cached((gx_cie_cache_size - 1) / pcf->params.factor +
+                         pcf->params.base);
     for (i = 0; i < gx_cie_cache_size; ++i) {
-	float f = pcf->values[i];
+        float f = pcf->values[i];
 
-	pcache->vecs.values[i].u = float2cie_cached(f * u);
-	pcache->vecs.values[i].v = float2cie_cached(f * v);
-	pcache->vecs.values[i].w = float2cie_cached(f * w);
+        pcache->vecs.values[i].u = float2cie_cached(f * u);
+        pcache->vecs.values[i].v = float2cie_cached(f * v);
+        pcache->vecs.values[i].w = float2cie_cached(f * w);
     }
     cie_cache_set_interpolation(pcache, threshold);
 }
@@ -623,19 +623,19 @@ cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
 
     /* Iterate over output components. */
     for (j = 0; j < 3; ++j) {
-	/* Iterate over sub-caches. */
-	cie_interpolation_range_t *p = 
-		&pvc->caches[0].vecs.params.interpolation_ranges[j];
+        /* Iterate over sub-caches. */
+        cie_interpolation_range_t *p =
+                &pvc->caches[0].vecs.params.interpolation_ranges[j];
         cie_cached_value rmin = p->rmin, rmax = p->rmax;
 
-	for (k = 1; k < 3; ++k) {
-	    p = &pvc->caches[k].vecs.params.interpolation_ranges[j];
-	    rmin = min(rmin, p->rmin), rmax = max(rmax, p->rmax);
-	}
-	pvc->interpolation_ranges[j].rmin = rmin;
-	pvc->interpolation_ranges[j].rmax = rmax;
-	if_debug3('c', "[c]Merged interpolation_ranges[%d] = %g, %g\n",
-		  j, rmin, rmax);
+        for (k = 1; k < 3; ++k) {
+            p = &pvc->caches[k].vecs.params.interpolation_ranges[j];
+            rmin = min(rmin, p->rmin), rmax = max(rmax, p->rmax);
+        }
+        pvc->interpolation_ranges[j].rmin = rmin;
+        pvc->interpolation_ranges[j].rmax = rmax;
+        if_debug3('c', "[c]Merged interpolation_ranges[%d] = %g, %g\n",
+                  j, rmin, rmax);
     }
 }
 
@@ -646,15 +646,15 @@ cie_cache3_set_interpolation(gx_cie_vector_cache3_t * pvc)
  */
 static bool
 cie_cache_mult3(gx_cie_vector_cache3_t * pvc, const gs_matrix3 * pmat,
-		floatp threshold)
+                floatp threshold)
 {
     cie_cache_mult(&pvc->caches[0], &pmat->cu, &pvc->caches[0].floats, threshold);
     cie_cache_mult(&pvc->caches[1], &pmat->cv, &pvc->caches[1].floats, threshold);
     cie_cache_mult(&pvc->caches[2], &pmat->cw, &pvc->caches[2].floats, threshold);
     cie_cache3_set_interpolation(pvc);
     return pmat->is_identity & pvc->caches[0].floats.params.is_identity &
-	pvc->caches[1].floats.params.is_identity &
-	pvc->caches[2].floats.params.is_identity;
+        pvc->caches[1].floats.params.is_identity &
+        pvc->caches[2].floats.params.is_identity;
 }
 
 /* ------ Install a rendering dictionary ------ */
@@ -668,20 +668,20 @@ gs_setcolorrendering(gs_state * pgs, gs_cie_render * pcrd)
     bool joint_ok;
 
     if (code < 0)
-	return code;
+        return code;
     if (pcrd_old != 0 && pcrd->id == pcrd_old->id)
-	return 0;		/* detect needless reselecting */
+        return 0;		/* detect needless reselecting */
     joint_ok =
-	pcrd_old != 0 &&
+        pcrd_old != 0 &&
 #define CRD_SAME(elt) !memcmp(&pcrd->elt, &pcrd_old->elt, sizeof(pcrd->elt))
-	CRD_SAME(points.WhitePoint) && CRD_SAME(points.BlackPoint) &&
-	CRD_SAME(MatrixPQR) && CRD_SAME(RangePQR) &&
-	CRD_SAME(TransformPQR);
+        CRD_SAME(points.WhitePoint) && CRD_SAME(points.BlackPoint) &&
+        CRD_SAME(MatrixPQR) && CRD_SAME(RangePQR) &&
+        CRD_SAME(TransformPQR);
 #undef CRD_SAME
     rc_assign(pgs->cie_render, pcrd, "gs_setcolorrendering");
     /* Initialize the joint caches if needed. */
     if (!joint_ok)
-	code = gs_cie_cs_complete(pgs, true);
+        code = gs_cie_cs_complete(pgs, true);
     gx_unset_dev_color(pgs);
     return code;
 }
@@ -700,12 +700,12 @@ gx_unshare_cie_caches(gs_state * pgs)
     gx_cie_joint_caches *pjc = pgs->cie_joint_caches;
 
     rc_unshare_struct(pgs->cie_joint_caches, gx_cie_joint_caches,
-		      &st_joint_caches, pgs->memory,
-		      return 0, "gx_unshare_cie_caches");
+                      &st_joint_caches, pgs->memory,
+                      return 0, "gx_unshare_cie_caches");
     if (pgs->cie_joint_caches != pjc) {
-	pjc = pgs->cie_joint_caches;
-	pjc->cspace_id = pjc->render_id = gs_no_id;
-	pjc->id_status = pjc->status = CIE_JC_STATUS_BUILT;
+        pjc = pgs->cie_joint_caches;
+        pjc->cspace_id = pjc->render_id = gs_no_id;
+        pjc->id_status = pjc->status = CIE_JC_STATUS_BUILT;
     }
     return pjc;
 }
@@ -720,7 +720,7 @@ gx_currentciecaches(gs_state * pgs)
 /* This procedure is idempotent. */
 void
 gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
-		  const gs_range * domain, client_name_t cname)
+                  const gs_range * domain, client_name_t cname)
 {
     /*
       We need to map the values in the range [domain->rmin..domain->rmax].
@@ -771,24 +771,24 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 
     /* Adjust the range if necessary. */
     if (A < 0 && B >= 0) {
-	const double X = -N * A / R;	/* know X > 0 */
-	/* Choose K to minimize range expansion. */
-	const int K = (int)(A + B < 0 ? floor(X) : ceil(X)); /* know 0 < K < N */
-	const double Ca = -A / K, Cb = B / (N - K); /* know Ca, Cb > 0 */
-	double C = max(Ca, Cb);	/* know C > 0 */
-	const int M = ARCH_FLOAT_MANTISSA_BITS - CEIL_LOG2_N;
-	int cexp;
-	const double cfrac = frexp(C, &cexp);
+        const double X = -N * A / R;	/* know X > 0 */
+        /* Choose K to minimize range expansion. */
+        const int K = (int)(A + B < 0 ? floor(X) : ceil(X)); /* know 0 < K < N */
+        const double Ca = -A / K, Cb = B / (N - K); /* know Ca, Cb > 0 */
+        double C = max(Ca, Cb);	/* know C > 0 */
+        const int M = ARCH_FLOAT_MANTISSA_BITS - CEIL_LOG2_N;
+        int cexp;
+        const double cfrac = frexp(C, &cexp);
 
-	if_debug4('c', "[c]adjusting cache_init(%8g, %8g), X = %8g, K = %d:\n",
-		  A, B, X, K);
-	/* Round C to no more than M significant bits.  See above. */
-	C = ldexp(ceil(ldexp(cfrac, M)), cexp - M);
-	/* Finally, compute A' and B'. */
-	A = -K * C;
-	B = (N - K) * C;
-	if_debug2('c', "[c]  => %8g, %8g\n", A, B);
-	R = B - A;
+        if_debug4('c', "[c]adjusting cache_init(%8g, %8g), X = %8g, K = %d:\n",
+                  A, B, X, K);
+        /* Round C to no more than M significant bits.  See above. */
+        C = ldexp(ceil(ldexp(cfrac, M)), cexp - M);
+        /* Finally, compute A' and B'. */
+        A = -K * C;
+        B = (N - K) * C;
+        if_debug2('c', "[c]  => %8g, %8g\n", A, B);
+        R = B - A;
     }
     delta = R / N;
 #ifdef CIE_CACHE_INTERPOLATE
@@ -804,8 +804,8 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
      */
     pcache->factor = (any_abs(delta) < 1e-30 ? 1.0 : N / R);
     if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
-	      (const char *)cname, (ulong) pcache,
-	      pcache->base, pcache->factor);
+              (const char *)cname, (ulong) pcache,
+              pcache->base, pcache->factor);
     pslp->A = A;
     pslp->B = B;
 #undef N
@@ -820,14 +820,14 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
  * procedure values.  This procedure is idempotent.
  */
 static void cie_transform_range3(const gs_range3 *, const gs_matrix3 *,
-				  gs_range3 *);
+                                  gs_range3 *);
 int
 gs_cie_render_init(gs_cie_render * pcrd)
 {
     gs_matrix3 PQR_inverse;
 
     if (pcrd->status >= CIE_RENDER_STATUS_INITED)
-	return 0;		/* init already done */
+        return 0;		/* init already done */
     if_debug_matrix3("[c]CRD MatrixLMN =", &pcrd->MatrixLMN);
     cie_matrix_init(&pcrd->MatrixLMN);
     if_debug_matrix3("[c]CRD MatrixABC =", &pcrd->MatrixABC);
@@ -836,11 +836,11 @@ gs_cie_render_init(gs_cie_render * pcrd)
     cie_matrix_init(&pcrd->MatrixPQR);
     cie_invert3(&pcrd->MatrixPQR, &PQR_inverse);
     cie_matrix_mult3(&pcrd->MatrixLMN, &PQR_inverse,
-		     &pcrd->MatrixPQR_inverse_LMN);
+                     &pcrd->MatrixPQR_inverse_LMN);
     cie_transform_range3(&pcrd->RangePQR, &pcrd->MatrixPQR_inverse_LMN,
-			 &pcrd->DomainLMN);
+                         &pcrd->DomainLMN);
     cie_transform_range3(&pcrd->RangeLMN, &pcrd->MatrixABC,
-			 &pcrd->DomainABC);
+                         &pcrd->DomainABC);
     cie_mult3(&pcrd->points.WhitePoint, &pcrd->MatrixPQR, &pcrd->wdpqr);
     cie_mult3(&pcrd->points.BlackPoint, &pcrd->MatrixPQR, &pcrd->bdpqr);
     pcrd->status = CIE_RENDER_STATUS_INITED;
@@ -857,51 +857,51 @@ gs_cie_render_sample(gs_cie_render * pcrd)
     int code;
 
     if (pcrd->status >= CIE_RENDER_STATUS_SAMPLED)
-	return 0;		/* sampling already done */
+        return 0;		/* sampling already done */
     code = gs_cie_render_init(pcrd);
     if (code < 0)
-	return code;
+        return code;
     CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeLMN.caches, pcrd->DomainLMN.ranges,
-			&pcrd->EncodeLMN, Encode_default, pcrd, "EncodeLMN");
+                        &pcrd->EncodeLMN, Encode_default, pcrd, "EncodeLMN");
     cache3_set_linear(&pcrd->caches.EncodeLMN);
     CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeABC, pcrd->DomainABC.ranges,
-			&pcrd->EncodeABC, Encode_default, pcrd, "EncodeABC");
+                        &pcrd->EncodeABC, Encode_default, pcrd, "EncodeABC");
     if (pcrd->RenderTable.lookup.table != 0) {
-	int i, j, m = pcrd->RenderTable.lookup.m;
-	gs_sample_loop_params_t lp;
-	bool is_identity = true;
+        int i, j, m = pcrd->RenderTable.lookup.m;
+        gs_sample_loop_params_t lp;
+        bool is_identity = true;
 
-	for (j = 0; j < m; j++) {
-	    gs_cie_cache_init(&pcrd->caches.RenderTableT[j].fracs.params,
-			      &lp, &Range3_default.ranges[0],
-			      "RenderTableT");
-	    is_identity &= pcrd->RenderTable.T.procs[j] ==
-		RenderTableT_default.procs[j];
-	}
-	pcrd->caches.RenderTableT_is_identity = is_identity;
-	/*
-	 * Unfortunately, we defined the first argument of the RenderTable
-	 * T procedures as being a byte, limiting the number of distinct
-	 * cache entries to 256 rather than gx_cie_cache_size.
-	 * We confine this decision to this loop, rather than propagating
-	 * it to the procedures that use the cached data, so that we can
-	 * change it more easily at some future time.
-	 */
-	for (i = 0; i < gx_cie_cache_size; i++) {
+        for (j = 0; j < m; j++) {
+            gs_cie_cache_init(&pcrd->caches.RenderTableT[j].fracs.params,
+                              &lp, &Range3_default.ranges[0],
+                              "RenderTableT");
+            is_identity &= pcrd->RenderTable.T.procs[j] ==
+                RenderTableT_default.procs[j];
+        }
+        pcrd->caches.RenderTableT_is_identity = is_identity;
+        /*
+         * Unfortunately, we defined the first argument of the RenderTable
+         * T procedures as being a byte, limiting the number of distinct
+         * cache entries to 256 rather than gx_cie_cache_size.
+         * We confine this decision to this loop, rather than propagating
+         * it to the procedures that use the cached data, so that we can
+         * change it more easily at some future time.
+         */
+        for (i = 0; i < gx_cie_cache_size; i++) {
 #if gx_cie_log2_cache_size >= 8
-	    byte value = i >> (gx_cie_log2_cache_size - 8);
+            byte value = i >> (gx_cie_log2_cache_size - 8);
 #else
-	    byte value = (i << (8 - gx_cie_log2_cache_size)) +
-		(i >> (gx_cie_log2_cache_size * 2 - 8));
+            byte value = (i << (8 - gx_cie_log2_cache_size)) +
+                (i >> (gx_cie_log2_cache_size * 2 - 8));
 #endif
-	    for (j = 0; j < m; j++) {
-		pcrd->caches.RenderTableT[j].fracs.values[i] =
-		    (*pcrd->RenderTable.T.procs[j])(value, pcrd);
-		if_debug3('C', "[C]RenderTableT[%d,%d] = %g\n",
-			  i, j,
-			  frac2float(pcrd->caches.RenderTableT[j].fracs.values[i]));
-	    }
-	}
+            for (j = 0; j < m; j++) {
+                pcrd->caches.RenderTableT[j].fracs.values[i] =
+                    (*pcrd->RenderTable.T.procs[j])(value, pcrd);
+                if_debug3('C', "[C]RenderTableT[%d,%d] = %g\n",
+                          i, j,
+                          frac2float(pcrd->caches.RenderTableT[j].fracs.values[i]));
+            }
+        }
     }
     pcrd->status = CIE_RENDER_STATUS_SAMPLED;
     return 0;
@@ -910,7 +910,7 @@ gs_cie_render_sample(gs_cie_render * pcrd)
 /* Transform a set of ranges. */
 static void
 cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
-		    gs_range * out)
+                    gs_range * out)
 {
     float umin = mu * in->ranges[0].rmin, umax = mu * in->ranges[0].rmax;
     float vmin = mv * in->ranges[1].rmin, vmax = mv * in->ranges[1].rmax;
@@ -918,24 +918,24 @@ cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
     float temp;
 
     if (umin > umax)
-	temp = umin, umin = umax, umax = temp;
+        temp = umin, umin = umax, umax = temp;
     if (vmin > vmax)
-	temp = vmin, vmin = vmax, vmax = temp;
+        temp = vmin, vmin = vmax, vmax = temp;
     if (wmin > wmax)
-	temp = wmin, wmin = wmax, wmax = temp;
+        temp = wmin, wmin = wmax, wmax = temp;
     out->rmin = umin + vmin + wmin;
     out->rmax = umax + vmax + wmax;
 }
 static void
 cie_transform_range3(const gs_range3 * in, const gs_matrix3 * mat,
-		     gs_range3 * out)
+                     gs_range3 * out)
 {
     cie_transform_range(in, mat->cu.u, mat->cv.u, mat->cw.u,
-			&out->ranges[0]);
+                        &out->ranges[0]);
     cie_transform_range(in, mat->cu.v, mat->cv.v, mat->cw.v,
-			&out->ranges[1]);
+                        &out->ranges[1]);
     cie_transform_range(in, mat->cu.w, mat->cv.w, mat->cw.w,
-			&out->ranges[2]);
+                        &out->ranges[2]);
 }
 
 /*
@@ -949,10 +949,10 @@ gs_cie_render_complete(gs_cie_render * pcrd)
     int code;
 
     if (pcrd->status >= CIE_RENDER_STATUS_COMPLETED)
-	return 0;		/* completion already done */
+        return 0;		/* completion already done */
     code = gs_cie_render_sample(pcrd);
     if (code < 0)
-	return code;
+        return code;
     /*
      * Since range restriction happens immediately after
      * the cache lookup, we can save a step by restricting
@@ -964,63 +964,63 @@ gs_cie_render_complete(gs_cie_render * pcrd)
      */
     pcrd->MatrixABCEncode = pcrd->MatrixABC;
     {
-	int c;
-	double f;
+        int c;
+        double f;
 
-	for (c = 0; c < 3; c++) {
-	    gx_cie_float_fixed_cache *pcache = &pcrd->caches.EncodeABC[c];
+        for (c = 0; c < 3; c++) {
+            gx_cie_float_fixed_cache *pcache = &pcrd->caches.EncodeABC[c];
 
-	    cie_cache_restrict(&pcrd->caches.EncodeLMN.caches[c].floats,
-			       &pcrd->RangeLMN.ranges[c]);
-	    cie_cache_restrict(&pcrd->caches.EncodeABC[c].floats,
-			       &pcrd->RangeABC.ranges[c]);
-	    if (pcrd->RenderTable.lookup.table == 0) {
-		cie_cache_restrict(&pcache->floats,
-				   &Range3_default.ranges[0]);
-		gs_cie_cache_to_fracs(&pcache->floats, &pcache->fixeds.fracs);
-		pcache->fixeds.fracs.params.is_identity = false;
-	    } else {
-		int i;
-		int n = pcrd->RenderTable.lookup.dims[c];
+            cie_cache_restrict(&pcrd->caches.EncodeLMN.caches[c].floats,
+                               &pcrd->RangeLMN.ranges[c]);
+            cie_cache_restrict(&pcrd->caches.EncodeABC[c].floats,
+                               &pcrd->RangeABC.ranges[c]);
+            if (pcrd->RenderTable.lookup.table == 0) {
+                cie_cache_restrict(&pcache->floats,
+                                   &Range3_default.ranges[0]);
+                gs_cie_cache_to_fracs(&pcache->floats, &pcache->fixeds.fracs);
+                pcache->fixeds.fracs.params.is_identity = false;
+            } else {
+                int i;
+                int n = pcrd->RenderTable.lookup.dims[c];
 
 #ifdef CIE_RENDER_TABLE_INTERPOLATE
 #  define SCALED_INDEX(f, n, itemp)\
      RESTRICTED_INDEX(f * (1 << _cie_interpolate_bits),\
-		      (n) << _cie_interpolate_bits, itemp)
+                      (n) << _cie_interpolate_bits, itemp)
 #else
-		int m = pcrd->RenderTable.lookup.m;
-		int k =
-		    (c == 0 ? 1 : c == 1 ?
-		     m * pcrd->RenderTable.lookup.dims[2] : m);
+                int m = pcrd->RenderTable.lookup.m;
+                int k =
+                    (c == 0 ? 1 : c == 1 ?
+                     m * pcrd->RenderTable.lookup.dims[2] : m);
 #  define SCALED_INDEX(f, n, itemp)\
      (RESTRICTED_INDEX(f, n, itemp) * k)
 #endif
-		const gs_range *prange = pcrd->RangeABC.ranges + c;
-		double scale = (n - 1) / (prange->rmax - prange->rmin);
+                const gs_range *prange = pcrd->RangeABC.ranges + c;
+                double scale = (n - 1) / (prange->rmax - prange->rmin);
 
-		for (i = 0; i < gx_cie_cache_size; ++i) {
-		    float v =
-			(pcache->floats.values[i] - prange->rmin) * scale
+                for (i = 0; i < gx_cie_cache_size; ++i) {
+                    float v =
+                        (pcache->floats.values[i] - prange->rmin) * scale
 #ifndef CIE_RENDER_TABLE_INTERPOLATE
-			+ 0.5
+                        + 0.5
 #endif
-			;
-		    int itemp;
+                        ;
+                    int itemp;
 
-		    if_debug5('c',
-			      "[c]cache[%d][%d] = %g => %g => %d\n",
-			      c, i, pcache->floats.values[i], v,
-			      SCALED_INDEX(v, n, itemp));
-		    pcache->fixeds.ints.values[i] =
-			SCALED_INDEX(v, n, itemp);
-		}
-		pcache->fixeds.ints.params = pcache->floats.params;
-		pcache->fixeds.ints.params.is_identity = false;
+                    if_debug5('c',
+                              "[c]cache[%d][%d] = %g => %g => %d\n",
+                              c, i, pcache->floats.values[i], v,
+                              SCALED_INDEX(v, n, itemp));
+                    pcache->fixeds.ints.values[i] =
+                        SCALED_INDEX(v, n, itemp);
+                }
+                pcache->fixeds.ints.params = pcache->floats.params;
+                pcache->fixeds.ints.params.is_identity = false;
 #undef SCALED_INDEX
-	    }
-	}
-	/* Fold the scaling of the EncodeABC cache index */
-	/* into MatrixABC. */
+            }
+        }
+        /* Fold the scaling of the EncodeABC cache index */
+        /* into MatrixABC. */
 #define MABC(i, t)\
   f = pcrd->caches.EncodeABC[i].floats.params.factor;\
   pcrd->MatrixABCEncode.cu.t *= f;\
@@ -1028,14 +1028,14 @@ gs_cie_render_complete(gs_cie_render * pcrd)
   pcrd->MatrixABCEncode.cw.t *= f;\
   pcrd->EncodeABC_base[i] =\
     float2cie_cached(pcrd->caches.EncodeABC[i].floats.params.base * f)
-	MABC(0, u);
-	MABC(1, v);
-	MABC(2, w);
+        MABC(0, u);
+        MABC(1, v);
+        MABC(2, w);
 #undef MABC
-	pcrd->MatrixABCEncode.is_identity = 0;
+        pcrd->MatrixABCEncode.is_identity = 0;
     }
     cie_cache_mult3(&pcrd->caches.EncodeLMN, &pcrd->MatrixABCEncode,
-		    CACHE_THRESHOLD);
+                    CACHE_THRESHOLD);
     pcrd->status = CIE_RENDER_STATUS_COMPLETED;
     return 0;
 }
@@ -1047,12 +1047,12 @@ cie_cache_restrict(cie_cache_floats * pcache, const gs_range * prange)
     int i;
 
     for (i = 0; i < gx_cie_cache_size; i++) {
-	float v = pcache->values[i];
+        float v = pcache->values[i];
 
-	if (v < prange->rmin)
-	    pcache->values[i] = prange->rmin;
-	else if (v > prange->rmax)
-	    pcache->values[i] = prange->rmax;
+        if (v < prange->rmin)
+            pcache->values[i] = prange->rmin;
+        else if (v > prange->rmax)
+            pcache->values[i] = prange->rmax;
     }
 }
 
@@ -1066,7 +1066,7 @@ gs_cie_cache_to_fracs(const cie_cache_floats *pfloats, cie_cache_fracs *pfracs)
     /* Loop from bottom to top so that we don't */
     /* overwrite elements before they're used. */
     for (i = 0; i < gx_cie_cache_size; ++i)
-	pfracs->values[i] = float2frac(pfloats->values[i]);
+        pfracs->values[i] = float2frac(pfloats->values[i]);
     pfracs->params = pfloats->params;
 }
 
@@ -1082,18 +1082,18 @@ cie_cs_common_abc(const gs_color_space *pcs_orig, const gs_cie_abc **ppabc)
     *ppabc = 0;
     do {
         switch (pcs->type->index) {
-	case gs_color_space_index_CIEDEF:
-	    *ppabc = (const gs_cie_abc *)pcs->params.def;
-	    return &pcs->params.def->common;
-	case gs_color_space_index_CIEDEFG:
-	    *ppabc = (const gs_cie_abc *)pcs->params.defg;
-	    return &pcs->params.defg->common;
-	case gs_color_space_index_CIEABC:
-	    *ppabc = pcs->params.abc;
-	    return &pcs->params.abc->common;
-	case gs_color_space_index_CIEA:
-	    return &pcs->params.a->common;
-	default:
+        case gs_color_space_index_CIEDEF:
+            *ppabc = (const gs_cie_abc *)pcs->params.def;
+            return &pcs->params.def->common;
+        case gs_color_space_index_CIEDEFG:
+            *ppabc = (const gs_cie_abc *)pcs->params.defg;
+            return &pcs->params.defg->common;
+        case gs_color_space_index_CIEABC:
+            *ppabc = pcs->params.abc;
+            return &pcs->params.abc->common;
+        case gs_color_space_index_CIEA:
+            return &pcs->params.a->common;
+        default:
             pcs = gs_cspace_base_space(pcs);
             break;
         }
@@ -1120,7 +1120,7 @@ gs_cie_cs_complete(gs_state * pgs, bool init)
     gx_cie_joint_caches *pjc = gx_unshare_cie_caches(pgs);
 
     if (pjc == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     pjc->status = (init ? CIE_JC_STATUS_BUILT : CIE_JC_STATUS_INITED);
     return 0;
 }
@@ -1134,24 +1134,24 @@ gs_cie_jc_complete(const gs_imager_state *pis, const gs_color_space *pcs)
     gx_cie_joint_caches *pjc = pis->cie_joint_caches;
 
     if (pjc->cspace_id == pcs->id &&
-	pjc->render_id == pcrd->id)
-	pjc->status = pjc->id_status;
+        pjc->render_id == pcrd->id)
+        pjc->status = pjc->id_status;
     switch (pjc->status) {
     case CIE_JC_STATUS_BUILT: {
-	int code = cie_joint_caches_init(pjc, common, pcrd);
+        int code = cie_joint_caches_init(pjc, common, pcrd);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
     }
-	/* falls through */
+        /* falls through */
     case CIE_JC_STATUS_INITED:
-	cie_joint_caches_complete(pjc, common, pabc, pcrd);
-	pjc->cspace_id = pcs->id;
-	pjc->render_id = pcrd->id;
-	pjc->id_status = pjc->status = CIE_JC_STATUS_COMPLETED;
-	/* falls through */
+        cie_joint_caches_complete(pjc, common, pabc, pcrd);
+        pjc->cspace_id = pcs->id;
+        pjc->render_id = pcrd->id;
+        pjc->id_status = pjc->status = CIE_JC_STATUS_COMPLETED;
+        /* falls through */
     case CIE_JC_STATUS_COMPLETED:
-	break;
+        break;
     }
     return 0;
 }
@@ -1160,10 +1160,10 @@ gs_cie_jc_complete(const gs_imager_state *pis, const gs_color_space *pcs)
  * Compute the source and destination WhitePoint and BlackPoint for
  * the TransformPQR procedure.
  */
-int 
+int
 gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
-			 const gs_cie_common * pcie,
-			 const gs_cie_render * pcrd)
+                         const gs_cie_common * pcie,
+                         const gs_cie_render * pcrd)
 {
     gs_cie_wbsd *pwbsd = &pjc->points_sd;
 
@@ -1184,8 +1184,8 @@ gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
  */
 static int
 cie_joint_caches_init(gx_cie_joint_caches * pjc,
-		      const gs_cie_common * pcie,
-		      gs_cie_render * pcrd)
+                      const gs_cie_common * pcie,
+                      gs_cie_render * pcrd)
 {
     bool is_identity;
     int j;
@@ -1196,27 +1196,27 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
      * ****** WRONG ******
      */
     if (pcrd->TransformPQR.proc == TransformPQR_from_cache.proc)
-	return 0;
+        return 0;
     is_identity = pcrd->TransformPQR.proc == TransformPQR_default.proc;
     for (j = 0; j < 3; j++) {
-	int i;
-	gs_sample_loop_params_t lp;
+        int i;
+        gs_sample_loop_params_t lp;
 
-	gs_cie_cache_init(&pjc->TransformPQR.caches[j].floats.params, &lp,
-			  &pcrd->RangePQR.ranges[j], "TransformPQR");
-	for (i = 0; i <= lp.N; ++i) {
-	    float in = SAMPLE_LOOP_VALUE(i, lp);
-	    float out;
-	    int code = (*pcrd->TransformPQR.proc)(j, in, &pjc->points_sd,
-						  pcrd, &out);
+        gs_cie_cache_init(&pjc->TransformPQR.caches[j].floats.params, &lp,
+                          &pcrd->RangePQR.ranges[j], "TransformPQR");
+        for (i = 0; i <= lp.N; ++i) {
+            float in = SAMPLE_LOOP_VALUE(i, lp);
+            float out;
+            int code = (*pcrd->TransformPQR.proc)(j, in, &pjc->points_sd,
+                                                  pcrd, &out);
 
-	    if (code < 0)
-		return code;
-	    pjc->TransformPQR.caches[j].floats.values[i] = out;
-	    if_debug4('C', "[C]TransformPQR[%d,%d] = %g => %g\n",
-		      j, i, in, out);
-	}
-	pjc->TransformPQR.caches[j].floats.params.is_identity = is_identity;
+            if (code < 0)
+                return code;
+            pjc->TransformPQR.caches[j].floats.values[i] = out;
+            if_debug4('C', "[C]TransformPQR[%d,%d] = %g => %g\n",
+                      j, i, in, out);
+        }
+        pjc->TransformPQR.caches[j].floats.params.is_identity = is_identity;
     }
     return 0;
 }
@@ -1227,9 +1227,9 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
  */
 static void
 cie_joint_caches_complete(gx_cie_joint_caches * pjc,
-			  const gs_cie_common * pcie,
-			  const gs_cie_abc * pabc /* NULL if CIEA */,
-			  const gs_cie_render * pcrd)
+                          const gs_cie_common * pcie,
+                          const gs_cie_abc * pabc /* NULL if CIEA */,
+                          const gs_cie_render * pcrd)
 {
     gs_matrix3 mat3, mat2;
     gs_matrix3 MatrixLMN_PQR;
@@ -1250,102 +1250,102 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
      * A project for another day....
      */
 
-	/* Step 4 */
+        /* Step 4 */
 
 #ifdef OPTIMIZE_CIE_MAPPING
     if (pcrd->caches.EncodeLMN.caches[0].floats.params.is_identity &&
-	pcrd->caches.EncodeLMN.caches[1].floats.params.is_identity &&
-	pcrd->caches.EncodeLMN.caches[2].floats.params.is_identity
-	) {
-	/* Fold step 4 into step 3. */
-	if_debug0('c', "[c]EncodeLMN is identity, folding MatrixABC(Encode) into MatrixPQR'+LMN.\n");
-	cie_matrix_mult3(&pcrd->MatrixABCEncode, &pcrd->MatrixPQR_inverse_LMN,
-			 &mat3);
-	pjc->skipEncodeLMN = true;
+        pcrd->caches.EncodeLMN.caches[1].floats.params.is_identity &&
+        pcrd->caches.EncodeLMN.caches[2].floats.params.is_identity
+        ) {
+        /* Fold step 4 into step 3. */
+        if_debug0('c', "[c]EncodeLMN is identity, folding MatrixABC(Encode) into MatrixPQR'+LMN.\n");
+        cie_matrix_mult3(&pcrd->MatrixABCEncode, &pcrd->MatrixPQR_inverse_LMN,
+                         &mat3);
+        pjc->skipEncodeLMN = true;
     } else
 #endif /* OPTIMIZE_CIE_MAPPING */
     {
-	if_debug0('c', "[c]EncodeLMN is not identity.\n");
-	mat3 = pcrd->MatrixPQR_inverse_LMN;
-	pjc->skipEncodeLMN = false;
+        if_debug0('c', "[c]EncodeLMN is not identity.\n");
+        mat3 = pcrd->MatrixPQR_inverse_LMN;
+        pjc->skipEncodeLMN = false;
     }
 
-	/* Step 3 */
+        /* Step 3 */
 
     cache3_set_linear(&pjc->TransformPQR);
     cie_matrix_mult3(&pcrd->MatrixPQR, &pcie->MatrixLMN,
-		     &MatrixLMN_PQR);
+                     &MatrixLMN_PQR);
 
 #ifdef OPTIMIZE_CIE_MAPPING
     if (pjc->TransformPQR.caches[0].floats.params.is_identity &
-	pjc->TransformPQR.caches[1].floats.params.is_identity &
-	pjc->TransformPQR.caches[2].floats.params.is_identity
-	) {
-	/* Fold step 3 into step 2. */
-	if_debug0('c', "[c]TransformPQR is identity, folding MatrixPQR'+LMN into MatrixLMN+PQR.\n");
-	cie_matrix_mult3(&mat3, &MatrixLMN_PQR, &mat2);
-	pjc->skipPQR = true;
+        pjc->TransformPQR.caches[1].floats.params.is_identity &
+        pjc->TransformPQR.caches[2].floats.params.is_identity
+        ) {
+        /* Fold step 3 into step 2. */
+        if_debug0('c', "[c]TransformPQR is identity, folding MatrixPQR'+LMN into MatrixLMN+PQR.\n");
+        cie_matrix_mult3(&mat3, &MatrixLMN_PQR, &mat2);
+        pjc->skipPQR = true;
     } else
 #endif /* OPTIMIZE_CIE_MAPPING */
     {
-	if_debug0('c', "[c]TransformPQR is not identity.\n");
-	mat2 = MatrixLMN_PQR;
-	for (j = 0; j < 3; j++) {
-	    cie_cache_restrict(&pjc->TransformPQR.caches[j].floats,
-			       &pcrd->RangePQR.ranges[j]);
-	}
-	cie_cache_mult3(&pjc->TransformPQR, &mat3, CACHE_THRESHOLD);
-	pjc->skipPQR = false;
+        if_debug0('c', "[c]TransformPQR is not identity.\n");
+        mat2 = MatrixLMN_PQR;
+        for (j = 0; j < 3; j++) {
+            cie_cache_restrict(&pjc->TransformPQR.caches[j].floats,
+                               &pcrd->RangePQR.ranges[j]);
+        }
+        cie_cache_mult3(&pjc->TransformPQR, &mat3, CACHE_THRESHOLD);
+        pjc->skipPQR = false;
     }
 
-	/* Steps 2 & 1 */
+        /* Steps 2 & 1 */
 
 #ifdef OPTIMIZE_CIE_MAPPING
     if (pcie->caches.DecodeLMN[0].floats.params.is_identity &
-	pcie->caches.DecodeLMN[1].floats.params.is_identity &
-	pcie->caches.DecodeLMN[2].floats.params.is_identity
-	) {
-	if_debug0('c', "[c]DecodeLMN is identity, folding MatrixLMN+PQR into MatrixABC.\n");
-	if (!pabc) {
-	    pjc->skipDecodeLMN = mat2.is_identity;
-	    pjc->skipDecodeABC = false;
-	    if (!pjc->skipDecodeLMN) {
-		for (j = 0; j < 3; j++) {
-		    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
-				   &pcie->caches.DecodeLMN[j].floats,
-				   CACHE_THRESHOLD);
-		}
-		cie_cache3_set_interpolation(&pjc->DecodeLMN);
-	    }
-	} else {
-	    /*
-	     * Fold step 2 into step 1.  This is a little different because
-	     * the data for step 1 are in the color space structure.
-	     */
-	    gs_matrix3 mat1;
+        pcie->caches.DecodeLMN[1].floats.params.is_identity &
+        pcie->caches.DecodeLMN[2].floats.params.is_identity
+        ) {
+        if_debug0('c', "[c]DecodeLMN is identity, folding MatrixLMN+PQR into MatrixABC.\n");
+        if (!pabc) {
+            pjc->skipDecodeLMN = mat2.is_identity;
+            pjc->skipDecodeABC = false;
+            if (!pjc->skipDecodeLMN) {
+                for (j = 0; j < 3; j++) {
+                    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+                                   &pcie->caches.DecodeLMN[j].floats,
+                                   CACHE_THRESHOLD);
+                }
+                cie_cache3_set_interpolation(&pjc->DecodeLMN);
+            }
+        } else {
+            /*
+             * Fold step 2 into step 1.  This is a little different because
+             * the data for step 1 are in the color space structure.
+             */
+            gs_matrix3 mat1;
 
-	    cie_matrix_mult3(&mat2, &pabc->MatrixABC, &mat1);
-	    for (j = 0; j < 3; j++) {
-		cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat1.cu + j,
-			       &pabc->caches.DecodeABC.caches[j].floats,
-			       CACHE_THRESHOLD);
-	    }
-	    cie_cache3_set_interpolation(&pjc->DecodeLMN);
-	    pjc->skipDecodeLMN = false;
-	    pjc->skipDecodeABC = true;
-	}
+            cie_matrix_mult3(&mat2, &pabc->MatrixABC, &mat1);
+            for (j = 0; j < 3; j++) {
+                cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat1.cu + j,
+                               &pabc->caches.DecodeABC.caches[j].floats,
+                               CACHE_THRESHOLD);
+            }
+            cie_cache3_set_interpolation(&pjc->DecodeLMN);
+            pjc->skipDecodeLMN = false;
+            pjc->skipDecodeABC = true;
+        }
     } else
 #endif /* OPTIMIZE_CIE_MAPPING */
     {
-	if_debug0('c', "[c]DecodeLMN is not identity.\n");
-	for (j = 0; j < 3; j++) {
-	    cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
-			   &pcie->caches.DecodeLMN[j].floats,
-			   CACHE_THRESHOLD);
-	}
-	cie_cache3_set_interpolation(&pjc->DecodeLMN);
-	pjc->skipDecodeLMN = false;
-	pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
+        if_debug0('c', "[c]DecodeLMN is not identity.\n");
+        for (j = 0; j < 3; j++) {
+            cie_cache_mult(&pjc->DecodeLMN.caches[j], &mat2.cu + j,
+                           &pcie->caches.DecodeLMN[j].floats,
+                           CACHE_THRESHOLD);
+        }
+        cie_cache3_set_interpolation(&pjc->DecodeLMN);
+        pjc->skipDecodeLMN = false;
+        pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
     }
 
 }
@@ -1357,30 +1357,30 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
  */
 int
 gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
-		    gs_memory_t *mem)
+                    gs_memory_t *mem)
 {
     /*
      * In addition to the imager state itself, we need the joint caches.
      */
     gs_imager_state *pis =
-	gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
-			"gx_cie_to_xyz_alloc(imager state)");
+        gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
+                        "gx_cie_to_xyz_alloc(imager state)");
     gx_cie_joint_caches *pjc;
     const gs_cie_abc *pabc;
     const gs_cie_common *pcie = cie_cs_common_abc(pcs, &pabc);
     int j;
 
     if (pis == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     memset(pis, 0, sizeof(*pis));	/* mostly paranoia */
     pis->memory = mem;
     gs_imager_state_initialize(pis, mem);
 
     pjc = gs_alloc_struct(mem, gx_cie_joint_caches, &st_joint_caches,
-			  "gx_cie_to_xyz_free(joint caches)");
+                          "gx_cie_to_xyz_free(joint caches)");
     if (pjc == 0) {
-	gs_free_object(mem, pis, "gx_cie_to_xyz_alloc(imager state)");
-	return_error(gs_error_VMerror);
+        gs_free_object(mem, pis, "gx_cie_to_xyz_alloc(imager state)");
+        return_error(gs_error_VMerror);
     }
 
     /*
@@ -1388,9 +1388,9 @@ gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
      * Don't bother with any optimizations.
      */
     for (j = 0; j < 3; j++) {
-	cie_cache_mult(&pjc->DecodeLMN.caches[j], &pcie->MatrixLMN.cu + j,
-		       &pcie->caches.DecodeLMN[j].floats,
-		       CACHE_THRESHOLD);
+        cie_cache_mult(&pjc->DecodeLMN.caches[j], &pcie->MatrixLMN.cu + j,
+                       &pcie->caches.DecodeLMN[j].floats,
+                       CACHE_THRESHOLD);
     }
     cie_cache3_set_interpolation(&pjc->DecodeLMN);
     pjc->skipDecodeLMN = false;
@@ -1410,7 +1410,7 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
     gs_memory_t *mem = pis->memory;
 
     gs_free_object(mem, pis->cie_joint_caches,
-		   "gx_cie_to_xyz_free(joint caches)");
+                   "gx_cie_to_xyz_free(joint caches)");
     /* Free up the ICC objects if created */
     if (pis->icc_link_cache != NULL) {
         rc_decrement(pis->icc_link_cache,"gx_cie_to_xyz_free");
@@ -1430,16 +1430,16 @@ gx_cie_to_xyz_free(gs_imager_state *pis)
 /* Note that we are computing M * V where v is a column vector. */
 void
 cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
-	  gs_vector3 * out)
+          gs_vector3 * out)
 {
     if_debug_vector3("[c]mult", in);
     if_debug_matrix3("	*", mat);
     {
-	float u = in->u, v = in->v, w = in->w;
+        float u = in->u, v = in->v, w = in->w;
 
-	out->u = (u * mat->cu.u) + (v * mat->cv.u) + (w * mat->cw.u);
-	out->v = (u * mat->cu.v) + (v * mat->cv.v) + (w * mat->cw.v);
-	out->w = (u * mat->cu.w) + (v * mat->cv.w) + (w * mat->cw.w);
+        out->u = (u * mat->cu.u) + (v * mat->cv.u) + (w * mat->cw.u);
+        out->v = (u * mat->cu.v) + (v * mat->cv.v) + (w * mat->cw.v);
+        out->w = (u * mat->cu.w) + (v * mat->cv.w) + (w * mat->cw.w);
     }
     if_debug_vector3("	=", out);
 }
@@ -1462,7 +1462,7 @@ cie_matrix_mult3(const gs_matrix3 *ma, const gs_matrix3 *mb, gs_matrix3 *mc)
     cie_matrix_init(mp);
     if_debug_matrix3("             =", mp);
     if (mp != mc)
-	*mc = *mp;
+        *mc = *mp;
 }
 
 /*
@@ -1535,29 +1535,29 @@ static void
 cie_matrix_init(register gs_matrix3 * mat)
 {
     mat->is_identity =
-	mat->cu.u == 1.0 && is_fzero2(mat->cu.v, mat->cu.w) &&
-	mat->cv.v == 1.0 && is_fzero2(mat->cv.u, mat->cv.w) &&
-	mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
+        mat->cu.u == 1.0 && is_fzero2(mat->cu.v, mat->cu.w) &&
+        mat->cv.v == 1.0 && is_fzero2(mat->cv.u, mat->cv.w) &&
+        mat->cw.w == 1.0 && is_fzero2(mat->cw.u, mat->cw.v);
 }
 
-bool 
+bool
 gx_color_space_needs_cie_caches(const gs_color_space * pcs)
 {
     switch (pcs->type->index) {
-    	case gs_color_space_index_CIEDEFG:
-    	case gs_color_space_index_CIEDEF:
-    	case gs_color_space_index_CIEABC:
-    	case gs_color_space_index_CIEA:
-	    return true;
-    	case gs_color_space_index_ICC:
+        case gs_color_space_index_CIEDEFG:
+        case gs_color_space_index_CIEDEF:
+        case gs_color_space_index_CIEABC:
+        case gs_color_space_index_CIEA:
+            return true;
+        case gs_color_space_index_ICC:
             return false;
-	case gs_color_space_index_DevicePixel:
-    	case gs_color_space_index_DeviceN:
-    	case gs_color_space_index_Separation:
-    	case gs_color_space_index_Indexed:
-    	case gs_color_space_index_Pattern:
-	    return gx_color_space_needs_cie_caches(pcs->base_space);
-	default:
-	    return false;
+        case gs_color_space_index_DevicePixel:
+        case gs_color_space_index_DeviceN:
+        case gs_color_space_index_Separation:
+        case gs_color_space_index_Indexed:
+        case gs_color_space_index_Pattern:
+            return gx_color_space_needs_cie_caches(pcs->base_space);
+        default:
+            return false;
     }
 }

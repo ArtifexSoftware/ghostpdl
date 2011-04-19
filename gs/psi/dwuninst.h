@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,7 +16,6 @@
 #ifndef dwuninst_INCLUDED
 #  define dwuninst_INCLUDED
 
-
 // Definitions for Ghostscript installer
 
 #define ID_UNINSTGS	1
@@ -28,6 +27,5 @@
 #define IDC_PRESSOK	103
 #define IDC_T1		111
 #define IDC_T2		112
-
 
 #endif /* dwuninst_INCLUDED */

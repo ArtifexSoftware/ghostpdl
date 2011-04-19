@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,7 +16,6 @@
 #include "stdpre.h"
 #include "gstypes.h"
 #include "gsserial.h"
-
 
 /*
  * Procedures for converint between integers and a variable-length,
@@ -93,7 +92,6 @@ enc_s_put_int(int ival, byte * ptr)
     }
 }
 
-
 /*
  * Decode an integer string for a signed or unsigned integer. Note that
  * two forms of this procedure are provide, to allow both const and non-
@@ -110,7 +108,7 @@ enc_u_get_uint(uint * pval, const byte * ptr)
         shift += enc_u_shift;
     }
     *pval = uval | (tmp_val << shift);
-    
+
     return ptr;
 }
 
@@ -160,7 +158,6 @@ enc_s_get_int_nc(int * pval, byte * ptr)
 
 #include <stdio.h>
 #include <string.h>
-
 
 /*
  * Encoding and decoding of integers is verified using a round-trip process,
@@ -336,7 +333,6 @@ check_s_vals(int ival)
         } while ((diff <<= 1) < abs_val);
     }
 }
-
 
 int
 main(void)

@@ -43,21 +43,21 @@ static const char
 #define fit_to_octet(value)	((value) < 0? 0: (value) > 255? 255: (value))
 
 #define FS_assign()				\
-	new_value = *to + correction;		\
-	if (new_value < 0) {			\
-	  *to = 0;				\
-	  remaining_error += new_value;		\
-	}					\
-	else if (255 < new_value) {		\
-	  *to = 255;				\
-	  remaining_error += new_value - 255;	\
-	}					\
-	else *to = new_value;
+        new_value = *to + correction;		\
+        if (new_value < 0) {			\
+          *to = 0;				\
+          remaining_error += new_value;		\
+        }					\
+        else if (255 < new_value) {		\
+          *to = 255;				\
+          remaining_error += new_value - 255;	\
+        }					\
+        else *to = new_value;
 
 #define error_propagation_Gray()				\
   if (error != 0) {						\
     remaining_error = error;					\
-								\
+                                                                \
     /* 7/16 of the error goes to the right */			\
     correction = (7*error)/16;					\
     remaining_error -= correction;				\
@@ -65,11 +65,11 @@ static const char
       to = from + 1;						\
       FS_assign()						\
       if (pixel == pixels - 1 && *to > 0) {			\
-	pixels++;						\
-	line->length++;						\
+        pixels++;						\
+        line->length++;						\
       }								\
     }								\
-								\
+                                                                \
     /* 3/16 of the error goes to the left and below */		\
     correction = (3*error)/16;					\
     remaining_error -= correction;				\
@@ -78,14 +78,14 @@ static const char
       FS_assign()						\
       if (next_line->length < pixel && *to > 0) next_line->length = pixel; \
     }								\
-								\
+                                                                \
     /* 5/16 of the error goes below */				\
     correction = (5*error)/16;					\
     remaining_error -= correction;				\
     to = next_line->str + pixel;				\
     FS_assign()							\
     if (next_line->length <= pixel && *to > 0) next_line->length = pixel + 1; \
-								\
+                                                                \
     /* The remainder (about 1/16 of the error) is added to the right and */ \
     /* below. */						\
     if (pixel < max_pixel) {					\
@@ -93,7 +93,7 @@ static const char
       new_value = *to + remaining_error;			\
       *to = fit_to_octet(new_value);				\
       if (next_line->length < pixel + 2 && *to > 0)		\
-	next_line->length = pixel + 2;				\
+        next_line->length = pixel + 2;				\
     }								\
   }
 
@@ -103,7 +103,7 @@ static const char
 #define error_propagation_colour()				\
   if (error != 0) {						\
     remaining_error = error;					\
-								\
+                                                                \
     /* 7/16 of the error goes to the right */			\
     correction = (7*error)/16;					\
     remaining_error -= correction;				\
@@ -111,11 +111,11 @@ static const char
       to = from + OCTETS_PER_PIXEL;				\
       FS_assign()						\
       if (pixel == pixels - 1 && *to > 0) {			\
-	pixels++;						\
-	line->length += OCTETS_PER_PIXEL;			\
+        pixels++;						\
+        line->length += OCTETS_PER_PIXEL;			\
       }								\
     }								\
-								\
+                                                                \
     /* 3/16 of the error goes to the left and below */		\
     correction = (3*error)/16;					\
     remaining_error -= correction;				\
@@ -123,9 +123,9 @@ static const char
       to = next_line->str + (pixel - 1)*OCTETS_PER_PIXEL + colorant; \
       FS_assign()						\
       if (next_line->length < pixel*OCTETS_PER_PIXEL && *to > 0) \
-	next_line->length = pixel*OCTETS_PER_PIXEL;		\
+        next_line->length = pixel*OCTETS_PER_PIXEL;		\
     }								\
-								\
+                                                                \
     /* 5/16 of the error goes below */				\
     correction = (5*error)/16;					\
     remaining_error -= correction;				\
@@ -133,7 +133,7 @@ static const char
     FS_assign()							\
     if (next_line->length <= pixel*OCTETS_PER_PIXEL && *to > 0)	\
       next_line->length = (pixel + 1)*OCTETS_PER_PIXEL;		\
-								\
+                                                                \
     /* The remainder (about 1/16 of the error) is added to the right and */ \
     /* below. */						\
     if (pixel < max_pixel) {					\
@@ -141,7 +141,7 @@ static const char
       new_value = *to + remaining_error;			\
       *to = fit_to_octet(new_value);				\
       if (next_line->length < (pixel + 2)*OCTETS_PER_PIXEL && *to > 0) \
-	next_line->length = (pixel + 2)*OCTETS_PER_PIXEL;	\
+        next_line->length = (pixel + 2)*OCTETS_PER_PIXEL;	\
     }								\
   }
 
@@ -188,7 +188,7 @@ static void split_Gray_2(eprn_OctetString *line, eprn_OctetString *next_line,
     approx = *from >> 7;	/* take the most significant bit */
     error = *from - 255*approx;
      /* The sign of 'error' is chosen such that 'error' is positive if
-	colorant intensity has to be added to the picture. */
+        colorant intensity has to be added to the picture. */
 
     /* Insert the approximation into the output plane */
     *ptr = (*ptr << 1) | approx;
@@ -251,7 +251,7 @@ static void split_Gray(eprn_OctetString *line, eprn_OctetString *next_line,
     approx = *from/divisor;
     error = *from - (255*approx)/max_level;
      /* The sign of 'error' is chosen such that 'error' is positive if
-	colorant intensity has to be added to the picture. */
+        colorant intensity has to be added to the picture. */
 
     /* Distribute the approximation over the bit planes */
     for (plane = 0; plane < planes; plane++) {
@@ -330,7 +330,7 @@ static void split_colour_CMYK_2(eprn_OctetString *line,
       approx = *from >> 7;
       error = *from - 255*approx;
        /* The sign of 'error' is chosen such that 'error' is positive if
-	  colorant intensity has to be added to the picture. */
+          colorant intensity has to be added to the picture. */
 
       /* Insert the approximation in the bit plane */
       plane = BLACK_INDEX - colorant;
@@ -365,11 +365,11 @@ static void split_colour_at_most_2(eprn_OctetString *line,
   const int
     last_colorant =
       colour_model == eprn_DeviceCMY_plus_K || colour_model == eprn_DeviceCMYK?
-	BLACK_INDEX: 2,
+        BLACK_INDEX: 2,
     max_pixel = max_octets/OCTETS_PER_PIXEL - 1,
     planes =
       colour_model == eprn_DeviceCMY_plus_K || colour_model == eprn_DeviceCMYK?
-	4: 3;
+        4: 3;
   int
     colorant,
     correction,
@@ -405,21 +405,21 @@ static void split_colour_at_most_2(eprn_OctetString *line,
       approx[colorant] = *from >> 7;
       error = *from - 255*approx[colorant];
        /* The sign of 'error' is chosen such that 'error' is positive if
-	  colorant intensity has to be added to the picture. */
+          colorant intensity has to be added to the picture. */
 
       error_propagation_colour()
     }
 
     /* Determine the black component for CMY+K */
     if (colour_model == eprn_DeviceCMY_plus_K &&
-	approx[0] == approx[1] && approx[1] == approx[2] && approx[0] > 0) {
+        approx[0] == approx[1] && approx[1] == approx[2] && approx[0] > 0) {
       approx[BLACK_INDEX] = approx[0];
       approx[0] = approx[1] = approx[2] = 0;
     }
 
     /* Distribute the approximation over the bit planes */
     for (colorant = last_colorant, plane = 0; colorant >= 0;
-	colorant--, plane++) {
+        colorant--, plane++) {
       *ptr[plane] = (*ptr[plane] << 1) | approx[colorant];
     }
 
@@ -507,19 +507,19 @@ static void split_colour(eprn_OctetString *line, eprn_OctetString *next_line,
       approx[colorant] = *from/divisor[colorant];
       error = *from - (255*approx[colorant])/max_level[colorant];
        /* The sign of 'error' is chosen such that 'error' is positive if
-	  colorant intensity has to be added to the picture. */
+          colorant intensity has to be added to the picture. */
 
       error_propagation_colour()
     }
 
     /* Determine the black component for CMY+K */
     if (colour_model == eprn_DeviceCMY_plus_K &&
-	approx[0] == approx[1] && approx[1] == approx[2] && approx[0] > 0) {
+        approx[0] == approx[1] && approx[1] == approx[2] && approx[0] > 0) {
       int value = approx[0]*(black_levels - 1);
       if (value % (non_black_levels - 1) == 0) {
-	/* Black does have a level at the same intensity as the CMY levels */
-	approx[BLACK_INDEX] = value/(non_black_levels - 1);
-	approx[0] = approx[1] = approx[2] = 0;
+        /* Black does have a level at the same intensity as the CMY levels */
+        approx[BLACK_INDEX] = value/(non_black_levels - 1);
+        approx[0] = approx[1] = approx[2] = 0;
       }
     }
 
@@ -527,9 +527,9 @@ static void split_colour(eprn_OctetString *line, eprn_OctetString *next_line,
     plane = 0;
     for (colorant = last_colorant; colorant >= 0; colorant--) {
       while (plane < next_plane[colorant]) {
-	*ptr[plane] = (*ptr[plane] << 1) | approx[colorant] & 0x01;
-	approx[colorant] >>= 1;
-	plane++;
+        *ptr[plane] = (*ptr[plane] << 1) | approx[colorant] & 0x01;
+        approx[colorant] >>= 1;
+        plane++;
       }
     }
 
@@ -582,10 +582,10 @@ void eprn_split_FS(eprn_OctetString *line, eprn_OctetString *next_line,
   else {
     if (black_levels <= 2 && non_black_levels == 2)
       split_colour_at_most_2(line, next_line, max_octets, colour_model,
-	bitplanes);
+        bitplanes);
     else
       split_colour(line, next_line, max_octets, colour_model, black_levels,
-	non_black_levels, bitplanes);
+        non_black_levels, bitplanes);
   }
 
   return;

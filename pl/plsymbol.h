@@ -39,7 +39,7 @@ typedef enum {
  * the mapping function defined in pl/plvocab.h to map to and from msl
  * and unicode. There are 3 mutually exclusive possibilities: (1) a
  * unicode symbol set that can be mapped to msl, (2) an msl symbol set
- * that can be mapped to unicode and (3) neither (1) or (2).  
+ * that can be mapped to unicode and (3) neither (1) or (2).
  */
 
 #define PLGV_M2U_MAPPING 1
@@ -82,7 +82,7 @@ extern const int pl_built_in_symbol_map_count;
    if the symbol set in null.  We cheat here and use a ulong instead
    of gs_char to avoid pulling in all the gs_char graphics library
    dependencies. */
-ulong pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool is_resident_font, 
+ulong pl_map_symbol(const pl_symbol_map_t *psm, uint chr, bool is_resident_font,
                     bool is_MSL, bool is_590);
 
 /* supported pcl and xl wide encodings - 4 Asian encodings and an an

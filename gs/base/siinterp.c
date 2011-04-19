@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,9 +46,9 @@ typedef struct stream_IIEncode_state_s {
     uint src_size;		/* bytes per row of input */
     uint dst_size;		/* bytes per row of output */
     void /*PixelOut */ *prev;	/* previous row of input data in output fmt, */
-				/* [WidthIn * sizeofPixelOut] */
+                                /* [WidthIn * sizeofPixelOut] */
     void /*PixelOut */ *cur;	/* current row of input data in output fmt, */
-				/* [WidthIn * sizeofPixelOut] */
+                                /* [WidthIn * sizeofPixelOut] */
     scale_case_t scale_case;
     /* The following are updated dynamically. */
     int dst_x;
@@ -75,9 +75,9 @@ s_IIEncode_init(stream_state * st)
     gs_memory_t *mem = ss->memory;
 
     ss->sizeofPixelIn =
-	ss->params.BitsPerComponentIn / 8 * ss->params.Colors;
+        ss->params.BitsPerComponentIn / 8 * ss->params.Colors;
     ss->sizeofPixelOut =
-	ss->params.BitsPerComponentOut / 8 * ss->params.Colors;
+        ss->params.BitsPerComponentOut / 8 * ss->params.Colors;
     ss->src_size = ss->sizeofPixelIn * ss->params.WidthIn;
     ss->dst_size = ss->sizeofPixelOut * ss->params.WidthOut;
 
@@ -91,27 +91,27 @@ s_IIEncode_init(stream_state * st)
 
     /* Allocate buffers for 2 rows of input data. */
     ss->prev = gs_alloc_byte_array(mem, ss->params.WidthIn,
-				   ss->sizeofPixelOut, "IIEncode prev");
+                                   ss->sizeofPixelOut, "IIEncode prev");
     ss->cur = gs_alloc_byte_array(mem, ss->params.WidthIn,
-				  ss->sizeofPixelOut, "IIEncode cur");
+                                  ss->sizeofPixelOut, "IIEncode cur");
     if (ss->prev == 0 || ss->cur == 0) {
-	s_IIEncode_release(st);
-	return ERRC;	/****** WRONG ******/
+        s_IIEncode_release(st);
+        return ERRC;	/****** WRONG ******/
     }
 
     /* Determine the case for the inner loop. */
     ss->scale_case =
-	(ss->params.BitsPerComponentIn == 8 ?
-	 (ss->params.BitsPerComponentOut == 8 ?
-	  (ss->params.MaxValueIn == ss->params.MaxValueOut ?
-	   SCALE_SAME : SCALE_8_8) :
-	  (ss->params.MaxValueIn == 255 && ss->params.MaxValueOut == frac_1 ?
-	   (ss->params.Colors == 3 ? SCALE_8_16_BYTE2FRAC_3 :
-	    SCALE_8_16_BYTE2FRAC) :
-	   SCALE_8_16_GENERAL)) :
-	 (ss->params.BitsPerComponentOut == 8 ? SCALE_16_8 :
-	  ss->params.MaxValueIn == ss->params.MaxValueOut ?
-	  SCALE_SAME : SCALE_16_16));
+        (ss->params.BitsPerComponentIn == 8 ?
+         (ss->params.BitsPerComponentOut == 8 ?
+          (ss->params.MaxValueIn == ss->params.MaxValueOut ?
+           SCALE_SAME : SCALE_8_8) :
+          (ss->params.MaxValueIn == 255 && ss->params.MaxValueOut == frac_1 ?
+           (ss->params.Colors == 3 ? SCALE_8_16_BYTE2FRAC_3 :
+            SCALE_8_16_BYTE2FRAC) :
+           SCALE_8_16_GENERAL)) :
+         (ss->params.BitsPerComponentOut == 8 ? SCALE_16_8 :
+          ss->params.MaxValueIn == ss->params.MaxValueOut ?
+          SCALE_SAME : SCALE_16_16));
 
     return 0;
 }
@@ -119,11 +119,11 @@ s_IIEncode_init(stream_state * st)
 /* Process a buffer. */
 static int
 s_IIEncode_process(stream_state * st, stream_cursor_read * pr,
-		   stream_cursor_write * pw, bool last)
+                   stream_cursor_write * pw, bool last)
 {
     stream_IIEncode_state *const ss = (stream_IIEncode_state *) st;
     const scale_case_t scale_case = ss->scale_case +
-	ALIGNMENT_MOD(pw->ptr, 2); /* ptr odd => buffer is aligned */
+        ALIGNMENT_MOD(pw->ptr, 2); /* ptr odd => buffer is aligned */
     byte *out = pw->ptr + 1;
     /****** WRONG, requires an entire output pixel ******/
     byte *limit = pw->limit + 1 - ss->sizeofPixelOut;
@@ -132,97 +132,97 @@ s_IIEncode_process(stream_state * st, stream_cursor_read * pr,
 
 top:
     if (dda_current(ss->dda_y) > ss->dst_y) {
-	/* Deliver some or all of the current scaled row. */
-	while (ss->dst_x < ss->params.WidthOut) {
-	    uint sx = dda_current(ss->dda_x) * ss->sizeofPixelIn;
-	    const byte *in = (const byte *)ss->cur + sx;
-	    int c;
+        /* Deliver some or all of the current scaled row. */
+        while (ss->dst_x < ss->params.WidthOut) {
+            uint sx = dda_current(ss->dda_x) * ss->sizeofPixelIn;
+            const byte *in = (const byte *)ss->cur + sx;
+            int c;
 
-	    if (out > limit) {
-		pw->ptr = out - 1;
-		return 1;
-	    }
-	    switch (scale_case) {
-	    case SCALE_SAME:
-	    case SCALE_SAME_ALIGNED:
-		memcpy(out, in, ss->sizeofPixelIn);
-		out += ss->sizeofPixelIn;
-		break;
-	    case SCALE_8_8:
-	    case SCALE_8_8_ALIGNED:
-		for (c = ss->params.Colors; --c >= 0; ++in, ++out)
-		    *out = (byte)(*in * ss->params.MaxValueOut /
-				  ss->params.MaxValueIn);
-		break;
-	    case SCALE_8_16_BYTE2FRAC:
-	    case SCALE_8_16_BYTE2FRAC_ALIGNED: /* could be optimized */
-	    case SCALE_8_16_BYTE2FRAC_3: /* could be optimized */
-		for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
-		    uint b = *in;
-		    uint value = byte2frac(b);
+            if (out > limit) {
+                pw->ptr = out - 1;
+                return 1;
+            }
+            switch (scale_case) {
+            case SCALE_SAME:
+            case SCALE_SAME_ALIGNED:
+                memcpy(out, in, ss->sizeofPixelIn);
+                out += ss->sizeofPixelIn;
+                break;
+            case SCALE_8_8:
+            case SCALE_8_8_ALIGNED:
+                for (c = ss->params.Colors; --c >= 0; ++in, ++out)
+                    *out = (byte)(*in * ss->params.MaxValueOut /
+                                  ss->params.MaxValueIn);
+                break;
+            case SCALE_8_16_BYTE2FRAC:
+            case SCALE_8_16_BYTE2FRAC_ALIGNED: /* could be optimized */
+            case SCALE_8_16_BYTE2FRAC_3: /* could be optimized */
+                for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
+                    uint b = *in;
+                    uint value = byte2frac(b);
 
-		    out[0] = (byte)(value >> 8), out[1] = (byte)value;
-		}
-		break;
-	    case SCALE_8_16_BYTE2FRAC_3_ALIGNED:
-		{
-		    uint b = in[0];
+                    out[0] = (byte)(value >> 8), out[1] = (byte)value;
+                }
+                break;
+            case SCALE_8_16_BYTE2FRAC_3_ALIGNED:
+                {
+                    uint b = in[0];
 
-		    ((bits16 *)out)[0] = byte2frac(b);
-		    b = in[1];
-		    ((bits16 *)out)[1] = byte2frac(b);
-		    b = in[2];
-		    ((bits16 *)out)[2] = byte2frac(b);
-		}
-		out += 6;
-		break;
-	    case SCALE_8_16_GENERAL:
-	    case SCALE_8_16_GENERAL_ALIGNED: /* could be optimized */
-		for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
-		    uint value = *in * ss->params.MaxValueOut /
-			ss->params.MaxValueIn;
+                    ((bits16 *)out)[0] = byte2frac(b);
+                    b = in[1];
+                    ((bits16 *)out)[1] = byte2frac(b);
+                    b = in[2];
+                    ((bits16 *)out)[2] = byte2frac(b);
+                }
+                out += 6;
+                break;
+            case SCALE_8_16_GENERAL:
+            case SCALE_8_16_GENERAL_ALIGNED: /* could be optimized */
+                for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
+                    uint value = *in * ss->params.MaxValueOut /
+                        ss->params.MaxValueIn;
 
-		    out[0] = (byte)(value >> 8), out[1] = (byte)value;
-		}
-		break;
-	    case SCALE_16_8:
-	    case SCALE_16_8_ALIGNED:
-		for (c = ss->params.Colors; --c >= 0; in += 2, ++out)
-		    *out = (byte)(*(const bits16 *)in *
-				  ss->params.MaxValueOut /
-				  ss->params.MaxValueIn);
-		break;
-	    case SCALE_16_16:
-	    case SCALE_16_16_ALIGNED: /* could be optimized */
-		for (c = ss->params.Colors; --c >= 0; in += 2, out += 2) {
-		    uint value = *(const bits16 *)in *
-			ss->params.MaxValueOut / ss->params.MaxValueIn;
+                    out[0] = (byte)(value >> 8), out[1] = (byte)value;
+                }
+                break;
+            case SCALE_16_8:
+            case SCALE_16_8_ALIGNED:
+                for (c = ss->params.Colors; --c >= 0; in += 2, ++out)
+                    *out = (byte)(*(const bits16 *)in *
+                                  ss->params.MaxValueOut /
+                                  ss->params.MaxValueIn);
+                break;
+            case SCALE_16_16:
+            case SCALE_16_16_ALIGNED: /* could be optimized */
+                for (c = ss->params.Colors; --c >= 0; in += 2, out += 2) {
+                    uint value = *(const bits16 *)in *
+                        ss->params.MaxValueOut / ss->params.MaxValueIn;
 
-		    out[0] = (byte)(value >> 8), out[1] = (byte)value;
-		}
-	    }
-	    dda_next(ss->dda_x);
-	    ss->dst_x++;
-	}
-	ss->dst_x = 0;
-	ss->dst_y++;
-	ss->dda_x = ss->dda_x_init;
-	goto top;
+                    out[0] = (byte)(value >> 8), out[1] = (byte)value;
+                }
+            }
+            dda_next(ss->dda_x);
+            ss->dst_x++;
+        }
+        ss->dst_x = 0;
+        ss->dst_y++;
+        ss->dda_x = ss->dda_x_init;
+        goto top;
     }
     pw->ptr = out - 1;
     if (ss->dst_y >= ss->params.HeightOut)
-	return EOFC;
+        return EOFC;
 
     if (ss->src_offset < ss->src_size) {
-	uint count = min(ss->src_size - ss->src_offset, pr->limit - pr->ptr);
+        uint count = min(ss->src_size - ss->src_offset, pr->limit - pr->ptr);
 
-	if (count == 0)
-	    return 0;
-	memcpy((byte *)ss->cur + ss->src_offset, pr->ptr + 1, count);
-	ss->src_offset += count;
-	pr->ptr += count;
-	if (ss->src_offset < ss->src_size)
-	    return 0;
+        if (count == 0)
+            return 0;
+        memcpy((byte *)ss->cur + ss->src_offset, pr->ptr + 1, count);
+        ss->src_offset += count;
+        pr->ptr += count;
+        if (ss->src_offset < ss->src_size)
+            return 0;
     }
     ss->src_offset = 0;
     ss->dst_x = 0;

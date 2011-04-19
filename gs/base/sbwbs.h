@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,18 +20,18 @@
 
 /* Common framework for streams that buffer a block for processing */
 #define stream_buffered_state_common\
-	stream_state_common;\
-		/* The client may set the following before initialization, */\
-		/* or the stream may set it later. */\
-	int BlockSize;\
-		/* The init procedure sets the following, */\
-		/* if BlockSize has been set. */\
-	byte *buffer;		/* [BlockSize] */\
-		/* The following are updated dynamically. */\
-	bool filling;		/* true if filling buffer, */\
-				/* false if emptying */\
-	int bsize;		/* size of current block (<= BlockSize) */\
-	int bpos		/* current index within buffer */
+        stream_state_common;\
+                /* The client may set the following before initialization, */\
+                /* or the stream may set it later. */\
+        int BlockSize;\
+                /* The init procedure sets the following, */\
+                /* if BlockSize has been set. */\
+        byte *buffer;		/* [BlockSize] */\
+                /* The following are updated dynamically. */\
+        bool filling;		/* true if filling buffer, */\
+                                /* false if emptying */\
+        int bsize;		/* size of current block (<= BlockSize) */\
+        int bpos		/* current index within buffer */
 typedef struct stream_buffered_state_s {
     stream_buffered_state_common;
 } stream_buffered_state;

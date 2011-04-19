@@ -23,11 +23,11 @@
  * Stream-driven reading cursor
  */
 typedef struct pl_top_cursor_s {
-	stream_cursor_read         cursor;        /* cursor actually used to read */
-	FILE                       *strm;         /* stream that data comes from */
-	unsigned char              *buffer;       /* buffer to use */
+        stream_cursor_read         cursor;        /* cursor actually used to read */
+        FILE                       *strm;         /* stream that data comes from */
+        unsigned char              *buffer;       /* buffer to use */
    unsigned                   buffer_length; /* # bytes in buffer */
-	int                        status;        /* if <=0, status to report to caller */
+        int                        status;        /* if <=0, status to report to caller */
 } pl_top_cursor_t;
 
 /* Init a read cursor w/specified open stream */

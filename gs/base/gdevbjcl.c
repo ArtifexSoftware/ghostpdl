@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -105,14 +105,14 @@ bjc_put_print_method_short(stream *s, bjc_print_color_short_t color)
 }
 void
 bjc_put_print_method(stream *s, bjc_print_color_t color,
-		     bjc_print_media_t media, bjc_print_quality_t quality,
-		     bjc_black_density_t density)
+                     bjc_print_media_t media, bjc_print_quality_t quality,
+                     bjc_black_density_t density)
 {
     bjc_put_command(s, 'c', 2 + (density != 0));
     spputc(s, 0x10 | color);
     spputc(s, (media << 4) | quality);
     if (density)
-	spputc(s, density << 4);
+        spputc(s, density << 4);
 }
 
 /* Set raster resolution (ESC ( d <count> <y_res> [<x_res>]) */
@@ -120,10 +120,10 @@ void
 bjc_put_raster_resolution(stream *s, int x_resolution, int y_resolution)
 {
     if (x_resolution == y_resolution) {
-	bjc_put_command(s, 'd', 2);
+        bjc_put_command(s, 'd', 2);
     } else {
-	bjc_put_command(s, 'd', 4);
-	bjc_put_hi_lo(s, y_resolution);
+        bjc_put_command(s, 'd', 4);
+        bjc_put_hi_lo(s, y_resolution);
     }
     bjc_put_hi_lo(s, x_resolution);
 }
@@ -152,7 +152,7 @@ bjc_put_page_margins(stream *s, int length, int lm, int rm, int top)
 /* Set media supply method (ESC * l <count> <parm1> <parm2>) */
 void
 bjc_put_media_supply(stream *s, bjc_media_supply_t supply,
-		     bjc_media_type_t type)
+                     bjc_media_type_t type)
 {
     bjc_put_command(s, 'l', 2);
     spputc(s, 0x10 | supply);
@@ -162,7 +162,7 @@ bjc_put_media_supply(stream *s, bjc_media_supply_t supply,
 /* Identify ink cartridge (ESC ( m <count> <type>) */
 void
 bjc_put_identify_cartridge(stream *s,
-			   bjc_identify_cartridge_command_t command)
+                           bjc_identify_cartridge_command_t command)
 {
     bjc_put_command(s, 'm', 1);
     spputc(s, command);
@@ -171,7 +171,7 @@ bjc_put_identify_cartridge(stream *s,
 /* CMYK raster image (ESC ( A <count> <color>) */
 void
 bjc_put_cmyk_image(stream *s, bjc_cmyk_image_component_t component,
-		   const byte *data, int count)
+                   const byte *data, int count)
 {
     bjc_put_command(s, 'A', count + 1);
     spputc(s, component);
@@ -209,7 +209,7 @@ bjc_put_extended_margins(stream *s, int length, int lm, int rm, int top)
 /* Set image format (ESC ( t <count> <depth> <format> <ink>) */
 void
 bjc_put_image_format(stream *s, int depth, bjc_image_format_t format,
-			     bjc_ink_system_t ink)
+                             bjc_ink_system_t ink)
 
 {
     bjc_put_command(s, 't', 3);

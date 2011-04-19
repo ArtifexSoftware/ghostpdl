@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,6 +19,6 @@
 #include "gdevprn.h"
 
 int select_medium(gx_device_printer *pdev, const char **available,
-		  int default_index);
+                  int default_index);
 
 #endif /* gdevmeds_INCLUDED */

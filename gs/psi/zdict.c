@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,7 +31,7 @@ zdict(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     return dict_create((uint) op->value.intval, op);
 }
 
@@ -55,7 +55,7 @@ zbegin(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    if ( dsp == dstop ) { 
+    if ( dsp == dstop ) {
         int code = ref_stack_extend(&d_stack, 1);
 
         if ( code < 0 ) {
@@ -79,12 +79,12 @@ int
 zend(i_ctx_t *i_ctx_p)
 {
     if (ref_stack_count_inline(&d_stack) == min_dstack_size) {
-	/* We would underflow the d-stack. */
-	return_error(e_dictstackunderflow);
+        /* We would underflow the d-stack. */
+        return_error(e_dictstackunderflow);
     }
     while (dsp == dsbot) {
-	/* We would underflow the current block. */
-	ref_stack_pop_block(&d_stack);
+        /* We would underflow the current block. */
+        ref_stack_pop_block(&d_stack);
     }
     dsp--;
     dict_set_top();
@@ -105,33 +105,33 @@ zop_def(i_ctx_t *i_ctx_p)
 
     /* The following combines a check_op(2) with a type check. */
     switch (r_type(op1)) {
-	case t_name: {
-	    /* We can use the fast single-probe lookup here. */
-	    uint nidx = name_index(imemory, op1);
-	    uint htemp;
+        case t_name: {
+            /* We can use the fast single-probe lookup here. */
+            uint nidx = name_index(imemory, op1);
+            uint htemp;
 
-	    if_dict_find_name_by_index_top(nidx, htemp, pvslot) {
-		if (dtop_can_store(op))
-		    goto ra;
-	    }
-	    break;		/* handle all slower cases */
-	    }
-	case t_null:
-	    return_error(e_typecheck);
-	case t__invalid:
-	    return_error(e_stackunderflow);
+            if_dict_find_name_by_index_top(nidx, htemp, pvslot) {
+                if (dtop_can_store(op))
+                    goto ra;
+            }
+            break;		/* handle all slower cases */
+            }
+        case t_null:
+            return_error(e_typecheck);
+        case t__invalid:
+            return_error(e_stackunderflow);
     }
     /*
      * Combine the check for a writable top dictionary with
      * the global/local store check.  See dstack.h for details.
      */
     if (!dtop_can_store(op)) {
-	check_dict_write(*dsp);
-	/*
-	 * If the dictionary is writable, the problem must be
-	 * an invalid store.
-	 */
-	return_error(e_invalidaccess);
+        check_dict_write(*dsp);
+        /*
+         * If the dictionary is writable, the problem must be
+         * an invalid store.
+         */
+        return_error(e_invalidaccess);
     }
     /*
      * Save a level of procedure call in the common (redefinition)
@@ -139,10 +139,10 @@ zop_def(i_ctx_t *i_ctx_p)
      * in the uncommon case.
      */
     if (dict_find(dsp, op1, &pvslot) <= 0)
-	return idict_put(dsp, op1, op);
+        return idict_put(dsp, op1, op);
 ra:
     if ((pvslot->tas.type_attrs & (&i_ctx_p->memory)->test_mask) == 0)
-	alloc_save_change(idmemory, &dsp->value.pdict->values, (ref_packed *)pvslot, "dict_put(value)");
+        alloc_save_change(idmemory, &dsp->value.pdict->values, (ref_packed *)pvslot, "dict_put(value)");
     ref_assign_new_inline(pvslot,op);
 
     return 0;
@@ -153,7 +153,7 @@ zdef(i_ctx_t *i_ctx_p)
     int code = zop_def(i_ctx_p);
 
     if (code >= 0) {
-	pop(2);
+        pop(2);
     }
     return code;
 }
@@ -166,32 +166,32 @@ zload(i_ctx_t *i_ctx_p)
     ref *pvalue;
 
     switch (r_type(op)) {
-	case t_name:
-	    /* Use the fast lookup. */
-	    if ((pvalue = dict_find_name(op)) == 0)
-		return_error(e_undefined);
-	    ref_assign(op, pvalue);
-	    return 0;
-	case t_null:
-	    return_error(e_typecheck);
-	case t__invalid:
-	    return_error(e_stackunderflow);
-	default: {
-		/* Use an explicit loop. */
-		uint size = ref_stack_count(&d_stack);
-		uint i;
+        case t_name:
+            /* Use the fast lookup. */
+            if ((pvalue = dict_find_name(op)) == 0)
+                return_error(e_undefined);
+            ref_assign(op, pvalue);
+            return 0;
+        case t_null:
+            return_error(e_typecheck);
+        case t__invalid:
+            return_error(e_stackunderflow);
+        default: {
+                /* Use an explicit loop. */
+                uint size = ref_stack_count(&d_stack);
+                uint i;
 
-		for (i = 0; i < size; i++) {
-		    ref *dp = ref_stack_index(&d_stack, i);
+                for (i = 0; i < size; i++) {
+                    ref *dp = ref_stack_index(&d_stack, i);
 
-		    check_dict_read(*dp);
-		    if (dict_find(dp, op, &pvalue) > 0) {
-			ref_assign(op, pvalue);
-			return 0;
-		    }
-		}
-		return_error(e_undefined);
-	    }
+                    check_dict_read(*dp);
+                    if (dict_find(dp, op, &pvalue) > 0) {
+                        ref_assign(op, pvalue);
+                        return 0;
+                    }
+                }
+                return_error(e_undefined);
+            }
     }
 }
 
@@ -210,10 +210,10 @@ zundef(i_ctx_t *i_ctx_p)
 
     check_type(*op1, t_dictionary);
     if (i_ctx_p->in_superexec == 0)
-	check_dict_write(*op1);
+        check_dict_write(*op1);
     code = idict_undef(op1, op);
     if (code < 0 && code != e_undefined) /* ignore undefined error */
-	return code;
+        return code;
     pop(2);
     return 0;
 }
@@ -232,11 +232,11 @@ zknown(i_ctx_t *i_ctx_p)
     code = dict_find(op1, op, &pvalue);
     switch (code) {
     case e_dictfull:
-	code = 0;
+        code = 0;
     case 0: case 1:
-	break;
+        break;
     default:
-	return code;
+        return code;
     }
     make_bool(op1, code);
     pop(1);
@@ -254,23 +254,23 @@ zwhere(i_ctx_t *i_ctx_p)
     check_op(1);
     ref_stack_enum_begin(&rsenum, &d_stack);
     do {
-	const ref *const bot = rsenum.ptr;
-	const ref *pdref = bot + rsenum.size;
-	ref *pvalue;
-	int code;
+        const ref *const bot = rsenum.ptr;
+        const ref *pdref = bot + rsenum.size;
+        ref *pvalue;
+        int code;
 
-	while (pdref-- > bot) {
-	    check_dict_read(*pdref);
-	    code = dict_find(pdref, op, &pvalue);
-	    if (code < 0 && code != e_dictfull)
-		return code;
-	    if (code > 0) {
-		push(1);
-		ref_assign(op - 1, pdref);
-		make_true(op);
-		return 0;
-	    }
-	}
+        while (pdref-- > bot) {
+            check_dict_read(*pdref);
+            code = dict_find(pdref, op, &pvalue);
+            if (code < 0 && code != e_dictfull)
+                return code;
+            if (code > 0) {
+                push(1);
+                ref_assign(op - 1, pdref);
+                make_true(op);
+                return 0;
+            }
+        }
     } while (ref_stack_enum_next(&rsenum));
     make_false(op);
     return 0;
@@ -289,19 +289,19 @@ zcopy_dict(i_ctx_t *i_ctx_p)
     check_dict_read(*op1);
     check_dict_write(*op);
     if (!imemory->gs_lib_ctx->dict_auto_expand &&
-	(dict_length(op) != 0 || dict_maxlength(op) < dict_length(op1))
-	)
-	return_error(e_rangecheck);
+        (dict_length(op) != 0 || dict_maxlength(op) < dict_length(op1))
+        )
+        return_error(e_rangecheck);
     code = idict_copy(op1, op);
     if (code < 0)
-	return code;
+        return code;
     /*
      * In Level 1 systems, we must copy the access attributes too.
      * The only possible effect this can have is to make the
      * copy read-only if the original dictionary is read-only.
      */
     if (!level2_enabled)
-	r_copy_attrs(dict_access_ref(op), a_write, dict_access_ref(op1));
+        r_copy_attrs(dict_access_ref(op), a_write, dict_access_ref(op1));
     ref_assign(op1, op);
     pop(1);
     return 0;
@@ -327,7 +327,7 @@ zcountdictstack(i_ctx_t *i_ctx_p)
 
     push(1);
     if (!level2_enabled)
-	count--;		/* see dstack.h */
+        count--;		/* see dstack.h */
     make_int(op, count);
     return 0;
 }
@@ -340,15 +340,15 @@ zdictstack(i_ctx_t *i_ctx_p)
     uint count = ref_stack_count(&d_stack);
 
     if (!level2_enabled)
-	count--;		/* see dstack.h */
+        count--;		/* see dstack.h */
     if (!r_is_array(op))
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     if (r_size(op) < count)
         return_error(e_rangecheck);
-    if (!r_has_type_attrs(op, t_array, a_write)) 
+    if (!r_has_type_attrs(op, t_array, a_write))
         return_error(e_invalidaccess);
     return ref_stack_store(&d_stack, op, count, 0, 0, true, idmemory,
-			   "dictstack");
+                           "dictstack");
 }
 
 /* - cleardictstack - */
@@ -356,7 +356,7 @@ static int
 zcleardictstack(i_ctx_t *i_ctx_p)
 {
     while (zend(i_ctx_p) >= 0)
-	DO_NOTHING;
+        DO_NOTHING;
     return 0;
 }
 
@@ -373,22 +373,22 @@ zdicttomark(i_ctx_t *i_ctx_p)
     uint idx;
 
     if (count2 == 0)
-	return_error(e_unmatchedmark);
+        return_error(e_unmatchedmark);
     count2--;
     if ((count2 & 1) != 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     code = dict_create(count2 >> 1, &rdict);
     if (code < 0)
-	return code;
+        return code;
     /* << /a 1 /a 2 >> => << /a 1 >>, i.e., */
     /* we must enter the keys in top-to-bottom order. */
     for (idx = 0; idx < count2; idx += 2) {
-	code = idict_put(&rdict,
-			 ref_stack_index(&o_stack, idx + 1),
-			 ref_stack_index(&o_stack, idx));
-	if (code < 0) {		/* There's no way to free the dictionary -- too bad. */
-	    return code;
-	}
+        code = idict_put(&rdict,
+                         ref_stack_index(&o_stack, idx + 1),
+                         ref_stack_index(&o_stack, idx));
+        if (code < 0) {		/* There's no way to free the dictionary -- too bad. */
+            return code;
+        }
     }
     ref_stack_pop(&o_stack, count2);
     ref_assign(osp, &rdict);
@@ -415,10 +415,10 @@ zforcecopynew(i_ctx_t *i_ctx_p)
     /*check_dict_write(*op);*/	/* see above */
     /* This is only recognized in Level 2 mode. */
     if (!imemory->gs_lib_ctx->dict_auto_expand)
-	return_error(e_undefined);
+        return_error(e_undefined);
     code = idict_copy_new(op1, op);
     if (code < 0)
-	return code;
+        return code;
     ref_assign(op1, op);
     pop(1);
     return 0;
@@ -454,11 +454,11 @@ zknownget(i_ctx_t *i_ctx_p)
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     if (dict_find(op1, op, &pvalue) <= 0) {
-	make_false(op1);
-	pop(1);
+        make_false(op1);
+        pop(1);
     } else {
-	ref_assign(op1, pvalue);
-	make_true(op);
+        ref_assign(op1, pvalue);
+        make_true(op);
     }
     return 0;
 }
@@ -490,16 +490,16 @@ zsetmaxlength(i_ctx_t *i_ctx_p)
 
     check_type(*op1, t_dictionary);
     if (i_ctx_p->in_superexec == 0)
-	check_dict_write(*op1);
+        check_dict_write(*op1);
     check_type(*op, t_integer);
     if (op->value.intval < 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     new_size = (uint) op->value.intval;
     if (dict_length(op - 1) > new_size)
-	return_error(e_dictfull);
+        return_error(e_dictfull);
     code = idict_resize(op - 1, new_size);
     if (code >= 0)
-	pop(2);
+        pop(2);
     return code;
 }
 
@@ -523,20 +523,20 @@ const op_def zdict1_op_defs[] = {
     op_def_end(0)
 };
 const op_def zdict2_op_defs[] = {
-		/* Extensions */
+                /* Extensions */
     {"1.dicttomark", zdicttomark},
     {"2.forcecopynew", zforcecopynew},
     {"2.forceundef", zforceundef},
     {"2.knownget", zknownget},
     {"1.knownundef", zknownundef},
     {"2.setmaxlength", zsetmaxlength},
-	/*
-	 * In Level 2, >> is a synonym for .dicttomark, and undef for
-	 * .undef.  By giving the former their own entries, they will not be
-	 * "eq" to .dicttomark and .undef, but that doesn't matter, since
-	 * we're doing this only for the sake of Adobe- compatible error
-	 * stacks.
-	 */
+        /*
+         * In Level 2, >> is a synonym for .dicttomark, and undef for
+         * .undef.  By giving the former their own entries, they will not be
+         * "eq" to .dicttomark and .undef, but that doesn't matter, since
+         * we're doing this only for the sake of Adobe- compatible error
+         * stacks.
+         */
     op_def_begin_level2(),
     {"1>>", zdicttomark},
     {"2undef", zundef},

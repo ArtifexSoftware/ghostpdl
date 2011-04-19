@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,16 +43,16 @@ typedef struct equivalent_cmyk_color_params_s {
  * If possible, update the equivalent CMYK color for spot colors.
  */
 void update_spot_equivalent_cmyk_colors(gx_device * pdev,
-		const gs_state * pgs, gs_devn_params * pdevn_params,
-		equivalent_cmyk_color_params * pparams);
+                const gs_state * pgs, gs_devn_params * pdevn_params,
+                equivalent_cmyk_color_params * pparams);
 
 /*
  * Utiliy routine:  Capture equivalent color when given a modified
  * color space.
  */
 void capture_spot_equivalent_cmyk_colors(gx_device * pdev,
-		const gs_state * pgs, const gs_client_color * pcc,
-		const gs_color_space * pcs, int sep_num,
-		equivalent_cmyk_color_params * pparams);
+                const gs_state * pgs, const gs_client_color * pcc,
+                const gs_color_space * pcs, int sep_num,
+                equivalent_cmyk_color_params * pparams);
 
 #endif		/* define gsequivc_INCLUDED */

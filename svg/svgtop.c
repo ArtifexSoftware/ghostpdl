@@ -55,20 +55,20 @@ svg_imp_characteristics(const pl_interp_implementation_t *pimpl)
 {
     static pl_interp_characteristics_t svg_characteristics =
     {
-	"SVG",
-	"<?xml", /* string to recognize SVG files */
-	"Artifex",
-	SVG_VERSION,
-	SVG_BUILD_DATE,
-	SVG_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
+        "SVG",
+        "<?xml", /* string to recognize SVG files */
+        "Artifex",
+        SVG_VERSION,
+        SVG_BUILD_DATE,
+        SVG_PARSER_MIN_INPUT_SIZE, /* Minimum input size */
     };
     return &svg_characteristics;
 }
 
 static int
 svg_imp_allocate_interp(pl_interp_t **ppinterp,
-	const pl_interp_implementation_t *pimpl,
-	gs_memory_t *pmem)
+        const pl_interp_implementation_t *pimpl,
+        gs_memory_t *pmem)
 {
     static pl_interp_t interp; /* there's only one interpreter */
     *ppinterp = &interp;
@@ -78,8 +78,8 @@ svg_imp_allocate_interp(pl_interp_t **ppinterp,
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
-	pl_interp_t *pinterp,
-	gs_memory_t *pmem)
+        pl_interp_t *pinterp,
+        gs_memory_t *pmem)
 {
     svg_interp_instance_t *instance;
     svg_context_t *ctx;
@@ -88,10 +88,10 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     dputs("-- svg_imp_allocate_interp_instance --\n");
 
     instance = (svg_interp_instance_t *) gs_alloc_bytes(pmem,
-	    sizeof(svg_interp_instance_t), "svg_imp_allocate_interp_instance");
+            sizeof(svg_interp_instance_t), "svg_imp_allocate_interp_instance");
 
     ctx = (svg_context_t *) gs_alloc_bytes(pmem,
-	    sizeof(svg_context_t), "svg_imp_allocate_interp_instance");
+            sizeof(svg_context_t), "svg_imp_allocate_interp_instance");
 
     pgs = gs_state_alloc(pmem);
     gsicc_init_iccmanager(pgs);
@@ -100,7 +100,7 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 
     if (!instance || !ctx || !pgs)
     {
-	if (instance)
+        if (instance)
             gs_free_object(pmem, instance, "svg_imp_allocate_interp_instance");
         if (ctx)
             gs_free_object(pmem, ctx, "svg_imp_allocate_interp_instance");
@@ -146,8 +146,8 @@ svg_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
 /* Set a client language into an interperter instance */
 static int
 svg_imp_set_client_instance(pl_interp_instance_t *pinstance,
-	pl_interp_instance_t *pclient,
-	pl_interp_instance_clients_t which_client)
+        pl_interp_instance_t *pclient,
+        pl_interp_instance_clients_t which_client)
 {
     /* ignore */
     return 0;
@@ -155,7 +155,7 @@ svg_imp_set_client_instance(pl_interp_instance_t *pinstance,
 
 static int
 svg_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
-	pl_page_action_t action, void *closure)
+        pl_page_action_t action, void *closure)
 {
     svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
     instance->pre_page_action = action;
@@ -165,7 +165,7 @@ svg_imp_set_pre_page_action(pl_interp_instance_t *pinstance,
 
 static int
 svg_imp_set_post_page_action(pl_interp_instance_t *pinstance,
-	pl_page_action_t action, void *closure)
+        pl_page_action_t action, void *closure)
 {
     svg_interp_instance_t *instance = (svg_interp_instance_t *)pinstance;
     instance->post_page_action = action;
@@ -190,7 +190,7 @@ svg_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
-	goto cleanup_setdevice;
+        goto cleanup_setdevice;
 
     gs_setaccuratecurves(ctx->pgs, true);  /* NB not sure */
 
@@ -199,15 +199,15 @@ svg_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     /* Ensure that now. */
     code = gs_gsave(ctx->pgs);
     if (code < 0)
-	goto cleanup_gsave;
+        goto cleanup_gsave;
 
     code = gs_erasepage(ctx->pgs);
     if (code < 0)
-	goto cleanup_erase;
+        goto cleanup_erase;
 
     code = svg_install_halftone(ctx, pdevice);
     if (code < 0)
-	goto cleanup_halftone;
+        goto cleanup_halftone;
 
     return 0;
 
@@ -247,34 +247,34 @@ svg_imp_process_file(pl_interp_instance_t *pinstance, char *filename)
 
     file = fopen(filename, "rb");
     if (!file)
-	return gs_error_ioerror;
+        return gs_error_ioerror;
 
     while (!feof(file))
     {
-	n = fread(buf, 1, sizeof buf, file);
-	if (n == 0)
-	    if (ferror(file))
-		return gs_error_ioerror;
-	code = svg_feed_xml_parser(ctx, buf, n);
-	if (code < 0)
-	{
-	    gs_catch(code, "cannot parse SVG document");
-	    fclose(file);
-	    return code;
-	}
+        n = fread(buf, 1, sizeof buf, file);
+        if (n == 0)
+            if (ferror(file))
+                return gs_error_ioerror;
+        code = svg_feed_xml_parser(ctx, buf, n);
+        if (code < 0)
+        {
+            gs_catch(code, "cannot parse SVG document");
+            fclose(file);
+            return code;
+        }
     }
 
     root = svg_close_xml_parser(ctx);
     if (!root)
     {
-	gs_catch(-1, "cannot parse xml document");
-	fclose(file);
-	return -1;
+        gs_catch(-1, "cannot parse xml document");
+        fclose(file);
+        return -1;
     }
 
     code = svg_parse_document(ctx, root);
     if (code < 0)
-	gs_catch(code, "cannot parse SVG document");
+        gs_catch(code, "cannot parse SVG document");
 
     svg_free_item(ctx, root);
     fclose(file);
@@ -291,7 +291,7 @@ svg_imp_process(pl_interp_instance_t *pinstance, stream_cursor_read *buf)
 
     code = svg_feed_xml_parser(ctx, (const char*)buf->ptr + 1, buf->limit - buf->ptr);
     if (code < 0)
-	gs_catch(code, "cannot parse SVG document");
+        gs_catch(code, "cannot parse SVG document");
 
     buf->ptr = buf->limit;
 
@@ -322,11 +322,11 @@ svg_imp_process_eof(pl_interp_instance_t *pinstance)
 
     root = svg_close_xml_parser(ctx);
     if (!root)
-	return gs_rethrow(-1, "cannot parse xml document");
+        return gs_rethrow(-1, "cannot parse xml document");
 
     code = svg_parse_document(ctx, root);
     if (code < 0)
-	gs_catch(code, "cannot parse SVG document");
+        gs_catch(code, "cannot parse SVG document");
 
     svg_free_item(ctx, root);
 
@@ -336,10 +336,10 @@ svg_imp_process_eof(pl_interp_instance_t *pinstance)
 /* Report any errors after running a job */
 static int
 svg_imp_report_errors(pl_interp_instance_t *pinstance,
-	int code,           /* prev termination status */
-	long file_position, /* file position of error, -1 if unknown */
-	bool force_to_cout  /* force errors to cout */
-	)
+        int code,           /* prev termination status */
+        long file_position, /* file position of error, -1 if unknown */
+        bool force_to_cout  /* force errors to cout */
+        )
 {
     return 0;
 }
@@ -468,7 +468,7 @@ svg_show_page(svg_context_t *ctx, int num_copies, int flush)
     /* do post-page action */
     if (instance->post_page_action)
     {
-	code = instance->post_page_action(pinstance, instance->post_page_closure);
+        code = instance->post_page_action(pinstance, instance->post_page_closure);
         if (code < 0)
             return code;
     }
@@ -525,25 +525,24 @@ svg_install_halftone(svg_context_t *ctx, gx_device *pdevice)
 
     if (gx_device_must_halftone(pdevice))
     {
-	ht.type = ht_type_threshold;
-	ht.params.threshold.width = width;
-	ht.params.threshold.height = height;
-	ht.params.threshold.thresholds.data = thresh.data;
-	ht.params.threshold.thresholds.size = thresh.size;
-	ht.params.threshold.transfer = 0;
-	ht.params.threshold.transfer_closure.proc = 0;
+        ht.type = ht_type_threshold;
+        ht.params.threshold.width = width;
+        ht.params.threshold.height = height;
+        ht.params.threshold.thresholds.data = thresh.data;
+        ht.params.threshold.thresholds.size = thresh.size;
+        ht.params.threshold.transfer = 0;
+        ht.params.threshold.transfer_closure.proc = 0;
 
-	gs_settransfer(ctx->pgs, identity_transfer);
+        gs_settransfer(ctx->pgs, identity_transfer);
 
-	code = gs_sethalftone(ctx->pgs, &ht);
-	if (code < 0)
-	    return gs_throw(code, "could not install halftone");
+        code = gs_sethalftone(ctx->pgs, &ht);
+        if (code < 0)
+            return gs_throw(code, "could not install halftone");
 
-	code = gs_sethalftonephase(ctx->pgs, 0, 0);
-	if (code < 0)
-	    return gs_throw(code, "could not set halftone phase");
+        code = gs_sethalftonephase(ctx->pgs, 0, 0);
+        if (code < 0)
+            return gs_throw(code, "could not set halftone phase");
     }
 
     return 0;
 }
-

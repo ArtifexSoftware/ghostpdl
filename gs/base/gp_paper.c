@@ -1,6 +1,6 @@
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,7 +23,7 @@ gp_defaultpapersize(char *ptr, int *plen)
 
     /* None available */
     if (*plen > 0)
-	*ptr = 0;
+        *ptr = 0;
     *plen = 1;
     return 1;
 }

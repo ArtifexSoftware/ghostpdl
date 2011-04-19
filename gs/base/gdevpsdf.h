@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,12 +49,12 @@ typedef struct psdf_image_params_s {
     bool Downsample;
     float DownsampleThreshold;
     enum psdf_downsample_type {
-	ds_Average,
-	ds_Bicubic,
-	ds_Subsample
+        ds_Average,
+        ds_Bicubic,
+        ds_Subsample
     } DownsampleType;
 #define psdf_ds_names\
-	"Average", "Bicubic", "Subsample"
+        "Average", "Bicubic", "Subsample"
     bool Encode;
     const char *Filter;
     int Resolution;
@@ -69,29 +69,29 @@ typedef struct psdf_distiller_params_s {
 
     bool ASCII85EncodePages;
     enum psdf_auto_rotate_pages {
-	arp_None,
-	arp_All,
-	arp_PageByPage
+        arp_None,
+        arp_All,
+        arp_PageByPage
     } AutoRotatePages;
 #define psdf_arp_names\
-	"None", "All", "PageByPage"
+        "None", "All", "PageByPage"
     enum psdf_binding {
-	binding_Left,
-	binding_Right
+        binding_Left,
+        binding_Right
     } Binding;
 #define psdf_binding_names\
-	"Left", "Right"
+        "Left", "Right"
     bool CompressPages;
     enum psdf_default_rendering_intent {
-	ri_Default,
-	ri_Perceptual,
-	ri_Saturation,
-	ri_RelativeColorimetric,
-	ri_AbsoluteColorimetric
+        ri_Default,
+        ri_Perceptual,
+        ri_Saturation,
+        ri_RelativeColorimetric,
+        ri_AbsoluteColorimetric
     } DefaultRenderingIntent;
 #define psdf_ri_names\
-	"Default", "Perceptual", "Saturation", "RelativeColorimetric",\
-	"AbsoluteColorimetric"
+        "Default", "Perceptual", "Saturation", "RelativeColorimetric",\
+        "AbsoluteColorimetric"
     bool DetectBlends;
     bool DoThumbnails;
     long ImageMemory;
@@ -108,33 +108,33 @@ typedef struct psdf_distiller_params_s {
     gs_const_string CalRGBProfile;
     gs_const_string sRGBProfile;
     enum psdf_color_conversion_strategy {
-	ccs_LeaveColorUnchanged,
-	ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
-	ccs_UseDeviceIndependentColor,
-	ccs_UseDeviceIndependentColorForImages,
-	ccs_sRGB,
-	ccs_CMYK,
-	ccs_Gray
+        ccs_LeaveColorUnchanged,
+        ccs_UseDeviceDependentColor, /* not in Acrobat Distiller 4.0 */
+        ccs_UseDeviceIndependentColor,
+        ccs_UseDeviceIndependentColorForImages,
+        ccs_sRGB,
+        ccs_CMYK,
+        ccs_Gray
     } ColorConversionStrategy;
 #define psdf_ccs_names\
-	"LeaveColorUnchanged", "UseDeviceDependentColor",\
-	"UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
-	"sRGB", "CMYK", "Gray"
+        "LeaveColorUnchanged", "UseDeviceDependentColor",\
+        "UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
+        "sRGB", "CMYK", "Gray"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {
-	tfi_Preserve,
-	tfi_Apply,
-	tfi_Remove
+        tfi_Preserve,
+        tfi_Apply,
+        tfi_Remove
     } TransferFunctionInfo;
 #define psdf_tfi_names\
-	"Preserve", "Apply", "Remove"
+        "Preserve", "Apply", "Remove"
     enum psdf_ucr_and_bg_info {
-	ucrbg_Preserve,
-	ucrbg_Remove
+        ucrbg_Preserve,
+        ucrbg_Remove
     } UCRandBGInfo;
 #define psdf_ucrbg_names\
-	"Preserve", "Remove"
+        "Preserve", "Remove"
 
     /* Color sampled image parameters */
 
@@ -146,23 +146,21 @@ typedef struct psdf_distiller_params_s {
 
     psdf_image_params GrayImage;
 
-
     /* Monochrome sampled image parameters */
 
     psdf_image_params MonoImage;
-
 
     /* Font embedding parameters */
 
     gs_param_string_array AlwaysEmbed;
     gs_param_string_array NeverEmbed;
     enum psdf_cannot_embed_font_policy {
-	cefp_OK,
-	cefp_Warning,
-	cefp_Error
+        cefp_OK,
+        cefp_Warning,
+        cefp_Error
     } CannotEmbedFontPolicy;
 #define psdf_cefp_names\
-	"OK", "Warning", "Error"
+        "OK", "Warning", "Error"
     bool EmbedAllFonts;
     int MaxSubsetPct;
     bool SubsetFonts;
@@ -188,7 +186,7 @@ extern const stream_template s_zlibE_template;
     1,		    /* Overprintmode (OPM) */ \
     0,		    /* PreserveOPIComments (false) */ \
     1,		    /* UseFlateCompression (true) */ \
-	/* Color processing parameters */\
+        /* Color processing parameters */\
     {0},	    /* calCMYKProfile */ \
     {0},	    /* CalGrayProfile */ \
     {0},	    /* calRGBProfile */ \
@@ -256,7 +254,6 @@ extern const stream_template s_zlibE_template;
     100,	    /* Max Subset Percent */ \
     1		    /* Subset Fonts (true) */
 
-
 /* Define PostScript/PDF versions, corresponding roughly to Adobe versions. */
 typedef enum {
     psdf_version_level1 = 1000,	/* Red Book Level 1 */
@@ -269,50 +266,50 @@ typedef enum {
 
 /* Define the extended device structure. */
 #define gx_device_psdf_common\
-	gx_device_vector_common;\
-	psdf_version version;\
-	bool binary_ok;		/* derived from ASCII85EncodePages */\
-	bool HaveCFF;\
-	bool HaveTrueTypes;\
-	bool HaveCIDSystem;\
-	double ParamCompatibilityLevel;\
-	psdf_distiller_params params
+        gx_device_vector_common;\
+        psdf_version version;\
+        bool binary_ok;		/* derived from ASCII85EncodePages */\
+        bool HaveCFF;\
+        bool HaveTrueTypes;\
+        bool HaveCIDSystem;\
+        double ParamCompatibilityLevel;\
+        psdf_distiller_params params
 
 typedef struct gx_device_psdf_s {
     gx_device_psdf_common;
 } gx_device_psdf;
 
 #define psdf_initial_values(version, ascii)\
-	vector_initial_values,\
-	version,\
-	!(ascii),\
-	true,\
-	true,\
-	false,\
-	1.3,\
-	 { psdf_general_param_defaults(ascii),\
-	   psdf_color_image_param_defaults,\
-	   psdf_gray_image_param_defaults,\
-	   psdf_mono_image_param_defaults,\
-	   psdf_font_param_defaults\
-	 }
+        vector_initial_values,\
+        version,\
+        !(ascii),\
+        true,\
+        true,\
+        false,\
+        1.3,\
+         { psdf_general_param_defaults(ascii),\
+           psdf_color_image_param_defaults,\
+           psdf_gray_image_param_defaults,\
+           psdf_mono_image_param_defaults,\
+           psdf_font_param_defaults\
+         }
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_psdf);
 #define public_st_device_psdf()	/* in gdevpsdu.c */\
   BASIC_PTRS(device_psdf_ptrs) {\
     GC_OBJ_ELT2(gx_device_psdf, params.ColorImage.ACSDict,\
-		params.ColorImage.Dict),\
+                params.ColorImage.Dict),\
     GC_CONST_STRING_ELT(gx_device_psdf, params.CalCMYKProfile),\
     GC_CONST_STRING_ELT(gx_device_psdf, params.CalGrayProfile),\
     GC_CONST_STRING_ELT(gx_device_psdf, params.CalRGBProfile),\
     GC_CONST_STRING_ELT(gx_device_psdf, params.sRGBProfile),\
     GC_OBJ_ELT2(gx_device_psdf, params.GrayImage.ACSDict,\
-		params.GrayImage.Dict),\
+                params.GrayImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.MonoImage.ACSDict,\
-		params.MonoImage.Dict),\
+                params.MonoImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.AlwaysEmbed.data,\
-		params.NeverEmbed.data)\
+                params.NeverEmbed.data)\
   };\
   gs_public_st_basic_super_final(st_device_psdf, gx_device_psdf,\
     "gx_device_psdf", device_psdf_ptrs, device_psdf_data,\
@@ -325,31 +322,31 @@ dev_proc_put_params(gdev_psdf_put_params);
 
 /* ---------------- Vector implementation procedures ---------------- */
 
-	/* Imager state */
+        /* Imager state */
 int psdf_setlinewidth(gx_device_vector * vdev, floatp width);
 int psdf_setlinecap(gx_device_vector * vdev, gs_line_cap cap);
 int psdf_setlinejoin(gx_device_vector * vdev, gs_line_join join);
 int psdf_setmiterlimit(gx_device_vector * vdev, floatp limit);
 int psdf_setdash(gx_device_vector * vdev, const float *pattern,
-		 uint count, floatp offset);
+                 uint count, floatp offset);
 int psdf_setflat(gx_device_vector * vdev, floatp flatness);
 int psdf_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
-		  gs_logical_operation_t diff);
+                  gs_logical_operation_t diff);
 
-	/* Paths */
+        /* Paths */
 #define psdf_dopath gdev_vector_dopath
 int psdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-		fixed y1, gx_path_type_t type);
+                fixed y1, gx_path_type_t type);
 int psdf_beginpath(gx_device_vector * vdev, gx_path_type_t type);
 int psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0,
-		floatp x, floatp y, gx_path_type_t type);
+                floatp x, floatp y, gx_path_type_t type);
 int psdf_lineto(gx_device_vector * vdev, floatp x0, floatp y0,
-		floatp x, floatp y, gx_path_type_t type);
+                floatp x, floatp y, gx_path_type_t type);
 int psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-		 floatp x1, floatp y1, floatp x2,
-		 floatp y2, floatp x3, floatp y3, gx_path_type_t type);
+                 floatp x1, floatp y1, floatp x2,
+                 floatp y2, floatp x3, floatp y3, gx_path_type_t type);
 int psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
-		   floatp x_start, floatp y_start, gx_path_type_t type);
+                   floatp x_start, floatp y_start, gx_path_type_t type);
 
 /* ---------------- Binary (image) data procedures ---------------- */
 
@@ -378,7 +375,7 @@ int psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw);
 /* Add an encoding filter.  The client must have allocated the stream state, */
 /* if any, using pdev->v_memory. */
 int psdf_encode_binary(psdf_binary_writer * pbw,
-		       const stream_template * template, stream_state * ss);
+                       const stream_template * template, stream_state * ss);
 
 /* Add a 2-D CCITTFax encoding filter. */
 /* Set EndOfBlock iff the stream is not ASCII85 encoded. */
@@ -391,46 +388,46 @@ int psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert);
  * used.  pbw = NULL means just set up the stream state.
  */
 int psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
-		    stream_state /*stream_DCTE_state*/ *st,
-		    int Columns, int Rows, int Colors,
-		    psdf_binary_writer *pbw /* may be NULL */);
+                    stream_state /*stream_DCTE_state*/ *st,
+                    int Columns, int Rows, int Colors,
+                    psdf_binary_writer *pbw /* may be NULL */);
 
 /* Decive whether to convert an image to RGB. */
-bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev, 
-		const gs_imager_state * pis, const gs_pixel_image_t * pim);
+bool psdf_is_converting_image_to_RGB(const gx_device_psdf * pdev,
+                const gs_imager_state * pis, const gs_pixel_image_t * pim);
 
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */
 /* pis only provides UCR and BG information for CMYK => RGB conversion. */
 int psdf_setup_image_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-			     gs_pixel_image_t *pim, const gs_matrix *pctm,
-			     const gs_imager_state * pis, bool lossless,
-			     bool in_line);
+                             gs_pixel_image_t *pim, const gs_matrix *pctm,
+                             const gs_imager_state * pis, bool lossless,
+                             bool in_line);
 
 /* Set up compression filters for a lossless image, with no downsampling, */
 /* no color space conversion, and only lossless filters. */
 /* Note that this may modify the image parameters. */
 int psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
-				gs_pixel_image_t *pim, bool in_line);
+                                gs_pixel_image_t *pim, bool in_line);
 
 /* Finish writing binary data. */
 int psdf_end_binary(psdf_binary_writer * pbw);
 
 /* Set up image compression chooser. */
 int psdf_setup_compression_chooser(psdf_binary_writer *pbw,
-				   gx_device_psdf *pdev,
-				   int width, int height, int depth,
-				   int bits_per_sample);
+                                   gx_device_psdf *pdev,
+                                   int width, int height, int depth,
+                                   int bits_per_sample);
 
 /* Set up an "image to mask" filter. */
 int psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
-	    int width, int height, int depth, int bits_per_sample, uint *MaskColor);
+            int width, int height, int depth, int bits_per_sample, uint *MaskColor);
 
 /* Set up an image colors filter. */
-int psdf_setup_image_colors_filter(psdf_binary_writer *pbw, 
-	gx_device_psdf *pdev, gs_pixel_image_t * pim,
-	const gs_imager_state *pis);
+int psdf_setup_image_colors_filter(psdf_binary_writer *pbw,
+        gx_device_psdf *pdev, gs_pixel_image_t * pim,
+        const gs_imager_state *pis);
 
 /* ---------------- Symbolic data printing ---------------- */
 
@@ -464,11 +461,11 @@ extern const psdf_set_color_commands_t
  * of gx_color_index isn't representable.
  */
 gx_color_index psdf_adjust_color_index(gx_device_vector *vdev,
-				       gx_color_index color);
+                                       gx_color_index color);
 
 /* Set the fill or stroke color. */
 int psdf_set_color(gx_device_vector *vdev, const gx_drawing_color *pdc,
-		   const psdf_set_color_commands_t *ppscc);
+                   const psdf_set_color_commands_t *ppscc);
 /* Round a double value to a specified precision. */
 double psdf_round(double v, int precision, int radix);
 

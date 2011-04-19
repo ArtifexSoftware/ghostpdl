@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -94,8 +94,8 @@ static const byte *const compress_tables[4][4] = {
  */
 void
 bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
-		     uint sraster, byte * dest, uint draster,
-		     const gs_log2_scale_point *plog2_scale, int log2_out_bits)
+                     uint sraster, byte * dest, uint draster,
+                     const gs_log2_scale_point *plog2_scale, int log2_out_bits)
 {
     int log2_x = plog2_scale->x, log2_y = plog2_scale->y;
     int xscale = 1 << log2_x;
@@ -110,7 +110,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     int input_byte_out_bits = out_bits << (3 - log2_x);
     byte input_byte_out_mask = (1 << input_byte_out_bits) - 1;
     const byte *table =
-	compress_tables[log2_out_bits][log2_x + log2_y - 1];
+        compress_tables[log2_out_bits][log2_x + log2_y - 1];
     uint sskip = sraster << log2_y;
     uint dwidth = (width >> log2_x) << log2_out_bits;
     uint dskip = draster - ((dwidth + 7) >> 3);
@@ -127,7 +127,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     uint h;
 
     for (h = height; h; srow += sskip, h -= yscale) {
-	const byte *s = srow;
+        const byte *s = srow;
 
 #if ALPHA_LSB_FIRST
 #  define out_shift_initial 0
@@ -136,161 +136,161 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 #  define out_shift_initial (8 - out_bits)
 #  define out_shift_update(out_shift, nbits) ((out_shift -= (nbits)) < 0)
 #endif
-	int out_shift = out_shift_initial;
-	byte out = 0;
-	int in_shift = in_shift_initial;
-	int dw = 8 - (srcx & 7);
-	int w;
+        int out_shift = out_shift_initial;
+        byte out = 0;
+        int in_shift = in_shift_initial;
+        int dw = 8 - (srcx & 7);
+        int w;
 
-	/* Loop over source bytes. */
-	for (w = width; w > 0; w -= dw, dw = 8) {
-	    int index;
-	    int in_shift_final = (w >= dw ? 0 : dw - w);
+        /* Loop over source bytes. */
+        for (w = width; w > 0; w -= dw, dw = 8) {
+            int index;
+            int in_shift_final = (w >= dw ? 0 : dw - w);
 
-	    /*
-	     * Check quickly for all-0s or all-1s, but only if each
-	     * input byte generates no more than one output byte,
-	     * we're at an input byte boundary, and we're processing
-	     * an entire input byte (i.e., this isn't a final
-	     * partial byte.)
-	     */
-	    if (in_shift == in_shift_check && in_shift_final == 0)
-		switch (*s) {
-		    case 0:
-			for (index = sraster; index != sskip; index += sraster)
-			    if (s[index] != 0)
-				goto p;
-			if (out_shift_update(out_shift, input_byte_out_bits))
-			    *d++ = out, out_shift &= 7, out = 0;
-			s++;
-			continue;
+            /*
+             * Check quickly for all-0s or all-1s, but only if each
+             * input byte generates no more than one output byte,
+             * we're at an input byte boundary, and we're processing
+             * an entire input byte (i.e., this isn't a final
+             * partial byte.)
+             */
+            if (in_shift == in_shift_check && in_shift_final == 0)
+                switch (*s) {
+                    case 0:
+                        for (index = sraster; index != sskip; index += sraster)
+                            if (s[index] != 0)
+                                goto p;
+                        if (out_shift_update(out_shift, input_byte_out_bits))
+                            *d++ = out, out_shift &= 7, out = 0;
+                        s++;
+                        continue;
 #if !ALPHA_LSB_FIRST		/* too messy to make it work */
-		    case 0xff:
-			for (index = sraster; index != sskip; index += sraster)
-			    if (s[index] != 0xff)
-				goto p;
-			{
-			    int shift =
-				(out_shift -= input_byte_out_bits) + out_bits;
+                    case 0xff:
+                        for (index = sraster; index != sskip; index += sraster)
+                            if (s[index] != 0xff)
+                                goto p;
+                        {
+                            int shift =
+                                (out_shift -= input_byte_out_bits) + out_bits;
 
-			    if (shift > 0)
-				out |= input_byte_out_mask << shift;
-			    else {
-				out |= input_byte_out_mask >> -shift;
-				*d++ = out;
-				out_shift += 8;
-				out = input_byte_out_mask << (8 + shift);
-			    }
-			}
-			s++;
-			continue;
+                            if (shift > 0)
+                                out |= input_byte_out_mask << shift;
+                            else {
+                                out |= input_byte_out_mask >> -shift;
+                                *d++ = out;
+                                out_shift += 8;
+                                out = input_byte_out_mask << (8 + shift);
+                            }
+                        }
+                        s++;
+                        continue;
 #endif
-		    default:
-			;
-		}
-	  p:			/* Loop over source pixels within a byte. */
-	    do {
-		uint count;
+                    default:
+                        ;
+                }
+          p:			/* Loop over source pixels within a byte. */
+            do {
+                uint count;
 
-		for (index = 0, count = 0; index != sskip;
-		     index += sraster
-		    )
-		    count += half_byte_1s[(s[index] >> in_shift) & mask];
-		if (count != 0 && table[count] == 0) {	/* Look at adjacent cells to help prevent */
-		    /* dropouts. */
-		    uint orig_count = count;
-		    uint shifted_mask = mask << in_shift;
-		    byte in;
+                for (index = 0, count = 0; index != sskip;
+                     index += sraster
+                    )
+                    count += half_byte_1s[(s[index] >> in_shift) & mask];
+                if (count != 0 && table[count] == 0) {	/* Look at adjacent cells to help prevent */
+                    /* dropouts. */
+                    uint orig_count = count;
+                    uint shifted_mask = mask << in_shift;
+                    byte in;
 
-		    if_debug3('B', "[B]count(%d,%d)=%d\n",
-			      (width - w) / xscale,
-			      (height - h) / yscale, count);
-		    if (yscale > 1) {	/* Look at the next "lower" cell. */
-			if (h < height && (in = s[0] & shifted_mask) != 0) {
-			    uint lower;
+                    if_debug3('B', "[B]count(%d,%d)=%d\n",
+                              (width - w) / xscale,
+                              (height - h) / yscale, count);
+                    if (yscale > 1) {	/* Look at the next "lower" cell. */
+                        if (h < height && (in = s[0] & shifted_mask) != 0) {
+                            uint lower;
 
-			    for (index = 0, lower = 0;
-				 -(index -= sraster) <= sskip &&
-				 (in &= s[index]) != 0;
-				)
-				lower += half_byte_1s[in >> in_shift];
-			    if_debug1('B', "[B]  lower adds %d\n",
-				      lower);
-			    if (lower <= orig_count)
-				count += lower;
-			}
-			/* Look at the next "higher" cell. */
-			if (h > yscale && (in = s[sskip - sraster] & shifted_mask) != 0) {
-			    uint upper;
+                            for (index = 0, lower = 0;
+                                 -(index -= sraster) <= sskip &&
+                                 (in &= s[index]) != 0;
+                                )
+                                lower += half_byte_1s[in >> in_shift];
+                            if_debug1('B', "[B]  lower adds %d\n",
+                                      lower);
+                            if (lower <= orig_count)
+                                count += lower;
+                        }
+                        /* Look at the next "higher" cell. */
+                        if (h > yscale && (in = s[sskip - sraster] & shifted_mask) != 0) {
+                            uint upper;
 
-			    for (index = sskip, upper = 0;
-				 index < sskip << 1 &&
-				 (in &= s[index]) != 0;
-				 index += sraster
-				)
-				upper += half_byte_1s[in >> in_shift];
-			    if_debug1('B', "[B]  upper adds %d\n",
-				      upper);
-			    if (upper < orig_count)
-				count += upper;
-			}
-		    }
-		    if (xscale > 1) {
-			uint mask1 = (mask << 1) + 1;
+                            for (index = sskip, upper = 0;
+                                 index < sskip << 1 &&
+                                 (in &= s[index]) != 0;
+                                 index += sraster
+                                )
+                                upper += half_byte_1s[in >> in_shift];
+                            if_debug1('B', "[B]  upper adds %d\n",
+                                      upper);
+                            if (upper < orig_count)
+                                count += upper;
+                        }
+                    }
+                    if (xscale > 1) {
+                        uint mask1 = (mask << 1) + 1;
 
-			/* Look at the next cell to the left. */
-			if (w < width) {
-			    int lshift = in_shift + xscale - 1;
-			    uint left;
+                        /* Look at the next cell to the left. */
+                        if (w < width) {
+                            int lshift = in_shift + xscale - 1;
+                            uint left;
 
-			    for (index = 0, left = 0;
-				 index < sskip; index += sraster
-				) {
-				uint bits =
-				((s[index - 1] << 8) +
-				 s[index]) >> lshift;
+                            for (index = 0, left = 0;
+                                 index < sskip; index += sraster
+                                ) {
+                                uint bits =
+                                ((s[index - 1] << 8) +
+                                 s[index]) >> lshift;
 
-				left += bits5_trailing_1s[bits & mask1];
-			    }
-			    if_debug1('B', "[B]  left adds %d\n",
-				      left);
-			    if (left < orig_count)
-				count += left;
-			}
-			/* Look at the next cell to the right. */
-			if (w > xscale) {
-			    int rshift = in_shift - xscale + 8;
-			    uint right;
+                                left += bits5_trailing_1s[bits & mask1];
+                            }
+                            if_debug1('B', "[B]  left adds %d\n",
+                                      left);
+                            if (left < orig_count)
+                                count += left;
+                        }
+                        /* Look at the next cell to the right. */
+                        if (w > xscale) {
+                            int rshift = in_shift - xscale + 8;
+                            uint right;
 
-			    for (index = 0, right = 0;
-				 index < sskip; index += sraster
-				) {
-				uint bits =
-				((s[index] << 8) +
-				 s[index + 1]) >> rshift;
+                            for (index = 0, right = 0;
+                                 index < sskip; index += sraster
+                                ) {
+                                uint bits =
+                                ((s[index] << 8) +
+                                 s[index + 1]) >> rshift;
 
-				right += bits5_leading_1s[(bits & mask1) << (4 - xscale)];
-			    }
-			    if_debug1('B', "[B]  right adds %d\n",
-				      right);
-			    if (right <= orig_count)
-				count += right;
-			}
-		    }
-		    if (count > count_max)
-			count = count_max;
-		}
-		out += table[count] << out_shift;
-		if (out_shift_update(out_shift, out_bits))
-		    *d++ = out, out_shift &= 7, out = 0;
-	    }
-	    while ((in_shift -= xscale) >= in_shift_final);
-	    s++, in_shift += 8;
-	}
-	if (out_shift != out_shift_initial)
-	    *d++ = out;
-	for (w = dskip; w != 0; w--)
-	    *d++ = 0;
+                                right += bits5_leading_1s[(bits & mask1) << (4 - xscale)];
+                            }
+                            if_debug1('B', "[B]  right adds %d\n",
+                                      right);
+                            if (right <= orig_count)
+                                count += right;
+                        }
+                    }
+                    if (count > count_max)
+                        count = count_max;
+                }
+                out += table[count] << out_shift;
+                if (out_shift_update(out_shift, out_bits))
+                    *d++ = out, out_shift &= 7, out = 0;
+            }
+            while ((in_shift -= xscale) >= in_shift_final);
+            s++, in_shift += 8;
+        }
+        if (out_shift != out_shift_initial)
+            *d++ = out;
+        for (w = dskip; w != 0; w--)
+            *d++ = 0;
 #undef out_shift_initial
 #undef out_shift_update
     }

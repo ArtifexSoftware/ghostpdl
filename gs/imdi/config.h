@@ -1,9 +1,7 @@
-
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
 /* General project wide configuration */
-
 
 /* Version of Argyll release */
 

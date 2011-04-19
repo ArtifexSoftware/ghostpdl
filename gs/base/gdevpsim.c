@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,28 +41,28 @@
 /* Write the file (if necessary) and page headers. */
 static void
 ps_image_write_headers(FILE *f, gx_device_printer *pdev,
-		       const char *const setup[],
-		       gx_device_pswrite_common_t *pdpc)
+                       const char *const setup[],
+                       gx_device_pswrite_common_t *pdpc)
 {
     if (gdev_prn_file_is_new(pdev)) {
-	gs_rect bbox;
+        gs_rect bbox;
 
-	bbox.p.x = 0;
-	bbox.p.y = 0;
-	bbox.q.x = pdev->width / pdev->HWResolution[0] * 72.0;
-	bbox.q.y = pdev->height / pdev->HWResolution[1] * 72.0;
-	psw_begin_file_header(f, (gx_device *)pdev, &bbox, pdpc, false);
-	psw_print_lines(f, setup);
-	psw_end_file_header(f);
+        bbox.p.x = 0;
+        bbox.p.y = 0;
+        bbox.q.x = pdev->width / pdev->HWResolution[0] * 72.0;
+        bbox.q.y = pdev->height / pdev->HWResolution[1] * 72.0;
+        psw_begin_file_header(f, (gx_device *)pdev, &bbox, pdpc, false);
+        psw_print_lines(f, setup);
+        psw_end_file_header(f);
     }
     {
-	byte buf[100];		/* arbitrary */
-	stream s;
+        byte buf[100];		/* arbitrary */
+        stream s;
 
-	s_init(&s, pdev->memory);
-	swrite_file(&s, f, buf, sizeof(buf));
-	psw_write_page_header(&s, (gx_device *)pdev, pdpc, true, pdev->PageCount + 1, 10);
-	sflush(&s);
+        s_init(&s, pdev->memory);
+        swrite_file(&s, f, buf, sizeof(buf));
+        psw_write_page_header(&s, (gx_device *)pdev, pdpc, true, pdev->PageCount + 1, 10);
+        sflush(&s);
     }
 }
 
@@ -85,33 +85,33 @@ static dev_proc_close_device(psmono_close);
 
 const gx_device_printer gs_psmono_device =
 prn_device(prn_std_procs, "psmono",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI, Y_DPI,
-	   0, 0, 0, 0,		/* margins */
-	   1, psmono_print_page);
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI, Y_DPI,
+           0, 0, 0, 0,		/* margins */
+           1, psmono_print_page);
 
 static const gx_device_procs psgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, psmono_close,
-	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 
 const gx_device_printer gs_psgray_device = {
     prn_device_body(gx_device_printer, psgray_procs, "psgray",
-		    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		    X_DPI, Y_DPI,
-		    0, 0, 0, 0,	/* margins */
-		    1, 8, 255, 0, 256, 1, psmono_print_page)
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                    X_DPI, Y_DPI,
+                    0, 0, 0, 0,	/* margins */
+                    1, 8, 255, 0, 256, 1, psmono_print_page)
 };
 
 static const char *const psmono_setup[] = {
-		/* Initialize the strings for filling runs. */
+                /* Initialize the strings for filling runs. */
     "/.ImageFills [ 0 1 255 {",
     "  256 string dup 0 1 7 { 3 index put dup } for { 8 16 32 64 128 } {",
     "    2 copy 0 exch getinterval putinterval dup",
     "  } forall pop exch pop",
     "} bind for ] def",
-		/* Initialize the procedure table for input dispatching. */
+                /* Initialize the procedure table for input dispatching. */
     "/.ImageProcs [",
-		/* Stack: <buffer> <file> <xdigits> <previous> <byte> */
+                /* Stack: <buffer> <file> <xdigits> <previous> <byte> */
     "  32 { { pop .ImageItem } } repeat",
     "  16 { {",	/* 0x20-0x2f: (N-0x20) data bytes follow */
     "    32 sub 3 -1 roll add 3 index exch 0 exch getinterval 2 index exch",
@@ -126,23 +126,23 @@ static const char *const psmono_setup[] = {
     "  } bind } repeat",
     "  160 { { pop .ImageItem } } repeat",
     "] readonly def",
-		/* Read one item from a compressed image. */
-		/* Stack contents: <buffer> <file> <xdigits> <previous> */
+                /* Read one item from a compressed image. */
+                /* Stack contents: <buffer> <file> <xdigits> <previous> */
     "/.ImageItem {",
     "  2 index read pop dup .ImageProcs exch get exec",
     "} bind def",
-		/* Read and print an entire compressed image. */
+                /* Read and print an entire compressed image. */
     "/.ImageRead {"	/* <width> <height> <bpc> .ImageRead - */
     "  gsave [",
       /* Stack: width height bpc -mark- */
     "    1 0 0 -1 0 7 index",
       /* Stack: width height bpc -mark- 1 0 0 -1 0 height */
     "  ] { .ImageItem }",
-	/* Stack: width height bpc <matrix> <proc> */
+        /* Stack: width height bpc <matrix> <proc> */
     "  4 index 3 index mul 7 add 8 idiv string currentfile 0 ()",
-	/* Stack: width height bpc <matrix> <proc> <buffer> <file> 0 () */
+        /* Stack: width height bpc <matrix> <proc> <buffer> <file> 0 () */
     "  9 4 roll",
-	/* Stack: <buffer> <file> 0 () width height bpc <matrix> <proc> */
+        /* Stack: <buffer> <file> 0 () width height bpc <matrix> <proc> */
     "  image pop pop pop pop grestore",
     "} def",
     0
@@ -169,7 +169,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gx_device_pswrite_common_t pswrite_common;
 
     if (line == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     pswrite_common = psmono_values;
 
     /* If this is the first page of the file, */
@@ -178,59 +178,59 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Write the .ImageRead command. */
     fprintf(prn_stream,
-	    "%d %d %d .ImageRead\n",
-	    pdev->width, pdev->height, pdev->color_info.depth);
+            "%d %d %d .ImageRead\n",
+            pdev->width, pdev->height, pdev->color_info.depth);
 
     /* Compress each scan line in turn. */
     for (lnum = 0; lnum < pdev->height; lnum++) {
-	const byte *p;
-	int left = line_size;
-	byte *data;
+        const byte *p;
+        int left = line_size;
+        byte *data;
 
-	gdev_prn_get_bits(pdev, lnum, line, &data);
-	p = data;
-	/* Loop invariant: p + left = data + line_size. */
+        gdev_prn_get_bits(pdev, lnum, line, &data);
+        p = data;
+        /* Loop invariant: p + left = data + line_size. */
 #define min_repeat_run 10
-	while (left >= min_repeat_run) {	/* Detect a maximal run of non-repeated data. */
-	    const byte *p1 = p;
-	    int left1 = left;
-	    byte b;
-	    int count, count_left;
+        while (left >= min_repeat_run) {	/* Detect a maximal run of non-repeated data. */
+            const byte *p1 = p;
+            int left1 = left;
+            byte b;
+            int count, count_left;
 
-	    while (left1 >= min_repeat_run &&
-		   ((b = *p1) != p1[1] ||
-		    b != p1[2] || b != p1[3] || b != p1[4] ||
-		    b != p1[5] || b != p1[6] || b != p1[7] ||
-		    b != p1[8] || b != p1[9])
-		)
-		++p1, --left1;
-	    if (left1 < min_repeat_run)
-		break;		/* no repeated data left */
-	    write_data_run(p, (int)(p1 - p + 1), prn_stream,
-			   invert);
-	    /* Detect a maximal run of repeated data. */
-	    p = ++p1 + (min_repeat_run - 1);
-	    left = --left1 - (min_repeat_run - 1);
-	    while (left > 0 && *p == b)
-		++p, --left;
-	    for (count = p - p1; count > 0;
-		 count -= count_left
-		) {
-		count_left = min(count, max_repeat_run);
-		if (count_left > max_repeat_run_code)
-		    fputc(xdigit_code + (count_left >> 4),
-			  prn_stream),
-			fputc(repeat_run_code + (count_left & 0xf),
-			      prn_stream);
-		else
-		    putc(repeat_run_code + count_left,
-			 prn_stream);
-	    }
+            while (left1 >= min_repeat_run &&
+                   ((b = *p1) != p1[1] ||
+                    b != p1[2] || b != p1[3] || b != p1[4] ||
+                    b != p1[5] || b != p1[6] || b != p1[7] ||
+                    b != p1[8] || b != p1[9])
+                )
+                ++p1, --left1;
+            if (left1 < min_repeat_run)
+                break;		/* no repeated data left */
+            write_data_run(p, (int)(p1 - p + 1), prn_stream,
+                           invert);
+            /* Detect a maximal run of repeated data. */
+            p = ++p1 + (min_repeat_run - 1);
+            left = --left1 - (min_repeat_run - 1);
+            while (left > 0 && *p == b)
+                ++p, --left;
+            for (count = p - p1; count > 0;
+                 count -= count_left
+                ) {
+                count_left = min(count, max_repeat_run);
+                if (count_left > max_repeat_run_code)
+                    fputc(xdigit_code + (count_left >> 4),
+                          prn_stream),
+                        fputc(repeat_run_code + (count_left & 0xf),
+                              prn_stream);
+                else
+                    putc(repeat_run_code + count_left,
+                         prn_stream);
+            }
             if (ferror(prn_stream))
-	        return_error(gs_error_ioerror);
+                return_error(gs_error_ioerror);
         }
-	/* Write the remaining data, if any. */
-	write_data_run(p, left, prn_stream, invert);
+        /* Write the remaining data, if any. */
+        write_data_run(p, left, prn_stream, invert);
     }
 
     /* Clean up and return. */
@@ -238,7 +238,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     psw_write_page_trailer(prn_stream, 1, true);
     gs_free_object(pdev->memory, line, "psmono_print_page");
     if (ferror(prn_stream))
-	return_error(gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -246,9 +246,9 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 static int
 psmono_close(gx_device *dev)
 {
-    int code = psw_end_file(((gx_device_printer *)dev)->file, dev, 
+    int code = psw_end_file(((gx_device_printer *)dev)->file, dev,
             &psmono_values, NULL, dev->PageCount);
-    
+
     if (code < 0)
         return code;
     return gdev_prn_close(dev);
@@ -267,31 +267,31 @@ write_data_run(const byte * data, int count, FILE * f, byte invert)
     /* Write the count. */
 
     if (!count)
-	return;
+        return;
     {
-	int shift = sizeof(count) * 8;
+        int shift = sizeof(count) * 8;
 
-	while ((shift -= 4) > 0 && (count >> shift) == 0);
-	for (; shift > 0; shift -= 4)
-	    *q++ = xdigit_code + ((count >> shift) & 0xf);
-	*q++ = data_run_code + (count & 0xf);
+        while ((shift -= 4) > 0 && (count >> shift) == 0);
+        for (; shift > 0; shift -= 4)
+            *q++ = xdigit_code + ((count >> shift) & 0xf);
+        *q++ = data_run_code + (count & 0xf);
     }
 
     /* Write the data. */
 
     while (left > 0) {
-	register int wcount = min(left, max_data_per_line);
+        register int wcount = min(left, max_data_per_line);
 
-	left -= wcount;
-	for (; wcount > 0; ++p, --wcount) {
-	    byte b = *p ^ invert;
+        left -= wcount;
+        for (; wcount > 0; ++p, --wcount) {
+            byte b = *p ^ invert;
 
-	    *q++ = hex_digits[b >> 4];
-	    *q++ = hex_digits[b & 0xf];
-	}
-	*q++ = '\n';
-	fwrite(line, 1, q - line, f);
-	q = line;
+            *q++ = hex_digits[b >> 4];
+            *q++ = hex_digits[b & 0xf];
+        }
+        *q++ = '\n';
+        fwrite(line, 1, q - line, f);
+        q = line;
     }
 
 }
@@ -312,14 +312,14 @@ static dev_proc_close_device(psrgb_close);
 
 static const gx_device_procs psrgb_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, psrgb_close,
-		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
 const gx_device_printer gs_psrgb_device = {
     prn_device_body(gx_device_printer, psrgb_procs, "psrgb",
-		    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		    X_DPI, Y_DPI,
-		    0, 0, 0, 0,	/* margins */
-		    3, 24, 255, 255, 256, 256, psrgb_print_page)
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                    X_DPI, Y_DPI,
+                    0, 0, 0, 0,	/* margins */
+                    3, 24, 255, 255, 256, 256, psrgb_print_page)
 };
 
 static const char *const psrgb_setup[] = {
@@ -343,7 +343,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gs_memory_t *mem = pdev->memory;
     int width = pdev->width;
     byte *lbuf = gs_alloc_bytes(mem, width * 3,
-				"psrgb_print_page(lbuf)");
+                                "psrgb_print_page(lbuf)");
     int lnum;
     stream fs, a85s, rls;
     stream_A85E_state a85state;
@@ -355,7 +355,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     pswrite_common = psrgb_values;
 
     if (lbuf == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     ps_image_write_headers(prn_stream, pdev, psrgb_setup, &pswrite_common);
     fprintf(prn_stream, "%d %d rgbimage\n", width, pdev->height);
     s_init(&fs, mem);
@@ -363,10 +363,10 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fs.memory = 0;
 
     if (s_A85E_template.set_defaults)
-	(*s_A85E_template.set_defaults) ((stream_state *) & a85state);
+        (*s_A85E_template.set_defaults) ((stream_state *) & a85state);
     s_init(&a85s, mem);
     s_std_init(&a85s, a85sbuf, sizeof(a85sbuf), &s_filter_write_procs,
-	       s_mode_write);
+               s_mode_write);
     a85s.memory = 0;
     a85state.memory = 0;
     a85state.template = &s_A85E_template;
@@ -378,7 +378,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     (*s_RLE_template.set_defaults) ((stream_state *) & rlstate);
     s_init(&rls, mem);
     s_std_init(&rls, rlsbuf, sizeof(rlsbuf), &s_filter_write_procs,
-	       s_mode_write);
+               s_mode_write);
     rls.memory = 0;
     rlstate.memory = 0;
     rlstate.template = &s_RLE_template;
@@ -388,18 +388,18 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     rls.strm = &a85s;
 
     for (lnum = 0; lnum < pdev->height; ++lnum) {
-	byte *data;
-	int i, c;
+        byte *data;
+        int i, c;
 
-	gdev_prn_get_bits(pdev, lnum, lbuf, &data);
-	for (c = 0; c < 3; ++c) {
-	    const byte *p;
+        gdev_prn_get_bits(pdev, lnum, lbuf, &data);
+        for (c = 0; c < 3; ++c) {
+            const byte *p;
 
-	    for (i = 0, p = data + c; i < width; ++i, p += 3)
-		sputc(&rls, *p);
+            for (i = 0, p = data + c; i < width; ++i, p += 3)
+                sputc(&rls, *p);
             if (rls.end_status == ERRC)
               return_error(gs_error_ioerror);
-	}
+        }
     }
     sclose(&rls);
     sclose(&a85s);
@@ -418,7 +418,7 @@ psrgb_close(gx_device *dev)
 {
     int code = psw_end_file(((gx_device_printer *)dev)->file, dev,
             &psrgb_values, NULL, dev->PageCount);
-    
+
     if (code < 0)
         return code;
     return gdev_prn_close(dev);

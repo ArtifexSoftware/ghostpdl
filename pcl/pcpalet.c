@@ -51,8 +51,8 @@ free_palette(
     gs_free_object(pmem, pvpalet, cname);
 }
 
-void 
-pcl_free_default_objects( 
+void
+pcl_free_default_objects(
     gs_memory_t *   mem,
     pcl_state_t *     pcs
     )
@@ -62,14 +62,14 @@ pcl_free_default_objects(
     rc_decrement(pcs->pdflt_cs_indexed, "free_default_palette(pdflt_cs_indexed)");
 
     if (ppalette != 0) {
-      
+
         rc_decrement(ppalette->pindexed, "free_default_palette cs indexed released");
-	if (ppalette->pht)
-	  rc_decrement(ppalette->pht, "free_default_palette ht released");
-	if (ppalette->pcrd)
-	  rc_decrement(ppalette->pcrd, "free_default_palette pcl_crd_release");
-	gs_free_object(mem, ppalette, "free_default_palette ppalette free");
-	pcs->pdflt_palette = 0;
+        if (ppalette->pht)
+          rc_decrement(ppalette->pht, "free_default_palette ht released");
+        if (ppalette->pcrd)
+          rc_decrement(ppalette->pcrd, "free_default_palette pcl_crd_release");
+        gs_free_object(mem, ppalette, "free_default_palette ppalette free");
+        pcs->pdflt_palette = 0;
     }
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
@@ -203,7 +203,7 @@ build_default_palette(
         code = alloc_palette(pcs, &ppalet, pmem);
         if (code == 0)
             code = pcl_cs_indexed_build_default_cspace( pcs,
-							&(ppalet->pindexed),
+                                                        &(ppalet->pindexed),
                                                         pmem
                                                        );
         if ((code == 0) && (pcs->pcl_default_crd == 0))
@@ -220,7 +220,6 @@ build_default_palette(
         pcl_palette_init_from(pcs->pdflt_palette, ppalet);
     } else
         pcl_palette_init_from(ppalet, pcs->pdflt_palette);
-
 
     /* NB: definitions do NOT record a referece */
     id_set_value(key, pcs->sel_palette_id);
@@ -270,7 +269,7 @@ push_pop_palette(
     int             action = uint_arg(pargs);
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     if (action == 0) {
         pstack_entry_t *    pentry;
@@ -324,7 +323,7 @@ push_pop_palette(
  * Returns 0 on success, < 0 in the event of an error.
  */
 
-int pcl_palette_CR(    
+int pcl_palette_CR(
     pcl_state_t *   pcs,
     floatp          wht0,
     floatp          wht1,
@@ -344,9 +343,8 @@ int pcl_palette_CR(
     return pcl_cs_indexed_set_norm_and_Decode( &(pcs->ppalet->pindexed),
                                                wht0, wht1, wht2,
                                                blk0, blk1, blk2
-                                               );                               
+                                               );
 }
-
 
 /*
  * Set the number of entries in a color palette. This is needed only for the
@@ -374,9 +372,9 @@ pcl_palette_NP(
                                                );
     /* shrinking a palette may make it gray, growing may make it color */
     if (code == 0)
-	code = pcl_ht_remap_render_method(pcs, 
-				      &(pcs->ppalet->pht), 
-				      pcl_ht_is_all_gray_palette(pcs));
+        code = pcl_ht_remap_render_method(pcs,
+                                      &(pcs->ppalet->pht),
+                                      pcl_ht_is_all_gray_palette(pcs));
     return code;
 }
 
@@ -462,7 +460,7 @@ pcl_palette_set_lookup_tbl(
 
     if ((code == 0) && (pcs->ppalet->pindexed == 0))
         code = pcl_cs_indexed_build_default_cspace( pcs,
-						    &(pcs->ppalet->pindexed),
+                                                    &(pcs->ppalet->pindexed),
                                                     pcs->memory
                                                     );
     if ((code == 0) && (pcs->ppalet->pht == 0))
@@ -506,30 +504,30 @@ pcl_palette_set_color(
                                                  indx,
                                                  comps
                                                  );
-    
+
     if ( pcs->monochrome_mode == 0 ) {
         was_gray = pcs->ppalet->pht->is_gray_render_method;
-    
-	now_gray = ((pcs->ppalet->pindexed->palette.data[indx*3 + 0] == 
-		     pcs->ppalet->pindexed->palette.data[indx*3 + 1]) &&
-		    (pcs->ppalet->pindexed->palette.data[indx*3 + 1] == 
-		     pcs->ppalet->pindexed->palette.data[indx*3 + 2]) );
 
-	if ( !was_gray && now_gray ) {
-	    /* change one entry from color to gray,
-	     * check entire palette for grey
-	     */
-	    code = pcl_ht_remap_render_method(pcs, 
-					      &(pcs->ppalet->pht), 
-					      pcl_ht_is_all_gray_palette(pcs));
-	}
-	else if ( was_gray && !now_gray ) {
-	    /* one color entry in gray palette makes it color 
-	     */ 
-	    code = pcl_ht_remap_render_method(pcs, 
-					      &(pcs->ppalet->pht), 
-					      false);
-	}
+        now_gray = ((pcs->ppalet->pindexed->palette.data[indx*3 + 0] ==
+                     pcs->ppalet->pindexed->palette.data[indx*3 + 1]) &&
+                    (pcs->ppalet->pindexed->palette.data[indx*3 + 1] ==
+                     pcs->ppalet->pindexed->palette.data[indx*3 + 2]) );
+
+        if ( !was_gray && now_gray ) {
+            /* change one entry from color to gray,
+             * check entire palette for grey
+             */
+            code = pcl_ht_remap_render_method(pcs,
+                                              &(pcs->ppalet->pht),
+                                              pcl_ht_is_all_gray_palette(pcs));
+        }
+        else if ( was_gray && !now_gray ) {
+            /* one color entry in gray palette makes it color
+             */
+            code = pcl_ht_remap_render_method(pcs,
+                                              &(pcs->ppalet->pht),
+                                              false);
+        }
     }
     return code;
 }
@@ -557,9 +555,9 @@ pcl_palette_set_default_color(
                                                          indx
                                                          );
    if (code == 0)
-	code = pcl_ht_remap_render_method(pcs, 
-				      &(pcs->ppalet->pht), 
-				      pcl_ht_is_all_gray_palette(pcs));
+        code = pcl_ht_remap_render_method(pcs,
+                                      &(pcs->ppalet->pht),
+                                      pcl_ht_is_all_gray_palette(pcs));
     return code;
 }
 
@@ -663,22 +661,22 @@ pcl_palette_set_cid(
 
     /* pcl_cspace_bnuild_indexed_cspace will release the old space */
     code = pcl_cs_indexed_build_cspace( pcs,
-					&(ppalet->pindexed),
+                                        &(ppalet->pindexed),
                                         pcid,
                                         fixed,
                                         gl2,
                                         pcs->memory
                                         );
     if (code == 0) {
-       bool is_gray = false; 
+       bool is_gray = false;
        /* direct raster is always color */
-       if ( pcl_cid_get_encoding(pcid) <= 1 ) { 
-	  /* indexed used palette which maybe gray or color */
-	  is_gray = pcl_ht_is_all_gray_palette(pcs); 
+       if ( pcl_cid_get_encoding(pcid) <= 1 ) {
+          /* indexed used palette which maybe gray or color */
+          is_gray = pcl_ht_is_all_gray_palette(pcs);
        }
-	code = pcl_ht_remap_render_method(pcs, 
-					  &(pcs->ppalet->pht), 
-					  is_gray);
+        code = pcl_ht_remap_render_method(pcs,
+                                          &(pcs->ppalet->pht),
+                                          is_gray);
     }
 
     /* if a halftone exist, inform it of the update and discard lookup tables */
@@ -741,7 +739,7 @@ pcl_palette_check_complete(
     ppalet = pcs->ppalet;
     if (ppalet->pindexed == 0)
         code = pcl_cs_indexed_build_default_cspace( pcs,
-						    &(ppalet->pindexed),
+                                                    &(ppalet->pindexed),
                                                     pcs->memory
                                                     );
     if ((code == 0) && (ppalet->pcrd == 0)) {
@@ -752,7 +750,6 @@ pcl_palette_check_complete(
         code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pcs->memory);
     return code;
 }
-
 
 /*
  * ESC & p # S
@@ -770,13 +767,13 @@ set_sel_palette_id(
     pcl_id_t        key;
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     /* ignore attempts to select non-existent palettes */
     id_set_value(key, id);
     if ( pl_dict_lookup( &pcs->palette_store,
                          id_key(key),
-                         2, 
+                         2,
                          (void **)&(pcs->ppalet),
                          false,
                          NULL
@@ -797,7 +794,7 @@ set_ctrl_palette_id(
 )
 {
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode)
-	return 0;
+        return 0;
 
     pcs->ctrl_palette_id = uint_arg(pargs);
     return 0;
@@ -826,7 +823,7 @@ clear_palette_store(
         int     id = (((int)plkey.data[0]) << 8) + plkey.data[1];
 
         if (id == sel_id) {
-	    if (pvalue != pcs->pdflt_palette)
+            if (pvalue != pcs->pdflt_palette)
                 build_default_palette(pcs);     /* will redefine sel_id */
         } else
             pl_dict_undef(&pcs->palette_store, plkey.data, plkey.size);
@@ -847,7 +844,7 @@ palette_control(
     uint            action = uint_arg(pargs);
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     switch (action) {
 
@@ -882,7 +879,7 @@ palette_control(
             if (code < 0)
                 return code;
             rc_increment(pcs->ppalet);
-            
+
         }
         break;
 
@@ -907,7 +904,7 @@ set_render_algorithm(
 )
 {
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
@@ -948,7 +945,6 @@ pcl_mono_color_mapping_procs(const gx_device * dev)
     return &pcl_mono_procs;
 }
 
-
 /* set monochrome page device parameter.  NB needs testing.  We don't
    currently have a device that does what we need with
    ProcessColorModel.  We assume non color devices will simply ignore
@@ -974,15 +970,15 @@ pcl_update_mono(pcl_state_t *pcs)
     gx_unset_dev_color(pcs->pgs);
     return 0;
 }
-            
+
 /*
  * ESC & b # M
  *
- * Set monochrome or normal print mode. 
- * Note  ForceMono=1 is similar to monochrome mode locked on. 
+ * Set monochrome or normal print mode.
+ * Note  ForceMono=1 is similar to monochrome mode locked on.
  *
  * The monochrome print mode command is ignored if the page is dirty.
- * 
+ *
  */
   static int
 set_print_mode(
@@ -993,7 +989,7 @@ set_print_mode(
     uint            mode = uint_arg(pargs);
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     if (mode > 1)
         return 0;
@@ -1030,7 +1026,7 @@ palette_do_registration(
         't', 'J',
         PCL_COMMAND( "Render Algorithm",
                      set_render_algorithm,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl 
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS
@@ -1040,28 +1036,28 @@ palette_do_registration(
         'b', 'M',
         PCL_COMMAND( "Monochrome Printing",
                      set_print_mode,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl 
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'p', 'S',
         PCL_COMMAND( "Select Palette",
                       set_sel_palette_id,
-                      pca_neg_ok | pca_big_ignore | pca_in_rtl 
+                      pca_neg_ok | pca_big_ignore | pca_in_rtl
                       )
     },
     {
         'p', 'I',
         PCL_COMMAND( "Palette Control ID",
                      set_ctrl_palette_id,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl 
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     {
         'p', 'C',
         PCL_COMMAND( "Palette Control",
                      palette_control,
-                     pca_neg_ok | pca_big_ignore | pca_in_rtl 
+                     pca_neg_ok | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS
@@ -1081,9 +1077,7 @@ palette_do_reset(
                                  | pcl_reset_cold
                                  | pcl_reset_printer
                                  | pcl_reset_overlay
-				 | pcl_reset_permanent);
-
-
+                                 | pcl_reset_permanent);
 
     if ((type & mask) == 0)
         return;
@@ -1094,34 +1088,33 @@ palette_do_reset(
         pcs->ppalet = 0;
         pcs->pfrgrnd = 0;
 
-	/* set up the built-in render methods and dithers matrices */
-	pcl_ht_init_render_methods(pcs, pcs->memory);
-
+        /* set up the built-in render methods and dithers matrices */
+        pcl_ht_init_render_methods(pcs, pcs->memory);
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
-       pcs->monochrome_mode = 0; 
+       pcs->monochrome_mode = 0;
        pcl_update_mono(pcs);
        /* clear the palette stack and store */
         clear_palette_stack(pcs, pcs->memory);
-	clear_palette_store(pcs);
+        clear_palette_store(pcs);
     }
     if ( type & pcl_reset_permanent ) {
-	pl_dict_release(&pcs->palette_store);
-	if (pcs->ppalet != pcs->pdflt_palette) {
-	  /* stefan foo: free or decrement reference counts? */
-	    gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
-	    gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
-	    gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
-	    gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
-	}
+        pl_dict_release(&pcs->palette_store);
+        if (pcs->ppalet != pcs->pdflt_palette) {
+          /* stefan foo: free or decrement reference counts? */
+            gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
+            gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
+            gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
+            gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
+        }
     }
     /* select and control palette ID's must be set back to 0 */
     pcs->sel_palette_id = 0;
     pcs->ctrl_palette_id = 0;
 
     if ( !(type & pcl_reset_permanent) ) {
-	(void)build_default_palette(pcs);
-	(void)pcl_frgrnd_set_default_foreground(pcs);
+        (void)build_default_palette(pcs);
+        (void)pcl_frgrnd_set_default_foreground(pcs);
     }
 }
 
@@ -1157,9 +1150,9 @@ palette_do_copy(
     if ((operation & (pcl_copy_before_call | pcl_copy_before_overlay)) != 0)
         pcl_palette_init_from(psaved->ppalet, pcs->ppalet);
     else if ((operation & pcl_copy_after) != 0) {
-	pcl_id_t    key;
-	/* fix the compiler warning resulting from overuse of const */
-	pcl_state_t *pcs2 = (pcl_state_t *)pcs;
+        pcl_id_t    key;
+        /* fix the compiler warning resulting from overuse of const */
+        pcl_state_t *pcs2 = (pcl_state_t *)pcs;
         id_set_value(key, psaved->sel_palette_id);
         pl_dict_put(&pcs2->palette_store, id_key(key), 2, psaved->ppalet);
         psaved->palette_stack = pcs2->palette_stack;

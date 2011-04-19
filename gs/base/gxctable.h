@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -50,10 +50,10 @@ typedef struct gx_color_lookup_table_s {
 
 /* Return the nearest value without interpolation. */
 void gx_color_interpolate_nearest(const fixed * pi,
-			    const gx_color_lookup_table * pclt, frac * pv);
+                            const gx_color_lookup_table * pclt, frac * pv);
 
 /* Use trilinear interpolation. */
 void gx_color_interpolate_linear(const fixed * pi,
-			    const gx_color_lookup_table * pclt, frac * pv);
+                            const gx_color_lookup_table * pclt, frac * pv);
 
 #endif /* gxctable_INCLUDED */

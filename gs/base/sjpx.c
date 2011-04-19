@@ -277,8 +277,7 @@ copy_row_yuv(byte *dest, jas_image_t *image,
     return count;
 }
 
-
-static inline bool 
+static inline bool
 is_color_component(jas_image_t *image, int n)
 {
     int k = jas_image_cmpttype(image, n) & (JAS_IMAGE_CT_UNKNOWN | JAS_IMAGE_CT_OPACITY);
@@ -380,7 +379,6 @@ copy_row_1comp16(byte *dest, jas_image_t *image,
     }
     return bytes-count;
 }
-
 
 /* buffer the input stream into our state */
 static int
@@ -514,9 +512,9 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
         usable = min(out_size, stride - x);
         /* now samples */
         if (bits > 8) {
-            x = x/(numcmpts*2);               
+            x = x/(numcmpts*2);
         } else {
-            x = x/numcmpts;     
+            x = x/numcmpts;
         }
         /* Make sure we can return a full pixel.
            This can fail if we get the colorspace wrong. */
@@ -629,7 +627,6 @@ s_jpxd_set_defaults(stream_state *ss)
     state->colorspace = gs_jpx_cs_unset;
     state->alpha = false;
 }
-
 
 /* stream template */
 const stream_template s_jpxd_template = {

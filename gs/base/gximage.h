@@ -116,7 +116,6 @@ typedef struct sample_map_s sample_map;
   cc.paint.values[i] =\
     penum->map[i].decode_base + (frac_value) * penum->map[i].decode_factor
 
-
 /* Decode a frac value, to our 16 bit frac form. */
 #define DECODE_FRAC_FRAC(frac_value, frac_value_out, i)\
   frac_value_out =\

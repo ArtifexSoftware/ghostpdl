@@ -31,8 +31,8 @@ typedef struct _IjsClientCtx IjsClientCtx;
 IjsClientCtx *
 ijs_invoke_server (const char *server_cmd);
 
-int 
-ijs_exec_server (const char *server_cmd, int *pfd_to, int *pfd_from, 
+int
+ijs_exec_server (const char *server_cmd, int *pfd_to, int *pfd_from,
     int *pchild_pid);
 
 int
@@ -49,7 +49,7 @@ ijs_client_send_cmd_wait (IjsClientCtx *ctx);
 
 int
 ijs_client_send_data_wait (IjsClientCtx *ctx, IjsJobId job_id,
-			   const char *buf, int size);
+                           const char *buf, int size);
 
 int
 ijs_client_open (IjsClientCtx *ctx);
@@ -65,22 +65,22 @@ ijs_client_end_job (IjsClientCtx *ctx, IjsJobId job_id);
 
 int
 ijs_client_list_params (IjsClientCtx *ctx, IjsJobId job_id,
-		       char *value, int value_size);
+                       char *value, int value_size);
 
 int
 ijs_client_enum_param (IjsClientCtx *ctx, IjsJobId job_id,
-		       const char *key, char *value,
-		       int value_size);
+                       const char *key, char *value,
+                       int value_size);
 
 int
 ijs_client_set_param (IjsClientCtx *ctx, IjsJobId job_id,
-		      const char *key, const char *value,
-		      int value_size);
+                      const char *key, const char *value,
+                      int value_size);
 
 int
 ijs_client_get_param (IjsClientCtx *ctx, IjsJobId job_id,
-		      const char *key, char *value,
-		      int value_size);
+                      const char *key, char *value,
+                      int value_size);
 
 int
 ijs_client_begin_page (IjsClientCtx *ctx, IjsJobId job_id);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -162,7 +162,6 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
 #endif
 
-
 /* Define the type for colors passed to the higher-level procedures. */
 typedef gx_device_color gx_drawing_color;
 
@@ -191,8 +190,8 @@ typedef struct gx_device_anti_alias_info_s {
     int graphics_bits;		/* ditto */
 } gx_device_anti_alias_info;
 
-typedef int32_t frac31; /* A fraction value in [-1,1]. 
-    Represents a color (in [0,1]) 
+typedef int32_t frac31; /* A fraction value in [-1,1].
+    Represents a color (in [0,1])
     or a color difference (in [-1,1]) in shadings. */
 
 /* Define an edge of a linear color trapezoid.  Requirement: end.y >= start.y. */
@@ -202,7 +201,6 @@ typedef struct gs_linear_color_edge_s {
     const frac31 *c0, *c1;
     fixed clip_x;
 } gs_linear_color_edge;
-
 
 /*
  * Possible values for the separable_and_linear flag in the
@@ -223,7 +221,7 @@ typedef struct gs_linear_color_edge_s {
  *    A separable and linear encoding has the separability and
  *    linearity properties.
  *
- *    Encodings with this property are completely characterized 
+ *    Encodings with this property are completely characterized
  *    by the comp_shift array. Hence, there is no need to provide
  *    an encode_color procedure for such devices, though the device
  *    creator may choose to do so for performance reasons (e.g.: when
@@ -323,7 +321,7 @@ typedef struct gx_device_color_info_s {
     gx_color_polarity_t polarity;
 
     /*
-     * The number of bits of gx_color_index actually used. 
+     * The number of bits of gx_color_index actually used.
      * This must be <= arch_sizeof_color_index, which is usually 64.
      */
     byte depth;
@@ -332,7 +330,7 @@ typedef struct gx_device_color_info_s {
      * Index of the gray color component, if any. The max_gray and
      * dither_gray values apply to this component only; all other
      * components use the max_color and dither_color values.
-     * 
+     *
      * Note:  This field refers to a 'gray' colorant because of the
      * past use of the max_gray/color and dither_grays/colors fields.
      * Prior to 8.00, the 'gray' values were used for monochrome
@@ -351,7 +349,7 @@ typedef struct gx_device_color_info_s {
      * 1 (the green colorant), set max_gray to 63 and dither_grays to
      * 64, and set max_color to 31 and dither_colors to 32.
      *
-     * This will be GX_CINFO_COMP_NO_INDEX if there is no 'gray' 
+     * This will be GX_CINFO_COMP_NO_INDEX if there is no 'gray'
      * component.
      */
     byte gray_index;
@@ -455,7 +453,7 @@ typedef struct gx_device_color_info_s {
 
 /* NB encoding flag ignored */
 #define dci_extended_alpha_values(mcmp, nc, p, d, gi, mg, \
-		        mc, dg, dc, ta, ga, sl, cn)   \
+                        mc, dg, dc, ta, ga, sl, cn)   \
     {mcmp /* max components */, \
      nc /* number components */, \
      p /* polarity */, \
@@ -481,7 +479,6 @@ typedef struct gx_device_color_info_s {
 #define gx_device_has_color(dev)                           \
    ( (dev)->color_info.num_components > 1 ||                \
      (dev)->color_info.gray_index == GX_CINFO_COMP_NO_INDEX )
-
 
 /* parameter initialization macros for backwards compatibility */
 
@@ -523,8 +520,7 @@ typedef struct gx_device_color_info_s {
                               dci_std_gray_index(nc),       \
                               mg, mc, dg, dc, ta, ga,       \
                               GX_CINFO_UNKNOWN_SEP_LIN,     \
-			      dci_std_cm_name(nc) )
-
+                              dci_std_cm_name(nc) )
 
 /*
  * Determine the depth corresponding to a color_bits specification.
@@ -576,13 +572,12 @@ typedef struct gx_device_color_info_s {
 #define dci_std_color_max_gray(nc, color_bits)            \
     ( (nc) == 3                                           \
         ? 0                                               \
-        : (1 << dci_std_gray_bits(nc, color_bits)) - 1 ) 
+        : (1 << dci_std_gray_bits(nc, color_bits)) - 1 )
 
 #define dci_std_color_max_color(nc, color_bits)               \
     ( (nc) == 1                                               \
         ? 0                                                   \
         : (1 << dci_std_color_bits(nc, color_bits)) - 1 )
-
 
 /*
  * Define a color model based strictly on the number of bits
@@ -614,7 +609,6 @@ typedef struct gx_device_color_info_s {
 #define get_process_color_model_name(dev) \
     ((dev)->color_info.cm_name)
 
-
 /* Structure for device procedures. */
 typedef struct gx_device_procs_s gx_device_procs;
 
@@ -643,9 +637,9 @@ dev_page_proc_end_page(gx_default_end_page);
 
 /* ----------- A stroked gradient recognizer data ----------*/
 
-/* This structure is associated with a device for 
+/* This structure is associated with a device for
    internal needs of the graphics library.
-   The main purpose is to suppress stroke adjustment 
+   The main purpose is to suppress stroke adjustment
    when painting a gradient as a set of parallel strokes.
    Such gradients still come from some obsolete 3d party software.
    See bug 687974,
@@ -661,7 +655,7 @@ typedef struct gx_stroked_gradient_recognizer_s {
 /*
  * Define the generic device structure.  The device procedures can
  * have two different configurations:
- * 
+ *
  *      - Statically initialized devices predating release 2.8.1
  *      set the static_procs pointer to point to a separate procedure record,
  *      and do not initialize procs.
@@ -687,55 +681,55 @@ typedef struct gx_device_cached_colors_s {
     gx_color_index black, white;
 } gx_device_cached_colors_t;
 #define gx_device_common\
-	int params_size;		/* OBSOLETE if stype != 0: */\
-					/* size of this structure */\
-	const gx_device_procs *static_procs;	/* OBSOLETE */\
-					/* pointer to procs */\
-	const char *dname;		/* the device name */\
-	gs_memory_t *memory;		/* (0 iff static prototype) */\
-	gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
-					/* may be 0 if static prototype */\
-	bool stype_is_dynamic;		/* if true, free the stype when */\
-					/* freeing the device */\
-	void (*finalize)(gx_device *);  /* finalization to execute */\
-					/* before closing device, if any */\
-	rc_header rc;			/* reference count from gstates */\
-					/* and targets, +1 if retained */\
-	bool retained;			/* true if retained */\
-	bool is_open;			/* true if device has been opened */\
-	int max_fill_band;		/* limit on band size for fill, */\
-					/* must be 0 or a power of 2 */\
-					/* (see gdevabuf.c for more info) */\
-	gx_device_color_info color_info;	/* color information */\
-	gx_device_cached_colors_t cached_colors;\
-	int width;			/* width in pixels */\
-	int height;			/* height in pixels */\
+        int params_size;		/* OBSOLETE if stype != 0: */\
+                                        /* size of this structure */\
+        const gx_device_procs *static_procs;	/* OBSOLETE */\
+                                        /* pointer to procs */\
+        const char *dname;		/* the device name */\
+        gs_memory_t *memory;		/* (0 iff static prototype) */\
+        gs_memory_type_ptr_t stype;	/* memory manager structure type, */\
+                                        /* may be 0 if static prototype */\
+        bool stype_is_dynamic;		/* if true, free the stype when */\
+                                        /* freeing the device */\
+        void (*finalize)(gx_device *);  /* finalization to execute */\
+                                        /* before closing device, if any */\
+        rc_header rc;			/* reference count from gstates */\
+                                        /* and targets, +1 if retained */\
+        bool retained;			/* true if retained */\
+        bool is_open;			/* true if device has been opened */\
+        int max_fill_band;		/* limit on band size for fill, */\
+                                        /* must be 0 or a power of 2 */\
+                                        /* (see gdevabuf.c for more info) */\
+        gx_device_color_info color_info;	/* color information */\
+        gx_device_cached_colors_t cached_colors;\
+        int width;			/* width in pixels */\
+        int height;			/* height in pixels */\
         int LeadingEdge;                /* see below */\
-	float MediaSize[2];		/* media dimensions in points */\
-	float ImagingBBox[4];		/* imageable region in points */\
-	  bool ImagingBBox_set;\
-	float HWResolution[2];		/* resolution, dots per inch */\
-	float MarginsHWResolution[2];	/* resolution for Margins */\
-	float Margins[2];		/* offset of physical page corner */\
-					/* from device coordinate (0,0), */\
-					/* in units given by MarginsHWResolution */\
-	float HWMargins[4];		/* margins around imageable area, */\
-					/* in default user units ("points") */\
-	long PageCount;			/* number of pages written */\
-	long ShowpageCount;		/* number of calls on showpage */\
-	int NumCopies;\
-	  bool NumCopies_set;\
-	bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
-	bool UseCIEColor;		/* for PS LL3 */\
-	bool LockSafetyParams;		/* If true, prevent unsafe changes */\
-	long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
-	long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
-	gx_stroked_gradient_recognizer_t sgr;\
-	int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
+        float MediaSize[2];		/* media dimensions in points */\
+        float ImagingBBox[4];		/* imageable region in points */\
+          bool ImagingBBox_set;\
+        float HWResolution[2];		/* resolution, dots per inch */\
+        float MarginsHWResolution[2];	/* resolution for Margins */\
+        float Margins[2];		/* offset of physical page corner */\
+                                        /* from device coordinate (0,0), */\
+                                        /* in units given by MarginsHWResolution */\
+        float HWMargins[4];		/* margins around imageable area, */\
+                                        /* in default user units ("points") */\
+        long PageCount;			/* number of pages written */\
+        long ShowpageCount;		/* number of calls on showpage */\
+        int NumCopies;\
+          bool NumCopies_set;\
+        bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
+        bool UseCIEColor;		/* for PS LL3 */\
+        bool LockSafetyParams;		/* If true, prevent unsafe changes */\
+        long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
+        long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
+        gx_stroked_gradient_recognizer_t sgr;\
+        int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
         cmm_profile_t *device_icc_profile;     /* Device profile in non-gc memory */\
-	gx_page_device_procs page_procs;	/* must be last */\
-		/* end of std_device_body */\
-	gx_device_procs procs	/* object procedures */
+        gx_page_device_procs page_procs;	/* must be last */\
+                /* end of std_device_body */\
+        gx_device_procs procs	/* object procedures */
 
 #define LEADINGEDGE_MASK 3
 #define LEADINGEDGE_SET_MASK (1 << 2)
@@ -874,7 +868,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_copy_color(proc)\
   dev_t_proc_copy_color(proc, gx_device)
 
-		/* OBSOLETED in release 3.66 */
+                /* OBSOLETED in release 3.66 */
 
 #define dev_t_proc_draw_line(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -882,7 +876,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_draw_line(proc)\
   dev_t_proc_draw_line(proc, gx_device)
 
-		/* Added in release 2.4 */
+                /* Added in release 2.4 */
 
 #define dev_t_proc_get_bits(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -890,8 +884,8 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_get_bits(proc)\
   dev_t_proc_get_bits(proc, gx_device)
 
-		/* Added in release 2.4, changed in 2.8, */
-		/* renamed in 2.9.6 */
+                /* Added in release 2.4, changed in 2.8, */
+                /* renamed in 2.9.6 */
 
 #define dev_t_proc_get_params(proc, dev_t)\
   int proc(dev_t *dev, gs_param_list *plist)
@@ -903,7 +897,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_put_params(proc)\
   dev_t_proc_put_params(proc, gx_device)
 
-		/* Added in release 2.6 */
+                /* Added in release 2.6 */
 
 #define dev_t_proc_map_cmyk_color(proc, dev_t)\
   gx_color_index proc(dev_t *dev, const gx_color_value cv[])
@@ -915,14 +909,14 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_get_xfont_procs(proc)\
   dev_t_proc_get_xfont_procs(proc, gx_device)
 
-		/* Added in release 2.6.1 */
+                /* Added in release 2.6.1 */
 
 #define dev_t_proc_get_xfont_device(proc, dev_t)\
   gx_device *proc(dev_t *dev)
 #define dev_proc_get_xfont_device(proc)\
   dev_t_proc_get_xfont_device(proc, gx_device)
 
-		/* Added in release 2.7.1 */
+                /* Added in release 2.7.1 */
 
 #define dev_t_proc_map_rgb_alpha_color(proc, dev_t)\
   gx_color_index proc(dev_t *dev,\
@@ -931,21 +925,21 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_map_rgb_alpha_color(proc)\
   dev_t_proc_map_rgb_alpha_color(proc, gx_device)
 
-		/* Added in release 2.8.1 */
+                /* Added in release 2.8.1 */
 
 #define dev_t_proc_get_page_device(proc, dev_t)\
   gx_device *proc(dev_t *dev)
 #define dev_proc_get_page_device(proc)\
   dev_t_proc_get_page_device(proc, gx_device)
 
-		/* Added in release 3.20, OBSOLETED in 5.65 */
+                /* Added in release 3.20, OBSOLETED in 5.65 */
 
 #define dev_t_proc_get_alpha_bits(proc, dev_t)\
   int proc(dev_t *dev, graphics_object_type type)
 #define dev_proc_get_alpha_bits(proc)\
   dev_t_proc_get_alpha_bits(proc, gx_device)
 
-		/* Added in release 3.20 */
+                /* Added in release 3.20 */
 
 #define dev_t_proc_copy_alpha(proc, dev_t)\
   int proc(dev_t *dev, const byte *data, int data_x,\
@@ -954,14 +948,14 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_copy_alpha(proc)\
   dev_t_proc_copy_alpha(proc, gx_device)
 
-		/* Added in release 3.38 */
+                /* Added in release 3.38 */
 
 #define dev_t_proc_get_band(proc, dev_t)\
   int proc(dev_t *dev, int y, int *band_start)
 #define dev_proc_get_band(proc)\
   dev_t_proc_get_band(proc, gx_device)
 
-		/* Added in release 3.44 */
+                /* Added in release 3.44 */
 
 #define dev_t_proc_copy_rop(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -973,7 +967,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_copy_rop(proc)\
   dev_t_proc_copy_rop(proc, gx_device)
 
-		/* Added in release 3.60, changed in 3.68. */
+                /* Added in release 3.60, changed in 3.68. */
 
 #define dev_t_proc_fill_path(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -991,7 +985,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_stroke_path(proc)\
   dev_t_proc_stroke_path(proc, gx_device)
 
-		/* Added in release 3.60 */
+                /* Added in release 3.60 */
 
 #define dev_t_proc_fill_mask(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1002,7 +996,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_fill_mask(proc)\
   dev_t_proc_fill_mask(proc, gx_device)
 
-		/* Added in release 3.66, changed in 3.69 */
+                /* Added in release 3.66, changed in 3.69 */
 
 #define dev_t_proc_fill_trapezoid(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1026,10 +1020,10 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_fill_triangle(proc)\
   dev_t_proc_fill_triangle(proc, gx_device)
 
-		/* adjustx and adjusty were added in 8.71 to get around a
-		 * problem with PCL (Bug 691030). In the fullness of time
-		 * hopefully PCL can be fixed to not need them and they can
-		 * be removed again. */
+                /* adjustx and adjusty were added in 8.71 to get around a
+                 * problem with PCL (Bug 691030). In the fullness of time
+                 * hopefully PCL can be fixed to not need them and they can
+                 * be removed again. */
 
 #define dev_t_proc_draw_thin_line(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1039,10 +1033,10 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_draw_thin_line(proc)\
   dev_t_proc_draw_thin_line(proc, gx_device)
 
-		/* Added in release 3.66 (as stubs); */
-		/* changed in 3.68; */
-		/* begin_image and image_data changed in 4.30, */
-		/* begin_image changed in 5.23. */
+                /* Added in release 3.66 (as stubs); */
+                /* changed in 3.68; */
+                /* begin_image and image_data changed in 4.30, */
+                /* begin_image changed in 5.23. */
 
 #define dev_t_proc_begin_image(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1053,7 +1047,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_begin_image(proc)\
   dev_t_proc_begin_image(proc, gx_device)
 
-		/* OBSOLETED in release 5.23 */
+                /* OBSOLETED in release 5.23 */
 
 #define dev_t_proc_image_data(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1062,7 +1056,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_image_data(proc)\
   dev_t_proc_image_data(proc, gx_device)
 
-		/* OBSOLETED in release 5.23 */
+                /* OBSOLETED in release 5.23 */
 
 #define dev_t_proc_end_image(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1070,7 +1064,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_end_image(proc)\
   dev_t_proc_end_image(proc, gx_device)
 
-		/* Added in release 3.68 */
+                /* Added in release 3.68 */
 
 #define dev_t_proc_strip_tile_rectangle(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1090,14 +1084,14 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_strip_copy_rop(proc)\
   dev_t_proc_strip_copy_rop(proc, gx_device)
 
-		/* Added in release 4.20 */
+                /* Added in release 4.20 */
 
 #define dev_t_proc_get_clipping_box(proc, dev_t)\
   void proc(dev_t *dev, gs_fixed_rect *pbox)
 #define dev_proc_get_clipping_box(proc)\
   dev_t_proc_get_clipping_box(proc, gx_device)
 
-		/* Added in release 5.20, changed in 5.23 */
+                /* Added in release 5.20, changed in 5.23 */
 
 #define dev_t_proc_begin_typed_image(proc, dev_t)\
   int proc(dev_t *dev,\
@@ -1108,7 +1102,7 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_begin_typed_image(proc)\
   dev_t_proc_begin_typed_image(proc, gx_device)
 
-		/* Added in release 5.20 */
+                /* Added in release 5.20 */
 
 #define dev_t_proc_get_bits_rectangle(proc, dev_t)\
   int proc(dev_t *dev, const gs_int_rect *prect,\
@@ -1129,26 +1123,25 @@ typedef struct gs_param_list_s gs_param_list;
 #define dev_proc_create_compositor(proc)\
   dev_t_proc_create_compositor(proc, gx_device)\
 
-		/* Added in release 5.23 */
+                /* Added in release 5.23 */
 
 #define dev_t_proc_get_hardware_params(proc, dev_t)\
   int proc(dev_t *dev, gs_param_list *plist)
 #define dev_proc_get_hardware_params(proc)\
   dev_t_proc_get_hardware_params(proc, gx_device)
 
-		/* Added in release 5.24 */
+                /* Added in release 5.24 */
 
      /* ... text_begin ... see gxtext.h for definition */
 
-		/* Added in release 6.23 */
+                /* Added in release 6.23 */
 
 #define dev_t_proc_finish_copydevice(proc, dev_t)\
   int proc(dev_t *dev, const gx_device *from_dev)
 #define dev_proc_finish_copydevice(proc)\
   dev_t_proc_finish_copydevice(proc, gx_device)
 
-		/* Added in release 6.61 (raph) */
-
+                /* Added in release 6.61 (raph) */
 
 /*
   This area of the transparency facilities is in flux.  Here is a proposal
@@ -1269,7 +1262,7 @@ typedef enum {
 
 #define dev_t_proc_pattern_manage(proc, dev_t)\
   int proc(gx_device *pdev, gx_bitmap_id id,\
-		gs_pattern1_instance_t *pinst, pattern_manage_t function)
+                gs_pattern1_instance_t *pinst, pattern_manage_t function)
 #define dev_proc_pattern_manage(proc)\
   dev_t_proc_pattern_manage(proc, gx_device)
 
@@ -1277,9 +1270,9 @@ typedef enum {
   Fill rectangle with a high level color.
   Return rangecheck, if the device can't handle the high level color.
 
-  The graphics library calls this function with degenerate (widths=0) 
-  rectangles, to know whether the device can handle a rectangle with 
-  the high level color. The device should skip such rectangles returning 
+  The graphics library calls this function with degenerate (widths=0)
+  rectangles, to know whether the device can handle a rectangle with
+  the high level color. The device should skip such rectangles returning
   a proper code.
 
   Currently this function is used with gs_rectfill and gs_fillpage only.
@@ -1288,14 +1281,14 @@ typedef enum {
 
 #define dev_t_proc_fill_rectangle_hl_color(proc, dev_t)\
   int proc(dev_t *dev, const gs_fixed_rect *rect, \
-	const gs_imager_state *pis, const gx_drawing_color *pdcolor, \
-	const gx_clip_path *pcpath)
+        const gs_imager_state *pis, const gx_drawing_color *pdcolor, \
+        const gx_clip_path *pcpath)
 #define dev_proc_fill_rectangle_hl_color(proc)\
   dev_t_proc_fill_rectangle_hl_color(proc, gx_device)
 
 /*
   Include a color space into the output.
-  This function is used to include DefaultGray, DefaultRGB, 
+  This function is used to include DefaultGray, DefaultRGB,
   DefaultCMYK into PDF, PS, EPS output.
   Low level devices should ignore this call.
 */
@@ -1305,7 +1298,7 @@ typedef enum {
 #define dev_proc_include_color_space(proc)\
   dev_t_proc_include_color_space(proc, gx_device)
 
-		/* Shading support. */
+                /* Shading support. */
 
 typedef struct gs_fill_attributes_s {
       const gs_fixed_rect *clip;
@@ -1320,16 +1313,16 @@ typedef struct gs_fill_attributes_s {
 
 #define dev_t_proc_fill_linear_color_scanline(proc, dev_t)\
   int proc(dev_t *dev, const gs_fill_attributes *fa,\
-	int i, int j, int w, /* scanline coordinates and width */\
-	const frac31 *c0, /* initial color for the pixel (i,j), the integer part */\
-	const int32_t *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
-	const int32_t *cg_num, /* color gradient numerator */\
-	int32_t cg_den /* color gradient denominator */)
+        int i, int j, int w, /* scanline coordinates and width */\
+        const frac31 *c0, /* initial color for the pixel (i,j), the integer part */\
+        const int32_t *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
+        const int32_t *cg_num, /* color gradient numerator */\
+        int32_t cg_den /* color gradient denominator */)
 #define dev_proc_fill_linear_color_scanline(proc)\
   dev_t_proc_fill_linear_color_scanline(proc, gx_device)
 
 /* Fill a linear color trapezoid. */
-/* The server assumes a strongly linear color, 
+/* The server assumes a strongly linear color,
    i.e. it can ignore any of c0, c1, c2, c3. */
 /* [p0 : p1] - left edge, from bottom to top.
    [p2 : p3] - right edge, from bottom to top.
@@ -1338,9 +1331,9 @@ typedef struct gs_fill_attributes_s {
    In this case the color doesn't depend on X (on Y if fa->swap_axes).
    In this case the base coordinates for the color gradient
    may be unequal to p0, p1, p2, p3, and must be provided/taken
-   in/from fa->ystart, fa->yend. 
+   in/from fa->ystart, fa->yend.
    The return value 0 is not allowed in this case. */
-/* Return values : 
+/* Return values :
   1 - success;
   0 - Too big. The area isn't filled. The client must decompose the area.
   <0 - error.
@@ -1348,15 +1341,15 @@ typedef struct gs_fill_attributes_s {
 
 #define dev_t_proc_fill_linear_color_trapezoid(proc, dev_t)\
   int proc(dev_t *dev, const gs_fill_attributes *fa,\
-	const gs_fixed_point *p0, const gs_fixed_point *p1,\
-	const gs_fixed_point *p2, const gs_fixed_point *p3,\
-	const frac31 *c0, const frac31 *c1,\
-	const frac31 *c2, const frac31 *c3)
+        const gs_fixed_point *p0, const gs_fixed_point *p1,\
+        const gs_fixed_point *p2, const gs_fixed_point *p3,\
+        const frac31 *c0, const frac31 *c1,\
+        const frac31 *c2, const frac31 *c3)
 #define dev_proc_fill_linear_color_trapezoid(proc)\
   dev_t_proc_fill_linear_color_trapezoid(proc, gx_device)
 
 /* Fill a linear color triangle. */
-/* Return values : 
+/* Return values :
   1 - success;
   0 - Too big. The area isn't filled. The client must decompose the area.
   <0 - error.
@@ -1364,9 +1357,9 @@ typedef struct gs_fill_attributes_s {
 
 #define dev_t_proc_fill_linear_color_triangle(proc, dev_t)\
   int proc(dev_t *dev, const gs_fill_attributes *fa,\
-	const gs_fixed_point *p0, const gs_fixed_point *p1,\
-	const gs_fixed_point *p2,\
-	const frac31 *c0, const frac31 *c1, const frac31 *c2)
+        const gs_fixed_point *p0, const gs_fixed_point *p1,\
+        const gs_fixed_point *p2,\
+        const frac31 *c0, const frac31 *c1, const frac31 *c2)
 #define dev_proc_fill_linear_color_triangle(proc)\
   dev_t_proc_fill_linear_color_triangle(proc, gx_device)
 
@@ -1404,13 +1397,11 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_fillpage(proc)\
   dev_t_proc_fillpage(proc, gx_device)
 
-
 #define dev_t_proc_push_transparency_state(proc, dev_t)\
   int proc(gx_device *dev,\
     gs_imager_state *pis)
 #define dev_proc_push_transparency_state(proc)\
   dev_t_proc_push_transparency_state(proc, gx_device)
-
 
 #define dev_t_proc_pop_transparency_state(proc, dev_t)\
   int proc(gx_device *dev,\
@@ -1441,67 +1432,67 @@ typedef struct gs_devn_params_s gs_devn_params;
 
 #define gx_device_proc_struct(dev_t)\
 {	dev_t_proc_open_device((*open_device), dev_t);\
-	dev_t_proc_get_initial_matrix((*get_initial_matrix), dev_t);\
-	dev_t_proc_sync_output((*sync_output), dev_t);\
-	dev_t_proc_output_page((*output_page), dev_t);\
-	dev_t_proc_close_device((*close_device), dev_t);\
-	dev_t_proc_map_rgb_color((*map_rgb_color), dev_t);\
-	dev_t_proc_map_color_rgb((*map_color_rgb), dev_t);\
-	dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
-	dev_t_proc_tile_rectangle((*tile_rectangle), dev_t);\
-	dev_t_proc_copy_mono((*copy_mono), dev_t);\
-	dev_t_proc_copy_color((*copy_color), dev_t);\
-	dev_t_proc_draw_line((*obsolete_draw_line), dev_t);\
-	dev_t_proc_get_bits((*get_bits), dev_t);\
-	dev_t_proc_get_params((*get_params), dev_t);\
-	dev_t_proc_put_params((*put_params), dev_t);\
-	dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
-	dev_t_proc_get_xfont_procs((*get_xfont_procs), dev_t);\
-	dev_t_proc_get_xfont_device((*get_xfont_device), dev_t);\
-	dev_t_proc_map_rgb_alpha_color((*map_rgb_alpha_color), dev_t);\
-	dev_t_proc_get_page_device((*get_page_device), dev_t);\
-	dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
-	dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
-	dev_t_proc_get_band((*get_band), dev_t);\
-	dev_t_proc_copy_rop((*copy_rop), dev_t);\
-	dev_t_proc_fill_path((*fill_path), dev_t);\
-	dev_t_proc_stroke_path((*stroke_path), dev_t);\
-	dev_t_proc_fill_mask((*fill_mask), dev_t);\
-	dev_t_proc_fill_trapezoid((*fill_trapezoid), dev_t);\
-	dev_t_proc_fill_parallelogram((*fill_parallelogram), dev_t);\
-	dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
-	dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
-	dev_t_proc_begin_image((*begin_image), dev_t);\
-	dev_t_proc_image_data((*image_data), dev_t);\
-	dev_t_proc_end_image((*end_image), dev_t);\
-	dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
-	dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
-	dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
-	dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
-	dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\
-	dev_t_proc_map_color_rgb_alpha((*map_color_rgb_alpha), dev_t);\
-	dev_t_proc_create_compositor((*create_compositor), dev_t);\
-	dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
-	dev_t_proc_text_begin((*text_begin), dev_t);\
-	dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
-	dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
-	dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
-	dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
-	dev_t_proc_end_transparency_mask((*end_transparency_mask), dev_t);\
-	dev_t_proc_discard_transparency_layer((*discard_transparency_layer), dev_t);\
-	dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), dev_t); \
-	dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
-	dev_t_proc_encode_color((*encode_color), dev_t); \
-	dev_t_proc_decode_color((*decode_color), dev_t); \
-	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
-	dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
-	dev_t_proc_include_color_space((*include_color_space), dev_t); \
-	dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \
-	dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
-	dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
-	dev_t_proc_update_spot_equivalent_colors((*update_spot_equivalent_colors), dev_t); \
-	dev_t_proc_ret_devn_params((*ret_devn_params), dev_t); \
-	dev_t_proc_fillpage((*fillpage), dev_t); \
+        dev_t_proc_get_initial_matrix((*get_initial_matrix), dev_t);\
+        dev_t_proc_sync_output((*sync_output), dev_t);\
+        dev_t_proc_output_page((*output_page), dev_t);\
+        dev_t_proc_close_device((*close_device), dev_t);\
+        dev_t_proc_map_rgb_color((*map_rgb_color), dev_t);\
+        dev_t_proc_map_color_rgb((*map_color_rgb), dev_t);\
+        dev_t_proc_fill_rectangle((*fill_rectangle), dev_t);\
+        dev_t_proc_tile_rectangle((*tile_rectangle), dev_t);\
+        dev_t_proc_copy_mono((*copy_mono), dev_t);\
+        dev_t_proc_copy_color((*copy_color), dev_t);\
+        dev_t_proc_draw_line((*obsolete_draw_line), dev_t);\
+        dev_t_proc_get_bits((*get_bits), dev_t);\
+        dev_t_proc_get_params((*get_params), dev_t);\
+        dev_t_proc_put_params((*put_params), dev_t);\
+        dev_t_proc_map_cmyk_color((*map_cmyk_color), dev_t);\
+        dev_t_proc_get_xfont_procs((*get_xfont_procs), dev_t);\
+        dev_t_proc_get_xfont_device((*get_xfont_device), dev_t);\
+        dev_t_proc_map_rgb_alpha_color((*map_rgb_alpha_color), dev_t);\
+        dev_t_proc_get_page_device((*get_page_device), dev_t);\
+        dev_t_proc_get_alpha_bits((*get_alpha_bits), dev_t);\
+        dev_t_proc_copy_alpha((*copy_alpha), dev_t);\
+        dev_t_proc_get_band((*get_band), dev_t);\
+        dev_t_proc_copy_rop((*copy_rop), dev_t);\
+        dev_t_proc_fill_path((*fill_path), dev_t);\
+        dev_t_proc_stroke_path((*stroke_path), dev_t);\
+        dev_t_proc_fill_mask((*fill_mask), dev_t);\
+        dev_t_proc_fill_trapezoid((*fill_trapezoid), dev_t);\
+        dev_t_proc_fill_parallelogram((*fill_parallelogram), dev_t);\
+        dev_t_proc_fill_triangle((*fill_triangle), dev_t);\
+        dev_t_proc_draw_thin_line((*draw_thin_line), dev_t);\
+        dev_t_proc_begin_image((*begin_image), dev_t);\
+        dev_t_proc_image_data((*image_data), dev_t);\
+        dev_t_proc_end_image((*end_image), dev_t);\
+        dev_t_proc_strip_tile_rectangle((*strip_tile_rectangle), dev_t);\
+        dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
+        dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
+        dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
+        dev_t_proc_get_bits_rectangle((*get_bits_rectangle), dev_t);\
+        dev_t_proc_map_color_rgb_alpha((*map_color_rgb_alpha), dev_t);\
+        dev_t_proc_create_compositor((*create_compositor), dev_t);\
+        dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
+        dev_t_proc_text_begin((*text_begin), dev_t);\
+        dev_t_proc_finish_copydevice((*finish_copydevice), dev_t);\
+        dev_t_proc_begin_transparency_group((*begin_transparency_group), dev_t);\
+        dev_t_proc_end_transparency_group((*end_transparency_group), dev_t);\
+        dev_t_proc_begin_transparency_mask((*begin_transparency_mask), dev_t);\
+        dev_t_proc_end_transparency_mask((*end_transparency_mask), dev_t);\
+        dev_t_proc_discard_transparency_layer((*discard_transparency_layer), dev_t);\
+        dev_t_proc_get_color_mapping_procs((*get_color_mapping_procs), dev_t); \
+        dev_t_proc_get_color_comp_index((*get_color_comp_index), dev_t); \
+        dev_t_proc_encode_color((*encode_color), dev_t); \
+        dev_t_proc_decode_color((*decode_color), dev_t); \
+        dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
+        dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
+        dev_t_proc_include_color_space((*include_color_space), dev_t); \
+        dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \
+        dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
+        dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
+        dev_t_proc_update_spot_equivalent_colors((*update_spot_equivalent_colors), dev_t); \
+        dev_t_proc_ret_devn_params((*ret_devn_params), dev_t); \
+        dev_t_proc_fillpage((*fillpage), dev_t); \
         dev_t_proc_push_transparency_state((*push_transparency_state), dev_t); \
         dev_t_proc_pop_transparency_state((*pop_transparency_state), dev_t); \
         dev_t_proc_put_image((*put_image), dev_t); \
@@ -1535,16 +1526,16 @@ typedef struct gx_image_plane_s {
  * Their replacements no longer take an ignored dev argument.
  */
 int gx_image_data(gx_image_enum_common_t *info, const byte **planes,
-		  int data_x, uint raster, int height);
+                  int data_x, uint raster, int height);
 /*
  * Solely for backward compatibility, gx_image_plane_data doesn't return
  * rows_used.
  */
 int gx_image_plane_data(gx_image_enum_common_t *info,
-			const gx_image_plane_t *planes, int height);
+                        const gx_image_plane_t *planes, int height);
 int gx_image_plane_data_rows(gx_image_enum_common_t *info,
-			     const gx_image_plane_t *planes, int height,
-			     int *rows_used);
+                             const gx_image_plane_t *planes, int height,
+                             int *rows_used);
 int gx_image_flush(gx_image_enum_common_t *info);
 bool gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted);
 int gx_image_end(gx_image_enum_common_t *info, bool draw_last);
@@ -1616,8 +1607,8 @@ typedef dev_proc_map_color_rgb((*dev_proc_map_color_rgb_t));
  * compositing, halftoning, and the null device.
  */
 #define gx_device_forward_common\
-	gx_device_common;\
-	gx_device *target
+        gx_device_common;\
+        gx_device *target
 /* A generic forwarding device. */
 typedef struct gx_device_forward_s {
     gx_device_forward_common;
@@ -1657,13 +1648,13 @@ extern_st(st_device_null);
  * internal = true (retained = false).
  */
 void gx_device_init(gx_device * dev, const gx_device * proto,
-		    gs_memory_t * mem, bool internal);
+                    gs_memory_t * mem, bool internal);
 
 /* Make a null device. */
 /* The gs_memory_t argument is 0 if the device is temporary and local, */
 /* or the allocator that was used to allocate it if it is a real object. */
 void gs_make_null_device(gx_device_null *dev_null, gx_device *target,
-			 gs_memory_t *mem);
+                         gs_memory_t *mem);
 /* Is a null device ? */
 bool gs_is_null_device(gx_device *dev);
 
@@ -1686,7 +1677,7 @@ int gx_device_adjust_resolution(gx_device * dev, int actual_width, int actual_he
 /* Set the HWMargins to values defined in inches. */
 /* If move_origin is true, also reset the Margins. */
 void gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
-			   bool move_origin);
+                           bool move_origin);
 
 /* Set the width and height (in pixels), updating MediaSize. */
 void gx_device_set_width_height(gx_device * dev, int width, int height);

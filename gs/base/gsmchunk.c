@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -117,16 +117,16 @@ typedef struct gs_memory_chunk_s {
 /* Initialize a gs_memory_chunk_t */
 int				/* -ve error code or 0 */
 gs_memory_chunk_wrap( gs_memory_t **wrapped,	/* chunk allocator init */
-		      gs_memory_t * target )	/* base allocator */
+                      gs_memory_t * target )	/* base allocator */
 {
     /* Use the non-GC allocator of the target. */
     gs_memory_t *non_gc_target = target->non_gc_memory;
     gs_memory_chunk_t *cmem = NULL;
 
     *wrapped = NULL;		/* don't leave garbage in case we fail */
-    if (non_gc_target) 
-	    cmem = (gs_memory_chunk_t *) gs_alloc_bytes_immovable(non_gc_target,
-			sizeof(gs_memory_chunk_t), "gs_malloc_wrap(chunk)");
+    if (non_gc_target)
+            cmem = (gs_memory_chunk_t *) gs_alloc_bytes_immovable(non_gc_target,
+                        sizeof(gs_memory_chunk_t), "gs_malloc_wrap(chunk)");
     if (cmem == 0)
         return_error(gs_error_VMerror);
     cmem->stable_memory = (gs_memory_t *)cmem;	/* we are stable */
@@ -155,7 +155,7 @@ void
 gs_memory_chunk_release(gs_memory_t *mem)
 {
     gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,
-		       "gs_memory_chunk_release");
+                       "gs_memory_chunk_release");
 }
 
 /* ---------- Accessors ------------- */
@@ -180,22 +180,22 @@ gs_memory_chunk_dump_memory(const gs_memory_t *mem)
 
     dprintf2("chunk_dump_memory: current used=%d, max_used=%d\n", cmem->used, cmem->max_used);
     if (cmem->in_use != 0)
-	dprintf1("*** this memory allocator is not idle, used for: %s\n",
-		cmem->in_use < 0 ? "free" : "alloc");
+        dprintf1("*** this memory allocator is not idle, used for: %s\n",
+                cmem->in_use < 0 ? "free" : "alloc");
     for (i=0; i<2; i++) {
-	current = head;
-	while ( current != NULL ) { 
-	    if (current->objlist != NULL) {
-		chunk_obj_node_t *obj;
+        current = head;
+        while ( current != NULL ) {
+            if (current->objlist != NULL) {
+                chunk_obj_node_t *obj;
 
-		for (obj= current->objlist; obj != NULL; obj=obj->next) 
-		    dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=%s, sequence#=%ld\n",
-			    (ulong)obj, obj->size, obj->type->sname, obj->sequence);
-	    }
-	    next = current->next; 
-	    current = next;
-	}
-	head = cmem->head_so_chunk;	/* switch to single object chunk list */
+                for (obj= current->objlist; obj != NULL; obj=obj->next)
+                    dprintf4("chunk_mem leak, obj=0x%lx, size=%d, type=%s, sequence#=%ld\n",
+                            (ulong)obj, obj->size, obj->type->sname, obj->sequence);
+            }
+            next = current->next;
+            current = next;
+        }
+        head = cmem->head_so_chunk;	/* switch to single object chunk list */
     }
 }
 #endif
@@ -219,18 +219,18 @@ chunk_mem_node_free_all_remaining(gs_memory_chunk_t *cmem)
 
 #ifdef DEBUG
     if (cmem->in_use != 0)
-	dprintf1("*** chunk_mem_node_free_all_remaining: this memory allocator is not idle, used for: %s\n",
-		cmem->in_use < 0 ? "free" : "alloc");
+        dprintf1("*** chunk_mem_node_free_all_remaining: this memory allocator is not idle, used for: %s\n",
+                cmem->in_use < 0 ? "free" : "alloc");
 #endif
     for (i=0; i<2; i++) {
-	current = head;
-	while ( current != NULL ) { 
-	    next = current->next; 
-	    gs_free_object(target, current, "chunk_mem_node_remove");
-	    current = next;
-	}
-	cmem->head_mo_chunk = NULL;
-	head = cmem->head_so_chunk;	/* switch to single object chunk list */
+        current = head;
+        while ( current != NULL ) {
+            next = current->next;
+            gs_free_object(target, current, "chunk_mem_node_remove");
+            current = next;
+        }
+        cmem->head_mo_chunk = NULL;
+        head = cmem->head_so_chunk;	/* switch to single object chunk list */
     }
     cmem->head_so_chunk = NULL;
 }
@@ -243,24 +243,24 @@ chunk_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
 #ifdef DEBUG
     if (cmem->in_use != 0)
-	dprintf1("*** chunk_free_all: this memory allocator is not idle, used for: %s\n",
-		cmem->in_use < 0 ? "free" : "alloc");
+        dprintf1("*** chunk_free_all: this memory allocator is not idle, used for: %s\n",
+                cmem->in_use < 0 ? "free" : "alloc");
 #endif
     /* Only free the structures and the allocator itself. */
     if (mem->stable_memory) {
-	if (mem->stable_memory != mem)
-	    gs_memory_free_all(mem->stable_memory, free_mask, cname);
-	if (free_mask & FREE_ALL_ALLOCATOR)
-	    mem->stable_memory = 0;
+        if (mem->stable_memory != mem)
+            gs_memory_free_all(mem->stable_memory, free_mask, cname);
+        if (free_mask & FREE_ALL_ALLOCATOR)
+            mem->stable_memory = 0;
     }
     if (free_mask & FREE_ALL_DATA) {
-	chunk_mem_node_free_all_remaining(cmem);
+        chunk_mem_node_free_all_remaining(cmem);
     }
     if (free_mask & FREE_ALL_STRUCTURES) {
-	cmem->target = 0;
+        cmem->target = 0;
     }
     if (free_mask & FREE_ALL_ALLOCATOR)
-	gs_free_object(target, cmem, cname);
+        gs_free_object(target, cmem, cname);
 }
 
 extern const gs_memory_struct_type_t st_bytes;
@@ -279,11 +279,10 @@ round_up_to_align(uint size)
 #define MULTIPLE_OBJ_CHUNK_SIZE \
     (sizeof(chunk_mem_node_t) + round_up_to_align(CHUNK_SIZE))
 
-
 /* return -1 on error, 0 on success */
-static int 
+static int
 chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_object_chunk,
-			chunk_mem_node_t **newchunk)
+                        chunk_mem_node_t **newchunk)
 {
     chunk_mem_node_t *node;
     gs_memory_t *target = cmem->target;
@@ -294,10 +293,10 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
 
     /* caller tells us whether or not to use a single object chunk */
     if (is_multiple_object_chunk && (chunk_size < MULTIPLE_OBJ_CHUNK_SIZE)) {
-	chunk_size = MULTIPLE_OBJ_CHUNK_SIZE;	/* the size for collections of objects */
-	is_multiple_object_chunk = true;
+        chunk_size = MULTIPLE_OBJ_CHUNK_SIZE;	/* the size for collections of objects */
+        is_multiple_object_chunk = true;
     } else
-	is_multiple_object_chunk = false;
+        is_multiple_object_chunk = false;
 
     *newchunk = NULL;
     node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size, "chunk_mem_node_add");
@@ -306,7 +305,7 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
     cmem->used += chunk_size;
 #ifdef DEBUG
     if (cmem->used > cmem->max_used)
-	cmem->max_used = cmem->used;
+        cmem->max_used = cmem->used;
 #endif
     node->size = chunk_size;	/* how much we allocated */
     node->largest_free = chunk_size - sizeof(chunk_mem_node_t);
@@ -319,35 +318,35 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
     /* Put the node at the head of the list (so=single object, mo=multiple object) */
     /* only multiple objects will be have any room in them */
     if (is_multiple_object_chunk) {
-	if (cmem->head_mo_chunk == NULL) {
-	    cmem->head_mo_chunk = node;
-	    node->next = NULL;
-	} else {
-	    node->next = cmem->head_mo_chunk;
-	    cmem->head_mo_chunk = node;
-	}
+        if (cmem->head_mo_chunk == NULL) {
+            cmem->head_mo_chunk = node;
+            node->next = NULL;
+        } else {
+            node->next = cmem->head_mo_chunk;
+            cmem->head_mo_chunk = node;
+        }
     } else {
-	if (cmem->head_so_chunk == NULL) {
-	    cmem->head_so_chunk = node;
- 	    node->next = NULL;
-	} else {
-	    node->next = cmem->head_so_chunk;
-	    cmem->head_so_chunk = node;
-	}
+        if (cmem->head_so_chunk == NULL) {
+            cmem->head_so_chunk = node;
+            node->next = NULL;
+        } else {
+            node->next = cmem->head_so_chunk;
+            cmem->head_so_chunk = node;
+        }
     }
 
     *newchunk = node;	    /* return the chunk we just allocated */
     return 0;
 }
 
-static int        
+static int
 chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
 {
     chunk_mem_node_t **p_head = addr->is_multiple_object_chunk ?
-		&(cmem->head_mo_chunk) : &(cmem->head_so_chunk);
+                &(cmem->head_mo_chunk) : &(cmem->head_so_chunk);
     chunk_mem_node_t *head = *p_head;
     gs_memory_t * const target = cmem->target;
- 
+
     cmem->used -= addr->size;
 #ifdef DEBUG
 #endif
@@ -359,28 +358,28 @@ chunk_mem_node_remove(gs_memory_chunk_t *cmem, chunk_mem_node_t *addr)
     }
     if (head == addr) {
         *p_head = head->next;
-	gs_free_object(target, head, "chunk_mem_node_remove");
+        gs_free_object(target, head, "chunk_mem_node_remove");
     } else {
-	chunk_mem_node_t *current;
+        chunk_mem_node_t *current;
         bool found = false;
 
         /* scan the list, stopping in front of element */
         for (current = head; current != NULL; current = current->next) {
             if ( current->next && (current->next == addr) ) {
                 current->next = current->next->next;	/* de-link it */
-		gs_free_object(target, addr, "chunk_mem_node_remove");
+                gs_free_object(target, addr, "chunk_mem_node_remove");
                 found = true;
                 break;
             }
         }
         if ( !found ) {
             dprintf1("FAIL freeing wild pointer freed address 0x%lx not found\n", (ulong)addr );
-	    return -1;
-	}
+            return -1;
+        }
     }
     return 0;
 }
-    
+
 /* all of the allocation routines reduce to the this function */
 static byte *
 chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
@@ -396,47 +395,47 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 
 #ifdef DEBUG
     if (cmem->in_use != 0)
-	dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
-		cmem->in_use < 0 ? "free" : "alloc");
+        dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
+                cmem->in_use < 0 ? "free" : "alloc");
     cmem->in_use = 1;	/* alloc */
 #endif
     newsize = round_up_to_align(size + sizeof(chunk_obj_node_t));	/* space we will need */
     is_multiple_object_size = ! IS_SINGLE_OBJ_SIZE(newsize);
-    
+
     if ( is_multiple_object_size ) {
-	/* Search the multiple object chunks for one with a large enough free area */
-	for (current = head; current != NULL; current = current->next) {
-	    if ( current->largest_free >= newsize) 
-		break;
-	}
+        /* Search the multiple object chunks for one with a large enough free area */
+        for (current = head; current != NULL; current = current->next) {
+            if ( current->largest_free >= newsize)
+                break;
+        }
     }
     if (current == NULL) {
-	/* No chunks with enough space or size makes this a single object, allocate one */
-	if (chunk_mem_node_add(cmem, newsize, is_multiple_object_size, &current) < 0) {
+        /* No chunks with enough space or size makes this a single object, allocate one */
+        if (chunk_mem_node_add(cmem, newsize, is_multiple_object_size, &current) < 0) {
 #ifdef DEBUG
-	if (gs_debug_c('a'))
-	    dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
-	    cmem->in_use = 0;	/* idle */
+        if (gs_debug_c('a'))
+            dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
+            cmem->in_use = 0;	/* idle */
 #endif
-	    return NULL;
-	}
+            return NULL;
+        }
     }
     /* Find the first free area in the current chunk that is big enough */
     /* LATER: might be better to find the 'best fit' */
     prev_free = NULL;		/* NULL means chunk */
     for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next) {
-	if (free_obj->size >= newsize) 
-	    break;
-	prev_free = free_obj;	/* keep track so we can update link */
+        if (free_obj->size >= newsize)
+            break;
+        prev_free = free_obj;	/* keep track so we can update link */
     }
 
     if (free_obj == NULL) {
-	dprintf2("largest_free value = %d is too large, cannot find room for size = %d\n",
-	    current->largest_free, newsize);
+        dprintf2("largest_free value = %d is too large, cannot find room for size = %d\n",
+            current->largest_free, newsize);
 #ifdef DEBUG
-	cmem->in_use = 0;	/* idle */
+        cmem->in_use = 0;	/* idle */
 #endif
-	return NULL;
+        return NULL;
     }
 
     /* If this free object's size == largest_free, we'll have to re-scan */
@@ -448,18 +447,18 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     free_size = free_obj->size - newsize;	/* amount remaining */
     new_free = (chunk_obj_node_t *)((byte *)(free_obj) + newsize);	/* start of remaining free area */
     if (free_size >= sizeof(chunk_obj_node_t)) {
-	if (prev_free != NULL)
-	    prev_free->next = new_free;
-	else
-	    current->freelist = new_free;
-	new_free->next = free_obj->next;
-	new_free->size = free_size;
+        if (prev_free != NULL)
+            prev_free->next = new_free;
+        else
+            current->freelist = new_free;
+        new_free->next = free_obj->next;
+        new_free->size = free_size;
     } else {
        /* Not enough space remaining, just skip around it */
-	if (prev_free != NULL)
-	    prev_free->next = free_obj->next;
-	else
-	    current->freelist = free_obj->next;
+        if (prev_free != NULL)
+            prev_free->next = free_obj->next;
+        else
+            current->freelist = free_obj->next;
     }
 
 #ifdef DEBUG
@@ -475,17 +474,17 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
 
     /* If we flagged for re-scan to find the new largest_free, do it now */
     if (rescan_free_list) {
-	current->largest_free = 0;
-	for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next)
-	    if (free_obj->size > current->largest_free) 
-		current->largest_free = free_obj->size;
+        current->largest_free = 0;
+        for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next)
+            if (free_obj->size > current->largest_free)
+                current->largest_free = free_obj->size;
     }
 
     /* return the client area of the object we allocated */
 #ifdef DEBUG
     if (gs_debug_c('A'))
-	dlprintf3("[a+]chunk_obj_alloc (%s)(%u) = 0x%lx: OK.\n",
-		  client_name_string(cname), size, (ulong) newobj);
+        dlprintf3("[a+]chunk_obj_alloc (%s)(%u) = 0x%lx: OK.\n",
+                  client_name_string(cname), size, (ulong) newobj);
     cmem->in_use = 0; 	/* idle */
 #endif
     return (byte *)(newobj) + sizeof(chunk_obj_node_t);
@@ -505,46 +504,45 @@ chunk_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 
 static void *
 chunk_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-			 client_name_t cname)
+                         client_name_t cname)
 {
     return chunk_obj_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static void *
 chunk_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-	       client_name_t cname)
+               client_name_t cname)
 {
     return chunk_obj_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static byte *
 chunk_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
-			     uint elt_size, client_name_t cname)
+                             uint elt_size, client_name_t cname)
 {
     return chunk_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static byte *
 chunk_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
-		   client_name_t cname)
+                   client_name_t cname)
 {
     return chunk_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static void *
 chunk_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
-			   gs_memory_type_ptr_t pstype, client_name_t cname)
+                           gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return chunk_obj_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
 
 static void *
 chunk_alloc_struct_array(gs_memory_t * mem, uint num_elements,
-		     gs_memory_type_ptr_t pstype, client_name_t cname)
+                     gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return chunk_obj_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
-
 
 static void *
 chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_name_t cname)
@@ -562,178 +560,178 @@ chunk_resize_object(gs_memory_t * mem, void *ptr, uint new_num_elements, client_
 #endif
 
     if (new_size == old_size)
-	return ptr;
+        return ptr;
     if ((new_ptr = chunk_obj_alloc(mem, new_size, type, cname)) == 0)
-	return 0;
+        return 0;
     memcpy(new_ptr, ptr, min(old_size, new_size));
     chunk_free_object(mem, ptr, cname);
 #ifdef DEBUG
     cmem->max_used = save_max_used;
     if (cmem->used > cmem->max_used)
-	cmem->max_used = cmem->used;
+        cmem->max_used = cmem->used;
 #endif
     return new_ptr;
 }
-	
+
 static void
 chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     gs_memory_chunk_t * const cmem = (gs_memory_chunk_t *)mem;
 
-    if (ptr == NULL ) 
-	return;
+    if (ptr == NULL )
+        return;
     {
-	/* back up to obj header */
-	chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
-	void (*finalize)(void *ptr) = obj->type->finalize;
-	chunk_mem_node_t *current;
-	chunk_obj_node_t *free_obj, *prev_free;
-	chunk_obj_node_t *scan_obj, *prev_obj;
-	/* space we will free */
-	uint freed_size = round_up_to_align(obj->size + sizeof(chunk_obj_node_t));
+        /* back up to obj header */
+        chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
+        void (*finalize)(void *ptr) = obj->type->finalize;
+        chunk_mem_node_t *current;
+        chunk_obj_node_t *free_obj, *prev_free;
+        chunk_obj_node_t *scan_obj, *prev_obj;
+        /* space we will free */
+        uint freed_size = round_up_to_align(obj->size + sizeof(chunk_obj_node_t));
 
-	if ( finalize != NULL )
-	    finalize(ptr);
+        if ( finalize != NULL )
+            finalize(ptr);
 #ifdef DEBUG
-	if (cmem->in_use != 0)
-	    dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
-		    cmem->in_use < 0 ? "free" : "alloc");
-	cmem->in_use = -1;	/* free */
+        if (cmem->in_use != 0)
+            dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
+                    cmem->in_use < 0 ? "free" : "alloc");
+        cmem->in_use = -1;	/* free */
 #endif
-	/* finalize may change the head_**_chunk doing free of stuff */
-	current = IS_SINGLE_OBJ_SIZE(freed_size) ?
-					cmem->head_so_chunk : cmem->head_mo_chunk;
-	/* Find the chunk containing this object */
-	for ( ; current != NULL; current = current->next) {
-	    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size))
-		break;
-	}
-	if (current == NULL) {
-	    /* We _may_have searched the wrong list -- if so find out. */
-	    current = cmem->head_so_chunk;
-	    /* Find the chunk containing this object */
-	    for ( ; current != NULL; current = current->next) {
-		if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
-		    dprintf1("chunk_free_obj: OOPS! found it on the single_object list, size=%d\n",
-				obj->size);
-		    break;
-		}
-	    }
-	    if (current == NULL) {
-		current = cmem->head_mo_chunk;
-		/* Find the chunk containing this object */
-		for ( ; current != NULL; current = current->next) {
-		    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
-			dprintf1("chunk_free_obj: OOPS! found it on the multiple_object list, size=%d\n",
-				obj->size);
-			break;
-		    }
-		}
-	    }
-	    if (current == NULL) {
-		/* Object not found in any chunk */
-		dprintf2("chunk_free_obj failed, object 0x%lx not in any chunk, size=%d\n", ((ulong)obj), obj->size);
+        /* finalize may change the head_**_chunk doing free of stuff */
+        current = IS_SINGLE_OBJ_SIZE(freed_size) ?
+                                        cmem->head_so_chunk : cmem->head_mo_chunk;
+        /* Find the chunk containing this object */
+        for ( ; current != NULL; current = current->next) {
+            if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size))
+                break;
+        }
+        if (current == NULL) {
+            /* We _may_have searched the wrong list -- if so find out. */
+            current = cmem->head_so_chunk;
+            /* Find the chunk containing this object */
+            for ( ; current != NULL; current = current->next) {
+                if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
+                    dprintf1("chunk_free_obj: OOPS! found it on the single_object list, size=%d\n",
+                                obj->size);
+                    break;
+                }
+            }
+            if (current == NULL) {
+                current = cmem->head_mo_chunk;
+                /* Find the chunk containing this object */
+                for ( ; current != NULL; current = current->next) {
+                    if (((byte *)obj > (byte *)current) && ((byte *)obj < (byte *)(current) + current->size)) {
+                        dprintf1("chunk_free_obj: OOPS! found it on the multiple_object list, size=%d\n",
+                                obj->size);
+                        break;
+                    }
+                }
+            }
+            if (current == NULL) {
+                /* Object not found in any chunk */
+                dprintf2("chunk_free_obj failed, object 0x%lx not in any chunk, size=%d\n", ((ulong)obj), obj->size);
 #ifdef DEBUG
-		cmem->in_use = 0; 	/* idle */
+                cmem->in_use = 0; 	/* idle */
 #endif
-		return;
-	    }
-	}
-	/* For large objects, they were given their own chunk -- just remove the node */
-	if (IS_SINGLE_OBJ_SIZE(freed_size)) {
-	    chunk_mem_node_remove(cmem, current);
+                return;
+            }
+        }
+        /* For large objects, they were given their own chunk -- just remove the node */
+        if (IS_SINGLE_OBJ_SIZE(freed_size)) {
+            chunk_mem_node_remove(cmem, current);
 #ifdef DEBUG
-	    cmem->in_use = 0; 	/* idle */
+            cmem->in_use = 0; 	/* idle */
 #endif
-	    return;
-	}
+            return;
+        }
 
-	/* Scan obj list to find this element */
-	prev_obj = NULL;	/* object is head, linked to mem node */
-	for (scan_obj = current->objlist; scan_obj != NULL; scan_obj = scan_obj->next) {
-	    if (scan_obj == obj)
-	        break;
-	    prev_obj = scan_obj;
-	}
-	if (scan_obj == NULL) {
-	    /* Object not found in expected chunk */
-	    dprintf3("chunk_free_obj failed, object 0x%lx not in chunk at 0x%lx, size = %d\n",
-			    ((ulong)obj), ((ulong)current), current->size);
+        /* Scan obj list to find this element */
+        prev_obj = NULL;	/* object is head, linked to mem node */
+        for (scan_obj = current->objlist; scan_obj != NULL; scan_obj = scan_obj->next) {
+            if (scan_obj == obj)
+                break;
+            prev_obj = scan_obj;
+        }
+        if (scan_obj == NULL) {
+            /* Object not found in expected chunk */
+            dprintf3("chunk_free_obj failed, object 0x%lx not in chunk at 0x%lx, size = %d\n",
+                            ((ulong)obj), ((ulong)current), current->size);
 #ifdef DEBUG
-	    cmem->in_use = 0; 	/* idle */
+            cmem->in_use = 0; 	/* idle */
 #endif
-	    return;
-	}
-	/* link around the object being freed */
-	if (prev_obj == NULL)
-	    current->objlist = obj->next;
-	else 
-	    prev_obj->next = obj->next;
+            return;
+        }
+        /* link around the object being freed */
+        if (prev_obj == NULL)
+            current->objlist = obj->next;
+        else
+            prev_obj->next = obj->next;
 
-	if_debug3('A', "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
-		  client_name_string(cname), (ulong) ptr, obj->size);
+        if_debug3('A', "[a-]chunk_free_object(%s) 0x%lx(%u)\n",
+                  client_name_string(cname), (ulong) ptr, obj->size);
 
-	/* Add this object's space (including the header) to the free list */
+        /* Add this object's space (including the header) to the free list */
 
-	/* Scan free list to find where this element goes */
-	obj->size = freed_size;	    /* adjust size to include chunk_obj_node and pad */
+        /* Scan free list to find where this element goes */
+        obj->size = freed_size;	    /* adjust size to include chunk_obj_node and pad */
 
-	prev_free = NULL;
-	for (free_obj = current->freelist; free_obj != NULL; free_obj = free_obj->next) {
-	    if (obj < free_obj)
-		break;
-	    prev_free = free_obj;
-	}
-	if (prev_free == NULL) {
-	    /* this object is before any other free objects */
-	    obj->next = current->freelist;
-	    current->freelist = obj;
-	} else {
-	    obj->next = free_obj;
-	    prev_free->next = obj;
-	}
-	/* If the end of this object is adjacent to the next free space,
-	 * merge the two. Next we'll merge with predecessor (prev_free)
-	 */
-	if (free_obj != NULL) {
-	    byte *after_obj = (byte*)(obj) + freed_size;
-	    
-	    if (free_obj <= (chunk_obj_node_t *)after_obj) {
-		/* Object is adjacent to following free space block -- merge it */
-		obj->next = free_obj->next;	/* link around the one being absorbed */
-		obj->size = (byte *)(free_obj) - (byte *)(obj) + free_obj->size;
-	    }
-	}
-	/* the prev_free object precedes this object that is now free,
-	 * it _may_ be adjacent
-	 */
-	if (prev_free != NULL) {
-	    byte *after_free = (byte*)(prev_free) + prev_free->size;
-	    
-	    if (obj <= (chunk_obj_node_t *)after_free) {
-		/* Object is adjacent to prior free space block -- merge it */
-		/* NB: this is the common case with LIFO alloc-free patterns */
-		/* (LIFO: Last-allocated, first freed) */
-		prev_free->size = (byte *)(obj) - (byte *)(prev_free) + obj->size;
-		prev_free->next = obj->next;		/* link around 'obj' area */
-		obj = prev_free;
-	    }
-	}
+        prev_free = NULL;
+        for (free_obj = current->freelist; free_obj != NULL; free_obj = free_obj->next) {
+            if (obj < free_obj)
+                break;
+            prev_free = free_obj;
+        }
+        if (prev_free == NULL) {
+            /* this object is before any other free objects */
+            obj->next = current->freelist;
+            current->freelist = obj;
+        } else {
+            obj->next = free_obj;
+            prev_free->next = obj;
+        }
+        /* If the end of this object is adjacent to the next free space,
+         * merge the two. Next we'll merge with predecessor (prev_free)
+         */
+        if (free_obj != NULL) {
+            byte *after_obj = (byte*)(obj) + freed_size;
+
+            if (free_obj <= (chunk_obj_node_t *)after_obj) {
+                /* Object is adjacent to following free space block -- merge it */
+                obj->next = free_obj->next;	/* link around the one being absorbed */
+                obj->size = (byte *)(free_obj) - (byte *)(obj) + free_obj->size;
+            }
+        }
+        /* the prev_free object precedes this object that is now free,
+         * it _may_ be adjacent
+         */
+        if (prev_free != NULL) {
+            byte *after_free = (byte*)(prev_free) + prev_free->size;
+
+            if (obj <= (chunk_obj_node_t *)after_free) {
+                /* Object is adjacent to prior free space block -- merge it */
+                /* NB: this is the common case with LIFO alloc-free patterns */
+                /* (LIFO: Last-allocated, first freed) */
+                prev_free->size = (byte *)(obj) - (byte *)(prev_free) + obj->size;
+                prev_free->next = obj->next;		/* link around 'obj' area */
+                obj = prev_free;
+            }
+        }
 #ifdef DEBUG
 memset((byte *)(obj) + sizeof(chunk_obj_node_t), 0xf1, obj->size - sizeof(chunk_obj_node_t));
 #endif
-	if (current->largest_free < obj->size)
-	    current->largest_free = obj->size;
+        if (current->largest_free < obj->size)
+            current->largest_free = obj->size;
 
-	/* If this chunk is now totally empty, free it */
-	if (current->objlist == NULL) {
-	    if (current->size != current->freelist->size + sizeof(chunk_mem_node_t))
-		dprintf2("chunk freelist size not correct, is: %d, should be: %d\n",
-		    round_up_to_align(current->freelist->size + sizeof(chunk_mem_node_t)), current->size);
-	    chunk_mem_node_remove(cmem, current);
-	}
+        /* If this chunk is now totally empty, free it */
+        if (current->objlist == NULL) {
+            if (current->size != current->freelist->size + sizeof(chunk_mem_node_t))
+                dprintf2("chunk freelist size not correct, is: %d, should be: %d\n",
+                    round_up_to_align(current->freelist->size + sizeof(chunk_mem_node_t)), current->size);
+            chunk_mem_node_remove(cmem, current);
+        }
 #ifdef DEBUG
-	cmem->in_use = 0; 	/* idle */
+        cmem->in_use = 0; 	/* idle */
 #endif
     }
 }
@@ -754,7 +752,7 @@ chunk_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 
 static byte *
 chunk_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
-		client_name_t cname)
+                client_name_t cname)
 {
     /* just resize object - ignores old_num */
     return chunk_resize_object(mem, data, new_num, cname);
@@ -762,7 +760,7 @@ chunk_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 
 static void
 chunk_free_string(gs_memory_t * mem, byte * data, uint nbytes,
-	      client_name_t cname)
+              client_name_t cname)
 {
     chunk_free_object(mem, data, cname);
 }
@@ -778,8 +776,8 @@ chunk_status(gs_memory_t * mem, gs_memory_status_t * pstat)
     pstat->allocated = cmem->used;
     /* Scan all chunks for free space to calculate the actual amount 'used' */
     for ( ; current != NULL; current = current->next) {
-	for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next) 
-	    tot_free += free_obj->size;
+        for (free_obj = current->freelist; free_obj != NULL; free_obj=free_obj->next)
+            tot_free += free_obj->size;
     }
     pstat->used = cmem->used - tot_free;
 
@@ -820,7 +818,7 @@ chunk_object_type(const gs_memory_t * mem, const void *ptr)
 
 static int
 chunk_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
-		 void **up, client_name_t cname)
+                 void **up, client_name_t cname)
 {
     return 0;
 }
@@ -834,7 +832,7 @@ chunk_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
 
 #define A(obj, size) \
     if ((obj = gs_alloc_bytes(cmem, size, "chunk_alloc_unit_test")) == NULL) { \
-	dprintf("chunk alloc failed\n"); \
+        dprintf("chunk alloc failed\n"); \
         return_error(gs_error_VMerror); \
     }
 
@@ -846,11 +844,11 @@ chunk_allocator_unit_test(gs_memory_t *mem)
 {
     int code;
     gs_memory_t *cmem;
-    byte *obj1, *obj2, *obj3, *obj4, *obj5, *obj6, *obj7; 
+    byte *obj1, *obj2, *obj3, *obj4, *obj5, *obj6, *obj7;
 
     if ((code = gs_memory_chunk_wrap(&cmem, mem )) < 0) {
-	dprintf1("chunk_wrap returned error code: %d\n", code);
-	return code;
+        dprintf1("chunk_wrap returned error code: %d\n", code);
+        return code;
     }
 
     /* Allocate a large object */

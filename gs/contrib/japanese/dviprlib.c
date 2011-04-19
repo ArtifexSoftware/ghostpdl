@@ -1,14 +1,14 @@
 /* COPYRIGHT (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
    Distributed by Free Software Foundation, Inc.
-   
+
    This file is part of Ghostscript.
-   
+
    Ghostscript is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
    to anyone for the consequences of using it or for whether it serves any
    particular purpose or works at all, unless he says so in writing.  Refer
    to the Ghostscript General Public License for full details.
-   
+
    Everyone is granted permission to copy, modify and redistribute
    Ghostscript, but only under the conditions described in the Ghostscript
    General Public License.  A copy of this license is supposed to have been
@@ -33,24 +33,22 @@
 
 /* The remainder of this file is a copy of the library for dviprt. */
 
-
 /***** From rcfg.c *****/
 /* $Id: RCFG.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
-
 
 /*--- forward declarations ---*/
 static int dviprt_read_S_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
 static int dviprt_read_QR_cfg(dviprt_cfg_t *,dviprt_cfg_i *);
-     
+
 /*--- library functions ---*/
-int 
+int
 dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     uchar *pworkbuf,int workbuf_s)
 {
   int code;
   int ver;
   dviprt_cfg_i info;
-  
+
   info.fname = ifname;
   info.line_no = -1;
   if (ifname) {
@@ -63,7 +61,7 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   else {
     info.file = stdin;
   }
-  
+
   fseek(info.file,16,0);
   ver = fgetc(info.file);
   fseek(info.file,0,0);
@@ -71,15 +69,15 @@ dviprt_readcfg(char *ifname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
   info.readbuf = pworkbuf;
   info.codebuf_size = codebuf_s;
   info.readbuf_size = workbuf_s;
-  code = (ver == 'S') ? dviprt_read_S_cfg(pcfg,&info) 
+  code = (ver == 'S') ? dviprt_read_S_cfg(pcfg,&info)
     : dviprt_read_QR_cfg(pcfg,&info);
-  
+
   if (ifname) fclose(info.file);
   return code;
 }
 
 /*--- internal routines ---*/
-static int 
+static int
 dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
   FILE *ifp;
@@ -89,13 +87,13 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   int code;
   char *ptype;
   int n;
-  
+
   if ((code = dviprt_setcfgbuffer_(pinfo,100,0)) < 0) return code;
   dviprt_initcfg_(pcfg,pinfo);
-  
+
   ifp = pinfo->file;
   rbuf = pinfo->readbuf;
-  
+
   if (fread(rbuf,20,1,ifp) < 1) {
     dviprt_printcfgerror(pinfo,"Read error.\n",-1);
   }
@@ -109,22 +107,22 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   pcfg->version = rbuf[2] | ((uint)rbuf[3] << 8);
   if (pcfg->version > CFG_VERSION) {
     sprintf(dviprt_message_buffer,
-	    "This *.CFG file is too new version(ver.%u).\n",pcfg->version);
+            "This *.CFG file is too new version(ver.%u).\n",pcfg->version);
     dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
     return CFG_ERROR_OTHER;
   }
-  
+
 #define bytes2long(p) ((p)[0] | ((long)(p)[1]<<8) | \
-		       ((long)(p)[2]<<16) | ((long)(p)[3]<<24))
+                       ((long)(p)[2]<<16) | ((long)(p)[3]<<24))
   intoff = bytes2long(rbuf+4);
   stroff = bytes2long(rbuf+8);
   codeoff = bytes2long(rbuf+12);
 #undef bytes2long
-  
+
   fseek(ifp,intoff,0);
   count = fgetc(ifp);
   fread(rbuf,count*3,1,ifp);
-  
+
   pbuf = rbuf;
   for (i=0;i<count;i++) {
     n = pbuf[0];
@@ -132,14 +130,14 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
       ptype = "integer";
     unknown_no:
       sprintf(dviprt_message_buffer,
-	      "Unknown %s type value No.%d is found.\n",ptype,n);
+              "Unknown %s type value No.%d is found.\n",ptype,n);
       dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
       return CFG_ERROR_OTHER;
     }
     pcfg->integer[n] = pbuf[1] | ((uint)pbuf[2]<<8);
     pbuf += 3;
   }
-  
+
   fseek(ifp,stroff,0);
   count = fgetc(ifp);
   pbuf = NULL;
@@ -167,7 +165,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     fread(pcfg->strings[n],l,1,ifp);
     *(pcfg->strings[n]+l) = 0;
   }
-  
+
   fseek(ifp,codeoff,0);
   count = fgetc(ifp);
   for (i=0;i<count;i++) {
@@ -175,7 +173,7 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     fread(rbuf,3,1,ifp);
     n = rbuf[0];
     l = rbuf[1] | ((uint)rbuf[2]<<8);
-    
+
     if (n >= CFG_PRTCODE_TYPE_COUNT) {
       ptype = "printer code";
       goto unknown_no;
@@ -197,11 +195,11 @@ dviprt_read_S_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   return 0;
 }
 
-static int 
+static int
 dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
 #define	TYPE_BIT		0xc0
-  
+
 #define	NO_NUM			0
 #define	BINARY_LTOH		1
 #define	BINARY_HTOL		2
@@ -209,7 +207,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 #define	DECIMAL_4		4
 #define	DECIMAL_5		5
 #define	DECIMAL_V		6
-  
+
 #define	TOTAL_BYTE		0x80
 #define	ISO_NUMBER		0x40
 #define	DIVIDEBY_2		0x10
@@ -239,7 +237,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     CFG_AFTER_BIT_IMAGE,
     CFG_BIT_ROW_HEADER,
   };
-  
+
   ch =dviprt_setcfgbuffer_(pinfo,300,TEMP_CODEBUF_SIZE);
   if (ch < 0) return CFG_ERROR_MEMORY;
   dviprt_initcfg_(pcfg,pinfo);
@@ -277,13 +275,13 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     pinfo->pcodebuf++;
   }
   strcpy(pcfg->strings[CFG_NAME],cfg_buf);
-  
+
   pcfg->integer[CFG_UPPER_POS] =
     (cfg_buf[17] & (CFG_LEFT_IS_LOW|CFG_NON_MOVING));
   pcfg->integer[CFG_ENCODE] =
     (cfg_buf[17] & 0x10) ? CFG_ENCODE_HEX : CFG_ENCODE_NULL;
   pcfg->integer[CFG_PINS] = ((uint) (cfg_buf[17]) & 0x0f);
-  
+
   ptr = cfg_buf+23;
   pcfg->integer[CFG_MINIMAL_UNIT] = (uint)ptr[0] | ((uint)ptr[1]<<8);
   pcfg->integer[CFG_MAXIMAL_UNIT] = (uint)ptr[2] | ((uint)ptr[3]<<8);
@@ -293,7 +291,7 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
     pcfg->integer[CFG_CONSTANT] = cfg_buf[20];
   offset = cfg_buf[19];
   fseek(pinfo->file,offset,0);
-  
+
   for (i = 0; i <= BIT_ROW_HEADER; i++) {
     uchar *pstart,*plength;
     uchar prev = 1;
@@ -310,81 +308,81 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
       pos = *ptr++;
       f_type = *ptr++;
       type = f_type & 0x7;
-      
+
       for (j = 0; j < lens; j++) {
-	ch = *ptr++;
-	if (pos == j && type != NO_NUM) {
-	  uchar *pfmt = pinfo->pcodebuf++;
-	  plength = pinfo->pcodebuf++;
-	  *pinfo->pcodebuf++ = CFG_VAL_DEFAULT;
-	  *plength = 1;
-	  j++;
-	  ptr++;
-	  switch (type) {
-	  case (BINARY_LTOH):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_BIN_LTOH | 2;
-	    break;
-	  case (BINARY_HTOL):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_BIN_HTOL | 2;
-	    break;
-	  case (DECIMAL_3):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 3;
-	    j++;
-	    ptr++;
-	    break;
-	  case (DECIMAL_4):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 4;
-	    j += 2;
-	    ptr += 2;
-	    break;
-	  case (DECIMAL_5):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 5;
-	    j += 3;
-	    ptr += 3;
-	    break;
-	  case (DECIMAL_V):
-	    *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL;
-	    j++;
-	    ptr++;
-	    break;
-	  default:
-	    sprintf(dviprt_message_buffer,"Unknown format %02X",type);
-	    dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
-	    goto ex_func;
-	  }
-	  if (f_type & TOTAL_BYTE) {
-	    *pinfo->pcodebuf++ = CFG_VAL_PINS_BYTE;
-	    *pinfo->pcodebuf++ = CFG_OP_MUL;
-	    (*plength) += 2;
-	  }
-	  if ((k = (f_type & DIVIDE_ALL)) != 0) {
-	    *pinfo->pcodebuf = 0;
-	    for (; k > 0; k -= DIVIDEBY_2) {
-	      (*pinfo->pcodebuf)++;
-	    }
-	    pinfo->pcodebuf++;
-	    *pinfo->pcodebuf++ = CFG_OP_SHR;
-	    (*plength) += 2;
-	  }
-	  if (f_type & ISO_NUMBER) {
-	    *pfmt |= CFG_FMT_ISO_BIT;
-	  }
-	  if (f_type & MULT_CONST) {
-	    *pinfo->pcodebuf++ = CFG_VAL_CONSTANT;
-	    *pinfo->pcodebuf++ = CFG_OP_MUL;
-	    (*plength) += 2;
-	  }
-	  prev = 1;
-	}
-	else {
-	  if (prev == 1 || *plength >= 127) {
-	    plength = pinfo->pcodebuf++;
-	    *plength = 0;
-	  }
-	  (*plength)++;
-	  *pinfo->pcodebuf++ = ch;
-	  prev = 0;
-	}
+        ch = *ptr++;
+        if (pos == j && type != NO_NUM) {
+          uchar *pfmt = pinfo->pcodebuf++;
+          plength = pinfo->pcodebuf++;
+          *pinfo->pcodebuf++ = CFG_VAL_DEFAULT;
+          *plength = 1;
+          j++;
+          ptr++;
+          switch (type) {
+          case (BINARY_LTOH):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_BIN_LTOH | 2;
+            break;
+          case (BINARY_HTOL):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_BIN_HTOL | 2;
+            break;
+          case (DECIMAL_3):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 3;
+            j++;
+            ptr++;
+            break;
+          case (DECIMAL_4):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 4;
+            j += 2;
+            ptr += 2;
+            break;
+          case (DECIMAL_5):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL | 5;
+            j += 3;
+            ptr += 3;
+            break;
+          case (DECIMAL_V):
+            *pfmt = CFG_FMT_BIT | CFG_FMT_DECIMAL;
+            j++;
+            ptr++;
+            break;
+          default:
+            sprintf(dviprt_message_buffer,"Unknown format %02X",type);
+            dviprt_printcfgerror(pinfo,dviprt_message_buffer,-1);
+            goto ex_func;
+          }
+          if (f_type & TOTAL_BYTE) {
+            *pinfo->pcodebuf++ = CFG_VAL_PINS_BYTE;
+            *pinfo->pcodebuf++ = CFG_OP_MUL;
+            (*plength) += 2;
+          }
+          if ((k = (f_type & DIVIDE_ALL)) != 0) {
+            *pinfo->pcodebuf = 0;
+            for (; k > 0; k -= DIVIDEBY_2) {
+              (*pinfo->pcodebuf)++;
+            }
+            pinfo->pcodebuf++;
+            *pinfo->pcodebuf++ = CFG_OP_SHR;
+            (*plength) += 2;
+          }
+          if (f_type & ISO_NUMBER) {
+            *pfmt |= CFG_FMT_ISO_BIT;
+          }
+          if (f_type & MULT_CONST) {
+            *pinfo->pcodebuf++ = CFG_VAL_CONSTANT;
+            *pinfo->pcodebuf++ = CFG_OP_MUL;
+            (*plength) += 2;
+          }
+          prev = 1;
+        }
+        else {
+          if (prev == 1 || *plength >= 127) {
+            plength = pinfo->pcodebuf++;
+            *plength = 0;
+          }
+          (*plength)++;
+          *pinfo->pcodebuf++ = ch;
+          prev = 0;
+        }
       }
     } while (f_cont & 0x80);
     *pinfo->pcodebuf++ = 0;
@@ -392,13 +390,13 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
       uint l = pinfo->pcodebuf-pstart;
       pcfg->prtcode_size[n] = l - 1;
       if (pinfo->temp_codebuf_f) { /* allocate buffer */
-     	pcfg->prtcode[n] = (uchar *)malloc(l);
+        pcfg->prtcode[n] = (uchar *)malloc(l);
         if (pcfg->prtcode[n] == NULL)
           goto no_memory;
-	memcpy(pcfg->prtcode[n],pstart,l);
+        memcpy(pcfg->prtcode[n],pstart,l);
       }
       else {
-	pcfg->prtcode[n] = pstart;
+        pcfg->prtcode[n] = pstart;
       }
     }
   }
@@ -408,10 +406,8 @@ dviprt_read_QR_cfg(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 }
 /***** End of rcfg.c *****/
 
-
 /***** From rsrc.c *****/
 /* $Id: RSRC.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
-
 
 typedef struct {
   char *name;
@@ -442,14 +438,14 @@ static int dviprt_set_code
 static long dviprt_oct2long(uchar *,uchar *,uchar **);
 static long dviprt_dec2long(uchar *,uchar *,uchar **);
 static long dviprt_hex2long(uchar *,uchar *,uchar **);
-     
+
 static int dviprt_printtokenerror(dviprt_cfg_i *,char *,int ,int);
-     
+
 /*--- macros ---*/
 #define strlcmp(tmplt,str,len) \
   (!(strncmp(tmplt,str,(int)(len)) == 0 && (int)(len) == strlen(tmplt)))
 #define set_version(pcfg,v) ((pcfg)->version = MAX(v,(pcfg)->version))
-     
+
 enum {
   ERROR_UNKNOWN_VALUE,ERROR_UNKNOWN_FORMAT,ERROR_UNKNOWN_ESCSEQ,
   ERROR_OUTOFRANGE,
@@ -459,7 +455,7 @@ enum {
 };
 
 /*--- library functions ---*/
-int 
+int
 dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     uchar *pworkbuf,int workbuf_s)
 {
@@ -496,7 +492,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     "encode",T_STRINGS,CFG_ENCODE_INFO,0,0,NULL
     };
   int prtcode_output_bytes[CFG_PRTCODE_TYPE_COUNT];
-  
+
   info.line_no = -1;
   info.fname = fname;
   if (fname) {
@@ -510,7 +506,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     ifp = stdin;
   }
   ifp = info.file;
-  
+
   info.codebuf = pcodebuf;
   info.readbuf = pworkbuf;
   info.codebuf_size = codebuf_s;
@@ -520,7 +516,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     fclose(info.file);
     return CFG_ERROR_MEMORY;
   }
-  
+
   /* initialize */
   dviprt_initcfg_(pcfg,&info);
   for (pitem = dviprt_items;pitem->type>=0;pitem++) {
@@ -546,12 +542,12 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     for (i=0;i<CFG_PRTCODE_TYPE_COUNT;i++)
       prtcode_output_bytes[i] = 0;
   }
-  
+
   pcfg->version = 1;
   for ( ; ; ) {
     uchar *pbuf = info.readbuf;
     uchar *pchar;
-    
+
     if (fgets(info.readbuf,info.readbuf_size,ifp) == NULL) break;
     info.line_no++;
     {
@@ -592,7 +588,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     if (pitem->spec_f) {
       dviprt_printcfgerror(&info,NULL,0);
       sprintf(dviprt_message_buffer,
-	      "Item `%s' is specified twice.\n",pitem->name);
+              "Item `%s' is specified twice.\n",pitem->name);
       dviprt_printmessage(dviprt_message_buffer,-1);
       code = CFG_ERROR_SYNTAX;
       goto end_process;
@@ -614,7 +610,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
       if (info.temp_codebuf_f)
         info.pcodebuf = info.codebuf;
       if ((code = dviprt_set_strings(pitem,pbuf,pcfg,&info)) < 0)
-    	goto end_process;
+        goto end_process;
       if (info.temp_codebuf_f) {
         pcfg->strings[pitem->no] =
           (uchar*)malloc(strlen(pcfg->strings[pitem->no])+1);
@@ -640,7 +636,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
           goto end_process;
         }
         memcpy(pcfg->prtcode[pitem->no],info.codebuf,
-	       pcfg->prtcode_size[pitem->no]+1);
+               pcfg->prtcode_size[pitem->no]+1);
       }
       break;
     case T_SELECT:
@@ -690,7 +686,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     pitem->spec_f = 1;
   }
  end_scan:
-  
+
   info.line_no = -1;
   code = 0;
   for (pitem = dviprt_items;pitem->name;pitem++) {
@@ -701,7 +697,7 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
     }
   }
   if (code) { code = CFG_ERROR_RANGE; goto end_process; }
-  
+
   if (pcfg->prtcode[CFG_LINE_FEED] == NULL) {
     if (info.temp_codebuf_f) {
       pcfg->prtcode[CFG_LINE_FEED] = info.pcodebuf;
@@ -746,11 +742,11 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
          MAX(prtcode_output_bytes[CFG_AFTER_BIT_IMAGE],0) +
          MAX(prtcode_output_bytes[CFG_SKIP_SPACES],0))
       / (pcfg->integer[CFG_PINS]*8) +
-	MAX(prtcode_output_bytes[CFG_BIT_ROW_HEADER],0);
+        MAX(prtcode_output_bytes[CFG_BIT_ROW_HEADER],0);
     if (v == 0) v = 1;
     pcfg->integer[CFG_MINIMAL_UNIT] = v;
   }
-  
+
   for (pitem = dviprt_items;pitem->type>=0;pitem++) {
     if (pitem->spec_f == 0) {
       sprintf(dviprt_message_buffer,": %s:",pitem->name);
@@ -768,23 +764,23 @@ dviprt_readsrc(char *fname,dviprt_cfg_t *pcfg,uchar *pcodebuf,int codebuf_s,
       }
     }
   }
-  
+
  end_process:
   if (fname) fclose(ifp);
   dviprt_resetcfgbuffer_(&info);
-  
+
   return code;
 }
 
 /*--- internal routines ---*/
-static int 
+static int
 dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
   uchar *pbuf = buf;
   long v = 0;
   long max = -1 ,min = -1;
-  
+
   if (pitem->info != NULL) {
     dviprt_cfg_limit_t *plimit = (dviprt_cfg_limit_t *)pitem->info;
     min = plimit->min;
@@ -807,14 +803,14 @@ dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
       dviprt_printtokenerror(pinfo,buf,strlen(buf),ERROR_OUTOFRANGE);
       dviprt_printcfgerror(pinfo,"",-1);
       sprintf(dviprt_message_buffer,
-	      "(%u <= value <= %u).\n",(uint)min,(uint)max);
+              "(%u <= value <= %u).\n",(uint)min,(uint)max);
       dviprt_printmessage(dviprt_message_buffer,-1);
       return CFG_ERROR_RANGE;
     }
     pbuf++;
   }
   if (v < min) goto out_of_range;
-  
+
   while (*pbuf) {
     if (!isspace(*pbuf)) {
     invalid_val:
@@ -824,11 +820,11 @@ dviprt_set_integer(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     pbuf++;
   }
   pcfg->integer[pitem->no] = v;
-  
+
   return 0;
 }
 
-static int 
+static int
 dviprt_set_strings(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -842,7 +838,7 @@ dviprt_set_strings(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_printcfgerror(pinfo,"Too long strings.\n",-1);
     return CFG_ERROR_RANGE;
   }
-  
+
   pcfg->strings[pitem->no] = pinfo->pcodebuf;
   strncpy(pinfo->pcodebuf,buf,(int)len);
   pinfo->pcodebuf[len] = 0;
@@ -864,7 +860,7 @@ dviprt_set_select(dviprt_cfg_item_t *pitem,uchar **buf,dviprt_cfg_t *pcfg,
     return CFG_ERROR_SYNTAX;
   }
   while (*ptmp && !isspace(*ptmp)) ptmp++;
-  
+
   for (i=0,opt=(uchar**)pitem->info;*opt;i++,opt++) {
     if (strlcmp(*opt,pstart,ptmp-pstart) == 0) {
       pcfg->integer[pitem->no] = i;
@@ -880,7 +876,7 @@ dviprt_set_select(dviprt_cfg_item_t *pitem,uchar **buf,dviprt_cfg_t *pcfg,
 #define CFG_TOKEN_LIMIT_BIT 0x100
 #define CFG_TOKEN_FMT       0x200
 
-static int 
+static int
 dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *stopescseqchars,
     uchar *limitchars)
 {
@@ -898,7 +894,7 @@ dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *s
     int c;
     long v;
     uchar *pexpr,*pnext;
-    
+
     pexpr = pinfo->token = pstart++;
     while (pstart < pend && !isspace(*pstart) &&
            *pstart != '\\' && !strchr(stopescseqchars,*pstart)) {
@@ -936,12 +932,12 @@ dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *s
     check_numb_range:
       if (pstart != pnext) {
         dviprt_printtokenerror(pinfo,pinfo->token,
-			       (int)(pinfo->endtoken - pinfo->token), ERROR_INVALID_VALUE);
+                               (int)(pinfo->endtoken - pinfo->token), ERROR_INVALID_VALUE);
         return CFG_TOKEN_ERROR;
       }
       if (v >= 256) {
         dviprt_printtokenerror(pinfo,pinfo->token,
-			       (int)(pinfo->endtoken - pinfo->token), ERROR_OUTOFRANGE);
+                               (int)(pinfo->endtoken - pinfo->token), ERROR_OUTOFRANGE);
         return CFG_TOKEN_ERROR;
       }
       pinfo->endtoken = pnext;
@@ -965,7 +961,7 @@ dviprt_get_codetype_token(dviprt_cfg_i *pinfo,uchar *pstart,uchar *pend,uchar *s
   }
 }
 
-static long 
+static long
 dviprt_dec2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -979,7 +975,7 @@ dviprt_dec2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-static long 
+static long
 dviprt_oct2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -993,7 +989,7 @@ dviprt_oct2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-static long 
+static long
 dviprt_hex2long(uchar *start,uchar *end,uchar **next)
 {
   long v = 0;
@@ -1009,14 +1005,14 @@ dviprt_hex2long(uchar *start,uchar *end,uchar **next)
   return v;
 }
 
-static int 
+static int
 dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo,int sp)
 {
   uchar *pend = pbuf + len;
   uchar *plastop = NULL;
   int code;
-  
+
   /* get left expr */
   while (pbuf < pend) {
     int par_count = 0;
@@ -1041,7 +1037,7 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
     }
     else break;
   }
-  
+
   if (plastop == NULL) { /* no operator */
     ulong v;
     uchar *pdummy;
@@ -1051,8 +1047,8 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
     check_intval:
       if (pdummy != pend) goto unknown_value;
       if (v > 0xffff) {
-	dviprt_printtokenerror(pinfo,pbuf,(int)(pend-pbuf),ERROR_OUTOFRANGE);
-	return CFG_ERROR_RANGE;
+        dviprt_printtokenerror(pinfo,pbuf,(int)(pend-pbuf),ERROR_OUTOFRANGE);
+        return CFG_ERROR_RANGE;
       }
       a = v & 0x7f;
       b = (v>>7) & 0x7f;
@@ -1129,12 +1125,12 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
   }
   else { /* has operator */
     uchar op;
-    
+
     code = dviprt_set_rpexpr(pitem,pbuf,(int)(plastop-pbuf),pcfg,pinfo,sp+1);
     if (code < 0) return code;
     code = dviprt_set_rpexpr(pitem,plastop+1,(int)(pend-plastop-1),pcfg,pinfo,sp+2);
     if (code < 0) return code;
-    
+
     switch (*plastop) {
     case '+': op = CFG_OP_ADD; break;
     case '-': op = CFG_OP_SUB; break;
@@ -1156,11 +1152,11 @@ dviprt_set_rpexpr(dviprt_cfg_item_t *pitem,uchar *pbuf,int len,dviprt_cfg_t *pcf
     }
     *pinfo->pcodebuf++ = op;
   }
-  
+
   return code;
 }
 
-static int 
+static int
 dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
     dviprt_cfg_i *pinfo)
 {
@@ -1170,11 +1166,11 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
   uchar *pcode_begin;
   uchar *rbuf;
   int obytes = 0;
-  
+
   prev_line = ftell(pinfo->file);
   pcode_begin = pinfo->pcodebuf;
   rbuf = pinfo->readbuf;
-  
+
   for ( ; ; ) {
     while (*buf) {
       int c;
@@ -1198,12 +1194,12 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
         uchar *pexpr = pinfo->token;
         int div=0,iso=0,mul=0,tl=0;
         int cols=0;
-	int fmt;
+        int fmt;
         uchar *plength;
         uchar *pstart;
-        
+
         buf = pinfo->token+1;
-        
+
         /* formats */
         switch (*buf) {
         case 'b': fmt = CFG_FMT_BIN_LTOH; break;
@@ -1220,11 +1216,11 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
         default:
         unknown_format:
           dviprt_printtokenerror(pinfo,pexpr,(int)(pinfo->endtoken-pexpr),
-				 ERROR_UNKNOWN_FORMAT);
+                                 ERROR_UNKNOWN_FORMAT);
           return CFG_ERROR_SYNTAX;
         }
         buf++;
-	
+
         /* columns */
         if (fmt == CFG_FMT_STRINGS) ;
         else {
@@ -1232,22 +1228,22 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
             dviprt_printtokenerror(pinfo,pexpr,(int)(pinfo->token-pexpr),ERROR_INCOMPLETE);
             return CFG_ERROR_SYNTAX;
           }
-          
+
           if (!(*buf >= '1' && *buf <= '7') && *buf != '?') {
           invalid_cols:
             dviprt_printtokenerror(pinfo,pexpr,(int)(pinfo->endtoken-pexpr),
-				   ERROR_UNKNOWN_FORMAT);
+                                   ERROR_UNKNOWN_FORMAT);
             return CFG_ERROR_SYNTAX;
           }
           cols = (*buf == '?') ? 0 : *buf - '0';
           if (cols == 0 &&
               (fmt == CFG_FMT_BIN_LTOH || fmt == CFG_FMT_BIN_HTOL))
             goto invalid_cols;
-	  
+
           buf++;
           obytes += (cols == 0) ? 5 : cols;
         }
-        
+
         /* additional format */
         while (buf < pinfo->endtoken) {
           switch (*buf) {
@@ -1270,22 +1266,22 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
         plength = pinfo->pcodebuf;
         pinfo->pcodebuf++;
         pstart = pinfo->pcodebuf;
-        
+
         if (*buf == ',' && *(buf+1) != '\"') {
-	  int code;
+          int code;
           buf++;
           pinfo->token = buf;
           while (*pinfo->token && *pinfo->token != ',' &&
                  *pinfo->token != '\\' && !isspace(*pinfo->token))
             pinfo->token++;
-	  if (pinfo->token == buf) {
+          if (pinfo->token == buf) {
             dviprt_printcfgerror(pinfo,"No expression is specified in ",-1);
             dviprt_printmessage(pexpr,(int)(buf-pexpr));
             dviprt_printmessage(".\n",-1);
             return CFG_ERROR_SYNTAX;
           }
           if ((code = dviprt_set_rpexpr(pitem,buf,(int)(pinfo->token-buf),pcfg,pinfo,0)) < 0)
-  	    return code;
+            return code;
           buf = pinfo->token;
         }
         else {
@@ -1303,21 +1299,21 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
           *pinfo->pcodebuf++ = div;
           *pinfo->pcodebuf++ = CFG_OP_SHR;
         }
-	{
-	  int length = pinfo->pcodebuf-pstart;
-	  if (length > 255) {
-	    dviprt_printtokenerror(pinfo,pexpr,(int)(buf-pexpr),ERROR_COMPLICATED_EXPR);
-	    return CFG_ERROR_RANGE;
-	  }
-	  *plength++ = length & 0xff;
-	}
+        {
+          int length = pinfo->pcodebuf-pstart;
+          if (length > 255) {
+            dviprt_printtokenerror(pinfo,pexpr,(int)(buf-pexpr),ERROR_COMPLICATED_EXPR);
+            return CFG_ERROR_RANGE;
+          }
+          *plength++ = length & 0xff;
+        }
         if (fmt == CFG_FMT_STRINGS) {
           uchar *pslen = pinfo->pcodebuf++;
           int len;
           if (strlen(buf) < 2 || *buf != ',' || *(buf+1) != '\"') {
-	    dviprt_printcfgerror(pinfo,"No strings specified in ",-1);
-	    dviprt_printmessage(pexpr,(int)(buf-pexpr));
-	    dviprt_printmessage(".\n",-1);
+            dviprt_printcfgerror(pinfo,"No strings specified in ",-1);
+            dviprt_printmessage(pexpr,(int)(buf-pexpr));
+            dviprt_printmessage(".\n",-1);
             return CFG_ERROR_SYNTAX;
           }
           buf += 2;
@@ -1327,15 +1323,15 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
             else if (c == CFG_TOKEN_FMT) {
               dviprt_printcfgerror(pinfo,"The format ",-1);
               dviprt_printmessage(pinfo->token,
-				  (int)(pinfo->endtoken-pinfo->token));
+                                  (int)(pinfo->endtoken-pinfo->token));
               dviprt_printmessage(" cannot to be specified here.\n",-1);
               return CFG_ERROR_SYNTAX;
             }
             else if (c & CFG_TOKEN_LIMIT_BIT) {
               if ((c & 0xff) != '\"') {
                 dviprt_printcfgerror(pinfo,
-				     "Strings must be enclosed with "
-				     "double quotations (\").\n",-1);
+                                     "Strings must be enclosed with "
+                                     "double quotations (\").\n",-1);
                 return CFG_ERROR_SYNTAX;
               }
               buf = pinfo->endtoken;
@@ -1348,15 +1344,15 @@ dviprt_set_code(dviprt_cfg_item_t *pitem,uchar *buf,dviprt_cfg_t *pcfg,
             dviprt_printcfgerror(pinfo,"Too long strings.\n",-1);
             return CFG_ERROR_RANGE;
           }
-	  *pslen = len;
-	}
+          *pslen = len;
+        }
         prev_type = 1;
       }
       else {
-	dviprt_printcfgerror(pinfo,"Parse error. Unexpected token ",-1);
-	dviprt_printmessage(pinfo->token,(int)(pinfo->endtoken-pinfo->token));
-	dviprt_printmessage(".\n",-1);
-	return CFG_ERROR_SYNTAX;
+        dviprt_printcfgerror(pinfo,"Parse error. Unexpected token ",-1);
+        dviprt_printmessage(pinfo->token,(int)(pinfo->endtoken-pinfo->token));
+        dviprt_printmessage(".\n",-1);
+        return CFG_ERROR_SYNTAX;
       }
     }
   next_line:
@@ -1406,14 +1402,14 @@ dviprt_src_errorno2message(int type)
   }
 }
 
-static int 
+static int
 dviprt_printtokenerror(dviprt_cfg_i *pinfo,char *token,int len,int type)
 {
   char *msg;
-  
+
   dviprt_printcfgerror(pinfo,token,len);
   dviprt_printmessage("\n",-1);
-  
+
   if ((msg = dviprt_src_errorno2message(type)) != NULL)
     dviprt_printcfgerror(pinfo,msg,-1);
   return 0;
@@ -1423,10 +1419,8 @@ dviprt_printtokenerror(dviprt_cfg_i *pinfo,char *token,int len,int type)
 #undef set_version
 /***** End of rsrc.c *****/
 
-
 /***** From util.c *****/
 /* $Id: UTIL.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
-
 
 char *dviprt_integername[] = { CFG_INTEGER_NAME, NULL };
 char *dviprt_stringsname[] = { CFG_STRINGS_NAME, NULL };
@@ -1448,11 +1442,11 @@ dviprt_setmessagestream(FILE *fp)
 }
 
 /*--- internal routines ---*/
-static int 
+static int
 dviprt_initcfg_(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
 {
   int i;
-  
+
   for (i=0;i<CFG_INTEGER_TYPE_COUNT;i++)
     pcfg->integer[i] = -1;
   for (i=0;i<CFG_STRINGS_TYPE_COUNT;i++)
@@ -1466,11 +1460,11 @@ dviprt_initcfg_(dviprt_cfg_t *pcfg,dviprt_cfg_i *pinfo)
   return 0;
 }
 
-static int 
+static int
 dviprt_setcfgbuffer_(dviprt_cfg_i *pinfo,int rsize,int csize)
 {
   pinfo->temp_readbuf_f = pinfo->temp_codebuf_f = 0;
-  
+
   if (pinfo->readbuf == NULL) {
     pinfo->readbuf_size = rsize;
     if (rsize>0) {
@@ -1495,7 +1489,7 @@ dviprt_setcfgbuffer_(dviprt_cfg_i *pinfo,int rsize,int csize)
   return 0;
 }
 
-static int 
+static int
 dviprt_resetcfgbuffer_(dviprt_cfg_i *pinfo)
 {
   if (pinfo->temp_readbuf_f) free(pinfo->readbuf);
@@ -1541,7 +1535,7 @@ dviprt_printerror(char *msg,int len)
   return 0;
 }
 
-static int 
+static int
 dviprt_printcfgerror(dviprt_cfg_i *pinfo,char *msg,int len)
 {
   dviprt_printcfgerrorheader(pinfo);
@@ -1557,7 +1551,7 @@ dviprt_printwarning(char *msg,int len)
   return 0;
 }
 
-static int 
+static int
 dviprt_printcfgwarning(dviprt_cfg_i *pinfo,char *msg,int len)
 {
   dviprt_printcfgerrorheader(pinfo);
@@ -1566,10 +1560,8 @@ dviprt_printcfgwarning(dviprt_cfg_i *pinfo,char *msg,int len)
 }
 /***** End of util.c *****/
 
-
 /***** From print.c *****/
 /* $Id: PRINT.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
-
 
 /*--- forward declarations ---*/
 static int dviprt_getmaximalwidth(dviprt_print *);
@@ -1582,14 +1574,14 @@ static int dviprt_transpose8x8(uchar far *,uint, uchar far *,uint);
 static int dviprt_output_expr(dviprt_print *,int,uint,uint);
 static int dviprt_default_outputproc(uchar far *,long ,void *);
 static long dviprt_getbuffersize(dviprt_print *);
-     
+
 /*--- library functions ---*/
 long
 dviprt_initlibrary(dviprt_print *pprint,dviprt_cfg_t *pprt,uint width,uint height)
 {
   dviprt_encoder *pencode;
   uint pins = pprt->integer[CFG_PINS]*8;
-  
+
   pprint->printer = pprt;
   height += (pins-1);
   height /= pins;
@@ -1604,15 +1596,15 @@ dviprt_initlibrary(dviprt_print *pprint,dviprt_cfg_t *pprt,uint width,uint heigh
   if (pencode == NULL) return CFG_ERROR_NOT_SUPPORTED;
   pprint->encode_getbuffersize_proc = pencode->getworksize;
   pprint->encode_encode_proc = pencode->encode;
-  
+
   pprint->output_bytes = 0;
   pprint->pstream = NULL;
   pprint->output_proc = NULL;
-  
+
   if (pprt->integer[CFG_UPPER_POS] & CFG_NON_TRANSPOSE_BIT) {
     pprint->output_maximal_unit =
       (pprt->integer[CFG_UPPER_POS] & CFG_REVERSE_BIT) ?
-	dviprt_output_nontranspose_reverse : dviprt_output_nontranspose;
+        dviprt_output_nontranspose_reverse : dviprt_output_nontranspose;
   }
   else
     pprint->output_maximal_unit = dviprt_output_transpose;
@@ -1685,10 +1677,10 @@ dviprt_outputscanlines(dviprt_print *pprint,uchar far *fb)
   dviprt_cfg_t *pprt;
   int code;
   uint bw;
-  
+
   pprt = pprint->printer;
   bw = pprint->bitmap_width;
-  
+
   if (pprt->prtcode_size[CFG_SKIP_SPACES] <= 0) {
     pprint->bitmap_x = bw;
     pprint->last_x = 0;
@@ -1700,11 +1692,11 @@ dviprt_outputscanlines(dviprt_print *pprint,uchar far *fb)
     uint pins = dviprt_getscanlines(pprint);
     mu = pprt->integer[CFG_MINIMAL_UNIT];
     bx = lx = 0;
-    
+
     for (rw= bw; rw > 0 ;rw -= uw) {
       uint x,y;
       uchar far *in;
-      
+
       uw = MIN(mu,rw);
       in = fb + bx;
       for (x = uw; x>0 ; x--) {
@@ -1716,7 +1708,7 @@ dviprt_outputscanlines(dviprt_print *pprint,uchar far *fb)
         }
         in++;
       }
-      
+
       if (bx > lx) {
         pprint->bitmap_x = bx;
         pprint->last_x = lx;
@@ -1725,7 +1717,7 @@ dviprt_outputscanlines(dviprt_print *pprint,uchar far *fb)
         lx = pprint->last_x + uw;
       }
       else lx += uw;
-      
+
     next_unit:
       bx += uw;
     }
@@ -1778,7 +1770,7 @@ dviprt_getbuffersize(dviprt_print *pprint)
   long w = dviprt_getmaximalwidth(pprint);
   long e = pprint->encode_getbuffersize_proc(pprint,w);
   switch (pprint->printer->integer[CFG_UPPER_POS]
-	  & (CFG_NON_TRANSPOSE_BIT | CFG_REVERSE_BIT)) {
+          & (CFG_NON_TRANSPOSE_BIT | CFG_REVERSE_BIT)) {
   case CFG_LEFT_IS_HIGH:
     return e;
   default:
@@ -1791,7 +1783,7 @@ dviprt_flush_buffer(dviprt_print *pprint,uchar far *fb)
 {
   dviprt_cfg_t *pprt;
   int code;
-  
+
   pprt = pprint->printer;
   while (pprint->device_y < pprint->bitmap_y) { /* skip vertical spaces */
     pprint->device_y++;
@@ -1802,7 +1794,7 @@ dviprt_flush_buffer(dviprt_print *pprint,uchar far *fb)
     int w;
     while (pprint->device_x < pprint->last_x) { /* skip horizontal spaces */
       w = MIN(pprt->integer[CFG_MAXIMAL_UNIT],
-	      pprint->last_x - pprint->device_x);
+              pprint->last_x - pprint->device_x);
       code = dviprt_output_expr(pprint,CFG_SKIP_SPACES,w,0);
       pprint->device_x += w;
     }
@@ -1823,9 +1815,9 @@ dviprt_output_nontranspose(dviprt_print *pprint,uchar far *fb,uint width)
   uint dsize;
   uint y;
   uint pins;
-  
+
   pins = dviprt_getscanlines(pprint);
-  
+
   dsize = 0;
   pprint->psource = fb;
   for (y = pins ; y>0 ; y--) {
@@ -1835,10 +1827,10 @@ dviprt_output_nontranspose(dviprt_print *pprint,uchar far *fb,uint width)
     dsize += dsize_line;
     pprint->psource += pprint->bitmap_width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_SEND_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   pprint->psource = fb;
   for (y = pins ; y>0 ; y--) {
     int dsize_line;
@@ -1849,13 +1841,12 @@ dviprt_output_nontranspose(dviprt_print *pprint,uchar far *fb,uint width)
     if (code < 0) return code;
     pprint->psource += pprint->bitmap_width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_AFTER_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   return 0;
 }
-
 
 static int
 dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width)
@@ -1867,10 +1858,10 @@ dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width
   uint dsize;
   uint y;
   uint pins;
-  
+
   pins = dviprt_getscanlines(pprint);
   src_size = width * pins;
-  
+
   psrc = pprint->source_buffer;
   for (y = pins ; y > 0; y--) {
     uint i;
@@ -1878,12 +1869,11 @@ dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width
     for (i=width;i>0;i--) *psrc++ = *pbuf++;
     fb += pprint->bitmap_width;
   }
-  
+
   /* here, reverse bits */
   psrc = pprint->source_buffer;
   dviprt_reverse_bits(psrc,src_size);
-  
-  
+
   dsize = 0;
   pprint->psource = pprint->source_buffer;
   for (y = pins ; y>0 ; y--) {
@@ -1893,10 +1883,10 @@ dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width
     dsize += dsize_line;
     pprint->psource += width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_SEND_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   pprint->psource = pprint->source_buffer;
   for (y = pins ; y>0 ; y--) {
     int dsize_line;
@@ -1907,10 +1897,10 @@ dviprt_output_nontranspose_reverse(dviprt_print *pprint,uchar far *fb,uint width
     if (code < 0) return code;
     pprint->psource += width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_AFTER_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   return 0;
 }
 
@@ -1924,7 +1914,7 @@ dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
   uint dsize;
   uint pins,pins8;
   int y;
-  
+
   pins8 = pprint->printer->integer[CFG_PINS];
   pins = pins8 * 8;
   src_size = width * pins;
@@ -1946,13 +1936,13 @@ dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
       psrc++;
     }
   }
-  
+
   psrc = pprint->source_buffer;
-  
+
   /* here, reverse bits */
   if (pprint->printer->integer[CFG_UPPER_POS] & CFG_REVERSE_BIT)
     dviprt_reverse_bits(psrc,src_size);
-  
+
   dsize = 0;
   pprint->psource = pprint->source_buffer;
   for (y = pins ; y>0 ; y--) {
@@ -1962,10 +1952,10 @@ dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
     dsize += dsize_line;
     pprint->psource += width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_SEND_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   pprint->psource = pprint->source_buffer;
   for (y = pins ; y>0 ; y--) {
     uint dsize_line;
@@ -1974,10 +1964,10 @@ dviprt_output_transpose(dviprt_print *pprint,uchar far *fb,uint width)
     if (code < 0) return code;
     pprint->psource += width;
   }
-  
+
   code = dviprt_output_expr(pprint,CFG_AFTER_BIT_IMAGE,width,dsize);
   if (code < 0) return code;
-  
+
   return 0;
 }
 
@@ -2017,27 +2007,27 @@ dviprt_transpose8x8(uchar far *inp,uint line_size,uchar far *outp,uint dist)
   }
   else {
     register uint temp;
-    
+
     /* Transpose a block of bits between registers. */
 #define transpose(r,s,mask,shift)\
     r ^= (temp = ((s >> shift) ^ r) & mask);\
       s ^= temp << shift
-	
-	/* Transpose blocks of 4 x 4 */
+
+        /* Transpose blocks of 4 x 4 */
 #define transpose4(r) transpose(r,r,0x00f0,4)
-	transpose4(ae);
+        transpose4(ae);
     transpose4(bf);
     transpose4(cg);
     transpose4(dh);
-    
+
     /* Transpose blocks of 2 x 2 */
     transpose(ae, cg, 0x3333, 2);
     transpose(bf, dh, 0x3333, 2);
-    
+
     /* Transpose blocks of 1 x 1 */
     transpose(ae, bf, 0x5555, 1);
     transpose(cg, dh, 0x5555, 1);
-    
+
   store:	*outp = ae >> 8;
     outp += dist;
     *outp = bf >> 8;
@@ -2061,38 +2051,38 @@ static int
 dviprt_reverse_bits(uchar far *buf,uint s)
 {
   static uchar rev[256] = {
-    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 
-    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0, 
-    0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8, 
-    0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8, 
-    0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4, 
-    0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4, 
-    0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec, 
-    0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc, 
-    0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2, 
-    0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2, 
-    0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea, 
-    0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa, 
-    0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6, 
-    0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6, 
-    0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee, 
-    0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe, 
-    0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1, 
-    0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1, 
-    0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9, 
-    0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9, 
-    0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5, 
-    0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5, 
-    0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed, 
-    0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd, 
-    0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3, 
-    0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3, 
-    0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb, 
-    0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb, 
-    0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7, 
-    0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7, 
-    0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef, 
-    0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff, 
+    0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
+    0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
+    0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8,
+    0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
+    0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4,
+    0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
+    0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec,
+    0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc,
+    0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2,
+    0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2,
+    0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea,
+    0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
+    0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6,
+    0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6,
+    0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee,
+    0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe,
+    0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1,
+    0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
+    0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9,
+    0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9,
+    0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5,
+    0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5,
+    0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed,
+    0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
+    0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3,
+    0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
+    0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb,
+    0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
+    0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7,
+    0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
+    0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
+    0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
   };
   while (s-- > 0) {
     *buf = rev[*buf];
@@ -2101,7 +2091,6 @@ dviprt_reverse_bits(uchar far *buf,uint s)
   return 0;
 }
 
-
 static int
 dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
 {
@@ -2109,12 +2098,12 @@ dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
   dviprt_cfg_t *pprt;
   uint v;
   uint len;
-  
+
   pprt = pprint->printer;
   if (pprt->prtcode[numb] == NULL) return 0;
   pcode = pprt->prtcode[numb];
   len = pprt->prtcode_size[numb];
-  
+
   while (*pcode && len>0) {
     if (*pcode & CFG_FMT_BIT) {
       uint stack[CFG_STACK_DEPTH];
@@ -2164,7 +2153,7 @@ dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
             case CFG_VAL_X_DPI: v = (int)pprt->integer[CFG_DPI]; break;
             case CFG_VAL_Y_DPI:
               v = pprt->integer[CFG_Y_DPI] > 0 ?
-		pprt->integer[CFG_Y_DPI] : pprt->integer[CFG_DPI];
+                pprt->integer[CFG_Y_DPI] : pprt->integer[CFG_DPI];
               break;
             case CFG_VAL_PINS_BYTE: v = pprt->integer[CFG_PINS]; break;
             case CFG_VAL_X_POS: v = pprint->device_x*8; break;
@@ -2193,45 +2182,45 @@ dviprt_output_expr(dviprt_print *pprint,int numb,uint width,uint dsize)
         pprint->uservar[fmt&0x0f] = v;
       }
       else { uchar valbuf[10];
-	     int cols = fmt & CFG_FMT_COLUMN_BIT;
-	     int i;
-	     
-	     switch (fmt & CFG_FMT_FORMAT_BIT) {
-	     case CFG_FMT_BIN_LTOH:
-	       for (i=0;i<cols;i++) {
-		 valbuf[i] = v&0xff;
-		 v >>= 8;
-	       }
-	       break;
-	     case CFG_FMT_BIN_HTOL:
-	       for (i=cols-1;i>=0;i--) {
-		 valbuf[i] = v&0xff;
-		 v >>= 8;
-	       }
-	       break;
-	     default:
-	       { char *f;
-		 char fmtbuf[10];
-		 switch(fmt & CFG_FMT_FORMAT_BIT) {
-		 case CFG_FMT_HEX_UPPER: f = "X"; break;
-		 case CFG_FMT_HEX_LOWER: f = "x"; break;
-		 case CFG_FMT_DECIMAL: f = "u"; break;
-		 case CFG_FMT_OCTAL: f = "o"; break;
-		 }
-		 if (cols == 0)
-		   strcpy(fmtbuf,"%");
-		 else
-		   sprintf(fmtbuf,"%%0%d",cols);
-		 strcat(fmtbuf,f);
-		 sprintf(valbuf,fmtbuf,stack[stack_p]);
-		 cols = strlen(valbuf);
-		 if (fmt & CFG_FMT_ISO_BIT)
-		   valbuf[cols-1] |= 0x10;
-	       }
-	       break;
-	     }
-	     dviprt_output(pprint,(uchar far *)valbuf, cols);
-	   }
+             int cols = fmt & CFG_FMT_COLUMN_BIT;
+             int i;
+
+             switch (fmt & CFG_FMT_FORMAT_BIT) {
+             case CFG_FMT_BIN_LTOH:
+               for (i=0;i<cols;i++) {
+                 valbuf[i] = v&0xff;
+                 v >>= 8;
+               }
+               break;
+             case CFG_FMT_BIN_HTOL:
+               for (i=cols-1;i>=0;i--) {
+                 valbuf[i] = v&0xff;
+                 v >>= 8;
+               }
+               break;
+             default:
+               { char *f;
+                 char fmtbuf[10];
+                 switch(fmt & CFG_FMT_FORMAT_BIT) {
+                 case CFG_FMT_HEX_UPPER: f = "X"; break;
+                 case CFG_FMT_HEX_LOWER: f = "x"; break;
+                 case CFG_FMT_DECIMAL: f = "u"; break;
+                 case CFG_FMT_OCTAL: f = "o"; break;
+                 }
+                 if (cols == 0)
+                   strcpy(fmtbuf,"%");
+                 else
+                   sprintf(fmtbuf,"%%0%d",cols);
+                 strcat(fmtbuf,f);
+                 sprintf(valbuf,fmtbuf,stack[stack_p]);
+                 cols = strlen(valbuf);
+                 if (fmt & CFG_FMT_ISO_BIT)
+                   valbuf[cols-1] |= 0x10;
+               }
+               break;
+             }
+             dviprt_output(pprint,(uchar far *)valbuf, cols);
+           }
     }
     else {
       uint l = *pcode++;
@@ -2259,10 +2248,8 @@ dviprt_default_outputproc(uchar far *buf,long s,void *fp)
 }
 /***** End of print.c *****/
 
-
 /***** From encode.c *****/
 /* $Id: ENCODE.C 1.1 1994/08/30 02:27:02 kaz Exp kaz $ */
-
 
 #define DVIPRT_SUPPORT_FAX 1
 #define DVIPRT_SUPPORT_PCL 1
@@ -2282,7 +2269,7 @@ static long dviprt_pcl1_encode(dviprt_print *,long ,int );
 static long dviprt_pcl2_getworksize(dviprt_print *,long );
 static long dviprt_pcl2_encode(dviprt_print *,long ,int );
 #endif
-     
+
 static dviprt_encoder dviprt_encoder_list[] = {
   { CFG_ENCODE_NULL, dviprt_null_getworksize,dviprt_null_encode},
   { CFG_ENCODE_HEX, dviprt_hex_getworksize,dviprt_hex_encode},
@@ -2308,24 +2295,24 @@ dviprt_getencoder_(int no)
   return NULL;
 }
 
-static long 
+static long
 dviprt_null_getworksize(dviprt_print *pprint,long s)
 {
   return 0;
 }
-static long 
+static long
 dviprt_null_encode(dviprt_print *pprint,long s,int f)
 {
   pprint->poutput = pprint->psource;
   return s;
 }
 
-static long 
+static long
 dviprt_hex_getworksize(dviprt_print *pprint,long s)
 {
   return s*2;
 }
-static long 
+static long
 dviprt_hex_encode(dviprt_print *pprint,long s,int f)
 {
   if (f) {
@@ -2350,18 +2337,18 @@ dviprt_pcl1_getworksize(dviprt_print *pprint,long s)
 {
   return s*2;
 }
-static long 
+static long
 dviprt_pcl1_encode(dviprt_print *pprint,long s,int f)
 {
   uchar far *src;
   uchar far *end;
   uchar far *out;
   long total = 0;
-  
+
   src = pprint->psource;
   end = src + s;
   out = pprint->poutput = pprint->encode_buffer;
-  
+
   while ( src < end  ) {
     uchar test = *src++;
     uchar far *run = src;
@@ -2384,12 +2371,12 @@ dviprt_pcl1_encode(dviprt_print *pprint,long s,int f)
   return total;
 }
 
-static long 
+static long
 dviprt_pcl2_getworksize(dviprt_print *pprint,long s)
 {
   return s + s/127 + 1;
 }
-static long 
+static long
 dviprt_pcl2_encode(dviprt_print *pprint,long s,int f)
 {
   uchar far *exam;
@@ -2397,12 +2384,12 @@ dviprt_pcl2_encode(dviprt_print *pprint,long s,int f)
   uchar far *end;
   uchar far *src;
   long total = 0;
-  
+
   src = pprint->psource;
   exam = src;
   cptr = pprint->poutput = pprint->encode_buffer;
   end = exam + s;
-  
+
   for ( ; ; ) {
     uchar test = *exam++;
     int len;
@@ -2450,7 +2437,7 @@ dviprt_pcl2_encode(dviprt_print *pprint,long s,int f)
 #endif /* DVIPRT_SUPPORT_PCL */
 
 #if DVIPRT_SUPPORT_FAX
-static long 
+static long
 dviprt_fax_getworksize(dviprt_print *pprint,long s)
 {
   long size = s * 8 + 7;
@@ -2466,7 +2453,7 @@ typedef struct {
   uchar i_bitbuf;
   uchar far *i_buf;
   int i_count;
-  
+
   uchar o_bitbuf;
   uchar far *o_buf;
   int o_count;
@@ -2475,8 +2462,8 @@ typedef struct {
 static int dviprt_fax_set_white(int,FaxEncodeInfo *);
 static int dviprt_fax_set_black(int,FaxEncodeInfo *);
 static int dviprt_fax_set_bitcount(FaxEncode_t *,FaxEncodeInfo *);
-     
-static long 
+
+static long
 dviprt_fax_encode(dviprt_print *pprint,long s,int f)
 {
   static FaxEncode_t eol_code = {0x800,12};
@@ -2486,11 +2473,11 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
   FaxEncodeInfo info;
   uchar far *src_end;
   uchar recover;
-  
+
   src_end = pprint->psource + s;
   recover = *src_end;
   *src_end = 0xaa;
-  
+
   /* initializing */
   info.i_buf = pprint->psource;
   info.i_bitbuf = *info.i_buf++;
@@ -2499,9 +2486,9 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
   info.o_bitbuf = 0;
   info.o_count = 8;
   info.o_bufcount = 0;
-  
+
   dviprt_fax_set_bitcount(&eol_code,&info);
-  
+
   for(;;){
     static uchar ROW[9] =
       {0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80};
@@ -2509,12 +2496,12 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
       {0x00, 0x01, 0x03, 0x07, 0x0f, 0x1f, 0x3f, 0x7f, 0xff};
     int white_run_length;
     int black_run_length;
-    
+
     /* count run-length */
     /* remaining bits in the current byte are white? */
     if (!(info.i_bitbuf &= MASK[info.i_count])){
       do{
-	top_bit_count += 8; /* next byte is also white	*/
+        top_bit_count += 8; /* next byte is also white	*/
       } while(!(info.i_bitbuf = *info.i_buf++));
       info.i_count = 8;
     }
@@ -2522,22 +2509,22 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
     while(!(info.i_bitbuf & ROW[info.i_count]))
       info.i_count--;		/* skip white bits 	*/
     white_run_length = top_bit_count - (black_run_length = info.i_count);
-    
+
     /* remaining bits in the current byte are black?	*/
     if (info.i_bitbuf == MASK[info.i_count]){
       do{
-	black_run_length += 8;
-	/* next byte is also black	*/
+        black_run_length += 8;
+        /* next byte is also black	*/
       } while((info.i_bitbuf = *info.i_buf++) == 0xff);
       info.i_count = 8;
     }
     else info.i_count--;	/* skip the top black bit	*/
-    
+
     /* current byte contains white and black bits 	*/
     while(info.i_bitbuf & ROW[info.i_count])
       info.i_count--;		/* skip black bits	 		*/
     black_run_length -= (top_bit_count = info.i_count);
-    
+
     /* output */
     if((allruns += white_run_length) < width)
       dviprt_fax_set_white(white_run_length,&info);
@@ -2552,22 +2539,22 @@ dviprt_fax_encode(dviprt_print *pprint,long s,int f)
       break;
     }
   }
-  
+
   info.o_bufcount++;
   if (info.o_count < 8)
     *info.o_buf++ = info.o_bitbuf;
   else
     *info.o_buf++ = 0;
   *src_end = recover;
-  
+
   return info.o_bufcount;
 }
 
-static int 
+static int
 dviprt_fax_set_bitcount(FaxEncode_t *pt,FaxEncodeInfo *info)
 {
   int	data, length;
-  
+
   data = pt->data;
   length = pt->length;
   while( (length -= info->o_count) >= 0 ){
@@ -2582,7 +2569,7 @@ dviprt_fax_set_bitcount(FaxEncode_t *pt,FaxEncodeInfo *info)
   return 0;
 }
 
-static int 
+static int
 dviprt_fax_set_white(int count,FaxEncodeInfo *info)
 {
   static FaxEncode_t white_count_list[]={
@@ -2650,7 +2637,7 @@ dviprt_fax_set_white(int count,FaxEncodeInfo *info)
     { 0x004C,      8,	}, /*   61 */
     { 0x00CC,      8,	}, /*   62 */
     { 0x002C,      8,	}, /*   63 */
-    
+
     { 0x001B,      5,	}, /*   64 */
     { 0x0009,      5,	}, /*  128 */
     { 0x003A,      6,	}, /*  192 */
@@ -2678,7 +2665,7 @@ dviprt_fax_set_white(int count,FaxEncodeInfo *info)
     { 0x00B2,      9,	}, /* 1600 */
     { 0x0006,      6,	}, /* 1664 */
     { 0x01B2,      9,	}, /* 1728 */
-    
+
     { 0x0080,     11,	}, /* 1792 */
     { 0x0180,     11,	}, /* 1856 */
     { 0x0580,     11,	}, /* 1920 */
@@ -2706,7 +2693,7 @@ dviprt_fax_set_white(int count,FaxEncodeInfo *info)
   return 0;
 }
 
-static int 
+static int
 dviprt_fax_set_black(int count,FaxEncodeInfo *info)
 {
   static FaxEncode_t black_count_list[]={
@@ -2774,7 +2761,7 @@ dviprt_fax_set_black(int count,FaxEncodeInfo *info)
     { 0x05A0,     12,	}, /*   61 */
     { 0x0660,     12,	}, /*   62 */
     { 0x0E60,     12,	}, /*   63 */
-    
+
     { 0x03C0,     10,	}, /*   64 */
     { 0x0130,     12,	}, /*  128 */
     { 0x0930,     12,	}, /*  192 */
@@ -2802,7 +2789,7 @@ dviprt_fax_set_black(int count,FaxEncodeInfo *info)
     { 0x1B40,     13,	}, /* 1600 */
     { 0x04C0,     13,	}, /* 1664 */
     { 0x14C0,     13, }, /* 1728 */
-    
+
     { 0x0080,     11,	}, /* 1792 */
     { 0x0180,     11,	}, /* 1856 */
     { 0x0580,     11,	}, /* 1920 */
@@ -2817,7 +2804,7 @@ dviprt_fax_set_black(int count,FaxEncodeInfo *info)
     { 0x0780,     12,	}, /* 2496 */
     { 0x0F80,     12,	}, /* 2560 */
   };
-  
+
   while (count >= 64){
     if(count <= MAX_FAX_WIDTH){
       dviprt_fax_set_bitcount((black_count_list + 63) + (count/64),info);

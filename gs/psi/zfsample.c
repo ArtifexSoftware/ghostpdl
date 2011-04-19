@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -58,25 +58,23 @@ struct gs_sampled_data_enum_s {
 
 typedef struct gs_sampled_data_enum_s gs_sampled_data_enum;
 
-
 gs_private_st_ptrs1(st_gs_sampled_data_enum, gs_sampled_data_enum,
-		"gs_sampled_data_enum", gs_sampled_data_enum_enum_ptrs,
-		gs_sampled_data_enum_reloc_ptrs, pfn);
-
+                "gs_sampled_data_enum", gs_sampled_data_enum_enum_ptrs,
+                gs_sampled_data_enum_reloc_ptrs, pfn);
 
 /* Forward references */
 
 static int cube_build_func0(const ref * pdict,
-	gs_function_Sd_params_t * params, gs_memory_t *mem);
+        gs_function_Sd_params_t * params, gs_memory_t *mem);
 static int sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
-	const ref * pproc, int (*finish_proc)(i_ctx_t *),
-	gs_memory_t * mem);
+        const ref * pproc, int (*finish_proc)(i_ctx_t *),
+        gs_memory_t * mem);
 static int sampled_data_sample(i_ctx_t *i_ctx_p);
 static int sampled_data_continue(i_ctx_t *i_ctx_p);
 static int sampled_data_finish(i_ctx_t *i_ctx_p);
 
 static gs_sampled_data_enum * gs_sampled_data_enum_alloc
-	(gs_memory_t * mem, client_name_t cname);
+        (gs_memory_t * mem, client_name_t cname);
 
 /*
  * Collect data for a type 0 (sampled data) function
@@ -102,18 +100,18 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
     gs_function_Sd_params_t params = {0};
 
     check_type(*pdict, t_dictionary);
-    /* 
+    /*
      * Check procedure to be sampled.
      */
     if (dict_find_string(pdict, "Function", &pfunc) <= 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     check_proc(*pfunc);
     /*
      * Set up the hyper cube function data structure.
      */
     code = cube_build_func0(pdict, &params, imemory);
     if (code < 0)
-	return code;
+        return code;
     /*
      * This is temporary.  We will call gs_function_Sd_init again after
      * we have collected the cube data.  We are doing it now because we need
@@ -124,7 +122,7 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
      */
     code = gs_function_Sd_init(&pfn, &params, imemory);
     if (code < 0)
-	return code;
+        return code;
     /*
      * Now setup to collect the sample data.
      */
@@ -132,7 +130,6 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
 }
 
 /* ------- Internal procedures ------- */
-
 
 #define bits2bytes(x) ((x) >> 3)	/* Convert bit count to byte count */
 
@@ -146,9 +143,9 @@ valid_cube_size(int num_inputs, int num_outputs, int sample_size, const int Size
     int i, total_size = num_outputs * sample_size;
 
     for (i = 0; i < num_inputs; i++) {
-	if (Size[i] <= 0 || Size[i] > MAX_DATA_SIZE / total_size)
-	    return false;
-	total_size *= Size[i];
+        if (Size[i] <= 0 || Size[i] > MAX_DATA_SIZE / total_size)
+            return false;
+        total_size *= Size[i];
     }
     return true;
 }
@@ -169,16 +166,16 @@ valid_cube_size(int num_inputs, int num_outputs, int sample_size, const int Size
  */
 static int
 determine_sampled_data_size(int num_inputs, int num_outputs,
-				int sample_size, int Size[])
+                                int sample_size, int Size[])
 {
     static const int size_list[] = {512, 50, 20, 10, 7, 5, 4, 3};
     int i, size;
 
     /* Start with initial guess at cube size */
     if (num_inputs > 0 && num_inputs <= 8)
-	size = size_list[num_inputs - 1];
+        size = size_list[num_inputs - 1];
     else
-	size = 2;
+        size = 2;
     /*
      * Verify that the cube will fit into MAX_DATA_SIZE.  If not then
      * decrement the cube size until it will fit.
@@ -188,15 +185,14 @@ determine_sampled_data_size(int num_inputs, int num_outputs,
         for (i = 0; i < num_inputs; i++)
             Size[i] = size;
 
-	if (valid_cube_size(num_inputs, num_outputs, sample_size, Size))
-	    return 0;		/* We have a valid size */
+        if (valid_cube_size(num_inputs, num_outputs, sample_size, Size))
+            return 0;		/* We have a valid size */
 
-	if (size == 2)		/* Cannot have less than 2 points per side */
-	    return_error(e_rangecheck);
-	size--;
+        if (size == 2)		/* Cannot have less than 2 points per side */
+            return_error(e_rangecheck);
+        size--;
     }
 }
-
 
 /*
  * Allocate the enumerator used while collecting sampled data.  This enumerator
@@ -206,7 +202,7 @@ static gs_sampled_data_enum *
 gs_sampled_data_enum_alloc(gs_memory_t * mem, client_name_t cname)
 {
     return gs_alloc_struct(mem, gs_sampled_data_enum,
-    				&st_gs_sampled_data_enum, cname);
+                                &st_gs_sampled_data_enum, cname);
 }
 
 /*
@@ -220,11 +216,11 @@ cube_ptr_from_index(gs_function_Sd_params_t * params, int indexes[])
     int i, sum = indexes[params->m - 1];
 
     for (i = params->m - 2; i >= 0; i--) {
-	sum *= params->Size[i];
-	sum += indexes[i];
+        sum *= params->Size[i];
+        sum += indexes[i];
     }
-    return (byte *)(params->DataSource.data.str.data) + 
-	sum * params->n * bits2bytes(params->BitsPerSample);
+    return (byte *)(params->DataSource.data.str.data) +
+        sum * params->n * bits2bytes(params->BitsPerSample);
 }
 
 /*
@@ -238,29 +234,29 @@ increment_cube_indexes(gs_function_Sd_params_t * params, int indexes[])
     int i = 0;
 
     while (true) {
-	/*
-	 * Increment an index value for an edge and test if we have
-	 * gone past the final value for the edge.
-	 */
-	indexes[i]++;
-	if (indexes[i] < params->Size[i])
-	    /*
-	     * We have not reached the end of the edge.  Exit but
-	     * indicate that we are not done with the hypercube.
-	     */
-	    return false;
-	/*
-	 * We have reached the end of one edge of the hypercube and we
-	 * need to increment the next index.
-	 */
-	indexes[i] = 0;
-	i++;
-	if (i == params->m)
-	    /*
-	     * We have finished the last edge of the hyper cube.
-	     * We are done.
-	     */
-	    return true;
+        /*
+         * Increment an index value for an edge and test if we have
+         * gone past the final value for the edge.
+         */
+        indexes[i]++;
+        if (indexes[i] < params->Size[i])
+            /*
+             * We have not reached the end of the edge.  Exit but
+             * indicate that we are not done with the hypercube.
+             */
+            return false;
+        /*
+         * We have reached the end of one edge of the hypercube and we
+         * need to increment the next index.
+         */
+        indexes[i] = 0;
+        i++;
+        if (i == params->m)
+            /*
+             * We have finished the last edge of the hyper cube.
+             * We are done.
+             */
+            return true;
     }
 }
 
@@ -272,23 +268,23 @@ increment_cube_indexes(gs_function_Sd_params_t * params, int indexes[])
  */
 static int
 cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
-							gs_memory_t *mem)
+                                                        gs_memory_t *mem)
 {
     byte * bytes = 0;
     int code, i;
     int total_size;
 
     if ((code = dict_int_param(pdict, "Order", 1, 3, 1, &params->Order)) < 0 ||
-	(code = dict_int_param(pdict, "BitsPerSample", 1, 32, 0,
-			       &params->BitsPerSample)) < 0 ||
-	((code = params->m =
-	    fn_build_float_array(pdict, "Domain", false, true,
-		    			&params->Domain, mem)) < 0 ) ||
-	((code = params->n =
-	    fn_build_float_array(pdict, "Range", false, true,
-		    			&params->Range, mem)) < 0) 
-	) {
-	goto fail;
+        (code = dict_int_param(pdict, "BitsPerSample", 1, 32, 0,
+                               &params->BitsPerSample)) < 0 ||
+        ((code = params->m =
+            fn_build_float_array(pdict, "Domain", false, true,
+                                        &params->Domain, mem)) < 0 ) ||
+        ((code = params->n =
+            fn_build_float_array(pdict, "Range", false, true,
+                                        &params->Range, mem)) < 0)
+        ) {
+        goto fail;
     }
     /*
      * The previous logic set the size of m and n to the size of the Domain
@@ -299,7 +295,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
     params->n >>= 1;
     if (params->m == 0 || params->n == 0 ||
         params->m > MAX_NUM_INPUTS || params->n > MAX_NUM_OUTPUTS) {
-	code = gs_note_error(e_rangecheck);
+        code = gs_note_error(e_rangecheck);
         goto fail;
     }
     /*
@@ -307,50 +303,50 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
      * we need to determine a set of default values for the Size array.
      */
     {
-	int *ptr = (int *)
-	    gs_alloc_byte_array(mem, params->m, sizeof(int), "Size");
+        int *ptr = (int *)
+            gs_alloc_byte_array(mem, params->m, sizeof(int), "Size");
 
-	if (ptr == NULL) {
-	    code = gs_note_error(e_VMerror);
-	    goto fail;
-	}
-	params->Size = ptr;
-	code = dict_ints_param(mem, pdict, "Size", params->m, ptr);
-        if (code < 0)
-	    goto fail;
-        if (code == 0) {
-	    /*
-	     * The Size array has not been specified.  Determine a default
-	     * set of values.
-	     */
-            code = determine_sampled_data_size(params->m, params->n,
-	     			params->BitsPerSample, (int *)params->Size);
-            if (code < 0)
-	        goto fail;
+        if (ptr == NULL) {
+            code = gs_note_error(e_VMerror);
+            goto fail;
         }
-	else {			/* Size array specified - verify valid */
-	    if (code != params->m || !valid_cube_size(params->m, params->n,
-	    				params->BitsPerSample, params->Size))
-	        code = gs_note_error(e_rangecheck);
-	        goto fail;
-	}
+        params->Size = ptr;
+        code = dict_ints_param(mem, pdict, "Size", params->m, ptr);
+        if (code < 0)
+            goto fail;
+        if (code == 0) {
+            /*
+             * The Size array has not been specified.  Determine a default
+             * set of values.
+             */
+            code = determine_sampled_data_size(params->m, params->n,
+                                params->BitsPerSample, (int *)params->Size);
+            if (code < 0)
+                goto fail;
+        }
+        else {			/* Size array specified - verify valid */
+            if (code != params->m || !valid_cube_size(params->m, params->n,
+                                        params->BitsPerSample, params->Size))
+                code = gs_note_error(e_rangecheck);
+                goto fail;
+        }
     }
     /*
      * Determine space required for the sample data storage.
      */
     total_size = params->n * bits2bytes(params->BitsPerSample);
     for (i = 0; i < params->m; i++)
-	total_size *= params->Size[i];
+        total_size *= params->Size[i];
     /*
      * Allocate space for the data cube itself.
      */
     bytes = gs_alloc_byte_array(mem, total_size, 1, "cube_build_func0(bytes)");
     if (!bytes) {
-	code = gs_note_error(e_VMerror);
-	goto fail;
+        code = gs_note_error(e_VMerror);
+        goto fail;
     }
     data_source_init_bytes(&params->DataSource,
-    				(const unsigned char *)bytes, total_size);
+                                (const unsigned char *)bytes, total_size);
 
     return 0;
 
@@ -389,7 +385,7 @@ fail:
  */
 static int
 sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
-	const ref * pproc, int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
+        const ref * pproc, int (*finish_proc)(i_ctx_t *), gs_memory_t * mem)
 {
     os_ptr op = osp;
     gs_sampled_data_enum *penum;
@@ -405,7 +401,7 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
      */
     penum = gs_sampled_data_enum_alloc(imemory, "zbuildsampledfuntion(params)");
     if (penum == NULL)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
 
     /* Initialize data in the enumeration structure */
 
@@ -426,7 +422,7 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
      */
     push(O_STACK_PAD);
     for (i = 0; i < O_STACK_PAD; i++) 		/* Set space = null */
-	make_null(op - i);
+        make_null(op - i);
 
     /* Push everything on the estack */
 
@@ -448,18 +444,18 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
     gs_sampled_data_enum *penum = senum;
     ref proc;
     gs_function_Sd_params_t * params =
-    			(gs_function_Sd_params_t *)&penum->pfn->params;
+                        (gs_function_Sd_params_t *)&penum->pfn->params;
     int num_inputs = params->m;
     int i;
 
     /* Put set of input values onto the stack. */
     push(num_inputs);
     for (i = 0; i < num_inputs; i++) {
-	double dmin = params->Domain[2 * i];
-	double dmax = params->Domain[2 * i + 1];
+        double dmin = params->Domain[2 * i];
+        double dmax = params->Domain[2 * i + 1];
 
-	make_real(op - num_inputs + i + 1, (float) (
-	    penum->indexes[i] * (dmax - dmin)/(params->Size[i] - 1) + dmin));
+        make_real(op - num_inputs + i + 1, (float) (
+            penum->indexes[i] * (dmax - dmin)/(params->Size[i] - 1) + dmin));
     }
 
     proc = sample_proc;			    /* Get procedure from storage */
@@ -468,7 +464,7 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 
-/* 
+/*
  * Continuation procedure for processing sampled values.
  */
 static int
@@ -477,7 +473,7 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_sampled_data_enum *penum = senum;
     gs_function_Sd_params_t * params =
-	    (gs_function_Sd_params_t *)&penum->pfn->params;
+            (gs_function_Sd_params_t *)&penum->pfn->params;
     int i, j, num_out = params->n;
     int code = 0;
     byte * data_ptr;
@@ -489,67 +485,67 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
      * values.  If not, move the stack back to where it belongs and abort
      */
     if (num_out + O_STACK_PAD + penum->o_stack_depth != ref_stack_count(&o_stack)) {
-	stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
-	
-	if (stack_depth_adjust < 0) {
-	    /*
-	     * If we get to here then there were major problems.  The function
-	     * removed too many items off of the stack.  We had placed extra
-	     * (unused) stack stack space to allow for this but the function
-	     * exceeded even that.  Data on the stack may have been lost.
-	     * The only thing that we can do is move the stack pointer back and
-	     * hope.  (We have not seen real Postscript files that have this
-	     * problem.)
-	     */
-	    push(-stack_depth_adjust);
-	    ifree_object(penum->pfn, "sampled_data_continue(pfn)");
-	    ifree_object(penum, "sampled_data_continue((enum)");
-	    return_error(e_undefinedresult);
-	}
+        stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
+
+        if (stack_depth_adjust < 0) {
+            /*
+             * If we get to here then there were major problems.  The function
+             * removed too many items off of the stack.  We had placed extra
+             * (unused) stack stack space to allow for this but the function
+             * exceeded even that.  Data on the stack may have been lost.
+             * The only thing that we can do is move the stack pointer back and
+             * hope.  (We have not seen real Postscript files that have this
+             * problem.)
+             */
+            push(-stack_depth_adjust);
+            ifree_object(penum->pfn, "sampled_data_continue(pfn)");
+            ifree_object(penum, "sampled_data_continue((enum)");
+            return_error(e_undefinedresult);
+        }
     }
-    
+
     /* Save data from the given function */
     data_ptr = cube_ptr_from_index(params, penum->indexes);
     for (i=0; i < num_out; i++) {
-	ulong cv;
+        ulong cv;
         double value;
-	double rmin = params->Range[2 * i];
-	double rmax = params->Range[2 * i + 1];
+        double rmin = params->Range[2 * i];
+        double rmax = params->Range[2 * i + 1];
 
         code = real_param(op + i - num_out + 1, &value);
         if (code < 0)
-	    return code;
-	if (value < rmin)
-	    value = rmin;
-	else if (value > rmax)
-	    value = rmax;
-	value = (value - rmin) / (rmax - rmin);		/* Convert to 0 to 1.0 */
-	cv = (int) (value * sampled_data_value_max + 0.5);
-	for (j = 0; j < bps; j++)
-	    data_ptr[bps * i + j] = (byte)(cv >> ((bps - 1 - j) * 8));	/* MSB first */
+            return code;
+        if (value < rmin)
+            value = rmin;
+        else if (value > rmax)
+            value = rmax;
+        value = (value - rmin) / (rmax - rmin);		/* Convert to 0 to 1.0 */
+        cv = (int) (value * sampled_data_value_max + 0.5);
+        for (j = 0; j < bps; j++)
+            data_ptr[bps * i + j] = (byte)(cv >> ((bps - 1 - j) * 8));	/* MSB first */
     }
     pop(num_out);		    /* Move op to base of result values */
-    
+
     /* Check if we are done collecting data. */
 
     if (increment_cube_indexes(params, penum->indexes)) {
-	if (stack_depth_adjust == 0)
-	    pop(O_STACK_PAD);	    /* Remove spare stack space */
-	else
-	    pop(stack_depth_adjust - num_out);
-	/* Execute the closing procedure, if given */
-	code = 0;
-	if (esp_finish_proc != 0)
-	    code = esp_finish_proc(i_ctx_p);
+        if (stack_depth_adjust == 0)
+            pop(O_STACK_PAD);	    /* Remove spare stack space */
+        else
+            pop(stack_depth_adjust - num_out);
+        /* Execute the closing procedure, if given */
+        code = 0;
+        if (esp_finish_proc != 0)
+            code = esp_finish_proc(i_ctx_p);
 
-	return code;
+        return code;
     } else {
-	if (stack_depth_adjust) {
-	    stack_depth_adjust -= num_out;
-	    push(O_STACK_PAD - stack_depth_adjust);
-	    for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
-		make_null(op - i);
-	}
+        if (stack_depth_adjust) {
+            stack_depth_adjust -= num_out;
+            push(O_STACK_PAD - stack_depth_adjust);
+            for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
+                make_null(op - i);
+        }
     }
 
     /* Now get the data for the next location */
@@ -567,18 +563,18 @@ sampled_data_finish(i_ctx_t *i_ctx_p)
     gs_sampled_data_enum *penum = senum;
     /* Build a type 0 function using the given parameters */
     gs_function_Sd_params_t * params =
-	(gs_function_Sd_params_t *)&penum->pfn->params;
+        (gs_function_Sd_params_t *)&penum->pfn->params;
     gs_function_t * pfn;
     ref cref;			/* closure */
     int code = gs_function_Sd_init(&pfn, params, imemory);
 
     if (code < 0)
-	return code;
+        return code;
 
     code = ialloc_ref_array(&cref, a_executable | a_execute, 2,
-			    "sampled_data_finish(cref)");
+                            "sampled_data_finish(cref)");
     if (code < 0)
-	return code;
+        return code;
 
     make_istruct_new(cref.value.refs, a_executable | a_execute, pfn);
     make_oper_new(cref.value.refs + 1, 0, zexecfunction);
@@ -602,50 +598,50 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
 
     code = get_space_object(i_ctx_p, arr, &space);
     if (code < 0)
-	return code;
+        return code;
     if (!space->alternateproc)
-	return e_typecheck;
+        return e_typecheck;
     code = space->alternateproc(i_ctx_p, arr, &palternatespace, &CIESubst);
     if (code < 0)
-	return code;
+        return code;
     code = get_space_object(i_ctx_p, palternatespace, &altspace);
     if (code < 0)
-	return code;
+        return code;
     /*
      * Set up the hyper cube function data structure.
      */
     params.Order = 3;
     params.BitsPerSample = 16;
 
-    code = space->numcomponents(i_ctx_p, arr, &num_components);    
+    code = space->numcomponents(i_ctx_p, arr, &num_components);
     if (code < 0)
-	return code;
+        return code;
     fptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_sampled_function(Domain)");
     if (!fptr)
-	return e_VMerror;
-    code = space->domain(i_ctx_p, arr, fptr);    
+        return e_VMerror;
+    code = space->domain(i_ctx_p, arr, fptr);
     if (code < 0) {
-	gs_free_const_object(imemory, fptr, "make_sampled_function(Domain)");
-	return code;
+        gs_free_const_object(imemory, fptr, "make_sampled_function(Domain)");
+        return code;
     }
     params.Domain = fptr;
     params.m = num_components;
 
-    code = altspace->numcomponents(i_ctx_p, palternatespace, &num_components);    
+    code = altspace->numcomponents(i_ctx_p, palternatespace, &num_components);
     if (code < 0) {
-	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
-	return code;
+        gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+        return code;
     }
     fptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_sampled_function(Range)");
     if (!fptr) {
-	gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
-	return e_VMerror;
+        gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
+        return e_VMerror;
     }
-    code = altspace->range(i_ctx_p, palternatespace, fptr);    
+    code = altspace->range(i_ctx_p, palternatespace, fptr);
     if (code < 0) {
-	gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
-	gs_free_const_object(imemory, fptr, "make_sampled_function(Range)");
-	return code;
+        gs_free_const_object(imemory, params.Domain, "make_sampled_function(Domain)");
+        gs_free_const_object(imemory, fptr, "make_sampled_function(Range)");
+        return code;
     }
     params.Range = fptr;
     params.n = num_components;
@@ -656,8 +652,8 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
      */
     ptr = (int *)gs_alloc_byte_array(imemory, params.m, sizeof(int), "Size");
     if (ptr == NULL) {
-	code = gs_note_error(e_VMerror);
-	goto fail;
+        code = gs_note_error(e_VMerror);
+        goto fail;
     }
     params.Size = ptr;
     /*
@@ -665,25 +661,25 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
      * set of values.
      */
     code = determine_sampled_data_size(params.m, params.n,
-     			params.BitsPerSample, (int *)params.Size);
+                        params.BitsPerSample, (int *)params.Size);
     if (code < 0)
-	goto fail;
+        goto fail;
     /*
      * Determine space required for the sample data storage.
      */
     total_size = params.n * bits2bytes(params.BitsPerSample);
     for (i = 0; i < params.m; i++)
-	total_size *= params.Size[i];
+        total_size *= params.Size[i];
     /*
      * Allocate space for the data cube itself.
      */
     bytes = gs_alloc_byte_array(imemory, total_size, 1, "cube_build_func0(bytes)");
     if (!bytes) {
-	code = gs_note_error(e_VMerror);
-	goto fail;
+        code = gs_note_error(e_VMerror);
+        goto fail;
     }
     data_source_init_bytes(&params.DataSource,
-    				(const unsigned char *)bytes, total_size);
+                                (const unsigned char *)bytes, total_size);
 
     /*
      * This is temporary.  We will call gs_function_Sd_init again after
@@ -695,7 +691,7 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
      */
     code = gs_function_Sd_init(&pfn, &params, imemory);
     if (code < 0)
-	return code;
+        return code;
     /*
      * Now setup to collect the sample data.
      */

@@ -132,7 +132,7 @@ static int add_line(FAPI_path *I, int64_t x, int64_t y)
 
 static int add_curve(FAPI_path *I, int64_t x0, int64_t y0, int64_t x1, int64_t y1, int64_t x2, int64_t y2)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
-    
+
     x0 = import_shift(x0, I->shift) + olh->x0;
     y0 = -import_shift(y0, I->shift) + olh->y0;
     x1 = import_shift(x1, I->shift) + olh->x0;
@@ -230,7 +230,7 @@ static ulong sfnts_reader_rlong(sfnts_reader *r)
 static int sfnts_reader_rstring(sfnts_reader *r, byte *v, int length)
 {
     int rlength = length;
-    
+
     if (length <= 0)
         return(0);
     while (!r->error) {
@@ -480,7 +480,7 @@ static ushort FAPI_FF_get_word(FAPI_font *ff, fapi_font_feature var_id, int inde
         case FAPI_FONT_FEATURE_lenIV: return (ff->need_decrypt ? 0 : pfont->data.lenIV);
         case FAPI_FONT_FEATURE_GlobalSubrs_count:
             {   ref *Private, *GlobalSubrs;
-                if (pfont->FontType == ft_encrypted2) {                
+                if (pfont->FontType == ft_encrypted2) {
                     if (dict_find_string(pdr, "Private", &Private) <= 0)
                         return 0;
                     if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
@@ -952,15 +952,13 @@ static bool get_MetricsCount(FAPI_font *ff)
     return 0;
 }
 
-
-
 static int get_charstring(FAPI_font *ff, int char_code, ref **proc)
 {
     ref *CharStrings, char_name;
     ref *pdr = (ref *)ff->client_font_data2;
 
     if (ff->is_type1) {
-        if (ff->is_cid) 
+        if (ff->is_cid)
             return -1;
         if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
             return -1;
@@ -983,7 +981,7 @@ static int get_charstring(FAPI_font *ff, int char_code, ref **proc)
                 if (name_ref(ff->memory, (const byte *)".notdef", 7, &char_name, -1) < 0)
                     return -1;
         }
-        if (dict_find(CharStrings, &char_name, (ref **)proc) <= 0) 
+        if (dict_find(CharStrings, &char_name, (ref **)proc) <= 0)
             return -1;
     }
     return 0;
@@ -1052,14 +1050,14 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
                     return -1;
                 }
             }
-            if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray)) 
+            if (r_has_type(glyph, t_array) || r_has_type(glyph, t_mixedarray))
                 return -1;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         }
     } else { /* type 42 */
         const byte *data_ptr;
         int l = get_GlyphDirectory_data_ptr(ff->memory, pdr, char_code, &data_ptr);
-        
+
         /* We should only render the TT notdef if we've been told to - logic lifted from zchar42.c */
         if (!i_ctx_p->RenderTTNotdef && ((ff->char_data_len == 7 && strncmp((const char *)ff->char_data, ".notdef", 7) == 0)
             || (ff->char_data_len > 9 && strncmp((const char *)ff->char_data, ".notdef~GS", 10) == 0))) {
@@ -1078,7 +1076,7 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
                 bool error = sfnt_get_glyph_offset(pdr, pfont42, char_code, &offset0);
 
                 glyph_length = (error ? -1 : pfont42->data.len_glyphs[char_code]);
-                
+
                 if (buf != 0 && !error) {
                     sfnts_reader r;
                     sfnts_reader_init(&r, pdr);
@@ -1111,21 +1109,21 @@ static bool using_transparency_pattern (gs_state *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
     int abits = 1;
-   
+
     if (dev_proc(dev, get_alpha_bits)) {
         abits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
     }
-   
+
     return((!gs_color_writes_pure(pgs)) && dev->procs.begin_transparency_group != NULL && dev->procs.end_transparency_group != NULL);
 }
 
 static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_font_base *pbfont, int abits, gs_log2_scale_point *log2_scale)
 {
     gs_state *pgs = (gs_state *)penum_s->pis;
-    
+
     log2_scale->x = 0;
     log2_scale->y = 0;
-    
+
     /* Checking both gx_compute_text_oversampling() result, and abits (below) may seem redundant,
      * and hopefully it will be soon, but for now, gx_compute_text_oversampling() could opt to
      * "oversample" sufficiently small glyphs (fwiw, I don't think gx_compute_text_oversampling is
@@ -1133,7 +1131,7 @@ static bool produce_outline_char (i_ctx_t *i_ctx_p, gs_show_enum *penum_s, gs_fo
      * This was an old, partial solution for dropouts in small glyphs.
      */
     gx_compute_text_oversampling(penum_s, (gs_font *)pbfont, abits, log2_scale);
-    
+
     return (pgs->in_charpath || pbfont->PaintType != 0 ||
             (pgs->in_cachedevice != CACHE_DEVICE_CACHING && using_transparency_pattern ((gs_state *)penum_s->pis)) ||
             (pgs->in_cachedevice != CACHE_DEVICE_CACHING && (log2_scale->x > 0 || log2_scale->y > 0)) ||
@@ -1544,24 +1542,24 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     }
     pdata = (font_data *)pfont->client_data;
     I = pbfont->FAPI;
-    
+
     if (r_type(&(pdata->BuildGlyph)) != t_null) {
         has_buildglyph = true;
     } else {
         has_buildglyph = false;
     }
-    
+
     if (r_type(&(pdata->BuildChar)) != t_null) {
         has_buildchar = true;
     } else {
         has_buildchar = false;
     }
-    
+
     /* This shouldn't happen, but just in case */
     if (has_buildglyph == false && has_buildchar == false) {
         has_buildglyph = true;
     }
-    
+
     if (dict_find_string(op - 1, "Path", &v) <= 0 || !r_has_type(v, t_string))
         v = NULL;
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
@@ -1584,7 +1582,7 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
         } else {
             make_null(&pdata->BuildChar);
         }
-        
+
         if (has_buildglyph == true) {
             ref_assign_new(&pdata->BuildGlyph, &build.BuildGlyph);
         } else {
@@ -1719,24 +1717,23 @@ static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAP
     int sstr = rast->line_step;
 
     dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
-   
 
     /* we can only safely use the gx_image_fill_masked() "shortcut" if we're drawing
      * a "simple" colour, rather than a pattern.
      */
     if (gs_color_writes_pure(pgs)) {
         if (dstr != sstr) {
-    
+
             /* If the stride of the bitmap we've got doesn't match what the rest
              * of the Ghostscript world expects, make one that does.
              * Ghostscript aligns bitmap raster memory in a platform specific
              * manner, so see gxbitmap.h for details.
-	     *
-	     * Ideally the padding bytes wouldn't matter, but currently the
-	     * clist code ends up compressing it using bitmap compression. To
-	     * ensure consistency across runs (and to get the best possible
-	     * compression ratios) we therefore set such bytes to zero. It would
-	     * be nicer if this was fixed in future.
+             *
+             * Ideally the padding bytes wouldn't matter, but currently the
+             * clist code ends up compressing it using bitmap compression. To
+             * ensure consistency across runs (and to get the best possible
+             * compression ratios) we therefore set such bytes to zero. It would
+             * be nicer if this was fixed in future.
              */
             r = gs_alloc_bytes(penum->memory, dstr * rast->height, "fapi_finish_render_aux");
             if (!r) {
@@ -1792,17 +1789,16 @@ static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAP
         uint used;
         int code1;
         int x, y, w, h;
-       
+
         if (!pie) {
             return_error(e_VMerror);
         }
-        
+
         x = (floatp) (pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5);
         y = (floatp) (pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
         w = rast->width;
         h = rast->height;
-        
-            
+
         /* Make a matrix that will place the image */
         /* at (x,y) with no transformation. */
         gs_image_t_init_mask(&image, true);
@@ -1813,7 +1809,7 @@ static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAP
         image.adjust = false;
         code = gs_image_init(pie, &image, false, pgs);
         nbytes = (rast->width + 7) >> 3;
-        
+
         switch (code) {
             case 1:         /* empty image */
                 code = 0;
@@ -1893,12 +1889,12 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
             } else {
                 gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
                 pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
-                
+
                 pgs->fill_adjust.x = pgs->fill_adjust.y = 0;
-                
+
                 if ((code = gs_fill(pgs)) < 0)
                     return code;
-                
+
                 pgs->in_cachedevice = in_cachedevice;
             }
             if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
@@ -2031,9 +2027,9 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
         SBW_SCALE,
         SBW_FROM_RENDERER
     } sbw_state = SBW_SCALE;
-    
+
     I->use_outline = false;
-    
+
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
         if (r_type(op) != t_name) {
@@ -2051,7 +2047,7 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
             if ((dict_find_string(op - 1, "CharStrings", &chstrs)) <= 0) {
                 return_error(e_undefined);
             }
-            
+
             if ((dict_find_string(chstrs, ".notdef", &chs)) <= 0) {
                 return_error(e_undefined);
             }
@@ -2074,10 +2070,10 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
      * 50% leeway on the maximum cache bitmap, just to be sure. Or the same maximum bitmap size
      * used in gxchar.c
      */
-        I->max_bitmap = pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) < MAX_TEMP_BITMAP_BITS ? 
+        I->max_bitmap = pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) < MAX_TEMP_BITMAP_BITS ?
                       pbfont->dir->ccache.upper + (pbfont->dir->ccache.upper >> 1) : MAX_TEMP_BITMAP_BITS;
     }
-    
+
     /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
         gs_currentcharmatrix(igs, NULL, 1); /* make char_tm valid */
@@ -2250,20 +2246,20 @@ retry_oversampling:
                         !r_has_type(&char_code1, t_integer))
                         return_error(e_invalidfont);
 
-		    c = char_code1.value.intval;
-		    I->check_cmap_for_GID(I, &c);
-		    if (c != 0)
-		        break;
-		}
-	    } else {
-		ref *CIDSystemInfo;
+                    c = char_code1.value.intval;
+                    I->check_cmap_for_GID(I, &c);
+                    if (c != 0)
+                        break;
+                }
+            } else {
+                ref *CIDSystemInfo;
                 ref *Ordering;
-                
+
                 /* We only have to lookup the char code if we're *not* using an identity ordering */
                 if (dict_find_string(pdr, "CIDSystemInfo", &CIDSystemInfo) >= 0 && r_has_type(CIDSystemInfo, t_dictionary) &&
                     dict_find_string(CIDSystemInfo, "Ordering", &Ordering) >= 0 && r_has_type(Ordering, t_string) &&
                     strncmp((const char *)Ordering->value.bytes, "Identity", 8) != 0) {
-            
+
                     code = cid_to_TT_charcode(imemory, Decoding, TT_cmap, SubstNWP,
                                 client_char_code, &c, &src_type, &dst_type);
                     if (code < 0)
@@ -2282,8 +2278,8 @@ retry_oversampling:
                     c = client_char_code;
                 }
             }
-	    cr.char_codes[0] = c;
-	    cr.is_glyph_index = is_glyph_index;
+            cr.char_codes[0] = c;
+            cr.is_glyph_index = is_glyph_index;
             /* fixme : process the narrow/wide/proportional mapping type,
                using src_type, dst_type. Should adjust the 'matrix' above.
                Call get_font_proportional_feature for proper choice.
@@ -2305,7 +2301,7 @@ retry_oversampling:
              */
             if (dict_find_string(pdr, "CIDMap", &CIDMap) > 0 && !r_has_type(CIDMap, t_name) &&
                (r_has_type(CIDMap, t_array) || r_has_type(CIDMap, t_string))) {
-       
+
                if (r_has_type(CIDMap, t_array)) {
 
                     /* Too big for single string, so its an array of 2 strings */
@@ -2337,9 +2333,9 @@ retry_oversampling:
             if (gs_debug_c('1') && (dict_find_string(systemdict,"QUIET", &pvalue)) > 0 &&
                (r_has_type(pvalue, t_boolean) && pvalue->value.boolval == false)) {
                 char *glyphn;
-                
+
                 name_string_ref (imemory, &char_name, &char_name);
-                
+
                 glyphn = ref_to_string(&char_name, imemory, "FAPI_do_char");
                 if (glyphn) {
                     dprintf2(" Substituting .notdef for %s in the font %s \n", glyphn, pbfont->font_name.chars);
@@ -2347,7 +2343,7 @@ retry_oversampling:
                 }
             }
 #endif
-            
+
             cr.char_codes[0] = 0; /* .notdef */
             if ((code = name_ref(imemory, (const byte *)".notdef", 7, &char_name, -1)) < 0)
                 return code;
@@ -2565,7 +2561,7 @@ retry_oversampling:
         }
 
     } else if (I->use_outline) {
-    
+
         code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
     } else {
 #if 0 /* Debug purpose only. */
@@ -2605,7 +2601,7 @@ retry_oversampling:
             return o_push_estack;
         }
     }
-    
+
     if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
        return code;
 
@@ -2623,7 +2619,7 @@ retry_oversampling:
         char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
         char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
         char_bbox.q.y = max(char_bbox.q.y, pbfont->FontBBox.q.y);
-    }    
+    }
 
     if (pbfont->PaintType != 0) {
         float w = pbfont->StrokeWidth / 2;
@@ -2636,7 +2632,7 @@ retry_oversampling:
     penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
     if (sbw_state == SBW_FROM_RENDERER) {
         int can_replace_metrics;
-        
+
         if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
             return code;
 
@@ -2705,7 +2701,7 @@ retry_oversampling:
      * from glyph code ? Currently we keep a compatibility
      * to the native GS font renderer without a deep analyzis.
      */
-    
+
     if (igs->in_cachedevice == CACHE_DEVICE_CACHING) {
         sbwp = sbw;
     }
@@ -2715,7 +2711,7 @@ retry_oversampling:
          * causes problems when we get to show_update().
          */
          sbwp = NULL;
-        
+
         if (I->use_outline) {
            /* HACK!!
             * The decision about whether to cache has already been
@@ -2724,7 +2720,7 @@ retry_oversampling:
             igs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
         }
     }
-    
+
     if (bCID)
         code = zchar_set_cache(i_ctx_p, pbfont, op,
                            NULL, sbw + 2, &char_bbox,
@@ -2733,7 +2729,7 @@ retry_oversampling:
         code = zchar_set_cache(i_ctx_p, pbfont, &char_name,
                            NULL, sbw + 2, &char_bbox,
                            fapi_finish_render, &exec_cont, sbwp);
-        
+
     if (code >= 0 && exec_cont != 0)
         code = (*exec_cont)(i_ctx_p);
     if (code != 0) {
@@ -2847,27 +2843,26 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
     ref *req, reqstr;
     bool do_restart = false;
 
-
     if (code < 0)
         return code;
     code = FAPI_get_xlatmap(i_ctx_p, &xlatmap); /* Useful for emulated fonts hooked with FAPI. */
     if (code < 0)
         return code;
     pbfont = (gs_font_base *)pfont;
-    
+
     *success = false;
-    
+
     /* If the font dictionary contains a FAPIPlugInReq key, the the PS world wants us
      * to try to use a specific FAPI plugin, so find it, and try it....
      */
     if (dict_find_string(pdr, "FAPIPlugInReq", &req) >= 0 && r_type(req) == t_name) {
         char *fapi_request;
         name_string_ref (imemory, req, &reqstr);
-        
+
         fapi_request = ref_to_string(&reqstr, imemory, "FAPI_do_char");
         if (fapi_request) {
             dprintf1("Requested FAPI plugin: %s ", fapi_request);
-        
+
             while (h && (strncmp(h->I->d->type, "FAPI", 4) != 0 || strncmp(h->I->d->subtype, fapi_request, strlen(fapi_request)) != 0)) {
                h = h->next;
             }
@@ -2882,8 +2877,7 @@ static int do_FAPIpassfont(i_ctx_t *i_ctx_p, char *font_file_path, bool *success
             gs_free_string(imemory, (byte *)fapi_request, strlen(fapi_request) + 1, "do_FAPIpassfont");
         }
     }
-    
-    
+
     while (h) {
         ref FAPI_ID;
         FAPI_server *I;
@@ -2960,4 +2954,3 @@ const op_def zfapi_op_defs[] =
     {"2.FAPIBuildGlyph9", zFAPIBuildGlyph9},
     op_def_end(0)
 };
-

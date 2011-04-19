@@ -28,7 +28,7 @@
 
   This code implements the MD5 Algorithm defined in RFC 1321, whose
   text is available at
-	http://www.ietf.org/rfc/rfc1321.txt
+        http://www.ietf.org/rfc/rfc1321.txt
   The code is derived from the text of the RFC, including the test suite
   (section A.5) but excluding the rest of Appendix A.  It does not include
   any code or documentation that is identified in the RFC as being
@@ -39,16 +39,16 @@
   that follows (in reverse chronological order):
 
   2007-06-08 RG  Namespaced the api calls to avoid conflict with other
-	implementations when linking gs as a library.
+        implementations when linking gs as a library.
   2002-04-13 lpd Clarified derivation from RFC 1321; now handles byte order
-	either statically or dynamically; added missing #include <string.h>
-	in library.
+        either statically or dynamically; added missing #include <string.h>
+        in library.
   2002-03-11 lpd Corrected argument list for main(), and added int return
-	type, in test program and T value program.
+        type, in test program and T value program.
   2002-02-21 lpd Added missing #include <stdio.h> in test program.
   2000-07-03 lpd Patched to eliminate warnings about "constant is
-	unsigned in ANSI C, signed in traditional"; made test program
-	self-checking.
+        unsigned in ANSI C, signed in traditional"; made test program
+        self-checking.
   1999-11-04 lpd Edited comments slightly for automatic TOC extraction.
   1999-10-18 lpd Fixed typo in header comment (ansi2knr rather than md5).
   1999-05-03 lpd Original version.
@@ -130,13 +130,12 @@
 #define T63    0x2ad7d2bb
 #define T64 /* 0xeb86d391 */ (T_MASK ^ 0x14792c6e)
 
-
 static void
 gs_md5_process(gs_md5_state_t *pms, const gs_md5_byte_t *data /*[64]*/)
 {
     gs_md5_word_t
-	a = pms->abcd[0], b = pms->abcd[1],
-	c = pms->abcd[2], d = pms->abcd[3];
+        a = pms->abcd[0], b = pms->abcd[1],
+        c = pms->abcd[2], d = pms->abcd[3];
     gs_md5_word_t t;
 #if BYTE_ORDER > 0
     /* Define storage only for big-endian CPUs. */
@@ -149,51 +148,51 @@ gs_md5_process(gs_md5_state_t *pms, const gs_md5_byte_t *data /*[64]*/)
 
     {
 #if BYTE_ORDER == 0
-	/*
-	 * Determine dynamically whether this is a big-endian or
-	 * little-endian machine, since we can use a more efficient
-	 * algorithm on the latter.
-	 */
-	static const int w = 1;
+        /*
+         * Determine dynamically whether this is a big-endian or
+         * little-endian machine, since we can use a more efficient
+         * algorithm on the latter.
+         */
+        static const int w = 1;
 
-	if (*((const gs_md5_byte_t *)&w)) /* dynamic little-endian */
+        if (*((const gs_md5_byte_t *)&w)) /* dynamic little-endian */
 #endif
 #if BYTE_ORDER <= 0		/* little-endian */
-	{
-	    /*
-	     * On little-endian machines, we can process properly aligned
-	     * data without copying it.
-	     */
-	    if (!((data - (const gs_md5_byte_t *)0) & 3)) {
-		/* data are properly aligned */
-		X = (const gs_md5_word_t *)data;
-	    } else {
-		/* not aligned */
-		memcpy(xbuf, data, 64);
-		X = xbuf;
-	    }
-	}
+        {
+            /*
+             * On little-endian machines, we can process properly aligned
+             * data without copying it.
+             */
+            if (!((data - (const gs_md5_byte_t *)0) & 3)) {
+                /* data are properly aligned */
+                X = (const gs_md5_word_t *)data;
+            } else {
+                /* not aligned */
+                memcpy(xbuf, data, 64);
+                X = xbuf;
+            }
+        }
 #endif
 #if BYTE_ORDER == 0
-	else			/* dynamic big-endian */
+        else			/* dynamic big-endian */
 #endif
 #if BYTE_ORDER >= 0		/* big-endian */
-	{
-	    /*
-	     * On big-endian machines, we must arrange the bytes in the
-	     * right order.
-	     */
-	    const gs_md5_byte_t *xp = data;
-	    int i;
+        {
+            /*
+             * On big-endian machines, we must arrange the bytes in the
+             * right order.
+             */
+            const gs_md5_byte_t *xp = data;
+            int i;
 
 #  if BYTE_ORDER == 0
-	    X = xbuf;		/* (dynamic only) */
+            X = xbuf;		/* (dynamic only) */
 #  else
 #    define xbuf X		/* (static only) */
 #  endif
-	    for (i = 0; i < 16; ++i, xp += 4)
-		xbuf[i] = xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24);
-	}
+            for (i = 0; i < 16; ++i, xp += 4)
+                xbuf[i] = xp[0] + (xp[1] << 8) + (xp[2] << 16) + (xp[3] << 24);
+        }
 #endif
     }
 
@@ -331,54 +330,54 @@ gs_md5_append(gs_md5_state_t *pms, const gs_md5_byte_t *data, int nbytes)
     gs_md5_word_t nbits = (gs_md5_word_t)(nbytes << 3);
 
     if (nbytes <= 0)
-	return;
+        return;
 
     /* Update the message length. */
     pms->count[1] += nbytes >> 29;
     pms->count[0] += nbits;
     if (pms->count[0] < nbits)
-	pms->count[1]++;
+        pms->count[1]++;
 
     /* Process an initial partial block. */
     if (offset) {
-	int copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
+        int copy = (offset + nbytes > 64 ? 64 - offset : nbytes);
 
-	memcpy(pms->buf + offset, p, copy);
-	if (offset + copy < 64)
-	    return;
-	p += copy;
-	left -= copy;
-	gs_md5_process(pms, pms->buf);
+        memcpy(pms->buf + offset, p, copy);
+        if (offset + copy < 64)
+            return;
+        p += copy;
+        left -= copy;
+        gs_md5_process(pms, pms->buf);
     }
 
     /* Process full blocks. */
     for (; left >= 64; p += 64, left -= 64)
-	gs_md5_process(pms, p);
+        gs_md5_process(pms, p);
 
     /* Process a final partial block. */
     if (left)
-	memcpy(pms->buf, p, left);
+        memcpy(pms->buf, p, left);
 }
 
 void
 gs_md5_finish(gs_md5_state_t *pms, gs_md5_byte_t digest[16])
 {
     static const gs_md5_byte_t pad[64] = {
-	0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+        0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
     gs_md5_byte_t data[8];
     int i;
 
     /* Save the length before padding. */
     for (i = 0; i < 8; ++i)
-	data[i] = (gs_md5_byte_t)(pms->count[i >> 2] >> ((i & 3) << 3));
+        data[i] = (gs_md5_byte_t)(pms->count[i >> 2] >> ((i & 3) << 3));
     /* Pad to 56 bytes mod 64. */
     gs_md5_append(pms, pad, ((55 - (pms->count[0] >> 3)) & 63) + 1);
     /* Append the length. */
     gs_md5_append(pms, data, 8);
     for (i = 0; i < 16; ++i)
-	digest[i] = (gs_md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
+        digest[i] = (gs_md5_byte_t)(pms->abcd[i >> 2] >> ((i & 3) << 3));
 }

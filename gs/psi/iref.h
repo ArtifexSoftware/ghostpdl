@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -126,7 +126,7 @@ typedef enum {
  */
     t_name,			/* @! # value.pname, uses size for index */
     t_null,			/*  ! # (value.opproc, uses size for mark */
-				/*        type, on e-stack only) */
+                                /*        type, on e-stack only) */
 /*
  * Operator objects use the a_space field because they may actually be
  * disguised procedures.  (Real operators always have a_space = 0.)
@@ -134,7 +134,7 @@ typedef enum {
     t_operator,			/* @! # value.opproc, uses size for index */
     t_real,			/*      value.realval */
     t_save,			/*      value.saveid, see isave.h for why */
-				/*        this isn't a t_struct */
+                                /*        this isn't a t_struct */
     t_string,			/* @!+# value.bytes */
 /*
  * The following are extensions to the PostScript type set.
@@ -148,7 +148,7 @@ typedef enum {
  */
     t_device,			/* @ +   value.pdevice */
     t_oparray,			/* @! #  value.const_refs, uses size */
-				/*         for index */
+                                /*         for index */
     t_next_index		/*** first available index ***/
 } ref_type;
 
@@ -380,29 +380,29 @@ struct ref_s {
     struct tas_s tas;
 
     union v {			/* name the union to keep gdb happy */
-	int intval;
-	ushort boolval;
-	float realval;
-	ulong saveid;
-	byte *bytes;
-	const byte *const_bytes;
-	ref *refs;
-	const ref *const_refs;
-	name *pname;
-	const name *const_pname;
-	dict *pdict;
-	const dict *const_pdict;
-	/*
-	 * packed is the normal variant for referring to packed arrays,
-	 * but we need a writable variant for memory management and for
-	 * storing into packed dictionary key arrays.
-	 */
-	const ref_packed *packed;
-	ref_packed *writable_packed;
-	op_proc_t opproc;
-	struct stream_s *pfile;
-	struct gx_device_s *pdevice;
-	obj_header_t *pstruct;
+        int intval;
+        ushort boolval;
+        float realval;
+        ulong saveid;
+        byte *bytes;
+        const byte *const_bytes;
+        ref *refs;
+        const ref *const_refs;
+        name *pname;
+        const name *const_pname;
+        dict *pdict;
+        const dict *const_pdict;
+        /*
+         * packed is the normal variant for referring to packed arrays,
+         * but we need a writable variant for memory management and for
+         * storing into packed dictionary key arrays.
+         */
+        const ref_packed *packed;
+        ref_packed *writable_packed;
+        op_proc_t opproc;
+        struct stream_s *pfile;
+        struct gx_device_s *pdevice;
+        obj_header_t *pstruct;
     } value;
 };
 
@@ -546,7 +546,7 @@ struct ref_s {
 /* Define data for initializing an empty array or string. */
 #define empty_ref_data(type, attrs)\
   { /*tas*/ { /*type_attrs*/ ((type) << r_type_shift) | (attrs),\
-	      /*rsize*/ 0 } }
+              /*rsize*/ 0 } }
 
 /* Define the size of a ref. */
 #define arch_sizeof_ref sizeof(ref)

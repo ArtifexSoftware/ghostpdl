@@ -1,12 +1,12 @@
 %    Copyright (C) 1989, 1996, 2002 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -14,7 +14,7 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
-% Allow the interpreter to encapsulate EPS files, to recognize MS-DOS 
+% Allow the interpreter to encapsulate EPS files, to recognize MS-DOS
 % EPSF file headers, and skip to the PostScript section of the file.
 
 % Encapsulate EPS files and optionally resize page or rescale image.
@@ -54,9 +54,9 @@
   % translate to new origin at lower left of clippath
   3 index 3 index translate
   % calculate scale to fit smaller of width or height
-  exch 4 -1 roll sub 3 1 roll exch sub 
+  exch 4 -1 roll sub 3 1 roll exch sub
   4 2 roll 5 index 5 index 4 2 roll
-  exch 4 -1 roll sub 3 1 roll exch sub 
+  exch 4 -1 roll sub 3 1 roll exch sub
   4 2 roll
   exch 4 -1 roll div 3 1 roll exch div
   1 index 1 index lt {pop}{exch pop} ifelse
@@ -67,41 +67,40 @@
 
 % Crop the page to the BoundingBox
 /EPSBoundingBoxCrop { % llx lly urx ury --
-  EPSDEBUG { 
-    (gs_epsf.ps: Setting pagesize from EPS bounding box\n) print flush 
+  EPSDEBUG {
+    (gs_epsf.ps: Setting pagesize from EPS bounding box\n) print flush
   } if
   exch 3 index sub exch 2 index sub % stack: llx lly urx-llx ury-lly
   << /PageSize [ 5 -2 roll ] >> setpagedevice
   neg exch neg exch translate
 } bind def
 
-
 /EPSBoundingBoxProcess { % (llx lly urx ury) state --
   //systemdict /EPSBoundingBoxState get 1 index lt {
-    exch EPSBoundingBoxParse 
+    exch EPSBoundingBoxParse
     {
       //systemdict /EPSCrop known {
         EPSBoundingBoxCrop
       } {
         //systemdict /EPSFitPage known {
           EPSBoundingBoxFitPage
-	} {
-	  % Warn if some of the EPS file will be clipped
-	  clippath pathbbox newpath
-	  { % context for exit
-	    5 -1 roll lt { 6 { pop } repeat //true exit } if
-	    4 -1 roll lt { 4 { pop } repeat //true exit } if
-	    3 -1 roll gt { 2 { pop } repeat //true exit } if
-	    exch gt { //true exit } if
-	    //false exit
-	  } loop
-	  QUIET not and /EPSBoundingBoxState .systemvar 1 and 1 eq and {
-	    (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
-	    (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
-	    flush
+        } {
+          % Warn if some of the EPS file will be clipped
+          clippath pathbbox newpath
+          { % context for exit
+            5 -1 roll lt { 6 { pop } repeat //true exit } if
+            4 -1 roll lt { 4 { pop } repeat //true exit } if
+            3 -1 roll gt { 2 { pop } repeat //true exit } if
+            exch gt { //true exit } if
+            //false exit
+          } loop
+          QUIET not and /EPSBoundingBoxState .systemvar 1 and 1 eq and {
+            (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
+            (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
+            flush
             1 add
           } if
-	} ifelse
+        } ifelse
       } ifelse
       EPSBoundingBoxSetState
     } {
@@ -121,17 +120,17 @@
       5 EPSBoundingBoxSetState
     } {
       (%%BoundingBox:) anchorsearch {
-	pop 
-	EPSDEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
-	1 EPSBoundingBoxProcess
+        pop
+        EPSDEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
+        1 EPSBoundingBoxProcess
       } {
-	(%%HiResBoundingBox:) anchorsearch {
-	  pop 
-	  EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
-	3 EPSBoundingBoxProcess
-	} { 
-	  pop % Not interested in this DSC comment
-	} ifelse
+        (%%HiResBoundingBox:) anchorsearch {
+          pop
+          EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
+        3 EPSBoundingBoxProcess
+        } {
+          pop % Not interested in this DSC comment
+        } ifelse
       } ifelse
     } ifelse
   } if
@@ -142,7 +141,7 @@
   systemdict /NOEPS known not {
     % Merge ProcessEPSComment with existing handler
     /ProcessEPSComment load /exec load
-    currentuserparams /ProcessDSCComment get 
+    currentuserparams /ProcessDSCComment get
     dup //null eq {pop {pop pop}} if /exec load
     4 array astore cvx readonly
     << /ProcessDSCComment 3 -1 roll >> setuserparams
@@ -155,10 +154,10 @@
   /runEPS_save save def
   /runEPS_dict_count countdictstack def
   /runEPS_op_count count 2 sub def
-  /runEPS_page_count currentpagedevice /PageCount get def 
+  /runEPS_page_count currentpagedevice /PageCount get def
   0 EPSBoundingBoxSetState
   .runNoEPS
-  currentpagedevice /PageCount get runEPS_page_count sub 0 eq 
+  currentpagedevice /PageCount get runEPS_page_count sub 0 eq
   { /showpage load exec } if
   count runEPS_op_count sub {pop} repeat
   countdictstack runEPS_dict_count sub {end} repeat
@@ -200,34 +199,33 @@
   } ifelse
 } bind odef
 
-
 % Handle DOS EPS files.
 
 /.runnoepsf /run load def
 /.epsfheader <C5D0D3C6> def
 /run
  { dup type /filetype ne { (r) file } if
-		% Check for MS-DOS EPSF file (see Red Book p. 729).
- dup (    ) .peekstring 
+                % Check for MS-DOS EPSF file (see Red Book p. 729).
+ dup (    ) .peekstring
   { .epsfheader eq { dup (    ) readstring exch pop } { //false } ifelse }
   { pop //false }
  ifelse
-		% Stack: file true/false
+                % Stack: file true/false
     {		% This block is executed if the file is MS-DOS EPSF.
-		% Build up the little-endian byte offset and length.
+                % Build up the little-endian byte offset and length.
       2
-	{ 1 0 4
-	   { 2 index read not { pop exit } if % if EOF, let error happen
-	     2 index mul add exch 256 mul exch
-	   }
-	  repeat exch pop exch
-	}
+        { 1 0 4
+           { 2 index read not { pop exit } if % if EOF, let error happen
+             2 index mul add exch 256 mul exch
+           }
+          repeat exch pop exch
+        }
       repeat
-		% Stack: offset length file
-		% Use flushfile to skip quickly to the start of the
-		% PostScript section.
+                % Stack: offset length file
+                % Use flushfile to skip quickly to the start of the
+                % PostScript section.
       dup 4 -1 roll 12 sub () /SubFileDecode filter flushfile
-		% Now interpret the PostScript.
+                % Now interpret the PostScript.
       exch () /SubFileDecode filter cvx run
     }
     { .runnoepsf

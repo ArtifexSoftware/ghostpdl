@@ -40,12 +40,11 @@
 /* define the gslt_image_t structure descriptor */
 public_st_gslt_image();
 
-
 /*
  * Strip alpha channel from an image
  * assumes a collapsed stride
  */
-static void 
+static void
 gslt_strip_alpha(gslt_image_t *image)
 {
     gslt_image_colorspace cs = image->colorspace;
@@ -109,9 +108,9 @@ void
 gslt_image_free(gs_memory_t *mem, gslt_image_t *image)
 {
     if (image != NULL) {
-	if (image->samples) {
-	    gs_free_object(mem, image->samples, "free gslt_image samples");
-	}
-	gs_free_object(mem, image, "free gslt_image");
+        if (image->samples) {
+            gs_free_object(mem, image->samples, "free gslt_image samples");
+        }
+        gs_free_object(mem, image, "free gslt_image");
     }
 }

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,6 +19,6 @@
 
 int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff);
 int seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff);
-int seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, 
+int seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
                float *matrix, int num_colorants,ulong dictkey);
 #endif /* zicc_INCLUDED */

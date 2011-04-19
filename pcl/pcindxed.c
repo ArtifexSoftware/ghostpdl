@@ -51,9 +51,8 @@ RELOC_PTRS_END
 
 private_st_cs_indexed_t();
 
-
 /*
- * Find the smallest non-negative integral exponent of 2 larger than 
+ * Find the smallest non-negative integral exponent of 2 larger than
  * or equal to the given number; 8 => 2^3 12 => 2^4
  * Note: in/out should be unsigned.
  */
@@ -65,8 +64,8 @@ get_pow_2(
     int      i;
     unsigned power_2 = 1;
 
-    for (i = 0; (unsigned)num > power_2; ++i)  
-	power_2 <<= 1;
+    for (i = 0; (unsigned)num > power_2; ++i)
+        power_2 <<= 1;
     return i;
 }
 
@@ -212,7 +211,6 @@ unshare_indexed_cspace(
     return 0;
 }
 
-
 /*
  * Fill in the default entries in a color palette. This is handled separately
  * for each color space type.
@@ -340,7 +338,7 @@ set_colmet_default_palette(
  * a somewhat different output is produced, but this is as close as we can
  * come to a "device independent" set of default entries.
  *
- * The code provides some compensation for range: if the desired value is 
+ * The code provides some compensation for range: if the desired value is
  * within the permitted range, the palette entry intensity (always in the range
  * [0, 1]) will be adjusted so as to achieve it; otherwise the intensity will
  * be set to the appropriate bound. Obviously, none of this works if a
@@ -389,7 +387,7 @@ set_CIELab_default_palette(
  * and we provide those primaries in the default palette. Since the
  * palette entries themselves are in the luminance-chrominance color space,
  * the default values must be converted to that color space.
- * 
+ *
  * An adjustment is made for the specified ranges.
  */
   static void
@@ -407,7 +405,7 @@ set_lumchrom_default_palette(
     pcl_mtx3_t                  tmp_mtx;
     int                         i;
     static  const pcl_vec3_t    lumchrom_default[8] = {
-	                          { 1.0, 1.0, 1.0 },    /* white */
+                                  { 1.0, 1.0, 1.0 },    /* white */
                                   { 0.0, 1.0, 1.0 },    /* cyan */
                                   { 1.0, 0.0, 1.0 },    /* magenta */
                                   { 0.0, 0.0, 1.0 },    /* blue */
@@ -457,7 +455,7 @@ set_default_entries(
                                                 byte *          palette,
                                                 const byte *    porder,
                                                 int             start,
-                                                int             num 
+                                                int             num
                                                                     ) = {
                         set_dev_specific_default_palette,   /* RGB */
                         set_dev_specific_default_palette,   /* CMY */
@@ -710,7 +708,7 @@ pcl_cs_indexed_set_num_entries(
      * Set new_num to the smallest larger power of 2 less than
      * pcl_cs_indexed_palette_size.
      */
-    bits = ( bits > pcl_cs_indexed_palette_size_log 
+    bits = ( bits > pcl_cs_indexed_palette_size_log
                  ? pcl_cs_indexed_palette_size_log
                  : bits );
     new_num = 1L << bits;
@@ -798,7 +796,7 @@ pcl_cs_indexed_update_lookup_tbl(
                                     (gs_const_string *)&(pindexed->palette),
                                     pindexed->rc.memory
                                     );
-   
+
 }
 
 /*
@@ -833,7 +831,7 @@ pcl_cs_indexed_set_palette_entry(
     /* get a unique copy of the indexed color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
-    pindexed = *ppindexed;    
+    pindexed = *ppindexed;
 
     /* normalize and store the entry */
     indx *= 3;
@@ -842,7 +840,7 @@ pcl_cs_indexed_set_palette_entry(
         floatp                  val = comps[i];
 
         if (pn->inv_range == 0)
-	    val = (val >= pn->blkref ? 255.0 : 0.0);
+            val = (val >= pn->blkref ? 255.0 : 0.0);
         else {
             val = (val - pn->blkref) * pn->inv_range;
             val = (val < 0.0 ? 0.0 : (val > 255.0 ? 255.0 : val));
@@ -880,7 +878,7 @@ pcl_cs_indexed_set_default_palette_entry(
     /* get a unique copy of the indexed color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
-    pindexed = *ppindexed;    
+    pindexed = *ppindexed;
 
     return set_default_entries(*ppindexed, indx, 1, true);
 }
@@ -997,7 +995,7 @@ pcl_cs_indexed_build_cspace(
         int     i;
 
         for (i = 0; i < 3; i++) {
-            wht_ref[i] = (1L << pcl_cid_get_bits_per_primary(pcid, i)) - 1; 
+            wht_ref[i] = (1L << pcl_cid_get_bits_per_primary(pcid, i)) - 1;
             blk_ref[i] = 0.0;
         }
 
@@ -1035,7 +1033,7 @@ pcl_cs_indexed_build_cspace(
  * Build the default indexed color space. This function is usually called only
  * once, at initialization time.
  *
- * Returns 0 on success, < 0 
+ * Returns 0 on success, < 0
  */
   int
 pcl_cs_indexed_build_default_cspace(
@@ -1049,7 +1047,7 @@ pcl_cs_indexed_build_default_cspace(
         pcs->dflt_cid_data.u.hdr = dflt_cid_hdr;
         pcs->dflt_cid_data.original_cspace = pcl_cspace_num;
         return pcl_cs_indexed_build_cspace( pcs,
-					    ppindexed,
+                                            ppindexed,
                                             &pcs->dflt_cid_data,
                                             true,
                                             false,

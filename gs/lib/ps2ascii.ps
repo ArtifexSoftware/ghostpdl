@@ -1,12 +1,12 @@
 %    Copyright (C) 1991, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -27,7 +27,7 @@
 %
 %	P
 %		Indicate the end of the page.
-% 
+%
 %	S <x> <y> (<string>) <width>
 %		Display a string.
 %
@@ -67,11 +67,11 @@
 
 %%  Additional modifications by David M. Jones
 %%  (dmjones@theory.lcs.mit.edu), December 23, 1997
-%%  
+%%
 %%  (a) Rewrote forall loop at the end of .show.write.  This fixes a
 %%      stack leakage problem, but the changes are more significant
-%%      than that.  
-%% 
+%%      than that.
+%%
 %%      .char.map includes the names of all characters in the
 %%      StandardEncoding, ISOLatin1Encoding, OT1Encoding and
 %%      T1Encoding vectors.  Thus, if the Encoding vector for the
@@ -89,25 +89,25 @@
 %%      fix (a) under my 1996 changes) completely obsolete, since
 %%      there's additional useful information I can extract in that
 %%      case.]
-%%      
+%%
 %%      Overall, this should provide better support for some documents
 %%      (e.g, DVILASER documents will no longer be translated into a
 %%      series of *'s) without breaking any other documents any worse
 %%      than they already were broken.
-%% 
+%%
 %%  (b) Fixed two bugs in dvips.df-tail: (1) changed "dup 127" to "dup
 %%      128" to fix fencepost error, and (2) gave each font it's own
 %%      FontName rather than having all fonts share the same name.
-%%  
+%%
 %%  (c) Added one further refinement to the heuristic for detecting
 %%      paragraph breaks: do not ever start a new paragraph after a
 %%      line ending in a hyphen.
-%% 
+%%
 %%  (d) Added a bunch of missing letters from the T1Encoding,
 %%      OT1Encoding and ISOLatin1Encoding vectors to .letter.chars to
 %%      improve hyphen-elimination algorithm.  This still won't help
 %%      if there's no useful Encoding vector.
-%% 
+%%
 %%  NOTE: A better solution to the problem of missing Encoding vectors
 %%  might be to redefine definefont to check whether the Encoding
 %%  vector is sensible and, if not, replace it by a default.  This
@@ -121,7 +121,7 @@
 %%* (dmjones@theory.lcs.mit.edu), June 25-July 8, 1996
 
 %%* Modifications:
-%%* 
+%%*
 %%* (a) added code to give better support for dvips files by providing
 %%*     FontBBox's, FontName's and Encoding vectors for downloaded
 %%*     bitmap fonts.  This is done by using dvips's start-hook to
@@ -129,7 +129,7 @@
 %%*     define its Type 3 bitmap fonts.  Thus, this change should
 %%*     provide better support for dvips-generated PS files without
 %%*     affecting the handling of other documents.
-%%* 
+%%*
 %%* (b) Fixed two bugs that could potentially affect any PS file, not
 %%*     just those created by dvips: (1) added missing "get" operator
 %%*     in .show.write and (2) fixed bug that caused a hyphen at the
@@ -137,9 +137,9 @@
 %%*     deleted.  Note that the first bug was a source of stack
 %%*     leakage, causing ps2ascii to run out of operand stack space
 %%*     occasionally.
-%%* 
+%%*
 %%*     Search for "%%* BF" to find these modifications.
-%%*     
+%%*
 %%* (c) Improved the heuristic for determining whether a line break
 %%*     has occurred and whether a line break represents a paragraph
 %%*     break.  Previously, any change in the vertical position caused
@@ -152,16 +152,16 @@
 %%*     comparing the vertical distance between the new line and the
 %%*     previous line to the vertical distance between the previous
 %%*     line and its predecessor.
-%%*     
+%%*
 %%* (d) Added a hook for renaming the files where stdout and stderr
 %%*     go.
-%%* 
+%%*
 %%* In general, my additions or changes to the code are described in
 %%* comments beginning with "%%*".  However, there are numerous other
 %%* places where I have either re-formatted code or added comments to
 %%* the code while I was trying to understand it.  These are usually
 %%* not specially marked.
-%%* 
+%%*
 
 /QUIET true def
 systemdict wcheck { systemdict } { userdict } ifelse begin
@@ -200,11 +200,11 @@ ifelse
  } odef
 /.fillcomplex
  {	% Do a first pass to see if the path is all rectangles in
-	% the output coordinate system.  We don't worry about overlapping
-	% rectangles that might be partially not filled.
-	% Stack: mark llx0 lly0 urx0 ury0 ... true mark x0 y0 ...
+        % the output coordinate system.  We don't worry about overlapping
+        % rectangles that might be partially not filled.
+        % Stack: mark llx0 lly0 urx0 ury0 ... true mark x0 y0 ...
    mark true mark
-	% Add a final moveto so we pick up any trailing unclosed subpath.
+        % Add a final moveto so we pick up any trailing unclosed subpath.
    0 0 itransform moveto
     { .coord counttomark 2 gt
        { counttomark 4 gt { .fillcheckrect } { 4 2 roll pop pop }  ifelse }
@@ -216,7 +216,7 @@ ifelse
    pathforall cleartomark
     { .showcolor counttomark 4 idiv
        { counttomark -4 roll .orderrect
-	 (R ) //print .show==4
+         (R ) //print .show==4
        }
       repeat pop
     }
@@ -226,16 +226,16 @@ ifelse
  } odef
 /.fillcheckrect
  {	% Check whether the current subpath is a rectangle.
-	% If it is, add it to the list of rectangles being accumulated;
-	% if not exit the .fillcomplex loop.
-	% The subpath has not been closed.
-	% Stack: as in .fillcomplex, + newx newy
+        % If it is, add it to the list of rectangles being accumulated;
+        % if not exit the .fillcomplex loop.
+        % The subpath has not been closed.
+        % Stack: as in .fillcomplex, + newx newy
    counttomark 10 eq { 9 index 9 index 4 2 roll } if
    counttomark 12 ne { cleartomark not mark exit } if
    12 2 roll
-	% Check for the two possible forms of rectangles:
-	%	x0 y0  x0 y1  x1 y1  x1 y0  x0 y0
-	%	x0 y0  x1 y0  x1 y1  x0 y1  x0 y0
+        % Check for the two possible forms of rectangles:
+        %	x0 y0  x0 y1  x1 y1  x1 y0  x0 y0
+        %	x0 y0  x1 y0  x1 y1  x0 y1  x0 y0
    9 index 2 index eq 9 index 2 index eq and
    10 index 9 index eq
     {	% Check for first form.
@@ -246,7 +246,7 @@ ifelse
       8 index 7 index eq and 5 index 4 index eq and 4 index 3 index eq and
     }
    ifelse not { cleartomark not mark exit } if
-	% We have a rectangle.
+        % We have a rectangle.
    pop pop pop pop 4 2 roll pop pop 8 4 roll
  } odef
 /eofill { COMPLEX { .fillcomplex } if newpath } codef
@@ -265,10 +265,10 @@ ifelse
    ifelse stroke grestore
  } codef
 /.strokeline	% <fromx> <fromy> <tox> <toy> .strokeline <tox> <toy>
-		% Note: fromx and fromy are in output coordinates;
-		% tox and toy are in user coordinates.
+                % Note: fromx and fromy are in output coordinates;
+                % tox and toy are in user coordinates.
  { .coord 2 copy 6 2 roll .orderrect
-	% Add in the line width.  Assume square or round caps.
+        % Add in the line width.  Assume square or round caps.
    currentlinewidth 2 div dup .dcoord add abs 1 .max 5 1 roll
    4 index add 4 1 roll 4 index add 4 1 roll
    4 index sub 4 1 roll 5 -1 roll sub 4 1 roll
@@ -276,8 +276,8 @@ ifelse
  } odef
 /.strokecomplex
  {	% Do a first pass to see if the path is all horizontal and vertical
-	% lines in the output coordinate system.
-	% Stack: true mark origx origy curx cury
+        % lines in the output coordinate system.
+        % Stack: true mark origx origy curx cury
    true mark null null null null
     { .coord 6 2 roll pop pop pop pop 2 copy }
     { .coord 1 index 4 index eq 1 index 4 index eq or
@@ -294,8 +294,8 @@ ifelse
     }
    pathforall cleartomark
    0 currentlinewidth .dcoord 0 eq exch 0 eq or and
-	% Do the second pass to write out the rectangles.
-	% Stack: origx origy curx cury
+        % Do the second pass to write out the rectangles.
+        % Stack: origx origy curx cury
     { .showcolor null null null null
        { 6 2 roll pop pop pop pop 2 copy .coord }
        { .strokeline }
@@ -354,17 +354,17 @@ ifelse
       1000 mul round cvi
       3 1 roll 1000 mul round cvi
       exch 1000 mul round cvi
-		% Stack: b g r
+                % Stack: b g r
       dup //.color.r .iget eq
       2 index //.color.g .iget eq and
       3 index //.color.b .iget eq and
        { pop pop pop
        }
        { (C ) //print
-	 dup //.color.r exch .iput .show==only
+         dup //.color.r exch .iput .show==only
          ( ) //print dup //.color.g exch .iput .show==only
          ( ) //print dup //.color.b exch .iput .show==only
-	 (\n) //print
+         (\n) //print
        }
       ifelse
     }
@@ -383,10 +383,10 @@ ifelse
 %   0.1 0 2 index dtransform abs exch abs .max /.show.scale exch def
 %   0.1 dup 3 -1 roll scale
   gsave initmatrix
-		% Assume the original transformation is well-behaved...
+                % Assume the original transformation is well-behaved...
   0.1 0 dtransform abs exch abs .max
   0.1 dup scale .show.ident.matrix currentmatrix
-		% ... but undo any rotation into landscape orientation.
+                % ... but undo any rotation into landscape orientation.
   dup 0 get 0 eq {
     1 get dup abs div 90 mul rotate
     .show.ident.matrix currentmatrix
@@ -400,8 +400,8 @@ ifelse
 } odef
 
 /.dcoord {		% <dx> <dy> .coord <dx'> <dy'>
-		% Transforming distances is trickier, because
-		% the coordinate system might be rotated.
+                % Transforming distances is trickier, because
+                % the coordinate system might be rotated.
    .show.ident pop 3 1 roll
    exch 0 dtransform
     dup mul exch dup mul add sqrt
@@ -458,7 +458,7 @@ ifelse
  } odef
 
 /.showwidth	% Same as stringwidth, but disable COMPLEX so that
-		% we don't try to detect rectangles during BuildChar.
+                % we don't try to detect rectangles during BuildChar.
  { COMPLEX
     { /COMPLEX false def stringwidth /COMPLEX true def }
     { stringwidth }
@@ -467,7 +467,7 @@ ifelse
 
 /.showfont	% <string> .showfont <string>
  { gsave
-	% Try getting the height and width of the font from the FontBBox.
+        % Try getting the height and width of the font from the FontBBox.
      currentfont /FontBBox .knownget not { {0 0 0 0} } if
      aload pop      % llx lly urx ury
      exch 4 -1 roll % lly ury urx llx
@@ -478,24 +478,24 @@ ifelse
       { currentfont /FontMatrix get dtransform
       }
       {	pop pop
-	% Fonts produced by dvips, among other applications, have
-	% BuildChar procedures that bomb out when given unexpected
-	% characters, and there is no way to determine whether a given
-	% character will do this.  So for Type 1 fonts, we measure a
-	% typical character ('X'); for others, we punt.
-	currentfont /FontType get 1 eq
-	 { (X) .showwidth pop dup 1.3 mul
-	 }
-	 {	% No safe way to get the character size.  Punt.
-	   0 0
-	 }
-	ifelse
+        % Fonts produced by dvips, among other applications, have
+        % BuildChar procedures that bomb out when given unexpected
+        % characters, and there is no way to determine whether a given
+        % character will do this.  So for Type 1 fonts, we measure a
+        % typical character ('X'); for others, we punt.
+        currentfont /FontType get 1 eq
+         { (X) .showwidth pop dup 1.3 mul
+         }
+         {	% No safe way to get the character size.  Punt.
+           0 0
+         }
+        ifelse
       }
      ifelse .dcoord exch
      currentfont /FontName .knownget not { () } if
      dup type /stringtype ne { //.show.string cvs } if
    grestore
-	% Stack: height width fontname
+        % Stack: height width fontname
    SIMPLE
     { pop pop //.show.height exch .iput }
     { 2 index //.font.height .iget eq
@@ -504,9 +504,9 @@ ifelse
        { pop pop pop
        }
        { (F ) //print
-	 3 -1 roll dup //.font.height exch .iput .show==only ( ) //print
+         3 -1 roll dup //.font.height exch .iput .show==only ( ) //print
          exch dup //.font.width exch .iput .show==only ( ) //print
-	 dup length //.font.name.length exch .iput
+         dup length //.font.name.length exch .iput
          //.font.name cvs .show==only (\n) //print
        }
       ifelse
@@ -550,7 +550,7 @@ mark
     /Eogonek
     /Eth
     /Gbreve
-    /Germandbls 
+    /Germandbls
     /IJ
     /Iacute
     /Icircumflex
@@ -776,7 +776,7 @@ mark
 %%* just provide support for the two most popular text encodings, the
 %%* OT1 and T1 encodings, and just accept the fact that any font not
 %%* using one of those encodings will be rendered as gibberish.
-%%* 
+%%*
 %%* OT1 is Knuth's 7-bit encoding for the CMR text fonts, while T1
 %%* (aka the Cork encoding) is the 8-bit encoding used by the DC
 %%* fonts, a preliminary version of the proposed Extended Computer
@@ -784,7 +784,7 @@ mark
 %%* they differ in positions 8#000 through 8#040, 8#074, 8#076, 8#134,
 %%* 8#137, 8#173, 8#174, 8#175 and 8#177, so we can't use the same
 %%* vector for both.
-%%* 
+%%*
 %%* Of course, we also can't reliably tell the difference between an
 %%* OT1-encoded font and a T1-encoded font based on the information in
 %%* a dvips-created PostScript file.  As a best-guess solution, we'll
@@ -955,7 +955,7 @@ mark
     8#334 /Udieresis
     8#335 /Yacute
     8#336 /Thorn
-    8#337 /Germandbls 
+    8#337 /Germandbls
 
     8#340 /agrave
     8#341 /aacute
@@ -1144,9 +1144,9 @@ mark
   {
     /nn 9 dict N
     nn begin
-        %%  
+        %%
         %%  Choose an encoding based on the highest position occupied.
-        %%  
+        %%
         dup 128 gt { T1Encoding } { OT1Encoding } ifelse
         /Encoding X
         /FontType 3 N
@@ -1154,18 +1154,18 @@ mark
         %%  It's ok for all the fonts to share a FontMatrix, but they
         %%  need to have separate FontBBoxes
         %%
-	/FontMatrix fntrx N
-	/FontBBox [0 0 0 0] N
+        /FontMatrix fntrx N
+        /FontBBox [0 0 0 0] N
         string /base X
         array /BitMaps X
         %%
         %%  And let's throw in a FontName for good measure
         %%
         dup (    ) cvs
-        %%  
+        %%
         %%  Make sure each font gets it own private FontName.  -- dmj,
         %%  12/23/97
-        %%  
+        %%
         dup length string copy
         /FontName X
         /BuildChar {CharBuilder} N
@@ -1206,7 +1206,7 @@ mark
     } if
     put                         % puts char-data into BitMaps at index ctr
     /ctr ctr 1 add N
-%%  
+%%
 %%  Make sure the Font Bounding Box encloses the Bounding Box of the
 %%  current character
 %%
@@ -1227,12 +1227,12 @@ mark
     dup                     % calculate new urx
     dup 2 get
     ch-dx ch-width add
-    .max 
+    .max
     2 exch put
 
     dup 3 get               % calculate new ury
     ch-yoff
-    .max 
+    .max
     3 exch put
 
 } def
@@ -1308,7 +1308,7 @@ userdict /start-hook {
           }
           { pop
           }
-        ifelse 
+        ifelse
         .show.stdout exch writestring
       }
     ifelse
@@ -1324,11 +1324,11 @@ userdict /start-hook {
       {                         % x y string width
         2 index                 % x y string width y
         //.show.y .iget         % x y string width y old.y
-        %%* 
+        %%*
         %%* Replaced test "has y changed" by "has y changed by more
         %%* than the current font height" so that subscripts and
         %%* superscripts won't cause line/paragraph breaks
-        %%* 
+        %%*
          sub abs dup            % x y string width dy dy
          //.show.height .iget
          gt
@@ -1398,7 +1398,7 @@ userdict /start-hook {
             % newpar?
               { (\n\n) }        % Paragraph
               {                 % Line
-                                %%* 
+                                %%*
                                 %%* BF2: If last character on a line is
                                 %%* a hyphen, we omit the hyphen and
                                 %%* run the lines together.  Of
@@ -1429,12 +1429,12 @@ userdict /start-hook {
             //.show.last 0 get .hyphen eq { (-) //print } if
          }
         ifelse
-                                %%* 
+                                %%*
                                 %%* If have moved more than 1 point to
                                 %%* the right, interpret it as a
                                 %%* space?  This need to be looked at
                                 %%* more closely.
-                                %%* 
+                                %%*
         3 index                     % x y string width x
         //.show.x .iget 10 add gt   % x y string width bool
             { ( ) //print }
@@ -1488,8 +1488,8 @@ userdict /start-hook {
  } codef
 /kshow
  { .showfont .showcolor
-	%**************** Should construct a closure, in case the procedure
-	%**************** affects the o-stack.
+        %**************** Should construct a closure, in case the procedure
+        %**************** affects the o-stack.
     { .show1 dup exec } forall pop
  } codef
 

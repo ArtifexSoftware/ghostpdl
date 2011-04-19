@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -21,7 +21,7 @@
 #include <ctype.h>
 #include <stdio.h>
 /*
- * In theory, not all systems provide <string.h> or declare memset 
+ * In theory, not all systems provide <string.h> or declare memset
  * there, but at this point we don't think we care about any that don't.
  */
 #include <string.h>
@@ -62,7 +62,7 @@ print_ffs(FILE *f, int nbytes)
     int i;
 
     for (i = 0; i < nbytes; ++i)
-	fprintf(f, "ff");
+        fprintf(f, "ff");
 }
 
 static int
@@ -71,7 +71,7 @@ ilog2(int n)
     int i = 0, m = n;
 
     while (m > 1)
-	++i, m = (m + 1) >> 1;
+        ++i, m = (m + 1) >> 1;
     return i;
 }
 
@@ -81,49 +81,49 @@ main(int argc, char *argv[])
     char *fname = argv[1];
     long one = 1;
     struct {
-	char c;
-	short s;
+        char c;
+        short s;
     } ss;
     struct {
-	char c;
-	int i;
+        char c;
+        int i;
     } si;
     struct {
-	char c;
-	long l;
+        char c;
+        long l;
     } sl;
     struct {
-	char c;
-	char *p;
+        char c;
+        char *p;
     } sp;
     struct {
-	char c;
-	float f;
+        char c;
+        float f;
     } sf;
     struct {
-	char c;
-	double d;
+        char c;
+        double d;
     } sd;
     long lm1 = -1;
     long lr1 = lm1 >> 1, lr2 = lm1 >> 2;
     int im1 = -1;
     int ir1 = im1 >> 1, ir2 = im1 >> 2;
     union {
-	long l;
-	char *p;
+        long l;
+        char *p;
     } pl0, pl1;
     int ars;
     union {
-	float f;
-	int i;
-	long l;
+        float f;
+        int i;
+        long l;
     } f0, f1, fm1;
     int floats_are_IEEE;
     FILE *f = fopen(fname, "w");
 
     if (f == NULL) {
-	fprintf(stderr, "genarch.c: can't open %s for writing\n", fname);
-	return exit_FAILED;
+        fprintf(stderr, "genarch.c: can't open %s for writing\n", fname);
+        return exit_FAILED;
     }
     fprintf(f, "/* Parameters derived from machine and compiler architecture. */\n");
     fprintf(f, "/* This file is generated mechanically by genarch.c. */\n");
@@ -132,9 +132,9 @@ main(int argc, char *argv[])
     /* because the preprocessor can't evaluate sizeof. */
     f0.f = 0.0, f1.f = 1.0, fm1.f = -1.0;
     floats_are_IEEE =
-	(size_of(float) == size_of(int) ?
-	 f0.i == 0 && f1.i == (int)0x3f800000 && fm1.i == (int)0xbf800000 :
-	 f0.l == 0 && f1.l == 0x3f800000L && fm1.l == 0xbf800000L);
+        (size_of(float) == size_of(int) ?
+         f0.i == 0 && f1.i == (int)0x3f800000 && fm1.i == (int)0xbf800000 :
+         f0.l == 0 && f1.l == 0x3f800000L && fm1.l == 0xbf800000L);
 
     section(f, "Scalar alignments");
 
@@ -170,17 +170,17 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_SIZEOF_FLOAT", size_of(float));
     define_int(f, "ARCH_SIZEOF_DOUBLE", size_of(double));
     if (floats_are_IEEE) {
-	define_int(f, "ARCH_FLOAT_MANTISSA_BITS", 24);
-	define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", 53);
+        define_int(f, "ARCH_FLOAT_MANTISSA_BITS", 24);
+        define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", 53);
     } else {
-	/*
-	 * There isn't any general way to compute the number of mantissa
-	 * bits accurately, especially if the machine uses hex rather
-	 * than binary exponents.  Use conservative values, assuming
-	 * the exponent is stored in a 16-bit word of its own.
-	 */
-	define_int(f, "ARCH_FLOAT_MANTISSA_BITS", sizeof(float) * 8 - 17);
-	define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", sizeof(double) * 8 - 17);
+        /*
+         * There isn't any general way to compute the number of mantissa
+         * bits accurately, especially if the machine uses hex rather
+         * than binary exponents.  Use conservative values, assuming
+         * the exponent is stored in a 16-bit word of its own.
+         */
+        define_int(f, "ARCH_FLOAT_MANTISSA_BITS", sizeof(float) * 8 - 17);
+        define_int(f, "ARCH_DOUBLE_MANTISSA_BITS", sizeof(double) * 8 - 17);
     }
 
     section(f, "Unsigned max values");
@@ -224,8 +224,8 @@ main(int argc, char *argv[])
      * never correct.
      */
     ars = (lr2 != -1 || ir1 != -1 || ir2 != -1 ? 0 :
-	   lr1 != -1 ? 1 :	/* Turbo C problem */
-	   2);
+           lr1 != -1 ? 1 :	/* Turbo C problem */
+           2);
     define_int(f, "ARCH_ARITH_RSHIFT", ars);
     /*
      * Determine whether dividing a negative integer by a positive one

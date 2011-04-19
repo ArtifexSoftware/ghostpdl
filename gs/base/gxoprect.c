@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,7 +23,6 @@
 #include "gxgetbit.h"
 #include "gxoprect.h"
 #include "gsbitops.h"
-
 
 /*
  * Unpack a scanline for a depth < 8. In this case we know the depth is
@@ -167,7 +166,6 @@ pack_scanline_ge8(
     }
 }
 
-
 /*
  * Perform the fill rectangle operation for a non-separable color encoding
  * that requires overprint support. This situation requires that colors be
@@ -259,7 +257,7 @@ gx_overprint_generic_fill_rectangle(
      *
      *  - Data should be returned in the depth of the process color
      *    model. Though this depth could be specified explicitly, there
-     *    is little reason to do so. 
+     *    is little reason to do so.
      *
      *  - Though overprint is much more easily implemented with planar
      *    data, there is no planar version of the copy_color method to
@@ -317,7 +315,7 @@ gx_overprint_generic_fill_rectangle(
             gx_color_index  comps;
             int             j;
             gx_color_value  dest_cvals[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        
+
             if ((code = dev_proc(tdev, decode_color)(tdev, *cp, dest_cvals)) < 0)
                 break;
             for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
@@ -344,8 +342,6 @@ gx_overprint_generic_fill_rectangle(
 
     return code;
 }
-
-
 
 /*
  * Replication of 2 and 4 bit patterns to fill a mem_mono_chunk.
@@ -403,7 +399,6 @@ replicate_color(int depth, mono_fill_chunk color)
 
     return color;
 }
-
 
 /*
  * Perform the fill rectangle operation for a separable color encoding
@@ -525,7 +520,6 @@ gx_overprint_sep_fill_rectangle_1(
     return code;
 }
 
-
 int
 gx_overprint_sep_fill_rectangle_2(
     gx_device *             tdev,
@@ -613,4 +607,3 @@ gx_overprint_sep_fill_rectangle_2(
 
     return code;
 }
-

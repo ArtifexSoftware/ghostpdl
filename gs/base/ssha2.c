@@ -35,22 +35,22 @@ s_SHA256E_init(stream_state * st)
 /* Process a buffer. */
 static int
 s_SHA256E_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
+               stream_cursor_write * pw, bool last)
 {
     stream_SHA256E_state *const ss = (stream_SHA256E_state *) st;
     int status = 0;
 
     if (pr->ptr < pr->limit) {
-	SHA256_Update(&ss->sha256, pr->ptr + 1, pr->limit - pr->ptr);
-	pr->ptr = pr->limit;
+        SHA256_Update(&ss->sha256, pr->ptr + 1, pr->limit - pr->ptr);
+        pr->ptr = pr->limit;
     }
     if (last) {
-	if (pw->limit - pw->ptr >= 32) {
-	    SHA256_Final(pw->ptr + 1, &ss->sha256);
-	    pw->ptr += 32;
-	    status = EOFC;
-	} else
-	    status = 1;
+        if (pw->limit - pw->ptr >= 32) {
+            SHA256_Final(pw->ptr + 1, &ss->sha256);
+            pw->ptr += 32;
+            status = EOFC;
+        } else
+            status = 1;
     }
     return status;
 }
@@ -67,10 +67,10 @@ s_SHA256E_make_stream(gs_memory_t *mem, byte *digest, int digest_size)
     stream_state *ss = s_alloc_state(mem, s_SHA256E_template.stype, "s_SHA256E_make_stream");
 
     if (ss == NULL || s == NULL)
-	goto err;
+        goto err;
     ss->template = &s_SHA256E_template;
     if (s_init_filter(s, ss, digest, digest_size, NULL) < 0)
-	goto err;
+        goto err;
     s->strm = s;
     return s;
 err:

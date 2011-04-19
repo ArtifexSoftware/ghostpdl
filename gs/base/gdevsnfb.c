@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,12 +29,12 @@ static gx_device_procs sonyfb_procs =
   prn_procs(sonyfb_open, sonyfb_output_page, sonyfb_close);
 const gx_device_printer far_data gs_sonyfb_device =
   prn_device(sonyfb_procs, "sonyfb",
-	102.4,				/* width_10ths */
-	103.2,				/* height_10ths */
-	100,				/* x_dpi */
-	100,				/* y_dpi */
-	0,0,0,0,			/* margins */
-	1, 0);
+        102.4,				/* width_10ths */
+        103.2,				/* height_10ths */
+        100,				/* x_dpi */
+        100,				/* y_dpi */
+        0,0,0,0,			/* margins */
+        1, 0);
 
 static int fb_file = -1;
 sPrimRect prect;
@@ -49,9 +49,9 @@ sonyfb_open(gx_device *dev)
       perror("open failed");
     else
       if(ioctl(fb_file, FBIOCGETSCRTYPE, &stype) < 0)
-	perror("ioctl failed");
+        perror("ioctl failed");
       else
-	prect.rect = stype.visiblerect;
+        prect.rect = stype.visiblerect;
 
   return gdev_prn_open(dev);
 }
@@ -83,7 +83,7 @@ sonyfb_output_page(gx_device *dev, int num_copies, int flush)
   prect.refPoint.x = 0;
   prect.refPoint.y = 0;
   prect.ptnRect = prect.rect;
-  
+
   prect.ptnBM.type  = BM_MEM;
   prect.ptnBM.depth = 1;
   prect.ptnBM.width = (byte_width + 1) / 2;
@@ -92,7 +92,7 @@ sonyfb_output_page(gx_device *dev, int num_copies, int flush)
   prect.ptnBM.rect.extent.x = byte_width * 8; /* width in 16bit words */
   prect.ptnBM.rect.extent.y = height;
   prect.ptnBM.base = (typeof(prect.ptnBM.base))bm;
-  
+
   prect.fore_color = 1;
   prect.aux_color = 0;
   prect.planemask = FB_PLANEALL;
@@ -104,7 +104,7 @@ sonyfb_output_page(gx_device *dev, int num_copies, int flush)
   prect.drawBM.width = (prect.rect.extent.x + 15) / 16;
   prect.drawBM.rect = prect.rect;
   prect.drawBM.base = 0;
-  
+
   if(ioctl(fb_file, FBIOCRECTANGLE, &prect) < 0)
     perror("rect ioctl failed");
 

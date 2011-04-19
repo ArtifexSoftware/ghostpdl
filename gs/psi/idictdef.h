@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -79,7 +79,7 @@
 #define npairs(dct) (nslots(dct) - 1)
 #define d_length(dct) ((uint)((dct)->count.value.intval))
 
-/* packed_search_value_pointer simplifies the access to 
+/* packed_search_value_pointer simplifies the access to
    packed dictionary search template data - see idicttpl.h . */
 #define packed_search_value_pointer (pdict->values.value.refs + (kp - kbot))
 

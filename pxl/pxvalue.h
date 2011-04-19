@@ -74,10 +74,10 @@ typedef struct {
     const px_value_t *pv_ = (pv);\
     if ( pv_->type & pxd_any_real )\
       x1 = pv_->value.ra[0], y1 = pv_->value.ra[1],\
-	x2 = pv_->value.ra[2], y2 = pv_->value.ra[3];\
+        x2 = pv_->value.ra[2], y2 = pv_->value.ra[3];\
     else\
       x1 = pv_->value.ia[0], y1 = pv_->value.ia[1],\
-	x2 = pv_->value.ia[2], y2 = pv_->value.ia[3];\
+        x2 = pv_->value.ia[2], y2 = pv_->value.ia[3];\
   } while ( 0 )
 
 #define value_size(pv)\

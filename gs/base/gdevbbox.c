@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -80,9 +80,9 @@ gx_device_bbox gs_bbox_device =
      * Define the device as 8-bit gray scale to avoid computing halftones.
      */
     std_device_dci_body(gx_device_bbox, 0, "bbox",
-			MAX_COORD, MAX_COORD,
-			MAX_RESOLUTION, MAX_RESOLUTION,
-			1, 8, 255, 0, 256, 1),
+                        MAX_COORD, MAX_COORD,
+                        MAX_RESOLUTION, MAX_RESOLUTION,
+                        1, 8, 255, 0, 256, 1),
     {bbox_open_device,
      gx_upright_get_initial_matrix,
      NULL,			/* sync_output */
@@ -189,19 +189,19 @@ bbox_default_add_rect(void *pdata, fixed x0, fixed y0, fixed x1, fixed y1)
     gs_fixed_rect *const pr = &bdev->bbox;
 
     if (x0 < pr->p.x)
-	pr->p.x = x0;
+        pr->p.x = x0;
     if (y0 < pr->p.y)
-	pr->p.y = y0;
+        pr->p.y = y0;
     if (x1 > pr->q.x)
-	pr->q.x = x1;
+        pr->q.x = x1;
     if (y1 > pr->q.y)
-	pr->q.y = y1;
+        pr->q.y = y1;
 }
 #define BBOX_ADD_RECT(bdev, x0, y0, x1, y1)\
     bdev->box_procs.add_rect(bdev->box_proc_data, x0, y0, x1, y1)
 #define BBOX_ADD_INT_RECT(bdev, x0, y0, x1, y1)\
     BBOX_ADD_RECT(bdev, int2fixed(x0), int2fixed(y0), int2fixed(x1),\
-		  int2fixed(y1))
+                  int2fixed(y1))
 
 bool
 bbox_default_in_rect(const void *pdata, const gs_fixed_rect *pbox)
@@ -227,12 +227,12 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_colors)
     gx_device *tdev = bdev->target;
 
     if (tdev != 0)
-	gx_device_copy_params((gx_device *)bdev, tdev);
+        gx_device_copy_params((gx_device *)bdev, tdev);
     if (remap_colors) {
-	bdev->black = gx_device_black((gx_device *)bdev);
-	bdev->white = gx_device_white((gx_device *)bdev);
-	bdev->transparent =
-	    (bdev->white_is_opaque ? gx_no_color_index : bdev->white);
+        bdev->black = gx_device_black((gx_device *)bdev);
+        bdev->white = gx_device_white((gx_device *)bdev);
+        bdev->transparent =
+            (bdev->white_is_opaque ? gx_no_color_index : bdev->white);
     }
 }
 
@@ -246,16 +246,16 @@ bbox_close_device(gx_device * dev)
     gx_device *tdev = bdev->target;
 
     if (bdev->box_procs.init_box != box_procs_default.init_box) {
-	/*
-	 * This device was created as a wrapper for a compositor.
-	 * Just free the devices.
-	 */
-	int code = (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
+        /*
+         * This device was created as a wrapper for a compositor.
+         * Just free the devices.
+         */
+        int code = (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
 
-	gs_free_object(dev->memory, dev, "bbox_close_device(composite)");
-	return code;
+        gs_free_object(dev->memory, dev, "bbox_close_device(composite)");
+        return code;
     } else {
-	return (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
+        return (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
     }
 }
 
@@ -264,28 +264,28 @@ void
 gx_device_bbox_init(gx_device_bbox * dev, gx_device * target, gs_memory_t *mem)
 {
     gx_device_init((gx_device *) dev, (const gx_device *)&gs_bbox_device,
-		   (target ? target->memory : mem), true);
+                   (target ? target->memory : mem), true);
     if (target) {
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
-	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
-	set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
-	set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
-	set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
-	set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
-	set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
-	set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
-	set_dev_proc(dev, encode_color, gx_forward_encode_color);
-	set_dev_proc(dev, decode_color, gx_forward_decode_color);
-	set_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
-	set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
-	set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
-	set_dev_proc(dev, update_spot_equivalent_colors,
-				gx_forward_update_spot_equivalent_colors);
-	set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
-	set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
-	gx_device_set_target((gx_device_forward *)dev, target);
+        set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
+        set_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
+        set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
+        set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
+        set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+        set_dev_proc(dev, get_color_mapping_procs, gx_forward_get_color_mapping_procs);
+        set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
+        set_dev_proc(dev, encode_color, gx_forward_encode_color);
+        set_dev_proc(dev, decode_color, gx_forward_decode_color);
+        set_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
+        set_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
+        set_dev_proc(dev, include_color_space, gx_forward_include_color_space);
+        set_dev_proc(dev, update_spot_equivalent_colors,
+                                gx_forward_update_spot_equivalent_colors);
+        set_dev_proc(dev, get_page_device, gx_forward_get_page_device);
+        set_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
+        gx_device_set_target((gx_device_forward *)dev, target);
     } else {
-	gx_device_fill_in_procs((gx_device *)dev);
+        gx_device_fill_in_procs((gx_device *)dev);
         gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     }
     dev->box_procs = box_procs_default;
@@ -307,7 +307,7 @@ gx_device_bbox_set_white_opaque(gx_device_bbox *bdev, bool white_is_opaque)
 {
     bdev->white_is_opaque = white_is_opaque;
     bdev->transparent =
-	(bdev->white_is_opaque ? gx_no_color_index : bdev->white);
+        (bdev->white_is_opaque ? gx_no_color_index : bdev->white);
 }
 
 /* Release a bounding box device. */
@@ -326,18 +326,18 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 
     BBOX_GET_BOX(dev, &bbox);
     if (bbox.p.x > bbox.q.x || bbox.p.y > bbox.q.y) {
-	/* Nothing has been written on this page. */
-	pbbox->p.x = pbbox->p.y = pbbox->q.x = pbbox->q.y = 0;
+        /* Nothing has been written on this page. */
+        pbbox->p.x = pbbox->p.y = pbbox->q.x = pbbox->q.y = 0;
     } else {
-	gs_rect dbox;
-	gs_matrix mat;
+        gs_rect dbox;
+        gs_matrix mat;
 
-	dbox.p.x = fixed2float(bbox.p.x);
-	dbox.p.y = fixed2float(bbox.p.y);
-	dbox.q.x = fixed2float(bbox.q.x);
-	dbox.q.y = fixed2float(bbox.q.y);
-	gs_deviceinitialmatrix((gx_device *)dev, &mat);
-	gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+        dbox.p.x = fixed2float(bbox.p.x);
+        dbox.p.y = fixed2float(bbox.p.y);
+        dbox.q.x = fixed2float(bbox.q.x);
+        dbox.q.y = fixed2float(bbox.q.y);
+        gs_deviceinitialmatrix((gx_device *)dev, &mat);
+        gs_bbox_transform_inverse(&dbox, &mat, pbbox);
     }
 }
 
@@ -347,20 +347,20 @@ bbox_open_device(gx_device * dev)
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
 
     if (bdev->free_standing) {
-	gx_device_forward_fill_in_procs((gx_device_forward *) dev);
-	bdev->box_procs = box_procs_default;
-	bdev->box_proc_data = bdev;
+        gx_device_forward_fill_in_procs((gx_device_forward *) dev);
+        bdev->box_procs = box_procs_default;
+        bdev->box_proc_data = bdev;
     }
     if (bdev->box_procs.init_box == box_procs_default.init_box)
-	BBOX_INIT_BOX(bdev);
+        BBOX_INIT_BOX(bdev);
     /* gx_forward_open_device doesn't exist */
     {
-	gx_device *tdev = bdev->target;
-	int code =
-	    (tdev && bdev->forward_open_close ? gs_opendevice(tdev) : 0);
+        gx_device *tdev = bdev->target;
+        int code =
+            (tdev && bdev->forward_open_close ? gs_opendevice(tdev) : 0);
 
-	bbox_copy_params(bdev, true);
-	return code;
+        bbox_copy_params(bdev, true);
+        return code;
     }
 }
 
@@ -370,17 +370,17 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
 
     if (bdev->free_standing) {
-	/*
-	 * This is a free-standing device.  Print the page bounding box.
-	 */
-	gs_rect bbox;
+        /*
+         * This is a free-standing device.  Print the page bounding box.
+         */
+        gs_rect bbox;
 
-	gx_device_bbox_bbox(bdev, &bbox);
-	dlprintf4("%%%%BoundingBox: %d %d %d %d\n",
-		  (int)floor(bbox.p.x), (int)floor(bbox.p.y),
-		  (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
-	dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
-		  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
+        gx_device_bbox_bbox(bdev, &bbox);
+        dlprintf4("%%%%BoundingBox: %d %d %d %d\n",
+                  (int)floor(bbox.p.x), (int)floor(bbox.p.y),
+                  (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
+        dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
+                  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
     return gx_forward_output_page(dev, num_copies, flush);
 }
@@ -389,50 +389,50 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 
 static int
 bbox_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		    gx_color_index color)
+                    gx_color_index color)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     /* gx_forward_fill_rectangle doesn't exist */
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color));
     if (color != bdev->transparent)
-	BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+        BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
 }
 
 static int
 bbox_copy_mono(gx_device * dev, const byte * data,
-	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-	       gx_color_index zero, gx_color_index one)
+            int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+               gx_color_index zero, gx_color_index one)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* gx_forward_copy_mono doesn't exist */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, copy_mono)
-	 (tdev, data, dx, raster, id, x, y, w, h, zero, one));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_mono)
+         (tdev, data, dx, raster, id, x, y, w, h, zero, one));
 
     if ((one != gx_no_color_index && one != bdev->transparent) ||
-	(zero != gx_no_color_index && zero != bdev->transparent)
-	)
-	BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+        (zero != gx_no_color_index && zero != bdev->transparent)
+        )
+        BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
 }
 
 static int
 bbox_copy_color(gx_device * dev, const byte * data,
-	    int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
+            int dx, int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* gx_forward_copy_color doesn't exist */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, copy_color)
-	 (tdev, data, dx, raster, id, x, y, w, h));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_color)
+         (tdev, data, dx, raster, id, x, y, w, h));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
@@ -440,16 +440,16 @@ bbox_copy_color(gx_device * dev, const byte * data,
 
 static int
 bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
-		int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		gx_color_index color, int depth)
+                int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                gx_color_index color, int depth)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* gx_forward_copy_alpha doesn't exist */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, copy_alpha)
-	 (tdev, data, data_x, raster, id, x, y, w, h, color, depth));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, copy_alpha)
+         (tdev, data, data_x, raster, id, x, y, w, h, color, depth));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
@@ -458,37 +458,37 @@ bbox_copy_alpha(gx_device * dev, const byte * data, int data_x,
 static int
 bbox_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, gx_color_index color0, gx_color_index color1,
-			  int px, int py)
+                          int px, int py)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, strip_tile_rectangle)
-	 (tdev, tiles, x, y, w, h, color0, color1, px, py));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_tile_rectangle)
+         (tdev, tiles, x, y, w, h, color0, color1, px, py));
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
 }
 
 static int
 bbox_strip_copy_rop(gx_device * dev,
-		    const byte * sdata, int sourcex, uint sraster,
-		    gx_bitmap_id id,
-		    const gx_color_index * scolors,
-		    const gx_strip_bitmap * textures,
-		    const gx_color_index * tcolors,
-		    int x, int y, int w, int h,
-		    int phase_x, int phase_y, gs_logical_operation_t lop)
+                    const byte * sdata, int sourcex, uint sraster,
+                    gx_bitmap_id id,
+                    const gx_color_index * scolors,
+                    const gx_strip_bitmap * textures,
+                    const gx_color_index * tcolors,
+                    int x, int y, int w, int h,
+                    int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* gx_forward_strip_copy_rop doesn't exist */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, strip_copy_rop)
-	 (tdev, sdata, sourcex, sraster, id, scolors,
-	  textures, tcolors, x, y, w, h, phase_x, phase_y, lop));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_copy_rop)
+         (tdev, sdata, sourcex, sraster, id, scolors,
+          textures, tcolors, x, y, w, h, phase_x, phase_y, lop));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;
@@ -507,15 +507,15 @@ bbox_get_params(gx_device * dev, gs_param_list * plist)
     float bbox[4];
 
     if (code < 0)
-	return code;
+        return code;
     /*
      * We might be calling get_params before the device has been
      * initialized: in this case, box_proc_data = 0.
      */
     if (bdev->box_proc_data == 0)
-	fbox = bdev->bbox;
+        fbox = bdev->bbox;
     else
-	BBOX_GET_BOX(bdev, &fbox);
+        BBOX_GET_BOX(bdev, &fbox);
     bbox[0] = fixed2float(fbox.p.x);
     bbox[1] = fixed2float(fbox.p.y);
     bbox[2] = fixed2float(fbox.q.x);
@@ -542,38 +542,38 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_float_array bba;
 
     code = param_read_float_array(plist, (param_name = "PageBoundingBox"),
-				  &bba);
+                                  &bba);
     switch (code) {
-	case 0:
-	    if (bba.size != 4) {
-		ecode = gs_note_error(gs_error_rangecheck);
-		goto e;
-	    }
-	    break;
-	default:
-	    ecode = code;
-	    e:param_signal_error(plist, param_name, ecode);
-	case 1:
-	    bba.data = 0;
+        case 0:
+            if (bba.size != 4) {
+                ecode = gs_note_error(gs_error_rangecheck);
+                goto e;
+            }
+            break;
+        default:
+            ecode = code;
+            e:param_signal_error(plist, param_name, ecode);
+        case 1:
+            bba.data = 0;
     }
 
     switch (code = param_read_bool(plist, (param_name = "WhiteIsOpaque"), &white_is_opaque)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
         case 1:
-	    break;
+            break;
     }
 
     code = gx_forward_put_params(dev, plist);
     if (ecode < 0)
-	code = ecode;
+        code = ecode;
     if (code >= 0) {
         if( bba.data != 0) {
-	    BBOX_INIT_BOX(bdev);
-	    BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
-	    	          float2fixed(bba.data[2]), float2fixed(bba.data[3]));
+            BBOX_INIT_BOX(bdev);
+            BBOX_ADD_RECT(bdev, float2fixed(bba.data[0]), float2fixed(bba.data[1]),
+                          float2fixed(bba.data[2]), float2fixed(bba.data[3]));
         }
         bdev->white_is_opaque = white_is_opaque;
     }
@@ -587,152 +587,152 @@ static fixed
 edge_x_at_y(const gs_fixed_edge * edge, fixed y)
 {
     return fixed_mult_quo(edge->end.x - edge->start.x,
-			  y - edge->start.y,
-			  edge->end.y - edge->start.y) + edge->start.x;
+                          y - edge->start.y,
+                          edge->end.y - edge->start.y) + edge->start.x;
 }
 static int
 bbox_fill_trapezoid(gx_device * dev,
-		    const gs_fixed_edge * left, const gs_fixed_edge * right,
-		    fixed ybot, fixed ytop, bool swap_axes,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop)
+                    const gs_fixed_edge * left, const gs_fixed_edge * right,
+                    fixed ybot, fixed ytop, bool swap_axes,
+                    const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, fill_trapezoid)
-	 (tdev, left, right, ybot, ytop, swap_axes, pdevc, lop));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_trapezoid)
+         (tdev, left, right, ybot, ytop, swap_axes, pdevc, lop));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
-	fixed x0l =
-	    (left->start.y == ybot ? left->start.x :
-	     edge_x_at_y(left, ybot));
-	fixed x1l =
-	    (left->end.y == ytop ? left->end.x :
-	     edge_x_at_y(left, ytop));
-	fixed x0r =
-	    (right->start.y == ybot ? right->start.x :
-	     edge_x_at_y(right, ybot));
-	fixed x1r =
-	    (right->end.y == ytop ? right->end.x :
-	     edge_x_at_y(right, ytop));
-	fixed xminl = min(x0l, x1l), xmaxl = max(x0l, x1l);
-	fixed xminr = min(x0r, x1r), xmaxr = max(x0r, x1r);
-	fixed x0 = min(xminl, xminr), x1 = max(xmaxl, xmaxr);
+        fixed x0l =
+            (left->start.y == ybot ? left->start.x :
+             edge_x_at_y(left, ybot));
+        fixed x1l =
+            (left->end.y == ytop ? left->end.x :
+             edge_x_at_y(left, ytop));
+        fixed x0r =
+            (right->start.y == ybot ? right->start.x :
+             edge_x_at_y(right, ybot));
+        fixed x1r =
+            (right->end.y == ytop ? right->end.x :
+             edge_x_at_y(right, ytop));
+        fixed xminl = min(x0l, x1l), xmaxl = max(x0l, x1l);
+        fixed xminr = min(x0r, x1r), xmaxr = max(x0r, x1r);
+        fixed x0 = min(xminl, xminr), x1 = max(xmaxl, xmaxr);
 
-	if (swap_axes)
-	    BBOX_ADD_RECT(bdev, ybot, x0, ytop, x1);
-	else
-	    BBOX_ADD_RECT(bdev, x0, ybot, x1, ytop);
+        if (swap_axes)
+            BBOX_ADD_RECT(bdev, ybot, x0, ytop, x1);
+        else
+            BBOX_ADD_RECT(bdev, x0, ybot, x1, ytop);
     }
     return code;
 }
 
 static int
 bbox_fill_parallelogram(gx_device * dev,
-			fixed px, fixed py, fixed ax, fixed ay,
-			fixed bx, fixed by, const gx_device_color * pdevc,
-			gs_logical_operation_t lop)
+                        fixed px, fixed py, fixed ax, fixed ay,
+                        fixed bx, fixed by, const gx_device_color * pdevc,
+                        gs_logical_operation_t lop)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, fill_parallelogram)
-	 (tdev, px, py, ax, ay, bx, by, pdevc, lop));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_parallelogram)
+         (tdev, px, py, ax, ay, bx, by, pdevc, lop));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
-	fixed xmin, ymin, xmax, ymax;
+        fixed xmin, ymin, xmax, ymax;
 
-	/* bbox_add_rect requires points in correct order. */
+        /* bbox_add_rect requires points in correct order. */
 #define SET_MIN_MAX(vmin, vmax, av, bv)\
   BEGIN\
     if (av <= 0) {\
-	if (bv <= 0)\
-	    vmin = av + bv, vmax = 0;\
-	else\
-	    vmin = av, vmax = bv;\
+        if (bv <= 0)\
+            vmin = av + bv, vmax = 0;\
+        else\
+            vmin = av, vmax = bv;\
     } else if (bv <= 0)\
-	vmin = bv, vmax = av;\
+        vmin = bv, vmax = av;\
     else\
-	vmin = 0, vmax = av + bv;\
+        vmin = 0, vmax = av + bv;\
   END
-	SET_MIN_MAX(xmin, xmax, ax, bx);
-	SET_MIN_MAX(ymin, ymax, ay, by);
+        SET_MIN_MAX(xmin, xmax, ax, bx);
+        SET_MIN_MAX(ymin, ymax, ay, by);
 #undef SET_MIN_MAX
-	BBOX_ADD_RECT(bdev, px + xmin, py + ymin, px + xmax, py + ymax);
+        BBOX_ADD_RECT(bdev, px + xmin, py + ymin, px + xmax, py + ymax);
     }
     return code;
 }
 
 static int
 bbox_fill_triangle(gx_device * dev,
-		   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
-		   const gx_device_color * pdevc, gs_logical_operation_t lop)
+                   fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by,
+                   const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, fill_triangle)
-	 (tdev, px, py, ax, ay, bx, by, pdevc, lop));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_triangle)
+         (tdev, px, py, ax, ay, bx, by, pdevc, lop));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
-	fixed xmin, ymin, xmax, ymax;
+        fixed xmin, ymin, xmax, ymax;
 
-	/* bbox_add_rect requires points in correct order. */
+        /* bbox_add_rect requires points in correct order. */
 #define SET_MIN_MAX(vmin, vmax, av, bv)\
   BEGIN\
     if (av <= 0) {\
-	if (bv <= 0)\
-	    vmin = min(av, bv), vmax = 0;\
-	else\
-	    vmin = av, vmax = bv;\
+        if (bv <= 0)\
+            vmin = min(av, bv), vmax = 0;\
+        else\
+            vmin = av, vmax = bv;\
     } else if (bv <= 0)\
-	vmin = bv, vmax = av;\
+        vmin = bv, vmax = av;\
     else\
-	vmin = 0, vmax = max(av, bv);\
+        vmin = 0, vmax = max(av, bv);\
   END
-	SET_MIN_MAX(xmin, xmax, ax, bx);
-	SET_MIN_MAX(ymin, ymax, ay, by);
+        SET_MIN_MAX(xmin, xmax, ax, bx);
+        SET_MIN_MAX(ymin, ymax, ay, by);
 #undef SET_MIN_MAX
-	BBOX_ADD_RECT(bdev, px + xmin, py + ymin, px + xmax, py + ymax);
+        BBOX_ADD_RECT(bdev, px + xmin, py + ymin, px + xmax, py + ymax);
     }
     return code;
 }
 
 static int
 bbox_draw_thin_line(gx_device * dev,
-		    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
-		    const gx_device_color * pdevc, gs_logical_operation_t lop,
-		    fixed adjustx, fixed adjusty)
+                    fixed fx0, fixed fy0, fixed fx1, fixed fy1,
+                    const gx_device_color * pdevc, gs_logical_operation_t lop,
+                    fixed adjustx, fixed adjusty)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     /* Skip the call if there is no target. */
     gx_device *tdev = bdev->target;
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, draw_thin_line)
-	 (tdev, fx0, fy0, fx1, fy0, pdevc, lop, adjustx, adjusty));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, draw_thin_line)
+         (tdev, fx0, fy0, fx1, fy0, pdevc, lop, adjustx, adjusty));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
-	fixed xmin, ymin, xmax, ymax;
+        fixed xmin, ymin, xmax, ymax;
 
-	/* bbox_add_rect requires points in correct order. */
+        /* bbox_add_rect requires points in correct order. */
 #define SET_MIN_MAX(vmin, vmax, av, bv)\
   BEGIN\
     if (av < bv)\
-	vmin = av, vmax = bv;\
+        vmin = av, vmax = bv;\
     else\
-	vmin = bv, vmax = av;\
+        vmin = bv, vmax = av;\
   END
-	SET_MIN_MAX(xmin, xmax, fx0, fx1);
-	SET_MIN_MAX(ymin, ymax, fy0, fy1);
+        SET_MIN_MAX(xmin, xmax, fx0, fx1);
+        SET_MIN_MAX(ymin, ymax, fy0, fy1);
 #undef SET_MIN_MAX
-	BBOX_ADD_RECT(bdev, xmin, ymin, xmax, ymax);
+        BBOX_ADD_RECT(bdev, xmin, ymin, xmax, ymax);
     }
     return code;
 }
@@ -745,166 +745,166 @@ bbox_draw_thin_line(gx_device * dev,
 
 static int
 bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
-	       const gx_fill_params * params, const gx_device_color * pdevc,
-	       const gx_clip_path * pcpath)
+               const gx_fill_params * params, const gx_device_color * pdevc,
+               const gx_clip_path * pcpath)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     dev_proc_fill_path((*fill_path)) =
-	(tdev == 0 ? dev_proc(&gs_null_device, fill_path) :
-	 dev_proc(tdev, fill_path));
+        (tdev == 0 ? dev_proc(&gs_null_device, fill_path) :
+         dev_proc(tdev, fill_path));
     int code;
 
     if (ppath == NULL) {
-	/* A special handling of shfill with no path. */
-	gs_fixed_rect ibox;
-	gs_fixed_point adjust;
+        /* A special handling of shfill with no path. */
+        gs_fixed_rect ibox;
+        gs_fixed_point adjust;
 
-	if (pcpath == NULL)
-	    return 0;
-	gx_cpath_inner_box(pcpath, &ibox);
-	adjust = params->adjust;
-	adjust_box(&ibox, adjust);
-	BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
-	return 0;
+        if (pcpath == NULL)
+            return 0;
+        gx_cpath_inner_box(pcpath, &ibox);
+        adjust = params->adjust;
+        adjust_box(&ibox, adjust);
+        BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+        return 0;
     } else if (!GX_DC_IS_TRANSPARENT(pdevc, bdev) && !gx_path_is_void(ppath)) {
-	gs_fixed_rect ibox;
-	gs_fixed_point adjust;
+        gs_fixed_rect ibox;
+        gs_fixed_point adjust;
 
-	if (gx_path_bbox(ppath, &ibox) < 0)
-	    return 0;
-	adjust = params->adjust;
-	adjust_box(&ibox, adjust);
-	/*
-	 * If the path lies within the already accumulated box, just draw
-	 * on the target.
-	 */
-	if (BBOX_IN_RECT(bdev, &ibox))
-	    return fill_path(tdev, pis, ppath, params, pdevc, pcpath);
-	/*
-	 * If the target uses the default algorithm, just draw on the
-	 * bbox device.
-	 */
-	if (tdev != 0 && fill_path == gx_default_fill_path)
-	    return fill_path(dev, pis, ppath, params, pdevc, pcpath);
-	/* Draw on the target now. */
-	code = fill_path(tdev, pis, ppath, params, pdevc, pcpath);
-	if (code < 0)
-	    return code;
-	if (pcpath != NULL &&
-	    !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-					 ibox.q.x, ibox.q.y)
-	    ) {
-	    /*
-	     * Let the target do the drawing, but break down the
-	     * fill path into pieces for computing the bounding box.
-	     */
-	    gx_drawing_color devc;
+        if (gx_path_bbox(ppath, &ibox) < 0)
+            return 0;
+        adjust = params->adjust;
+        adjust_box(&ibox, adjust);
+        /*
+         * If the path lies within the already accumulated box, just draw
+         * on the target.
+         */
+        if (BBOX_IN_RECT(bdev, &ibox))
+            return fill_path(tdev, pis, ppath, params, pdevc, pcpath);
+        /*
+         * If the target uses the default algorithm, just draw on the
+         * bbox device.
+         */
+        if (tdev != 0 && fill_path == gx_default_fill_path)
+            return fill_path(dev, pis, ppath, params, pdevc, pcpath);
+        /* Draw on the target now. */
+        code = fill_path(tdev, pis, ppath, params, pdevc, pcpath);
+        if (code < 0)
+            return code;
+        if (pcpath != NULL &&
+            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+                                         ibox.q.x, ibox.q.y)
+            ) {
+            /*
+             * Let the target do the drawing, but break down the
+             * fill path into pieces for computing the bounding box.
+             */
+            gx_drawing_color devc;
 
-	    set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
-	    bdev->target = NULL;
-	    code = gx_default_fill_path(dev, pis, ppath, params, &devc, pcpath);
-	    bdev->target = tdev;
-	} else {		/* Just use the path bounding box. */
-	    BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
-	}
-	return code;
+            set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
+            bdev->target = NULL;
+            code = gx_default_fill_path(dev, pis, ppath, params, &devc, pcpath);
+            bdev->target = tdev;
+        } else {		/* Just use the path bounding box. */
+            BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+        }
+        return code;
     } else
-	return fill_path(tdev, pis, ppath, params, pdevc, pcpath);
+        return fill_path(tdev, pis, ppath, params, pdevc, pcpath);
 }
 
 static int
 bbox_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
-		 const gx_stroke_params * params,
-		 const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
+                 const gx_stroke_params * params,
+                 const gx_drawing_color * pdevc, const gx_clip_path * pcpath)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     /* Skip the call if there is no target. */
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, stroke_path)(tdev, pis, ppath, params, pdevc, pcpath));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, stroke_path)(tdev, pis, ppath, params, pdevc, pcpath));
 
     if (!GX_DC_IS_TRANSPARENT(pdevc, bdev)) {
-	gs_fixed_rect ibox;
-	gs_fixed_point expand;
+        gs_fixed_rect ibox;
+        gs_fixed_point expand;
 
-	if (gx_stroke_path_expansion(pis, ppath, &expand) == 0 &&
-	    gx_path_bbox(ppath, &ibox) >= 0
-	    ) {
-	    /* The fast result is exact. */
-	    adjust_box(&ibox, expand);
-	} else {
-	    /*
-	     * The result is not exact.  Compute an exact result using
-	     * strokepath.
-	     */
-	    gx_path *spath = gx_path_alloc(pis->memory, "bbox_stroke_path");
-	    int code = 0;
+        if (gx_stroke_path_expansion(pis, ppath, &expand) == 0 &&
+            gx_path_bbox(ppath, &ibox) >= 0
+            ) {
+            /* The fast result is exact. */
+            adjust_box(&ibox, expand);
+        } else {
+            /*
+             * The result is not exact.  Compute an exact result using
+             * strokepath.
+             */
+            gx_path *spath = gx_path_alloc(pis->memory, "bbox_stroke_path");
+            int code = 0;
 
-	    if (spath)
-		code = gx_imager_stroke_add(ppath, spath, dev, pis);
-	    else
-		code = -1;
-	    if (code >= 0)
-		code = gx_path_bbox(spath, &ibox);
-	    if (code < 0) {
-		ibox.p.x = ibox.p.y = min_fixed;
-		ibox.q.x = ibox.q.y = max_fixed;
-	    }
-	    if (spath)
-		gx_path_free(spath, "bbox_stroke_path");
-	}
-	if (pcpath != NULL &&
-	    !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-					 ibox.q.x, ibox.q.y)
-	    ) {
-	    /* Let the target do the drawing, but break down the */
-	    /* fill path into pieces for computing the bounding box. */
-	    gx_drawing_color devc;
+            if (spath)
+                code = gx_imager_stroke_add(ppath, spath, dev, pis);
+            else
+                code = -1;
+            if (code >= 0)
+                code = gx_path_bbox(spath, &ibox);
+            if (code < 0) {
+                ibox.p.x = ibox.p.y = min_fixed;
+                ibox.q.x = ibox.q.y = max_fixed;
+            }
+            if (spath)
+                gx_path_free(spath, "bbox_stroke_path");
+        }
+        if (pcpath != NULL &&
+            !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+                                         ibox.q.x, ibox.q.y)
+            ) {
+            /* Let the target do the drawing, but break down the */
+            /* fill path into pieces for computing the bounding box. */
+            gx_drawing_color devc;
 
-	    set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
-	    bdev->target = NULL;
-	    gx_default_stroke_path(dev, pis, ppath, params, &devc, pcpath);
-	    bdev->target = tdev;
-	} else {
-	    /* Just use the path bounding box. */
-	    BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
-	}
+            set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
+            bdev->target = NULL;
+            gx_default_stroke_path(dev, pis, ppath, params, &devc, pcpath);
+            bdev->target = tdev;
+        } else {
+            /* Just use the path bounding box. */
+            BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+        }
     }
     return code;
 }
 
 static int
 bbox_fill_mask(gx_device * dev,
-	       const byte * data, int dx, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h,
-	       const gx_drawing_color * pdcolor, int depth,
-	       gs_logical_operation_t lop, const gx_clip_path * pcpath)
+               const byte * data, int dx, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h,
+               const gx_drawing_color * pdcolor, int depth,
+               gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     /* Skip the call if there is no target. */
     int code =
-	(tdev == 0 ? 0 :
-	 dev_proc(tdev, fill_mask)
-	 (tdev, data, dx, raster, id, x, y, w, h,
-	  pdcolor, depth, lop, pcpath));
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, fill_mask)
+         (tdev, data, dx, raster, id, x, y, w, h,
+          pdcolor, depth, lop, pcpath));
 
     if (pcpath != NULL &&
-	!gx_cpath_includes_rectangle(pcpath, int2fixed(x), int2fixed(y),
-				     int2fixed(x + w),
-				     int2fixed(y + h))
-	) {
-	/* Let the target do the drawing, but break down the */
-	/* image into pieces for computing the bounding box. */
-	bdev->target = NULL;
-	gx_default_fill_mask(dev, data, dx, raster, id, x, y, w, h,
-			     pdcolor, depth, lop, pcpath);
-	bdev->target = tdev;
+        !gx_cpath_includes_rectangle(pcpath, int2fixed(x), int2fixed(y),
+                                     int2fixed(x + w),
+                                     int2fixed(y + h))
+        ) {
+        /* Let the target do the drawing, but break down the */
+        /* image into pieces for computing the bounding box. */
+        bdev->target = NULL;
+        gx_default_fill_mask(dev, data, dx, raster, id, x, y, w, h,
+                             pdcolor, depth, lop, pcpath);
+        bdev->target = tdev;
     } else {
-	/* Just use the mask bounding box. */
-	BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+        /* Just use the mask bounding box. */
+        BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     }
     return code;
 }
@@ -936,42 +936,42 @@ static const gx_image_enum_procs_t bbox_image_enum_procs = {
 
 static int
 bbox_image_begin(const gs_imager_state * pis, const gs_matrix * pmat,
-		 const gs_image_common_t * pic, const gs_int_rect * prect,
-		 const gx_clip_path * pcpath, gs_memory_t * memory,
-		 bbox_image_enum ** ppbe)
+                 const gs_image_common_t * pic, const gs_int_rect * prect,
+                 const gx_clip_path * pcpath, gs_memory_t * memory,
+                 bbox_image_enum ** ppbe)
 {
     int code;
     gs_matrix mat;
     bbox_image_enum *pbe;
 
     if (pmat == 0)
-	pmat = &ctm_only(pis);
+        pmat = &ctm_only(pis);
     if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
-	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
-	)
-	return code;
+        (code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
+        )
+        return code;
     pbe = gs_alloc_struct(memory, bbox_image_enum, &st_bbox_image_enum,
-			  "bbox_image_begin");
+                          "bbox_image_begin");
     if (pbe == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     pbe->memory = memory;
     pbe->matrix = mat;
     pbe->pcpath = pcpath;
     pbe->target_info = 0;	/* in case no target */
     pbe->params_are_const = false;	/* check the first time */
     if (prect) {
-	pbe->x0 = prect->p.x, pbe->x1 = prect->q.x;
-	pbe->y = prect->p.y, pbe->height = prect->q.y - prect->p.y;
+        pbe->x0 = prect->p.x, pbe->x1 = prect->q.x;
+        pbe->y = prect->p.y, pbe->height = prect->q.y - prect->p.y;
     } else {
-	gs_int_point size;
-	int code = (*pic->type->source_size) (pis, pic, &size);
+        gs_int_point size;
+        int code = (*pic->type->source_size) (pis, pic, &size);
 
-	if (code < 0) {
-	    gs_free_object(memory, pbe, "bbox_image_begin");
-	    return code;
-	}
-	pbe->x0 = 0, pbe->x1 = size.x;
-	pbe->y = 0, pbe->height = size.y;
+        if (code < 0) {
+            gs_free_object(memory, pbe, "bbox_image_begin");
+            return code;
+        }
+        pbe->x0 = 0, pbe->x1 = size.x;
+        pbe->y = 0, pbe->height = size.y;
     }
     *ppbe = pbe;
     return 0;
@@ -984,62 +984,62 @@ bbox_image_copy_target_info(bbox_image_enum * pbe)
 
     pbe->num_planes = target_info->num_planes;
     memcpy(pbe->plane_depths, target_info->plane_depths,
-	   pbe->num_planes * sizeof(pbe->plane_depths[0]));
+           pbe->num_planes * sizeof(pbe->plane_depths[0]));
     memcpy(pbe->plane_widths, target_info->plane_widths,
-	   pbe->num_planes * sizeof(pbe->plane_widths[0]));
+           pbe->num_planes * sizeof(pbe->plane_widths[0]));
 }
 
 static int
 bbox_begin_typed_image(gx_device * dev,
-		       const gs_imager_state * pis, const gs_matrix * pmat,
-		   const gs_image_common_t * pic, const gs_int_rect * prect,
-		       const gx_drawing_color * pdcolor,
-		       const gx_clip_path * pcpath,
-		       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+                       const gs_imager_state * pis, const gs_matrix * pmat,
+                   const gs_image_common_t * pic, const gs_int_rect * prect,
+                       const gx_drawing_color * pdcolor,
+                       const gx_clip_path * pcpath,
+                       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
     bbox_image_enum *pbe;
     int code =
-	bbox_image_begin(pis, pmat, pic, prect, pcpath, memory, &pbe);
+        bbox_image_begin(pis, pmat, pic, prect, pcpath, memory, &pbe);
 
     if (code < 0)
-	return code;
+        return code;
     /*
      * If there is no target, we still have to call default_begin_image
      * to get the correct num_planes and plane_depths.
      */
     {
-	gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-	gx_device *tdev = bdev->target;
-	dev_proc_begin_typed_image((*begin_typed_image));
-	byte wanted[GS_IMAGE_MAX_COMPONENTS];
+        gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+        gx_device *tdev = bdev->target;
+        dev_proc_begin_typed_image((*begin_typed_image));
+        byte wanted[GS_IMAGE_MAX_COMPONENTS];
 
-	if (tdev == 0) {
-	    tdev = dev;
-	    begin_typed_image = gx_default_begin_typed_image;
-	} else {
-	    begin_typed_image = dev_proc(tdev, begin_typed_image);
-	}
-	code = (*begin_typed_image)
-	    (tdev, pis, pmat, pic, prect, pdcolor, pcpath, memory,
-	     &pbe->target_info);
-	if (code) {
-	    bbox_image_end_image((gx_image_enum_common_t *)pbe, false);
-	    return code;
-	}
-	/*
-	 * We fill in num_planes and plane_depths later.  format is
-	 * irrelevant.  NOTE: we assume that if begin_typed_image returned
-	 * 0, the image is a data image.
-	 */
-	code = gx_image_enum_common_init((gx_image_enum_common_t *) pbe,
-					 (const gs_data_image_t *)pic,
-					 &bbox_image_enum_procs, dev,
-					 0, gs_image_format_chunky);
-	if (code < 0)
-	    return code;
-	bbox_image_copy_target_info(pbe);
-	pbe->params_are_const =
-	    gx_image_planes_wanted(pbe->target_info, wanted);
+        if (tdev == 0) {
+            tdev = dev;
+            begin_typed_image = gx_default_begin_typed_image;
+        } else {
+            begin_typed_image = dev_proc(tdev, begin_typed_image);
+        }
+        code = (*begin_typed_image)
+            (tdev, pis, pmat, pic, prect, pdcolor, pcpath, memory,
+             &pbe->target_info);
+        if (code) {
+            bbox_image_end_image((gx_image_enum_common_t *)pbe, false);
+            return code;
+        }
+        /*
+         * We fill in num_planes and plane_depths later.  format is
+         * irrelevant.  NOTE: we assume that if begin_typed_image returned
+         * 0, the image is a data image.
+         */
+        code = gx_image_enum_common_init((gx_image_enum_common_t *) pbe,
+                                         (const gs_data_image_t *)pic,
+                                         &bbox_image_enum_procs, dev,
+                                         0, gs_image_format_chunky);
+        if (code < 0)
+            return code;
+        bbox_image_copy_target_info(pbe);
+        pbe->params_are_const =
+            gx_image_planes_wanted(pbe->target_info, wanted);
     }
     *pinfo = (gx_image_enum_common_t *) pbe;
     return 0;
@@ -1047,8 +1047,8 @@ bbox_begin_typed_image(gx_device * dev,
 
 static int
 bbox_image_plane_data(gx_image_enum_common_t * info,
-		      const gx_image_plane_t * planes, int height,
-		      int *rows_used)
+                      const gx_image_plane_t * planes, int height,
+                      int *rows_used)
 {
     gx_device *dev = info->dev;
     gx_device_bbox *const bdev = (gx_device_bbox *)dev;
@@ -1061,9 +1061,9 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
     int code;
 
     code = gx_image_plane_data_rows(pbe->target_info, planes, height,
-				    rows_used);
+                                    rows_used);
     if (code != 1 && !pbe->params_are_const)
-	bbox_image_copy_target_info(pbe);
+        bbox_image_copy_target_info(pbe);
     sbox.p.x = pbe->x0;
     sbox.p.y = pbe->y;
     sbox.q.x = pbe->x1;
@@ -1075,31 +1075,31 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
     ibox.q.x = float2fixed(dbox.q.x);
     ibox.q.y = float2fixed(dbox.q.y);
     if (pcpath != NULL &&
-	!gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
-				     ibox.q.x, ibox.q.y)
-	) {
-	/* Let the target do the drawing, but drive two triangles */
-	/* through the clipping path to get an accurate bounding box. */
-	gx_device_clip cdev;
-	gx_drawing_color devc;
-	fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
-	fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
+        !gx_cpath_includes_rectangle(pcpath, ibox.p.x, ibox.p.y,
+                                     ibox.q.x, ibox.q.y)
+        ) {
+        /* Let the target do the drawing, but drive two triangles */
+        /* through the clipping path to get an accurate bounding box. */
+        gx_device_clip cdev;
+        gx_drawing_color devc;
+        fixed x0 = float2fixed(corners[0].x), y0 = float2fixed(corners[0].y);
+        fixed bx2 = float2fixed(corners[2].x) - x0, by2 = float2fixed(corners[2].y) - y0;
 
-	gx_make_clip_device_on_stack(&cdev, pcpath, dev);
-	set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
-	bdev->target = NULL;
-	gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
-				 float2fixed(corners[1].x) - x0,
-				 float2fixed(corners[1].y) - y0,
-				 bx2, by2, &devc, lop_default);
-	gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
-				 float2fixed(corners[3].x) - x0,
-				 float2fixed(corners[3].y) - y0,
-				 bx2, by2, &devc, lop_default);
-	bdev->target = tdev;
+        gx_make_clip_device_on_stack(&cdev, pcpath, dev);
+        set_nonclient_dev_color(&devc, bdev->black);  /* any non-white color will do */
+        bdev->target = NULL;
+        gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                                 float2fixed(corners[1].x) - x0,
+                                 float2fixed(corners[1].y) - y0,
+                                 bx2, by2, &devc, lop_default);
+        gx_default_fill_triangle((gx_device *) & cdev, x0, y0,
+                                 float2fixed(corners[3].x) - x0,
+                                 float2fixed(corners[3].y) - y0,
+                                 bx2, by2, &devc, lop_default);
+        bdev->target = tdev;
     } else {
-	/* Just use the bounding box. */
-	BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
+        /* Just use the bounding box. */
+        BBOX_ADD_RECT(bdev, ibox.p.x, ibox.p.y, ibox.q.x, ibox.q.y);
     }
     return code;
 }
@@ -1131,7 +1131,7 @@ bbox_image_planes_wanted(const gx_image_enum_common_t * info, byte *wanted)
 {
     /* This is only used if target_info != 0. */
     const bbox_image_enum *pbe = (const bbox_image_enum *)info;
-    
+
     return gx_image_planes_wanted(pbe->target_info, wanted);
 }
 
@@ -1172,8 +1172,8 @@ static const gx_device_bbox_procs_t box_procs_forward = {
 
 static int
 bbox_create_compositor(gx_device * dev,
-		       gx_device ** pcdev, const gs_composite_t * pcte,
-		       gs_imager_state * pis, gs_memory_t * memory, gx_device *cindev)
+                       gx_device ** pcdev, const gs_composite_t * pcte,
+                       gs_imager_state * pis, gs_memory_t * memory, gx_device *cindev)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *target = bdev->target;
@@ -1183,8 +1183,8 @@ bbox_create_compositor(gx_device * dev,
      * so don't bother with actually compositing.
      */
     if (target == 0) {
-	*pcdev = dev;
-	return 0;
+        *pcdev = dev;
+        return 0;
     }
     /*
      * Create a compositor for the target, and then wrap another
@@ -1192,29 +1192,29 @@ bbox_create_compositor(gx_device * dev,
      * box in the same place.
      */
     {
-	gx_device *temp_cdev;
-	gx_device_bbox *bbcdev;
-	int code = (*dev_proc(target, create_compositor))
-	    (target, &temp_cdev, pcte, pis, memory, cindev);
+        gx_device *temp_cdev;
+        gx_device_bbox *bbcdev;
+        int code = (*dev_proc(target, create_compositor))
+            (target, &temp_cdev, pcte, pis, memory, cindev);
 
-	/* If the target did not create a new compositor then we are done. */
-	if (code < 0 || target == temp_cdev) {
-	    *pcdev = dev;
-	    return code;
-	}
-	bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
-					   &st_device_bbox,
-					   "bbox_create_compositor");
-	if (bbcdev == 0) {
-	    (*dev_proc(temp_cdev, close_device)) (temp_cdev);
-	    return_error(gs_error_VMerror);
-	}
-	gx_device_bbox_init(bbcdev, target, memory);
-	gx_device_set_target((gx_device_forward *)bbcdev, temp_cdev);
-	bbcdev->box_procs = box_procs_forward;
-	bbcdev->box_proc_data = bdev;
-	*pcdev = (gx_device *) bbcdev;
-	return 0;
+        /* If the target did not create a new compositor then we are done. */
+        if (code < 0 || target == temp_cdev) {
+            *pcdev = dev;
+            return code;
+        }
+        bbcdev = gs_alloc_struct_immovable(memory, gx_device_bbox,
+                                           &st_device_bbox,
+                                           "bbox_create_compositor");
+        if (bbcdev == 0) {
+            (*dev_proc(temp_cdev, close_device)) (temp_cdev);
+            return_error(gs_error_VMerror);
+        }
+        gx_device_bbox_init(bbcdev, target, memory);
+        gx_device_set_target((gx_device_forward *)bbcdev, temp_cdev);
+        bbcdev->box_procs = box_procs_forward;
+        bbcdev->box_proc_data = bdev;
+        *pcdev = (gx_device *) bbcdev;
+        return 0;
     }
 }
 
@@ -1222,14 +1222,14 @@ bbox_create_compositor(gx_device * dev,
 
 static int
 bbox_text_begin(gx_device * dev, gs_imager_state * pis,
-		const gs_text_params_t * text, gs_font * font,
-		gx_path * path, const gx_device_color * pdcolor,
-		const gx_clip_path * pcpath,
-		gs_memory_t * memory, gs_text_enum_t ** ppenum)
+                const gs_text_params_t * text, gs_font * font,
+                gx_path * path, const gx_device_color * pdcolor,
+                const gx_clip_path * pcpath,
+                gs_memory_t * memory, gs_text_enum_t ** ppenum)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     int code = gx_default_text_begin(dev, pis, text, font, path, pdcolor,
-				     pcpath, memory, ppenum);
+                                     pcpath, memory, ppenum);
 
     if (bdev->target != NULL) {
         /* See note on imaging_dev in gxtext.h */
@@ -1249,6 +1249,6 @@ int bbox_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 
     BBOX_INIT_BOX(bdev);
     if (tdev == NULL)
-	return 0;
+        return 0;
     return dev_proc(tdev, fillpage)(tdev, pis, pdevc);
 }

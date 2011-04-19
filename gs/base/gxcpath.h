@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -71,7 +71,7 @@ struct gx_clip_list_s {
     gx_clip_rect *tail;
     int xmin, xmax;		/* min and max X over all but head/tail */
     int count;			/* # of rectangles not counting */
-				/* head or tail */
+                                /* head or tail */
 };
 
 #define public_st_clip_list()	/* in gxcpath.c */\
@@ -110,11 +110,11 @@ extern_st(st_device_clip);
     gx_device_finalize)
 void gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target);
 void gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
-			      gs_memory_t *mem);
+                              gs_memory_t *mem);
 
 #define clip_rect_print(ch, str, ar)\
   if_debug7(ch, "[%c]%s 0x%lx: (%d,%d),(%d,%d)\n", ch, str, (ulong)ar,\
-	    (ar)->xmin, (ar)->ymin, (ar)->xmax, (ar)->ymax)
+            (ar)->xmin, (ar)->ymin, (ar)->xmax, (ar)->ymax)
 
 /* Exported by gxcpath.c for gxacpath.c */
 

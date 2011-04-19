@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,7 +41,7 @@ ulong get_u32_msb(const byte *p);
 /* 0 if they are equal, and 1 if first is greater. */
 /* We can't use memcmp, because we always use unsigned characters. */
 int bytes_compare(const byte * str1, uint len1,
-		  const byte * str2, uint len2);
+                  const byte * str2, uint len2);
 
 /* Test whether a string matches a pattern with wildcards. */
 /* If psmp == NULL, use standard parameters: '*' = any substring, */
@@ -55,8 +55,8 @@ typedef struct string_match_params_s {
 } string_match_params;
 extern const string_match_params string_match_params_default;
 bool string_match(const byte * str, uint len,
-		  const byte * pstr, uint plen,
-		  const string_match_params * psmp);
+                  const byte * pstr, uint plen,
+                  const string_match_params * psmp);
 
 #include "gslibctx.h"
 

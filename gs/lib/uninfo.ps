@@ -1,13 +1,13 @@
 %!
 % Copyright (C) 1997 Aladdin Enterprises.  All rights reserved
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -77,7 +77,7 @@
               } if
               2 index exch 2 index exch put
               1 add
-            } ifelse 
+            } ifelse
           } forall
           1 index exch (\)) putinterval
         }{ exch pop
@@ -116,7 +116,7 @@
         exch
       }{
         ( ) print
-        2 index add 1 add 
+        2 index add 1 add
         3 -1 roll pop
         exch
       } ifelse
@@ -140,7 +140,7 @@
     [ 1 index {
         pop dup type /nametype eq {
           dup length string cvs
-        }{ 
+        }{
           pop
         } ifelse
       } forall
@@ -151,7 +151,7 @@
       1 index 1 add 1 4 index length 1 sub { % stack: dic nam I nam[I] J
         3 index 1 index get % dic nam I S[I] J S[J]
         2 index 1 index gt { % swap them
-           4 index 2 index 4 index put 
+           4 index 2 index 4 index put
            4 index 4 index 2 index put
            3 1 roll
         } if
@@ -170,22 +170,22 @@
     length 2 copy lt { exch } if pop
   } forall
 % Print out all the items, stack: pre dic nam maxlen
-  (\n) print  
+  (\n) print
   exch { % pre dic maxlen nam[I]
 % no prefix yet, -> flush right
     3 index length 0 eq {
       dup length 2 index exch sub HSpindent
     }{
       3 index print (/) print
-    } ifelse 
+    } ifelse
 % print the name
     dup print
-% prefix: fill up with blanks 
+% prefix: fill up with blanks
     3 index length 0 ne {
       dup length 2 index exch sub HSpindent
     } if
 % now print the item itself, stack: pre dic maxlen nam[I]
-    2 index 1 index cvn get dup type % stack: pre dic maxlen nam[i] item typ 
+    2 index 1 index cvn get dup type % stack: pre dic maxlen nam[i] item typ
 % Dict-Syntax
     dup /dicttype eq { pop % stack: pre dic maxlen nam[i] item
       ( ) print dup HScvs print
@@ -203,7 +203,7 @@
       3 -1 roll pop % tack: pre dic maxlen item typ
 % Array-Syntax
       dup /arraytype eq { pop % stack: pre dic maxlen item
-        3 index length dup 0 ne { 1 add } if 2 index add 
+        3 index length dup 0 ne { 1 add } if 2 index add
         exch HSaprint
       }{ pop
         ( ) print

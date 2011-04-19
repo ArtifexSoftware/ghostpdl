@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,21 +29,21 @@ gp_getenv(const char *key, char *ptr, int *plen)
     const char *str = getenv(key);
 
     if (str) {
-	int len = strlen(str);
+        int len = strlen(str);
 
-	if (len < *plen) {
-	    /* string fits */
-	    strcpy(ptr, str);
-	    *plen = len + 1;
-	    return 0;
-	}
-	/* string doesn't fit */
-	*plen = len + 1;
-	return -1;
+        if (len < *plen) {
+            /* string fits */
+            strcpy(ptr, str);
+            *plen = len + 1;
+            return 0;
+        }
+        /* string doesn't fit */
+        *plen = len + 1;
+        return -1;
     }
     /* missing key */
     if (*plen > 0)
-	*ptr = 0;
+        *ptr = 0;
     *plen = 1;
     return 1;
 }

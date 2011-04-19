@@ -50,7 +50,7 @@
 #define DEBUG_DUMP
 
 /* Define HT_RAW_DUMP to store the output as a raw CMYK buffer with the
-   data size packed into the file name.  Photoshop does not handle pam 
+   data size packed into the file name.  Photoshop does not handle pam
    cmyk properly so we resort to this for debugging */
 #define HT_RAW_DUMP
 
@@ -255,7 +255,6 @@ static dev_proc_put_params(plib_put_params);
 
 static  dev_proc_dev_spec_op(plib_dev_spec_op);
 
-
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plib_print_page);
 
@@ -322,13 +321,13 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL,   /* get_color_comp_index */\
         p_map_rgb_color, /* encode_color */\
         p_map_color_rgb, /* decode_color */\
-	NULL,   /* pattern_manage */\
-	NULL,   /* fill_rectangle_hl_color */\
-	NULL,   /* include_color_space */\
-	NULL,   /* fill_linear_color_scanline */\
-	NULL,   /* fill_linear_color_trapezoid */\
-	NULL,   /* fill_linear_color_triangle */\
-	NULL,	/* update spot */\
+        NULL,   /* pattern_manage */\
+        NULL,   /* fill_rectangle_hl_color */\
+        NULL,   /* include_color_space */\
+        NULL,   /* fill_linear_color_scanline */\
+        NULL,   /* fill_linear_color_trapezoid */\
+        NULL,   /* fill_linear_color_triangle */\
+        NULL,	/* update spot */\
         NULL,   /* DevN params */\
         NULL,   /* fill page */\
         NULL,   /* push_transparency_state */\
@@ -988,11 +987,11 @@ plibc_print_page(gx_device_printer * pdev, FILE * pstream)
     return plib_print_page_loop(pdev, 3, 4, pstream);
 }
 
-static int 
+static int
 plib_dev_spec_op(gx_device *pdev, int dev_spec_op,
-		  void *data, int size)
+                  void *data, int size)
 {
     if (dev_spec_op == gxdso_is_native_planar)
-	return 1;
+        return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }

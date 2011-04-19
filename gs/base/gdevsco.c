@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -66,21 +66,21 @@ open_console()
     const char *dev;
 
     if (console_fd != -1)
-	return;
+        return;
     dev = getenv("GSDEVICE");
     if (dev == NULL || *dev == '\0')
-	dev = "/dev/tty";
+        dev = "/dev/tty";
     console_fd = open(dev, 0);
     if (console_fd == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf1("unable to map display '%s'\n", dev);
-	perror("open_console");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf1("unable to map display '%s'\n", dev);
+        perror("open_console");
+        exit(1);
     }
 }
 
 #if defined(__GNUC__)
-	/* Done with inline assembly in gdevpcfb.h */
+        /* Done with inline assembly in gdevpcfb.h */
 #else
 /* Output to a port */
 void
@@ -90,7 +90,7 @@ outportb(uint port, byte data)
     struct port_io_arg pio;
 
     if (console_fd == -1)
-	open_console();
+        open_console();
     pio.args[0].dir = OUT_ON_PORT;
     pio.args[0].port = port;
     pio.args[0].data = data;
@@ -99,10 +99,10 @@ outportb(uint port, byte data)
     pio.args[3].port = 0;
     i = ioctl(console_fd, CONSIO, (long)(&pio));
     if (i == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf("error setting device register\n");
-	perror("outportb");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("error setting device register\n");
+        perror("outportb");
+        exit(1);
     }
 }
 
@@ -114,7 +114,7 @@ outport2(uint port, byte index, byte data)
     struct port_io_arg pio;
 
     if (console_fd == -1)
-	open_console();
+        open_console();
     pio.args[0].dir = OUT_ON_PORT;
     pio.args[0].port = port;
     pio.args[0].data = index;
@@ -125,10 +125,10 @@ outport2(uint port, byte index, byte data)
     pio.args[3].port = 0;
     i = ioctl(console_fd, CONSIO, (long)(&pio));
     if (i == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf("error setting device register\n");
-	perror("outport2");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("error setting device register\n");
+        perror("outport2");
+        exit(1);
     }
 }
 #endif
@@ -207,20 +207,20 @@ pcfb_get_state(pcfb_bios_state * pbs)
     mode = ioctl(console_fd, CONS_CURRENT, 0L);
     if (mode == -1) {
 #ifdef __linux__
-	mode = M_ENH_C80x25;
+        mode = M_ENH_C80x25;
 #else
-	ega_close((gx_device *) NULL);
-	eprintf("unable to get current console mode\n");
-	perror("pcfb_get_state");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("unable to get current console mode\n");
+        perror("pcfb_get_state");
+        exit(1);
 #endif
     }
     pbs->display_mode =
-	(mode == M_ENH_CG640 || mode == M_CG640x350 ? 0x10 :
+        (mode == M_ENH_CG640 || mode == M_CG640x350 ? 0x10 :
 #ifdef M_VGA12
-	 mode == M_VGA12 ? 0x12 :
+         mode == M_VGA12 ? 0x12 :
 #endif
-	 0x03);
+         0x03);
 }
 
 /* Set the device mode */
@@ -233,45 +233,45 @@ pcfb_set_mode(int mode)
     cur_mode = mode;
     mode1 = -1;
     if (mode == 0x10)
-	mode = SW_ENH_CG640;
+        mode = SW_ENH_CG640;
 #ifdef SW_VGA12
     else if (mode == 0x12)
-	mode = SW_VGA12;
+        mode = SW_VGA12;
 #endif
     else if (mode == 0x03) {
 #ifdef SW_VGA80x25
-	mode = SW_VGA80x25;
-	mode1 = SW_ENHC80x25;
+        mode = SW_VGA80x25;
+        mode1 = SW_ENHC80x25;
 #else
-	mode = SW_ENHC80x25;
+        mode = SW_ENHC80x25;
 #endif
     } else {
-	eprintf1("can not set to video mode %d\n", mode);
-	exit(1);
+        eprintf1("can not set to video mode %d\n", mode);
+        exit(1);
     }
     i = ioctl(console_fd, mode, 0L);
     if (i == -1 && mode1 != -1)
-	i = ioctl(console_fd, mode1, 0L);
+        i = ioctl(console_fd, mode1, 0L);
     if (i == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf("unable to set console mode\n");
-	perror("pcfb_set_mode");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("unable to set console mode\n");
+        perror("pcfb_set_mode");
+        exit(1);
     }
 #ifdef VGA_IOPRIVL
     if (ioctl(console_fd, VGA_IOPRIVL, 1) == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf("unable to get I/O privilege\n");
-	perror("pcfb_set_mode");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("unable to get I/O privilege\n");
+        perror("pcfb_set_mode");
+        exit(1);
     }
 #endif
     i = ioctl(console_fd, MAPCONS, 0L);
     if (i == -1) {
-	ega_close((gx_device *) NULL);
-	eprintf("unable to map console adaptor's display memory\n");
-	perror("pcfb_set_mode");
-	exit(1);
+        ega_close((gx_device *) NULL);
+        eprintf("unable to map console adaptor's display memory\n");
+        perror("pcfb_set_mode");
+        exit(1);
     }
     fb_addr = (fb_ptr) (i);
 }

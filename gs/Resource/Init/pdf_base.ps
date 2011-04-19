@@ -1,12 +1,12 @@
 %    Copyright (C) 1994-2006 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -86,7 +86,7 @@ pdfdict begin
 /name#escape			% <post> <(#)> <pre> name#escape <string>
 { exch pop
   1 index 2 () /SubFileDecode filter dup (x) readhexstring
-		% Stack: post pre stream char t/f
+                % Stack: post pre stream char t/f
   not {	% tolerate, but complain about bad syntax
     pop closefile (#) concatstrings exch
     (   **** Warning: Invalid hex following '#' name escape, using literal '#' in name.\n)
@@ -104,7 +104,7 @@ pdfdict begin
 /.pdftokenerror {		% <count> <opdict> <errtoken> .pdftokenerror -
   BXlevel 0 le {
     (   **** Unknown operator: ') pdfformaterror
-    dup =string cvs pdfformaterror 
+    dup =string cvs pdfformaterror
     % Attempt a retry scan of the element after changing to PDFScanInvNum
     << /PDFScanInvNum //true >> setuserparams
     =string cvs
@@ -133,20 +133,20 @@ pdfdict begin
     PDFSTEP {
       pdfdict /PDFtokencount 2 copy .knownget { 1 add } { 1 } ifelse .forceput
       PDFSTEPcount 1 gt {
-	pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
+        pdfdict /PDFSTEPcount PDFSTEPcount 1 sub .forceput
       } {
         dup ==only
-        (    step # ) print PDFtokencount =only 
-	( ? ) print flush 1 //false .outputpage
-	(%stdin) (r) file 255 string readline {
-	  token {
+        (    step # ) print PDFtokencount =only
+        ( ? ) print flush 1 //false .outputpage
+        (%stdin) (r) file 255 string readline {
+          token {
             exch pop pdfdict /PDFSTEPcount 3 -1 roll .forceput
-	  } {
-	    pdfdict /PDFSTEPcount 1 .forceput
-	  } ifelse % token
-	} {
-	  pop /PDFSTEP //false def	 % EOF on stdin
-	} ifelse % readline
+          } {
+            pdfdict /PDFSTEPcount 1 .forceput
+          } ifelse % token
+        } {
+          pop /PDFSTEP //false def	 % EOF on stdin
+        } ifelse % readline
       } ifelse % PDFSTEPcount > 1
     } {
       dup ==only () = flush
@@ -155,14 +155,14 @@ pdfdict begin
   2 copy .knownget {
     exch pop exch pop exch pop exec
   } {
-		% Normally, true, false, and null would appear in opdict
-		% and be treated as "operators".  However, there is a
-		% special fast case in the PostScript interpreter for names
-		% that are defined in, and only in, systemdict and/or
-		% userdict: putting these three names in the PDF dictionaries
-		% destroys this property for them, slowing down their
-		% interpretation in all PostScript code.  Therefore, we
-		% check for them explicitly here instead.
+                % Normally, true, false, and null would appear in opdict
+                % and be treated as "operators".  However, there is a
+                % special fast case in the PostScript interpreter for names
+                % that are defined in, and only in, systemdict and/or
+                % userdict: putting these three names in the PDF dictionaries
+                % destroys this property for them, slowing down their
+                % interpretation in all PostScript code.  Therefore, we
+                % check for them explicitly here instead.
     dup dup dup /true eq exch /false eq or exch /null eq or {
       exch pop exch pop //systemdict exch get
     } {
@@ -180,8 +180,8 @@ pdfdict begin
 /PDFScanRules_true << /PDFScanRules //true >> def
 /PDFScanRules_null << /PDFScanRules //null >> def
 /.pdfrun {			% <file> <opdict> .pdfrun -
-	% Construct a procedure with the stack depth, file and opdict
-	% bound into it.
+        % Construct a procedure with the stack depth, file and opdict
+        % bound into it.
   1 index cvlit count 2 sub 3 1 roll mark
   /PDFScanRules .getuserparam //null eq {
     //PDFScanRules_true { setuserparams } 0 get % force PDF scanning mode
@@ -197,18 +197,18 @@ pdfdict begin
       //false
     } if {
       dup type /nametype eq {
-	dup xcheck {
-	  .pdfexectoken
-	} {
-	  .pdffixname
-	  exch pop exch pop PDFDEBUG {
+        dup xcheck {
+          .pdfexectoken
+        } {
+          .pdffixname
+          exch pop exch pop PDFDEBUG {
             PDFSTEPcount 1 le {
               dup ==only ( ) print flush
             } if
           } if
-	} ifelse
+        } ifelse
       } {
-	exch pop exch pop PDFDEBUG {
+        exch pop exch pop PDFDEBUG {
           PDFSTEPcount 1 le {
             dup ==only ( ) print flush
           } if
@@ -264,8 +264,8 @@ pdfdict begin
 .dicttomark def
 
 /token_nofail {		% <file|string> token_nofail false
-			% <file> token_nofail <token> true
-			% <string> token_nofail <post> <token> true
+                        % <file> token_nofail <token> true
+                        % <string> token_nofail <post> <token> true
   dup type /filetype eq {
     { dup ( ) .peekstring not { ({) } if
       //token_nofail_dict exch .knownget not {
@@ -330,10 +330,10 @@ currentdict /token_nofail_dict .undef
 } bind def
 /lgrowto {	% <lseq> <newlength> lgrowto <lseq'>
     dup //lsubmask add //lnshift bitshift dup 3 index length gt {
-	% Add more sub-arrays.  Start by completing the last existing one.
-		% Stack: lseq newlen newtoplen
+        % Add more sub-arrays.  Start by completing the last existing one.
+                % Stack: lseq newlen newtoplen
     3 -1 roll dup llength 1 sub //lsubmask or 1 add lgrowto
-		% Stack: newlen newtoplen lseq
+                % Stack: newlen newtoplen lseq
     [ exch aload pop
     counttomark 2 add -1 roll		% newtoplen
     counttomark sub { dup 0 0 getinterval lsublen growto } repeat
@@ -341,10 +341,10 @@ currentdict /token_nofail_dict .undef
   } {
     pop
   } ifelse
-	% Expand the last sub-array.
+        % Expand the last sub-array.
   1 sub //lsubmask and 1 add
   exch dup dup length 1 sub 2 copy
-		% Stack: newsublen lseq lseq len-1 lseq len-1
+                % Stack: newsublen lseq lseq len-1 lseq len-1
   get 5 -1 roll growto put
 } bind def
 /lforall {	% <lseq> <proc> lforall -
@@ -416,16 +416,16 @@ currentdict /token_nofail_dict .undef
 % (see below), we need both an xcheck and a type check to determine
 % whether an object has been resolved.
 /resolved? {		% <object#> resolved? <value> true
-			% <object#> resolved? false
+                        % <object#> resolved? false
   Objects 1 index lget dup xcheck {	% Check if executable
     dup type /integertype eq {		% Check if an integer
-		% Check whether the object is in GlobalObjects.
+                % Check whether the object is in GlobalObjects.
       pop IsGlobal 1 index lget 0 eq {	% 0 --> Not in GlabalObjects
-	pop //false			% The object is not resolved
+        pop //false			% The object is not resolved
       } {				% The object is in GlobalObjects
-		% Update Objects from GlobalObjects
-	PDFDEBUG { (%Global=>local: ) print dup //== exec } if
-	GlobalObjects 1 index get dup Objects 4 1 roll lput //true
+                % Update Objects from GlobalObjects
+        PDFDEBUG { (%Global=>local: ) print dup //== exec } if
+        GlobalObjects 1 index get dup Objects 4 1 roll lput //true
       } ifelse
     } {				% Else object is executable but not integer
       exch pop //true		% Therefore must be executable dict. (stream)
@@ -436,10 +436,10 @@ currentdict /token_nofail_dict .undef
 } bind def
 /oforce /exec load def
 /oget {		% <array> <index> oget <object>
-		% <dict> <key> oget <object>
-		% Before release 6.20, this procedure stored the resolved
-		% object back into the referring slot.  In order to support
-		% PDF linearization, we no longer do this.
+                % <dict> <key> oget <object>
+                % Before release 6.20, this procedure stored the resolved
+                % object back into the referring slot.  In order to support
+                % PDF linearization, we no longer do this.
   get oforce
 } bind def
 
@@ -452,20 +452,20 @@ currentdict /token_nofail_dict .undef
 } bind def
 
 /oforce_recursive { % <any> oforce_recursive <any>
-  dup type dup /arraytype eq exch /packedarraytype eq or {    
+  dup type dup /arraytype eq exch /packedarraytype eq or {
     dup rcheck {              % protect tint transform functions, etc.
       oforce                  % but dereference {1 0 R}
       dup type dup /arraytype eq exch /packedarraytype eq or {
         [ exch { oforce_recursive } forall ]
       } {
         dup type /dicttype eq {
-          << exch { oforce_recursive exch oforce exch } forall >> 
+          << exch { oforce_recursive exch oforce exch } forall >>
         } if
       } ifelse
     } if
   } {
     dup type /dicttype eq {
-      << exch { oforce_recursive exch oforce exch } forall >> 
+      << exch { oforce_recursive exch oforce exch } forall >>
     } if
   } ifelse
 } bind def
@@ -473,8 +473,8 @@ currentdict /token_nofail_dict .undef
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
 /knownoget {	% <dict> <key> knownoget <value> true
-		% <dict> <key> knownoget false
-		% See oget above regarding this procedure.
+                % <dict> <key> knownoget false
+                % See oget above regarding this procedure.
   .knownget {
     oforce dup //null eq { pop //false } { //true } ifelse
   } {
@@ -487,19 +487,17 @@ currentdict /token_nofail_dict .undef
   .knownget { oforce //null ne } { //false } ifelse
 } bind def
 
-
 /knownogetdict { % <dict> <key> knownogetdict <dict> true
-		 % <dict> <key> knownogetdict false
+                 % <dict> <key> knownogetdict false
   //knownoget exec dup {
     1 index type /dicttype ne { pop pop //false } if
   } if
 } bind def
 
-
 % PDF 1.1 defines a 'foreign file reference', but not its meaning.
 % Per the specification, we convert these to nulls.
 /F {		% <file#> <object#> <generation#> F <object>
-		% Some PDF 1.1 files use F as a synonym for f!
+                % Some PDF 1.1 files use F as a synonym for f!
    .pdfcount 3 lt { f } { pop pop pop //null } ifelse
 } bind def
 
@@ -512,15 +510,15 @@ currentdict /token_nofail_dict .undef
   } {					% Else not a match ...
     QUIET not {				% Create warning message if not QUIET
       Generations 2 index lget 0 eq {	% Check if object is free ...
-	(   **** Warning: reference to free object: )
+        (   **** Warning: reference to free object: )
         2 index =string cvs concatstrings ( ) concatstrings	% put obj #
         exch =string cvs concatstrings ( R\n) concatstrings	% put gen #
       } {
-	(   **** Warning: wrong generation: )
+        (   **** Warning: wrong generation: )
         2 index =string cvs concatstrings ( ) concatstrings	% put obj #
         exch =string cvs concatstrings				% put gen #
-       	(, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
-       	exch lget 1 sub =string cvs concatstrings (\n) concatstrings
+        (, xref gen#: ) concatstrings 1 index Generations  % put xref gen #
+        exch lget 1 sub =string cvs concatstrings (\n) concatstrings
       } ifelse
       pdfformaterror			% Output warning message
     } {					% Else QUIET ...
@@ -549,14 +547,14 @@ currentdict /token_nofail_dict .undef
 
 /endobj {		% <object#> <generation#> <object> endobj <object>
   3 1 roll
-		% Read the xref entry if we haven't yet done so.
-		% This is only needed for generation # checking.
+                % Read the xref entry if we haven't yet done so.
+                % This is only needed for generation # checking.
   1 index resolved? {
     pop
   } if
   checkgeneration {
-		% The only global objects we bother to save are
-		% (resource) dictionaries.
+                % The only global objects we bother to save are
+                % (resource) dictionaries.
     1 index dup gcheck exch type /dicttype eq and {
       PDFDEBUG { (%Local=>global: ) print dup //== exec } if
       GlobalObjects 1 index 3 index put
@@ -589,24 +587,24 @@ currentdict /token_nofail_dict .undef
   1 index /N get		% Save number of objects onto the stack
   2 index //false resolvestream	% Convert stream dict into a stream
   /ReusableStreamDecode filter	% We need to be able to position stream
-		% Objectstreams begin with list of object numbers and locations
-		% Create two arrays to hold object numbers and stream location
+                % Objectstreams begin with list of object numbers and locations
+                % Create two arrays to hold object numbers and stream location
   1 index array			% Array for holding object number
   2 index array			% Array for holding stream object location
-		% Get the object numbers and locations.
+                % Get the object numbers and locations.
   0 1 5 index 1 sub {		% Loop and collect obj # and locations
-		% Stack: objstreamdict First N objectstream [obj#] [loc] index
+                % Stack: objstreamdict First N objectstream [obj#] [loc] index
     2 index 1 index 		% Setup to put obj# into object number array
     5 index token pop put	% Get stream, then get obj# and put into array
     1 index 1 index 		% Setup to put object loc into location array
     5 index token pop put	% Get stream, get obj loc and put into array
     pop				% Remove loop index
   } for
-  		% Create a bytestring big enough for reading any object data
-  		% Scan for the size of the largest object
+                % Create a bytestring big enough for reading any object data
+                % Scan for the size of the largest object
   0 0				% Init max object size and previous location
   2 index {			% Loop through all object locations
-				% Stack:  ... maxsize prevloc currentloc
+                                % Stack:  ... maxsize prevloc currentloc
     dup 4 1 roll		% Save copy of object location into stack
     exch sub				% Object size = currentloc - prevloc
     .max			% Determine maximum object size
@@ -614,26 +612,26 @@ currentdict /token_nofail_dict .undef
   } forall
   pop				% Remove previous location
   .bigstring			% Create bytestring based upon max obj size
-		% Move to the start of the object data
+                % Move to the start of the object data
   3 index 6 index		% Get objectstream and start of first object
   setfileposition		% Move to the start of the data
-  		% Read the data for all objects except the last.  We do
-		% not know the size of the last object so we need to treat
-		% it as a special case.
+                % Read the data for all objects except the last.  We do
+                % not know the size of the last object so we need to treat
+                % it as a special case.
   0 1 6 index 2 sub {
     dup 4 index exch get 	% Get our current object number
-		% Stack: objstreamdict First N objectstream [obj#] [loc]
-		%        bytestring loopindex object#
+                % Stack: objstreamdict First N objectstream [obj#] [loc]
+                %        bytestring loopindex object#
     dup resolved? {		% If we already have this object
-    	(yyy) = pstack (yyy) = flush xxx
+        (yyy) = pstack (yyy) = flush xxx
       pop pop			% Remove object and object number
       1 add 2 index exch get	% Get location of next object
       6 index add 6 index exch	% Form location of next object and get stream
       setfileposition		% Move to the start of the next object data
     } {				% Else this is a new object ...
-		% We are going to create a string for reading the object
+                % We are going to create a string for reading the object
       2 index 0			% use our working string
-	  	% Determine the size of the object
+                % Determine the size of the object
       5 index 4 index 1 add get	% Get location of the next object
       6 index 5 index get	% Get location of this object
       sub			% Size of object = next loc - this loc
@@ -646,10 +644,10 @@ currentdict /token_nofail_dict .undef
     } ifelse
   } for
   pop pop			% Remove our working string and loc array
-  		% Now read the last object in the object stream.  Since it
-		% is the last object, we can use the original stream and
-		% terminate when we hit the end of the stream
-		% Stack: objstreamdict First N objectstream [obj#]
+                % Now read the last object in the object stream.  Since it
+                % is the last object, we can use the original stream and
+                % terminate when we hit the end of the stream
+                % Stack: objstreamdict First N objectstream [obj#]
   2 index 1 sub get	 	% Get our current object number
   dup resolved? not {		% If we do not already have this object
     exch	 		% Get our object stream
@@ -674,24 +672,24 @@ currentdict /token_nofail_dict .undef
   dup /N get			% Save number of objects onto the stack
   1 index //false resolvestream	% Convert stream dict into a stream
   /ReusableStreamDecode filter	% We need to be able to position stream
-		% Objectstreams begin with list of object numbers and locations
+                % Objectstreams begin with list of object numbers and locations
   1 index array			% Create array for holding object number
-		% Get the object numbers
+                % Get the object numbers
   0 1 4 index 1 sub {		% Loop and collect obj numbers
-		% Stack: strm# objstreamdict N PDFDEBUG objectstream [obj#] loopindex
+                % Stack: strm# objstreamdict N PDFDEBUG objectstream [obj#] loopindex
     1 index 1 index 		% Setup to put obj# into object number array
     4 index token pop put	% Get stream, then get obj# and put into array
     2 index token pop pop pop	% Get stream, get obj loc and clear stack
   } for
-		% Move to the start of the object data
+                % Move to the start of the object data
   1 index 4 index /First get	% Get objectstream and start of first object
   setfileposition		% Move to the start of the data
-  		% We disable PDFDEBUG while reading the data stream.  We will
-		% print the data later
+                % We disable PDFDEBUG while reading the data stream.  We will
+                % print the data later
   PDFDEBUG { //no_debug_dict begin } if
-  		% Read the data for all objects.  We check to see if we get
-		% the number of objects that we expect.
-		% Stack: strm# objstreamdict N objectstream [obj#] PDFDEBUG
+                % Read the data for all objects.  We check to see if we get
+                % the number of objects that we expect.
+                % Stack: strm# objstreamdict N objectstream [obj#] PDFDEBUG
   mark 3 -1 roll 		% Get objectstream
   count 4 index add		% Determine stack depth with objects
   3 1 roll
@@ -700,13 +698,13 @@ currentdict /token_nofail_dict .undef
     (   **** Incorrect object count in object stream.\n) pdfformaterror
     /resolveobjectstream cvx /rangecheck signalerror
   } if
-  		% We have the object data
+                % We have the object data
   counttomark array astore	% Put objects into an array
   exch pop exch pop		% Remove mark and count
   currentdict //no_debug_dict eq { end } if % Restore debug context
-		% Save the objects into Objects
+                % Save the objects into Objects
   0 1 2 index length 1 sub {	% Loop through all objects
-		% Stack: strm# objstreamdict N [obj#] [objects] loopindex
+                % Stack: strm# objstreamdict N [obj#] [objects] loopindex
     dup 3 index exch get 	% Get our current object number
                 % Stack: strm# objstreamdict N [obj#] [objects] loopindex obj#
     dup ObjectStream exch lget 7 index eq {
@@ -755,7 +753,7 @@ currentdict /no_debug_dict undef
   } if
   1 index 0 lt {
     (   **** Considering object with a negative number as null.\n) pdfformaterror
-    pop pop //null 
+    pop pop //null
   } {
     1 index resolved? {           % If object has already been resolved ...
       exch pop exch pop           % then clear stack and return object
@@ -796,7 +794,7 @@ currentdict /no_debug_dict undef
       exch PDFfile exch setfileposition   % Return to original file position
     } ifelse
   } ifelse
-} bind def      
+} bind def
 
 % ================================ Streams ================================ %
 
@@ -836,15 +834,15 @@ currentdict /no_debug_dict undef
       PDFfile read pop
       dup 13 eq {
         % If there had been a \n, token would have advanced over it
-	% thus, if the terminator was \r, we have a format error!
-	(   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
-	pop   % fileposition is OK (just past the \r).
+        % thus, if the terminator was \r, we have a format error!
+        (   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
+        pop   % fileposition is OK (just past the \r).
       } {
         % Otherwise, scan past \n
         { 10 eq { exit } if
           PDFfile read pop
         } loop
-      } ifelse   
+      } ifelse
       dup /FilePosition PDFfile fileposition put
       PDFDEBUG {
         PDFSTEPcount 1 le {
@@ -855,18 +853,18 @@ currentdict /no_debug_dict undef
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given
     % length to number of bytes left in the file.
-    dup /Length oget 
+    dup /Length oget
     dup PDFfile bytesavailable lt {	% compare to to bytes left in file
       PDFfile fileposition 		% reposition to the end of stream
       add PDFfile exch setfileposition
     } {
       pop				% bad stream length - do not reposition.
-      					% This will force a length warning below
+                                        % This will force a length warning below
     } ifelse
   } {
     pop
-	% We're already reading from a stream, which we can't reposition.
-	% Capture the sub-stream contents in a string.
+        % We're already reading from a stream, which we can't reposition.
+        % Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
       (   **** Warning: Unexpected EOF in stream!\n) pdfformaterror
@@ -880,7 +878,7 @@ currentdict /no_debug_dict undef
     (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
     pop /endstream		% fake a valid endstream
   } if
-  /endstream ne { 
+  /endstream ne {
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
     dup /Length undef % prevent the use of the incorrect length.
     cvx endobj exit   % exit from .pdfrun now.
@@ -906,30 +904,30 @@ currentdict /no_debug_dict undef
 
 % Extract and apply filters.
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
-			%   <dict> <parms> <filternames>
+                        %   <dict> <parms> <filternames>
   2 index exch knownoget {
     oforce_recursive
     exch 2 index exch knownoget {
-		% Both filters and parameters.
+                % Both filters and parameters.
       oforce_recursive
       exch dup type /nametype eq {
-	1 array astore exch
-	dup type /arraytype ne { 1 array astore } if exch
+        1 array astore exch
+        dup type /arraytype ne { 1 array astore } if exch
       } if
     } {
-		% Filters, but no parameters.
+                % Filters, but no parameters.
       //null exch
       dup type /nametype eq { 1 array astore } if
     } ifelse
   } {
-		% No filters: ignore parameters, if any.
+                % No filters: ignore parameters, if any.
     pop //null { }
   } ifelse
 } bind def
 /filtername {		% <filtername> filtername <filtername'>
   //unabbrevfilterdict 1 index .knownget { exch pop } if
   dup /Filter resourcestatus { pop pop } {
-    Repaired exch	% this error is not the creator's fault	
+    Repaired exch	% this error is not the creator's fault
     (   **** ERROR: Unable to process ) pdfformaterror
     64 string cvs pdfformaterror
     ( data. Page will be missing data.\n) pdfformaterror
@@ -1000,18 +998,18 @@ currentdict /pdf_rules_dict undef
 /jpxparmfix {	% <streamdict> <readdata?> jpxparmfix <streamdict <readdata?>
   1 index /Filter .knownget
     { /JPXDecode eq % we only need to do this for JPXDecode filters
-	% TODO: handle filter arrays
+        % TODO: handle filter arrays
       {
-	1 index /ColorSpace knownoget {
-	  2 index /DecodeParms knownoget {
-	    % insert in the existing DecodeParms dict
-	    /ColorSpace 3 -1 roll put
-	  }{
-	    1 dict % need to create a custom DecodeParms dict
-	    dup /ColorSpace 4 -1 roll put
-	    2 index exch /DecodeParms exch put
-	  } ifelse
-	} if
+        1 index /ColorSpace knownoget {
+          2 index /DecodeParms knownoget {
+            % insert in the existing DecodeParms dict
+            /ColorSpace 3 -1 roll put
+          }{
+            1 dict % need to create a custom DecodeParms dict
+            dup /ColorSpace 4 -1 roll put
+            2 index exch /DecodeParms exch put
+          } ifelse
+        } if
       } if
     } if
 } bind def
@@ -1026,10 +1024,10 @@ currentdict /pdf_rules_dict undef
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
   jpxparmfix
   1 index /F knownoget {
-		% This stream is stored on an external file.
+                % This stream is stored on an external file.
     (r) file 3 -1 roll
     /FDecodeParms /FFilter filterparms
-		% Stack: readdata? file dict parms filternames
+                % Stack: readdata? file dict parms filternames
     4 -1 roll exch
     pdf_decrypt_stream
     applyfilters
@@ -1041,14 +1039,14 @@ currentdict /pdf_rules_dict undef
       dup /FilePosition .knownget {
         1 index /File get exch setfileposition
       } if
-		% Stack: readdata? dict
+                % Stack: readdata? dict
       /DecodeParms /Filter filterparms
-		% Stack: readdata? dict parms filternames
+                % Stack: readdata? dict parms filternames
       2 index /File get exch
-		% Stack: readdata? dict parms file/string filternames
+                % Stack: readdata? dict parms file/string filternames
       dup length 0 eq {
-		% All the PDF filters have EOD markers, but in this case
-		% there is no specified filter.
+                % All the PDF filters have EOD markers, but in this case
+                % there is no specified filter.
         exch dup type /filetype eq 5 index or {
               % Use length for any files or reading data from any source.
           3 index /Length knownoget not { 0 } if
@@ -1069,7 +1067,7 @@ currentdict /pdf_rules_dict undef
       } ifelse
     } ifelse
   } ifelse
-		% Stack: readdata? dict file
+                % Stack: readdata? dict file
   exch pop exch pop
 } bind def
 
@@ -1096,18 +1094,18 @@ currentdict /pdf_rules_dict undef
     pop pop pop //null
   } {
     dup length -1 bitshift 2 copy oget
-			% Stack: key leafkey kids mid kids[mid]
+                        % Stack: key leafkey kids mid kids[mid]
     dup /Limits oget aload pop
-			% Stack: key leafkey kids mid kids[mid] min max
+                        % Stack: key leafkey kids mid kids[mid] min max
     6 index lt {
       pop pop
       1 add 1 index length 1 index sub getinterval .branchget
     } {
       5 index gt {
-	pop
-	0 exch getinterval .branchget
+        pop
+        0 exch getinterval .branchget
       } {
-	exch pop exch pop .treeget
+        exch pop exch pop .treeget
       } ifelse
     } ifelse
   } ifelse
@@ -1119,7 +1117,7 @@ currentdict /pdf_rules_dict undef
     exch pop
   } {
     dup length -1 bitshift -2 and 2 copy oget
-			% Stack: key pairs mid pairs[mid]
+                        % Stack: key pairs mid pairs[mid]
     3 index gt { 0 exch } { 1 index length 1 index sub } ifelse
     getinterval .leafget
   } ifelse

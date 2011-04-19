@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -50,12 +50,12 @@ pprintf_scan(stream * s, const char *format)
     const char *fp = format;
 
     for (; *fp != 0; ++fp) {
-	if (*fp == '%') {
-	    if (fp[1] != '%')
-		break;
-	    ++fp;
-	}
-	sputc(s, *fp);
+        if (*fp == '%') {
+            if (fp[1] != '%')
+                break;
+            ++fp;
+        }
+        sputc(s, *fp);
     }
     return fp;
 }
@@ -67,7 +67,7 @@ pputs_short(stream *s, const char *str)
     const char *p = str;
 
     for (; *p; ++p)
-	sputc(s, *p);
+        sputc(s, *p);
 }
 
 /* Print (an) int value(s) using a format. */
@@ -79,7 +79,7 @@ pprintd1(stream * s, const char *format, int v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'd')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintd1: %s\n", format);
+        lprintf1("Bad format in pprintd1: %s\n", format);
 #endif
     sprintf(str, "%d", v);
     pputs_short(s, str);
@@ -111,18 +111,18 @@ pprintg1(stream * s, const char *format, floatp v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'g')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintg: %s\n", format);
+        lprintf1("Bad format in pprintg: %s\n", format);
 #endif
     sprintf(str, "%f", 1.5);
     dot = str[1]; /* locale-dependent */
     sprintf(str, "%g", v);
     if (strchr(str, 'e')) {
-	/* Bad news.  Try again using f-format. */
-	sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
+        /* Bad news.  Try again using f-format. */
+        sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
     /* Juggling locales isn't thread-safe. Posix me harder. */
     if (dot != '.') {
-        char *pdot = strchr(str, dot); 
+        char *pdot = strchr(str, dot);
         if (pdot)
             *pdot = '.';
     }
@@ -141,13 +141,13 @@ pprintg3(stream * s, const char *format, floatp v1, floatp v2, floatp v3)
 }
 const char *
 pprintg4(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
-	 floatp v4)
+         floatp v4)
 {
     return pprintg2(s, pprintg2(s, format, v1, v2), v3, v4);
 }
 const char *
 pprintg6(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
-	 floatp v4, floatp v5, floatp v6)
+         floatp v4, floatp v5, floatp v6)
 {
     return pprintg3(s, pprintg3(s, format, v1, v2, v3), v4, v5, v6);
 }
@@ -161,7 +161,7 @@ pprintld1(stream * s, const char *format, long v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'l' || fp[2] != 'd')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintld: %s\n", format);
+        lprintf1("Bad format in pprintld: %s\n", format);
 #endif
     sprintf(str, "%ld", v);
     pputs_short(s, str);
@@ -186,7 +186,7 @@ pprints1(stream * s, const char *format, const char *str)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 's')	/* shouldn't happen! */
-	lprintf1("Bad format in pprints: %s\n", format);
+        lprintf1("Bad format in pprints: %s\n", format);
 #endif
     pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
@@ -198,7 +198,7 @@ pprints2(stream * s, const char *format, const char *str1, const char *str2)
 }
 const char *
 pprints3(stream * s, const char *format, const char *str1, const char *str2,
-	 const char *str3)
+         const char *str3)
 {
     return pprints2(s, pprints1(s, format, str1), str2, str3);
 }

@@ -17,12 +17,10 @@
    things, the copyright notice and this notice must be preserved on all
    copies.
 
-
  SPECIAL THANKS:
 
     本ドライバの作成にあたり、大森紀人さんの gdevlips, gdevl4v.c を参考に
     させて頂きました。
-
 
  NOTES:
 
@@ -82,9 +80,7 @@
 
 #endif /* GS_VERSION_MAJOR */
 
-
 #define ESCV_FORCEDRAWPATH 0	/* 0: correct LP-9200C path trouble. */
-
 
 /* ---------------- Device definition ---------------- */
 
@@ -99,11 +95,9 @@ static dev_proc_get_params(escv_get_params);
 static dev_proc_fill_mask(escv_fill_mask);
 static dev_proc_begin_image(escv_begin_image);
 
-
 gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
-			       "gx_device_escv", device_escv_enum_ptrs, device_escv_reloc_ptrs,
-			       gx_device_finalize, st_device_vector);
-
+                               "gx_device_escv", device_escv_enum_ptrs, device_escv_reloc_ptrs,
+                               gx_device_finalize, st_device_vector);
 
 /* for ESC/Page-Color
 ** 原点の値を 0 とした場合,計算誤差？の問題から描画エリアが狂うため
@@ -117,7 +111,6 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
         offset_margin_values(0.001, 0.001, lm, 0, 0, tm),\
         std_device_part3_()
 
-
 /* for ESC/Page (Monochrome) */
 #define esmv_device_full_body(dtype, pprocs, dname, stype, w, h, xdpi, ydpi, \
         ncomp, depth, mg, mc, dg, dc, lm, bm, rm, tm)\
@@ -128,135 +121,127 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
         0, 0, 5.0 / (MMETER_PER_INCH / POINT)), /* LPD.2.  041203 saito */\
         std_device_part3_()
 
-
 /* for ESC/Page-Color */
 #define escv_device_body(name)	\
   escv_device_full_body(gx_device_escv, 0, name, \
-				&st_device_escv,\
+                                &st_device_escv,\
 /* width & height */		ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */	X_DPI, Y_DPI,\
 /* color info */		3, 24, 255, 255, 256, 256,\
-				ESCPAGE_LEFT_MARGIN_DEFAULT,\
-				ESCPAGE_BOTTOM_MARGIN_DEFAULT,\
-				ESCPAGE_RIGHT_MARGIN_DEFAULT,\
-				ESCPAGE_TOP_MARGIN_DEFAULT)
-
+                                ESCPAGE_LEFT_MARGIN_DEFAULT,\
+                                ESCPAGE_BOTTOM_MARGIN_DEFAULT,\
+                                ESCPAGE_RIGHT_MARGIN_DEFAULT,\
+                                ESCPAGE_TOP_MARGIN_DEFAULT)
 
 /* for ESC/Page (Monochrome) */
 #define esmv_device_body(name)	\
   esmv_device_full_body(gx_device_escv, 0, name, \
-				&st_device_escv,\
+                                &st_device_escv,\
 /* width & height */		ESCPAGE_DEFAULT_WIDTH, ESCPAGE_DEFAULT_HEIGHT,\
 /* default resolution */	X_DPI, Y_DPI,\
 /* color info */		1, 8, 255, 255, 256, 256,\
-				ESCPAGE_LEFT_MARGIN_DEFAULT,\
-				ESCPAGE_BOTTOM_MARGIN_DEFAULT,\
-				ESCPAGE_RIGHT_MARGIN_DEFAULT,\
-				ESCPAGE_TOP_MARGIN_DEFAULT)
-
-
+                                ESCPAGE_LEFT_MARGIN_DEFAULT,\
+                                ESCPAGE_BOTTOM_MARGIN_DEFAULT,\
+                                ESCPAGE_RIGHT_MARGIN_DEFAULT,\
+                                ESCPAGE_TOP_MARGIN_DEFAULT)
 
 #define escv_procs_part1 \
-	escv_open,				/* open_device */\
-	gx_default_get_initial_matrix,		/* get_initial_matrix */\
-	NULL,					/* sync_output */\
-	escv_output_page,			/* output_page */\
-	escv_close				/* close_device */
+        escv_open,				/* open_device */\
+        gx_default_get_initial_matrix,		/* get_initial_matrix */\
+        NULL,					/* sync_output */\
+        escv_output_page,			/* output_page */\
+        escv_close				/* close_device */
 
 #define escv_procs_part2 \
-	gdev_vector_fill_rectangle,		/* fill_rectangle */\
-	NULL,					/* tile_rectangle */\
-	escv_copy_mono,				/* dev_t_proc_copy_mono */\
-	escv_copy_color,			/* dev_t_proc_copy_color */\
-	NULL,					/* draw_line */\
-	NULL,					/* get_bits */\
-	escv_get_params,			/* dev_t_proc_get_params */\
-	escv_put_params,			/* dev_t_proc_put_params */\
-	NULL,					/* map_cmyk_color */\
-	NULL,					/* get_xfont_procs */\
-	NULL,					/* get_xfont_device */\
-	NULL,					/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device,		/* dev_t_proc_get_page_device */\
-	NULL,					/* get_alpha_bits */\
-	NULL,					/* copy_alpha */\
-	NULL,					/* get_band */\
-	NULL,					/* copy_rop */\
-	gdev_vector_fill_path,			/* fill_path */\
-	gdev_vector_stroke_path,		/* stroke_path */\
-	escv_fill_mask,				/* fill_mask */\
-	gdev_vector_fill_trapezoid,		/* fill_trapezoid */\
-	gdev_vector_fill_parallelogram,		/* fill_parallelogram */\
-	gdev_vector_fill_triangle,		/* fill_triangle */\
-	NULL,	/****** WRONG ******/		/* draw_thin_line */\
-	escv_begin_image,			/* begin_image */\
-	NULL,					/* image_data */\
-	NULL,					/* end_image */\
-	NULL,					/* strip_tile_rectangle */\
-	NULL					/******strip_copy_rop******/
-
-
+        gdev_vector_fill_rectangle,		/* fill_rectangle */\
+        NULL,					/* tile_rectangle */\
+        escv_copy_mono,				/* dev_t_proc_copy_mono */\
+        escv_copy_color,			/* dev_t_proc_copy_color */\
+        NULL,					/* draw_line */\
+        NULL,					/* get_bits */\
+        escv_get_params,			/* dev_t_proc_get_params */\
+        escv_put_params,			/* dev_t_proc_put_params */\
+        NULL,					/* map_cmyk_color */\
+        NULL,					/* get_xfont_procs */\
+        NULL,					/* get_xfont_device */\
+        NULL,					/* map_rgb_alpha_color */\
+        gx_page_device_get_page_device,		/* dev_t_proc_get_page_device */\
+        NULL,					/* get_alpha_bits */\
+        NULL,					/* copy_alpha */\
+        NULL,					/* get_band */\
+        NULL,					/* copy_rop */\
+        gdev_vector_fill_path,			/* fill_path */\
+        gdev_vector_stroke_path,		/* stroke_path */\
+        escv_fill_mask,				/* fill_mask */\
+        gdev_vector_fill_trapezoid,		/* fill_trapezoid */\
+        gdev_vector_fill_parallelogram,		/* fill_parallelogram */\
+        gdev_vector_fill_triangle,		/* fill_triangle */\
+        NULL,	/****** WRONG ******/		/* draw_thin_line */\
+        escv_begin_image,			/* begin_image */\
+        NULL,					/* image_data */\
+        NULL,					/* end_image */\
+        NULL,					/* strip_tile_rectangle */\
+        NULL					/******strip_copy_rop******/
 
 /* for ESC/Page-Color */
 #define escv_procs	\
 {\
         escv_procs_part1,\
-	gx_default_rgb_map_rgb_color, /* map_rgb_color */\
-	gx_default_rgb_map_color_rgb, /* map_color_rgb */\
+        gx_default_rgb_map_rgb_color, /* map_rgb_color */\
+        gx_default_rgb_map_color_rgb, /* map_color_rgb */\
         escv_procs_part2\
 }
-
 
 /* for ESC/Page (Monochrome) */
 #define esmv_procs	\
 {\
         escv_procs_part1,\
-	gx_default_gray_map_rgb_color, /* map_rgb_color */\
-	gx_default_gray_map_color_rgb, /* map_color_rgb */\
+        gx_default_gray_map_rgb_color, /* map_rgb_color */\
+        gx_default_gray_map_color_rgb, /* map_color_rgb */\
         escv_procs_part2\
 }
 
-
 #define	escv_init_code_common \
-	ESCPAGE_MANUALFEED_DEFAULT, /*   bool          manualFeed;     * Use manual feed *  */\
-	ESCPAGE_CASSETFEED_DEFAULT, /*   int           cassetFeed;     * Input Casset *  */\
-	ESCPAGE_RIT_DEFAULT,	/*   bool          RITOff;         * RIT Control * */\
-	FALSE,			/*   bool          Collate; */\
-	0,			/*   int           toner_density; */\
-	FALSE,			/*   bool          toner_saving; */\
-	0,			/*   int           prev_paper_size; */\
-	0,			/*   int           prev_paper_width; */\
-	0,			/*   int           prev_paper_height; */\
-	0,			/*   int           prev_num_copies; */\
-	-1,			/*   int           prev_feed_mode; */\
-	0,			/*   int           orientation; */\
-	ESCPAGE_FACEUP_DEFAULT,	/*   bool          faceup; */\
-	ESCPAGE_MEDIATYPE_DEFAULT, /*   int           MediaType; */\
-	0,			/*   bool          first_page; */\
-	0,			/*   bool          Duplex; */\
-	ESCPAGE_TUMBLE_DEFAULT,	/*   bool          Tumble; */\
-	0,			/*   int           ncomp; */\
-	0,			/*   int           MaskReverse; */\
-	0,			/*   int           MaskState; */\
-	TRUE,			/*   bool          c4map;          * 4bit ColorMap * */\
-	TRUE,			/*   bool          c8map;          * 8bit ColorMap * */\
-	0,			/*   int           prev_x; */\
-	0,			/*   int           prev_y; */\
-	0,			/*   gx_color_index        prev_color; */\
-	0,			/*   gx_color_index        current_color; */\
-	3,			/*   floatp        lwidth; */\
-	0,			/*   long          cap; */\
-	3,			/*   long          join; */\
-	0,			/*   long          reverse_x; */\
-	0,			/*   long          reverse_y; */\
+        ESCPAGE_MANUALFEED_DEFAULT, /*   bool          manualFeed;     * Use manual feed *  */\
+        ESCPAGE_CASSETFEED_DEFAULT, /*   int           cassetFeed;     * Input Casset *  */\
+        ESCPAGE_RIT_DEFAULT,	/*   bool          RITOff;         * RIT Control * */\
+        FALSE,			/*   bool          Collate; */\
+        0,			/*   int           toner_density; */\
+        FALSE,			/*   bool          toner_saving; */\
+        0,			/*   int           prev_paper_size; */\
+        0,			/*   int           prev_paper_width; */\
+        0,			/*   int           prev_paper_height; */\
+        0,			/*   int           prev_num_copies; */\
+        -1,			/*   int           prev_feed_mode; */\
+        0,			/*   int           orientation; */\
+        ESCPAGE_FACEUP_DEFAULT,	/*   bool          faceup; */\
+        ESCPAGE_MEDIATYPE_DEFAULT, /*   int           MediaType; */\
+        0,			/*   bool          first_page; */\
+        0,			/*   bool          Duplex; */\
+        ESCPAGE_TUMBLE_DEFAULT,	/*   bool          Tumble; */\
+        0,			/*   int           ncomp; */\
+        0,			/*   int           MaskReverse; */\
+        0,			/*   int           MaskState; */\
+        TRUE,			/*   bool          c4map;          * 4bit ColorMap * */\
+        TRUE,			/*   bool          c8map;          * 8bit ColorMap * */\
+        0,			/*   int           prev_x; */\
+        0,			/*   int           prev_y; */\
+        0,			/*   gx_color_index        prev_color; */\
+        0,			/*   gx_color_index        current_color; */\
+        3,			/*   floatp        lwidth; */\
+        0,			/*   long          cap; */\
+        3,			/*   long          join; */\
+        0,			/*   long          reverse_x; */\
+        0,			/*   long          reverse_y; */\
        {0,},			/*   gs_matrix     xmat;		* matrix * */\
-	0,			/*   int           bx; */\
-	0,			/*   int           by; */\
-	0,			/*   int           w;		* width * */\
-	0,			/*   int           h;		* height * */\
-	0,			/*   int           roll; */\
-	0,			/*   float         sx;		* scale x * */\
-	0,			/*   float         sy;		* scale y * */\
-	0,			/*   long          dd; */\
+        0,			/*   int           bx; */\
+        0,			/*   int           by; */\
+        0,			/*   int           w;		* width * */\
+        0,			/*   int           h;		* height * */\
+        0,			/*   int           roll; */\
+        0,			/*   float         sx;		* scale x * */\
+        0,			/*   float         sy;		* scale y * */\
+        0,			/*   long          dd; */\
         0,                      /*   int           ispath */\
        {0,},			/*   gx_bitmap_id  id_cache[VCACHE + 1];    * for Font Downloading * */\
        {0,},                    /*   char          JobID[ESCPAGE_JOBID_MAX + 1]; */\
@@ -274,20 +259,17 @@ gs_public_st_suffix_add0_final(st_device_escv, gx_device_escv,
        false,                   /*  bool            capDuplexUnit; */\
        RES600                   /*  int             capMaxResolution; */
 
-
 /* for ESC/Page-Color */
 #define	escv_init_code \
         vector_initial_values,\
-	1,                      /*   int           colormode;      1=ESC/Page-Color */\
+        1,                      /*   int           colormode;      1=ESC/Page-Color */\
         escv_init_code_common
-
 
 /* for ESC/Page (Monochrome) */
 #define	esmv_init_code \
         vector_initial_values,\
-	0,                      /*   int           colormode;      0=ESC/Page(Monochrome) */\
+        0,                      /*   int           colormode;      0=ESC/Page(Monochrome) */\
         escv_init_code_common
-
 
 /* for ESC/Page (Monochrome) */
 gx_device_escv far_data gs_epl2050_device ={esmv_device_body("epl2050"), esmv_procs, esmv_init_code};
@@ -345,31 +327,30 @@ gx_device_escv far_data gs_lp9800c_device ={escv_device_body("lp9800c"), escv_pr
 gx_device_escv far_data gs_lps6500_device ={escv_device_body("lps6500"), escv_procs, escv_init_code};
 gx_device_escv far_data gs_eplcolor_device ={escv_device_body(ESCPAGE_DEVICENAME_COLOR), escv_procs, escv_init_code};
 
-
 /* Vector device implementation */
 #if ( 6 > GS_VERSION_MAJOR )
 static int escv_beginpage(P1(gx_device_vector * vdev));
 static int escv_setfillcolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
 static int escv_setstrokecolor(P2(gx_device_vector * vdev, const gx_drawing_color * pdc));
-static int escv_setdash(P4(gx_device_vector * vdev, const float *pattern, 
-			    uint count, floatp offset));
+static int escv_setdash(P4(gx_device_vector * vdev, const float *pattern,
+                            uint count, floatp offset));
 static int escv_setflat(P2(gx_device_vector * vdev, floatp flatness));
-static int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop, 
-			     gs_logical_operation_t diff));
+static int escv_setlogop(P3(gx_device_vector * vdev, gs_logical_operation_t lop,
+                             gs_logical_operation_t diff));
 static int escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-			       fixed y1, gx_path_type_t type);
+                               fixed y1, gx_path_type_t type);
 static int escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-			       gx_path_type_t type);
+                               gx_path_type_t type);
 static int escv_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 static int escv_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-			   floatp x, floatp y, gx_path_type_t type));
+                           floatp x, floatp y, gx_path_type_t type));
 static int escv_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-			   floatp x, floatp y, gx_path_type_t type));
+                           floatp x, floatp y, gx_path_type_t type));
 static int escv_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
-			     floatp x1, floatp y1, floatp x2, floatp y2,
-			     floatp x3, floatp y3, gx_path_type_t type));
+                             floatp x1, floatp y1, floatp x2, floatp y2,
+                             floatp x3, floatp y3, gx_path_type_t type));
 static int escv_closepath(P6(gx_device_vector * vdev, floatp x, floatp y,
-			      floatp x_start, floatp y_start, gx_path_type_t type));
+                              floatp x_start, floatp y_start, gx_path_type_t type));
 
 static int escv_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
 static int escv_setlinewidth(gx_device_vector * vdev, floatp width);
@@ -387,18 +368,18 @@ static int escv_setlinecap (gx_device_vector * vdev, gs_line_cap cap);
 static int escv_setlinejoin (gx_device_vector * vdev, gs_line_join join);
 static int escv_setmiterlimit (gx_device_vector * vdev, floatp limit);
 static int escv_setdash (gx_device_vector * vdev, const float *pattern,
-			  uint count, floatp offset);
+                          uint count, floatp offset);
 static int escv_setflat (gx_device_vector * vdev, floatp flatness);
 static int escv_setlogop (gx_device_vector * vdev, gs_logical_operation_t lop,
-			   gs_logical_operation_t diff);
+                           gs_logical_operation_t diff);
 /* Other state */
 #if ( 8 <= GS_VERSION_MAJOR )
 static bool escv_can_handle_hl_color (gx_device_vector * vdev, const gs_imager_state * pis,
-				       const gx_drawing_color * pdc);
-static int escv_setfillcolor (gx_device_vector * vdev, const gs_imager_state * pis, 
-			       const gx_drawing_color * pdc);
+                                       const gx_drawing_color * pdc);
+static int escv_setfillcolor (gx_device_vector * vdev, const gs_imager_state * pis,
+                               const gx_drawing_color * pdc);
 static int escv_setstrokecolor (gx_device_vector * vdev, const gs_imager_state * pis,
-				 const gx_drawing_color * pdc);
+                                 const gx_drawing_color * pdc);
 #else
 static int escv_setfillcolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
 static int escv_setstrokecolor (gx_device_vector * vdev, const gx_drawing_color * pdc);
@@ -406,19 +387,19 @@ static int escv_setstrokecolor (gx_device_vector * vdev, const gx_drawing_color 
 /* Paths */
 /* dopath and dorect are normally defaulted */
 static int escv_vector_dopath (gx_device_vector * vdev, const gx_path * ppath,
-				gx_path_type_t type, const gs_matrix *pmat);
+                                gx_path_type_t type, const gs_matrix *pmat);
 static int escv_vector_dorect (gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-				fixed y1, gx_path_type_t type);
+                                fixed y1, gx_path_type_t type);
 static int escv_beginpath (gx_device_vector * vdev, gx_path_type_t type);
 static int escv_moveto (gx_device_vector * vdev, floatp x0, floatp y0,
-			 floatp x, floatp y, gx_path_type_t type);
+                         floatp x, floatp y, gx_path_type_t type);
 static int escv_lineto (gx_device_vector * vdev, floatp x0, floatp y0,
-			 floatp x, floatp y, gx_path_type_t type);
+                         floatp x, floatp y, gx_path_type_t type);
 static int escv_curveto (gx_device_vector * vdev, floatp x0, floatp y0,
-			  floatp x1, floatp y1, floatp x2, floatp y2,
-			  floatp x3, floatp y3, gx_path_type_t type);
+                          floatp x1, floatp y1, floatp x2, floatp y2,
+                          floatp x3, floatp y3, gx_path_type_t type);
 static int escv_closepath (gx_device_vector * vdev, floatp x0, floatp y0,
-			    floatp x_start, floatp y_start, gx_path_type_t type);
+                            floatp x_start, floatp y_start, gx_path_type_t type);
 static int escv_endpath (gx_device_vector * vdev, gx_path_type_t type);
 
 #endif /* GS_VERSION_MAJOR */
@@ -456,7 +437,6 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
 static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras);
 static void escv_write_end(gx_device *dev, int bits);
 
-
 /* ---------------- Utilities ---------------- */
 
 /* Put a string on a stream.
@@ -482,7 +462,6 @@ put_bytes(stream * s, const byte * data, uint count)
   sputs(s, data, count, &used);
 }
 
-
 static int
 escv_range_check(gx_device * dev)
 {
@@ -494,16 +473,16 @@ escv_range_check(gx_device * dev)
   /* Paper Size Check */
   if (width <= height) {	/* portrait */
     if ((width < ESCPAGE_WIDTH_MIN ||
-	 width > ESCPAGE_WIDTH_MAX ||
-	 height < ESCPAGE_HEIGHT_MIN ||
-	 height > ESCPAGE_HEIGHT_MAX)) {
+         width > ESCPAGE_WIDTH_MAX ||
+         height < ESCPAGE_HEIGHT_MIN ||
+         height > ESCPAGE_HEIGHT_MAX)) {
       return_error(gs_error_rangecheck);
     }
   } else {			/* landscape */
     if ((width < ESCPAGE_HEIGHT_MIN ||
-	 width > ESCPAGE_HEIGHT_MAX ||
-	 height < ESCPAGE_WIDTH_MIN ||
-	 height > ESCPAGE_WIDTH_MAX )) {
+         width > ESCPAGE_HEIGHT_MAX ||
+         height < ESCPAGE_WIDTH_MIN ||
+         height > ESCPAGE_WIDTH_MAX )) {
       return_error(gs_error_rangecheck);
     }
   }
@@ -521,16 +500,15 @@ escv_range_check(gx_device * dev)
   return 0;			/* pass */
 }
 
-
 /* ---------------- Vector device implementation ---------------- */
 
 static int
 escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
-		   gx_path_type_t type
+                   gx_path_type_t type
 #if ( 6 <= GS_VERSION_MAJOR )
-		   , const gs_matrix *pmat
+                   , const gs_matrix *pmat
 #endif
-		   )
+                   )
 {
   gx_device_escv *pdev = (gx_device_escv *) vdev;
   bool do_close = (type & gx_path_type_stroke) != 0;
@@ -555,7 +533,6 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
     fixed	vs[6];
     int	pe_op, cnt;
     const segment *pseg;
-
 
     pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
 
@@ -584,8 +561,8 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 
     do {
       (void)sprintf(obuf, ";%d;%d",
-		    (int)(fixed2float(vs[0]) / scale.x),
-		    (int)(fixed2float(vs[1]) / scale.y));
+                    (int)(fixed2float(vs[0]) / scale.x),
+                    (int)(fixed2float(vs[1]) / scale.y));
       lputs(s, obuf);
 
       pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
@@ -605,9 +582,9 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 
     do {
       (void)sprintf(obuf, ";%d;%d;%d;%d;%d;%d",
-		    (int)(fixed2float(vs[0]) / scale.x), (int)(fixed2float(vs[1]) / scale.y),
-		    (int)(fixed2float(vs[2]) / scale.x), (int)(fixed2float(vs[3]) / scale.y),
-		    (int)(fixed2float(vs[4]) / scale.x), (int)(fixed2float(vs[5]) / scale.y));
+                    (int)(fixed2float(vs[0]) / scale.x), (int)(fixed2float(vs[1]) / scale.y),
+                    (int)(fixed2float(vs[2]) / scale.x), (int)(fixed2float(vs[3]) / scale.y),
+                    (int)(fixed2float(vs[4]) / scale.x), (int)(fixed2float(vs[5]) / scale.y));
       lputs(s, obuf);
 
       pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
@@ -631,7 +608,7 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
       lputs(s, ESC_GS "clpG");
 
       if (code < 0)
-	return code;
+        return code;
       goto sw;
     }
     return (*vdev_proc(vdev, endpath)) (vdev, type);
@@ -644,10 +621,9 @@ escv_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
   }
 }
 
-
 static int
 escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-		   fixed y1, gx_path_type_t type)
+                   fixed y1, gx_path_type_t type)
 {
   gx_device_escv *pdev = (gx_device_escv *) vdev;
   int		code;
@@ -662,10 +638,10 @@ escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
   scale = vdev->scale;
 
   (void)sprintf(obuf, ESC_GS "0;%d;%d;%d;%d;0;0rrpG",
-		(int)(fixed2float(x0) / scale.x),
-		(int)(fixed2float(y0) / scale.y),
-		(int)(fixed2float(x1) / scale.x),
-		(int)(fixed2float(y1) / scale.y));
+                (int)(fixed2float(x0) / scale.x),
+                (int)(fixed2float(y0) / scale.y),
+                (int)(fixed2float(x1) / scale.x),
+                (int)(fixed2float(y1) / scale.y));
   lputs(s, obuf);
   pdev->ispath = 1;
 
@@ -678,7 +654,6 @@ escv_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 
   return (*vdev_proc(vdev, endpath))(vdev, type);
 }
-
 
 /* ---------- */
 
@@ -717,7 +692,6 @@ escv_checkpapersize(gx_device_vector * vdev)
   paper_candidate	candidate[NUM_OF_PAPER_TABLES];
   int			num_candidate;
 
-  
   if (pdev->MediaSize[0] < pdev->MediaSize[1]) {
     /* portrait */
     devw = pdev->MediaSize[0];
@@ -737,35 +711,35 @@ escv_checkpapersize(gx_device_vector * vdev)
 
     for (delta = 0; delta <= MAX_PAPER_SIZE_DELTA; delta++) {
       for (pt = ePaperTable; 0 <= pt->escpage; pt++) {
-	if ( (pt->width  + delta) >= devw &&
-	     (pt->width  - delta) <= devw &&
-	     (pt->height + delta) >= devh &&
-	     (pt->height - delta) <= devh) {
+        if ( (pt->width  + delta) >= devw &&
+             (pt->width  - delta) <= devw &&
+             (pt->height + delta) >= devh &&
+             (pt->height - delta) <= devh) {
 
-	  candidate[num_candidate].paper = pt;
-	  candidate[num_candidate].absw = abs(pt->width  - devw);
-	  candidate[num_candidate].absh = abs(pt->height - devh);
-	  candidate[num_candidate].score = 0;
-	  candidate[num_candidate].isfillw = false;
-	  candidate[num_candidate].isfillh = false;
-	  candidate[num_candidate].isminw  = false;
-	  candidate[num_candidate].isminh  = false;
+          candidate[num_candidate].paper = pt;
+          candidate[num_candidate].absw = abs(pt->width  - devw);
+          candidate[num_candidate].absh = abs(pt->height - devh);
+          candidate[num_candidate].score = 0;
+          candidate[num_candidate].isfillw = false;
+          candidate[num_candidate].isfillh = false;
+          candidate[num_candidate].isminw  = false;
+          candidate[num_candidate].isminh  = false;
 
-	  if( 0 <= (pt->width - devw) ){
-	    candidate[num_candidate].isfillw = true;
-	  }
-	  if( 0 <= (pt->height - devh) ){
-	    candidate[num_candidate].isfillh = true;
-	  }
-	  num_candidate++;
-	}
+          if( 0 <= (pt->width - devw) ){
+            candidate[num_candidate].isfillw = true;
+          }
+          if( 0 <= (pt->height - devh) ){
+            candidate[num_candidate].isfillh = true;
+          }
+          num_candidate++;
+        }
       }
       if ( 0 < num_candidate ) {
-	break;
+        break;
       }
     }
   }
-  
+
   /* no papersize match, so use default paper size */
   if ( 0 == num_candidate  ) {
     return (const EPaperTable *)0;		/* not found */
@@ -785,45 +759,45 @@ escv_checkpapersize(gx_device_vector * vdev)
     absminh = candidate[0].absh;
     for (i = 1; i < num_candidate; i++) {
       if (absminw > candidate[i].absw) {
-	absminw = candidate[i].absw;
+        absminw = candidate[i].absw;
       }
       if (absminh > candidate[i].absh) {
-	absminh = candidate[i].absh;
+        absminh = candidate[i].absh;
       }
     }
 
     /* check isminw & isminh flag */
     for (i = 0; i < num_candidate; i++) {
       if (absminw == candidate[i].absw) {
-	candidate[i].isminw = true;
+        candidate[i].isminw = true;
       }
       if (absminh == candidate[i].absh) {
-	candidate[i].isminh = true;
+        candidate[i].isminh = true;
       }
     }
 
     /* add score */
     for (i = 0; i < num_candidate; i++) {
       if (candidate[i].isminw == true) {
-	candidate[i].score += 100;
+        candidate[i].score += 100;
       }
       if (candidate[i].isminh == true) {
-	candidate[i].score += 100;
+        candidate[i].score += 100;
       }
       if (candidate[i].isfillw == true) {
-	candidate[i].score += 10;
+        candidate[i].score += 10;
       }
       if (candidate[i].isfillh == true) {
-	candidate[i].score += 10;
+        candidate[i].score += 10;
       }
       if (absminw < absminh) {
-	if (candidate[i].isminw == true) {
-	  candidate[i].score += 1;
-	}
+        if (candidate[i].isminw == true) {
+          candidate[i].score += 1;
+        }
       } else {
-	if (candidate[i].isminh == true) {
-	  candidate[i].score += 1;
-	}
+        if (candidate[i].isminh == true) {
+          candidate[i].score += 1;
+        }
       }
     }
   }
@@ -836,7 +810,7 @@ escv_checkpapersize(gx_device_vector * vdev)
     best_candidate = 0;
     for (i = 1; i < num_candidate; i++) {
       if ( candidate[best_candidate].score <= candidate[i].score ) {
-	best_candidate = i;
+        best_candidate = i;
       }
     }
     return candidate[best_candidate].paper;
@@ -859,7 +833,7 @@ get_sysname ( void )
 /* EPSON printer model name translation.
   return: 0 unknown model, not translated.
           1 completed.
-	  -1 error.  ... This value not return now.
+          -1 error.  ... This value not return now.
  */
 static int
 trans_modelname ( char *dest, const char * src, size_t dest_len )
@@ -897,7 +871,6 @@ trans_modelname ( char *dest, const char * src, size_t dest_len )
 
   return 1;
 }
-
 
 static int
 escv_beginpage(gx_device_vector * vdev)
@@ -984,7 +957,6 @@ escv_beginpage(gx_device_vector * vdev)
     if ( !*pdev->JobID )
       strcpy(pdev->JobID, "0");
 
-
     lputs(s, "\033\001@EJL \012");
 
     lputs(s, "@EJL SJ ID=\"");
@@ -1002,16 +974,16 @@ escv_beginpage(gx_device_vector * vdev)
 
       lputs(s, " DATE=\"");
       {
-	struct tm *tm;
-	char   str[32];
-	size_t i;
+        struct tm *tm;
+        char   str[32];
+        size_t i;
 
-	tm =  localtime( &t );
-	i = strftime(str, 30, "%Y/%m/%d %H:%M:%S", tm);
-	if ( 30 >= i )
-	  str[i] = '\0';
+        tm =  localtime( &t );
+        i = strftime(str, 30, "%Y/%m/%d %H:%M:%S", tm);
+        if ( 30 >= i )
+          str[i] = '\0';
 
-	lputs(s, str);
+        lputs(s, str);
       }
       lputs(s, "\"");
 
@@ -1022,17 +994,17 @@ escv_beginpage(gx_device_vector * vdev)
     {
       lputs(s, " USER=\"");
       if ( *pdev->UserName )
-	lputs(s, pdev->UserName);
+        lputs(s, pdev->UserName);
       lputs(s, "\"");
 
       lputs(s, " MACHINE=\"");
       if ( *pdev->HostName )
-	lputs(s, pdev->HostName);
+        lputs(s, pdev->HostName);
       lputs(s, "\"");
 
       lputs(s, " DOCUMENT=\"");
       if ( *pdev->Document )
-	lputs(s, pdev->Document);
+        lputs(s, pdev->Document);
       lputs(s, "\"");
     }
     lputs(s, "\012");
@@ -1041,33 +1013,31 @@ escv_beginpage(gx_device_vector * vdev)
     {
       char *sysname = get_sysname ();
       if (sysname)
-	{
-	  lputs(s, sysname );
-	  free (sysname);
-	  sysname = NULL;
-	}
+        {
+          lputs(s, sysname );
+          free (sysname);
+          sysname = NULL;
+        }
     }
     lputs(s, "\"\012");
 
-
     if ( ( 0 == strcmp( pdev->dname, ESCPAGE_DEVICENAME_COLOR ) ) ||
-	 ( 0 == strcmp( pdev->dname, ESCPAGE_DEVICENAME_MONO  ) ) )
+         ( 0 == strcmp( pdev->dname, ESCPAGE_DEVICENAME_MONO  ) ) )
       {
-	Local = pdev->modelJP;
-	FaceUp = pdev->capFaceUp;
-	Duplex = pdev->capDuplexUnit;
-	MaxRes = pdev->capMaxResolution;
+        Local = pdev->modelJP;
+        FaceUp = pdev->capFaceUp;
+        Duplex = pdev->capDuplexUnit;
+        MaxRes = pdev->capMaxResolution;
 
-	lputs(s, "@EJL JI DRIVER=\"");
-	lputs(s, pdev->dname);
-	lputs(s, "\"\012");
+        lputs(s, "@EJL JI DRIVER=\"");
+        lputs(s, pdev->dname);
+        lputs(s, "\"\012");
 
-	lputs(s, "@EJL JI PRINTER=\"");
-	lputs(s, pdev->dname);
-	lputs(s, "\"\012");
+        lputs(s, "@EJL JI PRINTER=\"");
+        lputs(s, pdev->dname);
+        lputs(s, "\"\012");
 
       } else {
-
 
       char _modelname[ ESCPAGE_MODELNAME_MAX + 1 ] = {0,};
       const char *modelname;
@@ -1076,23 +1046,23 @@ escv_beginpage(gx_device_vector * vdev)
       modelname = pdev->dname;
 
       for ( i = 0; (-1) != model_resource[i].resolution; i++ ) {
-	if ( 0 == strcmp( pdev->dname, model_resource[i].name ) )
-	  break;
+        if ( 0 == strcmp( pdev->dname, model_resource[i].name ) )
+          break;
       }
 
       lputs(s, "@EJL JI DRIVER=\"");
       if ( (-1) != model_resource[i].resolution ) {
-	MaxRes = model_resource[i].resolution;
-	Local  = model_resource[i].locale;
-	Duplex = model_resource[i].duplex;
-	FaceUp = model_resource[i].faceup;
+        MaxRes = model_resource[i].resolution;
+        Local  = model_resource[i].locale;
+        Duplex = model_resource[i].duplex;
+        FaceUp = model_resource[i].faceup;
 
-	if ( 0 <= trans_modelname( _modelname, model_resource[i].name, ESCPAGE_MODELNAME_MAX ) )
-	    modelname = _modelname;
+        if ( 0 <= trans_modelname( _modelname, model_resource[i].name, ESCPAGE_MODELNAME_MAX ) )
+            modelname = _modelname;
 
-	lputs(s, modelname);
+        lputs(s, modelname);
       } else {
-	lputs(s, "Ghostscript");
+        lputs(s, "Ghostscript");
       }
       lputs(s, "\"\012");
 
@@ -1114,9 +1084,9 @@ escv_beginpage(gx_device_vector * vdev)
     /* Resolusion */
     if (vdev->x_pixels_per_inch == 1200){
       if (MaxRes == 1200){
-	lputs(s, " RS=1200");
+        lputs(s, " RS=1200");
       } else {
-	lputs(s, " RS=FN");
+        lputs(s, " RS=FN");
       }
     } else if (vdev->x_pixels_per_inch == 600) {
       lputs(s, " RS=FN");
@@ -1134,22 +1104,22 @@ escv_beginpage(gx_device_vector * vdev)
     /* Paper unit */
     if (pdev->MediaType){
       if (Local == ENG){
-	lputs(s, " PU=1");
+        lputs(s, " PU=1");
       } else {
-	lputs(s, " PU=15");
+        lputs(s, " PU=15");
       }
     }else{
       if (pdev->manualFeed) {
-	if (Local == ENG){
-	  lputs(s, " PU=1");
-	} else {
-	  lputs(s, " PU=15");
-	}
+        if (Local == ENG){
+          lputs(s, " PU=1");
+        } else {
+          lputs(s, " PU=15");
+        }
       } else if (pdev->cassetFeed) {
-	(void)sprintf(ebuf, " PU=%d", pdev->cassetFeed);
-	lputs(s, ebuf);
+        (void)sprintf(ebuf, " PU=%d", pdev->cassetFeed);
+        lputs(s, ebuf);
       } else {
-	lputs(s, " PU=AU");
+        lputs(s, " PU=AU");
       }
     }
 
@@ -1159,9 +1129,9 @@ escv_beginpage(gx_device_vector * vdev)
 
       /* binding type */
       if (pdev->Tumble) {
-	lputs(s, " BD=SE");
+        lputs(s, " BD=SE");
       } else {
-	lputs(s, " BD=LE");
+        lputs(s, " BD=LE");
       }
     } else {
       /* Duplex off */
@@ -1171,20 +1141,20 @@ escv_beginpage(gx_device_vector * vdev)
     /* Number of copies */
     if (pdev->NumCopies) {
       if (pdev->NumCopies >= 1000) {
-	pdev->NumCopies = 999;
+        pdev->NumCopies = 999;
       }
 
       /* lp8000c not have QT */
       if (strcmp(pdev->dname, "lp8000c") == 0) {
-	(void)sprintf(ebuf, " QT=1 CO=%d", pdev->NumCopies);
+        (void)sprintf(ebuf, " QT=1 CO=%d", pdev->NumCopies);
       } else {
-	if (pdev->Collate) {
-	  /* CO is 1, when set QT */
-	  (void)sprintf(ebuf, " QT=%d CO=1", pdev->NumCopies);
-	} else {
-	  /* QT is 1, when not specified QT */
-	  (void)sprintf(ebuf, " QT=1 CO=%d", pdev->NumCopies);
-	}
+        if (pdev->Collate) {
+          /* CO is 1, when set QT */
+          (void)sprintf(ebuf, " QT=%d CO=1", pdev->NumCopies);
+        } else {
+          /* QT is 1, when not specified QT */
+          (void)sprintf(ebuf, " QT=1 CO=%d", pdev->NumCopies);
+        }
       }
       lputs(s, ebuf);
     } else {
@@ -1230,12 +1200,11 @@ escv_beginpage(gx_device_vector * vdev)
 
       pt = escv_checkpapersize(vdev);
       if ( 0 == pt ) {
-	lputs(s, "A4");
+        lputs(s, "A4");
       } else {
-	lputs(s, pt->name);
+        lputs(s, pt->name);
       }
     }
-
 
     if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
@@ -1251,21 +1220,21 @@ escv_beginpage(gx_device_vector * vdev)
       lputs(s, STRAT_CODE);
 
       if (vdev->x_pixels_per_inch == 1200) {
-	/* 1200 dpi */
-	lputs(s, ESC_GS "0;0.06muE");
-	lputs(s, ESC_GS "1;45;156htmE");
-	lputs(s, ESC_GS "9;1200;1200drE" ESC_GS "2;1200;1200drE" ESC_GS "1;1200;1200drE" ESC_GS "0;1200;1200drE");
-	lputs(s, ESC_GS "1;1;raE");
+        /* 1200 dpi */
+        lputs(s, ESC_GS "0;0.06muE");
+        lputs(s, ESC_GS "1;45;156htmE");
+        lputs(s, ESC_GS "9;1200;1200drE" ESC_GS "2;1200;1200drE" ESC_GS "1;1200;1200drE" ESC_GS "0;1200;1200drE");
+        lputs(s, ESC_GS "1;1;raE");
       } else if (vdev->x_pixels_per_inch == 600) {
-	/* 600 dpi */
-	lputs(s, ESC_GS "0;0.12muE");
-	lputs(s, ESC_GS "1;45;106htmE");
-	lputs(s, ESC_GS "9;600;600drE" ESC_GS "2;600;600drE" ESC_GS "1;600;600drE" ESC_GS "0;600;600drE");
+        /* 600 dpi */
+        lputs(s, ESC_GS "0;0.12muE");
+        lputs(s, ESC_GS "1;45;106htmE");
+        lputs(s, ESC_GS "9;600;600drE" ESC_GS "2;600;600drE" ESC_GS "1;600;600drE" ESC_GS "0;600;600drE");
       } else {
-	/* 300 dpi */
-	lputs(s, ESC_GS "0;0.24muE");
-	lputs(s, ESC_GS "1;45;71htmE");
-	lputs(s, ESC_GS "9;300;300drE" ESC_GS "2;300;300drE" ESC_GS "1;300;300drE" ESC_GS "0;300;300drE");
+        /* 300 dpi */
+        lputs(s, ESC_GS "0;0.24muE");
+        lputs(s, ESC_GS "1;45;71htmE");
+        lputs(s, ESC_GS "9;300;300drE" ESC_GS "2;300;300drE" ESC_GS "1;300;300drE" ESC_GS "0;300;300drE");
       }
 
       lputs(s, START_CODE1);
@@ -1281,33 +1250,32 @@ escv_beginpage(gx_device_vector * vdev)
 
 #define	LP8200_CODE	ESC_GS "0pddO" ESC_GS "0;0cmmE" ESC_GS "1;2;3ccmE" ESC_GS "2;2;3ccmE" ESC_GS "3;2;4ccmE" ESC_GS "1;1raE" ESC_GS "2;1raE" ESC_GS "3;1raE"
 
-
       lputs(s, " ZO=OFF EC=ON SZ=OFF SL=YES TO=0 LO=0\012");
       lputs(s, "@EJL EN LA=ESC/PAGE-COLOR\012");
 
       lputs(s, ESC_GS "rhE");
 
       if (strcmp(vdev -> dname, "lp8000c") == 0) {
-	lputs(s, LP8000_CODE);
+        lputs(s, LP8000_CODE);
       } else {
-	lputs(s, LP8200_CODE);
+        lputs(s, LP8200_CODE);
       }
 
       put_bytes(s, ESC_GS "7;0;2;0cam{E\012\000\000\000\000\000\000", 20);
       lputs(s, ESC_GS "0;0cmmE");
 
       if (vdev->x_pixels_per_inch == 1200) {
-	/* 1200 dpi */
-	lputs(s, ESC_GS "0;0.06muE");
-	lputs(s, ESC_GS "3;1200;1200drE" ESC_GS "2;1200;1200drE" ESC_GS "1;1200;1200drE" ESC_GS "0;1200;1200drE");
+        /* 1200 dpi */
+        lputs(s, ESC_GS "0;0.06muE");
+        lputs(s, ESC_GS "3;1200;1200drE" ESC_GS "2;1200;1200drE" ESC_GS "1;1200;1200drE" ESC_GS "0;1200;1200drE");
       } else if (vdev->x_pixels_per_inch == 600) {
-	/* 600 dpi */
-	lputs(s, ESC_GS "0;0.12muE");
-	lputs(s, ESC_GS "3;600;600drE" ESC_GS "2;600;600drE" ESC_GS "1;600;600drE" ESC_GS "0;600;600drE");
+        /* 600 dpi */
+        lputs(s, ESC_GS "0;0.12muE");
+        lputs(s, ESC_GS "3;600;600drE" ESC_GS "2;600;600drE" ESC_GS "1;600;600drE" ESC_GS "0;600;600drE");
       } else {
-	/* 300 dpi */
-	lputs(s, ESC_GS "0;0.24muE");
-	lputs(s, ESC_GS "3;300;300drE" ESC_GS "2;300;300drE" ESC_GS "1;300;300drE" ESC_GS "0;300;300drE");
+        /* 300 dpi */
+        lputs(s, ESC_GS "0;0.24muE");
+        lputs(s, ESC_GS "3;300;300drE" ESC_GS "2;300;300drE" ESC_GS "1;300;300drE" ESC_GS "0;300;300drE");
       }
       lputs(s, ESC_GS "0;0loE");
 
@@ -1323,10 +1291,9 @@ escv_beginpage(gx_device_vector * vdev)
     }	/* ESC/Page-Color */
 
   }
-    
+
   return 0;
 }
-
 
 static int
 escv_setlinewidth(gx_device_vector * vdev, floatp width)
@@ -1354,14 +1321,13 @@ escv_setlinewidth(gx_device_vector * vdev, floatp width)
   pdev -> lwidth = width;
 
   (void)sprintf(obuf, ESC_GS "%d;%d;%dlwG",
-		(int)(pdev -> lwidth),
-		(int)(pdev -> cap),
-		(int)(pdev -> join));
+                (int)(pdev -> lwidth),
+                (int)(pdev -> cap),
+                (int)(pdev -> join));
   lputs(s, obuf);
 
   return 0;
 }
-
 
 static int
 escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
@@ -1376,14 +1342,13 @@ escv_setlinecap(gx_device_vector * vdev, gs_line_cap cap)
   if (pdev -> cap >= 3) return -1;
 
   (void)sprintf(obuf, ESC_GS "%d;%d;%dlwG",
-		(int)(pdev -> lwidth),
-		(int)(pdev -> cap),
-		(int)(pdev -> join));
+                (int)(pdev -> lwidth),
+                (int)(pdev -> cap),
+                (int)(pdev -> join));
   lputs(s, obuf);
 
   return 0;
 }
-
 
 static int
 escv_setlinejoin(gx_device_vector * vdev, gs_line_join join)
@@ -1408,14 +1373,13 @@ escv_setlinejoin(gx_device_vector * vdev, gs_line_join join)
   }
 
   (void)sprintf(obuf, ESC_GS "%d;%d;%dlwG",
-		(int)(pdev -> lwidth),
-		(int)(pdev -> cap),
-		(int)(pdev -> join));
+                (int)(pdev -> lwidth),
+                (int)(pdev -> cap),
+                (int)(pdev -> join));
   lputs(s, obuf);
 
   return 0;
 }
-
 
 static int
 escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
@@ -1431,9 +1395,9 @@ escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
     /* 強制的に接合部指定を行う */
     pdev -> join = 3;
     (void)sprintf(obuf, ESC_GS "%d;%d;%dlwG",
-		  (int)(pdev -> lwidth),
-		  (int)(pdev -> cap),
-		  (int)(pdev -> join));
+                  (int)(pdev -> lwidth),
+                  (int)(pdev -> cap),
+                  (int)(pdev -> join));
     lputs(s, obuf);
   }
 
@@ -1443,23 +1407,21 @@ escv_setmiterlimit(gx_device_vector * vdev, floatp limit)
   return 0;
 }
 
-
 #if ( 8 <= GS_VERSION_MAJOR )
 static bool
-escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+escv_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
                          const gx_drawing_color * pdc)
 {
   return false;
 }
 #endif
 
-
 static int
 escv_setfillcolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-		  const gs_imager_state * pis,
+                  const gs_imager_state * pis,
 #endif
-		  const gx_drawing_color * pdc)
+                  const gx_drawing_color * pdc)
 {
   stream			*s = gdev_vector_stream(vdev);
   gx_device_escv *const	pdev = (gx_device_escv *) vdev;
@@ -1484,12 +1446,11 @@ escv_setfillcolor(gx_device_vector * vdev,
 
   } else {			/* ESC/Page-Color */
 
-
     /* パターンＯＮ指定／ソリッドパターン指定 */
     (void)sprintf(obuf, ESC_GS "1;2;3;%d;%d;%dfpE",
-		  (unsigned char)(color >> 16 & 0xff),
-		  (unsigned char)(color >> 8 & 0xff),
-		  (unsigned char)(color & 0xff));
+                  (unsigned char)(color >> 16 & 0xff),
+                  (unsigned char)(color >> 8 & 0xff),
+                  (unsigned char)(color & 0xff));
     lputs(s, obuf);
     lputs(s, ESC_GS "3;2;1;0;0cpE" ESC_GS "1;2;1;0;0cpE" ESC_GS "5;2;1;0;0cpE");
 
@@ -1498,13 +1459,12 @@ escv_setfillcolor(gx_device_vector * vdev,
   return 0;
 }
 
-
 static int
 escv_setstrokecolor(gx_device_vector * vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-		    const gs_imager_state * pis,
+                    const gs_imager_state * pis,
 #endif
-		    const gx_drawing_color * pdc)
+                    const gx_drawing_color * pdc)
 {
   stream			*s = gdev_vector_stream(vdev);
   gx_device_escv *const	pdev = (gx_device_escv *) vdev;
@@ -1535,9 +1495,9 @@ escv_setstrokecolor(gx_device_vector * vdev,
       pdev->current_color = color;
       /* パターンＯＮ色指定／ソリッドパターン指定 */
       (void)sprintf(obuf, ESC_GS "1;2;3;%d;%d;%dfpE" ESC_GS "2;2;1;0;0cpE",
-		    (unsigned char)(color >> 16 & 0xff),
-		    (unsigned char)(color >> 8 & 0xff),
-		    (unsigned char)(color & 0xff));
+                    (unsigned char)(color >> 16 & 0xff),
+                    (unsigned char)(color >> 8 & 0xff),
+                    (unsigned char)(color & 0xff));
       lputs(s, obuf);
 
     }
@@ -1545,7 +1505,6 @@ escv_setstrokecolor(gx_device_vector * vdev,
 
   return 0;
 }
-
 
 /* 線種指定命令 */
 static int
@@ -1572,16 +1531,16 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
     lputs(s, ESC_GS "0;0lpG");
     return 0;
   }
-    
+
   /* offset が０以外の場合は描画不可として返却 */
   if (offset != 0) return -1;
 
   if (count) {
     if (count == 1) {
 #if GS_VERSION_MAJOR == 5
-      (void)sprintf(obuf, ESC_GS "1;%d;%ddlG", 
-		    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5),
-		    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5));
+      (void)sprintf(obuf, ESC_GS "1;%d;%ddlG",
+                    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5),
+                    (int)(pattern[0] * scale / vdev->x_pixels_per_inch + 0.5));
 #else
       (void)sprintf(obuf, ESC_GS "1;%d;%ddlG", (int) pattern[0], (int) pattern[0]);
 #endif
@@ -1589,18 +1548,18 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
     } else {
       /* pattern に０があった場合は描画不可として返却 */
       for (i = 0; i < count; ++i) {
-	if (pattern[i] == 0) return -1;
+        if (pattern[i] == 0) return -1;
       }
 
       lputs(s, ESC_GS "1");
       for (i = 0; i < count; ++i) {
 #if GS_VERSION_MAJOR == 5
-	(void)sprintf(obuf, ";%d", (int)(pattern[i] * scale / vdev->x_pixels_per_inch + 0.5));
+        (void)sprintf(obuf, ";%d", (int)(pattern[i] * scale / vdev->x_pixels_per_inch + 0.5));
 
 #else
-	(void)sprintf(obuf, ";%d", (int) pattern[i]);
+        (void)sprintf(obuf, ";%d", (int) pattern[i]);
 #endif
-	lputs(s, obuf);
+        lputs(s, obuf);
       }
       lputs(s, "dlG");
     }
@@ -1609,7 +1568,6 @@ escv_setdash(gx_device_vector * vdev, const float *pattern, uint count, floatp o
   return 0;
 }
 
-
 /* パス平滑度指定 */
 static int
 escv_setflat(gx_device_vector * vdev, floatp flatness)
@@ -1617,15 +1575,13 @@ escv_setflat(gx_device_vector * vdev, floatp flatness)
   return 0;
 }
 
-
 static int
 escv_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
-	      gs_logical_operation_t diff)
+              gs_logical_operation_t diff)
 {
   /****** SHOULD AT LEAST DETECT SET-0 & SET-1 ******/
   return 0;
 }
-
 
 static int
 escv_beginpath(gx_device_vector * vdev, gx_path_type_t type)
@@ -1644,10 +1600,9 @@ escv_beginpath(gx_device_vector * vdev, gx_path_type_t type)
   return 0;
 }
 
-
 static int
 escv_moveto(gx_device_vector * vdev,
-	    floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
+            floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
   char	obuf[64];
@@ -1659,10 +1614,9 @@ escv_moveto(gx_device_vector * vdev,
   return 0;
 }
 
-
 static int
 escv_lineto(gx_device_vector * vdev,
-	    floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
+            floatp x0, floatp y0, floatp x1, floatp y1, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
   gx_device_escv *pdev = (gx_device_escv *) vdev;
@@ -1675,11 +1629,10 @@ escv_lineto(gx_device_vector * vdev,
   return 0;
 }
 
-
 static int
 escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-	     floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
-	     gx_path_type_t type)
+             floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+             gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
   gx_device_escv *pdev = (gx_device_escv *) vdev;
@@ -1687,24 +1640,22 @@ escv_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 
   /* ベジェ曲線 */
   (void)sprintf(obuf, ESC_GS "0;3;%d;%d;%d;%d;%d;%dbzpG",
-		(int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3);
+                (int)x1, (int)y1, (int)x2, (int)y2, (int)x3, (int)y3);
   lputs(s, obuf);
   pdev->ispath = 1;
 
   return 0;
 }
 
-
 static int
 escv_closepath(gx_device_vector * vdev, floatp x, floatp y,
-	       floatp x_start, floatp y_start, gx_path_type_t type)
+               floatp x_start, floatp y_start, gx_path_type_t type)
 {
   stream	*s = gdev_vector_stream(vdev);
 
   lputs(s, ESC_GS "clpG");
   return 0;
 }
-
 
 static int
 escv_endpath(gx_device_vector * vdev, gx_path_type_t type)
@@ -1726,7 +1677,7 @@ escv_endpath(gx_device_vector * vdev, gx_path_type_t type)
     if ( ( 0 != ESCV_FORCEDRAWPATH ) || ( 0 != pdev->ispath ) ) {
       /* クリップ指定
       ** クリップにも gx_path_type_winding_number, gx_path_type_even_odd の判断が
-      ** 必要だと思うが gs 側が付加してこない。 
+      ** 必要だと思うが gs 側が付加してこない。
       ** とりあえず gx_path_type_even_odd をデフォルトにする。
       */
       lputs(s, ESC_GS "1;2capG");
@@ -1739,7 +1690,7 @@ escv_endpath(gx_device_vector * vdev, gx_path_type_t type)
     } else {
       lputs(s, ESC_GS "0;1drpG");		/* 塗りつぶし描画 */
     }
-  } else {	
+  } else {
     lputs(s, ESC_GS "0;0drpG");		/* 輪郭線描画 */
   }
 
@@ -1768,7 +1719,7 @@ escv_open(gx_device * dev)
   vdev->vec_procs = &escv_vector_procs;
 
   code = gdev_vector_open_file_options(vdev, 512, VECTOR_OPEN_FILE_BBOX
-				       | VECTOR_OPEN_FILE_SEQUENTIAL_OK);
+                                       | VECTOR_OPEN_FILE_SEQUENTIAL_OK);
   if (code < 0) return code;
 
   gdev_vector_init(vdev);
@@ -1779,15 +1730,15 @@ escv_open(gx_device * dev)
     if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
       pdev->Margins[1] = (pdev->width - pdev->height - \
-			  ESCPAGE_LEFT_MARGIN_DEFAULT * vdev->x_pixels_per_inch / 72.0) * \
-	X_DPI / vdev->x_pixels_per_inch;
+                          ESCPAGE_LEFT_MARGIN_DEFAULT * vdev->x_pixels_per_inch / 72.0) * \
+        X_DPI / vdev->x_pixels_per_inch;
 
     } else {			/* ESC/Page-Color */
 
       /*    pdev->Margins[1] = pdev->width - pdev->height + dev->HWMargins[0];
        */
       pdev->Margins[1] = (pdev->width - pdev->height) * \
-	X_DPI / vdev->x_pixels_per_inch;
+        X_DPI / vdev->x_pixels_per_inch;
 
     }	/* ESC/Page-Color */
 
@@ -1799,7 +1750,6 @@ escv_open(gx_device * dev)
 
   return 0;
 }
-
 
 /* Wrap up ("output") a page. */
 static int
@@ -1821,7 +1771,6 @@ escv_output_page(gx_device * dev, int num_copies, int flush)
   return 0;
 }
 
-
 static int
 escv_close(gx_device *dev)
 {
@@ -1841,7 +1790,6 @@ escv_close(gx_device *dev)
 /* the stream may no longer exist; but the file will still be open. */
 
 /* ---------------- Get/put parameters ---------------- */
-
 
 static int
 escv_get_str_param( gs_param_list * plist, gs_param_name key, gs_param_string *pgsstr, int code )
@@ -1921,7 +1869,6 @@ escv_get_params(gx_device * dev, gs_param_list * plist)
   return code;
 }
 
-
 static int
 escv_set_str_param( gs_param_list * plist, const char * key, char *strvalue, int bufmax, int ecode )
 {
@@ -1977,7 +1924,6 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_DOCUMENT, pdev->Document, ESCPAGE_DOCUMENT_MAX, ecode );
   ecode = escv_set_str_param( plist, ESCPAGE_OPTION_COMMENT,  pdev->Comment,  ESCPAGE_COMMENT_MAX,  ecode );
 
-
   modelJP = pdev->modelJP;
   param_name = ESCPAGE_OPTION_EPLModelJP;
   code = param_read_bool(plist, param_name, &modelJP);
@@ -2012,9 +1958,9 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
 
     case 0:
       if ( ( 600 != capMaxResolution ) &&
-	   ( 1200 != capMaxResolution ) ) {
-	ecode = gs_error_limitcheck;
-	goto maxrese;
+           ( 1200 != capMaxResolution ) ) {
+        ecode = gs_error_limitcheck;
+        goto maxrese;
       }
       break;
 
@@ -2059,30 +2005,30 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
     } else {   /* Check the validity of ``MediaType'' characters */
 
       if (strcmp(pmedia.data, "NM") == 0) {
-	pdev->MediaType = 0;
+        pdev->MediaType = 0;
       } else if ((strcmp(pmedia.data, "THICK") == 0) ||
-		 (strcmp(pmedia.data, "TH") == 0)) {
-	pdev->MediaType = 1;
+                 (strcmp(pmedia.data, "TH") == 0)) {
+        pdev->MediaType = 1;
       } else if ((strcmp(pmedia.data, "TRANS") == 0) ||
-		 (strcmp(pmedia.data, "TR") == 0)) {
-	pdev->MediaType = 2;
+                 (strcmp(pmedia.data, "TR") == 0)) {
+        pdev->MediaType = 2;
       } else if (strcmp(pmedia.data, "TN") == 0) {
-	pdev->MediaType = 3;
+        pdev->MediaType = 3;
       } else if (strcmp(pmedia.data, "LH") == 0) {
-	pdev->MediaType = 4;
+        pdev->MediaType = 4;
       } else if (strcmp(pmedia.data, "CT") == 0) {
-	pdev->MediaType = 5;
+        pdev->MediaType = 5;
       } else if (strcmp(pmedia.data, "ET") == 0) {
-	pdev->MediaType = 6;
+        pdev->MediaType = 6;
       } else if (strcmp(pmedia.data, "HQ") == 0) {
-	pdev->MediaType = 7;
+        pdev->MediaType = 7;
       } else if (strcmp(pmedia.data, "UT") == 0) {
-	pdev->MediaType = 8;
+        pdev->MediaType = 8;
       } else if (strcmp(pmedia.data, "UM") == 0) {
-	pdev->MediaType = 9;
+        pdev->MediaType = 9;
       } else {
-	ecode = gs_error_rangecheck;
-	goto pmediae;
+        ecode = gs_error_rangecheck;
+        goto pmediae;
       }
     }
     break;
@@ -2099,7 +2045,7 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
   }
 
   switch (code = param_read_int(plist,
-				(param_name = ESCPAGE_OPTION_TONERDENSITY), &toner_density)) {
+                                (param_name = ESCPAGE_OPTION_TONERDENSITY), &toner_density)) {
   case 0:
     if (toner_density < 0 || toner_density > 5)
       ecode = gs_error_rangecheck;
@@ -2124,7 +2070,7 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
     ecode = code;
     param_signal_error(plist, param_name, ecode);
   case 1:
-    break;   
+    break;
   }
 
   if ((code = param_read_bool(plist, (param_name = ESCPAGE_OPTION_DUPLEX), &duplex)) < 0)
@@ -2139,7 +2085,6 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
   if ((code = param_read_bool(plist, (param_name = ESCPAGE_OPTION_FACEUP), &faceup)) < 0) {
     param_signal_error(plist, param_name, ecode = code);
   }
-
 
   switch (code = param_read_int(plist, (param_name = "BitsPerPixel"), &bpp)) {
   case 0:
@@ -2194,11 +2139,10 @@ escv_put_params(gx_device * dev, gs_param_list * plist)
 
 /* ---------------- Images ---------------- */
 
-
 static int
 escv_copy_mono(gx_device * dev, const byte * data,
-	       int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-	       gx_color_index zero, gx_color_index one)
+               int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+               gx_color_index zero, gx_color_index one)
 {
   gx_device_escv *const	pdev = (gx_device_escv *) dev;
   gx_device_vector *const	vdev = (gx_device_vector *) dev;
@@ -2219,9 +2163,9 @@ escv_copy_mono(gx_device * dev, const byte * data,
     color_set_pure(&dcolor, one);
     escv_setfillcolor(vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-		      pis,
+                      pis,
 #endif
-		      &dcolor); /* FIXME! gs815 */
+                      &dcolor); /* FIXME! gs815 */
   }
 
   if (zero == gx_no_color_index) {
@@ -2231,26 +2175,26 @@ escv_copy_mono(gx_device * dev, const byte * data,
 
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	/*	    lputs(s, ESC_GS "1owE");*/
-	(void)sprintf(obuf, ESC_GS "1;1;%ldccE", c_color);
-	lputs(s, obuf);
+        /*	    lputs(s, ESC_GS "1owE");*/
+        (void)sprintf(obuf, ESC_GS "1;1;%ldccE", c_color);
+        lputs(s, obuf);
 
-	if (vdev->x_pixels_per_inch == 1200) {
-	  lputs(s, ESC_GS "1;45;156htmE");
-	} else if (vdev->x_pixels_per_inch == 600) {
-	  lputs(s, ESC_GS "1;45;106htmE");
-	} else {
-	  lputs(s, ESC_GS "1;45;71htmE");
-	}
+        if (vdev->x_pixels_per_inch == 1200) {
+          lputs(s, ESC_GS "1;45;156htmE");
+        } else if (vdev->x_pixels_per_inch == 600) {
+          lputs(s, ESC_GS "1;45;106htmE");
+        } else {
+          lputs(s, ESC_GS "1;45;71htmE");
+        }
 
       } else {			/* ESC/Page-Color */
 
-	lputs(s, ESC_GS "2;184wfE" ESC_GS "3;184wfE" ESC_GS "5;184wfE");
+        lputs(s, ESC_GS "2;184wfE" ESC_GS "3;184wfE" ESC_GS "5;184wfE");
 
       }	/* ESC/Page-Color */
 
-      pdev->MaskState = 1;   
-    }	
+      pdev->MaskState = 1;
+    }
     c_color = one;
 
   } else if (one == gx_no_color_index)
@@ -2258,58 +2202,58 @@ escv_copy_mono(gx_device * dev, const byte * data,
     {
       if (pdev->MaskState != 1) {
 
-	if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
+        if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	  /*	    lputs(s, ESC_GS "1owE");*/
+          /*	    lputs(s, ESC_GS "1owE");*/
 
-	} else {			/* ESC/Page-Color */
+        } else {			/* ESC/Page-Color */
 
-	  lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
+          lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
 
-	}	/* ESC/Page-Color */
+        }	/* ESC/Page-Color */
 
-	pdev->MaskState = 1;
+        pdev->MaskState = 1;
       }
       c_color = zero;
     } else if (one == vdev->white) {
 
       if (pdev->MaskState != 0) {
 
-	if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
+        if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	  /*	    lputs(s, ESC_GS "1owE");*/
+          /*	    lputs(s, ESC_GS "1owE");*/
 
-	} else {			/* ESC/Page-Color */
+        } else {			/* ESC/Page-Color */
 
-	  lputs(s, ESC_GS "3;204wfE" ESC_GS "5;204wfE");
+          lputs(s, ESC_GS "3;204wfE" ESC_GS "5;204wfE");
 
-	}	/* ESC/Page-Color */
+        }	/* ESC/Page-Color */
 
-	pdev->MaskState = 0;
+        pdev->MaskState = 0;
       }
       c_color = zero;
     } else {
 
       if (pdev->MaskState != 1) {
 
-	if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
+        if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	  /*	    lputs(s, ESC_GS "1owE");*/
+          /*	    lputs(s, ESC_GS "1owE");*/
 
-	} else {			/* ESC/Page-Color */
+        } else {			/* ESC/Page-Color */
 
-	  lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
+          lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
 
-	}	/* ESC/Page-Color */
+        }	/* ESC/Page-Color */
 
-	pdev->MaskState = 1;
+        pdev->MaskState = 1;
       }
       color_set_pure(&color, one);
       code = gdev_vector_update_fill_color((gx_device_vector *) pdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-					   pis,
+                                           pis,
 #endif
-					   &color);
+                                           &color);
 
       /* ここを通過したら以下の色設定は無意味？ */
     }
@@ -2320,9 +2264,9 @@ escv_copy_mono(gx_device * dev, const byte * data,
 
     /* パターンＯＮ指定／ソリッドパターン指定 */
     (void)sprintf(obuf, ESC_GS "1;2;3;%d;%d;%dfpE",
-		  (unsigned char)(c_color >> 16 & 0xff),
-		  (unsigned char)(c_color >> 8 & 0xff),
-		  (unsigned char)(c_color & 0xff));
+                  (unsigned char)(c_color >> 16 & 0xff),
+                  (unsigned char)(c_color >> 8 & 0xff),
+                  (unsigned char)(c_color & 0xff));
     lputs(s, obuf);
 
     lputs(s, ESC_GS "5;2;1;0;0cpE");
@@ -2333,21 +2277,21 @@ escv_copy_mono(gx_device * dev, const byte * data,
   {
     int		i, j;
     uint		width_bytes = (w + 7) >> 3;
-    uint		num_bytes = width_bytes * h; 
+    uint		num_bytes = width_bytes * h;
 
     byte *buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_copy_mono(buf)");
 
     if (data_x % 8 == 0) {
       for (i = 0; i < h; ++i) {
-	memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster, width_bytes);
+        memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster, width_bytes);
       }
     } else {
       for (i = 0; i < h; ++i) {
-	for (j = 0; j < width_bytes; j++) {
-	  *(buf + i * width_bytes + j) =
-	    *(data + (data_x >> 3) + i * raster + j) << (data_x % 8) |
-	    *(data + (data_x >> 3) + i * raster + j + 1) >> (8 - data_x % 8);
-	}
+        for (j = 0; j < width_bytes; j++) {
+          *(buf + i * width_bytes + j) =
+            *(data + (data_x >> 3) + i * raster + j) << (data_x % 8) |
+            *(data + (data_x >> 3) + i * raster + j + 1) >> (8 - data_x % 8);
+        }
       }
     }
 
@@ -2358,12 +2302,11 @@ escv_copy_mono(gx_device * dev, const byte * data,
   return 0;
 }
 
-
 /* Copy a color bitmap. */
 static int
 escv_copy_color(gx_device * dev,
-		const byte * data, int data_x, int raster, gx_bitmap_id id,
-		int x, int y, int w, int h)
+                const byte * data, int data_x, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h)
 {
   gx_device_escv	*const pdev = (gx_device_escv *) dev;
   gx_device_vector	*const vdev = (gx_device_vector *) dev;
@@ -2406,14 +2349,13 @@ escv_copy_color(gx_device * dev,
   return 0;
 }
 
-
 /* Fill a mask. */
 static int
 escv_fill_mask(gx_device * dev,
-	       const byte * data, int data_x, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h,
-	       const gx_drawing_color * pdcolor, int depth,
-	       gs_logical_operation_t lop, const gx_clip_path * pcpath)
+               const byte * data, int data_x, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h,
+               const gx_drawing_color * pdcolor, int depth,
+               gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
   gx_device_vector *const vdev = (gx_device_vector *) dev;
   gx_device_escv   *const pdev = (gx_device_escv *)   dev;
@@ -2428,18 +2370,18 @@ escv_fill_mask(gx_device * dev,
 #endif
 
   if (w <= 0 || h <= 0) return 0;
-    
+
   if (depth > 1 ||
       gdev_vector_update_fill_color(vdev,
 #if ( 8 <= GS_VERSION_MAJOR )
-				    pis,
+                                    pis,
 #endif
-				    pdcolor) < 0 ||
+                                    pdcolor) < 0 ||
       gdev_vector_update_clip_path(vdev, pcpath) < 0 ||
       gdev_vector_update_log_op(vdev, lop) < 0
-      ) 
+      )
     return gx_default_fill_mask(dev, data, data_x, raster, id,
-				x, y, w, h, pdcolor, depth, lop, pcpath);
+                                x, y, w, h, pdcolor, depth, lop, pcpath);
 
   if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
@@ -2448,7 +2390,6 @@ escv_fill_mask(gx_device * dev,
 
     (void)sprintf(obuf, ESC_GS "0;0;100spE" ESC_GS "1;1;%ldccE" ,color);
     lputs(s, obuf);
-
 
     if (vdev->x_pixels_per_inch == 1200) {
       lputs(s, ESC_GS "1;45;156htmE");
@@ -2480,19 +2421,19 @@ escv_fill_mask(gx_device * dev,
 
       if (pdev -> id_cache[id & VCACHE] != id) {
 
-	buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_fill_mask(buf)");
+        buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_fill_mask(buf)");
 
-	/* cache entry */
-	for (i = 0; i < h; ++i) {
-	  memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster, width_bytes);
-	}
+        /* cache entry */
+        for (i = 0; i < h; ++i) {
+          memcpy(buf + i * width_bytes, data + (data_x >> 3) + i * raster, width_bytes);
+        }
 
-	(void)sprintf(obuf, ESC_GS "%d;%d;%d;%d;0db{F", num_bytes, (int)(id & VCACHE), w, h);
-	lputs(s, obuf);
-	put_bytes(s, buf, num_bytes);
+        (void)sprintf(obuf, ESC_GS "%d;%d;%d;%d;0db{F", num_bytes, (int)(id & VCACHE), w, h);
+        lputs(s, obuf);
+        put_bytes(s, buf, num_bytes);
 
-	gs_free_object(vdev->memory, buf, "escv_fill_mask(buf)");
-	pdev -> id_cache[id & VCACHE] = id;
+        gs_free_object(vdev->memory, buf, "escv_fill_mask(buf)");
+        pdev -> id_cache[id & VCACHE] = id;
       }
 
       (void)sprintf(obuf, ESC_GS "%dX" ESC_GS "%dY", x, y);
@@ -2532,19 +2473,18 @@ static const gx_image_enum_procs_t escv_image_enum_procs =
     escv_image_plane_data, escv_image_end_image
   };
 
-
 /* Start processing an image. */
 static int
 escv_begin_image(gx_device * dev,
-		 const gs_imager_state * pis, const gs_image_t * pim,
-		 gs_image_format_t format, const gs_int_rect * prect,
-		 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		 gs_memory_t * mem, gx_image_enum_common_t **pinfo)
+                 const gs_imager_state * pis, const gs_image_t * pim,
+                 gs_image_format_t format, const gs_int_rect * prect,
+                 const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+                 gs_memory_t * mem, gx_image_enum_common_t **pinfo)
 {
   gx_device_vector *const	vdev = (gx_device_vector *) dev;
   gx_device_escv *const	pdev = (gx_device_escv *) dev;
   stream			*s = gdev_vector_stream((gx_device_vector *) pdev);
-  gdev_vector_image_enum_t	*pie = 
+  gdev_vector_image_enum_t	*pie =
     gs_alloc_struct(mem, gdev_vector_image_enum_t, &st_vector_image_enum, "escv_begin_image");
   const gs_color_space	*pcs = pim->ColorSpace;
   gs_color_space_index	index;
@@ -2563,38 +2503,38 @@ escv_begin_image(gx_device * dev,
   if (pie == 0) return_error(gs_error_VMerror);
   pie->memory = mem;
   code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
-				 pdcolor, pcpath, mem, &escv_image_enum_procs, pie);
+                                 pdcolor, pcpath, mem, &escv_image_enum_procs, pie);
   if (code < 0) return code;
-    
+
   *pinfo = (gx_image_enum_common_t *) pie;
 
   if (!pim->ImageMask) {
     index = gs_color_space_get_index(pcs);
     num_components = gs_color_space_num_components(pcs);
 
-    if (pim->CombineWithColor) {	    
+    if (pim->CombineWithColor) {
       can_do = false;
     } else {
       switch (index) {
       case gs_color_space_index_DeviceGray:
-	if ((pim->Decode[0] != 0 || pim->Decode[1] != 1)
-	    && (pim->Decode[0] != 1 || pim->Decode[1] != 0))
-	  can_do = false;
-	break;
+        if ((pim->Decode[0] != 0 || pim->Decode[1] != 1)
+            && (pim->Decode[0] != 1 || pim->Decode[1] != 0))
+          can_do = false;
+        break;
       case gs_color_space_index_DeviceRGB:
-	if (pim->Decode[0] != 0 || pim->Decode[1] != 1 ||
-	    pim->Decode[2] != 0 || pim->Decode[3] != 1 ||
-	    pim->Decode[4] != 0)
-	  can_do = false;
-	break;
+        if (pim->Decode[0] != 0 || pim->Decode[1] != 1 ||
+            pim->Decode[2] != 0 || pim->Decode[3] != 1 ||
+            pim->Decode[4] != 0)
+          can_do = false;
+        break;
       default:
-	can_do = false;
+        can_do = false;
       }
     }
   }
   if (!can_do) {
     return gx_default_begin_image(dev, pis, pim, format, prect,
-				  pdcolor, pcpath, mem, &pie->default_info);
+                                  pdcolor, pcpath, mem, &pie->default_info);
   }
 
   if (pim->ImageMask || (pim->BitsPerComponent == 1 && num_components == 1)) {
@@ -2603,8 +2543,8 @@ escv_begin_image(gx_device * dev,
     } else {
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
       } else {			/* ESC/Page-Color */
-	lputs(s, ESC_GS "8;1;2;2;2plr{E");
-	put_bytes(s, "\000\000\000\000\377\377\377\377", 8);
+        lputs(s, ESC_GS "8;1;2;2;2plr{E");
+        put_bytes(s, "\000\000\000\000\377\377\377\377", 8);
       }	/* ESC/Page-Color */
       pdev->MaskReverse = 0;
     }
@@ -2662,22 +2602,22 @@ escv_begin_image(gx_device * dev,
 
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	/*	    lputs(s, ESC_GS "1owE");*/
-	(void)sprintf(obuf, ESC_GS "1;1;%ldccE", color);
-	lputs(s, obuf);
+        /*	    lputs(s, ESC_GS "1owE");*/
+        (void)sprintf(obuf, ESC_GS "1;1;%ldccE", color);
+        lputs(s, obuf);
 
-	if (vdev->x_pixels_per_inch == 1200) {
-	  lputs(s, ESC_GS "1;45;156htmE");
-	} else if (vdev->x_pixels_per_inch == 600) {
-	  lputs(s, ESC_GS "1;45;106htmE");
-	} else {
-	  lputs(s, ESC_GS "1;45;71htmE");
-	}
+        if (vdev->x_pixels_per_inch == 1200) {
+          lputs(s, ESC_GS "1;45;156htmE");
+        } else if (vdev->x_pixels_per_inch == 600) {
+          lputs(s, ESC_GS "1;45;106htmE");
+        } else {
+          lputs(s, ESC_GS "1;45;71htmE");
+        }
 
       } else {			/* ESC/Page-Color */
 
-	lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
-	pdev->MaskState = 1;
+        lputs(s, ESC_GS "3;184wfE" ESC_GS "5;184wfE");
+        pdev->MaskState = 1;
 
       }	/* ESC/Page-Color */
 
@@ -2689,9 +2629,9 @@ escv_begin_image(gx_device * dev,
     if (pdev->MaskState != 0) {
 
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
-	/*	  lputs(s, ESC_GS "1owE");*/ /* 184->204 */
+        /*	  lputs(s, ESC_GS "1owE");*/ /* 184->204 */
       } else {			/* ESC/Page-Color */
-	lputs(s, ESC_GS "3;204wfE" ESC_GS "5;204wfE");
+        lputs(s, ESC_GS "3;204wfE" ESC_GS "5;204wfE");
       }	/* ESC/Page-Color */
 
       pdev->MaskState = 0;
@@ -2702,10 +2642,9 @@ escv_begin_image(gx_device * dev,
   if (pdev -> reverse_y) return 0;
 
   escv_write_begin(dev, pie->bits_per_pixel, (int)imat.tx, (int)imat.ty, pie->width, pie->height, sx, sy, pdev -> roll);
-    
+
   return 0;
 }
-
 
 /* Process the next piece of an image. */
 static int
@@ -2744,49 +2683,48 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
     if (pdev -> reverse_y) {
 
       if (pdev -> h == height) {
-	if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
+        if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	  if(tbyte == 1){
-	    if(strcmp(pdev->dname, "lp1800") != 0 &&
-	       strcmp(pdev->dname, "lp9600") != 0) {
-	      pdev->w += pdev->sx / 2048;
-	      height  += pdev->sy / 2048;
-	    }
-	  }
+          if(tbyte == 1){
+            if(strcmp(pdev->dname, "lp1800") != 0 &&
+               strcmp(pdev->dname, "lp9600") != 0) {
+              pdev->w += pdev->sx / 2048;
+              height  += pdev->sy / 2048;
+            }
+          }
 
-	} else {			/* ESC/Page-Color */
+        } else {			/* ESC/Page-Color */
 
-	  if(tbyte == 1){
-	    pdev->w += pdev->sx / 2048;
-	    height  += pdev->sy / 2048;
-	  }
+          if(tbyte == 1){
+            pdev->w += pdev->sx / 2048;
+            height  += pdev->sy / 2048;
+          }
 
-	}	/* ESC/Page-Color */
+        }	/* ESC/Page-Color */
 
-
-	escv_write_begin(dev, pie->bits_per_pixel, (int)pdev -> xmat.tx, (int)pdev -> xmat.ty, pdev -> w, height, (int)pdev -> sx, (int)pdev -> sy, pdev -> roll);
+        escv_write_begin(dev, pie->bits_per_pixel, (int)pdev -> xmat.tx, (int)pdev -> xmat.ty, pdev -> w, height, (int)pdev -> sx, (int)pdev -> sy, pdev -> roll);
 
       } else {
-	float	yy, sy;
+        float	yy, sy;
 
-	yy = (pdev -> h * pdev->xmat.yy) - (pdev -> dd * pdev -> xmat.yy) - (height * pdev -> xmat.yy);
-	if (yy == 0) {
-	  yy = (pdev -> h * pdev->xmat.yx) - (pdev -> dd * pdev -> xmat.yx) - (height * pdev -> xmat.yx);
-	}
+        yy = (pdev -> h * pdev->xmat.yy) - (pdev -> dd * pdev -> xmat.yy) - (height * pdev -> xmat.yy);
+        if (yy == 0) {
+          yy = (pdev -> h * pdev->xmat.yx) - (pdev -> dd * pdev -> xmat.yx) - (height * pdev -> xmat.yx);
+        }
 
-	if (pdev -> by) {
-	  sy = (int)pdev -> xmat.ty - (int)yy;
-	  sy = pdev -> by - (int)sy;
-	} else {
-	  sy = height * pdev -> xmat.yy + 0.5;
-	}
-	if (sy < 0) {
-	  sy = -sy;
-	}
+        if (pdev -> by) {
+          sy = (int)pdev -> xmat.ty - (int)yy;
+          sy = pdev -> by - (int)sy;
+        } else {
+          sy = height * pdev -> xmat.yy + 0.5;
+        }
+        if (sy < 0) {
+          sy = -sy;
+        }
 
-	escv_write_begin(dev, pie->bits_per_pixel, (int)pdev -> xmat.tx, (int)pdev -> xmat.ty - (int)yy, pdev -> w, height, (int)pdev -> sx, (int)sy, pdev -> roll);
+        escv_write_begin(dev, pie->bits_per_pixel, (int)pdev -> xmat.tx, (int)pdev -> xmat.ty - (int)yy, pdev -> w, height, (int)pdev -> sx, (int)sy, pdev -> roll);
 
-	pdev -> by = (int)pdev -> xmat.ty - (int)yy;
+        pdev -> by = (int)pdev -> xmat.ty - (int)yy;
       }
     }
     pdev -> dd += height;
@@ -2795,60 +2733,60 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 
       for (y = 0; y < height; ++y) {
 
-	int     bit, w;
-	const byte *p;
-	byte *d;
-	byte c;
+        int     bit, w;
+        const byte *p;
+        byte *d;
+        byte c;
 
-	p = planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3) + y * planes[plane].raster;
-	if (pdev -> reverse_y) {
+        p = planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3) + y * planes[plane].raster;
+        if (pdev -> reverse_y) {
 
-	  d = buf + (height - y) * width_bytes;
+          d = buf + (height - y) * width_bytes;
 
-	  if (!pdev -> reverse_x) {
-	    (void)memcpy(buf + (height - y - 1) * width_bytes,
-			 planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
-			 + y * planes[plane].raster, width_bytes);
+          if (!pdev -> reverse_x) {
+            (void)memcpy(buf + (height - y - 1) * width_bytes,
+                         planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
+                         + y * planes[plane].raster, width_bytes);
 
-	  }
+          }
 
-	} else {
+        } else {
 
-	  d = buf + (y + 1) * width_bytes;
+          d = buf + (y + 1) * width_bytes;
 
-	  if (!pdev -> reverse_x) {
+          if (!pdev -> reverse_x) {
 
-	    (void)memcpy(buf + y * width_bytes,
-			 planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
-			 + y * planes[plane].raster, width_bytes);
+            (void)memcpy(buf + y * width_bytes,
+                         planes[plane].data + ((planes[plane].data_x * pie->bits_per_pixel) >> 3)
+                         + y * planes[plane].raster, width_bytes);
 
-	  }
-	}
-	if (pdev -> reverse_x) {
-	  if (pie->bits_per_pixel == 1) {
-	    for (w = 0; w < width_bytes; w++) {
-	      c = 0;
-	      for (bit = 0; bit < 8; bit++) {
-		if (*p & 1 << (7 - bit)) {
-		  c |= 1 << bit;
-		}
-	      }
-	      p++;
-	      *--d = c;
-	    }
-	  } else if (pie->bits_per_pixel == 8){
-	    for (w = 0; w < width_bytes; w++) {
-	      *--d = *p++;
-	    }
-	  } else {
-	    for (w = 0; w < width_bytes / 3; w++) {
-	      *--d = *(p + 2);
-	      *--d = *(p + 1);
-	      *--d = *p;
-	      p += 3;
-	    }
-	  }
-	}
+          }
+        }
+        if (pdev -> reverse_x) {
+          if (pie->bits_per_pixel == 1) {
+            for (w = 0; w < width_bytes; w++) {
+              c = 0;
+              for (bit = 0; bit < 8; bit++) {
+                if (*p & 1 << (7 - bit)) {
+                  c |= 1 << bit;
+                }
+              }
+              p++;
+              *--d = c;
+            }
+          } else if (pie->bits_per_pixel == 8){
+            for (w = 0; w < width_bytes; w++) {
+              *--d = *p++;
+            }
+          } else {
+            for (w = 0; w < width_bytes / 3; w++) {
+              *--d = *(p + 2);
+              *--d = *(p + 1);
+              *--d = *p;
+              p += 3;
+            }
+          }
+        }
       }
     }
 
@@ -2857,56 +2795,56 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 
       if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
-	gs_free_object(vdev->memory, buf, "escv_image_data(buf)");
-	if(strcmp(pdev->dname, "lp1800") == 0 ||
-	   strcmp(pdev->dname, "lp9600") == 0) {
-	  if(pdev->sx > pdev->sy){
-	    height  = pdev->sy;
-	    pdev->w = pdev->sx; 
-	    tbyte = ((pdev->sx + 7) / 8) * pdev->sy;
-	  } else {
-	    if(pdev->sx < pdev->sy){
-	      height  = pdev->sy;
-	      pdev->w = pdev->sx; 
-	      tbyte = ((pdev->sx + 7) / 8) * pdev->sy;
-	    } else {
-	      tbyte = 1;
-	    }
-	  }
+        gs_free_object(vdev->memory, buf, "escv_image_data(buf)");
+        if(strcmp(pdev->dname, "lp1800") == 0 ||
+           strcmp(pdev->dname, "lp9600") == 0) {
+          if(pdev->sx > pdev->sy){
+            height  = pdev->sy;
+            pdev->w = pdev->sx;
+            tbyte = ((pdev->sx + 7) / 8) * pdev->sy;
+          } else {
+            if(pdev->sx < pdev->sy){
+              height  = pdev->sy;
+              pdev->w = pdev->sx;
+              tbyte = ((pdev->sx + 7) / 8) * pdev->sy;
+            } else {
+              tbyte = 1;
+            }
+          }
 
-	} else {
-	  if(pdev->sx > pdev->sy){
-	    tbyte = 1;
-	  } else {
-	    if(pdev->sx < pdev->sy){
-	      tbyte = tbyte * height;
-	    } else {
-	      tbyte = 1;
-	    }
-	  }
-	}
-	buf = gs_alloc_bytes(vdev->memory, tbyte, "escv_image_data(buf)");
-	for(t = 0; t < tbyte; t++){
-	  buf[t] = 0xff;
-	}
+        } else {
+          if(pdev->sx > pdev->sy){
+            tbyte = 1;
+          } else {
+            if(pdev->sx < pdev->sy){
+              tbyte = tbyte * height;
+            } else {
+              tbyte = 1;
+            }
+          }
+        }
+        buf = gs_alloc_bytes(vdev->memory, tbyte, "escv_image_data(buf)");
+        for(t = 0; t < tbyte; t++){
+          buf[t] = 0xff;
+        }
 
       } else {			/* ESC/Page-Color */
 
-	gs_free_object(vdev->memory, buf, "escv_image_data(buf)");
-	if(pdev->sx > pdev->sy){
-	  tbyte = 1;
-	} else {
-	  if(pdev->sx < pdev->sy){
-	    tbyte = tbyte * height;
-	  } else {
-	    tbyte = 1;
-	  }
-	}
+        gs_free_object(vdev->memory, buf, "escv_image_data(buf)");
+        if(pdev->sx > pdev->sy){
+          tbyte = 1;
+        } else {
+          if(pdev->sx < pdev->sy){
+            tbyte = tbyte * height;
+          } else {
+            tbyte = 1;
+          }
+        }
 
-	buf = gs_alloc_bytes(vdev->memory, tbyte, "escv_image_data(buf)");
-	for(t = 0; t < tbyte; t++){
-	  buf[t] = 0x00;
-	}
+        buf = gs_alloc_bytes(vdev->memory, tbyte, "escv_image_data(buf)");
+        for(t = 0; t < tbyte; t++){
+          buf[t] = 0x00;
+        }
 
       }	/* ESC/Page-Color */
 
@@ -2922,7 +2860,6 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
   }
   return (pie->y += height) >= pie->height;
 }
-
 
 static int
 #if GS_VERSION_MAJOR >= 6
@@ -2961,7 +2898,6 @@ escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
   return code;
 }
 
-
 static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll)
 {
   gx_device_vector *const     vdev = (gx_device_vector *) dev;
@@ -2980,24 +2916,24 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
     if (bits == 1) {
       if (strcmp(pdev->dname, "lp1800") == 0 ||
           strcmp(pdev->dname, "lp9600") == 0) {
-	(void)sprintf(obuf, ESC_GS "0bcI");
+        (void)sprintf(obuf, ESC_GS "0bcI");
       }else{
-	(void)sprintf(obuf, ESC_GS "5;%d;%d;%d;%d;%dsrI",  sw, sh, dw, dh, roll);
+        (void)sprintf(obuf, ESC_GS "5;%d;%d;%d;%d;%dsrI",  sw, sh, dw, dh, roll);
       }
     } else if (bits == 4) {
       if (pdev -> c4map) {
-	pdev -> c4map = FALSE;
+        pdev -> c4map = FALSE;
       }
       (void)sprintf(obuf, ESC_GS "1;1;1;0;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
     } else if (bits == 8) {
       if (pdev -> c8map) {
-	pdev -> c8map = FALSE;
+        pdev -> c8map = FALSE;
       }
       (void)sprintf(obuf, ESC_GS "1;1;1;0;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
     } else {
       /* 24 bit */
       (void)sprintf(obuf, ESC_GS "1;1;1;0;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
-    }    
+    }
 
   } else {			/* ESC/Page-Color */
 
@@ -3010,40 +2946,40 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
       (void)sprintf(obuf, ESC_GS "2;201;1;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
     } else if (bits == 4) {
       if (pdev -> c4map) {
-	/* カラーマップ登録 */
-	lputs(s, ESC_GS "64;2;2;16;16plr{E");
-	p = tmp = gs_alloc_bytes(vdev->memory, 64, "escv_write_begin(tmp4)");
-	for (i = 0; i < 16; i++) {
-	  *p++ = i << 4;
-	  *p++ = i << 4;
-	  *p++ = i << 4;
-	  *p++ = i << 4;
-	}
-	put_bytes(s, tmp, 64);
-	gs_free_object(vdev->memory, tmp, "escv_write_begin(tmp4)");
-	pdev -> c4map = FALSE;
+        /* カラーマップ登録 */
+        lputs(s, ESC_GS "64;2;2;16;16plr{E");
+        p = tmp = gs_alloc_bytes(vdev->memory, 64, "escv_write_begin(tmp4)");
+        for (i = 0; i < 16; i++) {
+          *p++ = i << 4;
+          *p++ = i << 4;
+          *p++ = i << 4;
+          *p++ = i << 4;
+        }
+        put_bytes(s, tmp, 64);
+        gs_free_object(vdev->memory, tmp, "escv_write_begin(tmp4)");
+        pdev -> c4map = FALSE;
       }
       (void)sprintf(obuf, ESC_GS "2;203;2;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
     } else if (bits == 8) {
       if (pdev -> c8map) {
-	/* カラーマップ登録 */
-	lputs(s, ESC_GS "1024;4;2;256;256plr{E");
-	p = tmp = gs_alloc_bytes(vdev->memory, 1024, "escv_write_begin(tmp)");
-	for (i = 0; i < 256; i++) {
-	  *p++ = i;
-	  *p++ = i;
-	  *p++ = i;
-	  *p++ = i;
-	}
-	put_bytes(s, tmp, 1024);
-	gs_free_object(vdev->memory, tmp, "escv_write_begin(tmp)");
-	pdev -> c8map = FALSE;
+        /* カラーマップ登録 */
+        lputs(s, ESC_GS "1024;4;2;256;256plr{E");
+        p = tmp = gs_alloc_bytes(vdev->memory, 1024, "escv_write_begin(tmp)");
+        for (i = 0; i < 256; i++) {
+          *p++ = i;
+          *p++ = i;
+          *p++ = i;
+          *p++ = i;
+        }
+        put_bytes(s, tmp, 1024);
+        gs_free_object(vdev->memory, tmp, "escv_write_begin(tmp)");
+        pdev -> c8map = FALSE;
       }
       (void)sprintf(obuf, ESC_GS "2;204;4;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
     } else {
       /* 24 bit */
       (void)sprintf(obuf, ESC_GS "2;102;0;%d;%d;%d;%d;%d;%dscrI", comp, sw, sh, dw, dh, roll);
-    }    
+    }
 
   }	/* ESC/Page-Color */
 
@@ -3051,7 +2987,6 @@ static void escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int
 
   return;
 }
-
 
 static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int w, int ras)
 {
@@ -3072,8 +3007,8 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
     if (bits == 12) {
       p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
       for (size = 0; size < bsize; size++) {
-	*p++ = buf[size] & 0xF0;
-	*p++ = buf[size] << 4;
+        *p++ = buf[size] & 0xF0;
+        *p++ = buf[size] << 4;
       }
       bsize = bsize * 2;
       buf = tmps;
@@ -3082,8 +3017,8 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
     if(bits == 4) {
       p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
       for (size = 0; size < bsize; size++) {
-	*p++ = ((buf[size] & 0xF0) * 0xFF / 0xF0);
-	*p++ = ((buf[size] << 4 & 0xF0) * 0xFF / 0xF0);
+        *p++ = ((buf[size] & 0xF0) * 0xFF / 0xF0);
+        *p++ = ((buf[size] << 4 & 0xF0) * 0xFF / 0xF0);
       }
       bsize = bsize * 2;
       buf = tmps;
@@ -3096,12 +3031,12 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
       rgbbuf = buf;
       ucp = tmps;
       for (size = 0; size < bsize; size = size + 3) {
-	gray8 = (0.299L * rgbbuf[size]) + (0.587L * rgbbuf[size + 1]) + (0.114L * rgbbuf[size + 2]);
-	if ( gray8 > 255L )
-	  *ucp = 255;
-	else
-	  *ucp = gray8;
-	ucp++;
+        gray8 = (0.299L * rgbbuf[size]) + (0.587L * rgbbuf[size + 1]) + (0.114L * rgbbuf[size + 2]);
+        if ( gray8 > 255L )
+          *ucp = 255;
+        else
+          *ucp = gray8;
+        ucp++;
       }
       bsize = bsize / 3;
       buf = tmps;
@@ -3109,10 +3044,10 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
 
     if(bits == 1){
       if (strcmp(pdev->dname, "lp1800") == 0 || \
-	  strcmp(pdev->dname, "lp9600") == 0) {
-	(void)sprintf(obuf, ESC_GS "%d;1;%d;%d;0db{I", bsize, w, ras);
+          strcmp(pdev->dname, "lp9600") == 0) {
+        (void)sprintf(obuf, ESC_GS "%d;1;%d;%d;0db{I", bsize, w, ras);
       }else{
-	(void)sprintf(obuf, ESC_GS "%d;%du{I", bsize, ras);
+        (void)sprintf(obuf, ESC_GS "%d;%du{I", bsize, ras);
       }
     }else{
       (void)sprintf(obuf, ESC_GS "%d;%dcu{I", bsize, ras);
@@ -3133,10 +3068,10 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
     if (bits == 12) {
       p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
       for (size = 0; size < bsize; size++) {
-	tmp = buf[size] & 0xF0;
-	*p++ = (tmp + (tmp >> 4 & 0x0F));
-	tmp = buf[size] << 4;
-	*p++ = (tmp + (tmp >> 4 & 0x0F));
+        tmp = buf[size] & 0xF0;
+        *p++ = (tmp + (tmp >> 4 & 0x0F));
+        tmp = buf[size] << 4;
+        *p++ = (tmp + (tmp >> 4 & 0x0F));
       }
       bsize = bsize * 2;
       buf = tmps;
@@ -3154,7 +3089,6 @@ static void escv_write_data(gx_device *dev, int bits, char *buf, int bsize, int 
   return;
 }
 
-
 static void escv_write_end(gx_device *dev, int bits)
 {
   gx_device_escv *const       pdev = (gx_device_escv *) dev;
@@ -3164,10 +3098,10 @@ static void escv_write_end(gx_device *dev, int bits)
 
     if(bits == 1){
       if (strcmp(pdev->dname, "lp1800") == 0 || \
-	  strcmp(pdev->dname, "lp9600") == 0) {
-	lputs(s, ESC_GS "1dbI");
+          strcmp(pdev->dname, "lp9600") == 0) {
+        lputs(s, ESC_GS "1dbI");
       } else {
-	lputs(s, ESC_GS "erI");
+        lputs(s, ESC_GS "erI");
       }
     }else{
       lputs(s, ESC_GS "ecrI");

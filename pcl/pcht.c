@@ -61,7 +61,6 @@ RELOC_PTRS_END
 
 private_st_ht_builtin_dither_t();
 
-
 static
 ENUM_PTRS_BEGIN(ht_enum_ptrs)
         return 0;
@@ -97,40 +96,40 @@ private_st_ht_t();
  * with logical operations (raster-ops).
  */
 static const byte  ordered_dither_data[16 * 16] = {
-  142, 46, 174, 6, 134, 38, 166, 12, 140, 44, 172, 4, 132, 36, 164, 14, 
-  78, 238, 110, 198, 70, 230, 102, 204, 76, 236, 108, 196, 68, 228, 100, 206, 
-  190, 30, 158, 54, 182, 22, 150, 60, 188, 28, 156, 52, 180, 20, 148, 62, 
-  126, 222, 94, 246, 118, 214, 86, 252, 124, 220, 92, 244, 116, 212, 84, 254, 
-  129, 33, 161, 9, 137, 41, 169, 3, 131, 35, 163, 11, 139, 43, 171, 1, 
-  65, 225, 97, 201, 73, 233, 105, 195, 67, 227, 99, 203, 75, 235, 107, 193, 
-  177, 17, 145, 57, 185, 25, 153, 51, 179, 19, 147, 59, 187, 27, 155, 49, 
-  113, 209, 81, 249, 121, 217, 89, 243, 115, 211, 83, 251, 123, 219, 91, 241, 
-  141, 45, 173, 5, 133, 37, 165, 15, 143, 47, 175, 7, 135, 39, 167, 13, 
-  77, 237, 109, 197, 69, 229, 101, 207, 79, 239, 111, 199, 71, 231, 103, 205, 
-  189, 29, 157, 53, 181, 21, 149, 63, 191, 31, 159, 55, 183, 23, 151, 61, 
-  125, 221, 93, 245, 117, 213, 85, 255, 127, 223, 95, 247, 119, 215, 87, 253, 
-  130, 34, 162, 10, 138, 42, 170, 1, 128, 32, 160, 8, 136, 40, 168, 2, 
-  66, 226, 98, 202, 74, 234, 106, 192, 64, 224, 96, 200, 72, 232, 104, 194, 
-  178, 18, 146, 58, 186, 26, 154, 48, 176, 16, 144, 56, 184, 24, 152, 50, 
+  142, 46, 174, 6, 134, 38, 166, 12, 140, 44, 172, 4, 132, 36, 164, 14,
+  78, 238, 110, 198, 70, 230, 102, 204, 76, 236, 108, 196, 68, 228, 100, 206,
+  190, 30, 158, 54, 182, 22, 150, 60, 188, 28, 156, 52, 180, 20, 148, 62,
+  126, 222, 94, 246, 118, 214, 86, 252, 124, 220, 92, 244, 116, 212, 84, 254,
+  129, 33, 161, 9, 137, 41, 169, 3, 131, 35, 163, 11, 139, 43, 171, 1,
+  65, 225, 97, 201, 73, 233, 105, 195, 67, 227, 99, 203, 75, 235, 107, 193,
+  177, 17, 145, 57, 185, 25, 153, 51, 179, 19, 147, 59, 187, 27, 155, 49,
+  113, 209, 81, 249, 121, 217, 89, 243, 115, 211, 83, 251, 123, 219, 91, 241,
+  141, 45, 173, 5, 133, 37, 165, 15, 143, 47, 175, 7, 135, 39, 167, 13,
+  77, 237, 109, 197, 69, 229, 101, 207, 79, 239, 111, 199, 71, 231, 103, 205,
+  189, 29, 157, 53, 181, 21, 149, 63, 191, 31, 159, 55, 183, 23, 151, 61,
+  125, 221, 93, 245, 117, 213, 85, 255, 127, 223, 95, 247, 119, 215, 87, 253,
+  130, 34, 162, 10, 138, 42, 170, 1, 128, 32, 160, 8, 136, 40, 168, 2,
+  66, 226, 98, 202, 74, 234, 106, 192, 64, 224, 96, 200, 72, 232, 104, 194,
+  178, 18, 146, 58, 186, 26, 154, 48, 176, 16, 144, 56, 184, 24, 152, 50,
   114, 210, 82, 250, 122, 218, 90, 240, 112, 208, 80, 248, 120, 216, 88, 242
 };
 
 static const byte  clustered_dither_data[16 * 16] = {
-  228, 164, 40, 8, 24, 152, 199, 247, 231, 167, 43, 11, 27, 155, 196, 244, 
-  116, 52, 96, 176, 80, 64, 135, 215, 119, 55, 99, 179, 83, 67, 132, 212, 
-  20, 148, 192, 240, 224, 160, 39, 7, 23, 151, 195, 243, 227, 163, 36, 4, 
-  94, 78, 128, 208, 112, 48, 109, 189, 93, 77, 131, 211, 115, 51, 111, 190, 
-  238, 174, 32, 1, 16, 144, 205, 253, 237, 173, 35, 3, 19, 147, 206, 254, 
-  126, 62, 106, 186, 90, 74, 141, 221, 125, 61, 105, 185, 89, 73, 142, 222, 
-  30, 158, 202, 250, 234, 170, 45, 13, 29, 157, 201, 249, 233, 169, 46, 14, 
-  86, 70, 138, 218, 122, 58, 101, 181, 85, 69, 137, 217, 121, 57, 102, 182, 
-  230, 166, 42, 10, 26, 154, 197, 245, 229, 165, 41, 9, 25, 153, 198, 246, 
-  118, 54, 98, 178, 82, 66, 133, 213, 117, 53, 97, 177, 81, 65, 134, 214, 
-  22, 150, 194, 242, 226, 162, 37, 5, 21, 149, 193, 241, 225, 161, 38, 6, 
-  92, 76, 130, 210, 114, 50, 111, 191, 95, 79, 129, 209, 113, 49, 108, 188, 
-  236, 172, 34, 2, 18, 146, 207, 255, 239, 175, 33, 1, 17, 145, 204, 252, 
-  124, 60, 104, 184, 88, 72, 143, 223, 127, 63, 107, 187, 91, 75, 140, 220, 
-  28, 156, 200, 248, 232, 168, 47, 15, 31, 159, 203, 251, 235, 171, 44, 12, 
+  228, 164, 40, 8, 24, 152, 199, 247, 231, 167, 43, 11, 27, 155, 196, 244,
+  116, 52, 96, 176, 80, 64, 135, 215, 119, 55, 99, 179, 83, 67, 132, 212,
+  20, 148, 192, 240, 224, 160, 39, 7, 23, 151, 195, 243, 227, 163, 36, 4,
+  94, 78, 128, 208, 112, 48, 109, 189, 93, 77, 131, 211, 115, 51, 111, 190,
+  238, 174, 32, 1, 16, 144, 205, 253, 237, 173, 35, 3, 19, 147, 206, 254,
+  126, 62, 106, 186, 90, 74, 141, 221, 125, 61, 105, 185, 89, 73, 142, 222,
+  30, 158, 202, 250, 234, 170, 45, 13, 29, 157, 201, 249, 233, 169, 46, 14,
+  86, 70, 138, 218, 122, 58, 101, 181, 85, 69, 137, 217, 121, 57, 102, 182,
+  230, 166, 42, 10, 26, 154, 197, 245, 229, 165, 41, 9, 25, 153, 198, 246,
+  118, 54, 98, 178, 82, 66, 133, 213, 117, 53, 97, 177, 81, 65, 134, 214,
+  22, 150, 194, 242, 226, 162, 37, 5, 21, 149, 193, 241, 225, 161, 38, 6,
+  92, 76, 130, 210, 114, 50, 111, 191, 95, 79, 129, 209, 113, 49, 108, 188,
+  236, 172, 34, 2, 18, 146, 207, 255, 239, 175, 33, 1, 17, 145, 204, 252,
+  124, 60, 104, 184, 88, 72, 143, 223, 127, 63, 107, 187, 91, 75, 140, 220,
+  28, 156, 200, 248, 232, 168, 47, 15, 31, 159, 203, 251, 235, 171, 44, 12,
   84, 68, 136, 216, 120, 56, 103, 183, 87, 71, 139, 219, 123, 59, 100, 180
 };
 
@@ -1180,18 +1179,18 @@ static const pcl_ht_builtin_threshold_t    noise_dither_thresh = {
     noise_dither_data
 };
 
-/* table used to map color rendering modes into monochrome 
+/* table used to map color rendering modes into monochrome
  */
 static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
-					      6,  5,  6,  8,
-					      8, 10, 10, 12,
-					      12, 14, 14, 17,
-					      16, 17, 19, 19  };
+                                              6,  5,  6,  8,
+                                              8, 10, 10, 12,
+                                              12, 14, 14, 17,
+                                              16, 17, 19, 19  };
 
 /* if true an all gray palette will automatically map
- *    itself to a monochrome rendering mode using the monochrome_remap 
+ *    itself to a monochrome rendering mode using the monochrome_remap
  * if false all render algorithms are are left alone
- * 
+ *
  * This is an optimization that if only gray is used on a page the page is printed with
  * only the K plane.  This is a work around for PCL not having a gray colorspace.
  * Should match the behavior of hp clj 4500, 4550 printers.
@@ -1357,7 +1356,7 @@ pcl_ht_init_render_methods(
 
     pcs->rendering_info[0].pbidither = &pcs->ordered_dither;
 
-    /* 1 - dither doesn't matter */                                       
+    /* 1 - dither doesn't matter */
     pcs->rendering_info[1].flags     = HT_FIXED | HT_DEVCSPACE;
     pcs->rendering_info[1].pbidither = &pcs->ordered_dither;
 
@@ -1403,7 +1402,7 @@ pcl_ht_init_render_methods(
     /* 12 */
     pcs->rendering_info[12].flags     = HT_FIXED;
     pcs->rendering_info[12].pbidither = &pcs->ordered_dither;
-    
+
     /* 13 - device should override */
     pcs->rendering_info[13].flags     = HT_NONE;
     pcs->rendering_info[13].pbidither = &pcs->noise_dither;
@@ -1411,7 +1410,7 @@ pcl_ht_init_render_methods(
     /* 14 - device should override */
     pcs->rendering_info[14].flags     = HT_NONE;
     pcs->rendering_info[14].pbidither = &pcs->noise_dither;
-    
+
     /* 15 - device should override */
     pcs->rendering_info[15].flags     = HT_NONE;
     pcs->rendering_info[15].pbidither = &pcs->ordered_dither;
@@ -1432,23 +1431,23 @@ pcl_ht_init_render_methods(
     pcs->rendering_info[19].flags     = HT_NONE;
     pcs->rendering_info[19].pbidither = &pcs->ordered_dither;
 
-    { 
-	/*
-	 * Remap the the rendering methods. This will generally be
-	 * selected from the device; the default value provided below
-	 * maps all methods to ones that are supported in the default
-	 * system.  
-	 */
-	static const byte  rendering_remap[20] = {
-	    0,  1,  2,  3,  /*  0 -  3 */
-	    3,  5,  5,  7,  /*  4 -  7 */
-	    8,  9, 10, 11,  /*  8 - 11 */
-	    12, 13, 14,  3,  /* 12 - 15 */
-	    5,  5,  3,  5   /* 16 - 19 */
-	};
-	for ( i = 0; i < countof(rendering_remap); i++ )
-	    pcs->dflt_rendering_remap[i] = 
-		pcs->rendering_remap[i]  = rendering_remap[i];
+    {
+        /*
+         * Remap the the rendering methods. This will generally be
+         * selected from the device; the default value provided below
+         * maps all methods to ones that are supported in the default
+         * system.
+         */
+        static const byte  rendering_remap[20] = {
+            0,  1,  2,  3,  /*  0 -  3 */
+            3,  5,  5,  7,  /*  4 -  7 */
+            8,  9, 10, 11,  /*  8 - 11 */
+            12, 13, 14,  3,  /* 12 - 15 */
+            5,  5,  3,  5   /* 16 - 19 */
+        };
+        for ( i = 0; i < countof(rendering_remap); i++ )
+            pcs->dflt_rendering_remap[i] =
+                pcs->rendering_remap[i]  = rendering_remap[i];
     }
 
     /* get any dither information from the current device */
@@ -1459,7 +1458,7 @@ pcl_ht_init_render_methods(
             continue;
         gs_c_param_list_write(&list, pmem);
         sprintf(nbuff, "Dither_%d", i);
-        if ( (param_request((gs_param_list *)&list, nbuff) >= 0)        && 
+        if ( (param_request((gs_param_list *)&list, nbuff) >= 0)        &&
              (gs_getdeviceparams(pcur_dev, (gs_param_list *)&list) >= 0)  ) {
             gs_param_dict   dict;
 
@@ -1507,11 +1506,10 @@ pcl_ht_set_print_mode(
     memcpy(pcs->rendering_remap, pcs->dflt_rendering_remap, sizeof(pcs->rendering_remap));
     if (monochrome) {
         int     i;
-        for (i = 0; i < countof(pcs->rendering_remap); i++) 
+        for (i = 0; i < countof(pcs->rendering_remap); i++)
             pcs->rendering_remap[i] = monochrome_remap[pcs->rendering_remap[i]];
     }
 }
-
 
 /*
  * Free the graphic library halftone objects associated with a PCL halftone
@@ -1604,8 +1602,8 @@ alloc_pcl_ht(
 
     pht->pdither = 0;
     pht->render_method = 3;     /* HP specified default value */
-    pht->orig_render_method = 3;    
-    pht->is_gray_render_method = false; 
+    pht->orig_render_method = 3;
+    pht->is_gray_render_method = false;
     pht->pfg_ht = 0;
     pht->pim_ht = 0;
 
@@ -1622,7 +1620,6 @@ alloc_pcl_ht(
     *ppht = pht;
     return 0;
 }
-
 
 /*
  * Make a unique copy of a PCL halftone object.
@@ -1682,35 +1679,35 @@ unshare_pcl_ht(
 }
 
 /* return true if all palette entries are gray
- * return false if any entry is color 
+ * return false if any entry is color
  * checks the entire palette
  * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
  * otherwise this is a NOP that always returns false.
  */
-bool 
+bool
 pcl_ht_is_all_gray_palette(pcl_state_t *pcs)
 {
-    if ( pcs->monochrome_mode ) 
+    if ( pcs->monochrome_mode )
         return true;
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
 
-        bool is_gray = true;    
-	const char *pb = 0;
-	pcl_palette_t *     ppalet = pcs->ppalet;
-	pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
-	int i;
+        bool is_gray = true;
+        const char *pb = 0;
+        pcl_palette_t *     ppalet = pcs->ppalet;
+        pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+        int i;
 
-	for ( i = 0; i < pindexed->num_entries; i++ ) {
-	    pb = pindexed->palette.data + (3 * i);
-	    if (  pb[0] == pb[1] && pb[0] == pb[2] ) {
-		continue;
-	    }
-	    else {
-		is_gray = false;
-		break;
-	    }
-	}
-	return is_gray;
+        for ( i = 0; i < pindexed->num_entries; i++ ) {
+            pb = pindexed->palette.data + (3 * i);
+            if (  pb[0] == pb[1] && pb[0] == pb[2] ) {
+                continue;
+            }
+            else {
+                is_gray = false;
+                break;
+            }
+        }
+        return is_gray;
     }
     return false; /* feature disabled, concider it color */
 }
@@ -1734,11 +1731,11 @@ pcl_ht_set_render_method(
         return 0;
 
     /* normal rendering remap */
-    color_render_method = pcs->rendering_remap[render_method];	
-  
+    color_render_method = pcs->rendering_remap[render_method];
+
     if (color_render_method == (*ppht)->orig_render_method)
         return 0;
-    
+
     if ((code = unshare_pcl_ht(ppht)) < 0)
         return code;
 
@@ -1747,15 +1744,15 @@ pcl_ht_set_render_method(
     (*ppht)->is_gray_render_method = false;
 
     /* remap render algo based on is the palette gray palette check */
-    return pcl_ht_remap_render_method(pcs, 
-				      &(pcs->ppalet->pht), 
-				      pcl_ht_is_all_gray_palette(pcs));
+    return pcl_ht_remap_render_method(pcs,
+                                      &(pcs->ppalet->pht),
+                                      pcl_ht_is_all_gray_palette(pcs));
 }
 
 /* if the palette is gray remap the render_algorithm to a gray algo
  * if the palette is color use the original "color" render_algorithm
  * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
- */ 
+ */
 int
 pcl_ht_remap_render_method(
     pcl_state_t * pcs,
@@ -1765,21 +1762,21 @@ pcl_ht_remap_render_method(
 {
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
         uint render_method = (*ppht)->orig_render_method;
-	int code = 0;
-	if (is_gray != (*ppht)->is_gray_render_method ) {
-	    if( is_gray ) {
-	        render_method = monochrome_remap[pcs->rendering_remap[render_method]];
-		(*ppht)->is_gray_render_method = is_gray; 	        
-	    }
-	    else {
-		render_method = (*ppht)->orig_render_method;
-	    }
-	    
-	    if ((code = unshare_pcl_ht(ppht)) < 0)
-		return code;     
-	    
-	    (*ppht)->render_method = render_method;
-	}
+        int code = 0;
+        if (is_gray != (*ppht)->is_gray_render_method ) {
+            if( is_gray ) {
+                render_method = monochrome_remap[pcs->rendering_remap[render_method]];
+                (*ppht)->is_gray_render_method = is_gray;
+            }
+            else {
+                render_method = (*ppht)->orig_render_method;
+            }
+
+            if ((code = unshare_pcl_ht(ppht)) < 0)
+                return code;
+
+            (*ppht)->render_method = render_method;
+        }
     }
     /* else feature disabled NOP */
     return 0;
@@ -1801,7 +1798,7 @@ pcl_ht_set_gamma(
     int         code = 0;
     int         i;
 
-    /* 
+    /*
      * All of the gamma correction factors and lookup table pointers are the
      * same, so just check the first of these. If nothing has changed, just
      * return.
@@ -1938,7 +1935,6 @@ identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
 {	return tint;
 }
 
-
 #ifdef DEVICE_HAS_CRD
 /*
  * Get the rendering information corresponding to a given rendering method.
@@ -1956,7 +1952,7 @@ get_rendering_info(
 {
     pcl_rend_info_t *   pinfo = &(pcs->rendering_info[sel_method]);
     uint                flags = pinfo->flags;
- 
+
     /* check for methods that require device-dependent color spaces */
     if ( (((flags & HT_DEVCSPACE) != 0) && (cstype > pcl_cspace_CMY)) ||
          (((flags & HT_IMONLY) != 0) && !for_image)                     )

@@ -42,18 +42,18 @@ example_list_params (IjsClientCtx *ctx)
       fprintf (stderr, "settable params: %s\n", buf);
       p = strtok(buf, ",");
       while (p)
-	{
-	  status = ijs_client_enum_param (ctx, 0, p, ebuf, sizeof(ebuf) - 1);
-	  if (status >= 0)
-	    {
-	      ebuf[status] = 0;
-	      fprintf (stderr, "  %s: %s\n", p, ebuf);
-	    }
-	  else
-	    {
-	      fprintf (stderr, "Error %d getting param %s\n", status, p);
-	    }
-	  p = strtok(NULL, ",");
+        {
+          status = ijs_client_enum_param (ctx, 0, p, ebuf, sizeof(ebuf) - 1);
+          if (status >= 0)
+            {
+              ebuf[status] = 0;
+              fprintf (stderr, "  %s: %s\n", p, ebuf);
+            }
+          else
+            {
+              fprintf (stderr, "Error %d getting param %s\n", status, p);
+            }
+          p = strtok(NULL, ",");
         }
     }
   else
@@ -99,9 +99,9 @@ send_pnm_file (IjsClientCtx *ctx, FILE *f, int xres, int yres)
     {
       /* skip depth */
       do
-	{
-	  lp = fgets (buf, sizeof(buf), f);
-	}
+        {
+          lp = fgets (buf, sizeof(buf), f);
+        }
       while (lp != NULL && lp[0] == '#');
     }
 
@@ -131,18 +131,18 @@ send_pnm_file (IjsClientCtx *ctx, FILE *f, int xres, int yres)
     {
       int n_bytes = bytes_left;
       if (n_bytes > sizeof(buf))
-	n_bytes = sizeof(buf);
+        n_bytes = sizeof(buf);
       fread (buf, 1, n_bytes, f); /* todo: check error */
       if (type == '4')
-	{
-	  /* invert pbm so black is 0, as per DeviceGray color space */
-	  int i;
-	  for (i = 0; i < n_bytes; i++)
-	    buf[i] ^= 0xff;
-	}
+        {
+          /* invert pbm so black is 0, as per DeviceGray color space */
+          int i;
+          for (i = 0; i < n_bytes; i++)
+            buf[i] ^= 0xff;
+        }
       status = ijs_client_send_data_wait (ctx, 0, buf, n_bytes);
       if (status)
-	break;
+        break;
       bytes_left -= n_bytes;
     }
 
@@ -160,7 +160,6 @@ verify_context (IjsClientCtx *ctx)
       exit (1);
     }
 }
-
 
 static void
 param_usage (void)
@@ -185,56 +184,56 @@ example_set_params (IjsClientCtx *ctx, const char *arg)
       for (ibeg = i; arg[ibeg] == ' '; ibeg++);
 
       for (ieq = ibeg; arg[ieq] != 0; ieq++)
-	{
-	  if (arg[ieq] == '=')
-	    break;
-	}
+        {
+          if (arg[ieq] == '=')
+            break;
+        }
       if (arg[ieq] == 0)
-	{
-	  param_usage ();
-	  return;
-	}
+        {
+          param_usage ();
+          return;
+        }
       for (iend = ieq; iend >= ibeg; iend--)
-	if (arg[iend - 1] != ' ')
-	  break;
+        if (arg[iend - 1] != ' ')
+          break;
       if (iend == ibeg)
-	{
-	  param_usage ();
-	  return;
-	}
+        {
+          param_usage ();
+          return;
+        }
       key_size = iend - ibeg;
       if (key_size + 1 > sizeof(key))
-	{
-	  fprintf (stderr, "Key exceeds %d bytes\n", sizeof(key));
-	  return;
-	}
+        {
+          fprintf (stderr, "Key exceeds %d bytes\n", sizeof(key));
+          return;
+        }
       memcpy (key, arg + ibeg, key_size);
       key[key_size] = 0;
       buf_ix = 0;
       for (i = ieq + 1; arg[i] == ' '; i++);
       for (; arg[i] != 0; i++)
-	{
-	  if (arg[i] == ',')
-	    break;
-	  if (buf_ix == sizeof(buf))
-	    {
-	      fprintf (stderr, "Value for %s exceeds %d bytes\n",
-		       key, sizeof(buf));
-	      return;
-	    }
-	  if (arg[i] == '\\' && arg[i + 1] != 0)
-	    buf[buf_ix++] = arg[++i];
-	  else
-	    buf[buf_ix++] = arg[i];
-	}
+        {
+          if (arg[i] == ',')
+            break;
+          if (buf_ix == sizeof(buf))
+            {
+              fprintf (stderr, "Value for %s exceeds %d bytes\n",
+                       key, sizeof(buf));
+              return;
+            }
+          if (arg[i] == '\\' && arg[i + 1] != 0)
+            buf[buf_ix++] = arg[++i];
+          else
+            buf[buf_ix++] = arg[i];
+        }
       if (arg[i] == ',')
-	inext = i + 1;
+        inext = i + 1;
       else
-	inext = i;
+        inext = i;
       code = ijs_client_set_param (ctx, 0, key, buf, buf_ix);
       if (code < 0)
-	fprintf (stderr, "Warning: error %d setting parameter %s\n",
-		 code, key);
+        fprintf (stderr, "Warning: error %d setting parameter %s\n",
+                 code, key);
     }
 }
 
@@ -283,9 +282,9 @@ get_arg (int argc, char **argv, int *pi, const char *arg)
     {
       (*pi)++;
       if (*pi == argc)
-	return NULL;
+        return NULL;
       else
-	return argv[*pi];
+        return argv[*pi];
     }
 }
 
@@ -303,69 +302,69 @@ main (int argc, char **argv)
       const char *arg = argv[i];
 
       if (arg[0] == '-')
-	{
-	  switch (arg[1])
-	    {
-	    case  'r':
-	      {
-		char *tail;
+        {
+          switch (arg[1])
+            {
+            case  'r':
+              {
+                char *tail;
 
-		arg = get_arg (argc, argv, &i, arg + 2);
-		xres = strtol (arg, &tail, 10);
-		if (tail[0] == 0)
-		  yres = xres;
-		else if (tail[0] == 'x')
-		  yres = strtol (tail + 1, &tail, 10);
-	      }
-	      break;
-	    case 's':
-	      arg = get_arg (argc, argv, &i, arg + 2);
-	      ctx = ijs_invoke_server (arg);
-	      if (!ctx) {
-	        fprintf (stderr, "ijs_invoke_server %s failed\n", arg);
-	        return 1;
-	      }
-	      ijs_client_open (ctx);
-	      ijs_client_begin_job (ctx, 0);
-	      break;
-	    case 'p':
-	      arg = get_arg (argc, argv, &i, arg + 2);
-	      verify_context (ctx);
-	      example_set_params (ctx, arg);
-	      break;
-	    case 'g':
-	      arg = get_arg (argc, argv, &i, arg + 2);
-	      verify_context (ctx);
-	      example_get_param (ctx, arg);
-	      break;
-	    case 'e':
-	      arg = get_arg (argc, argv, &i, arg + 2);
-	      verify_context (ctx);
-	      example_enum_param (ctx, arg);
-	      break;
-	    case 'l':
-	      verify_context (ctx);
-	      example_list_params (ctx);
-	      break;
-	    case 0:
-	      verify_context (ctx);
-	      send_pnm_file (ctx, stdin, xres, yres);
-	      break;
-	    }
-	}
+                arg = get_arg (argc, argv, &i, arg + 2);
+                xres = strtol (arg, &tail, 10);
+                if (tail[0] == 0)
+                  yres = xres;
+                else if (tail[0] == 'x')
+                  yres = strtol (tail + 1, &tail, 10);
+              }
+              break;
+            case 's':
+              arg = get_arg (argc, argv, &i, arg + 2);
+              ctx = ijs_invoke_server (arg);
+              if (!ctx) {
+                fprintf (stderr, "ijs_invoke_server %s failed\n", arg);
+                return 1;
+              }
+              ijs_client_open (ctx);
+              ijs_client_begin_job (ctx, 0);
+              break;
+            case 'p':
+              arg = get_arg (argc, argv, &i, arg + 2);
+              verify_context (ctx);
+              example_set_params (ctx, arg);
+              break;
+            case 'g':
+              arg = get_arg (argc, argv, &i, arg + 2);
+              verify_context (ctx);
+              example_get_param (ctx, arg);
+              break;
+            case 'e':
+              arg = get_arg (argc, argv, &i, arg + 2);
+              verify_context (ctx);
+              example_enum_param (ctx, arg);
+              break;
+            case 'l':
+              verify_context (ctx);
+              example_list_params (ctx);
+              break;
+            case 0:
+              verify_context (ctx);
+              send_pnm_file (ctx, stdin, xres, yres);
+              break;
+            }
+        }
       else
-	{
-	  FILE *f = fopen (arg, "rb");
+        {
+          FILE *f = fopen (arg, "rb");
 
-	  if (f == NULL)
-	    {
-	      fprintf (stderr, "error opening %s\n", arg);
-	      return 1;
-	    }
-	  verify_context (ctx);
-	  send_pnm_file (ctx, f, xres, yres);
-	  fclose (f);
-	}
+          if (f == NULL)
+            {
+              fprintf (stderr, "error opening %s\n", arg);
+              return 1;
+            }
+          verify_context (ctx);
+          send_pnm_file (ctx, f, xres, yres);
+          fclose (f);
+        }
     }
 
   verify_context (ctx);

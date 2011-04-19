@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,7 +64,6 @@ typedef struct gx_device_spot_analyzer_s gx_device_spot_analyzer;
 #  define gs_state_DEFINED
 typedef struct gs_state_s gs_state;
 #endif
-
 
 /*
  * Define the entry for a cached (font,matrix) pair.  If the UID
@@ -332,29 +331,29 @@ struct gs_font_dir_s {
 
 /* Character cache procedures (in gxccache.c and gxccman.c) */
 int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
-			gs_font_dir * pdir, uint bmax, uint mmax,
-			uint cmax, uint upper);
+                        gs_font_dir * pdir, uint bmax, uint mmax,
+                        uint cmax, uint upper);
 void gx_char_cache_init(gs_font_dir *);
-void gx_purge_selected_cached_chars(gs_font_dir *, 
-				    bool(*)(const gs_memory_t *, cached_char *, void *), void *);
-void gx_compute_char_matrix(const gs_matrix *char_tm, const gs_log2_scale_point *log2_scale, 
+void gx_purge_selected_cached_chars(gs_font_dir *,
+                                    bool(*)(const gs_memory_t *, cached_char *, void *), void *);
+void gx_compute_char_matrix(const gs_matrix *char_tm, const gs_log2_scale_point *log2_scale,
     float *mxx, float *mxy, float *myx, float *myy);
-void gx_compute_ccache_key(gs_font * pfont, const gs_matrix *char_tm, 
+void gx_compute_ccache_key(gs_font * pfont, const gs_matrix *char_tm,
     const gs_log2_scale_point *log2_scale, bool design_grid,
     float *mxx, float *mxy, float *myx, float *myy);
-int gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, 
+int gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
     const gs_log2_scale_point *log2_scale, bool design_grid, cached_fm_pair **ppair);
 int gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
-	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
-	       bool design_grid, cached_fm_pair **ppair);
+               const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+               bool design_grid, cached_fm_pair **ppair);
 int gx_fm_pair_attributes(gs_font_dir * dir,
-	       gs_font *font, cached_fm_pair *pair,
-	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
-	       bool design_grid);
+               gs_font *font, cached_fm_pair *pair,
+               const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+               bool design_grid);
 int  gx_provide_fm_pair_attributes(gs_font_dir * dir,
-	       gs_font *font, cached_fm_pair *pair,
-	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
-	       bool design_grid);
+               gs_font *font, cached_fm_pair *pair,
+               const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+               bool design_grid);
 int  gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
 void gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -115,7 +115,7 @@ static const char * const dsc_dict_name = "DSC_struct";
  */
 static int
 dsc_error_handler(void *caller_data, CDSC *dsc, unsigned int explanation,
-		  const char *line, unsigned int line_len)
+                  const char *line, unsigned int line_len)
 {
     return CDSC_OK;
 }
@@ -133,19 +133,19 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
     dict * const pdict = op->value.pdict;
     gs_memory_t * const mem = (gs_memory_t *)dict_memory(pdict);
     dsc_data_t * const data =
-	gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
+        gs_alloc_struct(mem, dsc_data_t, &st_dsc_data_t, "DSC parser init");
 
     if (!data)
         return_error(e_VMerror);
     data->document_level = 0;
     data->dsc_data_ptr = dsc_init((void *) "Ghostscript DSC parsing");
     if (!data->dsc_data_ptr)
-    	return_error(e_VMerror);
+        return_error(e_VMerror);
     dsc_set_error_function(data->dsc_data_ptr, dsc_error_handler);
     make_astruct(&local_ref, a_readonly | r_space(op), (byte *) data);
     code = idict_put_string(op, dsc_dict_name, &local_ref);
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -158,10 +158,9 @@ dsc_finalize(void *vptr)
     dsc_data_t * const st = vptr;
 
     if (st->dsc_data_ptr)
-	dsc_free(st->dsc_data_ptr);
+        dsc_free(st->dsc_data_ptr);
     st->dsc_data_ptr = NULL;
 }
-
 
 /* ---------------- Parsing ---------------- */
 
@@ -177,7 +176,7 @@ dsc_put_int(gs_param_list *plist, const char *keyname, int value)
 /* Return a string value. */
 static int
 dsc_put_string(gs_param_list *plist, const char *keyname,
-	       const char *string)
+               const char *string)
 {
     gs_param_string str;
 
@@ -188,14 +187,14 @@ dsc_put_string(gs_param_list *plist, const char *keyname,
 /* Return a BoundingBox value. */
 static int
 dsc_put_bounding_box(gs_param_list *plist, const char *keyname,
-		     const CDSCBBOX *pbbox)
+                     const CDSCBBOX *pbbox)
 {
     /* pbbox is NULL iff the bounding box values was "(atend)". */
     int values[4];
     gs_param_int_array va;
 
     if (!pbbox)
-	return 0;
+        return 0;
     values[0] = pbbox->llx;
     values[1] = pbbox->lly;
     values[2] = pbbox->urx;
@@ -255,7 +254,7 @@ dsc_page(gs_param_list *plist, const CDSC *pData)
 
     if (page_num)		/* If we have page information */
         return dsc_put_int(plist, "PageNum",
-		       pData->page[page_num - 1].ordinal );
+                       pData->page[page_num - 1].ordinal );
     else			/* No page info - so return page=0 */
         return dsc_put_int(plist, "PageNum", 0 );
 }
@@ -298,18 +297,18 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
      * will be in page_orientation.
      */
     if (page_num && pData->page[page_num - 1].orientation != CDSC_ORIENT_UNKNOWN)
-	return dsc_put_int(plist, "PageOrientation",
-			convert_orient(pData->page[page_num - 1].orientation));
+        return dsc_put_int(plist, "PageOrientation",
+                        convert_orient(pData->page[page_num - 1].orientation));
     else
         return dsc_put_int(plist, "Orientation",
-			   convert_orient(pData->page_orientation));
+                           convert_orient(pData->page_orientation));
 }
 
 static int
 dsc_orientation(gs_param_list *plist, const CDSC *pData)
 {
-    return dsc_put_int(plist, "Orientation", 
-			   convert_orient(pData->page_orientation));
+    return dsc_put_int(plist, "Orientation",
+                           convert_orient(pData->page_orientation));
 }
 
 static int
@@ -326,11 +325,11 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
      * 'defaults' section or in a page section.
      */
     if (page_num && pData->page[page_num - 1].viewing_orientation != NULL) {
-	key = "PageViewingOrientation";
-	pctm = pData->page[page_num - 1].viewing_orientation;
+        key = "PageViewingOrientation";
+        pctm = pData->page[page_num - 1].viewing_orientation;
     } else {
         key = "ViewingOrientation";
-	pctm = pData->viewing_orientation;
+        pctm = pData->viewing_orientation;
     }
     values[0] = pctm->xx;
     values[1] = pctm->xy;
@@ -350,12 +349,12 @@ typedef struct cmdlist_s {
     int code;			/* Russell's DSC parser code (see dsc.h) */
     const char *comment_name;	/* A name to be returned to postscript caller */
     int (*dsc_proc) (gs_param_list *, const CDSC *);
-				/* A routine for transferring parameter values
-				   from C data structure to postscript dictionary
-				   key/value pairs. */
+                                /* A routine for transferring parameter values
+                                   from C data structure to postscript dictionary
+                                   key/value pairs. */
 } cmdlist_t;
 
-static const cmdlist_t DSCcmdlist[] = { 
+static const cmdlist_t DSCcmdlist[] = {
     { CDSC_PSADOBE,	    "Header",		dsc_adobe_header },
     { CDSC_CREATOR,	    "Creator",		dsc_creator },
     { CDSC_CREATIONDATE,    "CreationDate",	dsc_creation_date },
@@ -437,13 +436,13 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
      */
     while (*pBadList && strncmp(*pBadList, dsc_buffer, strlen(*pBadList)))
         pBadList++;
-    if (*pBadList) {		    /* If found in list, then skip comment */	
+    if (*pBadList) {		    /* If found in list, then skip comment */
         comment_code = 0;	    /* Ignore */
         if (dsc_buffer[2] == 'B') {
-	    dsc_state->document_level++;
-	} else if (dsc_state->document_level > 0) {
+            dsc_state->document_level++;
+        } else if (dsc_state->document_level > 0) {
             dsc_state->document_level--;
-	}
+        }
     }
     else if (dsc_state->document_level > 0) {
        comment_code = 0;	    /* Ignore */
@@ -455,29 +454,29 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
          */
         comment_code = dsc_scan_data(dsc_state->dsc_data_ptr, dsc_buffer, ssize + 1);
         if_debug1('%', "[%%].parse_dsc_comments: code = %d\n", comment_code);
-	/*
-	 * We ignore any errors from Russell's parser.  The only value that
-	 * it will return for an error is -1 so there is very little information.
-	 * We also do not want bad DSC comments to abort processing of an
-	 * otherwise valid PS file.
-	 */
+        /*
+         * We ignore any errors from Russell's parser.  The only value that
+         * it will return for an error is -1 so there is very little information.
+         * We also do not want bad DSC comments to abort processing of an
+         * otherwise valid PS file.
+         */
         if (comment_code < 0)
-	    comment_code = 0;
+            comment_code = 0;
     }
     /*
      * Transfer data from DSC structure to postscript variables.
      * Look up proper handler in the local cmd decode list.
      */
     while (pCmdList->code && pCmdList->code != comment_code )
-	pCmdList++;
+        pCmdList++;
     if (pCmdList->dsc_proc) {
-	code = dict_param_list_write(&list, opDict, NULL, iimemory);
-	if (code < 0)
-	    return code;
-	code = (pCmdList->dsc_proc)((gs_param_list *)&list, dsc_state->dsc_data_ptr);
-	iparam_list_release(&list);
-	if (code < 0)
-	    return code;
+        code = dict_param_list_write(&list, opDict, NULL, iimemory);
+        if (code < 0)
+            return code;
+        code = (pCmdList->dsc_proc)((gs_param_list *)&list, dsc_state->dsc_data_ptr);
+        iparam_list_release(&list);
+        if (code < 0)
+            return code;
     }
 
     /* Put DSC comment name onto operand stack (replace string). */

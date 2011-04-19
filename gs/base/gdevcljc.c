@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,14 +40,14 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* allocate memory for the raw data and compressed data.  */
     if (((data = gs_alloc_bytes(mem, raster, "cljc_print_page(data)")) == 0) ||
-	((cdata = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(cdata)")) == 0) ||
-	((prow = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(prow)")) == 0)) {
-	code = gs_note_error(gs_error_VMerror);
-	goto out;
+        ((cdata = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(cdata)")) == 0) ||
+        ((prow = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(prow)")) == 0)) {
+        code = gs_note_error(gs_error_VMerror);
+        goto out;
     }
     /* send a reset and the the paper definition */
     fprintf(prn_stream, "\033E\033&u300D\033&l%dA",
-	    gdev_pcl_paper_size((gx_device *) pdev));
+            gdev_pcl_paper_size((gx_device *) pdev));
     /* turn off source and pattern transparency */
     fprintf(prn_stream, "\033*v1N\033*v1O");
     /* set color render mode and the requested resolution */
@@ -62,14 +62,14 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     memset(prow, 0, worst_case_comp_size);
     /* process each scanline */
     for (i = 0; i < pdev->height; i++) {
-	int compressed_size;
+        int compressed_size;
 
-	code = gdev_prn_copy_scan_lines(pdev, i, (byte *) data, raster);
-	if (code < 0)
-	    break;
-	compressed_size = gdev_pcl_mode3compress(raster, data, prow, cdata);
-	fprintf(prn_stream, "\033*b%dW", compressed_size);
-	fwrite(cdata, sizeof(byte), compressed_size, prn_stream);
+        code = gdev_prn_copy_scan_lines(pdev, i, (byte *) data, raster);
+        if (code < 0)
+            break;
+        compressed_size = gdev_pcl_mode3compress(raster, data, prow, cdata);
+        fprintf(prn_stream, "\033*b%dW", compressed_size);
+        fwrite(cdata, sizeof(byte), compressed_size, prn_stream);
     }
     /* PCL will take care of blank lines at the end */
     fputs("\033*rC\f", prn_stream);
@@ -83,15 +83,15 @@ out:
 /* CLJ device methods */
 static gx_device_procs cljc_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
+                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 
 /* the CLJ device */
 const gx_device_printer gs_cljet5c_device =
 {
     prn_device_body(gx_device_printer, cljc_procs, "cljet5c",
-		    85, 110, X_DPI, Y_DPI,
-		    0.167, 0.167,
-		    0.167, 0.167,
-		    3, 24, 255, 255, 256, 256,
-		    cljc_print_page)
+                    85, 110, X_DPI, Y_DPI,
+                    0.167, 0.167,
+                    0.167, 0.167,
+                    3, 24, 255, 255, 256, 256,
+                    cljc_print_page)
 };

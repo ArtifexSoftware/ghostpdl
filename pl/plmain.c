@@ -66,7 +66,6 @@ typedef struct pl_main_universe_s {
     gx_device               *curr_device;
 } pl_main_universe_t;
 
-
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
@@ -138,7 +137,6 @@ pl_select_implementation(
   pl_top_cursor_t r
 );
 
-
 /* Process the options on the command line. */
 static FILE *pl_main_arg_fopen(const char *fname, void *ignore_data);
 
@@ -186,7 +184,6 @@ long pl_main_cursor_position(pl_top_cursor_t *cursor);
 
 /* Close read cursor */
 void pl_main_cursor_close(pl_top_cursor_t *cursor);
-
 
 /* return index in gs device list -1 if not found */
 static inline int
@@ -239,7 +236,6 @@ pl_main_aux(
 
     pl_platform_init(mem->gs_lib_ctx->fstdout);
 
-
     pjl_mem = mem;
 
     gs_lib_init1(pjl_mem);
@@ -262,7 +258,6 @@ pl_main_aux(
     pl_main_init_instance(&inst, mem);
     arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
 
-
     /* Create PJL instance */
     if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
          || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
@@ -282,7 +277,6 @@ pl_main_aux(
         pl_print_usage(&inst, "Start");
 #endif
 
-
     /* ------ Begin Main LOOP ------- */
     for (;;) {
         /* Process one input file. */
@@ -297,7 +291,6 @@ pl_main_aux(
         int                 code = 0;
         bool                in_pjl = true;
         bool                new_job = false;
-
 
         if ( pl_init_job(pjl_instance) < 0 ) {
             errprintf(mem, "Unable to init PJL job.\n");
@@ -337,18 +330,18 @@ pl_main_aux(
         if (!filename)
             break;  /* no nore files to process */
 
-	/* If the display device is selected (default), set up the callback */
-	if (strcmp(inst.device->dname, "display") == 0) {
-	    gx_device_display *ddev; 
-	    if (!disp) {
-		errprintf(mem, "Display device selected, but no display device configured.\n");
-		return -1;
-	    }
-	    ddev = (gx_device_display *)inst.device;
-	    ddev->callback = (display_callback *)disp;
-	}
+        /* If the display device is selected (default), set up the callback */
+        if (strcmp(inst.device->dname, "display") == 0) {
+            gx_device_display *ddev;
+            if (!disp) {
+                errprintf(mem, "Display device selected, but no display device configured.\n");
+                return -1;
+            }
+            ddev = (gx_device_display *)inst.device;
+            ddev->callback = (display_callback *)disp;
+        }
 
-	/* open file for reading - NB we should respect the minimum
+        /* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(mem, &r, filename, buf, sizeof(buf)) < 0) {
@@ -597,7 +590,6 @@ pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem )
     return universe->curr_instance;
 }
 
-
 /* Undo pl_main_universe_init */
 int   /* 0 ok, else -1 error */
 pl_main_universe_dnit(
@@ -833,7 +825,6 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
     return code;
 }
 
-
 /* Process the options on the command line. */
 static FILE *
 pl_main_arg_fopen(const char *fname, void *ignore_data)
@@ -904,38 +895,38 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     code = param_write_bool((gs_param_list *)params, arg_heap_copy(arg), &bval);
                     continue;
                 }
-		/* Search for a non-decimal 'radix' number */
-		if ( strchr(value, '#') ) {
-		    int base, number = 0;
-		    char *val = strchr(value, '#');
+                /* Search for a non-decimal 'radix' number */
+                if ( strchr(value, '#') ) {
+                    int base, number = 0;
+                    char *val = strchr(value, '#');
 
-		    *val++ = 0x00;
-		    sscanf(value, "%d", &base);
-		    if (base < 2 || base > 36) {
-			dprintf1("Value out of range %s", value);
-			return -1;
-		    }
-		    while(*val) {
-			if (*val >= '0' && *val <= '9') {
-			    number = number * base + (*val - '0');
-			} else {
-			    if (*val >= 'A' && *val <= 'Z') {
-				number = number * base + (*val - 'A');
-			    } else {
-				if (*val >= 'a' && *val <= 'z') {
-				    number = number * base + (*val - 'a');
-				} else {
-				    dprintf1("Value out of range %s", val);
-				    return -1;
-				}
-			    }
-			}
-			val++;
-		    }
+                    *val++ = 0x00;
+                    sscanf(value, "%d", &base);
+                    if (base < 2 || base > 36) {
+                        dprintf1("Value out of range %s", value);
+                        return -1;
+                    }
+                    while(*val) {
+                        if (*val >= '0' && *val <= '9') {
+                            number = number * base + (*val - '0');
+                        } else {
+                            if (*val >= 'A' && *val <= 'Z') {
+                                number = number * base + (*val - 'A');
+                            } else {
+                                if (*val >= 'a' && *val <= 'z') {
+                                    number = number * base + (*val - 'a');
+                                } else {
+                                    dprintf1("Value out of range %s", val);
+                                    return -1;
+                                }
+                            }
+                        }
+                        val++;
+                    }
                     strncpy(buffer, arg, eqp - arg);
                     buffer[eqp - arg] = '\0';
                     code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &number);
-		} else if ( ( !strchr(value, '.' ) ) &&
+                } else if ( ( !strchr(value, '.' ) ) &&
                 /* search for an int (no decimal), if fail try a float */
                      ( sscanf(value, "%d", &vi) == 1 ) ) {
                     if ( !strncmp(arg, "FirstPage", 9) )
@@ -1028,7 +1019,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 #ifdef HEAP_ALLOCATOR_ONLY
                 gs_malloc_memory_t *rawheap =
                     (gs_malloc_memory_t *)gs_malloc_wrapped_contents(pmi->memory);
-#else                    
+#else
                 gs_malloc_memory_t *rawheap =
                     (gs_malloc_memory_t *)gs_memory_chunk_target(pmi->memory)->non_gc_memory;
 #endif
@@ -1044,13 +1035,13 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 const char *adef;
                 gs_param_string str;
 
-		if (arg[0] == 0) {
-		    adef = arg_next(pal, &code);
-		    if (code < 0)
+                if (arg[0] == 0) {
+                    adef = arg_next(pal, &code);
+                    if (code < 0)
                         break;
-		} else
-		    adef = arg;
-                param_string_from_transient_string(str, adef);   
+                } else
+                    adef = arg;
+                param_string_from_transient_string(str, adef);
                 code = param_write_string((gs_param_list *)params, "OutputFile", &str);
                 pmi->pause=false;
                 break;

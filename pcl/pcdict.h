@@ -18,7 +18,6 @@
 
 #include "gx.h"
 
-
 /* Define the type for an ID key used in a dictionary. */
 typedef struct pcl_id_s {
     uint    value;

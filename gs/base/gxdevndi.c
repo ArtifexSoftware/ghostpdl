@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -90,32 +90,32 @@ const gx_color_value *const fc_color_quo[8] = {
  **/
 static int
 gx_render_device_DeviceN_wts(frac * pcolor,
-			     gx_device_color * pdevc, gx_device * dev,
-			     gx_device_halftone * pdht,
-			     const gs_int_point * ht_phase)
+                             gx_device_color * pdevc, gx_device * dev,
+                             gx_device_halftone * pdht,
+                             const gs_int_point * ht_phase)
 {
     int i;
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int num_comp = pdht->num_comp;
 
     for (i = 0; i < num_comp; i++) {
-	cv[i] = 0;
+        cv[i] = 0;
     }
 
     pdevc->type = gx_dc_type_wts;
     pdevc->colors.wts.w_ht = pdht;
 
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN) {
-	/* Monochrome case may be inverted. */
-	pdevc->colors.wts.plane_vector[1] =
-	    dev_proc(dev, encode_color)(dev, cv);
+        /* Monochrome case may be inverted. */
+        pdevc->colors.wts.plane_vector[1] =
+            dev_proc(dev, encode_color)(dev, cv);
     }
     for (i = 0; i < num_comp; i++) {
-	pdevc->colors.wts.levels[i] = pcolor[i];
-	cv[i] = gx_max_color_value;
-	pdevc->colors.wts.plane_vector[i] =
-	    dev_proc(dev, encode_color)(dev, cv);
-	cv[i] = 0;
+        pdevc->colors.wts.levels[i] = pcolor[i];
+        cv[i] = gx_max_color_value;
+        pdevc->colors.wts.plane_vector[i] =
+            dev_proc(dev, encode_color)(dev, cv);
+        cv[i] = 0;
     }
     pdevc->colors.wts.num_components = num_comp;
     pdevc->phase = *ht_phase;
@@ -135,8 +135,8 @@ gx_render_device_DeviceN_wts(frac * pcolor,
  */
 int
 gx_render_device_DeviceN(frac * pcolor,
-	gx_device_color * pdevc, gx_device * dev,
-	gx_device_halftone * pdht, const gs_int_point * ht_phase)
+        gx_device_color * pdevc, gx_device * dev,
+        gx_device_halftone * pdht, const gs_int_point * ht_phase)
 {
     uint max_value[GS_CLIENT_COLOR_MAX_COMPONENTS];
     frac dither_check = 0;
@@ -147,45 +147,45 @@ gx_render_device_DeviceN(frac * pcolor,
     uint l_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
     if (pdht && pdht->components && pdht->components[0].corder.wts)
-	return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
-					    ht_phase);
+        return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
+                                            ht_phase);
 
     for (i=0; i<num_colors; i++) {
-	max_value[i] = (dev->color_info.gray_index == i) ?
-	     dev->color_info.dither_grays - 1 :
-	     dev->color_info.dither_colors - 1;
+        max_value[i] = (dev->color_info.gray_index == i) ?
+             dev->color_info.dither_grays - 1 :
+             dev->color_info.dither_colors - 1;
     }
 
     for (i = 0; i < num_colors; i++) {
-	unsigned long hsize = pdht ?
-		(unsigned) pdht->components[i].corder.num_levels
-	    	: 1;
-	unsigned long nshades = hsize * max_value[i] + 1;
-	long shade = pcolor[i] * nshades / (frac_1_long + 1);
-	int_color[i] = shade / hsize;
-	l_color[i] = shade % hsize;
-	if (max_value[i] < MIN_CONTONE_LEVELS)
-	    dither_check |= l_color[i];
+        unsigned long hsize = pdht ?
+                (unsigned) pdht->components[i].corder.num_levels
+                : 1;
+        unsigned long nshades = hsize * max_value[i] + 1;
+        long shade = pcolor[i] * nshades / (frac_1_long + 1);
+        int_color[i] = shade / hsize;
+        l_color[i] = shade % hsize;
+        if (max_value[i] < MIN_CONTONE_LEVELS)
+            dither_check |= l_color[i];
     }
 
 #ifdef DEBUG
     if (gs_debug_c('c')) {
-	dlprintf1("[c]ncomp=%d ", num_colors);
-	for (i = 0; i < num_colors; i++)
-	    dlprintf1("0x%x, ", pcolor[i]);
-	dlprintf("-->   ");
-	for (i = 0; i < num_colors; i++)
-	    dlprintf2("%x+0x%x, ", int_color[i], l_color[i]);
-	dlprintf("\n");
+        dlprintf1("[c]ncomp=%d ", num_colors);
+        for (i = 0; i < num_colors; i++)
+            dlprintf1("0x%x, ", pcolor[i]);
+        dlprintf("-->   ");
+        for (i = 0; i < num_colors; i++)
+            dlprintf2("%x+0x%x, ", int_color[i], l_color[i]);
+        dlprintf("\n");
     }
 #endif
 
     /* Check for no dithering required */
     if (!dither_check) {
-	for (i = 0; i < num_colors; i++)
-	    vcolor[i] = fractional_color(int_color[i], max_value[i]);
-	color_set_pure(pdevc, dev_proc(dev, encode_color)(dev, vcolor));
-	return 0;
+        for (i = 0; i < num_colors; i++)
+            vcolor[i] = fractional_color(int_color[i], max_value[i]);
+        color_set_pure(pdevc, dev_proc(dev, encode_color)(dev, vcolor));
+        return 0;
     }
 
     /* Use the slow, general colored halftone algorithm. */
@@ -195,13 +195,13 @@ gx_render_device_DeviceN(frac * pcolor,
     gx_complete_halftone(pdevc, num_colors, pdht);
 
     color_set_phase_mod(pdevc, ht_phase->x, ht_phase->y,
-			    pdht->lcm_width, pdht->lcm_height);
+                            pdht->lcm_width, pdht->lcm_height);
 
     /* Determine if we are using only one component */
     if (!(pdevc->colors.colored.plane_mask &
-	 (pdevc->colors.colored.plane_mask - 1))) {
-	/* We can reduce this color to a binary halftone or pure color. */
-	return gx_devn_reduce_colored_halftone(pdevc, dev);
+         (pdevc->colors.colored.plane_mask - 1))) {
+        /* We can reduce this color to a binary halftone or pure color. */
+        return gx_devn_reduce_colored_halftone(pdevc, dev);
     }
 
     return 1;
@@ -221,57 +221,57 @@ gx_devn_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev)
     int i;
 
     for (i = 0; i < num_colors; i++) {
-	max_value[i] = (dev->color_info.gray_index == i) ?
-	     dev->color_info.dither_grays - 1 :
-	     dev->color_info.dither_colors - 1;
+        max_value[i] = (dev->color_info.gray_index == i) ?
+             dev->color_info.dither_grays - 1 :
+             dev->color_info.dither_colors - 1;
         b[i] = pdevc->colors.colored.c_base[i];
         v[i] = fractional_color(b[i], max_value[i]);
     }
     c0 = dev_proc(dev, encode_color)(dev, v);
 
     if (planes == 0) {
-	/*
-	 * Use a pure color.  This case is unlikely, but it can occur if
-	 * (and only if) the difference of each component from the nearest
-	 * device color is less than one halftone level.
-	 */
-	color_set_pure(pdevc, c0);
-	return 0;
+        /*
+         * Use a pure color.  This case is unlikely, but it can occur if
+         * (and only if) the difference of each component from the nearest
+         * device color is less than one halftone level.
+         */
+        color_set_pure(pdevc, c0);
+        return 0;
     } else {
-	/* Use a binary color. */
-	int i = 0;
-	uint bi;
-	const gx_device_halftone *pdht = pdevc->colors.colored.c_ht;
-	/*
-	 * NB: the halftone orders are all set up for an additive color
-	 *     space.  To use these work with a subtractive color space, it is
-	 *     necessary to invert both the color level and the color
-	 *     pair. Note that if the original color was provided an
-	 *     additive space, this will reverse (in an approximate sense)
-	 *     the color conversion performed to express the color in
-	 *     subtractive space.
-	 */
-	bool invert = dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
-	uint level;
+        /* Use a binary color. */
+        int i = 0;
+        uint bi;
+        const gx_device_halftone *pdht = pdevc->colors.colored.c_ht;
+        /*
+         * NB: the halftone orders are all set up for an additive color
+         *     space.  To use these work with a subtractive color space, it is
+         *     necessary to invert both the color level and the color
+         *     pair. Note that if the original color was provided an
+         *     additive space, this will reverse (in an approximate sense)
+         *     the color conversion performed to express the color in
+         *     subtractive space.
+         */
+        bool invert = dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
+        uint level;
 
-	/* Convert plane mask bit position to component number */
-	/* Determine i = log2(planes);  This works for powers of two */
-	while (planes > 7) {
-	    i += 3;
-	    planes >>= 3;
-	}
-	i += planes >> 1;  /* log2 for 1,2,4 */
+        /* Convert plane mask bit position to component number */
+        /* Determine i = log2(planes);  This works for powers of two */
+        while (planes > 7) {
+            i += 3;
+            planes >>= 3;
+        }
+        i += planes >> 1;  /* log2 for 1,2,4 */
 
-	bi = b[i] + 1;
-	v[i] = fractional_color(bi, max_value[i]);
-	level = pdevc->colors.colored.c_level[i];
+        bi = b[i] + 1;
+        v[i] = fractional_color(bi, max_value[i]);
+        level = pdevc->colors.colored.c_level[i];
         c1 = dev_proc(dev, encode_color)(dev, v);
-	if (invert) {
-	    level = pdht->components[i].corder.num_levels - level;
-	    color_set_binary_halftone_component(pdevc, pdht, i, c1, c0, level);
-	} else
-	    color_set_binary_halftone_component(pdevc, pdht, i, c0, c1, level);
-					    
-	return 1;
+        if (invert) {
+            level = pdht->components[i].corder.num_levels - level;
+            color_set_binary_halftone_component(pdevc, pdht, i, c1, c0, level);
+        } else
+            color_set_binary_halftone_component(pdevc, pdht, i, c0, c1, level);
+
+        return 1;
     }
 }

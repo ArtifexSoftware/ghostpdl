@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,8 +39,8 @@
  */
 
 /*ARGSUSED*/
-int 
-stc_gsmono(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out) 
+int
+stc_gsmono(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 {
 
 /*
@@ -94,7 +94,7 @@ stc_gsmono(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
  * additionally, the size of the scanlines may be expanded by one to the
  * right and to the left.
  */
-     buf_size = 
+     buf_size =
            sdev->stc.dither->bufadd              /* scanline-independend size */
              + (-npixel)                                     /* pixels */
                * (sdev->stc.dither->flags/STC_SCAN)          /* * scanlines */

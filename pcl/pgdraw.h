@@ -22,7 +22,7 @@ int hpgl_set_plu_ctm(hpgl_state_t *pgls);
 
 /* compute the scaling transformation from plu to user units */
 int hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls,
-					  gs_matrix *pmat);
+                                          gs_matrix *pmat);
 
 /* The following 2 functions can be used together to calculate a ctm
    without picture frame scaling.  */
@@ -57,7 +57,7 @@ int hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt);
 
 /* puts a point into the path using the operation specified by func */
 int hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
-			      hpgl_plot_function_t func, bool set_ctm);
+                              hpgl_plot_function_t func, bool set_ctm);
 
 /* puts an arc into the current path.  start moveto indicates that we
    use moveto to go from the arc center to arc circumference. */
@@ -71,9 +71,9 @@ int hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x,
    decomposition is a bit different for 3 point arcs since the polygon
    wedge routines use this function as well */
 int hpgl_add_arc_3point_to_path(hpgl_state_t *pgls, floatp start_x, floatp
-				   start_y, floatp inter_x, floatp inter_y,
-				   floatp end_x, floatp end_y, floatp chord_angle,
-				   hpgl_plot_function_t draw);
+                                   start_y, floatp inter_x, floatp inter_y,
+                                   floatp end_x, floatp end_y, floatp chord_angle,
+                                   hpgl_plot_function_t draw);
 
 int hpgl_close_path(hpgl_state_t *pgls);
 
@@ -85,7 +85,7 @@ int hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1,
 
 /* clears the current path with stroke or fill */
 int hpgl_draw_current_path(hpgl_state_t *pgls,
-			      hpgl_rendering_mode_t render_mode);
+                              hpgl_rendering_mode_t render_mode);
 
 /* save/restore gs graphics state + HPGL/2's first moveto state */
 #define hpgl_gsave(pgls)    pcl_gsave(pgls)
@@ -98,7 +98,7 @@ int hpgl_copy_current_path_to_polygon_buffer(hpgl_state_t *pgls);
 
 /* draw the current path with stroke or fill, but do not clear */
 int hpgl_draw_and_preserve_path(hpgl_state_t *pgls,
-				   hpgl_rendering_mode_t render_mode);
+                                   hpgl_rendering_mode_t render_mode);
 
 /* destroy the current path */
 int hpgl_clear_current_path(hpgl_state_t *pgls);

@@ -1,12 +1,12 @@
 % Copyright (C) 1995 Aladdin Enterprises.  All rights reserved
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -69,11 +69,10 @@ exch (AFPL Ghostscript) eq or{
 % pick the colormodel
      STCold /ProcessColorModel get /STCcolor exch def
 
-
-     mark % prepare stack for "putdeviceprops" 
+     mark % prepare stack for "putdeviceprops"
 
 % warn for BitsPerPixel=30 with fsrgb
-     STCcolor /DeviceRGB eq STCold /BitsPerPixel get 32 eq and 
+     STCcolor /DeviceRGB eq STCold /BitsPerPixel get 32 eq and
      {
        (%%[ stcolor.ps: inefficient RGB-setup, recommend BitsPerPixel=24 ]%%\n)
        print
@@ -84,15 +83,15 @@ exch (AFPL Ghostscript) eq or{
 % if the selected algorithm uses another ProcessColorModel, it is necessary
 % to change the Value of STCcolor according to the new algorithm.
 
-     STCold /Dithering get (gscmyk) eq 
-     { 
+     STCold /Dithering get (gscmyk) eq
+     {
         /Dithering (hscmyk) % preferred dithering-method
      } if % might be necessary to change STCcolor too
 
 %
 % select the array according to the resolution
 %
-     STCdpi 359.0 lt 
+     STCdpi 359.0 lt
      { STCdeftransfer }
      { STCdpi 361.0 lt
        { STCKtransfer360 }
@@ -101,12 +100,12 @@ exch (AFPL Ghostscript) eq or{
          {
            STCKtransfer360 length STCKtransfer720 length eq
            {
-             0 1 STCKtransfer360 length 1 sub 
+             0 1 STCKtransfer360 length 1 sub
              {
-               dup dup 
-               STCKtransfer360 exch get 
-               exch STCKtransfer720 exch get 
-               add 2.0 div 
+               dup dup
+               STCKtransfer360 exch get
+               exch STCKtransfer720 exch get
+               add 2.0 div
                STCKtransfer360 3 1 roll put
              } for
            }if
@@ -117,19 +116,19 @@ exch (AFPL Ghostscript) eq or{
      /STCtransfer exch def
 
 %
-% Add the arrays. With Version 1.17 and above, it seems to be 
+% Add the arrays. With Version 1.17 and above, it seems to be
 % a good idea, to use the transfer-arrays as coding-arrays too.
 %
 
 %
 % RGB-Model requires inversion of the transfer-arrays
 %
-     STCcolor /DeviceRGB eq 
+     STCcolor /DeviceRGB eq
      {
         /RGBtransfer STCtransfer length array def
         0 1 STCtransfer length 1 sub
         {
-          dup RGBtransfer length 1 sub exch sub exch 
+          dup RGBtransfer length 1 sub exch sub exch
           STCtransfer exch get 1.0 exch sub
           RGBtransfer 3 1 roll put
         } for
@@ -156,7 +155,7 @@ exch (AFPL Ghostscript) eq or{
 
      } ifelse
 
-     counttomark 0 ne 
+     counttomark 0 ne
         {currentdevice putdeviceprops pop}{cleartomark}ifelse
 
 % decativate predefined correction

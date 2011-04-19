@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -85,18 +85,18 @@ gx_color_index
 gx_device_black(gx_device *dev)
 {
     if (dev->cached_colors.black == gx_no_color_index) {
-	const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+        const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
         int i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-    	/* Get color components for black (gray = 0) */
-    	cm_procs->map_gray(dev, frac_0, cm_comps);
+        /* Get color components for black (gray = 0) */
+        cm_procs->map_gray(dev, frac_0, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);
 
-	dev->cached_colors.black = dev_proc(dev, encode_color)(dev, cv);
+        dev->cached_colors.black = dev_proc(dev, encode_color)(dev, cv);
     }
     return dev->cached_colors.black;
 }
@@ -104,18 +104,18 @@ gx_color_index
 gx_device_white(gx_device *dev)
 {
     if (dev->cached_colors.white == gx_no_color_index) {
-	const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
+        const gx_cm_color_map_procs * cm_procs = dev_proc(dev, get_color_mapping_procs)(dev);
         int i, ncomps = dev->color_info.num_components;
         frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
 
-    	/* Get color components for white (gray = 1) */
-    	cm_procs->map_gray(dev, frac_1, cm_comps);
+        /* Get color components for white (gray = 1) */
+        cm_procs->map_gray(dev, frac_1, cm_comps);
 
         for (i = 0; i < ncomps; i++)
             cv[i] = frac2cv(cm_comps[i]);
 
-	dev->cached_colors.white = dev_proc(dev, encode_color)(dev, cv);
+        dev->cached_colors.white = dev_proc(dev, encode_color)(dev, cv);
     }
     return dev->cached_colors.white;
 }
@@ -132,23 +132,23 @@ static const gx_rop_source_t gx_rop_no_source_0 = {gx_rop_no_source_body(0)};
 static const gx_rop_source_t gx_rop_no_source_1 = {gx_rop_no_source_body(1)};
 void
 gx_set_rop_no_source(const gx_rop_source_t **psource,
-		     gx_rop_source_t *pno_source, gx_device *dev)
+                     gx_rop_source_t *pno_source, gx_device *dev)
 {
     gx_color_index black;
 
 top:
     black = dev->cached_colors.black;
     if (black == 0)
-	*psource = &gx_rop_no_source_0;
+        *psource = &gx_rop_no_source_0;
     else if (black == 1)
-	*psource = &gx_rop_no_source_1;
+        *psource = &gx_rop_no_source_1;
     else if (black == gx_no_color_index) {	/* cache not loaded */
-	discard(gx_device_black(dev));
-	goto top;
+        discard(gx_device_black(dev));
+        goto top;
     } else {
-	*pno_source = gx_rop_no_source_0;
-	gx_rop_source_set_color(pno_source, black);
-	*psource = pno_source;
+        *pno_source = gx_rop_no_source_0;
+        gx_rop_source_set_color(pno_source, black);
+        *psource = pno_source;
     }
 }
 
@@ -160,7 +160,7 @@ top:
  */
 bool
 gx_device_color_equal(const gx_device_color *pdevc1,
-		      const gx_device_color *pdevc2)
+                      const gx_device_color *pdevc2)
 {
     return pdevc1->type->equal(pdevc1, pdevc2);
 }
@@ -238,35 +238,35 @@ gx_dc_no_get_dev_halftone(const gx_device_color * pdevc)
 
 static int
 gx_dc_no_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
-	      gx_device *ignore_dev, gs_color_select_t ignore_select)
+              gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
 
 static int
 gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
-			int w, int h, gx_device *dev,
-			gs_logical_operation_t lop,
-			const gx_rop_source_t *source)
+                        int w, int h, gx_device *dev,
+                        gs_logical_operation_t lop,
+                        const gx_rop_source_t *source)
 {
     gx_device_color filler;
 
     if (w <= 0 || h <= 0)
-	return 0;
+        return 0;
     if (lop_uses_T(lop))
-	return_error(gs_error_Fatal);
+        return_error(gs_error_Fatal);
     set_nonclient_dev_color(&filler, 0);   /* any valid value for dev will do */
     return gx_dc_pure_fill_rectangle(&filler, x, y, w, h, dev, lop, source);
 }
 
 static int
 gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
-		     int data_x, int raster, gx_bitmap_id id,
-		     int x, int y, int w, int h, gx_device *dev,
-		     gs_logical_operation_t lop, bool invert)
+                     int data_x, int raster, gx_bitmap_id id,
+                     int x, int y, int w, int h, gx_device *dev,
+                     gs_logical_operation_t lop, bool invert)
 {
     if (w <= 0 || h <= 0)
-	return 0;
+        return 0;
     return_error(gs_error_Fatal);
 }
 
@@ -343,25 +343,25 @@ gx_dc_no_get_nonzero_comps(
 
 static int
 gx_dc_null_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
-		gx_device *ignore_dev, gs_color_select_t ignore_select)
+                gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
 
 static int
 gx_dc_null_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-			  int w, int h, gx_device * dev,
-			  gs_logical_operation_t lop,
-			  const gx_rop_source_t * source)
+                          int w, int h, gx_device * dev,
+                          gs_logical_operation_t lop,
+                          const gx_rop_source_t * source)
 {
     return 0;
 }
 
 static int
 gx_dc_null_fill_masked(const gx_device_color * pdevc, const byte * data,
-		       int data_x, int raster, gx_bitmap_id id,
-		       int x, int y, int w, int h, gx_device * dev,
-		       gs_logical_operation_t lop, bool invert)
+                       int data_x, int raster, gx_bitmap_id id,
+                       int x, int y, int w, int h, gx_device * dev,
+                       gs_logical_operation_t lop, bool invert)
 {
     return 0;
 }
@@ -398,7 +398,7 @@ gx_dc_pure_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
 
 static int
 gx_dc_pure_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
-		gx_device * ignore_dev, gs_color_select_t ignore_select)
+                gx_device * ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
@@ -407,23 +407,23 @@ gx_dc_pure_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
 /* Note that we treat this as "texture" for RasterOp. */
 static int
 gx_dc_pure_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
-			  const gx_rop_source_t * source)
+                  int w, int h, gx_device * dev, gs_logical_operation_t lop,
+                          const gx_rop_source_t * source)
 {
     if (source == NULL && lop_no_S_is_T(lop))
-	return (*dev_proc(dev, fill_rectangle)) (dev, x, y, w, h,
-						 pdevc->colors.pure);
+        return (*dev_proc(dev, fill_rectangle)) (dev, x, y, w, h,
+                                                 pdevc->colors.pure);
     {
-	gx_color_index colors[2];
-	gx_rop_source_t no_source;
+        gx_color_index colors[2];
+        gx_rop_source_t no_source;
 
-	colors[0] = colors[1] = pdevc->colors.pure;
-	if (source == NULL)
-	    set_rop_no_source(source, no_source, dev);
-	return (*dev_proc(dev, strip_copy_rop))
-	    (dev, source->sdata, source->sourcex, source->sraster,
-	     source->id, (source->use_scolors ? source->scolors : NULL),
-	     NULL /*arbitrary */ , colors, x, y, w, h, 0, 0, lop);
+        colors[0] = colors[1] = pdevc->colors.pure;
+        if (source == NULL)
+            set_rop_no_source(source, no_source, dev);
+        return (*dev_proc(dev, strip_copy_rop))
+            (dev, source->sdata, source->sourcex, source->sraster,
+             source->id, (source->use_scolors ? source->scolors : NULL),
+             NULL /*arbitrary */ , colors, x, y, w, h, 0, 0, lop);
     }
 }
 
@@ -431,34 +431,34 @@ gx_dc_pure_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 /* Note that there is no source in this case: the mask is the source. */
 static int
 gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
-	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		   gx_device * dev, gs_logical_operation_t lop, bool invert)
+        int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                   gx_device * dev, gs_logical_operation_t lop, bool invert)
 {
     if (lop_no_S_is_T(lop)) {
-	gx_color_index color0, color1;
+        gx_color_index color0, color1;
 
-	if (invert)
-	    color0 = pdevc->colors.pure, color1 = gx_no_color_index;
-	else
-	    color1 = pdevc->colors.pure, color0 = gx_no_color_index;
-	return (*dev_proc(dev, copy_mono))
-	    (dev, data, data_x, raster, id, x, y, w, h, color0, color1);
+        if (invert)
+            color0 = pdevc->colors.pure, color1 = gx_no_color_index;
+        else
+            color1 = pdevc->colors.pure, color0 = gx_no_color_index;
+        return (*dev_proc(dev, copy_mono))
+            (dev, data, data_x, raster, id, x, y, w, h, color0, color1);
     } {
-	gx_color_index scolors[2];
-	gx_color_index tcolors[2];
+        gx_color_index scolors[2];
+        gx_color_index tcolors[2];
 
-	if ( lop != lop_default ) {
-	    scolors[0] = gx_device_white(dev);
-	    scolors[1] = gx_device_black(dev);
-	} else {
-	    scolors[0] = gx_device_black(dev);
-	    scolors[1] = gx_device_white(dev);
+        if ( lop != lop_default ) {
+            scolors[0] = gx_device_white(dev);
+            scolors[1] = gx_device_black(dev);
+        } else {
+            scolors[0] = gx_device_black(dev);
+            scolors[1] = gx_device_white(dev);
         }
-	tcolors[0] = tcolors[1] = pdevc->colors.pure;
-	return (*dev_proc(dev, strip_copy_rop))
-	    (dev, data, data_x, raster, id, scolors,
-	     NULL, tcolors, x, y, w, h, 0, 0,
-	     (invert ? rop3_invert_S(lop) : lop) | (rop3_S | lop_S_transparent));
+        tcolors[0] = tcolors[1] = pdevc->colors.pure;
+        return (*dev_proc(dev, strip_copy_rop))
+            (dev, data, data_x, raster, id, scolors,
+             NULL, tcolors, x, y, w, h, 0, 0,
+             (invert ? rop3_invert_S(lop) : lop) | (rop3_S | lop_S_transparent));
     }
 }
 
@@ -466,7 +466,7 @@ static bool
 gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type &&
-	gx_dc_pure_color(pdevc1) == gx_dc_pure_color(pdevc2);
+        gx_dc_pure_color(pdevc1) == gx_dc_pure_color(pdevc2);
 }
 
 /*
@@ -478,7 +478,7 @@ gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
  *
  *  psdc        pointer ot saved version of last serialized color (for
  *              this band); this is ignored
- *  
+ *
  *  dev         pointer to the current device, used to retrieve process
  *              color model information
  *
@@ -610,8 +610,8 @@ gx_complete_halftone(gx_device_color *pdevc, int num_comps, gx_device_halftone *
 /* Fill a mask with a color by parsing the mask into rectangles. */
 int
 gx_dc_default_fill_masked(const gx_device_color * pdevc, const byte * data,
-	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		   gx_device * dev, gs_logical_operation_t lop, bool invert)
+        int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                   gx_device * dev, gs_logical_operation_t lop, bool invert)
 {
     int lbit = data_x & 7;
     const byte *row = data + (data_x >> 3);
@@ -620,61 +620,61 @@ gx_dc_default_fill_masked(const gx_device_color * pdevc, const byte * data,
     int iy;
 
     for (iy = 0; iy < h; ++iy, row += raster) {
-	const byte *p = row;
-	int bit = lbit;
-	int left = w;
-	int l0;
+        const byte *p = row;
+        int bit = lbit;
+        int left = w;
+        int l0;
 
-	while (left) {
-	    int run, code;
+        while (left) {
+            int run, code;
 
-	    /* Skip a run of zeros. */
-	    run = byte_bit_run_length[bit][*p ^ one];
-	    if (run) {
-		if (run < 8) {
-		    if (run >= left)
-			break;	/* end of row while skipping */
-		    bit += run, left -= run;
-		} else if ((run -= 8) >= left)
-		    break;	/* end of row while skipping */
-		else {
-		    left -= run;
-		    ++p;
-		    while (left > 8 && *p == zero)
-			left -= 8, ++p;
-		    run = byte_bit_run_length_0[*p ^ one];
-		    if (run >= left)	/* run < 8 unless very last byte */
-			break;	/* end of row while skipping */
-		    else
-			bit = run & 7, left -= run;
-		}
-	    }
-	    l0 = left;
-	    /* Scan a run of ones, and then paint it. */
-	    run = byte_bit_run_length[bit][*p ^ zero];
-	    if (run < 8) {
-		if (run >= left)
-		    left = 0;
-		else
-		    bit += run, left -= run;
-	    } else if ((run -= 8) >= left)
-		left = 0;
-	    else {
-		left -= run;
-		++p;
-		while (left > 8 && *p == one)
-		    left -= 8, ++p;
-		run = byte_bit_run_length_0[*p ^ zero];
-		if (run >= left)	/* run < 8 unless very last byte */
-		    left = 0;
-		else
-		    bit = run & 7, left -= run;
-	    }
-	    code = gx_device_color_fill_rectangle(pdevc,
-			  x + w - l0, y + iy, l0 - left, 1, dev, lop, NULL);
-	    if (code < 0)
-		return code;
-	}
+            /* Skip a run of zeros. */
+            run = byte_bit_run_length[bit][*p ^ one];
+            if (run) {
+                if (run < 8) {
+                    if (run >= left)
+                        break;	/* end of row while skipping */
+                    bit += run, left -= run;
+                } else if ((run -= 8) >= left)
+                    break;	/* end of row while skipping */
+                else {
+                    left -= run;
+                    ++p;
+                    while (left > 8 && *p == zero)
+                        left -= 8, ++p;
+                    run = byte_bit_run_length_0[*p ^ one];
+                    if (run >= left)	/* run < 8 unless very last byte */
+                        break;	/* end of row while skipping */
+                    else
+                        bit = run & 7, left -= run;
+                }
+            }
+            l0 = left;
+            /* Scan a run of ones, and then paint it. */
+            run = byte_bit_run_length[bit][*p ^ zero];
+            if (run < 8) {
+                if (run >= left)
+                    left = 0;
+                else
+                    bit += run, left -= run;
+            } else if ((run -= 8) >= left)
+                left = 0;
+            else {
+                left -= run;
+                ++p;
+                while (left > 8 && *p == one)
+                    left -= 8, ++p;
+                run = byte_bit_run_length_0[*p ^ zero];
+                if (run >= left)	/* run < 8 unless very last byte */
+                    left = 0;
+                else
+                    bit = run & 7, left -= run;
+            }
+            code = gx_device_color_fill_rectangle(pdevc,
+                          x + w - l0, y + iy, l0 - left, 1, dev, lop, NULL);
+            if (code < 0)
+                return code;
+        }
     }
     return 0;
 }

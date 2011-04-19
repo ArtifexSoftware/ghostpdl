@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,7 +39,7 @@ find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint space)
     os_ptr sop = osp - npop;
 
     if (r_has_type(sop, t_dictionary)) {
-	--sop;
+        --sop;
     }
     use_space = max(use_space, r_space(sop));
     return idmemory->spaces_indexed[use_space >> r_space_shift];
@@ -60,35 +60,35 @@ zDCTD(i_ctx_t *i_ctx_p)
     uint dspace;
 
     if (r_has_type(op, t_dictionary))
-	dop = op, dspace = r_space(op);
+        dop = op, dspace = r_space(op);
     else
-	dop = 0, dspace = 0;
+        dop = 0, dspace = 0;
     mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, dspace);
     state.memory = mem;
     /* First allocate space for IJG parameters. */
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
       &st_jpeg_decompress_data, "zDCTD");
     if (jddp == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     if (s_DCTD_template.set_defaults)
-	(*s_DCTD_template.set_defaults) ((stream_state *) & state);
+        (*s_DCTD_template.set_defaults) ((stream_state *) & state);
     state.data.decompress = jddp;
     jddp->memory = state.jpeg_memory = mem;	/* set now for allocation */
     jddp->scanline_buffer = NULL;	/* set this early for safe error exit */
     state.report_error = filter_report_error;	/* in case create fails */
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
-	goto fail;		/* correct to do jpeg_destroy here */
+        goto fail;		/* correct to do jpeg_destroy here */
     /* Read parameters from dictionary */
     if ((code = dict_param_list_read(&list, dop, NULL, false, iimemory)) < 0)
-	goto fail;
+        goto fail;
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
-	goto rel;
+        goto rel;
     /* Create the filter. */
     jddp->template = s_DCTD_template;
     code = filter_read(i_ctx_p, 0, &jddp->template,
-		       (stream_state *) & state, dspace);
+                       (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
-	return code;
+        return code;
     /*
      * We assume that if filter_read fails, the stream has not been
      * registered for closing, so s_DCTD_release will never be called.

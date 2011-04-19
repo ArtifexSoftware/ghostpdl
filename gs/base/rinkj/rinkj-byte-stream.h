@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,7 +31,6 @@ rinkj_byte_stream_printf (RinkjByteStream *bs, const char *fmt, ...);
 
 int
 rinkj_byte_stream_close (RinkjByteStream *bs);
-
 
 RinkjByteStream *
 rinkj_byte_stream_file_new (FILE *f);

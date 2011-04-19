@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,8 +15,8 @@
 /* $Id$ */
 
 /*
- * This allows the interpreter to set the callback structure 
- * of the "display" device.  This must set at the end of 
+ * This allows the interpreter to set the callback structure
+ * of the "display" device.  This must set at the end of
  * initialization and before the device is used.
  * This is harmless if the 'display' device is not included.
  * If gsapi_set_display_callback() is not called, this code
@@ -62,45 +62,43 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
      * If it doesn't exist, return
      *  false
      */
-    const char getdisplay[] = 
+    const char getdisplay[] =
       "devicedict /display known dup { /display finddevice exch } if";
-    code = gs_main_run_string(minst, getdisplay, 0, &exit_code, 
-	&minst->error_object);
+    code = gs_main_run_string(minst, getdisplay, 0, &exit_code,
+        &minst->error_object);
     if (code < 0)
        return code;
 
     op = osp;
     check_type(*op, t_boolean);
     if (op->value.boolval) {
-	/* display device was included in Ghostscript so we need
-	 * to set the callback structure pointer within it.
-	 * If the device is already open, close it before
-	 * setting callback, then reopen it.
-	 */
-	check_read_type(op[-1], t_device);
-	dev = op[-1].value.pdevice;
-	
-	was_open = dev->is_open;
-	if (was_open) {
-	    code = gs_closedevice(dev);
-	    if (code < 0)
-		return_error(code);
-	}
+        /* display device was included in Ghostscript so we need
+         * to set the callback structure pointer within it.
+         * If the device is already open, close it before
+         * setting callback, then reopen it.
+         */
+        check_read_type(op[-1], t_device);
+        dev = op[-1].value.pdevice;
 
-	ddev = (gx_device_display *) dev;
-	ddev->callback = callback;
+        was_open = dev->is_open;
+        if (was_open) {
+            code = gs_closedevice(dev);
+            if (code < 0)
+                return_error(code);
+        }
 
-	if (was_open) {
-	    code = gs_opendevice(dev);
-	    if (code < 0) {
-		dprintf("**** Unable to open the display device, quitting.\n");
-		return_error(code);
-	    }
-	}
-	pop(1);	/* device */
+        ddev = (gx_device_display *) dev;
+        ddev->callback = callback;
+
+        if (was_open) {
+            code = gs_opendevice(dev);
+            if (code < 0) {
+                dprintf("**** Unable to open the display device, quitting.\n");
+                return_error(code);
+            }
+        }
+        pop(1);	/* device */
     }
     pop(1);	/* boolean */
     return 0;
 }
-
-

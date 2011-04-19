@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,7 +46,6 @@ typedef struct point_scale_s {
 #define scaled_rounded(v, pps)\
   (((v) + (pps)->half) & -(pps)->unit)
 
-
 /*
  * The Type 2 charstring documentation says that the total number of hints
  * is limited to 96.
@@ -63,7 +62,7 @@ typedef struct {
     const byte *ip;
     crypt_state dstate;
     gs_glyph_data_t cs_data;	/* original CharString or Subr, */
-				/* for GC */
+                                /* for GC */
 } ip_state_t;
 
 /* Get the next byte from a CharString.  It may or may not be encrypted. */
@@ -71,7 +70,7 @@ typedef struct {
   (encrypted ? decrypt_this(ch, state) : ch)
 #define charstring_next(ch, state, chvar, encrypted)\
   (encrypted ? (chvar = decrypt_this(ch, state),\
-		decrypt_skip_next(ch, state)) :\
+                decrypt_skip_next(ch, state)) :\
    (chvar = ch))
 #define charstring_skip_next(ch, state, encrypted)\
   (encrypted ? decrypt_skip_next(ch, state) : 0)
@@ -109,7 +108,7 @@ struct gs_type1_state_s {
     ip_state_t ipstack[ipstack_size + 1];	/* control stack */
     int ips_count;		/* # of occupied entries */
     int init_done;		/* -1 if not done & not needed, */
-				/* 0 if not done & needed, 1 if done */
+                                /* 0 if not done & needed, 1 if done */
     bool sb_set;		/* true if lsb is preset */
     bool width_set;		/* true if width is set (for seac parts) */
     bool seac_flag;		/* true if executing the accent */
@@ -119,30 +118,30 @@ struct gs_type1_state_s {
     gs_fixed_point width;	/* character width (design coords) */
     int seac_accent;		/* accent character code for seac, or -1 */
     fixed asb;			/* the asb parameter of seac */
-    gs_fixed_point compound_lsb;/* lsb of the compound character 
-				   (i.e. of the accented character 
-				   defined with seac). */
+    gs_fixed_point compound_lsb;/* lsb of the compound character
+                                   (i.e. of the accented character
+                                   defined with seac). */
     gs_fixed_point save_adxy;	/* passes seac adx/ady across the base character. */
     fixed asb_diff;		/* asb - compound_lsb.x, */
-				/* needed to adjust Flex endpoint
-				   when processing the accent character;
-				   Zero when processing the base character. */
+                                /* needed to adjust Flex endpoint
+                                   when processing the accent character;
+                                   Zero when processing the base character. */
     gs_fixed_point adxy;	/* seac accent displacement,
-				   needed to adjust currentpoint
-				   when processing the accent character;
-				   Zero when processing the base character. */
+                                   needed to adjust currentpoint
+                                   when processing the accent character;
+                                   Zero when processing the base character. */
     fixed base_lsb;		/* The lsb of the base character for 'seac'. */
     int flex_path_state_flags;	/* record whether path was open */
-				/* at start of Flex section */
+                                /* at start of Flex section */
     gs_fixed_point origin_offset; /* Origin offset due to replaced metrics. */
 #define flex_max 8
     int flex_count;
     int ignore_pops;		/* # of pops to ignore (after */
-				/* a known othersubr call) */
+                                /* a known othersubr call) */
     /* The following are set dynamically. */
     gs_fixed_point vs_offset;	/* device space offset for centering */
-				/* middle stem of vstem3 */
-				/* of subpath */
+                                /* middle stem of vstem3 */
+                                /* of subpath */
     fixed transient_array[32];	/* Type 2 transient array, */
     /* will be variable-size someday */
 };
@@ -195,7 +194,7 @@ typedef fixed *cs_ptr;
     int cn = charstring_this(c2, state, encrypted);\
 \
     var = (c < c_neg2_0 ? c_value_pos2(c, 0) + cn :\
-	   c_value_neg2(c, 0) - cn);\
+           c_value_neg2(c, 0) - cn);\
     charstring_skip_next(c2, state, encrypted);\
   END
 #define decode_push_num2(csp, cstack, c, cip, state, encrypted)\
@@ -233,7 +232,7 @@ typedef fixed *cs_ptr;
     for ( i = 4; --i >= 0; )\
       { charstring_next(*cip, state, c4, encrypted);\
         lw = (lw << 8) + c4;\
-	cip++;\
+        cip++;\
       }\
     sign_extend_num4(lw);\
   END
@@ -245,13 +244,13 @@ int gs_type1_check_float(crypt_state *state, bool encrypted, const byte **cip, c
 void gs_type1_finish_init(gs_type1_state * pcis);
 
 int gs_type1_sbw(gs_type1_state * pcis, fixed sbx, fixed sby,
-		 fixed wx, fixed wy);
+                 fixed wx, fixed wy);
 
 /* blend returns the number of values to pop. */
 int gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results);
 
 int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
-		  fixed asb_diff, ip_state_t * ipsp);
+                  fixed asb_diff, ip_state_t * ipsp);
 
 int gs_type1_endchar(gs_type1_state * pcis);
 

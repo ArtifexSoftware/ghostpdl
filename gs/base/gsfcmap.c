@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,8 +31,8 @@ typedef struct gs_cmap_identity_s {
 /* GC descriptors */
 public_st_cmap();
 gs_private_st_suffix_add0_local(st_cmap_identity, gs_cmap_identity_t,
-				"gs_cmap_identity_t", cmap_ptrs, cmap_data,
-				st_cmap);
+                                "gs_cmap_identity_t", cmap_ptrs, cmap_data,
+                                st_cmap);
 
 /* ---------------- Client procedures ---------------- */
 
@@ -48,22 +48,22 @@ get_integer_bytes(const byte *src, int count)
     int i;
 
     for (i = 0; i < count; ++i)
-	v = (v << 8) + src[i];
+        v = (v << 8) + src[i];
     return v;
 }
 static int
 identity_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
-		     uint *pindex, uint *pfidx,
-		     gs_char *pchr, gs_glyph *pglyph)
+                     uint *pindex, uint *pfidx,
+                     gs_char *pchr, gs_glyph *pglyph)
 {
     const gs_cmap_identity_t *const pcimap =
-	(const gs_cmap_identity_t *)pcmap;
+        (const gs_cmap_identity_t *)pcmap;
     int num_bytes = pcimap->num_bytes;
     uint value;
 
     if (str->size < *pindex + num_bytes) {
-	*pglyph = gs_no_glyph;
-	return (*pindex == str->size ? 2 : -1);
+        *pglyph = gs_no_glyph;
+        return (*pindex == str->size ? 2 : -1);
     }
     value = get_integer_bytes(str->data + *pindex, num_bytes);
     *pglyph = gs_min_cid_glyph + value;
@@ -76,14 +76,14 @@ static int
 identity_next_range(gs_cmap_ranges_enum_t *penum)
 {
     if (penum->index == 0) {
-	const gs_cmap_identity_t *const pcimap =
-	    (const gs_cmap_identity_t *)penum->cmap;
+        const gs_cmap_identity_t *const pcimap =
+            (const gs_cmap_identity_t *)penum->cmap;
 
-	memset(penum->range.first, 0, pcimap->num_bytes);
-	memset(penum->range.last, 0xff, pcimap->num_bytes);
-	penum->range.size = pcimap->num_bytes;
-	penum->index = 1;
-	return 0;
+        memset(penum->range.first, 0, pcimap->num_bytes);
+        memset(penum->range.last, 0xff, pcimap->num_bytes);
+        penum->range.size = pcimap->num_bytes;
+        penum->index = 1;
+        return 0;
     }
     return 1;
 }
@@ -99,21 +99,21 @@ static int
 identity_next_lookup(gs_cmap_lookups_enum_t *penum)
 {
     if (penum->index[0] == 0) {
-	const gs_cmap_identity_t *const pcimap =
-	    (const gs_cmap_identity_t *)penum->cmap;
-	int num_bytes = pcimap->num_bytes;
+        const gs_cmap_identity_t *const pcimap =
+            (const gs_cmap_identity_t *)penum->cmap;
+        int num_bytes = pcimap->num_bytes;
 
-	memset(penum->entry.key[0], 0, num_bytes);
-	memset(penum->entry.key[1], 0xff, num_bytes);
-	memset(penum->entry.key[1], 0, num_bytes - pcimap->varying_bytes);
-	penum->entry.key_size = num_bytes;
-	penum->entry.key_is_range = true;
-	penum->entry.value_type =
-	    (pcimap->code ? CODE_VALUE_CHARS : CODE_VALUE_CID);
-	penum->entry.value.size = num_bytes;
-	penum->entry.font_index = 0;
-	penum->index[0] = 1;
-	return 0;
+        memset(penum->entry.key[0], 0, num_bytes);
+        memset(penum->entry.key[1], 0xff, num_bytes);
+        memset(penum->entry.key[1], 0, num_bytes - pcimap->varying_bytes);
+        penum->entry.key_size = num_bytes;
+        penum->entry.key_is_range = true;
+        penum->entry.value_type =
+            (pcimap->code ? CODE_VALUE_CHARS : CODE_VALUE_CID);
+        penum->entry.value.size = num_bytes;
+        penum->entry.font_index = 0;
+        penum->index[0] = 1;
+        return 0;
     }
     return 1;
 }
@@ -126,17 +126,17 @@ static int
 identity_next_entry(gs_cmap_lookups_enum_t *penum)
 {
     const gs_cmap_identity_t *const pcimap =
-	(const gs_cmap_identity_t *)penum->cmap;
+        (const gs_cmap_identity_t *)penum->cmap;
     int num_bytes = pcimap->num_bytes;
     int i = num_bytes - pcimap->varying_bytes;
 
     memcpy(penum->temp_value, penum->entry.key[0], num_bytes);
     memcpy(penum->entry.key[0], penum->entry.key[1], i);
     while (--i >= 0)
-	if (++(penum->entry.key[1][i]) != 0) {
-	    penum->entry.value.data = penum->temp_value;
-	    return 0;
-	}
+        if (++(penum->entry.key[1][i]) != 0) {
+            penum->entry.value.data = penum->temp_value;
+            return 0;
+        }
     return 1;
 }
 
@@ -148,11 +148,11 @@ const gs_cmap_lookups_enum_procs_t gs_cmap_no_lookups_procs = {
 };
 static void
 identity_enum_lookups(const gs_cmap_t *pcmap, int which,
-		      gs_cmap_lookups_enum_t *pre)
+                      gs_cmap_lookups_enum_t *pre)
 {
     gs_cmap_lookups_enum_setup(pre, pcmap,
-			       (which ? &gs_cmap_no_lookups_procs :
-				&identity_lookup_procs));
+                               (which ? &gs_cmap_no_lookups_procs :
+                                &identity_lookup_procs));
 }
 static bool
 identity_is_identity(const gs_cmap_t *pcmap, int font_index_only)
@@ -166,8 +166,8 @@ static const gs_cmap_procs_t identity_procs = {
 
 static int
 gs_cmap_identity_alloc(gs_cmap_t **ppcmap, int num_bytes, int varying_bytes,
-		       int return_code, const char *cmap_name, int wmode,
-		       gs_memory_t *mem)
+                       int return_code, const char *cmap_name, int wmode,
+                       gs_memory_t *mem)
 {
     /*
      * We could allow any value of num_bytes between 1 and
@@ -175,20 +175,20 @@ gs_cmap_identity_alloc(gs_cmap_t **ppcmap, int num_bytes, int varying_bytes,
      * the result "Identity-[HV]".
      */
     static const gs_cid_system_info_t identity_cidsi = {
-	{ (const byte *)"Adobe", 5 },
-	{ (const byte *)"Identity", 8 },
-	0
+        { (const byte *)"Adobe", 5 },
+        { (const byte *)"Identity", 8 },
+        0
     };
     int code;
     gs_cmap_identity_t *pcimap;
 
     if (num_bytes != 2)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     code = gs_cmap_alloc(ppcmap, &st_cmap_identity, wmode,
-			 (const byte *)cmap_name, strlen(cmap_name),
-			 &identity_cidsi, 1, &identity_procs, mem);
+                         (const byte *)cmap_name, strlen(cmap_name),
+                         &identity_cidsi, 1, &identity_procs, mem);
     if (code < 0)
-	return code;
+        return code;
     pcimap = (gs_cmap_identity_t *)*ppcmap;
     pcimap->num_bytes = num_bytes;
     pcimap->varying_bytes = varying_bytes;
@@ -197,19 +197,19 @@ gs_cmap_identity_alloc(gs_cmap_t **ppcmap, int num_bytes, int varying_bytes,
 }
 int
 gs_cmap_create_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
-			gs_memory_t *mem)
+                        gs_memory_t *mem)
 {
     return gs_cmap_identity_alloc(ppcmap, num_bytes, num_bytes, 0,
-				  (wmode ? "Identity-V" : "Identity-H"),
-				  wmode, mem);
+                                  (wmode ? "Identity-V" : "Identity-H"),
+                                  wmode, mem);
 }
 int
 gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
-			     gs_memory_t *mem)
+                             gs_memory_t *mem)
 {
     return gs_cmap_identity_alloc(ppcmap, num_bytes, 1, num_bytes,
-				  (wmode ? "Identity-BF-V" : "Identity-BF-H"),
-				  wmode, mem);
+                                  (wmode ? "Identity-BF-V" : "Identity-BF-H"),
+                                  wmode, mem);
 }
 
     /* ------ Check identity ------ */
@@ -231,8 +231,8 @@ gs_cmap_is_identity(const gs_cmap_t *pcmap, int font_index_only)
  */
 int
 gs_cmap_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
-		    uint *pindex, uint *pfidx,
-		    gs_char *pchr, gs_glyph *pglyph)
+                    uint *pindex, uint *pfidx,
+                    gs_char *pchr, gs_glyph *pglyph)
 {
     return pcmap->procs->decode_next(pcmap, str, pindex, pfidx, pchr, pglyph);
 }
@@ -260,7 +260,7 @@ gs_cmap_enum_next_range(gs_cmap_ranges_enum_t *penum)
  */
 void
 gs_cmap_lookups_enum_init(const gs_cmap_t *pcmap, int which,
-			  gs_cmap_lookups_enum_t *penum)
+                          gs_cmap_lookups_enum_t *penum)
 {
     pcmap->procs->enum_lookups(pcmap, which, penum);
 }
@@ -300,30 +300,30 @@ gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap, int num_fonts)
  */
 int
 gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
-	      int wmode, const byte *map_name, uint name_size,
-	      const gs_cid_system_info_t *pcidsi_in, int num_fonts,
-	      const gs_cmap_procs_t *procs, gs_memory_t *mem)
+              int wmode, const byte *map_name, uint name_size,
+              const gs_cid_system_info_t *pcidsi_in, int num_fonts,
+              const gs_cmap_procs_t *procs, gs_memory_t *mem)
 {
     gs_cmap_t *pcmap =
-	gs_alloc_struct(mem, gs_cmap_t, pstype, "gs_cmap_alloc(CMap)");
+        gs_alloc_struct(mem, gs_cmap_t, pstype, "gs_cmap_alloc(CMap)");
     gs_cid_system_info_t *pcidsi =
-	gs_alloc_struct_array(mem, num_fonts, gs_cid_system_info_t,
-			      &st_cid_system_info_element,
-			      "gs_cmap_alloc(CIDSystemInfo)");
+        gs_alloc_struct_array(mem, num_fonts, gs_cid_system_info_t,
+                              &st_cid_system_info_element,
+                              "gs_cmap_alloc(CIDSystemInfo)");
 
     if (pcmap == 0 || pcidsi == 0) {
-	gs_free_object(mem, pcidsi, "gs_cmap_alloc(CIDSystemInfo)");
-	gs_free_object(mem, pcmap, "gs_cmap_alloc(CMap)");
-	return_error(gs_error_VMerror);
+        gs_free_object(mem, pcidsi, "gs_cmap_alloc(CIDSystemInfo)");
+        gs_free_object(mem, pcmap, "gs_cmap_alloc(CMap)");
+        return_error(gs_error_VMerror);
     }
     gs_cmap_init(mem, pcmap, num_fonts);	/* id, uid, num_fonts */
     pcmap->CMapType = 1;
     pcmap->CMapName.data = map_name;
     pcmap->CMapName.size = name_size;
     if (pcidsi_in)
-	memcpy(pcidsi, pcidsi_in, sizeof(*pcidsi) * num_fonts);
+        memcpy(pcidsi, pcidsi_in, sizeof(*pcidsi) * num_fonts);
     else
-	memset(pcidsi, 0, sizeof(*pcidsi) * num_fonts);
+        memset(pcidsi, 0, sizeof(*pcidsi) * num_fonts);
     pcmap->CIDSystemInfo = pcidsi;
     pcmap->CMapVersion = 1.0;
     /* uid = 0, UIDOffset = 0 */
@@ -340,8 +340,8 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
  */
 void
 gs_cmap_ranges_enum_setup(gs_cmap_ranges_enum_t *penum,
-			  const gs_cmap_t *pcmap,
-			  const gs_cmap_ranges_enum_procs_t *procs)
+                          const gs_cmap_t *pcmap,
+                          const gs_cmap_ranges_enum_procs_t *procs)
 {
     penum->cmap = pcmap;
     penum->procs = procs;
@@ -349,15 +349,15 @@ gs_cmap_ranges_enum_setup(gs_cmap_ranges_enum_t *penum,
 }
 void
 gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
-			   const gs_cmap_t *pcmap,
-			   const gs_cmap_lookups_enum_procs_t *procs)
+                           const gs_cmap_t *pcmap,
+                           const gs_cmap_lookups_enum_procs_t *procs)
 {
     penum->cmap = pcmap;
     penum->procs = procs;
     penum->index[0] = penum->index[1] = 0;
 }
 
-/* 
+/*
  * For a random CMap, compute whether it is identity.
  * It is not applicable to gs_cmap_ToUnicode_t due to
  * different sizes of domain keys and range values.
@@ -373,31 +373,31 @@ gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
     int code;
 
     if (!bytes_compare(pcmap->CIDSystemInfo->Registry.data, pcmap->CIDSystemInfo->Registry.size,
-		    (const byte *)"Artifex", 7))
-	return false;
+                    (const byte *)"Artifex", 7))
+        return false;
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
-	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
-	if (font_index_only >= 0 && lenum.entry.font_index != font_index_only)
-	    continue;
-	if (font_index_only < 0 && lenum.entry.font_index > 0)
-	    return false;
-	while (gs_cmap_enum_next_entry(&lenum) == 0) {
-	    switch (lenum.entry.value_type) {
-	    case CODE_VALUE_CID:
-		break;
-	    case CODE_VALUE_CHARS:
-		return false; /* Not implemented yet. */
-	    case CODE_VALUE_GLYPH:
-		return false;
-	    default :
-		return false; /* Must not happen. */
-	    }
-	    if (lenum.entry.key_size != lenum.entry.value.size)
-		return false;
-	    if (memcmp(lenum.entry.key[0], lenum.entry.value.data, 
-		lenum.entry.key_size))
-		return false;
-	}
+         (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
+        if (font_index_only >= 0 && lenum.entry.font_index != font_index_only)
+            continue;
+        if (font_index_only < 0 && lenum.entry.font_index > 0)
+            return false;
+        while (gs_cmap_enum_next_entry(&lenum) == 0) {
+            switch (lenum.entry.value_type) {
+            case CODE_VALUE_CID:
+                break;
+            case CODE_VALUE_CHARS:
+                return false; /* Not implemented yet. */
+            case CODE_VALUE_GLYPH:
+                return false;
+            default :
+                return false; /* Must not happen. */
+            }
+            if (lenum.entry.key_size != lenum.entry.value.size)
+                return false;
+            if (memcmp(lenum.entry.key[0], lenum.entry.value.data,
+                lenum.entry.key_size))
+                return false;
+        }
     }
     return true;
 }
@@ -407,7 +407,7 @@ gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
 /*
  * This kind of CMaps keeps character a mapping from a random
  * PS encoding to Unicode, being defined in PDF reference, "ToUnicode CMaps".
- * It represents ranges in a closure data, without using 
+ * It represents ranges in a closure data, without using
  * gx_cmap_lookup_range_t. A special function gs_cmap_ToUnicode_set
  * allows to write code pairs into the closure data.
  */
@@ -429,11 +429,11 @@ static int
 gs_cmap_ToUnicode_next_range(gs_cmap_ranges_enum_t *penum)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
     if (penum->index == 0) {
-	memset(penum->range.first, 0, cmap->key_size);
-	memset(penum->range.last, 0xff, cmap->key_size);
-	penum->range.size = cmap->key_size; 
-	penum->index = 1;
-	return 0;
+        memset(penum->range.first, 0, cmap->key_size);
+        memset(penum->range.last, 0xff, cmap->key_size);
+        penum->range.size = cmap->key_size;
+        penum->index = 1;
+        return 0;
     }
     return 1;
 }
@@ -444,8 +444,8 @@ static const gs_cmap_ranges_enum_procs_t gs_cmap_ToUnicode_range_procs = {
 
 static int
 gs_cmap_ToUnicode_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
-		     uint *pindex, uint *pfidx,
-		     gs_char *pchr, gs_glyph *pglyph)
+                     uint *pindex, uint *pfidx,
+                     gs_char *pchr, gs_glyph *pglyph)
 {
     return_error(gs_error_unregistered);
 }
@@ -459,9 +459,9 @@ gs_cmap_ToUnicode_enum_ranges(const gs_cmap_t *pcmap, gs_cmap_ranges_enum_t *pre
 static int
 gs_cmap_ToUnicode_next_lookup(gs_cmap_lookups_enum_t *penum)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)penum->cmap;
-    
+
     if (penum->index[0]++ > 0)
-	return 1;
+        return 1;
     penum->entry.value.data = penum->temp_value;
     penum->entry.value.size = gs_cmap_ToUnicode_code_bytes;
     penum->index[1] = 0;
@@ -482,34 +482,34 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
     uchar c0, c1, c2;
 
     for (i = index; i < num_codes; i++)
-	if (map[i + i + 0] != 0 || map[i + i + 1] != 0)
-	    break;
+        if (map[i + i + 0] != 0 || map[i + i + 1] != 0)
+            break;
     if (i >= num_codes)
-	return 1;
+        return 1;
     c0 = map[i + i + 0];
     c1 = map[i + i + 1];
     for (j = i + 1, c2 = c1 + 1; j < num_codes; j++, c2++) {
-	/* Due to PDF spec, *bfrange boundaries may differ 
-	   in the last byte only. */
-	if (j % 256 == 0)
-	    break;
-	if ((uchar)c2 == 0)
-	    break;
-	if (map[j + j + 0] != c0 || map[j + j + 1] != c2)
-	    break;
+        /* Due to PDF spec, *bfrange boundaries may differ
+           in the last byte only. */
+        if (j % 256 == 0)
+            break;
+        if ((uchar)c2 == 0)
+            break;
+        if (map[j + j + 0] != c0 || map[j + j + 1] != c2)
+            break;
     }
     penum->index[1] = j;
     if (cmap->key_size > 1) {
-	penum->entry.key[0][0] = (uchar)(i >> 8);
-	penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
-	penum->entry.key[1][0] = (uchar)(j >> 8);
-	penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
+        penum->entry.key[0][0] = (uchar)(i >> 8);
+        penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
+        penum->entry.key[1][0] = (uchar)(j >> 8);
+        penum->entry.key[1][cmap->key_size - 1] = (uchar)((j - 1) & 0xFF);
     } else {
-	penum->entry.key[0][0] = (uchar)(i);
-	penum->entry.key[1][0] = (uchar)(j - 1);
+        penum->entry.key[0][0] = (uchar)(i);
+        penum->entry.key[1][0] = (uchar)(j - 1);
     }
-    memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes, 
-	gs_cmap_ToUnicode_code_bytes);
+    memcpy(penum->temp_value, map + i * gs_cmap_ToUnicode_code_bytes,
+        gs_cmap_ToUnicode_code_bytes);
     return 0;
 }
 
@@ -519,11 +519,11 @@ static const gs_cmap_lookups_enum_procs_t gs_cmap_ToUnicode_lookup_procs = {
 
 static void
 gs_cmap_ToUnicode_enum_lookups(const gs_cmap_t *pcmap, int which,
-		      gs_cmap_lookups_enum_t *pre)
+                      gs_cmap_lookups_enum_t *pre)
 {
     gs_cmap_lookups_enum_setup(pre, pcmap,
-			       (which ? &gs_cmap_no_lookups_procs : /* fixme */
-				&gs_cmap_ToUnicode_lookup_procs));
+                               (which ? &gs_cmap_no_lookups_procs : /* fixme */
+                                &gs_cmap_ToUnicode_lookup_procs));
 }
 
 static bool
@@ -549,32 +549,32 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
     gs_cmap_ToUnicode_t *cmap;
     int name_len = 0;
 #   if 0
-	/* We don't write a CMap name to ToUnicode CMaps,
-	 * becsue (1) there is no conventional method for
-	 * generating them, and (2) Acrobat Reader ignores them.
-	 * But we'd like to keep this code until beta-testing completes,
-	 * and we ensure that other viewers do not need the names.
-	 */
-	char sid[10], *pref = "aux-";
-	int sid_len, pref_len = strlen(pref);
-    
-	sprintf(sid, "%d", id);
-	sid_len = strlen(sid);
-	name_len = pref_len + sid_len;
-	cmap_name = gs_alloc_string(mem, name_len, "gs_cmap_ToUnicode_alloc");
-	if (cmap_name == 0)
-	    return_error(gs_error_VMerror);
-	memcpy(cmap_name, pref, pref_len);
-	memcpy(cmap_name + pref_len, sid, sid_len);
+        /* We don't write a CMap name to ToUnicode CMaps,
+         * becsue (1) there is no conventional method for
+         * generating them, and (2) Acrobat Reader ignores them.
+         * But we'd like to keep this code until beta-testing completes,
+         * and we ensure that other viewers do not need the names.
+         */
+        char sid[10], *pref = "aux-";
+        int sid_len, pref_len = strlen(pref);
+
+        sprintf(sid, "%d", id);
+        sid_len = strlen(sid);
+        name_len = pref_len + sid_len;
+        cmap_name = gs_alloc_string(mem, name_len, "gs_cmap_ToUnicode_alloc");
+        if (cmap_name == 0)
+            return_error(gs_error_VMerror);
+        memcpy(cmap_name, pref, pref_len);
+        memcpy(cmap_name + pref_len, sid, sid_len);
 #   endif
     code = gs_cmap_alloc(ppcmap, &st_cmap_ToUnicode,
-	      0, cmap_name, name_len, NULL, 0, &gs_cmap_ToUnicode_procs, mem);
+              0, cmap_name, name_len, NULL, 0, &gs_cmap_ToUnicode_procs, mem);
     if (code < 0)
-	return code;
-    map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes, 
+        return code;
+    map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes,
                                   "gs_cmap_ToUnicode_alloc");
     if (map == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     memset(map, 0, num_codes * gs_cmap_ToUnicode_code_bytes);
     cmap = (gs_cmap_ToUnicode_t *)*ppcmap;
     cmap->glyph_name_data = map;
@@ -595,9 +595,9 @@ gs_cmap_ToUnicode_add_pair(gs_cmap_t *pcmap, int code0, int code1)
 {   gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
     uchar *map = pcmap->glyph_name_data;
     const int num_codes = ((gs_cmap_ToUnicode_t *)pcmap)->num_codes;
-    
+
     if (code0 >= num_codes)
-	return; /* must not happen. */
+        return; /* must not happen. */
     map[code0 * gs_cmap_ToUnicode_code_bytes + 0] = (uchar)(code1 >> 8);
     map[code0 * gs_cmap_ToUnicode_code_bytes + 1] = (uchar)(code1 & 0xFF);
     cmap->is_identity &= (code0 == code1);

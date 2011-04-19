@@ -220,7 +220,6 @@ static RELOC_PTRS_WITH(cs_Indexed_reloc_ptrs, gs_color_space *pcs)
 }
 RELOC_PTRS_END
 
-
 /* Color space installation for an Indexed color space. */
 
 static int
@@ -574,7 +573,6 @@ gs_cspace_indexed_lookup_bytes(const gs_color_space *pcs, float index_float,
     }
 }
 
-
 /* Look up an index in an Indexed color space, return value as frac value(s). */
 int
 gs_cspace_indexed_lookup_frac(const gs_color_space *pcs, float index_float,
@@ -648,9 +646,6 @@ gs_cspace_indexed_lookup_frac(const gs_color_space *pcs, float index_float,
     }
 }
 
-
-
-
 /* Look up with restriction */
 
 int
@@ -666,7 +661,6 @@ gs_indexed_limit_and_lookup(const gs_client_color * pc,const gs_color_space *pcs
          return(gs_cspace_indexed_lookup(pcs, index, pcc));
 
 }
-
 
 /* ---------------- Serialization. -------------------------------- */
 

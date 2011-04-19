@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -60,15 +60,15 @@ int pdf_charproc_y_offset(pdf_char_proc_t *pcp);
 
 /* Begin a CharProc for an embedded (bitmap) font. */
 int pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
-			int y_offset, int x_offset, gs_id id, pdf_char_proc_t **ppcp,
-			pdf_stream_position_t * ppos);
+                        int y_offset, int x_offset, gs_id id, pdf_char_proc_t **ppcp,
+                        pdf_stream_position_t * ppos);
 
 /* End a CharProc. */
 int pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos);
 
 /* Put out a reference to an image as a character in an embedded font. */
 int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-		      const gs_matrix * pimat);
+                      const gs_matrix * pimat);
 
 /* Only used within text code */
 

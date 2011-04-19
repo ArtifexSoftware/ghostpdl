@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,37 +51,37 @@ dev_proc_draw_line(sun_draw_line);
 
 /* The device descriptor */
 static gx_device_procs sun_procs = {
-	sun_open,
-	NULL,			/* get_initial_matrix */
-	sun_sync,
-	NULL,			/* output_page */
-	sun_close,
-	sun_map_rgb_color,
-	sun_map_color_rgb,
-	sun_fill_rectangle,
-	NULL,			/* tile_rectangle */
-	sun_copy_mono,
-	sun_copy_color,
-	sun_draw_line
+        sun_open,
+        NULL,			/* get_initial_matrix */
+        sun_sync,
+        NULL,			/* output_page */
+        sun_close,
+        sun_map_rgb_color,
+        sun_map_color_rgb,
+        sun_fill_rectangle,
+        NULL,			/* tile_rectangle */
+        sun_copy_mono,
+        sun_copy_color,
+        sun_draw_line
 };
 
 #define CMSNAME	"GHOSTVIEW"		/* SunView colormap name */
 
 /* Define the SunView device */
 typedef struct gx_device_sun {
-	gx_device_common;
-	Frame frame;
-	Canvas canvas;
-	Pixwin *pw;
-	struct mpr_data mpr;
-	Pixrect	pr;
-	int truecolor;			/* use truecolor mapping */
-	int freecols;			/* unallocated colors */
-	byte *red, *green, *blue;	/* colormap */
-	char cmsname[sizeof(CMSNAME)+9];/* color map name */
+        gx_device_common;
+        Frame frame;
+        Canvas canvas;
+        Pixwin *pw;
+        struct mpr_data mpr;
+        Pixrect	pr;
+        int truecolor;			/* use truecolor mapping */
+        int freecols;			/* unallocated colors */
+        byte *red, *green, *blue;	/* colormap */
+        char cmsname[sizeof(CMSNAME)+9];/* color map name */
 #if !arch_is_big_endian			/* need to swap bits & bytes */
 #  define BUF_WIDTH_BYTES (((int)(8.5*DEFAULT_DPI)+15)/16*2)
-	byte swap_buf[BUF_WIDTH_BYTES];
+        byte swap_buf[BUF_WIDTH_BYTES];
 #endif
 } gx_device_sun;
 
@@ -109,12 +109,12 @@ static byte reverse_bits[256] = {
 
 /* The instance is public. */
 gx_device_sun far_data gs_sunview_device = {
-	std_device_std_body(gx_device_sun, &sun_procs, "sunview",
-	  (int)(PAPER_X*DEFAULT_DPI), (int)(PAPER_Y*DEFAULT_DPI),	/* x and y extent */
-	  DEFAULT_DPI, DEFAULT_DPI	/* x and y density */
-	),	/* fill in color_info later from display depth */
-	 { 0 },			/* std_procs */
- 	0,			/* connection not initialized */
+        std_device_std_body(gx_device_sun, &sun_procs, "sunview",
+          (int)(PAPER_X*DEFAULT_DPI), (int)(PAPER_Y*DEFAULT_DPI),	/* x and y extent */
+          DEFAULT_DPI, DEFAULT_DPI	/* x and y density */
+        ),	/* fill in color_info later from display depth */
+         { 0 },			/* std_procs */
+        0,			/* connection not initialized */
 };
 
 /* Macro for casting gx_device argument */
@@ -161,7 +161,7 @@ gx_device_sun far_data gs_sunview_device = {
 #define BLUE_MASK	((1 << BLUE_BITS) - 1)
 #define GREEN_MASK	((1 << (BLUE_BITS + GREEN_BITS)) - 1 - BLUE_MASK)
 #define RED_MASK	((1 << (BLUE_BITS + GREEN_BITS + RED_BITS)) - 1 \
-			 - BLUE_MASK - GREEN_MASK)
+                         - BLUE_MASK - GREEN_MASK)
 /*
  * number of colors on rgb dimensions
  */
@@ -175,12 +175,12 @@ gx_device_sun far_data gs_sunview_device = {
  */
 #define ALL_COLS	(1 << DEPTH)	/* 256 */
 #define CMS_SIZE	ALL_COLS	/* cut down to 64 or 128 for
-					   more cooperative behaviour */
+                                           more cooperative behaviour */
 
 #if (RGB_COLS > CMS_SIZE)		/* one is reserved for the scrollbar */
 CMS_SIZE_too_small_for_color_cube
 #endif
-#if (RGB_BITS < 0) || (RGB_BITS > DEPTH) 
+#if (RGB_BITS < 0) || (RGB_BITS > DEPTH)
 Display_does_not_support_this_many_colors
 #endif
 
@@ -207,10 +207,10 @@ Display_does_not_support_this_many_colors
  */
 #define TRUE_RED_MASK	((1 << TRUE_RED_BITS) - 1)
 #define TRUE_GREEN_MASK	((1 << (TRUE_RED_BITS + TRUE_GREEN_BITS)) - 1 \
-			 - TRUE_RED_MASK)
+                         - TRUE_RED_MASK)
 #define TRUE_BLUE_MASK	((1 << (TRUE_RED_BITS + TRUE_GREEN_BITS \
-				+ TRUE_BLUE_BITS)) - 1 \
-			 - TRUE_GREEN_MASK - TRUE_RED_MASK)
+                                + TRUE_BLUE_BITS)) - 1 \
+                         - TRUE_GREEN_MASK - TRUE_RED_MASK)
 /*
  * number of colors on rgb dimensions
  */
@@ -225,351 +225,350 @@ sun_open(register gx_device *dev)
 {
 #ifdef gs_DEBUG
 if ( gs_debug['X'] )
-	{ extern int _Xdebug;
-	  _Xdebug = 1;
-	}
+        { extern int _Xdebug;
+          _Xdebug = 1;
+        }
 #endif
-	if (xdev->frame == (Frame)0)
-	    xdev->frame =
-		window_create(NULL, FRAME, FRAME_LABEL, gs_product,
-			WIN_WIDTH, min(xdev->width + 24, 900),
-			WIN_HEIGHT, min(xdev->height + 36, 900),
-			WIN_Y, 0,
-			WIN_X, 200,
-			0);
-	if (xdev->frame == (Frame)0)
-	    return -1;
-	xdev->canvas = window_create(xdev->frame, CANVAS,
-			CANVAS_AUTO_EXPAND,		FALSE,
-			CANVAS_AUTO_SHRINK,		FALSE,
-			CANVAS_WIDTH,			xdev->width,
-			CANVAS_HEIGHT,			xdev->height,
+        if (xdev->frame == (Frame)0)
+            xdev->frame =
+                window_create(NULL, FRAME, FRAME_LABEL, gs_product,
+                        WIN_WIDTH, min(xdev->width + 24, 900),
+                        WIN_HEIGHT, min(xdev->height + 36, 900),
+                        WIN_Y, 0,
+                        WIN_X, 200,
+                        0);
+        if (xdev->frame == (Frame)0)
+            return -1;
+        xdev->canvas = window_create(xdev->frame, CANVAS,
+                        CANVAS_AUTO_EXPAND,		FALSE,
+                        CANVAS_AUTO_SHRINK,		FALSE,
+                        CANVAS_WIDTH,			xdev->width,
+                        CANVAS_HEIGHT,			xdev->height,
 #ifndef PRE_IBIS	/* try to use 24-bit visual if OS supports it */
-			CANVAS_COLOR24,			TRUE,
+                        CANVAS_COLOR24,			TRUE,
 #endif
-			CANVAS_RETAINED,		FALSE,
-		0);
-	xdev->pw = canvas_pixwin(xdev->canvas);
+                        CANVAS_RETAINED,		FALSE,
+                0);
+        xdev->pw = canvas_pixwin(xdev->canvas);
 
-	switch (xdev->pw->pw_pixrect->pr_depth) {
-	     static gx_device_color_info mono_ci =
-		dci_black_and_white;
-	     /*
-	      * If the pre-allocated color cube leaves room for spare entries,
-	      * tell gs we can render colors exactly.  Otherwise admit our
-	      * limitations.
-	      */
-	     static gx_device_color_info color_ci =
+        switch (xdev->pw->pw_pixrect->pr_depth) {
+             static gx_device_color_info mono_ci =
+                dci_black_and_white;
+             /*
+              * If the pre-allocated color cube leaves room for spare entries,
+              * tell gs we can render colors exactly.  Otherwise admit our
+              * limitations.
+              */
+             static gx_device_color_info color_ci =
 #if (RGB_COLS < CMS_SIZE)
-		dci_color(DEPTH, 31, MAX_COLS);
+                dci_color(DEPTH, 31, MAX_COLS);
 #else
-		dci_color(DEPTH, MAX_COLS - 1, MAX_COLS);
+                dci_color(DEPTH, MAX_COLS - 1, MAX_COLS);
 #endif
-	     static gx_device_color_info truecolor_ci =
-		dci_color(TRUE_DEPTH,31,4);
-	case 1:
-	     /* mono display */
-	     xdev->color_info = mono_ci;
-	     break;
+             static gx_device_color_info truecolor_ci =
+                dci_color(TRUE_DEPTH,31,4);
+        case 1:
+             /* mono display */
+             xdev->color_info = mono_ci;
+             break;
 #ifndef FAKE_TRUE_COLOR
-	case DEPTH:
-	     /* pseudo-color display */
-	     xdev->color_info = color_ci;
-	     xdev->truecolor = 0;
-	     break;
+        case DEPTH:
+             /* pseudo-color display */
+             xdev->color_info = color_ci;
+             xdev->truecolor = 0;
+             break;
 #endif /* FAKE_TRUE_COLOR */
-	case TRUE_DEPTH:
-	case TRUE_DEPTH+8:	/* I'm not sure whether the XBGR frame buffer
-				   returns depth 24 or 32. */
-	     /* pseudo-color display */
-	     xdev->color_info = truecolor_ci;
-	     xdev->truecolor = 1;
-	     break;
-	default:
-	     emprintf1(dev->memory,
+        case TRUE_DEPTH:
+        case TRUE_DEPTH+8:	/* I'm not sure whether the XBGR frame buffer
+                                   returns depth 24 or 32. */
+             /* pseudo-color display */
+             xdev->color_info = truecolor_ci;
+             xdev->truecolor = 1;
+             break;
+        default:
+             emprintf1(dev->memory,
                        "gs: Cannot handle display of depth %d.\n",
-	               xdev->pw->pw_pixrect->pr_depth);
-	     return -1;
-	}
-		
-	if ( gx_device_has_color(xdev)
-#ifndef FAKE_TRUE_COLOR
-	     && !xdev->truecolor
-#endif
-	   )
-	   {	
-		int j;
-		int color;
+                       xdev->pw->pw_pixrect->pr_depth);
+             return -1;
+        }
 
-		/*
-		 * Create the pre-allocated colorcube.
-		 */
-		xdev->red = (byte *)malloc(CMS_SIZE);
-		xdev->green = (byte *)malloc(CMS_SIZE);
-		xdev->blue = (byte *)malloc(CMS_SIZE);
-		if (!xdev->red || !xdev->green || !xdev->blue) {
-			emprintf(dev->memory, "gs: no memory for colormap\n");
-			return -1;
-		}
+        if ( gx_device_has_color(xdev)
+#ifndef FAKE_TRUE_COLOR
+             && !xdev->truecolor
+#endif
+           )
+           {
+                int j;
+                int color;
+
+                /*
+                 * Create the pre-allocated colorcube.
+                 */
+                xdev->red = (byte *)malloc(CMS_SIZE);
+                xdev->green = (byte *)malloc(CMS_SIZE);
+                xdev->blue = (byte *)malloc(CMS_SIZE);
+                if (!xdev->red || !xdev->green || !xdev->blue) {
+                        emprintf(dev->memory, "gs: no memory for colormap\n");
+                        return -1;
+                }
 
 #ifdef FAKE_TRUE_COLOR
-		/*
-		 * Fit the largest possible color cube into the colormap.
-		 */
-		for ( j = 0; j < ALL_COLS; j++ ) {
-		   xdev->blue[j] =
-			(double)((j & TRUE_BLUE_MASK)
-			         >> (TRUE_GREEN_BITS + TRUE_RED_BITS))
-			/ (TRUE_BLUE_COLS - 1)
-			* (ALL_COLS - 1);
-		   xdev->green[j] =
-			(double)((j & TRUE_GREEN_MASK) >> TRUE_RED_BITS)
-			/ (TRUE_GREEN_COLS - 1)
-			* (ALL_COLS - 1);
-		   xdev->red[j] =
-			(double)((j & TRUE_RED_MASK))
-			/ (TRUE_RED_COLS - 1)
-			* (ALL_COLS - 1);
-		}
+                /*
+                 * Fit the largest possible color cube into the colormap.
+                 */
+                for ( j = 0; j < ALL_COLS; j++ ) {
+                   xdev->blue[j] =
+                        (double)((j & TRUE_BLUE_MASK)
+                                 >> (TRUE_GREEN_BITS + TRUE_RED_BITS))
+                        / (TRUE_BLUE_COLS - 1)
+                        * (ALL_COLS - 1);
+                   xdev->green[j] =
+                        (double)((j & TRUE_GREEN_MASK) >> TRUE_RED_BITS)
+                        / (TRUE_GREEN_COLS - 1)
+                        * (ALL_COLS - 1);
+                   xdev->red[j] =
+                        (double)((j & TRUE_RED_MASK))
+                        / (TRUE_RED_COLS - 1)
+                        * (ALL_COLS - 1);
+                }
 
-		xdev->freecols = 0;
+                xdev->freecols = 0;
 #else /* !FAKE_TRUE_COLOR */
-		/*
-		 * Black and white are allocated in the last two slots,
-		 * so as to be compatible with the monochrome colormap.
-		 * This prevents most text etc. to go technicolor as focus
-		 * changes into the window.
-		 *
-	         * The requirement that these two entries be at the end
-		 * of the colormap makes it most convenient to allocate
-		 * the remmaining entries from back to the front as well.
-		 * Therefore xdev->freecols is the minimal allocated
-		 * color index, and decreases as new ones are allocated.
-		 */
-		j = CMS_SIZE - 2;
-		cms_monochromeload(xdev->red + j,
-		                   xdev->green + j,
-				   xdev->blue + j);
+                /*
+                 * Black and white are allocated in the last two slots,
+                 * so as to be compatible with the monochrome colormap.
+                 * This prevents most text etc. to go technicolor as focus
+                 * changes into the window.
+                 *
+                 * The requirement that these two entries be at the end
+                 * of the colormap makes it most convenient to allocate
+                 * the remmaining entries from back to the front as well.
+                 * Therefore xdev->freecols is the minimal allocated
+                 * color index, and decreases as new ones are allocated.
+                 */
+                j = CMS_SIZE - 2;
+                cms_monochromeload(xdev->red + j,
+                                   xdev->green + j,
+                                   xdev->blue + j);
 
-		/*
-		 * The remaining slots down to CMS_SIZE - RGB_COLS are filled
-		 * with evenly spaced points from the colorcube.
-		 */
-		for ( color = 1; color < RGB_COLS - 1; color++ ) {
-		   j--;
-		   xdev->red[j] =
-			(double)((color & RED_MASK) >> (GREEN_BITS + BLUE_BITS))
-			/ (RED_COLS - 1)
-			* (ALL_COLS - 1);
-		   xdev->green[j] =
-			(double)((color & GREEN_MASK) >> BLUE_BITS)
-			/ (GREEN_COLS - 1)
-			* (ALL_COLS - 1);
-		   xdev->blue[j] =
-			(double)((color & BLUE_MASK))
-			/ (BLUE_COLS - 1)
-			* (ALL_COLS - 1);
-		}
+                /*
+                 * The remaining slots down to CMS_SIZE - RGB_COLS are filled
+                 * with evenly spaced points from the colorcube.
+                 */
+                for ( color = 1; color < RGB_COLS - 1; color++ ) {
+                   j--;
+                   xdev->red[j] =
+                        (double)((color & RED_MASK) >> (GREEN_BITS + BLUE_BITS))
+                        / (RED_COLS - 1)
+                        * (ALL_COLS - 1);
+                   xdev->green[j] =
+                        (double)((color & GREEN_MASK) >> BLUE_BITS)
+                        / (GREEN_COLS - 1)
+                        * (ALL_COLS - 1);
+                   xdev->blue[j] =
+                        (double)((color & BLUE_MASK))
+                        / (BLUE_COLS - 1)
+                        * (ALL_COLS - 1);
+                }
 
+                /*
+                 * Set the low-water mark to the beginning of the colorcube.
+                 */
+                xdev->freecols = j;
 
-		/*
-		 * Set the low-water mark to the beginning of the colorcube.
-		 */
-		xdev->freecols = j;
-
-		/*
-		 * The unused entries are filled so that the last entry is
-		 * always different from the 0th entry.  This is a requirement
-		 * for SunWindows.
-		 */
-		for (j-- ; j >= 0 ; j--) {
-		   xdev->red[j] = xdev->green[j] = xdev->blue[j] =
-			~xdev->red[CMS_SIZE - 1];
-		}
+                /*
+                 * The unused entries are filled so that the last entry is
+                 * always different from the 0th entry.  This is a requirement
+                 * for SunWindows.
+                 */
+                for (j-- ; j >= 0 ; j--) {
+                   xdev->red[j] = xdev->green[j] = xdev->blue[j] =
+                        ~xdev->red[CMS_SIZE - 1];
+                }
 #endif /* FAKE_TRUE_COLOR */
 
-		/*
-		 * Install the colormap.
-		 */
-		sprintf(xdev->cmsname, "%s-%d", CMSNAME, getpid());
-		pw_setcmsname(xdev->pw, xdev->cmsname);
-		pw_putcolormap(xdev->pw, 0, CMS_SIZE,
-		               xdev->red, xdev->green, xdev->blue);
-	   }
-	else {
-		xdev->freecols = 0;
-		xdev->red = (byte *)0;
-		xdev->green = (byte *)0;
-		xdev->blue = (byte *)0;
-	}
+                /*
+                 * Install the colormap.
+                 */
+                sprintf(xdev->cmsname, "%s-%d", CMSNAME, getpid());
+                pw_setcmsname(xdev->pw, xdev->cmsname);
+                pw_putcolormap(xdev->pw, 0, CMS_SIZE,
+                               xdev->red, xdev->green, xdev->blue);
+           }
+        else {
+                xdev->freecols = 0;
+                xdev->red = (byte *)0;
+                xdev->green = (byte *)0;
+                xdev->blue = (byte *)0;
+        }
 
-	/*
-	 * Reset to retained after colormap length is changed 
-	 */
-	window_set(xdev->canvas, 
-		CANVAS_RETAINED, 		TRUE,
-		WIN_VERTICAL_SCROLLBAR,		scrollbar_create(0),
-		WIN_HORIZONTAL_SCROLLBAR,	scrollbar_create(0),
-		0);
-	window_set(xdev->frame, WIN_SHOW, TRUE, 0);
-	/* Interpose a destroy function to keep the driver bookkeeping */
-	/* machinery from getting confused if the user closes the window. */
-	notify_interpose_destroy_func(xdev->frame, destroy_func);
-	(void) notify_do_dispatch();
-	(void) notify_dispatch();
-	return 0;
+        /*
+         * Reset to retained after colormap length is changed
+         */
+        window_set(xdev->canvas,
+                CANVAS_RETAINED, 		TRUE,
+                WIN_VERTICAL_SCROLLBAR,		scrollbar_create(0),
+                WIN_HORIZONTAL_SCROLLBAR,	scrollbar_create(0),
+                0);
+        window_set(xdev->frame, WIN_SHOW, TRUE, 0);
+        /* Interpose a destroy function to keep the driver bookkeeping */
+        /* machinery from getting confused if the user closes the window. */
+        notify_interpose_destroy_func(xdev->frame, destroy_func);
+        (void) notify_do_dispatch();
+        (void) notify_dispatch();
+        return 0;
 }
 /* Prevent the user from closing the window. */
 static Notify_value
 destroy_func(Frame frame, Destroy_status status)
 {	if ( status == DESTROY_CHECKING )
-	   {	notify_veto_destroy(frame);
-		return (NOTIFY_DONE);
-	   }
-	return (notify_next_destroy_func(frame, status));
+           {	notify_veto_destroy(frame);
+                return (NOTIFY_DONE);
+           }
+        return (notify_next_destroy_func(frame, status));
 }
 
 /* Close the device. */
 int
 sun_close(gx_device *dev)
 {	window_destroy(xdev->frame);
-	xdev->frame = (Frame)0;
-	xdev->canvas = (Canvas)0;
-	xdev->pw = (Pixwin *)0;
-	xdev->freecols = 0;
-	if (xdev->red)
-	    free(xdev->red);
-	if (xdev->green)
-	    free(xdev->green);
-	if (xdev->blue)
-	    free(xdev->blue);
-	return 0;
+        xdev->frame = (Frame)0;
+        xdev->canvas = (Canvas)0;
+        xdev->pw = (Pixwin *)0;
+        xdev->freecols = 0;
+        if (xdev->red)
+            free(xdev->red);
+        if (xdev->green)
+            free(xdev->green);
+        if (xdev->blue)
+            free(xdev->blue);
+        return 0;
 }
 
 /* Synchronize the display with the commands already given */
 int
 sun_sync(register gx_device *dev)
 {	(void) notify_dispatch();
-	return 0;
+        return 0;
 }
 
 /* Map RGB to color number -
-	Look for existing entry in colormap, or create a new one, or
-	give up if no free colormap entries (requesting dithering).
+        Look for existing entry in colormap, or create a new one, or
+        give up if no free colormap entries (requesting dithering).
  */
 gx_color_index
 sun_map_rgb_color(gx_device *dev, unsigned short red,
-	unsigned short green, unsigned short blue)
+        unsigned short green, unsigned short blue)
 {	if ( !xdev->frame || !gx_device_has_color(dev) )
-		/*
-		 * Invert default color index to match mono display
-		 * pixel values (black = 1, white = 0).
-		 */
-		return !gx_default_map_rgb_color(dev, red, green, blue);
-	else if ( !xdev->truecolor ) {
-		byte red_val, green_val, blue_val;
-		int i;
-		static int warn = 1;
+                /*
+                 * Invert default color index to match mono display
+                 * pixel values (black = 1, white = 0).
+                 */
+                return !gx_default_map_rgb_color(dev, red, green, blue);
+        else if ( !xdev->truecolor ) {
+                byte red_val, green_val, blue_val;
+                int i;
+                static int warn = 1;
 
-		/*
-		 * Determine the RGB values at display resolution we
-		 * ideally would want this color to be mapped into.
-		 */
-		red_val = (double)red/gx_max_color_value * (ALL_COLS - 1);
-		green_val = (double)green/gx_max_color_value * (ALL_COLS - 1);
-		blue_val = (double)blue/gx_max_color_value * (ALL_COLS - 1);
+                /*
+                 * Determine the RGB values at display resolution we
+                 * ideally would want this color to be mapped into.
+                 */
+                red_val = (double)red/gx_max_color_value * (ALL_COLS - 1);
+                green_val = (double)green/gx_max_color_value * (ALL_COLS - 1);
+                blue_val = (double)blue/gx_max_color_value * (ALL_COLS - 1);
 
-		/*
-		 * Look for an exact match among the colors already allocated.
-		 * This includes the pre-allocated default color cube.
-		 */
-		for (i = CMS_SIZE - 1; i >= xdev->freecols; i--) {
-			if (xdev->red[i] == red_val &&
-			    xdev->green[i] == green_val &&
-			    xdev->blue[i] == blue_val) {
-				return i;
-			}
-		}
-		
-		/*
-		 * If we run out of space in the color map, let gs know.
-		 * It will call us again to request colors to do the
-		 * dithering, and hopefully request only RGB values that
-		 * match the colorcube entries. IF NOT, WE WILL LOOP
-		 * FOREVER!
-		 * NOTE: Leave the zero'th colormap entry alone lest the
-		 * scrollbar be colored.
-		 */
-		if (xdev->freecols <= 1) {
-		    if (warn) {
-			emprintf(dev->memory,
+                /*
+                 * Look for an exact match among the colors already allocated.
+                 * This includes the pre-allocated default color cube.
+                 */
+                for (i = CMS_SIZE - 1; i >= xdev->freecols; i--) {
+                        if (xdev->red[i] == red_val &&
+                            xdev->green[i] == green_val &&
+                            xdev->blue[i] == blue_val) {
+                                return i;
+                        }
+                }
+
+                /*
+                 * If we run out of space in the color map, let gs know.
+                 * It will call us again to request colors to do the
+                 * dithering, and hopefully request only RGB values that
+                 * match the colorcube entries. IF NOT, WE WILL LOOP
+                 * FOREVER!
+                 * NOTE: Leave the zero'th colormap entry alone lest the
+                 * scrollbar be colored.
+                 */
+                if (xdev->freecols <= 1) {
+                    if (warn) {
+                        emprintf(dev->memory,
                                  "gs: last spare color map entry allocated\n");
-			warn = 0;
-		    }
-		    return gx_no_color_index; 
-		}
+                        warn = 0;
+                    }
+                    return gx_no_color_index;
+                }
 
-		/*
-		 * Allocate new color in map.
-		 */
-		xdev->red[i] = red_val;
-		xdev->green[i] = green_val;
-		xdev->blue[i] = blue_val;
-		pw_setcmsname(xdev->pw, xdev->cmsname);
-		pw_putcolormap(xdev->pw, i, 1,
-		               &xdev->red[i], &xdev->green[i], &xdev->blue[i]);
-		
-		xdev->freecols = i;
-		return i;
-	}
-	else {	/* true color mapping --
-			color index encodes all 3 RGB values */
-		return ((blue >> (gx_color_value_bits - TRUE_BLUE_BITS))
-			<< (TRUE_GREEN_BITS + TRUE_RED_BITS)) |
-		       ((green >> (gx_color_value_bits - TRUE_GREEN_BITS))
-			<< TRUE_RED_BITS) |
-		       (red >> (gx_color_value_bits - TRUE_RED_BITS));
-	}
+                /*
+                 * Allocate new color in map.
+                 */
+                xdev->red[i] = red_val;
+                xdev->green[i] = green_val;
+                xdev->blue[i] = blue_val;
+                pw_setcmsname(xdev->pw, xdev->cmsname);
+                pw_putcolormap(xdev->pw, i, 1,
+                               &xdev->red[i], &xdev->green[i], &xdev->blue[i]);
+
+                xdev->freecols = i;
+                return i;
+        }
+        else {	/* true color mapping --
+                        color index encodes all 3 RGB values */
+                return ((blue >> (gx_color_value_bits - TRUE_BLUE_BITS))
+                        << (TRUE_GREEN_BITS + TRUE_RED_BITS)) |
+                       ((green >> (gx_color_value_bits - TRUE_GREEN_BITS))
+                        << TRUE_RED_BITS) |
+                       (red >> (gx_color_value_bits - TRUE_RED_BITS));
+        }
 }
 
 /* Map color number back to RGB values  - see sun_map_rgb_color(), above */
 int
 sun_map_color_rgb(gx_device *dev, gx_color_index color,
-	unsigned short rgb[3])
+        unsigned short rgb[3])
 {	if ( !xdev->frame || !gx_device_has_color(dev) )
-		return gx_default_map_color_rgb(dev, !color, rgb);
-	else if ( !xdev->truecolor ) {
-		/*
-		 * We just use the colormap to map back to rgb values.
-		 */
-		if (color < xdev->freecols || color >= CMS_SIZE) {
-			emprintf1(dev->memory,
+                return gx_default_map_color_rgb(dev, !color, rgb);
+        else if ( !xdev->truecolor ) {
+                /*
+                 * We just use the colormap to map back to rgb values.
+                 */
+                if (color < xdev->freecols || color >= CMS_SIZE) {
+                        emprintf1(dev->memory,
                                   "gs: attempt to get RGB values for unallocated color index %d\n",
                                   (int)color);
-			return -1;
-		}
-		rgb[0] = (double)xdev->red[color] / (ALL_COLS - 1)
-			 * gx_max_color_value;
-		rgb[1] = (double)xdev->green[color] / (ALL_COLS - 1)
-			 * gx_max_color_value;
-		rgb[2] = (double)xdev->blue[color] / (ALL_COLS - 1)
-			 * gx_max_color_value;
-		return 0;
-	}
-	else {	/* true color mapping */
-		rgb[0] = (double)((unsigned short)(color & TRUE_RED_MASK))
-			 / (TRUE_RED_COLS - 1)
-			 * gx_max_color_value;
-		rgb[1] = (double)((unsigned short)(color & TRUE_GREEN_MASK)
-			  >> TRUE_RED_BITS)
-			 / (TRUE_GREEN_COLS - 1)
-			 * gx_max_color_value;
-		rgb[2] = (double)((unsigned short)(color & TRUE_BLUE_MASK)
-			  >> (TRUE_GREEN_BITS + TRUE_RED_BITS))
-			 / (TRUE_BLUE_COLS - 1)
-			 * gx_max_color_value;
-		return 0;
-	}
+                        return -1;
+                }
+                rgb[0] = (double)xdev->red[color] / (ALL_COLS - 1)
+                         * gx_max_color_value;
+                rgb[1] = (double)xdev->green[color] / (ALL_COLS - 1)
+                         * gx_max_color_value;
+                rgb[2] = (double)xdev->blue[color] / (ALL_COLS - 1)
+                         * gx_max_color_value;
+                return 0;
+        }
+        else {	/* true color mapping */
+                rgb[0] = (double)((unsigned short)(color & TRUE_RED_MASK))
+                         / (TRUE_RED_COLS - 1)
+                         * gx_max_color_value;
+                rgb[1] = (double)((unsigned short)(color & TRUE_GREEN_MASK)
+                          >> TRUE_RED_BITS)
+                         / (TRUE_GREEN_COLS - 1)
+                         * gx_max_color_value;
+                rgb[2] = (double)((unsigned short)(color & TRUE_BLUE_MASK)
+                          >> (TRUE_GREEN_BITS + TRUE_RED_BITS))
+                         / (TRUE_BLUE_COLS - 1)
+                         * gx_max_color_value;
+                return 0;
+        }
 }
 
 /* Fill a rectangle with a color. */
@@ -578,10 +577,10 @@ sun_fill_rectangle(register gx_device *dev,
   int x, int y, int w, int h, gx_color_index color)
 {	fit_fill(dev, x, y, w, h);
 
-	pw_write(xdev->pw, x, y, w, h, PIX_SRC | PIX_COLOR((int)(color)),
-		 (Pixrect *)0, 0, 0);
-	(void) notify_dispatch();
-	return 0;
+        pw_write(xdev->pw, x, y, w, h, PIX_SRC | PIX_COLOR((int)(color)),
+                 (Pixrect *)0, 0, 0);
+        (void) notify_dispatch();
+        return 0;
 }
 
 /* Copy a monochrome bitmap. */
@@ -595,54 +594,54 @@ sun_copy_mono(register gx_device *dev,
 /* Yes, this is a bad and wicked thing to do! */
 #define non_const_base ((byte *)base)
 
-	register int i;
-	int nbytes;
-	extern struct pixrectops mem_ops;
+        register int i;
+        int nbytes;
+        extern struct pixrectops mem_ops;
 #if !arch_is_big_endian			/* need to swap bits & bytes */
 #  define BUF_WIDTH_BYTES (((int)(8.5*DEFAULT_DPI)+15)/16*2)
-	byte swap_buf[BUF_WIDTH_BYTES];
+        byte swap_buf[BUF_WIDTH_BYTES];
 #endif
 
-	fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
-	nbytes = h * raster;
+        fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
+        nbytes = h * raster;
 
-	xdev->pr.pr_ops = &mem_ops;
-	xdev->pr.pr_width = w + sourcex + 8;
-	xdev->pr.pr_height = h;
-	xdev->pr.pr_depth = 1;
-	xdev->pr.pr_data = (caddr_t)&(xdev->mpr);
-	xdev->mpr.md_linebytes = raster;
-	xdev->mpr.md_image = (short *)((ulong)base & ~1);
+        xdev->pr.pr_ops = &mem_ops;
+        xdev->pr.pr_width = w + sourcex + 8;
+        xdev->pr.pr_height = h;
+        xdev->pr.pr_depth = 1;
+        xdev->pr.pr_data = (caddr_t)&(xdev->mpr);
+        xdev->mpr.md_linebytes = raster;
+        xdev->mpr.md_image = (short *)((ulong)base & ~1);
 #if !arch_is_big_endian
-	/* Reverse the bit order in each byte. */
-	for ( i = 0; i < nbytes; i++ )
-		non_const_base[i] = reverse_bits[base[i]];
+        /* Reverse the bit order in each byte. */
+        for ( i = 0; i < nbytes; i++ )
+                non_const_base[i] = reverse_bits[base[i]];
 #endif
-	pw_batch_on(xdev->pw);
-	if (one != gx_no_color_index)
-	{	pw_stencil(xdev->pw, x, y, w, h,
-			PIX_SRC | PIX_COLOR(one), &(xdev->pr),
-			((int)base & 1) ? sourcex + 8 : sourcex, 0,
-			(Pixrect *)0, 0, 0);
-	}
-	if (zero != gx_no_color_index)
-	{	for (i = 0; i < nbytes; i++)
-			non_const_base[i] = ~base[i];
-		pw_stencil(xdev->pw, x, y, w, h,
-			PIX_SRC | PIX_COLOR(zero), &(xdev->pr),
-			((int)base & 1) ? sourcex + 8 : sourcex, 0,
-			(Pixrect *)0, 0, 0);
-		for (i = 0; i < nbytes; i++)
-			non_const_base[i] = ~base[i];
-	}
-	pw_batch_off(xdev->pw);
+        pw_batch_on(xdev->pw);
+        if (one != gx_no_color_index)
+        {	pw_stencil(xdev->pw, x, y, w, h,
+                        PIX_SRC | PIX_COLOR(one), &(xdev->pr),
+                        ((int)base & 1) ? sourcex + 8 : sourcex, 0,
+                        (Pixrect *)0, 0, 0);
+        }
+        if (zero != gx_no_color_index)
+        {	for (i = 0; i < nbytes; i++)
+                        non_const_base[i] = ~base[i];
+                pw_stencil(xdev->pw, x, y, w, h,
+                        PIX_SRC | PIX_COLOR(zero), &(xdev->pr),
+                        ((int)base & 1) ? sourcex + 8 : sourcex, 0,
+                        (Pixrect *)0, 0, 0);
+                for (i = 0; i < nbytes; i++)
+                        non_const_base[i] = ~base[i];
+        }
+        pw_batch_off(xdev->pw);
 #if !arch_is_big_endian
-	/* Reverse the bits back again. */
-	for ( i = 0; i < nbytes; i++ )
-		non_const_base[i] = reverse_bits[base[i]];
+        /* Reverse the bits back again. */
+        for ( i = 0; i < nbytes; i++ )
+                non_const_base[i] = reverse_bits[base[i]];
 #endif
-	(void) notify_dispatch();
-	return 0;
+        (void) notify_dispatch();
+        return 0;
 }
 
 /* Copy a color bitmap. */
@@ -651,27 +650,27 @@ sun_copy_color(register gx_device *dev,
   const byte *base, int sourcex, int raster, gx_bitmap_id id,
   int x, int y, int w, int h)
 {
-	extern struct pixrectops mem_ops;
+        extern struct pixrectops mem_ops;
 
-	if ( !gx_device_has_color(dev) )
-		return sun_copy_mono(dev, base, sourcex, raster, id,
-				     x, y, w, h,
-				     (gx_color_index)0, (gx_color_index)1);
+        if ( !gx_device_has_color(dev) )
+                return sun_copy_mono(dev, base, sourcex, raster, id,
+                                     x, y, w, h,
+                                     (gx_color_index)0, (gx_color_index)1);
 
-	fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
+        fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
 
-	xdev->pr.pr_ops = &mem_ops;
-	xdev->pr.pr_width = w + sourcex + 8;
-	xdev->pr.pr_height = h;
-	xdev->pr.pr_depth = 8;
-	xdev->pr.pr_data = (caddr_t)&(xdev->mpr);
-	xdev->mpr.md_linebytes = raster;
-	xdev->mpr.md_image = (short *)((ulong)base & ~1);
-	pw_write(xdev->pw, x, y, w, h,
-		 PIX_SRC, &(xdev->pr),
-		 (((int)base & 1) ? sourcex + 8 : sourcex), 0);
-	(void) notify_dispatch();
-	return 0;
+        xdev->pr.pr_ops = &mem_ops;
+        xdev->pr.pr_width = w + sourcex + 8;
+        xdev->pr.pr_height = h;
+        xdev->pr.pr_depth = 8;
+        xdev->pr.pr_data = (caddr_t)&(xdev->mpr);
+        xdev->mpr.md_linebytes = raster;
+        xdev->mpr.md_image = (short *)((ulong)base & ~1);
+        pw_write(xdev->pw, x, y, w, h,
+                 PIX_SRC, &(xdev->pr),
+                 (((int)base & 1) ? sourcex + 8 : sourcex), 0);
+        (void) notify_dispatch();
+        return 0;
 }
 
 /* Draw a line */
@@ -679,6 +678,6 @@ int
 sun_draw_line(register gx_device *dev,
   int x0, int y0, int x1, int y1, gx_color_index color)
 {	pw_vector(xdev->pw, x0, y0, x1, y1, PIX_SRC, color);
-	(void) notify_dispatch();
-	return 0;
+        (void) notify_dispatch();
+        return 0;
 }

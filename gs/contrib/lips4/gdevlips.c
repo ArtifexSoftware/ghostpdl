@@ -56,14 +56,14 @@ lips_media_selection(int width, int height)
     paper_table *pt;
 
     if (width > height) {
-	landscape = 1;
-	tmp = width;
-	width = height;
-	height = tmp;
+        landscape = 1;
+        tmp = width;
+        width = height;
+        height = tmp;
     }
     for (pt = lips_paper_table; pt->num_unit < 80; pt++)
-	if (pt->width == width && pt->height == height)
-	    break;
+        if (pt->width == width && pt->height == height)
+            break;
 
     return pt->num_unit + landscape;
 }
@@ -78,26 +78,26 @@ lips_packbits_encode(byte * inBuff, byte * outBuff, int Length)
     int size = 0;
 
     while (Length) {
-	int count;
+        int count;
 
-	if (1 < (count = GetNumSameData(inBuff,
-					Length > 128 ? 128 : Length))) {
-	    Length -= count;
-	    size += 2;
+        if (1 < (count = GetNumSameData(inBuff,
+                                        Length > 128 ? 128 : Length))) {
+            Length -= count;
+            size += 2;
 
-	    *outBuff++ = -(count - 1);
-	    *outBuff++ = *inBuff;
-	    inBuff += count;
-	} else {
-	    count = GetNumWrongData(inBuff, Length > 128 ? 128 : Length);
-	    Length -= count;
-	    size += count + 1;
+            *outBuff++ = -(count - 1);
+            *outBuff++ = *inBuff;
+            inBuff += count;
+        } else {
+            count = GetNumWrongData(inBuff, Length > 128 ? 128 : Length);
+            Length -= count;
+            size += count + 1;
 
-	    *outBuff++ = count - 1;
-	    while (count--) {
-		*outBuff++ = *inBuff++;
-	    }
-	}
+            *outBuff++ = count - 1;
+            while (count--) {
+                *outBuff++ = *inBuff++;
+            }
+        }
     }
 
     return (size);
@@ -112,26 +112,26 @@ lips_mode3format_encode(byte * inBuff, byte * outBuff, int Length)
     int size = 0;
 
     while (Length) {
-	int count;
+        int count;
 
-	if (1 < (count = GetNumSameData(inBuff,
-					Length > 257 ? 257 : Length))) {
-	    Length -= count;
-	    size += 3;
+        if (1 < (count = GetNumSameData(inBuff,
+                                        Length > 257 ? 257 : Length))) {
+            Length -= count;
+            size += 3;
 
-	    *outBuff++ = *inBuff;
-	    *outBuff++ = *inBuff;
-	    *outBuff++ = count - 2;
-	    inBuff += count;
-	} else {
-	    count = GetNumWrongData(inBuff, Length);
-	    Length -= count;
-	    size += count;
+            *outBuff++ = *inBuff;
+            *outBuff++ = *inBuff;
+            *outBuff++ = count - 2;
+            inBuff += count;
+        } else {
+            count = GetNumWrongData(inBuff, Length);
+            Length -= count;
+            size += count;
 
-	    while (count--) {
-		*outBuff++ = *inBuff++;
-	    }
-	}
+            while (count--) {
+                *outBuff++ = *inBuff++;
+            }
+        }
     }
 
     return (size);
@@ -143,10 +143,10 @@ GetNumSameData(const byte * curPtr, const int maxnum)
     int count = 1;
 
     if (1 == maxnum) {
-	return (1);
+        return (1);
     }
     while (*curPtr == *(curPtr + count) && maxnum > count) {
-	count++;
+        count++;
     }
 
     return (count);
@@ -158,15 +158,14 @@ GetNumWrongData(const byte * curPtr, const int maxnum)
     int count = 0;
 
     if (1 == maxnum) {
-	return (1);
+        return (1);
     }
     while (*(curPtr + count) != *(curPtr + count + 1) && maxnum > count) {
-	count++;
+        count++;
     }
 
     return (count);
 }
-
 
 /*
 
@@ -186,22 +185,22 @@ lips_rle_encode(byte * inBuff, byte * outBuff, int Length)
     ptr++;
 
     while (ptr < inBuff + Length) {
-	if (*ptr == value) {
-	    count++;
-	    if (count > RLECOUNTMAX) {
-		*outBuff++ = RLECOUNTMAX;
-		*outBuff++ = value;
-		i += 2;
-		count = 0;
-	    }
-	} else {
-	    *outBuff++ = count;
-	    *outBuff++ = value;
-	    i += 2;
-	    count = 0;
-	    value = *ptr;
-	}
-	ptr++;
+        if (*ptr == value) {
+            count++;
+            if (count > RLECOUNTMAX) {
+                *outBuff++ = RLECOUNTMAX;
+                *outBuff++ = value;
+                i += 2;
+                count = 0;
+            }
+        } else {
+            *outBuff++ = count;
+            *outBuff++ = value;
+            i += 2;
+            count = 0;
+            value = *ptr;
+        }
+        ptr++;
     }
     *outBuff++ = count;
     *outBuff++ = value;

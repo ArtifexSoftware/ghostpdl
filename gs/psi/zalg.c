@@ -1,6 +1,6 @@
 /* Copyright (C) 2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -57,25 +57,25 @@ zsort(i_ctx_t *i_ctx_p)
     /* Check operands for type and access */
     /* we can sort only writable [and unpacked] arrays */
     if (r_type(&op[-1]) == t_mixedarray || r_type(&op[-1]) == t_shortarray)
-	return_error(e_invalidaccess);
+        return_error(e_invalidaccess);
     check_write_type(op[-1], t_array);
     /* the predicate must be an executable array/ string/ name/ [pseudo-]operator */
     if (!r_has_attr(&op[0], a_executable))
-	return_op_typecheck(&op[0]);
+        return_op_typecheck(&op[0]);
     switch (r_btype(&op[0])) {
-	case t_array:
-	case t_mixedarray:
-	case t_shortarray:
-	case t_string:
-	    if (!r_has_attr(&op[0], a_execute))
-		return_error(e_invalidaccess);
-	    break;
-	case t_name:
-	case t_operator:
-	case t_oparray:
-	    break;
-	default:
-	    return_op_typecheck(&op[0]);
+        case t_array:
+        case t_mixedarray:
+        case t_shortarray:
+        case t_string:
+            if (!r_has_attr(&op[0], a_execute))
+                return_error(e_invalidaccess);
+            break;
+        case t_name:
+        case t_operator:
+        case t_oparray:
+            break;
+        default:
+            return_op_typecheck(&op[0]);
     }
     /*
      * if array length <= 1, then nothing to sort
@@ -83,23 +83,23 @@ zsort(i_ctx_t *i_ctx_p)
      */
     N = r_size(&op[-1]);
     if (N <= 1) {
-	pop(1);
-	return 0;
+        pop(1);
+        return 0;
     } else {
-	check_estack(11);
-	push_mark_estack(es_other, zsort_cleanup);
+        check_estack(11);
+        push_mark_estack(es_other, zsort_cleanup);
 /*H1:*/	make_int(&esp[1], N / 2 + 1);	/* l */
-	make_int(&esp[2], N);	    	/* r */
-	make_int(&esp[3], 0);	    	/* i */
-	make_int(&esp[4], 0);	    	/* j */
-	make_null(&esp[5]);	    	/* R */
-	make_int(&esp[6], 2);	    	/* H */
-	ref_assign(&esp[7], &op[0]);	/* lt */
-	ref_assign(&esp[8], &op[-1]);	/* the array */
-	esp += 8;
-	make_op_estack(&esp[1], zsort_continue);
-	make_null(&op[0]);		/* result of <lt>, not used when H = 2 */
-	return zsort_continue(i_ctx_p);
+        make_int(&esp[2], N);	    	/* r */
+        make_int(&esp[3], 0);	    	/* i */
+        make_int(&esp[4], 0);	    	/* j */
+        make_null(&esp[5]);	    	/* R */
+        make_int(&esp[6], 2);	    	/* H */
+        ref_assign(&esp[7], &op[0]);	/* lt */
+        ref_assign(&esp[8], &op[-1]);	/* the array */
+        esp += 8;
+        make_op_estack(&esp[1], zsort_continue);
+        make_null(&op[0]);		/* result of <lt>, not used when H = 2 */
+        return zsort_continue(i_ctx_p);
     }
 }
 
@@ -122,59 +122,59 @@ zsort_continue(i_ctx_t *i_ctx_p)
     status = esp - 8;
     Rn = arry.value.refs - 1; /* the -1 compensates for using 1-based indices */
     switch (H) {
-	case 2:
+        case 2:
 H2:	    if (l > 1) {
-		l--;
-		ref_assign(&R, &Rn[l]);
-	    } else {
-		ref_assign(&R, &Rn[r]);
-		ref_assign_old(&arry, &Rn[r], &Rn[1], ".sort(H2-a)");
-		r--;
-		if (r <= 1) {
-		    ref_assign_old(&arry, &Rn[1], &R, ".sort(H2-b)");
-		    esp -= 9;
-		    pop(1);
-		    return o_pop_estack;
-		}
-	    }
+                l--;
+                ref_assign(&R, &Rn[l]);
+            } else {
+                ref_assign(&R, &Rn[r]);
+                ref_assign_old(&arry, &Rn[r], &Rn[1], ".sort(H2-a)");
+                r--;
+                if (r <= 1) {
+                    ref_assign_old(&arry, &Rn[1], &R, ".sort(H2-b)");
+                    esp -= 9;
+                    pop(1);
+                    return o_pop_estack;
+                }
+            }
 /* H3: */   j = l;
 H4:	    i = j;
-	    j <<= 1;
-	    if (j >= r)
-		if (j == r)
-		    goto H6;
-		else
-		    goto H8;
-	    else {
+            j <<= 1;
+            if (j >= r)
+                if (j == r)
+                    goto H6;
+                else
+                    goto H8;
+            else {
 /* H5: */	H = 5;
-		push(1);
-		ref_assign(&op[-1], &Rn[j]);
-		ref_assign(&op[0], &Rn[j + 1]);
-		break;
-	    }
-	case 5:
+                push(1);
+                ref_assign(&op[-1], &Rn[j]);
+                ref_assign(&op[0], &Rn[j + 1]);
+                break;
+            }
+        case 5:
 /*H5_cont:*/if (!r_has_type(&op[0], t_boolean))
-		return_error(e_typecheck);
-	    if (op[0].value.boolval)
-		j++;
+                return_error(e_typecheck);
+            if (op[0].value.boolval)
+                j++;
 H6:	    H = 6;
-	    push(1);
-	    ref_assign(&op[-1], &R);
-	    ref_assign(&op[0], &Rn[j]);
-	    break;
-	case 6:
+            push(1);
+            ref_assign(&op[-1], &R);
+            ref_assign(&op[0], &Rn[j]);
+            break;
+        case 6:
 /*H6_cont:*/if (!r_has_type(&op[0], t_boolean))
-		return_error(e_typecheck);
-	    if (op[0].value.boolval) {
+                return_error(e_typecheck);
+            if (op[0].value.boolval) {
 /* H7: */  	ref_assign_old(&arry, &Rn[i], &Rn[j], ".sort(H7)");
-		goto H4;
-	    } else {
+                goto H4;
+            } else {
 H8:		ref_assign_old(&arry, &Rn[i], &R, ".sort(H8)");
-		goto H2;
-	    }
-	default:
-	    pop(1);
-	    return_error(gs_error_unregistered); /* Must not happen. */
+                goto H2;
+            }
+        default:
+            pop(1);
+            return_error(gs_error_unregistered); /* Must not happen. */
     }
     esp += 2;
     ref_assign(esp, &lt);
@@ -200,7 +200,7 @@ zsort_cleanup(i_ctx_t *i_ctx_p)
 const op_def zalg_op_defs[] =
 {
     {"2.sort", zsort},
-		/* Internal operators */
+                /* Internal operators */
     {"1%zsort_continue", zsort_continue},
     op_def_end(0)
 };

@@ -162,7 +162,6 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     last = *in; in++; /* Fetch one octet and remember it. */
     /* to state2 */
 
-
   state2:
     /* One octet to be treated is in 'last', 'in' points to the next. */
     if (*in != last) {
@@ -174,7 +173,6 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     if (available < 2) return -1;
     repeated = 2;
     /* to state3 */
-
 
   state3:
     /* We have read 'repeated' occurrences of 'last', 'in' is positioned on
@@ -198,7 +196,6 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     in++;
     goto state1;
 
-
   state4:
     /* We have read 'stored'+2 octets, 0 <= stored <= 126. All except the
        last two have already been stored before the current value of 'out',
@@ -209,9 +206,9 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     do {
       *out = last; stored++; available--; out++;
       if (in == end) {
-	*out = *in; stored++; available--;
-	out[-stored] = stored - 1; /* control byte */
-	goto finished;
+        *out = *in; stored++; available--;
+        out[-stored] = stored - 1; /* control byte */
+        goto finished;
       }
       if (available < 2) return -1;
       last = *in;
@@ -251,7 +248,6 @@ static int compress_tiff(const pcl_Octet *in, int incount, pcl_Octet *out,
     if (available < 3) return -1;
     *out = last; stored++; available--; out++; /* The first repeated octet */
     goto state4;
-    
 
   finished:
   return maxoutcount - available;
@@ -347,26 +343,25 @@ static int write_delta_replacement(pcl_Octet *out, int available, int reloffset,
     if (invalue != prevvalue) {						\
       int reloffset = pos - absoffset;	/* "left offset" */		\
       absoffset = pos;	/* first different octet */			\
-									\
+                                                                        \
       /* Collect different octets, at most 8 */				\
       do pos++;								\
       while (pos < bound && pos < absoffset + 8 && invalue != prevvalue); \
       /* All the octets with positions in [absoffset, pos) have to */	\
       /* be replaced, and there are at most 8 of them. */		\
-									\
+                                                                        \
       /* Write the replacement string */				\
       {									\
-	int written;							\
-	written = write_delta_replacement(out + opos, maxoutcount - opos, \
-	  reloffset, repstart, pos - absoffset);			\
-	if (written < 0) return -1;					\
-	opos += written;						\
+        int written;							\
+        written = write_delta_replacement(out + opos, maxoutcount - opos, \
+          reloffset, repstart, pos - absoffset);			\
+        if (written < 0) return -1;					\
+        opos += written;						\
       }									\
       absoffset = pos;							\
     }									\
     else pos++;								\
   }
-
 
 static int compress_delta(const pcl_Octet *in, int incount,
   const pcl_Octet *prev, int prevcount, pcl_Octet *out, int maxoutcount)
@@ -383,7 +378,7 @@ static int compress_delta(const pcl_Octet *in, int incount,
     if (incount == prevcount &&
       (incount == 0 || memcmp(in, prev, incount) == 0)) return 0;
       /* Can there be machines where memcmp() compares bits beyond those
-	 used for the 'pcl_Octet's? Unlikely. */
+         used for the 'pcl_Octet's? Unlikely. */
     return -1;
   }
 
@@ -391,7 +386,7 @@ static int compress_delta(const pcl_Octet *in, int incount,
   mincount = (incount < prevcount? incount: prevcount);
   pos = 0; opos = 0;
   absoffset = 0;	/* first untreated octet, i.e. position after the last
-			   unaltered octet. */
+                           unaltered octet. */
 
   /* Loop over parts common to this and the last row */
   delta_loop(mincount, in[pos], prev[pos], in + absoffset);
@@ -568,7 +563,7 @@ static int write_crdr_replacement(pcl_Octet *out, int maxoutcount,
       int incount = (bdup == final? repcount: bdup - in);
       int rc;
       rc = write_crdr_uncompressed(out + written, maxoutcount - written,
-	reloffset, in, incount);
+        reloffset, in, incount);
       if (rc < 0) return rc;
       written += rc;
       reloffset = 0;
@@ -586,7 +581,7 @@ static int write_crdr_replacement(pcl_Octet *out, int maxoutcount,
       while (edup < final && *(edup + 1) == *bdup) edup++;
       incount = edup - bdup + 1;
       rc = write_crdr_compressed(out + written, maxoutcount - written,
-	reloffset, *bdup, incount);
+        reloffset, *bdup, incount);
       if (rc < 0) return rc;
       written += rc;
       reloffset = 0;
@@ -632,15 +627,14 @@ static int write_crdr_replacement(pcl_Octet *out, int maxoutcount,
       int reloffset = pos - absoffset, written;				\
       absoffset = pos;							\
       do pos++; while (pos < bound && invalue != prevvalue);		\
-									\
+                                                                        \
       written = write_crdr_replacement(out + opos, maxoutcount - opos,	\
-	reloffset, repstart, pos - absoffset);				\
+        reloffset, repstart, pos - absoffset);				\
       if (written < 0) return written;					\
       absoffset = pos;							\
       opos += written;							\
     }									\
   }
-
 
 static int compress_crdr(const pcl_Octet *in, int incount,
   const pcl_Octet *prev, int prevcount, pcl_Octet *out, int maxoutcount)
@@ -703,7 +697,6 @@ static int compress_crdr(const pcl_Octet *in, int incount,
 /* Test macro for an argument of type "pcl_OctetString *" */
 #define is_valid(s)	\
   (s != NULL && ((s)->length == 0 || (s)->length > 0 && (s)->str != NULL))
-
 
 int pcl_compress(pcl_Compression method, const pcl_OctetString *in,
   const pcl_OctetString *prev, pcl_OctetString *out)

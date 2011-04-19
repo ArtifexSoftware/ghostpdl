@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,7 +30,7 @@
  * in-memory structure.
  */
 int gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
-		       int num_copies);
+                       int num_copies);
 
 /*
  * Render an array of saved pages by setting up a modified get_bits
@@ -48,6 +48,6 @@ int gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
  * the device width is the same as the BandWidth value of the saved pages.
  */
 int gdev_prn_render_pages(gx_device_printer * pdev,
-			  const gx_placed_page * ppages, int count);
+                          const gx_placed_page * ppages, int count);
 
 #endif /* gxclpage_INCLUDED */

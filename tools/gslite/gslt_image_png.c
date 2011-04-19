@@ -79,14 +79,14 @@ gslt_image_decode_png(gs_memory_t *mem, byte *buf, int len)
             NULL, NULL, NULL, /* error callbacks */
             mem, gslt_png_malloc, gslt_png_free);
     if (!png) {
-	gs_throw(-1, "png_create_read_struct_2 failed");
-	return NULL;
+        gs_throw(-1, "png_create_read_struct_2 failed");
+        return NULL;
     }
     info = png_create_info_struct(png);
     if (!info) {
         gs_throw(-1, "png_create_info_struct");
-	png_destroy_read_struct(&png, NULL, NULL);
-	return NULL;
+        png_destroy_read_struct(&png, NULL, NULL);
+        return NULL;
     }
     png_set_read_fn(png, &io, gslt_png_read);
 
@@ -98,7 +98,7 @@ gslt_image_decode_png(gs_memory_t *mem, byte *buf, int len)
     {
         png_destroy_read_struct(&png, &info, NULL);
         gs_throw(-1, "png reading failed");
-	return NULL;
+        return NULL;
     }
 
     /*
@@ -108,11 +108,11 @@ gslt_image_decode_png(gs_memory_t *mem, byte *buf, int len)
     png_read_info(png, info);
 
     image = gs_alloc_struct_immovable(mem, gslt_image_t,
-	&st_gslt_image, "new png gslt_image");
+        &st_gslt_image, "new png gslt_image");
     if (image == NULL) {
-	gs_throw(-1, "unable to allocate png gslt_image");
-	png_destroy_read_struct(&png, &info, NULL);
-	return NULL;
+        gs_throw(-1, "unable to allocate png gslt_image");
+        png_destroy_read_struct(&png, &info, NULL);
+        return NULL;
     }
 
     image->width = png_get_image_width(png, info);
@@ -176,9 +176,9 @@ gslt_image_decode_png(gs_memory_t *mem, byte *buf, int len)
 
     default:
         gs_throw(-1, "cannot handle this png color type");
-	png_destroy_read_struct(&png, &info, NULL);
-	gs_free_object(mem, image, "free png gslt_image");
-	return NULL;
+        png_destroy_read_struct(&png, &info, NULL);
+        gs_free_object(mem, image, "free png gslt_image");
+        return NULL;
     }
 
     image->stride = (image->width * image->components * image->bits + 7) / 8;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,15 +20,15 @@
 
 /* Procedures exported by zfproc.c */
 
-	/* for zfilter.c - procedure stream initialization */
+        /* for zfilter.c - procedure stream initialization */
 int sread_proc(ref *, stream **, gs_ref_memory_t *);
 int swrite_proc(ref *, stream **, gs_ref_memory_t *);
 
-	/* for interp.c, zfileio.c, zpaint.c - handle a procedure */
-	/* callback or an interrupt */
+        /* for interp.c, zfileio.c, zpaint.c - handle a procedure */
+        /* callback or an interrupt */
 int s_handle_read_exception(i_ctx_t *, int, const ref *, const ref *,
-			    int, op_proc_t);
+                            int, op_proc_t);
 int s_handle_write_exception(i_ctx_t *, int, const ref *, const ref *,
-			     int, op_proc_t);
+                             int, op_proc_t);
 
 #endif /* istream_INCLUDED */

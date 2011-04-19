@@ -136,7 +136,7 @@ uncompress_3(
         if ((offset == 0x1f) && (i-- > 0)) {
             uint    add_offset;
 
-            do 
+            do
                 offset += (add_offset = *pin++);
             while ((add_offset == 0xff) && (i-- > 0));
         }
@@ -163,7 +163,7 @@ uncompress_3(
 /*
  * Compression mode 9.
  *
- * HP's documentation of this command is not completely clear regarding the 
+ * HP's documentation of this command is not completely clear regarding the
  * interpretation of the replacement byte count for the run-length compression
  * case. The interpretation used here, based on the documentation in the
  * "PCL 5 Comparison Guide", October 1996 edition, pp. 2.94-2.96, is that the
@@ -181,7 +181,6 @@ uncompress_9(
     int                 i = in_size;
     byte *              pb = pout->pdata;
     byte *              plim = pb + pout->size;
-
 
     while (i-- > 0) {
         uint            val = *pin++;
@@ -231,7 +230,7 @@ uncompress_9(
                     *pb++ = rep_val;
             }
             i -= 2 * j;
-            
+
         } else {
             if (cnt > i)
                 cnt = i;
@@ -248,10 +247,9 @@ uncompress_9(
 
 }
 
-
 void    (*const pcl_decomp_proc[9 + 1])( pcl_seed_row_t *   pout,
                                          const byte *       pin,
-                                         int                in_size 
+                                         int                in_size
                                          ) = {
     uncompress_0,
     uncompress_1,

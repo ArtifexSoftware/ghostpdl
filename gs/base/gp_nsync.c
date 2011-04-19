@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,7 +32,7 @@ int
 gp_semaphore_open(gp_semaphore * sema)
 {
     if (sema)
-	*(int *)sema = 0;
+        *(int *)sema = 0;
     return 0;
 }
 
@@ -46,7 +46,7 @@ int
 gp_semaphore_wait(gp_semaphore * sema)
 {
     if (*(int *)sema == 0)
-	return_error(gs_error_unknownerror); /* no real waiting */
+        return_error(gs_error_unknownerror); /* no real waiting */
     --(*(int *)sema);
     return 0;
 }
@@ -70,7 +70,7 @@ int
 gp_monitor_open(gp_monitor * mon)
 {
     if (mon)
-	mon->dummy_ = 0;
+        mon->dummy_ = 0;
     return 0;
 }
 
@@ -84,7 +84,7 @@ int
 gp_monitor_enter(gp_monitor * mon)
 {
     if (mon->dummy_ != 0)
-	return_error(gs_error_unknownerror);
+        return_error(gs_error_unknownerror);
     mon->dummy_ = mon;
     return 0;
 }
@@ -93,7 +93,7 @@ int
 gp_monitor_leave(gp_monitor * mon)
 {
     if (mon->dummy_ != mon)
-	return_error(gs_error_unknownerror);
+        return_error(gs_error_unknownerror);
     mon->dummy_ = 0;
     return 0;
 }

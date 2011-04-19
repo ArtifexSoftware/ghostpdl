@@ -81,12 +81,12 @@ struct gx_io_device_procs_s {
 
 #define iodev_proc_open_device(proc)\
   int proc(gx_io_device *iodev, const char *access, stream **ps,\
-	   gs_memory_t *mem)
+           gs_memory_t *mem)
     iodev_proc_open_device((*open_device));
 
 #define iodev_proc_open_file(proc)\
   int proc(gx_io_device *iodev, const char *fname, uint namelen,\
-	   const char *access, stream **ps, gs_memory_t *mem)
+           const char *access, stream **ps, gs_memory_t *mem)
     iodev_proc_open_file((*open_file));
 
     /* fopen was changed in release 2.9.6, */
@@ -94,7 +94,7 @@ struct gx_io_device_procs_s {
 
 #define iodev_proc_fopen(proc)\
   int proc(gx_io_device *iodev, const char *fname, const char *access,\
-	   FILE **pfile, char *rfname, uint rnamelen)
+           FILE **pfile, char *rfname, uint rnamelen)
     iodev_proc_fopen((*fopen));
 
 #define iodev_proc_fclose(proc)\
@@ -115,7 +115,7 @@ struct gx_io_device_procs_s {
 
 #define iodev_proc_enumerate_files(proc)\
   file_enum *proc(gx_io_device *iodev, const char *pat, uint patlen,\
-		  gs_memory_t *mem)
+                  gs_memory_t *mem)
     iodev_proc_enumerate_files((*enumerate_files));
 
 #define iodev_proc_enumerate_next(proc)\

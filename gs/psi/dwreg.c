@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,7 +20,7 @@
 #include <string.h>
 #include "gscdefs.h"		/* for gs_productfamily and gs_revision */
 
-/* We store registry named values under the key 
+/* We store registry named values under the key
  * "Software\\GPL Ghostscript"
  * where "GPL Ghostscript" is actually gs_productfamily.
  * Either HKEY_LOCAL_MACHINE or HKEY_CURRENT_USER will be used.
@@ -30,7 +30,7 @@ win_registry_key(char *buf, int len)
 {
     const char *software = "Software";
     if (strlen(software) + 1 + strlen(gs_productfamily) >= len)
-	return -1;
+        return -1;
 
    strcpy(buf, software);
    strcat(buf, "\\");
@@ -42,7 +42,7 @@ win_registry_key(char *buf, int len)
  * Get a named registry value from HKCU.
  * name, ptr, plen and return values are the same as in gp_getenv();
  */
-int 
+int
 win_get_reg_value(const char *name, char *ptr, int *plen)
 {
     HKEY hkey;
@@ -54,22 +54,22 @@ win_get_reg_value(const char *name, char *ptr, int *plen)
 
     win_registry_key(key, sizeof(key));
     if (RegOpenKeyEx(HKEY_CURRENT_USER, key, 0, KEY_READ, &hkey)
-	== ERROR_SUCCESS) {
-	keytype = REG_SZ;
-	cbData = *plen;
-	if (bptr == (char *)NULL)
-	    bptr = &b;	/* Registry API won't return ERROR_MORE_DATA */
-			/* if ptr is NULL */
-	rc = RegQueryValueEx(hkey, (char *)name, 0, &keytype, bptr, &cbData);
-	RegCloseKey(hkey);
-	if (rc == ERROR_SUCCESS) {
-	    *plen = cbData;
-	    return 0;	/* found environment variable and copied it */
-	} else if (rc == ERROR_MORE_DATA) {
-	    /* buffer wasn't large enough */
-	    *plen = cbData;
-	    return -1;
-	}
+        == ERROR_SUCCESS) {
+        keytype = REG_SZ;
+        cbData = *plen;
+        if (bptr == (char *)NULL)
+            bptr = &b;	/* Registry API won't return ERROR_MORE_DATA */
+                        /* if ptr is NULL */
+        rc = RegQueryValueEx(hkey, (char *)name, 0, &keytype, bptr, &cbData);
+        RegCloseKey(hkey);
+        if (rc == ERROR_SUCCESS) {
+            *plen = cbData;
+            return 0;	/* found environment variable and copied it */
+        } else if (rc == ERROR_MORE_DATA) {
+            /* buffer wasn't large enough */
+            *plen = cbData;
+            return -1;
+        }
     }
     return 1;	/* not found */
 }
@@ -80,7 +80,7 @@ win_get_reg_value(const char *name, char *ptr, int *plen)
  * str = value of named value
  * Returns 0 on success.
  */
-int 
+int
 win_set_reg_value(const char *name, const char *value)
 {
     HKEY hkey;
@@ -91,14 +91,13 @@ win_set_reg_value(const char *name, const char *value)
     win_registry_key(key, sizeof(key));
     rc = RegOpenKeyEx(HKEY_CURRENT_USER, key, 0, KEY_WRITE, &hkey);
     if (rc != ERROR_SUCCESS)
-	rc = RegCreateKeyEx(HKEY_CURRENT_USER, key, 0, "", 0,
-	    KEY_ALL_ACCESS, NULL, &hkey, &dwDisposition);
+        rc = RegCreateKeyEx(HKEY_CURRENT_USER, key, 0, "", 0,
+            KEY_ALL_ACCESS, NULL, &hkey, &dwDisposition);
     if (rc == ERROR_SUCCESS) {
-	rc = RegSetValueEx(hkey, name, 0, REG_SZ, 
-		(CONST BYTE *)value, strlen(value)+1);
-	RegCloseKey(hkey);
+        rc = RegSetValueEx(hkey, name, 0, REG_SZ,
+                (CONST BYTE *)value, strlen(value)+1);
+        RegCloseKey(hkey);
     }
 
     return rc == ERROR_SUCCESS ? 0 : -1;
 }
-

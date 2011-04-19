@@ -23,10 +23,10 @@
 
 /* Define the lexical state of the scanner. */
 typedef enum {
-	scanning_none,
-	scanning_parameter,
-	scanning_display,	/* display_functions mode */
-	scanning_data		/* data following a command */
+        scanning_none,
+        scanning_parameter,
+        scanning_display,	/* display_functions mode */
+        scanning_data		/* data following a command */
 } pcl_scan_type_t;
 
 #define min_escape_2char '0'

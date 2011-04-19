@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -53,15 +53,15 @@ signalhandler(int sig)
 {
     clearerr(stdin);
     switch (sig) {
-	case SIGINT:
-	case SIGQUIT:
-	    interrupted = 1;
-	    break;
-	case SIGFPE:
-	    interrupted = 2;
-	    break;
-	default:
-	    break;
+        case SIGINT:
+        case SIGQUIT:
+            interrupted = 1;
+            break;
+        case SIGFPE:
+            interrupted = 2;
+            break;
+        default:
+            break;
     }
 }
 
@@ -101,7 +101,6 @@ gp_get_usertime(long *pdt)
     return gp_get_realtime(pdt);	/* not yet implemented */
 }
 
-
 /* ------ Persistent data cache ------*/
 
 /* insert a buffer under a (type, key) pair */
@@ -131,9 +130,9 @@ gp_open_printer(const gs_memory_t *mem,
                       int          binary_mode)
 {
     return
-	(strlen(fname) == 0 ? 0 :
-	 fname[0] == '|' ? popen(fname + 1, "w") :
-	 rbfopen(fname, "w"));
+        (strlen(fname) == 0 ? 0 :
+         fname[0] == '|' ? popen(fname + 1, "w") :
+         rbfopen(fname, "w"));
 }
 
 FILE *
@@ -150,9 +149,9 @@ void
 gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (fname[0] == '|')
-	pclose(pfile);
+        pclose(pfile);
     else
-	fclose(pfile);
+        fclose(pfile);
 }
 
 /* ------ File accessing -------- */
@@ -162,29 +161,29 @@ int
 gp_setmode_binary(FILE * pfile, bool binary)
 {
     if (binary)
-	file->_flag |= _RBF;
+        file->_flag |= _RBF;
     else
-	file->_flag &= ~_RBF;
+        file->_flag &= ~_RBF;
     return 0;
 }
 
 /* ------ Font enumeration ------ */
- 
+
  /* This is used to query the native os for a list of font names and
   * corresponding paths. The general idea is to save the hassle of
   * building a custom fontmap file.
   */
- 
+
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
 {
     return NULL;
 }
-         
+
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
     return 0;
 }
-                         
+
 void gp_enumerate_fonts_free(void *enum_state)
 {
-}           
+}

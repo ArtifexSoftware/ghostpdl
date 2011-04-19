@@ -1,12 +1,12 @@
 %    Copyright (C) 2000 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -43,7 +43,6 @@ systemdict exch /.xlatmap exch put
 
 %-------------------------------Font--------------------------------
 
-
 /FontCommon  % - font_common -
 { currentdict /PaintType known not {
     /PaintType 0 def
@@ -63,7 +62,7 @@ systemdict exch /.xlatmap exch put
   /TypeKey /FontType def
 
   1
-  { 
+  {
     currentdict /FontMatrix known not { /FontMatrix [0.001 0 0 0.001 0 0] def } if
     currentdict /FontBBox known not { /FontBBox [-128 -128 1024 1024] cvx def } if % zfapi.ps refines it.
     /Private 0 dict def
@@ -93,9 +92,9 @@ currentdict end def
 { RESMPDEBUG { (fntem TranslateCSI beg ) = } if
   begin
   CSI length 2 eq {
-    << /Registry (Adobe) 
-       /Ordering CSI aload pop 
-       /Supplement exch 
+    << /Registry (Adobe)
+       /Ordering CSI aload pop
+       /Supplement exch
     >>
   } {
     << /Registry CSI 0 get
@@ -114,17 +113,17 @@ currentdict end def
   /CIDCount 1 def % ChooseDecoding will set a reasonable value.
 } bind def
 
-% GFlyph substitution table for narrow, wide, proportional glyphs - 
+% GFlyph substitution table for narrow, wide, proportional glyphs -
 % used with TrueTypes.
 
 currentpacking //false setpacking
-/SubstNWP << 
+/SubstNWP <<
 
   % Array format : orig_type, beg_CID, end_CID, subst_beg_CID, subst_type
   % type = (n==narrow, w==wide, p==proportional).
 
   /Japan1
-  { p 1 94 231 n    
+  { p 1 94 231 n
 
     p 17 26 780 w
     p 34 59 790 w
@@ -165,7 +164,7 @@ currentpacking //false setpacking
 
   /GB1
   { p 2 94 814 n
-  
+
     p 2 94 262 w
 
     p 1 1 7716 n
@@ -273,7 +272,7 @@ currentdict end def
    pop (*) { dup cvn
      EncodingDirectory exch .knownget not {
        % A work around bug 688710 on Linux :
-       % findencoding can't load resource files until gs_init.ps executes .fixresources . 
+       % findencoding can't load resource files until gs_init.ps executes .fixresources .
        % It will happen after gs_init.ps runs INITFILES,
        % from which the current file runs.
        % Windows build has no such problem.
@@ -290,8 +289,8 @@ currentdict end def
      } {
        exch cvn exch
      } ifelse
-     exch 
-   } 1024 string /Encoding resourceforall 
+     exch
+   } 1024 string /Encoding resourceforall
  } if
 .dicttomark def
 
@@ -326,7 +325,7 @@ currentdict end def
       }
       {
           //true
-      } ifelse 
+      } ifelse
 
       {
         % unknown encoding, or an encoding for which we don't have a
@@ -397,7 +396,7 @@ currentdict end def
 {
   % If the font is maintained by FAPI, or if it is TT-emulated CID font,
   % it already has /Decoding. But its value isn't guaranteeed to
-  % be an Unicode decoding. Since we can't determine whether 
+  % be an Unicode decoding. Since we can't determine whether
   % it is an Unicode decoding, we unconditionally load an appropriate Unicode decoding
   % and attach it with /GlyphNames2Unicode entry.
   %

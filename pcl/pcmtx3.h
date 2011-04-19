@@ -23,7 +23,6 @@
 #include "gscolor2.h"
 #include "gscie.h"
 
-
 /*
  * To support device independent color spaces, PCL performs a number of
  * calculations with 3 x 3 matrices. The CIE color space code in the graphic
@@ -31,21 +30,21 @@
  * unusual and no corresponding utilities are provided. Hence, a separate
  * (though logically identical) format is provided here.
  *
- * Essentially all of the literature on color spaces deals with column 
- * vectors, EXCEPT that specific to PostScript. The latter deals with row 
- * vectors to remain consistent with the use of matrices for geometric 
+ * Essentially all of the literature on color spaces deals with column
+ * vectors, EXCEPT that specific to PostScript. The latter deals with row
+ * vectors to remain consistent with the use of matrices for geometric
  * transformations. The graphics library code, being based on PostScript,
  * uses the latter arrangement of components. The CIE code in the library is
  * documented for column vectors, but specifies matrices in the less usual
- * column-first order. The current code takes the logically equivalent and 
- * no less intuitive approach of using row vectors, and specifying 
+ * column-first order. The current code takes the logically equivalent and
+ * no less intuitive approach of using row vectors, and specifying
  * matrices in the more normal row-first order.
  *
  * There is actually some reason for these alternate approaches. The CIE code
  * is primarily concerned with transformation of color vectors, and performs
- * relatively few other matrix operations. The current code infrequently 
- * transforms color vectors, but does perform other matrix operations. 
- * Each code module uses the format that is more intuitive for its more 
+ * relatively few other matrix operations. The current code infrequently
+ * transforms color vectors, but does perform other matrix operations.
+ * Each code module uses the format that is more intuitive for its more
  * common operation.
  */
 typedef union {

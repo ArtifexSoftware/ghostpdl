@@ -99,7 +99,6 @@ const gx_device_tiff gs_tiffscaled_device = {
     1  /* MinFeatureSize */
 };
 
-
 /* ------ Private functions ------ */
 
 static void
@@ -334,7 +333,7 @@ RELOC_PTRS_END
 static void
 tiffsep_device_finalize(void *vpdev)
 {
-    /* We need to deallocate the compressed_color_list.  
+    /* We need to deallocate the compressed_color_list.
        and the names. */
     devn_free_params((gx_device*) vpdev);
     gx_device_finalize(vpdev);
@@ -410,7 +409,6 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         update_spot_colors,             /* update_spot_equivalent_colors */\
         tiffsep_ret_devn_params         /* ret_devn_params */\
 }
-
 
 #define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr)\
     std_device_full_body_type_extended(dtype, &procs, dname,\
@@ -857,7 +855,6 @@ tiffsep1_prn_close(gx_device * pdev)
     }
     return 0;
 }
-
 
 static int
 sep1_fill_path(gx_device * pdev, const gs_imager_state * pis,
@@ -1656,7 +1653,6 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
             return code;
 
     }   /* end initialization of separation files */
-
 
     {   /* Get the expanded contone line, halftone and write out the dithered separations */
         int raster = gdev_prn_raster(pdev);

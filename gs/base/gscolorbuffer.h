@@ -20,6 +20,6 @@
 
 /* This just does planar data for now */
 void gs_transform_color_buffer_generic(byte *inputbuffer,
-	    int rowstride, int planestride,
-	    int input_num_color, gs_int_rect rect,byte *outputbuffer,
-	    int output_num_color,int num_noncolor_planes);
+            int rowstride, int planestride,
+            int input_num_color, gs_int_rect rect,byte *outputbuffer,
+            int output_num_color,int num_noncolor_planes);

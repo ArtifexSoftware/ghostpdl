@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,10 +40,10 @@ private_st_jbig2decode_state();	/* creates a gc object for our state, defined in
 /* error callback for jbig2 decoder */
 static int
 s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity severity,
-	       int32_t seg_idx)
+               int32_t seg_idx)
 {
-    stream_jbig2decode_state *const state = 
-	(stream_jbig2decode_state *) error_callback_data;
+    stream_jbig2decode_state *const state =
+        (stream_jbig2decode_state *) error_callback_data;
     const char *type;
     char segment[22];
     int code = 0;
@@ -58,18 +58,18 @@ s_jbig2decode_error(void *error_callback_data, const char *msg, Jbig2Severity se
         case JBIG2_SEVERITY_FATAL:
             type = "FATAL ERROR decoding image:";
             /* pass the fatal error upstream if possible */
-	    code = gs_error_ioerror;
-	    if (state != NULL) state->error = code; 
-	    break;;
+            code = gs_error_ioerror;
+            if (state != NULL) state->error = code;
+            break;;
         default: type = "unknown message:"; break;;
     }
     if (seg_idx == -1) segment[0] = '\0';
     else sprintf(segment, "(segment 0x%02x)", seg_idx);
 
     if (severity == JBIG2_SEVERITY_FATAL) {
-	dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
+        dlprintf3("jbig2dec %s %s %s\n", type, msg, segment);
     } else {
-	if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
+        if_debug3('w', "[w] jbig2dec %s %s %s\n", type, msg, segment);
     }
 
     return code;
@@ -82,7 +82,7 @@ static void
 s_jbig2decode_invert_buffer(unsigned char *buf, int length)
 {
     int i;
-    
+
     for (i = 0; i < length; i++)
         *buf++ ^= 0xFF;
 }
@@ -94,30 +94,30 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
 {
     Jbig2Ctx *ctx = NULL;
     int code;
-    
+
     /* the cvision encoder likes to include empty global streams */
     if (length == 0) {
         if_debug0('w', "[w] ignoring zero-length jbig2 global stream.\n");
-    	*result = NULL;
-    	return 0;
+        *result = NULL;
+        return 0;
     }
-    
+
     /* allocate a context with which to parse our global segments */
-    ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL, 
+    ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL,
                             s_jbig2decode_error, NULL);
-    
+
     /* parse the global bitstream */
     code = jbig2_data_in(ctx, data, length);
-    
+
     if (code) {
-	/* error parsing the global stream */
-	*result = NULL;
-	return code;
+        /* error parsing the global stream */
+        *result = NULL;
+        return code;
     }
 
     /* canonize and store our global state */
     *result = jbig2_make_global_ctx(ctx);
-    
+
     return 0; /* todo: check for allocation failure */
 }
 
@@ -149,7 +149,7 @@ s_jbig2decode_init(stream_state * ss)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     Jbig2GlobalCtx *global_ctx = state->global_ctx; /* may be NULL */
-    
+
     /* initialize the decoder with the parsed global context if any */
     state->decode_ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED,
                 global_ctx, s_jbig2decode_error, ss);
@@ -163,15 +163,15 @@ s_jbig2decode_init(stream_state * ss)
  */
 static int
 s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
-		  stream_cursor_write * pw, bool last)
+                  stream_cursor_write * pw, bool last)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
     Jbig2Image *image = state->image;
     long in_size = pr->limit - pr->ptr;
     long out_size = pw->limit - pw->ptr;
     int status = 0;
-    
-    /* there will only be a single page image, 
+
+    /* there will only be a single page image,
        so pass all data in before looking for any output.
        note that the gs stream library expects offset-by-one
        indexing of the buffers, while jbig2dec uses normal 0 indexes */
@@ -183,8 +183,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
         if (last == 1) {
             jbig2_complete_page(state->decode_ctx);
         }
-	/* handle fatal decoding errors reported through our callback */
-	if (state->error) return state->error;
+        /* handle fatal decoding errors reported through our callback */
+        if (state->error) return state->error;
     }
     if (out_size > 0) {
         if (image == NULL) {
@@ -205,8 +205,8 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
             pw->ptr += usable;
             status = (state->offset < image_size) ? 1 : 0;
         }
-    }    
-    
+    }
+
     return status;
 }
 
@@ -234,7 +234,7 @@ static void
 s_jbig2decode_set_defaults(stream_state *ss)
 {
     stream_jbig2decode_state *const state = (stream_jbig2decode_state *) ss;
-    
+
     /* state->global_ctx is not owned by us */
     state->global_struct = NULL;
     state->global_ctx = NULL;
@@ -244,10 +244,9 @@ s_jbig2decode_set_defaults(stream_state *ss)
     state->error = 0;
 }
 
-
 /* stream template */
 const stream_template s_jbig2decode_template = {
-    &st_jbig2decode_state, 
+    &st_jbig2decode_state,
     s_jbig2decode_init,
     s_jbig2decode_process,
     1, 1, /* min in and out buffer sizes we can handle --should be ~32k,64k for efficiency? */

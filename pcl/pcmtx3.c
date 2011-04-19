@@ -19,7 +19,6 @@
 #include "pcommand.h"
 #include "pcmtx3.h"
 
-
 /*
  * Calculate the co-factor for the (i, j) component of a 3 x 3 matrix,
  * including the sign. Note that i and j range from 0 to 2.
@@ -66,7 +65,6 @@ make_cofactor_mtx(
             poutmtx->a[3 * i + j] = calc_cofactor(i, j, pinmtx);
     }
 }
-
 
 /*
  * Add and subtract 3 dimensional vectors. These are not currently needed,

@@ -20,7 +20,7 @@
  *   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111
  *   U.S.A.
  */
- 
+
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This program may also be distributed as part of AFPL Ghostscript, under the
@@ -98,25 +98,25 @@ struct gx_device_bjc_printer_s {
     float greenGamma;
     float blueGamma;
     struct {
-	int red;
-	int green;
-	int blue;
+        int red;
+        int green;
+        int blue;
     } paperColor;                      /* paper color for color correction */
 };
 
 typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
 
 #define bjc_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
-	std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((long)(w10) * (xdpi) / 10),\
-	  (int)((long)(h10) * (ydpi) / 10),\
-	  xdpi, ydpi,\
-	  ncomp, depth, mg, mc, dg, dc,\
-	  -(lo) * (xdpi), -(to) * (ydpi),\
-	  (lm) * 72.0, (bm) * 72.0,\
-	  (rm) * 72.0, (tm) * 72.0\
-	),\
-	prn_device_body_rest_(print_page)
+        std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
+          (int)((long)(w10) * (xdpi) / 10),\
+          (int)((long)(h10) * (ydpi) / 10),\
+          xdpi, ydpi,\
+          ncomp, depth, mg, mc, dg, dc,\
+          -(lo) * (xdpi), -(to) * (ydpi),\
+          (lm) * 72.0, (bm) * 72.0,\
+          (rm) * 72.0, (tm) * 72.0\
+        ),\
+        prn_device_body_rest_(print_page)
 
 #define bjc_device_margins(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, def_ink)\
 { bjc_device_margins_body(gx_device_bjc_printer, procs, dname,\
@@ -142,20 +142,17 @@ typedef struct gx_device_bjc_printer_s gx_device_bjc_printer;
        (int) 255 }          /*               */        \
 }
 
-
 #define bjc_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, def_ink)\
   bjc_device_margins(procs, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, def_ink)
 
-
 #define bjc_cmyk_param_procs(v_prn_open, v_prn_output_page, v_prn_close, \
                  p_map_color_rgb, p_map_cmyk_color, \
-		 v_prn_get_params, v_prn_put_params)\
+                 v_prn_get_params, v_prn_put_params)\
    {v_prn_open, NULL, NULL, v_prn_output_page, v_prn_close,\
     NULL, p_map_color_rgb, NULL, NULL, NULL, NULL, NULL, NULL,\
     v_prn_get_params, v_prn_put_params,\
     p_map_cmyk_color, NULL, NULL, NULL, gx_page_device_get_page_device}
-
 
 /* There are the definitions of commands for the Canon BJC printers. */
 

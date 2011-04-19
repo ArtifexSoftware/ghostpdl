@@ -10,7 +10,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 /*$Id$ */
- 
+
 /* pccid.c - PCL configure image data command and  object implementation */
 #include "gx.h"
 #include "gsmemory.h"
@@ -31,7 +31,7 @@
 
 /* CID accessors */
 pcl_cspace_type_t
-pcl_cid_get_cspace(const pcl_cid_data_t *pcid) 
+pcl_cid_get_cspace(const pcl_cid_data_t *pcid)
 {
     return pcid->u.hdr.cspace;
 }
@@ -53,7 +53,6 @@ pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
 {
     return pcid->u.hdr.bits_per_primary[index];
 }
-
 
 /*
  * Convert a 32-bit floating point number stored in HP's big-endian form
@@ -137,7 +136,6 @@ convert_int16_array(
     }
 }
 
-
 /*
  * Build the  various long-form configure image data structures.
  * Returns 0 on success, < 0 in case of an error.
@@ -165,7 +163,7 @@ normalize_cid_minmax_valrange_long(float *minmax)
 {
     int i;
     for ( i = 0; i < 6; i++ ) {
-	minmax[i] /= 255;
+        minmax[i] /= 255;
     }
 }
 
@@ -247,7 +245,6 @@ check_cid_hdr(
     if (pcidh->encoding == pcl_penc_direct_by_pixel)
       pcidh->bits_per_index = 8;
 
-
     /*
      * Map zero values. Zero bits per index is equivalent to one bit per index;
      * zero bits per primary is equivalent to 8 bits per primary.
@@ -257,11 +254,9 @@ check_cid_hdr(
     for (i = 0; i < countof(pcidh->bits_per_primary); i++) {
         if (pcidh->bits_per_primary[i] == 0)
             pcidh->bits_per_primary[i] = 8;
-	if ( pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1 )
-	    dprintf("pcl5e personality with color primaries\n" );
+        if ( pcs->personality == pcl5e && pcidh->bits_per_primary[i] != 1 )
+            dprintf("pcl5e personality with color primaries\n" );
     }
-
-
 
     switch (pcidh->encoding) {
 
@@ -313,7 +308,7 @@ check_cid_hdr(
         pcid->len = 6;
     }
 #endif
-    
+
     /* if the device handles color conversion remap the colorimetric color space to rgb */
     if (pl_device_does_color_conversion() && pcidh->cspace == pcl_cspace_Colorimetric) {
         pcidh->cspace = pcl_cspace_RGB;
@@ -325,8 +320,8 @@ check_cid_hdr(
 
 static int
 substitute_colorimetric_cs(
-	   pcl_state_t *pcs,
-	   pcl_cid_data_t *pcid
+           pcl_state_t *pcs,
+           pcl_cid_data_t *pcid
 )
 {
     pcl_cid_col_long_t *    pcol = &(pcid->u.col);
@@ -446,7 +441,6 @@ set_simple_color_mode(
     return install_cid_data(6, pbuff, pcs, true, false);
 }
 
-
 /*
  * ESC * v <nbytes> W
  *
@@ -460,7 +454,7 @@ pcl_configure_image_data(
 )
 {
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
     return install_cid_data( uint_arg(pargs),
                              arg_data(pargs),
                              pcs,
@@ -482,7 +476,7 @@ pcl_simple_color_space(
 )
 {
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
     return set_simple_color_mode(int_arg(pargs), pcs);
 }
 
@@ -509,7 +503,7 @@ set_view_illuminant(
     gs_vector3          wht_pt;
 
     if ( pcs->personality == pcl5e || pcs->raster_state.graphics_mode )
-	return 0;
+        return 0;
 
     if (len != 8)
         return e_Range;
@@ -544,16 +538,16 @@ pcl_cid_IN(
 )
 {
     static const byte   cid_GL2_Color[6] = { (byte)pcl_cspace_RGB,
-					     (byte)pcl_penc_indexed_by_plane,
-					     3, 8, 8, 8 };
+                                             (byte)pcl_penc_indexed_by_plane,
+                                             3, 8, 8, 8 };
 
     static const byte   cid_GL2_Mono[6] =  { (byte)pcl_cspace_RGB,
-					     (byte)pcl_penc_indexed_by_plane,
-					     3, 1, 1, 1 };
+                                             (byte)pcl_penc_indexed_by_plane,
+                                             3, 1, 1, 1 };
 
     return install_cid_data(6,
-			    pcs->personality == pcl5e ? cid_GL2_Mono : cid_GL2_Color,
-			    pcs, false, true);
+                            pcs->personality == pcl5e ? cid_GL2_Mono : cid_GL2_Color,
+                            pcs, false, true);
 }
 
 /*
@@ -589,7 +583,7 @@ pcl_cid_do_reset(pcl_state_t *       pcs,
           pcl_reset_type_t    type
 )
 {
-    static const uint mask = (pcl_reset_initial | 
+    static const uint mask = (pcl_reset_initial |
                               pcl_reset_cold |
                               pcl_reset_printer);
 
@@ -597,6 +591,6 @@ pcl_cid_do_reset(pcl_state_t *       pcs,
         pcs->useciecolor = !pjl_proc_compare(pcs->pjls,
                             pjl_proc_get_envvar(pcs->pjls, "useciecolor"), "on");
     }
-}    
+}
 
 const pcl_init_t pcl_cid_init = { pcl_cid_do_registration, pcl_cid_do_reset, 0 };

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,7 +43,7 @@ static void gx_print_segment(const segment *);
   py < ppath->bbox.p.y || py > ppath->bbox.q.y)
 #define check_in_bbox(ppath, px, py)\
   if ( outside_bbox(ppath, px, py) )\
-	return_error(gs_error_rangecheck)
+        return_error(gs_error_rangecheck)
 
 /* Structure descriptors for paths and path segment types. */
 public_st_path();
@@ -63,7 +63,7 @@ static rc_free_proc(rc_free_path_segments_local);
 /*
  * Define the default virtual path interface implementation.
  */
-static int 
+static int
     gz_path_add_point(gx_path *, fixed, fixed),
     gz_path_add_line_notes(gx_path *, fixed, fixed, segment_notes),
     gz_path_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
@@ -81,7 +81,7 @@ static gx_path_procs default_path_procs = {
 /*
  * Define virtual path interface implementation for computing a path bbox.
  */
-static int 
+static int
     gz_path_bbox_add_point(gx_path *, fixed, fixed),
     gz_path_bbox_add_line_notes(gx_path *, fixed, fixed, segment_notes),
     gz_path_bbox_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
@@ -118,32 +118,32 @@ gx_path_init_contents(gx_path * ppath)
  */
 static int
 path_alloc_segments(gx_path_segments ** ppsegs, gs_memory_t * mem,
-		    client_name_t cname)
+                    client_name_t cname)
 {
     mem = gs_memory_stable(mem);
     rc_alloc_struct_1(*ppsegs, gx_path_segments, &st_path_segments,
-		      mem, return_error(gs_error_VMerror), cname);
+                      mem, return_error(gs_error_VMerror), cname);
     (*ppsegs)->rc.free = rc_free_path_segments;
     return 0;
 }
 int
 gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
-			      gs_memory_t * mem, client_name_t cname)
+                              gs_memory_t * mem, client_name_t cname)
 {
     if (shared) {
-	if (shared->segments == &shared->local_segments) {
-	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-		     (ulong) shared);
-	    return_error(gs_error_Fatal);
-	}
-	*ppath = *shared;
-	rc_increment(ppath->segments);
+        if (shared->segments == &shared->local_segments) {
+            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
+                     (ulong) shared);
+            return_error(gs_error_Fatal);
+        }
+        *ppath = *shared;
+        rc_increment(ppath->segments);
     } else {
-	int code = path_alloc_segments(&ppath->segments, mem, cname);
+        int code = path_alloc_segments(&ppath->segments, mem, cname);
 
-	if (code < 0)
-	    return code;
-	gx_path_init_contents(ppath);
+        if (code < 0)
+            return code;
+        gx_path_init_contents(ppath);
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_contained;
@@ -158,30 +158,30 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
  */
 gx_path *
 gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
-		     client_name_t cname)
+                     client_name_t cname)
 {
     gx_path *ppath = gs_alloc_struct(mem, gx_path, &st_path, cname);
 
     if (ppath == 0)
-	return 0;
+        return 0;
     ppath->procs = &default_path_procs;
     if (shared) {
-	if (shared->segments == &shared->local_segments) {
-	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-		     (ulong) shared);
-	    gs_free_object(mem, ppath, cname);
-	    return 0;
-	}
-	*ppath = *shared;
-	rc_increment(ppath->segments);
+        if (shared->segments == &shared->local_segments) {
+            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
+                     (ulong) shared);
+            gs_free_object(mem, ppath, cname);
+            return 0;
+        }
+        *ppath = *shared;
+        rc_increment(ppath->segments);
     } else {
-	int code = path_alloc_segments(&ppath->segments, mem, cname);
+        int code = path_alloc_segments(&ppath->segments, mem, cname);
 
-	if (code < 0) {
-	    gs_free_object(mem, ppath, cname);
-	    return 0;
-	}
-	gx_path_init_contents(ppath);
+        if (code < 0) {
+            gs_free_object(mem, ppath, cname);
+            return 0;
+        }
+        gx_path_init_contents(ppath);
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_on_heap;
@@ -194,21 +194,21 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
  */
 int
 gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
-			  gs_memory_t * mem)
+                          gs_memory_t * mem)
 {
     if (shared) {
-	if (shared->segments == &shared->local_segments) {
-	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
-		     (ulong) shared);
-	    return_error(gs_error_Fatal);
-	}
-	*ppath = *shared;
-	rc_increment(ppath->segments);
+        if (shared->segments == &shared->local_segments) {
+            lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
+                     (ulong) shared);
+            return_error(gs_error_Fatal);
+        }
+        *ppath = *shared;
+        rc_increment(ppath->segments);
     } else {
-	rc_init_free(&ppath->local_segments, mem, 1,
-		     rc_free_path_segments_local);
-	ppath->segments = &ppath->local_segments;
-	gx_path_init_contents(ppath);
+        rc_init_free(&ppath->local_segments, mem, 1,
+                     rc_free_path_segments_local);
+        ppath->segments = &ppath->local_segments;
+        gx_path_init_contents(ppath);
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_on_stack;
@@ -249,7 +249,7 @@ gx_path_unshare(gx_path * ppath)
     int code = 0;
 
     if (gx_path_is_shared(ppath))
-	code = path_alloc_copy(ppath);
+        code = path_alloc_copy(ppath);
     return code;
 }
 
@@ -265,7 +265,7 @@ gx_path_free(gx_path * ppath, client_name_t cname)
     ppath->box_last = 0;
     ppath->segments = 0;	/* Nota bene */
     if (ppath->allocation == path_allocated_on_heap)
-	gs_free_object(ppath->memory, ppath, cname);
+        gs_free_object(ppath->memory, ppath, cname);
 }
 
 /*
@@ -284,27 +284,27 @@ gx_path_assign_preserve(gx_path * ppto, gx_path * ppfrom)
     gx_path_allocation_t allocation = ppto->allocation;
 
     if (fromsegs == &ppfrom->local_segments) {
-	/* We can't use ppfrom's segments object. */
-	if (tosegs == &ppto->local_segments || gx_path_is_shared(ppto)) {
-	    /* We can't use ppto's segments either.  Allocate a new one. */
-	    int code = path_alloc_segments(&tosegs, ppto->memory,
-					   "gx_path_assign");
+        /* We can't use ppfrom's segments object. */
+        if (tosegs == &ppto->local_segments || gx_path_is_shared(ppto)) {
+            /* We can't use ppto's segments either.  Allocate a new one. */
+            int code = path_alloc_segments(&tosegs, ppto->memory,
+                                           "gx_path_assign");
 
-	    if (code < 0)
-		return code;
-	    rc_decrement(ppto->segments, "gx_path_assign");
-	} else {
-	    /* Use ppto's segments object. */
-	    rc_free_path_segments_local(tosegs->rc.memory, tosegs,
-					"gx_path_assign");
-	}
-	tosegs->contents = fromsegs->contents;
-	ppfrom->segments = tosegs;
-	rc_increment(tosegs);	/* for reference from ppfrom */
+            if (code < 0)
+                return code;
+            rc_decrement(ppto->segments, "gx_path_assign");
+        } else {
+            /* Use ppto's segments object. */
+            rc_free_path_segments_local(tosegs->rc.memory, tosegs,
+                                        "gx_path_assign");
+        }
+        tosegs->contents = fromsegs->contents;
+        ppfrom->segments = tosegs;
+        rc_increment(tosegs);	/* for reference from ppfrom */
     } else {
-	/* We can use ppfrom's segments object. */
-	rc_increment(fromsegs);
-	rc_decrement(tosegs, "gx_path_assign");
+        /* We can use ppfrom's segments object. */
+        rc_increment(fromsegs);
+        rc_decrement(tosegs, "gx_path_assign");
     }
     *ppto = *ppfrom;
     ppto->memory = mem;
@@ -324,31 +324,31 @@ gx_path_assign_free(gx_path * ppto, gx_path * ppfrom)
      * segments, since we can avoid allocating new segments in this case.
      */
     if (ppto->segments == &ppto->local_segments &&
-	ppfrom->segments == &ppfrom->local_segments &&
-	!gx_path_is_shared(ppto)
-	) {
+        ppfrom->segments == &ppfrom->local_segments &&
+        !gx_path_is_shared(ppto)
+        ) {
 #define fromsegs (&ppfrom->local_segments)
 #define tosegs (&ppto->local_segments)
-	gs_memory_t *mem = ppto->memory;
-	gx_path_allocation_t allocation = ppto->allocation;
+        gs_memory_t *mem = ppto->memory;
+        gx_path_allocation_t allocation = ppto->allocation;
 
-	rc_free_path_segments_local(tosegs->rc.memory, tosegs,
-				    "gx_path_assign_free");
-	/* We record a bogus reference to fromsegs, which */
-	/* gx_path_free will undo. */
-	*ppto = *ppfrom;
-	rc_increment(fromsegs);
-	ppto->segments = tosegs;
-	ppto->memory = mem;
-	ppto->allocation = allocation;
+        rc_free_path_segments_local(tosegs->rc.memory, tosegs,
+                                    "gx_path_assign_free");
+        /* We record a bogus reference to fromsegs, which */
+        /* gx_path_free will undo. */
+        *ppto = *ppfrom;
+        rc_increment(fromsegs);
+        ppto->segments = tosegs;
+        ppto->memory = mem;
+        ppto->allocation = allocation;
 #undef fromsegs
 #undef tosegs
     } else {
-	/* In all other cases, just do assign + free. */
-	int code = gx_path_assign_preserve(ppto, ppfrom);
+        /* In all other cases, just do assign + free. */
+        int code = gx_path_assign_preserve(ppto, ppfrom);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
     }
     gx_path_free(ppfrom, "gx_path_assign_free");
     return 0;
@@ -362,21 +362,21 @@ gx_path_assign_free(gx_path * ppto, gx_path * ppfrom)
  */
 static void
 rc_free_path_segments_local(gs_memory_t * mem, void *vpsegs,
-			    client_name_t cname)
+                            client_name_t cname)
 {
     gx_path_segments *psegs = (gx_path_segments *) vpsegs;
     segment *pseg;
 
     mem = gs_memory_stable(mem);
     if (psegs->contents.subpath_first == 0)
-	return;			/* empty path */
+        return;			/* empty path */
     pseg = (segment *) psegs->contents.subpath_current->last;
     while (pseg) {
-	segment *prev = pseg->prev;
+        segment *prev = pseg->prev;
 
-	trace_segment("[P]release", pseg);
-	gs_free_object(mem, pseg, cname);
-	pseg = prev;
+        trace_segment("[P]release", pseg);
+        gs_free_object(mem, pseg, cname);
+        pseg = prev;
     }
 }
 static void
@@ -404,7 +404,7 @@ rc_free_path_segments(gs_memory_t * mem, void *vpsegs, client_name_t cname)
     if ( !path_is_drawing(ppath) ) {\
       int code_;\
       if ( !path_position_valid(ppath) )\
-	return_error(gs_error_nocurrentpoint);\
+        return_error(gs_error_nocurrentpoint);\
       code_ = gx_path_new_subpath(ppath);\
       if ( code_ < 0 ) return code_;\
     }\
@@ -418,7 +418,7 @@ rc_free_path_segments(gs_memory_t * mem, void *vpsegs, client_name_t cname)
   path_unshare(ppath);\
   psub = ppath->current_subpath;\
   if( !(pseg = gs_alloc_struct(gs_memory_stable(ppath->memory), ctype,\
-			       pstype, cname)) )\
+                               pstype, cname)) )\
     return_error(gs_error_VMerror);\
   pseg->type = stype, pseg->notes = snotes, pseg->next = 0
 #define path_alloc_link(pseg)\
@@ -435,14 +435,14 @@ gx_path_new(gx_path * ppath)
     gx_path_segments *psegs = ppath->segments;
 
     if (gx_path_is_shared(ppath)) {
-	int code = path_alloc_segments(&ppath->segments, ppath->memory,
-				       "gx_path_new");
+        int code = path_alloc_segments(&ppath->segments, ppath->memory,
+                                       "gx_path_new");
 
-	if (code < 0)
-	    return code;
-	rc_decrement(psegs, "gx_path_new");
+        if (code < 0)
+            return code;
+        rc_decrement(psegs, "gx_path_new");
     } else {
-	rc_free_path_segments_local(psegs->rc.memory, psegs, "gx_path_new");
+        rc_free_path_segments_local(psegs->rc.memory, psegs, "gx_path_new");
     }
     gx_path_init_contents(ppath);
     return 0;
@@ -457,19 +457,19 @@ gx_path_new_subpath(gx_path * ppath)
     subpath *spp;
 
     path_alloc_segment(spp, subpath, &st_subpath, s_start, sn_none,
-		       "gx_path_new_subpath");
+                       "gx_path_new_subpath");
     spp->last = (segment *) spp;
     spp->curve_count = 0;
     spp->is_closed = 0;
     spp->pt = ppath->position;
     if (!psub) {		/* first subpath */
-	ppath->first_subpath = spp;
-	spp->prev = 0;
+        ppath->first_subpath = spp;
+        spp->prev = 0;
     } else {
-	segment *prev = psub->last;
+        segment *prev = psub->last;
 
-	prev->next = (segment *) spp;
-	spp->prev = prev;
+        prev->next = (segment *) spp;
+        spp->prev = prev;
     }
     ppath->current_subpath = spp;
     ppath->subpath_count++;
@@ -481,18 +481,18 @@ static inline void
 gz_path_bbox_add(gx_path * ppath, fixed x, fixed y)
 {
     if (!ppath->bbox_set) {
-	ppath->bbox.p.x = ppath->bbox.q.x = x;
-	ppath->bbox.p.y = ppath->bbox.q.y = y;
-	ppath->bbox_set = 1;
+        ppath->bbox.p.x = ppath->bbox.q.x = x;
+        ppath->bbox.p.y = ppath->bbox.q.y = y;
+        ppath->bbox_set = 1;
     } else {
-	if (ppath->bbox.p.x > x)
-	    ppath->bbox.p.x = x;
-	if (ppath->bbox.p.y > y)
-	    ppath->bbox.p.y = y;
-	if (ppath->bbox.q.x < x)
-	    ppath->bbox.q.x = x;
-	if (ppath->bbox.q.y < y)
-	    ppath->bbox.q.y = y;
+        if (ppath->bbox.p.x > x)
+            ppath->bbox.p.x = x;
+        if (ppath->bbox.p.y > y)
+            ppath->bbox.p.y = y;
+        if (ppath->bbox.q.x < x)
+            ppath->bbox.q.x = x;
+        if (ppath->bbox.q.y < y)
+            ppath->bbox.q.y = y;
     }
 }
 
@@ -515,7 +515,7 @@ static int
 gz_path_add_point(gx_path * ppath, fixed x, fixed y)
 {
     if (ppath->bbox_set)
-	check_in_bbox(ppath, x, y);
+        check_in_bbox(ppath, x, y);
     ppath->position.x = x;
     ppath->position.y = y;
     path_update_moveto(ppath);
@@ -533,20 +533,20 @@ int
 gx_path_add_relative_point(gx_path * ppath, fixed dx, fixed dy)
 {
     if (!path_position_in_range(ppath))
-	return_error((path_position_valid(ppath) ? gs_error_limitcheck :
-		      gs_error_nocurrentpoint));
+        return_error((path_position_valid(ppath) ? gs_error_limitcheck :
+                      gs_error_nocurrentpoint));
     {
-	fixed nx = ppath->position.x + dx, ny = ppath->position.y + dy;
+        fixed nx = ppath->position.x + dx, ny = ppath->position.y + dy;
 
-	/* Check for overflow in addition. */
-	if (((nx ^ dx) < 0 && (ppath->position.x ^ dx) >= 0) ||
-	    ((ny ^ dy) < 0 && (ppath->position.y ^ dy) >= 0)
-	    )
-	    return_error(gs_error_limitcheck);
-	if (ppath->bbox_set)
-	    check_in_bbox(ppath, nx, ny);
-	ppath->position.x = nx;
-	ppath->position.y = ny;
+        /* Check for overflow in addition. */
+        if (((nx ^ dx) < 0 && (ppath->position.x ^ dx) >= 0) ||
+            ((ny ^ dy) < 0 && (ppath->position.y ^ dy) >= 0)
+            )
+            return_error(gs_error_limitcheck);
+        if (ppath->bbox_set)
+            check_in_bbox(ppath, nx, ny);
+        ppath->position.x = nx;
+        ppath->position.y = ny;
     }
     path_update_moveto(ppath);
     return 0;
@@ -555,8 +555,8 @@ gx_path_add_relative_point(gx_path * ppath, fixed dx, fixed dy)
 /* Set the segment point and the current point in the path. */
 /* Assumes ppath points to the path. */
 #define path_set_point(pseg, fx, fy)\
-	(pseg)->pt.x = ppath->position.x = (fx),\
-	(pseg)->pt.y = ppath->position.y = (fy)
+        (pseg)->pt.x = ppath->position.x = (fx),\
+        (pseg)->pt.y = ppath->position.y = (fy)
 
 /* Add a line to the current path (lineto). */
 int
@@ -571,10 +571,10 @@ gz_path_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes notes)
     line_segment *lp;
 
     if (ppath->bbox_set)
-	check_in_bbox(ppath, x, y);
+        check_in_bbox(ppath, x, y);
     path_open();
     path_alloc_segment(lp, line_segment, &st_line, s_line, notes,
-		       "gx_path_add_line");
+                       "gx_path_add_line");
     path_alloc_link(lp);
     path_set_point(lp, x, y);
     path_update_draw(ppath);
@@ -593,7 +593,7 @@ gz_path_bbox_add_line_notes(gx_path * ppath, fixed x, fixed y, segment_notes not
 /* Note that all lines have the same notes. */
 int
 gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
-			segment_notes notes)
+                        segment_notes notes)
 {
     subpath *psub;
     segment *prev;
@@ -602,7 +602,7 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
     int code = 0;
 
     if (count <= 0)
-	return 0;
+        return 0;
     path_unshare(ppath);
     path_open();
     psub = ppath->current_subpath;
@@ -614,37 +614,37 @@ gx_path_add_lines_notes(gx_path *ppath, const gs_fixed_point *ppts, int count,
      * happen with multiple calls on gx_path_add_line.
      */
     for (i = 0; i < count; i++) {
-	fixed x = ppts[i].x;
-	fixed y = ppts[i].y;
-	line_segment *next;
+        fixed x = ppts[i].x;
+        fixed y = ppts[i].y;
+        line_segment *next;
 
-	if (ppath->bbox_set && outside_bbox(ppath, x, y)) {
-	    code = gs_note_error(gs_error_rangecheck);
-	    break;
-	}
-	if (!(next = gs_alloc_struct(gs_memory_stable(ppath->memory),
-				     line_segment, &st_line,
-				     "gx_path_add_lines"))
-	    ) {
-	    code = gs_note_error(gs_error_VMerror);
-	    break;
-	}
-	lp = next;
-	lp->type = s_line;
-	lp->notes = notes;
-	prev->next = (segment *) lp;
-	lp->prev = prev;
-	lp->pt.x = x;
-	lp->pt.y = y;
-	prev = (segment *) lp;
-	trace_segment("[P]", (segment *) lp);
+        if (ppath->bbox_set && outside_bbox(ppath, x, y)) {
+            code = gs_note_error(gs_error_rangecheck);
+            break;
+        }
+        if (!(next = gs_alloc_struct(gs_memory_stable(ppath->memory),
+                                     line_segment, &st_line,
+                                     "gx_path_add_lines"))
+            ) {
+            code = gs_note_error(gs_error_VMerror);
+            break;
+        }
+        lp = next;
+        lp->type = s_line;
+        lp->notes = notes;
+        prev->next = (segment *) lp;
+        lp->prev = prev;
+        lp->pt.x = x;
+        lp->pt.y = y;
+        prev = (segment *) lp;
+        trace_segment("[P]", (segment *) lp);
     }
     if (lp != 0)
-	ppath->position.x = lp->pt.x,
-	    ppath->position.y = lp->pt.y,
-	    psub->last = (segment *) lp,
-	    lp->next = 0,
-	    path_update_draw(ppath);
+        ppath->position.x = lp->pt.x,
+            ppath->position.y = lp->pt.y,
+            psub->last = (segment *) lp,
+            lp->next = 0,
+            path_update_draw(ppath);
     return code;
 }
 
@@ -657,10 +657,10 @@ gx_path_add_dash_notes(gx_path * ppath, fixed x, fixed y, fixed dx, fixed dy, se
     dash_segment *lp;
 
     if (ppath->bbox_set)
-	check_in_bbox(ppath, x, y);
+        check_in_bbox(ppath, x, y);
     path_open();
     path_alloc_segment(lp, dash_segment, &st_dash, s_dash, notes,
-		       "gx_dash_add_dash");
+                       "gx_dash_add_dash");
     path_alloc_link(lp);
     path_set_point(lp, x, y);
     lp->tangent.x = dx;
@@ -683,37 +683,37 @@ gx_path_add_rectangle(gx_path * ppath, fixed x0, fixed y0, fixed x1, fixed y1)
     pts[2].y = y0;
     pts[0].y = pts[1].y = y1;
     if ((code = gx_path_add_point(ppath, x0, y0)) < 0 ||
-	(code = gx_path_add_lines(ppath, pts, 3)) < 0 ||
-	(code = gx_path_close_subpath(ppath)) < 0
-	)
-	return code;
+        (code = gx_path_add_lines(ppath, pts, 3)) < 0 ||
+        (code = gx_path_close_subpath(ppath)) < 0
+        )
+        return code;
     return 0;
 }
 
 /* Add a curve to the current path (curveto). */
 int
 gx_path_add_curve_notes(gx_path * ppath,
-		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
-			segment_notes notes)
+                 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
+                        segment_notes notes)
 {
     return ppath->procs->add_curve(ppath, x1, y1, x2, y2, x3, y3, notes);
 }
 static int
 gz_path_add_curve_notes(gx_path * ppath,
-		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
-			segment_notes notes)
+                 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
+                        segment_notes notes)
 {
     subpath *psub;
     curve_segment *lp;
 
     if (ppath->bbox_set) {
-	check_in_bbox(ppath, x1, y1);
-	check_in_bbox(ppath, x2, y2);
-	check_in_bbox(ppath, x3, y3);
+        check_in_bbox(ppath, x1, y1);
+        check_in_bbox(ppath, x2, y2);
+        check_in_bbox(ppath, x3, y3);
     }
     path_open();
     path_alloc_segment(lp, curve_segment, &st_curve, s_curve, notes,
-		       "gx_path_add_curve");
+                       "gx_path_add_curve");
     path_alloc_link(lp);
     lp->p1.x = x1;
     lp->p1.y = y1;
@@ -728,8 +728,8 @@ gz_path_add_curve_notes(gx_path * ppath,
 }
 static int
 gz_path_bbox_add_curve_notes(gx_path * ppath,
-		 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
-			segment_notes notes)
+                 fixed x1, fixed y1, fixed x2, fixed y2, fixed x3, fixed y3,
+                        segment_notes notes)
 {
     gz_path_bbox_add(ppath, x1, y1);
     gz_path_bbox_add(ppath, x2, y2);
@@ -764,16 +764,16 @@ fixed x3, fixed y3, fixed xt, fixed yt, floatp fraction, segment_notes notes)
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
 
     vd_curveto(x0 + (fixed) ((xt - x0) * fraction),
-				   y0 + (fixed) ((yt - y0) * fraction),
-				   x3 + (fixed) ((xt - x3) * fraction),
-				   y3 + (fixed) ((yt - y3) * fraction),
-				   x3, y3);
+                                   y0 + (fixed) ((yt - y0) * fraction),
+                                   x3 + (fixed) ((xt - x3) * fraction),
+                                   y3 + (fixed) ((yt - y3) * fraction),
+                                   x3, y3);
     return gx_path_add_curve_notes(ppath,
-				   x0 + (fixed) ((xt - x0) * fraction),
-				   y0 + (fixed) ((yt - y0) * fraction),
-				   x3 + (fixed) ((xt - x3) * fraction),
-				   y3 + (fixed) ((yt - y3) * fraction),
-				   x3, y3, notes | sn_from_arc);
+                                   x0 + (fixed) ((xt - x0) * fraction),
+                                   y0 + (fixed) ((yt - y0) * fraction),
+                                   x3 + (fixed) ((xt - x3) * fraction),
+                                   y3 + (fixed) ((yt - y3) * fraction),
+                                   x3, y3, notes | sn_from_arc);
 }
 
 /* Append a path to another path, and reset the first path. */
@@ -785,18 +785,18 @@ gx_path_add_path(gx_path * ppath, gx_path * ppfrom)
     path_unshare(ppfrom);
     path_unshare(ppath);
     if (ppfrom->first_subpath) {	/* i.e. ppfrom not empty */
-	if (ppath->first_subpath) {	/* i.e. ppath not empty */
-	    subpath *psub = ppath->current_subpath;
-	    segment *pseg = psub->last;
-	    subpath *pfsub = ppfrom->first_subpath;
+        if (ppath->first_subpath) {	/* i.e. ppath not empty */
+            subpath *psub = ppath->current_subpath;
+            segment *pseg = psub->last;
+            subpath *pfsub = ppfrom->first_subpath;
 
-	    pseg->next = (segment *) pfsub;
-	    pfsub->prev = pseg;
-	} else
-	    ppath->first_subpath = ppfrom->first_subpath;
-	ppath->current_subpath = ppfrom->current_subpath;
-	ppath->subpath_count += ppfrom->subpath_count;
-	ppath->curve_count += ppfrom->curve_count;
+            pseg->next = (segment *) pfsub;
+            pfsub->prev = pseg;
+        } else
+            ppath->first_subpath = ppfrom->first_subpath;
+        ppath->current_subpath = ppfrom->current_subpath;
+        ppath->subpath_count += ppfrom->subpath_count;
+        ppath->curve_count += ppfrom->curve_count;
     }
     /* Transfer the remaining state. */
     ppath->position = ppfrom->position;
@@ -811,40 +811,40 @@ gx_path_add_path(gx_path * ppath, gx_path * ppfrom)
 /* relatives. */
 int
 gx_path_add_char_path(gx_path * to_path, gx_path * from_path,
-		      gs_char_path_mode mode)
+                      gs_char_path_mode mode)
 {
     int code;
     gs_fixed_rect bbox;
 
     switch (mode) {
-	default:		/* shouldn't happen! */
-	    gx_path_new(from_path);
-	    return 0;
-	case cpm_charwidth: {
-	    gs_fixed_point cpt;
+        default:		/* shouldn't happen! */
+            gx_path_new(from_path);
+            return 0;
+        case cpm_charwidth: {
+            gs_fixed_point cpt;
 
-	    code = gx_path_current_point(from_path, &cpt);
-	    if (code < 0)
-		break;
-	    return gx_path_add_point(to_path, cpt.x, cpt.y);
-	}
-	case cpm_true_charpath:
-	case cpm_false_charpath:
-	    return gx_path_add_path(to_path, from_path);
-	case cpm_true_charboxpath:
-	    gx_path_bbox(from_path, &bbox);
-	    code = gx_path_add_rectangle(to_path, bbox.p.x, bbox.p.y,
-					 bbox.q.x, bbox.q.y);
-	    break;
-	case cpm_false_charboxpath:
-	    gx_path_bbox(from_path, &bbox);
-	    code = gx_path_add_point(to_path, bbox.p.x, bbox.p.y);
-	    if (code >= 0)
-		code = gx_path_add_line(to_path, bbox.q.x, bbox.q.y);
-	    break;
+            code = gx_path_current_point(from_path, &cpt);
+            if (code < 0)
+                break;
+            return gx_path_add_point(to_path, cpt.x, cpt.y);
+        }
+        case cpm_true_charpath:
+        case cpm_false_charpath:
+            return gx_path_add_path(to_path, from_path);
+        case cpm_true_charboxpath:
+            gx_path_bbox(from_path, &bbox);
+            code = gx_path_add_rectangle(to_path, bbox.p.x, bbox.p.y,
+                                         bbox.q.x, bbox.q.y);
+            break;
+        case cpm_false_charboxpath:
+            gx_path_bbox(from_path, &bbox);
+            code = gx_path_add_point(to_path, bbox.p.x, bbox.p.y);
+            if (code >= 0)
+                code = gx_path_add_line(to_path, bbox.q.x, bbox.q.y);
+            break;
     }
     if (code < 0)
-	return code;
+        return code;
     gx_path_new(from_path);
     return 0;
 }
@@ -863,15 +863,15 @@ gz_path_close_subpath_notes(gx_path * ppath, segment_notes notes)
     int code;
 
     if (!path_subpath_open(ppath))
-	return 0;
+        return 0;
     if (path_last_is_moveto(ppath)) {
-	/* The last operation was a moveto: create a subpath. */
-	code = gx_path_new_subpath(ppath);
-	if (code < 0)
-	    return code;
+        /* The last operation was a moveto: create a subpath. */
+        code = gx_path_new_subpath(ppath);
+        if (code < 0)
+            return code;
     }
     path_alloc_segment(lp, line_close_segment, &st_line_close,
-		       s_line_close, notes, "gx_path_close_subpath");
+                       s_line_close, notes, "gx_path_close_subpath");
     path_alloc_link(lp);
     path_set_point(lp, psub->pt.x, psub->pt.y);
     lp->sub = psub;
@@ -887,21 +887,21 @@ gz_path_bbox_close_subpath_notes(gx_path * ppath, segment_notes notes)
 }
 
 /* Access path state flags */
-byte 
+byte
 gz_path_state_flags(gx_path *ppath, byte flags)
 {
     byte flags_old = ppath->state_flags;
     ppath->state_flags = flags;
     return flags_old;
 }
-byte 
+byte
 gx_path_get_state_flags(gx_path *ppath)
 {
     byte flags = ppath->procs->state_flags(ppath, 0);
     ppath->procs->state_flags(ppath, flags);
     return flags;
 }
-void 
+void
 gx_path_set_state_flags(gx_path *ppath, byte flags)
 {
     ppath->procs->state_flags(ppath, flags);
@@ -911,8 +911,6 @@ gx_path_is_drawing(gx_path *ppath)
 {
   return path_is_drawing(ppath);
 }
-
-
 
 /* Remove the last line from the current subpath, and then close it. */
 /* The Type 1 font hinting routines use this if a path ends with */
@@ -925,9 +923,9 @@ gx_path_pop_close_notes(gx_path * ppath, segment_notes notes)
     segment *prev;
 
     if (psub == 0 || (pseg = psub->last) == 0 ||
-	pseg->type != s_line
-	)
-	return_error(gs_error_unknownerror);
+        pseg->type != s_line
+        )
+        return_error(gs_error_unknownerror);
     prev = pseg->prev;
     prev->next = 0;
     psub->last = prev;
@@ -949,8 +947,8 @@ path_alloc_copy(gx_path * ppath)
     gx_path_init_local(&path_new, ppath->memory);
     code = gx_path_copy(ppath, &path_new);
     if (code < 0) {
-	gx_path_free(&path_new, "path_alloc_copy error");
-	return code;
+        gx_path_free(&path_new, "path_alloc_copy error");
+        return code;
     }
     ppath->last_charpath_segment = 0;
     return gx_path_assign_free(ppath, &path_new);
@@ -975,21 +973,21 @@ gx_path_print(const gx_path * ppath)
     const segment *pseg = (const segment *)ppath->first_subpath;
 
     dlprintf5("   state_flags=%d subpaths=%d, curves=%d, point=(%f,%f)\n",
-	      ppath->state_flags, ppath->subpath_count, ppath->curve_count,
-	      fixed2float(ppath->position.x),
-	      fixed2float(ppath->position.y));
+              ppath->state_flags, ppath->subpath_count, ppath->curve_count,
+              fixed2float(ppath->position.x),
+              fixed2float(ppath->position.y));
     dlprintf5("   box=(%f,%f),(%f,%f) last=0x%lx\n",
-	      fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
-	      fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
-	      (ulong) ppath->box_last);
+              fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
+              fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
+              (ulong) ppath->box_last);
     dlprintf4("   segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
-	      (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
-	      (ulong) ppath->segments->contents.subpath_first,
-	      (ulong) ppath->segments->contents.subpath_current);
+              (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
+              (ulong) ppath->segments->contents.subpath_first,
+              (ulong) ppath->segments->contents.subpath_current);
     while (pseg) {
-	dlputs("");
-	gx_print_segment(pseg);
-	pseg = pseg->next;
+        dlputs("");
+        gx_print_segment(pseg);
+        pseg = pseg->next;
     }
 }
 static void
@@ -1000,44 +998,44 @@ gx_print_segment(const segment * pseg)
     char out[80];
 
     sprintf(out, "   0x%lx<0x%lx,0x%lx>:%u",
-	 (ulong) pseg, (ulong) pseg->prev, (ulong) pseg->next, pseg->notes);
+         (ulong) pseg, (ulong) pseg->prev, (ulong) pseg->next, pseg->notes);
     switch (pseg->type) {
-	case s_start:{
-		const subpath *const psub = (const subpath *)pseg;
+        case s_start:{
+                const subpath *const psub = (const subpath *)pseg;
 
-		dprintf5("%s: %1.4f %1.4f moveto\t%% #curves=%d last=0x%lx\n",
-			 out, px, py, psub->curve_count, (ulong) psub->last);
-		break;
-	    }
-	case s_curve:{
-		const curve_segment *const pcur = (const curve_segment *)pseg;
+                dprintf5("%s: %1.4f %1.4f moveto\t%% #curves=%d last=0x%lx\n",
+                         out, px, py, psub->curve_count, (ulong) psub->last);
+                break;
+            }
+        case s_curve:{
+                const curve_segment *const pcur = (const curve_segment *)pseg;
 
-		dprintf7("%s: %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\n",
-		      out, fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
-		  fixed2float(pcur->p2.x), fixed2float(pcur->p2.y), px, py);
-		break;
-	    }
-	case s_line:
-	    dprintf3("%s: %1.4f %1.4f lineto\n", out, px, py);
-	    break;
-	case s_dash:{
-    		const dash_segment *const pd = (const dash_segment *)pseg;
+                dprintf7("%s: %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\n",
+                      out, fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
+                  fixed2float(pcur->p2.x), fixed2float(pcur->p2.y), px, py);
+                break;
+            }
+        case s_line:
+            dprintf3("%s: %1.4f %1.4f lineto\n", out, px, py);
+            break;
+        case s_dash:{
+                const dash_segment *const pd = (const dash_segment *)pseg;
 
-		dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out, 
-		    fixed2float(pd->pt.x), fixed2float(pd->pt.y), 
-		    fixed2float(pd->tangent.x), fixed2float(pd->tangent.y));
-		break;
-	    }
-	case s_line_close:{
-		const line_close_segment *const plc =
-		(const line_close_segment *)pseg;
+                dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out,
+                    fixed2float(pd->pt.x), fixed2float(pd->pt.y),
+                    fixed2float(pd->tangent.x), fixed2float(pd->tangent.y));
+                break;
+            }
+        case s_line_close:{
+                const line_close_segment *const plc =
+                (const line_close_segment *)pseg;
 
-		dprintf4("%s: closepath\t%% %1.4f %1.4f 0x%lx\n",
-			 out, px, py, (ulong) (plc->sub));
-		break;
-	    }
-	default:
-	    dprintf4("%s: %1.4f %1.4f <type 0x%x>\n", out, px, py, pseg->type);
+                dprintf4("%s: closepath\t%% %1.4f %1.4f 0x%lx\n",
+                         out, px, py, (ulong) (plc->sub));
+                break;
+            }
+        default:
+            dprintf4("%s: %1.4f %1.4f <type 0x%x>\n", out, px, py, pseg->type);
     }
 }
 

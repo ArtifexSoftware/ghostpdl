@@ -46,8 +46,7 @@ pl_device_does_color_conversion()
     return true;
 #endif
     return false;
-}    
-
+}
 
 /* shared language (pcl and pclxl) for setting up sRGB to XYZ and an
    associated default CRD to be used.  The code will request a crd
@@ -56,11 +55,11 @@ pl_device_does_color_conversion()
    definitions are repeated here
 
     [ /CIEBasedABC <<
-    % sRGB gamma transform 
+    % sRGB gamma transform
             /DecodeLMN [
                     {dup 0.03928 le {12.92321 div}{0.055 add 1.055 div 2.4 exp}ifelse}
                     bind dup dup ]
-    
+
     % sRGB to XYZ (D65) matrix (ITU-R BT.709-2 Primaries)
             /MatrixLMN [
                     0.412457 0.212673 0.019334
@@ -68,38 +67,37 @@ pl_device_does_color_conversion()
                     0.180437 0.072175 0.950301 ]
             /WhitePoint [ 0.9505 1 1.0890 ] % D65
             /BlackPoint[0 0 0]
-    >> ] setcolorspace 
-    
+    >> ] setcolorspace
+
     <<
     % sRGB output CRD, D65 white point
     /ColorRenderingType 1
-    /RangePQR [ -0.5 2 -0.5 2 -0.5 2 ] 
-    
+    /RangePQR [ -0.5 2 -0.5 2 -0.5 2 ]
+
     % Bradford Cone Space
     /MatrixPQR [0.8951 -0.7502 0.0389
             0.2664 1.7135 -0.0685
-            -0.1614 0.0367 1.0296] 
-    
+            -0.1614 0.0367 1.0296]
+
     % VonKries-like transform in Bradford Cone Space
     /TransformPQR
             [{exch pop exch 3 get mul exch pop exch 3 get div} bind
             {exch pop exch 4 get mul exch pop exch 4 get div} bind
-            {exch pop exch 5 get mul exch pop exch 5 get div} bind] 
-    
+            {exch pop exch 5 get mul exch pop exch 5 get div} bind]
+
     /MatrixLMN [3.240449 -0.969265 0.055643
             -1.537136 1.876011 -0.204026
-            -0.498531 0.041556 1.057229] 
-    
+            -0.498531 0.041556 1.057229]
+
     % Inverse sRGB gamma transform
             /EncodeABC [{dup 0.00304 le {12.92321 mul}
             {1 2.4 div exp 1.055 mul 0.055 sub}ifelse}
-            bind dup dup] 
-    
+            bind dup dup]
+
     /WhitePoint[0.9505 1 1.0890] % D65
     /BlackPoint [0 0 0]
     >> setcolorrendering
 */
-
 
 /* CIEBasedABC definitions */
 /* Decode LMN procedures for srgb color spaces or sRGB gamma transform. */
@@ -107,11 +105,10 @@ inline static float
 pl_decodeLMN(floatp val, const gs_cie_common *pcie)
 {
     if ( val <= 0.03928 )
-	return (float)(val / 12.92321);
+        return (float)(val / 12.92321);
     else
-	return (float)pow((val + 0.055) / 1.055, (double)2.4);
+        return (float)pow((val + 0.055) / 1.055, (double)2.4);
 }
-
 
 static float
 pl_DecodeLMN_0(floatp val, const gs_cie_common *pcie)
@@ -169,7 +166,6 @@ static const gs_range3 pl_RangePQR = {
      {-0.5, 2.0}}
 };
 
-
 /* tranform pqr */
 static int
 pl_TransformPQR_proc(int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
@@ -187,7 +183,6 @@ static const gs_cie_transform_proc3 pl_TransformPQR = {
     { NULL, 0 },
     NULL
 };
-
 
 /* ABC - inverse srgb gamma transform */
 inline static float
@@ -284,12 +279,10 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
     return (code == 0);
 }
 
-
 /* statics to see if the crd has been built, in practice the crd is a
    singleton. */
 gs_cie_render *pl_pcrd;
 bool pl_pcrd_built = false; /* the crd has been built */
-
 
 static int
 pl_build_crd(gs_state *pgs)
@@ -301,7 +294,7 @@ pl_build_crd(gs_state *pgs)
 
     code = gs_cie_render1_build(&pl_pcrd, gs_state_memory(pgs), "build_crd");
     if ( code < 0 )
-	return code;
+        return code;
     pl_pcrd_built = true;
 
     if ( pl_read_device_CRD(pl_pcrd, pgs) ) {
@@ -309,8 +302,8 @@ pl_build_crd(gs_state *pgs)
         return 0;
     }
 
-    code = gs_cie_render1_initialize(pgs->memory, 
-				     pl_pcrd,
+    code = gs_cie_render1_initialize(pgs->memory,
+                                     pl_pcrd,
                                      NULL,
                                      &pl_WhitePoint,
                                      &pl_BlackPoint,
@@ -325,11 +318,10 @@ pl_build_crd(gs_state *pgs)
                                      NULL,
                                      NULL);
     if ( code < 0 )
-	return code; /* should not fail */
+        return code; /* should not fail */
     code = gs_setcolorrendering(pgs, pl_pcrd);
     return code;
 }
-
 
 /* return SRGB color space to the client */
 int
@@ -346,8 +338,6 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
     code = pl_build_crd((gs_state *)pgs);
     if ( code < 0 )
         return code;
-
-
 
     code = gs_cspace_build_CIEABC(ppcs, NULL, gs_state_memory(pgs));
     if ( code < 0 )
@@ -392,7 +382,7 @@ pl_setSRGBcolor(gs_state *pgs, float r, float g, float b)
     code = pl_setSRGB(pgs);
     if ( code < 0 )
         return code;
-    
+
     /* set the color */
     color.paint.values[0] = r;
     color.paint.values[1] = g;

@@ -79,7 +79,7 @@ static char *gp_cache_prefix(void)
     if (plen >= 1 && prefix[0] == '~') {
         char *home, *path;
         int hlen = 0;
-	unsigned int pathlen = 0;
+        unsigned int pathlen = 0;
         gp_file_name_combine_result result;
 
         if (gp_getenv("HOME", (char *)NULL, &hlen) < 0) {
@@ -321,7 +321,6 @@ gp_cache_write_entry(FILE *file, gp_cache_entry *item)
     fprintf(file, "%s %lu\n", item->filename, item->last_used);
     return 0;
 }
-
 
 /* insert a buffer under a (type, key) pair */
 int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)

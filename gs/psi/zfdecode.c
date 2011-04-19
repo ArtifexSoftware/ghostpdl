@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -60,9 +60,9 @@ zA85D(i_ctx_t *i_ctx_p)
     int code;
 
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
-	if ((code = dict_bool_param(op, "PDFRules", false, &ss.pdf_rules)) < 0)
-	    return code;
+        check_dict_read(*op);
+        if ((code = dict_bool_param(op, "PDFRules", false, &ss.pdf_rules)) < 0)
+            return code;
     } else {
         ss.pdf_rules = false;
     }
@@ -80,7 +80,7 @@ zcf_setup(os_ptr op, stream_CF_state *pcfs, gs_ref_memory_t *imem)
     int code = dict_param_list_read(&list, op, NULL, false, imem);
 
     if (code < 0)
-	return code;
+        return code;
     s_CF_set_defaults_inline(pcfs);
     code = s_CF_put_params((gs_param_list *)&list, pcfs);
     iparam_list_release(&list);
@@ -98,13 +98,13 @@ zCFD(i_ctx_t *i_ctx_p)
     int code;
 
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
-	dop = op;
+        check_dict_read(*op);
+        dop = op;
     } else
-	dop = 0;
+        dop = 0;
     code = zcf_setup(dop, (stream_CF_state *)&cfs, iimemory);
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_CFD_template, (stream_state *)&cfs, 0);
 }
 
@@ -112,7 +112,7 @@ zCFD(i_ctx_t *i_ctx_p)
 
 int
 filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
-		      const stream_template * template, stream_state * st)
+                      const stream_template * template, stream_state * st)
 {
     os_ptr op = osp;
     int predictor, code;
@@ -120,65 +120,65 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
     stream_PNGP_state pps;
 
     if (r_has_type(op, t_dictionary)) {
-	if ((code = dict_int_param(op, "Predictor", 0, 15, 1, &predictor)) < 0)
-	    return code;
-	switch (predictor) {
-	    case 0:		/* identity */
-		predictor = 1;
-	    case 1:		/* identity */
-		break;
-	    case 2:		/* componentwise horizontal differencing */
-		code = zpd_setup(op, &pds);
-		break;
-	    case 10:
-	    case 11:
-	    case 12:
-	    case 13:
-	    case 14:
-	    case 15:
-		/* PNG prediction */
-		code = zpp_setup(op, &pps);
-		break;
-	    default:
-		return_error(e_rangecheck);
-	}
-	if (code < 0)
-	    return code;
+        if ((code = dict_int_param(op, "Predictor", 0, 15, 1, &predictor)) < 0)
+            return code;
+        switch (predictor) {
+            case 0:		/* identity */
+                predictor = 1;
+            case 1:		/* identity */
+                break;
+            case 2:		/* componentwise horizontal differencing */
+                code = zpd_setup(op, &pds);
+                break;
+            case 10:
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+                /* PNG prediction */
+                code = zpp_setup(op, &pps);
+                break;
+            default:
+                return_error(e_rangecheck);
+        }
+        if (code < 0)
+            return code;
     } else
-	predictor = 1;
+        predictor = 1;
     if (predictor == 1)
-	return filter_read(i_ctx_p, npop, template, st, 0);
+        return filter_read(i_ctx_p, npop, template, st, 0);
     {
-	/* We need to cascade filters. */
-	ref rsource, rdict;
-	int code;
+        /* We need to cascade filters. */
+        ref rsource, rdict;
+        int code;
 
-	/* Save the operands, just in case. */
-	ref_assign(&rsource, op - 1);
-	ref_assign(&rdict, op);
-	code = filter_read(i_ctx_p, 1, template, st, 0);
-	if (code < 0)
-	    return code;
-	/* filter_read changed osp.... */
-	op = osp;
-	code =
-	    (predictor == 2 ?
-	 filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
-	  filter_read(i_ctx_p, 0, &s_PNGPD_template, (stream_state *) & pps, 0));
-	if (code < 0) {
-	    /* Restore the operands.  Don't bother trying to clean up */
-	    /* the first stream. */
-	    osp = ++op;
-	    ref_assign(op - 1, &rsource);
-	    ref_assign(op, &rdict);
-	    return code;
-	}
-	/*
-	 * Mark the compression stream as temporary, and propagate
-	 * CloseSource from it to the predictor stream.
-	 */
-	filter_mark_strm_temp(op, 2);
-	return code;
+        /* Save the operands, just in case. */
+        ref_assign(&rsource, op - 1);
+        ref_assign(&rdict, op);
+        code = filter_read(i_ctx_p, 1, template, st, 0);
+        if (code < 0)
+            return code;
+        /* filter_read changed osp.... */
+        op = osp;
+        code =
+            (predictor == 2 ?
+         filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
+          filter_read(i_ctx_p, 0, &s_PNGPD_template, (stream_state *) & pps, 0));
+        if (code < 0) {
+            /* Restore the operands.  Don't bother trying to clean up */
+            /* the first stream. */
+            osp = ++op;
+            ref_assign(op - 1, &rsource);
+            ref_assign(op, &rdict);
+            return code;
+        }
+        /*
+         * Mark the compression stream as temporary, and propagate
+         * CloseSource from it to the predictor stream.
+         */
+        filter_mark_strm_temp(op, 2);
+        return code;
     }
 }
 
@@ -192,25 +192,25 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
     const ref *dop;
 
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
-	dop = op;
+        check_dict_read(*op);
+        dop = op;
     } else
-	dop = 0;
+        dop = 0;
     if (   (code = dict_int_param(dop, "EarlyChange", 0, 1, 1,
-				  &plzs->EarlyChange)) < 0 ||
-	   /*
-	    * The following are not PostScript standard, although
-	    * LanguageLevel 3 provides the first two under different
-	    * names.
-	    */
-	   (code = dict_int_param(dop, "InitialCodeLength", 2, 11, 8,
-				  &plzs->InitialCodeLength)) < 0 ||
-	   (code = dict_bool_param(dop, "FirstBitLowOrder", false,
-				   &plzs->FirstBitLowOrder)) < 0 ||
-	   (code = dict_bool_param(dop, "BlockData", false,
-				   &plzs->BlockData)) < 0
-	)
-	return code;
+                                  &plzs->EarlyChange)) < 0 ||
+           /*
+            * The following are not PostScript standard, although
+            * LanguageLevel 3 provides the first two under different
+            * names.
+            */
+           (code = dict_int_param(dop, "InitialCodeLength", 2, 11, 8,
+                                  &plzs->InitialCodeLength)) < 0 ||
+           (code = dict_bool_param(dop, "FirstBitLowOrder", false,
+                                   &plzs->FirstBitLowOrder)) < 0 ||
+           (code = dict_bool_param(dop, "BlockData", false,
+                                   &plzs->BlockData)) < 0
+        )
+        return code;
     return 0;
 }
 
@@ -224,21 +224,21 @@ zLZWD(i_ctx_t *i_ctx_p)
     int code = zlz_setup(op, &lzs);
 
     if (code < 0)
-	return code;
+        return code;
     if (LL3_ENABLED && r_has_type(op, t_dictionary)) {
-	int unit_size;
+        int unit_size;
 
-	if ((code = dict_bool_param(op, "LowBitFirst", lzs.FirstBitLowOrder,
-				    &lzs.FirstBitLowOrder)) < 0 ||
-	    (code = dict_int_param(op, "UnitSize", 3, 8, 8,
-				   &unit_size)) < 0
-	    )
-	    return code;
-	if (code == 0 /* UnitSize specified */ )
-	    lzs.InitialCodeLength = unit_size + 1;
+        if ((code = dict_bool_param(op, "LowBitFirst", lzs.FirstBitLowOrder,
+                                    &lzs.FirstBitLowOrder)) < 0 ||
+            (code = dict_int_param(op, "UnitSize", 3, 8, 8,
+                                   &unit_size)) < 0
+            )
+            return code;
+        if (code == 0 /* UnitSize specified */ )
+            lzs.InitialCodeLength = unit_size + 1;
     }
     return filter_read_predictor(i_ctx_p, 0, &s_LZWD_template,
-				 (stream_state *) & lzs);
+                                 (stream_state *) & lzs);
 }
 
 /* ------ Color differencing filters ------ */
@@ -255,14 +255,14 @@ zpd_setup(os_ptr op, stream_PDiff_state * ppds)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if ((code = dict_int_param(op, "Colors", 1, s_PDiff_max_Colors, 1,
-			       &ppds->Colors)) < 0 ||
-	(code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
-			       &bpc)) < 0 ||
-	(bpc & (bpc - 1)) != 0 ||
-	(code = dict_int_param(op, "Columns", 1, max_int, 1,
-			       &ppds->Columns)) < 0
-	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+                               &ppds->Colors)) < 0 ||
+        (code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
+                               &bpc)) < 0 ||
+        (bpc & (bpc - 1)) != 0 ||
+        (code = dict_int_param(op, "Columns", 1, max_int, 1,
+                               &ppds->Columns)) < 0
+        )
+        return (code < 0 ? code : gs_note_error(e_rangecheck));
     ppds->BitsPerComponent = bpc;
     return 0;
 }
@@ -276,7 +276,7 @@ zPDiffE(i_ctx_t *i_ctx_p)
     int code = zpd_setup(op, &pds);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_write(i_ctx_p, 0, &s_PDiffE_template, (stream_state *) & pds, 0);
 }
 
@@ -289,7 +289,7 @@ zPDiffD(i_ctx_t *i_ctx_p)
     int code = zpd_setup(op, &pds);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0);
 }
 
@@ -304,16 +304,16 @@ zpp_setup(os_ptr op, stream_PNGP_state * ppps)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if ((code = dict_int_param(op, "Colors", 1, s_PNG_max_Colors, 1,
-			       &ppps->Colors)) < 0 ||
-	(code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
-			       &bpc)) < 0 ||
-	(bpc & (bpc - 1)) != 0 ||
-	(code = dict_uint_param(op, "Columns", 1, max_uint, 1,
-				&ppps->Columns)) < 0 ||
-	(code = dict_int_param(op, "Predictor", 10, 15, 15,
-			       &ppps->Predictor)) < 0
-	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+                               &ppps->Colors)) < 0 ||
+        (code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
+                               &bpc)) < 0 ||
+        (bpc & (bpc - 1)) != 0 ||
+        (code = dict_uint_param(op, "Columns", 1, max_uint, 1,
+                                &ppps->Columns)) < 0 ||
+        (code = dict_int_param(op, "Predictor", 10, 15, 15,
+                               &ppps->Predictor)) < 0
+        )
+        return (code < 0 ? code : gs_note_error(e_rangecheck));
     ppps->BitsPerComponent = bpc;
     return 0;
 }
@@ -327,7 +327,7 @@ zPNGPE(i_ctx_t *i_ctx_p)
     int code = zpp_setup(op, &pps);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_write(i_ctx_p, 0, &s_PNGPE_template, (stream_state *) & pps, 0);
 }
 
@@ -340,7 +340,7 @@ zPNGPD(i_ctx_t *i_ctx_p)
     int code = zpp_setup(op, &pps);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_PNGPD_template, (stream_state *) & pps, 0);
 }
 

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -120,17 +120,17 @@ extern const byte gs_param_type_base_sizes[];
 
 /* Define a union capable of holding any parameter value. */
 #define GS_PARAM_VALUE_UNION(dict_type)\
-	bool b;\
-	int i;\
-	long l;\
-	float f;\
-	gs_param_string s;\
-	gs_param_string n;\
-	gs_param_int_array ia;\
-	gs_param_float_array fa;\
-	gs_param_string_array sa;\
-	gs_param_string_array na;\
-	dict_type d
+        bool b;\
+        int i;\
+        long l;\
+        float f;\
+        gs_param_string s;\
+        gs_param_string n;\
+        gs_param_int_array ia;\
+        gs_param_float_array fa;\
+        gs_param_string_array sa;\
+        gs_param_string_array na;\
+        dict_type d
 typedef union gs_param_value_s {
     GS_PARAM_VALUE_UNION(gs_param_collection);
 } gs_param_value;
@@ -263,122 +263,122 @@ typedef struct gs_param_list_procs_s {
 
 #define param_proc_xmit_typed(proc)\
     int proc(gs_param_list *, gs_param_name, gs_param_typed_value *)
-	 param_proc_xmit_typed((*xmit_typed));
-	 /* See below for param_read_[requested_]typed */
+         param_proc_xmit_typed((*xmit_typed));
+         /* See below for param_read_[requested_]typed */
 #define param_write_typed(plist, pkey, pvalue)\
-	 (*(plist)->procs->xmit_typed)(plist, pkey, pvalue)
+         (*(plist)->procs->xmit_typed)(plist, pkey, pvalue)
 
-	 /* Start transmitting a dictionary or heterogenous value. */
+         /* Start transmitting a dictionary or heterogenous value. */
 
 #define param_proc_begin_xmit_collection(proc)\
-	 int proc(gs_param_list *, gs_param_name, gs_param_dict *,\
-		     gs_param_collection_type_t)
-	 param_proc_begin_xmit_collection((*begin_xmit_collection));
+         int proc(gs_param_list *, gs_param_name, gs_param_dict *,\
+                     gs_param_collection_type_t)
+         param_proc_begin_xmit_collection((*begin_xmit_collection));
 #define param_begin_read_collection(plist, pkey, pvalue, coll_type)\
-	 (*(plist)->procs->begin_xmit_collection)(plist, pkey, pvalue, coll_type)
+         (*(plist)->procs->begin_xmit_collection)(plist, pkey, pvalue, coll_type)
 #define param_begin_read_dict(l, k, v, int_keys)\
-	 param_begin_read_collection(l, k, v,\
-				     (int_keys ? gs_param_collection_dict_int_keys :\
-				      gs_param_collection_dict_any))
+         param_begin_read_collection(l, k, v,\
+                                     (int_keys ? gs_param_collection_dict_int_keys :\
+                                      gs_param_collection_dict_any))
 #define param_begin_write_collection(plist, pkey, pvalue, coll_type)\
-	 (*(plist)->procs->begin_xmit_collection)(plist, pkey, pvalue, coll_type)
+         (*(plist)->procs->begin_xmit_collection)(plist, pkey, pvalue, coll_type)
 #define param_begin_write_dict(l, k, v, int_keys)\
-	 param_begin_write_collection(l, k, v,\
-				      (int_keys ? gs_param_collection_dict_int_keys :\
-				       gs_param_collection_dict_any))
+         param_begin_write_collection(l, k, v,\
+                                      (int_keys ? gs_param_collection_dict_int_keys :\
+                                       gs_param_collection_dict_any))
 
-	 /* Finish transmitting a collection value. */
+         /* Finish transmitting a collection value. */
 
 #define param_proc_end_xmit_collection(proc)\
-	 int proc(gs_param_list *, gs_param_name, gs_param_dict *)
-	 param_proc_end_xmit_collection((*end_xmit_collection));
+         int proc(gs_param_list *, gs_param_name, gs_param_dict *)
+         param_proc_end_xmit_collection((*end_xmit_collection));
 #define param_end_read_collection(plist, pkey, pvalue)\
-	 (*(plist)->procs->end_xmit_collection)(plist, pkey, pvalue)
+         (*(plist)->procs->end_xmit_collection)(plist, pkey, pvalue)
 #define param_end_read_dict(l, k, v) param_end_read_collection(l, k, v)
 #define param_end_write_collection(plist, pkey, pvalue)\
-	 (*(plist)->procs->end_xmit_collection)(plist, pkey, pvalue)
+         (*(plist)->procs->end_xmit_collection)(plist, pkey, pvalue)
 #define param_end_write_dict(l, k, v) param_end_write_collection(l, k, v)
 
-	 /* 
-	  * Get the next key in sequence. 
-	  * (Only used when reading.)
-	  * Use param_init_enumerator(...) to reset to first key.
-	  */
+         /*
+          * Get the next key in sequence.
+          * (Only used when reading.)
+          * Use param_init_enumerator(...) to reset to first key.
+          */
 
 #define param_proc_next_key(proc)\
-	 int proc(gs_param_list *, gs_param_enumerator_t *, gs_param_key_t *)
-	 param_proc_next_key((*next_key));
+         int proc(gs_param_list *, gs_param_enumerator_t *, gs_param_key_t *)
+         param_proc_next_key((*next_key));
 #define param_get_next_key(plist, penum, pkey)\
-	 (*(plist)->procs->next_key)(plist, penum, pkey)
+         (*(plist)->procs->next_key)(plist, penum, pkey)
 
-	 /*
-	  * Request a specific parameter. (Only used when writing, before
-	  * writing any values.)  If no specific parameters are requested,
-	  * param_requested always returns -1; if specific parameters
-	  * are requested, param_requested will return 1 for those,
-	  * and may return either 0 or 1 for others.
-	  */
+         /*
+          * Request a specific parameter. (Only used when writing, before
+          * writing any values.)  If no specific parameters are requested,
+          * param_requested always returns -1; if specific parameters
+          * are requested, param_requested will return 1 for those,
+          * and may return either 0 or 1 for others.
+          */
 
 #define param_proc_request(proc)\
   int proc(gs_param_list *, gs_param_name)
-	 param_proc_request((*request));
+         param_proc_request((*request));
 
 #define param_request(plist, pkey)\
   ((plist)->procs->request(plist, pkey))
 
-	 /*
-	  * Determine whether a given key has been requested.  (Only used
-	  * when writing.)  A return value of -1 means that no specific
-	  * parameters have been requested; 0 means specific parameters have
-	  * been requested, but not this one; 1 means this parameter has
-	  * been requested specifically.
-	  */
+         /*
+          * Determine whether a given key has been requested.  (Only used
+          * when writing.)  A return value of -1 means that no specific
+          * parameters have been requested; 0 means specific parameters have
+          * been requested, but not this one; 1 means this parameter has
+          * been requested specifically.
+          */
 
 #define param_proc_requested(proc)\
-	 int proc(const gs_param_list *, gs_param_name)
-	 param_proc_requested((*requested));
+         int proc(const gs_param_list *, gs_param_name)
+         param_proc_requested((*requested));
 #define param_requested(plist, pkey)\
-	 (*(plist)->procs->requested)(plist, pkey)
+         (*(plist)->procs->requested)(plist, pkey)
 
-	 /* Get the 'policy' associated with an out-of-range parameter value. */
-	 /* (Only used when reading.) */
+         /* Get the 'policy' associated with an out-of-range parameter value. */
+         /* (Only used when reading.) */
 
 #define param_proc_get_policy(proc)\
-	 int proc(gs_param_list *, gs_param_name)
-	 param_proc_get_policy((*get_policy));
+         int proc(gs_param_list *, gs_param_name)
+         param_proc_get_policy((*get_policy));
 #define param_get_policy(plist, pkey)\
-	 (*(plist)->procs->get_policy)(plist, pkey)
+         (*(plist)->procs->get_policy)(plist, pkey)
 
-	 /*
-	  * Signal an error.  (Only used when reading.)
-	  * The procedure may return a different error code,
-	  * or may return 0 indicating that the error is to be ignored.
-	  */
+         /*
+          * Signal an error.  (Only used when reading.)
+          * The procedure may return a different error code,
+          * or may return 0 indicating that the error is to be ignored.
+          */
 
 #define param_proc_signal_error(proc)\
-	 int proc(gs_param_list *, gs_param_name, int)
-	 param_proc_signal_error((*signal_error));
+         int proc(gs_param_list *, gs_param_name, int)
+         param_proc_signal_error((*signal_error));
 #define param_signal_error(plist, pkey, code)\
-	 (*(plist)->procs->signal_error)(plist, pkey, code)
+         (*(plist)->procs->signal_error)(plist, pkey, code)
 #define param_return_error(plist, pkey, code)\
-	 return_error(param_signal_error(plist, pkey, code))
+         return_error(param_signal_error(plist, pkey, code))
 
-	 /*
-	  * "Commit" a set of changes.  (Only used when reading.)
-	  * This is called at the end of the first phase.
-	  */
+         /*
+          * "Commit" a set of changes.  (Only used when reading.)
+          * This is called at the end of the first phase.
+          */
 
 #define param_proc_commit(proc)\
-	 int proc(gs_param_list *)
-	 param_proc_commit((*commit));
+         int proc(gs_param_list *)
+         param_proc_commit((*commit));
 #define param_commit(plist)\
-	 (*(plist)->procs->commit)(plist)
+         (*(plist)->procs->commit)(plist)
 
 } gs_param_list_procs;
 
 /* Transmit typed parameters. */
 int param_read_requested_typed(gs_param_list *, gs_param_name,
-				  gs_param_typed_value *);
+                                  gs_param_typed_value *);
 
 #define param_read_typed(plist, pkey, pvalue)\
   ((pvalue)->type = gs_param_type_any,\
@@ -397,30 +397,30 @@ int param_read_float(gs_param_list *, gs_param_name, float *);
 int param_write_float(gs_param_list *, gs_param_name, const float *);
 int param_read_string(gs_param_list *, gs_param_name, gs_param_string *);
 int param_write_string(gs_param_list *, gs_param_name,
-		       const gs_param_string *);
+                       const gs_param_string *);
 int param_read_name(gs_param_list *, gs_param_name, gs_param_string *);
 int param_write_name(gs_param_list *, gs_param_name,
-		     const gs_param_string *);
+                     const gs_param_string *);
 int param_read_int_array(gs_param_list *, gs_param_name,
-			 gs_param_int_array *);
+                         gs_param_int_array *);
 int param_write_int_array(gs_param_list *, gs_param_name,
-			  const gs_param_int_array *);
+                          const gs_param_int_array *);
 int param_write_int_values(gs_param_list *, gs_param_name,
-			   const int *, uint, bool);
+                           const int *, uint, bool);
 int param_read_float_array(gs_param_list *, gs_param_name,
-			   gs_param_float_array *);
+                           gs_param_float_array *);
 int param_write_float_array(gs_param_list *, gs_param_name,
-			    const gs_param_float_array *);
+                            const gs_param_float_array *);
 int param_write_float_values(gs_param_list *, gs_param_name,
-			     const float *, uint, bool);
+                             const float *, uint, bool);
 int param_read_string_array(gs_param_list *, gs_param_name,
-			    gs_param_string_array *);
+                            gs_param_string_array *);
 int param_write_string_array(gs_param_list *, gs_param_name,
-			     const gs_param_string_array *);
+                             const gs_param_string_array *);
 int param_read_name_array(gs_param_list *, gs_param_name,
-			  gs_param_string_array *);
+                          gs_param_string_array *);
 int param_write_name_array(gs_param_list *, gs_param_name,
-			   const gs_param_string_array *);
+                           const gs_param_string_array *);
 
 /*
  * Define an abstract parameter list.  Implementations are concrete
@@ -463,14 +463,14 @@ typedef struct gs_param_item_s {
  * the optional default_obj, the item isn't transferred.
  */
 int gs_param_read_items(gs_param_list * plist, void *obj,
-			const gs_param_item_t * items);
+                        const gs_param_item_t * items);
 int gs_param_write_items(gs_param_list * plist, const void *obj,
-			 const void *default_obj,
-			 const gs_param_item_t * items);
+                         const void *default_obj,
+                         const gs_param_item_t * items);
 
 /* Internal procedure to initialize the common part of a parameter list. */
 void gs_param_list_init(gs_param_list *, const gs_param_list_procs *,
-			gs_memory_t *);
+                        gs_memory_t *);
 
 /*
  * Internal procedure to read a value, with coercion if requested, needed,
@@ -478,7 +478,7 @@ void gs_param_list_init(gs_param_list *, const gs_param_list_procs *,
  * possibly do other coercions later.
  */
 int param_coerce_typed(gs_param_typed_value * pvalue,
-		       gs_param_type req_type, gs_memory_t * mem);
+                       gs_param_type req_type, gs_memory_t * mem);
 
 /* ---------------- Default implementation ---------------- */
 
@@ -492,21 +492,21 @@ param_proc_requested(gs_param_requested_default);  /* always returns true */
 /*
  * Define a default implementation, intended to be usable easily
  * from C code.  The intended usage pattern is:
-	gs_c_param_list list;
-	[... other code here ...]
-	gs_c_param_list_write(&list, mem);
-	[As many as needed:]
-	code = param_write_XXX(&list, "ParamName", &param_value);
-	[Check code for <0]
-	gs_c_param_list_read(&list);
-	code = gs_putdeviceparams(dev, &list);
-	gs_c_param_list_release(&list);
-	[Check code for <0]
-	if ( code == 1 )
-	{
-	    code = (*dev_proc(dev, open_device))(dev);
-	    [Check code for <0]
-	}
+        gs_c_param_list list;
+        [... other code here ...]
+        gs_c_param_list_write(&list, mem);
+        [As many as needed:]
+        code = param_write_XXX(&list, "ParamName", &param_value);
+        [Check code for <0]
+        gs_c_param_list_read(&list);
+        code = gs_putdeviceparams(dev, &list);
+        gs_c_param_list_release(&list);
+        [Check code for <0]
+        if ( code == 1 )
+        {
+            code = (*dev_proc(dev, open_device))(dev);
+            [Check code for <0]
+        }
  *
  * This implementation also has the special property that it can forward
  * unrecognized param_read_ calls to another parameter list, called the
@@ -532,7 +532,7 @@ typedef struct gs_c_param_list_s {
 /* This structure descriptor is only for non persistent gs_param_strings. */
 #define private_st_gs_param_string()	/* in gdevdevn.c */\
   gs_private_st_composite(st_gs_param_string, gs_param_string, "gs_param_string",\
-			param_string_enum_ptrs, param_string_reloc_ptrs)
+                        param_string_enum_ptrs, param_string_reloc_ptrs)
 
 /* Set the target of a C parameter list. */
 void gs_c_param_list_set_target(gs_c_param_list *, gs_param_list *);

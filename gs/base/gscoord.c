@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,10 +46,10 @@ static void trace_matrix(const gs_matrix *);
 #  define print_inverse(pgs) DO_NOTHING
 #endif
 #define ensure_inverse_valid(pgs)\
-	if ( !pgs->ctm_inverse_valid )\
-	   {	int code = ctm_set_inverse(pgs);\
-		if ( code < 0 ) return code;\
-	   }
+        if ( !pgs->ctm_inverse_valid )\
+           {	int code = ctm_set_inverse(pgs);\
+                if ( code < 0 ) return code;\
+           }
 
 static int
 ctm_set_inverse(gs_state * pgs)
@@ -58,7 +58,7 @@ ctm_set_inverse(gs_state * pgs)
 
     print_inverse(pgs);
     if (code < 0)
-	return code;
+        return code;
     pgs->ctm_inverse_valid = true;
     return 0;
 }
@@ -83,9 +83,9 @@ ctm_set_inverse(gs_state * pgs)
 #define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
 #define update_matrix_fixed(mat, xt, yt)\
   ((mat).txy_fixed_valid = (f_fits_in_fixed(xt) && f_fits_in_fixed(yt) ?\
-			    (update_t_fixed(mat, tx, tx_fixed, xt),\
-			     update_t_fixed(mat, ty, ty_fixed, yt), true) :\
-			    ((mat).tx = (xt), (mat).ty = (yt), false)))
+                            (update_t_fixed(mat, tx, tx_fixed, xt),\
+                             update_t_fixed(mat, ty, ty_fixed, yt), true) :\
+                            ((mat).tx = (xt), (mat).ty = (yt), false)))
 #define update_ctm(pgs, xt, yt)\
   (pgs->ctm_inverse_valid = false,\
    pgs->char_tm_valid = false,\
@@ -103,7 +103,7 @@ gs_initmatrix(gs_state * pgs)
     set_ctm_only(pgs, imat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf("[x]initmatrix:\n"), trace_ctm(pgs);
+        dlprintf("[x]initmatrix:\n"), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -114,16 +114,16 @@ gs_defaultmatrix(const gs_state * pgs, gs_matrix * pmat)
     gx_device *dev;
 
     if (pgs->ctm_default_set) {	/* set after Install */
-	*pmat = pgs->ctm_default;
-	return 1;
+        *pmat = pgs->ctm_default;
+        return 1;
     }
     dev = gs_currentdevice_inline(pgs);
     gs_deviceinitialmatrix(dev, pmat);
     /* Add in the translation for the Margins. */
     pmat->tx += dev->Margins[0] *
-	dev->HWResolution[0] / dev->MarginsHWResolution[0];
+        dev->HWResolution[0] / dev->MarginsHWResolution[0];
     pmat->ty += dev->Margins[1] *
-	dev->HWResolution[1] / dev->MarginsHWResolution[1];
+        dev->HWResolution[1] / dev->MarginsHWResolution[1];
     return 0;
 }
 
@@ -131,10 +131,10 @@ int
 gs_setdefaultmatrix(gs_state * pgs, const gs_matrix * pmat)
 {
     if (pmat == NULL)
-	pgs->ctm_default_set = false;
+        pgs->ctm_default_set = false;
     else {
-	pgs->ctm_default = *pmat;
-	pgs->ctm_default_set = true;
+        pgs->ctm_default = *pmat;
+        pgs->ctm_default_set = true;
     }
     return 0;
 }
@@ -155,12 +155,12 @@ gs_setcharmatrix(gs_state * pgs, const gs_matrix * pmat)
     int code = gs_matrix_multiply(pmat, &ctm_only(pgs), &cmat);
 
     if (code < 0)
-	return code;
+        return code;
     update_matrix_fixed(pgs->char_tm, cmat.tx, cmat.ty);
     char_tm_only(pgs) = cmat;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf("[x]setting char_tm:"), trace_matrix_fixed(&pgs->char_tm);
+        dlprintf("[x]setting char_tm:"), trace_matrix_fixed(&pgs->char_tm);
 #endif
     pgs->char_tm_valid = true;
     return 0;
@@ -173,16 +173,16 @@ int
 gs_currentcharmatrix(gs_state * pgs, gs_matrix * ptm, bool force)
 {
     if (!pgs->char_tm_valid) {
-	int code;
+        int code;
 
-	if (!force)
-	    return_error(gs_error_undefinedresult);
-	code = gs_setcharmatrix(pgs, &pgs->font->FontMatrix);
-	if (code < 0)
-	    return code;
+        if (!force)
+            return_error(gs_error_undefinedresult);
+        code = gs_setcharmatrix(pgs, &pgs->font->FontMatrix);
+        if (code < 0)
+            return code;
     }
     if (ptm != NULL)
-	*ptm = char_tm_only(pgs);
+        *ptm = char_tm_only(pgs);
     return 0;
 }
 
@@ -193,7 +193,7 @@ gs_setmatrix(gs_state * pgs, const gs_matrix * pmat)
     set_ctm_only(pgs, *pmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf("[x]setmatrix:\n"), trace_ctm(pgs);
+        dlprintf("[x]setmatrix:\n"), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -205,7 +205,7 @@ gs_imager_setmatrix(gs_imager_state * pis, const gs_matrix * pmat)
     set_ctm_only(pis, *pmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf("[x]imager_setmatrix:\n"), trace_ctm(pis);
+        dlprintf("[x]imager_setmatrix:\n"), trace_ctm(pis);
 #endif
     return 0;
 }
@@ -214,11 +214,11 @@ int
 gs_settocharmatrix(gs_state * pgs)
 {
     if (pgs->char_tm_valid) {
-	pgs->ctm = pgs->char_tm;
-	pgs->ctm_inverse_valid = false;
-	return 0;
+        pgs->ctm = pgs->char_tm;
+        pgs->ctm_inverse_valid = false;
+        return 0;
     } else
-	return_error(gs_error_undefinedresult);
+        return_error(gs_error_undefinedresult);
 }
 
 int
@@ -228,15 +228,15 @@ gs_translate(gs_state * pgs, floatp dx, floatp dy)
     int code;
 
     if ((code = gs_distance_transform(dx, dy, &ctm_only(pgs), &pt)) < 0)
-	return code;
+        return code;
     pt.x = (float)pt.x + pgs->ctm.tx;
     pt.y = (float)pt.y + pgs->ctm.ty;
     update_ctm(pgs, pt.x, pt.y);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf4("[x]translate: %f %f -> %f %f\n",
-		  dx, dy, pt.x, pt.y),
-	    trace_ctm(pgs);
+        dlprintf4("[x]translate: %f %f -> %f %f\n",
+                  dx, dy, pt.x, pt.y),
+            trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -251,7 +251,7 @@ gs_scale(gs_state * pgs, floatp sx, floatp sy)
     pgs->ctm_inverse_valid = false, pgs->char_tm_valid = false;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf2("[x]scale: %f %f\n", sx, sy), trace_ctm(pgs);
+        dlprintf2("[x]scale: %f %f\n", sx, sy), trace_ctm(pgs);
 #endif
     return 0;
 }
@@ -260,12 +260,12 @@ int
 gs_rotate(gs_state * pgs, floatp ang)
 {
     int code = gs_matrix_rotate(&ctm_only(pgs), ang,
-				&ctm_only_writable(pgs));
+                                &ctm_only_writable(pgs));
 
     pgs->ctm_inverse_valid = false, pgs->char_tm_valid = false;
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf1("[x]rotate: %f\n", ang), trace_ctm(pgs);
+        dlprintf1("[x]rotate: %f\n", ang), trace_ctm(pgs);
 #endif
     return code;
 }
@@ -277,12 +277,12 @@ gs_concat(gs_state * pgs, const gs_matrix * pmat)
     int code = gs_matrix_multiply(pmat, &ctm_only(pgs), &cmat);
 
     if (code < 0)
-	return code;
+        return code;
     update_ctm(pgs, cmat.tx, cmat.ty);
     set_ctm_only(pgs, cmat);
 #ifdef DEBUG
     if (gs_debug_c('x'))
-	dlprintf("[x]concat:\n"), trace_matrix(pmat), trace_ctm(pgs);
+        dlprintf("[x]concat:\n"), trace_matrix(pmat), trace_ctm(pgs);
 #endif
     return code;
 }
@@ -308,10 +308,10 @@ gs_itransform(gs_state * pgs, floatp x, floatp y, gs_point * pt)
 {				/* If the matrix isn't skewed, we get more accurate results */
     /* by using transform_inverse than by using the inverse matrix. */
     if (!is_skewed(&pgs->ctm)) {
-	return gs_point_transform_inverse(x, y, &ctm_only(pgs), pt);
+        return gs_point_transform_inverse(x, y, &ctm_only(pgs), pt);
     } else {
-	ensure_inverse_valid(pgs);
-	return gs_point_transform(x, y, &pgs->ctm_inverse, pt);
+        ensure_inverse_valid(pgs);
+        return gs_point_transform(x, y, &pgs->ctm_inverse, pt);
     }
 }
 
@@ -320,17 +320,17 @@ gs_idtransform(gs_state * pgs, floatp dx, floatp dy, gs_point * pt)
 {				/* If the matrix isn't skewed, we get more accurate results */
     /* by using transform_inverse than by using the inverse matrix. */
     if (!is_skewed(&pgs->ctm)) {
-	return gs_distance_transform_inverse(dx, dy,
-					     &ctm_only(pgs), pt);
+        return gs_distance_transform_inverse(dx, dy,
+                                             &ctm_only(pgs), pt);
     } else {
-	ensure_inverse_valid(pgs);
-	return gs_distance_transform(dx, dy, &pgs->ctm_inverse, pt);
+        ensure_inverse_valid(pgs);
+        return gs_distance_transform(dx, dy, &pgs->ctm_inverse, pt);
     }
 }
 
 int
 gs_imager_idtransform(const gs_imager_state * pis, floatp dx, floatp dy,
-		      gs_point * pt)
+                      gs_point * pt)
 {
     return gs_distance_transform_inverse(dx, dy, &ctm_only(pis), pt);
 }
@@ -350,17 +350,17 @@ gx_translate_to_fixed(register gs_state * pgs, fixed px, fixed py)
     int code;
 
     if (pgs->ctm.txy_fixed_valid) {
-	dx = float2fixed(fdx);
-	dy = float2fixed(fdy);
-	code = gx_path_translate(pgs->path, dx, dy);
-	if (code < 0)
-	    return code;
-	if (pgs->char_tm_valid && pgs->char_tm.txy_fixed_valid)
-	    pgs->char_tm.tx_fixed += dx,
-		pgs->char_tm.ty_fixed += dy;
+        dx = float2fixed(fdx);
+        dy = float2fixed(fdy);
+        code = gx_path_translate(pgs->path, dx, dy);
+        if (code < 0)
+            return code;
+        if (pgs->char_tm_valid && pgs->char_tm.txy_fixed_valid)
+            pgs->char_tm.tx_fixed += dx,
+                pgs->char_tm.ty_fixed += dy;
     } else {
-	if (!gx_path_is_null(pgs->path))
-	    return_error(gs_error_limitcheck);
+        if (!gx_path_is_null(pgs->path))
+            return_error(gs_error_limitcheck);
     }
     pgs->ctm.tx = fpx;
     pgs->ctm.tx_fixed = px;
@@ -369,16 +369,16 @@ gx_translate_to_fixed(register gs_state * pgs, fixed px, fixed py)
     pgs->ctm.txy_fixed_valid = true;
     pgs->ctm_inverse_valid = false;
     if (pgs->char_tm_valid) {	/* Update char_tm now, leaving it valid. */
-	pgs->char_tm.tx += fdx;
-	pgs->char_tm.ty += fdy;
+        pgs->char_tm.tx += fdx;
+        pgs->char_tm.ty += fdy;
     }
 #ifdef DEBUG
     if (gs_debug_c('x')) {
-	dlprintf2("[x]translate_to_fixed %g, %g:\n",
-		  fixed2float(px), fixed2float(py));
-	trace_ctm(pgs);
-	dlprintf("[x]   char_tm:\n");
-	trace_matrix_fixed(&pgs->char_tm);
+        dlprintf2("[x]translate_to_fixed %g, %g:\n",
+                  fixed2float(px), fixed2float(py));
+        trace_ctm(pgs);
+        dlprintf("[x]   char_tm:\n");
+        trace_matrix_fixed(&pgs->char_tm);
     }
 #endif
     gx_setcurrentpoint(pgs, fixed2float(pgs->ctm.tx_fixed), fixed2float(pgs->ctm.ty_fixed));
@@ -393,12 +393,12 @@ gx_scale_char_matrix(register gs_state * pgs, int sx, int sy)
 #define scale_cxy(s, vx, vy)\
   if ( s != 1 )\
    {	pgs->ctm.vx *= s;\
-	pgs->ctm.vy *= s;\
-	pgs->ctm_inverse_valid = false;\
-	if ( pgs->char_tm_valid )\
-	{	pgs->char_tm.vx *= s;\
-		pgs->char_tm.vy *= s;\
-	}\
+        pgs->ctm.vy *= s;\
+        pgs->ctm_inverse_valid = false;\
+        if ( pgs->char_tm_valid )\
+        {	pgs->char_tm.vx *= s;\
+                pgs->char_tm.vy *= s;\
+        }\
    }
     scale_cxy(sx, xx, yx);
     scale_cxy(sy, xy, yy);
@@ -412,7 +412,7 @@ gx_scale_char_matrix(register gs_state * pgs, int sx, int sy)
 /* We should cache the coefficients with the ctm.... */
 int
 gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
-			 int max_bits)
+                         int max_bits)
 {
     gs_matrix ctm;
     int scale = -10000;
@@ -421,24 +421,24 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
     ctm = *pmat;
     pfc->skewed = 0;
     if (!is_fzero(ctm.xx)) {
-	discard(frexp(ctm.xx, &scale));
+        discard(frexp(ctm.xx, &scale));
     }
     if (!is_fzero(ctm.xy)) {
-	discard(frexp(ctm.xy, &expt));
-	if (expt > scale)
-	    scale = expt;
-	pfc->skewed = 1;
+        discard(frexp(ctm.xy, &expt));
+        if (expt > scale)
+            scale = expt;
+        pfc->skewed = 1;
     }
     if (!is_fzero(ctm.yx)) {
-	discard(frexp(ctm.yx, &expt));
-	if (expt > scale)
-	    scale = expt;
-	pfc->skewed = 1;
+        discard(frexp(ctm.yx, &expt));
+        if (expt > scale)
+            scale = expt;
+        pfc->skewed = 1;
     }
     if (!is_fzero(ctm.yy)) {
-	discard(frexp(ctm.yy, &expt));
-	if (expt > scale)
-	    scale = expt;
+        discard(frexp(ctm.yy, &expt));
+        if (expt > scale)
+            scale = expt;
     }
     /*
      * There are two multiplications in fixed_coeff_mult: one involves a
@@ -447,17 +447,17 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
      * will overflow.
      */
     if (max_bits < fixed_fraction_bits)
-	max_bits = fixed_fraction_bits;
+        max_bits = fixed_fraction_bits;
     scale = sizeof(long) * 8 - 1 - max_bits - scale;
 
     shift = scale - _fixed_shift;
     if (shift > 0) {
-	pfc->shift = shift;
-	pfc->round = (fixed) 1 << (shift - 1);
+        pfc->shift = shift;
+        pfc->round = (fixed) 1 << (shift - 1);
     } else {
-	pfc->shift = 0;
-	pfc->round = 0;
-	scale -= shift;
+        pfc->shift = 0;
+        pfc->round = 0;
+        scale -= shift;
     }
 #define SET_C(c)\
   if ( is_fzero(ctm.c) ) pfc->c = 0;\
@@ -469,11 +469,11 @@ gx_matrix_to_fixed_coeff(const gs_matrix * pmat, register fixed_coeff * pfc,
 #undef SET_C
 #ifdef DEBUG
     if (gs_debug_c('x')) {
-	dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
-		  ctm.xx, ctm.xy, ctm.yx, ctm.yy, ctm.tx, ctm.ty);
-	dlprintf6("   scale=%d fc: [0x%lx 0x%lx 0x%lx 0x%lx] shift=%d\n",
-		  scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
-		  pfc->shift);
+        dlprintf6("[x]ctm: [%6g %6g %6g %6g %6g %6g]\n",
+                  ctm.xx, ctm.xy, ctm.yx, ctm.yy, ctm.tx, ctm.ty);
+        dlprintf6("   scale=%d fc: [0x%lx 0x%lx 0x%lx 0x%lx] shift=%d\n",
+                  scale, pfc->xx, pfc->xy, pfc->yx, pfc->yy,
+                  pfc->shift);
     }
 #endif
     pfc->max_bits = max_bits;
@@ -493,20 +493,20 @@ fixed_coeff_mult(fixed value, long coeff, const fixed_coeff *pfc, int maxb)
      * Test if the value is too large for simple long math.
      */
     if ((value + (fixed_1 << (maxb - 1))) & (-fixed_1 << maxb)) {
-	/* The second argument of fixed_mult_quo must be non-negative. */
-	return
-	    (coeff < 0 ?
-	     -fixed_mult_quo(value, -coeff, fixed_1 << shift) :
-	     fixed_mult_quo(value, coeff, fixed_1 << shift));
+        /* The second argument of fixed_mult_quo must be non-negative. */
+        return
+            (coeff < 0 ?
+             -fixed_mult_quo(value, -coeff, fixed_1 << shift) :
+             fixed_mult_quo(value, coeff, fixed_1 << shift));
     } else {
-	/*
-	 * The construction above guarantees that the multiplications
-	 * won't overflow the capacity of an int.
-	 */
+        /*
+         * The construction above guarantees that the multiplications
+         * won't overflow the capacity of an int.
+         */
         return (fixed)
-	    arith_rshift(fixed2int_var(value) * coeff
-			 + fixed2int(fixed_fraction(value) * coeff)
-			 + pfc->round, shift);
+            arith_rshift(fixed2int_var(value) * coeff
+                         + fixed2int(fixed_fraction(value) * coeff)
+                         + pfc->round, shift);
     }
 }
 
@@ -520,18 +520,18 @@ trace_matrix_fixed(const gs_matrix_fixed * pmat)
 {
     trace_matrix((const gs_matrix *)pmat);
     if (pmat->txy_fixed_valid) {
-	dprintf2("\t\tt_fixed: [%6g %6g]\n",
-		 fixed2float(pmat->tx_fixed),
-		 fixed2float(pmat->ty_fixed));
+        dprintf2("\t\tt_fixed: [%6g %6g]\n",
+                 fixed2float(pmat->tx_fixed),
+                 fixed2float(pmat->ty_fixed));
     } else {
-	dputs("\t\tt_fixed not valid\n");
+        dputs("\t\tt_fixed not valid\n");
     }
 }
 static void
 trace_matrix(register const gs_matrix * pmat)
 {
     dlprintf6("\t[%6g %6g %6g %6g %6g %6g]\n",
-	      pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
+              pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
 }
 
 #endif

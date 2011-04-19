@@ -91,9 +91,9 @@ static const eprn_PageDescription
   /* Order of margins: left, bottom, right, top. */
   hpdj3xx_sizes[] = {
     /*  These are the page descriptions for the DeskJets Portable, 310, 320 and
-	340, taken from DJ3/4, pp. 1 and 20. When printing in colour, the
-	bottom margin is larger by 50 d.
-	Note that BPD05054 gives different margins.
+        340, taken from DJ3/4, pp. 1 and 20. When printing in colour, the
+        bottom margin is larger by 50 d.
+        Note that BPD05054 gives different margins.
     */
     {ms_Letter,
       75*BP_PER_DOT, 120*BP_PER_DOT, 75*BP_PER_DOT, 30*BP_PER_DOT},
@@ -108,12 +108,12 @@ static const eprn_PageDescription
   hpdj400_sizes[] = {
     /*  These are the page descriptions for the DeskJet 400 taken from DJ3/4,
         pp. 1 and 21, and are stated to be valid valid for black and colour.
-	Page 21 contains the following statement: "The mechanism will
-	physically shift the page image downwards by a nominal 0.08 inch
-	(2.0 mm)." I conclude this to mean that the real top margin is
-	0.08 inch instead of zero as specified and that the real bottom margin
-	is smaller than specified by 0.08 inch.
-	Note that BPD05054 gives different margins.
+        Page 21 contains the following statement: "The mechanism will
+        physically shift the page image downwards by a nominal 0.08 inch
+        (2.0 mm)." I conclude this to mean that the real top margin is
+        0.08 inch instead of zero as specified and that the real bottom margin
+        is smaller than specified by 0.08 inch.
+        Note that BPD05054 gives different margins.
     */
     {ms_Letter,
       0.25*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.25*BP_PER_IN, 0.08*BP_PER_IN},
@@ -126,10 +126,10 @@ static const eprn_PageDescription
     {ms_JISB5,
       3.175*BP_PER_MM, (0.5-0.08)*BP_PER_IN, 3.25*BP_PER_MM, 0.08*BP_PER_IN},
     /*  DJ3/4 p. 21: "Envelopes are printed in the landscape mode". As the
-	margins are given such that the largest value is designated as "bottom"
-	and the bottom is designated on page 19 as a long edge, I conclude that
-	the DJ 400 feeds envelopes long edge first. The list on p. 1 gives the
-	dimensions for Env10 in portrait and EnvDL in landscape orientation.
+        margins are given such that the largest value is designated as "bottom"
+        and the bottom is designated on page 19 as a long edge, I conclude that
+        the DJ 400 feeds envelopes long edge first. The list on p. 1 gives the
+        dimensions for Env10 in portrait and EnvDL in landscape orientation.
      */
     {ms_Env10 | MS_TRANSVERSE_FLAG,
       0.125*BP_PER_IN, (0.5-0.08)*BP_PER_IN, 0.08*BP_PER_IN, 0.08*BP_PER_IN},
@@ -139,10 +139,10 @@ static const eprn_PageDescription
   },
   hpdj500_sizes[] = {
     /*  These are taken from the TRG500 p. 1-18 except for No. 10 envelopes
-	which are supported according to p. 3-2 and where I took the margins
-	from BPD05054. The resulting collection agrees with BPD05054 which
-	declares it to be valid for the HP DeskJet and the HP DeskJet Plus as
-	well.
+        which are supported according to p. 3-2 and where I took the margins
+        from BPD05054. The resulting collection agrees with BPD05054 which
+        declares it to be valid for the HP DeskJet and the HP DeskJet Plus as
+        well.
         Order of margins: left, bottom, right, top. */
     {ms_Letter,
       0.25*BP_PER_IN, 0.57*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
@@ -156,11 +156,11 @@ static const eprn_PageDescription
   },
   hpdj500c_sizes[] = {
     /*  The data are from the TRG500 pp. 1-18 and 1-19 except for No. 10
-	envelopes which are supported according to p. 3-2 and which I took from
-	BPD05054. The values listed in both documents agree.
-	These are the values for the black cartridge; the CMY cartridge needs
-	0.17 inches more at the bottom.
-	Order of margins: left, bottom, right, top. */
+        envelopes which are supported according to p. 3-2 and which I took from
+        BPD05054. The values listed in both documents agree.
+        These are the values for the black cartridge; the CMY cartridge needs
+        0.17 inches more at the bottom.
+        Order of margins: left, bottom, right, top. */
     {ms_Letter,
       0.25*BP_PER_IN, 0.4*BP_PER_IN, 0.25*BP_PER_IN, 0.1*BP_PER_IN},
     {ms_Legal,
@@ -169,17 +169,17 @@ static const eprn_PageDescription
       3.1*BP_PER_MM, 0.4*BP_PER_IN, 3.6*BP_PER_MM, 0.1*BP_PER_IN},
     {ms_Env10 | MS_TRANSVERSE_FLAG,
        /* Margins from BPD05054, but I've chosen 0.4 in for the bottom margin
-	  instead of 0.57 in as listed there because it looks to me like the
-	  colour bottom. Compare with the DJ 500. */
+          instead of 0.57 in as listed there because it looks to me like the
+          colour bottom. Compare with the DJ 500. */
       0.75*BP_PER_IN, 0.4*BP_PER_IN, 0.75*BP_PER_IN, 0.1*BP_PER_IN},
     {ms_none}
   },
   common_sizes[] = { /* DJs 510, 520, 550C und 560C for printing in black */
     /*  The data are from the TRG500 p. 1-19 except for envelopes which are
-	supported according to p. 3-2 and where I took the margins from
-	BPD05054. The values listed in both documents agree.
-	For colour, the bottom margin must be increased by 0.13 inches.
-	Order of margins: left, bottom, right, top. */
+        supported according to p. 3-2 and where I took the margins from
+        BPD05054. The values listed in both documents agree.
+        For colour, the bottom margin must be increased by 0.13 inches.
+        Order of margins: left, bottom, right, top. */
     {ms_Letter,
       0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
     {ms_Legal,
@@ -198,10 +198,10 @@ static const eprn_PageDescription
   },
   hpdj540_sizes[] = {
     /*  The data are from the TRG500 pp. 1-20 and 1-21 except that I have used
-	a top margin of 0.04 inch from the DG instead of zero from the TRG500.
-	Taking into account that the bottom margin is larger by 0.13 inches in
-	colour, the resulting data agree with those in the DG, pp. 65-66.
-	Order of margins: left, bottom, right, top. */
+        a top margin of 0.04 inch from the DG instead of zero from the TRG500.
+        Taking into account that the bottom margin is larger by 0.13 inches in
+        colour, the resulting data agree with those in the DG, pp. 65-66.
+        Order of margins: left, bottom, right, top. */
     {ms_Executive,
       0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
     {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
@@ -226,13 +226,13 @@ static const eprn_PageDescription
   },
   hpdj660c_sizes[] = {
     /*  These are taken from "HP DeskJet 660C Printer - Printable Regions",
-	BPD02519, 1996 (obtained in March 1997), except that I've again
-	increased the top margin from zero to 0.04 inches following BPD05054
-	and DG pp. 69-70. These are the values for printing in black from DOS.
-	Colour printing increases the bottom margin by 0.13 inch. Adding this
-	value reproduces the data from BPD05054 and the DG. This is, however, a
-	contradiction with DG because BPD02519 gives different values for
-	printing from Windows.
+        BPD02519, 1996 (obtained in March 1997), except that I've again
+        increased the top margin from zero to 0.04 inches following BPD05054
+        and DG pp. 69-70. These are the values for printing in black from DOS.
+        Colour printing increases the bottom margin by 0.13 inch. Adding this
+        value reproduces the data from BPD05054 and the DG. This is, however, a
+        contradiction with DG because BPD02519 gives different values for
+        printing from Windows.
     */
     {ms_Letter,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
     {ms_Legal,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
@@ -242,10 +242,10 @@ static const eprn_PageDescription
     {ms_A5,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
     {ms_JISB5,	0.17*BP_PER_IN, 0.46*BP_PER_IN, 0.17*BP_PER_IN, 0.04*BP_PER_IN},
      /* The bottom margin for JISB5 is given with large differences. BPD02519
-	specifies it as 0.46 in for black from DOS, 0.59 in DOS/colour (agreeing
-	with +0.13 in for 'bottom_increment') and the same for Windows black or
-	colour. BPD05054 gives 0.84 in without distinguishing between black and
-	colour, and the DG gives 0.59 in. */
+        specifies it as 0.46 in for black from DOS, 0.59 in DOS/colour (agreeing
+        with +0.13 in for 'bottom_increment') and the same for Windows black or
+        colour. BPD05054 gives 0.84 in without distinguishing between black and
+        colour, and the DG gives 0.59 in. */
     {ms_Env10,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
       /* given in landscape by HP */
     {ms_EnvDL,	0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
@@ -263,7 +263,7 @@ static const eprn_PageDescription
     {ms_EnvUS_A2,
       0.13*BP_PER_IN, 0.71*BP_PER_IN, 0.13*BP_PER_IN, 0.04*BP_PER_IN},
        /* Supported (BPD02925, BPD05054, DG), margins from BPD05054 agreeing
-	  with DG p. 70 */
+          with DG p. 70 */
     {ms_none}
   },
   hpdj680c_sizes[] = {
@@ -347,11 +347,11 @@ static const eprn_PageDescription
       The manual agrees with "HP DeskJet 850C and 855C Printer -- Printable
       Regions" (BPD02523), HP FIRST #: 2789, 1995-09-05, and the newer
       "HP DeskJet 855C, 850C, 870C and 890C Series Printers -- Printable Areas"
-	(BPD02523), effective date 1996-06-06.
+        (BPD02523), effective date 1996-06-06.
       There are some minor deviations in the DG, pp. 81-82, which I have
       partially adopted.
       First some shorthand notation for margin types. The order is:
-	left, bottom, right, top.
+        left, bottom, right, top.
     */
 #define type1	6.4*BP_PER_MM, 11.7*BP_PER_MM, 6.4*BP_PER_MM, 1.0*BP_PER_MM
 #define type2	3.4*BP_PER_MM, 11.7*BP_PER_MM, 3.4*BP_PER_MM, 1.0*BP_PER_MM
@@ -365,11 +365,11 @@ static const eprn_PageDescription
     {ms_A5,		type2},	/* also BPD05054. DG: type4 */
     {ms_JISB5,		type4},	/* from DG */
      /* The German handbook as well as BPD02523 and BPD05054 state that this
-	should be type3. This is however demonstrably wrong for the DJ 850C.
-	Besides I can't see why the top margin should be so much larger for
-	JIS B5 than for the other sizes. 'type4' agrees fairly well with what
-	I've measured on a DJ 850C. In particular the right and bottom clipping
-	margins are definitely close to 3 and 11.5 mm, respectively.
+        should be type3. This is however demonstrably wrong for the DJ 850C.
+        Besides I can't see why the top margin should be so much larger for
+        JIS B5 than for the other sizes. 'type4' agrees fairly well with what
+        I've measured on a DJ 850C. In particular the right and bottom clipping
+        margins are definitely close to 3 and 11.5 mm, respectively.
       */
     {ms_Index4x6in,	type4},
     {ms_Index5x8in,	type4},
@@ -379,11 +379,11 @@ static const eprn_PageDescription
     {ms_EnvDL,		type5},
     {ms_EnvC6,		type5},
     /*	BPD02926 claims that the series-800 DeskJets support also US A2 envelope
-	size (ms_EnvUS_A2). I've experimented with a DeskJet 850C and I don't
-	believe it: when sent this page size code, the printer establishes
-	clipping regions which agree with those for US Letter size. This
-	indicates that the PCL interpreter has not recognized the page size code
-	and has therefore switched to the default size. */
+        size (ms_EnvUS_A2). I've experimented with a DeskJet 850C and I don't
+        believe it: when sent this page size code, the printer establishes
+        clipping regions which agree with those for US Letter size. This
+        indicates that the PCL interpreter has not recognized the page size code
+        and has therefore switched to the default size. */
     {ms_none}
 #undef type1
 /* type2 will be needed in a moment */
@@ -395,64 +395,64 @@ static const eprn_PageDescription
    /* These values are from DJ1120C, pp. 11-12, and from BPD05567. I don't
       consider them particularly trustworthy. */
     {ms_Executive,	0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
     {ms_Letter,		0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
     {ms_Legal,		0.25*BP_PER_IN, 0.46*BP_PER_IN, 0.25*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
     {ms_Tabloid,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
     {ms_Statement,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},	/* Not in BPD05567. */
+                        0.12*BP_PER_IN},	/* Not in BPD05567. */
     {ms_HPSuperB,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
     {ms_A6,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},	/* Not in BPD05567. */
+                        0.12*BP_PER_IN},	/* Not in BPD05567. */
     {ms_A5,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_A4,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.13 in, 0.46 in, 0.13 in, 0.12 in. */
     {ms_A3,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},	/* Only in BPD05567. */
+                        0.12*BP_PER_IN},	/* Only in BPD05567. */
     {ms_JISB5,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_JISB4,		0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},	/* Not in BPD05567. */
+                        0.12*BP_PER_IN},	/* Not in BPD05567. */
     {ms_Postcard,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_A6 | PCL_CARD_FLAG, 0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_Index4x6in,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_Index5x8in,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_Env10,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvDL,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvC6,		0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvUS_A2,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvChou3,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvChou4,	0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN,
-			0.12*BP_PER_IN},
+                        0.12*BP_PER_IN},
       /* BPD05567: 0.12 in, 0.46 in, 0.12 in, 0.12 in. */
     {ms_EnvKaku2,	0.20*BP_PER_IN, 0.46*BP_PER_IN, 0.20*BP_PER_IN,
-			0.12*BP_PER_IN},	/* Not in BPD05567. */
+                        0.12*BP_PER_IN},	/* Not in BPD05567. */
     /* Banners are listed only in BPD05567: */
     {ms_Letter | MS_BIG_FLAG,
       0.25*BP_PER_IN, 0, 0.25*BP_PER_IN, 0.04*BP_PER_IN},
@@ -507,14 +507,14 @@ static const eprn_CustomPageDescription
   },
   hpdj850c_custom_sizes[] = {
     { /*
-	The following values have been taken from the German DeskJet 850C
-	manual, "HP DeskJet 850C Handbuch", C2145-90248, 3/95.
-	They agree with the values given in the newer version of BPD02523 for
-	the DeskJets 850C, 855C, 870C and 890C except that the left and right
-	margins are stated to be 3.44 mm instead of 3.4 mm. This is almost
-	certainly a misprint because the accompanying value in inches is
-	identical (0.13 in, i.e. 3.30 mm), and specifying the margins to a
-	hundredth of a millimetre is ridiculous.
+        The following values have been taken from the German DeskJet 850C
+        manual, "HP DeskJet 850C Handbuch", C2145-90248, 3/95.
+        They agree with the values given in the newer version of BPD02523 for
+        the DeskJets 850C, 855C, 870C and 890C except that the left and right
+        margins are stated to be 3.44 mm instead of 3.4 mm. This is almost
+        certainly a misprint because the accompanying value in inches is
+        identical (0.13 in, i.e. 3.30 mm), and specifying the margins to a
+        hundredth of a millimetre is ridiculous.
       */
       ms_CustomPageSize,
       type2,
@@ -524,7 +524,7 @@ static const eprn_CustomPageDescription
   },
   hpdj1120c_custom_sizes[] = {
     {  /* Taken from DJ1120C pp. 10 and 12. The minimum sizes are guessed
-	  (smallest supported discrete dimensions) */
+          (smallest supported discrete dimensions) */
       ms_CustomPageSize,
       0.125*BP_PER_IN, 0.46*BP_PER_IN, 0.125*BP_PER_IN, 0.12*BP_PER_IN,
       90*BP_PER_MM, 13*BP_PER_IN, 146*BP_PER_MM, 19*BP_PER_IN,
@@ -562,8 +562,8 @@ static const eprn_Resolution
   basic_resolutions[] = {
     { 75, 75 }, { 100, 100 }, { 150, 150 }, { 300, 300 }, { 0, 0 }
      /* This is the list of resolutions supported by the series 300, 400 and
-	500 DeskJets (except the DJ 540) in black and colour and by the series
-	600 and 800 DeskJets (except the DJs 85xC) in colour. */
+        500 DeskJets (except the DJ 540) in black and colour and by the series
+        600 and 800 DeskJets (except the DJs 85xC) in colour. */
   },
   basic_without_100[] = {
     { 75, 75 }, { 150, 150 }, { 300, 300 }, { 0, 0 }
@@ -721,12 +721,12 @@ const pcl_PrinterDescription pcl3_printers[] = {
   { HPDJPortable, pcl_level_3plus_S5,
     { "HP DeskJet Portable", hpdj3xx_sizes, NULL, 0.0, ci_old_mono } },
      /* DJ3/4 p. 2: This printer behaves as the 550C without the colour
-	cartridge. */
+        cartridge. */
   { HPDJ310, pcl_level_3plus_S5,
     { "HP DeskJet 310", hpdj3xx_sizes, NULL, 50*BP_PER_DOT, ci_hpdj500c } },
      /* DJ3/4 p. 3: The 3xx DeskJets with the black cartridge installed behave
-	identically to the DJ Portable, with the colour cartridge they can be
-	treated as the DJ 500C. */
+        identically to the DJ Portable, with the colour cartridge they can be
+        treated as the DJ 500C. */
   { HPDJ320, pcl_level_3plus_S5,
     { "HP DeskJet 320", hpdj3xx_sizes, NULL, 50*BP_PER_DOT, ci_hpdj500c } },
   { HPDJ340, pcl_level_3plus_S5,
@@ -850,15 +850,15 @@ void pcl3_fill_defaults(pcl_Printer printer, pcl_FileData *data)
       /*FALLTHROUGH*/
     case HPDJ500:
        /* The DJ 500 does not support method 9 but it does support method 3
-	  (TRG500). I am guessing that the same is true for the HP DeskJet and
-	  the HP DeskJet Plus. */
+          (TRG500). I am guessing that the same is true for the HP DeskJet and
+          the HP DeskJet Plus. */
       data->compression = pcl_cm_delta;
       break;
     case pcl3_generic_old:
       /*FALLTHROUGH*/
     case pcl3_generic_new:
        /* All HP drivers I have seen use method 2 when writing a PCL file to
-	  disk. Presumably, this is the most portable compression method. */
+          disk. Presumably, this is the most portable compression method. */
       data->compression = pcl_cm_tiff;
       break;
     default:

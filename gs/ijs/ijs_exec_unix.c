@@ -29,8 +29,8 @@
 #include "ijs.h"
 #include "ijs_client.h"
 
-int 
-ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from, 
+int
+ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from,
     int *pchild_pid)
 {
   int fds_to[2], fds_from[2];
@@ -77,7 +77,7 @@ ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from,
       argv[i++] = NULL;
       status = execvp (argv[0], argv);
       if (status < 0)
-	exit (1);
+        exit (1);
     }
 
   /* Ignore SIGPIPE signals. This is the behaviour you'll want most of
@@ -90,7 +90,7 @@ ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from,
 
 #ifdef VERBOSE
   fprintf (stderr, "child_pid = %d; %d %d\n",
-	   child_pid, fds_to[0], fds_from[1]);
+           child_pid, fds_to[0], fds_from[1]);
 #endif
   close (fds_to[0]);
   close (fds_from[1]);
@@ -101,4 +101,3 @@ ijs_exec_server(const char *server_cmd, int *pfd_to, int *pfd_from,
 
   return 0;
 }
-

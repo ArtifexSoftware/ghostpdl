@@ -1,6 +1,6 @@
 /* Copyright (C) 2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,7 +30,6 @@ typedef struct {
     unsigned char stuff[sizeof(jmp_buf) + gsfix_jmp_buf_align];
 } gsfix_jmp_buf;
 
-
 /* This could be moved into a function, but it's fairly harmless as a macro. */
 #define find_jmp_buf(gsfjb) 				\
   (*(jmp_buf *)(					\
@@ -39,4 +38,3 @@ typedef struct {
   ))
 
 #endif /* setjmp_INCLUDED */
-

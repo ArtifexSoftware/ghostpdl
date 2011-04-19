@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,7 +51,7 @@
  * All device_specific_operations are identified by a unique dev_spec_op
  * key, listed in the enumeration below. To add a new one, simply extend the
  * enumeration.
- * 
+ *
  * The generic call to a dev_spec_op function is as follows:
  *
  * int dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size);
@@ -110,7 +110,7 @@
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.
-     * (i.e. do not use:  gxdso_foo = 256,  or similar below). The individual 
+     * (i.e. do not use:  gxdso_foo = 256,  or similar below). The individual
      * values may change on any compile.)
      */
 

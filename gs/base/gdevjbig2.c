@@ -19,7 +19,6 @@
 #include "strimpl.h"
 #include "sjbig2_luratech.h"
 
-
 /* Structure for the JBIG2-writing device. */
 typedef struct gx_device_jbig2_s {
     gx_device_common;
@@ -45,11 +44,10 @@ static dev_proc_print_page(jbig2_print_page);
 
 const gx_device_printer gs_gdevjbig2_device =
 prn_device(prn_std_procs, "jbig2",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,	/* resolution */
-	0, 0, 0, 0,	/* margins */
-	1, jbig2_print_page);
-
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,	/* resolution */
+        0, 0, 0, 0,	/* margins */
+        1, jbig2_print_page);
 
 /* Send the page to the file. */
 static int
@@ -69,46 +67,46 @@ jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream fstrm, cstrm;
 
     if (in == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto fail;
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
     }
     /* Create the jbig2encode state. */
     s_init_state((stream_state *)&state, &s_jbig2encode_template, 0);
     if (state.template->set_defaults)
-	(*state.template->set_defaults) ((stream_state *) & state);
+        (*state.template->set_defaults) ((stream_state *) & state);
     state.width = jdev->width;
     state.height = jdev->height;
     /* Set up the streams. */
     fbuf_size = max(512 /* arbitrary */ , state.template->min_out_size);
     jbuf_size = state.template->min_in_size;
     if ((fbuf = gs_alloc_bytes(mem, fbuf_size, "jbig2_print_page(fbuf)")) == 0 ||
-	(jbuf = gs_alloc_bytes(mem, jbuf_size, "jbig2_print_page(jbuf)")) == 0
-	) {
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        (jbuf = gs_alloc_bytes(mem, jbuf_size, "jbig2_print_page(jbuf)")) == 0
+        ) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
     s_init(&fstrm, mem);
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);
     s_init(&cstrm, mem);
     s_std_init(&cstrm, jbuf, jbuf_size, &s_filter_write_procs,
-	       s_mode_write);
+               s_mode_write);
     cstrm.state = (stream_state *) & state;
     cstrm.procs.process = state.template->process;
     cstrm.strm = &fstrm;
     if (state.template->init)
-	(*state.template->init) (cstrm.state);
+        (*state.template->init) (cstrm.state);
 
     /* Copy the data to the output. */
     for (lnum = 0; lnum < jdev->height; ++lnum) {
-	byte *data;
-	uint ignore_used;
+        byte *data;
+        uint ignore_used;
 
         if (cstrm.end_status) {
-	    code = gs_note_error(gs_error_ioerror);
+            code = gs_note_error(gs_error_ioerror);
             goto done;
         }
-	gdev_prn_get_bits(pdev, lnum, in, &data);
-	sputs(&cstrm, data, state.stride, &ignore_used);
+        gdev_prn_get_bits(pdev, lnum, in, &data);
+        sputs(&cstrm, data, state.stride, &ignore_used);
     }
 
     /* Wrap up. */

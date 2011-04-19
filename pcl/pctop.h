@@ -19,5 +19,4 @@
 
 pcl_state_t * pcl_get_gstate(pl_interp_instance_t *instance);
 
-
 #endif				/* pctop_INCLUDED */

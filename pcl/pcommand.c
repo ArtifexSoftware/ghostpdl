@@ -57,7 +57,6 @@ float_value(
                                 : (float)int_value(pv) );
 }
 
-
 /*
  * "put" parameters to the device.
  */

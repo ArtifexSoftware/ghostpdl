@@ -127,4 +127,3 @@ int gslt_render_font_glyph(gs_state *pgs, gslt_font_t *font, gs_matrix *tm, int 
  * Return -1 on failure.
  */
 int gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *font, int gid, gslt_glyph_metrics_t *mtx);
-

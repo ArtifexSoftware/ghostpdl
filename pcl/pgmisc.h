@@ -33,8 +33,8 @@ int32 hpgl_get_character_edge_pen(hpgl_state_t *pgls);
 #ifdef DEBUG
 
 void hpgl_error(void);
-int hpgl_print_error(const gs_memory_t *mem, 
-		     const char *function, const char *file, int line, int code);
+int hpgl_print_error(const gs_memory_t *mem,
+                     const char *function, const char *file, int line, int code);
 
 # ifdef __GNUC__
 #  define hpgl_call_note_error(mem, code)\

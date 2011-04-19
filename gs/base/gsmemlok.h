@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,9 +38,9 @@ typedef struct gs_memory_locked_s {
 
 /* Initialize a locked memory manager. */
 int gs_memory_locked_init(
-			  gs_memory_locked_t * lmem,	/* allocator to init */
-			  gs_memory_t * target	/* allocator to monitor lock */
-			  );
+                          gs_memory_locked_t * lmem,	/* allocator to init */
+                          gs_memory_t * target	/* allocator to monitor lock */
+                          );
 
 /* Release a locked memory manager. */
 /* Note that this has no effect on the target. */

@@ -468,13 +468,13 @@ zstatus(i_ctx_t *i_ctx_p)
                 struct stat fstat;
                 int code = parse_file_name(op, &pname,
                                            i_ctx_p->LockFilePermissions, imemory);
-		if (code < 0) {
-		    if (code == e_undefinedfilename) {
+                if (code < 0) {
+                    if (code == e_undefinedfilename) {
                         make_bool(op, 0);
                         code = 0;
-		    }
+                    }
                     return code;
-		}
+                }
                 code = gs_terminate_file_name(&pname, imemory, "status");
                 if (code < 0)
                     return code;
@@ -892,7 +892,6 @@ check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
         return_error(e_invalidfileaccess);
     return 0;
 }
-
 
 /* return zero for success, -ve for error, +1 for continue */
 static int

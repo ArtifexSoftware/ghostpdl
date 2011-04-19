@@ -433,7 +433,6 @@ gx_end_transparency_group(gs_imager_state * pis, gx_device * pdev)
         return 0;
 }
 
-
 /* Commands for handling q softmask Q in graphic states */
 
 int

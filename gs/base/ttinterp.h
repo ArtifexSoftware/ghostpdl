@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -52,19 +52,17 @@
 #include "ttcommon.h"
 #include "ttobjs.h"
 
-
 #ifdef __cplusplus
   extern "C" {
 #endif
-  
+
   /* Run instructions in current execution context */
   TT_Error  RunIns( PExecution_Context  exc );
- 
+
 #ifdef __cplusplus
   }
 #endif
 
 #endif /* TTINTERP_H */
-
 
 /* END */

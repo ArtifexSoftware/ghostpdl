@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -83,8 +83,8 @@ static const gs_memory_procs_t locked_procs =
 /* Initialize a gs_memory_locked_t */
 int				/* -ve error code or 0 */
 gs_memory_locked_init(
-		      gs_memory_locked_t * lmem,	/* allocator to init */
-		      gs_memory_t * target	/* allocator to monitor lock */
+                      gs_memory_locked_t * lmem,	/* allocator to init */
+                      gs_memory_t * target	/* allocator to monitor lock */
 )
 {
     lmem->stable_memory = 0;
@@ -92,7 +92,7 @@ gs_memory_locked_init(
     lmem->target = target;
     lmem->gs_lib_ctx = target->gs_lib_ctx;
     lmem->non_gc_memory = (gs_memory_t *)lmem;		/* WRONG: THIS IS QUESTIONABLE since this will not */
-							/* be non_gc_memory if the target was a GC memory  */
+                                                        /* be non_gc_memory if the target was a GC memory  */
     lmem->thread_safe_memory = (gs_memory_t *)lmem;	/* this allocator is thread safe */
 
     /* Allocate a monitor to serialize access to structures within */
@@ -106,7 +106,7 @@ void
 gs_memory_locked_release(gs_memory_locked_t *lmem)
 {
     gs_memory_free_all((gs_memory_t *)lmem, FREE_ALL_STRUCTURES,
-		       "gs_memory_locked_release");
+                       "gs_memory_locked_release");
     gx_monitor_free(lmem->monitor);
 }
 
@@ -127,20 +127,20 @@ gs_memory_locked_target(const gs_memory_locked_t *lmem)
  */
 
 #define DO_MONITORED(call_target)\
-	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
+        gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 \
-	gx_monitor_enter(lmem->monitor);\
-	call_target;\
-	gx_monitor_leave(lmem->monitor)
+        gx_monitor_enter(lmem->monitor);\
+        call_target;\
+        gx_monitor_leave(lmem->monitor)
 
 #define RETURN_MONITORED(result_type, call_target)\
-	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
-	result_type temp;\
+        gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
+        result_type temp;\
 \
-	gx_monitor_enter(lmem->monitor);\
-	temp = call_target;\
-	gx_monitor_leave(lmem->monitor);\
-	return temp
+        gx_monitor_enter(lmem->monitor);\
+        temp = call_target;\
+        gx_monitor_leave(lmem->monitor);\
+        return temp
 
 /* Procedures */
 static void
@@ -151,229 +151,229 @@ gs_locked_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
     /* Only free the structures and the allocator itself. */
     if (mem->stable_memory) {
-	if (mem->stable_memory != mem)
-	    gs_memory_free_all(mem->stable_memory, free_mask, cname);
-	if (free_mask & FREE_ALL_ALLOCATOR)
-	    mem->stable_memory = 0;
+        if (mem->stable_memory != mem)
+            gs_memory_free_all(mem->stable_memory, free_mask, cname);
+        if (free_mask & FREE_ALL_ALLOCATOR)
+            mem->stable_memory = 0;
     }
     if (free_mask & FREE_ALL_STRUCTURES) {
-	/*
-	 * Check for monitor == 0, in case this is called after a
-	 * failure during initialization.
-	 */
-	if (lmem->monitor)
-	    gx_monitor_free(lmem->monitor);
-	lmem->monitor = 0;
-	lmem->target = 0;
+        /*
+         * Check for monitor == 0, in case this is called after a
+         * failure during initialization.
+         */
+        if (lmem->monitor)
+            gx_monitor_free(lmem->monitor);
+        lmem->monitor = 0;
+        lmem->target = 0;
     }
     if (free_mask & FREE_ALL_ALLOCATOR)
-	gs_free_object(target, lmem, cname);
+        gs_free_object(target, lmem, cname);
 }
 static void
 gs_locked_consolidate_free(gs_memory_t * mem)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.consolidate_free)(lmem->target)
-		 );
+                 (*lmem->target->procs.consolidate_free)(lmem->target)
+                 );
 }
 static byte *
 gs_locked_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_bytes)
-		       (lmem->target, size, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_bytes)
+                       (lmem->target, size, cname)
+                     );
 }
 static byte *
 gs_locked_alloc_bytes_immovable(gs_memory_t * mem, uint size,
-				client_name_t cname)
+                                client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_bytes_immovable)
-		       (lmem->target, size, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_bytes_immovable)
+                       (lmem->target, size, cname)
+                     );
 }
 static void *
 gs_locked_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-		       client_name_t cname)
+                       client_name_t cname)
 {
     RETURN_MONITORED(
-		     void *,
-		     (*lmem->target->procs.alloc_struct)
-		       (lmem->target, pstype, cname)
-		     );
+                     void *,
+                     (*lmem->target->procs.alloc_struct)
+                       (lmem->target, pstype, cname)
+                     );
 }
 static void *
 gs_locked_alloc_struct_immovable(gs_memory_t * mem,
-			   gs_memory_type_ptr_t pstype, client_name_t cname)
+                           gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     RETURN_MONITORED(
-		     void *,
-		     (*lmem->target->procs.alloc_struct_immovable)
-		       (lmem->target, pstype, cname)
-		     );
+                     void *,
+                     (*lmem->target->procs.alloc_struct_immovable)
+                       (lmem->target, pstype, cname)
+                     );
 }
 static byte *
 gs_locked_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
-			   client_name_t cname)
+                           client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_byte_array)
-		       (lmem->target, num_elements, elt_size, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_byte_array)
+                       (lmem->target, num_elements, elt_size, cname)
+                     );
 }
 static byte *
 gs_locked_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
-				     uint elt_size, client_name_t cname)
+                                     uint elt_size, client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_byte_array_immovable)
-		       (lmem->target, num_elements, elt_size, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_byte_array_immovable)
+                       (lmem->target, num_elements, elt_size, cname)
+                     );
 }
 static void *
 gs_locked_alloc_struct_array(gs_memory_t * mem, uint num_elements,
-			   gs_memory_type_ptr_t pstype, client_name_t cname)
+                           gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     RETURN_MONITORED(
-		     void *,
-		     (*lmem->target->procs.alloc_struct_array)
-		       (lmem->target, num_elements, pstype, cname)
-		     );
+                     void *,
+                     (*lmem->target->procs.alloc_struct_array)
+                       (lmem->target, num_elements, pstype, cname)
+                     );
 }
 static void *
 gs_locked_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
-			   gs_memory_type_ptr_t pstype, client_name_t cname)
+                           gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     RETURN_MONITORED(
-		     void *,
-		     (*lmem->target->procs.alloc_struct_array_immovable)
-		       (lmem->target, num_elements, pstype, cname)
-		     );
+                     void *,
+                     (*lmem->target->procs.alloc_struct_array_immovable)
+                       (lmem->target, num_elements, pstype, cname)
+                     );
 }
 static void *
 gs_locked_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
-			client_name_t cname)
+                        client_name_t cname)
 {
     RETURN_MONITORED(
-		     void *,
-		     (*lmem->target->procs.resize_object)
-		       (lmem->target, obj, new_num_elements, cname)
-		     );
+                     void *,
+                     (*lmem->target->procs.resize_object)
+                       (lmem->target, obj, new_num_elements, cname)
+                     );
 }
 static uint
 gs_locked_object_size(gs_memory_t * mem, const void *ptr)
 {
     RETURN_MONITORED(
-		     uint,
-		     (*lmem->target->procs.object_size)
-		       (lmem->target, ptr)
-		     );
+                     uint,
+                     (*lmem->target->procs.object_size)
+                       (lmem->target, ptr)
+                     );
 }
 static gs_memory_type_ptr_t
 gs_locked_object_type(const gs_memory_t * mem, const void *ptr)
 {
     RETURN_MONITORED(
-		     gs_memory_type_ptr_t,
-		     (*lmem->target->procs.object_type)
-		       (lmem->target, ptr)
-		     );
+                     gs_memory_type_ptr_t,
+                     (*lmem->target->procs.object_type)
+                       (lmem->target, ptr)
+                     );
 }
 static void
 gs_locked_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.free_object)
-	           (lmem->target, ptr, cname)
-		 );
+                 (*lmem->target->procs.free_object)
+                   (lmem->target, ptr, cname)
+                 );
 }
 static byte *
 gs_locked_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_string)
-		       (lmem->target, nbytes, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_string)
+                       (lmem->target, nbytes, cname)
+                     );
 }
 static byte *
 gs_locked_alloc_string_immovable(gs_memory_t * mem, uint nbytes,
-				 client_name_t cname)
+                                 client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.alloc_string_immovable)
-		       (lmem->target, nbytes, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.alloc_string_immovable)
+                       (lmem->target, nbytes, cname)
+                     );
 }
 static byte *
 gs_locked_resize_string(gs_memory_t * mem, byte * data, uint old_num,
-			uint new_num,
-			client_name_t cname)
+                        uint new_num,
+                        client_name_t cname)
 {
     RETURN_MONITORED(
-		     byte *,
-		     (*lmem->target->procs.resize_string)
-		       (lmem->target, data, old_num, new_num, cname)
-		     );
+                     byte *,
+                     (*lmem->target->procs.resize_string)
+                       (lmem->target, data, old_num, new_num, cname)
+                     );
 }
 static void
 gs_locked_free_string(gs_memory_t * mem, byte * data, uint nbytes,
-		      client_name_t cname)
+                      client_name_t cname)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.free_string)
-		   (lmem->target, data, nbytes, cname)
-		 );
+                 (*lmem->target->procs.free_string)
+                   (lmem->target, data, nbytes, cname)
+                 );
 }
 static int
 gs_locked_register_root(gs_memory_t * mem, gs_gc_root_t * rp,
-			gs_ptr_type_t ptype, void **up, client_name_t cname)
+                        gs_ptr_type_t ptype, void **up, client_name_t cname)
 {
     RETURN_MONITORED(
-		     int,
-		     (*lmem->target->procs.register_root)
-		       (lmem->target, rp, ptype, up, cname)
-		     );
+                     int,
+                     (*lmem->target->procs.register_root)
+                       (lmem->target, rp, ptype, up, cname)
+                     );
 }
 static void
 gs_locked_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp,
-			  client_name_t cname)
+                          client_name_t cname)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.unregister_root)
-		   (lmem->target, rp, cname)
-		 );
+                 (*lmem->target->procs.unregister_root)
+                   (lmem->target, rp, cname)
+                 );
 }
 static gs_memory_t *
 gs_locked_stable(gs_memory_t * mem)
 {
     if (!mem->stable_memory) {
-	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;
-	gs_memory_t *stable;
+        gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;
+        gs_memory_t *stable;
 
-	gx_monitor_enter(lmem->monitor);
-	stable = gs_memory_stable(lmem->target);
-	if (stable == lmem->target)
-	    mem->stable_memory = mem;
-	else {
-	    gs_memory_locked_t *locked_stable = (gs_memory_locked_t *)
-		gs_alloc_bytes(stable, sizeof(*lmem), "gs_locked_stable");
+        gx_monitor_enter(lmem->monitor);
+        stable = gs_memory_stable(lmem->target);
+        if (stable == lmem->target)
+            mem->stable_memory = mem;
+        else {
+            gs_memory_locked_t *locked_stable = (gs_memory_locked_t *)
+                gs_alloc_bytes(stable, sizeof(*lmem), "gs_locked_stable");
 
-	    if (locked_stable) {
-		int code = gs_memory_locked_init(locked_stable, stable);
+            if (locked_stable) {
+                int code = gs_memory_locked_init(locked_stable, stable);
 
-		if (code < 0)
-		    gs_free_object(stable, locked_stable, "gs_locked_stable");
-		else
-		    mem->stable_memory = (gs_memory_t *)locked_stable;
-	    }
-	}
-	gx_monitor_leave(lmem->monitor);
+                if (code < 0)
+                    gs_free_object(stable, locked_stable, "gs_locked_stable");
+                else
+                    mem->stable_memory = (gs_memory_t *)locked_stable;
+            }
+        }
+        gx_monitor_leave(lmem->monitor);
     }
     return mem->stable_memory;
 }
@@ -381,14 +381,14 @@ static void
 gs_locked_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.status)(lmem->target, pstat)
-		 );
+                 (*lmem->target->procs.status)(lmem->target, pstat)
+                 );
     pstat->is_thread_safe = true;	/* the monitor (mutex) makes this thread safe */
 }
 static void
 gs_locked_enable_free(gs_memory_t * mem, bool enable)
 {
     DO_MONITORED(
-		 (*lmem->target->procs.enable_free)(lmem->target, enable)
-		 );
+                 (*lmem->target->procs.enable_free)(lmem->target, enable)
+                 );
 }

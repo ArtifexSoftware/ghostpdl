@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,11 +32,11 @@ typedef ulong gs_char;
  * Define a character glyph code, a.k.a. character name.  The space of
  * glyph codes is divided into five sections:
  *
- *	- Codes >= GS_MIN_GLYPH_INDEX represent (non-negative) 
+ *	- Codes >= GS_MIN_GLYPH_INDEX represent (non-negative)
  *	  integers biased by GS_MIN_CID_GLYPH.  They represent glyph indices
  *	  of a specific font.
  *
- *	- Codes within [GS_MIN_CID_GLYPH, GS_MIN_GLYPH_INDEX) represent (non-negative) 
+ *	- Codes within [GS_MIN_CID_GLYPH, GS_MIN_GLYPH_INDEX) represent (non-negative)
  *	  integers biased by GS_MIN_CID_GLYPH.  They represent PostScript CIDs
  *        of a specific Ordering.
  *
@@ -92,7 +92,7 @@ typedef bool (*gs_glyph_mark_proc_t)(const gs_memory_t *mem, gs_glyph glyph, voi
 /* Define the indices for known encodings. */
 typedef enum {
     ENCODING_INDEX_UNKNOWN = -1,
-	/* Real encodings.  These must come first. */
+        /* Real encodings.  These must come first. */
     ENCODING_INDEX_STANDARD = 0,
     ENCODING_INDEX_ISOLATIN1,
     ENCODING_INDEX_SYMBOL,
@@ -101,7 +101,7 @@ typedef enum {
     ENCODING_INDEX_MACROMAN,
     ENCODING_INDEX_MACEXPERT,
 #define NUM_KNOWN_REAL_ENCODINGS 7
-	/* Pseudo-encodings (glyph sets). */
+        /* Pseudo-encodings (glyph sets). */
     ENCODING_INDEX_MACGLYPH,	/* Mac glyphs */
     ENCODING_INDEX_ALOGLYPH,	/* Adobe Latin glyph set */
     ENCODING_INDEX_ALXGLYPH,	/* Adobe Latin Extended glyph set */
@@ -131,8 +131,8 @@ typedef enum gs_glyph_space_s {
  * currently used only for CMaps: it is *not* the same as the glyph_name
  * procedure in fonts.
  */
-typedef int (*gs_glyph_name_proc_t)(const gs_memory_t *mem, 
-				    gs_glyph glyph, gs_const_string *pstr,
-				    void *proc_data);
+typedef int (*gs_glyph_name_proc_t)(const gs_memory_t *mem,
+                                    gs_glyph glyph, gs_const_string *pstr,
+                                    void *proc_data);
 
 #endif /* gsccode_INCLUDED */

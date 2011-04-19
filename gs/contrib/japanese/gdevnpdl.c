@@ -25,7 +25,7 @@
  * language printers such as NEC MultiWriter series.
  *
  * Any test reports, comments, suggestions, and bug reports are welcome.
- * 
+ *
  *  -- Osamu Watanabe <owatanab@ceres.dti.ne.jp>
  *
  * $Id: gdevnpdl.c,v 1.10 1998/09/28 16:20:04 watanabe Exp $
@@ -120,15 +120,13 @@ static dev_proc_image_out(npdl_image_out);
 
 static gx_device_procs npdl_prn_procs =
 prn_params_procs(npdl_open, gdev_prn_output_page, npdl_close,
-		 lprn_get_params, npdl_put_params);
+                 lprn_get_params, npdl_put_params);
 
 gx_device_lprn far_data gs_npdl_device =
 lprn_duplex_device(gx_device_lprn, npdl_prn_procs, "npdl",
-	    X_DPI, Y_DPI,	/* default resolution */
-	    0.0, 0.0, 0.0, 0.0,	/* margins */
-	    1, npdl_print_page_copies, npdl_image_out);
-
-
+            X_DPI, Y_DPI,	/* default resolution */
+            0.0, 0.0, 0.0, 0.0,	/* margins */
+            1, npdl_print_page_copies, npdl_image_out);
 
 /* ------ internal routines ------ */
 
@@ -235,26 +233,26 @@ mh_write_to_buffer(byte * out, int chunk_size, int num_bits, char *code)
 
     for (code_length = 0; code[code_length] != '\0'; code_length++);
     if (((num_bits + code_length) / 8) >= chunk_size)
-	return 0;
+        return 0;
 
     p = num_bits / 8;
     q = num_bits % 8;
     for (i = 0; i < code_length; i++) {
-	/*
-	 * MH compressed data are stored from 2^0 to 2^7,
-	 * whereas uncompressed data are stored from 2^7 to 2^0.
-	 */
-	if (code[i] == '0')
-	    out[p] &= ~(mask[7 - q]);
-	else
-	    out[p] |= mask[7 - q];
+        /*
+         * MH compressed data are stored from 2^0 to 2^7,
+         * whereas uncompressed data are stored from 2^7 to 2^0.
+         */
+        if (code[i] == '0')
+            out[p] &= ~(mask[7 - q]);
+        else
+            out[p] |= mask[7 - q];
 
-	if (q < 7)
-	    q++;
-	else {
-	    p++;
-	    q = 0;
-	}
+        if (q < 7)
+            q++;
+        else {
+            p++;
+            q = 0;
+        }
     }
 
     return code_length;
@@ -270,15 +268,15 @@ mh_set_runlength(byte * out, int chunk_size, int num_bits, int phase, int count)
 
     /* Set makeup code */
     if (count / 64 > 0) {
-	if ((n = mh_write_to_buffer(out, chunk_size, num_bits,
-				    makeup[phase][(count / 64) - 1])) == 0)
-	    return 0;
-	code_length += n;
+        if ((n = mh_write_to_buffer(out, chunk_size, num_bits,
+                                    makeup[phase][(count / 64) - 1])) == 0)
+            return 0;
+        code_length += n;
     }
     /* Set terminating code */
     if ((n = mh_write_to_buffer(out, chunk_size, num_bits + code_length,
-				terminating[phase][count % 64])) == 0)
-	return 0;
+                                terminating[phase][count % 64])) == 0)
+        return 0;
     code_length += n;
 
     return code_length;
@@ -302,19 +300,19 @@ mh_set_rtc(byte * out, int chunk_size, int num_bits)
     /* Set FILL bits */
     num_fills = (EOL_SIZE * 6 + (num_bits % 8)) % 8;
     if (num_fills != 0) {
-	for (i = 0; i < 8 - num_fills; i++) {
-	    if ((n = mh_write_to_buffer(out, chunk_size, num_bits + code_length,
-					fill)) == 0)
-		return 0;
-	    code_length += n;
-	}
+        for (i = 0; i < 8 - num_fills; i++) {
+            if ((n = mh_write_to_buffer(out, chunk_size, num_bits + code_length,
+                                        fill)) == 0)
+                return 0;
+            code_length += n;
+        }
     }
     /* Set RTC (that is, six EOL) code */
     for (i = 0; i < 6; i++) {
-	if ((n = mh_write_to_buffer(out, chunk_size, num_bits + code_length,
-				    eol)) == 0)
-	    return 0;
-	code_length += n;
+        if ((n = mh_write_to_buffer(out, chunk_size, num_bits + code_length,
+                                    eol)) == 0)
+            return 0;
+        code_length += n;
     }
 
     return code_length;
@@ -331,79 +329,79 @@ mh_compression(byte * in, byte * out, int line_size, int column_size)
 
     num_bits = 0;
     for (i = 0; i < column_size; i++) {
-	r = i * line_size;
+        r = i * line_size;
 
-	/* Synchronization of 1-dot line */
-	if ((n = mh_set_eol(out, chunk_size, num_bits)) == 0)
-	    return 0;
-	num_bits += n;
+        /* Synchronization of 1-dot line */
+        if ((n = mh_set_eol(out, chunk_size, num_bits)) == 0)
+            return 0;
+        num_bits += n;
 
-	/* Data compression of 1-dot line */
-	phase = count = 0;
-	for (p = 0; p < line_size; p++) {
-	    if (phase == 0)
-		src = ~(in[r + p]);
-	    else
-		src = in[r + p];
-	    for (q = 0; q < 8; q++) {
+        /* Data compression of 1-dot line */
+        phase = count = 0;
+        for (p = 0; p < line_size; p++) {
+            if (phase == 0)
+                src = ~(in[r + p]);
+            else
+                src = in[r + p];
+            for (q = 0; q < 8; q++) {
 
-		/*
-		 * If the dot has reversed, write the
-		 * run-length of the continuous dots.
-		 */
-		if (!(src & mask[q])) {
-		    if ((n = mh_set_runlength(out, chunk_size, num_bits,
-					      phase, count)) == 0)
-			return 0;
-		    num_bits += n;
-		    phase = (phase == 0) ? 1 : 0;
-		    count = 1;
-		    src = ~src;
-		}
-		/*
-		 * If the dot is not reversed, check the
-		 * length of this continuous dots,
-		 */
-		else {
-		    if (count < MAX_RUNLENGTH)
-			count++;
-		    /*
-		     * and if the length >= MAX_RUNLENGTH,
-		     * stop and restart counting.
-		     */
-		    else {
-			if ((n = mh_set_runlength(out, chunk_size, num_bits,
-						phase, MAX_RUNLENGTH)) == 0)
-			    return 0;
-			num_bits += n;
-			phase = (phase == 0) ? 1 : 0;
-			if ((n = mh_set_runlength(out, chunk_size, num_bits,
-						  phase, 0)) == 0)
-			    return 0;
-			num_bits += n;
-			phase = (phase == 0) ? 1 : 0;
-			count = 1;
-		    }
-		}
-	    }
-	}
+                /*
+                 * If the dot has reversed, write the
+                 * run-length of the continuous dots.
+                 */
+                if (!(src & mask[q])) {
+                    if ((n = mh_set_runlength(out, chunk_size, num_bits,
+                                              phase, count)) == 0)
+                        return 0;
+                    num_bits += n;
+                    phase = (phase == 0) ? 1 : 0;
+                    count = 1;
+                    src = ~src;
+                }
+                /*
+                 * If the dot is not reversed, check the
+                 * length of this continuous dots,
+                 */
+                else {
+                    if (count < MAX_RUNLENGTH)
+                        count++;
+                    /*
+                     * and if the length >= MAX_RUNLENGTH,
+                     * stop and restart counting.
+                     */
+                    else {
+                        if ((n = mh_set_runlength(out, chunk_size, num_bits,
+                                                phase, MAX_RUNLENGTH)) == 0)
+                            return 0;
+                        num_bits += n;
+                        phase = (phase == 0) ? 1 : 0;
+                        if ((n = mh_set_runlength(out, chunk_size, num_bits,
+                                                  phase, 0)) == 0)
+                            return 0;
+                        num_bits += n;
+                        phase = (phase == 0) ? 1 : 0;
+                        count = 1;
+                    }
+                }
+            }
+        }
 
-	/* Write the last run-length of 1-dot line */
-	if ((n = mh_set_runlength(out, chunk_size, num_bits, phase,
-				  count)) == 0)
-	    return 0;
-	num_bits += n;
+        /* Write the last run-length of 1-dot line */
+        if ((n = mh_set_runlength(out, chunk_size, num_bits, phase,
+                                  count)) == 0)
+            return 0;
+        num_bits += n;
     }
 
     /* RTC (return to control) */
     if ((n = mh_set_rtc(out, chunk_size, num_bits)) == 0)
-	return 0;
+        return 0;
     num_bits += n;
 
     return (num_bits / 8);
 }
 
-/* Get the paper size code based on the width and the height. 
+/* Get the paper size code based on the width and the height.
    modified from gdevpcl.c and gdevmjc.c */
 static int
 npdl_get_paper_size(gx_device * dev)
@@ -411,14 +409,14 @@ npdl_get_paper_size(gx_device * dev)
     float media_height = (dev->MediaSize[0] > dev->MediaSize[1]) ? dev->MediaSize[0] : dev->MediaSize[1];
 
     return (media_height > 1032 ? PAPER_SIZE_A3 :
-	    media_height > 842 ? PAPER_SIZE_B4 :
-	    media_height > 792 ? PAPER_SIZE_A4 :
-	    media_height > 756 ? PAPER_SIZE_LETTER :
-	    media_height > 729 ? PAPER_SIZE_ENV4 :
-	    media_height > 595 ? PAPER_SIZE_BPOSTCARD :
-	    media_height > 568 ? PAPER_SIZE_B5 :
-	    media_height > 419 ? PAPER_SIZE_A5 :
-	    PAPER_SIZE_POSTCARD);
+            media_height > 842 ? PAPER_SIZE_B4 :
+            media_height > 792 ? PAPER_SIZE_A4 :
+            media_height > 756 ? PAPER_SIZE_LETTER :
+            media_height > 729 ? PAPER_SIZE_ENV4 :
+            media_height > 595 ? PAPER_SIZE_BPOSTCARD :
+            media_height > 568 ? PAPER_SIZE_B5 :
+            media_height > 419 ? PAPER_SIZE_A5 :
+            PAPER_SIZE_POSTCARD);
 }
 
 static int
@@ -429,98 +427,98 @@ npdl_set_page_layout(gx_device * dev)
 
     /* Change the margins according to the paper size. */
     switch (npdl_get_paper_size(dev)) {
-	case PAPER_SIZE_A3:
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[0] = L_MARGIN_A3;
-		margins[1] = B_MARGIN_A3;
-		margins[2] = R_MARGIN_A3;
-		margins[3] = T_MARGIN_A3;
-	    } else {		/* Portrait */
-		margins[1] = L_MARGIN_A3;
-		margins[2] = B_MARGIN_A3;
-		margins[3] = R_MARGIN_A3;
-		margins[0] = T_MARGIN_A3;
-	    }
-	    break;
-	case PAPER_SIZE_A5:
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[0] = L_MARGIN_A5;
-		margins[1] = B_MARGIN_A5;
-		margins[2] = R_MARGIN_A5;
-		margins[3] = T_MARGIN_A5;
-	    } else {		/* Portrait */
-		margins[1] = L_MARGIN_A5;
-		margins[2] = B_MARGIN_A5;
-		margins[3] = R_MARGIN_A5;
-		margins[0] = T_MARGIN_A5;
-	    }
-	    break;
-	case PAPER_SIZE_B5:
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[1] = L_MARGIN_B5;
-		margins[2] = B_MARGIN_B5;
-		margins[3] = R_MARGIN_B5;
-		margins[0] = T_MARGIN_B5;
-	    } else {		/* Portrait */
-		margins[0] = L_MARGIN_B5;
-		margins[1] = B_MARGIN_B5;
-		margins[2] = R_MARGIN_B5;
-		margins[3] = T_MARGIN_B5;
-	    }
-	    break;
-	case PAPER_SIZE_LETTER:
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[1] = L_MARGIN_LETTER;
-		margins[2] = B_MARGIN_LETTER;
-		margins[3] = R_MARGIN_LETTER;
-		margins[0] = T_MARGIN_LETTER;
-	    } else {		/* Portrait */
-		margins[0] = L_MARGIN_LETTER;
-		margins[1] = B_MARGIN_LETTER;
-		margins[2] = R_MARGIN_LETTER;
-		margins[3] = T_MARGIN_LETTER;
-	    }
-	    break;
-	case PAPER_SIZE_POSTCARD:
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[1] = L_MARGIN_POSTCARD;
-		margins[2] = B_MARGIN_POSTCARD;
-		margins[3] = R_MARGIN_POSTCARD;
-		margins[0] = T_MARGIN_POSTCARD;
-	    } else {		/* Portrait */
-		margins[0] = L_MARGIN_POSTCARD;
-		margins[1] = B_MARGIN_POSTCARD;
-		margins[2] = R_MARGIN_POSTCARD;
-		margins[3] = T_MARGIN_POSTCARD;
-	    }
-	    break;
-	case PAPER_SIZE_ENV4:
-	case PAPER_SIZE_BPOSTCARD:
-		margins[1] = L_MARGIN_ENV4;
-		margins[2] = B_MARGIN_ENV4;
-		margins[3] = R_MARGIN_ENV4;
-		margins[0] = T_MARGIN_ENV4;
-	    break;
-	default:		/* A4 */
-	    if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
-		margins[1] = L_MARGIN_A4;
-		margins[2] = B_MARGIN_A4;
-		margins[3] = R_MARGIN_A4;
-		margins[0] = T_MARGIN_A4;
-	    } else {		/* Portrait */
-		margins[0] = L_MARGIN_A4;
-		margins[1] = B_MARGIN_A4;
-		margins[2] = R_MARGIN_A4;
-		margins[3] = T_MARGIN_A4;
-	    }
-	    break;
+        case PAPER_SIZE_A3:
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[0] = L_MARGIN_A3;
+                margins[1] = B_MARGIN_A3;
+                margins[2] = R_MARGIN_A3;
+                margins[3] = T_MARGIN_A3;
+            } else {		/* Portrait */
+                margins[1] = L_MARGIN_A3;
+                margins[2] = B_MARGIN_A3;
+                margins[3] = R_MARGIN_A3;
+                margins[0] = T_MARGIN_A3;
+            }
+            break;
+        case PAPER_SIZE_A5:
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[0] = L_MARGIN_A5;
+                margins[1] = B_MARGIN_A5;
+                margins[2] = R_MARGIN_A5;
+                margins[3] = T_MARGIN_A5;
+            } else {		/* Portrait */
+                margins[1] = L_MARGIN_A5;
+                margins[2] = B_MARGIN_A5;
+                margins[3] = R_MARGIN_A5;
+                margins[0] = T_MARGIN_A5;
+            }
+            break;
+        case PAPER_SIZE_B5:
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[1] = L_MARGIN_B5;
+                margins[2] = B_MARGIN_B5;
+                margins[3] = R_MARGIN_B5;
+                margins[0] = T_MARGIN_B5;
+            } else {		/* Portrait */
+                margins[0] = L_MARGIN_B5;
+                margins[1] = B_MARGIN_B5;
+                margins[2] = R_MARGIN_B5;
+                margins[3] = T_MARGIN_B5;
+            }
+            break;
+        case PAPER_SIZE_LETTER:
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[1] = L_MARGIN_LETTER;
+                margins[2] = B_MARGIN_LETTER;
+                margins[3] = R_MARGIN_LETTER;
+                margins[0] = T_MARGIN_LETTER;
+            } else {		/* Portrait */
+                margins[0] = L_MARGIN_LETTER;
+                margins[1] = B_MARGIN_LETTER;
+                margins[2] = R_MARGIN_LETTER;
+                margins[3] = T_MARGIN_LETTER;
+            }
+            break;
+        case PAPER_SIZE_POSTCARD:
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[1] = L_MARGIN_POSTCARD;
+                margins[2] = B_MARGIN_POSTCARD;
+                margins[3] = R_MARGIN_POSTCARD;
+                margins[0] = T_MARGIN_POSTCARD;
+            } else {		/* Portrait */
+                margins[0] = L_MARGIN_POSTCARD;
+                margins[1] = B_MARGIN_POSTCARD;
+                margins[2] = R_MARGIN_POSTCARD;
+                margins[3] = T_MARGIN_POSTCARD;
+            }
+            break;
+        case PAPER_SIZE_ENV4:
+        case PAPER_SIZE_BPOSTCARD:
+                margins[1] = L_MARGIN_ENV4;
+                margins[2] = B_MARGIN_ENV4;
+                margins[3] = R_MARGIN_ENV4;
+                margins[0] = T_MARGIN_ENV4;
+            break;
+        default:		/* A4 */
+            if (dev->MediaSize[0] > dev->MediaSize[1]) {	/* Landscape */
+                margins[1] = L_MARGIN_A4;
+                margins[2] = B_MARGIN_A4;
+                margins[3] = R_MARGIN_A4;
+                margins[0] = T_MARGIN_A4;
+            } else {		/* Portrait */
+                margins[0] = L_MARGIN_A4;
+                margins[1] = B_MARGIN_A4;
+                margins[2] = R_MARGIN_A4;
+                margins[3] = T_MARGIN_A4;
+            }
+            break;
     }
     gx_device_set_margins(dev, margins, true);
     if (dev->is_open) {
-	gdev_prn_close(dev);
-	code = gdev_prn_open(dev);
-	if (code < 0)
-	    return code;
+        gdev_prn_close(dev);
+        code = gdev_prn_open(dev);
+        if (code < 0)
+            return code;
     }
     return 0;
 }
@@ -534,10 +532,10 @@ npdl_open(gx_device * dev)
 
     /* Print Resolution Check */
     if (xdpi != ydpi)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     else if (xdpi != 160 && xdpi != 200 && xdpi != 240 &&
-	     xdpi != 400 && xdpi != 600)
-	return_error(gs_error_rangecheck);
+             xdpi != 400 && xdpi != 600)
+        return_error(gs_error_rangecheck);
 
     npdl_set_page_layout(dev);
 
@@ -554,7 +552,6 @@ npdl_close(gx_device *pdev)
     return gdev_prn_close(pdev);
 }
 
-
 static int
 npdl_put_params(gx_device * pdev, gs_param_list * plist)
 {
@@ -563,9 +560,9 @@ npdl_put_params(gx_device * pdev, gs_param_list * plist)
 
     code = lprn_put_params(pdev, plist);
     if (code < 0)
-	return code;
+        return code;
     if (pdev->is_open && !lprn->initialized) {
-	npdl_set_page_layout(pdev);
+        npdl_set_page_layout(pdev);
     }
     return 0;
 }
@@ -583,71 +580,69 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
     if (!(lprn->CompBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), line_size * maxY, sizeof(byte), "npdl_print_page_copies(CompBuf)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
-
-	/* Initialize printer */
+        /* Initialize printer */
     if (pdev->PageCount == 0) {
-      
+
       /* Initialize printer */
       fputs("\033c1", prn_stream);               /* Software Reset */
       fputs("\034d240.", prn_stream);            /* Page Printer Mode */
 
+        /* Check paper size */
+        switch (npdl_get_paper_size((gx_device *) pdev)) {
+            case PAPER_SIZE_POSTCARD:
+                sprintf(paper_command, "PC");
+                break;
+            case PAPER_SIZE_A5:
+                sprintf(paper_command, "A5");
+                break;
+            case PAPER_SIZE_A4:
+                sprintf(paper_command, "A4");
+                break;
+            case PAPER_SIZE_A3:
+                sprintf(paper_command, "A3");
+                break;
+            case PAPER_SIZE_B5:
+                sprintf(paper_command, "B5");
+                break;
+            case PAPER_SIZE_B4:
+                sprintf(paper_command, "B4");
+                break;
+            case PAPER_SIZE_LETTER:
+                sprintf(paper_command, "LT");
+                break;
+            case PAPER_SIZE_ENV4:
+                sprintf(paper_command, "ENV4");
+                break;
+            case PAPER_SIZE_BPOSTCARD:
+                sprintf(paper_command, "UPPC");
+                break;
+        }
 
-	/* Check paper size */
-	switch (npdl_get_paper_size((gx_device *) pdev)) {
-	    case PAPER_SIZE_POSTCARD:
-		sprintf(paper_command, "PC");
-		break;
-	    case PAPER_SIZE_A5:
-		sprintf(paper_command, "A5");
-		break;
-	    case PAPER_SIZE_A4:
-		sprintf(paper_command, "A4");
-		break;
-	    case PAPER_SIZE_A3:
-		sprintf(paper_command, "A3");
-		break;
-	    case PAPER_SIZE_B5:
-		sprintf(paper_command, "B5");
-		break;
-	    case PAPER_SIZE_B4:
-		sprintf(paper_command, "B4");
-		break;
-	    case PAPER_SIZE_LETTER:
-		sprintf(paper_command, "LT");
-		break;
-	    case PAPER_SIZE_ENV4:
-		sprintf(paper_command, "ENV4");
-		break;
-	    case PAPER_SIZE_BPOSTCARD:
-		sprintf(paper_command, "UPPC");
-		break;
-	}
+        if (lprn->ManualFeed) {
+        fprintf(prn_stream, "\034f%cM0.",
+                (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P');
+        /* Page Orientation  P: Portrait, L: Landscape */
+        } else {
+        fprintf(prn_stream, "\034f%c%s.",
+                (pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P',
+        /* Page Orientation  P: Portrait, L: Landscape */
+                paper_command);	/* Paper Size */
+        }
 
-	if (lprn->ManualFeed) {
-	fprintf(prn_stream, "\034f%cM0.",
-		(pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P');
-	/* Page Orientation  P: Portrait, L: Landscape */
-	} else {
-	fprintf(prn_stream, "\034f%c%s.",
-		(pdev->MediaSize[0] > pdev->MediaSize[1]) ? 'L' : 'P',
-	/* Page Orientation  P: Portrait, L: Landscape */
-		paper_command);	/* Paper Size */
-	}
+        fprintf(prn_stream, "\034<1/%d,i.", x_dpi);	/* Image Resolution */
 
-	fprintf(prn_stream, "\034<1/%d,i.", x_dpi);	/* Image Resolution */
-
-	/* Duplex Setting */
-	if (pdev->Duplex_set > 0) {
-	    if (pdev->Duplex) {
-		if (lprn->Tumble == 0)
-		  fprintf(prn_stream, "\034'B,,1,0.");
-		else
-		  fprintf(prn_stream, "\034'B,,2,0.");
-	    } else
-	      fprintf(prn_stream, "\034'S,,,0.");
-	}
+        /* Duplex Setting */
+        if (pdev->Duplex_set > 0) {
+            if (pdev->Duplex) {
+                if (lprn->Tumble == 0)
+                  fprintf(prn_stream, "\034'B,,1,0.");
+                else
+                  fprintf(prn_stream, "\034'B,,2,0.");
+            } else
+              fprintf(prn_stream, "\034'S,,,0.");
+        }
     }
 
     if (num_copies > 99)
@@ -657,25 +652,24 @@ npdl_print_page_copies(gx_device_printer * pdev, FILE * prn_stream, int num_copi
     lprn->initialized = false;
 
     if (lprn->NegativePrint) {
-	fprintf(prn_stream, "\034e0,0.");	/* move to (0, 0) */
-	fprintf(prn_stream, "\034Y");	/* goto figure mode */
-	fprintf(prn_stream, "SU1,%d,0;", (int)pdev->x_pixels_per_inch);
-	/* Setting Printer Unit */
-	fprintf(prn_stream, "SG0,0;");	/* select black color */
-	fprintf(prn_stream, "NP;");	/* begin path */
-	fprintf(prn_stream, "PA%d,0,%d,%d,0,%d;",
-		pdev->width, pdev->width, pdev->height, pdev->height);
-	/* draw rectangle */
-	fprintf(prn_stream, "CP");	/* close path */
-	fprintf(prn_stream, "EP;");	/* end path */
-	fprintf(prn_stream, "FL0;");	/* fill path */
-	fprintf(prn_stream, "\034Z");	/* end of figure mode */
-	fprintf(prn_stream, "\034\"R.");	/* `R'eplace Mode */
+        fprintf(prn_stream, "\034e0,0.");	/* move to (0, 0) */
+        fprintf(prn_stream, "\034Y");	/* goto figure mode */
+        fprintf(prn_stream, "SU1,%d,0;", (int)pdev->x_pixels_per_inch);
+        /* Setting Printer Unit */
+        fprintf(prn_stream, "SG0,0;");	/* select black color */
+        fprintf(prn_stream, "NP;");	/* begin path */
+        fprintf(prn_stream, "PA%d,0,%d,%d,0,%d;",
+                pdev->width, pdev->width, pdev->height, pdev->height);
+        /* draw rectangle */
+        fprintf(prn_stream, "CP");	/* close path */
+        fprintf(prn_stream, "EP;");	/* end path */
+        fprintf(prn_stream, "FL0;");	/* fill path */
+        fprintf(prn_stream, "\034Z");	/* end of figure mode */
+        fprintf(prn_stream, "\034\"R.");	/* `R'eplace Mode */
     }
     code = lprn_print_image(pdev, prn_stream);
     if (code < 0)
-	return code;
-
+        return code;
 
     /* Form Feed */
     fputs("\014", prn_stream);
@@ -700,16 +694,16 @@ npdl_image_out(gx_device_printer * pdev, FILE * prn_stream, int x, int y, int wi
      * If the compression ratio >= 100%, send uncompressed data
      */
     if (num_bytes == 0) {
-	fprintf(prn_stream, "\034i%d,%d,0,1/1,1/1,%d,%d.", width,
-		height, width * height / 8, x_dpi);
-	fwrite(lprn->TmpBuf, 1, width * height / 8, prn_stream);
+        fprintf(prn_stream, "\034i%d,%d,0,1/1,1/1,%d,%d.", width,
+                height, width * height / 8, x_dpi);
+        fwrite(lprn->TmpBuf, 1, width * height / 8, prn_stream);
     }
     /*
      * If the compression ratio < 100%, send compressed data
      */
     else {
-	fprintf(prn_stream, "\034i%d,%d,1,1/1,1/1,%d,%d.", width,
-		height, num_bytes, x_dpi);
-	fwrite(lprn->CompBuf, 1, num_bytes, prn_stream);
+        fprintf(prn_stream, "\034i%d,%d,1,1/1,1/1,%d,%d.", width,
+                height, num_bytes, x_dpi);
+        fwrite(lprn->CompBuf, 1, num_bytes, prn_stream);
     }
 }

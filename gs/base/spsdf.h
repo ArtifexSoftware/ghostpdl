@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -69,12 +69,12 @@ typedef struct printer_param_list_s {
 #define param_printer_params_default_values 0, 0, 0, "\n", 0
 extern const param_printer_params_t param_printer_params_default;
 int s_alloc_param_printer(gs_param_list ** pplist,
-			  const param_printer_params_t * ppp, stream * s,
-			  gs_memory_t * mem);
+                          const param_printer_params_t * ppp, stream * s,
+                          gs_memory_t * mem);
 void s_free_param_printer(gs_param_list * plist);
 /* Initialize or release a list without allocating or freeing it. */
 int s_init_param_printer(printer_param_list_t *prlist,
-			 const param_printer_params_t * ppp, stream * s);
+                         const param_printer_params_t * ppp, stream * s);
 void s_release_param_printer(printer_param_list_t *prlist);
 
 #endif /* spsdf_INCLUDED */

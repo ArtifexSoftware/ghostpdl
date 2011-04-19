@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -54,9 +54,9 @@ typedef struct gs_text_returned_s {
 typedef struct gx_font_stack_item_s {
     gs_font *font;		/* font at this level */
     uint index;			/* if *font is a composite font, this is a font number of
-				   selected discendant font (index in Encoding).
-				   if *font is a CIDFont, an index of selected FDArray font.
-				   zero otherwise. */
+                                   selected discendant font (index in Encoding).
+                                   if *font is a CIDFont, an index of selected FDArray font.
+                                   zero otherwise. */
 } gx_font_stack_item_t;
 typedef struct gx_font_stack_s {
     int depth;
@@ -104,7 +104,7 @@ rc_free_proc(rc_free_text_enum);
     uint xy_index;		/* index within X/Y widths */\
     gx_font_stack_t fstack;\
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
-				/* the value returned by decode_next */\
+                                /* the value returned by decode_next */\
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
     ulong text_enum_id; /* debug purpose only - not used by algorythm. */\
     /* The following is controlled by a device. */\
@@ -161,20 +161,20 @@ struct gs_text_enum_s {
   gs_public_st_composite(st_gs_text_enum, gs_text_enum_t, "gs_text_enum_t",\
     text_enum_enum_ptrs, text_enum_reloc_ptrs)
 
-/* 
+/*
  * Initialize a newly created text enumerator.  Implementations of
  * text_begin must call this just after allocating the enumerator.
  * Note that this procedure can return an error, e.g., if attempting
  * a glyph-based operation with a composite font.
  */
 int gs_text_enum_init(gs_text_enum_t *pte,
-		      const gs_text_enum_procs_t *procs,
-		      gx_device *dev, gs_imager_state *pis,
-		      const gs_text_params_t *text,
-		      gs_font *font, gx_path *path,
-		      const gx_device_color *pdcolor,
-		      const gx_clip_path *pcpath,
-		      gs_memory_t *mem);
+                      const gs_text_enum_procs_t *procs,
+                      gx_device *dev, gs_imager_state *pis,
+                      const gs_text_params_t *text,
+                      gs_font *font, gx_path *path,
+                      const gx_device_color *pdcolor,
+                      const gx_clip_path *pcpath,
+                      gs_memory_t *mem);
 
 /*
  * Copy the dynamically changing elements from one enumerator to another.
@@ -183,8 +183,8 @@ int gs_text_enum_init(gs_text_enum_t *pte,
  * iff for_return is true.
  */
 void gs_text_enum_copy_dynamic(gs_text_enum_t *pto,
-			       const gs_text_enum_t *pfrom,
-			       bool for_return);
+                               const gs_text_enum_t *pfrom,
+                               bool for_return);
 
 /*
  * Define some convenience macros for testing aspects of a text

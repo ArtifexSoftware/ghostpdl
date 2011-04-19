@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@ public_st_gs_dual_memory();
 /* Initialize the allocator */
 int
 ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
-	    bool level2)
+            bool level2)
 {
     gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);
     gs_ref_memory_t *ilmem_stable = ialloc_alloc_state(rmem, chunk_size);
@@ -43,18 +43,18 @@ ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
     int i;
 
     if (ilmem == 0 || ilmem_stable == 0 || ismem == 0)
-	goto fail;
+        goto fail;
     ilmem->stable_memory = (gs_memory_t *)ilmem_stable;
     if (level2) {
-	igmem = ialloc_alloc_state(rmem, chunk_size);
-	igmem_stable = ialloc_alloc_state(rmem, chunk_size);
-	if (igmem == 0 || igmem_stable == 0)
-	    goto fail;
-	igmem->stable_memory = (gs_memory_t *)igmem_stable;
+        igmem = ialloc_alloc_state(rmem, chunk_size);
+        igmem_stable = ialloc_alloc_state(rmem, chunk_size);
+        if (igmem == 0 || igmem_stable == 0)
+            goto fail;
+        igmem->stable_memory = (gs_memory_t *)igmem_stable;
     } else
-	igmem = ilmem, igmem_stable = ilmem_stable;
+        igmem = ilmem, igmem_stable = ilmem_stable;
     for (i = 0; i < countof(dmem->spaces_indexed); i++)
-	dmem->spaces_indexed[i] = 0;
+        dmem->spaces_indexed[i] = 0;
     dmem->space_local = ilmem;
     dmem->space_global = igmem;
     dmem->space_system = ismem;
@@ -140,7 +140,7 @@ ialloc_trace_space(const gs_ref_memory_t *imem)
 /* Register a ref root. */
 int
 gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
-		     void **pp, client_name_t cname)
+                     void **pp, client_name_t cname)
 {
     return gs_register_root(mem, root, ptr_ref_type, pp, cname);
 }
@@ -155,69 +155,69 @@ gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
 /* Allocate an array of refs. */
 int
 gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
-		   uint num_refs, client_name_t cname)
+                   uint num_refs, client_name_t cname)
 {
     ref *obj;
 
     /* If we're allocating a run of refs already, */
     /* and we aren't about to overflow the maximum run length, use it. */
     if (mem->cc.rtop == mem->cc.cbot &&
-	num_refs < (mem->cc.ctop - mem->cc.cbot) / sizeof(ref) &&
-	mem->cc.rtop - (byte *) mem->cc.rcur + num_refs * sizeof(ref) <
-	max_size_st_refs
-	) {
-	ref *end;
+        num_refs < (mem->cc.ctop - mem->cc.cbot) / sizeof(ref) &&
+        mem->cc.rtop - (byte *) mem->cc.rcur + num_refs * sizeof(ref) <
+        max_size_st_refs
+        ) {
+        ref *end;
 
-	obj = (ref *) mem->cc.rtop - 1;		/* back up over last ref */
-	if_debug4('A', "[a%d:+$ ]%s(%u) = 0x%lx\n",
-		  ialloc_trace_space(mem), client_name_string(cname),
-		  num_refs, (ulong) obj);
-	mem->cc.rcur[-1].o_size += num_refs * sizeof(ref);
-	end = (ref *) (mem->cc.rtop = mem->cc.cbot +=
-		       num_refs * sizeof(ref));
-	make_mark(end - 1);
+        obj = (ref *) mem->cc.rtop - 1;		/* back up over last ref */
+        if_debug4('A', "[a%d:+$ ]%s(%u) = 0x%lx\n",
+                  ialloc_trace_space(mem), client_name_string(cname),
+                  num_refs, (ulong) obj);
+        mem->cc.rcur[-1].o_size += num_refs * sizeof(ref);
+        end = (ref *) (mem->cc.rtop = mem->cc.cbot +=
+                       num_refs * sizeof(ref));
+        make_mark(end - 1);
     } else {
-	/*
-	 * Allocate a new run.  We have to distinguish 3 cases:
-	 *      - Same chunk: pcc unchanged, end == cc.cbot.
-	 *      - Large chunk: pcc unchanged, end != cc.cbot.
-	 *      - New chunk: pcc changed.
-	 */
-	chunk_t *pcc = mem->pcc;
-	ref *end;
-	alloc_change_t *cp = 0;
+        /*
+         * Allocate a new run.  We have to distinguish 3 cases:
+         *      - Same chunk: pcc unchanged, end == cc.cbot.
+         *      - Large chunk: pcc unchanged, end != cc.cbot.
+         *      - New chunk: pcc changed.
+         */
+        chunk_t *pcc = mem->pcc;
+        ref *end;
+        alloc_change_t *cp = 0;
         int code = 0;
 
-	if ((gs_memory_t *)mem != mem->stable_memory) {
-	    code = alloc_save_change_alloc(mem, "gs_alloc_ref_array", &cp);
-	    if (code < 0)
-		return code;
-	}
-	obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
-				    ref, &st_refs, cname);
-	if (obj == 0)
-	    return_error(e_VMerror);
-	/* Set the terminating ref now. */
-	end = (ref *) obj + num_refs;
-	make_mark(end);
-	/* Set has_refs in the chunk. */
-	if (mem->pcc != pcc || mem->cc.cbot == (byte *) (end + 1)) {
-	    /* Ordinary chunk. */
-	    mem->cc.rcur = (obj_header_t *) obj;
-	    mem->cc.rtop = (byte *) (end + 1);
-	    mem->cc.has_refs = true;
-	} else {
-	    /* Large chunk. */
-	    /* This happens only for very large arrays, */
-	    /* so it doesn't need to be cheap. */
-	    chunk_locator_t cl;
+        if ((gs_memory_t *)mem != mem->stable_memory) {
+            code = alloc_save_change_alloc(mem, "gs_alloc_ref_array", &cp);
+            if (code < 0)
+                return code;
+        }
+        obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
+                                    ref, &st_refs, cname);
+        if (obj == 0)
+            return_error(e_VMerror);
+        /* Set the terminating ref now. */
+        end = (ref *) obj + num_refs;
+        make_mark(end);
+        /* Set has_refs in the chunk. */
+        if (mem->pcc != pcc || mem->cc.cbot == (byte *) (end + 1)) {
+            /* Ordinary chunk. */
+            mem->cc.rcur = (obj_header_t *) obj;
+            mem->cc.rtop = (byte *) (end + 1);
+            mem->cc.has_refs = true;
+        } else {
+            /* Large chunk. */
+            /* This happens only for very large arrays, */
+            /* so it doesn't need to be cheap. */
+            chunk_locator_t cl;
 
-	    cl.memory = mem;
-	    cl.cp = mem->clast;
-	    chunk_locate_ptr(obj, &cl);
-	    cl.cp->has_refs = true;
-	}
-	if (cp) {
+            cl.memory = mem;
+            cl.cp = mem->clast;
+            chunk_locate_ptr(obj, &cl);
+            cl.cp->has_refs = true;
+        }
+        if (cp) {
             mem->changes = cp;
             cp->where = (ref_packed *)obj;
         }
@@ -230,34 +230,34 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
 /* for shrinking, not for growing. */
 int
 gs_resize_ref_array(gs_ref_memory_t * mem, ref * parr,
-		    uint new_num_refs, client_name_t cname)
+                    uint new_num_refs, client_name_t cname)
 {
     uint old_num_refs = r_size(parr);
     uint diff;
     ref *obj = parr->value.refs;
 
     if (new_num_refs > old_num_refs || !r_has_type(parr, t_array))
-	return_error(e_Fatal);
+        return_error(e_Fatal);
     diff = old_num_refs - new_num_refs;
     /* Check for LIFO.  See gs_free_ref_array for more details. */
     if (mem->cc.rtop == mem->cc.cbot &&
-	(byte *) (obj + (old_num_refs + 1)) == mem->cc.rtop
-	) {
-	/* Shorten the refs object. */
-	ref *end = (ref *) (mem->cc.cbot = mem->cc.rtop -=
-			    diff * sizeof(ref));
+        (byte *) (obj + (old_num_refs + 1)) == mem->cc.rtop
+        ) {
+        /* Shorten the refs object. */
+        ref *end = (ref *) (mem->cc.cbot = mem->cc.rtop -=
+                            diff * sizeof(ref));
 
-	if_debug4('A', "[a%d:<$ ]%s(%u) 0x%lx\n",
-		  ialloc_trace_space(mem), client_name_string(cname), diff,
-		  (ulong) obj);
-	mem->cc.rcur[-1].o_size -= diff * sizeof(ref);
-	make_mark(end - 1);
+        if_debug4('A', "[a%d:<$ ]%s(%u) 0x%lx\n",
+                  ialloc_trace_space(mem), client_name_string(cname), diff,
+                  (ulong) obj);
+        mem->cc.rcur[-1].o_size -= diff * sizeof(ref);
+        make_mark(end - 1);
     } else {
-	/* Punt. */
-	if_debug4('A', "[a%d:<$#]%s(%u) 0x%lx\n",
-		  ialloc_trace_space(mem), client_name_string(cname), diff,
-		  (ulong) obj);
-	mem->lost.refs += diff * sizeof(ref);
+        /* Punt. */
+        if_debug4('A', "[a%d:<$#]%s(%u) 0x%lx\n",
+                  ialloc_trace_space(mem), client_name_string(cname), diff,
+                  (ulong) obj);
+        mem->lost.refs += diff * sizeof(ref);
     }
     r_set_size(parr, new_num_refs);
     return 0;
@@ -278,97 +278,97 @@ gs_free_ref_array(gs_ref_memory_t * mem, ref * parr, client_name_t cname)
      * The +1s are for the extra ref for the GC.
      */
     if (!r_has_type(parr, t_array))
-	DO_NOTHING;		/* don't look for special cases */
+        DO_NOTHING;		/* don't look for special cases */
     else if (mem->cc.rtop == mem->cc.cbot &&
-	     (byte *) (obj + (num_refs + 1)) == mem->cc.rtop
-	) {
-	if ((obj_header_t *) obj == mem->cc.rcur) {
-	    /* Deallocate the entire refs object. */
-	    if ((gs_memory_t *)mem != mem->stable_memory)
-		alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-	    gs_free_object((gs_memory_t *) mem, obj, cname);
-	    mem->cc.rcur = 0;
-	    mem->cc.rtop = 0;
-	} else {
-	    /* Deallocate it at the end of the refs object. */
-	    if_debug4('A', "[a%d:-$ ]%s(%u) 0x%lx\n",
-		      ialloc_trace_space(mem), client_name_string(cname),
-		      num_refs, (ulong) obj);
-	    mem->cc.rcur[-1].o_size -= num_refs * sizeof(ref);
-	    mem->cc.rtop = mem->cc.cbot = (byte *) (obj + 1);
-	    make_mark(obj);
-	}
-	return;
+             (byte *) (obj + (num_refs + 1)) == mem->cc.rtop
+        ) {
+        if ((obj_header_t *) obj == mem->cc.rcur) {
+            /* Deallocate the entire refs object. */
+            if ((gs_memory_t *)mem != mem->stable_memory)
+                alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
+            gs_free_object((gs_memory_t *) mem, obj, cname);
+            mem->cc.rcur = 0;
+            mem->cc.rtop = 0;
+        } else {
+            /* Deallocate it at the end of the refs object. */
+            if_debug4('A', "[a%d:-$ ]%s(%u) 0x%lx\n",
+                      ialloc_trace_space(mem), client_name_string(cname),
+                      num_refs, (ulong) obj);
+            mem->cc.rcur[-1].o_size -= num_refs * sizeof(ref);
+            mem->cc.rtop = mem->cc.cbot = (byte *) (obj + 1);
+            make_mark(obj);
+        }
+        return;
     } else if (num_refs >= (mem->large_size / arch_sizeof_ref - 1)) {
-	/* See if this array has a chunk all to itself. */
-	/* We only make this check when freeing very large objects, */
-	/* so it doesn't need to be cheap. */
-	chunk_locator_t cl;
+        /* See if this array has a chunk all to itself. */
+        /* We only make this check when freeing very large objects, */
+        /* so it doesn't need to be cheap. */
+        chunk_locator_t cl;
 
-	cl.memory = mem;
-	cl.cp = mem->clast;
-	if (chunk_locate_ptr(obj, &cl) &&
-	    obj == (ref *) ((obj_header_t *) (cl.cp->cbase) + 1) &&
-	    (byte *) (obj + (num_refs + 1)) == cl.cp->cend
-	    ) {
-	    /* Free the chunk. */
-	    if_debug4('a', "[a%d:-$L]%s(%u) 0x%lx\n",
-		      ialloc_trace_space(mem), client_name_string(cname),
-		      num_refs, (ulong) obj);
-	if ((gs_memory_t *)mem != mem->stable_memory)
-	    alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
-	    alloc_free_chunk(cl.cp, mem);
-	    return;
-	}
+        cl.memory = mem;
+        cl.cp = mem->clast;
+        if (chunk_locate_ptr(obj, &cl) &&
+            obj == (ref *) ((obj_header_t *) (cl.cp->cbase) + 1) &&
+            (byte *) (obj + (num_refs + 1)) == cl.cp->cend
+            ) {
+            /* Free the chunk. */
+            if_debug4('a', "[a%d:-$L]%s(%u) 0x%lx\n",
+                      ialloc_trace_space(mem), client_name_string(cname),
+                      num_refs, (ulong) obj);
+        if ((gs_memory_t *)mem != mem->stable_memory)
+            alloc_save_remove(mem, (ref_packed *)obj, "gs_free_ref_array");
+            alloc_free_chunk(cl.cp, mem);
+            return;
+        }
     }
     /* Punt, but fill the array with nulls so that there won't be */
     /* dangling references to confuse the garbage collector. */
     if_debug4('A', "[a%d:-$#]%s(%u) 0x%lx\n",
-	      ialloc_trace_space(mem), client_name_string(cname), num_refs,
-	      (ulong) obj);
+              ialloc_trace_space(mem), client_name_string(cname), num_refs,
+              (ulong) obj);
     {
-	uint size;
+        uint size;
 
-	switch (r_type(parr)) {
-	    case t_shortarray:
-		size = num_refs * sizeof(ref_packed);
-		break;
-	    case t_mixedarray:{
-		/* We have to parse the array to compute the storage size. */
-		uint i = 0;
-		const ref_packed *p = parr->value.packed;
+        switch (r_type(parr)) {
+            case t_shortarray:
+                size = num_refs * sizeof(ref_packed);
+                break;
+            case t_mixedarray:{
+                /* We have to parse the array to compute the storage size. */
+                uint i = 0;
+                const ref_packed *p = parr->value.packed;
 
-		for (; i < num_refs; ++i)
-		    p = packed_next(p);
-		size = (const byte *)p - (const byte *)parr->value.packed;
-		break;
-	    }
-	    case t_array:
-		size = num_refs * sizeof(ref);
-		break;
-	    default:
-		lprintf3("Unknown type 0x%x in free_ref_array(%u,0x%lx)!",
-			 r_type(parr), num_refs, (ulong) obj);
-		return;
-	}
-	/*
-	 * If there are any leftover packed elements, we don't
-	 * worry about them, since they can't be dangling references.
-	 */
-	refset_null_new(obj, size / sizeof(ref), 0);
-	mem->lost.refs += size;
+                for (; i < num_refs; ++i)
+                    p = packed_next(p);
+                size = (const byte *)p - (const byte *)parr->value.packed;
+                break;
+            }
+            case t_array:
+                size = num_refs * sizeof(ref);
+                break;
+            default:
+                lprintf3("Unknown type 0x%x in free_ref_array(%u,0x%lx)!",
+                         r_type(parr), num_refs, (ulong) obj);
+                return;
+        }
+        /*
+         * If there are any leftover packed elements, we don't
+         * worry about them, since they can't be dangling references.
+         */
+        refset_null_new(obj, size / sizeof(ref), 0);
+        mem->lost.refs += size;
     }
 }
 
 /* Allocate a string ref. */
 int
 gs_alloc_string_ref(gs_ref_memory_t * mem, ref * psref,
-		    uint attrs, uint nbytes, client_name_t cname)
+                    uint attrs, uint nbytes, client_name_t cname)
 {
     byte *str = gs_alloc_string((gs_memory_t *) mem, nbytes, cname);
 
     if (str == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     make_string(psref, attrs | mem->space, nbytes, str);
     return 0;
 }

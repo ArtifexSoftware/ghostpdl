@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -50,11 +50,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     int                     i, expected = 0;
     ref *                   pnameval;
     static const char *const icc_std_profile_names[] = {
-	    GSICC_STANDARD_PROFILES
-	};
+            GSICC_STANDARD_PROFILES
+        };
     static const char *const icc_std_profile_keys[] = {
-	    GSICC_STANDARD_PROFILES_KEYS
-	};
+            GSICC_STANDARD_PROFILES_KEYS
+        };
 
     palt_cs = gs_currentcolorspace(igs);
 
@@ -69,11 +69,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         return gs_rethrow(code, "building color space object");
 
     /*  For now, dump the profile into a buffer
-        and obtain handle from the buffer when we need it. 
+        and obtain handle from the buffer when we need it.
         We may want to change this later.
         This depends to some degree on what the CMS is capable of doing.
         I don't want to get bogged down on stream I/O at this point.
-        Note also, if we are going to be putting these into the clist we will 
+        Note also, if we are going to be putting these into the clist we will
         want to have this buffer. */
     /* Check if we have the /Name entry.  This is used to associate with
        specs that have enumerated types to indicate sRGB sGray etc */
@@ -87,7 +87,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         picc_profile = NULL;
         for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++) {
             if ( strcmp( str, icc_std_profile_keys[k] ) == 0 ) {
-                picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k], 
+                picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k],
                     strlen(icc_std_profile_names[k]), gs_state_memory(igs));
                 break;
     }
@@ -110,11 +110,11 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
     /* We have to get the profile handle due to the fact that we need to know
        if it has a data space that is CIELAB */
-    picc_profile->profile_handle = 
+    picc_profile->profile_handle =
         gsicc_get_profile_handle_buffer(picc_profile->buffer,
                                         picc_profile->buffer_size);
     if (picc_profile->profile_handle == NULL) {
-        /* Free up everything, the profile is not valid. We will end up going 
+        /* Free up everything, the profile is not valid. We will end up going
            ahead and using a default based upon the number of components */
         rc_decrement(picc_profile,"seticc");
         rc_decrement(pcs,"seticc");
@@ -122,32 +122,32 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     }
     picc_profile->data_cs = gscms_get_profile_data_space(picc_profile->profile_handle);
     switch( picc_profile->data_cs ) {
-	case gsCIEXYZ:
-	case gsCIELAB:
-	case gsRGB:
-	    expected = 3;
-	    break;
-	case gsGRAY:
-	    expected = 1;
-	    break;
-	case gsCMYK:
-	    expected = 4;
-	    break;
-	case gsNCHANNEL:
-	    expected = 0;
-	    break;
+        case gsCIEXYZ:
+        case gsCIELAB:
+        case gsRGB:
+            expected = 3;
+            break;
+        case gsGRAY:
+            expected = 1;
+            break;
+        case gsCMYK:
+            expected = 4;
+            break;
+        case gsNCHANNEL:
+            expected = 0;
+            break;
     }
     if (expected && ncomps != expected) {
-	rc_decrement(picc_profile,"seticc");
-	rc_decrement(pcs,"seticc");
-	return_error(e_rangecheck);
+        rc_decrement(picc_profile,"seticc");
+        rc_decrement(pcs,"seticc");
+        return_error(e_rangecheck);
     }
 
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
     /* Later we may want to delay this, but for now lets go ahead and do it */
     gsicc_init_hash_cs(picc_profile, pis);
 
-    /* Set the range according to the data type that is associated with the 
+    /* Set the range according to the data type that is associated with the
        ICC input color type.  Occasionally, we will run into CIELAB to CIELAB
        profiles for spot colors in PDF documents. These spot colors are typically described
        as separation colors with tint transforms that go from a tint value
@@ -176,17 +176,17 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         for (i = 0; i < ncomps; i++) {
             picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
             picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
-    } 
-	}
+    }
+        }
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
-    /* In this case, we already have a ref count of 2 on the icc profile 
+    /* In this case, we already have a ref count of 2 on the icc profile
        one for when it was created and one for when it was set.  We really
        only want one here so adjust */
     rc_decrement(picc_profile,"seticc");
     /* Remove the ICC dict from the stack */
     pop(1);
-	return code;
+        return code;
 }
 
 /*
@@ -231,7 +231,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
 
     code = dict_find_string(op, "N", &pnval);
     if (code < 0)
-	return code;
+        return code;
     ncomps = pnval->value.intval;
     if (2*ncomps > sizeof(range_buff)/sizeof(range_buff[0]))
         return_error(e_rangecheck);
@@ -264,8 +264,8 @@ zseticcspace(i_ctx_t * i_ctx_p)
      * space, we use the range values only to restrict the set of input
      * values; they are not used for normalization.
      */
-    code = dict_floats_param( imemory, 
-			      op,
+    code = dict_floats_param( imemory,
+                              op,
                               "Range",
                               2 * ncomps,
                               range_buff,
@@ -277,7 +277,6 @@ zseticcspace(i_ctx_t * i_ctx_p)
     return seticc(i_ctx_p, ncomps, op, range_buff);
 }
 
-
 /* Install a ICC type color space and use the ICC LABLUT profile. */
 int
 seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
@@ -288,7 +287,7 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     gs_imager_state *       pis = (gs_imager_state *)igs;
     int                     i;
     static const char *const rfs = LAB_ICC;
-    gs_param_string val, *pval;    
+    gs_param_string val, *pval;
 
     val.data = (const byte *)rfs;
     val.size = strlen(rfs);
@@ -310,7 +309,7 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
            should be initialized during the
            setting of the user params */
         return gs_rethrow(code, "cannot find lab icc profile");
-    } 
+    }
     /* Assign the LAB to LAB profile to this color space */
     code = gsicc_set_gscs_profile(pcs, pis->icc_manager->lab_profile, gs_state_memory(igs));
     rc_increment(pis->icc_manager->lab_profile);
@@ -319,11 +318,11 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
     pcs->cmm_icc_profile_data->Range.ranges[0].rmin = 0.0;
     pcs->cmm_icc_profile_data->Range.ranges[0].rmax = 100.0;
     for (i = 1; i < 3; i++) {
-        pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmin =
             range_buff[2 * (i-1)];
-        pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 
+        pcs->cmm_icc_profile_data->Range.ranges[i].rmax =
             range_buff[2 * (i-1) + 1];
-    } 
+    }
     /* Set the color space.  We are done.  */
     code = gs_setcolorspace(igs, pcs);
     return code;
@@ -331,13 +330,13 @@ seticc_lab(i_ctx_t * i_ctx_p, float *white, float *black, float *range_buff)
 
 /* Install an ICC space from the PDF CalRGB or CalGray types */
 int
-seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma, 
+seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
            float *matrix, int num_colorants, ulong dictkey)
 {
     int                     code;
     gs_color_space *        pcs;
     gs_imager_state *       pis = (gs_imager_state *)igs;
-    gs_memory_t             *mem = pis->memory; 
+    gs_memory_t             *mem = pis->memory;
     int                     i;
     cmm_profile_t           *cal_profile;
 
@@ -346,7 +345,7 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
     if (pcs == NULL ) {
         /* build the color space object.  Since this is cached
            in the profile cache which is a member variable
-           of the graphic state, we will want to use stable 
+           of the graphic state, we will want to use stable
            memory here */
         code = gs_cspace_build_ICC(&pcs, NULL, mem->stable_memory);
         if (code < 0)
@@ -354,7 +353,7 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
         /* There is no alternate for this.  Perhaps we should set DeviceRGB? */
         pcs->base_space = NULL;
         /* Create the ICC profile from the CalRGB or CalGray parameters */
-        cal_profile = gsicc_create_from_cal(white, black, gamma, matrix, 
+        cal_profile = gsicc_create_from_cal(white, black, gamma, matrix,
                                             mem->stable_memory, num_colorants);
         if (cal_profile == NULL)
             return gs_rethrow(-1, "creating the cal profile");
@@ -365,7 +364,7 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
         for (i = 0; i < num_colorants; i++) {
             pcs->cmm_icc_profile_data->Range.ranges[i].rmin = 0;
             pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
-        } 
+        }
         /* Add the color space to the profile cache */
         gsicc_add_cs(igs, pcs,dictkey);
     }

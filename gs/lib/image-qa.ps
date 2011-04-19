@@ -1,13 +1,13 @@
 %!PS
 %    Copyright (C) 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -18,7 +18,7 @@
 % Tests for the image operators
 
 % Specifications for Image operator testing.
-% 
+%
 % 1.  All 8 standard orientations (0, 90, 180, 270 degree rotations with
 %     and without reflection); ditto those orientations perturbed by +/-
 %     10 degrees, and by 45 degrees.
@@ -26,35 +26,35 @@
 %     Enough space is provided around images on a test page to allow
 %     these permutations to use the same page layout. This will make
 %     test page construction easier and simplify page checking.
-% 
+%
 % 2.  All 9 image types (ImageType 1 mask, ImageType 1 opaque,
 %     ImageType 3 with all 3 InterleaveTypes and with unequal scaling
 %     for InterleaveType 2 and 3, ImageType 4 with both range and
 %     single-point matching).
-% 
+%
 % 3.  DeviceGray, DeviceRGB, and DeviceN color, both direct and Indexed.
 %     Indexed color will use the common pallete size of 256 colors.
-% 
+%
 % 4.  For simple masks, both colored and uncolored Patterns.
-% 
+%
 % 5.  CombineWithColor true and false; several different colors for the
 %     true case (including black, white, other solid colors, halftones,
 %     and patterns).
-% 
+%
 % 6.  Source transparency true and false.
-% 
+%
 % 7.  Texture transparency true and false.
-% 
+%
 % 8.  Different RasterOp values.
-% 
+%
 % 9.  For ImageType 4, different color keys (out-of-range, specific
 %     color other than white, range without white).
-% 
+%
 % 10. String, file, and procedure data sources; for multi-component
 %     color spaces, MultipleDataSources = true. This is tested by
 %     constructing string data sources that are used as input to
 %     SubFileDecode filter to create a filetype data source. These
-%     filters are read into scratch strings for the procedure data 
+%     filters are read into scratch strings for the procedure data
 %     source case. The procedure data source scratch string length
 %     does not match the raster width, and the width x height is
 %     not an integer multiple of the string length.
@@ -75,7 +75,7 @@
 /WidthRGB	83 def
 /HeightRGB	89 def
 
-% 
+%
 % 11. Banded and non-banded rendering. This can be tested by running
 %     test files throuch with different page device parameters to
 %     force banding vs. page mode.
@@ -84,23 +84,23 @@
 %
 % Testing the RasterOp-related functions (5/6/7/8) is not necessary at this
 % time.  They are well isolated logically.
-% 
+%
 % Testing orientation (1) and color masking (9) would be a good idea at some
 % point, because this code has broken many times in the past and has had a
 % long bug tail.
-% 
+%
 % The really important things to test are 2 (image type), 3/4 (color space --
 % but only with regard to number of components, plus DeviceN and simple masks
 % with a Pattern, which exercise special control paths), 10 (data source),
 % and 11 (banding modes).
-% 
+%
 % ==========================================================================
 
 %
 % Procedure to generate test mask data
 %
 % WM and HM must be defined prior to invocation
-%     MaskGen -	
+%     MaskGen -
 %
 % The mask data is stored into a string named /MaskData
 %
@@ -118,23 +118,23 @@
     /Y exch def
     0 1 WB 1 sub {
       /B exch def	% byte within the row
-      /C B Y WB mul add def 
+      /C B Y WB mul add def
       /P 0 def
       0 1 7 {
-	/b exch def	% bit within the character
-        /X b B 8 mul add def 
-	X WM lt
-	  { X Y eq
-	    X HM 1 sub Y sub eq or
-	    Y Y0 gt X X0 sub abs 2 le and or
-	    X X0 sub WM div dup mul Y Y0 sub HM div dup mul add sqrt 9 mul cvi 2 mod 1 eq or
-	  }
-	  { true }	% pad bits are always set
-	ifelse
-	% stack: true if pixel is set
-	{ 
-	  MB b get P or /P exch def
-	} if
+        /b exch def	% bit within the character
+        /X b B 8 mul add def
+        X WM lt
+          { X Y eq
+            X HM 1 sub Y sub eq or
+            Y Y0 gt X X0 sub abs 2 le and or
+            X X0 sub WM div dup mul Y Y0 sub HM div dup mul add sqrt 9 mul cvi 2 mod 1 eq or
+          }
+          { true }	% pad bits are always set
+        ifelse
+        % stack: true if pixel is set
+        {
+          MB b get P or /P exch def
+        } if
       } for % Bits within a byte
       MaskData C P put
     } for % Bytes within the row
@@ -143,7 +143,7 @@
 
 %
 % WM and HM must be defined prior to invocation
-%     BPC MaskGenBPC -	
+%     BPC MaskGenBPC -
 %
 % The mask data is stored into a string named /MaskData
 %
@@ -168,9 +168,9 @@
       X BPC mul 8 div Y WB mul add exch
       [
         { }						% BPC = 0
-	{ { 1 } { 0 } ifelse put4bit }			% BPC = 4
-	{ { 255 } { 0 } ifelse exch cvi exch put }	% BPC = 8
-	{ { 1 } { 0 } ifelse put12bit }			% BPC = 12
+        { { 1 } { 0 } ifelse put4bit }			% BPC = 4
+        { { 255 } { 0 } ifelse exch cvi exch put }	% BPC = 8
+        { { 1 } { 0 } ifelse put12bit }			% BPC = 12
       ] BPC 4 div cvi get exec
     } for
   } for % Rows in the mask
@@ -220,7 +220,6 @@
   pop		% discard the procedure
   grestore
 } bind def
-
 
 % -----------------------------------------------------------------------
 %
@@ -292,7 +291,6 @@
   grestore
 } bind def
 
-
 % YY, SX, SY, WD and HD should be defined prior to invocation
 % X Y BPC matrix source multi decode MaskColor DoImage4 -
 %
@@ -338,7 +336,7 @@
   /DM exch def
   /MS exch def
   /S exch def		% May be an array of sources - For InterleaveType 3
-  			% S[0] is the Mask DataSource
+                        % S[0] is the Mask DataSource
   /M exch def
   /BPC exch def
   /XX 1 index def
@@ -365,11 +363,11 @@
   /Width		WM
   /Height		HM
   /ImageMatrix		% construct the mask matrix using signs from the DataImage matrix
-			/M0 M 0 get WD abs div cvi def
-			/M3 M 3 get HD abs div cvi def
-			/M4 M 4 get WD abs div cvi def
-			/M5 M 5 get HD abs div cvi def
-			[ WM M0 mul 0 0 HM M3 mul WM M4 mul HM M5 mul ]
+                        /M0 M 0 get WD abs div cvi def
+                        /M3 M 3 get HD abs div cvi def
+                        /M4 M 4 get WD abs div cvi def
+                        /M5 M 5 get HD abs div cvi def
+                        [ WM M0 mul 0 0 HM M3 mul WM M4 mul HM M5 mul ]
   IT 3 eq {
     /DataSource		S 0 get exec	% DataSource only allowed for InterleaveType 3
   } if
@@ -386,7 +384,6 @@
   image
   grestore
 } bind def
-
 
 % -----------------------------------------------------------------------
 %
@@ -447,7 +444,7 @@
 %     0 to 4095 (12 bit)
 
 /put4bit {
-  15 mul cvi 
+  15 mul cvi
   exch dup cvi dup 3 1 roll eq 3 -1 roll exch
   { % integer index means high nibble.
     16 mul put
@@ -461,7 +458,7 @@
 /put12bit {
   1 index cvi /I exch def
   2 index /S exch def
-  4095 mul cvi 
+  4095 mul cvi
   exch dup dup cvi eq
   { % integer index means high byte is aligned
     cvi exch 3 copy 16 div cvi put
@@ -483,7 +480,7 @@
 
 /sM WidthRGB 2 mul 1 sub string def	% long enough to hold more than one mask line
 /sD WidthRGB 7 mul 1 sub string def	% long enough to hold more than one 12 bit RGB line
-				% worst case is 12bit ImageType3 InterleaveType 1 == 48 bits
+                                % worst case is 12bit ImageType3 InterleaveType 1 == 48 bits
 
 /MaskDProc {
   /FM MaskData dup length () /SubFileDecode filter def
@@ -500,7 +497,7 @@
 } bind def
 
 /MaskDFile {
-  MaskData dup length () /SubFileDecode filter 
+  MaskData dup length () /SubFileDecode filter
   /MDF 1 index def
 } bind def
 
@@ -510,7 +507,7 @@
 } bind def
 
 /RGBDFile {
-  RGBData dup length () /SubFileDecode filter 
+  RGBData dup length () /SubFileDecode filter
   /RGBDF 1 index def
 } bind def
 
@@ -534,29 +531,29 @@
 } bind def
 
 /RDFile {
-  RData dup length () /SubFileDecode filter 
+  RData dup length () /SubFileDecode filter
   /RDF 1 index def
 } bind def
 
 /GDFile {
-  GData dup length () /SubFileDecode filter 
+  GData dup length () /SubFileDecode filter
   /GDF 1 index def
 } bind def
 
 /BDFile {
-  BData dup length () /SubFileDecode filter 
+  BData dup length () /SubFileDecode filter
   /BDF 1 index def
 } bind def
 
 % -----------------------------------------------------------------------
-% 
+%
 %  Procedure to handle fileposition. Ghostscript has a private
 %  operator .fileposition that works when fileposition does not
-% 
+%
 %    <file> tryfilepos
 % 	Returns:	fileposition true	if successful
 %			0 false			if not
-/tryfilepos {	
+/tryfilepos {
   /.fileposition where
     { pop /.fileposition load }	% most likely to succeed
     { /fileposition load }
@@ -568,7 +565,7 @@
 } bind def
 
 % -----------------------------------------------------------------------
-% 
+%
 % Procedure to provide =only operator if not present. Suggested
 % by Alex Cherepanov to use =print operator present on some Adobe
 % implementations.
@@ -580,12 +577,12 @@
 ifelse
 
 % -----------------------------------------------------------------------
-% 
+%
 %  Procedure to make sure that the file is at the EOF.
 %  added above (string == FileTailString.
 %
 %  If not, it will mark the image area with a red "F"
-% 
+%
 %    <string> <title> <file> CheckFileTail -	XX is the horizontal position
 %						YY is the vertical position
 %						SX,SY determine size of "F" if fail
@@ -635,10 +632,10 @@ ifelse
   200 740 moveto (Rotation Angle = ) show IR 3 string cvs show
   170 720 moveto (Colorspace = ) show CSpaceName show
   LegendFont setfont
-  
+
   .4 .1 .7 setrgbcolor	% contrasting color for stencil masking
   /SX SX 2 mul def /SY SY 2 mul def
-  /YY 780 SY sub def 
+  /YY 780 SY sub def
   MaskGen
   TX IMLRTB MaskData  [1 0] DoImageMask
 
@@ -648,8 +645,8 @@ ifelse
     dup 2 index 1 add G 255 mul cvi put
     exch 2 add B 255 mul cvi put
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XI  8  IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
   /SX SX 2 div def /SY SY 2 div def
 
@@ -661,8 +658,8 @@ ifelse
 % Type 1 and Type 4 Tests
 
 %	/CSpace and /IR are defined in order to generate various pages
-/T1T4Tests {	% 
-  
+/T1T4Tests {	%
+
   % Use an unusual (unpleasant?) underlying color
   .6 .95 .4 setrgbcolor clippath fill
   0 0 0 setrgbcolor
@@ -683,13 +680,13 @@ ifelse
   XH BY moveto (   Multi\nDS=string) blockshow
   XI BY moveto (  Multi\nDS=proc) blockshow
   XJ BY moveto (  Multi\nDS=file) blockshow
-  
+
   .4 .1 .7 setrgbcolor	% contrasting color for stencil masking
-  
+
   /WM WD def
   /HM HD def
   /SX SX 2 mul def /SY SY 2 mul def
-  /YY 780 SY sub def 
+  /YY 780 SY sub def
   MaskGen
   TX IMLRTB MaskData  [1 0] DoImageMask
 
@@ -699,20 +696,20 @@ ifelse
     dup 2 index 1 add G 255 mul cvi put
     exch 2 add B 255 mul cvi put
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XI  8  IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
   /SX SX 2 div def /SY SY 2 div def
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 Stencil Mask Images
-  
+
   /YY YA def
   TX YA SY add moveto (\nType 1\nStencil\nMask) blockshow
-  
+
   MaskGen
 
-  % X matrix source   decode 
+  % X matrix source   decode
    XA IMLRTB MaskData  [0 1] DoImageMask
    XB IMLRTB MaskData  [1 0] DoImageMask
    XC IMLRBT MaskData  [1 0] DoImageMask
@@ -721,21 +718,21 @@ ifelse
    XF IMLRTB MaskDProc [1 0] DoImageMask
    XG IMLRTB MaskDFile [1 0] DoImageMask
    MaskData (Mask) MDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Single Data Sources, BPC==8
-  
+
   /YY YB def
   TX YY SY add moveto (\nType 1\nRGB\nBPC=8) blockshow
-  
+
   /RGBData WD HD mul 3 mul string def
   { X Y WD mul add 3 mul RGBData
     dup 2 index R 255 mul cvi put
     dup 2 index 1 add G 255 mul cvi put
     exch 2 add B 255 mul cvi put
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XA  8  IMLRTB RGBData false  [1 0 1 0 1 0]  DoImage1
    XB  8  IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
    XC  8  IMLRBT RGBData false  [0 1 0 1 0 1]  DoImage1
@@ -744,35 +741,34 @@ ifelse
    XF  8  IMLRTB RGBDProc false [0 1 0 1 0 1]  DoImage1
    XG  8  IMLRTB RGBDFile false [0 1 0 1 0 1]  DoImage1
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Multiple Data Sources, BPC==8
-  
+
   WD HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { X Y WD mul add 
+        /BData exch    string def
+  { X Y WD mul add
     RData 1 index R 255 mul cvi put
     GData 1 index G 255 mul cvi put
     BData exch    B 255 mul cvi put
   } ImageGen
 
-  
-  % X BPC matrix source                   multi decode         
+  % X BPC matrix source                   multi decode
    XH  8  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1]  DoImage1
    XI  8  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1]  DoImage1
    XJ  8  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1]  DoImage1
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==8, mask black
-  
+
   /YY YE def
   TX YY SY add moveto (\nType 4\nBPC=8\nmask=black) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor        
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA  8  IMLRTB RGBData false  [1 0 1 0 1 0] [ 000 000 000 ]  DoImage4
    XB  8  IMLRTB RGBData false  [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    XC  8  IMLRBT RGBData false  [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
@@ -781,25 +777,25 @@ ifelse
    XF  8  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    XG  8  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==8, mask black
-  
-  % X BPC matrix source                   multi decode         MaskColor       
+
+  % X BPC matrix source                   multi decode         MaskColor
    XH  8  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    XI  8  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    XJ  8  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 000 000 000 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==8, mask white
-  
+
   /YY YF def
   TX YY SY add moveto (\nType 4\nBPC=8\nmask=white) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor        
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA  8  IMLRTB RGBData false  [1 0 1 0 1 0] [ 255 255 255 ]  DoImage4
    gsave .5 .2 .2 setrgbcolor XB YY SX 13 mul SY rectfill grestore
    XB  8  IMLRTB RGBData false  [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
@@ -809,25 +805,25 @@ ifelse
    XF  8  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
    XG  8  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==8, mask white
-  
-  % X BPC matrix source                   multi decode         MaskColor       
+
+  % X BPC matrix source                   multi decode         MaskColor
    XH  8  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
    XI  8  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
    XJ  8  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 255 255 255 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==8, mask gray
-  
+
   /YY YG def
   TX YY SY add moveto (\nType 4\nBPC=8\nmask=gray) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor        
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA  8  IMLRTB RGBData false  [1 0 1 0 1 0] [ 147 147 147 ]  DoImage4
    XB  8  IMLRTB RGBData false  [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    XC  8  IMLRBT RGBData false  [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
@@ -836,25 +832,25 @@ ifelse
    XF  8  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    XG  8  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==8, mask gray
-  
-  % X BPC matrix source                   multi decode         MaskColor       
+
+  % X BPC matrix source                   multi decode         MaskColor
    XH  8  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    XI  8  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    XJ  8  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 147 147 147 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==8, mask range
-  
+
   /YY YH def
   TX YY SY add moveto (\nType 4\nBPC=8\nmask range) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor                  
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA  8  IMLRTB RGBData false  [1 0 1 0 1 0] [ 020 200 020 200 020 200 ]  DoImage4
    XB  8  IMLRTB RGBData false  [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    XC  8  IMLRBT RGBData false  [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
@@ -863,33 +859,33 @@ ifelse
    XF  8  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    XG  8  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==8, mask range
-  
-  % X  Y SX SY BPC matrix source                   multi decode         MaskColor                  
+
+  % X  Y SX SY BPC matrix source                   multi decode         MaskColor
    XH  8  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    XI  8  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    XJ  8  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 020 200 020 200 020 200 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Single Data Sources, BPC==12
-  
+
   /YY YC def
   TX YY SY add moveto (\nType 1\nRGB\nBPC=12) blockshow
-  
+
   /RGBData WD 36 mul 7 add 8 div cvi HD mul string def
-  { 
+  {
     X 36 mul 8 div Y WD 36 mul 7 add 8 div cvi mul add
     RGBData 1 index R put12bit
     RGBData 1 index 1.5 add G put12bit
     RGBData exch 3 add B put12bit
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XA  12 IMLRTB RGBData false  [1 0 1 0 1 0]  DoImage1
    XB  12 IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
    XC  12 IMLRBT RGBData false  [0 1 0 1 0 1]  DoImage1
@@ -898,35 +894,35 @@ ifelse
    XF  12 IMLRTB RGBDProc false [0 1 0 1 0 1]  DoImage1
    XG  12 IMLRTB RGBDFile false [0 1 0 1 0 1]  DoImage1
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Multiple Data Sources, BPC==12
-  
+
   WD 3 mul 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 3 mul 2 div Y WD 3 mul 1 add 2 div cvi mul add
     RData 1 index R put12bit
     GData 1 index G put12bit
     BData exch B put12bit
   } ImageGen
-  
-  % X BPC matrix source                   multi decode         
+
+  % X BPC matrix source                   multi decode
    XH  12 IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1]  DoImage1
    XI  12 IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1]  DoImage1
    XJ  12 IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1]  DoImage1
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==12, mask range
-  
+
   /YY YI def
   TX YY SY add moveto (\nType 4\nBPC=12\nmask range) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor                  
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA 12  IMLRTB RGBData false  [1 0 1 0 1 0] [ 300 3000 300 3000 300 3000 ]  DoImage4
    XB 12  IMLRTB RGBData false  [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    XC 12  IMLRBT RGBData false  [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
@@ -935,33 +931,33 @@ ifelse
    XF 12  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    XG 12  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==12, mask range
-  
-  % X BPC matrix source                   multi decode         MaskColor                  
+
+  % X BPC matrix source                   multi decode         MaskColor
    XH 12  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    XI 12  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    XJ 12  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 300 3000 300 3000 300 3000 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Single Data Sources, BPC==4
-  
+
   /YY YD def
   TX YY SY add moveto (\nType 1\nRGB\nBPC=4) blockshow
-  
+
   /RGBData WD 12 mul 7 add 8 div cvi HD mul string def
-  { 
+  {
     X 12 mul 8 div Y WD 12 mul 7 add 8 div cvi mul add
     RGBData 1 index         R put4bit
     RGBData 1 index 0.5 add G put4bit
     RGBData exch    1.0 add B put4bit
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XA  4  IMLRTB RGBData false  [1 0 1 0 1 0]  DoImage1
    XB  4  IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
    XC  4  IMLRBT RGBData false  [0 1 0 1 0 1]  DoImage1
@@ -970,35 +966,35 @@ ifelse
    XF  4  IMLRTB RGBDProc false [0 1 0 1 0 1]  DoImage1
    XG  4  IMLRTB RGBDFile false [0 1 0 1 0 1]  DoImage1
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 1 RGB Multiple Data Sources, BPC==4
-  
+
   WD 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 2 div Y WD 1 add 2 div cvi mul add
     RData 1 index R put4bit
     GData 1 index G put4bit
     BData exch    B put4bit
   } ImageGen
-  
-  % X BPC matrix source                   multi decode         
+
+  % X BPC matrix source                   multi decode
    XH  4  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1]  DoImage1
    XI  4  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1]  DoImage1
    XJ  4  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1]  DoImage1
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Single Data Sources, BPC==4, mask range
-  
+
   /YY YJ def
   TX YY SY add moveto (\nType 4\nBPC=4\nmask range) blockshow
-  
-  % X BPC matrix source  multi  decode        MaskColor           
+
+  % X BPC matrix source  multi  decode        MaskColor
    XA  4  IMLRTB RGBData false  [1 0 1 0 1 0] [ 1 10 1 10 1 10 ]  DoImage4
    XB  4  IMLRTB RGBData false  [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    XC  4  IMLRBT RGBData false  [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
@@ -1007,20 +1003,20 @@ ifelse
    XF  4  IMLRTB RGBDProc false [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    XG  4  IMLRTB RGBDFile false [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   % ----------------------------------------------------------------------
   % 			Type 4 RGB Multiple Data Sources, BPC==4, mask range
-  
-  % X BPC matrix source                   multi decode         MaskColor          
+
+  % X BPC matrix source                   multi decode         MaskColor
    XH  4  IMLRTB [ RData GData BData ]    true  [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    XI  4  IMLRTB [ RDProc GDProc BDProc ] true  [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    XJ  4  IMLRTB [ RDFile GDFile BDFile ] true  [0 1 0 1 0 1] [ 1 10 1 10 1 10 ]  DoImage4
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   showpage
-  
+
 } bind def 	% T1T4Tests
 
 % -----------------------------------------------------------------------
@@ -1037,13 +1033,13 @@ ifelse
   200 740 moveto (Rotation Angle = ) show IR 3 string cvs show
   170 720 moveto (Colorspace = ) show CSpaceName show
   LegendFont setfont
-  
+
   .4 .1 .7 setrgbcolor	% contrasting color for stencil masking
 
   /WM WD def
   /HM HD def
   /SX SX 2 mul def /SY SY 2 mul def
-  /YY 780 SY sub def 
+  /YY 780 SY sub def
   MaskGen
   XA IMLRTB MaskData  [1 0] DoImageMask
 
@@ -1053,17 +1049,17 @@ ifelse
     dup 2 index 1 add G 255 mul cvi put
     exch 2 add B 255 mul cvi put
   } ImageGen
-  
-  % X BPC matrix source  multi  decode         
+
+  % X BPC matrix source  multi  decode
    XH  8  IMLRTB RGBData false  [0 1 0 1 0 1]  DoImage1
   /SX SX 2 div def /SY SY 2 div def
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 1, BPC==8, WM=WD, HM=HD
 %		IT 1 is what GS calls "chunky pixel"
   /YY YA def
   TX YY SY add moveto (\nIntType 1\nBPC=8) blockshow
-  
+
   % Generate the MaskData first
   8 MaskGenBPC
 
@@ -1089,13 +1085,13 @@ ifelse
    XH  8  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    XI  8  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 1, BPC==12, WM=WD, HM=HD
 %		IT 1 is what GS calls "chunky pixel"
   /YY YB def
   TX YY SY add moveto (\nIntType 1\nBPC=12) blockshow
-  
+
   % Generate the MaskData first
   12 MaskGenBPC
 
@@ -1103,11 +1099,11 @@ ifelse
   /RGBData WD HD mul 6 mul string def
   { X Y WD mul add 6 mul		% 6 bytes Mask,Red,Green,Blue
     RGBData
-    dup 2 index       
-    		      MaskData X 1.5 mul .5 add cvi
-		      Y WB mul add get	% get the aligned mask byte (hi or lo)
-    		      0 eq { 0 } { 1 } ifelse
-    		      put12bit
+    dup 2 index
+                      MaskData X 1.5 mul .5 add cvi
+                      Y WB mul add get	% get the aligned mask byte (hi or lo)
+                      0 eq { 0 } { 1 } ifelse
+                      put12bit
     dup 2 index 1.5 add R put12bit
     dup 2 index 3.0 add G put12bit
     exch        4.5 add B put12bit
@@ -1125,13 +1121,13 @@ ifelse
    XH 12  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    XI 12  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 1, BPC==4, WM=WD, HM=HD
 %		IT 1 is what GS calls "chunky pixel"
   /YY YC def
   TX YY SY add moveto (\nIntType 1\nBPC=4) blockshow
-  
+
   % Generate the MaskData first
   4 MaskGenBPC
 
@@ -1140,8 +1136,8 @@ ifelse
   { X Y WD mul add 2 mul		% 2 bytes Mask,Red,Green,Blue
     RGBData
     dup 2 index       MaskData X 2 div cvi Y WB mul add get
-    		      X 1 and 0 eq { 128 div cvi } { 1 and } ifelse
-		      put4bit
+                      X 1 and 0 eq { 128 div cvi } { 1 and } ifelse
+                      put4bit
     dup 2 index 0.5 add R put4bit
     dup 2 index 1.0 add G put4bit
     exch        1.5 add B put4bit
@@ -1159,14 +1155,14 @@ ifelse
    XH  4  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    XI  4  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  1 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 2, BPC==8, WM=WD, HM=HD
 %		IT 2 is line interleave -- Mask line follwoed by Data line
 %		RGB Image Data must be chunky (MultipleDatasources==false).
   /YY YD def
   TX YY SY add moveto (\nIntType 2\nBPC=8) blockshow
-  
+
   % Generate the MaskData first
   MaskGen
 
@@ -1197,12 +1193,12 @@ ifelse
    XH  8  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    XI  8  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 2, BPC==12, WM=WD, HM=HD
   /YY YE def
   TX YY SY add moveto (\nIntType 2\nBPC=12) blockshow
-  
+
   % Generate the Data Image (uses the MaskData)
   /BPL WD 36 mul 7 add 8 div cvi WB add def		% BytesPerLine
   /RGBData BPL HD mul string def
@@ -1230,12 +1226,12 @@ ifelse
    XH 12  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    XI 12  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 2, BPC==4, WM=WD, HM=HD
   /YY YF def
   TX YY SY add moveto (\nIntType 2\nBPC=4) blockshow
-  
+
   % Generate the Data Image (uses the MaskData)
   /BPL WD 12 mul 7 add 8 div cvi WB add def		% BytesPerLine
   /RGBData BPL HD mul string def
@@ -1270,7 +1266,7 @@ ifelse
 %		RGB Image Data must be chunky (MultipleDatasources==false).
   /YY YG def
   TX YY SY add moveto (\nIntType 2\nBPC=8\nWM=.6*WD\nHM=HD/2) blockshow
-  
+
   % Generate the MaskData first
   /WM WD .6 mul cvi def
   /HM HD 2 div cvi def
@@ -1297,7 +1293,7 @@ ifelse
 %DEBUG	/xx (xx) (w) file def
 %DEBUG	0 1 HM 1 sub { MaskData exch WB mul WB getinterval xx exch writehexstring xx (\n) writestring } for
 %DEBUG	xx (----------------------------------------------------------------\n) writestring
-%DEBUG	0 2 HD 1 sub { 
+%DEBUG	0 2 HD 1 sub {
 %DEBUG	  RGBData 1 index BPL mul 2 index 2 div cvi WB mul add
 %DEBUG	  WB getinterval xx exch writehexstring xx (\n) writestring
 %DEBUG	  RGBData 1 index BPL mul 2 index 2 div cvi 1 add WB mul add
@@ -1328,7 +1324,7 @@ ifelse
 %		RGB Image Data must be chunky (MultipleDatasources==false).
   /YY YH def
   TX YY SY add moveto (\nIntType 2\nBPC=8\nWM=1.3*WD\nHM=2*HD) blockshow
-  
+
   % Generate the MaskData first
   /WM WD 1.3 mul cvi def
   /HM HD 2 mul def
@@ -1366,7 +1362,7 @@ ifelse
 % 		InterleaveType 2, BPC==12, WM=1.3*WD, HM=2*HD
   /YY YI def
   TX YY SY add moveto (\nIntType 2\nBPC=12\nWM=1.3*WD\nHM=2*HD) blockshow
-  
+
   % Generate the Data Image (uses the MaskData)
   /HR HM HD div cvi def
   /BPL WD 36 mul 7 add 8 div cvi WB HR mul add def		% BytesPerLine
@@ -1395,12 +1391,12 @@ ifelse
    XH 12  IMLRTB RGBDProc false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    XI 12  IMLRTB RGBDFile false [1 0]    [0 1 0 1 0 1]  2 DoImage3
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 2, BPC==4, WM=1.3*WD, HM=2*HD
   /YY YJ def
   TX YY SY add moveto (\nIntType 2\nBPC=4\nWM=1.3*WD\nHM=2*HD) blockshow
-  
+
   % Generate the Data Image (uses the MaskData)
   /HR HM HD div cvi def
   /BPL WD 12 mul 7 add 8 div cvi WB HR mul add def		% BytesPerLine
@@ -1452,7 +1448,7 @@ ifelse
 %		RGB Image Data chunky (MultipleDatasources==false).
   /YY YA def
   TX YY SY add moveto (BPC=8\nMulti\nfalse) blockshow
-  
+
   % Generate the MaskData first
   /WM WD def
   /HM HD def
@@ -1478,20 +1474,20 @@ ifelse
    XI  8  IMLRTB [ MaskDFile RGBDFile ] false  [1 0]    [0 1 0 1 0 1]  3 DoImage3
    MaskData (Mask) MDF CheckFileTail % Check that the correct amount of data was consumed
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==12, WM=WD, HM=HD
   /YY YB def
   TX YY SY add moveto (BPC=12\nMulti\nfalse) blockshow
-  
+
   /RGBData WD 36 mul 7 add 8 div cvi HD mul string def
-  { 
+  {
     X 36 mul 8 div Y WD 36 mul 7 add 8 div cvi mul add
     RGBData 1 index R put12bit
     RGBData 1 index 1.5 add G put12bit
     RGBData exch 3 add B put12bit
   } ImageGen
-  
+
   % X BPC matrix source                 multi MaskDecode DataDecode   IT DoImage3 -
    XA 12  IMLRTB [ MaskData  RGBData  ] false  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB 12  IMLRTB [ MaskData  RGBData  ] false  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1504,20 +1500,20 @@ ifelse
    XI 12  IMLRTB [ MaskDFile RGBDFile ] false  [1 0]    [0 1 0 1 0 1]  3 DoImage3
    MaskData (Mask) MDF CheckFileTail % Check that the correct amount of data was consumed
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==4, WM=WD, HM=HD
   /YY YC def
   TX YY SY add moveto (BPC=4\nMulti\nfalse) blockshow
-  
+
   /RGBData WD 12 mul 7 add 8 div cvi HD mul string def
-  { 
+  {
     X 12 mul 8 div Y WD 12 mul 7 add 8 div cvi mul add
     RGBData 1 index         R put4bit
     RGBData 1 index 0.5 add G put4bit
     RGBData exch    1.0 add B put4bit
   } ImageGen
-  
+
   % X BPC matrix source                 multi MaskDecode DataDecode   IT DoImage3 -
    XA  4  IMLRTB [ MaskData  RGBData  ] false  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  4  IMLRTB [ MaskData  RGBData  ] false  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1530,27 +1526,27 @@ ifelse
    XI  4  IMLRTB [ MaskDFile RGBDFile ] false  [1 0]    [0 1 0 1 0 1]  3 DoImage3
    MaskData (Mask) MDF CheckFileTail % Check that the correct amount of data was consumed
    RGBData (RGB) RGBDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==8, WM=WD, HM=HD
 %		IT 3 is line interleave -- Mask and Data in separate sources
 %		RGB Image Data seprate (MultipleDatasources==true).
   /YY YA def
   TX YY SY add moveto (BPC=8\nMulti\ntrue) blockshow
-  
+
   % Generate the MaskData first
   MaskGen
 
   % Generate the Data Image
   WD HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { X Y WD mul add 
+        /BData exch    string def
+  { X Y WD mul add
     RData 1 index R 255 mul cvi put
     GData 1 index G 255 mul cvi put
     BData exch    B 255 mul cvi put
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1565,7 +1561,6 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
 
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==8, WM=WD, HM=HD
@@ -1573,20 +1568,20 @@ ifelse
 %		RGB Image Data seprate (MultipleDatasources==true).
   /YY YD def
   TX YY SY add moveto (BPC=8\nMulti\ntrue) blockshow
-  
+
   % Generate the MaskData first
   MaskGen
 
   % Generate the Data Image
   WD HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { X Y WD mul add 
+        /BData exch    string def
+  { X Y WD mul add
     RData 1 index R 255 mul cvi put
     GData 1 index G 255 mul cvi put
     BData exch    B 255 mul cvi put
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1601,22 +1596,22 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==12, WM=WD, HM=HD
   /YY YE def
   TX YY SY add moveto (BPC=12\nMulti\ntrue) blockshow
-  
+
   WD 3 mul 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 3 mul 2 div Y WD 3 mul 1 add 2 div cvi mul add
     RData 1 index R put12bit
     GData 1 index G put12bit
     BData exch B put12bit
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA 12  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB 12  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1631,23 +1626,22 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==4, WM=WD, HM=HD
   /YY YF def
   TX YY SY add moveto (BPC=4\nMulti\ntrue) blockshow
-  
+
   WD 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 2 div Y WD 1 add 2 div cvi mul add
     RData 1 index R put4bit
     GData 1 index G put4bit
     BData exch    B put4bit
   } ImageGen
-  
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  4  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  4  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1662,7 +1656,7 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==8, WM=.9*WD, HM=1.1*HD
 %		IT 3 is line interleave -- Mask and Data in separate sources
@@ -1678,13 +1672,13 @@ ifelse
   % Generate the Data Image
   WD HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { X Y WD mul add 
+        /BData exch    string def
+  { X Y WD mul add
     RData 1 index R 255 mul cvi put
     GData 1 index G 255 mul cvi put
     BData exch    B 255 mul cvi put
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1699,22 +1693,22 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==12, WM=WD, HM=HD
   /YY YI def
   TX YY SY add moveto (BPC=12\nMulti\ntrue\nWM=.9*WD\nHM=1.1*HD) blockshow
-  
+
   WD 3 mul 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 3 mul 2 div Y WD 3 mul 1 add 2 div cvi mul add
     RData 1 index R put12bit
     GData 1 index G put12bit
     BData exch B put12bit
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA 12  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB 12  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1729,23 +1723,22 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==4, WM=WD, HM=HD
   /YY YJ def
   TX YY SY add moveto (BPC=4\nMulti\ntrue\nWM=.9*WD\nHM=1.1*HD) blockshow
-  
+
   WD 1 add 2 div cvi HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { 
+        /BData exch    string def
+  {
     X 2 div Y WD 1 add 2 div cvi mul add
     RData 1 index R put4bit
     GData 1 index G put4bit
     BData exch    B put4bit
   } ImageGen
-  
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  4  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  4  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1760,7 +1753,7 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
 % ----------------------------------------------------------------------
 % 		InterleaveType 3, BPC==8, WM=1.1*WD, HM=.9*HD
 %		IT 3 is line interleave -- Mask and Data in separate sources
@@ -1776,13 +1769,13 @@ ifelse
   % Generate the Data Image
   WD HD mul /RData 1 index string def
           /GData 1 index string def
-  	/BData exch    string def
-  { X Y WD mul add 
+        /BData exch    string def
+  { X Y WD mul add
     RData 1 index R 255 mul cvi put
     GData 1 index G 255 mul cvi put
     BData exch    B 255 mul cvi put
   } ImageGen
-  
+
   % X BPC matrix source                              multi MaskDecode DataDecode   IT DoImage3 -
    XA  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [0 1]    [1 0 1 0 1 0]  3 DoImage3
    XB  8  IMLRTB [ MaskData  [RData  GData  BData] ] true  [1 0]    [1 0 1 0 1 0]  3 DoImage3
@@ -1797,10 +1790,9 @@ ifelse
    RData (Red) RDF CheckFileTail % Check that the correct amount of data was consumed
    GData (Grn) GDF CheckFileTail % Check that the correct amount of data was consumed
    BData (Blu) BDF CheckFileTail % Check that the correct amount of data was consumed
-  
+
   showpage
 } bind def 	% T3Tests
-
 
 % ----------------------------------------------------------------------
 % 	Do the various rotations

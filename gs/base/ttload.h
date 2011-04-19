@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,7 +19,7 @@
  *
  *  ttload.h                                                    1.1
  *
- *    TrueType Tables Loader.                          
+ *    TrueType Tables Loader.
  *
  *  Copyright 1996-1998 by
  *  David Turner, Robert Wilhelm, and Werner Lemberg.
@@ -42,7 +42,6 @@
 
 #include "ttcommon.h"
 
-
 #ifdef __cplusplus
   extern "C" {
 #endif
@@ -50,7 +49,7 @@
   Int  LookUp_TrueType_Table( PFace  face,
                               Long   tag  );
 
-  TT_Error  Load_TrueType_Directory        ( PFace  face, 
+  TT_Error  Load_TrueType_Directory        ( PFace  face,
                                              int    faceIndex );
 
   TT_Error  Load_TrueType_MaxProfile       ( PFace  face );
@@ -73,10 +72,8 @@
                                void*  buffer,
                                Long*  length );
 
-
   TT_Error  Free_TrueType_Names( PFace  face );
   TT_Error  Free_TrueType_Hdmx ( PFace  face );
-
 
 /* The following macros are defined to simplify the writing of */
 /* the various table and glyph loaders.                        */
@@ -100,7 +97,7 @@
 #define GET_Short()   ttfReader__Short (r)
 #define GET_Long()    ttfReader__Int (r)
 #define GET_ULong()   ttfReader__UInt(r)
-  
+
 #ifdef TT_CONFIG_REENTRANT  /* re-entrant implementation */
 
 /* The following macros define the necessary local */
@@ -134,7 +131,6 @@
           DEFINE_A_STREAM; \
           DEFINE_A_FRAME
 
-
 #define ACCESS_Frame( _size_ ) \
           ( error = TT_Access_Frame( stream, &frame, _size_ ) )
 #define CHECK_ACCESS_Frame( _size_ ) \
@@ -152,7 +148,7 @@
           ( error = TT_Read_File ( stream, buffer, count ) )
 #define FILE_Read_At( pos, buffer, count ) \
           ( error = TT_Read_At_File( stream, pos, buffer, count ) )
-  
+
 #else   /* thread-safe implementation */
 
 /* Define stream locals with frame -- nothing in thread-safe mode */
@@ -176,7 +172,6 @@
           TT_Error  error; \
           DEFINE_A_STREAM
 
-
 #define ACCESS_Frame( _size_ ) \
           ( error = TT_Access_Frame( _size_ ) )
 #define CHECK_ACCESS_Frame( _size_ ) \
@@ -185,7 +180,7 @@
           ( error = TT_Forget_Frame() )
 
 #define GET_Tag4()    TT_Get_Long  ()
-  
+
 #define FILE_Pos()    TT_File_Pos()
 
 #define FILE_Seek( _position_ ) \
@@ -196,7 +191,7 @@
           ( error = TT_Read_File ( buffer, count ) )
 #define FILE_Read_At( pos, buffer, count ) \
           ( error = TT_Read_At_File( pos, buffer, count ) )
-  
+
 #endif /* TT_CONFIG_REENTRANT */
 
 #ifdef __cplusplus
@@ -204,6 +199,5 @@
 #endif
 
 #endif /* TTLOAD_H */
-
 
 /* END */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,9 +31,9 @@
 /* Forward references */
 static int write_string(ref *, stream *);
 static int handle_read_status(i_ctx_t *, int, const ref *, const uint *,
-			       op_proc_t);
+                               op_proc_t);
 static int handle_write_status(i_ctx_t *, int, const ref *, const uint *,
-				op_proc_t);
+                                op_proc_t);
 
 /* ------ Operators ------ */
 
@@ -46,16 +46,16 @@ zclosefile(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_file);
     if (file_is_valid(s, op)) {	/* closing a closed file is a no-op */
-	int status = sclose(s);
+        int status = sclose(s);
 
-	if (status != 0 && status != EOFC) {
-	    if (s_is_writing(s))
-		return handle_write_status(i_ctx_p, status, op, NULL,
-					   zclosefile);
-	    else
-		return handle_read_status(i_ctx_p, status, op, NULL,
-					  zclosefile);
-	}
+        if (status != 0 && status != EOFC) {
+            if (s_is_writing(s))
+                return handle_write_status(i_ctx_p, status, op, NULL,
+                                           zclosefile);
+            else
+                return handle_read_status(i_ctx_p, status, op, NULL,
+                                          zclosefile);
+        }
     }
     pop(1);
     return 0;
@@ -82,15 +82,15 @@ zread(i_ctx_t *i_ctx_p)
     push(1);
     ch = sgetc(s);
     if (ch >= 0) {
-	make_int(op - 1, ch);
-	make_bool(op, 1);
+        make_int(op - 1, ch);
+        make_bool(op, 1);
     } else {
-	pop(1);		/* Adjust ostack back from preparatory 'pop' */
-	op--;
-	if (ch == EOFC) 
-	make_bool(op, 0);
+        pop(1);		/* Adjust ostack back from preparatory 'pop' */
+        op--;
+        if (ch == EOFC)
+        make_bool(op, 0);
     else
-	return handle_read_status(i_ctx_p, ch, op, NULL, zread);
+        return handle_read_status(i_ctx_p, ch, op, NULL, zread);
     }
     return 0;
 }
@@ -109,8 +109,8 @@ zwrite(i_ctx_t *i_ctx_p)
     ch = (byte) op->value.intval;
     status = sputc(s, (byte) ch);
     if (status >= 0) {
-	pop(2);
-	return 0;
+        pop(2);
+        return 0;
     }
     return handle_write_status(i_ctx_p, status, op - 1, NULL, zwrite);
 }
@@ -137,25 +137,25 @@ zreadhexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, int odd)
     cw.ptr = str + start - 1;
     cw.limit = str + len - 1;
     for (;;) {
-	status = s_hex_process(&s->cursor.r, &cw, &odd_byte,
-			       hex_ignore_garbage);
-	if (status == 1) {	/* filled the string */
-	    ref_assign_inline(op - 1, op);
-	    make_true(op);
-	    return 0;
-	} else if (status != 0)	/* error or EOF */
-	    break;
-	/* Didn't fill, keep going. */
-	status = spgetc(s);
-	if (status < 0)
-	    break;
-	sputback(s);
+        status = s_hex_process(&s->cursor.r, &cw, &odd_byte,
+                               hex_ignore_garbage);
+        if (status == 1) {	/* filled the string */
+            ref_assign_inline(op - 1, op);
+            make_true(op);
+            return 0;
+        } else if (status != 0)	/* error or EOF */
+            break;
+        /* Didn't fill, keep going. */
+        status = spgetc(s);
+        if (status < 0)
+            break;
+        sputback(s);
     }
     nread = cw.ptr + 1 - str;
     if (status != EOFC) {	/* Error */
-	nread |= odd_byte << 24;
+        nread |= odd_byte << 24;
         return handle_read_status(i_ctx_p, status, op - 1, &nread,
-				  zreadhexstring_continue);
+                                  zreadhexstring_continue);
     }
     /* Reached end-of-file before filling the string. */
     /* Return an appropriate substring. */
@@ -183,13 +183,13 @@ zreadhexstring_continue(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     length = op->value.intval & 0xFFFFFF;
     odd = op->value.intval >> 24;
-    
+
     if (length > r_size(op - 1) || odd < -1 || odd > 0xF)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     check_write_type(op[-1], t_string);
     code = zreadhexstring_at(i_ctx_p, op - 1, (uint)length, odd);
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -213,36 +213,36 @@ zwritehexstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint odd)
     p = op->value.bytes;
     len = r_size(op);
     while (len) {
-	uint len1 = min(len, MAX_HEX / 2);
-	register byte *q = buf;
-	uint count = len1;
-	ref rbuf;
+        uint len1 = min(len, MAX_HEX / 2);
+        register byte *q = buf;
+        uint count = len1;
+        ref rbuf;
 
-	do {
-	    ch = *p++;
-	    *q++ = hex_digits[ch >> 4];
-	    *q++ = hex_digits[ch & 0xf];
-	}
-	while (--count);
-	r_set_size(&rbuf, (len1 << 1) - odd);
-	rbuf.value.bytes = buf + odd;
-	status = write_string(&rbuf, s);
-	switch (status) {
-	    default:
-		return_error(e_ioerror);
-	    case 0:
-		len -= len1;
-		odd = 0;
-		continue;
-	    case INTC:
-	    case CALLC:
-		count = rbuf.value.bytes - buf;
-		op->value.bytes += count >> 1;
-		r_set_size(op, len - (count >> 1));
-		count &= 1;
-		return handle_write_status(i_ctx_p, status, op - 1, &count,
-					   zwritehexstring_continue);
-	}
+        do {
+            ch = *p++;
+            *q++ = hex_digits[ch >> 4];
+            *q++ = hex_digits[ch & 0xf];
+        }
+        while (--count);
+        r_set_size(&rbuf, (len1 << 1) - odd);
+        rbuf.value.bytes = buf + odd;
+        status = write_string(&rbuf, s);
+        switch (status) {
+            default:
+                return_error(e_ioerror);
+            case 0:
+                len -= len1;
+                odd = 0;
+                continue;
+            case INTC:
+            case CALLC:
+                count = rbuf.value.bytes - buf;
+                op->value.bytes += count >> 1;
+                r_set_size(op, len - (count >> 1));
+                count &= 1;
+                return handle_write_status(i_ctx_p, status, op - 1, &count,
+                                           zwritehexstring_continue);
+        }
     }
     pop(2);
     return 0;
@@ -265,10 +265,10 @@ zwritehexstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if ((op->value.intval & ~1) != 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     code = zwritehexstring_at(i_ctx_p, op - 1, (uint) op->value.intval);
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -287,12 +287,12 @@ zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
     status = sgets(s, op->value.bytes + start, len - start, &rlen);
     rlen += start;
     switch (status) {
-	case EOFC:
-	case 0:
-	    break;
-	default:
-	    return handle_read_status(i_ctx_p, status, op - 1, &rlen,
-				      zreadstring_continue);
+        case EOFC:
+        case 0:
+            break;
+        default:
+            return handle_read_status(i_ctx_p, status, op - 1, &rlen,
+                                      zreadstring_continue);
     }
     /*
      * The most recent Adobe specification says that readstring
@@ -302,7 +302,7 @@ zreadstring_at(i_ctx_t *i_ctx_p, os_ptr op, uint start)
      * len is zero, sgets will return 0 immediately with rlen = 0.
      */
     if (len == 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     r_set_size(op, rlen);
     op[-1] = *op;
     make_bool(op, (rlen == len ? 1 : 0));
@@ -325,10 +325,10 @@ zreadstring_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > r_size(op - 1))
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     code = zreadstring_at(i_ctx_p, op - 1, (uint) op->value.intval);
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -344,8 +344,8 @@ zwritestring(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     status = write_string(op, s);
     if (status >= 0) {
-	pop(2);
-	return 0;
+        pop(2);
+        return 0;
     }
     return handle_write_status(i_ctx_p, status, op - 1, NULL, zwritestring);
 }
@@ -377,23 +377,23 @@ zreadline_at(i_ctx_t *i_ctx_p, os_ptr op, uint count, bool in_eol)
     str.size = r_size(op);
     status = zreadline_from(s, &str, NULL, &count, &in_eol);
     switch (status) {
-	case 0:
-	case EOFC:
-	    break;
-	case 1:
-	    return_error(e_rangecheck);
-	default:
-	    if (count == 0 && !in_eol)
-		return handle_read_status(i_ctx_p, status, op - 1, NULL,
-					  zreadline);
-	    else {
-		if (in_eol) {
-		    r_set_size(op, count);
-		    count = 0;
-		}
-		return handle_read_status(i_ctx_p, status, op - 1, &count,
-					  zreadline_continue);
-	    }
+        case 0:
+        case EOFC:
+            break;
+        case 1:
+            return_error(e_rangecheck);
+        default:
+            if (count == 0 && !in_eol)
+                return handle_read_status(i_ctx_p, status, op - 1, NULL,
+                                          zreadline);
+            else {
+                if (in_eol) {
+                    r_set_size(op, count);
+                    count = 0;
+                }
+                return handle_read_status(i_ctx_p, status, op - 1, &count,
+                                          zreadline_continue);
+            }
     }
     r_set_size(op, count);
     op[-1] = *op;
@@ -419,12 +419,12 @@ zreadline_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > size)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     start = (uint) op->value.intval;
     code = (start == 0 ? zreadline_at(i_ctx_p, op - 1, size, true) :
-	    zreadline_at(i_ctx_p, op - 1, start, false));
+            zreadline_at(i_ctx_p, op - 1, start, false));
     if (code >= 0)
-	pop(1);
+        pop(1);
     return code;
 }
 
@@ -433,16 +433,16 @@ zreadline_continue(i_ctx_t *i_ctx_p)
 /* This is exported for %lineedit. */
 int
 zreadline_from(stream *s, gs_string *buf, gs_memory_t *bufmem,
-	       uint *pcount, bool *pin_eol)
+               uint *pcount, bool *pin_eol)
 {
     sreadline_proc((*readline));
 
     if (zis_stdin(s))
-	readline = gp_readline;
+        readline = gp_readline;
     else
-	readline = sreadline;
+        readline = sreadline;
     return readline(s, NULL, NULL /*WRONG*/, NULL, buf, bufmem,
-		    pcount, pin_eol, zis_stdin);
+                    pcount, pin_eol, zis_stdin);
 }
 
 /* <file> bytesavailable <int> */
@@ -455,12 +455,12 @@ zbytesavailable(i_ctx_t *i_ctx_p)
 
     check_read_file(i_ctx_p, s, op);
     switch (savailable(s, &avail)) {
-	default:
-	    return_error(e_ioerror);
-	case EOFC:
-	    avail = -1;
-	case 0:
-	    ;
+        default:
+            return_error(e_ioerror);
+        case EOFC:
+            avail = -1;
+        case 0:
+            ;
     }
     make_int(op, avail);
     return 0;
@@ -476,17 +476,17 @@ zflush(i_ctx_t *i_ctx_p)
     int code = zget_stdout(i_ctx_p, &s);
 
     if (code < 0)
-	return code;
+        return code;
 
     make_stream_file(&rstdout, s, "w");
     status = sflush(s);
     if (status == 0 || status == EOFC) {
-	return 0;
+        return 0;
     }
     return
-	(s_is_writing(s) ?
-	 handle_write_status(i_ctx_p, status, &rstdout, NULL, zflush) :
-	 handle_read_status(i_ctx_p, status, &rstdout, NULL, zflush));
+        (s_is_writing(s) ?
+         handle_write_status(i_ctx_p, status, &rstdout, NULL, zflush) :
+         handle_read_status(i_ctx_p, status, &rstdout, NULL, zflush));
 }
 
 /* <file> flushfile - */
@@ -503,20 +503,20 @@ zflushfile(i_ctx_t *i_ctx_p)
      * error on closed output files.
      */
     if (file_is_invalid(s, op)) {
-	if (r_has_attr(op, a_write))
-	    return_error(e_invalidaccess);
-	pop(1);
-	return 0;
+        if (r_has_attr(op, a_write))
+            return_error(e_invalidaccess);
+        pop(1);
+        return 0;
     }
     status = sflush(s);
     if (status == 0 || status == EOFC) {
-	pop(1);
-	return 0;
+        pop(1);
+        return 0;
     }
     return
-	(s_is_writing(s) ?
-	 handle_write_status(i_ctx_p, status, op, NULL, zflushfile) :
-	 handle_read_status(i_ctx_p, status, op, NULL, zflushfile));
+        (s_is_writing(s) ?
+         handle_write_status(i_ctx_p, status, op, NULL, zflushfile) :
+         handle_read_status(i_ctx_p, status, op, NULL, zflushfile));
 }
 
 /* <file> resetfile - */
@@ -529,7 +529,7 @@ zresetfile(i_ctx_t *i_ctx_p)
     /* According to Adobe, resetfile is a no-op on closed files. */
     check_type(*op, t_file);
     if (file_is_valid(s, op))
-	sreset(s);
+        sreset(s);
     pop(1);
     return 0;
 }
@@ -547,18 +547,18 @@ zprint(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     code = zget_stdout(i_ctx_p, &s);
     if (code < 0)
-	return code;
+        return code;
     status = write_string(op, s);
     if (status >= 0) {
-	pop(1);
-	return 0;
+        pop(1);
+        return 0;
     }
     /* Convert print to writestring on the fly. */
     make_stream_file(&rstdout, s, "w");
     code = handle_write_status(i_ctx_p, status, &rstdout, NULL,
-			       zwritestring);
+                               zwritestring);
     if (code != o_push_estack)
-	return code;
+        return code;
     push(1);
     *op = op[-1];
     op[-1] = rstdout;
@@ -592,7 +592,7 @@ zfileposition(i_ctx_t *i_ctx_p)
      * streams.
      */
     if (!s_can_seek(s))
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     make_int(op, stell(s));
     return 0;
 }
@@ -622,7 +622,7 @@ zsetfileposition(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     check_file(s, op - 1);
     if (sseek(s, op->value.intval) < 0)
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     pop(2);
     return 0;
 }
@@ -641,19 +641,19 @@ zfilename(i_ctx_t *i_ctx_p)
 
     check_file(s, op);
     if (sfilename(s, &fname) < 0) {
-	make_false(op);
-	return 0;
+        make_false(op);
+        return 0;
     }
     check_ostack(1);
     str = ialloc_string(fname.size, "filename");
     if (str == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     memcpy(str, fname.data, fname.size);
     push(1);			/* can't fail */
-    make_const_string( op - 1 , 
-		      a_all | imemory_space((const struct gs_ref_memory_s*) imemory), 
-		      fname.size, 
-		      str);
+    make_const_string( op - 1 ,
+                      a_all | imemory_space((const struct gs_ref_memory_s*) imemory),
+                      fname.size,
+                      str);
     make_true(op);
     return 0;
 }
@@ -667,7 +667,7 @@ zisprocfilter(i_ctx_t *i_ctx_p)
 
     check_file(s, op);
     while (s->strm != 0)
-	s = s->strm;
+        s = s->strm;
     make_bool(op, s_is_proc(s));
     return 0;
 }
@@ -684,29 +684,29 @@ zpeekstring(i_ctx_t *i_ctx_p)
     check_write_type(*op, t_string);
     len = r_size(op);
     while ((rlen = sbufavailable(s)) < len) {
-	int status = s->end_status;
+        int status = s->end_status;
 
-	switch (status) {
-	case EOFC:
-	    break;
-	case 0:
-	    /*
-	     * The following is a HACK.  It should reallocate the buffer to hold
-	     * at least len bytes.  However, this raises messy problems about
-	     * which allocator to use and how it should interact with restore.
-	     */
-	    if (len >= s->bsize)
-		return_error(e_rangecheck);
-	    s_process_read_buf(s);
-	    continue;
-	default:
-	    return handle_read_status(i_ctx_p, status, op - 1, NULL,
-				      zpeekstring);
-	}
-	break;
+        switch (status) {
+        case EOFC:
+            break;
+        case 0:
+            /*
+             * The following is a HACK.  It should reallocate the buffer to hold
+             * at least len bytes.  However, this raises messy problems about
+             * which allocator to use and how it should interact with restore.
+             */
+            if (len >= s->bsize)
+                return_error(e_rangecheck);
+            s_process_read_buf(s);
+            continue;
+        default:
+            return handle_read_status(i_ctx_p, status, op - 1, NULL,
+                                      zpeekstring);
+        }
+        break;
     }
     if (rlen > len)
-	rlen = len;
+        rlen = len;
     /* Don't remove the data from the buffer. */
     memcpy(op->value.bytes, sbufptr(s), rlen);
     r_set_size(op, rlen);
@@ -727,9 +727,9 @@ zunread(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     ch = op->value.intval;
     if (ch > 0xff)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     if (sungetc(s, (byte) ch) < 0)
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     pop(2);
     return 0;
 }
@@ -749,45 +749,45 @@ zwritecvp_at(i_ctx_t *i_ctx_p, os_ptr op, uint start, bool first)
     check_write_file(s, op - 2);
     check_type(*op, t_integer);
     code = obj_cvp(op - 1, str, sizeof(str), &len, (int)op->value.intval,
-		   start, imemory, true);
+                   start, imemory, true);
     if (code == e_rangecheck) {
         code = obj_string_data(imemory, op - 1, &data, &len);
-	if (len < start)
-	    return_error(e_rangecheck);
-	data += start;
-	len -= start;
+        if (len < start)
+            return_error(e_rangecheck);
+        data += start;
+        len -= start;
     }
     if (code < 0)
-	return code;
+        return code;
     r_set_size(&rstr, len);
     rstr.value.const_bytes = data;
     status = write_string(&rstr, s);
     switch (status) {
-	default:
-	    return_error(e_ioerror);
-	case 0:
-	    break;
-	case INTC:
-	case CALLC:
-	    len = start + len - r_size(&rstr);
-	    if (!first)
-		--osp;		/* pop(1) without affecting op */
-	    return handle_write_status(i_ctx_p, status, op - 2, &len,
-				       zwritecvp_continue);
+        default:
+            return_error(e_ioerror);
+        case 0:
+            break;
+        case INTC:
+        case CALLC:
+            len = start + len - r_size(&rstr);
+            if (!first)
+                --osp;		/* pop(1) without affecting op */
+            return handle_write_status(i_ctx_p, status, op - 2, &len,
+                                       zwritecvp_continue);
     }
     if (code == 1) {
-	if (first)
-	    check_ostack(1);
-	push_op_estack(zwritecvp_continue);
-	if (first)
-	    push(1);
-	make_int(osp, start + len);
-	return o_push_estack;
+        if (first)
+            check_ostack(1);
+        push_op_estack(zwritecvp_continue);
+        if (first)
+            push(1);
+        make_int(osp, start + len);
+        return o_push_estack;
     }
     if (first)			/* zwritecvp */
-	pop(3);
+        pop(3);
     else			/* zwritecvp_continue */
-	pop(4);
+        pop(4);
     return 0;
 }
 static int
@@ -804,10 +804,9 @@ zwritecvp_continue(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_integer);
     if (op->value.intval != (uint) op->value.intval)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     return zwritecvp_at(i_ctx_p, op - 1, (uint) op->value.intval, false);
 }
-
 
 /* ------ Initialization procedure ------ */
 
@@ -815,7 +814,7 @@ zwritecvp_continue(i_ctx_t *i_ctx_p)
 const op_def zfileio1_op_defs[] = {
     {"1bytesavailable", zbytesavailable},
     {"1closefile", zclosefile},
-		/* currentfile is in zcontrol.c */
+                /* currentfile is in zcontrol.c */
     {"1echo", zecho},
     {"1.filename", zfilename},
     {"1.fileposition", zxfileposition},
@@ -839,7 +838,7 @@ const op_def zfileio2_op_defs[] = {
     {"3.writecvp", zwritecvp},
     {"2writehexstring", zwritehexstring},
     {"2writestring", zwritestring},
-		/* Internal operators */
+                /* Internal operators */
     {"3%zreadhexstring_continue", zreadhexstring_continue},
     {"3%zreadline_continue", zreadline_continue},
     {"3%zreadstring_continue", zreadstring_continue},
@@ -858,9 +857,9 @@ file_switch_to_read(const ref * op)
     stream *s = fptr(op);
 
     if (s->write_id != r_size(op) || s->file == 0)	/* not valid */
-	return_error(e_invalidaccess);
+        return_error(e_invalidaccess);
     if (sswitch(s, false) < 0)
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     s->read_id = s->write_id;	/* enable reading */
     s->write_id = 0;		/* disable writing */
     return 0;
@@ -874,9 +873,9 @@ file_switch_to_write(const ref * op)
     stream *s = fptr(op);
 
     if (s->read_id != r_size(op) || s->file == 0)	/* not valid */
-	return_error(e_invalidaccess);
+        return_error(e_invalidaccess);
     if (sswitch(s, true) < 0)
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     s->write_id = s->read_id;	/* enable writing */
     s->read_id = 0;		/* disable reading */
     return 0;
@@ -895,13 +894,13 @@ write_string(ref * op, stream * s)
     int status = sputs(s, data, len, &wlen);
 
     switch (status) {
-	case INTC:
-	case CALLC:
-	    op->value.const_bytes = data + wlen;
-	    r_set_size(op, len - wlen);
-	    /* falls through */
-	default:		/* 0, EOFC, ERRC */
-	    return status;
+        case INTC:
+        case CALLC:
+            op->value.const_bytes = data + wlen;
+            r_set_size(op, len - wlen);
+            /* falls through */
+        default:		/* 0, EOFC, ERRC */
+            return status;
     }
 }
 
@@ -915,13 +914,13 @@ copy_error_string(i_ctx_t *i_ctx_p, const ref *fop)
     stream *s;
 
     for (s = fptr(fop); s->strm != 0 && s->state->error_string[0] == 0;)
-	s = s->strm;
+        s = s->strm;
     if (s->state->error_string[0]) {
-	int code = gs_errorinfo_put_string(i_ctx_p, s->state->error_string);
+        int code = gs_errorinfo_put_string(i_ctx_p, s->state->error_string);
 
-	if (code < 0)
-	    return code;
-	s->state->error_string[0] = 0; /* just do it once */
+        if (code < 0)
+            return code;
+        s->state->error_string[0] = 0; /* just do it once */
     }
     return_error(e_ioerror);
 }
@@ -932,24 +931,24 @@ copy_error_string(i_ctx_t *i_ctx_p, const ref *fop)
 /* Return 0, 1 (EOF), o_push_estack, or an error. */
 static int
 handle_read_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
-		   const uint * pindex, op_proc_t cont)
+                   const uint * pindex, op_proc_t cont)
 {
     switch (ch) {
-	default:		/* error */
-	    return copy_error_string(i_ctx_p, fop);
-	case EOFC:
-	    return 1;
-	case INTC:
-	case CALLC:
-	    if (pindex) {
-		ref index;
+        default:		/* error */
+            return copy_error_string(i_ctx_p, fop);
+        case EOFC:
+            return 1;
+        case INTC:
+        case CALLC:
+            if (pindex) {
+                ref index;
 
-		make_int(&index, *pindex);
-		return s_handle_read_exception(i_ctx_p, ch, fop, &index, 1,
-					       cont);
-	    } else
-		return s_handle_read_exception(i_ctx_p, ch, fop, NULL, 0,
-					       cont);
+                make_int(&index, *pindex);
+                return s_handle_read_exception(i_ctx_p, ch, fop, &index, 1,
+                                               cont);
+            } else
+                return s_handle_read_exception(i_ctx_p, ch, fop, NULL, 0,
+                                               cont);
     }
 }
 
@@ -959,23 +958,23 @@ handle_read_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
 /* Return 0, 1 (EOF), o_push_estack, or an error. */
 static int
 handle_write_status(i_ctx_t *i_ctx_p, int ch, const ref * fop,
-		    const uint * pindex, op_proc_t cont)
+                    const uint * pindex, op_proc_t cont)
 {
     switch (ch) {
-	default:		/* error */
-	    return copy_error_string(i_ctx_p, fop);
-	case EOFC:
-	    return 1;
-	case INTC:
-	case CALLC:
-	    if (pindex) {
-		ref index;
+        default:		/* error */
+            return copy_error_string(i_ctx_p, fop);
+        case EOFC:
+            return 1;
+        case INTC:
+        case CALLC:
+            if (pindex) {
+                ref index;
 
-		make_int(&index, *pindex);
-		return s_handle_write_exception(i_ctx_p, ch, fop, &index, 1,
-						cont);
-	    } else
-		return s_handle_write_exception(i_ctx_p, ch, fop, NULL, 0,
-						cont);
+                make_int(&index, *pindex);
+                return s_handle_write_exception(i_ctx_p, ch, fop, &index, 1,
+                                                cont);
+            } else
+                return s_handle_write_exception(i_ctx_p, ch, fop, NULL, 0,
+                                                cont);
     }
 }

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -53,7 +53,7 @@ XtResource gdev_x_resources[] = {
     rpix(XtNborderColor, XtCBorderColor, borderColor, "XtDefaultForeground"),
     rdim(XtNborderWidth, XtCBorderWidth, borderWidth, 1),
     rstr("dingbatFonts", "DingbatFonts", dingbatFonts,
-	 "ZapfDingbats: -Adobe-ITC Zapf Dingbats-Medium-R-Normal--"),
+         "ZapfDingbats: -Adobe-ITC Zapf Dingbats-Medium-R-Normal--"),
     rpix(XtNforeground, XtCForeground, foreground, "XtDefaultForeground"),
     rstr(XtNgeometry, XtCGeometry, geometry, NULL),
     rbool("logExternalFonts", "LogExternalFonts", logXFonts, False),
@@ -105,7 +105,7 @@ Utopia-Regular:-Adobe-Utopia-Regular-R-Normal--\n\
 ZapfChancery-MediumItalic:-Adobe-ITC Zapf Chancery-Medium-I-Normal--"),
 
     rstr("symbolFonts", "SymbolFonts", symbolFonts,
-	 "Symbol: -Adobe-Symbol-Medium-R-Normal--"),
+         "Symbol: -Adobe-Symbol-Medium-R-Normal--"),
 
     rbool("useBackingPixmap", "UseBackingPixmap", useBackingPixmap, True),
     rbool("useExternalFonts", "UseExternalFonts", useXFonts, True),

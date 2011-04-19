@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,18 +22,18 @@
 GSDLLEXPORT HGLOBAL GSDLLAPI gsdll_copy_dib(unsigned char * device);
 GSDLLEXPORT HPALETTE GSDLLAPI gsdll_copy_palette(unsigned char * device);
 GSDLLEXPORT void GSDLLAPI gsdll_draw(unsigned char * device, HDC hdc, LPRECT dest,
-			 LPRECT src);
+                         LPRECT src);
 GSDLLEXPORT int GSDLLAPI gsdll_get_bitmap_row(unsigned char *device,
-				  LPBITMAPINFOHEADER pbmih,
-				  LPRGBQUAD prgbquad, LPBYTE * ppbyte,
-				  unsigned int row);
+                                  LPBITMAPINFOHEADER pbmih,
+                                  LPRGBQUAD prgbquad, LPBYTE * ppbyte,
+                                  unsigned int row);
 
 /* Function pointer typedefs */
 /* for run time dynamic linking */
 typedef HGLOBAL (GSDLLAPI * PFN_gsdll_copy_dib)(unsigned char *);
 typedef HPALETTE (GSDLLAPI * PFN_gsdll_copy_palette)(unsigned char *);
 typedef void (GSDLLAPI * PFN_gsdll_draw) (unsigned char *, HDC, LPRECT,
-					  LPRECT);
+                                          LPRECT);
 typedef int (GSDLLAPI * PFN_gsdll_get_bitmap_row)
      (unsigned char *device, LPBITMAPINFOHEADER pbmih, LPRGBQUAD prgbquad,
       LPBYTE * ppbyte, unsigned int row);

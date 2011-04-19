@@ -144,7 +144,7 @@ alloc_crd(
  * and uses the device parameter "CRDName" to select the one that is to be
  * used as a default.
  *
- * Returns 
+ * Returns
  */
   static bool
 read_device_CRD(
@@ -280,7 +280,7 @@ pcl_crd_set_view_illuminant(
     if (pold == 0) {
         pcs->dflt_TransformPQR = dflt_TransformPQR_proto;
         return  gs_cie_render1_initialize( pcs->memory,
-					   pcrd->pgscrd,
+                                           pcrd->pgscrd,
                                            NULL,
                                            pwht_pt,
                                            NULL,
@@ -297,9 +297,9 @@ pcl_crd_set_view_illuminant(
                                            );
     }
     code = gs_cie_render1_init_from( pcs->memory,
-				     pcrd->pgscrd,
+                                     pcrd->pgscrd,
                                      NULL,     /* for now */
-				     pold->pgscrd,
+                                     pold->pgscrd,
                                      pwht_pt,
                                      &(pold->pgscrd->points.BlackPoint),
                                      &(pold->pgscrd->MatrixPQR),
@@ -315,7 +315,7 @@ pcl_crd_set_view_illuminant(
                                      );
 
     if (pcrd != pold)
-	rc_decrement(pold, "pcl set viewing illuminant");
+        rc_decrement(pold, "pcl set viewing illuminant");
     return code;
 }
 

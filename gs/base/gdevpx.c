@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,7 +34,6 @@
 #include "gdevpcl.h" /* for gdev_pcl_mode3compress() */
 #include <stdlib.h> /* abs() */
 
-
 /* ---------------- Device definition ---------------- */
 
 /* Define the default resolution. */
@@ -57,7 +56,7 @@ typedef struct gx_device_pclxl_s {
     /* Additional state information */
     pxeMediaSize_t media_size;
     bool ManualFeed;            /* map ps setpage commands to pxl */
-    bool ManualFeed_set;         
+    bool ManualFeed_set;
     int MediaPosition;		/* MediaPosition attribute */
     int MediaPosition_set;
     int page;			/* Page number starting at 0 */
@@ -67,29 +66,29 @@ typedef struct gx_device_pclxl_s {
     gx_path_type_t clip_rule;	/* ditto */
     pxeColorSpace_t color_space;
     struct pal_ {
-	int size;		/* # of bytes */
-	byte data[256 * 3];	/* up to 8-bit samples */
+        int size;		/* # of bytes */
+        byte data[256 * 3];	/* up to 8-bit samples */
     } palette;
     struct pts_ {		/* buffer for accumulating path points */
-	gs_int_point current;	/* current point as of start of data */
-	point_type_t type;
-	int count;
-	gs_int_point data[NUM_POINTS];
+        gs_int_point current;	/* current point as of start of data */
+        point_type_t type;
+        int count;
+        gs_int_point data[NUM_POINTS];
     } points;
     struct ch_ {		/* cache for downloaded characters */
 #define MAX_CACHED_CHARS 400
 #define MAX_CHAR_DATA 500000
 #define MAX_CHAR_SIZE 5000
 #define CHAR_HASH_FACTOR 247
-	ushort table[MAX_CACHED_CHARS * 3 / 2];
-	struct cd_ {
-	    gs_id id;		/* key */
-	    uint size;
-	} data[MAX_CACHED_CHARS];
-	int next_in;		/* next data element to fill in */
-	int next_out;		/* next data element to discard */
-	int count;		/* of occupied data elements */
-	ulong used;
+        ushort table[MAX_CACHED_CHARS * 3 / 2];
+        struct cd_ {
+            gs_id id;		/* key */
+            uint size;
+        } data[MAX_CACHED_CHARS];
+        int next_in;		/* next data element to fill in */
+        int next_out;		/* next data element to discard */
+        int count;		/* of occupied data elements */
+        ulong used;
     } chars;
     bool font_set;
     int state_rotated; /* 0, 1, 2, -1, mutiple of 90 deg */
@@ -102,18 +101,18 @@ typedef struct gx_device_pclxl_s {
 } gx_device_pclxl;
 
 gs_public_st_suffix_add0_final(st_device_pclxl, gx_device_pclxl,
-			       "gx_device_pclxl",
-			       device_pclxl_enum_ptrs, device_pclxl_reloc_ptrs,
-			       gx_device_finalize, st_device_vector);
+                               "gx_device_pclxl",
+                               device_pclxl_enum_ptrs, device_pclxl_reloc_ptrs,
+                               gx_device_finalize, st_device_vector);
 
 #define pclxl_device_body(dname, depth)\
   std_device_dci_type_body(gx_device_pclxl, 0, dname, &st_device_pclxl,\
-			   DEFAULT_WIDTH_10THS * X_DPI / 10,\
-			   DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
-			   X_DPI, Y_DPI,\
-			   (depth > 8 ? 3 : 1), depth,\
-			   (depth > 1 ? 255 : 1), (depth > 8 ? 255 : 0),\
-			   (depth > 1 ? 256 : 2), (depth > 8 ? 256 : 1))
+                           DEFAULT_WIDTH_10THS * X_DPI / 10,\
+                           DEFAULT_HEIGHT_10THS * Y_DPI / 10,\
+                           X_DPI, Y_DPI,\
+                           (depth > 8 ? 3 : 1), depth,\
+                           (depth > 1 ? 255 : 1), (depth > 8 ? 255 : 0),\
+                           (depth > 1 ? 256 : 2), (depth > 8 ? 256 : 1))
 
 /* Driver procedures */
 static dev_proc_open_device(pclxl_open_device);
@@ -132,42 +131,42 @@ static dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
 #define pclxl_device_procs(map_rgb_color, map_color_rgb)\
 {\
-	pclxl_open_device,\
-	NULL,			/* get_initial_matrix */\
-	NULL,			/* sync_output */\
-	pclxl_output_page,\
-	pclxl_close_device,\
-	map_rgb_color,		/* differs */\
-	map_color_rgb,		/* differs */\
-	gdev_vector_fill_rectangle,\
-	NULL,			/* tile_rectangle */\
-	pclxl_copy_mono,\
-	pclxl_copy_color,\
-	NULL,			/* draw_line */\
-	NULL,			/* get_bits */\
-	pclxl_get_params,\
-	pclxl_put_params,\
-	NULL,			/* map_cmyk_color */\
-	NULL,			/* get_xfont_procs */\
-	NULL,			/* get_xfont_device */\
-	NULL,			/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device,\
-	NULL,			/* get_alpha_bits */\
-	NULL,			/* copy_alpha */\
-	NULL,			/* get_band */\
-	NULL,			/* copy_rop */\
-	gdev_vector_fill_path,\
-	gdev_vector_stroke_path,\
-	pclxl_fill_mask,\
-	gdev_vector_fill_trapezoid,\
-	gdev_vector_fill_parallelogram,\
-	gdev_vector_fill_triangle,\
-	NULL /****** WRONG ******/,	/* draw_thin_line */\
-	pclxl_begin_image,\
-	NULL,			/* image_data */\
-	NULL,			/* end_image */\
-	NULL,			/* strip_tile_rectangle */\
-	pclxl_strip_copy_rop\
+        pclxl_open_device,\
+        NULL,			/* get_initial_matrix */\
+        NULL,			/* sync_output */\
+        pclxl_output_page,\
+        pclxl_close_device,\
+        map_rgb_color,		/* differs */\
+        map_color_rgb,		/* differs */\
+        gdev_vector_fill_rectangle,\
+        NULL,			/* tile_rectangle */\
+        pclxl_copy_mono,\
+        pclxl_copy_color,\
+        NULL,			/* draw_line */\
+        NULL,			/* get_bits */\
+        pclxl_get_params,\
+        pclxl_put_params,\
+        NULL,			/* map_cmyk_color */\
+        NULL,			/* get_xfont_procs */\
+        NULL,			/* get_xfont_device */\
+        NULL,			/* map_rgb_alpha_color */\
+        gx_page_device_get_page_device,\
+        NULL,			/* get_alpha_bits */\
+        NULL,			/* copy_alpha */\
+        NULL,			/* get_band */\
+        NULL,			/* copy_rop */\
+        gdev_vector_fill_path,\
+        gdev_vector_stroke_path,\
+        pclxl_fill_mask,\
+        gdev_vector_fill_trapezoid,\
+        gdev_vector_fill_parallelogram,\
+        gdev_vector_fill_triangle,\
+        NULL /****** WRONG ******/,	/* draw_thin_line */\
+        pclxl_begin_image,\
+        NULL,			/* image_data */\
+        NULL,			/* end_image */\
+        NULL,			/* strip_tile_rectangle */\
+        pclxl_strip_copy_rop\
 }
 
 const gx_device_pclxl gs_pxlmono_device = {
@@ -215,37 +214,37 @@ static void
 pclxl_set_color_space(gx_device_pclxl * xdev, pxeColorSpace_t color_space)
 {
     if (xdev->color_space != color_space) {
-	stream *s = pclxl_stream(xdev);
+        stream *s = pclxl_stream(xdev);
 
-	px_put_ub(s, (byte)color_space);
-	px_put_ac(s, pxaColorSpace, pxtSetColorSpace);
-	xdev->color_space = color_space;
-	xdev->palette.size = 0; /* purge the cached palette */
+        px_put_ub(s, (byte)color_space);
+        px_put_ac(s, pxaColorSpace, pxtSetColorSpace);
+        xdev->color_space = color_space;
+        xdev->palette.size = 0; /* purge the cached palette */
     }
 }
 static void
 pclxl_set_color_palette(gx_device_pclxl * xdev, pxeColorSpace_t color_space,
-			const byte * palette, uint palette_size)
+                        const byte * palette, uint palette_size)
 {
     if (xdev->color_space != color_space ||
-	xdev->palette.size != palette_size ||
-	memcmp(xdev->palette.data, palette, palette_size)
-	) {
-	stream *s = pclxl_stream(xdev);
-	static const byte csp_[] = {
-	    DA(pxaColorSpace),
-	    DUB(e8Bit), DA(pxaPaletteDepth),
-	    pxt_ubyte_array
-	};
+        xdev->palette.size != palette_size ||
+        memcmp(xdev->palette.data, palette, palette_size)
+        ) {
+        stream *s = pclxl_stream(xdev);
+        static const byte csp_[] = {
+            DA(pxaColorSpace),
+            DUB(e8Bit), DA(pxaPaletteDepth),
+            pxt_ubyte_array
+        };
 
-	px_put_ub(s, (byte)color_space);
-	PX_PUT_LIT(s, csp_);
-	px_put_u(s, palette_size);
-	px_put_bytes(s, palette, palette_size);
-	px_put_ac(s, pxaPaletteData, pxtSetColorSpace);
-	xdev->color_space = color_space;
-	xdev->palette.size = palette_size;
-	memcpy(xdev->palette.data, palette, palette_size);
+        px_put_ub(s, (byte)color_space);
+        PX_PUT_LIT(s, csp_);
+        px_put_u(s, palette_size);
+        px_put_bytes(s, palette, palette_size);
+        px_put_ac(s, pxaPaletteData, pxtSetColorSpace);
+        xdev->color_space = color_space;
+        xdev->palette.size = palette_size;
+        memcpy(xdev->palette.data, palette, palette_size);
     }
 }
 
@@ -268,7 +267,7 @@ pclxl_set_cached_nulls(gx_device_pclxl * xdev, px_attribute_t null_source, px_ta
     if (op == pxtSetBrushSource) {
         if (xdev->brush_null)
             return 0;
-        else 
+        else
             xdev->brush_null = true;
     }
     px_put_uba(s, 0, (byte)null_source);
@@ -279,35 +278,35 @@ pclxl_set_cached_nulls(gx_device_pclxl * xdev, px_attribute_t null_source, px_ta
 /* Set a drawing RGB color. */
 static int
 pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
-		px_attribute_t null_source, px_tag_t op)
+                px_attribute_t null_source, px_tag_t op)
 {
     stream *s = pclxl_stream(xdev);
 
     if (gx_dc_is_pure(pdc)) {
-	gx_color_index color = gx_dc_pure_color(pdc);
+        gx_color_index color = gx_dc_pure_color(pdc);
 
-	if (op == pxtSetPenSource)   xdev->pen_null   = false;
-	if (op == pxtSetBrushSource) xdev->brush_null = false;
+        if (op == pxtSetPenSource)   xdev->pen_null   = false;
+        if (op == pxtSetBrushSource) xdev->brush_null = false;
 
-	if (xdev->color_info.num_components == 1 || RGB_IS_GRAY(color)) {
-	    pclxl_set_color_space(xdev, eGray);
-	    px_put_uba(s, (byte) color, pxaGrayLevel);
-	} else {
-	    pclxl_set_color_space(xdev, eRGB);
-	    spputc(s, pxt_ubyte_array);
-	    px_put_ub(s, 3);
-	    spputc(s, (byte) (color >> 16));
-	    spputc(s, (byte) (color >> 8));
-	    spputc(s, (byte) color);
-	    px_put_a(s, pxaRGBColor);
-	}
+        if (xdev->color_info.num_components == 1 || RGB_IS_GRAY(color)) {
+            pclxl_set_color_space(xdev, eGray);
+            px_put_uba(s, (byte) color, pxaGrayLevel);
+        } else {
+            pclxl_set_color_space(xdev, eRGB);
+            spputc(s, pxt_ubyte_array);
+            px_put_ub(s, 3);
+            spputc(s, (byte) (color >> 16));
+            spputc(s, (byte) (color >> 8));
+            spputc(s, (byte) color);
+            px_put_a(s, pxaRGBColor);
+        }
     } else if (gx_dc_is_null(pdc) || !color_is_set(pdc)) {
-	if (op == pxtSetPenSource || op == pxtSetBrushSource)
-	    return pclxl_set_cached_nulls(xdev, null_source, op);
-	else
-	    px_put_uba(s, 0, null_source);
+        if (op == pxtSetPenSource || op == pxtSetBrushSource)
+            return pclxl_set_cached_nulls(xdev, null_source, op);
+        else
+            px_put_uba(s, 0, null_source);
     } else
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     spputc(s, (byte)op);
     return 0;
 }
@@ -320,13 +319,13 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
     gs_color_space_index index = gs_color_space_get_index(pcs);
 
     if (index == gs_color_space_index_Indexed) {
-	if (pcs->params.indexed.use_proc)
-	    return false;
-	index =
-	    gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
+        if (pcs->params.indexed.use_proc)
+            return false;
+        index =
+            gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
     }
     return !(index == gs_color_space_index_Separation ||
-	     index == gs_color_space_index_Pattern ||
+             index == gs_color_space_index_Pattern ||
              index == gs_color_space_index_ICC);
 }
 
@@ -338,26 +337,26 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     gx_path_type_t rule = type & gx_path_type_rule;
 
     if (!(type & gx_path_type_fill) &&
-	(color_is_set(&xdev->saved_fill_color.saved_dev_color) ||
-	!gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color) 
-	)
-	) {
-	pclxl_set_cached_nulls(xdev, pxaNullBrush, pxtSetBrushSource);
-	color_set_null(&xdev->saved_fill_color.saved_dev_color);
-	if (rule != xdev->fill_rule) {
-	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
-		       eNonZeroWinding));
-	    px_put_ac(s, pxaFillMode, pxtSetFillMode);
-	    xdev->fill_rule = rule;
-	}
+        (color_is_set(&xdev->saved_fill_color.saved_dev_color) ||
+        !gx_dc_is_null(&xdev->saved_fill_color.saved_dev_color)
+        )
+        ) {
+        pclxl_set_cached_nulls(xdev, pxaNullBrush, pxtSetBrushSource);
+        color_set_null(&xdev->saved_fill_color.saved_dev_color);
+        if (rule != xdev->fill_rule) {
+            px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
+                       eNonZeroWinding));
+            px_put_ac(s, pxaFillMode, pxtSetFillMode);
+            xdev->fill_rule = rule;
+        }
     }
     if (!(type & gx_path_type_stroke) &&
-	(color_is_set(&xdev->saved_stroke_color.saved_dev_color) ||
-	!gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
-	 )
-	) {
-	pclxl_set_cached_nulls(xdev, pxaNullPen, pxtSetPenSource);
-	color_set_null(&xdev->saved_stroke_color.saved_dev_color);
+        (color_is_set(&xdev->saved_stroke_color.saved_dev_color) ||
+        !gx_dc_is_null(&xdev->saved_stroke_color.saved_dev_color)
+         )
+        ) {
+        pclxl_set_cached_nulls(xdev, pxaNullPen, pxtSetPenSource);
+        color_set_null(&xdev->saved_stroke_color.saved_dev_color);
     }
 }
 
@@ -439,156 +438,156 @@ pclxl_flush_points(gx_device_pclxl * xdev)
     int count = xdev->points.count;
 
     if (count) {
-	stream *s = pclxl_stream(xdev);
-	px_tag_t op;
-	int x = xdev->points.current.x, y = xdev->points.current.y;
-	int uor = 0, sor = 0;
-	pxeDataType_t data_type;
-	int i, di;
-	byte diffs[NUM_POINTS * 2];
-	floatp x_scale = 1;
-	floatp y_scale = 1;
-	int temp_origin_x = 0, temp_origin_y = 0;
-	int count_smalls = 0;
+        stream *s = pclxl_stream(xdev);
+        px_tag_t op;
+        int x = xdev->points.current.x, y = xdev->points.current.y;
+        int uor = 0, sor = 0;
+        pxeDataType_t data_type;
+        int i, di;
+        byte diffs[NUM_POINTS * 2];
+        floatp x_scale = 1;
+        floatp y_scale = 1;
+        int temp_origin_x = 0, temp_origin_y = 0;
+        int count_smalls = 0;
 
-	if (xdev->points.type != POINTS_NONE) {
-	    for (i = 0; i < count; ++i) {
-		if ((abs(xdev->points.data[i].x) > 0x7FFF) || (abs(xdev->points.data[i].y) > 0x7FFF))
-		    xdev->scaled = true;
-		if ((abs(xdev->points.data[i].x) < 0x8000) && (abs(xdev->points.data[i].y) < 0x8000)) {
-		    if ((temp_origin_x != xdev->points.data[i].x) || (temp_origin_y != xdev->points.data[i].y)) {
-			temp_origin_x = xdev->points.data[i].x;
-			temp_origin_y = xdev->points.data[i].y;
-			count_smalls++;
-		    }
-		}
-	    }
-	    if (xdev->scaled) {
-		/* if there are some points with small co-ordinates, we set origin to it
-		   before scaling, an unset afterwards. This works around problems
-		   for small co-ordinates being moved snapped to 32767 x 32767 grid points;
-		   if there are more than 1, the other points
-		   will be in-accurate, unfortunately */
-		if (count_smalls) {
-		    pclxl_set_page_origin(s, temp_origin_x, temp_origin_y);
-		}
-		for (i = 0; i < count; ++i) {
-		    x_scale = max(((floatp) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
-		    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
-		}
-		for (i = 0; i < count; ++i) {
-		    xdev->points.data[i].x = (int)((xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5);
-		    xdev->points.data[i].y = (int)((xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5);
-		}
-		x = (int)((x - temp_origin_x)/x_scale + 0.5);
-		y = (int)((y - temp_origin_y)/y_scale + 0.5);
-		pclxl_set_page_scale(xdev, x_scale, y_scale);
-	    } else {
-		/* don't reset origin if we did not scale */
-		count_smalls = 0;
-	    }
-	}
-	/*
-	 * Writing N lines using a point list requires 11 + 4*N or 11 +
-	 * 2*N bytes, as opposed to 8*N bytes using separate commands;
-	 * writing N curves requires 11 + 12*N or 11 + 6*N bytes
-	 * vs. 22*N.  So it's always shorter to write curves with a
-	 * list (except for N = 1 with full-size coordinates, but since
-	 * the difference is only 1 byte, we don't bother to ever use
-	 * the non-list form), but lines are shorter only if N >= 3
-	 * (again, with a 1-byte difference if N = 2 and byte
-	 * coordinates).
-	 */
-	switch (xdev->points.type) {
-	    case POINTS_NONE:
-		return 0;
-	    case POINTS_LINES:
-		op = pxtLinePath;
-		if (count < 3) {
-		    for (i = 0; i < count; ++i) {
-			px_put_ssp(s, xdev->points.data[i].x,
-				xdev->points.data[i].y);
-			px_put_a(s, pxaEndPoint);
-			spputc(s, (byte)op);
-		    }
-		    pclxl_unset_page_scale(xdev);
-		    if (count_smalls)
-			pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
-		    goto zap;
-		}
-		/* See if we can use byte values. */
-		for (i = di = 0; i < count; ++i, di += 2) {
-		    int dx = xdev->points.data[i].x - x;
-		    int dy = xdev->points.data[i].y - y;
+        if (xdev->points.type != POINTS_NONE) {
+            for (i = 0; i < count; ++i) {
+                if ((abs(xdev->points.data[i].x) > 0x7FFF) || (abs(xdev->points.data[i].y) > 0x7FFF))
+                    xdev->scaled = true;
+                if ((abs(xdev->points.data[i].x) < 0x8000) && (abs(xdev->points.data[i].y) < 0x8000)) {
+                    if ((temp_origin_x != xdev->points.data[i].x) || (temp_origin_y != xdev->points.data[i].y)) {
+                        temp_origin_x = xdev->points.data[i].x;
+                        temp_origin_y = xdev->points.data[i].y;
+                        count_smalls++;
+                    }
+                }
+            }
+            if (xdev->scaled) {
+                /* if there are some points with small co-ordinates, we set origin to it
+                   before scaling, an unset afterwards. This works around problems
+                   for small co-ordinates being moved snapped to 32767 x 32767 grid points;
+                   if there are more than 1, the other points
+                   will be in-accurate, unfortunately */
+                if (count_smalls) {
+                    pclxl_set_page_origin(s, temp_origin_x, temp_origin_y);
+                }
+                for (i = 0; i < count; ++i) {
+                    x_scale = max(((floatp) abs(xdev->points.data[i].x - temp_origin_x))/0x7FFF , x_scale);
+                    y_scale = max(((floatp) abs(xdev->points.data[i].y - temp_origin_y))/0x7FFF , y_scale);
+                }
+                for (i = 0; i < count; ++i) {
+                    xdev->points.data[i].x = (int)((xdev->points.data[i].x - temp_origin_x)/x_scale + 0.5);
+                    xdev->points.data[i].y = (int)((xdev->points.data[i].y - temp_origin_y)/y_scale + 0.5);
+                }
+                x = (int)((x - temp_origin_x)/x_scale + 0.5);
+                y = (int)((y - temp_origin_y)/y_scale + 0.5);
+                pclxl_set_page_scale(xdev, x_scale, y_scale);
+            } else {
+                /* don't reset origin if we did not scale */
+                count_smalls = 0;
+            }
+        }
+        /*
+         * Writing N lines using a point list requires 11 + 4*N or 11 +
+         * 2*N bytes, as opposed to 8*N bytes using separate commands;
+         * writing N curves requires 11 + 12*N or 11 + 6*N bytes
+         * vs. 22*N.  So it's always shorter to write curves with a
+         * list (except for N = 1 with full-size coordinates, but since
+         * the difference is only 1 byte, we don't bother to ever use
+         * the non-list form), but lines are shorter only if N >= 3
+         * (again, with a 1-byte difference if N = 2 and byte
+         * coordinates).
+         */
+        switch (xdev->points.type) {
+            case POINTS_NONE:
+                return 0;
+            case POINTS_LINES:
+                op = pxtLinePath;
+                if (count < 3) {
+                    for (i = 0; i < count; ++i) {
+                        px_put_ssp(s, xdev->points.data[i].x,
+                                xdev->points.data[i].y);
+                        px_put_a(s, pxaEndPoint);
+                        spputc(s, (byte)op);
+                    }
+                    pclxl_unset_page_scale(xdev);
+                    if (count_smalls)
+                        pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
+                    goto zap;
+                }
+                /* See if we can use byte values. */
+                for (i = di = 0; i < count; ++i, di += 2) {
+                    int dx = xdev->points.data[i].x - x;
+                    int dy = xdev->points.data[i].y - y;
 
-		    diffs[di] = (byte) dx;
-		    diffs[di + 1] = (byte) dy;
-		    uor |= dx | dy;
-		    sor |= (dx + 0x80) | (dy + 0x80);
-		    x += dx, y += dy;
-		}
-		if (!(uor & ~0xff))
-		    data_type = eUByte;
-		else if (!(sor & ~0xff))
-		    data_type = eSByte;
-		else
-		    break;
-		op = pxtLineRelPath;
-		/* Use byte values. */
-	      useb:px_put_np(s, count, data_type);
-		spputc(s, (byte)op);
-		px_put_data_length(s, count * 2);	/* 2 bytes per point */
-		px_put_bytes(s, diffs, count * 2);
-		pclxl_unset_page_scale(xdev);
-		if (count_smalls)
-		    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
-		goto zap;
-	    case POINTS_CURVES:
-		op = pxtBezierPath;
-		/* See if we can use byte values. */
-		for (i = di = 0; i < count; i += 3, di += 6) {
-		    int dx1 = xdev->points.data[i].x - x;
-		    int dy1 = xdev->points.data[i].y - y;
-		    int dx2 = xdev->points.data[i + 1].x - x;
-		    int dy2 = xdev->points.data[i + 1].y - y;
-		    int dx = xdev->points.data[i + 2].x - x;
-		    int dy = xdev->points.data[i + 2].y - y;
+                    diffs[di] = (byte) dx;
+                    diffs[di + 1] = (byte) dy;
+                    uor |= dx | dy;
+                    sor |= (dx + 0x80) | (dy + 0x80);
+                    x += dx, y += dy;
+                }
+                if (!(uor & ~0xff))
+                    data_type = eUByte;
+                else if (!(sor & ~0xff))
+                    data_type = eSByte;
+                else
+                    break;
+                op = pxtLineRelPath;
+                /* Use byte values. */
+              useb:px_put_np(s, count, data_type);
+                spputc(s, (byte)op);
+                px_put_data_length(s, count * 2);	/* 2 bytes per point */
+                px_put_bytes(s, diffs, count * 2);
+                pclxl_unset_page_scale(xdev);
+                if (count_smalls)
+                    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
+                goto zap;
+            case POINTS_CURVES:
+                op = pxtBezierPath;
+                /* See if we can use byte values. */
+                for (i = di = 0; i < count; i += 3, di += 6) {
+                    int dx1 = xdev->points.data[i].x - x;
+                    int dy1 = xdev->points.data[i].y - y;
+                    int dx2 = xdev->points.data[i + 1].x - x;
+                    int dy2 = xdev->points.data[i + 1].y - y;
+                    int dx = xdev->points.data[i + 2].x - x;
+                    int dy = xdev->points.data[i + 2].y - y;
 
-		    diffs[di] = (byte) dx1;
-		    diffs[di + 1] = (byte) dy1;
-		    diffs[di + 2] = (byte) dx2;
-		    diffs[di + 3] = (byte) dy2;
-		    diffs[di + 4] = (byte) dx;
-		    diffs[di + 5] = (byte) dy;
-		    uor |= dx1 | dy1 | dx2 | dy2 | dx | dy;
-		    sor |= (dx1 + 0x80) | (dy1 + 0x80) |
-			(dx2 + 0x80) | (dy2 + 0x80) |
-			(dx + 0x80) | (dy + 0x80);
-		    x += dx, y += dy;
-		}
-		if (!(uor & ~0xff))
-		    data_type = eUByte;
-		else if (!(sor & ~0xff))
-		    data_type = eSByte;
-		else
-		    break;
-		op = pxtBezierRelPath;
-		goto useb;
-	    default:		/* can't happen */
-		return_error(gs_error_unknownerror);
-	}
-	px_put_np(s, count, eSInt16);
-	spputc(s, (byte)op);
-	px_put_data_length(s, count * 4);	/* 2 UInt16s per point */
-	for (i = 0; i < count; ++i) {
-	    px_put_s(s, xdev->points.data[i].x);
-	    px_put_s(s, xdev->points.data[i].y);
-	}
-	pclxl_unset_page_scale(xdev);
-	if (count_smalls)
-	    pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
+                    diffs[di] = (byte) dx1;
+                    diffs[di + 1] = (byte) dy1;
+                    diffs[di + 2] = (byte) dx2;
+                    diffs[di + 3] = (byte) dy2;
+                    diffs[di + 4] = (byte) dx;
+                    diffs[di + 5] = (byte) dy;
+                    uor |= dx1 | dy1 | dx2 | dy2 | dx | dy;
+                    sor |= (dx1 + 0x80) | (dy1 + 0x80) |
+                        (dx2 + 0x80) | (dy2 + 0x80) |
+                        (dx + 0x80) | (dy + 0x80);
+                    x += dx, y += dy;
+                }
+                if (!(uor & ~0xff))
+                    data_type = eUByte;
+                else if (!(sor & ~0xff))
+                    data_type = eSByte;
+                else
+                    break;
+                op = pxtBezierRelPath;
+                goto useb;
+            default:		/* can't happen */
+                return_error(gs_error_unknownerror);
+        }
+        px_put_np(s, count, eSInt16);
+        spputc(s, (byte)op);
+        px_put_data_length(s, count * 4);	/* 2 UInt16s per point */
+        for (i = 0; i < count; ++i) {
+            px_put_s(s, xdev->points.data[i].x);
+            px_put_s(s, xdev->points.data[i].y);
+        }
+        pclxl_unset_page_scale(xdev);
+        if (count_smalls)
+            pclxl_set_page_origin(s, -temp_origin_x, -temp_origin_y);
       zap:xdev->points.type = POINTS_NONE;
-	xdev->points.count = 0;
+        xdev->points.count = 0;
     }
     return 0;
 }
@@ -604,7 +603,7 @@ static const gx_image_enum_procs_t pclxl_image_enum_procs = {
 /* Begin an image. */
 static void
 pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
-			uint dest_width, uint dest_height)
+                        uint dest_width, uint dest_height)
 {
     stream *s = pclxl_stream(xdev);
 
@@ -620,7 +619,7 @@ pclxl_write_begin_image(gx_device_pclxl * xdev, uint width, uint height,
 /* RLE version */
 static void
 pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_bit,
-		       uint raster, uint width_bits, int y, int height)
+                       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
     uint width_bytes = (width_bits + 7) >> 3;
@@ -634,63 +633,63 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_b
     px_put_usa(s, y, pxaStartLine);
     px_put_usa(s, height, pxaBlockHeight);
     if (compress) {
-	stream_RLE_state rlstate;
-	stream_cursor_write w;
-	stream_cursor_read r;
+        stream_RLE_state rlstate;
+        stream_cursor_write w;
+        stream_cursor_read r;
 
-	/*
-	 * H-P printers require that all the data for an operator be
-	 * contained in a single data block.  Thus, we must allocate a
-	 * temporary buffer for the compressed data.  Currently we don't go
-	 * to the trouble of doing two passes if we can't allocate a buffer
-	 * large enough for the entire transfer.
-	 */
-	byte *buf = gs_alloc_bytes(xdev->v_memory, num_bytes,
-				   "pclxl_write_image_data");
+        /*
+         * H-P printers require that all the data for an operator be
+         * contained in a single data block.  Thus, we must allocate a
+         * temporary buffer for the compressed data.  Currently we don't go
+         * to the trouble of doing two passes if we can't allocate a buffer
+         * large enough for the entire transfer.
+         */
+        byte *buf = gs_alloc_bytes(xdev->v_memory, num_bytes,
+                                   "pclxl_write_image_data");
 
-	if (buf == 0)
-	    goto nc;
-	s_RLE_set_defaults_inline(&rlstate);
-	rlstate.EndOfData = false;
-	s_RLE_init_inline(&rlstate);
-	w.ptr = buf - 1;
-	w.limit = w.ptr + num_bytes;
-	/*
-	 * If we ever overrun the buffer, it means that the compressed
-	 * data was larger than the uncompressed.  If this happens,
-	 * write the data uncompressed.
-	 */
-	for (i = 0; i < height; ++i) {
-	    r.ptr = data + i * raster - 1;
-	    r.limit = r.ptr + width_bytes;
-	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, true) != 0 ||
-		r.ptr != r.limit
-		)
-		goto ncfree;
-	    r.ptr = (const byte *)"\000\000\000\000\000";
-	    r.limit = r.ptr + (-(int)width_bytes & 3);
-	    if ((*s_RLE_template.process)
-		((stream_state *) & rlstate, &r, &w, true) != 0 ||
-		r.ptr != r.limit
-		)
-		goto ncfree;
-	}
-	r.ptr = r.limit;
-	if ((*s_RLE_template.process)
-	    ((stream_state *) & rlstate, &r, &w, true) != 0
-	    )
-	    goto ncfree;
-	{
-	    uint count = w.ptr + 1 - buf;
+        if (buf == 0)
+            goto nc;
+        s_RLE_set_defaults_inline(&rlstate);
+        rlstate.EndOfData = false;
+        s_RLE_init_inline(&rlstate);
+        w.ptr = buf - 1;
+        w.limit = w.ptr + num_bytes;
+        /*
+         * If we ever overrun the buffer, it means that the compressed
+         * data was larger than the uncompressed.  If this happens,
+         * write the data uncompressed.
+         */
+        for (i = 0; i < height; ++i) {
+            r.ptr = data + i * raster - 1;
+            r.limit = r.ptr + width_bytes;
+            if ((*s_RLE_template.process)
+                ((stream_state *) & rlstate, &r, &w, true) != 0 ||
+                r.ptr != r.limit
+                )
+                goto ncfree;
+            r.ptr = (const byte *)"\000\000\000\000\000";
+            r.limit = r.ptr + (-(int)width_bytes & 3);
+            if ((*s_RLE_template.process)
+                ((stream_state *) & rlstate, &r, &w, true) != 0 ||
+                r.ptr != r.limit
+                )
+                goto ncfree;
+        }
+        r.ptr = r.limit;
+        if ((*s_RLE_template.process)
+            ((stream_state *) & rlstate, &r, &w, true) != 0
+            )
+            goto ncfree;
+        {
+            uint count = w.ptr + 1 - buf;
 
-	    px_put_ub(s, eRLECompression);
-	    px_put_ac(s, pxaCompressMode, pxtReadImage);
-	    px_put_data_length(s, count);
-	    px_put_bytes(s, buf, count);
-	}
-	gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data");
-	return;
+            px_put_ub(s, eRLECompression);
+            px_put_ac(s, pxaCompressMode, pxtReadImage);
+            px_put_data_length(s, count);
+            px_put_bytes(s, buf, count);
+        }
+        gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data");
+        return;
       ncfree:gs_free_object(xdev->v_memory, buf, "pclxl_write_image_data");
     }
  nc:
@@ -699,8 +698,8 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_b
     px_put_ac(s, pxaCompressMode, pxtReadImage);
     px_put_data_length(s, num_bytes);
     for (i = 0; i < height; ++i) {
-	px_put_bytes(s, data + i * raster, width_bytes);
-	px_put_bytes(s, (const byte *)"\000\000\000\000", -(int)width_bytes & 3);
+        px_put_bytes(s, data + i * raster, width_bytes);
+        px_put_bytes(s, (const byte *)"\000\000\000\000", -(int)width_bytes & 3);
     }
 }
 /* DeltaRow compression (also called "mode 3"):
@@ -712,7 +711,7 @@ pclxl_write_image_data_RLE(gx_device_pclxl * xdev, const byte * base, int data_b
  */
 static void
 pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int data_bit,
-		       uint raster, uint width_bits, int y, int height)
+                       uint raster, uint width_bits, int y, int height)
 {
     stream *s = pclxl_stream(xdev);
     uint width_bytes = (width_bits + 7) >> 3;
@@ -732,7 +731,7 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int d
     /* the RLE routine can write uncompressed without extra-allocation */
     if ((buf == 0) || (prow == 0)) {
         pclxl_write_image_data_RLE(xdev, data, data_bit, raster, width_bits, y, height);
-	return;
+        return;
     }
     /* initialize the seed row */
     memset(prow, 0, width_bytes);
@@ -759,7 +758,7 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base, int d
 
 static void
 pclxl_write_image_data(gx_device_pclxl * xdev, const byte * data, int data_bit,
-		       uint raster, uint width_bits, int y, int height)
+                       uint raster, uint width_bits, int y, int height)
 {
     /* If we only have 1 line, it does not make sense to do DeltaRow */
     if (height < 2) {
@@ -792,13 +791,13 @@ static void
 px_put_string(stream * s, const byte * data, uint len, bool wide)
 {
     if (wide) {
-	spputc(s, pxt_uint16_array);
-	px_put_u(s, len);
-	px_put_bytes(s, data, len * 2);
+        spputc(s, pxt_uint16_array);
+        px_put_u(s, len);
+        px_put_bytes(s, data, len * 2);
     } else {
-	spputc(s, pxt_ubyte_array);
-	px_put_u(s, len);
-	px_put_bytes(s, data, len);
+        spputc(s, pxt_ubyte_array);
+        px_put_u(s, len);
+        px_put_bytes(s, data, len);
     }
 }
 
@@ -817,18 +816,18 @@ pclxl_define_bitmap_font(gx_device_pclxl * xdev)
 {
     stream *s = pclxl_stream(xdev);
     static const byte bfh_[] = {
-	DA(pxaFontName), DUB(0), DA(pxaFontFormat),
-	pxtBeginFontHeader,
-	DUS(8 + 6 + 4 + 6), DA(pxaFontHeaderLength),
-	pxtReadFontHeader,
-	pxt_dataLengthByte, 8 + 6 + 4 + 6,
-	0, 0, 0, 0,
-	254, 0, (MAX_CACHED_CHARS + 255) >> 8, 0,
-	'B', 'R', 0, 0, 0, 4
+        DA(pxaFontName), DUB(0), DA(pxaFontFormat),
+        pxtBeginFontHeader,
+        DUS(8 + 6 + 4 + 6), DA(pxaFontHeaderLength),
+        pxtReadFontHeader,
+        pxt_dataLengthByte, 8 + 6 + 4 + 6,
+        0, 0, 0, 0,
+        254, 0, (MAX_CACHED_CHARS + 255) >> 8, 0,
+        'B', 'R', 0, 0, 0, 4
     };
     static const byte efh_[] = {
-	0xff, 0xff, 0, 0, 0, 0,
-	pxtEndFontHeader
+        0xff, 0xff, 0, 0, 0, 0,
+        pxtEndFontHeader
     };
 
     PX_PUT_LIT(s, bfh_);
@@ -844,8 +843,8 @@ pclxl_set_font(gx_device_pclxl * xdev)
 {
     stream *s = pclxl_stream(xdev);
     static const byte sf_[] = {
-	DA(pxaFontName), DUB(1), DA(pxaCharSize), DUS(0), DA(pxaSymbolSet),
-	pxtSetFont
+        DA(pxaFontName), DUB(1), DA(pxaCharSize), DUS(0), DA(pxaSymbolSet),
+        pxtSetFont
     };
 
     PX_PUT_LIT(s, sf_);
@@ -855,7 +854,7 @@ pclxl_set_font(gx_device_pclxl * xdev)
 /* with the font name immediately before calling this procedure. */
 static void
 pclxl_define_bitmap_char(gx_device_pclxl * xdev, uint ccode,
-	       const byte * data, uint raster, uint width_bits, uint height)
+               const byte * data, uint raster, uint width_bits, uint height)
 {
     stream *s = pclxl_stream(xdev);
     uint width_bytes = (width_bits + 7) >> 3;
@@ -866,17 +865,17 @@ pclxl_define_bitmap_char(gx_device_pclxl * xdev, uint ccode,
     px_put_u(s, ccode);
     px_put_a(s, pxaCharCode);
     if (size > 0xffff) {
-	spputc(s, pxt_uint32);
-	px_put_l(s, (ulong) size);
+        spputc(s, pxt_uint32);
+        px_put_l(s, (ulong) size);
     } else
-	px_put_us(s, size);
+        px_put_us(s, size);
     px_put_ac(s, pxaCharDataSize, pxtReadChar);
     px_put_data_length(s, size);
     px_put_bytes(s, (const byte *)"\000\000\000\000\000\000", 6);
     px_put_us_be(s, width_bits);
     px_put_us_be(s, height);
     for (i = 0; i < height; ++i)
-	px_put_bytes(s, data + i * raster, width_bytes);
+        px_put_bytes(s, data + i * raster, width_bytes);
     spputc(s, pxtEndChar);
 }
 
@@ -898,18 +897,18 @@ pclxl_char_index(gx_device_pclxl * xdev, gs_id id)
     uint ccode;
 
     for (i = (id * CHAR_HASH_FACTOR) % countof(xdev->chars.table);;
-	 i = (i == 0 ? countof(xdev->chars.table) : i) - 1
-	) {
-	ccode = xdev->chars.table[i];
-	if (ccode == 0)
-	    return (i_empty >= 0 ? i_empty : i);
-	else if (ccode == 1) {
-	    if (i_empty < 0)
-		i_empty = i;
-	    else if (i == i_empty)	/* full table */
-		return i;
-	} else if (xdev->chars.data[ccode].id == id)
-	    return i;
+         i = (i == 0 ? countof(xdev->chars.table) : i) - 1
+        ) {
+        ccode = xdev->chars.table[i];
+        if (ccode == 0)
+            return (i_empty >= 0 ? i_empty : i);
+        else if (ccode == 1) {
+            if (i_empty < 0)
+                i_empty = i;
+            else if (i == i_empty)	/* full table */
+                return i;
+        } else if (xdev->chars.data[ccode].id == id)
+            return i;
     }
 }
 
@@ -921,18 +920,18 @@ pclxl_remove_char(gx_device_pclxl * xdev, int index)
     int i;
 
     if (ccode < 2)
-	return;
+        return;
     xdev->chars.count--;
     xdev->chars.used -= xdev->chars.data[ccode].size;
     xdev->chars.table[index] = 1;	/* mark as deleted */
     i = (index == 0 ? countof(xdev->chars.table) : index) - 1;
     if (xdev->chars.table[i] == 0) {
-	/* The next slot in probe order is empty. */
-	/* Mark this slot and any deleted predecessors as empty. */
-	for (i = index; xdev->chars.table[i] == 1;
-	     i = (i == countof(xdev->chars.table) - 1 ? 0 : i + 1)
-	    )
-	    xdev->chars.table[i] = 0;
+        /* The next slot in probe order is empty. */
+        /* Mark this slot and any deleted predecessors as empty. */
+        for (i = index; xdev->chars.table[i] == 1;
+             i = (i == countof(xdev->chars.table) - 1 ? 0 : i + 1)
+            )
+            xdev->chars.table[i] = 0;
     }
 }
 
@@ -941,7 +940,7 @@ pclxl_remove_char(gx_device_pclxl * xdev, int index)
 /* We know id != gs_no_id. */
 static int
 pclxl_copy_text_char(gx_device_pclxl * xdev, const byte * data,
-		     int raster, gx_bitmap_id id, int w, int h)
+                     int raster, gx_bitmap_id id, int w, int h)
 {
     uint width_bytes = (w + 7) >> 3;
     uint size = width_bytes * h;
@@ -950,45 +949,45 @@ pclxl_copy_text_char(gx_device_pclxl * xdev, const byte * data,
     stream *s = pclxl_stream(xdev);
 
     if (size > MAX_CHAR_SIZE)
-	return -1;
+        return -1;
     index = pclxl_char_index(xdev, id);
     if ((ccode = xdev->chars.table[index]) < 2) {
-	/* Enter the character in the table. */
-	while (xdev->chars.used + size > MAX_CHAR_DATA ||
-	       xdev->chars.count >= MAX_CACHED_CHARS - 2
-	    ) {
-	    ccode = xdev->chars.next_out;
-	    index = pclxl_char_index(xdev, xdev->chars.data[ccode].id);
-	    pclxl_remove_char(xdev, index);
-	    xdev->chars.next_out =
-		(ccode == MAX_CACHED_CHARS - 1 ? 2 : ccode + 1);
-	}
-	index = pclxl_char_index(xdev, id);
-	ccode = xdev->chars.next_in;
-	xdev->chars.data[ccode].id = id;
-	xdev->chars.data[ccode].size = size;
-	xdev->chars.table[index] = ccode;
-	xdev->chars.next_in =
-	    (ccode == MAX_CACHED_CHARS - 1 ? 2 : ccode + 1);
-	if (!xdev->chars.count++) {
-	    /* This is the very first character. */
-	    pclxl_write_font_name(xdev);
-	    pclxl_define_bitmap_font(xdev);
-	}
-	xdev->chars.used += size;
-	pclxl_write_font_name(xdev);
-	pclxl_define_bitmap_char(xdev, ccode, data, raster, w, h);
+        /* Enter the character in the table. */
+        while (xdev->chars.used + size > MAX_CHAR_DATA ||
+               xdev->chars.count >= MAX_CACHED_CHARS - 2
+            ) {
+            ccode = xdev->chars.next_out;
+            index = pclxl_char_index(xdev, xdev->chars.data[ccode].id);
+            pclxl_remove_char(xdev, index);
+            xdev->chars.next_out =
+                (ccode == MAX_CACHED_CHARS - 1 ? 2 : ccode + 1);
+        }
+        index = pclxl_char_index(xdev, id);
+        ccode = xdev->chars.next_in;
+        xdev->chars.data[ccode].id = id;
+        xdev->chars.data[ccode].size = size;
+        xdev->chars.table[index] = ccode;
+        xdev->chars.next_in =
+            (ccode == MAX_CACHED_CHARS - 1 ? 2 : ccode + 1);
+        if (!xdev->chars.count++) {
+            /* This is the very first character. */
+            pclxl_write_font_name(xdev);
+            pclxl_define_bitmap_font(xdev);
+        }
+        xdev->chars.used += size;
+        pclxl_write_font_name(xdev);
+        pclxl_define_bitmap_char(xdev, ccode, data, raster, w, h);
     }
     if (!xdev->font_set) {
-	pclxl_write_font_name(xdev);
-	pclxl_set_font(xdev);
-	xdev->font_set = true;
+        pclxl_write_font_name(xdev);
+        pclxl_set_font(xdev);
+        xdev->font_set = true;
     } {
-	byte cc_bytes[2];
+        byte cc_bytes[2];
 
-	cc_bytes[0] = (byte) ccode;
-	cc_bytes[1] = ccode >> 8;
-	px_put_string(s, cc_bytes, 1, cc_bytes[1] != 0);
+        cc_bytes[0] = (byte) ccode;
+        cc_bytes[1] = ccode >> 8;
+        px_put_string(s, cc_bytes, 1, cc_bytes[1] != 0);
     }
     px_put_ac(s, pxaTextData, pxtText);
     return 0;
@@ -1017,13 +1016,13 @@ pclxl_beginpage(gx_device_vector * vdev)
 
     px_write_page_header(s, (const gx_device *)vdev);
 
-    if (xdev->ManualFeed_set && xdev->ManualFeed) 
-	media_source = 2;
+    if (xdev->ManualFeed_set && xdev->ManualFeed)
+        media_source = 2;
     else if (xdev->MediaPosition_set && xdev->MediaPosition >= 0 )
-	media_source = xdev->MediaPosition;
- 
+        media_source = xdev->MediaPosition;
+
     px_write_select_media(s, (const gx_device *)vdev, &xdev->media_size,
-			  &media_source,
+                          &media_source,
                           xdev->page, xdev->Duplex, xdev->Tumble);
 
     spputc(s, pxtBeginPage);
@@ -1085,32 +1084,32 @@ pclxl_setmiterlimit(gx_device_vector * vdev, floatp limit)
 
 static int
 pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
-	      floatp offset)
+              floatp offset)
 {
     stream *s = gdev_vector_stream(vdev);
 
     if (count == 0) {
-	static const byte nac_[] = {
-	    DUB(0), DA(pxaSolidLine)
-	};
+        static const byte nac_[] = {
+            DUB(0), DA(pxaSolidLine)
+        };
 
-	PX_PUT_LIT(s, nac_);
+        PX_PUT_LIT(s, nac_);
     } else if (count > 255)
-	return_error(gs_error_limitcheck);
+        return_error(gs_error_limitcheck);
     else {
-	uint i;
+        uint i;
 
-	/*
-	 * Astoundingly, PCL XL doesn't allow real numbers here.
-	 * Do the best we can.
-	 */
-	spputc(s, pxt_uint16_array);
-	px_put_ub(s, (byte)count);
-	for (i = 0; i < count; ++i)
-	    px_put_s(s, (uint)pattern[i]);
-	px_put_a(s, pxaLineDashStyle);
-	if (offset != 0)
-	    px_put_usa(s, (uint)offset, pxaDashOffset);
+        /*
+         * Astoundingly, PCL XL doesn't allow real numbers here.
+         * Do the best we can.
+         */
+        spputc(s, pxt_uint16_array);
+        px_put_ub(s, (byte)count);
+        for (i = 0; i < count; ++i)
+            px_put_s(s, (uint)pattern[i]);
+        px_put_a(s, pxaLineDashStyle);
+        if (offset != 0)
+            px_put_usa(s, (uint)offset, pxaDashOffset);
     }
     spputc(s, pxtSetLineDash);
     return 0;
@@ -1118,34 +1117,34 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 
 static int
 pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
-	       gs_logical_operation_t diff)
+               gs_logical_operation_t diff)
 {
     stream *s = gdev_vector_stream(vdev);
 
     if (diff & lop_S_transparent) {
-	px_put_ub(s, (byte)(lop & lop_S_transparent ? 1 : 0));
-	px_put_ac(s, pxaTxMode, pxtSetSourceTxMode);
+        px_put_ub(s, (byte)(lop & lop_S_transparent ? 1 : 0));
+        px_put_ac(s, pxaTxMode, pxtSetSourceTxMode);
     }
     if (diff & lop_T_transparent) {
-	px_put_ub(s, (byte)(lop & lop_T_transparent ? 1 : 0));
-	px_put_ac(s, pxaTxMode, pxtSetPaintTxMode);
+        px_put_ub(s, (byte)(lop & lop_T_transparent ? 1 : 0));
+        px_put_ac(s, pxaTxMode, pxtSetPaintTxMode);
     }
     if (lop_rop(diff)) {
-	px_put_ub(s, (byte)lop_rop(lop));
-	px_put_ac(s, pxaROP3, pxtSetROP);
+        px_put_ub(s, (byte)lop_rop(lop));
+        px_put_ac(s, pxaROP3, pxtSetROP);
     }
     return 0;
 }
 
 static int
-pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis, 
+pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_imager_state * pis,
                    const gx_drawing_color * pdc)
 {
     return false;
 }
 
 static int
-pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
                    const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1154,7 +1153,7 @@ pclxl_setfillcolor(gx_device_vector * vdev, const gs_imager_state * pis,
 }
 
 static int
-pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis, 
+pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
                      const gx_drawing_color * pdc)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
@@ -1164,7 +1163,7 @@ pclxl_setstrokecolor(gx_device_vector * vdev, const gs_imager_state * pis,
 
 static int
 pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-	     fixed y1, gx_path_type_t type)
+             fixed y1, gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
     stream *s = gdev_vector_stream(vdev);
@@ -1172,24 +1171,24 @@ pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
     /* Check for out-of-range points. */
 #define OUT_OF_RANGE(v) (v < 0 || v >= int2fixed(0x10000))
     if (OUT_OF_RANGE(x0) || OUT_OF_RANGE(y0) ||
-	OUT_OF_RANGE(x1) || OUT_OF_RANGE(y1)
-	)
-	return_error(gs_error_rangecheck);
+        OUT_OF_RANGE(x1) || OUT_OF_RANGE(y1)
+        )
+        return_error(gs_error_rangecheck);
 #undef OUT_OF_RANGE
     if (type & (gx_path_type_fill | gx_path_type_stroke)) {
-	pclxl_set_paints(xdev, type);
-	px_put_usq_fixed(s, x0, y0, x1, y1);
-	px_put_ac(s, pxaBoundingBox, pxtRectangle);
+        pclxl_set_paints(xdev, type);
+        px_put_usq_fixed(s, x0, y0, x1, y1);
+        px_put_ac(s, pxaBoundingBox, pxtRectangle);
     }
     if (type & gx_path_type_clip) {
-	static const byte cr_[] = {
-	    DA(pxaBoundingBox),
-	    DUB(eInterior), DA(pxaClipRegion),
-	    pxtSetClipRectangle
-	};
+        static const byte cr_[] = {
+            DA(pxaBoundingBox),
+            DUB(eInterior), DA(pxaClipRegion),
+            pxtSetClipRectangle
+        };
 
-	px_put_usq_fixed(s, x0, y0, x1, y1);
-	PX_PUT_LIT(s, cr_);
+        px_put_usq_fixed(s, x0, y0, x1, y1);
+        PX_PUT_LIT(s, cr_);
     }
     return 0;
 }
@@ -1208,70 +1207,70 @@ pclxl_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 static int
 pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
-	     gx_path_type_t type)
+             gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
     int code = pclxl_flush_points(xdev);
 
     if (code < 0)
-	return code;
+        return code;
     return pclxl_set_cursor(xdev,
-			    xdev->points.current.x = (int)(x+0.5),
-			    xdev->points.current.y = (int)(y+0.5));
+                            xdev->points.current.x = (int)(x+0.5),
+                            xdev->points.current.y = (int)(y+0.5));
 }
 
 static int
 pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
-	     gx_path_type_t type)
+             gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
 
     if (xdev->points.type != POINTS_LINES ||
-	xdev->points.count >= NUM_POINTS
-	) {
-	if (xdev->points.type != POINTS_NONE) {
-	    int code = pclxl_flush_points(xdev);
+        xdev->points.count >= NUM_POINTS
+        ) {
+        if (xdev->points.type != POINTS_NONE) {
+            int code = pclxl_flush_points(xdev);
 
-	    if (code < 0)
-		return code;
-	}
-	xdev->points.current.x = (int)(x0+0.5);
-	xdev->points.current.y = (int)(y0+0.5);
-	xdev->points.type = POINTS_LINES;
+            if (code < 0)
+                return code;
+        }
+        xdev->points.current.x = (int)(x0+0.5);
+        xdev->points.current.y = (int)(y0+0.5);
+        xdev->points.type = POINTS_LINES;
     } {
-	gs_int_point *ppt = &xdev->points.data[xdev->points.count++];
+        gs_int_point *ppt = &xdev->points.data[xdev->points.count++];
 
-	ppt->x = (int)(x+0.5), ppt->y = (int)(y+0.5);
+        ppt->x = (int)(x+0.5), ppt->y = (int)(y+0.5);
     }
     return 0;
 }
 
 static int
 pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
-	      gx_path_type_t type)
+           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+              gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
 
     if (xdev->points.type != POINTS_CURVES ||
-	xdev->points.count >= NUM_POINTS - 2
-	) {
-	if (xdev->points.type != POINTS_NONE) {
-	    int code = pclxl_flush_points(xdev);
+        xdev->points.count >= NUM_POINTS - 2
+        ) {
+        if (xdev->points.type != POINTS_NONE) {
+            int code = pclxl_flush_points(xdev);
 
-	    if (code < 0)
-		return code;
-	}
-	xdev->points.current.x = (int)(x0+0.5);
-	xdev->points.current.y = (int)(y0+0.5);
-	xdev->points.type = POINTS_CURVES;
+            if (code < 0)
+                return code;
+        }
+        xdev->points.current.x = (int)(x0+0.5);
+        xdev->points.current.y = (int)(y0+0.5);
+        xdev->points.type = POINTS_CURVES;
     }
     {
-	gs_int_point *ppt = &xdev->points.data[xdev->points.count];
+        gs_int_point *ppt = &xdev->points.data[xdev->points.count];
 
-	ppt->x = (int)(x1+0.5), ppt->y = (int)(y1+0.5), ++ppt;
-	ppt->x = (int)(x2+0.5), ppt->y = (int)(y2+0.5), ++ppt;
-	ppt->x = (int)(x3+0.5), ppt->y = (int)(y3+0.5);
+        ppt->x = (int)(x1+0.5), ppt->y = (int)(y1+0.5), ++ppt;
+        ppt->x = (int)(x2+0.5), ppt->y = (int)(y2+0.5), ++ppt;
+        ppt->x = (int)(x3+0.5), ppt->y = (int)(y3+0.5);
     }
     xdev->points.count += 3;
     return 0;
@@ -1279,14 +1278,14 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 
 static int
 pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
-		floatp x_start, floatp y_start, gx_path_type_t type)
+                floatp x_start, floatp y_start, gx_path_type_t type)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)vdev;
     stream *s = gdev_vector_stream(vdev);
     int code = pclxl_flush_points(xdev);
 
     if (code < 0)
-	return code;
+        return code;
     spputc(s, pxtCloseSubPath);
     xdev->points.current.x = (int)(x_start+0.5);
     xdev->points.current.y = (int)(y_start+0.5);
@@ -1302,29 +1301,29 @@ pclxl_endpath(gx_device_vector * vdev, gx_path_type_t type)
     gx_path_type_t rule = type & gx_path_type_rule;
 
     if (code < 0)
-	return code;
+        return code;
     if (type & (gx_path_type_fill | gx_path_type_stroke)) {
-	if (rule != xdev->fill_rule) {
-	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
-		       eNonZeroWinding));
-	    px_put_ac(s, pxaFillMode, pxtSetFillMode);
-	    xdev->fill_rule = rule;
-	}
-	pclxl_set_paints(xdev, type);
-	spputc(s, pxtPaintPath);
+        if (rule != xdev->fill_rule) {
+            px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
+                       eNonZeroWinding));
+            px_put_ac(s, pxaFillMode, pxtSetFillMode);
+            xdev->fill_rule = rule;
+        }
+        pclxl_set_paints(xdev, type);
+        spputc(s, pxtPaintPath);
     }
     if (type & gx_path_type_clip) {
-	static const byte scr_[] = {
-	    DUB(eInterior), DA(pxaClipRegion), pxtSetClipReplace
-	};
+        static const byte scr_[] = {
+            DUB(eInterior), DA(pxaClipRegion), pxtSetClipReplace
+        };
 
-	if (rule != xdev->clip_rule) {
-	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
-		       eNonZeroWinding));
-	    px_put_ac(s, pxaClipMode, pxtSetClipMode);
-	    xdev->clip_rule = rule;
-	}
-	PX_PUT_LIT(s, scr_);
+        if (rule != xdev->clip_rule) {
+            px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
+                       eNonZeroWinding));
+            px_put_ac(s, pxaClipMode, pxtSetClipMode);
+            xdev->clip_rule = rule;
+        }
+        PX_PUT_LIT(s, scr_);
     }
     return 0;
 }
@@ -1332,9 +1331,9 @@ pclxl_endpath(gx_device_vector * vdev, gx_path_type_t type)
 /* Vector implementation procedures */
 
 static const gx_device_vector_procs pclxl_vector_procs = {
-	/* Page management */
+        /* Page management */
     pclxl_beginpage,
-	/* Imager state */
+        /* Imager state */
     pclxl_setlinewidth,
     pclxl_setlinecap,
     pclxl_setlinejoin,
@@ -1342,11 +1341,11 @@ static const gx_device_vector_procs pclxl_vector_procs = {
     pclxl_setdash,
     gdev_vector_setflat,
     pclxl_setlogop,
-	/* Other state */
+        /* Other state */
     pclxl_can_handle_hl_color,
     pclxl_setfillcolor,
     pclxl_setstrokecolor,
-	/* Paths */
+        /* Paths */
     gdev_vector_dopath,
     pclxl_dorect,
     pclxl_beginpath,
@@ -1372,9 +1371,9 @@ pclxl_open_device(gx_device * dev)
     vdev->v_memory = dev->memory;	/****** WRONG ******/
     vdev->vec_procs = &pclxl_vector_procs;
     code = gdev_vector_open_file_options(vdev, 512,
-					 VECTOR_OPEN_FILE_SEQUENTIAL);
+                                         VECTOR_OPEN_FILE_SEQUENTIAL);
     if (code < 0)
-	return code;
+        return code;
 
     pclxl_page_init(xdev);
     px_write_file_header(vdev->strm, dev);
@@ -1394,14 +1393,14 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
 
     /* Note that unlike close_device, end_page must not omit blank pages. */
     if (!xdev->in_page)
-	pclxl_beginpage((gx_device_vector *)dev);
+        pclxl_beginpage((gx_device_vector *)dev);
     s = xdev->strm;
     px_put_usa(s, (uint)num_copies, pxaPageCopies);	/* num_copies */
     spputc(s, pxtEndPage);
     sflush(s);
     pclxl_page_init(xdev);
     if (ferror(xdev->file))
-	return_error(gs_error_ioerror);
+        return_error(gs_error_ioerror);
     return gx_finish_output_page(dev, num_copies, flush);
 }
 
@@ -1415,9 +1414,9 @@ pclxl_close_device(gx_device * dev)
     FILE *file = xdev->file;
 
     if (xdev->strm != NULL)
-	sflush(xdev->strm);
+        sflush(xdev->strm);
     if (xdev->in_page)
-	fputc(pxtEndPage, file);
+        fputc(pxtEndPage, file);
     px_write_file_trailer(file);
     return gdev_vector_close_file((gx_device_vector *)dev);
 }
@@ -1431,8 +1430,8 @@ static const byte eBit_values[] = {
 /* Copy a monochrome bitmap. */
 static int
 pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
-		gx_bitmap_id id, int x, int y, int w, int h,
-		gx_color_index zero, gx_color_index one)
+                gx_bitmap_id id, int x, int y, int w, int h,
+                gx_color_index zero, gx_color_index one)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1449,30 +1448,30 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
     fit_copy(dev, data, data_x, raster, id, x, y, w, h);
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
-	return code;
+        return code;
 
     /* write_image_data() needs byte-alignment,
      * and gx_default_copy_* is more efficient than pxlcl_*
      * for small rasters. See details in copy_color().
      */
     if ( ((data_x & 7) != 0) || (h == 1) || (w == 1) )
-        return gx_default_copy_mono(dev, data, data_x, raster, id, 
-  				    x, y, w, h, zero, one);
+        return gx_default_copy_mono(dev, data, data_x, raster, id,
+                                    x, y, w, h, zero, one);
 
     pclxl_set_cursor(xdev, x, y);
     if (id != gs_no_id && zero == gx_no_color_index &&
-	one != gx_no_color_index && data_x == 0
-	) {
-	gx_drawing_color dcolor;
+        one != gx_no_color_index && data_x == 0
+        ) {
+        gx_drawing_color dcolor;
 
-	code = gdev_vector_update_log_op(vdev, rop3_T|lop_T_transparent);
-	if (code < 0)
-	    return 0;
+        code = gdev_vector_update_log_op(vdev, rop3_T|lop_T_transparent);
+        if (code < 0)
+            return 0;
 
-	set_nonclient_dev_color(&dcolor, one);
-	pclxl_setfillcolor(vdev, NULL, &dcolor);
-	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
-	    return 0;
+        set_nonclient_dev_color(&dcolor, one);
+        pclxl_setfillcolor(vdev, NULL, &dcolor);
+        if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
+            return 0;
     }
     /*
      * The following doesn't work if we're writing white with a mask.
@@ -1494,71 +1493,71 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
      *
      * There is a further refinement to this algorithm - it appears that
      * black+mask is treated specially by the vector driver core (rendered
-     * as transparent on white), and does not work as non-white + mask. 
+     * as transparent on white), and does not work as non-white + mask.
      * So Instead we set mask color to white and do (S & D) (i.e. draw
      * background on mask, instead of transparent on mask).
      *
      */
     if (zero == gx_no_color_index) {
-	if (one == gx_no_color_index)
-	    return 0;
-	if (one != white) {
-	    if (one == black) {
-	        lop = (rop3_S & rop3_D);
-	    } else {
-	lop = rop3_S | lop_S_transparent;
-	    }
-	    color0 = white;
-	} else {
-	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
-	    color0 = black;
-	}
+        if (one == gx_no_color_index)
+            return 0;
+        if (one != white) {
+            if (one == black) {
+                lop = (rop3_S & rop3_D);
+            } else {
+        lop = rop3_S | lop_S_transparent;
+            }
+            color0 = white;
+        } else {
+            lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+            color0 = black;
+        }
     } else if (one == gx_no_color_index) {
-	if (zero != white) {
-	    if (zero == black) {
-	        lop = (rop3_S & rop3_D);
-	    } else {
-	lop = rop3_S | lop_S_transparent;
-	    }
-	    color1 = white;
-	} else {
-	    lop = rop3_S | (rop3_D & rop3_not(rop3_S));
-	    color1 = black;
-	}
+        if (zero != white) {
+            if (zero == black) {
+                lop = (rop3_S & rop3_D);
+            } else {
+        lop = rop3_S | lop_S_transparent;
+            }
+            color1 = white;
+        } else {
+            lop = rop3_S | (rop3_D & rop3_not(rop3_S));
+            color1 = black;
+        }
     } else {
-	lop = rop3_S;
+        lop = rop3_S;
     }
 
     if (dev->color_info.num_components == 1 ||
-	(RGB_IS_GRAY(color0) && RGB_IS_GRAY(color1))
-	) {
-	palette[0] = (byte) color0;
-	palette[1] = (byte) color1;
-	palette_size = 2;
-	color_space = eGray;
-	if_debug2('b', "color palette %02X %02X\n", palette[0], palette[1]);
+        (RGB_IS_GRAY(color0) && RGB_IS_GRAY(color1))
+        ) {
+        palette[0] = (byte) color0;
+        palette[1] = (byte) color1;
+        palette_size = 2;
+        color_space = eGray;
+        if_debug2('b', "color palette %02X %02X\n", palette[0], palette[1]);
     } else {
-	palette[0] = (byte) (color0 >> 16);
-	palette[1] = (byte) (color0 >> 8);
-	palette[2] = (byte) color0;
-	palette[3] = (byte) (color1 >> 16);
-	palette[4] = (byte) (color1 >> 8);
-	palette[5] = (byte) color1;
-	palette_size = 6;
-	color_space = eRGB;
+        palette[0] = (byte) (color0 >> 16);
+        palette[1] = (byte) (color0 >> 8);
+        palette[2] = (byte) color0;
+        palette[3] = (byte) (color1 >> 16);
+        palette[4] = (byte) (color1 >> 8);
+        palette[5] = (byte) color1;
+        palette_size = 6;
+        color_space = eRGB;
     }
     code = gdev_vector_update_log_op(vdev, lop);
     if (code < 0)
-	return 0;
+        return 0;
     pclxl_set_color_palette(xdev, color_space, palette, palette_size);
     s = pclxl_stream(xdev);
     {
-	static const byte mi_[] = {
-	    DUB(e1Bit), DA(pxaColorDepth),
-	    DUB(eIndexedPixel), DA(pxaColorMapping)
-	};
+        static const byte mi_[] = {
+            DUB(e1Bit), DA(pxaColorDepth),
+            DUB(eIndexedPixel), DA(pxaColorMapping)
+        };
 
-	PX_PUT_LIT(s, mi_);
+        PX_PUT_LIT(s, mi_);
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
     pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h);
@@ -1569,8 +1568,8 @@ pclxl_copy_mono(gx_device * dev, const byte * data, int data_x, int raster,
 /* Copy a color bitmap. */
 static int
 pclxl_copy_color(gx_device * dev,
-		 const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		 int x, int y, int w, int h)
+                 const byte * base, int sourcex, int raster, gx_bitmap_id id,
+                 int x, int y, int w, int h)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1581,8 +1580,7 @@ pclxl_copy_color(gx_device * dev,
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     code = gdev_vector_update_clip_path(vdev, NULL);
     if (code < 0)
-	return code;
-
+        return code;
 
     source_bit = sourcex * dev->color_info.depth;
 
@@ -1603,26 +1601,26 @@ pclxl_copy_color(gx_device * dev,
      * than images.
      */
     if ( ((source_bit & 7) != 0) || (w == 1) || (h == 1) )
-	return gx_default_copy_color(dev, base, sourcex, raster, id,
-				     x, y, w, h);
+        return gx_default_copy_color(dev, base, sourcex, raster, id,
+                                     x, y, w, h);
     code = gdev_vector_update_log_op(vdev, rop3_S);
     if(code < 0)
         return 0;
     pclxl_set_cursor(xdev, x, y);
     s = pclxl_stream(xdev);
     {
-	static const byte ci_[] = {
-	    DA(pxaColorDepth),
-	    DUB(eDirectPixel), DA(pxaColorMapping)
-	};
+        static const byte ci_[] = {
+            DA(pxaColorDepth),
+            DUB(eDirectPixel), DA(pxaColorMapping)
+        };
 
-	px_put_ub(s, eBit_values[dev->color_info.depth /
-				 dev->color_info.num_components]);
-	PX_PUT_LIT(s, ci_);
+        px_put_ub(s, eBit_values[dev->color_info.depth /
+                                 dev->color_info.num_components]);
+        PX_PUT_LIT(s, ci_);
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
     pclxl_write_image_data(xdev, base, source_bit, raster,
-			   w * dev->color_info.depth, 0, h);
+                           w * dev->color_info.depth, 0, h);
     pclxl_write_end_image(xdev);
     return 0;
 }
@@ -1630,10 +1628,10 @@ pclxl_copy_color(gx_device * dev,
 /* Fill a mask. */
 static int
 pclxl_fill_mask(gx_device * dev,
-		const byte * data, int data_x, int raster, gx_bitmap_id id,
-		int x, int y, int w, int h,
-		const gx_drawing_color * pdcolor, int depth,
-		gs_logical_operation_t lop, const gx_clip_path * pcpath)
+                const byte * data, int data_x, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h,
+                const gx_drawing_color * pdcolor, int depth,
+                gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1647,23 +1645,23 @@ pclxl_fill_mask(gx_device * dev,
      * for small rasters. See details in copy_color().
      */
     if ((data_x & 7) != 0 || !gx_dc_is_pure(pdcolor) || depth > 1 || (w == 1) || (h == 1) )
-	return gx_default_fill_mask(dev, data, data_x, raster, id,
-				    x, y, w, h, pdcolor, depth,
-				    lop, pcpath);
+        return gx_default_fill_mask(dev, data, data_x, raster, id,
+                                    x, y, w, h, pdcolor, depth,
+                                    lop, pcpath);
     code = gdev_vector_update_clip_path(vdev, pcpath);
     foreground = gx_dc_pure_color(pdcolor);
     if (code < 0)
-	return code;
+        return code;
     code = gdev_vector_update_fill_color(vdev, NULL, pdcolor);
     if (code < 0)
-	return 0;
+        return 0;
     pclxl_set_cursor(xdev, x, y);
     if (id != gs_no_id && data_x == 0) {
-	code = gdev_vector_update_log_op(vdev, lop);
-	if (code < 0)
-	    return 0;
-	if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
-	    return 0;
+        code = gdev_vector_update_log_op(vdev, lop);
+        if (code < 0)
+            return 0;
+        if (pclxl_copy_text_char(xdev, data, raster, id, w, h) >= 0)
+            return 0;
     }
     /* This is similiar to the copy_mono white-on-mask,
      * except we are drawing white on the black of a black/white mask,
@@ -1675,18 +1673,18 @@ pclxl_fill_mask(gx_device * dev,
     }else lop |= rop3_S | lop_S_transparent;
 
     code = gdev_vector_update_log_op(vdev,
-				     lop);
+                                     lop);
     if (code < 0)
-	return 0;
+        return 0;
     pclxl_set_color_palette(xdev, eGray, (const byte *)"\377\000", 2);
     s = pclxl_stream(xdev);
     {
-	static const byte mi_[] = {
-	    DUB(e1Bit), DA(pxaColorDepth),
-	    DUB(eIndexedPixel), DA(pxaColorMapping)
-	};
+        static const byte mi_[] = {
+            DUB(e1Bit), DA(pxaColorDepth),
+            DUB(eIndexedPixel), DA(pxaColorMapping)
+        };
 
-	PX_PUT_LIT(s, mi_);
+        PX_PUT_LIT(s, mi_);
     }
     pclxl_write_begin_image(xdev, w, h, w, h);
     pclxl_write_image_data(xdev, data, data_x, raster, w, 0, h);
@@ -1697,12 +1695,12 @@ pclxl_fill_mask(gx_device * dev,
 /* Do a RasterOp. */
 static int
 pclxl_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
-		     uint sraster, gx_bitmap_id id,
-		     const gx_color_index * scolors,
-		     const gx_strip_bitmap * textures,
-		     const gx_color_index * tcolors,
-		     int x, int y, int width, int height,
-		     int phase_x, int phase_y, gs_logical_operation_t lop)
+                     uint sraster, gx_bitmap_id id,
+                     const gx_color_index * scolors,
+                     const gx_strip_bitmap * textures,
+                     const gx_color_index * tcolors,
+                     int x, int y, int width, int height,
+                     int phase_x, int phase_y, gs_logical_operation_t lop)
 {				/* We can't do general RasterOps yet. */
 /****** WORK IN PROGRESS ******/
     return 0;
@@ -1715,25 +1713,25 @@ typedef struct pclxl_image_enum_s {
     gdev_vector_image_enum_common;
     gs_matrix mat;
     struct ir_ {
-	byte *data;
-	int num_rows;		/* # of allocated rows */
-	int first_y;
-	uint raster;
+        byte *data;
+        int num_rows;		/* # of allocated rows */
+        int first_y;
+        uint raster;
     } rows;
 } pclxl_image_enum_t;
 gs_private_st_suffix_add1(st_pclxl_image_enum, pclxl_image_enum_t,
-			  "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
-			  pclxl_image_enum_reloc_ptrs, st_vector_image_enum,
-			  rows.data);
+                          "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
+                          pclxl_image_enum_reloc_ptrs, st_vector_image_enum,
+                          rows.data);
 
 /* Start processing an image. */
 static int
 pclxl_begin_image(gx_device * dev,
-		  const gs_imager_state * pis, const gs_image_t * pim,
-		  gs_image_format_t format, const gs_int_rect * prect,
-		  const gx_drawing_color * pdcolor,
-		  const gx_clip_path * pcpath, gs_memory_t * mem,
-		  gx_image_enum_common_t ** pinfo)
+                  const gs_imager_state * pis, const gs_image_t * pim,
+                  gs_image_format_t format, const gs_int_rect * prect,
+                  const gx_drawing_color * pdcolor,
+                  const gx_clip_path * pcpath, gs_memory_t * mem,
+                  gx_image_enum_common_t ** pinfo)
 {
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
@@ -1747,8 +1745,8 @@ pclxl_begin_image(gx_device * dev,
      * images, i.e., num_planes = 1.
      */
     int bits_per_pixel =
-	(pim->ImageMask ? 1 :
-	 pim->BitsPerComponent * gs_color_space_num_components(pcs));
+        (pim->ImageMask ? 1 :
+         pim->BitsPerComponent * gs_color_space_num_components(pcs));
     gs_matrix mat;
     int code;
 
@@ -1766,35 +1764,35 @@ pclxl_begin_image(gx_device * dev,
      */
     if ((!((mat.xx * mat.yy > 0) && (mat.xy == 0) && (mat.yx == 0)) &&
          !((mat.xx == 0) && (mat.yy == 0) && (mat.xy * mat.yx < 0))) ||
-	(pim->ImageMask ?
-	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
-	 (!pclxl_can_handle_color_space(pim->ColorSpace) ||
-	  (bits_per_pixel != 1 && bits_per_pixel != 4 &&
-	   bits_per_pixel != 8 && bits_per_pixel !=24))) ||
-	format != gs_image_format_chunky || pim->Interpolate ||
-	prect
-	)
-	goto use_default;
+        (pim->ImageMask ?
+         (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
+         (!pclxl_can_handle_color_space(pim->ColorSpace) ||
+          (bits_per_pixel != 1 && bits_per_pixel != 4 &&
+           bits_per_pixel != 8 && bits_per_pixel !=24))) ||
+        format != gs_image_format_chunky || pim->Interpolate ||
+        prect
+        )
+        goto use_default;
     row_raster = (bits_per_pixel * pim->Width + 7) >> 3;
     num_rows = MAX_ROW_DATA / row_raster;
     if (num_rows > pim->Height)
-	num_rows = pim->Height;
+        num_rows = pim->Height;
     if (num_rows <= 0)
-	num_rows = 1;
+        num_rows = 1;
     pie = gs_alloc_struct(mem, pclxl_image_enum_t, &st_pclxl_image_enum,
-			  "pclxl_begin_image");
+                          "pclxl_begin_image");
     row_data = gs_alloc_bytes(mem, num_rows * row_raster,
-			      "pclxl_begin_image(rows)");
+                              "pclxl_begin_image(rows)");
     if (pie == 0 || row_data == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto fail;
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
     }
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
-				   pdcolor, pcpath, mem,
-				   &pclxl_image_enum_procs,
-				   (gdev_vector_image_enum_t *)pie);
+                                   pdcolor, pcpath, mem,
+                                   &pclxl_image_enum_procs,
+                                   (gdev_vector_image_enum_t *)pie);
     if (code < 0)
-	return code;
+        return code;
 
     /* emit a PXL XL rotation and adjust mat correspondingly */
     if (mat.xx * mat.yy >  0) {
@@ -1841,33 +1839,33 @@ pclxl_begin_image(gx_device * dev,
     pie->rows.raster = row_raster;
     *pinfo = (gx_image_enum_common_t *) pie;
     {
-	gs_logical_operation_t lop = pis->log_op;
+        gs_logical_operation_t lop = pis->log_op;
 
-	if (pim->ImageMask) {
-	    const byte *palette = (const byte *)
-		(pim->Decode[0] ? "\377\000" : "\000\377");
-	    gx_color_index foreground = gx_dc_pure_color(pdcolor);
+        if (pim->ImageMask) {
+            const byte *palette = (const byte *)
+                (pim->Decode[0] ? "\377\000" : "\000\377");
+            gx_color_index foreground = gx_dc_pure_color(pdcolor);
 
-	    code = gdev_vector_update_fill_color(vdev, 
-	                             NULL, /* use process color */
-				     pdcolor);
-	    if (code < 0)
-		goto fail;
-	    /* This is similiar to the copy_mono white-on-mask,
-	     * except we are drawing white on the black of a black/white mask,
-	     * so we invert source, compared to copy_mono */
-	    if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
-		lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
-	    }else if (foreground == 0) { /* black */
-		lop = (rop3_S & rop3_D);
-	    }else lop |= rop3_S | lop_S_transparent;
+            code = gdev_vector_update_fill_color(vdev,
+                                     NULL, /* use process color */
+                                     pdcolor);
+            if (code < 0)
+                goto fail;
+            /* This is similiar to the copy_mono white-on-mask,
+             * except we are drawing white on the black of a black/white mask,
+             * so we invert source, compared to copy_mono */
+            if (foreground == (1 << dev->color_info.depth) - 1) { /* white */
+                lop = rop3_not(rop3_S) | (rop3_D & rop3_S);
+            }else if (foreground == 0) { /* black */
+                lop = (rop3_S & rop3_D);
+            }else lop |= rop3_S | lop_S_transparent;
 
-	    code = gdev_vector_update_log_op
-		(vdev, lop);
-	    if (code < 0)
-		goto fail;
-	    pclxl_set_color_palette(xdev, eGray, palette, 2);
-	} else {
+            code = gdev_vector_update_log_op
+                (vdev, lop);
+            if (code < 0)
+                goto fail;
+            pclxl_set_color_palette(xdev, eGray, palette, 2);
+        } else {
             if (bits_per_pixel == 24 ) {
                 code = gdev_vector_update_log_op
                     (vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
@@ -1879,50 +1877,50 @@ pclxl_begin_image(gx_device * dev,
                     pclxl_set_color_space(xdev, eRGB);
                 }
             } else {
-	    int bpc = pim->BitsPerComponent;
-	    int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
-	    int sample_max = (1 << bpc) - 1;
-	    byte palette[256 * 3];
-	    int i;
+            int bpc = pim->BitsPerComponent;
+            int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
+            int sample_max = (1 << bpc) - 1;
+            byte palette[256 * 3];
+            int i;
 
-	    code = gdev_vector_update_log_op
-		(vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
-	    if (code < 0)
-		goto fail;
-	    for (i = 0; i < 1 << bits_per_pixel; ++i) {
-		gs_client_color cc;
-		gx_device_color devc;
-		int cv = i, j;
-		gx_color_index ci;
+            code = gdev_vector_update_log_op
+                (vdev, (pim->CombineWithColor ? lop : rop3_know_T_0(lop)));
+            if (code < 0)
+                goto fail;
+            for (i = 0; i < 1 << bits_per_pixel; ++i) {
+                gs_client_color cc;
+                gx_device_color devc;
+                int cv = i, j;
+                gx_color_index ci;
 
-		for (j = num_components - 1; j >= 0; cv >>= bpc, --j)
-		    cc.paint.values[j] = pim->Decode[j * 2] +
-			(cv & sample_max) *
-			(pim->Decode[j * 2 + 1] - pim->Decode[j * 2]) /
-			sample_max;
-		(*pcs->type->remap_color)
-		    (&cc, pcs, &devc, pis, dev, gs_color_select_source);
-		if (!gx_dc_is_pure(&devc))
-		    return_error(gs_error_Fatal);
-		ci = gx_dc_pure_color(&devc);
-		if (dev->color_info.num_components == 1) {
-		    palette[i] = (byte)ci;
-		} else {
-		    byte *ppal = &palette[i * 3];
+                for (j = num_components - 1; j >= 0; cv >>= bpc, --j)
+                    cc.paint.values[j] = pim->Decode[j * 2] +
+                        (cv & sample_max) *
+                        (pim->Decode[j * 2 + 1] - pim->Decode[j * 2]) /
+                        sample_max;
+                (*pcs->type->remap_color)
+                    (&cc, pcs, &devc, pis, dev, gs_color_select_source);
+                if (!gx_dc_is_pure(&devc))
+                    return_error(gs_error_Fatal);
+                ci = gx_dc_pure_color(&devc);
+                if (dev->color_info.num_components == 1) {
+                    palette[i] = (byte)ci;
+                } else {
+                    byte *ppal = &palette[i * 3];
 
-		    ppal[0] = (byte) (ci >> 16);
-		    ppal[1] = (byte) (ci >> 8);
-		    ppal[2] = (byte) ci;
-		}
-	    }
-	    if (dev->color_info.num_components == 1)
-		pclxl_set_color_palette(xdev, eGray, palette,
-					1 << bits_per_pixel);
-	    else
-		pclxl_set_color_palette(xdev, eRGB, palette,
-					3 << bits_per_pixel);
+                    ppal[0] = (byte) (ci >> 16);
+                    ppal[1] = (byte) (ci >> 8);
+                    ppal[2] = (byte) ci;
+                }
             }
-	}
+            if (dev->color_info.num_components == 1)
+                pclxl_set_color_palette(xdev, eGray, palette,
+                                        1 << bits_per_pixel);
+            else
+                pclxl_set_color_palette(xdev, eRGB, palette,
+                                        3 << bits_per_pixel);
+            }
+        }
     }
     return 0;
  fail:
@@ -1934,7 +1932,7 @@ pclxl_begin_image(gx_device * dev,
     else
         pclxl_set_color_space(xdev, eRGB);
     return gx_default_begin_image(dev, pis, pim, format, prect,
-				  pdcolor, pcpath, mem, pinfo);
+                                  pdcolor, pcpath, mem, pinfo);
 }
 
 /* Write one strip of an image, from pie->rows.first_y to pie->y. */
@@ -1942,13 +1940,13 @@ static int
 image_transform_x(const pclxl_image_enum_t *pie, int sx)
 {
     return (int)((pie->mat.tx + sx * pie->mat.xx + 0.5) /
-		 ((const gx_device_pclxl *)pie->dev)->scale.x);
+                 ((const gx_device_pclxl *)pie->dev)->scale.x);
 }
 static int
 image_transform_y(const pclxl_image_enum_t *pie, int sy)
 {
     return (int)((pie->mat.ty + sy * pie->mat.yy + 0.5) /
-		 ((const gx_device_pclxl *)pie->dev)->scale.y);
+                 ((const gx_device_pclxl *)pie->dev)->scale.y);
 }
 
 static int
@@ -1965,16 +1963,16 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
     int rows_raster=pie->rows.raster;
 
     if (dw <= 0 || dh <= 0)
-	return 0;
+        return 0;
     pclxl_set_cursor(xdev, xo, yo);
     if (pie->bits_per_pixel==24) {
-	static const byte ci_[] = {
-	    DA(pxaColorDepth),
-	    DUB(eDirectPixel), DA(pxaColorMapping)
-	};
+        static const byte ci_[] = {
+            DA(pxaColorDepth),
+            DUB(eDirectPixel), DA(pxaColorMapping)
+        };
 
-	px_put_ub(s, eBit_values[8]);
-	PX_PUT_LIT(s, ci_);
+        px_put_ub(s, eBit_values[8]);
+        PX_PUT_LIT(s, ci_);
         if (xdev->color_info.depth==8) {
           byte *in=pie->rows.data;
           byte *out=pie->rows.data;
@@ -1983,9 +1981,9 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
           rows_raster/=3;
           for (j=0;  j<h;  j++) {
             for (i=0;  i<rows_raster;  i++) {
-              *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) + 
-                              (*(in+1) * (ulong) lum_green_weight) + 
-                              (*(in+2) * (ulong) lum_blue_weight) + 
+              *out = (byte)( ((*(in+0) * (ulong) lum_red_weight) +
+                              (*(in+1) * (ulong) lum_green_weight) +
+                              (*(in+2) * (ulong) lum_blue_weight) +
                               (lum_all_weights / 2)) / lum_all_weights);
               in+=3;
               out++;
@@ -1994,15 +1992,15 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
         }
     } else {
         static const byte ii_[] = {
-	    DA(pxaColorDepth),
-	    DUB(eIndexedPixel), DA(pxaColorMapping)
+            DA(pxaColorDepth),
+            DUB(eIndexedPixel), DA(pxaColorMapping)
         };
         px_put_ub(s, eBit_values[pie->bits_per_pixel]);
         PX_PUT_LIT(s, ii_);
     }
     pclxl_write_begin_image(xdev, pie->width, h, dw, dh);
     pclxl_write_image_data(xdev, pie->rows.data, 0, rows_raster,
-			   rows_raster << 3, 0, h);
+                           rows_raster << 3, 0, h);
     pclxl_write_end_image(xdev);
     return 0;
 }
@@ -2010,8 +2008,8 @@ pclxl_image_write_rows(pclxl_image_enum_t *pie)
 /* Process the next piece of an image. */
 static int
 pclxl_image_plane_data(gx_image_enum_common_t * info,
-		       const gx_image_plane_t * planes, int height,
-		       int *rows_used)
+                       const gx_image_plane_t * planes, int height,
+                       int *rows_used)
 {
     pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
     int data_bit = planes[0].data_x * info->plane_depths[0];
@@ -2020,21 +2018,21 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 
     /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
     if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (height > pie->height - pie->y)
-	height = pie->height - pie->y;
+        height = pie->height - pie->y;
     for (i = 0; i < height; pie->y++, ++i) {
-	if (pie->y - pie->rows.first_y == pie->rows.num_rows) {
-	    int code = pclxl_image_write_rows(pie);
+        if (pie->y - pie->rows.first_y == pie->rows.num_rows) {
+            int code = pclxl_image_write_rows(pie);
 
-	    if (code < 0)
-		return code;
-	    pie->rows.first_y = pie->y;
-	}
-	memcpy(pie->rows.data +
-	         pie->rows.raster * (pie->y - pie->rows.first_y),
-	       planes[0].data + planes[0].raster * i + (data_bit >> 3),
-	       pie->rows.raster);
+            if (code < 0)
+                return code;
+            pie->rows.first_y = pie->y;
+        }
+        memcpy(pie->rows.data +
+                 pie->rows.raster * (pie->y - pie->rows.first_y),
+               planes[0].data + planes[0].raster * i + (data_bit >> 3),
+               pie->rows.raster);
     }
     *rows_used = height;
     return pie->y >= pie->height;
@@ -2049,7 +2047,7 @@ pclxl_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     /* Write the final strip, if any. */
     if (pie->y > pie->rows.first_y && draw_last)
-	code = pclxl_image_write_rows(pie);
+        code = pclxl_image_write_rows(pie);
     if (draw_last) {
         gx_device_pclxl *xdev = (gx_device_pclxl *)info->dev;
         stream *s = pclxl_stream(xdev);
@@ -2091,7 +2089,6 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
   gx_device_pclxl	*xdev;		/* PCL XL device */
   int			code;		/* Return code */
 
-
  /*
   * First process the "standard" page device parameters...
   */
@@ -2122,7 +2119,6 @@ pclxl_get_params(gx_device     *dev,	/* I - Device info */
   return (0);
 }
 
-
 /*
  * 'pclxl_put_params()' - Set pagedevice parameters.
  */
@@ -2135,7 +2131,6 @@ pclxl_put_params(gx_device     *dev,	/* I - Device info */
   int			code;		/* Error code */
   int			intval;		/* Integer value */
   bool			boolval;	/* Boolean value */
-
 
  /*
   * Process PCL-XL driver parameters...

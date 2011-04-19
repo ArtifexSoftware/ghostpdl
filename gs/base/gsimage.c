@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -100,7 +100,7 @@ struct gs_image_enum_s {
     bool wanted_varies;
     /* The following are updated dynamically. */
     int plane_index;		/* index of next plane of data, */
-				/* only needed for gs_image_next */
+                                /* only needed for gs_image_next */
     int y;
     bool error;
     byte wanted[GS_IMAGE_MAX_COMPONENTS]; /* cache gx_image_planes_wanted */
@@ -117,20 +117,20 @@ struct gs_image_enum_s {
 };
 
 gs_private_st_composite(st_gs_image_enum, gs_image_enum, "gs_image_enum",
-			gs_image_enum_enum_ptrs, gs_image_enum_reloc_ptrs);
+                        gs_image_enum_enum_ptrs, gs_image_enum_reloc_ptrs);
 #define gs_image_enum_num_ptrs 2
 
 /* GC procedures */
-static 
+static
 ENUM_PTRS_WITH(gs_image_enum_enum_ptrs, gs_image_enum *eptr)
 {
     /* Enumerate the data planes. */
     index -= gs_image_enum_num_ptrs;
     if (index < eptr->num_planes)
-	ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].source);
+        ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].source);
     index -= eptr->num_planes;
     if (index < eptr->num_planes)
-	ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].row);
+        ENUM_RETURN_STRING_PTR(gs_image_enum, planes[index].row);
     return 0;
 }
 ENUM_PTR(0, gs_image_enum, dev);
@@ -143,31 +143,31 @@ static RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
     RELOC_PTR(gs_image_enum, dev);
     RELOC_PTR(gs_image_enum, info);
     for (i = 0; i < eptr->num_planes; i++)
-	RELOC_CONST_STRING_PTR(gs_image_enum, planes[i].source);
+        RELOC_CONST_STRING_PTR(gs_image_enum, planes[i].source);
     for (i = 0; i < eptr->num_planes; i++)
-	RELOC_STRING_PTR(gs_image_enum, planes[i].row);
+        RELOC_STRING_PTR(gs_image_enum, planes[i].row);
 }
 RELOC_PTRS_END
 
 static int
 is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pcpath)
 {
-    /* HACK : We need the source image size here, 
+    /* HACK : We need the source image size here,
        but gs_image_common_t doesn't pass it.
        We would like to move Width, Height to gs_image_common,
        but gs_image2_t appears to have those fields of double type.
      */
     if (pic->type->begin_typed_image == gx_begin_image1) {
-	gs_image1_t *pim = (gs_image1_t *) pic;
-	gs_rect image_rect = {{0, 0}, {0, 0}};
-	gs_rect device_rect;
-	gs_int_rect device_int_rect;
-	gs_matrix mat;
-	int code;
+        gs_image1_t *pim = (gs_image1_t *) pic;
+        gs_rect image_rect = {{0, 0}, {0, 0}};
+        gs_rect device_rect;
+        gs_int_rect device_int_rect;
+        gs_matrix mat;
+        int code;
 
-	image_rect.q.x = pim->Width;
-	image_rect.q.y = pim->Height;
-	if (pic->ImageMatrix.xx == ctm_only(pgs).xx &&
+        image_rect.q.x = pim->Width;
+        image_rect.q.y = pim->Height;
+        if (pic->ImageMatrix.xx == ctm_only(pgs).xx &&
             pic->ImageMatrix.xy == ctm_only(pgs).xy &&
             pic->ImageMatrix.yx == ctm_only(pgs).yx &&
             pic->ImageMatrix.yy == ctm_only(pgs).yy) {
@@ -178,21 +178,21 @@ is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pc
             mat.ty = ctm_only(pgs).ty - pic->ImageMatrix.ty;
         } else {
             code = gs_matrix_invert(&pic->ImageMatrix, &mat);
-	    if (code < 0)
-	        return code;
-	    code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
-	    if (code < 0)
-	        return code;
+            if (code < 0)
+                return code;
+            code = gs_matrix_multiply(&mat, &ctm_only(pgs), &mat);
+            if (code < 0)
+                return code;
         }
-	code = gs_bbox_transform(&image_rect, &mat, &device_rect);
-	if (code < 0)
-	    return code;
-	device_int_rect.p.x = (int)floor(device_rect.p.x);
-	device_int_rect.p.y = (int)floor(device_rect.p.y);
-	device_int_rect.q.x = (int)ceil(device_rect.q.x);
-	device_int_rect.q.y = (int)ceil(device_rect.q.y);
-	if (!gx_cpath_rect_visible(pcpath, &device_int_rect))
-	    return 0;
+        code = gs_bbox_transform(&image_rect, &mat, &device_rect);
+        if (code < 0)
+            return code;
+        device_int_rect.p.x = (int)floor(device_rect.p.x);
+        device_int_rect.p.y = (int)floor(device_rect.p.y);
+        device_int_rect.q.x = (int)ceil(device_rect.q.x);
+        device_int_rect.q.y = (int)ceil(device_rect.q.y);
+        if (!gx_cpath_rect_visible(pcpath, &device_int_rect))
+            return 0;
     }
     return 1;
 }
@@ -200,7 +200,7 @@ is_image_visible(const gs_image_common_t * pic, gs_state * pgs, gx_clip_path *pc
 /* Create an image enumerator given image parameters and a graphics state. */
 int
 gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
-		     bool uses_color, gx_image_enum_common_t ** ppie)
+                     bool uses_color, gx_image_enum_common_t ** ppie)
 {
     gx_device *dev = gs_currentdevice(pgs);
     gx_clip_path *pcpath;
@@ -209,43 +209,43 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
     gx_device_color dc_temp, *pdevc = gs_currentdevicecolor_inline(pgs);
 
     if (code < 0)
-	return code;
+        return code;
     /* Processing an image object operation */
     gs_set_object_tag((gs_imager_state*) pgs, GS_IMAGE_TAG);
 
     if (uses_color) {
-	gx_set_dev_color(pgs);
+        gx_set_dev_color(pgs);
         code = gs_state_color_load(pgs);
         if (code < 0)
-	    return code;
+            return code;
     }
     /* Imagemask with shading color needs a special optimization
-       with converting the image into a clipping. 
+       with converting the image into a clipping.
        Check for such case after gs_state_color_load is done,
        because it can cause interpreter callout.
      */
     if (pic->type->begin_typed_image == &gx_begin_image1) {
-	gs_image_t *image = (gs_image_t *)pic;
+        gs_image_t *image = (gs_image_t *)pic;
 
-	if(image->ImageMask) {
-	    code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), pcpath, pgs->memory, &dev2);
-	    if (code < 0)
-		return code;
-	}
-	if (dev2 != dev) {
-	    set_nonclient_dev_color(&dc_temp, 1);
-	    pdevc = &dc_temp;
-	}
+        if(image->ImageMask) {
+            code = gx_image_fill_masked_start(dev, gs_currentdevicecolor_inline(pgs), pcpath, pgs->memory, &dev2);
+            if (code < 0)
+                return code;
+        }
+        if (dev2 != dev) {
+            set_nonclient_dev_color(&dc_temp, 1);
+            pdevc = &dc_temp;
+        }
     }
     code = gx_device_begin_typed_image(dev2, (const gs_imager_state *)pgs,
-		NULL, pic, NULL, pdevc, pcpath, pgs->memory, ppie);
+                NULL, pic, NULL, pdevc, pcpath, pgs->memory, ppie);
     if (code < 0)
-	return code;
+        return code;
     code = is_image_visible(pic, pgs, pcpath);
     if (code < 0)
-	return code;
-    if (!code)	
-	(*ppie)->skipping = true;
+        return code;
+    if (!code)
+        (*ppie)->skipping = true;
     return 0;
 }
 
@@ -263,11 +263,11 @@ gs_image_enum *
 gs_image_enum_alloc(gs_memory_t * mem, client_name_t cname)
 {
     gs_image_enum *penum =
-	gs_alloc_struct(mem, gs_image_enum, &st_gs_image_enum, cname);
+        gs_alloc_struct(mem, gs_image_enum, &st_gs_image_enum, cname);
 
     if (penum != 0) {
-	penum->memory = mem;
-	image_enum_init(penum);
+        penum->memory = mem;
+        image_enum_init(penum);
     }
     return penum;
 }
@@ -275,7 +275,7 @@ gs_image_enum_alloc(gs_memory_t * mem, client_name_t cname)
 /* Start processing an ImageType 1 image. */
 int
 gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
-	      gs_state * pgs)
+              gs_state * pgs)
 {
     gs_image_t image;
     gx_image_enum_common_t *pie;
@@ -283,27 +283,27 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
 
     image = *pim;
     if (image.ImageMask) {
-	image.ColorSpace = NULL;
-	if (pgs->in_cachedevice <= 1)
-	    image.adjust = false;
+        image.ColorSpace = NULL;
+        if (pgs->in_cachedevice <= 1)
+            image.adjust = false;
     } else {
-	if (pgs->in_cachedevice)
-	    return_error(gs_error_undefined);
-	if (image.ColorSpace == NULL) {
+        if (pgs->in_cachedevice)
+            return_error(gs_error_undefined);
+        if (image.ColorSpace == NULL) {
             /*
              * Use of a non-current color space is potentially
              * incorrect, but it appears this case doesn't arise.
              */
-	    image.ColorSpace = gs_cspace_new_DeviceGray(pgs->memory);
+            image.ColorSpace = gs_cspace_new_DeviceGray(pgs->memory);
         }
     }
     code = gs_image_begin_typed((const gs_image_common_t *)&image, pgs,
-				image.ImageMask | image.CombineWithColor,
-				&pie);
+                                image.ImageMask | image.CombineWithColor,
+                                &pie);
     if (code < 0)
-	return code;
+        return code;
     return gs_image_enum_init(penum, pie, (const gs_data_image_t *)&image,
-			      pgs);
+                              pgs);
 }
 
 /*
@@ -324,14 +324,14 @@ cache_planes(gs_image_enum *penum)
     int i;
 
     if (penum->wanted_varies) {
-	penum->wanted_varies =
-	    !gx_image_planes_wanted(penum->info, penum->wanted);
-	for (i = 0; i < penum->num_planes; ++i)
-	    if (penum->wanted[i])
-		penum->image_planes[i].raster =
-		    gs_image_bytes_per_plane_row(penum, i);
-	    else
-		penum->image_planes[i].data = 0;
+        penum->wanted_varies =
+            !gx_image_planes_wanted(penum->info, penum->wanted);
+        for (i = 0; i < penum->num_planes; ++i)
+            if (penum->wanted[i])
+                penum->image_planes[i].raster =
+                    gs_image_bytes_per_plane_row(penum, i);
+            else
+                penum->image_planes[i].data = 0;
     }
 }
 /* Advance to the next wanted plane. */
@@ -341,8 +341,8 @@ next_plane(gs_image_enum *penum)
     int px = penum->plane_index;
 
     do {
-	if (++px == penum->num_planes)
-	    px = 0;
+        if (++px == penum->num_planes)
+            px = 0;
     } while (!penum->wanted[px]);
     penum->plane_index = px;
 }
@@ -360,18 +360,18 @@ begin_planes(gs_image_enum *penum)
 
 int
 gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
-	    const gs_data_image_t * pim, gx_device * dev)
+            const gs_data_image_t * pim, gx_device * dev)
 {
     /*
      * HACK : For a compatibility with gs_image_cleanup_and_free_enum,
-     * penum->memory must be initialized in advance 
+     * penum->memory must be initialized in advance
      * with the memory heap that owns *penum.
      */
     int i;
 
     if (pim->Width == 0 || pim->Height == 0) {
-	gx_image_end(pie, false);
-	return 1;
+        gx_image_end(pie, false);
+        return 1;
     }
     image_enum_init(penum);
     penum->dev = dev;
@@ -387,12 +387,12 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
      */
     penum->height = pim->Height;
     for (i = 0; i < pie->num_planes; ++i) {
-	penum->planes[i].pos = 0;
-	penum->planes[i].source.size = 0;	/* for gs_image_next_planes */
-	penum->planes[i].source.data = 0; /* for GC */
+        penum->planes[i].pos = 0;
+        penum->planes[i].source.size = 0;	/* for gs_image_next_planes */
+        penum->planes[i].source.data = 0; /* for GC */
         penum->planes[i].row.data = 0; /* for GC */
-	penum->planes[i].row.size = 0; /* ditto */
-	penum->image_planes[i].data_x = 0; /* just init once, never changes */
+        penum->planes[i].row.size = 0; /* ditto */
+        penum->image_planes[i].data_x = 0; /* just init once, never changes */
     }
     /* Initialize the dynamic part of the state. */
     penum->y = 0;
@@ -402,17 +402,17 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
     return 0;
 }
 
-/* Initialize an enumerator for a general image. 
+/* Initialize an enumerator for a general image.
    penum->memory must be initialized in advance.
 */
 int
 gs_image_enum_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
-		   const gs_data_image_t * pim, gs_state *pgs)
+                   const gs_data_image_t * pim, gs_state *pgs)
 {
     pgs->device->sgr.stroke_stored = false;
     return gs_image_common_init(penum, pie, pim,
-				(pgs->in_charpath ? NULL :
-				 gs_currentdevice_inline(pgs)));
+                                (pgs->in_charpath ? NULL :
+                                 gs_currentdevice_inline(pgs)));
 }
 
 /* Return the set of planes wanted. */
@@ -426,10 +426,10 @@ gs_image_planes_wanted(gs_image_enum *penum)
      * underlying machinery and has no buffered or retained data.
      */
     for (i = 0; i < penum->num_planes; ++i)
-	penum->client_wanted[i] =
-	    (penum->wanted[i] &&
-	     penum->planes[i].pos + penum->planes[i].source.size <
-	       penum->image_planes[i].raster);
+        penum->client_wanted[i] =
+            (penum->wanted[i] &&
+             penum->planes[i].pos + penum->planes[i].source.size <
+               penum->image_planes[i].raster);
     return penum->client_wanted;
 }
 
@@ -451,20 +451,20 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-	if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
-		  i, (ulong)penum->planes[i].row.data,
-		  penum->planes[i].row.size);
-	gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
-		       penum->planes[i].row.size, cname);
-	penum->planes[i].row.data = 0;
-	penum->planes[i].row.size = 0;
+        if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
+                  i, (ulong)penum->planes[i].row.data,
+                  penum->planes[i].row.size);
+        gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
+                       penum->planes[i].row.size, cname);
+        penum->planes[i].row.data = 0;
+        penum->planes[i].row.size = 0;
     }
 }
 
 /* Process the next piece of an image. */
 int
 gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
-	      uint * pused)
+              uint * pused)
 {
     int px = penum->plane_index;
     int num_planes = penum->num_planes;
@@ -473,23 +473,23 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
 
     if (penum->planes[px].source.size != 0)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     for (i = 0; i < num_planes; i++)
-	plane_data[i].size = 0;
+        plane_data[i].size = 0;
     plane_data[px].data = dbytes;
     plane_data[px].size = dsize;
     penum->error = false;
     code = gs_image_next_planes(penum, plane_data, used);
     *pused = used[px];
     if (code >= 0)
-	next_plane(penum);
+        next_plane(penum);
     return code;
 }
 
 int
 gs_image_next_planes(gs_image_enum * penum,
-		     gs_const_string *plane_data /*[num_planes]*/,
-		     uint *used /*[num_planes]*/)
+                     gs_const_string *plane_data /*[num_planes]*/,
+                     uint *used /*[num_planes]*/)
 {
     const int num_planes = penum->num_planes;
     int i;
@@ -501,135 +501,135 @@ gs_image_next_planes(gs_image_enum * penum,
     vd_set_scale(0.01);
     vd_set_origin(0, 0);
     if (gs_debug_c('b')) {
-	int pi;
+        int pi;
 
-	for (pi = 0; pi < num_planes; ++pi)
-	    dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
-		     pi, (ulong)penum->planes[pi].source.data,
-		     penum->planes[pi].source.size, penum->planes[pi].pos,
-		     (ulong)plane_data[pi].data, plane_data[pi].size);
+        for (pi = 0; pi < num_planes; ++pi)
+            dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
+                     pi, (ulong)penum->planes[pi].source.data,
+                     penum->planes[pi].source.size, penum->planes[pi].pos,
+                     (ulong)plane_data[pi].data, plane_data[pi].size);
     }
 #endif
     for (i = 0; i < num_planes; ++i) {
         used[i] = 0;
-	if (penum->wanted[i] && plane_data[i].size != 0) {
-	    penum->planes[i].source.size = plane_data[i].size;
-	    penum->planes[i].source.data = plane_data[i].data;
-	}
+        if (penum->wanted[i] && plane_data[i].size != 0) {
+            penum->planes[i].source.size = plane_data[i].size;
+            penum->planes[i].source.data = plane_data[i].data;
+        }
     }
     for (;;) {
-	/* If wanted can vary, only transfer 1 row at a time. */
-	int h = (penum->wanted_varies ? 1 : max_int);
+        /* If wanted can vary, only transfer 1 row at a time. */
+        int h = (penum->wanted_varies ? 1 : max_int);
 
-	/* Move partial rows from source[] to row[]. */
-	for (i = 0; i < num_planes; ++i) {
-	    int pos, size;
-	    uint raster;
+        /* Move partial rows from source[] to row[]. */
+        for (i = 0; i < num_planes; ++i) {
+            int pos, size;
+            uint raster;
 
-	    if (!penum->wanted[i])
-		continue;	/* skip unwanted planes */
-	    pos = penum->planes[i].pos;
-	    size = penum->planes[i].source.size;
-	    raster = penum->image_planes[i].raster;
-	    if (size > 0) {
-		if (pos < raster && (pos != 0 || size < raster)) {
-		    /* Buffer a partial row. */
-		    int copy = min(size, raster - pos);
-		    uint old_size = penum->planes[i].row.size;
+            if (!penum->wanted[i])
+                continue;	/* skip unwanted planes */
+            pos = penum->planes[i].pos;
+            size = penum->planes[i].source.size;
+            raster = penum->image_planes[i].raster;
+            if (size > 0) {
+                if (pos < raster && (pos != 0 || size < raster)) {
+                    /* Buffer a partial row. */
+                    int copy = min(size, raster - pos);
+                    uint old_size = penum->planes[i].row.size;
 
-		    /* Make sure the row buffer is fully allocated. */
-		    if (raster > old_size) {
-			gs_memory_t *mem = gs_image_row_memory(penum);
-			byte *old_data = penum->planes[i].row.data;
-			byte *row =
-			    (old_data == 0 ?
-			     gs_alloc_string(mem, raster,
-					     "gs_image_next(row)") :
-			     gs_resize_string(mem, old_data, old_size, raster,
-					      "gs_image_next(row)"));
+                    /* Make sure the row buffer is fully allocated. */
+                    if (raster > old_size) {
+                        gs_memory_t *mem = gs_image_row_memory(penum);
+                        byte *old_data = penum->planes[i].row.data;
+                        byte *row =
+                            (old_data == 0 ?
+                             gs_alloc_string(mem, raster,
+                                             "gs_image_next(row)") :
+                             gs_resize_string(mem, old_data, old_size, raster,
+                                              "gs_image_next(row)"));
 
-			if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
-				  i, (ulong)old_data, old_size,
-				  (ulong)row, raster);
-			if (row == 0) {
-			    code = gs_note_error(gs_error_VMerror);
-			    free_row_buffers(penum, i, "gs_image_next(row)");
-			    break;
-			}
-			penum->planes[i].row.data = row;
-			penum->planes[i].row.size = raster;
-		    }
-		    memcpy(penum->planes[i].row.data + pos,
-			   penum->planes[i].source.data, copy);
-		    penum->planes[i].source.data += copy;
-		    penum->planes[i].source.size = size -= copy;
-		    penum->planes[i].pos = pos += copy;
-		    used[i] += copy;
-		}
-	    }
-	    if (h == 0)
-		continue;	/* can't transfer any data this cycle */
-	    if (pos == raster) {
-		/*
-		 * This plane will be transferred from the row buffer,
-		 * so we can only transfer one row.
-		 */
-		h = min(h, 1);
-		penum->image_planes[i].data = penum->planes[i].row.data;
-	    } else if (pos == 0 && size >= raster) {
-		/* We can transfer 1 or more planes from the source. */
-		h = min(h, size / raster);
-		penum->image_planes[i].data = penum->planes[i].source.data;
-	    } else
-		h = 0;		/* not enough data in this plane */
-	}
-	if (h == 0 || code != 0)
-	    break;
-	/* Pass rows to the device. */
-	if (penum->dev == 0) {
-	    /*
-	     * ****** NOTE: THE FOLLOWING IS NOT CORRECT FOR ImageType 3
-	     * ****** InterleaveType 2, SINCE MASK HEIGHT AND IMAGE HEIGHT
-	     * ****** MAY DIFFER (BY AN INTEGER FACTOR).  ALSO, plane_depths[0]
-	     * ****** AND plane_widths[0] ARE NOT UPDATED.
-	 */
-	    if (penum->y + h < penum->height)
-		code = 0;
-	    else
-		h = penum->height - penum->y, code = 1;
-	} else {
-	    code = gx_image_plane_data_rows(penum->info, penum->image_planes,
-					    h, &h);
-	    if_debug2('b', "[b]used %d, code=%d\n", h, code);
-	    penum->error = code < 0;
-	}
-	penum->y += h;
-	/* Update positions and sizes. */
-	if (h == 0)
-	    break;
-	for (i = 0; i < num_planes; ++i) {
-	    int count;
+                        if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
+                                  i, (ulong)old_data, old_size,
+                                  (ulong)row, raster);
+                        if (row == 0) {
+                            code = gs_note_error(gs_error_VMerror);
+                            free_row_buffers(penum, i, "gs_image_next(row)");
+                            break;
+                        }
+                        penum->planes[i].row.data = row;
+                        penum->planes[i].row.size = raster;
+                    }
+                    memcpy(penum->planes[i].row.data + pos,
+                           penum->planes[i].source.data, copy);
+                    penum->planes[i].source.data += copy;
+                    penum->planes[i].source.size = size -= copy;
+                    penum->planes[i].pos = pos += copy;
+                    used[i] += copy;
+                }
+            }
+            if (h == 0)
+                continue;	/* can't transfer any data this cycle */
+            if (pos == raster) {
+                /*
+                 * This plane will be transferred from the row buffer,
+                 * so we can only transfer one row.
+                 */
+                h = min(h, 1);
+                penum->image_planes[i].data = penum->planes[i].row.data;
+            } else if (pos == 0 && size >= raster) {
+                /* We can transfer 1 or more planes from the source. */
+                h = min(h, size / raster);
+                penum->image_planes[i].data = penum->planes[i].source.data;
+            } else
+                h = 0;		/* not enough data in this plane */
+        }
+        if (h == 0 || code != 0)
+            break;
+        /* Pass rows to the device. */
+        if (penum->dev == 0) {
+            /*
+             * ****** NOTE: THE FOLLOWING IS NOT CORRECT FOR ImageType 3
+             * ****** InterleaveType 2, SINCE MASK HEIGHT AND IMAGE HEIGHT
+             * ****** MAY DIFFER (BY AN INTEGER FACTOR).  ALSO, plane_depths[0]
+             * ****** AND plane_widths[0] ARE NOT UPDATED.
+         */
+            if (penum->y + h < penum->height)
+                code = 0;
+            else
+                h = penum->height - penum->y, code = 1;
+        } else {
+            code = gx_image_plane_data_rows(penum->info, penum->image_planes,
+                                            h, &h);
+            if_debug2('b', "[b]used %d, code=%d\n", h, code);
+            penum->error = code < 0;
+        }
+        penum->y += h;
+        /* Update positions and sizes. */
+        if (h == 0)
+            break;
+        for (i = 0; i < num_planes; ++i) {
+            int count;
 
-	    if (!penum->wanted[i])
-		continue;
-	    count = penum->image_planes[i].raster * h;
-	    if (penum->planes[i].pos) {
-		/* We transferred the row from the row buffer. */
-		penum->planes[i].pos = 0;
-	    } else {
-		/* We transferred the row(s) from the source. */
-		penum->planes[i].source.data += count;
-		penum->planes[i].source.size -= count;
-		used[i] += count;
-	    }
-	}
-	cache_planes(penum);
-	if (code > 0)
-	    break;
+            if (!penum->wanted[i])
+                continue;
+            count = penum->image_planes[i].raster * h;
+            if (penum->planes[i].pos) {
+                /* We transferred the row from the row buffer. */
+                penum->planes[i].pos = 0;
+            } else {
+                /* We transferred the row(s) from the source. */
+                penum->planes[i].source.data += count;
+                penum->planes[i].source.size -= count;
+                used[i] += count;
+            }
+        }
+        cache_planes(penum);
+        if (code > 0)
+            break;
     }
     /* Return the retained data pointers. */
     for (i = 0; i < num_planes; ++i)
-	plane_data[i] = penum->planes[i].source;
+        plane_data[i] = penum->planes[i].source;
     vd_release_dc;
     return code;
 }
@@ -643,17 +643,17 @@ gs_image_cleanup(gs_image_enum * penum, gs_state *pgs)
 
     free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
     if (penum->info != 0) {
-	if (dev_proc(penum->info->dev, dev_spec_op)(penum->info->dev, 
-		    gxdso_pattern_is_cpath_accum, NULL, 0)) {
-	    /* Performing a conversion of imagemask into a clipping path. */
-	    gx_device *cdev = penum->info->dev;
+        if (dev_proc(penum->info->dev, dev_spec_op)(penum->info->dev,
+                    gxdso_pattern_is_cpath_accum, NULL, 0)) {
+            /* Performing a conversion of imagemask into a clipping path. */
+            gx_device *cdev = penum->info->dev;
 
-	    code = gx_image_end(penum->info, !penum->error); /* Releases penum->info . */
-	    code1 = gx_image_fill_masked_end(cdev, penum->dev, gs_currentdevicecolor_inline(pgs));
-	    if (code == 0)
-		code = code1;
-	} else
-	    code = gx_image_end(penum->info, !penum->error);
+            code = gx_image_end(penum->info, !penum->error); /* Releases penum->info . */
+            code1 = gx_image_fill_masked_end(cdev, penum->dev, gs_currentdevicecolor_inline(pgs));
+            if (code == 0)
+                code = code1;
+        } else
+            code = gx_image_end(penum->info, !penum->error);
     }
     /* Don't free the local enumerator -- the client does that. */
 
@@ -669,4 +669,3 @@ gs_image_cleanup_and_free_enum(gs_image_enum * penum, gs_state *pgs)
     gs_free_object(penum->memory, penum, "gs_image_cleanup_and_free_enum");
     return code;
 }
-

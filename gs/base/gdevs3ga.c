@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -103,26 +103,26 @@ s3_open(gx_device * dev)
 {
     static const mode_info mode_table[] =
     {
-	{640, 480, 0x201},
-	{800, 600, 0x203},
-	{1024, 768, 0x205},
-	{-1, -1, -1}
+        {640, 480, 0x201},
+        {800, 600, 0x203},
+        {1024, 768, 0x205},
+        {-1, -1, -1}
     };
     int code = svga_find_mode(dev, mode_table);
 
     if (code < 0)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     /* The enhanced modes all use a 1024-pixel raster. */
     fb_dev->raster = 1024;
     code = svga_open(dev);
     if (code < 0)
-	return code;
+        return code;
     /* Clear the cache */
     {
-	int i;
+        int i;
 
-	for (i = 0; i < cache_capacity; i++)
-	    cache_ids[i] = gx_no_bitmap_id;
+        for (i = 0; i < cache_capacity; i++)
+            cache_ids[i] = gx_no_bitmap_id;
     }
     return 0;
 }
@@ -130,7 +130,7 @@ s3_open(gx_device * dev)
 /* Fill a rectangle. */
 int
 s3_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		  gx_color_index color)
+                  gx_color_index color)
 {
     fit_fill(dev, x, y, w, h);
     s3_wait_fifo();
@@ -146,7 +146,7 @@ s3_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* Color = gx_no_color_index means transparent (no effect on the image). */
 static int
 s3_copy_mono(gx_device * dev,
-	     const byte * base, int sourcex, int raster, gx_bitmap_id id,
+             const byte * base, int sourcex, int raster, gx_bitmap_id id,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone)
 {
     int sbit;
@@ -164,79 +164,79 @@ s3_copy_mono(gx_device * dev,
     lmask = 0xff >> sbit;
     /* See whether the cache is applicable. */
     if (id != gx_no_bitmap_id && w <= cell_width - 7 &&
-	h <= cell_height
-	) {
-	cache_index = (int)(id & (cache_capacity - 1));
-	cache_x = ((cache_index & ((1 << cache_x_bits) - 1)) <<
-		   log2_cell_width) + 7;
-	cache_y = ((cache_index >> cache_x_bits) <<
-		   log2_cell_height) + 768;
-	if (cache_ids[cache_index] != id) {
-	    cache_ids[cache_index] = id;
-	    /* Copy the bitmap to the cache. */
-	    s3_wait_fifo();
-	    out_s3_rect(cache_x - sbit, cache_y, w + sbit, h);
-	    outport(s3_fore_mix, 0x22);		/* 1s */
-	    outport(s3_back_mix, 0x01);		/* 0s */
-	    outport(s3_mf_control, mf_data_cpu);
-	    outport(s3_command, 0x41b3);
-	    {
-		const int skip = raster - run;
+        h <= cell_height
+        ) {
+        cache_index = (int)(id & (cache_capacity - 1));
+        cache_x = ((cache_index & ((1 << cache_x_bits) - 1)) <<
+                   log2_cell_width) + 7;
+        cache_y = ((cache_index >> cache_x_bits) <<
+                   log2_cell_height) + 768;
+        if (cache_ids[cache_index] != id) {
+            cache_ids[cache_index] = id;
+            /* Copy the bitmap to the cache. */
+            s3_wait_fifo();
+            out_s3_rect(cache_x - sbit, cache_y, w + sbit, h);
+            outport(s3_fore_mix, 0x22);		/* 1s */
+            outport(s3_back_mix, 0x01);		/* 0s */
+            outport(s3_mf_control, mf_data_cpu);
+            outport(s3_command, 0x41b3);
+            {
+                const int skip = raster - run;
 
-		for (i = h; i > 0; i--, sptr += skip)
-		    for (j = run; j > 0; j--, sptr++)
-			outportb(s3_pixel_data, *sptr);
-	    }
-	}
-	s3_wait_fifo();
+                for (i = h; i > 0; i--, sptr += skip)
+                    for (j = run; j > 0; j--, sptr++)
+                        outportb(s3_pixel_data, *sptr);
+            }
+        }
+        s3_wait_fifo();
     } else {
-	cache_index = -1;
-	if (lmask != 0xff) {	/* The hardware won't do the masking for us. */
-	    if (czero != gx_no_color_index) {
-		if (cone != gx_no_color_index) {
-		    s3_fill_rectangle(dev, x, y, w, h, czero);
-		    czero = gx_no_color_index;
-		} else {
-		    lmerge = ~lmask;
-		}
-	    }
-	}
-	s3_wait_fifo();
-	out_s3_rect(x - sbit, y, w + sbit, h);
+        cache_index = -1;
+        if (lmask != 0xff) {	/* The hardware won't do the masking for us. */
+            if (czero != gx_no_color_index) {
+                if (cone != gx_no_color_index) {
+                    s3_fill_rectangle(dev, x, y, w, h, czero);
+                    czero = gx_no_color_index;
+                } else {
+                    lmerge = ~lmask;
+                }
+            }
+        }
+        s3_wait_fifo();
+        out_s3_rect(x - sbit, y, w + sbit, h);
     }
     /* Load the colors for the real transfer. */
     if (cone != gx_no_color_index) {
-	outport(s3_fore_mix, 0x27);
-	outport(s3_fore_color, (int)cone);
+        outport(s3_fore_mix, 0x27);
+        outport(s3_fore_color, (int)cone);
     } else
-	outport(s3_fore_mix, 0x63);
+        outport(s3_fore_mix, 0x63);
     if (czero != gx_no_color_index) {
-	outport(s3_back_mix, 0x07);
-	outport(s3_back_color, (int)czero);
+        outport(s3_back_mix, 0x07);
+        outport(s3_back_color, (int)czero);
     } else
-	outport(s3_back_mix, 0x63);
+        outport(s3_back_mix, 0x63);
     s3_wait_fifo();
     if (cache_index < 0) {	/* direct transfer */
-	outport(s3_mf_control, mf_data_cpu);
-	outport(s3_command, 0x41b3);
-	if (run == 1 && !lmerge) {	/* special case for chars */
-	    for (i = h; i > 0; i--, sptr += raster)
-		outportb(s3_pixel_data, *sptr & lmask);
-	} else {
-	    const int skip = raster - run;
+        outport(s3_mf_control, mf_data_cpu);
+        outport(s3_command, 0x41b3);
+        if (run == 1 && !lmerge) {	/* special case for chars */
+            for (i = h; i > 0; i--, sptr += raster)
+                outportb(s3_pixel_data, *sptr & lmask);
+        } else {
+            const int skip = raster - run;
 
-	    for (i = h; i > 0; i--, sptr += skip) {
-		outportb(s3_pixel_data, (*sptr++ & lmask) | lmerge);
-		for (j = run; j > 1; j--, sptr++)
-		    outportb(s3_pixel_data, *sptr);
-	    }
-	}
+            for (i = h; i > 0; i--, sptr += skip) {
+                outportb(s3_pixel_data, (*sptr++ & lmask) | lmerge);
+                for (j = run; j > 1; j--, sptr++)
+                    outportb(s3_pixel_data, *sptr);
+            }
+        }
     } else {			/* Copy the character from the cache to the screen. */
-	out_s3_rect(cache_x, cache_y, w, h);
-	outport(s3_x_dest, x);
-	outport(s3_y_dest, y);
-	outport(s3_mf_control, mf_data_display);
-	outport(s3_command, 0xc0b3);
+        out_s3_rect(cache_x, cache_y, w, h);
+        outport(s3_x_dest, x);
+        outport(s3_y_dest, y);
+        outport(s3_mf_control, mf_data_display);
+        outport(s3_command, 0xc0b3);
     }
     return 0;
 }

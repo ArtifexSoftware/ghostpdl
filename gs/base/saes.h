@@ -43,7 +43,7 @@ typedef struct stream_aes_state_s stream_aes_state;
 #endif
 
 int s_aes_set_key(stream_aes_state * state,
-			const unsigned char *key, int keylength);
+                        const unsigned char *key, int keylength);
 void s_aes_set_padding(stream_aes_state *state, int use_padding);
 
 /* state declaration macro;

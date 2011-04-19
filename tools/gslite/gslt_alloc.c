@@ -75,7 +75,7 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
     /* NB apparently there is code floating around that does 0 size
        mallocs.  sigh. */
     if ( size == 0 )
-	return NULL;
+        return NULL;
 
     /* use 2 starting machine words for size and type - assumes
        malloc() returns on max boundary and first 2 words will hold
@@ -85,23 +85,23 @@ gslt_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t
     newsize = size + minsize + minsize;
     {
 
-	byte *ptr = (byte *)malloc(newsize);
-	if ( !ptr )
-	    return NULL;
-	num_alloc_called ++;
+        byte *ptr = (byte *)malloc(newsize);
+        if ( !ptr )
+            return NULL;
+        num_alloc_called ++;
 #ifdef DEBUG
-	if_debug2('A', "[da]:malloc:%p:%s\n", &ptr[minsize * 2], cname );
+        if_debug2('A', "[da]:malloc:%p:%s\n", &ptr[minsize * 2], cname );
 #endif
-	/* set the type and size */
-	set_type(ptr, type);
-	set_size(ptr, size);
-	/* initialize for debugging */
+        /* set the type and size */
+        set_type(ptr, type);
+        set_size(ptr, size);
+        /* initialize for debugging */
 #ifdef DEBUG
-	if ( gs_debug_c('@') )
-	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
+        if ( gs_debug_c('@') )
+            memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
 #endif
-	/* return the memory after the size and type words. */
-	return &ptr[minsize * 2];
+        /* return the memory after the size and type words. */
+        return &ptr[minsize * 2];
     }
 }
 
@@ -119,46 +119,45 @@ gslt_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 
 static void *
 gslt_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-			 client_name_t cname)
+                         client_name_t cname)
 {
     return gslt_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static void *
 gslt_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
-	       client_name_t cname)
+               client_name_t cname)
 {
     return gslt_alloc(mem, pstype->ssize, pstype, cname);
 }
 
 static byte *
 gslt_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
-			     uint elt_size, client_name_t cname)
+                             uint elt_size, client_name_t cname)
 {
     return gslt_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static byte *
 gslt_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
-		   client_name_t cname)
+                   client_name_t cname)
 {
     return gslt_alloc_bytes(mem, num_elements * elt_size, cname);
 }
 
 static void *
 gslt_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
-			   gs_memory_type_ptr_t pstype, client_name_t cname)
+                           gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return gslt_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
 
 static void *
 gslt_alloc_struct_array(gs_memory_t * mem, uint num_elements,
-		     gs_memory_type_ptr_t pstype, client_name_t cname)
+                     gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     return gslt_alloc(mem, num_elements * pstype->ssize, pstype, cname);
 }
-
 
 static void *
 gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_name_t cname)
@@ -173,8 +172,8 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
     /* replace the size field */
     ptr = (byte *)realloc(&bptr[-header_size], new_size);
-    if ( !ptr ) 
-	return NULL;
+    if ( !ptr )
+        return NULL;
 
     num_resize_called ++;
 
@@ -186,24 +185,23 @@ gslt_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_n
     return &ptr[round_up_to_align(1) * 2];
 }
 
-	
 static void
 gslt_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 {
     if ( ptr != NULL ) {
-	byte *bptr = (byte *)ptr;
-	uint header_size = round_up_to_align(1) * 2;
+        byte *bptr = (byte *)ptr;
+        uint header_size = round_up_to_align(1) * 2;
 #ifdef DEBUG
-	if ( gs_debug_c('@') )
-	    memset(bptr-header_size, 0xee, header_size + get_size(ptr));
+        if ( gs_debug_c('@') )
+            memset(bptr-header_size, 0xee, header_size + get_size(ptr));
 #endif
-	free(bptr-header_size);
+        free(bptr-header_size);
 
-	num_free_called ++;
-	
+        num_free_called ++;
+
 #ifdef DEBUG
-	    /* da for debug allocator - so scripts can parse the trace */
-	if_debug2('A', "[da]:free:%p:%s\n", ptr, cname );
+            /* da for debug allocator - so scripts can parse the trace */
+        if_debug2('A', "[da]:free:%p:%s\n", ptr, cname );
 #endif
     }
 }
@@ -224,7 +222,7 @@ gslt_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 
 static byte *
 gslt_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
-		client_name_t cname)
+                client_name_t cname)
 {
     /* just resize object - ignores old_num */
     return gslt_resize_object(mem, data, new_num, cname);
@@ -232,12 +230,11 @@ gslt_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 
 static void
 gslt_free_string(gs_memory_t * mem, byte * data, uint nbytes,
-	      client_name_t cname)
+              client_name_t cname)
 {
     gslt_free_object(mem, data, cname);
     return;
 }
-
 
 static void
 gslt_status(gs_memory_t * mem, gs_memory_status_t * pstat)
@@ -263,7 +260,6 @@ gslt_consolidate_free(gs_memory_t *mem)
     return;
 }
 
-
 static uint
 gslt_object_size(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 {
@@ -278,7 +274,7 @@ gslt_object_type(gs_memory_t * mem, const void /*obj_header_t */ *obj)
 
 static int
 gslt_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
-		 void **up, client_name_t cname)
+                 void **up, client_name_t cname)
 {
     return 0;
 }
@@ -296,10 +292,8 @@ no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
     return RECOVER_STATUS_NO_RETRY;
 }
 
-
 /* forward decl */
 static gs_memory_t * gslt_stable(gs_memory_t *mem);
-
 
 gs_memory_retrying_t gslt_mem = {
     (gs_memory_t *)&gslt_mem, /* also this is stable_memory since no save/restore */
@@ -310,7 +304,7 @@ gs_memory_retrying_t gslt_mem = {
       gslt_status, /* status */
       gslt_free_all, /* free_all */
       gslt_consolidate_free, /* consolidate_free */
-      gslt_alloc_bytes, /* alloc_bytes */ 
+      gslt_alloc_bytes, /* alloc_bytes */
       gslt_alloc_struct, /* alloc_struct */
       gslt_alloc_struct_immovable, /* alloc_struct_immovable */
       gslt_alloc_byte_array, /* alloc_byte_array */
@@ -323,9 +317,9 @@ gs_memory_retrying_t gslt_mem = {
       gslt_alloc_string_immovable, /* alloc_string_immovable */
       gslt_resize_string, /* resize_string */
       gslt_free_string, /* free_string */
-      gslt_register_root, /* register_root */ 
+      gslt_register_root, /* register_root */
       gslt_unregister_root, /* unregister_root */
-      gslt_enable_free /* enable_free */ 
+      gslt_enable_free /* enable_free */
     },
     NULL, /* gs_lib_ctx */
     NULL, /* head */
@@ -350,7 +344,7 @@ const gs_malloc_memory_t gslt_malloc_memory = {
       gslt_status, /* status */
       gslt_free_all, /* free_all */
       gslt_consolidate_free, /* consolidate_free */
-      gslt_alloc_bytes, /* alloc_bytes */ 
+      gslt_alloc_bytes, /* alloc_bytes */
       gslt_alloc_struct, /* alloc_struct */
       gslt_alloc_struct_immovable, /* alloc_struct_immovable */
       gslt_alloc_byte_array, /* alloc_byte_array */
@@ -363,16 +357,16 @@ const gs_malloc_memory_t gslt_malloc_memory = {
       gslt_alloc_string_immovable, /* alloc_string_immovable */
       gslt_resize_string, /* resize_string */
       gslt_free_string, /* free_string */
-      gslt_register_root, /* register_root */ 
+      gslt_register_root, /* register_root */
       gslt_unregister_root, /* unregister_root */
-      gslt_enable_free /* enable_free */ 
-    },    
+      gslt_enable_free /* enable_free */
+    },
     NULL, /* gs_lib_ctx */
     NULL, /* head */
     NULL, /* non_gc_memory */
     0, /* allocated */
-    0, /* limit */ 
-    0, /* used */ 
+    0, /* limit */
+    0, /* used */
     0  /* max used */
 };
 
@@ -387,7 +381,7 @@ gs_memory_t *
 gslt_alloc_init()
 {
     if ( gslt_malloc_init() ==  NULL )
-	return NULL;
+        return NULL;
 
     gs_lib_ctx_init((gs_memory_t *)&gslt_mem);
 
@@ -405,4 +399,3 @@ gslt_alloc_print_leaks(void)
     dprintf1("number of resizes: %d\n", num_resize_called);
     dprintf1("number of leaked chunks: %d\n", num_alloc_called - num_free_called);
 }
-

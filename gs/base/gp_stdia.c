@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -21,10 +21,8 @@
 #include "gx.h"
 #include "gp.h"
 
-
 /* Read bytes from stdin, unbuffered if possible. */
 int gp_stdin_read(char *buf, int len, int interactive, FILE *f)
 {
     return read(fileno(f), buf, len);
 }
-

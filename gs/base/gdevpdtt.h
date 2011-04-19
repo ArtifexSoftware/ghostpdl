@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -162,51 +162,51 @@ typedef struct pdf_glyph_widths_s {
  */
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
 
-/* 
- * Check the Encoding compatibility 
+/*
+ * Check the Encoding compatibility
  */
-bool pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont, 
-		const pdf_char_glyph_pair_t *pairs, int num_chars);
+bool pdf_check_encoding_compatibility(const pdf_font_resource_t *pdfont,
+                const pdf_char_glyph_pair_t *pairs, int num_chars);
 
 /*
  * Create or find a font resource object for a text.
  */
 int
-pdf_obtain_font_resource(pdf_text_enum_t *penum, 
-		const gs_string *pstr, pdf_font_resource_t **ppdfont);
+pdf_obtain_font_resource(pdf_text_enum_t *penum,
+                const gs_string *pstr, pdf_font_resource_t **ppdfont);
 
 /*
  * Create or find a font resource object for a glyphshow text.
  */
-int pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum, 
-	    const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata);
+int pdf_obtain_font_resource_unencoded(pdf_text_enum_t *penum,
+            const gs_string *pstr, pdf_font_resource_t **ppdfont, const gs_glyph *gdata);
 
 /*
  * Create or find a CID font resource object for a glyph set.
  */
-int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 
-			    pdf_font_resource_t **ppdsubf, 
-			    pdf_char_glyph_pairs_t *cgp);
+int pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont,
+                            pdf_font_resource_t **ppdsubf,
+                            pdf_char_glyph_pairs_t *cgp);
 
 /*
  * Create or find a parent Type 0 font resource object for a CID font resource.
  */
-int pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
-		uint font_index, const gs_const_string *CMapName, pdf_font_resource_t **pdfont);
+int pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf,
+                uint font_index, const gs_const_string *CMapName, pdf_font_resource_t **pdfont);
 
 /*
  * Retrive font resource attached to a font.
  * allocating glyph_usage and real_widths on request.
  */
-int pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
-			   pdf_font_resource_t **pdfont, byte **glyph_usage,
-			   double **real_widths, int *num_chars, int *num_widths);
+int pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,
+                           pdf_font_resource_t **pdfont, byte **glyph_usage,
+                           double **real_widths, int *num_chars, int *num_widths);
 
 /*
  * Attach font resource to a font.
  */
-int pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font, 
-			 pdf_font_resource_t *pdfont); 
+int pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
+                         pdf_font_resource_t *pdfont);
 
 /*
  * Locate a font cache element.
@@ -218,7 +218,7 @@ pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font);
  * Create a font resource object for a gs_font of Type 3.
  */
 int pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
-		       pdf_font_resource_t **ppdfont);
+                       pdf_font_resource_t **ppdfont);
 
 /*
  * Compute the cached values in the text processing state from the text
@@ -228,9 +228,9 @@ int pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
  * TEXT_ADD_TO_SPACE_WIDTH.
  */
 int pdf_update_text_state(pdf_text_process_state_t *ppts,
-			  const pdf_text_enum_t *penum,
-			  pdf_font_resource_t *pdfont,
-			  const gs_matrix *pfmat);
+                          const pdf_text_enum_t *penum,
+                          pdf_font_resource_t *pdfont,
+                          const gs_matrix *pfmat);
 
 /*
  * Set up commands to make the output state match the processing state.
@@ -238,8 +238,8 @@ int pdf_update_text_state(pdf_text_process_state_t *ppts,
  * are written later.
  */
 int pdf_set_text_process_state(gx_device_pdf *pdev,
-			       const gs_text_enum_t *pte, /*for pdcolor, pis*/
-			       pdf_text_process_state_t *ppts);
+                               const gs_text_enum_t *pte, /*for pdcolor, pis*/
+                               pdf_text_process_state_t *ppts);
 
 /*
  * Get the widths (unmodified and possibly modified) of a glyph in a (base)
@@ -250,14 +250,14 @@ int pdf_set_text_process_state(gx_device_pdf *pdev,
  * cdevproc_result != NULL if we restart after a CDevProc callout.
  */
 int pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
-		     gs_font *font, pdf_glyph_widths_t *pwidths,
-		     const double cdevproc_result[10]);
+                     gs_font *font, pdf_glyph_widths_t *pwidths,
+                     const double cdevproc_result[10]);
 
 /*
  * Fall back to the default text processing code when needed.
  */
 int pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
-			   gs_text_enum_t **ppte);
+                           gs_text_enum_t **ppte);
 
 /*
  * Check for simple font.
@@ -289,8 +289,8 @@ PROCESS_TEXT_PROC(process_plain_text);
  * Process a string with a simple gs_font.
  */
 int pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
-			      const gs_glyph *gdata, const gs_matrix *pfmat,
-			      pdf_text_process_state_t *ppts);
+                              const gs_glyph *gdata, const gs_matrix *pfmat,
+                              pdf_text_process_state_t *ppts);
 
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
@@ -298,17 +298,17 @@ int pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
  * Uses and updates ppts->values.matrix; uses ppts->values.pdfont.
  */
 int process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
-			  pdf_text_process_state_t *ppts,
-			  const gs_const_string *pstr,
-			  gs_point *pdpt, const gs_glyph *gdata, bool composite);
+                          pdf_text_process_state_t *ppts,
+                          const gs_const_string *pstr,
+                          gs_point *pdpt, const gs_glyph *gdata, bool composite);
 
-/* 
+/*
  * Add char code pair to ToUnicode CMap,
  * creating the CMap on neccessity.
  */
 int
-pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont, 
-		  gs_glyph glyph, gs_char ch, const gs_const_string *gnstr);
+pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfont,
+                  gs_glyph glyph, gs_char ch, const gs_const_string *gnstr);
 
 /*
  * Get character code from a glyph code.
@@ -316,13 +316,13 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
  * because a glyph may be unlisted in Encoding.
  */
 int pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
-	    byte *buf, int buf_size, int *char_code_length);
+            byte *buf, int buf_size, int *char_code_length);
 
 int pdf_shift_text_currentpoint(pdf_text_enum_t *penum, gs_point *wpt);
 
 void adjust_first_last_char(pdf_font_resource_t *pdfont, byte *str, int size);
 
-float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont, 
-			      const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
-			      gs_font *font, gx_device_pdf *pdev);
+float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
+                              const gs_matrix *pfmat, gs_matrix *smat, gs_matrix *tmat,
+                              gs_font *font, gx_device_pdf *pdev);
 #endif /* gdevpdtt_INCLUDED */

@@ -1,12 +1,12 @@
 %    Copyright (C) 1996-2003 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -46,14 +46,14 @@
     2 index 1 index unread
     % beginning with binary 0 or 't' (TrueType), or 'O' (OpenType)
     dup 0 eq 1 index (O) 0 get eq or exch (t) 0 get eq or {
-		% If this is a font at all, it's a TrueType font.
+                % If this is a font at all, it's a TrueType font.
       dup /FontType eq {
         pop closefile 42 //true
       } {
         dup /FontName eq { pop .findttfontname } { pop closefile //false } ifelse
       } ifelse
     } {
-		% Not a TrueType font.
+                % Not a TrueType font.
       .findnonttfontvalue
     } ifelse
   } { pop closefile //false } ifelse
@@ -88,10 +88,10 @@
 /.loadnonttfontfile /.loadfontfile load def
 /.loadfontfile {
   dup (1234) .peekstring { //tt_tag_dict exch known } { //false } ifelse {
-		% If this is a font at all, it's a TrueType font.
+                % If this is a font at all, it's a TrueType font.
     .loadttfont pop
   } {
-		% Not a TrueType font.
+                % Not a TrueType font.
     .loadnonttfontfile
   } ifelse
 } bind def
@@ -117,7 +117,7 @@ currentdict /tt_tag_dict .undef
 
 /orgXUID AladdinEnterprisesXUID def
 /maxstring 32764 def    % half the maximum length of a PostScript string,
-			% must be a multiple of 4 (for hmtx / loca / vmtx)
+                        % must be a multiple of 4 (for hmtx / loca / vmtx)
 
 /.invert_encoding   % <array> invert_encoding <dict>
 { dup 256 dict exch
@@ -126,9 +126,9 @@ currentdict /tt_tag_dict .undef
     dup /.notdef ne {
       exch 2 index 2 index .knownget {
         dup type /arraytype eq {
-  	[ exch aload pop counttomark 2 add -1 roll ]
+        [ exch aload pop counttomark 2 add -1 roll ]
         } {
-  	exch 2 array astore
+        exch 2 array astore
         } ifelse
       } if 2 index 3 1 roll put
     } {
@@ -150,22 +150,22 @@ currentdict /tt_tag_dict .undef
   /MacRomanEncoding .findencoding
   dup length array copy
   <<
-	/notequal	173
-	/infinity	176
-	/lessequal	178
-	/greaterequal	179
-	/partialdiff	182
-	/summation	183
-	/product	184
-	/pi		185
-	/integral	186
-	/Omega		189
-	/radical	195
-	/approxequal	197
-	/Delta		198
-	/lozenge	215
-	/Euro		219
-	/apple		240
+        /notequal	173
+        /infinity	176
+        /lessequal	178
+        /greaterequal	179
+        /partialdiff	182
+        /summation	183
+        /product	184
+        /pi		185
+        /integral	186
+        /Omega		189
+        /radical	195
+        /approxequal	197
+        /Delta		198
+        /lozenge	215
+        /Euro		219
+        /apple		240
   >> {
     TTFDEBUG { (Extend MacRomanEncodingForTrueType for TrueType: ) =only } if
 
@@ -287,28 +287,28 @@ currentdict /tt_tag_dict .undef
 /findname {
   TTFDEBUG { (findname: ) print dup =only  } if
   //false 3 1 roll
-  1 index length 0 gt {	% check for zero length name table 
+  1 index length 0 gt {	% check for zero length name table
     0 1 3 index 2 getu16 1 sub {
-		% Stack: false table id index
+                % Stack: false table id index
       12 mul 6 add 2 index exch 12 getinterval
       dup 6 getu16 2 index eq 1 index 8 getu16 0 ne and {
-		  % We found the name we want.
-	exch pop
-		  % Stack: false table record
-	dup 10 getu16 2 index 4 getu16 add
-	1 index 8 getu16 4 -1 roll 3 1 roll
-	    3 copy add 1 index length
-	    le {
-	      pop
-	      getinterval exch
-		  % Stack: false string record
-		  % Check for 8- vs. 16-bit characters.
-	  is2byte { //true } { dup is2byte2 } ifelse { string2to1 } if //true //null 4 -1 roll exit
-	    } {
-	      pop pop pop pop
-	      //false
-		  exit
-	    } ifelse
+                  % We found the name we want.
+        exch pop
+                  % Stack: false table record
+        dup 10 getu16 2 index 4 getu16 add
+        1 index 8 getu16 4 -1 roll 3 1 roll
+            3 copy add 1 index length
+            le {
+              pop
+              getinterval exch
+                  % Stack: false string record
+                  % Check for 8- vs. 16-bit characters.
+          is2byte { //true } { dup is2byte2 } ifelse { string2to1 } if //true //null 4 -1 roll exit
+            } {
+              pop pop pop pop
+              //false
+                  exit
+            } ifelse
       } if pop
     } for
   } if
@@ -330,7 +330,7 @@ currentdict /tt_tag_dict .undef
 
 % <string> is2byte2 <bool>
 /is2byte2 {
-  dup length 
+  dup length
   dup 2 mod 0 ne {
     pop pop //false
   } {            % s l
@@ -443,33 +443,33 @@ currentdict /tt_tag_dict .undef
     /etab exch def
     /nseg2 etab 6 getu16a def
     14 /endc etab 2 index nseg2 getinterval_from_stringarray def
-		% The Apple TrueType documentation omits the 2-byte
-		% 'reserved pad' that follows the endCount vector!
+                % The Apple TrueType documentation omits the 2-byte
+                % 'reserved pad' that follows the endCount vector!
     2 add
     nseg2 add /startc etab 2 index nseg2 getinterval_from_stringarray def
     nseg2 add /iddelta etab 2 index nseg2 getinterval_from_stringarray def
     nseg2 add /idroff etab 2 index nseg2 getinterval_from_stringarray def
-		% The following hack allows us to properly handle
-		% idiosyncratic fonts that start at 0xf000:
+                % The following hack allows us to properly handle
+                % idiosyncratic fonts that start at 0xf000:
     pop
     /firstcode startc 0 getu16a 16#ff00 and dup 16#f000 ne { pop 0 } if def
     /putglyph {
       glyphs code 3 -1 roll put /code code 1 add def
     } bind def
-		% Do a first pass to compute the size of the glyphs array.
+                % Do a first pass to compute the size of the glyphs array.
     /numcodes 0 def
     /glyphs 0 dict def
     0 0 2 nseg2 3 sub {
-		% Stack: /glyphs numglyphs i2
+                % Stack: /glyphs numglyphs i2
       /i2 exch def
       /scode startc i2 getu16a def
       /ecode endc i2 getu16a def
-      scode ecode 1 add gt {   % Bug 691326. 
+      scode ecode 1 add gt {   % Bug 691326.
         /ecode scode 1 add def % Acrobat does this contrary to TTF spec that
       } if               % requires such intervals to be ignored.
 
       numcodes scode firstcode sub
-		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+                % Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
       % the previous line is obstructive to CJK fonts, so it was removed
       exch sub 0 .max ecode scode sub 1 add add
@@ -477,7 +477,7 @@ currentdict /tt_tag_dict .undef
       numcodes add /numcodes exch def
     } for pop
 
-		% Now fill in the array.
+                % Now fill in the array.
     /numcodes 0 def /code 0 def
     0 2 nseg2 3 sub {
       /i2 exch def
@@ -486,27 +486,27 @@ currentdict /tt_tag_dict .undef
       scode ecode 1 add gt { /ecode scode 1 add def } if % Bug 691326. See above.
 
       numcodes scode firstcode sub
-		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+                % Hack for fonts that have only 0x0000 and 0xf000 ranges
       %dup 16#e000 ge { 255 and } if
       % the previous line is obstructive to CJK fonts, so it was removed
       exch sub 0 .max dup /code exch code exch add def
       ecode scode sub 1 add add numcodes add /numcodes exch def
       /delta iddelta i2 gets16a def
       TTFDEBUG {
-	(scode=) print scode =only
-	( ecode=) print ecode =only
-	( delta=) print delta =only
-	( droff=) print idroff i2 getu16 =
+        (scode=) print scode =only
+        ( ecode=) print ecode =only
+        ( delta=) print delta =only
+        ( droff=) print idroff i2 getu16 =
       } if
       idroff i2 getu16a dup 0 eq {
-	pop scode delta add 65535 and 1 ecode delta add 65535 and
-	{ putglyph } for
+        pop scode delta add 65535 and 1 ecode delta add 65535 and
+        { putglyph } for
       } {	% The +2 is for the 'reserved pad'.
         /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
         0 1 ecode scode sub {
-	  2 mul gloff add etab exch getu16a
-	  dup 0 ne { delta add 65535 and } if putglyph
-	} for
+          2 mul gloff add etab exch getu16a
+          dup 0 ne { delta add 65535 and } if putglyph
+        } for
       } ifelse
     } for glyphs /glyphs //null def	% for GC
   } bind
@@ -514,9 +514,9 @@ currentdict /tt_tag_dict .undef
     dup 6 getu16a /firstcode exch def
     dup 8 getu16a /ng exch def
     ng dict
-    dup 
-		% Stack: tab dict dict
-		% Fill elements firstcode .. firstcode+nvalue-1 with glyph values
+    dup
+                % Stack: tab dict dict
+                % Fill elements firstcode .. firstcode+nvalue-1 with glyph values
     0 1 ng 1 sub {
       dup firstcode add exch
       2 mul 10 add 4 index exch getu16a 3 copy put pop pop
@@ -558,7 +558,7 @@ currentdict /tt_tag_dict .undef
   2 index type /stringtype eq {
     getinterval
   } {
-    dup 65535 le { 
+    dup 65535 le {
       string exch 0                                 % [] s o p
       4 3 roll {                                    % s o p Si
         dup length                                  % s o p Si lSi
@@ -585,8 +585,8 @@ currentdict /tt_tag_dict .undef
         {
           dup 0 eq {
             pop pop pop exit
-          } if 
-          3 copy 
+          } if
+          3 copy
           dup 65535 ge {
             pop 65535
           } if
@@ -604,7 +604,7 @@ currentdict /tt_tag_dict .undef
 /string_array_size  % <array|string> string_array_size <int>
 { dup type /stringtype eq {
     length
-  } { 
+  } {
     0 exch { length add } forall
   } ifelse
 } bind def
@@ -628,14 +628,14 @@ currentdict /tt_tag_dict .undef
       /postpos glyphnames def
       /total_length postglyphs //string_array_size exec def
       numglyphs array 0 1 numglyphs 1 sub {
-	postpos total_length ge {
+        postpos total_length ge {
           % Fill the rest with .notdef
           1 numglyphs 1 sub { 1 index exch /.notdef put } for
           exit
         } if
-	% No name available, /postnames will be defined as an empty
-	% array and the glyph won't get a name attached.
-	postglyphs postpos //get_from_stringarray exec
+        % No name available, /postnames will be defined as an empty
+        % array and the glyph won't get a name attached.
+        postglyphs postpos //get_from_stringarray exec
         postglyphs postpos 1 add 2 index
         2 copy add total_length gt {
           TTFDEBUG { (post table ends in the middle of the entry.) print flush } if
@@ -645,7 +645,7 @@ currentdict /tt_tag_dict .undef
           exit
         } if
         //getinterval_from_stringarray exec cvn
-	exch postpos add 1 add /postpos exch def
+        exch postpos add 1 add /postpos exch def
         2 index 3 1 roll
         put
       } for
@@ -680,31 +680,31 @@ currentdict /tt_tag_dict .undef
       } if
 
       numglyphs array 0 1 numglyphs 1 sub {
-	dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec 
-	dup 0 get 8 bitshift exch 1 get add dup 258 lt {
-	  MacGlyphEncoding exch get
-	} {
-	  dup 32768 ge {
-		% According to the published TrueType spec, such values are
-		% "reserved for future use", but at least some PDF files
-		% produced by the Adobe PDF library contain entries with a
-		% value of 16#ffff.
-	    pop /.notdef
-	  } {
-	    % Get the name for this glyph
-	    258 sub dup postnames length ge {
-	      TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
-	      pop pop
-	      exit
-	    } if
-	    postnames exch get
-	    % At least some of Microsoft's TrueType fonts use incorrect
-	    % (Adobe-incompatible) names for some glyphs.
-	    % Correct for this here.
-	    postremap 1 index .knownget { exch pop } if
-	  } ifelse
-	} ifelse
-	2 index 3 1 roll put
+        dup 2 mul 34 add postglyphs exch 2 //getinterval_from_stringarray exec
+        dup 0 get 8 bitshift exch 1 get add dup 258 lt {
+          MacGlyphEncoding exch get
+        } {
+          dup 32768 ge {
+                % According to the published TrueType spec, such values are
+                % "reserved for future use", but at least some PDF files
+                % produced by the Adobe PDF library contain entries with a
+                % value of 16#ffff.
+            pop /.notdef
+          } {
+            % Get the name for this glyph
+            258 sub dup postnames length ge {
+              TTFDEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+              pop pop
+              exit
+            } if
+            postnames exch get
+            % At least some of Microsoft's TrueType fonts use incorrect
+            % (Adobe-incompatible) names for some glyphs.
+            % Correct for this here.
+            postremap 1 index .knownget { exch pop } if
+          } ifelse
+        } ifelse
+        2 index 3 1 roll put
       } for
 
       .broken_post {
@@ -731,7 +731,7 @@ currentdict /tt_tag_dict .undef
 % Note that each table must have an even length, because of a strange
 % Adobe requirement that each sfnts entry have even length.
 /readtables mark
-	% Ordinary tables
+        % Ordinary tables
   (head) //call.readtable
   (hhea) 1 index
   (maxp) 1 index
@@ -739,14 +739,14 @@ currentdict /tt_tag_dict .undef
   (OS/2) 1 index
   (post) //call.readbigtable
   (vhea) //call.readtable
-	% Big tables
+        % Big tables
   (cmap) //call.readbigtable
   (GSUB) //call.readbigtable
   (glyf) //call.readbigtable
   (loca) 1 index
   (hmtx) 1 index
   (vmtx) 1 index
-	% Tables only needed for embedding in PDF files
+        % Tables only needed for embedding in PDF files
   (cvt ) //call.readtable
   (fpgm) 1 index
   (prep) 1 index
@@ -771,12 +771,12 @@ def
 % <file> <length> .readtable <string>
 /.readtable {
   dup dup 1 and add string
-		% Stack: f len str
+                % Stack: f len str
   dup 0 4 -1 roll getinterval
-		% Stack: f str str1
-	% Because of the absurd PostScript specification that gives an
-	% error for reading into an empty string, we have to check for
-	% this explicitly here.
+                % Stack: f str str1
+        % Because of the absurd PostScript specification that gives an
+        % error for reading into an empty string, we have to check for
+        % this explicitly here.
   3 -1 roll exch
   dup () ne { readstring } if pop pop
 } bind def
@@ -789,7 +789,7 @@ def
   } {
     currentuserparams /VMReclaim get -2 vmreclaim
     [ 4 2 roll {
-		% Stack: mark ... f left
+                % Stack: mark ... f left
       dup maxstring le { exit } if
       1 index maxstring string readstring pop 3 1 roll maxstring sub
     } loop .readtable ]
@@ -850,7 +850,7 @@ end readonly def                % .loadttfontdict
         % Peek because table counter may be incorrect.
   /tables f offsets 4 getu16 16 mul string .peekstring pop def
   /tabdict tables length 16 idiv dict def
-	% tabs = tables we want to keep, sorted by file position.
+        % tabs = tables we want to keep, sorted by file position.
   /tabs [ 0 16 tables length 1 sub {
     tables exch 16 getinterval
     TTFDEBUG { dup .printtab } if
@@ -864,8 +864,8 @@ end readonly def                % .loadttfontdict
   } for ] {
     exch 8 getu32 exch 8 getu32 lt
   } .sort def
-	% In certain malformed TrueType fonts, tables overlap.
-	% Truncate tables if necessary.
+        % In certain malformed TrueType fonts, tables overlap.
+        % Truncate tables if necessary.
   0 1 tabs length 2 sub {
     dup tabs exch get exch 1 add tabs exch get
     1 index 8 getu32 2 index 12 getu32 add
@@ -902,8 +902,8 @@ mark
         tabdict tname () put
     } {
       8 sfpos putu32
-  	% Skip data between the end of the previous table and
-	% the beginning of this one, if any.
+        % Skip data between the end of the previous table and
+        % the beginning of this one, if any.
       tpos fpos gt {
         load_stripped {
           % 'setfileposition' is faster for skipping a big data.
@@ -915,7 +915,7 @@ mark
       } if
       f tlen readtables_ tname get exec
       tabdict tname 3 -1 roll put
-	% Round up the table length to an even value.
+        % Round up the table length to an even value.
       /sfpos sfpos tlen dup 1 and add add def
     } ifelse
     /fpos fpos tlen add def
@@ -937,10 +937,10 @@ mark
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
-  /post tabdict /post .knownget { 
-    dup 0 get /post_first_part exch def 
-  } { 
-    //null 
+  /post tabdict /post .knownget {
+    dup 0 get /post_first_part exch def
+  } {
+    //null
   } ifelse def
   load_stripped not {
     /locatable tabdict /loca get def
@@ -991,9 +991,9 @@ mark
   } {
     postformats first_post_string 0 getu32 .knownget {
       TTFDEBUG {
-	(post: format ) print
-	first_post_string
-	dup 0 getu16 =only (,) print 2 getu16 = flush
+        (post: format ) print
+        first_post_string
+        dup 0 getu16 =only (,) print 2 getu16 = flush
       } if
       post exch exec
     } {
@@ -1012,7 +1012,7 @@ mark
   /FontBBox [ 36 2 42 { head exch gets16 upem div } for ]
   nextxuid
   tabdict /name .knownget {
-		% Find the names from the 'name' table.
+                % Find the names from the 'name' table.
     /names exch def
     /FontName names 6 findname not { names 4 findname not { curxuid 16#ffffffff and 16 32 string cvrs } if } if
       /fontname 1 index def
@@ -1022,12 +1022,12 @@ mark
       names 4 findname { /FullName exch } if
       names 5 findname { /Version exch } if
   } {
-		% No name table, fabricate a FontName.
+                % No name table, fabricate a FontName.
     /FontName curxuid 16#ffffffff and 16 32 string cvrs
       /fontname 1 index def
     /FontInfo mark
   } ifelse
-		% Stack: ... /FontInfo mark key1 value1 ...
+                % Stack: ... /FontInfo mark key1 value1 ...
   post //null ne {
     /ItalicAngle first_post_string 4 gets32 65536.0 div
     /isFixedPitch first_post_string 12 getu32 0 ne
@@ -1050,9 +1050,9 @@ mark
 % Defines cmapsub, cmaptab
 /.pickcmap_with_no_xlatmap {
   tabdict /cmap get
-		% The Apple cmap format is no help in determining the encoding.
-		% Look for a Microsoft table.  If we can't find one,
-		% just use the first table, whatever it is.
+                % The Apple cmap format is no help in determining the encoding.
+                % Look for a Microsoft table.  If we can't find one,
+                % just use the first table, whatever it is.
   dup 4 8 getinterval_from_stringarray exch  % () [] % the default
   0 1 2 index 2 getu16a 1 sub {              % () [] i
     8 mul 4 add 1 index exch 8 getinterval_from_stringarray % () [] ()
@@ -1062,7 +1062,7 @@ mark
     } if
     dup 0 getu16 3 eq { exch 3 -1 roll pop exit } if pop
   } for
-		% Stack: subentry table
+                % Stack: subentry table
   /cmapsub 2 index def  % () []
   exch 4 getu32 1 index string_array_size 1 index sub getinterval_from_stringarray
   /cmaptab exch def
@@ -1077,7 +1077,7 @@ mark
     /.pickcmap_with_xlatmap cvx /configurationerror signalerror
   } if
   //false
-  .xlatmap_dict /TrueType get 
+  .xlatmap_dict /TrueType get
   dup length 2 sub 0 exch 2 exch {                       % bool [] i
     2 copy get                                           % bool [] i ()
     (.) search {                                         % bool [] i post match pre
@@ -1126,7 +1126,7 @@ mark
     1 index { exit } if
   } for                                                  % bool []
   pop                                                    % bool
-  not { 
+  not {
     QUIET not { (True Type font doesn't contain a charset listed in gs/lib/xlatmap.) = } if
     /.pickcmap_with_xlatmap cvx /invalidfont signalerror
   } if                                                   %
@@ -1139,9 +1139,9 @@ mark
   % a disk True Type font files, and use load_stripped
   % to check this regime. We would like to do so
   % while emulating a Type 42, but first the old code
-  % about handling them to be changed 
+  % about handling them to be changed
   % with adding a handling of a Decoding.
-  % fixme : A correct way to fix this is to implenent 
+  % fixme : A correct way to fix this is to implenent
   % the Type 42 emulation with gs_fntem.ps .
   % Also note that PDF embedded fonts probably don't need a xlatmap -
   % see PDF spec, "Encodings for True Type fonts".
@@ -1163,194 +1163,194 @@ mark
 % See: http://partners.adobe.com/asn/developer/typeforum/unicodegn.html
 /postalias mark
   /pi1  /pi                                            /plusinus /plusminus
-  /Acyrillic /afii10017                                /Becyrillic /afii10018                               
-  /Cdot /Cdotaccent                                    /Checyrillic /afii10041                              
-  /Dcroat /Dslash                                      /Decyrillic /afii10021                               
-  /Delta /increment                                    /Djecyrillic /afii10051                              
-  /Dzecyrillic /afii10054                              /Dzhecyrillic /afii10145                             
-  /Ecyrillic /afii10053                                /Edot /Edotaccent                                    
-  /Efcyrillic /afii10038                               /Elcyrillic /afii10029                               
-  /Emcyrillic /afii10030                               /Encyrillic /afii10031                               
-  /Ercyrillic /afii10034                               /Ereversedcyrillic /afii10047                        
-  /Escyrillic /afii10035                               /Euro /euro                                          
-  /Fitacyrillic /afii10147                             /Gcedilla /Gcommaaccent                              
-  /Gdot /Gdotaccent                                    /Gecyrillic /afii10020                               
-  /Gheupturncyrillic /afii10050                        /Gjecyrillic /afii10052                              
-  /H18533 /blackcircle                                 /H18543 /blacksmallsquare                            
-  /H18551 /whitesmallsquare                            /H22073 /whitesquare                                 
-  /Hardsigncyrillic /afii10044                         /IAcyrillic /afii10049                               
-  /IUcyrillic /afii10048                               /Icyrillic /afii10055                                
-  /Idot /Idotaccent                                    /Iecyrillic /afii10022                               
-  /Iicyrillic /afii10026                               /Iishortcyrillic /afii10027                          
-  /Iocyrillic /afii10023                               /Izhitsacyrillic /afii10148                          
-  /Jecyrillic /afii10057                               /Kacyrillic /afii10028                               
-  /Kcedilla /Kcommaaccent                              /Khacyrillic /afii10039                              
-  /Kjecyrillic /afii10061                              /Lcedilla /Lcommaaccent                              
-  /Ldot /Ldotaccent                                    /Ljecyrillic /afii10058                              
-  /Ncedilla /Ncommaaccent                              /Njecyrillic /afii10059                              
-  /Ocyrillic /afii10032                                /Odblacute /Ohungarumlaut                            
-  /Ohm /Omega                                          /Oslashacute /Ostrokeacute                           
-  /Pecyrillic /afii10033                               /Rcedilla /Rcommaaccent                              
-  /Shacyrillic /afii10042                              /Shchacyrillic /afii10043                            
-  /Softsigncyrillic /afii10046                         /Tcedilla /Tcommaaccent                              
-  /Tecyrillic /afii10036                               /Tsecyrillic /afii10040                              
-  /Tshecyrillic /afii10060                             /Ucyrillic /afii10037                                
-  /Udblacute /Uhungarumlaut                            /Upsilon1 /Upsilonhooksymbol                         
-  /Ushortcyrillic /afii10062                           /Vecyrillic /afii10019                               
-  /Yatcyrillic /afii10146                              /Yericyrillic /afii10045                             
-  /Yicyrillic /afii10056                               /Zdot /Zdotaccent                                    
-  /Zecyrillic /afii10025                               /Zhecyrillic /afii10024                              
-  /acutecmb /acutecomb                                 /acyrillic /afii10065                                
-  /afii00208 /horizontalbar                            /afii08941 /lira                                     
-  /afii10066 /becyrillic                               /afii10067 /vecyrillic                               
-  /afii10068 /gecyrillic                               /afii10069 /decyrillic                               
-  /afii10070 /iecyrillic                               /afii10071 /iocyrillic                               
-  /afii10072 /zhecyrillic                              /afii10073 /zecyrillic                               
-  /afii10074 /iicyrillic                               /afii10075 /iishortcyrillic                          
-  /afii10076 /kacyrillic                               /afii10077 /elcyrillic                               
-  /afii10078 /emcyrillic                               /afii10079 /encyrillic                               
-  /afii10080 /ocyrillic                                /afii10081 /pecyrillic                               
-  /afii10082 /ercyrillic                               /afii10083 /escyrillic                               
-  /afii10084 /tecyrillic                               /afii10085 /ucyrillic                                
-  /afii10086 /efcyrillic                               /afii10087 /khacyrillic                              
-  /afii10088 /tsecyrillic                              /afii10089 /checyrillic                              
-  /afii10090 /shacyrillic                              /afii10091 /shchacyrillic                            
-  /afii10092 /hardsigncyrillic                         /afii10093 /yericyrillic                             
-  /afii10094 /softsigncyrillic                         /afii10095 /ereversedcyrillic                        
-  /afii10096 /iucyrillic                               /afii10097 /iacyrillic                               
-  /afii10098 /gheupturncyrillic                        /afii10099 /djecyrillic                              
-  /afii10100 /gjecyrillic                              /afii10101 /ecyrillic                                
-  /afii10102 /dzecyrillic                              /afii10103 /icyrillic                                
-  /afii10104 /yicyrillic                               /afii10105 /jecyrillic                               
-  /afii10106 /ljecyrillic                              /afii10107 /njecyrillic                              
-  /afii10108 /tshecyrillic                             /afii10109 /kjecyrillic                              
-  /afii10110 /ushortcyrillic                           /afii10193 /dzhecyrillic                             
-  /afii10194 /yatcyrillic                              /afii10195 /fitacyrillic                             
-  /afii10196 /izhitsacyrillic                          /afii10846 /schwacyrillic                            
-  /afii57381 /percentarabic                            /afii57388 /commaarabic                              
-  /afii57392 /zeroarabic                               /afii57393 /onearabic                                
-  /afii57394 /twoarabic                                /afii57395 /threearabic                              
-  /afii57396 /fourarabic                               /afii57397 /fivearabic                               
-  /afii57398 /sixarabic                                /afii57399 /sevenarabic                              
-  /afii57400 /eightarabic                              /afii57401 /ninearabic                               
-  /afii57403 /semicolonarabic                          /afii57407 /questionarabic                           
-  /afii57409 /hamzaarabic                              /afii57410 /alefmaddaabovearabic                     
-  /afii57411 /alefhamzaabovearabic                     /afii57412 /wawhamzaabovearabic                      
-  /afii57413 /alefhamzabelowarabic                     /afii57414 /yehhamzaabovearabic                      
-  /afii57415 /alefarabic                               /afii57416 /beharabic                                
-  /afii57417 /tehmarbutaarabic                         /afii57418 /teharabic                                
-  /afii57419 /theharabic                               /afii57420 /jeemarabic                               
-  /afii57421 /haharabic                                /afii57422 /khaharabic                               
-  /afii57423 /dalarabic                                /afii57424 /thalarabic                               
-  /afii57425 /reharabic                                /afii57426 /zainarabic                               
-  /afii57427 /seenarabic                               /afii57428 /sheenarabic                              
-  /afii57429 /sadarabic                                /afii57430 /dadarabic                                
-  /afii57431 /taharabic                                /afii57432 /zaharabic                                
-  /afii57433 /ainarabic                                /afii57434 /ghainarabic                              
-  /afii57440 /tatweelarabic                            /afii57441 /feharabic                                
-  /afii57442 /qafarabic                                /afii57443 /kafarabic                                
-  /afii57444 /lamarabic                                /afii57445 /meemarabic                               
-  /afii57446 /noonarabic                               /afii57448 /wawarabic                                
-  /afii57449 /alefmaksuraarabic                        /afii57450 /yeharabic                                
-  /afii57451 /fathatanarabic                           /afii57452 /dammatanarabic                           
-  /afii57453 /kasratanarabic                           /afii57454 /fathaarabic                              
-  /afii57455 /dammaarabic                              /afii57456 /kasraarabic                              
-  /afii57457 /shaddaarabic                             /afii57458 /sukunarabic                              
-  /afii57470 /heharabic                                /afii57505 /veharabic                                
-  /afii57506 /peharabic                                /afii57507 /tcheharabic                              
-  /afii57508 /jeharabic                                /afii57509 /gafarabic                                
-  /afii57511 /tteharabic                               /afii57512 /ddalarabic                               
-  /afii57513 /rreharabic                               /afii57514 /noonghunnaarabic                         
-  /afii57519 /yehbarreearabic                          /afii57636 /newsheqelsign                            
-  /afii57645 /maqafhebrew                              /afii57658 /sofpasuqhebrew                           
-  /afii57664 /alef                                     /afii57665 /bet                                      
-  /afii57666 /gimel                                    /afii57667 /dalet                                    
-  /afii57668 /he                                       /afii57669 /vav                                      
-  /afii57670 /zayin                                    /afii57671 /het                                      
-  /afii57672 /tet                                      /afii57673 /yod                                      
-  /afii57674 /finalkaf                                 /afii57675 /kaf                                      
-  /afii57676 /lamed                                    /afii57677 /finalmem                                 
-  /afii57678 /mem                                      /afii57679 /finalnun                                 
-  /afii57680 /nun                                      /afii57681 /samekh                                   
-  /afii57682 /ayin                                     /afii57683 /finalpe                                  
-  /afii57684 /pe                                       /afii57685 /finaltsadi                               
-  /afii57686 /tsadi                                    /afii57687 /qof                                      
-  /afii57688 /resh                                     /afii57689 /shin                                     
-  /afii57690 /tav                                      /afii57694 /shinshindot                              
-  /afii57695 /shinsindot                               /afii57700 /vavholam                                 
-  /afii57705 /doubleyodpatah                           /afii57716 /vavvavhebrew                             
-  /afii57717 /vavyodhebrew                             /afii57718 /yodyodhebrew                             
-  /afii57723 /vavdagesh                                /afii57793 /hiriq                                    
-  /afii57794 /tsere                                    /afii57795 /segol                                    
-  /afii57796 /qubuts                                   /afii57797 /qamats                                   
-  /afii57798 /patah                                    /afii57799 /sheva                                    
-  /afii57800 /hatafpatah                               /afii57801 /hatafsegol                               
-  /afii57802 /hatafqamats                              /afii57803 /sindothebrew                             
-  /afii57804 /shindothebrew                            /afii57806 /holam                                    
-  /afii57807 /dagesh                                   /afii57839 /siluqhebrew                              
-  /afii57841 /rafe                                     /afii57842 /paseqhebrew                              
-  /afii57929 /apostrophemod                            /afii61248 /careof                                   
-  /afii61289 /lsquare                                  /afii61352 /numero                                   
-  /afii61664 /zerowidthnonjoiner                       /afii63167 /asteriskarabic                           
-  /afii64937 /commareversedmod                         /alefmaksurainitialarabic /yehinitialarabic          
-  /alefmaksuramedialarabic /yehmedialarabic            /approximatelyequal /congruent                       
-  /arrowdblboth /dblarrowleft                          /arrowdblleft /arrowleftdbl                          
-  /arrowdblright /dblarrowright                        /arrowupdnbse /arrowupdownbase                       
-  /bar /verticalbar                                    /betdagesh /betdageshhebrew                          
-  /blackdownpointingtriangle /triagdn                  /blackleftpointingpointer /triaglf                   
-  /blackrectangle /filledrect                          /blackrightpointingpointer /triagrt                  
-  /blacksmilingface /invsmileface                      /blacksquare /filledbox                              
-  /blackuppointingtriangle /triagup                    /bulletinverse /invbullet                            
-  /cdot /cdotaccent                                    /circle /whitecircle                                 
-  /circlemultiply /timescircle                         /circleplus /pluscircle                              
-  /club /clubsuitblack                                 /colonmonetary /colonsign                            
-  /compass /sun                                        /daletdagesh /daletdageshhebrew                      
-  /dargahebrew /dargalefthebrew                        /dbllowline /underscoredbl                           
-  /dcroat /dmacron                                     /decimalseparatorarabic /decimalseparatorpersian     
-  /dialytikatonos /dieresistonos                       /dkshade /shadedark                                  
-  /dotbelowcmb /dotbelowcomb                           /edot /edotaccent                                    
-  /eighthnotebeamed /musicalnotedbl                    /etnahtafoukhhebrew /etnahtahebrew                   
-  /existential /thereexists                            /female /venus                                       
-  /finalkafdagesh /finalkafdageshhebrew                /forall /universal                                   
-  /gcedilla /gcommaaccent                              /gdot /gdotaccent                                    
-  /gimeldagesh /gimeldageshhebrew                      /gradient /nabla                                     
-  /gravecmb /gravecomb                                 /haaltonearabic /hehaltonearabic                     
-  /heart /heartsuitblack                               /hedagesh /hedageshhebrew                            
-  /hehfinalalttwoarabic /hehfinalarabic                /hookabovecomb /hookcmb                              
-  /ilde /tilde                                         /integralbottom /integralbt                          
-  /integraltop /integraltp                             /invcircle /whitecircleinverse                       
-  /kafdagesh /kafdageshhebrew                          /kcedilla /kcommaaccent                              
-  /lameddagesh /lameddageshhebrew                      /lcedilla /lcommaaccent                              
-  /ldot /ldotaccent                                    /logicalnotreversed /revlogicalnot                   
-  /longs /slong                                        /ltshade /shadelight                                 
-  /macron /overscore                                   /mahapakhhebrew /mahapakhlefthebrew                  
-  /male /mars                                          /memdagesh /memdageshhebrew                          
-  /merkhahebrew /merkhalefthebrew                      /merkhakefulahebrew /merkhakefulalefthebrew          
-  /middot /periodcentered                              /mu /mu1                                             
-  /munahhebrew /munahlefthebrew                        /napostrophe /quoterightn                            
-  /nbspace /nonbreakingspace                           /ncedilla /ncommaaccent                              
-  /notelement /notelementof                            /nundagesh /nundageshhebrew                          
-  /odblacute /ohungarumlaut                            /omega1 /pisymbolgreek                               
-  /openbullet /whitebullet                             /orthogonal /rightangle                              
-  /oslashacute /ostrokeacute                           /pedagesh /pedageshhebrew                            
-  /phi1 /phisymbolgreek                                /propersubset /subset                                
-  /propersuperset /superset                            /qofdagesh /qofdageshhebrew                          
-  /quoteleftreversed /quotereversed                    /rcedilla /rcommaaccent                              
-  /reflexsubset /subsetorequal                         /reflexsuperset /supersetorequal                     
-  /reviahebrew /reviamugrashhebrew                     /samekhdagesh /samekhdageshhebrew                    
-  /sfthyphen /softhyphen                               /shade /shademedium                                  
-  /sheqel /sheqelhebrew                                /shindagesh /shindageshhebrew                        
-  /shindageshshindot /shindageshshindothebrew          /shindageshsindot /shindageshsindothebrew            
-  /sigma1 /sigmafinal                                  /similar /tildeoperator                              
-  /smileface /whitesmilingface                         /space /spacehackarabic                              
-  /spade /spadesuitblack                               /tavdages /tavdagesh                                 
-  /tcedilla /tcommaaccent                              /tetdagesh /tetdageshhebrew                          
-  /tevirhebrew /tevirlefthebrew                        /theta1 /thetasymbolgreek                            
-  /thousandsseparatorarabic /thousandsseparatorpersian /tildecmb /tildecomb                                 
-  /tipehahebrew /tipehalefthebrew                      /tsadidagesh /tsadidageshhebrew                      
-  /twodotenleader /twodotleader                        /udblacute /uhungarumlaut                            
-  /yerahbenyomohebrew /yerahbenyomolefthebrew          /yoddagesh /yoddageshhebrew                          
-  /zayindagesh /zayindageshhebrew                      /zdot /zdotaccent                                    
+  /Acyrillic /afii10017                                /Becyrillic /afii10018
+  /Cdot /Cdotaccent                                    /Checyrillic /afii10041
+  /Dcroat /Dslash                                      /Decyrillic /afii10021
+  /Delta /increment                                    /Djecyrillic /afii10051
+  /Dzecyrillic /afii10054                              /Dzhecyrillic /afii10145
+  /Ecyrillic /afii10053                                /Edot /Edotaccent
+  /Efcyrillic /afii10038                               /Elcyrillic /afii10029
+  /Emcyrillic /afii10030                               /Encyrillic /afii10031
+  /Ercyrillic /afii10034                               /Ereversedcyrillic /afii10047
+  /Escyrillic /afii10035                               /Euro /euro
+  /Fitacyrillic /afii10147                             /Gcedilla /Gcommaaccent
+  /Gdot /Gdotaccent                                    /Gecyrillic /afii10020
+  /Gheupturncyrillic /afii10050                        /Gjecyrillic /afii10052
+  /H18533 /blackcircle                                 /H18543 /blacksmallsquare
+  /H18551 /whitesmallsquare                            /H22073 /whitesquare
+  /Hardsigncyrillic /afii10044                         /IAcyrillic /afii10049
+  /IUcyrillic /afii10048                               /Icyrillic /afii10055
+  /Idot /Idotaccent                                    /Iecyrillic /afii10022
+  /Iicyrillic /afii10026                               /Iishortcyrillic /afii10027
+  /Iocyrillic /afii10023                               /Izhitsacyrillic /afii10148
+  /Jecyrillic /afii10057                               /Kacyrillic /afii10028
+  /Kcedilla /Kcommaaccent                              /Khacyrillic /afii10039
+  /Kjecyrillic /afii10061                              /Lcedilla /Lcommaaccent
+  /Ldot /Ldotaccent                                    /Ljecyrillic /afii10058
+  /Ncedilla /Ncommaaccent                              /Njecyrillic /afii10059
+  /Ocyrillic /afii10032                                /Odblacute /Ohungarumlaut
+  /Ohm /Omega                                          /Oslashacute /Ostrokeacute
+  /Pecyrillic /afii10033                               /Rcedilla /Rcommaaccent
+  /Shacyrillic /afii10042                              /Shchacyrillic /afii10043
+  /Softsigncyrillic /afii10046                         /Tcedilla /Tcommaaccent
+  /Tecyrillic /afii10036                               /Tsecyrillic /afii10040
+  /Tshecyrillic /afii10060                             /Ucyrillic /afii10037
+  /Udblacute /Uhungarumlaut                            /Upsilon1 /Upsilonhooksymbol
+  /Ushortcyrillic /afii10062                           /Vecyrillic /afii10019
+  /Yatcyrillic /afii10146                              /Yericyrillic /afii10045
+  /Yicyrillic /afii10056                               /Zdot /Zdotaccent
+  /Zecyrillic /afii10025                               /Zhecyrillic /afii10024
+  /acutecmb /acutecomb                                 /acyrillic /afii10065
+  /afii00208 /horizontalbar                            /afii08941 /lira
+  /afii10066 /becyrillic                               /afii10067 /vecyrillic
+  /afii10068 /gecyrillic                               /afii10069 /decyrillic
+  /afii10070 /iecyrillic                               /afii10071 /iocyrillic
+  /afii10072 /zhecyrillic                              /afii10073 /zecyrillic
+  /afii10074 /iicyrillic                               /afii10075 /iishortcyrillic
+  /afii10076 /kacyrillic                               /afii10077 /elcyrillic
+  /afii10078 /emcyrillic                               /afii10079 /encyrillic
+  /afii10080 /ocyrillic                                /afii10081 /pecyrillic
+  /afii10082 /ercyrillic                               /afii10083 /escyrillic
+  /afii10084 /tecyrillic                               /afii10085 /ucyrillic
+  /afii10086 /efcyrillic                               /afii10087 /khacyrillic
+  /afii10088 /tsecyrillic                              /afii10089 /checyrillic
+  /afii10090 /shacyrillic                              /afii10091 /shchacyrillic
+  /afii10092 /hardsigncyrillic                         /afii10093 /yericyrillic
+  /afii10094 /softsigncyrillic                         /afii10095 /ereversedcyrillic
+  /afii10096 /iucyrillic                               /afii10097 /iacyrillic
+  /afii10098 /gheupturncyrillic                        /afii10099 /djecyrillic
+  /afii10100 /gjecyrillic                              /afii10101 /ecyrillic
+  /afii10102 /dzecyrillic                              /afii10103 /icyrillic
+  /afii10104 /yicyrillic                               /afii10105 /jecyrillic
+  /afii10106 /ljecyrillic                              /afii10107 /njecyrillic
+  /afii10108 /tshecyrillic                             /afii10109 /kjecyrillic
+  /afii10110 /ushortcyrillic                           /afii10193 /dzhecyrillic
+  /afii10194 /yatcyrillic                              /afii10195 /fitacyrillic
+  /afii10196 /izhitsacyrillic                          /afii10846 /schwacyrillic
+  /afii57381 /percentarabic                            /afii57388 /commaarabic
+  /afii57392 /zeroarabic                               /afii57393 /onearabic
+  /afii57394 /twoarabic                                /afii57395 /threearabic
+  /afii57396 /fourarabic                               /afii57397 /fivearabic
+  /afii57398 /sixarabic                                /afii57399 /sevenarabic
+  /afii57400 /eightarabic                              /afii57401 /ninearabic
+  /afii57403 /semicolonarabic                          /afii57407 /questionarabic
+  /afii57409 /hamzaarabic                              /afii57410 /alefmaddaabovearabic
+  /afii57411 /alefhamzaabovearabic                     /afii57412 /wawhamzaabovearabic
+  /afii57413 /alefhamzabelowarabic                     /afii57414 /yehhamzaabovearabic
+  /afii57415 /alefarabic                               /afii57416 /beharabic
+  /afii57417 /tehmarbutaarabic                         /afii57418 /teharabic
+  /afii57419 /theharabic                               /afii57420 /jeemarabic
+  /afii57421 /haharabic                                /afii57422 /khaharabic
+  /afii57423 /dalarabic                                /afii57424 /thalarabic
+  /afii57425 /reharabic                                /afii57426 /zainarabic
+  /afii57427 /seenarabic                               /afii57428 /sheenarabic
+  /afii57429 /sadarabic                                /afii57430 /dadarabic
+  /afii57431 /taharabic                                /afii57432 /zaharabic
+  /afii57433 /ainarabic                                /afii57434 /ghainarabic
+  /afii57440 /tatweelarabic                            /afii57441 /feharabic
+  /afii57442 /qafarabic                                /afii57443 /kafarabic
+  /afii57444 /lamarabic                                /afii57445 /meemarabic
+  /afii57446 /noonarabic                               /afii57448 /wawarabic
+  /afii57449 /alefmaksuraarabic                        /afii57450 /yeharabic
+  /afii57451 /fathatanarabic                           /afii57452 /dammatanarabic
+  /afii57453 /kasratanarabic                           /afii57454 /fathaarabic
+  /afii57455 /dammaarabic                              /afii57456 /kasraarabic
+  /afii57457 /shaddaarabic                             /afii57458 /sukunarabic
+  /afii57470 /heharabic                                /afii57505 /veharabic
+  /afii57506 /peharabic                                /afii57507 /tcheharabic
+  /afii57508 /jeharabic                                /afii57509 /gafarabic
+  /afii57511 /tteharabic                               /afii57512 /ddalarabic
+  /afii57513 /rreharabic                               /afii57514 /noonghunnaarabic
+  /afii57519 /yehbarreearabic                          /afii57636 /newsheqelsign
+  /afii57645 /maqafhebrew                              /afii57658 /sofpasuqhebrew
+  /afii57664 /alef                                     /afii57665 /bet
+  /afii57666 /gimel                                    /afii57667 /dalet
+  /afii57668 /he                                       /afii57669 /vav
+  /afii57670 /zayin                                    /afii57671 /het
+  /afii57672 /tet                                      /afii57673 /yod
+  /afii57674 /finalkaf                                 /afii57675 /kaf
+  /afii57676 /lamed                                    /afii57677 /finalmem
+  /afii57678 /mem                                      /afii57679 /finalnun
+  /afii57680 /nun                                      /afii57681 /samekh
+  /afii57682 /ayin                                     /afii57683 /finalpe
+  /afii57684 /pe                                       /afii57685 /finaltsadi
+  /afii57686 /tsadi                                    /afii57687 /qof
+  /afii57688 /resh                                     /afii57689 /shin
+  /afii57690 /tav                                      /afii57694 /shinshindot
+  /afii57695 /shinsindot                               /afii57700 /vavholam
+  /afii57705 /doubleyodpatah                           /afii57716 /vavvavhebrew
+  /afii57717 /vavyodhebrew                             /afii57718 /yodyodhebrew
+  /afii57723 /vavdagesh                                /afii57793 /hiriq
+  /afii57794 /tsere                                    /afii57795 /segol
+  /afii57796 /qubuts                                   /afii57797 /qamats
+  /afii57798 /patah                                    /afii57799 /sheva
+  /afii57800 /hatafpatah                               /afii57801 /hatafsegol
+  /afii57802 /hatafqamats                              /afii57803 /sindothebrew
+  /afii57804 /shindothebrew                            /afii57806 /holam
+  /afii57807 /dagesh                                   /afii57839 /siluqhebrew
+  /afii57841 /rafe                                     /afii57842 /paseqhebrew
+  /afii57929 /apostrophemod                            /afii61248 /careof
+  /afii61289 /lsquare                                  /afii61352 /numero
+  /afii61664 /zerowidthnonjoiner                       /afii63167 /asteriskarabic
+  /afii64937 /commareversedmod                         /alefmaksurainitialarabic /yehinitialarabic
+  /alefmaksuramedialarabic /yehmedialarabic            /approximatelyequal /congruent
+  /arrowdblboth /dblarrowleft                          /arrowdblleft /arrowleftdbl
+  /arrowdblright /dblarrowright                        /arrowupdnbse /arrowupdownbase
+  /bar /verticalbar                                    /betdagesh /betdageshhebrew
+  /blackdownpointingtriangle /triagdn                  /blackleftpointingpointer /triaglf
+  /blackrectangle /filledrect                          /blackrightpointingpointer /triagrt
+  /blacksmilingface /invsmileface                      /blacksquare /filledbox
+  /blackuppointingtriangle /triagup                    /bulletinverse /invbullet
+  /cdot /cdotaccent                                    /circle /whitecircle
+  /circlemultiply /timescircle                         /circleplus /pluscircle
+  /club /clubsuitblack                                 /colonmonetary /colonsign
+  /compass /sun                                        /daletdagesh /daletdageshhebrew
+  /dargahebrew /dargalefthebrew                        /dbllowline /underscoredbl
+  /dcroat /dmacron                                     /decimalseparatorarabic /decimalseparatorpersian
+  /dialytikatonos /dieresistonos                       /dkshade /shadedark
+  /dotbelowcmb /dotbelowcomb                           /edot /edotaccent
+  /eighthnotebeamed /musicalnotedbl                    /etnahtafoukhhebrew /etnahtahebrew
+  /existential /thereexists                            /female /venus
+  /finalkafdagesh /finalkafdageshhebrew                /forall /universal
+  /gcedilla /gcommaaccent                              /gdot /gdotaccent
+  /gimeldagesh /gimeldageshhebrew                      /gradient /nabla
+  /gravecmb /gravecomb                                 /haaltonearabic /hehaltonearabic
+  /heart /heartsuitblack                               /hedagesh /hedageshhebrew
+  /hehfinalalttwoarabic /hehfinalarabic                /hookabovecomb /hookcmb
+  /ilde /tilde                                         /integralbottom /integralbt
+  /integraltop /integraltp                             /invcircle /whitecircleinverse
+  /kafdagesh /kafdageshhebrew                          /kcedilla /kcommaaccent
+  /lameddagesh /lameddageshhebrew                      /lcedilla /lcommaaccent
+  /ldot /ldotaccent                                    /logicalnotreversed /revlogicalnot
+  /longs /slong                                        /ltshade /shadelight
+  /macron /overscore                                   /mahapakhhebrew /mahapakhlefthebrew
+  /male /mars                                          /memdagesh /memdageshhebrew
+  /merkhahebrew /merkhalefthebrew                      /merkhakefulahebrew /merkhakefulalefthebrew
+  /middot /periodcentered                              /mu /mu1
+  /munahhebrew /munahlefthebrew                        /napostrophe /quoterightn
+  /nbspace /nonbreakingspace                           /ncedilla /ncommaaccent
+  /notelement /notelementof                            /nundagesh /nundageshhebrew
+  /odblacute /ohungarumlaut                            /omega1 /pisymbolgreek
+  /openbullet /whitebullet                             /orthogonal /rightangle
+  /oslashacute /ostrokeacute                           /pedagesh /pedageshhebrew
+  /phi1 /phisymbolgreek                                /propersubset /subset
+  /propersuperset /superset                            /qofdagesh /qofdageshhebrew
+  /quoteleftreversed /quotereversed                    /rcedilla /rcommaaccent
+  /reflexsubset /subsetorequal                         /reflexsuperset /supersetorequal
+  /reviahebrew /reviamugrashhebrew                     /samekhdagesh /samekhdageshhebrew
+  /sfthyphen /softhyphen                               /shade /shademedium
+  /sheqel /sheqelhebrew                                /shindagesh /shindageshhebrew
+  /shindageshshindot /shindageshshindothebrew          /shindageshsindot /shindageshsindothebrew
+  /sigma1 /sigmafinal                                  /similar /tildeoperator
+  /smileface /whitesmilingface                         /space /spacehackarabic
+  /spade /spadesuitblack                               /tavdages /tavdagesh
+  /tcedilla /tcommaaccent                              /tetdagesh /tetdageshhebrew
+  /tevirhebrew /tevirlefthebrew                        /theta1 /thetasymbolgreek
+  /thousandsseparatorarabic /thousandsseparatorpersian /tildecmb /tildecomb
+  /tipehahebrew /tipehalefthebrew                      /tsadidagesh /tsadidageshhebrew
+  /twodotenleader /twodotleader                        /udblacute /uhungarumlaut
+  /yerahbenyomohebrew /yerahbenyomolefthebrew          /yoddagesh /yoddageshhebrew
+  /zayindagesh /zayindageshhebrew                      /zdot /zdotaccent
 .dicttomark readonly def
 
 % - .charkeys /CharStrings <charstrings> /Encoding <encoding>
@@ -1359,8 +1359,8 @@ mark
   TTFDEBUG {
     (glyphencoding: length=) print glyphencoding dup length = === flush
   } if
-		% Hack: if there is no usable post table but the cmap uses
-		% the Microsoft Unicode encoding, use ISOLatin1Encoding.
+                % Hack: if there is no usable post table but the cmap uses
+                % the Microsoft Unicode encoding, use ISOLatin1Encoding.
      % if 'post' presents, .charkeys computes (with dropping minor details) :
      %     CharStrings = glyphencoding^-1
      %     Encoding = cmap*glyphencoding
@@ -1368,7 +1368,7 @@ mark
      % Otherwise .charkeys must compute (with dropping same details) :
      %     CharStrings = glyphencoding^-1 * cmap
      %     Encoding = glyphencoding
-     % because glyphencoding is stubbed with an encoding, 
+     % because glyphencoding is stubbed with an encoding,
      % which maps char codes to glyph names.
   glyphencoding length 0 eq {
     /have_post //false def
@@ -1382,8 +1382,8 @@ mark
   } {
     /have_post //true def
   } ifelse
-		% If necessary, fabricate additional glyphencoding entries
-		% to cover all of loca
+                % If necessary, fabricate additional glyphencoding entries
+                % to cover all of loca
   glyphencoding length numloca lt {
     /glyphencoding numloca array
       glyphencoding length dup 1 sub 0 1 3 2 roll {
@@ -1397,16 +1397,16 @@ mark
     def
   } if
   /cmapa cmaptab cmaparray def
-		% Some badly designed Chinese fonts have a post table
-		% in which all glyphs other than 0 are named .null.
-		% Use CharStrings to keep track of the reverse map from
-		% names to glyphs, and don't let any name be used for
-		% more than one glyph.
+                % Some badly designed Chinese fonts have a post table
+                % in which all glyphs other than 0 are named .null.
+                % Use CharStrings to keep track of the reverse map from
+                % names to glyphs, and don't let any name be used for
+                % more than one glyph.
   /CharStrings glyphencoding dup length 1 add dict	% +1 for .notdef
     0 1 3 index length 1 sub {
-		% Stack: glyphencoding dict index
-      2 index 1 index get 
-      have_post not { 
+                % Stack: glyphencoding dict index
+      2 index 1 index get
+      have_post not {
         exch
         cmapa exch .knownget not {
           0   % a stub for a while. Must skip the entry.
@@ -1416,15 +1416,15 @@ mark
       2 index 1 index known
       { % The same name maps to more than one glyph. Change the name.
         % No special treatment for /.notdef glyph. Bug 689408.
-       	pop dup .nname 3 index 2 index 2 index put
+        pop dup .nname 3 index 2 index 2 index put
         2 index exch 3 -1 roll put
       } {
         2 index exch 3 -1 roll put	% unique name
       } ifelse
     } for exch pop
-		% If there is no .notdef entry, map it to glyph 0.
+                % If there is no .notdef entry, map it to glyph 0.
   dup /.notdef known not { dup /.notdef 0 put } if
-  TTFDEBUG { 
+  TTFDEBUG {
     (CharStrings:)= dup { exch =string cvs print ( ) print //== exec } forall
   } if
   //postalias {
@@ -1435,11 +1435,11 @@ mark
       pop pop pop	% both names known or neither known
     } {
       % Stack: CharStrings(dict) /name1 /name2 name1_known(bool)
-      { exch } if		% /name1 known -- we need it on top 
+      { exch } if		% /name1 known -- we need it on top
       % Stack: CharStrings(dict) /alias_name /known_name
       TTFDEBUG { (setting alias: ) print 1 index ==only ( to be the same as glyph: ) print dup //== exec } if
       2 index exch get 2 index 3 1 roll put
-    } ifelse  
+    } ifelse
   } forall
   readonly
   /Encoding [
@@ -1490,12 +1490,12 @@ currentdict /postalias undef
 /.fill_identity_cmap {             % () v
   1 index length 2 sub          % () v n-2
   0 2 3 2 roll {                % () v 0 2 n-1
-      3 copy exch               % () v i () i v 
+      3 copy exch               % () v i () i v
       -8 bitshift               % () v i () i v>>8
       put                       % () v i
       3 copy 1 add              % () v i () v i+1
       exch 255 and              % () v i () i+1 v&255
-      put                       % () v i 
+      put                       % () v i
       pop 1 add                 % () v+1
   } for
   pop
@@ -1506,14 +1506,14 @@ currentdict /postalias undef
   dup begin
   /CIDFontName fontname def
   /CIDFontType 2 def
-  /CIDSystemInfo mark 
+  /CIDSystemInfo mark
     /Registry (Adobe)
     /Ordering (Japan1)		% adhoc
     /Supplement 0
   .dicttomark def
   /CharStrings mark /.notdef 0 .dicttomark def
-		% The cmap isn't of any use even if it is present.
-		% Just construct an identity CIDMap covering all the glyphs.
+                % The cmap isn't of any use even if it is present.
+                % Just construct an identity CIDMap covering all the glyphs.
 
   /CIDCount numloca % Wrong if a CIDFontType2 embedded into PDF with a non-Identity CIDToGIDMap.
   def               % processCIDToGIDMap may replace.
@@ -1539,12 +1539,12 @@ currentdict /postalias undef
   exch
   //false 0 .loadttfonttables
   .makesfnts
-	% CIDFontType2 fonts don't have a cmap: they are indexed by CID.
+        % CIDFontType2 fonts don't have a cmap: they are indexed by CID.
   mark
   .ttkeys
   .dicttomark dup              % convert keys to dict and copy dict
   3 -1 roll                    % Bring PDF substitute name to top of stack
-  
+
   dup
   /fontname exch def
   /FontName exch put           % replace any definition of /FontName
@@ -1565,7 +1565,7 @@ currentdict /postalias undef
   /file_table_pos file_table_pos
   /Decoding Decoding
   .dicttomark
-  end end 
+  end end
 } bind def
 
 % ---------------- PDF TrueType font loading ---------------- %
@@ -1578,17 +1578,17 @@ currentdict /postalias undef
 % <plat+enc> .findcmap false
 /.findcmap {
   //false exch tabdict /cmap get
-		% Some fonts have multiple cmaps with the same platform and
-		% encoding.  Use the first one we find.
+                % Some fonts have multiple cmaps with the same platform and
+                % encoding.  Use the first one we find.
   0 1 2 index 2 getu16a 1 sub {
-		% Stack: false plat+enc cmap index
+                % Stack: false plat+enc cmap index
     8 mul 4 add 1 index exch 8 getinterval_from_stringarray
     dup 0 4 getinterval 3 index eq {
       4 getu32 1 index exch 1 index string_array_size 1 index sub getinterval_from_stringarray
       4 -1 roll not 4 2 roll exit
     } if pop
   } for
-		% Stack: false plat+enc cmap || subtable true plat+enc cmap
+                % Stack: false plat+enc cmap || subtable true plat+enc cmap
   pop pop
 } bind def
 
@@ -1615,7 +1615,7 @@ currentdict /postalias undef
 {
   /.GS_extended_SymbolEncoding 256 array
   //.symbol_list {
-    exch 2 index 3 1 roll put  
+    exch 2 index 3 1 roll put
   } forall
   .defineencoding
 } bind exec
@@ -1626,7 +1626,7 @@ currentdict /postalias undef
   dup 48 ge exch
   dup 57 le exch
   dup 65 ge exch
-  70 le and 
+  70 le and
   3 1 roll
   and or
 } bind def
@@ -1636,11 +1636,11 @@ currentdict /postalias undef
 
 /.addglyph {  % <dict> <name> <glyph#> .addglyph -
   1 index .namestring     % d n g s
-  dup length 7 eq { 
+  dup length 7 eq {
     % Bug688467.ps doesn't work if the uniXXXX mapping is allowed with any cmap.
     % Allow it with cmap 3.1 only.
-    currentdict /.allow_uniXXXX_glyph_names .knownget not { //false } if 
-    } { //false 
+    currentdict /.allow_uniXXXX_glyph_names .knownget not { //false } if
+    } { //false
     } ifelse              % d n g s b
   {
     % An undocumented Adobe feature (not sure) :
@@ -1658,7 +1658,7 @@ currentdict /postalias undef
       dup 4 1 getinterval .hexdigits exch search pop length exch pop exch pop  8 bitshift exch
       dup 5 1 getinterval .hexdigits exch search pop length exch pop exch pop  4 bitshift exch
       dup 6 1 getinterval .hexdigits exch search pop length exch pop exch pop exch pop
-      add add add 
+      add add add
 
       cmapencoding exch .knownget not { 0 } if
       dup 0 eq //.popfex if
@@ -1745,7 +1745,7 @@ currentdict /postalias undef
 
 % - .pdfcharkeys /CharStrings <charstrings> /Encoding <encoding>
 /.pdfcharkeys {
-	% The following algorithms are per the PDF 1.7 Reference.
+        % The following algorithms are per the PDF 1.7 Reference.
   TTFDEBUG { (.pdfcharkeys beg) = } if
   is_symbolic {
     <00030000> .findcmap { //true } { <00010000> .findcmap } ifelse {
@@ -1760,10 +1760,10 @@ currentdict /postalias undef
       % prebuilt_encoding otherwise try the 3,0 cmap.
       prebuilt_encoding //null ne {
         //false prebuilt_encoding {	% false means no missing glyphs
-	  4 index exch known not { pop //true exit } if
+          4 index exch known not { pop //true exit } if
         } forall
         {
-	  (   **** Warning: Encoding derived from 'post' is incomplete.\n) pdfformaterror
+          (   **** Warning: Encoding derived from 'post' is incomplete.\n) pdfformaterror
         } if
       } if
     } ifelse
@@ -1778,7 +1778,7 @@ currentdict /postalias undef
         % is replaced by UCS2 charcode from AdobeGlyphList. Otherwise it is left
         % as in /prebuilt_encoding[]. /.pdfmapchars should dredge them.
 
-  	/.allow_uniXXXX_glyph_names //true def
+        /.allow_uniXXXX_glyph_names //true def
         AdobeGlyphList prebuilt_encoding .invert_encoding dup {    % <<AGL>> <<pbe>> <glyphname> <pbecode>
           pop                                                      % <<AGL>> <<pbe>> <glyphname>
           TTFDEBUG { (check glypname /) print dup =only flush } if
@@ -1798,16 +1798,16 @@ currentdict /postalias undef
       } {
         % Likely this branch is now obsolete.
         TTFDEBUG { (Using cmap 3.1 for non-symbolic.) = } if
-        AdobeGlyphList .pdfmapchars 
+        AdobeGlyphList .pdfmapchars
         /Encoding /WinAnsiEncoding .findencoding
-          % WinAnsiEncoding is just a stub here. 
+          % WinAnsiEncoding is just a stub here.
           % It will be replaced with one from font resource,
           % because PDF spec requires it.
       } ifelse
     } {
       <00010000> .findcmap {
         TTFDEBUG { (Using cmap 1.0 for non-symbolic.) = } if
-	.romanmacdict .pdfmapchars 
+        .romanmacdict .pdfmapchars
         /Encoding
         prebuilt_encoding //null ne {
           prebuilt_encoding
@@ -1816,7 +1816,7 @@ currentdict /postalias undef
         } ifelse
       } {
         % Apply the default algorithm for using the 'post'.
-	.charkeys
+        .charkeys
         % But use PDF encoding when available.
         prebuilt_encoding //null ne {
           pop prebuilt_encoding

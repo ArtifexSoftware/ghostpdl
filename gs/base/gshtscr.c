@@ -182,7 +182,7 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
 /* Forward references */
 static int pick_cell_size(gs_screen_halftone * ph,
      const gs_matrix * pmat, ulong max_size, uint min_levels, bool accurate,
-			   gx_ht_cell_params_t * phcp);
+                           gx_ht_cell_params_t * phcp);
 
 /* Allocate a screen enumerator. */
 gs_screen_enum *
@@ -420,18 +420,18 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 
                 {
                     /*
-		     * Compute the error in position between ideal location.
-		     * and the current integer location.
-		     */
+                     * Compute the error in position between ideal location.
+                     * and the current integer location.
+                     */
 
-		    double error =
-			(fn0 - p.N) * (fn0 - p.N) + (fm0 - p.M) * (fm0 - p.M);
-		    /*
-		     * Adjust the error by the length of the vector.  This gives
-		     * a slight bias toward larger cell sizzes.
-		     */
-		    error /= p.N * p.N + p.M * p.M;
-		    error = sqrt(error); /* The previous calcs. gave value squared */
+                    double error =
+                        (fn0 - p.N) * (fn0 - p.N) + (fm0 - p.M) * (fm0 - p.M);
+                    /*
+                     * Adjust the error by the length of the vector.  This gives
+                     * a slight bias toward larger cell sizzes.
+                     */
+                    error /= p.N * p.N + p.M * p.M;
+                    error = sqrt(error); /* The previous calcs. gave value squared */
                     if (error > e_best)
                         continue;
                     e_best = error;
@@ -493,44 +493,44 @@ gs_screen_enum_init_memory(gs_screen_enum * penum, const gx_ht_order * porder,
     penum->x = penum->y = 0;
 
     if (porder->wse == NULL) {
-	penum->strip = porder->num_levels / porder->width;
-	penum->shift = porder->shift;
-	/*
-	 * We want a transformation matrix that maps the parallelogram
-	 * (0,0), (U,V), (U-V',V+U'), (-V',U') to the square (+/-1, +/-1).
-	 * If the coefficients are [a b c d e f] and we let
-	 *      u = U = M/R, v = V = N/R,
-	 *      r = -V' = -N'/R', s = U' = M'/R',
-	 * then we just need to solve the equations:
-	 *      a*0 + c*0 + e = -1      b*0 + d*0 + f = -1
-	 *      a*u + c*v + e = 1       b*u + d*v + f = 1
-	 *      a*r + c*s + e = -1      b*r + d*s + f = 1
-	 * This has the following solution:
-	 *      Q = 2 / (M*M' + N*N')
-	 *      a = Q * R * M'
-	 *      b = -Q * R' * N
-	 *      c = Q * R * N'
-	 *      d = Q * R' * M
-	 *      e = -1
-	 *      f = -1
-	 */
-	{
-	    const int M = porder->params.M, N = porder->params.N, R = porder->params.R;
-	    const int M1 = porder->params.M1, N1 = porder->params.N1, R1 = porder->params.R1;
-	    double Q = 2.0 / ((long)M * M1 + (long)N * N1);
+        penum->strip = porder->num_levels / porder->width;
+        penum->shift = porder->shift;
+        /*
+         * We want a transformation matrix that maps the parallelogram
+         * (0,0), (U,V), (U-V',V+U'), (-V',U') to the square (+/-1, +/-1).
+         * If the coefficients are [a b c d e f] and we let
+         *      u = U = M/R, v = V = N/R,
+         *      r = -V' = -N'/R', s = U' = M'/R',
+         * then we just need to solve the equations:
+         *      a*0 + c*0 + e = -1      b*0 + d*0 + f = -1
+         *      a*u + c*v + e = 1       b*u + d*v + f = 1
+         *      a*r + c*s + e = -1      b*r + d*s + f = 1
+         * This has the following solution:
+         *      Q = 2 / (M*M' + N*N')
+         *      a = Q * R * M'
+         *      b = -Q * R' * N
+         *      c = Q * R * N'
+         *      d = Q * R' * M
+         *      e = -1
+         *      f = -1
+         */
+        {
+            const int M = porder->params.M, N = porder->params.N, R = porder->params.R;
+            const int M1 = porder->params.M1, N1 = porder->params.N1, R1 = porder->params.R1;
+            double Q = 2.0 / ((long)M * M1 + (long)N * N1);
 
-	    penum->mat.xx = Q * (R * M1);
-	    penum->mat.xy = Q * (-R1 * N);
-	    penum->mat.yx = Q * (R * N1);
-	    penum->mat.yy = Q * (R1 * M);
-	    penum->mat.tx = -1.0;
-	    penum->mat.ty = -1.0;
-	    gs_matrix_invert(&penum->mat, &penum->mat_inv);
-	}
-	if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
-		  porder->width, porder->height, porder->params.R,
-		  penum->mat.xx, penum->mat.xy,
-		  penum->mat.yx, penum->mat.yy);
+            penum->mat.xx = Q * (R * M1);
+            penum->mat.xy = Q * (-R1 * N);
+            penum->mat.yx = Q * (R * N1);
+            penum->mat.yy = Q * (R1 * M);
+            penum->mat.tx = -1.0;
+            penum->mat.ty = -1.0;
+            gs_matrix_invert(&penum->mat, &penum->mat_inv);
+        }
+        if_debug7('h', "[h]Screen: (%dx%d)/%d [%f %f %f %f]\n",
+                  porder->width, porder->height, porder->params.R,
+                  penum->mat.xx, penum->mat.xy,
+                  penum->mat.yx, penum->mat.yy);
     }
     return 0;
 }
@@ -545,9 +545,9 @@ gs_screen_currentpoint(gs_screen_enum * penum, gs_point * ppt)
     gs_point spot_center; /* device coords */
 
     if (penum->order.wse) {
-	int code;
-	code = gs_wts_screen_enum_currentpoint(penum->order.wse, ppt);
-	return code;
+        int code;
+        code = gs_wts_screen_enum_currentpoint(penum->order.wse, ppt);
+        return code;
     }
 
     if (penum->y >= penum->strip) {     /* all done */
@@ -595,28 +595,28 @@ int
 gs_screen_next(gs_screen_enum * penum, floatp value)
 {
     if (penum->order.wse) {
-	return gs_wts_screen_enum_next (penum->order.wse, value);
+        return gs_wts_screen_enum_next (penum->order.wse, value);
     } else {
-	ht_sample_t sample;
-	int width = penum->order.width;
-	gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
+        ht_sample_t sample;
+        int width = penum->order.width;
+        gx_ht_bit *bits = (gx_ht_bit *)penum->order.bit_data;
 
-	if (value < -1.0 || value > 1.0)
-	    return_error(gs_error_rangecheck);
-	sample = (ht_sample_t) ((value + 1) * max_ht_sample);
+        if (value < -1.0 || value > 1.0)
+            return_error(gs_error_rangecheck);
+        sample = (ht_sample_t) ((value + 1) * max_ht_sample);
 #ifdef DEBUG
-	if (gs_debug_c('H')) {
-	    gs_point pt;
+        if (gs_debug_c('H')) {
+            gs_point pt;
 
-	    gs_screen_currentpoint(penum, &pt);
-	    dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
-		      penum->x, penum->y, pt.x, pt.y, value, sample);
-	}
+            gs_screen_currentpoint(penum, &pt);
+            dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
+                      penum->x, penum->y, pt.x, pt.y, value, sample);
+        }
 #endif
-	bits[penum->y * width + penum->x].mask = sample;
-	if (++(penum->x) >= width)
-	    penum->x = 0, ++(penum->y);
-	return 0;
+        bits[penum->y * width + penum->x].mask = sample;
+        if (++(penum->x) >= width)
+            penum->x = 0, ++(penum->y);
+        return 0;
     }
 }
 

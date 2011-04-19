@@ -69,7 +69,7 @@ gslt_identify_font_encoding(gslt_font_t *xf, int idx, int *pid, int *eid)
     byte *cmapdata, *entry;
     if (idx < 0 || idx >= xf->cmapsubcount)
         return -1;
-	cmapdata = xf->data + xf->cmaptable;
+        cmapdata = xf->data + xf->cmaptable;
     entry = cmapdata + 4 + idx * 8;
     *pid = u16(entry + 0);
     *eid = u16(entry + 2);
@@ -165,34 +165,34 @@ gslt_encode_font_char_int(gslt_font_t *xf, int code)
         }
 
     case 10: /* Trimmed array (like 6) */
-	{
-	    int startCharCode = u32(table + 12);
-	    int numChars = u32(table + 16);
-	    if ( code < startCharCode || code >= startCharCode + numChars )
-		return 0;
-	    return u32(table + 20 + (code - startCharCode) * 4);
-	}
+        {
+            int startCharCode = u32(table + 12);
+            int numChars = u32(table + 16);
+            if ( code < startCharCode || code >= startCharCode + numChars )
+                return 0;
+            return u32(table + 20 + (code - startCharCode) * 4);
+        }
 
     case 12: /* Segmented coverage. (like 4) */
-	{
-	    int nGroups = u32(table + 12);
-	    byte *group = table + 16;
-	    int i;
+        {
+            int nGroups = u32(table + 12);
+            byte *group = table + 16;
+            int i;
 
-	    for (i = 0; i < nGroups; i++)
-	    {
-		int startCharCode = u32(group + 0);
-		int endCharCode = u32(group + 4);
-		int startGlyphID = u32(group + 8);
-		if ( code < startCharCode )
-		    return 0;
-		if ( code <= endCharCode )
-		    return startGlyphID + (code - startCharCode);
-		group += 12;
-	    }
+            for (i = 0; i < nGroups; i++)
+            {
+                int startCharCode = u32(group + 0);
+                int endCharCode = u32(group + 4);
+                int startGlyphID = u32(group + 8);
+                if ( code < startCharCode )
+                    return 0;
+                if ( code <= endCharCode )
+                    return startGlyphID + (code - startCharCode);
+                group += 12;
+            }
 
-	    return 0;
-	}
+            return 0;
+        }
 
     case 2: /* High-byte mapping through table. */
     case 8: /* Mixed 16-bit and 32-bit coverage (like 2) */
@@ -209,7 +209,6 @@ gslt_encode_font_char(gslt_font_t *xf, int code)
 {
     int gid = gslt_encode_font_char_int(xf, code);
     if (gid == 0 && xf->usepua)
-	gid = gslt_encode_font_char_int(xf, 0xF000 | code);
+        gid = gslt_encode_font_char_int(xf, 0xF000 | code);
     return gid;
 }
-

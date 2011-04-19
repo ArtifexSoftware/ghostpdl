@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,20 +43,20 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     check_array(op[-4]);
     msize = r_size(op - 4);
     switch (msize) {
-	case 10:
-	    long_form = true;
-	    break;
-	case 6:
-	    long_form = false;
-	    break;
-	default:
-	    return_error(e_rangecheck);
+        case 10:
+            long_form = true;
+            break;
+        case 6:
+            long_form = false;
+            break;
+        default:
+            return_error(e_rangecheck);
     }
     code = num_params(op[-4].value.refs + msize - 1, msize, metrics);
     if (code < 0)
-	return code;
+        return code;
     if (~code & 0x3c)		/* check llx .. ury for integers */
-	return_error(e_typecheck);
+        return_error(e_typecheck);
     check_read_type(op[-3], t_string);
     llx = (int)metrics[2];
     lly = (int)metrics[3];
@@ -66,41 +66,41 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     height = ury - lly;
     raster = (width + 7) >> 3;
     if (width < 0 || height < 0 || r_size(op - 3) != raster * height)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     check_int_leu(op[-2], 65535);
     code = font_param(op - 1, &pfont);
     if (code < 0)
-	return code;
+        return code;
     if (pfont->FontType != ft_CID_bitmap)
-	return_error(e_invalidfont);
+        return_error(e_invalidfont);
     check_write_type(*op, t_string);
     if (r_size(op) < 22)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     str = op->value.bytes;
     if (long_form || metrics[0] != (wx = (int)metrics[0]) ||
-	metrics[1] != 0 || height == 0 ||
-	((wx | width | height | (llx + 128) | (lly + 128)) & ~255) != 0
-	) {
-	/* Use the long form. */
-	int i, n = (long_form ? 10 : 6);
+        metrics[1] != 0 || height == 0 ||
+        ((wx | width | height | (llx + 128) | (lly + 128)) & ~255) != 0
+        ) {
+        /* Use the long form. */
+        int i, n = (long_form ? 10 : 6);
 
-	str[0] = 0;
-	str[1] = long_form;
-	for (i = 0; i < n; ++i) {
-	    int v = (int)metrics[i];  /* no floating point widths yet */
+        str[0] = 0;
+        str[1] = long_form;
+        for (i = 0; i < n; ++i) {
+            int v = (int)metrics[i];  /* no floating point widths yet */
 
-	    str[2 + 2 * i] = (byte)(v >> 8);
-	    str[2 + 2 * i + 1] = (byte)v;
-	}
-	r_set_size(op, 2 + n * 2);
+            str[2 + 2 * i] = (byte)(v >> 8);
+            str[2 + 2 * i + 1] = (byte)v;
+        }
+        r_set_size(op, 2 + n * 2);
     } else {
-	/* Use the short form. */
-	str[0] = (byte)width;
-	str[1] = (byte)height;
-	str[2] = (byte)wx;
-	str[3] = (byte)(llx + 128);
-	str[4] = (byte)(lly + 128);
-	r_set_size(op, 5);
+        /* Use the short form. */
+        str[0] = (byte)width;
+        str[1] = (byte)height;
+        str[2] = (byte)wx;
+        str[3] = (byte)(llx + 128);
+        str[4] = (byte)(lly + 128);
+        r_set_size(op, 5);
     }
     return code;
 }
@@ -116,8 +116,8 @@ select_cid_range(const gs_memory_t *mem, cached_char * cc, void *range_ptr)
     const font_cid_range_t *range = range_ptr;
 
     return (cc->code >= range->cid_min &&
-	    cc->code <= range->cid_max &&
-	    cc->pair->font == range->font);
+            cc->code <= range->cid_max &&
+            cc->pair->font == range->font);
 }
 static int
 zremoveglyphs(i_ctx_t *i_ctx_p)
@@ -130,13 +130,13 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
     check_int_leu(op[-1], 65535);
     code = font_param(op, &range.font);
     if (code < 0)
-	return code;
+        return code;
     if (range.font->FontType != ft_CID_bitmap)
-	return_error(e_invalidfont);
+        return_error(e_invalidfont);
     range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
     range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
     gx_purge_selected_cached_chars(range.font->dir, select_cid_range,
-				   &range);
+                                   &range);
     pop(3);
     return 0;
 }
@@ -156,39 +156,39 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
     data = op->value.const_bytes;
     size = r_size(op);
     if (size < 5)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     if (data[0]) {
-	/* Short form. */
-	int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
+        /* Short form. */
+        int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
 
-	n = 6;
-	size = 5;
-	push(8);
-	make_int(op - 6, data[2]); /* wx */
-	make_int(op - 5, 0);	/* wy */
-	make_int(op - 4, llx);
-	make_int(op - 3, lly);
-	make_int(op - 2, llx + data[0]); /* urx */
-	make_int(op - 1, lly + data[1]); /* ury */
+        n = 6;
+        size = 5;
+        push(8);
+        make_int(op - 6, data[2]); /* wx */
+        make_int(op - 5, 0);	/* wy */
+        make_int(op - 4, llx);
+        make_int(op - 3, lly);
+        make_int(op - 2, llx + data[0]); /* urx */
+        make_int(op - 1, lly + data[1]); /* ury */
     } else {
-	if (data[1]) {
-	    /* Long form, both WModes. */
-	    if (size < 22)
-		return_error(e_rangecheck);
-	    n = 10;
-	    size = 22;
-	} else {
-	    /* Long form, WMode = 0 only. */
-	    if (size < 14)
-		return_error(e_rangecheck);
-	    n = 6;
-	    size = 14;
-	}
-	push(2 + n);
-	for (i = 0; i < n; ++i)
-	    make_int(op - n + i,
-		     ((int)((data[2 * i + 2] << 8) + data[2 * i + 3]) ^ 0x8000)
-		       - 0x8000);
+        if (data[1]) {
+            /* Long form, both WModes. */
+            if (size < 22)
+                return_error(e_rangecheck);
+            n = 10;
+            size = 22;
+        } else {
+            /* Long form, WMode = 0 only. */
+            if (size < 14)
+                return_error(e_rangecheck);
+            n = 6;
+            size = 14;
+        }
+        push(2 + n);
+        for (i = 0; i < n; ++i)
+            make_int(op - n + i,
+                     ((int)((data[2 * i + 2] << 8) + data[2 * i + 3]) ^ 0x8000)
+                       - 0x8000);
     }
     wop = op - n;
     make_int(wop - 2, wop[4].value.intval - wop[2].value.intval);

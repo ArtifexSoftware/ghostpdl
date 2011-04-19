@@ -35,22 +35,22 @@ int readfile(char *filename, char **datap, int *lengthp)
     fp = fopen(filename, "rb");
     if (!fp) {
         printf("cannot open font file\n");
-	return 1;
+        return 1;
     }
     t = fseek(fp, 0, 2);
     if (t < 0)
     {
         fclose(fp);
-	printf("cannot seek in font file\n");
-	return 1;
+        printf("cannot seek in font file\n");
+        return 1;
     }
 
     n = ftell(fp);
     if (n < 0)
     {
         fclose(fp);
-	printf("cannot tell in font file\n");
-	return 1;
+        printf("cannot tell in font file\n");
+        return 1;
     }
 
     t = fseek(fp, 0, 0);
@@ -58,15 +58,15 @@ int readfile(char *filename, char **datap, int *lengthp)
     {
         fclose(fp);
         printf("cannot seek in font file\n");
-	return 1;
+        return 1;
     }
 
     p = malloc(n);
     if (!p)
     {
         fclose(fp);
-	printf("out of memory\n");
-	return 1;
+        printf("out of memory\n");
+        return 1;
     }
 
     t = fread(p, 1, n, fp);
@@ -74,8 +74,8 @@ int readfile(char *filename, char **datap, int *lengthp)
     {
         free(p);
         fclose(fp);
-	printf("cannot read font file data\n");
-	return 1;
+        printf("cannot read font file data\n");
+        return 1;
     }
 
     t = fclose(fp);
@@ -158,8 +158,8 @@ main(int argc, const char *argv[])
     if (argc < 2)
     {
         filename = "/Users/tor/src/work/gslite/TrajanPro-Regular.otf";
-	// filename = "/Users/tor/src/work/gslite/GenR102.TTF";
-	// return gs_throw(1, "usage: gslt_font_api_test font.otf [subfontid]");
+        // filename = "/Users/tor/src/work/gslite/GenR102.TTF";
+        // return gs_throw(1, "usage: gslt_font_api_test font.otf [subfontid]");
     }
     else
     {
@@ -168,14 +168,14 @@ main(int argc, const char *argv[])
 
     subfontid = 0;
     if (argc == 3)
-	subfontid = atoi(argv[2]);
+        subfontid = atoi(argv[2]);
 
     printf("Loading font '%s' subfont %d.\n", filename, subfontid);
 
     n = readfile(filename, &buf, &len);
     if (n < 0) {
         printf("cannot read font file '%s'", filename);
-	return 1;
+        return 1;
     }
 
     /*
@@ -185,7 +185,6 @@ main(int argc, const char *argv[])
     // gslt_get_device_param(mem, dev, "Name");
     gslt_set_device_param(mem, dev, "OutputFile", "-");
 
-
     /*
      * Create a font cache
      */
@@ -193,7 +192,7 @@ main(int argc, const char *argv[])
     cache = gslt_new_font_cache(mem);
     if (!cache) {
         printf("cannot create font cache\n");
-	return 1;
+        return 1;
     }
 
     /*
@@ -203,33 +202,33 @@ main(int argc, const char *argv[])
     font = gslt_new_font(mem, cache, buf, len, subfontid);
     if (!font) {
         printf("cannot create font");
-	return 1;
+        return 1;
     }
 
     static struct { int pid, eid; } xps_cmap_list[] =
     {
-	{ 3, 10 },	/* Unicode with surrogates */
-	{ 3, 1 },	/* Unicode without surrogates */
-	{ 3, 5 },	/* Wansung */
-	{ 3, 4 },	/* Big5 */
-	{ 3, 3 },	/* Prc */
-	{ 3, 2 },	/* ShiftJis */
-	{ 3, 0 },	/* Symbol */
-	// { 0, * }, -- Unicode (deprecated)
-	{ 1, 0 },
-	{ -1, -1 },
+        { 3, 10 },	/* Unicode with surrogates */
+        { 3, 1 },	/* Unicode without surrogates */
+        { 3, 5 },	/* Wansung */
+        { 3, 4 },	/* Big5 */
+        { 3, 3 },	/* Prc */
+        { 3, 2 },	/* ShiftJis */
+        { 3, 0 },	/* Symbol */
+        // { 0, * }, -- Unicode (deprecated)
+        { 1, 0 },
+        { -1, -1 },
     };
 
     n = gslt_count_font_encodings(font);
     best = -1;
     for (k = 0; xps_cmap_list[k].pid != -1; k++)
     {
-	for (i = 0; i < n; i++)
-	{
-	    gslt_identify_font_encoding(font, i, &pid, &eid);
-	    if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
-		goto found_cmap;
-	}
+        for (i = 0; i < n; i++)
+        {
+            gslt_identify_font_encoding(font, i, &pid, &eid);
+            if (pid == xps_cmap_list[k].pid && eid == xps_cmap_list[k].eid)
+                goto found_cmap;
+        }
     }
     gs_throw(-1, "could not find a suitable cmap");
     return 1;
@@ -257,7 +256,7 @@ found_cmap:
     /*
      * Test bitmap rendering.
      */
-    
+
     printf("getting bitmaps\n");
 
     text = "Pack my box with five dozen liquor jugs!";
@@ -274,10 +273,10 @@ text = "This";
     {
         int gid = gslt_encode_font_char(font, *s);
 
-	if (s == text)
-	    gid = 2119;
+        if (s == text)
+            gid = 2119;
 
-	printf("char '%c' -> glyph %d\n", *s, gid);
+        printf("char '%c' -> glyph %d\n", *s, gid);
 
         code = gslt_measure_font_glyph(pgs, font, gid, &mtx);
         if (code < 0)
@@ -291,14 +290,14 @@ text = "This";
         if (code < 0)
         {
             printf("error in gslt_render_font_glyph\n");
-	    return 1;
+            return 1;
         }
 
         printf(" -> %dx%d+(%d,%d)\n",
                 slot.w, slot.h,
                 slot.lsb, slot.top);
 
-	gslt_release_font_glyph(mem, &slot);
+        gslt_release_font_glyph(mem, &slot);
     }
 
     /*
@@ -316,4 +315,3 @@ text = "This";
 
     return 0;
 }
-

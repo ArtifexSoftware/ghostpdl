@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,16 +36,15 @@ typedef struct gx_semaphore_s {
 
 gx_semaphore_t *		/* returns a new semaphore, 0 if error */
     gx_semaphore_alloc(
-		       gs_memory_t * memory	/* memory allocator to use */
-		       );
+                       gs_memory_t * memory	/* memory allocator to use */
+                       );
 void
     gx_semaphore_free(
-		      gx_semaphore_t * sema	/* semaphore to delete */
-		      );
+                      gx_semaphore_t * sema	/* semaphore to delete */
+                      );
 
 #define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
 #define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
-
 
 /* ----- Monitor interface ----- */
 /* These have the usual monitor semantics: at init time, */
@@ -57,12 +56,12 @@ typedef struct gx_monitor_s {
 
 gx_monitor_t *			/* returns a new monitor, 0 if error */
     gx_monitor_alloc(
-		     gs_memory_t * memory	/* memory allocator to use */
-		     );
+                     gs_memory_t * memory	/* memory allocator to use */
+                     );
 void
     gx_monitor_free(
-		    gx_monitor_t * mon	/* monitor to delete */
-		    );
+                    gx_monitor_t * mon	/* monitor to delete */
+                    );
 
 #define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
 #define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)

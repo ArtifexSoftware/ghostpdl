@@ -18,7 +18,7 @@
 #include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
 #include "pgmisc.h" /* for hpgl_call */
 #include "gsmemory.h"
-#include "gsrop.h" 
+#include "gsrop.h"
 #include "gscoord.h"
 #include "pcpatxfm.h"
 #include "pcpage.h"
@@ -33,7 +33,7 @@ extern  const pcl_init_t *  pcl_init_table[];
 
 /*
  * ESC % <enum> B
- */ 
+ */
   static int
 rtl_enter_hpgl_mode(
     pcl_args_t *    pargs,
@@ -44,9 +44,9 @@ rtl_enter_hpgl_mode(
 
     /* Note: -1..3 for PCL5c, 0..1 for PCL5 */
     if (i < 0)
-	i = -1;
+        i = -1;
     else if (i > 3)
-	return 0;
+        return 0;
     hpgl_call_mem(pcs->memory, hpgl_clear_current_path(pcs));
     pcs->parse_other = ( int (*)( void *,
                                    pcl_state_t *,
@@ -55,12 +55,12 @@ rtl_enter_hpgl_mode(
 
     /* add the pcl cap to hpgl/2's path */
     if (i == 1) {
-	gs_point    pcl_pt;
+        gs_point    pcl_pt;
 
-	pcl_pt.x = (hpgl_real_t)pcs->cap.x;
-	pcl_pt.y = (hpgl_real_t)pcs->cap.y;
+        pcl_pt.x = (hpgl_real_t)pcs->cap.x;
+        pcl_pt.y = (hpgl_real_t)pcs->cap.y;
         hpgl_add_pcl_point_to_path(pcs, &pcl_pt);
-	hpgl_update_carriage_return_pos(pcs);
+        hpgl_update_carriage_return_pos(pcs);
     }
     hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
     return 0;
@@ -71,7 +71,7 @@ rtl_enter_hpgl_mode(
  * Note that it returns 1 iff it changed the PCL CAP.
  *
  * ESC % <enum> A
- */ 
+ */
   int
 rtl_enter_pcl_mode(
     pcl_args_t *    pargs,
@@ -80,30 +80,30 @@ rtl_enter_pcl_mode(
 {
     int             b = int_arg(pargs) & 1;
 
-    if ( pcs->parse_other == 
-	 (int(*)(void *, pcl_state_t *, stream_cursor_read *))hpgl_process ) {
-        /* 
+    if ( pcs->parse_other ==
+         (int(*)(void *, pcl_state_t *, stream_cursor_read *))hpgl_process ) {
+        /*
          * We were in HP-GL/2 mode.  Destroy the gl/2 polygon path
-	 * and conditionally copy back the cursor position.
+         * and conditionally copy back the cursor position.
          */
-	if (b != 0) {
+        if (b != 0) {
             /* the usual user -> device -> user dance. */
-	    gs_point    pt, dev_pt;
+            gs_point    pt, dev_pt;
 
-	    hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
-	    hpgl_call_mem(pcs->memory, hpgl_get_current_position(pcs, &pt));
-	    hpgl_call_mem(pcs->memory, gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
-	    hpgl_call_mem(pcs->memory, pcl_set_ctm(pcs, true));
-	    hpgl_call_mem(pcs->memory, gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
+            hpgl_call_mem(pcs->memory, hpgl_set_ctm(pcs));
+            hpgl_call_mem(pcs->memory, hpgl_get_current_position(pcs, &pt));
+            hpgl_call_mem(pcs->memory, gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
+            hpgl_call_mem(pcs->memory, pcl_set_ctm(pcs, true));
+            hpgl_call_mem(pcs->memory, gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
 
-	    /* HPGL/2 uses floats for coordinates */
+            /* HPGL/2 uses floats for coordinates */
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
-	    pcs->cap.x = round(pt.x);
-	    pcs->cap.y = round(pt.y);
+            pcs->cap.x = round(pt.x);
+            pcs->cap.y = round(pt.y);
 #undef round
-	}
+        }
     } else
-	  b = 0;
+          b = 0;
 
     pcs->parse_other = 0;
     return b;		/* not 0, see comment above */
@@ -127,15 +127,15 @@ pcl_appletalk_configuration(
     uint            i;
 
     if ((count < 2) || (data[0] == ' '))
-	return e_Range;
+        return e_Range;
 
     /* split the string at the first space */
     for (i = 1; data[i] != ' '; ++i) {
-	if (i == count - 1)
-	    return e_Range;
+        if (i == count - 1)
+            return e_Range;
     }
     if (pcs->configure_appletalk == 0)
-	return 0;
+        return 0;
     return (*pcs->configure_appletalk)(data, i, data + i + 1, count - (i + 1));
 }
 
@@ -153,7 +153,7 @@ pcl_negative_motion(
     int             motion = int_arg(pargs);
 
     if (motion > 1)
-	return e_Range;
+        return e_Range;
 
     /* Currently we can't take any advantage of this.... */
     return 0;
@@ -174,14 +174,14 @@ rtmisc_do_registration(
         0, 'B',
         PCL_COMMAND( "Enter HP-GL/2 Mode",
                      rtl_enter_hpgl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_rtl
+                     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     {
         0, 'A',
-	PCL_COMMAND( "Enter PCL Mode",
+        PCL_COMMAND( "Enter PCL Mode",
                      rtl_enter_pcl_mode,
-		     pca_neg_ok | pca_big_ok | pca_in_rtl
+                     pca_neg_ok | pca_big_ok | pca_in_rtl
                      )
     },
     END_CLASS
@@ -190,16 +190,16 @@ rtmisc_do_registration(
     DEFINE_CLASS('&')
     {
         'b', 'W',
-	PCL_COMMAND( "Appletalk Configuration",
-		     pcl_appletalk_configuration,
-		     pca_bytes
+        PCL_COMMAND( "Appletalk Configuration",
+                     pcl_appletalk_configuration,
+                     pca_bytes
                      )
     },
     {
         'a', 'N',
-	PCL_COMMAND( "Negative Motion",
+        PCL_COMMAND( "Negative Motion",
                      pcl_negative_motion,
-		     pca_neg_error | pca_big_error
+                     pca_neg_error | pca_big_error
                      )
     },
     END_CLASS

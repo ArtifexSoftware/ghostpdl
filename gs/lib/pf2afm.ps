@@ -448,7 +448,6 @@
   } ifelse
 } bind def
 
-
 % pf[ba]filename makeafm -
 /makeafm {
   count 0 eq {(Missing font file name\n) printquit} if
@@ -518,7 +517,6 @@
     .locksafe
   } if
 
-
   pfmn
   isPFB {pfbn}{pfan} ifelse
   printafm
@@ -536,4 +534,3 @@
   }
   {pop}
 ifelse
-

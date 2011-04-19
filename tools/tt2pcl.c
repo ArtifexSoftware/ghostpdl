@@ -79,7 +79,7 @@ typedef struct pcl_segment_s {
 
 #define SYMSET_NUM 1023
 #define SYMSET_LETTER 'Z'
-    
+
 #define NUM_TABLES 8
 /* alphabetical */
 const char *tables[NUM_TABLES] = {
@@ -92,7 +92,6 @@ const char *tables[NUM_TABLES] = {
     "maxp",
     "prep"
 };
-
 
 typedef struct table_directory_s {
     unsigned long sfnt_version; /* should be fixed 16.16 */
@@ -108,7 +107,7 @@ typedef struct table_s {
     unsigned long offset;
     unsigned long length;
 } table_t;
- 
+
 static void
 write_pcl_header()
 {
@@ -160,11 +159,11 @@ write_table_directory()
     td.searchRange = htons(NUM_TABLES * 16);
     td.entrySelector = htons(log2(NUM_TABLES));
     td.rangeShift = htons(0); /* since power of 2 */
-    
+
     stdout_offset += fwrite(&td, 1, sizeof(table_directory_t), stdout);
 }
 
-static int 
+static int
 get_tt_buffer(char *filename, unsigned char **pptt_font_data, unsigned long *size)
 {
 
@@ -192,7 +191,7 @@ get_tt_buffer(char *filename, unsigned char **pptt_font_data, unsigned long *siz
 
 /* offset of table "table_name" */
 static unsigned long
-find_table(const unsigned char *ptt_data, const char *table_name, unsigned long *table_size) 
+find_table(const unsigned char *ptt_data, const char *table_name, unsigned long *table_size)
 {
     unsigned int num_tables;
     const unsigned char *ptt_table_directory;
@@ -211,7 +210,6 @@ find_table(const unsigned char *ptt_data, const char *table_name, unsigned long 
     *table_size = 0;
     return 0;
 }
-
 
 static int
 write_table_entrys(unsigned char *ptt_data)
@@ -260,7 +258,7 @@ write_tables(unsigned char *ptt_data)
             fprintf(stderr, "table %s not found\n", tables[i]);
             exit(EXIT_FAILURE);
         }
-        fprintf(stderr, "writing table %c%c%c%c at %d\n", 
+        fprintf(stderr, "writing table %c%c%c%c at %d\n",
                 tables[i][0], tables[i][1], tables[i][2], tables[i][3], stdout_offset);
         stdout_offset += fwrite(ptt_data+offset, 1, length, stdout);
     }
@@ -299,7 +297,7 @@ write_GT_segment(unsigned char *ptt_data)
     write_table_directory();
     write_table_entrys(ptt_data);
     write_tables(ptt_data);
- 
+
 }
 
 static void
@@ -311,7 +309,6 @@ write_NULL_segment()
     fprintf( stderr, "NULL segment started at %d\n", stdout_offset);
     stdout_offset += fwrite(&NULL_seg, 1, sizeof(pcl_segment_t), stdout);
 }
-
 
 static void
 set_id(char *fontname)
@@ -469,7 +466,6 @@ write_CC_segment()
     stdout_offset += fwrite(&CharacterComplement, 1, 8, stdout);
 }
 
-
 static void
 write_character_descriptor(unsigned char *ptt_data)
 {
@@ -479,13 +475,13 @@ write_character_descriptor(unsigned char *ptt_data)
     unsigned char *start_charp;
     unsigned char *end_charp;
     unsigned char *id_deltap;
-    unsigned char *id_rangeoffsetp;        
+    unsigned char *id_rangeoffsetp;
     unsigned char *glyph_id_arrayp;
     if ( (table = get_mac_glyph_index(ptt_data)) == 0 ) {
         fprintf(stderr, "mac table not found\n");
         exit(EXIT_FAILURE);
     }
-    
+
     segment_count = pl_get_uint16(table + 6) / 2;
     fprintf(stderr, "number of segments %d\n", segment_count);
     end_charp = table + 14;
@@ -518,7 +514,7 @@ write_character_descriptor(unsigned char *ptt_data)
             glyph_data = find_glyph_data(glyph, ptt_data, &glyph_length);
             if (glyph_length == 0)
                 continue;
-            fprintf(stderr,  "contours=%d, minx=%d, miny=%d, maxx=%d, maxy=%d\n", 
+            fprintf(stderr,  "contours=%d, minx=%d, miny=%d, maxx=%d, maxy=%d\n",
                     pl_get_uint16(glyph_data), (short)pl_get_uint16(glyph_data+2),
                     (short)pl_get_uint16(glyph_data+4), (short)pl_get_uint16(glyph_data+6),
                     (short)pl_get_uint16(glyph_data+8));
@@ -536,7 +532,7 @@ write_character_descriptor(unsigned char *ptt_data)
                 int i;
                 for ( i = 0; i < glyph_length; i++ )
                     sum += glyph_data[i];
-                    
+
                 fprintf(stderr, "checksum=%d\n", sum);
             }
             stdout_offset += fwrite(&tt_char_des, 1, sizeof(character_descriptor_t), stdout);
@@ -554,7 +550,7 @@ write_test(unsigned char *ptt_data, char *fontname)
     unsigned char *start_charp;
     unsigned char *end_charp;
     unsigned char *id_deltap;
-    unsigned char *id_rangeoffsetp;        
+    unsigned char *id_rangeoffsetp;
     unsigned char *glyph_id_arrayp;
     int i;
 
@@ -562,7 +558,7 @@ write_test(unsigned char *ptt_data, char *fontname)
         fprintf(stderr, "mac table not found\n");
         exit(EXIT_FAILURE);
     }
-    stdout_offset += fprintf(stdout, "\033(s1P\033(s14V\033(1X");    
+    stdout_offset += fprintf(stdout, "\033(s1P\033(s14V\033(1X");
     segment_count = pl_get_uint16(table + 6) / 2;
     end_charp = table + 14;
     start_charp = end_charp + (segment_count * 2) + 2 /* reservedpad */;
@@ -574,7 +570,6 @@ write_test(unsigned char *ptt_data, char *fontname)
         unsigned short first_char = pl_get_uint16(start_charp + 2 * seg);
         unsigned short last_char = pl_get_uint16(end_charp + 2 * seg);
         unsigned short this_char;
-
 
         // NB doesn't handle 0xffff terminating a segment with valid
         // characters in it - don't think this happens in practice.
@@ -602,7 +597,7 @@ main(int argc, char **argv)
         return -1;
     {
         unsigned long total_bytes =
-            sizeof(pcl_font_header_t) + 
+            sizeof(pcl_font_header_t) +
             sizeof(table_directory_t) +
             sizeof(table_t) * NUM_TABLES +
             total_segments_size(ptt_data) +

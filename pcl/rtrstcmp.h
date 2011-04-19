@@ -82,8 +82,8 @@ typedef struct  pcl_seed_row_s {
  * The array of decompression functions.
  */
 extern void (*const pcl_decomp_proc[9 + 1])(pcl_seed_row_t *pout,
-					const byte *pin,
-					int in_size
+                                        const byte *pin,
+                                        int in_size
                                                  );
 
 #endif			/* rtrstcmp_INCLUDED */

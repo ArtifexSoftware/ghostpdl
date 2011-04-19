@@ -1086,7 +1086,6 @@ int aes_self_test( int verbose )
             printf( "passed\n" );
     }
 
-
     if( verbose != 0 )
         printf( "\n" );
 

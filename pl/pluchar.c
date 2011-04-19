@@ -55,7 +55,6 @@
 #include "shareinc.h"
 #include "gxfapiu.h"
 
-
 /* ---------------- UFST utilities ---------------- */
 
 #define UFST_SCALE  16
@@ -138,9 +137,9 @@ pl_init_fc(
             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     else if (plfont->scaling_technology == plfst_TrueType && plfont->large_sizes) {
-	 pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;
-	 if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
-	     pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
+         pfc->ExtndFlags = EF_FORMAT16_TYPE | EF_GALLEYSEG_TYPE;
+         if ((pfont->WMode & 0x1) != 0)  /* vertical substitution */
+             pfc->ExtndFlags |= EF_VERTSUBS_TYPE;
     }
     pfc->ExtndFlags |= EF_NOUSBOUNDBOX; /* UFST 5.0+ addition */
 
@@ -231,13 +230,13 @@ image_outline_char(
                                           pt[0].x, pt[0].y,
                                           pt[1].x, pt[1].y,
                                           pt[2].x, pt[2].y );
-            }       
+            }
             if (code < 0)
                 return code;
         }
         if ((code = gx_path_close_subpath(ppath)) < 0)
             return code;
-    }               
+    }
     return 0;
 }
 
@@ -252,7 +251,7 @@ pl_ufst_char_width(
     gs_point *          pwidth,
     FONTCONTEXT *       pfc )
 {
-    
+
     UW16                chIdloc = char_code;
     UW16                fontWidth[2];
     int                 status;
@@ -287,7 +286,7 @@ pl_ufst_make_char(
     gs_font *           pfont,
     gs_char             chr,
     FONTCONTEXT *       pfc )
-{       
+{
     gs_imager_state *   pis = (gs_imager_state *)pgs;
     MEM_HANDLE          memhdl;
     UW16                status, chIdloc = chr;
@@ -350,11 +349,11 @@ pl_ufst_make_char(
         wbox[4] = psbm->black_width + wbox[2];
         wbox[5] = psbm->black_depth + wbox[3];
 
-        /* if (status == ERR_fixed_space) 
-         *   we are relying on ufst to 
-         *   send a zero sized image; we then cache the escapements of the space character 
-         *   psbm->bm = psbm->width = psbm->height = 0;  
-         *   note that the outline code can't be reached on ERR_fixed_space 
+        /* if (status == ERR_fixed_space)
+         *   we are relying on ufst to
+         *   send a zero sized image; we then cache the escapements of the space character
+         *   psbm->bm = psbm->width = psbm->height = 0;
+         *   note that the outline code can't be reached on ERR_fixed_space
          */
 
         if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
@@ -426,9 +425,8 @@ pl_ufst_make_char(
         MEMfree(FSA CACHE_POOL, memhdl);
         gs_setmatrix(pgs, &sv_ctm);
         return (code < 0 ? code : 0);
-    }    
+    }
 }
-
 
 /* ---------------- MicroType font support ---------------- */
 /*
@@ -440,7 +438,6 @@ pl_mt_encode_char(gs_font * pfont, gs_char pchr, gs_glyph_space_t not_used)
 {
     return (gs_glyph)pchr;
 }
-
 
 /*
  * Set the current UFST font to be a MicroType font.
@@ -496,10 +493,10 @@ struct pl_glyph_width_node_s {
 pl_glyph_width_node_t *head = NULL;
 /* add at the front of the list */
 
-int 
+int
 pl_glyph_width_cache_node_add(gs_memory_t *mem, gs_id font_id, uint char_code, gs_point *pwidth)
 {
-    pl_glyph_width_node_t *node = 
+    pl_glyph_width_node_t *node =
         (pl_glyph_width_node_t *)gs_alloc_bytes(mem,
                                                sizeof(pl_glyph_width_node_t),
                                                "pl_glyph_width_cache_node_add");
@@ -512,7 +509,7 @@ pl_glyph_width_cache_node_add(gs_memory_t *mem, gs_id font_id, uint char_code, g
         node->next = head;
         head = node;
     }
-    
+
     head->char_code = char_code;
     head->font_id = font_id;
     head->width = *pwidth;
@@ -548,7 +545,6 @@ pl_glyph_width_list_remove(gs_memory_t *mem)
     return;
 }
 
-
 /* Get character existence and escapement for an MicroType font. */
 static int
 pl_mt_char_width(
@@ -568,7 +564,7 @@ pl_mt_char_width(
             return 0;
         code = pl_ufst_char_width(char_code, pgs, pwidth, &fc);
         if ( code == 0 )
-            code = pl_glyph_width_cache_node_add(plfont->pfont->memory, 
+            code = pl_glyph_width_cache_node_add(plfont->pfont->memory,
                                                  plfont->pfont->id,
                                                  char_code, pwidth);
     }
@@ -581,7 +577,7 @@ pl_mt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
     gs_point width;
     metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
     if ( 0 == pl_mt_char_width(plfont, pgs, char_code, &width) ) {
-      /* width is correct, 
+      /* width is correct,
          stefan foo: lsb is missing. */
         metrics[2] = width.x;
         /* metrics[0] = left_side_bearing;
@@ -641,7 +637,7 @@ LPUB8 pl_PCLEO_charptr(LPUB8 pfont_hdr, UW16 char_code)
         return pl_PCLchId2ptr(FSA char_code);
 }
 
-void plu_set_callbacks() 
+void plu_set_callbacks()
 {
    gx_set_UFST_Callbacks(pl_PCLEO_charptr, pl_PCLchId2ptr, pl_PCLglyphID2Ptr);
    /* nothing */
@@ -656,4 +652,3 @@ pl_mt_init_procs(gs_font_base *pfont)
         plfont->char_metrics = pl_mt_char_metrics;
 #undef plfont
 }
-

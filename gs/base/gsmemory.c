@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -56,25 +56,25 @@ void
 reloc_bytestring(gs_bytestring *pbs, gc_state_t *gcst)
 {
     if (pbs->bytes) {
-	byte *bytes = pbs->bytes;
-	long offset = pbs->data - bytes;
+        byte *bytes = pbs->bytes;
+        long offset = pbs->data - bytes;
 
-	pbs->bytes = bytes = RELOC_OBJ(bytes);
-	pbs->data = bytes + offset;
+        pbs->bytes = bytes = RELOC_OBJ(bytes);
+        pbs->data = bytes + offset;
     } else
-	RELOC_STRING_VAR(*(gs_string *)pbs);
+        RELOC_STRING_VAR(*(gs_string *)pbs);
 }
 void
 reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst)
 {
     if (pbs->bytes) {
-	const byte *bytes = pbs->bytes;
-	long offset = pbs->data - bytes;
+        const byte *bytes = pbs->bytes;
+        long offset = pbs->data - bytes;
 
-	pbs->bytes = bytes = RELOC_OBJ(bytes);
-	pbs->data = bytes + offset;
+        pbs->bytes = bytes = RELOC_OBJ(bytes);
+        pbs->data = bytes + offset;
     } else
-	RELOC_CONST_STRING_VAR(*(gs_const_string *)pbs);
+        RELOC_CONST_STRING_VAR(*(gs_const_string *)pbs);
 }
 
 /* Fill an unoccupied block with a pattern. */
@@ -87,8 +87,8 @@ gs_alloc_memset(void *ptr, int /*byte */ fill, ulong lsize)
     int isize;
 
     for (; msize; msize -= isize, p += isize) {
-	isize = min(msize, max_int);
-	memset(p, fill, isize);
+        isize = min(msize, max_int);
+        memset(p, fill, isize);
     }
 }
 
@@ -98,30 +98,29 @@ gs_alloc_memset(void *ptr, int /*byte */ fill, ulong lsize)
  */
 void *
 gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
-		       gs_memory_type_ptr_t pstype, client_name_t cname)
+                       gs_memory_type_ptr_t pstype, client_name_t cname)
 {
     if (obj == 0)
-	return gs_alloc_struct_array(mem, num_elements, void, pstype, cname);
+        return gs_alloc_struct_array(mem, num_elements, void, pstype, cname);
 #ifdef DEBUG
     if (gs_object_type(mem, obj) != pstype) {
-	lprintf3("resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
-		 (ulong)obj, (ulong)gs_object_type(mem, obj), (ulong)pstype);
-	return 0;
+        lprintf3("resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
+                 (ulong)obj, (ulong)gs_object_type(mem, obj), (ulong)pstype);
+        return 0;
     }
 #endif
     return gs_resize_object(mem, obj, num_elements, cname);
 }
 
-
 /* Allocate a structure using a "raw memory" allocator.
- * really just an alias for gs_alloc_struct_immovable 
- * with the clients false expectation that it is saving memory   
+ * really just an alias for gs_alloc_struct_immovable
+ * with the clients false expectation that it is saving memory
  */
- 
+
 void *
 gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
-			      gs_memory_type_ptr_t pstype,
-			      client_name_t cname)
+                              gs_memory_type_ptr_t pstype,
+                              client_name_t cname)
 {
     return gs_alloc_bytes_immovable(rmem, gs_struct_type_size(pstype), cname);
 }
@@ -133,7 +132,7 @@ gs_ignore_free_object(gs_memory_t * mem, void *data, client_name_t cname)
 }
 void
 gs_ignore_free_string(gs_memory_t * mem, byte * data, uint nbytes,
-		      client_name_t cname)
+                      client_name_t cname)
 {
 }
 
@@ -149,7 +148,7 @@ gs_free_const_object(gs_memory_t * mem, const void *data, client_name_t cname)
 }
 void
 gs_free_const_string(gs_memory_t * mem, const byte * data, uint nbytes,
-		     client_name_t cname)
+                     client_name_t cname)
 {
     union { const byte *r; byte *w; } u;
 
@@ -162,18 +161,18 @@ void
 gs_free_bytestring(gs_memory_t *mem, gs_bytestring *pbs, client_name_t cname)
 {
     if (pbs->bytes)
-	gs_free_object(mem, pbs->bytes, cname);
+        gs_free_object(mem, pbs->bytes, cname);
     else
-	gs_free_string(mem, pbs->data, pbs->size, cname);
+        gs_free_string(mem, pbs->data, pbs->size, cname);
 }
 void
 gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
-			 client_name_t cname)
+                         client_name_t cname)
 {
     if (pbs->bytes)
-	gs_free_const_object(mem, pbs->bytes, cname);
+        gs_free_const_object(mem, pbs->bytes, cname);
     else
-	gs_free_const_string(mem, pbs->data, pbs->size, cname);
+        gs_free_const_string(mem, pbs->data, pbs->size, cname);
 }
 
 /* No-op consolidation procedure */
@@ -212,7 +211,7 @@ gs_struct_type_name(gs_memory_type_ptr_t pstype)
 /* Register a structure root. */
 int
 gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
-			void **pp, client_name_t cname)
+                        void **pp, client_name_t cname)
 {
     return gs_register_root(mem, root, ptr_struct_type, pp, cname);
 }
@@ -227,21 +226,21 @@ rc_object_type_name(const void *vp, const rc_header *prc)
     gs_memory_type_ptr_t pstype;
 
     if (prc->memory == 0)
-	return "(unknown)";
+        return "(unknown)";
     pstype = gs_object_type(prc->memory, vp);
     if (prc->free != rc_free_struct_only) {
-	/*
-	 * This object might be stack-allocated or have other unusual memory
-	 * management properties.  Make some reasonableness checks.
-	 * ****** THIS IS A HACK. ******
-	 */
-	long dist;
+        /*
+         * This object might be stack-allocated or have other unusual memory
+         * management properties.  Make some reasonableness checks.
+         * ****** THIS IS A HACK. ******
+         */
+        long dist;
 
-	dist = (const char *)&dist - (const char *)vp;
-	if (dist < 10000 && dist > -10000)
-	    return "(on stack)";
-	if ((ulong)pstype < 0x10000 || (long)pstype < 0)
-	    return "(anomalous)";
+        dist = (const char *)&dist - (const char *)vp;
+        if (dist < 10000 && dist > -10000)
+            return "(on stack)";
+        if ((ulong)pstype < 0x10000 || (long)pstype < 0)
+            return "(anomalous)";
     }
     return client_name_string(gs_struct_type_name(pstype));
 }
@@ -251,28 +250,28 @@ void
 rc_trace_init_free(const void *vp, const rc_header *prc)
 {
     dprintf3("[^]%s 0x%lx init = %ld\n",
-	     rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
+             rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_free_struct(const void *vp, const rc_header *prc, client_name_t cname)
 {
     dprintf3("[^]%s 0x%lx => free (%s)\n",
-	      rc_object_type_name(vp, prc),
-	      (ulong)vp, client_name_string(cname));
+              rc_object_type_name(vp, prc),
+              (ulong)vp, client_name_string(cname));
 }
 void
 rc_trace_increment(const void *vp, const rc_header *prc)
 {
     dprintf3("[^]%s 0x%lx ++ => %ld\n",
-	      rc_object_type_name(vp, prc),
-	      (ulong)vp, (long)prc->ref_count);
+              rc_object_type_name(vp, prc),
+              (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_adjust(const void *vp, const rc_header *prc, int delta)
 {
     dprintf4("[^]%s 0x%lx %+d => %ld\n",
-	     rc_object_type_name(vp, prc),
-	     (ulong)vp, delta, (long)(prc->ref_count + delta));
+             rc_object_type_name(vp, prc),
+             (ulong)vp, delta, (long)(prc->ref_count + delta));
 }
 
 #endif /* DEBUG */
@@ -282,7 +281,7 @@ void
 rc_free_struct_only(gs_memory_t * mem, void *data, client_name_t cname)
 {
     if (mem != 0)
-	gs_free_object(mem, data, cname);
+        gs_free_object(mem, data, cname);
 }
 
 /* ---------------- Basic-structure GC procedures ---------------- */
@@ -296,38 +295,38 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
     /* with number of elements 0 and allocation not passing 'element' */
     if (size == 0) {
 #ifdef DEBUG
-	dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
-		 (ulong)vptr, pstype->sname);
+        dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
+                 (ulong)vptr, pstype->sname);
 #endif
-	return 0;
+        return 0;
     }
     if (index < psd->num_ptrs) {
-	const gc_ptr_element_t *ppe = &psd->ptrs[index];
-	EV_CONST char *pptr = (EV_CONST char *)vptr + ppe->offset;
+        const gc_ptr_element_t *ppe = &psd->ptrs[index];
+        EV_CONST char *pptr = (EV_CONST char *)vptr + ppe->offset;
 
 #ifdef DEBUG
-	/* some extra checking to make sure we aren't out of bounds */
-	if (ppe->offset > size - sizeof(void *)) {
-	    dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
-		     ppe->offset, size, (ulong)vptr, pstype->sname);
-	    return 0;
-	}
+        /* some extra checking to make sure we aren't out of bounds */
+        if (ppe->offset > size - sizeof(void *)) {
+            dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+                     ppe->offset, size, (ulong)vptr, pstype->sname);
+            return 0;
+        }
 #endif
-	switch ((gc_ptr_type_index_t)ppe->type) {
-	    case GC_ELT_OBJ:
-		return ENUM_OBJ(*(const void *EV_CONST *)pptr);
-	    case GC_ELT_STRING:
-		return ENUM_STRING((const gs_string *)pptr);
-	    case GC_ELT_CONST_STRING:
-		return ENUM_CONST_STRING((const gs_const_string *)pptr);
-	}
+        switch ((gc_ptr_type_index_t)ppe->type) {
+            case GC_ELT_OBJ:
+                return ENUM_OBJ(*(const void *EV_CONST *)pptr);
+            case GC_ELT_STRING:
+                return ENUM_STRING((const gs_string *)pptr);
+            case GC_ELT_CONST_STRING:
+                return ENUM_CONST_STRING((const gs_const_string *)pptr);
+        }
     }
     if (!psd->super_type)
-	return 0;
+        return 0;
     return ENUM_USING(*(psd->super_type),
-		      (EV_CONST void *)
-		        ((EV_CONST char *)vptr + psd->super_offset),
-		      pstype->ssize, index - psd->num_ptrs);
+                      (EV_CONST void *)
+                        ((EV_CONST char *)vptr + psd->super_offset),
+                      pstype->ssize, index - psd->num_ptrs);
 }
 ENUM_PTRS_END_PROC
 
@@ -338,23 +337,23 @@ RELOC_PTRS_BEGIN(basic_reloc_ptrs)
     uint i;
 
     for (i = 0; i < psd->num_ptrs; ++i) {
-	const gc_ptr_element_t *ppe = &psd->ptrs[i];
-	char *pptr = (char *)vptr + ppe->offset;
+        const gc_ptr_element_t *ppe = &psd->ptrs[i];
+        char *pptr = (char *)vptr + ppe->offset;
 
-	switch ((gc_ptr_type_index_t) ppe->type) {
-	    case GC_ELT_OBJ:
-		RELOC_OBJ_VAR(*(void **)pptr);
-		break;
-	    case GC_ELT_STRING:
-		RELOC_STRING_VAR(*(gs_string *)pptr);
-		break;
-	    case GC_ELT_CONST_STRING:
-		RELOC_CONST_STRING_VAR(*(gs_const_string *)pptr);
-		break;
-	}
+        switch ((gc_ptr_type_index_t) ppe->type) {
+            case GC_ELT_OBJ:
+                RELOC_OBJ_VAR(*(void **)pptr);
+                break;
+            case GC_ELT_STRING:
+                RELOC_STRING_VAR(*(gs_string *)pptr);
+                break;
+            case GC_ELT_CONST_STRING:
+                RELOC_CONST_STRING_VAR(*(gs_const_string *)pptr);
+                break;
+        }
     }
     if (psd->super_type)
-	RELOC_USING(*(psd->super_type),
-		      (void *)((char *)vptr + psd->super_offset),
-		      pstype->ssize);
+        RELOC_USING(*(psd->super_type),
+                      (void *)((char *)vptr + psd->super_offset),
+                      pstype->ssize);
 } RELOC_PTRS_END

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2007 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -25,7 +25,6 @@ typedef struct pantone_list_s {
     const char *name;		/* Name of the PANTONE color */
     double c, m, y, k;		/* Equivalent CMYK values */
 } pantone_list_t;
-
 
 #endif		/* if ENABLE_CUSTOM_COLOR_CALLBACK */
 

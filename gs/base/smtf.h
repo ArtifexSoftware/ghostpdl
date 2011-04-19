@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,8 +23,8 @@ typedef struct stream_MTF_state_s {
     stream_state_common;
     /* The following change dynamically. */
     union _p {
-	ulong l[256 / sizeof(long)];
-	byte b[256];
+        ulong l[256 / sizeof(long)];
+        byte b[256];
     } prev;
 } stream_MTF_state;
 typedef stream_MTF_state stream_MTFE_state;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -48,19 +48,19 @@ print_nodes_proc(const count_node * nodes, int n, const char *tag, int lengths)
 
     dlprintf1("[w]---------------- %s ----------------\n", tag);
     for (i = 0; i < n; ++i)
-	dlprintf7("[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
-		  i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
-		  (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
-		  (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
-		(nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
+        dlprintf7("[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
+                  i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
+                  (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
+                  (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
+                (nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
     for (i = lengths; i > 0;) {
-	int j = i;
-	int len = nodes[--j].code_length;
+        int j = i;
+        int len = nodes[--j].code_length;
 
-	while (j > 0 && nodes[j - 1].code_length == len)
-	    --j;
-	dlprintf2("[w]%d codes of length %d\n", i - j, len);
-	i = j;
+        while (j > 0 && nodes[j - 1].code_length == len)
+            --j;
+        dlprintf2("[w]%d codes of length %d\n", i - j, len);
+        i = j;
     }
 }
 #else
@@ -91,7 +91,7 @@ static int
 compare_values(const void *p1, const void *p2)
 {
     return (pn1->value < pn2->value ? -1 :
-	    pn1->value > pn2->value ? 1 : 0);
+            pn1->value > pn2->value ? 1 : 0);
 }
 #undef pn1
 #undef pn2
@@ -106,25 +106,25 @@ hc_limit_code_lengths(count_node * nodes, uint num_values, int max_length)
     count_node *longest = nodes + num_values;
 
     {				/* Compute the number of additional max_length codes */
-	/* we need to make available. */
-	int length = longest[-1].code_length;
-	int next_length;
-	int avail = 0;
+        /* we need to make available. */
+        int length = longest[-1].code_length;
+        int next_length;
+        int avail = 0;
 
-	while ((next_length = longest[-1].code_length) > max_length) {
-	    avail >>= length - next_length;
-	    length = next_length;
-	    (--longest)->code_length = max_length;
-	    ++avail;
-	}
-	needed = (nodes + num_values - longest) -
-	    (avail >>= (length - max_length));
-	if_debug2('W', "[w]avail=%d, needed=%d\n",
-		  avail, needed);
+        while ((next_length = longest[-1].code_length) > max_length) {
+            avail >>= length - next_length;
+            length = next_length;
+            (--longest)->code_length = max_length;
+            ++avail;
+        }
+        needed = (nodes + num_values - longest) -
+            (avail >>= (length - max_length));
+        if_debug2('W', "[w]avail=%d, needed=%d\n",
+                  avail, needed);
     }
     /* Skip over all max_length codes. */
     while (longest[-1].code_length == max_length)
-	--longest;
+        --longest;
 
     /*
      * To make available a code of length N, suppose that the next
@@ -140,23 +140,23 @@ hc_limit_code_lengths(count_node * nodes, uint num_values, int max_length)
      * In the present situation, N = max_length.
      */
     for (; needed > 0; --needed) {	/* longest points to the first code of length max_length. */
-	/* Since codes are sorted by increasing code length, */
-	/* longest-1 is the desired code of length M. */
-	int M1 = ++(longest[-1].code_length);
+        /* Since codes are sorted by increasing code length, */
+        /* longest-1 is the desired code of length M. */
+        int M1 = ++(longest[-1].code_length);
 
-	switch (max_length - M1) {
-	    case 0:		/* M == N-1 */
-		--longest;
-		break;
-	    case 1:		/* M == N-2 */
-		longest++->code_length = M1;
-		break;
-	    default:
-		longest->code_length = M1 + 1;
-		longest[1].code_length = M1 + 1;
-		longest[2].code_length--;
-		longest += 3;
-	}
+        switch (max_length - M1) {
+            case 0:		/* M == N-1 */
+                --longest;
+                break;
+            case 1:		/* M == N-2 */
+                longest++->code_length = M1;
+                break;
+            default:
+                longest->code_length = M1 + 1;
+                longest[1].code_length = M1 + 1;
+                longest[2].code_length--;
+                longest += 3;
+        }
     }
 }
 
@@ -168,58 +168,58 @@ hc_compute(hc_definition * def, const long *freqs, gs_memory_t * mem)
     uint num_values = def->num_values;
     count_node *nodes =
     (count_node *) gs_alloc_byte_array(mem, num_values * 2 - 1,
-				       sizeof(count_node), "hc_compute");
+                                       sizeof(count_node), "hc_compute");
     int i;
     count_node *lowest;
     count_node *comb;
 
     if (nodes == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     /* Create leaf nodes for the input data. */
     for (i = 0; i < num_values; ++i)
-	nodes[i].freq = freqs[i], nodes[i].value = i;
+        nodes[i].freq = freqs[i], nodes[i].value = i;
 
     /* Create a list sorted by increasing frequency. */
     /* Also initialize the tree structure. */
     qsort(nodes, num_values, sizeof(count_node), compare_freqs);
     for (i = 0; i < num_values; ++i)
-	nodes[i].next = &nodes[i - 1],
-	    nodes[i].code_length = 0,
-	    nodes[i].left = nodes[i].right = 0;
+        nodes[i].next = &nodes[i - 1],
+            nodes[i].code_length = 0,
+            nodes[i].left = nodes[i].right = 0;
     nodes[0].next = 0;
     debug_print_nodes(nodes, num_values, "after sort", 0);
 
     /* Construct the Huffman code tree. */
     for (lowest = &nodes[num_values - 1], comb = &nodes[num_values];;
-	 ++comb
-	) {
-	count_node *pn1 = lowest;
-	count_node *pn2 = pn1->next;
-	long freq = pn1->freq + pn2->freq;
+         ++comb
+        ) {
+        count_node *pn1 = lowest;
+        count_node *pn2 = pn1->next;
+        long freq = pn1->freq + pn2->freq;
 
-	/* Create a parent for the two lowest-frequency nodes. */
-	lowest = pn2->next;
-	comb->freq = freq;
-	if (pn1->code_length <= pn2->code_length)
-	    comb->left = pn1, comb->right = pn2,
-		comb->code_length = pn2->code_length + 1;
-	else
-	    comb->left = pn2, comb->right = pn1,
-		comb->code_length = pn1->code_length + 1;
-	if (lowest == 0)	/* no nodes left to combine */
-	    break;
-	/* Insert comb in the sorted list. */
-	if (freq < lowest->freq)
-	    comb->next = lowest, lowest = comb;
-	else {
-	    count_node *here = lowest;
+        /* Create a parent for the two lowest-frequency nodes. */
+        lowest = pn2->next;
+        comb->freq = freq;
+        if (pn1->code_length <= pn2->code_length)
+            comb->left = pn1, comb->right = pn2,
+                comb->code_length = pn2->code_length + 1;
+        else
+            comb->left = pn2, comb->right = pn1,
+                comb->code_length = pn1->code_length + 1;
+        if (lowest == 0)	/* no nodes left to combine */
+            break;
+        /* Insert comb in the sorted list. */
+        if (freq < lowest->freq)
+            comb->next = lowest, lowest = comb;
+        else {
+            count_node *here = lowest;
 
-	    while (here->next != 0 && freq >= here->next->freq)
-		here = here->next;
-	    comb->next = here->next;
-	    here->next = comb;
-	}
+            while (here->next != 0 && freq >= here->next->freq)
+                here = here->next;
+            comb->next = here->next;
+            here->next = comb;
+        }
     }
 
     /* comb (i.e., &nodes[num_values * 2 - 2] is the root of the tree. */
@@ -230,9 +230,9 @@ hc_compute(hc_definition * def, const long *freqs, gs_memory_t * mem)
     /* sweep. */
     comb++->code_length = 0;
     while (comb > nodes + num_values) {
-	--comb;
-	comb->left->code_length = comb->right->code_length =
-	    comb->code_length + 1;
+        --comb;
+        comb->left->code_length = comb->right->code_length =
+            comb->code_length + 1;
     }
     debug_print_nodes(nodes, num_values * 2 - 1, "after combine", 0);
 
@@ -249,20 +249,20 @@ hc_compute(hc_definition * def, const long *freqs, gs_memory_t * mem)
     /* the code definition itself compress better using our */
     /* incremental encoding. */
     for (i = num_values; i > 0;) {
-	int j = i;
-	int len = nodes[--j].code_length;
+        int j = i;
+        int len = nodes[--j].code_length;
 
-	while (j > 0 && nodes[j - 1].code_length == len)
-	    --j;
-	qsort(&nodes[j], i - j, sizeof(count_node), compare_values);
-	i = j;
+        while (j > 0 && nodes[j - 1].code_length == len)
+            --j;
+        qsort(&nodes[j], i - j, sizeof(count_node), compare_values);
+        i = j;
     }
 
     /* Extract the definition from the nodes. */
     memset(def->counts, 0, sizeof(*def->counts) * (def->num_counts + 1));
     for (i = 0; i < num_values; ++i) {
-	def->values[i] = nodes[i].value;
-	def->counts[nodes[i].code_length]++;
+        def->values[i] = nodes[i].value;
+        def->counts[nodes[i].code_length]++;
     }
 
     /* All done, release working storage. */
@@ -300,18 +300,18 @@ hc_bytes_from_definition(byte * dbytes, const hc_definition * def)
     /* Temporarily use the output string as a map from */
     /* values to code lengths. */
     for (i = 1; i <= def->num_counts; i++)
-	for (j = 0; j < def->counts[i]; j++)
-	    bp[*values++] = i;
+        for (j = 0; j < def->counts[i]; j++)
+            bp[*values++] = i;
 
     /* Now construct the actual string. */
     while (lp < end) {
-	const byte *vp;
-	byte len = *lp;
+        const byte *vp;
+        byte len = *lp;
 
-	for (vp = lp + 1; vp < end && vp < lp + 16 && *vp == len;)
-	    vp++;
-	*bp++ = ((vp - lp - 1) << 4) + (len - 1);
-	lp = vp;
+        for (vp = lp + 1; vp < end && vp < lp + 16 && *vp == len;)
+            vp++;
+        *bp++ = ((vp - lp - 1) << 4) + (len - 1);
+        lp = vp;
     }
 
     return bp - dbytes;
@@ -325,12 +325,12 @@ hc_sizes_from_bytes(hc_definition * def, const byte * dbytes, int num_bytes)
     int i;
 
     for (i = 0; i < num_bytes; i++) {
-	int n = (dbytes[i] >> 4) + 1;
-	int l = (dbytes[i] & 15) + 1;
+        int n = (dbytes[i] >> 4) + 1;
+        int l = (dbytes[i] & 15) + 1;
 
-	if (l > num_counts)
-	    num_counts = l;
-	num_values += n;
+        if (l > num_counts)
+            num_counts = l;
+        num_values += n;
     }
     def->num_counts = num_counts;
     def->num_values = num_values;
@@ -347,28 +347,28 @@ hc_definition_from_bytes(hc_definition * def, const byte * dbytes)
     /* Make a first pass to set the counts for each code length. */
     memset(counts, 0, sizeof(counts[0]) * (def->num_counts + 1));
     for (i = 0, v = 0; v < def->num_values; i++) {
-	int n = (dbytes[i] >> 4) + 1;
-	int l = (dbytes[i] & 15) + 1;
+        int n = (dbytes[i] >> 4) + 1;
+        int l = (dbytes[i] & 15) + 1;
 
-	counts[l] += n;
-	v += n;
+        counts[l] += n;
+        v += n;
     }
 
     /* Now fill in the definition. */
     memcpy(def->counts, counts, sizeof(counts[0]) * (def->num_counts + 1));
     for (i = 1, v = 0; i <= def->num_counts; i++) {
-	uint prev = counts[i];
+        uint prev = counts[i];
 
-	counts[i] = v;
-	v += prev;
+        counts[i] = v;
+        v += prev;
     }
     for (i = 0, v = 0; v < def->num_values; i++) {
-	int n = (dbytes[i] >> 4) + 1;
-	int l = (dbytes[i] & 15) + 1;
-	int j;
+        int n = (dbytes[i] >> 4) + 1;
+        int l = (dbytes[i] & 15) + 1;
+        int j;
 
-	for (j = 0; j < n; n++)
-	    def->values[counts[l]++] = v++;
+        for (j = 0; j < n; n++)
+            def->values[counts[l]++] = v++;
     }
 }
 
@@ -384,13 +384,13 @@ hc_make_encoding(hce_code * encode, const hc_definition * def)
     uint i, k;
 
     for (i = 1; i <= def->num_counts; i++) {
-	for (k = 0; k < def->counts[i]; k++, pvalue++, next++) {
-	    hce_code *pce = encode + *pvalue;
+        for (k = 0; k < def->counts[i]; k++, pvalue++, next++) {
+            hce_code *pce = encode + *pvalue;
 
-	    pce->code = next;
-	    pce->code_length = i;
-	}
-	next <<= 1;
+            pce->code = next;
+            pce->code_length = i;
+        }
+        next <<= 1;
     }
 }
 
@@ -407,11 +407,11 @@ hc_sizeof_decoding(const hc_definition * def, int initial_bits)
     uint i;
 
     for (i = initial_bits + 1; i <= def->num_counts;
-	 i++, carry <<= 1, mask <<= 1
-	) {
-	carry += def->counts[i];
-	size += carry & mask;
-	carry &= ~mask;
+         i++, carry <<= 1, mask <<= 1
+        ) {
+        carry += def->counts[i];
+        size += carry & mask;
+        carry &= ~mask;
     }
     return size;
 }
@@ -419,62 +419,62 @@ hc_sizeof_decoding(const hc_definition * def, int initial_bits)
 /* Generate the decoding tables. */
 void
 hc_make_decoding(hcd_code * decode, const hc_definition * def,
-		 int initial_bits)
+                 int initial_bits)
 {				/* Make entries for single-dispatch codes. */
     {
-	hcd_code *pcd = decode;
-	const ushort *pvalue = def->values;
-	uint i, k, d;
+        hcd_code *pcd = decode;
+        const ushort *pvalue = def->values;
+        uint i, k, d;
 
-	for (i = 0; i <= initial_bits; i++) {
-	    for (k = 0; k < def->counts[i]; k++, pvalue++) {
-		for (d = 1 << (initial_bits - i); d > 0;
-		     d--, pcd++
-		    )
-		    pcd->value = *pvalue,
-			pcd->code_length = i;
-	    }
-	}
+        for (i = 0; i <= initial_bits; i++) {
+            for (k = 0; k < def->counts[i]; k++, pvalue++) {
+                for (d = 1 << (initial_bits - i); d > 0;
+                     d--, pcd++
+                    )
+                    pcd->value = *pvalue,
+                        pcd->code_length = i;
+            }
+        }
     }
     /* Make entries for two-dispatch codes. */
     /* By working backward, we can do this more easily */
     /* in a single pass. */
     {
-	uint dsize = hc_sizeof_decoding(def, initial_bits);
-	hcd_code *pcd = decode + (1 << initial_bits);
-	hcd_code *pcd2 = decode + dsize;
-	const ushort *pvalue = def->values + def->num_values;
-	uint entries_left = 0, slots_left = 0, mult_shift = 0;
-	uint i = def->num_counts + 1, j;
+        uint dsize = hc_sizeof_decoding(def, initial_bits);
+        hcd_code *pcd = decode + (1 << initial_bits);
+        hcd_code *pcd2 = decode + dsize;
+        const ushort *pvalue = def->values + def->num_values;
+        uint entries_left = 0, slots_left = 0, mult_shift = 0;
+        uint i = def->num_counts + 1, j;
 
-	for (;;) {
-	    if (slots_left == 0) {
-		if (entries_left != 0) {
-		    slots_left = 1 << (i - initial_bits);
-		    mult_shift = 0;
-		    continue;
-		}
-		if (--i <= initial_bits)
-		    break;
-		entries_left = def->counts[i];
-		continue;
-	    }
-	    if (entries_left == 0) {
-		entries_left = def->counts[--i];
-		mult_shift++;
-		continue;
-	    }
-	    --entries_left, --pvalue;
-	    for (j = 1 << mult_shift; j > 0; j--) {
-		--pcd2;
-		pcd2->value = *pvalue;
-		pcd2->code_length = i - initial_bits;
-	    }
-	    if ((slots_left -= 1 << mult_shift) == 0) {
-		--pcd;
-		pcd->value = pcd2 - decode;
-		pcd->code_length = i + mult_shift;
-	    }
-	}
+        for (;;) {
+            if (slots_left == 0) {
+                if (entries_left != 0) {
+                    slots_left = 1 << (i - initial_bits);
+                    mult_shift = 0;
+                    continue;
+                }
+                if (--i <= initial_bits)
+                    break;
+                entries_left = def->counts[i];
+                continue;
+            }
+            if (entries_left == 0) {
+                entries_left = def->counts[--i];
+                mult_shift++;
+                continue;
+            }
+            --entries_left, --pvalue;
+            for (j = 1 << mult_shift; j > 0; j--) {
+                --pcd2;
+                pcd2->value = *pvalue;
+                pcd2->code_length = i - initial_bits;
+            }
+            if ((slots_left -= 1 << mult_shift) == 0) {
+                --pcd;
+                pcd->value = pcd2 - decode;
+                pcd->code_length = i + mult_shift;
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -97,20 +97,20 @@ s_band_read_init_offset_map(gx_device_clist_reader *crdev, stream_state * st)
     stream_band_read_state *const ss = (stream_band_read_state *) st;
 
     if (gs_debug_c('L')) {
-	ss->offset_map_length = 0;
-	ss->offset_map_max_length = cbuf_size + 1; /* fixme: Wanted a more accurate implementation. */
-	ss->offset_map = (cbuf_offset_map_elem *)gs_alloc_byte_array(crdev->memory, 
-		    ss->offset_map_max_length, sizeof(*ss->offset_map), "s_band_read_init_offset_map");
-	if (ss->offset_map == NULL)
-	    return_error(gs_error_VMerror);
-	ss->offset_map[0].buffered = 0;
-	crdev->offset_map = ss->offset_map; /* Prevent collecting it as garbage. 
-					    Debugged with ppmraw -r300 014-09.ps . */
+        ss->offset_map_length = 0;
+        ss->offset_map_max_length = cbuf_size + 1; /* fixme: Wanted a more accurate implementation. */
+        ss->offset_map = (cbuf_offset_map_elem *)gs_alloc_byte_array(crdev->memory,
+                    ss->offset_map_max_length, sizeof(*ss->offset_map), "s_band_read_init_offset_map");
+        if (ss->offset_map == NULL)
+            return_error(gs_error_VMerror);
+        ss->offset_map[0].buffered = 0;
+        crdev->offset_map = ss->offset_map; /* Prevent collecting it as garbage.
+                                            Debugged with ppmraw -r300 014-09.ps . */
     } else {
-	ss->offset_map_length = 0;
-	ss->offset_map_max_length = 0;
-	ss->offset_map = NULL;
-	crdev->offset_map = NULL;
+        ss->offset_map_length = 0;
+        ss->offset_map_max_length = 0;
+        ss->offset_map = NULL;
+        crdev->offset_map = NULL;
     }
     ss->skip_first = true;
     return 0;
@@ -120,18 +120,17 @@ static void
 s_band_read_dnit_offset_map(gx_device_clist_reader *crdev, stream_state * st)
 {
     if (gs_debug_c('L')) {
-	stream_band_read_state *const ss = (stream_band_read_state *) st;
+        stream_band_read_state *const ss = (stream_band_read_state *) st;
 
-	gs_free_object(crdev->memory, ss->offset_map, "s_band_read_dnit_offset_map");
-	crdev->offset_map = 0;
+        gs_free_object(crdev->memory, ss->offset_map, "s_band_read_dnit_offset_map");
+        crdev->offset_map = 0;
     }
 }
 #endif
 
-
 static int
 s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
-		    stream_cursor_write * pw, bool last)
+                    stream_cursor_write * pw, bool last)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
     register byte *q = pw->ptr;
@@ -144,66 +143,66 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     const clist_io_procs_t *io_procs = ss->page_info.io_procs;
 
     while ((count = wlimit - q) != 0) {
-	if (left) {		/* Read more data for the current run. */
-	    if (count > left)
-		count = left;
+        if (left) {		/* Read more data for the current run. */
+            if (count > left)
+                count = left;
 #	    ifdef DEBUG
-		if (gs_debug_c('L'))
-		    ss->offset_map[ss->offset_map_length - 1].buffered += count;
+                if (gs_debug_c('L'))
+                    ss->offset_map[ss->offset_map_length - 1].buffered += count;
 #	    endif
-	    io_procs->fread_chars(q + 1, count, cfile);
-	    if (io_procs->ferror_code(cfile) < 0) {
-		status = ERRC;
-		break;
-	    }
-	    q += count;
-	    left -= count;
-	    process_interrupts(st->memory);
-	    continue;
-	}
+            io_procs->fread_chars(q + 1, count, cfile);
+            if (io_procs->ferror_code(cfile) < 0) {
+                status = ERRC;
+                break;
+            }
+            q += count;
+            left -= count;
+            process_interrupts(st->memory);
+            continue;
+        }
 rb:
-	/*
-	 * Scan for the next run for the current bands (or a band range
-	 * that includes a current band).
-	 */
-	if (ss->b_this.band_min == cmd_band_end &&
-	    io_procs->ftell(bfile) == ss->page_bfile_end_pos
-	    ) {
-	    status = EOFC;
-	    break;
-	} {
-	    int bmin = ss->b_this.band_min;
-	    int bmax = ss->b_this.band_max;
-	    int64_t pos = ss->b_this.pos;
-	    int nread;
+        /*
+         * Scan for the next run for the current bands (or a band range
+         * that includes a current band).
+         */
+        if (ss->b_this.band_min == cmd_band_end &&
+            io_procs->ftell(bfile) == ss->page_bfile_end_pos
+            ) {
+            status = EOFC;
+            break;
+        } {
+            int bmin = ss->b_this.band_min;
+            int bmax = ss->b_this.band_max;
+            int64_t pos = ss->b_this.pos;
+            int nread;
 
-	    nread = io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
-	    if (nread < sizeof(ss->b_this)) {
-		DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
-		return ERRC;
-	    }
-	    if (!(ss->band_last >= bmin && ss->band_first <= bmax))
-		goto rb;
-	    io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
-	    left = (uint) (ss->b_this.pos - pos);
+            nread = io_procs->fread_chars(&ss->b_this, sizeof(ss->b_this), bfile);
+            if (nread < sizeof(ss->b_this)) {
+                DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
+                return ERRC;
+            }
+            if (!(ss->band_last >= bmin && ss->band_first <= bmax))
+                goto rb;
+            io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
+            left = (uint) (ss->b_this.pos - pos);
 #	    ifdef DEBUG
-	    if (left > 0  && gs_debug_c('L')) {
-		if (ss->offset_map_length >= ss->offset_map_max_length) {
-		    DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
-		    return ERRC;
-		}
-		ss->offset_map[ss->offset_map_length].file_offset = pos;
-		ss->offset_map[ss->offset_map_length].buffered = 0;
-		ss->offset_map_length++;
-	    }
+            if (left > 0  && gs_debug_c('L')) {
+                if (ss->offset_map_length >= ss->offset_map_max_length) {
+                    DISCARD(gs_note_error(gs_error_unregistered)); /* Must not happen. */
+                    return ERRC;
+                }
+                ss->offset_map[ss->offset_map_length].file_offset = pos;
+                ss->offset_map[ss->offset_map_length].buffered = 0;
+                ss->offset_map_length++;
+            }
 #	    endif
-	    if_debug7('l', 
-		      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
-		      bmin, bmax,
-		      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
-		      (long)pos, left, ss->b_this.band_complexity.uses_color,
-		      ss->b_this.band_complexity.nontrivial_rops);
-	}
+            if_debug7('l',
+                      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
+                      bmin, bmax,
+                      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
+                      (long)pos, left, ss->b_this.band_complexity.uses_color,
+                      ss->b_this.band_complexity.nontrivial_rops);
+        }
     }
     pw->ptr = q;
     ss->left = left;
@@ -222,12 +221,12 @@ buffer_segment_index(const stream_band_read_state *ss, uint buffer_offset, uint 
     uint i, offset0, offset = 0;
 
     for (i = 0; i < ss->offset_map_length; i++) {
-	offset0 = offset;
-	offset += ss->offset_map[i].buffered;
-	if (buffer_offset < offset) {
-	    *poffset0 = offset0;
-	    return i;
-	}
+        offset0 = offset;
+        offset += ss->offset_map[i].buffered;
+        if (buffer_offset < offset) {
+            *poffset0 = offset0;
+            return i;
+        }
     }
     gs_note_error(gs_error_unregistered); /* Must not happen. */
     return -1;
@@ -241,47 +240,46 @@ clist_file_offset(const stream_state * st, uint buffer_offset)
     int i = buffer_segment_index(ss, buffer_offset, &offset0);
 
     if (i < 0)
-	return -1;
+        return -1;
     return ss->offset_map[i].file_offset + (uint)(buffer_offset - offset0);
 }
 
 int
 top_up_offset_map(stream_state * st, const byte *buf, const byte *ptr, const byte *end)
 {
-    /* NOTE: The clist data are buffered in the clist reader buffer and in the 
+    /* NOTE: The clist data are buffered in the clist reader buffer and in the
        internal buffer of the clist stream. Since the 1st buffer is not accessible
        from s_band_read_process, offset_map corresponds the union of the 2 buffers.
      */
     stream_band_read_state *const ss = (stream_band_read_state *) st;
 
     if (!gs_debug_c('L')) {
-	return 0;
+        return 0;
     } else if (ss->skip_first) {
-	/* Work around the trick with initializing the buffer pointer with the buffer end. */
-	ss->skip_first = false;
-	return 0;
+        /* Work around the trick with initializing the buffer pointer with the buffer end. */
+        ss->skip_first = false;
+        return 0;
     } else if (ptr == buf)
-	return 0;
+        return 0;
     else {
-	uint buffer_offset = ptr - buf;
-	uint offset0, consumed;
-	int i = buffer_segment_index(ss, buffer_offset, &offset0);
-	
-	if (i < 0)
-	    return_error(gs_error_unregistered); /* Must not happen. */
-	consumed = buffer_offset - offset0;
-	ss->offset_map[i].buffered -= consumed;
-	ss->offset_map[i].file_offset += consumed;
-	if (i) {
-	    memmove(ss->offset_map, ss->offset_map + i, 
-		(ss->offset_map_length - i) * sizeof(*ss->offset_map));
-	    ss->offset_map_length -= i;
-	}
+        uint buffer_offset = ptr - buf;
+        uint offset0, consumed;
+        int i = buffer_segment_index(ss, buffer_offset, &offset0);
+
+        if (i < 0)
+            return_error(gs_error_unregistered); /* Must not happen. */
+        consumed = buffer_offset - offset0;
+        ss->offset_map[i].buffered -= consumed;
+        ss->offset_map[i].file_offset += consumed;
+        if (i) {
+            memmove(ss->offset_map, ss->offset_map + i,
+                (ss->offset_map_length - i) * sizeof(*ss->offset_map));
+            ss->offset_map_length -= i;
+        }
     }
     return 0;
 }
 #endif /* DEBUG */
-
 
 /* ------ Reading/rendering ------ */
 
@@ -290,27 +288,27 @@ static int
 clist_plane_raster(const gx_device *dev, const gx_render_plane_t *render_plane)
 {
     return bitmap_raster(dev->width *
-			 (render_plane && render_plane->index >= 0 ?
-			  render_plane->depth : dev->color_info.depth));
+                         (render_plane && render_plane->index >= 0 ?
+                          render_plane->depth : dev->color_info.depth));
 }
 
 /* Select full-pixel rendering if required for RasterOp. */
 void
 clist_select_render_plane(gx_device *dev, int y, int height,
-			  gx_render_plane_t *render_plane, int index)
+                          gx_render_plane_t *render_plane, int index)
 {
     if (index >= 0) {
-	gx_colors_used_t colors_used;
-	int ignore_start;
+        gx_colors_used_t colors_used;
+        int ignore_start;
 
-	gdev_prn_colors_used(dev, y, height, &colors_used,  &ignore_start);
-	if (colors_used.slow_rop)
-	    index = -1;
+        gdev_prn_colors_used(dev, y, height, &colors_used,  &ignore_start);
+        if (colors_used.slow_rop)
+            index = -1;
     }
     if (index < 0)
-	render_plane->index = index;
+        render_plane->index = index;
     else
-	gx_render_plane_init(render_plane, dev, index);
+        gx_render_plane_init(render_plane, dev, index);
 }
 
 /*
@@ -327,10 +325,10 @@ clist_setup_params(gx_device *dev)
     int code = clist_render_init(cldev);
 
     if (code < 0)
-	return code;
+        return code;
 
     code = clist_playback_file_bands(playback_action_setup,
-				     crdev, &crdev->page_info, 0, 0, 0, 0, 0);
+                                     crdev, &crdev->page_info, 0, 0, 0, 0, 0);
 
     /* put_params may have reinitialized device into a writer */
     clist_render_init(cldev);
@@ -338,7 +336,7 @@ clist_setup_params(gx_device *dev)
     return code;
 }
 
-int 
+int
 clist_close_writer_and_init_reader(gx_device_clist *cldev)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
@@ -348,21 +346,21 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 
     /* Initialize for rendering if we haven't done so yet. */
     if (crdev->ymin < 0) {
-	code = clist_end_page(&cldev->writer);
-	if (code < 0)
-	    return code;
-	code = clist_render_init(cldev);
+        code = clist_end_page(&cldev->writer);
+        if (code < 0)
+            return code;
+        code = clist_render_init(cldev);
          /* Check for and get ICC profile table */
         code = clist_read_icctable(crdev);
         /* Allocate the icc cache for the clist reader */
-	/* Since we may be rendering in multiple threads, make sure the memory */
-	/* is thread safe by using a known thread_safe memory allocator */
-	gs_memory_status(base_mem, &mem_status);
+        /* Since we may be rendering in multiple threads, make sure the memory */
+        /* is thread safe by using a known thread_safe memory allocator */
+        gs_memory_status(base_mem, &mem_status);
         if (mem_status.is_thread_safe == false) {
             return_error(gs_error_VMerror);
         }
 
-	code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
+        code = (crdev->icc_cache_cl = gsicc_cache_new(base_mem)) == NULL ? gs_error_VMerror : code;
     }
     return code;
 }
@@ -389,7 +387,7 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
         if (cb->band_max == band && cb->band_min == band) {
             crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
             return(0);  /* Found it */
-        } 
+        }
         start_pos -= sizeof(cmd_block);
         if (start_pos < 0) {
            crdev->page_info.io_procs->fseek(bfile, save_pos, SEEK_SET, crdev->page_info.bfname);
@@ -430,7 +428,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     clist_icctable_entry_t *curr_entry;
     int k;
 
-    if ( icc_table != NULL ) 
+    if ( icc_table != NULL )
         return(0);
     save_pos = crdev->page_info.io_procs->ftell(cfile);
     crdev->page_info.io_procs->fseek(cfile, cb->pos, SEEK_SET, crdev->page_info.cfname);
@@ -443,9 +441,9 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     /* Get the data */
     clist_read_chunk(crdev, cb->pos + 4, size_data, buf);
-    icc_table = gs_alloc_struct(crdev->memory, 
-		clist_icctable_t,
-		&st_clist_icctable, "clist_read_icctable");
+    icc_table = gs_alloc_struct(crdev->memory,
+                clist_icctable_t,
+                &st_clist_icctable, "clist_read_icctable");
     if (icc_table == NULL)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     icc_table->head = NULL;
@@ -454,9 +452,9 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     icc_table->tablesize = number_entries;
     crdev->icc_table = icc_table;
     for (k = 0; k < number_entries; k++) {
-        curr_entry = gs_alloc_struct(crdev->memory, 
-		clist_icctable_entry_t,
-		&st_clist_icctable_entry, "clist_read_icctable");
+        curr_entry = gs_alloc_struct(crdev->memory,
+                clist_icctable_entry_t,
+                &st_clist_icctable_entry, "clist_read_icctable");
         if (curr_entry == NULL)
             return gs_rethrow(-1, "insufficient memory for icc table entry");
         memcpy(&(curr_entry->serial_data), buf, sizeof(clist_icc_serial_entry_t));
@@ -483,7 +481,7 @@ clist_read_icctable(gx_device_clist_reader *crdev)
     cmd_block cb;
     int code;
 
-    /* First get the command block which will tell us where the 
+    /* First get the command block which will tell us where the
        information is stored in the cfile */
     code = clist_find_pseudoband(crdev, crdev->nbands + ICC_BAND_OFFSET - 1, &cb);
     if (code < 0)
@@ -518,7 +516,7 @@ clist_render_init(gx_device_clist *dev)
 /* Copy a rasterized rectangle to the client, rasterizing if needed. */
 int
 clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
-			 gs_get_bits_params_t *params, gs_int_rect **unread)
+                         gs_get_bits_params_t *params, gs_int_rect **unread)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
@@ -530,21 +528,21 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     int lines_rasterized;
     gx_device *bdev;
     int num_planes =
-	(options & GB_PACKING_CHUNKY ? 1 :
-	 options & GB_PACKING_PLANAR ? dev->color_info.num_components :
-	 options & GB_PACKING_BIT_PLANAR ? dev->color_info.depth :
-	 0 /****** NOT POSSIBLE ******/);
+        (options & GB_PACKING_CHUNKY ? 1 :
+         options & GB_PACKING_PLANAR ? dev->color_info.num_components :
+         options & GB_PACKING_BIT_PLANAR ? dev->color_info.depth :
+         0 /****** NOT POSSIBLE ******/);
     gx_render_plane_t render_plane;
     int plane_index;
     int my;
     int code;
 
     if (prect->p.x < 0 || prect->q.x > dev->width ||
-	y < 0 || end_y > dev->height
-	)
-	return_error(gs_error_rangecheck);
+        y < 0 || end_y > dev->height
+        )
+        return_error(gs_error_rangecheck);
     if (line_count <= 0 || prect->p.x >= prect->q.x)
-	return 0;
+        return 0;
 
     /*
      * Calculate the render_plane from the params.  There are two cases:
@@ -552,40 +550,40 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
      */
     plane_index = -1;
     if (options & GB_SELECT_PLANES) {
-	/* Look for the one selected plane. */
-	int i;
+        /* Look for the one selected plane. */
+        int i;
 
-	for (i = 0; i < num_planes; ++i)
-	    if (params->data[i]) {
-		if (plane_index >= 0)  /* >1 plane requested */
-		    return gx_default_get_bits_rectangle(dev, prect, params,
-							 unread);
-		plane_index = i;
-	    }
+        for (i = 0; i < num_planes; ++i)
+            if (params->data[i]) {
+                if (plane_index >= 0)  /* >1 plane requested */
+                    return gx_default_get_bits_rectangle(dev, prect, params,
+                                                         unread);
+                plane_index = i;
+            }
     }
 
     if (0 > (code = clist_close_writer_and_init_reader(cldev)))
-	return code;
+        return code;
 
     clist_select_render_plane(dev, y, line_count, &render_plane, plane_index);
     code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				  &bdev, cdev->target, y, &render_plane,
-				  dev->memory, clist_get_band_complexity(dev,y));
+                                  &bdev, cdev->target, y, &render_plane,
+                                  dev->memory, clist_get_band_complexity(dev,y));
     if (code < 0)
-	return code;
+        return code;
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
     if (code < 0)
-	return code;
+        return code;
     lines_rasterized = min(code, line_count);
     /* Return as much of the rectangle as falls within the rasterized lines. */
     band_rect = *prect;
     band_rect.p.y = my;
     band_rect.q.y = my + lines_rasterized;
     code = dev_proc(bdev, get_bits_rectangle)
-	(bdev, &band_rect, params, unread);
+        (bdev, &band_rect, params, unread);
     cdev->buf_procs.destroy_buf_device(bdev);
     if (code < 0 || lines_rasterized == line_count)
-	return code;
+        return code;
     /*
      * We'll have to return the rectangle in pieces.  Force GB_RETURN_COPY
      * rather than GB_RETURN_POINTER, and require all subsequent pieces to
@@ -594,48 +592,48 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
      * rectangles, punt.
      */
     if (!(options & GB_RETURN_COPY) || code > 0)
-	return gx_default_get_bits_rectangle(dev, prect, params, unread);
+        return gx_default_get_bits_rectangle(dev, prect, params, unread);
     options = params->options;
     if (!(options & GB_RETURN_COPY)) {
-	/* Redo the first piece with copying. */
-	params->options = options =
-	    (params->options & ~GB_RETURN_ALL) | GB_RETURN_COPY;
-	lines_rasterized = 0;
+        /* Redo the first piece with copying. */
+        params->options = options =
+            (params->options & ~GB_RETURN_ALL) | GB_RETURN_COPY;
+        lines_rasterized = 0;
     }
     {
-	gs_get_bits_params_t band_params;
-	uint raster = gx_device_raster(bdev, true);
+        gs_get_bits_params_t band_params;
+        uint raster = gx_device_raster(bdev, true);
 
-	code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
-				      &bdev, cdev->target, y, &render_plane,
-				      dev->memory, clist_get_band_complexity(dev, y));
-	if (code < 0)
-	    return code;
-	band_params = *params;
-	while ((y += lines_rasterized) < end_y) {
-	    int i;
+        code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
+                                      &bdev, cdev->target, y, &render_plane,
+                                      dev->memory, clist_get_band_complexity(dev, y));
+        if (code < 0)
+            return code;
+        band_params = *params;
+        while ((y += lines_rasterized) < end_y) {
+            int i;
 
-	    /* Increment data pointers by lines_rasterized. */
-	    for (i = 0; i < num_planes; ++i)
-		if (band_params.data[i])
-		    band_params.data[i] += raster * lines_rasterized;
-	    line_count = end_y - y;
-	    code = clist_rasterize_lines(dev, y, line_count, bdev,
-					 &render_plane, &my);
-	    if (code < 0)
-		break;
-	    lines_rasterized = min(code, line_count);
-	    band_rect.p.y = my;
-	    band_rect.q.y = my + lines_rasterized;
-	    code = dev_proc(bdev, get_bits_rectangle)
-		(bdev, &band_rect, &band_params, unread);
-	    if (code < 0)
-		break;
-	    params->options = options = band_params.options;
-	    if (lines_rasterized == line_count)
-		break;
-	}
-	cdev->buf_procs.destroy_buf_device(bdev);
+            /* Increment data pointers by lines_rasterized. */
+            for (i = 0; i < num_planes; ++i)
+                if (band_params.data[i])
+                    band_params.data[i] += raster * lines_rasterized;
+            line_count = end_y - y;
+            code = clist_rasterize_lines(dev, y, line_count, bdev,
+                                         &render_plane, &my);
+            if (code < 0)
+                break;
+            lines_rasterized = min(code, line_count);
+            band_rect.p.y = my;
+            band_rect.q.y = my + lines_rasterized;
+            code = dev_proc(bdev, get_bits_rectangle)
+                (bdev, &band_rect, &band_params, unread);
+            if (code < 0)
+                break;
+            params->options = options = band_params.options;
+            if (lines_rasterized == line_count)
+                break;
+        }
+        cdev->buf_procs.destroy_buf_device(bdev);
     }
     return code;
 }
@@ -644,8 +642,8 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 /* Processes min(requested # lines, # lines available thru end of band) */
 int	/* returns -ve error code, or # scan lines copied */
 clist_rasterize_lines(gx_device *dev, int y, int line_count,
-		      gx_device *bdev, const gx_render_plane_t *render_plane,
-		      int *pmy)
+                      gx_device *bdev, const gx_render_plane_t *render_plane,
+                      int *pmy)
 {
     gx_device_clist * const cldev = (gx_device_clist *)dev;
     gx_device_clist_reader * const crdev = &cldev->reader;
@@ -657,49 +655,49 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
 
     /* Render a band if necessary, and copy it incrementally. */
     if (crdev->ymin < 0 || crdev->yplane.index != plane_index ||
-	!(y >= crdev->ymin && y < crdev->ymax)
-	) {
-	int band_height = crdev->page_band_height;
-	int band = y / band_height;
-	int band_begin_line = band * band_height;
-	int band_end_line = band_begin_line + band_height;
-	int band_num_lines;
-	gs_int_rect band_rect;
+        !(y >= crdev->ymin && y < crdev->ymax)
+        ) {
+        int band_height = crdev->page_band_height;
+        int band = y / band_height;
+        int band_begin_line = band * band_height;
+        int band_end_line = band_begin_line + band_height;
+        int band_num_lines;
+        gs_int_rect band_rect;
 
-	if (band_end_line > dev->height)
-	    band_end_line = dev->height;
-	/* Clip line_count to current band */
-	if (line_count > band_end_line - y)
-	    line_count = band_end_line - y;
-	band_num_lines = band_end_line - band_begin_line;
+        if (band_end_line > dev->height)
+            band_end_line = dev->height;
+        /* Clip line_count to current band */
+        if (line_count > band_end_line - y)
+            line_count = band_end_line - y;
+        band_num_lines = band_end_line - band_begin_line;
 
-	if (y < 0 || y > dev->height)
-	    return_error(gs_error_rangecheck);
-	code = crdev->buf_procs.setup_buf_device
-	    (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
-	band_rect.p.x = 0;
-	band_rect.p.y = band_begin_line;
-	band_rect.q.x = dev->width;
-	band_rect.q.y = band_end_line;
-	if (code >= 0)
-	    code = clist_render_rectangle(cldev, &band_rect, bdev, render_plane,
-					  true);
-	/* Reset the band boundaries now, so that we don't get */
-	/* an infinite loop. */
-	crdev->ymin = band_begin_line;
-	crdev->ymax = band_end_line;
-	crdev->offset_map = NULL;
-	if (code < 0)
-	    return code;
+        if (y < 0 || y > dev->height)
+            return_error(gs_error_rangecheck);
+        code = crdev->buf_procs.setup_buf_device
+            (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
+        band_rect.p.x = 0;
+        band_rect.p.y = band_begin_line;
+        band_rect.q.x = dev->width;
+        band_rect.q.y = band_end_line;
+        if (code >= 0)
+            code = clist_render_rectangle(cldev, &band_rect, bdev, render_plane,
+                                          true);
+        /* Reset the band boundaries now, so that we don't get */
+        /* an infinite loop. */
+        crdev->ymin = band_begin_line;
+        crdev->ymax = band_end_line;
+        crdev->offset_map = NULL;
+        if (code < 0)
+            return code;
     }
 
     if (line_count > crdev->ymax - y)
-	line_count = crdev->ymax - y;
+        line_count = crdev->ymax - y;
     code = crdev->buf_procs.setup_buf_device
-	(bdev, mdata, raster, NULL, y - crdev->ymin, line_count,
-	 crdev->ymax - crdev->ymin);
+        (bdev, mdata, raster, NULL, y - crdev->ymin, line_count,
+         crdev->ymax - crdev->ymin);
     if (code < 0)
-	return code;
+        return code;
 
     *pmy = 0;
     return line_count;
@@ -711,8 +709,8 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
  */
 int
 clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
-		       gx_device *bdev,
-		       const gx_render_plane_t *render_plane, bool clear)
+                       gx_device *bdev,
+                       const gx_render_plane_t *render_plane, bool clear)
 {
     gx_device_clist_reader * const crdev = &cldev->reader;
     const gx_placed_page *ppages;
@@ -726,14 +724,14 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     int i;
 
     if (render_plane)
-	crdev->yplane = *render_plane;
+        crdev->yplane = *render_plane;
     else
-	crdev->yplane.index = -1;
+        crdev->yplane.index = -1;
     if_debug2('l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
 #if 0 /* Disabled because it is slow and appears to have no useful effect. */
     if (clear)
-	dev_proc(bdev, fill_rectangle)
-	    (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
+        dev_proc(bdev, fill_rectangle)
+            (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
 #endif
 
     /*
@@ -743,48 +741,48 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
      */
     ppages = crdev->pages;
     if (ppages == 0) {
-	current_page.info = crdev->page_info;
-	placed_page.page = &current_page;
-	placed_page.offset.x = placed_page.offset.y = 0;
-	ppages = &placed_page;
-	num_pages = 1;
+        current_page.info = crdev->page_info;
+        placed_page.page = &current_page;
+        placed_page.offset.x = placed_page.offset.y = 0;
+        ppages = &placed_page;
+        num_pages = 1;
     }
     for (i = 0; i < num_pages && code >= 0; ++i) {
-	const gx_placed_page *ppage = &ppages[i];
+        const gx_placed_page *ppage = &ppages[i];
 
-	/*
-	 * Set the band_offset_? values in case the buffer device
-	 * needs this. Example, wtsimdi device needs to adjust the 
-	 * phase of the dithering based on the page position, NOT
-	 * the position within the band buffer to avoid band stitch
-	 * lines in the dither pattern.
-	 *
-	 * The band_offset_x is not important for placed pages that
-	 * are nested on a 'master' page (imposition) since each
-	 * page expects to be dithered independently, but setting
-	 * this allows pages to be contiguous without a dithering
-	 * shift.
-	 *
-	 * The following sets the band_offset_? relative to the
-	 * master page.
-	 */
-	bdev->band_offset_x = ppage->offset.x;
-	bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
-	code = clist_playback_file_bands(playback_action_render,
-					 crdev, &ppage->page->info,
-					 bdev, band_first, band_last,
-					 prect->p.x - ppage->offset.x,
-					 prect->p.y);
+        /*
+         * Set the band_offset_? values in case the buffer device
+         * needs this. Example, wtsimdi device needs to adjust the
+         * phase of the dithering based on the page position, NOT
+         * the position within the band buffer to avoid band stitch
+         * lines in the dither pattern.
+         *
+         * The band_offset_x is not important for placed pages that
+         * are nested on a 'master' page (imposition) since each
+         * page expects to be dithered independently, but setting
+         * this allows pages to be contiguous without a dithering
+         * shift.
+         *
+         * The following sets the band_offset_? relative to the
+         * master page.
+         */
+        bdev->band_offset_x = ppage->offset.x;
+        bdev->band_offset_y = ppage->offset.y + (band_first * band_height);
+        code = clist_playback_file_bands(playback_action_render,
+                                         crdev, &ppage->page->info,
+                                         bdev, band_first, band_last,
+                                         prect->p.x - ppage->offset.x,
+                                         prect->p.y);
     }
     return code;
 }
 
 /* Playback the band file, taking the indicated action w/ its contents. */
 int
-clist_playback_file_bands(clist_playback_action action, 
-			  gx_device_clist_reader *crdev,
-			  gx_band_page_info_t *page_info, gx_device *target,
-			  int band_first, int band_last, int x0, int y0)
+clist_playback_file_bands(clist_playback_action action,
+                          gx_device_clist_reader *crdev,
+                          gx_band_page_info_t *page_info, gx_device *target,
+                          int band_first, int band_last, int x0, int y0)
 {
     int code = 0;
     bool opened_bfile = false;
@@ -792,67 +790,67 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* We have to pick some allocator for rendering.... */
     gs_memory_t *mem =crdev->memory;
- 
+
     stream_band_read_state rs;
 
     /* setup stream */
     s_init_state((stream_state *)&rs, &s_band_read_template,
-		 (gs_memory_t *)0);
+                 (gs_memory_t *)0);
     rs.band_first = band_first;
     rs.band_last = band_last;
     rs.page_info = *page_info;
 
     /* If this is a saved page, open the files. */
     if (rs.page_cfile == 0) {
-	code = crdev->page_info.io_procs->fopen(rs.page_cfname,
-			   gp_fmode_rb, &rs.page_cfile, crdev->bandlist_memory,
-			   crdev->bandlist_memory, true);
-	opened_cfile = (code >= 0);
+        code = crdev->page_info.io_procs->fopen(rs.page_cfname,
+                           gp_fmode_rb, &rs.page_cfile, crdev->bandlist_memory,
+                           crdev->bandlist_memory, true);
+        opened_cfile = (code >= 0);
     }
     if (rs.page_bfile == 0 && code >= 0) {
-	code = crdev->page_info.io_procs->fopen(rs.page_bfname,
-			   gp_fmode_rb, &rs.page_bfile, crdev->bandlist_memory,
-			   crdev->bandlist_memory, false);
-	opened_bfile = (code >= 0);
+        code = crdev->page_info.io_procs->fopen(rs.page_bfname,
+                           gp_fmode_rb, &rs.page_bfile, crdev->bandlist_memory,
+                           crdev->bandlist_memory, false);
+        opened_bfile = (code >= 0);
     }
     if (rs.page_cfile != 0 && rs.page_bfile != 0) {
-	stream s;
-	byte sbuf[cbuf_size];
-	static const stream_procs no_procs = {
-	    s_std_noavailable, s_std_noseek, s_std_read_reset,
-	    s_std_read_flush, s_std_close, s_band_read_process
-	};
+        stream s;
+        byte sbuf[cbuf_size];
+        static const stream_procs no_procs = {
+            s_std_noavailable, s_std_noseek, s_std_read_reset,
+            s_std_read_flush, s_std_close, s_band_read_process
+        };
 
-	s_band_read_init((stream_state *)&rs);
+        s_band_read_init((stream_state *)&rs);
 #	ifdef DEBUG
-	s_band_read_init_offset_map(crdev, (stream_state *)&rs);
+        s_band_read_init_offset_map(crdev, (stream_state *)&rs);
 #	endif
-	  /* The stream doesn't need a memory, but we'll need to access s.memory->gs_lib_ctx. */
-	s_init(&s, mem);
-	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
-	s.foreign = 1;
-	s.state = (stream_state *)&rs;
+          /* The stream doesn't need a memory, but we'll need to access s.memory->gs_lib_ctx. */
+        s_init(&s, mem);
+        s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
+        s.foreign = 1;
+        s.state = (stream_state *)&rs;
 
-	if (vd_allowed('s')) {
-	    vd_get_dc('s');
-	} else if (vd_allowed('i')) {
-	    vd_get_dc('i');
-	}
-	vd_set_shift(0, 0);
-	vd_set_scale(0.01);
-	vd_set_origin(0, 0);
-	code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
-	vd_release_dc;
+        if (vd_allowed('s')) {
+            vd_get_dc('s');
+        } else if (vd_allowed('i')) {
+            vd_get_dc('i');
+        }
+        vd_set_shift(0, 0);
+        vd_set_scale(0.01);
+        vd_set_origin(0, 0);
+        code = clist_playback_band(action, crdev, &s, target, x0, y0, mem);
+        vd_release_dc;
 #	ifdef DEBUG
-	s_band_read_dnit_offset_map(crdev, (stream_state *)&rs);
+        s_band_read_dnit_offset_map(crdev, (stream_state *)&rs);
 #	endif
     }
 
     /* Close the files if we just opened them. */
     if (opened_bfile && rs.page_bfile != 0)
-	crdev->page_info.io_procs->fclose(rs.page_bfile, rs.page_bfname, false);
+        crdev->page_info.io_procs->fclose(rs.page_bfile, rs.page_bfname, false);
     if (opened_cfile && rs.page_cfile != 0)
-	crdev->page_info.io_procs->fclose(rs.page_cfile, rs.page_cfname, false);
+        crdev->page_info.io_procs->fclose(rs.page_cfile, rs.page_cfname, false);
 
     return code;
 }
@@ -865,12 +863,12 @@ gx_band_complexity_t *
 clist_get_band_complexity(gx_device *dev, int y)
 {
     if (dev != NULL) {
-	gx_device_clist *cldev = (gx_device_clist *)dev;
-	gx_device_clist_reader * const crdev = &cldev->reader;
-	int band_number = y / crdev->page_info.band_params.BandHeight;
-    
-	if (crdev->band_complexity_array == NULL)
-	    return NULL;
+        gx_device_clist *cldev = (gx_device_clist *)dev;
+        gx_device_clist_reader * const crdev = &cldev->reader;
+        int band_number = y / crdev->page_info.band_params.BandHeight;
+
+        if (crdev->band_complexity_array == NULL)
+            return NULL;
 
         {
             /* NB this is a temporary workaround until the band
@@ -881,7 +879,7 @@ clist_get_band_complexity(gx_device *dev, int y)
             crdev->band_complexity_array[band_number].nontrivial_rops = (int)colors_used.slow_rop;
             crdev->band_complexity_array[band_number].uses_color = (int)colors_used.or;
         }
-	return &crdev->band_complexity_array[band_number];
+        return &crdev->band_complexity_array[band_number];
     }
     return NULL;
 }
@@ -889,18 +887,18 @@ clist_get_band_complexity(gx_device *dev, int y)
 /* Free any band_complexity_array memory used by the clist reader device */
 void gx_clist_reader_free_band_complexity_array( gx_device_clist *cldev )
 {
-	if (cldev != NULL) {
-	    gx_device_clist_reader * const crdev = &cldev->reader;
-	    
-	    if ( crdev->band_complexity_array ) {
-	    	gs_free_object( crdev->memory, crdev->band_complexity_array,
-	    	  "gx_clist_reader_free_band_complexity_array" );
-	    	crdev->band_complexity_array = NULL;
-	    }
-	}
+        if (cldev != NULL) {
+            gx_device_clist_reader * const crdev = &cldev->reader;
+
+            if ( crdev->band_complexity_array ) {
+                gs_free_object( crdev->memory, crdev->band_complexity_array,
+                  "gx_clist_reader_free_band_complexity_array" );
+                crdev->band_complexity_array = NULL;
+            }
+        }
 }
 
-/* call once per read page to read the band complexity from clist file 
+/* call once per read page to read the band complexity from clist file
  */
 static int
 gx_clist_reader_read_band_complexity(gx_device_clist *dev)
@@ -908,38 +906,38 @@ gx_clist_reader_read_band_complexity(gx_device_clist *dev)
     int code = -1;  /* no dev bad call */
 
     if (dev) {
-	gx_device_clist *cldev = (gx_device_clist *)dev;
-	gx_device_clist_reader * const crdev = &cldev->reader;
-	int i;
-	stream_band_read_state rs;
-	cmd_block cb;
-	int64_t save_pos;
-	int pos = 0;
- 
-	/* setup stream */
-	s_init_state((stream_state *)&rs, &s_band_read_template, (gs_memory_t *)0);
-	rs.band_first = 0;
-	rs.band_last = crdev->nbands;
-	rs.page_info = crdev->page_info;
+        gx_device_clist *cldev = (gx_device_clist *)dev;
+        gx_device_clist_reader * const crdev = &cldev->reader;
+        int i;
+        stream_band_read_state rs;
+        cmd_block cb;
+        int64_t save_pos;
+        int pos = 0;
 
-	save_pos = crdev->page_info.io_procs->ftell(rs.page_bfile);
-	crdev->page_info.io_procs->fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
+        /* setup stream */
+        s_init_state((stream_state *)&rs, &s_band_read_template, (gs_memory_t *)0);
+        rs.band_first = 0;
+        rs.band_last = crdev->nbands;
+        rs.page_info = crdev->page_info;
 
-	if ( crdev->band_complexity_array == NULL )
-		crdev->band_complexity_array = (gx_band_complexity_t*)
-		  gs_alloc_byte_array( crdev->memory, crdev->nbands,
-		  sizeof( gx_band_complexity_t ), "gx_clist_reader_read_band_complexity" );
+        save_pos = crdev->page_info.io_procs->ftell(rs.page_bfile);
+        crdev->page_info.io_procs->fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
 
-	if ( crdev->band_complexity_array == NULL )
-		return_error(gs_error_VMerror);
+        if ( crdev->band_complexity_array == NULL )
+                crdev->band_complexity_array = (gx_band_complexity_t*)
+                  gs_alloc_byte_array( crdev->memory, crdev->nbands,
+                  sizeof( gx_band_complexity_t ), "gx_clist_reader_read_band_complexity" );
 
-	for (i=0; i < crdev->nbands; i++) {
-	    crdev->page_info.io_procs->fread_chars(&cb, sizeof(cb), rs.page_bfile);
-	    crdev->band_complexity_array[i] = cb.band_complexity;
-	}
+        if ( crdev->band_complexity_array == NULL )
+                return_error(gs_error_VMerror);
 
-	crdev->page_info.io_procs->fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
-	code = 0;  
+        for (i=0; i < crdev->nbands; i++) {
+            crdev->page_info.io_procs->fread_chars(&cb, sizeof(cb), rs.page_bfile);
+            crdev->band_complexity_array[i] = cb.band_complexity;
+        }
+
+        crdev->page_info.io_procs->fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
+        code = 0;
     }
     return code;
 }

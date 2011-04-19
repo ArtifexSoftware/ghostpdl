@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,7 +18,7 @@
  * Since we need several statically defined variants of this agorithm,
  * we store it in .h file and include it several times into gxfill.c .
  * Configuration macros (template arguments) are :
- * 
+ *
  *  FILL_DIRECT - See LOOP_FILL_RECTANGLE_DIRECT.
  *  TEMPLATE_spot_into_scanlines - the name of the procedure to generate.
 */
@@ -39,10 +39,10 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
      * epsilon.)
      */
     fixed y_frac_min =
-	(fo.adjust_above == fixed_0 ? fixed_half :
-	 fixed_half + fixed_epsilon - fo.adjust_above);
+        (fo.adjust_above == fixed_0 ? fixed_half :
+         fixed_half + fixed_epsilon - fo.adjust_above);
     fixed y_frac_max =
-	fixed_half + fo.adjust_below;
+        fixed_half + fo.adjust_below;
     int y0 = fixed2int(min_fixed);
     fixed y_bot = min_fixed;	/* normally int2fixed(y0) + y_frac_min */
     fixed y_top = min_fixed;	/* normally int2fixed(y0) + y_frac_max */
@@ -52,189 +52,188 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
     int code = 0;
 
     if (yll == 0)		/* empty list */
-	return 0;
+        return 0;
     range_list_init(&rlist, rlocal, countof(rlocal), ll->memory);
     ll->x_list = 0;
     ll->x_head.x_current = min_fixed;	/* stop backward scan */
     do {
-	active_line *alp, *nlp;
-	fixed x;
-	bool new_band;
+        active_line *alp, *nlp;
+        fixed x;
+        bool new_band;
 
-	INCR(iter);
+        INCR(iter);
 
-	code = move_al_by_y(ll, y); /* Skip horizontal pieces. */
-	if (code < 0)
-	    return code;
-	/*
-	 * Find the next sampling point, either the bottom of a sampling
-	 * band or a line start.
-	 */
+        code = move_al_by_y(ll, y); /* Skip horizontal pieces. */
+        if (code < 0)
+            return code;
+        /*
+         * Find the next sampling point, either the bottom of a sampling
+         * band or a line start.
+         */
 
-	if (ll->x_list == 0)
-	    y = (yll == 0 ? ll->y_break : yll->start.y);
-	else {
-	    y = y_bot + fixed_1;
-	    if (yll != 0)
-		y = min(y, yll->start.y);
-	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		fixed yy = max(alp->fi.y3, alp->fi.y0);
-		
-		yy = max(yy, alp->end.y); /* Non-monotonic curves may have an inner extreme. */
-		y = min(y, yy);
-	    }
-	}
+        if (ll->x_list == 0)
+            y = (yll == 0 ? ll->y_break : yll->start.y);
+        else {
+            y = y_bot + fixed_1;
+            if (yll != 0)
+                y = min(y, yll->start.y);
+            for (alp = ll->x_list; alp != 0; alp = alp->next) {
+                fixed yy = max(alp->fi.y3, alp->fi.y0);
 
-	/* Move newly active lines from y to x list. */
+                yy = max(yy, alp->end.y); /* Non-monotonic curves may have an inner extreme. */
+                y = min(y, yy);
+            }
+        }
 
-	while (yll != 0 && yll->start.y == y) {
-	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
+        /* Move newly active lines from y to x list. */
 
-	    if (yll->direction == DIR_HORIZONTAL) {
-		insert_h_new(yll, ll);
-	    } else
-		insert_x_new(yll, ll);
-	    yll = ynext;
-	}
+        while (yll != 0 && yll->start.y == y) {
+            active_line *ynext = yll->next;	/* insert smashes next/prev links */
 
-	/* Update active lines to y. */
+            if (yll->direction == DIR_HORIZONTAL) {
+                insert_h_new(yll, ll);
+            } else
+                insert_x_new(yll, ll);
+            yll = ynext;
+        }
 
-	x = min_fixed;
-	for (alp = ll->x_list; alp != 0; alp = nlp) {
-	    fixed nx;
+        /* Update active lines to y. */
 
-	    nlp = alp->next;
-	  e:if (alp->end.y <= y || alp->start.y == alp->end.y) {
-		if (end_x_line(alp, ll, true))
-		    continue;
-		if (alp->more_flattened)
-		    if (alp->end.y <= y || alp->start.y == alp->end.y) {
-			code = step_al(alp, true);
-			if (code < 0)
-			    return code;
-		    }
-		goto e;
-	    }
-	    nx = alp->x_current = (alp->start.y >= y ? alp->start.x : AL_X_AT_Y(alp, y));
-	    if (nx < x) {
-		/* Move this line backward in the list. */
-		active_line *ilp = alp;
+        x = min_fixed;
+        for (alp = ll->x_list; alp != 0; alp = nlp) {
+            fixed nx;
 
-		while (nx < (ilp = ilp->prev)->x_current)
-		    DO_NOTHING;
-		/* Now ilp->x_current <= nx < ilp->next->x_cur. */
-		alp->prev->next = alp->next;
-		if (alp->next)
-		    alp->next->prev = alp->prev;
-		if (ilp->next)
-		    ilp->next->prev = alp;
-		alp->next = ilp->next;
-		ilp->next = alp;
-		alp->prev = ilp;
-		continue;
-	    }
-	    x = nx;
-	}
+            nlp = alp->next;
+          e:if (alp->end.y <= y || alp->start.y == alp->end.y) {
+                if (end_x_line(alp, ll, true))
+                    continue;
+                if (alp->more_flattened)
+                    if (alp->end.y <= y || alp->start.y == alp->end.y) {
+                        code = step_al(alp, true);
+                        if (code < 0)
+                            return code;
+                    }
+                goto e;
+            }
+            nx = alp->x_current = (alp->start.y >= y ? alp->start.x : AL_X_AT_Y(alp, y));
+            if (nx < x) {
+                /* Move this line backward in the list. */
+                active_line *ilp = alp;
 
-	if (y > y_top || y >= y_limit) {
-	    /* We're beyond the end of the previous sampling band. */
-	    const coord_range_t *pcr;
+                while (nx < (ilp = ilp->prev)->x_current)
+                    DO_NOTHING;
+                /* Now ilp->x_current <= nx < ilp->next->x_cur. */
+                alp->prev->next = alp->next;
+                if (alp->next)
+                    alp->next->prev = alp->prev;
+                if (ilp->next)
+                    ilp->next->prev = alp;
+                alp->next = ilp->next;
+                ilp->next = alp;
+                alp->prev = ilp;
+                continue;
+            }
+            x = nx;
+        }
 
-	    /* Fill the ranges for y0. */
+        if (y > y_top || y >= y_limit) {
+            /* We're beyond the end of the previous sampling band. */
+            const coord_range_t *pcr;
 
-	    for (pcr = rlist.first.next; pcr != &rlist.last;
-		 pcr = pcr->next
-		 ) {
-		int x0 = pcr->rmin, x1 = pcr->rmax;
+            /* Fill the ranges for y0. */
 
-		if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
-			  x0, x1, y0);
-		VD_RECT(x0, y0, x1 - x0, 1, VD_TRAP_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(&fo, x0, y0, x1 - x0, 1);
-		if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
-		if (code < 0)
-		    goto done;
-	    }
-	    range_list_reset(&rlist);
+            for (pcr = rlist.first.next; pcr != &rlist.last;
+                 pcr = pcr->next
+                 ) {
+                int x0 = pcr->rmin, x1 = pcr->rmax;
 
-	    /* Check whether we've reached the maximum y. */
+                if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
+                          x0, x1, y0);
+                VD_RECT(x0, y0, x1 - x0, 1, VD_TRAP_COLOR);
+                code = LOOP_FILL_RECTANGLE_DIRECT(&fo, x0, y0, x1 - x0, 1);
+                if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
+                if (code < 0)
+                    goto done;
+            }
+            range_list_reset(&rlist);
 
-	    if (y >= y_limit)
-		break;
+            /* Check whether we've reached the maximum y. */
 
-	    /* Reset the sampling band. */
+            if (y >= y_limit)
+                break;
 
-	    y0 = fixed2int(y);
-	    if (fixed_fraction(y) < y_frac_min)
-		--y0;
-	    y_bot = int2fixed(y0) + y_frac_min;
-	    y_top = int2fixed(y0) + y_frac_max;
-	    new_band = true;
-	} else
-	    new_band = false;
+            /* Reset the sampling band. */
 
-	if (y <= y_top) {
-	    /*
-	     * We're within the same Y pixel.  Merge regions for segments
-	     * starting here (at y), up to y_top or the end of the segment.
-	     * If this is the first sampling within the band, run the
-	     * fill/eofill algorithm.
-	     */
-	    fixed y_min;
+            y0 = fixed2int(y);
+            if (fixed_fraction(y) < y_frac_min)
+                --y0;
+            y_bot = int2fixed(y0) + y_frac_min;
+            y_top = int2fixed(y0) + y_frac_max;
+            new_band = true;
+        } else
+            new_band = false;
 
-	    if (new_band) {
-		int inside = 0;
+        if (y <= y_top) {
+            /*
+             * We're within the same Y pixel.  Merge regions for segments
+             * starting here (at y), up to y_top or the end of the segment.
+             * If this is the first sampling within the band, run the
+             * fill/eofill algorithm.
+             */
+            fixed y_min;
 
-		INCR(band);
-		for (alp = ll->x_list; alp != 0; alp = alp->next) {
-		    int x0 = fixed2int_pixround(alp->x_current - fo.adjust_left);
+            if (new_band) {
+                int inside = 0;
 
-		    for (;;) {
-			/* We're inside a filled region. */
-			print_al("step", alp);
-			INCR(band_step);
-			inside += alp->direction;
-			if (!INSIDE_PATH_P(inside, fo.rule))
-			    break;
-			/*
-			 * Since we're dealing with closed paths, the test
-			 * for alp == 0 shouldn't be needed, but we may have
-			 * omitted lines that are to the right of the
-			 * clipping region.
-			 */
-			if ((alp = alp->next) == 0)
-			    goto out;
-		    }
-		    /* We just went from inside to outside, so fill the region. */
-		    code = range_list_add(&rlist, x0,
-					  fixed2int_rounded(alp->x_current +
-							    fo.adjust_right));
-		    if (code < 0)
-			goto done;
-		}
-	    out:
-		y_min = min_fixed;
-	    } else
-		y_min = y;
+                INCR(band);
+                for (alp = ll->x_list; alp != 0; alp = alp->next) {
+                    int x0 = fixed2int_pixround(alp->x_current - fo.adjust_left);
 
-	    /* Process horisontal segments */
+                    for (;;) {
+                        /* We're inside a filled region. */
+                        print_al("step", alp);
+                        INCR(band_step);
+                        inside += alp->direction;
+                        if (!INSIDE_PATH_P(inside, fo.rule))
+                            break;
+                        /*
+                         * Since we're dealing with closed paths, the test
+                         * for alp == 0 shouldn't be needed, but we may have
+                         * omitted lines that are to the right of the
+                         * clipping region.
+                         */
+                        if ((alp = alp->next) == 0)
+                            goto out;
+                    }
+                    /* We just went from inside to outside, so fill the region. */
+                    code = range_list_add(&rlist, x0,
+                                          fixed2int_rounded(alp->x_current +
+                                                            fo.adjust_right));
+                    if (code < 0)
+                        goto done;
+                }
+            out:
+                y_min = min_fixed;
+            } else
+                y_min = y;
 
-	    for (alp = ll->h_list0; alp != NULL; alp = alp->next) {
-		fixed x0 = min(alp->start.x, alp->end.x);
-		fixed x1 = max(alp->start.x, alp->end.x);
+            /* Process horisontal segments */
 
-		code = range_list_add(&rlist, fixed2int_rounded(x0 - fo.adjust_left),
-					      fixed2int_rounded(x1 + fo.adjust_right));
-		if (code < 0)
-		    goto done;
-	    }
+            for (alp = ll->h_list0; alp != NULL; alp = alp->next) {
+                fixed x0 = min(alp->start.x, alp->end.x);
+                fixed x1 = max(alp->start.x, alp->end.x);
 
-	    code = merge_ranges(&rlist, ll, y_min, y_top);
-	} /* else y < y_bot + 1, do nothing */
-	ll->h_list0 = NULL;
+                code = range_list_add(&rlist, fixed2int_rounded(x0 - fo.adjust_left),
+                                              fixed2int_rounded(x1 + fo.adjust_right));
+                if (code < 0)
+                    goto done;
+            }
+
+            code = merge_ranges(&rlist, ll, y_min, y_top);
+        } /* else y < y_bot + 1, do nothing */
+        ll->h_list0 = NULL;
     } while (code >= 0);
  done:
     range_list_free(&rlist);
     return code;
 }
-

@@ -1,12 +1,12 @@
 %    Copyright (C) 1990, 1995, 1996 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -134,7 +134,7 @@ envBDF begin
     ]
     { dup =string cvs
       [ exch dup 0 1 getinterval cvn
-	exch dup length 1 sub 1 exch getinterval cvn
+        exch dup length 1 sub 1 exch getinterval cvn
       ]
     } forall
      /cent [/c /slash]
@@ -163,8 +163,8 @@ envBDF begin
 % (If commentword is equal to a space, never skip.)
    /nextline
     {  { bdfile buffer readline not
-	  { (Premature EOF\n) print stop } if
-	 dup length 0 ne { exit } if pop	 
+          { (Premature EOF\n) print stop } if
+         dup length 0 ne { exit } if pop
        }
       loop
       ( ) search
@@ -240,24 +240,24 @@ envBDF begin
     { mark exch lenIV
        {		% stack: mark ... string dropcount
          dup 2 index length exch sub getinterval
-	 dup 0 get dup 32 lt { pop exit } if
-	 dup 246 le
-	  { 139 sub exch 1 }
-	  { dup 250 le
-	     { 247 sub 8 bitshift 108 add 1 index 1 get add exch 2 }
-	     { dup 254 le
-		{ 251 sub 8 bitshift 108 add 1 index 1 get add neg exch 2 }
-		{ pop dup 1 get 128 xor 128 sub
-		  8 bitshift 1 index 2 get add
-		  8 bitshift 1 index 3 get add
-		  8 bitshift 1 index 4 get add exch 5
-		} ifelse
-	     } ifelse
-	  } ifelse
+         dup 0 get dup 32 lt { pop exit } if
+         dup 246 le
+          { 139 sub exch 1 }
+          { dup 250 le
+             { 247 sub 8 bitshift 108 add 1 index 1 get add exch 2 }
+             { dup 254 le
+                { 251 sub 8 bitshift 108 add 1 index 1 get add neg exch 2 }
+                { pop dup 1 get 128 xor 128 sub
+                  8 bitshift 1 index 2 get add
+                  8 bitshift 1 index 3 get add
+                  8 bitshift 1 index 4 get add exch 5
+                } ifelse
+             } ifelse
+          } ifelse
        } loop
       counttomark 3 eq { 0 3 1 roll 0 exch } if
       6 -1 roll pop
-    } bind def 
+    } bind def
 
 % Find the side bearing and width information that begins a CharString.
 % Arguments: charstring.  Result: charstring sizethroughsbw.
@@ -276,17 +276,17 @@ envBDF begin
        { 139 add 1 string dup 0 3 index put }
        { dup dup -1131 ge exch 1131 le and
           { dup 0 ge { 16#f694 } { neg 16#fa94 } ifelse add
-	    2 string dup 0 3 index -8 bitshift put
-	    dup 1 3 index 255 and put
-	  }
-	  { 5 string dup 0 255 put exch
-	    2 copy 1 exch -24 bitshift 255 and put
-	    2 copy 2 exch -16 bitshift 255 and put
-	    2 copy 3 exch -8 bitshift 255 and put
-	    2 copy 4 exch 255 and put
-	    exch
-	  }
-	 ifelse
+            2 string dup 0 3 index -8 bitshift put
+            dup 1 3 index 255 and put
+          }
+          { 5 string dup 0 255 put exch
+            2 copy 1 exch -24 bitshift 255 and put
+            2 copy 2 exch -16 bitshift 255 and put
+            2 copy 3 exch -8 bitshift 255 and put
+            2 copy 4 exch 255 and put
+            exch
+          }
+         ifelse
        }
       ifelse exch pop concatstrings
     } bind def
@@ -302,11 +302,11 @@ envBDF begin
 % ------ The main program ------ %
 
    /readBDF		% <infilename> <outfilename> <fontname>
-			%   <encodingname> <uniqueID> <xuid> readBDF -> <font>
+                        %   <encodingname> <uniqueID> <xuid> readBDF -> <font>
     { /xuid exch def		% may be null
       /uniqueID exch def	% may be -1
       /encodingname exch def
-	/encoding encodingname cvx exec def
+        /encoding encodingname cvx exec def
       /fontname exch def
       /psname exch def
       /bdfname exch def
@@ -360,7 +360,7 @@ envBDF begin
 %  Put out a header compatible with the Adobe "standard".
       (%!FontType1-1.0: ) ws fontname wt (000.000) wl
       (% This is a font description converted from ) ws
-	bdfname wl
+        bdfname wl
       (%   by bdftops running on ) ws
       statusdict /product get ws ( revision ) ws
       revision =string cvs ws (.) wl
@@ -368,10 +368,10 @@ envBDF begin
 %  Copy the initial comments, up to FONT.
       true
        { nextline
-	 keyword (COMMENT) ne {exit} if
-	  { (% Here are the initial comments from the BDF file:\n%) wl
-	  } if false
-	 (%) ws remarg wl
+         keyword (COMMENT) ne {exit} if
+          { (% Here are the initial comments from the BDF file:\n%) wl
+          } if false
+         (%) ws remarg wl
        } loop pop
       () wl
       /commentword (COMMENT) def	% do skip comments from now on
@@ -383,7 +383,7 @@ envBDF begin
       % The FONTBOUNDINGBOX may not be reliable, so we discard it too.
       (FONT) checkline
       (SIZE) getline
-	/pointsize iarg def   /xres iarg def   /yres iarg def
+        /pointsize iarg def   /xres iarg def   /yres iarg def
       (FONTBOUNDINGBOX) getline
       nextline
 
@@ -397,12 +397,12 @@ envBDF begin
       keyword (STARTPROPERTIES) eq
        { iarg
           { nextline
-	    properties keyword known
-	     { FontInfo properties keyword get sarg readonly put
-	     } if
-	  } repeat
+            properties keyword known
+             { FontInfo properties keyword get sarg readonly put
+             } if
+          } repeat
          (ENDPROPERTIES) getline
-	 nextline
+         nextline
        } if
 
 %  Compute and set the FontMatrix.
@@ -412,14 +412,14 @@ envBDF begin
 
 %  Read and process the header for the bitmaps.
       (CHARS) checkline
-	/ccount iarg def
+        /ccount iarg def
 
 %  Initialize the CharStrings dictionary.
       /charstrings ccount
-	composites length add
-	aliases length add
-	accentedchars length add
-	1 add dict def		% 1 add for .notdef
+        composites length add
+        aliases length add
+        accentedchars length add
+        1 add dict def		% 1 add for .notdef
       /isfixedwidth true def
       /fixedwidth null def
       /subrcount 0 def
@@ -432,56 +432,56 @@ envBDF begin
       ccount -1 1
        { (STARTCHAR) getline
            /charname remarg def
-	 (ENCODING) getline
-	   /eindex iarg def
-	   eindex dup 0 ge exch 255 le and
-	    { charname /charname StandardEncoding eindex get def
-	      charname /.notdef eq eindex 0 gt and
-	       { /charname (A) eindex =string cvs concatstrings cvn def
-	       }
-	      if
-	      (/) print charname =string cvs print (,) print print
-	    }
-	    { (/) print charname print
-	    }
-	   ifelse
-	   10 mod 1 eq { (\n) print flush } if
-	 (SWIDTH) getline
-	   /swx iarg pointsize mul 1000 div xres mul 72 div def
-	   /swy iarg pointsize mul 1000 div xres mul 72 div def
-	 (DWIDTH) getline		% Ignore, use SWIDTH instead
-	 (BBX) getline
-	   /bbw iarg def  /bbh iarg def  /bbox iarg def  /bboy iarg def
-	 nextline
-	 keyword (ATTRIBUTES) eq
-	  { nextline
-	  } if
-	 (BITMAP) checkline
+         (ENCODING) getline
+           /eindex iarg def
+           eindex dup 0 ge exch 255 le and
+            { charname /charname StandardEncoding eindex get def
+              charname /.notdef eq eindex 0 gt and
+               { /charname (A) eindex =string cvs concatstrings cvn def
+               }
+              if
+              (/) print charname =string cvs print (,) print print
+            }
+            { (/) print charname print
+            }
+           ifelse
+           10 mod 1 eq { (\n) print flush } if
+         (SWIDTH) getline
+           /swx iarg pointsize mul 1000 div xres mul 72 div def
+           /swy iarg pointsize mul 1000 div xres mul 72 div def
+         (DWIDTH) getline		% Ignore, use SWIDTH instead
+         (BBX) getline
+           /bbw iarg def  /bbh iarg def  /bbox iarg def  /bboy iarg def
+         nextline
+         keyword (ATTRIBUTES) eq
+          { nextline
+          } if
+         (BITMAP) checkline
 
 % Update the font bounding box.
-	 /fbbxo fbbxo bbox .min def
-	 /fbbyo fbbyo bboy .min def
-	 /fbbxe fbbxe bbox bbw add .max def
-	 /fbbye fbbye bboy bbh add .max def
+         /fbbxo fbbxo bbox .min def
+         /fbbyo fbbyo bboy .min def
+         /fbbxe fbbxe bbox bbw add .max def
+         /fbbye fbbye bboy bbh add .max def
 
 % Read the bits for this character.
-	 /raster bbw 7 add 8 idiv def
-	 /cbits raster bbh mul string def
-	 cbits length 0 gt
-	  { 0 raster cbits length raster sub
-	      { cbits exch raster getinterval
-	        bdfile buffer readline not
-	         { (EOF in bitmap\n) print stop } if
-		    % stack has <cbits.interval> <buffer.interval>
-	        0 () /SubFileDecode filter
-	        exch 2 copy readhexstring pop pop pop closefile
-	      } for
-	  } if
+         /raster bbw 7 add 8 idiv def
+         /cbits raster bbh mul string def
+         cbits length 0 gt
+          { 0 raster cbits length raster sub
+              { cbits exch raster getinterval
+                bdfile buffer readline not
+                 { (EOF in bitmap\n) print stop } if
+                    % stack has <cbits.interval> <buffer.interval>
+                0 () /SubFileDecode filter
+                exch 2 copy readhexstring pop pop pop closefile
+              } for
+          } if
 
          (ENDCHAR) getline
 
 % Save the character data.
-	 chardata charname [swx swy bbw bbh bbox bboy cbits] put
+         chardata charname [swx swy bbw bbh bbox bboy cbits] put
        } for
 
       (ENDFONT) getline
@@ -497,52 +497,52 @@ envBDF begin
 %  Process the characters.
       chardata
        { exch /charname exch def  aload pop
-	 /cbits exch def
-	 /bboy exch def   /bbox exch def
-	 /bbh exch def   /bbw exch def
-	 /swy exch def   /swx exch def
+         /cbits exch def
+         /bboy exch def   /bbox exch def
+         /bbh exch def   /bbw exch def
+         /swy exch def   /swx exch def
 
 % The bitmap handed to type1imagepath must have the correct height,
 % because type1imagepath uses this to compute the scale factor,
 % so we have to clear the unused parts of it.
-	 /raster bbw 7 add 8 idiv def
-	 bits dup 0 1 raster fbbh mul 1 sub
-	  { 0 put dup } for
-	 pop pop
-	 bits raster fbbh bbh sub mul cbits putinterval
+         /raster bbw 7 add 8 idiv def
+         bits dup 0 1 raster fbbh mul 1 sub
+          { 0 put dup } for
+         pop pop
+         bits raster fbbh bbh sub mul cbits putinterval
 
 %  Compute the font entry, converting the bitmap to an outline.
-	 bits 0 raster fbbh mul getinterval	% the bitmap image
-	 bbw   fbbh				% bitmap width & height
-	 swx   swy				% width x & y
-	 bbox neg   bboy neg			% origin x & y
-	 	% Account for lenIV when converting the outline.
-	 outline  lenIV  outline length lenIV sub  getinterval
+         bits 0 raster fbbh mul getinterval	% the bitmap image
+         bbw   fbbh				% bitmap width & height
+         swx   swy				% width x & y
+         bbox neg   bboy neg			% origin x & y
+                % Account for lenIV when converting the outline.
+         outline  lenIV  outline length lenIV sub  getinterval
          type1imagepath
          length lenIV add
-	 outline exch 0 exch getinterval
+         outline exch 0 exch getinterval
 
 % Check for a fixed width font.
-	 isfixedwidth
-	  { fixedwidth null eq
-	     { /fixedwidth swx def }
-	     { fixedwidth swx ne { /isfixedwidth false def } if }
-	    ifelse
-	  } if
+         isfixedwidth
+          { fixedwidth null eq
+             { /fixedwidth swx def }
+             { fixedwidth swx ne { /isfixedwidth false def } if }
+            ifelse
+          } if
 
 % Finish up the character.
-	 copystring
-	 charname exch charstrings 3 1 roll put
+         copystring
+         charname exch charstrings 3 1 roll put
        } forall
 
 %  Add CharStrings entries for aliases.
       aliases
        { charstrings 2 index known not charstrings 2 index known and
           { charstrings exch get charstrings 3 1 roll put
-	  }
-	  { pop pop
-	  }
-	 ifelse
+          }
+          { pop pop
+          }
+         ifelse
        }
       forall
 
@@ -550,27 +550,27 @@ envBDF begin
 %  out of available ones.
       isfixedwidth not
        { false composites
-	  { 1 index charstrings exch known not
-	    1 index { decoding exch known and } forall
-	     { ( /) print 1 index bits cvs print
-	       /combine exch def
-	       0 1 combine length 1 sub
-		{ dup combine exch get decoding exch get
-		  bits 3 1 roll put
-		} for
-	       bits 0 combine length getinterval copystring
-	       [ exch /compose_proc load aload pop ] cvx
-	       charstrings 3 1 roll put
-	       pop true
-	     }
-	     { pop pop }
-	    ifelse
-	  }
-	 forall flush
-	  { Private /composematrix matrix put
-	    Private /compose /compose load put
-	  }
-	 if
+          { 1 index charstrings exch known not
+            1 index { decoding exch known and } forall
+             { ( /) print 1 index bits cvs print
+               /combine exch def
+               0 1 combine length 1 sub
+                { dup combine exch get decoding exch get
+                  bits 3 1 roll put
+                } for
+               bits 0 combine length getinterval copystring
+               [ exch /compose_proc load aload pop ] cvx
+               charstrings 3 1 roll put
+               pop true
+             }
+             { pop pop }
+            ifelse
+          }
+         forall flush
+          { Private /composematrix matrix put
+            Private /compose /compose load put
+          }
+         if
        }
       if
 
@@ -578,25 +578,25 @@ envBDF begin
       accentedchars
        { aload pop /accent exch def /base exch def
          buffer cvs /accented exch def
-	 charstrings accented known not
-	 charstrings base known and
-	 charstrings accent known and
-	 StandardDecoding base known and
-	 StandardDecoding accent known and
-	 encoding StandardDecoding base get get base eq and
-	 encoding StandardDecoding accent get get accent eq and
-	  { ( /) print accented print
-	    charstrings base get findsbw 0 exch getinterval
-	    /acstring exch def		% start with sbw of base
-	    charstrings accent get parsesbw
-	    4 { pop } repeat		% just leave sbx
-	    acstring exch concatnum
-	    0 concatnum 0 concatnum		% adx ady
-	    decoding base get concatnum		% bchar
-	    decoding accent get concatnum	% achar
-	    s_seac concatstrings
-	    charstrings exch accented copystring exch put
-	  } if
+         charstrings accented known not
+         charstrings base known and
+         charstrings accent known and
+         StandardDecoding base known and
+         StandardDecoding accent known and
+         encoding StandardDecoding base get get base eq and
+         encoding StandardDecoding accent get get accent eq and
+          { ( /) print accented print
+            charstrings base get findsbw 0 exch getinterval
+            /acstring exch def		% start with sbw of base
+            charstrings accent get parsesbw
+            4 { pop } repeat		% just leave sbx
+            acstring exch concatnum
+            0 concatnum 0 concatnum		% adx ady
+            decoding base get concatnum		% bchar
+            decoding accent get concatnum	% achar
+            s_seac concatstrings
+            charstrings exch accented copystring exch put
+          } if
        } forall
 
 %  Make a CharStrings entry for .notdef.
@@ -606,29 +606,29 @@ envBDF begin
 %  Encrypt the CharStrings and Subrs (in place).
       charstrings
        {	% Be careful not to encrypt aliased characters twice,
-		% since they share their CharString.
-	 aliases 2 index known
-	  { charstrings aliases 3 index get .knownget
-	     { 1 index ne }
-	     { true }
-	    ifelse
-	  }
-	  { true
-	  }
-	 ifelse
-	 1 index type /stringtype eq and
+                % since they share their CharString.
+         aliases 2 index known
+          { charstrings aliases 3 index get .knownget
+             { 1 index ne }
+             { true }
+            ifelse
+          }
+          { true
+          }
+         ifelse
+         1 index type /stringtype eq and
           { 4330 exch dup .type1encrypt exch pop
-	    readonly charstrings 3 1 roll put
-	  }
-	  { pop pop
-	  }
-	 ifelse
+            readonly charstrings 3 1 roll put
+          }
+          { pop pop
+          }
+         ifelse
        }
       forall
       0 1 subrcount 1 sub
        { dup subrs exch get
-	 4330 exch dup .type1encrypt exch pop
-	 subrs 3 1 roll put
+         4330 exch dup .type1encrypt exch pop
+         subrs 3 1 roll put
        }
       for
 
@@ -640,9 +640,9 @@ envBDF begin
       /fontscale 1000 fbbh div yres mul xres div def
       Font /FontBBox
        [ fbbxo fontscale mul
-	 fbbyo fontscale mul
-	 fbbxe fontscale mul
-	 fbbye fontscale mul
+         fbbyo fontscale mul
+         fbbxe fontscale mul
+         fbbye fontscale mul
        ] cvx readonly put
       Font /CharStrings charstrings readonly put
       FontInfo /FullName known not
@@ -665,10 +665,10 @@ envBDF begin
       0 9999 0 5 85
        { dup rotate
          newpath 0 0 moveto (I) false charpath
-	 dup neg rotate
+         dup neg rotate
          pathbbox pop exch pop exch sub
-	 dup 3 index lt { 4 -2 roll } if
-	 pop pop
+         dup 3 index lt { 4 -2 roll } if
+         pop pop
        }
       for pop
 % The underline position is halfway between the bottom of the 'A'
@@ -718,31 +718,31 @@ envBDF begin
       /metrics 0 dict def
        { nextline
          keyword (EndFontMetrics) eq { exit } if
-	 keyword (StartCharMetrics) eq
-	  { iarg dup dict /metrics exch def
-	     { /c -1 def /n null def /w null def
-	       nextline buffer
-		{ token not { exit } if
-		  dup cmdict exch known
-		   { exch /args exch def   cmdict exch get exec   args }
-		   { pop }
-		  ifelse
-		} loop
-	       c 0 ge n null ne or w null ne and
-		{ n null eq { /n Font /Encoding get c get def } if
-		  metrics n w put
-		}
-	       if
-	     }
-	    repeat
-	    (EndCharMetrics) getline
-	  } if
+         keyword (StartCharMetrics) eq
+          { iarg dup dict /metrics exch def
+             { /c -1 def /n null def /w null def
+               nextline buffer
+                { token not { exit } if
+                  dup cmdict exch known
+                   { exch /args exch def   cmdict exch get exec   args }
+                   { pop }
+                  ifelse
+                } loop
+               c 0 ge n null ne or w null ne and
+                { n null eq { /n Font /Encoding get c get def } if
+                  metrics n w put
+                }
+               if
+             }
+            repeat
+            (EndCharMetrics) getline
+          } if
        } loop
 
 %  Insert the metrics in the font.
        metrics length 0 ne
-	{ Font /Metrics metrics readonly put
-	} if
+        { Font /Metrics metrics readonly put
+        } if
       Font
     } bind def
 
@@ -750,7 +750,7 @@ end		% envBDF
 
 % Enter the main program in the current dictionary.
 /bdfafmtops		% infilename afmfilename* outfilename fontname
-			%   encodingname uniqueID xuid
+                        %   encodingname uniqueID xuid
  { envBDF begin
      7 -2 roll exch 7 2 roll	% afm* in out fontname encodingname uniqueID xuid
      readBDF		% afm* font
@@ -775,8 +775,8 @@ end		% envBDF
       exch (.) search			% next-to-last arg has . in it?
        { mark 4 1 roll			% have xuid
           { cvi exch pop exch (.) search not { exit } if }
-	 loop cvi ]
-	 3 -1 roll cvi exch
+         loop cvi ]
+         3 -1 roll cvi exch
        }
        { cvi null			% no xuid
        }

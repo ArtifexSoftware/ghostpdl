@@ -18,7 +18,7 @@
 #include "oper.h"
 #include "estack.h"
 #include "gsstruct.h"		/* must precede igstate.h, */
-					/* because of #ifdef in gsht.h */
+                                        /* because of #ifdef in gsht.h */
 #include "ialloc.h"
 #include "igstate.h"
 #include "gsmatrix.h"
@@ -52,54 +52,54 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
 
     for (i = 0; i < 4; i++) {
-	os_ptr op1 = op - 9 + i * 3;
-	int code = zscreen_params(op1, &cscreen.screens.indexed[i]);
+        os_ptr op1 = op - 9 + i * 3;
+        int code = zscreen_params(op1, &cscreen.screens.indexed[i]);
 
-	if (code < 0)
-	    return code;
-	cscreen.screens.indexed[i].spot_function = spot_dummy;
-	sprocs[i] = *op1;
-	space = max(space, r_space_index(op1));
+        if (code < 0)
+            return code;
+        cscreen.screens.indexed[i].spot_function = spot_dummy;
+        sprocs[i] = *op1;
+        space = max(space, r_space_index(op1));
     }
     mem = (gs_memory_t *)idmemory->spaces_indexed[space];
     check_estack(8);		/* for sampling screens */
     rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
-		      mem, pht = 0, "setcolorscreen(halftone)");
+                      mem, pht = 0, "setcolorscreen(halftone)");
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
-		      mem, pdht = 0, "setcolorscreen(device halftone)");
+                      mem, pdht = 0, "setcolorscreen(device halftone)");
     if (pht == 0 || pdht == 0)
-	code = gs_note_error(e_VMerror);
+        code = gs_note_error(e_VMerror);
     else {
-	pht->type = ht_type_colorscreen;
-	pht->params.colorscreen = cscreen;
-	code = gs_sethalftone_prepare(igs, pht, pdht);
+        pht->type = ht_type_colorscreen;
+        pht->params.colorscreen = cscreen;
+        code = gs_sethalftone_prepare(igs, pht, pdht);
     }
     if (code >= 0) {		/* Schedule the sampling of the screens. */
-	es_ptr esp0 = esp;	/* for backing out */
+        es_ptr esp0 = esp;	/* for backing out */
 
-	esp += 8;
-	make_mark_estack(esp - 7, es_other, setcolorscreen_cleanup);
-	memcpy(esp - 6, sprocs, sizeof(ref) * 4);	/* procs */
-	make_istruct(esp - 2, 0, pht);
-	make_istruct(esp - 1, 0, pdht);
-	make_op_estack(esp, setcolorscreen_finish);
-	for (i = 0; i < 4; i++) {
-	    /* Shuffle the indices to correspond to */
-	    /* the component order. */
-	    code = zscreen_enum_init(i_ctx_p,
-				     &pdht->components[(i + 1) & 3].corder,
-				&pht->params.colorscreen.screens.indexed[i],
-				     &sprocs[i], 0, 0, space);
-	    if (code < 0) {
-		esp = esp0;
-		break;
-	    }
-	}
+        esp += 8;
+        make_mark_estack(esp - 7, es_other, setcolorscreen_cleanup);
+        memcpy(esp - 6, sprocs, sizeof(ref) * 4);	/* procs */
+        make_istruct(esp - 2, 0, pht);
+        make_istruct(esp - 1, 0, pdht);
+        make_op_estack(esp, setcolorscreen_finish);
+        for (i = 0; i < 4; i++) {
+            /* Shuffle the indices to correspond to */
+            /* the component order. */
+            code = zscreen_enum_init(i_ctx_p,
+                                     &pdht->components[(i + 1) & 3].corder,
+                                &pht->params.colorscreen.screens.indexed[i],
+                                     &sprocs[i], 0, 0, space);
+            if (code < 0) {
+                esp = esp0;
+                break;
+            }
+        }
     }
     if (code < 0) {
-	gs_free_object(mem, pdht, "setcolorscreen(device halftone)");
-	gs_free_object(mem, pht, "setcolorscreen(halftone)");
-	return code;
+        gs_free_object(mem, pdht, "setcolorscreen(device halftone)");
+        gs_free_object(mem, pht, "setcolorscreen(halftone)");
+        return code;
     }
     pop(12);
     return o_push_estack;
@@ -114,7 +114,7 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
     pdht->order = pdht->components[0].corder;
     code = gx_ht_install(igs, r_ptr(esp - 1, gs_halftone), pdht);
     if (code < 0)
-	return code;
+        return code;
     istate->screen_procs.red   = esp[-5];
     istate->screen_procs.green = esp[-4];
     istate->screen_procs.blue  = esp[-3];
@@ -132,9 +132,9 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
     gx_device_halftone *pdht = r_ptr(esp + 7, gx_device_halftone);
 
     gs_free_object(pdht->rc.memory, pdht,
-		   "setcolorscreen_cleanup(device halftone)");
+                   "setcolorscreen_cleanup(device halftone)");
     gs_free_object(pht->rc.memory, pht,
-		   "setcolorscreen_cleanup(halftone)");
+                   "setcolorscreen_cleanup(halftone)");
     return 0;
 }
 
@@ -143,7 +143,7 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
 const op_def zht1_op_defs[] =
 {
     {"<setcolorscreen", zsetcolorscreen},
-		/* Internal operators */
+                /* Internal operators */
     {"0%setcolorscreen_finish", setcolorscreen_finish},
     op_def_end(0)
 };

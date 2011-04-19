@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -118,7 +118,7 @@ typedef struct gx_image_enum_common_s gx_image_enum_common_t;
 
 typedef struct gs_image_enum_s gs_image_enum;
 int gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
-			 bool uses_color, gx_image_enum_common_t ** ppie);
+                         bool uses_color, gx_image_enum_common_t ** ppie);
 
 gs_image_enum *gs_image_enum_alloc(gs_memory_t *, client_name_t);
 
@@ -138,19 +138,19 @@ typedef struct gx_device_color_s gx_device_color;
 
 /* Initialize the common part of the image class */
 int gs_image_common_init(gs_image_enum * penum,
-			 gx_image_enum_common_t * pie,
-			 const gs_data_image_t * pim, gx_device * dev);
+                         gx_image_enum_common_t * pie,
+                         const gs_data_image_t * pim, gx_device * dev);
 
 /* Initialize an enumerator for an ImageType 1 image. */
 int gs_image_init(gs_image_enum * penum, const gs_image_t * pim,
-		  bool MultipleDataSources, gs_state * pgs);
+                  bool MultipleDataSources, gs_state * pgs);
 
-/* Initialize an enumerator for a general image. 
+/* Initialize an enumerator for a general image.
    penum->memory must be initialized in advance.
 */
 int gs_image_enum_init(gs_image_enum * penum,
-		       gx_image_enum_common_t * pie,
-		       const gs_data_image_t * pim, gs_state *pgs);
+                       gx_image_enum_common_t * pie,
+                       const gs_data_image_t * pim, gs_state *pgs);
 
 /*
  * Return the number of bytes of data per row
@@ -187,11 +187,11 @@ const byte *gs_image_planes_wanted(gs_image_enum *penum);
  * used[] and plane_data[] are set even in the error or end-of-image case.
  */
 int gs_image_next_planes(gs_image_enum *penum, gs_const_string *plane_data,
-			 uint *used);
+                         uint *used);
 
 /* Pass the next plane of data for an image.  See above for details. */
 int gs_image_next(gs_image_enum * penum, const byte * dbytes,
-		  uint dsize, uint * pused);
+                  uint dsize, uint * pused);
 
 /* Clean up after processing an image. */
 int gs_image_cleanup(gs_image_enum * penum, gs_state *pgs);

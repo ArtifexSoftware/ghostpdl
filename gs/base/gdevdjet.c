@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -114,11 +114,11 @@ static dev_proc_put_params(hpjet_put_params);
 
 static const gx_device_procs prn_hp_procs =
 prn_params_procs(hpjet_open, gdev_prn_output_page, hpjet_close,
-		 hpjet_get_params, hpjet_put_params);
+                 hpjet_get_params, hpjet_put_params);
 
 static gx_device_procs prn_ljet4pjl_procs =
 prn_params_procs(hpjet_open, gdev_prn_output_page, ljet4pjl_close,
-		 gdev_prn_get_params, gdev_prn_put_params);
+                 gdev_prn_get_params, gdev_prn_put_params);
 
 typedef struct gx_device_hpjet_s gx_device_hpjet;
 
@@ -140,94 +140,94 @@ struct gx_device_hpjet_s {
 
 const gx_device_hpjet gs_deskjet_device =
 HPJET_DEVICE(prn_hp_procs, "deskjet",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0, 0, 0, 0,		/* margins filled in by hpjet_open */
-	     1, djet_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0, 0, 0, 0,		/* margins filled in by hpjet_open */
+             1, djet_print_page_copies);
 
 const gx_device_hpjet gs_djet500_device =
 HPJET_DEVICE(prn_hp_procs, "djet500",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0, 0, 0, 0,		/* margins filled in by hpjet_open */
-	     1, djet500_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0, 0, 0, 0,		/* margins filled in by hpjet_open */
+             1, djet500_print_page_copies);
 
 const gx_device_hpjet gs_fs600_device =
 HPJET_DEVICE(prn_hp_procs, "fs600",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI2, Y_DPI2,
-	     0.23, 0.0, 0.23, 0.04,      /* margins */
-	     1, fs600_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI2, Y_DPI2,
+             0.23, 0.0, 0.23, 0.04,      /* margins */
+             1, fs600_print_page_copies);
 
 const gx_device_hpjet gs_laserjet_device =
 HPJET_DEVICE(prn_hp_procs, "laserjet",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0.05, 0.25, 0.55, 0.25,	/* margins */
-	     1, ljet_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.05, 0.25, 0.55, 0.25,	/* margins */
+             1, ljet_print_page_copies);
 
 const gx_device_hpjet gs_ljetplus_device =
 HPJET_DEVICE(prn_hp_procs, "ljetplus",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0.05, 0.25, 0.55, 0.25,	/* margins */
-	     1, ljetplus_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.05, 0.25, 0.55, 0.25,	/* margins */
+             1, ljetplus_print_page_copies);
 
 const gx_device_hpjet gs_ljet2p_device =
 HPJET_DEVICE(prn_hp_procs, "ljet2p",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0.25, 0.25, 0.25, 0.0,	/* margins */
-	     1, ljet2p_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.25, 0.25, 0.25, 0.0,	/* margins */
+             1, ljet2p_print_page_copies);
 
 const gx_device_hpjet gs_ljet3_device =
 HPJET_DEVICE(prn_hp_procs, "ljet3",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0.20, 0.25, 0.25, 0.25,	/* margins */
-	     1, ljet3_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.20, 0.25, 0.25, 0.25,	/* margins */
+             1, ljet3_print_page_copies);
 
 const gx_device_hpjet gs_ljet3d_device =
 HPJET_DEVICE(prn_hp_procs, "ljet3d",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0.20, 0.25, 0.25, 0.25,	/* margins */
-	     1, ljet3d_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0.20, 0.25, 0.25, 0.25,	/* margins */
+             1, ljet3d_print_page_copies);
 
 const gx_device_hpjet gs_ljet4_device =
 HPJET_DEVICE(prn_hp_procs, "ljet4",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI2, Y_DPI2,
-	     0, 0, 0, 0,		/* margins */
-	     1, ljet4_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI2, Y_DPI2,
+             0, 0, 0, 0,		/* margins */
+             1, ljet4_print_page_copies);
 
 const gx_device_hpjet gs_ljet4d_device =
 HPJET_DEVICE(prn_hp_procs, "ljet4d",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI2, Y_DPI2,
-	     0, 0, 0, 0,		/* margins */
-	     1, ljet4d_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI2, Y_DPI2,
+             0, 0, 0, 0,		/* margins */
+             1, ljet4d_print_page_copies);
 
 const gx_device_hpjet gs_lp2563_device =
 HPJET_DEVICE(prn_hp_procs, "lp2563",
-	     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	     X_DPI, Y_DPI,
-	     0, 0, 0, 0,		/* margins */
-	     1, lp2563_print_page_copies);
+             DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+             X_DPI, Y_DPI,
+             0, 0, 0, 0,		/* margins */
+             1, lp2563_print_page_copies);
 
 const gx_device_hpjet gs_oce9050_device =
 HPJET_DEVICE(prn_hp_procs, "oce9050",
-	     24 * 10, 24 * 10,	/* 24 inch roll (can print 32" also) */
-	     400, 400,		/* 400 dpi */
-	     0, 0, 0, 0,		/* margins */
-	     1, oce9050_print_page_copies);
+             24 * 10, 24 * 10,	/* 24 inch roll (can print 32" also) */
+             400, 400,		/* 400 dpi */
+             0, 0, 0, 0,		/* margins */
+             1, oce9050_print_page_copies);
 
 const gx_device_printer gs_ljet4pjl_device =
 prn_device_copies(prn_ljet4pjl_procs, "ljet4pjl",
-	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	   X_DPI2, Y_DPI2,
-	   0, 0, 0, 0,			/* margins */
-	   1, ljet4pjl_print_page_copies);
+           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+           X_DPI2, Y_DPI2,
+           0, 0, 0, 0,			/* margins */
+           1, ljet4pjl_print_page_copies);
 
 /* Open the printer, adjusting the margins if necessary. */
 static int
@@ -238,35 +238,35 @@ hpjet_open(gx_device * pdev)
     bool move_origin = true;
 
     if (ppdev->printer_procs.print_page_copies == djet_print_page_copies ||
-	ppdev->printer_procs.print_page_copies == djet500_print_page_copies
-	) {
-	static const float m_a4[4] =
-	{DESKJET_MARGINS_A4};
-	static const float m_letter[4] =
-	{DESKJET_MARGINS_LETTER};
+        ppdev->printer_procs.print_page_copies == djet500_print_page_copies
+        ) {
+        static const float m_a4[4] =
+        {DESKJET_MARGINS_A4};
+        static const float m_letter[4] =
+        {DESKJET_MARGINS_LETTER};
 
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? m_a4 :
-	     m_letter);
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? m_a4 :
+             m_letter);
     } else if (ppdev->printer_procs.print_page_copies == oce9050_print_page_copies ||
-	       ppdev->printer_procs.print_page_copies == lp2563_print_page_copies
-	);
+               ppdev->printer_procs.print_page_copies == lp2563_print_page_copies
+        );
     else {			/* LaserJet */
-	static const float m_a4[4] =
-	{LASERJET_MARGINS_A4};
-	static const float m_letter[4] =
-	{LASERJET_MARGINS_LETTER};
+        static const float m_a4[4] =
+        {LASERJET_MARGINS_A4};
+        static const float m_letter[4] =
+        {LASERJET_MARGINS_LETTER};
 
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? m_a4 :
-	     m_letter);
-	move_origin = false;
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? m_a4 :
+             m_letter);
+        move_origin = false;
     }
     if (m != 0)
-	gx_device_set_margins(pdev, m, move_origin);
+        gx_device_set_margins(pdev, m, move_origin);
     /* If this is a LJIIID, enable Duplex. */
     if (ppdev->printer_procs.print_page_copies == ljet3d_print_page_copies)
-	ppdev->Duplex = true, ppdev->Duplex_set = 0;
+        ppdev->Duplex = true, ppdev->Duplex_set = 0;
     if (ppdev->printer_procs.print_page_copies == ljet4d_print_page_copies)
-	ppdev->Duplex = true, ppdev->Duplex_set = 0;
+        ppdev->Duplex = true, ppdev->Duplex_set = 0;
     return gdev_prn_open(pdev);
 }
 
@@ -279,12 +279,12 @@ hpjet_close(gx_device * pdev)
     int code = gdev_prn_open_printer(pdev, 1);
 
     if (code < 0)
-	return code;
+        return code;
     if (ppdev->PageCount > 0) {
-	if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
-	    fputs("\033&l0H", ppdev->file);
+        if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
+            fputs("\033&l0H", ppdev->file);
 
-	fputs("\033E", ppdev->file);
+        fputs("\033E", ppdev->file);
     }
 
     return gdev_prn_close(pdev);
@@ -297,7 +297,7 @@ ljet4pjl_close(gx_device *pdev)
     int code = gdev_prn_open_printer(pdev, 1);
 
     if (code < 0)
-	return code;
+        return code;
     if ( ppdev->Duplex_set >= 0 && ppdev->Duplex ) {
         gdev_prn_open_printer(pdev, 1);
         fputs("\033&l0H", ppdev->file) ;
@@ -319,41 +319,41 @@ hpjet_make_init(gx_device_printer *pdev, char *buf, const char *str)
 
     if (dev->ManualFeed_set && dev->ManualFeed) paper_source = 2;
     else if (dev->MediaPosition_set && dev->MediaPosition >= 0)
-	paper_source = dev->MediaPosition;
+        paper_source = dev->MediaPosition;
     if (paper_source >= 0)
-	sprintf(buf, "%s\033&l%dH", str, paper_source);
+        sprintf(buf, "%s\033&l%dH", str, paper_source);
     else
-	sprintf(buf, "%s", str);
+        sprintf(buf, "%s", str);
 }
 
 /* The DeskJet can compress (mode 2) */
 static int
 djet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-		       int num_copies)
+                       int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033&k1W\033*b2M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_DJ_FEATURES, init, init, false);
+                                        300, PCL_DJ_FEATURES, init, init, false);
 }
 /* The DeskJet500 can compress (modes 2&3) */
 static int
 djet500_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			  int num_copies)
+                          int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033&k1W");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_DJ500_FEATURES, init, init, false);
+                                        300, PCL_DJ500_FEATURES, init, init, false);
 }
 /* The Kyocera FS-600 laser printer (and perhaps other printers */
 /* which use the PeerlessPrint5 firmware) doesn't handle        */
 /* ESC&l#u and ESC&l#Z correctly.                               */
 static int
 fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			int num_copies)
+                        int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
@@ -362,59 +362,59 @@ fs600_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     sprintf(base_init, "\033*r0F\033&u%dD", dots_per_inch);
     hpjet_make_init(pdev, init, base_init);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					dots_per_inch, PCL_FS600_FEATURES,
-					init, init, false);
+                                        dots_per_inch, PCL_FS600_FEATURES,
+                                        init, init, false);
 }
 /* The LaserJet series II can't compress */
 static int
 ljet_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-		       int num_copies)
+                       int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ_FEATURES, init, init, false);
+                                        300, PCL_LJ_FEATURES, init, init, false);
 }
 /* The LaserJet Plus can't compress */
 static int
 ljetplus_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			   int num_copies)
+                           int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJplus_FEATURES, init, init, false);
+                                        300, PCL_LJplus_FEATURES, init, init, false);
 }
 /* LaserJet series IIp & IId compress (mode 2) */
 /* but don't support *p+ or *b vertical spacing. */
 static int
 ljet2p_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			 int num_copies)
+                         int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033*r0F\033*b2M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ2p_FEATURES, init, init, false);
+                                        300, PCL_LJ2p_FEATURES, init, init, false);
 }
 /* All LaserJet series IIIs (III,IIId,IIIp,IIIsi) compress (modes 2&3) */
 /* They also need their coordinate system translated slightly. */
 static int
 ljet3_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			int num_copies)
+                        int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ3_FEATURES, init, init, false);
+                                        300, PCL_LJ3_FEATURES, init, init, false);
 }
 /* LaserJet IIId is same as LaserJet III, except for duplex */
 static int
 ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			 int num_copies)
+                         int num_copies)
 {
     char init[80];
     char even_init[80];
@@ -425,14 +425,14 @@ ljet3d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, "\033&l-180u36Z\033*r0F");
     sprintf(even_init, "\033&l180u36Z\033*r0F");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LJ3D_FEATURES, init, even_init, tumble);
+                                        300, PCL_LJ3D_FEATURES, init, even_init, tumble);
 }
 /* LaserJet 4 series compresses, and it needs a special sequence to */
 /* allow it to specify coordinates at 600 dpi. */
 /* It too needs its coordinate system translated slightly. */
 static int
 ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			int num_copies)
+                        int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
@@ -442,12 +442,12 @@ ljet4_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, base_init);
 
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					dots_per_inch, PCL_LJ4_FEATURES,
-					init, init, false);
+                                        dots_per_inch, PCL_LJ4_FEATURES,
+                                        init, init, false);
 }
 static int
 ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			 int num_copies)
+                         int num_copies)
 {
     int dots_per_inch = (int)pdev->y_pixels_per_inch;
     char base_init[60];
@@ -474,22 +474,22 @@ ljet4d_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, base_init);
     sprintf(even_init, "\033&l180u36Z\033*r0F\033&u%dD", dots_per_inch);
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					dots_per_inch, PCL_LJ4D_FEATURES,
-					init,even_init,tumble);
+                                        dots_per_inch, PCL_LJ4D_FEATURES,
+                                        init,even_init,tumble);
 }
- 
+
 /* LaserJet 4 series compresses, and it needs a special sequence to */
 /* allow it to specify coordinates at 600 dpi. */
 /* It too needs its coordinate system translated slightly. */
 static int
 ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
-			int num_copies)
+                        int num_copies)
 {	int dots_per_inch = (int)pdev->y_pixels_per_inch;
-	char real_init[60];
+        char real_init[60];
 
-	sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
-	return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					dots_per_inch, PCL_LJ4PJL_FEATURES,
+        sprintf(real_init, "\033&l-180u36Z\033*r0F\033&u%dD", dots_per_inch);
+        return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
+                                        dots_per_inch, PCL_LJ4PJL_FEATURES,
                                         real_init, real_init, false);
 }
 
@@ -497,19 +497,19 @@ ljet4pjl_print_page_copies(gx_device_printer *pdev, FILE *prn_stream,
 /* and doesn't support *p+ or *b vertical spacing. */
 static int
 lp2563_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			 int num_copies)
+                         int num_copies)
 {
     char init[80];
 
     hpjet_make_init(pdev, init, "\033*b0M");
     return dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					300, PCL_LP2563B_FEATURES, init, init, false);
+                                        300, PCL_LP2563B_FEATURES, init, init, false);
 }
 /* The Oce line printer has TIFF compression */
 /* and doesn't support *p+ or *b vertical spacing. */
 static int
 oce9050_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
-			  int num_copies)
+                          int num_copies)
 {
     int code;
     char init[80];
@@ -523,15 +523,15 @@ oce9050_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     hpjet_make_init(pdev, init, "\033*b0M");
 
     code = dljet_mono_print_page_copies(pdev, prn_stream, num_copies,
-					400, PCL_OCE9050_FEATURES, init, init, false);
+                                        400, PCL_OCE9050_FEATURES, init, init, false);
 
     /* Return to HPGL/2 mode. */
     fputs("\033%1B", prn_stream);	/* Enter HPGL/2 mode */
     if (code == 0) {
-	fputs("PU", prn_stream);	/* Pen Up */
-	fputs("SP0", prn_stream);	/* Pen Select */
-	fputs("PG;", prn_stream);	/* Advance Full Page */
-	fputs("\033E", prn_stream);	/* Reset */
+        fputs("PU", prn_stream);	/* Pen Up */
+        fputs("SP0", prn_stream);	/* Pen Select */
+        fputs("PG;", prn_stream);	/* Advance Full Page */
+        fputs("\033E", prn_stream);	/* Reset */
     }
     return code;
 }
@@ -544,14 +544,14 @@ hpjet_get_params(gx_device *pdev, gs_param_list *plist)
 
     if (code >= 0)
     {
-	code = param_write_bool(plist, "ManualFeed", &dev->ManualFeed);
+        code = param_write_bool(plist, "ManualFeed", &dev->ManualFeed);
     }
     if (code >= 0)
     {
-	code = param_write_int(plist, "MediaPosition", &dev->MediaPosition);
+        code = param_write_int(plist, "MediaPosition", &dev->MediaPosition);
     }
     if (code >=0)
-    	code = param_write_bool(plist, "Tumble", &dev->Tumble);
+        code = param_write_bool(plist, "Tumble", &dev->Tumble);
     return code;
 }
 
@@ -569,13 +569,13 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
     code = param_read_bool(plist, "ManualFeed", &ManualFeed);
     if (code == 0) ManualFeed_set = true;
     if (code >= 0) {
-	code = param_read_int(plist, "MediaPosition", &MediaPosition);
-	if (code == 0) MediaPosition_set = true;
-	else if (code < 0) {
-	    if (param_read_null(plist, "MediaPosition") == 0) {
-		code = 0;
-	    }
-	}
+        code = param_read_int(plist, "MediaPosition", &MediaPosition);
+        if (code == 0) MediaPosition_set = true;
+        else if (code < 0) {
+            if (param_read_null(plist, "MediaPosition") == 0) {
+                code = 0;
+            }
+        }
     }
     if (code>=0)
     {
@@ -584,18 +584,18 @@ hpjet_put_params(gx_device *pdev, gs_param_list *plist)
     }
 
     if (code >= 0)
-	code = gdev_prn_put_params(pdev, plist);
+        code = gdev_prn_put_params(pdev, plist);
 
     if (code >= 0) {
     dev->Tumble=Tumble;
-	if (ManualFeed_set) {
-	    dev->ManualFeed = ManualFeed;
-	    dev->ManualFeed_set = true;
-	}
-	if (MediaPosition_set) {
-	    dev->MediaPosition = MediaPosition;
-	    dev->MediaPosition_set = true;
-	}
+        if (ManualFeed_set) {
+            dev->ManualFeed = ManualFeed;
+            dev->ManualFeed_set = true;
+        }
+        if (MediaPosition_set) {
+            dev->MediaPosition = MediaPosition;
+            dev->MediaPosition_set = true;
+        }
     }
 
     return code;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,7 +34,6 @@ extern char *getenv(const char *);
 #  define fopen_VMS(name, mode, m1, m2) fopen(name, mode)
 #endif
 
-
 /* VMS string descriptor structure */
 #define DSC$K_DTYPE_T 14
 #define DSC$K_CLASS_S  1
@@ -58,11 +57,11 @@ struct file_enum_s {
     gs_memory_t *memory;
 };
 gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
-	  file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern.dsc$a_pointer);
+          file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern.dsc$a_pointer);
 
 extern uint
     LIB$FIND_FILE(descrip *, descrip *, uint *, descrip *, descrip *,
-		  uint *, uint *),
+                  uint *, uint *),
     LIB$FIND_FILE_END(uint *),
     SYS$FILESCAN(descrip *, uint *, uint *),
     SYS$PUTMSG(uint *, int (*)(), descrip *, uint);
@@ -73,7 +72,7 @@ strlength(char *str, uint maxlen, char term)
     uint i = 0;
 
     while (i < maxlen && str[i] != term)
-	i++;
+        i++;
     return i;
 }
 
@@ -95,10 +94,10 @@ gp_do_exit(int exit_status)
 {				/* The program returns exit_status = 0 for OK, 1 for failure; */
     /* VMS has different conventions. */
     switch (exit_status) {
-	case 0:
-	    exit(exit_OK);
-	case 1:
-	    exit(exit_FAILED);
+        case 0:
+            exit(exit_OK);
+        case 1:
+            exit(exit_FAILED);
     }
     exit(exit_status);
 }
@@ -111,7 +110,7 @@ void
 gp_get_realtime(long *pdt)
 {
     struct {
-	uint _l0, _l1;
+        uint _l0, _l1;
     } binary_date, now, difference;
     long LIB$EDIV(), LIB$SUBX(), SYS$BINTIM(), SYS$GETTIM();
     long units_per_second = 10000000;
@@ -148,7 +147,6 @@ gp_get_usertime(long *pdt)
 {
     gp_get_realtime(pdt);	/* Use an approximation for now.  */
 }
-
 
 /* ------ Persistent data cache ------*/
 
@@ -187,18 +185,18 @@ gp_open_printer(const gs_memory_t *mem,
                       int          binary_mode)
 {
     if (strlen(fname) == 0)
-	return 0;
+        return 0;
     if (binary_mode) {		/*
-				 * Printing must be done exactly byte to byte,
-				 * using "passall".  However the standard VMS symbiont
-				 * does not treat stream-LF files correctly in this respect,
-				 * but throws away \n characters.  Giving the file
-				 * the record type "undefined", but accessing it as a
-				 * normal stream-LF file does the trick.
-				 */
-	return fopen_VMS(fname, "w", "rfm = udf", "ctx = stm");
+                                 * Printing must be done exactly byte to byte,
+                                 * using "passall".  However the standard VMS symbiont
+                                 * does not treat stream-LF files correctly in this respect,
+                                 * but throws away \n characters.  Giving the file
+                                 * the record type "undefined", but accessing it as a
+                                 * normal stream-LF file does the trick.
+                                 */
+        return fopen_VMS(fname, "w", "rfm = udf", "ctx = stm");
     } else {			/* Open as a normal text stream file. */
-	return fopen_VMS(fname, "w", "rfm = var", "rat = cr");
+        return fopen_VMS(fname, "w", "rfm = var", "rat = cr");
     }
 }
 
@@ -237,7 +235,7 @@ FILE *
 gp_open_scratch_file(const gs_memory_t *mem,
                      const char        *prefix,
                            char         fname[gp_file_name_sizeof],
-		     const char        *mode)
+                     const char        *mode)
 {
     FILE *f;
     char tmpdir[gp_file_name_sizeof];
@@ -245,24 +243,24 @@ gp_open_scratch_file(const gs_memory_t *mem,
     int flen[1];
 
     if (!gp_file_name_is_absolute(prefix, strlen(prefix)) &&
-	gp_gettmpdir(tmpdir, &tdlen) == 0) {
+        gp_gettmpdir(tmpdir, &tdlen) == 0) {
       flen[0] = gp_file_name_sizeof;
-	if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
-			     false, fname, flen ) != gp_combine_success ) {
-	    return NULL;
-	}
+        if (gp_file_name_combine(tmpdir, tdlen, prefix, strlen(prefix),
+                             false, fname, flen ) != gp_combine_success ) {
+            return NULL;
+        }
        fname[ *flen ] = 0;
     } else {
-	strcpy(fname, prefix);
+        strcpy(fname, prefix);
     }
     if (strlen(fname) + 6 >= gp_file_name_sizeof)
-	return 0;		/* file name too long */
+        return 0;		/* file name too long */
     strcat(fname, "XXXXXX");
     mktemp(fname);
     f = fopen(fname, mode);
-   
+
     if (f == NULL)
-	emprintf1(mem, "**** Could not open temporary file %s\n", fname);
+        emprintf1(mem, "**** Could not open temporary file %s\n", fname);
    return f;
 }
 
@@ -277,8 +275,8 @@ gp_fopen(const char *fname, const char *mode)
     stat_t buffer;
 
     if (stat((char *)fname, &buffer) == 0)
-	if (buffer.st_fab_rfm == FAB$C_FIX)
-	    return fopen(fname, mode, "rfm=stmlf", "ctx=stm");
+        if (buffer.st_fab_rfm == FAB$C_FIX)
+            return fopen(fname, mode, "rfm=stmlf", "ctx=stm");
 #endif
     return fopen(fname, mode);
 }
@@ -296,11 +294,11 @@ static void
 gp_free_enumeration(file_enum * pfen)
 {
     if (pfen) {
-	LIB$FIND_FILE_END(&pfen->context);
-	gs_free_object(pfen->memory, pfen->pattern.dsc$a_pointer,
-		       "GP_ENUM(pattern)");
-	gs_free_object(pfen->memory, pfen,
-		       "GP_ENUM(file_enum)");
+        LIB$FIND_FILE_END(&pfen->context);
+        gs_free_object(pfen->memory, pfen->pattern.dsc$a_pointer,
+                       "GP_ENUM(pattern)");
+        gs_free_object(pfen->memory, pfen,
+                       "GP_ENUM(file_enum)");
     }
 }
 
@@ -315,12 +313,12 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     bool dot_in_filename = false;
 
     pfen = gs_alloc_struct(mem, file_enum, &st_file_enum,
-			   "GP_ENUM(file_enum)");
+                           "GP_ENUM(file_enum)");
     newpat = (char *)gs_alloc_bytes(mem, patlen + 2, "GP_ENUM(pattern)");
     if (pfen == 0 || newpat == 0) {
-	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
-	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
-	return (file_enum *) 0;
+        gs_free_object(mem, newpat, "GP_ENUM(pattern)");
+        gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
+        return (file_enum *) 0;
     }
     /*  Copy the pattern removing backslash quoting characters and
      *  transforming unquoted question marks, '?', to percent signs, '%'.
@@ -335,34 +333,34 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
      */
     c = newpat;
     for (i = 0; i < patlen; pat++, i++)
-	switch (*pat) {
-	    case '?':
-		*c++ = '%';
-		break;
-	    case '\\':
-		i++;
-		if (i < patlen)
-		    *c++ = *++pat;
-		break;
-	    case '.':
-	    case ']':
-		dot_in_filename = *pat == '.'; 
-	    default:
-		*c++ = *pat;
-		break;
-	}
+        switch (*pat) {
+            case '?':
+                *c++ = '%';
+                break;
+            case '\\':
+                i++;
+                if (i < patlen)
+                    *c++ = *++pat;
+                break;
+            case '.':
+            case ']':
+                dot_in_filename = *pat == '.';
+            default:
+                *c++ = *pat;
+                break;
+        }
     /* Check for trailing "*" and see if we need to add ".*" */
     if (pat[-1] == '*' && !dot_in_filename) {
-	*c++ = '.';
-	*c++ = '*';
+        *c++ = '.';
+        *c++ = '*';
     }
     len = c - newpat;
 
     /* Pattern may not exceed 255 characters */
     if (len > 255) {
-	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
-	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
-	return (file_enum *) 0;
+        gs_free_object(mem, newpat, "GP_ENUM(pattern)");
+        gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
+        return (file_enum *) 0;
     }
     pfen->context = 0;
     pfen->length = patlen;
@@ -393,19 +391,19 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
     /* Find the next file which matches the pattern */
     i = LIB$FIND_FILE(&pfen->pattern, &result, &pfen->context,
-		      (descrip *) 0, (descrip *) 0, (uint *) 0, (uint *) 0);
+                      (descrip *) 0, (descrip *) 0, (uint *) 0, (uint *) 0);
 
     /* Check the return status */
     if (RMS_IS_ERROR_OR_NMF(i)) {
-	gp_free_enumeration(pfen);
-	return (uint)(-1);
+        gp_free_enumeration(pfen);
+        return (uint)(-1);
     } else if ((len = strlength(filnam, NAM$C_MAXRSS, ' ')) > maxlen)
-	return maxlen + 1;
+        return maxlen + 1;
 
     /* Copy the returned filename over to the input string ptr */
     c = ptr;
     for (i = 0; i < len; i++)
-	*c++ = filnam[i];
+        *c++ = filnam[i];
 
     return len;
 }
@@ -430,7 +428,7 @@ gp_strerror(int errnum)
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)
-{   
+{
     /*
      *    The root for device:[root.][directory.subdirectory]filename.extension;version
      *	    is device:[root.][
@@ -442,52 +440,52 @@ uint gp_file_name_root(const char *fname, uint len)
     int i, j;
 
     if (len == 0)
-	return 0;
+        return 0;
     /* Search for ':' */
     for (i = 0; i < len; i++)
-	if (fname[i] == ':')
-	    break;
+        if (fname[i] == ':')
+            break;
     if (i == len)
-	return 0; /* No root. */
+        return 0; /* No root. */
     if (fname[i] == ':')
-	i++;
+        i++;
     if (i == len || fname[i] != '[')
-	return i; 
+        return i;
     /* Search for ']' */
     i++;
     for (j = i; j < len; j++)
-	if (fname[j] == ']')
-	    break;
+        if (fname[j] == ']')
+            break;
     if (j == len)
-	return i; /* No ']'. Allowed as a Ghostscript specifics. */
+        return i; /* No ']'. Allowed as a Ghostscript specifics. */
     j++;
     if (j == len)
-	return i; /* Appending "device:[directory.subdirectory]" with "filename.extension;version". */
+        return i; /* Appending "device:[directory.subdirectory]" with "filename.extension;version". */
     if (fname[j] != '[')
-	return i; /* Can't append anything, but pass through for checking an absolute path. */
+        return i; /* Can't append anything, but pass through for checking an absolute path. */
     return j + 1; /* device:[root.][ */
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
-{   
+{
     if (len > 0) {
-	/* 
-	 * Ghostscript specifics : an extended syntax like Mac OS.
-	 * We intentionally don't consider ':' and '[' as separators
-	 * in forward search, see gp_file_name_combine. 
-	 */
-	if (fname[0] == ']')
-	    return 1; /* It is a file separator. */
-	if (fname[0] == '.')
-	    return 1; /* It is a directory separator. */
-	if (fname[0] == '-') {
-	    if (fname == item + 1 && item[0] == '-')
-		return 1; /* Two or more parents, cut the first one. */
-	    return 1;
-	}
+        /*
+         * Ghostscript specifics : an extended syntax like Mac OS.
+         * We intentionally don't consider ':' and '[' as separators
+         * in forward search, see gp_file_name_combine.
+         */
+        if (fname[0] == ']')
+            return 1; /* It is a file separator. */
+        if (fname[0] == '.')
+            return 1; /* It is a directory separator. */
+        if (fname[0] == '-') {
+            if (fname == item + 1 && item[0] == '-')
+                return 1; /* Two or more parents, cut the first one. */
+            return 1;
+        }
     } else if (len < 0) {
-	if (fname[-1] == '.' || fname[-1] == ':' || fname[-1] == '[')
-	    return 1;
+        if (fname[-1] == '.' || fname[-1] == ':' || fname[-1] == '[')
+            return 1;
     }
     return 0;
 }
@@ -527,137 +525,137 @@ bool gp_file_name_is_empty_item_meanful(void)
 }
 
 gp_file_name_combine_result
-gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_sibling, char *buffer, uint *blen)
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen,
+                    bool no_sibling, char *buffer, uint *blen)
 {
     /*
      * Reduce it to the general case.
      *
-     * Implementation restriction : fname must not contain a part of 
+     * Implementation restriction : fname must not contain a part of
      * "device:[root.]["
      */
     uint rlen, flen1 = flen, plen1 = plen;
     const char *fname1 = fname;
-  
+
    if ( plen > 0 && prefix[plen-1] == '\0' )
      plen--;
-   
+
     if (plen == 0 && flen == 0) {
-	/* Not sure that we need this case. */
-	if (*blen == 0)
-	    return gp_combine_small_buffer;
-	buffer[0] = '.';
-	*blen = 1;
+        /* Not sure that we need this case. */
+        if (*blen == 0)
+            return gp_combine_small_buffer;
+        buffer[0] = '.';
+        *blen = 1;
     }
     rlen = gp_file_name_root(fname, flen);
     if (rlen > 0 || plen == 0 || flen == 0) {
-	if (rlen == 0 && plen != 0) {
-	    fname1 = prefix;
-	    flen1 = plen;
-	}
-	if (flen1 + 1 > *blen)
-	    return gp_combine_small_buffer;
-	memcpy(buffer, fname1, flen1);
-	buffer[flen1] = 0;
-	*blen = flen1;
-	return gp_combine_success;
+        if (rlen == 0 && plen != 0) {
+            fname1 = prefix;
+            flen1 = plen;
+        }
+        if (flen1 + 1 > *blen)
+            return gp_combine_small_buffer;
+        memcpy(buffer, fname1, flen1);
+        buffer[flen1] = 0;
+        *blen = flen1;
+        return gp_combine_success;
     }
-   
+
    if ( prefix[plen - 1] == ']' && fname[ 0 ] == '-' )
      {
-	memcpy(buffer, prefix, plen - 1 );
-	fname1 = fname + 1;
-	flen1 = flen - 1;
-	memcpy(buffer + plen - 1 , fname1, flen1);
-	memcpy(buffer + plen + flen1 - 1 , "]" , 1 );
-	buffer[plen + flen1] = 0;
-	*blen = plen + flen1;
-	return gp_combine_success;
+        memcpy(buffer, prefix, plen - 1 );
+        fname1 = fname + 1;
+        flen1 = flen - 1;
+        memcpy(buffer + plen - 1 , fname1, flen1);
+        memcpy(buffer + plen + flen1 - 1 , "]" , 1 );
+        buffer[plen + flen1] = 0;
+        *blen = plen + flen1;
+        return gp_combine_success;
      }
 
    if ( prefix[plen - 1] == ':' || (prefix[plen - 1] == ']' &&
-				     memchr(fname, ']', flen) == 0) )
+                                     memchr(fname, ']', flen) == 0) )
        {
-	/* Just concatenate. */
-	if (plen + flen + 1 > *blen)
-	    return gp_combine_small_buffer;
-	memcpy(buffer, prefix, plen);
-	memcpy(buffer + plen, fname, flen);
-	buffer[plen + flen] = 0;
-	*blen = plen + flen;
-	return gp_combine_success;
+        /* Just concatenate. */
+        if (plen + flen + 1 > *blen)
+            return gp_combine_small_buffer;
+        memcpy(buffer, prefix, plen);
+        memcpy(buffer + plen, fname, flen);
+        buffer[plen + flen] = 0;
+        *blen = plen + flen;
+        return gp_combine_success;
     }
    if ( memchr( prefix , '[' , plen ) == 0 &&
-	memchr( prefix , '.' , plen ) == 0 )
+        memchr( prefix , '.' , plen ) == 0 )
      {
-	char* tmp_prefix;
-	int tmp_plen;
-	
-	if ( prefix[0] == '/' )
-	  {
-	     tmp_prefix = prefix + 1;
-	     tmp_plen = plen - 1;
-	  }
-	else
-	  {
-	     tmp_prefix = prefix;
-	     tmp_plen = plen;
-	  }
-	if ( tmp_plen + flen + 2 > *blen)
-	    return gp_combine_small_buffer;
-	memcpy(buffer, tmp_prefix, tmp_plen);
-	memcpy(buffer + tmp_plen , ":" , 1 );
-	memcpy(buffer + tmp_plen + 1, fname, flen);
-	if ( memchr( fname , '.' , flen ) != 0 )
-	  {
-	     buffer[ tmp_plen + flen + 1] = 0;
-	     *blen = tmp_plen + flen + 1;
-	  }
-	else
-	  {
-	     memcpy(buffer + tmp_plen + flen + 1 , "." , 1 );
-	     buffer[ tmp_plen + flen + 2] = 0;
-	     *blen = tmp_plen + flen + 2;
-	  }
-	return gp_combine_success;
+        char* tmp_prefix;
+        int tmp_plen;
+
+        if ( prefix[0] == '/' )
+          {
+             tmp_prefix = prefix + 1;
+             tmp_plen = plen - 1;
+          }
+        else
+          {
+             tmp_prefix = prefix;
+             tmp_plen = plen;
+          }
+        if ( tmp_plen + flen + 2 > *blen)
+            return gp_combine_small_buffer;
+        memcpy(buffer, tmp_prefix, tmp_plen);
+        memcpy(buffer + tmp_plen , ":" , 1 );
+        memcpy(buffer + tmp_plen + 1, fname, flen);
+        if ( memchr( fname , '.' , flen ) != 0 )
+          {
+             buffer[ tmp_plen + flen + 1] = 0;
+             *blen = tmp_plen + flen + 1;
+          }
+        else
+          {
+             memcpy(buffer + tmp_plen + flen + 1 , "." , 1 );
+             buffer[ tmp_plen + flen + 2] = 0;
+             *blen = tmp_plen + flen + 2;
+          }
+        return gp_combine_success;
      }
     if (prefix[plen - 1] != ']' && fname[0] == '[')
         return gp_combine_cant_handle;
     /* Unclose "][" :*/
     if (fname[0] == '[') {
-	fname1 = fname + 1;
-	flen1 = flen - 1;
+        fname1 = fname + 1;
+        flen1 = flen - 1;
     }
     if (prefix[plen - 1] == ']')
         plen1 = plen - 1;
-    return gp_file_name_combine_generic(prefix, plen1, 
-	    fname1, flen1, no_sibling, buffer, blen);
+    return gp_file_name_combine_generic(prefix, plen1,
+            fname1, flen1, no_sibling, buffer, blen);
 }
 
 /* ------ Font enumeration ------ */
- 
+
  /* This is used to query the native os for a list of font names and
   * corresponding paths. The general idea is to save the hassle of
   * building a custom fontmap file.
   */
- 
+
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
 {
     return NULL;
 }
-         
+
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
     return 0;
 }
-                         
+
 void gp_enumerate_fonts_free(void *enum_state)
 {
 }
 
 /* --------- 64 bit file access ----------- */
 /* fixme: Not implemented yet.
- * Currently we stub it with 32 bits access. 
+ * Currently we stub it with 32 bits access.
  */
 
 FILE *gp_fopen_64(const char *filename, const char *mode)
@@ -688,8 +686,8 @@ int64_t gp_ftell_64(FILE *strm)
 int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
     long offset1 = (long)offset;
-    
+
     if (offset != offset1)
-	return -1;
+        return -1;
     return fseek(strm, offset1, origin);
 }

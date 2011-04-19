@@ -115,7 +115,7 @@ typedef enum {
   ms_SuperB,
   ms_EnvC3,
   ms_HPSuperB,		/* what Hewlett-Packard calls "SuperB" (13x19 in).
-			   Not a mediaOption keyword. */
+                           Not a mediaOption keyword. */
   ms_ISOB3,
   ms_JISB3,		/* PPD 4.3 calls this "B3" */
   ms_A2,
@@ -139,7 +139,6 @@ typedef enum {
   ms_CustomPageSize,	/* no particular size. Not a mediaOption keyword. */
   ms_MaxPage		/* largest available size on a particular device */
 } ms_Size;
-
 
 typedef struct {
   ms_Size size;

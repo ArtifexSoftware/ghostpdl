@@ -1,7 +1,7 @@
 /*
  * FILE:	sha2.h
  * AUTHOR:	Aaron D. Gifford - http://www.aarongifford.com/
- * 
+ *
  * Copyright (c) 2000-2001, Aaron D. Gifford
  * All rights reserved.
  *
@@ -16,7 +16,7 @@
  * 3. Neither the name of the copyright holder nor the names of contributors
  *    may be used to endorse or promote products derived from this software
  *    without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTOR(S) ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,12 +39,10 @@
 extern "C" {
 #endif
 
-
 #include "std.h"
 #include "stdint_.h"
 
 #define SHA2_USE_INTTYPES_H
-
 
 /*** SHA-256/384/512 Various Length Definitions ***********************/
 #define SHA256_BLOCK_LENGTH		64
@@ -56,7 +54,6 @@ extern "C" {
 #define SHA512_BLOCK_LENGTH		128
 #define SHA512_DIGEST_LENGTH		64
 #define SHA512_DIGEST_STRING_LENGTH	(SHA512_DIGEST_LENGTH * 2 + 1)
-
 
 /*** SHA-256/384/512 Context Structures *******************************/
 /* NOTE: If your architecture does not define either u_intXX_t types or
@@ -76,7 +73,7 @@ typedef unsigned long long u_int64_t;	/* 8-bytes (64-bits) */
  *
  *   #include <inttypes.h>
  *
- * If you choose to use <inttypes.h> then please define: 
+ * If you choose to use <inttypes.h> then please define:
  *
  *   #define SHA2_USE_INTTYPES_H
  *
@@ -87,33 +84,32 @@ typedef unsigned long long u_int64_t;	/* 8-bytes (64-bits) */
 #ifdef SHA2_USE_INTTYPES_H
 
 typedef struct _SHA256_CTX {
-	uint32_t	state[8];
-	uint64_t	bitcount;
-	uint8_t	buffer[SHA256_BLOCK_LENGTH];
+        uint32_t	state[8];
+        uint64_t	bitcount;
+        uint8_t	buffer[SHA256_BLOCK_LENGTH];
 } SHA256_CTX;
 typedef struct _SHA512_CTX {
-	uint64_t	state[8];
-	uint64_t	bitcount[2];
-	uint8_t	buffer[SHA512_BLOCK_LENGTH];
+        uint64_t	state[8];
+        uint64_t	bitcount[2];
+        uint8_t	buffer[SHA512_BLOCK_LENGTH];
 } SHA512_CTX;
 
 #else /* SHA2_USE_INTTYPES_H */
 
 typedef struct _SHA256_CTX {
-	u_int32_t	state[8];
-	u_int64_t	bitcount;
-	u_int8_t	buffer[SHA256_BLOCK_LENGTH];
+        u_int32_t	state[8];
+        u_int64_t	bitcount;
+        u_int8_t	buffer[SHA256_BLOCK_LENGTH];
 } SHA256_CTX;
 typedef struct _SHA512_CTX {
-	u_int64_t	state[8];
-	u_int64_t	bitcount[2];
-	u_int8_t	buffer[SHA512_BLOCK_LENGTH];
+        u_int64_t	state[8];
+        u_int64_t	bitcount[2];
+        u_int8_t	buffer[SHA512_BLOCK_LENGTH];
 } SHA512_CTX;
 
 #endif /* SHA2_USE_INTTYPES_H */
 
 typedef SHA512_CTX SHA384_CTX;
-
 
 /*** SHA-256/384/512 Function Prototypes ******************************/
 #ifndef NOPROTO
@@ -186,4 +182,3 @@ char* SHA512_Data();
 #endif /* __cplusplus */
 
 #endif /* __SHA2_H__ */
-

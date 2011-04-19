@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -14,7 +14,6 @@
 /* $Id$ */
 
 /* Changes after FreeType: cut out the TrueType instruction interpreter. */
-
 
 /*******************************************************************
  *
@@ -183,7 +182,6 @@ typedef struct _TExecution_Context TExecution_Context;
   typedef struct _TGlyph  TGlyph;
   typedef TGlyph*         PGlyph;
 
-
   /*************************************************************/
   /*                                                           */
   /*  ADDITIONAL SUBTABLES                                     */
@@ -234,9 +232,7 @@ typedef struct _TExecution_Context TExecution_Context;
 
   typedef struct _TGraphicsState  TGraphicsState;
 
-
   extern const TGraphicsState  Default_GraphicsState;
-
 
   /*************************************************************/
   /*                                                           */
@@ -257,7 +253,6 @@ typedef struct _TExecution_Context TExecution_Context;
 #  define TT_CodeRange_Cvt   2
 #  define TT_CodeRange_Glyph 3
 
-
   struct  _TCodeRange
   {
     PByte  Base;
@@ -266,7 +261,6 @@ typedef struct _TExecution_Context TExecution_Context;
 
   typedef struct _TCodeRange  TCodeRange;
   typedef TCodeRange*         PCodeRange;
-
 
   /* Defintion of a code range                                       */
   /*                                                                 */
@@ -306,7 +300,6 @@ typedef struct _TExecution_Context TExecution_Context;
   typedef TCallRecord*         PCallRecord;
   typedef TCallRecord*         PCallStack;  /* defines a simple call stack */
 
-
   /* This type defining a set of glyph points will be used to represent */
   /* each zone (regular and twilight) during instructions decoding.     */
   struct  _TGlyph_Zone
@@ -326,39 +319,37 @@ typedef struct _TExecution_Context TExecution_Context;
   typedef struct _TGlyph_Zone  TGlyph_Zone;
   typedef TGlyph_Zone         *PGlyph_Zone;
 
-
-  
 #ifndef TT_STATIC_INTERPRETER  /* indirect implementation */
 
 #define EXEC_OPS   PExecution_Context exc,
 #define EXEC_OP    PExecution_Context exc
 #define EXEC_ARGS  exc,
 #define EXEC_ARG   exc
-  
+
 #else                          /* static implementation */
 
 #define EXEC_OPS   /* void */
 #define EXEC_OP    /* void */
 #define EXEC_ARGS  /* void */
 #define EXEC_ARG   /* void */
-  
+
 #endif
 
   /* Rounding function, as used by the interpreter */
   typedef TT_F26Dot6  (*TRound_Function)( EXEC_OPS TT_F26Dot6 distance,
                                                    TT_F26Dot6 compensation );
- 
+
   /* Point displacement along the freedom vector routine, as */
   /* used by the interpreter                                 */
   typedef void  (*TMove_Function)( EXEC_OPS PGlyph_Zone zone,
                                             Int         point,
                                             TT_F26Dot6  distance );
- 
+
   /* Distance projection along one of the proj. vectors, as used */
   /* by the interpreter                                          */
   typedef TT_F26Dot6  (*TProject_Function)( EXEC_OPS TT_F26Dot6 Vx,
                                                      TT_F26Dot6 Vy );
-  
+
   /* reading a cvt value. Take care of non-square pixels when needed */
   typedef TT_F26Dot6  (*TGet_CVT_Function)( EXEC_OPS  Int index );
 
@@ -498,8 +489,6 @@ typedef struct _TExecution_Context TExecution_Context;
   typedef struct _TIns_Metrics  TIns_Metrics;
   typedef TIns_Metrics         *PIns_Metrics;
 
-
-
   /***********************************************************************/
   /*                                                                     */
   /*                         FreeType Face Type                          */
@@ -553,8 +542,6 @@ typedef struct _TExecution_Context TExecution_Context;
 
   };
 
-
-
   /***********************************************************************/
   /*                                                                     */
   /*                       FreeType Instance Type                        */
@@ -590,35 +577,34 @@ typedef struct _TExecution_Context TExecution_Context;
 
   };
 
-
   /***********************************************************************/
   /*                                                                     */
   /*                  FreeType Execution Context Type                    */
   /*                                                                     */
   /***********************************************************************/
 
-  struct  _TExecution_Context 
+  struct  _TExecution_Context
   {
     PFace           current_face;
 
     /* instructions state */
- 
+
     Int             error;     /* last execution error */
-  
+
     Int             curRange;  /* current code range number   */
     PByte           code;      /* current code range          */
     Int             IP;        /* current instruction pointer */
     Int             codeSize;  /* size of current range       */
-  
+
     Byte            opcode;    /* current opcode              */
     Int             length;    /* length of current opcode    */
-  
+
     Bool            step_ins;  /* true if the interpreter must */
                                 /* increment IP after ins. exec */
-  
+
     Int             numFDefs;  /* number of function defs */
     PDefRecord      FDefs;     /* table of FDefs entries  */
-  
+
     Int             numIDefs;  /* number of instruction defs */
     PDefRecord      IDefs;     /* table of IDefs entries     */
     Int		    countIDefs;/* The number of defined IDefs (igorm). */
@@ -626,24 +612,24 @@ typedef struct _TExecution_Context TExecution_Context;
 
     PByte           glyphIns;  /* glyph instructions buffer */
     Int             glyphSize; /* glyph instructions buffer size */
-  
+
     Int             callTop,    /* top of call stack during execution */
                     callSize;   /* size of call stack */
     PCallStack      callStack;  /* call stack */
-  
+
     TCodeRangeTable codeRangeTable;  /* table of valid coderanges */
                                      /* useful for the debugger   */
-  
+
     Int             storeSize;  /* size of current storage */
     PStorage        storage;    /* storage area            */
-  
+
     Int             stackSize;  /* size of exec. stack */
     Int             top;        /* top of exec. stack  */
     PStorage        stack;      /* current exec. stack */
-  
+
     Int             args,
                     new_top;    /* new top after exec.    */
-  
+
     TT_F26Dot6      period;     /* values used for the */
     TT_F26Dot6      phase;      /* 'SuperRounding'     */
     TT_F26Dot6      threshold;
@@ -661,36 +647,36 @@ typedef struct _TExecution_Context TExecution_Context;
                     zp2,
                     pts,
                     twilight;
-  
+
     Bool            instruction_trap;  /* If True, the interpreter will */
                                        /* exit after each instruction   */
- 
+
     TGraphicsState  GS;            /* current graphics state */
-                                   
+
     TGraphicsState  default_GS;    /* graphics state resulting from  */
                                    /* the prep program               */
     Bool            is_composite;  /* ture if the glyph is composite */
 
     Int             cvtSize;
     PLong           cvt;
-  
+
     /* latest interpreter additions */
-  
+
     Long               F_dot_P;    /* dot product of freedom and projection */
                                    /* vectors                               */
     TRound_Function    func_round; /* current rounding function             */
-    
+
     TProject_Function  func_project,   /* current projection function */
                        func_dualproj,  /* current dual proj. function */
                        func_freeProj;  /* current freedom proj. func  */
- 
+
     TMove_Function     func_move;      /* current point move function */
 
     TGet_CVT_Function  func_read_cvt;  /* read a cvt entry              */
     TSet_CVT_Function  func_write_cvt; /* write a cvt entry (in pixels) */
     TSet_CVT_Function  func_move_cvt;  /* incr a cvt entry (in pixels)  */
     /* GS extension */
-    gsfix_jmp_buf      trap;           /* Error throw trap. */ 
+    gsfix_jmp_buf      trap;           /* Error throw trap. */
     Int                n_contours;
     Int                n_points;
     Int                maxGlyphSize;
@@ -698,36 +684,33 @@ typedef struct _TExecution_Context TExecution_Context;
     ttfMemory	       *memory;
   };
 
-
   /********************************************************************/
   /*                                                                  */
   /*   Code Range Functions                                           */
   /*                                                                  */
   /********************************************************************/
- 
+
   /* Goto a specified coderange */
   TT_Error  Goto_CodeRange( PExecution_Context  exec, Int  range, Int  IP );
   /* Unset the coderange */
   void  Unset_CodeRange( PExecution_Context  exec );
- 
+
   /* Return a pointer to a given coderange record. */
   /* Used only by the debugger.                    */
   PCodeRange  Get_CodeRange( PExecution_Context  exec, Int  range );
- 
+
   /* Set a given code range properties */
   TT_Error  Set_CodeRange( PExecution_Context  exec,
                            Int                 range,
                            void*               base,
                            Int                 length );
- 
+
   /* Clear a given coderange */
   TT_Error  Clear_CodeRange( PExecution_Context  exec, Int  range );
-
 
   PExecution_Context  New_Context( PFace  face );
 
   TT_Error  Done_Context( PExecution_Context  exec );
-
 
   TT_Error  Context_Load( PExecution_Context  exec,
                           PInstance           ins );
@@ -745,7 +728,7 @@ typedef struct _TExecution_Context TExecution_Context;
 
   TT_Error  Instance_Create( void*  _instance,
                              void*  _face );
- 
+
   TT_Error  Instance_Destroy( void* _instance );
 
   TT_Error  Context_Destroy( void*  _context );
@@ -780,6 +763,5 @@ TT_Error  Face_Destroy( PFace  _face);
 #endif
 
 #endif /* TTOBJS_H */
-
 
 /* END */

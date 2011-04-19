@@ -31,7 +31,7 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
     int i;
 
     if (ctx->error)
-	return;
+        return;
 
     /* count size to alloc */
 
@@ -40,14 +40,14 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
     textlen = 0;
     for (i = 0; atts[i]; i++)
     {
-	attslen += sizeof(char*);
-	textlen += strlen(atts[i]) + 1;
+        attslen += sizeof(char*);
+        textlen += strlen(atts[i]) + 1;
     }
 
     item = svg_alloc(ctx, sizeof(svg_item_t) + attslen + namelen + textlen);
     if (!item)
     {
-	ctx->error = "out of memory";
+        ctx->error = "out of memory";
     }
 
     /* copy strings to new memory */
@@ -59,9 +59,9 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
     strcpy(item->name, name);
     for (i = 0; atts[i]; i++)
     {
-	item->atts[i] = p;
-	strcpy(item->atts[i], atts[i]);
-	p += strlen(p) + 1;
+        item->atts[i] = p;
+        strcpy(item->atts[i], atts[i]);
+        p += strlen(p) + 1;
     }
 
     item->atts[i] = 0;
@@ -74,21 +74,21 @@ static void on_open_tag(void *zp, const char *name, const char **atts)
 
     if (!ctx->head)
     {
-	ctx->root = item;
-	ctx->head = item;
-	return;
+        ctx->root = item;
+        ctx->head = item;
+        return;
     }
 
     if (!ctx->head->down)
     {
-	ctx->head->down = item;
-	ctx->head = item;
-	return;
+        ctx->head->down = item;
+        ctx->head = item;
+        return;
     }
 
     tail = ctx->head->down;
     while (tail->next)
-	tail = tail->next;
+        tail = tail->next;
     tail->next = item;
     ctx->head = item;
 }
@@ -98,10 +98,10 @@ static void on_close_tag(void *zp, const char *name)
     svg_context_t *ctx = zp;
 
     if (ctx->error)
-	return;
+        return;
 
     if (ctx->head)
-	ctx->head = ctx->head->up;
+        ctx->head = ctx->head->up;
 }
 
 static inline int is_svg_space(int c)
@@ -116,30 +116,30 @@ static void on_text(void *zp, const char *buf, int len)
     int i;
 
     if (ctx->error)
-	return;
+        return;
 
     for (i = 0; i < len; i++)
     {
-	if (!is_svg_space(buf[i]))
-	{
-	    char *tmp = svg_alloc(ctx, len + 1);
-	    if (!tmp)
-	    {
-		ctx->error = "out of memory";
-		return;
-	    }
+        if (!is_svg_space(buf[i]))
+        {
+            char *tmp = svg_alloc(ctx, len + 1);
+            if (!tmp)
+            {
+                ctx->error = "out of memory";
+                return;
+            }
 
-	    atts[0] = "";
-	    atts[1] = tmp;
-	    atts[2] = NULL;
+            atts[0] = "";
+            atts[1] = tmp;
+            atts[2] = NULL;
 
-	    memcpy(tmp, buf, len);
-	    tmp[len] = 0;
-	    on_open_tag(zp, "", atts);
-	    on_close_tag(zp, "");
-	    svg_free(ctx, tmp);
-	    return;
-	}
+            memcpy(tmp, buf, len);
+            tmp[len] = 0;
+            on_open_tag(zp, "", atts);
+            on_close_tag(zp, "");
+            svg_free(ctx, tmp);
+            return;
+        }
     }
 }
 
@@ -151,7 +151,7 @@ svg_open_xml_parser(svg_context_t *ctx)
     /* xp = XML_ParserCreateNS(NULL, ns); */
     xp = XML_ParserCreate(NULL);
     if (!xp)
-	return gs_throw(-1, "xml error: could not create expat parser");
+        return gs_throw(-1, "xml error: could not create expat parser");
 
     XML_SetUserData(xp, ctx);
     XML_SetParamEntityParsing(xp, XML_PARAM_ENTITY_PARSING_NEVER);
@@ -174,16 +174,16 @@ svg_feed_xml_parser(svg_context_t *ctx, const char *buf, int len)
     int code = XML_Parse(xp, buf, len, 0);
     if (code == 0)
     {
-	ctx->root = NULL;
-	ctx->head = NULL;
-	ctx->error = NULL;
-	ctx->parser = NULL;
-	gs_throw3(-1, "xml error: %s (line %d, column %d)",
-		XML_ErrorString(XML_GetErrorCode(xp)),
-		XML_GetCurrentLineNumber(xp),
-		XML_GetCurrentColumnNumber(xp));
-	XML_ParserFree(xp);
-	return -1;
+        ctx->root = NULL;
+        ctx->head = NULL;
+        ctx->error = NULL;
+        ctx->parser = NULL;
+        gs_throw3(-1, "xml error: %s (line %d, column %d)",
+                XML_ErrorString(XML_GetErrorCode(xp)),
+                XML_GetCurrentLineNumber(xp),
+                XML_GetCurrentColumnNumber(xp));
+        XML_ParserFree(xp);
+        return -1;
     }
     return 0;
 }
@@ -197,11 +197,11 @@ svg_close_xml_parser(svg_context_t *ctx)
     int code = XML_Parse(xp, "", 0, 1); /* finish parsing */
     if (code == 0)
     {
-	gs_throw3(-1, "xml error: %s (line %d, column %d)",
-		XML_ErrorString(XML_GetErrorCode(xp)),
-		XML_GetCurrentLineNumber(xp),
-		XML_GetCurrentColumnNumber(xp));
-	root = NULL;
+        gs_throw3(-1, "xml error: %s (line %d, column %d)",
+                XML_ErrorString(XML_GetErrorCode(xp)),
+                XML_GetCurrentLineNumber(xp),
+                XML_GetCurrentColumnNumber(xp));
+        root = NULL;
     }
 
     ctx->root = NULL;
@@ -237,8 +237,8 @@ svg_att(svg_item_t *item, const char *att)
 {
     int i;
     for (i = 0; item->atts[i]; i += 2)
-	if (!strcmp(item->atts[i], att))
-	    return item->atts[i + 1];
+        if (!strcmp(item->atts[i], att))
+            return item->atts[i + 1];
     return NULL;
 }
 
@@ -248,18 +248,18 @@ svg_free_item(svg_context_t *ctx, svg_item_t *item)
     svg_item_t *next;
     while (item)
     {
-	next = item->next;
-	if (item->down)
-	    svg_free_item(ctx, item->down);
-	svg_free(ctx, item);
-	item = next;
+        next = item->next;
+        if (item->down)
+            svg_free_item(ctx, item->down);
+        svg_free(ctx, item);
+        item = next;
     }
 }
 
 static void indent(int n)
 {
     while (n--)
-	printf("  ");
+        printf("  ");
 }
 
 static void
@@ -269,32 +269,32 @@ svg_debug_item_imp(svg_item_t *item, int level, int loop)
 
     while (item)
     {
-	indent(level);
+        indent(level);
 
-	if (strlen(item->name) == 0)
-	    printf("%s\n", item->atts[1]);
-	else
-	{
-	    printf("<%s", item->name);
+        if (strlen(item->name) == 0)
+            printf("%s\n", item->atts[1]);
+        else
+        {
+            printf("<%s", item->name);
 
-	    for (i = 0; item->atts[i]; i += 2)
-		printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
+            for (i = 0; item->atts[i]; i += 2)
+                printf(" %s=\"%s\"", item->atts[i], item->atts[i+1]);
 
-	    if (item->down)
-	    {
-		printf(">\n");
-		svg_debug_item_imp(item->down, level + 1, 1);
-		indent(level);
-		printf("</%s>\n", item->name);
-	    }
-	    else
-		printf(" />\n");
-	}
+            if (item->down)
+            {
+                printf(">\n");
+                svg_debug_item_imp(item->down, level + 1, 1);
+                indent(level);
+                printf("</%s>\n", item->name);
+            }
+            else
+                printf(" />\n");
+        }
 
-	item = item->next;
+        item = item->next;
 
-	if (!loop)
-	    return;
+        if (!loop)
+            return;
     }
 }
 
@@ -303,4 +303,3 @@ svg_debug_item(svg_item_t *item, int level)
 {
     svg_debug_item_imp(item, level, 0);
 }
-

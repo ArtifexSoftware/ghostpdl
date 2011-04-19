@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -55,16 +55,16 @@
  * (not typedef) chunk as either uint or byte.
  */
 #define declare_scan_ptr(ptr)\
-	DECLARE_SCAN_PTR_VARS(ptr, chunk *, draster)
+        DECLARE_SCAN_PTR_VARS(ptr, chunk *, draster)
 #define DECLARE_SCAN_PTR_VARS(ptr, ptype, draster)\
-	register ptype ptr;\
-	uint draster
+        register ptype ptr;\
+        uint draster
 #define setup_rect(ptr)\
-	SETUP_RECT_VARS(ptr, chunk *, draster)
+        SETUP_RECT_VARS(ptr, chunk *, draster)
 #define SETUP_RECT_VARS(ptr, ptype, draster)\
-	draster = mdev->raster;\
-	ptr = (ptype)(scan_line_base(mdev, y) +\
-	  (x_to_byte(x) & -chunk_align_bytes))
+        draster = mdev->raster;\
+        ptr = (ptype)(scan_line_base(mdev, y) +\
+          (x_to_byte(x) & -chunk_align_bytes))
 
 /* ------ Generic macros ------ */
 
@@ -117,73 +117,73 @@ dev_proc_strip_copy_rop(mem_default_strip_copy_rop);
    rgb_depth == 1 ? 1 : (1 << gray_depth) - 1)
 #define mem_full_alpha_device(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, copy_alpha, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle)\
 {	std_device_dci_body(gx_device_memory, 0, name,\
-	  0, 0, 72, 72,\
-	  (rgb_depth ? 3 : 0) + (gray_depth ? 1 : 0),	/* num_components */\
-	  rgb_depth + gray_depth,	/* depth */\
-	  max_value_gray(rgb_depth, gray_depth),	/* max_gray */\
-	  max_value_rgb(rgb_depth, gray_depth),	/* max_color */\
-	  max_value_gray(rgb_depth, gray_depth) + 1, /* dither_grays */\
-	  max_value_rgb(rgb_depth, gray_depth) + 1 /* dither_colors */\
-	),\
-	{	open,			/* differs */\
-		mem_get_initial_matrix,\
-		gx_default_sync_output,\
-		gx_default_output_page,\
-		mem_close,\
-		map_rgb_color,		/* differs */\
-		map_color_rgb,		/* differs */\
-		fill_rectangle,		/* differs */\
-		gx_default_tile_rectangle,\
-		copy_mono,		/* differs */\
-		copy_color,		/* differs */\
-		gx_default_draw_line,\
-		gx_default_get_bits,\
-		gx_default_get_params,\
-		gx_default_put_params,\
-		map_cmyk_color,		/* differs */\
-		gx_forward_get_xfont_procs,\
-		gx_forward_get_xfont_device,\
-		gx_default_map_rgb_alpha_color,\
-		gx_forward_get_page_device,\
-		gx_default_get_alpha_bits,	/* default is no alpha */\
-		copy_alpha,		/* differs */\
-		gx_default_get_band,\
-		gx_default_copy_rop,\
-		gx_default_fill_path,\
-		gx_default_stroke_path,\
-		gx_default_fill_mask,\
-		gx_default_fill_trapezoid,\
-		gx_default_fill_parallelogram,\
-		gx_default_fill_triangle,\
-		mem_draw_thin_line,	/* see above */\
-		gx_default_begin_image,\
-		gx_default_image_data,\
-		gx_default_end_image,\
-		strip_tile_rectangle,	/* differs */\
-		strip_copy_rop,		/* differs */\
-		gx_default_get_clipping_box,\
-		gx_default_begin_typed_image,\
-		get_bits_rectangle,	/* differs */\
-		gx_default_map_color_rgb_alpha,\
-		gx_default_create_compositor,\
-		gx_default_get_hardware_params,\
-		gx_default_text_begin,\
-		gx_default_finish_copydevice\
-	},\
-	0,			/* target */\
-	mem_device_init_private	/* see gxdevmem.h */\
+          0, 0, 72, 72,\
+          (rgb_depth ? 3 : 0) + (gray_depth ? 1 : 0),	/* num_components */\
+          rgb_depth + gray_depth,	/* depth */\
+          max_value_gray(rgb_depth, gray_depth),	/* max_gray */\
+          max_value_rgb(rgb_depth, gray_depth),	/* max_color */\
+          max_value_gray(rgb_depth, gray_depth) + 1, /* dither_grays */\
+          max_value_rgb(rgb_depth, gray_depth) + 1 /* dither_colors */\
+        ),\
+        {	open,			/* differs */\
+                mem_get_initial_matrix,\
+                gx_default_sync_output,\
+                gx_default_output_page,\
+                mem_close,\
+                map_rgb_color,		/* differs */\
+                map_color_rgb,		/* differs */\
+                fill_rectangle,		/* differs */\
+                gx_default_tile_rectangle,\
+                copy_mono,		/* differs */\
+                copy_color,		/* differs */\
+                gx_default_draw_line,\
+                gx_default_get_bits,\
+                gx_default_get_params,\
+                gx_default_put_params,\
+                map_cmyk_color,		/* differs */\
+                gx_forward_get_xfont_procs,\
+                gx_forward_get_xfont_device,\
+                gx_default_map_rgb_alpha_color,\
+                gx_forward_get_page_device,\
+                gx_default_get_alpha_bits,	/* default is no alpha */\
+                copy_alpha,		/* differs */\
+                gx_default_get_band,\
+                gx_default_copy_rop,\
+                gx_default_fill_path,\
+                gx_default_stroke_path,\
+                gx_default_fill_mask,\
+                gx_default_fill_trapezoid,\
+                gx_default_fill_parallelogram,\
+                gx_default_fill_triangle,\
+                mem_draw_thin_line,	/* see above */\
+                gx_default_begin_image,\
+                gx_default_image_data,\
+                gx_default_end_image,\
+                strip_tile_rectangle,	/* differs */\
+                strip_copy_rop,		/* differs */\
+                gx_default_get_clipping_box,\
+                gx_default_begin_typed_image,\
+                get_bits_rectangle,	/* differs */\
+                gx_default_map_color_rgb_alpha,\
+                gx_default_create_compositor,\
+                gx_default_get_hardware_params,\
+                gx_default_text_begin,\
+                gx_default_finish_copydevice\
+        },\
+        0,			/* target */\
+        mem_device_init_private	/* see gxdevmem.h */\
 }
 #define mem_full_device(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle)\
   mem_full_alpha_device(name, rgb_depth, gray_depth, open, map_rgb_color,\
-			map_color_rgb, copy_mono, copy_color, fill_rectangle,\
-			map_cmyk_color, gx_default_copy_alpha,\
-			strip_tile_rectangle, strip_copy_rop,\
-			get_bits_rectangle)
+                        map_color_rgb, copy_mono, copy_color, fill_rectangle,\
+                        map_cmyk_color, gx_default_copy_alpha,\
+                        strip_tile_rectangle, strip_copy_rop,\
+                        get_bits_rectangle)
 #define mem_device(name, rgb_depth, gray_depth, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, strip_copy_rop)\
   mem_full_device(name, rgb_depth, gray_depth, mem_open, map_rgb_color,\
-		  map_color_rgb, copy_mono, copy_color, fill_rectangle,\
-		  gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,\
-		  strip_copy_rop, mem_get_bits_rectangle)
+                  map_color_rgb, copy_mono, copy_color, fill_rectangle,\
+                  gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,\
+                  strip_copy_rop, mem_get_bits_rectangle)
 
 /* Swap a rectangle of bytes, for converting between word- and */
 /* byte-oriented representation. */
@@ -192,9 +192,9 @@ void mem_swap_byte_rect(byte *, uint, int, int, int, bool);
 /* Copy a rectangle of bytes from a source to a destination. */
 #define mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h)\
   bytes_copy_rectangle(scan_line_base(mdev, y) + x_to_byte(x),\
-		       (mdev)->raster,\
-		       base + x_to_byte(sourcex), sraster,\
-		       x_to_byte(w), h)
+                       (mdev)->raster,\
+                       base + x_to_byte(sourcex), sraster,\
+                       x_to_byte(w), h)
 
 /* ------ Implementations ------ */
 

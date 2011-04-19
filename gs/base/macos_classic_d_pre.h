@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,6 +18,6 @@
 #define macos_classic_d_pre_INCLUDED
 
 /* turn on (verbose) debugging output */
-#define DEBUG 
+#define DEBUG
 
 #endif /* macos_classic_d_pre_INCLUDED */

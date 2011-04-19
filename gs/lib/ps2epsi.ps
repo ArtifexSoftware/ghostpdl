@@ -1,13 +1,12 @@
-
 %    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -52,24 +51,24 @@
 /ps2edict where { pop } { /ps2edict 25 dict def } ifelse
 ps2edict begin
 
-				% The main procedure
+                                % The main procedure
   /ps2epsi
-   {			
-	% bbox written to outfile by bbox device from ps2epsi command file
-	outfile (r) file /epsifile exch def
-	/BBoxString epsifile 256 string readline pop def
-	/HiresBBoxString epsifile 256 string readline pop def
-	epsifile closefile
-			% Open the file
+   {
+        % bbox written to outfile by bbox device from ps2epsi command file
+        outfile (r) file /epsifile exch def
+        /BBoxString epsifile 256 string readline pop def
+        /HiresBBoxString epsifile 256 string readline pop def
+        epsifile closefile
+                        % Open the file
      outfile (w) file /epsifile exch def
-					% Get the device parameters
-     currentdevice getdeviceprops .dicttomark 
+                                        % Get the device parameters
+     currentdevice getdeviceprops .dicttomark
      /HWSize get aload pop
        /devheight exch def
        /devwidth exch def
      matrix defaultmatrix
        /devmatrix exch def
-				% Make a corresponding 8-bit deep memory device
+                                % Make a corresponding 8-bit deep memory device
      devmatrix devwidth devheight
      256 string 0 1 255 { 1 index exch dup 255 exch sub put } for
      makeimagedevice
@@ -82,7 +81,7 @@ ps2edict begin
      /rowwidth devwidth def
      /row rowwidth string def
      /zerorow rowwidth string def	% all zero
-				% Replace the definition of showpage
+                                % Replace the definition of showpage
      userdict /showpage { ps2edict begin epsipage end } bind put
      userdict /setfont { ps2edict begin epsisetfont end } bind put
      userdict /setpagedevice /pop load put
@@ -116,85 +115,84 @@ ps2edict begin
 } bind def
 
 /margintest {		% <y-start> <step> <y-limit> margintest <y-non-blank>
-			% <y-start> <step> <y-limit> margintest -
+                        % <y-start> <step> <y-limit> margintest -
   { dup arraydevice exch row getscanline
     zerorow ne { exit } if pop
   } for
 } bind def
 
-
   /epsiNameStr 200 string def
   /epsiNpages 0 def
   /epsiNpageStr 20 string def
   /epsipage
-   {      
+   {
      /epsiNpages epsiNpages 1 add def
      /loopcount devheight 1 sub def
 
      % Find top margin -- minimum Y of non-blank scan line.
      -1 0 1 loopcount margintest
-     dup -1 eq { (blank page!!\n) print quit }{ exch pop } ifelse 
+     dup -1 eq { (blank page!!\n) print quit }{ exch pop } ifelse
      /tm exch def
 
      % Find bottom margin -- maximum Y of non-blank scan line.
      loopcount -1 0 margintest
      /bm exch def
-     
+
      % Initialise limit variables
      /loopcount rowwidth 1 sub def
-     /lm loopcount def 
-     /rm 0 def 
+     /lm loopcount def
+     /rm 0 def
 
      % Find left and right boundaries of image
      tm 1 bm
       { % Get more data
-	arraydevice exch row getscanline pop
-	% Scan from left to find first non-zero element
-	% We save first the element, then the index
-	-1 0 1 loopcount
-	{ dup row exch get 0 ne { exch pop exit }{ pop } ifelse
-	} for
-	% If we found -1, row is blank ..
-	dup -1 ne 
-	{ % Find the leftmost index
+        arraydevice exch row getscanline pop
+        % Scan from left to find first non-zero element
+        % We save first the element, then the index
+        -1 0 1 loopcount
+        { dup row exch get 0 ne { exch pop exit }{ pop } ifelse
+        } for
+        % If we found -1, row is blank ..
+        dup -1 ne
+        { % Find the leftmost index
           dup lm lt
           % If the new index is less, we save index and element
           { /lm exch def } { pop } ifelse
-	  % Now find the rightmost index
-	  loopcount -1 0
+          % Now find the rightmost index
+          loopcount -1 0
           { dup row exch get 0 ne { exit }{ pop } ifelse
           } for
-	  dup rm gt
+          dup rm gt
           % If the new index is greater, we save index and element
           { /rm exch def } { pop } ifelse
-	} if
+        } if
       } for
 
     % Write out the magic string and bounding box information
      epsifile (%!PS-Adobe-2.0 EPSF-1.2\n) writestring
-	 /epsititle where { pop epsifile epsititle writestring } if
-	 /epsicreator where { pop epsifile epsicreator writestring } if
-	 /epsicrdt where { pop epsifile epsicrdt writestring } if
-	 /epsifor where { pop epsifile epsifor writestring } if
+         /epsititle where { pop epsifile epsititle writestring } if
+         /epsicreator where { pop epsifile epsicreator writestring } if
+         /epsicrdt where { pop epsifile epsicrdt writestring } if
+         /epsifor where { pop epsifile epsifor writestring } if
      epsifile flushfile
 
-	% Write out the page count:
-	 epsifile (%%Pages: ) writestring
-	 epsifile epsiNpages epsiNpageStr cvs writestring
-	 epsifile (\n) writestring
+        % Write out the page count:
+         epsifile (%%Pages: ) writestring
+         epsifile epsiNpages epsiNpageStr cvs writestring
+         epsifile (\n) writestring
      epsifile flushfile
 
-	% Write out the list of used fonts:
-	 epsifile (%%DocumentFonts:) writestring
-	 epsifontdict {
-					epsifile ( ) writestring
-					pop epsiNameStr cvs epsifile exch writestring
-					} forall
-	 epsifile (\n) writestring
+        % Write out the list of used fonts:
+         epsifile (%%DocumentFonts:) writestring
+         epsifontdict {
+                                        epsifile ( ) writestring
+                                        pop epsiNameStr cvs epsifile exch writestring
+                                        } forall
+         epsifile (\n) writestring
      epsifile flushfile
 
-	epsifile BBoxString writestring epsifile (\r) writestring
-	epsifile HiresBBoxString writestring epsifile (\r) writestring
+        epsifile BBoxString writestring epsifile (\r) writestring
+        epsifile HiresBBoxString writestring epsifile (\r) writestring
 
     % Define character and bit widths for the output line buffer:
      /cwidth rm lm sub 1 add def
@@ -213,14 +211,14 @@ ps2edict begin
 
      tm 1 bm
       { % Get a scan line interval from the array device
-	arraydevice exch row copyscanlines lm cwidth getinterval
-	% Write out the hex data as 40 bytes per line (82 chars)
-	0 40 cwidth
-	 { epsifile (% ) writestring 
-	   epsifile exch 2 index exch
-	   dup cwidth exch sub 40 .min getinterval writehexstring
-	   epsifile (\n) writestring
-	 } for
+        arraydevice exch row copyscanlines lm cwidth getinterval
+        % Write out the hex data as 40 bytes per line (82 chars)
+        0 40 cwidth
+         { epsifile (% ) writestring
+           epsifile exch 2 index exch
+           dup cwidth exch sub 40 .min getinterval writehexstring
+           epsifile (\n) writestring
+         } for
         pop
       } for
 
@@ -233,9 +231,8 @@ ps2edict begin
      DonePage 0 1 put
    } bind def
 
-
 (outfile) getenv
-  { /outfile exch def 
+  { /outfile exch def
     ps2epsi
 
     /DonePage 1 string def

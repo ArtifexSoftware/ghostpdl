@@ -1,14 +1,14 @@
 /* COPYRIGHT (C) 1990, 1992 Aladdin Enterprises.  All rights reserved.
    Distributed by Free Software Foundation, Inc.
-   
+
    This file is part of Ghostscript.
-   
+
    Ghostscript is distributed in the hope that it will be useful, but
    WITHOUT ANY WARRANTY.  No author or distributor accepts responsibility
    to anyone for the consequences of using it or for whether it serves any
    particular purpose or works at all, unless he says so in writing.  Refer
    to the Ghostscript General Public License for full details.
-   
+
    Everyone is granted permission to copy, modify and redistribute
    Ghostscript, but only under the conditions described in the Ghostscript
    General Public License.  A copy of this license is supposed to have been
@@ -22,7 +22,6 @@
 /* $Id: S_CFGBLD.H 1.1 1994/08/30 02:27:18 kaz Exp kaz $ */
 
 #ifndef s_cfgbld_h_INCLUDED
-
 
 /* $Id: S_CFG.H 1.1 1994/08/30 02:27:18 kaz Exp kaz $ */
 
@@ -48,7 +47,7 @@
 
 #define CFG_INTEGER_NAME  "pins","minimal_unit","maximal_unit","dpi",\
 "upper_position","encode","constant","y_dpi"
-  
+
 #define CFG_BIT_IMAGE_MODE  0
 #define CFG_SEND_BIT_IMAGE  1
 #define CFG_BIT_ROW_HEADER  2
@@ -58,16 +57,16 @@
 #define CFG_NORMAL_MODE     6
 #define CFG_SKIP_SPACES     7
 #define CFG_PRTCODE_TYPE_COUNT 8
-  
+
 #define CFG_PRTCODE_NAME "bit_image_mode", "send_bit_image", "bit_row_header",\
   "after_bit_image", "line_feed", "form_feed",\
   "normal_mode", "skip_spaces"
-  
+
 #define CFG_FMT_BIT         0x80
 #define CFG_FMT_FORMAT_BIT  0x70
 #define CFG_FMT_COLUMN_BIT  0x07
 #define CFG_FMT_ISO_BIT     0x08
-  
+
 #define CFG_FMT_BIN_LTOH    0x00
 #define CFG_FMT_BIN_HTOL    0x10
 #define CFG_FMT_HEX_UPPER   0x20
@@ -76,7 +75,7 @@
 #define CFG_FMT_OCTAL       0x50
 #define CFG_FMT_ASSIGNMENT  0x60  /* assignment(user variables) */
 #define CFG_FMT_STRINGS     0x70
-  
+
 #define CFG_EXPR_TYPE_BIT   0xe0
 #define CFG_EXPR_VAL_BIT    0x1f
 #define CFG_VAL           0x80
@@ -131,7 +130,7 @@
   NULL,NULL,\
   \
   "pop","null"
-  
+
 #define CFG_TOP_IS_HIGH  0x00
 #define CFG_TOP_IS_LOW   0x80
 #define CFG_LEFT_IS_HIGH 0x40
@@ -140,7 +139,7 @@
 #define CFG_NON_TRANSPOSE_BIT 0x40
 #define CFG_REVERSE_BIT       0x80
 #define CFG_PIN_POSITION_BITS 0xc0
-  
+
 #define CFG_ENCODE_NAME "NULL","HEX","FAX","PCL1","PCL2"
 #define CFG_ENCODE_NULL  0x00
 #define CFG_ENCODE_HEX   0x01
@@ -150,21 +149,21 @@
 #define CFG_ENCODE_LIPS3 0x05    /* Not implemented yet. */
 #define CFG_ENCODE_ESCPAGE 0x06  /* Not implemented yet. */
 #define CFG_ENCODE_COUNT 0x05
-  
+
 #define CFG_STACK_DEPTH  20
-  
+
 #define CFG_ERROR_OTHER        -1
-  
+
 #define CFG_ERROR_SYNTAX       -2
 #define CFG_ERROR_RANGE        -3
 #define CFG_ERROR_TYPE         -4
-  
+
 #define CFG_ERROR_FILE_OPEN    -5
 #define CFG_ERROR_OUTPUT       -6
 #define CFG_ERROR_MEMORY       -7
 #define CFG_ERROR_DIV0         -8
 #define CFG_ERROR_NOT_SUPPORTED -9
-  
+
 #if defined(MSDOS) || defined(_MSDOS)
 #  ifndef __MSDOS__
 #    define __MSDOS__
@@ -191,7 +190,7 @@
 
 typedef struct {
   unsigned int version;
-  
+
   long integer[CFG_INTEGER_TYPE_COUNT];
   unsigned char *strings[CFG_STRINGS_TYPE_COUNT];
   unsigned char *prtcode[CFG_PRTCODE_TYPE_COUNT];
@@ -204,20 +203,20 @@ struct dviprt_print_s {
   unsigned int bitmap_width;
   unsigned int bitmap_height;
   unsigned int buffer_width;
-  
+
   unsigned int device_x;
   unsigned int device_y;
   unsigned int bitmap_x;
   unsigned int bitmap_y;
   unsigned int last_x;
-  
+
   int page_count;
   unsigned char far *source_buffer;
   unsigned char far *encode_buffer;
   unsigned char far *psource;
   unsigned char far *poutput;
   int tempbuffer_f;
-  
+
 #ifdef __PROTOTYPES__
   int (*output_proc)(unsigned char far *,long ,void *);
   int (*output_maximal_unit)(dviprt_print *,unsigned char far *,unsigned int );
@@ -230,7 +229,7 @@ struct dviprt_print_s {
   long (*encode_encode_proc)();
 #endif
   void *pstream;
-  
+
   unsigned long output_bytes;
   unsigned int uservar[CFG_USERVAL_COUNT];
 };
@@ -240,13 +239,13 @@ struct dviprt_print_s {
 
 #ifdef __PROTOTYPES__
 extern int dviprt_readsrc(char *,dviprt_cfg_t *,
-			  unsigned char *,int ,unsigned char *, int);
+                          unsigned char *,int ,unsigned char *, int);
 extern int dviprt_readcfg(char *,dviprt_cfg_t *,
-			  unsigned char *,int , unsigned char *,int);
+                          unsigned char *,int , unsigned char *,int);
 
 extern int dviprt_beginpage(dviprt_print *);
 extern long dviprt_initlibrary(dviprt_print *,dviprt_cfg_t *,
-			       unsigned int ,unsigned int );
+                               unsigned int ,unsigned int );
 extern int dviprt_endbitmap(dviprt_print *);
 extern int dviprt_setstream
   (dviprt_print *p,int(*f)(unsigned char far*,long,void*),void *s);
@@ -284,7 +283,6 @@ extern char *dviprt_encodename[];
 #define s_cfg_h_INCLUDED
 #endif /* s_cfg_h_INCLUDED */
 
-
 #define TEMP_CODEBUF_SIZE 2048
 #define TEMP_READBUF_SIZE 1024
 
@@ -320,16 +318,16 @@ typedef struct {
   uchar *fname;
   FILE *file;
   int line_no;
-  
+
   char temp_readbuf_f;
   char temp_codebuf_f;
   uchar *readbuf;
   uchar *codebuf;
   int readbuf_size;
   int codebuf_size;
-  
+
   uchar *pcodebuf;
-  
+
   uchar *token;
   uchar *endtoken;
 } dviprt_cfg_i;
@@ -354,6 +352,6 @@ static int dviprt_printcfgwarning(dviprt_cfg_i *,char *,int);
 extern int dviprt_print_headercomment_(char *,char *,char *,FILE *);
 extern char dviprt_message_buffer[];
 #endif dviprlib_implementation
- 
+
 #define s_cfgbld_h_INCLUDED
 #endif /* s_cfgbld_h_INCLUDED */

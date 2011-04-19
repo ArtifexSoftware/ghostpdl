@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -74,16 +74,16 @@ struct ref_stack_s {
     /* Following are updated when adding or deleting blocks. */
     s_ptr bot;			/* bottommost valid element */
     s_ptr top;			/* topmost valid element = */
-				/* bot + data_size */
+                                /* bot + data_size */
     ref current;		/* t_array for current top block */
     uint extension_size;	/* total sizes of extn. blocks */
     uint extension_used;	/* total used sizes of extn. blocks */
     /* Following are updated rarely. */
     ref max_stack;		/* t_integer, Max...Stack user param */
     uint requested;		/* amount of last failing */
-				/* push or pop request */
+                                /* push or pop request */
     uint margin;		/* # of slots to leave between limit */
-				/* and top */
+                                /* and top */
     uint body_size;		/* data_size - margin */
     /* Following are set only at initialization. */
     ref_stack_params_t *params;

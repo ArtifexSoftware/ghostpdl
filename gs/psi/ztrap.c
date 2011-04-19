@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,11 +34,11 @@ zsettrapparams(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
-	return code;
+        return code;
     code = gs_settrapparams(&i_trap_params, (gs_param_list *) & list);
     iparam_list_release(&list);
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }

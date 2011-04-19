@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,7 +40,7 @@ const gx_device_color *gs_currentdevicecolor(const gs_state *);
 /* Look up with restriction */
 int
 gs_indexed_limit_and_lookup(const gs_client_color * pc,const gs_color_space *pcs,
-			 gs_client_color *pcc);
+                         gs_client_color *pcc);
 
 /* Declare the Indexed color space type. */
 extern const gs_color_space_type gs_color_space_type_Indexed;

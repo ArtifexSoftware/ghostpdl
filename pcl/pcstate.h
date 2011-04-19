@@ -37,7 +37,7 @@
 #include "rtrstst.h"            /* raster state information */
 #include "pcht.h"
 #include "pcident.h"
-#include "pccsbase.h"           
+#include "pccsbase.h"
 
 /*#include "pgstate.h"*/	/* HP-GL/2 state, included below */
 #include "pjtop.h"
@@ -64,7 +64,7 @@ typedef enum personality_enum {   /* NB  document */
 
 /*
  * Palette stack. This is implemented as a simple linked list.  NB
- * needs to be moved.  
+ * needs to be moved.
  */
 typedef struct pstack_entry_s {
     struct pstack_entry_s * pnext;
@@ -95,7 +95,6 @@ void pcl_free_gstate_stk(pcl_state_t * pcs);
  * "Cold start" initialization for the graphic state.
  */
 void pcl_init_state(pcl_state_t * pcs, gs_memory_t * pmem);
-
 
 #include "pgstate.h"	    /* HP-GL/2 state */
 
@@ -132,7 +131,7 @@ struct pcl_state_s {
     /* Define an optional procedure for parsing non-ESC data. */
     int             (*parse_other)( void *                  parse_data,
                                        pcl_state_t *           pcs,
-			               stream_cursor_read *    pr
+                                       stream_cursor_read *    pr
                                        );
     void *          parse_data;	        /* closure data for parse_other */
 
@@ -163,7 +162,7 @@ struct pcl_state_s {
     pcl_font_selection_t    font_selection[2];
     enum {
         primary = 0,
-	secondary = 1
+        secondary = 1
     }               font_selected;
     pl_font_t *     font;		/* 0 means recompute from params */
     pl_dict_t       built_in_fonts;	/* "built-in", known at start-up */
@@ -261,7 +260,6 @@ struct pcl_state_s {
                                              * known as source transparent */
     bool                pcl_pattern_transparent;
 
-
     /* Chapter 14 (pcrect.c) */
     coord_point_t     rectangle;
 
@@ -272,10 +270,10 @@ struct pcl_state_s {
     int             location_type;
     int             location_unit;
     struct _sb {
-	byte            internal_buffer[80];    /* enough for an error message */
-	byte *          buffer;
-	uint            write_pos;
-	uint            read_pos;
+        byte            internal_buffer[80];    /* enough for an error message */
+        byte *          buffer;
+        uint            write_pos;
+        uint            read_pos;
     }               status;
 
     /* Chapter 24 (pcmisc.c) */
@@ -283,7 +281,7 @@ struct pcl_state_s {
     bool            display_functions;
     int             (*configure_appletalk)( const byte * key,
                                                uint         key_length,
-				               const byte * value,
+                                               const byte * value,
                                                uint         value_length
                                                );
 
@@ -297,7 +295,7 @@ struct pcl_state_s {
                                     colors see pcident.h */
     pcl_frgrnd_t *      pfrgrnd;
     pcl_gsid_t          frgnd_cache_id;
-    
+
     pcl_gstate_ids_t *  pids;
     /*
      * Unlike other elements of the PCL "palette", color rendering dictionaries
@@ -306,7 +304,7 @@ struct pcl_state_s {
      * are determined by the output device rather than the language.
      */
     pcl_crd_t *         pcl_default_crd;
-    
+
     /* internal dithers */
     pcl_ht_builtin_dither_t  ordered_dither;
     pcl_ht_builtin_dither_t  clustered_dither;
@@ -347,13 +345,13 @@ struct pcl_state_s {
 
     /* the current language personality */
     pcl_personality_t personality;
-    
+
     /* enable image interpolation */
     bool interpolate;
 
     /* store a pointer to the command definitions for use by macros */
     void *pcl_commands;
-    
+
     /* indicates page has been written to with a drawing command */
     bool page_marked;
 

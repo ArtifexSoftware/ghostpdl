@@ -22,7 +22,7 @@ typedef enum {
 
 /* Enumerate the segments of a stick/arc character. */
 int hpgl_stick_arc_segments(const gs_memory_t *mem,
-			    void *data, uint char_index, hpgl_font_type_t font_type);
+                            void *data, uint char_index, hpgl_font_type_t font_type);
 
 /* Get the unscaled width of a stick/arc character. */
 int hpgl_stick_arc_width(uint char_index, hpgl_font_type_t font_type);

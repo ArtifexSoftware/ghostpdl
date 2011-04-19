@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,22 +35,22 @@ s_MD5E_init(stream_state * st)
 /* Process a buffer. */
 static int
 s_MD5E_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
+               stream_cursor_write * pw, bool last)
 {
     stream_MD5E_state *const ss = (stream_MD5E_state *) st;
     int status = 0;
 
     if (pr->ptr < pr->limit) {
-	gs_md5_append(&ss->md5, pr->ptr + 1, pr->limit - pr->ptr);
-	pr->ptr = pr->limit;
+        gs_md5_append(&ss->md5, pr->ptr + 1, pr->limit - pr->ptr);
+        pr->ptr = pr->limit;
     }
     if (last) {
-	if (pw->limit - pw->ptr >= 16) {
-	    gs_md5_finish(&ss->md5, pw->ptr + 1);
-	    pw->ptr += 16;
-	    status = EOFC;
-	} else
-	    status = 1;
+        if (pw->limit - pw->ptr >= 16) {
+            gs_md5_finish(&ss->md5, pw->ptr + 1);
+            pw->ptr += 16;
+            status = EOFC;
+        } else
+            status = 1;
     }
     return status;
 }
@@ -67,7 +67,7 @@ s_MD5E_make_stream(gs_memory_t *mem, byte *digest, int digest_size)
     stream_state *ss = s_alloc_state(mem, s_MD5E_template.stype, "s_MD5E_make_stream");
 
     if (ss == NULL || s == NULL)
-	goto err;
+        goto err;
     ss->template = &s_MD5E_template;
     if (s_init_filter(s, ss, digest, digest_size, NULL) < 0)
 goto err;
@@ -82,7 +82,7 @@ err:
 /* Process a buffer. */
 static int
 s_MD5C_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
+               stream_cursor_write * pw, bool last)
 {
     stream_MD5E_state *const ss = (stream_MD5E_state *) st;
     int nr = pr->limit - pr->ptr;
@@ -94,7 +94,7 @@ s_MD5C_process(stream_state * st, stream_cursor_read * pr,
     pr->ptr += n;
     pw->ptr += n;
     if (pw->limit == pw->ptr)
-	return 1;
+        return 1;
     return 0;
 }
 /* Stream template */
@@ -111,10 +111,10 @@ s_MD5C_make_stream(gs_memory_t *mem, stream *strm)
     byte *buffer = gs_alloc_bytes(mem, buffer_size, "s_MD5E_make_stream(buffer)");
 
     if (ss == NULL || s == NULL || buffer == NULL)
-	goto err;
+        goto err;
     ss->template = &s_MD5C_template;
     if (s_init_filter(s, ss, buffer, buffer_size, NULL) < 0)
-	goto err;
+        goto err;
     s->strm = strm;
     s->close_strm = true;
     return s;
@@ -135,15 +135,13 @@ s_MD5C_get_digest(stream *s, byte *buf, int buf_length)
     int l = min(16, buf_length), k;
 
     if (s->procs.process != s_MD5C_process)
-	return 0; /* Must not happen. */
+        return 0; /* Must not happen. */
     md5 = ss->md5;
     gs_md5_finish(&md5, b);
     memcpy(buf, b, l);
     for (p = b + l; p < b + sizeof(b); p += l) {
-	for (k = 0; k < l && p + k < b + sizeof(b); k++)
-	    buf[k] ^= p[k];
+        for (k = 0; k < l && p + k < b + sizeof(b); k++)
+            buf[k] ^= p[k];
     }
     return l;
 }
-
-

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,7 @@
  *
  *  This file is part of the FreeType project, and may only be used
  *  modified and distributed under the terms of the FreeType project
- *  license, LICENSE.TXT.  By continuing to use, modify, or distribute 
+ *  license, LICENSE.TXT.  By continuing to use, modify, or distribute
  *  this file you indicate that you have read the license and
  *  understand and accept it fully.
  *
@@ -92,7 +92,6 @@
 #endif
 
 #endif
-
 
 #ifdef __cplusplus
   extern "C" {
@@ -163,7 +162,6 @@
 
 #endif /* LONG64 */
 
-
 #define MUL_FIXED( a, b )      MulDiv_Round( (a), (b), 1 << 16 )
 #define INT_TO_F26DOT6( x )    ( (Long)(x) << 6  )
 #define INT_TO_F2DOT14( x )    ( (Long)(x) << 14 )
@@ -179,6 +177,5 @@
 #endif
 
 #endif /* TTCALC_H */
-
 
 /* END */

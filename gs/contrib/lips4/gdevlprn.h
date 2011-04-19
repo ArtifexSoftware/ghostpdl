@@ -39,24 +39,24 @@
 #define dev_proc_image_out(proc) lprn_dev_proc_image_out(proc)
 
 #define gx_lprn_device_common\
-	lprn_dev_proc_image_out((*image_out));\
+        lprn_dev_proc_image_out((*image_out));\
         bool initialized;\
         bool ManualFeed;\
         bool NegativePrint;\
-	bool Tumble;           /* for Duplex */\
-	bool RITOff;           /* currently only escpage.dev use this */\
-	int prev_x;\
-	int prev_y;\
-	int BlockLine;\
-	byte *ImageBuf;		/* Image Buffer */\
-	byte *TmpBuf;           /* Tmporary buffer */\
-	byte *CompBuf;		/* Compress buffer */\
-	byte *CompBuf2;		/* Compress buffer */\
-	int nBw; /* block width (byte,8dot)    */\
-	int nBh; /* block height(line)         */\
-	struct _Bubble **bubbleTbl;\
-	struct _Bubble *freeBubbleList;\
-	bool ShowBubble
+        bool Tumble;           /* for Duplex */\
+        bool RITOff;           /* currently only escpage.dev use this */\
+        int prev_x;\
+        int prev_y;\
+        int BlockLine;\
+        byte *ImageBuf;		/* Image Buffer */\
+        byte *TmpBuf;           /* Tmporary buffer */\
+        byte *CompBuf;		/* Compress buffer */\
+        byte *CompBuf2;		/* Compress buffer */\
+        int nBw; /* block width (byte,8dot)    */\
+        int nBh; /* block height(line)         */\
+        struct _Bubble **bubbleTbl;\
+        struct _Bubble *freeBubbleList;\
+        bool ShowBubble
 
 #define lp_device_body_rest_(print_page_copies, image_out)\
        prn_device_body_rest2_(NULL, print_page_copies, -1),\
@@ -91,7 +91,7 @@
        0			/*false */
 
 #define lprn_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
-		    print_page_copies, image_out)\
+                    print_page_copies, image_out)\
 {        std_device_std_color_full_body(dtype, &procs, dname,\
           (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\
@@ -104,7 +104,7 @@
 }
 
 #define lprn_duplex_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
-		    print_page_copies, image_out)\
+                    print_page_copies, image_out)\
 {        std_device_std_color_full_body(dtype, &procs, dname,\
           (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\

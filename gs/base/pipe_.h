@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,7 +22,7 @@
 #ifdef __WIN32__
 /*
  * MS Windows has popen and pclose in stdio.h, but under different names.
- * Unfortunately MSVC5 and 6 have a broken implementation of _popen, 
+ * Unfortunately MSVC5 and 6 have a broken implementation of _popen,
  * so we use own.  Our implementation only supports mode "wb".
  */
 extern FILE *mswin_popen(const char *cmd, const char *mode);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -93,7 +93,7 @@ struct file_enum_s {
     gs_memory_t *memory;
 };
 gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
-		    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
+                    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
 
 /* Initialize an enumeration.  Note that * and ? in a directory */
 /* don't work with the OS call currently used. The '\' escape	*/
@@ -108,28 +108,28 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     int i, j;
 
     if (pfen == 0)
-	return 0;
+        return 0;
     /* pattern could be allocated as a string, */
     /* but it's simpler for GC and freeing to allocate it as bytes. */
     pattern = (char *)gs_alloc_bytes(mem, pat_size,
-				     "gp_enumerate_files(pattern)");
+                                     "gp_enumerate_files(pattern)");
     if (pattern == 0)
-	return 0;
+        return 0;
     /* translate the template into a pattern discarding the escape  */
     /* char '\' (not needed by the OS Find...File logic). Note that */
     /* a final '\' in the string is also discarded.		    */
     for (i = 0, j=0; i < patlen; i++) {
-	if (pat[i] == '\\') {
-	    i++;
-	    if (i == patlen)
-		break;		/* '\' at end ignored */
-	}
-	pattern[j++]=pat[i];
+        if (pat[i] == '\\') {
+            i++;
+            if (i == patlen)
+                break;		/* '\' at end ignored */
+        }
+        pattern[j++]=pat[i];
     }
     /* Scan for last path separator to determine 'head_size' (directory part) */
     for (i = 0; i < j; i++) {
-	if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
-	hsize = i+1;
+        if(pattern[i] == '/' || pattern[i] == '\\' || pattern[i] == ':')
+        hsize = i+1;
     }
     pattern[j] = 0;
     pfen->pattern = pattern;
@@ -149,44 +149,44 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;
-    for(;;) 
-      { if (pfen->first_time) 
+    for(;;)
+      { if (pfen->first_time)
           { pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
-	    if (pfen->find_handle == INVALID_HANDLE_VALUE)
-	      { code = -1;
+            if (pfen->find_handle == INVALID_HANDLE_VALUE)
+              { code = -1;
                 break;
               }
-	    pfen->first_time = 0;
-          } 
-        else 
+            pfen->first_time = 0;
+          }
+        else
           { if (!FindNextFile(pfen->find_handle, &(pfen->find_data)))
-	      { code = -1;
+              { code = -1;
                 break;
               }
           }
         if ( strcmp(".",  pfen->find_data.cFileName)
           && strcmp("..", pfen->find_data.cFileName)
-	  && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
+          && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
             break;
-      } 
-   
+      }
+
     if (code != 0) {		/* All done, clean up. */
-	gp_enumerate_files_close(pfen);
-	return ~(uint) 0;
+        gp_enumerate_files_close(pfen);
+        return ~(uint) 0;
     }
     len = strlen(pfen->find_data.cFileName);
 
     if (pfen->head_size + len < maxlen) {
-	memcpy(ptr, pfen->pattern, pfen->head_size);
-	strcpy(ptr + pfen->head_size, pfen->find_data.cFileName);
-	return pfen->head_size + len;
+        memcpy(ptr, pfen->pattern, pfen->head_size);
+        strcpy(ptr + pfen->head_size, pfen->find_data.cFileName);
+        return pfen->head_size + len;
     }
     if (pfen->head_size >= maxlen)
-	return 0;		/* no hope at all */
+        return 0;		/* no hope at all */
 
     memcpy(ptr, pfen->pattern, pfen->head_size);
     strncpy(ptr + pfen->head_size, pfen->find_data.cFileName,
-	    maxlen - pfen->head_size - 1);
+            maxlen - pfen->head_size - 1);
     return maxlen;
 }
 
@@ -197,47 +197,46 @@ gp_enumerate_files_close(file_enum * pfen)
     gs_memory_t *mem = pfen->memory;
 
     if (pfen->find_handle != INVALID_HANDLE_VALUE)
-	FindClose(pfen->find_handle);
+        FindClose(pfen->find_handle);
     gs_free_object(mem, pfen->pattern,
-		   "gp_enumerate_files_close(pattern)");
+                   "gp_enumerate_files_close(pattern)");
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
 }
-
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)
 {   int i = 0;
-    
-    if (len == 0)
-	return 0;
-    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
-	/* A network path: "\\server\share\" */
-	int k = 0;
 
-	for (i = 2; i < len; i++)
-	    if (fname[i] == '\\' || fname[i] == '/')
-		if (k++) {
-		    i++;
-		    break;
-		}
+    if (len == 0)
+        return 0;
+    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
+        /* A network path: "\\server\share\" */
+        int k = 0;
+
+        for (i = 2; i < len; i++)
+            if (fname[i] == '\\' || fname[i] == '/')
+                if (k++) {
+                    i++;
+                    break;
+                }
     } else if (fname[0] == '/' || fname[0] == '\\') {
-	/* Absolute with no drive. */
-	i = 1;
+        /* Absolute with no drive. */
+        i = 1;
     } else if (len > 1 && fname[1] == ':') {
-	/* Absolute with a drive. */
-	i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
+        /* Absolute with a drive. */
+        i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
     }
     return i;
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
-	if (fname[0] == '/' || fname[0] == '\\')
-	    return 1;
+        if (fname[0] == '/' || fname[0] == '\\')
+            return 1;
     } else if (len < 0) {
-	if (fname[-1] == '/' || fname[-1] == '\\')
-	    return 1;
+        if (fname[-1] == '/' || fname[-1] == '\\')
+            return 1;
     }
     return 0;
 }
@@ -275,10 +274,9 @@ bool gp_file_name_is_empty_item_meanful(void)
 }
 
 gp_file_name_combine_result
-gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_sibling, char *buffer, uint *blen)
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen,
+                    bool no_sibling, char *buffer, uint *blen)
 {
-    return gp_file_name_combine_generic(prefix, plen, 
-	    fname, flen, no_sibling, buffer, blen);
+    return gp_file_name_combine_generic(prefix, plen,
+            fname, flen, no_sibling, buffer, blen);
 }
-

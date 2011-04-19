@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -29,14 +29,13 @@
 #include "ivmspace.h"
 #include "store.h"
 
-
 /* ------ Internal routines ------ */
 
 /* Allocate, and prepare to load, the index or tint map. */
 int
 zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
-	      int num_entries,  const gs_color_space * base_space,
-	      op_proc_t map1)
+              int num_entries,  const gs_color_space * base_space,
+              op_proc_t map1)
 {
     gs_memory_t *mem = gs_state_memory(igs);
     int space = imemory_space((gs_ref_memory_t *)mem);
@@ -44,11 +43,11 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
     int num_values = num_entries * num_components;
     gs_indexed_map *map;
     int code = alloc_indexed_map(&map, num_values, mem,
-				 "setcolorspace(mapped)");
+                                 "setcolorspace(mapped)");
     es_ptr ep;
 
     if (code < 0)
-	return code;
+        return code;
     *pmap = map;
     /* Map the entire set of color indices.  Since the */
     /* o-stack may not be able to hold N*4096 values, we have */

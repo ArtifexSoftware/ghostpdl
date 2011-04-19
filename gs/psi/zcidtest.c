@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,40 +39,40 @@ zwrapfont(i_ctx_t *i_ctx_p)
 
     switch (font->FontType) {
     case ft_TrueType:
-	code = gs_font_type0_from_type42(&font0, (gs_font_type42 *)font, wmode,
-					 true, font->memory);
-	if (code < 0)
-	    return code;
-	/*
-	 * Patch up BuildChar and CIDMap.  This isn't necessary for
-	 * TrueType fonts in general, only for Type 42 fonts whose
-	 * BuildChar is implemented in PostScript code.
-	 */
-	{
-	    font_data *pdata = pfont_data(font);
-	    const char *bgstr = "%Type11BuildGlyph";
-	    ref temp;
+        code = gs_font_type0_from_type42(&font0, (gs_font_type42 *)font, wmode,
+                                         true, font->memory);
+        if (code < 0)
+            return code;
+        /*
+         * Patch up BuildChar and CIDMap.  This isn't necessary for
+         * TrueType fonts in general, only for Type 42 fonts whose
+         * BuildChar is implemented in PostScript code.
+         */
+        {
+            font_data *pdata = pfont_data(font);
+            const char *bgstr = "%Type11BuildGlyph";
+            ref temp;
 
-	    make_int(&temp, 0);
-	    ref_assign(&pdata->u.type42.CIDMap, &temp);
-	    code = name_ref((const byte *)bgstr, strlen(bgstr), &temp, 1);
-	    if (code < 0)
-		return code;
-	    r_set_attrs(&temp, a_executable);
-	    ref_assign(&pdata->BuildGlyph, &temp);
-	}
-	break;
+            make_int(&temp, 0);
+            ref_assign(&pdata->u.type42.CIDMap, &temp);
+            code = name_ref((const byte *)bgstr, strlen(bgstr), &temp, 1);
+            if (code < 0)
+                return code;
+            r_set_attrs(&temp, a_executable);
+            ref_assign(&pdata->BuildGlyph, &temp);
+        }
+        break;
     case ft_CID_encrypted:
     case ft_CID_user_defined:
     case ft_CID_TrueType:
-	code = gs_font_type0_from_cidfont(&font0, font, wmode, NULL,
-					  font->memory);
-	break;
+        code = gs_font_type0_from_cidfont(&font0, font, wmode, NULL,
+                                          font->memory);
+        break;
     default:
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     }
     if (code < 0)
-	return code;
+        return code;
     gs_setfont(igs, (gs_font *)font0);
     return 0;
 }
@@ -96,14 +96,14 @@ zwritecmap(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_dictionary);
     if (dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
-	!r_is_struct(pcodemap)
-	)
-	return_error(e_typecheck);
+        !r_is_struct(pcodemap)
+        )
+        return_error(e_typecheck);
     check_write_file(s, op - 1);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
     code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL, -1);
     if (code >= 0)
-	pop(2);
+        pop(2);
     return code;
 }
 
@@ -118,16 +118,16 @@ zwritefont9(i_ctx_t *i_ctx_p)
     stream *s;
 
     if (code < 0)
-	return code;
+        return code;
     if (pfont->FontType != ft_CID_encrypted)
-	return_error(e_invalidfont);
+        return_error(e_invalidfont);
     check_write_file(s, op - 1);
     pfcid = (gs_font_cid0 *)pfont;
     code = psf_write_cid0_font(s, pfcid,
-			       WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS,
-			       NULL, 0, NULL);
+                               WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS,
+                               NULL, 0, NULL);
     if (code >= 0)
-	pop(2);
+        pop(2);
     return code;
 }
 

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -43,12 +43,12 @@ zcond(i_ctx_t *i_ctx_p)
 
     /* Push the array on the e-stack and call the continuation. */
     if (!r_is_array(op))
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     check_execute(*op);
     if ((r_size(op) & 1) != 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     if (r_size(op) == 0)
-	return zpop(i_ctx_p);
+        return zpop(i_ctx_p);
     check_estack(3);
     esp = ep += 3;
     ref_assign(ep - 2, op);	/* the cond body */
@@ -72,24 +72,24 @@ cond_continue(i_ctx_t *i_ctx_p)
     check_type(*op, t_boolean);
     if (op->value.boolval) {	/* true */
         array_get(imemory, ep, 1L, ep);
-	esfile_check_cache();
-	code = o_pop_estack;
+        esfile_check_cache();
+        code = o_pop_estack;
     } else if (r_size(ep) > 2) {	/* false */
-	const ref_packed *elts = ep->value.packed;
+        const ref_packed *elts = ep->value.packed;
 
-	check_estack(2);
-	r_dec_size(ep, 2);
-	elts = packed_next(elts);
-	elts = packed_next(elts);
-	ep->value.packed = elts;
-	array_get(imemory, ep, 0L, ep + 2);
-	make_op_estack(ep + 1, cond_continue);
-	esp = ep + 2;
-	esfile_check_cache();
-	code = o_push_estack;
+        check_estack(2);
+        r_dec_size(ep, 2);
+        elts = packed_next(elts);
+        elts = packed_next(elts);
+        ep->value.packed = elts;
+        array_get(imemory, ep, 0L, ep + 2);
+        make_op_estack(ep + 1, cond_continue);
+        esp = ep + 2;
+        esfile_check_cache();
+        code = o_push_estack;
     } else {			/* fall off end of cond */
-	esp = ep - 1;
-	code = o_pop_estack;
+        esp = ep - 1;
+        code = o_pop_estack;
     }
     pop(1);			/* get rid of the boolean */
     return code;
@@ -105,10 +105,10 @@ zexec(i_ctx_t *i_ctx_p)
     check_op(1);
     code = check_for_exec(op);
     if (code < 0) {
-	return code;
+        return code;
     }
     if (!r_has_attr(op, a_executable)) {
-	return 0;	/* shortcut, literal object just gets pushed back */
+        return 0;	/* shortcut, literal object just gets pushed back */
     }
     check_estack(1);
     ++esp;
@@ -132,23 +132,23 @@ zexecn(i_ctx_t *i_ctx_p)
     check_estack(n);
     esp_orig = esp;
     for (i = 0; i < n; ++i) {
-	const ref *rp = ref_stack_index(&o_stack, (long)(i + 1));
+        const ref *rp = ref_stack_index(&o_stack, (long)(i + 1));
 
-	/* Make sure this object is legal to execute. */
-	if (ref_type_uses_access(r_type(rp))) {
-	    if (!r_has_attr(rp, a_execute) &&
-		r_has_attr(rp, a_executable)
-		) {
-		esp = esp_orig;
-		return_error(e_invalidaccess);
-	    }
-	}
-	/* Executable nulls have a special meaning on the e-stack, */
-	/* so since they are no-ops, don't push them. */
-	if (!r_has_type_attrs(rp, t_null, a_executable)) {
-	    ++esp;
-	    ref_assign(esp, rp);
-	}
+        /* Make sure this object is legal to execute. */
+        if (ref_type_uses_access(r_type(rp))) {
+            if (!r_has_attr(rp, a_execute) &&
+                r_has_attr(rp, a_executable)
+                ) {
+                esp = esp_orig;
+                return_error(e_invalidaccess);
+            }
+        }
+        /* Executable nulls have a special meaning on the e-stack, */
+        /* so since they are no-ops, don't push them. */
+        if (!r_has_type_attrs(rp, t_null, a_executable)) {
+            ++esp;
+            ref_assign(esp, rp);
+        }
     }
     esfile_check_cache();
     pop(n + 1);
@@ -165,7 +165,7 @@ zsuperexec(i_ctx_t *i_ctx_p)
 
     check_op(1);
     if (!r_has_attr(op, a_executable))
-	return 0;		/* literal object just gets pushed back */
+        return 0;		/* literal object just gets pushed back */
     check_estack(2);
     ep = esp += 3;
     make_mark_estack(ep - 2, es_other, end_superexec); /* error case */
@@ -200,9 +200,9 @@ zrunandhide(i_ctx_t *i_ctx_p)
 
     check_op(2);
     if (!r_is_array(op - 1))
-	return_op_typecheck(op);
+        return_op_typecheck(op);
     if (!r_has_attr(op, a_executable))
-	return 0;		/* literal object just gets pushed back */
+        return 0;		/* literal object just gets pushed back */
     check_estack(5);
     ep = esp += 5;
     make_mark_estack(ep - 4, es_other, err_end_runandhide); /* error case */
@@ -263,10 +263,10 @@ zif(i_ctx_t *i_ctx_p)
     check_proc(*op);
     check_type(op[-1], t_boolean);
     if (op[-1].value.boolval) {
-	check_estack(1);
-	++esp;
-	ref_assign(esp, op);
-	esfile_check_cache();
+        check_estack(1);
+        ++esp;
+        ref_assign(esp, op);
+        esfile_check_cache();
     }
     pop(2);
     return o_push_estack;
@@ -284,9 +284,9 @@ zifelse(i_ctx_t *i_ctx_p)
     check_estack(1);
     ++esp;
     if (op[-2].value.boolval) {
-	ref_assign(esp, op - 1);
+        ref_assign(esp, op - 1);
     } else {
-	ref_assign(esp, op);
+        ref_assign(esp, op);
     }
     esfile_check_cache();
     pop(3);
@@ -306,14 +306,14 @@ zfor(i_ctx_t *i_ctx_p)
     int code;
     float params[3];
 
- 	/* Mostly undocumented, and somewhat bizarre Adobe behavior discovered	*/
-	/* with the CET (28-05) and FTS (124-01) is that the proc is not run	*/
-	/* if BOTH the initial value and increment are zero.			*/
+        /* Mostly undocumented, and somewhat bizarre Adobe behavior discovered	*/
+        /* with the CET (28-05) and FTS (124-01) is that the proc is not run	*/
+        /* if BOTH the initial value and increment are zero.			*/
     if ((code = float_params(op - 1, 3, params)) < 0)
-	return code;
+        return code;
     if ( params[0] == 0.0 && params[1] == 0.0 ) {
-	pop(4);		/* don't run the proc */
-	return 0;
+        pop(4);		/* don't run the proc */
+        return 0;
     }
     check_estack(7);
     ep = esp + 6;
@@ -322,29 +322,29 @@ zfor(i_ctx_t *i_ctx_p)
     /* the increment, the limit, and the procedure, */
     /* and invoke the continuation operator. */
     if (r_has_type(op - 3, t_integer) &&
-	r_has_type(op - 2, t_integer)
-	) {
-	make_int(ep - 4, op[-3].value.intval);
-	make_int(ep - 3, op[-2].value.intval);
-	switch (r_type(op - 1)) {
-	    case t_integer:
-		make_int(ep - 2, op[-1].value.intval);
-		break;
-	    case t_real:
-		make_int(ep - 2, (long)op[-1].value.realval);
-		break;
-	    default:
-		return_op_typecheck(op - 1);
-	}
-	if (ep[-3].value.intval >= 0)
-	    make_op_estack(ep, for_pos_int_continue);
-	else
-	    make_op_estack(ep, for_neg_int_continue);
+        r_has_type(op - 2, t_integer)
+        ) {
+        make_int(ep - 4, op[-3].value.intval);
+        make_int(ep - 3, op[-2].value.intval);
+        switch (r_type(op - 1)) {
+            case t_integer:
+                make_int(ep - 2, op[-1].value.intval);
+                break;
+            case t_real:
+                make_int(ep - 2, (long)op[-1].value.realval);
+                break;
+            default:
+                return_op_typecheck(op - 1);
+        }
+        if (ep[-3].value.intval >= 0)
+            make_op_estack(ep, for_pos_int_continue);
+        else
+            make_op_estack(ep, for_neg_int_continue);
     } else {
-	make_real(ep - 4, params[0]);
-	make_real(ep - 3, params[1]);
-	make_real(ep - 2, params[2]);
-	make_op_estack(ep, for_real_continue);
+        make_real(ep - 4, params[0]);
+        make_real(ep - 3, params[1]);
+        make_real(ep - 2, params[2]);
+        make_op_estack(ep, for_real_continue);
     }
     make_mark_estack(ep - 5, es_for, no_cleanup);
     ref_assign(ep - 1, op);
@@ -365,8 +365,8 @@ for_pos_int_continue(i_ctx_t *i_ctx_p)
     int var = ep[-3].value.intval;
 
     if (var > ep[-1].value.intval) {
-	esp -= 5;		/* pop everything */
-	return o_pop_estack;
+        esp -= 5;		/* pop everything */
+        return o_pop_estack;
     }
     push(1);
     make_int(op, var);
@@ -384,8 +384,8 @@ for_neg_int_continue(i_ctx_t *i_ctx_p)
     int var = ep[-3].value.intval;
 
     if (var < ep[-1].value.intval) {
-	esp -= 5;		/* pop everything */
-	return o_pop_estack;
+        esp -= 5;		/* pop everything */
+        return o_pop_estack;
     }
     push(1);
     make_int(op, var);
@@ -404,10 +404,10 @@ for_real_continue(i_ctx_t *i_ctx_p)
     float incr = ep[-2].value.realval;
 
     if (incr >= 0 ? (var > ep[-1].value.realval) :
-	(var < ep[-1].value.realval)
-	) {
-	esp -= 5;		/* pop everything */
-	return o_pop_estack;
+        (var < ep[-1].value.realval)
+        ) {
+        esp -= 5;		/* pop everything */
+        return o_pop_estack;
     }
     push(1);
     ref_assign(op, ep - 3);
@@ -460,8 +460,8 @@ for_samples_continue(i_ctx_t *i_ctx_p)
     float b = ep[-1].value.realval;
 
     if (var > n) {
-	esp -= 6;		/* pop everything */
-	return o_pop_estack;
+        esp -= 6;		/* pop everything */
+        return o_pop_estack;
     }
     push(1);
     make_real(op, ((n - var) * a + var * b) / n);
@@ -480,7 +480,7 @@ zrepeat(i_ctx_t *i_ctx_p)
     check_proc(*op);
     check_type(op[-1], t_integer);
     if (op[-1].value.intval < 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     check_estack(5);
     /* Push a mark, the count, and the procedure, and invoke */
     /* the continuation operator. */
@@ -498,12 +498,12 @@ repeat_continue(i_ctx_t *i_ctx_p)
     es_ptr ep = esp;		/* saved proc */
 
     if (--(ep[-1].value.intval) >= 0) {		/* continue */
-	esp += 2;
-	ref_assign(esp, ep);
-	return o_push_estack;
+        esp += 2;
+        ref_assign(esp, ep);
+        return o_push_estack;
     } else {			/* done */
-	esp -= 3;		/* pop mark, count, proc */
-	return o_pop_estack;
+        esp -= 3;		/* pop mark, count, proc */
+        return o_pop_estack;
     }
 }
 
@@ -545,20 +545,20 @@ zexit(i_ctx_t *i_ctx_p)
 
     ref_stack_enum_begin(&rsenum, &e_stack);
     do {
-	uint used = rsenum.size;
-	es_ptr ep = rsenum.ptr + used - 1;
-	uint count = used;
+        uint used = rsenum.size;
+        es_ptr ep = rsenum.ptr + used - 1;
+        uint count = used;
 
-	for (; count; count--, ep--)
-	    if (r_is_estack_mark(ep))
-		switch (estack_mark_index(ep)) {
-		    case es_for:
-			pop_estack(i_ctx_p, scanned + (used - count + 1));
-			return o_pop_estack;
-		    case es_stopped:
-			return_error(e_invalidexit);	/* not a loop */
-		}
-	scanned += used;
+        for (; count; count--, ep--)
+            if (r_is_estack_mark(ep))
+                switch (estack_mark_index(ep)) {
+                    case es_for:
+                        pop_estack(i_ctx_p, scanned + (used - count + 1));
+                        return o_pop_estack;
+                    case es_stopped:
+                        return_error(e_invalidexit);	/* not a loop */
+                }
+        scanned += used;
     } while (ref_stack_enum_next(&rsenum));
     /* No mark, quit.  (per Adobe documentation) */
     push(2);
@@ -597,17 +597,17 @@ zstop(i_ctx_t *i_ctx_p)
     uint count = count_to_stopped(i_ctx_p, 1L);
 
     if (count) {
-	/*
-	 * If there are any t_oparrays on the e-stack, they will pop
-	 * any new items from the o-stack.  Wait to push the 'true'
-	 * until we have run all the unwind procedures.
-	 */
-	check_ostack(2);
-	pop_estack(i_ctx_p, count);
-	op = osp;
-	push(1);
-	make_true(op);
-	return o_pop_estack;
+        /*
+         * If there are any t_oparrays on the e-stack, they will pop
+         * any new items from the o-stack.  Wait to push the 'true'
+         * until we have run all the unwind procedures.
+         */
+        check_ostack(2);
+        pop_estack(i_ctx_p, count);
+        op = osp;
+        push(1);
+        make_true(op);
+        return o_pop_estack;
     }
     /* No mark, quit.  (per Adobe documentation) */
     push(2);
@@ -624,21 +624,21 @@ zzstop(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     count = count_to_stopped(i_ctx_p, op->value.intval);
     if (count) {
-	/*
-	 * If there are any t_oparrays on the e-stack, they will pop
-	 * any new items from the o-stack.  Wait to push the result
-	 * until we have run all the unwind procedures.
-	 */
-	ref save_result;
+        /*
+         * If there are any t_oparrays on the e-stack, they will pop
+         * any new items from the o-stack.  Wait to push the result
+         * until we have run all the unwind procedures.
+         */
+        ref save_result;
 
-	check_op(2);
-	save_result = op[-1];
-	pop(2);
-	pop_estack(i_ctx_p, count);
-	op = osp;
-	push(1);
-	*op = save_result;
-	return o_pop_estack;
+        check_op(2);
+        save_result = op[-1];
+        pop(2);
+        pop_estack(i_ctx_p, count);
+        op = osp;
+        push(1);
+        *op = save_result;
+        return o_pop_estack;
     }
     /* No mark, quit.  (per Adobe documentation) */
     return unmatched_exit(op, zzstop);
@@ -697,11 +697,11 @@ zinstopped(i_ctx_t *i_ctx_p)
     check_type(*op, t_integer);
     count = count_to_stopped(i_ctx_p, op->value.intval);
     if (count) {
-	push(1);
-	op[-1] = *ref_stack_index(&e_stack, count - 2);		/* default result */
-	make_true(op);
+        push(1);
+        op[-1] = *ref_stack_index(&e_stack, count - 2);		/* default result */
+        make_true(op);
     } else
-	make_false(op);
+        make_false(op);
     return 0;
 }
 
@@ -734,7 +734,7 @@ static int execstack_continue(i_ctx_t *);
 static int execstack2_continue(i_ctx_t *);
 static int
 push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
-	       op_proc_t cont)
+               op_proc_t cont)
 {
     uint size;
     /*
@@ -747,18 +747,18 @@ push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
     uint depth;
 
     if (!r_is_array(op1))
-	return_op_typecheck(op1);
+        return_op_typecheck(op1);
     /* Check the length before the write access per CET 28-03 */
     size = r_size(op1);
     depth = count_exec_stack(i_ctx_p, include_marks);
     if (depth > size)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     check_write(*op1);
     {
-	int code = ref_stack_store_check(&e_stack, op1, size, 0);
+        int code = ref_stack_store_check(&e_stack, op1, size, 0);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
     }
     check_estack(1);
     r_set_size(op1, depth);
@@ -800,34 +800,34 @@ do_execstack(i_ctx_t *i_ctx_p, bool include_marks, os_ptr op1)
      * probably be freed when unwinding) to something harmless.
      */
     for (i = 0, rq = arefs + asize; rq != arefs; ++i) {
-	const ref *rp = ref_stack_index(&e_stack, (long)i);
+        const ref *rp = ref_stack_index(&e_stack, (long)i);
 
-	if (r_has_type_attrs(rp, t_null, a_executable) && !include_marks)
-	    continue;
-	--rq;
-	ref_assign_old(op1, rq, rp, "execstack");
-	switch (r_type(rq)) {
-	    case t_operator: {
-		uint opidx = op_index(rq);
+        if (r_has_type_attrs(rp, t_null, a_executable) && !include_marks)
+            continue;
+        --rq;
+        ref_assign_old(op1, rq, rp, "execstack");
+        switch (r_type(rq)) {
+            case t_operator: {
+                uint opidx = op_index(rq);
 
-		if (opidx == 0 || op_def_is_internal(op_index_def(opidx)))
-		    r_clear_attrs(rq, a_executable);
-		break;
-	    }
-	    case t_struct:
-	    case t_astruct: {
-		const char *tname = rq->value.pstruct ?
-		    gs_struct_type_name_string(
-				gs_object_type(imemory, rq->value.pstruct))
+                if (opidx == 0 || op_def_is_internal(op_index_def(opidx)))
+                    r_clear_attrs(rq, a_executable);
+                break;
+            }
+            case t_struct:
+            case t_astruct: {
+                const char *tname = rq->value.pstruct ?
+                    gs_struct_type_name_string(
+                                gs_object_type(imemory, rq->value.pstruct))
                     : "NULL";
 
-		make_const_string(rq, a_readonly | avm_foreign,
-				  strlen(tname), (const byte *)tname);
-		break;
-	    }
-	    default:
-		;
-	}
+                make_const_string(rq, a_readonly | avm_foreign,
+                                  strlen(tname), (const byte *)tname);
+                break;
+            }
+            default:
+                ;
+        }
     }
     pop(op - op1);
     return 0;
@@ -877,23 +877,23 @@ zcurrentfile(i_ctx_t *i_ctx_p)
     /* Check the cache first */
     if (esfile != 0) {
 #ifdef DEBUG
-	/* Check that esfile is valid. */
-	ref *efp = zget_current_file(i_ctx_p);
+        /* Check that esfile is valid. */
+        ref *efp = zget_current_file(i_ctx_p);
 
-	if (esfile != efp) {
-	    lprintf2("currentfile: esfile=0x%lx, efp=0x%lx\n",
-		     (ulong) esfile, (ulong) efp);
-	    ref_assign(op, efp);
-	} else
+        if (esfile != efp) {
+            lprintf2("currentfile: esfile=0x%lx, efp=0x%lx\n",
+                     (ulong) esfile, (ulong) efp);
+            ref_assign(op, efp);
+        } else
 #endif
-	    ref_assign(op, esfile);
+            ref_assign(op, esfile);
     } else if ((fp = zget_current_file(i_ctx_p)) == 0) {	/* Return an invalid file object. */
-	/* This doesn't make a lot of sense to me, */
-	/* but it's what the PostScript manual specifies. */
-	make_invalid_file(i_ctx_p, op);
+        /* This doesn't make a lot of sense to me, */
+        /* but it's what the PostScript manual specifies. */
+        make_invalid_file(i_ctx_p, op);
     } else {
-	ref_assign(op, fp);
-	esfile_set_cache(fp);
+        ref_assign(op, fp);
+        esfile_set_cache(fp);
     }
     /* Make the returned value literal. */
     r_clear_attrs(op, a_executable);
@@ -907,12 +907,12 @@ zget_current_file(i_ctx_t *i_ctx_p)
 
     ref_stack_enum_begin(&rsenum, &e_stack);
     do {
-	uint count = rsenum.size;
-	es_ptr ep = rsenum.ptr + count - 1;
+        uint count = rsenum.size;
+        es_ptr ep = rsenum.ptr + count - 1;
 
-	for (; count; count--, ep--)
-	    if (r_has_type_attrs(ep, t_file, a_executable))
-		return ep;
+        for (; count; count--, ep--)
+            if (r_has_type_attrs(ep, t_file, a_executable))
+                return ep;
     } while (ref_stack_enum_next(&rsenum));
     return 0;
 }
@@ -948,7 +948,7 @@ const op_def zcontrol2_op_defs[] = {
     op_def_end(0)
 };
 const op_def zcontrol3_op_defs[] = {
-		/* Internal operators */
+                /* Internal operators */
     {"1%cond_continue", cond_continue},
     {"1%execstack_continue", execstack_continue},
     {"2%execstack2_continue", execstack2_continue},
@@ -982,10 +982,10 @@ static bool
 check_for_exec(const_os_ptr op)
 {
     if (!r_has_attr(op, a_execute) && /* only true if noaccess */
-	ref_type_uses_access(r_type(op)) &&
-	(r_has_attr(op, a_executable) || !r_has_type(op, t_dictionary))
-	) {
-	return_error(e_invalidaccess);
+        ref_type_uses_access(r_type(op)) &&
+        (r_has_attr(op, a_executable) || !r_has_type(op, t_dictionary))
+        ) {
+        return_error(e_invalidaccess);
     }
     return 0;
 }
@@ -1007,12 +1007,12 @@ count_exec_stack(i_ctx_t *i_ctx_p, bool include_marks)
     uint count = ref_stack_count(&e_stack);
 
     if (!include_marks) {
-	uint i;
+        uint i;
 
-	for (i = count; i--;)
-	    if (r_has_type_attrs(ref_stack_index(&e_stack, (long)i),
-				 t_null, a_executable))
-		--count;
+        for (i = count; i--;)
+            if (r_has_type_attrs(ref_stack_index(&e_stack, (long)i),
+                                 t_null, a_executable))
+                --count;
     }
     return count;
 }
@@ -1030,18 +1030,18 @@ count_to_stopped(i_ctx_t *i_ctx_p, long mask)
 
     ref_stack_enum_begin(&rsenum, &e_stack);
     do {
-	uint used = rsenum.size;
-	es_ptr ep = rsenum.ptr + used - 1;
-	uint count = used;
+        uint used = rsenum.size;
+        es_ptr ep = rsenum.ptr + used - 1;
+        uint count = used;
 
-	for (; count; count--, ep--) {
-	    if (r_is_estack_mark(ep)) {
-		if (estack_mark_index(ep) == es_stopped &&
-		  (ep[2].value.intval & mask) != 0)
-		    return scanned + (used - count + 1);
-	    }
-	}	
-	scanned += used;
+        for (; count; count--, ep--) {
+            if (r_is_estack_mark(ep)) {
+                if (estack_mark_index(ep) == es_stopped &&
+                  (ep[2].value.intval & mask) != 0)
+                    return scanned + (used - count + 1);
+            }
+        }
+        scanned += used;
     } while (ref_stack_enum_next(&rsenum));
     return 0;
 }
@@ -1059,13 +1059,13 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
 
     esfile_clear_cache();
     for (; idx < count; idx++) {
-	ref *ep = ref_stack_index(&e_stack, idx - popped);
+        ref *ep = ref_stack_index(&e_stack, idx - popped);
 
-	if (r_is_estack_mark(ep)) {
-	    ref_stack_pop(&e_stack, idx + 1 - popped);
-	    popped = idx + 1;
-	    (*real_opproc(ep)) (i_ctx_p);
-	}
+        if (r_is_estack_mark(ep)) {
+            ref_stack_pop(&e_stack, idx + 1 - popped);
+            popped = idx + 1;
+            (*real_opproc(ep)) (i_ctx_p);
+        }
     }
     ref_stack_pop(&e_stack, count - popped);
 }

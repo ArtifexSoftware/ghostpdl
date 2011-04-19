@@ -115,7 +115,6 @@ min_feature_size_init(gs_memory_t *mem, int min_feature_size,
     for (i=0; i<256; i++) {
         int f = i, l = i, fd = 8, fw;
 
-
         do {
             fd = next_one(fd, f);       /* value == -1 if past bit_0 */
             if (fd < 0)
@@ -347,4 +346,3 @@ fax_adjusted_width(int width)
     else
         return width;
 }
-

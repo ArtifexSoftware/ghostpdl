@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -13,7 +13,7 @@
 
 /* $Id$ */
 /* %rom% IODevice implementation for a compressed in-memory filesystem */
- 
+
 /*
  * This file implements a special %rom% IODevice designed for embedded
  * use. It accesses a compressed filesytem image which may be stored
@@ -55,7 +55,7 @@ const gx_io_device gs_iodev_rom =
      iodev_no_fopen, iodev_no_fclose,
      iodev_no_delete_file, iodev_no_rename_file,
      romfs_file_status,
-     romfs_enumerate_files_init, romfs_enumerate_next, romfs_enumerate_close, 
+     romfs_enumerate_files_init, romfs_enumerate_next, romfs_enumerate_close,
      iodev_no_get_params, iodev_no_put_params
     }
 };
@@ -96,20 +96,20 @@ static int
     s_block_read_seek(stream *, long),
     s_block_read_close(stream *),
     s_block_read_process(stream_state *, stream_cursor_read *,
-			  stream_cursor_write *, bool);
+                          stream_cursor_write *, bool);
 
 /* Initialize a stream for reading from a collection of blocks */
 static void
 sread_block(register stream *s,  const byte *ptr, uint len, const uint32_t *node )
 {
     static const stream_procs p = {
-	 s_block_read_available, s_block_read_seek, s_std_read_reset,
-	 s_std_read_flush, s_block_read_close, s_block_read_process,
-	 NULL		/* no read_switch */
+         s_block_read_available, s_block_read_seek, s_std_read_reset,
+         s_std_read_flush, s_block_read_close, s_block_read_process,
+         NULL		/* no read_switch */
     };
     s_std_init(s, (byte *)ptr, len, &p, s_mode_read + s_mode_seek);
     s->end_status = 0;
-    s->file = (FILE *)node;	/* convenient place to put it for %rom% files */ 
+    s->file = (FILE *)node;	/* convenient place to put it for %rom% files */
     s->file_modes = s->modes;
     s->file_offset = 0;
     s->file_limit = max_long;
@@ -124,7 +124,7 @@ s_block_read_available(stream *s, long *pl)
 
     *pl = filelen - s->position - (sbufptr(s) - s->cbuf);
     if (*pl == 0 && s->close_at_eod)	/* EOF */
-	*pl = -1;
+        *pl = -1;
     return 0;
 }
 
@@ -138,24 +138,24 @@ s_block_read_seek(register stream * s, long pos)
     long offset = pos - s->position;
 
     if (pos < 0 || pos > filelen)
-	return ERRC;
+        return ERRC;
     if (offset < 0 || offset > end) {
-	/* Need to pull a different block into the buffer */
-	stream_cursor_write pw;
+        /* Need to pull a different block into the buffer */
+        stream_cursor_write pw;
 
-	/* buffer stays aligned to blocks */
-	offset = (s->file_offset + pos) % ROMFS_BLOCKSIZE;
-	s->position = pos - offset;
-	pw.ptr = s->cbuf - 1;
-	pw.limit = pw.ptr + s->cbsize;
-	s->srptr = s->srlimit = s->cbuf - 1;
-	if ((s->end_status = s_block_read_process((stream_state *)s, NULL, &pw, 0)) == ERRC)
-	    return ERRC;
-	if (s->end_status == 1)
-	    s->end_status = 0;
-	s->srptr = s->cbuf - 1;
-	s->srlimit = pw.ptr;		/* limit of the block just read */
-    } 
+        /* buffer stays aligned to blocks */
+        offset = (s->file_offset + pos) % ROMFS_BLOCKSIZE;
+        s->position = pos - offset;
+        pw.ptr = s->cbuf - 1;
+        pw.limit = pw.ptr + s->cbsize;
+        s->srptr = s->srlimit = s->cbuf - 1;
+        if ((s->end_status = s_block_read_process((stream_state *)s, NULL, &pw, 0)) == ERRC)
+            return ERRC;
+        if (s->end_status == 1)
+            s->end_status = 0;
+        s->srptr = s->cbuf - 1;
+        s->srlimit = pw.ptr;		/* limit of the block just read */
+    }
     /* Now set the read pointer to the correct place in the buffer */
     s->srptr = s->cbuf + offset - 1;
     return 0;
@@ -173,7 +173,7 @@ s_block_read_close(stream * s)
 
 static int
 s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
-		      stream_cursor_write * pw, bool last)
+                      stream_cursor_write * pw, bool last)
 {
     int  code;
     stream *s = (stream *)st;	/* no separate state */
@@ -190,53 +190,53 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     int count = iblock < (blocks - 1) ? ROMFS_BLOCKSIZE : filelen - (ROMFS_BLOCKSIZE * iblock);
 
     if (s->position + (s->cursor.r.limit - s->cbuf + 1) >= filelen || block_data == NULL)
-	return EOFC;			/* at EOF */
+        return EOFC;			/* at EOF */
     if (s->file_limit < max_long) {
-	/* Adjust count for subfile limit */
-	uint32_t limit_count = s->file_offset + s->file_limit - s->position;
+        /* Adjust count for subfile limit */
+        uint32_t limit_count = s->file_offset + s->file_limit - s->position;
 
-	if (count > limit_count)
-	    count = limit_count;
+        if (count > limit_count)
+            count = limit_count;
     }
     /* get the block into the buffer */
     if (compression) {
-	unsigned long buflen = ROMFS_BLOCKSIZE;
-	byte *dest = (pw->ptr + 1);	/* destination for unpack */
-	int need_copy = false;
+        unsigned long buflen = ROMFS_BLOCKSIZE;
+        byte *dest = (pw->ptr + 1);	/* destination for unpack */
+        int need_copy = false;
 
-	/* If the dest is not in our buffer, we can only use it if there */
-	/* is enough space in it					 */
-	if ((dest < s->cbuf) || (dest >= (s->cbuf + s->cbsize))) {
-	    /* the destination is _not_ in our buffer. If the area isn't */
-	    /* big enough we need to ucompress to our buffer, then copy  */
-	    /* the data afterward. INVARIANT: if the buffer is outside   */
-	    /* the cbuf, then the cbuf must be empty.			 */
-	    if (max_count < count) {
+        /* If the dest is not in our buffer, we can only use it if there */
+        /* is enough space in it					 */
+        if ((dest < s->cbuf) || (dest >= (s->cbuf + s->cbsize))) {
+            /* the destination is _not_ in our buffer. If the area isn't */
+            /* big enough we need to ucompress to our buffer, then copy  */
+            /* the data afterward. INVARIANT: if the buffer is outside   */
+            /* the cbuf, then the cbuf must be empty.			 */
+            if (max_count < count) {
 #ifdef DEBUG
-		if ((sbufptr(s)) != s->srlimit)
-		    emprintf(s->memory, "cbuf not empty as expected\n.");
+                if ((sbufptr(s)) != s->srlimit)
+                    emprintf(s->memory, "cbuf not empty as expected\n.");
 #endif
-		dest = s->cbuf;
-		need_copy = true;
-	    }
-	}
-	/* Decompress the data into this block */
-	code = uncompress (dest, &buflen, block_data, block_length);
-	if (count != buflen)
-	    return ERRC;
-	if (need_copy) {
-	    memcpy(pw->ptr+1, dest, max_count);
-	    count = max_count;
-	}
+                dest = s->cbuf;
+                need_copy = true;
+            }
+        }
+        /* Decompress the data into this block */
+        code = uncompress (dest, &buflen, block_data, block_length);
+        if (count != buflen)
+            return ERRC;
+        if (need_copy) {
+            memcpy(pw->ptr+1, dest, max_count);
+            count = max_count;
+        }
     } else {
-	/* not compressed -- just copy it */
-	count = block_length;
-	if (count > max_count)
-	    count = max_count;
-	memcpy(pw->ptr+1, block_data, count);
+        /* not compressed -- just copy it */
+        count = block_length;
+        if (count > max_count)
+            count = max_count;
+        memcpy(pw->ptr+1, block_data, count);
     }
     if (count < 0)
-	count = 0;
+        count = 0;
     pw->ptr += count;
     process_interrupts(s->memory);
     return status;
@@ -245,10 +245,10 @@ s_block_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 static int
 romfs_init(gx_io_device *iodev, gs_memory_t *mem)
 {
-    romfs_state *state = gs_alloc_struct(mem, romfs_state, &st_romfs_state, 
+    romfs_state *state = gs_alloc_struct(mem, romfs_state, &st_romfs_state,
                                          "romfs_init(state)");
     if (!state)
-	return gs_error_VMerror;
+        return gs_error_VMerror;
     iodev->state = state;
     return 0;
 }
@@ -270,26 +270,26 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
 
     /* scan the inodes to find the requested file */
     for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {
-	filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
-	blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-	filename = (char *)(&(node_scan[1+(2*blocks)]));
-	if ((namelen == strlen(filename)) && 
-	    (strncmp(filename, fname, namelen) == 0)) {
-	    node = node_scan;
-	    break;
-	}
+        filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
+        blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+        filename = (char *)(&(node_scan[1+(2*blocks)]));
+        if ((namelen == strlen(filename)) &&
+            (strncmp(filename, fname, namelen) == 0)) {
+            node = node_scan;
+            break;
+        }
     }
     /* inode points to the file (or NULL if not found */
     if (node == NULL)
-	return_error(gs_error_undefinedfilename);
+        return_error(gs_error_undefinedfilename);
 
     /* Initialize a stream for reading this romfs file using a common function */
     /* we get a buffer that is larger than what we need for decompression */
     /* we need extra space since some filters may leave data in the buffer when */
     /* calling 'read_process' */
     code = file_prepare_stream(fname, namelen, access, ROMFS_BLOCKSIZE+256, ps, fmode, mem);
-    if (code < 0) 
-	return code;
+    if (code < 0)
+        return code;
     sread_block(*ps, (*ps)->cbuf, (*ps)->cbsize, node);
     /* return success */
     return 0;
@@ -309,18 +309,18 @@ romfs_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
     memset(pstat, 0, sizeof(struct stat));
     /* scan the inodes to find the requested file */
     for (i=0; node_scan != 0; i++, node_scan = gs_romfs[i]) {
-	filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
-	blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-	filename = (char *)(&(node_scan[1+(2*blocks)]));
-	if ((namelen == strlen(filename)) && 
-	    (strncmp(filename, fname, namelen) == 0)) {
-	    node = node_scan;
-	    break;
-	}
+        filelen = get_u32_big_endian(node_scan) & 0x7fffffff;	/* ignore compression bit */
+        blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+        filename = (char *)(&(node_scan[1+(2*blocks)]));
+        if ((namelen == strlen(filename)) &&
+            (strncmp(filename, fname, namelen) == 0)) {
+            node = node_scan;
+            break;
+        }
     }
     /* inode points to the file (or NULL if not found */
     if (node == NULL)
-	return_error(gs_error_undefinedfilename);
+        return_error(gs_error_undefinedfilename);
 
     /* fill in the values used by zstatus */
     pstat->st_size = filelen;
@@ -331,10 +331,10 @@ romfs_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 
 static file_enum *
 romfs_enumerate_files_init(gx_io_device *iodev, const char *pat, uint patlen,
-	     gs_memory_t *mem)
+             gs_memory_t *mem)
 {
     romfs_file_enum *penum = gs_alloc_struct(mem, romfs_file_enum, &st_romfs_file_enum,
-			   				"romfs_enumerate_files_init(file_enum)");
+                                                        "romfs_enumerate_files_init(file_enum)");
     if (penum == NULL)
         return NULL;
     memset(penum, 0, sizeof(romfs_file_enum));
@@ -342,8 +342,8 @@ romfs_enumerate_files_init(gx_io_device *iodev, const char *pat, uint patlen,
     penum->list_index = 0;		/* start at first node */
     penum->memory = mem;
     if (penum->pattern == NULL) {
-	romfs_enumerate_close((file_enum *) penum);
-	return NULL;
+        romfs_enumerate_close((file_enum *) penum);
+        return NULL;
     }
     memcpy(penum->pattern, pat, patlen);	/* Copy string to buffer */
     penum->pattern[patlen]=0;			/* Terminate string */
@@ -358,7 +358,7 @@ romfs_enumerate_close(file_enum *pfen)
     gs_memory_t *mem = penum->memory;
 
     if (penum->pattern)
-	gs_free_object(mem, penum->pattern, "romfs_enum_init(pattern)");
+        gs_free_object(mem, penum->pattern, "romfs_enum_init(pattern)");
     gs_free_object(mem, penum, "romfs_enum_init(romfs_enum)");
 }
 
@@ -367,21 +367,21 @@ romfs_enumerate_next(file_enum *pfen, char *ptr, uint maxlen)
 {
     extern const uint32_t *gs_romfs[];
     romfs_file_enum *penum = (romfs_file_enum *)pfen;
-    
-    while (gs_romfs[penum->list_index] != 0) {
-	const uint32_t *node = gs_romfs[penum->list_index];
-	uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
-	uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
-	char *filename = (char *)(&(node[1+(2*blocks)]));
 
-	penum->list_index++;		/* bump to next unconditionally */
-	if (string_match((byte *)filename, strlen(filename),
-			 (byte *)penum->pattern,
-			 strlen(penum->pattern), 0)) {
-	    if (strlen(filename) < maxlen) 
-		memcpy(ptr, filename, strlen(filename));
-	    return strlen(filename);	/* if > maxlen, caller will detect rangecheck */
-	}
+    while (gs_romfs[penum->list_index] != 0) {
+        const uint32_t *node = gs_romfs[penum->list_index];
+        uint32_t filelen = get_u32_big_endian(node) & 0x7fffffff;	/* ignore compression bit */
+        uint32_t blocks = (filelen+ROMFS_BLOCKSIZE-1)/ ROMFS_BLOCKSIZE;
+        char *filename = (char *)(&(node[1+(2*blocks)]));
+
+        penum->list_index++;		/* bump to next unconditionally */
+        if (string_match((byte *)filename, strlen(filename),
+                         (byte *)penum->pattern,
+                         strlen(penum->pattern), 0)) {
+            if (strlen(filename) < maxlen)
+                memcpy(ptr, filename, strlen(filename));
+            return strlen(filename);	/* if > maxlen, caller will detect rangecheck */
+        }
     }
     /* ran off end of list, close the enum */
     romfs_enumerate_close(pfen);

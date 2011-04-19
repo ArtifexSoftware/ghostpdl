@@ -92,7 +92,6 @@ ps_impl_characteristics(
   return &ps_characteristics;
 }
 
-
 /* Don't need to do anything to PS interpreter */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp(
@@ -112,7 +111,7 @@ ps_impl_allocate_interp(
    plugins the root data directory.  These are internally separated with
    ':' but environment variable use the gp separator */
 #ifndef UFSTFONTDIR
-	/* not using UFST */
+        /* not using UFST */
 #  define UFSTFONTDIR ""
 #endif
 
@@ -129,109 +128,108 @@ ps_impl_allocate_interp_instance(
 #else
 #   define MAX_ARGS /* unspecified */
 #endif
-	int code = 0, exit_code;
-	const char *argv[MAX_ARGS] = { 
-	    "",
-	    "-dNOPAUSE",
+        int code = 0, exit_code;
+        const char *argv[MAX_ARGS] = {
+            "",
+            "-dNOPAUSE",
 #ifndef DEBUG
-	    "-dQUIET",
+            "-dQUIET",
 #else
-	    "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed. 
-	    "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed. 
+            "-dOSTACKPRINT", // NB: debuggging postscript Needs to be removed.
+            "-dESTACKPRINT", // NB: debuggging postscript Needs to be removed.
 #endif
 #if UFST_BRIDGE==1
-	    "-dJOBSERVER", 
-	    "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
+            "-dJOBSERVER",
+            "-sUFST_PlugIn=" UFSTFONTDIR "mtfonts/pcl45/mt3/plug__xi.fco",
             "-sFCOfontfile=" UFSTFONTDIR "mtfonts/pclps2/mt3/pclp2_xj.fco",
             "-sFCOfontfile2=" UFSTFONTDIR "mtfonts/pcl45/mt3/wd____xh.fco",
-	    "-sFAPIfontmap=FCOfontmap-PCLPS2",
-	    "-sFAPIconfig=FAPIconfig-FCO",
+            "-sFAPIfontmap=FCOfontmap-PCLPS2",
+            "-sFAPIconfig=FAPIconfig-FCO",
 #endif
-	    0
-	};
+            0
+        };
 #ifndef DEBUG
-	int argc = 9;
+        int argc = 9;
 #else
-	int argc = 10;
+        int argc = 10;
 #endif
 #ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
-	char argbuf[1024];
+        char argbuf[1024];
 #endif
 #   undef MAX_ARGS
-	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
-	    = (ps_interp_instance_t *)
-	    gs_alloc_bytes( mem,
-			    sizeof(ps_interp_instance_t),
-			    "ps_allocate_interp_instance(ps_interp_instance_t)"	
-			    );
+        ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
+            = (ps_interp_instance_t *)
+            gs_alloc_bytes( mem,
+                            sizeof(ps_interp_instance_t),
+                            "ps_allocate_interp_instance(ps_interp_instance_t)"
+                            );
 
 #if UFST_BRIDGE!=1
     argc -= 6;
 #endif
 
-
-	/* If allocation error, deallocate & return */
-	if (!psi) {
-	  return gs_error_VMerror;
-	}
-	/* Initialize for pl_main_universe_dnit/pl_deallocate_interp_instance
-	   in case of gs_main_init_with_args returns with error code. */
-	psi->pl.interp = interp;
-	/* Setup pointer to mem used by PostScript */
-	psi->plmemory = mem;
-	psi->minst = gs_main_alloc_instance(mem->non_gc_memory);
+        /* If allocation error, deallocate & return */
+        if (!psi) {
+          return gs_error_VMerror;
+        }
+        /* Initialize for pl_main_universe_dnit/pl_deallocate_interp_instance
+           in case of gs_main_init_with_args returns with error code. */
+        psi->pl.interp = interp;
+        /* Setup pointer to mem used by PostScript */
+        psi->plmemory = mem;
+        psi->minst = gs_main_alloc_instance(mem->non_gc_memory);
 
 #ifdef DEBUG_WITH_EXPERIMENTAL_GSOPTIONS_FILE
-	{   /* Fetch more GS arguments (debug purposes only).
-	       Pulling debugging arguments from a file allows easy additions
-	       of postscript arguments to a debug system, it is not recommended for 
-	       production systems since some options will conflict with commandline 
-	       arguments in unpleasant ways.  
-	    */
-	    FILE *f = fopen("gsoptions", "rb"); /* Sorry we handle 
-					          the current directory only.
-						  Assuming it always fails with no crash
-						  in a real embedded system. */
+        {   /* Fetch more GS arguments (debug purposes only).
+               Pulling debugging arguments from a file allows easy additions
+               of postscript arguments to a debug system, it is not recommended for
+               production systems since some options will conflict with commandline
+               arguments in unpleasant ways.
+            */
+            FILE *f = fopen("gsoptions", "rb"); /* Sorry we handle
+                                                  the current directory only.
+                                                  Assuming it always fails with no crash
+                                                  in a real embedded system. */
 
-	    if (f != NULL) {
-		int i;
-		int l = fread(argbuf, 1, sizeof(argbuf) - 1, f);
+            if (f != NULL) {
+                int i;
+                int l = fread(argbuf, 1, sizeof(argbuf) - 1, f);
 
-		if (l >= sizeof(argbuf) - 1)
-		    errprintf("The gsoptions file is too big. Truncated to the buffer length %d.\n", l - 1);
-		if (l > 0) {
-		    argbuf[l] = 0;
-		    if (argbuf[0] && argbuf[0] != '\r' && argbuf[0] != '\n') /* Silently skip empty lines. */
-			argv[argc++] = argbuf;
-		    for (i = 0; i < l; i++)
-			if (argbuf[i] == '\r' || argbuf[i] == '\n') {
-			    argbuf[i] = 0;
-			    if (argbuf[i + 1] == 0 || argbuf[i + 1] == '\r' || argbuf[i + 1] == '\n')
-				continue; /* Silently skip empty lines. */
-			    if (argc >= count_of(argv)) {
-				errprintf("The gsoptions file contains too many options. "
-					  "Truncated to the buffer length %d.\n", argc);
-				break;
-			    }
-			    argv[argc++] = argbuf + i + 1;
-			}
-		}
-		fclose(f);
-	    }
-	}
+                if (l >= sizeof(argbuf) - 1)
+                    errprintf("The gsoptions file is too big. Truncated to the buffer length %d.\n", l - 1);
+                if (l > 0) {
+                    argbuf[l] = 0;
+                    if (argbuf[0] && argbuf[0] != '\r' && argbuf[0] != '\n') /* Silently skip empty lines. */
+                        argv[argc++] = argbuf;
+                    for (i = 0; i < l; i++)
+                        if (argbuf[i] == '\r' || argbuf[i] == '\n') {
+                            argbuf[i] = 0;
+                            if (argbuf[i + 1] == 0 || argbuf[i + 1] == '\r' || argbuf[i + 1] == '\n')
+                                continue; /* Silently skip empty lines. */
+                            if (argc >= count_of(argv)) {
+                                errprintf("The gsoptions file contains too many options. "
+                                          "Truncated to the buffer length %d.\n", argc);
+                                break;
+                            }
+                            argv[argc++] = argbuf + i + 1;
+                        }
+                }
+                fclose(f);
+            }
+        }
 #endif
 
-	*instance = (pl_interp_instance_t *)psi;
-	code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
-	if (code<0)
-	    return code;
+        *instance = (pl_interp_instance_t *)psi;
+        code = gs_main_init_with_args(psi->minst, argc, (char**)argv);
+        if (code<0)
+            return code;
 
-	/* General init of PS interp instance */
-	
-	if ((code = gs_main_run_string_begin(psi->minst, 0, &exit_code, &psi->minst->error_object)) < 0)
-	    return exit_code;
+        /* General init of PS interp instance */
 
-        {    
+        if ((code = gs_main_run_string_begin(psi->minst, 0, &exit_code, &psi->minst->error_object)) < 0)
+            return exit_code;
+
+        {
             gs_state *pgs = psi->minst->i_ctx_p->pgs;
             gsicc_init_iccmanager(pgs);
         }
@@ -241,8 +239,8 @@ ps_impl_allocate_interp_instance(
         /* default is a postscript stream */
         psi->pdf_stream = false;
 
-	/* Return success */
-	return 0;
+        /* Return success */
+        return 0;
 }
 
 /* NB this pointer should be placed in the ps instance */
@@ -255,7 +253,7 @@ ps_impl_set_client_instance(
   pl_interp_instance_clients_t which_client
 )
 {
-	return 0;
+        return 0;
 }
 
 /* Set an interpreter instance's pre-page action */
@@ -280,10 +278,10 @@ ps_impl_set_post_page_action(
   void                   *closure       /* closure to call action with */
 )
 {
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-	psi->post_page_action = action;
-	psi->post_page_closure = closure;
-	return 0;
+        ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+        psi->post_page_action = action;
+        psi->post_page_closure = closure;
+        return 0;
 }
 
 /* Set a device into an interpreter instance */
@@ -305,7 +303,7 @@ ps_impl_set_device(
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
     if (code >= 0 )
-	code = gs_erasepage(pgs);
+        code = gs_erasepage(pgs);
 
     if (code < 0)
         return code;
@@ -325,10 +323,10 @@ ps_impl_set_device(
     return exit_code;
 }
 
-/* fetch the gs_memory_t ptr so that the device and ps use the same 
+/* fetch the gs_memory_t ptr so that the device and ps use the same
  * garbage collection aware a memory
  */
-static int   
+static int
 ps_impl_get_device_memory(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gs_memory_t **pmem)
@@ -348,11 +346,11 @@ gs_main_instance *ps_impl_get_minst( const gs_memory_t *mem )
     ps_interp_instance_t *psi = (ps_interp_instance_t *)get_interpreter_from_memory(mem);
     return psi->minst;
 }
-  
+
 /* Prepare interp instance for the next "job" */
 static int	/* ret 0 ok, else -ve error code */
 ps_impl_init_job(
-	pl_interp_instance_t   *instance         /* interp instance to start job in */
+        pl_interp_instance_t   *instance         /* interp instance to start job in */
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -368,8 +366,8 @@ ps_impl_init_job(
 /* Parse a buffer full of data */
 static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process(
-	pl_interp_instance_t *instance,        /* interp instance to process data job in */
-	stream_cursor_read   *cursor           /* data to process */
+        pl_interp_instance_t *instance,        /* interp instance to process data job in */
+        stream_cursor_read   *cursor           /* data to process */
 )
 {
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -410,7 +408,7 @@ ps_impl_process(
         /* we only check for pdf at the beginning of the job */
         psi->fresh_job = false;
     }
-            
+
     /* for a pdf stream we append to the open pdf file but for
        postscript we hand it directly to the ps interpreter.  PDF
        files are processed subsequently, at end job time */
@@ -434,7 +432,7 @@ ps_impl_process(
     cursor->ptr += avail;
     /* flush stdout on error. */
     if (code < 0)
-	zflush(psi->minst->i_ctx_p);
+        zflush(psi->minst->i_ctx_p);
     /* return the exit code */
     return code;
 }
@@ -442,33 +440,33 @@ ps_impl_process(
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
 static int
 ps_impl_flush_to_eoj(
-	pl_interp_instance_t *instance,        /* interp instance to flush for */
-	stream_cursor_read   *cursor           /* data to process */
+        pl_interp_instance_t *instance,        /* interp instance to flush for */
+        stream_cursor_read   *cursor           /* data to process */
 )
 {
-	const byte *p = cursor->ptr;
-	const byte *rlimit = cursor->limit;
+        const byte *p = cursor->ptr;
+        const byte *rlimit = cursor->limit;
 
-	/* Skip to, but leave UEL in buffer for PJL to find later */
-	for (; p < rlimit; ++p)
-	  if (p[1] == '\033') {
-	    uint avail = rlimit - p;
+        /* Skip to, but leave UEL in buffer for PJL to find later */
+        for (; p < rlimit; ++p)
+          if (p[1] == '\033') {
+            uint avail = rlimit - p;
 
-	  if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
-	    continue;
-	  if (avail < 9)
-	    break;
-	  cursor->ptr = p;
-	  return 1;  /* found eoj */
-	}
-	cursor->ptr = p;
-	return 0;  /* need more */
+          if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
+            continue;
+          if (avail < 9)
+            break;
+          cursor->ptr = p;
+          return 1;  /* found eoj */
+        }
+        cursor->ptr = p;
+        return 0;  /* need more */
 }
 
 /* Parser action for end-of-file */
 static int	/* ret 0 or +ve if ok, else -ve error code */
 ps_impl_process_eof(
-	pl_interp_instance_t *instance        /* interp instance to process data job in */
+        pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
 {
     int code = 0;
@@ -479,9 +477,9 @@ ps_impl_process_eof(
 /* Report any errors after running a job */
 static int   /* ret 0 ok, else -ve error code */
 ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to wrap up job in */
-		      int                  code,           /* prev termination status */
-		      long                 file_position,  /* file position of error, -1 if unknown */
-		      bool                 force_to_cout    /* force errors to cout */
+                      int                  code,           /* prev termination status */
+                      long                 file_position,  /* file position of error, -1 if unknown */
+                      bool                 force_to_cout    /* force errors to cout */
 )
 {
     /*    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -492,10 +490,10 @@ ps_impl_report_errors(pl_interp_instance_t *instance,      /* interp instance to
 /* Wrap up interp instance after a "job" */
 static int	/* ret 0 ok, else -ve error code */
 ps_impl_dnit_job(
-	pl_interp_instance_t *instance         /* interp instance to wrap up job in */
+        pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
 {
-    int code = 0; 
+    int code = 0;
     int exit_code = 0;
     static const char *buf = "\n.endjob\n";  /* restore to initial state, non-encapsualted */
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
@@ -503,20 +501,20 @@ ps_impl_dnit_job(
     /* take care of a stored pdf file */
     if ( psi->pdf_stream ) {
 
-	/* 
+        /*
          * Hex encode to avoid problems with window's directory
-	 * separators '\' being interpreted in postscript as escape
-	 * sequences.  The buffer length is the maximum file name size
-	 * (gp_file_name_sizeof) * 2 (hex encoding) + 2 (hex
-	 * delimiters '<' and '>') + the rest of the run command 7
-	 * (space + (run) + new line + null).
-	 */
+         * separators '\' being interpreted in postscript as escape
+         * sequences.  The buffer length is the maximum file name size
+         * (gp_file_name_sizeof) * 2 (hex encoding) + 2 (hex
+         * delimiters '<' and '>') + the rest of the run command 7
+         * (space + (run) + new line + null).
+         */
         char buf[gp_file_name_sizeof * 2 + 2 + 7];
         const char *run_str = " run\n";
         const char *hex_digits = "0123456789ABCDEF";
         char *pd = buf;                       /* destination */
         const char *ps = psi->pdf_file_name;  /* source */
-        
+
         *pd = '<'; pd++;
         while (*ps) {
             *pd = hex_digits[*ps >> 4 ]; pd++;
@@ -551,7 +549,7 @@ ps_impl_dnit_job(
     gsapi_run_string_begin(psi->plmemory->gs_lib_ctx, 0, &exit_code);	/* prepare to send .endjob */
     gsapi_run_string_continue(psi->plmemory->gs_lib_ctx, buf, strlen(buf), 0, &exit_code); /* .endjob */
     /* Note the above will restore to the server save level and will not be encapsulated */
-    
+
     /* Flush stdout. */
     zflush(psi->minst->i_ctx_p);
 
@@ -573,7 +571,7 @@ ps_impl_remove_device(
     int code = gs_nulldevice(pgs);
 
     if ( code < 0 )
-	dprintf1("error code %d installing nulldevice, continuing\n", code );
+        dprintf1("error code %d installing nulldevice, continuing\n", code );
     return 0;
 }
 
@@ -583,18 +581,18 @@ ps_impl_deallocate_interp_instance(
   pl_interp_instance_t   *instance     /* instance to dealloc */
 )
 {
-	int code = 0, exit_code;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
-	gs_memory_t *mem = psi->plmemory;
-	
-	/* do total dnit of interp state */
-	code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
+        int code = 0, exit_code;
+        ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+        gs_memory_t *mem = psi->plmemory;
 
-	gsapi_exit(psi->minst);
+        /* do total dnit of interp state */
+        code = gsapi_run_string_end(mem->gs_lib_ctx, 0, &exit_code);
 
-	gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
+        gsapi_exit(psi->minst);
 
-	return (code < 0) ? exit_code : 0;
+        gs_free_object(mem, psi, "ps_impl_deallocate_interp_instance(ps_interp_instance_t)");
+
+        return (code < 0) ? exit_code : 0;
 }
 
 /* Do static deinit of PS interpreter */
@@ -603,11 +601,11 @@ ps_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )
 {
-	/* nothing to do */
-	return 0;
+        /* nothing to do */
+        return 0;
 }
 
-/* 
+/*
  * End-of-page called back by PS
  */
 int
@@ -617,16 +615,16 @@ ps_end_page_top(const gs_memory_t *mem, int num_copies, bool flush)
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     int code = 0;
 
-    if (psi == 0) 
-	return 0;
+    if (psi == 0)
+        return 0;
 
     /* do pre-page action */
     if (psi->pre_page_action) {
         code = psi->pre_page_action(instance, psi->pre_page_closure);
         if (code < 0)
-	    return code;
+            return code;
         if (code != 0)
-	    return 0;    /* code > 0 means abort w/no error */
+            return 0;    /* code > 0 means abort w/no error */
     }
 
     /* output the page */
@@ -641,7 +639,7 @@ ps_end_page_top(const gs_memory_t *mem, int num_copies, bool flush)
     if (psi->post_page_action) {
         code = psi->post_page_action(instance, psi->post_page_closure);
         if (code < 0)
-	    return code;
+            return code;
     }
 
     return 0;
@@ -668,4 +666,3 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_deallocate_interp,
   ps_impl_get_device_memory,
 };
-

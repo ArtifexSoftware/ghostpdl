@@ -61,7 +61,6 @@ static int gs_imager_arc_add(gx_path * ppath, gs_imager_state * pis, bool clockw
             floatp axc, floatp ayc, floatp arad, floatp aang1, floatp aang2,
                   bool add_line, gs_point *p3);
 
-
 int
 gx_setcurrentpoint_from_path(gs_imager_state *pis, gx_path *path)
 {
@@ -477,7 +476,6 @@ make_quadrant_arc(gs_point *p, const gs_point *c,
     p[3].x = c->x + p1->x * r;
     p[3].y = c->y + p1->y * r;
 }
-
 
 /* ------ Path transformers ------ */
 

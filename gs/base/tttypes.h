@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,7 +15,6 @@
 
 /* Changes after FreeType: cut out the TrueType instruction interpreter. */
 
-
 /*******************************************************************
  *
  *  tttypes.h
@@ -28,11 +27,11 @@
  *
  *  This file is part of the FreeType project, and may only be used
  *  modified and distributed under the terms of the FreeType project
- *  license, LICENSE.TXT. By continuing to use, modify, or distribute 
+ *  license, LICENSE.TXT. By continuing to use, modify, or distribute
  *  this file you indicate that you have read the license and
  *  understand and accept it fully.
  *
- *  NOTE: 
+ *  NOTE:
  *
  *   All these declarations are library internals, and *not* part
  *   of the high-level interface.  See also 'freetype.h'.
@@ -65,7 +64,7 @@
   typedef int             Int;
 
   typedef long            Integer;
-  
+
   /* Simple access types: pointers and tables */
 
   typedef Byte*    PByte;
@@ -80,7 +79,6 @@
 
   typedef TT_F26Dot6*     PCoordinates;
   typedef unsigned char*  PTouchTable;
-
 
 #ifndef Bool
   typedef int  Bool;        /* No boolean type in C */
@@ -100,7 +98,6 @@
 
   typedef Long*    PStorage;
 
-
 /* Rounding mode constants */
 
 #define TT_Round_Off             5
@@ -112,7 +109,6 @@
 #define TT_Round_Super           6
 #define TT_Round_Super_45        7
 
-
 /* Touch flag masks */
 
 #define TT_Flag_On_Curve      1
@@ -120,12 +116,10 @@
 #define TT_Flag_Touched_Y     4
 #define TT_Flag_Touched_Both  6
 
-
 /* Error management constants :) */
 
 #define SUCCESS  0
 #define FAILURE  -1
-
 
 /* The min and max functions missing in C.  As usual, be careful not to */
 /* write things like MIN( a++, b++ ) to avoid side effects.             */
@@ -160,8 +154,6 @@
 
 #define HANDLE_Set( handle, val )  ((handle).z = (void*)(val))
 
-
 #endif /* TTTYPES_H */
-
 
 /* END */

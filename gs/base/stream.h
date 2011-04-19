@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -126,7 +126,7 @@ struct stream_s {
      *      CALLC if a callout is required.
      */
     short end_status;		/* status at end of buffer (when */
-				/* reading) or now (when writing) */
+                                /* reading) or now (when writing) */
     byte foreign;		/* true if buffer is outside heap */
     byte modes;			/* access modes allowed for this stream */
 #define s_mode_read 1
@@ -138,19 +138,19 @@ struct stream_s {
 #define s_is_writing(s) (((s)->modes & s_mode_write) != 0)
 #define s_can_seek(s) (((s)->modes & s_mode_seek) != 0)
     gs_string cbuf_string;	/* cbuf/cbsize if cbuf is a string, */
-				/* 0/? if not */
+                                /* 0/? if not */
     long position;		/* file position of beginning of */
-				/* buffer */
+                                /* buffer */
     stream_procs procs;
     stream *strm;		/* the underlying stream, non-zero */
-				/* iff this is a filter stream */
+                                /* iff this is a filter stream */
     int is_temp;		/* if >0, this is a temporary */
-				/* stream and should be freed */
-				/* when its source/sink is closed; */
-				/* if >1, the buffer is also */
-				/* temporary */
+                                /* stream and should be freed */
+                                /* when its source/sink is closed; */
+                                /* if >1, the buffer is also */
+                                /* temporary */
     int inline_temp;		/* temporary for inline access */
-				/* (see spgetc_inline below) */
+                                /* (see spgetc_inline below) */
     stream_state *state;	/* state of process */
     /*
      * The following are for the use of the interpreter.
@@ -159,8 +159,8 @@ struct stream_s {
      * zfilter.c for more information on close_strm.
      */
     ushort read_id;		/* "unique" serial # for detecting */
-				/* references to closed streams */
-				/* and for validating read access */
+                                /* references to closed streams */
+                                /* and for validating read access */
     ushort write_id;		/* ditto to validate write access */
     stream *prev, *next;	/* keep track of all files */
     bool close_strm;		/* CloseSource/CloseTarget */
@@ -173,9 +173,9 @@ struct stream_s {
      */
     FILE *file;			/* file handle for C library */
     gs_const_string file_name;	/* file name (optional) -- clients must */
-				/* access only through procedures */
+                                /* access only through procedures */
     uint file_modes;		/* access modes for the file, */
-				/* may be a superset of modes */
+                                /* may be a superset of modes */
     /* Clients must only set the following through sread_subfile. */
     long file_offset;		/* starting point in file (reading) */
     long file_limit;		/* ending point in file (reading) */
@@ -336,15 +336,15 @@ void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
 
 /* create a stream for a file object */
 int file_prepare_stream(const char *, uint, const char *,
-		 uint, stream **, char[4], gs_memory_t *);
+                 uint, stream **, char[4], gs_memory_t *);
 
 /* Set up a file stream on an OS file.  */
 void file_init_stream(stream *, FILE *, const char *, byte *, uint);
 
 /* Open a file stream, optionally on an OS file. */
 int file_open_stream(const char *, uint, const char *,
-		 uint, stream **, gx_io_device *,
-		 iodev_proc_fopen_t, gs_memory_t *);
+                 uint, stream **, gx_io_device *,
+                 iodev_proc_fopen_t, gs_memory_t *);
 
 /* Allocate and return a file stream. */
 stream * file_alloc_stream(gs_memory_t *, client_name_t);
@@ -422,9 +422,9 @@ extern const stream_procs s_filter_read_procs, s_filter_write_procs;
  * an additional filter to provide it.
  */
 int s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
-		  stream *target);
+                  stream *target);
 stream *s_add_filter(stream **ps, const stream_template *template,
-		     stream_state *ss, gs_memory_t *mem);
+                     stream_state *ss, gs_memory_t *mem);
 
 /*
  * Close the filters in a pipeline, up to a given target stream, freeing
@@ -437,7 +437,7 @@ int s_close_filters(stream **ps, stream *target);
 extern const stream_template s_NullE_template;
 extern const stream_template s_NullD_template;
 
-	/* for ziodev.c */
+        /* for ziodev.c */
 int file_close_finish(stream *);
 int file_close_disable(stream *);
 

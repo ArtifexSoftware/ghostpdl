@@ -1,6 +1,6 @@
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,13 +49,13 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     const double smooth_value = 1; /* from 0..1 range */
 
     if (count == 0)
-	return_error(e_unmatchedmark);
+        return_error(e_unmatchedmark);
     if ((count & 1) == 0 || count < 3)
-	return_error(e_rangecheck);
-    
+        return_error(e_rangecheck);
+
     ocount = count - 1;
     optr = op - ocount + 1;
-    
+
     if ((code = real_param(optr, &x1)) < 0)
         return code;
     if ((code = real_param(optr + 1, &y1)) < 0)
@@ -76,7 +76,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     }
     x0 = 2*x1 - x2;
     y0 = 2*y1 - y2;
-    
+
     for (i = 4; i <= ocount; i += 2) {
         if (i < ocount) {
             if ((code = real_param(optr + i, &x3)) < 0)
@@ -120,7 +120,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
         x0 = x1, x1 = x2, x2 = x3;
         y0 = y1, y1 = y2, y2 = y3;
     }
-  pop:  
+  pop:
     ref_stack_pop(&o_stack, count);
     return 0;
 }
@@ -161,30 +161,30 @@ zsaslprep(i_ctx_t *i_ctx_p)
 
     err = stringprep((char *)buffer, buffer_size, 0, stringprep_saslprep);
     if (err != STRINGPREP_OK) {
-	ifree_string(buffer, buffer_size, "saslprep result");
+        ifree_string(buffer, buffer_size, "saslprep result");
 
-	/* Since we're just verifying the password to an existing
-	 * document here, we don't care about "invalid input" errors
-	 * like STRINGPREP_CONTAINS_PROHIBITED.  In these cases, we
-	 * ignore the error and return the original string unchanged --
-	 * chances are it's not the right password anyway, and if it
-	 * is we shouldn't gratuitously fail to decrypt the document.
-	 *
-	 * On the other hand, errors like STRINGPREP_NFKC_FAILED are
-	 * real errors, and should be returned to the user.
-	 *
-	 * Fortunately, the stringprep error codes are sorted to make
-	 * this easy: the errors we want to ignore are the ones with
-	 * codes less than 100. */
-	if ((int)err < 100)
-	    return 0;
+        /* Since we're just verifying the password to an existing
+         * document here, we don't care about "invalid input" errors
+         * like STRINGPREP_CONTAINS_PROHIBITED.  In these cases, we
+         * ignore the error and return the original string unchanged --
+         * chances are it's not the right password anyway, and if it
+         * is we shouldn't gratuitously fail to decrypt the document.
+         *
+         * On the other hand, errors like STRINGPREP_NFKC_FAILED are
+         * real errors, and should be returned to the user.
+         *
+         * Fortunately, the stringprep error codes are sorted to make
+         * this easy: the errors we want to ignore are the ones with
+         * codes less than 100. */
+        if ((int)err < 100)
+            return 0;
 
-	return_error(e_ioerror);
+        return_error(e_ioerror);
     }
 
     output_size = strlen((char *)buffer);
     buffer = iresize_string(buffer, buffer_size, output_size,
-	"saslprep result");	/* can't fail */
+        "saslprep result");	/* can't fail */
     make_string(op, a_all | icurrent_space, output_size, buffer);
 
     return 0;

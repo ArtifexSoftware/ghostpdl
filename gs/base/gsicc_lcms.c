@@ -109,7 +109,6 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
     return(cmsOpenProfileFromMem(buffer,input_size));
 }
 
-
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
 gscms_get_profile_handle_file(const char *filename)
@@ -347,7 +346,6 @@ gscms_release_link(gsicc_link_t *icclink)
         cmsDeleteTransform(icclink->link_handle);
 }
 
-
 /* Have the CMS release the profile handle */
 void
 gscms_release_profile(void *profile)
@@ -358,7 +356,6 @@ gscms_release_profile(void *profile)
     profile_handle = (cmsHPROFILE) profile;
     notok = cmsCloseProfile(profile_handle);
 }
-
 
 /* Named color, color management */
 /* Get a device value for the named color.  Since there exist named color

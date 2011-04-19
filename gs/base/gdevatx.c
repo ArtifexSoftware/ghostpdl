@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,19 +39,19 @@ static dev_proc_print_page(atx38_print_page);
 
 #define ATX_DEVICE(dname, w10, h10, dpi, lrm, btm, print_page)\
   prn_device_margins(prn_std_procs, dname, w10, h10, dpi, dpi, 0, 0,\
-		     lrm, btm, lrm, btm, 1, print_page)
+                     lrm, btm, lrm, btm, 1, print_page)
 
 const gx_device_printer gs_atx23_device = /* real width = 576 pixels */
 ATX_DEVICE("atx23", 28 /* 2.84" */, 35 /* (minimum) */,
-	   203, 0.25, 0.125, atx23_print_page);
+           203, 0.25, 0.125, atx23_print_page);
 
 const gx_device_printer gs_atx24_device = /* real width = 832 pixels */
 ATX_DEVICE("atx24", 41 /* 4.1" */, 35 /* (minimum) */,
-	   203, 0.193, 0.125, atx24_print_page);
+           203, 0.193, 0.125, atx24_print_page);
 
 const gx_device_printer gs_atx38_device = /* real width = 2400 pixels */
 ATX_DEVICE("atx38", 80 /* 8.0" */, 35 /* (minimum) */,
-	   300, 0.25, 0.125, atx38_print_page);
+           300, 0.25, 0.125, atx38_print_page);
 
 /* Output a printer command with a 2-byte, little-endian numeric argument. */
 static void
@@ -83,35 +83,35 @@ atx_compress(const byte *in_buf, int in_size, byte *out_buf, int out_size)
     int pair_count;
 
     if (in_size < MIN_IN_SIZE_TO_COMPRESS)
-	return -1;			/* not worth compressing */
+        return -1;			/* not worth compressing */
 
     /* Start a new segment. */
  New_Segment:
     if (in == in_end)		/* end of input data */
-	return out - out_buf;
+        return out - out_buf;
     if (out == out_end)		/* output buffer full */
-	return -1;
+        return -1;
     out_command = out;
     out += 2;
     if (in[1] == in[0]) {		/* start compressed segment */
-	/* out[-2] will be compressed segment command */
-	out[-1] = in[0];
-	pair_count = 1;
-	goto Scan_Compressed_Pair;
+        /* out[-2] will be compressed segment command */
+        out[-1] = in[0];
+        pair_count = 1;
+        goto Scan_Compressed_Pair;
     } else {			/* start uncompressed segment */
-	out[-2] = UNCOMPRESSED_SEGMENT_COMMAND;
-	/* out[-1] will be pair count */
-	pair_count = 0;
-	goto Scan_Uncompressed_Pair;
+        out[-2] = UNCOMPRESSED_SEGMENT_COMMAND;
+        /* out[-1] will be pair count */
+        pair_count = 0;
+        goto Scan_Uncompressed_Pair;
     }
 
     /* Scan compressed data. */
  Scan_Compressed:
     if (pair_count == MAX_COMPRESSED_SEGMENT_PAIRS ||
-	in == in_end || in[0] != in[-1] || in[1] != in[0]
-	) {			/* end the segment */
-	out_command[0] = COMPRESSED_SEGMENT_COMMAND + pair_count;
-	goto New_Segment;
+        in == in_end || in[0] != in[-1] || in[1] != in[0]
+        ) {			/* end the segment */
+        out_command[0] = COMPRESSED_SEGMENT_COMMAND + pair_count;
+        goto New_Segment;
     }
     ++pair_count;
  Scan_Compressed_Pair:
@@ -121,20 +121,20 @@ atx_compress(const byte *in_buf, int in_size, byte *out_buf, int out_size)
     /* Scan uncompressed data. */
  Scan_Uncompressed:
     if (pair_count == MAX_UNCOMPRESSED_SEGMENT_PAIRS ||
-	in == in_end || in[1] == in[0]
-	) {			/* end the segment */
-	out_command[1] = pair_count;
-	goto New_Segment;
+        in == in_end || in[1] == in[0]
+        ) {			/* end the segment */
+        out_command[1] = pair_count;
+        goto New_Segment;
     }
  Scan_Uncompressed_Pair:
     if (out == out_end)		/* output buffer full */
-	return -1;
+        return -1;
     out[0] = in[0], out[1] = in[1];
     in += 2;
     out += 2;
     ++pair_count;
     goto Scan_Uncompressed;
-  
+
 }
 
 /* Send the page to the printer. */
@@ -143,7 +143,7 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
 {
     /*
      * The page length command uses 16 bits to represent the length in
-     * units of 0.01", so the maximum representable page length is 
+     * units of 0.01", so the maximum representable page length is
      * 655.35", including the unprintable top and bottom margins.
      * Compute the maximum height of the printable area in pixels.
      */
@@ -151,7 +151,7 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
     int max_height = (int)(pdev->HWResolution[1] * 655 - top_bottom_skip);
     int height = min(pdev->height, max_height);
     int page_length_100ths =
-	(int)ceil((height / pdev->HWResolution[1] + top_bottom_skip) * 100);
+        (int)ceil((height / pdev->HWResolution[1] + top_bottom_skip) * 100);
     gs_memory_t *mem = pdev->memory;
     int raster = gx_device_raster((gx_device *)pdev, true);
     byte *buf;
@@ -166,63 +166,63 @@ atx_print_page(gx_device_printer *pdev, FILE *f, int max_width_bytes)
 
     /* Enforce a minimum 3" page length. */
     if (page_length_100ths < 300)
-	page_length_100ths = 300;
+        page_length_100ths = 300;
     buf = gs_alloc_bytes(mem, raster, "atx_print_page(buf)");
     compressed = gs_alloc_bytes(mem, compressed_raster,
-				"atx_print_page(compressed)");
+                                "atx_print_page(compressed)");
     if (buf == 0 || compressed == 0) {
-	code = gs_note_error(gs_error_VMerror);
-	goto done;
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
     }
     fput_atx_command(f, ATX_SET_PAGE_LENGTH, page_length_100ths);
     for (blank_lines = 0, lnum = 0; lnum < height; ++lnum) {
-	byte *row;
-	byte *end;
-	int count;
+        byte *row;
+        byte *end;
+        int count;
 
-	gdev_prn_get_bits(pdev, lnum, buf, &row);
-	/* Find the end of the non-blank data. */
-	for (end = row + raster; end > row && end[-1] == 0 && end[-2] == 0; )
-	    end -= 2;
-	if (end == row) {		/* blank line */
-	    ++blank_lines;
-	    continue;
-	}
-	if (blank_lines) {		/* skip vertically */
-	    fput_atx_command(f, ATX_VERTICAL_TAB, blank_lines + 1);
-	    blank_lines = 0;
-	}
-	/* Truncate the line to the maximum printable width. */
-	if (end - row > max_width_bytes)
-	    end = row + max_width_bytes;
-	count = atx_compress(row, end - row, compressed, compressed_raster);
-	if (count >= 0) {		/* compressed line */
-	    /*
-	     * Note that since compressed_raster can't exceed 510, count
-	     * can't exceed 510 either.
-	     */
-	    fputs(ATX_COMPRESSED_DATA, f);
-	    fputc(count / 2, f);
-	    fwrite(compressed, 1, count, f);
-	} else {			/* uncompressed line */
-	    int num_bytes = end - row;
+        gdev_prn_get_bits(pdev, lnum, buf, &row);
+        /* Find the end of the non-blank data. */
+        for (end = row + raster; end > row && end[-1] == 0 && end[-2] == 0; )
+            end -= 2;
+        if (end == row) {		/* blank line */
+            ++blank_lines;
+            continue;
+        }
+        if (blank_lines) {		/* skip vertically */
+            fput_atx_command(f, ATX_VERTICAL_TAB, blank_lines + 1);
+            blank_lines = 0;
+        }
+        /* Truncate the line to the maximum printable width. */
+        if (end - row > max_width_bytes)
+            end = row + max_width_bytes;
+        count = atx_compress(row, end - row, compressed, compressed_raster);
+        if (count >= 0) {		/* compressed line */
+            /*
+             * Note that since compressed_raster can't exceed 510, count
+             * can't exceed 510 either.
+             */
+            fputs(ATX_COMPRESSED_DATA, f);
+            fputc(count / 2, f);
+            fwrite(compressed, 1, count, f);
+        } else {			/* uncompressed line */
+            int num_bytes = end - row;
 
-	    fput_atx_command(f, ATX_UNCOMPRESSED_DATA, num_bytes);
-	    fwrite(row, 1, num_bytes, f);
-	}
+            fput_atx_command(f, ATX_UNCOMPRESSED_DATA, num_bytes);
+            fwrite(row, 1, num_bytes, f);
+        }
     }
 
 #if 0	/**************** MAY NOT BE NEEDED ****************/
     /* Enforce the minimum page length, and skip any final blank lines. */
     {
-	int paper_length = (int)(pdev->HWResolution[1] * 3 + 0.5);
-	int printed_length = height - blank_lines;
+        int paper_length = (int)(pdev->HWResolution[1] * 3 + 0.5);
+        int printed_length = height - blank_lines;
 
-	if (height > paper_length)
-	    paper_length = height;
-	if (printed_length < paper_length)
-	    fput_atx_command(f, ATX_VERTICAL_TAB,
-			     paper_length - printed_length + 1);
+        if (height > paper_length)
+            paper_length = height;
+        if (printed_length < paper_length)
+            fput_atx_command(f, ATX_VERTICAL_TAB,
+                             paper_length - printed_length + 1);
     }
 #endif
 

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -40,9 +40,9 @@ struct clist_io_procs_s {
      * Mode "r" with *fname = 0 is an error.
      */
     int (*fopen)(char fname[gp_file_name_sizeof], const char *fmode,
-		    clist_file_ptr * pcf,
-		    gs_memory_t * mem, gs_memory_t *data_mem,
-		    bool ok_to_compress);
+                    clist_file_ptr * pcf,
+                    gs_memory_t * mem, gs_memory_t *data_mem,
+                    bool ok_to_compress);
 
     /*
      * Close a file, optionally deleting it.

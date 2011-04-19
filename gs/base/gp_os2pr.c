@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,15 +37,15 @@
 /* The OS/2 printer IODevice */
 
 /*
- * This allows an OS/2 printer to be specified as an 
+ * This allows an OS/2 printer to be specified as an
  * output using
  *  -sOutputFile="%printer%AppleLas"
  * where "AppleLas" is the physical name of the queue.
  *
  * If you don't supply a printer name you will get
- *  Error: /undefinedfilename in --.outputpage-- 
+ *  Error: /undefinedfilename in --.outputpage--
  * If the printer name is invalid you will get
- *  Error: /invalidfileaccess in --.outputpage-- 
+ *  Error: /invalidfileaccess in --.outputpage--
  *
  * This is implemented by writing to a temporary file
  * then copying it to the spooler.
@@ -81,8 +81,8 @@ static int
 os2_printer_init(gx_io_device * iodev, gs_memory_t * mem)
 {
     /* state -> structure containing thread handle */
-    iodev->state = gs_alloc_bytes(mem, sizeof(os2_printer_t), 
-	"os2_printer_init");
+    iodev->state = gs_alloc_bytes(mem, sizeof(os2_printer_t),
+        "os2_printer_init");
     if (iodev->state == NULL)
         return_error(gs_error_VMerror);
     memset(iodev->state, 0, sizeof(os2_printer_t));
@@ -90,20 +90,19 @@ os2_printer_init(gx_io_device * iodev, gs_memory_t * mem)
     return 0;
 }
 
-
 static int
 os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
-	   FILE ** pfile, char *rfname, uint rnamelen)
+           FILE ** pfile, char *rfname, uint rnamelen)
 {
     os2_printer_t *pr = (os2_printer_t *)iodev->state;
     char driver_name[256];
 
     /* Make sure that printer exists. */
     if (pm_find_queue(pr->memory, fname, driver_name)) {
-	/* error, list valid queue names */
-	emprintf(pr->memory, "Invalid queue name.  Use one of:\n");
-	pm_find_queue(pr->memory, NULL, NULL);
-	return_error(gs_error_undefinedfilename);
+        /* error, list valid queue names */
+        emprintf(pr->memory, "Invalid queue name.  Use one of:\n");
+        pm_find_queue(pr->memory, NULL, NULL);
+        return_error(gs_error_undefinedfilename);
     }
 
     strncpy(pr->queue, fname, sizeof(pr->queue)-1);
@@ -111,7 +110,7 @@ os2_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     /* Create a temporary file */
     *pfile = gp_open_scratch_file(pr->memory, "gs", pr->filename, access);
     if (*pfile == NULL)
-	return_error(gs_fopen_errno_to_code(errno));
+        return_error(gs_fopen_errno_to_code(errno));
 
     return 0;
 }
@@ -121,8 +120,7 @@ os2_printer_fclose(gx_io_device * iodev, FILE * file)
 {
     os2_printer_t *pr = (os2_printer_t *)iodev->state;
     fclose(file);
-    pm_spool(pr->memory, pr->filename, pr->queue); 
+    pm_spool(pr->memory, pr->filename, pr->queue);
     unlink(pr->filename);
     return 0;
 }
-

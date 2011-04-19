@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -81,7 +81,6 @@ extern jmp_buf gsdll_env;
 #endif
 char pm_prntmp[256];		/* filename of printer spool temporary file */
 
-
 /* ------ Miscellaneous ------ */
 
 /* Get the string corresponding to an OS error number. */
@@ -104,8 +103,8 @@ gp_get_realtime(long *pdt)
     struct timezone tzp;
 
     if (gettimeofday(&tp, &tzp) == -1) {
-	lprintf("Ghostscript: gettimeofday failed!\n");
-	tp.tv_sec = tp.tv_usec = 0;
+        lprintf("Ghostscript: gettimeofday failed!\n");
+        tp.tv_sec = tp.tv_usec = 0;
     }
     /* tp.tv_sec is #secs since Jan 1, 1970 */
     pdt[0] = tp.tv_sec;
@@ -113,7 +112,7 @@ gp_get_realtime(long *pdt)
 
 #ifdef DEBUG_CLOCK
     printf("tp.tv_sec = %d  tp.tv_usec = %d  pdt[0] = %ld  pdt[1] = %ld\n",
-	   tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
+           tp.tv_sec, tp.tv_usec, pdt[0], pdt[1]);
 #endif
 }
 
@@ -124,7 +123,6 @@ gp_get_usertime(long *pdt)
 {
     gp_get_realtime(pdt);	/* Use an approximation for now.  */
 }
-
 
 /* ------ Console management ------ */
 
@@ -138,31 +136,31 @@ gp_file_is_console(FILE * f)
 {
 #ifndef __DLL__
     if (!isos2) {
-	union REGS regs;
+        union REGS regs;
 
-	if (f == NULL)
-	    return false;
-	regs.h.ah = 0x44;	/* ioctl */
-	regs.h.al = 0;		/* get device info */
-	regs.rshort.bx = fileno(f);
-	intdos(&regs, &regs);
-	return ((regs.h.dl & 0x80) != 0 && (regs.h.dl & 3) != 0);
+        if (f == NULL)
+            return false;
+        regs.h.ah = 0x44;	/* ioctl */
+        regs.h.al = 0;		/* get device info */
+        regs.rshort.bx = fileno(f);
+        intdos(&regs, &regs);
+        return ((regs.h.dl & 0x80) != 0 && (regs.h.dl & 3) != 0);
     }
 #endif
     if (fileno(f) <= 2)
-	return true;
+        return true;
     return false;
 }
 
 /* ------ Persistent data cache ------*/
-  
+
 /* insert a buffer under a (type, key) pair */
 int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
-{ 
+{
     /* not yet implemented */
     return 0;
-} 
- 
+}
+
 /* look up a (type, key) in the cache */
 int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     gp_cache_alloc alloc, void *userdata)
@@ -170,7 +168,6 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     /* not yet implemented */
     return -1;
 }
-
 
 /*************************************************************/
 /* from gp_iwatc.c and gp_itbc.c */
@@ -199,12 +196,12 @@ gp_init(void)
     /* get environment of EXE */
     DosGetInfoBlocks(&pptib, &pppib);
     for (i = 0, p = pppib->pib_pchenv; *p; p += strlen(p) + 1)
-	i++;
+        i++;
     _environ = environ = (char **)malloc((i + 2) * sizeof(char *));
 
     for (i = 0, p = pppib->pib_pchenv; *p; p += strlen(p) + 1) {
-	environ[i] = p;
-	i++;
+        environ[i] = p;
+        i++;
     }
     environ[i] = p;
     i++;
@@ -221,7 +218,6 @@ gp_init(void)
     signal(SIGFPE, handle_FPE);
 }
 
-
 /* Trap numeric exceptions.  Someday we will do something */
 /* more appropriate with these. */
 static void
@@ -237,8 +233,8 @@ gp_exit(int exit_status, int code)
 {
 #if defined(__DLL__) && defined(__EMX__)
     if (environ != fake_environ) {
-	free(environ);
-	environ = _environ = fake_environ;
+        free(environ);
+        environ = _environ = fake_environ;
     }
 #endif
 }
@@ -267,11 +263,11 @@ gp_set_file_binary(int prnfno, int binary)
     regs.rshort.bx = prnfno;
     intdos(&regs, &regs);
     if (((regs.rshort.flags) & 1) != 0 || !(regs.h.dl & 0x80))
-	return;			/* error, or not a device */
+        return;			/* error, or not a device */
     if (binary)
-	regs.h.dl |= 0x20;	/* binary (no ^Z intervention) */
+        regs.h.dl |= 0x20;	/* binary (no ^Z intervention) */
     else
-	regs.h.dl &= ~0x20;	/* text */
+        regs.h.dl &= ~0x20;	/* text */
     regs.h.dh = 0;
     regs.h.ah = 0x44;		/* ioctl */
     regs.h.al = 1;		/* set device info */
@@ -297,27 +293,27 @@ gp_open_printer(const gs_memory_t *mem,
     FILE *pfile;
 
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
-	if (isos2) {
-	    /* default or spool */
-	    if (pm_spool(mem, NULL, fname))	/* check if spool queue valid */
-		return NULL;
-	    pfile = gp_open_scratch_file(mem,
+        if (isos2) {
+            /* default or spool */
+            if (pm_spool(mem, NULL, fname))	/* check if spool queue valid */
+                return NULL;
+            pfile = gp_open_scratch_file(mem,
                                          gp_scratch_file_name_prefix,
                                          pm_prntmp,
                                          (binary_mode ? "wb" : "w"));
-	} else
-	    pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
+        } else
+            pfile = fopen("PRN", (binary_mode ? "wb" : "w"));
     } else if ((isos2) && (fname[0] == '|'))
-	/* pipe */
-	pfile = popen(fname + 1, (binary_mode ? "wb" : "w"));
+        /* pipe */
+        pfile = popen(fname + 1, (binary_mode ? "wb" : "w"));
     else
-	/* normal file or port */
-	pfile = fopen(fname, (binary_mode ? "wb" : "w"));
+        /* normal file or port */
+        pfile = fopen(fname, (binary_mode ? "wb" : "w"));
 
     if (pfile == (FILE *) NULL)
-	return (FILE *) NULL;
+        return (FILE *) NULL;
     if (!isos2)
-	gp_set_file_binary(fileno(pfile), binary_mode);
+        gp_set_file_binary(fileno(pfile), binary_mode);
     return pfile;
 }
 
@@ -326,14 +322,14 @@ void
 gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
     if (isos2 && (fname[0] == '|'))
-	pclose(pfile);
+        pclose(pfile);
     else
-	fclose(pfile);
+        fclose(pfile);
 
     if ((strlen(fname) == 0) || is_os2_spool(fname)) {
-	/* spool temporary file */
-	pm_spool(mem, pm_prntmp, fname);
-	unlink(pm_prntmp);
+        /* spool temporary file */
+        pm_spool(mem, pm_prntmp, fname);
+        unlink(pm_prntmp);
     }
 }
 
@@ -374,65 +370,64 @@ pm_find_queue(const gs_memory_t *mem, char *queue_name, char *driver_name)
     ulLevel = 3L;
     pszComputerName = (PSZ) NULL;
     splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, 0L,	/* cbBuf */
-			  &cReturned, &cTotal,
-			  &cbNeeded, NULL);
+                          &cReturned, &cTotal,
+                          &cbNeeded, NULL);
     if (splerr == ERROR_MORE_DATA || splerr == NERR_BufTooSmall) {
-	if (!DosAllocMem((PVOID) & pBuf, cbNeeded,
-			 PAG_READ | PAG_WRITE | PAG_COMMIT)) {
-	    cbBuf = cbNeeded;
-	    splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, cbBuf,
-				  &cReturned, &cTotal,
-				  &cbNeeded, NULL);
-	    if (splerr == NO_ERROR) {
-		/* Set pointer to point to the beginning of the buffer.           */
-		prq = (PPRQINFO3) pBuf;
+        if (!DosAllocMem((PVOID) & pBuf, cbNeeded,
+                         PAG_READ | PAG_WRITE | PAG_COMMIT)) {
+            cbBuf = cbNeeded;
+            splerr = SplEnumQueue(pszComputerName, ulLevel, pBuf, cbBuf,
+                                  &cReturned, &cTotal,
+                                  &cbNeeded, NULL);
+            if (splerr == NO_ERROR) {
+                /* Set pointer to point to the beginning of the buffer.           */
+                prq = (PPRQINFO3) pBuf;
 
-		/* cReturned has the count of the number of PRQINFO3 structures.  */
-		for (i = 0; i < cReturned; i++) {
-		    if (queue_name) {
-			/* find queue name and return driver name */
-			if (strlen(queue_name) == 0) {	/* use default queue */
-			    if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
-				strcpy(queue_name, prq->pszName);
-			}
-			if (strcmp(prq->pszName, queue_name) == 0) {
-			    char *p;
+                /* cReturned has the count of the number of PRQINFO3 structures.  */
+                for (i = 0; i < cReturned; i++) {
+                    if (queue_name) {
+                        /* find queue name and return driver name */
+                        if (strlen(queue_name) == 0) {	/* use default queue */
+                            if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
+                                strcpy(queue_name, prq->pszName);
+                        }
+                        if (strcmp(prq->pszName, queue_name) == 0) {
+                            char *p;
 
-			    for (p = prq->pszDriverName; *p && (*p != '.'); p++)
-				/* do nothing */ ;
-			    *p = '\0';	/* truncate at '.' */
-			    if (driver_name != NULL)
-				strcpy(driver_name, prq->pszDriverName);
-			    DosFreeMem((PVOID) pBuf);
-			    return 0;
-			}
-		    } else {
-			/* list queue details */
-			if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
-			    emprintf1(mem, "  \042%s\042  (DEFAULT)\n", prq->pszName);
-			else
-			    emprintf1(mem, "  \042%s\042\n", prq->pszName);
-		    }
-		    prq++;
-		}		/*endfor cReturned */
-	    }
-	    DosFreeMem((PVOID) pBuf);
-	}
+                            for (p = prq->pszDriverName; *p && (*p != '.'); p++)
+                                /* do nothing */ ;
+                            *p = '\0';	/* truncate at '.' */
+                            if (driver_name != NULL)
+                                strcpy(driver_name, prq->pszDriverName);
+                            DosFreeMem((PVOID) pBuf);
+                            return 0;
+                        }
+                    } else {
+                        /* list queue details */
+                        if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
+                            emprintf1(mem, "  \042%s\042  (DEFAULT)\n", prq->pszName);
+                        else
+                            emprintf1(mem, "  \042%s\042\n", prq->pszName);
+                    }
+                    prq++;
+                }		/*endfor cReturned */
+            }
+            DosFreeMem((PVOID) pBuf);
+        }
     }
-    /* end if Q level given */ 
+    /* end if Q level given */
     else {
-	/* If we are here we had a bad error code. Print it and some other info. */
-	emprintf4(mem,
+        /* If we are here we had a bad error code. Print it and some other info. */
+        emprintf4(mem,
                   "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
-		  splerr, cTotal, cReturned, cbNeeded);
+                  splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)
-	return splerr;
+        return splerr;
     if (queue_name)
-	return -1;
+        return -1;
     return 0;
 }
-
 
 /* return TRUE if queue looks like a valid OS/2 queue name */
 static int
@@ -442,12 +437,12 @@ is_os2_spool(const char *queue)
     int i;
 
     for (i = 0; i < 8; i++) {
-	if (prefix[i] == '\\') {
-	    if ((*queue != '\\') && (*queue != '/'))
-		return FALSE;
-	} else if (tolower(*queue) != prefix[i])
-	    return FALSE;
-	queue++;
+        if (prefix[i] == '\\') {
+            if ((*queue != '\\') && (*queue != '/'))
+                return FALSE;
+        } else if (tolower(*queue) != prefix[i])
+            return FALSE;
+        queue++;
     }
     return TRUE;
 }
@@ -472,110 +467,107 @@ pm_spool(const gs_memory_t *mem, char *filename, const char *queue)
     int count;
 
     if (strlen(queue) != 0) {
-	/* queue specified */
-	strcpy(queue_name, queue + 8);	/* skip over \\spool\ */
+        /* queue specified */
+        strcpy(queue_name, queue + 8);	/* skip over \\spool\ */
     } else {
-	/* get default queue */
-	queue_name[0] = '\0';
+        /* get default queue */
+        queue_name[0] = '\0';
     }
     if (pm_find_queue(mem, queue_name, driver_name)) {
-	/* error, list valid queue names */
-	emprintf(mem, "Invalid queue name.  Use one of:\n");
-	pm_find_queue(mem, NULL, NULL);
-	return 1;
+        /* error, list valid queue names */
+        emprintf(mem, "Invalid queue name.  Use one of:\n");
+        pm_find_queue(mem, NULL, NULL);
+        return 1;
     }
     if (!filename)
-	return 0;		/* we were only asked to check the queue */
-
+        return 0;		/* we were only asked to check the queue */
 
     if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL) {
-	emprintf(mem, "Out of memory in pm_spool\n");
-	return 1;
+        emprintf(mem, "Out of memory in pm_spool\n");
+        return 1;
     }
     if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
-	free(buffer);
-	emprintf1(mem, "Can't open temporary file %s\n", filename);
-	return 1;
+        free(buffer);
+        emprintf1(mem, "Can't open temporary file %s\n", filename);
+        return 1;
     }
     /* Allocate memory for pdata */
     if (!DosAllocMem((PVOID) & pdata, sizeof(DEVOPENSTRUC),
-		     (PAG_READ | PAG_WRITE | PAG_COMMIT))) {
-	/* Initialize elements of pdata */
-	pdata->pszLogAddress = queue_name;
-	pdata->pszDriverName = driver_name;
-	pdata->pdriv = NULL;
-	pdata->pszDataType = "PM_Q_RAW";
-	pdata->pszComment = "Ghostscript";
-	pdata->pszQueueProcName = NULL;
-	pdata->pszQueueProcParams = NULL;
-	pdata->pszSpoolerParams = NULL;
-	pdata->pszNetworkParams = NULL;
+                     (PAG_READ | PAG_WRITE | PAG_COMMIT))) {
+        /* Initialize elements of pdata */
+        pdata->pszLogAddress = queue_name;
+        pdata->pszDriverName = driver_name;
+        pdata->pdriv = NULL;
+        pdata->pszDataType = "PM_Q_RAW";
+        pdata->pszComment = "Ghostscript";
+        pdata->pszQueueProcName = NULL;
+        pdata->pszQueueProcParams = NULL;
+        pdata->pszSpoolerParams = NULL;
+        pdata->pszNetworkParams = NULL;
 
-	hspl = SplQmOpen(pszToken, 4L, (PQMOPENDATA) pdata);
-	if (hspl == SPL_ERROR) {
-	    emprintf(mem, "SplQmOpen failed.\n");
-	    DosFreeMem((PVOID) pdata);
-	    free(buffer);
-	    fclose(f);
-	    return 1;		/* failed */
-	}
-	rc = SplQmStartDoc(hspl, "Ghostscript");
-	if (!rc) {
-	    emprintf(mem, "SplQmStartDoc failed.\n");
-	    DosFreeMem((PVOID) pdata);
-	    free(buffer);
-	    fclose(f);
-	    return 1;
-	}
-	/* loop, copying file to queue */
-	while (rc && (count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
-	    rc = SplQmWrite(hspl, count, buffer);
-	    if (!rc)
-		emprintf(mem, "SplQmWrite failed.\n");
-	}
-	free(buffer);
-	fclose(f);
+        hspl = SplQmOpen(pszToken, 4L, (PQMOPENDATA) pdata);
+        if (hspl == SPL_ERROR) {
+            emprintf(mem, "SplQmOpen failed.\n");
+            DosFreeMem((PVOID) pdata);
+            free(buffer);
+            fclose(f);
+            return 1;		/* failed */
+        }
+        rc = SplQmStartDoc(hspl, "Ghostscript");
+        if (!rc) {
+            emprintf(mem, "SplQmStartDoc failed.\n");
+            DosFreeMem((PVOID) pdata);
+            free(buffer);
+            fclose(f);
+            return 1;
+        }
+        /* loop, copying file to queue */
+        while (rc && (count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
+            rc = SplQmWrite(hspl, count, buffer);
+            if (!rc)
+                emprintf(mem, "SplQmWrite failed.\n");
+        }
+        free(buffer);
+        fclose(f);
 
-	if (!rc) {
-	    emprintf(mem, "Aborting Spooling.\n");
-	    SplQmAbort(hspl);
-	} else {
-	    SplQmEndDoc(hspl);
-	    rc = SplQmClose(hspl);
-	    if (!rc)
-		emprintf(mem, "SplQmClose failed.\n");
-	}
+        if (!rc) {
+            emprintf(mem, "Aborting Spooling.\n");
+            SplQmAbort(hspl);
+        } else {
+            SplQmEndDoc(hspl);
+            rc = SplQmClose(hspl);
+            if (!rc)
+                emprintf(mem, "SplQmClose failed.\n");
+        }
     } else
-	rc = 0;			/* no memory */
+        rc = 0;			/* no memory */
     return !rc;
 }
 
-
-
 /* ------ Font enumeration ------ */
- 
+
  /* This is used to query the native os for a list of font names and
   * corresponding paths. The general idea is to save the hassle of
   * building a custom fontmap file.
   */
- 
+
 void *gp_enumerate_fonts_init(gs_memory_t *mem)
 {
     return NULL;
 }
-         
+
 int gp_enumerate_fonts_next(void *enum_state, char **fontname, char **path)
 {
     return 0;
 }
-                         
+
 void gp_enumerate_fonts_free(void *enum_state)
 {
-}           
+}
 
 /* --------- 64 bit file access ----------- */
 /* fixme: Not implemented yet.
- * Currently we stub it with 32 bits access. 
+ * Currently we stub it with 32 bits access.
  */
 
 FILE *gp_fopen_64(const char *filename, const char *mode)
@@ -606,8 +598,8 @@ int64_t gp_ftell_64(FILE *strm)
 int gp_fseek_64(FILE *strm, int64_t offset, int origin)
 {
     long offset1 = (long)offset;
-    
+
     if (offset != offset1)
-	return -1;
+        return -1;
     return fseek(strm, offset1, origin);
 }

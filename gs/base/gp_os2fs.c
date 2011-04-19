@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2008 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -70,7 +70,6 @@ const char gp_fmode_wb[] = "wb";
 
 /* ------ File enumeration ------ */
 
-
 struct file_enum_s {
     FILEFINDBUF3 findbuf;
     HDIR hdir;
@@ -83,7 +82,7 @@ struct file_enum_s {
     gs_memory_t *memory;
 };
 gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
-		    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
+                    file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern);
 
 /* Initialize an enumeration.  may NEED WORK ON HANDLING * ? \. */
 file_enum *
@@ -96,27 +95,27 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     int i;
 
     if (pfen == 0)
-	return 0;
+        return 0;
 
     /* pattern could be allocated as a string, */
     /* but it's simpler for GC and freeing to allocate it as bytes. */
 
     pattern = (char *)gs_alloc_bytes(mem, pat_size,
-				     "gp_enumerate_files(pattern)");
+                                     "gp_enumerate_files(pattern)");
     if (pattern == 0)
-	return 0;
+        return 0;
     memcpy(pattern, pat, patlen);
     /* find directory name = header */
     for (i = 0; i < patlen; i++) {
-	switch (pat[i]) {
-	    case '\\':
-		if (i + 1 < patlen && pat[i + 1] == '\\')
-		    i++;
-		/* falls through */
-	    case ':':
-	    case '/':
-		hsize = i + 1;
-	}
+        switch (pat[i]) {
+            case '\\':
+                if (i + 1 < patlen && pat[i + 1] == '\\')
+                    i++;
+                /* falls through */
+            case ':':
+            case '/':
+                hsize = i + 1;
+        }
     }
     pattern[patlen] = 0;
     pfen->pattern = pattern;
@@ -137,43 +136,43 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     ULONG cFilenames = 1;
 
     if (!isos2) {
-	/* CAN'T DO IT SO JUST RETURN THE PATTERN. */
-	if (pfen->first_time) {
-	    char *pattern = pfen->pattern;
-	    uint len = strlen(pattern);
+        /* CAN'T DO IT SO JUST RETURN THE PATTERN. */
+        if (pfen->first_time) {
+            char *pattern = pfen->pattern;
+            uint len = strlen(pattern);
 
-	    pfen->first_time = 0;
-	    if (len > maxlen)
-		return maxlen + 1;
-	    strcpy(ptr, pattern);
-	    return len;
-	}
-	return -1;
+            pfen->first_time = 0;
+            if (len > maxlen)
+                return maxlen + 1;
+            strcpy(ptr, pattern);
+            return len;
+        }
+        return -1;
     }
     /* else OS/2 */
     if (pfen->first_time) {
-	rc = DosFindFirst(pfen->pattern, &pfen->hdir, FILE_NORMAL,
-			  &pfen->findbuf, sizeof(pfen->findbuf),
-			  &cFilenames, FIL_STANDARD);
-	pfen->first_time = 0;
+        rc = DosFindFirst(pfen->pattern, &pfen->hdir, FILE_NORMAL,
+                          &pfen->findbuf, sizeof(pfen->findbuf),
+                          &cFilenames, FIL_STANDARD);
+        pfen->first_time = 0;
     } else {
-	rc = DosFindNext(pfen->hdir, &pfen->findbuf, sizeof(pfen->findbuf),
-			 &cFilenames);
+        rc = DosFindNext(pfen->hdir, &pfen->findbuf, sizeof(pfen->findbuf),
+                         &cFilenames);
     }
     if (rc)
-	return -1;
+        return -1;
 
     if (pfen->head_size + pfen->findbuf.cchName < maxlen) {
-	memcpy(ptr, pfen->pattern, pfen->head_size);
-	strcpy(ptr + pfen->head_size, pfen->findbuf.achName);
-	return pfen->head_size + pfen->findbuf.cchName;
+        memcpy(ptr, pfen->pattern, pfen->head_size);
+        strcpy(ptr + pfen->head_size, pfen->findbuf.achName);
+        return pfen->head_size + pfen->findbuf.cchName;
     }
     if (pfen->head_size >= maxlen)
-	return 0;		/* no hope at all */
+        return 0;		/* no hope at all */
 
     memcpy(ptr, pfen->pattern, pfen->head_size);
     strncpy(ptr + pfen->head_size, pfen->findbuf.achName,
-	    maxlen - pfen->head_size - 1);
+            maxlen - pfen->head_size - 1);
     return maxlen;
 }
 
@@ -184,12 +183,11 @@ gp_enumerate_files_close(file_enum * pfen)
     gs_memory_t *mem = pfen->memory;
 
     if (isos2)
-	DosFindClose(pfen->hdir);
+        DosFindClose(pfen->hdir);
     gs_free_object(mem, pfen->pattern,
-		   "gp_enumerate_files_close(pattern)");
+                   "gp_enumerate_files_close(pattern)");
     gs_free_object(mem, pfen, "gp_enumerate_files_close");
 }
-
 
 /* ------ File naming and accessing ------ */
 
@@ -199,7 +197,7 @@ FILE *
 gp_open_scratch_file(const gs_memory_t *mem,
                      const char        *prefix,
                            char         fname[gp_file_name_sizeof],
-		     const char        *mode)
+                     const char        *mode)
 {
     FILE *f;
 #ifdef __IBMC__
@@ -208,19 +206,19 @@ gp_open_scratch_file(const gs_memory_t *mem,
     int prefix_length = strlen(prefix);
 
     if (!gp_file_name_is_absolute(prefix, prefix_length)) {
-	temp = getenv("TMPDIR");
-	if (temp == 0)
-	    temp = getenv("TEMP");
+        temp = getenv("TMPDIR");
+        if (temp == 0)
+            temp = getenv("TEMP");
     }
     *fname = 0;
     tname = _tempnam(temp, (char *)prefix);
     if (tname) {
-	if (strlen(tname) > gp_file_name_sizeof - 1) {
-	    free(tname);
-	    return 0;		/* file name too long */
-	}
-	strcpy(fname, tname);
-	free(tname);
+        if (strlen(tname) > gp_file_name_sizeof - 1) {
+            free(tname);
+            return 0;		/* file name too long */
+        }
+        strcpy(fname, tname);
+        free(tname);
     }
 #else
     /* The -7 is for XXXXXX plus a possible final \. */
@@ -228,25 +226,25 @@ gp_open_scratch_file(const gs_memory_t *mem,
     int len = gp_file_name_sizeof - prefix_length - 7;
 
     if (gp_file_name_is_absolute(prefix, prefix_length) ||
-	gp_gettmpdir(fname, &len) != 0)
-	*fname = 0;
+        gp_gettmpdir(fname, &len) != 0)
+        *fname = 0;
     else {
-	char last = '\\';
-	char *temp;
+        char last = '\\';
+        char *temp;
 
-	/* Prevent X's in path from being converted by mktemp. */
-	for (temp = fname; *temp; temp++)
-	    *temp = last = tolower(*temp);
-	switch (last) {
-	default:
-	    strcat(fname, "\\");
-	case ':':
-	case '\\':
-	    ;
-	}
+        /* Prevent X's in path from being converted by mktemp. */
+        for (temp = fname; *temp; temp++)
+            *temp = last = tolower(*temp);
+        switch (last) {
+        default:
+            strcat(fname, "\\");
+        case ':':
+        case '\\':
+            ;
+        }
     }
     if (strlen(fname) + prefix_length + 7 >= gp_file_name_sizeof)
-	return 0;		/* file name too long */
+        return 0;		/* file name too long */
     strcat(fname, prefix);
     strcat(fname, "XXXXXX");
     mktemp(fname);
@@ -266,36 +264,36 @@ gp_fopen(const char *fname, const char *mode)
 
 uint gp_file_name_root(const char *fname, uint len)
 {   int i = 0;
-    
-    if (len == 0)
-	return 0;
-    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
-	/* A network path: "\\server\share\" */
-	int k = 0;
 
-	for (i = 2; i < len; i++)
-	    if (fname[i] == '\\' || fname[i] == '/')
-		if (k++) {
-		    i++;
-		    break;
-		}
+    if (len == 0)
+        return 0;
+    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
+        /* A network path: "\\server\share\" */
+        int k = 0;
+
+        for (i = 2; i < len; i++)
+            if (fname[i] == '\\' || fname[i] == '/')
+                if (k++) {
+                    i++;
+                    break;
+                }
     } else if (fname[0] == '/' || fname[0] == '\\') {
-	/* Absolute with no drive. */
-	i = 1;
+        /* Absolute with no drive. */
+        i = 1;
     } else if (len > 1 && fname[1] == ':') {
-	/* Absolute with a drive. */
-	i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
+        /* Absolute with a drive. */
+        i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
     }
     return i;
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
-	if (fname[0] == '/' || fname[0] == '\\')
-	    return 1;
+        if (fname[0] == '/' || fname[0] == '\\')
+            return 1;
     } else if (len < 0) {
-	if (fname[-1] == '/' || fname[-1] == '\\')
-	    return 1;
+        if (fname[-1] == '/' || fname[-1] == '\\')
+            return 1;
     }
     return 0;
 }
@@ -333,11 +331,9 @@ bool gp_file_name_is_empty_item_meanful(void)
 }
 
 gp_file_name_combine_result
-gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen, 
-		    bool no_sibling, char *buffer, uint *blen)
+gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen,
+                    bool no_sibling, char *buffer, uint *blen)
 {
-    return gp_file_name_combine_generic(prefix, plen, 
-	    fname, flen, no_sibling, buffer, blen);
+    return gp_file_name_combine_generic(prefix, plen,
+            fname, flen, no_sibling, buffer, blen);
 }
-
-

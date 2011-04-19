@@ -151,7 +151,6 @@ const char *const initial_dstack[] =
 
 #define MIN_DSTACK_SIZE (countof(initial_dstack) + 1)   /* +1 for systemdict */
 
-
 /*
  * Detect whether we have any Level 2 or LanguageLevel 3 operators.
  * We export this for gs_init1 in imain.c.

@@ -50,7 +50,7 @@ cie_icc_finalize(void * pvicc_info)
    they always provide a mapping to a specified destination
    profile.  As such they will have their own remap functions.
    These will simply potentially implement the transfer function,
-   apply any alpha value, and or end up going through halftoning. 
+   apply any alpha value, and or end up going through halftoning.
    There will not be any heuristic remap of rgb to gray etc */
 
 static cs_proc_num_components(gx_num_components_ICC);
@@ -85,11 +85,9 @@ const gs_color_space_type gs_color_space_type_ICC = {
     gx_cspace_is_linear_ICC
 };
 
-
-
 static inline void
 gsicc_remap_fast(unsigned short *psrc, unsigned short *psrc_cm,
-		       gsicc_link_t *icc_link)
+                       gsicc_link_t *icc_link)
 {
     gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
 }
@@ -97,9 +95,9 @@ gsicc_remap_fast(unsigned short *psrc, unsigned short *psrc_cm,
 /* ICC color mapping linearity check, a 2-points case. Check only the 1/2 point */
 static int
 gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		float smoothness, gsicc_link_t *icclink)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                float smoothness, gsicc_link_t *icclink)
 {
     int nsrc = cs->type->num_components(cs);
     int ndes = dev->color_info.num_components;
@@ -135,9 +133,9 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
 /* Default icc color mapping linearity check, a triangle case. */
 static int
 gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		const gs_client_color *c2, float smoothness, gsicc_link_t *icclink)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                const gs_client_color *c2, float smoothness, gsicc_link_t *icclink)
 {
     /* Check 4 points middle points of 3 sides and middle of one side with
        other point.  We avoid divisions this way. */
@@ -167,9 +165,9 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
         src1[k] = (unsigned short) (c1->paint.values[k]*65535);
         src2[k] = (unsigned short) (c2->paint.values[k]*65535);
         src01[k] = (src0[k] + src1[k]) >> 1;
-        src02[k] = (src0[k] + src2[k]) >> 1;   
+        src02[k] = (src0[k] + src2[k]) >> 1;
         src12[k] = (src1[k] + src2[k]) >> 1;
-        src012[k] = (src12[k] + src0[k]) >> 1;  
+        src012[k] = (src12[k] + src0[k]) >> 1;
     }
     /* Map the points */
     gsicc_remap_fast(&(src0[0]), &(des0[0]), icclink);
@@ -201,31 +199,31 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
 /* ICC color mapping linearity check. */
 int
 gx_cspace_is_linear_ICC(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness, gsicc_link_t *icclink)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                const gs_client_color *c2, const gs_client_color *c3,
+                float smoothness, gsicc_link_t *icclink)
 {
     /* Assuming 2 <= nc <= 4. We don't need other cases. */
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
     int code;
-    
+
     /* Do a quick check if we are in a halftone situation. If yes,
        then we should not be doing this linear check */
     if (gx_device_must_halftone(dev)) return 0;
     if (icclink->is_identity) return 1; /* Transform is identity, linear! */
 
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (c2 == NULL)
-	return gx_icc_is_linear_in_line(cs, pis, dev, c0, c1, smoothness, icclink);
-    code = gx_icc_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, 
+        return gx_icc_is_linear_in_line(cs, pis, dev, c0, c1, smoothness, icclink);
+    code = gx_icc_is_linear_in_triangle(cs, pis, dev, c0, c1, c2,
                                             smoothness, icclink);
     if (code <= 0)
-	return code;
+        return code;
     if (c3 == NULL)
-	return 1;
-    return gx_icc_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, 
+        return 1;
+    return gx_icc_is_linear_in_triangle(cs, pis, dev, c1, c2, c3,
                                                 smoothness, icclink);
 }
 /*
@@ -247,7 +245,7 @@ gx_init_ICC(gs_client_color * pcc, const gs_color_space * pcs)
     int     i, ncomps = pcs->cmm_icc_profile_data->num_comps;
 
     for (i = 0; i < ncomps; ++i)
-	pcc->paint.values[i] = 0.0;
+        pcc->paint.values[i] = 0.0;
 
     /* make sure that [ 0, ... 0] is in range */
     gx_restrict_ICC(pcc, pcs);
@@ -273,22 +271,22 @@ gx_restrict_ICC(gs_client_color * pcc, const gs_color_space * pcs)
     }
 }
 
-/* If the color is already concretized, then we are in the color space 
+/* If the color is already concretized, then we are in the color space
    defined by the device profile.  The remaining things to do would
    be to potentially apply alpha, apply the transfer function, and
    do any halftoning.  The remap is based upon the ICC profile defined
    in the device profile entry of the profile manager. */
 int
 gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
-	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
-			  gs_color_select_t select)
+        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+                          gs_color_select_t select)
 {
     const cmm_profile_t *icc_profile = dev->device_icc_profile;
     int num_colorants = icc_profile->num_comps;
     int code;
 
     switch( num_colorants ) {
-        case 1: 
+        case 1:
             code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
             break;
         case 3:
@@ -311,8 +309,8 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
  */
 int
 gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
-	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
-		gs_color_select_t select)
+        gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+                gs_color_select_t select)
 {
     gsicc_link_t *icc_link;
     gsicc_rendering_param_t rendering_params;
@@ -381,7 +379,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     /* Save original color space and color info into dev color */
     i = pcs->cmm_icc_profile_data->num_comps;
     for (i--; i >= 0; i--)
-	pdc->ccolor.paint.values[i] = pcc->paint.values[i];
+        pdc->ccolor.paint.values[i] = pcc->paint.values[i];
     pdc->ccolor_valid = true;
     return 0;
 }
@@ -410,7 +408,7 @@ gx_concretize_ICC(
     rendering_params.rendering_intent = pis->renderingintent;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
-	}
+        }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory, false);
     /* Transform the color */
@@ -430,13 +428,13 @@ gx_concretize_ICC(
     return 0;
 }
 
-	/*
+        /*
  * Finalize the contents of an ICC color space. Now that color space
  * objects have straightforward reference counting discipline, there's
  * nothing special about it. In the previous state of affairs, the
  * argument in favor of correct reference counting spoke of "an
  * unintuitive but otherwise legitimate state of affairs".
-	 */
+         */
 static void
 gx_final_ICC(const gs_color_space * pcs)
 {
@@ -456,7 +454,7 @@ static int
 gx_install_ICC(gs_color_space * pcs, gs_state * pgs)
 {
     /* update the stub information used by the joint caches */
-		return 0;
+                return 0;
         }
 
 /*
@@ -485,7 +483,7 @@ gx_serialize_ICC(const gs_color_space * pcs, stream * s)
     int code = gx_serialize_cspace_type(pcs, s);
 
     if (code < 0)
-	return code;
+        return code;
     profile__serial = (gsicc_serialized_profile_t*) pcs->cmm_icc_profile_data;
     code = sputs(s, (byte *)profile__serial, sizeof(gsicc_serialized_profile_t), &n);
     return(code);
@@ -508,4 +506,3 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
 
     return gx_set_overprint_cmyk(pcs, pgs);
 }
-

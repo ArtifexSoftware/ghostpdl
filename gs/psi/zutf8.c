@@ -1,6 +1,6 @@
 /* Copyright (C) 2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -39,34 +39,34 @@ zlocale_to_utf8(i_ctx_t *i_ctx_p)
     check_read_type(*op, t_string);
     input = ref_to_string(op, imemory, "locale_to_utf8 input");
     if (input == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
 
     output = stringprep_locale_to_utf8(input);
     ifree_string((byte *)input, r_size(op) + 1, "locale_to_utf8 input");
     if (output == 0) {
-	/* This function is intended to be used on strings whose
-	 * character set is unknown, so it's not an error if the
-	 * input contains invalid characters.  Just return the input
-	 * string unchanged.
-	 *
-	 * Sadly, EINVAL from stringprep_locale_to_utf8 can mean
-	 * either an invalid character set conversion (which we care
-	 * about), or an incomplete input string (which we don't).
-	 * For now, we ignore EINVAL; the right solution is probably
-	 * to not use stringprep_locale_to_utf8, and just call iconv
-	 * by hand. */
-	if (errno == EILSEQ || errno == EINVAL)
-	    return 0;
+        /* This function is intended to be used on strings whose
+         * character set is unknown, so it's not an error if the
+         * input contains invalid characters.  Just return the input
+         * string unchanged.
+         *
+         * Sadly, EINVAL from stringprep_locale_to_utf8 can mean
+         * either an invalid character set conversion (which we care
+         * about), or an incomplete input string (which we don't).
+         * For now, we ignore EINVAL; the right solution is probably
+         * to not use stringprep_locale_to_utf8, and just call iconv
+         * by hand. */
+        if (errno == EILSEQ || errno == EINVAL)
+            return 0;
 
-	/* Other errors (like ENFILE) are real errors, which we
-	 * want to return to the user. */
-	return_error(e_ioerror);
+        /* Other errors (like ENFILE) are real errors, which we
+         * want to return to the user. */
+        return_error(e_ioerror);
     }
 
     code = string_to_ref(output, op, iimemory, "locale_to_utf8 output");
     free(output);
     if (code < 0)
-	return code;
+        return code;
 
     return 0;
 }

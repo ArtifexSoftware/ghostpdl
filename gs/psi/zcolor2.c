@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,7 +23,6 @@
 #include "igstate.h"
 #include "store.h"
 
-
 /*
  *  -   .useralternate   <bool>
  *
@@ -41,7 +40,6 @@ zusealternate(i_ctx_t * i_ctx_p)
     make_bool(op, pcs->base_space != 0);
     return 0;
 }
-
 
 /* ------ Initialization procedure ------ */
 

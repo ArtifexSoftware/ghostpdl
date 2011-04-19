@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -47,9 +47,9 @@ struct alloc_change_s {
  */
 
 int alloc_save_change(gs_dual_memory_t *dmem, const ref *pcont,
-		      ref_packed *ptr, client_name_t cname);
+                      ref_packed *ptr, client_name_t cname);
 int alloc_save_change_in(gs_ref_memory_t *mem, const ref *pcont,
-			 ref_packed *ptr, client_name_t cname);
+                         ref_packed *ptr, client_name_t cname);
 /* Remove an AC_OFFSET_ALLOCATED element. */
 void alloc_save_remove(gs_ref_memory_t *mem, ref_packed *obj, client_name_t cname);
 /* Allocate a structure for recording an allocation event. */

@@ -37,13 +37,13 @@ typedef struct Rectangle Rectangle;
 typedef struct Point Point;
 
 struct Point {
-	int x;
-	int y;
+        int x;
+        int y;
 };
 
 struct Rectangle {
-	Point min;
-	Point max;
+        Point min;
+        Point max;
 };
 static const Point ZP = { 0, 0 };
 
@@ -65,14 +65,14 @@ static dev_proc_close_device(inferno_close);
 static dev_proc_print_page(inferno_print_page);
 
 typedef struct inferno_device_s {
-	gx_device_common;
-	gx_prn_device_common;
-	int ldepth;
-	int lastldepth;
-	int color, gray;
-	int cmapcall;
-	int nbits;
-	ulong *p9color;	/* index blue most sig, red least sig */
+        gx_device_common;
+        gx_prn_device_common;
+        int ldepth;
+        int lastldepth;
+        int color, gray;
+        int cmapcall;
+        int nbits;
+        ulong *p9color;	/* index blue most sig, red least sig */
 } inferno_device;
 
 /* structure descriptor for the garbage collector */
@@ -83,24 +83,23 @@ gs_private_st_suffix_add1_final(st_inferno_device, inferno_device,
                           gx_device_finalize, st_device_printer, p9color);
 
 static const gx_device_procs inferno_procs =
-	prn_color_params_procs(inferno_open, gdev_prn_output_page, inferno_close,
-		inferno_rgb2cmap, inferno_cmap2rgb,
-		gdev_prn_get_params, gdev_prn_put_params);
-
+        prn_color_params_procs(inferno_open, gdev_prn_output_page, inferno_close,
+                inferno_rgb2cmap, inferno_cmap2rgb,
+                gdev_prn_get_params, gdev_prn_put_params);
 
 inferno_device far_data gs_inferno_device =
 { prn_device_stype_body(inferno_device, inferno_procs, "inferno",
-	&st_inferno_device,
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	X_DPI, Y_DPI,
-	0,0,0,0,	/* margins */
-	3,		/* 3 = RGB, 1 = gray, 4 = CMYK */
-	16,		/* # of bits per pixel -- 16 is easier to handle than 12 */
-	255,		/* # of distinct gray levels.  >=31 to fool gs into asking us*/
-	255,		/* # of distinct color levels.  >= 31 to fool gs */
-	0,		/* dither gray ramp size.  hopefully not used */
-	0,    		/* dither color ramp size.  hopefully not used */
-	inferno_print_page)
+        &st_inferno_device,
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+        X_DPI, Y_DPI,
+        0,0,0,0,	/* margins */
+        3,		/* 3 = RGB, 1 = gray, 4 = CMYK */
+        16,		/* # of bits per pixel -- 16 is easier to handle than 12 */
+        255,		/* # of distinct gray levels.  >=31 to fool gs into asking us*/
+        255,		/* # of distinct color levels.  >= 31 to fool gs */
+        0,		/* dither gray ramp size.  hopefully not used */
+        0,    		/* dither color ramp size.  hopefully not used */
+        inferno_print_page)
 };
 
 /*
@@ -109,80 +108,80 @@ inferno_device far_data gs_inferno_device =
  */
 static gx_color_index
 inferno_rgb2cmap(gx_device *dev, const gx_color_value cv[]) {
-	int shift;
-	inferno_device *bdev = (inferno_device*) dev;
-	int nbits = bdev->nbits;
-	int mask = (1<<nbits)-1;
-	gx_color_value red, green, blue;
+        int shift;
+        inferno_device *bdev = (inferno_device*) dev;
+        int nbits = bdev->nbits;
+        int mask = (1<<nbits)-1;
+        gx_color_value red, green, blue;
 
-	red = cv[0]; green = cv[1]; blue = cv[2];
-	/* make the colors the size we want */
-	if(gx_color_value_bits > nbits) {
-		shift = gx_color_value_bits - nbits;
-		red >>= shift;
-		green >>= shift;
-		blue >>= shift;
-	} else if(gx_color_value_bits < nbits) {
-		shift = nbits - gx_color_value_bits;
-		red <<= shift;
-		green <<= shift;
-		blue <<= shift;
-	}
+        red = cv[0]; green = cv[1]; blue = cv[2];
+        /* make the colors the size we want */
+        if(gx_color_value_bits > nbits) {
+                shift = gx_color_value_bits - nbits;
+                red >>= shift;
+                green >>= shift;
+                blue >>= shift;
+        } else if(gx_color_value_bits < nbits) {
+                shift = nbits - gx_color_value_bits;
+                red <<= shift;
+                green <<= shift;
+                blue <<= shift;
+        }
 
-	/* mask them off to be just nbits */
-	red   &= mask;
-	green &= mask;
-	blue  &= mask;
+        /* mask them off to be just nbits */
+        red   &= mask;
+        green &= mask;
+        blue  &= mask;
 
-	/*
-	 * we keep track of what ldepth bitmap this is by watching
-	 * what colors gs asks for.
-	 *
-	 * one catch: sometimes print_page gets called more than one
-	 * per page (for multiple copies) without cmap calls inbetween.
-	 * if bdev->cmapcall is 0 when print_page gets called, it uses
-	 * the ldepth of the last page.
-	 */
-	if(red == green && green == blue && red != 0 && red != mask) {
-		if(red == 5 || red == 10) {
-			if(bdev->ldepth < 1)
-				bdev->ldepth = 1;
-		} else {
-			if(bdev->ldepth < 2)
-				bdev->ldepth = 2;
-		}
-	} else
-		bdev->ldepth = 3;
+        /*
+         * we keep track of what ldepth bitmap this is by watching
+         * what colors gs asks for.
+         *
+         * one catch: sometimes print_page gets called more than one
+         * per page (for multiple copies) without cmap calls inbetween.
+         * if bdev->cmapcall is 0 when print_page gets called, it uses
+         * the ldepth of the last page.
+         */
+        if(red == green && green == blue && red != 0 && red != mask) {
+                if(red == 5 || red == 10) {
+                        if(bdev->ldepth < 1)
+                                bdev->ldepth = 1;
+                } else {
+                        if(bdev->ldepth < 2)
+                                bdev->ldepth = 2;
+                }
+        } else
+                bdev->ldepth = 3;
 
-	bdev->cmapcall = 1;
-	return ((((blue<<4)|green)<<4)|red);
+        bdev->cmapcall = 1;
+        return ((((blue<<4)|green)<<4)|red);
 }
 
 static int
 inferno_cmap2rgb(gx_device *dev, gx_color_index color,
   gx_color_value rgb[3]) {
-	int shift, i;
-	inferno_device *bdev = (inferno_device*) dev;
-	int nbits = bdev->nbits;
-	int mask = (1<<nbits)-1;
+        int shift, i;
+        inferno_device *bdev = (inferno_device*) dev;
+        int nbits = bdev->nbits;
+        int mask = (1<<nbits)-1;
 
-	if(color < 0 || color > 255)
-		return_error(gs_error_rangecheck);
+        if(color < 0 || color > 255)
+                return_error(gs_error_rangecheck);
 
-	rgb[2] = (color >> (2*nbits)) & mask;
-	rgb[1] = (color >> nbits) & mask;
-	rgb[0] = color & mask;
-	if(gx_color_value_bits > nbits) {
-		shift = gx_color_value_bits - nbits;
-		for(i=0; i<3; i++)
-			rgb[i] <<= shift;
-	} else if(gx_color_value_bits < nbits) {
-		shift = nbits - gx_color_value_bits;
-		for(i=0; i<3; i++)
-			rgb[i] >>= shift;
-	}
+        rgb[2] = (color >> (2*nbits)) & mask;
+        rgb[1] = (color >> nbits) & mask;
+        rgb[0] = color & mask;
+        if(gx_color_value_bits > nbits) {
+                shift = gx_color_value_bits - nbits;
+                for(i=0; i<3; i++)
+                        rgb[i] <<= shift;
+        } else if(gx_color_value_bits < nbits) {
+                shift = nbits - gx_color_value_bits;
+                for(i=0; i<3; i++)
+                        rgb[i] >>= shift;
+        }
 
-	return 0;
+        return 0;
 }
 
 /*
@@ -202,30 +201,29 @@ inferno_cmap2rgb(gx_device *dev, gx_color_index color,
 
 void init_p9color(ulong *p9color)	/* init at run time since p9color[] is so big */
 {
-	int r, g, b, o;
-	ulong* cur = p9color;
-	for (b=0; b<16; b++) {
-	    for (g=0; g<16; g++) {
-		int m0 = (b>g) ? b : g;
-		for (r=0; r<16; r++) {
-		    int V, M, rM, gM, bM, m;
-		    int m1 = (r>m0) ? r : m0;
-		    V=m1&3; M=(m1-V)<<1;
-		    if (m1==0) m1=1;
-		    m = m1 << 3;
-		    rM=r*M; gM=g*M; bM=b*M;
-		    *cur = 0;
-		    for (o=7*m1; o>0; o-=2*m1) {
-			int rr=(rM+o)/m, gg=(gM+o)/m, bb=(bM+o)/m;
-			int ij = (rr<<6) + (V<<4) + ((V-rr+(gg<<2)+bb)&15);
-			*cur = (*cur << 8) + 255-ij;
-		    }
-		    cur++;
-		}
-	    }
-	}
+        int r, g, b, o;
+        ulong* cur = p9color;
+        for (b=0; b<16; b++) {
+            for (g=0; g<16; g++) {
+                int m0 = (b>g) ? b : g;
+                for (r=0; r<16; r++) {
+                    int V, M, rM, gM, bM, m;
+                    int m1 = (r>m0) ? r : m0;
+                    V=m1&3; M=(m1-V)<<1;
+                    if (m1==0) m1=1;
+                    m = m1 << 3;
+                    rM=r*M; gM=g*M; bM=b*M;
+                    *cur = 0;
+                    for (o=7*m1; o>0; o-=2*m1) {
+                        int rr=(rM+o)/m, gg=(gM+o)/m, bb=(bM+o)/m;
+                        int ij = (rr<<6) + (V<<4) + ((V-rr+(gg<<2)+bb)&15);
+                        *cur = (*cur << 8) + 255-ij;
+                    }
+                    cur++;
+                }
+            }
+        }
 }
-
 
 /*
  * inferno_open() is supposed to initialize the device.
@@ -234,17 +232,17 @@ void init_p9color(ulong *p9color)	/* init at run time since p9color[] is so big 
 static int
 inferno_open(gx_device *dev)
 {
-	inferno_device *bdev = (inferno_device*) dev;
-	bdev->color = bdev->gray = 0;
-	bdev->cmapcall = 0;
-	bdev->ldepth = 3;
-	bdev->nbits = 4;	/* 4 bits per color per pixel (12 bpp, then we dither) */
-				/* if you change this, change the entry in gs_inferno_device */
-	bdev->p9color = (ulong *)gs_alloc_bytes(bdev->memory, p9color_size, "plan 9 colour cube");
-	if (bdev->p9color == NULL)
-		return_error(gs_error_VMerror);
-	init_p9color(bdev->p9color);
-	return gdev_prn_open(dev);
+        inferno_device *bdev = (inferno_device*) dev;
+        bdev->color = bdev->gray = 0;
+        bdev->cmapcall = 0;
+        bdev->ldepth = 3;
+        bdev->nbits = 4;	/* 4 bits per color per pixel (12 bpp, then we dither) */
+                                /* if you change this, change the entry in gs_inferno_device */
+        bdev->p9color = (ulong *)gs_alloc_bytes(bdev->memory, p9color_size, "plan 9 colour cube");
+        if (bdev->p9color == NULL)
+                return_error(gs_error_VMerror);
+        init_p9color(bdev->p9color);
+        return gdev_prn_open(dev);
 }
 
 /*
@@ -254,15 +252,15 @@ inferno_open(gx_device *dev)
 static int
 inferno_close(gx_device *dev)
 {
-	inferno_device *bdev = (inferno_device*) dev;
-	int code;
+        inferno_device *bdev = (inferno_device*) dev;
+        int code;
 
-	gs_free_object(dev->memory, bdev->p9color, "plan 9 colour cube");
+        gs_free_object(dev->memory, bdev->p9color, "plan 9 colour cube");
 
-	code = gdev_prn_close(dev);
-	if(code < 0)
-		return_error(code);
-	return 0;
+        code = gdev_prn_close(dev);
+        if(code < 0)
+                return_error(code);
+        return 0;
 }
 
 /*
@@ -273,111 +271,111 @@ inferno_close(gx_device *dev)
 static int
 inferno_print_page(gx_device_printer *pdev, FILE *f)
 {
-	uchar *buf;
-	uchar *p;
-	WImage *w;
-	int bpl, y;
-	int x, xmod;
-	int ldepth;
-	int ppb[] = {8, 4, 2, 1};	/* pixels per byte */
-	int bpp[] = {1, 2, 4, 8};	/* bits per pixel */
-	int gsbpl;
-	ulong u;
-	ushort us;
+        uchar *buf;
+        uchar *p;
+        WImage *w;
+        int bpl, y;
+        int x, xmod;
+        int ldepth;
+        int ppb[] = {8, 4, 2, 1};	/* pixels per byte */
+        int bpp[] = {1, 2, 4, 8};	/* bits per pixel */
+        int gsbpl;
+        ulong u;
+        ushort us;
 
-	inferno_device *bdev = (inferno_device *) pdev;
-	Rectangle r;
+        inferno_device *bdev = (inferno_device *) pdev;
+        Rectangle r;
 
-	gsbpl = gdev_prn_raster(pdev);
-	if(gsbpl > 16384) {	/* == 8192 dots across */
-		errprintf(pdev->memory, "bitmap far too wide for inferno\n");
-		return_error(gs_error_Fatal);
-	}
+        gsbpl = gdev_prn_raster(pdev);
+        if(gsbpl > 16384) {	/* == 8192 dots across */
+                errprintf(pdev->memory, "bitmap far too wide for inferno\n");
+                return_error(gs_error_Fatal);
+        }
 
-	if(bdev->cmapcall) {
-		bdev->lastldepth = bdev->ldepth;
-		bdev->ldepth = 0;
-		bdev->cmapcall = 0;
-	}
-	ldepth = bdev->lastldepth;
+        if(bdev->cmapcall) {
+                bdev->lastldepth = bdev->ldepth;
+                bdev->ldepth = 0;
+                bdev->cmapcall = 0;
+        }
+        ldepth = bdev->lastldepth;
 
-	r.min = ZP;
-	r.max.x = pdev->width;
-	r.max.y = pdev->height;
-	bpl = bytesperline(r, ldepth);
-	w = initwriteimage(f, r, ldepth, bdev->memory);
-	if(w == nil) {
-		errprintf(pdev->memory, "initwriteimage failed\n");
-		return_error(gs_error_Fatal);
-	}
+        r.min = ZP;
+        r.max.x = pdev->width;
+        r.max.y = pdev->height;
+        bpl = bytesperline(r, ldepth);
+        w = initwriteimage(f, r, ldepth, bdev->memory);
+        if(w == nil) {
+                errprintf(pdev->memory, "initwriteimage failed\n");
+                return_error(gs_error_Fatal);
+        }
 
-	buf = gs_alloc_bytes(bdev->memory, gsbpl, "inferno line buffer");
-	if(buf == NULL) {
-		errprintf(pdev->memory, "couldn't allocate line buffer\n");
-		return_error(gs_error_VMerror);
-	}
+        buf = gs_alloc_bytes(bdev->memory, gsbpl, "inferno line buffer");
+        if(buf == NULL) {
+                errprintf(pdev->memory, "couldn't allocate line buffer\n");
+                return_error(gs_error_VMerror);
+        }
 
-	/*
-	 * i wonder if it is faster to put the switch around the for loops
-	 * to save all the ldepth lookups.
-	 */
-	for(y=0; y<pdev->height; y++) {
-		gdev_prn_get_bits(pdev, y, buf, &p);
-		for(x=0; x<pdev->width; x++) {
-			us = (p[2*x]<<8) | p[2*x+1];
-			switch(ldepth) {
-			case 3:
-				if(0){
-					int r, g, b;
-					r = us & 0xf;
-					g = (us>>4)&0xf;
-					b = (us>>8)&0xf;
-					r<<=4;
-					g<<=4;
-					b<<=4;
-					p[x] = rgb2cmap(r,g,b);
-				}
-				if(1){
-					u = bdev->p9color[us];
-					/* the ulong in p9color is a 2x2 matrix.  pull the entry
-					 * u[x%2][y%2], more or less.
-					 */
-					p[x] = u >> (8*((y%2)+2*(x%2)));
-				}
-				break;
-			case 2:
-				us = ~us;
-				if((x%2) == 0)
-					p[x/2] = us & 0xf;
-				else
-					p[x/2] = (p[x/2]<<4)|(us&0xf);
-				break;
-			case 0:
-				us = ~us;
-				if((x%8) == 0)
-					p[x/8] = us & 0x1;
-				else
-					p[x/8] = (p[x/8]<<1)|(us&0x1);
-				break;
-			}
-		}
+        /*
+         * i wonder if it is faster to put the switch around the for loops
+         * to save all the ldepth lookups.
+         */
+        for(y=0; y<pdev->height; y++) {
+                gdev_prn_get_bits(pdev, y, buf, &p);
+                for(x=0; x<pdev->width; x++) {
+                        us = (p[2*x]<<8) | p[2*x+1];
+                        switch(ldepth) {
+                        case 3:
+                                if(0){
+                                        int r, g, b;
+                                        r = us & 0xf;
+                                        g = (us>>4)&0xf;
+                                        b = (us>>8)&0xf;
+                                        r<<=4;
+                                        g<<=4;
+                                        b<<=4;
+                                        p[x] = rgb2cmap(r,g,b);
+                                }
+                                if(1){
+                                        u = bdev->p9color[us];
+                                        /* the ulong in p9color is a 2x2 matrix.  pull the entry
+                                         * u[x%2][y%2], more or less.
+                                         */
+                                        p[x] = u >> (8*((y%2)+2*(x%2)));
+                                }
+                                break;
+                        case 2:
+                                us = ~us;
+                                if((x%2) == 0)
+                                        p[x/2] = us & 0xf;
+                                else
+                                        p[x/2] = (p[x/2]<<4)|(us&0xf);
+                                break;
+                        case 0:
+                                us = ~us;
+                                if((x%8) == 0)
+                                        p[x/8] = us & 0x1;
+                                else
+                                        p[x/8] = (p[x/8]<<1)|(us&0x1);
+                                break;
+                        }
+                }
 
-		/* pad last byte over if we didn't fill it */
-		xmod = pdev->width % ppb[ldepth];
-		if(xmod)
-			p[(x-1)/ppb[ldepth]] <<= ((ppb[ldepth]-xmod)*bpp[ldepth]);
-		if(writeimageblock(w, p, bpl, bdev->memory) == ERROR) {
-			gs_free_object(bdev->memory, buf, "inferno line buffer");
-			/* w leaks here */
-			return_error(gs_error_Fatal);
-		}
-	}
-	gs_free_object(bdev->memory, buf, "inferno line buffer");
-	if(writeimageblock(w, nil, 0, bdev->memory) == ERROR) {
-		return_error(gs_error_Fatal);
-	}
+                /* pad last byte over if we didn't fill it */
+                xmod = pdev->width % ppb[ldepth];
+                if(xmod)
+                        p[(x-1)/ppb[ldepth]] <<= ((ppb[ldepth]-xmod)*bpp[ldepth]);
+                if(writeimageblock(w, p, bpl, bdev->memory) == ERROR) {
+                        gs_free_object(bdev->memory, buf, "inferno line buffer");
+                        /* w leaks here */
+                        return_error(gs_error_Fatal);
+                }
+        }
+        gs_free_object(bdev->memory, buf, "inferno line buffer");
+        if(writeimageblock(w, nil, 0, bdev->memory) == ERROR) {
+                return_error(gs_error_Fatal);
+        }
 
-	return 0;
+        return 0;
 }
 
 /*
@@ -405,130 +403,130 @@ typedef struct Dump	Dump;
 typedef struct Hlist Hlist;
 
 struct Hlist{
-	ulong p;
-	Hlist *next, *prev;
+        ulong p;
+        Hlist *next, *prev;
 };
 
 struct Dump {
-	int ndump;
-	uchar *dumpbuf;
-	uchar buf[1+NDUMP];
+        int ndump;
+        uchar *dumpbuf;
+        uchar buf[1+NDUMP];
 };
 
 struct WImage {
-	FILE *f;
+        FILE *f;
 
-	/* image attributes */
-	Rectangle origr, r;
-	int bpl;
+        /* image attributes */
+        Rectangle origr, r;
+        int bpl;
 
-	/* output buffer */
-	uchar outbuf[NCBLOCK], *outp, *eout, *loutp;
+        /* output buffer */
+        uchar outbuf[NCBLOCK], *outp, *eout, *loutp;
 
-	/* sliding input window */
-	/*
-	 * ibase is the pointer to where the beginning of
-	 * the input "is" in memory.  whenever we "slide" the
-	 * buffer N bytes, what we are actually doing is
-	 * decrementing ibase by N.
-	 * the ulongs in the Hlist structures are just
-	 * pointers relative to ibase.
-	 */
-	uchar *inbuf;	/* inbuf should be at least NMEM+NRUN+NMATCH long */
-	uchar *ibase;
-	int minbuf;	/* size of inbuf (malloc'ed bytes) */
-	int ninbuf;	/* size of inbuf (filled bytes) */
-	ulong line;	/* the beginning of the line we are currently encoding,
-			 * relative to inbuf (NOT relative to ibase) */
+        /* sliding input window */
+        /*
+         * ibase is the pointer to where the beginning of
+         * the input "is" in memory.  whenever we "slide" the
+         * buffer N bytes, what we are actually doing is
+         * decrementing ibase by N.
+         * the ulongs in the Hlist structures are just
+         * pointers relative to ibase.
+         */
+        uchar *inbuf;	/* inbuf should be at least NMEM+NRUN+NMATCH long */
+        uchar *ibase;
+        int minbuf;	/* size of inbuf (malloc'ed bytes) */
+        int ninbuf;	/* size of inbuf (filled bytes) */
+        ulong line;	/* the beginning of the line we are currently encoding,
+                         * relative to inbuf (NOT relative to ibase) */
 
-	/* raw dump buffer */
-	Dump dump;
+        /* raw dump buffer */
+        Dump dump;
 
-	/* hash tables */
-	Hlist hash[NHASH];
-	Hlist chain[NMEM], *cp;
-	int h;
-	int needhash;
+        /* hash tables */
+        Hlist hash[NHASH];
+        Hlist chain[NMEM], *cp;
+        int h;
+        int needhash;
 };
 
 static void
 zerohash(WImage *w)
 {
-	memset(w->hash, 0, sizeof(w->hash));
-	memset(w->chain, 0, sizeof(w->chain));
-	w->cp=w->chain;
-	w->needhash = 1;
+        memset(w->hash, 0, sizeof(w->hash));
+        memset(w->chain, 0, sizeof(w->chain));
+        w->cp=w->chain;
+        w->needhash = 1;
 }
 
 static int
 addbuf(WImage *w, uchar *buf, int nbuf)
 {
-	int n;
-	if(buf == nil || w->outp+nbuf > w->eout) {
-		if(w->loutp==w->outbuf){	/* can't really happen -- we checked line length above */
-			errprintf_nomem("buffer too small for line\n");
-			return ERROR;
-		}
-		n=w->loutp-w->outbuf;
-		fprintf(w->f, "%11d %11d ", w->r.max.y, n);
-		fwrite(w->outbuf, 1, n, w->f);
-		w->r.min.y=w->r.max.y;
-		w->outp=w->outbuf;
-		w->loutp=w->outbuf;
-		zerohash(w);
-		return -1;
-	}
+        int n;
+        if(buf == nil || w->outp+nbuf > w->eout) {
+                if(w->loutp==w->outbuf){	/* can't really happen -- we checked line length above */
+                        errprintf_nomem("buffer too small for line\n");
+                        return ERROR;
+                }
+                n=w->loutp-w->outbuf;
+                fprintf(w->f, "%11d %11d ", w->r.max.y, n);
+                fwrite(w->outbuf, 1, n, w->f);
+                w->r.min.y=w->r.max.y;
+                w->outp=w->outbuf;
+                w->loutp=w->outbuf;
+                zerohash(w);
+                return -1;
+        }
 
-	memmove(w->outp, buf, nbuf);
-	w->outp += nbuf;
-	return nbuf;
+        memmove(w->outp, buf, nbuf);
+        w->outp += nbuf;
+        return nbuf;
 }
 
 /* return 0 on success, -1 if buffer is full */
 static int
 flushdump(WImage *w)
 {
-	int n = w->dump.ndump;
+        int n = w->dump.ndump;
 
-	if(n == 0)
-		return 0;
+        if(n == 0)
+                return 0;
 
-	w->dump.buf[0] = 0x80|(n-1);
-	if((n=addbuf(w, w->dump.buf, n+1)) == ERROR)
-		return ERROR;
-	if(n < 0)
-		return -1;
-	w->dump.ndump = 0;
-	return 0;
+        w->dump.buf[0] = 0x80|(n-1);
+        if((n=addbuf(w, w->dump.buf, n+1)) == ERROR)
+                return ERROR;
+        if(n < 0)
+                return -1;
+        w->dump.ndump = 0;
+        return 0;
 }
 
 static void
 updatehash(WImage *w, uchar *p, uchar *ep)
 {
-	uchar *q;
-	Hlist *cp;
-	Hlist *hash;
-	int h;
+        uchar *q;
+        Hlist *cp;
+        Hlist *hash;
+        int h;
 
-	hash = w->hash;
-	cp = w->cp;
-	h = w->h;
-	for(q=p; q<ep; q++) {
-		if(cp->prev)
-			cp->prev->next = cp->next;
-		cp->next = hash[h].next;
-		cp->prev = &hash[h];
-		cp->prev->next = cp;
-		if(cp->next)
-			cp->next->prev = cp;
-		cp->p = q - w->ibase;
-		if(++cp == w->chain+NMEM)
-			cp = w->chain;
-		if(&q[NMATCH] < &w->inbuf[w->ninbuf])
-			h = hupdate(h, q[NMATCH]);
-	}
-	w->cp = cp;
-	w->h = h;
+        hash = w->hash;
+        cp = w->cp;
+        h = w->h;
+        for(q=p; q<ep; q++) {
+                if(cp->prev)
+                        cp->prev->next = cp->next;
+                cp->next = hash[h].next;
+                cp->prev = &hash[h];
+                cp->prev->next = cp;
+                if(cp->next)
+                        cp->next->prev = cp;
+                cp->p = q - w->ibase;
+                if(++cp == w->chain+NMEM)
+                        cp = w->chain;
+                if(&q[NMATCH] < &w->inbuf[w->ninbuf])
+                        h = hupdate(h, q[NMATCH]);
+        }
+        w->cp = cp;
+        w->h = h;
 }
 
 /*
@@ -542,192 +540,192 @@ updatehash(WImage *w, uchar *p, uchar *ep)
 static int
 gobbleline(WImage *w)
 {
-	int runlen, n, offs;
-	uchar *eline, *es, *best, *p, *s, *t;
-	Hlist *hp;
-	uchar buf[2];
-	int rv;
+        int runlen, n, offs;
+        uchar *eline, *es, *best, *p, *s, *t;
+        Hlist *hp;
+        uchar buf[2];
+        int rv;
 
-	if(w->needhash) {
-		w->h = 0;
-		for(n=0; n!=NMATCH; n++)
-			w->h = hupdate(w->h, w->inbuf[w->line+n]);
-		w->needhash = 0;
-	}
-	w->dump.ndump=0;
-	eline=w->inbuf+w->line+w->bpl;
-	for(p=w->inbuf+w->line;p!=eline;){
-		es = (eline < p+NRUN) ? eline : p+NRUN;
+        if(w->needhash) {
+                w->h = 0;
+                for(n=0; n!=NMATCH; n++)
+                        w->h = hupdate(w->h, w->inbuf[w->line+n]);
+                w->needhash = 0;
+        }
+        w->dump.ndump=0;
+        eline=w->inbuf+w->line+w->bpl;
+        for(p=w->inbuf+w->line;p!=eline;){
+                es = (eline < p+NRUN) ? eline : p+NRUN;
 
-		best=nil;
-		runlen=0;
-		/* hash table lookup */
-		for(hp=w->hash[w->h].next;hp;hp=hp->next){
-			/*
-			 * the next block is an optimization of
-			 * for(s=p, t=w->ibase+hp->p; s<es && *s == *t; s++, t++)
-			 * 	;
-			 */
+                best=nil;
+                runlen=0;
+                /* hash table lookup */
+                for(hp=w->hash[w->h].next;hp;hp=hp->next){
+                        /*
+                         * the next block is an optimization of
+                         * for(s=p, t=w->ibase+hp->p; s<es && *s == *t; s++, t++)
+                         * 	;
+                         */
 
-			{	uchar *ss, *tt;
-				s = p+runlen;
-				t = w->ibase+hp->p+runlen;
-				for(ss=s, tt=t; ss>=p && *ss == *tt; ss--, tt--)
-					;
-				if(ss < p)
-					while(s<es && *s == *t)
-						s++, t++;
-			}
+                        {	uchar *ss, *tt;
+                                s = p+runlen;
+                                t = w->ibase+hp->p+runlen;
+                                for(ss=s, tt=t; ss>=p && *ss == *tt; ss--, tt--)
+                                        ;
+                                if(ss < p)
+                                        while(s<es && *s == *t)
+                                                s++, t++;
+                        }
 
-			n = s-p;
+                        n = s-p;
 
-			if(n > runlen) {
-				runlen = n;
-				best = w->ibase+hp->p;
-				if(p+runlen == es)
-					break;
-			}
-		}
+                        if(n > runlen) {
+                                runlen = n;
+                                best = w->ibase+hp->p;
+                                if(p+runlen == es)
+                                        break;
+                        }
+                }
 
-		/*
-		 * if we didn't find a long enough run, append to
-		 * the raw dump buffer
-		 */
-		if(runlen<NMATCH){
-			if(w->dump.ndump==NDUMP) {
-				if((rv = flushdump(w)) == ERROR)
-					return ERROR;
-				if(rv < 0)
-					return 0;
-			}
-			w->dump.dumpbuf[w->dump.ndump++]=*p;
-			runlen=1;
-		}else{
-		/*
-		 * otherwise, assuming the dump buffer is empty,
-		 * add the compressed rep.
-		 */
-			if((rv = flushdump(w)) == ERROR)
-				return ERROR;
-			if(rv < 0)
-				return 0;
-			offs=p-best-1;
-			buf[0] = ((runlen-NMATCH)<<2)|(offs>>8);
-			buf[1] = offs&0xff;
-			if(addbuf(w, buf, 2) < 0)
-				return 0;
-		}
+                /*
+                 * if we didn't find a long enough run, append to
+                 * the raw dump buffer
+                 */
+                if(runlen<NMATCH){
+                        if(w->dump.ndump==NDUMP) {
+                                if((rv = flushdump(w)) == ERROR)
+                                        return ERROR;
+                                if(rv < 0)
+                                        return 0;
+                        }
+                        w->dump.dumpbuf[w->dump.ndump++]=*p;
+                        runlen=1;
+                }else{
+                /*
+                 * otherwise, assuming the dump buffer is empty,
+                 * add the compressed rep.
+                 */
+                        if((rv = flushdump(w)) == ERROR)
+                                return ERROR;
+                        if(rv < 0)
+                                return 0;
+                        offs=p-best-1;
+                        buf[0] = ((runlen-NMATCH)<<2)|(offs>>8);
+                        buf[1] = offs&0xff;
+                        if(addbuf(w, buf, 2) < 0)
+                                return 0;
+                }
 
-		/*
-		 * add to hash tables what we just encoded
-		 */
-		updatehash(w, p, p+runlen);
-		p += runlen;
-	}
+                /*
+                 * add to hash tables what we just encoded
+                 */
+                updatehash(w, p, p+runlen);
+                p += runlen;
+        }
 
-	if((rv = flushdump(w)) == ERROR)
-		return ERROR;
-	if(rv < 0)
-		return 0;
-	w->line += w->bpl;
-	w->loutp=w->outp;
-	w->r.max.y++;
-	return w->bpl;
+        if((rv = flushdump(w)) == ERROR)
+                return ERROR;
+        if(rv < 0)
+                return 0;
+        w->line += w->bpl;
+        w->loutp=w->outp;
+        w->r.max.y++;
+        return w->bpl;
 }
 
 static uchar*
 shiftwindow(WImage *w, uchar *data, uchar *edata)
 {
-	int n, m;
+        int n, m;
 
-	/* shift window over */
-	if(w->line > NMEM) {
-		n = w->line-NMEM;
-		memmove(w->inbuf, w->inbuf+n, w->ninbuf-n);
-		w->line -= n;
-		w->ibase -= n;
-		w->ninbuf -= n;
-	}
+        /* shift window over */
+        if(w->line > NMEM) {
+                n = w->line-NMEM;
+                memmove(w->inbuf, w->inbuf+n, w->ninbuf-n);
+                w->line -= n;
+                w->ibase -= n;
+                w->ninbuf -= n;
+        }
 
-	/* fill right with data if available */
-	if(w->minbuf > w->ninbuf && edata > data) {
-		m = w->minbuf - w->ninbuf;
-		if(edata-data < m)
-			m = edata-data;
-		memmove(w->inbuf+w->ninbuf, data, m);
-		data += m;
-		w->ninbuf += m;
-	}
+        /* fill right with data if available */
+        if(w->minbuf > w->ninbuf && edata > data) {
+                m = w->minbuf - w->ninbuf;
+                if(edata-data < m)
+                        m = edata-data;
+                memmove(w->inbuf+w->ninbuf, data, m);
+                data += m;
+                w->ninbuf += m;
+        }
 
-	return data;
+        return data;
 }
 
 static WImage*
 initwriteimage(FILE *f, Rectangle r, int ldepth, gs_memory_t *mem)
 {
-	WImage *w;
-	int n, bpl;
+        WImage *w;
+        int n, bpl;
 
-	bpl = bytesperline(r, ldepth);
-	if(r.max.y <= r.min.y || r.max.x <= r.min.x || bpl <= 0) {
-		errprintf(mem, "bad rectangle, ldepth");
-		return nil;
-	}
+        bpl = bytesperline(r, ldepth);
+        if(r.max.y <= r.min.y || r.max.x <= r.min.x || bpl <= 0) {
+                errprintf(mem, "bad rectangle, ldepth");
+                return nil;
+        }
 
-	n = NMEM+NMATCH+NRUN+bpl*2;
-	w = (WImage*)gs_alloc_bytes(mem, n+sizeof(*w), "inferno image");
-	if(w == nil)
-		return nil;
-	w->inbuf = (uchar*) &w[1];
-	w->ibase = w->inbuf;
-	w->line = 0;
-	w->minbuf = n;
-	w->ninbuf = 0;
-	w->origr = r;
-	w->r = r;
-	w->r.max.y = w->r.min.y;
-	w->eout = w->outbuf+sizeof(w->outbuf);
-	w->outp = w->loutp = w->outbuf;
-	w->bpl = bpl;
-	w->f = f;
-	w->dump.dumpbuf = w->dump.buf+1;
-	w->dump.ndump = 0;
-	zerohash(w);
+        n = NMEM+NMATCH+NRUN+bpl*2;
+        w = (WImage*)gs_alloc_bytes(mem, n+sizeof(*w), "inferno image");
+        if(w == nil)
+                return nil;
+        w->inbuf = (uchar*) &w[1];
+        w->ibase = w->inbuf;
+        w->line = 0;
+        w->minbuf = n;
+        w->ninbuf = 0;
+        w->origr = r;
+        w->r = r;
+        w->r.max.y = w->r.min.y;
+        w->eout = w->outbuf+sizeof(w->outbuf);
+        w->outp = w->loutp = w->outbuf;
+        w->bpl = bpl;
+        w->f = f;
+        w->dump.dumpbuf = w->dump.buf+1;
+        w->dump.ndump = 0;
+        zerohash(w);
 
-	fprintf(f, "compressed\n%11d %11d %11d %11d %11d ",
-		ldepth, r.min.x, r.min.y, r.max.x, r.max.y);
-	return w;
+        fprintf(f, "compressed\n%11d %11d %11d %11d %11d ",
+                ldepth, r.min.x, r.min.y, r.max.x, r.max.y);
+        return w;
 }
 
 static int
 writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem)
 {
-	uchar *edata;
+        uchar *edata;
 
-	if(data == nil) {	/* end of data, flush everything */
-		while(w->line < w->ninbuf)
-			if(gobbleline(w) == ERROR)
-				return ERROR;
-		addbuf(w, nil, 0);
-		if(w->r.min.y != w->origr.max.y) {
-			errprintf(mem, "not enough data supplied to writeimage\n");
-		}
-		gs_free_object(mem, w, "inferno image");
-		return 0;
-	}
+        if(data == nil) {	/* end of data, flush everything */
+                while(w->line < w->ninbuf)
+                        if(gobbleline(w) == ERROR)
+                                return ERROR;
+                addbuf(w, nil, 0);
+                if(w->r.min.y != w->origr.max.y) {
+                        errprintf(mem, "not enough data supplied to writeimage\n");
+                }
+                gs_free_object(mem, w, "inferno image");
+                return 0;
+        }
 
-	edata = data+ndata;
-	data = shiftwindow(w, data, edata);
-	while(w->ninbuf >= w->line+w->bpl+NMATCH) {
-		if(gobbleline(w) == ERROR)
-			return ERROR;
-		data = shiftwindow(w, data, edata);
-	}
-	if(data != edata) {
-		fprintf(w->f, "data != edata.  uh oh\n");
-		return ERROR; /* can't happen */
-	}
-	return 0;
+        edata = data+ndata;
+        data = shiftwindow(w, data, edata);
+        while(w->ninbuf >= w->line+w->bpl+NMATCH) {
+                if(gobbleline(w) == ERROR)
+                        return ERROR;
+                data = shiftwindow(w, data, edata);
+        }
+        if(data != edata) {
+                fprintf(w->f, "data != edata.  uh oh\n");
+                return ERROR; /* can't happen */
+        }
+        return 0;
 }
 
 /*
@@ -736,48 +734,48 @@ writeimageblock(WImage *w, uchar *data, int ndata, gs_memory_t *mem)
 static int
 bytesperline(Rectangle r, int ld)
 {
-	ulong ws, l, t;
-	int bits = 8;
+        ulong ws, l, t;
+        int bits = 8;
 
-	ws = bits>>ld;	/* pixels per unit */
-	if(r.min.x >= 0){
-		l = (r.max.x+ws-1)/ws;
-		l -= r.min.x/ws;
-	}else{			/* make positive before divide */
-		t = (-r.min.x)+ws-1;
-		t = (t/ws)*ws;
-		l = (t+r.max.x+ws-1)/ws;
-	}
-	return l;
+        ws = bits>>ld;	/* pixels per unit */
+        if(r.min.x >= 0){
+                l = (r.max.x+ws-1)/ws;
+                l -= r.min.x/ws;
+        }else{			/* make positive before divide */
+                t = (-r.min.x)+ws-1;
+                t = (t/ws)*ws;
+                l = (t+r.max.x+ws-1)/ws;
+        }
+        return l;
 }
 
 static int
 rgb2cmap(int cr, int cg, int cb)
 {
-	int r, g, b, v, cv;
+        int r, g, b, v, cv;
 
-	if(cr < 0)
-		cr = 0;
-	else if(cr > 255)
-		cr = 255;
-	if(cg < 0)
-		cg = 0;
-	else if(cg > 255)
-		cg = 255;
-	if(cb < 0)
-		cb = 0;
-	else if(cb > 255)
-		cb = 255;
-	r = cr>>6;
-	g = cg>>6;
-	b = cb>>6;
-	cv = cr;
-	if(cg > cv)
-		cv = cg;
-	if(cb > cv)
-		cv = cb;
-	v = (cv>>4)&3;
-	return 255-((((r<<2)+v)<<4)+(((g<<2)+b+v-r)&15));
+        if(cr < 0)
+                cr = 0;
+        else if(cr > 255)
+                cr = 255;
+        if(cg < 0)
+                cg = 0;
+        else if(cg > 255)
+                cg = 255;
+        if(cb < 0)
+                cb = 0;
+        else if(cb > 255)
+                cb = 255;
+        r = cr>>6;
+        g = cg>>6;
+        b = cb>>6;
+        cv = cr;
+        if(cg > cv)
+                cv = cg;
+        if(cb > cv)
+                cv = cb;
+        v = (cv>>4)&3;
+        return 255-((((r<<2)+v)<<4)+(((g<<2)+b+v-r)&15));
 }
 
 /*
@@ -786,30 +784,29 @@ rgb2cmap(int cr, int cg, int cb)
 static long
 cmap2rgb(int c)
 {
-	int j, num, den, r, g, b, v, rgb;
+        int j, num, den, r, g, b, v, rgb;
 
-	c = 255-c;
-	r = c>>6;
-	v = (c>>4)&3;
-	j = (c-v+r)&15;
-	g = j>>2;
-	b = j&3;
-	den=r;
-	if(g>den)
-		den=g;
-	if(b>den)
-		den=b;
-	if(den==0) {
-		v *= 17;
-		rgb = (v<<16)|(v<<8)|v;
-	}
-	else{
-		num=17*(4*den+v);
-		rgb = ((r*num/den)<<16)|((g*num/den)<<8)|(b*num/den);
-	}
-	return rgb;
+        c = 255-c;
+        r = c>>6;
+        v = (c>>4)&3;
+        j = (c-v+r)&15;
+        g = j>>2;
+        b = j&3;
+        den=r;
+        if(g>den)
+                den=g;
+        if(b>den)
+                den=b;
+        if(den==0) {
+                v *= 17;
+                rgb = (v<<16)|(v<<8)|v;
+        }
+        else{
+                num=17*(4*den+v);
+                rgb = ((r*num/den)<<16)|((g*num/den)<<8)|(b*num/den);
+        }
+        return rgb;
 }
  *
  *
  */
-

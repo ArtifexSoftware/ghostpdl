@@ -50,13 +50,13 @@ lprn_procs(escpage_open, gdev_prn_output_page, escpage_close);
 
 gx_device_lprn far_data gs_lp2000_device =
 lprn_device(gx_device_lprn, lp2000_prn_procs, "lp2000",
-	    DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
-	    lp2000_print_page_copies, escpage_image_out);
+            DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
+            lp2000_print_page_copies, escpage_image_out);
 
 gx_device_lprn far_data gs_escpage_device =
 lprn_duplex_device(gx_device_lprn, escpage_prn_procs, "escpage",
-		   DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
-		   escpage_print_page_copies, escpage_image_out);
+                   DPI, DPI, 0.0, 0.0, 0.0, 0.0, 1,
+                   escpage_print_page_copies, escpage_image_out);
 
 #define ppdev ((gx_device_printer *)pdev)
 
@@ -71,9 +71,9 @@ escpage_open(gx_device * pdev)
 
     /* Resolution Check */
     if (xdpi != ydpi)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (xdpi < 60 || xdpi > 600)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
 
     return gdev_prn_open(pdev);
 }
@@ -86,9 +86,9 @@ lp2000_open(gx_device * pdev)
 
     /* Resolution Check */
     if (xdpi != ydpi)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (xdpi < 60 || xdpi > 300)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
 
     return gdev_prn_open(pdev);
 }
@@ -98,7 +98,7 @@ escpage_close(gx_device * pdev)
 {
     gdev_prn_open_printer(pdev, 1);
     if (ppdev->Duplex && (pdev->PageCount & 1)) {
-	fprintf(ppdev->file, "%c0dpsE", GS);
+        fprintf(ppdev->file, "%c0dpsE", GS);
     }
     fputs(epson_remote_start, ppdev->file);
     fputs(epson_remote_start, ppdev->file);
@@ -111,21 +111,21 @@ escpage_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
 
     if (pdev->PageCount == 0) {
-	double xDpi = pdev->x_pixels_per_inch;
+        double xDpi = pdev->x_pixels_per_inch;
 
-	/* Goto REMOTE MODE */
-	fputs(epson_remote_start, fp);
-	fprintf(fp, "@EJL SELECT LANGUAGE=ESC/PAGE\r\n");
+        /* Goto REMOTE MODE */
+        fputs(epson_remote_start, fp);
+        fprintf(fp, "@EJL SELECT LANGUAGE=ESC/PAGE\r\n");
 
-	/* RIT (Resolution Improvement Technology) Setting */
-	if (lprn->RITOff)
-	    fprintf(fp, "@EJL SET RI=OFF\r\n");
-	else
-	    fprintf(fp, "@EJL SET RI=ON\r\n");
+        /* RIT (Resolution Improvement Technology) Setting */
+        if (lprn->RITOff)
+            fprintf(fp, "@EJL SET RI=OFF\r\n");
+        else
+            fprintf(fp, "@EJL SET RI=ON\r\n");
 
-	/* Resolution Setting */
-	fprintf(fp, "@EJL SET RS=%s\r\n", xDpi > 300 ? "FN" : "QK");
-	fprintf(fp, "@EJL ENTER LANGUAGE=ESC/PAGE\r\n");
+        /* Resolution Setting */
+        fprintf(fp, "@EJL SET RS=%s\r\n", xDpi > 300 ? "FN" : "QK");
+        fprintf(fp, "@EJL ENTER LANGUAGE=ESC/PAGE\r\n");
     }
     return lp2000_print_page_copies(pdev, fp, num_coipes);
 }
@@ -140,26 +140,26 @@ lp2000_print_page_copies(gx_device_printer * pdev, FILE * fp, int num_coipes)
 
     /* printer initialize */
     if (pdev->PageCount == 0)
-	escpage_printer_initialize(pdev, fp, num_coipes);
+        escpage_printer_initialize(pdev, fp, num_coipes);
 
     if (!(lprn->CompBuf = gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), bpl * 3 / 2 + 1, maxY, "lp2000_print_page_copies(CompBuf)")))
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     if (lprn->NegativePrint) {
-	fprintf(fp, "%c1dmG", GS);
-	fprintf(fp, "%c0;0;%d;%d;0rG", GS, pdev->width, pdev->height);
-	fprintf(fp, "%c2owE", GS);
+        fprintf(fp, "%c1dmG", GS);
+        fprintf(fp, "%c0;0;%d;%d;0rG", GS, pdev->width, pdev->height);
+        fprintf(fp, "%c2owE", GS);
     }
     code = lprn_print_image(pdev, fp);
     if (code < 0)
-	return code;
+        return code;
 
     gs_free(gs_lib_ctx_get_non_gc_memory_t(), lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "lp2000_print_page_copies(CompBuf)");
 
     if (pdev->Duplex)
-	fprintf(fp, "%c0dpsE", GS);
+        fprintf(fp, "%c0dpsE", GS);
     else
-	fprintf(fp, "\014");	/* eject page */
+        fprintf(fp, "\014");	/* eject page */
     return code;
 }
 
@@ -175,13 +175,13 @@ escpage_image_out(gx_device_printer * pdev, FILE * fp, int x, int y, int width, 
     Len = lips_mode3format_encode(lprn->TmpBuf, lprn->CompBuf, width / 8 * height);
 
     fprintf(fp, "%c%d;%d;%d;0bi{I", GS, Len,
-	    width, height);
+            width, height);
     fwrite(lprn->CompBuf, 1, Len, fp);
 
     if (lprn->ShowBubble) {
-	fprintf(fp, "%c0dmG", GS);
-	fprintf(fp, "%c%d;%d;%d;%d;0rG", GS,
-		x, y, x + width, y + height);
+        fprintf(fp, "%c0dmG", GS);
+        fprintf(fp, "%c%d;%d;%d;%d;0rG", GS,
+                x, y, x + width, y + height);
     }
 }
 
@@ -212,14 +212,14 @@ escpage_printer_initialize(gx_device_printer * pdev, FILE * fp, int copies)
     fwrite(can_inits, sizeof(can_inits), 1, fp);
     /* Duplex Setting */
     if (pdev->Duplex_set > 0) {
-	if (pdev->Duplex) {
-	    fprintf(fp, "%c1sdE", GS);
-	    if (lprn->Tumble == 0)
-		fprintf(fp, "%c0bdE", GS);
-	    else
-		fprintf(fp, "%c1bdE", GS);
-	} else
-	    fprintf(fp, "%c0sdE", GS);
+        if (pdev->Duplex) {
+            fprintf(fp, "%c1sdE", GS);
+            if (lprn->Tumble == 0)
+                fprintf(fp, "%c0bdE", GS);
+            else
+                fprintf(fp, "%c1bdE", GS);
+        } else
+            fprintf(fp, "%c0sdE", GS);
     }
     /* Set the Size Unit  */
     fprintf(fp, "%c0;%4.2fmuE", GS, 72.0 / xDpi);
@@ -275,26 +275,26 @@ escpage_paper_set(gx_device_printer * pdev, FILE * fp)
     height = pdev->MediaSize[1];
 
     if (width < height) {
-	bLandscape = 0;
-	w = width;
-	h = height;
-	wp = width / 72.0 * pdev->x_pixels_per_inch;
-	hp = height / 72.0 * pdev->y_pixels_per_inch;
+        bLandscape = 0;
+        w = width;
+        h = height;
+        wp = width / 72.0 * pdev->x_pixels_per_inch;
+        hp = height / 72.0 * pdev->y_pixels_per_inch;
     } else {
-	bLandscape = 1;
-	w = height;
-	h = width;
-	wp = height / 72.0 * pdev->y_pixels_per_inch;
-	hp = width / 72.0 * pdev->x_pixels_per_inch;
+        bLandscape = 1;
+        w = height;
+        h = width;
+        wp = height / 72.0 * pdev->y_pixels_per_inch;
+        hp = width / 72.0 * pdev->x_pixels_per_inch;
     }
 
     for (pt = epagPaperTable; pt->escpage > 0; pt++)
-	if (pt->width == w && pt->height == h)
-	    break;
+        if (pt->width == w && pt->height == h)
+            break;
 
     fprintf(fp, "%c%d", GS, pt->escpage);
     if (pt->escpage < 0)
-	fprintf(fp, ";%d;%d", wp, hp);
+        fprintf(fp, ";%d;%d", wp, hp);
     fprintf(fp, "psE");
 
     fprintf(fp, "%c%dpoE", GS, bLandscape);

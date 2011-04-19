@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@ psw_print_lines(FILE *f, const char *const lines[])
 {
     int i;
     for (i = 0; lines[i] != 0; ++i) {
-	if (fprintf(f, "%s\n", lines[i]) < 0)
+        if (fprintf(f, "%s\n", lines[i]) < 0)
             return_error(gs_error_ioerror);
     }
     return 0;
@@ -42,17 +42,17 @@ psw_print_lines(FILE *f, const char *const lines[])
 /* Write the ProcSet name. */
 static void
 psw_put_procset_name(stream *s, const gx_device *dev,
-		     const gx_device_pswrite_common_t *pdpc)
+                     const gx_device_pswrite_common_t *pdpc)
 {
     pprints1(s, "GS_%s", dev->dname);
     pprintd3(s, "_%d_%d_%d",
-	    (int)pdpc->LanguageLevel,
-	    (int)(pdpc->LanguageLevel * 10 + 0.5) % 10,
-	    pdpc->ProcSet_version);
+            (int)pdpc->LanguageLevel,
+            (int)(pdpc->LanguageLevel * 10 + 0.5) % 10,
+            pdpc->ProcSet_version);
 }
 static void
 psw_print_procset_name(FILE *f, const gx_device *dev,
-		       const gx_device_pswrite_common_t *pdpc)
+                       const gx_device_pswrite_common_t *pdpc)
 {
     byte buf[100];		/* arbitrary */
     stream s;
@@ -68,10 +68,10 @@ static void
 psw_print_bbox(FILE *f, const gs_rect *pbbox)
 {
     fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
-	    (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
-	    (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
+            (int)floor(pbbox->p.x), (int)floor(pbbox->p.y),
+            (int)ceil(pbbox->q.x), (int)ceil(pbbox->q.y));
     fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
-	    pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
+            pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
 }
 
 /* ---------------- File level ---------------- */
@@ -91,8 +91,8 @@ static const char *const psw_begin_prolog[] = {
     "%%EndComments",
     "%%BeginProlog",
     "% This copyright applies to everything between here and the %%EndProlog:",
-				/* copyright */
-				/* begin ProcSet */
+                                /* copyright */
+                                /* begin ProcSet */
     0
 };
 
@@ -103,7 +103,7 @@ static const char *const psw_begin_prolog[] = {
  * it only if it is necessary.
  */
 static const char *const psw_ps_procset[] = {
-	/* <w> <h> <sizename> setpagesize - */
+        /* <w> <h> <sizename> setpagesize - */
    "/PageSize 2 array def"
    "/setpagesize"              /* x y /a4 -> -          */
      "{ PageSize aload pop "   /* x y /a4 x0 y0         */
@@ -149,7 +149,7 @@ static const char *const psw_end_prolog[] = {
  */
 static bool
 is_seekable(FILE *f)
-{ 
+{
     struct stat buf;
 
     if(fstat(fileno(f), &buf))
@@ -163,39 +163,39 @@ is_seekable(FILE *f)
  */
 int
 psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
-		      gx_device_pswrite_common_t *pdpc, bool ascii)
+                      gx_device_pswrite_common_t *pdpc, bool ascii)
 {
     psw_print_lines(f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
     if (pbbox) {
-	psw_print_bbox(f, pbbox);
-	pdpc->bbox_position = 0;
+        psw_print_bbox(f, pbbox);
+        pdpc->bbox_position = 0;
     } else if (!is_seekable(f)) {	/* File is not seekable. */
-	pdpc->bbox_position = -1;
-	fputs("%%BoundingBox: (atend)\n", f);
-	fputs("%%HiResBoundingBox: (atend)\n", f);
+        pdpc->bbox_position = -1;
+        fputs("%%BoundingBox: (atend)\n", f);
+        fputs("%%HiResBoundingBox: (atend)\n", f);
     } else {		/* File is seekable, leave room to rewrite bbox. */
-	pdpc->bbox_position = ftell(f);
-	fputs("%...............................................................\n", f);
-	fputs("%...............................................................\n", f);
+        pdpc->bbox_position = ftell(f);
+        fputs("%...............................................................\n", f);
+        fputs("%...............................................................\n", f);
     }
     fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
-	    dev->dname);
+            dev->dname);
     {
-	time_t t;
-	struct tm tms;
+        time_t t;
+        struct tm tms;
 
-	time(&t);
-	tms = *localtime(&t);
-	fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
-		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
-		tms.tm_hour, tms.tm_min, tms.tm_sec);
+        time(&t);
+        tms = *localtime(&t);
+        fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
+                tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
+                tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
     if (ascii)
-	fputs("%%DocumentData: Clean7Bit\n", f);
+        fputs("%%DocumentData: Clean7Bit\n", f);
     if (pdpc->LanguageLevel >= 2.0)
-	fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
+        fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
     else if (pdpc->LanguageLevel == 1.5)
-	fputs("%%Extensions: CMYK\n", f);
+        fputs("%%Extensions: CMYK\n", f);
     psw_print_lines(f, psw_begin_prolog);
     fprintf(f, "%% %s\n", gs_copyright);
     fputs("%%BeginResource: procset ", f);
@@ -226,7 +226,7 @@ psw_end_file_header(FILE *f)
  */
 int
 psw_end_file(FILE *f, const gx_device *dev,
-	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
+             const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
              int /* should be long */ page_count)
 {
     if (f == NULL)
@@ -235,36 +235,36 @@ psw_end_file(FILE *f, const gx_device *dev,
     if (ferror(f))
         return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
-	if (pdpc->bbox_position >= 0) {
-	    long save_pos = ftell(f);
+        if (pdpc->bbox_position >= 0) {
+            long save_pos = ftell(f);
 
-	    fseek(f, pdpc->bbox_position, SEEK_SET);
-	    /* Theoretically the bbox device should fill in the bounding box
-	     * but this does nothing because we don't write on the page.
-	     * So if bbox = 0 0 0 0, replace with the device page size.
-	     */
-	    if(pbbox->p.x == 0 && pbbox->p.y == 0 
-		&& pbbox->q.x == 0 && pbbox->q.y == 0) {
-		gs_rect bbox;
-		int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
-		int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
+            fseek(f, pdpc->bbox_position, SEEK_SET);
+            /* Theoretically the bbox device should fill in the bounding box
+             * but this does nothing because we don't write on the page.
+             * So if bbox = 0 0 0 0, replace with the device page size.
+             */
+            if(pbbox->p.x == 0 && pbbox->p.y == 0
+                && pbbox->q.x == 0 && pbbox->q.y == 0) {
+                gs_rect bbox;
+                int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
+                int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 
-		bbox.p.x = 0;
-		bbox.p.y = 0;
-		bbox.q.x = width;
-		bbox.q.y = height;
-		psw_print_bbox(f, &bbox);
-	    } else 
-		psw_print_bbox(f, pbbox);
+                bbox.p.x = 0;
+                bbox.p.y = 0;
+                bbox.q.x = width;
+                bbox.q.y = height;
+                psw_print_bbox(f, &bbox);
+            } else
+                psw_print_bbox(f, pbbox);
             fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
             fseek(f, save_pos, SEEK_SET);
-	} else
-	    psw_print_bbox(f, pbbox);
+        } else
+            psw_print_bbox(f, pbbox);
     }
     if (!pdpc->ProduceEPS)
-	fputs("%%EOF\n", f);
+        fputs("%%EOF\n", f);
     if (ferror(f))
         return_error(gs_error_ioerror);
     return 0;
@@ -286,7 +286,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
 
     pprintld2(s, "%%%%Page: %ld %ld\n", page, page_ord);
     if (!pdpc->ProduceEPS)
-	pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
+        pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
 
     stream_puts(s, "%%BeginPageSetup\n");
     /*
@@ -301,39 +301,39 @@ psw_write_page_header(stream *s, const gx_device *dev,
     psw_put_procset_name(s, dev, pdpc);
     stream_puts(s, " begin\n");
     if (!pdpc->ProduceEPS) {
-	typedef struct ps_ {
-	    const char *size_name;
-	    int width, height;
-	} page_size;
-	static const page_size sizes[] = {
-	    {"/11x17", 792, 1224},
-	    {"/a3", 842, 1191},
-	    {"/a4", 595, 842},
-	    {"/b5", 501, 709},
-	    {"/ledger", 1224, 792},
-	    {"/legal", 612, 1008},
-	    {"/letter", 612, 792},
-	    {"null", 0, 0}
-	};
-	const page_size *p = sizes;
+        typedef struct ps_ {
+            const char *size_name;
+            int width, height;
+        } page_size;
+        static const page_size sizes[] = {
+            {"/11x17", 792, 1224},
+            {"/a3", 842, 1191},
+            {"/a4", 595, 842},
+            {"/b5", 501, 709},
+            {"/ledger", 1224, 792},
+            {"/legal", 612, 1008},
+            {"/letter", 612, 792},
+            {"null", 0, 0}
+        };
+        const page_size *p = sizes;
 
-	while (p->size_name[0] == '/') {
-	    if((p->width - 5) <= width && (p->width + 5) >= width) {
-		if((p->height - 5) <= height && (p->height + 5) >= height) {
-		    break;
-		} else 
-		    ++p;
-	    }
-	    else
-		++p;
-	}
-	pprintd2(s, "%d %d ", width, height);
-	pprints1(s, "%s setpagesize\n", p->size_name);
+        while (p->size_name[0] == '/') {
+            if((p->width - 5) <= width && (p->width + 5) >= width) {
+                if((p->height - 5) <= height && (p->height + 5) >= height) {
+                    break;
+                } else
+                    ++p;
+            }
+            else
+                ++p;
+        }
+        pprintd2(s, "%d %d ", width, height);
+        pprints1(s, "%s setpagesize\n", p->size_name);
     }
     pprintd1(s, "/pagesave save store %d dict begin\n", dictsize);
     if (do_scale)
-	pprintg2(s, "%g %g scale\n",
-		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
+        pprintg2(s, "%g %g scale\n",
+                 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
     stream_puts(s, "%%EndPageSetup\ngsave mark\n");
     if (s->end_status == ERRC)
         return_error(gs_error_ioerror);
@@ -349,7 +349,7 @@ psw_write_page_trailer(FILE *f, int num_copies, int flush)
 {
     fprintf(f, "cleartomark end end pagesave restore\n");
     if (num_copies != 1)
-	fprintf(f, "userdict /#copies %d put\n", num_copies);
+        fprintf(f, "userdict /#copies %d put\n", num_copies);
     fprintf(f, " %s\n%%%%PageTrailer\n", (flush ? "showpage" : "copypage"));
     fflush(f);
     if (ferror(f))

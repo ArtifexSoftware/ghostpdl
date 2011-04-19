@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -104,9 +104,9 @@ struct pdf_font_descriptor_s {
     font_type FontType;		/* (copied from base_font) */
     bool embed;
     struct cid_ {		/* (CIDFonts only) */
-	cos_dict_t *Style;
-	char Lang[3];		/* 2 chars + \0 */
-	cos_dict_t *FD;		/* value = COS_VALUE_RESOURCE */
+        cos_dict_t *Style;
+        char Lang[3];		/* 2 chars + \0 */
+        cos_dict_t *FD;		/* value = COS_VALUE_RESOURCE */
     } cid;
 };
 /*
@@ -155,7 +155,7 @@ pdf_font_descriptor_common_id(const pdf_font_descriptor_common_t *pfdc)
 /* Write the common part of a FontDescriptor, aside from the final >>. */
 static int
 write_FontDescriptor_common(gx_device_pdf *pdev,
-			    const pdf_font_descriptor_common_t *pfd)
+                            const pdf_font_descriptor_common_t *pfd)
 {
     stream *s;
     int code;
@@ -173,38 +173,38 @@ write_FontDescriptor_common(gx_device_pdf *pdev,
     if (code >= 0) {
 #define DESC_INT(str, memb)\
  {str, gs_param_type_int, offset_of(pdf_font_descriptor_common_t, values.memb)}
-	static const gs_param_item_t required_items[] = {
-	    DESC_INT("Ascent", Ascent),
-	    DESC_INT("CapHeight", CapHeight),
-	    DESC_INT("Descent", Descent),
-	    DESC_INT("ItalicAngle", ItalicAngle),
-	    DESC_INT("StemV", StemV),
-	    gs_param_item_end
-	};
-	static const gs_param_item_t optional_items[] = {
-	    DESC_INT("AvgWidth", AvgWidth),
-	    DESC_INT("Leading", Leading),
-	    DESC_INT("MaxWidth", MaxWidth),
-	    DESC_INT("MissingWidth", MissingWidth),
-	    DESC_INT("StemH", StemH),
-	    DESC_INT("XHeight", XHeight),
-	    gs_param_item_end
-	};
+        static const gs_param_item_t required_items[] = {
+            DESC_INT("Ascent", Ascent),
+            DESC_INT("CapHeight", CapHeight),
+            DESC_INT("Descent", Descent),
+            DESC_INT("ItalicAngle", ItalicAngle),
+            DESC_INT("StemV", StemV),
+            gs_param_item_end
+        };
+        static const gs_param_item_t optional_items[] = {
+            DESC_INT("AvgWidth", AvgWidth),
+            DESC_INT("Leading", Leading),
+            DESC_INT("MaxWidth", MaxWidth),
+            DESC_INT("MissingWidth", MissingWidth),
+            DESC_INT("StemH", StemH),
+            DESC_INT("XHeight", XHeight),
+            gs_param_item_end
+        };
 #undef DESC_INT
-	int Flags = pfd->values.Flags;
-	pdf_font_descriptor_t defaults;
+        int Flags = pfd->values.Flags;
+        pdf_font_descriptor_t defaults;
 
-	code = param_write_int(plist, "Flags", &Flags);
-	if (code < 0) 
-	    return code;
-	code = gs_param_write_items(plist, pfd, NULL, required_items);
-	if (code < 0) 
-	    return code;
-	memset(&defaults, 0, sizeof(defaults));
-	code = gs_param_write_items(plist, pfd, &defaults, optional_items);
-	if (code < 0) 
-	    return code;
-	s_release_param_printer(&rlist);
+        code = param_write_int(plist, "Flags", &Flags);
+        if (code < 0)
+            return code;
+        code = gs_param_write_items(plist, pfd, NULL, required_items);
+        if (code < 0)
+            return code;
+        memset(&defaults, 0, sizeof(defaults));
+        code = gs_param_write_items(plist, pfd, &defaults, optional_items);
+        if (code < 0)
+            return code;
+        s_release_param_printer(&rlist);
     }
     return 0;
 }
@@ -217,25 +217,25 @@ write_FontDescriptor_common(gx_device_pdf *pdev,
  */
 int
 pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
-			  gs_font_base *font, bool embed)
+                          gs_font_base *font, bool embed)
 {
     pdf_font_descriptor_t *pfd;
     pdf_base_font_t *pbfont;
-    int code = pdf_base_font_alloc(pdev, &pbfont, font, 
-		(font->orig_FontMatrix.xx == 0 && font->orig_FontMatrix.xy == 0 
-		    ? &font->FontMatrix : &font->orig_FontMatrix), false);
+    int code = pdf_base_font_alloc(pdev, &pbfont, font,
+                (font->orig_FontMatrix.xx == 0 && font->orig_FontMatrix.xy == 0
+                    ? &font->FontMatrix : &font->orig_FontMatrix), false);
 
     if (code < 0)
-	return code;
+        return code;
     code = pdf_alloc_resource(pdev, resourceFontDescriptor,
-			      font->id, (pdf_resource_t **)&pfd, -1L);
+                              font->id, (pdf_resource_t **)&pfd, -1L);
     if (code < 0) {
-	gs_free_object(pdev->pdf_memory, pbfont,
-		       "pdf_font_descriptor_alloc(base_font)");
-	return code;
+        gs_free_object(pdev->pdf_memory, pbfont,
+                       "pdf_font_descriptor_alloc(base_font)");
+        return code;
     }
     memset(&pfd->common.values, 0,
-	   sizeof(*pfd) - offset_of(pdf_font_descriptor_t, common.values));
+           sizeof(*pfd) - offset_of(pdf_font_descriptor_t, common.values));
     pfd->base_font = pbfont;
     pfd->FontType = font->FontType;
     pfd->embed = embed;
@@ -320,7 +320,7 @@ gs_string *pdf_font_descriptor_base_name(const pdf_font_descriptor_t *pfd)
  */
 int
 pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
-		    gs_font_base *font)
+                    gs_font_base *font)
 {
     return pdf_base_font_copy_glyph(pfd->base_font, glyph, font);
 }
@@ -334,7 +334,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     int index;
     int wmode = bfont->WMode;
     int members = (GLYPH_INFO_WIDTH0 << wmode) |
-	GLYPH_INFO_BBOX | GLYPH_INFO_NUM_PIECES;
+        GLYPH_INFO_BBOX | GLYPH_INFO_NUM_PIECES;
     pdf_font_descriptor_values_t desc;
     gs_matrix smat;
     gs_matrix *pmat = NULL;
@@ -345,7 +345,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     int cap_height = 0;
     gs_rect bbox_colon, bbox_period, bbox_I;
     bool is_cid = (bfont->FontType == ft_CID_encrypted ||
-		   bfont->FontType == ft_CID_TrueType);
+                   bfont->FontType == ft_CID_TrueType);
     bool have_colon = false, have_period = false, have_I = false;
     int code;
 
@@ -354,18 +354,18 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     memset(&bbox_I, 0, sizeof(bbox_I)); /* quiet gcc warnings. */
     memset(&desc, 0, sizeof(desc));
     if (is_cid && bfont->FontBBox.p.x != bfont->FontBBox.q.x &&
-		  bfont->FontBBox.p.y != bfont->FontBBox.q.y) {
-	int scale = (bfont->FontType == ft_TrueType || bfont->FontType == ft_CID_TrueType ? 1000 : 1);
+                  bfont->FontBBox.p.y != bfont->FontBBox.q.y) {
+        int scale = (bfont->FontType == ft_TrueType || bfont->FontType == ft_CID_TrueType ? 1000 : 1);
 
-	desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
-	desc.FontBBox.p.y = (int)(bfont->FontBBox.p.y * scale);
-	desc.FontBBox.q.x = (int)(bfont->FontBBox.q.x * scale);
-	desc.FontBBox.q.y = (int)(bfont->FontBBox.q.y * scale);
-	desc.Ascent = desc.FontBBox.q.y;
-	members &= ~GLYPH_INFO_BBOX;
+        desc.FontBBox.p.x = (int)(bfont->FontBBox.p.x * scale);
+        desc.FontBBox.p.y = (int)(bfont->FontBBox.p.y * scale);
+        desc.FontBBox.q.x = (int)(bfont->FontBBox.q.x * scale);
+        desc.FontBBox.q.y = (int)(bfont->FontBBox.q.y * scale);
+        desc.Ascent = desc.FontBBox.q.y;
+        members &= ~GLYPH_INFO_BBOX;
     } else {
-	desc.FontBBox.p.x = desc.FontBBox.p.y = max_int;
-	desc.FontBBox.q.x = desc.FontBBox.q.y = min_int;
+        desc.FontBBox.p.x = desc.FontBBox.p.y = max_int;
+        desc.FontBBox.q.x = desc.FontBBox.q.y = min_int;
     }
     /*
      * Embedded TrueType fonts use a 1000-unit character space, but the
@@ -374,23 +374,23 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     switch (bfont->FontType) {
     case ft_TrueType:
     case ft_CID_TrueType:
-	gs_make_scaling(1000.0, 1000.0, &smat);
-	pmat = &smat;
-	/* Type 3 fonts may use a FontMatrix in PDF, so we don't 
-	 * need to deal with non-standard matrices
-	 */
+        gs_make_scaling(1000.0, 1000.0, &smat);
+        pmat = &smat;
+        /* Type 3 fonts may use a FontMatrix in PDF, so we don't
+         * need to deal with non-standard matrices
+         */
     case ft_user_defined:
-	break;
-	/* Other font types may use a non-standard (not 1000x1000) design grid
-	 * The FontMatrix is used to map to the unit square. However PDF files
-	 * don't allow FontMatrix entries, all fonts are nominally 1000x1000.
-	 * If we have a font with a non-standard matrix we must account for that
-	 * here by scaling the font outline.
-	 */
-    default:	
-	gs_matrix_scale(&bfont->FontMatrix, 1000.0, 1000.0, &smat);
-	pmat = &smat;
-	break;
+        break;
+        /* Other font types may use a non-standard (not 1000x1000) design grid
+         * The FontMatrix is used to map to the unit square. However PDF files
+         * don't allow FontMatrix entries, all fonts are nominally 1000x1000.
+         * If we have a font with a non-standard matrix we must account for that
+         * here by scaling the font outline.
+         */
+    default:
+        gs_matrix_scale(&bfont->FontMatrix, 1000.0, 1000.0, &smat);
+        pmat = &smat;
+        break;
     }
 
     /*
@@ -403,177 +403,177 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
      */
     notdef = GS_NO_GLYPH;
     for (index = 0;
-	 (bfont->procs.enumerate_glyph((gs_font *)bfont, &index, 
-		(is_cid ? GLYPH_SPACE_INDEX : GLYPH_SPACE_NAME), &glyph)) >= 0 &&
-	     index != 0;
-	 ) {
-	gs_glyph_info_t info;
-	gs_const_string gname;
-	gs_glyph glyph_known_enc;
-	gs_char position=0;
+         (bfont->procs.enumerate_glyph((gs_font *)bfont, &index,
+                (is_cid ? GLYPH_SPACE_INDEX : GLYPH_SPACE_NAME), &glyph)) >= 0 &&
+             index != 0;
+         ) {
+        gs_glyph_info_t info;
+        gs_const_string gname;
+        gs_glyph glyph_known_enc;
+        gs_char position=0;
 
-	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
-	if (code == gs_error_VMerror)
-	    return code;
-	if (code < 0) {
-	    /*
-	     * Since this function may be indirtectly called from gx_device_finalize,
-	     * we are unable to propagate error code to the interpreter.
-	     * Therefore we skip it here hoping that few errors can be
-	     * recovered by the integration through entire glyph set.
-	     */
-	    continue;
-	}
-	if (members & GLYPH_INFO_BBOX) {
-	    /* rect_merge(desc.FontBBox, info.bbox); Expanding due to type cast :*/
-	    if (info.bbox.p.x < desc.FontBBox.p.x) desc.FontBBox.p.x = (int)info.bbox.p.x;
-	    if (info.bbox.q.x > desc.FontBBox.q.x) desc.FontBBox.q.x = (int)info.bbox.q.x;
-	    if (info.bbox.p.y < desc.FontBBox.p.y) desc.FontBBox.p.y = (int)info.bbox.p.y;
-	    if (info.bbox.q.y > desc.FontBBox.q.y) desc.FontBBox.q.y = (int)info.bbox.q.y;
-	    if (!info.num_pieces)
-		desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
-	}
-	if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {
-	    notdef = glyph;
-	    desc.MissingWidth = (int)info.width[wmode].x;
-	}
-	if (info.width[wmode].y != 0)
-	    fixed_width = min_int;
-	else if (fixed_width == 0)
-	    fixed_width = (int)info.width[wmode].x;
-	else if (info.width[wmode].x != fixed_width)
-	    fixed_width = min_int;
-	if (desc.Flags & FONT_IS_SYMBOLIC)
-	    continue;		/* skip Roman-only computation */
-	if (is_cid)
-	    continue;
-	code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gname);
-	if (code < 0) {
-	    /* If we fail to get the glyph name, best assume this is a symbolic font */
-	    desc.Flags |= FONT_IS_SYMBOLIC;
-	    continue;
-	}
-	/* See if the glyph name is in any of the known encodings */
+        code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
+        if (code == gs_error_VMerror)
+            return code;
+        if (code < 0) {
+            /*
+             * Since this function may be indirtectly called from gx_device_finalize,
+             * we are unable to propagate error code to the interpreter.
+             * Therefore we skip it here hoping that few errors can be
+             * recovered by the integration through entire glyph set.
+             */
+            continue;
+        }
+        if (members & GLYPH_INFO_BBOX) {
+            /* rect_merge(desc.FontBBox, info.bbox); Expanding due to type cast :*/
+            if (info.bbox.p.x < desc.FontBBox.p.x) desc.FontBBox.p.x = (int)info.bbox.p.x;
+            if (info.bbox.q.x > desc.FontBBox.q.x) desc.FontBBox.q.x = (int)info.bbox.q.x;
+            if (info.bbox.p.y < desc.FontBBox.p.y) desc.FontBBox.p.y = (int)info.bbox.p.y;
+            if (info.bbox.q.y > desc.FontBBox.q.y) desc.FontBBox.q.y = (int)info.bbox.q.y;
+            if (!info.num_pieces)
+                desc.Ascent = max(desc.Ascent, (int)info.bbox.q.y);
+        }
+        if (notdef == GS_NO_GLYPH && gs_font_glyph_is_notdef(bfont, glyph)) {
+            notdef = glyph;
+            desc.MissingWidth = (int)info.width[wmode].x;
+        }
+        if (info.width[wmode].y != 0)
+            fixed_width = min_int;
+        else if (fixed_width == 0)
+            fixed_width = (int)info.width[wmode].x;
+        else if (info.width[wmode].x != fixed_width)
+            fixed_width = min_int;
+        if (desc.Flags & FONT_IS_SYMBOLIC)
+            continue;		/* skip Roman-only computation */
+        if (is_cid)
+            continue;
+        code = bfont->procs.glyph_name((gs_font *)bfont, glyph, &gname);
+        if (code < 0) {
+            /* If we fail to get the glyph name, best assume this is a symbolic font */
+            desc.Flags |= FONT_IS_SYMBOLIC;
+            continue;
+        }
+        /* See if the glyph name is in any of the known encodings */
         glyph_known_enc = gs_c_name_glyph(gname.data, gname.size);
-	if (glyph_known_enc == gs_no_glyph) {
-	    desc.Flags |= FONT_IS_SYMBOLIC;
-	    continue;
-	}
-	/* Finally check if the encoded glyph is in Standard Encoding */
-	/* gs_c_decode always fails to find .notdef, its always present so 
-	 * don't worry about it
-	 */
-	if(strncmp(".notdef", (const char *)gname.data, gname.size)) {
-	    position = gs_c_decode(glyph_known_enc, 0);
-	    if (position == GS_NO_CHAR) {
-		desc.Flags |= FONT_IS_SYMBOLIC;
-		continue;
-	    }
-	}
+        if (glyph_known_enc == gs_no_glyph) {
+            desc.Flags |= FONT_IS_SYMBOLIC;
+            continue;
+        }
+        /* Finally check if the encoded glyph is in Standard Encoding */
+        /* gs_c_decode always fails to find .notdef, its always present so
+         * don't worry about it
+         */
+        if(strncmp(".notdef", (const char *)gname.data, gname.size)) {
+            position = gs_c_decode(glyph_known_enc, 0);
+            if (position == GS_NO_CHAR) {
+                desc.Flags |= FONT_IS_SYMBOLIC;
+                continue;
+            }
+        }
         switch (gname.size) {
-	case 5:
-	    if (!memcmp(gname.data, "colon", 5))
-		bbox_colon = info.bbox, have_colon = true;
-	    continue;
-	case 6:
-	    if (!memcmp(gname.data, "period", 6))
-		bbox_period = info.bbox, have_period = true;
-	    continue;
-	case 1:
-	    break;
-	default:
-	    continue;
-	}
+        case 5:
+            if (!memcmp(gname.data, "colon", 5))
+                bbox_colon = info.bbox, have_colon = true;
+            continue;
+        case 6:
+            if (!memcmp(gname.data, "period", 6))
+                bbox_period = info.bbox, have_period = true;
+            continue;
+        case 1:
+            break;
+        default:
+            continue;
+        }
 
-	if (gname.data[0] >= 'A' && gname.data[0] <= 'Z') {
-	    cap_height = max(cap_height, (int)info.bbox.q.y);
-	    if (gname.data[0] == 'I')
-		bbox_I = info.bbox, have_I = true;
-	} else if (gname.data[0] >= 'a' && gname.data[0] <= 'z') {
-	    int y0 = (int)(info.bbox.p.y), y1 = (int)(info.bbox.q.y);
+        if (gname.data[0] >= 'A' && gname.data[0] <= 'Z') {
+            cap_height = max(cap_height, (int)info.bbox.q.y);
+            if (gname.data[0] == 'I')
+                bbox_I = info.bbox, have_I = true;
+        } else if (gname.data[0] >= 'a' && gname.data[0] <= 'z') {
+            int y0 = (int)(info.bbox.p.y), y1 = (int)(info.bbox.q.y);
 
-	    small_present = true;
-	    switch (gname.data[0]) {
-	    case 'b': case 'd': case 'f': case 'h':
-	    case 'k': case 'l': case 't': /* ascender */
-		small_height = max(small_height, y1);
-	    case 'i':		/* anomalous ascent */
-		break;
-	    case 'j':		/* descender with anomalous ascent */
-		small_descent = min(small_descent, y0);
-		break;
-	    case 'g': case 'p': case 'q': case 'y': /* descender */
-		small_descent = min(small_descent, y0);
-	    default:		/* no ascender or descender */
-		x_height = max(x_height, y1);		
-	    }
-	}
+            small_present = true;
+            switch (gname.data[0]) {
+            case 'b': case 'd': case 'f': case 'h':
+            case 'k': case 'l': case 't': /* ascender */
+                small_height = max(small_height, y1);
+            case 'i':		/* anomalous ascent */
+                break;
+            case 'j':		/* descender with anomalous ascent */
+                small_descent = min(small_descent, y0);
+                break;
+            case 'g': case 'p': case 'q': case 'y': /* descender */
+                small_descent = min(small_descent, y0);
+            default:		/* no ascender or descender */
+                x_height = max(x_height, y1);
+            }
+        }
     }
     if (!(desc.Flags & FONT_IS_SYMBOLIC)) {
-	desc.Flags |= FONT_IS_ADOBE_ROMAN; /* required if not symbolic */
-	desc.XHeight = (int)x_height;
-	if (!small_present && (!pdev->PDFA || bfont->FontType != ft_TrueType))
-	    desc.Flags |= FONT_IS_ALL_CAPS;
-	desc.CapHeight = cap_height;
-	/*
-	 * Look at various glyphs to determine ItalicAngle, StemV,
-	 * SERIF, SCRIPT, and ITALIC.
-	 */
-	if (have_colon && have_period) {
-	    /* Calculate the dominant angle. */
-	    int angle = 
-		(int)(atan2((bbox_colon.q.y - bbox_colon.p.y) -
-			      (bbox_period.q.y - bbox_period.p.y),
-			    (bbox_colon.q.x - bbox_colon.p.x) -
-			      (bbox_period.q.x - bbox_period.p.x)) *
-		      radians_to_degrees) - 90;
+        desc.Flags |= FONT_IS_ADOBE_ROMAN; /* required if not symbolic */
+        desc.XHeight = (int)x_height;
+        if (!small_present && (!pdev->PDFA || bfont->FontType != ft_TrueType))
+            desc.Flags |= FONT_IS_ALL_CAPS;
+        desc.CapHeight = cap_height;
+        /*
+         * Look at various glyphs to determine ItalicAngle, StemV,
+         * SERIF, SCRIPT, and ITALIC.
+         */
+        if (have_colon && have_period) {
+            /* Calculate the dominant angle. */
+            int angle =
+                (int)(atan2((bbox_colon.q.y - bbox_colon.p.y) -
+                              (bbox_period.q.y - bbox_period.p.y),
+                            (bbox_colon.q.x - bbox_colon.p.x) -
+                              (bbox_period.q.x - bbox_period.p.x)) *
+                      radians_to_degrees) - 90;
 
-	    /* Normalize to [-90..90]. */
-	    while (angle > 90)
-		angle -= 180;
-	    while (angle < -90)
-		angle += 180;
-	    if (angle < -30)
-		angle = -30;
-	    else if (angle > 30)
-		angle = 30;
-	    /*
-	     * For script or embellished fonts, we can get an angle that is
-	     * slightly off from zero even for non-italic fonts.
-	     * Compensate for this now.
-	     */
-	    if (angle <= 2 && angle >= -2)
-		angle = 0;
-	    desc.ItalicAngle = angle;
-	}
-	if (desc.ItalicAngle)
-	    desc.Flags |= FONT_IS_ITALIC;
-	if (have_I) {
-	    double wdot = bbox_period.q.x - bbox_period.p.x;
-	    double wcolon = bbox_I.q.x - bbox_I.p.x;
-	    double wI = bbox_period.q.x - bbox_period.p.x;
+            /* Normalize to [-90..90]. */
+            while (angle > 90)
+                angle -= 180;
+            while (angle < -90)
+                angle += 180;
+            if (angle < -30)
+                angle = -30;
+            else if (angle > 30)
+                angle = 30;
+            /*
+             * For script or embellished fonts, we can get an angle that is
+             * slightly off from zero even for non-italic fonts.
+             * Compensate for this now.
+             */
+            if (angle <= 2 && angle >= -2)
+                angle = 0;
+            desc.ItalicAngle = angle;
+        }
+        if (desc.ItalicAngle)
+            desc.Flags |= FONT_IS_ITALIC;
+        if (have_I) {
+            double wdot = bbox_period.q.x - bbox_period.p.x;
+            double wcolon = bbox_I.q.x - bbox_I.p.x;
+            double wI = bbox_period.q.x - bbox_period.p.x;
 
-	    desc.StemV = (int)wdot;
-	    if (wI > wcolon * 2.5 || wI > (bbox_period.q.y - bbox_period.p.y) * 0.25)
-		desc.Flags |= FONT_IS_SERIF;
-	}
+            desc.StemV = (int)wdot;
+            if (wI > wcolon * 2.5 || wI > (bbox_period.q.y - bbox_period.p.y) * 0.25)
+                desc.Flags |= FONT_IS_SERIF;
+        }
     }
     if (desc.Ascent == 0)
-	desc.Ascent = desc.FontBBox.q.y;
+        desc.Ascent = desc.FontBBox.q.y;
     desc.Descent = desc.FontBBox.p.y;
     if (!(desc.Flags & (FONT_IS_SYMBOLIC | FONT_IS_ALL_CAPS)) &&
-	(small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9) &&
-	(!pdev->PDFA || bfont->FontType != ft_TrueType)
-	)
-	desc.Flags |= FONT_IS_SMALL_CAPS;
+        (small_descent > desc.Descent / 3 || desc.XHeight > small_height * 0.9) &&
+        (!pdev->PDFA || bfont->FontType != ft_TrueType)
+        )
+        desc.Flags |= FONT_IS_SMALL_CAPS;
     if (fixed_width > 0 && (!pdev->PDFA || bfont->FontType != ft_TrueType)) {
-	desc.Flags |= FONT_IS_FIXED_WIDTH;
-	desc.AvgWidth = desc.MaxWidth = desc.MissingWidth = fixed_width;
+        desc.Flags |= FONT_IS_FIXED_WIDTH;
+        desc.AvgWidth = desc.MaxWidth = desc.MissingWidth = fixed_width;
     }
     if (desc.CapHeight == 0)
-	desc.CapHeight = desc.Ascent;
+        desc.CapHeight = desc.Ascent;
     if (desc.StemV == 0)
-	desc.StemV = (int)(desc.FontBBox.q.x * 0.15);
+        desc.StemV = (int)(desc.FontBBox.q.x * 0.15);
     pfd->common.values = desc;
     return 0;
 }
@@ -589,15 +589,15 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     int code = 0;
     cos_dict_t *pcd = 0;
     if (pfd->common.object->id == -1)
-	return 0;
+        return 0;
     if (!pfd->common.object->written &&
-	(code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
-	(!pfd->embed ||
-	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
-				pfd->FontType,
-				&pfd->common.values.FontBBox, 
-				pfd->common.rid, &pcd)) >= 0)
-	) {
+        (code = pdf_compute_font_descriptor(pdev, pfd)) >= 0 &&
+        (!pfd->embed ||
+         (code = pdf_write_embedded_font(pdev, pfd->base_font,
+                                pfd->FontType,
+                                &pfd->common.values.FontBBox,
+                                pfd->common.rid, &pcd)) >= 0)
+        ) {
         pdf_set_FontFile_object(pfd->base_font, pcd);
     }
     return code;
@@ -614,76 +614,76 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     stream *s;
 
     if (pfd->common.object->written)
-	return 0;
+        return 0;
     if (pfd->common.object->id == -1)
-	return 0;
+        return 0;
 
     /* If this is a CIDFont subset, write the CIDSet now. */
     switch (ftype) {
     case ft_CID_encrypted:
     case ft_CID_TrueType:
-	if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)) {
-	    code = pdf_write_CIDSet(pdev, pfd->base_font, &cidset_id);
-	    if (code < 0)
-		return code;
-	}
+        if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)) {
+            code = pdf_write_CIDSet(pdev, pfd->base_font, &cidset_id);
+            if (code < 0)
+                return code;
+        }
     default:
-	break;
+        break;
     }
 
     {
-	/*
-	 * Hack: make all embedded subset TrueType fonts "symbolic" to
-	 * work around undocumented assumptions in Acrobat Reader.
-	 */
-	pdf_font_descriptor_common_t fd;
+        /*
+         * Hack: make all embedded subset TrueType fonts "symbolic" to
+         * work around undocumented assumptions in Acrobat Reader.
+         */
+        pdf_font_descriptor_common_t fd;
 
-	fd = pfd->common;
-	if (pfd->embed && pfd->FontType == ft_TrueType /*&& !pdev->PDFA*/ &&
-	    pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
-	    )
-	    fd.values.Flags =
-		(fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
-	code = write_FontDescriptor_common(pdev, &fd);
+        fd = pfd->common;
+        if (pfd->embed && pfd->FontType == ft_TrueType /*&& !pdev->PDFA*/ &&
+            pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
+            )
+            fd.values.Flags =
+                (fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
+        code = write_FontDescriptor_common(pdev, &fd);
     }
     if (code < 0)
-	return code;
+        return code;
     s = pdev->strm;
     if (cidset_id != 0)
-	pprintld1(s, "/CIDSet %ld 0 R\n", cidset_id);
+        pprintld1(s, "/CIDSet %ld 0 R\n", cidset_id);
     else if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid) &&
-	     (ftype == ft_encrypted || ftype == ft_encrypted2)
-	     ) {
-	stream_puts(s, "/CharSet");
-	code = pdf_write_CharSet(pdev, pfd->base_font);
-	if (code < 0)
-	    return code;
+             (ftype == ft_encrypted || ftype == ft_encrypted2)
+             ) {
+        stream_puts(s, "/CharSet");
+        code = pdf_write_CharSet(pdev, pfd->base_font);
+        if (code < 0)
+            return code;
     }
     if (pfd->embed) {
-	code = pdf_write_FontFile_entry(pdev, pfd->base_font);
-	if (code < 0)
-	    return code;
+        code = pdf_write_FontFile_entry(pdev, pfd->base_font);
+        if (code < 0)
+            return code;
     }
     if (pfd->cid.Style) {
-	stream_puts(s, "/Style");
-	COS_WRITE(pfd->cid.Style, pdev);
+        stream_puts(s, "/Style");
+        COS_WRITE(pfd->cid.Style, pdev);
     }
     if (pfd->cid.Lang[0]) {
-	pprints1(s, "/Lang(%s)", pfd->cid.Lang);
+        pprints1(s, "/Lang(%s)", pfd->cid.Lang);
     }
     if (pfd->cid.FD) {
-	stream_puts(s, "/FD");
-	COS_WRITE(pfd->cid.FD, pdev);
+        stream_puts(s, "/FD");
+        COS_WRITE(pfd->cid.FD, pdev);
     }
     stream_puts(s, ">>\n");
     pdf_end_separate(pdev, resourceFontDescriptor);
     pfd->common.object->written = true;
     {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
-	if (pco != NULL) {
-	    code = COS_WRITE_OBJECT(pco, pdev, resourceNone);
-	    if (code < 0)
-		return code;
-	}
+        if (pco != NULL) {
+            code = COS_WRITE_OBJECT(pco, pdev, resourceNone);
+            if (code < 0)
+                return code;
+        }
     }
     return 0;
 }
@@ -705,18 +705,18 @@ pdf_release_FontDescriptor_components(gx_device_pdf *pdev, pdf_resource_t *pres)
 /*
  * Mark a FontDescriptor used in a text.
  */
-int 
+int
 pdf_mark_font_descriptor_used(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     if (pfd != NULL && pfd->common.object->id == -1)
-	pdf_reserve_object_id(pdev, (pdf_resource_t *)&pfd->common, 0);
+        pdf_reserve_object_id(pdev, (pdf_resource_t *)&pfd->common, 0);
     return 0;
 }
 
 /*
  * Convert True Type font descriptor into CID font descriptor for PDF/A.
  */
-int 
+int
 pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     pdf_font_descriptor_t *pfd = pdfont->FontDescriptor;
@@ -732,23 +732,23 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
 
     pfd->FontType = ft_CID_TrueType;
     pdfont->u.simple.Encoding = NULL; /* Drop due to overlapping against a garbager problem. */
-    pbfont->CIDSet = gs_alloc_bytes(pdev->pdf_memory, length_CIDSet, 
-			"pdf_convert_truetype_font_descriptor");
+    pbfont->CIDSet = gs_alloc_bytes(pdev->pdf_memory, length_CIDSet,
+                        "pdf_convert_truetype_font_descriptor");
     if (pbfont->CIDSet == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     memset(pbfont->CIDSet, 0, length_CIDSet);
-    pdfont->u.cidfont.CIDToGIDMap = (ushort *)gs_alloc_bytes(pdev->pdf_memory, 
-			length_CIDToGIDMap, "pdf_convert_truetype_font_descriptor");
+    pdfont->u.cidfont.CIDToGIDMap = (ushort *)gs_alloc_bytes(pdev->pdf_memory,
+                        length_CIDToGIDMap, "pdf_convert_truetype_font_descriptor");
     if (pdfont->u.cidfont.CIDToGIDMap == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     memset(pdfont->u.cidfont.CIDToGIDMap, 0, length_CIDToGIDMap);
     for (ch = FirstChar; ch <= LastChar; ch++) {
-	if (Encoding[ch].glyph != GS_NO_GLYPH) {
-	    gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
+        if (Encoding[ch].glyph != GS_NO_GLYPH) {
+            gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
 
-	    pbfont->CIDSet[ch / 8] |= 0x80 >> (ch % 8);
-	    pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
-	}
+            pbfont->CIDSet[ch / 8] |= 0x80 >> (ch % 8);
+            pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
+        }
     }
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.used2 = NULL;
@@ -759,15 +759,15 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
 int mark_font_descriptor_symbolic(const pdf_font_resource_t *pdfont)
 {
     pdf_font_descriptor_values_t *desc;
-    
+
     if(!pdfont || !pdfont->FontDescriptor)
-	return 0;
+        return 0;
 
     desc = &pdfont->FontDescriptor->common.values;
 
     if (!(desc->Flags & FONT_IS_SYMBOLIC)) {
-	desc->Flags |= FONT_IS_SYMBOLIC; 
-	desc->Flags &= ~FONT_IS_ADOBE_ROMAN; 
+        desc->Flags |= FONT_IS_SYMBOLIC;
+        desc->Flags &= ~FONT_IS_ADOBE_ROMAN;
     }
     return 1;
 }

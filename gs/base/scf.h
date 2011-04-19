@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -62,7 +62,7 @@ extern const cf_runs
 extern const cfe_run cf_uncompressed[6];
 extern const cfe_run cf_uncompressed_exit[10];	/* indexed by 2 x length of */
 
-			/* white run + (1 if next run black, 0 if white) */
+                        /* white run + (1 if next run black, 0 if white) */
 /* 1-D encoding. */
 extern const cfe_run cf1_run_uncompressed;
 
@@ -172,10 +172,10 @@ extern const cfd_node cf_uncompressed_decode[];
 BEGIN\
     rlen = cf_byte_run_length[count & 7][data ^ 0xff];\
     if ( rlen >= 8 ) {		/* run extends past byte boundary */\
-	if ( white_byte == 0 ) {\
+        if ( white_byte == 0 ) {\
             register short s;\
-	    if      ( (data = *p++) ) { rlen -= 8; }\
-	    else if ( (data = *p++) ) { }\
+            if      ( (data = *p++) ) { rlen -= 8; }\
+            else if ( (data = *p++) ) { }\
             else if ((((int)p) & 1) && (rlen += 8, (data = *p++))) { }\
             else if ((((int)p) & 2) && (rlen += 16, p += 2, (s = *(short *)(void *)(p-2)))) {\
                 if ((data = BYTE0OF2(s))) {rlen -= 8; p--;} else data = BYTE1OF2(s); }\
@@ -186,24 +186,24 @@ BEGIN\
                 else if ( (data = BYTE1OF4(i)) ) { rlen += 16; p -= 2; }\
                 else if ( (data = BYTE2OF4(i)) ) { rlen += 24; p -= 1; }\
                 else    {  data = BYTE3OF4(i);     rlen += 32;         }\
-	    }\
-	} else {\
+            }\
+        } else {\
             register short s;\
-	    if      ( (data = (byte)~*p++) ) { rlen -= 8; }\
-	    else if ( (data = (byte)~*p++) ) { }\
+            if      ( (data = (byte)~*p++) ) { rlen -= 8; }\
+            else if ( (data = (byte)~*p++) ) { }\
             else if ((((int)p) & 1) && (rlen += 8, data = (byte)~*p++)) { }\
             else if ((((int)p) & 2) && (rlen += 16, p += 2, s = (short)~*(short *)(void *)(p-2))) {\
                 if ((data = BYTE0OF2(s))) {rlen -= 8; p--;} else data = BYTE1OF2(s); }\
-	    else {\
+            else {\
                 register int i;\
                 while ((p += 4, (i = ~*(int *)(void *)(p-4))) == 0) rlen += 32; \
                 if      ( (data = BYTE0OF4(i)) ) { rlen += 8;  p -= 3; }\
                 else if ( (data = BYTE1OF4(i)) ) { rlen += 16; p -= 2; }\
                 else if ( (data = BYTE2OF4(i)) ) { rlen += 24; p -= 1; }\
                 else    {  data = BYTE3OF4(i);     rlen += 32;         }\
-	    }\
-	}\
-	rlen += cf_byte_run_length_0[data ^ 0xff];\
+            }\
+        }\
+        rlen += cf_byte_run_length_0[data ^ 0xff];\
     }\
     count -= rlen;\
 END
@@ -214,30 +214,30 @@ END
 BEGIN\
     rlen = cf_byte_run_length[count & 7][data ^ 0xff];\
     if ( rlen >= 8 ) {		/* run extends past byte boundary */\
-	if ( white_byte == 0 ) {\
-	    if ( data = *p++ ) { rlen -= 8; }\
-	    else if ( data = *p++ ) { }\
-	    else {\
+        if ( white_byte == 0 ) {\
+            if ( data = *p++ ) { rlen -= 8; }\
+            else if ( data = *p++ ) { }\
+            else {\
                 do {\
                     if      ( data = *p++ ) { rlen += 8;  break; }\
                     else if ( data = *p++ ) { rlen += 16; break; }\
                     else if ( data = *p++ ) { rlen += 24; break; }\
                     else { rlen += 32; if (data = *p++) break; }\
                 } while (1);\
-	    }\
-	} else {\
-	    if ( data = (byte)~*p++ ) { rlen -= 8; }\
-	    else if ( data = (byte)~*p++ ) { }\
-	    else {\
+            }\
+        } else {\
+            if ( data = (byte)~*p++ ) { rlen -= 8; }\
+            else if ( data = (byte)~*p++ ) { }\
+            else {\
                 do {\
                     if      ( data = (byte)~*p++ ) { rlen += 8;  break; }\
                     else if ( data = (byte)~*p++ ) { rlen += 16; break; }\
                     else if ( data = (byte)~*p++ ) { rlen += 24; break; }\
                     else { rlen += 32; if (data = (byte)~*p++) break; }\
                 } while (1);\
-	    }\
-	}\
-	rlen += cf_byte_run_length_0[data ^ 0xff];\
+            }\
+        }\
+        rlen += cf_byte_run_length_0[data ^ 0xff];\
     }\
     count -= rlen;\
 END
@@ -249,40 +249,40 @@ END
 BEGIN\
     rlen = cf_byte_run_length[count & 7][data ^ 0xff];\
     if ( rlen >= 8 ) {		/* run extends past byte boundary */\
-	if ( white_byte == 0 ) {\
-	    if ( p[0] ) { data = p[0]; p += 1; rlen -= 8; }\
-	    else if ( p[1] ) { data = p[1]; p += 2; }\
-	    else {\
-		while ( !(p[2] | p[3] | p[4] | p[5]) )\
-		    p += 4, rlen += 32;\
-		if ( p[2] ) {\
-		    data = p[2]; p += 3; rlen += 8;\
-		} else if ( p[3] ) {\
-		    data = p[3]; p += 4; rlen += 16;\
-		} else if ( p[4] ) {\
-		    data = p[4]; p += 5; rlen += 24;\
-		} else /* p[5] */ {\
-		    data = p[5]; p += 6; rlen += 32;\
-		}\
-	    }\
-	} else {\
-	    if ( p[0] != 0xff ) { data = (byte)~p[0]; p += 1; rlen -= 8; }\
-	    else if ( p[1] != 0xff ) { data = (byte)~p[1]; p += 2; }\
-	    else {\
-		while ( (p[2] & p[3] & p[4] & p[5]) == 0xff )\
-		    p += 4, rlen += 32;\
-		if ( p[2] != 0xff ) {\
-		    data = (byte)~p[2]; p += 3; rlen += 8;\
-		} else if ( p[3] != 0xff ) {\
-		    data = (byte)~p[3]; p += 4; rlen += 16;\
-		} else if ( p[4] != 0xff ) {\
-		    data = (byte)~p[4]; p += 5; rlen += 24;\
-		} else /* p[5] != 0xff */ {\
-		    data = (byte)~p[5]; p += 6; rlen += 32;\
-		}\
-	    }\
-	}\
-	rlen += cf_byte_run_length_0[data ^ 0xff];\
+        if ( white_byte == 0 ) {\
+            if ( p[0] ) { data = p[0]; p += 1; rlen -= 8; }\
+            else if ( p[1] ) { data = p[1]; p += 2; }\
+            else {\
+                while ( !(p[2] | p[3] | p[4] | p[5]) )\
+                    p += 4, rlen += 32;\
+                if ( p[2] ) {\
+                    data = p[2]; p += 3; rlen += 8;\
+                } else if ( p[3] ) {\
+                    data = p[3]; p += 4; rlen += 16;\
+                } else if ( p[4] ) {\
+                    data = p[4]; p += 5; rlen += 24;\
+                } else /* p[5] */ {\
+                    data = p[5]; p += 6; rlen += 32;\
+                }\
+            }\
+        } else {\
+            if ( p[0] != 0xff ) { data = (byte)~p[0]; p += 1; rlen -= 8; }\
+            else if ( p[1] != 0xff ) { data = (byte)~p[1]; p += 2; }\
+            else {\
+                while ( (p[2] & p[3] & p[4] & p[5]) == 0xff )\
+                    p += 4, rlen += 32;\
+                if ( p[2] != 0xff ) {\
+                    data = (byte)~p[2]; p += 3; rlen += 8;\
+                } else if ( p[3] != 0xff ) {\
+                    data = (byte)~p[3]; p += 4; rlen += 16;\
+                } else if ( p[4] != 0xff ) {\
+                    data = (byte)~p[4]; p += 5; rlen += 24;\
+                } else /* p[5] != 0xff */ {\
+                    data = (byte)~p[5]; p += 6; rlen += 32;\
+                }\
+            }\
+        }\
+        rlen += cf_byte_run_length_0[data ^ 0xff];\
     }\
     count -= rlen;\
 END
@@ -295,21 +295,21 @@ END
 BEGIN\
     rlen = cf_byte_run_length[count & 7][data];\
     if ( rlen >= 8 ) {\
-	if ( white_byte == 0 )\
-	    for ( ; ; p += 4, rlen += 32 ) {\
-		if ( p[0] != 0xff ) { data = p[0]; p += 1; rlen -= 8; break; }\
-		if ( p[1] != 0xff ) { data = p[1]; p += 2; break; }\
-		if ( p[2] != 0xff ) { data = p[2]; p += 3; rlen += 8; break; }\
-		if ( p[3] != 0xff ) { data = p[3]; p += 4; rlen += 16; break; }\
-	    }\
-	else\
-	    for ( ; ; p += 4, rlen += 32 ) {\
-		if ( p[0] ) { data = (byte)~p[0]; p += 1; rlen -= 8; break; }\
-		if ( p[1] ) { data = (byte)~p[1]; p += 2; break; }\
-		if ( p[2] ) { data = (byte)~p[2]; p += 3; rlen += 8; break; }\
-		if ( p[3] ) { data = (byte)~p[3]; p += 4; rlen += 16; break; }\
-	    }\
-	rlen += cf_byte_run_length_0[data];\
+        if ( white_byte == 0 )\
+            for ( ; ; p += 4, rlen += 32 ) {\
+                if ( p[0] != 0xff ) { data = p[0]; p += 1; rlen -= 8; break; }\
+                if ( p[1] != 0xff ) { data = p[1]; p += 2; break; }\
+                if ( p[2] != 0xff ) { data = p[2]; p += 3; rlen += 8; break; }\
+                if ( p[3] != 0xff ) { data = p[3]; p += 4; rlen += 16; break; }\
+            }\
+        else\
+            for ( ; ; p += 4, rlen += 32 ) {\
+                if ( p[0] ) { data = (byte)~p[0]; p += 1; rlen -= 8; break; }\
+                if ( p[1] ) { data = (byte)~p[1]; p += 2; break; }\
+                if ( p[2] ) { data = (byte)~p[2]; p += 3; rlen += 8; break; }\
+                if ( p[3] ) { data = (byte)~p[3]; p += 4; rlen += 16; break; }\
+            }\
+        rlen += cf_byte_run_length_0[data];\
     }\
     count -= rlen;\
 END

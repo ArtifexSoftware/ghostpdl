@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,7 +37,7 @@ typedef struct gx_band_params_s {
 typedef struct gx_colors_used_s {
     gx_color_index or;		/* the "or" of all the used colors */
     bool slow_rop;		/* true if any RasterOps that can't be */
-				/* executed plane-by-plane on CMYK devices */
+                                /* executed plane-by-plane on CMYK devices */
 } gx_colors_used_t;
 
 /*
@@ -65,9 +65,9 @@ typedef struct gx_band_page_info_s {
     uint tile_cache_size;	/* size of tile cache */
     int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */
-				/* (actual values, no 0s) */
+                                /* (actual values, no 0s) */
     int scan_lines_per_colors_used; /* number of scan lines per colors_used */
-				/* entry (a multiple of the band height) */
+                                /* entry (a multiple of the band height) */
     gx_colors_used_t band_colors_used[PAGE_INFO_NUM_COLORS_USED];  /* colors used on the page */
 } gx_band_page_info_t;
 #define PAGE_INFO_NULL_VALUES\

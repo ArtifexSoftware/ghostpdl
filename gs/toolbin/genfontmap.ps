@@ -1,13 +1,13 @@
 %!PS
 % Copyright (C) 2003 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -16,7 +16,7 @@
 
 % $Id$
 % Create a Fontmap format file after scanning the FONTPATH directories
-% 
+%
 % Example usage:
 %   windows:  gswin32c -q -sFONTPATH=c:/windows/fonts genfontmap.ps > myFontmap
 %
@@ -59,7 +59,7 @@ count array astore
   dup 0 get 		% get the name of the font
   % Since the name might be Unicode, write it as a string
   100 string cvs ==only
-  (	) print 1 get 0 get ==only ( ;) = 
+  (	) print 1 get 0 get ==only ( ;) =
 } forall
 flush
 

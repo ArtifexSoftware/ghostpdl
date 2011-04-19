@@ -79,7 +79,7 @@ gslt_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font 
     w2[3] = pbbox->p.y;
     w2[4] = pbbox->q.x;
     w2[5] = pbbox->q.y;
-    
+
     dprintf6("  bbox (%g %g) %g %g %g %g\n", w2[0], w2[1], w2[2], w2[3], w2[4], w2[5]);
 
     /* Expand the bbox when stroking */
@@ -97,9 +97,9 @@ gslt_true_callback_build_char(gs_text_enum_t *ptextenum, gs_state *pgs, gs_font 
         return code;
 
     code = gs_type42_append(glyph, pgs,
-	    gx_current_path(pgs),
-	    ptextenum, (gs_font*)p42,
-	    gs_show_in_charpath(penum) != cpm_show);
+            gx_current_path(pgs),
+            ptextenum, (gs_font*)p42,
+            gs_show_in_charpath(penum) != cpm_show);
     if (code < 0)
         return code;
 
@@ -193,4 +193,3 @@ gslt_init_truetype_font(gs_memory_t *mem, gs_font_dir *fontdir, gslt_font_t *xf)
 
     return 0;
 }
-

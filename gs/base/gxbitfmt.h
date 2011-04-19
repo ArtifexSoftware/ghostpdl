@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -158,7 +158,7 @@ typedef ulong gx_bitmap_format_t;
 #define GB_OFFSET_0         (1L<<24)  /* no offsetting */
 #define GB_OFFSET_SPECIFIED (1L<<25)  /* client-specified offset */
 #define GB_OFFSET_ANY       (1L<<26)  /* any offset is acceptable */
-				/* (for GB_RETURN_POINTER only) */
+                                /* (for GB_RETURN_POINTER only) */
   /*unused*/                /*(1L<<27)*/
 
 #define GB_OFFSET_ALL\
@@ -183,7 +183,7 @@ typedef ulong gx_bitmap_format_t;
 #define GB_RASTER_STANDARD  (1L<<28)
 #define GB_RASTER_SPECIFIED (1L<<29)  /* any client-specified raster */
 #define GB_RASTER_ANY       (1L<<30)  /* any raster is acceptable (for */
-				/* GB_RETURN_POINTER only) */
+                                /* GB_RETURN_POINTER only) */
 
 #define GB_RASTER_ALL\
   (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED | GB_RASTER_ANY)

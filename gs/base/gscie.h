@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -96,8 +96,8 @@
 #  define _cif(i) ((int)(i) & ((1 << _cie_interpolate_bits) - 1))
 #  define cie_interpolate_between(v0, v1, i)\
      ((v0) + cie_cached_rshift(((v1) - (v0)) * _cif(i) +\
-			        (1 << (_cie_interpolate_bits - 1)),\
-			       _cie_interpolate_bits))
+                                (1 << (_cie_interpolate_bits - 1)),\
+                               _cie_interpolate_bits))
 #  define cie_interpolate(p, i)\
      ((i) >= (gx_cie_cache_size - 1) << _cie_interpolate_bits ? \
        (p)[gx_cie_cache_size - 1] : \
@@ -132,9 +132,9 @@ typedef long cie_cached_value;
 #  define cie_cached_product2int(v, factor, fbits)\
      (_cie_product_excess_bits > 0 ?\
       arith_rshift( (v) * arith_rshift(factor, _cie_product_excess_bits) +\
-		    arith_rshift(v, _cie_product_excess_bits) *\
-		     ((factor) & ((1 << _cie_product_excess_bits) - 1)),\
-		    _cie_fixed_shift * 2 - _cie_product_excess_bits - (fbits)) :\
+                    arith_rshift(v, _cie_product_excess_bits) *\
+                     ((factor) & ((1 << _cie_product_excess_bits) - 1)),\
+                    _cie_fixed_shift * 2 - _cie_product_excess_bits - (fbits)) :\
       arith_rshift((v) * (factor), _cie_fixed_shift * 2 - (fbits)))
 #  define cie_cached_rshift(v, n) arith_rshift(v, n)
 #  define cie_cached_abs(v) any_abs(v)  /* labs() is C89 extension */
@@ -250,7 +250,7 @@ typedef struct gs_cie_render_proc3_s {
  * recognize the proc_name), it must return a failure code.
  */
 typedef int (*gs_cie_transform_proc)(int, floatp, const gs_cie_wbsd *,
-				     gs_cie_render *, float *);
+                                     gs_cie_render *, float *);
 typedef struct gs_cie_transform_proc3_s {
     gs_cie_transform_proc proc;
     const char *proc_name;
@@ -290,7 +290,7 @@ typedef struct gs_cie_wb_s {
  rendering      TransformPQR    RangePQR
  (but depends on color space White/BlackPoints)
  rendering      EncodeLMN       RangePQR transformed by the inverse of
-				MatrixPQR and then by MatrixLMN
+                                MatrixPQR and then by MatrixLMN
  rendering      EncodeABC       RangeLMN transformed by MatrixABC
  rendering      RenderTable.T   [0..1]*m
 
@@ -375,31 +375,31 @@ struct gs_cie_common_s {
     gs_cie_wb points;
     /* Following are computed when structure is initialized. */
     struct {
-	gx_cie_scalar_cache DecodeLMN[3];
+        gx_cie_scalar_cache DecodeLMN[3];
     } caches;
 };
 
 /* st_cie_common and st_cie_common_elements_t are exported for gsicc.c */
 #define public_st_cie_common()     /* in gscscie.c */\
   gs_public_st_ptrs1(st_cie_common, gs_cie_common, "gs_cie_common",\
-		      cie_common_enum_ptrs, cie_common_reloc_ptrs, client_data)
+                      cie_common_enum_ptrs, cie_common_reloc_ptrs, client_data)
 
 /* extern_st(st_cie_common); */ /* in gxcie.h */
 
 #define gs_cie_common_elements\
-	gs_cie_common common;		/* must be first */\
-	rc_header rc
+        gs_cie_common common;		/* must be first */\
+        rc_header rc
 typedef struct gs_cie_common_elements_s {
     gs_cie_common_elements;
 } gs_cie_common_elements_t;
 
 #define public_st_cie_common_elements() /* in gscscie.c */ \
   gs_public_st_suffix_add0_local( st_cie_common_elements_t,\
-				  gs_cie_common_elements_t,\
-				  "gs_cie_common_elements_t",\
-				  cie_common_enum_ptrs,\
-				  cie_common_reloc_ptrs,\
-				  st_cie_common)
+                                  gs_cie_common_elements_t,\
+                                  "gs_cie_common_elements_t",\
+                                  cie_common_enum_ptrs,\
+                                  cie_common_reloc_ptrs,\
+                                  st_cie_common)
 
 /* extern_st(st_cie_common_elements_t); */ /* in gxcie.h */
 
@@ -411,27 +411,27 @@ struct gs_cie_a_s {
     gs_vector3 MatrixA;
     /* Following are computed when structure is initialized. */
     struct {
-	gx_cie_vector_cache DecodeA;	/* mult. by MatrixA */
+        gx_cie_vector_cache DecodeA;	/* mult. by MatrixA */
     } caches;
 };
 
 #define private_st_cie_a()	/* in gscscie.c */\
   gs_private_st_suffix_add0_local(st_cie_a, gs_cie_a, "gs_cie_a",\
-				  cie_common_enum_ptrs,\
-				  cie_common_reloc_ptrs,\
-				  st_cie_common_elements_t)
+                                  cie_common_enum_ptrs,\
+                                  cie_common_reloc_ptrs,\
+                                  st_cie_common_elements_t)
 
 /* Common elements for CIEBasedABC, DEF, and DEFG dictionaries. */
 #define gs_cie_abc_elements\
-	gs_cie_common_elements;		/* must be first */\
-	gs_range3 RangeABC;\
-	gs_cie_abc_proc3 DecodeABC;\
-	gs_matrix3 MatrixABC;\
-		/* Following are computed when structure is initialized. */\
-	struct {\
-		bool skipABC;\
-		gx_cie_vector_cache3_t DecodeABC;  /* mult. by MatrixABC */\
-	} caches
+        gs_cie_common_elements;		/* must be first */\
+        gs_range3 RangeABC;\
+        gs_cie_abc_proc3 DecodeABC;\
+        gs_matrix3 MatrixABC;\
+                /* Following are computed when structure is initialized. */\
+        struct {\
+                bool skipABC;\
+                gx_cie_vector_cache3_t DecodeABC;  /* mult. by MatrixABC */\
+        } caches
 
 /* A CIEBasedABC dictionary. */
 struct gs_cie_abc_s {
@@ -440,8 +440,8 @@ struct gs_cie_abc_s {
 
 #define private_st_cie_abc()	/* in gscscie.c */\
   gs_private_st_suffix_add0_local(st_cie_abc, gs_cie_abc, "gs_cie_abc",\
-				  cie_common_enum_ptrs, cie_common_reloc_ptrs,\
-				  st_cie_common_elements_t)
+                                  cie_common_enum_ptrs, cie_common_reloc_ptrs,\
+                                  st_cie_common_elements_t)
 
 /* A CIEBasedDEF dictionary. */
 struct gs_cie_def_s {
@@ -451,7 +451,7 @@ struct gs_cie_def_s {
     gs_range3 RangeHIJ;
     gx_color_lookup_table Table;	/* [NH][NI * NJ * 3] */
     struct {
-	gx_cie_scalar_cache DecodeDEF[3];
+        gx_cie_scalar_cache DecodeDEF[3];
     } caches_def;
 };
 
@@ -468,14 +468,14 @@ struct gs_cie_defg_s {
     gs_range4 RangeHIJK;
     gx_color_lookup_table Table;	/* [NH * NI][NJ * NK * 3] */
     struct {
-	gx_cie_scalar_cache DecodeDEFG[4];
+        gx_cie_scalar_cache DecodeDEFG[4];
     } caches_defg;
 };
 
 #define private_st_cie_defg()	/* in gscscie.c */\
   gs_private_st_suffix_add1(st_cie_defg, gs_cie_defg, "gs_cie_defg",\
-			    cie_defg_enum_ptrs, cie_defg_reloc_ptrs,\
-			    st_cie_abc, Table.table)
+                            cie_defg_enum_ptrs, cie_defg_reloc_ptrs,\
+                            st_cie_abc, Table.table)
 
 /*
  * Default values for components.  Note that for some components, there are
@@ -511,7 +511,7 @@ extern const gs_cie_render_table_procs RenderTableT_from_cache;
 
 struct gs_cie_wbsd_s {
     struct {
-	gs_vector3 xyz, pqr;
+        gs_vector3 xyz, pqr;
     } ws, bs, wd, bd;
 };
 typedef struct gs_cie_render_table_s {
@@ -533,8 +533,8 @@ typedef enum {
 typedef struct gx_cie_float_fixed_cache_s {
     cie_cache_floats floats;
     union if_ {
-	cie_cache_fracs fracs;
-	cie_cache_ints ints;
+        cie_cache_fracs fracs;
+        cie_cache_ints ints;
     } fixeds;
 } gx_cie_float_fixed_cache;
 
@@ -563,10 +563,10 @@ struct gs_cie_render_s {
     gs_matrix3 MatrixPQR_inverse_LMN;
     gs_vector3 wdpqr, bdpqr;
     struct {
-	gx_cie_vector_cache3_t EncodeLMN;	/* mult. by M'ABCEncode */
-	gx_cie_float_fixed_cache EncodeABC[3];
-	gx_cie_scalar_cache RenderTableT[4];
-	bool RenderTableT_is_identity;
+        gx_cie_vector_cache3_t EncodeLMN;	/* mult. by M'ABCEncode */
+        gx_cie_float_fixed_cache EncodeABC[3];
+        gx_cie_scalar_cache RenderTableT[4];
+        bool RenderTableT_is_identity;
     } caches;
 };
 
@@ -574,7 +574,7 @@ struct gs_cie_render_s {
 extern_st(st_cie_render1);
 #define public_st_cie_render1()	/* in gscrd.c */\
   gs_public_st_composite(st_cie_render1, gs_cie_render, "gs_cie_render",\
-			 cie_render1_enum_ptrs, cie_render1_reloc_ptrs)
+                         cie_render1_enum_ptrs, cie_render1_reloc_ptrs)
 
 /* ------ Joint caches ------ */
 
@@ -594,7 +594,7 @@ typedef enum {
  */
 #define GX_CIE_REMAP_FINISH_PROC(proc)\
   int proc(cie_cached_vector3 vec3, frac *pconc,\
-	   const gs_imager_state *pis, const gs_color_space *pcs)
+           const gs_imager_state *pis, const gs_color_space *pcs)
 
 struct gx_cie_joint_caches_s {
     /*
@@ -641,7 +641,6 @@ struct gx_cie_joint_caches_s {
 typedef struct gx_cie_joint_caches_s gx_cie_joint_caches;
 #endif
 
-
 #define private_st_joint_caches() /* in gscie.c */\
   gs_private_st_simple(st_joint_caches, gx_cie_joint_caches,\
     "gx_cie_joint_caches")
@@ -672,7 +671,7 @@ typedef struct gs_sample_loop_params_s {
 #define SAMPLE_LOOP_VALUE(i, lp)\
   ( (((lp).N - (i)) * (lp).A + (i) * (lp).B) / (lp).N )
 void gs_cie_cache_init(cie_cache_params *, gs_sample_loop_params_t *,
-		       const gs_range *, client_name_t);
+                       const gs_range *, client_name_t);
 
 void gs_cie_cache_to_fracs(const cie_cache_floats *, cie_cache_fracs *);
 void gs_cie_defg_complete(gs_cie_defg *);
@@ -689,30 +688,30 @@ int gx_install_cie_abc(gs_cie_abc *, gs_state *);
 
 #define CIE_CLAMP_INDEX(index)\
   index = (index < 0 ? 0 :\
-	   index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
+           index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
 
 /* Define the template for loading a cache. */
 /* If we had parameterized types, or a more flexible type system, */
 /* this could be done with a single procedure. */
 #define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, dprocs, pcie, cname)\
   BEGIN\
-	int j;\
+        int j;\
 \
-	for (j = 0; j < countof(pcache); j++) {\
-	    cie_cache_floats *pcf = &(pcache)[j].floats;\
-	    int i;\
-	    gs_sample_loop_params_t lp;\
+        for (j = 0; j < countof(pcache); j++) {\
+            cie_cache_floats *pcf = &(pcache)[j].floats;\
+            int i;\
+            gs_sample_loop_params_t lp;\
 \
-	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
-	    for (i = 0; i <= lp.N; ++i) {\
-		float v = SAMPLE_LOOP_VALUE(i, lp);\
-		pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
-		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
-			  cname, j, i, v, pcf->values[i]);\
-	    }\
-	    pcf->params.is_identity =\
-		(rprocs)->procs[j] == (dprocs).procs[j];\
-	}\
+            gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
+            for (i = 0; i <= lp.N; ++i) {\
+                float v = SAMPLE_LOOP_VALUE(i, lp);\
+                pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
+                if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
+                          cname, j, i, v, pcf->values[i]);\
+            }\
+            pcf->params.is_identity =\
+                (rprocs)->procs[j] == (dprocs).procs[j];\
+        }\
   END
 
 /*
@@ -720,8 +719,8 @@ int gx_install_cie_abc(gs_cie_abc *, gs_state *);
  * the TransformPQR procedure.
  */
 int gs_cie_compute_points_sd(gx_cie_joint_caches *pjc,
-			     const gs_cie_common * pcie,
-			     const gs_cie_render * pcrd);
+                             const gs_cie_common * pcie,
+                             const gs_cie_render * pcrd);
 
 /*
  * Compute the derived values in a CRD that don't involve the cached
@@ -764,13 +763,13 @@ int gs_cie_render_complete(gs_cie_render *);
  */
 extern int
     gs_cspace_build_CIEA(gs_color_space ** ppcspace, void *client_data,
-			 gs_memory_t * pmem),
+                         gs_memory_t * pmem),
     gs_cspace_build_CIEABC(gs_color_space ** ppcspace, void *client_data,
-			   gs_memory_t * pmem),
+                           gs_memory_t * pmem),
     gs_cspace_build_CIEDEF(gs_color_space ** ppcspace, void *client_data,
-			   gs_memory_t * pmem),
+                           gs_memory_t * pmem),
     gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
-			    gs_memory_t * pmem);
+                            gs_memory_t * pmem);
 
 /* ------ Accessors ------ */
 
@@ -824,14 +823,14 @@ extern int
  * 3 * pdims[1] * pdims[2].
  *
  * For a 4 component color space (CIEBasedDEFG), ptable points to an array of
- * pdims[0] * pdims[1] strings, each of which is of length 
+ * pdims[0] * pdims[1] strings, each of which is of length
  * 3 * pdims[2] * pdims[3].
  *
  * NB: the caller is responsible for deallocating the color table data
  *     when no longer needed.  */
 extern int
     gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
-				 const gs_const_string * ptable);
+                                 const gs_const_string * ptable);
 
 /* Serialize common CIE elements. */
 int gx_serialize_cie_common_elements(const gs_color_space * pcs, stream * s);
@@ -844,9 +843,9 @@ float common_identity(floatp in, const gs_cie_common * pcie);
 float abc_identity(floatp in, const gs_cie_abc * pcie);
 float a_identity(floatp in, const gs_cie_a * pcie);
 void cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
-	  gs_vector3 * out);
+          gs_vector3 * out);
 void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
-			      gs_matrix3 *);
+                              gs_matrix3 *);
 void  cie_matrix_transpose3(const gs_matrix3 *, gs_matrix3 *);
 
 #endif /* gscie_INCLUDED */

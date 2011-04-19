@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -19,8 +19,8 @@
    try my very best, but i have some work to do.
 
    Ludger Kunz           |    ____________|Tel.: 02371/566-230
-   FernUniversitaet Hagen|   /| /   / \   |FAX:  02371/52212           
-   Lehrgebiet ES         |  / |/   /_  \  |EMAIL:                      
+   FernUniversitaet Hagen|   /| /   / \   |FAX:  02371/52212
+   Lehrgebiet ES         |  / |/   /_  \  |EMAIL:
    Frauenstuhlweg 31     | /  |\  /     \ |ludger.kunz@fernuni-hagen.de
    58644 Iserlohn        |/___|_\/_______\|
  */
@@ -53,7 +53,6 @@ static dc_entry dynamic_colors[dc_hash_size + 1];
 #define XSIZE 8.3		/*8.27 */
 #define YSIZE 11.7		/*11.69 */
 #endif
-
 
 /* The device descriptor */
 typedef struct gx_device_lvga256 {
@@ -90,9 +89,9 @@ static gx_device_procs lvga256_procs =
 
 gx_device_lvga256 far_data gs_lvga256_device =
 {std_device_color_body(gx_device_lvga256, &lvga256_procs, "lvga256",
-		       0, 0,	/* width and height are set in lvga256_open */
-		       1, 1,	/* density is set in lvga256_open */
-		       /*dci_color( */ 8, 31, 4 /*) */ )
+                       0, 0,	/* width and height are set in lvga256_open */
+                       1, 1,	/* density is set in lvga256_open */
+                       /*dci_color( */ 8, 31, 4 /*) */ )
 };
 
 /* Open the LINUX driver for graphics mode */
@@ -105,7 +104,7 @@ lvga256_open(gx_device * dev)
     vga_init();
     vgamode = vga_getdefaultmode();
     if (vgamode == -1)
-	vgamode = G320x200x256;
+        vgamode = G320x200x256;
     vga_setmode(vgamode);
     gl_setcontextvga(vgamode);
     width = vga_getxdim();
@@ -114,14 +113,14 @@ lvga256_open(gx_device * dev)
     dev->x_pixels_per_inch = dev->y_pixels_per_inch;
     gx_device_set_width_height(dev, width, height);
     {
-	int c;
+        int c;
 
-	for (c = 0; c < 64; c++) {
-	    static const byte c2[10] =
-	    {0, 42, 0, 0, 0, 0, 0, 0, 21, 63};
+        for (c = 0; c < 64; c++) {
+            static const byte c2[10] =
+            {0, 42, 0, 0, 0, 0, 0, 0, 21, 63};
 
-	    gl_setpalettecolor(c, c2[(c >> 2) & 9], c2[(c >> 1) & 9], c2[c & 9]);
-	}
+            gl_setpalettecolor(c, c2[(c >> 2) & 9], c2[(c >> 1) & 9], c2[c & 9]);
+        }
     }
     /* Initialize the dynamic color table. */
     memset(dynamic_colors, 0, (dc_hash_size + 1) * sizeof(dc_entry));
@@ -162,37 +161,37 @@ lvga256_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 
     /* Check for a color on the cube. */
     if (cx < 64)
-	return (gx_color_index) cx;
+        return (gx_color_index) cx;
     /* Not on the cube, check the dynamic color table. */
     rgb = (r5 << 10) + (g5 << 5) + b5;
     for (pdc = &dynamic_colors[rgb % dc_hash_size]; pdc->rgb != 0; pdc++) {
-	if (pdc->rgb == rgb)
-	    return (gx_color_index) (pdc->index);
+        if (pdc->rgb == rgb)
+            return (gx_color_index) (pdc->index);
     }
     if (pdc == &dynamic_colors[dc_hash_size]) {		/* Wraparound */
-	for (pdc = &dynamic_colors[0]; pdc->rgb != 0; pdc++) {
-	    if (pdc->rgb == rgb)
-		return (gx_color_index) (pdc->index);
-	}
+        for (pdc = &dynamic_colors[0]; pdc->rgb != 0; pdc++) {
+            if (pdc->rgb == rgb)
+                return (gx_color_index) (pdc->index);
+        }
     }
     if (next_dc_index == 256) {	/* No space left, report failure. */
-	return gx_no_color_index;
+        return gx_no_color_index;
     }
     /* Not on the cube, and not in the dynamic table. */
     /* Put in the dynamic table if space available. */
     {
-	int i = next_dc_index++;
+        int i = next_dc_index++;
 
-	pdc->rgb = rgb;
-	pdc->index = i;
-	gl_setpalettecolor(i, cv_bits(r, 6), cv_bits(g, 6), cv_bits(b, 6));
-	return (gx_color_index) i;
+        pdc->rgb = rgb;
+        pdc->index = i;
+        gl_setpalettecolor(i, cv_bits(r, 6), cv_bits(g, 6), cv_bits(b, 6));
+        return (gx_color_index) i;
     }
 }
 
 int
 lvga256_map_color_rgb(gx_device * dev, gx_color_index color,
-		      unsigned short prgb[3])
+                      unsigned short prgb[3])
 {
 /*   gl_getpalettecolor (color,(int *)&prgb[0],(int *)&prgb[1],(int *)&prgb[2]); */
     prgb[0] = gx_max_color_value;
@@ -205,9 +204,9 @@ lvga256_map_color_rgb(gx_device * dev, gx_color_index color,
 /* Color = gx_no_color_index means transparent (no effect on the image). */
 int
 lvga256_copy_mono(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		  int x, int y, int w, int h,
-		  gx_color_index zero, gx_color_index one)
+                const byte * base, int sourcex, int raster, gx_bitmap_id id,
+                  int x, int y, int w, int h,
+                  gx_color_index zero, gx_color_index one)
 {
     const byte *ptr_line = base + (sourcex >> 3);
     int left_bit = 0x80 >> (sourcex & 7);
@@ -217,33 +216,33 @@ lvga256_copy_mono(gx_device * dev,
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     if (zero == gx_no_color_index) {
-	if (one == gx_no_color_index)
-	    return 0;
-	color = (int)one;
+        if (one == gx_no_color_index)
+            return 0;
+        color = (int)one;
     } else {
-	if (one == gx_no_color_index) {
-	    color = (int)zero;
-	    invert = -1;
-	} else {		/* Pre-clear the rectangle to zero */
-	    gl_fillbox(x, y, w, h, 0);
-	    color = (int)one;
-	}
+        if (one == gx_no_color_index) {
+            color = (int)zero;
+            invert = -1;
+        } else {		/* Pre-clear the rectangle to zero */
+            gl_fillbox(x, y, w, h, 0);
+            color = (int)one;
+        }
     }
     while (h--) {		/* for each line */
-	const byte *ptr_source = ptr_line;
-	register int dest_x = x;
-	register int bit = left_bit;
+        const byte *ptr_source = ptr_line;
+        register int dest_x = x;
+        register int bit = left_bit;
 
-	while (dest_x < end_x) {	/* for each bit in the line */
-	    if ((*ptr_source ^ invert) & bit) {
-		gl_setpixel(dest_x, dest_y, color);
-	    }
-	    dest_x++;
-	    if ((bit >>= 1) == 0)
-		bit = 0x80, ptr_source++;
-	}
-	dest_y++;
-	ptr_line += raster;
+        while (dest_x < end_x) {	/* for each bit in the line */
+            if ((*ptr_source ^ invert) & bit) {
+                gl_setpixel(dest_x, dest_y, color);
+            }
+            dest_x++;
+            if ((bit >>= 1) == 0)
+                bit = 0x80, ptr_source++;
+        }
+        dest_y++;
+        ptr_line += raster;
     }
     return 0;
 }
@@ -252,18 +251,18 @@ lvga256_copy_mono(gx_device * dev,
 /* each pixel takes 4 bits instead of 1 when device driver has color. */
 int
 lvga256_copy_color(gx_device * dev,
-		const byte * base, int sourcex, int raster, gx_bitmap_id id,
-		   int x, int y, int w, int h)
+                const byte * base, int sourcex, int raster, gx_bitmap_id id,
+                   int x, int y, int w, int h)
 {
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
     if (gx_device_has_color(dev)) {	/* color device, four bits per pixel */
-	const byte *line = base + sourcex;
+        const byte *line = base + sourcex;
 
-	gl_putbox(x, y, w, h, line);
+        gl_putbox(x, y, w, h, line);
     } else {			/* monochrome device: one bit per pixel */
-	/* bit map is the same as lvga256_copy_mono: one bit per pixel */
-	lvga256_copy_mono(dev, base, sourcex, raster, id, x, y, w, h,
-			  (gx_color_index) 0, (gx_color_index) 255);
+        /* bit map is the same as lvga256_copy_mono: one bit per pixel */
+        lvga256_copy_mono(dev, base, sourcex, raster, id, x, y, w, h,
+                          (gx_color_index) 0, (gx_color_index) 255);
     }
     return 0;
 }
@@ -271,7 +270,7 @@ lvga256_copy_color(gx_device * dev,
 /* Fill a rectangle. */
 int
 lvga256_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		       gx_color_index color)
+                       gx_color_index color)
 {
     fit_fill(dev, x, y, w, h);
     gl_fillbox(x, y, w, h, color);
@@ -285,11 +284,11 @@ lvga256_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 int
 lvga256_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone,
-		       int px, int py)
+                       int px, int py)
 {
     if (czero != gx_no_color_index && cone != gx_no_color_index) {
-	lvga256_fill_rectangle(dev, x, y, w, h, czero);
-	czero = gx_no_color_index;
+        lvga256_fill_rectangle(dev, x, y, w, h, czero);
+        czero = gx_no_color_index;
     }
     return gx_default_tile_rectangle(dev, tile, x, y, w, h, czero, cone, px, py);
 }
@@ -297,7 +296,7 @@ lvga256_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 /* Draw a line */
 int
 lvga256_draw_line(gx_device * dev, int x0, int y0, int x1, int y1,
-		  gx_color_index color)
+                  gx_color_index color)
 {
     gl_line(x0, y0, x1, y1, color);
     return 0;

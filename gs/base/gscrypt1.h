@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,9 +20,9 @@
 /* Normal public interface */
 typedef ushort crypt_state;
 int gs_type1_encrypt(byte * dest, const byte * src, uint len,
-		     crypt_state * pstate);
+                     crypt_state * pstate);
 int gs_type1_decrypt(byte * dest, const byte * src, uint len,
-		     crypt_state * pstate);
+                     crypt_state * pstate);
 
 /* Define the encryption parameters and procedures. */
 #define crypt_c1 ((ushort)52845)

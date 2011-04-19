@@ -1,6 +1,6 @@
 %   Copyright (C) 2009 Artifex Software, Inc.
 %   All Rights Reserved.
-%  
+%
 %   This software is provided AS-IS with no warranty, either express or
 %   implied.
 %
@@ -35,7 +35,7 @@
    pop closefile
  } bind def
 
-/extractFonts {	%	(filename) extractFonts 
+/extractFonts {	%	(filename) extractFonts
   /FontsFound 100 dict def
   (r) file runpdfbegin
   1 1 pdfpagecount % stack: first_page# last_page#
@@ -43,59 +43,58 @@
     pdfgetpage			% get pagedict
     /Resources pget {
       /Font knownoget {
-	{ exch pop oforce
+        { exch pop oforce
           dup /DescendantFonts knownoget {
             exch pop 0 get oforce
           } if
-       	  dup /FontDescriptor knownoget {
+          dup /FontDescriptor knownoget {
             dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
-	    {
+            {
               % embedded font found!
-	      dup /BaseFont oget
-	      FontsFound 1 index known not {
-		1 index /Subtype oget
-		FontsFound 2 index 2 index put	% mark the font we found
-		% data for different types of fonts is handled separately
-		% stack: -dict- BaseFont Subtype
-		dup /Type1 eq {
-		  2 index /FontDescriptor oget
-		  dup /FontFile knownoget {
-		    true resolvestream
-		    2 index 100 string cvs (.pfb) concatstrings
-		    (Extracting Type1 font: ) print dup = flush
-		    (w) file copyfile
-		  } if
-		  /FontFile3 knownoget {
-		    dup /Subtype oget /Type1C ne {
-		      (Warning: Font ) print 2 index =print ( of type: ) print dup
-		      /Subtype oget =print ( is being written with extension .cff) = flush
-		    } if
-		    true resolvestream
-		    2 index 100 string cvs (.cff) concatstrings
-		    (Extracting Type1C font: ) print dup = flush
-		    (w) file copyfile
-		  } if
-		} if
-		dup /TrueType eq {
-		  2 index /FontDescriptor oget
-		  dup ===
-		  /FontFile2 oget true resolvestream
-		  2 index 100 string cvs (.ttf) concatstrings
-		  (Extracting TrueType font: ) print dup = flush
-		  (w) file copyfile
-		} if
-	        pop pop		% done with BaseFont and Subtype
-	      } if	% end if font not already in FontsFound
-	      pop  % done with the font resource dictionary
-	    } {
-	      pop	%  not embedded
-	    } ifelse
-	  } {
-	    pop		% no FontDescriptor, not embedded
-	  } ifelse
-	} forall	% traverse the Font resource dictionary
+              dup /BaseFont oget
+              FontsFound 1 index known not {
+                1 index /Subtype oget
+                FontsFound 2 index 2 index put	% mark the font we found
+                % data for different types of fonts is handled separately
+                % stack: -dict- BaseFont Subtype
+                dup /Type1 eq {
+                  2 index /FontDescriptor oget
+                  dup /FontFile knownoget {
+                    true resolvestream
+                    2 index 100 string cvs (.pfb) concatstrings
+                    (Extracting Type1 font: ) print dup = flush
+                    (w) file copyfile
+                  } if
+                  /FontFile3 knownoget {
+                    dup /Subtype oget /Type1C ne {
+                      (Warning: Font ) print 2 index =print ( of type: ) print dup
+                      /Subtype oget =print ( is being written with extension .cff) = flush
+                    } if
+                    true resolvestream
+                    2 index 100 string cvs (.cff) concatstrings
+                    (Extracting Type1C font: ) print dup = flush
+                    (w) file copyfile
+                  } if
+                } if
+                dup /TrueType eq {
+                  2 index /FontDescriptor oget
+                  dup ===
+                  /FontFile2 oget true resolvestream
+                  2 index 100 string cvs (.ttf) concatstrings
+                  (Extracting TrueType font: ) print dup = flush
+                  (w) file copyfile
+                } if
+                pop pop		% done with BaseFont and Subtype
+              } if	% end if font not already in FontsFound
+              pop  % done with the font resource dictionary
+            } {
+              pop	%  not embedded
+            } ifelse
+          } {
+            pop		% no FontDescriptor, not embedded
+          } ifelse
+        } forall	% traverse the Font resource dictionary
       } if
-    } if 
+    } if
   } for
 } bind def
-

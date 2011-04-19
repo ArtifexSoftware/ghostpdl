@@ -75,7 +75,6 @@ typedef struct pcl_palette_s    pcl_palette_t;
                          pht                    \
                          )
 
-
 /*
  * The usual init, copy,and release macros.
  */
@@ -96,7 +95,6 @@ typedef struct pcl_palette_s    pcl_palette_t;
 
 #define pcl_palette_release(pbase)           \
     rc_decrement(pbase, "pcl_frgrnd_release")
-
 
 /*
  * Get the color space type for the base color space of a palette.
@@ -293,7 +291,6 @@ int pcl_palette_set_view_illuminant(
  */
 int pcl_palette_check_complete(pcl_state_t * pcs);
 
-
 #define private_st_pstack_entry_t()		\
     gs_private_st_ptrs1( st_pstack_entry_t,	\
                      pstack_entry_t,		\
@@ -309,11 +306,9 @@ int pcl_palette_check_complete(pcl_state_t * pcs);
 extern  const pcl_init_t    pcl_palette_init;
 extern  const pcl_init_t    pcl_color_init;
 
-
-/* free default objects (pcs->pdfl_*) 
+/* free default objects (pcs->pdfl_*)
  * called at end of process.
  */
 void pcl_free_default_objects(gs_memory_t *mem, pcl_state_t *pcs);
 
-
-#endif		/* pcpalet_INCLUDED */   
+#endif		/* pcpalet_INCLUDED */

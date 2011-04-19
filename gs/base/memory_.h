@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,20 +34,20 @@
 #  endif
 #  include <mem.h>
 #else
-	/* Not Turbo C, no inline functions */
+        /* Not Turbo C, no inline functions */
 #  define memcmp_inline(b1,b2,len) memcmp(b1,b2,len)
-	/*
-	 * Apparently the newer VMS compilers include prototypes
-	 * for the mem... routines in <string.h>.  Unfortunately,
-	 * gcc lies on Sun systems: it defines __STDC__ even if
-	 * the header files in /usr/include are broken.
-	 * However, Solaris systems, which define __svr4__, do have
-	 * correct header files.
-	 */
-	/*
-	 * The exceptions vastly outnumber the BSD4_2 "rule":
-	 * these tests should be the other way around....
-	 */
+        /*
+         * Apparently the newer VMS compilers include prototypes
+         * for the mem... routines in <string.h>.  Unfortunately,
+         * gcc lies on Sun systems: it defines __STDC__ even if
+         * the header files in /usr/include are broken.
+         * However, Solaris systems, which define __svr4__, do have
+         * correct header files.
+         */
+        /*
+         * The exceptions vastly outnumber the BSD4_2 "rule":
+         * these tests should be the other way around....
+         */
 #  if defined(VMS) || defined(_POSIX_SOURCE) || (defined(__STDC__) && (!defined(sun) || defined(__svr4__))) || defined(_HPUX_SOURCE) || defined(__WATCOMC__) || defined(THINK_C) || defined(bsdi) || defined(__FreeBSD) || (defined(_MSC_VER) && _MSC_VER >= 1000)
 #    include <string.h>
 #  else
@@ -56,7 +56,7 @@ extern bcopy(), bcmp(), bzero();
 
 #	 define memcpy(dest,src,len) bcopy(src,dest,len)
 #	 define memcmp(b1,b2,len) bcmp(b1,b2,len)
-	 /* Define our own versions of missing routines (in gsmisc.c). */
+         /* Define our own versions of missing routines (in gsmisc.c). */
 #	 define MEMORY__NEED_MEMMOVE
 #        include <sys/types.h>	/* for size_t */
 #	 define MEMORY__NEED_MEMSET

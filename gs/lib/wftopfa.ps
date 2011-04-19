@@ -1,12 +1,12 @@
 %    Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -47,13 +47,13 @@ wftopfa_dict begin
     { dup rdstring readline not { pop exit } if
       dup length 15 ge
        { dup dup length 7 sub 7 getinterval (> CompD) eq
-	  { token pop exch token pop exch pop
-	    dup 0 get /highcode exch def
-	    exch chars 3 1 roll put
-	  }
-	  { pop
-	  }
-	 ifelse
+          { token pop exch token pop exch pop
+            dup 0 get /highcode exch def
+            exch chars 3 1 roll put
+          }
+          { pop
+          }
+         ifelse
        }
        { pop
        }
@@ -77,7 +77,7 @@ wftopfa_dict begin
    /FontInfo 20 dict def
    FontInfo begin
 
-		% Write the clear text part.
+                % Write the clear text part.
 
    /CreationDate (%Calendar%) currentdevparams
      dup /Weekday get {(Sun )(Mon )(Tue )(Wed )(Thu )(Fri )(Sat )} exch get
@@ -269,7 +269,7 @@ ifelse
    /fontname exch def
    [ templates
       { wfdir (/) concatstrings exch concatstrings { copystring }
-	8192 string filenameforall
+        8192 string filenameforall
       }
      forall
      wfdir (/wadalab-sym/*.ps) concatstrings { copystring }

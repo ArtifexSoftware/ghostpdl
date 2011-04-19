@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -28,6 +28,6 @@
 
 /* Make a packed array from the top N elements of a stack. */
 int make_packed_array(ref *, ref_stack_t *, uint, gs_dual_memory_t *,
-		      client_name_t);
+                      client_name_t);
 
 #endif /* iparray_INCLUDED */

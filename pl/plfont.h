@@ -150,13 +150,13 @@ struct pl_font_s {
   int storage;                /* where the font is stored */
   bool data_are_permanent;    /* glyph data stored in rom */
   char *font_file;            /* non null only if data is stored in a
-				 file only relevant to pcl resident
-				 fonts. NB this should be done
-				 dynamically */
+                                 file only relevant to pcl resident
+                                 fonts. NB this should be done
+                                 dynamically */
   bool font_file_loaded;      /* contents of the font file have be read into memory */
   byte *header;	              /* downloaded header, or built-in font data */
   ulong header_size;
-	/* Information extracted from the font or supplied by the client. */
+        /* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
   bool is_xl_format;          /* this is required for the agfa ufst scaler */
   pl_font_type_t font_type;
@@ -165,7 +165,7 @@ struct pl_font_s {
   int (*char_width)(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth);
   int (*char_metrics)(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
-			/* (for segmented fonts only) */
+                        /* (for segmented fonts only) */
   struct { uint x, y; } resolution; /* resolution (for bitmap fonts) */
   float bold_fraction;              /* for PXL algorithmic bolding */
   int orient;                       /* true if pcl bitmap font designed in landscape */
@@ -176,9 +176,9 @@ struct pl_font_s {
     long GT;		/* Global TrueType data (required, for TT fonts) */
     long VT;		/* VerTical substitution (optional) */
   } offsets;		/* segment offsets, -1 if segment missing */
-	/* Glyph table for downloaded fonts. */
+        /* Glyph table for downloaded fonts. */
   pl_glyph_table_t glyphs;
-	/* Character to glyph map for downloaded TrueType fonts. */
+        /* Character to glyph map for downloaded TrueType fonts. */
   pl_tt_char_glyph_table_t char_glyphs;
 
   float pts_per_inch;   /* either 72 or 72.307 (for Intellifont) */
@@ -207,7 +207,7 @@ int pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars,
 
 /* Fill in generic gs_font boilerplate. */
 #ifndef gs_font_dir_DEFINED
-#  define gs_font_dir_DEFINED	
+#  define gs_font_dir_DEFINED
 typedef struct gs_font_dir_s gs_font_dir;
 #endif
 int pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
@@ -259,8 +259,8 @@ typedef struct pl_font_offset_errors_s {
   int illegal_VT_segment;
   int illegal_BR_segment;
 } pl_font_offset_errors_t;
-int pl_font_scan_segments(const gs_memory_t *mem, 
-			  pl_font_t *plfont, int fst_offset,
+int pl_font_scan_segments(const gs_memory_t *mem,
+                          pl_font_t *plfont, int fst_offset,
                           int start_offset, long end_offset,
                           bool large_sizes,
                           const pl_font_offset_errors_t *pfoe);
@@ -272,7 +272,6 @@ int pl_load_tt_font(stream *in, gs_font_dir *pdir, gs_memory_t *mem,
 /* allocate, read in and free tt font files to and from memory */
 int pl_alloc_tt_fontfile_buffer(stream *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size);
 int pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data);
-
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
 int pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *data);
@@ -287,7 +286,6 @@ int pl_font_char_width(const pl_font_t *plfont, const void *pgs, uint char_code,
    effect metrics[1] = lsb, metrics[3] = width otherwise metrics[0] =
    lsb and metrics 2 = width.   The same rules for character width apply */
 int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4]);
-
 
 /* Look up a glyph in a font.  Return a pointer to the glyph's slot */
 /* (data != 0) or where it should be added (data == 0). */

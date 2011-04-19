@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -48,9 +48,9 @@ struct gs_memory_retrying_s {
 
 /* Initialize a retrying memory manager. */
 int gs_memory_retrying_init(
-			    gs_memory_retrying_t * rmem, /* allocator to init */
-			    gs_memory_t * target	/* allocator to wrap */
-			    );
+                            gs_memory_retrying_t * rmem, /* allocator to init */
+                            gs_memory_t * target	/* allocator to wrap */
+                            );
 
 /* Release a retrying memory manager. */
 /* Note that this has no effect on the target. */
@@ -58,8 +58,8 @@ void gs_memory_retrying_release(gs_memory_retrying_t *rmem);
 
 /* Set the recovery closure of a retrying memory manager. */
 void gs_memory_retrying_set_recover(gs_memory_retrying_t *rmem,
-				    gs_memory_recover_proc_t recover_proc,
-				    void *recover_proc_data);
+                                    gs_memory_recover_proc_t recover_proc,
+                                    void *recover_proc_data);
 
 /* Get the target of a retrying memory manager. */
 gs_memory_t * gs_memory_retrying_target(const gs_memory_retrying_t *rmem);

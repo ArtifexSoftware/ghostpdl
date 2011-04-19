@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -48,61 +48,61 @@ bhc_setup(os_ptr op, stream_BHC_state * pbhcs)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if ((code = dict_bool_param(op, "FirstBitLowOrder", false,
-				&pbhcs->FirstBitLowOrder)) < 0 ||
-	(code = dict_int_param(op, "MaxCodeLength", 1, max_hc_length,
-			       max_hc_length, &num_counts)) < 0 ||
-	(code = dict_bool_param(op, "EndOfData", true,
-				&pbhcs->EndOfData)) < 0 ||
-	(code = dict_uint_param(op, "EncodeZeroRuns", 2, 256,
-				256, &pbhcs->EncodeZeroRuns)) < 0 ||
+                                &pbhcs->FirstBitLowOrder)) < 0 ||
+        (code = dict_int_param(op, "MaxCodeLength", 1, max_hc_length,
+                               max_hc_length, &num_counts)) < 0 ||
+        (code = dict_bool_param(op, "EndOfData", true,
+                                &pbhcs->EndOfData)) < 0 ||
+        (code = dict_uint_param(op, "EncodeZeroRuns", 2, 256,
+                                256, &pbhcs->EncodeZeroRuns)) < 0 ||
     /* Note: the code returned from the following call */
     /* is actually the number of elements in the array. */
-	(code = dict_int_array_param(imemory, op, "Tables", countof(data),
-				     data)) <= 0
-	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+        (code = dict_int_array_param(imemory, op, "Tables", countof(data),
+                                     data)) <= 0
+        )
+        return (code < 0 ? code : gs_note_error(e_rangecheck));
     dsize = code;
     if (dsize <= num_counts + 2)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     for (i = 0, num_values = 0, accum = 0; i <= num_counts;
-	 i++, accum <<= 1
-	) {
-	int count = data[i];
+         i++, accum <<= 1
+        ) {
+        int count = data[i];
 
-	if (count < 0)
-	    return_error(e_rangecheck);
-	num_values += count;
-	accum += count;
+        if (count < 0)
+            return_error(e_rangecheck);
+        num_values += count;
+        accum += count;
     }
     if (dsize != num_counts + 1 + num_values ||
-	accum != 1 << (num_counts + 1) ||
-	pbhcs->EncodeZeroRuns >
-	(pbhcs->EndOfData ? num_values - 1 : num_values)
-	)
-	return_error(e_rangecheck);
+        accum != 1 << (num_counts + 1) ||
+        pbhcs->EncodeZeroRuns >
+        (pbhcs->EndOfData ? num_values - 1 : num_values)
+        )
+        return_error(e_rangecheck);
     for (; i < num_counts + 1 + num_values; i++) {
-	int value = data[i];
+        int value = data[i];
 
-	if (value < 0 || value >= num_values)
-	    return_error(e_rangecheck);
+        if (value < 0 || value >= num_values)
+            return_error(e_rangecheck);
     }
     pbhcs->definition.counts = counts =
-	(ushort *) ialloc_byte_array(num_counts + 1, sizeof(ushort),
-				     "bhc_setup(counts)");
+        (ushort *) ialloc_byte_array(num_counts + 1, sizeof(ushort),
+                                     "bhc_setup(counts)");
     pbhcs->definition.values = values =
-	(ushort *) ialloc_byte_array(num_values, sizeof(ushort),
-				     "bhc_setup(values)");
+        (ushort *) ialloc_byte_array(num_values, sizeof(ushort),
+                                     "bhc_setup(values)");
     if (counts == 0 || values == 0) {
-	ifree_object(values, "bhc_setup(values)");
-	ifree_object(counts, "bhc_setup(counts)");
-	return_error(e_VMerror);
+        ifree_object(values, "bhc_setup(values)");
+        ifree_object(counts, "bhc_setup(counts)");
+        return_error(e_VMerror);
     }
     for (i = 0; i <= num_counts; i++)
-	counts[i] = data[i];
+        counts[i] = data[i];
     pbhcs->definition.counts = counts;
     pbhcs->definition.num_counts = num_counts;
     for (i = 0; i < num_values; i++)
-	values[i] = data[i + num_counts + 1];
+        values[i] = data[i + num_counts + 1];
     pbhcs->definition.values = values;
     pbhcs->definition.num_values = num_values;
     return 0;
@@ -117,7 +117,7 @@ zBHCE(i_ctx_t *i_ctx_p)
     int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_write(op, 0, &s_BHCE_template, (stream_state *)&bhcs, 0);
 }
 
@@ -130,7 +130,7 @@ zBHCD(i_ctx_t *i_ctx_p)
     int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_BHCD_template, (stream_state *)&bhcs, 0);
 }
 
@@ -154,46 +154,46 @@ zcomputecodes(i_ctx_t *i_ctx_p)
     check_write_type(*op1, t_array);
     asize = r_size(op1);
     if (op->value.intval < 1 || op->value.intval > max_hc_length)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     def.num_counts = op->value.intval;
     if (asize < def.num_counts + 2)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     def.num_values = asize - (def.num_counts + 1);
     data = (ushort *) gs_alloc_byte_array(imemory, asize, sizeof(ushort),
-					  "zcomputecodes");
+                                          "zcomputecodes");
     freqs = (long *)gs_alloc_byte_array(imemory, def.num_values,
-					sizeof(long),
-					"zcomputecodes(freqs)");
+                                        sizeof(long),
+                                        "zcomputecodes(freqs)");
 
     if (data == 0 || freqs == 0)
-	code = gs_note_error(e_VMerror);
+        code = gs_note_error(e_VMerror);
     else {
-	uint i;
+        uint i;
 
-	def.counts = data;
-	def.values = data + (def.num_counts + 1);
-	for (i = 0; i < def.num_values; i++) {
-	    const ref *pf = op1->value.const_refs + i + def.num_counts + 1;
+        def.counts = data;
+        def.values = data + (def.num_counts + 1);
+        for (i = 0; i < def.num_values; i++) {
+            const ref *pf = op1->value.const_refs + i + def.num_counts + 1;
 
-	    if (!r_has_type(pf, t_integer)) {
-		code = gs_note_error(e_typecheck);
-		break;
-	    }
-	    freqs[i] = pf->value.intval;
-	}
-	if (!code) {
-	    code = hc_compute(&def, freqs, imemory);
-	    if (code >= 0) {
-		/* Copy back results. */
-		for (i = 0; i < asize; i++)
-		    make_int(op1->value.refs + i, data[i]);
-	    }
-	}
+            if (!r_has_type(pf, t_integer)) {
+                code = gs_note_error(e_typecheck);
+                break;
+            }
+            freqs[i] = pf->value.intval;
+        }
+        if (!code) {
+            code = hc_compute(&def, freqs, imemory);
+            if (code >= 0) {
+                /* Copy back results. */
+                for (i = 0; i < asize; i++)
+                    make_int(op1->value.refs + i, data[i]);
+            }
+        }
     }
     gs_free_object(imemory, freqs, "zcomputecodes(freqs)");
     gs_free_object(imemory, data, "zcomputecodes");
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return code;
 }
@@ -205,11 +205,11 @@ static int
 bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
 {
     int code =
-	dict_int_param(op, "BlockSize", 1, max_int / sizeof(int) - 10, 16384,
-		       &pbwbss->BlockSize);
+        dict_int_param(op, "BlockSize", 1, max_int / sizeof(int) - 10, 16384,
+                       &pbwbss->BlockSize);
 
     if (code < 0)
-	return code;
+        return code;
     return 0;
 }
 
@@ -225,7 +225,7 @@ zBWBSE(i_ctx_t *i_ctx_p)
     check_dict_read(*op);
     code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
     if (code < 0)
-	return code;
+        return code;
     return filter_write(op, 0, &s_BWBSE_template, (stream_state *)&bwbss, 0);
 }
 
@@ -238,7 +238,7 @@ zBWBSD(i_ctx_t *i_ctx_p)
     int code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_BWBSD_template, (stream_state *)&bwbss, 0);
 }
 
@@ -250,7 +250,7 @@ bt_setup(os_ptr op, stream_BT_state * pbts)
 {
     check_read_type(*op, t_string);
     if (r_size(op) != 256)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     memcpy(pbts->table, op->value.const_bytes, 256);
     return 0;
 }
@@ -265,7 +265,7 @@ zBTE(i_ctx_t *i_ctx_p)
     int code = bt_setup(op, &bts);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_write(op, 0, &s_BTE_template, (stream_state *)&bts, 0);
 }
 
@@ -279,7 +279,7 @@ zBTD(i_ctx_t *i_ctx_p)
     int code = bt_setup(op, &bts);
 
     if (code < 0)
-	return code;
+        return code;
     return filter_read(i_ctx_p, 0, &s_BTD_template, (stream_state *)&bts, 0);
 }
 
@@ -311,7 +311,7 @@ const op_def zfilterx_op_defs[] =
 {
     {"2.computecodes", zcomputecodes},	/* not a filter */
     op_def_begin_filter(),
-		/* Non-standard filters */
+                /* Non-standard filters */
     {"2BoundedHuffmanEncode", zBHCE},
     {"2BoundedHuffmanDecode", zBHCD},
     {"2BWBlockSortEncode", zBWBSE},

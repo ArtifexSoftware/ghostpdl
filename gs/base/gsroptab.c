@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -289,38 +289,38 @@ ROP_PROC(rop255, ~(rop_operand) 0)	/* 1 */
 #undef ROP_PROC
 
      const rop_proc rop_proc_table[256] = {
-	 rop0, rop1, rop2, rop3, rop4, rop5, rop6, rop7,
-	 rop8, rop9, rop10, rop11, rop12, rop13, rop14, rop15,
-	 rop16, rop17, rop18, rop19, rop20, rop21, rop22, rop23,
-	 rop24, rop25, rop26, rop27, rop28, rop29, rop30, rop31,
-	 rop32, rop33, rop34, rop35, rop36, rop37, rop38, rop39,
-	 rop40, rop41, rop42, rop43, rop44, rop45, rop46, rop47,
-	 rop48, rop49, rop50, rop51, rop52, rop53, rop54, rop55,
-	 rop56, rop57, rop58, rop59, rop60, rop61, rop62, rop63,
-	 rop64, rop65, rop66, rop67, rop68, rop69, rop70, rop71,
-	 rop72, rop73, rop74, rop75, rop76, rop77, rop78, rop79,
-	 rop80, rop81, rop82, rop83, rop84, rop85, rop86, rop87,
-	 rop88, rop89, rop90, rop91, rop92, rop93, rop94, rop95,
-	 rop96, rop97, rop98, rop99, rop100, rop101, rop102, rop103,
-	 rop104, rop105, rop106, rop107, rop108, rop109, rop110, rop111,
-	 rop112, rop113, rop114, rop115, rop116, rop117, rop118, rop119,
-	 rop120, rop121, rop122, rop123, rop124, rop125, rop126, rop127,
-	 rop128, rop129, rop130, rop131, rop132, rop133, rop134, rop135,
-	 rop136, rop137, rop138, rop139, rop140, rop141, rop142, rop143,
-	 rop144, rop145, rop146, rop147, rop148, rop149, rop150, rop151,
-	 rop152, rop153, rop154, rop155, rop156, rop157, rop158, rop159,
-	 rop160, rop161, rop162, rop163, rop164, rop165, rop166, rop167,
-	 rop168, rop169, rop170, rop171, rop172, rop173, rop174, rop175,
-	 rop176, rop177, rop178, rop179, rop180, rop181, rop182, rop183,
-	 rop184, rop185, rop186, rop187, rop188, rop189, rop190, rop191,
-	 rop192, rop193, rop194, rop195, rop196, rop197, rop198, rop199,
-	 rop200, rop201, rop202, rop203, rop204, rop205, rop206, rop207,
-	 rop208, rop209, rop210, rop211, rop212, rop213, rop214, rop215,
-	 rop216, rop217, rop218, rop219, rop220, rop221, rop222, rop223,
-	 rop224, rop225, rop226, rop227, rop228, rop229, rop230, rop231,
-	 rop232, rop233, rop234, rop235, rop236, rop237, rop238, rop239,
-	 rop240, rop241, rop242, rop243, rop244, rop245, rop246, rop247,
-	 rop248, rop249, rop250, rop251, rop252, rop253, rop254, rop255
+         rop0, rop1, rop2, rop3, rop4, rop5, rop6, rop7,
+         rop8, rop9, rop10, rop11, rop12, rop13, rop14, rop15,
+         rop16, rop17, rop18, rop19, rop20, rop21, rop22, rop23,
+         rop24, rop25, rop26, rop27, rop28, rop29, rop30, rop31,
+         rop32, rop33, rop34, rop35, rop36, rop37, rop38, rop39,
+         rop40, rop41, rop42, rop43, rop44, rop45, rop46, rop47,
+         rop48, rop49, rop50, rop51, rop52, rop53, rop54, rop55,
+         rop56, rop57, rop58, rop59, rop60, rop61, rop62, rop63,
+         rop64, rop65, rop66, rop67, rop68, rop69, rop70, rop71,
+         rop72, rop73, rop74, rop75, rop76, rop77, rop78, rop79,
+         rop80, rop81, rop82, rop83, rop84, rop85, rop86, rop87,
+         rop88, rop89, rop90, rop91, rop92, rop93, rop94, rop95,
+         rop96, rop97, rop98, rop99, rop100, rop101, rop102, rop103,
+         rop104, rop105, rop106, rop107, rop108, rop109, rop110, rop111,
+         rop112, rop113, rop114, rop115, rop116, rop117, rop118, rop119,
+         rop120, rop121, rop122, rop123, rop124, rop125, rop126, rop127,
+         rop128, rop129, rop130, rop131, rop132, rop133, rop134, rop135,
+         rop136, rop137, rop138, rop139, rop140, rop141, rop142, rop143,
+         rop144, rop145, rop146, rop147, rop148, rop149, rop150, rop151,
+         rop152, rop153, rop154, rop155, rop156, rop157, rop158, rop159,
+         rop160, rop161, rop162, rop163, rop164, rop165, rop166, rop167,
+         rop168, rop169, rop170, rop171, rop172, rop173, rop174, rop175,
+         rop176, rop177, rop178, rop179, rop180, rop181, rop182, rop183,
+         rop184, rop185, rop186, rop187, rop188, rop189, rop190, rop191,
+         rop192, rop193, rop194, rop195, rop196, rop197, rop198, rop199,
+         rop200, rop201, rop202, rop203, rop204, rop205, rop206, rop207,
+         rop208, rop209, rop210, rop211, rop212, rop213, rop214, rop215,
+         rop216, rop217, rop218, rop219, rop220, rop221, rop222, rop223,
+         rop224, rop225, rop226, rop227, rop228, rop229, rop230, rop231,
+         rop232, rop233, rop234, rop235, rop236, rop237, rop238, rop239,
+         rop240, rop241, rop242, rop243, rop244, rop245, rop246, rop247,
+         rop248, rop249, rop250, rop251, rop252, rop253, rop254, rop255
      };
 
 /*
@@ -341,20 +341,20 @@ ROP_PROC(rop255, ~(rop_operand) 0)	/* 1 */
 
      const byte /*rop_usage_t */ rop_usage_table[256] =
      {
-	 0, 7, 7, 6, 7, 5, 7, 7, 7, 7, 5, 7, 6, 7, 7, 4,
-	 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-	 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-	 6, 7, 7, 2, 7, 7, 7, 7, 7, 7, 7, 7, 6, 7, 7, 6,
-	 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-	 5, 7, 7, 7, 7, 1, 7, 7, 7, 7, 5, 7, 7, 7, 7, 5,
-	 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7,
-	 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7,
-	 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7,
-	 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7,
-	 5, 7, 7, 7, 7, 5, 7, 7, 7, 7, 1, 7, 7, 7, 7, 5,
-	 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7,
-	 6, 7, 7, 6, 7, 7, 7, 7, 7, 7, 7, 7, 2, 7, 7, 6,
-	 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7,
-	 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7,
-	 4, 7, 7, 6, 7, 5, 7, 7, 7, 7, 5, 7, 6, 7, 7, 0
+         0, 7, 7, 6, 7, 5, 7, 7, 7, 7, 5, 7, 6, 7, 7, 4,
+         7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+         7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+         6, 7, 7, 2, 7, 7, 7, 7, 7, 7, 7, 7, 6, 7, 7, 6,
+         7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+         5, 7, 7, 7, 7, 1, 7, 7, 7, 7, 5, 7, 7, 7, 7, 5,
+         7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+         7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7, 7,
+         7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7, 7,
+         7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7, 7, 7,
+         5, 7, 7, 7, 7, 5, 7, 7, 7, 7, 1, 7, 7, 7, 7, 5,
+         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7, 7, 7,
+         6, 7, 7, 6, 7, 7, 7, 7, 7, 7, 7, 7, 2, 7, 7, 6,
+         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7, 7,
+         7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 3, 7,
+         4, 7, 7, 6, 7, 5, 7, 7, 7, 7, 5, 7, 6, 7, 7, 0
      };

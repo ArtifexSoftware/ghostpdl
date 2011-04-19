@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,7 +38,7 @@ gs_malloc_memory_t *gs_malloc_memory_init(void);
 /* The cast is unfortunate, but unavoidable. */
 #define gs_malloc_memory_release(mem)\
   gs_memory_free_all((gs_memory_t *)mem, FREE_ALL_EVERYTHING,\
-		     "gs_malloc_memory_release")
+                     "gs_malloc_memory_release")
 
 gs_memory_t * gs_malloc_init(void);
 void gs_malloc_release(gs_memory_t *mem);

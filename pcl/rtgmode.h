@@ -32,7 +32,6 @@ typedef enum {
     IMPLICIT = 100
 } pcl_gmode_entry_t;
 
-
 /* enter raster graphics mode */
 int     pcl_enter_graphics_mode(
     pcl_state_t *       pcs,

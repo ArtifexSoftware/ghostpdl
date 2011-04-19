@@ -70,7 +70,6 @@ static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
                           gs_memory_t *memory);
 
-
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
 gs_private_st_ptrs2(st_gsicc_colorname, gsicc_colorname_t, "gsicc_colorname",
@@ -194,7 +193,6 @@ gsicc_new_iccsmask(gs_memory_t *memory)
     }
     return(result);
 }
-
 
 /* Allocate a new structure to hold the profiles that contains the profiles
    used when we are in a softmask group */
@@ -1082,7 +1080,6 @@ gsicc_manager_new(gs_memory_t *memory)
    result->namelen = 0;
    return(result);
 }
-
 
 static void
 rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)

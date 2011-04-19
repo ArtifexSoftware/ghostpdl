@@ -26,7 +26,6 @@
 #include "pclookup.h"
 #include "pcdither.h"
 
-
 /*
  * Structure for built-in dither methods. "built-in" in this case refers to
  * items that cannot be modifiied by the user via the PCL interpreter; there
@@ -47,7 +46,7 @@
  * should be provided as:
  *
  *   red(0, 0), red(1, 0), red(0, 1), red(1, 1), green(0, 0), ..., blue(1, 1)
- * 
+ *
  * For table dithers, data is organized by (device-space) row, then column,
  * then level (the intensity level to which the given color plane corresponds),
  * then color plane. Data is one bit per pixel, high-order-bit leftmost, and
@@ -122,7 +121,7 @@ typedef struct pcl_ht_builtin_dither_s {
  *
  * The HT_FIXED flag indicates which methods may not be changed by the output
  * device. The ordered, clustered ordered, and user-defined dithers (both
- * color and monochrome versions) are in this category, because they must 
+ * color and monochrome versions) are in this category, because they must
  * have predictable matrices for the logical operations to produce predictable
  * results.
  *
@@ -268,14 +267,13 @@ void pcl_ht_set_print_mode(pcl_state_t *pcs, bool monochrome);
  */
 int pcl_ht_set_render_method(pcl_state_t *pcs, pcl_ht_t ** ppht, uint render_method);
 
-
-/** 
- * Remap render method to a gray render method iff enabled && palette is all gray 
+/**
+ * Remap render method to a gray render method iff enabled && palette is all gray
  *
  * if the palette is gray remap the render_algorithm to a gray algo
  * if the palette is color use the original "color" render_algorithm
  * degenerates to NOP if ENABLE_AUTO_GRAY_RENDER_METHODS is false
- */ 
+ */
 int pcl_ht_remap_render_method(pcl_state_t * pcs,
                                pcl_ht_t **ppht,
                                bool is_gray
@@ -285,7 +283,7 @@ int pcl_ht_remap_render_method(pcl_state_t * pcs,
  * Checks if all palette entries are gray iff enabled.
  *
  * Returns true if all palette entries are gray
- * Returns false if any entry is color 
+ * Returns false if any entry is color
  * checks the entire palette
  * all gray palette ONLY has meaning if ENABLE_AUTO_GRAY_RENDER_METHODS is true
  * otherwise this is a NOP that always returns false.

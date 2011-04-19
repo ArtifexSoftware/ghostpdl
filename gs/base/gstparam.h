@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -91,7 +91,7 @@ typedef struct gs_transparency_group_params_s {
     int group_color_numcomps;
     gs_transparency_color_t group_color;
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
-    cmm_profile_t *iccprofile;               /* The profile  */    
+    cmm_profile_t *iccprofile;               /* The profile  */
 } gs_transparency_group_params_t;
 
 /* Define the parameter structure for a transparency mask. */
@@ -115,7 +115,7 @@ typedef struct gs_transparency_mask_params_s {
     gs_function_t *TransferFunction_data;
     bool replacing;
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
-    cmm_profile_t *iccprofile;               /* The profile  */    
+    cmm_profile_t *iccprofile;               /* The profile  */
 } gs_transparency_mask_params_t;
 
 #define MASK_TRANSFER_FUNCTION_SIZE 256
@@ -134,7 +134,7 @@ typedef struct gx_transparency_mask_params_s {
     uint mask_id;
     byte transfer_fn[MASK_TRANSFER_FUNCTION_SIZE];
     int64_t icc_hashcode;                    /* Needed when we are doing clist reading */
-    cmm_profile_t *iccprofile;               /* The profile  */    
+    cmm_profile_t *iccprofile;               /* The profile  */
 } gx_transparency_mask_params_t;
 
 /*
@@ -148,14 +148,14 @@ typedef struct gx_transparency_mask_params_s {
              sizeof(((gs_pdf14trans_params_t *)0)->subtype) + \
              sizeof(((gs_pdf14trans_params_t *)0)->group_color_numcomps) + \
              4 /* group color, replacing, function_is_identity, Background_components */ + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->bbox) + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->mask_id) + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->Background) + \
+             sizeof(((gs_pdf14trans_params_t *)0)->bbox) + \
+             sizeof(((gs_pdf14trans_params_t *)0)->mask_id) + \
+             sizeof(((gs_pdf14trans_params_t *)0)->Background) + \
              sizeof(float)*4 + /* If cmyk background */ \
-	     sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground) + \
+             sizeof(((gs_pdf14trans_params_t *)0)->GrayBackground) + \
              sizeof(int64_t)) /* ICC band information */
 #define MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE (MAX_CLIST_TRANSPARENCY_BUFFER_SIZE + \
-	     sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn))
+             sizeof(((gs_pdf14trans_params_t *)0)->transfer_fn))
 #define MAX_CLIST_COMPOSITOR_SIZE MAX_CLIST_TRANSPARENCY_COMPOSITOR_SIZE
 
 /* Select the opacity or shape parameters. */

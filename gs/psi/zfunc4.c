@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -136,11 +136,11 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
     } else if (r_btype(pref) == t_name) {
         ref * val;
         if (dict_find(systemdict, pref, &val) <= 0)
-	    return false;
+            return false;
         if (r_btype(val) != t_operator)
-	    return false;
+            return false;
         if (!r_has_attr(val, a_executable))
-	    return false;
+            return false;
         return val->value.opproc == proc;
     }
    else
@@ -148,7 +148,7 @@ resolves_to_oper(i_ctx_t *i_ctx_p, const ref *pref, const op_proc_t proc)
 }
 
 /* Store an int in the  buffer */
-static int 
+static int
 put_int(byte **p, int n) {
    if (n == (byte)n) {
        if (*p) {
@@ -168,7 +168,7 @@ put_int(byte **p, int n) {
 }
 
 /* Store a float in the  buffer */
-static int 
+static int
 put_float(byte **p, float n) {
    if (*p) {
       **p = PtCr_float;
@@ -179,7 +179,7 @@ put_float(byte **p, float n) {
 }
 
 /* Store an op code in the  buffer */
-static int 
+static int
 put_op(byte **p, byte op) {
    if (*p)
       *(*p)++ = op;
@@ -230,7 +230,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
               outColor aload pop
             }
         */
-	ref r_tp, r_cttf; /* original references */
+        ref r_tp, r_cttf; /* original references */
         ref n_tp, n_cttf; /* names */
         ref *v_tp, *v_cttf; /* values */
         int sz;
@@ -253,7 +253,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                     if (v_tp && v_cttf && r_is_array(v_tp) && r_is_array(v_cttf)) {
                         uint n_elem = r_size(v_tp);
 
-                        if ((n_elem & 3) == 0 && r_size(v_cttf) == 31) { 
+                        if ((n_elem & 3) == 0 && r_size(v_cttf) == 31) {
                             /* Enough testing, idiom recognition tests less. */
                             uint n_col = n_elem/4;
 
@@ -261,7 +261,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                                 ref v;
                                 float fv;
                                 bool first = true;
-                                
+
                                 for (j = 0; j < n_col; j++) {
                                     if (array_get(imemory, v_tp, j*4 + i, &v) < 0)
                                         goto idiom_failed;
@@ -285,7 +285,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                                         sz += put_op(&p, PtCr_sub);
                                         if (first)
                                             first = false;
-                                        else 
+                                        else
                                             sz += put_op(&p, PtCr_mul);
                                     }
                                 }
@@ -310,126 +310,126 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
     }
   idiom_failed:;
     for (i = 0; i < size; ++i) {
-	byte no_ops[1 + max(sizeof(int), sizeof(float))];
-	ref elt, elt2, elt3;
-	ref * delp;
+        byte no_ops[1 + max(sizeof(int), sizeof(float))];
+        ref elt, elt2, elt3;
+        ref * delp;
 
-	p = (ops ? ops + *psize : no_ops);
-	array_get(imemory, pref, i, &elt);
-	switch (r_btype(&elt)) {
-	case t_integer:
-	    *psize += put_int(&p, elt.value.intval);
-	    break;
-	case t_real:
-	    *psize += put_float(&p, elt.value.realval);
-	    break;
-	case t_boolean:
-	    *p = (elt.value.boolval ? PtCr_true : PtCr_false);
-	    ++*psize;
-	    break;
-	case t_name:
-	    if (!r_has_attr(&elt, a_executable))
-		return_error(e_rangecheck);
-	    name_string_ref(imemory, &elt, &elt);
-	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
-			       (const byte *)"true", 4)) {
-		*p = PtCr_true;
-	        ++*psize;
-	        break;
-	    }
-	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
-				      (const byte *)"false", 5)) {
-		*p = PtCr_false;
-	        ++*psize;
-	        break;
-	    }
-	    /* Check if the name is a valid operator in systemdict */
-	    if (dict_find(systemdict, &elt, &delp) <= 0)
-		return_error(e_undefined);
-	    if (r_btype(delp) != t_operator)
-		return_error(e_typecheck);
-	    if (!r_has_attr(delp, a_executable))
-		return_error(e_rangecheck);
-	    elt = *delp;
-	    /* Fall into the operator case */
-	case t_operator: {
-	    int j;
+        p = (ops ? ops + *psize : no_ops);
+        array_get(imemory, pref, i, &elt);
+        switch (r_btype(&elt)) {
+        case t_integer:
+            *psize += put_int(&p, elt.value.intval);
+            break;
+        case t_real:
+            *psize += put_float(&p, elt.value.realval);
+            break;
+        case t_boolean:
+            *p = (elt.value.boolval ? PtCr_true : PtCr_false);
+            ++*psize;
+            break;
+        case t_name:
+            if (!r_has_attr(&elt, a_executable))
+                return_error(e_rangecheck);
+            name_string_ref(imemory, &elt, &elt);
+            if (!bytes_compare(elt.value.bytes, r_size(&elt),
+                               (const byte *)"true", 4)) {
+                *p = PtCr_true;
+                ++*psize;
+                break;
+            }
+            if (!bytes_compare(elt.value.bytes, r_size(&elt),
+                                      (const byte *)"false", 5)) {
+                *p = PtCr_false;
+                ++*psize;
+                break;
+            }
+            /* Check if the name is a valid operator in systemdict */
+            if (dict_find(systemdict, &elt, &delp) <= 0)
+                return_error(e_undefined);
+            if (r_btype(delp) != t_operator)
+                return_error(e_typecheck);
+            if (!r_has_attr(delp, a_executable))
+                return_error(e_rangecheck);
+            elt = *delp;
+            /* Fall into the operator case */
+        case t_operator: {
+            int j;
 
-	    for (j = 0; j < countof(calc_ops); ++j)
-		if (elt.value.opproc == calc_ops[j].proc) {
-		    *p = calc_ops[j].opcode;
-		    ++*psize;
-		    goto next;
-		}
-	    return_error(e_rangecheck);
-	}
-	default: {
-	    if (!r_is_proc(&elt))
-		return_error(e_typecheck);
-	    if (depth == MAX_PSC_FUNCTION_NESTING)
-		return_error(e_limitcheck);
-	    if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
-		return code;
-	    *psize += 3;
-	    code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
-	    if (code < 0)
-		return code;
-	    /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
-	    if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
-		gs_c_param_list list;
-		int AllowRepeat = 1;
+            for (j = 0; j < countof(calc_ops); ++j)
+                if (elt.value.opproc == calc_ops[j].proc) {
+                    *p = calc_ops[j].opcode;
+                    ++*psize;
+                    goto next;
+                }
+            return_error(e_rangecheck);
+        }
+        default: {
+            if (!r_is_proc(&elt))
+                return_error(e_typecheck);
+            if (depth == MAX_PSC_FUNCTION_NESTING)
+                return_error(e_limitcheck);
+            if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
+                return code;
+            *psize += 3;
+            code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
+            if (code < 0)
+                return code;
+            /* Check for { proc } repeat | {proc} if | {proc1} {proc2} ifelse */
+            if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
+                gs_c_param_list list;
+                int AllowRepeat = 1;
 
-		/* Check if the device allows the use of repeat in functions */
-		/* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
-		gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
-		code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
-		if (code < 0)
-		    return code;
-		gs_c_param_list_read(&list);
-		code = param_read_bool((gs_param_list *)&list,
-		    "AllowPSRepeatFunctions",
-		    &AllowRepeat);
-		if (code < 0)
-		    return code;
-		gs_c_param_list_release(&list);
+                /* Check if the device allows the use of repeat in functions */
+                /* We can't handle 'repeat' with pdfwrite since it emits FunctionType 4 */
+                gs_c_param_list_write(&list, i_ctx_p->pgs->device->memory);
+                code = gs_getdeviceparams(i_ctx_p->pgs->device, (gs_param_list *)&list);
+                if (code < 0)
+                    return code;
+                gs_c_param_list_read(&list);
+                code = param_read_bool((gs_param_list *)&list,
+                    "AllowPSRepeatFunctions",
+                    &AllowRepeat);
+                if (code < 0)
+                    return code;
+                gs_c_param_list_release(&list);
 
-		if (!AllowRepeat)
-		    return_error(e_rangecheck);
-		if (ops) {
-		    *p = PtCr_repeat;
-		    psc_fixup(p, ops + *psize);
-		    p = ops + *psize;
-		    *p++ = PtCr_repeat_end;
-		}
-		*psize += 1;	/* extra room for repeat_end */
-	    } else if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
-		if (ops) {
-		    *p = PtCr_if;
-		    psc_fixup(p, ops + *psize);
-		}
-	    } else if (!r_is_proc(&elt2))
-		return_error(e_rangecheck);
-    	    else if ((code = array_get(imemory, pref, ++i, &elt3)) < 0)
-		return code;
-	    else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
-		if (ops) {
-		    *p = PtCr_if;
-		    psc_fixup(p, ops + *psize + 3);
-		    p = ops + *psize;
-		    *p = PtCr_else;
-		}
-		*psize += 3;
-		code = check_psc_function(i_ctx_p, &elt2, depth + 1, ops, psize);
-		if (code < 0)
-		    return code;
-		if (ops)
-		    psc_fixup(p, ops + *psize);
-	    } else 
-		return_error(e_rangecheck);
-	    }	 /* end 'default' */
-	}
+                if (!AllowRepeat)
+                    return_error(e_rangecheck);
+                if (ops) {
+                    *p = PtCr_repeat;
+                    psc_fixup(p, ops + *psize);
+                    p = ops + *psize;
+                    *p++ = PtCr_repeat_end;
+                }
+                *psize += 1;	/* extra room for repeat_end */
+            } else if (resolves_to_oper(i_ctx_p, &elt2, zif)) {
+                if (ops) {
+                    *p = PtCr_if;
+                    psc_fixup(p, ops + *psize);
+                }
+            } else if (!r_is_proc(&elt2))
+                return_error(e_rangecheck);
+            else if ((code = array_get(imemory, pref, ++i, &elt3)) < 0)
+                return code;
+            else if (resolves_to_oper(i_ctx_p, &elt3, zifelse)) {
+                if (ops) {
+                    *p = PtCr_if;
+                    psc_fixup(p, ops + *psize + 3);
+                    p = ops + *psize;
+                    *p = PtCr_else;
+                }
+                *psize += 3;
+                code = check_psc_function(i_ctx_p, &elt2, depth + 1, ops, psize);
+                if (code < 0)
+                    return code;
+                if (ops)
+                    psc_fixup(p, ops + *psize);
+            } else
+                return_error(e_rangecheck);
+            }	 /* end 'default' */
+        }
     next:
-	DO_NOTHING;
+        DO_NOTHING;
     }
     return 0;
 }
@@ -441,7 +441,7 @@ build_function_proc(gs_build_function_4);
 /* Finish building a FunctionType 4 (PostScript Calculator) function. */
 int
 gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t * mnDR,
-		    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
+                    int depth, gs_function_t ** ppfn, gs_memory_t *mem)
 {
     gs_function_PtCr_params_t params;
     ref *proc;
@@ -453,21 +453,21 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
     if (dict_find_string(op, "Function", &proc) <= 0) {
-	code = gs_note_error(e_rangecheck);
-	goto fail;
+        code = gs_note_error(e_rangecheck);
+        goto fail;
     }
     if (!r_is_proc(proc)) {
-	code = gs_note_error(e_typecheck);
-	goto fail;
+        code = gs_note_error(e_typecheck);
+        goto fail;
     }
     size = 0;
     code = check_psc_function(i_ctx_p, proc, 0, NULL, &size);
     if (code < 0)
-	goto fail;
+        goto fail;
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
     if (ops == 0) {
-	code = gs_note_error(e_VMerror);
-	goto fail;
+        code = gs_note_error(e_VMerror);
+        goto fail;
     }
     size = 0;
     check_psc_function(i_ctx_p, proc, 0, ops, &size); /* can't fail */
@@ -476,7 +476,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.ops.size = size + 1;
     code = gs_function_PtCr_init(ppfn, &params, mem);
     if (code >= 0)
-	return 0;
+        return 0;
     /* free_params will free the ops string */
 fail:
     gs_function_PtCr_free_params(&params, mem);
@@ -494,56 +494,56 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
 
     code = get_space_object(i_ctx_p, arr, &space);
     if (code < 0)
-	return code;
+        return code;
     if (!space->alternateproc)
-	return e_typecheck;
+        return e_typecheck;
     code = space->alternateproc(i_ctx_p, arr, &palternatespace, &CIESubst);
     if (code < 0)
-	return code;
+        return code;
     code = get_space_object(i_ctx_p, palternatespace, &altspace);
     if (code < 0)
-	return code;
+        return code;
 
-    code = space->numcomponents(i_ctx_p, arr, &num_components);    
+    code = space->numcomponents(i_ctx_p, arr, &num_components);
     if (code < 0)
-	return code;
+        return code;
     ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Domain)");
     if (!ptr)
-	return e_VMerror;
-    code = space->domain(i_ctx_p, arr, ptr);    
+        return e_VMerror;
+    code = space->domain(i_ctx_p, arr, ptr);
     if (code < 0) {
-	gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
-	return code;
+        gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
+        return code;
     }
     params.Domain = ptr;
     params.m = num_components;
 
-    code = altspace->numcomponents(i_ctx_p, &alternatespace, &num_components);    
+    code = altspace->numcomponents(i_ctx_p, &alternatespace, &num_components);
     if (code < 0) {
-	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
-	return code;
+        gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+        return code;
     }
     ptr = (float *)gs_alloc_byte_array(imemory, num_components * 2, sizeof(float), "make_type4_function(Range)");
     if (!ptr) {
-	gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
-	return e_VMerror;
+        gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
+        return e_VMerror;
     }
-    code = altspace->range(i_ctx_p, &alternatespace, ptr);    
+    code = altspace->range(i_ctx_p, &alternatespace, ptr);
     if (code < 0) {
-	gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
-	gs_free_const_object(imemory, params.Domain, "make_type4_function(Range)");
-	return code;
+        gs_free_const_object(imemory, ptr, "make_type4_function(Domain)");
+        gs_free_const_object(imemory, params.Domain, "make_type4_function(Range)");
+        return code;
     }
     params.Range = ptr;
     params.n = num_components;
-    
+
     params.ops.data = 0;	/* in case of failure, see gs_function_PtCr_free_params */
     params.ops.size = 0;	/* ditto */
     size = 0;
     code = check_psc_function(i_ctx_p, (const ref *)pproc, 0, NULL, &size);
     if (code < 0) {
-	gs_function_PtCr_free_params(&params, imemory);
-	return code;
+        gs_function_PtCr_free_params(&params, imemory);
+        return code;
     }
     ops = gs_alloc_string(imemory, size + 1, "make_type4_function(ops)");
     size = 0;
@@ -552,8 +552,8 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     params.ops.data = ops;
     params.ops.size = size + 1;
     code = gs_function_PtCr_init(func, &params, imemory);
-    if (code < 0) 
-	gs_function_PtCr_free_params(&params, imemory);
+    if (code < 0)
+        gs_function_PtCr_free_params(&params, imemory);
 
     return code;
 }

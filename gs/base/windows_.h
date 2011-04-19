@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,13 +23,13 @@
 
 #ifdef __WATCOMC__
 typedef RGBQUAD FAR * LPRGBQUAD;
-	/* Watcom's _beginthread takes an extra stack_bottom argument. */
+        /* Watcom's _beginthread takes an extra stack_bottom argument. */
 #  define BEGIN_THREAD(proc, stksize, data)\
      _beginthread(proc, NULL, stksize, data)
 #else
 #  define BEGIN_THREAD(proc, stksize, data)\
      _beginthread(proc, stksize, data)
-	/* Define null equivalents of the Watcom 32-to-16-bit glue. */
+        /* Define null equivalents of the Watcom 32-to-16-bit glue. */
 #  define AllocAlias16(ptr) ((DWORD)(ptr))
 #  define FreeAlias16(dword)	/* */
 #  define MK_FP16(fp32) ((DWORD)(fp32))
@@ -45,7 +45,7 @@ typedef RGBQUAD FAR * LPRGBQUAD;
 #endif
 
 #if defined(__BORLANDC__)
-#  define exception_code() __exception_code  
+#  define exception_code() __exception_code
 #endif
 
 #endif /* windows__INCLUDED */

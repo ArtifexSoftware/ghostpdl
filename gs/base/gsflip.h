@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,7 +27,7 @@
  * bits_per_sample is invalid, otherwise 0.
  */
 extern int image_flip_planes(byte * buffer, const byte ** planes,
-			     int offset, int nbytes,
-			     int num_planes, int bits_per_sample);
+                             int offset, int nbytes,
+                             int num_planes, int bits_per_sample);
 
 #endif /* gsflip_INCLUDED */

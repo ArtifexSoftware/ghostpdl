@@ -361,7 +361,6 @@ static char *next_word(char *s)
 
 #define cleanup()       (free(list), fclose(f))
 
-
 static int eprn_read_media_data(eprn_Eprn *eprn)
 {
   char buffer[BUFFER_SIZE];

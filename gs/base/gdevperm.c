@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -114,17 +114,16 @@ static const gx_device_procs perm_procs = {
 
 const gx_device_perm_t gs_perm_device = {
     prn_device_body_extended(gx_device_perm_t, perm_procs, "permute",
-	DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
-	0, 0, 0, 0,
-	GX_DEVICE_COLOR_MAX_COMPONENTS, 4,
-	GX_CINFO_POLARITY_SUBTRACTIVE,
-	32, 0, 255, 255, 256, 256,
-	GX_CINFO_SEP_LIN,
-	"DeviceN",
-	perm_print_page),
+        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, 72, 72,
+        0, 0, 0, 0,
+        GX_DEVICE_COLOR_MAX_COMPONENTS, 4,
+        GX_CINFO_POLARITY_SUBTRACTIVE,
+        32, 0, 255, 255, 256, 256,
+        GX_CINFO_SEP_LIN,
+        "DeviceN",
+        perm_print_page),
     NULL, 0, 0, 0
 };
-
 
 static int
 perm_print_page(gx_device_printer *pdev, FILE *pstream)
@@ -144,45 +143,45 @@ perm_print_page(gx_device_printer *pdev, FILE *pstream)
     raw_line = gs_alloc_bytes(pdev->memory, raw_raster, "perm_print_page");
     cooked_line = gs_alloc_bytes(pdev->memory, dev->width * 3, "perm_print_page");
     for (y = 0; y < dev->height; y++) {
-	int x;
-	code = gdev_prn_get_bits(pdev, y, raw_line, &row);
-	for (x = 0; x < dev->width; x++) {
-	    int c, m, y, k;
-	    int r, g, b;
+        int x;
+        code = gdev_prn_get_bits(pdev, y, raw_line, &row);
+        for (x = 0; x < dev->width; x++) {
+            int c, m, y, k;
+            int r, g, b;
 
-	    if (mode == 0) {
-		if (permute) {
-		    c = row[x * ncomp + 1];
-		    m = row[x * ncomp + 3];
-		    y = row[x * ncomp + 0];
-		    k = row[x * ncomp + 5];
-		} else {
-		    c = row[x * ncomp];
-		    m = row[x * ncomp + 1];
-		    y = row[x * ncomp + 2];
-		    k = row[x * ncomp + 3];
-		}
-	    } else /* if (mode == 1) */ {
-		if (permute) {
-		    c = row[x * ncomp + 1];
-		    m = row[x * ncomp + 3];
-		    y = row[x * ncomp + 0];
-		    k = 0;
-		} else {
-		    c = row[x * ncomp];
-		    m = row[x * ncomp + 1];
-		    y = row[x * ncomp + 2];
-		    k = 0;
-		}
-	    }
-	    r = (255 - c) * (255 - k) / 255;
-	    g = (255 - m) * (255 - k) / 255;
-	    b = (255 - y) * (255 - k) / 255;
-	    cooked_line[x * 3] = r;
-	    cooked_line[x * 3 + 1] = g;
-	    cooked_line[x * 3 + 2] = b;
-	}
-	fwrite(cooked_line, 1, dev->width * 3, pstream);
+            if (mode == 0) {
+                if (permute) {
+                    c = row[x * ncomp + 1];
+                    m = row[x * ncomp + 3];
+                    y = row[x * ncomp + 0];
+                    k = row[x * ncomp + 5];
+                } else {
+                    c = row[x * ncomp];
+                    m = row[x * ncomp + 1];
+                    y = row[x * ncomp + 2];
+                    k = row[x * ncomp + 3];
+                }
+            } else /* if (mode == 1) */ {
+                if (permute) {
+                    c = row[x * ncomp + 1];
+                    m = row[x * ncomp + 3];
+                    y = row[x * ncomp + 0];
+                    k = 0;
+                } else {
+                    c = row[x * ncomp];
+                    m = row[x * ncomp + 1];
+                    y = row[x * ncomp + 2];
+                    k = 0;
+                }
+            }
+            r = (255 - c) * (255 - k) / 255;
+            g = (255 - m) * (255 - k) / 255;
+            b = (255 - y) * (255 - k) / 255;
+            cooked_line[x * 3] = r;
+            cooked_line[x * 3 + 1] = g;
+            cooked_line[x * 3 + 2] = b;
+        }
+        fwrite(cooked_line, 1, dev->width * 3, pstream);
     }
     gs_free_object(pdev->memory, cooked_line, "perm_print_page");
     gs_free_object(pdev->memory, raw_line, "perm_print_page");
@@ -194,14 +193,14 @@ perm_permute_cm(gx_device *pdev, frac out[])
 {
     gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
     if (dev->permute) {
-	frac y;
-	out[5] = dev->mode == 0 ? out[3] : 0;
-	out[4] = frac_0;
-	y = out[2];
-	out[3] = out[1];
-	out[2] = out[0];
-	out[1] = out[0];
-	out[0] = y;
+        frac y;
+        out[5] = dev->mode == 0 ? out[3] : 0;
+        out[4] = frac_0;
+        y = out[2];
+        out[3] = out[1];
+        out[2] = out[0];
+        out[1] = out[0];
+        out[0] = y;
     }
 }
 
@@ -215,7 +214,7 @@ gray_cs_to_perm_cm_0(gx_device *dev, frac gray, frac out[])
 
 static void
 rgb_cs_to_perm_cm_0(gx_device *dev, const gs_imager_state *pis,
-				  frac r, frac g, frac b, frac out[])
+                                  frac r, frac g, frac b, frac out[])
 {
     color_rgb_to_cmyk(r, g, b, pis, out, dev->memory);
     perm_permute_cm(dev, out);
@@ -240,7 +239,7 @@ gray_cs_to_perm_cm_1(gx_device *dev, frac gray, frac out[])
 
 static void
 rgb_cs_to_perm_cm_1(gx_device *dev, const gs_imager_state *pis,
-				  frac r, frac g, frac b, frac out[])
+                                  frac r, frac g, frac b, frac out[])
 {
     out[0] = frac_1 - r;
     out[1] = frac_1 - g;
@@ -277,26 +276,26 @@ perm_get_color_mapping_procs(const gx_device *dev)
     const gx_device_perm_t * const pdev = (const gx_device_perm_t *)dev;
 
     if (pdev->mode < 0 || pdev->mode >= sizeof(perm_cmapping_procs) / sizeof(perm_cmapping_procs[0]))
-	return NULL;
+        return NULL;
     return perm_cmapping_procs[pdev->mode];
 }
 
 #define compare_color_names(name, name_size, str, str_size) \
     (name_size == str_size && \
-	(strncmp((const char *)name, (const char *)str, name_size) == 0))
+        (strncmp((const char *)name, (const char *)str, name_size) == 0))
 
 static int
 perm_get_color_comp_index(const gx_device *pdev, const char *pname,
-					int name_size, int component_type)
+                                        int name_size, int component_type)
 {
     const gx_device_perm_t * const dev = (const gx_device_perm_t *)pdev;
     int n_separation_names = dev->num_std_colorant_names;
     int i;
 
     for (i = 0; i < n_separation_names; i++) {
-	const char *sep_name = dev->std_colorant_names[i];
-	if (compare_color_names(pname, name_size, sep_name, strlen(sep_name)))
-	    return i;
+        const char *sep_name = dev->std_colorant_names[i];
+        if (compare_color_names(pname, name_size, sep_name, strlen(sep_name)))
+            return i;
     }
     return -1;
 }
@@ -319,7 +318,7 @@ perm_encode_color(gx_device *dev, const gx_color_value colors[])
     int ncomp = dev->color_info.num_components;
 
     for (; i<ncomp; i++) {
-	color <<= bpc;
+        color <<= bpc;
         color |= (colors[i] >> drop);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
@@ -339,7 +338,7 @@ perm_decode_color(gx_device *dev, gx_color_index color, gx_color_value *out)
 
     for (; i<ncomp; i++) {
         out[ncomp - i - 1] = (gx_color_value)((color & mask) << drop);
-	color >>= bpc;
+        color >>= bpc;
     }
     return 0;
 }
@@ -355,56 +354,56 @@ perm_get_params(gx_device *pdev, gs_param_list *plist)
 
     code = param_write_int(plist, "Permute", &dev->permute);
     if (code >= 0)
-	code = param_write_int(plist, "Mode", &dev->mode);
+        code = param_write_int(plist, "Mode", &dev->mode);
     /*
      * We need to specify the SeparationColorNames if we are permuting the colors.
      */
     if (code >= 0 && dev->permute == 1) {
-	int i;
-	/* Temp variables.  The data is copied into the plist below. */
+        int i;
+        /* Temp variables.  The data is copied into the plist below. */
         gs_param_string_array scna;
         gs_param_string scn[6];
 
         set_param_array(scna, scn, dev->num_std_colorant_names);
-	/* Place colorant names into string array elements */
-	for (i = 0; i < dev->num_std_colorant_names; i++)
-	    param_string_from_string(scn[i], dev->std_colorant_names[i]);
-	/*
-	 * Place the name array in the plist.  This includes allocating
-	 * memory for the name array element and the actual string array.
-	 */
-	code = param_write_name_array(plist, "SeparationColorNames", &scna);
+        /* Place colorant names into string array elements */
+        for (i = 0; i < dev->num_std_colorant_names; i++)
+            param_string_from_string(scn[i], dev->std_colorant_names[i]);
+        /*
+         * Place the name array in the plist.  This includes allocating
+         * memory for the name array element and the actual string array.
+         */
+        code = param_write_name_array(plist, "SeparationColorNames", &scna);
     }
     if (code >= 0)
-	code = gdev_prn_get_params(pdev, plist);
+        code = gdev_prn_get_params(pdev, plist);
     return code;
 }
 
 #undef set_param_array
 
 static const char * DeviceCMYKComponents[] = {
-	"Cyan",
-	"Magenta",
-	"Yellow",
-	"Black",
-	0		/* List terminator */
+        "Cyan",
+        "Magenta",
+        "Yellow",
+        "Black",
+        0		/* List terminator */
 };
 
 static const char * DeviceCMYComponents[] = {
-	"Cyan",
-	"Magenta",
-	"Yellow",
-	0		/* List terminator */
+        "Cyan",
+        "Magenta",
+        "Yellow",
+        0		/* List terminator */
 };
 
 static const char * DeviceNComponents[] = {
-	"Yellow",
-	"Cyan",
-	"Cyan2",
-	"Magenta",
-	"Zero",
-	"Black",
-	0		/* List terminator */
+        "Yellow",
+        "Cyan",
+        "Cyan2",
+        "Magenta",
+        "Zero",
+        "Black",
+        0		/* List terminator */
 };
 
 static int
@@ -413,27 +412,27 @@ perm_set_color_model(gx_device_perm_t *dev, int mode, int permute)
     dev->mode = mode;
     dev->permute = permute;
     if (mode == 0 && permute == 0) {
-	dev->std_colorant_names = DeviceCMYKComponents;
-	dev->num_std_colorant_names = 4;
-	dev->color_info.cm_name = "DeviceCMYK";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+        dev->std_colorant_names = DeviceCMYKComponents;
+        dev->num_std_colorant_names = 4;
+        dev->color_info.cm_name = "DeviceCMYK";
+        dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (mode == 0 && permute == 1) {
-	dev->std_colorant_names = DeviceNComponents;
-	dev->num_std_colorant_names = 6;
-	dev->color_info.cm_name = "DeviceN";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+        dev->std_colorant_names = DeviceNComponents;
+        dev->num_std_colorant_names = 6;
+        dev->color_info.cm_name = "DeviceN";
+        dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (mode == 1 && permute == 0) {
-	dev->std_colorant_names = DeviceCMYComponents;
-	dev->num_std_colorant_names = 3;
-	dev->color_info.cm_name = "DeviceCMY";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+        dev->std_colorant_names = DeviceCMYComponents;
+        dev->num_std_colorant_names = 3;
+        dev->color_info.cm_name = "DeviceCMY";
+        dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (mode == 1 && permute == 1) {
-	dev->std_colorant_names = DeviceNComponents;
-	dev->num_std_colorant_names = 6;
-	dev->color_info.cm_name = "DeviceN";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+        dev->std_colorant_names = DeviceNComponents;
+        dev->num_std_colorant_names = 6;
+        dev->color_info.cm_name = "DeviceN";
+        dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else {
-	return -1;
+        return -1;
     }
     dev->color_info.num_components = dev->num_std_colorant_names;
     dev->color_info.depth = 8 * dev->num_std_colorant_names;
@@ -452,22 +451,21 @@ perm_put_params(gx_device *pdev, gs_param_list *plist)
 
     code = param_read_int(plist, "Permute", &new_permute);
     if (code < 0)
-	return code;
+        return code;
     code = param_read_int(plist, "Mode", &new_mode);
     if (code < 0)
-	return code;
+        return code;
     if (new_mode < 0 || new_mode >= sizeof(perm_cmapping_procs) / sizeof(perm_cmapping_procs[0])) {
-	dlprintf("rangecheck!\n");
-	return_error(gs_error_rangecheck);
+        dlprintf("rangecheck!\n");
+        return_error(gs_error_rangecheck);
     }
     dev->permute = new_permute;
     dev->mode = new_mode;
     save_info = pdev->color_info;
     code = perm_set_color_model(dev, dev->mode, dev->permute);
     if (code >= 0)
-	code = gdev_prn_put_params(pdev, plist);
+        code = gdev_prn_put_params(pdev, plist);
     if (code < 0)
-	pdev->color_info = save_info;
+        pdev->color_info = save_info;
     return code;
 }
-

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,6 +37,6 @@
  * mdev->color_info.depth.
  */
 int gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
-			const gx_render_plane_t *planes /*[num_planes]*/);
+                        const gx_render_plane_t *planes /*[num_planes]*/);
 
 #endif /* gdevmpla_INCLUDED */

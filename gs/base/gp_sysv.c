@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -30,13 +30,13 @@ int
 rename(const char *a, const char *b)
 {
     if (access(a, 0) == -1)
-	return (-1);
+        return (-1);
     unlink(b);
     if (link(a, b) == -1)
-	return (-1);
+        return (-1);
     if (unlink(a) == -1) {
-	unlink(b);		/* ??? */
-	return (-1);
+        unlink(b);		/* ??? */
+        return (-1);
     }
     return (0);
 }
@@ -53,8 +53,8 @@ gettimeofday(struct timeval *tvp, struct timezone *tzp)
     long ticks;
 
     if (!offset) {
-	time(&offset);
-	offset -= (times(&tms) / HZ);
+        time(&offset);
+        offset -= (times(&tms) / HZ);
     }
     ticks = times(&tms);
     tvp->tv_sec = ticks / HZ + offset;

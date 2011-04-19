@@ -17,7 +17,7 @@ def
 
 0 0 moveto % So the show commands don't bomb because of nocurrentpoint.
 
-{ [1 2] executeonly aload }					dotest 
+{ [1 2] executeonly aload }					dotest
 { (string) executeonly (seek) anchorsearch }			dotest
 { (string) (seek) executeonly anchorsearch }			dotest
 { 100 101 (string) noaccess ashow}				dotest
@@ -36,7 +36,7 @@ def
 { 1 10 1 string readonly cvrs }					dotest
 { true 5 string readonly cvs }					dotest
 { 1 dict readonly begin /foo true def }				dotest
-{ 10 array readonly dictstack }					dotest 
+{ 10 array readonly dictstack }					dotest
 { 1 string executeonly 1 string eq }				dotest
 { 1 string 1 string executeonly eq }				dotest
 { 10 array readonly execstack }					dotest
@@ -67,7 +67,7 @@ def
 { 1 dict noaccess maxlength }					dotest
 { 1 string executeonly 1 string ne }				dotest
 { 1 string 1 string executeonly ne }				dotest
-%{ newpath 0 0 moveto (a) false charpath 
+%{ newpath 0 0 moveto (a) false charpath
 %  {} {} {} {} pathforall closepath }				dotest
 { 1 array executeonly 0 put }					dotest
 { 1 dict noaccess /key put }					dotest

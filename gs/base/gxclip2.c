@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@ static dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
 /* The device descriptor. */
 static const gx_device_tile_clip gs_tile_clip_device =
 {std_device_std_body_open(gx_device_tile_clip, 0, "tile clipper",
-			  0, 0, 1, 1),
+                          0, 0, 1, 1),
  {gx_default_open_device,
   gx_forward_get_initial_matrix,
   gx_default_sync_output,
@@ -106,16 +106,16 @@ static const gx_device_tile_clip gs_tile_clip_device =
 /* Initialize a tile clipping device from a mask. */
 int
 tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
-		     gx_device * tdev, int px, int py, gs_memory_t *mem)
+                     gx_device * tdev, int px, int py, gs_memory_t *mem)
 {
     int code =
     gx_mask_clip_initialize(cdev, &gs_tile_clip_device,
-			    (const gx_bitmap *)tiles,
-			    tdev, 0, 0, mem);	/* phase will be reset */
+                            (const gx_bitmap *)tiles,
+                            tdev, 0, 0, mem);	/* phase will be reset */
 
     if (code >= 0) {
-	cdev->tiles = *tiles;
-	tile_clip_set_phase(cdev, px, py);
+        cdev->tiles = *tiles;
+        tile_clip_set_phase(cdev, px, py);
     }
     return code;
 }
@@ -131,14 +131,14 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
 /* Fill a rectangle by tiling with the mask. */
 static int
 tile_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-			 gx_color_index color)
+                         gx_color_index color)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
     gx_device *tdev = cdev->target;
 
     return (*dev_proc(tdev, strip_tile_rectangle)) (tdev, &cdev->tiles,
-						    x, y, w, h,
-		    gx_no_color_index, color, cdev->phase.x, cdev->phase.y);
+                                                    x, y, w, h,
+                    gx_no_color_index, color, cdev->phase.x, cdev->phase.y);
 }
 
 /* Calculate the X offset corresponding to a given Y, taking the phase */
@@ -152,9 +152,9 @@ tile_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 /* combination of the tile mask and the source. */
 static int
 tile_clip_copy_mono(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		    int x, int y, int w, int h,
-		    gx_color_index color0, gx_color_index color1)
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                    int x, int y, int w, int h,
+                    gx_color_index color0, gx_color_index color1)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
     gx_color_index color, mcolor0, mcolor1;
@@ -163,36 +163,36 @@ tile_clip_copy_mono(gx_device * dev,
 
     setup_mask_copy_mono(cdev, color, mcolor0, mcolor1);
     for (ty = y; ty < y + h; ty += ny) {
-	int tx, nx;
-	int cy = (ty + cdev->phase.y) % cdev->tiles.rep_height;
-	int xoff = x_offset(ty, cdev);
+        int tx, nx;
+        int cy = (ty + cdev->phase.y) % cdev->tiles.rep_height;
+        int xoff = x_offset(ty, cdev);
 
-	ny = min(y + h - ty, cdev->tiles.size.y - cy);
-	if (ny > cdev->mdev.height)
-	    ny = cdev->mdev.height;
-	for (tx = x; tx < x + w; tx += nx) {
-	    int cx = (tx + xoff) % cdev->tiles.rep_width;
+        ny = min(y + h - ty, cdev->tiles.size.y - cy);
+        if (ny > cdev->mdev.height)
+            ny = cdev->mdev.height;
+        for (tx = x; tx < x + w; tx += nx) {
+            int cx = (tx + xoff) % cdev->tiles.rep_width;
 
-	    nx = min(x + w - tx, cdev->tiles.size.x - cx);
-	    /* Copy a tile slice to the memory device buffer. */
-	    memcpy(cdev->buffer.bytes,
-		   cdev->tiles.data + cy * cdev->tiles.raster,
-		   cdev->tiles.raster * ny);
-	    /* Intersect the tile with the source data. */
-	    /* mcolor0 and mcolor1 invert the data if needed. */
-	    /* This call can't fail. */
-	    (*dev_proc(&cdev->mdev, copy_mono)) ((gx_device *) & cdev->mdev,
-				 data + (ty - y) * raster, sourcex + tx - x,
-						 raster, gx_no_bitmap_id,
-					   cx, 0, nx, ny, mcolor0, mcolor1);
-	    /* Now copy the color through the double mask. */
-	    code = (*dev_proc(cdev->target, copy_mono)) (cdev->target,
-				 cdev->buffer.bytes, cx, cdev->tiles.raster,
-							 gx_no_bitmap_id,
-				  tx, ty, nx, ny, gx_no_color_index, color);
-	    if (code < 0)
-		return code;
-	}
+            nx = min(x + w - tx, cdev->tiles.size.x - cx);
+            /* Copy a tile slice to the memory device buffer. */
+            memcpy(cdev->buffer.bytes,
+                   cdev->tiles.data + cy * cdev->tiles.raster,
+                   cdev->tiles.raster * ny);
+            /* Intersect the tile with the source data. */
+            /* mcolor0 and mcolor1 invert the data if needed. */
+            /* This call can't fail. */
+            (*dev_proc(&cdev->mdev, copy_mono)) ((gx_device *) & cdev->mdev,
+                                 data + (ty - y) * raster, sourcex + tx - x,
+                                                 raster, gx_no_bitmap_id,
+                                           cx, 0, nx, ny, mcolor0, mcolor1);
+            /* Now copy the color through the double mask. */
+            code = (*dev_proc(cdev->target, copy_mono)) (cdev->target,
+                                 cdev->buffer.bytes, cx, cdev->tiles.raster,
+                                                         gx_no_bitmap_id,
+                                  tx, ty, nx, ny, gx_no_color_index, color);
+            if (code < 0)
+                return code;
+        }
     }
     return 0;
 }
@@ -216,60 +216,60 @@ tile_clip_copy_mono(gx_device * dev,
     tx++;\
   } END
 #define FOR_RUNS(data_row, tx1, tx, ty)\
-	const byte *data_row = data;\
-	int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
-	const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
-	int ty;\
+        const byte *data_row = data;\
+        int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
+        const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
+        int ty;\
 \
-	for ( ty = y; ty < y + h; ty++, data_row += raster ) {\
-	  int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;\
-	  const byte *tp = tile_row + (cx >> 3);\
-	  byte tbit = 0x80 >> (cx & 7);\
-	  int tx;\
+        for ( ty = y; ty < y + h; ty++, data_row += raster ) {\
+          int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;\
+          const byte *tp = tile_row + (cx >> 3);\
+          byte tbit = 0x80 >> (cx & 7);\
+          int tx;\
 \
-	  for ( tx = x; tx < x + w; ) {\
-	    int tx1;\
+          for ( tx = x; tx < x + w; ) {\
+            int tx1;\
 \
-	    /* Skip a run of 0s. */\
-	    while ( tx < x + w && (*tp & tbit) == 0 )\
-	      t_next(tx);\
-	    if ( tx == x + w )\
-	      break;\
-	    /* Scan a run of 1s. */\
-	    tx1 = tx;\
-	    do {\
-	      t_next(tx);\
-	    } while ( tx < x + w && (*tp & tbit) != 0 );\
-	    if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
+            /* Skip a run of 0s. */\
+            while ( tx < x + w && (*tp & tbit) == 0 )\
+              t_next(tx);\
+            if ( tx == x + w )\
+              break;\
+            /* Scan a run of 1s. */\
+            tx1 = tx;\
+            do {\
+              t_next(tx);\
+            } while ( tx < x + w && (*tp & tbit) != 0 );\
+            if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
 /* (body goes here) */
 #define END_FOR_RUNS()\
-	  }\
-	  if ( ++cy == cdev->tiles.size.y )\
-	    cy = 0, tile_row = cdev->tiles.data;\
-	  else\
-	    tile_row += cdev->tiles.raster;\
-	}
+          }\
+          if ( ++cy == cdev->tiles.size.y )\
+            cy = 0, tile_row = cdev->tiles.data;\
+          else\
+            tile_row += cdev->tiles.raster;\
+        }
 
 /* Copy a color rectangle. */
 static int
 tile_clip_copy_color(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		     int x, int y, int w, int h)
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                     int x, int y, int w, int h)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
     fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
     {
-	FOR_RUNS(data_row, txrun, tx, ty) {
-	    /* Copy the run. */
-	    int code = (*dev_proc(cdev->target, copy_color))
-	    (cdev->target, data_row, sourcex + txrun - x, raster,
-	     gx_no_bitmap_id, txrun, ty, tx - txrun, 1);
+        FOR_RUNS(data_row, txrun, tx, ty) {
+            /* Copy the run. */
+            int code = (*dev_proc(cdev->target, copy_color))
+            (cdev->target, data_row, sourcex + txrun - x, raster,
+             gx_no_bitmap_id, txrun, ty, tx - txrun, 1);
 
-	    if (code < 0)
-		return code;
-	}
-	END_FOR_RUNS();
+            if (code < 0)
+                return code;
+        }
+        END_FOR_RUNS();
     }
     return 0;
 }
@@ -277,23 +277,23 @@ tile_clip_copy_color(gx_device * dev,
 /* Copy an alpha rectangle similarly. */
 static int
 tile_clip_copy_alpha(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		int x, int y, int w, int h, gx_color_index color, int depth)
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h, gx_color_index color, int depth)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
     fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
     {
-	FOR_RUNS(data_row, txrun, tx, ty) {
-	    /* Copy the run. */
-	    int code = (*dev_proc(cdev->target, copy_alpha))
-	    (cdev->target, data_row, sourcex + txrun - x, raster,
-	     gx_no_bitmap_id, txrun, ty, tx - txrun, 1, color, depth);
+        FOR_RUNS(data_row, txrun, tx, ty) {
+            /* Copy the run. */
+            int code = (*dev_proc(cdev->target, copy_alpha))
+            (cdev->target, data_row, sourcex + txrun - x, raster,
+             gx_no_bitmap_id, txrun, ty, tx - txrun, 1, color, depth);
 
-	    if (code < 0)
-		return code;
-	}
-	END_FOR_RUNS();
+            if (code < 0)
+                return code;
+        }
+        END_FOR_RUNS();
     }
     return 0;
 }
@@ -301,27 +301,27 @@ tile_clip_copy_alpha(gx_device * dev,
 /* Copy a RasterOp rectangle similarly. */
 static int
 tile_clip_strip_copy_rop(gx_device * dev,
-	       const byte * data, int sourcex, uint raster, gx_bitmap_id id,
-			 const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-			 int x, int y, int w, int h,
-		       int phase_x, int phase_y, gs_logical_operation_t lop)
+               const byte * data, int sourcex, uint raster, gx_bitmap_id id,
+                         const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                         int x, int y, int w, int h,
+                       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
     fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
     {
-	FOR_RUNS(data_row, txrun, tx, ty) {
-	    /* Copy the run. */
-	    int code = (*dev_proc(cdev->target, strip_copy_rop))
-	    (cdev->target, data_row, sourcex + txrun - x, raster,
-	     gx_no_bitmap_id, scolors, textures, tcolors,
-	     txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
+        FOR_RUNS(data_row, txrun, tx, ty) {
+            /* Copy the run. */
+            int code = (*dev_proc(cdev->target, strip_copy_rop))
+            (cdev->target, data_row, sourcex + txrun - x, raster,
+             gx_no_bitmap_id, scolors, textures, tcolors,
+             txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
 
-	    if (code < 0)
-		return code;
-	}
-	END_FOR_RUNS();
+            if (code < 0)
+                return code;
+        }
+        END_FOR_RUNS();
     }
     return 0;
 }

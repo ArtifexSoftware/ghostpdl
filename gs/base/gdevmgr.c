@@ -18,11 +18,11 @@
 
 /* Structure for MGR devices, which extend the generic printer device. */
 struct gx_device_mgr_s {
-	gx_device_common;
-	gx_prn_device_common;
-	/* Add MGR specific variables */
-	int mgr_depth;
-	/* globals for greymapped printing */
+        gx_device_common;
+        gx_prn_device_common;
+        /* Add MGR specific variables */
+        int mgr_depth;
+        /* globals for greymapped printing */
         unsigned char bgreytable[16];
         unsigned char bgreybacktable[16];
         unsigned char bgrey256table[256];
@@ -44,13 +44,13 @@ static void swap_bwords(unsigned char *, int);
 
 /* Macro for generating MGR device descriptors. */
 #define mgr_prn_device(procs, dev_name, num_comp, depth, mgr_depth,\
-	max_gray, max_rgb, dither_gray, dither_rgb, print_page)\
+        max_gray, max_rgb, dither_gray, dither_rgb, print_page)\
 {	prn_device_body(gx_device_mgr, procs, dev_name,\
-	  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
-	  0, 0, 0, 0,\
-	  num_comp, depth, max_gray, max_rgb, dither_gray, dither_rgb,\
-	  print_page),\
-	  mgr_depth\
+          DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
+          0, 0, 0, 0,\
+          num_comp, depth, max_gray, max_rgb, dither_gray, dither_rgb,\
+          print_page),\
+          mgr_depth\
 }
 
 /* For all mgr variants we do some extra things at opening time. */
@@ -67,13 +67,13 @@ static gx_device_procs mgr_procs =
     prn_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close);
 static gx_device_procs mgrN_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
-	gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
+        gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 static gx_device_procs cmgr4_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
-	pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
+        pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 static gx_device_procs cmgr8_procs =
     prn_color_procs(gdev_mgr_open, gdev_prn_output_page, gdev_prn_close,
-	mgr_8bit_map_rgb_color, mgr_8bit_map_color_rgb);
+        mgr_8bit_map_rgb_color, mgr_8bit_map_color_rgb);
 
 /* The device descriptors themselves */
 gx_device_mgr far_data gs_mgrmono_device =
@@ -93,11 +93,11 @@ gx_device_mgr far_data gs_mgr8_device =
 
 /* Define a "cursor" that keeps track of where we are in the page. */
 typedef struct mgr_cursor_s {
-	gx_device_mgr *dev;
-	int bpp;			/* bits per pixel */
-	uint line_size;			/* bytes per scan line */
-	byte *data;			/* output row buffer */
-	int lnum;			/* row within page */
+        gx_device_mgr *dev;
+        int bpp;			/* bits per pixel */
+        uint line_size;			/* bytes per scan line */
+        byte *data;			/* output row buffer */
+        int lnum;			/* row within page */
 } mgr_cursor;
 
 /* Begin an MGR output page. */
@@ -105,40 +105,40 @@ typedef struct mgr_cursor_s {
 static int
 mgr_begin_page(gx_device_mgr *bdev, FILE *pstream, mgr_cursor *pcur)
 {	struct b_header head;
-	uint line_size =
-		gdev_prn_raster((gx_device_printer *)bdev) + 3;
-	byte *data = (byte *)gs_malloc(bdev->memory, line_size, 1, "mgr_begin_page");
-	if ( data == 0 )
-		return_error(gs_error_VMerror);
+        uint line_size =
+                gdev_prn_raster((gx_device_printer *)bdev) + 3;
+        byte *data = (byte *)gs_malloc(bdev->memory, line_size, 1, "mgr_begin_page");
+        if ( data == 0 )
+                return_error(gs_error_VMerror);
 
-	/* Write the header */
-	B_PUTHDR8(&head, bdev->width, bdev->height, bdev->mgr_depth);
-	fprintf(pstream, "");
-	if ( fwrite(&head, 1, sizeof(head), pstream) < sizeof(head) )
-		return_error(gs_error_ioerror);
-	fflush(pstream);
+        /* Write the header */
+        B_PUTHDR8(&head, bdev->width, bdev->height, bdev->mgr_depth);
+        fprintf(pstream, "");
+        if ( fwrite(&head, 1, sizeof(head), pstream) < sizeof(head) )
+                return_error(gs_error_ioerror);
+        fflush(pstream);
 
-	/* Initialize the cursor. */
-	pcur->dev = bdev;
-	pcur->bpp = bdev->color_info.depth;
-	pcur->line_size = line_size;
-	pcur->data = data;
-	pcur->lnum = 0;
-	return 0;
+        /* Initialize the cursor. */
+        pcur->dev = bdev;
+        pcur->bpp = bdev->color_info.depth;
+        pcur->line_size = line_size;
+        pcur->data = data;
+        pcur->lnum = 0;
+        return 0;
 }
 
 /* Advance to the next row.  Return 0 if more, 1 if done. */
 static int
 mgr_next_row(mgr_cursor *pcur)
 {	if ( pcur->lnum >= pcur->dev->height )
-	{	gs_free(((gx_device_printer *)pcur->dev)->memory,
-			(char *)pcur->data, pcur->line_size, 1,
-			"mgr_next_row(done)");
-		return 1;
-	   }
-	gdev_prn_copy_scan_lines((gx_device_printer *)pcur->dev,
-				 pcur->lnum++, pcur->data, pcur->line_size);
-	return 0;
+        {	gs_free(((gx_device_printer *)pcur->dev)->memory,
+                        (char *)pcur->data, pcur->line_size, 1,
+                        "mgr_next_row(done)");
+                return 1;
+           }
+        gdev_prn_copy_scan_lines((gx_device_printer *)pcur->dev,
+                                 pcur->lnum++, pcur->data, pcur->line_size);
+        return 0;
 }
 
 /* ------ Individual page printing routines ------ */
@@ -149,196 +149,195 @@ mgr_next_row(mgr_cursor *pcur)
 static int
 mgr_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
-	int mgr_wide;
-	int code = mgr_begin_page(bdev, pstream, &cur);
-	if ( code < 0 ) return code;
+        int mgr_wide;
+        int code = mgr_begin_page(bdev, pstream, &cur);
+        if ( code < 0 ) return code;
 
-	mgr_wide = bdev->width;
-	if (mgr_wide & 7)
-	   mgr_wide += 8 - (mgr_wide & 7);
+        mgr_wide = bdev->width;
+        if (mgr_wide & 7)
+           mgr_wide += 8 - (mgr_wide & 7);
 
-	while ( !(code = mgr_next_row(&cur)) )
-	   {	if ( fwrite(cur.data, sizeof(char), mgr_wide / 8, pstream) <
+        while ( !(code = mgr_next_row(&cur)) )
+           {	if ( fwrite(cur.data, sizeof(char), mgr_wide / 8, pstream) <
                     mgr_wide / 8)
-		return_error(gs_error_ioerror);
-	   }
-	return (code < 0 ? code : 0);
+                return_error(gs_error_ioerror);
+           }
+        return (code < 0 ? code : 0);
 }
-
 
 /* Print a gray-mapped page. */
 static int
 mgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
-	int i = 0, j, k, mgr_wide;
-	uint mgr_line_size;
-	byte *bp, *data = NULL, *dp;
-	gx_device_mgr *mgr = (gx_device_mgr *)pdev;
+        int i = 0, j, k, mgr_wide;
+        uint mgr_line_size;
+        byte *bp, *data = NULL, *dp;
+        gx_device_mgr *mgr = (gx_device_mgr *)pdev;
 
-	int code = mgr_begin_page(bdev, pstream, &cur);
-	if ( code < 0 ) return code;
+        int code = mgr_begin_page(bdev, pstream, &cur);
+        if ( code < 0 ) return code;
 
-	mgr_wide = bdev->width;
-	if ( bdev->mgr_depth == 2 && mgr_wide & 3 )
+        mgr_wide = bdev->width;
+        if ( bdev->mgr_depth == 2 && mgr_wide & 3 )
             mgr_wide += 4 - (mgr_wide & 3);
-	if ( bdev->mgr_depth == 4 && mgr_wide & 1 )
+        if ( bdev->mgr_depth == 4 && mgr_wide & 1 )
             mgr_wide++;
-	mgr_line_size = mgr_wide / ( 8 / bdev->mgr_depth );
+        mgr_line_size = mgr_wide / ( 8 / bdev->mgr_depth );
 
-	if ( bdev->mgr_depth == 4 )
+        if ( bdev->mgr_depth == 4 )
             for ( i = 0; i < 16; i++ ) {
-		mgr->bgreytable[i] = mgrlut[LUT_BGREY][RGB_RED][i];
-		mgr->bgreybacktable[mgr->bgreytable[i]] = i;
+                mgr->bgreytable[i] = mgrlut[LUT_BGREY][RGB_RED][i];
+                mgr->bgreybacktable[mgr->bgreytable[i]] = i;
             }
 
-	if ( bdev->mgr_depth == 8 ) {
+        if ( bdev->mgr_depth == 8 ) {
             for ( i = 0; i < 16; i++ ) {
-		mgr->bgrey256table[i] = mgrlut[LUT_BGREY][RGB_RED][i] << 4;
-		mgr->bgrey256backtable[mgr->bgrey256table[i]] = i;
+                mgr->bgrey256table[i] = mgrlut[LUT_BGREY][RGB_RED][i] << 4;
+                mgr->bgrey256backtable[mgr->bgrey256table[i]] = i;
             }
             for ( i = 16,j = 0; i < 256; i++ ) {
-		for ( k = 0; k < 16; k++ )
+                for ( k = 0; k < 16; k++ )
                   if ( j == mgrlut[LUT_BGREY][RGB_RED][k] << 4 ) {
                     j++;
                     break;
                   }
-		mgr->bgrey256table[i] = j;
-		mgr->bgrey256backtable[j++] = i;
+                mgr->bgrey256table[i] = j;
+                mgr->bgrey256backtable[j++] = i;
             }
-	}
+        }
 
-	if ( bdev->mgr_depth != 8 )
-	    data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
+        if ( bdev->mgr_depth != 8 )
+            data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "mgrN_print_page");
 
-	while ( !(code = mgr_next_row(&cur)) )
-	   {
-		switch (bdev->mgr_depth) {
-			case 2:
-				for (i = 0,dp = data,bp = cur.data; i < mgr_line_size; i++) {
-					*dp =	*(bp++) & 0xc0;
-					*dp |= (*(bp++) & 0xc0) >> 2;
-					*dp |= (*(bp++) & 0xc0) >> 4;
+        while ( !(code = mgr_next_row(&cur)) )
+           {
+                switch (bdev->mgr_depth) {
+                        case 2:
+                                for (i = 0,dp = data,bp = cur.data; i < mgr_line_size; i++) {
+                                        *dp =	*(bp++) & 0xc0;
+                                        *dp |= (*(bp++) & 0xc0) >> 2;
+                                        *dp |= (*(bp++) & 0xc0) >> 4;
                                     *(dp++) |= (*(bp++) & 0xc0) >> 6;
-				}
-                		if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
-                                	return_error(gs_error_ioerror);
-				break;
+                                }
+                                if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
+                                        return_error(gs_error_ioerror);
+                                break;
 
-			case 4:
-				for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
-					*dp =  mgr->bgreybacktable[*(bp++) >> 4] << 4;
+                        case 4:
+                                for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
+                                        *dp =  mgr->bgreybacktable[*(bp++) >> 4] << 4;
                                     *(dp++) |= mgr->bgreybacktable[*(bp++) >> 4];
-				}
-                		if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
-                                	return_error(gs_error_ioerror);
-				break;
+                                }
+                                if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
+                                        return_error(gs_error_ioerror);
+                                break;
 
-			case 8:
-				for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
-	                              *bp = mgr->bgrey256backtable[*bp];
-                		if ( fwrite(cur.data, sizeof(cur.data[0]), mgr_line_size, pstream)
-					< mgr_line_size )
-                                	return_error(gs_error_ioerror);
-				break;
-		}
-	   }
-	if (bdev->mgr_depth != 8)
-	    gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
+                        case 8:
+                                for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
+                                      *bp = mgr->bgrey256backtable[*bp];
+                                if ( fwrite(cur.data, sizeof(cur.data[0]), mgr_line_size, pstream)
+                                        < mgr_line_size )
+                                        return_error(gs_error_ioerror);
+                                break;
+                }
+           }
+        if (bdev->mgr_depth != 8)
+            gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "mgrN_print_page(done)");
 
-	if (bdev->mgr_depth == 2) {
+        if (bdev->mgr_depth == 2) {
             for (i = 0; i < 4; i++) {
                mgr->clut[i].colnum = i;
                mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(i, 2);
-	    }
-   	}
-	if (bdev->mgr_depth == 4) {
+            }
+        }
+        if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {
                mgr->clut[i].colnum = i;
                mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(mgr->bgreytable[i], 4);
-	    }
-   	}
-	if (bdev->mgr_depth == 8) {
+            }
+        }
+        if (bdev->mgr_depth == 8) {
             for (i = 0; i < 256; i++) {
                mgr->clut[i].colnum = i;
                mgr->clut[i].red    = mgr->clut[i].green = mgr->clut[i].blue = clut2mgr(mgr->bgrey256table[i], 8);
-	    }
-   	}
+            }
+        }
 #if !arch_is_big_endian
-	swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
+        swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif
-	if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
+        if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
             return_error(gs_error_ioerror);
-	return (code < 0 ? code : 0);
+        return (code < 0 ? code : 0);
 }
 
 /* Print a color page. */
 static int
 cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 {	mgr_cursor cur;
-	int i = 0, j, mgr_wide, r, g, b, colors8 = 0;
-	uint mgr_line_size;
-	byte *bp, *data, *dp;
-	ushort prgb[3];
-	unsigned char table[256], backtable[256];
-	gx_device_mgr *mgr = (gx_device_mgr *)pdev;
+        int i = 0, j, mgr_wide, r, g, b, colors8 = 0;
+        uint mgr_line_size;
+        byte *bp, *data, *dp;
+        ushort prgb[3];
+        unsigned char table[256], backtable[256];
+        gx_device_mgr *mgr = (gx_device_mgr *)pdev;
 
-	int code = mgr_begin_page(bdev, pstream, &cur);
-	if ( code < 0 ) return code;
+        int code = mgr_begin_page(bdev, pstream, &cur);
+        if ( code < 0 ) return code;
 
-	mgr_wide = bdev->width;
-	if (bdev->mgr_depth == 4 && mgr_wide & 1)
+        mgr_wide = bdev->width;
+        if (bdev->mgr_depth == 4 && mgr_wide & 1)
             mgr_wide++;
-	mgr_line_size = mgr_wide / (8 / bdev->mgr_depth);
-       	data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "cmgrN_print_page");
+        mgr_line_size = mgr_wide / (8 / bdev->mgr_depth);
+        data = (byte *)gs_malloc(pdev->memory, mgr_line_size, 1, "cmgrN_print_page");
 
-       	if ( bdev->mgr_depth == 8 ) {
+        if ( bdev->mgr_depth == 8 ) {
             memset( table, 0, sizeof(table) );
             for ( r = 0; r <= 6; r++ )
-		for ( g = 0; g <= 6; g++ )
-       	            for ( b = 0; b <= 6; b++ )
-       			if ( r == g && g == b )
+                for ( g = 0; g <= 6; g++ )
+                    for ( b = 0; b <= 6; b++ )
+                        if ( r == g && g == b )
                             table[ r + (256-7) ] = 1;
-			else
+                        else
                             table[ (r << 5) + (g << 2) + (b >> 1) ] = 1;
             for ( i = j = 0; i < sizeof(table); i++ )
-		if ( table[i] == 1 ) {
+                if ( table[i] == 1 ) {
                     backtable[i] = j;
                     table[j++] = i;
-		}
+                }
             colors8 = j;
-	}
-	while ( !(code = mgr_next_row(&cur)) )
-	   {
-		switch (bdev->mgr_depth) {
-			case 4:
-				for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
-					*dp =  *(bp++) << 4;
+        }
+        while ( !(code = mgr_next_row(&cur)) )
+           {
+                switch (bdev->mgr_depth) {
+                        case 4:
+                                for (i = 0,dp = data, bp = cur.data; i < mgr_line_size; i++) {
+                                        *dp =  *(bp++) << 4;
                                     *(dp++) |= *(bp++) & 0x0f;
-				}
-                		if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
-                                	return_error(gs_error_ioerror);
-				break;
+                                }
+                                if ( fwrite(data, sizeof(byte), mgr_line_size, pstream) < mgr_line_size )
+                                        return_error(gs_error_ioerror);
+                                break;
 
-			case 8:
-				for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
-	                              *bp = backtable[*bp] + MGR_RESERVEDCOLORS;
-                		if ( fwrite(cur.data, sizeof(cur.data[0]), mgr_line_size, pstream) < mgr_line_size )
-                                	return_error(gs_error_ioerror);
-				break;
-		}
-	   }
-       	gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
+                        case 8:
+                                for (i = 0,bp = cur.data; i < mgr_line_size; i++, bp++)
+                                      *bp = backtable[*bp] + MGR_RESERVEDCOLORS;
+                                if ( fwrite(cur.data, sizeof(cur.data[0]), mgr_line_size, pstream) < mgr_line_size )
+                                        return_error(gs_error_ioerror);
+                                break;
+                }
+           }
+        gs_free(bdev->memory, (char *)data, mgr_line_size, 1, "cmgrN_print_page(done)");
 
-	if (bdev->mgr_depth == 4) {
+        if (bdev->mgr_depth == 4) {
             for (i = 0; i < 16; i++) {
                pc_4bit_map_color_rgb((gx_device *)0, (gx_color_index) i, prgb);
                mgr->clut[i].colnum = i;
                mgr->clut[i].red    = clut2mgr(prgb[0], 16);
                mgr->clut[i].green  = clut2mgr(prgb[1], 16);
                mgr->clut[i].blue   = clut2mgr(prgb[2], 16);
-	    }
-   	}
-	if (bdev->mgr_depth == 8) {
+            }
+        }
+        if (bdev->mgr_depth == 8) {
             for (i = 0; i < colors8; i++) {
                mgr_8bit_map_color_rgb((gx_device *)0, (gx_color_index)
                    table[i], prgb);
@@ -346,16 +345,15 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
                mgr->clut[i].red    = clut2mgr(prgb[0], 16);
                mgr->clut[i].green  = clut2mgr(prgb[1], 16);
                mgr->clut[i].blue   = clut2mgr(prgb[2], 16);
-	    }
-   	}
+            }
+        }
 #if !arch_is_big_endian
-	swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
+        swap_bwords( (unsigned char *) mgr->clut, sizeof( struct nclut ) * i );
 #endif
-	if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
+        if ( fwrite(&mgr->clut, sizeof(struct nclut), i, pstream) < i )
             return_error(gs_error_ioerror);
-	return (code < 0 ? code : 0);
+        return (code < 0 ? code : 0);
 }
-
 
 /* Color mapping routines for 8-bit color with a fixed palette */
 /* (3 bits of R, 3 bits of G, 2 bits of B). */
@@ -367,37 +365,36 @@ cmgrN_print_page(gx_device_printer *pdev, FILE *pstream)
 gx_color_index
 mgr_8bit_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 {
-	uint rv = cv[0] / (gx_max_color_value / 7 + 1);
-	uint gv = cv[1] / (gx_max_color_value / 7 + 1);
-	uint bv = cv[2] / (gx_max_color_value / 7 + 1);
-	return (gx_color_index)
-		(rv == gv && gv == bv ? rv + (256-7) :
-		 (rv << 5) + (gv << 2) + (bv >> 1));
+        uint rv = cv[0] / (gx_max_color_value / 7 + 1);
+        uint gv = cv[1] / (gx_max_color_value / 7 + 1);
+        uint bv = cv[2] / (gx_max_color_value / 7 + 1);
+        return (gx_color_index)
+                (rv == gv && gv == bv ? rv + (256-7) :
+                 (rv << 5) + (gv << 2) + (bv >> 1));
 }
 int
 mgr_8bit_map_color_rgb(gx_device *dev, gx_color_index color,
   gx_color_value prgb[3])
 {	static const gx_color_value ramp[8] =
-	{	0, gx_max_color_value / 6, gx_max_color_value / 3,
-		gx_max_color_value / 2, 2 * (gx_max_color_value / 3),
-		5 * (gx_max_color_value / 6), gx_max_color_value,
-		/* The 8th entry is not actually ever used, */
-		/* except to fill out the palette. */
-		gx_max_color_value
-	};
+        {	0, gx_max_color_value / 6, gx_max_color_value / 3,
+                gx_max_color_value / 2, 2 * (gx_max_color_value / 3),
+                5 * (gx_max_color_value / 6), gx_max_color_value,
+                /* The 8th entry is not actually ever used, */
+                /* except to fill out the palette. */
+                gx_max_color_value
+        };
 #define icolor (uint)color
-	if ( icolor >= 256-7 )
-	{	prgb[0] = prgb[1] = prgb[2] = ramp[icolor - (256-7)];
-	}
-	else
-	{	prgb[0] = ramp[(icolor >> 5) & 7];
-		prgb[1] = ramp[(icolor >> 2) & 7];
-		prgb[2] = ramp[(icolor & 3) << 1];
-	}
+        if ( icolor >= 256-7 )
+        {	prgb[0] = prgb[1] = prgb[2] = ramp[icolor - (256-7)];
+        }
+        else
+        {	prgb[0] = ramp[(icolor >> 5) & 7];
+                prgb[1] = ramp[(icolor >> 2) & 7];
+                prgb[2] = ramp[(icolor & 3) << 1];
+        }
 #undef icolor
-	return 0;
+        return 0;
 }
-
 
 /* convert the 8-bit look-up table into the standard MGR look-up table */
 static unsigned int
@@ -411,7 +408,6 @@ clut2mgr(
   i = (unsigned int) 0xffffffff / ((1<<bits)-1);
   return((v*i)/0x10000);
 }
-
 
 /*
  * s w a p _ b w o r d s

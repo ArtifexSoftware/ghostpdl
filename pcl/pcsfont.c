@@ -124,10 +124,9 @@ pcl_make_resident_font_copy(pcl_state_t *pcs)
     return 0;
 }
 
-
 static int /* ESC * c <fc_enum> F */
 pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
-{       
+{
     gs_const_string key;
     void *value;
     pl_dict_enum_t denum;
@@ -149,17 +148,17 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         pl_dict_release(&pcs->soft_fonts);
         break;
     case 1:
-	/* Delete all temporary soft fonts. */
-	pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
-	while ( pl_dict_enum_next(&denum, &key, &value) )
-	    if ( ((pl_font_t *)value)->storage == pcds_temporary )
-		pcl_delete_soft_font(pcs, key.data, key.size, value);
+        /* Delete all temporary soft fonts. */
+        pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
+        while ( pl_dict_enum_next(&denum, &key, &value) )
+            if ( ((pl_font_t *)value)->storage == pcds_temporary )
+                pcl_delete_soft_font(pcs, key.data, key.size, value);
         break;
     case 2:
-	/* Delete soft font <font_id>. */
-	pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
-	/* decache the currently selected font in case we deleted it. */
-	pcl_decache_font(pcs, -1);
+        /* Delete soft font <font_id>. */
+        pcl_delete_soft_font(pcs, current_font_id, current_font_id_size, NULL);
+        /* decache the currently selected font in case we deleted it. */
+        pcl_decache_font(pcs, -1);
 
         break;
     case 3:
@@ -167,26 +166,26 @@ pcl_font_control(pcl_args_t *pargs, pcl_state_t *pcs)
         if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
             pl_font_remove_glyph((pl_font_t *)value, pcs->character_code);
         return 0;
-        
+
         break;
     case 4:
         /* Make soft font <font_id> temporary. */
         if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) )
             ((pl_font_t *)value)->storage = pcds_temporary;
-        
+
         break;
     case 5:
         /* Make soft font <font_id> permanent. */
         if ( pl_dict_find_no_stack(&pcs->soft_fonts, current_font_id, current_font_id_size, &value) ) {
             ((pl_font_t *)value)->storage = pcds_permanent;
-            ((pl_font_t *)value)->params.pjl_font_number = 
+            ((pl_font_t *)value)->params.pjl_font_number =
                 pjl_proc_register_permanent_soft_font_addition(pcs->pjls);
         }
         break;
     case 6:
         {
             int code;
-            if ( pcs->font == 0 ) { 
+            if ( pcs->font == 0 ) {
                 code = pcl_recompute_font(pcs, false);
                 if ( code < 0 )
                     return code;
@@ -230,7 +229,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcs)
         int code;
         bool has_checksum;
         if ( count < 64 && pfh->HeaderFormat != pcfh_bitmap)
-          return e_Range; /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */ 
+          return e_Range; /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */
         desc_size =
           (pfh->FontDescriptorSize[0] << 8) + pfh->FontDescriptorSize[1];
         /* Dispatch on the header format. */
@@ -378,7 +377,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
               if ( ( pfh->HeaderFormat == pcfh_truetype_large ) &&
                    ( plfont->scaling_technology == plfst_bitmap ) )
                   goto bitmap;
-                                                                  
+
             }
             pfont = gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
                                     "pcl_font_header(truetype font)");
@@ -445,14 +444,14 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 
 static int /* ESC * c <char_code> E */
 pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcs)
-{       
+{
     pcs->character_code = uint_arg(pargs);
     return 0;
 }
 
 static int /* ESC ( s <count> W */
 pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
-{       
+{
     uint count = uint_arg(pargs);
     uint font_data_size = count;
     const byte *data = arg_data(pargs);
@@ -511,20 +510,20 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                     return e_Range;
                 height = pl_get_uint16(data + 12);
                 if (height < 1 || height > 16384)
-		    return e_Range;
+                    return e_Range;
                 /* more error checking of offsets, delta, width and height. */
                 {
                     int toff, loff;
                     int deltax;
                     loff = pl_get_int16(data + 6);
                     if ((-16384 > loff) || (loff > 16384))
-			return e_Range;
+                        return e_Range;
                     toff = pl_get_int16(data + 8);
                     if ((-16384 > toff) || (toff > 16384))
-			return e_Range;
+                        return e_Range;
                     deltax = pl_get_int16(data + 14);
                     if ((-32768 > deltax) || (deltax > 32767))
-			return e_Range;
+                        return e_Range;
                     /* also reject if width * height larger than 1MByte */
                     if ((width * height / 8) > 1024 *1024) return e_Range;
                 }
@@ -592,7 +591,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
                     /* See TRM Figure 11-16 (p. 11-67) for the following. */
                     if ( count < 14 )
                         return e_Range;
-                    { 
+                    {
                         uint data_size = pl_get_uint16(data + 4);
                         uint contour_offset = pl_get_uint16(data + 6);
                         uint metric_offset = pl_get_uint16(data + 8);
@@ -640,7 +639,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     /**** FREE PREVIOUS DEFINITION ****/
     /* Compressed bitmaps have already allocated and filled in */
     /* the character data structure. */
-    if ( char_data == 0 ) { 
+    if ( char_data == 0 ) {
         char_data = gs_alloc_bytes(pcs->memory, font_data_size,
                                    "pcl_character_data");
         if ( char_data == 0 )
@@ -649,7 +648,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
         /* if count > font_data_size extra data is ignored */
         memcpy(char_data, data, min(count, font_data_size) );
         /* NB we only handle continuation for uncompressed bitmap characters */
-        if ( data[0] == pccd_bitmap && 
+        if ( data[0] == pccd_bitmap &&
              data[3] == 1 &&
              font_data_size > count /* expecting continuation */
              ) {
@@ -682,11 +681,11 @@ typedef struct alphanumeric_data_s {
   byte string_id[512];
 } alphanumeric_data_t;
 
-typedef enum resource_type_enum { 
+typedef enum resource_type_enum {
     macro_resource,
     font_resource
 } resource_type_t;
-    
+
 /* look up a macro in the macro dictionary, if it is not found search
    on disk and add the macro to the macro dictionary */
 static void *
@@ -696,7 +695,7 @@ pcl_find_resource(pcl_state_t *pcs,
                   resource_type_t resource_type
                   )
 {
-    pl_dict_t *dict = (resource_type == macro_resource ? 
+    pl_dict_t *dict = (resource_type == macro_resource ?
                        &pcs->macros :
                        &pcs->soft_fonts);
     void *value = NULL;
@@ -743,12 +742,12 @@ static int /* ESC & n <count> W [operation][string ID] */
 pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {
         uint count = uint_arg(pargs);
-        const alphanumeric_data_t *alpha_data = 
+        const alphanumeric_data_t *alpha_data =
           (const alphanumeric_data_t *)arg_data(pargs);
         int string_id_size = (count - 1); /* size of id data size - operation size */
-        if ( count == 0 ) 
+        if ( count == 0 )
           return 0;
-        if ( count < 1 || count > 512 ) 
+        if ( count < 1 || count > 512 )
           return e_Range;
         switch ( alpha_data->operation )
           {
@@ -757,7 +756,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
             {
               char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
                                             "pcl_alphanumeric_id_data");
-              if ( new_id == 0 ) 
+              if ( new_id == 0 )
                 return_error(e_Memory);
               /* release the previous id, if necessary */
               if ( pcs->alpha_font_id.id )
@@ -826,7 +825,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
               /* sets the current macro id to the string id */
               char *new_id = (char *)gs_alloc_bytes(pcs->memory, string_id_size,
                                             "pcl_alphanumeric_id_data");
-              if ( new_id == 0 ) 
+              if ( new_id == 0 )
                 return_error(e_Memory);
               /* release the previous id, if necessary */
               if ( pcs->alpha_macro_id.id )
@@ -878,7 +877,7 @@ pcl_alphanumeric_id_data(pcl_args_t *pargs, pcl_state_t *pcs)
           }
         return 0;
 }
-        
+
 /* Initialization */
 static int
 pcsfont_do_registration(
@@ -906,14 +905,14 @@ pcsfont_do_registration(
 }
 static void
 pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{       
-    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) { 
+{
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
             pcs->soft_font_char_data = 0;
             pcs->soft_font_count = 0;
             id_set_value(pcs->font_id, 0);
             pcs->character_code = 0;
             pcs->font_id_type = numeric_id;
-            if ( (type & pcl_reset_printer) != 0 ) { 
+            if ( (type & pcl_reset_printer) != 0 ) {
                 pcl_args_t args;
                 arg_set_uint(&args, 1); /* delete temporary fonts */
                 pcl_font_control(&args, pcs);

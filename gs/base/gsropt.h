@@ -300,7 +300,7 @@ struct rop_run_op_s {
     const byte *scolors;
     const byte *tcolors;
     void (*release)(rop_run_op *);
-    void *opaque;    
+    void *opaque;
 };
 
 /* Flags for passing into rop_get_run_op */

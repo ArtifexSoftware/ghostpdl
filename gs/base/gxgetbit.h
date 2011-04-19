@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -78,14 +78,14 @@ struct gs_get_bits_params_s {
 
 /* Try to implement get_bits_rectangle by returning a pointer. */
 int gx_get_bits_return_pointer(gx_device * dev, int x, int h,
-			       gs_get_bits_params_t * params,
-			       const gs_get_bits_params_t *stored,
-			       byte * stored_base);
+                               gs_get_bits_params_t * params,
+                               const gs_get_bits_params_t *stored,
+                               byte * stored_base);
 
 /* Implement get_bits_rectangle by copying. */
 int gx_get_bits_copy(gx_device * dev, int x, int w, int h,
-		     gs_get_bits_params_t * params,
-		     const gs_get_bits_params_t *stored,
-		     const byte * src_base, uint dev_raster);
+                     gs_get_bits_params_t * params,
+                     const gs_get_bits_params_t *stored,
+                     const byte * src_base, uint dev_raster);
 
 #endif /* gxgetbit_INCLUDED */

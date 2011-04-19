@@ -28,8 +28,8 @@ static inline void
 print_blank_lines(pcl_state_t *pcs, int count)
 {
     while( count-- ) {
-	pcl_do_CR(pcs);
-	pcl_do_LF(pcs);
+        pcl_do_CR(pcs);
+        pcl_do_LF(pcs);
     }
 }
 
@@ -105,19 +105,19 @@ pcl_print_font_page(pcl_args_t *pargs, pcl_state_t *pcs)
 
     /* font page header */
     {
-	const char *header_str = "PCL Font List";
-	const char *sample_str = "Sample";
-	const char *select_str = "Font Selection Command";
-	uint hlen = strlen(header_str);
-	/* assume the pcl font list string is 1 inch 7200 units */
-	uint pos = pcs->margins.right / 2 - 7200 / 2;
-	pcl_set_cap_x(pcs, pos, false, false);
-	pcl_text((byte *)header_str, hlen, pcs, false);
-	print_blank_lines(pcs, 2);
-	pcl_text((byte *)sample_str, strlen(sample_str), pcs, false);
-	pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
-	pcl_text((byte *)select_str, strlen(select_str), pcs, false);
-	print_blank_lines(pcs, 2);
+        const char *header_str = "PCL Font List";
+        const char *sample_str = "Sample";
+        const char *select_str = "Font Selection Command";
+        uint hlen = strlen(header_str);
+        /* assume the pcl font list string is 1 inch 7200 units */
+        uint pos = pcs->margins.right / 2 - 7200 / 2;
+        pcl_set_cap_x(pcs, pos, false, false);
+        pcl_text((byte *)header_str, hlen, pcs, false);
+        print_blank_lines(pcs, 2);
+        pcl_text((byte *)sample_str, strlen(sample_str), pcs, false);
+        pcl_set_cap_x(pcs, pcs->margins.right / 2, false, false);
+        pcl_text((byte *)select_str, strlen(select_str), pcs, false);
+        print_blank_lines(pcs, 2);
     }
 
     /* enumerate all non-resident fonts.*/

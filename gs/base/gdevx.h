@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -79,16 +79,16 @@ typedef struct gx_device_X_s {
 
     /* A backing pixmap so X will handle exposure automatically */
     Pixmap bpixmap;		/* 0 if useBackingPixmap is false, */
-				/* or if it can't be allocated */
+                                /* or if it can't be allocated */
     int ghostview;		/* flag to tell if ghostview is in control */
     Window mwin;		/* window to receive ghostview messages */
     gs_matrix initial_matrix;	/* the initial transformation */
     Atom NEXT, PAGE, DONE;	/* Atoms used to talk to ghostview */
     struct {
-	gs_int_rect box;	/* region needing updating */
-	long area;		/* total area of update */
-	long total;		/* total of individual area updates */
-	int count;		/* # of updates since flush */
+        gs_int_rect box;	/* region needing updating */
+        long area;		/* total area of update */
+        long total;		/* total of individual area updates */
+        int count;		/* # of updates since flush */
     } update;
     Pixmap dest;		/* bpixmap if non-0, else use win */
     x_pixel colors_or;		/* 'or' of all device colors used so far */
@@ -96,19 +96,19 @@ typedef struct gx_device_X_s {
 
     /* An intermediate pixmap for the stencil case of copy_mono */
     struct {
-	Pixmap pixmap;
-	GC gc;
-	int raster, height;
+        Pixmap pixmap;
+        GC gc;
+        int raster, height;
     } cp;
 
     /* Structure for dealing with the halftone tile. */
     /* Later this might become a multi-element cache. */
     struct {
-	Pixmap pixmap;
-	Pixmap no_pixmap;	/* kludge to get around X bug */
-	gx_bitmap_id id;
-	int width, height, raster;
-	x_pixel fore_c, back_c;
+        Pixmap pixmap;
+        Pixmap no_pixmap;	/* kludge to get around X bug */
+        gx_bitmap_id id;
+        int width, height, raster;
+        x_pixel fore_c, back_c;
     } ht;
 
     /* Cache the function and fill style from the GC */
@@ -213,15 +213,15 @@ typedef struct gx_device_X_s {
      * Buffered text awaiting display.
      */
     struct {
-	int item_count;
+        int item_count;
 #define IN_TEXT(xdev) ((xdev)->text.item_count != 0)
-	int char_count;
-	gs_int_point origin;
-	int x;			/* after last buffered char */
+        int char_count;
+        gs_int_point origin;
+        int x;			/* after last buffered char */
 #define MAX_TEXT_ITEMS 12
-	XTextItem items[MAX_TEXT_ITEMS];
+        XTextItem items[MAX_TEXT_ITEMS];
 #define MAX_TEXT_CHARS 25
-	char chars[MAX_TEXT_CHARS];
+        char chars[MAX_TEXT_CHARS];
     } text;
 /*
  * All the GC parameters are set correctly when we buffer the first
@@ -230,7 +230,7 @@ typedef struct gx_device_X_s {
  */
 #define DRAW_TEXT(xdev)\
    XDrawText(xdev->dpy, xdev->dest, xdev->gc, xdev->text.origin.x,\
-	     xdev->text.origin.y, xdev->text.items, xdev->text.item_count)
+             xdev->text.origin.y, xdev->text.items, xdev->text.item_count)
 
 } gx_device_X;
 #define private_st_device_X()	/* in gdevx.c */\

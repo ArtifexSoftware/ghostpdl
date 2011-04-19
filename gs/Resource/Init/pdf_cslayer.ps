@@ -11,9 +11,9 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 %
 % $Id$
-% 
+%
 % Layer data extraction from Illustator CS2/CS3 files
-% 
+%
 
 .languagelevel dup 2 .max .setlanguagelevel
 .currentglobal //true .setglobal
@@ -56,7 +56,7 @@
     dup /Print knownoget { /PrintState knownoget { /OFF ne } { //true } ifelse } { //true } ifelse
     /BDC_Printed exch def
     pop  % Usage dict
- 
+
     dup /Intent knownoget {
       dup type /nametype eq {
         /Design eq

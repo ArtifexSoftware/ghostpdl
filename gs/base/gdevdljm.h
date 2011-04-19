@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,9 +41,9 @@
 
 /* Individual printer properties.  Any subset of these may be included. */
 #define PCL_MODE_2_COMPRESSION       8	/* compression mode 2 supported */
-					/* (PCL 4) */
+                                        /* (PCL 4) */
 #define PCL_MODE_3_COMPRESSION      16	/* compression modes 2 & 3 supported */
-					/* (PCL 5) */
+                                        /* (PCL 5) */
 #define PCL_END_GRAPHICS_DOES_RESET 32	/* <esc>*rB resets all parameters */
 #define PCL_HAS_DUPLEX              64	/* <esc>&l<duplex>S supported */
 #define PCL_CAN_SET_PAPER_SIZE     128	/* <esc>&l<sizecode>A supported */
@@ -108,7 +108,6 @@
   (PCL_MODE3 |\
    PCL_CAN_SET_PAPER_SIZE | PCL_CAN_PRINT_COPIES | HACK__IS_A_LJET4PJL)
 
-
      /* H-P LaserJet 4d */
 #define PCL_LJ4D_FEATURES\
   (PCL_MODE3 |\
@@ -128,21 +127,21 @@
 
 /* Send a page to the printer. */
 int dljet_mono_print_page(
-	gx_device_printer * pdev,	/* from device-specific _print_page */
-	FILE * prn_stream,		/* ibid. */
-	int dots_per_inch,		/* may be a multiple of y resolution */
-	int features,			/* as defined above */
-	const char *page_init		/* page initialization string */
-			     );
+        gx_device_printer * pdev,	/* from device-specific _print_page */
+        FILE * prn_stream,		/* ibid. */
+        int dots_per_inch,		/* may be a multiple of y resolution */
+        int features,			/* as defined above */
+        const char *page_init		/* page initialization string */
+                             );
 int dljet_mono_print_page_copies(
-	gx_device_printer * pdev,
-	FILE * prn_stream,
-	int num_copies,
-	int dots_per_inch,
-	int features,
-	const char *odd_page_init,
+        gx_device_printer * pdev,
+        FILE * prn_stream,
+        int num_copies,
+        int dots_per_inch,
+        int features,
+        const char *odd_page_init,
         const char *even_page_init,
         bool tumble
-			     );
+                             );
 
 #endif /* gdevdljm_INCLUDED */

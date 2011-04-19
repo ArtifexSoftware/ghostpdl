@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,7 +22,7 @@
 
 /* In zfont.c */
 int add_FID(i_ctx_t *i_ctx_p, ref *pfdict, gs_font *pfont,
-	    gs_ref_memory_t *imem);
+            gs_ref_memory_t *imem);
 
 font_proc_make_font(zdefault_make_font);
 font_proc_make_font(zbase_make_font);
@@ -48,32 +48,32 @@ typedef enum {
 } build_font_options_t;
 
 /* In zbfont.c */
-int build_proc_name_refs(const gs_memory_t *mem, 
-			 build_proc_refs * pbuild,
-			 const char *bcstr, const char *bgstr);
+int build_proc_name_refs(const gs_memory_t *mem,
+                         build_proc_refs * pbuild,
+                         const char *bcstr, const char *bgstr);
 int build_gs_font_procs(os_ptr, build_proc_refs *);
 #define BUILD_BASE_FONT_PROC(proc)\
   int proc(i_ctx_t *, os_ptr, gs_font_base **, font_type,\
-	   gs_memory_type_ptr_t, const build_proc_refs *,\
-	   build_font_options_t)
+           gs_memory_type_ptr_t, const build_proc_refs *,\
+           build_font_options_t)
 typedef BUILD_BASE_FONT_PROC((*build_base_font_proc_t));
 BUILD_BASE_FONT_PROC(build_gs_primitive_font);
 int build_gs_FDArray_font(i_ctx_t *, /*const*/ ref *, gs_font_base **,
-			  font_type, gs_memory_type_ptr_t,
-			  const build_proc_refs *);
+                          font_type, gs_memory_type_ptr_t,
+                          const build_proc_refs *);
 int build_gs_outline_font(i_ctx_t *, os_ptr, gs_font_base **, font_type,
-			  gs_memory_type_ptr_t, const build_proc_refs *,
-			  build_font_options_t, build_base_font_proc_t);
+                          gs_memory_type_ptr_t, const build_proc_refs *,
+                          build_font_options_t, build_base_font_proc_t);
 BUILD_BASE_FONT_PROC(build_gs_simple_font);
 void init_gs_simple_font(gs_font_base *pfont, const double bbox[4],
-			 const gs_uid *puid);
+                         const gs_uid *puid);
 void lookup_gs_simple_font_encoding(gs_font_base *);
 int build_gs_font(i_ctx_t *, os_ptr, gs_font **, font_type,
-		  gs_memory_type_ptr_t, const build_proc_refs *,
-		  build_font_options_t);
+                  gs_memory_type_ptr_t, const build_proc_refs *,
+                  build_font_options_t);
 int build_gs_sub_font(i_ctx_t *, const ref *, gs_font **,
-		      font_type, gs_memory_type_ptr_t,
-		      const build_proc_refs *, const ref *, ref *);
+                      font_type, gs_memory_type_ptr_t,
+                      const build_proc_refs *, const ref *, ref *);
 int define_gs_font(i_ctx_t *, gs_font *);
 void get_font_name(const gs_memory_t *mem, ref *pfname, const ref *op);
 void copy_font_name(gs_font_name * pfstr, const ref * pfname);

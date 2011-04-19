@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -55,7 +55,7 @@
 \
     hash = hperm[*p++];\
     while (--n > 0)\
-	hash = (hash << 8) | hperm[(byte)hash ^ *p++];\
+        hash = (hash << 8) | hperm[(byte)hash ^ *p++];\
   END
 
 /*

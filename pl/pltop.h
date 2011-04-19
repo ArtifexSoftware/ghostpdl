@@ -33,7 +33,7 @@ typedef struct gx_device_s gx_device;
  */
 typedef struct pl_interp_implementation_s pl_interp_implementation_t;	/* fwd decl */
 typedef struct pl_interp_s {
-	const struct pl_interp_implementation_s  *implementation;  /* implementation of actual interp */
+        const struct pl_interp_implementation_s  *implementation;  /* implementation of actual interp */
 } pl_interp_t;
 
 typedef struct pl_interp_instance_s {
@@ -51,7 +51,7 @@ typedef int (*pl_page_action_t)(pl_interp_instance_t *, void *);
  */
 typedef struct pl_interp_characteristics_s {
   const char*                 language;          /* generic language should correspond with
-						    HP documented PJL name */
+                                                    HP documented PJL name */
   const char*                 auto_sense_string;  /* string used to detect language */
   const char*                 manufacturer;      /* manuf str */
   const char*                 version;           /* version str */
@@ -61,7 +61,7 @@ typedef struct pl_interp_characteristics_s {
 
 /*
  * The pl_interp_t and pl_interp_instance are intended to provide a generic
- * front end for language interpreters, in tandem with a 
+ * front end for language interpreters, in tandem with a
  * pl_interp_implementation_t. pl_interp_t and pl_interp_impmementation_t
  * together are used to describe a particular implementation. An implementation
  * can then generate one or more instances, which are more-or-less
@@ -111,13 +111,12 @@ int pl_allocate_interp_instance(pl_interp_instance_t **, pl_interp_t *, gs_memor
 typedef int (*pl_interp_proc_allocate_interp_instance_t)(pl_interp_instance_t **, pl_interp_t *, gs_memory_t *);
 
 /* clients that can be set into an interpreter's state */
-typedef enum { 
+typedef enum {
     /* needed to access the pcl interpreter in pxl (passthrough mode) */
     PCL_CLIENT,
     /* needed by all interpreters to query pjl state */
     PJL_CLIENT
 } pl_interp_instance_clients_t;
-
 
 int pl_set_client_instance(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client);
 typedef int (*pl_interp_proc_set_client_instance_t)(pl_interp_instance_t *, pl_interp_instance_t *, pl_interp_instance_clients_t client);
@@ -175,7 +174,7 @@ pl_interp_instance_t *get_interpreter_from_memory( const gs_memory_t *mem );
  * Define a generic interpreter implementation
  */
 struct pl_interp_implementation_s {
-	/* Procedure vector */
+        /* Procedure vector */
   pl_interp_proc_characteristics_t            proc_characteristics;
   pl_interp_proc_allocate_interp_t            proc_allocate_interp;
   pl_interp_proc_allocate_interp_instance_t   proc_allocate_interp_instance;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,17 +36,17 @@ typedef struct gs_font_type1_s gs_font_type1;
  * specification, but some fonts have arbitrary floats here.
  */
 #define zone_table(size)\
-	struct {\
-		int count;\
-		float values[(size)*2];\
-	}
+        struct {\
+                int count;\
+                float values[(size)*2];\
+        }
 #define float_array(size)\
-	struct {\
-		int count;\
-		float values[size];\
-	}
+        struct {\
+                int count;\
+                float values[size];\
+        }
 #define stem_table(size)\
-	float_array(size)
+        float_array(size)
 
 #ifndef gs_type1_data_DEFINED
 #define gs_type1_data_DEFINED
@@ -58,12 +58,12 @@ typedef struct gs_type1_data_procs_s {
     /* Get the data for any glyph.  Return >= 0 or < 0 as usual. */
 
     int (*glyph_data)(gs_font_type1 * pfont, gs_glyph glyph,
-		      gs_glyph_data_t *pgd);
+                      gs_glyph_data_t *pgd);
 
     /* Get the data for a Subr.  Return like glyph_data. */
 
     int (*subr_data)(gs_font_type1 * pfont, int subr_num, bool global,
-		     gs_glyph_data_t *pgd);
+                     gs_glyph_data_t *pgd);
 
     /*
      * Get the data for a seac character, including the glyph and/or the
@@ -73,7 +73,7 @@ typedef struct gs_type1_data_procs_s {
      */
 
     int (*seac_data)(gs_font_type1 * pfont, int ccode,
-		     gs_glyph * pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd);
+                     gs_glyph * pglyph, gs_const_string *gstr, gs_glyph_data_t *pgd);
 
     /*
      * Push (a) value(s) onto the client ('PostScript') stack during
@@ -82,7 +82,7 @@ typedef struct gs_type1_data_procs_s {
      */
 
     int (*push_values)(void *callback_data, const fixed *values,
-		       int count);
+                       int count);
 
     /* Pop a value from the client stack. */
 
@@ -103,15 +103,15 @@ struct gs_type1_data_s {
     void *proc_data;		/* data for procs */
     gs_font_base *parent;	/* the type 9 font, if this font is is a type 9 descendent. */
     int lenIV;			/* -1 means no encryption */
-				/* (undocumented feature!) */
+                                /* (undocumented feature!) */
     uint subroutineNumberBias;	/* added to operand of callsubr */
-				/* (undocumented feature!) */
-	/* Type 2 additions */
+                                /* (undocumented feature!) */
+        /* Type 2 additions */
     uint gsubrNumberBias;	/* added to operand of callgsubr */
     long initialRandomSeed;
     fixed defaultWidthX;
     fixed nominalWidthX;
-	/* End of Type 2 additions */
+        /* End of Type 2 additions */
     /* For a description of the following hint information, */
     /* see chapter 5 of the "Adobe Type 1 Font Format" book. */
     int BlueFuzz;
@@ -163,6 +163,6 @@ font_proc_glyph_info(gs_type1_glyph_info);
  * This is exported only for the benefit of font copying.
  */
 int gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
-			 const gs_glyph_data_t *pgd, gs_char *chars);
+                         const gs_glyph_data_t *pgd, gs_char *chars);
 
 #endif /* gxfont1_INCLUDED */

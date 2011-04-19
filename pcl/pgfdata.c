@@ -23,7 +23,6 @@
 #include "gxarith.h"		/* for any_abs */
 #include "pgfdata.h"
 
-
 /* Font data consists of instructions for each character.
    Fonts are on a 1024x1024 grid. */
 
@@ -5055,29 +5054,29 @@ hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
     /* set up tables debending on stick or arc font */
     int i;
 
-    if ( (char_index < 0x20) || 
-	 (char_index > 0xff) || 
-	 ((char_index > 0x7f) && (char_index < 0xa0)) )
-	return 0; /* no glyph */
+    if ( (char_index < 0x20) ||
+         (char_index > 0xff) ||
+         ((char_index > 0x7f) && (char_index < 0xa0)) )
+        return 0; /* no glyph */
 
     /* all entries have 3 short entries */
     i = offset;
     while ( i < stop ) {
-	if ( stick_font_data[i] == FNT_LINETO ) {
-	    gs_lineto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
-	    i += 3;
-	}
-	else if ( stick_font_data[i] == FNT_MOVETO ) {
-	    gs_moveto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
-	    i += 3;
-	}
-	else
-	    return_error(gs_error_invalidfont);
+        if ( stick_font_data[i] == FNT_LINETO ) {
+            gs_lineto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+            i += 3;
+        }
+        else if ( stick_font_data[i] == FNT_MOVETO ) {
+            gs_moveto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+            i += 3;
+        }
+        else
+            return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(gs_error_invalidfont);
+        return_error(gs_error_invalidfont);
     return 0;
 }
 
@@ -5098,37 +5097,37 @@ hpgl_arc_segments(const gs_memory_t *mem, void *data, uint char_index)
     int i;
     /* 3 entries for moveto and lineto and 5 for curveto */
 
-    if ( (char_index < 0x20) || 
-	 (char_index > 0xff) || 
-	 ((char_index > 0x7f) && (char_index < 0xa0)) )
-	return 0; /* no glyph */
+    if ( (char_index < 0x20) ||
+         (char_index > 0xff) ||
+         ((char_index > 0x7f) && (char_index < 0xa0)) )
+        return 0; /* no glyph */
 
     i = offset;
     while ( i < stop ) {
-	if ( arc_font_data[i] == FNT_LINETO ) {
-	    gs_lineto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
-	    i += 3;
-	}
-	else if ( arc_font_data[i] == FNT_MOVETO ) {
-	    gs_moveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
-	    i += 3;
-	}
-	else if ( arc_font_data[i] == FNT_CURVETO ) {
-	    gs_curveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]),
-		       (floatp)(arc_font_data[i+3]), (floatp)(arc_font_data[i+4]),
-		       (floatp)(arc_font_data[i+5]), (floatp)(arc_font_data[i+6]));
-	    i += 7;
-	}
-	else
-	    return_error(gs_error_invalidfont);
+        if ( arc_font_data[i] == FNT_LINETO ) {
+            gs_lineto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+            i += 3;
+        }
+        else if ( arc_font_data[i] == FNT_MOVETO ) {
+            gs_moveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+            i += 3;
+        }
+        else if ( arc_font_data[i] == FNT_CURVETO ) {
+            gs_curveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]),
+                       (floatp)(arc_font_data[i+3]), (floatp)(arc_font_data[i+4]),
+                       (floatp)(arc_font_data[i+5]), (floatp)(arc_font_data[i+6]));
+            i += 7;
+        }
+        else
+            return_error(gs_error_invalidfont);
     }
 
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
-	return_error(gs_error_invalidfont);
+        return_error(gs_error_invalidfont);
     return 0;
 }
-	
+
 static int
 hpgl_stick_width(uint char_index)
 {
@@ -5139,28 +5138,28 @@ hpgl_stick_width(uint char_index)
 /* Get the unscaled width of a stick/arc character. */
 static int
 hpgl_arc_width(uint char_index)
-{	
+{
     if ( char_index < 0x20 || (char_index < 0xa0 && char_index > 0x7f))
-	return arc_font_widths[0];
+        return arc_font_widths[0];
     return arc_font_widths[char_index - 0x20];
 }
 
 /* interface procedure render the characters */
-int 
+int
 hpgl_stick_arc_segments(const gs_memory_t *mem,
-			void *data, uint char_index, hpgl_font_type_t font_type)
+                        void *data, uint char_index, hpgl_font_type_t font_type)
 {
     if ( font_type == HPGL_ARC_FONT )
-	return hpgl_arc_segments(mem, data, char_index);
+        return hpgl_arc_segments(mem, data, char_index);
     else
-	return hpgl_stick_segments(mem, data, char_index);
+        return hpgl_stick_segments(mem, data, char_index);
 }
 
 /* interface procedure to get the width of the characters */
 int hpgl_stick_arc_width(uint char_index, hpgl_font_type_t font_type)
 {
     if ( font_type == HPGL_ARC_FONT )
-	return hpgl_arc_width(char_index);
+        return hpgl_arc_width(char_index);
     else
-	return hpgl_stick_width(char_index);
-}    
+        return hpgl_stick_width(char_index);
+}

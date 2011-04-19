@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,7 +38,7 @@
       defined(__hpux) || defined(__SUNPRO_C)
      /* Plan 9, SCO, AIX and Sequent's DYNIX/ptx need both time.h and
       * sys/time.h! As of version 2.2, at least some glibc
-      * installations also require both files. 
+      * installations also require both files.
       * Following Duraid Madina's request we also do it on Intel compiler.
       */
 #    include <time.h>
@@ -79,10 +79,10 @@ struct timezone {
 #ifdef HAVE_SYS_TIMES_H
 #  include <sys/times.h>
 #  define use_times_for_usertime 1
-		/* Posix 1003.1b-1993 section 4.8.1.5 says that
-		   CLK_TCK is obsolescent and that sysconf(_SC_CLK_TCK)
-		   should be used instead, but this requires including
-		   <unistd.h>, which is too painful to configure.  */
+                /* Posix 1003.1b-1993 section 4.8.1.5 says that
+                   CLK_TCK is obsolescent and that sysconf(_SC_CLK_TCK)
+                   should be used instead, but this requires including
+                   <unistd.h>, which is too painful to configure.  */
 #  ifndef CLK_TCK
 #    define CLK_TCK 100		/* guess for older hosts */
 #  endif
@@ -91,4 +91,3 @@ struct timezone {
 #endif
 
 #endif /* time__INCLUDED */
-

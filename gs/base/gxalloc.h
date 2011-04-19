@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -134,23 +134,23 @@ struct chunk_s {
     /* (aligned objects) and from the top down (strings). */
     byte *cbase;		/* bottom of chunk data area */
     byte *int_freed_top;	/* top of most recent internal free area */
-				/* in chunk (which may no longer be free), */
-				/* used to decide when to consolidate */
-				/* trailing free space in allocated area */
+                                /* in chunk (which may no longer be free), */
+                                /* used to decide when to consolidate */
+                                /* trailing free space in allocated area */
     byte *cbot;			/* bottom of free area */
-				/* (top of aligned objects) */
+                                /* (top of aligned objects) */
     obj_header_t *rcur;		/* current refs object, 0 if none */
     byte *rtop;			/* top of rcur */
     byte *ctop;			/* top of free area */
-				/* (bottom of strings) */
+                                /* (bottom of strings) */
     byte *climit;		/* top of strings */
     byte *cend;			/* top of chunk */
     chunk_t *cprev;		/* chain chunks together, */
     chunk_t *cnext;		/*   sorted by address */
     chunk_t *outer;		/* the chunk of which this is */
-				/*   an inner chunk, if any */
+                                /*   an inner chunk, if any */
     uint inner_count;		/* number of chunks of which this is */
-				/*   the outer chunk, if any */
+                                /*   the outer chunk, if any */
     bool has_refs;		/* true if any refs in chunk */
     /*
      * Free lists for single bytes in blocks of 1 to 2*N-1 bytes, one per
@@ -179,7 +179,7 @@ struct chunk_s {
     string_reloc_offset *sreloc;	/* relocation for string blocks */
     byte *sdest;		/* destination for (top of) strings */
     byte *rescan_bot;		/* bottom of rescanning range if */
-				/* the GC mark stack overflows */
+                                /* the GC mark stack overflows */
     byte *rescan_top;		/* top of range ditto */
 };
 
@@ -200,31 +200,31 @@ extern_st(st_chunk);
  * NB on error END_OBJECTS_SCAN calls gs_abort in debug systems.
  */
 #define SCAN_CHUNK_OBJECTS(cp)\
-	{	obj_header_t *pre = (obj_header_t *)((cp)->cbase);\
-		obj_header_t *end = (obj_header_t *)((cp)->cbot);\
-		uint size;\
+        {	obj_header_t *pre = (obj_header_t *)((cp)->cbase);\
+                obj_header_t *end = (obj_header_t *)((cp)->cbot);\
+                uint size;\
 \
-		for ( ; pre < end;\
-			pre = (obj_header_t *)((char *)pre + obj_size_round(size))\
-		    )\
-		{
+                for ( ; pre < end;\
+                        pre = (obj_header_t *)((char *)pre + obj_size_round(size))\
+                    )\
+                {
 #define DO_ALL\
-			size = pre_obj_contents_size(pre);\
-			{
+                        size = pre_obj_contents_size(pre);\
+                        {
 #define END_OBJECTS_SCAN_NO_ABORT\
-			}\
-		}\
-	}
+                        }\
+                }\
+        }
 #ifdef DEBUG
 #  define END_OBJECTS_SCAN\
-			}\
-		}\
-		if ( pre != end )\
-		{	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
-				 (ulong)pre, (ulong)end);\
-		    /*gs_abort((const gs_memory_t *)NULL);*/	\
-		}\
-	}
+                        }\
+                }\
+                if ( pre != end )\
+                {	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
+                                 (ulong)pre, (ulong)end);\
+                    /*gs_abort((const gs_memory_t *)NULL);*/	\
+                }\
+        }
 #else
 #  define END_OBJECTS_SCAN END_OBJECTS_SCAN_NO_ABORT
 #endif
@@ -278,12 +278,12 @@ void alloc_free_chunk(chunk_t *, gs_ref_memory_t *);
   "%s 0x%lx (0x%lx..0x%lx, 0x%lx..0x%lx..0x%lx)\n"
 #define dprintf_chunk(msg, cp)\
   dprintf7(dprintf_chunk_format,\
-	   msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
-	   (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
+           msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
+           (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
 #define if_debug_chunk(c, msg, cp)\
   if_debug7(c, dprintf_chunk_format,\
-	    msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
-	    (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
+            msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
+            (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
 
 /* ================ Allocator state ================ */
 
@@ -332,8 +332,8 @@ struct gs_ref_memory_s {
     gs_memory_common;
     uint chunk_size;
     uint large_size;		/* min size to give large object */
-				/* its own chunk: must be */
-				/* 1 mod obj_align_mod */
+                                /* its own chunk: must be */
+                                /* 1 mod obj_align_mod */
     uint space;			/* a_local, a_global, a_system */
 #   if IGC_PTR_STABILITY_CHECK
     unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
@@ -343,23 +343,23 @@ struct gs_ref_memory_s {
     gs_memory_gc_status_t gc_status;
     /* The following are updated dynamically. */
     bool is_controlled;		/* if true, this allocator doesn't manage */
-				/* its own chunks */
+                                /* its own chunks */
     ulong limit;		/* signal a VMerror when total */
-				/* allocated exceeds this */
+                                /* allocated exceeds this */
     chunk_t *cfirst;		/* head of chunk list */
     chunk_t *clast;		/* tail of chunk list */
     chunk_t cc;			/* current chunk */
     chunk_t *pcc;		/* where to store cc */
     chunk_locator_t cfreed;	/* chunk where last object freed */
     ulong allocated;		/* total size of all chunks */
-				/* allocated at this save level */
+                                /* allocated at this save level */
     ulong gc_allocated;		/* value of (allocated + */
-				/* previous_status.allocated) after last GC */
+                                /* previous_status.allocated) after last GC */
     struct lost_ {		/* space freed and 'lost' (not put on a */
-				/* freelist) */
-	ulong objects;
-	ulong refs;
-	ulong strings;
+                                /* freelist) */
+        ulong objects;
+        ulong refs;
+        ulong strings;
     } lost;
     /*
      * The following are for the interpreter's convenience: the
@@ -381,7 +381,7 @@ struct gs_ref_memory_s {
     long total_scanned_after_compacting;
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
-				/* in outer save levels */
+                                /* in outer save levels */
     uint largest_free_size;	/* largest (aligned) size on large block list */
     /* We put the freelists last to keep the scalar offsets small. */
     obj_header_t *freelists[num_freelists];
@@ -406,12 +406,12 @@ extern const gs_memory_procs_t gs_ref_memory_procs;
  *      END_CHUNKS_SCAN
  */
 #define SCAN_MEM_CHUNKS(mem, cp)\
-	{	chunk_t *cp = (mem)->cfirst;\
-		for ( ; cp != 0; cp = cp->cnext )\
-		{
+        {	chunk_t *cp = (mem)->cfirst;\
+                for ( ; cp != 0; cp = cp->cnext )\
+                {
 #define END_CHUNKS_SCAN\
-		}\
-	}
+                }\
+        }
 
 /* ================ Debugging ================ */
 
@@ -459,7 +459,7 @@ void debug_print_chunk(const gs_memory_t *mem, const chunk_t * cp);	/* default o
 /* Print the contents of all chunks managed by an allocator. */
 /* Relevant options: all. */
 void debug_dump_memory(const gs_ref_memory_t *mem,
-		       const dump_control_t *control);
+                       const dump_control_t *control);
 
 /* convenience routine to call debug_dump_memory(), defaults
    dump_control_t to dump_control_all.  */

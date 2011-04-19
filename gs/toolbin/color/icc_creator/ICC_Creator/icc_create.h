@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -10,8 +10,6 @@
    or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
-
-
 
 #ifndef gsicc_create_INCLUDED
 #  define gsicc_create_INCLUDED
@@ -25,13 +23,12 @@ typedef enum {
     RGB2CMYK
 } link_t;
 
-typedef struct ucr_bg {   
+typedef struct ucr_bg {
     unsigned char *cyan;
     unsigned char *magenta;
     unsigned char *yellow;
     unsigned char *black;
 } ucrbg_t;
-
 
 int create_devicen_profile(cielab_t *cielab, colornames_t *colorant_names, int num_colors, int num_samples, TCHAR FileName[]);
 int create_devicelink_profile(TCHAR FileName[],link_t link_type);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,7 +41,6 @@
 #include "gsparamx.h"
 #include "gx.h"
 #include "gxistate.h"
-
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -112,17 +111,17 @@ zcheckpassword(i_ctx_t *i_ctx_p)
     password pass;
 
     if (code < 0)
-	return code;
+        return code;
     params[1] = *op;
     array_param_list_read(&list, params, 2, NULL, false, iimemory);
     if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
-	param_check_password(plist, &pass) == 0
-	)
-	result = 1;
+        param_check_password(plist, &pass) == 0
+        )
+        result = 1;
     if (dict_read_password(&pass, systemdict, "SystemParamsPassword") >= 0 &&
-	param_check_password(plist, &pass) == 0
-	)
-	result = 2;
+        param_check_password(plist, &pass) == 0
+        )
+        result = 2;
     iparam_list_release(&list);
     make_int(op, result);
     return 0;
@@ -151,8 +150,8 @@ static int
 set_MaxFontCache(i_ctx_t *i_ctx_p, long val)
 {
     return gs_setcachesize(igs, ifont_dir,
-			   (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
-				   val));
+                           (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
+                                   val));
 }
 static long
 current_CurFontCache(i_ctx_t *i_ctx_p)
@@ -221,8 +220,6 @@ current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->persistent = true;
 }
 
-
-
 static const string_param_def_t system_string_params[] =
 {
     {"RealFormat", current_RealFormat, NULL},
@@ -249,48 +246,48 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
-	return code;
+        return code;
     code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
     if (code < 0)
-	return code;
+        return code;
     code = param_check_password(plist, &pass);
     if (code != 0) {
-	if (code > 0)
-	    code = gs_note_error(e_invalidaccess);
-	goto out;
+        if (code > 0)
+            code = gs_note_error(e_invalidaccess);
+        goto out;
     }
     code = param_read_password(plist, "StartJobPassword", &pass);
     switch (code) {
-	default:		/* invalid */
-	    goto out;
-	case 1:		/* missing */
-	    break;
-	case 0:
-	    code = dict_write_password(&pass, systemdict,
-				       "StartJobPassword",
-				       ! i_ctx_p->LockFilePermissions);
-	    if (code < 0)
-		goto out;
+        default:		/* invalid */
+            goto out;
+        case 1:		/* missing */
+            break;
+        case 0:
+            code = dict_write_password(&pass, systemdict,
+                                       "StartJobPassword",
+                                       ! i_ctx_p->LockFilePermissions);
+            if (code < 0)
+                goto out;
     }
     code = param_read_password(plist, "SystemParamsPassword", &pass);
     switch (code) {
-	default:		/* invalid */
-	    goto out;
-	case 1:		/* missing */
-	    break;
-	case 0:
-	    code = dict_write_password(&pass, systemdict,
-				       "SystemParamsPassword",
-				       ! i_ctx_p->LockFilePermissions);
-	    if (code < 0)
-		goto out;
+        default:		/* invalid */
+            goto out;
+        case 1:		/* missing */
+            break;
+        case 0:
+            code = dict_write_password(&pass, systemdict,
+                                       "SystemParamsPassword",
+                                       ! i_ctx_p->LockFilePermissions);
+            if (code < 0)
+                goto out;
     }
 
     code = setparams(i_ctx_p, plist, &system_param_set);
   out:
     iparam_list_release(&list);
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -453,7 +450,6 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 
 #undef ifont_dir
 
-
 /* No default for the proofing profile.  It would
    seem that I should be able to set the default
    operator to NULL but this introduces issues */
@@ -465,8 +461,8 @@ current_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)((pis->icc_manager->proof_profile == NULL) ?
-        		rfs :
-			pis->icc_manager->proof_profile->name);
+                        rfs :
+                        pis->icc_manager->proof_profile->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -478,12 +474,12 @@ set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char *pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     /* Check if it was "NULL" */
     if ( pval->size != 0 ) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
-		   		     "set_proof_profile_icc");
+                                     "set_proof_profile_icc");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         code = gsicc_set_profile(pis->icc_manager, (const char*) pname, namelen, PROOF_TYPE);
@@ -507,7 +503,7 @@ current_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     /*FIXME: This should return the entire list !!! */
     /*       Just return the first one for now      */
     pval->data = (const byte *)( (pis->icc_manager->device_n == NULL) ?
-        		rfs : pis->icc_manager->device_n->head->iccprofile->name);
+                        rfs : pis->icc_manager->device_n->head->iccprofile->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -519,18 +515,18 @@ set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char *pname, *pstr, *pstrend;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0) {
-        /* The DeviceN name can have multiple files 
-           in it.  This way we can define all the 
+        /* The DeviceN name can have multiple files
+           in it.  This way we can define all the
            DeviceN color spaces with ICC profiles.
-           divide using , and ; delimeters as well as 
+           divide using , and ; delimeters as well as
            remove leading and ending spaces (file names
            can have internal spaces). */
         pname = (char *)gs_alloc_bytes(mem, namelen,
-		   		     "set_devicen_profile_icc");
+                                     "set_devicen_profile_icc");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         pstr = strtok(pname, ",;");
@@ -566,7 +562,7 @@ current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->default_gray == NULL) ?
-        		rfs : pis->icc_manager->default_gray->name);
+                        rfs : pis->icc_manager->default_gray->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -581,17 +577,17 @@ set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     gs_memory_t *mem = pis->memory;
     bool not_initialized;
 
-    /* Detect if this is our first time in here.  If so, then we need to 
+    /* Detect if this is our first time in here.  If so, then we need to
        reset up the default gray color spaces that are in the graphic state
        to be ICC based.  It was not possible to do it until after we get
        the profile */
     not_initialized = (pis->icc_manager->default_gray == NULL);
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		     "set_default_gray_icc");
+                             "set_default_gray_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager, 
+    code = gsicc_set_profile(pis->icc_manager,
         (const char*) pname, namelen, DEFAULT_GRAY);
     gs_free_object(mem, pname,
         "set_default_gray_icc");
@@ -614,7 +610,7 @@ current_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->profiledir == NULL) ?
-		  rfs : pis->icc_manager->profiledir);
+                  rfs : pis->icc_manager->profiledir);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -629,7 +625,7 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
     /* Check if it was "NULL" */
     if (pval->size != 0 ) {
         pname = (char *)gs_alloc_bytes(pis->icc_manager->memory, namelen,
-		   		     "set_icc_directory");
+                                     "set_icc_directory");
         if (pname == NULL)
             return gs_rethrow(-1, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);
@@ -649,7 +645,7 @@ current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->default_rgb == NULL) ?
-        		rfs : pis->icc_manager->default_rgb->name);
+                        rfs : pis->icc_manager->default_rgb->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -661,13 +657,13 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char *pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		     "set_default_rgb_icc");
+                             "set_default_rgb_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager, 
+    code = gsicc_set_profile(pis->icc_manager,
         (const char*) pname, namelen, DEFAULT_RGB);
     gs_free_object(mem, pname,
         "set_default_rgb_icc");
@@ -683,7 +679,7 @@ current_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->output_link == NULL) ?
-        		rfs : pis->icc_manager->output_link->name);
+                        rfs : pis->icc_manager->output_link->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -695,15 +691,15 @@ set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char* pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		         "set_link_profile_icc");
+                                 "set_link_profile_icc");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        code = gsicc_set_profile(pis->icc_manager, 
+        code = gsicc_set_profile(pis->icc_manager,
             (const char*) pname, namelen, LINKED_TYPE);
         gs_free_object(mem, pname,
                 "set_link_profile_icc");
@@ -721,7 +717,7 @@ current_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->device_named == NULL) ?
-        		rfs : pis->icc_manager->device_named->name);
+                        rfs : pis->icc_manager->device_named->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -733,15 +729,15 @@ set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char* pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0) {
         pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		         "set_named_profile_icc");
+                                 "set_named_profile_icc");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        code = gsicc_set_profile(pis->icc_manager, 
+        code = gsicc_set_profile(pis->icc_manager,
             (const char*) pname, namelen, NAMED_TYPE);
         gs_free_object(mem, pname,
                 "set_named_profile_icc");
@@ -759,7 +755,7 @@ current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->default_cmyk == NULL) ?
-        		rfs : pis->icc_manager->default_cmyk->name);
+                        rfs : pis->icc_manager->default_cmyk->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -771,13 +767,13 @@ set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char* pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		     "set_default_cmyk_icc");
+                             "set_default_cmyk_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager, 
+    code = gsicc_set_profile(pis->icc_manager,
         (const char*) pname, namelen, DEFAULT_CMYK);
     gs_free_object(mem, pname,
                 "set_default_cmyk_icc");
@@ -793,7 +789,7 @@ current_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     const gs_imager_state * pis = (gs_imager_state *) igs;
 
     pval->data = (const byte *)( (pis->icc_manager->lab_profile == NULL) ?
-        		rfs : pis->icc_manager->lab_profile->name);
+                        rfs : pis->icc_manager->lab_profile->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
@@ -805,13 +801,13 @@ set_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     char* pname;
     int namelen = (pval->size)+1;
     const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory; 
+    gs_memory_t *mem = pis->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
-	   		     "set_lab_icc");
+                             "set_lab_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager, 
+    code = gsicc_set_profile(pis->icc_manager,
         (const char*) pname, namelen, LAB_TYPE);
     gs_free_object(mem, pname,
                 "set_lab_icc");
@@ -847,21 +843,21 @@ static const long_param_def_t user_long_params[] =
      current_MinScreenLevels, set_MinScreenLevels},
     {"AlignToPixels", 0, 1,
      current_AlignToPixels, set_AlignToPixels},
-    {"GridFitTT", 0, 3, 
+    {"GridFitTT", 0, 3,
      current_GridFitTT, set_GridFitTT}
 };
 
-/* Note that string objects that are maintained as user params must be 
+/* Note that string objects that are maintained as user params must be
    either allocated in non-gc memory or be a constant in the executable.
    The problem stems from the way userparams are retained during garbage
    collection in a param_list (collected by currentuserparams).  For
-   some reason this param_list does not get the pointers to strings relocated 
-   during the GC. Note that the param_dict itself is correctly updated by reloc, 
-   it is just the pointers to the strings in the param_list that are not traced 
-   and updated. An example of this includes the ICCProfilesDir, which sets a 
-   string in the icc_manager. When a reclaim occurs, the string is relocated 
-   (when in non-gc memory and when it is noted to the gc with the proper object 
-   descriptor).  Then if a set_icc_directory occurs, the user params pointer has 
+   some reason this param_list does not get the pointers to strings relocated
+   during the GC. Note that the param_dict itself is correctly updated by reloc,
+   it is just the pointers to the strings in the param_list that are not traced
+   and updated. An example of this includes the ICCProfilesDir, which sets a
+   string in the icc_manager. When a reclaim occurs, the string is relocated
+   (when in non-gc memory and when it is noted to the gc with the proper object
+   descriptor).  Then if a set_icc_directory occurs, the user params pointer has
    NOT been updated and validation problems will occur. */
 static const string_param_def_t user_string_params[] =
 {
@@ -871,9 +867,9 @@ static const string_param_def_t user_string_params[] =
     {"ProofProfile", current_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_named_icc, set_named_profile_icc},
     {"DeviceLinkProfile", current_link_icc, set_link_profile_icc},
-    {"ICCProfilesDir", current_icc_directory, set_icc_directory}, 
+    {"ICCProfilesDir", current_icc_directory, set_icc_directory},
     {"LabProfile", current_lab_icc, set_lab_icc},
-    {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc} 
+    {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc}
 
 };
 
@@ -911,7 +907,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 {
     /* allow locking even if already locked */
     if (i_ctx_p->LockFilePermissions && !val)
-	return_error(e_invalidaccess);
+        return_error(e_invalidaccess);
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
@@ -953,7 +949,7 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
     check_type(*paramdict, t_dictionary);
     code = dict_param_list_read(&list, paramdict, NULL, false, iimemory);
     if (code < 0)
-	return code;
+        return code;
     code = setparams(i_ctx_p, (gs_param_list *)&list, &user_param_set);
     iparam_list_release(&list);
     return code;
@@ -965,10 +961,10 @@ zsetuserparams(i_ctx_t *i_ctx_p)
     int code = set_user_params(i_ctx_p, op);
 
     if (code >= 0) {
-	/* Update cached scanner options. */
-	i_ctx_p->scanner_options =
-	    ztoken_scanner_options(op, i_ctx_p->scanner_options);
-	pop(1);
+        /* Update cached scanner options. */
+        i_ctx_p->scanner_options =
+            ztoken_scanner_options(op, i_ctx_p->scanner_options);
+        pop(1);
     }
     return code;
 }
@@ -991,15 +987,15 @@ zgetuserparam(i_ctx_t *i_ctx_p)
 
 const op_def zusparam_op_defs[] =
 {
-	/* User and system parameters are accessible even in Level 1 */
-	/* (if this is a Level 2 system). */
+        /* User and system parameters are accessible even in Level 1 */
+        /* (if this is a Level 2 system). */
     {"0.currentsystemparams", zcurrentsystemparams},
     {"0.currentuserparams", zcurrentuserparams},
     {"1.getsystemparam", zgetsystemparam},
     {"1.getuserparam", zgetuserparam},
     {"1.setsystemparams", zsetsystemparams},
     {"1.setuserparams", zsetuserparams},
-	/* The rest of the operators are defined only in Level 2. */
+        /* The rest of the operators are defined only in Level 2. */
     op_def_begin_level2(),
     {"1.checkpassword", zcheckpassword},
     op_def_end(0)
@@ -1016,55 +1012,55 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
     unsigned int i;
 
     for (i = 0; i < pset->long_count; i++) {
-	const long_param_def_t *pdef = &pset->long_defs[i];
-	long val;
+        const long_param_def_t *pdef = &pset->long_defs[i];
+        long val;
 
-	if (pdef->set == NULL)
-	    continue;
-	code = param_read_long(plist, pdef->pname, &val);
-	switch (code) {
-	    default:		/* invalid */
-		return code;
-	    case 1:		/* missing */
-		break;
-	    case 0:
-		if (val < pdef->min_value || val > pdef->max_value)
-		    return_error(e_rangecheck);
-		code = (*pdef->set)(i_ctx_p, val);
-		if (code < 0)
-		    return code;
-	}
+        if (pdef->set == NULL)
+            continue;
+        code = param_read_long(plist, pdef->pname, &val);
+        switch (code) {
+            default:		/* invalid */
+                return code;
+            case 1:		/* missing */
+                break;
+            case 0:
+                if (val < pdef->min_value || val > pdef->max_value)
+                    return_error(e_rangecheck);
+                code = (*pdef->set)(i_ctx_p, val);
+                if (code < 0)
+                    return code;
+        }
     }
     for (i = 0; i < pset->bool_count; i++) {
-	const bool_param_def_t *pdef = &pset->bool_defs[i];
-	bool val;
+        const bool_param_def_t *pdef = &pset->bool_defs[i];
+        bool val;
 
-	if (pdef->set == NULL)
-	    continue;
-	code = param_read_bool(plist, pdef->pname, &val);
-	if (code == 0)
-	    code = (*pdef->set)(i_ctx_p, val);
-	if (code < 0)
-	    return code;
+        if (pdef->set == NULL)
+            continue;
+        code = param_read_bool(plist, pdef->pname, &val);
+        if (code == 0)
+            code = (*pdef->set)(i_ctx_p, val);
+        if (code < 0)
+            return code;
     }
 
     for (i = 0; i < pset->string_count; i++) {
-	const string_param_def_t *pdef = &pset->string_defs[i];
-	gs_param_string val;
+        const string_param_def_t *pdef = &pset->string_defs[i];
+        gs_param_string val;
 
-	if (pdef->set == NULL)
-	    continue;
-	code = param_read_string(plist, pdef->pname, &val);
-	switch (code) {
-	    default:		/* invalid */
-		return code;
-	    case 1:		/* missing */
-		break;
-	    case 0:
-		code = (*pdef->set)(i_ctx_p, &val);
-		if (code < 0)
-		    return code;
-	}
+        if (pdef->set == NULL)
+            continue;
+        code = param_read_string(plist, pdef->pname, &val);
+        switch (code) {
+            default:		/* invalid */
+                return code;
+            case 1:		/* missing */
+                break;
+            case 0:
+                code = (*pdef->set)(i_ctx_p, &val);
+                if (code < 0)
+                    return code;
+        }
     }
 
     return 0;
@@ -1075,13 +1071,13 @@ static bool
 pname_matches(const char *pname, const ref * psref)
 {
     return
-	(psref == 0 ||
-	 !bytes_compare((const byte *)pname, strlen(pname),
-			psref->value.const_bytes, r_size(psref)));
+        (psref == 0 ||
+         !bytes_compare((const byte *)pname, strlen(pname),
+                        psref->value.const_bytes, r_size(psref)));
 }
 static int
 current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
-		   const ref * psref /*t_string */ )
+                   const ref * psref /*t_string */ )
 {
     stack_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
@@ -1090,62 +1086,62 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
 
     stack_param_list_write(&list, &o_stack, NULL, iimemory);
     for (i = 0; i < pset->long_count; i++) {
-	const char *pname = pset->long_defs[i].pname;
+        const char *pname = pset->long_defs[i].pname;
 
-	if (pname_matches(pname, psref)) {
-	    long val = (*pset->long_defs[i].current)(i_ctx_p);
+        if (pname_matches(pname, psref)) {
+            long val = (*pset->long_defs[i].current)(i_ctx_p);
 
-	    code = param_write_long(plist, pname, &val);
-	    if (code < 0)
-		return code;
-	}
+            code = param_write_long(plist, pname, &val);
+            if (code < 0)
+                return code;
+        }
     }
     for (i = 0; i < pset->bool_count; i++) {
-	const char *pname = pset->bool_defs[i].pname;
+        const char *pname = pset->bool_defs[i].pname;
 
-	if (pname_matches(pname, psref)) {
-	    bool val = (*pset->bool_defs[i].current)(i_ctx_p);
+        if (pname_matches(pname, psref)) {
+            bool val = (*pset->bool_defs[i].current)(i_ctx_p);
 
-	    code = param_write_bool(plist, pname, &val);
-	    if (code < 0)
-		return code;
-	}
+            code = param_write_bool(plist, pname, &val);
+            if (code < 0)
+                return code;
+        }
     }
     for (i = 0; i < pset->string_count; i++) {
-	const char *pname = pset->string_defs[i].pname;
+        const char *pname = pset->string_defs[i].pname;
 
-	if (pname_matches(pname, psref)) {
-	    gs_param_string val;
+        if (pname_matches(pname, psref)) {
+            gs_param_string val;
 
-	    (*pset->string_defs[i].current)(i_ctx_p, &val);
-	    code = param_write_string(plist, pname, &val);
-	    if (code < 0)
-		return code;
-	}
+            (*pset->string_defs[i].current)(i_ctx_p, &val);
+            code = param_write_string(plist, pname, &val);
+            if (code < 0)
+                return code;
+        }
     }
     if (psref) {
-	/*
-	 * Scanner options can be read, but only individually by .getuserparam.
-	 * This avoids putting them into userparams, and being affected by save/restore.
-	 */
-	const char *pname;
-	bool val;
-	int code;
+        /*
+         * Scanner options can be read, but only individually by .getuserparam.
+         * This avoids putting them into userparams, and being affected by save/restore.
+         */
+        const char *pname;
+        bool val;
+        int code;
 
-	switch (ztoken_get_scanner_option(psref, i_ctx_p->scanner_options, &pname)) {
-	    case 0:
-		code = param_write_null(plist, pname);
-		break;
-	    case 1:
-		val = true;
-		code = param_write_bool(plist, pname, &val);
-		break;
-	    default:
-		code = 0;
-		break;
-	}
-	if (code < 0)
-	    return code;
+        switch (ztoken_get_scanner_option(psref, i_ctx_p->scanner_options, &pname)) {
+            case 0:
+                code = param_write_null(plist, pname);
+                break;
+            case 1:
+                val = true;
+                code = param_write_bool(plist, pname, &val);
+                break;
+            default:
+                code = 0;
+                break;
+        }
+        if (code < 0)
+            return code;
     }
     return code;
 }
@@ -1170,9 +1166,9 @@ currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
     name_string_ref(imemory, (const ref *)op, &sref);
     code = current_param_list(i_ctx_p, pset, &sref);
     if (code < 0)
-	return code;
+        return code;
     if (osp == op)
-	return_error(e_undefined);
+        return_error(e_undefined);
     /* We know osp == op + 2. */
     ref_assign(op, op + 2);
     pop(2);

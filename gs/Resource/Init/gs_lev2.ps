@@ -1,12 +1,12 @@
 %    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -49,17 +49,17 @@ level2dict begin
   exch type eq
 } .bind def
 /.checksetparams {		% <newdict> <opname> <checkdict>
-				%   .checksetparams <newdict>
+                                %   .checksetparams <newdict>
   2 .argindex {
-		% Stack: newdict opname checkdict key newvalue
+                % Stack: newdict opname checkdict key newvalue
     3 copy 3 1 roll .knownget {
       exec not {
-	pop pop pop load /typecheck signalerror
+        pop pop pop load /typecheck signalerror
       } if
       dup type /stringtype eq {
-	dup rcheck not {
-	  pop pop pop load /invalidaccess signalerror
-	} if
+        dup rcheck not {
+          pop pop pop load /invalidaccess signalerror
+        } if
       } if
     } {
       pop
@@ -75,20 +75,20 @@ level2dict begin
 % be changed. Also be careful to preserve 'executable' state.
 /.copyparam {			% <value> .copyparam <value'>
   dup type /arraytype eq {
-    .currentglobal //true .setglobal exch 
+    .currentglobal //true .setglobal exch
     dup wcheck exch dup xcheck exch		% original attributes
     dup length array exch dup {	% stack: destination_array original_array original_array
       dup type /arraytype eq {
-	dup 2 index ne {	% avoid recursion
+        dup 2 index ne {	% avoid recursion
           .copyparam	% recurse to handle composite array elements
         } {
-	  % this array self referenced, do it again (yuk!)
-	  pop 1 index		% get copy of destination array
-	} ifelse
+          % this array self referenced, do it again (yuk!)
+          pop 1 index		% get copy of destination array
+        } ifelse
       } {
         dup type /stringtype eq {
-	  .copyparam
-        } if 
+          .copyparam
+        } if
       }
       ifelse 3 1 roll		% keep arrays on top
     } forall pop astore
@@ -128,28 +128,28 @@ end
 % We break out setuserparams into a separate procedure so that setvmxxx
 % can use it without affecting the command in case of an error.
 /.setuserparams2 {
-	% Check that we will be able to set the PostScript-level
-	% user parameters.
+        % Check that we will be able to set the PostScript-level
+        % user parameters.
   /setuserparams /psuserparams .systemvar .checksetparams
-	% Set the C-level user params.  If this succeeds, we know that
-	% the password check succeeded.
+        % Set the C-level user params.  If this succeeds, we know that
+        % the password check succeeded.
   dup .setuserparams
-	% Now set the PostScript-level params.
-	% The interpreter may have adjusted the values of some of the
-	% parameters, so we have to read them back.
+        % Now set the PostScript-level params.
+        % The interpreter may have adjusted the values of some of the
+        % parameters, so we have to read them back.
   dup {
     /userparams .systemvar 2 index known {
       psuserparams 2 index known not {
-	pop dup .getuserparam
+        pop dup .getuserparam
       } if
       .copyparam
       % special protection for the security related parameters
       [ /PermitFileReading /PermitFileWriting /PermitFileControl ]
       { 2 index eq { % force all strings to readonly but make sure the
-		     % array is in the correct VM space (local/global).
-	currentglobal exch dup gcheck setglobal
-	dup length array exch { readonly exch } forall astore
-	exch setglobal
+                     % array is in the correct VM space (local/global).
+        currentglobal exch dup gcheck setglobal
+        dup length array exch { readonly exch } forall astore
+        exch setglobal
         } if
       } forall
       % protect top level of parameters that we copied
@@ -159,10 +159,10 @@ end
       pop pop
     } ifelse
   } forall
-	% A context switch might have occurred during the above loop,
-	% causing the interpreter-level parameters to be reset.
-	% Set them again to the new values.  From here on, we are safe,
-	% since a context switch will consult userparams.
+        % A context switch might have occurred during the above loop,
+        % causing the interpreter-level parameters to be reset.
+        % Set them again to the new values.  From here on, we are safe,
+        % since a context switch will consult userparams.
   .setuserparams
 } .bind def
 /setuserparams {		% <dict> setuserparams -
@@ -191,14 +191,14 @@ end
   mark .currentsystemparams //pssystemparams { } forall .dicttomark
 } odef
 /setsystemparams {		% <dict> setsystemparams -
-	% Check that we will be able to set the PostScript-level
-	% system parameters.
+        % Check that we will be able to set the PostScript-level
+        % system parameters.
    dup pop		% check # of args
    /SAFETY .systemvar /safe get {
      % SAFER mode disallows some changes
      [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
        2 copy .knownget {
-	 exch //pssystemparams exch .knownget {
+         exch //pssystemparams exch .knownget {
            ne { /setsystemparams /invalidaccess signalerror } if
          } {
            pop
@@ -211,18 +211,18 @@ end
    /setsystemparams //pssystemparams mark exch {
      type cvlit /.checkparamtype cvx 2 packedarray cvx
    } forall .dicttomark .checksetparams
-	% Set the C-level system params.  If this succeeds, we know that
-	% the password check succeeded.
+        % Set the C-level system params.  If this succeeds, we know that
+        % the password check succeeded.
    dup .setsystemparams
-	% Now set the PostScript-level params.  We must copy local strings
-	% into global VM.
+        % Now set the PostScript-level params.  We must copy local strings
+        % into global VM.
    dup
     { //pssystemparams 2 index known
        {		% Stack: key newvalue
-	 .copyparam
-	 % protect top level parameters that we copied
+         .copyparam
+         % protect top level parameters that we copied
          dup type dup /arraytype eq exch /stringtype eq or { readonly } if
-	 //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
+         //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
        }
        { pop pop
        }
@@ -246,10 +246,10 @@ end
     } if
 } .bind odef
 /setcacheparams {
-	% The MaxFontCache parameter is a system parameter, which we might
-	% not be able to set.  Fortunately, this doesn't matter, because
-	% system parameters don't have to be synchronized between this code
-	% and the VM.
+        % The MaxFontCache parameter is a system parameter, which we might
+        % not be able to set.  Fortunately, this doesn't matter, because
+        % system parameters don't have to be synchronized between this code
+        % and the VM.
   counttomark 1 add copy setcacheparams
   currentcacheparams	% mark size lower upper
     3 -1 roll pop
@@ -282,7 +282,7 @@ end
         % in addition to validating the value, ensure the value is read/only
         dup { readonly exch } forall
         .currentglobal exch dup gcheck .setglobal length array exch .setglobal
-	astore readonly
+        astore readonly
       }
       ifelse
     } {
@@ -450,7 +450,7 @@ serverdict begin
 
 /.jobsave //null def		% top-level save object
 /.jobsavelevel 0 def		% save depth of job (0 if .jobsave is null,
-				% 1 otherwise)
+                                % 1 otherwise)
 /.adminjob //true def		% status of current unencapsulated job
 
 end		% serverdict
@@ -463,49 +463,49 @@ end		% serverdict
 %**************** The definition of startjob is not complete yet, since
 % it doesn't reset stdin/stdout.
 /.startnewjob {			% <exit_bool> <password_level>
-				%   .startnewjob -
+                                %   .startnewjob -
     serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
     exch {
-			% Unencapsulated job
+                        % Unencapsulated job
       serverdict /.jobsave //null put
       serverdict /.jobsavelevel 0 put
       serverdict /.adminjob 3 -1 roll 1 gt put
     } {
-			% Encapsulated job
+                        % Encapsulated job
       pop
       serverdict /.jobsave save put
       serverdict /.jobsavelevel 1 put
       .userdict /quit { stop } .bind put  % CET 28-10 requires a procedure
     } ifelse
-		% Reset the interpreter state.
+                % Reset the interpreter state.
   clear cleardictstack
   initgraphics
   //false setglobal
   2 vmreclaim	% Make sure GC'ed memory is reclaimed and freed.
 } bind def
 /.startjob {			% <exit_bool> <password> <finish_proc>
-				%   .startjob <ok_bool>
+                                %   .startjob <ok_bool>
   vmstatus pop pop serverdict /.jobsavelevel get eq
   2 .argindex .checkpassword 0 gt and {
     exch .checkpassword exch count 3 roll count 3 sub { pop } repeat
     cleardictstack
-		% Reset the e-stack back to the 2 .stopped in .runexec,
-		% passing the finish_proc to be executed afterwards.
+                % Reset the e-stack back to the 2 .stopped in .runexec,
+                % passing the finish_proc to be executed afterwards.
     2 .stop
   } {		% Password check failed
     pop pop pop //false
   } ifelse
 } odef
 /startjob {			% <exit_bool> <password> startjob <ok_bool>
-	% This is a hack.  We really need some way to indicate explicitly
-	% to the interpreter that we are under control of a job server.
+        % This is a hack.  We really need some way to indicate explicitly
+        % to the interpreter that we are under control of a job server.
   1 .argindex type /booleantype ne {
     /startjob .systemvar /typecheck signalerror
   } if
   { .startnewjob //true } .startjob
 } odef
 
-% The procedure to undo the job encapsulation 
+% The procedure to undo the job encapsulation
 /.endjob {
   clear cleardictstack
   serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
@@ -630,7 +630,6 @@ currentuserparams /WaitTimeout known
 %pagestackorder
 %setpagestackorder
 
-
 % -------- ICC manager -------- %
 % All color management is going
 % through ICC flow.  We need
@@ -646,10 +645,10 @@ currentuserparams /WaitTimeout known
   mark .currentuserparams .dicttomark /ICCProfilesDir get
   (default_gray.icc) concatstrings status {
     pop pop pop pop		% current value was OK. Just clean up stack
-  } { 
+  } {
     % Search for valid (iccprofiles) directory as a sibling to (Resource)
     % and set it as a default if found.
-    LIBPATH { 
+    LIBPATH {
       (Resource) search {
         exch pop exch pop (iccprofiles) concatstrings
         .file_name_separator concatstrings
@@ -724,24 +723,24 @@ currentdict end
   (*) 3 1 roll /IODevice resourceforall
 } odef
 /devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
-			%   <hasNames> <mounted> <removable> <searchOrder>
-			%   <freePages> <size> true
-			% <string> devstatus false
+                        %   <hasNames> <mounted> <removable> <searchOrder>
+                        %   <freePages> <size> true
+                        % <string> devstatus false
   dup length 5 ge {
     dup 0 5 getinterval (%disk) eq {
       dup /IODevice resourcestatus {
-	pop pop dup currentdevparams
-	dup /Searchable get
-	exch dup /Writeable get
-	exch dup /HasNames get
-	exch dup /Mounted get
-	exch dup /Removable get
-	exch dup /SearchOrder get
-	exch dup /Free get
-	exch /LogicalSize get
-	9 -1 roll pop //true
+        pop pop dup currentdevparams
+        dup /Searchable get
+        exch dup /Writeable get
+        exch dup /HasNames get
+        exch dup /Mounted get
+        exch dup /Removable get
+        exch dup /SearchOrder get
+        exch dup /Free get
+        exch /LogicalSize get
+        9 -1 roll pop //true
       } {
-	pop //false
+        pop //false
       } ifelse
     } {
       pop //false
@@ -765,27 +764,25 @@ systemdict /colorspacedict get begin
 /Separation [] def
 end
 
-
-
 % ------ CIE color rendering ------ %
 
 % Define findcolorrendering and a default ColorRendering ProcSet.
 
 /findcolorrendering {		% <intentname> findcolorrendering
-				%   <crdname> <found>
+                                %   <crdname> <found>
     % Adobe interpreters report /findcolorrendering (literal name), not the
     % operator itself, if an error occurs in findcolorrendering.
     /findcolorrendering {
-	/ColorRendering /ProcSet findresource
-	1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
-	1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
-	2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
-	concatstrings concatstrings cvn	% stack: intentname procset crdname
-	dup /ColorRendering resourcestatus {
-	    pop pop exch pop exch pop //true
-	} {
-	    pop /GetSubstituteCRD get exec //false
-	} ifelse
+        /ColorRendering /ProcSet findresource
+        1 .argindex dup type /nametype eq { .namestring } if (.) concatstrings
+        1 index /GetPageDeviceName get exec dup type /nametype eq { .namestring } if (.) concatstrings
+        2 index /GetHalftoneName get exec dup type /nametype eq { .namestring } if
+        concatstrings concatstrings cvn	% stack: intentname procset crdname
+        dup /ColorRendering resourcestatus {
+            pop pop exch pop exch pop //true
+        } {
+            pop /GetSubstituteCRD get exec //false
+        } ifelse
     } .errorexec
 } odef
 
@@ -822,7 +819,7 @@ end
     /setcolorrendering .systemvar /typecheck signalerror
   } if
   //.colorrenderingtypes exch .knownget {
-     exec 
+     exec
   } {
     /setcolorrendering .systemvar /rangecheck signalerror
   } ifelse
@@ -831,7 +828,7 @@ end
 /.setcolorrendering1 where { pop } { (%END CRD) .skipeof } ifelse
 
 .colorrenderingtypes 1 {
-  % Adobe ProcSet "Adobe_AGM_Core 2.0 0" places an /Intent key into CRD's 
+  % Adobe ProcSet "Adobe_AGM_Core 2.0 0" places an /Intent key into CRD's
   dup /Intent .knownget {
     //.renderingintentdict exch .knownget { .setrenderingintent } if
   } if
@@ -851,12 +848,12 @@ mark
 
 % Bradford Cone Space
 /MatrixPQR [ 0.8951 -0.7502  0.0389
-	     0.2664  1.7135 -0.0685
-	    -0.1614  0.0367  1.0296] readonly
+             0.2664  1.7135 -0.0685
+            -0.1614  0.0367  1.0296] readonly
 
 /MatrixLMN [ 3.240449 -0.969265  0.055643
-	    -1.537136  1.876011 -0.204026
-	    -0.498531  0.041556  1.057229 ] readonly
+            -1.537136  1.876011 -0.204026
+            -0.498531  0.041556  1.057229 ] readonly
 
 % Inverse sRGB gamma transform
 /EncodeABC [ { dup 0.00304 le
@@ -873,7 +870,7 @@ mark
    /TransformPQR
      % The implementations have been moved to C for performance.
      [ { .TransformPQR_scale_WB0 } bind
-       { .TransformPQR_scale_WB1 } bind 
+       { .TransformPQR_scale_WB1 } bind
        { .TransformPQR_scale_WB2 } bind
      ] readonly
 .dicttomark setcolorrendering
@@ -895,27 +892,26 @@ mark
   .dicttomark readonly
 ] readonly def
 
-
 % Special type to install
 % sRGB ICC profile color space
 /CIEsRGBICC [ /ICCBased
   mark
-    /N 3 
+    /N 3
     /DataSource (srgb)
     /Alternate [/DeviceRGB]
-    /Name (srgb) 
-  .dicttomark 
+    /Name (srgb)
+  .dicttomark
 ] def
 
 % Special type to install
 % sGray ICC profile color space
 /CIEsGRAYICC [ /ICCBased
   mark
-    /N 1 
+    /N 1
     /DataSource (sgray)
     /Alternate [/DeviceGray]
-    /Name (sgray) 
-  .dicttomark 
+    /Name (sgray)
+  .dicttomark
 ] def
 
 % ------ Painting ------ %
@@ -923,8 +919,8 @@ mark
 % A straightforward definition of execform that doesn't actually
 % do any caching.
 /.execform1 {
-	% This is a separate operator so that the stacks will be restored
-	% properly if an error occurs.
+        % This is a separate operator so that the stacks will be restored
+        % properly if an error occurs.
   dup /Matrix get concat
   dup /BBox get aload pop
   exch 3 index sub exch 2 index sub rectclip
@@ -958,11 +954,11 @@ def
       /makepattern .systemvar /rangecheck signalerror
   } if
   .currentglobal //false .setglobal exch
-		% Stack: proto matrix global buildproc
+                % Stack: proto matrix global buildproc
   3 index dup length 1 add dict .copydict
-		% Stack: proto matrix global buildproc newdict
+                % Stack: proto matrix global buildproc newdict
   3 index 3 -1 roll exec
-		% Stack: proto matrix global newdict instance
+                % Stack: proto matrix global newdict instance
   % Create an 'Implementation' entry for the pattern dict.  The PRLM 3rd says
   % this about the contents of Implementation:  "The type and value of this
   % entry are implementation-dependent."  The CET (page 2 of 18-02f) expects
@@ -972,7 +968,7 @@ def
   1 index /Implementation 3 -1 roll
   .getCPSImode { gstate } { //null } ifelse 2 array astore
   put				% put Implementation into the pattern dict.
-		% Stack: proto matrix global newdict
+                % Stack: proto matrix global newdict
   readonly exch .setglobal exch pop exch pop
 } odef
 
@@ -996,7 +992,7 @@ def
 %
 % We are providing these functions because we have found files created by
 % "QuarkXPress: pictwpstops filter 1.0" which produce bad shading dictionaries
-% if these operators are not defined. 
+% if these operators are not defined.
 
 % Conditionally disable the TN 5044 psuedo-ops if NO_TN5044 specified
 /NO_TN5044 where { pop (%END TN 5044 psuedo-ops) .skipeof } if

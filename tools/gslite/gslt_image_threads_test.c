@@ -44,8 +44,8 @@ decode_image_file(gs_memory_t *mem, FILE *in)
 
     bytes = fread(buf, 1, len, in);
     if (bytes != len) {
-	free(buf);
-	return NULL;
+        free(buf);
+        return NULL;
     }
 
     image = gslt_image_decode(mem, buf, len);
@@ -73,46 +73,46 @@ decode_image_filename(gs_memory_t *mem, const char *filename)
 int
 write_image_file(gslt_image_t *image, FILE *out)
 {
-    byte *row;    
+    byte *row;
     int j, bytes;
 
     if (image == NULL || image->samples == NULL) {
-	fprintf(stderr, "ignoring empty image object\n");
-	return  -1;
+        fprintf(stderr, "ignoring empty image object\n");
+        return  -1;
     }
 
     if (image->components == 1 && image->bits == 1) {
-	/* PBM file */
-	int i;
-	int rowbytes = (image->width+7)>>3;
-	byte *local = malloc(rowbytes);
+        /* PBM file */
+        int i;
+        int rowbytes = (image->width+7)>>3;
+        byte *local = malloc(rowbytes);
 
-	fprintf(out, "P4\n%d %d\n", image->width, image->height); 
-	row = image->samples;
-	for (j = 0; j < image->height; j++) {
-	    /* PBM images are inverted relative to our XPS/PS convention */
-	    for (i = 0; i < rowbytes; i++)
-		local[i] = row[i] ^ 0xFF;	
-	    bytes = fwrite(local, 1, rowbytes, out);
-	    row += image->stride;
-	}
-	free(local);
+        fprintf(out, "P4\n%d %d\n", image->width, image->height);
+        row = image->samples;
+        for (j = 0; j < image->height; j++) {
+            /* PBM images are inverted relative to our XPS/PS convention */
+            for (i = 0; i < rowbytes; i++)
+                local[i] = row[i] ^ 0xFF;
+            bytes = fwrite(local, 1, rowbytes, out);
+            row += image->stride;
+        }
+        free(local);
     } else if (image->components == 1 && image->bits == 8) {
-	/* PGM file */
-	fprintf(out, "P5\n%d %d\n255\n", image->width, image->height); 
-	row = image->samples;
-	for (j = 0; j < image->height; j++) {
-	    bytes = fwrite(row, 1, image->width, out);
-	    row += image->stride;
-	}
+        /* PGM file */
+        fprintf(out, "P5\n%d %d\n255\n", image->width, image->height);
+        row = image->samples;
+        for (j = 0; j < image->height; j++) {
+            bytes = fwrite(row, 1, image->width, out);
+            row += image->stride;
+        }
     } else {
-	/* PPM file */
-	fprintf(out, "P6\n%d %d\n255\n", image->width, image->height); 
-	row = image->samples;
-	for (j = 0; j < image->height; j++) {
-	    bytes = fwrite(row, image->components, image->width, out);
-	    row += image->stride;
-	}
+        /* PPM file */
+        fprintf(out, "P6\n%d %d\n255\n", image->width, image->height);
+        row = image->samples;
+        for (j = 0; j < image->height; j++) {
+            bytes = fwrite(row, image->components, image->width, out);
+            row += image->stride;
+        }
     }
 
     return 0;
@@ -126,8 +126,8 @@ write_image_filename(gslt_image_t *image, const char *filename)
 
     out = fopen(filename, "wb");
     if (out == NULL) {
-	fprintf(stderr, "could not open '%s' for writing\n", filename);
-	return -1;
+        fprintf(stderr, "could not open '%s' for writing\n", filename);
+        return -1;
     }
 
     error = write_image_file(image, out);
@@ -166,12 +166,11 @@ print_image(void *threadid)
     gs_erasepage(gs);
     gs_moveto(gs, 72.0, 72.0);
 
-
     /* load and decode the image */
     image = decode_image_filename(mem, filename);
     if (image == NULL) {
-	fprintf(stderr, "reading image failed.\n");
-	code = -1;
+        fprintf(stderr, "reading image failed.\n");
+        code = -1;
     }
     /* save an uncompressed copy for verification */
     {
@@ -188,7 +187,7 @@ print_image(void *threadid)
 
     /* output the page (unused) */
     gs_output_page(gs, 1, 1);
-    
+
     /* clean up the library */
     gslt_free_state(mem, gs);
     gslt_free_device(mem, dev);
@@ -208,7 +207,7 @@ main(int argc, const char *argv[])
 
     filename = argv[argc-1];
     fprintf(stderr, "loading '%s'\n", filename);
-    
+
     if ( ((ret=pthread_create(&thread1, NULL, print_image, (void *)t1)) != 0) ||
          ((ret=pthread_create(&thread2, NULL, print_image, (void *)t2)) != 0) ) {
         fprintf(stderr, "Error creating thread code=%d", ret);
@@ -216,4 +215,3 @@ main(int argc, const char *argv[])
     }
     pthread_exit(NULL);
 }
-

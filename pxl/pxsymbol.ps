@@ -13,7 +13,7 @@
       5 { pop dup token pop } repeat
     }
    if
-		% stack: file token
+                % stack: file token
    /Encoding resourcestatus
     { pop 2 ne
        { closefile }
@@ -95,7 +95,7 @@ const unsigned short px) print dup =only ([257] = {) print
  ) print
       dup 1 exch 3 add
        { ( pxg_) print 2 copy get dup /.notdef eq { pop (_notdef) } if
-	 =only (,) print pop
+         =only (,) print pop
        }
       for
     }

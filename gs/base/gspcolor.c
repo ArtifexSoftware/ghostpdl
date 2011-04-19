@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -69,7 +69,7 @@ const gs_color_space_type gs_color_space_type_Pattern = {
 /* Initialize a generic pattern template. */
 void
 gs_pattern_common_init(gs_pattern_template_t * ppat,
-		       const gs_pattern_type_t *type)
+                       const gs_pattern_type_t *type)
 {
     ppat->type = type;
     ppat->PatternType = type->PatternType;
@@ -80,7 +80,7 @@ gs_pattern_common_init(gs_pattern_template_t * ppat,
 /* Generic makepattern */
 int
 gs_make_pattern(gs_client_color * pcc, const gs_pattern_template_t * pcp,
-		const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
+                const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
 {
     return pcp->type->procs.make_pattern(pcc, pcp, pmat, pgs, mem);
 }
@@ -91,24 +91,24 @@ gs_make_pattern(gs_client_color * pcc, const gs_pattern_template_t * pcp,
  */
 int
 gs_make_pattern_common(gs_client_color *pcc,
-		       const gs_pattern_template_t *ptemp,
-		       const gs_matrix *pmat, gs_state *pgs, gs_memory_t *mem,
-		       gs_memory_type_ptr_t pstype)
+                       const gs_pattern_template_t *ptemp,
+                       const gs_matrix *pmat, gs_state *pgs, gs_memory_t *mem,
+                       gs_memory_type_ptr_t pstype)
 {
     gs_pattern_instance_t *pinst;
     gs_state *saved;
 
     if (mem == 0)
-	mem = gs_state_memory(pgs);
+        mem = gs_state_memory(pgs);
     rc_alloc_struct_1(pinst, gs_pattern_instance_t, pstype, mem,
-		      return_error(gs_error_VMerror),
-		      "gs_make_pattern_common");
+                      return_error(gs_error_VMerror),
+                      "gs_make_pattern_common");
     pinst->rc.free = rc_free_pattern_instance;
     pinst->type = ptemp->type;
     saved = gs_state_copy(pgs, mem);
     if (saved == 0) {
-	gs_free_object(mem, pinst, "gs_make_pattern_common");
-	return_error(gs_error_VMerror);
+        gs_free_object(mem, pinst, "gs_make_pattern_common");
+        return_error(gs_error_VMerror);
     }
     gs_concat(saved, pmat);
     gs_newpath(saved);
@@ -121,7 +121,7 @@ gs_make_pattern_common(gs_client_color *pcc,
 /* Free the saved gstate when freeing a Pattern instance. */
 void
 rc_free_pattern_instance(gs_memory_t * mem, void *pinst_void,
-			 client_name_t cname)
+                         client_name_t cname)
 {
     gs_pattern_instance_t *pinst = pinst_void;
 
@@ -136,7 +136,7 @@ gs_setpattern(gs_state * pgs, const gs_client_color * pcc)
     int code = gs_setpatternspace(pgs);
 
     if (code < 0)
-	return code;
+        return code;
     return gs_setcolor(pgs, pcc);
 }
 
@@ -149,20 +149,20 @@ gs_setpatternspace(gs_state * pgs)
     gs_color_space *ccs_old;
 
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+        return_error(gs_error_undefined);
     ccs_old = gs_currentcolorspace_inline(pgs);
     if (ccs_old->type->index != gs_color_space_index_Pattern) {
-	gs_color_space *pcs;
+        gs_color_space *pcs;
 
-	pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Pattern);
-	if (pcs == NULL)
-	    return_error(gs_error_VMerror);
-	/* reference to base space shifts from pgs to pcs with no net change */
-	pcs->base_space = ccs_old;
-	pcs->params.pattern.has_base_space = true;
-	pgs->color[0].color_space = pcs;
-	cs_full_init_color(pgs->color[0].ccolor, pcs);
-	gx_unset_dev_color(pgs);
+        pcs = gs_cspace_alloc(pgs->memory, &gs_color_space_type_Pattern);
+        if (pcs == NULL)
+            return_error(gs_error_VMerror);
+        /* reference to base space shifts from pgs to pcs with no net change */
+        pcs->base_space = ccs_old;
+        pcs->params.pattern.has_base_space = true;
+        pgs->color[0].color_space = pcs;
+        cs_full_init_color(pgs->color[0].ccolor, pcs);
+        gx_unset_dev_color(pgs);
     }
     return code;
 }
@@ -200,25 +200,25 @@ static int
 gx_num_components_Pattern(const gs_color_space * pcs)
 {
     return
-	(pcs->params.pattern.has_base_space ?
-	 -1 - cs_num_components(pcs->base_space) :
-	 -1 /* Pattern dictionary only */ );
+        (pcs->params.pattern.has_base_space ?
+         -1 - cs_num_components(pcs->base_space) :
+         -1 /* Pattern dictionary only */ );
 }
 
 /* Remap a Pattern color. */
 static int
 gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
-		 gx_device_color * pdc, const gs_imager_state * pis,
-		 gx_device * dev, gs_color_select_t select)
+                 gx_device_color * pdc, const gs_imager_state * pis,
+                 gx_device * dev, gs_color_select_t select)
 {
     if (pc->pattern == 0) {
         pdc->ccolor_valid = false;
         pdc->ccolor.pattern = 0; /* for GC */
-	color_set_null_pattern(pdc);
-	return 0;
+        color_set_null_pattern(pdc);
+        return 0;
     }
     return
-	pc->pattern->type->procs.remap_color(pc, pcs, pdc, pis, dev, select);
+        pc->pattern->type->procs.remap_color(pc, pcs, pdc, pis, dev, select);
 }
 
 /* Initialize a Pattern color. */
@@ -226,9 +226,9 @@ static void
 gx_init_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 {
     if (pcs->params.pattern.has_base_space) {
-	const gs_color_space *pbcs = pcs->base_space;
+        const gs_color_space *pbcs = pcs->base_space;
 
-	cs_init_color(pcc, pbcs);
+        cs_init_color(pcc, pbcs);
     }
     /*pcc->pattern = 0; *//* cs_full_init_color handles this */
 }
@@ -243,12 +243,12 @@ gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 {
     /* We need a special check for the null pattern. */
     if (pcc->pattern &&
-	pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
-	pcs->params.pattern.has_base_space
-	) {
-	const gs_color_space *pbcs = pcs->base_space;
+        pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
+        pcs->params.pattern.has_base_space
+        ) {
+        const gs_color_space *pbcs = pcs->base_space;
 
-	(*pbcs->type->restrict_color) (pcc, pbcs);
+        (*pbcs->type->restrict_color) (pcc, pbcs);
     }
 }
 
@@ -257,7 +257,7 @@ static int
 gx_install_Pattern(gs_color_space * pcs, gs_state * pgs)
 {
     if (!pcs->params.pattern.has_base_space)
-	return 0;
+        return 0;
     return (pcs->base_space->type->install_cspace)(pcs->base_space, pgs);
 }
 
@@ -280,19 +280,19 @@ gx_final_Pattern(const gs_color_space * pcs)
 
 static void
 gx_adjust_color_Pattern(const gs_client_color * pcc,
-			const gs_color_space * pcs, int delta)
+                        const gs_color_space * pcs, int delta)
 {
     gs_pattern_instance_t *pinst = pcc->pattern;
 
     rc_adjust_only(pinst, delta, "gx_adjust_color_Pattern");
     if (pcs && pcs->params.pattern.has_base_space)
-	(pcs->base_space->type->adjust_color_count)
-	    (pcc, pcs->base_space, delta);
+        (pcs->base_space->type->adjust_color_count)
+            (pcc, pcs->base_space, delta);
 }
 
 /* GC procedures */
 
-static 
+static
 ENUM_PTRS_BEGIN_PROC(cs_Pattern_enum_ptrs)
 {
     return 0;
@@ -307,7 +307,7 @@ RELOC_PTRS_END
 
 /* ---------------- Serialization. -------------------------------- */
 
-static int 
+static int
 gx_serialize_Pattern(const gs_color_space * pcs, stream * s)
 {
     const gs_pattern_params * p = &pcs->params.pattern;
@@ -315,11 +315,11 @@ gx_serialize_Pattern(const gs_color_space * pcs, stream * s)
     int code = gx_serialize_cspace_type(pcs, s);
 
     if (code < 0)
-	return code;
+        return code;
     code = sputs(s, (const byte *)&p->has_base_space, sizeof(p->has_base_space), &n);
     if (code < 0)
-	return code;
+        return code;
     if (!p->has_base_space)
-	return 0;
+        return 0;
     return cs_serialize(pcs->base_space, s);
 }

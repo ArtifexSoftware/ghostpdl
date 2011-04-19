@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,8 +37,8 @@ typedef struct gx_device_s gx_device;
  * cause certain cached (idempotent) values to be computed.
  */
 int param_write_cie_render1(gs_param_list * plist, gs_param_name key,
-			    gs_cie_render * pcrd,
-			    gs_memory_t * mem);
+                            gs_cie_render * pcrd,
+                            gs_memory_t * mem);
 
 /*
  * For internal use, we also provide an API that writes the CRD directly
@@ -46,7 +46,7 @@ int param_write_cie_render1(gs_param_list * plist, gs_param_name key,
  * list.
  */
 int param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
-			  gs_memory_t * mem);
+                          gs_memory_t * mem);
 
 /*
  * Client code that wants to initialize a CRD from a device parameter
@@ -67,17 +67,17 @@ int param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
  * where "ParamName" is the parameter name, e.g., "CRDDefault".
  */
 int gs_cie_render1_param_initialize(gs_cie_render * pcrd,
-				    gs_param_list * plist,
-				    gs_param_name key,
-				    gx_device * dev);
+                                    gs_param_list * plist,
+                                    gs_param_name key,
+                                    gx_device * dev);
 
 /*
  * Again, we provide an internal procedure that doesn't involve a
  * parameter name.
  */
 int param_get_cie_render1(gs_cie_render * pcrd,
-			  gs_param_list * plist,
-			  gx_device * dev);
+                          gs_param_list * plist,
+                          gx_device * dev);
 
 /*
  * The actual representation of the CRD is a slightly modified PostScript

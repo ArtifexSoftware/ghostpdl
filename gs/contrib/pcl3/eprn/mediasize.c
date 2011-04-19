@@ -107,8 +107,8 @@ static const ms_SizeDescription list[] = {
   {sn(A4),		{210*BP_PER_MM,	297*BP_PER_MM}},
   {sn(Folio),		{210*BP_PER_MM, 330*BP_PER_MM}},
   {sn(Quarto),		{8.5*BP_PER_IN,	10.83*BP_PER_IN}},  /* 215.9 x 275.1 mm
-	PPD 4.3 uses bp values for the definition, but this does not agree
-	with the mm values it specifies. The inch specifications fit. */
+        PPD 4.3 uses bp values for the definition, but this does not agree
+        with the mm values it specifies. The inch specifications fit. */
   {sn(Letter),		{8.5*BP_PER_IN,	11.0*BP_PER_IN}}, /* 215.9 x 279.4 mm */
   {sn(Legal),		{8.5*BP_PER_IN,	14.0*BP_PER_IN}}, /* 215.9 x 355.6 mm */
   {sn(EnvKaku3),	{216*BP_PER_MM,	277*BP_PER_MM}},
@@ -172,7 +172,7 @@ static void check(void)
     assert(strlen(list[j].name) < LONGER_THAN_NAMES);
     assert(list[j].dimen[0] == 0.0 || list[j-1].dimen[0] < list[j].dimen[0] ||
       list[j-1].dimen[0] == list[j].dimen[0] &&
-	list[j-1].dimen[1] <= list[j].dimen[1]);
+        list[j-1].dimen[1] <= list[j].dimen[1]);
   }
 
   /* Check that the highest accepted value does not collide with the flags */
@@ -291,8 +291,8 @@ ms_MediaCode ms_find_code_from_name(const char *name,
       if ((t = strchr(s, '.')) == NULL) t = strchr(s, '\0');
       l = t - s;
 #define set_if(keyword)					\
-	if (l == STRLEN(MS_##keyword##_STRING) &&	\
-	  strncmp(s, MS_##keyword##_STRING, l) == 0) flag = MS_##keyword##_FLAG
+        if (l == STRLEN(MS_##keyword##_STRING) &&	\
+          strncmp(s, MS_##keyword##_STRING, l) == 0) flag = MS_##keyword##_FLAG
       set_if(TRANSVERSE);
       else set_if(BIG);
       else set_if(SMALL);
@@ -311,8 +311,8 @@ ms_MediaCode ms_find_code_from_name(const char *name,
     ms_MediaCode flag;
 
     if ((flag = find_flag(name, &l, substrings)) == 0 &&
-	(user_flag_list == NULL ||
-	   (flag = find_flag(name, &l, user_flag_list)) == 0))
+        (user_flag_list == NULL ||
+           (flag = find_flag(name, &l, user_flag_list)) == 0))
       break;	/* loop exit */
 
     if ((flag & flags) != 0) return ms_none;	/* no duplicates */
@@ -366,8 +366,8 @@ static int add_substrings(char *buffer, size_t *length, ms_MediaCode *code,
     if (flag_list[j].code & *code) {
       l = strlen(flag_list[j].name);
       if (*length < l) {
-	errno = ERANGE;
-	return -1;
+        errno = ERANGE;
+        return -1;
       }
       *code &= ~flag_list[j].code;
       strcpy(buffer, flag_list[j].name);

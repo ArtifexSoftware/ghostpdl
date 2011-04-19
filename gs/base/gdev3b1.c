@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -146,29 +146,29 @@ att3b1_open(gx_device *dev)
 #endif
 
     if (att3b1dev->fd >= 0) {
-	close(att3b1dev->fd);
-	att3b1dev->fd = -1;
+        close(att3b1dev->fd);
+        att3b1dev->fd = -1;
     }
 
     if (att3b1dev->screen != NULL) {
-	gs_free(dev->memory, (char *)att3b1dev->screen,
-		att3b1dev->screen_size, 1, "att3b1_open");
-	att3b1dev->screen = 0;
-	att3b1dev->screen_size = 0;
+        gs_free(dev->memory, (char *)att3b1dev->screen,
+                att3b1dev->screen_size, 1, "att3b1_open");
+        att3b1dev->screen = 0;
+        att3b1dev->screen_size = 0;
     }
 
     att3b1dev->fd = open("/dev/tty", 2);
     if (att3b1dev->fd < 0) {
-	lprintf1("att3b1_open: open /dev/tty failed [%d]\n", errno);
-	return_error(gs_error_ioerror);
+        lprintf1("att3b1_open: open /dev/tty failed [%d]\n", errno);
+        return_error(gs_error_ioerror);
     }
 
     /* Verify that /dev/tty is associated with a console window. */
     if (ioctl(att3b1dev->fd, WIOCGETD, &uw) < 0) {
-	lprintf1("att3b1_open: can not obtain window data [%d]\n", errno);
-	lprintf("att3b1_open: the att3b1 device requires a console window\n");
-	att3b1_close(dev);
-	return_error(gs_error_ioerror);
+        lprintf1("att3b1_open: can not obtain window data [%d]\n", errno);
+        lprintf("att3b1_open: the att3b1 device requires a console window\n");
+        att3b1_close(dev);
+        return_error(gs_error_ioerror);
     }
 
     /* we need an even number of bytes per line */
@@ -176,10 +176,10 @@ att3b1_open(gx_device *dev)
     att3b1dev->screen_size = att3b1dev->line_size * att3b1dev->height;
 
     att3b1dev->screen =
-	(uchar *)gs_malloc(dev->memory, att3b1dev->screen_size, 1, "att3b1_open");
+        (uchar *)gs_malloc(dev->memory, att3b1dev->screen_size, 1, "att3b1_open");
     if (att3b1dev->screen == NULL) {
-	att3b1_close(dev);
-	return_error(gs_error_VMerror);
+        att3b1_close(dev);
+        return_error(gs_error_VMerror);
     }
 
     att3b1dev->page_num = 1;
@@ -197,15 +197,15 @@ int
 att3b1_close(gx_device *dev)
 {
     if (att3b1dev->fd >= 0) {
-	close(att3b1dev->fd);
-	att3b1dev->fd = -1;
+        close(att3b1dev->fd);
+        att3b1dev->fd = -1;
     }
 
     if (att3b1dev->screen != NULL) {
-	gs_free(dev->memory, (char *)att3b1dev->screen,
-		att3b1dev->screen_size, 1, "att3b1_close");
-	att3b1dev->screen = 0;
-	att3b1dev->screen_size = 0;
+        gs_free(dev->memory, (char *)att3b1dev->screen,
+                att3b1dev->screen_size, 1, "att3b1_close");
+        att3b1dev->screen = 0;
+        att3b1dev->screen_size = 0;
     }
 
     return 0;
@@ -227,7 +227,7 @@ att3b1_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
     /* following fit_fill, we can assume x, y, w, h are unsigned. */
 
     p = (ushort *)&att3b1dev->screen[(ushort)y*att3b1dev->line_size] +
-	(uint)x/16;
+        (uint)x/16;
     o = (uint)x % 16;
     b = 16 - o;
     wl = ((uint)w < b) ? (uint)w : b;
@@ -237,32 +237,32 @@ att3b1_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
     maskr = masks[wr];
 
     if (colour == 0) {
-	maskl = ~maskl;
-	maskr = ~maskr;
-	while (h-- > 0) {
-	    q = p;
-	    w2 = w;
-	    *q++ &= maskl;
-	    while (w2 >= 16) {
-		*q++ = 0;
-		w2 -= 16;
-	    }
-	    *q &= maskr;
-	    p += (att3b1dev->line_size / 2);
-	}
+        maskl = ~maskl;
+        maskr = ~maskr;
+        while (h-- > 0) {
+            q = p;
+            w2 = w;
+            *q++ &= maskl;
+            while (w2 >= 16) {
+                *q++ = 0;
+                w2 -= 16;
+            }
+            *q &= maskr;
+            p += (att3b1dev->line_size / 2);
+        }
     }
     else {
-	while (h-- > 0) {
-	    q = p;
-	    w2 = w;
-	    *q++ |= maskl;
-	    while (w2 >= 16) {
-		*q++ = 0xffff;
-		w2 -= 16;
-	    }
-	    *q |= maskr;
-	    p += (att3b1dev->line_size / 2);
-	}
+        while (h-- > 0) {
+            q = p;
+            w2 = w;
+            *q++ |= maskl;
+            while (w2 >= 16) {
+                *q++ = 0xffff;
+                w2 -= 16;
+            }
+            *q |= maskr;
+            p += (att3b1dev->line_size / 2);
+        }
     }
 
     return 0;
@@ -278,9 +278,9 @@ att3b1_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
 
 int
 att3b1_copy_mono(gx_device *dev, const uchar *data,
-		 int data_x, int raster, gx_bitmap_id id,
-		 int x, int y, int width, int height, 
-		 gx_color_index colour0, gx_color_index colour1)
+                 int data_x, int raster, gx_bitmap_id id,
+                 int x, int y, int width, int height,
+                 gx_color_index colour0, gx_color_index colour1)
 {
     const ushort *src_p, *src_q;
     ushort *dst_p, *dst_q;
@@ -293,7 +293,7 @@ att3b1_copy_mono(gx_device *dev, const uchar *data,
 #endif
 
     if (colour1 == colour0)		/* vacuous case */
-	return att3b1_fill_rectangle(dev, x, y, width, height, colour0);
+        return att3b1_fill_rectangle(dev, x, y, width, height, colour0);
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
 
@@ -308,81 +308,81 @@ att3b1_copy_mono(gx_device *dev, const uchar *data,
     src_b = 16 - src_o;
 
     dst_p = (ushort *)&att3b1dev->screen[(ushort)y*att3b1dev->line_size] +
-	    (uint)x/16;
+            (uint)x/16;
     dst_o = (uint)x % 16;
     dst_b = 16 - dst_o;
 
     op = (int)colour0 * 3 + (int)colour1 + 4;
 
     while (height-- > 0) {
-	w2 = width;
-	src_q = src_p;
-	dst_q = dst_p;
+        w2 = width;
+        src_q = src_p;
+        dst_q = dst_p;
 
-	while (w2 > 0) {
-	    w1 = (w2 < 16) ? w2 : 16;
-	    mask = masks[w1];
-	    /*
-	     * We are assuming that the bitmap "data" is typically aligned.
-	     * Thus the test for this special case is typically a win over
-	     * a 16-bit shift.
-	     */
-	    if (src_o == 0)
-		bits = *src_q++;
-	    else {
-		bits = *((ulong *)src_q) >> src_b;
-		bits &= 0xffff;
-		src_q++;
-	    }
-	    if (w1 <= 8)
-		bits = reverse_bits[bits>>8];
-	    else
-		bits = (reverse_bits[bits&0xff] << 8) | reverse_bits[bits>>8];
-	    /*
-	     * While the input bit map is assumed to be typically aligned, we
-	     * assume that the place in the image is not.  Thus we don't
-	     * separate out the aligned case.  Doing so would cost a test,
-	     * and only reduce the average shift by about 1.
-	     */
-	    p = (ulong *)dst_q;
-	    switch(op) {
-	    case 1:	/* not src and dst */
-		bits = ~(bits & mask);
-		rotate(bits,dst_b);
-		*p &= bits;
-		break;
-	    case 2:	/* src or dst */
-		bits = bits & mask;
-		rotate(bits,dst_b);
-		*p |= bits;
-		break;
-	    case 3:	/* src and dst */
-		bits = bits | ~mask;
-		rotate(bits,dst_b);
-		*p &= bits;
-		break;
-	    case 5:	/* src */
-		rotate(bits,dst_b);
-		rotate(mask,dst_b);
-		*p = (*p & ~mask) | (bits & mask);
-		break;
-	    case 6:	/* not src or dst */
-		bits = ~bits & mask;
-		rotate(bits,dst_b);
-		*p |= bits;
-		break;
-	    case 7:	/* not src */
-		rotate(bits,dst_b);
-		rotate(mask,dst_b);
-		*p = (*p & ~mask) | (~bits & mask);
-		break;
-	    }
-	    dst_q++;
-	    w2 -= w1;
-	}
+        while (w2 > 0) {
+            w1 = (w2 < 16) ? w2 : 16;
+            mask = masks[w1];
+            /*
+             * We are assuming that the bitmap "data" is typically aligned.
+             * Thus the test for this special case is typically a win over
+             * a 16-bit shift.
+             */
+            if (src_o == 0)
+                bits = *src_q++;
+            else {
+                bits = *((ulong *)src_q) >> src_b;
+                bits &= 0xffff;
+                src_q++;
+            }
+            if (w1 <= 8)
+                bits = reverse_bits[bits>>8];
+            else
+                bits = (reverse_bits[bits&0xff] << 8) | reverse_bits[bits>>8];
+            /*
+             * While the input bit map is assumed to be typically aligned, we
+             * assume that the place in the image is not.  Thus we don't
+             * separate out the aligned case.  Doing so would cost a test,
+             * and only reduce the average shift by about 1.
+             */
+            p = (ulong *)dst_q;
+            switch(op) {
+            case 1:	/* not src and dst */
+                bits = ~(bits & mask);
+                rotate(bits,dst_b);
+                *p &= bits;
+                break;
+            case 2:	/* src or dst */
+                bits = bits & mask;
+                rotate(bits,dst_b);
+                *p |= bits;
+                break;
+            case 3:	/* src and dst */
+                bits = bits | ~mask;
+                rotate(bits,dst_b);
+                *p &= bits;
+                break;
+            case 5:	/* src */
+                rotate(bits,dst_b);
+                rotate(mask,dst_b);
+                *p = (*p & ~mask) | (bits & mask);
+                break;
+            case 6:	/* not src or dst */
+                bits = ~bits & mask;
+                rotate(bits,dst_b);
+                *p |= bits;
+                break;
+            case 7:	/* not src */
+                rotate(bits,dst_b);
+                rotate(mask,dst_b);
+                *p = (*p & ~mask) | (~bits & mask);
+                break;
+            }
+            dst_q++;
+            w2 -= w1;
+        }
 
-	src_p += (raster / 2);
-	dst_p += (att3b1dev->line_size / 2);
+        src_p += (raster / 2);
+        dst_p += (att3b1dev->line_size / 2);
     }
 
     return 0;
@@ -416,8 +416,8 @@ do_help(gx_device *dev)
 
     /* write help screen */
     for (i=0; i < sizeof(help_msg)/sizeof(help_msg[0]); ++i) {
-	write(att3b1dev->fd, help_msg[i], strlen(help_msg[i]));
-	write(att3b1dev->fd, "\n", 1);
+        write(att3b1dev->fd, help_msg[i], strlen(help_msg[i]));
+        write(att3b1dev->fd, "\n", 1);
     }
     ut.ut_num = WTXTSLK1;
     strcpy(ut.ut_text, "Press any key to continue");
@@ -456,10 +456,10 @@ att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
      */
 
     if (ioctl(att3b1dev->fd, WIOCGETD, &uw) < 0) {
-	lprintf1("att3b1_output_page: window WIOCGETD ioctl failed [%d]\n",
-	    errno);
-	att3b1_close(dev);
-	return_error(gs_error_ioerror);
+        lprintf1("att3b1_output_page: window WIOCGETD ioctl failed [%d]\n",
+            errno);
+        att3b1_close(dev);
+        return_error(gs_error_ioerror);
     }
 
     /*
@@ -470,8 +470,8 @@ att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
 
     uflags = uw.uw_uflags;
     if (!(uflags & NBORDER)) {
-	uw.uw_uflags = BORDHSCROLL | BORDVSCROLL | BORDHELP | BORDCANCEL;
-	ioctl(att3b1dev->fd, WIOCSETD, &uw);
+        uw.uw_uflags = BORDHSCROLL | BORDVSCROLL | BORDHELP | BORDCANCEL;
+        ioctl(att3b1dev->fd, WIOCSETD, &uw);
     }
 
     ut_orig.ut_num = WTXTSLK1;
@@ -503,9 +503,9 @@ att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
     ioctl(att3b1dev->fd, TCSETAF, &new);
 
     screen_width = (uw.uw_width < att3b1dev->width) ? uw.uw_width
-				: att3b1dev->width;
+                                : att3b1dev->width;
     screen_height = (uw.uw_height < att3b1dev->height) ? uw.uw_height
-				: att3b1dev->height;
+                                : att3b1dev->height;
 
     write(att3b1dev->fd, "\033[2J", 4);
 
@@ -523,174 +523,173 @@ att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
     yorigin = def_yorigin;
 
     while (1) {
-	/* Things go bad if ur_srcx >= 2048 */
-	ur.ur_srcbase = (ushort *)att3b1dev->screen + (xorigin >> 4);
-	ur.ur_srcx = xorigin & 15;
-	ur.ur_srcy = yorigin;
+        /* Things go bad if ur_srcx >= 2048 */
+        ur.ur_srcbase = (ushort *)att3b1dev->screen + (xorigin >> 4);
+        ur.ur_srcx = xorigin & 15;
+        ur.ur_srcy = yorigin;
 
-	if (ioctl(att3b1dev->fd, WIOCRASTOP, &ur) < 0) {
-	    lprintf1(
-		"att3b1_output_page: window WIOCRASTOP ioctl failed [%d]\n",
-		errno);
-	    error = gs_error_ioerror;
-	}
+        if (ioctl(att3b1dev->fd, WIOCRASTOP, &ur) < 0) {
+            lprintf1(
+                "att3b1_output_page: window WIOCRASTOP ioctl failed [%d]\n",
+                errno);
+            error = gs_error_ioerror;
+        }
 
-	ut.ut_num = WTXTSLK1;
-	sprintf(ut.ut_text,
-	    "%s %d, top right (%d,%d), size (%d,%d), press '?' for help.",
-	    flush ? "Showpage" : "Copypage", att3b1dev->page_num, xorigin, yorigin,
-	    att3b1dev->width, att3b1dev->height);
-	ioctl(att3b1dev->fd, WIOCSETTEXT, &ut);
+        ut.ut_num = WTXTSLK1;
+        sprintf(ut.ut_text,
+            "%s %d, top right (%d,%d), size (%d,%d), press '?' for help.",
+            flush ? "Showpage" : "Copypage", att3b1dev->page_num, xorigin, yorigin,
+            att3b1dev->width, att3b1dev->height);
+        ioctl(att3b1dev->fd, WIOCSETTEXT, &ut);
 
-	ch = error ? 'q' : getKeyboard(dev);
+        ch = error ? 'q' : getKeyboard(dev);
 
-	switch(ch) {
-	case 'h':
-	    xorigin -= ((uint)(int)att3b1dev->x_pixels_per_inch+3)/4;
-	    break;
+        switch(ch) {
+        case 'h':
+            xorigin -= ((uint)(int)att3b1dev->x_pixels_per_inch+3)/4;
+            break;
 
-	case 'k':
-	    yorigin -= ((uint)(int)att3b1dev->y_pixels_per_inch+1)/2;
-	    break;
+        case 'k':
+            yorigin -= ((uint)(int)att3b1dev->y_pixels_per_inch+1)/2;
+            break;
 
-	case 'l':
-	    xorigin += ((uint)(int)att3b1dev->x_pixels_per_inch+3)/4;
-	    break;
+        case 'l':
+            xorigin += ((uint)(int)att3b1dev->x_pixels_per_inch+3)/4;
+            break;
 
-	case 'j':
-	    yorigin += ((uint)(int)att3b1dev->y_pixels_per_inch+1)/2;
-	    break;
+        case 'j':
+            yorigin += ((uint)(int)att3b1dev->y_pixels_per_inch+1)/2;
+            break;
 
-	case 'H':
-	    xorigin = 0;
-	    break;
+        case 'H':
+            xorigin = 0;
+            break;
 
-	case 'K':
-	    yorigin = 0;
-	    break;
+        case 'K':
+            yorigin = 0;
+            break;
 
-	case 'L':
-	    xorigin = att3b1dev->width - screen_width;
-	    break;
+        case 'L':
+            xorigin = att3b1dev->width - screen_width;
+            break;
 
-	case 'J':
-	    yorigin = att3b1dev->height - screen_height;
-	    break;
+        case 'J':
+            yorigin = att3b1dev->height - screen_height;
+            break;
 
-	case '<':
-	    xorigin -= 1;
-	    break;
+        case '<':
+            xorigin -= 1;
+            break;
 
-	case '>':
-	    xorigin += 1;
-	    break;
+        case '>':
+            xorigin += 1;
+            break;
 
-	case '^':
-	    yorigin -= 1;
-	    break;
+        case '^':
+            yorigin -= 1;
+            break;
 
-	case '_':
-	    yorigin += 1;
-	    break;
+        case '_':
+            yorigin += 1;
+            break;
 
-	    
-	case '\025':	/* control-U */
-	    yorigin -= screen_height/2;
-	    break;
+        case '\025':	/* control-U */
+            yorigin -= screen_height/2;
+            break;
 
-	case '\004':	/* control-D */
-	    yorigin += screen_height/2;
-	    break;
+        case '\004':	/* control-D */
+            yorigin += screen_height/2;
+            break;
 
-	case '\002':	/* control-B */
-	    yorigin -= screen_height;
-	    break;
+        case '\002':	/* control-B */
+            yorigin -= screen_height;
+            break;
 
-	case '\006':	/* control-F */
-	    yorigin += screen_height;
-	    break;
+        case '\006':	/* control-F */
+            yorigin += screen_height;
+            break;
 
-	case '\f':
-	case 'r' :
-	case '\022':	/* control-R */
-	    xorigin = def_xorigin;
-	    yorigin = def_yorigin;
-	    break;
-	
-	case 'c':	/* centre horizontally */
-	    xorigin = (att3b1dev->width - screen_width) / 2;
-	    break;
-	
-	case 'C':	/* centre vertically */
-	    yorigin = (att3b1dev->height - screen_height) / 2;
-	    break;
+        case '\f':
+        case 'r' :
+        case '\022':	/* control-R */
+            xorigin = def_xorigin;
+            yorigin = def_yorigin;
+            break;
 
-	case '=':
-	    def_xorigin = xorigin;
-	    def_yorigin = yorigin;
-	    break;
+        case 'c':	/* centre horizontally */
+            xorigin = (att3b1dev->width - screen_width) / 2;
+            break;
 
-	case 'I':
-	    for (p = (ushort *)att3b1dev->screen;
-	      p < (ushort *)&att3b1dev->screen[att3b1dev->screen_size]; ++p)
-		*p = ~ *p;
-	    inverted = !inverted;
-	    break;
-	
-	case '?':
-	    do_help(dev);
-	    break;
-	
-	case -1:
-	    error = gs_error_ioerror;
-	    /* fall through, for cleanup */
+        case 'C':	/* centre vertically */
+            yorigin = (att3b1dev->height - screen_height) / 2;
+            break;
 
-	case 'q':
-	case 'x':
-	case '\003':	/* control-C */
-	case 'n':
-	case 'f':
-	case ' ':
-	case '\n':
-	case '\r':
-	    if (flush)
-		att3b1dev->page_num++;
-	    else if (inverted)	/* restore inverted image for copypage */
-		for (p = (ushort *)att3b1dev->screen;
-		  p < (ushort *)&att3b1dev->screen[att3b1dev->screen_size]; ++p)
-		    *p = ~ *p;
-	    if (!(uflags & NBORDER)) {
-		ioctl(att3b1dev->fd, WIOCGETD, &uw); /*window may have moved*/
-		uw.uw_uflags = uflags;
-		ioctl(att3b1dev->fd, WIOCSETD, &uw);
-	    }
-	    ur.ur_srcbase = save_image;
-	    ur.ur_srcwidth = WINWIDTH / 8;
-	    ur.ur_width = uw.uw_width;
-	    ur.ur_height = uw.uw_height;
-	    ur.ur_srcx = 0;
-	    ur.ur_srcy = 0;
-	    ioctl(att3b1dev->fd, WIOCRASTOP, &ur);
-	    ioctl(att3b1dev->fd, WIOCSETTEXT, &ut_orig);
-	    ioctl(att3b1dev->fd, TCSETAF, &old);
-	    write(att3b1dev->fd, "\033[=0C", 5);
+        case '=':
+            def_xorigin = xorigin;
+            def_yorigin = yorigin;
+            break;
 
-	    if (error) {
-		att3b1_close(dev);
-		return_error(error);
-	    }
-	    else
-		return 0;
-	}
+        case 'I':
+            for (p = (ushort *)att3b1dev->screen;
+              p < (ushort *)&att3b1dev->screen[att3b1dev->screen_size]; ++p)
+                *p = ~ *p;
+            inverted = !inverted;
+            break;
 
-	if (xorigin >= att3b1dev->width - screen_width)
-	    xorigin = att3b1dev->width - screen_width;
-	if (xorigin < 0)
-	    xorigin = 0;
-	if (yorigin >= att3b1dev->height - screen_height)
-	    yorigin = att3b1dev->height - screen_height;
-	if (yorigin < 0)
-	    yorigin = 0;
+        case '?':
+            do_help(dev);
+            break;
+
+        case -1:
+            error = gs_error_ioerror;
+            /* fall through, for cleanup */
+
+        case 'q':
+        case 'x':
+        case '\003':	/* control-C */
+        case 'n':
+        case 'f':
+        case ' ':
+        case '\n':
+        case '\r':
+            if (flush)
+                att3b1dev->page_num++;
+            else if (inverted)	/* restore inverted image for copypage */
+                for (p = (ushort *)att3b1dev->screen;
+                  p < (ushort *)&att3b1dev->screen[att3b1dev->screen_size]; ++p)
+                    *p = ~ *p;
+            if (!(uflags & NBORDER)) {
+                ioctl(att3b1dev->fd, WIOCGETD, &uw); /*window may have moved*/
+                uw.uw_uflags = uflags;
+                ioctl(att3b1dev->fd, WIOCSETD, &uw);
+            }
+            ur.ur_srcbase = save_image;
+            ur.ur_srcwidth = WINWIDTH / 8;
+            ur.ur_width = uw.uw_width;
+            ur.ur_height = uw.uw_height;
+            ur.ur_srcx = 0;
+            ur.ur_srcy = 0;
+            ioctl(att3b1dev->fd, WIOCRASTOP, &ur);
+            ioctl(att3b1dev->fd, WIOCSETTEXT, &ut_orig);
+            ioctl(att3b1dev->fd, TCSETAF, &old);
+            write(att3b1dev->fd, "\033[=0C", 5);
+
+            if (error) {
+                att3b1_close(dev);
+                return_error(error);
+            }
+            else
+                return 0;
+        }
+
+        if (xorigin >= att3b1dev->width - screen_width)
+            xorigin = att3b1dev->width - screen_width;
+        if (xorigin < 0)
+            xorigin = 0;
+        if (yorigin >= att3b1dev->height - screen_height)
+            yorigin = att3b1dev->height - screen_height;
+        if (yorigin < 0)
+            yorigin = 0;
     }
 }
 int
@@ -699,7 +698,7 @@ att3b1_output_page(gx_device *dev, int num_copies, int flush)
     int code = att3b1_do_output_page(dev, num_copies, flush);
 
     if (code >= 0)
-	code = gx_finish_output_page(dev, num_copies, flush);
+        code = gx_finish_output_page(dev, num_copies, flush);
     return code;
 }
 
@@ -711,11 +710,11 @@ get_char(gx_device *dev)
 
     count = read(att3b1dev->fd, &ch, 1);
     if (count == 0)
-	return 'q';
+        return 'q';
     else if (count < 0)
-	return -1;
+        return -1;
     else
-	return ch;
+        return ch;
 }
 
 static int
@@ -726,7 +725,7 @@ getKeyboard(gx_device *dev)
     ch = get_char(dev);
 
     if (ch != '\033')
-	return ch;
+        return ch;
 
     /*
      * If the char is escape, interpret the escape sequence and return
@@ -739,55 +738,55 @@ getKeyboard(gx_device *dev)
 
     switch (get_char(dev)) {
     case '[':
-	switch(get_char(dev)) {
-	case 'A':	/* up arrow */
-	    return 'k';
-	case 'T':	/* shift up arrow (roll up) */
-	    return '\025';
-	case 'B':	/* down arrow */
-	    return 'j';
-	case 'S':	/* shift down arrow (roll down) */
-	    return '\004';
-	case 'C':	/* right arrow */
-	    return 'l';
-	case 'D':	/* left arrow */
-	    return 'h';
-	case 'H':	/* home */
-	    return 'r';
-	case 'U':	/* page down */
-	    return '\006';
-	case 'V':	/* page up */
-	    return '\002';
-	}
-	break;
+        switch(get_char(dev)) {
+        case 'A':	/* up arrow */
+            return 'k';
+        case 'T':	/* shift up arrow (roll up) */
+            return '\025';
+        case 'B':	/* down arrow */
+            return 'j';
+        case 'S':	/* shift down arrow (roll down) */
+            return '\004';
+        case 'C':	/* right arrow */
+            return 'l';
+        case 'D':	/* left arrow */
+            return 'h';
+        case 'H':	/* home */
+            return 'r';
+        case 'U':	/* page down */
+            return '\006';
+        case 'V':	/* page up */
+            return '\002';
+        }
+        break;
     case 'O':
-	switch(get_char(dev)) {
-	case 'm':	/* help */
-	case 'M':	/* shift help */
-	    return '?';
-	case 'k':	/* exit */
-	case 'K':	/* shift exit */
-	case 'w':	/* cancl */
-	case 'W':	/* shift cancl */
-	    return 'q';
-	}
-	break;
+        switch(get_char(dev)) {
+        case 'm':	/* help */
+        case 'M':	/* shift help */
+            return '?';
+        case 'k':	/* exit */
+        case 'K':	/* shift exit */
+        case 'w':	/* cancl */
+        case 'W':	/* shift cancl */
+            return 'q';
+        }
+        break;
     case 'N':
-	switch(get_char(dev)) {
-	case 'h':	/* next */
-	    return 'f';
-	case 'i':	/* mark */
-	    return '=';
-	case 'L':	/* shift right arrow */
-	    return 'l';
-	case 'K':	/* shift left arrow */
-	    return 'h';
-	}
-	break;
+        switch(get_char(dev)) {
+        case 'h':	/* next */
+            return 'f';
+        case 'i':	/* mark */
+            return '=';
+        case 'L':	/* shift right arrow */
+            return 'l';
+        case 'K':	/* shift left arrow */
+            return 'h';
+        }
+        break;
     case '9':	/* Beg */
-	return 'K';
+        return 'K';
     case '0':	/* End */
-	return 'J';
+        return 'J';
     }
     return '\0';
 }

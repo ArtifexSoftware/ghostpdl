@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -24,7 +24,7 @@
 
 /* See zfjbig2.c for details. */
 typedef struct s_jbig2_global_data_s {
-	void *data;
+        void *data;
 } s_jbig2_global_data_t;
 
 /* JBIG2Decode internal stream state */
@@ -53,5 +53,5 @@ int
 s_jbig2decode_set_global_data(stream_state *ss, s_jbig2_global_data_t *gd);
 void
 s_jbig2decode_free_global_data(void *data);
-	
+
 #endif /* sjbig2_INCLUDED */

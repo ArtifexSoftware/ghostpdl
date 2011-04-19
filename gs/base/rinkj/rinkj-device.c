@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,7 +31,7 @@ rinkj_device_set (RinkjDevice *self, const char *config)
 /* Preferred, as it matches IJS */
 int
 rinkj_device_set_param (RinkjDevice *self, const char *key,
-			const char *value, int value_size)
+                        const char *value, int value_size)
 {
   int keylen = strlen (key);
   int bufsize = keylen + value_size + 3;
@@ -51,7 +51,7 @@ rinkj_device_set_param (RinkjDevice *self, const char *key,
 
 int
 rinkj_device_set_param_string (RinkjDevice *self, const char *key,
-			       const char *value)
+                               const char *value)
 {
   return rinkj_device_set_param (self, key, value, strlen (value));
 }

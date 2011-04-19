@@ -30,9 +30,9 @@ sint16at(const byte *p, bool big_endian)
 int32_t
 uint32at(const byte *p, bool big_endian)
 {	return
-	  (big_endian ?
-	   ((int32_t)((p[0] << 8) + p[1]) << 16) + (p[2] << 8) + p[3] :
-	   ((int32_t)((p[3] << 8) + p[2]) << 16) + (p[1] << 8) + p[0]);
+          (big_endian ?
+           ((int32_t)((p[0] << 8) + p[1]) << 16) + (p[2] << 8) + p[3] :
+           ((int32_t)((p[3] << 8) + p[2]) << 16) + (p[1] << 8) + p[0]);
 }
 int32_t
 sint32at(const byte *p, bool big_endian)
@@ -40,7 +40,7 @@ sint32at(const byte *p, bool big_endian)
 }
 real
 real32at(const byte *p, bool big_endian)
-{	    
+{
     union {
         float   f;
         int32_t d;
@@ -55,26 +55,26 @@ real32at(const byte *p, bool big_endian)
 int32_t
 integer_elt(const px_value_t *pav, uint index)
 {	px_data_type_t type = pav->type;
-	const byte *base = pav->value.array.data;
-	bool big_endian;
+        const byte *base = pav->value.array.data;
+        bool big_endian;
 
-	if ( type & pxd_ubyte )
-	  return base[index];
-	big_endian = (type & pxd_big_endian) != 0;
-	if ( type & pxd_uint16 )
-	  return uint16at(base + (index << 1), big_endian);
-	else if ( type & pxd_sint16 )
-	  return sint16at(base + (index << 1), big_endian);
-	else if ( type & pxd_uint32 )
-	  return uint32at(base + (index << 2), big_endian);
-	else /* ( type & pxd_sint32 ) */
-	  return sint32at(base + (index << 2), big_endian);
+        if ( type & pxd_ubyte )
+          return base[index];
+        big_endian = (type & pxd_big_endian) != 0;
+        if ( type & pxd_uint16 )
+          return uint16at(base + (index << 1), big_endian);
+        else if ( type & pxd_sint16 )
+          return sint16at(base + (index << 1), big_endian);
+        else if ( type & pxd_uint32 )
+          return uint32at(base + (index << 2), big_endian);
+        else /* ( type & pxd_sint32 ) */
+          return sint32at(base + (index << 2), big_endian);
 }
 real
 real_elt(const px_value_t *pav, uint index)
 {	return
-	  (pav->type & pxd_real32 ?
-	   real32at(pav->value.array.data + (index << 2),
-		    (pav->type & pxd_big_endian) != 0) :
-	   (real)integer_elt(pav, index));
+          (pav->type & pxd_real32 ?
+           real32at(pav->value.array.data + (index << 2),
+                    (pav->type & pxd_big_endian) != 0) :
+           (real)integer_elt(pav, index));
 }

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -238,9 +238,9 @@ typedef enum {
     BJC_BLACK_DENSITY_HIGH = 0x1
 } bjc_black_density_t;
 void bjc_put_print_method(stream *s, bjc_print_color_t color,
-			  bjc_print_media_t media,
-			  bjc_print_quality_t quality,
-			  bjc_black_density_t density);
+                          bjc_print_media_t media,
+                          bjc_print_quality_t quality,
+                          bjc_black_density_t density);
 typedef enum {
     /* 70, 4000, 4550, 4650 */
     BJC_70_PRINT_COLOR_SHORT_FINE = 0x0,		/* also 0x1, 0x2 */
@@ -300,7 +300,7 @@ typedef enum {
     BJC_MEDIA_TYPE_BANNER = 0xd
 } bjc_media_type_t;
 void bjc_put_media_supply(stream *s, bjc_media_supply_t supply,
-			  bjc_media_type_t type);
+                          bjc_media_type_t type);
 
 /* Identify ink cartridge */
 typedef enum {
@@ -308,7 +308,7 @@ typedef enum {
     BJC_IDENTIFY_CARTRIDGE_REQUEST = 0x1
 } bjc_identify_cartridge_command_t;
 void bjc_put_identify_cartridge(stream *s,
-				bjc_identify_cartridge_command_t command);
+                                bjc_identify_cartridge_command_t command);
 
 /*
  * Page commands.
@@ -317,12 +317,12 @@ void bjc_put_identify_cartridge(stream *s,
 /* Set page margins */
 /* Left margin is 1-origin; margins are both from left edge; indent <= 8 */
 void bjc_put_page_margins(stream *s, int length10ths, int lm10ths,
-			  int rm10ths, int indent60ths);
+                          int rm10ths, int indent60ths);
 
 /* Set extended margins */
 /* All values are 0-origin; margins are both from left edge; indent <= 8 */
 void bjc_put_extended_margins(stream *s, int length60ths, int lm60ths,
-			      int rm60ths, int indent60ths);
+                              int rm60ths, int indent60ths);
 
 /* Page ID */
 /* 0 <= id <= 127 */
@@ -354,7 +354,7 @@ typedef enum {
     BJC_CMYK_IMAGE_BLACK = 'K',
 } bjc_cmyk_image_component_t;
 void bjc_put_cmyk_image(stream *s, bjc_cmyk_image_component_t component,
-			const byte *data, int count);
+                        const byte *data, int count);
 
 /* Move by raster lines */
 /* Distance must be a multiple of the raster resolution */
@@ -379,8 +379,8 @@ typedef enum {
     BJC_INK_SYSTEM_PHOTO_DVM = 0x0a	/* drop volume modulation */
 } bjc_ink_system_t;
 void bjc_put_image_format(stream *s, int depth,
-			  bjc_image_format_t format,
-			  bjc_ink_system_t ink);
+                          bjc_image_format_t format,
+                          bjc_ink_system_t ink);
 /* 4550 only */
 void bjc_put_photo_image(stream *s, bool photo);
 

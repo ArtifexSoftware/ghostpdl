@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -68,19 +68,19 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
 
 #define cos_proc_release(proc)\
   void proc(cos_object_t *pco, client_name_t cname)
-	cos_proc_release((*release));
+        cos_proc_release((*release));
 
 #define cos_proc_write(proc)\
   int proc(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
-	cos_proc_write((*write));
+        cos_proc_write((*write));
 
 #define cos_proc_equal(proc)\
   int proc(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
-	cos_proc_equal((*equal));
+        cos_proc_equal((*equal));
 
 #define cos_proc_hash(proc)\
   int proc(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *hash, gx_device_pdf *pdev)
-	cos_proc_hash((*hash));
+        cos_proc_hash((*hash));
 
 } /*cos_object_procs_t*/;
 /*typedef const cos_object_procs_t *cos_type_t;*/
@@ -156,8 +156,8 @@ typedef enum {
 struct cos_value_s {
     cos_value_type_t value_type;
     union vc_ {
-	gs_string chars;	/* SCALAR, CONST */
-	cos_object_t *object;	/* OBJECT, RESOURCE */
+        gs_string chars;	/* SCALAR, CONST */
+        cos_object_t *object;	/* OBJECT, RESOURCE */
     } contents;
 };
 #define private_st_cos_value()	/* in gdevpdfo.c */\
@@ -198,7 +198,7 @@ extern const cos_object_procs_t cos_stream_procs;
 cos_object_t *cos_object_alloc(gx_device_pdf *, client_name_t);
 cos_array_t *cos_array_alloc(gx_device_pdf *, client_name_t);
 cos_array_t *cos_array_from_floats(gx_device_pdf *, const float *, uint,
-				   client_name_t);
+                                   client_name_t);
 cos_dict_t *cos_dict_alloc(gx_device_pdf *, client_name_t);
 cos_stream_t *cos_stream_alloc(gx_device_pdf *, client_name_t);
 
@@ -247,7 +247,7 @@ int cos_array_unadd(cos_array_t *, cos_value_t *);
     /* dict */
 int cos_dict_put(cos_dict_t *, const byte *, uint, const cos_value_t *);
 int cos_dict_put_no_copy(cos_dict_t *, const byte *, uint,
-			 const cos_value_t *);
+                         const cos_value_t *);
 int cos_dict_put_c_key(cos_dict_t *, const char *, const cos_value_t *);
 int cos_dict_put_c_key_string(cos_dict_t *, const char *, const byte *, uint);
 int cos_dict_put_c_key_int(cos_dict_t *, const char *, int);
@@ -284,14 +284,14 @@ const cos_array_element_t *
     cos_array_element_first(const cos_array_t *);
 const cos_array_element_t *
     cos_array_element_next(const cos_array_element_t *, long *,
-			   const cos_value_t **);
+                           const cos_value_t **);
 
 /* Look up a key in a dictionary. */
 const cos_value_t *cos_dict_find(const cos_dict_t *, const byte *, uint);
 const cos_value_t *cos_dict_find_c_key(const cos_dict_t *, const char *);
 /* Process all entries in a dictionary. */
-int cos_dict_forall(const cos_dict_t *pcd, void *client_data, 
-	int (*proc)(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v));
+int cos_dict_forall(const cos_dict_t *pcd, void *client_data,
+        int (*proc)(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v));
 
 /* Set up a parameter list that writes into a Cos dictionary. */
 typedef struct cos_param_list_writer_s {
@@ -300,12 +300,12 @@ typedef struct cos_param_list_writer_s {
     int print_ok;
 } cos_param_list_writer_t;
 int cos_param_list_writer_init(cos_param_list_writer_t *, cos_dict_t *,
-			       int print_ok);
+                               int print_ok);
 
 /* Create a stream that writes into a Cos stream. */
 /* Closing the stream will free it. */
 stream *cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
-			       client_name_t cname);
+                               client_name_t cname);
 
 /* Get cos stream from pipeline. */
 cos_stream_t * cos_stream_from_pipeline(stream *s);

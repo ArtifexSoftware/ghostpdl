@@ -55,8 +55,6 @@ const char *gs_errstr(int code);
 int gs_throw_imp(const char *func, const char *file, int line,
         int op, int code, const char *fmt, ...) __printflike(6, 7);
 
-
-
 /* Use throw at origin of error
 */
 #define gs_throw_code(code) \
@@ -82,7 +80,6 @@ int gs_throw_imp(const char *func, const char *file, int line,
     gs_throw_imp(__func__, __FILE__, __LINE__, 0, code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 #define gs_throw9(code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 0, code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-
 
 /* Bubble the code up the stack
 */
@@ -110,8 +107,6 @@ int gs_throw_imp(const char *func, const char *file, int line,
 #define gs_rethrow9(code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 1, code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 
-
-
 /* This will cause trouble, as it implies you are fixing an error
  * the system will spew messages
  */
@@ -136,7 +131,6 @@ int gs_throw_imp(const char *func, const char *file, int line,
 #define gs_catch9(code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) \
     gs_throw_imp(__func__, __FILE__, __LINE__, 2, code, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
 
-
 /* gs_warn is a printf
  */
 #define gs_warn(fmt) \
@@ -159,7 +153,6 @@ int gs_throw_imp(const char *func, const char *file, int line,
     (void)gs_throw_imp(__func__, __FILE__, __LINE__, 3, 0, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
 #define gs_warn9(fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) \
     (void)gs_throw_imp(__func__, __FILE__, __LINE__, 3, 0, fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-
 
 /* just in case you don't know 0 means no error
  * other return codes are errors.

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -216,8 +216,8 @@ static int  stc_print_setup(stcolor_device *sd);
  *** compute the ESC/P2 specific values
  ***/
 
-static int 
-stc_print_setup(stcolor_device *sd) 
+static int
+stc_print_setup(stcolor_device *sd)
 {
 
 /*
@@ -258,8 +258,8 @@ stc_print_setup(stcolor_device *sd)
        sd->stc.escp_top = (int)(dev_t_margin(sd)*sd->y_pixels_per_inch);
 
    if((sd->stc.flags & STCBOTTOM) == 0)
-      sd->stc.escp_bottom = (int)(sd->height - 
-	    dev_b_margin(sd)*sd->y_pixels_per_inch);
+      sd->stc.escp_bottom = (int)(sd->height -
+            dev_b_margin(sd)*sd->y_pixels_per_inch);
 
    if((sd->stc.flags & STCINIT) == 0) { /* No Initialization-String defined */
       int need  = 8  /* Reset, Graphics-Mode 1 */
@@ -291,7 +291,6 @@ stc_print_setup(stcolor_device *sd)
 /* 0 1  2 34  5  6 7  8 90 1 23  4 56  7   8 9  0 12 3  4 56  7 89 0  1 2345  6 78*/
 "\033@\033(G\001\0\1\033(i\1\0w\033(U\001\000u\033(C\2\000hh\033(c\4\000ttbb\033U",
              need);
-
 
       if((sd->stc.flags & STCUWEAVE) != 0) bp[13] = '\1';
       else                                 bp[13] = '\0';
@@ -537,7 +536,6 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
          sigprocmask(SIG_BLOCK,&stc_int_mask, &stc_int_save);
 #endif /* STC_SIGNAL */
 
-
          if(sd->color_info.num_components > 1) ncolor = 4;
          else                                  ncolor = 1;
 
@@ -583,7 +581,6 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
                      sd->stc.prt_width[buf_i+color] = 0;
                   }
 
-
 /* "read data", immediately continue if all is white */
 
                   if(sd->stc.buf_y < sd->stc.prt_scans) {  /* Test for White */
@@ -609,7 +606,6 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 /* convert data for the various cases */
 
                   alg_data = (*iconvert)(sd,ext_data,prt_pixels,alg_line);
-
 
 /*
  * invoke the dithering-algorithm
@@ -737,7 +733,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 #ifdef    STC_SIGNAL
          sigprocmask(SIG_SETMASK,&stc_int_save,NULL);
 #endif /* STC_DIGNAL */
-  
+
       }
    }
 
@@ -794,7 +790,7 @@ stc_print_page(gx_device_printer * pdev, FILE * prn_stream)
 /*
  * white-check
  */
-static bool 
+static bool
 stc_iswhite(stcolor_device *sd, int prt_pixels,byte *ext_data)
 {
    long  b2do = (prt_pixels*sd->color_info.depth+7)>>3;
@@ -1017,7 +1013,6 @@ stc_cmyk10_float(stcolor_device *sd,
                                                                             \
       return alg_line;
 
-
 static byte *
 stc_cmyk10_dbyte(stcolor_device *sd,
                 byte *ext_data,int prt_pixels,byte *alg_line)
@@ -1046,7 +1041,7 @@ stc_any_direct(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 /* ----------------------------------------------------------------------- */
 /* stc_rle: epson ESC/P2 RLE-Encoding
  */
-static int 
+static int
 stc_rle(byte *out,const byte *in,int width)
 {
 
@@ -1104,11 +1099,10 @@ stc_rle(byte *out,const byte *in,int width)
    return used;
 }
 
-
 /*
  * Horizontal & vertical positioning, color-selection, "ESC ."
  */
-static int 
+static int
 stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
    int escp_used, int color,int m,int wbytes)
 {
@@ -1141,7 +1135,7 @@ stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
          ((dy % sd->stc.escp_lf) == 0))   /* and possible */
             nlf = dy / sd->stc.escp_lf;
       else  nlf = 7;
-         
+
       if(nlf > 6) {
          sd->stc.escp_data[escp_used++]  = '\033';
          sd->stc.escp_data[escp_used++]  = '(';
@@ -1183,7 +1177,7 @@ stc_print_escpcmd(stcolor_device *sd, FILE *prn_stream,
 /*
  * compute width of a group of scanlines
  */
-static int 
+static int
 stc_bandwidth(stcolor_device *sd,int color,int m,int npass)
 {
    int ncolor = sd->color_info.num_components == 1 ? 1 : 4;
@@ -1201,7 +1195,7 @@ stc_bandwidth(stcolor_device *sd,int color,int m,int npass)
 /*
  * Multi-Pass Printing-Routine
  */
-static void 
+static void
 stc_print_weave(stcolor_device *sd, FILE *prn_stream)
 {
 
@@ -1209,7 +1203,6 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
 
    int npass  = sd->stc.escp_v / sd->stc.escp_u;
    int ncolor = sd->color_info.num_components == 1 ? 1 : 4;
-
 
    while(sd->stc.stc_y < sd->stc.prt_scans) {
 
@@ -1276,7 +1269,7 @@ stc_print_weave(stcolor_device *sd, FILE *prn_stream)
 /*
  * Single-Pass printing-Routine
  */
-static void 
+static void
 stc_print_bands(stcolor_device *sd, FILE *prn_stream)
 {
 
@@ -1343,7 +1336,7 @@ stc_print_bands(stcolor_device *sd, FILE *prn_stream)
 }
 /* ----------------------------------------------------------------------- */
 
-static int 
+static int
 stc_deltarow(byte *out,const byte *in,int width,byte *seed)
 {
 
@@ -1430,7 +1423,7 @@ stc_print_delta(stcolor_device *sd, FILE *prn_stream)
 {
 
    int color,buf_a,w;
-   int escp_used = 0; 
+   int escp_used = 0;
    int ncolor = sd->color_info.num_components == 1 ? 1 : 4;
 
    while(sd->stc.stc_y < sd->stc.prt_scans) {
@@ -1524,7 +1517,7 @@ stc_print_delta(stcolor_device *sd, FILE *prn_stream)
 /***
  *** Free-Data: release the specific-Arrays
  ***/
-static void 
+static void
 stc_freedata(gs_memory_t *mem, stc_t *stc)
 {
    int i,j;
@@ -1558,7 +1551,7 @@ stc_freedata(gs_memory_t *mem, stc_t *stc)
  *** open the device and initialize margins & arrays
  ***/
 
-static int 
+static int
 stc_open(gx_device *pdev) /* setup margins & arrays */
 {
   stcolor_device *sd = (stcolor_device *) pdev;
@@ -1596,7 +1589,6 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 /*
  * Establish internal Value & Code-Arrays
  */
-
 
   for(i = 0; i < sd->color_info.num_components; ++i) { /* comp */
 
@@ -1679,7 +1671,6 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
            } else {                      /* success */
 
-
               if(sd->stc.code[i] == NULL) { /* linear */
 
                  byte  *Out  = sd->stc.vals[i];
@@ -1709,7 +1700,6 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
                     Y = Omin + (Omax-Omin) * Y;
                     Y = Y < Omin ? Omin : (Y > Omax ? Omax : Y);
-
 
                     switch(sd->stc.dither->flags & STC_TYPE) {
                        case STC_BYTE:
@@ -1793,11 +1783,11 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 
       switch(sd->color_info.num_components) { /* Establish color-procs */
       case 1:
-	 sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+         sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
          set_dev_proc(sd,map_rgb_color, stc_map_gray_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_gray);
-	 set_dev_proc(sd,encode_color, stc_map_gray_color);
+         set_dev_proc(sd,encode_color, stc_map_gray_color);
          set_dev_proc(sd,decode_color, stc_map_color_gray);
          set_dev_proc(sd, get_color_mapping_procs,
                            gx_default_DevGray_get_color_mapping_procs);
@@ -1807,11 +1797,11 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          white = stc_map_gray_color((gx_device *) sd, cv);
          break;
       case 3:
-	 sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
+         sd->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
          set_dev_proc(sd,map_rgb_color, stc_map_rgb_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_rgb);
-	 set_dev_proc(sd,encode_color, stc_map_rgb_color);
+         set_dev_proc(sd,encode_color, stc_map_rgb_color);
          set_dev_proc(sd,decode_color, stc_map_color_rgb);
          set_dev_proc(sd, get_color_mapping_procs,
                            gx_default_DevRGB_get_color_mapping_procs);
@@ -1821,7 +1811,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          white = stc_map_rgb_color((gx_device *) sd, cv);
          break;
       default:
-	 sd->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+         sd->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
          set_dev_proc(sd,map_rgb_color, gx_default_map_rgb_color);
          set_dev_proc(sd, get_color_mapping_procs,
                            gx_default_DevCMYK_get_color_mapping_procs);
@@ -1830,21 +1820,20 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          if(sd->stc.flags & STCCMYK10) {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk10_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk10);
-	    set_dev_proc(sd,encode_color,stc_map_cmyk10_color);
+            set_dev_proc(sd,encode_color,stc_map_cmyk10_color);
             set_dev_proc(sd,decode_color, stc_map_color_cmyk10);
             cv[0] = cv[1] = cv[2] = cv[3] = 0;
             white = stc_map_cmyk10_color((gx_device *) sd, cv);
          } else {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk);
-	    set_dev_proc(sd,encode_color,stc_map_cmyk_color);
+            set_dev_proc(sd,encode_color,stc_map_cmyk_color);
             set_dev_proc(sd,decode_color, stc_map_color_cmyk);
             cv[0] = cv[1] = cv[2] = cv[3] = 0;
             white = stc_map_cmyk_color((gx_device *) sd,cv);
          }
          break;                               /* Establish color-procs */
       }
-
 
 /*
  * create at least a Byte
@@ -1921,7 +1910,7 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
 /***
  *** stc_close: release the internal data
  ***/
-static int 
+static int
 stc_close(gx_device *pdev)
 {
    stc_freedata(pdev->memory, &((stcolor_device *) pdev)->stc);
@@ -1929,11 +1918,10 @@ stc_close(gx_device *pdev)
    return gdev_prn_close(pdev);
 }
 
-
 /***
  *** Function for Bit-Truncation, including direct-byte-transfer
  ***/
-static gx_color_value 
+static gx_color_value
 stc_truncate(stcolor_device *sd,int i,gx_color_value v)
 {
 
@@ -1986,7 +1974,7 @@ stc_truncate1(stcolor_device *sd,int i,gx_color_value v)
 /***
  *** Expansion of indices for reverse-mapping
  ***/
-static gx_color_value 
+static gx_color_value
 stc_expand(stcolor_device *sd,int i,gx_color_index col)
 {
 
@@ -2018,7 +2006,7 @@ stc_expand(stcolor_device *sd,int i,gx_color_index col)
 /***
  *** color-mapping of gray-scales
  ***/
-static gx_color_index 
+static gx_color_index
 stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2064,7 +2052,7 @@ stc_map_gray_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-static int 
+static int
 stc_map_color_gray(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 {
    stcolor_device *sd = (stcolor_device *) pdev;
@@ -2079,7 +2067,7 @@ stc_map_color_gray(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 /***
  *** color-mapping of rgb-values
  ***/
-static gx_color_index 
+static gx_color_index
 stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2129,7 +2117,7 @@ stc_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-static int 
+static int
 stc_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 {
 
@@ -2147,7 +2135,7 @@ stc_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
 /***
  *** color-mapping of cmyk-values
  ***/
-static gx_color_index 
+static gx_color_index
 stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2241,7 +2229,7 @@ stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 }
 
 /* Modified to be a "decode_color" routine */
-static int 
+static int
 stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value cv[4])
 {
 
@@ -2255,19 +2243,18 @@ stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value cv[4])
    m = stc_expand(sd,1, color & l); color >>= shift;
    c = stc_expand(sd,0, color & l);
 
-   
    cv[0] = c;
    cv[1] = m;
    cv[2] = y;
    cv[3] = k;
-   
+
    return 0;
 }
 
 /***
  *** color-mapping of cmyk10-values
  ***/
-static gx_color_index 
+static gx_color_index
 stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
 {
 
@@ -2400,7 +2387,7 @@ stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
-static int 
+static int
 stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
                      gx_color_value cv[3])
 {
@@ -2523,7 +2510,7 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
  *** Get parameters == Make them accessable via PostScript
  ***/
 
-static int 
+static int
 stc_get_params(gx_device *pdev, gs_param_list *plist)
 {
    int code,nc;
@@ -2672,7 +2659,7 @@ stc_get_params(gx_device *pdev, gs_param_list *plist)
  *** put parameters == Store them in the device-structure
  ***/
 
-static int 
+static int
 stc_put_params(gx_device *pdev, gs_param_list *plist)
 {
    int code,error,i,l;
@@ -3328,7 +3315,6 @@ stc_gscmyk(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 
    byte *ip = in;
    int   error = 0;
-
 
 /* ============================================================= */
    if(npixel > 0) {  /* npixel >  0 -> scanline-processing       */

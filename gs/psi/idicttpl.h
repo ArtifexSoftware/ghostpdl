@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,7 +15,7 @@
 /* A template for packed dictionary search method */
 
 /*
- * Define template for searching a packed dictionary.  
+ * Define template for searching a packed dictionary.
  *
  * Free variables:
  *      ref_packed kpack - holds the packed key.
@@ -39,23 +39,23 @@
 
     again:
     for (; ; kp-- ) {
-	if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);
-	if ( *kp == kpack ) {
-	    found;
-	} else if ( !r_packed_is_name(kp) ) {
-	    /* Empty, deleted, or wraparound. Figure out which. */
-	    if ( *kp == packed_key_empty ) 
-		missing;
-	    if ( kp == kbot ) {
-		if (wrap)
-		    break;
-		else {
-		    wrap++;
-		    kp += size; /* wrap */
-		    goto again; /* skip "kp--". */
-		}
-	    } else { 
-		deleted; 
-	    }
-	}
+        if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);
+        if ( *kp == kpack ) {
+            found;
+        } else if ( !r_packed_is_name(kp) ) {
+            /* Empty, deleted, or wraparound. Figure out which. */
+            if ( *kp == packed_key_empty )
+                missing;
+            if ( kp == kbot ) {
+                if (wrap)
+                    break;
+                else {
+                    wrap++;
+                    kp += size; /* wrap */
+                    goto again; /* skip "kp--". */
+                }
+            } else {
+                deleted;
+            }
+        }
    }

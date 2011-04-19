@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -42,16 +42,16 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
 
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 
     /* we pass npop=0, since we've no arguments left to consume */
-    /* we pass 0 instead of the usual rspace(sop) will allocate storage for 
+    /* we pass 0 instead of the usual rspace(sop) will allocate storage for
        filter state from the same memory pool as the stream it's coding. this
        causes no trouble because we maintain no pointers */
     return filter_read(i_ctx_p, 0, &s_arcfour_template,
-		       (stream_state *) & state, 0);
+                       (stream_state *) & state, 0);
 }
 
 /* encode version of the filter */
@@ -66,16 +66,16 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
 
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 
     /* we pass npop=0, since we've no arguments left to consume */
-    /* we pass 0 instead of the usual rspace(sop) will allocate storage for 
+    /* we pass 0 instead of the usual rspace(sop) will allocate storage for
        filter state from the same memory pool as the stream it's coding. this
        causes no trouble because we maintain no pointers */
     return filter_write(i_ctx_p, 0, &s_arcfour_template,
-			(stream_state *) & state, 0);
+                        (stream_state *) & state, 0);
 }
 
 /* Match the above routines to their postscript filter names.

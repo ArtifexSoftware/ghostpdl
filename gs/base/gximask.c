@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,6 @@
 #include "gzcpath.h"
 #include "gxdevsop.h"
 
-
 /* Functions for masked fill optimization. */
 /* Imagemask with a shading color would paint entire shading for each rectangle of the mask.
    These functions convert the mask into a clipping path and then render entire shading
@@ -34,33 +33,33 @@
 */
 
 int
-gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const gx_clip_path *pcpath, 
-			   gs_memory_t *mem, gx_device **cdev)
+gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, const gx_clip_path *pcpath,
+                           gs_memory_t *mem, gx_device **cdev)
 {
     if (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc)) {
-	if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
-	    extern_st(st_device_cpath_accum);
-	    gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem, 
-		    gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");
-	    gs_fixed_rect cbox;
+        if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
+            extern_st(st_device_cpath_accum);
+            gx_device_cpath_accum *pcdev =  gs_alloc_struct(mem,
+                    gx_device_cpath_accum, &st_device_cpath_accum, "gx_image_fill_masked_start");
+            gs_fixed_rect cbox;
 
-	    if (pcdev == NULL)
-		return_error(gs_error_VMerror);
-	    gx_cpath_accum_begin(pcdev, mem);
-	    gx_cpath_outer_box(pcpath, &cbox);
-	    gx_cpath_accum_set_cbox(pcdev, &cbox);
-	    pcdev->rc.memory = mem;
-	    pcdev->width = dev->width;   /* For gx_default_copy_mono. */
-	    pcdev->height = dev->height; /* For gx_default_copy_mono. */
-	    gx_device_retain((gx_device *)pcdev, true);
-	    *cdev = (gx_device *)pcdev;
-	}
+            if (pcdev == NULL)
+                return_error(gs_error_VMerror);
+            gx_cpath_accum_begin(pcdev, mem);
+            gx_cpath_outer_box(pcpath, &cbox);
+            gx_cpath_accum_set_cbox(pcdev, &cbox);
+            pcdev->rc.memory = mem;
+            pcdev->width = dev->width;   /* For gx_default_copy_mono. */
+            pcdev->height = dev->height; /* For gx_default_copy_mono. */
+            gx_device_retain((gx_device *)pcdev, true);
+            *cdev = (gx_device *)pcdev;
+        }
     } else
-	*cdev = dev;
+        *cdev = dev;
     return 0;
 }
 
-int 
+int
 gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color *pdevc)
 {
     gx_device_cpath_accum *pcdev = (gx_device_cpath_accum *)dev;
@@ -73,25 +72,25 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
     gx_cpath_init_local(&cpath, pcdev->memory);
     code = gx_cpath_accum_end(pcdev, &cpath);
     if (code >= 0)
-	code = gx_dc_pattern2_clip_with_bbox(pdevc, tdev, &cpath_with_shading_bbox, &pcpath1);
+        code = gx_dc_pattern2_clip_with_bbox(pdevc, tdev, &cpath_with_shading_bbox, &pcpath1);
     gx_make_clip_device_on_stack(&cdev, pcpath1, tdev);
     if (code >= 0 && pcdev->bbox.p.x < pcdev->bbox.q.x) {
-	code1 = gx_device_color_fill_rectangle(pdevc, 
-		    pcdev->bbox.p.x, pcdev->bbox.p.y, 
-		    pcdev->bbox.q.x - pcdev->bbox.p.x, 
-		    pcdev->bbox.q.y - pcdev->bbox.p.y, 
-		    (gx_device *)&cdev, lop_default, 0);
-	if (code == 0)
-	    code = code1;
+        code1 = gx_device_color_fill_rectangle(pdevc,
+                    pcdev->bbox.p.x, pcdev->bbox.p.y,
+                    pcdev->bbox.q.x - pcdev->bbox.p.x,
+                    pcdev->bbox.q.y - pcdev->bbox.p.y,
+                    (gx_device *)&cdev, lop_default, 0);
+        if (code == 0)
+            code = code1;
     }
     if (pcpath1 == &cpath_with_shading_bbox)
-	gx_cpath_free(&cpath_with_shading_bbox, "s_image_cleanup");
+        gx_cpath_free(&cpath_with_shading_bbox, "s_image_cleanup");
     gx_device_retain((gx_device *)pcdev, false);
     gx_cpath_free(&cpath, "s_image_cleanup");
     return code;
 }
 
-int 
+int
 gx_image_fill_masked(gx_device *dev,
     const byte *data, int data_x, int raster, gx_bitmap_id id,
     int x, int y, int width, int height,
@@ -103,9 +102,9 @@ gx_image_fill_masked(gx_device *dev,
 
     code = gx_image_fill_masked_start(dev, pdc, pcpath, dev->memory, &cdev);
     if (code >= 0)
-	code = (*dev_proc(cdev, fill_mask))(cdev, data, data_x, raster, id,
-			    x, y, width, height, pdc, depth, lop, pcpath);
+        code = (*dev_proc(cdev, fill_mask))(cdev, data, data_x, raster, id,
+                            x, y, width, height, pdc, depth, lop, pcpath);
     if (code >= 0 && cdev != dev)
-	code = gx_image_fill_masked_end(cdev, dev, pdc);
+        code = gx_image_fill_masked_end(cdev, dev, pdc);
     return code;
 }

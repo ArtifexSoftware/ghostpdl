@@ -78,14 +78,14 @@ gslt_render_font_glyph(gs_state *pgs, gslt_font_t *xf, gs_matrix *tm, int gid, g
         params.data.d_glyph = gid;
         params.size = 1;
 
-	gs_moveto(pgs, 100.0, 100.0); // why?
+        gs_moveto(pgs, 100.0, 100.0); // why?
 
         code = gs_text_begin(pgs, &params, xf->font->memory, &textenum);
-	if (code != 0)
+        if (code != 0)
             return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
 
         code = gs_text_process(textenum);
-	if (code != 0)
+        if (code != 0)
             return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
 
         gs_text_release(textenum, "gslt font render");
@@ -230,24 +230,24 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 
     ofs = gslt_find_sfnt_table(xf, "hhea", &len);
     if (ofs < 0)
-	return gs_throw(-1, "cannot find hhea table");
+        return gs_throw(-1, "cannot find hhea table");
 
     if (len < 2 * 18)
-	return gs_throw(-1, "hhea table is too short");
+        return gs_throw(-1, "hhea table is too short");
 
     vorg = s16(xf->data + ofs + 4); /* ascender is default vorg */
     desc = s16(xf->data + ofs + 6); /* descender */
     if (desc < 0)
-	desc = -desc;
+        desc = -desc;
     n = u16(xf->data + ofs + 17 * 2);
 
     ofs = gslt_find_sfnt_table(xf, "hmtx", &len);
     if (ofs < 0)
-	return gs_throw(-1, "cannot find hmtx table");
+        return gs_throw(-1, "cannot find hmtx table");
 
     idx = gid;
     if (idx > n - 1)
-	idx = n - 1;
+        idx = n - 1;
 
     hadv = u16(xf->data + ofs + idx * 4);
     vadv = 0;
@@ -259,71 +259,71 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
     head = gslt_find_sfnt_table(xf, "head", &len);
     if (head > 0)
     {
-	scale = u16(xf->data + head + 18); /* units per em */
+        scale = u16(xf->data + head + 18); /* units per em */
     }
 
     ofs = gslt_find_sfnt_table(xf, "OS/2", &len);
     if (ofs > 0 && len > 70)
     {
-	vorg = s16(xf->data + ofs + 68); /* sTypoAscender */
-	desc = s16(xf->data + ofs + 70); /* sTypoDescender */
-	if (desc < 0)
-	    desc = -desc;
+        vorg = s16(xf->data + ofs + 68); /* sTypoAscender */
+        desc = s16(xf->data + ofs + 70); /* sTypoDescender */
+        if (desc < 0)
+            desc = -desc;
     }
 
     ofs = gslt_find_sfnt_table(xf, "vhea", &len);
     if (ofs > 0)
     {
-	if (len < 2 * 18)
-	    return gs_throw(-1, "vhea table is too short");
+        if (len < 2 * 18)
+            return gs_throw(-1, "vhea table is too short");
 
-	n = u16(xf->data + ofs + 17 * 2);
+        n = u16(xf->data + ofs + 17 * 2);
 
-	ofs = gslt_find_sfnt_table(xf, "vmtx", &len);
-	if (ofs < 0)
-	    return gs_throw(-1, "cannot find vmtx table");
+        ofs = gslt_find_sfnt_table(xf, "vmtx", &len);
+        if (ofs < 0)
+            return gs_throw(-1, "cannot find vmtx table");
 
-	idx = gid;
-	if (idx > n - 1)
-	    idx = n - 1;
+        idx = gid;
+        if (idx > n - 1)
+            idx = n - 1;
 
-	vadv = u16(xf->data + ofs + idx * 4);
-	vtop = u16(xf->data + ofs + idx * 4 + 2);
+        vadv = u16(xf->data + ofs + idx * 4);
+        vtop = u16(xf->data + ofs + idx * 4 + 2);
 
-	glyf = gslt_find_sfnt_table(xf, "glyf", &len);
-	loca = gslt_find_sfnt_table(xf, "loca", &len);
-	if (head > 0 && glyf > 0 && loca > 0)
-	{
-	    format = u16(xf->data + head + 50); /* indexToLocaFormat */
+        glyf = gslt_find_sfnt_table(xf, "glyf", &len);
+        loca = gslt_find_sfnt_table(xf, "loca", &len);
+        if (head > 0 && glyf > 0 && loca > 0)
+        {
+            format = u16(xf->data + head + 50); /* indexToLocaFormat */
 
-	    if (format == 0)
-		ofs = u16(xf->data + loca + gid * 2) * 2;
-	    else
-		ofs = u32(xf->data + loca + gid * 4);
+            if (format == 0)
+                ofs = u16(xf->data + loca + gid * 2) * 2;
+            else
+                ofs = u32(xf->data + loca + gid * 4);
 
-	    ymax = u16(xf->data + glyf + ofs + 8); /* yMax */
+            ymax = u16(xf->data + glyf + ofs + 8); /* yMax */
 
-	    vorg = ymax + vtop;
-	}
+            vorg = ymax + vtop;
+        }
     }
 
     ofs = gslt_find_sfnt_table(xf, "VORG", &len);
     if (ofs > 0)
     {
-	vorg = u16(xf->data + ofs + 6);
-	n = u16(xf->data + ofs + 6);
-	for (i = 0; i < n; i++)
-	{
-	    if (u16(xf->data + ofs + 8 + 4 * i) == gid)
-	    {
-		vorg = s16(xf->data + ofs + 8 + 4 * i + 2);
-		break;
-	    }
-	}
+        vorg = u16(xf->data + ofs + 6);
+        n = u16(xf->data + ofs + 6);
+        for (i = 0; i < n; i++)
+        {
+            if (u16(xf->data + ofs + 8 + 4 * i) == gid)
+            {
+                vorg = s16(xf->data + ofs + 8 + 4 * i + 2);
+                break;
+            }
+        }
     }
 
     if (vadv == 0)
-	vadv = vorg + desc;
+        vadv = vorg + desc;
 
     mtx->hadv = hadv / (float) scale;
     mtx->vadv = vadv / (float) scale;
@@ -331,4 +331,3 @@ gslt_measure_font_glyph(gs_state *pgs, gslt_font_t *xf, int gid, gslt_glyph_metr
 
     return 0;
 }
-

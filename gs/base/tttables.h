@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -14,7 +14,6 @@
 /* $Id$ */
 
 /* Changes after FreeType: cut out the TrueType instruction interpreter. */
-
 
 /*******************************************************************
  *
@@ -61,7 +60,6 @@
   typedef struct _TTTCHeader  TTTCHeader;
   typedef TTTCHeader*         PTTCHeader;
 
-
   /* TrueType Table Directory type */
 
   struct  _TTableDir
@@ -77,7 +75,6 @@
   typedef struct _TTableDir  TTableDir;
   typedef TTableDir*         PTableDir;
 
-
   /* The 'TableDir' is followed by 'numTables' TableDirEntries */
 
   struct  _TTableDirEntry
@@ -90,7 +87,6 @@
 
   typedef struct _TTableDirEntry  TTableDirEntry;
   typedef TTableDirEntry*         PTableDirEntry;
-
 
   /* 'cmap' tables */
 
@@ -112,7 +108,6 @@
 
   typedef struct _TCMapDirEntry  TCMapDirEntry;
   typedef TCMapDirEntry*         PCMapDirEntries;
-
 
   /* 'maxp' Maximum Profiles table */
 
@@ -138,7 +133,6 @@
   typedef struct _TMaxProfile  TMaxProfile;
   typedef TMaxProfile*         PMaxProfile;
 
-
   /* table "gasp" */
 
 #  define GASP_GRIDFIT  0x01
@@ -152,7 +146,6 @@
 
   typedef struct _GaspRange  GaspRange;
 
-
   struct  _TGasp
   {
     UShort      version;
@@ -162,10 +155,8 @@
 
   typedef struct _TGasp  TGasp;
 
-
   /* table "head" - now defined in freetype.h */
   /* table "hhea" - now defined in freetype.h */
-
 
   /* table "HMTX" */
 
@@ -178,10 +169,8 @@
   typedef struct _TLongHorMetric  TLongHorMetric;
   typedef TLongHorMetric*         PTableHorMetrics;
 
-
   /* 'OS/2' table - now defined in freetype.h */
   /* "post" table - now defined in freetype.h */
-
 
   /* 'loca' location table type */
 
@@ -192,7 +181,6 @@
   };
 
   typedef struct _TLoca  TLoca;
-
 
   /* table "name" */
 
@@ -213,7 +201,6 @@
 
   typedef struct _TNameRec  TNameRec;
 
-
   struct  _TName_Table
   {
     UShort     format;
@@ -225,12 +212,10 @@
 
   typedef struct _TName_Table  TName_Table;
 
-
 #ifdef __cplusplus
   }
 #endif
 
 #endif /* TTTABLES_H */
-
 
 /* END */

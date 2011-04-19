@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,14 +22,13 @@
    PDF_FOR_OPDFREAD - an integer 0 (false) or 1 (true).
  */
 
-
 const gx_device_pdf PDF_DEVICE_IDENT =
 {std_device_dci_type_body(gx_device_pdf, 0, PDF_DEVICE_NAME,
-			  &st_device_pdfwrite,
-			  DEFAULT_WIDTH_10THS * X_DPI / 10,
-			  DEFAULT_HEIGHT_10THS * Y_DPI / 10,
-			  X_DPI, Y_DPI,
-			  3, 24, 255, 255, 256, 256),
+                          &st_device_pdfwrite,
+                          DEFAULT_WIDTH_10THS * X_DPI / 10,
+                          DEFAULT_HEIGHT_10THS * Y_DPI / 10,
+                          X_DPI, Y_DPI,
+                          3, 24, 255, 255, 256, 256),
  {pdf_open,
   gx_upright_get_initial_matrix,
   NULL,				/* sync_output */
@@ -188,7 +187,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  1,				/* used_mask */
  {
      {
-	 {0}}},			/* resources */
+         {0}}},			/* resources */
  {0},				/* cs_Patterns */
  {0},				/* Identity_ToUnicode_CMaps */
  0,				/* last_resource */
@@ -196,14 +195,14 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  gs_no_id,			/* IdentityCIDSystemInfo_id */
  {
      {
-	 {0}}},			/* outline_levels */
+         {0}}},			/* outline_levels */
  0,				/* outline_depth */
  0,				/* closed_outline_depth */
  0,				/* outlines_open */
  0,				/* articles */
  0,				/* Dests */
  {0},				/* fileID */
-	 {0, 0},		/* uuid_time */
+         {0, 0},		/* uuid_time */
  0,				/* global_named_objects */
  0,				/* local_named_objects */
  0,				/* NI_stack */
@@ -267,4 +266,3 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD		/* PreserveTrMode */
 };
-

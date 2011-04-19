@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -17,11 +17,9 @@
 #ifndef dwtext_INCLUDED
 #  define dwtext_INCLUDED
 
-
 #ifdef _WINDOWS
 #define _Windows
 #endif
-
 
 typedef struct TEXTWINDOW_S {
     const char *Title;		/* required */
@@ -65,7 +63,6 @@ typedef struct TEXTWINDOW_S {
 
     int x, y, cx, cy;	/* window position */
 } TW;
-
 
 /* Create new TW structure */
 TW *text_new(void);
@@ -128,7 +125,7 @@ int text_getpos(TW *tw, int *px, int *py, int *pcx, int *pcy);
 
 /* Set pre drag and post drag strings
  * If a file is dropped on the window, the following will
- * be poked into the keyboard buffer: 
+ * be poked into the keyboard buffer:
  *   the pre_drag string
  *   the file name
  *   the post_drag string
@@ -139,6 +136,5 @@ void text_drag(TW *tw, const char *pre_drag, const char *post_drag);
 HWND text_get_handle(TW *tw);
 
 /* ================================== */
-
 
 #endif /* dwtext_INCLUDED */

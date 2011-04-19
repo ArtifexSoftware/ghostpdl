@@ -36,29 +36,29 @@
    HP870, HP890, HP1100, HP1600 and HP2200 color printers.
    Also work with HP DesignJet 500 large-format color printer.
    To be used with the Ghostscript printing system.
-   
+
    CREDITS: Much of the driver is based on ideas derived
             from the cdj550 driver of George Cameron.
-	    
-	    The support for the hp670, hp690, hp890
-	    and hp1600 was added by Martin Gerbershagen.
 
-	    The support for the hp2200 was added by Siow-Kiat Tan.
+            The support for the hp670, hp690, hp890
+            and hp1600 was added by Martin Gerbershagen.
 
-	    The support for the dnj500 was added by Timur Maximov.
+            The support for the hp2200 was added by Siow-Kiat Tan.
+
+            The support for the dnj500 was added by Timur Maximov.
 
 -------------------------------------------------------------------*/
 
-/* Note: Depending on how you transfered the files, 
+/* Note: Depending on how you transfered the files,
    you might need to remove some CR-codes used on intel-based machines:
 
    simply type:  unzip -a hp850.zip
 
-   to compile with gs5.x, simply add 
+   to compile with gs5.x, simply add
 
    DEVICE_DEVS4=cdj850.dev cdj670.dev cdj890.dev cdj1600.dev
 
-   to your makefile. 
+   to your makefile.
 
    BTW, it is always a good idea to read Make.htm found in the
    gs-distrib before attempting to recompile.....
@@ -77,12 +77,11 @@
 
    Problems  :  Dark colors are still pale.
 
-
    The driver no longer needs special switches to be invoked
    except -sDEVICE=cdj850, or -sDEVICE=CDJ890, or sDEVICE=CDJ670
    or -sDEVICE=CDJ1600
 
-   The hp690 is supported through the hp670 device, the hp855, hp870 
+   The hp690 is supported through the hp670 device, the hp855, hp870
    and the hp1100 through the hp850 device.
 
    The driver implements the following switches:
@@ -97,9 +96,9 @@
    for printing on special paper or transperencies.
    Please revert to the gamma functions in this case.
 
-   -dQuality=  -1 draft     
+   -dQuality=  -1 draft
    0 normal       [default]
-   1 presentation 
+   1 presentation
 
    -dRetStatus= 0 C-RET off
    1 C-RET on [default]
@@ -107,9 +106,9 @@
    -dMasterGamma= 3.0 [default = 1.0]
    __Note__: To take advantage of the calibrated color-transfer
    functions, be sure not to have any Gamma-Statements
-   left! If you need to (i.e. overhead sheets), 
-   you still can use the gamma-functions, but they will 
-   override the built-in calibration. To use gamma in the 
+   left! If you need to (i.e. overhead sheets),
+   you still can use the gamma-functions, but they will
+   override the built-in calibration. To use gamma in the
    traditional way, set MasterGamma to any value greater
    1.0 and less 10.0. To adjust individual gamma-values,
    you have to additionally set MasterGamma to a value
@@ -163,7 +162,7 @@
 
  */
 
-/* 25.08.97  Version 1.2. Resolved all but one of the 
+/* 25.08.97  Version 1.2. Resolved all but one of the
    known bugs, introduced a couple
    of perfomance improvements. Complete
    new color-transfer-function handling.
@@ -201,39 +200,39 @@ typedef struct hp850_cmyk_init_s {
 static const hp850_cmyk_init_t hp850_cmyk_init =
 {
     {
-	0x02,			/* format */
-	0x04,			/* number of components */
+        0x02,			/* format */
+        0x04,			/* number of components */
       /* black */
-	0x01,			/* MSB x resolution */
-	0x2c,			/* LSB x resolution */
-	0x01,			/* MSB y resolution */
-	0x2c,			/* LSB y resolution */
-	0x00,			/* MSB intensity levels */
-	0x02,			/* LSB intensity levels */
+        0x01,			/* MSB x resolution */
+        0x2c,			/* LSB x resolution */
+        0x01,			/* MSB y resolution */
+        0x2c,			/* LSB y resolution */
+        0x00,			/* MSB intensity levels */
+        0x02,			/* LSB intensity levels */
 
       /* cyan */
-	0x01,			/* MSB x resolution */
-	0x2c,			/* LSB x resolution */
-	0x01,			/* MSB y resolution */
-	0x2c,			/* LSB y resolution */
-	0x00,			/* MSB intensity levels */
-	0x02,			/* LSB intensity levels */
+        0x01,			/* MSB x resolution */
+        0x2c,			/* LSB x resolution */
+        0x01,			/* MSB y resolution */
+        0x2c,			/* LSB y resolution */
+        0x00,			/* MSB intensity levels */
+        0x02,			/* LSB intensity levels */
 
       /* magenta */
-	0x01,			/* MSB x resolution */
-	0x2c,			/* LSB x resolution */
-	0x01,			/* MSB y resolution */
-	0x2c,			/* LSB y resolution */
-	0x00,			/* MSB intensity levels */
-	0x02,			/* LSB intensity levels */
+        0x01,			/* MSB x resolution */
+        0x2c,			/* LSB x resolution */
+        0x01,			/* MSB y resolution */
+        0x2c,			/* LSB y resolution */
+        0x00,			/* MSB intensity levels */
+        0x02,			/* LSB intensity levels */
 
       /* yellow */
-	0x01,			/* MSB x resolution */
-	0x2c,			/* LSB x resolution */
-	0x01,			/* MSB y resolution */
-	0x2c,			/* LSB y resolution */
-	0x00,			/* MSB intensity levels */
-	0x02			/* LSB intensity levels */
+        0x01,			/* MSB x resolution */
+        0x2c,			/* LSB x resolution */
+        0x01,			/* MSB y resolution */
+        0x2c,			/* LSB y resolution */
+        0x00,			/* MSB intensity levels */
+        0x02			/* LSB intensity levels */
     }
 };
 
@@ -317,7 +316,6 @@ static const Gamma gammat850 =
      166, 169, 174, 177, 182, 187, 194, 203, 215, 255}
 };
 
-
 static const Gamma gammat890 =
 {
 /* Lookup values for cyan */
@@ -360,7 +358,7 @@ static const Gamma gammat890 =
 210, 210, 211, 211, 212, 213, 213, 214, 214, 215, 215, 216, 216, 217,
 217, 218, 218, 218, 219, 219, 219, 220, 220},
 
-/* Lookup values for yellow */ 
+/* Lookup values for yellow */
 /* gamma 0.7 */
 
 {0, 1, 3, 4, 6, 7, 9, 10, 11, 13, 14, 16, 17, 18, 20, 21, 23, 24, 25,
@@ -412,23 +410,23 @@ static const Gamma * const gammat[] =
 
 static int
     rescale_byte_wise1x1(int bytecount, const byte * inbytea,
-			 const byte * inbyteb, byte * outbyte);
+                         const byte * inbyteb, byte * outbyte);
 static int
     rescale_byte_wise2x1(int bytecount, const byte * inbytea,
-			 const byte * inbyteb, byte * outbyte);
+                         const byte * inbyteb, byte * outbyte);
 static int
     rescale_byte_wise1x2(int bytecount, const byte * inbytea,
-			 const byte * inbyteb, byte * outbyte);
+                         const byte * inbyteb, byte * outbyte);
 static int
     rescale_byte_wise2x2(int bytecount, const byte * inbytea,
-			 const byte * inbyteb, byte * outbyte);
+                         const byte * inbyteb, byte * outbyte);
 
 static int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *, byte *) = {
     {
-	rescale_byte_wise1x1, rescale_byte_wise1x2
+        rescale_byte_wise1x1, rescale_byte_wise1x2
     },
     {
-	rescale_byte_wise2x1, rescale_byte_wise2x2
+        rescale_byte_wise2x1, rescale_byte_wise2x2
     }
 };
 
@@ -445,7 +443,6 @@ static int (* const rescale_color_plane[2][2]) (int, const byte *, const byte *,
 #  define BITSPERPIXEL 32
 #endif
 #define DOFFSET (dev_t_margin(pdev) - DESKJET_PRINT_LIMIT)	/* Print position */
-
 
 #define W sizeof(word)
 #define I sizeof(int)
@@ -465,14 +462,12 @@ typedef enum {
     DJ670C, DJ850C, DJ880C, DJ890C, DJ1600C, HP2200C, DNJ500C
 } cdj_printer_type_t;
 
-
 /*  No. of ink jets (used to minimise head movements)
  *  NOTE:  These don't appear to actually be used anywhere.  Can they
  *         be removed?
  */
 #define HEAD_ROWS_MONO 50
 #define HEAD_ROWS_COLOUR 16
-
 
 /*
  *  Colour mapping procedures
@@ -483,7 +478,6 @@ static dev_proc_map_color_rgb(gdev_cmyk_map_color_rgb);
 
 static dev_proc_map_rgb_color(gdev_pcl_map_rgb_color);
 static dev_proc_map_color_rgb(gdev_pcl_map_color_rgb);
-
 
 /*
  *  Print-page, parameters and miscellaneous procedures
@@ -505,15 +499,12 @@ static dev_proc_print_page(cdnj500_print_page);
 #define prn_colour_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page, cmyk, correct)\
     prn_device_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page), cmyk, depth /* default */, correct
 
-
-
 #define gx_prn_colour_device_common \
     gx_prn_device_common; \
     int cmyk;	  	/* 0: not CMYK-capable, > 0: printing CMYK, */ \
-		  	/* < 0 : CMYK-capable, not printing CMYK */ \
+                        /* < 0 : CMYK-capable, not printing CMYK */ \
     uint default_depth;	/* Used only for CMYK-capable printers now. */ \
     uint correction
-
 
 /* some definitions needed later */
 struct error_val_field {
@@ -578,13 +569,13 @@ struct misc_struct {
 
     /* function pointer typedefs for device driver struct */
 typedef void (*StartRasterMode) (gx_device_printer * pdev, int paper_size,
-				 FILE * prn_stream);
+                                 FILE * prn_stream);
 typedef void (*PrintNonBlankLines) (gx_device_printer * pdev,
-				    struct ptr_arrays *data_ptrs,
-				    struct misc_struct *misc_vars,
-				    struct error_val_field *error_values,
-				    const Gamma *gamma,
-				    FILE * prn_stream);
+                                    struct ptr_arrays *data_ptrs,
+                                    struct misc_struct *misc_vars,
+                                    struct error_val_field *error_values,
+                                    const Gamma *gamma,
+                                    FILE * prn_stream);
 
 typedef void (*TerminatePage) (gx_device_printer * pdev, FILE * prn_stream);
 
@@ -600,10 +591,10 @@ typedef struct gx_device_cdj850_s {
     int compression;		/* compression level */
     float mastergamma;		/* Gammavalue applied to all colors */
     float gammavalc;		/* range to which gamma-correction is
-				   applied to bw values */
+                                   applied to bw values */
     float gammavalm;		/* amount of gamma correction for bw */
     float gammavaly;		/* range to which gamma-correction i
-				   applied to color values */
+                                   applied to color values */
     float gammavalk;		/* amount of gamma correction for color */
     float blackcorrect;		/* amount of gamma correction for color */
     StartRasterMode start_raster_mode;	/* output function to start raster mode */
@@ -615,7 +606,6 @@ typedef struct {
     gx_device_common;
     gx_prn_colour_device_common;
 } gx_device_colour_prn;
-
 
 /* Use the cprn_device macro to access generic fields (like cmyk,
    default_depth and correction), and specific macros for specific
@@ -708,40 +698,39 @@ typedef struct {
 }
 
 #define cmyk_colour_procs(proc_colour_open, proc_get_params, proc_put_params, \
-			  map_rgb_color, map_color_rgb, map_cmyk_color)\
+                          map_rgb_color, map_color_rgb, map_cmyk_color)\
 {	proc_colour_open,\
-	gx_default_get_initial_matrix,\
-	gx_default_sync_output,\
-	gdev_prn_output_page,\
-	gdev_prn_close,\
-	map_rgb_color,\
-	map_color_rgb,\
-	NULL /* fill_rectangle */,\
-	NULL /* tile_rectangle */,\
-	NULL /* copy_mono */,\
-	NULL /* copy_color */,\
-	NULL /* draw_line */,\
-	gx_default_get_bits,\
-	proc_get_params,\
-	proc_put_params,\
+        gx_default_get_initial_matrix,\
+        gx_default_sync_output,\
+        gdev_prn_output_page,\
+        gdev_prn_close,\
+        map_rgb_color,\
+        map_color_rgb,\
+        NULL /* fill_rectangle */,\
+        NULL /* tile_rectangle */,\
+        NULL /* copy_mono */,\
+        NULL /* copy_color */,\
+        NULL /* draw_line */,\
+        gx_default_get_bits,\
+        proc_get_params,\
+        proc_put_params,\
         map_cmyk_color\
 }
-
 
 /*  Printer-specific functions.  Most printers are handled by the cdj850_xx()
  *  functions.
  */
 static void
      cdj850_start_raster_mode(gx_device_printer * pdev,
-			      int papersize, FILE * prn_stream);
+                              int papersize, FILE * prn_stream);
 
 static void
      cdj850_print_non_blank_lines(gx_device_printer * pdev,
-				  struct ptr_arrays *data_ptrs,
-				  struct misc_struct *misc_vars,
-				  struct error_val_field *error_values,
-				  const Gamma *gamma,
-				  FILE * prn_stream);
+                                  struct ptr_arrays *data_ptrs,
+                                  struct misc_struct *misc_vars,
+                                  struct error_val_field *error_values,
+                                  const Gamma *gamma,
+                                  FILE * prn_stream);
 
 static void
      cdj850_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
@@ -751,15 +740,15 @@ static void
  */
 static void
      cdj880_start_raster_mode(gx_device_printer * pdev,
-			      int papersize, FILE * prn_stream);
+                              int papersize, FILE * prn_stream);
 
 static void
      cdj880_print_non_blank_lines(gx_device_printer * pdev,
-				  struct ptr_arrays *data_ptrs,
-				  struct misc_struct *misc_vars,
-				  struct error_val_field *error_values,
-				  const Gamma *gamma,
-				  FILE * prn_stream);
+                                  struct ptr_arrays *data_ptrs,
+                                  struct misc_struct *misc_vars,
+                                  struct error_val_field *error_values,
+                                  const Gamma *gamma,
+                                  FILE * prn_stream);
 
 static void
      cdj880_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
@@ -768,21 +757,21 @@ static void
  */
 static void
      cdj1600_start_raster_mode(gx_device_printer * pdev,
-			       int papersize, FILE * prn_stream);
+                               int papersize, FILE * prn_stream);
 static void
      cdj1600_print_non_blank_lines(gx_device_printer * pdev,
-				   struct ptr_arrays *data_ptrs,
-				   struct misc_struct *misc_vars,
-				   struct error_val_field *error_values,
-				   const Gamma *gamma,
-				   FILE * prn_stream);
+                                   struct ptr_arrays *data_ptrs,
+                                   struct misc_struct *misc_vars,
+                                   struct error_val_field *error_values,
+                                   const Gamma *gamma,
+                                   FILE * prn_stream);
 static void
      cdj1600_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
 /*  Functions for the HP2200C */
 static void
      chp2200_start_raster_mode(gx_device_printer * pdev,
-			       int papersize, FILE * prn_stream);
+                               int papersize, FILE * prn_stream);
 
 static void
      chp2200_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
@@ -790,97 +779,94 @@ static void
 /*  Functions for the DNJ500C */
 static void
      cdnj500_start_raster_mode(gx_device_printer * pdev,
-			       int papersize, FILE * prn_stream);
+                               int papersize, FILE * prn_stream);
 
 static void
      cdnj500_terminate_page(gx_device_printer * pdev, FILE * prn_stream);
 
-
 static const gx_device_procs cdj670_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
 static const gx_device_procs cdj850_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
 static const gx_device_procs cdj880_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
 static const gx_device_procs cdj890_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
+                  NULL, gdev_cmyk_map_color_rgb, gdev_cmyk_map_cmyk_color);
 
 static const gx_device_procs cdj1600_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  gdev_pcl_map_rgb_color, gdev_pcl_map_color_rgb, NULL);
+                  gdev_pcl_map_rgb_color, gdev_pcl_map_color_rgb, NULL);
 
 /* HP2200 and DNJ500 is a RGB printer */
 static const gx_device_procs chp2200_procs =
 cmyk_colour_procs(hp_colour_open, cdj850_get_params, cdj850_put_params,
-		  gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL);
-
+                  gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb, NULL);
 
 const gx_device_cdj850 gs_cdj670_device =
 cdj_850_device(cdj670_procs, "cdj670", 600, 600, 32, cdj850_print_page, 0,
-	       PRESENTATION, PLAIN_PAPER, 2, DJ670C, 9,
-	       1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	       cdj850_start_raster_mode, cdj850_print_non_blank_lines,
-	       cdj850_terminate_page);
+               PRESENTATION, PLAIN_PAPER, 2, DJ670C, 9,
+               1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+               cdj850_start_raster_mode, cdj850_print_non_blank_lines,
+               cdj850_terminate_page);
 
 const gx_device_cdj850 gs_cdj850_device =
 cdj_850_device(cdj850_procs, "cdj850", 600, 600, 32, cdj850_print_page, 0,
-	       PRESENTATION, PLAIN_PAPER, 4, DJ850C, 9,
-	       1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	       cdj850_start_raster_mode, cdj850_print_non_blank_lines,
-	       cdj850_terminate_page);
+               PRESENTATION, PLAIN_PAPER, 4, DJ850C, 9,
+               1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+               cdj850_start_raster_mode, cdj850_print_non_blank_lines,
+               cdj850_terminate_page);
 
 const gx_device_cdj850 gs_cdj880_device =
 cdj_850_device(cdj880_procs, "cdj880", 600, 600, 32, cdj850_print_page, 0,
-	       PRESENTATION, PLAIN_PAPER, 4, DJ880C, 2,
-	       1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	       cdj880_start_raster_mode, cdj880_print_non_blank_lines,
-	       cdj880_terminate_page);
+               PRESENTATION, PLAIN_PAPER, 4, DJ880C, 2,
+               1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+               cdj880_start_raster_mode, cdj880_print_non_blank_lines,
+               cdj880_terminate_page);
 
 const gx_device_cdj850 gs_cdj890_device =
 cdj_850_device(cdj890_procs, "cdj890", 600, 600, 32, cdj850_print_page, 0,
-	       PRESENTATION, PLAIN_PAPER, 4, DJ890C, 9,
-	       1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-	       cdj850_start_raster_mode, cdj850_print_non_blank_lines,
-	       cdj850_terminate_page);
+               PRESENTATION, PLAIN_PAPER, 4, DJ890C, 9,
+               1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+               cdj850_start_raster_mode, cdj850_print_non_blank_lines,
+               cdj850_terminate_page);
 
 const gx_device_cdj850 gs_cdj1600_device =
 cdj_1600_device(cdj1600_procs, "cdj1600", 300, 300, 24, cdj850_print_page, 0,
-		PRESENTATION, PLAIN_PAPER, 2, DJ1600C, 3,
-		1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-		cdj1600_start_raster_mode, cdj1600_print_non_blank_lines,
-		cdj1600_terminate_page);
+                PRESENTATION, PLAIN_PAPER, 2, DJ1600C, 3,
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+                cdj1600_start_raster_mode, cdj1600_print_non_blank_lines,
+                cdj1600_terminate_page);
 
 /* HP2200 does not need color matching and halftoning parameters */
 const gx_device_cdj850 gs_chp2200_device =
 chp_2200_device(chp2200_procs, "chp2200", 300, 300, 24, chp2200_print_page, 0,
-	       NORMAL, PLAIN_PAPER, 0 /*unused*/, HP2200C, 10,
-	       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /*all unused*/
-	       chp2200_start_raster_mode, NULL /*unused*/,
-	       chp2200_terminate_page);
+               NORMAL, PLAIN_PAPER, 0 /*unused*/, HP2200C, 10,
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /*all unused*/
+               chp2200_start_raster_mode, NULL /*unused*/,
+               chp2200_terminate_page);
 
 /* DNJ500 does not need color matching and halftoning parameters */
 const gx_device_cdj850 gs_cdnj500_device =
 chp_2200_device(chp2200_procs, "cdnj500", 300, 300, 24, cdnj500_print_page, 0,
-	       NORMAL, PLAIN_PAPER, 0 /*unused*/, DNJ500C, 10,
-	       0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /*all unused*/
-	       cdnj500_start_raster_mode, NULL /*unused*/,
-	       cdnj500_terminate_page);
+               NORMAL, PLAIN_PAPER, 0 /*unused*/, DNJ500C, 10,
+               0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /*all unused*/
+               cdnj500_start_raster_mode, NULL /*unused*/,
+               cdnj500_terminate_page);
 
 /* Forward references */
 static int cdj_put_param_int(gs_param_list *, gs_param_name,
-			      int *, int, int, int);
+                              int *, int, int, int);
 static int cdj_put_param_float(gs_param_list *, gs_param_name, float
-				*, float, float, int);
+                                *, float, float, int);
 static int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
 static int cdj_set_bpp(gx_device *, int, int);
-
 
 /*  hp_colour_open()
  *
@@ -893,165 +879,165 @@ static int
 hp_colour_open(gx_device * pdev)
 {				/* Change the margins if necessary. */
     static const float dj_a4[4] = {
-	DESKJET_MARGINS_A4
+        DESKJET_MARGINS_A4
     };
     static const float dj_letter[4] = {
-	DESKJET_MARGINS_LETTER
+        DESKJET_MARGINS_LETTER
     };
 
     /* margins for DJ1600C from manual */
     static const float m_cdj1600[4] = {
-	0.25, 0.5, 0.25, 0.5
+        0.25, 0.5, 0.25, 0.5
     };
 
     /* margins for HP2200C */
     static const float chp2200_a4[4] = {
-	0.13, 0.46, 0.13, 0.08
+        0.13, 0.46, 0.13, 0.08
     };
     static const float chp2200_letter[4] = {
-	0.25, 0.46, 0.25, 0.08
+        0.25, 0.46, 0.25, 0.08
     };
 
     /* margins for DNJ500C */
     static const float cdnj500[4] = {
-	0.00, 0.00, 0.00, 0.00
+        0.00, 0.00, 0.00, 0.00
     };
 
     const float *m = (float *)0;
 
     /* Set up colour params if put_params has not already done so */
     if (pdev->color_info.num_components == 0) {
-	int code = cdj_set_bpp(pdev, pdev->color_info.depth,
-			       pdev->color_info.num_components);
+        int code = cdj_set_bpp(pdev, pdev->color_info.depth,
+                               pdev->color_info.num_components);
 
-	if (code < 0)
-	    return code;
+        if (code < 0)
+            return code;
     }
     /* assign printer type and set resolution dependent on printer type */
     switch (cdj850->ptype) {
     case DJ670C:
-	if (cdj850->papertype <= SPECIAL_PAPER) {	/* paper */
-	    if (cdj850->quality == DRAFT) {
-		gx_device_set_resolution(pdev, 300.0, 300.0);
-		cdj850->xscal = 0;
-		cdj850->yscal = 0;
-	    } else if (cdj850->quality == NORMAL) {
-		gx_device_set_resolution(pdev, 600.0, 300.0);
-		cdj850->xscal = 1;
-		cdj850->yscal = 0;
-	    } else {		/* quality == PRESENTATION */
-		gx_device_set_resolution(pdev, 600.0, 600.0);
-		cdj850->xscal = 1;
-		cdj850->yscal = 1;
-	    }
-	} else {		/* film */
-	    gx_device_set_resolution(pdev, 600.0, 300.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 0;
-	}
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
-	break;
+        if (cdj850->papertype <= SPECIAL_PAPER) {	/* paper */
+            if (cdj850->quality == DRAFT) {
+                gx_device_set_resolution(pdev, 300.0, 300.0);
+                cdj850->xscal = 0;
+                cdj850->yscal = 0;
+            } else if (cdj850->quality == NORMAL) {
+                gx_device_set_resolution(pdev, 600.0, 300.0);
+                cdj850->xscal = 1;
+                cdj850->yscal = 0;
+            } else {		/* quality == PRESENTATION */
+                gx_device_set_resolution(pdev, 600.0, 600.0);
+                cdj850->xscal = 1;
+                cdj850->yscal = 1;
+            }
+        } else {		/* film */
+            gx_device_set_resolution(pdev, 600.0, 300.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 0;
+        }
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
+        break;
     case DJ850C:
       if (cdj850->quality == DRAFT) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	    cdj850->xscal = 0;
-	    cdj850->yscal = 0;
-	    cdj850->intensities = 2;
-	} else if (cdj850->quality == NORMAL) {
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 1;
-	    /* only 3 intensities for normal paper */
-	    if (cdj850->papertype <= PLAIN_PAPER) {
-		cdj850->intensities = 3;
-	    }			/* else cdj850->intensities = 4 from initialization */
-	} else {		/* quality == PRESENTATION */
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 1;
-	    /* intensities = 4 from initialization */
-	}
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
-	break;
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+            cdj850->xscal = 0;
+            cdj850->yscal = 0;
+            cdj850->intensities = 2;
+        } else if (cdj850->quality == NORMAL) {
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 1;
+            /* only 3 intensities for normal paper */
+            if (cdj850->papertype <= PLAIN_PAPER) {
+                cdj850->intensities = 3;
+            }			/* else cdj850->intensities = 4 from initialization */
+        } else {		/* quality == PRESENTATION */
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 1;
+            /* intensities = 4 from initialization */
+        }
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
+        break;
     case DJ880C:
-	if (cdj850->quality == DRAFT) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	    cdj850->xscal = 0;
-	    cdj850->yscal = 0;
-	    cdj850->intensities = 2;
-	} else if (cdj850->quality == NORMAL) {
-	    gx_device_set_resolution(pdev, 600.0, 300.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 0;
-	    /* only 3 intensities for normal paper */
-	    if (cdj850->papertype <= PLAIN_PAPER) {
-	  	cdj850->intensities = 4;
-	    }			/* else cdj850->intensities = 4 from initialization */
-	} else {		/* quality == PRESENTATION */
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	    cdj850->xscal = 0;    /* color is also 600dpi in PRESENTATION mode */
-	    cdj850->yscal = 0;
-  	  cdj850->intensities = 4;
-	}
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
-	break;
+        if (cdj850->quality == DRAFT) {
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+            cdj850->xscal = 0;
+            cdj850->yscal = 0;
+            cdj850->intensities = 2;
+        } else if (cdj850->quality == NORMAL) {
+            gx_device_set_resolution(pdev, 600.0, 300.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 0;
+            /* only 3 intensities for normal paper */
+            if (cdj850->papertype <= PLAIN_PAPER) {
+                cdj850->intensities = 4;
+            }			/* else cdj850->intensities = 4 from initialization */
+        } else {		/* quality == PRESENTATION */
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+            cdj850->xscal = 0;    /* color is also 600dpi in PRESENTATION mode */
+            cdj850->yscal = 0;
+          cdj850->intensities = 4;
+        }
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
+        break;
     case DJ890C:
-	if (cdj850->quality == DRAFT) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	    cdj850->xscal = 0;
-	    cdj850->yscal = 0;
-	    cdj850->intensities = 2;
-	} else if (cdj850->quality == NORMAL) {
-	    gx_device_set_resolution(pdev, 600.0, 300.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 0;
-	    /* only 3 intensities for normal paper */
-	    if (cdj850->papertype <= PLAIN_PAPER) {
-		cdj850->intensities = 3;
-	    }			/* else cdj850->intensities = 4 from initialization */
-	} else {		/* quality == PRESENTATION */
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	    cdj850->xscal = 1;
-	    cdj850->yscal = 1;
-	    /* intensities = 4 from initialization */
-	}
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
-	break;
+        if (cdj850->quality == DRAFT) {
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+            cdj850->xscal = 0;
+            cdj850->yscal = 0;
+            cdj850->intensities = 2;
+        } else if (cdj850->quality == NORMAL) {
+            gx_device_set_resolution(pdev, 600.0, 300.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 0;
+            /* only 3 intensities for normal paper */
+            if (cdj850->papertype <= PLAIN_PAPER) {
+                cdj850->intensities = 3;
+            }			/* else cdj850->intensities = 4 from initialization */
+        } else {		/* quality == PRESENTATION */
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+            cdj850->xscal = 1;
+            cdj850->yscal = 1;
+            /* intensities = 4 from initialization */
+        }
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? dj_a4 : dj_letter);
+        break;
     case DJ1600C:
-	gx_device_set_resolution(pdev, 300.0, 300.0);
-	m = m_cdj1600;
-	break;
+        gx_device_set_resolution(pdev, 300.0, 300.0);
+        m = m_cdj1600;
+        break;
     /* HP2200 supports 300dpi draft/normal and 600dpi normal/best
        for all media types.  For normal, we are only using 300dpi here*/
     case HP2200C:
         cdj850->xscal = 0; /* unused */
         cdj850->yscal = 0; /* unused */
         cdj850->intensities = 0; /* unused */
-	if (cdj850->quality == DRAFT) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	} else if (cdj850->quality == NORMAL) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	} else {  /* quality == PRESENTATION */
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	}
-	m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? chp2200_a4 : chp2200_letter);
-	break;
+        if (cdj850->quality == DRAFT) {
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+        } else if (cdj850->quality == NORMAL) {
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+        } else {  /* quality == PRESENTATION */
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+        }
+        m = (gdev_pcl_paper_size(pdev) == PAPER_SIZE_A4 ? chp2200_a4 : chp2200_letter);
+        break;
     /* DNJ500 supports 300dpi and 600dpi with any combinations */
     case DNJ500C:
         cdj850->xscal = 0; /* unused */
         cdj850->yscal = 0; /* unused */
         cdj850->intensities = 0; /* unused */
-	if (cdj850->quality == DRAFT) {
-	    gx_device_set_resolution(pdev, 300.0, 300.0);
-	} else if (cdj850->quality == NORMAL) {
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	} else {  /* quality == PRESENTATION */
-	    gx_device_set_resolution(pdev, 600.0, 600.0);
-	}
-	m = cdnj500;
-	break;
+        if (cdj850->quality == DRAFT) {
+            gx_device_set_resolution(pdev, 300.0, 300.0);
+        } else if (cdj850->quality == NORMAL) {
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+        } else {  /* quality == PRESENTATION */
+            gx_device_set_resolution(pdev, 600.0, 600.0);
+        }
+        m = cdnj500;
+        break;
     default:
-	assert(0);
+        assert(0);
     }
     gx_device_set_margins(pdev, m, true);
     return gdev_prn_open(pdev);
@@ -1064,22 +1050,22 @@ cdj850_get_params(gx_device * pdev, gs_param_list * plist)
     int code = gdev_prn_get_params(pdev, plist);
 
     if (code < 0 ||
-	(code = param_write_int(plist, "Quality", &cdj850->quality)) < 0 ||
-	(code = param_write_int(plist, "Papertype", &cdj850->papertype)) < 0 ||
-	(code = param_write_float(plist, "MasterGamma", &cdj850->gammavalc))
-	< 0 ||
-	(code = param_write_float(plist, "GammaValC", &cdj850->gammavalc)) <
-	0 ||
-	(code = param_write_float(plist, "GammaValM", &cdj850->gammavalm)) <
-	0 ||
-	(code = param_write_float(plist, "GammaValY", &cdj850->gammavaly)) <
-	0 ||
-	(code = param_write_float(plist, "GammaValK", &cdj850->gammavalk)) <
-	0 ||
-	(code = param_write_float(plist, "BlackCorrect",
-				  &cdj850->blackcorrect)) < 0
-	)
-	return code;
+        (code = param_write_int(plist, "Quality", &cdj850->quality)) < 0 ||
+        (code = param_write_int(plist, "Papertype", &cdj850->papertype)) < 0 ||
+        (code = param_write_float(plist, "MasterGamma", &cdj850->gammavalc))
+        < 0 ||
+        (code = param_write_float(plist, "GammaValC", &cdj850->gammavalc)) <
+        0 ||
+        (code = param_write_float(plist, "GammaValM", &cdj850->gammavalm)) <
+        0 ||
+        (code = param_write_float(plist, "GammaValY", &cdj850->gammavaly)) <
+        0 ||
+        (code = param_write_float(plist, "GammaValK", &cdj850->gammavalk)) <
+        0 ||
+        (code = param_write_float(plist, "BlackCorrect",
+                                  &cdj850->blackcorrect)) < 0
+        )
+        return code;
 
     return code;
 }
@@ -1107,14 +1093,13 @@ cdj850_put_params(gx_device * pdev, gs_param_list * plist)
     code = cdj_put_param_float(plist, "GammaValY", &gammavaly, 0.0, 9.0, code);
     code = cdj_put_param_float(plist, "GammaValK", &gammavalk, 0.0, 9.0, code);
     code = cdj_put_param_float(plist, "BlackCorrect", &blackcorrect, 0.0,
-			       9.0, code);
-
+                               9.0, code);
 
     if (code < 0)
-	return code;
+        return code;
     code = cdj_put_param_bpp(pdev, plist, bpp, bpp, 0);
     if (code < 0)
-	return code;
+        return code;
 
     cdj850->quality = quality;
     cdj850->papertype = papertype;
@@ -1130,7 +1115,6 @@ cdj850_put_params(gx_device * pdev, gs_param_list * plist)
 /* ------ Internal routines ------ */
 /* The DeskJet850C can compress (mode 9) */
 
-
 /* Some convenient shorthand .. */
 #define x_dpi        (pdev->x_pixels_per_inch)
 #define y_dpi        (pdev->y_pixels_per_inch)
@@ -1141,46 +1125,46 @@ cdj850_put_params(gx_device * pdev, gs_param_list * plist)
 /* internal functions */
 static void
      FSDlinebw(int scan, int plane_size,
-	       struct error_val_field *error_values,
-	       byte * kP,
-	       int n, int *ep, byte * dp);
+               struct error_val_field *error_values,
+               byte * kP,
+               int n, int *ep, byte * dp);
 static void
      FSDlinec2(int scan, int plane_size,
-	       struct error_val_field *error_values,
-	       byte * cPa, byte * mPa, byte * yPa, int n,
-	       byte * dp, int *ep);
+               struct error_val_field *error_values,
+               byte * cPa, byte * mPa, byte * yPa, int n,
+               byte * dp, int *ep);
 static void
      FSDlinec3(int scan, int plane_size,
-	       struct error_val_field *error_values,
-	       byte * cPa, byte * mPa, byte * yPa,
-	       byte * cPb, byte * mPb, byte * yPb,
-	       int n, byte * dp, int *ep);
+               struct error_val_field *error_values,
+               byte * cPa, byte * mPa, byte * yPa,
+               byte * cPb, byte * mPb, byte * yPb,
+               int n, byte * dp, int *ep);
 static void
      FSDlinec4(int scan, int plane_size,
-	       struct error_val_field *error_values,
-	       byte * cPa, byte * mPa, byte * yPa,
-	       byte * cPb, byte * mPb, byte * yPb,
-	       int n, byte * dp, int *ep);
+               struct error_val_field *error_values,
+               byte * cPa, byte * mPa, byte * yPa,
+               byte * cPb, byte * mPb, byte * yPb,
+               int n, byte * dp, int *ep);
 static void
      init_error_buffer(struct misc_struct *misc_vars,
-		       struct ptr_arrays *data_ptrs);
+                       struct ptr_arrays *data_ptrs);
 static void
      do_floyd_steinberg(int scan, int cscan, int plane_size,
-			int plane_size_c, int n,
-			struct ptr_arrays *data_ptrs,
-			gx_device_printer * pdev,
-			struct error_val_field *error_values);
+                        int plane_size_c, int n,
+                        struct ptr_arrays *data_ptrs,
+                        gx_device_printer * pdev,
+                        struct error_val_field *error_values);
 static int
     do_gcr(int bytecount, byte * inbyte, const byte * kvalues,
-	   const byte * cvalues, const byte * mvalues,
-	   const byte * yvalues, const int *kcorrect,
-	   word * inword);
+           const byte * cvalues, const byte * mvalues,
+           const byte * yvalues, const int *kcorrect,
+           word * inword);
 
 /* UNUSED
  *static int
- *test_scan (P4(int size, 
+ *test_scan (P4(int size,
  *            byte * current,
- *            byte * last, 
+ *            byte * last,
  *            byte * control));
  *static void
  *save_color_data(P3(int size,
@@ -1190,11 +1174,11 @@ static int
  */
 static void
      send_scan_lines(gx_device_printer * pdev,
-		     struct ptr_arrays *data_ptrs,
-		     struct misc_struct *misc_vars,
-		     struct error_val_field *error_values,
-		     const Gamma *gamma,
-		     FILE * prn_stream);
+                     struct ptr_arrays *data_ptrs,
+                     struct misc_struct *misc_vars,
+                     struct error_val_field *error_values,
+                     const Gamma *gamma,
+                     FILE * prn_stream);
 static void
      do_gamma(float mastergamma, float gammaval, byte * values);
 static void
@@ -1202,22 +1186,21 @@ static void
 
 static void
      init_data_structure(gx_device_printer * pdev,
-			 struct ptr_arrays *data_ptrs,
-			 struct misc_struct *misc_vars);
+                         struct ptr_arrays *data_ptrs,
+                         struct misc_struct *misc_vars);
 static void
      calculate_memory_size(gx_device_printer * pdev,
-			   struct misc_struct *misc_vars);
-
+                           struct misc_struct *misc_vars);
 
 static void
 assign_dpi(int dpi, byte * msb)
 {
     if (dpi == 600) {
-	msb[0] = 0x02;
-	msb[1] = 0x58;
+        msb[0] = 0x02;
+        msb[1] = 0x58;
     } else {
-	msb[0] = 0x01;
-	msb[1] = 0x2c;
+        msb[0] = 0x01;
+        msb[1] = 0x2c;
     }
 }
 
@@ -1271,9 +1254,9 @@ cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
 /*      gamma.k[i] = (int)(sqrt((float)i)/16);*/
     /* if mastergamma, don't use the built in functions */
 /*    if (cdj850->mastergamma > 1.0) {*/
-	/* prepare the bw lookup table */
+        /* prepare the bw lookup table */
 /*	do_gamma(cdj850->mastergamma, cdj850->gammavalk, gamma.k);*/
-	/* prepare the color lookup table */
+        /* prepare the color lookup table */
     for (i=0; i<256; i++)
       gamma.c[i] = (int)(((float)(i*i*i))/(256.0*256.0));
 /*	do_gamma(cdj850->mastergamma, cdj850->gammavalc, gamma.c);*/
@@ -1304,11 +1287,11 @@ cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
        storagee contains the errors from b/w fs-ditherng */
 
     data_ptrs.storage = (ulong *) gs_malloc(gs_lib_ctx_get_non_gc_memory_t(), misc_vars.storage_size_words, W,
-					    "cdj850_print_page");
+                                            "cdj850_print_page");
 
     /* if we can't allocate working area */
     if (data_ptrs.storage == 0) {
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     }
     /* Initialise the needed pointers */
     init_data_structure(pdev, &data_ptrs, &misc_vars);
@@ -1318,14 +1301,14 @@ cdj850_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
     /* Send each scan line in turn */
     send_scan_lines(pdev, &data_ptrs, &misc_vars,
-		    &error_values, &gamma, prn_stream);
+                    &error_values, &gamma, prn_stream);
 
     /* terminate page and eject paper */
     (*cdj850->terminate_page) (pdev, prn_stream);
 
     /* Free Memory */
     gs_free(gs_lib_ctx_get_non_gc_memory_t(), (char *)data_ptrs.storage, misc_vars.storage_size_words, W,
-	    "hp850_print_page");
+            "hp850_print_page");
 
     return 0;
 }
@@ -1369,7 +1352,7 @@ getPixel(byte* pixAddress, unsigned int pixelOffset)
 
     /* BGRBGR format */
     /*
-    return (((unsigned int)(*(pixAddress+2)) << 16) +	
+    return (((unsigned int)(*(pixAddress+2)) << 16) +
             ((unsigned int)(*(pixAddress+1)) << 8 ) +
             ((*(pixAddress)) & kWhite));
     */
@@ -1464,8 +1447,8 @@ Mode10(unsigned int planeWidthInPixels,
             curPixel++;
         }
         seedRowPixelCopyCount = curPixel - seedRowPixelCopyCount;
- 	
-	    /* On last pixel of row. RLE could also leave us on the last pixel of the row
+
+            /* On last pixel of row. RLE could also leave us on the last pixel of the row
            from the previous iteration. */
         if (curPixel == lastPixel)
         {
@@ -1534,7 +1517,7 @@ Mode10(unsigned int planeWidthInPixels,
             if (0 == replacementCount) /* no RLE so it's a literal by default.*/
             {
                 unsigned int tempPixel = getPixel(curPtr, curPixel);
-		        unsigned int tempPixel2 = 0;
+                        unsigned int tempPixel2 = 0;
                 CMDByte = eLiteral;
 
                 if (cachedColor == tempPixel)
@@ -1743,19 +1726,19 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int width_in_pixels = pdev->width;
     int width_in_bytes = width_in_pixels * 3; /* assume 24 bits (3 bytes per pixel) */
     byte *lbuf = gs_alloc_bytes(mem, width_in_bytes,
-				"(input)chp2200_print_page");
+                                "(input)chp2200_print_page");
     byte *lseedbuf = gs_alloc_bytes(mem, width_in_bytes,
-				"(seed)chp2200_print_page");
+                                "(seed)chp2200_print_page");
     /* allocate twice the input size for worse case compressed output*/
-    byte *loutputbuf = gs_alloc_bytes(mem, width_in_bytes*2,	
-				"(output)chp2200_print_page");
+    byte *loutputbuf = gs_alloc_bytes(mem, width_in_bytes*2,
+                                "(output)chp2200_print_page");
 
     int lnum = 0;
     int iEmptyRows = 0;
     byte *data = lbuf;
 
     if ((lbuf == 0) || (lseedbuf == 0) || (loutputbuf == 0))
-	    return_error(gs_error_VMerror);
+            return_error(gs_error_VMerror);
 
     /* Start Raster mode */
     (*cdj850->start_raster_mode) (pdev,
@@ -1772,17 +1755,17 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
     {
         int result = -1;
 
-    	/*gdev_prn_get_bits(pdev, lnum, lbuf, &data);*/
+        /*gdev_prn_get_bits(pdev, lnum, lbuf, &data);*/
         result = gdev_prn_copy_scan_lines(pdev, lnum, data, width_in_bytes);
 
         if ((result == 1) && IsScanlineDirty(data, width_in_bytes))
         {
-	        unsigned int OutputLen = 0;
+                unsigned int OutputLen = 0;
 
             if (iEmptyRows)
             {
-             	/* send vertical Y move */
-	        	fprintf(prn_stream, "%dy", iEmptyRows);
+                /* send vertical Y move */
+                        fprintf(prn_stream, "%dy", iEmptyRows);
 
                 /* reset empty row count */
                 iEmptyRows = 0;
@@ -1799,14 +1782,14 @@ chp2200_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (OutputLen)
             {
                 fprintf(prn_stream, "%dw", OutputLen);
-        		fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
+                        fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
 
                 /* save the current scanline as the seed for the next scanline*/
                 memcpy((void*)lseedbuf, (const void*)data, width_in_bytes);
             }
             else
             {
-		        fputs("0w", prn_stream);
+                        fputs("0w", prn_stream);
             }
         }
         else
@@ -1848,12 +1831,12 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int width_in_pixels = pdev->width;
     int width_in_bytes = width_in_pixels * 3; /* assume 24 bits (3 bytes per pixel) */
     byte *lbuf = gs_alloc_bytes(mem, width_in_bytes,
-				"(input)cdnj500_print_page");
+                                "(input)cdnj500_print_page");
     byte *lseedbuf = gs_alloc_bytes(mem, width_in_bytes,
-				"(seed)cdnj500_print_page");
+                                "(seed)cdnj500_print_page");
     /* allocate twice the input size for worse case compressed output*/
-    byte *loutputbuf = gs_alloc_bytes(mem, width_in_bytes*2,	
-				"(output)cdnj500_print_page");
+    byte *loutputbuf = gs_alloc_bytes(mem, width_in_bytes*2,
+                                "(output)cdnj500_print_page");
 
     int lnum = 0;
     int iEmptyRows = 0;
@@ -1862,7 +1845,7 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *data = lbuf;
 
     if ((lbuf == 0) || (lseedbuf == 0) || (loutputbuf == 0))
-	    return_error(gs_error_VMerror);
+            return_error(gs_error_VMerror);
 
     /* Start Raster mode */
     (*cdj850->start_raster_mode) (pdev,
@@ -1879,7 +1862,7 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
     {
         int result = -1;
 
-    	/*gdev_prn_get_bits(pdev, lnum, lbuf, &data);*/
+        /*gdev_prn_get_bits(pdev, lnum, lbuf, &data);*/
         result = gdev_prn_copy_scan_lines(pdev, lnum, data, width_in_bytes);
 
         if ((result == 1) && IsScanlineDirty(data, width_in_bytes))
@@ -1906,7 +1889,7 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
             {
                 /* Send CRD */
                 fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
-            
+
                 /* Raster mode */
                 fputs("\033*r1A", prn_stream);
 
@@ -1920,8 +1903,8 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
             if (iEmptyRows)
             {
-             	/* send vertical Y move */
-	        	fprintf(prn_stream, "%dy", iEmptyRows);
+                /* send vertical Y move */
+                        fprintf(prn_stream, "%dy", iEmptyRows);
 
                 /* reset empty row count */
                 iEmptyRows = 0;
@@ -1938,14 +1921,14 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
             if (OutputLen)
             {
                 fprintf(prn_stream, "%dw", OutputLen);
-        		fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
+                        fwrite(loutputbuf, sizeof(byte), OutputLen, prn_stream);
 
                 /* save the current scanline as the seed for the next scanline*/
                 memcpy((void*)lseedbuf, (const void*)data, width_in_bytes);
             }
             else
             {
-		        fputs("0w", prn_stream);
+                        fputs("0w", prn_stream);
             }
 
             /* Content printing already started */
@@ -1971,14 +1954,13 @@ cdnj500_print_page(gx_device_printer * pdev, FILE * prn_stream)
     return 0;
 }
 
-
 #define odd(i) ((i & 01) != 0)
 
 static int
 GetScanLine(gx_device_printer * pdev, int *lnum,
-	    struct ptr_arrays *data_ptrs,
-	    struct misc_struct *misc_vars,
-	    word rmask)
+            struct ptr_arrays *data_ptrs,
+            struct misc_struct *misc_vars,
+            word rmask)
 {
     word *data_words = (word *) data_ptrs->data[misc_vars->scan];
     register word *end_data = data_words + misc_vars->line_size_words;
@@ -1994,7 +1976,7 @@ GetScanLine(gx_device_printer * pdev, int *lnum,
 
     /* Remove trailing 0s. */
     while (end_data > data_words && end_data[-1] == 0)
-	end_data--;
+        end_data--;
 
     return end_data - data_words;
 }
@@ -2002,11 +1984,11 @@ GetScanLine(gx_device_printer * pdev, int *lnum,
 /* Send the scan lines to the printer */
 static void
 send_scan_lines(gx_device_printer * pdev,
-		struct ptr_arrays *data_ptrs,
-		struct misc_struct *misc_vars,
-		struct error_val_field *error_values,
-		const Gamma *gamma,
-		FILE * prn_stream)
+                struct ptr_arrays *data_ptrs,
+                struct misc_struct *misc_vars,
+                struct error_val_field *error_values,
+                const Gamma *gamma,
+                FILE * prn_stream)
 {
     int lnum, lend, llen;
     int num_blank_lines = 0;
@@ -2017,7 +1999,7 @@ send_scan_lines(gx_device_printer * pdev,
     lend = pdev->height - (dev_t_margin(pdev) + dev_b_margin(pdev)) * y_dpi;
 
     error_values->c = error_values->m = error_values->y =
-	error_values->k = 0;
+        error_values->k = 0;
 
     /* init the error buffer */
     init_error_buffer(misc_vars, data_ptrs);
@@ -2026,58 +2008,57 @@ send_scan_lines(gx_device_printer * pdev,
     lnum = -1;
     llen = GetScanLine(pdev, &lnum, data_ptrs, misc_vars, rmask);
     while (lnum < lend) {
-	num_blank_lines = 0;
-	while (lnum < lend && llen == 0) {
-	    ++num_blank_lines;
-	    llen = GetScanLine(pdev, &lnum, data_ptrs, misc_vars, rmask);
-	}
-	if (lnum >= lend) {
-	    break;
-	}
-	/* Skip blank lines if any */
-	if (num_blank_lines > 0) {
-	    fprintf(prn_stream, "\033*b%dY", num_blank_lines / (cdj850->yscal + 1));
-	    memset(data_ptrs->plane_data[0][0], 0,
-		   (misc_vars->plane_size * 2 * misc_vars->num_comps));
-	    memset(data_ptrs->plane_data_c[0][0], 0,
-		   (misc_vars->plane_size_c * 2 * misc_vars->num_comps));
+        num_blank_lines = 0;
+        while (lnum < lend && llen == 0) {
+            ++num_blank_lines;
+            llen = GetScanLine(pdev, &lnum, data_ptrs, misc_vars, rmask);
+        }
+        if (lnum >= lend) {
+            break;
+        }
+        /* Skip blank lines if any */
+        if (num_blank_lines > 0) {
+            fprintf(prn_stream, "\033*b%dY", num_blank_lines / (cdj850->yscal + 1));
+            memset(data_ptrs->plane_data[0][0], 0,
+                   (misc_vars->plane_size * 2 * misc_vars->num_comps));
+            memset(data_ptrs->plane_data_c[0][0], 0,
+                   (misc_vars->plane_size_c * 2 * misc_vars->num_comps));
 
-	}
-	/* all blank lines printed, now for the non-blank lines */
-	if (cdj850->yscal && odd(lnum)) {
-	    /* output a blank black plane for odd lines */
-	    fprintf(prn_stream, "\033*b0V");
-	}
-	/* now output all non blank lines */
-	while (lnum < lend && llen != 0) {
-	    misc_vars->is_color_data = 0;	/* maybe we have color ? */
-	    (*cdj850->print_non_blank_lines) (pdev, data_ptrs, misc_vars,
-					      error_values, gamma, prn_stream);
-	    llen = GetScanLine(pdev, &lnum, data_ptrs, misc_vars, rmask);
-	}
-	if (cdj850->yscal && odd(lnum)) {	/* output empty line for odd lines */
-	    (*cdj850->print_non_blank_lines) (pdev, data_ptrs, misc_vars,
-					      error_values, gamma, prn_stream);
-	}
-	/* the current line is empty => run the next iteration */
+        }
+        /* all blank lines printed, now for the non-blank lines */
+        if (cdj850->yscal && odd(lnum)) {
+            /* output a blank black plane for odd lines */
+            fprintf(prn_stream, "\033*b0V");
+        }
+        /* now output all non blank lines */
+        while (lnum < lend && llen != 0) {
+            misc_vars->is_color_data = 0;	/* maybe we have color ? */
+            (*cdj850->print_non_blank_lines) (pdev, data_ptrs, misc_vars,
+                                              error_values, gamma, prn_stream);
+            llen = GetScanLine(pdev, &lnum, data_ptrs, misc_vars, rmask);
+        }
+        if (cdj850->yscal && odd(lnum)) {	/* output empty line for odd lines */
+            (*cdj850->print_non_blank_lines) (pdev, data_ptrs, misc_vars,
+                                              error_values, gamma, prn_stream);
+        }
+        /* the current line is empty => run the next iteration */
     }
 }
 
 /* print_line compresses (mode 9) and outputs one plane */
 static void
 print_c9plane(FILE * prn_stream, char plane_code, int plane_size,
-	      const byte * curr, const byte * prev, byte * out_data)
+              const byte * curr, const byte * prev, byte * out_data)
 {
     /* Compress the output data */
     int out_count = gdev_pcl_mode9compress(plane_size, curr, prev, out_data);
 
     /* and output the data */
-	fprintf(prn_stream, "%d%c", out_count, plane_code);
+        fprintf(prn_stream, "%d%c", out_count, plane_code);
     if (out_count > 0) {
-	fwrite(out_data, sizeof(byte), out_count, prn_stream);
+        fwrite(out_data, sizeof(byte), out_count, prn_stream);
     }
 }
-
 
 /*  print_c2plane()
  *
@@ -2102,7 +2083,6 @@ print_c2plane(FILE *prn_stream, char plane_code, int plane_size,
     fwrite(out_data, sizeof(byte), out_count, prn_stream);
 }
 
-
 /*  print_c0plane()
  *
  *  Outputs a plane with no compression.
@@ -2116,15 +2096,14 @@ print_c0plane(FILE *prn_stream, char plane_code, int plane_size,
     fwrite(curr, sizeof(byte), plane_size, prn_stream);
 }
 
-
 /* Printing non-blank lines */
 static void
 cdj850_print_non_blank_lines(gx_device_printer * pdev,
-			     struct ptr_arrays *data_ptrs,
-			     struct misc_struct *misc_vars,
-			     struct error_val_field *error_values,
-			     const Gamma *gamma,
-			     FILE * prn_stream)
+                             struct ptr_arrays *data_ptrs,
+                             struct misc_struct *misc_vars,
+                             struct error_val_field *error_values,
+                             const Gamma *gamma,
+                             FILE * prn_stream)
 {
     static const char *const plane_code[2] =
     {"wvvv", "vvvv"};
@@ -2140,57 +2119,57 @@ cdj850_print_non_blank_lines(gx_device_printer * pdev,
        might generate black */
 
     misc_vars->is_color_data =
-	do_gcr(misc_vars->databuff_size, data_ptrs->data[misc_vars->scan],
-	       gamma->k, gamma->c, gamma->m, gamma->y, gamma->correct,
-	       (word *) data_ptrs->data[misc_vars->scan]);
+        do_gcr(misc_vars->databuff_size, data_ptrs->data[misc_vars->scan],
+               gamma->k, gamma->c, gamma->m, gamma->y, gamma->correct,
+               (word *) data_ptrs->data[misc_vars->scan]);
 
     /* dithering the black-plane */
     FSDlinebw(misc_vars->scan, misc_vars->plane_size,
-	      error_values, kP, misc_vars->num_comps, ep, dp);
+              error_values, kP, misc_vars->num_comps, ep, dp);
 
     /* output the black plane */
     print_c9plane(prn_stream, 'v', misc_vars->plane_size,
-		  data_ptrs->plane_data[misc_vars->scan][3],
-		  data_ptrs->plane_data[1 - misc_vars->scan][3],
-		  data_ptrs->out_data);
+                  data_ptrs->plane_data[misc_vars->scan][3],
+                  data_ptrs->plane_data[1 - misc_vars->scan][3],
+                  data_ptrs->out_data);
 
     /* since color resolution is only half of the b/w-resolution,
        we only output every second row */
     if (!cdj850->yscal || misc_vars->is_two_pass) {
 
-	int plane_size_c = (*rescale_color_plane[cdj850->xscal][cdj850->yscal])
-	(misc_vars->databuff_size,
-	 data_ptrs->data[misc_vars->scan],
-	 data_ptrs->data[!misc_vars->scan],
-	 data_ptrs->data_c[misc_vars->cscan]) / misc_vars->storage_bpp;
+        int plane_size_c = (*rescale_color_plane[cdj850->xscal][cdj850->yscal])
+        (misc_vars->databuff_size,
+         data_ptrs->data[misc_vars->scan],
+         data_ptrs->data[!misc_vars->scan],
+         data_ptrs->data_c[misc_vars->cscan]) / misc_vars->storage_bpp;
 
-	/* dither the color planes */
-	do_floyd_steinberg(misc_vars->scan, misc_vars->cscan,
-			   misc_vars->plane_size, plane_size_c,
-			   misc_vars->num_comps, data_ptrs, pdev, error_values);
+        /* dither the color planes */
+        do_floyd_steinberg(misc_vars->scan, misc_vars->cscan,
+                           misc_vars->plane_size, plane_size_c,
+                           misc_vars->num_comps, data_ptrs, pdev, error_values);
 
-	/* Transfer raster graphics in the order C, M, Y, that is
-	   planes 2,1,0 */
-	for (i = misc_vars->num_comps - 2; i >= 0; i--) {
+        /* Transfer raster graphics in the order C, M, Y, that is
+           planes 2,1,0 */
+        for (i = misc_vars->num_comps - 2; i >= 0; i--) {
 
-	    /* output the lower color planes */
-	    print_c9plane(prn_stream, plane_code[cdj850->intensities > 2][i],
-			  plane_size_c,
-			  data_ptrs->plane_data_c[misc_vars->cscan][i],
-			  data_ptrs->plane_data_c[1 - misc_vars->cscan][i],
-			  data_ptrs->out_data);
+            /* output the lower color planes */
+            print_c9plane(prn_stream, plane_code[cdj850->intensities > 2][i],
+                          plane_size_c,
+                          data_ptrs->plane_data_c[misc_vars->cscan][i],
+                          data_ptrs->plane_data_c[1 - misc_vars->cscan][i],
+                          data_ptrs->out_data);
 
-	    /* output the upper color planes */
-	    if (cdj850->intensities > 2) {
-		print_c9plane(prn_stream, plane_code[0][i], plane_size_c,
-			      data_ptrs->plane_data_c[misc_vars->cscan][i + 4],
-			      data_ptrs->plane_data_c[1 -
-									    misc_vars->cscan][i
-									    + 4],
-			      data_ptrs->out_data);
-	    }			/* end cdj850->intensities > 2 */
-	}			/* End For i = num_comps */
-	misc_vars->cscan = 1 - misc_vars->cscan;
+            /* output the upper color planes */
+            if (cdj850->intensities > 2) {
+                print_c9plane(prn_stream, plane_code[0][i], plane_size_c,
+                              data_ptrs->plane_data_c[misc_vars->cscan][i + 4],
+                              data_ptrs->plane_data_c[1 -
+                                                                            misc_vars->cscan][i
+                                                                            + 4],
+                              data_ptrs->out_data);
+            }			/* end cdj850->intensities > 2 */
+        }			/* End For i = num_comps */
+        misc_vars->cscan = 1 - misc_vars->cscan;
     }				/* End of is_two_pass */
     return;
 }
@@ -2198,11 +2177,11 @@ cdj850_print_non_blank_lines(gx_device_printer * pdev,
 /* Printing non-blank lines */
 static void
 cdj880_print_non_blank_lines(gx_device_printer * pdev,
-			     struct ptr_arrays *data_ptrs,
-			     struct misc_struct *misc_vars,
-			     struct error_val_field *error_values,
-			     const Gamma *gamma,
-			     FILE * prn_stream)
+                             struct ptr_arrays *data_ptrs,
+                             struct misc_struct *misc_vars,
+                             struct error_val_field *error_values,
+                             const Gamma *gamma,
+                             FILE * prn_stream)
 {
     static const char *const plane_code[2] =
     {"WVVV", "VVVV"};
@@ -2218,61 +2197,61 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
        might generate black */
 
     misc_vars->is_color_data =
-	do_gcr(misc_vars->databuff_size, data_ptrs->data[misc_vars->scan],
-	       gamma->k, gamma->c, gamma->m, gamma->y, gamma->correct,
-	       (word *) data_ptrs->data[misc_vars->scan]);
+        do_gcr(misc_vars->databuff_size, data_ptrs->data[misc_vars->scan],
+               gamma->k, gamma->c, gamma->m, gamma->y, gamma->correct,
+               (word *) data_ptrs->data[misc_vars->scan]);
 
     /* dithering the black-plane */
     FSDlinebw(misc_vars->scan, misc_vars->plane_size,
-	      error_values, kP, misc_vars->num_comps, ep, dp);
+              error_values, kP, misc_vars->num_comps, ep, dp);
 
     /* output the black plane */
     fputs("\033*b", prn_stream);
     print_c2plane(prn_stream, 'V', misc_vars->plane_size,
-		  data_ptrs->plane_data[misc_vars->scan][3],
+                  data_ptrs->plane_data[misc_vars->scan][3],
 /*		  data_ptrs->plane_data[1 - misc_vars->scan][3],*/
-		  data_ptrs->out_data);
+                  data_ptrs->out_data);
 /*    fputs("\033*b0V", prn_stream);*/
 
     /* since color resolution is only half of the b/w-resolution,
        we only output every second row */
     if (!cdj850->yscal || misc_vars->is_two_pass) {
 
-	int plane_size_c = (*rescale_color_plane[cdj850->xscal][cdj850->yscal])
-	(misc_vars->databuff_size,
-	 data_ptrs->data[misc_vars->scan],
-	 data_ptrs->data[!misc_vars->scan],
-	 data_ptrs->data_c[misc_vars->cscan]) / misc_vars->storage_bpp;
+        int plane_size_c = (*rescale_color_plane[cdj850->xscal][cdj850->yscal])
+        (misc_vars->databuff_size,
+         data_ptrs->data[misc_vars->scan],
+         data_ptrs->data[!misc_vars->scan],
+         data_ptrs->data_c[misc_vars->cscan]) / misc_vars->storage_bpp;
 
-	/* dither the color planes */
-	do_floyd_steinberg(misc_vars->scan, misc_vars->cscan,
-			   misc_vars->plane_size, plane_size_c,
-			   misc_vars->num_comps, data_ptrs, pdev, error_values);
+        /* dither the color planes */
+        do_floyd_steinberg(misc_vars->scan, misc_vars->cscan,
+                           misc_vars->plane_size, plane_size_c,
+                           misc_vars->num_comps, data_ptrs, pdev, error_values);
 
-	/* Transfer raster graphics in the order C, M, Y, that is
-	   planes 2,1,0 */
-	for (i = misc_vars->num_comps - 2; i >= 0; i--) {
+        /* Transfer raster graphics in the order C, M, Y, that is
+           planes 2,1,0 */
+        for (i = misc_vars->num_comps - 2; i >= 0; i--) {
 
-	    /* output the lower color planes */
+            /* output the lower color planes */
       fputs("\033*b", prn_stream);
-	    print_c2plane(prn_stream, plane_code[cdj850->intensities > 2][i],
-			  plane_size_c,
-			  data_ptrs->plane_data_c[misc_vars->cscan][i],
+            print_c2plane(prn_stream, plane_code[cdj850->intensities > 2][i],
+                          plane_size_c,
+                          data_ptrs->plane_data_c[misc_vars->cscan][i],
 /*			  data_ptrs->plane_data_c[1 - misc_vars->cscan][i],*/
-			  data_ptrs->out_data);
+                          data_ptrs->out_data);
 
-	    /* output the upper color planes */
-	    if (cdj850->intensities > 2) {
+            /* output the upper color planes */
+            if (cdj850->intensities > 2) {
     fputs("\033*b", prn_stream);
-		print_c2plane(prn_stream, plane_code[0][i], plane_size_c,
-			      data_ptrs->plane_data_c[misc_vars->cscan][i + 4],
+                print_c2plane(prn_stream, plane_code[0][i], plane_size_c,
+                              data_ptrs->plane_data_c[misc_vars->cscan][i + 4],
 /*			      data_ptrs->plane_data_c[1 -
-						    misc_vars->cscan][i
-						    + 4],*/
-			      data_ptrs->out_data);
-	    }			/* end cdj850->intensities > 2 */
-	}			/* End For i = num_comps */
-	misc_vars->cscan = 1 - misc_vars->cscan;
+                                                    misc_vars->cscan][i
+                                                    + 4],*/
+                              data_ptrs->out_data);
+            }			/* end cdj850->intensities > 2 */
+        }			/* End For i = num_comps */
+        misc_vars->cscan = 1 - misc_vars->cscan;
     }				/* End of is_two_pass */
     return;
 }
@@ -2281,10 +2260,10 @@ cdj880_print_non_blank_lines(gx_device_printer * pdev,
    somewhat clumsy */
 static void
 do_floyd_steinberg(int scan, int cscan, int plane_size,
-		   int plane_size_c, int n,
-		   struct ptr_arrays *data_ptrs,
-		   gx_device_printer * pdev,
-		   struct error_val_field *error_values)
+                   int plane_size_c, int n,
+                   struct ptr_arrays *data_ptrs,
+                   gx_device_printer * pdev,
+                   struct error_val_field *error_values)
 {
     /* the color pointers */
     byte *cPa, *mPa, *yPa, *cPb, *mPb, *yPb;
@@ -2312,20 +2291,20 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
     ep = data_ptrs->errors[scan];
 
     switch (cdj850->intensities) {
-	case 2:
-	FSDlinec2(cscan, plane_size_c, error_values,
-		  cPa, mPa, yPa, n, dpc, epc);
-	break;
-	case 3:
-	FSDlinec3(cscan, plane_size_c, error_values,
-		  cPa, mPa, yPa, cPb, mPb, yPb, n, dpc, epc);
-	break;
-	case 4:
-	FSDlinec4(cscan, plane_size_c, error_values,
-		  cPa, mPa, yPa, cPb, mPb, yPb, n, dpc, epc);
-	break;
-	default:
-	assert(0);
+        case 2:
+        FSDlinec2(cscan, plane_size_c, error_values,
+                  cPa, mPa, yPa, n, dpc, epc);
+        break;
+        case 3:
+        FSDlinec3(cscan, plane_size_c, error_values,
+                  cPa, mPa, yPa, cPb, mPb, yPb, n, dpc, epc);
+        break;
+        case 4:
+        FSDlinec4(cscan, plane_size_c, error_values,
+                  cPa, mPa, yPa, cPb, mPb, yPb, n, dpc, epc);
+        break;
+        default:
+        assert(0);
     }
     return;
 }
@@ -2338,15 +2317,15 @@ do_gamma(float mastergamma, float gammaval, byte values[256])
     float gamma;
 
     if (gammaval > 0.0) {
-	gamma = gammaval;
+        gamma = gammaval;
     } else {
-	gamma = mastergamma;
+        gamma = mastergamma;
     }
 
     for (i = 0; i < 256; i++) {
-	values[i] = (byte) (255.0 *
-			    (1.0 - pow(((double)(255.0 - (float)i) / 255.0),
-			     (double)(1.0 / gamma))));
+        values[i] = (byte) (255.0 *
+                            (1.0 - pow(((double)(255.0 - (float)i) / 255.0),
+                             (double)(1.0 / gamma))));
     }
 
     return;
@@ -2354,7 +2333,7 @@ do_gamma(float mastergamma, float gammaval, byte values[256])
 
 /* here we calculate a lookup-table which is used to compensate the
    relative loss of color due to undercolor-removal */
-static void 
+static void
 do_black_correction(float kvalue, int kcorrect[256])
 {
     int i;
@@ -2362,14 +2341,14 @@ do_black_correction(float kvalue, int kcorrect[256])
     for (i = 0; i < 256; i++) {
       kcorrect[i] = 0;
 #if 0
-	kcorrect[i] = (int)
-	    (100.0 * kvalue * (
-				  pow(10.0,
-				      pow((i / 255.0), 3.0)
-				  )
-				  - 1.0
-	     )
-	    );
+        kcorrect[i] = (int)
+            (100.0 * kvalue * (
+                                  pow(10.0,
+                                      pow((i / 255.0), 3.0)
+                                  )
+                                  - 1.0
+             )
+            );
 #endif /* 0 */
     }
 
@@ -2445,9 +2424,9 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
   last_color = &last_color_value;
   /* Grey component replacement */
   for (i = 0; i < bytecount; i += 4) {
-    
+
     /* Assign to black the current address of  inbyte */
-    black = inbyte++;	
+    black = inbyte++;
     cyan = inbyte++;
     magenta = inbyte++;
     yellow = inbyte++;
@@ -2464,61 +2443,61 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
         debug_print_string(output, strlen(output));
       }
 #endif /* 0 */
-      
+
       is_color = 1;
 
       /* Test whether we 've already computet the value */
       if (*inword == last_color_value) {
-	/* save a copy of the current color before it will be modified */
-	last_color_value = *inword;
+        /* save a copy of the current color before it will be modified */
+        last_color_value = *inword;
 /*	debug_print_string("\n", 1);*/
-	/* copy the result of the old value onto the new position */
-	*inword = *last_color;
+        /* copy the result of the old value onto the new position */
+        *inword = *last_color;
       } else {
-	/* save a copy of the current color before it will be modified */
-	last_color_value = *inword;
+        /* save a copy of the current color before it will be modified */
+        last_color_value = *inword;
   NOBLACK(cyan, magenta, yellow, black);
-	if ((*cyan >= *magenta)
-	    && (*magenta >= *yellow)
-	    && (*yellow > 0)) {	/* if any grey component */
-	  NOBLACK(cyan, magenta, yellow, black);
-	} else if ((*cyan >= *yellow)
-		   && (*yellow >= *magenta)
-		   && (*magenta > 0)) {
-	  NOBLACK(cyan, yellow, magenta, black);
-	} else if ((*yellow >= *magenta)
-		   && (*magenta >= *cyan)
-		   && (*cyan > 0)) {
-	  NOBLACK(yellow, magenta, cyan, black);
-	} else if ((*yellow >= *cyan)
-		   && (*cyan >= *magenta)
-		   && (*magenta > 0)) {
-	  NOBLACK(yellow, cyan, magenta, black);
-	} else if ((*magenta >= *yellow)
-		   && (*yellow >= *cyan)
-		   && (*cyan > 0)) {
-	  NOBLACK(magenta, yellow, cyan, black);
-	} else if ((*magenta >= *cyan)
-		   && (*cyan >= *yellow)
-		   && (*yellow > 0)) {
-	  NOBLACK(magenta, cyan, yellow, black);
-	} else {		/* do gamma only if no black */
-	}
+        if ((*cyan >= *magenta)
+            && (*magenta >= *yellow)
+            && (*yellow > 0)) {	/* if any grey component */
+          NOBLACK(cyan, magenta, yellow, black);
+        } else if ((*cyan >= *yellow)
+                   && (*yellow >= *magenta)
+                   && (*magenta > 0)) {
+          NOBLACK(cyan, yellow, magenta, black);
+        } else if ((*yellow >= *magenta)
+                   && (*magenta >= *cyan)
+                   && (*cyan > 0)) {
+          NOBLACK(yellow, magenta, cyan, black);
+        } else if ((*yellow >= *cyan)
+                   && (*cyan >= *magenta)
+                   && (*magenta > 0)) {
+          NOBLACK(yellow, cyan, magenta, black);
+        } else if ((*magenta >= *yellow)
+                   && (*yellow >= *cyan)
+                   && (*cyan > 0)) {
+          NOBLACK(magenta, yellow, cyan, black);
+        } else if ((*magenta >= *cyan)
+                   && (*cyan >= *yellow)
+                   && (*yellow > 0)) {
+          NOBLACK(magenta, cyan, yellow, black);
+        } else {		/* do gamma only if no black */
+        }
 #if 0
-	  if (ucr > 0)
-	  {
+          if (ucr > 0)
+          {
       sprintf(output, "%3d %3d %3d %3d - %5d\n", *cyan, *magenta, *yellow, *black, ucr);
       debug_print_string(output, strlen(output));
     }
 #endif /* 0 */
-	  if (   *cyan > 255)    *cyan = 255;
-	  if (*magenta > 255) *magenta = 255;
-	  if ( *yellow > 255)  *yellow = 255;
-	
-	  *cyan = *(cvalues + *cyan);
-	  *magenta = *(mvalues + *magenta);
-	  *yellow = *(yvalues + *yellow);
-	  last_color =  inword; /* save pointer */
+          if (   *cyan > 255)    *cyan = 255;
+          if (*magenta > 255) *magenta = 255;
+          if ( *yellow > 255)  *yellow = 255;
+
+          *cyan = *(cvalues + *cyan);
+          *magenta = *(mvalues + *magenta);
+          *yellow = *(yvalues + *yellow);
+          last_color =  inword; /* save pointer */
       }/* end current_color */
     }			/* end of if c+m+y > 0 */
     *black = *(kvalues + *black);
@@ -2531,22 +2510,22 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
    rescale the data byte by byte */
 static int
 rescale_byte_wise2x2(int bytecount, const byte * inbytea, const byte * inbyteb,
-		     byte * outbyte)
+                     byte * outbyte)
 {
     register int i, j;
     int max = bytecount / 2;
 
     for (i = 0; i < max; i += 4) {
-	j = 2 * i;
-	/* cyan */
-	outbyte[i + 1] = (inbytea[j + 1] + inbytea[j + 5] + inbyteb[j + 1] +
-			  inbyteb[j + 5]) / 4;
-	/* magenta */
-	outbyte[i + 2] = (inbytea[j + 2] + inbytea[j + 6] + inbyteb[j + 2] +
-			  inbyteb[j + 6]) / 4;
-	/* yellow */
-	outbyte[i + 3] = (inbytea[j + 3] + inbytea[j + 7] + inbyteb[j + 3] +
-			  inbyteb[j + 7]) / 4;
+        j = 2 * i;
+        /* cyan */
+        outbyte[i + 1] = (inbytea[j + 1] + inbytea[j + 5] + inbyteb[j + 1] +
+                          inbyteb[j + 5]) / 4;
+        /* magenta */
+        outbyte[i + 2] = (inbytea[j + 2] + inbytea[j + 6] + inbyteb[j + 2] +
+                          inbyteb[j + 6]) / 4;
+        /* yellow */
+        outbyte[i + 3] = (inbytea[j + 3] + inbytea[j + 7] + inbyteb[j + 3] +
+                          inbyteb[j + 7]) / 4;
     }
     return max;
 }
@@ -2555,19 +2534,19 @@ rescale_byte_wise2x2(int bytecount, const byte * inbytea, const byte * inbyteb,
    rescale the data byte by byte */
 static int
 rescale_byte_wise2x1(int bytecount, const byte * inbytea, const byte * inbyteb,
-		     byte * outbyte)
+                     byte * outbyte)
 {
     register int i, j;
     int max = bytecount / 2;
 
     for (i = 0; i < max; i += 4) {
-	j = 2 * i;
-	/* cyan */
-	outbyte[i + 1] = (inbytea[j + 1] + inbytea[j + 5]) / 2;
-	/* magenta */
-	outbyte[i + 2] = (inbytea[j + 2] + inbytea[j + 6]) / 2;
-	/* yellow */
-	outbyte[i + 3] = (inbytea[j + 3] + inbytea[j + 7]) / 2;
+        j = 2 * i;
+        /* cyan */
+        outbyte[i + 1] = (inbytea[j + 1] + inbytea[j + 5]) / 2;
+        /* magenta */
+        outbyte[i + 2] = (inbytea[j + 2] + inbytea[j + 6]) / 2;
+        /* yellow */
+        outbyte[i + 3] = (inbytea[j + 3] + inbytea[j + 7]) / 2;
     }
     return max;
 }
@@ -2576,17 +2555,17 @@ rescale_byte_wise2x1(int bytecount, const byte * inbytea, const byte * inbyteb,
    rescale the data byte by byte */
 static int
 rescale_byte_wise1x2(int bytecount, const byte * inbytea, const byte * inbyteb,
-		     byte * outbyte)
+                     byte * outbyte)
 {
     register int i;
 
     for (i = 0; i < bytecount; i += 4) {
-	/* cyan */
-	outbyte[i + 1] = (inbytea[i + 1] + inbyteb[i + 1]) / 2;
-	/* magenta */
-	outbyte[i + 2] = (inbytea[i + 2] + inbyteb[i + 2]) / 2;
-	/* yellow */
-	outbyte[i + 3] = (inbytea[i + 3] + inbyteb[i + 3]) / 2;
+        /* cyan */
+        outbyte[i + 1] = (inbytea[i + 1] + inbyteb[i + 1]) / 2;
+        /* magenta */
+        outbyte[i + 2] = (inbytea[i + 2] + inbyteb[i + 2]) / 2;
+        /* yellow */
+        outbyte[i + 3] = (inbytea[i + 3] + inbyteb[i + 3]) / 2;
     }
     return bytecount;
 }
@@ -2595,17 +2574,17 @@ rescale_byte_wise1x2(int bytecount, const byte * inbytea, const byte * inbyteb,
    rescale the data byte by byte */
 static int
 rescale_byte_wise1x1(int bytecount, const byte * inbytea, const byte * inbyteb,
-		     byte * outbyte)
+                     byte * outbyte)
 {
     register int i;
 
     for (i = 0; i < bytecount; i += 4) {
-	/* cyan */
-	outbyte[i + 1] = inbytea[i + 1];
-	/* magenta */
-	outbyte[i + 2] = inbytea[i + 2];
-	/* yellow */
-	outbyte[i + 3] = inbytea[i + 3];
+        /* cyan */
+        outbyte[i + 1] = inbytea[i + 1];
+        /* magenta */
+        outbyte[i + 2] = inbytea[i + 2];
+        /* yellow */
+        outbyte[i + 3] = inbytea[i + 3];
     }
     return bytecount;
 }
@@ -2674,26 +2653,26 @@ have a pixel rate >50%.
 /* --------------------------- */
 
 /* initialise the error_buffer */
-static void 
-init_error_buffer(struct misc_struct * misc_vars, 
-		  struct  ptr_arrays * data_ptrs)
+static void
+init_error_buffer(struct misc_struct * misc_vars,
+                  struct  ptr_arrays * data_ptrs)
 {
   int i;
   int *ep;
   int *epc;
-  
+
   ep = data_ptrs->errors[0];
   epc = data_ptrs->errors_c[0];
-  
+
   if (misc_vars->bits_per_pixel > 4) { /* Randomly seed initial error
-					  buffer */
+                                          buffer */
     /* Otherwise, the first dithered rows would look rather uniform */
     for (i = 0; i < misc_vars->databuff_size; i++) { /* 600dpi planes */
       *ep++ = RANDOM;
     }
-    
+
     /* Now for the 2 * 300dpi color planes */
-    for (i = 0; i < misc_vars->databuff_size_c; i++) { 
+    for (i = 0; i < misc_vars->databuff_size_c; i++) {
       *epc++ = CRANDOM;
     }
   }
@@ -2703,17 +2682,16 @@ init_error_buffer(struct misc_struct * misc_vars,
 #define FSdither(inP, out, errP, Err, Bit, Offset, Element)\
 {\
    oldErr = Err;\
-	Err = (*(errP + Element)\
-	       + ((Err * 7 + C) >> 4)\
-	       + ((int)*(inP + Element) << SHIFT));\
-	if (Err > THRESHOLD || *(inP + Element) == 255 /* b/w optimization */) {\
-	  out |= Bit;\
-	  Err -= MAXVALUE;\
+        Err = (*(errP + Element)\
+               + ((Err * 7 + C) >> 4)\
+               + ((int)*(inP + Element) << SHIFT));\
+        if (Err > THRESHOLD || *(inP + Element) == 255 /* b/w optimization */) {\
+          out |= Bit;\
+          Err -= MAXVALUE;\
         }\
-	*(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
-	*(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
+        *(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
+        *(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
 }
-
 
 /*  FSDlinebw()
  *
@@ -2738,38 +2716,38 @@ init_error_buffer(struct misc_struct * misc_vars,
  *  Returns: Nothing.
  */
 static void
-FSDlinebw(int scan, int plane_size, 
-	  struct error_val_field * error_values,
-	  byte * kP, int n, int * ep, byte * dp)
+FSDlinebw(int scan, int plane_size,
+          struct error_val_field * error_values,
+          byte * kP, int n, int * ep, byte * dp)
 {
   if (scan == 0) {       /* going_up */
     byte k, bitmask; /* k = outbyte byte, whereas bitmask defines the
-			bit to be set within k */
+                        bit to be set within k */
     int oldErr, i;
-  
+
     for (i = 0; i < plane_size; i++) {
       bitmask = 0x80;
       for (k = 0; bitmask != 0; bitmask >>= 1) {
-	/* dp points to the first word of the input data which is in
-	   kcmy-format */
-	/* k points to the beginning of the first outbut byte, which
-	   is filled up, bit by bit while looping over bytemask */
-	/* ep points to the first word of the error-plane which
-	   contains the errors kcmy format */
-	/* err_values->k tempararily holds the error-value */
-	/* bitmask selects the bit to be set in the outbyte */
-	/* n gives the offset for the byte selection within
-	   words. With simple cmyk-printing, this should be 4 */
-	/* 0 points to the active color within the input-word, i.e. 0
-	   = black, 1 = cyan, 2 = yellow, 3 = magenta */
+        /* dp points to the first word of the input data which is in
+           kcmy-format */
+        /* k points to the beginning of the first outbut byte, which
+           is filled up, bit by bit while looping over bytemask */
+        /* ep points to the first word of the error-plane which
+           contains the errors kcmy format */
+        /* err_values->k tempararily holds the error-value */
+        /* bitmask selects the bit to be set in the outbyte */
+        /* n gives the offset for the byte selection within
+           words. With simple cmyk-printing, this should be 4 */
+        /* 0 points to the active color within the input-word, i.e. 0
+           = black, 1 = cyan, 2 = yellow, 3 = magenta */
 
-	FSdither(dp, k, ep, error_values->k, bitmask, -n, 0);
-	dp += n, ep += n; /* increment the input and error pointer one
-			     word (=4 byte) further, in order to
-			     convert the next word into an bit */
+        FSdither(dp, k, ep, error_values->k, bitmask, -n, 0);
+        dp += n, ep += n; /* increment the input and error pointer one
+                             word (=4 byte) further, in order to
+                             convert the next word into an bit */
       }
       *kP++ = k; /* fill the output-plane byte with the computed byte
-		    and increment the output plane pointer  one byte */
+                    and increment the output plane pointer  one byte */
     }
 
   } else {		/* going_down */
@@ -2778,8 +2756,8 @@ FSDlinebw(int scan, int plane_size,
     for (i = 0; i < plane_size; i++) {
       bitmask = 0x01;
       for (k = 0; bitmask != 0; bitmask <<= 1) {
-	dp -= n, ep -= n;
-	FSdither(dp, k, ep, error_values->k, bitmask, n, 0);
+        dp -= n, ep -= n;
+        FSdither(dp, k, ep, error_values->k, bitmask, n, 0);
       }
       *--kP = k;
     }
@@ -2791,45 +2769,45 @@ FSDlinebw(int scan, int plane_size,
    an adapted dither algorythm */
 static void
 FSDlinec2(int scan, int plane_size,
-	  struct error_val_field *error_values,
-	  byte * cPa, byte * mPa, byte * yPa, int n,
-	  byte * dp, int *ep)
+          struct error_val_field *error_values,
+          byte * cPa, byte * mPa, byte * yPa, int n,
+          byte * dp, int *ep)
 {
     if (scan == 0) {		/* going_up */
-	int oldErr, i;
-	byte ca, ya, ma, bitmask;
+        int oldErr, i;
+        byte ca, ya, ma, bitmask;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x80;
-	    ca = ya = ma = 0;
-	    for (ca = 0; bitmask != 0; bitmask >>= 1) {
-		FSdither(dp, ca, ep, error_values->c, bitmask, -n, n - 3);
-		FSdither(dp, ma, ep, error_values->m, bitmask, -n, n - 2);
-		FSdither(dp, ya, ep, error_values->y, bitmask, -n, n - 1);
-		dp += n, ep += n;
-	    }
-	    *cPa++ = ca;
-	    *mPa++ = ma;
-	    *yPa++ = ya;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x80;
+            ca = ya = ma = 0;
+            for (ca = 0; bitmask != 0; bitmask >>= 1) {
+                FSdither(dp, ca, ep, error_values->c, bitmask, -n, n - 3);
+                FSdither(dp, ma, ep, error_values->m, bitmask, -n, n - 2);
+                FSdither(dp, ya, ep, error_values->y, bitmask, -n, n - 1);
+                dp += n, ep += n;
+            }
+            *cPa++ = ca;
+            *mPa++ = ma;
+            *yPa++ = ya;
+        }
 
     } else {			/* going_down */
-	byte ca, ya, ma, bitmask;
-	int oldErr, i;
+        byte ca, ya, ma, bitmask;
+        int oldErr, i;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x01;
-	    ca = ya = ma = 0;
-	    for (ca = 0; bitmask != 0; bitmask <<= 1) {
-		dp -= n, ep -= n;
-		FSdither(dp, ya, ep, error_values->y, bitmask, n, n - 1);
-		FSdither(dp, ma, ep, error_values->m, bitmask, n, n - 2);
-		FSdither(dp, ca, ep, error_values->c, bitmask, n, n - 3);
-	    }
-	    *--yPa = ya;
-	    *--mPa = ma;
-	    *--cPa = ca;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x01;
+            ca = ya = ma = 0;
+            for (ca = 0; bitmask != 0; bitmask <<= 1) {
+                dp -= n, ep -= n;
+                FSdither(dp, ya, ep, error_values->y, bitmask, n, n - 1);
+                FSdither(dp, ma, ep, error_values->m, bitmask, n, n - 2);
+                FSdither(dp, ca, ep, error_values->c, bitmask, n, n - 3);
+            }
+            *--yPa = ya;
+            *--mPa = ma;
+            *--cPa = ca;
+        }
     }
     return;
 }
@@ -2837,169 +2815,167 @@ FSDlinec2(int scan, int plane_size,
 /* while printing on paper, we only use 3 -intensities */
 #define FSdither8503(inP, outa, outb, errP, Err, Bit, Offset, Element)\
 {\
-	oldErr = Err;\
-	Err = (*(errP + Element)\
-	       + ((Err * 7 + C) >> 4)\
-	       + ((int) *(inP + Element) << SHIFT));\
-	if ((Err > THRESHOLDS) && (Err <= THRESHOLDM)) {\
-	  outa |= Bit;\
-	  Err -= MAXVALUES;\
-	}\
-	if (Err > THRESHOLDM) {\
-	  outb |= Bit;\
-	  Err -= MAXVALUEM;\
-	}\
-	*(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
-	*(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
+        oldErr = Err;\
+        Err = (*(errP + Element)\
+               + ((Err * 7 + C) >> 4)\
+               + ((int) *(inP + Element) << SHIFT));\
+        if ((Err > THRESHOLDS) && (Err <= THRESHOLDM)) {\
+          outa |= Bit;\
+          Err -= MAXVALUES;\
+        }\
+        if (Err > THRESHOLDM) {\
+          outb |= Bit;\
+          Err -= MAXVALUEM;\
+        }\
+        *(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
+        *(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
 }
 
 /* On ordinary paper, we'll only use 3 intensities with the hp850  */
 static void
 FSDlinec3(int scan, int plane_size,
-	  struct error_val_field *error_values,
-	  byte * cPa, byte * mPa, byte * yPa,
-	  byte * cPb, byte * mPb, byte * yPb,
-	  int n, byte * dp, int *ep)
+          struct error_val_field *error_values,
+          byte * cPa, byte * mPa, byte * yPa,
+          byte * cPb, byte * mPb, byte * yPb,
+          int n, byte * dp, int *ep)
 {
     if (scan == 0) {		/* going_up */
-	byte ca, ya, ma, cb, yb, mb, bitmask;
-	int oldErr, i;
+        byte ca, ya, ma, cb, yb, mb, bitmask;
+        int oldErr, i;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x80;
-	    ca = ya = ma = cb = yb = mb = 0;
-	    for (ca = 0; bitmask != 0; bitmask >>= 1) {
-		FSdither8503(dp, ca, cb, ep, error_values->c, bitmask, -n, n
-			     - 3);
-		FSdither8503(dp, ma, mb, ep, error_values->m, bitmask, -n, n
-			     - 2);
-		FSdither8503(dp, ya, yb, ep, error_values->y, bitmask, -n, n
-			     - 1);
-		dp += n, ep += n;
-	    }
-	    *cPa++ = ca;
-	    *mPa++ = ma;
-	    *yPa++ = ya;
-	    *cPb++ = cb;
-	    *mPb++ = mb;
-	    *yPb++ = yb;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x80;
+            ca = ya = ma = cb = yb = mb = 0;
+            for (ca = 0; bitmask != 0; bitmask >>= 1) {
+                FSdither8503(dp, ca, cb, ep, error_values->c, bitmask, -n, n
+                             - 3);
+                FSdither8503(dp, ma, mb, ep, error_values->m, bitmask, -n, n
+                             - 2);
+                FSdither8503(dp, ya, yb, ep, error_values->y, bitmask, -n, n
+                             - 1);
+                dp += n, ep += n;
+            }
+            *cPa++ = ca;
+            *mPa++ = ma;
+            *yPa++ = ya;
+            *cPb++ = cb;
+            *mPb++ = mb;
+            *yPb++ = yb;
+        }
     } else {			/* going_down */
-	byte ca, ya, ma, cb, yb, mb, bitmask;
-	int oldErr, i;
+        byte ca, ya, ma, cb, yb, mb, bitmask;
+        int oldErr, i;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x01;
-	    ca = ya = ma = cb = yb = mb = 0;
-	    for (ca = 0; bitmask != 0; bitmask <<= 1) {
-		dp -= n, ep -= n;
-		FSdither8503(dp, ya, yb, ep, error_values->y, bitmask, n, n
-			     - 1);
-		FSdither8503(dp, ma, mb, ep, error_values->m, bitmask, n, n
-			     - 2);
-		FSdither8503(dp, ca, cb, ep, error_values->c, bitmask, n, n
-			     - 3);
-	    }
-	    *--yPa = ya;
-	    *--mPa = ma;
-	    *--cPa = ca;
-	    *--yPb = yb;
-	    *--mPb = mb;
-	    *--cPb = cb;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x01;
+            ca = ya = ma = cb = yb = mb = 0;
+            for (ca = 0; bitmask != 0; bitmask <<= 1) {
+                dp -= n, ep -= n;
+                FSdither8503(dp, ya, yb, ep, error_values->y, bitmask, n, n
+                             - 1);
+                FSdither8503(dp, ma, mb, ep, error_values->m, bitmask, n, n
+                             - 2);
+                FSdither8503(dp, ca, cb, ep, error_values->c, bitmask, n, n
+                             - 3);
+            }
+            *--yPa = ya;
+            *--mPa = ma;
+            *--cPa = ca;
+            *--yPb = yb;
+            *--mPb = mb;
+            *--cPb = cb;
+        }
     }
     return;
 }
 
-
 /* the hp850 knows about 4 different color intensities per color */
 #define FSdither8504(inP, outa, outb, errP, Err, Bit, Offset, Element)\
 {\
-	oldErr = Err;\
-	Err = (*(errP + Element)\
-	       + ((Err * 7 + C) >> 4)\
-	       + ((int) *(inP + Element) << SHIFT));\
-	if ((Err > THRESHOLDS) && (Err <= THRESHOLDM)) {\
-	  outa |= Bit;\
-	  Err -= MAXVALUES;\
-	}\
-	if ((Err > THRESHOLDM) && (Err <= THRESHOLDL)) {\
-	  outb |= Bit;\
-	  Err -= MAXVALUEM;\
-	}\
-	if (Err > THRESHOLDL) {\
+        oldErr = Err;\
+        Err = (*(errP + Element)\
+               + ((Err * 7 + C) >> 4)\
+               + ((int) *(inP + Element) << SHIFT));\
+        if ((Err > THRESHOLDS) && (Err <= THRESHOLDM)) {\
           outa |= Bit;\
-	  outb |= Bit;\
-	  Err -= MAXVALUEL;\
-	}\
-	*(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
-	*(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
+          Err -= MAXVALUES;\
+        }\
+        if ((Err > THRESHOLDM) && (Err <= THRESHOLDL)) {\
+          outb |= Bit;\
+          Err -= MAXVALUEM;\
+        }\
+        if (Err > THRESHOLDL) {\
+          outa |= Bit;\
+          outb |= Bit;\
+          Err -= MAXVALUEL;\
+        }\
+        *(errP + (Element + Offset)) += ((Err * 3 + C) >> 4);\
+        *(errP + Element) = ((Err * 5 + oldErr + C) >> 4);\
 }
 
 /* The hp850c knows about 4 intensity levels per color. Once more, we need
    an adapted dither algorythm */
 static void
 FSDlinec4(int scan, int plane_size,
-	  struct error_val_field *error_values,
-	  byte * cPa, byte * mPa, byte * yPa,
-	  byte * cPb, byte * mPb, byte * yPb,
-	  int n, byte * dp, int *ep)
+          struct error_val_field *error_values,
+          byte * cPa, byte * mPa, byte * yPa,
+          byte * cPb, byte * mPb, byte * yPb,
+          int n, byte * dp, int *ep)
 {
     if (scan == 0) {		/* going_up */
-	byte ca, ya, ma, cb, yb, mb, bitmask;
-	int oldErr, i;
+        byte ca, ya, ma, cb, yb, mb, bitmask;
+        int oldErr, i;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x80;
-	    ca = ya = ma = cb = yb = mb = 0;
-	    for (ca = 0; bitmask != 0; bitmask >>= 1) {
-		FSdither8504(dp, ca, cb, ep, error_values->c, bitmask, -n, n
-			     - 3);
-		FSdither8504(dp, ma, mb, ep, error_values->m, bitmask, -n, n
-			     - 2);
-		FSdither8504(dp, ya, yb, ep, error_values->y, bitmask, -n, n
-			     - 1);
-		dp += n, ep += n;
-	    }
-	    *cPa++ = ca;
-	    *mPa++ = ma;
-	    *yPa++ = ya;
-	    *cPb++ = cb;
-	    *mPb++ = mb;
-	    *yPb++ = yb;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x80;
+            ca = ya = ma = cb = yb = mb = 0;
+            for (ca = 0; bitmask != 0; bitmask >>= 1) {
+                FSdither8504(dp, ca, cb, ep, error_values->c, bitmask, -n, n
+                             - 3);
+                FSdither8504(dp, ma, mb, ep, error_values->m, bitmask, -n, n
+                             - 2);
+                FSdither8504(dp, ya, yb, ep, error_values->y, bitmask, -n, n
+                             - 1);
+                dp += n, ep += n;
+            }
+            *cPa++ = ca;
+            *mPa++ = ma;
+            *yPa++ = ya;
+            *cPb++ = cb;
+            *mPb++ = mb;
+            *yPb++ = yb;
+        }
     } else {			/* going_down */
-	byte ca, ya, ma, cb, yb, mb, bitmask;
-	int oldErr, i;
+        byte ca, ya, ma, cb, yb, mb, bitmask;
+        int oldErr, i;
 
-	for (i = 0; i < plane_size; i++) {
-	    bitmask = 0x01;
-	    ca = ya = ma = cb = yb = mb = 0;
-	    for (ca = 0; bitmask != 0; bitmask <<= 1) {
-		dp -= n, ep -= n;
-		FSdither8504(dp, ya, yb, ep, error_values->y, bitmask, n, n
-			     - 1);
-		FSdither8504(dp, ma, mb, ep, error_values->m, bitmask, n, n
-			     - 2);
-		FSdither8504(dp, ca, cb, ep, error_values->c, bitmask, n, n
-			     - 3);
-	    }
-	    *--yPa = ya;
-	    *--mPa = ma;
-	    *--cPa = ca;
-	    *--yPb = yb;
-	    *--mPb = mb;
-	    *--cPb = cb;
-	}
+        for (i = 0; i < plane_size; i++) {
+            bitmask = 0x01;
+            ca = ya = ma = cb = yb = mb = 0;
+            for (ca = 0; bitmask != 0; bitmask <<= 1) {
+                dp -= n, ep -= n;
+                FSdither8504(dp, ya, yb, ep, error_values->y, bitmask, n, n
+                             - 1);
+                FSdither8504(dp, ma, mb, ep, error_values->m, bitmask, n, n
+                             - 2);
+                FSdither8504(dp, ca, cb, ep, error_values->c, bitmask, n, n
+                             - 3);
+            }
+            *--yPa = ya;
+            *--mPa = ma;
+            *--cPa = ca;
+            *--yPb = yb;
+            *--mPb = mb;
+            *--cPb = cb;
+        }
     }
     return;
 }
 
-
 /* calculate the needed memory */
 static void
 calculate_memory_size(gx_device_printer * pdev,
-		      struct misc_struct *misc_vars)
+                      struct misc_struct *misc_vars)
 {
     int xfac = cdj850->xscal ? 2 : 1;
 
@@ -3023,46 +2999,44 @@ calculate_memory_size(gx_device_printer * pdev,
     /* 4n extra values for line ends */
     /* might be wrong, see gdevcdj.c */
     misc_vars->errbuff_size =
-	calc_buffsize((misc_vars->plane_size * misc_vars->expanded_bpp +
-		       misc_vars->num_comps * 4) * I, 1);
+        calc_buffsize((misc_vars->plane_size * misc_vars->expanded_bpp +
+                       misc_vars->num_comps * 4) * I, 1);
 
     /* 4n extra values for line ends */
     misc_vars->errbuff_size_c =
-	calc_buffsize((misc_vars->plane_size_c / 2 * misc_vars->expanded_bpp
-		       + misc_vars->num_comps * 4) * I, 1);
+        calc_buffsize((misc_vars->plane_size_c / 2 * misc_vars->expanded_bpp
+                       + misc_vars->num_comps * 4) * I, 1);
 
     misc_vars->databuff_size =
-	misc_vars->plane_size * misc_vars->storage_bpp;
+        misc_vars->plane_size * misc_vars->storage_bpp;
 
     misc_vars->databuff_size_c =
-	misc_vars->plane_size_c / 2 * misc_vars->storage_bpp;
-
+        misc_vars->plane_size_c / 2 * misc_vars->storage_bpp;
 
     misc_vars->outbuff_size = misc_vars->plane_size * 4;
 
     misc_vars->storage_size_words = (((misc_vars->plane_size)
-				      * 2
-				      * misc_vars->num_comps)
-				     + misc_vars->databuff_size
-				     + misc_vars->errbuff_size
-				     + misc_vars->outbuff_size
-				     + ((misc_vars->plane_size_c)
-					* 2
-					* misc_vars->num_comps)
-				     + misc_vars->databuff_size_c
-				     + misc_vars->errbuff_size_c
-				     + (4 * misc_vars->plane_size_c))
-	/ W;
+                                      * 2
+                                      * misc_vars->num_comps)
+                                     + misc_vars->databuff_size
+                                     + misc_vars->errbuff_size
+                                     + misc_vars->outbuff_size
+                                     + ((misc_vars->plane_size_c)
+                                        * 2
+                                        * misc_vars->num_comps)
+                                     + misc_vars->databuff_size_c
+                                     + misc_vars->errbuff_size_c
+                                     + (4 * misc_vars->plane_size_c))
+        / W;
 
     return;
 }
 
-
 /* Initialise the needed pointers */
 static void
 init_data_structure(gx_device_printer * pdev,
-		    struct ptr_arrays *data_ptrs,
-		    struct misc_struct *misc_vars)
+                    struct ptr_arrays *data_ptrs,
+                    struct misc_struct *misc_vars)
 {
     int i;
     byte *p = (byte *) data_ptrs->storage;
@@ -3077,27 +3051,27 @@ init_data_structure(gx_device_printer * pdev,
     /* Note: The output data will overwrite part of the input-data */
 
     if (misc_vars->bits_per_pixel > 1) {
-	p += misc_vars->databuff_size;
+        p += misc_vars->databuff_size;
     }
     if (misc_vars->bits_per_pixel > 4) {
-	data_ptrs->errors[0] = (int *)p + misc_vars->num_comps * 2;
-	data_ptrs->errors[1] = data_ptrs->errors[0] + misc_vars->databuff_size;
-	p += misc_vars->errbuff_size;
+        data_ptrs->errors[0] = (int *)p + misc_vars->num_comps * 2;
+        data_ptrs->errors[1] = data_ptrs->errors[0] + misc_vars->databuff_size;
+        p += misc_vars->errbuff_size;
     }
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data[0][i] = data_ptrs->plane_data[2][i] = p;
-	p += misc_vars->plane_size;
+        data_ptrs->plane_data[0][i] = data_ptrs->plane_data[2][i] = p;
+        p += misc_vars->plane_size;
     }
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data[1][i] = p;
-	data_ptrs->plane_data[3][i] = p + misc_vars->plane_size;
-	p += misc_vars->plane_size;
+        data_ptrs->plane_data[1][i] = p;
+        data_ptrs->plane_data[3][i] = p + misc_vars->plane_size;
+        p += misc_vars->plane_size;
     }
     data_ptrs->out_data = p;
     p += misc_vars->outbuff_size;
 
     /* ---------------------------------------------------------
-       now for the color pointers 
+       now for the color pointers
        --------------------------------------------------------- */
 
     data_ptrs->data_c[0] = data_ptrs->data_c[1] = data_ptrs->data_c[2] = p;
@@ -3105,39 +3079,39 @@ init_data_structure(gx_device_printer * pdev,
     /* Note: The output data will overwrite part of the input-data */
 
     if (misc_vars->bits_per_pixel > 1) {
-	p += misc_vars->databuff_size_c;
+        p += misc_vars->databuff_size_c;
     }
     if (misc_vars->bits_per_pixel > 4) {
-	data_ptrs->errors_c[0] = (int *)p + misc_vars->num_comps * 2;
-	data_ptrs->errors_c[1] = data_ptrs->errors_c[0] + misc_vars->databuff_size_c;
-	p += misc_vars->errbuff_size_c;
+        data_ptrs->errors_c[0] = (int *)p + misc_vars->num_comps * 2;
+        data_ptrs->errors_c[1] = data_ptrs->errors_c[0] + misc_vars->databuff_size_c;
+        p += misc_vars->errbuff_size_c;
     }
     /* pointer for the lower bits of the output data */
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data_c[0][i] = data_ptrs->plane_data_c[2][i] = p;
-	p += misc_vars->plane_size_c / 2;
+        data_ptrs->plane_data_c[0][i] = data_ptrs->plane_data_c[2][i] = p;
+        p += misc_vars->plane_size_c / 2;
     }
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data_c[1][i] = p;
-	data_ptrs->plane_data_c[3][i] = p + misc_vars->plane_size_c / 2;
-	p += misc_vars->plane_size_c / 2;
+        data_ptrs->plane_data_c[1][i] = p;
+        data_ptrs->plane_data_c[3][i] = p + misc_vars->plane_size_c / 2;
+        p += misc_vars->plane_size_c / 2;
     }
 
     /* pointer for the upper bits of the output data */
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data_c[0][i + 4] = data_ptrs->plane_data_c[2][i +
-	    4] = p;
-	p += misc_vars->plane_size_c / 2;
+        data_ptrs->plane_data_c[0][i + 4] = data_ptrs->plane_data_c[2][i +
+            4] = p;
+        p += misc_vars->plane_size_c / 2;
     }
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->plane_data_c[1][i + 4] = p;
-	data_ptrs->plane_data_c[3][i + 4] = p + misc_vars->plane_size_c / 2;
-	p += misc_vars->plane_size_c / 2;
+        data_ptrs->plane_data_c[1][i + 4] = p;
+        data_ptrs->plane_data_c[3][i + 4] = p + misc_vars->plane_size_c / 2;
+        p += misc_vars->plane_size_c / 2;
     }
 
     for (i = 0; i < misc_vars->num_comps; i++) {
-	data_ptrs->test_data[i] = p;
-	p += misc_vars->plane_size_c / 2;
+        data_ptrs->test_data[i] = p;
+        p += misc_vars->plane_size_c / 2;
     }
 
     /* Clear temp storage */
@@ -3149,7 +3123,7 @@ init_data_structure(gx_device_printer * pdev,
 /* Configure the printer and start Raster mode */
 static void
 cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
-			 FILE * prn_stream)
+                         FILE * prn_stream)
 {
     int xres, yres;		/* x,y resolution for color planes */
     hp850_cmyk_init_t init;
@@ -3191,16 +3165,16 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* This will start and configure the raster-mode */
     fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
-									   raster data comand */
+                                                                           raster data comand */
     fwrite(init.a, sizeof(byte), sizeof(init.a),
-	   prn_stream);		/* Transmit config
-				   data */
+           prn_stream);		/* Transmit config
+                                   data */
     /* From now on, all escape commands start with \033*b, so we
      * combine them (if the printer supports this). */
     fputs("\033*b", prn_stream);
     /* Set compression if the mode has been defined. */
     if (cdj850->compression)
-	fprintf(prn_stream, "%dm", cdj850->compression);
+        fprintf(prn_stream, "%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
@@ -3208,7 +3182,7 @@ cdj850_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Configure the printer and start Raster mode */
 static void
 cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
-			 FILE * prn_stream)
+                         FILE * prn_stream)
 {
     int xres, yres;		/* x,y resolution for color planes */
     hp850_cmyk_init_t init;
@@ -3254,11 +3228,11 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* This will configure the raster-mode */
     fprintf(prn_stream, "\033*g%dW", (int)sizeof(init.a));	/* The new configure
-									   raster data comand */
+                                                                           raster data comand */
     fwrite(init.a, sizeof(byte), sizeof(init.a),
-	   prn_stream);		/* Transmit config
-				   data */
-				
+           prn_stream);		/* Transmit config
+                                   data */
+
     /*  Start the raster graphics mode.  The 880C needs this explicit command.
      */
     fputs("\033*r1A", prn_stream);
@@ -3269,7 +3243,7 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* Set compression if the mode has been defined. */
 /*    if (cdj850->compression)*/
-	fprintf(prn_stream, "\033*b%dm", cdj850->compression);
+        fprintf(prn_stream, "\033*b%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
@@ -3277,7 +3251,7 @@ cdj880_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Start Raster mode for HP2200 */
 static void
 chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
-			 FILE * prn_stream)
+                         FILE * prn_stream)
 {
     byte  CRD_SeqC[]     = {0x1b, 0x2a, 0x67, 0x31, 0x32, 0x57, 0x06, 0x07, 0x00, 0x01,
     /*                      Esc   *     |g    |# of bytes |W    |frmt |SP   |# of cmpnts*/
@@ -3334,7 +3308,7 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
     CRD_SeqC[12] = HIBYTE(yres);
     CRD_SeqC[13] = LOBYTE(yres);
     fwrite(CRD_SeqC, sizeof(byte), sizeof(CRD_SeqC), prn_stream);
-				
+
     fputs("\033*r1A", prn_stream);
 
     return;
@@ -3343,7 +3317,7 @@ chp2200_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* Start Raster mode for DNJ500 */
 static void
 cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
-			 FILE * prn_stream)
+                         FILE * prn_stream)
 {
     /* x,y resolution for color planes, assume x=y */
     int xres = cdj850->x_pixels_per_inch;
@@ -3394,40 +3368,40 @@ cdnj500_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
 static int near
 cdj_put_param_int(gs_param_list * plist, gs_param_name pname, int *pvalue,
-		  int minval, int maxval, int ecode)
+                  int minval, int maxval, int ecode)
 {
     int code, value;
 
     switch (code = param_read_int(plist, pname, &value)) {
-	default:
-	return code;
-	case 1:
-	return ecode;
-	case 0:
-	if (value < minval || value > maxval)
-	    param_signal_error(plist, pname, gs_error_rangecheck);
-	*pvalue = value;
-	return (ecode < 0 ? ecode : 1);
+        default:
+        return code;
+        case 1:
+        return ecode;
+        case 0:
+        if (value < minval || value > maxval)
+            param_signal_error(plist, pname, gs_error_rangecheck);
+        *pvalue = value;
+        return (ecode < 0 ? ecode : 1);
     }
 }
 
 static int near
 cdj_put_param_float(gs_param_list * plist, gs_param_name pname, float *pvalue,
-		    float minval, float maxval, int ecode)
+                    float minval, float maxval, int ecode)
 {
     int code;
     float value;
 
     switch (code = param_read_float(plist, pname, &value)) {
-	default:
-	return code;
-	case 1:
-	return ecode;
-	case 0:
-	if (value < minval || value > maxval)
-	    param_signal_error(plist, pname, gs_error_rangecheck);
-	*pvalue = value;
-	return (ecode < 0 ? ecode : 1);
+        default:
+        return code;
+        case 1:
+        return ecode;
+        case 0:
+        if (value < minval || value > maxval)
+            param_signal_error(plist, pname, gs_error_rangecheck);
+        *pvalue = value;
+        return (ecode < 0 ? ecode : 1);
     }
 }
 
@@ -3437,169 +3411,168 @@ cdj_set_bpp(gx_device * pdev, int bpp, int ccomps)
     gx_device_color_info *ci = &pdev->color_info;
 
     if (ccomps && bpp == 0) {
-	if (cprn_device->cmyk) {
-	    switch (ccomps) {
-		default:
-		return gs_error_rangecheck;
-		/*NOTREACHED */
-		break;
+        if (cprn_device->cmyk) {
+            switch (ccomps) {
+                default:
+                return gs_error_rangecheck;
+                /*NOTREACHED */
+                break;
 
-		case 1:
-		bpp = 1;
-		break;
+                case 1:
+                bpp = 1;
+                break;
 
-		case 3:
-		bpp = 24;
-		break;
+                case 3:
+                bpp = 24;
+                break;
 
-		case 4:
-		switch (ci->depth) {
-		    case 8:
-		    case 16:
-		    case 24:
-		    case 32:
-		    break;
+                case 4:
+                switch (ci->depth) {
+                    case 8:
+                    case 16:
+                    case 24:
+                    case 32:
+                    break;
 
-		    default:
-		    bpp = cprn_device->default_depth;
-		    break;
-		}
-		break;
-	    }
-	}
+                    default:
+                    bpp = cprn_device->default_depth;
+                    break;
+                }
+                break;
+            }
+        }
     }
     if (bpp == 0) {
-	bpp = ci->depth;	/* Use the current setting. */
+        bpp = ci->depth;	/* Use the current setting. */
     }
     if (cprn_device->cmyk < 0) {
 
-	/* Reset procedures because we may have been in another mode. */
+        /* Reset procedures because we may have been in another mode. */
 
-	dev_proc(pdev, map_cmyk_color) = gdev_cmyk_map_cmyk_color;
-	dev_proc(pdev, map_rgb_color) = NULL;
-	dev_proc(pdev, map_color_rgb) = gdev_cmyk_map_color_rgb;
+        dev_proc(pdev, map_cmyk_color) = gdev_cmyk_map_cmyk_color;
+        dev_proc(pdev, map_rgb_color) = NULL;
+        dev_proc(pdev, map_color_rgb) = gdev_cmyk_map_color_rgb;
 
-	if (pdev->is_open)
-	    gs_closedevice(pdev);
+        if (pdev->is_open)
+            gs_closedevice(pdev);
     }
     /* Check for valid bpp values */
 
     switch (bpp) {
-	case 16:
-	case 32:
-	if (cprn_device->cmyk && ccomps && ccomps != 4)
-	    goto bppe;
-	break;
+        case 16:
+        case 32:
+        if (cprn_device->cmyk && ccomps && ccomps != 4)
+            goto bppe;
+        break;
 
-	case 24:
-	if (!cprn_device->cmyk || ccomps == 0 || ccomps == 4) {
-	    break;
-	} else if (ccomps == 1) {
-	    goto bppe;
-	} else {
+        case 24:
+        if (!cprn_device->cmyk || ccomps == 0 || ccomps == 4) {
+            break;
+        } else if (ccomps == 1) {
+            goto bppe;
+        } else {
 
-	    /* 3 components 24 bpp printing for CMYK device. */
+            /* 3 components 24 bpp printing for CMYK device. */
 
-	    cprn_device->cmyk = -1;
-	}
-	break;
+            cprn_device->cmyk = -1;
+        }
+        break;
 
-	case 8:
-	if (cprn_device->cmyk) {
-	    if (ccomps) {
-		if (ccomps == 3) {
-		    cprn_device->cmyk = -1;
-		    bpp = 3;
-		} else if (ccomps != 1 && ccomps != 4) {
-		    goto bppe;
-		}
-	    }
-	    if (ccomps != 1)
-		break;
-	} else {
-	    break;
-	}
+        case 8:
+        if (cprn_device->cmyk) {
+            if (ccomps) {
+                if (ccomps == 3) {
+                    cprn_device->cmyk = -1;
+                    bpp = 3;
+                } else if (ccomps != 1 && ccomps != 4) {
+                    goto bppe;
+                }
+            }
+            if (ccomps != 1)
+                break;
+        } else {
+            break;
+        }
 
-	case 1:
-	if (ccomps != 1)
-	    goto bppe;
+        case 1:
+        if (ccomps != 1)
+            goto bppe;
 
-	if (cprn_device->cmyk && bpp != pdev->color_info.depth) {
-	    dev_proc(pdev, map_cmyk_color) = NULL;
-	    dev_proc(pdev, map_rgb_color) = gdev_cmyk_map_rgb_color;
+        if (cprn_device->cmyk && bpp != pdev->color_info.depth) {
+            dev_proc(pdev, map_cmyk_color) = NULL;
+            dev_proc(pdev, map_rgb_color) = gdev_cmyk_map_rgb_color;
 
-	    if (pdev->is_open) {
-		gs_closedevice(pdev);
-	    }
-	}
-	break;
+            if (pdev->is_open) {
+                gs_closedevice(pdev);
+            }
+        }
+        break;
 
-	case 3:
-	if (!cprn_device->cmyk) {
-	    break;
-	}
-	default:
+        case 3:
+        if (!cprn_device->cmyk) {
+            break;
+        }
+        default:
       bppe:return gs_error_rangecheck;
     }
 
-
     if (cprn_device->cmyk == -1) {
-	dev_proc(pdev, map_cmyk_color) = NULL;
-	dev_proc(pdev, map_rgb_color) = gdev_pcl_map_rgb_color;
-	dev_proc(pdev, map_color_rgb) = gdev_pcl_map_color_rgb;
+        dev_proc(pdev, map_cmyk_color) = NULL;
+        dev_proc(pdev, map_rgb_color) = gdev_pcl_map_rgb_color;
+        dev_proc(pdev, map_color_rgb) = gdev_pcl_map_color_rgb;
 
-	if (pdev->is_open) {
-	    gs_closedevice(pdev);
-	}
+        if (pdev->is_open) {
+            gs_closedevice(pdev);
+        }
     }
     switch (ccomps) {
-	case 0:
-	break;
+        case 0:
+        break;
 
-	case 1:
-	if (bpp != 1 && bpp != 8)
-	    goto cce;
-	break;
+        case 1:
+        if (bpp != 1 && bpp != 8)
+            goto cce;
+        break;
 
-	case 4:
-	if (cprn_device->cmyk) {
-	    if (bpp >= 8)
-		break;
-	}
-	case 3:
-	if (bpp == 1 || bpp == 3 || bpp == 8 || bpp == 16
-	    || bpp == 24 || bpp == 32) {
-	    break;
-	}
-	cce: default:
-	return gs_error_rangecheck;
+        case 4:
+        if (cprn_device->cmyk) {
+            if (bpp >= 8)
+                break;
+        }
+        case 3:
+        if (bpp == 1 || bpp == 3 || bpp == 8 || bpp == 16
+            || bpp == 24 || bpp == 32) {
+            break;
+        }
+        cce: default:
+        return gs_error_rangecheck;
     }
 
     if (cprn_device->cmyk) {
-	if (cprn_device->cmyk > 0) {
-	    ci->num_components = ccomps ? ccomps : (bpp < 8 ? 1 : 4);
-	} else {
-	    ci->num_components = ccomps ? ccomps : (bpp < 8 ? 1 : 3);
-	}
-	if (bpp != 1 && ci->num_components == 1) {	/* We do dithered grays. */
-	    bpp = bpp < 8 ? 8 : bpp;
-	}
-	ci->max_color = (1 << (bpp >> 2)) - 1;
-	ci->max_gray = (bpp >= 8 ? 255 : 1);
+        if (cprn_device->cmyk > 0) {
+            ci->num_components = ccomps ? ccomps : (bpp < 8 ? 1 : 4);
+        } else {
+            ci->num_components = ccomps ? ccomps : (bpp < 8 ? 1 : 3);
+        }
+        if (bpp != 1 && ci->num_components == 1) {	/* We do dithered grays. */
+            bpp = bpp < 8 ? 8 : bpp;
+        }
+        ci->max_color = (1 << (bpp >> 2)) - 1;
+        ci->max_gray = (bpp >= 8 ? 255 : 1);
 
-	if (ci->num_components == 1) {
-	    ci->dither_grays = (bpp >= 8 ? 5 : 2);
-	    ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
-	} else {
-	    ci->dither_grays = (bpp > 8 ? 5 : 2);
-	    ci->dither_colors = (bpp > 8 ? 5 : bpp > 1 ? 2 : 0);
-	}
+        if (ci->num_components == 1) {
+            ci->dither_grays = (bpp >= 8 ? 5 : 2);
+            ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
+        } else {
+            ci->dither_grays = (bpp > 8 ? 5 : 2);
+            ci->dither_colors = (bpp > 8 ? 5 : bpp > 1 ? 2 : 0);
+        }
     } else {
-	ci->num_components = (bpp == 1 || bpp == 8 ? 1 : 3);
-	ci->max_color = (bpp >= 8 ? 255 : bpp > 1 ? 1 : 0);
-	ci->max_gray = (bpp >= 8 ? 255 : 1);
-	ci->dither_grays = (bpp >= 8 ? 5 : 2);
-	ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
+        ci->num_components = (bpp == 1 || bpp == 8 ? 1 : 3);
+        ci->max_color = (bpp >= 8 ? 255 : bpp > 1 ? 1 : 0);
+        ci->max_gray = (bpp >= 8 ? 255 : 1);
+        ci->dither_grays = (bpp >= 8 ? 5 : 2);
+        ci->dither_colors = (bpp >= 8 ? 5 : bpp > 1 ? 2 : 0);
     }
 
     ci->depth = ((bpp > 1) && (bpp < 8) ? 8 : bpp);
@@ -3635,7 +3608,7 @@ cdj_set_bpp(gx_device * pdev, int bpp, int ccomps)
 
 static gx_color_index
 gdev_cmyk_map_cmyk_color(gx_device * pdev,
-			 const gx_color_value cv[])
+                         const gx_color_value cv[])
 {
 
     gx_color_index color;
@@ -3643,28 +3616,28 @@ gdev_cmyk_map_cmyk_color(gx_device * pdev,
 
     cyan = cv[0]; magenta = cv[1]; yellow = cv[2]; black = cv[3];
     switch (pdev->color_info.depth) {
-	case 1:
-	color = (cyan | magenta | yellow | black) > gx_max_color_value / 2 ?
-	    (gx_color_index) 1 : (gx_color_index) 0;
-	break;
+        case 1:
+        color = (cyan | magenta | yellow | black) > gx_max_color_value / 2 ?
+            (gx_color_index) 1 : (gx_color_index) 0;
+        break;
 
-	default:{
-	    int nbits = pdev->color_info.depth;
+        default:{
+            int nbits = pdev->color_info.depth;
 
-	    if (cyan == magenta && magenta == yellow) {
-		/* Convert CMYK to gray -- Red Book 6.2.2 */
-		float bpart = ((float)cyan) * (lum_red_weight / 100.) +
-		((float)magenta) * (lum_green_weight / 100.) +
-		((float)yellow) * (lum_blue_weight / 100.) +
-		(float)black;
+            if (cyan == magenta && magenta == yellow) {
+                /* Convert CMYK to gray -- Red Book 6.2.2 */
+                float bpart = ((float)cyan) * (lum_red_weight / 100.) +
+                ((float)magenta) * (lum_green_weight / 100.) +
+                ((float)yellow) * (lum_blue_weight / 100.) +
+                (float)black;
 
-		cyan = magenta = yellow = (gx_color_index) 0;
-		black = (gx_color_index) (bpart > gx_max_color_value ?
-					  gx_max_color_value : bpart);
-	    }
-	    color = gx_cmyk_value_bits(cyan, magenta, yellow, black,
-				       nbits >> 2);
-	}
+                cyan = magenta = yellow = (gx_color_index) 0;
+                black = (gx_color_index) (bpart > gx_max_color_value ?
+                                          gx_max_color_value : bpart);
+            }
+            color = gx_cmyk_value_bits(cyan, magenta, yellow, black,
+                                       nbits >> 2);
+        }
     }
 
     return color;
@@ -3679,27 +3652,27 @@ gdev_cmyk_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 
     r = cv[0]; g = cv[1]; b = cv[2];
     if (gx_color_value_to_byte(r & g & b) == 0xff) {
-	return (gx_color_index) 0;	/* White */
+        return (gx_color_index) 0;	/* White */
     } else {
-	gx_color_value c = gx_max_color_value - r;
-	gx_color_value m = gx_max_color_value - g;
-	gx_color_value y = gx_max_color_value - b;
+        gx_color_value c = gx_max_color_value - r;
+        gx_color_value m = gx_max_color_value - g;
+        gx_color_value y = gx_max_color_value - b;
 
-	switch (pdev->color_info.depth) {
-	    case 1:
-	    return (c | m | y) > gx_max_color_value / 2 ?
-		(gx_color_index) 1 : (gx_color_index) 0;
-	    /*NOTREACHED */
-	    break;
+        switch (pdev->color_info.depth) {
+            case 1:
+            return (c | m | y) > gx_max_color_value / 2 ?
+                (gx_color_index) 1 : (gx_color_index) 0;
+            /*NOTREACHED */
+            break;
 
-	    case 8:
-	    return ((ulong) c * lum_red_weight * 10
-		    + (ulong) m * lum_green_weight * 10
-		    + (ulong) y * lum_blue_weight * 10)
-		>> (gx_color_value_bits + 2);
-	    /*NOTREACHED */
-	    break;
-	}
+            case 8:
+            return ((ulong) c * lum_red_weight * 10
+                    + (ulong) m * lum_green_weight * 10
+                    + (ulong) y * lum_blue_weight * 10)
+                >> (gx_color_value_bits + 2);
+            /*NOTREACHED */
+            break;
+        }
     }
 
     return (gx_color_index) 0;	/* This should never happen. */
@@ -3708,57 +3681,57 @@ gdev_cmyk_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 /* Mapping of CMYK colors. */
 static int
 gdev_cmyk_map_color_rgb(gx_device * pdev, gx_color_index color,
-			gx_color_value prgb[3])
+                        gx_color_value prgb[3])
 {
     switch (pdev->color_info.depth) {
-	case 1:
-	prgb[0] = prgb[1] = prgb[2] = gx_max_color_value * (1 - color);
-	break;
+        case 1:
+        prgb[0] = prgb[1] = prgb[2] = gx_max_color_value * (1 - color);
+        break;
 
-	case 8:
-	if (pdev->color_info.num_components == 1) {
-	    gx_color_value value = (gx_color_value) color ^ 0xff;
+        case 8:
+        if (pdev->color_info.num_components == 1) {
+            gx_color_value value = (gx_color_value) color ^ 0xff;
 
-	    prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
+            prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
 
-	    break;
-	}
-	default:{
-	    unsigned long bcyan, bmagenta, byellow, black;
-	    int nbits = pdev->color_info.depth;
+            break;
+        }
+        default:{
+            unsigned long bcyan, bmagenta, byellow, black;
+            int nbits = pdev->color_info.depth;
 
-	    gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
-			       nbits >> 2);
+            gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
+                               nbits >> 2);
 
 #ifdef USE_ADOBE_CMYK_RGB
 
-	    /* R = 1.0 - min(1.0, C + K), etc. */
+            /* R = 1.0 - min(1.0, C + K), etc. */
 
-	    bcyan += black, bmagenta += black, byellow += black;
-	    prgb[0] = (bcyan > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - bcyan);
-	    prgb[1] = (bmagenta > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - bmagenta);
-	    prgb[2] = (byellow > gx_max_color_value ? (gx_color_value) 0 :
-		       gx_max_color_value - byellow);
+            bcyan += black, bmagenta += black, byellow += black;
+            prgb[0] = (bcyan > gx_max_color_value ? (gx_color_value) 0 :
+                       gx_max_color_value - bcyan);
+            prgb[1] = (bmagenta > gx_max_color_value ? (gx_color_value) 0 :
+                       gx_max_color_value - bmagenta);
+            prgb[2] = (byellow > gx_max_color_value ? (gx_color_value) 0 :
+                       gx_max_color_value - byellow);
 
 #else
 
-	    /* R = (1.0 - C) * (1.0 - K), etc. */
+            /* R = (1.0 - C) * (1.0 - K), etc. */
 
-	    prgb[0] = (gx_color_value)
-		((ulong) (gx_max_color_value - bcyan) *
-		 (gx_max_color_value - black) / gx_max_color_value);
-	    prgb[1] = (gx_color_value)
-		((ulong) (gx_max_color_value - bmagenta) *
-		 (gx_max_color_value - black) / gx_max_color_value);
-	    prgb[2] = (gx_color_value)
-		((ulong) (gx_max_color_value - byellow) *
-		 (gx_max_color_value - black) / gx_max_color_value);
+            prgb[0] = (gx_color_value)
+                ((ulong) (gx_max_color_value - bcyan) *
+                 (gx_max_color_value - black) / gx_max_color_value);
+            prgb[1] = (gx_color_value)
+                ((ulong) (gx_max_color_value - bmagenta) *
+                 (gx_max_color_value - black) / gx_max_color_value);
+            prgb[2] = (gx_color_value)
+                ((ulong) (gx_max_color_value - byellow) *
+                 (gx_max_color_value - black) / gx_max_color_value);
 
 #endif
 
-	}
+        }
     }
 
     return 0;
@@ -3771,49 +3744,49 @@ gdev_pcl_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 
     r = cv[0]; g = cv[1]; b = cv[2];
     if (gx_color_value_to_byte(r & g & b) == 0xff)
-	return (gx_color_index) 0;	/* white */
+        return (gx_color_index) 0;	/* white */
     else {
-	gx_color_value c = gx_max_color_value - r;
-	gx_color_value m = gx_max_color_value - g;
-	gx_color_value y = gx_max_color_value - b;
+        gx_color_value c = gx_max_color_value - r;
+        gx_color_value m = gx_max_color_value - g;
+        gx_color_value y = gx_max_color_value - b;
 
-	switch (pdev->color_info.depth) {
-	    case 1:
-	    return ((c | m | y) > gx_max_color_value / 2 ?
-		    (gx_color_index) 1 : (gx_color_index) 0);
-	    case 8:
-	    if (pdev->color_info.num_components >= 3)
+        switch (pdev->color_info.depth) {
+            case 1:
+            return ((c | m | y) > gx_max_color_value / 2 ?
+                    (gx_color_index) 1 : (gx_color_index) 0);
+            case 8:
+            if (pdev->color_info.num_components >= 3)
 #define gx_color_value_to_1bit(cv) ((cv) >> (gx_color_value_bits - 1))
-		return (gx_color_value_to_1bit(c) +
-			(gx_color_value_to_1bit(m) << 1) +
-			(gx_color_value_to_1bit(y) << 2));
-	    else
+                return (gx_color_value_to_1bit(c) +
+                        (gx_color_value_to_1bit(m) << 1) +
+                        (gx_color_value_to_1bit(y) << 2));
+            else
 #define red_weight 306
 #define green_weight 601
 #define blue_weight 117
-		return ((((ulong) c * red_weight +
-			  (ulong) m * green_weight +
-			  (ulong) y * blue_weight)
-			 >> (gx_color_value_bits + 2)));
-	    case 16:
+                return ((((ulong) c * red_weight +
+                          (ulong) m * green_weight +
+                          (ulong) y * blue_weight)
+                         >> (gx_color_value_bits + 2)));
+            case 16:
 #define gx_color_value_to_5bits(cv) ((cv) >> (gx_color_value_bits - 5))
 #define gx_color_value_to_6bits(cv) ((cv) >> (gx_color_value_bits - 6))
-	    return (gx_color_value_to_5bits(y) +
-		    (gx_color_value_to_6bits(m) << 5) +
-		    (gx_color_value_to_5bits(c) << 11));
-	    case 24:
-	    return (gx_color_value_to_byte(y) +
-		    (gx_color_value_to_byte(m) << 8) +
-		    ((ulong) gx_color_value_to_byte(c) << 16));
-	    case 32:
-	    {
-		return ((c == m && c == y) ? ((ulong)
-					      gx_color_value_to_byte(c) << 24)
-			: (gx_color_value_to_byte(y) +
-			   (gx_color_value_to_byte(m) << 8) +
-			   ((ulong) gx_color_value_to_byte(c) << 16)));
-	    }
-	}
+            return (gx_color_value_to_5bits(y) +
+                    (gx_color_value_to_6bits(m) << 5) +
+                    (gx_color_value_to_5bits(c) << 11));
+            case 24:
+            return (gx_color_value_to_byte(y) +
+                    (gx_color_value_to_byte(m) << 8) +
+                    ((ulong) gx_color_value_to_byte(c) << 16));
+            case 32:
+            {
+                return ((c == m && c == y) ? ((ulong)
+                                              gx_color_value_to_byte(c) << 24)
+                        : (gx_color_value_to_byte(y) +
+                           (gx_color_value_to_byte(m) << 8) +
+                           ((ulong) gx_color_value_to_byte(c) << 16)));
+            }
+        }
     }
     return (gx_color_index) 0;	/* This never happens */
 }
@@ -3821,60 +3794,60 @@ gdev_pcl_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 /* Map a color index to a r-g-b color. */
 static int
 gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
-		       gx_color_value prgb[3])
+                       gx_color_value prgb[3])
 {
     /* For the moment, we simply ignore any black correction */
     switch (pdev->color_info.depth) {
-	case 1:
-	prgb[0] = prgb[1] = prgb[2] = -((gx_color_value) color ^ 1);
-	break;
-	case 8:
-	if (pdev->color_info.num_components >= 3) {
-	    gx_color_value c = (gx_color_value) color ^ 7;
+        case 1:
+        prgb[0] = prgb[1] = prgb[2] = -((gx_color_value) color ^ 1);
+        break;
+        case 8:
+        if (pdev->color_info.num_components >= 3) {
+            gx_color_value c = (gx_color_value) color ^ 7;
 
-	    prgb[0] = -(c & 1);
-	    prgb[1] = -((c >> 1) & 1);
-	    prgb[2] = -(c >> 2);
-	} else {
-	    gx_color_value value = (gx_color_value) color ^ 0xff;
+            prgb[0] = -(c & 1);
+            prgb[1] = -((c >> 1) & 1);
+            prgb[2] = -(c >> 2);
+        } else {
+            gx_color_value value = (gx_color_value) color ^ 0xff;
 
-	    prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
-	}
-	break;
-	case 16:
-	{
-	    gx_color_value c = (gx_color_value) color ^ 0xffff;
-	    ushort value = c >> 11;
+            prgb[0] = prgb[1] = prgb[2] = (value << 8) + value;
+        }
+        break;
+        case 16:
+        {
+            gx_color_value c = (gx_color_value) color ^ 0xffff;
+            ushort value = c >> 11;
 
-	    prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
-		       (value >> 4)) >> (16 - gx_color_value_bits);
-	    value = (c >> 6) & 0x3f;
-	    prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
-		>> (16 - gx_color_value_bits);
-	    value = c & 0x1f;
-	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) +
-		       (value >> 4)) >> (16 - gx_color_value_bits);
-	}
-	break;
-	case 24:
-	{
-	    gx_color_value c = (gx_color_value) color ^ 0xffffff;
+            prgb[0] = ((value << 11) + (value << 6) + (value << 1) +
+                       (value >> 4)) >> (16 - gx_color_value_bits);
+            value = (c >> 6) & 0x3f;
+            prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
+                >> (16 - gx_color_value_bits);
+            value = c & 0x1f;
+            prgb[2] = ((value << 11) + (value << 6) + (value << 1) +
+                       (value >> 4)) >> (16 - gx_color_value_bits);
+        }
+        break;
+        case 24:
+        {
+            gx_color_value c = (gx_color_value) color ^ 0xffffff;
 
-	    prgb[0] = gx_color_value_from_byte(c >> 16);
-	    prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
-	    prgb[2] = gx_color_value_from_byte(c & 0xff);
-	}
-	break;
-	case 32:
+            prgb[0] = gx_color_value_from_byte(c >> 16);
+            prgb[1] = gx_color_value_from_byte((c >> 8) & 0xff);
+            prgb[2] = gx_color_value_from_byte(c & 0xff);
+        }
+        break;
+        case 32:
 #define  gx_maxcol gx_color_value_from_byte(gx_color_value_to_byte(gx_max_color_value))
-	{
-	    gx_color_value w = gx_maxcol - gx_color_value_from_byte(color >> 24);
+        {
+            gx_color_value w = gx_maxcol - gx_color_value_from_byte(color >> 24);
 
-	    prgb[0] = w - gx_color_value_from_byte((color >> 16) & 0xff);
-	    prgb[1] = w - gx_color_value_from_byte((color >> 8) & 0xff);
-	    prgb[2] = w - gx_color_value_from_byte(color & 0xff);
-	}
-	break;
+            prgb[0] = w - gx_color_value_from_byte((color >> 16) & 0xff);
+            prgb[1] = w - gx_color_value_from_byte((color >> 8) & 0xff);
+            prgb[2] = w - gx_color_value_from_byte(color & 0xff);
+        }
+        break;
     }
     return 0;
 }
@@ -3886,38 +3859,38 @@ gdev_pcl_map_color_rgb(gx_device * pdev, gx_color_index color,
  */
 static int
 cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
-		  int real_bpp, int ccomps)
+                  int real_bpp, int ccomps)
 {
     if (new_bpp == 0 && ccomps == 0)
-	return gdev_prn_put_params(pdev, plist);
+        return gdev_prn_put_params(pdev, plist);
     else {
-	gx_device_color_info save_info;
-	int save_bpp;
-	int code;
+        gx_device_color_info save_info;
+        int save_bpp;
+        int code;
 
-	save_info = pdev->color_info;
-	save_bpp = save_info.depth;
+        save_info = pdev->color_info;
+        save_bpp = save_info.depth;
 #define save_ccomps save_info.num_components
-	if (save_bpp == 8 && save_ccomps == 3 && !cprn_device->cmyk)
-	    save_bpp = 3;
-	code = cdj_set_bpp(pdev, real_bpp, ccomps);
-	if (code < 0) {
-	    param_signal_error(plist, "BitsPerPixel", code);
-	    param_signal_error(plist, "ProcessColorModel", code);
-	    return code;
-	}
-	pdev->color_info.depth = new_bpp;	/* cdj_set_bpp maps 3/6 to 8 */
-	code = gdev_prn_put_params(pdev, plist);
-	if (code < 0) {
-	    cdj_set_bpp(pdev, save_bpp, save_ccomps);
-	    return code;
-	}
-	cdj_set_bpp(pdev, real_bpp, ccomps);	/* reset depth if needed */
-	if ((cdj850->color_info.depth != save_bpp ||
-	     (ccomps != 0 && ccomps != save_ccomps))
-	    && pdev->is_open)
-	    return gs_closedevice(pdev);
-	return 0;
+        if (save_bpp == 8 && save_ccomps == 3 && !cprn_device->cmyk)
+            save_bpp = 3;
+        code = cdj_set_bpp(pdev, real_bpp, ccomps);
+        if (code < 0) {
+            param_signal_error(plist, "BitsPerPixel", code);
+            param_signal_error(plist, "ProcessColorModel", code);
+            return code;
+        }
+        pdev->color_info.depth = new_bpp;	/* cdj_set_bpp maps 3/6 to 8 */
+        code = gdev_prn_put_params(pdev, plist);
+        if (code < 0) {
+            cdj_set_bpp(pdev, save_bpp, save_ccomps);
+            return code;
+        }
+        cdj_set_bpp(pdev, real_bpp, ccomps);	/* reset depth if needed */
+        if ((cdj850->color_info.depth != save_bpp ||
+             (ccomps != 0 && ccomps != save_ccomps))
+            && pdev->is_open)
+            return gs_closedevice(pdev);
+        return 0;
 #undef save_ccomps
     }
 }
@@ -3926,14 +3899,14 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
 
  * static int
  * x_mul_div (int a, int b, int c)
- * { 
+ * {
  *   int result;
- *   
+ *
  *   result = (int) ((a * b) / c) ;
  *  return result;
  * }
- *   
- * static void 
+ *
+ * static void
  * save_color_data(int size,
  *              byte * current,
  *              byte * saved)
@@ -3944,30 +3917,30 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  *   }
  *   return;
  * }
- * 
- * static int 
- * test_scan (int size, 
+ *
+ * static int
+ * test_scan (int size,
  *         byte * current,
- *         byte * last, 
+ *         byte * last,
  *         byte * control)
  *   {
  *   int error = 0;
  *   int i;
- *   
+ *
  *   for (i=0;i<size;i++){
  *     if (*control != *last){
  *       error = 1;
  *     }
  *     *control = *current;
- * 
+ *
  *     control++;
  *     last++;
  *     current++;
  *   }
  *   return error;
  * }
- * 
- * * Transform from cmy into hsv 
+ *
+ * * Transform from cmy into hsv
  * static void
  * cmy2hsv(int *c, int *m, int *y, int *h, int *s, int *v)
  * {
@@ -3975,21 +3948,21 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  *   int r, g, b;
  *   int r1, g1, b1;
  *   int maxValue, minValue, diff;
- *   
+ *
  *   r = 255 - *c;
  *   g = 255 - *m;
  *   b = 255 - *y;
- *   
+ *
  *   maxValue = max(r, max(g,b));
  *   minValue = min(r,min(g,b));
  *   diff = maxValue - minValue;
  *   *v = maxValue;
- *   
+ *
  *   if (maxValue != 0)
  *     *s = x_mul_div(diff,255,maxValue);
  *   else
  *     *s = 0;
- *   
+ *
  *   if (*s == 0)
  *     {
  *       hue = 0;
@@ -3999,31 +3972,30 @@ cdj_put_param_bpp(gx_device * pdev, gs_param_list * plist, int new_bpp,
  *       r1 = x_mul_div(maxValue - r,255,diff);
  *       g1 = x_mul_div(maxValue - g,255,diff);
  *       b1 = x_mul_div(maxValue - b,255,diff);
- *       
+ *
  *       if (r == maxValue)
  *      hue = b1 - g1;
  *       else if (g == maxValue)
  *      hue = 510 + r1 - b1;
  *       else
  *      hue = 1020 + g1 - r1;
- *       
+ *
  *       if (hue < 0)
  *      hue += 1530;
  *     }
- *   
+ *
  *   *h = (hue + 3) / 6;
- * 
+ *
  *   return;
  * }
  * end of unused code */
-
 
 /************************ the routines for the cdj1600 printer ***************/
 
 /* Configure the printer and start Raster mode */
 static void
 cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
-			  FILE * prn_stream)
+                          FILE * prn_stream)
 {
     uint raster_width = pdev->width -
     pdev->x_pixels_per_inch * (dev_l_margin(pdev) + dev_r_margin(pdev));
@@ -4055,7 +4027,7 @@ cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* raster width and number of planes */
     fprintf(prn_stream, "\033*r%ds-%du0A",
-	    raster_width, pdev->color_info.num_components);
+            raster_width, pdev->color_info.num_components);
 
     /* start raster graphics */
     fputs("\033*r1A", prn_stream);
@@ -4066,7 +4038,7 @@ cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
 
     /* Set compression if the mode has been defined. */
     if (cdj850->compression)
-	fprintf(prn_stream, "%dm", cdj850->compression);
+        fprintf(prn_stream, "%dm", cdj850->compression);
 
     return;
 }				/* end configure raster-mode */
@@ -4074,17 +4046,17 @@ cdj1600_start_raster_mode(gx_device_printer * pdev, int paper_size,
 /* print_plane compresses (mode 3) and outputs one plane */
 static void
 print_c3plane(FILE * prn_stream, char plane_code, int plane_size,
-	      const byte * curr, byte * prev, byte * out_data)
+              const byte * curr, byte * prev, byte * out_data)
 {
     /* Compress the output data */
     int out_count = gdev_pcl_mode3compress(plane_size, curr, prev, out_data);
 
     /* and output the data */
     if (out_count > 0) {
-	fprintf(prn_stream, "%d%c", out_count, plane_code);
-	fwrite(out_data, sizeof(byte), out_count, prn_stream);
+        fprintf(prn_stream, "%d%c", out_count, plane_code);
+        fwrite(out_data, sizeof(byte), out_count, prn_stream);
     } else {
-	putc(plane_code, prn_stream);
+        putc(plane_code, prn_stream);
     }
 }
 
@@ -4097,7 +4069,7 @@ copy_color_data(byte * dest, const byte * src, int n)
     register const word *s = (const word *)src;
 
     while (i-- > 0) {
-	*d++ = *s++;
+        *d++ = *s++;
     }
     return n;
 }
@@ -4105,34 +4077,34 @@ copy_color_data(byte * dest, const byte * src, int n)
 /* Printing non-blank lines */
 static void
 cdj1600_print_non_blank_lines(gx_device_printer * pdev,
-			      struct ptr_arrays *data_ptrs,
-			      struct misc_struct *misc_vars,
-			      struct error_val_field *error_values,
-			      const Gamma *gamma,
-			      FILE * prn_stream)
+                              struct ptr_arrays *data_ptrs,
+                              struct misc_struct *misc_vars,
+                              struct error_val_field *error_values,
+                              const Gamma *gamma,
+                              FILE * prn_stream)
 {
     int i, plane_size_c;
 
     /* copy data to data_c in order to make do_floyd_steinberg work */
     plane_size_c = copy_color_data
-	(data_ptrs->data_c[misc_vars->cscan],
-	 data_ptrs->data[misc_vars->scan],
-	 misc_vars->databuff_size) / misc_vars->storage_bpp;
+        (data_ptrs->data_c[misc_vars->cscan],
+         data_ptrs->data[misc_vars->scan],
+         misc_vars->databuff_size) / misc_vars->storage_bpp;
 
     /* dither the color planes */
     do_floyd_steinberg(misc_vars->scan, misc_vars->cscan,
-		       misc_vars->plane_size, plane_size_c,
-		       misc_vars->num_comps, data_ptrs, pdev, error_values);
+                       misc_vars->plane_size, plane_size_c,
+                       misc_vars->num_comps, data_ptrs, pdev, error_values);
 
     /* Transfer raster graphics in the order C, M, Y, that is
        planes 2,1,0 */
     for (i = misc_vars->num_comps - 1; i >= 0; i--) {
 
-	/* output the lower color planes */
-	print_c3plane(prn_stream, "wvv"[i], plane_size_c,
-		      data_ptrs->plane_data_c[misc_vars->cscan][i],
-		      data_ptrs->plane_data_c[1 - misc_vars->cscan][i],
-		      data_ptrs->out_data);
+        /* output the lower color planes */
+        print_c3plane(prn_stream, "wvv"[i], plane_size_c,
+                      data_ptrs->plane_data_c[misc_vars->cscan][i],
+                      data_ptrs->plane_data_c[1 - misc_vars->cscan][i],
+                      data_ptrs->out_data);
     }				/* End For i = num_comps */
     misc_vars->cscan = 1 - misc_vars->cscan;
 }

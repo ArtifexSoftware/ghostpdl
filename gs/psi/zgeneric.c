@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,16 +49,16 @@ zcopy(i_ctx_t *i_ctx_p)
     int type = r_type(op);
 
     if (type == t_integer)
-	return zcopy_integer(i_ctx_p);
+        return zcopy_integer(i_ctx_p);
     check_op(2);
     switch (type) {
-	case t_array:
-	case t_string:
-	    return zcopy_interval(i_ctx_p);
-	case t_dictionary:
-	    return zcopy_dict(i_ctx_p);
-	default:
-	    return_op_typecheck(op);
+        case t_array:
+        case t_string:
+            return zcopy_interval(i_ctx_p);
+        case t_dictionary:
+            return zcopy_dict(i_ctx_p);
+        default:
+            return_op_typecheck(op);
     }
 }
 
@@ -72,27 +72,27 @@ zcopy_integer(i_ctx_t *i_ctx_p)
     int code;
 
     if ((uint) op->value.intval > (uint)(op - osbot)) {
-	/* There might be enough elements in other blocks. */
-	check_type(*op, t_integer);
-        if (op->value.intval >= (int)ref_stack_count(&o_stack)) 
+        /* There might be enough elements in other blocks. */
+        check_type(*op, t_integer);
+        if (op->value.intval >= (int)ref_stack_count(&o_stack))
             return_error(e_stackunderflow);
-        if (op->value.intval < 0) 
+        if (op->value.intval < 0)
             return_error(e_rangecheck);
         check_int_ltu(*op, ref_stack_count(&o_stack));
-	count = op->value.intval;
+        count = op->value.intval;
     } else if (op1 + (count = op->value.intval) <= ostop) {
-	/* Fast case. */
-	memcpy((char *)op, (char *)(op - count), count * sizeof(ref));
-	push(count - 1);
-	return 0;
+        /* Fast case. */
+        memcpy((char *)op, (char *)(op - count), count * sizeof(ref));
+        push(count - 1);
+        return 0;
     }
     /* Do it the slow, general way. */
     code = ref_stack_push(&o_stack, count - 1);
     if (code < 0)
-	return code;
+        return code;
     for (i = 0; i < count; i++)
-	*ref_stack_index(&o_stack, i) =
-	    *ref_stack_index(&o_stack, i + count);
+        *ref_stack_index(&o_stack, i) =
+            *ref_stack_index(&o_stack, i + count);
     return 0;
 }
 
@@ -106,7 +106,7 @@ zcopy_interval(i_ctx_t *i_ctx_p)
     int code = copy_interval(i_ctx_p, op, 0, op1, "copy");
 
     if (code < 0)
-	return code;
+        return code;
     r_set_size(op, r_size(op1));
     *op1 = *op;
     pop(1);
@@ -119,32 +119,32 @@ zlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     switch (r_type(op)) {
-	case t_array:
-	case t_string:
-	case t_mixedarray:
-	case t_shortarray:
-	    check_read(*op);
-	    make_int(op, r_size(op));
-	    return 0;
-	case t_dictionary:
-	    check_dict_read(*op);
-	    make_int(op, dict_length(op));
-	    return 0;
-	case t_name: {
-	    ref str;
+        case t_array:
+        case t_string:
+        case t_mixedarray:
+        case t_shortarray:
+            check_read(*op);
+            make_int(op, r_size(op));
+            return 0;
+        case t_dictionary:
+            check_dict_read(*op);
+            make_int(op, dict_length(op));
+            return 0;
+        case t_name: {
+            ref str;
 
-	    name_string_ref(imemory, op, &str);
-	    make_int(op, r_size(&str));
-	    return 0;
-	}
-	case t_astruct:
-	    if (gs_object_type(imemory, op->value.pstruct) != &st_bytes)
-		return_error(e_typecheck);
-	    check_read(*op);
-	    make_int(op, gs_object_size(imemory, op->value.pstruct));
-	    return 0;
-	default:
-	    return_op_typecheck(op);
+            name_string_ref(imemory, op, &str);
+            make_int(op, r_size(&str));
+            return 0;
+        }
+        case t_astruct:
+            if (gs_object_type(imemory, op->value.pstruct) != &st_bytes)
+                return_error(e_typecheck);
+            check_read(*op);
+            make_int(op, gs_object_size(imemory, op->value.pstruct));
+            return 0;
+        default:
+            return_op_typecheck(op);
     }
 }
 
@@ -159,30 +159,30 @@ zget(i_ctx_t *i_ctx_p)
     ref *pvalue;
 
     switch (r_type(op1)) {
-	case t_dictionary:
-	    check_dict_read(*op1);
-	    if (dict_find(op1, op, &pvalue) <= 0)
-		return_error(e_undefined);
-	    op[-1] = *pvalue;
-	    break;
-	case t_string:
-	    check_read(*op1);
-	    check_int_ltu(*op, r_size(op1));
-	    make_int(op1, op1->value.bytes[(uint) op->value.intval]);
-	    break;
-	case t_array:
-	case t_mixedarray:
-	case t_shortarray:
-	    check_type(*op, t_integer);
-	    check_read(*op1);
-	    code = array_get(imemory, op1, op->value.intval, op1);
-	    if (code < 0) 
-	        return code;
-	    break;
+        case t_dictionary:
+            check_dict_read(*op1);
+            if (dict_find(op1, op, &pvalue) <= 0)
+                return_error(e_undefined);
+            op[-1] = *pvalue;
+            break;
+        case t_string:
+            check_read(*op1);
+            check_int_ltu(*op, r_size(op1));
+            make_int(op1, op1->value.bytes[(uint) op->value.intval]);
+            break;
+        case t_array:
+        case t_mixedarray:
+        case t_shortarray:
+            check_type(*op, t_integer);
+            check_read(*op1);
+            code = array_get(imemory, op1, op->value.intval, op1);
+            if (code < 0)
+                return code;
+            break;
         case t__invalid:
             return_error(e_stackunderflow);
         default:
-            return_error(e_typecheck); 
+            return_error(e_typecheck);
     }
     pop(1);
     return 0;
@@ -201,45 +201,45 @@ zput(i_ctx_t *i_ctx_p)
     uint ssize;
 
     switch (r_type(op2)) {
-	case t_dictionary:
-	    if (i_ctx_p->in_superexec == 0)
-		check_dict_write(*op2);
-	    {
-		int code = idict_put(op2, op1, op);
+        case t_dictionary:
+            if (i_ctx_p->in_superexec == 0)
+                check_dict_write(*op2);
+            {
+                int code = idict_put(op2, op1, op);
 
-		if (code < 0)
-		    return code;	/* error */
-	    }
-	    break;
-	case t_array:
-	    check_write(*op2);
-	    check_int_ltu(*op1, r_size(op2));
-	    store_check_dest(op2, op);
-	    {
-		ref *eltp = op2->value.refs + (uint) op1->value.intval;
+                if (code < 0)
+                    return code;	/* error */
+            }
+            break;
+        case t_array:
+            check_write(*op2);
+            check_int_ltu(*op1, r_size(op2));
+            store_check_dest(op2, op);
+            {
+                ref *eltp = op2->value.refs + (uint) op1->value.intval;
 
-		ref_assign_old(op2, eltp, op, "put");
-	    }
-	    break;
-	case t_mixedarray:	/* packed arrays are read-only */
-	case t_shortarray:
-	    return_error(e_invalidaccess);
-	case t_string:
-	    sdata = op2->value.bytes;
-	    ssize = r_size(op2);
+                ref_assign_old(op2, eltp, op, "put");
+            }
+            break;
+        case t_mixedarray:	/* packed arrays are read-only */
+        case t_shortarray:
+            return_error(e_invalidaccess);
+        case t_string:
+            sdata = op2->value.bytes;
+            ssize = r_size(op2);
 str:	    check_write(*op2);
-	    check_int_ltu(*op1, ssize);
-	    check_int_leu(*op, 0xff);
-	    sdata[(uint)op1->value.intval] = (byte)op->value.intval;
-	    break;
-	case t_astruct:
-	    if (gs_object_type(imemory, op2->value.pstruct) != &st_bytes)
-		return_error(e_typecheck);
-	    sdata = r_ptr(op2, byte);
-	    ssize = gs_object_size(imemory, op2->value.pstruct);
-	    goto str;
-	default:
-	    return_op_typecheck(op2);
+            check_int_ltu(*op1, ssize);
+            check_int_leu(*op, 0xff);
+            sdata[(uint)op1->value.intval] = (byte)op->value.intval;
+            break;
+        case t_astruct:
+            if (gs_object_type(imemory, op2->value.pstruct) != &st_bytes)
+                return_error(e_typecheck);
+            sdata = r_ptr(op2, byte);
+            ssize = gs_object_size(imemory, op2->value.pstruct);
+            goto str;
+        default:
+            return_op_typecheck(op2);
     }
     pop(3);
     return 0;
@@ -265,33 +265,33 @@ zforceput(i_ctx_t *i_ctx_p)
 
     switch (r_type(op2)) {
     case t_array:
-	check_int_ltu(*op1, r_size(op2));
-	if (r_space(op2) > r_space(op)) {
-	    if (imemory_save_level(iimemory))
-		return_error(e_invalidaccess);
-	}
-	{
-	    ref *eltp = op2->value.refs + (uint) op1->value.intval;
+        check_int_ltu(*op1, r_size(op2));
+        if (r_space(op2) > r_space(op)) {
+            if (imemory_save_level(iimemory))
+                return_error(e_invalidaccess);
+        }
+        {
+            ref *eltp = op2->value.refs + (uint) op1->value.intval;
 
-	    ref_assign_old(op2, eltp, op, "put");
-	}
-	break;
+            ref_assign_old(op2, eltp, op, "put");
+        }
+        break;
     case t_dictionary:
-	if (op2->value.pdict == systemdict->value.pdict ||
-	    !imemory_save_level(iimemory)
-	    ) {
-	    uint space = r_space(op2);
+        if (op2->value.pdict == systemdict->value.pdict ||
+            !imemory_save_level(iimemory)
+            ) {
+            uint space = r_space(op2);
 
-	    r_set_space(op2, avm_local);
-	    code = idict_put(op2, op1, op);
-	    r_set_space(op2, space);
-	} else
-	    code = idict_put(op2, op1, op);
-	if (code < 0)
-	    return code;
-	break;
+            r_set_space(op2, avm_local);
+            code = idict_put(op2, op1, op);
+            r_set_space(op2, space);
+        } else
+            code = idict_put(op2, op1, op);
+        if (code < 0)
+            return code;
+        break;
     default:
-	return_error(e_typecheck);
+        return_error(e_typecheck);
     }
     pop(3);
     return 0;
@@ -308,12 +308,12 @@ zgetinterval(i_ctx_t *i_ctx_p)
     uint count;
 
     switch (r_type(op2)) {
-	default:
-	    return_op_typecheck(op2);
-	case t_array:
-	case t_string:
-	case t_mixedarray:
-	case t_shortarray:;
+        default:
+            return_op_typecheck(op2);
+        case t_array:
+        case t_string:
+        case t_mixedarray:
+        case t_shortarray:;
     }
     check_read(*op2);
     check_int_leu(*op1, r_size(op2));
@@ -321,23 +321,23 @@ zgetinterval(i_ctx_t *i_ctx_p)
     check_int_leu(*op, r_size(op2) - index);
     count = op->value.intval;
     switch (r_type(op2)) {
-	case t_array:
-	    op2->value.refs += index;
-	    break;
-	case t_string:
-	    op2->value.bytes += index;
-	    break;
-	case t_mixedarray: {
-	    const ref_packed *packed = op2->value.packed;
+        case t_array:
+            op2->value.refs += index;
+            break;
+        case t_string:
+            op2->value.bytes += index;
+            break;
+        case t_mixedarray: {
+            const ref_packed *packed = op2->value.packed;
 
-	    for (; index--;)
-		packed = packed_next(packed);
-	    op2->value.packed = packed;
-	    break;
-	}
-	case t_shortarray:
-	    op2->value.packed += index;
-	    break;
+            for (; index--;)
+                packed = packed_next(packed);
+            op2->value.packed = packed;
+            break;
+        }
+        case t_shortarray:
+            op2->value.packed += index;
+            break;
     }
     r_set_size(op2, count);
     pop(2);
@@ -356,43 +356,43 @@ zputinterval(i_ctx_t *i_ctx_p)
     int code;
 
     switch (r_type(opto)) {
-	default:
+        default:
             return_error(e_typecheck);
         case t__invalid:
             if (r_type(op) != t_array && r_type(op) != t_string && r_type(op) != t__invalid)
                 return_error(e_typecheck); /* to match Distiller */
             else
                 return_error(e_stackunderflow);
-	case t_mixedarray:
-	case t_shortarray:
-	    return_error(e_invalidaccess);
-	case t_array:
-	case t_string:
-	    check_write(*opto);
-	    check_int_leu(*opindex, r_size(opto));
-	    code = copy_interval(i_ctx_p, opto, (uint)(opindex->value.intval),
-				 op, "putinterval");
-	    break;
-	case t_astruct: {
-	    uint dsize, ssize, index;
+        case t_mixedarray:
+        case t_shortarray:
+            return_error(e_invalidaccess);
+        case t_array:
+        case t_string:
+            check_write(*opto);
+            check_int_leu(*opindex, r_size(opto));
+            code = copy_interval(i_ctx_p, opto, (uint)(opindex->value.intval),
+                                 op, "putinterval");
+            break;
+        case t_astruct: {
+            uint dsize, ssize, index;
 
-	    check_write(*opto);
-	    if (gs_object_type(imemory, opto->value.pstruct) != &st_bytes)
-		return_error(e_typecheck);
-	    dsize = gs_object_size(imemory, opto->value.pstruct);
-	    check_int_leu(*opindex, dsize);
-	    index = (uint)opindex->value.intval;
-	    check_read_type(*op, t_string);
-	    ssize = r_size(op);
-	    if (ssize > dsize - index)
-		return_error(e_rangecheck);
-	    memcpy(r_ptr(opto, byte) + index, op->value.const_bytes, ssize);
-	    code = 0;
-	    break;
-	}
+            check_write(*opto);
+            if (gs_object_type(imemory, opto->value.pstruct) != &st_bytes)
+                return_error(e_typecheck);
+            dsize = gs_object_size(imemory, opto->value.pstruct);
+            check_int_leu(*opindex, dsize);
+            index = (uint)opindex->value.intval;
+            check_read_type(*op, t_string);
+            ssize = r_size(op);
+            if (ssize > dsize - index)
+                return_error(e_rangecheck);
+            memcpy(r_ptr(opto, byte) + index, op->value.const_bytes, ssize);
+            code = 0;
+            break;
+        }
     }
     if (code >= 0)
-	pop(3);
+        pop(3);
     return code;
 }
 
@@ -415,27 +415,27 @@ zforall(i_ctx_t *i_ctx_p)
     check_estack(6);
     check_proc(*op);
     switch (r_type(obj)) {
-	default:
-	    return_op_typecheck(obj);
-	case t_array:
-	    check_read(*obj);
-	    make_op_estack(cproc, array_continue);
-	    break;
-	case t_dictionary:
-	    check_dict_read(*obj);
-	    make_int(cproc, dict_first(obj));
-	    ++cproc;
-	    make_op_estack(cproc, dict_continue);
-	    break;
-	case t_string:
-	    check_read(*obj);
-	    make_op_estack(cproc, string_continue);
-	    break;
-	case t_mixedarray:
-	case t_shortarray:
-	    check_read(*obj);
-	    make_op_estack(cproc, packedarray_continue);
-	    break;
+        default:
+            return_op_typecheck(obj);
+        case t_array:
+            check_read(*obj);
+            make_op_estack(cproc, array_continue);
+            break;
+        case t_dictionary:
+            check_dict_read(*obj);
+            make_int(cproc, dict_first(obj));
+            ++cproc;
+            make_op_estack(cproc, dict_continue);
+            break;
+        case t_string:
+            check_read(*obj);
+            make_op_estack(cproc, string_continue);
+            break;
+        case t_mixedarray:
+        case t_shortarray:
+            check_read(*obj);
+            make_op_estack(cproc, packedarray_continue);
+            break;
     }
     /*
      * Push:
@@ -460,16 +460,16 @@ array_continue(i_ctx_t *i_ctx_p)
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
-	push(1);
-	r_dec_size(obj, 1);
-	*op = *obj->value.refs;
-	obj->value.refs++;
-	esp += 2;
-	*esp = obj[1];
-	return o_push_estack;
+        push(1);
+        r_dec_size(obj, 1);
+        *op = *obj->value.refs;
+        obj->value.refs++;
+        esp += 2;
+        *esp = obj[1];
+        return o_push_estack;
     } else {			/* done */
-	esp -= 3;		/* pop mark, object, proc */
-	return o_pop_estack;
+        esp -= 3;		/* pop mark, object, proc */
+        return o_pop_estack;
     }
 }
 /* Continuation operator for dictionaries */
@@ -482,14 +482,14 @@ dict_continue(i_ctx_t *i_ctx_p)
 
     push(2);			/* make room for key and value */
     if ((index = dict_next(obj, index, op - 1)) >= 0) {	/* continue */
-	esp->value.intval = index;
-	esp += 2;
-	*esp = obj[1];
-	return o_push_estack;
+        esp->value.intval = index;
+        esp += 2;
+        *esp = obj[1];
+        return o_push_estack;
     } else {			/* done */
-	pop(2);			/* undo push */
-	esp -= 4;		/* pop mark, object, proc, index */
-	return o_pop_estack;
+        pop(2);			/* undo push */
+        esp -= 4;		/* pop mark, object, proc, index */
+        return o_pop_estack;
     }
 }
 /* Continuation operator for strings */
@@ -500,16 +500,16 @@ string_continue(i_ctx_t *i_ctx_p)
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
-	r_dec_size(obj, 1);
-	push(1);
-	make_int(op, *obj->value.bytes);
-	obj->value.bytes++;
-	esp += 2;
-	*esp = obj[1];
-	return o_push_estack;
+        r_dec_size(obj, 1);
+        push(1);
+        make_int(op, *obj->value.bytes);
+        obj->value.bytes++;
+        esp += 2;
+        *esp = obj[1];
+        return o_push_estack;
     } else {			/* done */
-	esp -= 3;		/* pop mark, object, proc */
-	return o_pop_estack;
+        esp -= 3;		/* pop mark, object, proc */
+        return o_pop_estack;
     }
 }
 /* Continuation operator for packed arrays */
@@ -520,18 +520,18 @@ packedarray_continue(i_ctx_t *i_ctx_p)
     es_ptr obj = esp - 1;
 
     if (r_size(obj)) {		/* continue */
-	const ref_packed *packed = obj->value.packed;
+        const ref_packed *packed = obj->value.packed;
 
-	r_dec_size(obj, 1);
-	push(1);
-	packed_get(imemory, packed, op);
-	obj->value.packed = packed_next(packed);
-	esp += 2;
-	*esp = obj[1];
-	return o_push_estack;
+        r_dec_size(obj, 1);
+        push(1);
+        packed_get(imemory, packed, op);
+        obj->value.packed = packed_next(packed);
+        esp += 2;
+        *esp = obj[1];
+        return o_push_estack;
     } else {			/* done */
-	esp -= 3;		/* pop mark, object, proc */
-	return o_pop_estack;
+        esp -= 3;		/* pop mark, object, proc */
+        return o_pop_estack;
     }
 }
 /* Vacuous cleanup procedure */
@@ -553,7 +553,7 @@ const op_def zgeneric_op_defs[] =
     {"1length", zlength},
     {"3put", zput},
     {"3putinterval", zputinterval},
-		/* Internal operators */
+                /* Internal operators */
     {"0%array_continue", array_continue},
     {"0%dict_continue", dict_continue},
     {"0%packedarray_continue", packedarray_continue},
@@ -570,50 +570,50 @@ const op_def zgeneric_op_defs[] =
 /* its length; nothing else has been checked. */
 static int
 copy_interval(i_ctx_t *i_ctx_p /* for ref_assign_old */, os_ptr prto,
-	      uint index, os_ptr prfrom, client_name_t cname)
+              uint index, os_ptr prfrom, client_name_t cname)
 {
     int fromtype = r_type(prfrom);
     uint fromsize = r_size(prfrom);
 
     if (!(fromtype == r_type(prto) ||
-	  ((fromtype == t_shortarray || fromtype == t_mixedarray) &&
-	   r_type(prto) == t_array))
-	)
-	return_op_typecheck(prfrom);
+          ((fromtype == t_shortarray || fromtype == t_mixedarray) &&
+           r_type(prto) == t_array))
+        )
+        return_op_typecheck(prfrom);
     check_read(*prfrom);
     check_write(*prto);
     if (fromsize > r_size(prto) - index)
-	return_error(e_rangecheck);
+        return_error(e_rangecheck);
     switch (fromtype) {
-	case t_array:
-	    {			/* We have to worry about aliasing, */
-		/* but refcpy_to_old takes care of it for us. */
-		return refcpy_to_old(prto, index, prfrom->value.refs,
-				     fromsize, idmemory, cname);
-	    }
-	case t_string:
-	    {	/* memmove takes care of aliasing. */
-		memmove(prto->value.bytes + index, prfrom->value.bytes,
-			fromsize);
-	    }
-	    break;
-	case t_mixedarray:
-	case t_shortarray:
-	    {	/* We don't have to worry about aliasing, because */
-		/* packed arrays are read-only and hence the destination */
-		/* can't be a packed array. */
-		uint i;
-		const ref_packed *packed = prfrom->value.packed;
-		ref *pdest = prto->value.refs + index;
-		ref elt;
+        case t_array:
+            {			/* We have to worry about aliasing, */
+                /* but refcpy_to_old takes care of it for us. */
+                return refcpy_to_old(prto, index, prfrom->value.refs,
+                                     fromsize, idmemory, cname);
+            }
+        case t_string:
+            {	/* memmove takes care of aliasing. */
+                memmove(prto->value.bytes + index, prfrom->value.bytes,
+                        fromsize);
+            }
+            break;
+        case t_mixedarray:
+        case t_shortarray:
+            {	/* We don't have to worry about aliasing, because */
+                /* packed arrays are read-only and hence the destination */
+                /* can't be a packed array. */
+                uint i;
+                const ref_packed *packed = prfrom->value.packed;
+                ref *pdest = prto->value.refs + index;
+                ref elt;
 
-		for (i = 0; i < fromsize; i++, pdest++) {
-		    packed_get(imemory, packed, &elt);
-		    ref_assign_old(prto, pdest, &elt, cname);
-		    packed = packed_next(packed);
-		}
-	    }
-	    break;
+                for (i = 0; i < fromsize; i++, pdest++) {
+                    packed_get(imemory, packed, &elt);
+                    ref_assign_old(prto, pdest, &elt, cname);
+                    packed = packed_next(packed);
+                }
+            }
+            break;
     }
     return 0;
 }

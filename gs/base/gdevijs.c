@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -16,12 +16,12 @@
  * Intended to work with any IJS compliant inkjet driver, including
  * hpijs 1.0 and later, an IJS-enhanced gimp-print driver, and
  * the IJS Windows GDI server (ijsmswin.exe).
- * 
+ *
  * DRAFT
  *
  * WARNING: The ijs server can be selected on the gs command line
  * which is a security risk, since any program can be run.
- * You should use -dSAFER which sets .LockSafetyParams to true 
+ * You should use -dSAFER which sets .LockSafetyParams to true
  * before opening this device.
  *
  * 11/26/03 David Suffield (gdevijs-krgb-1.0.patch)
@@ -35,15 +35,15 @@
  * 2. Fixed z-order issue with colored text on black rectangle.
  *
  * 02/22/06 David Suffield (gdevijs-krgb-1.2.patch)
- * 1. Fixed krgb buffer overflow issue with out-of-band data in fill_rectangle and copy_mono. 
+ * 1. Fixed krgb buffer overflow issue with out-of-band data in fill_rectangle and copy_mono.
  *    This buffer overflow condition occurred with fullbleed print jobs that had k-band images.
  * 2. Added Dan Coby (artifex) fix for gsijs_read_string_malloc gs_free *str memory leak.
  *
  * 06/02/06 David Suffield (gdevijs-krgb-1.3.patch)
- * 1. Revisited the krgb buffer overflow issue with out-of-band data in fill_rectangle and 
- *    copy_mono. Changed the fill_rectangle and copy_mono to an inner loop buffer check 
+ * 1. Revisited the krgb buffer overflow issue with out-of-band data in fill_rectangle and
+ *    copy_mono. Changed the fill_rectangle and copy_mono to an inner loop buffer check
  *    instead of a outer loop x/y extent check.
- * 2. As requested by Ralph Giles, added K 1-bit and 8-bit support for krgb, but only 1-bit is 
+ * 2. As requested by Ralph Giles, added K 1-bit and 8-bit support for krgb, but only 1-bit is
  *    implemented for now.
  *
  *    KRGB definition:
@@ -76,9 +76,9 @@
 /* This should go into gdevprn.h, or, better yet, gdevprn should
    acquire an API for changing resolution. */
 int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
-				  gdev_prn_space_params *old_space,
-			          int old_width, int old_height,
-			          bool old_page_uses_transparency);
+                                  gdev_prn_space_params *old_space,
+                                  int old_width, int old_height,
+                                  bool old_page_uses_transparency);
 
 /* Device procedures */
 
@@ -99,50 +99,50 @@ static dev_proc_fill_path(gsijs_fill_path);
 static dev_proc_stroke_path(gsijs_stroke_path);
 
 static const gx_device_procs gsijs_procs = {
-	gsijs_open,
-	NULL,	/* get_initial_matrix */
-	NULL,	/* sync_output */
-	gsijs_output_page,
-	gsijs_close,
-	gx_default_rgb_map_rgb_color,
-	gx_default_rgb_map_color_rgb,
-	NULL,	/* fill_rectangle */
-	NULL,	/* tile_rectangle */
-	NULL,	/* copy_mono */
-	NULL,	/* copy_color */
-	NULL,	/* draw_line */
-	NULL,	/* get_bits */
-	gsijs_get_params,
-	gsijs_put_params,
-	NULL,	/* map_cmyk_color */
-	NULL,	/* get_xfont_procs */
-	NULL,	/* get_xfont_device */
-	NULL,	/* map_rgb_alpha_color */
-	gx_page_device_get_page_device,
-	NULL,	/* get_alpha_bits */
-	NULL,	/* copy_alpha */
-	NULL,	/* get_band */
-	NULL,	/* copy_rop */
-	NULL,	/* fill_path */
-	NULL,	/* stroke_path */
-	NULL,	/* fill_mask */
-	NULL,	/* fill_trapezoid */
-	NULL,	/* fill_parallelogram */
-	NULL,	/* fill_triangle */
-	NULL,	/* draw_thin_line */
-	NULL,	/* begin_image */
-	NULL,	/* image_data */
-	NULL,	/* end_image */
-	NULL,	/* strip_tile_rectangle */
-	NULL,	/* strip_copy_rop, */
-	NULL,	/* get_clipping_box */
-	NULL,	/* begin_typed_image */
-	NULL,	/* get_bits_rectangle */
-	NULL,	/* map_color_rgb_alpha */
-	NULL,	/* create_compositor */
-	NULL,	/* get_hardware_params */
-	NULL,	/* text_begin */
-	gsijs_finish_copydevice
+        gsijs_open,
+        NULL,	/* get_initial_matrix */
+        NULL,	/* sync_output */
+        gsijs_output_page,
+        gsijs_close,
+        gx_default_rgb_map_rgb_color,
+        gx_default_rgb_map_color_rgb,
+        NULL,	/* fill_rectangle */
+        NULL,	/* tile_rectangle */
+        NULL,	/* copy_mono */
+        NULL,	/* copy_color */
+        NULL,	/* draw_line */
+        NULL,	/* get_bits */
+        gsijs_get_params,
+        gsijs_put_params,
+        NULL,	/* map_cmyk_color */
+        NULL,	/* get_xfont_procs */
+        NULL,	/* get_xfont_device */
+        NULL,	/* map_rgb_alpha_color */
+        gx_page_device_get_page_device,
+        NULL,	/* get_alpha_bits */
+        NULL,	/* copy_alpha */
+        NULL,	/* get_band */
+        NULL,	/* copy_rop */
+        NULL,	/* fill_path */
+        NULL,	/* stroke_path */
+        NULL,	/* fill_mask */
+        NULL,	/* fill_trapezoid */
+        NULL,	/* fill_parallelogram */
+        NULL,	/* fill_triangle */
+        NULL,	/* draw_thin_line */
+        NULL,	/* begin_image */
+        NULL,	/* image_data */
+        NULL,	/* end_image */
+        NULL,	/* strip_tile_rectangle */
+        NULL,	/* strip_copy_rop, */
+        NULL,	/* get_clipping_box */
+        NULL,	/* begin_typed_image */
+        NULL,	/* get_bits_rectangle */
+        NULL,	/* map_color_rgb_alpha */
+        NULL,	/* create_compositor */
+        NULL,	/* get_hardware_params */
+        NULL,	/* text_begin */
+        gsijs_finish_copydevice
 };
 
 typedef struct gx_device_ijs_s gx_device_ijs;
@@ -188,10 +188,10 @@ struct gx_device_ijs_s {
 gx_device_ijs gs_ijs_device =
 {
     prn_device_std_body(gx_device_ijs, gsijs_procs, "ijs",
-			DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-			DEFAULT_DPI, DEFAULT_DPI,
-			0, 0, 0, 0,
-			24 /* depth */, NULL /* print page */),
+                        DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                        DEFAULT_DPI, DEFAULT_DPI,
+                        0, 0, 0, 0,
+                        24 /* depth */, NULL /* print page */),
     FALSE,	/* IjsUseOutputFD */
     "",		/* IjsServer */
     NULL,	/* ColorSpace */
@@ -217,15 +217,14 @@ gx_device_ijs gs_ijs_device =
     NULL        /* k_band buffer */
 };
 
-
 static int gsijs_client_set_param(gx_device_ijs *ijsdev, const char *key,
     const char *value);
 static int gsijs_set_color_format(gx_device_ijs *ijsdev);
-static int gsijs_read_int(gs_param_list *plist, gs_param_name pname, 
+static int gsijs_read_int(gs_param_list *plist, gs_param_name pname,
    int *pval, int min_value, int max_value, bool only_when_closed);
-static int gsijs_read_bool(gs_param_list *plist, gs_param_name pname, 
+static int gsijs_read_bool(gs_param_list *plist, gs_param_name pname,
    bool *pval, bool only_when_closed);
-static int gsijs_read_string(gs_param_list * plist, gs_param_name pname, 
+static int gsijs_read_string(gs_param_list * plist, gs_param_name pname,
    char * str, uint size, bool safety, bool only_when_closed);
 
 /**************************************************************************/
@@ -252,7 +251,7 @@ static int gsijs_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
    if (!ijsdev)
       return 0;  /* no forward device, bug?? */
 
-   if (ijsdev->krgb_mode && ijsdev->k_path && y >= 0 && x >= 0) 
+   if (ijsdev->krgb_mode && ijsdev->k_path && y >= 0 && x >= 0)
    {
       int raster = (ijsdev->k_width+7) >> 3;
       register unsigned char *dest;
@@ -276,7 +275,7 @@ static int gsijs_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
       /* Note x,y orgin 0,0 is stored first byte 0 left to right. */
 
       if (color==0x0)
-      { 
+      {
          /* Color is black, store in k plane band instead of regular band. */
          for (j=0; j<h; j++)
          {
@@ -286,7 +285,7 @@ static int gsijs_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                if (p >= beg && p <= end)
                   *p |= xmask[(dest_start_bit+i)&7];
             }
-            dest+=raster;    
+            dest+=raster;
          }
          return 0;
       }
@@ -301,7 +300,7 @@ static int gsijs_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                if (p >= beg && p <= end)
                   *p &= ~xmask[(dest_start_bit+i)&7];
             }
-            dest+=raster;    
+            dest+=raster;
          }
       }
    }
@@ -319,7 +318,7 @@ static int gsijs_copy_mono(gx_device * dev, const byte * data,
       return 0;  /* no forward device, bug?? */
 
    /*   if (ijsdev->krgb_mode && ijsdev->k_path && one==0x0) */
-   if (ijsdev->krgb_mode && ijsdev->k_path) 
+   if (ijsdev->krgb_mode && ijsdev->k_path)
    {
       /* Store in k plane band instead of regular band. */
       int raster = (ijsdev->k_width+7) >> 3;       /* raster width in bytes, byte aligned */
@@ -332,7 +331,7 @@ static int gsijs_copy_mono(gx_device * dev, const byte * data,
       unsigned char *beg = ijsdev->k_band;
       unsigned char *end = ijsdev->k_band+ijsdev->k_band_size;
       unsigned char *p;
-      
+
       if (h <= 0 || w <= 0)
          return 0;
 
@@ -381,7 +380,7 @@ static int gsijs_copy_mono(gx_device * dev, const byte * data,
             scan+=draster;
             dest+=raster;
          }
-      }   
+      }
    }
 
    return (*ijsdev->prn_procs.copy_mono)(dev, data, dx, draster, id, x, y, w, height, zero, one);
@@ -460,11 +459,11 @@ static int gsijs_get_bits(gx_device_printer * pdev, int y, byte * str, byte ** a
    int band_number = y/band_height;
    int raster = (ijsdev->k_width+7) >> 3;       /* raster width in bytes, byte aligned */
    int y1=raster*(y-(band_height*band_number));
- 
+
    if (y1 == 0)
    {
       /* First raster for band, clear k_band. Banding playback occurs on first raster. */
-      memset(ijsdev->k_band, 0, ijsdev->k_band_size); 
+      memset(ijsdev->k_band, 0, ijsdev->k_band_size);
    }
 
    return gdev_prn_get_bits(pdev, y, str, actual_data);  /* get raster from regular band */
@@ -478,7 +477,7 @@ static int gsijs_k_get_bits(gx_device_printer * pdev, int y, byte ** actual_data
    int band_number = y/band_height;
    int raster = (ijsdev->k_width+7) >> 3;       /* raster width in bytes, byte aligned */
    int y1=raster*(y-(band_height*band_number));
- 
+
    *actual_data = ijsdev->k_band+y1;
 
    return 0;
@@ -526,7 +525,7 @@ gsijs_set_krgb_mode(gx_device_ijs *ijsdev)
     if (strstr(buf, "KRGB") != NULL)
     {
         ijsdev->krgb_mode = 1;     /* yes KRGB is supported */
-        ijsdev->k_bits = 1;        /* KRGB = 1x8x8x8 */ 
+        ijsdev->k_bits = 1;        /* KRGB = 1x8x8x8 */
     }
     else if (strstr(buf, "KxRGB") != NULL)
     {
@@ -534,7 +533,7 @@ gsijs_set_krgb_mode(gx_device_ijs *ijsdev)
         ijsdev->k_bits = 8;       /* KRGB = 8x8x8x8 */
     }
 
-    return 0; 
+    return 0;
 }
 
 /* ------ Private definitions ------ */
@@ -547,29 +546,29 @@ gsijs_parse_wxh (const char *val, int size, double *pw, double *ph)
     int i;
 
     for (i = 0; i < size; i++)
-	if (val[i] == 'x')
-	    break;
+        if (val[i] == 'x')
+            break;
 
     if (i + 1 >= size)
-	return IJS_ESYNTAX;
+        return IJS_ESYNTAX;
 
     if (i >= sizeof(buf))
-	return IJS_EBUF;
+        return IJS_EBUF;
 
     memcpy (buf, val, i);
     buf[i] = 0;
     *pw = strtod (buf, &tail);
     if (tail == buf)
-	return IJS_ESYNTAX;
+        return IJS_ESYNTAX;
 
     if (size - i > sizeof(buf))
-	return IJS_EBUF;
+        return IJS_EBUF;
 
     memcpy (buf, val + i + 1, size - i - 1);
     buf[size - i - 1] = 0;
     *ph = strtod (buf, &tail);
     if (tail == buf)
-	return IJS_ESYNTAX;
+        return IJS_ESYNTAX;
 
     return 0;
 }
@@ -588,38 +587,38 @@ gsijs_set_generic_params(gx_device_ijs *ijsdev)
     /* Split IjsParams into separate parameters and send to ijs server */
     value = NULL;
     for (i=0, j=0; (j < ijsdev->IjsParams_size) && (i < sizeof(buf)-1); j++) {
-	char ch = ijsdev->IjsParams[j];
-	if (ch == '\\') {
-	    j++;
-	    buf[i++] = ijsdev->IjsParams[j];
-	}
-	else {
-	    if (ch == '=') {
-		buf[i++] = '\0';
-		value = &buf[i];
-	    }
-	    else
-		buf[i++] = ch;
-	    if (ch == ',') {
-		buf[i-1] = '\0';
-		if (value)
-		    gsijs_client_set_param(ijsdev, buf, value);
-		i = 0;
-		value = NULL;
-	    }
-	}
+        char ch = ijsdev->IjsParams[j];
+        if (ch == '\\') {
+            j++;
+            buf[i++] = ijsdev->IjsParams[j];
+        }
+        else {
+            if (ch == '=') {
+                buf[i++] = '\0';
+                value = &buf[i];
+            }
+            else
+                buf[i++] = ch;
+            if (ch == ',') {
+                buf[i-1] = '\0';
+                if (value)
+                    gsijs_client_set_param(ijsdev, buf, value);
+                i = 0;
+                value = NULL;
+            }
+        }
     }
     if (value)
-	code = gsijs_client_set_param(ijsdev, buf, value);
+        code = gsijs_client_set_param(ijsdev, buf, value);
 
     if (code == 0 && ijsdev->Duplex_set) {
-	code = gsijs_client_set_param(ijsdev, "PS:Duplex",
-				      ijsdev->Duplex ? "true" : "false");
+        code = gsijs_client_set_param(ijsdev, "PS:Duplex",
+                                      ijsdev->Duplex ? "true" : "false");
     }
     if (code == 0 && ijsdev->IjsTumble_set) {
-	code = gsijs_client_set_param(ijsdev, "PS:Tumble",
-				      ijsdev->IjsTumble ? "true" :
-				      "false");
+        code = gsijs_client_set_param(ijsdev, "PS:Tumble",
+                                      ijsdev->IjsTumble ? "true" :
+                                      "false");
     }
     return code;
 }
@@ -638,86 +637,86 @@ gsijs_set_margin_params(gx_device_ijs *ijsdev)
     /* Split IjsParams into separate parameters and send to ijs server */
     value = NULL;
     for (i=0, j=0; (j < ijsdev->IjsParams_size) && (i < sizeof(buf)-1); j++) {
-	char ch = ijsdev->IjsParams[j];
-	if (ch == '\\') {
-	    j++;
-	    buf[i++] = ijsdev->IjsParams[j];
-	}
-	else {
-	    if (ch == '=') {
-		buf[i++] = '\0';
-		value = &buf[i];
-	    }
-	    else
-		buf[i++] = ch;
-	    if (ch == ',') {
-		buf[i-1] = '\0';
-		if (value)
-		    gsijs_client_set_param(ijsdev, buf, value);
-		i = 0;
-		value = NULL;
-	    }
-	}
+        char ch = ijsdev->IjsParams[j];
+        if (ch == '\\') {
+            j++;
+            buf[i++] = ijsdev->IjsParams[j];
+        }
+        else {
+            if (ch == '=') {
+                buf[i++] = '\0';
+                value = &buf[i];
+            }
+            else
+                buf[i++] = ch;
+            if (ch == ',') {
+                buf[i-1] = '\0';
+                if (value)
+                    gsijs_client_set_param(ijsdev, buf, value);
+                i = 0;
+                value = NULL;
+            }
+        }
     }
     if (value)
-	code = gsijs_client_set_param(ijsdev, buf, value);
+        code = gsijs_client_set_param(ijsdev, buf, value);
 
     if (code == 0 && ijsdev->Duplex_set) {
-	code = gsijs_client_set_param(ijsdev, "Duplex",
-				      ijsdev->Duplex ? "true" : "false");
+        code = gsijs_client_set_param(ijsdev, "Duplex",
+                                      ijsdev->Duplex ? "true" : "false");
     }
     if (code == 0 && ijsdev->IjsTumble_set) {
-	code = gsijs_client_set_param(ijsdev, "Tumble",
-				      ijsdev->IjsTumble ? "true" :
-				      "false");
+        code = gsijs_client_set_param(ijsdev, "Tumble",
+                                      ijsdev->IjsTumble ? "true" :
+                                      "false");
     }
 
     if (code == 0) {
-	sprintf (buf, "%gx%g", ijsdev->MediaSize[0] * (1.0 / 72),
-		 ijsdev->MediaSize[1] * (1.0 / 72));
-	code = ijs_client_set_param(ijsdev->ctx, 0, "PaperSize",
-				    buf, strlen(buf));
+        sprintf (buf, "%gx%g", ijsdev->MediaSize[0] * (1.0 / 72),
+                 ijsdev->MediaSize[1] * (1.0 / 72));
+        code = ijs_client_set_param(ijsdev->ctx, 0, "PaperSize",
+                                    buf, strlen(buf));
     }
 
     if (code == 0) {
-	double printable_width, printable_height;
-	double printable_left, printable_top;
-	float m[4];
+        double printable_width, printable_height;
+        double printable_left, printable_top;
+        float m[4];
 
-	code = ijs_client_get_param(ijsdev->ctx, 0, "PrintableArea",
-				   buf, sizeof(buf));
-	if (code == IJS_EUNKPARAM)
-	    /* IJS server doesn't support margin negotiations.
-	       That's ok. */
-	    return 0;
-	else if (code >= 0) {
-	    code = gsijs_parse_wxh (buf, code,
-				    &printable_width, &printable_height);
-	}
+        code = ijs_client_get_param(ijsdev->ctx, 0, "PrintableArea",
+                                   buf, sizeof(buf));
+        if (code == IJS_EUNKPARAM)
+            /* IJS server doesn't support margin negotiations.
+               That's ok. */
+            return 0;
+        else if (code >= 0) {
+            code = gsijs_parse_wxh (buf, code,
+                                    &printable_width, &printable_height);
+        }
 
-	if (code == 0) {
-	    code = ijs_client_get_param(ijsdev->ctx, 0, "PrintableTopLeft",
-					buf, sizeof(buf));
-	    if (code == IJS_EUNKPARAM)
-		return 0;
-	    else if (code >= 0) {
-		code = gsijs_parse_wxh(buf, code,
-					&printable_left, &printable_top);
-	    }
-	}
+        if (code == 0) {
+            code = ijs_client_get_param(ijsdev->ctx, 0, "PrintableTopLeft",
+                                        buf, sizeof(buf));
+            if (code == IJS_EUNKPARAM)
+                return 0;
+            else if (code >= 0) {
+                code = gsijs_parse_wxh(buf, code,
+                                        &printable_left, &printable_top);
+            }
+        }
 
-	if (code == 0) {
-	    m[0] = printable_left;
-	    m[3] = printable_top;
-	    m[2] = ijsdev->MediaSize[0] * (1.0 / 72) -
-		printable_left - printable_width;
-	    m[1] = ijsdev->MediaSize[1] * (1.0 / 72) -
-		printable_top - printable_height;
-	    gx_device_set_margins((gx_device *)ijsdev, m, true);
-	    sprintf (buf, "%gx%g", printable_left, printable_top);
-	    code = ijs_client_set_param(ijsdev->ctx, 0, "TopLeft",
-					buf, strlen(buf));
-	}
+        if (code == 0) {
+            m[0] = printable_left;
+            m[3] = printable_top;
+            m[2] = ijsdev->MediaSize[0] * (1.0 / 72) -
+                printable_left - printable_width;
+            m[1] = ijsdev->MediaSize[1] * (1.0 / 72) -
+                printable_top - printable_height;
+            gx_device_set_margins((gx_device *)ijsdev, m, true);
+            sprintf (buf, "%gx%g", printable_left, printable_top);
+            code = ijs_client_set_param(ijsdev->ctx, 0, "TopLeft",
+                                        buf, strlen(buf));
+        }
     }
 
     return code;
@@ -747,47 +746,47 @@ gsijs_set_resolution(gx_device_ijs *ijsdev)
     bool save_is_open = ijsdev->is_open;
 
     if (ijsdev->HWResolution[0] != DEFAULT_DPI ||
-	ijsdev->HWResolution[1] != DEFAULT_DPI) {
-	/* Resolution has been set on command line. */
-	return 0;
+        ijsdev->HWResolution[1] != DEFAULT_DPI) {
+        /* Resolution has been set on command line. */
+        return 0;
     }
     code = ijs_client_get_param(ijsdev->ctx, 0, "Dpi",
-				buf, sizeof(buf));
+                                buf, sizeof(buf));
     if (code >= 0) {
-	int i;
+        int i;
 
-	for (i = 0; i < code; i++)
-	    if (buf[i] == 'x')
-		break;
-	if (i == code) {
-	    char *tail;
+        for (i = 0; i < code; i++)
+            if (buf[i] == 'x')
+                break;
+        if (i == code) {
+            char *tail;
 
-	    if (i == sizeof(buf))
-		code = IJS_EBUF;
-	    buf[i] = 0;
-	    x_dpi = y_dpi = strtod (buf, &tail);
-	    if (tail == buf)
-		code = IJS_ESYNTAX;
-	} else {
-	    double x, y;
+            if (i == sizeof(buf))
+                code = IJS_EBUF;
+            buf[i] = 0;
+            x_dpi = y_dpi = strtod (buf, &tail);
+            if (tail == buf)
+                code = IJS_ESYNTAX;
+        } else {
+            double x, y;
 
-	    code = gsijs_parse_wxh(buf, code, &x, &y);
-	    x_dpi = x;
-	    y_dpi = y;
-	}
+            code = gsijs_parse_wxh(buf, code, &x, &y);
+            x_dpi = x;
+            y_dpi = y;
+        }
     }
 
     if (code < 0) {
-	x_dpi = 72.0;
-	y_dpi = 72.0;
+        x_dpi = 72.0;
+        y_dpi = 72.0;
     }
 
     gx_device_set_resolution((gx_device *)ijsdev, x_dpi, y_dpi);
 
     ijsdev->is_open = true;
     code = gdev_prn_maybe_realloc_memory((gx_device_printer *)ijsdev,
-					 &ijsdev->space_params, width, height,
-					 ijsdev->page_uses_transparency);
+                                         &ijsdev->space_params, width, height,
+                                         ijsdev->page_uses_transparency);
     ijsdev->is_open = save_is_open;
     return code;
 }
@@ -803,8 +802,8 @@ gsijs_open(gx_device *dev)
     int fd = -1;
 
     if (strlen(ijsdev->IjsServer) == 0) {
-	emprintf(dev->memory, "ijs server not specified\n");
-	return gs_note_error(gs_error_ioerror);
+        emprintf(dev->memory, "ijs server not specified\n");
+        return gs_note_error(gs_error_ioerror);
     }
 
     ijsdev->space_params.banding_type = BandingAlways;	/* always force banding */
@@ -824,13 +823,13 @@ gsijs_open(gx_device *dev)
 
     code = gdev_prn_open(dev);
     if (code < 0)
-	return code;
+        return code;
 
     if (use_outputfd) {
-	/* Note: dup() may not be portable to all interesting IJS
-	   platforms. In that case, this branch should be #ifdef'ed out.
-	*/
-	fd = dup(fileno(ijsdev->file));
+        /* Note: dup() may not be portable to all interesting IJS
+           platforms. In that case, this branch should be #ifdef'ed out.
+        */
+        fd = dup(fileno(ijsdev->file));
     }
 
     /* WARNING: Ghostscript should be run with -dSAFER to stop
@@ -838,53 +837,53 @@ gsijs_open(gx_device *dev)
      */
     ijsdev->ctx = ijs_invoke_server(ijsdev->IjsServer);
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
-	emprintf1(ijsdev->memory,
+        emprintf1(ijsdev->memory,
                   "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
-	return gs_note_error(gs_error_ioerror);
+        return gs_note_error(gs_error_ioerror);
     }
 
     ijsdev->ijs_version = ijs_client_get_version (ijsdev->ctx);
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
-	emprintf(ijsdev->memory, "Can't open ijs\n");
-	return gs_note_error(gs_error_ioerror);
+        emprintf(ijsdev->memory, "Can't open ijs\n");
+        return gs_note_error(gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
-	emprintf(ijsdev->memory, "Can't begin ijs job 0\n");
-	ijs_client_close(ijsdev->ctx);
-	return gs_note_error(gs_error_ioerror);
+        emprintf(ijsdev->memory, "Can't begin ijs job 0\n");
+        ijs_client_close(ijsdev->ctx);
+        return gs_note_error(gs_error_ioerror);
     }
 
     if (use_outputfd) {
-	/* Note: dup() may not be portable to all interesting IJS
-	   platforms. In that case, this branch should be #ifdef'ed out.
-	*/
-	sprintf(buf, "%d", fd);
-	ijs_client_set_param(ijsdev->ctx, 0, "OutputFD", buf, strlen(buf)); 
-	close(fd);
+        /* Note: dup() may not be portable to all interesting IJS
+           platforms. In that case, this branch should be #ifdef'ed out.
+        */
+        sprintf(buf, "%d", fd);
+        ijs_client_set_param(ijsdev->ctx, 0, "OutputFD", buf, strlen(buf));
+        close(fd);
     } else {
-	ijs_client_set_param(ijsdev->ctx, 0, "OutputFile", 
-			     ijsdev->fname, strlen(ijsdev->fname));
+        ijs_client_set_param(ijsdev->ctx, 0, "OutputFile",
+                             ijsdev->fname, strlen(ijsdev->fname));
     }
 
     if (code >= 0 && ijsdev->DeviceManufacturer)
-	code = ijs_client_set_param(ijsdev->ctx, 0, "DeviceManufacturer",
-			     ijsdev->DeviceManufacturer,
-			     strlen(ijsdev->DeviceManufacturer));
+        code = ijs_client_set_param(ijsdev->ctx, 0, "DeviceManufacturer",
+                             ijsdev->DeviceManufacturer,
+                             strlen(ijsdev->DeviceManufacturer));
 
     if (code >= 0 && ijsdev->DeviceModel)
-	code = ijs_client_set_param(ijsdev->ctx, 0, "DeviceModel",
-			     ijsdev->DeviceModel,
-			     strlen(ijsdev->DeviceModel));
+        code = ijs_client_set_param(ijsdev->ctx, 0, "DeviceModel",
+                             ijsdev->DeviceModel,
+                             strlen(ijsdev->DeviceModel));
 
     if (code >= 0)
-	code = gsijs_set_generic_params(ijsdev);
+        code = gsijs_set_generic_params(ijsdev);
 
     if (code >= 0)
-	code = gsijs_set_resolution(ijsdev);
+        code = gsijs_set_resolution(ijsdev);
 
     if (code >= 0)
-	code = gsijs_set_margin_params(ijsdev);
+        code = gsijs_set_margin_params(ijsdev);
 
     if (code >= 0)
         code = gsijs_set_krgb_mode(ijsdev);
@@ -903,12 +902,12 @@ gsijs_finish_copydevice(gx_device *dev, const gx_device *from_dev)
     code = gx_default_finish_copydevice(dev, from_dev);
     if(code < 0)
         return code;
- 
+
     if (!ijsdev->ColorSpace) {
-	ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1, 
-		"gsijs_finish_copydevice");
+        ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1,
+                "gsijs_finish_copydevice");
         if (!ijsdev->ColorSpace)
- 	    return gs_note_error(gs_error_VMerror);
+            return gs_note_error(gs_error_VMerror);
         ijsdev->ColorSpace_size = sizeof(rgb);
         memcpy(ijsdev->ColorSpace, rgb, sizeof(rgb));
     }
@@ -930,17 +929,17 @@ gsijs_close(gx_device *dev)
 
     code = gdev_prn_close(dev);
     if (ijsdev->IjsParams)
-	gs_free(dev->memory, ijsdev->IjsParams,
-		ijsdev->IjsParams_size, 1, "gsijs_read_string_malloc");
+        gs_free(dev->memory, ijsdev->IjsParams,
+                ijsdev->IjsParams_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->ColorSpace)
-	gs_free(dev->memory, ijsdev->ColorSpace,
-		ijsdev->ColorSpace_size, 1, "gsijs_read_string_malloc");
+        gs_free(dev->memory, ijsdev->ColorSpace,
+                ijsdev->ColorSpace_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->DeviceManufacturer)
-	gs_free(dev->memory, ijsdev->DeviceManufacturer,
-		ijsdev->DeviceManufacturer_size, 1, "gsijs_read_string_malloc");
+        gs_free(dev->memory, ijsdev->DeviceManufacturer,
+                ijsdev->DeviceManufacturer_size, 1, "gsijs_read_string_malloc");
     if (ijsdev->DeviceModel)
-	gs_free(dev->memory, ijsdev->DeviceModel,
-		ijsdev->DeviceModel_size, 1, "gsijs_read_string_malloc");
+        gs_free(dev->memory, ijsdev->DeviceModel,
+                ijsdev->DeviceModel_size, 1, "gsijs_read_string_malloc");
     ijsdev->IjsParams = NULL;
     ijsdev->IjsParams_size = 0;
     ijsdev->DeviceManufacturer = NULL;
@@ -969,7 +968,7 @@ gsijs_raster_width(gx_device *pdev)
     return min(width, end);
 }
 
-/* Print a page.  Don't use normal printer gdev_prn_output_page 
+/* Print a page.  Don't use normal printer gdev_prn_output_page
  * because it opens the output file.
  */
 static int
@@ -993,12 +992,12 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
     int i, y;
 
     if ((data = gs_alloc_bytes(pdev->memory, raster, "gsijs_output_page"))
-	== (unsigned char *)NULL)
+        == (unsigned char *)NULL)
         return gs_note_error(gs_error_VMerror);
 
     /* Determine bitmap width and height */
     ijs_height = gdev_prn_print_scan_lines(dev);
-	ijs_width = gsijs_raster_width(dev);
+        ijs_width = gsijs_raster_width(dev);
 
     row_bytes = (ijs_width * pdev->color_info.depth + 7) >> 3;
 
@@ -1010,7 +1009,7 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 
         /* Create banding buffer for k plane. */
         ijsdev->k_width = ijs_width;
-        ijsdev->k_band_size = band_height * k_row_bytes;   
+        ijsdev->k_band_size = band_height * k_row_bytes;
         if ((ijsdev->k_band = gs_malloc(pdev->memory, ijsdev->k_band_size, 1, "gsijs_output_page")) == (unsigned char *)NULL)
            return gs_note_error(gs_error_VMerror);
     }
@@ -1022,8 +1021,8 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
     gsijs_client_set_param(ijsdev, "BitsPerSample", buf);
 
     /* This needs to become more sophisticated for DeviceN. */
-    strcpy(buf, (n_chan == 4) ? "DeviceCMYK" : 
-	((n_chan == 3) ? (krgb_mode ? ((k_bits == 1) ? "KRGB" : "KxRGB") : "DeviceRGB") : "DeviceGray"));
+    strcpy(buf, (n_chan == 4) ? "DeviceCMYK" :
+        ((n_chan == 3) ? (krgb_mode ? ((k_bits == 1) ? "KRGB" : "KxRGB") : "DeviceRGB") : "DeviceGray"));
     gsijs_client_set_param(ijsdev, "ColorSpace", buf);
 
     sprintf(buf, "%d", ijs_width);
@@ -1046,11 +1045,11 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 #endif
 
     for (i=0; i<num_copies; i++) {
- 	unsigned char *actual_data;
-	ijs_client_begin_cmd (ijsdev->ctx, IJS_CMD_BEGIN_PAGE);
-	status = ijs_client_send_cmd_wait(ijsdev->ctx);
+        unsigned char *actual_data;
+        ijs_client_begin_cmd (ijsdev->ctx, IJS_CMD_BEGIN_PAGE);
+        status = ijs_client_send_cmd_wait(ijsdev->ctx);
 
-	for (y = 0; y < ijs_height; y++) {
+        for (y = 0; y < ijs_height; y++) {
             if (krgb_mode)
                 code = gsijs_get_bits(pdev, y, data, &actual_data);
             else
@@ -1074,10 +1073,10 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
                 status = ijs_client_send_data_wait(ijsdev->ctx, 0, (char *)actual_data, k_row_bytes);
                 if (status)
                     break;
-	    }
-	}
-	ijs_client_begin_cmd(ijsdev->ctx, IJS_CMD_END_PAGE);
-	status = ijs_client_send_cmd_wait(ijsdev->ctx);
+            }
+        }
+        ijs_client_begin_cmd(ijsdev->ctx, IJS_CMD_END_PAGE);
+        status = ijs_client_send_cmd_wait(ijsdev->ctx);
     }
 
 #ifdef KRGB_DEBUG
@@ -1091,22 +1090,20 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
     gs_free_object(pdev->memory, data, "gsijs_output_page");
 
     endcode = (pdev->buffer_space && !pdev->is_async_renderer ?
-	       clist_finish_page(dev, flush) : 0);
-
+               clist_finish_page(dev, flush) : 0);
 
     if (endcode < 0)
-	return endcode;
+        return endcode;
 
     if (code < 0)
-	return endcode;
+        return endcode;
 
     if (status < 0)
-	return gs_note_error(gs_error_ioerror);
+        return gs_note_error(gs_error_ioerror);
 
     code = gx_finish_output_page(dev, num_copies, flush);
     return code;
 }
-
 
 /**************************************************************************/
 
@@ -1119,51 +1116,51 @@ gsijs_get_params(gx_device *dev, gs_param_list *plist)
     int code = gdev_prn_get_params(dev, plist);
 
     if (code >= 0) {
-	param_string_from_transient_string(gps, ijsdev->IjsServer);
-	code = param_write_string(plist, "IjsServer", &gps);
+        param_string_from_transient_string(gps, ijsdev->IjsServer);
+        code = param_write_string(plist, "IjsServer", &gps);
     }
 
     if (code >= 0) {
-	if (ijsdev->DeviceManufacturer) {
-	    param_string_from_transient_string(gps,
-					       ijsdev->DeviceManufacturer);
-	    code = param_write_string(plist, "DeviceManufacturer", &gps);
-	} else {
-	    code = param_write_null(plist, "DeviceManufacturer");
-	}
+        if (ijsdev->DeviceManufacturer) {
+            param_string_from_transient_string(gps,
+                                               ijsdev->DeviceManufacturer);
+            code = param_write_string(plist, "DeviceManufacturer", &gps);
+        } else {
+            code = param_write_null(plist, "DeviceManufacturer");
+        }
     }
 
     if (code >= 0) {
-	if (ijsdev->DeviceModel) {
-	    param_string_from_transient_string(gps, ijsdev->DeviceModel);
-	    code = param_write_string(plist, "DeviceModel", &gps);
-	} else {
-	    code = param_write_null(plist, "DeviceModel");
-	}
+        if (ijsdev->DeviceModel) {
+            param_string_from_transient_string(gps, ijsdev->DeviceModel);
+            code = param_write_string(plist, "DeviceModel", &gps);
+        } else {
+            code = param_write_null(plist, "DeviceModel");
+        }
     }
 
     if (code >= 0) {
-	if (ijsdev->IjsParams) {
-	    param_string_from_transient_string(gps, ijsdev->IjsParams);
-	    code = param_write_string(plist, "IjsParams", &gps);
-	} else {
-	    code = param_write_null(plist, "IjsParams");
-	}
+        if (ijsdev->IjsParams) {
+            param_string_from_transient_string(gps, ijsdev->IjsParams);
+            code = param_write_string(plist, "IjsParams", &gps);
+        } else {
+            code = param_write_null(plist, "IjsParams");
+        }
     }
 
     if (code >= 0)
- 	code = param_write_int(plist, "BitsPerSample", &ijsdev->BitsPerSample);
+        code = param_write_int(plist, "BitsPerSample", &ijsdev->BitsPerSample);
 
     if (code >= 0)
- 	code = param_write_bool(plist, "IjsUseOutputFD",
-				&ijsdev->IjsUseOutputFD);
+        code = param_write_bool(plist, "IjsUseOutputFD",
+                                &ijsdev->IjsUseOutputFD);
 
     if (code >= 0) {
-	if (ijsdev->IjsTumble_set) {
-	    code = param_write_bool(plist, "Tumble", &ijsdev->IjsTumble);
-	} else {
-	    code = param_write_null(plist, "Tumble");
-	}
+        if (ijsdev->IjsTumble_set) {
+            code = param_write_bool(plist, "Tumble", &ijsdev->IjsTumble);
+        } else {
+            code = param_write_null(plist, "Tumble");
+        }
     }
 
     return code;
@@ -1177,49 +1174,49 @@ gsijs_read_int(gs_param_list *plist, gs_param_name pname, int *pval,
     int new_value;
 
     switch (code = param_read_int(plist, pname, &new_value)) {
-	case 0:
-	    if (only_when_closed && (new_value != *pval)) {
-		code = gs_error_rangecheck;
-		goto e;
-	    }
-	    if ((new_value >= min_value) && (new_value <= max_value)) {
-		*pval = new_value;
-		break;
-	    }
-	    code = gs_note_error(gs_error_rangecheck);
-	    goto e;
-	default:
-	    if (param_read_null(plist, pname) == 0)
-		return 1;
-	    e:param_signal_error(plist, pname, code);
-	case 1:
-	    ;
+        case 0:
+            if (only_when_closed && (new_value != *pval)) {
+                code = gs_error_rangecheck;
+                goto e;
+            }
+            if ((new_value >= min_value) && (new_value <= max_value)) {
+                *pval = new_value;
+                break;
+            }
+            code = gs_note_error(gs_error_rangecheck);
+            goto e;
+        default:
+            if (param_read_null(plist, pname) == 0)
+                return 1;
+            e:param_signal_error(plist, pname, code);
+        case 1:
+            ;
     }
     return code;
 }
 
 static int
 gsijs_read_bool(gs_param_list *plist, gs_param_name pname, bool *pval,
-		bool only_when_closed)
+                bool only_when_closed)
 {
     int code = 0;
     bool new_value;
 
     switch (code = param_read_bool(plist, pname, &new_value)) {
-	case 0:
-	    if (only_when_closed && (new_value != *pval)) {
-		code = gs_error_rangecheck;
-		goto e;
-	    }
-	    *pval = new_value;
-	    break;
-	default:
-	    if (param_read_null(plist, pname) == 0) {
-		return 1;
-	    }
-	    e:param_signal_error(plist, pname, code);
-	case 1:
-	    ;
+        case 0:
+            if (only_when_closed && (new_value != *pval)) {
+                code = gs_error_rangecheck;
+                goto e;
+            }
+            *pval = new_value;
+            break;
+        default:
+            if (param_read_null(plist, pname) == 0) {
+                return 1;
+            }
+            e:param_signal_error(plist, pname, code);
+        case 1:
+            ;
     }
     return code;
 }
@@ -1234,21 +1231,21 @@ gsijs_read_string(gs_param_list *plist, gs_param_name pname, char *str,
 
     switch (code = param_read_string(plist, pname, &new_value)) {
         case 0:
-	    differs = bytes_compare(new_value.data, new_value.size,
-			(const byte *)str, strlen(str));
-	    if (safety && differs) {
-		code = gs_error_invalidaccess;
-		goto e;
-	    }
-	    if (only_when_closed && differs) {
-		code = gs_error_rangecheck;
-		goto e;
-	    }
+            differs = bytes_compare(new_value.data, new_value.size,
+                        (const byte *)str, strlen(str));
+            if (safety && differs) {
+                code = gs_error_invalidaccess;
+                goto e;
+            }
+            if (only_when_closed && differs) {
+                code = gs_error_rangecheck;
+                goto e;
+            }
             if (new_value.size < size) {
-		strncpy(str, (const char *)new_value.data, new_value.size);
-		str[new_value.size+1] = '\0';
+                strncpy(str, (const char *)new_value.data, new_value.size);
+                str[new_value.size+1] = '\0';
                 break;
-	    }
+            }
             code = gs_note_error(gs_error_rangecheck);
             goto e;
         default:
@@ -1271,30 +1268,30 @@ gsijs_read_string_malloc(gs_param_list *plist, gs_param_name pname, char **str,
 
     switch (code = param_read_string(plist, pname, &new_value)) {
         case 0:
-	    differs = bytes_compare(new_value.data, new_value.size,
-			(const byte *)(*str ? *str : ""), 
-		  	*str ? strlen(*str) : 0);
-	    if (only_when_closed && differs) {
-		code = gs_error_rangecheck;
-		goto e;
-	    }
-	    if (new_value.size + 1 != *size) {
-	        if (*str)
-		    gs_free(plist->memory, *str, *size, 1,
-					"gsijs_read_string_malloc");
-		*str = NULL;
-		*size = 0;
-	    }
-	    if (*str == NULL)
-	        *str = gs_malloc(plist->memory, new_value.size + 1, 1, 
-					"gsijs_read_string_malloc");
-	    if (*str == NULL) {
+            differs = bytes_compare(new_value.data, new_value.size,
+                        (const byte *)(*str ? *str : ""),
+                        *str ? strlen(*str) : 0);
+            if (only_when_closed && differs) {
+                code = gs_error_rangecheck;
+                goto e;
+            }
+            if (new_value.size + 1 != *size) {
+                if (*str)
+                    gs_free(plist->memory, *str, *size, 1,
+                                        "gsijs_read_string_malloc");
+                *str = NULL;
+                *size = 0;
+            }
+            if (*str == NULL)
+                *str = gs_malloc(plist->memory, new_value.size + 1, 1,
+                                        "gsijs_read_string_malloc");
+            if (*str == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto e;
-	    }
-	    *size = new_value.size + 1;
-	    strncpy(*str, (const char *)new_value.data, new_value.size);
-	    (*str)[new_value.size] = '\0';
+            }
+            *size = new_value.size + 1;
+            strncpy(*str, (const char *)new_value.data, new_value.size);
+            (*str)[new_value.size] = '\0';
             break;
         default:
             if (param_read_null(plist, pname) == 0)
@@ -1305,7 +1302,6 @@ gsijs_read_string_malloc(gs_param_list *plist, gs_param_name pname, char **str,
     }
     return code;
 }
-
 
 static int
 gsijs_put_params(gx_device *dev, gs_param_list *plist)
@@ -1320,8 +1316,8 @@ gsijs_put_params(gx_device *dev, gs_param_list *plist)
        the device has been opened, which is when the -DDuplex
        command line is processed. */
     if (ijsdev->Duplex_set < 0) {
-	ijsdev->Duplex = 1;
-	ijsdev->Duplex_set = 0;
+        ijsdev->Duplex = 1;
+        ijsdev->Duplex_set = 0;
     }
 
     /* If a parameter must not be changed after the device is open,
@@ -1329,57 +1325,57 @@ gsijs_put_params(gx_device *dev, gs_param_list *plist)
      * If a parameter may be changed at any time, it is false.
      */
     if (code >= 0)
-	code = gsijs_read_string(plist, "IjsServer", 
-	    ijsdev->IjsServer, sizeof(ijsdev->IjsServer), 
-	    dev->LockSafetyParams, is_open);
+        code = gsijs_read_string(plist, "IjsServer",
+            ijsdev->IjsServer, sizeof(ijsdev->IjsServer),
+            dev->LockSafetyParams, is_open);
 
     if (code >= 0)
-	code = gsijs_read_string_malloc(plist, "DeviceManufacturer", 
-	    &ijsdev->DeviceManufacturer, &ijsdev->DeviceManufacturer_size, 
-	    is_open);
+        code = gsijs_read_string_malloc(plist, "DeviceManufacturer",
+            &ijsdev->DeviceManufacturer, &ijsdev->DeviceManufacturer_size,
+            is_open);
 
     if (code >= 0)
-	code = gsijs_read_string_malloc(plist, "DeviceModel", 
-	    &ijsdev->DeviceModel, &ijsdev->DeviceModel_size, 
-	    is_open);
+        code = gsijs_read_string_malloc(plist, "DeviceModel",
+            &ijsdev->DeviceModel, &ijsdev->DeviceModel_size,
+            is_open);
 
     if (code >= 0)
-	code = gsijs_read_string_malloc(plist, "IjsParams", 
-	    &(ijsdev->IjsParams), &(ijsdev->IjsParams_size), is_open);
+        code = gsijs_read_string_malloc(plist, "IjsParams",
+            &(ijsdev->IjsParams), &(ijsdev->IjsParams_size), is_open);
 
     if (code >= 0)
-	code = gsijs_read_int(plist, "BitsPerSample", &ijsdev->BitsPerSample, 
-		1, 16, is_open);
+        code = gsijs_read_int(plist, "BitsPerSample", &ijsdev->BitsPerSample,
+                1, 16, is_open);
 
     if (code >= 0)
- 	code = gsijs_read_bool(plist, "IjsUseOutputFD",
-			       &ijsdev->IjsUseOutputFD, is_open);
+        code = gsijs_read_bool(plist, "IjsUseOutputFD",
+                               &ijsdev->IjsUseOutputFD, is_open);
 
     if (code >= 0) {
-	code = gsijs_read_string_malloc(plist, "ProcessColorModel",
-	    &ijsdev->ColorSpace, &ijsdev->ColorSpace_size, is_open);
+        code = gsijs_read_string_malloc(plist, "ProcessColorModel",
+            &ijsdev->ColorSpace, &ijsdev->ColorSpace_size, is_open);
     }
 
     if (code >= 0) {
- 	code = gsijs_read_bool(plist, "Tumble", &ijsdev->IjsTumble, false);
-	if (code == 0)
-	    ijsdev->IjsTumble_set = true;
+        code = gsijs_read_bool(plist, "Tumble", &ijsdev->IjsTumble, false);
+        if (code == 0)
+            ijsdev->IjsTumble_set = true;
     }
 
     if (code >= 0)
-	code = gsijs_set_color_format(ijsdev);
+        code = gsijs_set_color_format(ijsdev);
 
     if (code >= 0)
-	code = gdev_prn_put_params(dev, plist);
+        code = gdev_prn_put_params(dev, plist);
 
     if (code >= 0 && is_open) {
-	code = gsijs_set_generic_params(ijsdev);
-	if (code >= 0)
-	  code = gsijs_set_margin_params(ijsdev);
-	if (code < 0)
-	    return gs_note_error(gs_error_ioerror);
+        code = gsijs_set_generic_params(ijsdev);
+        if (code >= 0)
+          code = gsijs_set_margin_params(ijsdev);
+        if (code < 0)
+            return gs_note_error(gs_error_ioerror);
     }
-    
+
     return code;
 }
 
@@ -1387,10 +1383,10 @@ static int
 gsijs_client_set_param(gx_device_ijs *ijsdev, const char *key,
     const char *value)
 {
-    int code = ijs_client_set_param(ijsdev->ctx, 0 /* job id */, 
-	key, value, strlen(value));
+    int code = ijs_client_set_param(ijsdev->ctx, 0 /* job id */,
+        key, value, strlen(value));
     if (code < 0)
-	dprintf2("ijs: Can't set parameter %s=%s\n", key, value);
+        dprintf2("ijs: Can't set parameter %s=%s\n", key, value);
     return code;
 }
 
@@ -1404,39 +1400,39 @@ gsijs_set_color_format(gx_device_ijs *ijsdev)
     const char *ColorSpace = ijsdev->ColorSpace;
 
     if (ColorSpace == NULL)
-	ColorSpace = "DeviceRGB";
+        ColorSpace = "DeviceRGB";
 
     if (!strcmp (ColorSpace, "DeviceGray")) {
-	components = 1;
-	if (bpc == 1) {
-	    ijsdev->procs.map_rgb_color = gx_default_w_b_map_rgb_color;
-	    ijsdev->procs.map_color_rgb = gx_default_w_b_map_color_rgb;
-	} else {
-	    ijsdev->procs.map_rgb_color = gx_default_gray_map_rgb_color;
-	    ijsdev->procs.map_color_rgb = gx_default_gray_map_color_rgb;
-	}
-	ijsdev->procs.encode_color = gx_default_gray_fast_encode;
-	ijsdev->procs.decode_color = gx_default_decode_color;
-	dci.polarity = GX_CINFO_POLARITY_ADDITIVE;
-	dci.gray_index = 0;
+        components = 1;
+        if (bpc == 1) {
+            ijsdev->procs.map_rgb_color = gx_default_w_b_map_rgb_color;
+            ijsdev->procs.map_color_rgb = gx_default_w_b_map_color_rgb;
+        } else {
+            ijsdev->procs.map_rgb_color = gx_default_gray_map_rgb_color;
+            ijsdev->procs.map_color_rgb = gx_default_gray_map_color_rgb;
+        }
+        ijsdev->procs.encode_color = gx_default_gray_fast_encode;
+        ijsdev->procs.decode_color = gx_default_decode_color;
+        dci.polarity = GX_CINFO_POLARITY_ADDITIVE;
+        dci.gray_index = 0;
     } else if (!strcmp (ColorSpace, "DeviceRGB")) {
-	components = 3;
-	ijsdev->procs.map_rgb_color = gx_default_rgb_map_rgb_color;
-	ijsdev->procs.map_color_rgb = gx_default_rgb_map_color_rgb;
-	ijsdev->procs.encode_color = gx_default_rgb_map_rgb_color;
-	ijsdev->procs.decode_color = gx_default_rgb_map_color_rgb;
-	dci.polarity = GX_CINFO_POLARITY_ADDITIVE;
-	dci.gray_index = GX_CINFO_COMP_NO_INDEX;
+        components = 3;
+        ijsdev->procs.map_rgb_color = gx_default_rgb_map_rgb_color;
+        ijsdev->procs.map_color_rgb = gx_default_rgb_map_color_rgb;
+        ijsdev->procs.encode_color = gx_default_rgb_map_rgb_color;
+        ijsdev->procs.decode_color = gx_default_rgb_map_color_rgb;
+        dci.polarity = GX_CINFO_POLARITY_ADDITIVE;
+        dci.gray_index = GX_CINFO_COMP_NO_INDEX;
     } else if (!strcmp (ColorSpace, "DeviceCMYK")) {
-	components = 4;
-	ijsdev->procs.map_cmyk_color = cmyk_8bit_map_cmyk_color;
-	ijsdev->procs.map_color_rgb = cmyk_8bit_map_color_rgb;
-	ijsdev->procs.encode_color = cmyk_8bit_map_cmyk_color;
-	ijsdev->procs.decode_color = gx_default_decode_color;
-	dci.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-	dci.gray_index = 3;
+        components = 4;
+        ijsdev->procs.map_cmyk_color = cmyk_8bit_map_cmyk_color;
+        ijsdev->procs.map_color_rgb = cmyk_8bit_map_color_rgb;
+        ijsdev->procs.encode_color = cmyk_8bit_map_cmyk_color;
+        ijsdev->procs.decode_color = gx_default_decode_color;
+        dci.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+        dci.gray_index = 3;
     } else {
-	return -1;
+        return -1;
     }
 
     maxvalue = (1 << bpc) - 1;
@@ -1450,7 +1446,7 @@ gsijs_set_color_format(gx_device_ijs *ijsdev)
 
     dci.separable_and_linear = GX_CINFO_SEP_LIN;
     dci.cm_name = ColorSpace;
-    
+
     ijsdev->color_info = dci;
 
     set_linear_color_bits_mask_shift((gx_device *)ijsdev);

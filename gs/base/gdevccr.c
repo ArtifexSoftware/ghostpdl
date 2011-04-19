@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -24,24 +24,23 @@
 #define CCNEWPASS(p) putc(0x0c, p)
 #define CCEMPTYLINE(p) putc(0x0a, p)
 #define CCLINESTART(len,p) do{ putc(0x1b,p);putc(0x4b,p);putc(len>>8,p); \
-			       putc(len&0xff,p);} while(0)
+                               putc(len&0xff,p);} while(0)
 
 #define CPASS (0)
 #define MPASS (1)
 #define YPASS (2)
 #define NPASS (3)
 
-
 typedef struct cmyrow_s
-	  {
-	    int current;
+          {
+            int current;
             int _cmylen[NPASS];
-	    int is_used;
-	    char cname[4];
-	    char mname[4];
-	    char yname[4];
+            int is_used;
+            char cname[4];
+            char mname[4];
+            char yname[4];
             unsigned char *_cmybuf[NPASS];
-	  } cmyrow;
+          } cmyrow;
 
 #define clen _cmylen[CPASS]
 #define mlen _cmylen[MPASS]
@@ -60,8 +59,8 @@ static void write_cpass(cmyrow *buf, int rows, int pass, FILE * pstream);
 static void free_rb_line( gs_memory_t *mem, cmyrow *rbuf, int rows, int cols);
 
 struct gx_device_ccr_s {
-	gx_device_common;
-	gx_prn_device_common;
+        gx_device_common;
+        gx_prn_device_common;
         /* optional parameters */
 };
 typedef struct gx_device_ccr_s gx_device_ccr;
@@ -81,16 +80,15 @@ typedef struct gx_device_ccr_s gx_device_ccr;
 /* Macro for generating ccr device descriptors. */
 #define ccr_prn_device(procs, dev_name, margin, num_comp, depth, max_gray, max_rgb, print_page)\
 {	prn_device_body(gx_device_ccr, procs, dev_name,\
-	  DEFAULT_WIDTH_10THS_A3, DEFAULT_HEIGHT_10THS_A3, X_DPI, Y_DPI,\
-	  margin, margin, margin, margin,\
-	  num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
-	  print_page)\
+          DEFAULT_WIDTH_10THS_A3, DEFAULT_HEIGHT_10THS_A3, X_DPI, Y_DPI,\
+          margin, margin, margin, margin,\
+          num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
+          print_page)\
 }
 
 /* For CCR, we need our own color mapping procedures. */
 static dev_proc_map_rgb_color(ccr_map_rgb_color);
 static dev_proc_map_color_rgb(ccr_map_color_rgb);
-
 
 /* And of course we need our own print-page routine. */
 static dev_proc_print_page(ccr_print_page);
@@ -98,12 +96,12 @@ static dev_proc_print_page(ccr_print_page);
 /* The device procedures */
 static gx_device_procs ccr_procs =
     prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-		    ccr_map_rgb_color, ccr_map_color_rgb);
+                    ccr_map_rgb_color, ccr_map_color_rgb);
 
 /* The device descriptors themselves */
 gx_device_ccr far_data gs_ccr_device =
   ccr_prn_device(ccr_procs, "ccr", 0.2, 3, 8, 1, 1,
-		 ccr_print_page);
+                 ccr_print_page);
 
 /* ------ Color mapping routines ------ */
 /* map an rgb color to a ccr cmy bitmap */
@@ -122,7 +120,7 @@ ccr_map_rgb_color(gx_device *pdev, const ushort cv[])
   return r<<2 | g<<1 | b;
 }
 
-/* map an ccr cmy bitmap to a rgb color */ 
+/* map an ccr cmy bitmap to a rgb color */
 static int
 ccr_map_color_rgb(gx_device *pdev, gx_color_index color, ushort rgb[3])
 {
@@ -132,7 +130,6 @@ ccr_map_color_rgb(gx_device *pdev, gx_color_index color, ushort rgb[3])
   return 0;
 }
 /* ------ print page routine ------ */
-
 
 static int
 ccr_print_page(gx_device_printer *pdev, FILE *pstream)
@@ -148,7 +145,7 @@ ccr_print_page(gx_device_printer *pdev, FILE *pstream)
 
   if((in = (byte *)gs_malloc(pdev->memory, line_size, 1, "gsline")) == NULL)
      return_error(gs_error_VMerror);
-    
+
   if(alloc_rb( pdev->memory, &linebuf, lnum))
     {
       gs_free(pdev->memory, in, line_size, 1, "gsline");
@@ -158,29 +155,29 @@ ccr_print_page(gx_device_printer *pdev, FILE *pstream)
   for ( l = 0; l < lnum; l++ )
      {	gdev_prn_get_bits(pdev, l, in, &data);
         if(alloc_line(pdev->memory, &linebuf[l], pixnum))
-	  {
-	    gs_free(pdev->memory, in, line_size, 1, "gsline");
-	    free_rb_line( pdev->memory, linebuf, lnum, pixnum );
-	    return_error(gs_error_VMerror);
-	  }
+          {
+            gs_free(pdev->memory, in, line_size, 1, "gsline");
+            free_rb_line( pdev->memory, linebuf, lnum, pixnum );
+            return_error(gs_error_VMerror);
+          }
         for ( p=0; p< pixnum; p+=8)
-	  {
-	    c=m=y=0;
+          {
+            c=m=y=0;
             for(b=0; b<8; b++)
-	    {
+            {
               c <<= 1; m <<= 1; y <<= 1;
-	      if(p+b < pixnum)
-		cmy = *data;
-	      else
-		cmy = 0;
+              if(p+b < pixnum)
+                cmy = *data;
+              else
+                cmy = 0;
 
               c |= cmy>>2;
-	      m |= (cmy>>1) & 0x1;
-	      y |= cmy & 0x1;
-	      data++;
-	    }
-	    add_cmy8(&linebuf[l], c, m, y);
-	  }
+              m |= (cmy>>1) & 0x1;
+              y |= cmy & 0x1;
+              data++;
+            }
+            add_cmy8(&linebuf[l], c, m, y);
+          }
       }
 CCFILESTART(pstream);
 write_cpass(linebuf, lnum, YPASS, pstream);
@@ -188,17 +185,15 @@ CCNEWPASS(pstream);
 write_cpass(linebuf, lnum, MPASS, pstream);
 CCNEWPASS(pstream);
 write_cpass(linebuf, lnum, CPASS, pstream);
-CCFILEEND(pstream);		 
+CCFILEEND(pstream);
 
-/* clean up */	      
+/* clean up */
 gs_free(pdev->memory, in, line_size, 1, "gsline");
 free_rb_line( pdev->memory, linebuf, lnum, pixnum );
 return 0;
 }
 
-
 /* ------ Internal routines ------ */
-
 
 static int alloc_rb( gs_memory_t *mem, cmyrow **rb, int rows)
   {
@@ -209,12 +204,12 @@ static int alloc_rb( gs_memory_t *mem, cmyrow **rb, int rows)
     {
       int r;
       for(r=0; r<rows; r++)
-	{
-	  sprintf((*rb)[r].cname, "C%02x", r);
-	  sprintf((*rb)[r].mname, "M%02x", r);
-	  sprintf((*rb)[r].yname, "Y%02x", r);
-	  (*rb)[r].is_used=0;
-	}
+        {
+          sprintf((*rb)[r].cname, "C%02x", r);
+          sprintf((*rb)[r].mname, "M%02x", r);
+          sprintf((*rb)[r].yname, "Y%02x", r);
+          (*rb)[r].is_used=0;
+        }
       return 0;
     }
 }
@@ -261,10 +256,10 @@ static void write_cpass(cmyrow *buf, int rows, int pass, FILE * pstream)
       {
       len=buf[row].cmylen[pass];
       if(len == 0)
-	CCEMPTYLINE(pstream);
+        CCEMPTYLINE(pstream);
       else
-	{
-	  CCLINESTART(len,pstream);
+        {
+          CCLINESTART(len,pstream);
           fwrite( buf[row].cmybuf[pass], len, 1, pstream);
         }
     }
@@ -277,14 +272,14 @@ static void free_rb_line( gs_memory_t *mem, cmyrow *rbuf, int rows, int cols)
   for(i=0; i<rows; i++)
     {
       if(rbuf[i].is_used)
-	{
+        {
           gs_free(mem, rbuf[i].cbuf, cols, 1, rbuf[i].cname);
-	  gs_free(mem, rbuf[i].mbuf, cols, 1, rbuf[i].mname);
-	  gs_free(mem, rbuf[i].ybuf, cols, 1, rbuf[i].yname);
-	  rbuf[i].is_used = 0;
-	}
+          gs_free(mem, rbuf[i].mbuf, cols, 1, rbuf[i].mname);
+          gs_free(mem, rbuf[i].ybuf, cols, 1, rbuf[i].yname);
+          rbuf[i].is_used = 0;
+        }
       else
-	break;
+        break;
     }
   gs_free( mem, rbuf, rows, sizeof(cmyrow),  "rb");
   return;

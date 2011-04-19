@@ -1,12 +1,12 @@
 % Copyright (C) 1995 Aladdin Enterprises.  All rights reserved
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -17,13 +17,13 @@
 % stcinfo.ps
 % Epson Stylus-Color Printer-Driver
 
-% The purpose of this file is to print & show Parameters of the 
-% stcolor-driver. If not run on ghostscript/stcolor, it prints 
+% The purpose of this file is to print & show Parameters of the
+% stcolor-driver. If not run on ghostscript/stcolor, it prints
 % something like a color-chart.
 
 % use either existing STCinfo-dictionary, retrieve new one or create dummy
 
-statusdict begin product end 
+statusdict begin product end
 dup (Ghostscript) eq 1 index (Aladdin Ghostscript) eq or
 exch (AFPL Ghostscript) eq or{
 
@@ -65,11 +65,9 @@ exch (AFPL Ghostscript) eq or{
 
    /colortri_bg {pop pop 0.85 dup dup} bind def
 
-
 % +---------------------------------------------------------------------+
 % | Besides from fixing bugs, nothing should be changed below this line |
 % +---------------------------------------------------------------------+
-
 
 %  Arbitrary operation on a pair of vectors, *CHANGES* 1st.
 %  invoke: Vaccu Vop op vop
@@ -84,7 +82,6 @@ exch (AFPL Ghostscript) eq or{
 
 %  Compute sum of vectors elements
    /vsum {0.0 exch{add}forall} bind def
-
 
 %  Sum up products of elements
    /veqn { [ 3 -1 roll {} forall ] exch vmul vsum } bind def
@@ -105,7 +102,7 @@ exch (AFPL Ghostscript) eq or{
 
 % Procedure to *CHANGE* transform rgb->xy
    /rgb2xy {
-      rgb2xyz 
+      rgb2xyz
       dup 0 get 1 index 1 get 2 index vsum % XYZ X Y sum
       dup 0 ne {
         exch 1 index div 3 1 roll div      % XYZ y x
@@ -125,7 +122,6 @@ exch (AFPL Ghostscript) eq or{
    /colortri_scale exch def
    /colortri_box   exch def
 
-
 %  Prepare some useful constants for xy -> RGB conversion
 
    /colsum [                              % Array with column-sums
@@ -136,7 +132,7 @@ exch (AFPL Ghostscript) eq or{
    /Yrow colortri_mat 3 3 getinterval def
 
 %  Avoid allocating new arrays
-   /xcoeff 3 array def                    
+   /xcoeff 3 array def
    /ycoeff 3 array def
 
 % Procedure to derive RGB-Values form X,Y
@@ -151,13 +147,13 @@ exch (AFPL Ghostscript) eq or{
       1e-6 lt { % No Pivot ?
          pop colortri_bg xcoeff astore pop
       }{        % Have a Pivot
-         dup ycoeff exch get neg 
+         dup ycoeff exch get neg
          0 1 2 { dup ycoeff exch get 2 index div ycoeff 3 1 roll put} for
          pop ycoeff 1 index 0 put
 
-         xcoeff 1 index get 
-         0 1 2 { 
-            ycoeff 1 index get 2 index mul xcoeff 2 index get add 
+         xcoeff 1 index get
+         0 1 2 {
+            ycoeff 1 index get 2 index mul xcoeff 2 index get add
             xcoeff 3 1 roll put
          } for
          pop xcoeff 1 index 0 put
@@ -165,23 +161,23 @@ exch (AFPL Ghostscript) eq or{
            pop pop colortri_bg xcoeff astore pop
          }{
            dup 2 index or 3 exch sub
-           xcoeff 1 index get xcoeff 3 index get div neg 
+           xcoeff 1 index get xcoeff 3 index get div neg
            xcoeff exch 3 index exch put
            xcoeff 1 index 1 put
            ycoeff exch get ycoeff 2 index get xcoeff 4 -1 roll get mul add
            xcoeff 3 1 roll put
-           0 1 2 { 
+           0 1 2 {
                xcoeff exch get dup -0.0015 lt exch 1.0015 gt or {
                  colortri_bg xcoeff astore dup exit
                } if
            } for
-           pop pop xcoeff 
+           pop pop xcoeff
          } ifelse
       } ifelse
    } bind def
 
 % Compute the displayed range
-   [ 1 1 1 ] rgb2xy 
+   [ 1 1 1 ] rgb2xy
    dup 0 get /colortri_x0 exch def /colortri_dx colortri_x0 def
    1 get     /colortri_y0 exch def /colortri_dy colortri_y0 def
    [[0 0 1][0 1 0][0 1 1][1 0 0][1 0 1][1 1 0]] {
@@ -208,10 +204,10 @@ exch (AFPL Ghostscript) eq or{
       colortri_box 2 get colortri_box 0 get sub
       dup colortri_dy mul colortri_dx div
    } ifelse
-   dtransform abs colortri_scale div cvi /colortri_ny exch def 
+   dtransform abs colortri_scale div cvi /colortri_ny exch def
               abs colortri_scale div cvi /colortri_nx exch def
-   colortri_nx colortri_scale mul colortri_ny colortri_scale mul 
-   idtransform abs exch abs exch 
+   colortri_nx colortri_scale mul colortri_ny colortri_scale mul
+   idtransform abs exch abs exch
    colortri_box 0 get colortri_box 2 get 1 index sub 3 index sub 2 div add
    colortri_box 1 get colortri_box 3 get 1 index sub 3 index sub 2 div add
    transform .5 add cvi exch .5 add cvi exch itransform
@@ -225,7 +221,7 @@ exch (AFPL Ghostscript) eq or{
    /colortri_ie colortri_tmp length 3 sub def
 
    colortri_nx colortri_ny 8 [ colortri_nx 0 0 colortri_ny 0 0 ]
-   { 
+   {
      colortri_xy 0 colortri_x0 put
      0 3 colortri_ie {
          colortri_tmp exch   % buf ir
@@ -256,7 +252,7 @@ exch (AFPL Ghostscript) eq or{
 
 % action upon ProcessColorModel
 /STCimode {
-   /ProcessColorModel STCiget dup 
+   /ProcessColorModel STCiget dup
    /DeviceCMYK eq{pop 2}{/DeviceRGB eq{1}{0}ifelse}ifelse get exec
 } bind def
 
@@ -266,7 +262,7 @@ exch (AFPL Ghostscript) eq or{
 } bind def
 
 % print right or left-justified text
-/STCiprint { 
+/STCiprint {
    dup 0 gt { dup 2 index length sub STCipspace } if
    1 index print
    dup 0 lt { neg dup 2 index length sub STCipspace } if
@@ -279,7 +275,7 @@ exch (AFPL Ghostscript) eq or{
 
 % Prepare the result
    8 string dup 0 (        ) putinterval
-   exch 
+   exch
 
 % Make it unsigned
    dup 0 lt {neg(-)}{( )}ifelse 0 get exch
@@ -310,7 +306,7 @@ exch (AFPL Ghostscript) eq or{
    dup 0 eq { pop pop dup cvi sub % String fraction
 
       dup 0.0 ne { % Fraction present
-         0.0005 add 1 index 4 (.) putinterval 
+         0.0005 add 1 index 4 (.) putinterval
          5 1 7 { % string frac ind
            exch 10 mul dup cvi exch 1 index sub % string ind ic nfrac
            exch (0123456789) exch get 3 -1 roll % string nfrac chr ind
@@ -329,7 +325,7 @@ exch (AFPL Ghostscript) eq or{
       } for
       pop
    } ifelse
-   
+
 } bind def
 
 % compute colorvalue-steps from transfer & coding
@@ -366,7 +362,7 @@ exch (AFPL Ghostscript) eq or{
          2 copy exch dup 0 eq {
             10 index exch 0.0 put pop
          }{
-            dup 10 index exch 1 sub get 3 -1 roll add 2 div 
+            dup 10 index exch 1 sub get 3 -1 roll add 2 div
             10 index 3 1 roll put
          }ifelse
          7 index 3 1 roll put
@@ -399,7 +395,7 @@ exch (AFPL Ghostscript) eq or{
      dup 2 index add 2 div 3 index exec % Color to average
      4 index 2 get 5 index 0 get sub exch 1 index mul 5 index 0 get add 3 1 roll
      mul 4 index 0 get add 4 index 3 get 5 index 1 get
-     newpath 
+     newpath
      2 index 1 index moveto
      3 index 1 index lineto
      3 index 2 index lineto
@@ -407,7 +403,7 @@ exch (AFPL Ghostscript) eq or{
      closepath fill
      pop pop pop pop
    } for
-   pop pop 
+   pop pop
    0 setgray
    newpath
    dup 0 get 1 index 1 get moveto
@@ -440,15 +436,15 @@ exch (AFPL Ghostscript) eq or{
    /STCi_l2 0 def
    /STCi_text [
 % Driver-Name & Version
-      (Parameters of) 
+      (Parameters of)
          /Name STCiget length /Version STCiget length add 1 add string
          dup 0 /Name STCiget putinterval dup /Name STCiget length (-)putinterval
          dup /Name STCiget length 1 add /Version STCiget putinterval
 % Dithering-Algorithm
-      (Dithering)    
-         /Dithering STCiget 
+      (Dithering)
+         /Dithering STCiget
          [{( \(Monochrome\))}{( \(RGB\))}{( \(CMYK\))}] STCimode
-         dup length 2 index length add string exch 1 index exch 
+         dup length 2 index length add string exch 1 index exch
          3 index length exch putinterval dup 3 1 roll exch 0 exch putinterval
 % Flags for the algorithm
       (Flag4-0) 5 string
@@ -458,7 +454,7 @@ exch (AFPL Ghostscript) eq or{
          dup 3 /Flag1 STCiget {(T)}{(f)} ifelse putinterval
          dup 4 /Flag0 STCiget {(T)}{(f)} ifelse putinterval
 
-% Bits Per Pixel & Bits Per Component 
+% Bits Per Pixel & Bits Per Component
       (BitsPerPixel) 10 string % (nn -> nxnn)
          /BitsPerPixel STCiget 1 index cvs length % string used
          dup 2 index exch ( -> ) putinterval 4 add dup 2 add exch 2 index exch
@@ -470,19 +466,19 @@ exch (AFPL Ghostscript) eq or{
 % ColorAdjustMatrix
       (ColorAdjustMatrix)
          /ColorAdjustMatrix STCiget dup null eq {
-            pop (default) 
+            pop (default)
          }{
             { STCicvs } forall
             [{ % Monochrome
-               26 string 
+               26 string
                dup  0 6 -1 roll putinterval dup  8 ( ) putinterval
                dup  9 5 -1 roll putinterval dup 17 ( ) putinterval
-               dup 18 4 -1 roll putinterval 
+               dup 18 4 -1 roll putinterval
              }{ % RGB
-               26 string 
+               26 string
                dup  0 12 -1 roll putinterval dup  8 ( ) putinterval
                dup  9 11 -1 roll putinterval dup 17 ( ) putinterval
-               dup 18 10 -1 roll putinterval 
+               dup 18 10 -1 roll putinterval
 
                () 26 string
                dup  0 11 -1 roll putinterval dup  8 ( ) putinterval
@@ -494,7 +490,7 @@ exch (AFPL Ghostscript) eq or{
                dup  9  9 -1 roll putinterval dup 17 ( ) putinterval
                dup 18  8 -1 roll putinterval
              }{
-               35 string 
+               35 string
                dup  0 19 -1 roll  putinterval dup  8 ( ) putinterval
                dup  9 18 -1 roll putinterval dup 17 ( ) putinterval
                dup 18 17 -1 roll putinterval dup 26 ( ) putinterval
@@ -528,7 +524,7 @@ exch (AFPL Ghostscript) eq or{
 
 % Resolution
       (Resolution) 15 string % (nnnnnxnnnnn DpI)
-         /HWResolution STCiget 0 get cvi 1 index cvs length 
+         /HWResolution STCiget 0 get cvi 1 index cvs length
          dup 2 index exch (x) putinterval 1 add dup 2 index exch 5 getinterval
          /HWResolution STCiget 1 get cvi exch cvs length add dup 2 index
          exch ( DpI) putinterval 4 add 0 exch getinterval
@@ -536,10 +532,10 @@ exch (AFPL Ghostscript) eq or{
 % HWsize holds entire Page in Pixels,
 % .HWMargins is [left,bottom,right,top] in Points
       (Printed Area)   18 string % (nnnnnxnnnnn Pixel)
-         /HWSize STCiget 0 get /.HWMargins STCiget dup 0 get exch 2 get add 
+         /HWSize STCiget 0 get /.HWMargins STCiget dup 0 get exch 2 get add
          /HWResolution STCiget 0 get mul 72.0 div sub cvi 1 index cvs length
          dup 2 index exch (x) putinterval 1 add dup 2 index exch 5 getinterval
-         /HWSize STCiget 1 get /.HWMargins STCiget dup 1 get exch 3 get add 
+         /HWSize STCiget 1 get /.HWMargins STCiget dup 1 get exch 3 get add
          /HWResolution STCiget 1 get mul 72.0 div sub cvi exch cvs length add
          dup 2 index exch ( Pixel) putinterval 6 add 0 exch getinterval
 
@@ -572,7 +568,7 @@ exch (AFPL Ghostscript) eq or{
      /STCi_xv   [ 3 -1 roll ] def
      /STCi_col  [[0 0 0]] def
      /STCi_set  [{1.0 exch sub setgray}] def
-    }{ % RGB 
+    }{ % RGB
      /Rtransfer STCiget /Rcoding STCiget STCisteps
      /Gtransfer STCiget /Gcoding STCiget STCisteps
      /Btransfer STCiget /Bcoding STCiget STCisteps
@@ -602,9 +598,9 @@ exch (AFPL Ghostscript) eq or{
     }
    ]STCimode
 
-} stopped 
+} stopped
 
-{ {/STCi_stopped eq {exit}if}loop true} 
+{ {/STCi_stopped eq {exit}if}loop true}
 { {/STCi_stopped eq {exit}if}loop false} ifelse
 
 % End:   stcinfo_preparation
@@ -625,9 +621,9 @@ exch (AFPL Ghostscript) eq or{
      STCi_text exch get length dup STCi_l2 gt{/STCi_l2 exch def}{pop}ifelse
    } for
    /STCi_l2 STCi_l2 neg def
-   0 2 STCi_text length 2 sub { 
+   0 2 STCi_text length 2 sub {
      dup 1 add STCi_text exch get exch STCi_text exch get
-     1 index length 0 gt { 
+     1 index length 0 gt {
        dup STCi_l1 STCiprint length 0 gt {(: )}{(  )}ifelse print print
      }{
        pop pop
@@ -718,8 +714,8 @@ exch (AFPL Ghostscript) eq or{
 
 % The Graphs
   gsave
-     STCi_win 0 get 14 add STCi_win 1 get 14 add 
-     STCi_win 2 get 2 index sub STCi_win 3 get 2 index sub 
+     STCi_win 0 get 14 add STCi_win 1 get 14 add
+     STCi_win 2 get 2 index sub STCi_win 3 get 2 index sub
      4 2 roll translate
      STCi_col 0 1 2 index length 1 sub {
        1 index 1 index get aload pop setrgbcolor
@@ -749,7 +745,7 @@ exch (AFPL Ghostscript) eq or{
 %  compute the upper bar-window
 %
    /STCi_win [
-      STCi_clip 0 get 4 -1 roll 36 sub STCi_clip 2 get 1 index 36 add 
+      STCi_clip 0 get 4 -1 roll 36 sub STCi_clip 2 get 1 index 36 add
    ] def
 
 %

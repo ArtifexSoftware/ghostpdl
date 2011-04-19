@@ -1,12 +1,12 @@
 %    Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -39,27 +39,27 @@
   }
   /PseudoClass {
     [ /Indexed
-		% The MIFF documentation lies about the size of pixels
-		% for this case: the pixel size is determined only by
-		% the number of colors, and is not affected by the image
-		% depth.  Specifically, if there are 256 or fewer colors
-		% but the depth (of color map entries) is 16, each pixel
-		% is still only 1 byte, not 2.
+                % The MIFF documentation lies about the size of pixels
+                % for this case: the pixel size is determined only by
+                % the number of colors, and is not affected by the image
+                % depth.  Specifically, if there are 256 or fewer colors
+                % but the depth (of color map entries) is 16, each pixel
+                % is still only 1 byte, not 2.
       currentdict /colors known {
-	/DeviceRGB colors 1 sub
-	/BitsPerComponent colors 256 le { 8 } { 16 } ifelse def
-	colors 3 mul string depth 8 eq {
-	  f exch readstring pop
-	} {
-		% 16-bit color map entries: take only the high-order byte.
-	  0 1 2 index length 1 sub {
-	    f read pop 2 index 3 1 roll put f read pop pop
-	  } for
-	} ifelse
+        /DeviceRGB colors 1 sub
+        /BitsPerComponent colors 256 le { 8 } { 16 } ifelse def
+        colors 3 mul string depth 8 eq {
+          f exch readstring pop
+        } {
+                % 16-bit color map entries: take only the high-order byte.
+          0 1 2 index length 1 sub {
+            f read pop 2 index 3 1 roll put f read pop pop
+          } for
+        } ifelse
       } {
-	/colors 256 def
-	/DeviceGray 255
-	256 string 0 1 255 { 1 index exch dup put } for
+        /colors 256 def
+        /DeviceGray 255
+        256 string 0 1 255 { 1 index exch dup put } for
       } ifelse
     ] setcolorspace
     /Decode [ 0 1 BitsPerComponent bitshift 1 sub ] def
@@ -69,7 +69,7 @@
 % Recognize MIFF compression methods.
 /rlstring 768 string def
 /rlread {
-		% packets is not reliable -- disregard it.
+                % packets is not reliable -- disregard it.
   dup rlstring 0 3 getinterval readstring {
     pop read pop 3 mul 3 3 2 index {
       rlstring exch rlstring 0 3 getinterval putinterval
@@ -90,26 +90,26 @@
   50 dict begin
   /fname 1 index def
   /f exch (r) file def
-		% Set defaults.
+                % Set defaults.
   /ImageType 1 def
   /class /DirectClass def
   /compression /Uncompressed def
   /depth 8 def
   /packets 16#7fffffff def
-		% Read and parse the header.
+                % Read and parse the header.
   { f token pop
     dup (:) eq { pop exit } if
     dup type /nametype eq {
       .namestring (=) search {
-	exch pop miffwords exch .knownget { exec } { pop } ifelse
+        exch pop miffwords exch .knownget { exec } { pop } ifelse
       } {
-	pop	% who knows?
+        pop	% who knows?
       } ifelse
     } {
       pop	% probably a comment in braces
     } ifelse
   } loop
-		% Read and display the image.
+                % Read and display the image.
   miffclasses class get exec
   /DataSource miffcompress compression get exec def
   /ImageMatrix [Width 0 0 Height neg 0 Height] def
@@ -118,7 +118,7 @@
   gsave 0.8 setgray 0 0 1 1 rectfill grestore	% provide background
   currentdict image
   showpage
-		% Clean up.
+                % Clean up.
   f closefile
   end
 } bind def

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -64,15 +64,15 @@ dev_proc_get_alpha_bits(win_get_alpha_bits);
 #define win_gsview_sizeof 80
 
 #define gx_device_win_common\
-	int BitsPerPixel;\
-	int nColors;\
-	byte *mapped_color_flags;\
-		/* Implementation-specific procedures */\
-	win_proc_alloc_bitmap((*alloc_bitmap));\
-	win_proc_free_bitmap((*free_bitmap));\
-		/* Handles */\
-	HPALETTE himgpalette;\
-	LPLOGPALETTE limgpalette
+        int BitsPerPixel;\
+        int nColors;\
+        byte *mapped_color_flags;\
+                /* Implementation-specific procedures */\
+        win_proc_alloc_bitmap((*alloc_bitmap));\
+        win_proc_free_bitmap((*free_bitmap));\
+                /* Handles */\
+        HPALETTE himgpalette;\
+        LPLOGPALETTE limgpalette
 
 /* The basic window device */
 struct gx_device_win_s {

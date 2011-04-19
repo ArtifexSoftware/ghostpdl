@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2010 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,7 +46,7 @@ subr_bias(const ref * psubrs)
  */
 int
 type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
-		  gs_type1_data *pdata1)
+                  gs_type1_data *pdata1)
 {
     int code;
     float dwx, nwx;
@@ -57,31 +57,31 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
     pdata1->subroutineNumberBias = subr_bias(pfr->Subrs);
     /* Get information specific to Type 2 fonts. */
     if (dict_find_string(pfr->Private, "GlobalSubrs", &temp) > 0) {
-	if (!r_is_array(temp))
-	    return_error(e_typecheck);
+        if (!r_is_array(temp))
+            return_error(e_typecheck);
         pfr->GlobalSubrs = temp;
     }
     pdata1->gsubrNumberBias = subr_bias(pfr->GlobalSubrs);
     if ((code = dict_uint_param(pfr->Private, "gsubrNumberBias",
-				0, max_uint, pdata1->gsubrNumberBias,
-				&pdata1->gsubrNumberBias)) < 0 ||
-	(code = dict_float_param(pfr->Private, "defaultWidthX", 0.0,
-				 &dwx)) < 0 ||
-	(code = dict_float_param(pfr->Private, "nominalWidthX", 0.0,
-				 &nwx)) < 0
-	)
-	return code;
+                                0, max_uint, pdata1->gsubrNumberBias,
+                                &pdata1->gsubrNumberBias)) < 0 ||
+        (code = dict_float_param(pfr->Private, "defaultWidthX", 0.0,
+                                 &dwx)) < 0 ||
+        (code = dict_float_param(pfr->Private, "nominalWidthX", 0.0,
+                                 &nwx)) < 0
+        )
+        return code;
     pdata1->defaultWidthX = float2fixed(dwx);
     pdata1->nominalWidthX = float2fixed(nwx);
     {
-	ref *pirs;
+        ref *pirs;
 
-	if (dict_find_string(pfr->Private, "initialRandomSeed", &pirs) <= 0)
-	    pdata1->initialRandomSeed = 0;
-	else if (!r_has_type(pirs, t_integer))
-	    return_error(e_typecheck);
-	else
-	    pdata1->initialRandomSeed = pirs->value.intval;
+        if (dict_find_string(pfr->Private, "initialRandomSeed", &pirs) <= 0)
+            pdata1->initialRandomSeed = 0;
+        else if (!r_has_type(pirs, t_integer))
+            return_error(e_typecheck);
+        else
+            pdata1->initialRandomSeed = pirs->value.intval;
     }
     return 0;
 }
@@ -95,19 +95,19 @@ zbuildfont2(i_ctx_t *i_ctx_p)
     charstring_font_refs_t refs;
     build_proc_refs build;
     int code = build_proc_name_refs(imemory, &build,
-				    "%Type2BuildChar", "%Type2BuildGlyph");
+                                    "%Type2BuildChar", "%Type2BuildGlyph");
     gs_type1_data data1;
 
     if (code < 0)
-	return code;
+        return code;
     code = charstring_font_get_refs(op, &refs);
     if (code < 0)
-	return code;
+        return code;
     code = type2_font_params(op, &refs, &data1);
     if (code < 0)
-	return code;
+        return code;
     return build_charstring_font(i_ctx_p, op, &build, ft_encrypted2, &refs,
-				 &data1, bf_notdef_required);
+                                 &data1, bf_notdef_required);
 }
 
 /* CFF parser */
@@ -116,399 +116,398 @@ zbuildfont2(i_ctx_t *i_ctx_p)
 #define MAXOP 50   /* Max value according to TN 5176 is 48 */
 
 static const char * const standard_strings[] = {
-    /*   0 */ ".notdef", 
-    /*   1 */ "space", 
-    /*   2 */ "exclam", 
-    /*   3 */ "quotedbl", 
-    /*   4 */ "numbersign", 
-    /*   5 */ "dollar", 
-    /*   6 */ "percent", 
-    /*   7 */ "ampersand", 
-    /*   8 */ "quoteright", 
-    /*   9 */ "parenleft", 
-    /*  10 */ "parenright", 
-    /*  11 */ "asterisk", 
-    /*  12 */ "plus", 
-    /*  13 */ "comma", 
-    /*  14 */ "hyphen", 
-    /*  15 */ "period", 
-    /*  16 */ "slash", 
-    /*  17 */ "zero", 
-    /*  18 */ "one", 
-    /*  19 */ "two", 
-    /*  20 */ "three", 
-    /*  21 */ "four", 
-    /*  22 */ "five", 
-    /*  23 */ "six", 
-    /*  24 */ "seven", 
-    /*  25 */ "eight", 
-    /*  26 */ "nine", 
-    /*  27 */ "colon", 
-    /*  28 */ "semicolon", 
-    /*  29 */ "less", 
-    /*  30 */ "equal", 
-    /*  31 */ "greater", 
-    /*  32 */ "question", 
-    /*  33 */ "at", 
-    /*  34 */ "A", 
-    /*  35 */ "B", 
-    /*  36 */ "C", 
-    /*  37 */ "D", 
-    /*  38 */ "E", 
-    /*  39 */ "F", 
-    /*  40 */ "G", 
-    /*  41 */ "H", 
-    /*  42 */ "I", 
-    /*  43 */ "J", 
-    /*  44 */ "K", 
-    /*  45 */ "L", 
-    /*  46 */ "M", 
-    /*  47 */ "N", 
-    /*  48 */ "O", 
-    /*  49 */ "P", 
-    /*  50 */ "Q", 
-    /*  51 */ "R", 
-    /*  52 */ "S", 
-    /*  53 */ "T", 
-    /*  54 */ "U", 
-    /*  55 */ "V", 
-    /*  56 */ "W", 
-    /*  57 */ "X", 
-    /*  58 */ "Y", 
-    /*  59 */ "Z", 
-    /*  60 */ "bracketleft", 
-    /*  61 */ "backslash", 
-    /*  62 */ "bracketright", 
-    /*  63 */ "asciicircum", 
-    /*  64 */ "underscore", 
-    /*  65 */ "quoteleft", 
-    /*  66 */ "a", 
-    /*  67 */ "b", 
-    /*  68 */ "c", 
-    /*  69 */ "d", 
-    /*  70 */ "e", 
-    /*  71 */ "f", 
-    /*  72 */ "g", 
-    /*  73 */ "h", 
-    /*  74 */ "i", 
-    /*  75 */ "j", 
-    /*  76 */ "k", 
-    /*  77 */ "l", 
-    /*  78 */ "m", 
-    /*  79 */ "n", 
-    /*  80 */ "o", 
-    /*  81 */ "p", 
-    /*  82 */ "q", 
-    /*  83 */ "r", 
-    /*  84 */ "s", 
-    /*  85 */ "t", 
-    /*  86 */ "u", 
-    /*  87 */ "v", 
-    /*  88 */ "w", 
-    /*  89 */ "x", 
-    /*  90 */ "y", 
-    /*  91 */ "z", 
-    /*  92 */ "braceleft", 
-    /*  93 */ "bar", 
-    /*  94 */ "braceright", 
-    /*  95 */ "asciitilde", 
-    /*  96 */ "exclamdown", 
-    /*  97 */ "cent", 
-    /*  98 */ "sterling", 
-    /*  99 */ "fraction", 
-    /* 100 */ "yen", 
-    /* 101 */ "florin", 
-    /* 102 */ "section", 
-    /* 103 */ "currency", 
-    /* 104 */ "quotesingle", 
-    /* 105 */ "quotedblleft", 
-    /* 106 */ "guillemotleft", 
-    /* 107 */ "guilsinglleft", 
-    /* 108 */ "guilsinglright", 
-    /* 109 */ "fi", 
-    /* 110 */ "fl", 
-    /* 111 */ "endash", 
-    /* 112 */ "dagger", 
-    /* 113 */ "daggerdbl", 
-    /* 114 */ "periodcentered", 
-    /* 115 */ "paragraph", 
-    /* 116 */ "bullet", 
-    /* 117 */ "quotesinglbase", 
-    /* 118 */ "quotedblbase", 
-    /* 119 */ "quotedblright", 
-    /* 120 */ "guillemotright", 
-    /* 121 */ "ellipsis", 
-    /* 122 */ "perthousand", 
-    /* 123 */ "questiondown", 
-    /* 124 */ "grave", 
-    /* 125 */ "acute", 
-    /* 126 */ "circumflex", 
-    /* 127 */ "tilde", 
-    /* 128 */ "macron", 
-    /* 129 */ "breve", 
-    /* 130 */ "dotaccent", 
-    /* 131 */ "dieresis", 
-    /* 132 */ "ring", 
-    /* 133 */ "cedilla", 
-    /* 134 */ "hungarumlaut", 
-    /* 135 */ "ogonek", 
-    /* 136 */ "caron", 
-    /* 137 */ "emdash", 
-    /* 138 */ "AE", 
-    /* 139 */ "ordfeminine", 
-    /* 140 */ "Lslash", 
-    /* 141 */ "Oslash", 
-    /* 142 */ "OE", 
-    /* 143 */ "ordmasculine", 
-    /* 144 */ "ae", 
-    /* 145 */ "dotlessi", 
-    /* 146 */ "lslash", 
-    /* 147 */ "oslash", 
-    /* 148 */ "oe", 
-    /* 149 */ "germandbls", 
-    /* 150 */ "onesuperior", 
-    /* 151 */ "logicalnot", 
-    /* 152 */ "mu", 
-    /* 153 */ "trademark", 
-    /* 154 */ "Eth", 
-    /* 155 */ "onehalf", 
-    /* 156 */ "plusminus", 
-    /* 157 */ "Thorn", 
-    /* 158 */ "onequarter", 
-    /* 159 */ "divide", 
-    /* 160 */ "brokenbar", 
-    /* 161 */ "degree", 
-    /* 162 */ "thorn", 
-    /* 163 */ "threequarters", 
-    /* 164 */ "twosuperior", 
-    /* 165 */ "registered", 
-    /* 166 */ "minus", 
-    /* 167 */ "eth", 
-    /* 168 */ "multiply", 
-    /* 169 */ "threesuperior", 
-    /* 170 */ "copyright", 
-    /* 171 */ "Aacute", 
-    /* 172 */ "Acircumflex", 
-    /* 173 */ "Adieresis", 
-    /* 174 */ "Agrave", 
-    /* 175 */ "Aring", 
-    /* 176 */ "Atilde", 
-    /* 177 */ "Ccedilla", 
-    /* 178 */ "Eacute", 
-    /* 179 */ "Ecircumflex", 
-    /* 180 */ "Edieresis", 
-    /* 181 */ "Egrave", 
-    /* 182 */ "Iacute", 
-    /* 183 */ "Icircumflex", 
-    /* 184 */ "Idieresis", 
-    /* 185 */ "Igrave", 
-    /* 186 */ "Ntilde", 
-    /* 187 */ "Oacute", 
-    /* 188 */ "Ocircumflex", 
-    /* 189 */ "Odieresis", 
-    /* 190 */ "Ograve", 
-    /* 191 */ "Otilde", 
-    /* 192 */ "Scaron", 
-    /* 193 */ "Uacute", 
-    /* 194 */ "Ucircumflex", 
-    /* 195 */ "Udieresis", 
-    /* 196 */ "Ugrave", 
-    /* 197 */ "Yacute", 
-    /* 198 */ "Ydieresis", 
-    /* 199 */ "Zcaron", 
-    /* 200 */ "aacute", 
-    /* 201 */ "acircumflex", 
-    /* 202 */ "adieresis", 
-    /* 203 */ "agrave", 
-    /* 204 */ "aring", 
-    /* 205 */ "atilde", 
-    /* 206 */ "ccedilla", 
-    /* 207 */ "eacute", 
-    /* 208 */ "ecircumflex", 
-    /* 209 */ "edieresis", 
-    /* 210 */ "egrave", 
-    /* 211 */ "iacute", 
-    /* 212 */ "icircumflex", 
-    /* 213 */ "idieresis", 
-    /* 214 */ "igrave", 
-    /* 215 */ "ntilde", 
-    /* 216 */ "oacute", 
-    /* 217 */ "ocircumflex", 
-    /* 218 */ "odieresis", 
-    /* 219 */ "ograve", 
-    /* 220 */ "otilde", 
-    /* 221 */ "scaron", 
-    /* 222 */ "uacute", 
-    /* 223 */ "ucircumflex", 
-    /* 224 */ "udieresis", 
-    /* 225 */ "ugrave", 
-    /* 226 */ "yacute", 
-    /* 227 */ "ydieresis", 
-    /* 228 */ "zcaron", 
-    /* 229 */ "exclamsmall", 
-    /* 230 */ "Hungarumlautsmall", 
-    /* 231 */ "dollaroldstyle", 
-    /* 232 */ "dollarsuperior", 
-    /* 233 */ "ampersandsmall", 
-    /* 234 */ "Acutesmall", 
-    /* 235 */ "parenleftsuperior", 
-    /* 236 */ "parenrightsuperior", 
-    /* 237 */ "twodotenleader", 
-    /* 238 */ "onedotenleader", 
-    /* 239 */ "zerooldstyle", 
-    /* 240 */ "oneoldstyle", 
-    /* 241 */ "twooldstyle", 
-    /* 242 */ "threeoldstyle", 
-    /* 243 */ "fouroldstyle", 
-    /* 244 */ "fiveoldstyle", 
-    /* 245 */ "sixoldstyle", 
-    /* 246 */ "sevenoldstyle", 
-    /* 247 */ "eightoldstyle", 
-    /* 248 */ "nineoldstyle", 
-    /* 249 */ "commasuperior", 
-    /* 250 */ "threequartersemdash", 
-    /* 251 */ "periodsuperior", 
-    /* 252 */ "questionsmall", 
-    /* 253 */ "asuperior", 
-    /* 254 */ "bsuperior", 
-    /* 255 */ "centsuperior", 
-    /* 256 */ "dsuperior", 
-    /* 257 */ "esuperior", 
-    /* 258 */ "isuperior", 
-    /* 259 */ "lsuperior", 
-    /* 260 */ "msuperior", 
-    /* 261 */ "nsuperior", 
-    /* 262 */ "osuperior", 
-    /* 263 */ "rsuperior", 
-    /* 264 */ "ssuperior", 
-    /* 265 */ "tsuperior", 
-    /* 266 */ "ff", 
-    /* 267 */ "ffi", 
-    /* 268 */ "ffl", 
-    /* 269 */ "parenleftinferior", 
-    /* 270 */ "parenrightinferior", 
-    /* 271 */ "Circumflexsmall", 
-    /* 272 */ "hyphensuperior", 
-    /* 273 */ "Gravesmall", 
-    /* 274 */ "Asmall", 
-    /* 275 */ "Bsmall", 
-    /* 276 */ "Csmall", 
-    /* 277 */ "Dsmall", 
-    /* 278 */ "Esmall", 
-    /* 279 */ "Fsmall", 
-    /* 280 */ "Gsmall", 
-    /* 281 */ "Hsmall", 
-    /* 282 */ "Ismall", 
-    /* 283 */ "Jsmall", 
-    /* 284 */ "Ksmall", 
-    /* 285 */ "Lsmall", 
-    /* 286 */ "Msmall", 
-    /* 287 */ "Nsmall", 
-    /* 288 */ "Osmall", 
-    /* 289 */ "Psmall", 
-    /* 290 */ "Qsmall", 
-    /* 291 */ "Rsmall", 
-    /* 292 */ "Ssmall", 
-    /* 293 */ "Tsmall", 
-    /* 294 */ "Usmall", 
-    /* 295 */ "Vsmall", 
-    /* 296 */ "Wsmall", 
-    /* 297 */ "Xsmall", 
-    /* 298 */ "Ysmall", 
-    /* 299 */ "Zsmall", 
-    /* 300 */ "colonmonetary", 
-    /* 301 */ "onefitted", 
-    /* 302 */ "rupiah", 
-    /* 303 */ "Tildesmall", 
-    /* 304 */ "exclamdownsmall", 
-    /* 305 */ "centoldstyle", 
-    /* 306 */ "Lslashsmall", 
-    /* 307 */ "Scaronsmall", 
-    /* 308 */ "Zcaronsmall", 
-    /* 309 */ "Dieresissmall", 
-    /* 310 */ "Brevesmall", 
-    /* 311 */ "Caronsmall", 
-    /* 312 */ "Dotaccentsmall", 
-    /* 313 */ "Macronsmall", 
-    /* 314 */ "figuredash", 
-    /* 315 */ "hypheninferior", 
-    /* 316 */ "Ogoneksmall", 
-    /* 317 */ "Ringsmall", 
-    /* 318 */ "Cedillasmall", 
-    /* 319 */ "questiondownsmall", 
-    /* 320 */ "oneeighth", 
-    /* 321 */ "threeeighths", 
-    /* 322 */ "fiveeighths", 
-    /* 323 */ "seveneighths", 
-    /* 324 */ "onethird", 
-    /* 325 */ "twothirds", 
-    /* 326 */ "zerosuperior", 
-    /* 327 */ "foursuperior", 
-    /* 328 */ "fivesuperior", 
-    /* 329 */ "sixsuperior", 
-    /* 330 */ "sevensuperior", 
-    /* 331 */ "eightsuperior", 
-    /* 332 */ "ninesuperior", 
-    /* 333 */ "zeroinferior", 
-    /* 334 */ "oneinferior", 
-    /* 335 */ "twoinferior", 
-    /* 336 */ "threeinferior", 
-    /* 337 */ "fourinferior", 
-    /* 338 */ "fiveinferior", 
-    /* 339 */ "sixinferior", 
-    /* 340 */ "seveninferior", 
-    /* 341 */ "eightinferior", 
-    /* 342 */ "nineinferior", 
-    /* 343 */ "centinferior", 
-    /* 344 */ "dollarinferior", 
-    /* 345 */ "periodinferior", 
-    /* 346 */ "commainferior", 
-    /* 347 */ "Agravesmall", 
-    /* 348 */ "Aacutesmall", 
-    /* 349 */ "Acircumflexsmall", 
-    /* 350 */ "Atildesmall", 
-    /* 351 */ "Adieresissmall", 
-    /* 352 */ "Aringsmall", 
-    /* 353 */ "AEsmall", 
-    /* 354 */ "Ccedillasmall", 
-    /* 355 */ "Egravesmall", 
-    /* 356 */ "Eacutesmall", 
-    /* 357 */ "Ecircumflexsmall", 
-    /* 358 */ "Edieresissmall", 
-    /* 359 */ "Igravesmall", 
-    /* 360 */ "Iacutesmall", 
-    /* 361 */ "Icircumflexsmall", 
-    /* 362 */ "Idieresissmall", 
-    /* 363 */ "Ethsmall", 
-    /* 364 */ "Ntildesmall", 
-    /* 365 */ "Ogravesmall", 
-    /* 366 */ "Oacutesmall", 
-    /* 367 */ "Ocircumflexsmall", 
-    /* 368 */ "Otildesmall", 
-    /* 369 */ "Odieresissmall", 
-    /* 370 */ "OEsmall", 
-    /* 371 */ "Oslashsmall", 
-    /* 372 */ "Ugravesmall", 
-    /* 373 */ "Uacutesmall", 
-    /* 374 */ "Ucircumflexsmall", 
-    /* 375 */ "Udieresissmall", 
-    /* 376 */ "Yacutesmall", 
-    /* 377 */ "Thornsmall", 
-    /* 378 */ "Ydieresissmall", 
-    /* 379 */ "001.000", 
-    /* 380 */ "001.001", 
-    /* 381 */ "001.002", 
-    /* 382 */ "001.003", 
-    /* 383 */ "Black", 
-    /* 384 */ "Bold", 
-    /* 385 */ "Book", 
-    /* 386 */ "Light", 
-    /* 387 */ "Medium", 
-    /* 388 */ "Regular", 
-    /* 389 */ "Roman", 
+    /*   0 */ ".notdef",
+    /*   1 */ "space",
+    /*   2 */ "exclam",
+    /*   3 */ "quotedbl",
+    /*   4 */ "numbersign",
+    /*   5 */ "dollar",
+    /*   6 */ "percent",
+    /*   7 */ "ampersand",
+    /*   8 */ "quoteright",
+    /*   9 */ "parenleft",
+    /*  10 */ "parenright",
+    /*  11 */ "asterisk",
+    /*  12 */ "plus",
+    /*  13 */ "comma",
+    /*  14 */ "hyphen",
+    /*  15 */ "period",
+    /*  16 */ "slash",
+    /*  17 */ "zero",
+    /*  18 */ "one",
+    /*  19 */ "two",
+    /*  20 */ "three",
+    /*  21 */ "four",
+    /*  22 */ "five",
+    /*  23 */ "six",
+    /*  24 */ "seven",
+    /*  25 */ "eight",
+    /*  26 */ "nine",
+    /*  27 */ "colon",
+    /*  28 */ "semicolon",
+    /*  29 */ "less",
+    /*  30 */ "equal",
+    /*  31 */ "greater",
+    /*  32 */ "question",
+    /*  33 */ "at",
+    /*  34 */ "A",
+    /*  35 */ "B",
+    /*  36 */ "C",
+    /*  37 */ "D",
+    /*  38 */ "E",
+    /*  39 */ "F",
+    /*  40 */ "G",
+    /*  41 */ "H",
+    /*  42 */ "I",
+    /*  43 */ "J",
+    /*  44 */ "K",
+    /*  45 */ "L",
+    /*  46 */ "M",
+    /*  47 */ "N",
+    /*  48 */ "O",
+    /*  49 */ "P",
+    /*  50 */ "Q",
+    /*  51 */ "R",
+    /*  52 */ "S",
+    /*  53 */ "T",
+    /*  54 */ "U",
+    /*  55 */ "V",
+    /*  56 */ "W",
+    /*  57 */ "X",
+    /*  58 */ "Y",
+    /*  59 */ "Z",
+    /*  60 */ "bracketleft",
+    /*  61 */ "backslash",
+    /*  62 */ "bracketright",
+    /*  63 */ "asciicircum",
+    /*  64 */ "underscore",
+    /*  65 */ "quoteleft",
+    /*  66 */ "a",
+    /*  67 */ "b",
+    /*  68 */ "c",
+    /*  69 */ "d",
+    /*  70 */ "e",
+    /*  71 */ "f",
+    /*  72 */ "g",
+    /*  73 */ "h",
+    /*  74 */ "i",
+    /*  75 */ "j",
+    /*  76 */ "k",
+    /*  77 */ "l",
+    /*  78 */ "m",
+    /*  79 */ "n",
+    /*  80 */ "o",
+    /*  81 */ "p",
+    /*  82 */ "q",
+    /*  83 */ "r",
+    /*  84 */ "s",
+    /*  85 */ "t",
+    /*  86 */ "u",
+    /*  87 */ "v",
+    /*  88 */ "w",
+    /*  89 */ "x",
+    /*  90 */ "y",
+    /*  91 */ "z",
+    /*  92 */ "braceleft",
+    /*  93 */ "bar",
+    /*  94 */ "braceright",
+    /*  95 */ "asciitilde",
+    /*  96 */ "exclamdown",
+    /*  97 */ "cent",
+    /*  98 */ "sterling",
+    /*  99 */ "fraction",
+    /* 100 */ "yen",
+    /* 101 */ "florin",
+    /* 102 */ "section",
+    /* 103 */ "currency",
+    /* 104 */ "quotesingle",
+    /* 105 */ "quotedblleft",
+    /* 106 */ "guillemotleft",
+    /* 107 */ "guilsinglleft",
+    /* 108 */ "guilsinglright",
+    /* 109 */ "fi",
+    /* 110 */ "fl",
+    /* 111 */ "endash",
+    /* 112 */ "dagger",
+    /* 113 */ "daggerdbl",
+    /* 114 */ "periodcentered",
+    /* 115 */ "paragraph",
+    /* 116 */ "bullet",
+    /* 117 */ "quotesinglbase",
+    /* 118 */ "quotedblbase",
+    /* 119 */ "quotedblright",
+    /* 120 */ "guillemotright",
+    /* 121 */ "ellipsis",
+    /* 122 */ "perthousand",
+    /* 123 */ "questiondown",
+    /* 124 */ "grave",
+    /* 125 */ "acute",
+    /* 126 */ "circumflex",
+    /* 127 */ "tilde",
+    /* 128 */ "macron",
+    /* 129 */ "breve",
+    /* 130 */ "dotaccent",
+    /* 131 */ "dieresis",
+    /* 132 */ "ring",
+    /* 133 */ "cedilla",
+    /* 134 */ "hungarumlaut",
+    /* 135 */ "ogonek",
+    /* 136 */ "caron",
+    /* 137 */ "emdash",
+    /* 138 */ "AE",
+    /* 139 */ "ordfeminine",
+    /* 140 */ "Lslash",
+    /* 141 */ "Oslash",
+    /* 142 */ "OE",
+    /* 143 */ "ordmasculine",
+    /* 144 */ "ae",
+    /* 145 */ "dotlessi",
+    /* 146 */ "lslash",
+    /* 147 */ "oslash",
+    /* 148 */ "oe",
+    /* 149 */ "germandbls",
+    /* 150 */ "onesuperior",
+    /* 151 */ "logicalnot",
+    /* 152 */ "mu",
+    /* 153 */ "trademark",
+    /* 154 */ "Eth",
+    /* 155 */ "onehalf",
+    /* 156 */ "plusminus",
+    /* 157 */ "Thorn",
+    /* 158 */ "onequarter",
+    /* 159 */ "divide",
+    /* 160 */ "brokenbar",
+    /* 161 */ "degree",
+    /* 162 */ "thorn",
+    /* 163 */ "threequarters",
+    /* 164 */ "twosuperior",
+    /* 165 */ "registered",
+    /* 166 */ "minus",
+    /* 167 */ "eth",
+    /* 168 */ "multiply",
+    /* 169 */ "threesuperior",
+    /* 170 */ "copyright",
+    /* 171 */ "Aacute",
+    /* 172 */ "Acircumflex",
+    /* 173 */ "Adieresis",
+    /* 174 */ "Agrave",
+    /* 175 */ "Aring",
+    /* 176 */ "Atilde",
+    /* 177 */ "Ccedilla",
+    /* 178 */ "Eacute",
+    /* 179 */ "Ecircumflex",
+    /* 180 */ "Edieresis",
+    /* 181 */ "Egrave",
+    /* 182 */ "Iacute",
+    /* 183 */ "Icircumflex",
+    /* 184 */ "Idieresis",
+    /* 185 */ "Igrave",
+    /* 186 */ "Ntilde",
+    /* 187 */ "Oacute",
+    /* 188 */ "Ocircumflex",
+    /* 189 */ "Odieresis",
+    /* 190 */ "Ograve",
+    /* 191 */ "Otilde",
+    /* 192 */ "Scaron",
+    /* 193 */ "Uacute",
+    /* 194 */ "Ucircumflex",
+    /* 195 */ "Udieresis",
+    /* 196 */ "Ugrave",
+    /* 197 */ "Yacute",
+    /* 198 */ "Ydieresis",
+    /* 199 */ "Zcaron",
+    /* 200 */ "aacute",
+    /* 201 */ "acircumflex",
+    /* 202 */ "adieresis",
+    /* 203 */ "agrave",
+    /* 204 */ "aring",
+    /* 205 */ "atilde",
+    /* 206 */ "ccedilla",
+    /* 207 */ "eacute",
+    /* 208 */ "ecircumflex",
+    /* 209 */ "edieresis",
+    /* 210 */ "egrave",
+    /* 211 */ "iacute",
+    /* 212 */ "icircumflex",
+    /* 213 */ "idieresis",
+    /* 214 */ "igrave",
+    /* 215 */ "ntilde",
+    /* 216 */ "oacute",
+    /* 217 */ "ocircumflex",
+    /* 218 */ "odieresis",
+    /* 219 */ "ograve",
+    /* 220 */ "otilde",
+    /* 221 */ "scaron",
+    /* 222 */ "uacute",
+    /* 223 */ "ucircumflex",
+    /* 224 */ "udieresis",
+    /* 225 */ "ugrave",
+    /* 226 */ "yacute",
+    /* 227 */ "ydieresis",
+    /* 228 */ "zcaron",
+    /* 229 */ "exclamsmall",
+    /* 230 */ "Hungarumlautsmall",
+    /* 231 */ "dollaroldstyle",
+    /* 232 */ "dollarsuperior",
+    /* 233 */ "ampersandsmall",
+    /* 234 */ "Acutesmall",
+    /* 235 */ "parenleftsuperior",
+    /* 236 */ "parenrightsuperior",
+    /* 237 */ "twodotenleader",
+    /* 238 */ "onedotenleader",
+    /* 239 */ "zerooldstyle",
+    /* 240 */ "oneoldstyle",
+    /* 241 */ "twooldstyle",
+    /* 242 */ "threeoldstyle",
+    /* 243 */ "fouroldstyle",
+    /* 244 */ "fiveoldstyle",
+    /* 245 */ "sixoldstyle",
+    /* 246 */ "sevenoldstyle",
+    /* 247 */ "eightoldstyle",
+    /* 248 */ "nineoldstyle",
+    /* 249 */ "commasuperior",
+    /* 250 */ "threequartersemdash",
+    /* 251 */ "periodsuperior",
+    /* 252 */ "questionsmall",
+    /* 253 */ "asuperior",
+    /* 254 */ "bsuperior",
+    /* 255 */ "centsuperior",
+    /* 256 */ "dsuperior",
+    /* 257 */ "esuperior",
+    /* 258 */ "isuperior",
+    /* 259 */ "lsuperior",
+    /* 260 */ "msuperior",
+    /* 261 */ "nsuperior",
+    /* 262 */ "osuperior",
+    /* 263 */ "rsuperior",
+    /* 264 */ "ssuperior",
+    /* 265 */ "tsuperior",
+    /* 266 */ "ff",
+    /* 267 */ "ffi",
+    /* 268 */ "ffl",
+    /* 269 */ "parenleftinferior",
+    /* 270 */ "parenrightinferior",
+    /* 271 */ "Circumflexsmall",
+    /* 272 */ "hyphensuperior",
+    /* 273 */ "Gravesmall",
+    /* 274 */ "Asmall",
+    /* 275 */ "Bsmall",
+    /* 276 */ "Csmall",
+    /* 277 */ "Dsmall",
+    /* 278 */ "Esmall",
+    /* 279 */ "Fsmall",
+    /* 280 */ "Gsmall",
+    /* 281 */ "Hsmall",
+    /* 282 */ "Ismall",
+    /* 283 */ "Jsmall",
+    /* 284 */ "Ksmall",
+    /* 285 */ "Lsmall",
+    /* 286 */ "Msmall",
+    /* 287 */ "Nsmall",
+    /* 288 */ "Osmall",
+    /* 289 */ "Psmall",
+    /* 290 */ "Qsmall",
+    /* 291 */ "Rsmall",
+    /* 292 */ "Ssmall",
+    /* 293 */ "Tsmall",
+    /* 294 */ "Usmall",
+    /* 295 */ "Vsmall",
+    /* 296 */ "Wsmall",
+    /* 297 */ "Xsmall",
+    /* 298 */ "Ysmall",
+    /* 299 */ "Zsmall",
+    /* 300 */ "colonmonetary",
+    /* 301 */ "onefitted",
+    /* 302 */ "rupiah",
+    /* 303 */ "Tildesmall",
+    /* 304 */ "exclamdownsmall",
+    /* 305 */ "centoldstyle",
+    /* 306 */ "Lslashsmall",
+    /* 307 */ "Scaronsmall",
+    /* 308 */ "Zcaronsmall",
+    /* 309 */ "Dieresissmall",
+    /* 310 */ "Brevesmall",
+    /* 311 */ "Caronsmall",
+    /* 312 */ "Dotaccentsmall",
+    /* 313 */ "Macronsmall",
+    /* 314 */ "figuredash",
+    /* 315 */ "hypheninferior",
+    /* 316 */ "Ogoneksmall",
+    /* 317 */ "Ringsmall",
+    /* 318 */ "Cedillasmall",
+    /* 319 */ "questiondownsmall",
+    /* 320 */ "oneeighth",
+    /* 321 */ "threeeighths",
+    /* 322 */ "fiveeighths",
+    /* 323 */ "seveneighths",
+    /* 324 */ "onethird",
+    /* 325 */ "twothirds",
+    /* 326 */ "zerosuperior",
+    /* 327 */ "foursuperior",
+    /* 328 */ "fivesuperior",
+    /* 329 */ "sixsuperior",
+    /* 330 */ "sevensuperior",
+    /* 331 */ "eightsuperior",
+    /* 332 */ "ninesuperior",
+    /* 333 */ "zeroinferior",
+    /* 334 */ "oneinferior",
+    /* 335 */ "twoinferior",
+    /* 336 */ "threeinferior",
+    /* 337 */ "fourinferior",
+    /* 338 */ "fiveinferior",
+    /* 339 */ "sixinferior",
+    /* 340 */ "seveninferior",
+    /* 341 */ "eightinferior",
+    /* 342 */ "nineinferior",
+    /* 343 */ "centinferior",
+    /* 344 */ "dollarinferior",
+    /* 345 */ "periodinferior",
+    /* 346 */ "commainferior",
+    /* 347 */ "Agravesmall",
+    /* 348 */ "Aacutesmall",
+    /* 349 */ "Acircumflexsmall",
+    /* 350 */ "Atildesmall",
+    /* 351 */ "Adieresissmall",
+    /* 352 */ "Aringsmall",
+    /* 353 */ "AEsmall",
+    /* 354 */ "Ccedillasmall",
+    /* 355 */ "Egravesmall",
+    /* 356 */ "Eacutesmall",
+    /* 357 */ "Ecircumflexsmall",
+    /* 358 */ "Edieresissmall",
+    /* 359 */ "Igravesmall",
+    /* 360 */ "Iacutesmall",
+    /* 361 */ "Icircumflexsmall",
+    /* 362 */ "Idieresissmall",
+    /* 363 */ "Ethsmall",
+    /* 364 */ "Ntildesmall",
+    /* 365 */ "Ogravesmall",
+    /* 366 */ "Oacutesmall",
+    /* 367 */ "Ocircumflexsmall",
+    /* 368 */ "Otildesmall",
+    /* 369 */ "Odieresissmall",
+    /* 370 */ "OEsmall",
+    /* 371 */ "Oslashsmall",
+    /* 372 */ "Ugravesmall",
+    /* 373 */ "Uacutesmall",
+    /* 374 */ "Ucircumflexsmall",
+    /* 375 */ "Udieresissmall",
+    /* 376 */ "Yacutesmall",
+    /* 377 */ "Thornsmall",
+    /* 378 */ "Ydieresissmall",
+    /* 379 */ "001.000",
+    /* 380 */ "001.001",
+    /* 381 */ "001.002",
+    /* 382 */ "001.003",
+    /* 383 */ "Black",
+    /* 384 */ "Bold",
+    /* 385 */ "Book",
+    /* 386 */ "Light",
+    /* 387 */ "Medium",
+    /* 388 */ "Regular",
+    /* 389 */ "Roman",
     /* 390 */ "Semibold"
 };
-
 
 const static unsigned short expert_charset[] = {
     1,   /* space */
@@ -1297,7 +1296,6 @@ typedef struct tag_cff_index_t {
   unsigned int  offsize, count;
 } cff_index_t;
 
-
 static int
 card8(unsigned int *u, const cff_data_t *o, unsigned p, unsigned pe)
 {
@@ -1345,7 +1343,7 @@ static int (* const offset_procs[])(unsigned int *, const cff_data_t *, unsigned
 
 static int
 get_cff_string(unsigned char *dst, const cff_data_t *o, unsigned p, unsigned len)
-{  
+{
     if (p + len > o->length)
         return_error(e_rangecheck); /* out of range access */
     while (len) {
@@ -1364,7 +1362,7 @@ get_cff_string(unsigned char *dst, const cff_data_t *o, unsigned p, unsigned len
 static int
 parse_index(cff_index_t *x, const cff_data_t *data, unsigned p, unsigned pe)
 {  int code;
-   
+
    if (p == 0) {
        /* Make an empty index when the offset to the index is not defined. */
        memset(x, 0, sizeof(*x));
@@ -1422,7 +1420,7 @@ peek_index(unsigned *pp, unsigned int *len, const cff_index_t *x, const cff_data
 
 static int
 get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
-{ 
+{
     int code;
     unsigned int c, u;
     const int ext16 = ~0 << 15;  /* sign extension constant */
@@ -1430,7 +1428,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
 
     if ((code = card8(&c, data, p, pe)) < 0)
         return code;
-    
+
     if (c == 28) {
         if ((code = card16(&u, data, p + 1, pe)) < 0)
             return code;
@@ -1442,7 +1440,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
             return code;
         *v = ((int)u + ext32) ^ ext32;
         return 5;
-    } 
+    }
     if (c < 32)
         return_error(e_rangecheck); /* out of range */
     if (c < 247) {
@@ -1466,7 +1464,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
 
 static int
 get_float(float *v, const cff_data_t *data, unsigned p, unsigned pe)
-{  
+{
     int code;
     unsigned int c, i;
     char buf[80];
@@ -1538,7 +1536,7 @@ idict_undef_c_name(i_ctx_t *i_ctx_p, ref *dst, const char *c_name, unsigned int 
       return code;
     code = idict_undef(dst, &ps_name);
     if (code < 0 && code != e_undefined) /* ignore undefined error */
-	return code;
+        return code;
     return 0;
 }
 
@@ -1559,7 +1557,7 @@ idict_move_c_name(i_ctx_t *i_ctx_p, ref *dst, ref *src, const char *c_name, unsi
     return 0;
 }
 
-static int 
+static int
 make_string_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index, const cff_data_t *data, unsigned int id, int fd_num)
 {
     int code;
@@ -1572,7 +1570,7 @@ make_string_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index, con
     if (len + fdoff> 65535)
         return_error(e_limitcheck);
     if ((sbody = ialloc_string(len + fdoff, "make_string_from_index")) == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     make_string(dst, icurrent_space | a_readonly, len + fdoff, sbody);
     if ((code = get_cff_string(sbody + fdoff, data, doff, len)) < 0)
         return code;
@@ -1581,19 +1579,18 @@ make_string_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index, con
     return 0;
 }
 
-static int 
+static int
 make_string_from_sid(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *strings, const cff_data_t *data, unsigned int sid)
 {
     if (sid < count_of(standard_strings)) {
-        make_string(dst, avm_foreign | a_readonly, 
+        make_string(dst, avm_foreign | a_readonly,
           strlen(standard_strings[sid]), (unsigned char *)standard_strings[sid]);  /* break const */
         return 0;
-    } else 
+    } else
         return make_string_from_index(i_ctx_p, dst, strings, data, sid - count_of(standard_strings), -1);
 }
 
-
-static int 
+static int
 make_name_from_sid(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *strings, const cff_data_t *data, unsigned int sid)
 {
     if (sid < count_of(standard_strings)) {
@@ -1614,7 +1611,7 @@ make_name_from_sid(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *strings, const
     }
 }
 
-static int 
+static int
 make_stringarray_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index, const cff_data_t *data)
 {
     int code;
@@ -1635,7 +1632,7 @@ make_stringarray_from_index(i_ctx_t *i_ctx_p, ref *dst, const cff_index_t *index
 
 static void
 undelta(ref *ops, unsigned int cnt)
-{ 
+{
     unsigned int i;
 
     for (i = 0; i < cnt; i++) {
@@ -1647,7 +1644,7 @@ undelta(ref *ops, unsigned int cnt)
     }
 }
 
-static int 
+static int
 iso_adobe_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i)
 {
     if (i < 228)
@@ -1656,7 +1653,7 @@ iso_adobe_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned
         return_error(e_rangecheck);
 }
 
-static int 
+static int
 expert_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i)
 {
     if (i < sizeof(expert_charset)/sizeof(*expert_charset))
@@ -1665,7 +1662,7 @@ expert_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i)
         return_error(e_rangecheck);
 }
 
-static int 
+static int
 expert_subset_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     if (i < sizeof(expert_subset_charset)/sizeof(*expert_subset_charset))
@@ -1674,7 +1671,7 @@ expert_subset_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsi
         return_error(e_rangecheck);
 }
 
-static int 
+static int
 format0_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     int code;
@@ -1685,7 +1682,7 @@ format0_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i
     return (int)u;
 }
 
-static int 
+static int
 format1_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     int code;
@@ -1707,7 +1704,7 @@ format1_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i
     return_error(e_rangecheck);
 }
 
-static int 
+static int
 format2_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     int code;
@@ -1730,23 +1727,23 @@ format2_charset_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned i
     return_error(e_rangecheck);
 }
 
-static int 
+static int
 format0_fdselect_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     int code;
     unsigned u;
-    
+
     if ((code = card8(&u, data, p + i, pe)) < 0)
         return code;
     return (int)u;
 }
 
-static int 
+static int
 format3_fdselect_proc(const cff_data_t *data, unsigned p, unsigned pe, unsigned int i)
 {
     int code;
     unsigned int u, n_ranges;
-        
+
     if ((code = card16(&n_ranges, data, p, pe)) < 0)
         return code;
     p += 2;
@@ -1871,7 +1868,6 @@ typedef enum {
 
 #define CONTROL(id, n_op, flags) ((flags) | (n_op) | ((k_##id) << 8))
 
-
 typedef enum {
   k_0, k_1, k_2, k_7, k_50, k_neg_100, k_8720, k_0_039625, k_0_06, k_false, k_box,
   k_matrix, k_matrix_1, k_emptydict
@@ -1901,7 +1897,7 @@ static const font_defaults_t cid_font_defaults[] = {
     { k_CIDFontVersion,     k_0 },
     { k_CIDFontRevision,    k_0 },
     { k_CIDFontType,        k_0 },
-    { k_CIDCount,           k_8720 }  
+    { k_CIDCount,           k_8720 }
 };
 
 static const font_defaults_t fd_font_defaults[] = {
@@ -1940,7 +1936,7 @@ set_defaults(i_ctx_t *i_ctx_p, ref *dest, const font_defaults_t *def, int count)
         if ((code = name_ref(imemory, (const unsigned char *)font_keys[def[i].key],
                                              font_keys_sz[def[i].key], &name, 0)) < 0)
             return code;
-	if (dict_find(dest, &name, &dummy) <= 0) {
+        if (dict_find(dest, &name, &dummy) <= 0) {
            switch (def[i].value) {
                default:
                case k_0:
@@ -2073,7 +2069,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                     return_error(e_rangecheck);
                 if ((code = card8(&c, data, p++, pe)) < 0)
                     return code;
-                switch(c) {     
+                switch(c) {
                     case 0: /* Copyright    12 0 SID -, FontInfo */
                         control = CONTROL(Copyright, 1, k_fontinfodict | k_sid);
                         break;
@@ -2261,9 +2257,9 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 continue;
             case 31: case 255: /* reserved */
                 continue;
-            default:  
+            default:
                 {  int n;  /* int operand */
-                
+
                    if (op_i >= MAXOP)
                        return_error(e_limitcheck);
                    if ((code = get_int(&n, data, p - 1, pe)) < 0)
@@ -2272,7 +2268,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                    op_i++;
                    p += code - 1;
                 }
-                continue;             
+                continue;
         }
         {
             unsigned int n_op = control & 255;
@@ -2287,7 +2283,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 undelta(ops + op_i - n_op, n_op);
             op_i -= n_op;
             if (control & (k_sid | k_int | k_bool)) {
-                if (!r_has_type(&ops[op_i], t_integer)) 
+                if (!r_has_type(&ops[op_i], t_integer))
                     return_error(e_typecheck);
             }
             if (control & k_bool)
@@ -2309,7 +2305,7 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
                 if ((code = find_font_dict(i_ctx_p, topdict, &fontinfodict, "FontInfo")) < 0)
                     return code;
                 dict = fontinfodict;
-            } else 
+            } else
                 dict = topdict;
             code = idict_put_c_name(i_ctx_p, dict, font_keys[string_id], font_keys_sz[string_id],
               ((control & (k_bool | k_sid | k_array)) == 0 ? &ops[op_i] : &arg));
@@ -2398,7 +2394,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             }
         }
     }
-   
+
     if (offsets.have_ros) {  /* CIDFont */
         unsigned int i;
         cff_index_t fdarray;
@@ -2467,15 +2463,15 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             *
             * 1) If both Top DICT and Font DICT does _not_ have FontMatrix, then Top DICT =
             * [0.001 0 0 0.001 0 0], Font DICT= [1 0 0 1 0 0].  (Or, Top DICT = (absent),
-            * Font DICT = [0.001 0 0 0.001 0 0] then let '/CIDFont defineresource' 
+            * Font DICT = [0.001 0 0 0.001 0 0] then let '/CIDFont defineresource'
             * make Top DICT = [0.001 0 0 0.001 0 0], Font DICT = [1 0 0 1 0 0].)
             *
             * 2) If Top DICT has FontMatrix and Font DICT doesn't, then Top DICT = (supplied
             * matrix), Font DICT = [1 0 0 1 0 0].
             *
             * 3) If Top DICT does not have FontMatrix but Font DICT does, then Top DICT = [1
-            * 0 0 1 0 0], Font DICT = (supplied matrix).  (Or, Top DICT = (absent), 
-            * Font DICT = (supplied matrix) then let '/CIDFont defineresource' 
+            * 0 0 1 0 0], Font DICT = (supplied matrix).  (Or, Top DICT = (absent),
+            * Font DICT = (supplied matrix) then let '/CIDFont defineresource'
             * make Top DICT = [0.001 0 0 0.001 0 0], Font DICT = (supplied matrix 1000 times
             * larger).)
             *
@@ -2491,12 +2487,12 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             if ((code = set_defaults(i_ctx_p, fdfont, fd_font_defaults, count_of(fd_font_defaults))) < 0)
                 return code;
         }
-        
+
         if ((code = card8(&fdselect_code, data, p_all + fdselect_off, pe_all)) < 0)
           return code;
         if (fdselect_code == 0)
             fdselect_proc = format0_fdselect_proc;
-        else if (fdselect_code == 3)     
+        else if (fdselect_code == 3)
             fdselect_proc = format3_fdselect_proc;
         else
             return_error(e_rangecheck);
@@ -2504,7 +2500,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         make_int(&int_ref, 0);
         for (i = 0; i < charstrings_index.count; i++) {
             int fd;
-            
+
             if (fdarray.count <= 1)
                fd = -1;
             else {
@@ -2531,9 +2527,9 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         ref int_ref, str_ref, glyph_directory_ref, fdarray_ref, cidsysteminfo_ref;
 
         if ((code = idict_undef_c_name(i_ctx_p, topdict, STR2MEM("UniqueID"))) < 0)
-	    return code;
+            return code;
         if ((code = idict_undef_c_name(i_ctx_p, topdict, STR2MEM("XUID"))) < 0)
-	    return code;
+            return code;
         if ((code = ialloc_ref_array(&fdarray_ref, a_readonly, 1, "force_cid.fdarray")) < 0)
             return code;
         if ((code = idict_put_c_name(i_ctx_p, topdict, STR2MEM("FDArray"), &fdarray_ref)) < 0)
@@ -2573,7 +2569,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
         make_int(&int_ref, 0);
         for ( ; int_ref.value.intval < (int)charstrings_index.count; int_ref.value.intval++) {
             ref cstr_ref;
-            
+
             if ((code = make_string_from_index(i_ctx_p, &cstr_ref, &charstrings_index, data, int_ref.value.intval, -1)) < 0)
                 return code;
             if ((code = idict_put(&glyph_directory_ref, &int_ref, &cstr_ref)) < 0)
@@ -2606,7 +2602,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             if ((code = ialloc_ref_array(&encoding, a_readonly, 256, "cff_parser.encoding")) < 0)
                 return code;
             for (i = 0; i < 256; i++) {
-                if ((code = make_name_from_sid(i_ctx_p, &encoding.value.refs[i], 
+                if ((code = make_name_from_sid(i_ctx_p, &encoding.value.refs[i],
                   strings, data, (offsets.encoding_off ? expert_encoding : standard_encoding)[i])) < 0)
                     return code;
             }
@@ -2662,7 +2658,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
             if ((code = make_name_from_sid(i_ctx_p, &name, strings, data, sid)) < 0) {
                char buf[40];
                int len = sprintf(buf, "sid-%d", sid);
-               
+
                if ((code = name_ref(imemory, (unsigned char *)buf, len, &name, 1)) < 0)
                    return code;
             }
@@ -2670,7 +2666,7 @@ parse_font(i_ctx_t *i_ctx_p,  ref *topdict,
                 return code;
             if (offsets.encoding_off > 1 && gid < 256) {
                 encoding.value.refs[gid2char[gid]] = name;
-            }     
+            }
         }
         if (offsets.encoding_off > 1 && (enc_format & 0x80)) {
             unsigned int n_supp, charcode, sid;
@@ -2715,7 +2711,7 @@ zparsecff(i_ctx_t *i_ctx_p)
     check_read(*op);
     if (r_has_type(op, t_array)) {  /* no packedarrays */
         int i, blk_sz, blk_cnt;
-	
+
         data.blk_ref = op->value.refs;
         blk_cnt  = r_size(op);
         blk_sz = r_size(data.blk_ref);
@@ -2731,14 +2727,14 @@ zparsecff(i_ctx_t *i_ctx_p)
         }
         if (data.length == 0)
             return_error(e_rangecheck);
-        
+
         if (blk_cnt == 1) {
            data.mask   = 0xffff; /* stub */
            data.shift  = 16;     /* stub */
         } else {
-            static const int mod2shift[] = { 
+            static const int mod2shift[] = {
               0, 0, 1, 26, 2, 23, 27, 0, 3, 16, 24, 30, 28, 11, 0, 13, 4, 7, 17,
-              0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5, 20, 8, 19, 18 
+              0, 25, 22, 31, 15, 29, 10, 12, 6, 0, 21, 14, 9, 5, 20, 8, 19, 18
             };
             data.mask = blk_sz - 1;
             if (data.mask & blk_sz)
@@ -2784,7 +2780,7 @@ zparsecff(i_ctx_t *i_ctx_p)
         return_error(e_limitcheck);
     if ((code = dict_create(names.count, &fontset)) < 0)
         return code;
-    
+
     for (i_font = 0; i_font < names.count; i_font++) {
         unsigned int name_data;
         unsigned int name_len;
@@ -2802,23 +2798,23 @@ zparsecff(i_ctx_t *i_ctx_p)
             return_error(e_limitcheck);
         if ((code = get_cff_string(buf, &data, name_data, name_len)) < 0)
             return code;
-	if (buf[0] == 0)   /* deleted entry */
+        if (buf[0] == 0)   /* deleted entry */
             continue;
         if ((code = name_ref(imemory, buf, name_len, &name, 1)) < 0)
-	    return code;
+            return code;
         if ((code = peek_index(&topdict_data, &topdict_len, &topdicts, &data, i_font)) < 0)
             return code;
-        
+
         if ((code = dict_create(20, &topdict)) < 0)
             return code;
 
         if ((code = idict_put(&fontset, &name, &topdict)) < 0)
-	    return code;
+            return code;
 
         if ((code = parse_font(i_ctx_p, &topdict, &strings, (gsubrs.count ? &gsubrs_array : 0),
                  &data, topdict_data, topdict_data + topdict_len, p, pe, force_cidfont)) < 0)
             return code;
-    } 
+    }
     ref_assign(op - 1, &fontset);
     pop(1);
     return 0;

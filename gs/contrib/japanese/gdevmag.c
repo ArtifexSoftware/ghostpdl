@@ -49,10 +49,10 @@ static gx_device_procs mag16_procs =
     pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
 gx_device_printer far_data gs_mag16_device =
   prn_device(mag16_procs, "mag16",
-	(int)WIDTH_10THS, (int)HEIGHT_10THS,
-	DPI, DPI,
-	0,0,0,0,			/* margins */
-	4, mag_4bit_print_page);
+        (int)WIDTH_10THS, (int)HEIGHT_10THS,
+        DPI, DPI,
+        0,0,0,0,			/* margins */
+        4, mag_4bit_print_page);
 
 /* 8-bit planar color. */
 
@@ -61,10 +61,10 @@ static gx_device_procs mag256_procs =
     pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
 gx_device_printer far_data gs_mag256_device =
   prn_device(mag256_procs, "mag256",
-	(int)WIDTH_10THS, (int)HEIGHT_10THS,
-	DPI, DPI,
-	0,0,0,0,			/* margins */
-	8, mag_8bit_print_page);
+        (int)WIDTH_10THS, (int)HEIGHT_10THS,
+        DPI, DPI,
+        0,0,0,0,			/* margins */
+        8, mag_8bit_print_page);
 
 /* ------ Private definitions ------ */
 
@@ -197,7 +197,7 @@ mag_print_page(gx_device_printer *pdev, int depth, FILE *file)
         f2 = f0; f0 = f1; f1 = f2;
       }
       if (next_bit) fputc(flag_a[0],file);
-      
+
       /* flag B */
       memset(f0,0,flag_size);
       for (y=0;y<height;y++) {
@@ -224,7 +224,7 @@ mag_done:
 
     fflush(file);
 
-	return code;
+        return code;
 }
 
 /* make flag and pixel data */
@@ -252,9 +252,9 @@ mag_make_flag(gx_device_printer *pdev,int line_no, int depth,
   }
 
 #define check_pixel(a,b) \
-	(x >= (a) && line_no >= (b) && \
+        (x >= (a) && line_no >= (b) && \
      *(row[0]+x)   == *(row[b] + (x - (a))) && \
-	 *(row[0]+x+1) == *(row[b] + (x+1 - (a))))
+         *(row[0]+x+1) == *(row[b] + (x+1 - (a))))
 #define set_flag(v) \
     ((x & 2) ? (flag[x>>2] |= (v)) : (flag[x>>2] = (v)<<4))
 
@@ -293,7 +293,7 @@ mag_comp_flag(gx_device_printer *pdev, int size,byte *f0,byte *f1,
 {
   byte mask = 0x80>>next_bit;
   byte *pflag_b = flag_b;
-  
+
   for ( ;size>0 ; size--) {
     byte b = *f0 ^ *f1;
     if (mask == 0x80) {
@@ -322,7 +322,7 @@ mag_write_palette(gx_device_printer *pdev,int depth)
   uint i;
   gx_color_value rgb[3];
   int max_index = 1 << depth;
-  
+
   for ( i = 0; i < max_index; i++ ) {
     byte grb[3];
     (pdev->orig_procs.map_color_rgb)((gx_device *)pdev, (gx_color_index)i, rgb);

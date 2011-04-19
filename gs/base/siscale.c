@@ -104,7 +104,6 @@ Mitchell_filter(double t)
         return 0;
 }
 
-
 /* Interpolated filter definition */
 #define Interp_support 1
 #define Interp_min_scale 0
@@ -278,7 +277,6 @@ calculate_contrib(
     return last_index;
 }
 
-
 /* Apply filter to zoom horizontally from src to tmp. */
 static void
 zoom_x(byte * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
@@ -347,7 +345,6 @@ zoom_x(byte * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
         if_debug0('W', "\n");
     }
 }
-
 
 /*
  * Apply filter to zoom vertically from tmp to dst.

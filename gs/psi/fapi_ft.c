@@ -66,7 +66,7 @@ typedef struct FF_face_s
     FT_F26Dot6 width, height;
     FT_UInt horz_res;
     FT_UInt vert_res;
-    
+
     /* If non-null, the incremental interface object passed to FreeType. */
     FT_Incremental_InterfaceRec *ft_inc_int;
 
@@ -76,7 +76,7 @@ typedef struct FF_face_s
 
 /* Here we define the struct FT_Incremental that is used as an opaque type
  * inside FreeType. This structure has to have the tag FT_IncrementalRec_
- * to be compatible with the functions defined in FT_Incremental_FuncsRec. 
+ * to be compatible with the functions defined in FT_Incremental_FuncsRec.
  */
 typedef struct FT_IncrementalRec_
 {
@@ -92,12 +92,11 @@ typedef struct FT_IncrementalRec_
     FAPI_metrics_type metrics_type;        /* determines whether metrics are replaced, added, etc. */
 } FT_IncrementalRec;
 
-
 FT_CALLBACK_DEF( void* )
 FF_alloc( FT_Memory memory, long size)
 {
     gs_memory_t *mem = (gs_memory_t *)memory->user;
-    
+
     return(gs_malloc (mem, size, 1, "FF_alloc"));
 }
 
@@ -106,20 +105,19 @@ FF_realloc(FT_Memory memory, long cur_size, long new_size, void* block)
 {
     gs_memory_t *mem = (gs_memory_t *)memory->user;
     void *tmp;
-    
+
     if (cur_size == new_size) {
         return (block);
     }
-    
+
     tmp = gs_malloc (mem, new_size, 1, "FF_realloc");
-    
-    
+
     if (tmp && block) {
         memcpy (tmp, block, min(cur_size, new_size));
 
         gs_free (mem, block, 0, 0, "FF_realloc");
     }
-    
+
     return(tmp);
 }
 
@@ -129,7 +127,6 @@ FF_free(FT_Memory memory, void* block)
     gs_memory_t *mem = (gs_memory_t *)memory->user;
     gs_free (mem, block, 0, 0, "FF_free");
 }
-
 
 static FF_face *
 new_face(FAPI_server *a_server, FT_Face a_ft_face, FT_Incremental_InterfaceRec *a_ft_inc_int, unsigned char *a_font_data)
@@ -152,7 +149,7 @@ delete_face(FAPI_server *a_server, FF_face *a_face)
     if (a_face)
     {
         FF_server *s = (FF_server*)a_server;
-        
+
         FT_Done_Face(a_face->ft_face);
         FF_free(s->ftmemory, a_face->ft_inc_int);
         FF_free(s->ftmemory, a_face->font_data);
@@ -194,7 +191,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
 {
     FAPI_font *ff = a_info->fapi_font;
     int length = 0;
-    
+
     /* Tell the FAPI interface that we need to decrypt the glyph data. */
     ff->need_decrypt = true;
 
@@ -210,7 +207,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
         buffer = gs_malloc ((gs_memory_t *)a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
         if (!buffer)
             return FT_Err_Out_Of_Memory;
-            
+
         length = ff->get_glyph(ff, a_index, buffer, length);
         if (length == 65535) {
             gs_free ((gs_memory_t *)a_info->fapi_font->memory, buffer, 0, 0, "get_fapi_glyph_data");
@@ -238,9 +235,9 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
             if (a_info->glyph_data) {
                 gs_free ((gs_memory_t *)a_info->fapi_font->memory, a_info->glyph_data, 0, 0, "get_fapi_glyph_data");
             }
-        
+
             a_info->glyph_data = gs_malloc ((gs_memory_t *)a_info->fapi_font->memory, length, 1, "get_fapi_glyph_data");
-        
+
             if (!a_info->glyph_data) {
                 a_info->glyph_data_length = 0;
                 return FT_Err_Out_Of_Memory;
@@ -375,7 +372,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     FT_Long w;
     FT_Long h;
     FT_Long fflags;
-    
+
     /* Save a_fapi_font->char_data, which is set to null by FAPI_FF_get_glyph as part of a hack to
      * make the deprecated Type 2 endchar ('seac') work, so that it can be restored
      * after the first call to FT_Load_Glyph.
@@ -438,7 +435,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
             ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
-            if (ft_error == FT_Err_Invalid_File_Format) 
+            if (ft_error == FT_Err_Invalid_File_Format)
                 return index+1;
         }
     }
@@ -452,7 +449,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
         ft_face->face_flags = fflags;
     }
-    
+
     if (ft_error == FT_Err_Out_Of_Memory || ft_error == FT_Err_Array_Too_Large) {
         return(e_VMerror);
     }
@@ -461,15 +458,15 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     if (ft_error) {
         a_fapi_font->char_data = (void *)".notdef";
         a_fapi_font->char_data_len = 7;
-        
+
         /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
         fflags = ft_face->face_flags;
         ft_face->face_flags &= ~FT_FACE_FLAG_TRICKY;
-        
+
         ft_error_fb = FT_Load_Glyph(ft_face, 0, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
-        
+
         ft_face->face_flags = fflags;
-        
+
         a_fapi_font->char_data = saved_char_data;
         a_fapi_font->char_data_len = saved_char_data_len;
     }
@@ -492,7 +489,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         w = (FT_Long)((((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
         h = (FT_Long)((((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
 
-        /* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the 
+        /* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the
          * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
          * loaded as CIDFont replacements are not incrementally handled. So here, if its a CIDFont, and
          * its not type 1 outlines, and its not a vertical mode fotn, ignore the advance.
@@ -501,7 +498,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
              vadv = 0;
          else
              vadv = ft_face->glyph->linearVertAdvance;
-        
+
         a_metrics->bbox_x0 = hx;
         a_metrics->bbox_y0 = hy - h;
         a_metrics->bbox_x1 = a_metrics->bbox_x0 + w;
@@ -513,12 +510,12 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
     }
 
     if ((!ft_error || !ft_error_fb) && a_bitmap == true) {
-        
+
         FT_BBox      cbox;
         /* compute the control box, and grid fit it - lifted from ft_raster1_render() */
         FT_Outline_Get_CBox(&ft_face->glyph->outline,&cbox);
 
-        /* These round operations are only to preserve behaviour compared to the 9.00 release 
+        /* These round operations are only to preserve behaviour compared to the 9.00 release
            which used the bitmap dimensions as calculated by Freetype.
            But FT_PIX_FLOOR/FT_PIX_CEIL aren't public.
         */
@@ -533,8 +530,8 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         if (ft_face->glyph->format != FT_GLYPH_FORMAT_BITMAP && ft_face->glyph->format != FT_GLYPH_FORMAT_COMPOSITE) {
             if ((bitmap_raster(w) * h) < max_bitmap) {
                FT_Render_Mode  mode = FT_RENDER_MODE_MONO;
-               
-               ft_error = FT_Render_Glyph(ft_face->glyph, mode);           
+
+               ft_error = FT_Render_Glyph(ft_face->glyph, mode);
             }
             else {
                 (*a_glyph) = NULL;
@@ -553,7 +550,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
             emprintf1(a_fapi_font->memory,
                       "TrueType glyph %d uses more instructions than the declared maximum in the font.",
                       a_char_ref->char_code);
-            
+
             if (!ft_error_fb) {
                 emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
             }
@@ -567,7 +564,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
             emprintf1(a_fapi_font->memory,
                       "TrueType parsing error in glyph %d in the font.",
                       a_char_ref->char_code);
-            
+
             if (!ft_error_fb) {
                 emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
             }
@@ -581,7 +578,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
             emprintf1(a_fapi_font->memory,
                       "TrueType instruction error in glyph %d in the font.",
                       a_char_ref->char_code);
-            
+
             if (!ft_error_fb) {
                 emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
             }
@@ -595,7 +592,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
             emprintf1(a_fapi_font->memory,
                       "FreeType is unable to find the glyph %d in the font.",
                       a_char_ref->char_code);
-            
+
             if (!ft_error_fb) {
                 emprintf(a_fapi_font->memory, " Continuing, falling back to notdef\n\n");
             }
@@ -604,7 +601,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         if (!ft_error_fb) ft_error = 0;
     }
     return ft_to_gs_error(ft_error);
-} 
+}
 
 /*
  * Ensure that the rasterizer is open.
@@ -618,7 +615,7 @@ ensure_open(FAPI_server *a_server, const byte *server_param, int server_param_si
     if (!s->freetype_library)
     {
         FT_Error ft_error;
-        
+
         /* As we want FT to use our memory management, we cannot use the convenience of
          * FT_Init_FreeType(), we have to do each stage "manually"
          */
@@ -626,12 +623,12 @@ ensure_open(FAPI_server *a_server, const byte *server_param, int server_param_si
         if (!s->ftmemory) {
             return(-1);
         }
-        
+
         s->ftmemory->user = s->mem;
         s->ftmemory->alloc = FF_alloc;
         s->ftmemory->free = FF_free;
         s->ftmemory->realloc = FF_realloc;
-        
+
         ft_error = FT_New_Library(s->ftmemory, &s->freetype_library);
         if (ft_error) {
             gs_free (s->mem, s->ftmemory, 0, 0, "ensure_open");
@@ -687,10 +684,10 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
     FT_UInt xres;
     FT_UInt yres;
     FT_Vector vectx, vecty;
-    
+
     scalex = hypot ((double)a_transform->xx, (double)a_transform->xy);
     scaley = hypot ((double)a_transform->yx, (double)a_transform->yy);
-    
+
     if (*xresp != *yresp) {
         /* We need to give the resolution in "glyph space", taking account of rotation and
          * shearing, so that makes life a little complicated when non-square resolutions
@@ -699,15 +696,15 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
         ftscale_mat.xx = scalex;
         ftscale_mat.xy = ftscale_mat.yx = 0;
         ftscale_mat.yy = scaley;
-    
+
         FT_Matrix_Invert(&ftscale_mat);
-    
+
         FT_Matrix_Multiply (a_transform, &ftscale_mat);
-    
+
         vectx.x = *xresp << 16;
         vecty.y = *yresp << 16;
         vectx.y = vecty.x = 0;
-    
+
         FT_Vector_Transform (&vectx, &ftscale_mat);
         FT_Vector_Transform (&vecty, &ftscale_mat);
         xres = (FT_UInt)((hypot ((double)vectx.x, (double)vecty.x) / 65536.0) + 0.5);
@@ -718,7 +715,7 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
         xres = *xresp;
         yres = *yresp;
     }
-    
+
     scalex /= 65536.0;
     scaley /= 65536.0;
     /* FT clamps the width and height to a lower limit of 1.0 units
@@ -747,23 +744,23 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
             scaley = scaley * fact;
             scalex = scalex * fact;
         }
-        
+
         /* These seemingly arbitrary numbers are derived from a) using 64ths of a unit
            and b) the calculations done in FT_Request_Metrics() to derive the ppem.
            This is necessary due to FT's need for them ppem to be an in larger than 1
            - see tt_size_reset().
-           
+
            The calculation has been rearranged to reduce (in particular) the number of
            floating point divisions.
          */
         if ((scaley * 64 * yres) < 2268.0)
         {
             fact = 2400.0 / (64 * yres) / scaley;
-            
+
             scaley *= fact;
             scalex *= fact;
         }
-        
+
         /* We also have to watch for variable overflow in Freetype.
          * I've opted to fiddle with the resolution here, as it is
          * almost always a larger value than the text size, and therefore
@@ -784,34 +781,34 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
             scalex = scalex * fact;
             scaley = scaley * fact;
         }
-        
+
         /* see above */
         if ((scalex * 64 * xres) < 2268.0)
         {
             fact = 2400.0 / (64 * xres) / scalex;
-            
+
             scaley *= fact;
             scalex *= fact;
         }
-        
+
         /* see above */
         fact = 1;
         while (((scaley * yres) / 72) > 256.0 && xres > 0 && yres > 0) {
             xres /= 2;
             yres /= 2;
-            
+
             fact *= 2;
         }
     }
-        
+
     ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0) * fact;
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
     ftscale_mat.yy = (FT_Fixed)(((1.0 / scaley)) * 65536.0) * fact;
-    
+
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
-        
+
     *xresp = xres;
     *yresp = yres;
     /* Return values ready scaled for FT */
@@ -831,7 +828,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
     FF_server *s = (FF_server*)a_server;
     FF_face *face = (FF_face*)a_font->server_font_data;
     FT_Error ft_error = 0;
-    
+
     if (s->bitmap_glyph) {
         FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
         s->bitmap_glyph = NULL;
@@ -840,7 +837,6 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
         s->outline_glyph = NULL;
     }
-    
 
     /* dpf("get_scaled_font enter: is_type1=%d is_cid=%d font_file_path='%s' a_descendant_code=%d\n",
        a_font->is_type1, a_font->is_cid, a_font->font_file_path ? a_font->font_file_path : "", a_descendant_code); */
@@ -915,7 +911,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
             }
 
             /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
-            else 
+            else
             {
                 /* Get the length of the TrueType data. */
                 open_args.memory_size = a_font->get_long(a_font, FAPI_FONT_FEATURE_TT_size, 0);
@@ -962,7 +958,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
             a_font->server_font_data = face;
         }
         else
-            a_font->server_font_data = NULL;        
+            a_font->server_font_data = NULL;
     }
 
     /* Set the point size and transformation.
@@ -979,18 +975,18 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         face->ft_transform.xy = a_font_scale->matrix[2];
         face->ft_transform.yx = a_font_scale->matrix[1];
         face->ft_transform.yy = a_font_scale->matrix[3];
-        
+
         face->horz_res = a_font_scale->HWResolution[0] >> 16;
         face->vert_res = a_font_scale->HWResolution[1] >> 16;
-        
+
         /* Split the transform into scale factors and a rotation-and-shear
          * transform.
          */
         transform_decompose(&face->ft_transform, &face->horz_res, &face->vert_res, &face->width, &face->height);
-        
+
         ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
                 face->horz_res, face->vert_res);
-        
+
         if (ft_error)
         {
             /* The code originally cleaned up the face data here, but the "top level"
@@ -1168,7 +1164,7 @@ static int move_to(const FT_Vector *aTo, void *aObject)
     FF_path_info *p = (FF_path_info*)aObject;
 
     /* FAPI expects that co-ordinates will be as implied by frac_shift
-     * in our case 16.16 fixed precision. True for 'low level' FT 
+     * in our case 16.16 fixed precision. True for 'low level' FT
      * routines (apparently), it isn't true for these routines where
      * FT returns a 26.6 format. Rescale to 16.16 so that FAPI will
      * be able to convert to GS co-ordinates properly.
@@ -1197,7 +1193,7 @@ static int conic_to(const FT_Vector *aControl, const FT_Vector *aTo, void *aObje
     floatp x, y, Controlx, Controly;
     int64_t Control1x, Control1y, Control2x, Control2y;
     floatp sx, sy;
-    
+
     /* More complivated than above, we need to do arithmetic on the
      * co-ordinates, so we want them as floats and we will convert the
      * result into 16.16 fixed precision for FAPI
@@ -1287,11 +1283,11 @@ get_char_outline(FAPI_server *a_server, FAPI_path *a_path)
 static FAPI_retcode release_char_data(FAPI_server *a_server)
 {
     FF_server *s = (FF_server*)a_server;
-    
+
     if (s->outline_glyph) {
         FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
     }
-    
+
     if (s->bitmap_glyph) {
         FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
     }
@@ -1372,10 +1368,10 @@ int gs_fapi_ft_instantiate( i_plugin_client_memory *a_memory, i_plugin_instance 
 static void gs_freetype_destroy(i_plugin_instance *a_plugin_instance, i_plugin_client_memory *a_memory)
 {
     FF_server *server = (FF_server *)a_plugin_instance;
-    
+
     FT_Done_Glyph(&server->outline_glyph->root);
     FT_Done_Glyph(&server->bitmap_glyph->root);
-    
+
     /* As with initialization: since we're supplying memory management to
      * FT, we cannot just to use FT_Done_FreeType (), we have to use
      * FT_Done_Library () and then discard the memory ourselves

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,6 +18,6 @@
 #  define gdevtfax_INCLUDED
 
 int gdev_fax_print_page_stripped(gx_device_printer *pdev, FILE *prn_stream,
-				 stream_CFE_state *ss, long rows_per_strip);
+                                 stream_CFE_state *ss, long rows_per_strip);
 
 #endif /* gdevtfax_INCLUDED */

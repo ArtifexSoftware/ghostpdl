@@ -173,180 +173,180 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
     else {
       /* Palette und colorants */
       switch(data->palette) {
-	case pcl_no_palette:
-	/*FALLTHROUGH*/
-	case pcl_black: invalid = data->number_of_colorants != 1; break;
-	case pcl_CMY:   invalid = data->number_of_colorants != 3; break;
-	case pcl_RGB:   invalid = data->number_of_colorants != 3; break;
-	case pcl_CMYK:  invalid = data->number_of_colorants != 4; break;
-	default: invalid = data->number_of_colorants <= 0;
+        case pcl_no_palette:
+        /*FALLTHROUGH*/
+        case pcl_black: invalid = data->number_of_colorants != 1; break;
+        case pcl_CMY:   invalid = data->number_of_colorants != 3; break;
+        case pcl_RGB:   invalid = data->number_of_colorants != 3; break;
+        case pcl_CMYK:  invalid = data->number_of_colorants != 4; break;
+        default: invalid = data->number_of_colorants <= 0;
       }
       if (invalid)
-	fputs(ERRPREF
-	  "Palette specification and number of colorants are inconsistent.\n",
-	  stderr);
+        fputs(ERRPREF
+          "Palette specification and number of colorants are inconsistent.\n",
+          stderr);
       else {
-	if (data->colorant == NULL) colorant = data->colorant_array;
-	else colorant = data->colorant;
+        if (data->colorant == NULL) colorant = data->colorant_array;
+        else colorant = data->colorant;
 
-	/* First pass over colorants: find minimal and maximal resolutions,
-	   check the number of intensity levels */
-	data->minvres = colorant[0].vres;
-	for (j = 0; j < data->number_of_colorants; j++) {
-	  if (colorant[j].hres <= 0 || colorant[j].vres <= 0) {
-	    invalid = TRUE;
-	    fprintf(stderr, ERRPREF
-	      "The resolution for colorant %d is not positive: %u x %u ppi.\n",
-	      j, colorant[j].hres, colorant[j].vres);
-	  }
-	  else {
-	    if (colorant[j].vres < data->minvres)
-	      data->minvres = colorant[j].vres;
-	    if (colorant[j].hres > maxhres) maxhres = colorant[j].hres;
-	    if (colorant[j].vres > maxvres) maxvres = colorant[j].vres;
-	  }
-	  if (colorant[j].levels < 2 || 0xFFFF < colorant[j].levels) {
-	    invalid = TRUE;
-	    fprintf(stderr, ERRPREF "The number of intensity levels for "
-	      "colorant %d is %u instead of at least 2 and at most 65535.\n",
-	      j, colorant[j].levels);
-	    /* Actually, DJ6/8 p. 68 requires the levels to be in the range
-	       2-255, but as there are two octets available in the CRD format
-	       this seems unnecessarily strict. */
-	  }
-	}
+        /* First pass over colorants: find minimal and maximal resolutions,
+           check the number of intensity levels */
+        data->minvres = colorant[0].vres;
+        for (j = 0; j < data->number_of_colorants; j++) {
+          if (colorant[j].hres <= 0 || colorant[j].vres <= 0) {
+            invalid = TRUE;
+            fprintf(stderr, ERRPREF
+              "The resolution for colorant %d is not positive: %u x %u ppi.\n",
+              j, colorant[j].hres, colorant[j].vres);
+          }
+          else {
+            if (colorant[j].vres < data->minvres)
+              data->minvres = colorant[j].vres;
+            if (colorant[j].hres > maxhres) maxhres = colorant[j].hres;
+            if (colorant[j].vres > maxvres) maxvres = colorant[j].vres;
+          }
+          if (colorant[j].levels < 2 || 0xFFFF < colorant[j].levels) {
+            invalid = TRUE;
+            fprintf(stderr, ERRPREF "The number of intensity levels for "
+              "colorant %d is %u instead of at least 2 and at most 65535.\n",
+              j, colorant[j].levels);
+            /* Actually, DJ6/8 p. 68 requires the levels to be in the range
+               2-255, but as there are two octets available in the CRD format
+               this seems unnecessarily strict. */
+          }
+        }
 
-	/* Check for relations between resolutions and the need for CRD */
-	if (!invalid)  /* this implies that all resolutions are positive */
-	  for (j = 0; j < data->number_of_colorants; j++) {
-	    /* If there is more than one resolution or more than 2 levels we
-	       need CRD. Note that we compare with 'maxhres' in both lines: */
-	    if (maxhres != colorant[j].hres ||
-		maxhres != colorant[j].vres || colorant[j].levels > 2)
-	      needs_CRD = TRUE;
+        /* Check for relations between resolutions and the need for CRD */
+        if (!invalid)  /* this implies that all resolutions are positive */
+          for (j = 0; j < data->number_of_colorants; j++) {
+            /* If there is more than one resolution or more than 2 levels we
+               need CRD. Note that we compare with 'maxhres' in both lines: */
+            if (maxhres != colorant[j].hres ||
+                maxhres != colorant[j].vres || colorant[j].levels > 2)
+              needs_CRD = TRUE;
 
-	    /*  DJ6/8 states that the highest horizontal resolution must be a
-		multiple of all lower horizontal resolutions and the same for
-		the set of vertical resolutions. The reason is not given but
-		these properties imply that it is possible to operate uniformly
-		on a grid at the highest resolution.
-		In contrast, the way in which raster data are transferred
-		(strips with a height equal to the reciprocal of the lowest
-		vertical resolution) logically requires that all vertical
-		resolutions are multiples of the lowest vertical resolution.
-		This condition is not stated in DJ6/8 but it is satisfied by
-		all examples given in that document. This includes example 4 on
-		page 72 which is meant to illustrate the maximum flexibility of
-		format 2 and which describes a situation where the
-		corresponding condition does not hold for the horizontal
-		resolutions.
-	    */
-	    if (colorant[j].vres % data->minvres != 0) {
-	      invalid = TRUE;
-	      fprintf(stderr, ERRPREF
-		"The vertical resolution for colorant %d (%u ppi) is not a "
-		"multiple of the lowest vertical resolution (%u ppi).\n",
-		j, colorant[j].vres, data->minvres);
-	    }
-	    if (maxhres % colorant[j].hres != 0) {
-	      invalid = TRUE;
-	      fprintf(stderr, ERRPREF
-		"The highest horizontal resolution (%u ppi) is not a multiple "
-		"of the horizontal resolution for colorant %d (%u ppi).\n",
-		maxhres, j, colorant[j].hres);
-	    }
-	    if (maxvres % colorant[j].vres != 0) {
-	      invalid = TRUE;
-	      fprintf(stderr, ERRPREF
-		"The highest vertical resolution (%u ppi) is not a multiple "
-		"of the vertical resolution for colorant %d (%u ppi).\n",
-		maxvres, j, colorant[j].vres);
-	    }
-	  }
+            /*  DJ6/8 states that the highest horizontal resolution must be a
+                multiple of all lower horizontal resolutions and the same for
+                the set of vertical resolutions. The reason is not given but
+                these properties imply that it is possible to operate uniformly
+                on a grid at the highest resolution.
+                In contrast, the way in which raster data are transferred
+                (strips with a height equal to the reciprocal of the lowest
+                vertical resolution) logically requires that all vertical
+                resolutions are multiples of the lowest vertical resolution.
+                This condition is not stated in DJ6/8 but it is satisfied by
+                all examples given in that document. This includes example 4 on
+                page 72 which is meant to illustrate the maximum flexibility of
+                format 2 and which describes a situation where the
+                corresponding condition does not hold for the horizontal
+                resolutions.
+            */
+            if (colorant[j].vres % data->minvres != 0) {
+              invalid = TRUE;
+              fprintf(stderr, ERRPREF
+                "The vertical resolution for colorant %d (%u ppi) is not a "
+                "multiple of the lowest vertical resolution (%u ppi).\n",
+                j, colorant[j].vres, data->minvres);
+            }
+            if (maxhres % colorant[j].hres != 0) {
+              invalid = TRUE;
+              fprintf(stderr, ERRPREF
+                "The highest horizontal resolution (%u ppi) is not a multiple "
+                "of the horizontal resolution for colorant %d (%u ppi).\n",
+                maxhres, j, colorant[j].hres);
+            }
+            if (maxvres % colorant[j].vres != 0) {
+              invalid = TRUE;
+              fprintf(stderr, ERRPREF
+                "The highest vertical resolution (%u ppi) is not a multiple "
+                "of the vertical resolution for colorant %d (%u ppi).\n",
+                maxvres, j, colorant[j].vres);
+            }
+          }
       }
 
       if (needs_CRD && data->palette == pcl_RGB) {
-	invalid = TRUE;
-	if (data->level == pcl_level_3plus_CRD_only)
-	  fputs(ERRPREF
-	    "You can't use an RGB palette at the requested PCL level.\n",
-	    stderr);
-	else
-	  fputs(ERRPREF "The specified structure of resolutions and intensity "
-	    "levels is not possible with an RGB palette.\n",
-	    stderr);
+        invalid = TRUE;
+        if (data->level == pcl_level_3plus_CRD_only)
+          fputs(ERRPREF
+            "You can't use an RGB palette at the requested PCL level.\n",
+            stderr);
+        else
+          fputs(ERRPREF "The specified structure of resolutions and intensity "
+            "levels is not possible with an RGB palette.\n",
+            stderr);
       }
       if (needs_CRD && !pcl_has_CRD(data->level)) {
-	invalid = TRUE;
-	fputs(ERRPREF "The specified structure of resolutions and intensity "
-	  "levels is not possible at the requested PCL level.\n", stderr);
+        invalid = TRUE;
+        fputs(ERRPREF "The specified structure of resolutions and intensity "
+          "levels is not possible at the requested PCL level.\n", stderr);
       }
       if (data->palette == pcl_any_palette) {
-	needs_CRD = TRUE;
-	if (!pcl_has_CRD(data->level)) {
-	  invalid = TRUE;
-	  fputs(ERRPREF "The specified palette is not possible at the "
-	    "requested PCL level.\n", stderr);
-	}
+        needs_CRD = TRUE;
+        if (!pcl_has_CRD(data->level)) {
+          invalid = TRUE;
+          fputs(ERRPREF "The specified palette is not possible at the "
+            "requested PCL level.\n", stderr);
+        }
       }
       if (needs_CRD && (maxhres > 0xFFFF || maxvres > 0xFFFF)) {
-	fputs(ERRPREF "Resolutions may be at most 65535 ppi when more than one "
-	  "resolution or more than two intensity levels are requested.\n",
-	  stderr);
-	invalid = TRUE;
+        fputs(ERRPREF "Resolutions may be at most 65535 ppi when more than one "
+          "resolution or more than two intensity levels are requested.\n",
+          stderr);
+        invalid = TRUE;
       }
       if (data->order_CMYK && data->palette != pcl_CMYK) {
-	fputs(ERRPREF
-	  "Ordering bit planes as CMYK instead of KCMY is only meaningful\n"
-	  "  for a CMYK palette.\n", stderr);
-	invalid = TRUE;
+        fputs(ERRPREF
+          "Ordering bit planes as CMYK instead of KCMY is only meaningful\n"
+          "  for a CMYK palette.\n", stderr);
+        invalid = TRUE;
       }
 
       /* Check PJL job name */
       if (data->PJL_job != NULL) {
-	const unsigned char *s = (const unsigned char *)data->PJL_job;
+        const unsigned char *s = (const unsigned char *)data->PJL_job;
 
-	/* Permissible characters are HT and the octets 32-255 with the
-	   exception of '"' (PJLTRM, with some corrections). */
-	while (*s != '\0' && (*s == '\t' || 32 <= *s && *s != '"')) s++;
-	if (*s != '\0') {
-	  fprintf(stderr,
-	    ERRPREF "Illegal character in PJL job name (code 0x%02X).\n", *s);
-	  invalid = TRUE;
-	}
+        /* Permissible characters are HT and the octets 32-255 with the
+           exception of '"' (PJLTRM, with some corrections). */
+        while (*s != '\0' && (*s == '\t' || 32 <= *s && *s != '"')) s++;
+        if (*s != '\0') {
+          fprintf(stderr,
+            ERRPREF "Illegal character in PJL job name (code 0x%02X).\n", *s);
+          invalid = TRUE;
+        }
 
-	/* There is a maximum of 80 "significant characters" (PJLTRM).
-	   According to PJLTRM, p. D-8, "String too long" is a parser warning
-	   and leads to a part of the command being ignored. I play it safe.
-	   There would also be a warning for an empty string but we treat that
-	   case differently anyway (see below). */
-	if (strlen(data->PJL_job) > 80) {
-	  fputs(ERRPREF "PJL job name is too long (more than 80 characters).\n",
-	    stderr);
-	  invalid = TRUE;
-	}
+        /* There is a maximum of 80 "significant characters" (PJLTRM).
+           According to PJLTRM, p. D-8, "String too long" is a parser warning
+           and leads to a part of the command being ignored. I play it safe.
+           There would also be a warning for an empty string but we treat that
+           case differently anyway (see below). */
+        if (strlen(data->PJL_job) > 80) {
+          fputs(ERRPREF "PJL job name is too long (more than 80 characters).\n",
+            stderr);
+          invalid = TRUE;
+        }
       }
 
       /* Check PJL personality name */
       if (data->PJL_language != NULL) {
-	const char *s = data->PJL_language;
+        const char *s = data->PJL_language;
 
-	/* PJLTRM does not give explicit lexical conventions for personality
-	   names but from general considerations it should be an "alphanumeric
-	   variable". The latter must start with a letter and may consist of
-	   letters and digits. */
-	if (is_letter(*s)) do s++; while (is_letter(*s) || is_digit(*s));
+        /* PJLTRM does not give explicit lexical conventions for personality
+           names but from general considerations it should be an "alphanumeric
+           variable". The latter must start with a letter and may consist of
+           letters and digits. */
+        if (is_letter(*s)) do s++; while (is_letter(*s) || is_digit(*s));
 
-	if (*data->PJL_language == '\0') {
-	  fputs(ERRPREF "Empty PJL language name.\n", stderr);
-	  invalid = TRUE;
-	}
-	else if (*s != '\0') {
-	  fprintf(stderr,
-	    ERRPREF "Illegal character in PJL language name (code 0x%02X).\n",
-	    *s);
-	  invalid = TRUE;
-	}
+        if (*data->PJL_language == '\0') {
+          fputs(ERRPREF "Empty PJL language name.\n", stderr);
+          invalid = TRUE;
+        }
+        else if (*s != '\0') {
+          fprintf(stderr,
+            ERRPREF "Illegal character in PJL language name (code 0x%02X).\n",
+            *s);
+          invalid = TRUE;
+        }
       }
     }
 
@@ -394,7 +394,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
     "\033&l%da"	/* PCL: Page Size */
     "0o"	/* PCL: Page Orientation/Orientation: portrait */
     "0L",	/* PCL: Perforation Skip Mode: off. This also effectively sets
-		   the PCL top margin to zero. */
+                   the PCL top margin to zero. */
     (int) data->size
   );
 
@@ -402,8 +402,8 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
   if (data->media_source != 0)
     fprintf(out, "\033&l%dH", data->media_source);	/* PCL: Media Source */
       /*  Note that a value of zero for the Media Source command means
-	  "eject the current page". Hence we are losing no functionality by
-	  reserving 0 to mean "no Media Source request". */
+          "eject the current page". Hence we are losing no functionality by
+          reserving 0 to mean "no Media Source request". */
   if (data->media_source != 2 && data->manual_feed) fputs("\033&l2H", out);
    /* I am using two Media Source commands here in case the value 2 means
       "manual feed from the last selected media source" on some printer. */
@@ -427,14 +427,14 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
       /* PCL: Raster Graphics Quality */
     if (data->level > pcl_level_3plus_DJ500)
       fprintf(out, "\033*o%dQ", data->shingling);
-	/* PCL: Set Raster Graphics Shingling/Mechanical Print Quality */
+        /* PCL: Set Raster Graphics Shingling/Mechanical Print Quality */
     if (data->depletion != 0)
      /*	According to TRG500 p. 6-32, depletion makes no sense for monochrome
-	data.  Besides, not all printers react to this command. Hence I'm
-	handing the decision to the caller. Note that permitted values are 1-5.
+        data.  Besides, not all printers react to this command. Hence I'm
+        handing the decision to the caller. Note that permitted values are 1-5.
       */
       fprintf(out, "\033*o%dD", data->depletion);
-	/* PCL: Set Raster Graphics Depletion */
+        /* PCL: Set Raster Graphics Depletion */
   }
   else
     fprintf(out,
@@ -469,9 +469,9 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
   if (data->level >= pcl_level_3plus_S68)
     fprintf(out, "\033&u%uD", maxhres < maxvres? maxvres: maxhres);
      /* PCL: Unit of Measure. This is not documented but merely mentioned in
-	DJ6/8. All HP drivers for newer printers I've looked at (admittedly not
-	many) generate this command, including a driver for the DJ 540.
-	Actually, as the routines here send a Move CAP Horizontal/Vertical
+        DJ6/8. All HP drivers for newer printers I've looked at (admittedly not
+        many) generate this command, including a driver for the DJ 540.
+        Actually, as the routines here send a Move CAP Horizontal/Vertical
         (PCL Units) command only for position 0, the units should be irrelevant.
       */
 
@@ -479,7 +479,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
   if (data->level != pcl_level_3plus_CRD_only &&
       data->palette != pcl_no_palette && data->palette != pcl_any_palette)
     fprintf(out, "\033*r%dU",
-	/* PCL: Set Number of Planes per Row/Simple Color */
+        /* PCL: Set Number of Planes per Row/Simple Color */
       data->palette == pcl_RGB? 3:	/* RGB palette */
       -data->number_of_colorants);	/* (K)(CMY) palette */
 
@@ -491,11 +491,11 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
 
     for (j = 0; j < data->number_of_colorants; j++)
       fprintf(out, "%c%c%c%c%c%c",
-	/*  Note that %c expects an 'int' (and converts it to 'unsigned char').
-	 */
-	colorant[j].hres/256,   colorant[j].hres%256,
-	colorant[j].vres/256,   colorant[j].vres%256,
-	colorant[j].levels/256, colorant[j].levels%256);
+        /*  Note that %c expects an 'int' (and converts it to 'unsigned char').
+         */
+        colorant[j].hres/256,   colorant[j].hres%256,
+        colorant[j].vres/256,   colorant[j].vres%256,
+        colorant[j].levels/256, colorant[j].levels%256);
   }
 
   if (ferror(out)) {
@@ -517,7 +517,7 @@ int pcl3_init_file(FILE *out, pcl_FileData *data)
   for (j = 0; j < data->number_of_colorants; j++)
     data->number_of_bitplanes +=
       pcl3_levels_to_planes(colorant[j].levels)*
-	(colorant[j].vres/data->minvres);
+        (colorant[j].vres/data->minvres);
 
   return 0;
 }
@@ -572,27 +572,27 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
       global = data->global;
 
       for (j = 0;
-	j < global->number_of_bitplanes &&
-	  (data->next[j].length == 0 || data->next[j].str != NULL);
-	j++);
+        j < global->number_of_bitplanes &&
+          (data->next[j].length == 0 || data->next[j].str != NULL);
+        j++);
       invalid = j < global->number_of_bitplanes;
       if (!invalid && pcl_cm_is_differential(global->compression)) {
-	invalid = (data->previous == NULL ||
-	  global->compression == pcl_cm_delta &&
-	    data->workspace[1] == NULL);
-	if (!invalid) {
-	  for (j = 0;
-	    j < global->number_of_bitplanes &&
-	      (data->previous[j].length == 0 || data->previous[j].str != NULL);
-	    j++);
-	  invalid = j < global->number_of_bitplanes;
-	}
+        invalid = (data->previous == NULL ||
+          global->compression == pcl_cm_delta &&
+            data->workspace[1] == NULL);
+        if (!invalid) {
+          for (j = 0;
+            j < global->number_of_bitplanes &&
+              (data->previous[j].length == 0 || data->previous[j].str != NULL);
+            j++);
+          invalid = j < global->number_of_bitplanes;
+        }
       }
     }
 
     if (invalid) {
       fputs(ERRPREF "Invalid data structure passed to pcl3_begin_raster().\n",
-	stderr);
+        stderr);
       return +1;
     }
   }
@@ -611,25 +611,25 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
   /* Use the seed plane array for differential compression methods */
   if (pcl_cm_is_differential(global->compression)) {
     /*  HP's documentation is a bit obscure concerning what the seed plane for
-	a particular bit plane is. Most of the documentation talks only about
-	seed rows (and "rows" consist of planes), but then one suddenly comes
-	across a statement like "a separate seed row is maintained for each
-	graphic plane" (DJ6/8 p. 57). I've also never found a statement what
-	the seed row/plane/whatever for a bitplane in a strip group with
-	multiple lines or multiple planes per colorant is, except that DJ6/8
-	(p. 60) states explicitly that one cannot use Seed Row Source in that
-	situation to select it.
+        a particular bit plane is. Most of the documentation talks only about
+        seed rows (and "rows" consist of planes), but then one suddenly comes
+        across a statement like "a separate seed row is maintained for each
+        graphic plane" (DJ6/8 p. 57). I've also never found a statement what
+        the seed row/plane/whatever for a bitplane in a strip group with
+        multiple lines or multiple planes per colorant is, except that DJ6/8
+        (p. 60) states explicitly that one cannot use Seed Row Source in that
+        situation to select it.
 
-	I therefore have to make a few assumptions. The following seem sensible:
-	- The PCL interpreter maintains independent "seed lines" for each
-	  colorant. Each line consists of independent seed planes, one for each
-	  bit plane in a pixel line for that colorant (i.e., there are
-	  pcl3_levels_to_planes(levels) seed planes for a colorant accepting
-	  'levels' intensity levels).
-	- If the current compression method (this is a global property of the
-	  interpreter) is a differential one, a bit plane is interpreted as a
-	  delta plane with respect to the corresponding bit plane in the
-	  current colorant's preceding line.
+        I therefore have to make a few assumptions. The following seem sensible:
+        - The PCL interpreter maintains independent "seed lines" for each
+          colorant. Each line consists of independent seed planes, one for each
+          bit plane in a pixel line for that colorant (i.e., there are
+          pcl3_levels_to_planes(levels) seed planes for a colorant accepting
+          'levels' intensity levels).
+        - If the current compression method (this is a global property of the
+          interpreter) is a differential one, a bit plane is interpreted as a
+          delta plane with respect to the corresponding bit plane in the
+          current colorant's preceding line.
     */
 
     int strip;
@@ -645,15 +645,15 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
       int l, p;
 
       /* The first line of the colorant strip refers to the last line in the
-	 preceding strip. I'm assuming Seed Row Source == 0 here. */
+         preceding strip. I'm assuming Seed Row Source == 0 here. */
       for (p = 0; p < planes; p++, plane++)
-	data->seed_plane[plane] = data->previous + plane + (lines - 1)*planes;
+        data->seed_plane[plane] = data->previous + plane + (lines - 1)*planes;
 
       /* Subsequent lines refer to the preceding line in the current strip
-	 group */
+         group */
       for (l = 1; l < lines; l++)
-	for (p = 0; p < planes; p++, plane++)
-	  data->seed_plane[plane] = data->next + plane - planes;
+        for (p = 0; p < planes; p++, plane++)
+          data->seed_plane[plane] = data->next + plane - planes;
     }
   }
 
@@ -665,8 +665,8 @@ int pcl3_begin_raster(FILE *out, pcl_RasterData *data)
        This is reset by End Raster Graphics. */
   }
   fputs("\033*p0X"	/* PCL: Horizontal Cursor Positioning by Dots */
-	"\033*r1A", out);
-	  /* PCL: Start Raster Graphics: at current position */
+        "\033*r1A", out);
+          /* PCL: Start Raster Graphics: at current position */
 
   /* After Start Raster Graphics the seed row consists of all zeroes
      (DJ6/8 p. 50). */
@@ -778,11 +778,11 @@ static int send_plane(pcl_bool final,
      method employed. */
   if (method_demanded == pcl_cm_delta) {
     /*  Method 3 (delta row compression) has a widely varying effectiveness,
-	depending on the structure of the input. Hence it is best combined
-	with a non-delta method like method 2, as is done here on a per-plane
-	basis, or method 1, as inherent in method 9.
-	The procedure here is simple: try both methods, and then take the one
-	giving the shortest output.
+        depending on the structure of the input. Hence it is best combined
+        with a non-delta method like method 2, as is done here on a per-plane
+        basis, or method 1, as inherent in method 9.
+        The procedure here is simple: try both methods, and then take the one
+        giving the shortest output.
     */
     int c1, c2;	/* cost in octets */
 
@@ -797,10 +797,10 @@ static int send_plane(pcl_bool final,
     else {
       int bound = in->length + (*method_used == pcl_cm_none? 0: 2);
       if (c1 >= 0 && c1 < bound) {
-	/* We're interested in TIFF compression only if it results in an octet
-	   string shorter than the one produced by delta row compression. */
-	bound = c1;
-	if (*method_used != pcl_cm_tiff && bound >= 2) bound -= 2;
+        /* We're interested in TIFF compression only if it results in an octet
+           string shorter than the one produced by delta row compression. */
+        bound = c1;
+        if (*method_used != pcl_cm_tiff && bound >= 2) bound -= 2;
       }
       out2.str = out_bf2; out2.length = bound;
       rc = pcl_compress(pcl_cm_tiff, in, NULL, &out2);
@@ -828,7 +828,7 @@ static int send_plane(pcl_bool final,
   }
   else {
     if (method_demanded != pcl_cm_none &&
-	pcl_compress(method_demanded, in, prev, &out1) == 0) {
+        pcl_compress(method_demanded, in, prev, &out1) == 0) {
       /* Send compressed data */
       send = out1;
       choice = method_demanded;
@@ -918,23 +918,23 @@ int pcl3_transfer_group(FILE *out, pcl_RasterData *data)
     /* First CMY */
     for (j = global->black_planes; j < global->number_of_bitplanes; j++) {
       if (send_plane(FALSE,
-	  global->compression, &data->current_compression, data->next + j,
-	  data->seed_plane[j],
-	  out,
-	  data->workspace[0], data->workspace[1],
-	  data->workspace_allocated) != 0)
-	return -1;
+          global->compression, &data->current_compression, data->next + j,
+          data->seed_plane[j],
+          out,
+          data->workspace[0], data->workspace[1],
+          data->workspace_allocated) != 0)
+        return -1;
     }
     /* Now black */
     final = global->black_planes - 1;
     for (j = 0; j < global->black_planes; j++) {
       if (send_plane(j == final,
-	  global->compression, &data->current_compression, data->next + j,
-	  data->seed_plane[j],
-	  out,
-	  data->workspace[0], data->workspace[1],
-	  data->workspace_allocated) != 0)
-	return -1;
+          global->compression, &data->current_compression, data->next + j,
+          data->seed_plane[j],
+          out,
+          data->workspace[0], data->workspace[1],
+          data->workspace_allocated) != 0)
+        return -1;
     }
   }
   else {
@@ -942,12 +942,12 @@ int pcl3_transfer_group(FILE *out, pcl_RasterData *data)
     final = global->number_of_bitplanes - 1;
     for (j = 0; j < global->number_of_bitplanes; j++) {
       if (send_plane(j == final,
-	  global->compression, &data->current_compression, data->next + j,
-	  data->seed_plane[j],
-	  out,
-	  data->workspace[0], data->workspace[1],
-	  data->workspace_allocated) != 0)
-	return -1;
+          global->compression, &data->current_compression, data->next + j,
+          data->seed_plane[j],
+          out,
+          data->workspace[0], data->workspace[1],
+          data->workspace_allocated) != 0)
+        return -1;
     }
   }
 
@@ -975,8 +975,8 @@ int pcl3_end_raster(FILE *out, pcl_RasterData *data)
 {
   fputs("0Y", out);
     /*  PCL: Relative Vertical Pixel Movement/Y Offset. This is a simple way
-	to terminate the combined escape sequence started at the beginning of
-	raster mode. */
+        to terminate the combined escape sequence started at the beginning of
+        raster mode. */
 
   /* End Raster Graphics */
   send_ERG(out, data->global->level);
@@ -1040,15 +1040,15 @@ int pcl3_end_file(FILE *out, pcl_FileData *data)
 
     if (data->PJL_job != NULL) {
       /* PJL: End of Job. Some HP PCL-3 drivers using JOB omit this command.
-	 According to PJLTRM, it is required in that case. */
+         According to PJLTRM, it is required in that case. */
       fputs("@PJL EOJ\n", out);
 
       /* PJL: UEL. All output I've seen from HP's PCL-3 drivers using EOJ
-	 omits this final UEL. According to PJLTRM, it is required. In my
-	 opinion it doesn't make any difference because in both cases the
-	 printer expects PJL in preference to other data next and the rules
-	 for deciding whether it's PJL or not are also the same. Note that the
-	 command does not influence the printer's state. */
+         omits this final UEL. According to PJLTRM, it is required. In my
+         opinion it doesn't make any difference because in both cases the
+         printer expects PJL in preference to other data next and the rules
+         for deciding whether it's PJL or not are also the same. Note that the
+         command does not influence the printer's state. */
       fputs("\033%-12345X", out);
     }
   }
@@ -1099,7 +1099,7 @@ int pcl3_set_oldquality(pcl_FileData *data)
     else
       data->depletion = 3;		/* 50 % */
        /* Actually, TRG500 recommends 5 (50 % with gamma correction), but we
-	  assume that gamma correction will be handled externally. */
+          assume that gamma correction will be handled externally. */
     data->raster_graphics_quality = 2;	/* high */
     data->shingling = 2;		/* 4 passes */
     break;
@@ -1107,8 +1107,8 @@ int pcl3_set_oldquality(pcl_FileData *data)
     data->depletion = 2;		/* 25 % */
     data->raster_graphics_quality = 0;	/* use current control panel setting */
     if (data->media_type == 3 ||
-	data->media_type == 4 && data->palette != pcl_CMY &&
-	   data->palette != pcl_RGB)
+        data->media_type == 4 && data->palette != pcl_CMY &&
+           data->palette != pcl_RGB)
       data->shingling = 2;		/* 4 passes (25 % each pass) */
     else data->shingling = 1;		/* 2 passes (50 % each pass) */
   }

@@ -26,10 +26,10 @@ typedef enum {
     GSLT_GRAY_A,
     GSLT_RGB,
     GSLT_RGB_A,
-    GSLT_CMYK, 
+    GSLT_CMYK,
     GSLT_CMYK_A,
     GSLT_UNDEFINED  /* sentinel for the last defined colorspace */
-} gslt_image_colorspace; 
+} gslt_image_colorspace;
 
 /* definition of the image object structure */
 struct gslt_image_s {
@@ -49,7 +49,6 @@ gslt_image_t *gslt_image_decode(gs_memory_t *mem, byte *buf, int len);
 
 /* free an image object when it is no longer needed */
 void gslt_image_free(gs_memory_t *mem, gslt_image_t *image);
-
 
 /* decode a memory buffer as a particular image format */
 gslt_image_t *gslt_image_decode_jpeg(gs_memory_t *mem, byte *buf, int len);

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,8 +38,8 @@ typedef struct gs_image4_s {
     bool MaskColor_is_range;
     uint MaskColor[GS_IMAGE_MAX_COMPONENTS * 2];
     /*
-     * Define the parent image type that gave rise to this. 
-     * Used to avoid the use of mixed halftoning methods 
+     * Define the parent image type that gave rise to this.
+     * Used to avoid the use of mixed halftoning methods
      * between images and their masks, which
      * can cause misalignment issues in pixel replications.
      */

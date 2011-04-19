@@ -14,13 +14,13 @@
   Preprocessor variables:
 
     EPRN_TRACE
-	Define this to enable tracing. Only useful for development.
+        Define this to enable tracing. Only useful for development.
 
     EPRN_TRAILING_BIT_BUG_FIXED
-	Define this to deactivate compensation for a bug in ghostscript which
-	leads to the last pixel in an RGB line being black instead of white.
-	This occurs at least in gs 6.01 and 6.50. The correction covers only
-	the one-bit-per-colorant case and is equivalent to clipping the pixel.
+        Define this to deactivate compensation for a bug in ghostscript which
+        leads to the last pixel in an RGB line being black instead of white.
+        This occurs at least in gs 6.01 and 6.50. The correction covers only
+        the one-bit-per-colorant case and is equivalent to clipping the pixel.
 
 *******************************************************************************
 
@@ -141,8 +141,8 @@ void eprn_number_of_octets(eprn_Device *dev, unsigned int lenghts[])
       dev->color_info.depth;
    /* This results in length >= ceiling((number of pixels per line)/8)
       because:
-	      8 * octets_per_line >= pixels_per_line * depth
-	<==>  octets_per_line/depth >= pixels_per_line/8
+              8 * octets_per_line >= pixels_per_line * depth
+        <==>  octets_per_line/depth >= pixels_per_line/8
       where division is to be understood as exact.
     */
 
@@ -309,9 +309,9 @@ gx_color_index eprn_map_rgb_color_for_CMY_or_K_flex(gx_device *device,
     return eprn_map_cmyk_color_flex(device, tmpcv);
 
   }
-  tmpcv[0] = gx_max_color_value - red; 
-  tmpcv[1] = gx_max_color_value - green; 
-  tmpcv[2] = gx_max_color_value - blue; 
+  tmpcv[0] = gx_max_color_value - red;
+  tmpcv[1] = gx_max_color_value - green;
+  tmpcv[2] = gx_max_color_value - blue;
   tmpcv[3] = 0;
   return eprn_map_cmyk_color_flex(device, tmpcv);
 }
@@ -377,9 +377,9 @@ gx_color_index eprn_map_rgb_color_for_CMY_or_K_max(gx_device *device,
   }
   /* Note that the conversion from composite black to true black for CMY+K can
      only happen at the output pixel level, not here. */
-  tmpcv[0] = gx_max_color_value - red; 
-  tmpcv[1] = gx_max_color_value - green; 
-  tmpcv[2] = gx_max_color_value - blue; 
+  tmpcv[0] = gx_max_color_value - red;
+  tmpcv[1] = gx_max_color_value - green;
+  tmpcv[2] = gx_max_color_value - blue;
   tmpcv[3] = 0;
   return eprn_map_cmyk_color_max(device, tmpcv);
 }
@@ -487,10 +487,10 @@ gx_color_index eprn_map_cmyk_color_flex(gx_device *device,
       (a) multiply by the number of levels minus 1 and truncate,
       (b) multiply by the number of levels minus 1 and round, and
       (c) multiply by the number of levels and truncate, except for an
-	  intensity of 1 in which case one returns the number of levels minus 1.
+          intensity of 1 in which case one returns the number of levels minus 1.
       For intensity values which can be represented exactly, i.e.,
 
-	intensity = i/(levels-1)	for some non-negative i < levels,
+        intensity = i/(levels-1)	for some non-negative i < levels,
 
       these three methods are identical. (a) is however inappropriate here
       because for less than 32 levels ghostscript already provides intensity
@@ -624,7 +624,7 @@ void eprn_finalize(bool is_RGB, unsigned int non_black_levels,
 
     if (is_RGB) {
       /* White may be any intensity, but it's the same for all three colorants,
-	 and it's the highest. */
+         and it's the highest. */
       eprn_Octet imax = non_black_levels - 1;
       int c, rgb_planes = eprn_bits_for_levels(non_black_levels);
 
@@ -632,25 +632,25 @@ void eprn_finalize(bool is_RGB, unsigned int non_black_levels,
 
       /* Loop over RGB */
       for (c = 0; c < 3; c++) {
-	eprn_Octet value = imax;
-	int m;
+        eprn_Octet value = imax;
+        int m;
 
-	/* Loop over all planes for this colorant */
-	for (m = 0; m < rgb_planes; m++, j++) {
-	  eprn_Octet bit = value & 1;
-	  int p;
+        /* Loop over all planes for this colorant */
+        for (m = 0; m < rgb_planes; m++, j++) {
+          eprn_Octet bit = value & 1;
+          int p;
 
-	  value = value >> 1;
+          value = value >> 1;
 
-	  /* Put the bit into all remaining pixels for this plane */
-	  for (p = 0; p < shift; p++)
-	    *ptr[j] = (*ptr[j] << 1) | bit;
-	}
+          /* Put the bit into all remaining pixels for this plane */
+          for (p = 0; p < shift; p++)
+            *ptr[j] = (*ptr[j] << 1) | bit;
+        }
       }
     }
     else /* White is zero */
       for (j = 0; j < planes; j++)
-	*ptr[j] = *ptr[j] << shift;
+        *ptr[j] = *ptr[j] << shift;
 
     /* Advance all plane pointers by 1 */
     for (j = 0; j < planes; j++) ptr[j]++;
@@ -730,15 +730,15 @@ static void split_line_le8(eprn_Device *dev, const eprn_Octet *line,
        */
       comp = pixel & comp_mask;	/* black */
       for (j = 0; j < black_planes; j++) {
-	*ptr[j] = (*ptr[j] << 1) | comp & 1;
-	comp >>= 1;
+        *ptr[j] = (*ptr[j] << 1) | comp & 1;
+        comp >>= 1;
       }
       if (non_black_planes > 0) for (l = 1; l < 4; l++) {
-	comp = (pixel >> l*dev->eprn.bits_per_colorant) & comp_mask;
-	for (m = 0; m < non_black_planes; m++, j++) {
-	  *ptr[j] = (*ptr[j] << 1) | comp & 1;
-	  comp >>= 1;
-	}
+        comp = (pixel >> l*dev->eprn.bits_per_colorant) & comp_mask;
+        for (m = 0; m < non_black_planes; m++, j++) {
+          *ptr[j] = (*ptr[j] << 1) | comp & 1;
+          comp >>= 1;
+        }
       }
 
       pixels++;
@@ -825,8 +825,8 @@ static void split_line_ge8(eprn_Device *dev, const eprn_Octet *line,
     for (l = 1; l < 4; l++) {
       comp = (pixel >> l*dev->eprn.bits_per_colorant) & comp_mask;
       for (m = 0; m < non_black_planes; m++, j++) {
-	*ptr[j] = (*ptr[j] << 1) | comp & 1;
-	comp >>= 1;
+        *ptr[j] = (*ptr[j] << 1) | comp & 1;
+        comp >>= 1;
       }
     }
 
@@ -898,12 +898,12 @@ static void split_line_3or4x1(eprn_Device *dev, const eprn_Octet *line,
     if (l < 4) {
       for (j = from; j < 4; j++) octet[j] <<= 8 - 2*l;
       if (dev->eprn.colour_model == eprn_DeviceRGB) {
-	/* Add white in the last 8 - 2*l pixels */
-	for (j = 1; j < 4; j++) {
-	  int k;
-	  /* We add two pixels at a time */
-	  for (k = 3 - l; k >= 0; k--) octet[j] |= 0x03 << k;
-	}
+        /* Add white in the last 8 - 2*l pixels */
+        for (j = 1; j < 4; j++) {
+          int k;
+          /* We add two pixels at a time */
+          for (k = 3 - l; k >= 0; k--) octet[j] |= 0x03 << k;
+        }
       }
     }
     for (j = from; j < 4; j++) *(ptr[j]++) = octet[j];
@@ -955,7 +955,7 @@ static void split_line_4x2(eprn_Device *dev, const eprn_Octet *line,
     /* Split and distribute over planes */
     *ptr[0] = (*ptr[0] << 1) | pixel & 0x01;
 #define assign_bit(index) \
-	*ptr[index] = (*ptr[index] << 1) | (pixel >> index) & 0x01
+        *ptr[index] = (*ptr[index] << 1) | (pixel >> index) & 0x01
     assign_bit(1);
     assign_bit(2);
     assign_bit(3);
@@ -1094,18 +1094,18 @@ int eprn_get_planes(eprn_Device *dev, eprn_OctetString bitplanes[])
   }
   else {
     /*  Here we split multi-bit pixels which are already adapted to the
-	printer's capabilities.
+        printer's capabilities.
 
-	All the functions called here have the following signature:
+        All the functions called here have the following signature:
 
-	  static void split_line...(eprn_Device *dev, const eprn_Octet *line,
-	    int length, eprn_OctetString plane[])
+          static void split_line...(eprn_Device *dev, const eprn_Octet *line,
+            int length, eprn_OctetString plane[])
 
-	Such a "split_line implementation" must take the scan line of length
-	'length', pointed to by 'line', split it into bit planes according to
-	the state of 'dev', and return these planes via 'plane'. The length
-	fields of the planes must be set. Trailing zero octets should not be
-	removed because it's done here afterwards anyway.
+        Such a "split_line implementation" must take the scan line of length
+        'length', pointed to by 'line', split it into bit planes according to
+        the state of 'dev', and return these planes via 'plane'. The length
+        fields of the planes must be set. Trailing zero octets should not be
+        removed because it's done here afterwards anyway.
     */
 
     if (dev->eprn.colour_model == eprn_DeviceGray)
@@ -1113,34 +1113,34 @@ int eprn_get_planes(eprn_Device *dev, eprn_OctetString bitplanes[])
     else {
       if (dev->eprn.bits_per_colorant == 1) {
 #ifndef EPRN_TRAILING_BIT_BUG_FIXED
-	if (dev->eprn.colour_model == eprn_DeviceRGB &&
-	    line->length == dev->eprn.octets_per_line) {
-	 /* At least gs 6.01 and 6.50 sometimes generate pixel lines where the
-	    last pixel is not white but black (last octet in 'line' is 0xE0
-	    instead of 0xEE; with pcl3 it shows up for A6 and A4, but not for
-	    A3, A5, US Letter, or US Legal).
-	    I'm overwriting it with white. */
+        if (dev->eprn.colour_model == eprn_DeviceRGB &&
+            line->length == dev->eprn.octets_per_line) {
+         /* At least gs 6.01 and 6.50 sometimes generate pixel lines where the
+            last pixel is not white but black (last octet in 'line' is 0xE0
+            instead of 0xEE; with pcl3 it shows up for A6 and A4, but not for
+            A3, A5, US Letter, or US Legal).
+            I'm overwriting it with white. */
 #ifdef EPRN_TRACE
-	  if (gs_debug_c(EPRN_TRACE_CHAR)) {
-	    static bool already_noted = false;
-	    if (!already_noted && line->str[line->length - 1] != 0xEE) {
-	      dlprintf1("! eprn_get_planes(): "
-		"Line-terminating octet is 0x%02X.\n",
-		line->str[line->length - 1]);
-	      already_noted = true;
-	    }
-	  }
+          if (gs_debug_c(EPRN_TRACE_CHAR)) {
+            static bool already_noted = false;
+            if (!already_noted && line->str[line->length - 1] != 0xEE) {
+              dlprintf1("! eprn_get_planes(): "
+                "Line-terminating octet is 0x%02X.\n",
+                line->str[line->length - 1]);
+              already_noted = true;
+            }
+          }
 #endif	/* EPRN_TRACE */
-	  line->str[line->length - 1] |= RED_BIT | GREEN_BIT | BLUE_BIT;
-	}
+          line->str[line->length - 1] |= RED_BIT | GREEN_BIT | BLUE_BIT;
+        }
 #endif	/* EPRN_TRAILING_BIT_BUG_FIXED */
-	split_line_3or4x1(dev, line->str, line->length, bitplanes);
+        split_line_3or4x1(dev, line->str, line->length, bitplanes);
       }
       else if (dev->eprn.bits_per_colorant == 2 && dev->eprn.black_levels > 2 &&
-	  dev->eprn.non_black_levels > 2)
-	split_line_4x2(dev, line->str, line->length, bitplanes);
+          dev->eprn.non_black_levels > 2)
+        split_line_4x2(dev, line->str, line->length, bitplanes);
       else if (dev->color_info.depth < 8)
-	split_line_le8(dev, line->str, line->length, bitplanes);
+        split_line_le8(dev, line->str, line->length, bitplanes);
       else split_line_ge8(dev, line->str, line->length, bitplanes);
     }
   }

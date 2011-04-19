@@ -510,14 +510,12 @@ gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
         &((const gs_pattern1_instance_t *)pinst)->template;
 }
 
-
 /* Get transparency object pointer */
 void *
 gx_pattern1_get_transptr(const gx_device_color *pdevc)
 {
     return pdevc->colors.pattern.p_tile->ttrans;
 }
-
 
 /* Check device color for Pattern Type 1. */
 bool
@@ -538,7 +536,6 @@ gs_dc_get_pattern_id(const gx_device_color *pdevc)
         return gs_no_id;
     return pdevc->colors.pattern.p_tile->id;
 }
-
 
 /*
  * Perform actions required at setcolor time. This procedure resets the
@@ -598,7 +595,6 @@ gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
         return gs_state_update_overprint(pgs, &params);
     }
 }
-
 
 const gs_pattern1_template_t *
 gs_getpattern(const gs_client_color * pcc)
@@ -922,7 +918,6 @@ gs_makebitmappattern_xform(
     return gs_makepixmappattern(pcc, &bitmap, mask, pmat, id, 0, 0, pgs, mem);
 }
 
-
 /* ------ Color space implementation ------ */
 
 /*
@@ -1078,7 +1073,6 @@ static RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
 }
 RELOC_PTRS_END
 
-
 /*
  * Currently patterns cannot be passed through the command list,
  * however vector devices need to save a color for comparing
@@ -1138,7 +1132,6 @@ gx_dc_colored_masked_get_dev_halftone(const gx_device_color * pdevc)
 {
     return pdevc->colors.colored.c_ht;
 }
-
 
 /* Macros for pattern loading */
 #define FINISH_PATTERN_LOAD\
@@ -1270,7 +1263,6 @@ gx_dc_pattern_get_nonzero_comps(
     return 1;
 }
 
-
 static bool
 gx_dc_pure_masked_equal(const gx_device_color * pdevc1,
                         const gx_device_color * pdevc2)
@@ -1399,7 +1391,6 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     return 0;
 }
 
-
 /* This is for the case of writing into the clist the pattern that includes transparency.
    Transparency with patterns is handled a bit differently since the data is coming from
    a pdf14 device that includes planar data with an alpha channel */
@@ -1494,8 +1485,6 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
 
     return 0;
 }
-
-
 
 /* Write a pattern into command list, possibly dividing into portions. */
 int
@@ -1668,7 +1657,6 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
     return size - left;
 }
 
-
 /* This reads in the transparency buffer from the clist */
 static int
 gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset,
@@ -1708,8 +1696,6 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset,
 
      return size - left;
 }
-
-
 
 int
 gx_dc_pattern_read(
@@ -1908,5 +1894,3 @@ gx_dc_is_pattern1_color(const gx_device_color *pdevc)
 {
     return (pdevc->type == &gx_dc_pattern || pdevc->type == &gx_dc_pattern_trans);
 }
-
-

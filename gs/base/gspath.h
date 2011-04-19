@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -65,8 +65,8 @@ typedef struct gs_matrix_fixed_s gs_matrix_fixed;
 #endif
 
 /* Imager-level procedures */
-void make_quadrant_arc(gs_point *p, const gs_point *c, 
-	const gs_point *p0, const gs_point *p1, double r);
+void make_quadrant_arc(gs_point *p, const gs_point *c,
+        const gs_point *p0, const gs_point *p1, double r);
 
 /* Add the current path to the path in the previous graphics state. */
 int gs_upmergepath(gs_state *);

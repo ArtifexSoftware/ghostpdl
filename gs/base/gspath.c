@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -42,7 +42,7 @@ gs_closepath(gs_state * pgs)
     int code = gx_path_close_subpath(ppath);
 
     if (code < 0)
-	return code;
+        return code;
     pgs->current_point = pgs->subpath_start;
     return code;
 }
@@ -61,11 +61,11 @@ gs_upmergepath(gs_state * pgs)
 
     code = gx_path_add_path(saved->path, pgs->path);
     if (code < 0)
-	return code;
+        return code;
     if (pgs->current_point_valid) {
-	saved->current_point = pgs->current_point;
-	saved->subpath_start = pgs->subpath_start;
-	saved->current_point_valid = true;
+        saved->current_point = pgs->current_point;
+        saved->subpath_start = pgs->subpath_start;
+        saved->current_point_valid = true;
     }
     return code;
 }
@@ -90,12 +90,12 @@ int
 gs_currentpoint(gs_state * pgs, gs_point * ppt)
 {
     if (!pgs->current_point_valid)
-	return_error(gs_error_nocurrentpoint);
-    return gs_itransform(pgs, pgs->current_point.x, 
-			      pgs->current_point.y, ppt);
+        return_error(gs_error_nocurrentpoint);
+    return gs_itransform(pgs, pgs->current_point.x,
+                              pgs->current_point.y, ppt);
 }
 
-static inline int 
+static inline int
 gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
@@ -103,7 +103,7 @@ gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point
     int code = gs_point_transform2fixed(m, x, y, &p);
 
     if (code < 0)
-	return code;
+        return code;
     pt->x = fixed2float(p.x);
     pt->y = fixed2float(p.y);
     return 0;
@@ -112,7 +112,7 @@ gs_point_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point
 #endif
 }
 
-static inline int 
+static inline int
 gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_point *pt)
 {
 #if !PRECISE_CURRENTPOINT
@@ -120,7 +120,7 @@ gs_distance_transform_compat(floatp x, floatp y, const gs_matrix_fixed *m, gs_po
     int code = gs_distance_transform2fixed(m, x, y, &p);
 
     if (code < 0)
-	return code;
+        return code;
     pt->x = fixed2float(p.x);
     pt->y = fixed2float(p.y);
     return 0;
@@ -133,14 +133,14 @@ static inline int
 clamp_point_aux(bool clamp_coordinates, gs_fixed_point *ppt, floatp x, floatp y)
 {
     if (!f_fits_in_bits(x, fixed_int_bits) || !f_fits_in_bits(y, fixed_int_bits)) {
-	if (!clamp_coordinates)
-	    return_error(gs_error_limitcheck);
-	clamp_point(ppt, x, y);
+        if (!clamp_coordinates)
+            return_error(gs_error_limitcheck);
+        clamp_point(ppt, x, y);
     } else {
-	/* 181-01.ps" fails with no rounding in 
-	   "Verify as last element of a userpath and effect on setbbox." */
-	ppt->x = float2fixed_rounded(x);
-	ppt->y = float2fixed_rounded(y);
+        /* 181-01.ps" fails with no rounding in
+           "Verify as last element of a userpath and effect on setbbox." */
+        ppt->x = float2fixed_rounded(x);
+        ppt->y = float2fixed_rounded(y);
     }
     return 0;
 }
@@ -153,10 +153,10 @@ gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y)
 
     code = clamp_point_aux(pis->clamp_coordinates, &pt, x, y);
     if (code < 0)
-	return code;
+        return code;
     code = gx_path_add_point(ppath, pt.x, pt.y);
     if (code < 0)
-	return code;
+        return code;
     ppath->start_flags = ppath->state_flags;
     gx_setcurrentpoint(pis, x, y);
     pis->subpath_start = pis->current_point;
@@ -171,7 +171,7 @@ gs_moveto(gs_state * pgs, floatp x, floatp y)
     int code = gs_point_transform_compat(x, y, &pgs->ctm, &pt);
 
     if (code < 0)
-	return code;
+        return code;
     return gs_moveto_aux((gs_imager_state *)pgs, pgs->path, pt.x, pt.y);
 }
 
@@ -179,16 +179,16 @@ int
 gs_rmoveto(gs_state * pgs, floatp x, floatp y)
 {
     gs_point dd;
-    int code; 
+    int code;
 
     if (!pgs->current_point_valid)
-	return_error(gs_error_nocurrentpoint);
+        return_error(gs_error_nocurrentpoint);
     code = gs_distance_transform_compat(x, y, &pgs->ctm, &dd);
     if (code < 0)
-	return code;
+        return code;
     /* fixme : check in range. */
-    return gs_moveto_aux((gs_imager_state *)pgs, pgs->path, 
-		dd.x + pgs->current_point.x, dd.y + pgs->current_point.y);
+    return gs_moveto_aux((gs_imager_state *)pgs, pgs->path,
+                dd.x + pgs->current_point.x, dd.y + pgs->current_point.y);
 }
 
 static inline int
@@ -200,10 +200,10 @@ gs_lineto_aux(gs_state * pgs, floatp x, floatp y)
 
     code = clamp_point_aux(pgs->clamp_coordinates, &pt, x, y);
     if (code < 0)
-	return code;
+        return code;
     code = gx_path_add_line(ppath, pt.x, pt.y);
     if (code < 0)
-	return code;
+        return code;
     gx_setcurrentpoint(pgs, x, y);
     return 0;
 }
@@ -215,7 +215,7 @@ gs_lineto(gs_state * pgs, floatp x, floatp y)
     int code = gs_point_transform_compat(x, y, &pgs->ctm, &pt);
 
     if (code < 0)
-	return code;
+        return code;
     return gs_lineto_aux(pgs, pt.x, pt.y);
 }
 
@@ -223,15 +223,15 @@ int
 gs_rlineto(gs_state * pgs, floatp x, floatp y)
 {
     gs_point dd;
-    int code; 
+    int code;
 
     if (!pgs->current_point_valid)
-	return_error(gs_error_nocurrentpoint);
+        return_error(gs_error_nocurrentpoint);
     code = gs_distance_transform_compat(x, y, &pgs->ctm, &dd);
     if (code < 0)
-	return code;
+        return code;
     /* fixme : check in range. */
-    return gs_lineto_aux(pgs, dd.x + pgs->current_point.x, 
+    return gs_lineto_aux(pgs, dd.x + pgs->current_point.x,
                               dd.y + pgs->current_point.y);
 }
 
@@ -239,7 +239,7 @@ gs_rlineto(gs_state * pgs, floatp x, floatp y)
 
 static inline int
 gs_curveto_aux(gs_state * pgs,
-	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
 {
     gs_fixed_point p1, p2, p3;
     int code;
@@ -247,36 +247,36 @@ gs_curveto_aux(gs_state * pgs,
 
     code = clamp_point_aux(pgs->clamp_coordinates, &p1, x1, y1);
     if (code < 0)
-	return code;
+        return code;
     code = clamp_point_aux(pgs->clamp_coordinates, &p2, x2, y2);
     if (code < 0)
-	return code;
+        return code;
     code = clamp_point_aux(pgs->clamp_coordinates, &p3, x3, y3);
     if (code < 0)
-	return code;
+        return code;
     code = gx_path_add_curve(ppath, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     if (code < 0)
-	return code;
+        return code;
     gx_setcurrentpoint(pgs, x3, y3);
     return 0;
 }
 
 int
 gs_curveto(gs_state * pgs,
-	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+           floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
 {
     gs_point pt1, pt2, pt3;
     int code;
 
     code = gs_point_transform_compat(x1, y1, &pgs->ctm, &pt1);
     if (code < 0)
-	return code;
+        return code;
     code = gs_point_transform_compat(x2, y2, &pgs->ctm, &pt2);
     if (code < 0)
-	return code;
+        return code;
     code = gs_point_transform_compat(x3, y3, &pgs->ctm, &pt3);
     if (code < 0)
-	return code;
+        return code;
     return gs_curveto_aux(pgs,   pt1.x, pt1.y,   pt2.x, pt2.y,   pt3.x, pt3.y);
 }
 
@@ -285,23 +285,23 @@ gs_rcurveto(gs_state * pgs,
      floatp dx1, floatp dy1, floatp dx2, floatp dy2, floatp dx3, floatp dy3)
 {
     gs_point dd1, dd2, dd3;
-    int code; 
+    int code;
 
     if (!pgs->current_point_valid)
-	return_error(gs_error_nocurrentpoint);
+        return_error(gs_error_nocurrentpoint);
     code = gs_distance_transform_compat(dx1, dy1, &pgs->ctm, &dd1);
     if (code < 0)
-	return code;
+        return code;
     code = gs_distance_transform_compat(dx2, dy2, &pgs->ctm, &dd2);
     if (code < 0)
-	return code;
+        return code;
     code = gs_distance_transform_compat(dx3, dy3, &pgs->ctm, &dd3);
     if (code < 0)
-	return code;
+        return code;
     /* fixme : check in range. */
-    return gs_curveto_aux(pgs, dd1.x + pgs->current_point.x, dd1.y + pgs->current_point.y, 
-			       dd2.x + pgs->current_point.x, dd2.y + pgs->current_point.y, 
-			       dd3.x + pgs->current_point.x, dd3.y + pgs->current_point.y);
+    return gs_curveto_aux(pgs, dd1.x + pgs->current_point.x, dd1.y + pgs->current_point.y,
+                               dd2.x + pgs->current_point.x, dd2.y + pgs->current_point.y,
+                               dd3.x + pgs->current_point.x, dd3.y + pgs->current_point.y);
 }
 
 /* ------ Clipping ------ */
@@ -321,67 +321,67 @@ int
 gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
 {
     gs_id view_clip_id =
-	(pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
-	 pgs->view_clip->id);
+        (pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
+         pgs->view_clip->id);
 
     if (gs_device_is_memory(pgs->device)) {
-	*ppcpath = pgs->clip_path;
-	return 0;
+        *ppcpath = pgs->clip_path;
+        return 0;
     }
     if (pgs->effective_clip_id == pgs->clip_path->id &&
-	pgs->effective_view_clip_id == view_clip_id
-	) {
-	*ppcpath = pgs->effective_clip_path;
-	return 0;
+        pgs->effective_view_clip_id == view_clip_id
+        ) {
+        *ppcpath = pgs->effective_clip_path;
+        return 0;
     }
     /* Update the cache. */
     if (view_clip_id == gs_no_id) {
-	if (!pgs->effective_clip_shared)
-	    gx_cpath_free(pgs->effective_clip_path, "gx_effective_clip_path");
-	pgs->effective_clip_path = pgs->clip_path;
-	pgs->effective_clip_shared = true;
+        if (!pgs->effective_clip_shared)
+            gx_cpath_free(pgs->effective_clip_path, "gx_effective_clip_path");
+        pgs->effective_clip_path = pgs->clip_path;
+        pgs->effective_clip_shared = true;
     } else {
-	gs_fixed_rect cbox, vcbox;
+        gs_fixed_rect cbox, vcbox;
 
-	gx_cpath_inner_box(pgs->clip_path, &cbox);
-	gx_cpath_outer_box(pgs->view_clip, &vcbox);
-	if (rect_within(vcbox, cbox)) {
-	    if (!pgs->effective_clip_shared)
-		gx_cpath_free(pgs->effective_clip_path,
-			      "gx_effective_clip_path");
-	    pgs->effective_clip_path = pgs->view_clip;
-	    pgs->effective_clip_shared = true;
-	} else {
-	    /* Construct the intersection of the two clip paths. */
-	    int code;
-	    gx_clip_path ipath;
-	    gx_path vpath;
-	    gx_clip_path *npath = pgs->effective_clip_path;
+        gx_cpath_inner_box(pgs->clip_path, &cbox);
+        gx_cpath_outer_box(pgs->view_clip, &vcbox);
+        if (rect_within(vcbox, cbox)) {
+            if (!pgs->effective_clip_shared)
+                gx_cpath_free(pgs->effective_clip_path,
+                              "gx_effective_clip_path");
+            pgs->effective_clip_path = pgs->view_clip;
+            pgs->effective_clip_shared = true;
+        } else {
+            /* Construct the intersection of the two clip paths. */
+            int code;
+            gx_clip_path ipath;
+            gx_path vpath;
+            gx_clip_path *npath = pgs->effective_clip_path;
 
-	    if (pgs->effective_clip_shared) {
-		npath = gx_cpath_alloc(pgs->memory, "gx_effective_clip_path");
-		if (npath == 0)
-		    return_error(gs_error_VMerror);
-	    }
-	    gx_cpath_init_local(&ipath, pgs->memory);
-	    code = gx_cpath_assign_preserve(&ipath, pgs->clip_path);
-	    if (code < 0)
-		return code;
-	    gx_path_init_local(&vpath, pgs->memory);
-	    code = gx_cpath_to_path(pgs->view_clip, &vpath);
-	    if (code < 0 ||
-		(code = gx_cpath_clip(pgs, &ipath, &vpath,
-				      gx_rule_winding_number)) < 0 ||
-		(code = gx_cpath_assign_free(npath, &ipath)) < 0
-		)
-		DO_NOTHING;
-	    gx_path_free(&vpath, "gx_effective_clip_path");
-	    gx_cpath_free(&ipath, "gx_effective_clip_path");
-	    if (code < 0)
-		return code;
-	    pgs->effective_clip_path = npath;
-	    pgs->effective_clip_shared = false;
-	}
+            if (pgs->effective_clip_shared) {
+                npath = gx_cpath_alloc(pgs->memory, "gx_effective_clip_path");
+                if (npath == 0)
+                    return_error(gs_error_VMerror);
+            }
+            gx_cpath_init_local(&ipath, pgs->memory);
+            code = gx_cpath_assign_preserve(&ipath, pgs->clip_path);
+            if (code < 0)
+                return code;
+            gx_path_init_local(&vpath, pgs->memory);
+            code = gx_cpath_to_path(pgs->view_clip, &vpath);
+            if (code < 0 ||
+                (code = gx_cpath_clip(pgs, &ipath, &vpath,
+                                      gx_rule_winding_number)) < 0 ||
+                (code = gx_cpath_assign_free(npath, &ipath)) < 0
+                )
+                DO_NOTHING;
+            gx_path_free(&vpath, "gx_effective_clip_path");
+            gx_cpath_free(&ipath, "gx_effective_clip_path");
+            if (code < 0)
+                return code;
+            pgs->effective_clip_path = npath;
+            pgs->effective_clip_shared = false;
+        }
     }
     pgs->effective_clip_id = pgs->effective_clip_path->id;
     pgs->effective_view_clip_id = view_clip_id;
@@ -395,8 +395,8 @@ static void
 note_set_clip_path(const gs_state * pgs)
 {
     if (gs_debug_c('P')) {
-	dlprintf("[P]Clipping path:\n");
-	gx_cpath_print(pgs->clip_path);
+        dlprintf("[P]Clipping path:\n");
+        gx_cpath_print(pgs->clip_path);
     }
 }
 #else
@@ -412,13 +412,13 @@ gs_clippath(gs_state * pgs)
     gx_path_init_local(&cpath, pgs->path->memory);
     code = gx_cpath_to_path(pgs->clip_path, &cpath);
     if (code >= 0) {
-	code = gx_path_assign_free(pgs->path, &cpath);
-	pgs->current_point.x = fixed2float(pgs->path->position.x);
-	pgs->current_point.y = fixed2float(pgs->path->position.y);
-	pgs->current_point_valid = true;
+        code = gx_path_assign_free(pgs->path, &cpath);
+        pgs->current_point.x = fixed2float(pgs->path->position.x);
+        pgs->current_point.y = fixed2float(pgs->path->position.y);
+        pgs->current_point_valid = true;
     }
     if (code < 0)
-	gx_path_free(&cpath, "gs_clippath");
+        gx_path_free(&cpath, "gs_clippath");
     return code;
 }
 
@@ -429,7 +429,7 @@ gs_initclip(gs_state * pgs)
     int code = gx_default_clip_box(pgs, &box);
 
     if (code < 0)
-	return code;
+        return code;
     return gx_clip_to_rectangle(pgs, &box);
 }
 
@@ -450,7 +450,7 @@ common_clip(gs_state * pgs, int rule)
 {
     int code = gx_cpath_clip(pgs, pgs->clip_path, pgs->path, rule);
     if (code < 0)
-	return code;
+        return code;
     pgs->clip_path->rule = rule;
     note_set_clip_path(pgs);
     return 0;
@@ -464,7 +464,7 @@ gx_clip_to_rectangle(gs_state * pgs, gs_fixed_rect * pbox)
     int code = gx_cpath_from_rectangle(pgs->clip_path, pbox);
 
     if (code < 0)
-	return code;
+        return code;
     pgs->clip_path->rule = gx_rule_winding_number;
     note_set_clip_path(pgs);
     return 0;
@@ -479,10 +479,10 @@ gx_clip_to_path(gs_state * pgs)
     int code;
 
     if ((code = gx_path_bbox(pgs->path, &bbox)) < 0 ||
-	(code = gx_clip_to_rectangle(pgs, &bbox)) < 0 ||
-	(code = gs_clip(pgs)) < 0
-	)
-	return code;
+        (code = gx_clip_to_rectangle(pgs, &bbox)) < 0 ||
+        (code = gs_clip(pgs)) < 0
+        )
+        return code;
     note_set_clip_path(pgs);
     return 0;
 }
@@ -497,30 +497,30 @@ gx_default_clip_box(const gs_state * pgs, gs_fixed_rect * pbox)
     int code;
 
     if (dev->ImagingBBox_set) {	/* Use the ImagingBBox, relative to default user space. */
-	gs_defaultmatrix(pgs, &imat);
-	bbox.p.x = dev->ImagingBBox[0];
-	bbox.p.y = dev->ImagingBBox[1];
-	bbox.q.x = dev->ImagingBBox[2];
-	bbox.q.y = dev->ImagingBBox[3];
+        gs_defaultmatrix(pgs, &imat);
+        bbox.p.x = dev->ImagingBBox[0];
+        bbox.p.y = dev->ImagingBBox[1];
+        bbox.q.x = dev->ImagingBBox[2];
+        bbox.q.y = dev->ImagingBBox[3];
     } else {			/* Use the MediaSize indented by the HWMargins, */
-	/* relative to unrotated user space adjusted by */
-	/* the Margins.  (We suspect this isn't quite right, */
-	/* but the whole issue of "margins" is such a mess that */
-	/* we don't think we can do any better.) */
-	(*dev_proc(dev, get_initial_matrix)) (dev, &imat);
-	/* Adjust for the Margins. */
-	imat.tx += dev->Margins[0] * dev->HWResolution[0] /
-	    dev->MarginsHWResolution[0];
-	imat.ty += dev->Margins[1] * dev->HWResolution[1] /
-	    dev->MarginsHWResolution[1];
-	bbox.p.x = dev->HWMargins[0];
-	bbox.p.y = dev->HWMargins[1];
-	bbox.q.x = dev->MediaSize[0] - dev->HWMargins[2];
-	bbox.q.y = dev->MediaSize[1] - dev->HWMargins[3];
+        /* relative to unrotated user space adjusted by */
+        /* the Margins.  (We suspect this isn't quite right, */
+        /* but the whole issue of "margins" is such a mess that */
+        /* we don't think we can do any better.) */
+        (*dev_proc(dev, get_initial_matrix)) (dev, &imat);
+        /* Adjust for the Margins. */
+        imat.tx += dev->Margins[0] * dev->HWResolution[0] /
+            dev->MarginsHWResolution[0];
+        imat.ty += dev->Margins[1] * dev->HWResolution[1] /
+            dev->MarginsHWResolution[1];
+        bbox.p.x = dev->HWMargins[0];
+        bbox.p.y = dev->HWMargins[1];
+        bbox.q.x = dev->MediaSize[0] - dev->HWMargins[2];
+        bbox.q.y = dev->MediaSize[1] - dev->HWMargins[3];
     }
     code = gs_bbox_transform(&bbox, &imat, &bbox);
     if (code < 0)
-	return code;
+        return code;
     /* Round the clipping box so that it doesn't get ceilinged. */
     pbox->p.x = fixed_rounded(float2fixed(bbox.p.x));
     pbox->p.y = fixed_rounded(float2fixed(bbox.p.y));

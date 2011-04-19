@@ -62,7 +62,6 @@ pxl_find_symbol_map(uint symbol_set)
     return (*ppsm ? *ppsm : NULL);
 }
 
-
 /* Compute the symbol map from the font and symbol set. */
 void
 set_symbol_map(px_state_t *pxs, bool wide16)
@@ -386,7 +385,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
                            &cmat);
         gs_setcharmatrix(pgs, &cmat);
     }
-        
+
     /* The character matrix is not visible to devices.  High level
        devices get character scaling information from the font's
        matrix (FontMatrix).  */
@@ -451,7 +450,6 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
     return (code == gs_error_invalidfont ?
             gs_note_error(errorBadFontData) : code);
 }
-
 
 /* ---------------- Operators ---------------- */
 
@@ -648,12 +646,12 @@ const byte apxReadChar[] = {
 };
 int
 pxReadChar(px_args_t *par, px_state_t *pxs)
-{       
+{
     uint char_code = par->pv[0]->value.i;
     uint size = par->pv[1]->value.i;
     uint pos = par->source.position;
 
-    if ( pos == 0 ) { 
+    if ( pos == 0 ) {
         /* We're starting a character definition. */
         byte *def;
 
@@ -667,7 +665,7 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
         pxs->download_bytes.data = def;
         pxs->download_bytes.size = size;
     }
-    while ( pos < size ) { 
+    while ( pos < size ) {
         uint copy = min(par->source.available, size - pos);
         if ( copy == 0 )
             return pxNeedData;

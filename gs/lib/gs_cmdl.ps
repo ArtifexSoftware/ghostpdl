@@ -1,12 +1,12 @@
 %    Copyright (C) 1994, 1996, 1999 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -24,7 +24,7 @@ cmddict begin
 
 % Get the next argument from the parsed argument list.
 /nextarg		% - nextarg <arg> true
-			% - nextarg false
+                        % - nextarg false
  { argv length 0 eq
     { false }
     { argv dup 0 get exch dup length 1 sub 1 exch getinterval /argv exch def }
@@ -51,12 +51,12 @@ cmddict begin
        { pop /expand@ false def
        }
        { expand@ { (@) anchorsearch } { false } ifelse
-	  { pop findlibfile
-	     { exch pop }
-	     { (r) file }		% let the error happen
-	    expandargfile
-	  }
-	 if
+          { pop findlibfile
+             { exch pop }
+             { (r) file }		% let the error happen
+            expandargfile
+          }
+         if
        }
       ifelse
     }
@@ -91,7 +91,7 @@ cmddict begin
       argv 0 get (-) anchorsearch { pop pop exit } if
       pop nextarg token
        { exch pop			% Probably should check for empty.
-	 end exec //cmddict begin
+         end exec //cmddict begin
        }
       if
     }
@@ -146,29 +146,29 @@ cmddict begin
  { //cmddict begin
    /expand@ true def
    [
-		% Process the GS_OPTIONS environment variable.
+                % Process the GS_OPTIONS environment variable.
    (GS_OPTIONS) getenv { 0 () /SubFileDecode filter expandargfile } if
-		% Process the actual command line.
+                % Process the actual command line.
    .getargv { expandarg } forall
    ] readonly /argv exch def
-		% Now interpret the commands.
+                % Now interpret the commands.
     { nextarg not { exit } if
       dup 0 get (-) 0 get eq
        { dup length 1 eq
-	  { pop (%stdin) (r) file runjob
-	  }
-	  { dup length 2 gt
-	     { dup dup length 2 sub 2 exch getinterval exch 1 1 getinterval }
-	    if currentdict .knownget
-	     { exec
-	     }
-	     { (Ignoring unknown switch ) print
-	       dup length 1 eq { (-) print print } if print
-	       () = flush
-	     }
-	    ifelse
-	  }
-	 ifelse
+          { pop (%stdin) (r) file runjob
+          }
+          { dup length 2 gt
+             { dup dup length 2 sub 2 exch getinterval exch 1 1 getinterval }
+            if currentdict .knownget
+             { exec
+             }
+             { (Ignoring unknown switch ) print
+               dup length 1 eq { (-) print print } if print
+               () = flush
+             }
+            ifelse
+          }
+         ifelse
        }
        { runfilejob
        }

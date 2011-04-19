@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -84,29 +84,29 @@ gs_matrix_multiply(const gs_matrix * pm1, const gs_matrix * pm2, gs_matrix * pmr
     double xy2 = pm2->xy, yx2 = pm2->yx;
 
     if (is_xxyy(pm1)) {
-	pmr->tx = tx1 * xx2 + pm2->tx;
-	pmr->ty = ty1 * yy2 + pm2->ty;
-	if (is_fzero(xy2))
-	    pmr->xy = 0;
-	else
-	    pmr->xy = xx1 * xy2,
-		pmr->ty += tx1 * xy2;
-	pmr->xx = xx1 * xx2;
-	if (is_fzero(yx2))
-	    pmr->yx = 0;
-	else
-	    pmr->yx = yy1 * yx2,
-		pmr->tx += ty1 * yx2;
-	pmr->yy = yy1 * yy2;
+        pmr->tx = tx1 * xx2 + pm2->tx;
+        pmr->ty = ty1 * yy2 + pm2->ty;
+        if (is_fzero(xy2))
+            pmr->xy = 0;
+        else
+            pmr->xy = xx1 * xy2,
+                pmr->ty += tx1 * xy2;
+        pmr->xx = xx1 * xx2;
+        if (is_fzero(yx2))
+            pmr->yx = 0;
+        else
+            pmr->yx = yy1 * yx2,
+                pmr->tx += ty1 * yx2;
+        pmr->yy = yy1 * yy2;
     } else {
-	double xy1 = pm1->xy, yx1 = pm1->yx;
+        double xy1 = pm1->xy, yx1 = pm1->yx;
 
-	pmr->xx = xx1 * xx2 + xy1 * yx2;
-	pmr->xy = xx1 * xy2 + xy1 * yy2;
-	pmr->yy = yx1 * xy2 + yy1 * yy2;
-	pmr->yx = yx1 * xx2 + yy1 * yx2;
-	pmr->tx = tx1 * xx2 + ty1 * yx2 + pm2->tx;
-	pmr->ty = tx1 * xy2 + ty1 * yy2 + pm2->ty;
+        pmr->xx = xx1 * xx2 + xy1 * yx2;
+        pmr->xy = xx1 * xy2 + xy1 * yy2;
+        pmr->yy = yx1 * xy2 + yy1 * yy2;
+        pmr->yx = yx1 * xx2 + yy1 * yx2;
+        pmr->tx = tx1 * xx2 + ty1 * yx2 + pm2->tx;
+        pmr->ty = tx1 * xy2 + ty1 * yy2 + pm2->ty;
     }
     return 0;
 }
@@ -119,29 +119,29 @@ gs_matrix_multiply_double(const gs_matrix_double * pm1, const gs_matrix * pm2, g
     double xy2 = pm2->xy, yx2 = pm2->yx;
 
     if (is_xxyy(pm1)) {
-	pmr->tx = tx1 * xx2 + pm2->tx;
-	pmr->ty = ty1 * yy2 + pm2->ty;
-	if (is_fzero(xy2))
-	    pmr->xy = 0;
-	else
-	    pmr->xy = xx1 * xy2,
-		pmr->ty += tx1 * xy2;
-	pmr->xx = xx1 * xx2;
-	if (is_fzero(yx2))
-	    pmr->yx = 0;
-	else
-	    pmr->yx = yy1 * yx2,
-		pmr->tx += ty1 * yx2;
-	pmr->yy = yy1 * yy2;
+        pmr->tx = tx1 * xx2 + pm2->tx;
+        pmr->ty = ty1 * yy2 + pm2->ty;
+        if (is_fzero(xy2))
+            pmr->xy = 0;
+        else
+            pmr->xy = xx1 * xy2,
+                pmr->ty += tx1 * xy2;
+        pmr->xx = xx1 * xx2;
+        if (is_fzero(yx2))
+            pmr->yx = 0;
+        else
+            pmr->yx = yy1 * yx2,
+                pmr->tx += ty1 * yx2;
+        pmr->yy = yy1 * yy2;
     } else {
-	double xy1 = pm1->xy, yx1 = pm1->yx;
+        double xy1 = pm1->xy, yx1 = pm1->yx;
 
-	pmr->xx = xx1 * xx2 + xy1 * yx2;
-	pmr->xy = xx1 * xy2 + xy1 * yy2;
-	pmr->yy = yx1 * xy2 + yy1 * yy2;
-	pmr->yx = yx1 * xx2 + yy1 * yx2;
-	pmr->tx = tx1 * xx2 + ty1 * yx2 + pm2->tx;
-	pmr->ty = tx1 * xy2 + ty1 * yy2 + pm2->ty;
+        pmr->xx = xx1 * xx2 + xy1 * yx2;
+        pmr->xy = xx1 * xy2 + xy1 * yy2;
+        pmr->yy = yx1 * xy2 + yy1 * yy2;
+        pmr->yx = yx1 * xx2 + yy1 * yx2;
+        pmr->tx = tx1 * xx2 + ty1 * yx2 + pm2->tx;
+        pmr->ty = tx1 * xy2 + ty1 * yy2 + pm2->ty;
     }
     return 0;
 }
@@ -152,37 +152,37 @@ gs_matrix_invert(const gs_matrix * pm, gs_matrix * pmr)
 {				/* We have to be careful about fetch/store order, */
     /* because pm might be the same as pmr. */
     if (is_xxyy(pm)) {
-	if (is_fzero(pm->xx) || is_fzero(pm->yy))
-	    return_error(gs_error_undefinedresult);
-	pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
-	pmr->xy = 0.0;
-	pmr->yx = 0.0;
-	pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
+        if (is_fzero(pm->xx) || is_fzero(pm->yy))
+            return_error(gs_error_undefinedresult);
+        pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
+        pmr->xy = 0.0;
+        pmr->yx = 0.0;
+        pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
     } else {
-	float mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
+        float mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
         float mtx = pm->tx, mty = pm->ty;
         /* we declare det as double since on at least some computer (i.e. peeves)
            declaring it as a float results in different values for pmr depending
            on whether or not optimization is turned on.  I believe this is caused
-           by the compiler keeping the det value in an internal register when 
-           optimization is enable.  As evidence of this if you add a debugging 
-           statement to print out det the optimized code acts the same as the 
-           unoptimized code.  declearing det as double does not change the CET 10-09.ps 
+           by the compiler keeping the det value in an internal register when
+           optimization is enable.  As evidence of this if you add a debugging
+           statement to print out det the optimized code acts the same as the
+           unoptimized code.  declearing det as double does not change the CET 10-09.ps
            output. */
-	double det = (float)(mxx * myy) - (float)(mxy * myx);
+        double det = (float)(mxx * myy) - (float)(mxy * myx);
 
         /*
          * We are doing the math as floats instead of doubles to reproduce
-	 * the results in page 1 of CET 10-09.ps
+         * the results in page 1 of CET 10-09.ps
          */
-	if (det == 0)
-	    return_error(gs_error_undefinedresult);
-	pmr->xx = myy / det;
-	pmr->xy = -mxy / det;
-	pmr->yx = -myx / det;
-	pmr->yy = mxx / det;
-	pmr->tx = (((float)(mty * myx) - (float)(mtx * myy))) / det;
-	pmr->ty = (((float)(mtx * mxy) - (float)(mty * mxx))) / det;
+        if (det == 0)
+            return_error(gs_error_undefinedresult);
+        pmr->xx = myy / det;
+        pmr->xy = -mxy / det;
+        pmr->yx = -myx / det;
+        pmr->yy = mxx / det;
+        pmr->tx = (((float)(mty * myx) - (float)(mtx * myy))) / det;
+        pmr->ty = (((float)(mtx * mxy) - (float)(mty * mxx))) / det;
     }
     return 0;
 }
@@ -191,29 +191,29 @@ gs_matrix_invert_to_double(const gs_matrix * pm, gs_matrix_double * pmr)
 {				/* We have to be careful about fetch/store order, */
     /* because pm might be the same as pmr. */
     if (is_xxyy(pm)) {
-	if (is_fzero(pm->xx) || is_fzero(pm->yy))
-	    return_error(gs_error_undefinedresult);
-	pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
-	pmr->xy = 0.0;
-	pmr->yx = 0.0;
-	pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
+        if (is_fzero(pm->xx) || is_fzero(pm->yy))
+            return_error(gs_error_undefinedresult);
+        pmr->tx = -(pmr->xx = 1.0 / pm->xx) * pm->tx;
+        pmr->xy = 0.0;
+        pmr->yx = 0.0;
+        pmr->ty = -(pmr->yy = 1.0 / pm->yy) * pm->ty;
     } else {
-	double mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
+        double mxx = pm->xx, myy = pm->yy, mxy = pm->xy, myx = pm->yx;
         double mtx = pm->tx, mty = pm->ty;
-	double det = (mxx * myy) - (mxy * myx);
+        double det = (mxx * myy) - (mxy * myx);
 
         /*
          * We are doing the math as floats instead of doubles to reproduce
-	 * the results in page 1 of CET 10-09.ps
+         * the results in page 1 of CET 10-09.ps
          */
-	if (det == 0)
-	    return_error(gs_error_undefinedresult);
-	pmr->xx = myy / det;
-	pmr->xy = -mxy / det;
-	pmr->yx = -myx / det;
-	pmr->yy = mxx / det;
-	pmr->tx = (((mty * myx) - (mtx * myy))) / det;
-	pmr->ty = (((mtx * mxy) - (mty * mxx))) / det;
+        if (det == 0)
+            return_error(gs_error_undefinedresult);
+        pmr->xx = myy / det;
+        pmr->xy = -mxy / det;
+        pmr->yx = -myx / det;
+        pmr->yy = mxx / det;
+        pmr->tx = (((mty * myx) - (mtx * myy))) / det;
+        pmr->ty = (((mtx * mxy) - (mty * mxx))) / det;
     }
     return 0;
 }
@@ -226,9 +226,9 @@ gs_matrix_translate(const gs_matrix * pm, floatp dx, floatp dy, gs_matrix * pmr)
     int code = gs_distance_transform(dx, dy, pm, &trans);
 
     if (code < 0)
-	return code;
+        return code;
     if (pmr != pm)
-	*pmr = *pm;
+        *pmr = *pm;
     pmr->tx += trans.x;
     pmr->ty += trans.y;
     return 0;
@@ -243,8 +243,8 @@ gs_matrix_scale(const gs_matrix * pm, floatp sx, floatp sy, gs_matrix * pmr)
     pmr->yx = pm->yx * sy;
     pmr->yy = pm->yy * sy;
     if (pmr != pm) {
-	pmr->tx = pm->tx;
-	pmr->ty = pm->ty;
+        pmr->tx = pm->tx;
+        pmr->ty = pm->ty;
     }
     return 0;
 }
@@ -263,8 +263,8 @@ gs_matrix_rotate(const gs_matrix * pm, floatp ang, gs_matrix * pmr)
     pmr->yx = sincos.cos * pm->yx - sincos.sin * mxx;
     pmr->yy = sincos.cos * pm->yy - sincos.sin * mxy;
     if (pmr != pm) {
-	pmr->tx = pm->tx;
-	pmr->ty = pm->ty;
+        pmr->tx = pm->tx;
+        pmr->ty = pm->ty;
     }
     return 0;
 }
@@ -277,7 +277,7 @@ gs_matrix_rotate(const gs_matrix * pm, floatp ang, gs_matrix * pmr)
 /* Transform a point. */
 int
 gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
-		   gs_point * ppt)
+                   gs_point * ppt)
 {
     /*
      * The float casts are there to reproduce results in CET 10-01.ps
@@ -286,9 +286,9 @@ gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
     ppt->x = (float)(x * pmat->xx) + pmat->tx;
     ppt->y = (float)(y * pmat->yy) + pmat->ty;
     if (!is_fzero(pmat->yx))
-	ppt->x += (float)(y * pmat->yx);
+        ppt->x += (float)(y * pmat->yx);
     if (!is_fzero(pmat->xy))
-	ppt->y += (float)(x * pmat->xy);
+        ppt->y += (float)(x * pmat->xy);
     return 0;
 }
 
@@ -296,42 +296,42 @@ gs_point_transform(floatp x, floatp y, const gs_matrix * pmat,
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
 gs_point_transform_inverse(floatp x, floatp y, const gs_matrix * pmat,
-			   gs_point * ppt)
+                           gs_point * ppt)
 {
     if (is_xxyy(pmat)) {
-	if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
-	    return_error(gs_error_undefinedresult);
-	ppt->x = (x - pmat->tx) / pmat->xx;
-	ppt->y = (y - pmat->ty) / pmat->yy;
-	return 0;
+        if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
+            return_error(gs_error_undefinedresult);
+        ppt->x = (x - pmat->tx) / pmat->xx;
+        ppt->y = (y - pmat->ty) / pmat->yy;
+        return 0;
     } else if (is_xyyx(pmat)) {
-	if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
-	    return_error(gs_error_undefinedresult);
-	ppt->x = (y - pmat->ty) / pmat->xy;
-	ppt->y = (x - pmat->tx) / pmat->yx;
-	return 0;
+        if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
+            return_error(gs_error_undefinedresult);
+        ppt->x = (y - pmat->ty) / pmat->xy;
+        ppt->y = (x - pmat->tx) / pmat->yx;
+        return 0;
     } else {			/* There are faster ways to do this, */
-	/* but we won't implement one unless we have to. */
-	gs_matrix imat;
-	int code = gs_matrix_invert(pmat, &imat);
+        /* but we won't implement one unless we have to. */
+        gs_matrix imat;
+        int code = gs_matrix_invert(pmat, &imat);
 
-	if (code < 0)
-	    return code;
-	return gs_point_transform(x, y, &imat, ppt);
+        if (code < 0)
+            return code;
+        return gs_point_transform(x, y, &imat, ppt);
     }
 }
 
 /* Transform a distance. */
 int
 gs_distance_transform(floatp dx, floatp dy, const gs_matrix * pmat,
-		      gs_point * pdpt)
+                      gs_point * pdpt)
 {
     pdpt->x = dx * pmat->xx;
     pdpt->y = dy * pmat->yy;
     if (!is_fzero(pmat->yx))
-	pdpt->x += dy * pmat->yx;
+        pdpt->x += dy * pmat->yx;
     if (!is_fzero(pmat->xy))
-	pdpt->y += dx * pmat->xy;
+        pdpt->y += dx * pmat->xy;
     return 0;
 }
 
@@ -339,25 +339,25 @@ gs_distance_transform(floatp dx, floatp dy, const gs_matrix * pmat,
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 int
 gs_distance_transform_inverse(floatp dx, floatp dy,
-			      const gs_matrix * pmat, gs_point * pdpt)
+                              const gs_matrix * pmat, gs_point * pdpt)
 {
     if (is_xxyy(pmat)) {
-	if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
-	    return_error(gs_error_undefinedresult);
-	pdpt->x = dx / pmat->xx;
-	pdpt->y = dy / pmat->yy;
+        if (is_fzero(pmat->xx) || is_fzero(pmat->yy))
+            return_error(gs_error_undefinedresult);
+        pdpt->x = dx / pmat->xx;
+        pdpt->y = dy / pmat->yy;
     } else if (is_xyyx(pmat)) {
-	if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
-	    return_error(gs_error_undefinedresult);
-	pdpt->x = dy / pmat->xy;
-	pdpt->y = dx / pmat->yx;
+        if (is_fzero(pmat->xy) || is_fzero(pmat->yx))
+            return_error(gs_error_undefinedresult);
+        pdpt->x = dy / pmat->xy;
+        pdpt->y = dx / pmat->yx;
     } else {
-	double det = pmat->xx * pmat->yy - pmat->xy * pmat->yx;
+        double det = pmat->xx * pmat->yy - pmat->xy * pmat->yx;
 
-	if (det == 0)
-	    return_error(gs_error_undefinedresult);
-	pdpt->x = (dx * pmat->yy - dy * pmat->yx) / det;
-	pdpt->y = (dy * pmat->xx - dx * pmat->xy) / det;
+        if (det == 0)
+            return_error(gs_error_undefinedresult);
+        pdpt->x = (dx * pmat->yy - dy * pmat->yx) / det;
+        pdpt->y = (dy * pmat->xx - dx * pmat->xy) / det;
     }
     return 0;
 }
@@ -376,9 +376,9 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
     vmax = max(max01, max23);\
   }
     assign_min_max_4(pbox->p.x, pbox->q.x,
-		     pts[0].x, pts[1].x, pts[2].x, pts[3].x);
+                     pts[0].x, pts[1].x, pts[2].x, pts[3].x);
     assign_min_max_4(pbox->p.y, pbox->q.y,
-		     pts[0].y, pts[1].y, pts[2].y, pts[3].y);
+                     pts[0].y, pts[1].y, pts[2].y, pts[3].y);
 #undef assign_min_max
 #undef assign_min_max_4
     return 0;
@@ -388,23 +388,23 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 /* Return gs_error_undefinedresult if the matrix is not invertible. */
 static int
 bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
-			   gs_point pts[4],
+                           gs_point pts[4],
      int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
     if ((code = (*point_xform) (pbox_in->p.x, pbox_in->p.y, pmat, &pts[0])) < 0 ||
-	(code = (*point_xform) (pbox_in->p.x, pbox_in->q.y, pmat, &pts[1])) < 0 ||
-	(code = (*point_xform) (pbox_in->q.x, pbox_in->p.y, pmat, &pts[2])) < 0 ||
+        (code = (*point_xform) (pbox_in->p.x, pbox_in->q.y, pmat, &pts[1])) < 0 ||
+        (code = (*point_xform) (pbox_in->q.x, pbox_in->p.y, pmat, &pts[2])) < 0 ||
      (code = (*point_xform) (pbox_in->q.x, pbox_in->q.y, pmat, &pts[3])) < 0
-	)
-	DO_NOTHING;
+        )
+        DO_NOTHING;
     return code;
 }
 
 static int
 bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
-		      gs_rect * pbox_out,
+                      gs_rect * pbox_out,
      int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
@@ -419,29 +419,29 @@ bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
     gs_point pts[4];
 
     if ((code = bbox_transform_either_only(pbox_in, pmat, pts, point_xform)) < 0)
-	return code;
+        return code;
     return gs_points_bbox(pts, pbox_out);
 }
 int
 gs_bbox_transform(const gs_rect * pbox_in, const gs_matrix * pmat,
-		  gs_rect * pbox_out)
+                  gs_rect * pbox_out)
 {
     return bbox_transform_either(pbox_in, pmat, pbox_out,
-				 gs_point_transform);
+                                 gs_point_transform);
 }
 int
 gs_bbox_transform_only(const gs_rect * pbox_in, const gs_matrix * pmat,
-		       gs_point points[4])
+                       gs_point points[4])
 {
     return bbox_transform_either_only(pbox_in, pmat, points,
-				      gs_point_transform);
+                                      gs_point_transform);
 }
 int
 gs_bbox_transform_inverse(const gs_rect * pbox_in, const gs_matrix * pmat,
-			  gs_rect * pbox_out)
+                          gs_rect * pbox_out)
 {
     return bbox_transform_either(pbox_in, pmat, pbox_out,
-				 gs_point_transform_inverse);
+                                 gs_point_transform_inverse);
 }
 
 /* ------ Coordinate transformations (to fixed point) ------ */
@@ -454,11 +454,11 @@ gs_matrix_fixed_from_matrix(gs_matrix_fixed *pfmat, const gs_matrix *pmat)
 {
     *(gs_matrix *)pfmat = *pmat;
     if (f_fits_in_fixed(pmat->tx) && f_fits_in_fixed(pmat->ty)) {
-	pfmat->tx = fixed2float(pfmat->tx_fixed = float2fixed(pmat->tx));
-	pfmat->ty = fixed2float(pfmat->ty_fixed = float2fixed(pmat->ty));
-	pfmat->txy_fixed_valid = true;
+        pfmat->tx = fixed2float(pfmat->tx_fixed = float2fixed(pmat->tx));
+        pfmat->ty = fixed2float(pfmat->ty_fixed = float2fixed(pmat->ty));
+        pfmat->txy_fixed_valid = true;
     } else {
-	pfmat->txy_fixed_valid = false;
+        pfmat->txy_fixed_valid = false;
     }
     return 0;
 }
@@ -466,59 +466,59 @@ gs_matrix_fixed_from_matrix(gs_matrix_fixed *pfmat, const gs_matrix *pmat)
 /* Transform a point with a fixed-point result. */
 int
 gs_point_transform2fixed(const gs_matrix_fixed * pmat,
-			 floatp x, floatp y, gs_fixed_point * ppt)
+                         floatp x, floatp y, gs_fixed_point * ppt)
 {
     fixed px, py, t;
     double xtemp, ytemp;
     int code;
 
     if (!pmat->txy_fixed_valid) {	/* The translation is out of range.  Do the */
-	/* computation in floating point, and convert to */
-	/* fixed at the end. */
-	gs_point fpt;
+        /* computation in floating point, and convert to */
+        /* fixed at the end. */
+        gs_point fpt;
 
-	gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
-	if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
-	    return_error(gs_error_limitcheck);
-	ppt->x = float2fixed(fpt.x);
-	ppt->y = float2fixed(fpt.y);
-	return 0;
+        gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
+        if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
+            return_error(gs_error_limitcheck);
+        ppt->x = float2fixed(fpt.x);
+        ppt->y = float2fixed(fpt.y);
+        return 0;
     }
     if (!is_fzero(pmat->xy)) {	/* Hope for 90 degree rotation */
-	if ((code = CHECK_DFMUL2FIXED_VARS(px, y, pmat->yx, xtemp)) < 0 ||
-	    (code = CHECK_DFMUL2FIXED_VARS(py, x, pmat->xy, ytemp)) < 0
-	    )
-	    return code;
-	FINISH_DFMUL2FIXED_VARS(px, xtemp);
-	FINISH_DFMUL2FIXED_VARS(py, ytemp);
-	if (!is_fzero(pmat->xx)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
-		return code;
-	    FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
-	        return code;
-	}
-	if (!is_fzero(pmat->yy)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
-		return code;
-	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
-	        return code;
-	}
+        if ((code = CHECK_DFMUL2FIXED_VARS(px, y, pmat->yx, xtemp)) < 0 ||
+            (code = CHECK_DFMUL2FIXED_VARS(py, x, pmat->xy, ytemp)) < 0
+            )
+            return code;
+        FINISH_DFMUL2FIXED_VARS(px, xtemp);
+        FINISH_DFMUL2FIXED_VARS(py, ytemp);
+        if (!is_fzero(pmat->xx)) {
+            if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
+                return code;
+            FINISH_DFMUL2FIXED_VARS(t, xtemp);
+            if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+                return code;
+        }
+        if (!is_fzero(pmat->yy)) {
+            if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
+                return code;
+            FINISH_DFMUL2FIXED_VARS(t, ytemp);
+            if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+                return code;
+        }
     } else {
-	if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
-	    (code = CHECK_DFMUL2FIXED_VARS(py, y, pmat->yy, ytemp)) < 0
-	    )
-	    return code;
-	FINISH_DFMUL2FIXED_VARS(px, xtemp);
-	FINISH_DFMUL2FIXED_VARS(py, ytemp);
-	if (!is_fzero(pmat->yx)) {
-	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
-		return code;
-	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
-	        return code;
-	}
+        if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
+            (code = CHECK_DFMUL2FIXED_VARS(py, y, pmat->yy, ytemp)) < 0
+            )
+            return code;
+        FINISH_DFMUL2FIXED_VARS(px, xtemp);
+        FINISH_DFMUL2FIXED_VARS(py, ytemp);
+        if (!is_fzero(pmat->yx)) {
+            if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
+                return code;
+            FINISH_DFMUL2FIXED_VARS(t, ytemp);
+            if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+                return code;
+        }
     }
     if (((code = CHECK_SET_FIXED_SUM(ppt->x, px, pmat->tx_fixed)) < 0) ||
         ((code = CHECK_SET_FIXED_SUM(ppt->y, py, pmat->ty_fixed)) < 0) )
@@ -532,13 +532,13 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
    see comment in clamp_point_aux. */
 int
 gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
-			 floatp x, floatp y, gs_fixed_point * ppt)
+                         floatp x, floatp y, gs_fixed_point * ppt)
 {
     gs_point fpt;
 
     gs_point_transform(x, y, (const gs_matrix *)pmat, &fpt);
     if (!(f_fits_in_fixed(fpt.x) && f_fits_in_fixed(fpt.y)))
-	return_error(gs_error_limitcheck);
+        return_error(gs_error_limitcheck);
     ppt->x = float2fixed_rounded(fpt.x);
     ppt->y = float2fixed_rounded(fpt.y);
     return 0;
@@ -548,31 +548,31 @@ gs_point_transform2fixed_rounding(const gs_matrix_fixed * pmat,
 /* Transform a distance with a fixed-point result. */
 int
 gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
-			    floatp dx, floatp dy, gs_fixed_point * ppt)
+                            floatp dx, floatp dy, gs_fixed_point * ppt)
 {
     fixed px, py, t;
     double xtemp, ytemp;
     int code;
 
     if ((code = CHECK_DFMUL2FIXED_VARS(px, dx, pmat->xx, xtemp)) < 0 ||
-	(code = CHECK_DFMUL2FIXED_VARS(py, dy, pmat->yy, ytemp)) < 0
-	)
-	return code;
+        (code = CHECK_DFMUL2FIXED_VARS(py, dy, pmat->yy, ytemp)) < 0
+        )
+        return code;
     FINISH_DFMUL2FIXED_VARS(px, xtemp);
     FINISH_DFMUL2FIXED_VARS(py, ytemp);
     if (!is_fzero(pmat->yx)) {
-	if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
-	    return code;
-	FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
-	    return code;
+        if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
+            return code;
+        FINISH_DFMUL2FIXED_VARS(t, ytemp);
+        if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+            return code;
     }
     if (!is_fzero(pmat->xy)) {
-	if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
-	    return code;
-	FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
-	    return code;
+        if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
+            return code;
+        FINISH_DFMUL2FIXED_VARS(t, xtemp);
+        if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+            return code;
     }
     ppt->x = px;
     ppt->y = py;
@@ -613,33 +613,33 @@ sput_matrix(stream *s, const gs_matrix *pmat)
     coeff[4] = pmat->tx;
     coeff[5] = pmat->ty;
     for (i = 0; i < 4; i += 2) {
-	float u = coeff[i], v = coeff[i ^ 3];
+        float u = coeff[i], v = coeff[i ^ 3];
 
-	b <<= 2;
-	if (u != 0 || v != 0) {
-	    memcpy(cp, &u, sizeof(float));
-	    cp += sizeof(float);
+        b <<= 2;
+        if (u != 0 || v != 0) {
+            memcpy(cp, &u, sizeof(float));
+            cp += sizeof(float);
 
-	    if (v == u)
-		b += 1;
-	    else if (v == -u)
-		b += 2;
-	    else {
-		b += 3;
-		memcpy(cp, &v, sizeof(float));
-		cp += sizeof(float);
-	    }
-	}
+            if (v == u)
+                b += 1;
+            else if (v == -u)
+                b += 2;
+            else {
+                b += 3;
+                memcpy(cp, &v, sizeof(float));
+                cp += sizeof(float);
+            }
+        }
     }
     for (; i < 6; ++i) {
-	float v = coeff[i];
+        float v = coeff[i];
 
-	b <<= 1;
-	if (v != 0) {
-	    ++b;
-	    memcpy(cp, &v, sizeof(float));
-	    cp += sizeof(float);
-	}
+        b <<= 1;
+        if (v != 0) {
+            ++b;
+            memcpy(cp, &v, sizeof(float));
+            cp += sizeof(float);
+        }
     }
     buf[0] = b << 2;
     return sputs(s, buf, cp - buf, &ignore);
@@ -656,38 +656,38 @@ sget_matrix(stream *s, gs_matrix *pmat)
     uint nread;
 
     if (b < 0)
-	return b;
+        return b;
     for (i = 0; i < 4; i += 2, b <<= 2)
-	if (!(b & 0xc0))
-	    coeff[i] = coeff[i ^ 3] = 0.0;
-	else {
-	    float value;
+        if (!(b & 0xc0))
+            coeff[i] = coeff[i ^ 3] = 0.0;
+        else {
+            float value;
 
-	    status = sgets(s, (byte *)&value, sizeof(value), &nread);
-	    if (status < 0 && status != EOFC)
-		return_error(gs_error_ioerror);
-	    coeff[i] = value;
-	    switch ((b >> 6) & 3) {
-		case 1:
-		    coeff[i ^ 3] = value;
-		    break;
-		case 2:
-		    coeff[i ^ 3] = -value;
-		    break;
-		case 3:
-		    status = sgets(s, (byte *)&coeff[i ^ 3],
-				   sizeof(coeff[0]), &nread);
-		    if (status < 0 && status != EOFC)
-			return_error(gs_error_ioerror);
-	    }
-	}
+            status = sgets(s, (byte *)&value, sizeof(value), &nread);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+            coeff[i] = value;
+            switch ((b >> 6) & 3) {
+                case 1:
+                    coeff[i ^ 3] = value;
+                    break;
+                case 2:
+                    coeff[i ^ 3] = -value;
+                    break;
+                case 3:
+                    status = sgets(s, (byte *)&coeff[i ^ 3],
+                                   sizeof(coeff[0]), &nread);
+                    if (status < 0 && status != EOFC)
+                        return_error(gs_error_ioerror);
+            }
+        }
     for (; i < 6; ++i, b <<= 1)
-	if (b & 0x80) {
-	    status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
-	    if (status < 0 && status != EOFC)
-		return_error(gs_error_ioerror);
-	} else
-	    coeff[i] = 0.0;
+        if (b & 0x80) {
+            status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
+            if (status < 0 && status != EOFC)
+                return_error(gs_error_ioerror);
+        } else
+            coeff[i] = 0.0;
     pmat->xx = coeff[0];
     pmat->xy = coeff[1];
     pmat->yx = coeff[2];

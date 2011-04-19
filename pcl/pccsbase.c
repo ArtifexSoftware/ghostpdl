@@ -131,7 +131,6 @@ private_st_cs_base_t();
     val = min_val + val * range;                            \
     END
 
-
 /*
  * Default Configure Image Data information for the various color spaces.
  *
@@ -191,7 +190,6 @@ static const struct {
     { &lumchrom_range_default, &chroma_default, lumchrom_xform_default }
                                                     /* pcl_cspace_LumChrom */
 };
-
 
 /*
  * Code for constructing/modifying the client data structure of PCL base
@@ -275,7 +273,7 @@ build_client_data(
  */
 static void
 init_client_data_from( pcl_cs_client_data_t *          pnew,
-		       const pcl_cs_client_data_t *    pfrom
+                       const pcl_cs_client_data_t *    pfrom
 )
 {
     *pnew = *pfrom;
@@ -303,7 +301,6 @@ update_lookup_tbls(
  */
 #define free_lookup_tbls(pdata)               \
     update_lookup_tbls((pdata), NULL, NULL)
-
 
 /*
  * The colorimetric case.
@@ -599,7 +596,7 @@ finish_colmet_cspace(
  *    a1 = a* / 500
  *    b1 = b* / 200
  *                                       -         -
- *    { a2, T1, b2 } = { T1, a1, b1 } * | 1   1   1 |  
+ *    { a2, T1, b2 } = { T1, a1, b1 } * | 1   1   1 |
  *                                      | 1   0   0 |
  *                                      | 0   0  -1 |
  *                                       -         -
@@ -713,7 +710,6 @@ static const gs_cie_common_proc3   lab_DecodeLMN = {
 
 static const gs_vector3    lab_WhitePoint = { .9504, 1.0, 1.0889 };
 
-
 /*
  * Finish the creation of a CIE L*a*b* color space.
  */
@@ -734,7 +730,6 @@ finish_lab_cspace(
     /* BlackPoint has the default value */
     return 0;
 }
-
 
 /*
  * The luminance-chrominance color space
@@ -833,7 +828,6 @@ static const gs_cie_common_proc3   lumchrom_DecodeLMN = {
     { lumchrom_DecodeLMN_0, lumchrom_DecodeLMN_1, lumchrom_DecodeLMN_2 }
 };
 
-
 /*
  * Build the MatrixABC value for a luminance/chrominance color space. Note that
  * this is the inverse of the matrix provided in the Configure Image Data
@@ -848,7 +842,7 @@ build_lum_chrom_mtxABC(
 )
 {
     int             i;
-    pcl_mtx3_t      tmp_mtx;    
+    pcl_mtx3_t      tmp_mtx;
 
     /* transpose the input to create a row-order matrix */
     for (i = 0; i < 3; i++) {
@@ -911,7 +905,6 @@ static int (*const finish_cspace[(int)pcl_cspace_num])( gs_color_space *,
     finish_lab_cspace,      /* pcl_cspace_CIELab */
     finish_lumchrom_cspace  /* pcl_cspace_LumChrom */
 };
-
 
 /*
  * Free a PCL base color space. This decrements the reference count for the
@@ -976,7 +969,7 @@ alloc_base_cspace(
                                        );
     if (code < 0 || pbase->pcspace == NULL)
         free_base_cspace(pmem, pbase, "allocate pcl base color space");
-    else 
+    else
         *ppbase = pbase;
     return code;
 }
@@ -1001,8 +994,8 @@ alloc_base_cspace(
  * client data may have been changed).
  */
 static int
-unshare_base_cspace(const gs_memory_t *mem, 
-		    pcl_cs_base_t **    ppbase
+unshare_base_cspace(const gs_memory_t *mem,
+                    pcl_cs_base_t **    ppbase
 )
 {
     pcl_cs_base_t *     pbase = *ppbase;
@@ -1124,7 +1117,7 @@ pcl_cs_base_update_lookup_tbl(
     int                 code = 0;
 
     if (plktbl == 0) {
-        if ( (pbase->client_data.plktbl1 == 0) && 
+        if ( (pbase->client_data.plktbl1 == 0) &&
              (pbase->client_data.plktbl2 == 0)   )
             return 0;
         plktbl1 = 0;
@@ -1137,7 +1130,7 @@ pcl_cs_base_update_lookup_tbl(
         /* lookup tables for "higher" color spaces are always ignored */
         if ( (cstype < lktype)          ||
              (lktype == pcl_cspace_RGB) ||
-             (lktype == pcl_cspace_CMY)   ) 
+             (lktype == pcl_cspace_CMY)   )
             return 0;
 
         /* CIE L*a*b* space and the L*a*b* lookup table must match */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -17,7 +17,6 @@
 #ifndef gsexit_INCLUDED
 #  define gsexit_INCLUDED
 
-
 /** The client must provide this.
  *  normally they do exit cleanup and error messaging
  *  without calling system exit() returning to the caller.
@@ -29,7 +28,7 @@ int gs_to_exit(const gs_memory_t *mem, int exit_status);
  */
 int gs_to_exit_with_code(const gs_memory_t *mem, int exit_status, int code);
 
-/** The client must provide this.  
+/** The client must provide this.
  * After possible cleanup it may call gp_do_exit() which calls exit() in a platform
  * independent way.  This is a fatal error so returning is not a good idea.
  */

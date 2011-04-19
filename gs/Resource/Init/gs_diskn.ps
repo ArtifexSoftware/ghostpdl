@@ -1,12 +1,12 @@
 %    Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -25,7 +25,7 @@ systemdict begin
 /.getsearchabledevs { % - .getsearchabledevs [ list_of_strings ]
   //systemdict /.searchabledevs .knownget not {
     .currentglobal //true .setglobal
-    mark (*) { 
+    mark (*) {
       dup length string copy dup currentdevparams /Searchable
       .knownget { not { pop } if } { pop } ifelse
     } 8192 string /IODevice resourceforall
@@ -33,19 +33,19 @@ systemdict begin
     % now process the array into correct SearchOrder
     0 1 2 {
       mark exch 2 index {
-	dup currentdevparams /SearchOrder get 2 index eq
-	{ exch } { pop } ifelse
+        dup currentdevparams /SearchOrder get 2 index eq
+        { exch } { pop } ifelse
       } forall % devices on the old list
       pop
       % make the array and sort it by name
-      ] { lt } bind .sort 
+      ] { lt } bind .sort
       exch
     } for
     % collect all devices with SearchOrder > 2
     mark 2 index {
-      dup currentdevparams /SearchOrder get 2 gt 
+      dup currentdevparams /SearchOrder get 2 gt
       { exch } { pop } ifelse
-    } forall 
+    } forall
     ] exch pop
     % We now have 4 arrays on the stack, SO=0 SO=1 SO=2 SO>2
     % make them into a single array
@@ -61,14 +61,14 @@ systemdict begin
   % We could be smarter and check for %disk* device, but this
   % doesn't get run enough to justify the complication
   //.putdevparams
-  //systemdict /.searchabledevs .forceundef  
+  //systemdict /.searchabledevs .forceundef
 } .bind odef % must be bound and hidden for .forceundef
 
 % ------ extend filenameforall to handle wildcards in %dev% part of pattern -------%
 /filenameforall {
   count 3 ge {
     2 index (%) search {
-      pop pop 
+      pop pop
     } {
       % no device specified, so search them all
       pop (*%) 3 index concatstrings
@@ -100,7 +100,7 @@ systemdict begin
       } forall
       ]
       3 1 roll pop pop
-      4 -1 roll pop 
+      4 -1 roll pop
       % now we need to invoke filenameforall for each of the strings
       % in the array. We do this by building a procedure that is like
       % an unrolled 'forall' loop. We do this to get the parameters
@@ -131,8 +131,8 @@ systemdict begin
     { 3 index concatstrings	% prepend the device
       {
         2 index //file } .internalstopped not {
-	4 1 roll pop pop pop //true
-	exit		% exit with success
+        4 1 roll pop pop pop //true
+        exit		% exit with success
       } {
         pop pop
       }
@@ -169,13 +169,13 @@ systemdict begin
     { 2 index concatstrings	% prepend the device
       { //status } .internalstopped not {
         { //true 7 -2 roll pop pop //true exit } % exit with success
-	if
+        if
       }
       if
     }
     forall
     % If we made it this far, no devices were found to status the file
-    	% clean up to return 'false'
+        % clean up to return 'false'
     exch pop
   } {
     //status
@@ -204,7 +204,7 @@ systemdict begin
 % redefine devforall to process devices in numeric order
 % Spec's for 'devforall' are unclear, but font downloaders may expect this
 /devforall {		% <proc> <scratch> devforall -
-  [ { dup length string copy } 2 index //devforall ]	
+  [ { dup length string copy } 2 index //devforall ]
   % stack: proc scratch array_of_device_names
   { lt } .sort
   % We don't really invoke the procedure with the scratch string

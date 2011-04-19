@@ -30,19 +30,16 @@ gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
     *err = stderr;
 }
 
-
 #include "gslibctx.h"
 #include "gsmemory.h"
 
 static gs_memory_t *mem_err_print = NULL;
-
 
 gs_memory_t *
 gs_lib_ctx_get_non_gc_memory_t()
 {
     return mem_err_print ? mem_err_print->non_gc_memory : NULL;
 }
-
 
 int gs_lib_ctx_init( gs_memory_t *mem )
 {
@@ -155,5 +152,3 @@ void errflush(const gs_memory_t *mem)
         fflush(mem->gs_lib_ctx->fstderr);
     /* else nothing to flush */
 }
-
-

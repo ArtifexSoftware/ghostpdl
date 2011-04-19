@@ -36,8 +36,8 @@
 #define	ifileno(p)		((p)->file)
 #define	getpix(p)		(--(p)->cnt>=0 ? *(p)->ptr++ : ifilbuf(p))
 #define putpix(p,x)		(--(p)->cnt>=0 \
-				    ? ((int)(*(p)->ptr++=(unsigned)(x))) \
-				    : iflsbuf(p,(unsigned)(x)))
+                                    ? ((int)(*(p)->ptr++=(unsigned)(x))) \
+                                    : iflsbuf(p,(unsigned)(x)))
 
 typedef struct {
     unsigned short	imagic;		/* stuff saved on disk . . */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -75,11 +75,11 @@ typedef struct gs_function_PtCr_params_s {
 
 /* Allocate and initialize a PostScript Calculator function. */
 int gs_function_PtCr_init(gs_function_t ** ppfn,
-			  const gs_function_PtCr_params_t * params,
-			  gs_memory_t * mem);
+                          const gs_function_PtCr_params_t * params,
+                          gs_memory_t * mem);
 
 /* Free the parameters of a PostScript Calculator function. */
 void gs_function_PtCr_free_params(gs_function_PtCr_params_t * params,
-				  gs_memory_t * mem);
+                                  gs_memory_t * mem);
 
 #endif /* gsfunc4_INCLUDED */

@@ -1,12 +1,12 @@
 %    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -54,19 +54,19 @@
     /Encoding [ 0 1 FDepVector length 1 sub { } for ] def
     /FontInfo 1 dict def % for .processToUnicode in pdf_font.ps .
     /FDepVector [ 0 1 FDepVector length 1 sub {
-		% Stack: name cmap[name] fonts /FDepVector [ fonts... i
+                % Stack: name cmap[name] fonts /FDepVector [ fonts... i
       FDepVector 1 index get
       dup type /dicttype ne {
-	dup /CIDFont resourcestatus {
-	  pop pop /CIDFont
-	} {
-	  /Font
-	} ifelse findresource
+        dup /CIDFont resourcestatus {
+          pop pop /CIDFont
+        } {
+          /Font
+        } ifelse findresource
       } if
       exch CMap /FontMatrices get dup length 2 index gt {
-	exch get dup //null eq { pop } { makefont } ifelse
+        exch get dup //null eq { pop } { makefont } ifelse
       } {
-	pop pop
+        pop pop
       } ifelse
     } for ] readonly def
     /FMapType 9 def
@@ -74,7 +74,7 @@
     /FontName 3 index def
     CMap /WMode .knownget { /WMode exch def } if
     /FontType 0 def
-  pop pop currentdict end 
+  pop pop currentdict end
 } bind odef
 
 % composefont doesn't appear in CMap files -- it's documented in
@@ -134,14 +134,14 @@
       pop
     } repeat
   } if
-  
+
   /.CodeMapData dup load [ exch
-    .TempMaps aload pop begin begin begin 
+    .TempMaps aload pop begin begin begin
     {
       [ exch aload pop
-        0 1 currentdict length 1 sub { 
-           currentdict exch get 
-        } for 
+        0 1 currentdict length 1 sub {
+           currentdict exch get
+        } for
       ]
       end
     } forall
@@ -159,11 +159,11 @@
 
 /.endmap {		% <map> .endmap <map>
   dup type /arraytype eq {
-	% This might be a shared read-only array inherited via usecmap.
-	% Don't try to update its elements if this is the case.
+        % This might be a shared read-only array inherited via usecmap.
+        % Don't try to update its elements if this is the case.
     dup wcheck {
       0 1 2 index length 1 sub {
-	2 copy 2 copy get .endmap put pop
+        2 copy 2 copy get .endmap put pop
       } for readonly
     } if
   } {
@@ -186,7 +186,7 @@
 
 /usecmap {		% <CMap_name> usecmap -
   /CMap findresource dup
-		% Copy the top level of .CodeMapData
+                % Copy the top level of .CodeMapData
   /.CodeMapData exch /.CodeMapData get copyarray def
   /FontMatrices exch /FontMatrices get copyarray def
 } bind def
@@ -236,35 +236,35 @@
   pop mark
 } bind def
 /endbfrange {		% <code_lo> <code_hi> <to_code|(charname*)> ...
-			%   endbfrange -
+                        %   endbfrange -
   counttomark 3 idiv {
     counttomark -3 roll		% process in correct order
     dup type dup /arraytype eq exch /packedarraytype eq or {
-			% Array value, split up.
+                        % Array value, split up.
       exch pop {
-			% Stack: code to_code|charname
-	1 index exch .addbfchar
-			% Increment the code.  As noted above, we require
-			% that only the last byte vary, but we still must
-			% mask it after incrementing, in case the last
-			% value was 0xff.
-			% Stack: code prefix params key value fontindex
-	6 -1 roll dup length string copy
-	dup dup length 1 sub 2 copy get 1 add 255 and put
+                        % Stack: code to_code|charname
+        1 index exch .addbfchar
+                        % Increment the code.  As noted above, we require
+                        % that only the last byte vary, but we still must
+                        % mask it after incrementing, in case the last
+                        % value was 0xff.
+                        % Stack: code prefix params key value fontindex
+        6 -1 roll dup length string copy
+        dup dup length 1 sub 2 copy get 1 add 255 and put
       } forall pop
     } {
-			% Single value, handle directly.
+                        % Single value, handle directly.
       .addbfrange
     } ifelse
   } repeat 1 .appendmap
 } bind def
 
 /.addbfchar {		% <code> <to_code|charname> .addbfchar
-			%   <prefix> <params> <key> <value> <font_index>
+                        %   <prefix> <params> <key> <value> <font_index>
   1 index exch .addbfrange
 } bind def
 /.addbfrange {		% <code_lo> <code_hi> <to_code|charname>
-			%   .addbfrange <<same as .addbfchar>>
+                        %   .addbfrange <<same as .addbfchar>>
   4 string dup 3
   3 index type /nametype eq {
     2 index 2 1 put % dst = CODE_VALUE_GLYPH, see gxfcmap.h .
@@ -273,16 +273,16 @@
     2 index 2 2 put % dst = CODE_VALUE_CHARS, see gxfcmap.h .
     3 index length
   } ifelse put
-			% Stack: code_lo code_hi value params
+                        % Stack: code_lo code_hi value params
   3 index 3 index eq {
-			% Single value.
+                        % Single value.
     3 -1 roll pop exch () exch
   } {
-			% Range.
+                        % Range.
     dup 0 1 put dup 1 1 put
     4 2 roll
     dup dup length 1 sub 0 exch getinterval 5 1 roll	% prefix
-			% Stack: prefix value params code_lo code_hi
+                        % Stack: prefix value params code_lo code_hi
     2 { exch dup length 1 sub 1 getinterval } repeat concatstrings
     3 -1 roll
   } ifelse
@@ -376,23 +376,23 @@
 } bind def
 
 /.endmapranges {	% -mark- <code_lo> <code_hi> <cid_base> ... <map#>
-			%   .endmapranges -
+                        %   .endmapranges -
   counttomark 1 add 1 roll
   counttomark 3 idiv {
     counttomark -3 roll		% process in correct order
-		% Construct prefix, params, key_lo, key_hi, value, font_index
+                % Construct prefix, params, key_lo, key_hi, value, font_index
     3 1 roll	% <cid_base> <code_lo> <code_hi>
-		%		prefix	key
-		% 1-byte code:	()	.
-		% 1-byte range:	()	.
-		% N-byte code:	.	(*)
-		% N-byte range:	(*)	(*)
+                %		prefix	key
+                % 1-byte code:	()	.
+                % 1-byte range:	()	.
+                % N-byte code:	.	(*)
+                % N-byte range:	(*)	(*)
     dup 2 index eq {	% <code_lo> == <code_hi>
-           		% 0: prefix_len for 1-byte code
-           		% 1: prefix_len for N-byte code
+                        % 0: prefix_len for 1-byte code
+                        % 1: prefix_len for N-byte code
        dup length 1 eq { 0 } { 1 } ifelse
     } {			% <code_lo> != <code_hi>
-     			% calculate prefix_len for *-byte range
+                        % calculate prefix_len for *-byte range
        dup length 1 sub % <cid_base> <code_lo> <code_hi> <code_len-1>
        0		% initial value for N
        {		% <cid_base> <code_lo> <code_hi> (code_len-1)  N
@@ -403,13 +403,13 @@
        } loop
        exch pop 	% discard <code_len-1>
     } ifelse
-				% cid_base code_lo code_hi prefix_len
+                                % cid_base code_lo code_hi prefix_len
 
     % Althogh Adobe CPSI with native CID/CMap support accept
     % multi-dimensional range specification in notdef & cidrange
     % (and CID is calculated as relative position in multi-dimensional
     % range), but older CPSI & ATM cannot handle it.
-    % 
+    %
     % GS accepts such specification, but it's recommended to keep
     % from using this feature for notdef & cidrange.
     % Following is a disabler of this feature.
@@ -436,9 +436,9 @@
     % -------------------------------------------------------------
 
     1 index exch 0 exch getinterval
-				% cid_base code_lo code_hi prefix
+                                % cid_base code_lo code_hi prefix
     dup length 3 index length exch sub
-				% cid_base code_lo code_hi prefix range_len
+                                % cid_base code_lo code_hi prefix range_len
     dup 255 gt {
        (too long coderange specification for current GS\n) print
        /.endmapranges cvx /rangecheck signalerror
@@ -455,27 +455,27 @@
     % make "keys" (concatenated key_lo + key_hi)
     exch concatstrings
 
-    % 
+    %
     4 -1 roll
     .endmapvalue
 
-		% See if we can merge with the previous value.
-		% The prefix, params, and font index must match.
+                % See if we can merge with the previous value.
+                % The prefix, params, and font index must match.
     % prefix params keys value fontindex
     counttomark 5 gt { % 2 (or more) ranges (1 range = 5 item)
        4 index 10 index eq	% compare prefix
        4 index 10 index eq and	% compare params
        1 index 7 index eq and	% compare fontindex
-	{
+        {
           CMAPDEBUG { (merge!\n) print } if
-	  pop 4 2 roll pop pop
+          pop 4 2 roll pop pop
            % prefix params keys value fontindex keys2 value2
-	  5 -1 roll 3 -1 roll concatstrings
+          5 -1 roll 3 -1 roll concatstrings
            % prefix params value fontindex value2 keys'
-	  4 -1 roll 3 -1 roll concatstrings
+          4 -1 roll 3 -1 roll concatstrings
            % prefix params fontindex keys' values'
-	  3 -1 roll
-	} if
+          3 -1 roll
+        } if
      } if % end of 2 (or more) ranges
   } repeat
   counttomark 2 add -1 roll .appendmap
@@ -512,9 +512,9 @@ languagelevel exch 2 .setlanguagelevel
 /CMap /Generic /Category findresource dup length dict .copydict
 dup /InstanceType /dicttype put
 dup /DefineResource {
-		% The AdobePS5 Windows driver emits code that attempts to
-		% create CMaps without the required CMapName entry.
-		% Work around this here.
+                % The AdobePS5 Windows driver emits code that attempts to
+                % create CMaps without the required CMapName entry.
+                % Work around this here.
   dup /CMapName known not {
     dup wcheck not {
       .currentglobal exch dup wcheck .setglobal
@@ -538,9 +538,9 @@ dup /DefineResource {
   /Generic /Category findresource /DefineResource get exec
 } bind put
 /Category defineresource pop
-	% We might have loaded CID font support already.
+        % We might have loaded CID font support already.
 /CIDInit /ProcSet 2 copy { findresource } .internalstopped
-	% An interior `stopped' might have reset VM allocation to local.
+        % An interior `stopped' might have reset VM allocation to local.
 //true .setglobal
  { pop pop 3 -1 roll }
  { dup length 4 index length add dict .copydict 4 -1 roll exch .copydict }

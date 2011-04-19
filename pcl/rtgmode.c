@@ -69,11 +69,11 @@ adjust_pres_mode(pcl_state_t *pcs)
  * Get the effective printing region in raster space
  */
 static void
-get_raster_print_rect( const gs_memory_t *mem, 
-		       const gs_rect *      plp_print_rect,
-		       gs_rect *            prst_print_rect,
-		       const gs_matrix *    prst2lp
-		       )
+get_raster_print_rect( const gs_memory_t *mem,
+                       const gs_rect *      plp_print_rect,
+                       gs_rect *            prst_print_rect,
+                       const gs_matrix *    prst2lp
+                       )
 {
     gs_matrix            lp2rst;
 
@@ -164,14 +164,14 @@ get_raster_print_rect( const gs_memory_t *mem,
  *
  *        If only one destination dimension is specified, the ratio of this
  *        dimension to the corresponding source dimension determins the
- *        raster scale for both dimensions; With strange interactions with 
+ *        raster scale for both dimensions; With strange interactions with
  *        the 1200centipoint margin and rotated pages (Bug emulation).
  *
  *        If neither dimension is specified, the page printable region is
  *        transformed to raster space, the intersection of this with the
  *        positive quadrant is taken. The dimensions of the resulting region
  *        are compared with the dimensions of the source raster. The smaller
- *        of the two dest_dim / src_dim ratios is used as the ratio for 
+ *        of the two dest_dim / src_dim ratios is used as the ratio for
  *        the raster scale in both dimensions (i.e.: select the largest
  *        isotropic scaling that does not cause clipping).
  *
@@ -179,7 +179,7 @@ get_raster_print_rect( const gs_memory_t *mem,
  *    converting the page printable region to raster space and intersecting
  *    the result with the positive quadrant. This region is used to determine
  *    the useable source raster width and height.
- *        
+ *
  */
    int
 pcl_enter_graphics_mode(
@@ -248,32 +248,32 @@ pcl_enter_graphics_mode(
         scale_y = scale_x;
 
     } else if (prstate->dest_width_set) {
-	scale_x = (floatp)prstate->dest_width_cp / (floatp)prstate->src_width;
+        scale_x = (floatp)prstate->dest_width_cp / (floatp)prstate->src_width;
 
-	if ( clip_x < 0 && pxfmst->lp_orient == 3 ) { 
-	    scale_y = (floatp)(prstate->dest_width_cp - clip_y ) / (floatp)prstate->src_width;
-	    if ( rot == 2 && scale_y <=  2* prstate->src_width) /* empirical test 1 */
-		scale_y = scale_x;   
-	}
-	else if ( clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3 ) {
-	    scale_y = (floatp)(prstate->dest_width_cp - clip_y) / (floatp)prstate->src_width;
+        if ( clip_x < 0 && pxfmst->lp_orient == 3 ) {
+            scale_y = (floatp)(prstate->dest_width_cp - clip_y ) / (floatp)prstate->src_width;
+            if ( rot == 2 && scale_y <=  2* prstate->src_width) /* empirical test 1 */
+                scale_y = scale_x;
+        }
+        else if ( clip_x < 0 && pxfmst->lp_orient == 1 && rot == 3 ) {
+            scale_y = (floatp)(prstate->dest_width_cp - clip_y) / (floatp)prstate->src_width;
 
-	    if ( prstate->dest_width_cp <= 7200 )  /* empirical test 2 */
-		scale_y = (floatp)(prstate->dest_width_cp + clip_y) / (floatp)prstate->src_width;
-	}
-	else 
-	    scale_y = scale_x;
+            if ( prstate->dest_width_cp <= 7200 )  /* empirical test 2 */
+                scale_y = (floatp)(prstate->dest_width_cp + clip_y) / (floatp)prstate->src_width;
+        }
+        else
+            scale_y = scale_x;
 
-        if (prstate->dest_height_set) 
-	    scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
+        if (prstate->dest_height_set)
+            scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
 
-    } else if (prstate->dest_height_set) {    	 
-	scale_x = scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
+    } else if (prstate->dest_height_set) {
+        scale_x = scale_y = (floatp)prstate->dest_height_cp / (floatp)prstate->src_height;
     } else {
 
         /* select isotropic scaling with no clipping */
-	scale_x = (floatp)dwid / (floatp)prstate->src_width;
-	scale_y = (floatp)dhgt / (floatp)prstate->src_height;
+        scale_x = (floatp)dwid / (floatp)prstate->src_width;
+        scale_y = (floatp)dhgt / (floatp)prstate->src_height;
         if (scale_x > scale_y)
             scale_x = scale_y;
         else
@@ -382,12 +382,11 @@ pcl_end_graphics_mode(
                           );
 }
 
-
 /*
  * ESC * t # R
  *
- * Set raster graphics resolution. 
- * The value provided will be rounded up to the nearest legal value or down to 600dpi. 
+ * Set raster graphics resolution.
+ * The value provided will be rounded up to the nearest legal value or down to 600dpi.
  * 75 100 150 200 300 600 are legal;  120 and 85.7143 are multiples of 75 but not legal.
  */
   static int
@@ -398,7 +397,6 @@ set_graphics_resolution(
 {
     uint            res = arg_is_present(pargs) ? uint_arg(pargs) : 75;
     uint            qi = 600 / res;
-
 
     /* HP does not allow 120 dpi or 85.7 dpi as a resolution */
     qi = (qi == 0 ? 1 : (qi > 8 ? 8 : (qi == 7 ? 6 : (qi == 5 ? 4 : qi))));
@@ -529,14 +527,14 @@ set_dest_raster_width(
 )
 {
     if (!pcs->raster_state.graphics_mode) {
-	if ( arg_is_present(pargs) ) {
-	    uint    dw = 10 * fabs(float_arg(pargs));
+        if ( arg_is_present(pargs) ) {
+            uint    dw = 10 * fabs(float_arg(pargs));
 
-	    pcs->raster_state.dest_width_cp = dw;
-	    pcs->raster_state.dest_width_set = (dw != 0);
-	}
-	else
-	    pcs->raster_state.dest_width_set = false;
+            pcs->raster_state.dest_width_cp = dw;
+            pcs->raster_state.dest_width_set = (dw != 0);
+        }
+        else
+            pcs->raster_state.dest_width_set = false;
     }
     return 0;
 }
@@ -558,15 +556,15 @@ set_dest_raster_height(
     pcl_state_t *   pcs
 )
 {
-    if (!pcs->raster_state.graphics_mode) {	
-	if ( arg_is_present(pargs) ) {
-	    uint    dh = 10 * fabs(float_arg(pargs));
+    if (!pcs->raster_state.graphics_mode) {
+        if ( arg_is_present(pargs) ) {
+            uint    dh = 10 * fabs(float_arg(pargs));
 
-	    pcs->raster_state.dest_height_cp = dh;
-	    pcs->raster_state.dest_height_set = (dh != 0);
-	}
-	else
-	    pcs->raster_state.dest_height_set = false;
+            pcs->raster_state.dest_height_cp = dh;
+            pcs->raster_state.dest_height_set = (dh != 0);
+        }
+        else
+            pcs->raster_state.dest_height_set = false;
     }
     return 0;
 }
@@ -637,7 +635,6 @@ end_graphics_mode_C(
     pcs->raster_state.compression_mode = 0;
     return 0;
 }
-
 
 /*
  * Initialization
@@ -736,7 +733,7 @@ gmode_do_reset(
     if ((type & mask) != 0) {
         pcl_raster_state_t *    prstate = &(pcs->raster_state);
 
-	prstate->gmargin_cp = 0L;
+        prstate->gmargin_cp = 0L;
         prstate->resolution = 75;
         prstate->pres_mode_3 = true;
         prstate->scale_raster = false;

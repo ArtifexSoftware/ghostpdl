@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -27,13 +27,13 @@ int cid_system_info_param(gs_cid_system_info_t *, const ref *);
 
 /* Convert a CID into TT char code or to TT glyph index, using SubstNWP. */
 /* Returns 1 if a glyph presents, 0 if not, <0 if error. */
-int cid_to_TT_charcode(const gs_memory_t *mem, 
-		       const ref *Decoding, const ref *TT_cmap,  
-		       const ref *SubstNWP, 
+int cid_to_TT_charcode(const gs_memory_t *mem,
+                       const ref *Decoding, const ref *TT_cmap,
+                       const ref *SubstNWP,
                        uint nCID, uint *c, ref *src_type, ref *dst_type);
 
 /* Create a CIDMap from a True Type cmap, Decoding and SubstNWP. */
-int cid_fill_CIDMap(const gs_memory_t *mem, const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP, 
+int cid_fill_CIDMap(const gs_memory_t *mem, const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP,
                     int GDBytes, ref *CIDMap);
 /* Create an identity CIDMap. */
 int cid_fill_Identity_CIDMap(const gs_memory_t *mem, ref *CIDMap);

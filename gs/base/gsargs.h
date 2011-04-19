@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -28,13 +28,13 @@
 typedef struct arg_source_s {
     bool is_file;
     union _u {
-	struct _su {
-	    bool parsed;	/* true for "pushed-back" argument, not to be parsed again */
-	    char *chars;	/* original string */
-	    gs_memory_t *memory;  /* if non-0, free chars when done with it */
-	    const char *str;	/* string being read */
-	} s;
-	FILE *file;
+        struct _su {
+            bool parsed;	/* true for "pushed-back" argument, not to be parsed again */
+            char *chars;	/* original string */
+            gs_memory_t *memory;  /* if non-0, free chars when done with it */
+            const char *str;	/* string being read */
+        } s;
+        FILE *file;
     } u;
 } arg_source;
 typedef struct arg_list_s {
@@ -50,8 +50,8 @@ typedef struct arg_list_s {
 
 /* Initialize an arg list. */
 void arg_init(arg_list * pal, const char **argv, int argc,
-	      FILE * (*arg_fopen) (const char *fname, void *fopen_data),
-	      void *fopen_data);
+              FILE * (*arg_fopen) (const char *fname, void *fopen_data),
+              void *fopen_data);
 
 /*
  * Push a string onto an arg list.

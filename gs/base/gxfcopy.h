@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,13 +63,13 @@ typedef struct gs_matrix_s gs_matrix;
  * rendering (glyph_outline, etc.), but it does not support make_font.
  *
  * max_reserved_glyphs limits the maount of space allocated for the glyph names
- * and glyph outlines of type 1 or 2 fonts. -1 reserves as many as required for 
- * a full copy of the original font. This is used by pdfwrite to limit the size 
+ * and glyph outlines of type 1 or 2 fonts. -1 reserves as many as required for
+ * a full copy of the original font. This is used by pdfwrite to limit the size
  * of a copy when creating a subset font.
  */
-int gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, 
-		    gs_memory_t *mem, gs_font **pfont_new, 
-		    int max_reserved_glyphs);
+int gs_copy_font(gs_font *font, const gs_matrix *orig_matrix,
+                    gs_memory_t *mem, gs_font **pfont_new,
+                    int max_reserved_glyphs);
 
 /*
  * Copy a glyph, including any sub-glyphs.  The destination font ("copied"
@@ -123,7 +123,7 @@ int gs_copy_glyph(gs_font *font, gs_glyph glyph, gs_font *copied);
 #define COPY_GLYPH_NO_NEW 2
 #define COPY_GLYPH_BY_INDEX 4
 int gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
-			  int options);
+                          int options);
 
 /*
  * Add an encoding entry to a copied font.  If the given encoding entry is
@@ -151,28 +151,27 @@ int gs_copied_font_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph);
  */
 int gs_copy_font_complete(gs_font *font, gs_font *copied);
 
-
 /*
  * Check whether specified glyphs can be copied from another font.
- * It means that (1) fonts have same hinting parameters and 
- * (2) font subsets for the specified glyph set don't include different 
- * outlines or metrics. Possible returned values : 
+ * It means that (1) fonts have same hinting parameters and
+ * (2) font subsets for the specified glyph set don't include different
+ * outlines or metrics. Possible returned values :
  * 0 (incompatible), 1 (compatible), < 0 (error)
  */
-int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
-		    gs_glyph *glyphs, int num_glyphs, int glyphs_step, 
-		    bool check_hinting);
+int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
+                    gs_glyph *glyphs, int num_glyphs, int glyphs_step,
+                    bool check_hinting);
 
-/* Extension glyphs may be added to a font to resolve 
+/* Extension glyphs may be added to a font to resolve
    glyph name conflicts while conwerting a PDF Widths into Metrics.
    This function drops them before writing out an embedded font. */
 int copied_drop_extension_glyphs(gs_font *cfont);
 
-/* Order font to avoid a serialization indeterminism. 
-   An indeterminizm can happen due to PS name indices 
+/* Order font to avoid a serialization indeterminism.
+   An indeterminizm can happen due to PS name indices
    depend on memory allocation.
    Must not add glyphs after calling this function.
-   After calling this function, enumerate_glyph 
+   After calling this function, enumerate_glyph
    enumerates glyphs in the alphabetic order of glyph names.
    Currently works for Type 1,2 only,
    because other fonts type don't use PS name indices

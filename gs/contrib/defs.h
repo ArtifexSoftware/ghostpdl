@@ -82,7 +82,6 @@ typedef struct _SIZEL            /* sizl */
 } SIZEL;
 typedef SIZEL *PSIZEL;
 
-
 typedef struct _POINTL  {
     LONG  x;
     LONG  y;
@@ -113,7 +112,6 @@ typedef LONG APIRET;
 #define HIUCHAR(w)      ((UCHAR)(((USHORT)(w) >> 8) & 0xff))
 #define LOUSHORT(l)     ((USHORT)((ULONG)l))
 #define HIUSHORT(l)     ((USHORT)(((ULONG)(l) >> 16) & 0xffff))
-
 
 #define CLR_FALSE                     (-5L)
 #define CLR_TRUE                      (-4L)
@@ -151,8 +149,6 @@ typedef LONG APIRET;
 #define RGB_YELLOW             0x00FFFF00L
 #define RGB_WHITE              0x00FFFFFFL
 
-
-
 #define BMAP_MEMORY          0x00000001
 
 /* bitmap parameterization used by GpiCreateBitmap and others */
@@ -165,7 +161,6 @@ typedef struct _BITMAPINFOHEADER         /* bmp */
    USHORT cBitCount;
 } BITMAPINFOHEADER;
 typedef BITMAPINFOHEADER *PBITMAPINFOHEADER;
-
 
 typedef struct _BMAPINFO          /* bmapinfo */
 {
@@ -226,7 +221,6 @@ typedef struct _BITMAPINFO2      /* bmi2 */
 } BITMAPINFO2;
 typedef BITMAPINFO2 *PBITMAPINFO2;
 
-
 /******************************************************************************/
 /*    PPOINTL     pptlSrc;            // src left, bottom, width and height.  */
 /*    PPOINTL     pptlDst;            // dst left, bottom, width and height.  */
@@ -267,7 +261,6 @@ typedef IMAGEINFOS * PIMAGEINFO;    /* pimginfo */
 #define  GDM_DITHER_BEGIN            0x0008   /* Use System Floyd-Steinberg dithering   */
 #define  GDM_DITHER_END              0x0010   /* Use System error propigation dithering */
 #define  GDM_COLOR_CONVERT           0x0020   /* use device's clr mapping functions     */
-
 
 /*******************************************************************************************/
 /*    ULONG       ulLength;      // length of structure                 - 88               */

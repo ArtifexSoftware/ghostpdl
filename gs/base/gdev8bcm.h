@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -53,7 +53,7 @@ void gx_8bit_map_init(gx_8bit_color_map *, int);
 /* Look up a color in an 8-bit color map. */
 /* Return -1 if not found. */
 int gx_8bit_map_rgb_color(const gx_8bit_color_map *, gx_color_value,
-			  gx_color_value, gx_color_value);
+                          gx_color_value, gx_color_value);
 
 /* Test whether an 8-bit color map has room for more entries. */
 #define gx_8bit_map_is_full(pcm)\
@@ -62,6 +62,6 @@ int gx_8bit_map_rgb_color(const gx_8bit_color_map *, gx_color_value,
 /* Add a color to an 8-bit color map. */
 /* Return -1 if the map is full. */
 int gx_8bit_add_rgb_color(gx_8bit_color_map *, gx_color_value,
-			  gx_color_value, gx_color_value);
+                          gx_color_value, gx_color_value);
 
 #endif /* gdev8bcm_INCLUDED */

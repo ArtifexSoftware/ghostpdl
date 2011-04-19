@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,8 +33,8 @@ gs_initviewclip(gs_state * pgs)
     gx_clip_path *pcpath = pgs->view_clip;
 
     if (pcpath != 0 && pcpath->rule != 0) {
-	gx_cpath_reset(pcpath);
-	pcpath->rule = 0;
+        gx_cpath_reset(pcpath);
+        pcpath->rule = 0;
     }
     return 0;
 }
@@ -62,20 +62,20 @@ common_viewclip(gs_state * pgs, int rule)
     gx_clip_path *pcpath = pgs->view_clip;
 
     if (pcpath == 0) {
-	pcpath = gx_cpath_alloc(pgs->memory, "gs_[eo]viewclip");
-	if (pcpath == 0)
-	    return_error(gs_error_VMerror);
-	pgs->view_clip = pcpath;
+        pcpath = gx_cpath_alloc(pgs->memory, "gs_[eo]viewclip");
+        if (pcpath == 0)
+            return_error(gs_error_VMerror);
+        pgs->view_clip = pcpath;
     }
     if ((code = gx_path_bbox(pgs->path, &bbox)) < 0)
-	return code;
+        return code;
     gx_cpath_init_local(&rpath, pgs->memory);
     code = gx_cpath_from_rectangle(&rpath, &bbox);
     if (code >= 0)
-	code = gx_cpath_clip(pgs, &rpath, pgs->path, rule);
+        code = gx_cpath_clip(pgs, &rpath, pgs->path, rule);
     if (code < 0) {
-	gx_cpath_free(&rpath, "gs_[eo]viewclip");
-	return code;
+        gx_cpath_free(&rpath, "gs_[eo]viewclip");
+        return code;
     }
     rpath.rule = rule;
     gx_cpath_assign_free(pcpath, &rpath);
@@ -92,18 +92,18 @@ gs_viewclippath(gs_state * pgs)
 
     gx_path_init_local(&cpath, pgs->memory);
     if (pcpath == 0 || pcpath->rule == 0) {
-	/* No view clip path is active: fabricate one. */
-	gs_fixed_rect box;
+        /* No view clip path is active: fabricate one. */
+        gs_fixed_rect box;
 
-	code = gx_default_clip_box(pgs, &box);
-	if (code < 0)
-	    return code;
-	code = gx_path_add_rectangle(&cpath, box.p.x, box.p.y,
-				     box.q.x, box.q.y);
+        code = gx_default_clip_box(pgs, &box);
+        if (code < 0)
+            return code;
+        code = gx_path_add_rectangle(&cpath, box.p.x, box.p.y,
+                                     box.q.x, box.q.y);
     } else {
-	code = gx_cpath_to_path(pcpath, &cpath);
+        code = gx_cpath_to_path(pcpath, &cpath);
     }
     if (code < 0)
-	return code;
+        return code;
     return gx_path_assign_free(pgs->path, &cpath);
 }

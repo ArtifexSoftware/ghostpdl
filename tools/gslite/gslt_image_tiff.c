@@ -686,31 +686,31 @@ gslt_decode_tiff_strips(gs_memory_t *mem, gslt_tiff_t *tiff, gslt_image_t *image
         switch (tiff->compression)
         {
         case 1:
-            error = gslt_decode_tiff_uncompressed(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_uncompressed(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 2:
-            error = gslt_decode_tiff_fax(mem, tiff, 2, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_fax(mem, tiff, 2, rp, rp + rlen, wp, wp + wlen);
             break;
         case 3:
-            error = gslt_decode_tiff_fax(mem, tiff, 3, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_fax(mem, tiff, 3, rp, rp + rlen, wp, wp + wlen);
             break;
         case 4:
-            error = gslt_decode_tiff_fax(mem, tiff, 4, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_fax(mem, tiff, 4, rp, rp + rlen, wp, wp + wlen);
             break;
         case 5:
-            error = gslt_decode_tiff_lzw(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_lzw(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 6:
-            error = gs_throw(-1, "deprecated JPEG in TIFF compression not supported"); 
+            error = gs_throw(-1, "deprecated JPEG in TIFF compression not supported");
             break;
         case 7:
-            error = gslt_decode_tiff_jpeg(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_jpeg(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 8:
-            error = gslt_decode_tiff_flate(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_flate(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         case 32773:
-            error = gslt_decode_tiff_packbits(mem, tiff, rp, rp + rlen, wp, wp + wlen); 
+            error = gslt_decode_tiff_packbits(mem, tiff, rp, rp + rlen, wp, wp + wlen);
             break;
         default:
             error = gs_throw1(-1, "unknown TIFF compression: %d", tiff->compression);
@@ -797,7 +797,7 @@ gslt_read_tiff_tag_value(unsigned *p, gslt_tiff_t *tiff, unsigned type, unsigned
     }
 }
 
-static int 
+static int
 gslt_read_tiff_tag(gs_memory_t *mem, gslt_tiff_t *tiff, unsigned offset)
 {
     unsigned tag;
@@ -981,8 +981,8 @@ gslt_image_decode_tiff(gs_memory_t *mem, byte *buf, int len)
         error = gslt_read_tiff_tag(mem, tiff, offset);
         if (error) {
             error = gs_rethrow(error, "could not read TIFF header tag");
-	    return NULL;
-	}
+            return NULL;
+        }
         offset += 12;
     }
 #ifdef GSLT_DEBUG_TIFF
@@ -990,17 +990,17 @@ gslt_image_decode_tiff(gs_memory_t *mem, byte *buf, int len)
 #endif
     /* new image */
     image = gs_alloc_struct_immovable(mem, gslt_image_t,
-	&st_gslt_image, "new tiff gslt_image");
+        &st_gslt_image, "new tiff gslt_image");
     if (image == NULL) {
-	error = gs_throw(-1, "unable to allocate tiff gslt_image");
-	return NULL;
+        error = gs_throw(-1, "unable to allocate tiff gslt_image");
+        return NULL;
     }
     image->samples = gs_alloc_bytes(mem, image->stride * image->height,
-	"decoded tiff data");
+        "decoded tiff data");
     if (image->samples == NULL) {
-	error = gs_throw(-1, "unable to allocate tiff gslt_image pixel data");
-	gs_free_object(mem, image, "free tiff gslt_image");
-	return NULL;
+        error = gs_throw(-1, "unable to allocate tiff gslt_image pixel data");
+        gs_free_object(mem, image, "free tiff gslt_image");
+        return NULL;
     }
 
     /*
@@ -1012,8 +1012,8 @@ gslt_image_decode_tiff(gs_memory_t *mem, byte *buf, int len)
 
     error = gslt_decode_tiff_strips(mem, tiff, image);
     if (error) {
-	error = gs_rethrow(error, "could not decode image data");
-	return NULL;
+        error = gs_rethrow(error, "could not decode image data");
+        return NULL;
     }
 
     /*

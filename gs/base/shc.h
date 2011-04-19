@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -59,15 +59,15 @@ typedef struct hc_definition_s {
  *        contain valid data.
  */
 #define stream_hc_state_common\
-	stream_state_common;\
-		/* The client sets the following before initialization. */\
-	bool FirstBitLowOrder;\
-		/* The following are updated dynamically. */\
-	uint bits;		/* most recent bits of input or */\
-				/* current bits of output */\
-	int bits_left		/* # of valid low bits (input) or */\
-				/* unused low bits (output) in above, */\
-				/* 0 <= bits_left <= 7 */
+        stream_state_common;\
+                /* The client sets the following before initialization. */\
+        bool FirstBitLowOrder;\
+                /* The following are updated dynamically. */\
+        uint bits;		/* most recent bits of input or */\
+                                /* current bits of output */\
+        int bits_left		/* # of valid low bits (input) or */\
+                                /* unused low bits (output) in above, */\
+                                /* 0 <= bits_left <= 7 */
 typedef struct stream_hc_state_s {
     stream_hc_state_common;
 } stream_hc_state;
@@ -116,18 +116,18 @@ typedef struct hce_table_s {
 
 /* Declare variables that hold the encoder state. */
 #define hce_declare_state\
-	register uint bits;\
-	register int bits_left
+        register uint bits;\
+        register int bits_left
 
 /* Load the state from the stream. */
 /* Free variables: ss, bits, bits_left. */
 #define hce_load_state()\
-	bits = ss->bits, bits_left = ss->bits_left
+        bits = ss->bits, bits_left = ss->bits_left
 
 /* Store the state back in the stream. */
 /* Free variables: ss, bits, bits_left. */
 #define hce_store_state()\
-	ss->bits = bits, ss->bits_left = bits_left
+        ss->bits = bits, ss->bits_left = bits_left
 
 /* Put a code on the stream. */
 void hc_put_code_proc(bool, byte *, uint);
@@ -137,8 +137,8 @@ void hc_put_code_proc(bool, byte *, uint);
    ((bits_left -= (clen)) >= 0 ?\
     (bits += (code) << bits_left) :\
     (hc_put_code_proc((ss)->FirstBitLowOrder,\
-		      q += hc_bits_size >> 3,\
-		      (bits + ((code) >> -bits_left))),\
+                      q += hc_bits_size >> 3,\
+                      (bits + ((code) >> -bits_left))),\
      bits = (code) << (bits_left += hc_bits_size))))
 #define hc_put_code(ss, q, cp)\
   hc_put_value(ss, q, (cp)->code, (cp)->code_length)
@@ -179,26 +179,26 @@ typedef struct hcd_table_s {
 
 /* Declare variables that hold the decoder state. */
 #define hcd_declare_state\
-	register const byte *p;\
-	const byte *rlimit;\
-	uint bits;\
-	int bits_left
+        register const byte *p;\
+        const byte *rlimit;\
+        uint bits;\
+        int bits_left
 
 /* Load the state from the stream. */
 /* Free variables: pr, ss, p, rlimit, bits, bits_left. */
 #define hcd_load_state()\
-	p = pr->ptr,\
-	rlimit = pr->limit,\
-	bits = ss->bits,\
-	bits_left = ss->bits_left
+        p = pr->ptr,\
+        rlimit = pr->limit,\
+        bits = ss->bits,\
+        bits_left = ss->bits_left
 
 /* Store the state back in the stream. */
 /* Put back any complete bytes into the input buffer. */
 /* Free variables: pr, ss, p, bits, bits_left. */
 #define hcd_store_state()\
-	pr->ptr = p -= (bits_left >> 3),\
-	ss->bits = bits >>= (bits_left & ~7),\
-	ss->bits_left = bits_left &= 7
+        pr->ptr = p -= (bits_left >> 3),\
+        ss->bits = bits >>= (bits_left & ~7),\
+        ss->bits_left = bits_left &= 7
 
 /* Macros to get blocks of bits from the input stream. */
 /* Invariants: 0 <= bits_left <= bits_size; */

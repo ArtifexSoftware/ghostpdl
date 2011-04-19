@@ -87,16 +87,16 @@ struct _IjsServerCtx {
 
 static int
 ijs_server_dummy_begin_cb (void *begin_cb_data,
-			   IjsServerCtx *ctx,
-			   IjsJobId job_id)
+                           IjsServerCtx *ctx,
+                           IjsJobId job_id)
 {
   return 0;
 }
 
 static int
 ijs_server_dummy_end_cb (void *end_cb_data,
-			 IjsServerCtx *ctx,
-			 IjsJobId job_id)
+                         IjsServerCtx *ctx,
+                         IjsJobId job_id)
 {
   return 0;
 }
@@ -168,7 +168,7 @@ ijs_server_init (void)
 
 int
 ijs_server_install_begin_cb (IjsServerCtx *ctx,
-			     IjsBeginJobCb *begin_cb, void *begin_cb_data)
+                             IjsBeginJobCb *begin_cb, void *begin_cb_data)
 {
   ctx->begin_cb = begin_cb;
   ctx->begin_cb_data = begin_cb_data;
@@ -177,7 +177,7 @@ ijs_server_install_begin_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_end_cb (IjsServerCtx *ctx,
-			   IjsEndJobCb *end_cb, void *end_cb_data)
+                           IjsEndJobCb *end_cb, void *end_cb_data)
 {
   ctx->end_cb = end_cb;
   ctx->end_cb_data = end_cb_data;
@@ -186,8 +186,8 @@ ijs_server_install_end_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_status_cb (IjsServerCtx *ctx,
-			      IjsQueryStatusCb *status_cb,
-			      void *status_cb_data)
+                              IjsQueryStatusCb *status_cb,
+                              void *status_cb_data)
 {
   ctx->status_cb = status_cb;
   ctx->status_cb_data = status_cb_data;
@@ -196,7 +196,7 @@ ijs_server_install_status_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_list_cb (IjsServerCtx *ctx,
-			   IjsListParamsCb *list_cb, void *list_cb_data)
+                           IjsListParamsCb *list_cb, void *list_cb_data)
 {
   ctx->list_cb = list_cb;
   ctx->list_cb_data = list_cb_data;
@@ -205,7 +205,7 @@ ijs_server_install_list_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_enum_cb (IjsServerCtx *ctx,
-			   IjsEnumParamCb *enum_cb, void *enum_cb_data)
+                           IjsEnumParamCb *enum_cb, void *enum_cb_data)
 {
   ctx->enum_cb = enum_cb;
   ctx->enum_cb_data = enum_cb_data;
@@ -214,7 +214,7 @@ ijs_server_install_enum_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_set_cb (IjsServerCtx *ctx,
-			   IjsSetParamCb *set_cb, void *set_cb_data)
+                           IjsSetParamCb *set_cb, void *set_cb_data)
 {
   ctx->set_cb = set_cb;
   ctx->set_cb_data = set_cb_data;
@@ -223,7 +223,7 @@ ijs_server_install_set_cb (IjsServerCtx *ctx,
 
 int
 ijs_server_install_get_cb (IjsServerCtx *ctx,
-			   IjsGetParamCb *get_cb, void *get_cb_data)
+                           IjsGetParamCb *get_cb, void *get_cb_data)
 {
   ctx->get_cb = get_cb;
   ctx->get_cb_data = get_cb_data;
@@ -399,10 +399,10 @@ ijs_server_proc_query_status (IjsServerCtx *ctx)
 
       status = ijs_send_begin (&ctx->send_chan, IJS_CMD_ACK);
       if (status < 0)
-	return status;
+        return status;
       status = ijs_send_int (&ctx->send_chan, code);
       if (status < 0)
-	return status;
+        return status;
       return ijs_send_buf (&ctx->send_chan);
     }
 }
@@ -430,10 +430,10 @@ ijs_server_proc_list_params (IjsServerCtx *ctx)
 
       status = ijs_send_begin (&ctx->send_chan, IJS_CMD_ACK);
       if (status < 0)
-	return status;
+        return status;
       status = ijs_send_block (&ctx->send_chan, buf, code);
       if (status < 0)
-	return status;
+        return status;
       return ijs_send_buf (&ctx->send_chan);
     }
 }
@@ -471,10 +471,10 @@ ijs_server_proc_enum_param (IjsServerCtx *ctx)
 
       status = ijs_send_begin (&ctx->send_chan, IJS_CMD_ACK);
       if (status < 0)
-	return status;
+        return status;
       status = ijs_send_block (&ctx->send_chan, buf, code);
       if (status < 0)
-	return status;
+        return status;
       return ijs_send_buf (&ctx->send_chan);
     }
 }
@@ -513,7 +513,7 @@ ijs_server_parse_int (const char *value, int size, int *result)
     {
       char c = value[i];
       if (c < '0' || c > '9')
-	return IJS_ESYNTAX;
+        return IJS_ESYNTAX;
       num = (num * 10) + (c - '0');
     }
   *result = num;
@@ -538,7 +538,7 @@ ijs_server_parse_float (const char *value, int size, double *result)
 
 static int
 ijs_server_set_param (IjsServerCtx *ctx, IjsJobId job_id, const char *key,
-		      const char *value, int value_size)
+                      const char *value, int value_size)
 {
   int code;
 
@@ -551,14 +551,14 @@ ijs_server_set_param (IjsServerCtx *ctx, IjsJobId job_id, const char *key,
     {
       code = ijs_server_parse_int (value, value_size, &ctx->ph->n_chan);
       if (code == 0)
-	ctx->fields_set |= IJS_N_CHAN_SET;
+        ctx->fields_set |= IJS_N_CHAN_SET;
       return code;
     }
   else if (!strcmp (key, "BitsPerSample"))
     {
       code = ijs_server_parse_int (value, value_size, &ctx->ph->bps);
       if (code == 0)
-	ctx->fields_set |= IJS_BPS_SET;
+        ctx->fields_set |= IJS_BPS_SET;
       return code;
     }
   else if (!strcmp (key, "ColorSpace"))
@@ -566,24 +566,24 @@ ijs_server_set_param (IjsServerCtx *ctx, IjsJobId job_id, const char *key,
       int size = value_size;
 
       if (size > (int)sizeof(ctx->ph->cs) - 1)
-	size = sizeof(ctx->ph->cs) - 1;
+        size = sizeof(ctx->ph->cs) - 1;
       memcpy (ctx->ph->cs, value, size);
       ctx->ph->cs[size] = 0;
-	ctx->fields_set |= IJS_CS_SET;
+        ctx->fields_set |= IJS_CS_SET;
       return 0;
     }
   else if (!strcmp (key, "Width"))
     {
       code = ijs_server_parse_int (value, value_size, &ctx->ph->width);
       if (code == 0)
-	ctx->fields_set |= IJS_WIDTH_SET;
+        ctx->fields_set |= IJS_WIDTH_SET;
       return code;
     }
   else if (!strcmp (key, "Height"))
     {
       code = ijs_server_parse_int (value, value_size, &ctx->ph->height);
       if (code == 0)
-	ctx->fields_set |= IJS_HEIGHT_SET;
+        ctx->fields_set |= IJS_HEIGHT_SET;
       return code;
     }
   else if (!strcmp (key, "Dpi"))
@@ -591,17 +591,17 @@ ijs_server_set_param (IjsServerCtx *ctx, IjsJobId job_id, const char *key,
       int x_ix;
 
       for (x_ix = 0; x_ix < value_size; x_ix++)
-	if (value[x_ix] == 'x')
-	  break;
+        if (value[x_ix] == 'x')
+          break;
       if (x_ix == value_size)
-	return IJS_ESYNTAX;
+        return IJS_ESYNTAX;
       code = ijs_server_parse_float (value, x_ix, &ctx->ph->xres);
       if (code < 0)
-	return code;
+        return code;
       code = ijs_server_parse_float (value + x_ix + 1, value_size - (x_ix + 1),
-				     &ctx->ph->yres);
+                                     &ctx->ph->yres);
       if (code < 0)
-	return code;
+        return code;
       ctx->fields_set |= IJS_DPI_SET;
       return 0;
     }
@@ -647,13 +647,13 @@ ijs_server_proc_set_param (IjsServerCtx *ctx)
 
 static int
 ijs_server_get_param (IjsServerCtx *ctx, IjsJobId job_id, const char *key,
-		      char *value, int value_size)
+                      char *value, int value_size)
 {
 #ifdef VERBOSE
   fprintf (stderr, "ijs_server_get_param %s\n", key);
 #endif
   return ctx->get_cb (ctx->get_cb_data, ctx, job_id, key,
-		      value, value_size);
+                      value, value_size);
 }
 
 static int
@@ -689,10 +689,10 @@ ijs_server_proc_get_param (IjsServerCtx *ctx)
 
       status = ijs_send_begin (&ctx->send_chan, IJS_CMD_ACK);
       if (status < 0)
-	return status;
+        return status;
       status = ijs_send_block (&ctx->send_chan, buf, code);
       if (status < 0)
-	return status;
+        return status;
       return ijs_send_buf (&ctx->send_chan);
     }
 }
@@ -709,7 +709,7 @@ ijs_server_proc_begin_page (IjsServerCtx *ctx)
     status = IJS_EPROTO;
 #ifdef VERBOSE
   fprintf (stderr, "begin page %d %d %s %d %d\n",
-	   ph->n_chan, ph->bps, ph->cs, ph->width, ph->height);
+           ph->n_chan, ph->bps, ph->cs, ph->width, ph->height);
 #endif
   if (!status)
     {
@@ -748,7 +748,7 @@ ijs_server_proc_send_data_block (IjsServerCtx *ctx)
 
 #ifdef VERBOSE
   fprintf (stderr, "status=%d, send data block id=%d, size=%d\n",
-	   status, job_id, size);
+           status, job_id, size);
 #endif
   if (status)
     return ijs_server_nak (ctx, status);
@@ -764,13 +764,13 @@ ijs_server_proc_send_data_block (IjsServerCtx *ctx)
       ctx->overflow_buf = (char *)malloc (ctx->overflow_buf_size);
       ctx->overflow_buf_ix = 0;
       status = ijs_server_read_data (ctx, ctx->buf + ctx->buf_ix,
-				     ctx->buf_size - ctx->buf_ix);
+                                     ctx->buf_size - ctx->buf_ix);
       ctx->buf_ix = ctx->buf_size;
       if (!status)
-	{
-	  status = ijs_server_read_data (ctx, ctx->overflow_buf,
-					 ctx->overflow_buf_size);
-	}
+        {
+          status = ijs_server_read_data (ctx, ctx->overflow_buf,
+                                         ctx->overflow_buf_size);
+        }
     }
   return ijs_server_ack (ctx);
 }
@@ -847,7 +847,7 @@ ijs_server_get_page_header (IjsServerCtx *ctx, IjsPageHeader *ph)
   ctx->ph = ph;
   ctx->in_page = FALSE;
 
-  do 
+  do
     {
       status = ijs_server_iter (ctx);
     }
@@ -862,7 +862,7 @@ ijs_server_get_page_header (IjsServerCtx *ctx, IjsPageHeader *ph)
  * @ctx: The server context.
  * @buf: Buffer for data being read.
  * @size: Size of buf.
- * 
+ *
  * Gets data from client. Data is stored in @buf or the
  * overflow_buf.
  *
@@ -883,17 +883,17 @@ ijs_server_get_data (IjsServerCtx *ctx, char *buf, int size)
     {
       int n_bytes = ctx->overflow_buf_size - ctx->overflow_buf_ix;
       if (n_bytes > size)
-	n_bytes = size;
+        n_bytes = size;
       memcpy (buf, ctx->overflow_buf + ctx->overflow_buf_ix, n_bytes);
       ctx->overflow_buf_ix += n_bytes;
       buf_ix = n_bytes;
       if (ctx->overflow_buf_ix == ctx->overflow_buf_size)
-	{
-	  free (ctx->overflow_buf);
-	  ctx->overflow_buf = NULL;
-	  ctx->overflow_buf_size = 0;
-	  ctx->overflow_buf_ix = 0;
-	}
+        {
+          free (ctx->overflow_buf);
+          ctx->overflow_buf = NULL;
+          ctx->overflow_buf_size = 0;
+          ctx->overflow_buf_ix = 0;
+        }
     }
   ctx->buf = buf;
   ctx->buf_size = size;

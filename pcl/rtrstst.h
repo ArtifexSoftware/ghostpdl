@@ -137,11 +137,11 @@ typedef struct pcl_raster_state_s {
                                  * origin was at the logical page edge, hence
                                  * the raster needs to be clipped */
     pcl_raster_type *pcur_raster; /* There is at most one image
-				  * actively under construction in PCL
-				  * at one time.  This pointer points
-				  * to that image, if it exists. The
-				  * pointer will be non-null while in
-				  * graphic mode.  */
+                                  * actively under construction in PCL
+                                  * at one time.  This pointer points
+                                  * to that image, if it exists. The
+                                  * pointer will be non-null while in
+                                  * graphic mode.  */
 } pcl_raster_state_t;
 
 #endif			/* rtrstst_INCLUDED */

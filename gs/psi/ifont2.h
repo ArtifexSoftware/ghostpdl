@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,6 +26,6 @@
  * fonts.
  */
 int type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
-		      gs_type1_data *pdata1);
+                      gs_type1_data *pdata1);
 
 #endif /* ifont2_INCLUDED */

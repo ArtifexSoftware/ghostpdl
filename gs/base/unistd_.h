@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -33,7 +33,7 @@
 #  include <io.h>
 #endif
 
-#if defined(_MSC_VER) 
+#if defined(_MSC_VER)
 #  define fsync(handle) _commit(handle)
 #  define read(fd, buf, len) _read(fd, buf, len)
 #  define isatty(fd) _isatty(fd)
@@ -42,7 +42,7 @@
 #  define dup(fd) _dup(fd)
 #  define open(fname, flags, mode) _open(fname, flags, mode)
 #  define close(fd) _close(fd)
-#elif defined(__BORLANDC__) && defined(__WIN32__) 
+#elif defined(__BORLANDC__) && defined(__WIN32__)
 #  define fsync(handle) _commit(handle)
 #  define read(fd, buf, len) _read(fd, buf, len)
 #  define isatty(fd) _isatty(fd)
@@ -52,4 +52,3 @@
 #endif
 
 #endif   /* unistd__INCLUDED */
-

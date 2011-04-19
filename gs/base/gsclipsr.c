@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -36,8 +36,8 @@ rc_free_clip_stack(gs_memory_t * mem, void *vstack, client_name_t cname)
     if (stack->rc.ref_count <= 1 ) {
         gx_clip_path *pcpath = stack->clip_path;
 
-	gs_free_object(stack->rc.memory, stack, cname);
-	gx_cpath_free(pcpath, "rc_free_clip_stack");
+        gs_free_object(stack->rc.memory, stack, cname);
+        gx_cpath_free(pcpath, "rc_free_clip_stack");
     }
 }
 
@@ -47,15 +47,15 @@ gs_clipsave(gs_state *pgs)
 {
     gs_memory_t *mem = pgs->memory;
     gx_clip_path *copy =
-	gx_cpath_alloc_shared(pgs->clip_path, mem, "gs_clipsave(clip_path)");
+        gx_cpath_alloc_shared(pgs->clip_path, mem, "gs_clipsave(clip_path)");
     gx_clip_stack_t *stack =
-	gs_alloc_struct(mem, gx_clip_stack_t, &st_clip_stack,
-			"gs_clipsave(stack)");
+        gs_alloc_struct(mem, gx_clip_stack_t, &st_clip_stack,
+                        "gs_clipsave(stack)");
 
     if (copy == 0 || stack == 0) {
-	gs_free_object(mem, stack, "gs_clipsave(stack)");
-	gs_free_object(mem, copy, "gs_clipsave(clip_path)");
-	return_error(gs_error_VMerror);
+        gs_free_object(mem, stack, "gs_clipsave(stack)");
+        gs_free_object(mem, copy, "gs_clipsave(clip_path)");
+        return_error(gs_error_VMerror);
     }
     rc_init_free(stack, mem, 1, rc_free_clip_stack);
     stack->clip_path = copy;
@@ -71,23 +71,23 @@ gs_cliprestore(gs_state *pgs)
     gx_clip_stack_t *stack = pgs->clip_stack;
 
     if (stack) {
-	gx_clip_stack_t *next = stack->next;
-	gx_clip_path *pcpath = stack->clip_path;
-	int code;
+        gx_clip_stack_t *next = stack->next;
+        gx_clip_path *pcpath = stack->clip_path;
+        int code;
 
-	if (stack->rc.ref_count == 1) {
-	    /* Use assign_free rather than assign_preserve. */
-	    gs_free_object(stack->rc.memory, stack, "cliprestore");
-	    code = gx_cpath_assign_free(pgs->clip_path, pcpath);
-	} else {
-	    code = gx_cpath_assign_preserve(pgs->clip_path, pcpath);
-	    if (code < 0)
-		return code;
-	    --(stack->rc.ref_count);
-	}
-	pgs->clip_stack = next;
-	return code;
+        if (stack->rc.ref_count == 1) {
+            /* Use assign_free rather than assign_preserve. */
+            gs_free_object(stack->rc.memory, stack, "cliprestore");
+            code = gx_cpath_assign_free(pgs->clip_path, pcpath);
+        } else {
+            code = gx_cpath_assign_preserve(pgs->clip_path, pcpath);
+            if (code < 0)
+                return code;
+            --(stack->rc.ref_count);
+        }
+        pgs->clip_stack = next;
+        return code;
     } else {
-	return gx_cpath_assign_preserve(pgs->clip_path, pgs->saved->clip_path);
+        return gx_cpath_assign_preserve(pgs->clip_path, pgs->saved->clip_path);
     }
 }

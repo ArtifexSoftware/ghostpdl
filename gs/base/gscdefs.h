@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -68,7 +68,7 @@ extern const unsigned gx_io_device_table_count;
 /* descriptors (no longer used), and (as the value) the length of the lists. */
 #define extern_gs_lib_device_list()\
   int gs_lib_device_list(const gx_device * const **plist,\
-			 gs_memory_struct_type_t **pst)
+                         gs_memory_struct_type_t **pst)
 
 /* find a compositor by name */
 #define extern_gs_find_compositor() \

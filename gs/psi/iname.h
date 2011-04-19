@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -26,7 +26,6 @@
  */
 
 /* ---------------- Procedural interface ---------------- */
-
 
 /* Get the allocator for the name table. */
 #define name_memory(mem)\

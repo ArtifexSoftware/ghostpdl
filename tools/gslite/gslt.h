@@ -61,4 +61,3 @@ void gslt_free_library(gs_memory_t *mem);
 
 void gslt_get_device_param(gs_memory_t *mem, gx_device *dev, char *key);
 void gslt_set_device_param(gs_memory_t *mem, gx_device *dev, char *key, char *val);
-

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,11 +34,11 @@
    2    1-D Domain      Function + Extend       perp. to Coords
    3    1-D Domain      Function + Extend       circles per Coords
    4,5  triangle x      Gouraud interp. on      Gouraud interp. on
-	2-D in tri.	Decode => corner        triangle corners
-			values => Function
+        2-D in tri.	Decode => corner        triangle corners
+                        values => Function
    6    patch x (u,v)   Decode => bilinear      Sc + Sd - Sb on each patch
-	in patch	interp. on corner
-			values => Function
+        in patch	interp. on corner
+                        values => Function
    7    see 6           see 6                   Sum(i) Sum(j) Pij*Bi(u)*Bj(v)
 
    To be able to render a portion of a shading usefully, we must be able to
@@ -107,7 +107,7 @@ SHADING_FILL_RECTANGLE_PROC(gs_shading_Tpp_fill_rectangle);
 typedef struct shade_coord_stream_s shade_coord_stream_t;
 struct shade_coord_stream_s {
     stream ds;			/* stream if DataSource isn't one already -- */
-				/* first for GC-ability (maybe unneeded?) */
+                                /* first for GC-ability (maybe unneeded?) */
     stream *s;			/* DataSource or &ds */
     uint bits;			/* shifted bits of current byte */
     int left;			/* # of bits left in bits */
@@ -116,7 +116,7 @@ struct shade_coord_stream_s {
     const gs_matrix_fixed *pctm;
     int (*get_value)(shade_coord_stream_t *cs, int num_bits, uint *pvalue);
     int (*get_decoded)(shade_coord_stream_t *cs, int num_bits,
-		       const float decode[2], float *pvalue);
+                       const float decode[2], float *pvalue);
     void (*align)(shade_coord_stream_t *cs, int radix);
     bool (*is_eod)(const shade_coord_stream_t *cs);
 };
@@ -137,22 +137,22 @@ typedef struct patch_color_s patch_color_t;
 
 /* Initialize a packed value stream. */
 void shade_next_init(shade_coord_stream_t * cs,
-		     const gs_shading_mesh_params_t * params,
-		     const gs_imager_state * pis);
+                     const gs_shading_mesh_params_t * params,
+                     const gs_imager_state * pis);
 
 /* Get the next flag value. */
 int shade_next_flag(shade_coord_stream_t * cs, int BitsPerFlag);
 
 /* Get one or more coordinate pairs. */
 int shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
-		      int num_points);
+                      int num_points);
 
 /* Get a color.  Currently all this does is look up Indexed colors. */
 int shade_next_color(shade_coord_stream_t * cs, float *pc);
 
 /* Get the next vertex for a mesh element. */
-int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, 
-		      patch_color_t *c);
+int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex,
+                      patch_color_t *c);
 
 /*
    Currently, all shading fill procedures follow the same algorithm:
@@ -197,7 +197,7 @@ int shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex,
   int num_components;		/* # of color components in direct_space */\
   float cc_max_error[GS_CLIENT_COLOR_MAX_COMPONENTS];\
   gx_device *trans_device;\
-  gsicc_link_t *icclink 
+  gsicc_link_t *icclink
 
 typedef struct shading_fill_state_s {
     shading_fill_state_common;
@@ -205,8 +205,8 @@ typedef struct shading_fill_state_s {
 
 /* Initialize the common parts of the recursion state. */
 void shade_init_fill_state(shading_fill_state_t * pfs,
-			   const gs_shading_t * psh, gx_device * dev,
-			   gs_imager_state * pis);
+                           const gs_shading_t * psh, gx_device * dev,
+                           gs_imager_state * pis);
 
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED
@@ -214,6 +214,6 @@ void shade_init_fill_state(shading_fill_state_t * pfs,
 typedef struct gx_device_color_s gx_device_color;
 #endif
 int shade_fill_path(const shading_fill_state_t * pfs, gx_path * ppath,
-		    gx_device_color * pdevc, const gs_fixed_point *fill_adjust);
+                    gx_device_color * pdevc, const gs_fixed_point *fill_adjust);
 
 #endif /* gxshade_INCLUDED */

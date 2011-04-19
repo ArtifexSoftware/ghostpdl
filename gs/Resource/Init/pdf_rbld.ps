@@ -1,12 +1,12 @@
 %    Copyright (C) 2002 Artifex Software, Inc.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -41,41 +41,41 @@
     pdfformaterror
     pop 0
   } if
-       	% We store generation numbers as value + 1
-	% We reserve 0 to indicate an free xref entry
+        % We store generation numbers as value + 1
+        % We reserve 0 to indicate an free xref entry
   1 add			% increment generation number
-	% To save space, generations numbers are stored in a lstring unless we
-	% find a generation number greater than 255.  If so then transfer to 
-	% an larray.
+        % To save space, generations numbers are stored in a lstring unless we
+        % find a generation number greater than 255.  If so then transfer to
+        % an larray.
   dup 255 gt {
     Generations ltype /stringtype eq {	% Convert Generations to an larray.
       larray Generations llength lgrowto dup	% Create new larray
       0 1 2 index llength 1 sub {	% Copy from old lstring to new larray
-	Generations 1 index lget lput dup
+        Generations 1 index lget lput dup
       } for
       pop
       /Generations exch store		% Save new Generations larray
     } if
   } if
-	% Verify that the new values are for a new object.  If the current
-	% entry is null then we have a new entry.
+        % Verify that the new values are for a new object.  If the current
+        % entry is null then we have a new entry.
   Objects 4 index lget //null eq {
     ObjectStream 4 index 4 index cvx lput % Save ObjectStream object number
     Objects 4 index 3 index cvx lput	% Save object location
     Generations 4 index 2 index lput	% Save geenration number
   } {
-	% Verify that the new entry has at least as high a generaton number
-	% We accept equal entry number because we have found PDF files in
-	% which there are multiple objects with the same object and entry
-	% numbers.  The normal xref logic only accepts the first such
-	% entry that it finds.  However the 'rebuild PDF' logic can find
-	% both such entries.  The correct one is usually the last one.
+        % Verify that the new entry has at least as high a generaton number
+        % We accept equal entry number because we have found PDF files in
+        % which there are multiple objects with the same object and entry
+        % numbers.  The normal xref logic only accepts the first such
+        % entry that it finds.  However the 'rebuild PDF' logic can find
+        % both such entries.  The correct one is usually the last one.
     Generations 4 index lget 1 index le {
       ObjectStream 4 index 4 index cvx lput % Save ObjectStream object number
       Objects 4 index 3 index cvx lput	% Save object location
       Generations 4 index 2 index lput	% Save geenration number
     } if
-	% Set error flag if we have equal object and generation numbers
+        % Set error flag if we have equal object and generation numbers
     Generations 4 index lget 1 index eq { /dup_obj_gen_num //true def } if
   } 8 -1 roll { ifelse } { pop if } ifelse  % Run 'else' only when rebuilding.
 } bind def
@@ -118,7 +118,7 @@
 
 % Allocate space for post_eof_count to be bound into procedures below.
 /post_eof_count 0 def
- 
+
 % We want the location of the trailer dictionary at the start of file.
 % First we will find the xref.  Then we will skip over the xref entries
 % to the trailer.
@@ -157,7 +157,7 @@
   PDFfile 0 setfileposition
   PDFfile bytesavailable post_eof_count sub	% location of end of data
   dup 65535 .min		% block size to read
-				% stack: <file end pos> <block size>
+                                % stack: <file end pos> <block size>
   % move file position to the start of the block
   2 copy sub PDFfile exch setfileposition
   % read block of data
@@ -168,7 +168,7 @@
     { search not { exit } if pop } loop
     % determine where the trailer is in the file
     %   trailer loc = end loc - remaing string length
-    length sub 
+    length sub
   } {
     pop pop 0
   } ifelse
@@ -199,12 +199,12 @@
   dup string 0 1 4 -1 roll 1 sub { 2 copy PDFfile read pop put pop } for
   % search for last occurance of 'startxref'
   //false				% Assume that startxref not present
-  exch (startxref) { 
+  exch (startxref) {
      search not { exit } if	% Exit loop when no more startxref's
      pop 3 -1 roll pop //true 3 1 roll	% Idicate that we have found starxref
   } loop
   exch				% Exch last string and 'found' flag
-  { 
+  {
      % determine where the startxref is in the file
      %   'startxref' loc = end loc - remaing string length - 9 bytes
      length sub 9 sub
@@ -237,10 +237,10 @@
 % contain some garbage.  This routine checks how much.  We then ignore this
 % stuff when we are scanning for objects.
 /determine_post_eof_count		% - determine_post_eof_count <count>
-{ % Position to read block of data from the end of the file. 
+{ % Position to read block of data from the end of the file.
   PDFfilelen			% size of file
   dup 4096 .min	                % file_size block_size
-  dup 3 1 roll sub              % block_size file_size-block_size 
+  dup 3 1 roll sub              % block_size file_size-block_size
   PDFfile exch setfileposition  % block_size
   string PDFfile exch readstring pop % ()
 
@@ -253,7 +253,7 @@
 
     % Now search for %%EO or try to read a number after 'startxref'.
     (%%EO) search {
-      pop pop 
+      pop pop
     } {
       % Look for a number after startxref
       { dup token { pop exch pop } if
@@ -262,7 +262,7 @@
     length
   } {
     % Can't even find startxref, assume it's all objects
-    pop 0 
+    pop 0
   } ifelse
 } bind def
 
@@ -304,18 +304,18 @@
         /integertype typed_token {	% get obj number
           /integertype typed_token {	% get ref number
             /nametype typed_token {	% get 'obj' text
-	      pop			% pop remaining string
-	      /obj eq {			% verify name is 'obj'
-	        % make sure we have room in the arrays.  We work in increments
-	        % of 20 each time we increase the size.
-	        1 index 20 add 20 idiv 20 mul
-	        growPDFobjects
-	        % save xref parameters into ObjectStream, Objects and Generations
-	        1 index 0		% rearrange parms for setxrefentry
-	        4 index PDFoffset sub 3 index
-	        //true setxrefentry	% save parameters
-	        pop pop pop pop		% clear parameters
-	      } if			% check if name is 'obj'
+              pop			% pop remaining string
+              /obj eq {			% verify name is 'obj'
+                % make sure we have room in the arrays.  We work in increments
+                % of 20 each time we increase the size.
+                1 index 20 add 20 idiv 20 mul
+                growPDFobjects
+                % save xref parameters into ObjectStream, Objects and Generations
+                1 index 0		% rearrange parms for setxrefentry
+                4 index PDFoffset sub 3 index
+                //true setxrefentry	% save parameters
+                pop pop pop pop		% clear parameters
+              } if			% check if name is 'obj'
             } if			% check if we got 'obj" string
             pop				% remove ref number
           } if				% check if we got ref number

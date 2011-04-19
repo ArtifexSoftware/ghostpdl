@@ -18,8 +18,8 @@
 #  define gdevtifs_INCLUDED
 
 #include <tiffio.h>	/* must be first, because gdevio.h re-#defines "printf"
-			   which is used in a function __attribute__ by
-			   tiffio.h */
+                           which is used in a function __attribute__ by
+                           tiffio.h */
 #include "gdevprn.h"
 
 /* ================ Implementation ================ */
@@ -63,9 +63,9 @@ int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
 #define TIFF_DEFAULT_DOWNSCALE 1
 
 int tiff_set_compression(gx_device_printer *pdev,
-			 TIFF *tif,
-			 uint compression,
-			 long max_strip_size);
+                         TIFF *tif,
+                         uint compression,
+                         long max_strip_size);
 
 int tiff_set_fields_for_printer(gx_device_printer *pdev, TIFF *tif, int factor,
                                 int adjustWidth);

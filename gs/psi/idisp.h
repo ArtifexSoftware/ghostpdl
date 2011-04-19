@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,6 +23,5 @@ typedef struct display_callback_s display_callback;
 
 /* Called from imain.c to set the display callback in the device instance. */
 int display_set_callback(gs_main_instance *minst, display_callback *callback);
-
 
 #endif /* idisp_INCLUDED */

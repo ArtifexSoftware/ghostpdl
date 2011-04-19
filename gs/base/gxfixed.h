@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -37,7 +37,6 @@ typedef ulong ufixed;		/* only used in a very few places */
 #  define min_fixed min_long
 # endif
 #endif
-
 
 #define fixed_0 0L
 #define fixed_epsilon 1L
@@ -88,21 +87,21 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed_pre_pixround(x) ((x)+_fixed_pixround_v)
 #define fixed2int_pixround(x) fixed2int(fixed_pre_pixround(x))
 #define fixed2int_pixround_perfect(x) ((x) < 0 && ((x) & (fixed_1 - fixed_epsilon)) == fixed_half \
-	? (int)_fixed_rshift(x) + 1 : fixed2int_pixround(x))
+        ? (int)_fixed_rshift(x) + 1 : fixed2int_pixround(x))
 #define fixed_is_int(x) !((x)&_fixed_fraction_v)
 #if ARCH_INTS_ARE_SHORT & !ARCH_IS_BIG_ENDIAN
 /* Do some of the shifting and extraction ourselves. */
 #  define _fixed_hi(x) *((const uint *)&(x)+1)
 #  define _fixed_lo(x) *((const uint *)&(x))
 #  define fixed2int_var(x)\
-	((int)((_fixed_hi(x) << (16-_fixed_shift)) +\
-	       (_fixed_lo(x) >> _fixed_shift)))
+        ((int)((_fixed_hi(x) << (16-_fixed_shift)) +\
+               (_fixed_lo(x) >> _fixed_shift)))
 #  define fixed2int_var_rounded(x)\
-	((int)((_fixed_hi(x) << (16-_fixed_shift)) +\
-	       (((_fixed_lo(x) >> (_fixed_shift-1))+1)>>1)))
+        ((int)((_fixed_hi(x) << (16-_fixed_shift)) +\
+               (((_fixed_lo(x) >> (_fixed_shift-1))+1)>>1)))
 #  define fixed2int_var_ceiling(x)\
-	(fixed2int_var(x) -\
-	 arith_rshift((int)-(_fixed_lo(x) & _fixed_fraction_v), _fixed_shift))
+        (fixed2int_var(x) -\
+         arith_rshift((int)-(_fixed_lo(x) & _fixed_fraction_v), _fixed_shift))
 #else
 /* Use reasonable definitions. */
 #  define fixed2int_var(x) fixed2int(x)
@@ -178,9 +177,9 @@ fixed fixed_mult_quo(fixed A, fixed B, fixed C);
  * truncated to 'fixed'; *ey is 1 iff the precise Y coordinate of
  * the intersection is greater than *ry (used by the shading algorithm).
  */
-bool 
-gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q2y, 
-			fixed q3x, fixed q3y, fixed *ry, fixed *ey);
+bool
+gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q2y,
+                        fixed q3x, fixed q3y, fixed *ry, fixed *ey);
 
 /*
  * The macros all use R for the (fixed) result, FB for the second (float)

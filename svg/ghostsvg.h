@@ -203,4 +203,3 @@ struct svg_context_s
     const char *error;
     void *parser; /* Expat XML_Parser */
 };
-

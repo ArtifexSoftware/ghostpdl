@@ -62,7 +62,6 @@ typedef struct tile_fill_state_s {
 
 } tile_fill_state_t;
 
-
 /* Define the state for tile filling.
    This is used for when we have
    transparency */
@@ -467,7 +466,6 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
     }
 }
 
-
 /*
  * This is somewhat a clone of the tile_by_steps function but one
  * that performs filling from and to pdf14dev (transparency) buffers.
@@ -617,7 +615,6 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
 
     right_tile_width = w - num_full_tiles*tile_width - left_width;
 
-
     for (kk = 0; kk < fill_trans_buffer->n_chan; kk++){
 
         ptr_out = buff_out + kk * fill_trans_buffer->planestride;
@@ -673,7 +670,6 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax, int px, int py, c
     }
 
 }
-
 
 /* This does the case of tiling with non simple tiles.  In this case, the tiles may overlap and
    so we really need to do blending within the existing buffer.  This needs some serious optimization. */
@@ -771,9 +767,9 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax, int px, int py, co
 /* This version does a rect fill with the transparency object */
 int
 gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-			     int w, int h, gx_device * dev,
-			     gs_logical_operation_t lop,
-			     const gx_rop_source_t * source)
+                             int w, int h, gx_device * dev,
+                             gs_logical_operation_t lop,
+                             const gx_rop_source_t * source)
 {
     gx_color_tile *ptile = pdevc->colors.pattern.p_tile;
     int code;
@@ -789,7 +785,7 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     phase.x = pdevc->phase.x;
     phase.y = pdevc->phase.y;
 
-    code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile, 
+    code = gx_trans_pattern_fill_rect(x, y, x+w, y+h, ptile,
                                     ptile->ttrans->fill_trans_buffer, phase);
 
     return code;
@@ -800,7 +796,7 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 
 int
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile *ptile,
-                               gx_pattern_trans_t *fill_trans_buffer, 
+                               gx_pattern_trans_t *fill_trans_buffer,
                                gs_int_point phase)
 {
 
@@ -813,7 +809,7 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
     /* Fit fill */
     if ( (xmin | ymin) < 0 ) {
         if ( xmin < 0 )
-	    xmin = 0;
+            xmin = 0;
         if ( ymin < 0 )
             ymin = 0;
     }
@@ -829,7 +825,7 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax, gx_color_tile
         int py =
             imod(-(int)fastfloor(ptile->step_matrix.ty - phase.y + 0.5),
                  ptile->ttrans->height);
-        
+
         tile_rect_trans_simple(xmin, ymin, xmax, ymax, px, py, ptile,
             fill_trans_buffer);
     } else {

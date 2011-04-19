@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -44,12 +44,12 @@ zbuildfont32(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     code = build_proc_name_refs(imemory, &build, NULL, "%Type32BuildGlyph");
     if (code < 0)
-	return code;
+        return code;
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_bitmap,
-				&st_gs_font_base, &build,
-				bf_Encoding_optional);
+                                &st_gs_font_base, &build,
+                                bf_Encoding_optional);
     if (code < 0)
-	return code;
+        return code;
     /* Always transform cached bitmaps. */
     pfont->BitmapWidths = true;
     pfont->ExactSize = fbit_transform_bitmaps;
@@ -68,7 +68,7 @@ zgetshowoperator(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_text_enum_t *osenum = op_show_find(i_ctx_p);
-  
+
     push(1);
     if (osenum == NULL)
         make_null(op);
@@ -79,7 +79,6 @@ zgetshowoperator(i_ctx_t *i_ctx_p)
     }
     return 0;
 }
-
 
 /* ------ Initialization procedure ------ */
 

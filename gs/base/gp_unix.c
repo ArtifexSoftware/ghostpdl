@@ -232,7 +232,6 @@ gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
   * building a custom fontmap file.
   */
 
-
 /* Mangle the FontConfig family and style information into a
  * PostScript font name */
 #ifdef HAVE_FONTCONFIG
@@ -429,4 +428,3 @@ void gp_enumerate_fonts_free(void *enum_state)
     }
 #endif
 }
-

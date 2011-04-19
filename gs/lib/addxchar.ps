@@ -1,12 +1,12 @@
 %    Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -26,7 +26,7 @@
 addce_dict begin
 
 % Define the added copyright notice.
-/addednotice (. Portions Copyright (C) 1999 Aladdin Enterprises.) def 
+/addednotice (. Portions Copyright (C) 1999 Aladdin Enterprises.) def
 
 % Open a font for modification by removing the FID and changing the
 % FontName.  Removing UniqueID and XUID is not necessary, since we
@@ -46,7 +46,7 @@ addce_dict begin
 
 % Do the equivalent of charpath + pathbbox for a glyph.
 /glyphbbox {		% <glyph> glyphbbox <llx> <lly> <urx> <ury>
-	% We cache this value, because it's expensive to compute.
+        % We cache this value, because it's expensive to compute.
   BBoxes 1 index .knownget {
     exch pop
   } {
@@ -57,7 +57,7 @@ addce_dict begin
 
 % Get the side bearing and width for a glyph.
 /glyphsbw {		% <glyph> glyphsbw <lsbx> <wx>
-	% We cache this value, because it's expensive to compute.
+        % We cache this value, because it's expensive to compute.
   SBW 1 index .knownget {
     exch pop
   } {
@@ -77,9 +77,9 @@ addce_dict begin
 
 % Find an occurrence of a value in an array.
 /asearch {		% <array> <value> asearch <index> true
-			% <array> <value> asearch false
+                        % <array> <value> asearch false
   false 0 4 2 roll exch {
-		% Stack: false index value element
+                % Stack: false index value element
     2 copy eq { pop pop exch not exch dup exit } if
     exch 1 add exch
   } forall pop pop
@@ -103,7 +103,7 @@ addce_dict begin
 % Defines accent, base, abox, bbox.
 % The initial dx lines up the origins of the base and the accent.
 /beginseac {		% <bchar> <achar> beginseac
-			%   -mark- <lsbx> <wx> /hsbw <asb> <dx>
+                        %   -mark- <lsbx> <wx> /hsbw <asb> <dx>
   /accent exch def /base exch def
   /abox [accent glyphbbox] def
   /bbox [base glyphbbox] def
@@ -212,14 +212,14 @@ addce_dict begin
     0
   } ifelse def
 
-	% Invert the Encoding (needed for seac).
+        % Invert the Encoding (needed for seac).
 
   /charindex 256 dict def
   0 1 255 {
     charindex exch Encoding 1 index get exch put
   } for
 
-	% Add the commaaccent character, by moving the comma downward.
+        % Add the commaaccent character, by moving the comma downward.
 
   /comma glyphbbox /commatop exch def pop pop pop
   /comma glyphcs
@@ -227,24 +227,24 @@ addce_dict begin
     [ exch { caedit 1 index .knownget { exec } if } forall ]
   /commaaccent exch csdef
 
-	% Add the accented characters that can be made with seac.
+        % Add the accented characters that can be made with seac.
 
   seacchars {
     splitaccented beginseac
       centeraccent
-		% If the accent would collide with the base character,
-		% raise it a little.
+                % If the accent would collide with the base character,
+                % raise it a little.
       abox 1 get bbox 3 get sub dup 0 le {
-		% ... but not if the accent is in the low position.
-	abox 1 get 0 gt {
-	  neg 60 add
-		% Adjust the X position if italic.
-	  dup italfactor mul 3 -1 roll add exch
-	} {
-	  pop 0
-	} ifelse
+                % ... but not if the accent is in the low position.
+        abox 1 get 0 gt {
+          neg 60 add
+                % Adjust the X position if italic.
+          dup italfactor mul 3 -1 roll add exch
+        } {
+          pop 0
+        } ifelse
       } {
-	pop 0
+        pop 0
       } ifelse
     finishseac
   } forall
@@ -269,9 +269,9 @@ addce_dict begin
 
   seaccaronchars {
     dup =string cvs 0 1 getinterval cvn /quoteright beginseac
-		% Move the quote to the right of the character.
+                % Move the quote to the right of the character.
     bbox 2 get abox 0 get sub 50 add add
-		% Adjust the character width as well.
+                % Adjust the character width as well.
     4 -1 roll abox 2 get abox 0 get sub 50 add add cvi 4 1 roll
     0 finishseac
   } forall
@@ -280,26 +280,26 @@ addce_dict begin
     dup =string cvs 0 1 getinterval cvn /comma beginseac
       centeraccent
       commatop neg
-		% Lower the accent if the character extends below
-		% the baseline
+                % Lower the accent if the character extends below
+                % the baseline
       bbox 1 get 0 .min add
     finishseac
   } forall
 
-	% Add the characters from the Symbol font.
-	% We should scale them to match the FontBBox, but we don't.
+        % Add the characters from the Symbol font.
+        % We should scale them to match the FontBBox, but we don't.
 
   symbolchars {
     symbolfont /CharStrings get 1 index get
     CharStrings 3 1 roll put
   } forall
 
-	% Add the one remaining character.
+        % Add the one remaining character.
 
   CharStrings /Dcroat CharStrings /Eth get put
 
-	% Recompute the FontBBox, since some of the accented characters
-	% may have enlarged it.
+        % Recompute the FontBBox, since some of the accented characters
+        % may have enlarged it.
 
   /llx 1000 def /lly 1000 def /urx 0 def /ury 0 def
   CharStrings {
@@ -309,7 +309,7 @@ addce_dict begin
   } forall
   /FontBBox llx cvi lly cvi urx ceiling cvi ury ceiling cvi 4 packedarray def
 
-	% Restore the Encoding and wrap up.
+        % Restore the Encoding and wrap up.
 
   [/Copyright /Notice] {
     FontInfo 1 index .knownget {

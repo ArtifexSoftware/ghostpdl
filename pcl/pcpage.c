@@ -46,7 +46,6 @@
 
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
 
-
 /* Procedures */
 
 /*
@@ -243,7 +242,6 @@ update_xfm_state(
      */
 }
 
-
 /* default margins, relative to the logical page boundaries */
 #define DFLT_TOP_MARGIN     inch2coord(0.5)
 #define DFLT_LEFT_MARGIN    inch2coord(0.0)
@@ -366,7 +364,6 @@ new_page_size(
     changed_page_size = !(old_page_size[0] == pcs->xfm_state.paper_size->width &&
                           old_page_size[1] == pcs->xfm_state.paper_size->height);
 
-
     /*
      * make sure underlining is disabled (homing the cursor may cause
      * an underline to be put out.
@@ -463,8 +460,6 @@ pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdi
     return 0;
 
 }
-
-
 
 /* page marking routines */
 
@@ -606,7 +601,6 @@ pcl_end_page(
     pcl_continue_underline(pcs);
     return (code < 0 ? code : 1);
 }
-
 
 /* Commands */
 
@@ -850,7 +844,6 @@ clear_horizontal_margins(
     reset_horizontal_margins(pcs);
     return 0;
 }
-
 
 /*
  * ESC & l <line> E

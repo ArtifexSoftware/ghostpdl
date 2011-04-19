@@ -78,13 +78,13 @@ rmoveto}B/y{3 2 roll p a}B/bos{/SS save N}B/eos{SS restore}B end
 %   docstring = "Encoding for TrueType or Type 1 fonts
 %                to be used with TeX."
 % @}
-% 
+%
 % Idea is to have all the characters normally included in Type 1 fonts
 % available for typesetting. This is effectively the characters in Adobe
 % Standard Encoding + ISO Latin 1 + extra characters from Lucida.
-% 
+%
 % Character code assignments were made as follows:
-% 
+%
 % (1) the Windows ANSI characters are almost all in their Windows ANSI
 % positions, because some Windows users cannot easily reencode the
 % fonts, and it makes no difference on other systems. The only Windows
@@ -92,39 +92,39 @@ rmoveto}B/y{3 2 roll p a}B/bos{/SS save N}B/eos{SS restore}B end
 % typesetting -- rubout (127 decimal), nobreakspace (160), softhyphen
 % (173). quotesingle and grave are moved just because it's such an
 % irritation not having them in TeX positions.
-% 
+%
 % (2) Remaining characters are assigned arbitrarily to the lower part
 % of the range, avoiding 0, 10 and 13 in case we meet dumb software.
-% 
+%
 % (3) Y&Y Lucida Bright includes some extra text characters; in the
 % hopes that other PostScript fonts, perhaps created for public
 % consumption, will include them, they are included starting at 0x12.
-% 
+%
 % (4) Remaining positions left undefined are for use in (hopefully)
 % upward-compatible revisions, if someday more characters are generally
 % available.
-% 
-% (5) hyphen appears twice for compatibility with both 
+%
+% (5) hyphen appears twice for compatibility with both
 % ASCII and Windows.
-% 
+%
 /TeXBase1Encoding [
 % 0x00 (encoded characters from Adobe Standard not in Windows 3.1)
   /.notdef /dotaccent /fi /fl
   /fraction /hungarumlaut /Lslash /lslash
   /ogonek /ring /.notdef
-  /breve /minus /.notdef 
+  /breve /minus /.notdef
 % These are the only two remaining unencoded characters, so may as
 % well include them.
-  /Zcaron /zcaron 
+  /Zcaron /zcaron
 % 0x10
- /caron /dotlessi 
+ /caron /dotlessi
 % (unusual TeX characters available in, e.g., Lucida Bright)
- /dotlessj /ff /ffi /ffl 
+ /dotlessj /ff /ffi /ffl
  /.notdef /.notdef /.notdef /.notdef
  /.notdef /.notdef /.notdef /.notdef
  % very contentious; it's so painful not having quoteleft and quoteright
  % at 96 and 145 that we move the things normally found there to here.
- /grave /quotesingle 
+ /grave /quotesingle
 % 0x20 (ASCII begins)
  /space /exclam /quotedbl /numbersign
  /dollar /percent /ampersand /quoteright
@@ -611,17 +611,17 @@ newpath 0 257 moveto 0 0 lineto 912 0 lineto 912 257 lineto closepath clip newpa
 /shd {dup dup currentrgbcolor 4 -2 roll mul 4 -2 roll mul
   4 -2 roll mul srgb} bind def
  /DrawEllipse {
-	/endangle exch def
-	/startangle exch def
-	/yrad exch def
-	/xrad exch def
-	/y exch def
-	/x exch def
-	/savematrix mtrx currentmatrix def
-	x y tr xrad yrad sc 0 0 1 startangle endangle arc
-	closepath
-	savematrix setmatrix
-	} def
+        /endangle exch def
+        /startangle exch def
+        /yrad exch def
+        /xrad exch def
+        /y exch def
+        /x exch def
+        /savematrix mtrx currentmatrix def
+        x y tr xrad yrad sc 0 0 1 startangle endangle arc
+        closepath
+        savematrix setmatrix
+        } def
 
 /$F2psBegin {$F2psDict begin /$F2psEnteredState save def} def
 /$F2psEnd {$F2psEnteredState restore end} def

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -76,7 +76,7 @@ cgm_initialize(FILE * file, const cgm_allocator * cal)
     cgm_state *st = (*cal->alloc) (cal->private_data, sizeof(cgm_state));
 
     if (st == 0)
-	return 0;
+        return 0;
     st->file = file;
     st->allocator = *cal;
     /* Initialize metafile elements. */
@@ -139,7 +139,7 @@ cgm_initialize(FILE * file, const cgm_allocator * cal)
     /* pattern_size */
     /* color_table */
     memset(st->source_flags, (byte) cgm_aspect_source_individual,
-	   sizeof(st->source_flags));
+           sizeof(st->source_flags));
     return st;
 }
 
@@ -165,87 +165,87 @@ cgm_result
 cgm_set_metafile_elements(cgm_state * st, const cgm_metafile_elements * meta, long mask)
 {
     if ((mask & cgm_set_METAFILE_VERSION)) {
-	OP(METAFILE_VERSION);
-	I(meta->metafile_version);
-	END_OP;
-	st->metafile.metafile_version = meta->metafile_version;
+        OP(METAFILE_VERSION);
+        I(meta->metafile_version);
+        END_OP;
+        st->metafile.metafile_version = meta->metafile_version;
     }
     if ((mask & cgm_set_METAFILE_DESCRIPTION)) {
-	OP(METAFILE_DESCRIPTION);
-	S(meta->metafile_description.chars, meta->metafile_description.length);
-	END_OP;
-	st->metafile.metafile_description = meta->metafile_description;
+        OP(METAFILE_DESCRIPTION);
+        S(meta->metafile_description.chars, meta->metafile_description.length);
+        END_OP;
+        st->metafile.metafile_description = meta->metafile_description;
     }
     if ((mask & cgm_set_VDC_TYPE)) {
-	OP(VDC_TYPE);
-	E(meta->vdc_type);
-	END_OP;
-	st->metafile.vdc_type = meta->vdc_type;
+        OP(VDC_TYPE);
+        E(meta->vdc_type);
+        END_OP;
+        st->metafile.vdc_type = meta->vdc_type;
     }
     if ((mask & cgm_set_INTEGER_PRECISION)) {
-	OP(INTEGER_PRECISION);
-	I(meta->integer_precision);
-	END_OP;
-	st->metafile.integer_precision = meta->integer_precision;
+        OP(INTEGER_PRECISION);
+        I(meta->integer_precision);
+        END_OP;
+        st->metafile.integer_precision = meta->integer_precision;
     }
     if ((mask & cgm_set_REAL_PRECISION)) {
-	OP(REAL_PRECISION);
-	put_real_precision(st, &meta->real_precision);
-	END_OP;
-	st->metafile.real_precision = meta->real_precision;
+        OP(REAL_PRECISION);
+        put_real_precision(st, &meta->real_precision);
+        END_OP;
+        st->metafile.real_precision = meta->real_precision;
     }
     if ((mask & cgm_set_INDEX_PRECISION)) {
-	OP(INDEX_PRECISION);
-	I(meta->index_precision);
-	END_OP;
-	st->metafile.index_precision = meta->index_precision;
+        OP(INDEX_PRECISION);
+        I(meta->index_precision);
+        END_OP;
+        st->metafile.index_precision = meta->index_precision;
     }
     if ((mask & cgm_set_COLOR_PRECISION)) {
-	OP(COLOR_PRECISION);
-	I(meta->color_precision);
-	END_OP;
-	st->metafile.color_index_precision = meta->color_index_precision;
+        OP(COLOR_PRECISION);
+        I(meta->color_precision);
+        END_OP;
+        st->metafile.color_index_precision = meta->color_index_precision;
     }
     if ((mask & cgm_set_COLOR_INDEX_PRECISION)) {
-	OP(COLOR_INDEX_PRECISION);
-	I(meta->color_index_precision);
-	END_OP;
-	st->metafile.color_index_precision = meta->color_index_precision;
+        OP(COLOR_INDEX_PRECISION);
+        I(meta->color_index_precision);
+        END_OP;
+        st->metafile.color_index_precision = meta->color_index_precision;
     }
     if ((mask & cgm_set_MAXIMUM_COLOR_INDEX)) {
-	OP(MAXIMUM_COLOR_INDEX);
-	CI(meta->maximum_color_index);
-	END_OP;
-	st->metafile.maximum_color_index = meta->maximum_color_index;
+        OP(MAXIMUM_COLOR_INDEX);
+        CI(meta->maximum_color_index);
+        END_OP;
+        st->metafile.maximum_color_index = meta->maximum_color_index;
     }
     if ((mask & cgm_set_METAFILE_ELEMENT_LIST)) {
-	int i;
-	const int *p;
+        int i;
+        const int *p;
 
-	OP(METAFILE_ELEMENT_LIST);
-	for (i = 0, p = meta->metafile_element_list;
-	     i < meta->metafile_element_list_count;
-	     i++, p += 2
-	    ) {
-	    I(p[0]);
-	    I(p[1]);
-	}
-	END_OP;
-	st->metafile.metafile_element_list =
-	    meta->metafile_element_list;
-	st->metafile.metafile_element_list_count =
-	    meta->metafile_element_list_count;
+        OP(METAFILE_ELEMENT_LIST);
+        for (i = 0, p = meta->metafile_element_list;
+             i < meta->metafile_element_list_count;
+             i++, p += 2
+            ) {
+            I(p[0]);
+            I(p[1]);
+        }
+        END_OP;
+        st->metafile.metafile_element_list =
+            meta->metafile_element_list;
+        st->metafile.metafile_element_list_count =
+            meta->metafile_element_list_count;
     }
     /* element list */
     if ((mask & cgm_set_FONT_LIST)) {
-	int i;
+        int i;
 
-	OP(FONT_LIST);
-	for (i = 0; i < meta->font_list_count; ++i)
-	    S(meta->font_list[i].chars, meta->font_list[i].length);
-	END_OP;
-	st->metafile.font_list = meta->font_list;
-	st->metafile.font_list_count = meta->font_list_count;
+        OP(FONT_LIST);
+        for (i = 0; i < meta->font_list_count; ++i)
+            S(meta->font_list[i].chars, meta->font_list[i].length);
+        END_OP;
+        st->metafile.font_list = meta->font_list;
+        st->metafile.font_list_count = meta->font_list_count;
     }
     /* character set list */
     /* character coding announcer */
@@ -273,50 +273,50 @@ cgm_result
 cgm_set_picture_elements(cgm_state * st, const cgm_picture_elements * pic, long mask)
 {
     if ((mask & cgm_set_SCALING_MODE)) {
-	OP(SCALING_MODE);
-	E(pic->scaling_mode);
-	R(pic->scale_factor);
-	st->picture.scaling_mode = pic->scaling_mode;
-	st->picture.scale_factor = pic->scale_factor;
-	END_OP;
+        OP(SCALING_MODE);
+        E(pic->scaling_mode);
+        R(pic->scale_factor);
+        st->picture.scaling_mode = pic->scaling_mode;
+        st->picture.scale_factor = pic->scale_factor;
+        END_OP;
     }
     if ((mask & cgm_set_COLOR_SELECTION_MODE)) {
-	OP(COLOR_SELECTION_MODE);
-	E(pic->color_selection_mode);
-	END_OP;
-	st->picture.color_selection_mode = pic->color_selection_mode;
+        OP(COLOR_SELECTION_MODE);
+        E(pic->color_selection_mode);
+        END_OP;
+        st->picture.color_selection_mode = pic->color_selection_mode;
     }
     if ((mask & cgm_set_LINE_WIDTH_SPECIFICATION_MODE)) {
-	OP(LINE_WIDTH_SPECIFICATION_MODE);
-	E(pic->line_width_specification_mode);
-	END_OP;
-	st->picture.line_width_specification_mode = pic->line_width_specification_mode;
+        OP(LINE_WIDTH_SPECIFICATION_MODE);
+        E(pic->line_width_specification_mode);
+        END_OP;
+        st->picture.line_width_specification_mode = pic->line_width_specification_mode;
     }
     if ((mask & cgm_set_MARKER_SIZE_SPECIFICATION_MODE)) {
-	OP(MARKER_SIZE_SPECIFICATION_MODE);
-	E(pic->marker_size_specification_mode);
-	END_OP;
-	st->picture.marker_size_specification_mode = pic->marker_size_specification_mode;
+        OP(MARKER_SIZE_SPECIFICATION_MODE);
+        E(pic->marker_size_specification_mode);
+        END_OP;
+        st->picture.marker_size_specification_mode = pic->marker_size_specification_mode;
     }
     if ((mask & cgm_set_EDGE_WIDTH_SPECIFICATION_MODE)) {
-	OP(EDGE_WIDTH_SPECIFICATION_MODE);
-	E(pic->edge_width_specification_mode);
-	END_OP;
-	st->picture.edge_width_specification_mode = pic->edge_width_specification_mode;
+        OP(EDGE_WIDTH_SPECIFICATION_MODE);
+        E(pic->edge_width_specification_mode);
+        END_OP;
+        st->picture.edge_width_specification_mode = pic->edge_width_specification_mode;
     }
     if ((mask & cgm_set_VDC_EXTENT)) {
-	OP(VDC_EXTENT);
-	P(&pic->vdc_extent[0]);
-	P(&pic->vdc_extent[1]);
-	END_OP;
-	st->picture.vdc_extent[0] = pic->vdc_extent[0];
-	st->picture.vdc_extent[1] = pic->vdc_extent[1];
+        OP(VDC_EXTENT);
+        P(&pic->vdc_extent[0]);
+        P(&pic->vdc_extent[1]);
+        END_OP;
+        st->picture.vdc_extent[0] = pic->vdc_extent[0];
+        st->picture.vdc_extent[1] = pic->vdc_extent[1];
     }
     if ((mask & cgm_set_BACKGROUND_COLOR)) {
-	OP(BACKGROUND_COLOR);
-	CD(&pic->background_color.rgb);
-	DONE;
-	st->picture.background_color = pic->background_color;
+        OP(BACKGROUND_COLOR);
+        CD(&pic->background_color.rgb);
+        DONE;
+        st->picture.background_color = pic->background_color;
     }
     return st->result;
 }
@@ -341,12 +341,12 @@ cgm_result
 cgm_VDC_INTEGER_PRECISION(cgm_state * st, int precision)
 {
     if (st->vdc_integer_precision != precision) {
-	OP(VDC_INTEGER_PRECISION);
-	I(precision);
-	st->vdc_integer_precision = precision;
-	DONE;
+        OP(VDC_INTEGER_PRECISION);
+        I(precision);
+        st->vdc_integer_precision = precision;
+        DONE;
     } else
-	return cgm_result_ok;
+        return cgm_result_ok;
 }
 
 cgm_result
@@ -467,8 +467,8 @@ cgm_POLYGON_SET(cgm_state * st, const cgm_polygon_edge * vertices, int count)
 
     OP(POLYGON);
     for (i = 0; i < count; ++i) {
-	P(&vertices[i].vertex);
-	E(vertices[i].edge_out);
+        P(&vertices[i].vertex);
+        E(vertices[i].edge_out);
     }
     DONE;
 }
@@ -493,30 +493,30 @@ cgm_CELL_ARRAY(cgm_state * st, const cgm_point * pqr /*[3] */ , cgm_int nx, cgm_
     I(local_color_precision);
     E(mode);
     if (precision == 0)
-	precision = (st->picture.color_selection_mode ==
-		     cgm_color_selection_indexed ?
-		     st->metafile.color_index_precision :
-		     st->metafile.color_precision);
+        precision = (st->picture.color_selection_mode ==
+                     cgm_color_selection_indexed ?
+                     st->metafile.color_index_precision :
+                     st->metafile.color_precision);
     bits_per_pixel =
-	(st->picture.color_selection_mode == cgm_color_selection_indexed ?
-	 precision : precision * 3);
+        (st->picture.color_selection_mode == cgm_color_selection_indexed ?
+         precision : precision * 3);
     row_bytes = (bits_per_pixel * nx + 7) >> 3;
     for (y = 0; y < ny; y++, row += raster) {
-	if (bit == 0)
-	    put_bytes(st, row, row_bytes);
-	else {
-	    uint i;
+        if (bit == 0)
+            put_bytes(st, row, row_bytes);
+        else {
+            uint i;
 
-	    for (i = 0; i < row_bytes; i++) {
-		byte b = (row[i] << bit) +
-		(row[i + 1] >> (8 - bit));
+            for (i = 0; i < row_bytes; i++) {
+                byte b = (row[i] << bit) +
+                (row[i + 1] >> (8 - bit));
 
-		put_byte(st, b);
-	    }
-	}
-	if ((row_bytes & 1)) {
-	    put_byte(st, 0);
-	}
+                put_byte(st, b);
+            }
+        }
+        if ((row_bytes & 1)) {
+            put_byte(st, 0);
+        }
     }
     DONE;
 }
@@ -922,20 +922,20 @@ cgm_COLOR_TABLE(cgm_state * st, cgm_int index, const cgm_color * values, int cou
     OP(COLOR_TABLE);
     CI(index);
     for (i = 0; i < count; ++i)
-	CD(&values[i].rgb);
+        CD(&values[i].rgb);
     DONE;
 }
 
-cgm_result 
+cgm_result
 cgm_ASPECT_SOURCE_FLAGS(cgm_state * st, const cgm_aspect_source_flag * flags, int count)
 {
     int i;
 
     OP(ASPECT_SOURCE_FLAGS);
     for (i = 0; i < count; ++i) {
-	E(flags[i].type);
-	E(flags[i].source);
-	st->source_flags[flags[i].type] = (byte) flags[i].source;
+        E(flags[i].type);
+        E(flags[i].source);
+        st->source_flags[flags[i].type] = (byte) flags[i].source;
     }
     DONE;
 }
@@ -964,32 +964,32 @@ write_command(cgm_state * st, bool last)
     int count = st->command_count;
 
     if (st->command_first) {
-	if (count <= 34) {
-	    command[2] = command[0];
-	    command[3] = command[1] + count - 4;
-	    command += 2, count -= 2;
-	} else {
-	    int pcount = count - 4;
+        if (count <= 34) {
+            command[2] = command[0];
+            command[3] = command[1] + count - 4;
+            command += 2, count -= 2;
+        } else {
+            int pcount = count - 4;
 
-	    command[1] |= 31;
-	    command[2] = (byte) (pcount >> 8);
-	    if (!last)
-		command[2] |= 0x80;
-	    command[3] = (byte) pcount;
-	}
-	st->command_first = false;
+            command[1] |= 31;
+            command[2] = (byte) (pcount >> 8);
+            if (!last)
+                command[2] |= 0x80;
+            command[3] = (byte) pcount;
+        }
+        st->command_first = false;
     } else {
-	int pcount = count - 2;
+        int pcount = count - 2;
 
-	command[0] = (byte) (pcount >> 8);
-	if (!last)
-	    command[0] |= 0x80;
-	command[1] = (byte) pcount;
+        command[0] = (byte) (pcount >> 8);
+        if (!last)
+            command[0] |= 0x80;
+        command[1] = (byte) pcount;
     }
     fwrite(command, sizeof(byte), count + (count & 1), st->file);
     st->command_count = 2;	/* leave room for extension header */
     if (ferror(st->file))
-	st->result = cgm_result_io_error;
+        st->result = cgm_result_io_error;
 }
 
 /* End a command. */
@@ -1005,14 +1005,14 @@ static void
 put_int(cgm_state * st, cgm_int value, int precision)
 {
     switch (precision) {
-	case 32:
-	    put_byte(st, value >> 24);
-	case 24:
-	    put_byte(st, value >> 16);
-	case 16:
-	    put_byte(st, value >> 8);
-	case 8:
-	    put_byte(st, value);
+        case 32:
+            put_byte(st, value >> 24);
+        case 24:
+            put_byte(st, value >> 16);
+        case 16:
+            put_byte(st, value >> 8);
+        case 8:
+            put_byte(st, value);
     }
 }
 
@@ -1022,24 +1022,24 @@ put_real(cgm_state * st, cgm_real value, const cgm_precision * pr)
 {
     if (pr->representation == cgm_representation_floating) {
     } else {			/* Casting to integer simply discards the fraction, */
-	/* so we need to be careful with negative values. */
-	long whole = (long)value;
-	double fpart;
+        /* so we need to be careful with negative values. */
+        long whole = (long)value;
+        double fpart;
 
-	if (value < whole)
-	    --whole;
-	fpart = value - whole;
-	put_int(st, whole, pr->exponent_or_whole_width);
-	if (pr->fraction_width == 16) {
-	    uint fraction = (uint) (fpart * (1.0 * 0x10000));
+        if (value < whole)
+            --whole;
+        fpart = value - whole;
+        put_int(st, whole, pr->exponent_or_whole_width);
+        if (pr->fraction_width == 16) {
+            uint fraction = (uint) (fpart * (1.0 * 0x10000));
 
-	    put_int(st, fraction, 16);
-	} else {		/* pr->fraction_width == 32 */
-	    ulong fraction =
-	    (ulong) (fpart * (1.0 * 0x10000 * 0x10000));
+            put_int(st, fraction, 16);
+        } else {		/* pr->fraction_width == 32 */
+            ulong fraction =
+            (ulong) (fpart * (1.0 * 0x10000 * 0x10000));
 
-	    put_int(st, fraction, 32);
-	}
+            put_int(st, fraction, 32);
+        }
     }
 }
 
@@ -1057,20 +1057,20 @@ static void
 put_vdc(cgm_state * st, const cgm_vdc * pvdc)
 {
     if (st->metafile.vdc_type == cgm_vdc_integer)
-	put_int(st, pvdc->integer, st->vdc_integer_precision);
+        put_int(st, pvdc->integer, st->vdc_integer_precision);
     else
-	put_real(st, pvdc->real, &st->vdc_real_precision);
+        put_real(st, pvdc->real, &st->vdc_real_precision);
 }
 
 /* Put a VDC or a real. */
 static void
 put_vdc_r(cgm_state * st, const cgm_line_marker_extent * extent,
-	  cgm_line_marker_specification_mode mode)
+          cgm_line_marker_specification_mode mode)
 {
     if (mode == cgm_line_marker_absolute)
-	VDC(&extent->absolute);
+        VDC(&extent->absolute);
     else
-	R(extent->scaled);
+        R(extent->scaled);
 }
 
 /* Put a point (pair of VDCs). */
@@ -1078,11 +1078,11 @@ static void
 put_point(cgm_state * st, const cgm_point * ppt)
 {
     if (st->metafile.vdc_type == cgm_vdc_integer) {
-	put_int(st, ppt->integer.x, st->vdc_integer_precision);
-	put_int(st, ppt->integer.y, st->vdc_integer_precision);
+        put_int(st, ppt->integer.x, st->vdc_integer_precision);
+        put_int(st, ppt->integer.y, st->vdc_integer_precision);
     } else {
-	put_real(st, ppt->real.x, &st->vdc_real_precision);
-	put_real(st, ppt->real.y, &st->vdc_real_precision);
+        put_real(st, ppt->real.x, &st->vdc_real_precision);
+        put_real(st, ppt->real.y, &st->vdc_real_precision);
     }
 }
 
@@ -1093,7 +1093,7 @@ put_points(cgm_state * st, const cgm_point * ppt, int count)
     int i;
 
     for (i = 0; i < count; i++)
-	P(ppt + i);
+        P(ppt + i);
 }
 
 /* Put bytes. */
@@ -1103,11 +1103,11 @@ put_bytes(cgm_state * st, const byte * data, uint length)
     int count;
 
     while (length > (count = command_max_count - st->command_count)) {
-	memcpy(st->command + st->command_count, data, count);
-	st->command_count += count;
-	write_command(st, false);
-	data += count;
-	length -= count;
+        memcpy(st->command + st->command_count, data, count);
+        st->command_count += count;
+        write_command(st, false);
+        data += count;
+        length -= count;
     }
     memcpy(st->command + st->command_count, data, length);
     st->command_count += length;
@@ -1120,13 +1120,13 @@ put_string(cgm_state * st, const char *data, uint length)
     /* mechanism for commands and the mechanism for strings */
     /* are orthogonal; we take this interpretation. */
     if (length >= 255) {
-	put_byte(st, 255);
-	while (length > 32767) {
-	    put_int(st, 65535, 2);
-	    put_bytes(st, (const byte *)data, 32767);
-	    data += 32767;
-	    length -= 32767;
-	}
+        put_byte(st, 255);
+        while (length > 32767) {
+            put_int(st, 65535, 2);
+            put_bytes(st, (const byte *)data, 32767);
+            data += 32767;
+            length -= 32767;
+        }
     }
     put_byte(st, length);
     put_bytes(st, (const byte *)data, length);
@@ -1137,9 +1137,9 @@ static void
 put_color(cgm_state * st, const cgm_color * color)
 {
     if (st->picture.color_selection_mode == cgm_color_selection_indexed)
-	CI(color->index);
+        CI(color->index);
     else
-	CD(&color->rgb);
+        CD(&color->rgb);
 }
 
 /* Put an RGB value. */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -87,33 +87,32 @@ public_st_base_color_space();
 
 /* ------ Create/copy/destroy ------ */
 
-
 static void
 gs_cspace_final(void *vptr)
 {
     gs_color_space *pcs = (gs_color_space *)vptr;
 
     if (pcs->type->final)
-	pcs->type->final(pcs);
+        pcs->type->final(pcs);
     if_debug2('c', "[c]cspace final %08x %d\n", pcs, pcs->id);
     rc_decrement_only_cs(pcs->base_space, "gs_cspace_final");
-    
+
     /* No need to decrement the ICC profile data.  It is handled
        by the finalize of the ICC space which is called above using
        pcs->type->final(pcs);  */
-    
+
 }
 
 static gs_color_space *
 gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
-		   const gs_color_space_type *pcstype)
+                   const gs_color_space_type *pcstype)
 {
     gs_color_space *pcs;
 
     rc_alloc_struct_1(pcs, gs_color_space, &st_color_space, mem, return NULL,
-		      "gs_cspace_alloc_with_id");
+                      "gs_cspace_alloc_with_id");
     if_debug3('c', "[c]cspace alloc %08x %s %d\n",
-	      pcs, pcstype->stype->sname, pcstype->index);
+              pcs, pcstype->stype->sname, pcstype->index);
     pcs->type = pcstype;
     pcs->id = id;
     pcs->base_space = NULL;
@@ -143,22 +142,21 @@ gs_color_space *
 gs_cspace_new_DeviceGray(gs_memory_t *mem)
 {
     return gs_cspace_alloc_with_id(mem, cs_DeviceGray_id,
-				   &gs_color_space_type_DeviceGray);
+                                   &gs_color_space_type_DeviceGray);
 }
 
 gs_color_space *
 gs_cspace_new_DeviceRGB(gs_memory_t *mem)
 {
     return gs_cspace_alloc_with_id(mem, cs_DeviceRGB_id,
-				   &gs_color_space_type_DeviceRGB);
+                                   &gs_color_space_type_DeviceRGB);
 }
 gs_color_space *
 gs_cspace_new_DeviceCMYK(gs_memory_t *mem)
 {
     return gs_cspace_alloc_with_id(mem, cs_DeviceCMYK_id,
-				   &gs_color_space_type_DeviceCMYK);
+                                   &gs_color_space_type_DeviceCMYK);
 }
-
 
 /* ------ Accessors ------ */
 
@@ -195,7 +193,7 @@ bool gs_color_space_is_PSCIE(const gs_color_space * pcs)
         case gs_color_space_index_CIEA:
             return true;
         break;
-        default:            
+        default:
             return false;
 }
 }
@@ -226,13 +224,13 @@ gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
     if (pcs->cmm_icc_profile_data == NULL) {
         if (pgs->icc_manager->default_gray == NULL) {
-            /* User params have not yet been set for the icc manager 
+            /* User params have not yet been set for the icc manager
                go ahead and init */
             gsicc_init_iccmanager(pgs);
         }
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
         pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");	
+        rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");
     }
     return 0;
 }
@@ -262,7 +260,6 @@ gs_cspace_base_space(const gs_color_space * pcspace)
 {
     return pcspace->base_space;
 }
-
 
 /* Abstract the reference counting for color spaces
    so that we can also increment the ICC profile
@@ -304,12 +301,11 @@ void cs_adjust_counts_icc(gs_state *pgs, int delta)
 
     if (pcs) {
         if (pcs->cmm_icc_profile_data != NULL) {
-            rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");	
+            rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");
         }
         cs_adjust_counts(pgs, delta);
     }
 }
-
 
 /* ------ Other implementation procedures ------ */
 
@@ -319,20 +315,20 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 {
     return 0;
 }
-  
+
 /* Install a DeviceRGB color space. */
 static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {
     if (pcs->cmm_icc_profile_data == NULL) {
         if (pgs->icc_manager->default_rgb == NULL) {
-            /* User params have not yet been set for the icc manager 
+            /* User params have not yet been set for the icc manager
                go ahead and init */
             gsicc_init_iccmanager(pgs);
         }
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
         pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");	
+        rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");
     }
     return 0;
 }
@@ -343,13 +339,13 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
     if (pcs->cmm_icc_profile_data == NULL) {
         if (pgs->icc_manager->default_cmyk == NULL) {
-            /* User params have not yet been set for the icc manager 
+            /* User params have not yet been set for the icc manager
                go ahead and init */
             gsicc_init_iccmanager(pgs);
         }
         pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
         pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");	
+        rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");
     }
     return 0;
 }
@@ -373,7 +369,6 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
     pgs->effective_overprint_mode = 0;
     return gs_state_update_overprint(pgs, &params);
 }
-
 
 static bool
 check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
@@ -534,69 +529,69 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
 gx_cspace_no_linear(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device * dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness, gsicc_link_t *icclink)
+                gx_device * dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                const gs_client_color *c2, const gs_client_color *c3,
+                float smoothness, gsicc_link_t *icclink)
 {
     return_error(gs_error_rangecheck);
 }
 
 static inline int
 cc2dc(const gs_color_space *cs, const gs_imager_state * pis, gx_device *dev,
-	    gx_device_color *dc, const gs_client_color *cc)
+            gx_device_color *dc, const gs_client_color *cc)
 {
     return cs->type->remap_color(cc, cs, dc, pis, dev, gs_color_select_texture);
 }
 
 static inline void
-interpolate_cc(gs_client_color *c, 
-	const gs_client_color *c0, const gs_client_color *c1, double t, int n)
+interpolate_cc(gs_client_color *c,
+        const gs_client_color *c0, const gs_client_color *c1, double t, int n)
 {
     int i;
 
     for (i = 0; i < n; i++)
-	c->paint.values[i] = c0->paint.values[i] * t + c1->paint.values[i] * (1 - t);
+        c->paint.values[i] = c0->paint.values[i] * t + c1->paint.values[i] * (1 - t);
 }
 
 static inline bool
-is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c, 
-	const gx_device_color *c0, const gx_device_color *c1, 
-	double t, int n, float smoothness)
+is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
+        const gx_device_color *c0, const gx_device_color *c1,
+        double t, int n, float smoothness)
 {
 
     if (c0->type == &gx_dc_type_data_pure) {
-	int i;
-	gx_color_index pure0 = c0->colors.pure;
-	gx_color_index pure1 = c1->colors.pure;
-	gx_color_index pure = c->colors.pure;
+        int i;
+        gx_color_index pure0 = c0->colors.pure;
+        gx_color_index pure1 = c1->colors.pure;
+        gx_color_index pure = c->colors.pure;
 
-	for (i = 0; i < n; i++) {
-	    int shift = dev->color_info.comp_shift[i];
-	    int mask = (1 << dev->color_info.comp_bits[i]) - 1;
-	    int max_color = (i == dev->color_info.gray_index ? dev->color_info.max_gray 
-							     : dev->color_info.max_color);
-	    float max_diff = max(1, max_color * smoothness);
-	    int b0 = (pure0 >> shift) & mask, b1 = (pure1 >> shift) & mask; 
-	    int b = (pure >> shift) & mask;
-	    double bb = b0 * t + b1 * (1 - t);
+        for (i = 0; i < n; i++) {
+            int shift = dev->color_info.comp_shift[i];
+            int mask = (1 << dev->color_info.comp_bits[i]) - 1;
+            int max_color = (i == dev->color_info.gray_index ? dev->color_info.max_gray
+                                                             : dev->color_info.max_color);
+            float max_diff = max(1, max_color * smoothness);
+            int b0 = (pure0 >> shift) & mask, b1 = (pure1 >> shift) & mask;
+            int b = (pure >> shift) & mask;
+            double bb = b0 * t + b1 * (1 - t);
 
-	    if (any_abs(b - bb) > max_diff)
-		return false;
-	}
-	return true;
+            if (any_abs(b - bb) > max_diff)
+                return false;
+        }
+        return true;
     } else {
-	/* Halftones must not paint with fill_linear_color_*. */
-	return false;
+        /* Halftones must not paint with fill_linear_color_*. */
+        return false;
     }
 }
 
 /* Default color mapping linearity check, a 2-points case. */
 static int
 gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		float smoothness)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                float smoothness)
 {
     gs_client_color c01a, c01b;
     gx_device_color d[2], d01a, d01b;
@@ -606,34 +601,34 @@ gx_cspace_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pi
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
     if (code < 0)
-	return code;
+        return code;
     code = cc2dc(cs, pis, dev, &d[1], c1);
     if (code < 0)
-	return code;
+        return code;
     interpolate_cc(&c01a, c0, c1, 0.3, n);
     code = cc2dc(cs, pis, dev, &d01a, &c01a);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d01a, &d[0], &d[1], 0.3, ndev, smoothness))
-	return 0;
+        return 0;
     interpolate_cc(&c01b, c0, c1, 0.7, n);
     code = cc2dc(cs, pis, dev, &d01b, &c01b);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d01b, &d[0], &d[1], 0.7, ndev, smoothness))
-	return 0;
+        return 0;
     return 1;
 }
 
 /* Default color mapping linearity check, a triangle case. */
 static int
 gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		const gs_client_color *c2, float smoothness)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                const gs_client_color *c2, float smoothness)
 {
-    /* We check 4 points - the median center, and middle points of 3 sides. 
-       Hopely this is enough for reasonable color spaces and color renderings. 
+    /* We check 4 points - the median center, and middle points of 3 sides.
+       Hopely this is enough for reasonable color spaces and color renderings.
        Note it gives 7 points for a quadrangle. */
     gs_client_color c01, c12, c20, c012;
     gx_device_color d[3], d01, d12, d20, d012;
@@ -648,71 +643,70 @@ gx_cspace_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state 
 
     code = cc2dc(cs, pis, dev, &d[0], c0);
     if (code < 0)
-	return code;
+        return code;
     code = cc2dc(cs, pis, dev, &d[1], c1);
     if (code < 0)
-	return code;
+        return code;
     code = cc2dc(cs, pis, dev, &d[2], c2);
     if (code < 0)
-	return code;
+        return code;
 
     interpolate_cc(&c01, c0, c1, 0.5, n);
     code = cc2dc(cs, pis, dev, &d01, &c01);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, ndev, smoothness))
-	return 0;
+        return 0;
 
     interpolate_cc(&c012, c2, &c01, 2.0 / 3, n);
     code = cc2dc(cs, pis, dev, &d012, &c012);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, ndev, smoothness))
-	return 0;
+        return 0;
 
     interpolate_cc(&c12, c1, c2, 0.5, n);
     code = cc2dc(cs, pis, dev, &d12, &c12);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, ndev, smoothness))
-	return 0;
+        return 0;
 
     interpolate_cc(&c20, c2, c0, 0.5, n);
     code = cc2dc(cs, pis, dev, &d20, &c20);
     if (code < 0)
-	return code;
+        return code;
     if (!is_dc_nearly_linear(dev, &d20, &d[2], &d[0], 0.5, ndev, smoothness))
-	return 0;
+        return 0;
     return 1;
 }
-
 
 /* Default color mapping linearity check. */
 int
 gx_cspace_is_linear_default(const gs_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, 
-		const gs_client_color *c0, const gs_client_color *c1,
-		const gs_client_color *c2, const gs_client_color *c3,
-		float smoothness, gsicc_link_t *icclink)
+                gx_device *dev,
+                const gs_client_color *c0, const gs_client_color *c1,
+                const gs_client_color *c2, const gs_client_color *c3,
+                float smoothness, gsicc_link_t *icclink)
 {
     /* Assuming 2 <= nc <= 4. We don't need other cases. */
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
     int code;
 
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     if (c2 == NULL)
-	return gx_cspace_is_linear_in_line(cs, pis, dev, c0, c1, smoothness);
+        return gx_cspace_is_linear_in_line(cs, pis, dev, c0, c1, smoothness);
     code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, smoothness);
     if (code <= 0)
-	return code;
+        return code;
     if (c3 == NULL)
-	return 1;
+        return 1;
     return gx_cspace_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, smoothness);
 }
 
 /* Serialization. */
-int 
+int
 gx_serialize_cspace_type(const gs_color_space * pcs, stream * s)
 {
     const gs_color_space_type * type = pcs->type;
@@ -722,21 +716,21 @@ gx_serialize_cspace_type(const gs_color_space * pcs, stream * s)
 
 /* GC procedures */
 
-static 
+static
 ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 {
     EV_CONST gs_color_space *pcs = vptr;
 
     if (index == 0)
-	return ENUM_OBJ(pcs->base_space);
+        return ENUM_OBJ(pcs->base_space);
     if (index == 1)
-	return ENUM_OBJ(pcs->pclient_color_space_data);
+        return ENUM_OBJ(pcs->pclient_color_space_data);
     if (index == 2)
         return ENUM_OBJ(pcs->icc_equivalent);
     return ENUM_USING(*pcs->type->stype, vptr, size, index - 3);
     ENUM_PTRS_END_PROC
 }
-static 
+static
 RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
 {
     RELOC_VAR(pcs->base_space);
@@ -745,4 +739,3 @@ RELOC_PTRS_WITH(color_space_reloc_ptrs, gs_color_space *pcs)
     RELOC_USING(*pcs->type->stype, vptr, size);
 }
 RELOC_PTRS_END
-

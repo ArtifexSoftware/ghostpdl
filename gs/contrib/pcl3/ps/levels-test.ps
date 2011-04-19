@@ -129,15 +129,15 @@
       % <HTD_1> <Name>
       1 index 1 index known
       {
-	% <HTD_1> <Name>
-	dup temp cvs show (: ) show
-	1 index exch get	% <HTD_1> <HTD_2>
-	dup
-	(type ) show dup /HalftoneType get dup temp cvs show
-	% <HTD_1> <HTD_2> <HTD_2> <Typ>
-	HTDict2 zeigeHTTeile
-	zeigeTF
-	nz
+        % <HTD_1> <Name>
+        dup temp cvs show (: ) show
+        1 index exch get	% <HTD_1> <HTD_2>
+        dup
+        (type ) show dup /HalftoneType get dup temp cvs show
+        % <HTD_1> <HTD_2> <HTD_2> <Typ>
+        HTDict2 zeigeHTTeile
+        zeigeTF
+        nz
       }
       {pop}
       ifelse
@@ -201,10 +201,10 @@
       0 setlinewidth  0 setgray
       currentpoint newpath moveto
         maxLevel 1 add Breite mul
-	dup 0 rlineto
-	0 Hoehe rlineto
-	neg 0 rlineto
-	closepath
+        dup 0 rlineto
+        0 Hoehe rlineto
+        neg 0 rlineto
+        closepath
       stroke
     grestore
   } if
@@ -245,9 +245,9 @@
       Breite 2 div 0 rmoveto
       0 1 schwarzeStufen 1 sub
       {
-	temp cvs
-	gsave zeigeZentriert grestore
-	Breite 0 rmoveto
+        temp cvs
+        gsave zeigeZentriert grestore
+        Breite 0 rmoveto
       } for
     grestore
     3 runter

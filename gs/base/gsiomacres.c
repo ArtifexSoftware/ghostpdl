@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -54,20 +54,20 @@
 #define TYPE_vers 0x76657273
 
 typedef struct {
-	unsigned int data_offset;
-	unsigned int map_offset;
-	unsigned int data_length;
-	unsigned int map_length;
+        unsigned int data_offset;
+        unsigned int map_offset;
+        unsigned int data_length;
+        unsigned int map_length;
 } resource_header;
 
 typedef struct {
-	unsigned int type;
-	unsigned int offset;
-	unsigned int length;
-	byte *data;
-	char *name;
-	unsigned short id;
-	byte flags;
+        unsigned int type;
+        unsigned int offset;
+        unsigned int length;
+        byte *data;
+        char *name;
+        unsigned short id;
+        byte flags;
 } resource;
 
 typedef struct {
@@ -93,45 +93,45 @@ int get_int16(byte *p) {
 static
 int read_int32(FILE *in, void *p)
 {
-	byte w[4], err;
+        byte w[4], err;
 
-	err = fread(w, 1, 4, in);
-	if (err != 4) return -1;
+        err = fread(w, 1, 4, in);
+        if (err != 4) return -1;
 
-	*(unsigned int*)p = get_int32(w);
-	return 0;
+        *(unsigned int*)p = get_int32(w);
+        return 0;
 }
 
 static
 int read_int24(FILE *in, void *p)
 {
-	byte w[3], err;
-	
-	err = fread(w, 1, 3, in);
-	if (err != 3) return -1;
-	
-	*(unsigned int*)p = get_int24(w);
-	return 0;
+        byte w[3], err;
+
+        err = fread(w, 1, 3, in);
+        if (err != 3) return -1;
+
+        *(unsigned int*)p = get_int24(w);
+        return 0;
 }
 
 static
 int read_int16(FILE *in, void *p)
 {
-	byte w[2], err;
-	
-	err = fread(w, 1, 2, in);
-	if (err != 2) return -1;
-	
-	*(unsigned short*)p = get_int16(w);
-	return 0;
+        byte w[2], err;
+
+        err = fread(w, 1, 2, in);
+        if (err != 2) return -1;
+
+        *(unsigned short*)p = get_int16(w);
+        return 0;
 }
 
 static
 int read_int8(FILE *in, void *p)
 {
-	byte c = fgetc(in);
-	if (c < 0) return -1;
-	
+        byte c = fgetc(in);
+        if (c < 0) return -1;
+
     *(byte*)p = (c&0xFF);
     return 0;
 }
@@ -139,22 +139,22 @@ int read_int8(FILE *in, void *p)
 /* convert a 4-character typecode from C string to uint32 representation */
 static unsigned int res_string2type(const char *type_string)
 {
-	unsigned int type = type_string[0] << 24 |
-           				type_string[1] << 16 |
-          				type_string[2] <<  8 |
-           				type_string[3];
+        unsigned int type = type_string[0] << 24 |
+                                        type_string[1] << 16 |
+                                        type_string[2] <<  8 |
+                                        type_string[3];
     return (type);
 }
 /* convert a 4-character typecode from unsigned int to C string representation */
 static char * res_type2string(const unsigned int type, char *type_string)
 {
-	if (type_string == NULL) return NULL;
-	
-	type_string[0] = (type >> 24) & 0xFF;
+        if (type_string == NULL) return NULL;
+
+        type_string[0] = (type >> 24) & 0xFF;
     type_string[1] = (type >> 16) & 0xFF;
     type_string[2] = (type >> 8) & 0xFF;
     type_string[3] = (type) & 0xFF;
-    type_string[4] = '\0';    
+    type_string[4] = '\0';
 
     return (type_string);
 }
@@ -162,21 +162,21 @@ static char * res_type2string(const unsigned int type, char *type_string)
 static
 resource_header *read_resource_header(FILE *in, int offset)
 {
-	resource_header *header = malloc(sizeof(*header));
+        resource_header *header = malloc(sizeof(*header));
 
-	fseek(in, offset, SEEK_SET);
+        fseek(in, offset, SEEK_SET);
 
-	read_int32(in, &(header->data_offset));
-	read_int32(in, &(header->map_offset));
-	read_int32(in, &(header->data_length));
-	read_int32(in, &(header->map_length));
+        read_int32(in, &(header->data_offset));
+        read_int32(in, &(header->map_offset));
+        read_int32(in, &(header->data_length));
+        read_int32(in, &(header->map_length));
 
         if (feof(in)) {
             free (header);
             header = NULL;
         }
-        
-	return header;
+
+        return header;
 }
 
 static
@@ -184,7 +184,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
 {
     resource_list *list;
     int n_resources;
-	int type_offset, name_offset, this_name_offset;
+        int type_offset, name_offset, this_name_offset;
     unsigned int *types;
     int *number, *ref_offsets;
     int n_types;
@@ -197,18 +197,18 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
         if_debug1('s', "error: could not allocate %d bytes for resource map\n", header->map_length);
         return NULL;
     }
-        
+
     /* read in the whole resource map */
-	fseek(in, header->map_offset, SEEK_SET);
+        fseek(in, header->map_offset, SEEK_SET);
     fread(buf, 1, header->map_length, in);
-    
+
     type_offset = get_int16(buf + 24);
     name_offset = get_int16(buf + 26);
     n_types = get_int16(buf + 28); n_types++;
-    
+
     if (type_offset != 30)
         if_debug1('s', "[s] warning! resource type list offset is %d, not 30!\n", type_offset);
-            
+
     /* determine the total number of resources */
     types = malloc(sizeof(*types)*n_types);
     number = malloc(sizeof(*number)*n_types);
@@ -223,15 +223,15 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
         p += 8;
         n_resources += number[i];
     }
-    
+
     /* parse the individual resources */
     list = malloc(sizeof(resource_list));
     list->resources = malloc(sizeof(resource)*n_resources);
     list->n_resources = n_resources;
     k = 0;
     for (i = 0; i < n_types; i++) {
-    	res_type2string(types[i], type_string);
-    	if_debug2('s', "[s] %d resources of type '%s':\n", number[i], type_string);
+        res_type2string(types[i], type_string);
+        if_debug2('s', "[s] %d resources of type '%s':\n", number[i], type_string);
         p = buf + type_offset + ref_offsets[i]; /* FIXME: also off? */
         /* p = buf + 32 + ref_offsets[i]; */
         for (j = 0; j < number[i]; j++) {
@@ -252,18 +252,18 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
             /* load the actual resource data separately */
             list->resources[k].length = 0;
             list->resources[k].data = NULL;
-            
+
             p += 12;
             if_debug4('s', "\tid %d offset 0x%08x flags 0x%02x '%s'\n",
                 list->resources[k].id, list->resources[k].offset,
                 list->resources[k].flags, list->resources[k].name);
             k++;
         }
-    }        
-    
+    }
+
     free(buf);
-        
-	return list;
+
+        return list;
 }
 
 static
@@ -271,15 +271,15 @@ void load_resource(FILE *in, resource_header *header, resource *res)
 {
     unsigned int len;
     byte *buf;
-    
+
     fseek(in, header->data_offset + res->offset, SEEK_SET);
     read_int32(in, &len);
-    
+
     buf = malloc(len);
     fread(buf, 1, len, in);
     res->data = buf;
     res->length = len;
-    
+
     return;
 }
 
@@ -290,7 +290,6 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
     resource_list *list;
     FILE *in;
     int i;
-
 
     in = fopen(fname, "rb");
     if (in == NULL) {
@@ -304,19 +303,19 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
         if_debug0('s', "[s] not a serialized data fork resource file?\n");
         return 0;
     }
-    
+
     if_debug0('s', "[s] loading resource map\n");
-	list = read_resource_map(in, header);
+        list = read_resource_map(in, header);
     if (list == NULL) {
         if_debug0('s', "[s] couldn't read resource map.\n");
         return 0;
     }
-    
+
     /* load the resource data we're interested in */
     for (i = 0; i < list->n_resources; i++) {
-        if ((list->resources[i].type == type) && 
-        	(list->resources[i].id == id)) {
-        	if_debug2('s', "[s] loading '%s' resource id %d",
+        if ((list->resources[i].type == type) &&
+                (list->resources[i].id == id)) {
+                if_debug2('s', "[s] loading '%s' resource id %d",
                 list->resources[i].name, list->resources[i].id);
             load_resource(in, header, &(list->resources[i]));
             if_debug1('s', " (%d bytes)\n", list->resources[i].length);
@@ -325,16 +324,15 @@ int read_datafork_resource(byte *buf, const char *fname, const uint type, const 
             return (list->resources[i].length);
         }
     }
-    
+
     fclose(in);
     free(list);
     free(header);
-    
+
     return (0);
 }
 
 /* end dfont loading code */
-
 
 /* prototypes */
 static iodev_proc_init(iodev_macresource_init);
@@ -345,7 +343,7 @@ static iodev_proc_open_file(iodev_macresource_open_file);
 /* Define the %macresource% device */
 const gx_io_device gs_iodev_macresource =
 {
-    "%macresource%", "FileSystem", 
+    "%macresource%", "FileSystem",
     {
      iodev_macresource_init, iodev_no_open_device,
      iodev_macresource_open_file,
@@ -376,10 +374,10 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     bool datafork = 0;
     int size;
     byte *buf;
-    
+
     /* return NULL if there's an error */
     *ps = NULL;
-    
+
     strncpy(filename, fname, min(namelen, gp_file_name_sizeof));
     if (namelen < gp_file_name_sizeof) filename[namelen] = '\0';
     /* parse out the resource type and id. they're appended to the pathname
@@ -399,7 +397,7 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     type = res_string2type(res_type_string);
     id = (ushort)atoi(res_id_string);
     if_debug3('s', "[s] opening resource fork of '%s' for type '%s' id '%d'\n", filename, res_type_string, id);
-    
+
     /* we call with a NULL buffer to get the size */
     size = gp_read_macresource(NULL, filename, type, id);
     if (size == 0) {
@@ -407,15 +405,15 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
         /* try to open as a .dfont from here */
         if_debug0('s', "[s] trying to open as a datafork file instead...\n");
         size = read_datafork_resource(NULL, filename, type, id);
-    	if (size != 0) {
+        if (size != 0) {
             datafork = true;
-    	} else {
+        } else {
             if_debug0('s', "could not get resource size\n");
-    	    return_error(e_invalidfileaccess);
-    	}
+            return_error(e_invalidfileaccess);
+        }
     }
     if_debug1('s', "[s] got resource size %d bytes\n", size);
-    /* allocate a buffer */    
+    /* allocate a buffer */
     buf = gs_alloc_string(mem, size, "macresource buffer");
     if (buf == NULL) {
         if_debug0('s', "macresource: could not allocate buffer for resource data\n");
@@ -427,7 +425,7 @@ iodev_macresource_open_file(gx_io_device *iodev, const char *fname, uint namelen
     } else {
         size = read_datafork_resource(buf, filename, type, id);
     }
-	 
+
     /* allocate stream *ps and set it up with the buffered data */
     *ps = s_alloc(mem, "macresource");
     sread_string(*ps, buf, size);

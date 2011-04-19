@@ -69,44 +69,44 @@ int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
 void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
 void  htsc_create_dot_mask(htsc_dig_grid_t *dig_grid, int x, int y, int u, int v,
                        double screen_angle, htsc_vertices_t vertices);
-void htsc_diffpoint(htsc_point_t point1, htsc_point_t point2, 
+void htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
                    htsc_point_t *diff_point);
-double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point, 
+double htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
                  double horiz_dpi, double vert_dpi);
-double htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi); 
+double htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi);
 int htsc_sumsum(htsc_dig_grid_t dig_grid);
-void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, 
-                            int u, int v, htsc_point_t center, double horiz_dpi, 
-                            double vert_dpi, htsc_vertices_t vertices, 
+void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y,
+                            int u, int v, htsc_point_t center, double horiz_dpi,
+                            double vert_dpi, htsc_vertices_t vertices,
                             htsc_point_t *one_index);
-int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u, 
-                           int v, int target_size, bool use_holladay_grid, 
+int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
+                           int v, int target_size, bool use_holladay_grid,
                            htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L);
-void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid, 
+void htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N);
-void htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L, 
+void htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                                double gamma, htsc_dig_grid_t *final_mask);
-void htsc_create_dither_mask(htsc_dig_grid_t super_cell, 
-                             htsc_dig_grid_t *final_mask, 
+void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
+                             htsc_dig_grid_t *final_mask,
                              int num_levels, int y, int x, double vert_dpi,
                              double horiz_dpi, int N, double gamma,
                              htsc_dig_grid_t dot_grid, htsc_point_t one_index);
-void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L, 
+void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
-void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S, 
+void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     output_format_type output_format);
 
 int htsc_gcd(int a, int b);
 int  htsc_lcm(int a, int b);
 int htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out);
-void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in, 
+void htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
                    htsc_vector_t *vector_out);
 #if RAW_SCREEN_DUMP
 void htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[]);
 void htsc_dump_float_image(float *image, int height, int width, float max_val,
-                      char filename[]); 
+                      char filename[]);
 void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
-                      char filename[]); 
+                      char filename[]);
 #endif
 
 int usage (void) {
@@ -121,9 +121,9 @@ static const char * get_arg (int argc, char **argv, int *pi, const char *arg) {
     } else {
       (*pi)++;
       if (*pi == argc) {
-	return NULL;
+        return NULL;
       } else {
-	return argv[*pi];
+        return argv[*pi];
       }
     }
 }
@@ -162,7 +162,7 @@ main (int argc, char **argv)
     output_format_type output_format = OUTPUT_BIN;
 
     horiz_dpi = 300;  /* Default values */
-    vert_dpi = 300;  
+    vert_dpi = 300;
     target_lpi = 75;
     use_dither_grid = true;
     target_screen_angle = 0;
@@ -173,43 +173,43 @@ main (int argc, char **argv)
     for (i = 1; i < argc; i++) {
       const char *arg = argv[i];
       if (arg[0] == '-') {
-	  switch (arg[1]) {
-	    case 'a':
-	      target_screen_angle = atoi(get_arg(argc, argv, &i, arg + 2));
+          switch (arg[1]) {
+            case 'a':
+              target_screen_angle = atoi(get_arg(argc, argv, &i, arg + 2));
               target_screen_angle = target_screen_angle % 90;
               screen_angle = target_screen_angle;
-	      break;
-	    case 'l':
-	      target_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
-	      break;
-	    case 'p':
-	      output_format = (arg[2] == 's') ? OUTPUT_PS : 
-				(arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
-	      break;
-	    case 'q':
-	      target_quantization = atoi(get_arg(argc, argv, &i, arg + 2));
+              break;
+            case 'l':
+              target_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
+              break;
+            case 'p':
+              output_format = (arg[2] == 's') ? OUTPUT_PS :
+                                (arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
+              break;
+            case 'q':
+              target_quantization = atoi(get_arg(argc, argv, &i, arg + 2));
               target_quant_specified = true;
-	      break;
-	    case 'r':
-	      horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
-              vert_dpi = horiz_dpi; 
-	      break;
+              break;
+            case 'r':
+              horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
+              vert_dpi = horiz_dpi;
+              break;
             case 's':
                 target_size = atoi(get_arg(argc, argv, &i, arg + 2));
                 target_size_specified = true;
-	        break;
-	    default:
-	      return usage();
-	    }
-	}
+                break;
+            default:
+              return usage();
+            }
+        }
     }
     dot_grid.data = NULL;
     super_cell.data = NULL;
     final_mask.data = NULL;
-    num_levels = 6; 
+    num_levels = 6;
     use_holladay_grid = false;
     /* Go through and find the rational angle options that gets us to the
-       best LPI.  Pick the one that is just over what is requested.  
+       best LPI.  Pick the one that is just over what is requested.
        That is really our limiting factor here.  Pick it and
        then figure out how much dithering we need to do to get to the proper
        number of levels.  */
@@ -227,7 +227,7 @@ main (int argc, char **argv)
             x_use = x;
             y=ROUND((double) x_use / ratio);
             true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
-            lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) + 
+            lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
                                     ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
             v = -x_use / scaled_x;
             u = y * scaled_x;
@@ -252,11 +252,11 @@ main (int argc, char **argv)
                     x_use = x - 1;
                     y=ROUND((double) x_use / ratio);
                     true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
-                    lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) + 
+                    lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
                                             ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
                     v = -x_use / scaled_x;
                     u = y * scaled_x;
-                    N = y *u - x_use * v;                
+                    N = y *u - x_use * v;
                 }
                 use = true;
             }
@@ -281,13 +281,13 @@ main (int argc, char **argv)
         for (y = 1; y < 11; y++) {
             y_use = y;
             x = ROUND(y_use * ratio);
-            /* compute the true angle */           
+            /* compute the true angle */
             true_angle = 180.0 * atan((x / horiz_dpi) / (y_use / vert_dpi)) / pi;
             lpi = 1.0 / sqrt( (y_use /vert_dpi) * (y_use /vert_dpi) +
                                 (x/horiz_dpi) * (x/horiz_dpi));
             v = ROUND(-x / scaled_x);
             u = ROUND(y_use * scaled_x);
-            N = y_use * u - x * v; 
+            N = y_use * u - x * v;
             if (prev_lpi == 0) {
                 prev_lpi = lpi;
                 if (target_lpi > lpi) {
@@ -307,13 +307,13 @@ main (int argc, char **argv)
                     /* Reset these to previous x */
                     y_use = y - 1;
                     x = ROUND(y_use * ratio);
-                    /* compute the true angle */           
+                    /* compute the true angle */
                     true_angle = 180.0 * atan((x / horiz_dpi) / (y_use / vert_dpi)) / pi;
                     lpi = 1.0 / sqrt( (y_use /vert_dpi) * (y_use /vert_dpi) +
                                         (x/horiz_dpi) * (x/horiz_dpi));
                     v = ROUND(-x / scaled_x);
                     u = ROUND(y_use * scaled_x);
-                    N = y_use * u - x * v; 
+                    N = y_use * u - x * v;
                 }
                 use = true;
             }
@@ -328,7 +328,7 @@ main (int argc, char **argv)
             printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                             x,y_use,u,v,true_angle,lpi,N);
             prev_lpi = lpi;
-        }  
+        }
         y = y_use;
     }
     if (ratio == 0) {
@@ -338,12 +338,12 @@ main (int argc, char **argv)
             printf("-----------------------------------------------------------\n");
             for (y = 1; y < 11; y++) {
                 y_use = y;
-                x = ROUND( y_use * ratio ); 
+                x = ROUND( y_use * ratio );
                 v = ROUND(-x / scaled_x);
                 u = ROUND(y_use * scaled_x);
-                N = y_use * u - x * v;     
+                N = y_use * u - x * v;
                 true_angle = 0;
-                lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) * 
+                lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) *
                     (y_use / vert_dpi) + (x / horiz_dpi) * (x / horiz_dpi)) );
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
@@ -363,13 +363,13 @@ main (int argc, char **argv)
                     } else {
                         /* Reset these to previous x */
                         y_use = y - 1;
-                        x = ROUND( y_use * ratio ); 
+                        x = ROUND( y_use * ratio );
                         v = ROUND(-x / scaled_x);
                         u = ROUND(y_use * scaled_x);
-                        N = y_use * u - x * v;     
+                        N = y_use * u - x * v;
                         true_angle = 0;
-                        lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) * 
-                            (y_use / vert_dpi) + (x / horiz_dpi) * (x / horiz_dpi)) );                    
+                        lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) *
+                            (y_use / vert_dpi) + (x / horiz_dpi) * (x / horiz_dpi)) );
                     }
                     use = true;
                 }
@@ -384,7 +384,7 @@ main (int argc, char **argv)
                 printf("%3.0lf\t%3.0lf\t%3.0lf\t%3.0lf\t%3.1lf\t%3.1lf\t%3.0lf\n",
                                 x,y_use,u,v,true_angle,lpi,N);
                 prev_lpi = lpi;
-            }  
+            }
             y = y_use;
         } else {
             printf("x\ty\tu\tv\tAngle\tLPI\tLevels\n");
@@ -393,11 +393,11 @@ main (int argc, char **argv)
                 x_use = x;
                 y = ROUND(x_use * ratio);
                 true_angle = 0;
-                lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) + 
+                lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) +
                             (x_use / horiz_dpi) * (x_use / horiz_dpi) ));
                 v = ROUND( -x_use / scaled_x);
                 u = ROUND( y * scaled_x);
-                N = y  *u - x_use * v; 
+                N = y  *u - x_use * v;
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
                     if (target_lpi > lpi) {
@@ -418,11 +418,11 @@ main (int argc, char **argv)
                         x_use = x - 1;
                         y = ROUND(x_use * ratio);
                         true_angle = 0;
-                        lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) + 
+                        lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) +
                                     (x_use / horiz_dpi) * (x_use / horiz_dpi) ));
                         v = ROUND( -x_use / scaled_x);
                         u = ROUND( y * scaled_x);
-                        N = y  *u - x_use * v;                     
+                        N = y  *u - x_use * v;
                     }
                     use = true;
                 }
@@ -443,14 +443,14 @@ main (int argc, char **argv)
     }
     /* Figure out how many levels to dither across. */
     if (target_quant_specified) {
-        num_levels = ROUND((double) target_quantization / N); 
+        num_levels = ROUND((double) target_quantization / N);
     } else {
         num_levels = 1;
     }
     if (num_levels == 1 && !target_size_specified) {
         printf("No quantization, creating minimal sized periodic screen\n");
         target_size = 1;
-    } 
+    }
     /* Lower left of the cell is at the origin.  Define the other vertices */
     vertices.lower_left.x = 0;
     vertices.lower_left.y = 0;
@@ -474,13 +474,13 @@ main (int argc, char **argv)
         return -1;
     }
     /* Now actually determine the turn on sequence */
-    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, horiz_dpi, 
+    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, horiz_dpi,
                             vert_dpi, vertices, &one_index);
 #if RAW_SCREEN_DUMP
     htsc_dump_screen(&dot_grid, "dot_profile");
-#endif    
+#endif
     /* Allocate super cell */
-    code = htsc_allocate_supercell(&super_cell, x, y, u, v, target_size, 
+    code = htsc_allocate_supercell(&super_cell, x, y, u, v, target_size,
                             use_holladay_grid, dot_grid, N, &S, &H, &L);
     if (code < 0) {
         printf("ERROR! grid size problem!\n");
@@ -490,16 +490,16 @@ main (int argc, char **argv)
     htsc_tile_supercell(&super_cell, &dot_grid, x, y, u, v, N);
 #if RAW_SCREEN_DUMP
     htsc_dump_screen(&super_cell, "super_cell_tiled");
-#endif        
+#endif
     /* If we are using the Holladay grid (non dithered) then we are done. */
     if (use_holladay_grid) {
         htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
     } else {
-        if (super_cell.height == dot_grid.height && 
+        if (super_cell.height == dot_grid.height &&
             super_cell.width == dot_grid.width) {
             htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
         } else {
-            htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x, 
+            htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
                                     vert_dpi, horiz_dpi, N, gamma, dot_grid,
                                     one_index);
         }
@@ -512,9 +512,9 @@ main (int argc, char **argv)
 }
 
 void
-htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v, 
+htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
                         htsc_point_t center, double horiz_dpi, double vert_dpi,
-                        htsc_vertices_t vertices, htsc_point_t *one_index) 
+                        htsc_vertices_t vertices, htsc_point_t *one_index)
 {
     int done, dot_index, hole_index, count, index_x, index_y;
     htsc_dot_shape_search_t dot_search;
@@ -531,7 +531,7 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
     val_min=MIN(0,v);
 
     while (!done) {
-        /* First perform a search for the closest one to the center 
+        /* First perform a search for the closest one to the center
            (of those remaining) and assign the current smallest index */
         index_x = 0;
         dot_search.index_x = 0;
@@ -541,11 +541,11 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
             index_y = 0;
             for (j = val_min; j < y; j++) {
                 test_point.x = k + 0.5;
-                test_point.y = j + 0.5;                                      
+                test_point.y = j + 0.5;
                 if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
                     htsc_diffpoint(test_point, center, &differ);
                     dist = htsc_normpoint(&differ, horiz_dpi, vert_dpi);
-                    if (dist < dot_search.norm) {                    
+                    if (dist < dot_search.norm) {
                         dot_search.norm = dist;
                         dot_search.index_x = index_x;
                         dot_search.index_y = index_y;
@@ -562,29 +562,29 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         if (count == N) {
             done = 1;
             break;
-        }     
+        }
         /* The ones position for the dig_grid is locatd at the first dot_search entry */
         /* We need this later so grab it now */
         if (count == 1) {
             one_index->x = dot_search.index_x;
             one_index->y = dot_search.index_y;
         }
-        /* Now search for the closest one to a vertix (of those remaining).  
+        /* Now search for the closest one to a vertix (of those remaining).
            and assign the current largest index */
         index_x = 0;
         dot_search.index_x = 0;
         dot_search.index_y = 0;
-        dot_search.norm = 10000000000;        
+        dot_search.norm = 10000000000;
         for (k = 0; k < x + u; k++) {
             index_y = 0;
             for (j = val_min; j < y; j++) {
                 test_point.x = k + 0.5;
-                test_point.y = j + 0.5;                                      
+                test_point.y = j + 0.5;
                 if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
                     /* Find closest to a vertex */
-                    dist = htsc_vertex_dist(vertices, test_point, horiz_dpi, 
+                    dist = htsc_vertex_dist(vertices, test_point, horiz_dpi,
                                             vert_dpi);
-                    if (dist < dot_search.norm) {                    
+                    if (dist < dot_search.norm) {
                         dot_search.norm = dist;
                         dot_search.index_x = index_x;
                         dot_search.index_y = index_y;
@@ -601,13 +601,13 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         if (count == N) {
             done = 1;
             break;
-        }        
+        }
     }
 }
 
 /* This creates a mask for creating the dot shape */
-void 
-htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v, 
+void
+htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
                  double screen_angle, htsc_vertices_t vertices)
 {
     int k,j,val_min,index_x,index_y;
@@ -622,7 +622,7 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         val_min=MIN(0,v);
         dot_grid->height = abs(val_min) + y;
         dot_grid->width = x + u;
-        dot_grid->data = 
+        dot_grid->data =
             (int *) malloc(dot_grid->height * dot_grid->width * sizeof(int));
         memset(dot_grid->data,0,dot_grid->height * dot_grid->width * sizeof(int));
         index_x = 0;
@@ -644,11 +644,11 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
                 if (point_in) {
                     htsc_setpoint(dot_grid, index_x, index_y, -1);
                 }
-                index_y++; 
+                index_y++;
             }
             index_x++;
         }
-    } else { 
+    } else {
         /* All points are valid */
         dot_grid->height = y;
         dot_grid->width = u;
@@ -660,7 +660,7 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
 }
 
 double
-htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point, 
+htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
                  double horiz_dpi, double vert_dpi)
 {
     double dist[4], smallest;
@@ -684,8 +684,8 @@ htsc_vertex_dist(htsc_vertices_t vertices, htsc_point_t test_point,
     return smallest;
 }
 
-double 
-htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi) 
+double
+htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi)
 {
     diff_point->x =  diff_point->x / horiz_dpi;
     diff_point->y =  diff_point->y / vert_dpi;
@@ -693,13 +693,13 @@ htsc_normpoint(htsc_point_t *diff_point, double horiz_dpi, double vert_dpi)
 }
 
 int
-htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y) 
+htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y)
 {
-    return dig_grid->data[ y * dig_grid->width + x]; 
+    return dig_grid->data[ y * dig_grid->width + x];
 }
 
 void
-htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value) 
+htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value)
 {
     int kk;
     if (x < 0 || x > dig_grid->width-1 || y < 0 || y > dig_grid->height-1) {
@@ -708,9 +708,9 @@ htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value)
     dig_grid->data[ y * dig_grid->width + x] = value;
 }
 
-void 
-htsc_diffpoint(htsc_point_t point1, htsc_point_t point2, 
-              htsc_point_t *diff_point) 
+void
+htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
+              htsc_point_t *diff_point)
 {
 
     diff_point->x = point1.x - point2.x;
@@ -718,7 +718,7 @@ htsc_diffpoint(htsc_point_t point1, htsc_point_t point2,
 }
 
 int
-htsc_sumsum(htsc_dig_grid_t dig_grid) 
+htsc_sumsum(htsc_dig_grid_t dig_grid)
 {
 
     int pos;
@@ -732,7 +732,7 @@ htsc_sumsum(htsc_dig_grid_t dig_grid)
     return value;
 }
 
-int 
+int
 htsc_gcd(int a, int b)
 {
     if ( b == 0 ) return a;
@@ -750,7 +750,7 @@ htsc_gcd(int a, int b)
     }
 }
 
-int 
+int
 htsc_lcm(int a, int b)
 {
     int product = a * b;
@@ -761,14 +761,14 @@ htsc_lcm(int a, int b)
     return lcm;
 }
 
-int 
+int
 htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out)
 {
     double determinant;
 
     determinant = matrix_in.row[0].xy[0] * matrix_in.row[1].xy[1] -
                   matrix_in.row[0].xy[1] * matrix_in.row[1].xy[0];
-    if (determinant == 0) 
+    if (determinant == 0)
         return -1;
     matrix_out->row[0].xy[0] = matrix_in.row[1].xy[1] / determinant;
     matrix_out->row[0].xy[1] = -matrix_in.row[0].xy[1] / determinant;
@@ -778,7 +778,7 @@ htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out)
 }
 
 void
-htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in, 
+htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
                    htsc_vector_t *vector_out)
 {
     vector_out->xy[0] = matrix_in.row[0].xy[0] * vector_in.xy[0] +
@@ -788,8 +788,8 @@ htsc_matrix_vector_mult(htsc_matrix_t matrix_in, htsc_vector_t vector_in,
 }
 
 int
-htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u, 
-                        int v, int target_size, bool use_holladay_grid, 
+htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
+                        int v, int target_size, bool use_holladay_grid,
                         htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L)
 {
     htsc_matrix_t matrix;
@@ -843,9 +843,9 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
      The macrocell must be H*a by L*b where a and b are integers due to the
      periodicity of the screen. */
 
-    /* To create the Holladay screen (no stocastic stuff), 
-       select the size H and L to create the matrix i.e. super_size_x 
-       and super_size_y need to be H by L at least and then just take an 
+    /* To create the Holladay screen (no stocastic stuff),
+       select the size H and L to create the matrix i.e. super_size_x
+       and super_size_y need to be H by L at least and then just take an
        H by L section. */
     /* Force a periodicity in the screen to avoid the shift factor */
     if (*S != 0) {
@@ -871,7 +871,7 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
     }
     super_cell->height = super_size_y;
     super_cell->width = super_size_x;
-    super_cell->data = 
+    super_cell->data =
         (int *) malloc(super_size_x * super_size_y * sizeof(int));
     memset(super_cell->data, 0, super_size_x * super_size_y * sizeof(int));
     return 0;
@@ -890,7 +890,7 @@ htsc_supercell_assign_point(int new_k, int new_j, int sc_xsize, int sc_ysize,
 }
 
 void
-htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid, 
+htsc_tile_supercell(htsc_dig_grid_t *super_cell, htsc_dig_grid_t *dot_grid,
                  int x, int y, int u, int v, int N)
 {
     int sc_ysize = super_cell->height;
@@ -963,8 +963,8 @@ create_2d_gauss_filter(float *filter, int x_size, int y_size,
 
     for (j = -y_half_size; j < y_half_size+1; j++) {
         index_y = j + y_half_size;
-        for (k = -x_half_size; k < x_half_size+1; k++) { 
-            arg   = -(k  * k / (stdvalx * stdvalx) + 
+        for (k = -x_half_size; k < x_half_size+1; k++) {
+            arg   = -(k  * k / (stdvalx * stdvalx) +
                       j * j / (stdvaly * stdvaly) ) /2;
             val = (float) exp(arg);
             sum += val;
@@ -983,10 +983,10 @@ create_2d_gauss_filter(float *filter, int x_size, int y_size,
 
 /* 2-D convolution (or correlation) with periodic boundary condition */
 void
-htsc_apply_filter(byte *screen_matrix, int num_cols_sc, 
-                  int num_rows_sc, float *filter, int num_cols_filt, 
+htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
+                  int num_rows_sc, float *filter, int num_cols_filt,
                   int num_rows_filt, float *screen_blur,
-                  float *max_val, htsc_point_t *max_pos, float *min_val, 
+                  float *max_val, htsc_point_t *max_pos, float *min_val,
                   htsc_point_t *min_pos)
 {
     int k,j,kk,jj;
@@ -1003,19 +1003,19 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
             sum = 0.0;
             for (jj = -half_rows_filt; jj <= half_rows_filt; jj++) {
                 j_circ = j + jj;
-                if (j_circ < 0) { 
-                    j_circ = 
+                if (j_circ < 0) {
+                    j_circ =
                         (num_rows_sc - ((-j_circ) % num_rows_sc)) % num_rows_sc;
-                } 
+                }
                 if (j_circ > (num_rows_sc - 1)) {
                     j_circ = j_circ % num_rows_sc;
                 }
                 for (kk = -half_cols_filt; kk <= half_cols_filt; kk++) {
                     k_circ = k + kk;
-                    if (k_circ < 0) { 
-                        k_circ = 
+                    if (k_circ < 0) {
+                        k_circ =
                             (num_cols_sc - ((-k_circ) % num_cols_sc)) % num_cols_sc;
-                    } 
+                    }
                     if (k_circ > (num_cols_sc - 1)) {
                         k_circ = k_circ % num_cols_sc;
                     }
@@ -1044,10 +1044,10 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
 
 int
 htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
-                       double horiz_dpi, double vert_dpi, double lpi_act, 
+                       double horiz_dpi, double vert_dpi, double lpi_act,
                        unsigned short *pos_x, unsigned short *pos_y,
-                       int *locate, int num_dots, 
-                       htsc_dither_pos_t *dot_level_position, int level_num, 
+                       int *locate, int num_dots,
+                       htsc_dither_pos_t *dot_level_position, int level_num,
                        int num_dots_add)
 {
     double xscale = horiz_dpi / vert_dpi;
@@ -1078,16 +1078,16 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
 
     for (j = 0; j < num_dots_add; j++) {
         /* Perform the blur */
-        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx, 
+        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
-        /* Find the closest OFF dot to the min position.  */    
+        /* Find the closest OFF dot to the min position.  */
         white_pos = 0;
         dist = (pos_y[0] - min_pos.y) * (pos_y[0] - min_pos.y) +
                (pos_x[0] - min_pos.x) * (pos_x[0] - min_pos.x);
         for ( k = 1; k < num_dots; k++) {
             curr_dist = (pos_y[k] - min_pos.y) * (pos_y[k] - min_pos.y) +
                         (pos_x[k] - min_pos.x) * (pos_x[k] - min_pos.x);
-            if (curr_dist < dist && 
+            if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 0) {
                 white_pos = k;
                 dist = curr_dist;
@@ -1108,7 +1108,7 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
 
 int
 htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
-                       double horiz_dpi, double vert_dpi, double lpi_act, 
+                       double horiz_dpi, double vert_dpi, double lpi_act,
                        unsigned short *pos_x, unsigned short *pos_y, int num_dots,
                        htsc_dither_pos_t *dot_level_position)
 {
@@ -1138,21 +1138,21 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     create_2d_gauss_filter(filter, sizefiltx, sizefilty, sizefiltx, sizefilty);
     screen_blur = (float*) malloc(sizeof(float) * num_cols * num_rows);
     /* Start moving dots until the whitest and darkest dot are the same */
-    while (!done) {   
+    while (!done) {
         /* Blur */
-        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx, 
+        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
 #if RAW_SCREEN_DUMP
         htsc_dump_float_image(screen_blur, num_cols, num_rows, max_val, "blur_one");
-#endif        
-    /* Find the closest on dot to the max position */    
+#endif
+    /* Find the closest on dot to the max position */
         black_pos = 0;
         dist = (pos_y[0] - max_pos.y) * (pos_y[0] - max_pos.y) +
                (pos_x[0] - max_pos.x) * (pos_x[0] - max_pos.x);
         for ( k = 1; k < num_dots; k++) {
             curr_dist = (pos_y[k] - max_pos.y) * (pos_y[k] - max_pos.y) +
                         (pos_x[k] - max_pos.x) * (pos_x[k] - max_pos.x);
-            if (curr_dist < dist && 
+            if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 1) {
                 black_pos = k;
                 dist = curr_dist;
@@ -1161,16 +1161,16 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
         /* Set this dot to black */
         screen_matrix[pos_x[black_pos] + num_cols * pos_y[black_pos]] = 0;
         /* Blur again */
-        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx, 
+        htsc_apply_filter(screen_matrix, num_cols, num_rows, filter, sizefiltx,
                   sizefilty, screen_blur, &max_val, &max_pos, &min_val, &min_pos);
-        /* Find the closest OFF dot to the min position. */    
+        /* Find the closest OFF dot to the min position. */
         white_pos = 0;
         dist = (pos_y[0] - min_pos.y) * (pos_y[0] - min_pos.y) +
                (pos_x[0] - min_pos.x) * (pos_x[0] - min_pos.x);
         for ( k = 1; k < num_dots; k++) {
             curr_dist = (pos_y[k] - min_pos.y) * (pos_y[k] - min_pos.y) +
                         (pos_x[k] - min_pos.x) * (pos_x[k] - min_pos.x);
-            if (curr_dist < dist && 
+            if (curr_dist < dist &&
                 screen_matrix[pos_x[k] + num_cols * pos_y[k]] == 0) {
                 white_pos = k;
                 dist = curr_dist;
@@ -1194,7 +1194,7 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
                     found_it = true;
                     dot_level_position->point[k].x = pos_x[white_pos];
                     dot_level_position->point[k].y = pos_y[white_pos];
-                    dot_level_position->locations[k] = 
+                    dot_level_position->locations[k] =
                         pos_x[white_pos] + pos_y[white_pos] * num_cols;
                     break;
                 }
@@ -1210,10 +1210,10 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     return 0;
 }
 
-void 
-htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask, 
+void
+htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                           int num_levels, int y, int x, double vert_dpi,
-                          double horiz_dpi, int N, double gamma, 
+                          double horiz_dpi, int N, double gamma,
                           htsc_dig_grid_t dot_grid, htsc_point_t dot_grid_one_index)
 {
     int *dot_levels;
@@ -1242,14 +1242,14 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
     int j_index, k_index, threshold_value;
     int *dot_level_sort;
     bool found;
-        
+
     lpi_act = 1.0/((double) sqrt( vert_scale * vert_scale +
                                   horiz_scale * horiz_scale));
     if (num_levels > 1) {
         curr_size = 2 * MAX(height_supercell, width_supercell);
         locate = (int*) malloc(sizeof(int) * curr_size);
         screen_matrix = (byte*) malloc(sizeof(byte) * number_points);
-        memset(screen_matrix, 0, sizeof(byte) * number_points);  
+        memset(screen_matrix, 0, sizeof(byte) * number_points);
         /* Determine the number of dots in the screen and their index */
         for (j = 0; j < number_points; j++) {
             if (super_cell.data[j] == 1) {
@@ -1270,7 +1270,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             pos_x[k] = locate[k] % width_supercell;
             pos_y[k] = (locate[k] - pos_x[k])/width_supercell;
         }
-        dot_level_pos = 
+        dot_level_pos =
             (htsc_dither_pos_t*) malloc(sizeof(htsc_dither_pos_t) * num_levels);
         dot_levels = (int*) malloc(sizeof(int) * num_levels);
         percent = 1.0/((float)num_levels+1.0);
@@ -1281,16 +1281,16 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             curr_num_dots = dot_levels[k] -prev_dot_level;
             prev_dot_level = dot_levels[k];
             dot_level_pos[k].locations = (int*) malloc(sizeof(int) * curr_num_dots);
-            dot_level_pos[k].point = 
+            dot_level_pos[k].point =
                 (htsc_point_t*) malloc(sizeof(htsc_point_t) * curr_num_dots);
             dot_level_pos[k].number_points = curr_num_dots;
         }
-        /* An initial random location for the first level  */     
+        /* An initial random location for the first level  */
         dots_needed = dot_levels[0];
         count = 0;
         if (dots_needed > 0) {
             done = 0;
-            while (!done) {             
+            while (!done) {
                 rand_pos = ROUND((num_dots-1)*(double) rand()/ (double) RAND_MAX);
                 if (screen_matrix[locate[rand_pos]] != 1) {
                     screen_matrix[locate[rand_pos]] = 1;
@@ -1307,30 +1307,30 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         }
         /* Rearrange these dots into a pleasing pattern */
 #if RAW_SCREEN_DUMP
-        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell, 
+        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_init");
-#endif         
-        code = htsc_init_dot_position(screen_matrix, width_supercell, 
+#endif
+        code = htsc_init_dot_position(screen_matrix, width_supercell,
                                height_supercell, horiz_dpi, vert_dpi, lpi_act,
                                pos_x, pos_y, num_dots, dot_level_pos);
 #if RAW_SCREEN_DUMP
-        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell, 
+        htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                              1, "screen0_arrange");
-#endif          
+#endif
         /* Now we want to introduce more dots at each level */
         for (k = 1; k < num_levels; k++) {
             code = htsc_add_dots(screen_matrix, width_supercell, height_supercell,
-                          horiz_dpi, vert_dpi, lpi_act, pos_x, pos_y, locate, 
-                          num_dots, dot_level_pos, k, 
+                          horiz_dpi, vert_dpi, lpi_act, pos_x, pos_y, locate,
+                          num_dots, dot_level_pos, k,
                           dot_level_pos[k].number_points);
 #if RAW_SCREEN_DUMP
             {
             char str_name[30];
             sprintf(str_name,"screen%d_arrange",k);
-            htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell, 
+            htsc_dump_byte_image(screen_matrix, width_supercell, height_supercell,
                                  1, str_name);
             }
-#endif         
+#endif
         }
         /* Create the threshold mask. */
         step_size = 256.0 / (double) N;
@@ -1338,8 +1338,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         for (k = 0; k < N; k++) {
             thresholds[N-1-k] = (k + 1) * step_size - (step_size / 2);
         }
-        mag_offset = 
-            (double) (thresholds[0]-thresholds[1]) / (double) (num_levels+1);  
+        mag_offset =
+            (double) (thresholds[0]-thresholds[1]) / (double) (num_levels+1);
         if ( gamma != 1.0) {
             for (k = 0; k < N; k++) {
                 temp_dbl = (double) pow((double) thresholds[k]/255.0, (double) gamma);
@@ -1352,9 +1352,9 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         /* allocate the mask */
         final_mask->height = height_supercell;
         final_mask->width = width_supercell;
-        final_mask->data = 
+        final_mask->data =
             (int*) malloc(sizeof(int) * height_supercell * width_supercell);
-        /* We need to associate the locate index with a particular level 
+        /* We need to associate the locate index with a particular level
            for the when the dot begins to turn on.  Go through the dot_level_pos
            array to get the values.  Probably should create this earlier and avoid
            this */
@@ -1364,7 +1364,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             for (jj = 0; jj < num_levels; jj++) {
                 curr_dot_level = &(dot_level_pos[jj]);
                 for (mm = 0; mm < curr_dot_level->number_points; mm++) {
-                    if (pos_x[h] == curr_dot_level->point[mm].x && 
+                    if (pos_x[h] == curr_dot_level->point[mm].x &&
                         pos_y[h] == curr_dot_level->point[mm].y ) {
                         found = true;
                         dot_level_sort[h] = jj + 1;
@@ -1386,11 +1386,11 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                     val = htsc_getpoint(&dot_grid, k, j);
                     if (val != 0) {
                         /* Assign a offset threshold values */
-                        j_index = 
+                        j_index =
                             (pos_y[h] + j - (int) dot_grid_one_index.y) % height_supercell;
-                        k_index = 
+                        k_index =
                             (pos_x[h] + k - (int) dot_grid_one_index.x) % width_supercell;
-                        threshold_value = thresholds[val-1] + 
+                        threshold_value = thresholds[val-1] +
                                           mag_offset * dot_level_sort[h];
                         if (threshold_value > 255) threshold_value = 255;
                         if (threshold_value < 0) threshold_value = 0;
@@ -1414,8 +1414,8 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
     }
 }
 
-void 
-htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L, 
+void
+htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
     double step_size = 256.0 /( (double) H * (double) L);
@@ -1437,11 +1437,11 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
          if ( gamma != 1.0) {
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
-         } 
+         }
          thresholds[number_points - k - 1] = ROUND(temp * 253.0 + 1);
     }
     memset(final_mask->data, 0, H * L * sizeof(int));
-   
+
     for (j = 0; j < H; j++) {
         for (k = 0; k < L; k++) {
             index_point = htsc_getpoint(&super_cell,k,j) - 1;
@@ -1452,8 +1452,8 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
     free(thresholds);
 }
 
-void 
-htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L, 
+void
+htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
     double step_size = 256.0 /( (double) H * (double) L);
@@ -1467,7 +1467,7 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = super_cell.height;
     final_mask->width = super_cell.width;
-    final_mask->data = (int *) malloc(super_cell.height * super_cell.width * 
+    final_mask->data = (int *) malloc(super_cell.height * super_cell.width *
                                       sizeof(int));
     thresholds = (double *) malloc(H * L * sizeof(double));
     for (k = 0; k < number_points; k++) {
@@ -1475,10 +1475,10 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
          if ( gamma != 1.0) {
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
-         } 
+         }
          thresholds[number_points - k - 1] = ROUND(temp * 253.0 + 1);
     }
-    memset(final_mask->data, 0, super_cell.height * super_cell.width * 
+    memset(final_mask->data, 0, super_cell.height * super_cell.width *
                                 sizeof(int));
     for (j = 0; j < super_cell.height; j++) {
         for (k = 0; k < super_cell.width; k++) {
@@ -1490,8 +1490,8 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
     free(thresholds);
 }
 
-void 
-htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S, 
+void
+htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                output_format_type output_format)
 {
     char full_file_name[50];
@@ -1502,63 +1502,63 @@ htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     int height = final_mask.height;
     byte data;
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
-			((output_format == OUTPUT_PPM) ? "ppm" : "raw");
-    
+                        ((output_format == OUTPUT_PPM) ? "ppm" : "raw");
+
     if (use_holladay_grid) {
-        sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width, 
+        sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width,
                 height, output_extension);
     } else {
-        sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height, 
+        sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height,
                 output_extension);
     }
     fid = fopen(full_file_name,"wb");
 
     if (output_format == OUTPUT_PPM)
-	fprintf(fid, "P5\n"
-		"# Halftone threshold array, %s, [%d, %d], S=%d\n"
-		"%d %d\n"
-		"255\n",
-		use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height, 
+        fprintf(fid, "P5\n"
+                "# Halftone threshold array, %s, [%d, %d], S=%d\n"
+                "%d %d\n"
+                "255\n",
+                use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
                 S, width, height);
 
     if (output_format != OUTPUT_PS) {
-	/* Both BIN and PPM format write the same binary data */
-	for (y = 0; y < height; y++) {
-	    for ( x = 0; x < width; x++ ) {
-		data = (byte) *buff_ptr; 
-		fwrite(&data,sizeof(byte),1,fid);
-		buff_ptr++;
-	    }
-	}
+        /* Both BIN and PPM format write the same binary data */
+        for (y = 0; y < height; y++) {
+            for ( x = 0; x < width; x++ ) {
+                data = (byte) *buff_ptr;
+                fwrite(&data,sizeof(byte),1,fid);
+                buff_ptr++;
+            }
+        }
     } else {
-	/* Output PS HalftoneType 3 dictionary */
-	fprintf(fid, "%%!PS\n"
-		"<< /HalftoneType 3\n"
-		"   /Width  %d\n"
-		"   /Height %d\n"
-		"   /Thresholds <\n",
-		width, height);
-	
-	for (y = 0; y < height; y++) {
-	    for ( x = 0; x < width; x++ ) {
-		data = (byte) *buff_ptr; 
-		fprintf(fid, "%02x", data);
-		buff_ptr++;
-		if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-		    fprintf(fid, "\n");
-	    }
-	    fprintf(fid, "\n");
-	}
-	fprintf(fid, "   >\n"
-		">>\n"
-		);
+        /* Output PS HalftoneType 3 dictionary */
+        fprintf(fid, "%%!PS\n"
+                "<< /HalftoneType 3\n"
+                "   /Width  %d\n"
+                "   /Height %d\n"
+                "   /Thresholds <\n",
+                width, height);
+
+        for (y = 0; y < height; y++) {
+            for ( x = 0; x < width; x++ ) {
+                data = (byte) *buff_ptr;
+                fprintf(fid, "%02x", data);
+                buff_ptr++;
+                if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+                    fprintf(fid, "\n");
+            }
+            fprintf(fid, "\n");
+        }
+        fprintf(fid, "   >\n"
+                ">>\n"
+                );
     }
     fclose(fid);
 }
- 
+
 #if RAW_SCREEN_DUMP
 void
-htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[]) 
+htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
 {
     char full_file_name[50];
     FILE *fid;
@@ -1595,7 +1595,7 @@ htsc_dump_screen(htsc_dig_grid_t *dig_grid, char filename[])
 
 void
 htsc_dump_float_image(float *image, int height, int width, float max_val,
-                      char filename[]) 
+                      char filename[])
 {
     char full_file_name[50];
     FILE *fid;
@@ -1619,7 +1619,7 @@ htsc_dump_float_image(float *image, int height, int width, float max_val,
 
 void
 htsc_dump_byte_image(byte *image, int height, int width, float max_val,
-                      char filename[]) 
+                      char filename[])
 {
     char full_file_name[50];
     FILE *fid;

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -31,10 +31,10 @@
  * Clients that get glyph data (for example, using the get_outline procedure
  * of a Type 42 or a CIDFontType 2 font) do so as follows:
 
-	gs_glyph_data_t gdata;
-	int code;
-	...
-	code = ...get_outline(...&gdata...);
+        gs_glyph_data_t gdata;
+        int code;
+        ...
+        code = ...get_outline(...&gdata...);
 
  *
  * If code >= 0 (no error), gdata.bits.{data,size} point to the outline data.
@@ -42,7 +42,7 @@
  * Since the data may have been allocated in response to the request,
  * when the client is finished with the data, it should call:
 
-	gs_glyph_data_free(&gdata, "client name");
+        gs_glyph_data_free(&gdata, "client name");
 
  * This is a no-op if the data are stored in the font, but an actual freeing
  * procedure if they were allocated by get_outline.
@@ -96,16 +96,16 @@ void gs_glyph_data_free(gs_glyph_data_t *pgd, client_name_t cname);
  * The implementor of get_outline or similar procedures should set the
  * client's glyph_data_t structure as follows:
 
-	...get_outline...(...gs_font *pfont...gs_glyph_data_t *pgd...)
-	{
-	    ...
-	    gs_glyph_data_from_string(pgd, odata, osize, NULL);
+        ...get_outline...(...gs_font *pfont...gs_glyph_data_t *pgd...)
+        {
+            ...
+            gs_glyph_data_from_string(pgd, odata, osize, NULL);
    (or)	    gs_glyph_data_from_string(pgd, odata, osize, pfont);
-	}
+        }
 
  * If the data are in an object rather then a string, use
 
-	gs_glyph_data_from_bytes(pgd, obase, ooffset, osize, <NULL|pfont>);
+        gs_glyph_data_from_bytes(pgd, obase, ooffset, osize, <NULL|pfont>);
 
  * The last argument of gs_glyph_data_from_{string|bytes} should be pfont
  * iff odata/osize were allocated by this call and will not be retained
@@ -121,9 +121,9 @@ void gs_glyph_data_free(gs_glyph_data_t *pgd, client_name_t cname);
 typedef struct gs_font_s gs_font;
 #endif
 void gs_glyph_data_from_string(gs_glyph_data_t *pgd, const byte *data,
-			       uint size, gs_font *font);
+                               uint size, gs_font *font);
 void gs_glyph_data_from_bytes(gs_glyph_data_t *pgd, const byte *bytes,
-			      uint offset, uint size, gs_font *font);
+                              uint offset, uint size, gs_font *font);
 /* from_null(pgd) is a shortcut for from_string(pgd, NULL, 0, NULL). */
 void gs_glyph_data_from_null(gs_glyph_data_t *pgd);
 

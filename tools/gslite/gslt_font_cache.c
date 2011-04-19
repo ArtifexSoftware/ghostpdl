@@ -16,7 +16,6 @@
 #include "gslt.h"
 #include "gslt_font.h"
 
-
 /*
  * The font cache is a gs_font_dir.
  * It has some parameters that need to be set,
@@ -53,7 +52,6 @@ gslt_free_font_cache(gs_memory_t *mem, gs_font_dir *fontdir)
     gs_free_object(mem, fontdir, "gs_font_dir");
 }
 
-
 /*
  * Find the offset and length of an SFNT table.
  * Return -1 if no table by the specified name is found.
@@ -72,14 +70,14 @@ gslt_find_sfnt_table(gslt_font_t *xf, char *name, int *lengthp)
 
     if (!memcmp(xf->data, "ttcf", 4))
     {
-	int nfonts = u32(xf->data + 8);
-	if (xf->subfontid < 0 || xf->subfontid >= nfonts)
-	    return -1;
-	offset = u32(xf->data + 12 + xf->subfontid * 4);
+        int nfonts = u32(xf->data + 8);
+        if (xf->subfontid < 0 || xf->subfontid >= nfonts)
+            return -1;
+        offset = u32(xf->data + 12 + xf->subfontid * 4);
     }
     else
     {
-	offset = 0;
+        offset = 0;
     }
 
     ntables = u16(xf->data + offset + 4);
@@ -134,18 +132,18 @@ gslt_new_font(gs_memory_t *mem, gs_font_dir *fontdir, char *buf, int buflen, int
     xf->charstrings = 0;
 
     if (memcmp(xf->data, "OTTO", 4) == 0)
-	t = gslt_init_postscript_font(mem, fontdir, xf);
+        t = gslt_init_postscript_font(mem, fontdir, xf);
     else if (memcmp(xf->data, "\0\1\0\0", 4) == 0)
-	t = gslt_init_truetype_font(mem, fontdir, xf);
+        t = gslt_init_truetype_font(mem, fontdir, xf);
     else if (memcmp(xf->data, "true", 4) == 0)
-	t = gslt_init_truetype_font(mem, fontdir, xf);
+        t = gslt_init_truetype_font(mem, fontdir, xf);
     else if (memcmp(xf->data, "ttcf", 4) == 0)
-	t = gslt_init_truetype_font(mem, fontdir, xf);
+        t = gslt_init_truetype_font(mem, fontdir, xf);
     else
     {
         gslt_free_font(mem, xf);
-	gs_throw(-1, "not an opentype font");
-	return NULL;
+        gs_throw(-1, "not an opentype font");
+        return NULL;
     }
 
     if (t < 0)
@@ -171,4 +169,3 @@ gslt_free_font(gs_memory_t *mem, gslt_font_t *xf)
     gs_free_object(mem, xf->font, "font object");
     gs_free_object(mem, xf, "gslt_font struct");
 }
-

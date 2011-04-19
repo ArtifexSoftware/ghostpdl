@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2009 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,7 +18,7 @@
 #include "stdpre.h"
 #include "gstypes.h"
 #include "gsmemory.h"
-#include "gsstruct.h"  
+#include "gsstruct.h"
 #include "scommon.h"
 #include "gx.h"
 #include "gzstate.h"
@@ -26,18 +26,18 @@
 #include "gsicc_profilecache.h"
 #include "gserrors.h"
 
-#define ICC_CACHE_MAXPROFILE 50 
+#define ICC_CACHE_MAXPROFILE 50
 
 /* Static prototypes */
-static void rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, 
+static void rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in,
                                         client_name_t cname);
 static void gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache);
 
-gs_private_st_ptrs2(st_profile_entry, gsicc_profile_entry_t, 
-                    "gsicc_profile_entry", profile_entry_enum_ptrs, 
+gs_private_st_ptrs2(st_profile_entry, gsicc_profile_entry_t,
+                    "gsicc_profile_entry", profile_entry_enum_ptrs,
                     profile_entry_reloc_ptrs, color_space, next);
-gs_private_st_ptrs1(st_profile_cache, gsicc_profile_cache_t, 
-                    "gsicc_profile_cache", profile_list_enum_ptrs, 
+gs_private_st_ptrs1(st_profile_cache, gsicc_profile_cache_t,
+                    "gsicc_profile_cache", profile_list_enum_ptrs,
                     profile_list_reloc_ptrs, head);
 
 /**
@@ -49,9 +49,9 @@ gsicc_profilecache_new(gs_memory_t *memory)
 {
     gsicc_profile_cache_t *result;
 
-    /* We want this to be maintained in stable_memory.  It should not be effected by the 
+    /* We want this to be maintained in stable_memory.  It should not be effected by the
        save and restores */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_cache_t, 
+    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_cache_t,
                              &st_profile_cache, "gsicc_profilecache_new");
     if ( result == NULL )
         return(NULL);
@@ -70,18 +70,18 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
 
     while (curr != NULL ){
         rc_decrement(curr->color_space, "rc_gsicc_profile_cache_free");
-        gs_free_object(mem->stable_memory, curr, 
+        gs_free_object(mem->stable_memory, curr,
                        "rc_gsicc_profile_cache_free");
         profile_cache->num_entries--;
         curr = curr->next;
     }
 #ifdef DEBUG
     if (profile_cache->num_entries != 0)
-	eprintf1("gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
-	    profile_cache->num_entries);
+        eprintf1("gsicc_profile_cache_free, num_entries is %d (should be 0).\n",
+            profile_cache->num_entries);
 #endif
-    gs_free_object(mem->stable_memory, profile_cache, 
-                   "rc_gsicc_profile_cache_free"); 
+    gs_free_object(mem->stable_memory, profile_cache,
+                   "rc_gsicc_profile_cache_free");
 }
 
 void
@@ -93,7 +93,7 @@ gsicc_add_cs(gs_state * pgs, gs_color_space * colorspace, ulong dictkey)
 
     /* The entry has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
-    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t, 
+    result = gs_alloc_struct(memory->stable_memory, gsicc_profile_entry_t,
                                 &st_profile_entry, "gsicc_add_cs");
     /* If needed, remove an entry (the last one) */
     if (profile_cache->num_entries >= ICC_CACHE_MAXPROFILE) {
@@ -120,11 +120,11 @@ gsicc_find_cs(ulong key_test, gs_state * pgs)
         if (curr->key == key_test){
             /* If not already at head of list, move this one there */
             if (curr != profile_cache->head) {
-		/* We need to move found one to the top of the list. */
-		prev->next = curr->next;
-		curr->next = profile_cache->head;
-		profile_cache->head = curr;
-	    }
+                /* We need to move found one to the top of the list. */
+                prev->next = curr->next;
+                curr->next = profile_cache->head;
+                profile_cache->head = curr;
+            }
             return(curr->color_space);
         }
         prev = curr;
@@ -144,13 +144,13 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
 
 #ifdef DEBUG
     if (curr == NULL) {
-	eprintf(" attempt to remove from an empty profile cache.\n");
-	return; /* gs_abort(); */
+        eprintf(" attempt to remove from an empty profile cache.\n");
+        return; /* gs_abort(); */
     }
 #endif
     while (curr->next != NULL) {
         prev = curr;
-	curr = curr->next;
+        curr = curr->next;
     }
     profile_cache->num_entries--;
     if (prev == NULL) {
@@ -158,15 +158,15 @@ gsicc_remove_cs_entry(gsicc_profile_cache_t *profile_cache)
         profile_cache->head = NULL;
 #ifdef DEBUG
     if (profile_cache->num_entries != 0) {
-	eprintf1("profile cache list empty, but list has num_entries=%d.\n",
-	    profile_cache->num_entries);
+        eprintf1("profile cache list empty, but list has num_entries=%d.\n",
+            profile_cache->num_entries);
     }
 #endif
     } else {
-	prev->next = NULL;	/* new tail */
+        prev->next = NULL;	/* new tail */
     }
     /* Decremented, but someone could still be referencing this */
-    /* If found again in the source document, it will be regenerated 
+    /* If found again in the source document, it will be regenerated
        and added back into the cache. */
     rc_decrement(curr->color_space, "gsicc_remove_cs_entry");
     gs_free_object(memory->stable_memory, curr, "gsicc_remove_cs_entry");

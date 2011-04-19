@@ -57,11 +57,11 @@ typedef struct px_bitmap_params_s {
 /* Define the structure for downloaded raster patterns. */
 typedef struct px_pattern_s {
   rc_header rc;			/* counts refs from gstates, dicts */
-	/* Original parameters */
+        /* Original parameters */
   px_bitmap_params_t params;
   gs_string palette;		/* copy of palette if indexed color */
   byte *data;			/* raster data */
-	/* Internal values */
+        /* Internal values */
   gx_bitmap_id id;		/* PCL XL ID * #persistence + persistence */
 } px_pattern_t;
 #define private_st_px_pattern()		/* in pximage.c */\
@@ -110,10 +110,10 @@ typedef enum {
 /* Define the PCL XL extension of the PostScript graphics state. */
 typedef struct px_gstate_s {
   gs_memory_t *memory;
-	/* Since this is what the 'client data' of the gs_state points to, */
-	/* we need a pointer back to the px_state_t. */
+        /* Since this is what the 'client data' of the gs_state points to, */
+        /* we need a pointer back to the px_state_t. */
   px_state_t *pxs;
-	/* State information */
+        /* State information */
   px_paint_t brush;
   float char_angle;
   float char_bold_value;
@@ -138,7 +138,7 @@ typedef struct px_gstate_s {
   struct ht_ {
     pxeDitherMatrix_t method;
     bool set;			/* true if we have done gs_sethalftone */
-				/* with these parameters */
+                                /* with these parameters */
     uint width;
     uint height;
     gs_point origin;
@@ -149,11 +149,11 @@ typedef struct px_gstate_s {
   bool dashed;
   gs_matrix dash_matrix;
   px_paint_t pen;
-	/* Pattern dictionary */
+        /* Pattern dictionary */
   px_dict_t temp_pattern_dict;
-	/* Cached values */
+        /* Cached values */
   gs_matrix text_ctm;		/* scale/rotate transformations applied in */
-				/* the reverse order */
+                                /* the reverse order */
   gs_matrix char_matrix;	/* char_size+angle+scale+shear */
   bool char_matrix_set;
   int stack_depth;		/* # of unmatched PushGS */

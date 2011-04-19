@@ -34,7 +34,7 @@ typedef struct pcl_symbol_set_s {
 /* Check whether a symbol map's character requirements are supported by a
  * font's character complement. */
 bool pcl_check_symbol_support(const byte *symset_req,
-				 const byte *font_sup);
+                                 const byte *font_sup);
 
 /* Find a symbol map, given its ID and glyph vocabulary. */
 pl_symbol_map_t *pcl_find_symbol_map(const pcl_state_t *pcs,

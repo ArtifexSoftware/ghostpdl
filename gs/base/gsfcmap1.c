@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -38,13 +38,13 @@ bytes2int(const byte *p, int n)
 public_st_cmap_adobe1();
 /* Because lookup ranges can be elements of arrays, */
 /* their enum_ptrs procedure must never return 0 prematurely. */
-static 
+static
 ENUM_PTRS_WITH(cmap_lookup_range_enum_ptrs,
                gx_cmap_lookup_range_t *pclr) return 0;
 case 0:
     if (pclr->value_type == CODE_VALUE_GLYPH) {
         const byte *pv = pclr->values.data;
-	int size = pclr->value_size;
+        int size = pclr->value_size;
         int k;
 
         for (k = 0; k < pclr->num_entries; ++k, pv += size) {
@@ -115,7 +115,7 @@ gs_cmap_get_shortest_chr(const gx_code_map_t * pcmap, uint *pfidx)
 static int
 gs_multidim_CID_offset(const byte *key_str,
                         const byte *key_lo, const byte *key_hi,
-			int key_size)
+                        int key_size)
 {
 
     int i;	/* index for current dimension */
@@ -132,7 +132,7 @@ gs_multidim_CID_offset(const byte *key_str,
         CID_offset = CID_offset * (key_hi[i] - key_lo[i] + 1) +
             key_str[i] - key_lo[i];
 
-#ifdef DEBUG 
+#ifdef DEBUG
     if_debug1('J', "[J]gmCo()         CID_offset = %d\n", CID_offset);
 #endif
 
@@ -179,20 +179,20 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
         dlprintf("[J]CMDNmr() is called: str=(");
         debug_print_string_hex(str, ssize);
         dlprintf3(") @ 0x%lx ssize=%d, %d ranges to check\n",
-		  (ulong)str, ssize, pcmap->num_lookup);
+                  (ulong)str, ssize, pcmap->num_lookup);
     }
  #endif
 
     for (i = pcmap->num_lookup - 1; i >= 0; --i) {
-	/* main loop - scan the map passed via pcmap */
-	/* reverse scan order due to 'usecmap' */
+        /* main loop - scan the map passed via pcmap */
+        /* reverse scan order due to 'usecmap' */
 
         const gx_cmap_lookup_range_t *pclr = &pcmap->lookup[i];
         int pre_size = pclr->key_prefix_size, key_size = pclr->key_size,
             chr_size = pre_size + key_size;
 
         int j = 0;
-	/* length of the given byte stream is shorter than
+        /* length of the given byte stream is shorter than
          * chr-length of current range, no need for further check,
          * skip to the next range.
          */
@@ -240,14 +240,14 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
             int k, l;
             const byte *pvalue = NULL;
 
-	    /* when range is "range", 2 keys for lo-end and hi-end
+            /* when range is "range", 2 keys for lo-end and hi-end
              * are stacked. So twice the step. current "key" points
              * lo-end of current range, and the pointer for hi-end
              * is calculated by (key + step - key_size).
              */
 
             if (pclr->key_is_range)
-		step <<=1; 	/* step = step * 2; */
+                step <<=1; 	/* step = step * 2; */
 
             for (k = 0; k < pclr->num_entries; ++k, key += step) {
 
@@ -264,7 +264,7 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
                         break;
                 }
 
-		if (pm_maxlen < pre_size + l) {
+                if (pm_maxlen < pre_size + l) {
                     pm_maxlen = chr_size;
                     pm_chr = bytes2int(str, chr_size);
                     pm_index = (*pindex) + chr_size;
@@ -272,7 +272,7 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
                 }
                 if (l == key_size)
                         break;
-	    }
+            }
 
             /* all keys are tried, but found no match. */
             /* go to next prefix. */
@@ -345,9 +345,9 @@ code_map_decode_next_multidim_regime(const gx_code_map_t * pcmap,
  */
 static int
 gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
-			   const gs_const_string * pstr,
-			   uint * pindex, uint * pfidx,
-			   gs_char * pchr, gs_glyph * pglyph)
+                           const gs_const_string * pstr,
+                           uint * pindex, uint * pfidx,
+                           gs_char * pchr, gs_glyph * pglyph)
 {
     const gs_cmap_adobe1_t *pcmap = (const gs_cmap_adobe1_t *)pcmap_in;
     uint save_index = *pindex;
@@ -376,7 +376,7 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
     if_debug0('J', "[J]GCDN() check notdef CMap\n");
     *pindex = save_index;
     code =
-	code_map_decode_next_multidim_regime(&pcmap->notdef, pstr, pindex, pfidx, pchr, pglyph);
+        code_map_decode_next_multidim_regime(&pcmap->notdef, pstr, pindex, pfidx, pchr, pglyph);
 
     /* This is defined "notdef" character. */
     if (code != 0 || *pglyph != gs_no_glyph)
@@ -385,10 +385,10 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
     /*
      * This is undefined in def & undef maps,
      * use partially matched result with default notdef (CID = 0).
-     */ 
+     */
     if (save_index < pm_index) {
 
-	/* there was some partially matched */
+        /* there was some partially matched */
 
         *pglyph = gs_min_cid_glyph;	/* CID = 0 */
         *pindex = pm_index;
@@ -397,25 +397,25 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
          return 0; /* should return some error for partial matched .notdef? */
     }
     else {
-	/* no match */
+        /* no match */
 
-	/* Even partial match is failed.
+        /* Even partial match is failed.
          * Getting the shortest length from defined characters,
          * and take the leading bytes (with same length of the shortest
          * defined chr) as an unidentified character: CID = 0.
-	 * Also this procedure is specified in PS Ref. Manual v3,
-         * at the end of Fonts chapter. 
+         * Also this procedure is specified in PS Ref. Manual v3,
+         * at the end of Fonts chapter.
          */
 
-	const byte *str = pstr->data + save_index;
-	uint ssize = pstr->size - save_index;
-	int chr_size_shortest = 
-		gs_cmap_get_shortest_chr(&pcmap->def, pfidx);
+        const byte *str = pstr->data + save_index;
+        uint ssize = pstr->size - save_index;
+        int chr_size_shortest =
+                gs_cmap_get_shortest_chr(&pcmap->def, pfidx);
 
-	if (chr_size_shortest <= ssize) {
+        if (chr_size_shortest <= ssize) {
             *pglyph = gs_min_cid_glyph;	/* CID = 0, this is CMap fallback */
             *pindex = save_index + chr_size_shortest;
-	    *pchr = '\0';
+            *pchr = '\0';
 #ifdef DEBUG
             if (gs_debug_c('J')) {
                 dlprintf1("[J]GCDN() no partial match, skip %d byte (",
@@ -425,10 +425,10 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
             }
 #endif
             return 0; /* should return some error for fallback .notdef? */
-	}
-	else {
+        }
+        else {
             /* Undecodable string is shorter than the shortest character,
-             * return 'gs_no_glyph' and update index to end-of-string 
+             * return 'gs_no_glyph' and update index to end-of-string
              */
 #ifdef DEBUG
             if (gs_debug_c('J')) {
@@ -437,9 +437,9 @@ gs_cmap_adobe1_decode_next(const gs_cmap_t * pcmap_in,
             }
 #endif
             *pglyph = gs_no_glyph;
-	    *pindex += ssize;
+            *pindex += ssize;
             return 0;			/* fixme: should return a code != 0 if caller needs to know */
-	}
+        }
     }
 }
 
@@ -454,10 +454,10 @@ static int
 adobe1_next_range(gs_cmap_ranges_enum_t *penum)
 {
     const gs_cmap_adobe1_t *const pcmap =
-	(const gs_cmap_adobe1_t *)penum->cmap;
+        (const gs_cmap_adobe1_t *)penum->cmap;
 
     if (penum->index >= pcmap->code_space.num_ranges)
-	return 1;
+        return 1;
     penum->range = pcmap->code_space.ranges[penum->index++];
     return 0;
 }
@@ -475,7 +475,7 @@ adobe1_next_lookup(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
     const gx_cmap_lookup_range_t *lookup = &pcm->lookup[penum->index[0]];
 
     if (penum->index[0] >= pcm->num_lookup)
-	return 1;
+        return 1;
     penum->entry.key_size = lookup->key_prefix_size + lookup->key_size;
     penum->entry.key_is_range = lookup->key_is_range;
     penum->entry.value_type = lookup->value_type;
@@ -489,13 +489,13 @@ static int
 adobe1_next_lookup_def(gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
-			&((const gs_cmap_adobe1_t *)penum->cmap)->def);
+                        &((const gs_cmap_adobe1_t *)penum->cmap)->def);
 }
 static int
 adobe1_next_lookup_notdef(gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
-			&((const gs_cmap_adobe1_t *)penum->cmap)->notdef);
+                        &((const gs_cmap_adobe1_t *)penum->cmap)->notdef);
 }
 static int
 adobe1_next_entry(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
@@ -504,20 +504,20 @@ adobe1_next_entry(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
     int psize = lookup->key_prefix_size;
     int ksize = lookup->key_size;
     const byte *key =
-	lookup->keys.data + penum->index[1] * ksize *
-	(lookup->key_is_range ? 2 : 1);
+        lookup->keys.data + penum->index[1] * ksize *
+        (lookup->key_is_range ? 2 : 1);
     int i;
 
     if (penum->index[1] >= lookup->num_entries)
-	return 1;
+        return 1;
     if (psize + ksize > MAX_CMAP_CODE_SIZE)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     for (i = 0; i < 2; ++i, key += ksize) {
-	memcpy(penum->entry.key[i], lookup->key_prefix, psize);
-	memcpy(penum->entry.key[i] + psize, key, ksize);
+        memcpy(penum->entry.key[i], lookup->key_prefix, psize);
+        memcpy(penum->entry.key[i] + psize, key, ksize);
     }
     penum->entry.value.data =
-	lookup->values.data + penum->index[1] * lookup->value_size;
+        lookup->values.data + penum->index[1] * lookup->value_size;
     penum->entry.value.size = lookup->value_size;
     penum->index[1]++;
     return 0;
@@ -526,13 +526,13 @@ static int
 adobe1_next_entry_def(gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_entry(penum,
-			&((const gs_cmap_adobe1_t *)penum->cmap)->def);
+                        &((const gs_cmap_adobe1_t *)penum->cmap)->def);
 }
 static int
 adobe1_next_entry_notdef(gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_entry(penum,
-			&((const gs_cmap_adobe1_t *)penum->cmap)->notdef);
+                        &((const gs_cmap_adobe1_t *)penum->cmap)->notdef);
 }
 static const gs_cmap_lookups_enum_procs_t adobe1_lookup_def_procs = {
     adobe1_next_lookup_def, adobe1_next_entry_def
@@ -542,11 +542,11 @@ static const gs_cmap_lookups_enum_procs_t adobe1_lookup_notdef_procs = {
 };
 static void
 gs_cmap_adobe1_enum_lookups(const gs_cmap_t *pcmap, int which,
-			    gs_cmap_lookups_enum_t *pre)
+                            gs_cmap_lookups_enum_t *pre)
 {
     gs_cmap_lookups_enum_setup(pre, pcmap,
-			       (which ? &adobe1_lookup_notdef_procs :
-				&adobe1_lookup_def_procs));
+                               (which ? &adobe1_lookup_notdef_procs :
+                                &adobe1_lookup_def_procs));
 }
 
 static const gs_cmap_procs_t cmap_adobe1_procs = {
@@ -558,52 +558,52 @@ static const gs_cmap_procs_t cmap_adobe1_procs = {
 
 int
 gs_cmap_adobe1_alloc(gs_cmap_adobe1_t **ppcmap, int wmode,
-		     const byte *map_name, uint name_size,
-		     uint num_fonts, uint num_ranges, uint num_lookups,
-		     uint keys_size, uint values_size,
-		     const gs_cid_system_info_t *pcidsi_in, gs_memory_t *mem)
+                     const byte *map_name, uint name_size,
+                     uint num_fonts, uint num_ranges, uint num_lookups,
+                     uint keys_size, uint values_size,
+                     const gs_cid_system_info_t *pcidsi_in, gs_memory_t *mem)
 {
     gs_cmap_t *pcmap;
     gs_cmap_adobe1_t *pcmap1;
     gx_code_space_range_t *ranges = (gx_code_space_range_t *)
-	gs_alloc_byte_array(mem, num_ranges, sizeof(gx_code_space_range_t),
-			    "gs_cmap_alloc(code space ranges)");
+        gs_alloc_byte_array(mem, num_ranges, sizeof(gx_code_space_range_t),
+                            "gs_cmap_alloc(code space ranges)");
     gx_cmap_lookup_range_t *lookups =
-	(num_lookups == 0 ? NULL :
-	 gs_alloc_struct_array(mem, num_lookups, gx_cmap_lookup_range_t,
-			       &st_cmap_lookup_range,
-			       "gs_cmap_alloc(lookup ranges)"));
+        (num_lookups == 0 ? NULL :
+         gs_alloc_struct_array(mem, num_lookups, gx_cmap_lookup_range_t,
+                               &st_cmap_lookup_range,
+                               "gs_cmap_alloc(lookup ranges)"));
     byte *keys =
-	(keys_size == 0 ? NULL :
-	 gs_alloc_string(mem, keys_size, "gs_cmap_alloc(keys)"));
+        (keys_size == 0 ? NULL :
+         gs_alloc_string(mem, keys_size, "gs_cmap_alloc(keys)"));
     byte *values =
-	(values_size == 0 ? NULL :
-	 gs_alloc_string(mem, values_size, "gs_cmap_alloc(values)"));
+        (values_size == 0 ? NULL :
+         gs_alloc_string(mem, values_size, "gs_cmap_alloc(values)"));
     int code =
-	gs_cmap_alloc(&pcmap, &st_cmap_adobe1, wmode, map_name, name_size,
-		      pcidsi_in, num_fonts, &cmap_adobe1_procs, mem);
+        gs_cmap_alloc(&pcmap, &st_cmap_adobe1, wmode, map_name, name_size,
+                      pcidsi_in, num_fonts, &cmap_adobe1_procs, mem);
     uint i;
 
     if (code < 0 || ranges == 0 || (num_lookups != 0 && lookups == 0) ||
-	(keys_size != 0 && keys == 0) || (values_size != 0 && values == 0)) {
-	gs_free_string(mem, values, values_size, "gs_cmap_alloc(values)");
-	gs_free_string(mem, keys, keys_size, "gs_cmap_alloc(keys)");
-	gs_free_object(mem, lookups, "gs_cmap_alloc(lookup ranges)");
-	gs_free_object(mem, ranges, "gs_cmap_alloc(code space ranges)");
-	return_error(gs_error_VMerror);
+        (keys_size != 0 && keys == 0) || (values_size != 0 && values == 0)) {
+        gs_free_string(mem, values, values_size, "gs_cmap_alloc(values)");
+        gs_free_string(mem, keys, keys_size, "gs_cmap_alloc(keys)");
+        gs_free_object(mem, lookups, "gs_cmap_alloc(lookup ranges)");
+        gs_free_object(mem, ranges, "gs_cmap_alloc(code space ranges)");
+        return_error(gs_error_VMerror);
     }
     *ppcmap = pcmap1 = (gs_cmap_adobe1_t *)pcmap;
     pcmap1->code_space.ranges = ranges;
     pcmap1->code_space.num_ranges = num_ranges;
     if (num_lookups > 0) {
-	for (i = 0; i < num_lookups; ++i) {
-	    memset(&lookups[i], 0, sizeof(*lookups));
-	    lookups[i].cmap = pcmap1;
-	}
-	lookups[0].keys.data = keys;
-	lookups[0].keys.size = keys_size;
-	lookups[0].values.data = values;
-	lookups[0].values.size = values_size;
+        for (i = 0; i < num_lookups; ++i) {
+            memset(&lookups[i], 0, sizeof(*lookups));
+            lookups[i].cmap = pcmap1;
+        }
+        lookups[0].keys.data = keys;
+        lookups[0].keys.size = keys_size;
+        lookups[0].values.data = values;
+        lookups[0].values.size = values_size;
     }
     pcmap1->def.lookup = lookups;
     pcmap1->def.num_lookup = num_lookups;

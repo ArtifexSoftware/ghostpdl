@@ -103,8 +103,8 @@
 #define LIPS_FACEUP_DEFAULT FALSE
 
 /* display text to printer panel */
-#define LIPS_USERNAME_MAX 12	/* If your printer have two line display, 
-				   this value can change to 14 */
+#define LIPS_USERNAME_MAX 12	/* If your printer have two line display,
+                                   this value can change to 14 */
 #define LIPS_MEDIACHAR_MAX 32
 #define LIPS_USERNAME_DEFAULT "Ghostscript"
 #define LIPS_MEDIATYPE_DEFAULT "Default"	/* Dummy */

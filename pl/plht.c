@@ -26,7 +26,7 @@ typedef struct gs_state_s gs_state;
 #include "gxdevice.h"
 #include "plht.h"
 
-int 
+int
 pl_set_pcl_halftone(gs_state *pgs, gs_mapping_proc transfer_proc,
                     int width, int height,
                     gs_string threshold_data,

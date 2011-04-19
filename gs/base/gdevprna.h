@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -23,17 +23,17 @@
 # include "gdevprn.h"
 # include "gxsync.h"
 
-/* 
+/*
  * General
  * -------
  * Async drivers actually create two separate instances of the device at
  * the same time. The first (the writer instance) is only used in the
- * interpretation operation; it feeds rendering commands into the command 
- * lists. The second device instance is used only for rendering the 
+ * interpretation operation; it feeds rendering commands into the command
+ * lists. The second device instance is used only for rendering the
  * commands placed into the command list by the writer.
 
- * The writer builds a command list for an entire page; the command list 
- * is only queued for rendering once a page's command list is completely 
+ * The writer builds a command list for an entire page; the command list
+ * is only queued for rendering once a page's command list is completely
  * built. The only exception to this rule is when the interpreter runs
  * out of memory, or when no free command list memory is available. In
  * such cases, the interpreter queues a "partial page" consisting of all
@@ -43,7 +43,7 @@
  * command list memory to enable the interpreter to proceed.
 
  * To avoid deadlocks when the system runs out of memory, special
- * memory allocation provisions are made on both the writer and 
+ * memory allocation provisions are made on both the writer and
  * renderer sides. On the writer side, enough "reserve" bandlist
  * memory is set aside at startup time to cover the needs of queuing a
  * partial page to the renderer. The renderer operates out of a fixed
@@ -59,7 +59,7 @@
  * dictate the "restricted bandlist format."
 
  * Note that the renderer's instance of the device driver uses the
- * renderer's memory. That implies that it must also operate in a small, 
+ * renderer's memory. That implies that it must also operate in a small,
  * fixed amount of memory, and must do all memory allocation using the
  * memory allocator pointed to by the render device's ->memory member.
 
@@ -84,13 +84,13 @@
 
  * Since partial page support imposes extra requirements on drivers,
  * such support can be disabled by zeroing out (in the async writer open
- * routine, after calling down to gdev_prn_async_write_open) the 
+ * routine, after calling down to gdev_prn_async_write_open) the
  * free_up_bandlist_memory member of the driver structure. Doing so
  * will, of course, cause interpretation to fail if memory runs out.
 
  * Once the driver calls down to gdev_prn_async_write_open, the async
  * support logic will create a second instance of the driver for
- * rendering, but will not open it just yet. Instead, the async logic 
+ * rendering, but will not open it just yet. Instead, the async logic
  * will attempt to synchronize the two device instances.
 
  * Synchrnonizing the instances
@@ -99,7 +99,7 @@
  * will call printer_procs.start_render_thread (which the driver is
  * required to implement). start_render_thread must somehow either start a new
  * thread or rendez-vous with an existing thread for use in rendering,
- * then return. start_render_thread must also have caused the render thread 
+ * then return. start_render_thread must also have caused the render thread
  * to call gdev_prn_async_render_thread, passing it as an argument a magic
  * cookie passed to start_render_thread. start_render_thread will only
  * return once the device has been closed and all renering has been
@@ -141,7 +141,7 @@ struct gdev_prn_start_render_params_s {
 /* -------- Macros used to initialize render-specific structures ------ */
 
 #define init_async_render_procs(xpdev, xstart_render_thread,\
-				xbuffer_page, xprint_page_copies)\
+                                xbuffer_page, xprint_page_copies)\
   BEGIN\
     (xpdev)->printer_procs.start_render_thread = (xstart_render_thread);\
     (xpdev)->printer_procs.buffer_page = (xbuffer_page);\
@@ -152,11 +152,11 @@ struct gdev_prn_start_render_params_s {
 
 /* Open this printer device in ASYNC (overlapped) mode.
  *
- * This routine is always called by the concrete device's xx_open routine 
+ * This routine is always called by the concrete device's xx_open routine
  * in lieu of gdev_prn_open.
  */
 int gdev_prn_async_write_open(gx_device_printer *pdev, int max_raster,
-			      int min_band_height, int max_src_image_row);
+                              int min_band_height, int max_src_image_row);
 
 /* Open the render portion of a printer device in ASYNC (overlapped) mode.
  *

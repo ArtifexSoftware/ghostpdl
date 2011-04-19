@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,12 +32,12 @@ typedef enum {
 } metrics_present;
 int /*metrics_present*/
   zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
-		    double psbw[4]);
+                    double psbw[4]);
 
 /* Get the vertical metrics for a character from Metrics2, if present. */
 int /*metrics_present*/
   zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
-		     double pwv[4]);
+                     double pwv[4]);
 /*  Get CDevProc. */
 bool zchar_get_CDevProc(const gs_font_base * pbfont, ref **ppcdevproc);
 
@@ -47,17 +47,17 @@ bool zchar_get_CDevProc(const gs_font_base * pbfont, ref **ppcdevproc);
  * rendering process (only getting the metrics).
  */
 int zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
-		    const ref * pcnref, const double psb[2],
-		    const double pwidth[2], const gs_rect * pbbox,
-    		    op_proc_t cont, op_proc_t *exec_cont,
-		    const double Metrics2_sbw_default[4]);
+                    const ref * pcnref, const double psb[2],
+                    const double pwidth[2], const gs_rect * pbbox,
+                    op_proc_t cont, op_proc_t *exec_cont,
+                    const double Metrics2_sbw_default[4]);
 
 /*
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
 int zchar_charstring_data(gs_font *font, const ref *pgref,
-			  gs_glyph_data_t *pgd);
+                          gs_glyph_data_t *pgd);
 
 /*
  * Enumerate the next glyph from a directory.  This is essentially a

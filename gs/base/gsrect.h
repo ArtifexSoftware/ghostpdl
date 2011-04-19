@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -59,7 +59,7 @@
  * the variations that we need.
  */
 int int_rect_difference(gs_int_rect * outer, const gs_int_rect * inner,
-			gs_int_rect * diffs /*[4] */ );
+                        gs_int_rect * diffs /*[4] */ );
 
 /*
  * Check whether a parallelogram is a rectangle.

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -45,21 +45,21 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     blen = blen0 = plen + flen + 2; /* Inserts separator and ending zero byte. */
     buffer = ialloc_string(blen, "zfile_name_combine");
     if (buffer == 0)
-	return_error(e_VMerror);
+        return_error(e_VMerror);
     prefix = op[-2].value.const_bytes;
     fname =  op[-1].value.const_bytes;
     no_sibling = op[0].value.boolval;
-    if (gp_file_name_combine((const char *)prefix, plen, 
-			     (const char *)fname, flen, no_sibling,
-		             (char *)buffer, &blen) != gp_combine_success) {
-	make_bool(op, false);
+    if (gp_file_name_combine((const char *)prefix, plen,
+                             (const char *)fname, flen, no_sibling,
+                             (char *)buffer, &blen) != gp_combine_success) {
+        make_bool(op, false);
     } else {
-	buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
-	if (buffer == 0)
-	    return_error(e_VMerror);
-	make_string(op - 2, a_all | icurrent_space, blen, buffer);
-	make_bool(op - 1, true);
-	pop(1);
+        buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
+        if (buffer == 0)
+            return_error(e_VMerror);
+        make_string(op - 2, a_all | icurrent_space, blen, buffer);
+        make_bool(op - 1, true);
+        pop(1);
     }
     return 0;
 }
@@ -74,8 +74,8 @@ zfile_name_is_absolute(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
 
     check_type(op[0], t_string);
-    make_bool(op, gp_file_name_is_absolute((const char *)op->value.const_bytes, 
-					r_size(op)));
+    make_bool(op, gp_file_name_is_absolute((const char *)op->value.const_bytes,
+                                        r_size(op)));
     return 0;
 }
 
@@ -86,7 +86,7 @@ push_string(i_ctx_t *i_ctx_p, const char *v)
 
     push(1);
     make_const_string(op, avm_foreign | a_readonly,
-		      len, (const byte *)v);
+                      len, (const byte *)v);
     return 0;
 }
 
@@ -124,4 +124,3 @@ const op_def zfile1_op_defs[] =
     {"0.file_name_parent", zfile_name_parent},
     op_def_end(0)
 };
-

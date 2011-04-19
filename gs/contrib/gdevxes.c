@@ -43,7 +43,7 @@ are compressed to an ascii count and a single character.
 
 /* Forward references */
 static int sixel_print_page(gx_device_printer *pdev,
-			     FILE *prn_stream, const char *init);
+                             FILE *prn_stream, const char *init);
 
 /* The device descriptor */
 static dev_proc_output_page(sixel_output_page);
@@ -61,10 +61,10 @@ static gx_device_procs xes_procs =
 
 gx_device_printer gs_xes_device =
     prn_device(xes_procs, "xes",
-	       DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	       300, 300,		/* x_dpi, y_dpi */
-	       0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */
-	       1, xes_print_page);
+               DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+               300, 300,		/* x_dpi, y_dpi */
+               0, BOTTOM_MARGIN, 0, 0,	/* left, bottom, right, top margin */
+               1, xes_print_page);
 
 /*
  * Initialization string: switch to graphics mode, 300 dpi
@@ -90,9 +90,9 @@ xes_print_page(gx_device_printer *pdev, FILE *prn_stream)
 static int
 sixel_output_page(gx_device *pdev, int num_copies, int flush)
 {	int code = gdev_prn_open_printer(pdev, 0);
-	if ( code < 0 )
-		return code;
-	return gdev_prn_output_page(pdev, num_copies, flush);
+        if ( code < 0 )
+                return code;
+        return gdev_prn_output_page(pdev, num_copies, flush);
 }
 
 /* Send the page to the printer. */
@@ -109,7 +109,7 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
     int count = 0;
 
     line_size = gdev_mem_bytes_per_scan_line(pdev);
-    height = pdev->height; 
+    height = pdev->height;
     /* Default page rectangle */
     top    = pdev->height;
     left   = line_size;
@@ -120,93 +120,93 @@ sixel_print_page(gx_device_printer *pdev, FILE *prn_stream, const char *init)
     end = buf + line_size - 1;
 
     /* Check allocation */
-    if (!buf) 
+    if (!buf)
       return_error(gs_error_VMerror);
 
     /* Compute required window size */
     for (lnum=0; lnum < pdev->height; lnum++ ) {
-	gdev_prn_copy_scan_lines(pdev, lnum, buf, line_size);
-	for( b=buf; b<=end; b++ ) if(*b) break;
-	if ( b<=end ) {
-	  top  = min( top, lnum );
-	  left = min( left, (int)(b-buf));
-	  bottom = max( bottom, lnum );
-	  for( b=end; b>=buf; b-- ) if(*b) break;
-	  if ( b>=buf ) right = max( right, (int)(b-buf) );
-	  } /* endif */
-	} /* endfor */
-	width = right - left + 1;	/* width in bytes */
-	height= bottom- top  + 1;	/* height in pels */
-	/* round width to multiple of 3 bytes */
-	width = ( (width+2) / 3 ) * 3;
-	right = min( line_size-1, left+width-1 );
-	end = buf + right;		/* recompute EOL  */
+        gdev_prn_copy_scan_lines(pdev, lnum, buf, line_size);
+        for( b=buf; b<=end; b++ ) if(*b) break;
+        if ( b<=end ) {
+          top  = min( top, lnum );
+          left = min( left, (int)(b-buf));
+          bottom = max( bottom, lnum );
+          for( b=end; b>=buf; b-- ) if(*b) break;
+          if ( b>=buf ) right = max( right, (int)(b-buf) );
+          } /* endif */
+        } /* endfor */
+        width = right - left + 1;	/* width in bytes */
+        height= bottom- top  + 1;	/* height in pels */
+        /* round width to multiple of 3 bytes */
+        width = ( (width+2) / 3 ) * 3;
+        right = min( line_size-1, left+width-1 );
+        end = buf + right;		/* recompute EOL  */
 
     fputs( init, prn_stream );
 
     /* Position and size graphics window */
-    fprintf( prn_stream, "%s%d,%d,%d,%d\n", 
-             XES_GRAPHICS, 
-             left*8, PAGE_LENGTH_PELS-top, 
+    fprintf( prn_stream, "%s%d,%d,%d,%d\n",
+             XES_GRAPHICS,
+             left*8, PAGE_LENGTH_PELS-top,
              width*8, height );
 
     /* Print lines of graphics                 */
     for (lnum = top; lnum <= bottom; lnum++ ) {
-	gdev_prn_copy_scan_lines(pdev, lnum, buf, line_size);
-	for ( b=buf+left; b<=end ; ) {
-	  /* grab data in 3-byte chunks   */
-	  /* with zero pad at end-of-line */
-	  tmp[0]=tmp[1]=tmp[2]='\0';
-	  tmp[0]=*b++;
-	  if (b<=end) tmp[1]=*b++;
-	  if (b<=end) tmp[2]=*b++;
-	  /* sixellize data */
-	  tmp[3] = ( tmp[2] & 0x3F) + 0x3F;
-	  tmp[2] = ( tmp[2] >> 6 |
-	            (tmp[1] & 0x0F) << 2 ) + 0x3F;
-	  tmp[1] = ( tmp[1] >> 4 |
-	            (tmp[0] & 0x03) << 4 ) + 0x3F;
-	  tmp[0] = ( tmp[0] >> 2 ) + 0x3F;
-	  /* build runs of identical characters */
-	  /* longest run length is 32767 bytes  */
-	  for ( l=0; l<4; l++) {
-	      if ( tmp[l] == last ) {
-		count++;
-		if (count==32767) {
-		  run[sprintf(run, "%d", count)]='\0';
-		  for (t=run; *t; t++)fputc( *t, prn_stream ); 
-		  fputc( last, prn_stream ); 
-		  last = '\0';
-		  count = 0;
-		  } /* end if count */
-		} /* end if tmp[l] */
-	      else {
-		  /* emit single character or run */
-		  switch (count) {
-		    case 0: break;
-		    case 1: fputc( last, prn_stream );
-			    break;
-		    default:run[sprintf(run, "%d", count)]='\0';
-			    for (t=run; *t; t++) fputc( *t, prn_stream );
-			    fputc( last, prn_stream );
-			    break;
-		    } /* end switch */
-		  last = tmp[l];
-		  count = 1;
-		  } /* end else */
-	  } /* end for l */
-	} /* end for b */
+        gdev_prn_copy_scan_lines(pdev, lnum, buf, line_size);
+        for ( b=buf+left; b<=end ; ) {
+          /* grab data in 3-byte chunks   */
+          /* with zero pad at end-of-line */
+          tmp[0]=tmp[1]=tmp[2]='\0';
+          tmp[0]=*b++;
+          if (b<=end) tmp[1]=*b++;
+          if (b<=end) tmp[2]=*b++;
+          /* sixellize data */
+          tmp[3] = ( tmp[2] & 0x3F) + 0x3F;
+          tmp[2] = ( tmp[2] >> 6 |
+                    (tmp[1] & 0x0F) << 2 ) + 0x3F;
+          tmp[1] = ( tmp[1] >> 4 |
+                    (tmp[0] & 0x03) << 4 ) + 0x3F;
+          tmp[0] = ( tmp[0] >> 2 ) + 0x3F;
+          /* build runs of identical characters */
+          /* longest run length is 32767 bytes  */
+          for ( l=0; l<4; l++) {
+              if ( tmp[l] == last ) {
+                count++;
+                if (count==32767) {
+                  run[sprintf(run, "%d", count)]='\0';
+                  for (t=run; *t; t++)fputc( *t, prn_stream );
+                  fputc( last, prn_stream );
+                  last = '\0';
+                  count = 0;
+                  } /* end if count */
+                } /* end if tmp[l] */
+              else {
+                  /* emit single character or run */
+                  switch (count) {
+                    case 0: break;
+                    case 1: fputc( last, prn_stream );
+                            break;
+                    default:run[sprintf(run, "%d", count)]='\0';
+                            for (t=run; *t; t++) fputc( *t, prn_stream );
+                            fputc( last, prn_stream );
+                            break;
+                    } /* end switch */
+                  last = tmp[l];
+                  count = 1;
+                  } /* end else */
+          } /* end for l */
+        } /* end for b */
     } /* end for lnum */
 
     /* Write final run */
     switch (count) {
       case 0: break;
       case 1: fputc( last, prn_stream );
-	      break;
+              break;
       default:run[sprintf(run, "%d", count)]='\0';
-	      for (t=run; *t; t++) fputc( *t, prn_stream );
-	      fputc( last, prn_stream );
-	      break;
+              for (t=run; *t; t++) fputc( *t, prn_stream );
+              fputc( last, prn_stream );
+              break;
       } /* end switch */
 
     /* Eject page and reset */

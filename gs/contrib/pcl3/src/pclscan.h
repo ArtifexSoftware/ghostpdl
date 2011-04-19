@@ -44,21 +44,21 @@ typedef struct {
   unsigned short kind;
    /* The value can be in the range 1-6:
       1:  control code. chars[0] is this code and 'i' gives the number of its
-	  occurrences (positive).
+          occurrences (positive).
       2:  two-character escape sequence. chars[0] is the second character, the
           first was ESC.
       3:  parameterized escape sequence. chars[0] is the parameterized
-	  character, chars[1] is the group character, and chars[2] is the
-	  termination character.
+          character, chars[1] is the group character, and chars[2] is the
+          termination character.
       4:  same as 3, except that the sequence is not terminated. In this case
-	  chars[2] is the octet which would be used as the termination
-	  character, not the octet actually read from the input stream
-	  (parameter character). pcl_to_parameter_character() can be used to
-	  obtain the latter.
+          chars[2] is the octet which would be used as the termination
+          character, not the octet actually read from the input stream
+          (parameter character). pcl_to_parameter_character() can be used to
+          obtain the latter.
       5:  same as 3, except that this is a part of a combined escape sequence
-	  started earlier.
+          started earlier.
       6:  same as 4, except that this is a part of a combined escape sequence
-	  started earlier.
+          started earlier.
     */
   pcl_Octet chars[3];
   pcl_Octet prefix;
@@ -71,8 +71,8 @@ typedef struct {
   int i;	/* integer part of the value (including the sign) */
   unsigned int scale;
     /*  This can be zero or any power of ten. A value of zero means that the
-	value was given without a decimal point, a value of one that there were
-	no digits after the point. */
+        value was given without a decimal point, a value of one that there were
+        no digits after the point. */
   int fraction;
    /* fractional part of the value (including the sign). The entire value is
       i + ((float)fraction)/scale, provided 'scale' is non-zero. */

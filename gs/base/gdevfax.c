@@ -33,7 +33,6 @@ const gx_device_procs gdev_fax_std_procs =
     FAX_DEVICE_BODY(gx_device_fax, gdev_fax_std_procs, dname, print_page)\
 }
 
-
 const gx_device_fax gs_faxg3_device =
     FAX_DEVICE("faxg3", faxg3_print_page);
 

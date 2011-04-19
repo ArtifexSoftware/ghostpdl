@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -49,11 +49,11 @@ typedef struct stream_image_scale_params_s {
     int Colors;			/* >= 1 */
     int BitsPerComponentIn;	/* bits per input value, 8 or 16 */
     uint MaxValueIn;		/* max value of input component, */
-				/* 0 < MaxValueIn < 1 << BitsPerComponentIn */
+                                /* 0 < MaxValueIn < 1 << BitsPerComponentIn */
     int WidthIn, HeightIn;	/* > 0 */
     int BitsPerComponentOut;	/* bits per output value, 8 or 16 */
     uint MaxValueOut;		/* max value of output component, */
-				/* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
+                                /* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
     int WidthOut, HeightOut;	/* > 0 */
     bool ColorPolarityAdditive;	/* needed by SpecialDownScale filter */
     int src_y_offset;		/* Offset of the subimage in the source image. */

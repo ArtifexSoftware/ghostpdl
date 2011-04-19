@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,72 +41,72 @@ px_write_file_header(stream *s, const gx_device *dev)
     static const char *const resolution_1200 = "1200";
     static const char *const resolution_2400 = "2400";
     static const char *const file_header =
-	"\n@PJL ENTER LANGUAGE = PCLXL\n\
+        "\n@PJL ENTER LANGUAGE = PCLXL\n\
 ) HP-PCL XL;1;1;Comment Copyright Artifex Sofware, Inc. 2005\000\n";
     static const byte stream_header[] = {
-	DA(pxaUnitsPerMeasure),
-	DUB(0), DA(pxaMeasure),
-	DUB(eBackChAndErrPage), DA(pxaErrorReport),
-	pxtBeginSession,
-	DUB(0), DA(pxaSourceType),
-	DUB(eBinaryLowByteFirst), DA(pxaDataOrg),
-	pxtOpenDataSource
+        DA(pxaUnitsPerMeasure),
+        DUB(0), DA(pxaMeasure),
+        DUB(eBackChAndErrPage), DA(pxaErrorReport),
+        pxtBeginSession,
+        DUB(0), DA(pxaSourceType),
+        DUB(eBinaryLowByteFirst), DA(pxaDataOrg),
+        pxtOpenDataSource
     };
 
     px_put_bytes(s, (const byte *)enter_pjl_header,
-		 strlen(enter_pjl_header));
+                 strlen(enter_pjl_header));
 
     if (dev->color_info.num_components == 1)
-	px_put_bytes(s, (const byte *)rendermode_gray,
-		     strlen(rendermode_gray));
+        px_put_bytes(s, (const byte *)rendermode_gray,
+                     strlen(rendermode_gray));
     else
-	px_put_bytes(s, (const byte *)rendermode_color,
-		     strlen(rendermode_color));
+        px_put_bytes(s, (const byte *)rendermode_color,
+                     strlen(rendermode_color));
 
     px_put_bytes(s, (const byte *)pjl_resolution,
-		 strlen(pjl_resolution));
+                 strlen(pjl_resolution));
 
     if ((uint) (dev->HWResolution[0] + 0.5) == 150)
-	px_put_bytes(s, (const byte *)resolution_150,
-		     strlen(resolution_150));
+        px_put_bytes(s, (const byte *)resolution_150,
+                     strlen(resolution_150));
     else if ((uint) (dev->HWResolution[0] + 0.5) == 300)
-	px_put_bytes(s, (const byte *)resolution_300,
-		     strlen(resolution_300));
+        px_put_bytes(s, (const byte *)resolution_300,
+                     strlen(resolution_300));
     else if ((uint) (dev->HWResolution[0] + 0.5) == 1200)
-	px_put_bytes(s, (const byte *)resolution_1200,
-		     strlen(resolution_1200));
+        px_put_bytes(s, (const byte *)resolution_1200,
+                     strlen(resolution_1200));
     else if ((uint) (dev->HWResolution[0] + 0.5) == 2400)
-	px_put_bytes(s, (const byte *)resolution_2400,
-		     strlen(resolution_2400));
-    else 
+        px_put_bytes(s, (const byte *)resolution_2400,
+                     strlen(resolution_2400));
+    else
         px_put_bytes(s, (const byte *)resolution_600,
-		     strlen(resolution_600));
+                     strlen(resolution_600));
     if ((uint) (dev->HWResolution[1] + 0.5) !=
-	(uint) (dev->HWResolution[0] + 0.5)) {
+        (uint) (dev->HWResolution[0] + 0.5)) {
         px_put_bytes(s, (const byte *)"x", strlen("x"));
-	if ((uint) (dev->HWResolution[1] + 0.5) == 150)
-	    px_put_bytes(s, (const byte *)resolution_150,
-		         strlen(resolution_150));
-	else if ((uint) (dev->HWResolution[1] + 0.5) == 300)
-	    px_put_bytes(s, (const byte *)resolution_300,
-		         strlen(resolution_300));
-	else if ((uint) (dev->HWResolution[1] + 0.5) == 1200)
-	    px_put_bytes(s, (const byte *)resolution_1200,
-		         strlen(resolution_1200));
-	else if ((uint) (dev->HWResolution[1] + 0.5) == 2400)
-	    px_put_bytes(s, (const byte *)resolution_2400,
-		         strlen(resolution_2400));
-	else 
-	    px_put_bytes(s, (const byte *)resolution_600,
-		         strlen(resolution_600));
+        if ((uint) (dev->HWResolution[1] + 0.5) == 150)
+            px_put_bytes(s, (const byte *)resolution_150,
+                         strlen(resolution_150));
+        else if ((uint) (dev->HWResolution[1] + 0.5) == 300)
+            px_put_bytes(s, (const byte *)resolution_300,
+                         strlen(resolution_300));
+        else if ((uint) (dev->HWResolution[1] + 0.5) == 1200)
+            px_put_bytes(s, (const byte *)resolution_1200,
+                         strlen(resolution_1200));
+        else if ((uint) (dev->HWResolution[1] + 0.5) == 2400)
+            px_put_bytes(s, (const byte *)resolution_2400,
+                         strlen(resolution_2400));
+        else
+            px_put_bytes(s, (const byte *)resolution_600,
+                         strlen(resolution_600));
     }
 
     /* We have to add 2 to the strlen because the next-to-last */
     /* character is a null. */
     px_put_bytes(s, (const byte *)file_header,
-		 strlen(file_header) + 2);
+                 strlen(file_header) + 2);
     px_put_usp(s, (uint) (dev->HWResolution[0] + 0.5),
-	       (uint) (dev->HWResolution[1] + 0.5));
+               (uint) (dev->HWResolution[1] + 0.5));
     PX_PUT_LIT(s, stream_header);
     return 0;
 }
@@ -116,7 +116,7 @@ int
 px_write_page_header(stream *s, const gx_device *dev)
 {
     static const byte page_header_1[] = {
-	DUB(ePortraitOrientation), DA(pxaOrientation)
+        DUB(ePortraitOrientation), DA(pxaOrientation)
     };
 
     PX_PUT_LIT(s, page_header_1);
@@ -125,23 +125,23 @@ px_write_page_header(stream *s, const gx_device *dev)
 
 /* Write the media selection command if needed, updating the media size. */
 int
-px_write_select_media(stream *s, const gx_device *dev, 
-		      pxeMediaSize_t *pms, byte *media_source,
-		      int page, bool Duplex, bool Tumble)
+px_write_select_media(stream *s, const gx_device *dev,
+                      pxeMediaSize_t *pms, byte *media_source,
+                      int page, bool Duplex, bool Tumble)
 {
 #define MSD(ms, mstr, res, w, h)                                 \
     { ms, mstr, (float)((w) * 1.0 / (res)), (float)((h) * 1.0 / res) },
     static const struct {
-	pxeMediaSize_t ms;
+        pxeMediaSize_t ms;
         const char *media_name;
-	float width, height;
+        float width, height;
     } media_sizes[] = {
-	px_enumerate_media(MSD)
-	{ pxeMediaSize_next }
+        px_enumerate_media(MSD)
+        { pxeMediaSize_next }
     };
 #undef MSD
     float w = dev->width / dev->HWResolution[0],
-	h = dev->height / dev->HWResolution[1];
+        h = dev->height / dev->HWResolution[1];
     int i;
     pxeMediaSize_t size = eDefaultPaperSize;
     byte tray = eAutoSelect;
@@ -150,13 +150,13 @@ px_write_select_media(stream *s, const gx_device *dev,
     /* The default is eDefaultPaperSize (=96), but we'll emit CustomMediaSize */
     /* 0.05 = 30@r600 - one of the test files is 36 off and within 5.0/72@600 */
     for (i = countof(media_sizes) - 2; i > 0; --i)
-	if (fabs(media_sizes[i].width - w) < 0.05 &&
-	    fabs(media_sizes[i].height - h) < 0.05
-	    ) {
-	    match_found = true;
-	    size = media_sizes[i].ms;
-	    break;
-	}
+        if (fabs(media_sizes[i].width - w) < 0.05 &&
+            fabs(media_sizes[i].height - h) < 0.05
+            ) {
+            match_found = true;
+            size = media_sizes[i].ms;
+            break;
+        }
     /*
      * According to the PCL XL documentation, MediaSize/CustomMediaSize must always
      * be specified, but MediaSource is optional.
@@ -171,26 +171,26 @@ px_write_select_media(stream *s, const gx_device *dev,
     }
 
     if (media_source != NULL)
-	tray = *media_source;
+        tray = *media_source;
     px_put_uba(s, tray, pxaMediaSource);
 
     if (Duplex)
     {
       if (Tumble)
-	px_put_uba(s, (byte)eDuplexHorizontalBinding, pxaDuplexPageMode);
+        px_put_uba(s, (byte)eDuplexHorizontalBinding, pxaDuplexPageMode);
       else
-	px_put_uba(s, (byte)eDuplexVerticalBinding, pxaDuplexPageMode);
+        px_put_uba(s, (byte)eDuplexVerticalBinding, pxaDuplexPageMode);
 
       if (page & 1)
-	px_put_uba(s, (byte)eFrontMediaSide, pxaDuplexPageSide);
+        px_put_uba(s, (byte)eFrontMediaSide, pxaDuplexPageSide);
       else
-	px_put_uba(s, (byte)eBackMediaSide, pxaDuplexPageSide);
+        px_put_uba(s, (byte)eBackMediaSide, pxaDuplexPageSide);
     }
     else
       px_put_uba(s, (byte)eSimplexFrontSide, pxaSimplexPageMode);
 
     if (pms)
-	*pms = size;
+        *pms = size;
 
     return 0;
 }
@@ -203,9 +203,9 @@ int
 px_write_file_trailer(FILE *file)
 {
     static const byte file_trailer[] = {
-	pxtCloseDataSource,
-	pxtEndSession,
-	033, '%', '-', '1', '2', '3', '4', '5', 'X'
+        pxtCloseDataSource,
+        pxtEndSession,
+        033, '%', '-', '1', '2', '3', '4', '5', 'X'
     };
 
     fwrite(file_trailer, 1, sizeof(file_trailer), file);
@@ -275,9 +275,9 @@ void
 px_put_u(stream * s, uint i)
 {
     if (i <= 255)
-	px_put_ub(s, (byte)i);
+        px_put_ub(s, (byte)i);
     else
-	px_put_us(s, i);
+        px_put_us(s, i);
 }
 
 void
@@ -360,10 +360,10 @@ px_put_r(stream * s, floatp r)
            2^(-126) * 0.[22 '0' then '1']_base2 = 2 ^(146) * 0.1_base2
        but it is simplier for such small number to be zero. */
     if (exp < -126)
-	mantissa = 0, exp = 0;	/* unnormalized */
+        mantissa = 0, exp = 0;	/* unnormalized */
     /* put the sign bit in the right place */
     if (mantissa < 0)
-	exp += 128, mantissa = -mantissa;
+        exp += 128, mantissa = -mantissa;
     /* All quantities are little-endian. */
     spputc(s, (byte) mantissa);
     spputc(s, (byte) (mantissa >> 8));
@@ -396,10 +396,10 @@ void
 px_put_data_length(stream * s, uint num_bytes)
 {
     if (num_bytes > 255) {
-	spputc(s, pxt_dataLength);
-	px_put_l(s, (ulong) num_bytes);
+        spputc(s, pxt_dataLength);
+        px_put_l(s, (ulong) num_bytes);
     } else {
-	spputc(s, pxt_dataLengthByte);
-	spputc(s, (byte) num_bytes);
+        spputc(s, pxt_dataLengthByte);
+        spputc(s, (byte) num_bytes);
     }
 }

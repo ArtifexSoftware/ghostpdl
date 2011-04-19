@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -58,7 +58,7 @@ typedef const gs_ptr_procs_t *gs_ptr_type_t;
 /* Define the opaque type for a GC root. */
 typedef struct gs_gc_root_s gs_gc_root_t;
 
-	/* Accessors for structure types. */
+        /* Accessors for structure types. */
 
 typedef client_name_t struct_name_t;
 
@@ -90,14 +90,14 @@ typedef struct gs_memory_status_s {
     bool is_thread_safe;
 } gs_memory_status_t;
 
-		/*
-		 * Allocate bytes.  The bytes are always aligned maximally
-		 * if the processor requires alignment.
-		 *
-		 * Note that the object memory level can allocate bytes as
-		 * either movable or immovable: raw memory blocks are
-		 * always immovable.
-		 */
+                /*
+                 * Allocate bytes.  The bytes are always aligned maximally
+                 * if the processor requires alignment.
+                 *
+                 * Note that the object memory level can allocate bytes as
+                 * either movable or immovable: raw memory blocks are
+                 * always immovable.
+                 */
 
 #define gs_memory_t_proc_alloc_bytes(proc, mem_t)\
   byte *proc(mem_t *mem, uint nbytes, client_name_t cname)
@@ -105,29 +105,29 @@ typedef struct gs_memory_status_s {
 #define gs_alloc_bytes_immovable(mem, nbytes, cname)\
   ((mem)->procs.alloc_bytes_immovable(mem, nbytes, cname))
 
-		/*
-		 * Resize an object to a new number of elements.  At the raw
-		 * memory level, the "element" is a byte; for object memory
-		 * (gsmemory.h), the object may be an an array of either
-		 * bytes or structures.  The new size may be larger than,
-		 * the same as, or smaller than the old.  If the new size is
-		 * the same as the old, resize_object returns the same
-		 * object; otherwise, it preserves the first min(old_size,
-		 * new_size) bytes of the object's contents.
-		 */
+                /*
+                 * Resize an object to a new number of elements.  At the raw
+                 * memory level, the "element" is a byte; for object memory
+                 * (gsmemory.h), the object may be an an array of either
+                 * bytes or structures.  The new size may be larger than,
+                 * the same as, or smaller than the old.  If the new size is
+                 * the same as the old, resize_object returns the same
+                 * object; otherwise, it preserves the first min(old_size,
+                 * new_size) bytes of the object's contents.
+                 */
 
 #define gs_memory_t_proc_resize_object(proc, mem_t)\
   void *proc(mem_t *mem, void *obj, uint new_num_elements,\
-	     client_name_t cname)
+             client_name_t cname)
 
 #define gs_resize_object(mem, obj, newn, cname)\
   ((mem)->procs.resize_object(mem, obj, newn, cname))
 
-		/*
-		 * Free an object (at the object memory level, this includes
-		 * everything except strings).  Note: data == 0 must be
-		 * allowed, and must be a no-op.
-		 */
+                /*
+                 * Free an object (at the object memory level, this includes
+                 * everything except strings).  Note: data == 0 must be
+                 * allowed, and must be a no-op.
+                 */
 
 #define gs_memory_t_proc_free_object(proc, mem_t)\
   void proc(mem_t *mem, void *data, client_name_t cname)
@@ -135,9 +135,9 @@ typedef struct gs_memory_status_s {
 #define gs_free_object(mem, data, cname)\
   ((mem)->procs.free_object(mem, data, cname))
 
-		/*
-		 * Report status (assigned, used).
-		 */
+                /*
+                 * Report status (assigned, used).
+                 */
 
 #define gs_memory_t_proc_status(proc, mem_t)\
   void proc(mem_t *mem, gs_memory_status_t *status)
@@ -145,16 +145,16 @@ typedef struct gs_memory_status_s {
 #define gs_memory_status(mem, pst)\
   ((mem)->procs.status(mem, pst))
 
-		/*
-		 * Return the stable allocator for this allocator.  The
-		 * stable allocator allocates from the same heap and in
-		 * the same VM space, but is not subject to save and restore.
-		 * (It is the client's responsibility to avoid creating
-		 * dangling pointers.)
-		 *
-		 * Note that the stable allocator may be the same allocator
-		 * as this one.
-		 */
+                /*
+                 * Return the stable allocator for this allocator.  The
+                 * stable allocator allocates from the same heap and in
+                 * the same VM space, but is not subject to save and restore.
+                 * (It is the client's responsibility to avoid creating
+                 * dangling pointers.)
+                 *
+                 * Note that the stable allocator may be the same allocator
+                 * as this one.
+                 */
 
 #define gs_memory_t_proc_stable(proc, mem_t)\
   mem_t *proc(mem_t *mem)
@@ -162,16 +162,16 @@ typedef struct gs_memory_status_s {
 #define gs_memory_stable(mem)\
   ((mem)->procs.stable(mem))
 
-		/*
-		 * Free one or more of: data memory acquired by the allocator
-		 * (FREE_ALL_DATA), overhead structures other than the
-		 * allocator itself (FREE_ALL_STRUCTURES), and the allocator
-		 * itself (FREE_ALL_ALLOCATOR).  Note that this requires
-		 * allocators to keep track of all the memory they have ever
-		 * acquired, and where they acquired it.  Note that this
-		 * operation propagates to the stable allocator (if
-		 * different).
-		 */
+                /*
+                 * Free one or more of: data memory acquired by the allocator
+                 * (FREE_ALL_DATA), overhead structures other than the
+                 * allocator itself (FREE_ALL_STRUCTURES), and the allocator
+                 * itself (FREE_ALL_ALLOCATOR).  Note that this requires
+                 * allocators to keep track of all the memory they have ever
+                 * acquired, and where they acquired it.  Note that this
+                 * operation propagates to the stable allocator (if
+                 * different).
+                 */
 
 #define FREE_ALL_DATA 1
 #define FREE_ALL_STRUCTURES 2
@@ -188,11 +188,11 @@ typedef struct gs_memory_status_s {
 #define gs_free_all(mem)\
   gs_memory_free_all(mem, FREE_ALL_DATA, "(free_all)")
 
-		/*
-		 * Consolidate free space.  This may be used as part of (or
-		 * as an alternative to) garbage collection, or before
-		 * giving up on an attempt to allocate.
-		 */
+                /*
+                 * Consolidate free space.  This may be used as part of (or
+                 * as an alternative to) garbage collection, or before
+                 * giving up on an attempt to allocate.
+                 */
 
 #define gs_memory_t_proc_consolidate_free(proc, mem_t)\
   void proc(mem_t *mem)
@@ -210,20 +210,12 @@ typedef struct gs_memory_status_s {
     gs_memory_t_proc_free_all((*free_all), mem_t);\
     gs_memory_t_proc_consolidate_free((*consolidate_free), mem_t)
 
-
-
-
-
-
-
-
-
 /*
  * Define the memory manager procedural interface.
  */
 typedef struct gs_memory_procs_s {
 
-    gs_raw_memory_procs(gs_memory_t);	
+    gs_raw_memory_procs(gs_memory_t);
 
     /* Redefine inherited procedures with the new allocator type. */
 
@@ -400,30 +392,30 @@ typedef struct gs_memory_procs_s {
  * because it is const for all ordinary clients.
  */
 void gs_free_const_object(gs_memory_t *mem, const void *data,
-			  client_name_t cname);
+                          client_name_t cname);
 void gs_free_const_string(gs_memory_t *mem, const byte *data, uint nbytes,
-			  client_name_t cname);
+                          client_name_t cname);
 
 /*
  * Free a [const] bytestring.  Note that this is *not* a member procedure of
  * the allocator: it calls the free_object or free_string procedure.
  */
 void gs_free_bytestring(gs_memory_t *mem, gs_bytestring *pbs,
-			client_name_t cname);
+                        client_name_t cname);
 void gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
-			      client_name_t cname);
+                              client_name_t cname);
 
 /*
  * Either allocate (if obj == 0) or resize (if obj != 0) a structure array.
  * If obj != 0, pstype is used only for checking (in DEBUG configurations).
  */
 void *gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
-			     gs_memory_type_ptr_t pstype,
-			     client_name_t cname);
+                             gs_memory_type_ptr_t pstype,
+                             client_name_t cname);
 
 /* Register a structure root.  This just calls gs_register_root. */
 int gs_register_struct_root(gs_memory_t *mem, gs_gc_root_t *root,
-			    void **pp, client_name_t cname);
+                            void **pp, client_name_t cname);
 
 /* Define no-op freeing procedures for use by enable_free. */
 gs_memory_proc_free_object(gs_ignore_free_object);
@@ -439,8 +431,8 @@ gs_memory_proc_consolidate_free(gs_ignore_consolidate_free);
  * parameter.
  */
 void *gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
-				    gs_memory_type_ptr_t pstype,
-				    client_name_t cname);
+                                    gs_memory_type_ptr_t pstype,
+                                    client_name_t cname);
 
 typedef struct pl_mem_node_s pl_mem_node_t;
 
@@ -449,22 +441,22 @@ typedef struct pl_mem_node_s pl_mem_node_t;
  * Subclasses may have state as well
  *
  * stable_memory: no save or restore, maybe gc-ed
- *                non-gc allocators stable_memory == this 
+ *                non-gc allocators stable_memory == this
  *
- * gs_lib_ctx: pointer to a library context 
+ * gs_lib_ctx: pointer to a library context
  *
  * non_gc_memory: a garabge collecting allocator requires a "parent" who doesn't gc
- *                non-gc allocators non_gc_memory == this 
+ *                non-gc allocators non_gc_memory == this
  *
  * thread_safe_memory:	use with multiple threads must provide for a thread safe allocator
- * 			that will most likely use a monitor (mutex) to serialize actions. 
+ * 			that will most likely use a monitor (mutex) to serialize actions.
  */
 #define gs_memory_common\
-	gs_memory_t *stable_memory;\
-	gs_memory_procs_t procs;\
+        gs_memory_t *stable_memory;\
+        gs_memory_procs_t procs;\
         gs_lib_ctx_t *gs_lib_ctx;\
         gs_memory_t *non_gc_memory;\
-	gs_memory_t *thread_safe_memory
+        gs_memory_t *thread_safe_memory
 
 struct gs_memory_s {
     gs_memory_common;

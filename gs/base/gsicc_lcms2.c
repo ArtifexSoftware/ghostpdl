@@ -25,7 +25,6 @@
 
 typedef struct gsicc_lcms2_link_s gsicc_lcms2_link_t;
 
-
 /* Only provide warning about issues in lcms if debug build */
 static void
 gscms_error(cmsContext       ContextID,
@@ -70,17 +69,17 @@ void gs_lcms2_free(cmsContext id, void *ptr)
 
 static cmsPluginMemHandler gs_cms_memhandler =
 {
-    { 
-        cmsPluginMagicNumber, 
-        2000,  
-        cmsPluginMemHandlerSig, 
-        NULL 
-    }, 
-    gs_lcms2_malloc, 
-    gs_lcms2_free, 
-    gs_lcms2_realloc, 
-    NULL, 
-    NULL, 
+    {
+        cmsPluginMagicNumber,
+        2000,
+        cmsPluginMemHandlerSig,
+        NULL
+    },
+    gs_lcms2_malloc,
+    gs_lcms2_free,
+    gs_lcms2_realloc,
+    NULL,
+    NULL,
     NULL
 };
 
@@ -170,7 +169,6 @@ gscms_get_profile_handle_mem(unsigned char *buffer, unsigned int input_size)
     cmsSetLogErrorHandler(gscms_error);
     return(cmsOpenProfileFromMem(buffer,input_size));
 }
-
 
 /* Get ICC Profile handle from file ptr */
 gcmmhprofile_t
@@ -409,7 +407,6 @@ gscms_release_link(gsicc_link_t *icclink)
         cmsDeleteTransform(icclink->link_handle);
 }
 
-
 /* Have the CMS release the profile handle */
 void
 gscms_release_profile(void *profile)
@@ -420,7 +417,6 @@ gscms_release_profile(void *profile)
     profile_handle = (cmsHPROFILE) profile;
     notok = cmsCloseProfile(profile_handle);
 }
-
 
 /* Named color, color management */
 /* Get a device value for the named color.  Since there exist named color

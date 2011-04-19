@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -61,7 +61,7 @@ void gs_notify_init(gs_notify_list_t *nlist, gs_memory_t *mem);
 
 /* Register a client. */
 int gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
-		       void *proc_data);
+                       void *proc_data);
 
 /*
  * Unregister a client.  Return 1 if the client was registered, 0 if not.
@@ -69,12 +69,12 @@ int gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
  * unregister only the registration of that procedure with that proc_data.
  */
 int gs_notify_unregister(gs_notify_list_t *nlist, gs_notify_proc_t proc,
-			 void *proc_data);
+                         void *proc_data);
 
 /* Unregister a client, calling a procedure for each unregistration. */
 int gs_notify_unregister_calling(gs_notify_list_t *nlist,
-				 gs_notify_proc_t proc, void *proc_data,
-				 void (*unreg_proc)(void *pdata));
+                                 gs_notify_proc_t proc, void *proc_data,
+                                 void (*unreg_proc)(void *pdata));
 
 /*
  * Notify the clients on a list.  If an error occurs, return the first

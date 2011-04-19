@@ -19,7 +19,6 @@
 #include "stdio_.h"
 #include "gs_dll_call.h"
 
-
 typedef struct name_table_s *name_table_ptr;
 
 #ifndef gs_font_dir_DEFINED
@@ -55,11 +54,11 @@ typedef struct gs_lib_ctx_s
     int (GSDLLCALL *poll_fn)(void *caller_handle);
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
     void *top_of_system;  /* use accessor functions to walk down the system
-			   * to the desired structure gs_lib_ctx_get_*()
-			   */
+                           * to the desired structure gs_lib_ctx_get_*()
+                           */
     name_table_ptr gs_name_table;  /* hack this is the ps interpreters name table
-				    * doesn't belong here
-				    */
+                                    * doesn't belong here
+                                    */
     /* Define whether dictionaries expand automatically when full. */
     bool dict_auto_expand;  /* ps dictionary: false level 1 true level 2 or 3 */
     /* A table of local copies of the IODevices */

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -63,7 +63,7 @@ int gs_errorinfo_put_string(i_ctx_t *, const char *);
 
 /* Initialize the interpreter. */
 int gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
-		   gs_dual_memory_t *dmem);
+                   gs_dual_memory_t *dmem);
 
 #ifndef gs_context_state_t_DEFINED
 #  define gs_context_state_t_DEFINED
@@ -75,20 +75,20 @@ typedef struct gs_context_state_s gs_context_state_t;
  * We export this for creating new contexts.
  */
 int gs_interp_alloc_stacks(gs_ref_memory_t * smem,
-			   gs_context_state_t * pcst);
+                           gs_context_state_t * pcst);
 
 /*
  * Free the stacks when destroying a context.  This is the inverse of
  * create_stacks.
  */
 void gs_interp_free_stacks(gs_ref_memory_t * smem,
-			   gs_context_state_t * pcst);
+                           gs_context_state_t * pcst);
 
 /* Reset the interpreter. */
 void gs_interp_reset(i_ctx_t *i_ctx_p);
 
 /* Define the top-level interface to the interpreter. */
 int gs_interpret(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
-		 int *pexit_code, ref * perror_object);
+                 int *pexit_code, ref * perror_object);
 
 #endif /* interp_INCLUDED */

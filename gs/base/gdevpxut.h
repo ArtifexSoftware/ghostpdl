@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -28,9 +28,9 @@ int px_write_page_header(stream *s, const gx_device *dev);
 
 /* Write the media selection command if needed, updating the media size. */
 int px_write_select_media(stream *s, const gx_device *dev,
-			  pxeMediaSize_t *pms,
-			  byte *media_source,
-			  int page, bool Duplex, bool Tumble);
+                          pxeMediaSize_t *pms,
+                          byte *media_source,
+                          int page, bool Duplex, bool Tumble);
 
 /*
  * Write the file trailer.  Note that this takes a FILE *, not a stream *,

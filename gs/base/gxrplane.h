@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -41,6 +41,6 @@ typedef struct gx_render_plane_s {
  * color_info.)
  */
 int gx_render_plane_init(gx_render_plane_t *render_plane,
-			 const gx_device *dev, int index);
+                         const gx_device *dev, int index);
 
 #endif /* gxrplane_INCLUDED */

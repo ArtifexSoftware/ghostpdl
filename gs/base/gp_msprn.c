@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -32,7 +32,7 @@
 /* The MS-Windows printer IODevice */
 
 /*
- * This allows a MS-Windows printer to be specified as an 
+ * This allows a MS-Windows printer to be specified as an
  * output using
  *  -sOutputFile="%printer%HP DeskJet 500"
  *
@@ -40,9 +40,9 @@
  *  -sOutputFile="%printer%\\server\printer name"
  *
  * If you don't supply a printer name you will get
- *  Error: /undefinedfilename in --.outputpage-- 
+ *  Error: /undefinedfilename in --.outputpage--
  * If the printer name is invalid you will get
- *  Error: /invalidfileaccess in --.outputpage-- 
+ *  Error: /invalidfileaccess in --.outputpage--
  *
  * This is implemented by returning the file pointer
  * for the write end of a pipe, and starting a thread
@@ -71,7 +71,6 @@ typedef struct tid_s {
     unsigned long tid;
 } tid_t;
 
-
 void mswin_printer_thread(void *arg)
 {
     int fd = (int)arg;
@@ -86,48 +85,48 @@ void mswin_printer_thread(void *arg)
      * First gp_file_name_sizeof bytes are name of the printer.
      */
     if (read(fd, pname, sizeof(pname)) != sizeof(pname)) {
-	/* Didn't get the printer name */
-	close(fd);
-	return;
+        /* Didn't get the printer name */
+        close(fd);
+        return;
     }
 
     while ( (count = read(fd, data, sizeof(data))) > 0 ) {
-	if (hprinter == INVALID_HANDLE_VALUE) {
-	    if (!OpenPrinter(pname, &hprinter, NULL)) {
-		close(fd);
-		return;
-	    }
-	    di.pDocName = (LPTSTR)gs_product;
-	    di.pOutputFile = NULL;
-	    di.pDatatype = "RAW";
-	    if (!StartDocPrinter(hprinter, 1, (LPBYTE) & di)) {
-		AbortPrinter(hprinter);
-		close(fd);
-		return;
-	    }
-	}
-	if (!StartPagePrinter(hprinter)) {
-		AbortPrinter(hprinter);
-		close(fd);
-		return;
-	}
-	if (!WritePrinter(hprinter, (LPVOID) data, count, &written)) {
-	    AbortPrinter(hprinter);
-	    close(fd);
-	    return;
-	}
+        if (hprinter == INVALID_HANDLE_VALUE) {
+            if (!OpenPrinter(pname, &hprinter, NULL)) {
+                close(fd);
+                return;
+            }
+            di.pDocName = (LPTSTR)gs_product;
+            di.pOutputFile = NULL;
+            di.pDatatype = "RAW";
+            if (!StartDocPrinter(hprinter, 1, (LPBYTE) & di)) {
+                AbortPrinter(hprinter);
+                close(fd);
+                return;
+            }
+        }
+        if (!StartPagePrinter(hprinter)) {
+                AbortPrinter(hprinter);
+                close(fd);
+                return;
+        }
+        if (!WritePrinter(hprinter, (LPVOID) data, count, &written)) {
+            AbortPrinter(hprinter);
+            close(fd);
+            return;
+        }
     }
     if (hprinter != INVALID_HANDLE_VALUE) {
-	if (count == 0) {
-	    /* EOF */
-	    EndPagePrinter(hprinter);
-	    EndDocPrinter(hprinter);
-	    ClosePrinter(hprinter);
-	}
-	else {
-	    /* Error */
-	    AbortPrinter(hprinter);
-	}
+        if (count == 0) {
+            /* EOF */
+            EndPagePrinter(hprinter);
+            EndDocPrinter(hprinter);
+            ClosePrinter(hprinter);
+        }
+        else {
+            /* Error */
+            AbortPrinter(hprinter);
+        }
     }
     close(fd);
 }
@@ -144,10 +143,9 @@ mswin_printer_init(gx_io_device * iodev, gs_memory_t * mem)
     return 0;
 }
 
-
 static int
 mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
-	   FILE ** pfile, char *rfname, uint rnamelen)
+           FILE ** pfile, char *rfname, uint rnamelen)
 {
     DWORD version = GetVersion();
     HANDLE hprinter;
@@ -158,47 +156,47 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
     unsigned long *ptid = &((tid_t *)(iodev->state))->tid;
 
     /* Win32s supports neither pipes nor Win32 printers. */
-    if (((HIWORD(version) & 0x8000) != 0) && 
-	((HIWORD(version) & 0x4000) == 0))
-	return_error(gs_error_invalidfileaccess);
+    if (((HIWORD(version) & 0x8000) != 0) &&
+        ((HIWORD(version) & 0x4000) == 0))
+        return_error(gs_error_invalidfileaccess);
 
     /* Make sure that printer exists. */
     if (!OpenPrinter((LPTSTR)fname, &hprinter, NULL))
-	return_error(gs_error_invalidfileaccess);
+        return_error(gs_error_invalidfileaccess);
     ClosePrinter(hprinter);
 
     /* Create a pipe to connect a FILE pointer to a Windows printer. */
     if (_pipe(pipeh, 4096, _O_BINARY) != 0)
-	return_error(gs_fopen_errno_to_code(errno));
+        return_error(gs_fopen_errno_to_code(errno));
 
     *pfile = fdopen(pipeh[1], (char *)access);
     if (*pfile == NULL) {
-	close(pipeh[0]);
-	close(pipeh[1]);
-	return_error(gs_fopen_errno_to_code(errno));
+        close(pipeh[0]);
+        close(pipeh[1]);
+        return_error(gs_fopen_errno_to_code(errno));
     }
 
     /* start a thread to read the pipe */
     tid = _beginthread(&mswin_printer_thread, 32768, (void *)(pipeh[0]));
     if (tid == -1) {
-	fclose(*pfile);
-	close(pipeh[0]);
-	return_error(gs_error_invalidfileaccess);
+        fclose(*pfile);
+        close(pipeh[0]);
+        return_error(gs_error_invalidfileaccess);
     }
     /* Duplicate thread handle so we can wait on it
      * even if original handle is closed by CRTL
      * when the thread finishes.
      */
     if (!DuplicateHandle(GetCurrentProcess(), (HANDLE)tid,
-	GetCurrentProcess(), &hthread, 
-	0, FALSE, DUPLICATE_SAME_ACCESS)) {
-	fclose(*pfile);
-	return_error(gs_error_invalidfileaccess);
+        GetCurrentProcess(), &hthread,
+        0, FALSE, DUPLICATE_SAME_ACCESS)) {
+        fclose(*pfile);
+        return_error(gs_error_invalidfileaccess);
     }
     *ptid = (unsigned long)hthread;
 
     /* Give the name of the printer to the thread by writing
-     * it to the pipe.  This is avoids elaborate thread 
+     * it to the pipe.  This is avoids elaborate thread
      * synchronisation code.
      */
     strncpy(pname, fname, sizeof(pname));
@@ -214,13 +212,11 @@ mswin_printer_fclose(gx_io_device * iodev, FILE * file)
     HANDLE hthread;
     fclose(file);
     if (*ptid != -1) {
-	/* Wait until the print thread finishes before continuing */
-	hthread = (HANDLE)*ptid;
-	WaitForSingleObject(hthread, 60000);
-	CloseHandle(hthread);
-	*ptid = -1;
+        /* Wait until the print thread finishes before continuing */
+        hthread = (HANDLE)*ptid;
+        WaitForSingleObject(hthread, 60000);
+        CloseHandle(hthread);
+        *ptid = -1;
     }
     return 0;
 }
-
-

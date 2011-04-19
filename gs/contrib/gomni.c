@@ -102,8 +102,8 @@ typedef void* gpointer;
 #define g_module_close dlclose
 int dlsym_wrapper(void *lib, char const *name, void **symbol)
 {
-	*symbol=dlsym(lib, name);
-	return *symbol != 0;
+        *symbol=dlsym(lib, name);
+        return *symbol != 0;
 }
 #define g_module_symbol dlsym_wrapper
 #define g_module_error dlerror
@@ -271,7 +271,6 @@ typedef struct gx_device_omni_s {
 } gx_device_omni;
 typedef gx_device_omni omni_device;
 
-
 /* Define initializer for device */
 #define omni_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
 { prn_device_std_margins_body(gx_device_omni, procs, dname,\
@@ -331,7 +330,6 @@ static gx_device_procs omni16m_procs = {
                   SetupDevice                       /** Import parameters, special */
 };
 
-
 gx_device_omni far_data gs_omni_device =
   omni_device (omni16m_procs,
                "omni",
@@ -341,7 +339,6 @@ gx_device_omni far_data gs_omni_device =
                0,0,0,0,              /* margins - need defaults  */
                1,                    /* Bpp value */
                omni_print_page);     /* sync routine for output of raster data */
-
 
 /* ------------------------------------------------------*/
 /* ------------------------------------------------------*/
@@ -359,14 +356,14 @@ omni_map_16m_rgb_color(gx_device * dev, const gx_color_value cv[])
     gx_color_value r, g, b;
     r = cv[0]; g = cv[1]; b = cv[2];
     return gx_color_value_to_byte(r) +
-	((uint) gx_color_value_to_byte(g) << 8) +
-	((ulong) gx_color_value_to_byte(b) << 16);
+        ((uint) gx_color_value_to_byte(g) << 8) +
+        ((ulong) gx_color_value_to_byte(b) << 16);
 }
 
 /* Map a color index to a r-g-b color. */
 static int
 omni_map_16m_color_rgb(gx_device * dev, gx_color_index color,
-		  gx_color_value prgb[3])
+                  gx_color_value prgb[3])
 {
     prgb[2] = gx_color_value_from_byte(color >> 16);
     prgb[1] = gx_color_value_from_byte((color >> 8) & 0xff);
@@ -1540,7 +1537,6 @@ PrintPage (gx_device_printer *pgx_prt_dev, FILE *prn_stream, int num_copies)
    rectPageLocation.xLeft  = 0;
    rectPageLocation.xRight = pasyncDev->width;
 
-
    if (pDev->iPageNumber == 1)
    {
       pDev->pcoreOmni->pfpOut = prn_stream;
@@ -1692,9 +1688,9 @@ PrintPage (gx_device_printer *pgx_prt_dev, FILE *prn_stream, int num_copies)
             }
 
             /*
-	     * implemented based on the number of lines sent to the
+             * implemented based on the number of lines sent to the
              * printer and not based on the bandsize
-	     */
+             */
 
             rectPageLocation.yTop -= iYBand;
 
@@ -2032,7 +2028,7 @@ GetSpaceParams (const gx_device_printer *pgx_prt_dev,
    space_params->band.BandHeight = (pgx_prt_dev->height + min_band_count - 1) / min_band_count;
 
    gdev_mem_data_size ((const gx_device_memory *)pgx_prt_dev, space_params->band.BandWidth,
-			space_params->band.BandHeight, &render_space);
+                        space_params->band.BandHeight, &render_space);
 
    /* need to include minimal writer requirements to satisfy rasterizer init */
    writer_space = 5000 /* add 5K slop for good measure */

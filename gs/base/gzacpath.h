@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -44,21 +44,21 @@ void gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem);
 
 /* Set the accumulator's clipping box. */
 void gx_cpath_accum_set_cbox(gx_device_cpath_accum * padev,
-			     const gs_fixed_rect * pbox);
+                             const gs_fixed_rect * pbox);
 
 /* Finish accumulating a clipping path. */
 /* Note that this releases the old contents of the clipping path. */
 int gx_cpath_accum_end(const gx_device_cpath_accum * padev,
-		       gx_clip_path * pcpath);
+                       gx_clip_path * pcpath);
 
 /* Discard an accumulator in case of error. */
 void gx_cpath_accum_discard(gx_device_cpath_accum * padev);
 
 /* Intersect two clipping paths using an accumulator. */
 int gx_cpath_intersect_path_slow(gx_clip_path *, gx_path *, int,
-			gs_imager_state *, const gx_fill_params *);
+                        gs_imager_state *, const gx_fill_params *);
 
-int cpath_accum_fill_rect_with(gx_device_cpath_accum *pcdev, gx_device *tdev, 
-			       gx_device_color *pdevc);
+int cpath_accum_fill_rect_with(gx_device_cpath_accum *pcdev, gx_device *tdev,
+                               gx_device_color *pdevc);
 
 #endif /* gzacpath_INCLUDED */

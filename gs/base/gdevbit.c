@@ -23,7 +23,6 @@
 #include "gdevdcrd.h"
 #include "gsutil.h" /* for bittags hack */
 
-
 /* Define the device parameters. */
 #ifndef X_DPI
 #  define X_DPI 72
@@ -51,58 +50,58 @@ static dev_proc_put_image(bit_put_image);
 
 #define bit_procs(encode_color)\
 {	gdev_prn_open,\
-	gx_default_get_initial_matrix,\
-	NULL,	/* sync_output */\
-	gdev_prn_output_page,\
-	gdev_prn_close,\
-	encode_color,	/* map_rgb_color */\
-	bit_map_color_rgb,	/* map_color_rgb */\
-	NULL,	/* fill_rectangle */\
-	NULL,	/* tile_rectangle */\
-	NULL,	/* copy_mono */\
-	NULL,	/* copy_color */\
-	NULL,	/* draw_line */\
-	NULL,	/* get_bits */\
-	bit_get_params,\
-	bit_put_params,\
-	encode_color,	/* map_cmyk_color */\
-	NULL,	/* get_xfont_procs */\
-	NULL,	/* get_xfont_device */\
-	NULL,	/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device,	/* get_page_device */\
-	NULL,	/* get_alpha_bits */\
-	NULL,	/* copy_alpha */\
-	NULL,	/* get_band */\
-	NULL,	/* copy_rop */\
-	NULL,	/* fill_path */\
-	NULL,	/* stroke_path */\
-	NULL,	/* fill_mask */\
-	NULL,	/* fill_trapezoid */\
-	NULL,	/* fill_parallelogram */\
-	NULL,	/* fill_triangle */\
-	NULL,	/* draw_thin_line */\
-	NULL,	/* begin_image */\
-	NULL,	/* image_data */\
-	NULL,	/* end_image */\
-	NULL,	/* strip_tile_rectangle */\
-	NULL,	/* strip_copy_rop */\
-	NULL,	/* get_clipping_box */\
-	NULL,	/* begin_typed_image */\
-	NULL,	/* get_bits_rectangle */\
-	NULL,	/* map_color_rgb_alpha */\
-	NULL,	/* create_compositor */\
-	NULL,	/* get_hardware_params */\
-	NULL,	/* text_begin */\
-	NULL,	/* finish_copydevice */\
-	NULL,	/* begin_transparency_group */\
-	NULL,	/* end_transparency_group */\
-	NULL,	/* begin_transparency_mask */\
-	NULL,	/* end_transparency_mask */\
-	NULL,	/* discard_transparency_layer */\
-	NULL,	/* get_color_mapping_procs */\
-	NULL,	/* get_color_comp_index */\
-	encode_color,		/* encode_color */\
-	bit_map_color_rgb	/* decode_color */\
+        gx_default_get_initial_matrix,\
+        NULL,	/* sync_output */\
+        gdev_prn_output_page,\
+        gdev_prn_close,\
+        encode_color,	/* map_rgb_color */\
+        bit_map_color_rgb,	/* map_color_rgb */\
+        NULL,	/* fill_rectangle */\
+        NULL,	/* tile_rectangle */\
+        NULL,	/* copy_mono */\
+        NULL,	/* copy_color */\
+        NULL,	/* draw_line */\
+        NULL,	/* get_bits */\
+        bit_get_params,\
+        bit_put_params,\
+        encode_color,	/* map_cmyk_color */\
+        NULL,	/* get_xfont_procs */\
+        NULL,	/* get_xfont_device */\
+        NULL,	/* map_rgb_alpha_color */\
+        gx_page_device_get_page_device,	/* get_page_device */\
+        NULL,	/* get_alpha_bits */\
+        NULL,	/* copy_alpha */\
+        NULL,	/* get_band */\
+        NULL,	/* copy_rop */\
+        NULL,	/* fill_path */\
+        NULL,	/* stroke_path */\
+        NULL,	/* fill_mask */\
+        NULL,	/* fill_trapezoid */\
+        NULL,	/* fill_parallelogram */\
+        NULL,	/* fill_triangle */\
+        NULL,	/* draw_thin_line */\
+        NULL,	/* begin_image */\
+        NULL,	/* image_data */\
+        NULL,	/* end_image */\
+        NULL,	/* strip_tile_rectangle */\
+        NULL,	/* strip_copy_rop */\
+        NULL,	/* get_clipping_box */\
+        NULL,	/* begin_typed_image */\
+        NULL,	/* get_bits_rectangle */\
+        NULL,	/* map_color_rgb_alpha */\
+        NULL,	/* create_compositor */\
+        NULL,	/* get_hardware_params */\
+        NULL,	/* text_begin */\
+        NULL,	/* finish_copydevice */\
+        NULL,	/* begin_transparency_group */\
+        NULL,	/* end_transparency_group */\
+        NULL,	/* begin_transparency_mask */\
+        NULL,	/* end_transparency_mask */\
+        NULL,	/* discard_transparency_layer */\
+        NULL,	/* get_color_mapping_procs */\
+        NULL,	/* get_color_comp_index */\
+        encode_color,		/* encode_color */\
+        bit_map_color_rgb	/* decode_color */\
 }
 
 /*
@@ -114,7 +113,7 @@ static dev_proc_put_image(bit_put_image);
  * parameter, which alters dev->num_components.
  */
 #define REAL_NUM_COMPONENTS(dev) (dev->dname[3] == 'c' ? 4 : \
-				  dev->dname[3] == 'r' ? 3 : 1)
+                                  dev->dname[3] == 'r' ? 3 : 1)
 struct gx_device_bit_s {
     gx_device_common;
     gx_prn_device_common;
@@ -126,34 +125,34 @@ static const gx_device_procs bitmono_procs =
 bit_procs(bit_mono_map_color);
 const gx_device_bit gs_bit_device =
 {prn_device_body(gx_device_bit, bitmono_procs, "bit",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,    /* margins */
-		 1, 1, 1, 0, 2, 1, bit_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,    /* margins */
+                 1, 1, 1, 0, 2, 1, bit_print_page)
 };
 
 static const gx_device_procs bitrgb_procs =
 bit_procs(gx_default_rgb_map_rgb_color);
 const gx_device_bit gs_bitrgb_device =
 {prn_device_body(gx_device_bit, bitrgb_procs, "bitrgb",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 3, 4, 1, 1, 2, 2, bit_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 4, 1, 1, 2, 2, bit_print_page)
 };
 
 static const gx_device_procs bitcmyk_procs =
 bit_procs(bit_map_cmyk_color);
 const gx_device_bit gs_bitcmyk_device =
 {prn_device_body(gx_device_bit, bitcmyk_procs, "bitcmyk",
-		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-		 X_DPI, Y_DPI,
-		 0, 0, 0, 0,	/* margins */
-		 4, 4, 1, 1, 2, 2, bit_print_page)
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 4, 4, 1, 1, 2, 2, bit_print_page)
 };
 
 static const gx_device_procs bitrgbtags_procs =
-    { 
+    {
         gdev_prn_open,                        /* open_device */
         gx_default_get_initial_matrix,        /* initial_matrix */
         ((void *)0),                        /* sync_output */
@@ -207,18 +206,18 @@ static const gx_device_procs bitrgbtags_procs =
         ((void *)0),                       /* get_color_comp_index */
         bittag_rgb_map_rgb_color,           /* encode_color */
         bittag_map_color_rgb,               /* decode_color */
-        ((void *)0),                        /* pattern_manage */ 
-        ((void *)0),                        /* fill_rectangle_hl_color */ 
-        ((void *)0),                        /* include_color_space */ 
-        ((void *)0),                        /* fill_linear_color_scanline */ 
-        ((void *)0),                        /* fill_linear_color_trapezoid */ 
-        ((void *)0),                        /* fill_linear_color_triangle */ 
-        ((void *)0),                        /* update_spot_equivalent_colors */ 
-        ((void *)0),                        /* ret_devn_params */ 
-        ((void *)0),                        /* fillpage */ 
-        ((void *)0),                        /* push_transparency_state */ 
-        ((void *)0),                        /* pop_transparency_state */ 
-        bit_put_image                        /* put_image */ 
+        ((void *)0),                        /* pattern_manage */
+        ((void *)0),                        /* fill_rectangle_hl_color */
+        ((void *)0),                        /* include_color_space */
+        ((void *)0),                        /* fill_linear_color_scanline */
+        ((void *)0),                        /* fill_linear_color_trapezoid */
+        ((void *)0),                        /* fill_linear_color_triangle */
+        ((void *)0),                        /* update_spot_equivalent_colors */
+        ((void *)0),                        /* ret_devn_params */
+        ((void *)0),                        /* fillpage */
+        ((void *)0),                        /* push_transparency_state */
+        ((void *)0),                        /* pop_transparency_state */
+        bit_put_image                        /* put_image */
     };
 
 const gx_device_bit gs_bitrgbtags_device =
@@ -238,7 +237,7 @@ const gx_device_bit gs_bitrgbtags_device =
             3,                          /* max_components */
             3,                          /* num_components */
             GX_CINFO_POLARITY_ADDITIVE, /* polarity */
-            32,                         /* depth */                        
+            32,                         /* depth */
             GX_CINFO_COMP_NO_INDEX,     /* gray index */
             255 ,                         /* max_gray */
             255 ,                         /* max_colors */
@@ -246,28 +245,28 @@ const gx_device_bit gs_bitrgbtags_device =
             256 ,                         /* dither colors */
             { 1, 1 } ,                  /* antialiasing */
             GX_CINFO_UNKNOWN_SEP_LIN,   /* sep and linear */
-	    { 16, 8, 0, 0 } ,                    /* comp shift */
-	    { 8, 8, 8, 8 } ,                     /* comp bits */
-	    { 0xFF0000, 0x00FF00, 0x0000FF } ,     /* comp mask */
+            { 16, 8, 0, 0 } ,                    /* comp shift */
+            { 8, 8, 8, 8 } ,                     /* comp bits */
+            { 0xFF0000, 0x00FF00, 0x0000FF } ,     /* comp mask */
             ( "DeviceRGBT" ),            /* color model name */
             GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
             0                           /* process comps */
         },
-        { 
+        {
             ((gx_color_index)(~0)),
-            ((gx_color_index)(~0)) 
+            ((gx_color_index)(~0))
         },
         (int)((float)(85) * (X_DPI) / 10 + 0.5),
         (int)((float)(110) * (Y_DPI) / 10 + 0.5),
         0,
-        { 
+        {
             (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)) ,
             (float)(((((int)((float)(110) * (Y_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (Y_DPI)) },
         {
             0,
             0,
             0,
-            0 
+            0
         } ,
         0 ,
         { X_DPI, Y_DPI } ,
@@ -285,12 +284,12 @@ const gx_device_bit gs_bitrgbtags_device =
         0 ,
         0 ,
         0 ,
-	0,
-	0,
-	{false},
-	0,
-	0,
-        { 
+        0,
+        0,
+        {false},
+        0,
+        0,
+        {
             gx_default_install,
             gx_default_begin_page,
             gx_default_end_page
@@ -308,7 +307,7 @@ const gx_device_bit gs_bitrgbtags_device =
           gx_default_open_render_device,
           gx_default_close_render_device,
           gx_default_buffer_page },
-        { 
+        {
             PRN_MAX_BITMAP,
             PRN_BUFFER_SPACE,
             { 0, 0, 0 },
@@ -341,7 +340,7 @@ cmyk_cs_to_rgb_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
 
 static void
 private_rgb_cs_to_rgb_cm(gx_device * dev, const gs_imager_state *pis,
-				  frac r, frac g, frac b, frac out[])
+                                  frac r, frac g, frac b, frac out[])
 {
     out[0] = r;
     out[1] = g;
@@ -353,7 +352,6 @@ gray_cs_to_rgb_cm(gx_device * dev, frac gray, frac out[])
 {
     out[0] = out[1] = out[2] = gray;
 }
-
 
 static const gx_cm_color_map_procs bittag_DeviceRGB_procs = {
     gray_cs_to_rgb_cm, private_rgb_cs_to_rgb_cm, cmyk_cs_to_rgb_cm
@@ -420,11 +418,11 @@ bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
     red = cv[0]; green = cv[1]; blue = cv[2];
     gray = red;
     if ((red != green) || (green != blue))
-	gray = (red * (unsigned long)lum_red_weight +
-	     green * (unsigned long)lum_green_weight +
-	     blue * (unsigned long)lum_blue_weight +
-	     (lum_all_weights / 2))
-		/ lum_all_weights;
+        gray = (red * (unsigned long)lum_red_weight +
+             green * (unsigned long)lum_green_weight +
+             blue * (unsigned long)lum_blue_weight +
+             (lum_all_weights / 2))
+                / lum_all_weights;
 
     color = (gx_max_color_value - gray) >> drop;	/* color is in K channel */
     return color;
@@ -444,39 +442,39 @@ bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
 #define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / mask))
 
     switch (ncomp) {
-	case 1:		/* gray */
-	    cv[0] = cv[1] = cv[2] =
-		(depth == 1 ? (color ? 0 : gx_max_color_value) :
-		 cvalue(color));
-	    break;
-	case 3:		/* RGB */
-	    {
-		gx_color_index cshift = color;
+        case 1:		/* gray */
+            cv[0] = cv[1] = cv[2] =
+                (depth == 1 ? (color ? 0 : gx_max_color_value) :
+                 cvalue(color));
+            break;
+        case 3:		/* RGB */
+            {
+                gx_color_index cshift = color;
 
-		cv[2] = cvalue(cshift & mask);
-		cshift >>= bpc;
-		cv[1] = cvalue(cshift & mask);
-		cv[0] = cvalue(cshift >> bpc);
-	    }
-	    break;
-	case 4:		/* CMYK */
-	    /* Map CMYK back to RGB. */
-	    {
-		gx_color_index cshift = color;
-		uint c, m, y, k;
+                cv[2] = cvalue(cshift & mask);
+                cshift >>= bpc;
+                cv[1] = cvalue(cshift & mask);
+                cv[0] = cvalue(cshift >> bpc);
+            }
+            break;
+        case 4:		/* CMYK */
+            /* Map CMYK back to RGB. */
+            {
+                gx_color_index cshift = color;
+                uint c, m, y, k;
 
-		k = cshift & mask;
-		cshift >>= bpc;
-		y = cshift & mask;
-		cshift >>= bpc;
-		m = cshift & mask;
-		c = cshift >> bpc;
-		/* We use our improved conversion rule.... */
-		cv[0] = cvalue((mask - c) * (mask - k) / mask);
-		cv[1] = cvalue((mask - m) * (mask - k) / mask);
-		cv[2] = cvalue((mask - y) * (mask - k) / mask);
-	    }
-	    break;
+                k = cshift & mask;
+                cshift >>= bpc;
+                y = cshift & mask;
+                cshift >>= bpc;
+                m = cshift & mask;
+                c = cshift >> bpc;
+                /* We use our improved conversion rule.... */
+                cv[0] = cvalue((mask - c) * (mask - k) / mask);
+                cv[1] = cvalue((mask - m) * (mask - k) / mask);
+                cv[2] = cvalue((mask - y) * (mask - k) / mask);
+            }
+            break;
     }
     return 0;
 #undef cvalue
@@ -490,7 +488,7 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
     int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color =
     (((((((gx_color_index) cv[0] >> drop) << bpc) +
-	(cv[1] >> drop)) << bpc) +
+        (cv[1] >> drop)) << bpc) +
       (cv[2] >> drop)) << bpc) +
     (cv[3] >> drop);
 
@@ -525,15 +523,15 @@ bit_get_params(gx_device * pdev, gs_param_list * plist)
     ecode = gdev_prn_get_params(pdev, plist);
     code = sample_device_crd_get_params(pdev, plist, "CRDDefault");
     if (code < 0)
-	    ecode = code;
+            ecode = code;
     if ((code = param_write_int(plist, "ForceMono", &forcemono)) < 0) {
-	ecode = code;
+        ecode = code;
     }
     if ((code = param_write_int(plist, "FirstLine", &((gx_device_bit *)pdev)->FirstLine)) < 0) {
-	ecode = code;
+        ecode = code;
     }
     if ((code = param_write_int(plist, "LastLine", &((gx_device_bit *)pdev)->LastLine)) < 0) {
-	ecode = code;
+        ecode = code;
     }
 
     /* Restore the working num_components */
@@ -555,10 +553,10 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     int ecode = 0;
     int code;
     static const byte depths[4][16] = {
-	{1, 2, 0, 4, 8, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 16},
-	{0},
-	{4, 8, 0, 16, 16, 0, 0, 24, 0, 0, 0, 40, 0, 0, 0, 48},
-	{4, 8, 0, 16, 32, 0, 0, 32, 0, 0, 0, 48, 0, 0, 0, 64}
+        {1, 2, 0, 4, 8, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 16},
+        {0},
+        {4, 8, 0, 16, 16, 0, 0, 24, 0, 0, 0, 40, 0, 0, 0, 48},
+        {4, 8, 0, 16, 32, 0, 0, 32, 0, 0, 0, 48, 0, 0, 0, 64}
     };
     const char *vname;
     int FirstLine = ((gx_device_bit *)pdev)->FirstLine;
@@ -571,71 +569,71 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     pdev->color_info.num_components = real_ncomps;
 
     if ((code = param_read_int(plist, (vname = "GrayValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "GreenValues"), &v)) != 1 ||
-	(code = param_read_int(plist, (vname = "BlueValues"), &v)) != 1
-	) {
-	if (code < 0)
-	    ecode = code;
-	else
-	    switch (v) {
-		case   2: bpc = 1; break;
-		case   4: bpc = 2; break;
-		case  16: bpc = 4; break;
-		case  32: bpc = 5; break;
-		case 256: bpc = 8; break;
-		case 4096: bpc = 12; break;
-		case 65536: bpc = 16; break;
-		default:
-		    param_signal_error(plist, vname,
-				       ecode = gs_error_rangecheck);
-	    }
+        (code = param_read_int(plist, (vname = "RedValues"), &v)) != 1 ||
+        (code = param_read_int(plist, (vname = "GreenValues"), &v)) != 1 ||
+        (code = param_read_int(plist, (vname = "BlueValues"), &v)) != 1
+        ) {
+        if (code < 0)
+            ecode = code;
+        else
+            switch (v) {
+                case   2: bpc = 1; break;
+                case   4: bpc = 2; break;
+                case  16: bpc = 4; break;
+                case  32: bpc = 5; break;
+                case 256: bpc = 8; break;
+                case 4096: bpc = 12; break;
+                case 65536: bpc = 16; break;
+                default:
+                    param_signal_error(plist, vname,
+                                       ecode = gs_error_rangecheck);
+            }
     }
 
     switch (code = param_read_int(plist, (vname = "ForceMono"), &v)) {
     case 0:
-	if (v == 1) {
-	    ncomps = 1;
-	    break;
-	}
-	else if (v == 0) {
-	    ncomps = real_ncomps;
-	    break;
-	}
-	code = gs_error_rangecheck;
+        if (v == 1) {
+            ncomps = 1;
+            break;
+        }
+        else if (v == 0) {
+            ncomps = real_ncomps;
+            break;
+        }
+        code = gs_error_rangecheck;
     default:
-	ecode = code;
-	param_signal_error(plist, vname, ecode);
+        ecode = code;
+        param_signal_error(plist, vname, ecode);
     case 1:
-	break;
+        break;
     }
     if (ecode < 0)
-	return ecode;
+        return ecode;
     switch (code = param_read_int(plist, (vname = "FirstLine"), &v)) {
     case 0:
         FirstLine = v;
-	break;
+        break;
     default:
-	ecode = code;
-	param_signal_error(plist, vname, ecode);
+        ecode = code;
+        param_signal_error(plist, vname, ecode);
     case 1:
-	break;
+        break;
     }
     if (ecode < 0)
-	return ecode;
+        return ecode;
 
     switch (code = param_read_int(plist, (vname = "LastLine"), &v)) {
     case 0:
         LastLine = v;
-	break;
+        break;
     default:
-	ecode = code;
-	param_signal_error(plist, vname, ecode);
+        ecode = code;
+        param_signal_error(plist, vname, ecode);
     case 1:
-	break;
+        break;
     }
     if (ecode < 0)
-	return ecode;
+        return ecode;
 
     /*
      * Save the color_info in case gdev_prn_put_params fails, and for
@@ -644,30 +642,30 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     save_info = pdev->color_info;
     pdev->color_info.depth = depths[real_ncomps - 1][bpc - 1];
     pdev->color_info.max_gray = pdev->color_info.max_color =
-	(pdev->color_info.dither_grays =
-	 pdev->color_info.dither_colors =
-	 (1 << bpc)) - 1;
+        (pdev->color_info.dither_grays =
+         pdev->color_info.dither_colors =
+         (1 << bpc)) - 1;
     ecode = gdev_prn_put_params(pdev, plist);
     if (ecode < 0) {
-	pdev->color_info = save_info;
-	return ecode;
+        pdev->color_info = save_info;
+        return ecode;
     }
     /* Now restore/change num_components. This is done after other	*/
     /* processing since it is used in gx_default_put_params		*/
     pdev->color_info.num_components = ncomps;
     if (pdev->color_info.depth != save_info.depth ||
-	pdev->color_info.num_components != save_info.num_components
-	) {
-	gs_closedevice(pdev);
+        pdev->color_info.num_components != save_info.num_components
+        ) {
+        gs_closedevice(pdev);
     }
     /* Reset the map_cmyk_color procedure if appropriate. */
     if (dev_proc(pdev, map_cmyk_color) == cmyk_1bit_map_cmyk_color ||
-	dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
-	dev_proc(pdev, map_cmyk_color) == bit_map_cmyk_color) {
-	set_dev_proc(pdev, map_cmyk_color,
-		     pdev->color_info.depth == 4 ? cmyk_1bit_map_cmyk_color :
-		     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
-		     bit_map_cmyk_color);
+        dev_proc(pdev, map_cmyk_color) == cmyk_8bit_map_cmyk_color ||
+        dev_proc(pdev, map_cmyk_color) == bit_map_cmyk_color) {
+        set_dev_proc(pdev, map_cmyk_color,
+                     pdev->color_info.depth == 4 ? cmyk_1bit_map_cmyk_color :
+                     pdev->color_info.depth == 32 ? cmyk_8bit_map_cmyk_color :
+                     bit_map_cmyk_color);
     }
     /* Reset the separable and linear shift, masks, bits. */
     set_linear_color_bits_mask_shift(pdev);
@@ -688,20 +686,20 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
     int lnum = ((gx_device_bit *)pdev)->FirstLine >= pdev->height ?  pdev->height - 1 :
-		 ((gx_device_bit *)pdev)->FirstLine;
+                 ((gx_device_bit *)pdev)->FirstLine;
     int bottom = ((gx_device_bit *)pdev)->LastLine >= pdev->height ?  pdev->height - 1 :
-		 ((gx_device_bit *)pdev)->LastLine;
+                 ((gx_device_bit *)pdev)->LastLine;
     int line_count = any_abs(bottom - lnum);
     int i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     if ((lnum == 0) && (bottom == 0))
-	line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
+        line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
-	gdev_prn_get_bits(pdev, lnum, in, &data);
-	if (!nul)
-	    fwrite(data, 1, line_size, prn_stream);
+        gdev_prn_get_bits(pdev, lnum, in, &data);
+        if (!nul)
+            fwrite(data, 1, line_size, prn_stream);
     }
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
@@ -719,30 +717,30 @@ bittags_print_page(gx_device_printer * pdev, FILE * prn_stream)
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
     int lnum = ((gx_device_bit *)pdev)->FirstLine >= pdev->height ?  pdev->height - 1 :
-		 ((gx_device_bit *)pdev)->FirstLine;
+                 ((gx_device_bit *)pdev)->FirstLine;
     int bottom = ((gx_device_bit *)pdev)->LastLine >= pdev->height ?  pdev->height - 1 :
-		 ((gx_device_bit *)pdev)->LastLine;
+                 ((gx_device_bit *)pdev)->LastLine;
     int line_count = any_abs(bottom - lnum);
     int i, step = lnum > bottom ? -1 : 1;
 
     if (in == 0)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
 
     fprintf(prn_stream, "P6\n%d %d\n255\n", pdev->width, pdev->height);
     if ((lnum == 0) && (bottom == 0))
-	line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
+        line_count = pdev->height - 1;		/* default when LastLine == 0, FirstLine == 0 */
     for (i = 0; i <= line_count; i++, lnum += step) {
-	gdev_prn_get_bits(pdev, lnum, in, &data);
-	if (!nul)
-	    fwrite(data, 1, line_size, prn_stream);
+        gdev_prn_get_bits(pdev, lnum, in, &data);
+        if (!nul)
+            fwrite(data, 1, line_size, prn_stream);
     }
     gs_free_object(pdev->memory, in, "bit_print_page(in)");
     return 0;
 }
 
 static int
-bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart, 
-              int ystart, int width, int height, int row_stride, 
+bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
+              int ystart, int width, int height, int row_stride,
               int plane_stride, int alpha_plane_index, int tag_plane_index)
 {
     gx_device_memory *pmemdev = (gx_device_memory *)pdev;
@@ -768,11 +766,11 @@ bit_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
         des_position = y * pmemdev->raster + xstart * 4;
         for ( x = xstart; x < xend; x++ ) {
             /* Tag data first, then RGB */
-            buffer_prn[des_position] = 
+            buffer_prn[des_position] =
                 buffer[src_position + tag_plane_index * plane_stride];
                 des_position += 1;
             for ( k = 0; k < 3; k++) {
-                buffer_prn[des_position] = 
+                buffer_prn[des_position] =
                     buffer[src_position + k * plane_stride];
                     des_position += 1;
             }

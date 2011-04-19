@@ -369,7 +369,6 @@ gs_public_st_suffix_add0_final(
     NULL  /* discard_transparency_layer */\
 }
 
-
 /* vector procs */
 static  gx_device_vector_procs  opvp_vector_procs =
 {
@@ -1197,7 +1196,6 @@ typedef struct bbox_image_enum_s {
 
 /* The following is already defined in stdpre.h */
 /*#define       min(a, b) (((a) < (b))? (a) : (b))*/
-
 
 /* ----- Utilities ----- */
 
@@ -3009,7 +3007,6 @@ opvp_copy_color(
         ecode = code;
     }
 
-
 #if !(ENABLE_SIMPLE_MODE)
     /* call RestoreGS */
     if (apiEntry->opvpRestoreGS) {
@@ -3444,19 +3441,19 @@ static int checkPath(const gx_path *ppath)
     gx_path_enum_init(&path, ppath);
 
     while ((op = gx_path_enum_next(&path, (gs_fixed_point *)vs)) != 0) {
-	switch (op) {
-	case gs_pe_lineto:
-	case gs_pe_moveto:
+        switch (op) {
+        case gs_pe_lineto:
+        case gs_pe_moveto:
             npoints += 1;
-	    break;
-	case gs_pe_curveto:
+            break;
+        case gs_pe_curveto:
             npoints += 3;
-	    break;
-	case gs_pe_closepath:
-	    break;
-	default:
-	    break;
-	}
+            break;
+        case gs_pe_closepath:
+            break;
+        default:
+            break;
+        }
         if (npoints > MAX_PATH_POINTS) {
             return 0;
         }
@@ -3507,7 +3504,7 @@ opvp_fill_path(
 
     /* check if paths are too complex */
     if (!checkPath(ppath) || !checkCPath(pxpath)) {
-	return gx_default_fill_path(dev, pis, ppath, params, pdevc, pxpath);
+        return gx_default_fill_path(dev, pis, ppath, params, pdevc, pxpath);
     }
     /* check clippath support */
     if (!(apiEntry->opvpSetClipPath)) {
@@ -3546,8 +3543,8 @@ opvp_stroke_path(
 
     /* check if paths are too complex */
     if (!checkPath(ppath) || !checkCPath(pxpath)) {
-	return gx_default_stroke_path(dev, pis, ppath,
-				      params, pdcolor, pxpath);
+        return gx_default_stroke_path(dev, pis, ppath,
+                                      params, pdcolor, pxpath);
     }
     /* check clippath support */
     if (!(apiEntry->opvpSetClipPath)) {

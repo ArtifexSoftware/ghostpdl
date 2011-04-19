@@ -1,12 +1,12 @@
 %    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
-% 
+%
 % This software is provided AS-IS with no warranty, either express or
 % implied.
-% 
+%
 % This software is distributed under license and may not be copied,
 % modified or distributed except as expressly authorized under the terms
 % of the license contained in the file LICENSE in this distribution.
-% 
+%
 % For more information about licensing, please refer to
 % http://www.ghostscript.com/licensing/. For information on
 % commercial licensing, go to http://www.artifex.com/licensing/ or
@@ -40,18 +40,18 @@ languagelevel dup 2 .max .setlanguagelevel
     (*) {
       /IdiomSet findresource
       //false exch {
-		% Stack: proc //false dummykey [template substitute]
-	exch pop dup 1 get exch 0 get
-		% Stack: proc //false substitute template
-	3 index .eqproc {
-	  2 index gcheck 1 index gcheck not and {
-	    pop
-	  } {
-	    3 -1 roll pop exch not exit
-	  } ifelse
-	} {
-	  pop
-	} ifelse
+                % Stack: proc //false dummykey [template substitute]
+        exch pop dup 1 get exch 0 get
+                % Stack: proc //false substitute template
+        3 index .eqproc {
+          2 index gcheck 1 index gcheck not and {
+            pop
+          } {
+            3 -1 roll pop exch not exit
+          } ifelse
+        } {
+          pop
+        } ifelse
       } forall { exit } if
     } //.bindscratch /IdiomSet resourceforall
   } if
@@ -59,7 +59,7 @@ languagelevel dup 2 .max .setlanguagelevel
 /.bind /.bind_ load odef	% note that .bind_ will get bound
 currentdict /.bindscratch .undef
 
-DELAYBIND NOBIND or not { 
+DELAYBIND NOBIND or not {
 % We can't just do
 %   /bind /.bind load def
 % because then /bind load == prints --.bind-- .
@@ -85,8 +85,8 @@ currentdict /.bind_ undef
 % (currently only 1 and 3).
 
 /.makehalftone7 {	% <dict> <dict> <source> <Width> <Height>
-			%   (<Width2> <Height2> | null) <BPS> .makehalftone7
-			%   <setdict> <dict5> { .sethalftone5 }
+                        %   (<Width2> <Height2> | null) <BPS> .makehalftone7
+                        %   <setdict> <dict5> { .sethalftone5 }
   8 dict begin
   /HalftoneType 7 def
   /BitsPerSample exch def
@@ -98,13 +98,13 @@ currentdict /.bind_ undef
   /Height 1 index def
   /Width 2 index def
   mul add BitsPerSample 8 idiv mul .bigstring
-		% Stack: dict dict source str
+                % Stack: dict dict source str
   dup type /stringtype eq { readstring } { .readbytestring } ifelse
   not { /sethalftone .systemvar /rangecheck signalerror exit } if
   readonly /Thresholds exch def
   /TransferFunction .knownget { /TransferFunction exch def } if
-		% If the original Thresholds was a file, replace it with
-		% a new one.
+                % If the original Thresholds was a file, replace it with
+                % a new one.
   dup /Thresholds get type /filetype eq {
     dup /Thresholds [ Thresholds ] cvx 0 () .subfiledecode put
   } if
@@ -117,39 +117,39 @@ currentdict /.bind_ undef
 } bind def
 
 /.readbytestring {	% <source> <bytestring> .readbytestring
-			%   <bytestring> <filled>
-		% Note that since bytestrings don't implement getinterval,
-		% if filled is false, there is no way to tell how much
-		% was read.
+                        %   <bytestring> <filled>
+                % Note that since bytestrings don't implement getinterval,
+                % if filled is false, there is no way to tell how much
+                % was read.
   //true exch 0 1 2 index length 1 sub {
-		% Stack: source true str index
+                % Stack: source true str index
     3 index read not { pop exch not exch exit } if
     3 copy put pop pop
   } for 3 -1 roll pop exch
 } bind def
 
 /.sethalftone6 {	% <dict> <dict> .sethalftone6 <setdict> <dict5>
-			%   { .sethalftone5 }
-			% Keys: Width, Height, Thresholds, T'Function
+                        %   { .sethalftone5 }
+                        % Keys: Width, Height, Thresholds, T'Function
   dup /Thresholds get
   1 index /Width get 2 index /Height get
   //null 8 .makehalftone7
 } bind def
 
 /.sethalftone10 {	% <dict> <dict> .sethalftone10 <setdict> <dict5>
-			%   { .sethalftone5 }
-			% Keys: Xsquare, Ysquare, Thresholds, T'Function
-		% Note that this is the only one of these three HalftoneTypes
-		% that allows either a file or a string for Thresholds.
+                        %   { .sethalftone5 }
+                        % Keys: Xsquare, Ysquare, Thresholds, T'Function
+                % Note that this is the only one of these three HalftoneTypes
+                % that allows either a file or a string for Thresholds.
   dup /Thresholds get dup type /stringtype eq { 0 () .subfiledecode } if
   1 index /Xsquare get dup 3 index /Ysquare get dup
   8 .makehalftone7
 } bind def
 
 /.sethalftone16 {	% <dict> <dict> .sethalftone16 <setdict> <dict5>
-			%   { .sethalftone5 }
-			% Keys: Width, Height, Width2, Height2,
-			%   Thresholds, T'Function
+                        %   { .sethalftone5 }
+                        % Keys: Width, Height, Width2, Height2,
+                        %   Thresholds, T'Function
   dup /Thresholds get
   1 index /Width get 2 index /Height get
   3 index /Width2 .knownget {  % 2-rectangle case
@@ -375,15 +375,15 @@ systemdict /.reuseparamdict mark
       % Copy the dictionary to replace the DataSource, but make sure the
       % copy is in the same VM as the original.
       .currentglobal 2 index gcheck .setglobal
-		% Stack: shdict rsdfile saveglobal
+                % Stack: shdict rsdfile saveglobal
       2 index dup length dict copy exch .setglobal
       dup /DataSource 4 -1 roll put exch pop
     } {
       pop
     } ifelse
   } if
-	% The .buildshading operators use the current color space
-	% for ColorSpace.
+        % The .buildshading operators use the current color space
+        % for ColorSpace.
   dup /ShadingType .knownget not { % error handling for CET 12-14b conformance
      /$error .systemvar /errorinfo [ /ShadingType //null ] put
      /shfill .systemvar /undefined signalerror
@@ -402,7 +402,7 @@ systemdict /.reuseparamdict mark
        /shfill .systemvar /$error .systemvar /errorname get signalerror
     } if
     exec
-  } { 
+  } {
     /$error .systemvar /errorinfo [ /ColorSpace //null ] put
     /shfill .systemvar /undefined signalerror
   } ifelse
@@ -410,13 +410,13 @@ systemdict /.reuseparamdict mark
 systemdict /.reuseparamdict undef
 
 /.buildpattern2 {	% <template> <matrix> .buildpattern2
-			%   <template> <pattern>
-	% We want to build the pattern without doing gsave/grestore,
-	% since we want it to load the CIE caches.
+                        %   <template> <pattern>
+        % We want to build the pattern without doing gsave/grestore,
+        % since we want it to load the CIE caches.
   1 index /Shading get
   mark currentcolor currentcolorspace
   counttomark 4 add -3 roll mark 4 1 roll
-	% Stack: -mark- ..color.. cspace -mark- template matrix shadingdict
+        % Stack: -mark- ..color.. cspace -mark- template matrix shadingdict
   { .buildshading } stopped {
     cleartomark setcolorspace setcolor pop stop
   } if
@@ -428,9 +428,9 @@ systemdict /.reuseparamdict undef
   2 /.buildpattern2 load put
 
 /shfill {		% <shadingdict> shfill -
-	% Currently, .shfill requires that the color space
-	% in the pattern be the current color space.
-	% Disable overprintmode for shfill
+        % Currently, .shfill requires that the color space
+        % in the pattern be the current color space.
+        % Disable overprintmode for shfill
   { dup gsave 0 .setoverprintmode .buildshading .shfill } stopped
   grestore {
     /$error .systemvar /errorinfo 2 copy known {

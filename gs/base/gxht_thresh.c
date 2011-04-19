@@ -278,7 +278,6 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
 #endif
 }
 
-
 /* This thresholds a buffer that is 16 wide by data_length tall */
 void
 gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
@@ -333,7 +332,7 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                 contone_out_posit++;
             }
 #ifdef PACIFY_VALGRIND
-	    if (extra)
+            if (extra)
                 memset(contone+contone_out_posit, 0, extra);
 #endif
             curr_position++; /* Move us to the next position in our width array */
@@ -367,7 +366,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         if (penum->pis != NULL && penum->pis->dev_ht != NULL) {
             for (k = 0; k < penum->pis->dev_ht->num_comp; k++) {
                 d_order = &(penum->pis->dev_ht->components[k].corder);
-                code = gx_ht_construct_threshold(d_order, penum->dev, 
+                code = gx_ht_construct_threshold(d_order, penum->dev,
                                                  penum->pis, k);
                 if (code < 0 ) {
                     return gs_rethrow(code, "threshold creation failed");
@@ -396,7 +395,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
        with h=0 we will flush the buffer as we are at the end of the
        data.  */
     if (penum->posture == image_landscape) {
-        int col_length = 
+        int col_length =
             fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
@@ -500,12 +499,12 @@ gxht_thresh_image_init(gx_image_enum *penum)
            Also allow a 15 sample over run during the execution.  */
         temp = (int) ceil((float) ((dev_width + 15.0) + 15.0)/16.0);
         penum->line_size = temp * 16;  /* The stride */
-        penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out, 
+        penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out,
                                      "gxht_thresh");
-        penum->thresh_buffer = gs_alloc_bytes(penum->memory, 
+        penum->thresh_buffer = gs_alloc_bytes(penum->memory,
                                               penum->line_size * max_height * spp_out,
                                               "gxht_thresh");
-        if (penum->line == NULL || penum->thresh_buffer == NULL || 
+        if (penum->line == NULL || penum->thresh_buffer == NULL ||
             penum->ht_buffer == NULL) {
             return -1;
         } else {
@@ -587,13 +586,13 @@ reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
     }
 }
 
-/* This performs a thresholding operation on a single plane of data and 
+/* This performs a thresholding operation on a single plane of data and
    performs a copy mono operation to the device */
-int 
-gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,  
+int
+gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                   fixed xrun, int dest_width, int dest_height,
-                  byte *thresh_align, byte *contone_align, int contone_stride, 
-                  gx_device * dev) 
+                  byte *thresh_align, byte *contone_align, int contone_stride,
+                  gx_device * dev)
 {
     int thresh_width, thresh_height, dx;
     int left_rem_end, left_width, vdi;

@@ -44,14 +44,14 @@ typedef struct gx_line_params_s {
     gs_line_cap dash_cap;       /* Cap to use on start/end of dash segment */
     gs_line_join join;
     int curve_join;		/* <0 means use join between segments of */
-				/* flattened curves, >=0 means use this join */
+                                /* flattened curves, >=0 means use this join */
     float miter_limit;
     float miter_check;		/* computed from miter limit, */
-				/* see gx_set_miter_limit and gs_stroke */
+                                /* see gx_set_miter_limit and gs_stroke */
     float dot_length;
     bool dot_length_absolute;	/* if true, dot_length is 1/72" units */
     gs_matrix dot_orientation;	/* dot length is aligned with (1,0); */
-				/* must be xxyy or xyyx */
+                                /* must be xxyy or xyyx */
     gx_dash_params dash;
 } gx_line_params;
 

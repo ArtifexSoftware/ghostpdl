@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -20,7 +20,7 @@
 #include "gxdevice.h"
 #include "gdevpccm.h"
 #include "gdevpcfb.h"
- 
+
 /* We may compile this in a non-segmented environment.... */
 #ifndef _ss
 #define _ss
@@ -48,26 +48,26 @@ static dev_proc_map_color_rgb(ega01_map_color_rgb);
 # endif
 #endif
 #define ega_std_procs(get_params, put_params)\
-	ega_open,\
-	NULL,			/* get_initial_matrix */\
-	NULL,			/* sync_output */\
-	NULL,			/* output_page */\
-	ega_close,\
-	ega_map_rgb_color,\
-	ega_map_color_rgb,\
-	ega_fill_rectangle,\
-	ega_tile_rectangle,\
-	ega_copy_mono,\
-	ega_copy_color,\
-	NULL,			/* draw_line */\
-	ega_get_bits,\
-	get_params,\
-	put_params,\
-	NULL,			/* map_cmyk_color */\
-	NULL,			/* get_xfont_procs */\
-	NULL,			/* get_xfont_device */\
-	NULL,			/* map_rgb_alpha_color */\
-	gx_page_device_get_page_device
+        ega_open,\
+        NULL,			/* get_initial_matrix */\
+        NULL,			/* sync_output */\
+        NULL,			/* output_page */\
+        ega_close,\
+        ega_map_rgb_color,\
+        ega_map_color_rgb,\
+        ega_fill_rectangle,\
+        ega_tile_rectangle,\
+        ega_copy_mono,\
+        ega_copy_color,\
+        NULL,			/* draw_line */\
+        ega_get_bits,\
+        get_params,\
+        put_params,\
+        NULL,			/* map_cmyk_color */\
+        NULL,			/* get_xfont_procs */\
+        NULL,			/* get_xfont_device */\
+        NULL,			/* map_rgb_alpha_color */\
+        gx_page_device_get_page_device
 
 static const gx_device_procs ega_procs =
 {
@@ -82,15 +82,15 @@ static const gx_device_procs svga16_procs =
 };
 
 /* All the known instances */
-		/* EGA */
+                /* EGA */
 gx_device_ega far_data gs_ega_device =
 ega_device("ega", ega_procs, 80, 350, 48.0 / 35.0, 0x10);
 
-		/* VGA */
+                /* VGA */
 gx_device_ega far_data gs_vga_device =
 ega_device("vga", ega_procs, 80, 480, 1.0, 0x12);
 
-		/* Generic SuperVGA, 800x600, 16-color mode */
+                /* Generic SuperVGA, 800x600, 16-color mode */
 gx_device_ega far_data gs_svga16_device =
 ega_device("svga16", svga16_procs, 100, 600, 1.0, 0x29 /*Tseng */ );
 
@@ -104,18 +104,18 @@ ega_open(gx_device * dev)
 {				/* Adjust the device resolution. */
     /* This is a hack, pending refactoring of the put_params machinery. */
     switch (fb_dev->video_mode) {
-	case 0x10:		/* EGA */
-	    gx_device_adjust_resolution(dev, 640, 350, 1);
-	    break;
-	case 0x12:		/* VGA */
-	    gx_device_adjust_resolution(dev, 640, 480, 1);
-	    break;
-	default:		/* 800x600 SuperVGA */
-	    gx_device_adjust_resolution(dev, 800, 600, 1);
-	    break;
+        case 0x10:		/* EGA */
+            gx_device_adjust_resolution(dev, 640, 350, 1);
+            break;
+        case 0x12:		/* VGA */
+            gx_device_adjust_resolution(dev, 640, 480, 1);
+            break;
+        default:		/* 800x600 SuperVGA */
+            gx_device_adjust_resolution(dev, 800, 600, 1);
+            break;
     }
     if (pcfb_save_state.display_mode < 0)
-	pcfb_get_state(&pcfb_save_state);
+        pcfb_get_state(&pcfb_save_state);
     /* Do implementation-specific initialization */
     pcfb_set_signals(dev);
     pcfb_set_mode(fb_dev->video_mode);
@@ -128,7 +128,7 @@ int
 ega_close(gx_device * dev)
 {
     if (pcfb_save_state.display_mode >= 0)
-	pcfb_set_state(&pcfb_save_state);
+        pcfb_set_state(&pcfb_save_state);
     return 0;
 }
 
@@ -139,7 +139,7 @@ svga16_get_params(gx_device * dev, gs_param_list * plist)
     int code = gx_default_get_params(dev, plist);
 
     if (code < 0)
-	return code;
+        return code;
     return param_write_int(plist, "DisplayMode", &fb_dev->video_mode);
 }
 static int
@@ -151,24 +151,24 @@ svga16_put_params(gx_device * dev, gs_param_list * plist)
     const char *param_name;
 
     switch (code = param_read_int(plist, (param_name = "DisplayMode"), &imode)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
     }
 
     if (ecode < 0)
-	return ecode;
+        return ecode;
     code = gx_default_put_params(dev, plist);
     if (code < 0)
-	return code;
+        return code;
 
     if (imode != fb_dev->video_mode) {
-	if (dev->is_open)
-	    gs_closedevice(dev);
-	fb_dev->video_mode = imode;
+        if (dev->is_open)
+            gs_closedevice(dev);
+        fb_dev->video_mode = imode;
     }
     return 0;
 }
@@ -194,7 +194,7 @@ ega1_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 #define icolor (int)color
 static int
 ega01_map_color_rgb(gx_device * dev, gx_color_index color,
-		    gx_color_value prgb[3])
+                    gx_color_value prgb[3])
 {
 #define one (gx_max_color_value / 2 + 1)
     prgb[0] = (icolor & 4 ? one : 0);
@@ -234,9 +234,9 @@ memsetcol(rop_ptr rop)		/* dest, draster, height, data */
     int draster = rop->draster;
 
     while (yc--) {
-	byte_discard(*addr);
-	*addr = data;
-	addr += draster;
+        byte_discard(*addr);
+        *addr = data;
+        addr += draster;
     }
 }
 
@@ -247,32 +247,32 @@ memsetrect(rop_ptr rop)       /* dest, draster, width, height, data */
     int width = rop->width;
 
     if (yc <= 0 || width <= 0)
-	return;
+        return;
     {
-	byte *addr = rop->dest;
-	byte data = rop->data;
+        byte *addr = rop->dest;
+        byte data = rop->data;
 
-	if (width > 5) {	/* use memset */
-	    int skip = rop->draster;
+        if (width > 5) {	/* use memset */
+            int skip = rop->draster;
 
-	    do {
-		memset(addr, data, width);
-		addr += skip;
-	    }
-	    while (--yc);
-	} else {		/* avoid the fixed overhead */
-	    int skip = rop->draster - width;
+            do {
+                memset(addr, data, width);
+                addr += skip;
+            }
+            while (--yc);
+        } else {		/* avoid the fixed overhead */
+            int skip = rop->draster - width;
 
-	    do {
-		int cnt = width;
+            do {
+                int cnt = width;
 
-		do {
-		    *addr++ = data;
-		} while (--cnt);
-		addr += skip;
-	    }
-	    while (--yc);
-	}
+                do {
+                    *addr++ = data;
+                } while (--cnt);
+                addr += skip;
+            }
+            while (--yc);
+        }
     }
 }
 
@@ -288,9 +288,9 @@ memrwcol(rop_ptr rop)	/* dest, draster, src, sraster, height, shift, invert */
     int sraster = rop->sraster, draster = rop->draster;
 
     while (yc--) {
-	byte_discard(*dp);
-	*dp = ((*sp >> shift) + (*sp << (8 - shift))) ^ invert;
-	dp += draster, sp += sraster;
+        byte_discard(*dp);
+        *dp = ((*sp >> shift) + (*sp << (8 - shift))) ^ invert;
+        dp += draster, sp += sraster;
     }
 }
 static void
@@ -303,12 +303,12 @@ memrwcol0(rop_ptr rop)  /* same except shift = 0 */
     int sraster = rop->sraster, draster = rop->draster;
 
     if (yc > 0)
-	do {
-	    byte_discard(*dp);
-	    *dp = *sp ^ invert;
-	    dp += draster, sp += sraster;
-	}
-	while (--yc);
+        do {
+            byte_discard(*dp);
+            *dp = *sp ^ invert;
+            dp += draster, sp += sraster;
+        }
+        while (--yc);
 }
 
 static void
@@ -322,9 +322,9 @@ memrwcol2(rop_ptr rop)	/* dest, draster, src, sraster, height, shift, invert */
     int sraster = rop->sraster, draster = rop->draster;
 
     while (yc--) {
-	byte_discard(*dp);
-	*dp = ((sp[1] >> shift) + (*sp << (8 - shift))) ^ invert;
-	dp += draster, sp += sraster;
+        byte_discard(*dp);
+        *dp = ((sp[1] >> shift) + (*sp << (8 - shift))) ^ invert;
+        dp += draster, sp += sraster;
     }
 }
 
@@ -355,7 +355,7 @@ ega_write_dot(gx_device * dev, int x, int y, gx_color_index color)
 /* Color = gx_no_color_index means transparent (no effect on the image). */
 int
 ega_copy_mono(gx_device * dev,
-	      const byte * base, int sourcex, int raster, gx_bitmap_id id,
+              const byte * base, int sourcex, int raster, gx_bitmap_id id,
       int x, int y, int w, int h, gx_color_index izero, gx_color_index ione)
 {
     rop_params params;
@@ -377,160 +377,160 @@ ega_copy_mono(gx_device * dev,
     /* Analyze the 16 possible cases: each of izero and ione may be */
     /* 0, 0xf, transparent, or some other color. */
     switch (czero) {
-	case no_color:
-	    switch (cone) {
-		default:	/* (T, other) */
-		    /* Must do 2 passes */
-		    other_color = cone;
-		    save_dest = params.dest;
-		    /* falls through */
-		case 0:	/* (T, 0) */
-		    set_g_function(gf_AND);
-		    params.invert = -1;
-		    break;
-		case 0xf:	/* (T, 0xf) */
-		    set_g_function(gf_OR);
-		    params.invert = 0;
-		    break;
-		case no_color:	/* (T, T) */
-		    return 0;	/* nothing to do */
-	    }
-	    break;
-	case 0:
-	    params.invert = 0;
-	    switch (cone) {
-		default:	/* (0, other) */
-		    set_g_const(0);
-		    set_g_const_map(cone ^ 0xf);
-		    /* falls through */
-		case 0xf:	/* (0, 0xf) */
-		    break;
-		case no_color:	/* (0, T) */
-		    set_g_function(gf_AND);
-		    break;
-	    }
-	    break;
-	case 0xf:
-	    params.invert = -1;
-	    switch (cone) {
-		case 0:	/* (0xf, 0) */
-		    break;
-		default:	/* (0xf, other) */
-		    set_g_const(0xf);
-		    set_g_const_map(cone);
-		    break;
-		case no_color:	/* (0xf, T) */
-		    set_g_function(gf_OR);
-		    /* falls through */
-	    }
-	    break;
-	default:
-	    switch (cone) {
-		default:	/* (other, not T) */
-		    if (bit_included_in(czero, cone)) {
-			set_g_const(czero);
-			set_g_const_map(czero ^ cone ^ 0xf);
-			params.invert = 0;
-			break;
-		    } else if (bit_included_in(cone, czero)) {
-			set_g_const(cone);
-			set_g_const_map(cone ^ czero ^ 0xf);
-			params.invert = -1;
-			break;
-		    }
-		    /* No way around it, fill with one color first. */
-		    save_dest = params.dest;
-		    fill_rectangle((rop_ptr) & params, x & 7, w, cone);
-		    params.dest = save_dest;
-		    set_g_function(gf_XOR);
-		    set_s_map(czero ^ cone);
-		    other_color = -2;	/* must reset s_map at end */
-		    params.invert = -1;
-		    break;
-		case no_color:	/* (other, T) */
-		    /* Must do 2 passes */
-		    other_color = czero;
-		    save_dest = params.dest;
-		    set_g_function(gf_AND);
-		    params.invert = 0;
-		    break;
-	    }
-	    break;
+        case no_color:
+            switch (cone) {
+                default:	/* (T, other) */
+                    /* Must do 2 passes */
+                    other_color = cone;
+                    save_dest = params.dest;
+                    /* falls through */
+                case 0:	/* (T, 0) */
+                    set_g_function(gf_AND);
+                    params.invert = -1;
+                    break;
+                case 0xf:	/* (T, 0xf) */
+                    set_g_function(gf_OR);
+                    params.invert = 0;
+                    break;
+                case no_color:	/* (T, T) */
+                    return 0;	/* nothing to do */
+            }
+            break;
+        case 0:
+            params.invert = 0;
+            switch (cone) {
+                default:	/* (0, other) */
+                    set_g_const(0);
+                    set_g_const_map(cone ^ 0xf);
+                    /* falls through */
+                case 0xf:	/* (0, 0xf) */
+                    break;
+                case no_color:	/* (0, T) */
+                    set_g_function(gf_AND);
+                    break;
+            }
+            break;
+        case 0xf:
+            params.invert = -1;
+            switch (cone) {
+                case 0:	/* (0xf, 0) */
+                    break;
+                default:	/* (0xf, other) */
+                    set_g_const(0xf);
+                    set_g_const_map(cone);
+                    break;
+                case no_color:	/* (0xf, T) */
+                    set_g_function(gf_OR);
+                    /* falls through */
+            }
+            break;
+        default:
+            switch (cone) {
+                default:	/* (other, not T) */
+                    if (bit_included_in(czero, cone)) {
+                        set_g_const(czero);
+                        set_g_const_map(czero ^ cone ^ 0xf);
+                        params.invert = 0;
+                        break;
+                    } else if (bit_included_in(cone, czero)) {
+                        set_g_const(cone);
+                        set_g_const_map(cone ^ czero ^ 0xf);
+                        params.invert = -1;
+                        break;
+                    }
+                    /* No way around it, fill with one color first. */
+                    save_dest = params.dest;
+                    fill_rectangle((rop_ptr) & params, x & 7, w, cone);
+                    params.dest = save_dest;
+                    set_g_function(gf_XOR);
+                    set_s_map(czero ^ cone);
+                    other_color = -2;	/* must reset s_map at end */
+                    params.invert = -1;
+                    break;
+                case no_color:	/* (other, T) */
+                    /* Must do 2 passes */
+                    other_color = czero;
+                    save_dest = params.dest;
+                    set_g_function(gf_AND);
+                    params.invert = 0;
+                    break;
+            }
+            break;
     }
     /* Actually copy the bits. */
     dleft = 8 - (x & 7);
     mask = 0xff >> (8 - dleft);
     count = w - dleft;
     if (count < 0)
-	mask -= mask >> w,
-	    rmask = 0;
+        mask -= mask >> w,
+            rmask = 0;
     else
-	rmask = 0xff00 >> (count & 7);
+        rmask = 0xff00 >> (count & 7);
     /* params: dest, src, sraster, height, shift, invert */
     /* Smashes params.src, params.dest, count. */
   copy:set_g_mask(mask);
     if (params.shift == 0) {	/* optimize the aligned case *//* Do left column */
-	memrwcol0((rop_ptr) & params);
-	/* Do center */
-	if ((count -= 8) >= 0) {
-	    out_g_mask(0xff);
-	    do {
-		params.src++, params.dest++;
-		memrwcol0((rop_ptr) & params);
-	    }
-	    while ((count -= 8) >= 0);
-	}
-	/* Do right column */
-	if (rmask) {
-	    params.src++, params.dest++;
-	    out_g_mask(rmask);
-	    memrwcol0((rop_ptr) & params);
-	}
+        memrwcol0((rop_ptr) & params);
+        /* Do center */
+        if ((count -= 8) >= 0) {
+            out_g_mask(0xff);
+            do {
+                params.src++, params.dest++;
+                memrwcol0((rop_ptr) & params);
+            }
+            while ((count -= 8) >= 0);
+        }
+        /* Do right column */
+        if (rmask) {
+            params.src++, params.dest++;
+            out_g_mask(rmask);
+            memrwcol0((rop_ptr) & params);
+        }
     } else {			/* Do left column */
-	int sleft = 8 - (sourcex & 7);
+        int sleft = 8 - (sourcex & 7);
 
-	if (sleft >= dleft) {	/* Source fits in one byte */
-	    memrwcol((rop_ptr) & params);
-	} else if (w <= sleft) {	/* Source fits in one byte, thin case */
-	    memrwcol((rop_ptr) & params);
-	    goto fin;
-	} else {
-	    memrwcol2((rop_ptr) & params);
-	    params.src++;
-	}
-	/* Do center */
-	if ((count -= 8) >= 0) {
-	    out_g_mask(0xff);
-	    do {
-		params.dest++;
-		memrwcol2((rop_ptr) & params);
-		params.src++;
-	    }
-	    while ((count -= 8) >= 0);
-	}
-	/* Do right column */
-	if (rmask) {
-	    out_g_mask(rmask);
-	    params.dest++;
-	    if (count + 8 <= params.shift)
-		memrwcol((rop_ptr) & params);
-	    else
-		memrwcol2((rop_ptr) & params);
-	}
+        if (sleft >= dleft) {	/* Source fits in one byte */
+            memrwcol((rop_ptr) & params);
+        } else if (w <= sleft) {	/* Source fits in one byte, thin case */
+            memrwcol((rop_ptr) & params);
+            goto fin;
+        } else {
+            memrwcol2((rop_ptr) & params);
+            params.src++;
+        }
+        /* Do center */
+        if ((count -= 8) >= 0) {
+            out_g_mask(0xff);
+            do {
+                params.dest++;
+                memrwcol2((rop_ptr) & params);
+                params.src++;
+            }
+            while ((count -= 8) >= 0);
+        }
+        /* Do right column */
+        if (rmask) {
+            out_g_mask(rmask);
+            params.dest++;
+            if (count + 8 <= params.shift)
+                memrwcol((rop_ptr) & params);
+            else
+                memrwcol2((rop_ptr) & params);
+        }
     }
   fin:if (other_color != -1) {
-	if (other_color >= 0) {	/* Do the second pass on (T, other) or (other, T). */
-	    count = w - dleft;
-	    params.src = base + (sourcex >> 3);
-	    params.dest = save_dest;
-	    params.invert ^= -1;
-	    set_s_map(other_color);
-	    set_g_function(gf_OR);
-	    other_color = -2;
-	    goto copy;
-	} else {		/* Finished second pass, restore s_map */
-	    set_s_map(-1);
-	}
+        if (other_color >= 0) {	/* Do the second pass on (T, other) or (other, T). */
+            count = w - dleft;
+            params.src = base + (sourcex >> 3);
+            params.dest = save_dest;
+            params.invert ^= -1;
+            set_s_map(other_color);
+            set_g_function(gf_OR);
+            other_color = -2;
+            goto copy;
+        } else {		/* Finished second pass, restore s_map */
+            set_s_map(-1);
+        }
     }
     set_g_function(gf_WRITE);
     set_g_const_map(0);
@@ -544,8 +544,8 @@ ega_copy_mono(gx_device * dev,
 /* except that each pixel takes 4 bits instead of 1. */
 int
 ega_copy_color(gx_device * dev,
-	       const byte * base, int sourcex, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h)
+               const byte * base, int sourcex, int raster, gx_bitmap_id id,
+               int x, int y, int w, int h)
 {
     const byte *line = base + (sourcex >> 1);
     unsigned mask = 0x80 >> (x & 7);
@@ -558,33 +558,33 @@ ega_copy_color(gx_device * dev,
     set_g_mode(gm_FILL);
     select_g_mask();
     for (;; px++) {
-	const byte *bptr = line;
-	fb_ptr fbptr = fb_line;
-	int py = h;
+        const byte *bptr = line;
+        fb_ptr fbptr = fb_line;
+        int py = h;
 
-	out_g_mask(mask);
-	if (px & 1) {
-	    do {
-		byte_discard(*fbptr);	/* latch frame buffer data */
-		*fbptr = *bptr;
-		bptr += raster;
-		fbptr += fb_raster;
-	    }
-	    while (--py);
-	    line++;
-	} else {
-	    do {
-		byte_discard(*fbptr);	/* latch frame buffer data */
-		*fbptr = *bptr >> 4;
-		bptr += raster;
-		fbptr += fb_raster;
-	    }
-	    while (--py);
-	}
-	if (!--w)
-	    break;
-	if ((mask >>= 1) == 0)
-	    mask = 0x80, fb_line++;
+        out_g_mask(mask);
+        if (px & 1) {
+            do {
+                byte_discard(*fbptr);	/* latch frame buffer data */
+                *fbptr = *bptr;
+                bptr += raster;
+                fbptr += fb_raster;
+            }
+            while (--py);
+            line++;
+        } else {
+            do {
+                byte_discard(*fbptr);	/* latch frame buffer data */
+                *fbptr = *bptr >> 4;
+                bptr += raster;
+                fbptr += fb_raster;
+            }
+            while (--py);
+        }
+        if (!--w)
+            break;
+        if ((mask >>= 1) == 0)
+            mask = 0x80, fb_line++;
     }
     set_g_mode(gm_DATA);
     dot_end();
@@ -594,19 +594,19 @@ ega_copy_color(gx_device * dev,
 /* Fill a rectangle. */
 int
 ega_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		   gx_color_index color)
+                   gx_color_index color)
 {
     rop_params params;
 
     fit_fill(dev, x, y, w, h);
     params.dest = mk_fb_ptr(x, y);
     if (h == 1)
-	fill_row_only(params.dest, x & 7, w, (int)color);
+        fill_row_only(params.dest, x & 7, w, (int)color);
     else {
-	params.draster = fb_dev->raster;
-	params.height = h;
-	fill_rectangle((rop_ptr) & params, x & 7, w, (int)color);
-	dot_end();
+        params.draster = fb_dev->raster;
+        params.height = h;
+        fill_rectangle((rop_ptr) & params, x & 7, w, (int)color);
+        dot_end();
     }
     return 0;
 }
@@ -617,7 +617,7 @@ ega_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 int
 ega_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
       int x, int y, int w, int h, gx_color_index czero, gx_color_index cone,
-		   int px, int py)
+                   int px, int py)
 #define zero (int)czero
 #define one (int)cone
 {
@@ -635,8 +635,8 @@ ega_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
     fit_fill(dev, x, y, w, h);
     /* We only handle the easiest cases directly. */
     if ((tile->size.x & 7) || one == -1 || zero == -1 || px || py)
-	return gx_default_tile_rectangle(dev, tile, x, y, w, h,
-					 czero, cone, px, py);
+        return gx_default_tile_rectangle(dev, tile, x, y, w, h,
+                                         czero, cone, px, py);
     /* Following is similar to aligned case of copy_mono */
     params.dest = mk_fb_ptr(x, y);
     params.draster = fb_dev->raster;
@@ -646,114 +646,114 @@ ega_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
     /* Set up the graphics registers */
     const_bits = (zero ^ one) ^ 0xf;
     if (const_bits) {
-	set_g_const(zero);	/* either color will do */
-	set_g_const_map(const_bits);
+        set_g_const(zero);	/* either color will do */
+        set_g_const_map(const_bits);
     }
     if ((maps = zero & ~one) != 0) {
-	set_s_map(maps += const_bits);
-	params.invert = -1;
-	again = one & ~zero;
+        set_s_map(maps += const_bits);
+        params.invert = -1;
+        again = one & ~zero;
     } else {
-	maps = one & ~zero;
-	set_s_map(maps += const_bits);
-	params.invert = 0;
-	again = 0;
+        maps = one & ~zero;
+        set_s_map(maps += const_bits);
+        params.invert = 0;
+        again = 0;
     }
     xmod = (x % tile->size.x) >> 3;
     width_bytes = tile->size.x >> 3;
     mask = 0xff >> xbit;
     if (w + xbit <= 8)
-	mask -= mask >> w,
-	    rmask = 0,
-	    narrow = 1;
+        mask -= mask >> w,
+            rmask = 0,
+            narrow = 1;
     else {
-	rmask = (0xff00 >> ((w + x) & 7)) & 0xff;
-	if (xbit)
-	    w += xbit - 8;
-	else
-	    mask = 0, --xmod, --params.dest;
-	narrow = 0;
+        rmask = (0xff00 >> ((w + x) & 7)) & 0xff;
+        if (xbit)
+            w += xbit - 8;
+        else
+            mask = 0, --xmod, --params.dest;
+        narrow = 0;
     }
     ymod = y % tile_height;
   tile:yleft = tile_height - ymod;
     params.src = tile->data + ymod * params.sraster + xmod;
     lcount = h;
     if (narrow) {		/* Optimize narrow case */
-	set_g_mask(mask);
-	if (lcount > yleft) {
-	    params.height = yleft;
-	    memrwcol0((rop_ptr) & params);
-	    params.dest += yleft * params.draster;
-	    params.src = tile->data + xmod;
-	    params.height = tile_height;
-	    lcount -= yleft;
-	    while (lcount >= tile_height) {
-		memrwcol0((rop_ptr) & params);
-		params.dest += tile_height * params.draster;
-		lcount -= tile_height;
-	    }
-	}
-	if (lcount) {
-	    params.height = lcount;
-	    memrwcol0((rop_ptr) & params);
-	}
+        set_g_mask(mask);
+        if (lcount > yleft) {
+            params.height = yleft;
+            memrwcol0((rop_ptr) & params);
+            params.dest += yleft * params.draster;
+            params.src = tile->data + xmod;
+            params.height = tile_height;
+            lcount -= yleft;
+            while (lcount >= tile_height) {
+                memrwcol0((rop_ptr) & params);
+                params.dest += tile_height * params.draster;
+                lcount -= tile_height;
+            }
+        }
+        if (lcount) {
+            params.height = lcount;
+            memrwcol0((rop_ptr) & params);
+        }
     } else {
-	fb_ptr line = params.dest;
-	int xpos = width_bytes - xmod;
+        fb_ptr line = params.dest;
+        int xpos = width_bytes - xmod;
 
-	while (1) {
-	    int xleft = xpos;
-	    int count = w;
+        while (1) {
+            int xleft = xpos;
+            int count = w;
 
-	    params.height = (lcount > yleft ? yleft : lcount);
-	    /* Do first byte, if not a full byte. */
-	    if (mask) {
-		set_g_mask(mask);
-		memrwcol0((rop_ptr) & params);
-	    }
-	    /* Do full bytes */
-	    if ((count -= 8) >= 0) {
-		set_g_mask(0xff);
-		do {
-		    if (!--xleft)
-			xleft = width_bytes,
-			    params.src -= width_bytes;
-		    ++params.src, ++params.dest;
-		    memrwcol0((rop_ptr) & params);
-		}
-		while ((count -= 8) >= 0);
-	    }
-	    /* Do last byte */
-	    if (rmask) {
-		if (!--xleft)
-		    xleft = width_bytes,
-			params.src -= width_bytes;
-		set_g_mask(rmask);
-		++params.src, ++params.dest;
-		memrwcol0((rop_ptr) & params);
-	    }
-	    if ((lcount -= params.height) == 0)
-		break;
-	    params.dest = line += params.height * params.draster;
-	    params.src = tile->data + xmod;
-	    yleft = tile_height;
-	}
+            params.height = (lcount > yleft ? yleft : lcount);
+            /* Do first byte, if not a full byte. */
+            if (mask) {
+                set_g_mask(mask);
+                memrwcol0((rop_ptr) & params);
+            }
+            /* Do full bytes */
+            if ((count -= 8) >= 0) {
+                set_g_mask(0xff);
+                do {
+                    if (!--xleft)
+                        xleft = width_bytes,
+                            params.src -= width_bytes;
+                    ++params.src, ++params.dest;
+                    memrwcol0((rop_ptr) & params);
+                }
+                while ((count -= 8) >= 0);
+            }
+            /* Do last byte */
+            if (rmask) {
+                if (!--xleft)
+                    xleft = width_bytes,
+                        params.src -= width_bytes;
+                set_g_mask(rmask);
+                ++params.src, ++params.dest;
+                memrwcol0((rop_ptr) & params);
+            }
+            if ((lcount -= params.height) == 0)
+                break;
+            params.dest = line += params.height * params.draster;
+            params.src = tile->data + xmod;
+            yleft = tile_height;
+        }
     }
     /* Now do the second color if needed */
     if (again) {
-	maps = again + const_bits;
-	set_s_map(maps);
-	again = 0;
-	params.dest = mk_fb_ptr(x, y);
-	if (mask == 0)
-	    params.dest--;
-	params.invert = 0;
-	goto tile;
+        maps = again + const_bits;
+        set_s_map(maps);
+        again = 0;
+        params.dest = mk_fb_ptr(x, y);
+        if (mask == 0)
+            params.dest--;
+        params.invert = 0;
+        goto tile;
     }
     if (maps != 0xf)
-	set_s_map(-1);
+        set_s_map(-1);
     if (const_bits)
-	set_g_const_map(0);
+        set_g_const_map(0);
     dot_end();
     return 0;
 }
@@ -788,20 +788,20 @@ ega_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
     };
 
     if (y < 0 || y >= dev->height || dev->width > 800)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     /* Read 4 planes into the holding buffer. */
     for (i = 0; i < 4; ++i) {
-	set_g_read_plane(i);
-	memcpy(planes + 100 * i, mk_fb_ptr(0, y), width_bytes);
+        set_g_read_plane(i);
+        memcpy(planes + 100 * i, mk_fb_ptr(0, y), width_bytes);
     }
     /* Now assemble the final data from the planes. */
     for (dest = (bits32 *) data, src = planes, end = src + width_bytes;
-	 src < end; ++dest, ++src
-	)
-	*dest = (((((spread8[src[0]] >> 1) | spread8[src[100]]) >> 1) |
-		  spread8[src[200]]) >> 1) | spread8[src[300]];
+         src < end; ++dest, ++src
+        )
+        *dest = (((((spread8[src[0]] >> 1) | spread8[src[100]]) >> 1) |
+                  spread8[src[200]]) >> 1) | spread8[src[300]];
     if (actual_data != 0)
-	*actual_data = data;
+        *actual_data = data;
     return 0;
 }
 
@@ -823,28 +823,28 @@ fill_rectangle(register rop_ptr rop, int bit, int w, int color)
     set_g_const_map(0xf);
     select_g_mask();
     if (bit + w <= 8) {		/* Less than one byte */
-	out_g_mask(rmask_tab[w] >> bit);
-	memsetcol(rop);
+        out_g_mask(rmask_tab[w] >> bit);
+        memsetcol(rop);
     } else {
-	byte right_mask;
+        byte right_mask;
 
-	if (bit) {
-	    out_g_mask(0xff >> bit);
-	    memsetcol(rop);
-	    rop->dest++;
-	    w += bit - 8;
-	}
-	if (w >= 8) {
-	    out_g_mask(0xff);	/* all bits */
-	    rop->width = w >> 3;
-	    memsetrect(rop);
-	    rop->dest += rop->width;
-	    w &= 7;
-	}
-	if ((right_mask = rmask_tab[w]) != 0) {
-	    out_g_mask(right_mask);
-	    memsetcol(rop);
-	}
+        if (bit) {
+            out_g_mask(0xff >> bit);
+            memsetcol(rop);
+            rop->dest++;
+            w += bit - 8;
+        }
+        if (w >= 8) {
+            out_g_mask(0xff);	/* all bits */
+            rop->width = w >> 3;
+            memsetrect(rop);
+            rop->dest += rop->width;
+            w &= 7;
+        }
+        if ((right_mask = rmask_tab[w]) != 0) {
+            out_g_mask(right_mask);
+            memsetcol(rop);
+        }
     }
     set_g_const_map(0);
 }
@@ -857,50 +857,50 @@ fill_row_only(byte * dest, int bit, int w, int color)
   /* rop: dest */
 {
     if (bit + w <= 8) {		/* Less than one byte. */
-	/* Optimize filling with black or white. */
-	switch (color) {
-	    case 0:
-		set_g_mask(rmask_tab[w] >> bit);
-		*dest &= color;	/* read, then write 0s; */
-		/* some compilers optimize &= 0 to a store. */
-		out_g_mask(0xff);	/* dot_end */
-		break;
-	    case 0xf:
-		set_g_mask(rmask_tab[w] >> bit);
-		*dest |= 0xff;	/* read, then write 1s; */
-		/* some compilers optimize &= 0 to a store. */
-		out_g_mask(0xff);	/* dot_end */
-		break;
-	    default:
-		set_g_const(color);
-		set_g_const_map(0xf);
-		set_g_mask(rmask_tab[w] >> bit);
-		r_m_w(dest);
-		out_g_mask(0xff);	/* dot_end */
-		set_g_const_map(0);
-	}
+        /* Optimize filling with black or white. */
+        switch (color) {
+            case 0:
+                set_g_mask(rmask_tab[w] >> bit);
+                *dest &= color;	/* read, then write 0s; */
+                /* some compilers optimize &= 0 to a store. */
+                out_g_mask(0xff);	/* dot_end */
+                break;
+            case 0xf:
+                set_g_mask(rmask_tab[w] >> bit);
+                *dest |= 0xff;	/* read, then write 1s; */
+                /* some compilers optimize &= 0 to a store. */
+                out_g_mask(0xff);	/* dot_end */
+                break;
+            default:
+                set_g_const(color);
+                set_g_const_map(0xf);
+                set_g_mask(rmask_tab[w] >> bit);
+                r_m_w(dest);
+                out_g_mask(0xff);	/* dot_end */
+                set_g_const_map(0);
+        }
     } else {
-	byte right_mask;
-	int byte_count;
+        byte right_mask;
+        int byte_count;
 
-	set_g_const(color);
-	set_g_const_map(0xf);
-	select_g_mask();
-	if (bit) {
-	    out_g_mask(0xff >> bit);
-	    r_m_w(dest);
-	    dest++;
-	    w += bit - 8;
-	}
-	byte_count = w >> 3;
-	if ((right_mask = rmask_tab[w & 7]) != 0) {
-	    out_g_mask(right_mask);
-	    r_m_w(dest + byte_count);
-	}
-	out_g_mask(0xff);
-	if (byte_count) {
-	    memset(dest, 0, byte_count);	/* data irrelevant */
-	}
-	set_g_const_map(0);
+        set_g_const(color);
+        set_g_const_map(0xf);
+        select_g_mask();
+        if (bit) {
+            out_g_mask(0xff >> bit);
+            r_m_w(dest);
+            dest++;
+            w += bit - 8;
+        }
+        byte_count = w >> 3;
+        if ((right_mask = rmask_tab[w & 7]) != 0) {
+            out_g_mask(right_mask);
+            r_m_w(dest + byte_count);
+        }
+        out_g_mask(0xff);
+        if (byte_count) {
+            memset(dest, 0, byte_count);	/* data irrelevant */
+        }
+        set_g_const_map(0);
     }
 }

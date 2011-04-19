@@ -41,18 +41,18 @@ struct _ExampleParamList {
 
 static int
 example_status_cb (void *status_cb_data,
-		  IjsServerCtx *ctx,
-		  IjsJobId job_id)
+                  IjsServerCtx *ctx,
+                  IjsJobId job_id)
 {
   return 0;
 }
 
 static int
 example_list_cb (void *list_cb_data,
-		 IjsServerCtx *ctx,
-		 IjsJobId job_id,
-		 char *val_buf,
-		 int val_size)
+                 IjsServerCtx *ctx,
+                 IjsJobId job_id,
+                 char *val_buf,
+                 int val_size)
 {
   const char *param_list = "OutputFile,DeviceManufacturer,DeviceModel,PageImageFormat,Dpi,Width,Height,BitsPerSample,ColorSpace,NumChan,PaperSize,PrintableArea,PrintableTopLeft,TopLeft";
   int size = strlen (param_list);
@@ -68,11 +68,11 @@ example_list_cb (void *list_cb_data,
 
 static int
 example_enum_cb (void *enum_cb_data,
-		 IjsServerCtx *ctx,
-		 IjsJobId job_id,
-		 const char *key,
-		 char *val_buf,
-		 int val_size)
+                 IjsServerCtx *ctx,
+                 IjsJobId job_id,
+                 const char *key,
+                 char *val_buf,
+                 int val_size)
 {
   const char *val = NULL;
   if (!strcmp (key, "ColorSpace"))
@@ -91,7 +91,7 @@ example_enum_cb (void *enum_cb_data,
       int size = strlen (val);
 
       if (size > val_size)
-	return IJS_EBUF;
+        return IJS_EBUF;
       memcpy (val_buf, val, size);
       return size;
     }
@@ -100,7 +100,7 @@ example_enum_cb (void *enum_cb_data,
 /* A C implementation of /^(\d\.+\-eE)+x(\d\.+\-eE)+$/ */
 static int
 example_parse_wxh (const char *val, int size,
-		   double *pw, double *ph)
+                   double *pw, double *ph)
 {
   char buf[256];
   char *tail;
@@ -149,7 +149,7 @@ example_find_key (ExampleParamList *pl, const char *key)
   for (curs = pl; curs != NULL; curs = curs->next)
     {
       if (!strcmp (curs->key, key))
-	return curs;
+        return curs;
     }
   return NULL;
 }
@@ -185,7 +185,7 @@ example_compute_printable (ExampleParamList *pl, double printable[4])
 
 static int
 example_compute_offset (ExampleParamList *pl, IjsPageHeader *ph,
-			double *px0, double *py0)
+                        double *px0, double *py0)
 {
   ExampleParamList *curs;
   double width, height;
@@ -205,21 +205,21 @@ example_compute_offset (ExampleParamList *pl, IjsPageHeader *ph,
     {
       curs = example_find_key (pl, "TopLeft");
       if (curs != NULL)
-	{
-	  code = example_parse_wxh (curs->value, curs->value_size,
-				    &top, &left);
-	}
+        {
+          code = example_parse_wxh (curs->value, curs->value_size,
+                                    &top, &left);
+        }
       else
-	{
-	  double printable[4];
+        {
+          double printable[4];
 
-	  code = example_compute_printable (pl, printable);
-	  if (code == 0)
-	    {
-	      top = printable[2];
-	      left = printable[3];
-	    }
-	}
+          code = example_compute_printable (pl, printable);
+          if (code == 0)
+            {
+              top = printable[2];
+              left = printable[3];
+            }
+        }
     }
 
   if (code == 0)
@@ -233,11 +233,11 @@ example_compute_offset (ExampleParamList *pl, IjsPageHeader *ph,
 
 static int
 example_get_cb (void *get_cb_data,
-		 IjsServerCtx *ctx,
-		 IjsJobId job_id,
-		 const char *key,
-		 char *val_buf,
-		 int val_size)
+                 IjsServerCtx *ctx,
+                 IjsJobId job_id,
+                 const char *key,
+                 char *val_buf,
+                 int val_size)
 {
   ExampleParamList *pl = *(ExampleParamList **)get_cb_data;
   ExampleParamList *curs;
@@ -250,7 +250,7 @@ example_get_cb (void *get_cb_data,
   if (curs != NULL)
     {
       if (curs->value_size > val_size)
-	return IJS_EBUF;
+        return IJS_EBUF;
       memcpy (val_buf, curs->value, curs->value_size);
       return curs->value_size;
     }
@@ -262,10 +262,10 @@ example_get_cb (void *get_cb_data,
 
       code = example_compute_printable (pl, printable);
       if (code == 0)
-	{
-	  sprintf (buf, "%gx%g", printable[off + 0], printable[off + 1]);
-	  val = buf;
-	}
+        {
+          sprintf (buf, "%gx%g", printable[off + 0], printable[off + 1]);
+          val = buf;
+        }
     }
 
   if (!strcmp (key, "DeviceManufacturer"))
@@ -282,7 +282,7 @@ example_get_cb (void *get_cb_data,
       int size = strlen (val);
 
       if (size > val_size)
-	return IJS_EBUF;
+        return IJS_EBUF;
       memcpy (val_buf, val, size);
       return size;
     }
@@ -290,7 +290,7 @@ example_get_cb (void *get_cb_data,
 
 static int
 example_set_cb (void *set_cb_data, IjsServerCtx *ctx, IjsJobId job_id,
-		const char *key, const char *value, int value_size)
+                const char *key, const char *value, int value_size)
 {
   ExampleParamList **ppl = (ExampleParamList **)set_cb_data;
   ExampleParamList *pl;
@@ -305,7 +305,7 @@ example_set_cb (void *set_cb_data, IjsServerCtx *ctx, IjsJobId job_id,
 
       code = example_parse_wxh (value, value_size, &width, &height);
       if (code < 0)
-	return code;
+        return code;
     }
 
   fwrite (value, 1, value_size, stderr);
@@ -389,7 +389,7 @@ main (int argc, char **argv)
   ijs_server_install_set_cb (ctx, example_set_cb, &pl);
   ijs_server_install_get_cb (ctx, example_get_cb, &pl);
 
-  do 
+  do
     {
       int total_bytes, bytes_left;
       ExampleParamList *curs;
@@ -397,35 +397,35 @@ main (int argc, char **argv)
       status = ijs_server_get_page_header (ctx, &ph);
       if (status) break;
       fprintf (stderr, "got page header, %d x %d\n",
-	      ph.width, ph.height);
+              ph.width, ph.height);
 
       if (f == NULL)
-	{
-	  fn = find_param (pl, "OutputFile");
-	  /* todo: check error! */
+        {
+          fn = find_param (pl, "OutputFile");
+          /* todo: check error! */
 
-	  if (fn == NULL)
-	    {
-	      fn = find_param (pl, "OutputFD");
-	      if (fn != NULL)
-		{
-		  f = fdopen (atoi (fn), "wb");
-		}
-	    }
-	  else
-	    {
-	      f = fopen (fn, "wb");
-	    }
-	  if (f == NULL)
-	    {
-	      fprintf (stderr, "can't open output file %s\n", fn);
-	      fclose (stdin);
-	      fclose (stdout);
-	      break;
-	    }
-	  if (fn != NULL)
-	    free (fn);
-	}
+          if (fn == NULL)
+            {
+              fn = find_param (pl, "OutputFD");
+              if (fn != NULL)
+                {
+                  f = fdopen (atoi (fn), "wb");
+                }
+            }
+          else
+            {
+              f = fopen (fn, "wb");
+            }
+          if (f == NULL)
+            {
+              fprintf (stderr, "can't open output file %s\n", fn);
+              fclose (stdin);
+              fclose (stdout);
+              break;
+            }
+          if (fn != NULL)
+            free (fn);
+        }
 
       fprintf (f, "%%!PS-Adobe-2.0\n");
 
@@ -435,71 +435,71 @@ main (int argc, char **argv)
       yscale = 72.0 / ph.yres;
 
       fprintf (f, "%%%%BoundingBox: %d %d %d %d\n",
-	       (int)(x0 * 72), (int)(y0 * 72),
-	       (int)(x0 * 72 + xscale * ph.width + 0.999),
-	       (int)(y0 * 72 + yscale * ph.height + 0.999));
+               (int)(x0 * 72), (int)(y0 * 72),
+               (int)(x0 * 72 + xscale * ph.width + 0.999),
+               (int)(y0 * 72 + yscale * ph.height + 0.999));
 
       fprintf (f, "/rhex { currentfile exch readhexstring pop } bind def\n");
       fprintf (f, "/picstr %d string def\n", ph.width);
 
       for (curs = pl; curs != NULL; curs = curs->next)
-	{
-	  fprintf (f, "%% IJS parameter: %s = ", curs->key);
-	  fwrite (curs->value, 1, curs->value_size, f);
-	  fputs ("\n", f);
-	}
+        {
+          fprintf (f, "%% IJS parameter: %s = ", curs->key);
+          fwrite (curs->value, 1, curs->value_size, f);
+          fputs ("\n", f);
+        }
 
       fprintf (f,
-	       "gsave\n"
-	       "%f %f translate\n"
-	       "%f %f scale\n"
-	       "%d %d %d\n"
-	       "[ %d 0 0 %d 0 %d ]\n",
-	       x0 * 72, y0 * 72,
-	       xscale * ph.width, yscale * ph.height,
-	       ph.width, ph.height, ph.bps,
-	       ph.width, -ph.height, ph.height);
+               "gsave\n"
+               "%f %f translate\n"
+               "%f %f scale\n"
+               "%d %d %d\n"
+               "[ %d 0 0 %d 0 %d ]\n",
+               x0 * 72, y0 * 72,
+               xscale * ph.width, yscale * ph.height,
+               ph.width, ph.height, ph.bps,
+               ph.width, -ph.height, ph.height);
       if (ph.n_chan == 1)
-	fprintf (f, "{ picstr rhex } image\n");
+        fprintf (f, "{ picstr rhex } image\n");
       else
-	{
-	  fprintf (f, "{ picstr rhex }\n"
-		   "false %d colorimage\n", ph.n_chan);
-	}
+        {
+          fprintf (f, "{ picstr rhex }\n"
+                   "false %d colorimage\n", ph.n_chan);
+        }
       total_bytes = ((ph.n_chan * ph.bps * ph.width + 7) >> 3) * ph.height;
       bytes_left = total_bytes;
       while (bytes_left)
-	{
-	  int n_bytes = bytes_left;
-	  int i, j;
+        {
+          int n_bytes = bytes_left;
+          int i, j;
 
-	  if (n_bytes > sizeof(buf))
-	    n_bytes = sizeof(buf);
+          if (n_bytes > sizeof(buf))
+            n_bytes = sizeof(buf);
 #ifdef VERBOSE
-	  fprintf (stderr, "%d bytes left, reading %d\n", bytes_left, n_bytes);
+          fprintf (stderr, "%d bytes left, reading %d\n", bytes_left, n_bytes);
 #endif
-	  status = ijs_server_get_data (ctx, buf, n_bytes);
-	  if (status)
-	    {
-	      fprintf (stderr, "page aborted!\n");
-	      break;
-	    }
-	  j = 0;
-	  for (i = 0; i < n_bytes; i++)
-	    {
-	      const char hex[16] = "0123456789AbCdEf";
-	      unsigned char c = ((unsigned char *)buf)[i];
+          status = ijs_server_get_data (ctx, buf, n_bytes);
+          if (status)
+            {
+              fprintf (stderr, "page aborted!\n");
+              break;
+            }
+          j = 0;
+          for (i = 0; i < n_bytes; i++)
+            {
+              const char hex[16] = "0123456789AbCdEf";
+              unsigned char c = ((unsigned char *)buf)[i];
 
-	      hexbuf[j++] = hex[c >> 4];
-	      hexbuf[j++] = hex[c & 0xf];
-	      if ((i & 31) == 31)
-		hexbuf[j++] = '\n';
-	    }
-	  if ((n_bytes & 31) != 0)
-	    hexbuf[j++] = '\n';
-	  fwrite (hexbuf, 1, j, f);
-	  bytes_left -= n_bytes;
-	}
+              hexbuf[j++] = hex[c >> 4];
+              hexbuf[j++] = hex[c & 0xf];
+              if ((i & 31) == 31)
+                hexbuf[j++] = '\n';
+            }
+          if ((n_bytes & 31) != 0)
+            hexbuf[j++] = '\n';
+          fwrite (hexbuf, 1, j, f);
+          bytes_left -= n_bytes;
+        }
       fprintf (f, "grestore\nshowpage\n");
     }
   while (status == 0);

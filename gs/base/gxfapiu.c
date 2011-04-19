@@ -64,12 +64,11 @@ static LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
 /* set to 1 to display UFST debugging statements */
 GLOBAL const SW16 trace_sw = 0;
 
-
 /*
-    The following 4 variables are defined statically 
+    The following 4 variables are defined statically
 
 They could be stored in the gs_lib_ctx but that would require casting the types
-to avoid including ufst's typedefs. 
+to avoid including ufst's typedefs.
 */
 
 static LPUB8 (*m_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code) = stub_PCLEO_charptr;
@@ -143,7 +142,6 @@ int FAPIU_fclose (FILE *s)
     return(sfclose((stream *)(s)));
 }
 
-
 void * FAPIU_open (char *path, int mode)
 {
     if (!gs_mem_ctx)
@@ -161,7 +159,7 @@ int FAPIU_read (void *s, void *ptr, int count)
 int FAPIU_lseek (void *s, int offset, int whence)
 {
     int pos = sfseek (s, offset, whence);
-    
+
     if (pos >= 0)
     {
         pos = sftell(s);
@@ -172,7 +170,7 @@ int FAPIU_lseek (void *s, int offset, int whence)
 int fapi_ufseek (stream *s, long offset, int whence)
 {
     int pos = sfseek (s, offset, whence);
-    
+
     if (pos >= 0)
     {
         pos = sftell(s);
@@ -197,7 +195,7 @@ GLOBAL VOID MEMinit(FSP0)
 
    if_state.pserver->mem_avail[CHARGEN_POOL]  = 16 * 1024 * 1024;
    if_state.pserver->mem_fund[CHARGEN_POOL]   = 16 * 1024 * 1024;
-    
+
 }
 #ifndef UFST_MEMORY_CHECKING
 #define UFST_MEMORY_CHECKING 0
@@ -243,7 +241,7 @@ GLOBAL MEM_HANDLE MEMalloc(FSP UW16 pool, SL32 size)
         ptr += sizeof(void *);
 
 #endif
-        
+
         return((MEM_HANDLE)ptr);
     }
 }
@@ -255,14 +253,14 @@ GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
 #if UFST_MEMORY_CHECKING
     int size1;
     void *ptr2;
-    
+
     size = sizeof(void *);
 #endif
-    
+
     if (!ptr) {
         return;
     }
-    
+
     ptr -= (sizeof(long) + size);
     size = *((long *)ptr);
 
@@ -281,7 +279,7 @@ GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
         dprintf("Memory pointer record corrupt!\n");
     }
 #endif
-    
+
     memset (ptr, 0x00, size);
     gs_free (gs_mem_ctx, ptr, 0, 0, "UFST MEMfree");
 }
@@ -291,13 +289,13 @@ GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
 /* Set UFST callbacks. Each PDL will want it's own character build function and must set the callbacks
  * upon language entry/initialization.
  */
-/* Warning : this function may cause a reentrancy problem   
-     due to a modification of static variables.   
-     Nevertheless this problem isn't important in a   
-     single interpreter build, because the values   
-     really change on the first demand only.   
-     See also a comment in gs_fapiufst_finit.   
-   */ 
+/* Warning : this function may cause a reentrancy problem
+     due to a modification of static variables.
+     Nevertheless this problem isn't important in a
+     single interpreter build, because the values
+     really change on the first demand only.
+     See also a comment in gs_fapiufst_finit.
+   */
 void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code),
                            LPUB8 (*p_PCLchId2ptr)(FSP UW16 chId),
                            LPUB8 (*p_PCLglyphID2Ptr)(FSP UW16 glyphID))
@@ -309,8 +307,7 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
 #define MAX_OPEN_LIBRARIES  5   /* NB */
 #define BITMAP_WIDTH        1   /* must be 1, 2, 4 or 8 */
 
-
-/* returns negative on error, 
+/* returns negative on error,
  * 1 = "I just initialized for the first time and you might want to as well."
  * 0 = "I've already initialized but its ok to call me."
  * <0 = error.
@@ -323,7 +320,7 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 
 #if !UFST_REENTRANT
     if (ufst_initialized)
-	return 0;
+        return 0;
     gs_mem_ctx = mem;
 #endif
     strcpy(config_block.ufstPath, ufst_root_dir);
@@ -336,19 +333,19 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
     config_block.typePath[0] = 0;
 
     if ((status = CGIFinit(FSA0)) != 0) {
-	dprintf1("CGIFinit() error: %d\n", status);
+        dprintf1("CGIFinit() error: %d\n", status);
         gs_mem_ctx = NULL;
-	return status;
+        return status;
     }
     if ((status = CGIFconfig(FSA &config_block)) != 0) {
-	dprintf1("CGIFconfig() error: %d\n", status);
+        dprintf1("CGIFconfig() error: %d\n", status);
         gs_mem_ctx = NULL;
-	return status;
+        return status;
     }
     if ((status = CGIFenter(FSA0)) != 0) {
-	dprintf1("CGIFenter() error: %u\n",status);
+        dprintf1("CGIFenter() error: %u\n",status);
         gs_mem_ctx = NULL;
-	return status;
+        return status;
     }
 #if !UFST_REENTRANT
     ufst_initialized = TRUE;
@@ -370,55 +367,55 @@ gx_UFST_fini(void)
 /* Access to the static FCO list for the language switching project. */
 
 fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path)
-{   
+{
 #if !UFST_REENTRANT
     int i;
 
     for (i = 0; i < static_fco_count; i++)
-	if (!strcmp(static_fco_list[i].file_path, font_file_path))
-	    return &static_fco_list[i];
+        if (!strcmp(static_fco_list[i].file_path, font_file_path))
+            return &static_fco_list[i];
 #endif
     return NULL;
 }
 
 fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle)
-{   
+{
 #if !UFST_REENTRANT
     int i;
 
     for (i = 0; i < static_fco_count; i++)
-	if (static_fco_list[i].fcHandle == fcHandle)
-	    return &static_fco_list[i];
+        if (static_fco_list[i].fcHandle == fcHandle)
+            return &static_fco_list[i];
 #endif
     return NULL;
 }
 
 SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path)
-{   
+{
 #if !UFST_REENTRANT
     fco_list_elem *fco = gx_UFST_find_static_fco(font_file_path);
 
     if (fco)
-	return fco->fcHandle;
+        return fco->fcHandle;
     return 0;
 #endif
 }
 
 UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
-{   
+{
 #if !UFST_REENTRANT
     SW16 fcHandle;
     UW16 code;
     fco_list_elem *e;
 
     if (static_fco_count >= MAX_STATIC_FCO_COUNT)
-	return ERR_fco_NoMem;
+        return ERR_fco_NoMem;
     code = CGIFfco_Open(FSA (UB8 *)font_file_path, &fcHandle);
     if (code != 0)
-	return code;
+        return code;
     e = &static_fco_list[static_fco_count];
-    strncpy(static_fco_paths[static_fco_count], font_file_path, 
-	    sizeof(static_fco_paths[static_fco_count]));
+    strncpy(static_fco_paths[static_fco_count], font_file_path,
+            sizeof(static_fco_paths[static_fco_count]));
     e->file_path = static_fco_paths[static_fco_count];
     e->fcHandle = fcHandle;
     e->open_count = -1; /* Unused for static FCOs. */
@@ -432,19 +429,19 @@ UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
 }
 
 UW16 gx_UFST_close_static_fco(SW16 fcHandle)
-{   
+{
 #if !UFST_REENTRANT
     int i;
 
     for (i = 0; i < static_fco_count; i++)
-	if (static_fco_list[i].fcHandle == fcHandle)
-	    break;
+        if (static_fco_list[i].fcHandle == fcHandle)
+            break;
     if (i >= static_fco_count)
-	return ERR_fco_NoMem;
+        return ERR_fco_NoMem;
     CGIFfco_Close(FSA fcHandle);
     for (i++; i < static_fco_count; i++) {
-	static_fco_list[i - 1] = static_fco_list[i];
-	strcpy(static_fco_paths[i - 1], static_fco_paths[i]);
+        static_fco_list[i - 1] = static_fco_list[i];
+        strcpy(static_fco_paths[i - 1], static_fco_paths[i]);
     }
     static_fco_count--;
 #endif
@@ -455,7 +452,7 @@ void gx_UFST_close_static_fcos()
 {
 #if !UFST_REENTRANT
     for(; static_fco_count; )
-	gx_UFST_close_static_fco(static_fco_list[0].fcHandle);
+        gx_UFST_close_static_fco(static_fco_list[0].fcHandle);
 #endif
 }
 
@@ -467,9 +464,8 @@ void gx_UFST_close_static_fcos()
  */
 GLOBAL VOID BLACKPIX(FSP SW16 x, SW16 y )
 {
-	return;
+        return;
 }
-
 
 /* -------------------------------- GRAYPIX --------------------------------
  * Description: Called by UFST gichar function.
@@ -478,6 +474,6 @@ GLOBAL VOID BLACKPIX(FSP SW16 x, SW16 y )
  */
 GLOBAL VOID GRAYPIX(FSP SW16 x, SW16 y, SW16 v )
 {
-	return;
+        return;
 }
 #endif	/* GRAYSCALING */

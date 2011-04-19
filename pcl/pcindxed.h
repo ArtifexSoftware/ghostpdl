@@ -26,7 +26,6 @@
 #include "pclookup.h"
 #include "pccsbase.h"
 
-
 /*
  * Size of a PCL color palette. All palettes are allocated at this size, as
  * GL/2 may change the size of a palette after it has been created.
@@ -39,7 +38,6 @@
  */
 #define pcl_cs_indexed_palette_size_log 8
 #define pcl_cs_indexed_palette_size     (1 << pcl_cs_indexed_palette_size_log)
-
 
 /*
  * Structure to hold the parameters that normalize raw color values to values
@@ -59,7 +57,6 @@ typedef struct pcl_cs_indexed_norm_s {
     float   blkref;
     float   inv_range;  /* 255 / (whtref - blkref) */
 } pcl_cs_indexed_norm_t;
-
 
 /*
  * PCL indexed color space. This consists of:
@@ -294,7 +291,7 @@ int pcl_cs_indexed_set_pen_width(
  * Returns 0 if successful, < 0 in case of error.
  */
 int pcl_cs_indexed_build_cspace(
-    pcl_state_t *           pcs,				   
+    pcl_state_t *           pcs,
     pcl_cs_indexed_t **     ppindexed,
     const pcl_cid_data_t *  pcid,
     bool                    fixed,
@@ -306,7 +303,7 @@ int pcl_cs_indexed_build_cspace(
  * Build the default indexed color space. This function is usually called only
  * once, at initialization time.
  *
- * Returns 0 on success, < 0 
+ * Returns 0 on success, < 0
  */
 int pcl_cs_indexed_build_default_cspace(
     pcl_state_t *       pcs,

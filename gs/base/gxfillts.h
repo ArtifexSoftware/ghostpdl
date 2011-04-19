@@ -216,4 +216,3 @@ TEMPLATE_slant_into_trapezoids (const line_list *ll,
     /* Otherwise, handle it as a slanted trapezoid. */
     return fill_slant_adjust(ll, flp, alp, y, y1);
 }
-

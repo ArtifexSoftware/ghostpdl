@@ -61,13 +61,13 @@
  * uncolored patterns.
  *
  * HP Bug is_cmy is set when the base colorspace of the foreground color
- * is CMY.  
- * if foreground colorspace is the different than palette's force black 
+ * is CMY.
+ * if foreground colorspace is the different than palette's force black
  *   CMY foreground + RGB raster --> black + raster
  *   RGB foreground + CMY raster --> black + raster
  * else same colorspaces:
  *   foreground + raster -> fg_color + raster
- * This is an HP bug in the 4550 4600.    
+ * This is an HP bug in the 4550 4600.
  */
 struct pcl_frgrnd_s {
     rc_header       rc;
@@ -128,11 +128,11 @@ typedef struct pcl_frgrnd_s     pcl_frgrnd_t;
  */
 int pcl_frgrnd_set_default_foreground(pcl_state_t * pcs);
 
-/* checks for: 
+/* checks for:
  * (white pattern or white foreground color) and transparent pattern
- * is a NOP 
+ * is a NOP
  */
-bool 
+bool
 is_invisible_pattern( pcl_state_t *pcs );
- 
+
 #endif  /* pcfrgrnd_INCLUDED */

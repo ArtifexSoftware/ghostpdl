@@ -50,7 +50,6 @@ typedef enum {
     hpgl_SV_pattern_cross_hatch = 21,
     hpgl_SV_pattern_user_defined = 22
 } hpgl_SV_pattern_source_t;
-    
 
 /*
  * Opaque definitions of palettes, foregrounds, client colors, halftones,

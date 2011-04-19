@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -51,8 +51,8 @@ gs_lib_init1(gs_memory_t * mem)
     int code;
 
     for (ipp = gx_init_table; *ipp != 0; ++ipp)
-	if ((code = (**ipp)(mem)) < 0)
-	    return code;
+        if ((code = (**ipp)(mem)) < 0)
+            return code;
     return 0;
 }
 
@@ -68,6 +68,6 @@ gs_lib_finit(int exit_status, int code, gs_memory_t *mem)
      *    gs_malloc_release(mem);
      * else
      *    someone else has control of mem so we can't free it.
-     *    gs_view and iapi.h interface 
+     *    gs_view and iapi.h interface
      */
 }

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -35,13 +35,13 @@
 #include "gsdfilt.h"
 
 gs_private_st_ptrs3(st_gs_device_filter_stack, gs_device_filter_stack_t,
-		    "gs_device_filter_stack",
-		    gs_device_filter_stack_enum_ptrs,
-		    gs_device_filter_stack_reloc_ptrs,
-		    next, df, next_device);
+                    "gs_device_filter_stack",
+                    gs_device_filter_stack_enum_ptrs,
+                    gs_device_filter_stack_reloc_ptrs,
+                    next, df, next_device);
 
 gs_public_st_simple(st_gs_device_filter, gs_device_filter_t,
-		    "gs_device_filter");
+                    "gs_device_filter");
 
 int
 gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
@@ -51,15 +51,15 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     int code;
 
     dfs = gs_alloc_struct(mem, gs_device_filter_stack_t,
-			  &st_gs_device_filter_stack, "gs_push_device_filter");
+                          &st_gs_device_filter_stack, "gs_push_device_filter");
     if (dfs == NULL)
-	return_error(gs_error_VMerror);
+        return_error(gs_error_VMerror);
     rc_increment(pgs->device);
     dfs->next_device = pgs->device;
     code = df->push(df, mem, pgs, &new_dev, pgs->device);
     if (code < 0) {
-	gs_free_object(mem, dfs, "gs_push_device_filter");
-	return code;
+        gs_free_object(mem, dfs, "gs_push_device_filter");
+        return code;
     }
     dfs->next = pgs->dfilter_stack;
     pgs->dfilter_stack = dfs;
@@ -79,7 +79,7 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
     int code;
 
     if (dfs_tos == NULL)
-	return_error(gs_error_rangecheck);
+        return_error(gs_error_rangecheck);
     df = dfs_tos->df;
     pgs->dfilter_stack = dfs_tos->next;
     code = df->prepop(df, mem, pgs, tos_device);
@@ -99,8 +99,8 @@ gs_clear_device_filters(gs_memory_t *mem, gs_state *pgs)
     int code;
 
     while (pgs->dfilter_stack != NULL) {
-	if ((code = gs_pop_device_filter(mem, pgs)) < 0)
-	    return code;
+        if ((code = gs_pop_device_filter(mem, pgs)) < 0)
+            return code;
     }
     return 0;
 }

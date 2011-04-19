@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -89,7 +89,7 @@ struct gs_state_s {
     bool ctm_inverse_valid;	/* true if ctm_inverse = ctm^-1 */
     gs_matrix ctm_default;
     bool ctm_default_set;	/* if true, use ctm_default; */
-				/* if false, ask device */
+                                /* if false, ask device */
     /* Paths: */
 
     gx_path *path;
@@ -101,7 +101,7 @@ struct gs_state_s {
     gs_id effective_clip_id;	/* (key) clip path id */
     gs_id effective_view_clip_id;	/* (key) view clip path id */
     gx_clip_path *effective_clip_path;	/* (value) effective clip path, */
-				/* possibly = clip_path or view_clip */
+                                /* possibly = clip_path or view_clip */
     bool effective_clip_shared;	/* true iff e.c.p. = c.p. or v.c. */
 
 #define gs_currentdevicecolor_inline(pgs) \
@@ -119,7 +119,7 @@ struct gs_state_s {
         gs_client_color *ccolor;
         gx_device_color *dev_color;
     } color[2];
-    
+
     /* Font: */
 
     gs_font *font;
@@ -130,7 +130,7 @@ struct gs_state_s {
     gs_in_cache_device_t in_cachedevice;    /* (see gscpm.h) */
     gs_char_path_mode in_charpath;	/* (see gscpm.h) */
     gs_state *show_gstate;	/* gstate when show was invoked */
-				/* (so charpath can append to path) */
+                                /* (so charpath can append to path) */
 
     /* Other stuff: */
 
@@ -166,7 +166,7 @@ struct gs_state_s {
   m(15,transparency_group_stack)
 #define gs_state_num_ptrs 16
 
-/* The following macro is used for development purpose for designating places 
+/* The following macro is used for development purpose for designating places
    where current point is changed. Clients must not use it. */
 #define gx_setcurrentpoint(pgs, xx, yy)\
     (pgs)->current_point.x = xx;\

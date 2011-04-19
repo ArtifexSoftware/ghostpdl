@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -70,7 +70,7 @@ int check_type_failed(const ref *);
 #define check_type_access(orf,typ,acc1)\
   if ( !r_has_type_attrs(&orf,typ,acc1) )\
     return_error((!r_has_type(&orf,typ) ? check_type_failed(&orf) :\
-		  e_invalidaccess))
+                  e_invalidaccess))
 #define check_read_type(orf,typ)\
   check_type_access(orf,typ,a_read)
 #define check_write_type(orf,typ)\

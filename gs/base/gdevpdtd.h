@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -65,8 +65,8 @@ typedef struct pdf_font_descriptor_s pdf_font_descriptor_t;
  * gs_font.
  */
 int pdf_font_descriptor_alloc(gx_device_pdf *pdev,
-			      pdf_font_descriptor_t **ppfd,
-			      gs_font_base *font, bool embed);
+                              pdf_font_descriptor_t **ppfd,
+                              gs_font_base *font, bool embed);
 
 /*
  * Get the object ID of a FontDescriptor.
@@ -116,7 +116,7 @@ gs_string *pdf_font_descriptor_base_name(const pdf_font_descriptor_t *pfd);
  * new glyph, 1 if it was already copied.
  */
 int pdf_font_used_glyph(pdf_font_descriptor_t *pfd, gs_glyph glyph,
-			gs_font_base *font);
+                        gs_font_base *font);
 
 /*
  * Compute the FontDescriptor metrics for a font.
@@ -128,16 +128,16 @@ int pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
  * writing the associated embedded font if any.
  */
 int pdf_finish_FontDescriptor(gx_device_pdf *pdev,
-			      pdf_resource_t *pfd);
+                              pdf_resource_t *pfd);
 
 int pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
-			int (*finish_proc)(gx_device_pdf *,
-					   pdf_resource_t *));
+                        int (*finish_proc)(gx_device_pdf *,
+                                           pdf_resource_t *));
 /*
  * Write a FontDescriptor.
  */
 int pdf_write_FontDescriptor(gx_device_pdf *pdev,
-			     pdf_resource_t *pfd);
+                             pdf_resource_t *pfd);
 
 /*
  * Release a FontDescriptor components.

@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -15,7 +15,6 @@
 
 /* Changes after FreeType: cut out the TrueType instruction interpreter. */
 
-
 /*******************************************************************
  *
  *  tttype.h
@@ -27,15 +26,15 @@
  *
  *  This file is part of the FreeType project and may only be used,
  *  modified, and distributed under the terms of the FreeType project
- *  license, LICENSE.TXT.  By continuing to use, modify, or distribute 
+ *  license, LICENSE.TXT.  By continuing to use, modify, or distribute
  *  this file you indicate that you have read the license and
  *  understand and accept it fully.
  *
  *  Notes:
  *
- *    This is the only file that should be included by client            
+ *    This is the only file that should be included by client
  *    application sources for the final release.  All other types
- *    and functions defined in the "tt*.h" files are library  
+ *    and functions defined in the "tt*.h" files are library
  *    internals, and should not be included (except of course
  *    during development, as now).
  *
@@ -49,7 +48,6 @@
 #ifdef __cplusplus
   extern "C" {
 #endif
-
 
   /*******************************************************************/
   /*                                                                 */
@@ -115,13 +113,12 @@
 #endif
 
   struct  _TT_UnitVector      /* guess what...  */
-  { 
+  {
     TT_F2Dot14  x;
     TT_F2Dot14  y;
   };
 
   typedef struct _TT_UnitVector  TT_UnitVector;
-
 
   struct  _TT_Vector          /* Simple vector type */
   {
@@ -131,7 +128,6 @@
 
   typedef struct _TT_Vector  TT_Vector;
 
-
   /* A simple 2x2 matrix used for transformations. */
   /* You should use 16.16 fixed floats             */
   /*                                               */
@@ -139,14 +135,13 @@
   /*  y' = yx*x + yy*y                             */
   /*                                               */
 
-  struct  _TT_Matrix                       
+  struct  _TT_Matrix
   {
     TT_Fixed  xx, xy;
     TT_Fixed  yx, yy;
   };
 
   typedef struct _TT_Matrix  TT_Matrix;
-
 
   /* A structure used to describe the source glyph to the renderer. */
 
@@ -199,7 +194,6 @@
 
   typedef struct _TT_Outline  TT_Outline;
 
- 
   /* A structure used to describe a simple bounding box */
 
   struct _TT_BBox
@@ -267,7 +261,6 @@
   typedef struct _TT_Glyph_Metrics      TT_Glyph_Metrics;
   typedef struct _TT_Big_Glyph_Metrics  TT_Big_Glyph_Metrics;
 
-
   /* A structure used to return instance metrics. */
 
   struct  _TT_Instance_Metrics
@@ -286,7 +279,6 @@
 
   typedef struct _TT_Instance_Metrics  TT_Instance_Metrics;
 
-
   /* Flow constants:                                             */
   /*                                                             */
   /* The flow of a bitmap refers to the way lines are oriented   */
@@ -300,7 +292,6 @@
 #define TT_Flow_Down  -1  /* bitmap is oriented from top to bottom */
 #define TT_Flow_Up     1  /* bitmap is oriented from bottom to top */
 #define TT_Flow_Error  0  /* an error occurred during rendering    */
-
 
   /* A structure used to describe the target bitmap or pixmap to the   */
   /* renderer.  Note that there is nothing in this structure that      */
@@ -340,8 +331,6 @@
 
   typedef struct _TT_Raster_Map  TT_Raster_Map;
 
-
-
   /* ------- The font header TrueType table structure ----- */
 
   struct  _TT_Header
@@ -373,7 +362,6 @@
 
   typedef struct _TT_Header  TT_Header;
 
-
   /* ------- The horizontal header TrueType table structure ----- */
 
   struct  _TT_Horizontal_Header
@@ -398,7 +386,6 @@
   };
 
   typedef struct _TT_Horizontal_Header  TT_Horizontal_Header;
-
 
   /* ----------- OS/2 Table ----------------------------- */
 
@@ -447,7 +434,6 @@
 
   typedef struct _TT_OS2  TT_OS2;
 
-
   /* ----------- Postscript table ------------------------ */
 
   struct  _TT_Postscript
@@ -468,7 +454,6 @@
 
   typedef struct _TT_Postscript  TT_Postscript;
 
-
   /* ------------ horizontal device metrics "hdmx" ---------- */
 
   struct  _TT_Hdmx_Record
@@ -480,7 +465,6 @@
 
   typedef struct _TT_Hdmx_Record  TT_Hdmx_Record;
 
-
   struct  _TT_Hdmx
   {
     TT_UShort        version;
@@ -489,7 +473,6 @@
   };
 
   typedef struct _TT_Hdmx  TT_Hdmx;
-
 
   /* A structure used to describe face properties. */
 
@@ -573,10 +556,8 @@
 
   TT_Error  TT_Init_FreeType( TT_Engine*  engine );
 
-
   /* Finalize the engine, and release all allocated objects. */
   TT_Error  TT_Done_FreeType( TT_Engine  engine );
-
 
   /* Set the gray level palette.  This is an array of 5 bytes used */
   /* to produce the font smoothed pixmaps.  By convention:         */
@@ -589,7 +570,7 @@
   /*                                                               */
 
   TT_Error  TT_Set_Raster_Gray_Palette( TT_Engine  engine, char*  palette );
-  
+
   /* ----------------------- face management ----------------------- */
 
   /* Open a new TrueType font file, and returns a handle for */
@@ -606,7 +587,6 @@
                           const char*  fontpathname,
                           TT_Face*     face );
 
-
   /* Open a TrueType font file located inside a collection. */
   /* The font is designed by its index in 'fontIndex'.      */
 
@@ -615,12 +595,10 @@
                                 int          fontIndex,
                                 TT_Face*     face );
 
-
   /* Return face properties in the 'properties' structure. */
 
   TT_Error  TT_Get_Face_Properties( TT_Face              face,
                                     TT_Face_Properties*  properties );
-
 
   /* Set a face object's generic pointer */
   TT_Error  TT_Set_Face_Pointer( TT_Face  face,
@@ -658,7 +636,6 @@
   TT_Error  TT_New_Instance( TT_Face       face,
                              TT_Instance*  instance );
 
-
   /* Set device resolution for a given instance.  The values are      */
   /* given in dpi (Dots Per Inch).  Default is 96 in both directions. */
 
@@ -668,7 +645,6 @@
   TT_Error  TT_Set_Instance_Resolutions( TT_Instance  instance,
                                          int          x_resolution,
                                          int          y_resolution );
-
 
   /* Set the pointsize for a given instance.  Default is 10pt. */
 
@@ -712,7 +688,6 @@
   TT_Error  TT_Get_Instance_Metrics( TT_Instance           instance,
                                      TT_Instance_Metrics*  metrics );
 
-
   /* Set an instance's generic pointer */
 
   TT_Error  TT_Set_Instance_Pointer( TT_Instance  instance,
@@ -722,12 +697,10 @@
 
   void*     TT_Get_Instance_Pointer( TT_Instance  instance );
 
-
   /* Close a given instance object, destroying all associated */
   /* data.                                                    */
 
   TT_Error  TT_Done_Instance( TT_Instance  instance );
-
 
   /* ----------------------- glyph management ----------------------- */
 
@@ -736,11 +709,9 @@
   TT_Error  TT_New_Glyph( TT_Face    face,
                           TT_Glyph*  glyph );
 
-
   /* Discard (and destroy) a given glyph object. */
 
   TT_Error  TT_Done_Glyph( TT_Glyph  glyph );
-
 
 #define TTLOAD_SCALE_GLYPH  1
 #define TTLOAD_HINT_GLYPH   2
@@ -773,11 +744,10 @@
                            int          glyph_index,
                            int          load_flags );
 
-
   /* Return glyph outline pointers in 'outline'.  Note that the returned */
   /* pointers are owned by the glyph object, and will be destroyed with  */
   /* it.  The client application should _not_ change the pointers.       */
-  
+
   TT_Error  TT_Get_Glyph_Outline( TT_Glyph     glyph,
                                   TT_Outline*  outline );
 
@@ -785,7 +755,6 @@
 
   TT_Error  TT_Get_Glyph_Metrics( TT_Glyph           glyph,
                                   TT_Glyph_Metrics*  metrics );
-
 
   /* Render the glyph into a bitmap, with given position offsets.     */
 
@@ -800,7 +769,6 @@
                                  TT_Raster_Map*  raster_map,
                                  TT_F26Dot6      x_offset,
                                  TT_F26Dot6      y_offset );
-
 
   /* Render the glyph into a pixmap, with given position offsets.     */
 
@@ -884,12 +852,10 @@
 
   void      TT_Matrix_Multiply( TT_Matrix*  a,
                                 TT_Matrix*  b );
-                 
+
   /* Invert a transformation matrix */
 
   TT_Error  TT_Matrix_Invert( TT_Matrix*  matrix );
-
-
 
   /* ----------------- character mappings support ------------- */
 
@@ -898,7 +864,6 @@
 
   int  TT_Get_CharMap_Count( TT_Face  face );
 
-
   /* Return the ID of charmap number 'charmapIndex' of a given face */
   /* used to enumerate the charmaps present in a TrueType file.     */
 
@@ -906,7 +871,6 @@
                                int      charmapIndex,
                                short*   platformID,
                                short*   encodingID );
-
 
   /* Look up the character maps found in 'face' and return a handle */
   /* for the one matching 'platformID' and 'platformEncodingID'     */
@@ -918,7 +882,6 @@
                             int          charmapIndex,
                             TT_CharMap*  charMap );
 
-
   /* Translate a character code through a given character map   */
   /* and return the corresponding glyph index to be used in     */
   /* a TT_Load_Glyph call.  This function returns -1 in case of */
@@ -927,15 +890,12 @@
   int  TT_Char_Index( TT_CharMap      charMap,
                       unsigned short  charCode );
 
-
-
   /* --------------------- names table support ------------------- */
 
   /* Return the number of name strings found in the name table. */
   /* Returns -1 in case of failure (invalid face handle).       */
 
   int  TT_Get_Name_Count( TT_Face  face );
-
 
   /* Return the ID of the name number 'nameIndex' of a given face */
   /* used to enumerate the charmaps present in a TrueType file.   */
@@ -946,7 +906,6 @@
                             short*   encodingID,
                             short*   languageID,
                             short*   nameID );
-
 
   /* Return the address and length of the name number 'nameIndex' */
   /* of a given face.  The string is part of the face object and  */
@@ -959,8 +918,6 @@
                                 int      nameIndex,
                                 char**   stringPtr, /* pointer address     */
                                 int*     length );  /* str. length address */
-
-
 
   /************************ callback definition ******************/
 
@@ -989,19 +946,17 @@
                                   void*      callback_ptr );
 
   /************************ error codes declaration **************/
-  
+
   /* The error codes are grouped in 'classes' used to indicate the */
   /* 'level' at which the error happened.                          */
   /* The class is given by an error code's high byte.              */
-
 
   /* ------------- Success is always 0 -------- */
 
 #define TT_Err_Ok                       0
 
-  
   /* -------- High-level API error codes ------ */
-  
+
 #define TT_Err_Invalid_Face_Handle      0x001
 #define TT_Err_Invalid_Instance_Handle  0x002
 #define TT_Err_Invalid_Glyph_Handle     0x003
@@ -1011,7 +966,7 @@
 #define TT_Err_Invalid_Argument         0x007
 #define TT_Err_Could_Not_Open_File      0x008
 #define TT_Err_File_Is_Not_Collection   0x009
-  
+
 #define TT_Err_Table_Missing            0x00A
 #define TT_Err_Invalid_Horiz_Metrics    0x00B
 #define TT_Err_Invalid_CharMap_Format   0x00C
@@ -1034,7 +989,6 @@
 #define TT_Err_OS2_Table_Missing        0x087
 #define TT_Err_Post_Table_Missing       0x088
 
-  
   /* -------- Memory component error codes ---- */
 
   /* this error indicates that an operation cannot */
@@ -1042,9 +996,8 @@
 
 #define TT_Err_Out_Of_Memory            0x100
 
-  
   /* -------- File component error codes ------ */
-  
+
   /* these error codes indicate that the file could */
   /* not be accessed properly.  Usually, this means */
   /* a broken font file!                            */
@@ -1053,9 +1006,8 @@
 #define TT_Err_Invalid_File_Read        0x201
 #define TT_Err_Invalid_Frame_Access     0x202
 
-  
   /* -------- Glyph loader error codes -------- */
-  
+
   /* Produced only by the glyph loader, these error */
   /* codes indicate a broken glyph in a font file.  */
 
@@ -1064,9 +1016,8 @@
 #define TT_Err_Invalid_Composite        0x302
 #define TT_Err_Too_Many_Ins             0x303
 
-  
   /* --- bytecode interpreter error codes ----- */
-  
+
   /* These error codes are produced by the TrueType */
   /* bytecode interpreter.  They usually indicate a */
   /* broken font file, a broken glyph within a font */
@@ -1086,10 +1037,9 @@
 #define TT_Err_Debug_OpCode             0x40B
 #define TT_Err_ENDF_In_Exec_Stream      0x40C
 #define TT_Err_Out_Of_CodeRanges        0x40D
-#define TT_Err_Nested_DEFS              0x40E 
+#define TT_Err_Nested_DEFS              0x40E
 #define TT_Err_Invalid_CodeRange        0x40F
 #define TT_Err_Invalid_Displacement     0x410
-
 
   /* ------ internal failure error codes ----- */
 
@@ -1097,15 +1047,14 @@
   /* library state has been detected.  These reflect a */
   /* severe bug in the engine! (or a major overwrite   */
   /* of your application into the library's data).     */
-  
+
 #define TT_Err_Nested_Frame_Access      0x500
 #define TT_Err_Invalid_Cache_List       0x501
 #define TT_Err_Could_Not_Find_Context   0x502
 #define TT_Err_Unlisted_Object          0x503
 
-  
   /* ---- scan-line converter error codes ----- */
-  
+
   /* These error codes are produced by the raster component.  */
   /* They indicate that an outline structure was incoherently */
   /* setup, or that you're trying to render an horribly       */
@@ -1115,13 +1064,11 @@
 #define TT_Err_Raster_Negative_Height   0x601
 #define TT_Err_Raster_Invalid_Value     0x602
 #define TT_Err_Raster_Not_Initialized   0x603
-  
 
 #ifdef __cplusplus
   }
 #endif
 
 #endif /* FREETYPE_H */
-
 
 /* END */

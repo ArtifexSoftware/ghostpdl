@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -34,7 +34,7 @@ typedef union REGS registers;
 
 /* Procedures */
 
-	/* See gxdevice.h for the definitions of the procedures. */
+        /* See gxdevice.h for the definitions of the procedures. */
 
 dev_proc_open_device(ega_open);
 dev_proc_close_device(ega_close);
@@ -84,7 +84,7 @@ struct gx_device_ega_s {
   (fb_dev->fb_byte_mult == 0 ?\
    (fb_ptr)MK_PTR(regen + (y) * (fb_dev->fb_seg_mult), (x) >> 3) :\
    (fb_ptr)MK_PTR(regen + ((y) >> 4) * (fb_dev->fb_seg_mult),\
-		 (((y) & 15) * fb_dev->fb_byte_mult) + ((x) >> 3)))
+                 (((y) & 15) * fb_dev->fb_byte_mult) + ((x) >> 3)))
     int video_mode;
 };
 
@@ -94,21 +94,21 @@ struct gx_device_ega_s {
 /* This may or may not be what is desired! */
 #define ega_device(dev_name, procs, fb_raster, screen_height, aspect_ratio, video_mode)\
    {	std_device_dci_body(gx_device_ega, &procs, dev_name,\
-	  fb_raster * 8, screen_height,\
-	  (screen_height * (aspect_ratio)) / PAGE_HEIGHT_INCHES,	/* x dpi */\
-	  screen_height / PAGE_HEIGHT_INCHES,		/* y dpi */\
-	  (rgb_max ? 3 : 1),	/* num_components */\
-	  4,			/* depth */\
-	  (rgb_max ? rgb_max : 1),	/* max_gray */\
-	  rgb_max,\
-	  (rgb_max ? rgb_max + 1 : 2),	/* dither_grays */\
-	  (rgb_max ? rgb_max + 1 : 0)	/* dither_colors */\
-	),\
-	 { 0 },			/* std_procs */\
-	fb_raster,\
-	(fb_raster & 15 ? fb_raster : fb_raster >> 4),\
-	(fb_raster & 15 ? fb_raster : 0),\
-	video_mode\
+          fb_raster * 8, screen_height,\
+          (screen_height * (aspect_ratio)) / PAGE_HEIGHT_INCHES,	/* x dpi */\
+          screen_height / PAGE_HEIGHT_INCHES,		/* y dpi */\
+          (rgb_max ? 3 : 1),	/* num_components */\
+          4,			/* depth */\
+          (rgb_max ? rgb_max : 1),	/* max_gray */\
+          rgb_max,\
+          (rgb_max ? rgb_max + 1 : 2),	/* dither_grays */\
+          (rgb_max ? rgb_max + 1 : 0)	/* dither_colors */\
+        ),\
+         { 0 },			/* std_procs */\
+        fb_raster,\
+        (fb_raster & 15 ? fb_raster : fb_raster >> 4),\
+        (fb_raster & 15 ? fb_raster : 0),\
+        video_mode\
    }
 
 /* Define the device port and register numbers, and the regen map base */
@@ -143,28 +143,28 @@ struct gx_device_ega_s {
 
 #if defined(M_UNIX) || defined(M_XENIX) || defined(UNIX) || defined(SYSV) || defined(__linux__)
 
-		/* SCO Unix/Xenix, AT&T SVR4, or Linux. */
+                /* SCO Unix/Xenix, AT&T SVR4, or Linux. */
 
 #undef outportb
 
 #if defined(__GNUC__)
-	/* Inline assembly version for gcc */
-	/* Under SCO, requires installing the gnu assembler as "as" */
-static inline void 
+        /* Inline assembly version for gcc */
+        /* Under SCO, requires installing the gnu assembler as "as" */
+static inline void
 outportb(int port, int data)
 {
     __asm__ volatile ("outb %0,%1"::
-		      "a"      ((unsigned char)data),
-		      "d"      ((unsigned short)port));
+                      "a"      ((unsigned char)data),
+                      "d"      ((unsigned short)port));
 }
-static inline void 
+static inline void
 outport2(int port, int index, int data)
 {
     __asm__ volatile ("movb %0,%%ah; movb %1,%%al; outw %%ax,%2"::
-		      "qmi"    ((unsigned char)data),
-		      "qmi"    ((unsigned char)index),
-		      "d"      ((unsigned short)port):
-		      "eax");
+                      "qmi"    ((unsigned char)data),
+                      "qmi"    ((unsigned char)index),
+                      "d"      ((unsigned short)port):
+                      "eax");
 }
 #else
 void outportb(uint, byte);
@@ -181,7 +181,7 @@ extern fb_ptr fb_addr;
 
 #else
 
-		/* MS-DOS */
+                /* MS-DOS */
 
 /* outportb is defined in dos_.h */
 #define outport2(port, index, data)\

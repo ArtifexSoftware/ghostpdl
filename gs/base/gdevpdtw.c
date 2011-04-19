@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -46,20 +46,20 @@ pdf_write_Widths(gx_device_pdf *pdev, int first, int last, const double *widths)
     int i;
 
     if (first > last)
-	first = last = 0;
+        first = last = 0;
     pprintd2(s, "/FirstChar %d/LastChar %d/Widths[", first, last);
     for (i = first; i <= last; ++i)
-    	pprintg1(s, (i & 15 ? " %g" : "\n%g"), psdf_round(widths[i], 100, 10));
+        pprintg1(s, (i & 15 ? " %g" : "\n%g"), psdf_round(widths[i], 100, 10));
     stream_puts(s, "]\n");
     return 0;
 }
 
 /* Check strings equality. */
-static bool 
+static bool
 strings_equal(const gs_const_string *str0, const gs_const_string *str1)
 {
     return str0->size == str1->size &&
-	   !memcmp(str0->data, str1->data, str0->size);
+           !memcmp(str0->data, str1->data, str0->size);
 }
 
 /* Check if an encoding element differs from a standard one. */
@@ -67,18 +67,18 @@ static int
 pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int encoding_index)
 {
     if (pdfont->u.simple.Encoding[ch].is_difference)
-	return 1;
+        return 1;
     else if (encoding_index != ENCODING_INDEX_UNKNOWN) {
-	gs_glyph glyph0 = gs_c_known_encode(ch, encoding_index);
-	gs_glyph glyph1 = pdfont->u.simple.Encoding[ch].glyph;
-	gs_const_string str;
-	int code = gs_c_glyph_name(glyph0, &str);
+        gs_glyph glyph0 = gs_c_known_encode(ch, encoding_index);
+        gs_glyph glyph1 = pdfont->u.simple.Encoding[ch].glyph;
+        gs_const_string str;
+        int code = gs_c_glyph_name(glyph0, &str);
 
-	if (code < 0)
-	    return code; /* Must not happen */
-	if (glyph1 != GS_NO_GLYPH)
-	    if (!strings_equal(&str, &pdfont->u.simple.Encoding[ch].str))
-		return 1;
+        if (code < 0)
+            return code; /* Must not happen */
+        if (glyph1 != GS_NO_GLYPH)
+            if (!strings_equal(&str, &pdfont->u.simple.Encoding[ch].str))
+                return 1;
     }
     return 0;
 }
@@ -91,11 +91,11 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
     int ch, code;
 
     for (ch = ch0; ch < 256; ++ch) {
-	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
-	if (code < 0)
-	    return code; /* Must not happen */
-	if (code)
-	    break;
+        code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+        if (code < 0)
+            return code; /* Must not happen */
+        if (code)
+            break;
     }
     return ch;
 }
@@ -105,41 +105,41 @@ static bool
 pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 {
     int ch;
-    unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
-		? GS_C_PDF_GOOD_GLYPH_MASK : GS_C_PDF_GOOD_NON_SYMBOL_MASK);
+    unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2
+                ? GS_C_PDF_GOOD_GLYPH_MASK : GS_C_PDF_GOOD_NON_SYMBOL_MASK);
 
     if (pdfont->u.simple.Encoding == NULL)
-	return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
+        return true; /* Bitmap Type 3 fonts have no pdfont->u.simple.Encoding . */
     if (pdfont->FontType == ft_TrueType)
-	/*
-	    TrueType fonts are always written as symbolic, and so they do not have
-	    an Encoding entry (SVN revision 11735, bugs #690744, #691036, #691319).
-	    In this circumstance, write the ToUnicode map to get a searchable PDF.
-	*/
-	return true;
+        /*
+            TrueType fonts are always written as symbolic, and so they do not have
+            an Encoding entry (SVN revision 11735, bugs #690744, #691036, #691319).
+            In this circumstance, write the ToUnicode map to get a searchable PDF.
+        */
+        return true;
     for (ch = 0; ch < 256; ++ch) {
-	pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
-	gs_glyph glyph = pet->glyph;
+        pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+        gs_glyph glyph = pet->glyph;
 
-	if (glyph == GS_NO_GLYPH)
-	    continue;
-	if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
-	    if (pet->str.size == 0)
-		return true;
-	    glyph = gs_c_name_glyph(pet->str.data, pet->str.size);
-	    if (glyph == GS_NO_GLYPH)
-		return true;
-	}
+        if (glyph == GS_NO_GLYPH)
+            continue;
+        if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
+            if (pet->str.size == 0)
+                return true;
+            glyph = gs_c_name_glyph(pet->str.data, pet->str.size);
+            if (glyph == GS_NO_GLYPH)
+                return true;
+        }
         glyph -= gs_c_min_std_encoding_glyph;
         if( glyph > GS_C_PDF_MAX_GOOD_GLYPH ||
-           !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) ))) 
+           !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) )))
           return true;
     }
     return false;
 }
 
 /* Write Encoding differencrs. */
-int 
+int
 pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch)
 {
     /* Note : this truncates extended glyph names to original names. */
@@ -152,42 +152,42 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
     s = pdev->strm;
     stream_puts(s, "<</Type/Encoding");
     if (base_encoding < 0 && pdev->ForOPDFRead)
-	base_encoding = ENCODING_INDEX_STANDARD;
+        base_encoding = ENCODING_INDEX_STANDARD;
     if (base_encoding > 0)
-	pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
+        pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
     stream_puts(s, "/Differences[");
     for (; ch < 256; ++ch) {
-	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
-	if (code < 0)
-	    return code; /* Must not happen */
-	if (code == 0 && pdfont->FontType == ft_user_defined) {
-	    /* PDF 1.4 spec Appendix H Note 42 says that
-	     * Acrobat 4 can't properly handle Base Encoding. 
-	     * Enforce writing differences against that.
-	     */
-	    if (pdfont->used[ch >> 3] & 0x80 >> (ch & 7))
-		if (pdfont->u.simple.Encoding[ch].str.size)
-		    code = 1;
-	}
-	if (code) {
-	    const byte *d = pdfont->u.simple.Encoding[ch].str.data;
-	    int i, l = pdfont->u.simple.Encoding[ch].str.size;
+        code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+        if (code < 0)
+            return code; /* Must not happen */
+        if (code == 0 && pdfont->FontType == ft_user_defined) {
+            /* PDF 1.4 spec Appendix H Note 42 says that
+             * Acrobat 4 can't properly handle Base Encoding.
+             * Enforce writing differences against that.
+             */
+            if (pdfont->used[ch >> 3] & 0x80 >> (ch & 7))
+                if (pdfont->u.simple.Encoding[ch].str.size)
+                    code = 1;
+        }
+        if (code) {
+            const byte *d = pdfont->u.simple.Encoding[ch].str.data;
+            int i, l = pdfont->u.simple.Encoding[ch].str.size;
 
-    	    if (pdev->HavePDFWidths) {
-		for (i = 0; i + sl < l; i++)
-		    if (!memcmp(d + i, gx_extendeg_glyph_name_separator, sl)) {
-			l = i;
-			break;
-		    }
-	    }
-	    if (ch != prev + 1) {
-		pprintd1(s, "\n%d", ch);
-		cnt = 1;
-	    } else if (!(cnt++ & 15))
-		stream_puts(s, "\n");
-	    pdf_put_name(pdev, d, l);
-	    prev = ch;
-	}
+            if (pdev->HavePDFWidths) {
+                for (i = 0; i + sl < l; i++)
+                    if (!memcmp(d + i, gx_extendeg_glyph_name_separator, sl)) {
+                        l = i;
+                        break;
+                    }
+            }
+            if (ch != prev + 1) {
+                pprintd1(s, "\n%d", ch);
+                cnt = 1;
+            } else if (!(cnt++ & 15))
+                stream_puts(s, "\n");
+            pdf_put_name(pdev, d, l);
+            prev = ch;
+        }
     }
     stream_puts(s, "]>>\n");
     pdf_end_separate(pdev, resourceEncoding);
@@ -197,15 +197,15 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 /* Write Encoding reference. */
 int
 pdf_write_encoding_ref(gx_device_pdf *pdev,
-	  const pdf_font_resource_t *pdfont, long id)
+          const pdf_font_resource_t *pdfont, long id)
 {
     stream *s = pdev->strm;
 
     if (id != 0)
-	pprintld1(s, "/Encoding %ld 0 R", id);
+        pprintld1(s, "/Encoding %ld 0 R", id);
     else if (pdfont->u.simple.BaseEncoding > 0) {
-	gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
-	pprints1(s, "/Encoding/%s", encoding_names[base_encoding]);
+        gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
+        pprints1(s, "/Encoding/%s", encoding_names[base_encoding]);
     }
     return 0;
 }
@@ -213,7 +213,7 @@ pdf_write_encoding_ref(gx_device_pdf *pdev,
 /* Write the Subtype and Encoding for a simple font. */
 static int
 pdf_write_simple_contents(gx_device_pdf *pdev,
-			  const pdf_font_resource_t *pdfont)
+                          const pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
     long diff_id = 0;
@@ -222,19 +222,19 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
 
     ch = pdf_different_encoding_index(pdfont, ch);
     if (ch < 256)
-	diff_id = pdf_obj_ref(pdev);
+        diff_id = pdf_obj_ref(pdev);
     code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
     if (code < 0)
-	return code;
+        return code;
     pprints1(s, "/Subtype/%s>>\n",
-	     (pdfont->FontType == ft_TrueType ? "TrueType" :
-	      pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
+             (pdfont->FontType == ft_TrueType ? "TrueType" :
+              pdfont->u.simple.s.type1.is_MM_instance ? "MMType1" : "Type1"));
     pdf_end_separate(pdev, resourceFont);
     if (diff_id) {
-	mark_font_descriptor_symbolic(pdfont);
-	code = pdf_write_encoding(pdev, pdfont, diff_id, ch);
-	if (code < 0)
-	    return code;
+        mark_font_descriptor_symbolic(pdfont);
+        code = pdf_write_encoding(pdev, pdfont, diff_id, ch);
+        if (code < 0)
+            return code;
     }
     return 0;
 }
@@ -259,42 +259,42 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
      * and use the corresponding sign.
      * fixme : implement 2 hystograms.
      */
-    psf_enumerate_bits_begin(&genum, NULL, 
-			     wmode ? pdfont->u.cidfont.used2 : pdfont->used, 
-			     pdfont->count, GLYPH_SPACE_INDEX);
+    psf_enumerate_bits_begin(&genum, NULL,
+                             wmode ? pdfont->u.cidfont.used2 : pdfont->used,
+                             pdfont->count, GLYPH_SPACE_INDEX);
     memset(counts, 0, sizeof(counts));
     while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
         int i = glyph - GS_MIN_CID_GLYPH;
 
-	if ( i < pdfont->count) { /* safety */
-	    int width = (int)(w[i] + 0.5);
+        if ( i < pdfont->count) { /* safety */
+            int width = (int)(w[i] + 0.5);
 
-	    counts[min(any_abs(width), countof(counts) - 1)]++;
-	    if (width > 0)
-		pos_count++;
-	    else if (width < 0)
-		neg_count++;
-	}
+            counts[min(any_abs(width), countof(counts) - 1)]++;
+            if (width > 0)
+                pos_count++;
+            else if (width < 0)
+                neg_count++;
+        }
     }
     for (i = 1; i < countof(counts); ++i)
-	if (counts[i] > dw_count)
-	    dwi = i, dw_count = counts[i];
+        if (counts[i] > dw_count)
+            dwi = i, dw_count = counts[i];
     *pdw = (neg_count > pos_count ? -dwi : dwi);
     *pdv = 0;
     if (wmode) {
-	psf_enumerate_glyphs_reset(&genum);
-	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	    int i = glyph - GS_MIN_CID_GLYPH;
+        psf_enumerate_glyphs_reset(&genum);
+        while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
+            int i = glyph - GS_MIN_CID_GLYPH;
 
-	    if ( i < pdfont->count) { /* safety */
-		int width = (int)(w[i] + 0.5);
+            if ( i < pdfont->count) { /* safety */
+                int width = (int)(w[i] + 0.5);
 
-		if (min(any_abs(width), countof(counts) - 1) == any_abs(dwi)) {
-		    *pdv = (int)(pdfont->u.cidfont.v[i * 2 + 1] + 0.5);
-		    break;
-		}
-	    }
-	}
+                if (min(any_abs(width), countof(counts) - 1) == any_abs(dwi)) {
+                    *pdv = (int)(pdfont->u.cidfont.v[i * 2 + 1] + 0.5);
+                    break;
+                }
+            }
+        }
     }
     return (dw_count + counts[0] > 0);
 }
@@ -305,7 +305,7 @@ pdf_compute_CIDFont_default_widths(const pdf_font_resource_t *pdfont, int wmode,
  */
 static int
 pdf_write_CIDFont_widths(gx_device_pdf *pdev,
-			 const pdf_font_resource_t *pdfont, int wmode)
+                         const pdf_font_resource_t *pdfont, int wmode)
 {
     /*
      * The values of the CIDFont width keys are as follows:
@@ -323,84 +323,84 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
 
     /* Compute and write default width : */
     if (pdf_compute_CIDFont_default_widths(pdfont, wmode, &dw, &dv)) {
-	if (wmode) {
-	    pprintd2(s, "/DW2 [%d %d]\n", dv, dw);
-	} else
-	    pprintd1(s, "/DW %d\n", dw);
+        if (wmode) {
+            pprintd2(s, "/DW2 [%d %d]\n", dv, dw);
+        } else
+            pprintd1(s, "/DW %d\n", dw);
     }
 
     /*
      * Now write all widths different from the default one.  Currently we make no
      * attempt to optimize this: we write every width individually.
      */
-    psf_enumerate_bits_begin(&genum, NULL, 
-			     wmode ? pdfont->u.cidfont.used2 : pdfont->used, 
-			     pdfont->count, GLYPH_SPACE_INDEX);
+    psf_enumerate_bits_begin(&genum, NULL,
+                             wmode ? pdfont->u.cidfont.used2 : pdfont->used,
+                             pdfont->count, GLYPH_SPACE_INDEX);
     {
-	while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	    int cid = glyph - GS_MIN_CID_GLYPH;
-	    int width = (int)(w[cid] + 0.5);
+        while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
+            int cid = glyph - GS_MIN_CID_GLYPH;
+            int width = (int)(w[cid] + 0.5);
 
 #if 0 /* Must write zero widths - see test file of the bug Bug 687681.
-	 We don't enumerate unused glyphs here due to pdfont->used. */
-	    if (width == 0)
-		continue; /* Don't write for unused glyphs. */
+         We don't enumerate unused glyphs here due to pdfont->used. */
+            if (width == 0)
+                continue; /* Don't write for unused glyphs. */
 #else
-	    {	/* Check whether copied font really have this glyph.
-	           debugged with 401-01.ps, which uses undefined CIDs. */
-		gs_font_base *pfont = pdf_font_resource_font(pdfont, false);
-		gs_glyph_info_t info;
+            {	/* Check whether copied font really have this glyph.
+                   debugged with 401-01.ps, which uses undefined CIDs. */
+                gs_font_base *pfont = pdf_font_resource_font(pdfont, false);
+                gs_glyph_info_t info;
 
-		if (pfont->FontType == ft_TrueType) {
-		    /* We're converting a Type 42 into CIDFontType2. */
-		    /* We know that CIDs equal to char codes. */
-		    gs_glyph glyph1;
-		    int ch = glyph & 0xff;
+                if (pfont->FontType == ft_TrueType) {
+                    /* We're converting a Type 42 into CIDFontType2. */
+                    /* We know that CIDs equal to char codes. */
+                    gs_glyph glyph1;
+                    int ch = glyph & 0xff;
 
-		    glyph1 = pfont->procs.encode_char((gs_font *)pfont, ch, GLYPH_SPACE_NAME);
-		    if (cid == 0 && glyph1 == GS_NO_GLYPH)
-		        glyph1 = copied_get_notdef((gs_font *)pdf_font_resource_font(pdfont, false));
-		    if (glyph1 == GS_NO_GLYPH)
-		        continue;
-		    if (pfont->procs.glyph_info((gs_font *)pfont, glyph1, NULL, 0, &info) < 0)
-		        continue;
-		} else if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL, 0, &info) < 0)
-		    continue;
-	    }
+                    glyph1 = pfont->procs.encode_char((gs_font *)pfont, ch, GLYPH_SPACE_NAME);
+                    if (cid == 0 && glyph1 == GS_NO_GLYPH)
+                        glyph1 = copied_get_notdef((gs_font *)pdf_font_resource_font(pdfont, false));
+                    if (glyph1 == GS_NO_GLYPH)
+                        continue;
+                    if (pfont->procs.glyph_info((gs_font *)pfont, glyph1, NULL, 0, &info) < 0)
+                        continue;
+                } else if (pfont->procs.glyph_info((gs_font *)pfont, glyph, NULL, 0, &info) < 0)
+                    continue;
+            }
 #endif
-	    if (cid == prev + 1) {
-		if (wmode) {
-		    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
-		    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
+            if (cid == prev + 1) {
+                if (wmode) {
+                    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
+                    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
 
-		    pprintd3(s, "\n%d %d %d", width, vx, vy);
-		} else
-		    pprintd1(s, "\n%d", width);
-	    } else if (!pdev->PDFA && width == dw && 
-		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5) == 
-				(int)(pdfont->Widths[cid] / 2 + 0.5)) &&
-		    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5) == dv))
-		continue;
-	    else {
-		if (prev >= 0)
-		    stream_puts(s, "]\n");
-		else {
-		    stream_puts(s, Widths_key);
-		    stream_puts(s, "[");
-		}
-		if (wmode) {
-		    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
-		    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
+                    pprintd3(s, "\n%d %d %d", width, vx, vy);
+                } else
+                    pprintd1(s, "\n%d", width);
+            } else if (!pdev->PDFA && width == dw &&
+                    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5) ==
+                                (int)(pdfont->Widths[cid] / 2 + 0.5)) &&
+                    (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5) == dv))
+                continue;
+            else {
+                if (prev >= 0)
+                    stream_puts(s, "]\n");
+                else {
+                    stream_puts(s, Widths_key);
+                    stream_puts(s, "[");
+                }
+                if (wmode) {
+                    int vx = (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5);
+                    int vy = (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5);
 
-		    pprintd4(s, "%d[%d %d %d", cid, width, vx, vy);
-		} else
-		    pprintd2(s, "%d[%d", cid, width);
-	    }
-	    prev = cid;
-	}
-	if (prev >= 0)
-	    stream_puts(s, "]]\n");
-    }    
+                    pprintd4(s, "%d[%d %d %d", cid, width, vx, vy);
+                } else
+                    pprintd2(s, "%d[%d", cid, width);
+            }
+            prev = cid;
+        }
+        if (prev >= 0)
+            stream_puts(s, "]]\n");
+    }
 
     return 0;
 }
@@ -418,9 +418,9 @@ pdf_write_contents_type0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
      * creating the font resource.
      */
     if (pdfont->u.type0.Encoding_name[0])
-	pprints1(s, "/Encoding %s", pdfont->u.type0.Encoding_name);
+        pprints1(s, "/Encoding %s", pdfont->u.type0.Encoding_name);
     pprintld1(s, "/DescendantFonts[%ld 0 R]",
-	      pdf_font_id(pdfont->u.type0.DescendantFont));
+              pdf_font_id(pdfont->u.type0.DescendantFont));
     stream_puts(s, "/Subtype/Type0>>\n");
     pdf_end_separate(pdev, resourceFont);
     return 0;
@@ -432,13 +432,13 @@ pdf_write_contents_type0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
  */
 int
 pdf_finish_write_contents_type3(gx_device_pdf *pdev,
-				pdf_font_resource_t *pdfont)
+                                pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
 
     pdf_write_font_bbox_float(pdev, &pdfont->u.simple.s.type3.FontBBox);
-    pdf_write_Widths(pdev, pdfont->u.simple.FirstChar, 
-		    pdfont->u.simple.LastChar, pdfont->Widths);
+    pdf_write_Widths(pdev, pdfont->u.simple.FirstChar,
+                    pdfont->u.simple.LastChar, pdfont->Widths);
     stream_puts(s, "/Subtype/Type3>>\n");
     pdf_end_separate(pdev, resourceFont);
     return 0;
@@ -456,36 +456,36 @@ int
 pdf_write_contents_simple(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     pdf_write_Widths(pdev, pdfont->u.simple.FirstChar,
-		     pdfont->u.simple.LastChar, pdfont->Widths);
+                     pdfont->u.simple.LastChar, pdfont->Widths);
     return pdf_write_simple_contents(pdev, pdfont);
 }
 
 /* Write the contents of a CIDFont resource. */
 static int
 write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
-			  int subtype)
+                          int subtype)
 {
     /* Write [D]W[2], CIDSystemInfo, and Subtype, and close the object. */
     stream *s = pdev->strm;
     int code;
 
     if (pdfont->Widths != 0) {
-	code = pdf_write_CIDFont_widths(pdev, pdfont, 0);
-	if (code < 0)
-	    return code;
+        code = pdf_write_CIDFont_widths(pdev, pdfont, 0);
+        if (code < 0)
+            return code;
     } else {
-	/* With a vertical font, the viewer uses /DW 
-	   to determine glyph width to compute its v-vector. */
-	stream_puts(s, "/DW 0\n");
+        /* With a vertical font, the viewer uses /DW
+           to determine glyph width to compute its v-vector. */
+        stream_puts(s, "/DW 0\n");
     }
     if (pdfont->u.cidfont.Widths2 != 0) {
-	code = pdf_write_CIDFont_widths(pdev, pdfont, 1);
-	if (code < 0)
-	    return code;
+        code = pdf_write_CIDFont_widths(pdev, pdfont, 1);
+        if (code < 0)
+            return code;
     }
     if (pdfont->u.cidfont.CIDSystemInfo_id)
-	pprintld1(s, "/CIDSystemInfo %ld 0 R",
-		  pdfont->u.cidfont.CIDSystemInfo_id);
+        pprintld1(s, "/CIDSystemInfo %ld 0 R",
+                  pdfont->u.cidfont.CIDSystemInfo_id);
     pprintd1(s, "/Subtype/CIDFontType%d>>\n", subtype);
     pdf_end_separate(pdev, resourceFont);
     return 0;
@@ -506,44 +506,44 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 
     /* Check for the identity CIDMap. */
     psf_enumerate_bits_begin(&genum, NULL, pdfont->used, count,
-			     GLYPH_SPACE_INDEX);
+                             GLYPH_SPACE_INDEX);
     while (!psf_enumerate_glyphs_next(&genum, &glyph)) {
-	int cid = glyph - GS_MIN_CID_GLYPH;
-	int gid = pdfont->u.cidfont.CIDToGIDMap[cid];
+        int cid = glyph - GS_MIN_CID_GLYPH;
+        int gid = pdfont->u.cidfont.CIDToGIDMap[cid];
 
-	if (gid != cid) {	/* non-identity map */
-	    map_id = pdf_obj_ref(pdev);
-	    pprintld1(pdev->strm, "/CIDToGIDMap %ld 0 R\n", map_id);
-	    break;
-	}
+        if (gid != cid) {	/* non-identity map */
+            map_id = pdf_obj_ref(pdev);
+            pprintld1(pdev->strm, "/CIDToGIDMap %ld 0 R\n", map_id);
+            break;
+        }
     }
 
     if (map_id == 0 && pdf_font_descriptor_embedding(pdfont->FontDescriptor)) {
-	code = stream_puts(pdev->strm, "/CIDToGIDMap /Identity\n");
-	if (code < 0)
-	    return code;
+        code = stream_puts(pdev->strm, "/CIDToGIDMap /Identity\n");
+        if (code < 0)
+            return code;
     }
 
     code = write_contents_cid_common(pdev, pdfont, 2);
     if (code < 0)
-	return code;
+        return code;
 
     if (map_id && pdf_font_descriptor_embedding(pdfont->FontDescriptor)) {
-	pdf_data_writer_t writer;
-	int i;
+        pdf_data_writer_t writer;
+        int i;
 
-	pdf_begin_data_stream(pdev, &writer,
-	    DATA_STREAM_BINARY | (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0),
-		    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
-		       See comment in pdf_begin_encrypt. */
-		    map_id);
-	for (i = 0; i < count; ++i) {
-	    uint gid = pdfont->u.cidfont.CIDToGIDMap[i];
+        pdf_begin_data_stream(pdev, &writer,
+            DATA_STREAM_BINARY | (pdev->CompressFonts ? DATA_STREAM_COMPRESS : 0),
+                    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+                       See comment in pdf_begin_encrypt. */
+                    map_id);
+        for (i = 0; i < count; ++i) {
+            uint gid = pdfont->u.cidfont.CIDToGIDMap[i];
 
-	    stream_putc(writer.binary.strm, (byte)(gid >> 8));
-	    stream_putc(writer.binary.strm, (byte)(gid));
-	}
-	code = pdf_end_data(&writer);
+            stream_putc(writer.binary.strm, (byte)(gid >> 8));
+            stream_putc(writer.binary.strm, (byte)(gid));
+        }
+        code = pdf_end_data(&writer);
     }
     return code;
 }
@@ -558,53 +558,53 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     cos_dict_t *pcd_Resources = NULL;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
-	if (pdfont->FontType == ft_composite ||
-	    ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 || 
-		pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined) && 
-		pdf_simple_font_needs_ToUnicode(pdfont))
-	   ) {
-	    pdf_resource_t *prcmap;
-	    int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
+        if (pdfont->FontType == ft_composite ||
+            ((pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 ||
+                pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined) &&
+                pdf_simple_font_needs_ToUnicode(pdfont))
+           ) {
+            pdf_resource_t *prcmap;
+            int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
 
-	    if (code < 0)
-		return code;
-	    pdfont->res_ToUnicode = prcmap;
-	}
+            if (code < 0)
+                return code;
+            pdfont->res_ToUnicode = prcmap;
+        }
     if (pdev->CompatibilityLevel >= 1.2 &&
-	    pdfont->FontType == ft_user_defined && 
-	    pdfont->u.simple.s.type3.Resources != NULL &&
-	    pdfont->u.simple.s.type3.Resources->elements != NULL) {
-	int code; 
+            pdfont->FontType == ft_user_defined &&
+            pdfont->u.simple.s.type3.Resources != NULL &&
+            pdfont->u.simple.s.type3.Resources->elements != NULL) {
+        int code;
 
-	pcd_Resources = pdfont->u.simple.s.type3.Resources;
-	pcd_Resources->id = pdf_obj_ref(pdev);
-	pdf_open_separate(pdev, pcd_Resources->id, resourceFont);
-	code = COS_WRITE(pcd_Resources, pdev);
-	if (code < 0)
-	    return code;
-	pdf_end_separate(pdev, resourceFont);
+        pcd_Resources = pdfont->u.simple.s.type3.Resources;
+        pcd_Resources->id = pdf_obj_ref(pdev);
+        pdf_open_separate(pdev, pcd_Resources->id, resourceFont);
+        code = COS_WRITE(pcd_Resources, pdev);
+        if (code < 0)
+            return code;
+        pdf_end_separate(pdev, resourceFont);
     }
     pdf_open_separate(pdev, pdf_font_id(pdfont), resourceFont);
     s = pdev->strm;
     stream_puts(s, "<<");
     if (pdfont->BaseFont.size > 0) {
-	stream_puts(s, "/BaseFont");
-	pdf_put_name(pdev, pdfont->BaseFont.data, pdfont->BaseFont.size);
+        stream_puts(s, "/BaseFont");
+        pdf_put_name(pdev, pdfont->BaseFont.data, pdfont->BaseFont.size);
     }
     if (pdfont->FontDescriptor)
-	pprintld1(s, "/FontDescriptor %ld 0 R",
-		  pdf_font_descriptor_id(pdfont->FontDescriptor));
+        pprintld1(s, "/FontDescriptor %ld 0 R",
+                  pdf_font_descriptor_id(pdfont->FontDescriptor));
     if (pdfont->res_ToUnicode)
-	pprintld1(s, "/ToUnicode %ld 0 R",
-		  pdf_resource_id((const pdf_resource_t *)pdfont->res_ToUnicode));
+        pprintld1(s, "/ToUnicode %ld 0 R",
+                  pdf_resource_id((const pdf_resource_t *)pdfont->res_ToUnicode));
     if (pdev->CompatibilityLevel > 1.0)
-	stream_puts(s, "/Type/Font\n");
+        stream_puts(s, "/Type/Font\n");
     else
-	pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
+        pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
     if (pdev->ForOPDFRead && pdfont->global)
-	stream_puts(s, "/.Global true\n");
+        stream_puts(s, "/.Global true\n");
     if (pcd_Resources != NULL)
-	pprintld1(s, "/Resources %ld 0 R\n", pcd_Resources->id);
+        pprintld1(s, "/Resources %ld 0 R\n", pcd_Resources->id);
     return pdfont->write_contents(pdev, pdfont);
 }
 
@@ -619,39 +619,39 @@ write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
     pdf_resource_t *pres;
 
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
-	for (pres = prlist->chains[j]; pres != 0; pres = pres->next) {
-	    pdf_font_resource_t *const pdfont = (pdf_font_resource_t *)pres;
+        for (pres = prlist->chains[j]; pres != 0; pres = pres->next) {
+            pdf_font_resource_t *const pdfont = (pdf_font_resource_t *)pres;
 
-	    if (pdf_resource_id(pres) != -1) {
-		int code = pdf_compute_BaseFont(pdev, pdfont, true);
+            if (pdf_resource_id(pres) != -1) {
+                int code = pdf_compute_BaseFont(pdev, pdfont, true);
 
-		if (code < 0)
-		    return code;
-		code = pdf_write_font_resource(pdev, pdfont);
-		if (code < 0)
-		    return code;
-		pdfont->object->written = true;
-	    }
-	}
+                if (code < 0)
+                    return code;
+                code = pdf_write_font_resource(pdev, pdfont);
+                if (code < 0)
+                    return code;
+                pdfont->object->written = true;
+            }
+        }
     return 0;
 }
 int
 pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
-			int (*finish_proc)(gx_device_pdf *,
-					   pdf_resource_t *))
+                        int (*finish_proc)(gx_device_pdf *,
+                                           pdf_resource_t *))
 {
     int j;
     pdf_resource_t *pres;
 
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j)
-	for (pres = pdev->resources[type].chains[j];
-	     pres != 0; pres = pres->next
-	     ) {
-	    int code = finish_proc(pdev, pres);
+        for (pres = pdev->resources[type].chains[j];
+             pres != 0; pres = pres->next
+             ) {
+            int code = finish_proc(pdev, pres);
 
-	    if (code < 0)
-		return code;
-	}
+            if (code < 0)
+                return code;
+        }
     return 0;
 }
 int
@@ -667,14 +667,14 @@ pdf_close_text_document(gx_device_pdf *pdev)
 
     pdf_clean_standard_fonts(pdev);
     if ((code = pdf_free_font_cache(pdev)) < 0 ||
-	(code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
- 	(code = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font)) < 0 ||
- 	(code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor)) < 0 ||
-  	(code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
-	(code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
-	(code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor)) < 0
-	)
-	return code;
+        (code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
+        (code = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font)) < 0 ||
+        (code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor)) < 0 ||
+        (code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
+        (code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
+        (code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor)) < 0
+        )
+        return code;
 
     /* If required, write the Encoding for Type 3 bitmap fonts. */
 
@@ -688,28 +688,28 @@ pdf_close_text_document(gx_device_pdf *pdev)
  */
 static int
 pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
-			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
+                          const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {
     byte Registry[32], Ordering[32];
 
     if (pcidsi->Registry.size > sizeof(Registry))
-	return_error(gs_error_limitcheck);
+        return_error(gs_error_limitcheck);
     if (pcidsi->Ordering.size > sizeof(Ordering))
-	return_error(gs_error_limitcheck);
+        return_error(gs_error_limitcheck);
     memcpy(Registry, pcidsi->Registry.data, pcidsi->Registry.size);
     memcpy(Ordering, pcidsi->Ordering.data, pcidsi->Ordering.size);
     if (pdev->KeyLength && object_id != 0) {
-	stream_arcfour_state sarc4;
-	int code; 
+        stream_arcfour_state sarc4;
+        int code;
 
-	code = pdf_encrypt_init(pdev, object_id, &sarc4);
-	if (code < 0)
-	    return code;
-	s_arcfour_process_buffer(&sarc4, Registry, pcidsi->Registry.size);
-	code = pdf_encrypt_init(pdev, object_id, &sarc4);
-	if (code < 0)
-	    return code;
-	s_arcfour_process_buffer(&sarc4, Ordering, pcidsi->Ordering.size);
+        code = pdf_encrypt_init(pdev, object_id, &sarc4);
+        if (code < 0)
+            return code;
+        s_arcfour_process_buffer(&sarc4, Registry, pcidsi->Registry.size);
+        code = pdf_encrypt_init(pdev, object_id, &sarc4);
+        if (code < 0)
+            return code;
+        s_arcfour_process_buffer(&sarc4, Ordering, pcidsi->Ordering.size);
     }
     stream_puts(s, "<<\n/Registry");
     s_write_ps_string(s, Registry, pcidsi->Registry.size, PRINT_HEX_NOT_OK);
@@ -721,14 +721,14 @@ pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
 
 int
 pdf_write_cid_system_info(gx_device_pdf *pdev,
-			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
+                          const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {
     return pdf_write_cid_system_info_to_stream(pdev, pdev->strm, pcidsi, object_id);
 }
 
 int
 pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_t *pcidsi, long *id)
-{   
+{
     int code;
 
     *id = pdf_begin_separate(pdev, resourceCIDSystemInfo);
@@ -743,7 +743,7 @@ pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_
  */
 int
 pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t **ppres /*CMap*/, int font_index_only)
+               pdf_resource_t **ppres /*CMap*/, int font_index_only)
 {
     int code;
     pdf_data_writer_t writer;
@@ -751,56 +751,56 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     const gs_const_string *cmap_name = &pcmap->CMapName;
 
     code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY |
-			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
-			       See comment in pdf_begin_encrypt. */
-				 (pdev->CompressFonts ? 
-				  DATA_STREAM_COMPRESS : 0), gs_no_id);
+                                 DATA_STREAM_NOT_BINARY |
+                            /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+                               See comment in pdf_begin_encrypt. */
+                                 (pdev->CompressFonts ?
+                                  DATA_STREAM_COMPRESS : 0), gs_no_id);
     if (code < 0)
-	return code;
+        return code;
     *ppres = writer.pres;
     writer.pres->where_used = 0; /* CMap isn't a PDF resource. */
     if (!pcmap->ToUnicode) {
-	byte buf[200];
-	cos_dict_t *pcd = (cos_dict_t *)writer.pres->object;
-	stream s;
+        byte buf[200];
+        cos_dict_t *pcd = (cos_dict_t *)writer.pres->object;
+        stream s;
 
-	code = cos_dict_put_c_key_int(pcd, "/WMode", pcmap->WMode);
-	if (code < 0)
-	    return code;
-	buf[0] = '/';
-	memcpy(buf + 1, pcmap->CMapName.data, pcmap->CMapName.size);
-	code = cos_dict_put_c_key_string(pcd, "/CMapName", 
-			buf, pcmap->CMapName.size + 1);
-	if (code < 0)
-	    return code;
-	s_init(&s, pdev->memory);
-	swrite_string(&s, buf, sizeof(buf));
-	code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 0);
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo", 
-			buf, stell(&s));
-	if (code < 0)
-	    return code;
-	code = cos_dict_put_string_copy(pcd, "/Type", "/CMap");
-	if (code < 0)
-	    return code;
+        code = cos_dict_put_c_key_int(pcd, "/WMode", pcmap->WMode);
+        if (code < 0)
+            return code;
+        buf[0] = '/';
+        memcpy(buf + 1, pcmap->CMapName.data, pcmap->CMapName.size);
+        code = cos_dict_put_c_key_string(pcd, "/CMapName",
+                        buf, pcmap->CMapName.size + 1);
+        if (code < 0)
+            return code;
+        s_init(&s, pdev->memory);
+        swrite_string(&s, buf, sizeof(buf));
+        code = pdf_write_cid_system_info_to_stream(pdev, &s, pcmap->CIDSystemInfo, 0);
+        if (code < 0)
+            return code;
+        code = cos_dict_put_c_key_string(pcd, "/CIDSystemInfo",
+                        buf, stell(&s));
+        if (code < 0)
+            return code;
+        code = cos_dict_put_string_copy(pcd, "/Type", "/CMap");
+        if (code < 0)
+            return code;
     }
     if (pcmap->CMapName.size == 0) {
-	/* Create an arbitrary name (for ToUnicode CMap). */
-	alt_cmap_name.data = (byte *)(*ppres)->rname;
-	alt_cmap_name.size = strlen((*ppres)->rname);
-	cmap_name = &alt_cmap_name;
+        /* Create an arbitrary name (for ToUnicode CMap). */
+        alt_cmap_name.data = (byte *)(*ppres)->rname;
+        alt_cmap_name.size = strlen((*ppres)->rname);
+        cmap_name = &alt_cmap_name;
     }
     code = psf_write_cmap(pdev->memory, writer.binary.strm, pcmap,
-			  pdf_put_name_chars_proc(pdev), 
-			  cmap_name, font_index_only);
+                          pdf_put_name_chars_proc(pdev),
+                          cmap_name, font_index_only);
     if (code < 0)
-	return code;
+        return code;
     code = pdf_end_data(&writer);
     if (code < 0)
-	return code;
+        return code;
     return code;
 }
 
@@ -831,12 +831,12 @@ static const char *OneByteIdentityH[] = {
     "end",
 NULL};
 
-/* 
- * Write OneByteIdentityH CMap. 
+/*
+ * Write OneByteIdentityH CMap.
  */
 int
 pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
-{ 
+{
     int code, i;
     pdf_data_writer_t writer;
     cos_dict_t *pcd;
@@ -845,36 +845,36 @@ pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
     long id;
 
     if (pdev->IdentityCIDSystemInfo_id == gs_no_id) {
-	code = pdf_write_cid_systemInfo_separate(pdev, &cidsi, &id);
-	if (code < 0)
-	    return code;
-	pdev->IdentityCIDSystemInfo_id = id;
+        code = pdf_write_cid_systemInfo_separate(pdev, &cidsi, &id);
+        if (code < 0)
+            return code;
+        pdev->IdentityCIDSystemInfo_id = id;
     }
     if (pdev->OneByteIdentityH != NULL)
-	return 0;
+        return 0;
     code = pdf_begin_data_stream(pdev, &writer,
-				 DATA_STREAM_NOT_BINARY |
-			    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
-			       See comment in pdf_begin_encrypt. */
-				 (pdev->CompressFonts ? 
-				  DATA_STREAM_COMPRESS : 0), gs_no_id);
+                                 DATA_STREAM_NOT_BINARY |
+                            /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+                               See comment in pdf_begin_encrypt. */
+                                 (pdev->CompressFonts ?
+                                  DATA_STREAM_COMPRESS : 0), gs_no_id);
     if (code < 0)
-	return code;
+        return code;
     pdev->OneByteIdentityH = writer.pres;
     pcd = (cos_dict_t *)writer.pres->object;
     code = cos_dict_put_string_copy(pcd, "/CMapName", "/OneByteIdentityH");
     if (code < 0)
-	return code;
+        return code;
     sprintf(buf, "%ld 0 R", pdev->IdentityCIDSystemInfo_id);
     code = cos_dict_put_string_copy(pcd, "/CIDSystemInfo", buf);
     if (code < 0)
-	return code;
+        return code;
     code = cos_dict_put_string_copy(pcd, "/Type", "/CMap");
     if (code < 0)
-	return code;
+        return code;
     for (i = 0; OneByteIdentityH[i]; i++) {
-	stream_puts(pdev->strm, OneByteIdentityH[i]);
-	stream_putc(pdev->strm, '\n');
+        stream_puts(pdev->strm, OneByteIdentityH[i]);
+        stream_putc(pdev->strm, '\n');
     }
     return pdf_end_data(&writer);
 }

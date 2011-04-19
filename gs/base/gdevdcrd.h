@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -18,6 +18,6 @@
 
 /* Implement get_params for a sample device CRD. */
 int sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
-				 const char *crd_param_name);
+                                 const char *crd_param_name);
 
 #endif	/* gdevdcrd_INCLUDED */

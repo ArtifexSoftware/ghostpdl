@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -105,9 +105,9 @@ extern FILE *gs_debug_out;
 
 /* Debugging support procedures in gsmisc.c */
 void debug_dump_bytes(const byte * from, const byte * to,
-		      const char *msg);
+                      const char *msg);
 void debug_dump_bitmap(const byte * from, uint raster, uint height,
-		       const char *msg);
+                       const char *msg);
 void debug_print_string(const byte * str, uint len);
 void debug_print_string_hex(const byte * str, uint len);
 

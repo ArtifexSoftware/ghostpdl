@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -74,7 +74,7 @@ void gx_path_print(const gx_path *);
  * segments.
  */
 gx_path *gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
-			      client_name_t cname);
+                              client_name_t cname);
 
 #define gx_path_alloc(mem, cname)\
   gx_path_alloc_shared(NULL, mem, cname)
@@ -83,7 +83,7 @@ gx_path *gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
  * optionally allocating its segments.
  */
 int gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
-				  gs_memory_t * mem, client_name_t cname);
+                                  gs_memory_t * mem, client_name_t cname);
 
 #define gx_path_alloc_contained(ppath, mem, cname)\
   gx_path_init_contained_shared(ppath, NULL, mem, cname)
@@ -93,7 +93,7 @@ int gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
  * asked to share the segments of another local path.
  */
 int gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
-			      gs_memory_t * mem);
+                              gs_memory_t * mem);
 
 #define gx_path_init_local(ppath, mem)\
   (void)gx_path_init_local_shared(ppath, NULL, mem)	/* can't fail */
@@ -149,8 +149,8 @@ int gx_path_new(gx_path *),
     gx_path_add_partial_arc_notes(gx_path *, fixed, fixed, fixed, fixed, floatp, segment_notes),
     gx_path_add_path(gx_path *, gx_path *),
     gx_path_close_subpath_notes(gx_path *, segment_notes),
-	  /* We have to remove the 'subpath' from the following name */
-	  /* to keep it unique in the first 23 characters. */
+          /* We have to remove the 'subpath' from the following name */
+          /* to keep it unique in the first 23 characters. */
     gx_path_pop_close_notes(gx_path *, segment_notes);
 
 /* Access path state flags */
@@ -224,8 +224,8 @@ gx_path_is_rectangular(const gx_path *, gs_fixed_rect *);
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
 int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
-			  fixed fixed_flatness, const gs_imager_state *pis,
-			  gx_path_copy_options options);
+                          fixed fixed_flatness, const gs_imager_state *pis,
+                          gx_path_copy_options options);
 
 #define gx_path_copy(old, new)\
   gx_path_copy_reducing(old, new, max_fixed, NULL, pco_none)
@@ -233,20 +233,20 @@ int gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath_new,
   gx_path_copy_reducing(old, new, float2fixed(flatness), NULL, pco_none)
 #define gx_path_add_flattened_accurate(old, new, flatness, accurate)\
   gx_path_copy_reducing(old, new, float2fixed(flatness), NULL,\
-			(accurate ? pco_accurate : pco_none))
+                        (accurate ? pco_accurate : pco_none))
 #define gx_path_add_flattened_for_stroke(old, new, flatness, pis)\
   gx_path_copy_reducing(old, new, float2fixed(flatness), pis,\
-			(pis->accurate_curves ?\
-			 pco_accurate | pco_for_stroke : pco_for_stroke))
+                        (pis->accurate_curves ?\
+                         pco_accurate | pco_for_stroke : pco_for_stroke))
 #define gx_path_add_monotonized(old, new)\
   gx_path_copy_reducing(old, new, max_fixed, NULL, pco_monotonize)
 int gx_path_add_dash_expansion(const gx_path * /*old*/, gx_path * /*new*/,
-				  const gs_imager_state *),
+                                  const gs_imager_state *),
       gx_path_copy_reversed(const gx_path * /*old*/, gx_path * /*new*/),
       gx_path_append_reversed(const gx_path * /*orig*/, gx_path * /*rev*/),
       gx_path_translate(gx_path *, fixed, fixed),
       gx_path_scale_exp2_shared(gx_path *ppath, int log2_scale_x,
-				   int log2_scale_y, bool segments_shared);
+                                   int log2_scale_y, bool segments_shared);
 void gx_point_scale_exp2(gs_fixed_point *, int, int),
       gx_rect_scale_exp2(gs_fixed_rect *, int, int);
 
@@ -295,7 +295,6 @@ typedef struct gx_clip_list_s gx_clip_list;
 typedef struct gx_fill_params_s gx_fill_params;
 #endif
 
-
 /* Opaque type for a clipping path enumerator. */
 typedef struct gs_cpath_enum_s gs_cpath_enum;
 
@@ -304,20 +303,20 @@ typedef struct gs_cpath_enum_s gs_cpath_enum;
  * paths (see above for details).
  */
 gx_clip_path *gx_cpath_alloc_shared(const gx_clip_path * shared,
-				    gs_memory_t * mem, client_name_t cname);
+                                    gs_memory_t * mem, client_name_t cname);
 
 #define gx_cpath_alloc(mem, cname)\
   gx_cpath_alloc_shared(NULL, mem, cname)
 int gx_cpath_init_contained_shared(gx_clip_path * pcpath,
-				   const gx_clip_path * shared,
-				   gs_memory_t * mem,
-				   client_name_t cname);
+                                   const gx_clip_path * shared,
+                                   gs_memory_t * mem,
+                                   client_name_t cname);
 
 #define gx_cpath_alloc_contained(pcpath, mem, cname)\
   gx_cpath_init_contained_shared(pcpath, NULL, mem, cname)
 int gx_cpath_init_local_shared(gx_clip_path * pcpath,
-			       const gx_clip_path * shared,
-			       gs_memory_t * mem);
+                               const gx_clip_path * shared,
+                               gs_memory_t * mem);
 
 #define gx_cpath_init_local(pcpath, mem)\
   (void)gx_cpath_init_local_shared(pcpath, NULL, mem)	/* can't fail */
@@ -333,19 +332,19 @@ int
     gx_cpath_from_rectangle(gx_clip_path *, gs_fixed_rect *),
     gx_cpath_clip(gs_state *, gx_clip_path *, /*const*/ gx_path *, int),
     gx_cpath_intersect(gx_clip_path *, /*const*/ gx_path *, int,
-		       gs_imager_state *),
+                       gs_imager_state *),
     gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
-		   int rule, gs_imager_state *pis, const gx_fill_params * params),
+                   int rule, gs_imager_state *pis, const gx_fill_params * params),
     gx_cpath_scale_exp2_shared(gx_clip_path *pcpath, int log2_scale_x,
-			       int log2_scale_y, bool list_shared,
-			       bool segments_shared),
+                               int log2_scale_y, bool list_shared,
+                               bool segments_shared),
     gx_cpath_to_path(gx_clip_path *, gx_path *),
     gx_cpath_to_path_synthesize(const gx_clip_path * pcpath, gx_path * ppath);
 bool
     gx_cpath_inner_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_outer_box(const gx_clip_path *, gs_fixed_rect *),
     gx_cpath_includes_rectangle(const gx_clip_path *, fixed, fixed,
-				fixed, fixed);
+                                fixed, fixed);
 const gs_fixed_rect *cpath_is_rectangle(const gx_clip_path * pcpath);
 bool gx_cpath_rect_visible(gx_clip_path * pcpath, gs_int_rect *prect);
 int gx_cpath_copy(const gx_clip_path * from, gx_clip_path * pcpath);
@@ -361,6 +360,5 @@ gx_cpath_enum_notes(const gs_cpath_enum *);
 #ifdef DEBUG
 void gx_cpath_print(const gx_clip_path *);
 #endif
-
 
 #endif /* gxpath_INCLUDED */

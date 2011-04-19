@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -22,8 +22,8 @@
 
 /* Forward references */
 static int common_transform(i_ctx_t *,
-		int (*)(gs_state *, floatp, floatp, gs_point *),
-		int (*)(floatp, floatp, const gs_matrix *, gs_point *));
+                int (*)(gs_state *, floatp, floatp, gs_point *),
+                int (*)(floatp, floatp, const gs_matrix *, gs_point *));
 
 /* - initmatrix - */
 static int
@@ -52,11 +52,11 @@ zcurrentmatrix(i_ctx_t *i_ctx_p)
     int code = gs_currentmatrix(igs, &mat);
 
     if (code < 0)
-	return code;
+        return code;
     push(6);
     code = make_floats(op - 5, &mat.xx, 6);
     if (code < 0)
-	pop(6);
+        pop(6);
     return code;
 }
 
@@ -69,9 +69,9 @@ zsetmatrix(i_ctx_t *i_ctx_p)
     int code = float_params(op, 6, &mat.xx);
 
     if (code < 0)
-	return code;
+        return code;
     if ((code = gs_setmatrix(igs, &mat)) < 0)
-	return code;
+        return code;
     pop(6);
     return 0;
 }
@@ -84,17 +84,17 @@ zsetdefaultmatrix(i_ctx_t *i_ctx_p)
     int code;
 
     if (r_has_type(op, t_null))
-	code = gs_setdefaultmatrix(igs, NULL);
+        code = gs_setdefaultmatrix(igs, NULL);
     else {
-	gs_matrix mat;
+        gs_matrix mat;
 
-	code = read_matrix(imemory, op, &mat);
-	if (code < 0)
-	    return code;
-	code = gs_setdefaultmatrix(igs, &mat);
+        code = read_matrix(imemory, op, &mat);
+        if (code < 0)
+            return code;
+        code = gs_setdefaultmatrix(igs, &mat);
     }
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -109,22 +109,22 @@ ztranslate(i_ctx_t *i_ctx_p)
     double trans[2];
 
     if ((code = num_params(op, 2, trans)) >= 0) {
-	code = gs_translate(igs, trans[0], trans[1]);
-	if (code < 0)
-	    return code;
+        code = gs_translate(igs, trans[0], trans[1]);
+        if (code < 0)
+            return code;
     } else {			/* matrix operand */
-	gs_matrix mat;
+        gs_matrix mat;
 
-	/* The num_params failure might be a stack underflow. */
-	check_op(2);
-	if ((code = num_params(op - 1, 2, trans)) < 0 ||
-	    (code = gs_make_translation(trans[0], trans[1], &mat)) < 0 ||
-	    (code = write_matrix(op, &mat)) < 0
-	    ) {			/* Might be a stack underflow. */
-	    check_op(3);
-	    return code;
-	}
-	op[-2] = *op;
+        /* The num_params failure might be a stack underflow. */
+        check_op(2);
+        if ((code = num_params(op - 1, 2, trans)) < 0 ||
+            (code = gs_make_translation(trans[0], trans[1], &mat)) < 0 ||
+            (code = write_matrix(op, &mat)) < 0
+            ) {			/* Might be a stack underflow. */
+            check_op(3);
+            return code;
+        }
+        op[-2] = *op;
     }
     pop(2);
     return code;
@@ -140,22 +140,22 @@ zscale(i_ctx_t *i_ctx_p)
     double scale[2];
 
     if ((code = num_params(op, 2, scale)) >= 0) {
-	code = gs_scale(igs, scale[0], scale[1]);
-	if (code < 0)
-	    return code;
+        code = gs_scale(igs, scale[0], scale[1]);
+        if (code < 0)
+            return code;
     } else {			/* matrix operand */
-	gs_matrix mat;
+        gs_matrix mat;
 
-	/* The num_params failure might be a stack underflow. */
-	check_op(2);
-	if ((code = num_params(op - 1, 2, scale)) < 0 ||
-	    (code = gs_make_scaling(scale[0], scale[1], &mat)) < 0 ||
-	    (code = write_matrix(op, &mat)) < 0
-	    ) {			/* Might be a stack underflow. */
-	    check_op(3);
-	    return code;
-	}
-	op[-2] = *op;
+        /* The num_params failure might be a stack underflow. */
+        check_op(2);
+        if ((code = num_params(op - 1, 2, scale)) < 0 ||
+            (code = gs_make_scaling(scale[0], scale[1], &mat)) < 0 ||
+            (code = write_matrix(op, &mat)) < 0
+            ) {			/* Might be a stack underflow. */
+            check_op(3);
+            return code;
+        }
+        op[-2] = *op;
     }
     pop(2);
     return code;
@@ -171,22 +171,22 @@ zrotate(i_ctx_t *i_ctx_p)
     double ang;
 
     if ((code = real_param(op, &ang)) >= 0) {
-	code = gs_rotate(igs, ang);
-	if (code < 0)
-	    return code;
+        code = gs_rotate(igs, ang);
+        if (code < 0)
+            return code;
     } else {			/* matrix operand */
-	gs_matrix mat;
+        gs_matrix mat;
 
-	/* The num_params failure might be a stack underflow. */
-	check_op(1);
-	if ((code = num_params(op - 1, 1, &ang)) < 0 ||
-	    (code = gs_make_rotation(ang, &mat)) < 0 ||
-	    (code = write_matrix(op, &mat)) < 0
-	    ) {			/* Might be a stack underflow. */
-	    check_op(2);
-	    return code;
-	}
-	op[-1] = *op;
+        /* The num_params failure might be a stack underflow. */
+        check_op(1);
+        if ((code = num_params(op - 1, 1, &ang)) < 0 ||
+            (code = gs_make_rotation(ang, &mat)) < 0 ||
+            (code = write_matrix(op, &mat)) < 0
+            ) {			/* Might be a stack underflow. */
+            check_op(2);
+            return code;
+        }
+        op[-1] = *op;
     }
     pop(1);
     return code;
@@ -201,10 +201,10 @@ zconcat(i_ctx_t *i_ctx_p)
     int code = read_matrix(imemory, op, &mat);
 
     if (code < 0)
-	return code;
+        return code;
     code = gs_concat(igs, &mat);
     if (code < 0)
-	return code;
+        return code;
     pop(1);
     return 0;
 }
@@ -218,11 +218,11 @@ zconcatmatrix(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = read_matrix(imemory, op - 2, &m1)) < 0 ||
-	(code = read_matrix(imemory, op - 1, &m2)) < 0 ||
-	(code = gs_matrix_multiply(&m1, &m2, &mp)) < 0 ||
-	(code = write_matrix(op, &mp)) < 0
-	)
-	return code;
+        (code = read_matrix(imemory, op - 1, &m2)) < 0 ||
+        (code = gs_matrix_multiply(&m1, &m2, &mp)) < 0 ||
+        (code = write_matrix(op, &mp)) < 0
+        )
+        return code;
     op[-2] = *op;
     pop(2);
     return code;
@@ -263,8 +263,8 @@ zidtransform(i_ctx_t *i_ctx_p)
 /* Common logic for [i][d]transform */
 static int
 common_transform(i_ctx_t *i_ctx_p,
-	int (*ptproc)(gs_state *, floatp, floatp, gs_point *),
-	int (*matproc)(floatp, floatp, const gs_matrix *, gs_point *))
+        int (*ptproc)(gs_state *, floatp, floatp, gs_point *),
+        int (*matproc)(floatp, floatp, const gs_matrix *, gs_point *))
 {
     os_ptr op = osp;
     double opxy[2];
@@ -273,44 +273,44 @@ common_transform(i_ctx_t *i_ctx_p,
 
     /* Optimize for the non-matrix case */
     switch (r_type(op)) {
-	case t_real:
-	    opxy[1] = op->value.realval;
-	    break;
-	case t_integer:
-	    opxy[1] = op->value.intval;
-	    break;
-	case t_array:		/* might be a matrix */
-	case t_shortarray:
-	case t_mixedarray: {
-	    gs_matrix mat;
-	    gs_matrix *pmat = &mat;
+        case t_real:
+            opxy[1] = op->value.realval;
+            break;
+        case t_integer:
+            opxy[1] = op->value.intval;
+            break;
+        case t_array:		/* might be a matrix */
+        case t_shortarray:
+        case t_mixedarray: {
+            gs_matrix mat;
+            gs_matrix *pmat = &mat;
 
-	    if ((code = read_matrix(imemory, op, pmat)) < 0 ||
-		(code = num_params(op - 1, 2, opxy)) < 0 ||
-		(code = (*matproc) (opxy[0], opxy[1], pmat, &pt)) < 0
-		) {		/* Might be a stack underflow. */
-		check_op(3);
-		return code;
-	    }
-	    op--;
-	    pop(1);
-	    goto out;
-	}
-	default:
-	    return_op_typecheck(op);
+            if ((code = read_matrix(imemory, op, pmat)) < 0 ||
+                (code = num_params(op - 1, 2, opxy)) < 0 ||
+                (code = (*matproc) (opxy[0], opxy[1], pmat, &pt)) < 0
+                ) {		/* Might be a stack underflow. */
+                check_op(3);
+                return code;
+            }
+            op--;
+            pop(1);
+            goto out;
+        }
+        default:
+            return_op_typecheck(op);
     }
     switch (r_type(op - 1)) {
-	case t_real:
-	    opxy[0] = (op - 1)->value.realval;
-	    break;
-	case t_integer:
-	    opxy[0] = (op - 1)->value.intval;
-	    break;
-	default:
-	    return_op_typecheck(op - 1);
+        case t_real:
+            opxy[0] = (op - 1)->value.realval;
+            break;
+        case t_integer:
+            opxy[0] = (op - 1)->value.intval;
+            break;
+        default:
+            return_op_typecheck(op - 1);
     }
     if ((code = (*ptproc) (igs, opxy[0], opxy[1], &pt)) < 0)
-	return code;
+        return code;
 out:
     make_real(op - 1, pt.x);
     make_real(op, pt.y);
@@ -326,10 +326,10 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     int code;
 
     if ((code = read_matrix(imemory, op - 1, &m)) < 0 ||
-	(code = gs_matrix_invert(&m, &m)) < 0 ||
-	(code = write_matrix(op, &m)) < 0
-	)
-	return code;
+        (code = gs_matrix_invert(&m, &m)) < 0 ||
+        (code = write_matrix(op, &m)) < 0
+        )
+        return code;
     op[-1] = *op;
     pop(1);
     return code;
@@ -349,9 +349,9 @@ zbbox_transform(i_ctx_t *i_ctx_p)
 
     if ((code = read_matrix(imemory, op, &m)) < 0)
         return code;
-    
+
     if (!r_is_array(op - 1))
-	return_op_typecheck(op - 1);
+        return_op_typecheck(op - 1);
     check_read(op[-1]);
     if (r_size(op - 1) != 4)
         return_error(e_rangecheck);

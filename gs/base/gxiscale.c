@@ -102,7 +102,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
     /* If the device has some unique color mapping procs due to its color space,
        then we will need to use those and go through pixel by pixel instead
-       of blasting through buffers.  This is true for example with many of 
+       of blasting through buffers.  This is true for example with many of
        the color spaces for CUPs */
     if(!gx_device_uses_std_cmap_procs(penum->dev)) {
         use_icc = false;

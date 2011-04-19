@@ -1,6 +1,6 @@
 /* Copyright (C) 2001-2006 Artifex Software, Inc.
    All Rights Reserved.
-  
+
    This software is provided AS-IS with no warranty, either express or
    implied.
 
@@ -45,6 +45,6 @@ uint hc_sizeof_decoding(const hc_definition * def, int initial_bits);
 
 /* Generate the decoding tables. */
 void hc_make_decoding(hcd_code * decode, const hc_definition * def,
-		      int initial_bits);
+                      int initial_bits);
 
 #endif /* shcgen_INCLUDED */

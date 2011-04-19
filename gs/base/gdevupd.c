@@ -271,7 +271,6 @@ upd_device far_data gs_uniprint_device = { /** */
       NULL                                 /** upd-field: Initially none */
 };                                         /** */
 
-
 /* ------------------------------------------------------------------- */
 /* UPD-Data- and Prototypes                                            */
 /* ------------------------------------------------------------------- */
@@ -616,7 +615,6 @@ typedef struct updcmap_s { /** */
 } updcmap_t, *updcmap_p;  /** */
 typedef const updcmap_t *updcmap_pc;
 
-
 /**
 "updcomp" holds similar informations, but is used for the rendering
 */
@@ -639,7 +637,6 @@ typedef struct updscan_s { /* Single Scanline (1 Bit/Pixel) */
    int    *xbegin;     /* 1st  Pixel set (or nbytes<<3 if none) */
    int    *xend;       /* last Pixel set (or -1, if none) */
 } updscan_t, *updscan_p;   /* Single Scanline (1 Bit/Pixel) */
-
 
 /** Main upd-Structure ***/
 
@@ -714,7 +711,6 @@ struct upd_s { /* All upd-specific data */
    int                    yscnbuf;    /* Y not yet buffered */
    const gs_memory_t     *memory;     /* Memory pointer - for errprintf */
 };             /* All upd-specific data */
-
 
 /* ------------------------------------------------------------------- */
 /* Various Message-Levels                                              */
@@ -863,7 +859,6 @@ The seventh writer is for ESC P/2 Nozzle Map Mode (currently Stylus Color 300) (
 
 static int             upd_wrtescnm(      upd_p upd, FILE *out);
 
-
 /**
 Generalized Pixel Get & Read
 */
@@ -961,7 +956,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
          uint iii;                                                     \
          To.size = From.size;                                          \
          for(iii = 0; To.size > iii; ++iii)                            \
-	     UPD_MM_CPY_PARAM(mem, tmp2[iii],From.data[iii]);	       \
+             UPD_MM_CPY_PARAM(mem, tmp2[iii],From.data[iii]);	       \
       }                                                                \
    }
 
@@ -1001,7 +996,6 @@ upd_signal_handler(int sig)
   if(sigupd) sigupd->flags |= B_ABORT;
 }
 #endif
-
 
 /* ------------------------------------------------------------------- */
 /* upd_print_page: The main workhorse                                  */
@@ -1198,18 +1192,18 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
  * If necessary, write the close-sequence
  */
     {
-	gs_parsed_file_name_t parsed;
-	const char *fmt;
+        gs_parsed_file_name_t parsed;
+        const char *fmt;
 
-	if (NULL != udev->fname &&
-	    0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname,
+        if (NULL != udev->fname &&
+            0 <= gx_parse_output_file_name(&parsed, &fmt, udev->fname,
                                            strlen(udev->fname), udev->memory) &&
-	    fmt
-	    ) {
-	    if (0 < upd->strings[S_CLOSE].size)
-		fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
-	    upd->flags &= ~B_OPEN;
-	}
+            fmt
+            ) {
+            if (0 < upd->strings[S_CLOSE].size)
+                fwrite(upd->strings[S_CLOSE].data,1,upd->strings[S_CLOSE].size,out);
+            upd->flags &= ~B_OPEN;
+        }
     }
 
 /*
@@ -1446,7 +1440,6 @@ buffer for the raw raster-data
 
       }
 
-
       errprintf(udev->memory,"\n%sready to print\n\n",
          B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR)) ?
          "NOT " : "");
@@ -1519,7 +1512,6 @@ upd_close(gx_device *pdev)
 /** Then call the superclass close **/
    code = gdev_prn_close(pdev);
    error = error > code ? code : error;
-
 
 #if UPD_MESSAGES & UPD_M_TOPCALLS
       errprintf(pdev->memory,"RETURN: %d = upd_close(0x%05lx)\n",
@@ -1707,7 +1699,6 @@ is carried out by upd_open.
          (long)udev,(long)plist);
 #endif
 
-
 /**
 I consider the following part of upd_put_params a bad-nasty-hack-hack
 and i am uncertain, wether it really works in the intended way. I provide it
@@ -1783,7 +1774,6 @@ setting data and size to 0.
 #endif
 
    UPD_PARAM_READ(param_read_string,upd_version,udev->upd_version,udev->memory)
-
 
 /**
 upd_put_params begins it's normal work by creating a copy, of
@@ -2149,7 +2139,6 @@ transferred into the device-structure. In the case of "uniprint", this may
 
    upd_procs_map(udev);
 
-
 #if UPD_MESSAGES & UPD_M_TOPCALLS
       errprintf(udev->memory,"RETURN: %d = upd_put_params(0x%05lx,0x%05lx)\n",
          error,(long) udev, (long) plist);
@@ -2195,12 +2184,10 @@ in the W- or K-Component.
       rv  = upd_truncate(upd,0,k) | upd_truncate(upd,1,c)
           | upd_truncate(upd,2,m) | upd_truncate(upd,3,y);
 
-
 /* It might still become a "gx_no_color_value" due to truncation, thus: */
 
       if(rv == gx_no_color_index) rv ^= 1;
    }
-
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
   errprintf(pdev->memory,
@@ -2255,7 +2242,6 @@ upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
    prgb[2] = gx_max_color_value - y;
    if(prgb[2] > k) prgb[2] -= k;
    else            prgb[2]  = 0;
-
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf(pdev->memory,
@@ -2467,7 +2453,6 @@ upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
    if(!(prgb[0] || prgb[1] || prgb[2]))
       prgb[0] = prgb[1] = prgb[2] = upd_expand(upd,0,color);
 
-
 #if UPD_MESSAGES & UPD_M_MAPCALLS
    errprintf(pdev->memory,
     "4color_rgb: 0x%0*lx -> (%5.1f,%5.1f,%5.1f,%5.1f) -> (%5.1f,%5.1f,%5.1f)\n",
@@ -2523,7 +2508,6 @@ upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 
       if(rv == gx_no_color_index) rv ^= 1;
    }
-
 
 #if UPD_MESSAGES & UPD_M_MAPCALLS
   errprintf(pdev->memory,
@@ -2865,7 +2849,6 @@ upd_open_map(upd_device *udev)
       }
    }
 
-
 /** The bit number sould be positive & fit into the storage */
 
    if(imap) { /* Check number of Bits & Shifts */
@@ -2891,7 +2874,6 @@ upd_open_map(upd_device *udev)
 #endif
 
             success = false;
-
 
          } else {
 
@@ -3097,7 +3079,6 @@ upd_open_map(upd_device *udev)
       }
    }
 
-
 /** If unsuccesful, install the default routines */
 
    if(!imap) {
@@ -3282,7 +3263,6 @@ upd_open_render(upd_device *udev)
 
    return;
 }
-
 
 /* ------------------------------------------------------------------- */
 /* upd_close_render: Deinitialize rendering                            */
@@ -4150,7 +4130,6 @@ upd_open_writer(upd_device *udev)
    const upd_p upd                 = udev->upd;
    bool        success             = true;
 
-
 /** Reset the crucial values */
    upd->start_writer = NULL;
    upd->writer       = NULL;
@@ -4225,7 +4204,6 @@ upd_open_writer(upd_device *udev)
 
       if(0 >= upd->ints[I_END_Y]) upd->ints[I_END_Y] = upd->ints[I_PHEIGHT] ?
         upd->ints[I_PHEIGHT] : upd->gsheight;
-
 
 /*    Create Default X-Passes */
 
@@ -4338,7 +4316,6 @@ upd_open_writer(upd_device *udev)
          success = false;
       }
    }
-
 
 /** The sum of Values in BEG_DY should equal BEG_Y */
 
@@ -4574,11 +4551,9 @@ upd_close_writer(upd_device *udev)
          gs_free(udev->memory, upd->scnbuf,upd->nscnbuf,sizeof(upd->scnbuf[0]),"upd/scnbuf");
       }
 
-
       upd->flags &= ~B_FORMAT;
    }
 }
-
 
 /* ------------------------------------------------------------------- */
 /* upd_limits: Establish passwise limits, after rendering              */
@@ -4875,7 +4850,6 @@ upd_open_wrtescp(upd_device *udev)
         }
      }
    }                                    /* BOP-Checker */
-
 
 /** Either SETLF or YMOVE must be set */
    if((0 == upd->strings[S_SETLF].size) &&
@@ -5442,7 +5416,6 @@ upd_open_wrtescp2(upd_device *udev)
       break;
    }
 
-
 /** If there is neither a writecomp nor a setcomp-command, generate both */
    if((0 == upd->string_a[SA_WRITECOMP].size) &&
       (0 == upd->string_a[SA_SETCOMP].size  )   ) { /* Default-commands */
@@ -5554,7 +5527,6 @@ upd_open_wrtescp2(upd_device *udev)
          error = - 1;
       break;
    }
-
 
 /**
 If all this is correct, it's time to compute the size of the output-buffer.
@@ -6142,7 +6114,6 @@ upd_wrtescnm(upd_p upd, FILE *out)
 
    return 0;
 }
-
 
 /* ------------------------------------------------------------------- */
 /* upd_wrtescp2x: Write an ESC/P2-pass with X-Weaving                  */
@@ -7116,7 +7087,6 @@ upd_wrtcanon(upd_p upd, FILE *out)
   int x, xend, icomp, ioutbuf, step, ioutbuf1;
   byte *data;
 
-
   /* Check length of the printable date */
   xend = -1;
   for(icomp = 0; icomp < upd->ocomp; ++icomp) {
@@ -7155,9 +7125,9 @@ upd_wrtcanon(upd_p upd, FILE *out)
 
       /* Compressing of the scan line */
       if(x <= xend) {
-	ioutbuf = upd_rle(upd->outbuf, scan[icomp].bytes, xend);
+        ioutbuf = upd_rle(upd->outbuf, scan[icomp].bytes, xend);
       } else {
-	ioutbuf = 0;
+        ioutbuf = 0;
       }
 
       ioutbuf1 = ioutbuf + 1;
@@ -7204,8 +7174,6 @@ upd_wrtcanon(upd_p upd, FILE *out)
 
   return 0;
 }
-
-
 
 /* ------------------------------------------------------------------- */
 /* All the Pixel-Get Routines                                          */
@@ -7379,7 +7347,6 @@ upd_pxlget2f4(upd_p upd)
    return  (uint32_t) (*upd->pxlptr++) & (uint32_t) 0x03;
 }
 
-
 /* 4 Bit Forward */
 static uint32_t
 upd_pxlget4f1(upd_p upd)
@@ -7395,14 +7362,12 @@ upd_pxlget4f2(upd_p upd)
    return  (uint32_t) (*upd->pxlptr++) & (uint32_t) 0x0F;
 }
 
-
 /* 8 Bit Forward */
 static uint32_t
 upd_pxlget8f(upd_p upd)
 {
    return (uint32_t) (*upd->pxlptr++);
 }
-
 
 /* 16 Bit Forward */
 static uint32_t
@@ -7433,7 +7398,6 @@ upd_pxlget32f(upd_p upd)
                   ci |=                   *upd->pxlptr++;
    return         ci;
 }
-
 
 /* Dummy-Routine */
 
@@ -7611,14 +7575,12 @@ upd_pxlget4r2(upd_p upd)
    return  (uint32_t) (*upd->pxlptr  ) & (uint32_t) 0x0F;
 }
 
-
 /* 8 Bit Reverse */
 static uint32_t
 upd_pxlget8r(upd_p upd)
 {
    return (uint32_t) (*upd->pxlptr--);
 }
-
 
 /* 16 Bit Reverse */
 static uint32_t
