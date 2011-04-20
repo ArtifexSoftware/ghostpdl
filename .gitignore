@@ -16,6 +16,12 @@
 win32/GhostPDLGit.sln
 
 # Ignore all the object files
+bin
+debugbin
+profbin
+bin64
+debugbin64
+profbin64
 debugobj
 obj
 profobj
@@ -24,3 +30,25 @@ obj64
 profobj64
 cscope.*
 autom4te.cache
+
+# Adding the following lines would help limit the 'noise' seen in git status
+# due to files created during testing. Conversely, it prevents them being
+# removed with git clean. A compromise is to include them here commented out
+# so that people can copy them to their local .git/info/exclude if they want
+# them.
+# /*.pam
+# /*.pbm
+# /*.pgm
+# /*.pkm
+# /*.pnm
+# /*.png
+# /*.tif
+# /*.tiff
+# gs/*.pam
+# gs/*.pbm
+# gs/*.pgm
+# gs/*.pkm
+# gs/*.pnm
+# gs/*.png
+# gs/*.tif
+# gs/*.tiff
