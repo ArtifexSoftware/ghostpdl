@@ -17,7 +17,7 @@
 #ifndef gdevtifs_INCLUDED
 #  define gdevtifs_INCLUDED
 
-#include <tiffio.h>	/* must be first, because gdevio.h re-#defines "printf"
+#include <tiffio.h>     /* must be first, because gdevio.h re-#defines "printf"
                            which is used in a function __attribute__ by
                            tiffio.h */
 #include "gdevprn.h"
@@ -28,12 +28,12 @@ typedef struct gx_device_tiff_s {
     gx_device_common;
     gx_prn_device_common;
     bool  BigEndian;            /* true = big endian; false = little endian*/
-    uint16 Compression;		/* same values as TIFFTAG_COMPRESSION */
+    uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
     long MaxStripSize;
     long DownScaleFactor;
     long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values */
     long MinFeatureSize;         /* < 2 == no darkening */
-    TIFF *tif;			/* TIFF file opened on gx_device_common.file */
+    TIFF *tif;                  /* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;
 
 dev_proc_output_page(tiff_output_page);
@@ -52,7 +52,8 @@ TIFF * tiff_from_filep(const char *name, FILE *filep, int big_endian);
 int tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size);
 
 int tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
-                                  int factor, int msf, int aw);
+                                  int factor, int msf, int aw, int bpc,
+                                  int num_comps);
 
 /*
  * Sets the compression tag for TIFF and updates the rows_per_strip tag to

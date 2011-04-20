@@ -454,6 +454,17 @@ enum {
     mfs_above_left_is_0 = 4,
 };
 
+typedef int (down_fn)(TIFF *tif,
+                      byte *data,
+                      int   max_size,
+                      int   factor,
+                      int   row,
+                      int   width,
+                      int  *errors,
+                      byte *mfs_data,
+                      int   padWhite);
+
+/* Mono downscale/error diffusion/min feature size code */
 static int down_and_out(TIFF *tif,
                         byte *data,
                         int   max_size,
@@ -712,11 +723,302 @@ static int down_and_out(TIFF *tif,
     return TIFFWriteScanline(tif, data, row, 0);
 }
 
+/* Grey downscale/error diffusion code */
+static int down_and_out8(TIFF *tif,
+                         byte *data,
+                         int   max_size,
+                         int   factor,
+                         int   row,
+                         int   width,
+                         int  *errors,
+                         byte *mfs_data,
+                         int   padWhite)
+{
+    int x, xx, y, value;
+    byte *outp;
+    byte *inp = data;
+    int mask;
+    int e_downleft, e_down, e_forward = 0;
+    int div = factor*factor;
+
+    if (padWhite)
+    {
+        outp = data + (width - padWhite)*factor;
+        for (y = factor; y > 0; y--)
+        {
+            memset(outp, 0xFF, padWhite*factor);
+            outp += max_size;
+        }
+    }
+
+    if ((row & 1) == 0)
+    {
+        /* Left to Right pass (no min feature size) */
+        const int back = max_size * factor -1;
+        errors += 2;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            int res;
+            value = e_forward + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            res = (value+(div>>1))/div;
+            *outp++ = res;
+            value -= res*div;
+            e_forward  = value * 7/16;
+            e_downleft = value * 3/16;
+            e_down     = value * 5/16;
+            value     -= e_forward + e_downleft + e_down;
+            errors[-2] += e_downleft;
+            errors[-1] += e_down;
+            *errors++   = value;
+        }
+        outp -= width;
+    }
+    else
+    {
+        /* Right to Left pass (no min feature size) */
+        const int back = max_size * factor + 1;
+        errors += width;
+        inp += width*factor-1;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            int res;
+            value = e_forward + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            res = (value + (div>>1))/div;
+            *outp-- = res;
+            value -= res*div;
+            e_forward  = value * 7/16;
+            e_downleft = value * 3/16;
+            e_down     = value * 5/16;
+            value     -= e_forward + e_downleft + e_down;
+            errors[2] += e_downleft;
+            errors[1] += e_down;
+            *errors--   = value;
+        }
+        outp++;
+    }
+
+    return TIFFWriteScanline(tif, outp, row, 0);
+}
+
+/* RGB downscale/error diffusion code */
+static int down_and_out24(TIFF *tif,
+                          byte *data,
+                          int   max_size,
+                          int   factor,
+                          int   row,
+                          int   width,
+                          int  *errors,
+                          byte *mfs_data,
+                          int   padWhite)
+{
+    int x, xx, y, value;
+    byte *outp;
+    byte *inp = data;
+    int mask;
+    int e_downleft, e_down;
+    int e_forward_r = 0;
+    int e_forward_g = 0;
+    int e_forward_b = 0;
+    int div = factor*factor;
+
+    if (padWhite)
+    {
+        outp = data + (width - padWhite)*factor*3;
+        for (y = factor; y > 0; y--)
+        {
+            memset(outp, 0xFF, padWhite*factor*3);
+            outp += max_size;
+        }
+    }
+
+    if ((row & 1) == 0)
+    {
+        /* Left to Right pass (no min feature size) */
+        const int back  = max_size * factor - 3;
+        const int back2 = factor * 3 - 1;
+        errors += 6;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            int res;
+            /* R */
+            value = e_forward_r + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp -= back2;
+            res = (value+(div>>1))/div;
+            *outp++ = res;
+            value -= res*div;
+            e_forward_r = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_r + e_downleft + e_down;
+            errors[-2] += e_downleft;
+            errors[-1] += e_down;
+            *errors++   = value;
+            /* G */
+            value = e_forward_g + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp -= back2;
+            res = (value+(div>>1))/div;
+            *outp++ = res;
+            value -= res*div;
+            e_forward_g = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_g + e_downleft + e_down;
+            errors[-2] += e_downleft;
+            errors[-1] += e_down;
+            *errors++   = value;
+            /* B */
+            value = e_forward_b + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp -= 2;
+            res = (value+(div>>1))/div;
+            *outp++ = res;
+            value -= res*div;
+            e_forward_b = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_b + e_downleft + e_down;
+            errors[-2] += e_downleft;
+            errors[-1] += e_down;
+            *errors++   = value;
+        }
+        outp -= 3*width;
+    }
+    else
+    {
+        /* Right to Left pass (no min feature size) */
+        const int back  = max_size * factor + 3;
+        const int back2 = factor * 3 - 1;
+        errors += 3*width;
+        inp += 3*width*factor-1;
+        outp = inp;
+        for (x = width; x > 0; x--)
+        {
+            int res;
+            /* B */
+            value = e_forward_b + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp += back2;
+            res = (value + (div>>1))/div;
+            *outp-- = res;
+            value -= res*div;
+            e_forward_b = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_b + e_downleft + e_down;
+            errors[2]  += e_downleft;
+            errors[1]  += e_down;
+            *errors--   = value;
+            /* G */
+            value = e_forward_g + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp += back2;
+            res = (value + (div>>1))/div;
+            *outp-- = res;
+            value -= res*div;
+            e_forward_g = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_g + e_downleft + e_down;
+            errors[2]  += e_downleft;
+            errors[1]  += e_down;
+            *errors--   = value;
+            /* R */
+            value = e_forward_r + *errors;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += *inp;
+                    inp += max_size;
+                }
+                inp -= back;
+            }
+            inp += 2;
+            res = (value + (div>>1))/div;
+            *outp-- = res;
+            value -= res*div;
+            e_forward_r = value * 7/16;
+            e_downleft  = value * 3/16;
+            e_down      = value * 5/16;
+            value      -= e_forward_r + e_downleft + e_down;
+            errors[2]  += e_downleft;
+            errors[1]  += e_down;
+            *errors--   = value;
+        }
+        outp++;
+    }
+
+    return TIFFWriteScanline(tif, outp, row, 0);
+}
+
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
  * output. */
 int
 tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
-                              int mfs, int aw)
+                              int mfs, int aw, int bpc, int num_comps)
 {
     int code = 0;
     byte *data = NULL;
@@ -729,6 +1031,22 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     int width = dev->width/factor;
     int awidth = width;
     int padWhite;
+    down_fn *down;
+
+    if (num_comps == 1)
+        if (bpc == 1)
+            down = &down_and_out;
+        else if (bpc == 8)
+            down = &down_and_out8;
+        else
+            return_error(gs_error_rangecheck);
+    else if (num_comps == 3)
+        if (bpc == 8)
+            down = &down_and_out24;
+        else
+            return_error(gs_error_rangecheck);
+    else
+        return_error(gs_error_rangecheck);
 
     if (aw > 0)
         awidth = fax_adjusted_width(awidth);
@@ -736,7 +1054,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     if (padWhite < 0)
         padWhite = 0;
 
-    max_size = max(size + padWhite*factor, TIFFScanlineSize(tif)) + factor-1;
+    max_size = max(size + padWhite*factor*num_comps, TIFFScanlineSize(tif)) + factor-1;
 
     data = gs_alloc_bytes(dev->memory,
                           max_size * factor,
@@ -745,7 +1063,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         return_error(gs_error_VMerror);
 
     errors = (int *)gs_alloc_bytes(dev->memory,
-                                   (awidth+3) * sizeof(int),
+                                   num_comps * (awidth+3) * sizeof(int),
                                    "tiff_print_page(errors)");
     if (errors == NULL)
     {
@@ -766,7 +1084,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
     code = TIFFCheckpointDirectory(tif);
 
     memset(data, 0xFF, max_size * factor);
-    memset(errors, 0, (awidth+3) * sizeof(int));
+    memset(errors, 0, num_comps * (awidth+3) * sizeof(int));
     if (mfs_data)
         memset(mfs_data, 0, awidth+1);
     n = 0;
@@ -779,8 +1097,8 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         {
             /* Do the downsample */
             n = 0;
-            code = down_and_out(tif, data, max_size, factor, row/factor, awidth,
-                                errors, mfs_data, padWhite);
+            code = (*down)(tif, data, max_size, factor, row/factor, awidth,
+                           errors, mfs_data, padWhite);
         }
     }
 #if DISABLED_AS_WE_DONT_ROUND_UP_ANY_MORE
@@ -793,8 +1111,8 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
             n++;
             row++;
         }
-        code = down_and_out(tif, data, max_size, factor, row/factor, awidth,
-                            errors, mfs_data, padWhite);
+        code = (*down)(tif, data, max_size, factor, row/factor, awidth,
+                       errors, mfs_data, padWhite);
     }
 #endif
 
@@ -807,6 +1125,7 @@ cleanup:
 
     return code;
 }
+
 
 static struct compression_string {
     uint16 id;
