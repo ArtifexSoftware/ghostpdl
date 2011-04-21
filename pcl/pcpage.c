@@ -404,11 +404,15 @@ static struct {
     p_size(  6, "ledger",    3300, 5100, 75, 60),
     p_size( 26, "a4",        2480, 3507, 71, 59),
     p_size( 27, "a3",        3507, 4960, 71, 59),
+    p_size( 78, "index_3x5",  900, 1500, 75, 60),
     p_size( 80, "monarch",   1162, 2250, 75, 60),
     p_size( 81, "com_10",    1237, 2850, 75, 60),
     p_size( 90, "dl",        1299, 2598, 71, 59),
     p_size( 91, "c5",        1913, 2704, 71, 59),
-    p_size(100, "b5",        2078, 2952, 71, 59)
+    p_size(100, "b5",        2078, 2952, 71, 59),
+    /* initial values for custom: copied from default(letter) */
+    /* offset_portrait/offset_landscape ? */
+    p_size(101, "custom",    2550, 3300, 75, 60)
 };
 
 /*
@@ -977,6 +981,58 @@ set_logical_page(
     return 0;
 }
 
+/* 
+ * Custom Paper Width/Length 
+ * from Windows Driver "HP Universal Printing PCL 5" (.GPD files) and
+ * http://www.office.xerox.com/support/dctips/dc10cc0471.pdf
+ *
+ * ESC & f <decipoints> I
+ *
+ */
+ static int
+set_paper_width(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint                        decipoints = uint_arg(pargs);
+    int                         i;
+    pcl_paper_size_t          * psize;
+
+    for (i = 0; i < countof(paper_sizes); i++) {
+        if (101 == paper_sizes[i].tag) {
+            psize = &(paper_sizes[i].psize);
+            break;
+        }
+    }
+    psize->width = decipoints * 10L;
+    return 0;
+}
+
+/*
+ * ESC & f <decipoints> J
+ */
+
+ static int
+set_paper_length(
+    pcl_args_t *    pargs,
+    pcl_state_t *   pcs
+)
+{
+    uint                        decipoints = uint_arg(pargs);
+    int                         i;
+    pcl_paper_size_t          * psize;
+
+    for (i = 0; i < countof(paper_sizes); i++) {
+        if (101 == paper_sizes[i].tag) {
+            psize = &(paper_sizes[i].psize);
+            break;
+        }
+    }
+    psize->height = decipoints * 10L;
+    return 0;
+}
+
 /*
  * (From PCL5 Comparison Guide, p. 1-99)
  *
@@ -1101,7 +1157,24 @@ pcpage_do_registration(
         'a', 'W',
         PCL_COMMAND( "Set Logical Page",
                      set_logical_page,
-                     pca_bytes
+		     pca_bytes
+                     )
+    },
+    END_CLASS
+
+    DEFINE_CLASS('&')
+    {
+        'f', 'I',
+	PCL_COMMAND( "Set Custom Paper Width",
+                     set_paper_width,
+                     pca_neg_ok | pca_big_ignore
+                     )
+    },
+    {
+        'f', 'J',
+	PCL_COMMAND( "Set Custom Paper Length",
+                     set_paper_length,
+                     pca_neg_ok | pca_big_ignore
                      )
     },
     END_CLASS
@@ -1127,7 +1200,20 @@ pcl_get_default_paper(
 )
 {
     int i;
-    pjl_envvar_t *psize = pjl_proc_get_envvar(pcs->pjls, "paper");
+    pjl_envvar_t *pwidth  = pjl_proc_get_envvar(pcs->pjls, "paperwidth");
+    pjl_envvar_t *plength = pjl_proc_get_envvar(pcs->pjls, "paperlength");
+    pjl_envvar_t *psize   = pjl_proc_get_envvar(pcs->pjls, "paper");
+    if (*pwidth && *plength) {
+        for (i = 0; i < countof(paper_sizes); i++)
+	    if (!pjl_proc_compare(pcs->pjls, "custom", paper_sizes[i].pname)) {
+	        paper_sizes[i].psize.width  = atol(pwidth)*10L;
+		paper_sizes[i].psize.height = atol(plength)*10L;
+		/* just a guess, values copied from letter entry in table paper_sizes */
+	        paper_sizes[i].psize.offset_portrait   = 75*24L;
+	        paper_sizes[i].psize.offset_landscape  = 60*24L;
+		return &(paper_sizes[i].psize);
+	    }
+    }
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
         if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
