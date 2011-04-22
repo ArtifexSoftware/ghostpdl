@@ -188,8 +188,11 @@ for a complete description of the format.</p>
 
 <p>Ghostscript provides a variety of devices for <acronym>PNG</acronym> output
 varying by bit depth. For normal use we recommend <tt>png16m</tt> for 24-bit RGB color,
-or <tt>pnggray</tt> for grayscale. The png256, png16 and pngmono devices respectively
-provide 8-bit color, 4-bit color and black-and-white for special needs.</p>
+or <tt>pnggray</tt> for grayscale. The <tt>png256</tt>, <tt>png16</tt> and
+<tt>pngmono</tt> devices respectively provide 8-bit color, 4-bit color and
+black-and-white for special needs. The <tt>pngmonod</tt> device is also a
+black-and-white device, but the output is formed from an internal 8 bit grayscale
+rendering which is then error diffused and converted down to 1bpp.</p>
 
 <p>The pngalpha device is 32-bit RGBA color with transparency 
 indicating pixel coverage.  The background is transparent unless
@@ -199,8 +202,44 @@ anti-aliasing are enabled by default.</p>
 
 <h4>Options</h4>
 
-<p>The pngalpha device has one option. 
-The other png devices have no special options.</p>
+<p>The <tt>pngmonod</tt>, <tt>png16m</tt> and <tt>pnggray</tt> devices all
+respond to the following:</p>
+
+<blockquote>
+<dl>
+<dt><code>-dDownScaleFactor=</code><b><em>integer</em></b>
+<dd>This causes the internal rendering to be scaled down by the given (small
+integer) factor before being output. For example, the following will produce
+a 200dpi output png from a 300dpi internal rendering:
+<blockquote>
+<pre>
+ <kbd>gs -sDEVICE=png16m -r600 -dDownScaleFactor=3 -o tiger.png\
+      examples/tiger.png</kbd>
+</pre>
+</blockquote>
+
+</dl>
+</blockquote>
+
+<p>The <tt>pngmonod</tt> device responds to the following option:</p>
+
+<blockquote>
+<dl>
+<dt><code>-dMinFeatureSize=</code><em>state</em> (0 to 4; default = 1)
+<dd>This option allows a minimum feature size to be set; if any output pixel
+appears on its own, or as part of a group of pixels smaller than
+<tt>MinFeatureSize</tt> x <tt>MinFeatureSize</tt>, it will be expanded to
+ensure that it does. This is useful for output devices that are high
+resolution, but that have trouble rendering isolated pixels.
+
+<dd>While this parameter will accept values from 0 to 4, not all are fully
+implemented. 0 and 1 cause no change to the output (as expected). 2 works
+as specified. Values of 3 and 4 are accepted for compatibility, but
+behave as for 2.
+</dl>
+</blockquote>
+
+<p>The <tt>pngalpha</tt> device responds to the following option:</p>
 
 <blockquote>
 <dl>

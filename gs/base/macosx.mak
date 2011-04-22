@@ -356,7 +356,7 @@ DISPLAY_DEV=
 # devs.mak and contrib.mak for the list of available devices.
 
 # use png output by default
-DEVICE_DEVS=$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev
+DEVICE_DEVS=$(DD)png16m.dev $(DD)pnggray.dev $(DD)pngmono.dev $(DD)pngmonod.dev
 #DEVICE_DEVS=$(DISPLAY_DEV)
 
 # most devices are disabled by default since file conversion is the
@@ -373,7 +373,7 @@ DEVICE_DEVS9=$(DD)pbm.dev $(DD)pbmraw.dev $(DD)pgm.dev $(DD)pgmraw.dev $(DD)pgnm
 DEVICE_DEVS10=
 DEVICE_DEVS11=
 DEVICE_DEVS12=
-#DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
+#DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS13=$(DD)png16.dev $(DD)png256.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev

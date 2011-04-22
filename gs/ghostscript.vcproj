@@ -747,6 +747,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\base\gxdownscale.c"
+					>
+				</File>
+				<File
 					RelativePath="base\gxfapiu.c"
 					>
 				</File>
@@ -4936,6 +4940,10 @@
 				</File>
 				<File
 					RelativePath="base\gxdither.h"
+					>
+				</File>
+				<File
+					RelativePath=".\base\gxdownscale.h"
 					>
 				</File>
 				<File

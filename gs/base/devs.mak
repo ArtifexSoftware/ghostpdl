@@ -171,6 +171,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	plibc		PLanar Interleaved Band buffer device (32 bit CMYK)
 #	plibk		PLanar Interleaved Band buffer device (4 bit CMYK)
 #	pngmono		Monochrome Portable Network Graphics (PNG)
+#	pngmonod	Monochrome (error diffused) Portable Network Graphics (PNG)
 #	pnggray		8-bit gray Portable Network Graphics (PNG)
 #	png16		4-bit color Portable Network Graphics (PNG)
 #	png256		8-bit color Portable Network Graphics (PNG)
@@ -1519,6 +1520,10 @@ $(GLOBJ)gdevpng.$(OBJ) : $(GLSRC)gdevpng.c\
 $(DD)pngmono.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pngmono $(png_)
 	$(ADDMOD) $(DD)pngmono $(png_i_)
+
+$(DD)pngmonod.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)pngmonod $(png_)
+	$(ADDMOD) $(DD)pngmonod $(png_i_)
 
 $(DD)pnggray.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pnggray $(png_)
