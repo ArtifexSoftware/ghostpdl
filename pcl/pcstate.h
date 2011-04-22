@@ -338,6 +338,8 @@ struct pcl_state_s {
     pcl_hpgl_state_t    g;	/* see pgstate.h */
     /* ---------------- PJL state -------------------- */
     pl_interp_instance_t *pjls;
+    /* ---------------- page size table -------------- */
+    pcl_paper_type_t *ppaper_type_table;
     /* yet another poorly documented pjl variable - this should widen
        the margins on A4 paper to support 80 10 pitch characters but
        it appears to affect letter paper as well */

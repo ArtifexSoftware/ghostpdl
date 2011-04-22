@@ -35,6 +35,7 @@
 #include "gspath.h"
 #include "gxdevice.h"
 #include "pjtop.h"
+#include <stdlib.h>             /* for atol() */
 
 /*
  * The PCL printable region. HP always sets the boundary of this region to be
@@ -393,11 +394,7 @@ new_page_size(
 #define p_size(t, n, w, h, offp, offl)                                  \
     { (t), (n), { (w) * 24L, (h) * 24L, (offp) * 24L, (offl) * 24L } }
 
-static struct {
-    uint                    tag;
-    const char *            pname;
-    pcl_paper_size_t        psize;
-} paper_sizes[] = {
+pcl_paper_type_t paper_types_proto[] = {
     p_size(  1, "executive", 2175, 3150, 75, 60),
     p_size(  2, "letter",    2550, 3300, 75, 60),
     p_size(  3, "legal",     2550, 4200, 75, 60),
@@ -414,6 +411,8 @@ static struct {
     /* offset_portrait/offset_landscape ? */
     p_size(101, "custom",    2550, 3300, 75, 60)
 };
+
+const int pcl_paper_type_count = countof(paper_types_proto);
 
 /*
  * Reset all parameters which must be reset whenever the logical page
@@ -438,6 +437,9 @@ new_logical_page(
     new_page_size(pcs, psize, reset_initial, for_passthrough);
 }
 
+
+#define paper_sizes pcs->ppaper_type_table
+
 int
 pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdims)
 {
@@ -448,7 +450,7 @@ pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdi
     coord cp_height = (coord)(pdims->y * 100 + 0.5);
     bool found = false;
 
-    for (i = 0; i < countof(paper_sizes); i++) {
+    for (i = 0; i < pcl_paper_type_count; i++) {
         psize = &(paper_sizes[i].psize);
         if (psize->width == cp_width && psize->height == cp_height) {
             found = true;
@@ -632,7 +634,7 @@ set_page_size(
         return code;
     pcl_home_cursor(pcs);
 
-    for (i = 0; i < countof(paper_sizes); i++) {
+    for (i = 0; i < pcl_paper_type_count; i++) {
         if (tag == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
             break;
@@ -999,7 +1001,7 @@ set_paper_width(
     int                         i;
     pcl_paper_size_t          * psize;
 
-    for (i = 0; i < countof(paper_sizes); i++) {
+    for (i = 0; i < pcl_paper_type_count; i++) {
         if (101 == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
             break;
@@ -1023,7 +1025,7 @@ set_paper_length(
     int                         i;
     pcl_paper_size_t          * psize;
 
-    for (i = 0; i < countof(paper_sizes); i++) {
+    for (i = 0; i < pcl_paper_type_count; i++) {
         if (101 == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
             break;
@@ -1204,7 +1206,7 @@ pcl_get_default_paper(
     pjl_envvar_t *plength = pjl_proc_get_envvar(pcs->pjls, "paperlength");
     pjl_envvar_t *psize   = pjl_proc_get_envvar(pcs->pjls, "paper");
     if (*pwidth && *plength) {
-        for (i = 0; i < countof(paper_sizes); i++)
+        for (i = 0; i < pcl_paper_type_count; i++)
 	    if (!pjl_proc_compare(pcs->pjls, "custom", paper_sizes[i].pname)) {
 	        paper_sizes[i].psize.width  = atol(pwidth)*10L;
 		paper_sizes[i].psize.height = atol(plength)*10L;
@@ -1215,7 +1217,7 @@ pcl_get_default_paper(
 	    }
     }
     pcs->wide_a4 = false;
-    for (i = 0; i < countof(paper_sizes); i++)
+    for (i = 0; i < pcl_paper_type_count; i++)
         if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
             /* set wide a4, only used if the paper is a4 */
             if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
@@ -1256,6 +1258,18 @@ pcpage_do_reset(
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
         pcs->perforation_skip = 1;
+        if (!pcs->ppaper_type_table)
+            pcs->ppaper_type_table = 
+                (pcl_paper_type_t *)gs_alloc_bytes(pcs->memory,
+                                                   sizeof(paper_types_proto),
+                                                   "Paper Table");
+        
+        if (!pcs->ppaper_type_table)
+            /* should never fail */
+            ;
+
+        memcpy(pcs->ppaper_type_table, paper_types_proto, sizeof(paper_types_proto));
+
         new_logical_page( pcs,
                           !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
                                                  "orientation"),
@@ -1269,6 +1283,11 @@ pcpage_do_reset(
         update_xfm_state(pcs, 0);
         reset_margins(pcs, false);
         pcl_xfm_reset_pcl_pat_ref_pt(pcs);
+    } else if ((type & pcl_reset_permanent) != 0) {
+        if (pcs->ppaper_type_table) {
+            gs_free_object(pcs->memory, pcs->ppaper_type_table, "Paper Table");
+            pcs->ppaper_type_table = 0;
+        }
     }
 }
 
