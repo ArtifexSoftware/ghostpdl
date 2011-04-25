@@ -1205,6 +1205,21 @@ pcl_get_default_paper(
     pjl_envvar_t *pwidth  = pjl_proc_get_envvar(pcs->pjls, "paperwidth");
     pjl_envvar_t *plength = pjl_proc_get_envvar(pcs->pjls, "paperlength");
     pjl_envvar_t *psize   = pjl_proc_get_envvar(pcs->pjls, "paper");
+
+    /* build the state's paper table if it doesn't exist */
+    if (!pcs->ppaper_type_table)
+        pcs->ppaper_type_table = 
+            (pcl_paper_type_t *)gs_alloc_bytes(pcs->memory,
+                                               sizeof(paper_types_proto),
+                                               "Paper Table");
+        
+    if (!pcs->ppaper_type_table)
+        /* should never fail */
+        return NULL;
+
+    /* restore default table values - this would only reset custom paper sizes */
+    memcpy(pcs->ppaper_type_table, paper_types_proto, sizeof(paper_types_proto));
+
     if (*pwidth && *plength) {
         for (i = 0; i < pcl_paper_type_count; i++)
 	    if (!pjl_proc_compare(pcs->pjls, "custom", paper_sizes[i].pname)) {
@@ -1258,18 +1273,6 @@ pcpage_do_reset(
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
         pcs->perforation_skip = 1;
-        if (!pcs->ppaper_type_table)
-            pcs->ppaper_type_table = 
-                (pcl_paper_type_t *)gs_alloc_bytes(pcs->memory,
-                                                   sizeof(paper_types_proto),
-                                                   "Paper Table");
-        
-        if (!pcs->ppaper_type_table)
-            /* should never fail */
-            ;
-
-        memcpy(pcs->ppaper_type_table, paper_types_proto, sizeof(paper_types_proto));
-
         new_logical_page( pcs,
                           !pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls,
                                                  "orientation"),
