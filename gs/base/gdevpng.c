@@ -160,11 +160,12 @@ prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                        gx_default_rgb_map_color_rgb,
                        png_get_params_downscale, png_put_params_downscale);
 const gx_device_png gs_png16m_device =
-prn_device(png16m_procs, "png16m",
-           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-           X_DPI, Y_DPI,
-           0, 0, 0, 0,		/* margins */
-           24, png_print_page);
+{prn_device_body(gx_device_png, png16m_procs, "png16m",
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 24, 255, 255, 256, 256, png_print_page)
+};
 
 /* 48 bit color. */
 
@@ -172,11 +173,12 @@ static const gx_device_procs png48_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
 const gx_device_png gs_png48_device =
-prn_device(png48_procs, "png48",
-           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-           X_DPI, Y_DPI,
-           0, 0, 0, 0,		/* margins */
-           48, png_print_page);
+{prn_device_body(gx_device_png, png48_procs, "png48",
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 48, 0, 65535, 1, 65536, png_print_page)
+};
 
 /* 32-bit RGBA */
 /* pngalpha device is 32-bit RGBA, with the alpha channel
