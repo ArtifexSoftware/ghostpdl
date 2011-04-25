@@ -632,7 +632,6 @@ int
 pxReadImage(px_args_t *par, px_state_t *pxs)
 {
     px_image_enum_t *pxenum = pxs->image_enum;
-    gx_device *dev = gs_currentdevice(pxs->pgs);
 
     if ( par->pv[1]->value.i == 0 )
         return 0;		/* no data */
@@ -644,9 +643,8 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
         int code = read_bitmap(&pxenum->benum, &data, par);
         if ( code != 1 )
             return code;
-        code = (*dev_proc(dev, image_data))
-            (dev, pxenum->info, (const byte **)&data,
-             0, pxenum->benum.data_per_row, 1);
+        code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0, 
+                             pxenum->benum.data_per_row, 1);
         if ( code < 0 )
             return code;
         pxs->have_page = true;
@@ -656,11 +654,10 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
 const byte apxEndImage[] = {0, 0};
 int
 pxEndImage(px_args_t *par, px_state_t *pxs)
-{
-    gx_device *dev = gs_currentdevice(pxs->pgs);
+{	
     px_image_enum_t *pxenum = pxs->image_enum;
     px_bitmap_enum_t *pbenum = &pxenum->benum;
-    (*dev_proc(dev, end_image))(dev, pxenum->info, true);
+    int code = pl_end_image(pxs->pgs, pxenum->info, true);
     gs_free_object(pxs->memory, pxenum->row, "pxEndImage(row)");
     if ( pbenum->compress_type == eDeltaRowCompression )
         gs_free_object(pbenum->mem, pbenum->deltarow_state.seedrow, "pxEndImage(seedrow)");
@@ -668,7 +665,7 @@ pxEndImage(px_args_t *par, px_state_t *pxs)
         rc_decrement(pxenum->image.ColorSpace, "pxEndImage(image.ColorSpace)");
     gs_free_object(pxs->memory, pxenum, "pxEndImage(pxenum)");
     pxs->image_enum = 0;
-    return 0;
+    return code;
 }
 
 /* ---------------- Raster pattern operators ---------------- */

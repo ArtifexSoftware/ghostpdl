@@ -34,6 +34,7 @@
 #include "gxdevice.h"
 #include "gxht.h"
 #include "gxstate.h"
+#include "pldraw.h"
 #include "plsrgb.h"
 #include "plht.h"
 #include "pxptable.h"
@@ -215,57 +216,56 @@ ilcm(uint x, uint y)
 /* Render a pattern. */
 static int
 px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
-{       const gs_client_pattern *ppat = gs_getpattern(pcc);
-        const px_pattern_t *pattern = ppat->client_data;
-        const byte *dp = pattern->data;
-        gs_image_enum *penum;
-        gs_image_t image;
-        int code;
-        int num_components =
-          (pattern->params.indexed || pattern->params.color_space == eGray ?
-           1 : 3);
-        uint rep_width = pattern->params.width;
-        uint rep_height = pattern->params.height;
-        uint full_width = (uint)ppat->XStep;
-        uint full_height = (uint)ppat->YStep;
-        uint bits_per_row, bytes_per_row;
-        int x;
+{       
+    const gs_client_pattern *ppat = gs_getpattern(pcc);
+    const px_pattern_t *pattern = ppat->client_data;
+    const byte *dp = pattern->data;
+    gs_image_enum *penum;
+    gs_image_t image;
+    int code;
+    int num_components =
+        (pattern->params.indexed || pattern->params.color_space == eGray ?
+         1 : 3);
+    uint rep_width = pattern->params.width;
+    uint rep_height = pattern->params.height;
+    uint full_width = (uint)ppat->XStep;
+    uint full_height = (uint)ppat->YStep;
+    uint bits_per_row, bytes_per_row;
+    int x;
 
-        code = px_image_color_space(&image, &pattern->params, &pattern->palette, pgs);
-        if ( code < 0 )
-          return code;
-        penum = gs_image_enum_alloc(gs_state_memory(pgs), "px_paint_pattern");
-        if ( penum == 0 )
-          return_error(errorInsufficientMemory);
-        bits_per_row = rep_width * image.BitsPerComponent * num_components;
-        bytes_per_row = (bits_per_row + 7) >> 3;
-        /*
-         * As noted above, in general, we have to replicate the original
-         * pattern to a multiple that avoids halftone seams.  If the
-         * number of bits per row is a multiple of 8, we can do this with
-         * a single image; otherwise, we need one image per X replica.
-         * To simplify the code, we always use the (slightly) slower method.
-         */
-        image.Width = rep_width;
-        image.Height = full_height;
-        image.CombineWithColor = true;
-        for ( x = 0; x < full_width; x += rep_width )
-          { int y;
-
-            image.ImageMatrix.tx = -x;
-            code = gs_image_init(penum, &image, false, pgs);
-            if ( code < 0 )
-              break;
-            for ( y = 0; code >= 0 && y < full_height; ++y )
-              { const byte *row = dp + (y % rep_height) * bytes_per_row;
-                uint used;
-
-                code = gs_image_next(penum, row, bytes_per_row, &used);
-              }
-            gs_image_cleanup(penum, pgs);
-          }
-        gs_free_object(gs_state_memory(pgs), penum, "px_paint_pattern");
+    code = px_image_color_space(&image, &pattern->params, &pattern->palette, pgs);
+    if ( code < 0 )
         return code;
+
+    bits_per_row = rep_width * image.BitsPerComponent * num_components;
+    bytes_per_row = (bits_per_row + 7) >> 3;
+    /*
+     * As noted above, in general, we have to replicate the original
+     * pattern to a multiple that avoids halftone seams.  If the
+     * number of bits per row is a multiple of 8, we can do this with
+     * a single image; otherwise, we need one image per X replica.
+     * To simplify the code, we always use the (slightly) slower method.
+     */
+    image.Width = rep_width;
+    image.Height = full_height;
+    image.CombineWithColor = true;
+    for ( x = 0; x < full_width; x += rep_width ) { 
+        int y;
+
+        image.ImageMatrix.tx = -x;
+        code = pl_begin_image2(&penum, &image, pgs);
+        if ( code < 0 )
+            break;
+        for ( y = 0; code >= 0 && y < full_height; ++y ) { 
+            const byte *row = dp + (y % rep_height) * bytes_per_row;
+            uint used; /* better named not_used */
+            code = pl_image_data2(penum, row, bytes_per_row, &used);
+            if (code < 0)
+                break;
+        }
+        pl_end_image2(penum, pgs);
+    }
+    return code;
 }
 
 /* Create the rendering of a pattern. */
