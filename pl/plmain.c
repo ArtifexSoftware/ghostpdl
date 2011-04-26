@@ -268,7 +268,7 @@ pl_main_aux(
     /* Create PDL instances, etc */
     if (pl_main_universe_init(&universe, err_buf, mem, pdl_implementation,
                               pjl_instance, &inst, &pl_pre_finish_page, &pl_post_finish_page) < 0) {
-        errprintf(mem, err_buf);
+        errprintf(mem, "%s", err_buf);
         return -1;
     }
 
@@ -396,7 +396,7 @@ pl_main_aux(
                                                         pl_select_implementation(pjl_instance, &inst, r),
                                                         &inst, (gs_param_list *)&params);
                 if ( curr_instance == NULL ) {
-                    dprintf(err_buf);
+                    errprintf(mem, "%s", err_buf);
                     return -1;
                 }
 
@@ -478,7 +478,7 @@ pl_main_aux(
 
     /* Dnit PDLs */
     if (pl_main_universe_dnit(&universe, err_buf)) {
-        dprintf(err_buf);
+        errprintf(mem, "%s", err_buf);
         return -1;
     }
     /* dnit pjl */

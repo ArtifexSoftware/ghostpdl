@@ -38,7 +38,7 @@ typedef struct pjl_interp_instance_s {
 } pjl_interp_instance_t;
 
 /* Get implemtation's characteristics */
-const pl_interp_characteristics_t * /* always returns a descriptor */
+static const pl_interp_characteristics_t * /* always returns a descriptor */
 pjl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
@@ -55,7 +55,7 @@ pjl_impl_characteristics(
 }
 
 /* Allocate a PJL interp */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_allocate_interp(
   pl_interp_t        **interp,       /* RETURNS abstract interpreter struct */
   const pl_interp_implementation_t *impl,     /* implementation of interpereter to alloc */
@@ -76,7 +76,7 @@ pjl_impl_allocate_interp(
 }
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_allocate_interp_instance(
   pl_interp_instance_t   **instance,     /* RETURNS instance struct */
   pl_interp_t            *interp,        /* dummy interpreter */
@@ -105,7 +105,7 @@ pjl_impl_allocate_interp_instance(
 }
 
 /* Set a client language into an interperter instance */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_set_client_instance(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_interp_instance_t   *client,       /* client to set */
@@ -116,7 +116,7 @@ pjl_impl_set_client_instance(
 }
 
 /* Set a device into an interperter instance */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_set_device(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   gx_device              *device        /* device to set (open or closed) */
@@ -126,7 +126,7 @@ pjl_impl_set_device(
 }
 
 /* Set an interpreter instance's pre-page action */
-int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pjl_impl_set_pre_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
@@ -137,7 +137,7 @@ pjl_impl_set_pre_page_action(
 }
 
 /* Set an interpreter instance's post-page action */
-int   /* ret 0 ok, else -ve err */
+static int   /* ret 0 ok, else -ve err */
 pjl_impl_set_post_page_action(
   pl_interp_instance_t   *instance,     /* interp instance to use */
   pl_page_action_t       action,        /* action to execute */
@@ -156,7 +156,7 @@ pjl_impl_get_device_memory(
 }
 
 /* Prepare interp instance for the next "job" */
-int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pjl_impl_init_job(
         pl_interp_instance_t *instance         /* interp instance to start job in */
 )
@@ -171,12 +171,15 @@ pjl_impl_init_job(
 }
 
 /* Parse a cursor-full of data */
-int	/* The parser reads data from the input
-     * buffer and returns either:
-     *	>=0 - OK, more input is needed.
-     *	e_ExitLanguage - Non-PJL was detected.
-     *	<0 value - an error was detected.
-     */
+
+/* The parser reads data from the input
+ * buffer and returns either:
+ *	>=0 - OK, more input is needed.
+ *	e_ExitLanguage - Non-PJL was detected.
+ *	<0 value - an error was detected.
+ */
+
+static int	
 pjl_impl_process(
         pl_interp_instance_t *instance,        /* interp instance to process data job in */
         stream_cursor_read    *cursor           /* data to process */
@@ -188,7 +191,7 @@ pjl_impl_process(
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */
-int
+static int
 pjl_impl_flush_to_eoj(
         pl_interp_instance_t *instance,        /* interp instance to flush for */
         stream_cursor_read   *cursor           /* data to process */
@@ -198,7 +201,7 @@ pjl_impl_flush_to_eoj(
 }
 
 /* Parser action for end-of-file */
-int	/* ret 0 or +ve if ok, else -ve error code */
+static int	/* ret 0 or +ve if ok, else -ve error code */
 pjl_impl_process_eof(
         pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
@@ -207,7 +210,7 @@ pjl_impl_process_eof(
 }
 
 /* Report any errors after running a job */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_report_errors(
         pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
@@ -219,7 +222,7 @@ pjl_impl_report_errors(
 }
 
 /* Wrap up interp instance after a "job" */
-int	/* ret 0 ok, else -ve error code */
+static int	/* ret 0 ok, else -ve error code */
 pjl_impl_dnit_job(
         pl_interp_instance_t *instance         /* interp instance to wrap up job in */
 )
@@ -229,7 +232,7 @@ pjl_impl_dnit_job(
 }
 
 /* Remove a device from an interperter instance */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_remove_device(
   pl_interp_instance_t   *instance     /* interp instance to use */
 )
@@ -238,7 +241,7 @@ pjl_impl_remove_device(
 }
 
 /* Deallocate a interpreter instance */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_deallocate_interp_instance(
   pl_interp_instance_t   *instance     /* instance to dealloc */
 )
@@ -253,7 +256,7 @@ pjl_impl_deallocate_interp_instance(
 }
 
 /* Do static deinit of PJL interpreter */
-int   /* ret 0 ok, else -ve error code */
+static int   /* ret 0 ok, else -ve error code */
 pjl_impl_deallocate_interp(
   pl_interp_t        *interp       /* interpreter to deallocate */
 )
@@ -266,7 +269,7 @@ pjl_impl_deallocate_interp(
 }
 
 /* return the current setting of a pjl environment variable. */
-pjl_envvar_t *
+static pjl_envvar_t *
 pjl_impl_get_envvar(
   pl_interp_instance_t   *pli,
   const char             *pjl_var
@@ -277,7 +280,7 @@ pjl_impl_get_envvar(
 }
 
 /* compare a pjl environment variable to a string values. */
-int
+static int
 pjl_impl_compare(
   pl_interp_instance_t   *pli,
   const pjl_envvar_t     *s1,
@@ -288,7 +291,7 @@ pjl_impl_compare(
 }
 
 /* map a pjl symbol set name to a pcl integer */
-int
+static int
 pjl_impl_map_pjl_sym_to_pcl_sym(
   pl_interp_instance_t   *pli,
   const pjl_envvar_t     *symname
@@ -298,7 +301,7 @@ pjl_impl_map_pjl_sym_to_pcl_sym(
 }
 
 /* pjl environment variable to integer. */
-int
+static int
 pjl_impl_vartoi(
   pl_interp_instance_t   *pli,
   const pjl_envvar_t     *s
@@ -308,7 +311,7 @@ pjl_impl_vartoi(
 }
 
 /* pjl envioronment variable to float. */
-floatp
+static floatp
 pjl_impl_vartof(
   pl_interp_instance_t   *pli,
   const pjl_envvar_t     *s
@@ -318,7 +321,7 @@ pjl_impl_vartof(
 }
 
 /* convert a pjl designated fontsource to a subdirectory pathname. */
-char *
+static char *
 pjl_impl_fontsource_to_path(
   pl_interp_instance_t   *pli,
   const pjl_envvar_t     *fontsource
@@ -329,7 +332,7 @@ pjl_impl_fontsource_to_path(
 }
 
 /* Change to next highest priority font source. */
-void
+static void
 pjl_impl_set_next_fontsource(
   pl_interp_instance_t   *pli
 )
@@ -339,7 +342,7 @@ pjl_impl_set_next_fontsource(
 }
 
 /* tell pjl that a soft font is being deleted. */
-int
+static int
 pjl_impl_register_permanent_soft_font_deletion(
   pl_interp_instance_t   *pli,
   int                     font_number
@@ -350,7 +353,7 @@ pjl_impl_register_permanent_soft_font_deletion(
 }
 
 /* request that pjl add a soft font and return a pjl font number for the font. */
-int
+static int
 pjl_impl_register_permanent_soft_font_addition(
   pl_interp_instance_t   *pli
 )
@@ -359,14 +362,14 @@ pjl_impl_register_permanent_soft_font_addition(
         return pjl_register_permanent_soft_font_addition(pjli->state);
 }
 
-long int
+static long int
 pjl_impl_get_named_resource_size(pl_interp_instance_t *pli, char *name)
 {
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
     return pjl_get_named_resource_size(pjli->state, name);
 }
 
-int
+static int
 pjl_impl_get_named_resource(pl_interp_instance_t *pli, char *name, unsigned char *data)
 {
     pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
