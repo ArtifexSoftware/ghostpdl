@@ -390,7 +390,6 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                        This does not occur if color space was CIE encoded.
                        Then we do the decode during concretization which occurs
                        after interpolation */
-                    int bps = 1;
                     int dc = penum->spp;
                     const byte *pdata = bdata;
                     byte *psrc = (byte *) penum->line;
@@ -736,7 +735,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     stream_cursor_write w;
     unsigned char index_space;
     byte *out = penum->line;
-    bool need_decode = penum->icc_setup.need_decode;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
     bool islab = penum->icc_setup.is_lab;
@@ -791,7 +789,6 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                        This does not occur if color space was CIE encoded.
                        Then we do the decode during concretization which occurs
                        after interpolation */
-                    int bps = 1;
                     int dc = penum->spp;
                     const byte *pdata = bdata;
                     byte *psrc = (byte *) penum->line;

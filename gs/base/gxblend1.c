@@ -441,7 +441,6 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
     gx_color_index color;
     int i;
     int ncomp = dev->color_info.num_components;
-    int tag_value;
 
     /* Add in the tag information */
     color = gs_current_object_tag(dev->memory);

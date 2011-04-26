@@ -768,7 +768,6 @@ gx_default_draw_thin_line(gx_device * dev,
                           fixed adjustx, fixed adjusty)
 {
     int ix, iy, itox, itoy;
-    fixed tf;
     int epsilon;
 
     return_if_interrupt(dev->memory);
@@ -839,7 +838,6 @@ gx_default_draw_thin_line(gx_device * dev,
             ix   = fixed2int_var(fx0-epsilon);
             itox = fixed2int_var(fx1-epsilon);
             if (itox == ix) {
-                int sy, sh;
                 /* Figure out the start/height, allowing for our "covers
                  * centre of pixel" rule. */
                 iy   = fixed2int_var(fy0+fixed_half-fixed_epsilon);

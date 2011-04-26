@@ -553,7 +553,7 @@ gs_begin_transparency_mask(gs_state * pgs,
     gs_pdf14trans_params_t params = { 0 };
     gs_pdf14trans_params_t params_color = { 0 };
     const int l = sizeof(params.Background[0]) * ptmp->Background_components;
-    int i, num_components, code;
+    int i, code;
     gs_color_space *blend_color_space;
     gsicc_manager_t *icc_manager = pgs->icc_manager;
 

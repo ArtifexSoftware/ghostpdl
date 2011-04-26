@@ -136,6 +136,9 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         case gsNCHANNEL:
             expected = 0;
             break;
+        case gsNAMED:            /* Silence warnings */
+        case gsUNDEFINED:        /* Silence warnings */
+            break;
     }
     if (expected && ncomps != expected) {
         rc_decrement(picc_profile,"seticc");
