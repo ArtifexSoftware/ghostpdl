@@ -2747,7 +2747,6 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
      */
     code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem, (gx_device*) cdev);
     if (code >= 0 && tdev != *ptarget) {
-        rc_increment(tdev);
         *ptarget = tdev;
     }
     if (code < 0)

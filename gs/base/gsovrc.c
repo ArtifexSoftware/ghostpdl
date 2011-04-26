@@ -1027,7 +1027,7 @@ c_overprint_create_default_compositor(
     gx_device_init( (gx_device *)opdev,
                     (const gx_device *)&gs_overprint_device,
                     mem,
-                    true );
+                    false );
     memcpy(&opdev->no_overprint_procs,
            &no_overprint_procs,
            sizeof(no_overprint_procs));
