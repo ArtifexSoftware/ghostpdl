@@ -596,9 +596,12 @@ in:                             /* Initialize for a new page. */
     code = gs_imager_state_initialize(&imager_state, mem);
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
-   rc_decrement(imager_state.icc_link_cache,"clist_plaback_band");
-   imager_state.icc_link_cache = cdev->icc_cache_cl;
-   rc_increment(cdev->icc_cache_cl);
+    rc_decrement(imager_state.icc_link_cache,"clist_plaback_band");
+    imager_state.icc_link_cache = cdev->icc_cache_cl;
+    /* Need to lock during the increment of the link cache */
+    gx_monitor_enter(cdev->icc_cache_cl->lock);
+    rc_increment(cdev->icc_cache_cl);
+    gx_monitor_leave(cdev->icc_cache_cl->lock);	/* let everyone run */
     if (code < 0)
         goto out;
 
@@ -2109,7 +2112,11 @@ idata:                  data_size = 0;
         gx_pattern_cache_free(imager_state.pattern_cache);
         imager_state.pattern_cache = NULL;
     }
+    /* The imager state release will decrement the icc link cache.  To avoid
+       race conditions lock the cache */
+    gx_monitor_enter(cdev->icc_cache_cl->lock);
     gs_imager_state_release(&imager_state);
+    gx_monitor_leave(cdev->icc_cache_cl->lock);	/* done with increment, let everyone run */
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {
         rc_decrement_only(target, "gxclrast discard compositor");
