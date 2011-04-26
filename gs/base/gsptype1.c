@@ -1815,45 +1815,11 @@ gx_dc_pattern_read(
                 return code + sizeof(buf)+sizeof(trans_info);
 
             } else {
-            code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
-            if (code < 0)
-                return code;
-            return code + sizeof(buf);
-        }
-
-        }
-
-        size_b = buf.size_b;
-        size_c = buf.size_c;
-        ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
-        ptile->tbits.size.y = size_c; /* HACK: Use unrelated field for saving size_c between calls. */
-        {
-            gs_state state;
-            gs_pattern1_instance_t inst;
-
-            memset(&state, 0, sizeof(state));
-            memset(&inst, 0, sizeof(inst));
-            /* NB: Currently PaintType 2 can't pass here. */
-            state.device = (gx_device *)dev; /* Break 'const'. */
-            inst.template.PaintType = 1;
-            inst.size.x = buf.size.x;
-            inst.size.y = buf.size.y;
-            inst.saved = &state;
-            inst.is_clist = buf.is_clist;       /* tell gx_pattern_accum_alloc to use clist */
-            ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem,
-                               &inst, "gx_dc_pattern_read");
-            if (ptile->cdev == NULL)
-                return_error(gs_error_VMerror);
-            code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
-            if (code < 0)
-                return code;
-        }
-=======
-            code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
-            if (code < 0)
-                return code;
-            return code + sizeof(buf);
-        }
+                code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
+                if (code < 0)
+                    return code;
+                return code + sizeof(buf);
+            }
 
         }
 
@@ -1877,16 +1843,15 @@ gx_dc_pattern_read(
             inst.is_clist = buf.is_clist;	/* tell gx_pattern_accum_alloc to use clist */
             ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem,
                                &inst, "gx_dc_pattern_read");
+            if (ptile->cdev == NULL)
+                return_error(gs_error_VMerror);
             ptile->cdev->common.band_params.page_uses_transparency =
                                                         buf.uses_transparency;
             ptile->cdev->common.page_uses_transparency = buf.uses_transparency;
-            if (ptile->cdev == NULL)
-                return_error(gs_error_VMerror);
             code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
             if (code < 0)
                 return code;
         }
->>>>>>> Initial commit of work so far on getting the pattern transparency clist code working. Much of this comes from work that Ray and I did for customer 532. The remaining portion of the work is primarily in pdf14_tile_pattern_fill in gdevp14.c, where we need to make sure that the group that we are going to push is the intersection with the rect from trans pattern since we only use the part that we drew into in the pattern creation and not the whole group buffer. I had not worked on this in a few weeks so I don't have more details right now. I will spend a day on it this week to see exactly what remains to be done.
     } else {
         ptile = pdevc->colors.pattern.p_tile;
 
