@@ -403,8 +403,6 @@ static void down_core8(gx_downscaler_t *ds,
                        int              row)
 {
     int        x, xx, y, value;
-    int        mask;
-    int        e_downleft, e_down, e_forward = 0;
     int        pad_white;
     byte      *inp;
     int        width     = ds->width;
@@ -412,7 +410,6 @@ static void down_core8(gx_downscaler_t *ds,
     int        factor    = ds->factor;
     int        span      = ds->span;
     int       *errors    = ds->errors;
-    byte      *mfs_data  = ds->mfs_data;
     int        div       = factor*factor;
 
     pad_white = (awidth - width) * factor;
@@ -652,14 +649,12 @@ static void down_core24(gx_downscaler_t *ds,
                         int              row)
 {
     int        x, xx, y, value;
-    int        mask;
     int        pad_white;
     byte      *inp;
     int        width     = ds->width;
     int        awidth    = ds->awidth;
     int        factor    = ds->factor;
     int        span      = ds->span;
-    byte      *mfs_data  = ds->mfs_data;
     int        div       = factor*factor;
 
     pad_white = (awidth - width) * factor * 3;
@@ -683,7 +678,6 @@ static void down_core24(gx_downscaler_t *ds,
         const int back2 = factor * 3 - 1;
         for (x = awidth; x > 0; x--)
         {
-            int res;
             /* R */
             value = 0;
             for (xx = factor; xx > 0; xx--)

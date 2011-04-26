@@ -444,15 +444,11 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
 {
     int code = 0;
     byte *data = NULL;
-    byte *mfs_data = NULL;
-    int *errors = NULL;
     int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int max_size = max(size, TIFFScanlineSize(tif));
     int row;
     int width  = dev->width/factor;
     int height = dev->height/factor;
-    int awidth = width;
-    int padWhite;
     gx_downscaler_t ds;
 
     code = TIFFCheckpointDirectory(tif);
