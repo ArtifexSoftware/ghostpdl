@@ -1214,10 +1214,11 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         gx_device_retain(saved->device, false);		/* device no longer retained */
         if (pinst->template.uses_transparency) {
             dev_proc(saved->device, close_device)((gx_device *)saved->device);
-        dev_proc(adev, close_device)((gx_device *)adev);
+            dev_proc(adev, close_device)((gx_device *)adev);
             if (pinst->is_clist == 0)
                 gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
-                            ((gx_device_pattern_accum *)adev)->transbuff, "gx_pattern_load");
+                               ((gx_device_pattern_accum *)adev)->transbuff,
+                               "gx_pattern_load");
             rc_decrement_only(adev, "gx_pattern_load");	/* may free the device */
             // gs_free_object(mem, adev, "gx_pattern_load");
         } else {
