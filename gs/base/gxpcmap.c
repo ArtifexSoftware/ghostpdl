@@ -195,17 +195,19 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
 {
     gx_device *tdev = pinst->saved->device;
     int depth = (pinst->template.PaintType == 2 ? 1 : tdev->color_info.depth);
-    int raster;
-    int size;
+    int64_t raster;
+    int64_t size;
 
     if (pinst->template.uses_transparency) {
         raster = (pinst->size.x * ((depth/8) + 1 + has_tags));
-        size = raster > 0x7fffffff / pinst->size.y ? 0x7fff0000 : raster * pinst->size.y;
+        size = raster > max_int / pinst->size.y ? (max_int & ~0xFFFF) : raster * pinst->size.y;
     } else {
         raster = (pinst->size.x * depth + 7) / 8;
         size = raster * pinst->size.y;
     }
-    return size;
+    if (size > (int64_t)max_int)
+        size = (int64_t)max_int;
+    return (int)size;
 }
 
 #ifndef MaxPatternBitmap_DEFAULT
