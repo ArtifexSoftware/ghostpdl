@@ -2119,11 +2119,13 @@ idata:                  data_size = 0;
     gx_monitor_leave(cdev->icc_cache_cl->lock);	/* done with increment, let everyone run */
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {
-        rc_decrement_only(target, "gxclrast discard compositor");
-        if (target->rc.ref_count == 0) {
-            dev_proc(target, close_device)(target);
-            gs_free_object(target->memory, target, "gxclrast discard compositor");
+#ifdef DEBUG
+        if (target->rc.ref_count != 1) {
+            eprintf("Compositor ref count incorrect in clist_playback_band\n");
         }
+#endif
+        dev_proc(target, close_device)(target);
+        gs_free_object(target->memory, target, "gxclrast discard compositor");
         target = orig_target;
     }
     if (code < 0) {
