@@ -131,5 +131,8 @@ typedef gx_color_index_data gx_color_index;
             if ( code < 0 )\
               return code;\
         }
+#define LINE_ACCUM_FLUSH_AND_RESTART(dev, line, bpp, xo, xe, raster, y)\
+        { LINE_ACCUM_COPY(dev, line, bpp, xo, xe, raster, y);\
+          l_xprev = xe+1; }
 
 #endif /* gxcindex_INCLUDED */

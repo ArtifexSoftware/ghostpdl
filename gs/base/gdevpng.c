@@ -35,6 +35,7 @@
 #include "gdevmem.h"
 #include "gdevpccm.h"
 #include "gscdefs.h"
+#include "gxdownscale.h"
 
 #define PNG_INTERNAL
 /*
@@ -62,6 +63,7 @@
 #define Y_DPI 72
 
 static dev_proc_print_page(png_print_page);
+static dev_proc_print_page(png_print_page_monod);
 static dev_proc_open_device(pngalpha_open);
 static dev_proc_encode_color(pngalpha_encode_color);
 static dev_proc_decode_color(pngalpha_decode_color);
@@ -70,10 +72,22 @@ static dev_proc_fill_rectangle(pngalpha_fill_rectangle);
 static dev_proc_get_params(pngalpha_get_params);
 static dev_proc_put_params(pngalpha_put_params);
 static dev_proc_create_buf_device(pngalpha_create_buf_device);
+static dev_proc_get_params(png_get_params_downscale);
+static dev_proc_put_params(png_put_params_downscale);
+static dev_proc_get_params(png_get_params_downscale_mfs);
+static dev_proc_put_params(png_put_params_downscale_mfs);
+
+typedef struct gx_device_png_s gx_device_png;
+struct gx_device_png_s {
+    gx_device_common;
+    gx_prn_device_common;
+    int downscale_factor;
+    int min_feature_size;
+};
 
 /* Monochrome. */
 
-const gx_device_printer gs_pngmono_device =
+const gx_device_png gs_pngmono_device =
 prn_device(prn_std_procs, "pngmono",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
@@ -85,8 +99,8 @@ prn_device(prn_std_procs, "pngmono",
 static const gx_device_procs png16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                 pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-const gx_device_printer gs_png16_device = {
-  prn_device_body(gx_device_printer, png16_procs, "png16",
+const gx_device_png gs_png16_device = {
+  prn_device_body(gx_device_png, png16_procs, "png16",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -99,8 +113,8 @@ const gx_device_printer gs_png16_device = {
 static const gx_device_procs png256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                 pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-const gx_device_printer gs_png256_device = {
-  prn_device_body(gx_device_printer, png256_procs, "png256",
+const gx_device_png gs_png256_device = {
+  prn_device_body(gx_device_png, png256_procs, "png256",
            DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
@@ -110,39 +124,61 @@ const gx_device_printer gs_png256_device = {
 /* 8-bit gray */
 
 static const gx_device_procs pnggray_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-              gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-const gx_device_printer gs_pnggray_device =
-{prn_device_body(gx_device_printer, pnggray_procs, "pnggray",
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+                       gx_default_gray_map_rgb_color,
+                       gx_default_gray_map_color_rgb,
+                       png_get_params_downscale, png_put_params_downscale);
+const gx_device_png gs_pnggray_device =
+{prn_device_body(gx_device_png, pnggray_procs, "pnggray",
                  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  1, 8, 255, 0, 256, 0, png_print_page)
 };
 
+/* Monochrome (with error diffusion) */
+
+static const gx_device_procs pngmonod_procs =
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+                       gx_default_gray_map_rgb_color,
+                       gx_default_gray_map_color_rgb,
+                       png_get_params_downscale_mfs,
+                       png_put_params_downscale_mfs);
+const gx_device_png gs_pngmonod_device =
+{prn_device_body(gx_device_png, pngmonod_procs, "pngmonod",
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 1, 8, 255, 0, 256, 0, png_print_page_monod)
+};
+
 /* 24-bit color. */
 
 static const gx_device_procs png16m_procs =
-prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
-                gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-const gx_device_printer gs_png16m_device =
-prn_device(png16m_procs, "png16m",
-           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-           X_DPI, Y_DPI,
-           0, 0, 0, 0,		/* margins */
-           24, png_print_page);
+prn_color_params_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
+                       gx_default_rgb_map_rgb_color,
+                       gx_default_rgb_map_color_rgb,
+                       png_get_params_downscale, png_put_params_downscale);
+const gx_device_png gs_png16m_device =
+{prn_device_body(gx_device_png, png16m_procs, "png16m",
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 24, 255, 255, 256, 256, png_print_page)
+};
 
 /* 48 bit color. */
 
 static const gx_device_procs png48_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
                 gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-const gx_device_printer gs_png48_device =
-prn_device(png48_procs, "png48",
-           DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-           X_DPI, Y_DPI,
-           0, 0, 0, 0,		/* margins */
-           48, png_print_page);
+const gx_device_png gs_png48_device =
+{prn_device_body(gx_device_png, png48_procs, "png48",
+                 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                 X_DPI, Y_DPI,
+                 0, 0, 0, 0,	/* margins */
+                 3, 48, 0, 65535, 1, 65536, png_print_page)
+};
 
 /* 32-bit RGBA */
 /* pngalpha device is 32-bit RGBA, with the alpha channel
@@ -156,6 +192,8 @@ typedef struct gx_device_pngalpha_s gx_device_pngalpha;
 struct gx_device_pngalpha_s {
     gx_device_common;
     gx_prn_device_common;
+    int downscale_factor;
+    int min_feature_size;
     dev_t_proc_fill_rectangle((*orig_fill_rectangle), gx_device);
     int background;
 };
@@ -245,19 +283,116 @@ const gx_device_pngalpha gs_pngalpha_device = {
         offset_margin_values(0, 0, 0, 0, 0, 0),
         std_device_part3_(),
         prn_device_body_rest_(png_print_page),
+        1, /* downscale_factor */
+        0, /* min_feature_size */
         NULL,
         0xffffff	/* white background */
 };
 
 /* ------ Private definitions ------ */
 
+static int
+png_get_params_downscale(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_png *pdev = (gx_device_png *)dev;
+    int code, ecode;
+
+    ecode = 0;
+    if ((code = param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor)) < 0)
+        ecode = code;
+
+    code = gdev_prn_get_params(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    return ecode;
+}
+
+static int
+png_put_params_downscale(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_png *pdev = (gx_device_png *)dev;
+    int code, ecode;
+    int dsf = pdev->downscale_factor;
+    char *param_name;
+    
+    ecode = 0;
+    switch (code = param_read_int(plist, (param_name = "DownScaleFactor"), &dsf)) {
+        case 0:
+            if (dsf >= 1)
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+
+    code = gdev_prn_put_params(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    pdev->downscale_factor = dsf;
+
+    return ecode;
+}
+
+static int
+png_get_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_png *pdev = (gx_device_png *)dev;
+    int code, ecode;
+    
+    ecode = 0;
+    if ((code = param_write_int(plist, "MinFeatureSize", &pdev->min_feature_size)) < 0)
+        ecode = code;
+    code = png_get_params_downscale(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    return ecode;
+}
+
+static int
+png_put_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
+{
+    gx_device_png *pdev = (gx_device_png *)dev;
+    int code, ecode;
+    int mfs = pdev->min_feature_size;
+    char *param_name;
+    
+    ecode = 0;
+    switch (code = param_read_int(plist, (param_name = "MinFeatureSize"), &mfs)) {
+        case 0:
+            if (mfs >= 0 && mfs <= 2)
+                break;
+            code = gs_error_rangecheck;
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            break;
+    }
+
+    code = png_put_params_downscale(dev, plist);
+    if (code < 0)
+        ecode = code;
+
+    pdev->min_feature_size = mfs;
+
+    return ecode;
+}
+
+
 /* Write out a page in PNG format. */
 /* This routine is used for all formats. */
 static int
-png_print_page(gx_device_printer * pdev, FILE * file)
+do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
 {
     gs_memory_t *mem = pdev->memory;
     int raster = gdev_prn_raster(pdev);
+    gx_downscaler_t ds;
 
     /* PNG structures */
     byte *row = gs_alloc_bytes(mem, raster, "png raster buffer");
@@ -265,13 +400,31 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_info *info_ptr =
     png_create_info_struct(png_ptr);
-    int height = pdev->height;
+    int height;
     int depth = pdev->color_info.depth;
     int y;
     int code;			/* return code */
     char software_key[80];
     char software_text[256];
     png_text text_png;
+    int dst_bpc, src_bpc;
+    bool errdiff = 0;
+    int factor = pdev->downscale_factor;
+    int mfs = pdev->min_feature_size;
+
+    /* Sanity check params */
+    if (factor < 1)
+        factor = 1;
+    if (mfs < 1)
+        mfs = 1;
+    else if (mfs > 2)
+        mfs = 2;
+
+    /* Slightly nasty, but it saves us duplicating this entire routine. */
+    if (monod) {
+        errdiff = 1;
+        depth = 1;
+    }
 
     if (row == 0 || png_ptr == 0 || info_ptr == 0) {
         code = gs_note_error(gs_error_VMerror);
@@ -288,13 +441,11 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     png_init_io(png_ptr, file);
 
     /* set the file information here */
-    info_ptr->width = pdev->width;
-    info_ptr->height = pdev->height;
     /* resolution is in pixels per meter vs. dpi */
     info_ptr->x_pixels_per_unit =
-        (png_uint_32) (pdev->HWResolution[0] * (100.0 / 2.54));
+        (png_uint_32) (pdev->HWResolution[0] * (100.0 / 2.54) / factor + 0.5);
     info_ptr->y_pixels_per_unit =
-        (png_uint_32) (pdev->HWResolution[1] * (100.0 / 2.54));
+        (png_uint_32) (pdev->HWResolution[1] * (100.0 / 2.54) / factor + 0.5);
     info_ptr->phys_unit_type = PNG_RESOLUTION_METER;
     info_ptr->valid |= PNG_INFO_pHYs;
     switch (depth) {
@@ -322,13 +473,17 @@ png_print_page(gx_device_printer * pdev, FILE * file)
         case 24:
             info_ptr->bit_depth = 8;
             info_ptr->color_type = PNG_COLOR_TYPE_RGB;
+            errdiff = 1;
             break;
         case 8:
             info_ptr->bit_depth = 8;
-            if (gx_device_has_color(pdev))
+            if (gx_device_has_color(pdev)) {
                 info_ptr->color_type = PNG_COLOR_TYPE_PALETTE;
-            else
+                errdiff = 0;
+            } else {
                 info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
+                errdiff = 1;
+            }
             break;
         case 4:
             info_ptr->bit_depth = 4;
@@ -338,7 +493,8 @@ png_print_page(gx_device_printer * pdev, FILE * file)
             info_ptr->bit_depth = 1;
             info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
             /* invert monocrome pixels */
-            png_set_invert_mono(png_ptr);
+            if (!monod)
+                png_set_invert_mono(png_ptr);
             break;
     }
 
@@ -376,6 +532,15 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     info_ptr->text = &text_png;
     info_ptr->num_text = 1;
 
+    dst_bpc = info_ptr->bit_depth;
+    src_bpc = dst_bpc;
+    if (errdiff)
+        src_bpc = 8;
+    else
+        factor = 1;
+    info_ptr->width = pdev->width/factor;
+    height = info_ptr->height = pdev->height/factor;
+
     /* write the file information */
     png_write_info(png_ptr, info_ptr);
 
@@ -383,10 +548,20 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     info_ptr->num_text = 0;
     info_ptr->text = NULL;
 
-    /* Write the contents of the image. */
-    for (y = 0; y < height; y++) {
-        gdev_prn_copy_scan_lines(pdev, y, row, raster);
-        png_write_rows(png_ptr, &row, 1);
+    /* For simplicity of code, we always go through the downscaler. For
+     * non-supported depths, it will pass through with minimal performance
+     * hit. So ensure that we only trigger downscales when we need them.
+     */
+    code = gx_downscaler_init(&ds, (gx_device *)pdev, src_bpc, dst_bpc,
+                              depth/dst_bpc, factor, mfs, NULL);
+    if (code >= 0)
+    {
+        /* Write the contents of the image. */
+        for (y = 0; y < height; y++) {
+            gx_downscaler_copy_scan_lines(&ds, y, row, raster);
+            png_write_rows(png_ptr, &row, 1);
+        }
+        gx_downscaler_fin(&ds);
     }
 
     /* write the rest of the file */
@@ -401,6 +576,18 @@ png_print_page(gx_device_printer * pdev, FILE * file)
     gs_free_object(mem, row, "png raster buffer");
 
     return code;
+}
+
+static int
+png_print_page(gx_device_printer * pdev, FILE * file)
+{
+    return do_png_print_page((gx_device_png *)pdev, file, 0);
+}
+
+static int
+png_print_page_monod(gx_device_printer * pdev, FILE * file)
+{
+    return do_png_print_page((gx_device_png *)pdev, file, 1);
 }
 
 /*

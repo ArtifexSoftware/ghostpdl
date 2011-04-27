@@ -23,6 +23,7 @@
 #include "gxgetbit.h"
 #include "gdevplnx.h"
 #include "gstrans.h"
+#include "gxdownscale.h"
 
 /*#define DEBUGGING_HACKS*/
 

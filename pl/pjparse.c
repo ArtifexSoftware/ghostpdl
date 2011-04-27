@@ -95,6 +95,8 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"plotsize2", "0"},           /* 2nd arg to PS - plotter units */
     {"plotsizerotate", "on"},     /* "on" default allows PS rotation per spec */
     {"viewer", "off"},            /* "on" enables unsafe viewer speed optimizations */
+    {"paperwidth", ""},
+    {"paperlength", ""},
     /*    {"personality", "rtl"}, */
     {"", ""}
 };
@@ -582,7 +584,7 @@ pjl_fsinit(pjl_parser_state_t *pst, char *pathname)
 }
 
 /* make a pjl directory */
-int
+static int
 pjl_fsmkdir(pjl_parser_state_t *pst, char *pathname)
 {
     char fname[MAXPATHLEN];
@@ -593,7 +595,7 @@ pjl_fsmkdir(pjl_parser_state_t *pst, char *pathname)
 }
 
 /* query a file in the pjl sandbox */
-int
+static int
 pjl_fsquery(pjl_parser_state_t *pst, char *pathname)
 {
     /* not implemented */
@@ -601,7 +603,7 @@ pjl_fsquery(pjl_parser_state_t *pst, char *pathname)
 }
 
 /* Upload a file from the pjl sandbox */
-int
+static int
 pjl_fsupload(pjl_parser_state_t *pst, char *pathname, int offset, int size)
 {
     /* not implemented */
@@ -613,7 +615,7 @@ pjl_fsupload(pjl_parser_state_t *pst, char *pathname, int offset, int size)
    is found result will hold the matching path and filename.  Thie
    procedure recursively searches the directory tree "pathname" for
    "filename" */
-int
+static int
 pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, char *result)
 {
     file_enum *fe;
@@ -646,7 +648,7 @@ pjl_search_for_file(pjl_parser_state_t *pst, char *pathname, char *filename, cha
     return -1;
 }
 
-int
+static int
 pjl_fsdirlist(pjl_parser_state_t *pst, char *pathname, int entry, int count)
 {
     file_enum *fe;

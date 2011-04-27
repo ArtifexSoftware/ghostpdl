@@ -528,7 +528,7 @@ pxl_impl_report_errors(
            code, st, pxs)) >= 0
         )
           { if ( (report & eBackChannel) || force_to_cout )
-              errprintf(pxli->memory, message);
+              errprintf(pxli->memory, "%s", message);
             if ( report & eErrorPage )
               y = px_error_page_show(message, y, pxs);
           }

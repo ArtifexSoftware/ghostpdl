@@ -123,6 +123,12 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
     char *result;
     gs_memory_t *mem_gc = pis->memory;
 
+    /* If it is already set and the incoming is the default then don't set
+       as we are coming from a VMreclaim which is trying to reset the user
+       parameter */
+    if (icc_manager->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
+        return;
+    }
     /* User param string.  Must allocate in non-gc memory */
     result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, namelen,
                                      "gsicc_set_icc_directory");

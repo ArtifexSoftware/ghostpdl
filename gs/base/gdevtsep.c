@@ -17,8 +17,12 @@
  * tiffsep device:   Generate individual TIFF gray files for each separation
  *                   as well as a 'composite' 32-bit CMYK for the page.
  * tiffsep1 device:  Generate individual TIFF 1-bit files for each separation
- * tiffscaled device:Mono TIFF device (dithered downscaled output from
+ * tiffscaled device:Mono TIFF device (error-diffused downscaled output from
  *                   8-bit Gray internal rendering)
+ * tiffscaled8 device:Greyscale TIFF device (downscaled output from
+ *                   8-bit Gray internal rendering)
+ * tiffscaled24 device:24-bit RGB TIFF device (dithered downscaled output
+ *                   from 24-bit RGB internal rendering)
  */
 
 #include "stdint_.h"   /* for tiff.h */
@@ -99,6 +103,71 @@ const gx_device_tiff gs_tiffscaled_device = {
     1  /* MinFeatureSize */
 };
 
+/* ------ The tiffscaled8 device ------ */
+
+static dev_proc_print_page(tiffscaled8_print_page);
+
+static const gx_device_procs tiffscaled8_procs =
+prn_color_params_procs(tiff_open,
+                       tiff_output_page,
+                       tiff_close,
+                       gx_default_gray_map_rgb_color,
+                       gx_default_gray_map_color_rgb,
+                       tiff_get_params_downscale,
+                       tiff_put_params_downscale);
+
+const gx_device_tiff gs_tiffscaled8_device = {
+    prn_device_body(gx_device_tiff,
+                    tiffscaled8_procs,
+                    "tiffscaled8",
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                    600, 600,   /* 600 dpi by default */
+                    0, 0, 0, 0, /* Margins */
+                    1,          /* num components */
+                    8,          /* bits per sample */
+                    255, 0, 256, 0,
+                    tiffscaled8_print_page),
+    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
+};
+
+/* ------ The tiffscaled24 device ------ */
+
+static dev_proc_print_page(tiffscaled24_print_page);
+
+static const gx_device_procs tiffscaled24_procs =
+prn_color_params_procs(tiff_open,
+                       tiff_output_page,
+                       tiff_close,
+                       gx_default_rgb_map_rgb_color,
+                       gx_default_rgb_map_color_rgb,
+                       tiff_get_params_downscale,
+                       tiff_put_params_downscale);
+
+const gx_device_tiff gs_tiffscaled24_device = {
+    prn_device_body(gx_device_tiff,
+                    tiffscaled24_procs,
+                    "tiffscaled24",
+                    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+                    600, 600,   /* 600 dpi by default */
+                    0, 0, 0, 0, /* Margins */
+                    3,          /* num components */
+                    24,         /* bits per sample */
+                    255, 255, 256, 256,
+                    tiffscaled24_print_page),
+    arch_is_big_endian,/* default to native endian (i.e. use big endian iff the platform is so */
+    COMPRESSION_NONE,
+    TIFF_DEFAULT_STRIP_SIZE,
+    TIFF_DEFAULT_DOWNSCALE,
+    0, /* Adjust size */
+    1  /* MinFeatureSize */
+};
+
+
 /* ------ Private functions ------ */
 
 static void
@@ -148,7 +217,70 @@ tiffscaled_print_page(gx_device_printer * pdev, FILE * file)
     return tiff_downscale_and_print_page(pdev, tfdev->tif,
                                          tfdev->DownScaleFactor,
                                          tfdev->MinFeatureSize,
-                                         tfdev->AdjustWidth);
+                                         tfdev->AdjustWidth,
+                                         1, 1);
+}
+
+static int
+tiffscaled8_print_page(gx_device_printer * pdev, FILE * file)
+{
+    gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
+    int code;
+
+    code = gdev_tiff_begin_page(tfdev, file);
+    if (code < 0)
+        return code;
+
+    tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression, tfdev->MaxStripSize);
+
+    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+                                         tfdev->DownScaleFactor,
+                                         tfdev->MinFeatureSize,
+                                         tfdev->AdjustWidth,
+                                         8, 1);
+}
+
+static void
+tiff_set_rgb_fields(gx_device_tiff *tfdev)
+{
+    /* Put in a switch statement in case we want to have others */
+    switch (tfdev->device_icc_profile->data_cs) {
+        case gsRGB:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+            break;
+        case gsCIELAB:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_ICCLAB);
+            break;
+        default:
+            TIFFSetField(tfdev->tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+            break;
+    }
+    TIFFSetField(tfdev->tif, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
+    TIFFSetField(tfdev->tif, TIFFTAG_SAMPLESPERPIXEL, 3);
+
+    tiff_set_compression((gx_device_printer *)tfdev, tfdev->tif,
+                         tfdev->Compression, tfdev->MaxStripSize);
+}
+
+
+static int
+tiffscaled24_print_page(gx_device_printer * pdev, FILE * file)
+{
+    gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
+    int code;
+
+    code = gdev_tiff_begin_page(tfdev, file);
+    if (code < 0)
+        return code;
+
+    TIFFSetField(tfdev->tif, TIFFTAG_BITSPERSAMPLE, 8);
+    tiff_set_rgb_fields(tfdev);
+
+    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+                                         tfdev->DownScaleFactor,
+                                         tfdev->MinFeatureSize,
+                                         tfdev->AdjustWidth,
+                                         8, 3);
 }
 
 /* ------ The cmyk devices ------ */
@@ -409,6 +541,7 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         update_spot_colors,             /* update_spot_equivalent_colors */\
         tiffsep_ret_devn_params         /* ret_devn_params */\
 }
+
 
 #define tiffsep_devices_body(dtype, procs, dname, ncomp, pol, depth, mg, mc, sl, cn, print_page, compr)\
     std_device_full_body_type_extended(dtype, &procs, dname,\
@@ -855,6 +988,7 @@ tiffsep1_prn_close(gx_device * pdev)
     }
     return 0;
 }
+
 
 static int
 sep1_fill_path(gx_device * pdev, const gs_imager_state * pis,
@@ -1653,6 +1787,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
             return code;
 
     }   /* end initialization of separation files */
+
 
     {   /* Get the expanded contone line, halftone and write out the dithered separations */
         int raster = gdev_prn_raster(pdev);

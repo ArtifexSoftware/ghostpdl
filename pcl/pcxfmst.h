@@ -33,6 +33,15 @@ typedef struct pcl_paper_size_s {
 } pcl_paper_size_t;
 
 /*
+ * The table of paper sizes
+ */
+typedef struct pcl_paper_type_s {
+    uint                    tag;
+    const char *            pname;
+    pcl_paper_size_t        psize;
+} pcl_paper_type_t;
+
+/*
  * Geometric transformation structure for PCL.
  *
  * Except for GL/2, PCL deals strictly in diagonal transformations: all

@@ -140,7 +140,7 @@ pxPassthrough_init(px_state_t *pxs)
     /* do an initial reset to set up a permanent reset.  The
        motivation here is to avoid tracking down a slew of memory
        leaks */
-    global_pcs->xfm_state.paper_size = pcl_get_default_paper(global_pcs); /* pxl paper ? */
+    global_pcs->xfm_state.paper_size = pcl_get_default_paper(global_pcs);
     pcl_do_resets(global_pcs, pcl_reset_initial);
     pcl_do_resets(global_pcs, pcl_reset_permanent);
 
@@ -154,6 +154,7 @@ pxPassthrough_init(px_state_t *pxs)
        If not then initialize. Fix for seg fault with T427.BIN */
     gsicc_init_device_profile(global_pcs->pgs, gs_currentdevice(pxs->pgs));
     /* yet another reset with the new page device */
+    global_pcs->xfm_state.paper_size = pcl_get_default_paper(global_pcs);
     pcl_do_resets(global_pcs, pcl_reset_initial);
     /* set the parser state and initialize the pcl parser */
     global_pcl_parser_state.definitions = global_pcs->pcl_commands;

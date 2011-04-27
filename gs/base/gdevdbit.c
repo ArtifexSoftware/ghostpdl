@@ -188,7 +188,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
         byte *lout;
         int code = 0;
         gx_color_value color_cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        int ry;
+        int ry, lx;
 
         fit_copy(dev, data, data_x, raster, id, x, y, width, height);
         row = data;
@@ -209,6 +209,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
             code = (*dev_proc(dev, get_bits)) (dev, ry, lin, &line);
             if (code < 0)
                 break;
+            lx = x;
             for (sx = data_x, rx = x; sx < data_x + width; ++sx, ++rx) {
                 gx_color_index previous = gx_no_color_index;
                 gx_color_index composite;
@@ -219,51 +220,61 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 else
                     alpha2 = row[sx >> 1],
                         alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
-              blend:if (alpha == 15) {	/* Just write the new color. */
-                    composite = color;
+              blend:
+                if (alpha == 0) {
+                    /* Previously the code used to just write out the previous
+                     * colour when the alpha was 0, but that's wrong. It leaves
+                     * the underlying colour unchanged, but has the effect of
+                     * making this pixel appear solid in any device that's
+                     * watching what pixels are written (such as the pattern
+                     * tile devices). The right thing to do is to write out
+                     * the buffered accumulator, and skip over any pixels that
+                     * are completely clear. */
+                    LINE_ACCUM_FLUSH_AND_RESTART(dev, lout, bpp, lx, rx, out_size, ry);
+                    lx = rx+1;
                 } else {
-                    if (previous == gx_no_color_index) {	/* Extract the old color. */
-                        if (bpp < 8) {
-                            const uint bit = rx * bpp;
-                            const byte *src = line + (bit >> 3);
-
-                            previous =
-                                (*src >> (8 - ((bit & 7) + bpp))) &
-                                ((1 << bpp) - 1);
-                        } else {
-                            const byte *src = line + (rx * (bpp >> 3));
-
-                            previous = 0;
-                            switch (bpp >> 3) {
-                                case 8:
-                                    previous += (gx_color_index) * src++
-                                        << sample_bound_shift(previous, 56);
-                                case 7:
-                                    previous += (gx_color_index) * src++
-                                        << sample_bound_shift(previous, 48);
-                                case 6:
-                                    previous += (gx_color_index) * src++
-                                        << sample_bound_shift(previous, 40);
-                                case 5:
-                                    previous += (gx_color_index) * src++
-                                        << sample_bound_shift(previous, 32);
-                                case 4:
-                                    previous += (gx_color_index) * src++ << 24;
-                                case 3:
-                                    previous += (gx_color_index) * src++ << 16;
-                                case 2:
-                                    previous += (gx_color_index) * src++ << 8;
-                                case 1:
-                                    previous += *src++;
-                            }
-                        }
-                    }
-                    if (alpha == 0) {	/* Just write the old color. */
-                        composite = previous;
-                    } else {	/* Blend values. */
+                    if (alpha == 15) {	/* Just write the new color. */
+                        composite = color;
+                    } else {
                         gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int i;
 
+                        if (previous == gx_no_color_index) {	/* Extract the old color. */
+                            if (bpp < 8) {
+                                const uint bit = rx * bpp;
+                                const byte *src = line + (bit >> 3);
+
+                                previous =
+                                    (*src >> (8 - ((bit & 7) + bpp))) &
+                                    ((1 << bpp) - 1);
+                            } else {
+                                const byte *src = line + (rx * (bpp >> 3));
+
+                                previous = 0;
+                                switch (bpp >> 3) {
+                                    case 8:
+                                        previous += (gx_color_index) * src++
+                                            << sample_bound_shift(previous, 56);
+                                    case 7:
+                                        previous += (gx_color_index) * src++
+                                            << sample_bound_shift(previous, 48);
+                                    case 6:
+                                        previous += (gx_color_index) * src++
+                                            << sample_bound_shift(previous, 40);
+                                    case 5:
+                                        previous += (gx_color_index) * src++
+                                            << sample_bound_shift(previous, 32);
+                                    case 4:
+                                        previous += (gx_color_index) * src++ << 24;
+                                    case 3:
+                                        previous += (gx_color_index) * src++ << 16;
+                                    case 2:
+                                        previous += (gx_color_index) * src++ << 8;
+                                    case 1:
+                                        previous += *src++;
+                                }
+                            }
+                        }
                         (*dev_proc(dev, decode_color)) (dev, previous, cv);
 #if ARCH_INTS_ARE_SHORT
 #  define b_int long
@@ -286,10 +297,10 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                             goto blend;
                         }
                     }
+                    LINE_ACCUM(composite, bpp);
                 }
-                LINE_ACCUM(composite, bpp);
             }
-            LINE_ACCUM_COPY(dev, lout, bpp, x, rx, out_size, ry);
+            LINE_ACCUM_COPY(dev, lout, bpp, lx, rx, out_size, ry);
         }
       out:gs_free_object(mem, lout, "copy_alpha(lout)");
         gs_free_object(mem, lin, "copy_alpha(lin)");

@@ -2176,10 +2176,8 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
         /* We must complete the defg or def decode function such that it is within
            the HIJ(K) range AND is scaled to index into the CLUT properly */
         if (gs_color_space_get_index(pcs) == gs_color_space_index_CIEDEF) {
-            gs_cie_def_complete(pcs->params.def);
             input_range_ok = check_range(&(pcs->params.def->RangeDEF.ranges[0]),3);
         } else {
-            gs_cie_defg_complete(pcs->params.defg);
             input_range_ok = check_range(&(pcs->params.defg->RangeDEFG.ranges[0]),4);
         }
         gsicc_create_mashed_clut(icc_luta2bparts, header, Table,

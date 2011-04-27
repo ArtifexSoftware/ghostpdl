@@ -252,4 +252,5 @@ pcl_init_state(
     pcs->cap.x = pcs->cap.y = 0;
     pcs->vmi_cp = 0;
     pcs->halftone_set = false;
+    pcs->ppaper_type_table = 0;
 }

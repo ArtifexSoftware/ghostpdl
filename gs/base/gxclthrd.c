@@ -387,7 +387,6 @@ clist_render_thread(void *data)
     crdev->ymin = band_begin_line;
     crdev->ymax = band_end_line;
     crdev->offset_map = NULL;
-    //crdev->icc_cache_cl = NULL;
     if (code < 0)
         thread->status = code;          /* shouldn't happen */
     else

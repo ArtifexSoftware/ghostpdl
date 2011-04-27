@@ -78,7 +78,7 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl') {
 #$directory="gs" if ($directory eq "" && $product eq "bmpcmp");
 $directory="gs" if ($directory eq "" && $product && $product eq "abort");
 
-die "can't figure out if this is a ghostscript or ghostpdl directory" if ($directory eq "");
+die "can't figure out if this is a ghostpdl or gs directory" if ($directory eq "");
 
 $product='gs pcl xps ls' if (!$product);
 print "$user $directory $product\n" if ($verbose);

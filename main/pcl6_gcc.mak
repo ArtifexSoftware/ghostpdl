@@ -217,12 +217,13 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev\
    $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev\
    $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
-   $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev $(DD)tiffscaled.dev\
+   $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev\
+   $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev\
    $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
    $(DD)pxlmono.dev $(DD)pxlcolor.dev\
    $(DD)bmpmono.dev $(DD)bmp16m.dev $(DD)bmpsep8.dev \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
-   $(DD)png16m.dev $(DD)pngmono.dev $(DD)jpeg.dev\
+   $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)wtscmyk.dev $(DD)wtsimdi.dev\
    $(DD)romfs$(COMPILE_INITS).dev
 

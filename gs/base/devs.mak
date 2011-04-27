@@ -44,147 +44,155 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 
 # MS-DOS displays (note: not usable with Desqview/X):
 #   MS-DOS EGA and VGA:
-#	ega	EGA (640x350, 16-color)
-#	vga	VGA (640x480, 16-color)
+#	ega		EGA (640x350, 16-color)
+#	vga		VGA (640x480, 16-color)
 #   MS-DOS SuperVGA:
-# *	ali	SuperVGA using Avance Logic Inc. chipset, 256-color modes
-# *	atiw	ATI Wonder SuperVGA, 256-color modes
-# *	cirr	SuperVGA using Cirrus Logic CL-GD54XX chips, 256-color modes
-# *	s3vga	SuperVGA using S3 86C911 chip (e.g., Diamond Stealth board)
-#	svga16	Generic SuperVGA in 800x600, 16-color mode
-# *	tseng	SuperVGA using Tseng Labs ET3000/4000 chips, 256-color modes
-# *	tvga	SuperVGA using Trident chipset, 256-color modes
+# *	ali		SuperVGA using Avance Logic Inc. chipset, 256-color modes
+# *	atiw		ATI Wonder SuperVGA, 256-color modes
+# *	cirr		SuperVGA using Cirrus Logic CL-GD54XX chips, 256-color modes
+# *	s3vga		SuperVGA using S3 86C911 chip (e.g., Diamond Stealth board)
+#	svga16		Generic SuperVGA in 800x600, 16-color mode
+# *	tseng		SuperVGA using Tseng Labs ET3000/4000 chips, 256-color modes
+# *	tvga		SuperVGA using Trident chipset, 256-color modes
 #   ****** NOTE: The vesa device does not work with the Watcom (32-bit MS-DOS)
 #   ****** compiler or executable.
-#	vesa	SuperVGA with VESA standard API driver
+#	vesa		SuperVGA with VESA standard API driver
 # Other displays:
-#	display   For use on any platform that supports DLLs
+#	display		For use on any platform that supports DLLs
 #   MS Windows:
-#	mswindll  Microsoft Windows 3.1 DLL  [MS Windows only]
-#	mswinprn  Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
-#	mswinpr2  Microsoft Windows 3.0, 3.1 DIB printer  [MS Windows only]
+#	mswindll	Microsoft Windows 3.1 DLL  [MS Windows only]
+#	mswinprn	Microsoft Windows 3.0, 3.1 DDB printer  [MS Windows only]
+#	mswinpr2	Microsoft Windows 3.0, 3.1 DIB printer  [MS Windows only]
 #   OS/2:
-# *	os2prn	OS/2 printer                [OS/2 only]
+# *	os2prn		OS/2 printer                [OS/2 only]
 #   Unix and VMS:
 #   ****** NOTE: For direct frame buffer addressing under SCO Unix or Xenix,
 #   ****** edit the definition of EGAVGA below.
-# *	lvga256  Linux vgalib, 256-color VGA modes  [Linux only]
-# +	vgalib	Linux vgalib, 16-color VGA modes   [Linux only]
-#	x11	X Windows version 11, release >=4   [Unix and VMS only]
-#	x11alpha  X Windows masquerading as a device with alpha capability
-#	x11cmyk  X Windows masquerading as a 1-bit-per-plane CMYK device
-#	x11cmyk2  X Windows as a 2-bit-per-plane CMYK device
-#	x11cmyk4  X Windows as a 4-bit-per-plane CMYK device
-#	x11cmyk8  X Windows as an 8-bit-per-plane CMYK device
-#	x11gray2  X Windows as a 2-bit gray-scale device
-#	x11gray4  X Windows as a 4-bit gray-scale device
-#	x11mono  X Windows masquerading as a black-and-white device
-#	x11rg16x  X Windows with G5/B5/R6 pixel layout for testing.
-#	x11rg32x  X Windows with G11/B10/R11 pixel layout for testing.
+# *	lvga256		Linux vgalib, 256-color VGA modes  [Linux only]
+# +	vgalib		Linux vgalib, 16-color VGA modes   [Linux only]
+#	x11		X Windows version 11, release >=4   [Unix and VMS only]
+#	x11alpha	X Windows masquerading as a device with alpha capability
+#	x11cmyk		X Windows masquerading as a 1-bit-per-plane CMYK device
+#	x11cmyk2 	X Windows as a 2-bit-per-plane CMYK device
+#	x11cmyk4	X Windows as a 4-bit-per-plane CMYK device
+#	x11cmyk8	X Windows as an 8-bit-per-plane CMYK device
+#	x11gray2	X Windows as a 2-bit gray-scale device
+#	x11gray4 	X Windows as a 4-bit gray-scale device
+#	x11mono		X Windows masquerading as a black-and-white device
+#	x11rg16x 	X Windows with G5/B5/R6 pixel layout for testing.
+#	x11rg32x	X Windows with G11/B10/R11 pixel layout for testing.
 # Printers:
-# +	atx23	Practical Automation ATX-23 label printer
-# +	atx24	Practical Automation ATX-24 label printer
-# +	atx38	Practical Automation ATX-38 label printer
-# +	deskjet  H-P DeskJet and DeskJet Plus
-#	djet500  H-P DeskJet 500; use -r600 for DJ 600 series
-# +	fs600	Kyocera FS-600 (600 dpi)
-# +	laserjet  H-P LaserJet
-# +	ljet2p	H-P LaserJet IId/IIp/III* with TIFF compression
-# +	ljet3	H-P LaserJet III* with Delta Row compression
-# +	ljet3d	H-P LaserJet IIID with duplex capability
-# +	ljet4	H-P LaserJet 4 (defaults to 600 dpi)
-# +	ljet4d	H-P LaserJet 4 (defaults to 600 dpi) with duplex
-# +	ljetplus  H-P LaserJet Plus
-#	lj5mono  H-P LaserJet 5 & 6 family (PCL XL), bitmap:
-#		see below for restrictions & advice
-#	lj5gray  H-P LaserJet 5 & 6 family, gray-scale bitmap;
-#		see below for restrictions & advice
-# *	lp2563	H-P 2563B line printer
-# *	oce9050  OCE 9050 printer
-#	(pxlmono) H-P black-and-white PCL XL printers (LaserJet 5 and 6 family)
-#	(pxlcolor) H-P color PCL XL printers (e.g. Color LaserJet 4500)
+# +	atx23		Practical Automation ATX-23 label printer
+# +	atx24		Practical Automation ATX-24 label printer
+# +	atx38		Practical Automation ATX-38 label printer
+# +	deskjet		H-P DeskJet and DeskJet Plus
+#	djet500		H-P DeskJet 500; use -r600 for DJ 600 series
+# +	fs600		Kyocera FS-600 (600 dpi)
+# +	laserjet	H-P LaserJet
+# +	ljet2p		H-P LaserJet IId/IIp/III* with TIFF compression
+# +	ljet3		H-P LaserJet III* with Delta Row compression
+# +	ljet3d		H-P LaserJet IIID with duplex capability
+# +	ljet4		H-P LaserJet 4 (defaults to 600 dpi)
+# +	ljet4d		H-P LaserJet 4 (defaults to 600 dpi) with duplex
+# +	ljetplus	H-P LaserJet Plus
+#	lj5mono		H-P LaserJet 5 & 6 family (PCL XL), bitmap:
+#			see below for restrictions & advice
+#	lj5gray		H-P LaserJet 5 & 6 family, gray-scale bitmap;
+#			see below for restrictions & advice
+# *	lp2563		H-P 2563B line printer
+# *	oce9050		OCE 9050 printer
+#	(pxlmono)	H-P black-and-white PCL XL printers (LaserJet 5 and 6 family)
+#	(pxlcolor)	H-P color PCL XL printers (e.g. Color LaserJet 4500)
 # Fax file format:
 #   ****** NOTE: all of these drivers normally adjust the page size to match
 #   ****** one of the three CCITT standard sizes (U.S. letter with A4 width,
 #   ****** A4, or B4).  To suppress this, use -dAdjustWidth=0.
-#	faxg3	Group 3 fax, with EOLs but no header or EOD
-#	faxg32d  Group 3 2-D fax, with EOLs but no header or EOD
-#	faxg4	Group 4 fax, with EOLs but no header or EOD
-#	tiffcrle  TIFF "CCITT RLE 1-dim" (= Group 3 fax with no EOLs)
-#	tiffg3	TIFF Group 3 fax (with EOLs)
-#	tiffg32d  TIFF Group 3 2-D fax
-#	tiffg4	TIFF Group 4 fax
+#	faxg3		Group 3 fax, with EOLs but no header or EOD
+#	faxg32d		Group 3 2-D fax, with EOLs but no header or EOD
+#	faxg4		Group 4 fax, with EOLs but no header or EOD
+#	tiffcrle	TIFF "CCITT RLE 1-dim" (= Group 3 fax with no EOLs)
+#	tiffg3		TIFF Group 3 fax (with EOLs)
+#	tiffg32d	TIFF Group 3 2-D fax
+#	tiffg4		TIFF Group 4 fax
 # High-level file formats:
-#	epswrite  EPS output (like PostScript Distillery)
-#	pdfwrite  PDF output (like Adobe Acrobat Distiller)
-#	pswrite   PostScript output (like PostScript Distillery)
-#	txtwrite  ASCII or Unicode text output
-#	pxlmono   Black-and-white PCL XL
-#	pxlcolor  Color PCL XL
+#	epswrite	EPS output (like PostScript Distillery)
+#	pdfwrite	PDF output (like Adobe Acrobat Distiller)
+#	pswrite		PostScript output (like PostScript Distillery)
+#	txtwrite	ASCII or Unicode text output
+#	pxlmono 	Black-and-white PCL XL
+#	pxlcolor	Color PCL XL
 # Other raster file formats and devices:
-#	bit	Plain bits, monochrome
-#	bitrgb	Plain bits, RGB
-#	bitcmyk  Plain bits, CMYK
-#	bmpmono	Monochrome MS Windows .BMP file format
-#	bmpgray	8-bit gray .BMP file format
-#	bmpsep1	Separated 1-bit CMYK .BMP file format, primarily for testing
-#	bmpsep8	Separated 8-bit CMYK .BMP file format, primarily for testing
-#	bmp16	4-bit (EGA/VGA) .BMP file format
-#	bmp256	8-bit (256-color) .BMP file format
-#	bmp16m	24-bit .BMP file format
-#	bmp32b  32-bit pseudo-.BMP file format
-#	cgmmono  Monochrome (black-and-white) CGM -- LOW LEVEL OUTPUT ONLY
-#	cgm8	8-bit (256-color) CGM -- DITTO
-#	cgm24	24-bit color CGM -- DITTO
-#	jpeg	JPEG format, RGB output
-#	jpeggray  JPEG format, gray output
-#	jpegcmyk  JPEG format, cmyk output
-#	miff24	ImageMagick MIFF format, 24-bit direct color, RLE compressed
+#	bit		Plain bits, monochrome
+#	bitrgb		Plain bits, RGB
+#	bitcmyk		Plain bits, CMYK
+#	bmpmono		Monochrome MS Windows .BMP file format
+#	bmpgray		8-bit gray .BMP file format
+#	bmpsep1		Separated 1-bit CMYK .BMP file format, primarily for testing
+#	bmpsep8		Separated 8-bit CMYK .BMP file format, primarily for testing
+#	bmp16		4-bit (EGA/VGA) .BMP file format
+#	bmp256		8-bit (256-color) .BMP file format
+#	bmp16m		24-bit .BMP file format
+#	bmp32b		32-bit pseudo-.BMP file format
+#	cgmmono		Monochrome (black-and-white) CGM -- LOW LEVEL OUTPUT ONLY
+#	cgm8		8-bit (256-color) CGM -- DITTO
+#	cgm24		24-bit color CGM -- DITTO
+#	jpeg		JPEG format, RGB output
+#	jpeggray	JPEG format, gray output
+#	jpegcmyk	JPEG format, cmyk output
+#	miff24		ImageMagick MIFF format, 24-bit direct color, RLE compressed
 #	pamcmyk4 	Portable Arbitrary Map file format 4-bit CMYK
 #	pamcmyk32	Portable Arbitrary Map file format 32-bit CMYK
-#	pcxmono	PCX file format, monochrome (1-bit black and white)
-#	pcxgray	PCX file format, 8-bit gray scale
-#	pcx16	PCX file format, 4-bit planar (EGA/VGA) color
-#	pcx256	PCX file format, 8-bit chunky color
-#	pcx24b	PCX file format, 24-bit color (3 8-bit planes)
-#	pcxcmyk PCX file format, 4-bit chunky CMYK color
-#	pbm	Portable Bitmap (plain format)
-#	pbmraw	Portable Bitmap (raw format)
-#	pgm	Portable Graymap (plain format)
-#	pgmraw	Portable Graymap (raw format)
-#	pgnm	Portable Graymap (plain format), optimizing to PBM if possible
-#	pgnmraw	Portable Graymap (raw format), optimizing to PBM if possible
-#	pnm	Portable Pixmap (plain format) (RGB), optimizing to PGM or PBM
-#		 if possible
-#	pnmraw	Portable Pixmap (raw format) (RGB), optimizing to PGM or PBM
-#		 if possible
-#	ppm	Portable Pixmap (plain format) (RGB)
-#	ppmraw	Portable Pixmap (raw format) (RGB)
-#	pkm	Portable inKmap (plain format) (4-bit CMYK => RGB)
-#	pkmraw	Portable inKmap (raw format) (4-bit CMYK => RGB)
-#	pksm	Portable Separated map (plain format) (4-bit CMYK => 4 pages)
-#	pksmraw	Portable Separated map (raw format) (4-bit CMYK => 4 pages)
-# *	plan9bm  Plan 9 bitmap format
-#	pngmono	Monochrome Portable Network Graphics (PNG)
-#	pnggray	8-bit gray Portable Network Graphics (PNG)
-#	png16	4-bit color Portable Network Graphics (PNG)
-#	png256	8-bit color Portable Network Graphics (PNG)
-#	png16m	24-bit color Portable Network Graphics (PNG)
-#	pngalpha 32-bit RGBA color Portable Network Graphics (PNG)
-#	psmono	PostScript (Level 1) monochrome image
-#	psgray	PostScript (Level 1) 8-bit gray image
-#	psrgb	PostScript (Level 2) 24-bit color image
-#	tiffgray  TIFF 8-bit gray, no compression
-#	tiff12nc  TIFF 12-bit RGB, no compression
-#	tiff24nc  TIFF 24-bit RGB, no compression (NeXT standard format)
-#	tiff48nc  TIFF 48-bit RGB, no compression
-#	tiff32nc  TIFF 32-bit CMYK
-#	tiff64nc  TIFF 64-bit CMYK
-#	tiffsep   Creates tiffgray for each colorant plus a CMYK composite
-#	tiffsep1  Creates halftoned tiff 1-bit per pixel for each colorant
-#	tifflzw  TIFF LZW (tag = 5) (monochrome)
-#	tiffpack  TIFF PackBits (tag = 32773) (monochrome)
-#	tiffscaled  TIFF (monochrome output, integer downsampled and dithered from grayscale rendering)
+#	pcxmono		PCX file format, monochrome (1-bit black and white)
+#	pcxgray		PCX file format, 8-bit gray scale
+#	pcx16		PCX file format, 4-bit planar (EGA/VGA) color
+#	pcx256		PCX file format, 8-bit chunky color
+#	pcx24b		PCX file format, 24-bit color (3 8-bit planes)
+#	pcxcmyk		PCX file format, 4-bit chunky CMYK color
+#	pbm		Portable Bitmap (plain format)
+#	pbmraw		Portable Bitmap (raw format)
+#	pgm		Portable Graymap (plain format)
+#	pgmraw		Portable Graymap (raw format)
+#	pgnm		Portable Graymap (plain format), optimizing to PBM if possible
+#	pgnmraw		Portable Graymap (raw format), optimizing to PBM if possible
+#	pnm		Portable Pixmap (plain format) (RGB), optimizing to PGM or PBM
+#			if possible
+#	pnmraw		Portable Pixmap (raw format) (RGB), optimizing to PGM or PBM
+#			if possible
+#	ppm		Portable Pixmap (plain format) (RGB)
+#	ppmraw		Portable Pixmap (raw format) (RGB)
+#	pkm		Portable inKmap (plain format) (4-bit CMYK => RGB)
+#	pkmraw		Portable inKmap (raw format) (4-bit CMYK => RGB)
+#	pksm		Portable Separated map (plain format) (4-bit CMYK => 4 pages)
+#	pksmraw		Portable Separated map (raw format) (4-bit CMYK => 4 pages)
+# *	plan9bm		Plan 9 bitmap format
+#	plib		PLanar Interleaved Band buffer device (24 bit RGB)
+#	plibm		PLanar Interleaved Band buffer device (1 bit Mono)
+#	plibg		PLanar Interleaved Band buffer device (8 bit Gray)
+#	plibc		PLanar Interleaved Band buffer device (32 bit CMYK)
+#	plibk		PLanar Interleaved Band buffer device (4 bit CMYK)
+#	pngmono		Monochrome Portable Network Graphics (PNG)
+#	pngmonod	Monochrome (error diffused) Portable Network Graphics (PNG)
+#	pnggray		8-bit gray Portable Network Graphics (PNG)
+#	png16		4-bit color Portable Network Graphics (PNG)
+#	png256		8-bit color Portable Network Graphics (PNG)
+#	png16m		24-bit color Portable Network Graphics (PNG)
+#	pngalpha	32-bit RGBA color Portable Network Graphics (PNG)
+#	psmono		PostScript (Level 1) monochrome image
+#	psgray		PostScript (Level 1) 8-bit gray image
+#	psrgb		PostScript (Level 2) 24-bit color image
+#	tiffgray	TIFF 8-bit gray, no compression
+#	tiff12nc	TIFF 12-bit RGB, no compression
+#	tiff24nc 	TIFF 24-bit RGB, no compression (NeXT standard format)
+#	tiff48nc	TIFF 48-bit RGB, no compression
+#	tiff32nc	TIFF 32-bit CMYK
+#	tiff64nc 	TIFF 64-bit CMYK
+#	tiffsep		Creates tiffgray for each colorant plus a CMYK composite
+#	tiffsep1	Creates halftoned tiff 1-bit per pixel for each colorant
+#	tifflzw 	TIFF LZW (tag = 5) (monochrome)
+#	tiffpack	TIFF PackBits (tag = 32773) (monochrome)
+#	tiffscaled	TIFF (monochrome output, integer downsampled and dithered from grayscale rendering)
+#	tiffscaled8	TIFF (greyscale output, integer downsampled and dithered from grayscale rendering)
+#	tiffscaled24	TIFF (rgb output, integer downsampled and dithered from rgb rendering)
 
 # Note that MS Windows-specific drivers are defined in pcwin.mak, not here,
 # because they have special compilation requirements that require defining
@@ -1513,6 +1521,10 @@ $(DD)pngmono.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pngmono $(png_)
 	$(ADDMOD) $(DD)pngmono $(png_i_)
 
+$(DD)pngmonod.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
+	$(SETPDEV2) $(DD)pngmonod $(png_)
+	$(ADDMOD) $(DD)pngmonod $(png_i_)
+
 $(DD)pnggray.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)pnggray $(png_)
 	$(ADDMOD) $(DD)pnggray $(png_i_)
@@ -1735,6 +1747,22 @@ tiffscaled_=$(tiffgray_) $(GLOBJ)gdevtsep.$(OBJ) $(GLOBJ)minftrsz.$(OBJ)
 $(DD)tiffscaled.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled_) $(DD)tiffs.dev $(minftrsz_h)
 	$(SETPDEV2) $(DD)tiffscaled $(tiffscaled_)
 	$(ADDMOD) $(DD)tiffscaled -include $(DD)tiffs $(tiff_i_)
+
+# TIFF Scaled 8 (downscaled gray -> gray), configurable compression
+
+tiffscaled8_=$(tiffgray_) $(GLOBJ)gdevtsep.$(OBJ) $(GLOBJ)minftrsz.$(OBJ)
+
+$(DD)tiffscaled8.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled8_) $(DD)tiffs.dev $(minftrsz_h)
+	$(SETPDEV2) $(DD)tiffscaled8 $(tiffscaled8_)
+	$(ADDMOD) $(DD)tiffscaled8 -include $(DD)tiffs $(tiff_i_)
+
+# TIFF Scaled 24 (downscaled rgb -> rgb), configurable compression
+
+tiffscaled24_=$(tiffgray_) $(GLOBJ)gdevtsep.$(OBJ) $(GLOBJ)minftrsz.$(OBJ)
+
+$(DD)tiffscaled24.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffscaled24_) $(DD)tiffs.dev $(minftrsz_h)
+	$(SETPDEV2) $(DD)tiffscaled24 $(tiffscaled8_)
+	$(ADDMOD) $(DD)tiffscaled24 -include $(DD)tiffs $(tiff_i_)
 
 # TIFF RGB, no compression
 

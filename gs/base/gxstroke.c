@@ -696,7 +696,6 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         bool is_closed = ((const subpath *)pseg)->is_closed;
         partial_line pl, pl_prev, pl_first;
         bool zero_length = true;
-        gs_line_cap cap;
 
         flags = nf_all_from_arc;
 
