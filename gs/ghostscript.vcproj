@@ -1,12 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="8.00"
 	Name="ghostscript"
 	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
 	RootNamespace="ghostscript"
 	Keyword="MakeFileProj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -40,46 +39,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="obj"
-			IntermediateDirectory="obj"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
-			Name="Profile|Win32"
-			OutputDirectory="profobj"
-			IntermediateDirectory="profobj"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -100,6 +59,26 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="obj"
+			IntermediateDirectory="obj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|x64"
 			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
@@ -112,6 +91,26 @@
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Profile|Win32"
+			OutputDirectory="profobj"
+			IntermediateDirectory="profobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= profile &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= profilebsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= profileclean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;DEBUG=0;TDEBUG=0;DEBUGSYM=1;HAVE_SSE2=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""

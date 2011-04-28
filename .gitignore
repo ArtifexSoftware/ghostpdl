@@ -8,8 +8,8 @@
 # Ignore Visual Studio local and binary files
 *.pdb
 *.ncb
-# *.suo
-# *.vcproj.*.user
+*.suo
+*.vcproj.*.user
 
 # RJW: I copy GhostPDL.sln to something more memorable in each checkout
 # so VS2005 shows me a sensible 'Recent Projects' list. Ignore the copy.
