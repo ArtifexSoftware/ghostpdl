@@ -578,6 +578,156 @@ static void nop_rop_const_st(rop_run_op *op, byte *d, int len)
 {
 }
 
+/* rop = 0xF0 = t dep=1 s_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          sett_rop_run1_const_s
+#define SPECIFIC_ROP           0xF0
+#define SPECIFIC_CODE(O,D,S,T) do { O = T; } while (0)
+#define S_CONST
+#include "gsroprun1.h"
+#else
+static void sett_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    rop_proc    proc = rop_proc_table[op->rop];
+    byte        lmask, rmask;
+    byte        T, D;
+    const byte *t = op->t.b.ptr;
+    int         t_skew;
+
+    len    = len*op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* See note #1 above. RJW. */
+    t_skew = op->t.b.pos - op->dpos;
+    if (t_skew < 0) {
+        t_skew += 8;
+        t--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = proc(*d, 0, T);
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        t++;
+        D = proc(*d, 0, T);
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (t_skew == 0) {
+            do {
+                *d = proc(*d, 0, *t++);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+                t++;
+                *d = proc(*d, 0, T);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        T = (t[0]<<t_skew) | (t[1]>>(8-t_skew));
+        D = proc(*d, 0, T);
+        *d = (D & ~rmask) | (*d & rmask);
+    }
+}
+#endif
+
+/* rop = 0xCC = s dep=1 t_constant */
+#ifdef USE_TEMPLATES
+#define TEMPLATE_NAME          sets_rop_run1_const_t
+#define SPECIFIC_ROP           0xCC
+#define SPECIFIC_CODE(O,D,S,T) do { O = S; } while (0)
+#define T_CONST
+#include "gsroprun1.h"
+#else
+static void sets_rop_run1_const_s(rop_run_op *op, byte *d, int len)
+{
+    rop_proc    proc = rop_proc_table[op->rop];
+    byte        lmask, rmask;
+    byte        S, D;
+    const byte *s = op->s.b.ptr;
+    int         s_skew;
+
+    len    = len*op->depth + op->dpos;
+    /* lmask = the set of bits to alter in the output bitmap on the left
+     * hand edge of the run. rmask = the set of bits NOT to alter in the
+     * output bitmap on the right hand edge of the run. */
+    lmask  = 255>>(7 & op->dpos);
+    rmask  = 255>>(7 & len);
+
+    /* See note #1 above. RJW. */
+    s_skew = op->s.b.pos - op->dpos;
+    if (s_skew < 0) {
+        s_skew += 8;
+        s--;
+    }
+
+    len -= 8;
+    if (len < 0) {
+        /* Short case - starts and ends in the same byte */
+        lmask &= ~rmask; /* Combined mask = bits to alter */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        D = proc(*d, 0, S);
+        *d = (*d & ~lmask) | (D & lmask);
+        return;
+    }
+    if (lmask != 0xFF) {
+        /* Unaligned left hand case */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        s++;
+        D = proc(*d, 0, S);
+        *d = (*d & ~lmask) | (D & lmask);
+        d++;
+        len -= 8;
+    }
+    if (len >= 0) {
+        /* Simple middle case (complete destination bytes). */
+        if (s_skew == 0) {
+            do {
+                *d = proc(*d, 0, *s++);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        } else {
+            do {
+                S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+                s++;
+                *d = proc(*d, 0, S);
+                d++;
+                len -= 8;
+            } while (len >= 0);
+        }
+    }
+    if (rmask != 0xFF) {
+        /* Unaligned right hand case */
+        S = (s[0]<<s_skew) | (s[1]>>(8-s_skew));
+        D = proc(*d, 0, S);
+        *d = (D & ~rmask) | (*d & rmask);
+    }
+}
+#endif
+
 /* Generic ROP run code */
 #ifdef USE_TEMPLATES
 #define TEMPLATE_NAME          generic_rop_run1
@@ -1525,9 +1675,17 @@ retry:
     case ROP_SPECIFIC_KEY(0xAA, 24, rop_s_constant | rop_t_constant):
         op->run     = nop_rop_const_st;
         break;
+    /* 0xCC = S */
+    case ROP_SPECIFIC_KEY(0xCC, 1, rop_t_constant):
+        op->run     = sets_rop_run1_const_t;
+        break;
     /* 0xEE = D or S */
     case ROP_SPECIFIC_KEY(0xEE, 1, rop_t_constant):
         op->run     = dors_rop_run1_const_t;
+        break;
+    /* 0xF0 = T */
+    case ROP_SPECIFIC_KEY(0xF0, 1, rop_s_constant):
+        op->run     = sett_rop_run1_const_s;
         break;
     /* 0xFA = D or T */
     case ROP_SPECIFIC_KEY(0xFA, 1, rop_s_constant):
