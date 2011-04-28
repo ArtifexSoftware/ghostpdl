@@ -219,7 +219,7 @@ COMPILE_FOR_CONSOLE_EXE=
 GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS) $(SBRFLAGS)
-CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
+CC=$(COMP) /c $(CCFLAGS) $(COMPILE_FULL_OPTIMIZED) @$(GLGENDIR)\ccf32.tr
 CPP=$(COMPCPP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !if $(MAKEDLL)
 WX=$(COMPILE_FOR_DLL)
@@ -236,7 +236,7 @@ ZM=
 
 # /Za disables the MS-specific extensions & enables ANSI mode.
 CC_WX=$(CC) $(WX)
-CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za $(ZM)
+CC_=$(CC_WX) /Za $(ZM)
 CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
