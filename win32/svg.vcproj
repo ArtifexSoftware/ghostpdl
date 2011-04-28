@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="svg"
 	ProjectGUID="{EE2F2672-713B-4609-ABC2-67D3C56E82FB}"
 	RootNamespace="svg"
 	Keyword="MakeFileProj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -39,26 +40,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\svg\obj"
 			IntermediateDirectory="..\svg\obj"
@@ -69,26 +50,6 @@
 				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
 				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
@@ -111,6 +72,46 @@
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;DEBUGSYM=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""

@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="language_switch"
 	ProjectGUID="{135AA27A-6B97-41E4-B172-CD31A2D33C5E}"
 	RootNamespace="language_switch"
 	Keyword="MakeFileProj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -39,26 +40,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN64;_DEBUG;"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="..\language_switch\obj"
 			IntermediateDirectory="..\language_switch\obj"
@@ -79,26 +60,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN64;NDEBUG;"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
 			Name="Profile|Win32"
 			OutputDirectory="..\language_switch\profobj"
 			IntermediateDirectory="..\language_switch\profobj"
@@ -111,6 +72,46 @@
 				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;DEBUGSYM=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN64;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1 &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake /A -f pspcl6_msvc.mak WIN64= DEVSTUDIO= SBR=1  &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= bsc"
+				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak WIN64= DEVSTUDIO= clean"
+				Output=""
+				PreprocessorDefinitions="WIN64;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -143,6 +144,4 @@
 	</References>
 	<Files>
 	</Files>
-	<Globals>
-	</Globals>
 </VisualStudioProject>
