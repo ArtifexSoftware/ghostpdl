@@ -327,10 +327,16 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
         contone_out_posit = 0; /* Our index out */
         for (j = num_contone; j > 0; j--) {
             byte c = *contone_ptr;
-            for (w = local_widths[curr_position]; w > 0; w--) {
-                contone[contone_out_posit] = c;
+            /* The microsoft compiler, cleverly spots that the following loop
+             * can be replaced by a memset. Unfortunately, it can't spot that
+             * the typical length values of the memset are so small that we'd
+             * be better off doing it the slow way. We therefore introduce a
+             * sneaky 'volatile' cast below that stops this optimisation. */
+            w = local_widths[curr_position];
+            do {
+                ((volatile byte *)contone)[contone_out_posit] = c;
                 contone_out_posit++;
-            }
+            } while (--w);
 #ifdef PACIFY_VALGRIND
             if (extra)
                 memset(contone+contone_out_posit, 0, extra);
