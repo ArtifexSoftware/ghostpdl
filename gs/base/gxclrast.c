@@ -2119,13 +2119,19 @@ idata:                  data_size = 0;
     gx_monitor_leave(cdev->icc_cache_cl->lock);	/* done with increment, let everyone run */
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {
-#ifdef DEBUG
         if (target->rc.ref_count != 1) {
-            eprintf("Compositor ref count incorrect in clist_playback_band\n");
+            /* This can occur if we are coming from a pattern clist that 
+               includes transparency.  In this case, we do not want to 
+               free the compositor since it is really the main target that
+               we are tiling into.  i.e. the tile itself does not have 
+               a pdf14 device, but rather we push a trans group, draw and
+               then pop the group to properly blend */
+            rc_decrement(target, "gxclrast(target compositor)");
+        } else { 
+            /* Ref count was 1. close the device and then free it */
+            dev_proc(target, close_device)(target);
+            gs_free_object(target->memory, target, "gxclrast discard compositor");
         }
-#endif
-        dev_proc(target, close_device)(target);
-        gs_free_object(target->memory, target, "gxclrast discard compositor");
         target = orig_target;
     }
     if (code < 0) {
