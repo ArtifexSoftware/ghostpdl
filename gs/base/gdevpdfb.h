@@ -233,6 +233,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* accumulating_substream_resource */
  {0,0,0,0,0,0,0,0,0},		/* charproc_ctm */
  0,				/* charproc_just_accumulated */
+ 0,				/* type3_accum_status */
  0,				/* accumulating_a_global_object */
  0,				/* cgp */
  0,				/* substituted_pattern_count */

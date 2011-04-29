@@ -18,14 +18,14 @@
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
-#include "gdevpdfo.h"		/* for data stream */
+#include "gdevpdfo.h"                /* for data stream */
 #include "gxcspace.h"
 #include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gxhldevc.h"
 #include "gxchar.h"
-#include "gdevpdtf.h"		/* Required to include gdevpdti.h */
-#include "gdevpdti.h"		/* For pdf_charproc_x_offset */
+#include "gdevpdtf.h"                /* Required to include gdevpdti.h */
+#include "gdevpdti.h"                /* For pdf_charproc_x_offset */
 #include "gsptype1.h"
 
 /* We need this color space type for constructing temporary color spaces. */
@@ -140,6 +140,30 @@ pdf_copy_mono(gx_device_pdf *pdev,
     int x_offset, y_offset;
     double width;
 
+    if(id != gx_no_bitmap_id && sourcex == 0 && show_enum &&
+        pdev->type3_accum_status == 1)
+    {
+        /* We should only get here if we had started accumulating a type 3 CharProc
+         * but ended up rendering an existing cached glyph. This can happen if
+         * we glyphshow a type 3 glyph, and the glyph does not exist so we use
+         * the /.notdef *and* we've already cached the /.notdef. In this case
+         * we want to abort the charproc accumulation.
+         * Ideally we would note that in the text enumerator, but that's a
+         * pdfwrite text enumerator, and we can't access that here. So in a
+         * rather kludgy manner we pas the status to and fro via the device.
+         * QL CET 136-01.ps exhibits this.
+         */
+        pdf_resource_t *pres = pdev->accumulating_substream_resource;
+
+        code = pdf_exit_substream(pdev);
+        if (code < 0)
+            return code;
+        code = pdf_cancel_resource(pdev, pres, resourceCharProc);
+        if (code < 0)
+            return code;
+        pdf_forget_resource(pdev, pres, resourceCharProc);
+        pdev->type3_accum_status = 2;
+    }
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
         code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -162,7 +186,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
             else
                 pdev->char_width.x = fixed2float(show_enum->wxy.x);
             pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
-            if (pres == 0) {	/* Define the character in an embedded font. */
+            if (pres == 0) {        /* Define the character in an embedded font. */
                 gs_image_t_init_mask(&image, false);
                 invert = 0xff;
                 x_offset = x - (int)show_enum->pis->current_point.x;
@@ -318,7 +342,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
         switch ((code = pdf_end_write_image(pdev, &writer))) {
-            default:		/* error */
+            default:                /* error */
                 return code;
             case 1:
                 return 0;
@@ -327,11 +351,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
                                     true);
         }
     }
-    writer.end_string = "";	/* no Q */
+    writer.end_string = "";        /* no Q */
     switch ((code = pdf_end_write_image(pdev, &writer))) {
-    default:		/* error */
+    default:                /* error */
         return code;
-    case 0:			/* not possible */
+    case 0:                        /* not possible */
         return_error(gs_error_Fatal);
     case 1:
         break;
@@ -383,7 +407,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     bool in_line;
 
     if (code < 0)
-        return code;		/* can't happen */
+        return code;                /* can't happen */
     gs_image_t_init(pim, pcs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;
@@ -466,7 +490,7 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
                                &image, &writer, 0);
     switch (code) {
         default:
-            return code;	/* error */
+            return code;        /* error */
         case 1:
             return 0;
         case 0:
@@ -598,10 +622,10 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                              tile_id, 0, 0, tw, th, &image, &writer, -1);
             switch (code) {
             default:
-                return code;	/* error */
+                return code;        /* error */
             case 1:
                 break;
-            case 0:			/* not possible */
+            case 0:                        /* not possible */
                 return_error(gs_error_Fatal);
             }
             end = pdf_stell(pdev);

@@ -26,7 +26,7 @@
 #include "gdevpdtw.h"
 #include "gdevpdtt.h"
 #include "gdevpdfo.h"
-#include "gxchar.h"	/* For gs_show_enum */
+#include "gxchar.h"        /* For gs_show_enum */
 
 /* ---------------- Private ---------------- */
 
@@ -35,10 +35,10 @@
 struct pdf_char_proc_s {
     pdf_resource_common(pdf_char_proc_t);
     pdf_char_proc_ownership_t *owner_fonts; /* fonts using this charproc. */
-    int y_offset;		/* of character (0,0) */
-    int x_offset;		/* of character (0,0) */
+    int y_offset;                /* of character (0,0) */
+    int x_offset;                /* of character (0,0) */
     gs_point real_width;        /* Not used with synthesised bitmap fonts. */
-    gs_point v;			/* Not used with synthesised bitmap fonts. */
+    gs_point v;                        /* Not used with synthesised bitmap fonts. */
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
@@ -48,11 +48,11 @@ gs_public_st_suffix_add1(st_pdf_char_proc, pdf_char_proc_t,
 
 struct pdf_char_proc_ownership_s {
     pdf_char_proc_t *char_proc;
-    pdf_char_proc_ownership_t *font_next;	/* next char_proc for same font */
-    pdf_char_proc_ownership_t *char_next;	/* next char_proc for same charproc */
+    pdf_char_proc_ownership_t *font_next;        /* next char_proc for same font */
+    pdf_char_proc_ownership_t *char_next;        /* next char_proc for same charproc */
     pdf_font_resource_t *font;
-    gs_char char_code;		/* Character code in PDF font. */
-    gs_glyph glyph;		/* Glyph id in Postscript font. */
+    gs_char char_code;                /* Character code in PDF font. */
+    gs_glyph glyph;                /* Glyph id in Postscript font. */
     gs_const_string char_name;
     bool duplicate_char_name;
 };
@@ -563,7 +563,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
  */
 int
 pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-                gs_text_cache_control_t control, gs_char ch)
+                gs_text_cache_control_t control, gs_char ch, bool scale_100)
 {
     pdf_font_resource_t *pdfont;
     pdf_resource_t *pres = pdev->accumulating_substream_resource;
@@ -599,9 +599,11 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
      * operator. We write the scale matrix here because this is *after* the
      * 'd1' has been emitted above, and so does not affect it.
      */
-    code = stream_puts(pdev->strm, "0.01 0 0 0.01 0 0 cm\n");
-    if (code < 0)
-        return code;
+    if (scale_100) {
+        code = stream_puts(pdev->strm, "0.01 0 0 0.01 0 0 cm\n");
+        if (code < 0)
+            return code;
+    }
     return 0;
 }
 
