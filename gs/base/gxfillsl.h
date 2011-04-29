@@ -217,7 +217,7 @@ TEMPLATE_spot_into_scanlines (line_list *ll, fixed band_mask)
             } else
                 y_min = y;
 
-            /* Process horisontal segments */
+            /* Process horizontal segments */
 
             for (alp = ll->h_list0; alp != NULL; alp = alp->next) {
                 fixed x0 = min(alp->start.x, alp->end.x);
