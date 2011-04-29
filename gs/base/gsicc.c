@@ -357,13 +357,13 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
         if_debug0('c',"[c]ICC remap [ ");
         for (k = 0; k < num_src_comps; k++) {
             if_debug1('c', "%d ",psrc[k]);
-}
+        }
         if_debug0('c',"] --> [ ");
         for (k = 0; k < num_des_comps; k++) {
             if_debug1('c', "%d ",psrc_temp[k]);
-}
+        }
         if_debug0('c',"]\n");
-}
+    }
 #endif
     /* Release the link */
     gsicc_release_link(icc_link);

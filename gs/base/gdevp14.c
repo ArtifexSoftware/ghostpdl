@@ -1947,7 +1947,7 @@ pdf14_fill_path(gx_device *dev,	const gs_imager_state *pis,
             return code;
         }
     }
-   if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
            pinst->saved->has_transparency = true;
@@ -3039,8 +3039,8 @@ pdf14_create_compositor(gx_device * dev, gx_device * * pcdev,
         const gs_composite_t * pct, gs_imager_state * pis,
         gs_memory_t * mem, gx_device *cdev)
 {
-        pdf14_device *p14dev = (pdf14_device *)dev;
-        if (gs_is_pdf14trans_compositor(pct)) {
+    pdf14_device *p14dev = (pdf14_device *)dev;
+    if (gs_is_pdf14trans_compositor(pct)) {
         const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
         *pcdev = dev;
         /* cdev, may be the clist reader device which may contain information that
