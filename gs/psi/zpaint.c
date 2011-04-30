@@ -68,6 +68,26 @@ zimagepath(i_ctx_t *i_ctx_p)
     return code;
 }
 
+static int
+zstrokeafterfill(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int state;
+
+    switch (r_type(op)) {
+        case t_boolean:
+            state = op->value.boolval;
+            break;
+        case t_integer:
+            state = op->value.intval;
+            break;
+        default:
+            return_op_typecheck(op);
+    }
+    gs_set_stroke_after_fill(igs, state);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zpaint_op_defs[] =
@@ -78,5 +98,6 @@ const op_def zpaint_op_defs[] =
                 /* Non-standard operators */
     {"0.fillpage", zfillpage},
     {"3.imagepath", zimagepath},
+    {"1.strokeafterfill", zstrokeafterfill},
     op_def_end(0)
 };

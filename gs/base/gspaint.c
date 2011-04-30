@@ -520,3 +520,9 @@ gs_strokepath2(gs_state * pgs)
 {
     return gs_strokepath_aux(pgs, false);
 }
+
+void
+gs_set_stroke_after_fill(gs_state *pgs, int state)
+{
+    pgs->stroke_after_fill = !!state;
+}

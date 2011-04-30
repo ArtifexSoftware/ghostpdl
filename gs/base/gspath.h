@@ -80,6 +80,10 @@ int gs_currentpoint(gs_state *, gs_point *),
       gs_strokepath(gs_state *),
       gs_strokepath2(gs_state *);
 
+/* Horrid hack to allow us to know we are doing the stroking part of a
+ * combined "fill then stroke" operation. */
+void gs_set_stroke_after_fill(gs_state *, int);
+
 /* The extra argument for gs_upathbbox controls whether to include */
 /* a trailing moveto in the bounding box. */
 #define gs_pathbbox(pgs, prect)\
