@@ -963,6 +963,7 @@ currentdict /ICCBased-resolve undef
     2 index /Resources knownoget { oforce } { 0 dict } ifelse
     /.pdfpaintproc cvx
   ] cvx put
+  dup /BBox 2 copy knownoget { normrect put } { pop pop } ifelse
   dup /.pattern_uses_transparency  1 index patternusestransparency put
   PDFDEBUG { pdfdict /PDFSTEPcount .knownget { 1 le } { //true } ifelse { (%Pattern: ) print dup === flush } if } if
 } bdef
