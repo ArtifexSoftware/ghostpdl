@@ -4927,6 +4927,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\base\gxdevsop.h"
+					>
+				</File>
+				<File
 					RelativePath="base\gxdht.h"
 					>
 				</File>
