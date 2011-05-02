@@ -601,7 +601,7 @@ in:                             /* Initialize for a new page. */
     /* Need to lock during the increment of the link cache */
     gx_monitor_enter(cdev->icc_cache_cl->lock);
     rc_increment(cdev->icc_cache_cl);
-    gx_monitor_leave(cdev->icc_cache_cl->lock);	/* let everyone run */
+    gx_monitor_leave(cdev->icc_cache_cl->lock); /* let everyone run */
     if (code < 0)
         goto out;
 
@@ -2116,18 +2116,18 @@ idata:                  data_size = 0;
        race conditions lock the cache */
     gx_monitor_enter(cdev->icc_cache_cl->lock);
     gs_imager_state_release(&imager_state);
-    gx_monitor_leave(cdev->icc_cache_cl->lock);	/* done with increment, let everyone run */
+    gx_monitor_leave(cdev->icc_cache_cl->lock); /* done with increment, let everyone run */
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
     if (target != orig_target) {
         if (target->rc.ref_count != 1) {
-            /* This can occur if we are coming from a pattern clist that 
-               includes transparency.  In this case, we do not want to 
+            /* This can occur if we are coming from a pattern clist that
+               includes transparency.  In this case, we do not want to
                free the compositor since it is really the main target that
-               we are tiling into.  i.e. the tile itself does not have 
+               we are tiling into.  i.e. the tile itself does not have
                a pdf14 device, but rather we push a trans group, draw and
                then pop the group to properly blend */
             rc_decrement(target, "gxclrast(target compositor)");
-        } else { 
+        } else {
             /* Ref count was 1. close the device and then free it */
             dev_proc(target, close_device)(target);
             gs_free_object(target->memory, target, "gxclrast discard compositor");
@@ -2762,7 +2762,17 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
      */
     code = dev_proc(tdev, create_compositor)(tdev, &tdev, pcomp, pis, mem, (gx_device*) cdev);
     if (code >= 0 && tdev != *ptarget) {
-        *ptarget = tdev;
+        /* If we created a new compositor here, then that new compositor should
+         * become the device to which we send all future drawing requests. If
+         * the above create_compositor call found an existing compositor
+         * already in the chain of devices (such as might happen when we are
+         * playing back a clist based pattern, and the top device is a clip
+         * device that forwards to a pdf14 device), then we'll just reuse
+         * that one. We do not want to send new drawing operations to the
+         * compositor, as that will sidestep the clipping. We therefore check
+         * the reference count to see if this is a new device or not. */
+        if (tdev->rc.ref_count == 1)
+            *ptarget = tdev;
     }
     if (code < 0)
         return code;
