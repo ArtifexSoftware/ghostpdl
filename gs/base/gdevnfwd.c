@@ -62,6 +62,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, sync_output, gx_forward_sync_output);
     fill_dev_proc(dev, output_page, gx_forward_output_page);
     /* NOT close_device */
+    fill_dev_proc(dev, map_rgb_color, gx_forward_map_rgb_color);
     fill_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
     /* NOT fill_rectangle */
     /* NOT tile_rectangle */
@@ -140,7 +141,7 @@ gx_forward_close_device(gx_device * dev)
                        : dev_proc(tdev, close_device)(tdev);
 
     if (tdev)
-        tdev->is_open = false;		/* flag corresponds to the state */
+        tdev->is_open = false;          /* flag corresponds to the state */
     return code;
 }
 
@@ -753,7 +754,7 @@ gx_forward_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value c
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
-    if (tdev == 0)	/* If no device - just clear the color values */
+    if (tdev == 0)      /* If no device - just clear the color values */
         memset(colors, 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));
     else
         dev_proc(tdev, decode_color)(tdev, cindex, colors);
@@ -943,7 +944,7 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
         gx_forward_get_xfont_procs,\
         gx_forward_get_xfont_device,\
         gx_forward_map_rgb_alpha_color,\
-        get_page_device,	/* differs */\
+        get_page_device,        /* differs */\
         gx_default_get_alpha_bits,\
         null_copy_alpha,\
         gx_forward_get_band,\
@@ -968,15 +969,15 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
         gx_forward_get_hardware_params,\
         gx_default_text_begin,\
         gx_default_finish_copydevice,\
-        NULL,				/* begin_transparency_group */\
-        NULL,				/* end_transparency_group */\
-        NULL,				/* begin_transparency_mask */\
-        NULL,				/* end_transparency_mask */\
-        NULL,				/* discard_transparency_layer */\
-        gx_default_DevGray_get_color_mapping_procs,	/* get_color_mapping_procs */\
+        NULL,                           /* begin_transparency_group */\
+        NULL,                           /* end_transparency_group */\
+        NULL,                           /* begin_transparency_mask */\
+        NULL,                           /* end_transparency_mask */\
+        NULL,                           /* discard_transparency_layer */\
+        gx_default_DevGray_get_color_mapping_procs,     /* get_color_mapping_procs */\
         gx_default_DevGray_get_color_comp_index,/* get_color_comp_index */\
-        gx_default_gray_fast_encode,		/* encode_color */\
-        null_decode_color,		/* decode_color */\
+        gx_default_gray_fast_encode,            /* encode_color */\
+        null_decode_color,              /* decode_color */\
         NULL, /* pattern_manage */\
         gx_default_fill_rectangle_hl_color,\
         gx_default_include_color_space,\
@@ -997,7 +998,7 @@ const gx_device_null gs_null_device = {
                                   0, 0, 72, 72),
     null_procs(gx_forward_upright_get_initial_matrix, /* upright matrix */
                gx_default_get_page_device     /* not a page device */ ),
-    0				/* target */
+    0                           /* target */
 };
 
 const gx_device_null gs_nullpage_device = {
@@ -1005,7 +1006,7 @@ std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
                               72 /*nominal */ , 72 /*nominal */ , 72, 72),
     null_procs( gx_forward_get_initial_matrix, /* default matrix */
                 gx_page_device_get_page_device /* a page device */ ),
-    0				/* target */
+    0                           /* target */
 };
 
 static void
