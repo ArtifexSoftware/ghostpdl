@@ -572,6 +572,7 @@ in:                             /* Initialize for a new page. */
     }
     state_tile.id = gx_no_bitmap_id;
     state_tile.shift = state_tile.rep_shift = 0;
+    state_tile.size.x = state_tile.size.y = 0;
     tile_phase.x = color_phase.x = x0;
     tile_phase.y = color_phase.y = y0;
     gx_path_init_local(&path, mem);
