@@ -227,7 +227,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
        length = ff->get_glyph(ff, a_index, a_info->glyph_data, (ushort)a_info->glyph_data_length);
        if (length == -1) {
            ff->char_data = saved_char_data;
-           return FT_Err_Invalid_File_Format;
+           return FT_Err_Unknown_File_Format;
        }
 
        /* If the buffer was too small enlarge it and try again. */
@@ -246,7 +246,7 @@ get_fapi_glyph_data(FT_Incremental a_info, FT_UInt a_index, FT_Data *a_data)
             ff->char_data = saved_char_data;
             length = ff->get_glyph(ff, a_index, a_info->glyph_data, length);
             if (length == -1)
-                return FT_Err_Invalid_File_Format;
+                return FT_Err_Unknown_File_Format;
         }
 
         /* Set the returned pointer and length. */
@@ -435,7 +435,7 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
             ft_error = FT_Load_Glyph(ft_face, index, FT_LOAD_MONOCHROME | FT_LOAD_NO_HINTING | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN);
-            if (ft_error == FT_Err_Invalid_File_Format)
+            if (ft_error == FT_Err_Unknown_File_Format)
                 return index+1;
         }
     }
