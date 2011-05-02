@@ -379,6 +379,133 @@ static void *bmp_read(ImageReader *im,
     return data;
 }
 
+static int skip_bytes(FILE *file, int count)
+{
+    int c;
+    while (count--)
+    {
+        c = fgetc(file);
+        if (c == EOF)
+            return c;
+    }
+    return 0;
+}
+
+static int get_int(FILE *file, int rev)
+{
+    int c;
+
+    if (rev) {
+        c  = fgetc(file)<<24;
+        c |= fgetc(file)<<16;
+        c |= fgetc(file)<<8;
+        c |= fgetc(file);
+    } else {
+        c  = fgetc(file);
+        c |= fgetc(file)<<8;
+        c |= fgetc(file)<<16;
+        c |= fgetc(file)<<24;
+    }
+    return c;
+}
+
+static void *cups_read(ImageReader *im,
+                       int         *width,
+                       int         *height,
+                       int         *span,
+                       int         *bpp,
+                       int         *cmyk,
+                       int          rev)
+{
+    unsigned char *data, *d;
+    int            c, x, y, b, bpc, bpl;
+
+    if (skip_bytes(im->file, 372) == EOF)
+        return NULL;
+    *width  = get_int(im->file, rev);
+    *height = get_int(im->file, rev);
+    if (skip_bytes(im->file, 4) == EOF)
+        return NULL;
+    bpc  = get_int(im->file, rev);
+    if (get_int(im->file, rev) != 1) {
+        fprintf(stderr, "Only 1bpp cups files for now!\n");
+        return NULL;
+    }
+    bpl = get_int(im->file, rev);
+    if (get_int(im->file, rev) != 0) {
+        fprintf(stderr, "Only chunky cups files for now!\n");
+        return NULL;
+    }
+    if (get_int(im->file, rev) != 3) {
+        fprintf(stderr, "Only black cups files for now!\n");
+        return NULL;
+    }
+    if (get_int(im->file, rev) != 0) {
+        fprintf(stderr, "Only uncompressed cups files for now!\n");
+        return NULL;
+    }
+    if (skip_bytes(im->file, 12) == EOF)
+        return NULL;
+    if (get_int(im->file, rev) != 1) {
+        fprintf(stderr, "Only num_colors=1 cups files for now!\n");
+        return NULL;
+    }
+    if (skip_bytes(im->file, 1796-424) == EOF)
+        return NULL;
+
+    d = data = Malloc(*width * *height * 4);
+    *span = *width * 4;
+    *bpp = 32;
+    for (y = *height; y > 0; y--) {
+        b = 0;
+        c = 0;
+        for (x = *width; x > 0; x--) {
+            b >>= 1;
+            if (b == 0) {
+                c = fgetc(im->file);
+                b = 0x80;
+            }
+            if (c & b) {
+                *d++ = 255;
+                *d++ = 255;
+                *d++ = 255;
+                *d++ = 0;
+            } else {
+                *d++ = 0;
+                *d++ = 0;
+                *d++ = 0;
+                *d++ = 0;
+            }
+        }
+        skip_bytes(im->file, bpl-((*width+7)>>3));
+    }
+
+    /* No CMYK cups support */
+    *cmyk = 0;
+
+    return data;
+}
+
+static void *cups_read_le(ImageReader *im,
+                          int         *width,
+                          int         *height,
+                          int         *span,
+                          int         *bpp,
+                          int         *cmyk)
+{
+    return cups_read(im, width, height, span, bpp, cmyk, 0);
+}
+
+static void *cups_read_be(ImageReader *im,
+                          int         *width,
+                          int         *height,
+                          int         *span,
+                          int         *bpp,
+                          int         *cmyk)
+{
+    return cups_read(im, width, height, span, bpp, cmyk, 1);
+}
+
 static void skip_to_eol(FILE *file)
 {
     int c;
@@ -932,12 +1059,23 @@ static void image_open(ImageReader *im,
         im->read = png_read;
         ungetc(137, im->file);
 #endif
+    } else if ((type == '3') || (type == 'R')) {
+        type |= (fgetc(im->file)<<8);
+        type |= (fgetc(im->file)<<16);
+        type |= (fgetc(im->file)<<24);
+        if (type == 0x52615333)
+            im->read = cups_read_le;
+        else if (type == 0x33536152)
+            im->read = cups_read_be;
+        else
+            goto fail;
     } else {
         type |= (fgetc(im->file)<<8);
         if (type == 0x4d42) { /* BM */
             /* BMP format; Win v2 or above */
             im->read = bmp_read;
         } else {
+        fail:
             fprintf(stderr, "%s: Unrecognised image type\n", filename);
             exit(EXIT_FAILURE);
         }
