@@ -320,7 +320,6 @@ zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
 
     if (!gray_cs)
         return_error(e_VMerror);
-    params.ColorSpace = gray_cs;	/* per PDF spec, Image SMask is alway DeviceGray */
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
     code = gs_begin_transparency_mask(igs, &params, &bbox, true);
     if (code < 0)
