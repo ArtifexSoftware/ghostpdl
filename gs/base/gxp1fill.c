@@ -673,7 +673,7 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
     if (fill_trans_buffer->has_shape) {
         ptr_out = buff_out + fill_trans_buffer->n_chan * fill_trans_buffer->planestride;
         for (jj = 0; jj < h; jj++,ptr_out += fill_trans_buffer->rowstride) {
-            memset(ptr_out_temp, 255, w);
+            memset(ptr_out, 255, w);
         }
     }
 }
