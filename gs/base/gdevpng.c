@@ -298,6 +298,8 @@ png_get_params_downscale(gx_device * dev, gs_param_list * plist)
     int code, ecode;
 
     ecode = 0;
+    if (pdev->downscale_factor < 1)
+        pdev->downscale_factor = 1;
     if ((code = param_write_int(plist, "DownScaleFactor", &pdev->downscale_factor)) < 0)
         ecode = code;
 
