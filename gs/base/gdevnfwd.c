@@ -776,6 +776,12 @@ gx_forward_dev_spec_op(gx_device * dev, int dev_spec_op, void *data, int size)
     } else if (dev_spec_op == gxdso_pattern_handles_clip_path) {
         if (dev->procs.fill_path == gx_default_fill_path)
             return 0;
+    } else if (dev_spec_op == gxdso_device_child) {
+        gxdso_device_child_request *d = (gxdso_device_child_request *)data;
+        if (d->target == dev) {
+            d->target = fdev->target;
+            return 1;
+        }
     }
     return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
 }
@@ -1150,3 +1156,34 @@ fwd_get_target_cmap_procs(gx_device * dev)
     }
     return pprocs;
 }
+
+#ifdef DEBUG
+static void do_device_dump(gx_device *dev, int n)
+{
+    int i, ret;
+    gxdso_device_child_request data;
+
+    /* Dump the details of device dev */
+    for (i = 0; i < n; i++)
+        dlprintf(" ");
+    if (dev == NULL) {
+        dlprintf("NULL\n");
+        return;
+    }
+    dlprintf3("%x(%d) = '%s'\n", dev, dev->rc.ref_count, dev->dname);
+
+    data.n = 0;
+    do {
+        data.target = dev;
+        ret = dev_proc(dev, dev_spec_op)(dev, gxdso_device_child, &data, sizeof(data));
+        if (ret > 0)
+            do_device_dump(data.target, n+1);
+    } while ((ret > 0) && (data.n != 0));
+}
+
+void gx_device_dump(gx_device *dev, const char *text)
+{
+    dlprintf1("%s", text);
+    do_device_dump(dev, 0);
+}
+#endif

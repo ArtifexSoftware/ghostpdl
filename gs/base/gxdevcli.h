@@ -1720,4 +1720,8 @@ const gx_device_type dtname = { &stype, initproc }
 
 /*dev_type_proc_initialize(gdev_initialize); */
 
+#ifdef DEBUG
+void gx_device_dump(gx_device *dev, const char *text);
+#endif
+
 #endif /* gxdevcli_INCLUDED */

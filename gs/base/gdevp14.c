@@ -4560,6 +4560,14 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         return 1;
     if (dev_spec_op == gxdso_is_pdf14_device)
         return 1;
+    if (dev_spec_op == gxdso_device_child) {
+        pdf14_device *dev = (pdf14_device *)pdev;
+        gxdso_device_child_request *d = (gxdso_device_child_request *)data;
+        if (d->target == pdev) {
+            d->target = dev->target;
+            return 1;
+        }
+    }
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 

@@ -107,6 +107,13 @@
  *         size = (int)(gx_bitmap_id)id;
  */
 
+/* Request data block for gxdso_device_child */
+typedef struct gxdso_device_child_request_s
+{
+    gx_device *target;
+    int        n;
+} gxdso_device_child_request;
+
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.
@@ -199,7 +206,27 @@ enum {
      *      size = 0
      * Returns 1 if the device's native format is planar
      */
-     gxdso_is_native_planar,
+    gxdso_is_native_planar,
+
+    /* gxdso_device_child:
+     *      data = pointer to gxdso_device_child_request struct
+     *      size = sizeof(gxdso_device_child_request)
+     * Returns 1 if found.
+     * Call with target = device, n = 0 initially, or value returned from
+     * previous call.
+     * If a device X is called with data->target == X:
+     *    If data->n == 0: fills in data->target with the address of the
+     *                     first device child target. Fill in data->n with 0
+     *                     if no more children, or a continuation value.
+     *    If data->n != 0: data->n is a continuation value previously
+     *                     returned. Set data->target to the next device
+     *                     child target. Set data->n to 0 if no more, or
+     *                     another continuation value.
+     * Else:
+     *    call each child device in turn until one returns a non zero result.
+     *    Or return 0 if none do.
+     */
+    gxdso_device_child,
 
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
