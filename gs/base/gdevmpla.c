@@ -576,6 +576,7 @@ mem_planar_copy_plane(gx_device * dev, const byte * base, int sourcex,
     if ((plane < 0) || (plane >= mdev->num_planes))
         return gs_error_rangecheck;
     MEM_SAVE_PARAMS(mdev, save);
+    mdev->line_ptrs += mdev->height * plane;
     plane_depth = mdev->planes[plane].depth;
     mdproto = gdev_mem_device_for_bits(plane_depth);
     if (plane_depth == 1)
