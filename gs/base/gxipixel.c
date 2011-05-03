@@ -710,6 +710,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
                                    (penum->clip_dev != 0 ?
                                     (gx_device *) penum->clip_dev :
                                     dev), lop, pdcolor);
+        gx_device_retain((gx_device *)rtdev, true);
         penum->rop_dev = rtdev;
     }
     return 0;
