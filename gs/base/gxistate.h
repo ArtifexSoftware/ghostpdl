@@ -271,7 +271,6 @@ typedef struct gs_xstate_trans_flags {
         CUSTOM_COLOR_PTR	/* Pointer to custom color callback struct */\
         const gx_color_map_procs *\
           (*get_cmap_procs)(const gs_imager_state *, const gx_device *);\
-        bool stroke_after_fill; /* True, if we are in the process of performing the stroke part of a stroke and fill operation */\
         gs_color_rendering_state_common
 #define st_imager_state_num_ptrs\
   (st_line_params_num_ptrs + st_cr_state_num_ptrs + 6)
@@ -303,7 +302,7 @@ struct gs_imager_state_s {
 { 1.0 }, { 1.0 }, {0, 0}, 0, 0/*false*/, 0, 0, 0, 0, 0/*false*/, 0, 0, 0/*false*/, 0, 0, 1.0,  \
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 0/*false*/, 1.0,\
   1, 0, 0, 0, INIT_CUSTOM_COLOR_PTR	/* 'Custom color' callback pointer */  \
-  gx_default_get_cmap_procs, 0/*false*/
+  gx_default_get_cmap_procs
 
 /* The imager state structure is public only for subclassing. */
 #define public_st_imager_state()	/* in gsistate.c */\
