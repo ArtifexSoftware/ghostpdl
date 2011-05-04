@@ -353,15 +353,27 @@ pdfdict begin
   /R { /resolveR cvx 3 packedarray cvx } bind	% see Objects below
 .dicttomark readonly def
 
-% Because of EOL conversion, lines with fixed contents might be followed
-% by one or more blanks.
-/lineeq			% <filestr> <conststr> lineeq <bool>
- { anchorsearch
-    { pop { ( ) anchorsearch not { () eq exit } if pop } loop }
-    { pop //false }
-   ifelse
- } bind def
-/linene { lineeq not } bind def
+% After reading entry count: skip whitespace, exit on a digit
+% (presumably the object offset, otherwise throw /syntaxerror
+/xref-char-dict <<
+   0  {}        % \000
+   9  1 index   % \t
+  10  1 index   % \r
+  12  1 index   % \f
+  13  1 index   % \n
+  32  1 index   % ' '
+  
+  48  { exit } bind % '0'
+  49  1 index   % '1'
+  50  1 index   % '2'
+  51  1 index   % '3'
+  52  1 index   % '4'
+  53  1 index   % '5'
+  54  1 index   % '6'
+  55  1 index   % '7'
+  56  1 index   % '8'
+  57  1 index   % '9'
+>> readonly def
 
  %  Read original version (pre PDF 1.5) of the xref table.
  %  Note:  The position is the location of 'xref'.  The current PDFfile
@@ -372,17 +384,19 @@ pdfdict begin
    0				% Initialize xref table error counter
    { PDFfile token pop		% first object # or trailer
      dup /trailer eq { pop exit } if
-     PDFfile pdfstring readline pop
-     token pop			% entry count
+     PDFfile token pop		% entry count
+ 
      % remaining must be whitespace only (otherwise this xref Size was invalid.
-     exch dup length 0 ne {
-       //false 1 index { 32 gt { pop //true exit } if } forall {
+     { PDFfile (0) .peekstring not { pop exit } if
+       0 get //xref-char-dict exch .knownget {
+         exec
+       } {
          (   **** Warning: xref subsection header has extra characters.\n)
          pdfformaterror
          /setxrefentry cvx /syntaxerror signalerror
-       } if
-     } if
-     pop			% remove last
+       } ifelse
+       PDFfile read { pop } { exit } ifelse
+     } loop
                 % This section might be adding new objects:
                 % ensure that Objects and Generations are big enough.
                 % stack: <err count> <first obj> <entry count>
@@ -428,6 +442,8 @@ pdfdict begin
    /dictlevelcount 0 def
    PDFfile traileropdict .pdfrun
  } bind def
+
+currentdict /xref-char-dict undef
 
  % This dicitonary is used to read the xref dictionary.  It should work for
  % reading any dictionary.  dictlevelcount must contain 0.
