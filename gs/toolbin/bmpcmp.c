@@ -419,6 +419,7 @@ static void *cups_read(ImageReader *im,
 {
     unsigned char *data, *d;
     int            c, x, y, b, bpc, bpl;
+    int            colspace;
 
     if (skip_bytes(im->file, 372) == EOF)
         return NULL;
@@ -436,8 +437,9 @@ static void *cups_read(ImageReader *im,
         fprintf(stderr, "Only chunky cups files for now!\n");
         return NULL;
     }
-    if (get_int(im->file, rev) != 3) {
-        fprintf(stderr, "Only black cups files for now!\n");
+    colspace = get_int(im->file, rev);
+    if ((colspace != 0) && (colspace != 3)) {
+        fprintf(stderr, "Only gray/black cups files for now!\n");
         return NULL;
     }
     if (get_int(im->file, rev) != 0) {
