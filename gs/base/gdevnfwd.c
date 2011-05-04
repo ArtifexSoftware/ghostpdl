@@ -898,9 +898,20 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
-    return (tdev == 0 ?
-        gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev) :
-        dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pis, memory, cdev));
+    if (tdev == 0) {
+        gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+    } else {
+        dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pis, memory, cdev);
+        /* In the case of pdf14, it is possible that the pdf14 device profile
+           has changed due to a transparency group or mask push.  In this case,
+           we need to update the profile in dev */
+        if (dev->device_icc_profile->hashcode != 
+            tdev->device_icc_profile->hashcode) {
+                rc_decrement(dev->device_icc_profile,"gx_forward_create_compositor");
+                dev->device_icc_profile = tdev->device_icc_profile;
+                rc_increment(tdev->device_icc_profile);
+        }
+    }
 }
 
 /* ---------------- The null device(s) ---------------- */

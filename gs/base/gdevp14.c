@@ -7276,6 +7276,8 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
     pdf14_device * pdev = (pdf14_device *) dev;
     pdf14_smaskcolor_t *result;
     gsicc_smask_t *smask_profiles = pis->icc_manager->smask_profiles;
+    gs_color_space *pcs;
+    int k;
 
     /* See if we have profiles already in place */
     if (pdev->smaskcolor != NULL) {
@@ -7300,6 +7302,44 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
         pis->icc_manager->default_rgb = smask_profiles->smask_rgb;
         pis->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
         pdev->smaskcolor->ref_count = 1;
+        /* We also need to update the profile that is currently in the 
+           color spaces of the graphic state.  Otherwise this can be
+           referenced, which will result in a mismatch.  What we want to do 
+           is see if it was the original default and only swap in that case. */
+        if (pis->is_gstate) {
+            gs_state *pgs = (gs_state*) pis;
+            for (k = 0; k < 2; k++) {
+                pcs = pgs->color[k].color_space;
+                if (pcs->cmm_icc_profile_data != NULL) {
+                    switch(pcs->cmm_icc_profile_data->data_cs) {
+                        case gsGRAY:
+                            if (pcs->cmm_icc_profile_data->hashcode ==
+                                result->profiles->smask_gray->hashcode) {
+                                    pcs->cmm_icc_profile_data = 
+                                        pis->icc_manager->default_gray;
+                            }
+                            break;
+                        case gsRGB:
+                            if (pcs->cmm_icc_profile_data->hashcode ==
+                                result->profiles->smask_rgb->hashcode) {
+                                    pcs->cmm_icc_profile_data = 
+                                        pis->icc_manager->default_rgb;
+                            }
+                            break;
+                        case gsCMYK:
+                            if (pcs->cmm_icc_profile_data->hashcode ==
+                                result->profiles->smask_cmyk->hashcode) {
+                                    pcs->cmm_icc_profile_data = 
+                                        pis->icc_manager->default_cmyk;
+                            }
+                            break;
+                        default:
+
+                            break;
+                    }
+                } 
+            }
+        }
     }
     return(0);
 }
@@ -7310,11 +7350,50 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
     pdf14_device * pdev = (pdf14_device *) dev;
     pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
     gsicc_manager_t *icc_manager = pis->icc_manager;
+    int k;
+    gs_color_space *pcs;
 
     if (smaskcolor != NULL) {
         smaskcolor->ref_count--;
         if (smaskcolor->ref_count == 0) {
             /* Lets return the profiles and clean up */
+            /* First see if we need to "reset" the profiles that are in
+               the graphic state */
+            if (pis->is_gstate) {
+                gs_state *pgs = (gs_state*) pis;
+                for (k = 0; k < 2; k++) {
+                    pcs = pgs->color[k].color_space;
+                    if (pcs->cmm_icc_profile_data != NULL) {
+                        switch(pcs->cmm_icc_profile_data->data_cs) {
+                            case gsGRAY:
+                                if (pcs->cmm_icc_profile_data->hashcode ==
+                                    pis->icc_manager->default_gray->hashcode) {
+                                        pcs->cmm_icc_profile_data = 
+                                            smaskcolor->profiles->smask_gray;
+                                }
+                                break;
+                            case gsRGB:
+                                if (pcs->cmm_icc_profile_data->hashcode ==
+                                    pis->icc_manager->default_rgb->hashcode) {
+                                        pcs->cmm_icc_profile_data = 
+                                            smaskcolor->profiles->smask_rgb;
+                                }
+                                break;
+                            case gsCMYK:
+                                if (pcs->cmm_icc_profile_data->hashcode ==
+                                    pis->icc_manager->default_cmyk->hashcode) {
+                                        pcs->cmm_icc_profile_data = 
+                                            smaskcolor->profiles->smask_cmyk;
+                                }
+                                break;
+                            default:
+
+                                break;
+                        }
+                    } 
+                }
+            }
+
             /* Decrement handled in pdf14_free_smask_color */
             icc_manager->default_gray = smaskcolor->profiles->smask_gray;
             icc_manager->default_rgb = smaskcolor->profiles->smask_rgb;
