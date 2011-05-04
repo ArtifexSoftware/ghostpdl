@@ -7315,21 +7315,21 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
                         case gsGRAY:
                             if (pcs->cmm_icc_profile_data->hashcode ==
                                 result->profiles->smask_gray->hashcode) {
-                                    pcs->cmm_icc_profile_data = 
+                                    pcs->cmm_icc_profile_data =
                                         pis->icc_manager->default_gray;
                             }
                             break;
                         case gsRGB:
                             if (pcs->cmm_icc_profile_data->hashcode ==
                                 result->profiles->smask_rgb->hashcode) {
-                                    pcs->cmm_icc_profile_data = 
+                                    pcs->cmm_icc_profile_data =
                                         pis->icc_manager->default_rgb;
                             }
                             break;
                         case gsCMYK:
                             if (pcs->cmm_icc_profile_data->hashcode ==
                                 result->profiles->smask_cmyk->hashcode) {
-                                    pcs->cmm_icc_profile_data = 
+                                    pcs->cmm_icc_profile_data =
                                         pis->icc_manager->default_cmyk;
                             }
                             break;
@@ -7337,7 +7337,7 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
 
                             break;
                     }
-                } 
+                }
             }
         }
     }
