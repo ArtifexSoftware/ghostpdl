@@ -468,14 +468,14 @@ static void *cups_read(ImageReader *im,
                 b = 0x80;
             }
             if (c & b) {
+                *d++ = 0;
+                *d++ = 0;
+                *d++ = 0;
+                *d++ = 0;
+            } else {
                 *d++ = 255;
                 *d++ = 255;
                 *d++ = 255;
-                *d++ = 0;
-            } else {
-                *d++ = 0;
-                *d++ = 0;
-                *d++ = 0;
                 *d++ = 0;
             }
         }
