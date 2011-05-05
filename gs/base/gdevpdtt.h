@@ -99,14 +99,12 @@ struct pdf_char_glyph_pairs_s {
     pdf_char_glyph_pair_t s[1];  /* Variable length. */
 };
 
-typedef enum {idle, started, aborted} type3_accum_status;
-
 /* Define the text enumerator. */
 typedef struct pdf_text_enum_s {
     gs_text_enum_common;
     gs_text_enum_t *pte_default;
     gs_fixed_point origin;
-    type3_accum_status charproc_accum;
+    bool charproc_accum;
     bool cdevproc_callout;
     double cdevproc_result[10];
     pdf_char_glyph_pairs_t *cgp;

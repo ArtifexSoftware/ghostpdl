@@ -140,30 +140,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
     int x_offset, y_offset;
     double width;
 
-    if(id != gx_no_bitmap_id && sourcex == 0 && show_enum &&
-        pdev->type3_accum_status == 1)
-    {
-        /* We should only get here if we had started accumulating a type 3 CharProc
-         * but ended up rendering an existing cached glyph. This can happen if
-         * we glyphshow a type 3 glyph, and the glyph does not exist so we use
-         * the /.notdef *and* we've already cached the /.notdef. In this case
-         * we want to abort the charproc accumulation.
-         * Ideally we would note that in the text enumerator, but that's a
-         * pdfwrite text enumerator, and we can't access that here. So in a
-         * rather kludgy manner we pas the status to and fro via the device.
-         * QL CET 136-01.ps exhibits this.
-         */
-        pdf_resource_t *pres = pdev->accumulating_substream_resource;
-
-        code = pdf_exit_substream(pdev);
-        if (code < 0)
-            return code;
-        code = pdf_cancel_resource(pdev, pres, resourceCharProc);
-        if (code < 0)
-            return code;
-        pdf_forget_resource(pdev, pres, resourceCharProc);
-        pdev->type3_accum_status = 2;
-    }
     /* Update clipping. */
     if (pdf_must_put_clip_path(pdev, pcpath)) {
         code = pdf_open_page(pdev, PDF_IN_STREAM);

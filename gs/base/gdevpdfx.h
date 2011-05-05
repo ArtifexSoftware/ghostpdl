@@ -657,10 +657,6 @@ struct gx_device_pdf_s {
     bool charproc_just_accumulated; /* A flag for controlling
                         the glyph variation recognition.
                         Used only with uncached charprocs. */
-    int  type3_accum_status; /* This is just a means of passing the status of the
-                              * type 3 font accumulator which is stored in a
-                              * pdfwrite text enumerator to pdf_copy_mono, in case
-                              * we want to abort the accumulation. */
     bool accumulating_a_global_object; /* ps2write only.
                         Accumulating a global object (such as a named Form,
                         so that resources used in it must also be global.
@@ -1281,7 +1277,7 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 int pdf_start_charproc_accum(gx_device_pdf *pdev);
 /* Install charproc accumulator for a Type 3 font. */
 int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-                gs_text_cache_control_t control, gs_char ch, bool scale_100);
+                gs_text_cache_control_t control, gs_char ch);
 /* Complete charproc accumulation for aType 3 font. */
 int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp,
                        gs_glyph glyph, gs_char output_char_code, const gs_const_string *gnstr);
