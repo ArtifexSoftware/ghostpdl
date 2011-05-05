@@ -469,6 +469,14 @@ lpdict begin
       (.\n) eprint flush
     } if
 
+    colines 1 lt cowidth 1 lt or
+    {
+      (Page too small, it must be large to hold at least one line of text\n) eprint
+      (please specify a page size using for example -sPAPERSIZE=(a4|letter)\n) eprint
+      /gslp.ps cvx /limitcheck signalerror
+    } if
+
+
 % Write the kerning table, if relevant.
    OutFile null ne Kern length 0 ne and {
      (/kproc) ws /kproc load wosp ( def\n) ws

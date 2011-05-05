@@ -994,9 +994,12 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
         gx_default_dev_spec_op /* dev_spec_op */\
 }
 
+#define NULLD_X_RES 72
+#define NULLD_Y_RES 72
+
 const gx_device_null gs_null_device = {
     std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
-                                  0, 0, 72, 72),
+                                  0, 0, NULLD_X_RES, NULLD_Y_RES),
     null_procs(gx_forward_upright_get_initial_matrix, /* upright matrix */
                gx_default_get_page_device     /* not a page device */ ),
     0				/* target */
@@ -1004,7 +1007,9 @@ const gx_device_null gs_null_device = {
 
 const gx_device_null gs_nullpage_device = {
 std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
-                              72 /*nominal */ , 72 /*nominal */ , 72, 72),
+                              (int)((float)(DEFAULT_WIDTH_10THS * NULLD_X_RES) / 10),
+                              (int)((float)(DEFAULT_HEIGHT_10THS * NULLD_Y_RES) / 10),
+                              NULLD_X_RES, NULLD_Y_RES),
     null_procs( gx_forward_get_initial_matrix, /* default matrix */
                 gx_page_device_get_page_device /* a page device */ ),
     0				/* target */
