@@ -90,7 +90,7 @@ pdf_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
         return gs_text_current_width(penum->pte_default, pwidth);
     return_error(gs_error_rangecheck); /* can't happen */
 }
-#if 1
+#if 0
 static int
 pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          gs_text_cache_control_t control)
@@ -2968,6 +2968,9 @@ pdf_text_process(gs_text_enum_t *pte)
          * then it will return TEXT_PROCESS_RENDER and we need to exit
          * to the interpreter to run the glyph description
          */
+        if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined) {
+            return -28;
+        } else {
         pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
         code = gs_text_process(pte_default);
         pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
@@ -2978,6 +2981,7 @@ pdf_text_process(gs_text_enum_t *pte)
             code1 = install_PS_charproc_accumulator(pdev, pte, pte_default, penum);
             if (code1 != 0)
                 return code1;
+        }
         }
 
         gs_text_enum_copy_dynamic(pte, pte_default, true);
