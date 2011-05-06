@@ -222,7 +222,11 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                     pw1[i + 1] = p.y;
                 }
             }
-            code = pdf_set_charproc_attrs(pdev, pte->current_font,
+            if (penum->pte_default == NULL)
+                code = pdf_set_charproc_attrs(pdev, pte->current_font,
+                        pw1, narg, control, penum->returned.current_char);
+            else
+                code = pdf_set_charproc_attrs(pdev, pte->current_font,
                         pw1, narg, control, penum->output_char_code);
             if (code < 0)
                 return code;
@@ -2842,8 +2846,9 @@ pdf_text_process(gs_text_enum_t *pte)
          * then it will return TEXT_PROCESS_RENDER and we need to exit
          * to the interpreter to run the glyph description
          */
-        if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined) {
-            gs_state *pgs = penum->pis;
+        if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined
+            && operation & TEXT_FROM_CHARS) {
+            gs_state *pgs = (gs_state *)penum->pis;
             gs_text_enum_procs_t const *save_procs = pte_default->procs;
             gs_text_enum_procs_t special_procs = *pte_default->procs;
 
@@ -2851,12 +2856,15 @@ pdf_text_process(gs_text_enum_t *pte)
             pte_default->procs = &special_procs;
 
             /* charproc completion will restore a gstate */
-            gs_gsave(penum->pis);
+            gs_gsave(pgs);
             pgs->char_tm_valid = 0;
             pgs->char_tm.txy_fixed_valid = 0;
+            pte_default->returned.current_char = pte->text.data.chars[pte->index];
+
             code = install_PS_charproc_accumulator(pdev, pte, pte_default, penum);
             if (code < 0)
                 return code;
+
             pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
             code = gs_text_process(pte_default);
             pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
