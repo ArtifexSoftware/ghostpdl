@@ -212,15 +212,16 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
              * needs to be in the 100x100 space so that it doesn't clip
              * out marking operations.
              */
-            if (penum->pte_default != NULL){
+            if (penum->pte_default != NULL)
                 gs_matrix_scale(&ctm_only(penum_s->pgs), .01, .01, &m);
-                for (i = 0; i < narg; i += 2) {
-                    gs_point p;
+            else
+                m = ctm_only(penum_s->pgs);
+            for (i = 0; i < narg; i += 2) {
+                gs_point p;
 
-                    gs_point_transform(pw[i], pw[i + 1], &m, &p);
-                    pw1[i] = p.x;
-                    pw1[i + 1] = p.y;
-                }
+                gs_point_transform(pw[i], pw[i + 1], &m, &p);
+                pw1[i] = p.x;
+                pw1[i + 1] = p.y;
             }
             if (penum->pte_default == NULL)
                 code = pdf_set_charproc_attrs(pdev, pte->current_font,

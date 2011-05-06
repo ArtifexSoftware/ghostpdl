@@ -562,7 +562,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
  * Install charproc accumulator for a Type 3 font.
  */
 int
-pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
+pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, double *pw, int narg,
                 gs_text_cache_control_t control, gs_char ch, bool scale_100)
 {
     pdf_font_resource_t *pdfont;
@@ -587,7 +587,18 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
         pdev->skip_colors = false;
         pprintg1(pdev->strm, "%g 0 d0\n", (float)pw[0]);
     } else {
+        double d;
         pdev->skip_colors = true;
+        if (pw[4] < pw[2]) {
+            d = pw[2];
+            pw[2] = pw[4];
+            pw[4] = d;
+        }
+        if (pw[5] < pw[3]) {
+            d = pw[5];
+            pw[5] = pw[3];
+            pw[3] = d;
+        }
         pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n",
             (float)pw[0], (float)0.0, (float)pw[2],
             (float)pw[3], (float)pw[4], (float)pw[5]);
