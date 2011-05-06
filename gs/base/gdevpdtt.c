@@ -2843,13 +2843,18 @@ pdf_text_process(gs_text_enum_t *pte)
          * to the interpreter to run the glyph description
          */
         if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined) {
+            gs_state *pgs = penum->pis;
             gs_text_enum_procs_t const *save_procs = pte_default->procs;
             gs_text_enum_procs_t special_procs = *pte_default->procs;
 
             special_procs.set_cache = pdf_text_set_cache;
             pte_default->procs = &special_procs;
 
-            code = install_charproc_accumulator(pdev, pte, pte_default, penum);
+            /* charproc completion will restore a gstate */
+            gs_gsave(penum->pis);
+            pgs->char_tm_valid = 0;
+            pgs->char_tm.txy_fixed_valid = 0;
+            code = install_PS_charproc_accumulator(pdev, pte, pte_default, penum);
             if (code < 0)
                 return code;
             pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
@@ -2863,7 +2868,7 @@ pdf_text_process(gs_text_enum_t *pte)
             if (code < 0)
                 return code;
 
-            code = complete_charproc(pdev, pte, pte_default, penum, true);
+            code = complete_PS_charproc(pdev, pte, pte_default, penum, true);
             pte_default->procs = save_procs;
             if (code < 0)
                 return code;
