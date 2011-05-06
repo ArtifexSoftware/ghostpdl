@@ -224,10 +224,10 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             }
             if (penum->pte_default == NULL)
                 code = pdf_set_charproc_attrs(pdev, pte->current_font,
-                        pw1, narg, control, penum->returned.current_char);
+                        pw1, narg, control, penum->returned.current_char, false);
             else
                 code = pdf_set_charproc_attrs(pdev, pte->current_font,
-                        pw1, narg, control, penum->output_char_code);
+                        pw1, narg, control, penum->output_char_code, true);
             if (code < 0)
                 return code;
             /* Prevent writing the clipping path to charproc.
@@ -2859,9 +2859,12 @@ pdf_text_process(gs_text_enum_t *pte)
             gs_gsave(pgs);
             pgs->char_tm_valid = 0;
             pgs->char_tm.txy_fixed_valid = 0;
+            pgs->current_point.x = pgs->current_point.y = 0;
+            pgs->char_tm.txy_fixed_valid = 0;
+
             pte_default->returned.current_char = pte->text.data.chars[pte->index];
 
-            code = install_PS_charproc_accumulator(pdev, pte, pte_default, penum);
+            code = install_charproc_accumulator(pdev, pte, pte_default, penum);
             if (code < 0)
                 return code;
 
@@ -2876,7 +2879,7 @@ pdf_text_process(gs_text_enum_t *pte)
             if (code < 0)
                 return code;
 
-            code = complete_PS_charproc(pdev, pte, pte_default, penum, true);
+            code = complete_PS_charproc(pdev, pte, pte_default, penum, false);
             pte_default->procs = save_procs;
             if (code < 0)
                 return code;

@@ -563,7 +563,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
  */
 int
 pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-                gs_text_cache_control_t control, gs_char ch)
+                gs_text_cache_control_t control, gs_char ch, bool scale_100)
 {
     pdf_font_resource_t *pdfont;
     pdf_resource_t *pres = pdev->accumulating_substream_resource;
@@ -599,9 +599,11 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
      * operator. We write the scale matrix here because this is *after* the
      * 'd1' has been emitted above, and so does not affect it.
      */
+    if (scale_100) {
     code = stream_puts(pdev->strm, "0.01 0 0 0.01 0 0 cm\n");
     if (code < 0)
         return code;
+    }
     return 0;
 }
 
