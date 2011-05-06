@@ -2162,7 +2162,8 @@ end
                 % tell whether this is a Form or a set of sub-appearances
                 % is by testing for the stream Length or File key.
                 % If the stream lacks Length key, try File key.
-      dup /Length known 1 index /File known or {
+      dup /Length knownoget { type /integertype eq } { //false } ifelse 
+      1 index /File knownoget { type /filetype eq or } if {
                 % If this is a form then simply use it
         //true
       } {
