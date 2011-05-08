@@ -548,7 +548,6 @@ gs_nulldevice(gs_state * pgs)
            is one */
         rc_init(ndev, pgs->memory, 0);
         if (pgs->device != NULL) {
-            cmm_profile_t *dev_profile;
             gsicc_rendering_intents_t rendering_intent;
 
             code = dev_proc(pgs->device, get_profile)(pgs->device, 
