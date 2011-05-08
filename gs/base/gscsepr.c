@@ -305,7 +305,11 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     gs_color_space *pacs = pcs->base_space;
     bool is_lab;
     int k;
+    cmm_profile_t *dev_profile;
+    gsicc_rendering_intents_t rendering_intent;
 
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);
     if (pcs->params.separation.sep_type == SEP_OTHER &&
         pcs->params.separation.use_alt_cspace) {
         gs_device_n_map *map = pcs->params.separation.map;
@@ -331,7 +335,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
                             name_size, device_values, pis, dev, NULL,
                             &rendering_params, false);
             if (code == 0) {
-                for (k = 0; k < dev->device_icc_profile->num_comps; k++){
+                for (k = 0; k < dev_profile->num_comps; k++){
                     pconc[k] = float2frac(((float) device_values[k])/65535.0);
                 }
                 return(0);

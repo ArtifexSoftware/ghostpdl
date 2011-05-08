@@ -107,7 +107,9 @@ static const gx_device_clip gs_clip_device =
   NULL,                      /* push_transparency_state */
   NULL,                      /* pop_transparency_state */
   NULL,                      /* put_image */
-  gx_forward_dev_spec_op
+  gx_forward_dev_spec_op,
+  NULL,                      /* copy plane */
+  gx_forward_get_profile
  }
 };
 
@@ -123,7 +125,6 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
     dev->target = target;
-    dev->device_icc_profile = target->device_icc_profile;
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }

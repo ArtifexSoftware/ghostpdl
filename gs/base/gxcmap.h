@@ -284,7 +284,8 @@ frac gx_unit_frac(float fvalue);
 /* Determine if the device is using the standard color mapping procs.  In
    such a case, we can make use of the faster icc color conversions for
    images */
-bool gx_device_uses_std_cmap_procs(gx_device * dev);
+bool gx_device_uses_std_cmap_procs(gx_device * dev, 
+                                   const gs_imager_state * pis);
 bool fwd_uses_fwd_cmap_procs(gx_device * dev);
 const gx_cm_color_map_procs* fwd_get_target_cmap_procs(gx_device * dev);
 void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,

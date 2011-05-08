@@ -1044,8 +1044,6 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     } else {
         gs_make_mem_device(mdev, mdproto, mem, (band_complexity == NULL ? 1 : 0),
                            (target == (gx_device *)mdev ? NULL : target));
-        mdev->device_icc_profile = target->device_icc_profile;
-        rc_increment(mdev->device_icc_profile);
     }
     mdev->width = target->width;
     mdev->band_y = y;

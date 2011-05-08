@@ -46,7 +46,7 @@ gx_device_finalize(void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
 
-    if (dev->device_icc_profile != NULL && !dev->retained) {
+    if (dev->device_icc_profile != NULL) {
         rc_decrement(dev->device_icc_profile, "gx_device_finalize(icc_profile)");
     }
     if (dev->finalize)
@@ -503,6 +503,7 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, get_color_comp_index, gx_forward_get_color_comp_index);
         set_dev_proc(dn, encode_color, gx_forward_encode_color);
         set_dev_proc(dn, decode_color, gx_forward_decode_color);
+        set_dev_proc(dn, get_profile, gx_forward_get_profile);
         gx_device_copy_color_params(dn, dev);
     }
 }
@@ -541,11 +542,23 @@ gs_nulldevice(gs_state * pgs)
          * Internal devices have a reference count of 0, not 1,
          * aside from references from graphics states.
          */
+        /* There is some strange use of the null device in the code.  I need
+           to sort out how the icc profile is best handled with this device.
+           It seems to inherit properties from the current device if there
+           is one */
         rc_init(ndev, pgs->memory, 0);
-        if (pgs->device != NULL && pgs->device->device_icc_profile != NULL) {
-            ndev->device_icc_profile = pgs->device->device_icc_profile;
+        if (pgs->device != NULL) {
+            cmm_profile_t *dev_profile;
+            gsicc_rendering_intents_t rendering_intent;
+
+            code = dev_proc(pgs->device, get_profile)(pgs->device, 
+                                        gs_current_object_tag(pgs->memory), 
+                                        &(ndev->device_icc_profile), 
+                                        &rendering_intent);        
             rc_increment(ndev->device_icc_profile);
-        }
+            set_dev_proc(ndev, get_profile, gx_default_get_profile);
+        } 
+
         return gs_setdevice_no_erase(pgs, ndev);
     }
     return 0;
@@ -758,8 +771,6 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
         COPY_ARRAY_PARAM(HWMargins);
         COPY_PARAM(PageCount);
         COPY_PARAM(MaxPatternBitmap);
-        COPY_PARAM(device_icc_profile);
-        rc_increment(dev->device_icc_profile);
 #undef COPY_ARRAY_PARAM
         gx_device_copy_color_params(dev, target);
 }

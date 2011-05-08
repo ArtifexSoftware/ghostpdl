@@ -1120,7 +1120,12 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     bool use_rgb2dev_icc = false;
+    cmm_profile_t *dev_profile = NULL;
+    gsicc_rendering_intents_t rendering_intent;
+    int code;
 
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
@@ -1141,7 +1146,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
            on how addivite devices should behave with the ALL option but it
            is clear from testing the AR 10 does simply do the RGB = 1 - INK
            type of mapping */
-        if (dev->device_icc_profile->data_cs == gsCIELAB) {
+        if (dev_profile->data_cs == gsCIELAB) {
             use_rgb2dev_icc = true;
         }
     }
@@ -1172,8 +1177,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         rendering_params.rendering_intent = pis->renderingintent;
 
         icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb,
-                                          dev->device_icc_profile,
-                                          &rendering_params, pis->memory, false);
+                                          dev_profile, &rendering_params, 
+                                          pis->memory, false);
         /* Transform the color */
         for (i = 0; i < ncomps; i++) {
             psrc[i] = cv[i];
@@ -1221,7 +1226,12 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     unsigned short psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k;
     unsigned short *psrc_temp;
+    cmm_profile_t *dev_profile = NULL;
+    gsicc_rendering_intents_t rendering_intent;
+    int code;
 
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);
     /* Define the rendering intents. */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = GS_PATH_TAG;
@@ -1231,7 +1241,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
         psrc[k] = frac2cv(cm_comps[k]);
     }
     icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_cmyk,
-                dev->device_icc_profile, &rendering_params, pis->memory, false);
+                dev_profile, &rendering_params, pis->memory, false);
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -1263,14 +1273,18 @@ cmap_devicen_halftoned(const frac * pcc,
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int code;
+    cmm_profile_t *dev_profile = NULL;
+    gsicc_rendering_intents_t rendering_intent;
 
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);    
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     map_components_to_colorants(pcc, &(pis->color_component_map), cm_comps);
     /* See comments in cmap_devicen_direct for details on below operations */
     if (devicen_has_cmyk(dev) &&
-        dev->device_icc_profile->data_cs == gsCMYK) {
+        dev_profile->data_cs == gsCMYK) {
         code = devicen_icc_cmyk(cm_comps, pis, dev);
     }
     /* apply the transfer function(s); convert to color values */
@@ -1303,7 +1317,11 @@ cmap_devicen_direct(const frac * pcc,
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
     int code;
+    cmm_profile_t *dev_profile = NULL;
+    gsicc_rendering_intents_t rendering_intent;
 
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);
     /*   See the comment below */
     /* map to the color model */
     for (i=0; i < ncomps; i++)
@@ -1320,8 +1338,7 @@ cmap_devicen_direct(const frac * pcc,
        as a CMYK color that will be color managed and specified with 10% C,
        20% M 0% Y 0% K. Hence the CMYK values should go through the same
        color management as a stand alone CMYK value.  */
-    if (devicen_has_cmyk(dev) &&
-        dev->device_icc_profile->data_cs == gsCMYK) {
+    if (devicen_has_cmyk(dev) && dev_profile->data_cs == gsCMYK) {
         /* We need to do a CMYK to CMYK conversion here.  This will always
            use the default CMYK profile and the device's output profile.
            We probably need to add some checking here
@@ -1818,17 +1835,22 @@ cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * de
 }
 
 bool
-gx_device_uses_std_cmap_procs(gx_device * dev)
+gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
 {
     const gx_cm_color_map_procs *pprocs;
+    cmm_profile_t *dev_profile = NULL;
+    gsicc_rendering_intents_t rendering_intent;
+    int code;
 
-    if (dev->device_icc_profile != NULL) {
+    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                      &dev_profile, &rendering_intent);
+    if (dev_profile != NULL) {
         pprocs = dev_proc(dev, get_color_mapping_procs)(dev);
         /* Check if they are forwarding procs */
         if (fwd_uses_fwd_cmap_procs(dev)) {
             pprocs = fwd_get_target_cmap_procs(dev);
         }
-        switch(dev->device_icc_profile->data_cs) {
+        switch(dev_profile->data_cs) {
             case gsGRAY:
                 if (pprocs == &DeviceGray_procs) {
                     return true;

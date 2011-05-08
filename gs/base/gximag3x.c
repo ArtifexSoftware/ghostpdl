@@ -141,6 +141,7 @@ gx_begin_image3x_generic(gx_device * dev,
     gs_int_point origin[2];
     int code;
     int i;
+    gsicc_rendering_intents_t rendering_intent;
 
     /* Validate the parameters. */
     if (pim->Height <= 0)
@@ -228,8 +229,9 @@ gx_begin_image3x_generic(gx_device * dev,
                         (int)ceil(mrect.q.x) - origin[i].x,
                         (int)ceil(mrect.q.y) - origin[i].y,
                         penum->mask[i].depth, mem);
-        mdev->device_icc_profile = dev->device_icc_profile;
-        rc_increment(dev->device_icc_profile);
+        code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
+                                          &mdev->device_icc_profile, &rendering_intent);
+        rc_increment(mdev->device_icc_profile);
         if (code < 0)
             goto out1;
         penum->mask[i].mdev = mdev;

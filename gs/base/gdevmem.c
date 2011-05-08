@@ -283,6 +283,8 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     gdev_mem_mono_set_inverted(dev, true);
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
+    /* Should this be forwarding or monochrome profile? */
+    set_dev_proc(dev, get_profile, gx_forward_get_profile);
 }
 
 /* Define whether a monobit memory device is inverted (black=1). */

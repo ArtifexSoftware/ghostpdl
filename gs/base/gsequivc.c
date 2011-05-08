@@ -376,18 +376,26 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     gs_imager_state temp_state = *((const gs_imager_state *)pgs);
     color_capture_device temp_device = { 0 };
     gx_device_color dev_color;
+    cmm_profile_t *dev_profile;
+    gsicc_rendering_intents_t rendering_intent;
+    int code;
 
+    code = dev_proc(pdev, get_profile)(pdev, 
+                                      gs_current_object_tag(temp_state.memory), 
+                                      &dev_profile, &rendering_intent);
     /*
      * Create a temp device.  The primary purpose of this device is pass the
      * separation number and a pointer to the original device's equivalent
      * color parameters.  Since we only using this device for a very specific
-     * purpose, we only set up the color_info structure and and our data.
+     * purpose, we only set up the color_info structure and our data.
      */
     temp_device.color_info = pdev->color_info;
     temp_device.sep_num = sep_num;
     temp_device.pequiv_cmyk_colors = pparams;
     temp_device.memory = pgs->memory;
-    temp_device.device_icc_profile = pdev->device_icc_profile;
+    temp_device.device_icc_profile = dev_profile;
+    set_dev_proc(&temp_device, get_profile, gx_default_get_profile);
+
     /*
      * Create a temp copy of the imager state.  We do this so that we
      * can modify the color space mapping (cmap) procs.  We use our
