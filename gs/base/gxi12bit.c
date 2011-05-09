@@ -436,8 +436,8 @@ fill:
         }
         run = next;
 inc:
-        xl = dda_next(pnext.x);
-        ytf = dda_next(pnext.y);
+        dda_next_assign(pnext.x, xl);
+        dda_next_assign(pnext.y, ytf);
     }
     /* Fill the final run. */
     if (posture != image_portrait) {
