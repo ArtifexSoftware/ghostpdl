@@ -1215,11 +1215,11 @@ $(GLD)libd.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 
 $(GLD)libcore.dev : $(LIB_MAK) $(ECHOGS_XE)\
  $(GLD)libs.dev $(GLD)libx.dev $(GLD)libd.dev\
- $(GLD)iscale.dev $(GLD)noroplib.dev $(GLD)strdline.dev
+ $(GLD)iscale.dev $(GLD)roplib.dev $(GLD)strdline.dev
 	$(SETMOD) $(GLD)libcore
 	$(ADDMOD) $(GLD)libcore -dev2 nullpage
 	$(ADDMOD) $(GLD)libcore -include $(GLD)libs $(GLD)libx $(GLD)libd
-	$(ADDMOD) $(GLD)libcore -include $(GLD)iscale $(GLD)noroplib
+	$(ADDMOD) $(GLD)libcore -include $(GLD)iscale $(GLD)roplib
 	$(ADDMOD) $(GLD)libcore -include $(GLD)strdline
 
 # ---------------- Stream support ---------------- #
@@ -1912,17 +1912,7 @@ $(GLOBJ)gshtx.$(OBJ) : $(GLSRC)gshtx.c $(GXERR) $(memory__h)\
  $(gxfmap_h) $(gshtx_h) $(gzht_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gshtx.$(OBJ) $(C_) $(GLSRC)gshtx.c
 
-# ---------------- RasterOp et al ---------------- #
-# Note that noroplib is a default, roplib replaces it.
-
-noroplib_=$(GLOBJ)gsnorop.$(OBJ)
-$(GLD)noroplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(noroplib_)
-	$(SETMOD) $(GLD)noroplib $(noroplib_)
-
-$(GLOBJ)gsnorop.$(OBJ) : $(GLSRC)gsnorop.c $(GXERR)\
- $(gdevmem_h) $(gdevmrop_h) $(gsrop_h)\
- $(gxdevcli_h) $(gxdevice_h) $(gxdevmem_h)
-	$(GLCC) $(GLO_)gsnorop.$(OBJ) $(C_) $(GLSRC)gsnorop.c
+# ----- Ternary raster operations and device level transparency ------#
 
 roplib1_=$(GLOBJ)gdevdrop.$(OBJ) $(GLOBJ)gsroprun.$(OBJ)
 roplib2_=$(GLOBJ)gdevmr1.$(OBJ) $(GLOBJ)gdevmr2n.$(OBJ) $(GLOBJ)gdevmr8n.$(OBJ)
@@ -1932,7 +1922,6 @@ $(GLD)roplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(roplib_)
 	$(SETMOD) $(GLD)roplib $(roplib1_)
 	$(ADDMOD) $(GLD)roplib $(roplib2_)
 	$(ADDMOD) $(GLD)roplib $(roplib3_)
-	$(ADDMOD) $(GLD)roplib -replace $(GLD)noroplib
 
 $(GLOBJ)gdevdrop.$(OBJ) : $(GLSRC)gdevdrop.c $(GXERR) $(memory__h)\
  $(gsbittab_h) $(gsropt_h)\

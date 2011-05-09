@@ -228,7 +228,7 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
-	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
+	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev\
 	     $(DD)gxfapiu$(UFST_BRIDGE).dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)sdctd.dev $(DD)libpng_$(SHARE_LIBPNG).dev\

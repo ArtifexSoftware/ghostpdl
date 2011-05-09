@@ -406,7 +406,6 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
 		  $(DD)\gxfapiu$(UFST_BRIDGE).dev\
                   $(DD)\rld.dev       \
                   $(DD)\psl2cs.dev    \
-                  $(DD)\roplib.dev    \
                   $(DD)\ttflib.dev    \
                   $(DD)\colimlib.dev  \
                   $(DD)\cielib.dev    \
