@@ -1492,8 +1492,8 @@ Fixed32 cdecl FixedSquare(Fixed32 a);
 
 #ifdef USE_INLINE
 
-LCMS_INLINE Fixed32 ToFixedDomain(int a)        { return a + ((a + 0x7fff) / 0xffff); }
-LCMS_INLINE int     FromFixedDomain(Fixed32 a)  { return a - ((a + 0x7fff) >> 16); }   
+#define ToFixedDomain(a)    ( (a) + (((a) + 0x7fff) / 0xffff) )
+#define FromFixedDomain(a)  ( (a) - (((a) + 0x7fff) >> 16) )  
 
 #else
 
