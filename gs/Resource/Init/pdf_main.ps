@@ -1376,7 +1376,13 @@ end readonly def
         } ifelse
       } ifelse
     } if
-    linkdest pop /LNK pdfmark
+    { linkdest } stopped {
+      cleartomark
+      (   **** Warning: Link annotation points out of the document page range.\n)
+      pdfformaterror
+    } {
+      pop /LNK pdfmark
+    } ifelse
   } bind def
 end readonly def
 
