@@ -287,10 +287,23 @@ void gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s,
 #define gs_image_t_init_mask(pim, write_1s)\
   gs_image_t_init_mask_adjust(pim, write_1s, true)
 
-/* Used for bookkeeping ht buffer information in lanscape mode */
+/* When doing thresholding in landscape mode, we collect scancolumns into a
+ * buffer LAND_BITS wide, and then flush them to copy_mono. Because we use
+ * SSE operations, LAND_BITS must be a multiple of 16. For performance,
+ * copy_mono would prefer longer runs than shorter ones, so we leave this
+ * configurable. The hope is that we can effectively trade memory for speed.
+ *
+ * Timings with LAND_BITS set to 32 and 128 both show slower performance than
+ * 16 though, due to increased time in image_render_mono_ht in the loop
+ * that copies data from scanlines to scancolumns. It seems that writing to
+ * the buffer in positions [0] [16] [32] [48] etc is faster than writing in
+ * positions [0] [32] [64] [96] etc. For now we leave LAND_BITS set to 16. */
+#define LAND_BITS 16
+
+/* Used for bookkeeping ht buffer information in landscape mode */
 typedef struct ht_landscape_info_s {
     int count;
-    int widths[16];
+    int widths[LAND_BITS];
     int xstart;
     int curr_pos;
     int index;

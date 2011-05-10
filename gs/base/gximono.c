@@ -900,10 +900,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    or right to left. */
                 if (penum->ht_landscape.flipy) {
                     position = penum->ht_landscape.curr_pos +
-                                16 * (data_length - 1);
+                                LAND_BITS * (data_length - 1);
                     for (k = 0; k < data_length; k++) {
                         devc_contone[position] = psrc[dda_ht.state.Q];
-                        position -= 16;
+                        position -= LAND_BITS;
                         dda_next(dda_ht);
                     }
                 } else {
@@ -914,20 +914,20 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     if (scale_factor == fixed_1) {
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = psrc[k];
-                            position += 16;
+                            position += LAND_BITS;
                         }
                     } else if (scale_factor == fixed_half) {
                         for (k = 0; k < data_length; k+=2) {
                             offset = fixed2int_rounded(scale_factor * k);
                             devc_contone[position] =
-                                devc_contone[position + 16] = psrc[offset];
-                            position += 32;
+                                devc_contone[position + LAND_BITS] = psrc[offset];
+                            position += LAND_BITS*2;
                         }
                     } else {
                         /* use dda */
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = psrc[dda_ht.state.Q];
-                            position += 16;
+                            position += LAND_BITS;
                             dda_next(dda_ht);
                         }
                     }
@@ -983,19 +983,19 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    or right to left. */
                 if (penum->ht_landscape.flipy) {
                     position = penum->ht_landscape.curr_pos +
-                                16 * (data_length - 1);
+                                LAND_BITS * (data_length - 1);
                     /* use dda */
                     if (spp_out == 1) {
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = color_cache[psrc[dda_ht.state.Q]];
-                            position -= 16;
+                            position -= LAND_BITS;
                             dda_next(dda_ht);
                         }
                     } else {
                         for (k = 0; k < data_length; k++) {
                             dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
                             devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
-                            position -= 16;
+                            position -= LAND_BITS;
                             dda_next(dda_ht);
                         }
                     }
@@ -1005,14 +1005,14 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     if (spp_out == 1) {
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = color_cache[psrc[dda_ht.state.Q]];
-                            position += 16;
+                            position += LAND_BITS;
                             dda_next(dda_ht);
                         }
                     } else {
                         for (k = 0; k < data_length; k++) {
                             dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
                             devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
-                            position += 16;
+                            position += LAND_BITS;
                             dda_next(dda_ht);
                         }
                     }
