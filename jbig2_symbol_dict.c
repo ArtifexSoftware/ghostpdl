@@ -758,7 +758,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     goto too_short;
 
   /* 7.4.2.1.1 */
-  flags = jbig2_get_int16(segment_data);
+  flags = jbig2_get_uint16(segment_data);
   params.SDHUFF = flags & 1;
   params.SDREFAGG = (flags >> 1) & 1;
   params.SDTEMPLATE = (flags >> 10) & 3;
@@ -889,9 +889,9 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     goto too_short;
 
   /* 7.4.2.1.4 */
-  params.SDNUMEXSYMS = jbig2_get_int32(segment_data + offset);
+  params.SDNUMEXSYMS = jbig2_get_uint32(segment_data + offset);
   /* 7.4.2.1.5 */
-  params.SDNUMNEWSYMS = jbig2_get_int32(segment_data + offset + 4);
+  params.SDNUMNEWSYMS = jbig2_get_uint32(segment_data + offset + 4);
   offset += 8;
 
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

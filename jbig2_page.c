@@ -105,11 +105,11 @@ jbig2_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_da
     }
 
     /* 7.4.8.x */
-    page->width = jbig2_get_int32(segment_data);
-    page->height = jbig2_get_int32(segment_data + 4);
+    page->width = jbig2_get_uint32(segment_data);
+    page->height = jbig2_get_uint32(segment_data + 4);
 
-    page->x_resolution = jbig2_get_int32(segment_data + 8);
-    page->y_resolution = jbig2_get_int32(segment_data + 12);
+    page->x_resolution = jbig2_get_uint32(segment_data + 8);
+    page->y_resolution = jbig2_get_uint32(segment_data + 12);
     page->flags = segment_data[16];
 
     /* 7.4.8.6 */

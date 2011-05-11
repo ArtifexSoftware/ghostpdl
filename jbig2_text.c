@@ -429,7 +429,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     offset += 17;
 
     /* 7.4.3.1.1 */
-    flags = jbig2_get_int16(segment_data + offset);
+    flags = jbig2_get_uint16(segment_data + offset);
     offset += 2;
 
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
@@ -456,7 +456,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     if (params.SBHUFF)	/* Huffman coding */
       {
         /* 7.4.3.1.2 */
-        huffman_flags = jbig2_get_int16(segment_data + offset);
+        huffman_flags = jbig2_get_uint16(segment_data + offset);
         offset += 2;
 
         if (huffman_flags & 0x8000)
@@ -480,7 +480,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
       }
 
     /* 7.4.3.1.4 */
-    params.SBNUMINSTANCES = jbig2_get_int32(segment_data + offset);
+    params.SBNUMINSTANCES = jbig2_get_uint32(segment_data + offset);
     offset += 4;
 
     if (params.SBHUFF) {
