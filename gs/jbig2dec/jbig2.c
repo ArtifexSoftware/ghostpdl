@@ -160,16 +160,33 @@ jbig2_ctx_new (Jbig2Allocator *allocator,
   return result;
 }
 
-int32_t
-jbig2_get_int32 (const byte *buf)
-{
-  return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
-}
+#define get_uint16(bptr)\
+  (((bptr)[0] << 8) | (bptr)[1])
+#define get_int16(bptr)\
+  (((int)get_uint16(bptr) ^ 0x8000) - 0x8000)
 
 int16_t
-jbig2_get_int16 (const byte *buf)
-{
-  return (buf[0] << 8) | buf[1];
+jbig2_get_int16(const byte *bptr)
+{	
+    return get_int16(bptr);
+}
+
+uint16_t
+jbig2_get_uint16(const byte *bptr)
+{	
+    return get_uint16(bptr);
+}
+
+int32_t
+jbig2_get_int32(const byte *bptr)
+{	
+    return ((int32_t)get_int16(bptr) << 16) | get_uint16(bptr + 2);
+}
+
+uint32_t
+jbig2_get_uint32(const byte *bptr)
+{	
+    return ((uint32_t)get_uint16(bptr) << 16) | get_uint16(bptr + 2);
 }
 
 
