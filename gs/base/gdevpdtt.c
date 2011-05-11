@@ -109,7 +109,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * NOT the identity, but we want the cache device values to be in
          * font co-ordinate space, so we need to undo that scale here.
          */
-        if (penum->pte_default != NULL){
+        if (pdev->PS_accumulator){
             gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
@@ -128,7 +128,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
          * NOT the identity, but we want the cache device values to be in
          * font co-ordinate space, so we need to undo that scale here.
          */
-        if (penum->pte_default != NULL){
+        if (pdev->PS_accumulator){
             gs_matrix_scale(&ctm_only(pte->pis), .01, .01, &m);
             gs_distance_transform(pw[0], pw[1], &m, &pdev->char_width);
         } else {
@@ -143,11 +143,10 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
     default:
         return_error(gs_error_rangecheck);
     }
-    if (penum->pte_default == NULL)
+    if (!pdev->PS_accumulator)
         pgste = (gs_text_enum_t *)penum;
     else
         pgste = penum->pte_default;
-//        return_error(gs_error_unregistered); /* Must not happen. */
 
     if (penum->current_font->FontType == ft_user_defined &&
             penum->outer_CID == GS_NO_GLYPH &&
@@ -156,7 +155,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
         gs_glyph glyph;
 
         glyph = penum->returned.current_glyph;
-        if (glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) {
+        if ((glyph != GS_NO_GLYPH && penum->output_char_code != GS_NO_CHAR) || !pdev->PS_accumulator) {
             gs_show_enum *penum_s;
             extern_st(st_gs_show_enum);
             gs_fixed_rect clip_box;
@@ -212,7 +211,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
              * needs to be in the 100x100 space so that it doesn't clip
              * out marking operations.
              */
-            if (penum->pte_default != NULL)
+            if (pdev->PS_accumulator)
                 gs_matrix_scale(&ctm_only(penum_s->pgs), .01, .01, &m);
             else
                 m = ctm_only(penum_s->pgs);
@@ -223,7 +222,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                 pw1[i] = p.x;
                 pw1[i + 1] = p.y;
             }
-            if (penum->pte_default == NULL)
+            if (!pdev->PS_accumulator)
                 code = pdf_set_charproc_attrs(pdev, pte->current_font,
                         pw1, narg, control, penum->returned.current_char, false);
             else
@@ -274,7 +273,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             penum->charproc_accum = false;
         }
     }
-    if (penum->pte_default) {
+    if (pdev->PS_accumulator) {
         if (penum->pte_default->text.operation & TEXT_DO_CHARWIDTH /* See process_cmap_text.*/)
             return gs_text_set_cache(penum->pte_default, pw, TEXT_SET_CHAR_WIDTH);
         else
@@ -2637,6 +2636,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
         gs_matrix m;
         pdf_font_resource_t *pdfont;
 
+        pdev->PS_accumulator = false;
         code = pdf_start_charproc_accum(pdev);
         if (code < 0)
             return code;
@@ -2683,10 +2683,21 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 {
     gs_const_string gnstr;
     int code;
+    unsigned char unknown_glyph[10];
 
     code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
-    if (code < 0)
-        return code;
+    if (code < 0) {
+        if (code == gs_error_unregistered) {
+            /* couldn't find a glyph name, so make one up! This can happen
+               if we are handling PCL and the glyph (character code) is less
+               than 29, the PCL glyph names start with /.notdef at 29
+             */
+            sprintf((char *)unknown_glyph, "Unknown%02d", pte_default->returned.current_glyph);
+            gnstr.data = unknown_glyph;
+            gnstr.size = 9;
+        } else
+            return code;
+    }
 
     if ((penum->current_font->FontType == ft_user_defined) && stell(pdev->strm) == 0)
     {
@@ -2709,9 +2720,13 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
             stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
     }
 
-    /* See below, we scaled the device height and width to prevent
-     * clipping of the CharProc operations, now we need to undo that.
-     */
+    if (was_PS_type3) {
+        /* See below, we scaled the device height and width to prevent
+         * clipping of the CharProc operations, now we need to undo that.
+         */
+        pdev->width /= 100;
+        pdev->height /= 100;
+    }
     code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp,
                 pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
     if (code < 0)
@@ -2725,55 +2740,29 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 
     return 0;
 }
-static int complete_PS_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
-                             gs_text_enum_t *pte_default, pdf_text_enum_t *const penum,
-                             bool was_PS_type3)
+
+/* Nasty hackery. The PCL 'stick font' is drawn by constructing a path, and then stroking it.
+ * The stroke width is calculated under the influence of the device default matrix, whic
+ * ensures it is the same, not matter what size the font is drawn at. Of course we are
+ * capturing the glyph under an identity matrix, so using the device matrix blows it up.
+ * What we do is replace the get_initial_matrix method for teh course of the charproc
+ * accumulation *only*, and return a more sensible 'device' matrix.
+ * We know that the Charproc CTM is a combination of the font point size, and the default device
+ * matrix, so we just take off the default matrix, and invert the font scaling.
+ * This will scale the linewidth nicely for us. It does mean that if we use the
+ * same font at a different size, then the width will not be 'correct', but I
+ * thin this is good enough.
+ */
+static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
-    gs_const_string gnstr;
-    int code;
+    gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
-    if (code < 0)
-        return code;
-
-    if ((penum->current_font->FontType == ft_user_defined) && stell(pdev->strm) == 0)
-    {
-        char glyph[256], FontName[gs_font_name_max + 1], KeyName[256];
-        int len;
-
-        len = min(gs_font_name_max, gnstr.size);
-        memcpy(glyph, gnstr.data, len);
-        glyph[len] = 0x00;
-        len = min(gs_font_name_max, penum->current_font->font_name.size);
-        memcpy(FontName, penum->current_font->font_name.chars, len);
-        FontName[len] = 0x00;
-        len = min(gs_font_name_max, penum->current_font->key_name.size);
-        memcpy(KeyName, penum->current_font->key_name.chars, len);
-        KeyName[len] = 0x00;
-
-        emprintf4(pdev->memory,
-            "ERROR: Page %d used undefined glyph '%s' from type 3 font '%s', key '%s'\n",
-            pdev->next_page, glyph, FontName, KeyName);
-            stream_puts(pdev->strm, "0 0 0 0 0 0 d1\n");
-    }
-
-    /* See below, we scaled the device height and width to prevent
-     * clipping of the CharProc operations, now we need to undo that.
-     */
-    pdev->width /= 100;
-    pdev->height /= 100;
-    code = pdf_end_charproc_accum(pdev, penum->current_font, penum->cgp,
-                pte_default->returned.current_glyph, penum->output_char_code, &gnstr);
-    if (code < 0)
-        return code;
-    penum->charproc_accum = false;
-    code = gx_default_text_restore_state(pte_default);
-    if (code < 0)
-        return code;
-    gs_text_release(pte_default, "pdf_text_process");
-    penum->pte_default = 0;
-
-    return 0;
+    pmat->xx = (1 / pdev->charproc_ctm.xx) * (pdev->HWResolution[0] / 72.0);
+    pmat->xy = 0;
+    pmat->yx = 0;
+    pmat->yy = (1 / pdev->charproc_ctm.yy ) * (pdev->HWResolution[0] / 72.0);
+    pmat->tx = 0;
+    pmat->ty = 0;
 }
 
 /*
@@ -2833,7 +2822,7 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
         if (penum->charproc_accum) {
-            code = complete_PS_charproc(pdev, pte, pte_default, penum, true);
+            code = complete_charproc(pdev, pte, pte_default, penum, true);
             if (code < 0)
                 return code;
             if (!pdev->type3charpath)
@@ -2841,6 +2830,7 @@ pdf_text_process(gs_text_enum_t *pte)
             else
                 goto default_impl;
         }
+#if 1
         /* Now we run the default text procedure to see what ahppens. If its a
          * PCL type 3 font or any non-type 3 PostScript font, then the glyph
          * will be rendered. If its a PostScript type 3 font (and some other kinds)
@@ -2848,47 +2838,61 @@ pdf_text_process(gs_text_enum_t *pte)
          * to the interpreter to run the glyph description
          */
         if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined
-            && operation & TEXT_FROM_CHARS) {
-            gs_state *pgs = (gs_state *)penum->pis;
-            gs_text_enum_procs_t const *save_procs = pte_default->procs;
-            gs_text_enum_procs_t special_procs = *pte_default->procs;
+            && operation & TEXT_FROM_CHARS && !pdev->type3charpath) {
+            gs_char *cdata;
 
-            special_procs.set_cache = pdf_text_set_cache;
-            pte_default->procs = &special_procs;
+            cdata = (gs_char *)pte->text.data.chars;
+            if (cdata[pte->index] <= 255) {
+                gs_state *pgs = (gs_state *)penum->pis;
+                gs_text_enum_procs_t const *save_procs = pte_default->procs;
+                gs_text_enum_procs_t special_procs = *pte_default->procs;
+                void *save_proc = pdev->procs.get_initial_matrix;
 
-            /* charproc completion will restore a gstate */
-            gs_gsave(pgs);
-            pgs->char_tm_valid = 0;
-            pgs->char_tm.txy_fixed_valid = 0;
-            pgs->current_point.x = pgs->current_point.y = 0;
-            pgs->char_tm.txy_fixed_valid = 0;
+                special_procs.set_cache = pdf_text_set_cache;
+                pte_default->procs = &special_procs;
 
-            pte_default->returned.current_char = pte->text.data.chars[pte->index];
+                /* charproc completion will restore a gstate */
+                gs_gsave(pgs);
+                pgs->char_tm_valid = 0;
+                pgs->char_tm.txy_fixed_valid = 0;
+                pgs->current_point.x = pgs->current_point.y = 0;
+                pgs->char_tm.txy_fixed_valid = 0;
 
-            code = install_charproc_accumulator(pdev, pte, pte_default, penum);
-            if (code < 0)
-                return code;
+                pte_default->returned.current_char = penum->returned.current_char =
+                    pte->text.data.chars[pte->index];
 
-            pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
-            code = gs_text_process(pte_default);
-            pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
-            pdev->charproc_just_accumulated = false;
+                code = install_charproc_accumulator(pdev, pte, pte_default, penum);
+                if (code < 0)
+                    return code;
 
-            penum->returned.current_char = pte_default->returned.current_char;
-            penum->returned.current_glyph = pte_default->returned.current_glyph;
-            code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
-            if (code < 0)
-                return code;
+                if (pte->text.size != 1)
+                    pte_default->text.size = pte->index + 1;
+                pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
 
-            code = complete_PS_charproc(pdev, pte, pte_default, penum, false);
-            pte_default->procs = save_procs;
-            if (code < 0)
-                return code;
-            if (!pdev->type3charpath)
-                goto top;
-            else
-                goto default_impl;
-        } else {
+                pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
+                code = gs_text_process(pte_default);
+                pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
+                pdev->charproc_just_accumulated = false;
+
+                pdev->procs.get_initial_matrix = save_proc;
+                penum->returned.current_char = pte_default->returned.current_char;
+                penum->returned.current_glyph = pte_default->returned.current_glyph;
+                code = pdf_choose_output_char_code(pdev, penum, &penum->output_char_code);
+                if (code < 0)
+                    return code;
+
+                code = complete_charproc(pdev, pte, pte_default, penum, false);
+                pte_default->procs = save_procs;
+                size = pte->text.size - pte->index;
+                if (code < 0)
+                    return code;
+                if (!pdev->type3charpath)
+                    goto top;
+                else
+                    goto default_impl;
+            }
+        }
+#endif
         pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
         code = gs_text_process(pte_default);
         pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
@@ -2899,7 +2903,6 @@ pdf_text_process(gs_text_enum_t *pte)
             code1 = install_PS_charproc_accumulator(pdev, pte, pte_default, penum);
             if (code1 != 0)
                 return code1;
-        }
         }
 
         gs_text_enum_copy_dynamic(pte, pte_default, true);
