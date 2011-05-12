@@ -727,7 +727,8 @@ typedef struct gx_device_cached_colors_s {
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
         cmm_profile_t *device_icc_profile;     /* Device profile in non-gc memory */\
-        gx_page_device_procs page_procs;	/* must be last */\
+        cmm_dev_profile_t *dev_icc_array;      /* object dependent profiles */\
+        gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\
         gx_device_procs procs	/* object procedures */
 
@@ -1428,6 +1429,13 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_copy_plane(proc)\
   dev_t_proc_copy_plane(proc, gx_device)
 
+#define dev_t_proc_get_profile(proc, dev_t)\
+  int proc(dev_t *dev, gs_object_tag_type_t object_type,\
+           cmm_profile_t **profile,\
+           gsicc_rendering_intents_t *rendering_intent)
+#define dev_proc_get_profile(proc)\
+  dev_t_proc_get_profile(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1498,6 +1506,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_put_image((*put_image), dev_t); \
         dev_t_proc_dev_spec_op((*dev_spec_op), dev_t); \
         dev_t_proc_copy_plane((*copy_plane), dev_t); \
+        dev_t_proc_get_profile((*get_profile), dev_t); \
 }
 
 /*
@@ -1719,5 +1728,9 @@ static dev_type_proc_initialize(initproc);\
 const gx_device_type dtname = { &stype, initproc }
 
 /*dev_type_proc_initialize(gdev_initialize); */
+
+#ifdef DEBUG
+void gx_device_dump(gx_device *dev, const char *text);
+#endif
 
 #endif /* gxdevcli_INCLUDED */

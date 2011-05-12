@@ -103,7 +103,7 @@
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */, 0/* MaxPatternBitmap */,\
-        0/*Profile*/,\
+        0/*Profile*/, 0/*Profile Array*/,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -277,6 +277,7 @@ dev_proc_fill_linear_color_triangle(gx_default_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors);
 dev_proc_ret_devn_params(gx_default_ret_devn_params);
 dev_proc_fillpage(gx_default_fillpage);
+dev_proc_get_profile(gx_default_get_profile);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -361,6 +362,7 @@ dev_proc_update_spot_equivalent_colors(gx_forward_update_spot_equivalent_colors)
 dev_proc_ret_devn_params(gx_forward_ret_devn_params);
 dev_proc_fillpage(gx_forward_fillpage);
 dev_proc_create_compositor(gx_forward_create_compositor);
+dev_proc_get_profile(gx_forward_get_profile);
 
 /* ---------------- Implementation utilities ---------------- */
 

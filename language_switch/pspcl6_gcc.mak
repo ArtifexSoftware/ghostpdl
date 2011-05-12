@@ -67,7 +67,6 @@ FEATURE_DEVS    ?= \
 	  $(DD)pdf.dev		\
 	  $(DD)dpsnext.dev	\
           $(DD)htxlib.dev	\
-          $(DD)roplib.dev	\
 	  $(DD)ttfont.dev	\
 	  $(DD)pipe.dev         \
           $(DD)gsnogc.dev       \

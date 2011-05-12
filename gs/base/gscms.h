@@ -94,6 +94,12 @@ typedef enum {
     gsABSOLUTECOLORIMETRIC
 } gsicc_rendering_intents_t;
 
+typedef struct cmm_dev_profile_s {
+        cmm_profile_t  *device_profile[4];
+        gsicc_rendering_intents_t intent[4];
+        gs_memory_t *memory;
+} cmm_dev_profile_t;
+
 /*  Doing this an an enum type for now.  There is alot going on with respect
  *  to this and V2 versus V4 profiles
  */

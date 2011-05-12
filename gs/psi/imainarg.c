@@ -316,7 +316,9 @@ run_stdin:
                 }
                 if (code < 0)
                     return e_Fatal;
-                runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
+                code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
+                if (code < 0)
+                    return code;
                 return e_Quit;
             }
         case 'A':               /* trace allocator */

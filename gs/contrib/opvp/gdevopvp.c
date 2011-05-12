@@ -2059,12 +2059,6 @@ opvp_open(gx_device *dev)
             if (pdev->bbox_device->memory == NULL) {
                 pdev->bbox_device->memory = gs_memory_stable(dev->memory);
             }
-#if GS_VERSION_MAJOR >= 9
-            if (pdev->bbox_device->device_icc_profile == NULL) {
-                pdev->bbox_device->device_icc_profile =
-                  pdev->device_icc_profile;
-            }
-#endif
         }
 #endif
         outputFD = fileno(pdev->file);

@@ -70,6 +70,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
     /* Set up the link now */
     const gs_color_space *pcs;
     gsicc_rendering_param_t rendering_params;
+    cmm_profile_t *dev_profile;
+    gsicc_rendering_intents_t rendering_intent;
 
     if (penum->spp == 1) {
         /* At this point in time, only use the ht approach if our device
@@ -95,6 +97,9 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     penum->icc_setup.need_decode = true;
                 }
             }
+            code = dev_proc(penum->dev, get_profile)(penum->dev, 
+                                              gs_current_object_tag(penum->pis->memory), 
+                                              &dev_profile, &rendering_intent);
             /* Define the rendering intents */
             rendering_params.black_point_comp = BP_ON;
             rendering_params.object_type = GS_IMAGE_TAG;
@@ -119,8 +124,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
             /* The effective transfer is built into the threshold array and
                need require a special lookup to decode it */
-            penum->icc_setup.has_transfer = gx_has_transfer(penum->pis,
-                                    penum->dev->device_icc_profile->num_comps);
+            penum->icc_setup.has_transfer = 
+                gx_has_transfer(penum->pis, dev_profile->num_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
                 penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
@@ -765,7 +770,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     fixed scale_factor, offset;
     int src_size;
     bool flush_buff = false;
-    byte *psrc_temp;
     int offset_contone;    /* to ensure 128 bit boundary */
     int offset_threshold;  /* to ensure 128 bit boundary */
     gx_dda_int_t dda_ht;
@@ -871,7 +875,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     if (scale_factor == fixed_1) {
                         memcpy(devc_contone, psrc, data_length);
                     } else if (scale_factor == fixed_half) {
-                        psrc_temp = psrc;
+                        const byte *psrc_temp = psrc;
                         for (k = 0; k < data_length; k+=2, devc_contone+=2,
                              psrc_temp++) {
                             *devc_contone = *(devc_contone+1) = *psrc_temp;
@@ -896,10 +900,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    or right to left. */
                 if (penum->ht_landscape.flipy) {
                     position = penum->ht_landscape.curr_pos +
-                                16 * (data_length - 1);
+                                LAND_BITS * (data_length - 1);
                     for (k = 0; k < data_length; k++) {
                         devc_contone[position] = psrc[dda_ht.state.Q];
-                        position -= 16;
+                        position -= LAND_BITS;
                         dda_next(dda_ht);
                     }
                 } else {
@@ -910,20 +914,20 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     if (scale_factor == fixed_1) {
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = psrc[k];
-                            position += 16;
+                            position += LAND_BITS;
                         }
                     } else if (scale_factor == fixed_half) {
                         for (k = 0; k < data_length; k+=2) {
                             offset = fixed2int_rounded(scale_factor * k);
                             devc_contone[position] =
-                                devc_contone[position + 16] = psrc[offset];
-                            position += 32;
+                                devc_contone[position + LAND_BITS] = psrc[offset];
+                            position += LAND_BITS*2;
                         }
                     } else {
                         /* use dda */
                         for (k = 0; k < data_length; k++) {
                             devc_contone[position] = psrc[dda_ht.state.Q];
-                            position += 16;
+                            position += LAND_BITS;
                             dda_next(dda_ht);
                         }
                     }
@@ -944,18 +948,32 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
         switch (posture) {
             case image_portrait:
                 if (penum->dst_width > 0) {
-                    for (k = 0; k < data_length; k++) {
-                        dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                        memcpy(devc_contone, dev_value, spp_out);
-                        devc_contone += spp_out;
-                        dda_next(dda_ht);
+                    if (spp_out == 1) {
+                        for (k = 0; k < data_length; k++) {
+                            *devc_contone++ = color_cache[psrc[dda_ht.state.Q]];
+                            dda_next(dda_ht);
+                        }
+                    } else {
+                        for (k = 0; k < data_length; k++) {
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            memcpy(devc_contone, dev_value, spp_out);
+                            devc_contone += spp_out;
+                            dda_next(dda_ht);
+                        }
                     }
                 } else {
-                    for (k = 0; k < data_length; k++) {
-                        dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                        memcpy(&(devc_contone[(data_length - k - 1) * spp_out]),
-                               dev_value, spp_out);
-                        dda_next(dda_ht);
+                    if (spp_out == 1) {
+                        for (k = data_length-1; k >= 0; k--) {
+                            devc_contone[k] = color_cache[psrc[dda_ht.state.Q]];
+                            dda_next(dda_ht);
+                        }
+                    } else {
+                        for (k = 0; k < data_length; k++) {
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            memcpy(&(devc_contone[(data_length - k - 1) * spp_out]),
+                                   dev_value, spp_out);
+                            dda_next(dda_ht);
+                        }
                     }
                 }
                 break;
@@ -965,22 +983,38 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                    or right to left. */
                 if (penum->ht_landscape.flipy) {
                     position = penum->ht_landscape.curr_pos +
-                                16 * (data_length - 1);
+                                LAND_BITS * (data_length - 1);
                     /* use dda */
-                    for (k = 0; k < data_length; k++) {
-                        dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                        devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
-                        position -= 16;
-                        dda_next(dda_ht);
+                    if (spp_out == 1) {
+                        for (k = 0; k < data_length; k++) {
+                            devc_contone[position] = color_cache[psrc[dda_ht.state.Q]];
+                            position -= LAND_BITS;
+                            dda_next(dda_ht);
+                        }
+                    } else {
+                        for (k = 0; k < data_length; k++) {
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
+                            position -= LAND_BITS;
+                            dda_next(dda_ht);
+                        }
                     }
                 } else {
                     position = penum->ht_landscape.curr_pos;
                     /* use dda */
-                    for (k = 0; k < data_length; k++) {
-                        dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                        devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
-                        position += 16;
-                        dda_next(dda_ht);
+                    if (spp_out == 1) {
+                        for (k = 0; k < data_length; k++) {
+                            devc_contone[position] = color_cache[psrc[dda_ht.state.Q]];
+                            position += LAND_BITS;
+                            dda_next(dda_ht);
+                        }
+                    } else {
+                        for (k = 0; k < data_length; k++) {
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            devc_contone[position] = dev_value[0];  /* Only works for monochrome device now */
+                            position += LAND_BITS;
+                            dda_next(dda_ht);
+                        }
                     }
                 }
                 /* Store the width information and update our counts */

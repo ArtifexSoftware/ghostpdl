@@ -191,7 +191,9 @@ const gx_device_procs gs_clist_device_procs = {
     NULL,                      /* push_transparency_state */
     NULL,                      /* pop_transparency_state */
     NULL,                      /* put_image */
-    clist_dev_spec_op
+    clist_dev_spec_op,
+    NULL,                      /* copy plane */
+    gx_default_get_profile
 };
 
 /*------------------- Choose the implementation -----------------------

@@ -68,13 +68,16 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
     int c, i;
     int Colors = ss->params.Colors;
     int WidthIn = ss->params.WidthIn;
-    int prev_y = dda_previous(ss->dda_y);
-    int cur_y = dda_next(ss->dda_y);
-    bool firstline = prev_y != cur_y;	/* at the start of a new group of lines */
+    int prev_y;
+    int cur_y;
+    bool firstline;
     bool polarity_additive = ss->params.ColorPolarityAdditive;
 
-        /* The following could be a macro, BUT macro's with control */
-        /* are not good style and hard to debug */
+    dda_previous_assign(ss->dda_y, prev_y);
+    dda_next_assign(ss->dda_y, cur_y);
+    firstline = prev_y != cur_y; /* at the start of a new group of lines */
+    /* The following could be a macro, BUT macro's with control */
+    /* are not good style and hard to debug */
     if (ss->sizeofPixelIn == 1) {
         for (c = 0; c < Colors; ++c) {
             byte *tp = (byte *)tmp + c;		/* destination */
@@ -84,7 +87,8 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             if_debug1('W', "[W]idownscale_x color %d:", c);
 
             for ( i = 0; i < WidthIn; tp += Colors) {
-                int endx = dda_next(ss->dda_x);
+                int endx;
+                dda_next_assign(ss->dda_x, endx);
                 if (firstline)
                     *tp = *pp;
                 else {
@@ -111,7 +115,8 @@ idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISp
             if_debug1('W', "[W]idownscale_x color %d:", c);
 
             for ( i = 0; i < WidthIn; tp += Colors) {
-                int endx = dda_next(ss->dda_x);
+                int endx;
+                dda_next_assign(ss->dda_x,endx);
                 if (firstline)
                     *tp = *pp;
                 else {
@@ -318,7 +323,7 @@ adv:	++(ss->dst_y);
             idownscale_x(ss->tmp, row, ss);
             pr->ptr += rcount;
             ++(ss->src_y);
-            cur_y = dda_next(ss->dda_y);
+            dda_next_assign(ss->dda_y,cur_y);
             goto top;
         } else {		/* We don't have a complete row.  Copy data to src buffer. */
             memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1, rleft);

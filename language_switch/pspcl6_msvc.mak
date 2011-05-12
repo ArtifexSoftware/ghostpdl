@@ -228,7 +228,6 @@ FEATURE_CORE    = \
 	  $(DD)\pdf.dev		\
 	  $(DD)\dpsnext.dev	\
           $(DD)\htxlib.dev	\
-          $(DD)\roplib.dev	\
 	  $(DD)\ttfont.dev	\
           $(DD)\gsnogc.dev       \
 	  $(DD)\pipe.dev

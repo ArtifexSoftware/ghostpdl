@@ -28,18 +28,9 @@
 #define DO_TILE_RECT_BY_COPY_ROP
 
 /* Either we can implement fill_rect directly, or we can call copy_rop to do
- * its work. For now we still implement it directly. */
+ * its work. For now we still implement it directly, as for small tile widths
+ * it wins over using run_rop. */
 #undef DO_FILL_RECT_BY_COPY_ROP
-
-/* When implementing copy_rop, we can either use braindead local functions,
- * or appeal to the fast rop_run operations. We leave this option in for
- * debugging. */
-#define USE_ROP_RUN
-
-/* Set COMPARE_AND_CONTRAST in conjunction with USE_ROP_RUN to perform rops
- * both using rop_run and using the braindead functions and compare the
- * results. This is a hack, but useful for debugging. Use with care. */
-#undef COMPARE_AND_CONTRAST
 
 /* Calculate the X offset for a given Y value, */
 /* taking shift into account if necessary. */
@@ -65,16 +56,13 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 {
     gx_device_memory *mdev = (gx_device_memory *) dev;
     gs_rop3_t rop = (gs_rop3_t)lop;
-    gx_strip_bitmap no_texture;
     uint draster = mdev->raster;
     uint traster;
     int line_count;
     byte *drow;
     const byte *srow;
     int ty;
-#ifdef USE_ROP_RUN
     rop_run_op ropper;
-#endif
 
     /* Modify the raster operation according to the source palette. */
     if (scolors != 0) {		/* Source with palette. */
@@ -145,6 +133,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                      color0, color1);
 #else
                 fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
+                goto no_T;
                 break;
 #endif
             case rop_usage_DS:
@@ -165,14 +154,8 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
 #undef copy_case
 #endif
                 fit_copy(dev, sdata, sourcex, sraster, id, x, y, width, height);
-              no_T:		/* Texture is not used; textures may be garbage. */
-                no_texture.data = scan_line_base(mdev, 0);  /* arbitrary */
-                no_texture.raster = 0;
-                no_texture.size.x = width;
-                no_texture.size.y = height;
-                no_texture.rep_width = no_texture.rep_height = 1;
-                no_texture.rep_shift = no_texture.shift = 0;
-                textures = &no_texture;
+              no_T: /* Texture is not used; textures may be garbage. */
+                textures = NULL;
                 break;
             case rop_usage_T:
 #ifndef DO_TILE_RECT_BY_COPY_ROP /* Tile rect calls us - don't call it! */
@@ -228,125 +211,150 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
     traster = (textures ? textures->raster : 0);
     ty = y + phase_y;
 
-#ifdef USE_ROP_RUN
-    rop_get_run_op(&ropper, rop, 1, 0);
-#endif
-
-    /* Loop over scan lines. */
-    for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
-        int sx = sourcex;
-        int dx = x;
-        int w = width;
-        const byte *trow = (textures == NULL ? 0 :
-                            textures->data + (ty % textures->rep_height) * traster);
-        int xoff = (textures ? x_offset(phase_x, ty, textures) : 0);
-        int nw;
-
-        /* Loop over (horizontal) copies of the tile. */
-        for (; w > 0; sx += nw, dx += nw, w -= nw) {
-#ifndef USE_ROP_RUN
-            int dbit = dx & 7;
-            int sbit = sx & 7;
-            int sskew = sbit - dbit;
+    if (textures == NULL) {
+        int dbit = x & 7;
+        int sbit = sourcex & 7;
+        drow += (x >> 3);
+        srow += (sourcex >> 3);
+        /* Use Rop run */
+        rop_get_run_op(&ropper, rop, 1, 0);
+        /* Loop over scan lines. */
+        for (; line_count-- > 0; drow += draster, srow += sraster) {
+            rop_set_s_bitmap_subbyte(&ropper, srow, sbit);
+            rop_run_subbyte(&ropper, drow, dbit, width);
+        }
+        rop_release_run_op(&ropper);
+    } else if (textures->rep_width > 32) {
+        /* Use Rop run */
+        rop_get_run_op(&ropper, rop, 1, 0);
+        /* Loop over scan lines. */
+        for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
+            int sx = sourcex;
+            int dx = x;
+            int w = width;
+            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            int xoff = x_offset(phase_x, ty, textures);
+            int nw;
             int tx = (dx + xoff) % textures->rep_width;
-            int tbit = tx & 7;
-            int tskew = tbit - dbit;
-            int left = nw = min(w, textures->size.x - tx);
-            byte lmask = 0xff >> dbit;
-            byte rmask = 0xff << (~(dbit + nw - 1) & 7);
-            byte mask = lmask;
-            int nx = 8 - dbit;
-            byte *dptr = drow + (dx >> 3);
-            const byte *sptr = srow + (sx >> 3);
-            const byte *tptr = trow + (tx >> 3);
 
-            if (sskew < 0)
-                --sptr, sskew += 8;
-            if (tskew < 0)
-                --tptr, tskew += 8;
-            for (; left > 0;
-                 left -= nx, mask = 0xff, nx = 8,
-                 ++dptr, ++sptr, ++tptr
-                ) {
-                byte dbyte = *dptr;
+            /* Loop over (horizontal) copies of the tile. */
+            for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
+                int dbit = dx & 7;
+                int sbit = sx & 7;
+                int tbit = tx & 7;
+                byte *dptr = drow + (dx >> 3);
+                const byte *sptr = srow + (sx >> 3);
+                const byte *tptr = trow + (tx >> 3);
+                nw = min(w, textures->size.x - tx);
+                rop_set_s_bitmap_subbyte(&ropper, sptr, sbit);
+                rop_set_t_bitmap_subbyte(&ropper, tptr, tbit);
+                rop_run_subbyte(&ropper, dptr, dbit, nw);
+            }
+        }
+        rop_release_run_op(&ropper);
+    } else if (srow == NULL) {
+        /* Do it the old, 'slow' way. rop runs of less than 1 word are
+         * not likely to be a win with rop_run. */
+        /* Loop over scan lines. */
+        for (; line_count-- > 0; drow += draster, ++ty) {
+            int dx = x;
+            int w = width;
+            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            int xoff = x_offset(phase_x, ty, textures);
+            int nw;
+            int tx = (dx + xoff) % textures->rep_width;
+
+            /* Loop over (horizontal) copies of the tile. */
+            for (; w > 0; dx += nw, w -= nw, tx = 0) {
+                int dbit = dx & 7;
+                int tbit = tx & 7;
+                int tskew = tbit - dbit;
+                int left = nw = min(w, textures->size.x - tx);
+                byte lmask = 0xff >> dbit;
+                byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+                byte mask = lmask;
+                int nx = 8 - dbit;
+                byte *dptr = drow + (dx >> 3);
+                const byte *tptr = trow + (tx >> 3);
+
+                if (tskew < 0)
+                    --tptr, tskew += 8;
+                for (; left > 0;
+                    left -= nx, mask = 0xff, nx = 8,
+                    ++dptr, ++tptr
+                    ) {
+                    byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
   (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
-                byte sbyte = fetch1(sptr, sskew);
-                byte tbyte = fetch1(tptr, tskew);
+                    byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                byte result =
-                (*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
+                    byte result = (*rop_proc_table[rop])(dbyte,0,tbyte);
 
-                if (left <= nx)
-                    mask &= rmask;
-                *dptr = (mask == 0xff ? result :
-                         (result & mask) | (dbyte & ~mask));
+                    if (left <= nx)
+                        mask &= rmask;
+                    *dptr = (mask == 0xff ? result :
+                             (result & mask) | (dbyte & ~mask));
+                }
             }
-#else
-            int dbit = dx & 7;
-            int sbit = sx & 7;
-            int tx = (textures ? (dx + xoff) % textures->rep_width : 0);
-            int tbit = tx & 7;
-            int left = nw = (textures ? min(w, textures->size.x - tx) : w);
-            byte *dptr = drow + (dx >> 3);
-            const byte *sptr = srow + (sx >> 3);
-            const byte *tptr = trow + (tx >> 3);
-#ifdef COMPARE_AND_CONTRAST
-            int sskew = sbit - dbit;
-            int tskew = tbit - dbit;
-            byte lmask = 0xff >> dbit;
-            byte rmask = 0xff << (~(dbit + nw - 1) & 7);
-            byte mask = lmask;
-            int nx = 8 - dbit;
+        }
+    } else {
+        /* Do it the old, 'slow' way. rop runs of less than 1 word are
+         * not likely to be a win with rop_run. */
+        /* Loop over scan lines. */
+        for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
+            int sx = sourcex;
+            int dx = x;
+            int w = width;
+            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            int xoff = x_offset(phase_x, ty, textures);
+            int nw;
+            int tx = (dx + xoff) % textures->rep_width;
 
-            static byte testbuffer[4096];
-            byte *start = dptr-2;
-            int bytelen = (left+32+7)>>3;
-            memcpy(testbuffer, start, bytelen);
-#endif
-            rop_set_s_bitmap_subbyte(&ropper, sptr, sbit);
-            rop_set_t_bitmap_subbyte(&ropper, tptr, tbit);
-#ifndef COMPARE_AND_CONTRAST
-            rop_run_subbyte(&ropper, dptr, dbit, left);
-#else
-            eprintf5("rop=%x dbit=%d sbit=%d tbit=%d left=%d\n", rop, dbit, sbit, tbit, left);
-            rop_run_subbyte(&ropper, testbuffer+2, dbit, left);
-            if (sskew < 0)
-                --sptr, sskew += 8;
-            if (tskew < 0)
-                --tptr, tskew += 8;
-            for (; left > 0;
-                 left -= nx, mask = 0xff, nx = 8,
-                 ++dptr, ++sptr, ++tptr
-                ) {
-                byte dbyte = *dptr;
+            /* Loop over (horizontal) copies of the tile. */
+            for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
+                int dbit = dx & 7;
+                int sbit = sx & 7;
+                int sskew = sbit - dbit;
+                int tbit = tx & 7;
+                int tskew = tbit - dbit;
+                int left = nw = min(w, textures->size.x - tx);
+                byte lmask = 0xff >> dbit;
+                byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+                byte mask = lmask;
+                int nx = 8 - dbit;
+                byte *dptr = drow + (dx >> 3);
+                const byte *sptr = srow + (sx >> 3);
+                const byte *tptr = trow + (tx >> 3);
+
+                if (sskew < 0)
+                    --sptr, sskew += 8;
+                if (tskew < 0)
+                    --tptr, tskew += 8;
+                for (; left > 0;
+                    left -= nx, mask = 0xff, nx = 8,
+                    ++dptr, ++sptr, ++tptr
+                    ) {
+                    byte dbyte = *dptr;
 
 #define fetch1(ptr, skew)\
   (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
-                byte sbyte = fetch1(sptr, sskew);
-                byte tbyte = fetch1(tptr, tskew);
+                    byte sbyte = fetch1(sptr, sskew);
+                    byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                byte result =
-                (*rop_proc_table[rop]) (dbyte, sbyte, tbyte);
+                    byte result = (*rop_proc_table[rop])(dbyte,sbyte,tbyte);
 
-                if (left <= nx)
-                    mask &= rmask;
-                *dptr = (mask == 0xff ? result :
-                         (result & mask) | (dbyte & ~mask));
+                    if (left <= nx)
+                        mask &= rmask;
+                    *dptr = (mask == 0xff ? result :
+                             (result & mask) | (dbyte & ~mask));
+                }
             }
-            if (memcmp(testbuffer, start, bytelen) != 0)
-                eprintf("Different! Shoulda put a breakpoint on it.\n");
-#endif
-#endif
         }
     }
 
-#ifdef USE_ROP_RUN
-    rop_release_run_op(&ropper);
-#endif
 #ifdef DEBUG
     if (gs_debug_c('B'))
         debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,

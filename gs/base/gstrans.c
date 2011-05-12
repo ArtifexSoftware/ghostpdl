@@ -773,7 +773,13 @@ int
 gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
 {
     gs_pdf14trans_params_t params = { 0 };
+    cmm_profile_t *dev_profile;
+    gsicc_rendering_intents_t rendering_intent;
+    int code;
 
+    code = dev_proc(pgs->device, get_profile)(pgs->device, 
+                                           gs_current_object_tag(pgs->memory), 
+                                           &dev_profile, &rendering_intent);
     params.pdf14_op = PDF14_PUSH_DEVICE;
     /*
      * We really only care about the number of spot colors when we have
@@ -787,7 +793,7 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
        whose profile is CIELAB then we will need to make sure that we
        do our blending in RGB and convert to CIELAB when we do the put_image
        command */
-    if (pgs->device->device_icc_profile->data_cs == gsCIELAB) {
+    if (dev_profile->data_cs == gsCIELAB) {
         params.iccprofile = pgs->icc_manager->default_rgb;
     }
     /* Note: Other parameters not used */

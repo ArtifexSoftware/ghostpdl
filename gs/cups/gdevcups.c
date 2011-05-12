@@ -459,9 +459,7 @@ cups_close(gx_device *pdev)		/* I - Device info */
   if (cups->stream != NULL)
   {
     cupsRasterClose(cups->stream);
-    close(fileno(cups->file));
     cups->stream = NULL;
-    cups->file = NULL;
   }
 
 #if 0 /* Can't do this here because put_params() might close the device */

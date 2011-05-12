@@ -480,7 +480,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		      /* multiple symbols are handled as a text region */
 		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
-			  n_refagg_dicts, image, data, size, GR_stats, as, (Jbig2WordStream *)NULL);
+			  n_refagg_dicts, image, data, size, GR_stats, as, as ? NULL : ws);
 
 		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
 		      refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_clone(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
@@ -758,7 +758,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     goto too_short;
 
   /* 7.4.2.1.1 */
-  flags = jbig2_get_int16(segment_data);
+  flags = jbig2_get_uint16(segment_data);
   params.SDHUFF = flags & 1;
   params.SDREFAGG = (flags >> 1) & 1;
   params.SDTEMPLATE = (flags >> 10) & 3;
@@ -889,9 +889,9 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     goto too_short;
 
   /* 7.4.2.1.4 */
-  params.SDNUMEXSYMS = jbig2_get_int32(segment_data + offset);
+  params.SDNUMEXSYMS = jbig2_get_uint32(segment_data + offset);
   /* 7.4.2.1.5 */
-  params.SDNUMNEWSYMS = jbig2_get_int32(segment_data + offset + 4);
+  params.SDNUMNEWSYMS = jbig2_get_uint32(segment_data + offset + 4);
   offset += 8;
 
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

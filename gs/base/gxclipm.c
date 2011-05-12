@@ -98,7 +98,9 @@ const gx_device_mask_clip gs_mask_clip_device =
   NULL,                      /* push_transparency_state */
   NULL,                      /* pop_transparency_state */
   NULL,                      /* put_image */
-  gx_forward_dev_spec_op
+  gx_forward_dev_spec_op,
+  NULL,
+  gx_forward_get_profile
  }
 };
 

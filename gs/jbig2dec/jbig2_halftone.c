@@ -218,7 +218,7 @@ jbig2_pattern_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.HDTEMPLATE = (flags & 6) >> 1;
   params.HDPW = segment_data[1];
   params.HDPH = segment_data[2];
-  params.GRAYMAX = jbig2_get_int32(segment_data + 3);
+  params.GRAYMAX = jbig2_get_uint32(segment_data + 3);
   offset += 7;
 
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
@@ -320,16 +320,16 @@ jbig2_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_
 
   /* Figure 43 */
   if (segment->data_length - offset < 16) goto too_short;
-  params.HGW = jbig2_get_int32(segment_data + offset);
-  params.HGH = jbig2_get_int32(segment_data + offset + 4);
+  params.HGW = jbig2_get_uint32(segment_data + offset);
+  params.HGH = jbig2_get_uint32(segment_data + offset + 4);
   params.HGX = jbig2_get_int32(segment_data + offset + 8);
   params.HGY = jbig2_get_int32(segment_data + offset + 12);
   offset += 16;
 
   /* Figure 44 */
   if (segment->data_length - offset < 4) goto too_short;
-  params.HRX = jbig2_get_int16(segment_data + offset);
-  params.HRY = jbig2_get_int16(segment_data + offset + 2);
+  params.HRX = jbig2_get_uint16(segment_data + offset);
+  params.HRY = jbig2_get_uint16(segment_data + offset + 2);
   offset += 4;
 
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

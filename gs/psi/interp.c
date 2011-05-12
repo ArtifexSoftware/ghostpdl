@@ -75,28 +75,34 @@ public_st_op_stack();
  * Apply an operator.  When debugging, we route all operator calls
  * through a procedure.
  */
-#ifdef DEBUG
+#if defined(DEBUG_TRACE_PS_OPERATORS) || defined(DEBUG)
+#define call_operator(proc, p) (*call_operator_fn)(proc, p)
 static int
-call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
+do_call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
+{
+    int code;
+    code = op_proc(i_ctx_p);
+    return code; /* A good place for a conditional breakpoint. */
+}
+static int
+do_call_operator_verbose(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
     int code;
 
-# ifdef DEBUG_TRACE_PS_OPERATORS
-#   ifndef SHOW_STACK_DEPTHS
+#ifndef SHOW_STACK_DEPTHS
     if_debug1('!', "[!]operator %s\n", op_get_name_string(op_proc));
-#   else
+#else
     if_debug3('!', "[!][es=%d os=%d]operator %s\n",
             esp-i_ctx_p->exec_stack.stack.bot,
             osp-i_ctx_p->op_stack.stack.bot,
             op_get_name_string(op_proc));
-#   endif
-# endif
-    code = op_proc(i_ctx_p);
-# if defined(DEBUG_TRACE_PS_OPERATORS) && defined(SHOW_STACK_DEPTHS)
+#endif
+    code = do_call_operator(op_proc, i_ctx_p);
+#if defined(SHOW_STACK_DEPTHS)
     if_debug2('!', "[!][es=%d os=%d]\n",
             esp-i_ctx_p->exec_stack.stack.bot,
             osp-i_ctx_p->op_stack.stack.bot);
-# endif
+#endif
     return code; /* A good place for a conditional breakpoint. */
 }
 #else
@@ -823,6 +829,13 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
   }
 
     int ticks_left = i_ctx_p->time_slice_ticks;
+
+#if defined(DEBUG_TRACE_PS_OPERATORS) || defined(DEBUG)
+    int (*call_operator_fn)(op_proc_t, i_ctx_t *) = do_call_operator;
+
+    if (gs_debug_c('!'))
+        call_operator_fn = do_call_operator_verbose;
+#endif
 
     /*
      * If we exceed the VMThreshold, set ticks_left to -100

@@ -111,7 +111,9 @@ static const gx_device_rop_texture gs_rop_texture_device = {
      NULL,                              /* push_transparency_state */
      NULL,                              /* pop_transparency_state */
      NULL,                              /* put_image */
-     gx_forward_dev_spec_op
+     gx_forward_dev_spec_op,
+     NULL,                              /* copy plane */
+     gx_forward_get_profile
     },
     0,				/* target */
     lop_default			/* log_op */

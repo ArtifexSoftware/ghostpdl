@@ -243,7 +243,7 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
     byte *contone_ptr;
     byte *thresh_ptr;
     byte *halftone_ptr;
-    int num_tiles = (int) ceil((float) (width - offset_bits)/16.0);
+    int num_tiles = (width - offset_bits + 15)>>4;
     int k, j;
 
     for (j = 0; j < num_rows; j++) {
@@ -278,16 +278,16 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
 #endif
 }
 
-/* This thresholds a buffer that is 16 wide by data_length tall */
+/* This thresholds a buffer that is LAND_BITS wide by data_length tall. */
 void
 gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
                     int data_length)
 {
-    __align16 byte contone[16];
+    __align16 byte contone[LAND_BITS];
     int position_start, position, curr_position;
     int *widths = &(ht_landscape.widths[0]);
-    int local_widths[16];
+    int local_widths[LAND_BITS];
     int num_contone = ht_landscape.num_contones;
     int k, j, w, contone_out_posit;
     byte *contone_ptr, *thresh_ptr, *halftone_ptr;
@@ -309,16 +309,16 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
     k = 0;
     for (j = 0; j < num_contone; j++)
         k += (local_widths[j] = widths[position_start+j]);
-    if (k > 16) {
+    if (k > LAND_BITS) {
         if (ht_landscape.index > 0) {
-            local_widths[num_contone-1] -= k-16;
+            local_widths[num_contone-1] -= k-LAND_BITS;
         } else {
-            local_widths[0] -= k-16;
+            local_widths[0] -= k-LAND_BITS;
         }
     }
 #ifdef PACIFY_VALGRIND
-    if (k < 16) {
-        extra = 16 - k;
+    if (k < LAND_BITS) {
+        extra = LAND_BITS - k;
     }
 #endif
     for (k = data_length; k > 0; k--) { /* Loop on rows */
@@ -344,16 +344,26 @@ gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
             curr_position++; /* Move us to the next position in our width array */
             contone_ptr++;   /* Move us to a new location in our contone buffer */
         }
-        /* Now we have our left justified and expanded contone data for a single
-           set of 16.  Go ahead and threshold these */
-#ifdef HAVE_SSE2
-        threshold_16_SSE(&(contone[0]), thresh_ptr, halftone_ptr);
-#else
-        threshold_16_bit(&(contone[0]), thresh_ptr, halftone_ptr);
+        /* Now we have our left justified and expanded contone data for
+           LAND_BITS/16 sets of 16 bits. Go ahead and threshold these. */
+        contone_ptr = &contone[0];
+#if LAND_BITS > 16
+        j = LAND_BITS;
+        do {
 #endif
-        thresh_ptr += 16;
-        position += 16;
-        halftone_ptr += 2;
+#ifdef HAVE_SSE2
+            threshold_16_SSE(contone_ptr, thresh_ptr, halftone_ptr);
+#else
+            threshold_16_bit(contone_ptr, thresh_ptr, halftone_ptr);
+#endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
+            contone_ptr += 16;
+#if LAND_BITS > 16
+            j -= 16;
+        } while (j > 0);
+#endif
     }
 }
 
@@ -392,10 +402,10 @@ gxht_thresh_image_init(gx_image_enum *penum)
        number of  colorants in the source space.  Note we will
        need to eventually  consider  multi-level halftone case
        here too.  For now, to make use of the SSE2 stuff, we would
-       like to have 16 bytes of data to process at a time.  So we
-       will collect the columns of data in a buffer that is 16 wide.
-       We will also keep track of the widths of each column.  When
-       the total width count reaches 16, we will create our
+       like to have a multiple of 16 bytes of data to process at a time.
+       So we will collect the columns of data in a buffer that is LAND_BITS
+       wide.  We will also keep track of the widths of each column.  When
+       the total width count reaches LAND_BITS, we will create our
        threshold array and apply it.  We may have one column that is
        buffered between calls in this case.  Also if a call is made
        with h=0 we will flush the buffer as we are at the end of the
@@ -405,20 +415,23 @@ gxht_thresh_image_init(gx_image_enum *penum)
             fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
-        temp = (int) ceil((float) col_length/16.0);
-        penum->line_size = temp * 16;  /* The stride */
-        /* Now we need at most 16 of these */
+        /* Line_size is col_length rounded up - why? */
+        /* RJW: This was 16 here, but as I don't understand why, I'm using
+         * LAND_BITS instead. Check with Michael. */
+        temp = (col_length + LAND_BITS-1)/LAND_BITS;
+        penum->line_size = temp * LAND_BITS;  /* The stride */
+        /* Now we need at most LAND_BITS of these */
         penum->line = gs_alloc_bytes(penum->memory,
-                                     16 * penum->line_size + 16,
+                                     LAND_BITS * penum->line_size + 16,
                                      "gxht_thresh");
         /* Same with this */
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
-                                   penum->line_size * 16  + 16,
-                                   "gxht_thresh");
-        /* That maps into 2 bytes of Halftone data */
+                                           penum->line_size * LAND_BITS + 16,
+                                           "gxht_thresh");
+        /* That maps into (LAND_BITS/8) bytes of Halftone data */
         penum->ht_buffer = gs_alloc_bytes(penum->memory,
-                                       penum->line_size * 2,
-                                       "gxht_thresh");
+                                          penum->line_size * (LAND_BITS>>3),
+                                          "gxht_thresh");
         penum->ht_stride = penum->line_size;
         if (penum->line == NULL || penum->thresh_buffer == NULL
                     || penum->ht_buffer == NULL)
@@ -427,7 +440,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         penum->ht_landscape.num_contones = 0;
         if (penum->y_extent.x < 0) {
             /* Going right to left */
-            penum->ht_landscape.curr_pos = 15;
+            penum->ht_landscape.curr_pos = LAND_BITS-1;
             penum->ht_landscape.index = -1;
         } else {
             /* Going left to right */
@@ -443,14 +456,14 @@ gxht_thresh_image_init(gx_image_enum *penum)
             penum->ht_landscape.y_pos =
                 fixed2int_pixround_perfect(dda_current(penum->dda.pixel0.y));
         }
-        memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
+        memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*LAND_BITS);
         penum->ht_landscape.offset_set = false;
         penum->ht_offset_bits = 0; /* Will get set in call to render */
         if (code >= 0) {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-            memset(penum->line, 0, 16 * penum->line_size + 16);
-            memset(penum->ht_buffer, 0, penum->line_size * 2);
-            memset(penum->thresh_buffer, 0, 16 * penum->line_size + 16);
+            memset(penum->line, 0, LAND_BITS * penum->line_size + 16);
+            memset(penum->ht_buffer, 0, penum->line_size * (LAND_BITS>>3));
+            memset(penum->thresh_buffer, 0, LAND_BITS * penum->line_size + 16);
 #endif
         }
     } else {
@@ -548,7 +561,7 @@ fill_threshhold_buffer(byte *dest_strip, byte *src_strip, int src_width,
     memcpy(ptr_out_temp, src_strip, right_width);
 #ifdef PACIFY_VALGRIND
     ptr_out_temp += right_width;
-    ii = (dest_strip-ptr_out_temp) & 15;
+    ii = (dest_strip-ptr_out_temp) % (LAND_BITS-1);
     if (ii > 0)
         memset(ptr_out_temp, 0, ii);
 #endif
@@ -567,18 +580,18 @@ reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
     if (ht_landscape->index < 0) {
         /* Moving right to left, move column to far right */
         position_curr = ht_landscape->curr_pos + 1;
-        position_new = 15;
+        position_new = LAND_BITS-1;
         delta = ht_landscape->count - num_used;
-        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
-        ht_landscape->widths[15] = delta;
-        ht_landscape->curr_pos = 14;
+        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*LAND_BITS);
+        ht_landscape->widths[LAND_BITS-1] = delta;
+        ht_landscape->curr_pos = LAND_BITS-2;
         ht_landscape->xstart = curr_x_pos - num_used;
     } else {
         /* Moving left to right, move column to far left */
         position_curr = ht_landscape->curr_pos - 1;
         position_new = 0;
         delta = ht_landscape->count - num_used;
-        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*16);
+        memset(&(ht_landscape->widths[0]), 0, sizeof(int)*LAND_BITS);
         ht_landscape->widths[0] = delta;
         ht_landscape->curr_pos = 1;
         ht_landscape->xstart = curr_x_pos + num_used;
@@ -587,8 +600,8 @@ reset_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
     ht_landscape->num_contones = 1;
     for (k = 0; k < data_length; k++) {
             contone_align[position_new] = contone_align[position_curr];
-            position_curr += 16;
-            position_new += 16;
+            position_curr += LAND_BITS;
+            position_new += LAND_BITS;
     }
 }
 
@@ -703,19 +716,20 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
 #endif
             break;
         case image_landscape:
-            /* Go ahead and paint the chunk if we have 16 values or a partial
-               to get us in sync with the 1 bit devices 16 bit positions */
+            /* Go ahead and paint the chunk if we have LAND_BITS values or a
+             * partial to get us in sync with the 1 bit devices 16 bit
+             * positions. */
             vdi = penum->wci;
-            while (penum->ht_landscape.count > 15 ||
+            while (penum->ht_landscape.count >= LAND_BITS ||
                    ((penum->ht_landscape.count >= offset_bits) &&
                     penum->ht_landscape.offset_set)) {
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
-                   16 columns */
+                   LAND_BITS columns */
                 if (penum->ht_landscape.offset_set) {
                     width = offset_bits;
                 } else {
-                    width = 16;
+                    width = LAND_BITS;
                 }
                 if (penum->y_extent.x < 0) {
                     dx = (penum->ht_landscape.xstart - width + 1) % thresh_width;
@@ -726,14 +740,13 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 if (dy < 0)
                     dy += thresh_height;
                 /* Left remainder part */
-                left_rem_end = min(dx + 16, thresh_width);
+                left_rem_end = min(dx + LAND_BITS, thresh_width);
                 left_width = left_rem_end - dx;
                 /* Now the middle part */
-                num_full_tiles =
-                    (int)fastfloor((float) (16 - left_width)/ (float) thresh_width);
+                num_full_tiles = (LAND_BITS - left_width) / thresh_width;
                 /* Now the right part */
                 right_tile_width =
-                    16 - num_full_tiles * thresh_width - left_width;
+                    LAND_BITS - num_full_tiles * thresh_width - left_width;
                 /* Now loop over the y stuff */
                 ptr_out = thresh_align;
                 /* Do this in three parts.  We do a top part, followed by
@@ -761,7 +774,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                     }
                     /* Now the remainder */
                     memcpy(ptr_out_temp, row_ptr, right_tile_width);
-                    ptr_out += 16;
+                    ptr_out += LAND_BITS;
                 }
                 if (replicate_tile) {
                     /* Find out how many we need to copy */
@@ -769,11 +782,11 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                         (int)fastfloor((float) (dest_height - thresh_height)/ (float) thresh_height);
                     tile_remainder = dest_height - (num_tiles + 1) * thresh_height;
                     for (jj = 0; jj < num_tiles; jj ++) {
-                        memcpy(ptr_out, thresh_align, 16 * thresh_height);
-                        ptr_out += 16 * thresh_height;
+                        memcpy(ptr_out, thresh_align, LAND_BITS * thresh_height);
+                        ptr_out += LAND_BITS * thresh_height;
                     }
                     /* Now fill in the remainder */
-                    memcpy(ptr_out, thresh_align, 16 * tile_remainder);
+                    memcpy(ptr_out, thresh_align, LAND_BITS * tile_remainder);
                 }
                 /* Apply the threshold operation */
                 gx_ht_threshold_landscape(contone_align, thresh_align,
@@ -781,7 +794,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 /* Perform the copy mono */
                 penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
-                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2,
+                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
                                                  gx_no_bitmap_id,
                                                  penum->ht_landscape.xstart - width + 1,
                                                  penum->ht_landscape.y_pos,
@@ -789,7 +802,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                                                  (gx_color_index) 0,
                                                  (gx_color_index) 1);
                 } else {
-                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, 2,
+                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
                                                  gx_no_bitmap_id,
                                                  penum->ht_landscape.xstart,
                                                  penum->ht_landscape.y_pos,
@@ -808,13 +821,13 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                     penum->ht_landscape.count = 0;
                     if (penum->ht_landscape.index < 0) {
                         /* Going right to left */
-                        penum->ht_landscape.curr_pos = 15;
+                        penum->ht_landscape.curr_pos = LAND_BITS-1;
                     } else {
                         /* Going left to right */
                         penum->ht_landscape.curr_pos = 0;
                     }
                     penum->ht_landscape.num_contones = 0;
-                    memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*16);
+                    memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*LAND_BITS);
                 }
             }
             break;
