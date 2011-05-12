@@ -92,9 +92,6 @@ void FUNCTION_NAME(_LPcmsTRANSFORM p,
     WORD *currIn;
 #ifdef CACHED
     WORD *prevIn;
-#ifdef INBYTES
-    int cacheValid = 1;
-#endif /* INBYTES */
 #endif /* CACHED */
     WORD wOut[MAXCHANNELS];
     LPLUT devLink = p->DeviceLink;
@@ -113,49 +110,22 @@ void FUNCTION_NAME(_LPcmsTRANSFORM p,
     CopyMemory(wOut, p ->CacheOut, sizeof(WORD) * MAXCHANNELS);
     LCMS_UNLOCK(&p ->rwlock);
 
-#ifdef INBYTES
-    /* We only check the first 'inBytes' of the cached version in the loop,
-     * and the cached version might differ after that point. So check the
-     * rest of the bytes now. */
-    if (memcmp(((LPBYTE)wIn0)+INBYTES, wIn1,
-               sizeof(WORD) * MAXCHANNELS - INBYTES) != 0)
-    {
-        cacheValid = 0;
-        /* Zero the rest of the cached bytes to ensure what we copy back is
-         * correct. */
-        ZeroMemory(((LPBYTE)wIn0)+INBYTES,
-                   sizeof(WORD) * MAXCHANNELS - INBYTES);
-    }
-#endif /* INBYTES */
+    // The caller guarantees us that the cache is always valid on entry; if
+    // the representation is changed, the cache is reset.
 
     prevIn = wIn0;
 #endif /* CACHED */
     currIn = wIn1;
 
     // Try to speedup things on plain devicelinks
-#ifdef INBYTES
-    UNPACK(p,currIn,accum);
-#endif
 #ifndef GAMUTCHECK
     if (devLink->wFlags == LUT_HAS3DGRID) {
-#ifdef INBYTES
-        if (cacheValid)
-            goto enterCacheValid3d;
-        else
-            goto enterCacheInvalid3d;
-#endif
         do {
             UNPACK(p,currIn,accum);
-#ifdef INBYTES
-          enterCacheValid3d:
-#endif /* INBYTES */
 #ifdef CACHED
             if (COMPARE(currIn, prevIn))
 #endif /* CACHED */
             {
-#ifdef INBYTES
-              enterCacheInvalid3d:
-#endif /* INBYTES */
                 devLink->CLut16params.Interp3D(currIn, wOut,
                                                devLink -> T,
                                                &devLink -> CLut16params);
@@ -169,24 +139,12 @@ void FUNCTION_NAME(_LPcmsTRANSFORM p,
     else
 #endif /* GAMUTCHECK */
     {
-#ifdef INBYTES
-        if (cacheValid)
-            goto enterCacheValid;
-        else
-            goto enterCacheInvalid;
-#endif /* INBYTES */
         do {
             UNPACK(p,currIn,accum);
-#ifdef INBYTES
-          enterCacheValid:
-#endif
 #ifdef CACHED
             if (COMPARE(currIn, prevIn))
 #endif /* CACHED */
             {
-#ifdef INBYTES
-              enterCacheInvalid:
-#endif /* INBYTES */
 #ifdef GAMUTCHECK
                 {
                     WORD wOutOfGamut;
