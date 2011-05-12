@@ -899,7 +899,6 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
-    int code;
 
     return (tdev == 0 ?
         gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev) :
