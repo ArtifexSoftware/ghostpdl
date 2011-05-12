@@ -43,8 +43,12 @@
 #if INBYTES <= 4
 #define COMPARE(A,B) (*((int *)(A)) != *((int *)(B)))
 #elif INBYTES <= 8
-#define COMPARE(A,B) (*((LCMSULONGLONG *)(A)) != *((LCMSULONGLONG *)(B)))
-/* Or we could use #define COMPARE(A,B) ((((int *)(A))[0] != ((int *)(B))[0]) || (((int *)(A))[1] != ((int *)(B))[1])) */
+// I'd really like to be able to use this first define
+//#define COMPARE(A,B) (*((LCMSULONGLONG *)(A)) != *((LCMSULONGLONG *)(B)))
+// Or failing that, this second...
+//#define COMPARE(A,B) ((((int *)(A))[0] != ((int *)(B))[0]) || (((int *)(A))[1] != ((int *)(B))[1]))
+// But I'm having to resort to this last one.
+#define COMPARE(A,B) memcmp((A),(B), 8)
 #else
 #undef INBYTES
 #endif

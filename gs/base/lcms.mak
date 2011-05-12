@@ -125,7 +125,7 @@ $(LCMSOBJ)cmsmatsh.$(OBJ) : $(LCMSSRC)cmsmatsh.c $(lcms_HDRS)
 $(LCMSOBJ)cmsmtrx.$(OBJ) : $(LCMSSRC)cmsmtrx.c $(lcms_HDRS)
 	$(LCMS_CC) $(LCMSO_)cmsmtrx.$(OBJ) $(C_) $(LCMSSRC)cmsmtrx.c
 
-$(LCMSOBJ)cmspack.$(OBJ) : $(LCMSSRC)cmspack.c $(lcms_HDRS)
+$(LCMSOBJ)cmspack.$(OBJ) : $(LCMSSRC)cmspack.c $(LCMSSRC)cmsxform.h $(lcms_HDRS)
 	$(LCMS_CC) $(LCMSO_)cmspack.$(OBJ) $(C_) $(LCMSSRC)cmspack.c
 
 $(LCMSOBJ)cmspcs.$(OBJ) : $(LCMSSRC)cmspcs.c $(lcms_HDRS)
