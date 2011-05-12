@@ -7446,7 +7446,6 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
     pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
     gsicc_manager_t *icc_manager = pis->icc_manager;
     int k;
-    gs_color_space *pcs;
 
     if (smaskcolor != NULL) {
         smaskcolor->ref_count--;
