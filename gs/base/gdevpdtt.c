@@ -2504,7 +2504,11 @@ pdf_choose_output_char_code(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_char
 static int
 pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_const_string *gnstr, gs_glyph glyph)
 {
-    if (penum->orig_font->FontType == ft_composite) {
+    if (penum->orig_font->FontType == ft_composite || penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr) < 0) {
+        /* couldn't find a glyph name, so make one up! This can happen if we are handling PCL and the glyph
+         * (character code) is less than 29, the PCL glyph names start with /.notdef at 29. We also need to
+         * do this for composite fonts.
+         */
         char buf[6];
         byte *p;
 
@@ -2515,11 +2519,6 @@ pdf_choose_output_glyph_hame(gx_device_pdf *pdev, pdf_text_enum_t *penum, gs_con
         sprintf(buf, "g%04x", (unsigned int)(glyph & 0xFFFF));
         memcpy(p, buf, 5);
         gnstr->data = p;
-    } else {
-        int code = penum->orig_font->procs.glyph_name(penum->orig_font, glyph, gnstr);
-
-        if (code < 0)
-            return_error(gs_error_unregistered); /* Must not happen. */
     }
     return 0;
 }
@@ -2687,16 +2686,7 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 
     code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
     if (code < 0) {
-        if (code == gs_error_unregistered) {
-            /* couldn't find a glyph name, so make one up! This can happen
-               if we are handling PCL and the glyph (character code) is less
-               than 29, the PCL glyph names start with /.notdef at 29
-             */
-            sprintf((char *)unknown_glyph, "Unknown%02d", pte_default->returned.current_glyph);
-            gnstr.data = unknown_glyph;
-            gnstr.size = 9;
-        } else
-            return code;
+        return code;
     }
 
     if ((penum->current_font->FontType == ft_user_defined) && stell(pdev->strm) == 0)
@@ -2757,10 +2747,10 @@ static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    pmat->xx = (1 / pdev->charproc_ctm.xx) * (pdev->HWResolution[0] / 72.0);
-    pmat->xy = 0;
-    pmat->yx = 0;
-    pmat->yy = (1 / pdev->charproc_ctm.yy ) * (pdev->HWResolution[0] / 72.0);
+    pmat->xx = pdev->charproc_ctm.xx != 0 ? (1 / pdev->charproc_ctm.xx) * (pdev->HWResolution[0] / 72.0) : 0;
+    pmat->xy = pdev->charproc_ctm.xy != 0 ? (1 / pdev->charproc_ctm.xy) * (pdev->HWResolution[0] / 72.0) : 0;
+    pmat->yx = pdev->charproc_ctm.yx != 0 ? (1 / pdev->charproc_ctm.yx) * (pdev->HWResolution[0] / 72.0) : 0;
+    pmat->yy = pdev->charproc_ctm.yy != 0 ? (1 / pdev->charproc_ctm.yy) * (pdev->HWResolution[0] / 72.0) : 0;
     pmat->tx = 0;
     pmat->ty = 0;
 }
