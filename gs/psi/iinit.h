@@ -24,7 +24,7 @@
 int obj_init(i_ctx_t **, gs_dual_memory_t *);
 int zop_init(i_ctx_t *);
 int op_init(i_ctx_t *);
-#ifdef DEBUG_TRACE_PS_OPERATORS
+#if defined(DEBUG_TRACE_PS_OPERATORS) || defined(DEBUG)
 const char *op_get_name_string(op_proc_t opproc);
 #endif
 

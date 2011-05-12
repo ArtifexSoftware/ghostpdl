@@ -494,7 +494,7 @@ op_init(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-#ifdef DEBUG_TRACE_PS_OPERATORS
+#if defined(DEBUG_TRACE_PS_OPERATORS) || defined(DEBUG)
 static const char *unknown_op_name = "unknown_op";
 
 const char *
