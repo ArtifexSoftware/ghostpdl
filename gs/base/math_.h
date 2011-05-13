@@ -56,15 +56,9 @@
      ((0x1000000 - 1.0) * 0x1000000 * 0x1000000 * 0x10000000 * 0x10000000)
 #endif
 
-/* Define the hypot procedure on those few systems that don't provide it. */
-#if defined(_IBMR2)
-/* The RS/6000 has hypot, but math.h doesn't declare it! */
-extern double hypot(double, double);
-#elif defined(_MSC_VER)
-#  define hypot(x,y) _hypot(x,y)
-#elif !defined(__TURBOC__) && !defined(BSD4_2) && !defined(VMS) && !defined(__MWERKS__) && !defined(HAVE_HYPOT)
-#  define hypot(x,y) sqrt((double)(x)*(x)+(double)(y)*(y))
-#endif
+/* we use our own hypot() since the system one is not consistent between Linux and Mac OS X, also ours is faster */
+#undef  hypot
+#define hypot(x,y) sqrt((double)(x)*(x)+(double)(y)*(y))
 
 #ifdef OSK
 /* OSK has atan2 and ldexp, but math.h doesn't declare them! */
