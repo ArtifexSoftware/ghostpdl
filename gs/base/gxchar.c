@@ -612,6 +612,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
             gx_path box_path;
 
             if (penum->current_font->FontType != ft_user_defined &&
+                penum->current_font->FontType != ft_GL2_stick_user_defined &&
                 penum->current_font->FontType != ft_CID_user_defined) {
                 /* Most fonts don't paint outside bbox,
                    so render with no clipping. */

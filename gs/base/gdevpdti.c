@@ -327,7 +327,8 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
      * font we created has a non-identity FontMatrix we can't use it and must
      * go back to collecting the bitmap into our fallback font.
      */
-    if (show_enum->current_font->FontType == ft_user_defined && allowed_op &&
+    if ((show_enum->current_font->FontType == ft_user_defined ||
+        show_enum->current_font->FontType == ft_GL2_stick_user_defined) && allowed_op &&
         show_enum->current_font->FontMatrix.xx == 1 && show_enum->current_font->FontMatrix.xy == 0 &&
         show_enum->current_font->FontMatrix.yx == 0 && show_enum->current_font->FontMatrix.yy == 1) {
         pdf_char_proc_ownership_t *pcpo;
@@ -474,7 +475,7 @@ pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memor
              if (pdfont->u.simple.Encoding[i].glyph != GS_NO_GLYPH)
                 pdfont->mark_glyph(memory, pdfont->u.simple.Encoding[i].glyph, pdfont->mark_glyph_data);
      }
-    if (pdfont->FontType == ft_user_defined) {
+    if (pdfont->FontType == ft_user_defined || pdfont->FontType == ft_GL2_stick_user_defined) {
         const pdf_char_proc_ownership_t *pcpo = pdfont->u.simple.s.type3.char_procs;
 
         for (; pcpo != NULL; pcpo = pcpo->font_next)
