@@ -106,11 +106,8 @@ my $cmd="rsync -avxcz".
 " --exclude .deps --exclude .libs --exclude autom4te.cache".
 " --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude sobin --exclude soobj".
-" --exclude main/obj --exclude main/debugobj".
-" --exclude language_switch/obj --exclude language_switch/obj".
-" --exclude xps/obj --exclude xps/debugobj".
-" --exclude svg/obj --exclude svg/debugobj".
 " --exclude ufst --exclude ufst-obj".
+" --exclude Makefile --exclude config.log".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
 " .".
