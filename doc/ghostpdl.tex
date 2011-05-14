@@ -11,7 +11,7 @@ GhostPDL \footnote{PDL stands for Page Description Language} family of products:
 \emph{HPGL/2} with \emph{RTL}~\cite{RTLTRM}, additionally a scaled
 down \emph{PJL}~\cite{PJLTRM} interpreter is provided.  The PDL
 products use the Ghostscript Graphic Library for graphics, imaging and
-driver support.  GhostPDL may be configured with PostScript and PDF support but these PDL's are not documented here, for these see the Ghostscript documentation at
+driver support.  GhostPDL may be configured with PostScript and PDF support but these PDL's are not documented here, see the Ghostscript documentation at
 \url{www.ghostscript.com/doc/} for information about these languages.
 The relevant ghostscript version used by the PDL's  can be found
 in gs/base/version.mak.  The GhostPDL product may be configured with 
@@ -29,22 +29,16 @@ pcl and pxl source code directories should be consulted for
 discrepancy details: Anomalies.txt (PCL), pxcet.txt (PCLXL), and
 pxfts.txt (PCLXL).
 
-For printer customers we have GhostSwitch.  GhostSwitch integrates
-Ghostscript's Postscript and PDF interpreter with GhostPCL and optionally GhostXPS in a
-language switching environment with auto language sensing and PJL job
-control as found on many modern printers.
-
 In this document and the software, PCL6 refers to technology that
 supports both PCL5 and PCLXL languages.
 
-\subsection*{Quick Start For Unix environment with GCC.}
+\subsection*{Quick Start for Unix environment with GCC.}
 \begin{verbatim}
 # unpack the release and go to the release directory.
-tar zxvf ghostpcl-xxx.tar.gz; cd ghostpcl-xxx
-make pcl                                                            # build pcl
-make xps                                                           # build xps
-
-NB - needs more examples - install, urwfonts, debug builds...
+tar zxvf ghostpdl-xxx.tar.gz; cd ghostpdl-xxx
+./configure
+make pcl  # build pcl
+make xps # build xps
 \end{verbatim}
 
 \subsection*{Supported development environments}
@@ -124,15 +118,18 @@ have obtained the archived compressed version use:
 
 \item[urwfonts] 80 URW TrueType fonts.
 
+\item[win32] Microsoft Visual C project files and instructions (ReadMe.txt) how to use them.
+
 \end{description}
 
 This directory structure is the default, but the directories can be
 rearranged with minor modifications to the makefiles.
 
 \subsection*{Building with Microsoft Visual C/C++}
-The GhostPDL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0, Visual Studio 2005 and 2008. \footnote{A subset of the components have been known to build with these tools}
 
-NB "makefile wrapping" no longer works in Visual Studio.
+The recommended way to build is to use the project files found in the subdirectory win32, there is a ReadMe.txt file containing instructions.  The rest of this section may prove helpful if you wish to wrestle with Microsoft's NMAKE.
+  
+The GhostPDL tools are known to build with Visual C/C++ 4.0, 5.0 and 6.0, Visual Studio 2005 and 2008. \footnote{A subset of the components have been known to build with these tools}.  Automatic makefile wrapping to projects file stopped working some time ago, we aren't sure which Visual Studio version deprecated the functionality.
 
 There are 2 ways of building the PCL components with Microsoft Visual
 C/C++: Convert the current makefile environment to a Visual C/C++
@@ -152,7 +149,7 @@ a Visual C++ project:
   
   \textbf{NMAKE /f pcl6\_msvc.mak DEBUG=1
     DEVSTUDIO=c:$\backslash$progra~1$\backslash$micros~3}\footnote{DEBUG=1/0
-    on/off will require you manually clean;  del
+    on/off will require you manually clean; del
     main$\backslash$obj$\backslash$*.*}
   
   Now set the name of the executable for debuggging to
@@ -184,7 +181,7 @@ Unix environment with GCC.
 The PCL tools have been compiled on Solaris with the Sun Development
 Tools and SGI with the native SGI C compiler. We only provide
 makefiles for the gcc tools and assume users can customize the gcc
-makefiles such that they work with vendor's compilers.  For the Sun
+makefiles such that they work with vendor's compilers. For the Sun
 Development tools the following workaround is sufficient to build the
 software:
 
@@ -198,7 +195,7 @@ makefile should be constructed.
 
 \subsection*{Customizing the build process}
 
-The build process is completely configurable.  Here is a list of
+The build process is completely configurable. Here is a list of
 things that are user will most like be interested in customizing.  To
 change any of these see the appropriate makefile for your platform in
 the ``main'' subdirectory
@@ -211,7 +208,7 @@ the ``main'' subdirectory
 \item  The font scaling technology.
 \begin{itemize}
 \item  Defaults to /tmp/pjl0 and /tmp/pjl1
-\item  Edit pl/pl.mak  PJL\_VOLUME\_0 and PJL\_VOLUME\_1 to match desired root
+\item  Edit pl/pl.mak PJL\_VOLUME\_0 and PJL\_VOLUME\_1 to match desired root
 \end{itemize}
 
 \end{itemize}
@@ -219,13 +216,14 @@ the ``main'' subdirectory
 All of these can be configured in the top level makefile or can be
 specified on the make command line.
 
-The following make targets are available: 
+Sample make targets include: 
 \begin{description}
 \item[debug] build tools with symbols and debugging information
 \item[product] builds optimized code.
-\item[pg-fp] builds profiling code for hardware with floating point.
-\item[pg-nofp] builds profiling code for hardware with no floating point (i\.e\. with floating point emulation software).
+\item[pdl-pg] builds profiling.
 \end{description}
+
+For a complete list of targets see the top level makefile named Makefile.  Each target is somewhat self explanatory.
 
 \subsection*{Building only one Language}
 PCL or PCL-XL can be built together in a language switching
@@ -233,9 +231,6 @@ environment or each can be built alone with the supporting PJL
 interpreter.  The simplest way to implement one language is simply to
 remove the unwanted implementation from the pdl implementation table
 located in pl/plimpl.c:
-
-
-NB - there are now makefile variables that can be used to select languages.
 
 For example, this is the default table with two implementations: PCL and XL. 
 
@@ -259,7 +254,7 @@ Few things are harder to put up with than a good example.
 \end{quote}
 
 
-Most ghostscript options, as described in the  Ghostscript
+Most ghostscript options, as described in the Ghostscript
 documentation \url{www.ghostscript.com/doc/}, have similar effect in
 the GhostPCL system.  Of course, options specific to the PostScript or
 PDF language are not relevant and are ignored.
@@ -267,22 +262,13 @@ PDF language are not relevant and are ignored.
 
 \textbf{pcl6 mypcl.pcl}
 
-
- 
 Interpret a pcl file called mypcl.pcl and render it to the default
-device.  For now the default device on systems with x11 is a full
-color x11 display, other system default to laserjet 4 output suitable
-for a monochrome laser printer.
-
+device, usually a simple display  is the default, X11 on Unix like systems and the Window's display device on Windows.
 
 \textbf{pcl6 -dTextAlphaBits=4 mypcltext.pcl}
 
-When rendering pcl text onn a low (screen) resolution display device,
+When rendering pcl text on a low (screen) resolution display device,
 use the TextAlphaBits option to enable anti-aliasing.
-
-\textbf{pcl6 -sDEVICE=x11 mypcl.pcl}
-
-Interpret a pcl file called mypcl.pcl and render to the x11 device.
 
 \textbf{pcl6 -sDEVICE=ljet4 -sOutputFile=''$|$ lpr'' -dNOPAUSE mypcl.pcl}
 
@@ -297,14 +283,12 @@ files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
 \textbf{pcl6 -r72 -sDEVICE=x11mono mypcl.pcl -r100 -sDEVICE=x11 mypcl.pcl}
 
 Render a pcl file at 72dpi on the monochrome X11 device, then render
-the same file at 100 dpi  on color X11 device.  This demonstrates
+the same file at 100 dpi on color X11 device. This demonstrates
 on-the-fly device switching.
 
-\textbf{pcl6 -sDEVICE=bmpamono -sOutputFile=foo.bmp mypcl.pcl}
+\textbf{./pcl6 -J"@PJL SET SYMSET = ISOL1" mypcl.pcl}
 
-The bmpamono (1 bit)  and bmpa16m (full color) run asynchronously.  In
-short, the language and graphics library produce bands in one thread
-while the device renders the bands in a second thread.
+PJL or PCL Job control commands can be set directly on the command line.  This example sets the default symbol set to ISO Latin 1.
 
 \textbf{pcl6 -sDEVICE=pdfwrite -sOutputFile=mypcl.pdf mypcl.pcl}
 
@@ -314,57 +298,57 @@ mypcl.pdf.
 \textbf{pcl6}
 
 Simply running the interpreter should generate some useful information
-about the available options and devices.   
+about the available options and devices.  
 
 \subsection*{PCL Personality}
 
-The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.  The
+The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL. The
 PCL5E personality thresholds colors to black and white irrespective of
-the color parameters of the output device.  PCL5C is the color
-personality, used with a monochrome device it will grayscale colors. 
+the color parameters of the output device. PCL5C is the color
+personality, used with a monochrome device it will grayscale colors.
 The RTL personality can be used to print HPGL/2 RTL plot files.
 
-\textbf{pcl6 -PRTL myrtl.rtl}
+\textbf{pcl6 -lRTL myrtl.rtl}
 
 run the interpreter with the rtl personality.
 
-\textbf{pcl6 -PPCL5E -sDEVICE=ljet4 mypcl.pcl}
+\textbf{pcl6 -lPCL5E -sDEVICE=ljet4 mypcl.pcl}
 
-run the interpreter with the pcl5e personality.  This will threshold
+run the interpreter with the pcl5e personality. This will threshold
 colors to black and white (ljet4 is a 1 bit device).
 
-\textbf{pcl6 -PPCL5C -sDEVICE=ljet4 mypcl.pcl}
+\textbf{pcl6 -lPCL5C -sDEVICE=ljet4 mypcl.pcl}
 
-run the interpreter with the pcl5c personality.  This will grayscale
+run the interpreter with the pcl5c personality. This will grayscale
 colors on the 1 bit output device.  If not set on the command line the
 pcl interpreter personality will be set to PCL5E if the output device
-is 1 bit per pixel otherwise it is set to PCL5C.  RTL must be
-explicitly set on the command line.  RTL always grayscales and never
+is 1 bit per pixel otherwise it is set to PCL5C. RTL must be
+explicitly set on the command line. RTL always grayscales and never
 thresholds colors to black and white.
 
 \subsection*{Fonts}
 
-The release is packaged with 80 high quality URW TrueType fonts.  For
+The release is packaged with 80 high quality URW TrueType fonts. For
 commercial use of the GhostPCL technology these fonts can be licensed
-from Artifex.  The fonts are searched for in either the fonts,
+from Artifex. The fonts are searched for in either the fonts,
 /windows/fonts, or a directory specified with the PCLFONTSOURCE
 environment variable.  For historical reasons the directory path must
 be specified using forward slashes and must include a trailing slash.
 
-Fonts and a font scaler from a third-party vendor such as  Agfa  or 
-Bitstream  may also be used.  There is an existing interface for
+Fonts and a font scaler from a third-party vendor such as Agfa or
+Bitstream may also be used. There is an existing interface for
 integrating the AGFA Universal Font Scaler Technology, several Artifex
-customers currently use this solution.  The software can use Hewlett
+customers currently use this solution. The software can use Hewlett
 Packard FONTSMART version 1.5 or Windows TrueType fonts, using either
 of these font solutions require minor PCL code modifications.
 
 \subsection*{PCL Code changes required to use other TrueType fonts.}
 
 To use a new set of TrueType fonts requires modifying the C code in
-the file pl/plftable.c.  The C structure resident\_table contains a
-list of Windows TrueType font names.  In the released package these
+the file pl/plftable.c. The C structure resident\_table contains a
+list of Windows TrueType font names. In the released package these
 names will correspond with the Windows True Type font names in the URW
-font set.  To use a different font set these names must be replaced
+font set. To use a different font set these names must be replaced
 with the new font names and the code (at least the plftable.c module)
 should be recompiled and linked.  The file tools/fontpage.pcl can be
 run to display font samples and the pcl escape sequences required to
