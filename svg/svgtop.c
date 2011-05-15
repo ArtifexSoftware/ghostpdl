@@ -184,7 +184,7 @@ svg_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 
     gs_opendevice(pdevice);
 
-    code = gsicc_init_device_profile(ctx->pgs, pdevice);
+    code = gsicc_init_device_profile_struct(pdevice, NULL, 0);
     if (code < 0)
         return code;
 

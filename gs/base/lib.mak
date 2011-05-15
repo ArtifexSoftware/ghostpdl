@@ -847,7 +847,8 @@ $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(GXERR) $(math__h) $(memory__h)\
 
 $(GLOBJ)gsdparam.$(OBJ) : $(GLSRC)gsdparam.c $(GXERR)\
  $(memory__h) $(string__h)\
- $(gsdevice_h) $(gsparam_h) $(gxdevice_h) $(gxfixed_h)
+ $(gsdevice_h) $(gsparam_h) $(gxdevice_h) $(gxfixed_h)\
+ $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gsdparam.$(OBJ) $(C_) $(GLSRC)gsdparam.c
 
 $(GLOBJ)gsfname.$(OBJ) : $(GLSRC)gsfname.c $(memory__h)\
@@ -2525,7 +2526,7 @@ $(GLOBJ)gsicc_manage.$(OBJ) : $(GLSRC)gsicc_manage.c $(GX) $(stdpre_h)\
  $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(scommon_h) $(strmio_h)\
  $(gxistate_h) $(gscspace_h) $(gscms_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(gsicc_profilecache_h) $(gserrors_h) $(string__h) $(gxclist_h) $(gxcldev_h)\
- $(gzstate_h) $(gsicc_create_h) $(gpmisc_h)
+ $(gzstate_h) $(gsicc_create_h) $(gpmisc_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gsicc_manage.$(OBJ) $(C_) $(GLSRC)gsicc_manage.c
 
 $(GLOBJ)gsicc_cache.$(OBJ) : $(GLSRC)gsicc_cache.c $(GX) $(stdpre_h)\

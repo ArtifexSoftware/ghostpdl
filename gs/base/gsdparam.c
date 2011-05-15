@@ -21,6 +21,7 @@
 #include "gsparam.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
+#include "gsicc_manage.h"
 
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
@@ -71,15 +72,16 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Standard page device parameters: */
 
     bool seprs = false;
-    gs_param_string dns, pcms, icc;
+    gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES], icc_dir;
+    int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
+    char null_str[1]={'\0'};
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
 
     /* Non-standard parameters: */
-
     int colors = dev->color_info.num_components;
     int mns = colors;
     int depth = dev->color_info.depth;
@@ -87,6 +89,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     int HWSize[2];
     gs_param_int_array hwsa;
     gs_param_float_array hwma, mhwra;
+    cmm_dev_profile_t *dev_profile;
 
     /* Fill in page device parameters. */
 
@@ -102,8 +105,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             pcms.data = 0;
     }
 
-    param_string_from_string(icc, dev->color_info.icc_profile);
-
     set_param_array(hwra, dev->HWResolution, 2);
     set_param_array(msa, dev->MediaSize, 2);
     set_param_array(ibba, dev->ImagingBBox, 4);
@@ -111,21 +112,45 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     set_param_array(scna, NULL, 0);
 
     /* Fill in non-standard parameters. */
-
     HWSize[0] = dev->width;
     HWSize[1] = dev->height;
     set_param_array(hwsa, HWSize, 2);
     set_param_array(hwma, dev->HWMargins, 4);
     set_param_array(mhwra, dev->MarginsHWResolution, 2);
+    /* Check if the device profile is null.  If it is, then we need to
+       go ahead and get it set up at this time.  If the proc is not
+       set up yet then we are not going to do anything yet */
+    if (dev->procs.get_profile != NULL) {
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (dev_profile == NULL) { 
+            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        } 
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (dev_profile->device_profile[k] == NULL) {
+                param_string_from_string(profile_array[k], null_str);
+            } else {
+                param_string_from_string(profile_array[k], 
+                    dev_profile->device_profile[k]->name);
+            }
+        }
+        /* This probably should be set to the default */
+        if (dev_profile->icc_dir != NULL) {
+            param_string_from_string(icc_dir, dev_profile->icc_dir); 
+        } else {
+            param_string_from_string(icc_dir, null_str); 
+        }
+    } else {
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            param_string_from_string(profile_array[k], null_str);
+        }
+        param_string_from_string(icc_dir, null_str); 
+    }
 
     /* Transmit the values. */
-
     if (
-
         /* Standard parameters */
-
         (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
-        (code = param_write_name(plist,"OutputICCProfile", &icc)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
         (code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
 #endif
@@ -147,7 +172,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_bool(plist, "UseCIEColor", &dev->UseCIEColor)) < 0 ||
 
         /* Non-standard parameters */
-
+        /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
+           that profile here for the device parameter on the command line */
+        (code = param_write_name(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
+        (code = param_write_name(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
+        (code = param_write_name(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
+        (code = param_write_name(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
+        (code = param_write_name(plist,"OutputICCDir", &(icc_dir))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
         (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
         (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
@@ -164,7 +195,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                                 &dev->color_info.anti_alias.graphics_bits)) < 0 ||
         (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
         (code = param_write_int(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0
-
         )
         return code;
 
@@ -418,6 +448,46 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
     return (code < 0 ? code : was_open && !dev->is_open ? 1 : code);
 }
 
+static void
+gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,  
+                   gsicc_profile_types_t index) 
+{
+    char *tempstr;
+    int code;
+
+    if (icc_pro->size == 0) return;
+
+    if (icc_pro->size < gp_file_name_sizeof) {
+        tempstr = (char *) gs_alloc_bytes(dev->memory, icc_pro->size+1, 
+                                          "gx_default_put_icc");
+        memcpy(tempstr, icc_pro->data, icc_pro->size);
+        /* Set last position to NULL. */
+        tempstr[icc_pro->size] = 0;
+        code = gsicc_init_device_profile_struct(dev, tempstr, index);
+        gs_free_object(dev->memory, tempstr, "gx_default_put_icc");
+    }
+}
+
+/* This is set when the ICCDir user params is set.  In general they stay in
+   sync.  The dir is stored in the device so that it can be obtained during
+   clist rendering.  It is also stored in the graphic state to enable getting
+   the default profiles for the icc manager.  */
+void
+gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev) 
+{
+    char *tempstr;
+
+    if (icc_pro->size < gp_file_name_sizeof) {
+        tempstr = (char *) gs_alloc_bytes(dev->memory, icc_pro->size+1, 
+                                          "gx_default_put_icc");
+        memcpy(tempstr, icc_pro->data, icc_pro->size);
+        /* Set last position to NULL. */
+        tempstr[icc_pro->size] = 0;
+        gsicc_init_device_profile_dir(dev, tempstr);
+        gs_free_object(dev->memory, tempstr, "gx_default_put_icc");
+    }
+}
+
 /* Set standard parameters. */
 /* Note that setting the size or resolution closes the device. */
 /* Window devices that don't want this to happen must temporarily */
@@ -628,15 +698,23 @@ nce:
             break;
     }
     }
+    /* Set the directory first */
+    if (param_read_string(plist, "OutputICCDir", &icc_pro) != 1) {
+        gx_default_put_icc_dir(&icc_pro, dev); 
+    }    
     if (param_read_string(plist, "OutputICCProfile", &icc_pro) != 1) {
-        if (icc_pro.size < gp_file_name_sizeof) {
-            /* Copy device ICC profile name in the device */
-            if (&(dev->color_info.icc_profile[0]) != (char *)(icc_pro.data)) {
-                memcpy(&(dev->color_info.icc_profile[0]), icc_pro.data, icc_pro.size);
-                /* Set last position to NULL. In case of profile reset */
-                dev->color_info.icc_profile[icc_pro.size] = 0;
-            }
-        }
+        gx_default_put_icc(&icc_pro, dev, gsDEFAULTPROFILE); 
+    }
+    /* Note, if a change is made to NUM_DEVICE_PROFILES we need to update
+       this with the name of the profile */
+    if (param_read_string(plist, "GraphicICCProfile", &icc_pro) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsGRAPHICPROFILE); 
+    }
+    if (param_read_string(plist, "ImageICCProfile", &icc_pro) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsIMAGEPROFILE); 
+    }
+    if (param_read_string(plist, "TextICCProfile", &icc_pro) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsTEXTPROFILE); 
     }
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
         ecode = code;

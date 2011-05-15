@@ -76,8 +76,8 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     gs_point dst_xy;
     uint in_size;
     bool use_icc = false;
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
+    int num_des_comps;
+    cmm_dev_profile_t *dev_profile;
     int code;
 
     if (!penum->interpolate)
@@ -99,11 +99,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     /* Do not allow mismatch in devices component output with the
        profile output size.  For example sep device with CMYK profile should
        not go through the fast method */
-    code = 
-        dev_proc(penum->dev, get_profile)(penum->dev, 
-                                          gs_current_object_tag(penum->pis->memory), 
-                                          &dev_profile, &rendering_intent);
-    if (dev_profile->num_comps != penum->dev->color_info.num_components) {
+    code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    if (num_des_comps != penum->dev->color_info.num_components) {
         use_icc = false;
     }
     /* If the device has some unique color mapping procs due to its color space,
@@ -318,7 +316,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
         penum->icc_setup.has_transfer = 
-            gx_has_transfer(penum->pis, dev_profile->num_comps);
+            gx_has_transfer(penum->pis, num_des_comps);
         if (penum->icc_link == NULL) {
             penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
                 &rendering_params, penum->memory, false);
@@ -984,20 +982,16 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         gsicc_bufferdesc_t input_buff_desc;
         gsicc_bufferdesc_t output_buff_desc;
         gx_color_index color;
-        cmm_profile_t *device_profile;
-        gsicc_rendering_intents_t rendering_intent;
         int code;
+        cmm_dev_profile_t *dev_profile;
 
-        code = dev_proc(dev, get_profile)(dev, GS_IMAGE_TAG, &device_profile,
-                                         &rendering_intent);
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        spp_cm = dev_profile->device_profile[0]->num_comps;
         psrc_cm_start = NULL;
         if (penum->matrix.yy > 0)
             dy = 1;
         else
             dy = -1, yo--;
-
-        spp_cm = device_profile->num_comps;
-
         if (!penum->icc_link->is_identity) {
             psrc_cm_start = (unsigned short *) gs_alloc_bytes(pis->memory,
                 sizeof(unsigned short) * width * spp_cm,

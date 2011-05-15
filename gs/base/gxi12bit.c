@@ -140,14 +140,12 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             gsicc_rendering_param_t rendering_params;
             int k;
             int src_num_comp = cs_num_components(penum->pcs);
-            cmm_profile_t *dev_profile;
-            gsicc_rendering_intents_t rendering_intent;
+            int num_des_comps;
             int code;
+            cmm_dev_profile_t *dev_profile;
 
-            code = 
-                dev_proc(penum->dev, get_profile)(penum->dev, 
-                                           gs_current_object_tag(penum->pis->memory), 
-                                           &dev_profile, &rendering_intent);
+            code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+            num_des_comps = dev_profile->device_profile[0]->num_comps;
              penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  If yes, then that will slow us down */
             for (k = 0; k < src_num_comp; k++) {
@@ -168,7 +166,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
             penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
             penum->icc_setup.has_transfer = 
-                gx_has_transfer(penum->pis, dev_profile->num_comps);
+                gx_has_transfer(penum->pis, num_des_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
                 penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
@@ -591,8 +589,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     bool need_decode = penum->icc_setup.need_decode;
     bool must_halftone = penum->icc_setup.must_halftone;
     bool has_transfer = penum->icc_setup.has_transfer;
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
+    int num_des_comps;
+    cmm_dev_profile_t *dev_profile;
 
     if (h == 0)
         return 0;
@@ -614,8 +612,8 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     pdevc_next->type = gx_dc_type_none;
     if (h == 0)
         return 0;
-    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                      &dev_profile, &rendering_intent);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    num_des_comps = dev_profile->device_profile[0]->num_comps;
     /* If the link is the identity, then we don't need to do any color
        conversions except for potentially a decode. */
     if (penum->icc_link->is_identity && !need_decode) {
@@ -625,7 +623,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         bufend = psrc_cm +  w;
         psrc_cm_start = NULL;
     } else {
-        spp_cm = dev_profile->num_comps;
+        spp_cm = num_des_comps;
         psrc_cm = (unsigned short*) gs_alloc_bytes(pis->memory,
                         sizeof(unsigned short)  * w * spp_cm/spp,
                         "image_render_icc16");

@@ -325,7 +325,7 @@ pxl_impl_set_device(
         if ((code = gs_setdevice_no_erase(pxli->pgs, device)) < 0)	/* can't erase yet */
           goto pisdEnd;
         /* Initialize device ICC profile  */
-        code = gsicc_init_device_profile(pxli->pgs, device);
+        code = gsicc_init_device_profile_struct(device, NULL, 0);
         if (code < 0)
             return code;
         /* Init XL graphics */

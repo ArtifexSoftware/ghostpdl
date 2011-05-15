@@ -40,6 +40,7 @@
 #include "pltop.h"
 #include "gzstate.h"
 #include "uconfig.h"	/* for UFSTFONTDIR */
+#include "gsicc_manage.h"
 
 /* Forward decls */
 
@@ -297,7 +298,7 @@ ps_impl_set_device(
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
 
     /* Initialize device ICC profile  */
-    code = gsicc_init_device_profile(pgs, device);
+    code = gsicc_init_device_profile_struct(device, NULL, 0);
     if (code < 0)
         return code;
     /* Set the device into the gstate */

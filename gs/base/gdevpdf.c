@@ -26,6 +26,7 @@
 #include "gdevpdfo.h"
 #include "smd5.h"
 #include "sarc4.h"
+#include "gscms.h"
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -510,13 +511,13 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
 void
 pdf_set_process_color_model(gx_device_pdf * pdev, int index)
 {
-
     const static gx_device_color_info pcm_color_info[] = {
         dci_values(1, 8, 255, 0, 256, 0),		/* Gray */
         dci_values(3, 24, 255, 255, 256, 256),		/* RGB */
         dci_values(4, 32, 255, 255, 256, 256),		/* CMYK */
         dci_values(4, 32, 255, 255, 256, 256)	/* Treat DeviceN like CMYK */
     };
+    /* Don't blow away the ICC information */
 
     pdev->pcm_color_info_index = index;
     pdev->color_info = pcm_color_info[index];

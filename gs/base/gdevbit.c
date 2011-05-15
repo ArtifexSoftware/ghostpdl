@@ -250,7 +250,8 @@ const gx_device_bit gs_bitrgbtags_device =
             { 0xFF0000, 0x00FF00, 0x0000FF } ,     /* comp mask */
             ( "DeviceRGBT" ),            /* color model name */
             GX_CINFO_OPMODE_UNKNOWN ,   /* overprint mode */
-            0                           /* process comps */
+            0,                           /* process comps */
+            0                            /* icc_locations */    
         },
         {
             ((gx_color_index)(~0)),
@@ -287,7 +288,6 @@ const gx_device_bit gs_bitrgbtags_device =
         0,
         0,
         {false},
-        0,
         0,
         0,
         {

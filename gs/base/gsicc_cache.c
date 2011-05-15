@@ -295,14 +295,16 @@ static void
 gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
                       cmm_profile_t *cmm_icc_profile_data, int64_t *hash)
 {
-    cmm_profile_t *dev_profile;
+    cmm_dev_profile_t *dev_profile;
+    cmm_profile_t *icc_profile;
     gsicc_rendering_intents_t rendering_intent;
     int code;
 
     if (cmm_icc_profile_data == NULL ) {
-        code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(dev->memory), 
-                                          &dev_profile, &rendering_intent);        
-        *hash = dev_profile->hashcode;
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
+        gsicc_extract_profile(gs_current_object_tag(dev->memory), dev_profile,
+                               &(icc_profile), &rendering_intent); 
+        *hash = icc_profile->hashcode;
         return;
     }
     if (cmm_icc_profile_data->hash_is_valid ) {
@@ -426,6 +428,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     gs_state *pgs;
     gx_device *dev;
     gsicc_rendering_intents_t rendering_intent;
+    cmm_dev_profile_t *dev_profile;
     int code;
 
     if (dev_in == NULL) {
@@ -448,8 +451,10 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
     } else {
         /* Use the device profile */
-        code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                          &gs_output_profile, &rendering_intent);
+
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
+        gsicc_extract_profile(gs_current_object_tag(dev->memory), dev_profile,
+                               &(gs_output_profile), &rendering_intent); 
     }
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, include_softproof));
@@ -721,6 +726,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     gsicc_link_t *icc_link;
     cmm_profile_t *curr_output_profile;
     gsicc_rendering_intents_t rendering_intent;
+    cmm_dev_profile_t *dev_profile;
 
     /* Check if the data that we have has already been generated. */
     if (pis->icc_manager != NULL) {
@@ -845,11 +851,10 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     curr_output_profile = gs_output_profile;
                 } else {
                     /* Use the device profile */
-                    code = 
-                        dev_proc(dev, get_profile)(dev, 
-                                              gs_current_object_tag(pis->memory), 
-                                              &curr_output_profile, 
-                                              &rendering_intent);
+                    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
+                    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
+                                          dev_profile, &(curr_output_profile), 
+                                          &rendering_intent); 
                 }
                 icc_link = gsicc_get_link_profile(pis, dev,
                                                 pis->icc_manager->lab_profile,
