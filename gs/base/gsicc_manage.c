@@ -893,29 +893,26 @@ int
 gsicc_set_gscs_profile(gs_color_space *pcs, cmm_profile_t *icc_profile,
                        gs_memory_t * mem)
 {
-    if (pcs != NULL) {
+    if (pcs == NULL)
+        return (-1);
 #if ICC_DUMP
-        if (icc_profile->buffer) {
-            dump_icc_buffer(icc_profile->buffer_size, "set_gscs",
-                            icc_profile->buffer);
-            global_icc_index++;
-        }
-#endif
-        if (pcs->cmm_icc_profile_data != NULL) {
-            /* There is already a profile set there */
-            /* free it and then set to the new one.  */
-            /* should we check the hash code and retain if the same
-               or place this job on the caller?  */
-            rc_free_icc_profile(mem, (void*) pcs->cmm_icc_profile_data,
-                                "gsicc_set_gscs_profile");
-            pcs->cmm_icc_profile_data = icc_profile;
-            return(0);
-        } else {
-            pcs->cmm_icc_profile_data = icc_profile;
-            return(0);
-        }
+    if (icc_profile->buffer) {
+        dump_icc_buffer(icc_profile->buffer_size, "set_gscs",
+                        icc_profile->buffer);
+        global_icc_index++;
     }
-    return(-1);
+#endif
+
+    rc_increment(icc_profile);
+    if (pcs->cmm_icc_profile_data != NULL) {
+        /* There is already a profile set there */
+        /* free it and then set to the new one.  */
+        /* should we check the hash code and retain if the same
+           or place this job on the caller?  */
+        rc_decrement(pcs->cmm_icc_profile_data, "gsicc_set_gscs_profile");
+    }
+    pcs->cmm_icc_profile_data = icc_profile;
+    return(0);
 }
 
 cmm_profile_t *
@@ -1338,14 +1335,14 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
            rc_increment(icc_manager->default_cmyk);
            return(gs_colorspace->cmm_icc_profile_data);
            /* Need to convert to an ICC form */
-            break;
+           break;
         case gs_color_space_index_CIEDEF:
            /* For now just use default RGB to avoid segfault.  MJV to fix */
            gs_colorspace->cmm_icc_profile_data = icc_manager->default_rgb;
            rc_increment(icc_manager->default_rgb);
            return(gs_colorspace->cmm_icc_profile_data);
            /* Need to convert to an ICC form */
-            break;
+           break;
         case gs_color_space_index_CIEABC:
             gs_colorspace->cmm_icc_profile_data =
                 gsicc_profile_new(NULL, icc_manager->memory, NULL, 0);

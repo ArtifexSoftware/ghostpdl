@@ -454,11 +454,10 @@ gx_concretize_ICC(
 static void
 gx_final_ICC(const gs_color_space * pcs)
 {
-  /*  if (pcs->cmm_icc_profile_data != NULL) {
+    if (pcs->cmm_icc_profile_data != NULL) {
         rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_ICC");
-    } */
-    /* rc_decrement_only(pcs->params.icc.picc_info, "gx_final_ICC"); */
     }
+}
 
 /*
  * Install an ICCBased color space.
@@ -470,8 +469,8 @@ static int
 gx_install_ICC(gs_color_space * pcs, gs_state * pgs)
 {
     /* update the stub information used by the joint caches */
-                return 0;
-        }
+    return 0;
+}
 
 /*
  * Constructor for ICCBased color space. As with the other color space

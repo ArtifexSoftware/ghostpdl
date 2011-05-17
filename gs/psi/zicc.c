@@ -90,7 +90,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                 picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k],
                     strlen(icc_std_profile_names[k]), gs_state_memory(igs));
                 break;
-    }
+            }
         }
     } else {
         picc_profile = gsicc_profile_new(s, gs_state_memory(igs), NULL, 0);
@@ -179,17 +179,20 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         for (i = 0; i < ncomps; i++) {
             picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
             picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
-    }
         }
+    }
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
+    /* The context has taken a reference to the colorspace. We no longer need
+     * ours, so drop it. */
+    rc_decrement_only(pcs, "seticc");
     /* In this case, we already have a ref count of 2 on the icc profile
        one for when it was created and one for when it was set.  We really
        only want one here so adjust */
     rc_decrement(picc_profile,"seticc");
     /* Remove the ICC dict from the stack */
     pop(1);
-        return code;
+    return code;
 }
 
 /*
