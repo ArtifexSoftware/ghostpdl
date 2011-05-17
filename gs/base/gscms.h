@@ -25,6 +25,7 @@
 #include "stdint_.h"
 
 #define ICC_MAX_CHANNELS 15
+#define NUM_DEVICE_PROFILES 4
 
 /* Define the preferred size of the output by the CMS */
 /* This can be different than the size of gx_color_value
@@ -54,11 +55,11 @@ typedef struct cmm_profile_s cmm_profile_t;
 #endif
 
 typedef struct gsicc_device_cm_s {
-        cmm_profile_t *gray_profile;
-        cmm_profile_t *rgb_profile;
-        cmm_profile_t *cmyk_profile;
-        cmm_profile_t *device_link_profile;
-        gs_memory_t *memory;
+    cmm_profile_t *gray_profile;
+    cmm_profile_t *rgb_profile;
+    cmm_profile_t *cmyk_profile;
+    cmm_profile_t *device_link_profile;
+    gs_memory_t *memory;
 } gsicc_device_cm_t;
 
 /*  The buffer description.  We handle a variety of different types */
@@ -94,11 +95,34 @@ typedef enum {
     gsABSOLUTECOLORIMETRIC
 } gsicc_rendering_intents_t;
 
+/* Enumerate the types of profiles */
+typedef enum {
+    gsDEFAULTPROFILE = 0,
+    gsGRAPHICPROFILE,
+    gsIMAGEPROFILE,
+    gsTEXTPROFILE
+} gsicc_profile_types_t;
+
 typedef struct cmm_dev_profile_s {
-        cmm_profile_t  *device_profile[4];
-        gsicc_rendering_intents_t intent[4];
+        cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
+        gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         gs_memory_t *memory;
+        rc_header rc;
+        char *icc_dir;
+        char dir_length;
 } cmm_dev_profile_t;
+
+typedef struct cmm_dev_profile_name_s {
+    char *name;
+    unsigned int name_length;
+} cmm_dev_profile_name_t;
+
+typedef struct cmm_dev_profile_name_array_s {
+    cmm_dev_profile_name_t file_names[NUM_DEVICE_PROFILES];
+    rc_header rc; 
+    gs_memory_t *memory;
+    char *icc_output_dir;
+} cmm_dev_profile_name_array_t;
 
 /*  Doing this an an enum type for now.  There is alot going on with respect
  *  to this and V2 versus V4 profiles

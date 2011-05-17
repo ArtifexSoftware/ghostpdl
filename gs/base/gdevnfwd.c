@@ -906,16 +906,14 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
 }
 
 int
-gx_forward_get_profile(gx_device *dev, gs_object_tag_type_t object_type,
-                       cmm_profile_t **profile, 
-                       gsicc_rendering_intents_t *rendering_intent) 
+gx_forward_get_profile(gx_device *dev,  cmm_dev_profile_t **profile) 
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     dev_proc_get_profile((*proc)) =
         (tdev == 0 ? (tdev = dev, gx_default_get_profile) :
          dev_proc(tdev, get_profile));
-    return proc(tdev, object_type, profile, rendering_intent);
+    return proc(tdev, profile);
 }
 
 /* ---------------- The null device(s) ---------------- */

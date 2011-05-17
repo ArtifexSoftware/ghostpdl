@@ -34,6 +34,7 @@
 #include "gzstate.h"
 #include "gsicc_create.h"
 #include "gpmisc.h"
+#include "gxdevice.h"
 
 #define ICC_HEADER_SIZE 128
 
@@ -60,9 +61,10 @@ static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
                                      gs_memory_t *memory);
 static stream* gsicc_open_search(const char* pname, int namelen,
                                  gs_memory_t *mem_gc,
-                                 gsicc_manager_t *icc_manager);
-static int gsicc_set_device_profile(gsicc_manager_t *icc_manager,
-                                    gx_device * pdev, gs_memory_t * mem);
+                                 const char* dirname, int dir_namelen);
+static int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
+                                    char *dir_name, char *file_name,
+                                    gsicc_profile_t defaulttype);
 static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type,
                                         gsicc_manager_t *icc_manager );
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
@@ -159,7 +161,12 @@ gsicc_set_iccsmaskprofile(const char *pname,
     int code;
     cmm_profile_t *icc_profile;
 
-    str = gsicc_open_search(pname, namelen, mem, icc_manager);
+    if (icc_manager == NULL) {
+        str = gsicc_open_search(pname, namelen, mem, NULL, 0);
+    } else {
+        str = gsicc_open_search(pname, namelen, mem, icc_manager->profiledir,
+                                icc_manager->namelen);
+    }
     if (str != NULL) {
         icc_profile = gsicc_profile_new(str, mem, pname, namelen);
         code = sfclose(str);
@@ -553,8 +560,12 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             current_entry = current_entry->next;
         }
     }
-
-    str = gsicc_open_search(pname, namelen, mem_gc, icc_manager);
+    if (icc_manager == NULL) {
+        str = gsicc_open_search(pname, namelen, mem_gc, NULL, 0);
+    } else {
+        str = gsicc_open_search(pname, namelen, mem_gc, icc_manager->profiledir,
+                                icc_manager->namelen);
+    }
     if (str != NULL) {
         icc_profile = gsicc_profile_new(str, mem_gc, pname, namelen);
         /* Add check so that we detect cases where we are loading a named
@@ -634,7 +645,7 @@ gsicc_get_profile_handle_file(const char* pname, int namelen, gs_memory_t *mem)
     int code;
 
     /* First see if we can get the stream.  NOTE  icc directory not used! */
-    str = gsicc_open_search(pname, namelen, mem, NULL);
+    str = gsicc_open_search(pname, namelen, mem, NULL, 0);
     if (str != NULL) {
         result = gsicc_profile_new(str, mem, pname, namelen);
         code = sfclose(str);
@@ -675,27 +686,27 @@ gsicc_init_profile_info(cmm_profile_t *profile)
 /* This is used to try to find the specified or default ICC profiles */
 static stream*
 gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
-                  gsicc_manager_t *icc_manager)
+                  const char* dirname, int dirlen)
 {
     char *buffer;
     stream* str;
 
     /* Check if we need to prepend the file name  */
-    if ( icc_manager != NULL) {
-        if ( icc_manager->profiledir != NULL ) {
-            /* If this fails, we will still try the file by itself and with
-               %rom% since someone may have left a space some of the spaces
-               as our defaults, even if they defined the directory to use.
-               This will occur only after searching the defined directory.
-               A warning is noted.  */
-            buffer = (char *) gs_alloc_bytes(mem_gc, namelen + icc_manager->namelen,
-                                         "gsicc_open_search");
-            strcpy(buffer, icc_manager->profiledir);
-            strcat(buffer, pname);
-            str = sfopen(buffer, "rb", mem_gc);
-            gs_free_object(mem_gc, buffer, "gsicc_open_search");
-            if (str != NULL) return(str);
-        }
+    if ( dirname != NULL) {
+        /* If this fails, we will still try the file by itself and with
+           %rom% since someone may have left a space some of the spaces
+           as our defaults, even if they defined the directory to use.
+           This will occur only after searching the defined directory.
+           A warning is noted.  */
+        buffer = (char *) gs_alloc_bytes(mem_gc, namelen + dirlen + 1,
+                                     "gsicc_open_search");
+        strcpy(buffer, dirname);
+        strcat(buffer, pname);
+        /* Just to make sure we were null terminated */
+        buffer[namelen + dirlen] = '\0';
+        str = sfopen(buffer, "rb", mem_gc);
+        gs_free_object(mem_gc, buffer, "gsicc_open_search");
+        if (str != NULL) return(str);
     }
 
     /* First just try it like it is */
@@ -708,6 +719,8 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
                         strlen(DEFAULT_DIR_ICC),"gsicc_open_search");
     strcpy(buffer, DEFAULT_DIR_ICC);
     strcat(buffer, pname);
+    /* Just to make sure we were null terminated */
+    buffer[namelen + strlen(DEFAULT_DIR_ICC)] = '\0';
     str = sfopen(buffer, "rb", mem_gc);
     gs_free_object(mem_gc, buffer, "gsicc_open_search");
     if (str == NULL) {
@@ -716,152 +729,154 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     return(str);
 }
 
-/* This sets the device profile. If the device does not have a defined
-   profile, then a default one is selected. */
-int
-gsicc_init_device_profile(const gs_state *pgs, gx_device * dev)
+/* Free device icc array structure.  */
+static void
+rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
-    int code;
-    char *pname;
-    stream *str;
+    cmm_dev_profile_t *icc_array = (cmm_dev_profile_t *)ptr_in;
+    int k;
+    gs_memory_t *mem_nongc =  icc_array->memory;
 
-    if (!pgs) {
-        dprintf("pgs is NULL in gsicc_init_device_profile\n");
-        return 0;
-    }
-
-    /* See if the device has a profile */
-    if (dev->color_info.icc_profile[0] == '\0') {
-        /* Grab a default one and prepend the icc directory to
-           it so that we have a proper path during c-list reading
-           if build was without compile inits.   */
-        if (pgs->icc_manager->profiledir != NULL) {
-            strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
-        }
-        switch(dev->color_info.num_components) {
-            case 1:
-                strcat(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
-                break;
-            case 3:
-                strcat(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
-                break;
-            case 4:
-                strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
-                break;
-            default:
-                strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
-                break;
-        }
-    }
-    /* Set the manager */
-    if (dev->device_icc_profile == NULL) {
-        /* No color model for the device */
-        code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
-        return(code);
-    } else {
-        /* It is possible that the profile name has not yet been prepended
-           by the ICC directory path when we specify a directory and an output
-           ICC profile.  This (the full path name) is needed later for c-list
-           processing.  Check and make sure that this is the case.  If not, then
-           prepend it now if there is room.  But FIRST check if the path is ok
-           as it is. If path is absolute then we are done..*/
-        if (!gp_file_name_is_absolute(dev->color_info.icc_profile,
-            strlen(dev->color_info.icc_profile))) {
-            if (pgs->icc_manager->profiledir != NULL) {
-                if (strncmp(pgs->icc_manager->profiledir,dev->color_info.icc_profile,
-                    strlen(pgs->icc_manager->profiledir)) != 0) {
-                    if ((strlen(pgs->icc_manager->profiledir) +
-                        strlen(dev->color_info.icc_profile)) < gp_file_name_sizeof) {
-                        str = sfopen(dev->color_info.icc_profile, "rb", pgs->memory);
-                        if (str == NULL) {
-                            /* Prepend the icc directory */
-                            pname = (char *)gs_alloc_bytes(pgs->memory,
-                                                        strlen(dev->color_info.icc_profile)+1,
-                                                    "gsicc_init_device_profile");
-                            strcpy(pname,dev->color_info.icc_profile);
-                            strcpy(dev->color_info.icc_profile,pgs->icc_manager->profiledir);
-                            strcat(dev->color_info.icc_profile,pname);
-                            gs_free_object(pgs->memory, pname, "gsicc_init_device_profile");
-                        } else {
-                            /* Path is all OK */
-                            sfclose(str);
-                        }
-                    }
-                }
+    if (icc_array->rc.ref_count <= 1 ) {
+        /* Decrement any profiles. */
+        for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+            if (icc_array->device_profile[k] != NULL) {
+                rc_decrement(icc_array->device_profile[k], 
+                             "rc_free_profile_array");
             }
         }
-        /* Check for cases where the color model has changed.  However ignore
-           sep device mismatches */
-        if ((dev->device_icc_profile->num_comps !=
-            dev->color_info.num_components && dev->color_info.num_components < 5)  ||
-            strncmp(dev->device_icc_profile->name,dev->color_info.icc_profile,
-            dev->device_icc_profile->name_length) != 0 ) {
-            /* First go ahead and try to use the profile path that is already
-               given in the dev */
-            code = gsicc_set_device_profile(pgs->icc_manager, dev, pgs->memory);
-            /* Check that we are OK in our setting of the profile.  If not,
-               then we go ahead and grab the proper default rather than
-               render wrong or even worst crash */
-            if (code < 0 || dev->device_icc_profile->num_comps !=
-                dev->color_info.num_components) {
-                if (pgs->icc_manager->profiledir != NULL) {
-                    strcpy(dev->color_info.icc_profile, pgs->icc_manager->profiledir);
-                } else {
-                    /* profiledir not set.  go ahead and clear out the
-                       current profile information to avoid two profile
-                       names getting concatenated */
-                    dev->color_info.icc_profile[0] = '\0';
-                }
-                switch(dev->color_info.num_components) {
-                    case 1:
-                        strcat(dev->color_info.icc_profile, DEFAULT_GRAY_ICC);
-                        break;
-                    case 3:
-                        strcat(dev->color_info.icc_profile, DEFAULT_RGB_ICC);
-                        break;
-                    case 4:
-                        strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
-                        break;
-                    default:
-                        strcat(dev->color_info.icc_profile, DEFAULT_CMYK_ICC);
-                        break;
-                }
-            }
-            return(code);
+        if (icc_array->icc_dir == NULL) {
+            gs_free_object(mem_nongc, icc_array->icc_dir, 
+                           "rc_free_profile_array");
         }
-        return(0);
+        gs_free_object(mem_nongc, icc_array, "rc_free_profile_array");
     }
 }
 
+/* Allocate device icc structure. The actual profiles are in this structure */
+cmm_dev_profile_t*
+gsicc_new_device_profile_array(gs_memory_t *memory)
+{
+    cmm_dev_profile_t *result;
+    int k;
+
+    result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory, 
+                                            sizeof(cmm_dev_profile_t),
+                                            "gsicc_new_device_profile_array");
+    result->memory = memory->non_gc_memory;
+
+    for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
+        result->device_profile[k] = NULL;
+    }
+    result->icc_dir = NULL;
+    result->dir_length = 0;
+    rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
+    return(result);
+}
+
+/* This sets the device profile. If the device does not have a defined
+   profile, then a default one is selected.  Name and dir may be NULL */
+int
+gsicc_init_device_profile_struct(gx_device * dev, 
+                                 char *profile_name,
+                                 gsicc_profile_types_t profile_type)
+{
+    int code;
+    cmm_profile_t *curr_profile;
+    cmm_dev_profile_t *profile_struct;
+    char *profile_dir = NULL;
+
+    /* See if the device has a profile structure.  If it does, then do a 
+       check to see if the profile that we are trying to set is already 
+       set and the same.  If it is not, then we need to free it and then
+       reset. */
+    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    if (profile_struct != NULL) {
+        if (profile_name == NULL) {
+            return 0;  /* A strange case */
+        }
+        /* Get the profile of interest */
+        curr_profile = profile_struct->device_profile[profile_type];       
+        /* See if we have the same profile in this location */
+        if (curr_profile == NULL) {
+            /* A new one that we need to set,  get the file and dir names
+               set up now */
+            /* The file name cannot be NULL in this case */
+            if (profile_name == NULL) {
+                return gs_rethrow(-1, "Trying to set object profile with NULL");
+            }
+        } else {
+            /* There is something there now.  See if what we have coming in
+               is different.  If it is, then we need to free and the create
+               the new one else we just return */
+            if (strncmp(curr_profile->name, profile_name, 
+                        strlen(profile_name) != 0 )) {
+                /* A change in the profile.  rc decrement this one as it will
+                   be replaced */
+                rc_decrement(dev->icc_array->device_profile[profile_type],
+                             "gsicc_init_device_profile_struct");
+            } else {
+                /* Nothing to change */
+                return 0;
+            }
+        }
+    } else {
+        /* We have no profile structure at all. Allocate the structure in 
+           non-GC memory.  */
+        dev->icc_array = gsicc_new_device_profile_array(dev->memory);
+        profile_struct = dev->icc_array;
+    }
+    profile_dir = profile_struct->icc_dir;
+    /* With respect to the directory, use the device setting or default  */
+    if (profile_dir == NULL) {
+        profile_dir = DEFAULT_DIR_ICC;
+    }
+    /* Either use the incoming or a default */
+    if (profile_name == NULL) {
+        switch(dev->color_info.num_components) {
+            case 1:
+                profile_name = DEFAULT_GRAY_ICC;
+                break;
+            case 3:
+               profile_name = DEFAULT_RGB_ICC;
+                break;
+            case 4:
+                profile_name = DEFAULT_CMYK_ICC;
+                break;
+            default:
+                profile_name = DEFAULT_CMYK_ICC;
+                break;
+        }
+    }
+    /* Go ahead and set the profile */
+    code = gsicc_set_device_profile(dev, dev->memory, profile_dir, profile_name,
+                                    profile_type);
+    return code;
+}
+
 /*  This computes the hash code for the device profile and assigns the profile
-    to the device_icc_profile member variable of the device.  This should
+    in the icc_array member variable of the device.  This should
     really occur only one time, but may occur twice if a color model is
-    specified or a non default profile is specified on the command line */
+    specified or a nondefault profile is specified on the command line */
 static int
-gsicc_set_device_profile(gsicc_manager_t *icc_manager, gx_device * pdev,
-                         gs_memory_t * mem)
+gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *dir_name, 
+                         char *file_name, gsicc_profile_t pro_enum)
 {
     cmm_profile_t *icc_profile;
     stream *str;
-    const char *profile = &(pdev->color_info.icc_profile[0]);
     int code;
 
-    /* It is possible that the device profile has already been
-       set.  We need to decrement if so and reset */
-
-    if (pdev->device_icc_profile != NULL) {
-        rc_decrement(pdev->device_icc_profile, "gsicc_set_device_profile");
-    }
-    /* Check if device has a profile.  This should always be true, since if
-       one was not set, we should have set it to the default.
-    */
-    if (profile != '\0') {
-        str = gsicc_open_search(profile, strlen(profile), mem, icc_manager);
+    /* Check if device has a profile for this slot. Note that we already 
+       decremented for any profile that we might be replacing 
+       in gsicc_init_device_profile_struct */
+    if (file_name != '\0') {
+        str = gsicc_open_search(file_name, strlen(file_name), mem, dir_name,
+                                strlen(dir_name));
         if (str != NULL) {
             icc_profile =
-                gsicc_profile_new(str, mem, profile, strlen(profile));
+                gsicc_profile_new(str, mem, file_name, strlen(file_name));
             code = sfclose(str);
-            pdev->device_icc_profile = icc_profile;
+            pdev->icc_array->device_profile[pro_enum] = icc_profile;
 
             /* Get the profile handle */
             icc_profile->profile_handle =
@@ -930,9 +945,10 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         return result;
     memset(result,0,sizeof(gsicc_serialized_profile_t));
     if (namelen > 0) {
-        nameptr = (char*) gs_alloc_bytes(mem_nongc, namelen,
+        nameptr = (char*) gs_alloc_bytes(mem_nongc, namelen+1,
                              "gsicc_profile_new");
         memcpy(nameptr, pname, namelen);
+        nameptr[namelen] = '\0';
         result->name = nameptr;
     } else {
         result->name = NULL;
@@ -1520,6 +1536,96 @@ gsicc_profile_reference(cmm_profile_t *icc_profile, int delta)
 {
     if (icc_profile != NULL)
         rc_adjust(icc_profile, delta, "gsicc_profile_reference");
+}
+
+void
+gsicc_extract_profile(gs_object_tag_type_t object_type,
+                       cmm_dev_profile_t *profile_struct,
+                       cmm_profile_t **profile,
+                       gsicc_rendering_intents_t *rendering_intent) 
+{
+    switch (object_type) {
+        case GS_DEVICE_DOESNT_SUPPORT_TAGS:
+        case GS_UNKNOWN_TAG:
+        case GS_UNTOUCHED_TAG:
+        default: 
+            (*profile) = profile_struct->device_profile[0];
+            *rendering_intent =  profile_struct->intent[0];
+            break;
+        case GS_PATH_TAG:
+            if (profile_struct->device_profile[1] != NULL) {
+                (*profile) = profile_struct->device_profile[1];
+                *rendering_intent =  profile_struct->intent[1];
+            } else {
+                (*profile) = profile_struct->device_profile[0];
+                *rendering_intent =  profile_struct->intent[0];
+            }
+            break;
+        case GS_IMAGE_TAG:
+            if (profile_struct->device_profile[2] != NULL) {
+                (*profile) = profile_struct->device_profile[2];
+                *rendering_intent =  profile_struct->intent[2];
+            } else {
+                (*profile) = profile_struct->device_profile[0];
+                *rendering_intent =  profile_struct->intent[0];
+            }
+            break;
+        case GS_TEXT_TAG:
+            if (profile_struct->device_profile[3] != NULL) {
+                (*profile) = profile_struct->device_profile[3];
+                *rendering_intent =  profile_struct->intent[3];
+            } else {
+                (*profile) = profile_struct->device_profile[0];
+                *rendering_intent =  profile_struct->intent[0];
+            }
+            break;
+        }
+}
+
+/* This is an interface function between the user params and the device params
+   to duplicate the icc directory so that it can be persistent during clist
+   rendering and so that we can keep the profile file names and the directory
+   seperate through the whole process.  It is also kept in the icc manager
+   for convience so that you do not need to the device when setting the profile.
+   During clist rendering all the icc profiles are pickled into the clist so
+   we do not need to directory for those during clist playback. */
+void
+gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname)
+{
+    const gs_state *pgs = (const gs_state*) pis;
+
+    if (pgs != NULL && pgs->device != NULL) {
+        gsicc_init_device_profile_dir(pgs->device, pname);
+    }
+}
+
+void
+gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir)
+{
+    cmm_dev_profile_t *profile_struct;
+    int code;
+    gs_memory_t *memory;
+    int size = strlen(profile_dir);
+
+    if (profile_dir != NULL && dev->procs.get_profile != NULL) {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (profile_struct == NULL) return;
+        /* Check if they are the same, if so then return */
+        if (profile_struct->icc_dir == NULL ||
+            strncmp(profile_struct->icc_dir, profile_dir, size) != 0) {
+            memory = profile_struct->memory;
+            gs_free_object(memory, profile_struct->icc_dir, 
+                           "gsicc_init_device_profile_dir");
+            profile_struct->icc_dir = (char *) gs_alloc_bytes(memory, 
+                        size+1, "gsicc_init_device_profile_dir");
+            memcpy(profile_struct->icc_dir, profile_dir, size);
+            /* Set last position to NULL. */
+            profile_struct->icc_dir[size] = 0;
+            profile_struct->dir_length = size;
+        } else {
+            return;
+        }
+    }
 }
 
 #if ICC_DUMP

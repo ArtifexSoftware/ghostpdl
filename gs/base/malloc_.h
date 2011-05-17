@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,6 +19,8 @@
 
 /* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
+
+#include "memento.h"
 
 #ifdef __TURBOC__
 #  include <alloc.h>

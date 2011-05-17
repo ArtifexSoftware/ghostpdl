@@ -447,8 +447,7 @@ typedef struct gx_device_color_info_s {
      */
     gx_cm_opmode_t opmode;
     gx_color_index process_comps;
-    int black_component;
-    char icc_profile[gp_file_name_sizeof]; /* It set, the filename for the ICC profile */\
+    int black_component;\
 } gx_device_color_info;
 
 /* NB encoding flag ignored */
@@ -468,9 +467,9 @@ typedef struct gx_device_color_info_s {
      { 0 } /* component shift */, \
      { 0 } /* component bits */, \
      { 0 } /* component mask */, \
-     cn /* process color name */,\
-     GX_CINFO_OPMODE_UNKNOWN /* opmode */,\
-     0 /* process_cmps */ }
+     cn /* process color name */, \
+     GX_CINFO_OPMODE_UNKNOWN /* opmode */, \
+     0  /* process_cmps */ }
 
 /*
  * The "has color" macro requires a slightly different definition
@@ -726,8 +725,7 @@ typedef struct gx_device_cached_colors_s {
         long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
-        cmm_profile_t *device_icc_profile;     /* Device profile in non-gc memory */\
-        cmm_dev_profile_t *dev_icc_array;      /* object dependent profiles */\
+        cmm_dev_profile_t *icc_array;      /* object dependent profiles */\
         gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\
         gx_device_procs procs	/* object procedures */
@@ -1430,9 +1428,7 @@ typedef struct gs_devn_params_s gs_devn_params;
   dev_t_proc_copy_plane(proc, gx_device)
 
 #define dev_t_proc_get_profile(proc, dev_t)\
-  int proc(dev_t *dev, gs_object_tag_type_t object_type,\
-           cmm_profile_t **profile,\
-           gsicc_rendering_intents_t *rendering_intent)
+  int proc(dev_t *dev, cmm_dev_profile_t **dev_profile)
 #define dev_proc_get_profile(proc)\
   dev_t_proc_get_profile(proc, gx_device)
 

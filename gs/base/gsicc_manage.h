@@ -42,12 +42,18 @@
 
 /* Prototypes */
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
+void gsicc_extract_profile(gs_object_tag_type_t object_type,
+                       cmm_dev_profile_t *profile_struct,
+                       cmm_profile_t **profile,
+                       gsicc_rendering_intents_t *rendering_intent); 
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
-int gsicc_init_device_profile(const gs_state *pgs, gx_device * dev);
+int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
+                                     gsicc_profile_types_t profile_type);
+cmm_dev_profile_name_array_t* gsicc_new_dev_icc_names(gs_memory_t *memory);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
                       int namelen, gsicc_profile_t defaulttype);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
@@ -74,6 +80,9 @@ cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
                                  gsicc_manager_t *icc_manager);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
+void gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname);
+void gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir);
+cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
 #endif

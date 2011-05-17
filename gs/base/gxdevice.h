@@ -103,7 +103,7 @@
         0/*PageCount*/, 0/*ShowpageCount*/, 1/*NumCopies*/, 0/*NumCopies_set*/,\
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */, 0/* MaxPatternBitmap */,\
-        0/*Profile*/, 0/*Profile Array*/,\
+        0/*Profile Array*/,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -584,6 +584,9 @@ int gdev_begin_output_media(gs_param_list * mlist, gs_param_dict * pdict,
 
 int gdev_write_output_media(int index, gs_param_dict * pdict,
                             const gdev_output_media_t * pom);
+
+/* Can be called from set user params */
+void gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev); 
 
 int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 

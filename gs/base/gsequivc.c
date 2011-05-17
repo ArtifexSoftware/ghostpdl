@@ -25,6 +25,7 @@
 #include "gsstate.h"
 #include "gscspace.h"
 #include "gxcspace.h"
+#include "gsicc_manage.h"
 
 /*
  * These routines are part of the logic for determining an equivalent
@@ -376,13 +377,16 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     gs_imager_state temp_state = *((const gs_imager_state *)pgs);
     color_capture_device temp_device = { 0 };
     gx_device_color dev_color;
-    cmm_profile_t *dev_profile;
     gsicc_rendering_intents_t rendering_intent;
     int code;
+    cmm_dev_profile_t *dev_profile;
+    cmm_profile_t *curr_output_profile;
+    cmm_dev_profile_t temp_profile;
 
-    code = dev_proc(pdev, get_profile)(pdev, 
-                                      gs_current_object_tag(temp_state.memory), 
-                                      &dev_profile, &rendering_intent);
+    code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
+    gsicc_extract_profile(gs_current_object_tag(pgs->memory), 
+                          dev_profile, &(curr_output_profile), 
+                          &rendering_intent); 
     /*
      * Create a temp device.  The primary purpose of this device is pass the
      * separation number and a pointer to the original device's equivalent
@@ -393,7 +397,12 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_device.sep_num = sep_num;
     temp_device.pequiv_cmyk_colors = pparams;
     temp_device.memory = pgs->memory;
-    temp_device.device_icc_profile = dev_profile;
+
+    temp_profile.device_profile[0] = curr_output_profile;
+    temp_profile.device_profile[1] = NULL;
+    temp_profile.device_profile[2] = NULL;
+    temp_profile.device_profile[2] = NULL;
+    temp_device.icc_array = &temp_profile;
     set_dev_proc(&temp_device, get_profile, gx_default_get_profile);
 
     /*

@@ -619,8 +619,8 @@ x_set_buffer(gx_device_X * xdev)
             xdev->buffer = buffer;
             mdev->width = xdev->width;
             mdev->height = xdev->height;
-            mdev->device_icc_profile = xdev->device_icc_profile;
-            rc_increment(xdev->device_icc_profile);
+            mdev->icc_array = xdev->icc_array;
+            rc_increment(xdev->icc_array);
             mdev->color_info = xdev->color_info;
             mdev->base = xdev->buffer;
             gdev_mem_open_scan_lines(mdev, xdev->height);

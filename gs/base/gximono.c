@@ -70,8 +70,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
     /* Set up the link now */
     const gs_color_space *pcs;
     gsicc_rendering_param_t rendering_params;
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
+    int num_des_comps;
+    cmm_dev_profile_t *dev_profile;
 
     if (penum->spp == 1) {
         /* At this point in time, only use the ht approach if our device
@@ -97,9 +97,8 @@ gs_image_class_3_mono(gx_image_enum * penum)
                     penum->icc_setup.need_decode = true;
                 }
             }
-            code = dev_proc(penum->dev, get_profile)(penum->dev, 
-                                              gs_current_object_tag(penum->pis->memory), 
-                                              &dev_profile, &rendering_intent);
+            code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+            num_des_comps = dev_profile->device_profile[0]->num_comps;
             /* Define the rendering intents */
             rendering_params.black_point_comp = BP_ON;
             rendering_params.object_type = GS_IMAGE_TAG;
@@ -125,7 +124,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             /* The effective transfer is built into the threshold array and
                need require a special lookup to decode it */
             penum->icc_setup.has_transfer = 
-                gx_has_transfer(penum->pis, dev_profile->num_comps);
+                gx_has_transfer(penum->pis, num_des_comps);
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
                 penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,

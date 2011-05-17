@@ -2056,6 +2056,8 @@ LPGAMMATABLE _cmsBuildKToneCurve(cmsHTRANSFORM hCMYK2CMYK, int nPoints);
 // Validates a LUT
 LCMSBOOL cdecl _cmsValidateLUT(LPLUT NewLUT);
 
+// Choose the transform function to use
+void _cmsSetPrecalculatedTransform(_LPcmsTRANSFORM p);
 
 // These are two VITAL macros, from converting between 8 and 16 bit
 // representation. 

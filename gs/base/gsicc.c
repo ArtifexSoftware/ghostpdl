@@ -281,14 +281,12 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                           gs_color_select_t select)
 {
-    cmm_profile_t *icc_profile;
     int num_colorants;
     int code;
-    gsicc_rendering_intents_t rendering_intent;
+    cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                      &icc_profile, &rendering_intent);
-    num_colorants = icc_profile->num_comps;
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    num_colorants = dev_profile->device_profile[0]->num_comps;
     switch( num_colorants ) {
         case 1:
             code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
@@ -321,17 +319,16 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short *psrc_temp;
     frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
     int k,i;
-    int code;
 #ifdef DEBUG
     int num_src_comps;
-    int num_des_comps;
 #endif
+    int num_des_comps;
+    int code;
+    cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                      &dev_profile, &rendering_intent);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    num_des_comps = dev_profile->device_profile[0]->num_comps;
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = gs_current_object_tag(pis->memory);
     /* Need to figure out which one rules here on rendering intent.  The
@@ -364,7 +361,6 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
 #ifdef DEBUG
     if (!icc_link->is_identity) {
         num_src_comps = pcs->cmm_icc_profile_data->num_comps;
-        num_des_comps = dev_profile->num_comps;
         if_debug0('c',"[c]ICC remap [ ");
         for (k = 0; k < num_src_comps; k++) {
             if_debug1('c', "%d ",psrc[k]);
@@ -382,7 +378,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
        the transfer function and potentially the halftoning */
     /* Right now we need to go from unsigned short to frac.  I really
        would like to avoid this sort of stuff.  That will come. */
-    for ( k = 0; k < dev_profile->num_comps; k++){
+    for ( k = 0; k < num_des_comps; k++){
         conc[k] = ushort2frac(psrc_temp[k]);
     }
     gx_remap_concrete_ICC(conc, pcs, pdc, pis, dev, select);
@@ -412,12 +408,12 @@ gx_concretize_ICC(
     unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int k;
     unsigned short *psrc_temp;
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
+    int num_des_comps;
     int code;
+    cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                      &dev_profile, &rendering_intent);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    num_des_comps = dev_profile->device_profile[0]->num_comps;
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.object_type = gs_current_object_tag(pis->memory);
@@ -436,7 +432,7 @@ gx_concretize_ICC(
         gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
     }
     /* This needs to be optimized */
-    for (k = 0; k < dev_profile->num_comps; k++){
+    for (k = 0; k < num_des_comps; k++){
         pconc[k] = float2frac(((float) psrc_temp[k])/65535.0);
     }
     /* Release the link */
@@ -523,11 +519,10 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
 }
 
 int
-gx_default_get_profile(gx_device *dev, gs_object_tag_type_t object_type,
-                       cmm_profile_t **profile, 
-                       gsicc_rendering_intents_t *rendering_intent) 
+gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile) 
 {
-    *profile = dev->device_icc_profile;
-    *rendering_intent = gsPERCEPTUAL;
+    *profile = dev->icc_array;
     return 0;
 }
+
+

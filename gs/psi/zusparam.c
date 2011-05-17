@@ -42,6 +42,7 @@
 #include "gx.h"
 #include "gxistate.h"
 
+
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
 
@@ -628,9 +629,11 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
                                      "set_icc_directory");
         if (pname == NULL)
             return gs_rethrow(-1, "cannot allocate directory name");
-        memcpy(pname,pval->data,namelen-1);
+        memcpy(pname, pval->data,namelen-1);
         pname[namelen-1] = 0;
         gsicc_set_icc_directory(pis, (const char*) pname, namelen);
+        /* Also go ahead and set it in the device params. */
+        gsicc_set_device_icc_dir(pis, (const char*) pname);
         gs_free_object(pis->icc_manager->memory, pname,
                 "set_icc_directory");
         return(0);

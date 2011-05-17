@@ -113,13 +113,11 @@ gs_image_class_4_color(gx_image_enum * penum)
         gsicc_rendering_param_t rendering_params;
         int k;
         int src_num_comp = cs_num_components(penum->pcs);
-        cmm_profile_t *dev_profile;
-        gsicc_rendering_intents_t rendering_intent;
+        int des_num_comp;
+        cmm_dev_profile_t *dev_profile;
 
-        code = 
-            dev_proc(penum->dev, get_profile)(penum->dev, 
-                                              gs_current_object_tag(penum->pis->memory), 
-                                              &dev_profile, &rendering_intent);         
+        code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
+        des_num_comp = dev_profile->device_profile[0]->num_comps;
         penum->icc_setup.need_decode = false;
         /* Check if we need to do any decoding.  If yes, then that will slow us down */
         for (k = 0; k < src_num_comp; k++) {
@@ -140,7 +138,7 @@ gs_image_class_4_color(gx_image_enum * penum)
         penum->icc_setup.is_lab = pcs->cmm_icc_profile_data->islab;
         penum->icc_setup.must_halftone = gx_device_must_halftone(penum->dev);
         penum->icc_setup.has_transfer = 
-            gx_has_transfer(penum->pis, dev_profile->num_comps);
+            gx_has_transfer(penum->pis, des_num_comp);
         if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
         if (penum->icc_link == NULL) {
             penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
@@ -297,12 +295,12 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     int num_pixels, spp_cm;
     int spp = penum->spp;
     bool force_planar = false;
-    cmm_profile_t *dev_profile;
-    gsicc_rendering_intents_t rendering_intent;
+    int num_des_comps;
     int code;
+    cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
-                                      &dev_profile, &rendering_intent);
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    num_des_comps = dev_profile->device_profile[0]->num_comps;
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }
@@ -316,7 +314,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
        case. For now we let the CMM do the reorg into planar.  We will want
        to optimize this to do something special when we have the identity
        transform for CM and going out to a planar CMYK device */
-    if (dev_profile->num_comps != 1 && planar_out == true) {
+    if (num_des_comps != 1 && planar_out == true) {
         force_planar = true;
     }
     if (penum->icc_link->is_identity && !need_decode && !force_planar) {
@@ -326,7 +324,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
         *bufend = *psrc_cm +  w;
         *psrc_cm_start = NULL;
     } else {
-        spp_cm = dev_profile->num_comps;
+        spp_cm = num_des_comps;
         *psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp,
                                   "image_render_color_icc");
         *psrc_cm_start = *psrc_cm;

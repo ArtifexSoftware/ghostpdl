@@ -46,8 +46,8 @@ gx_device_finalize(void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
 
-    if (dev->device_icc_profile != NULL) {
-        rc_decrement(dev->device_icc_profile, "gx_device_finalize(icc_profile)");
+    if (dev->icc_array != NULL) {
+        rc_decrement(dev->icc_array, "gx_device_finalize(icc_profile)");
     }
     if (dev->finalize)
         dev->finalize(dev);
@@ -548,13 +548,9 @@ gs_nulldevice(gs_state * pgs)
            is one */
         rc_init(ndev, pgs->memory, 0);
         if (pgs->device != NULL) {
-            gsicc_rendering_intents_t rendering_intent;
-
             code = dev_proc(pgs->device, get_profile)(pgs->device, 
-                                        gs_current_object_tag(pgs->memory), 
-                                        &(ndev->device_icc_profile), 
-                                        &rendering_intent);        
-            rc_increment(ndev->device_icc_profile);
+                                                      &(ndev->icc_array));        
+            rc_increment(ndev->icc_array);
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
         } 
 

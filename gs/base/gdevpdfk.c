@@ -67,13 +67,19 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
     int ncomp = gs_color_space_num_components(pcs);
     int i;
     gx_device dev;
+    cmm_dev_profile_t dev_profile;
+
     gs_color_space_index cs_index;
     const gs_vector3 *const pWhitePoint = &pciec->points.WhitePoint;
     double xyz_float[3];
 
     cs_index = gs_color_space_get_index(pcs);
     /* Need a device profile */
-    dev.device_icc_profile = pcs->cmm_icc_profile_data;
+    dev_profile.device_profile[0] = pcs->cmm_icc_profile_data;
+    dev_profile.device_profile[1] = NULL;
+    dev_profile.device_profile[2] = NULL;
+    dev_profile.device_profile[3] = NULL;
+    dev.icc_array = &(dev_profile);
 
     for (i = 0; i < ncomp; ++i)
         cc.paint.values[i] = in[i];

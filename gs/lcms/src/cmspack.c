@@ -1,22 +1,22 @@
 //  Little cms
 //  Copyright (C) 1998-2007 Marti Maria
 //
-// Permission is hereby granted, free of charge, to any person obtaining 
-// a copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the Software 
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software
 // is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in 
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
@@ -58,9 +58,9 @@ LPBYTE UnrollAnyBytes(register _LPcmsTRANSFORM info, register WORD wIn[], regist
 
        for (i=0; i < nChan; i++) {
 
-              wIn[i] = RGB_8_TO_16(*accum); accum++;              
+              wIn[i] = RGB_8_TO_16(*accum); accum++;
        }
-       
+
        return accum + T_EXTRA(info -> InputFormat);
 }
 
@@ -97,7 +97,7 @@ LPBYTE Unroll4BytesSwapFirst(register _LPcmsTRANSFORM info, register WORD wIn[],
        wIn[0] = RGB_8_TO_16(*accum); accum++; // C
        wIn[1] = RGB_8_TO_16(*accum); accum++; // M
        wIn[2] = RGB_8_TO_16(*accum); accum++; // Y
-       
+
 
        return accum;
 }
@@ -134,13 +134,13 @@ LPBYTE UnrollAnyWords(register _LPcmsTRANSFORM info, register WORD wIn[], regist
 {
      int nChan = T_CHANNELS(info -> InputFormat);
      register int i;
-     
+
      for (i=0; i < nChan; i++) {
 
-              wIn[i] = *(LPWORD) accum; accum += 2;              
+              wIn[i] = *(LPWORD) accum; accum += 2;
      }
 
-     return accum + T_EXTRA(info -> InputFormat) * sizeof(WORD);       
+     return accum + T_EXTRA(info -> InputFormat) * sizeof(WORD);
 }
 
 
@@ -174,7 +174,7 @@ LPBYTE Unroll4WordsSwapFirst(register _LPcmsTRANSFORM info, register WORD wIn[],
        wIn[0] = *(LPWORD) accum; accum+= 2; // C
        wIn[1] = *(LPWORD) accum; accum+= 2; // M
        wIn[2] = *(LPWORD) accum; accum+= 2; // Y
-       
+
        return accum;
 }
 
@@ -256,9 +256,9 @@ static
 LPBYTE Unroll3BytesLab(register _LPcmsTRANSFORM info, register WORD wIn[], register LPBYTE accum)
 {
 
-       wIn[0] = (WORD) ((*accum) << 8); accum++;     
-       wIn[1] = (WORD) ((*accum) << 8); accum++;     
-       wIn[2] = (WORD) ((*accum) << 8); accum++;     
+       wIn[0] = (WORD) ((*accum) << 8); accum++;
+       wIn[1] = (WORD) ((*accum) << 8); accum++;
+       wIn[2] = (WORD) ((*accum) << 8); accum++;
 
        return accum;
 }
@@ -369,8 +369,8 @@ LPBYTE Unroll1WordBigEndian(register _LPcmsTRANSFORM info, register WORD wIn[], 
 static
 LPBYTE Unroll1WordSkip3(register _LPcmsTRANSFORM info, register WORD wIn[], register LPBYTE accum)
 {
-       wIn[0] = wIn[1] = wIn[2] = *(LPWORD) accum; 
-        
+       wIn[0] = wIn[1] = wIn[2] = *(LPWORD) accum;
+
        accum += 8;
        return accum;
 }
@@ -390,7 +390,7 @@ static
 LPBYTE Unroll2ByteSwapFirst(register _LPcmsTRANSFORM info, register WORD wIn[], register LPBYTE accum)
 {
        wIn[3] = RGB_8_TO_16(*accum); accum++;                       // alpha
-       wIn[0] = wIn[1] = wIn[2] = RGB_8_TO_16(*accum); accum++;     // L       
+       wIn[0] = wIn[1] = wIn[2] = RGB_8_TO_16(*accum); accum++;     // L
        return accum;
 }
 
@@ -410,7 +410,7 @@ LPBYTE Unroll2WordSwapFirst(register _LPcmsTRANSFORM info, register WORD wIn[], 
 {
        wIn[3] = *(LPWORD) accum; accum += 2;                    // alpha
        wIn[0] = wIn[1] = wIn[2] = *(LPWORD) accum; accum+= 2;   // L
-       
+
        return accum;
 }
 
@@ -482,8 +482,8 @@ LPBYTE UnrollPlanarWordsBigEndian(register _LPcmsTRANSFORM info, register WORD w
 // floating point
 static
 LPBYTE UnrollLabDouble(register _LPcmsTRANSFORM info, register WORD wIn[], register LPBYTE accum)
-{       
-        
+{
+
     if (T_PLANAR(info -> InputFormat)) {
 
         double* Pt = (double*) accum;
@@ -516,7 +516,7 @@ LPBYTE UnrollLabDouble(register _LPcmsTRANSFORM info, register WORD wIn[], regis
 
 static
 LPBYTE UnrollXYZDouble(register _LPcmsTRANSFORM info, register WORD wIn[], register LPBYTE accum)
-{   
+{
     if (T_PLANAR(info -> InputFormat)) {
 
         double* Pt = (double*) accum;
@@ -560,9 +560,9 @@ LPBYTE UnrollInkDouble(register _LPcmsTRANSFORM info, register WORD wIn[], regis
             v = Inks[i * info ->StrideIn];
         else
             v = Inks[i];
-            
+
         v = floor(v * 655.35 + 0.5);
-        
+
         if (v > 65535.0) v = 65535.0;
         if (v < 0) v = 0;
 
@@ -593,7 +593,7 @@ LPBYTE UnrollDouble(register _LPcmsTRANSFORM info, register WORD wIn[], register
             v = Inks[i * info ->StrideIn];
         else
             v = Inks[i];
-        
+
         v = floor(v * 65535.0 + 0.5);
 
         if (v > 65535.0) v = 65535.0;
@@ -615,17 +615,17 @@ LPBYTE UnrollDouble1Chan(register _LPcmsTRANSFORM info, register WORD wIn[], reg
 {
     double* Inks = (double*) accum;
     double v;
-    
-    
+
+
     v = floor(Inks[0] * 65535.0 + 0.5);
-    
+
     if (v > 65535.0) v = 65535.0;
     if (v < 0) v = 0;
-    
-    
+
+
     wIn[0] = wIn[1] = wIn[2] = (WORD) v;
-    
-    return accum + sizeof(double);    
+
+    return accum + sizeof(double);
 }
 
 
@@ -646,7 +646,7 @@ LPBYTE PackNBytesDither(register _LPcmsTRANSFORM info, register WORD wOut[], reg
        for (i=0; i < nChan;  i++) {
 
               n = wOut[i] + err[i]; // Value
-             
+
               pe = (n / 257);       // Whole part
               pf = (n % 257);       // Fractional part
 
@@ -950,7 +950,7 @@ LPBYTE Pack4BytesSwapFirst(register _LPcmsTRANSFORM info, register WORD wOut[], 
          *output++ = RGB_16_TO_8(wOut[0]);
          *output++ = RGB_16_TO_8(wOut[1]);
          *output++ = RGB_16_TO_8(wOut[2]);
-         
+
          return output;
 }
 
@@ -1183,7 +1183,7 @@ LPBYTE Pack3BytesAndSkip1SwapFirst(register _LPcmsTRANSFORM Info, register WORD 
        *output++ = RGB_16_TO_8(wOut[0]);
        *output++ = RGB_16_TO_8(wOut[1]);
        *output++ = RGB_16_TO_8(wOut[2]);
-       
+
        return output;
 }
 
@@ -1194,19 +1194,19 @@ LPBYTE Pack3BytesAndSkip1Swap(register _LPcmsTRANSFORM Info, register WORD wOut[
        *output++ = RGB_16_TO_8(wOut[2]);
        *output++ = RGB_16_TO_8(wOut[1]);
        *output++ = RGB_16_TO_8(wOut[0]);
-    
+
        return output;
 }
 
 
 static
 LPBYTE Pack3BytesAndSkip1SwapSwapFirst(register _LPcmsTRANSFORM Info, register WORD wOut[], register LPBYTE output)
-{       
+{
        *output++ = RGB_16_TO_8(wOut[2]);
        *output++ = RGB_16_TO_8(wOut[1]);
        *output++ = RGB_16_TO_8(wOut[0]);
        output++;
-    
+
        return output;
 }
 
@@ -1235,7 +1235,7 @@ LPBYTE Pack3WordsAndSkip1Swap(register _LPcmsTRANSFORM Info, register WORD wOut[
        output+= 2;
        *(LPWORD) output = wOut[0];
        output+= 2;
-       
+
 
        return output;
 }
@@ -1243,7 +1243,7 @@ LPBYTE Pack3WordsAndSkip1Swap(register _LPcmsTRANSFORM Info, register WORD wOut[
 
 static
 LPBYTE Pack3WordsAndSkip1SwapSwapFirst(register _LPcmsTRANSFORM Info, register WORD wOut[], register LPBYTE output)
-{      
+{
        *(LPWORD) output = wOut[2];
        output+= 2;
        *(LPWORD) output = wOut[1];
@@ -1251,7 +1251,7 @@ LPBYTE Pack3WordsAndSkip1SwapSwapFirst(register _LPcmsTRANSFORM Info, register W
        *(LPWORD) output = wOut[0];
        output+= 2;
        output+= 2;
-       
+
 
        return output;
 }
@@ -1282,7 +1282,7 @@ LPBYTE Pack3WordsAndSkip1SwapBigEndian(register _LPcmsTRANSFORM Info, register W
        output+= 2;
        *(LPWORD) output = CHANGE_ENDIAN(wOut[0]);
        output+= 2;
-    
+
 
        return output;
 }
@@ -1311,7 +1311,7 @@ LPBYTE Pack1ByteAndSkip1SwapFirst(register _LPcmsTRANSFORM Info, register WORD w
 {
        output++;
        *output++ = RGB_16_TO_8(wOut[0]);
-       
+
        return output;
 }
 
@@ -1346,7 +1346,7 @@ LPBYTE Pack1WordAndSkip1(register _LPcmsTRANSFORM Info, register WORD wOut[], re
 static
 LPBYTE Pack1WordAndSkip1SwapFirst(register _LPcmsTRANSFORM Info, register WORD wOut[], register LPBYTE output)
 {
-       output += 2; 
+       output += 2;
        *(LPWORD) output = wOut[0];
        output+= 2;
 
@@ -1390,7 +1390,7 @@ LPBYTE PackLabDouble(register _LPcmsTRANSFORM Info, register WORD wOut[], regist
        else
            cmsLabEncoded2Float((LPcmsCIELab) output, wOut);
 
-        return output + (sizeof(cmsCIELab) + T_EXTRA(Info ->OutputFormat) * sizeof(double));            
+        return output + (sizeof(cmsCIELab) + T_EXTRA(Info ->OutputFormat) * sizeof(double));
     }
 
 }
@@ -1415,7 +1415,7 @@ LPBYTE PackXYZDouble(register _LPcmsTRANSFORM Info, register WORD wOut[], regist
     else {
 
         cmsXYZEncoded2Float((LPcmsCIEXYZ) output, wOut);
-        
+
         return output + (sizeof(cmsCIEXYZ) + T_EXTRA(Info ->OutputFormat) * sizeof(double));
     }
 }
@@ -1437,14 +1437,14 @@ LPBYTE PackInkDouble(register _LPcmsTRANSFORM Info, register WORD wOut[], regist
         }
 
         return output + sizeof(double);
-    } 
+    }
     else {
 
         for (i=0; i <  nChan; i++) {
 
             Inks[i] = wOut[i] /  655.35;
         }
-    
+
 
     return output + (nChan + T_EXTRA(Info ->OutputFormat)) * sizeof(double);
     }
@@ -1490,13 +1490,13 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
 
        // Check Named Color
         /* Disabled to avoid illegal memory access if profile was released. */
-        /* lcms appears not to check its handles of links when a profile is 
+        /* lcms appears not to check its handles of links when a profile is
            released to clear out xform->InputProfile.  Probably due to the
            fact that lcms may not expect a change of the formatters after the
            link is created.  That would imply that we would need to create
-           links based upon data types which is not so efficient.  */ 
+           links based upon data types which is not so efficient.  */
     /* if (xform) {
-           
+
            if (xform ->InputProfile) {
 
            if (cmsGetDeviceClass(xform ->InputProfile) == icSigNamedColorClass) {
@@ -1506,7 +1506,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                     return NULL;
                 }
            }
-                
+
         }
        } */
 
@@ -1515,11 +1515,11 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
        if (T_BYTES(dwInput) == 0) {
 
            switch (T_COLORSPACE(dwInput)) {
-               
-           case PT_Lab: 
+
+           case PT_Lab:
                     FromInput = UnrollLabDouble;
                     break;
-           case PT_XYZ: 
+           case PT_XYZ:
                     FromInput = UnrollXYZDouble;
                     break;
 
@@ -1532,7 +1532,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
            case PT_YUVK:
            case PT_HSV:
            case PT_HLS:
-           case PT_Yxy: 
+           case PT_Yxy:
                     if (T_CHANNELS(dwInput) == 1)
                         FromInput = UnrollDouble1Chan;
                     else
@@ -1545,25 +1545,25 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                     FromInput = UnrollInkDouble;
                     break;
            }
-                    
+
        }
-       else {    
-       
+       else {
+
            if (T_PLANAR(dwInput)) {
-               
+
                switch (T_BYTES(dwInput)) {
-                   
-               case 1: 
+
+               case 1:
                    FromInput = UnrollPlanarBytes;
                    break;
-                   
-               case 2:                   
+
+               case 2:
                    if (T_ENDIAN16(dwInput))
                        FromInput = UnrollPlanarWordsBigEndian;
                    else
-                       FromInput = UnrollPlanarWords;                
+                       FromInput = UnrollPlanarWords;
                    break;
-                   
+
                default:;
                }
        }
@@ -1606,7 +1606,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                             if (T_SWAPFIRST(dwInput))
 
                                 FromInput = Unroll4BytesSwapSwapFirst;
-                            else 
+                            else
                                 FromInput = Unroll4BytesSwap;
                       }
                       else {
@@ -1630,7 +1630,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                        FromInput = UnrollAnyBytes;
                    break;
 
-                    
+
               default:;
               }
               break;
@@ -1654,8 +1654,8 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                         else {
                           if (T_SWAPFIRST(dwInput))
                               FromInput = Unroll2WordSwapFirst;
-                          else 
-                              FromInput = Unroll2Word;              
+                          else
+                              FromInput = Unroll2Word;
                         }
                         break;
 
@@ -1678,14 +1678,14 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                             if (T_ENDIAN16(dwInput))
                                    FromInput = Unroll4WordsSwapBigEndian;
                             else {
-                                   
+
                                     if (T_SWAPFIRST(dwInput))
                                         FromInput = Unroll4WordsSwapSwapFirst;
-                                    else 
+                                    else
                                         FromInput = Unroll4WordsSwap;
 
                             }
-                            
+
                       }
                       else {
 
@@ -1707,7 +1707,7 @@ _cmsFIXFN _cmsIdentifyInputFormat(_LPcmsTRANSFORM xform, DWORD dwInput)
                                       if (T_FLAVOR(dwInput))
                                             FromInput = Unroll4WordsReverse;
                                       else
-                                            FromInput = Unroll4Words;                                    
+                                            FromInput = Unroll4Words;
                                   }
                             }
                       }
@@ -1747,11 +1747,11 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
        if (T_BYTES(dwOutput) == 0) {
 
            switch (T_COLORSPACE(dwOutput)) {
-               
-           case PT_Lab: 
+
+           case PT_Lab:
                     ToOutput = PackLabDouble;
                     break;
-           case PT_XYZ: 
+           case PT_XYZ:
                     ToOutput = PackXYZDouble;
                     break;
 
@@ -1763,7 +1763,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
            case PT_YUVK:
            case PT_HSV:
            case PT_HLS:
-           case PT_Yxy: 
+           case PT_Yxy:
                     ToOutput = PackDouble;
                     break;
 
@@ -1773,9 +1773,9 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                     ToOutput = PackInkDouble;
                     break;
            }
-                    
+
        }
-       else 
+       else
 
        if (T_PLANAR(dwOutput)) {
 
@@ -1801,7 +1801,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                      case 1:
                             if (T_DITHER(dwOutput))
                                     ToOutput = PackNBytesDither;
-                            else                                        
+                            else
                             ToOutput = Pack1Byte;
                             if (T_EXTRA(dwOutput) == 1) {
                                 if (T_SWAPFIRST(dwOutput))
@@ -1828,10 +1828,10 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                              break;
 
                          case 1:    // TODO: ALab8 should be handled here
-                             
+
                                     if (T_DOSWAP(dwOutput)) {
 
-                                    if (T_SWAPFIRST(dwOutput))  
+                                    if (T_SWAPFIRST(dwOutput))
                                         ToOutput = Pack3BytesAndSkip1SwapSwapFirst;
                                     else
                                         ToOutput = Pack3BytesAndSkip1Swap;
@@ -1839,7 +1839,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                              else {
                                    if (T_SWAPFIRST(dwOutput))
                                     ToOutput = Pack3BytesAndSkip1SwapFirst;
-                                   else 
+                                   else
                                     ToOutput = Pack3BytesAndSkip1;
                              }
                              break;
@@ -1849,8 +1849,8 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                          break;
 
                      case 4: if (T_EXTRA(dwOutput) == 0) {
-                            
- 
+
+
                                 if (T_DOSWAP(dwOutput)) {
 
 
@@ -1871,7 +1871,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                                      if (T_SWAPFIRST(dwOutput))
                                          ToOutput = Pack4BytesSwapFirst;
                                      else {
-                                         
+
                                          if (T_FLAVOR(dwOutput))
                                              ToOutput = Pack4BytesReverse;
                                          else {
@@ -1954,7 +1954,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                                else {
                                    if (T_SWAPFIRST(dwOutput))
                                       ToOutput = Pack1WordAndSkip1SwapFirst;
-                                   else 
+                                   else
                                       ToOutput = Pack1WordAndSkip1;
                                }
                             }
@@ -1988,9 +1988,9 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
 
                                           ToOutput = Pack3WordsAndSkip1SwapBigEndian;
                                    else {
-                                       if (T_SWAPFIRST(dwOutput)) 
+                                       if (T_SWAPFIRST(dwOutput))
                                           ToOutput = Pack3WordsAndSkip1SwapSwapFirst;
-                                       else 
+                                       else
                                           ToOutput = Pack3WordsAndSkip1Swap;
                                    }
                              }
@@ -2016,7 +2016,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                                    else {
 
                                        if (T_ENDIAN16(dwOutput)) {
-                                              
+
                                            if (T_FLAVOR(dwOutput))
                                                 ToOutput = Pack4WordsBigEndianReverse;
                                            else
@@ -2025,7 +2025,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                                        else {
                                           if (T_FLAVOR(dwOutput))
                                               ToOutput = Pack4WordsReverse;
-                                          else 
+                                          else
                                                ToOutput = Pack4Words;
                                         }
                                    }
@@ -2033,7 +2033,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                             else {
                                     if (!T_DOSWAP(dwOutput) && !T_SWAPFIRST(dwOutput))
                                              ToOutput = PackNWords;
-                            }                            
+                            }
                             break;
 
                      case 6: if (T_EXTRA(dwOutput) == 0) {
@@ -2056,7 +2056,7 @@ _cmsFIXFN _cmsIdentifyOutputFormat(_LPcmsTRANSFORM xform, DWORD dwOutput)
                             else {
                                     if (!T_DOSWAP(dwOutput) && !T_SWAPFIRST(dwOutput))
                                              ToOutput = PackNWords;
-                            }                            
+                            }
                             break;
 
 
@@ -2109,7 +2109,7 @@ void LCMSEXPORT cmsSetUserFormatters(cmsHTRANSFORM hTransform, DWORD dwInput,  c
                                                                DWORD dwOutput, cmsFORMATTER Output)
 {
     _LPcmsTRANSFORM xform = (_LPcmsTRANSFORM) (LPSTR) hTransform;
-    
+
     if (Input != NULL) {
         xform ->FromInput = (_cmsFIXFN) Input;
         xform ->InputFormat = dwInput;
@@ -2122,12 +2122,12 @@ void LCMSEXPORT cmsSetUserFormatters(cmsHTRANSFORM hTransform, DWORD dwInput,  c
 
 }
 
-void LCMSEXPORT cmsGetUserFormatters(cmsHTRANSFORM hTransform, 
-                                     LPDWORD InputFormat, cmsFORMATTER* Input, 
+void LCMSEXPORT cmsGetUserFormatters(cmsHTRANSFORM hTransform,
+                                     LPDWORD InputFormat, cmsFORMATTER* Input,
                                      LPDWORD OutputFormat, cmsFORMATTER* Output)
 {
     _LPcmsTRANSFORM xform = (_LPcmsTRANSFORM) (LPSTR) hTransform;
-    
+
     if (Input)        *Input =  (cmsFORMATTER) xform ->FromInput;
     if (InputFormat)  *InputFormat = xform -> InputFormat;
     if (Output)       *Output = (cmsFORMATTER) xform ->ToOutput;
@@ -2135,16 +2135,135 @@ void LCMSEXPORT cmsGetUserFormatters(cmsHTRANSFORM hTransform,
 }
 
 
+extern WORD _cmsAlarmR, _cmsAlarmG, _cmsAlarmB;
+
+// RJW: Move the core transform routines in here, so they can benefit from
+// being in the same compilation unit as the pack/unpack routines.
+#define FUNCTION_NAME PrecalculatedXFORM
+#include "cmsxform.h"
+
+#define FUNCTION_NAME PrecalculatedXFORMGamutCheck
+#define GAMUTCHECK
+#include "cmsxform.h"
+
+#define FUNCTION_NAME CachedXFORM
+#define CACHED
+#include "cmsxform.h"
+
+#define FUNCTION_NAME CachedXFORM4
+#define CACHED
+#define INBYTES 4
+#include "cmsxform.h"
+
+#define FUNCTION_NAME CachedXFORM8
+#define CACHED
+#define INBYTES 8
+#include "cmsxform.h"
+
+#define FUNCTION_NAME CachedXFORMGamutCheck
+#define CACHED
+#define GAMUTCHECK
+#include "cmsxform.h"
+
+#define FUNCTION_NAME CachedXFORM3to1
+#define CACHED
+#define INBYTES 6
+#define UNPACK(T,D,S)                                    \
+do {                                                     \
+       (D)[0] = RGB_8_TO_16(*(S)); (S)++;     /* R */    \
+       (D)[1] = RGB_8_TO_16(*(S)); (S)++;     /* G */    \
+       (D)[2] = RGB_8_TO_16(*(S)); (S)++;     /* B */    \
+} while (0)
+#define PACKFN Pack1Byte
+#include "cmsxform.h"
+
+// Auxiliar: Handle precalculated gamut check
+
+static
+void TransformOnePixelWithGamutCheck(_LPcmsTRANSFORM p, WORD wIn[], WORD wOut[])
+{
+    WORD wOutOfGamut;
+
+       cmsEvalLUT(p ->GamutCheck,  wIn, &wOutOfGamut);
+
+       if (wOutOfGamut >= 1) {
+
+              ZeroMemory(wOut, sizeof(WORD) * MAXCHANNELS);
+
+              wOut[0] = _cmsAlarmR;
+              wOut[1] = _cmsAlarmG;
+              wOut[2] = _cmsAlarmB;
+
+       }
+       else
+            cmsEvalLUT(p -> DeviceLink, wIn, wOut);
+
+}
+
+// Identify whatever a transform is to be cached
+
+void _cmsSetPrecalculatedTransform(_LPcmsTRANSFORM p)
+{
+    if ((p->dwOriginalFlags & cmsFLAGS_GAMUTCHECK) && p ->GamutCheck != NULL) {
+
+        p -> xform = PrecalculatedXFORMGamutCheck;
+
+        if (!(p->dwOriginalFlags & cmsFLAGS_NOTCACHE)) {
+
+            ZeroMemory(p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
+            TransformOnePixelWithGamutCheck(p, p->CacheIn, p ->CacheOut);
+            p ->xform = CachedXFORMGamutCheck;
+        }
+
+    }
+    else {
+
+        p -> xform = PrecalculatedXFORM;
+
+        if (!(p->dwOriginalFlags & cmsFLAGS_NOTCACHE)) {
+
+            ZeroMemory(p ->CacheIn, sizeof(WORD) * MAXCHANNELS);
+            cmsEvalLUT(p ->DeviceLink, p->CacheIn, p ->CacheOut);
+            if ((p->FromInput == Unroll3Bytes) &&
+                (p->ToOutput  == Pack1Byte))
+            {
+                p->xform = CachedXFORM3to1;
+            } else {
+                int inbytes = (T_CHANNELS(p->InputFormat) * 2);
+                switch (inbytes) {
+                    case 1:
+                    case 2:
+                    case 3:
+                    case 4:
+                        p->xform = CachedXFORM4;
+                        break;
+                    case 5:
+                    case 6:
+                    case 7:
+                    case 8:
+                        p->xform = CachedXFORM8;
+                        break;
+                    default:
+                        p->xform = CachedXFORM;
+                }
+            }
+        }
+    }
+}
+
+
 // Change format of yet existing transform. No colorspace checking is performed
 
-void LCMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform, 
-                                        DWORD dwInputFormat, 
+void LCMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
+                                        DWORD dwInputFormat,
                                         DWORD dwOutputFormat)
 {
 
-    cmsSetUserFormatters(hTransform, 
+    cmsSetUserFormatters(hTransform,
                         dwInputFormat,
                         (cmsFORMATTER) _cmsIdentifyInputFormat((_LPcmsTRANSFORM) hTransform, dwInputFormat),
                         dwOutputFormat,
                         (cmsFORMATTER) _cmsIdentifyOutputFormat((_LPcmsTRANSFORM) hTransform, dwOutputFormat));
+
+    _cmsSetPrecalculatedTransform((_LPcmsTRANSFORM) hTransform);
 }

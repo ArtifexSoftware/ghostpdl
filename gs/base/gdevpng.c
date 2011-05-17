@@ -274,7 +274,8 @@ const gx_device_pngalpha gs_pngalpha_device = {
          { 0 } /* component mask */,
          "DeviceRGB" /* process color name */,
          GX_CINFO_OPMODE_UNKNOWN /* opmode */,
-         0 /* process_cmps */
+         0 /* process_cmps */,
+         0 /* icc_locations */    
         },
         std_device_part2_(
           (int)((float)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10 + 0.5),
