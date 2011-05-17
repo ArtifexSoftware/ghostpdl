@@ -468,8 +468,8 @@ void *Memento_realloc(void *blk, size_t newsize)
     if (globals.peakAlloc < globals.alloc)
         globals.peakAlloc = globals.alloc;
     if (newmemblk->rawsize < newsize)
-        memset(MEMBLK_TOBLK(newmemblk), MEMENTO_ALLOCFILL,
-               newsize - newmemblk->rawsize);
+        memset(((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize,
+               MEMENTO_ALLOCFILL, newsize - newmemblk->rawsize);
     newmemblk->rawsize = newsize;
     Memento_addBlock(&globals.used, newmemblk);
     memset(newmemblk->preblk, MEMENTO_PREFILL, Memento_PreSize);
@@ -641,6 +641,8 @@ void Memento_find(void *a)
                 data.blk, data.blk->rawsize);
         return;
     }
+    data.blk   = NULL;
+    data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
     if (data.blk != NULL) {
         fprintf(stderr, "Address %x is in %sfreed block %x(%d)\n",
