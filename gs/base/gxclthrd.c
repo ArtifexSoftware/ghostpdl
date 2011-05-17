@@ -144,6 +144,9 @@ clist_setup_render_threads(gx_device *dev, int y)
                 ncdev->bandlist_memory = thread->memory;
         gs_c_param_list_read(&paramlist);
         ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
+        /* Set the icc_array before putdeviceparams so we don't need to load profiles */
+        ncdev->icc_array =  cdev->icc_array;
+        rc_increment(cdev->icc_array);	    /* freeing the thread's device will decrement this */
         if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
             break;
         /* In the case of a separation device, we need to make sure we get the
@@ -153,10 +156,6 @@ clist_setup_render_threads(gx_device *dev, int y)
             code = devn_copy_params(dev, (gx_device*) ncdev);
             if (code < 0) return_error(gs_error_VMerror);
         }
-        /* A question is, can the clist instances share the device profile.
-           Only doing reads of this from different threads */
-        ncdev->icc_array = cdev->icc_array;
-        rc_increment(ncdev->icc_array);
         ncdev->page_uses_transparency = cdev->page_uses_transparency;
         /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
          * We need  to unlink those files and open the main thread's files, then
@@ -295,11 +294,9 @@ clist_teardown_render_threads(gx_device *dev)
             thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
             thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
             gdev_prn_free_memory((gx_device *)thread_cdev);
-            /* Decrement the rc count on the icc profile */
-            rc_decrement(thread_cdev->icc_array,"clist_teardown_render_threads");
             /* Free the device copy this thread used.  Note that the
                deviceN stuff if was allocated and copied earlier for the device
-               will be freed with this call */
+               will be freed with this call and the icc_array ref count will be decremented. */
             gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
 #ifdef DEBUG
             if (gs_debug[':'])
