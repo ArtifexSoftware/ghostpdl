@@ -67,6 +67,7 @@ case 8: switch (pdfont->FontType) {
  case ft_encrypted:
  case ft_encrypted2:
  case ft_TrueType:
+ case ft_PCL_user_defined:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.v);
@@ -77,6 +78,7 @@ case 8: switch (pdfont->FontType) {
      ENUM_RETURN(0);
 }
 case 9: switch (pdfont->FontType) {
+ case ft_PCL_user_defined:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
@@ -87,6 +89,7 @@ case 9: switch (pdfont->FontType) {
      ENUM_RETURN(0);
 }
 case 10: switch (pdfont->FontType) {
+ case ft_PCL_user_defined:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.cached);
@@ -97,6 +100,7 @@ case 10: switch (pdfont->FontType) {
      ENUM_RETURN(0);
 }
 case 11: switch (pdfont->FontType) {
+ case ft_PCL_user_defined:
  case ft_GL2_stick_user_defined:
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.Resources);
@@ -124,6 +128,7 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
             RELOC_CONST_STRING_VAR(pdfont->u.type0.CMapName);
         RELOC_VAR(pdfont->u.type0.DescendantFont);
         break;
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
     case ft_user_defined:
         RELOC_VAR(pdfont->u.simple.Encoding);

@@ -25,6 +25,8 @@
 #include "gxfont0.h"
 #include "gxfont0c.h"
 #include "gxpath.h"		/* for getting current point */
+#include "gxchar.h"     /* for gx_compute_text_oversampling & gx_lookup_cached_char */
+#include "gxfcache.h"    /* for gx_lookup_fm_pair */
 #include "gdevpsf.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
@@ -59,6 +61,7 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     case ft_encrypted:
     case ft_encrypted2:
     case ft_user_defined:
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
         break;
     default:
@@ -184,6 +187,7 @@ pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     if (pdev->CompatibilityLevel >= 1.2)
         return 0;
     if (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PCL_user_defined ||
         pdfont->FontType == ft_GL2_stick_user_defined) {
         pdf_resource_enum_data_t data;
 
@@ -233,6 +237,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
     if (code < 0)
         return code;	/* can't get name of glyph */
     if (font->FontType != ft_user_defined &&
+        font->FontType != ft_PCL_user_defined &&
         font->FontType != ft_GL2_stick_user_defined) {
         /* The standard 14 fonts don't have a FontDescriptor. */
         code = (pdfont->base_font != 0 ?
@@ -657,6 +662,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
     if (pwidths == 0)
         pwidths = &widths;
     if ((font->FontType != ft_user_defined &&
+        font->FontType != ft_PCL_user_defined &&
         font->FontType != ft_GL2_stick_user_defined)&& real_widths[ch] == 0) {
         /* Might be an unused char, or just not cached. */
         gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
@@ -684,7 +690,8 @@ pdf_char_widths(gx_device_pdf *const pdev,
             real_widths[ch] = pwidths->real_width.w;
         }
     } else {
-        if (font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined) {
+        if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
+            font->FontType == ft_GL2_stick_user_defined) {
             if (!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
                 return gs_error_undefined; /* The charproc was not accumulated. */
             if (!pdev->charproc_just_accumulated &&
@@ -696,7 +703,8 @@ pdf_char_widths(gx_device_pdf *const pdev,
         }
         pwidths->Width.w = pdfont->Widths[ch];
         pwidths->Width.v = pdfont->u.simple.v[ch];
-        if (font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined) {
+        if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
+            font->FontType == ft_GL2_stick_user_defined) {
             pwidths->real_width.w = real_widths[ch * 2];
             pwidths->Width.xy.x = pwidths->Width.w;
             pwidths->Width.xy.y = 0;
@@ -730,6 +738,7 @@ pdf_char_widths_to_uts(pdf_font_resource_t *pdfont /* may be NULL for non-Type3 
                        pdf_glyph_widths_t *pwidths)
 {
     if (pdfont && (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PCL_user_defined ||
         pdfont->FontType == ft_GL2_stick_user_defined)) {
         gs_matrix *pmat = &pdfont->u.simple.s.type3.FontMatrix;
 
@@ -783,14 +792,59 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
             if (code < 0)
                 return code;
         }
-        if ((font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined) &&
+        if ((font->FontType == ft_user_defined ||
+            font->FontType == ft_PCL_user_defined ||
+            font->FontType == ft_GL2_stick_user_defined) &&
             (i > 0 || !pdev->charproc_just_accumulated) &&
             !(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7))))
             code = gs_error_undefined;
-        else
-            code = pdf_char_widths((gx_device_pdf *)pte->dev,
-                                   ppts->values.pdfont, ch, font,
-                                   &cw);
+        else {
+            if (font->FontType == ft_PCL_user_defined) {
+                /* Check the cache, if the glyph has been flushed, assume that
+                 * it has been redefined, and do not use the current glyph.
+                 * Additional code in pdf_text_process will also spot this
+                 * condition and will not capture the glyph in this font.
+                 */
+                /* Cache checking code copied from gxchar.c, show_proceed,
+                 * case 0, 'plain char'.
+                 */
+                gs_font *rfont = (pte->fstack.depth < 0 ? pte->current_font : pte->fstack.items[0].font);
+                gs_font *pfont = (pte->fstack.depth < 0 ? pte->current_font :
+                    pte->fstack.items[pte->fstack.depth].font);
+                int wmode = rfont->WMode;
+                gs_log2_scale_point log2_scale;
+                int alpha_bits, depth;
+                gs_fixed_point subpix_origin;
+                cached_fm_pair *pair;
+
+                /* Copied from compute_glyph_raster_params */
+                alpha_bits = (*dev_proc(pte->dev, get_alpha_bits)) (pte->dev, go_text);
+                if (pte->fapi_log2_scale.x != -1)
+                    log2_scale = pte->fapi_log2_scale;
+                else
+                    gx_compute_text_oversampling(pte, pte->current_font, alpha_bits, &log2_scale);
+                depth = (log2_scale.x + log2_scale.y == 0 ?
+                    1 : min(log2_scale.x + log2_scale.y, alpha_bits));
+                subpix_origin.x = subpix_origin.y = 0;
+                /* End of code copied from compute_glyph_raster_params */
+
+                code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pis), &log2_scale,
+                    false, &pair);
+                if (code < 0)
+                    return code;
+                if (gx_lookup_cached_char(pfont, pair, ch, wmode,
+                                           depth, &subpix_origin) == 0)
+                        /* Character is not in cache, must have been redefined. */
+                    code = gs_error_undefined;
+                else
+                    /* Character is in cache, go ahead and use it */
+                    code = pdf_char_widths((gx_device_pdf *)pte->dev,
+                                   ppts->values.pdfont, ch, font, &cw);
+            } else
+                /* Not a PCL bitmap font, we don't need to worry abou redefined glyphs */
+                code = pdf_char_widths((gx_device_pdf *)pte->dev,
+                                   ppts->values.pdfont, ch, font, &cw);
+        }
         if (code < 0) {
             if (i)
                 break;
@@ -879,7 +933,9 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
     pdf_font_resource_t *pdfont3 = NULL;
     int code;
 
-    if (font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined) {
+    if (font->FontType == ft_user_defined ||
+        font->FontType == ft_PCL_user_defined ||
+        font->FontType == ft_GL2_stick_user_defined) {
         code = pdf_attached_font_resource(pdev, font, &pdfont3, NULL, NULL, NULL, NULL);
         if (code < 0)
             return code;

@@ -149,6 +149,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
         pgste = penum->pte_default;
 
     if ((penum->current_font->FontType == ft_user_defined ||
+        penum->current_font->FontType == ft_PCL_user_defined ||
         penum->current_font->FontType == ft_GL2_stick_user_defined) &&
             penum->outer_CID == GS_NO_GLYPH &&
             !(pgste->text.operation & TEXT_DO_CHARWIDTH)) {
@@ -414,7 +415,9 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
             pdev->last_charpath_op = text->operation & TEXT_DO_ANY_CHARPATH;
     }
 
-    if(font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined)
+    if(font->FontType == ft_user_defined ||
+       font->FontType == ft_PCL_user_defined ||
+       font->FontType == ft_GL2_stick_user_defined)
         user_defined = 1;
 
     /* We need to know whether any of the glyphs in a string using a composite font
@@ -604,6 +607,7 @@ font_cache_elem_array_sizes(gx_device_pdf *pdev, gs_font *font,
     case ft_encrypted2:
     case ft_user_defined:
     case ft_GL2_stick_user_defined:
+    case ft_PCL_user_defined:
     case ft_disk_based:
     case ft_Chameleon:
     case ft_TrueType:
@@ -634,7 +638,8 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
     e->real_widths = (num_widths > 0 ? (double *)gs_alloc_bytes(pdev->pdf_memory,
                         num_widths * sizeof(*e->real_widths) *
                             ((font->FontType == ft_user_defined ||
-                            font->FontType == ft_GL2_stick_user_defined) ? 2 : 1),
+                            font->FontType == ft_GL2_stick_user_defined ||
+                            font->FontType == ft_PCL_user_defined) ? 2 : 1),
                         "alloc_font_cache_elem_arrays") : NULL);
     if (e->glyph_usage == NULL || (num_widths !=0 && e->real_widths == NULL)) {
         gs_free_object(pdev->pdf_memory, e->glyph_usage,
@@ -707,13 +712,14 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
     int num_chars, num_widths, len;
     pdf_font_cache_elem_t *e, **pe = pdf_locate_font_cache_elem(pdev, font);
 
-    /* Allow the HPGL2 stick font to have a type 3 font attached, it *is* a
+    /* Allow the HPGL2 stick font to be attached to a type 3 font, it *is* a
      * type 3 font, its just identified differently so that we can choose not
-     * to capture it elsewhere
+     * to capture it elsewhere. Same for PCL bitmap fonts.
      */
     if (pdfont->FontType != font->FontType &&
         (pdfont->FontType != ft_user_defined ||
-        font->FontType != ft_GL2_stick_user_defined))
+        (font->FontType != ft_PCL_user_defined &&
+        font->FontType != ft_GL2_stick_user_defined)))
         return_error(gs_error_unregistered); /* Must not happen. */
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
@@ -768,6 +774,7 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
     case ft_encrypted2:
     case ft_CID_encrypted:
     case ft_user_defined:
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
         /*
          * Type 1 fonts are supposed to use a standard FontMatrix of
@@ -804,7 +811,9 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 
             while (base_font->base != base_font)
                 base_font = base_font->base;
-            if (font->FontType == ft_user_defined || font->FontType == ft_GL2_stick_user_defined)
+            if (font->FontType == ft_user_defined ||
+                font->FontType == ft_PCL_user_defined ||
+                font->FontType == ft_GL2_stick_user_defined)
                 *pmat = base_font->FontMatrix;
             else if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
                 base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
@@ -939,6 +948,7 @@ pdf_is_compatible_encoding(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
         }
         return false;
     case ft_user_defined:
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
         if (pdfont->u.simple.Encoding == NULL)
             return false; /* Not sure. Happens with 020-01.ps . */
@@ -975,6 +985,7 @@ pdf_font_has_glyphs(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
     switch (pdfont->FontType) {
     case ft_composite:
     case ft_user_defined:
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
         /* Unused case. */
         return false;
@@ -1290,6 +1301,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         font_alloc = pdf_font_simple_alloc;
         break;
     case ft_user_defined:
+    case ft_PCL_user_defined:
     case ft_GL2_stick_user_defined:
         code = pdf_make_font3_resource(pdev, font, ppdfont);
         if (code < 0)
@@ -1405,6 +1417,7 @@ pdf_is_simple_font(gs_font *font)
             font->FontType == ft_encrypted2 ||
             font->FontType == ft_TrueType ||
             font->FontType == ft_user_defined ||
+            font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_GL2_stick_user_defined);
 }
 
@@ -1777,7 +1790,9 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
     if (*ppdfont != 0) {
         gs_font_base *cfont = pdf_font_resource_font(*ppdfont, false);
 
-        if (font->FontType != ft_user_defined && font->FontType != ft_GL2_stick_user_defined ) {
+        if (font->FontType != ft_user_defined &&
+            font->FontType != ft_PCL_user_defined &&
+            font->FontType != ft_GL2_stick_user_defined ) {
             code = gs_copied_can_copy_glyphs((gs_font *)cfont, font,
                         &cgp->s[cgp->unused_offset].glyph, cgp->num_unused_chars,
                         sizeof(pdf_char_glyph_pair_t), true);
@@ -2035,7 +2050,9 @@ pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *
 gs_char
 pdf_find_glyph(pdf_font_resource_t *pdfont, gs_glyph glyph)
 {
-    if (pdfont->FontType != ft_user_defined && pdfont->FontType != ft_GL2_stick_user_defined)
+    if (pdfont->FontType != ft_user_defined &&
+        pdfont->FontType != ft_PCL_user_defined &&
+        pdfont->FontType != ft_GL2_stick_user_defined)
         return GS_NO_CHAR;
     else {
         pdf_encoding_element_t *pet = pdfont->u.simple.Encoding;
@@ -2102,7 +2119,9 @@ float pdf_calculate_text_size(gs_imager_state *pis, pdf_font_resource_t *pdfont,
     {
         gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
 
-        if (pdfont->FontType == ft_user_defined || pdfont->FontType == ft_GL2_stick_user_defined)
+        if (pdfont->FontType == ft_user_defined ||
+            pdfont->FontType == ft_PCL_user_defined ||
+            pdfont->FontType == ft_GL2_stick_user_defined)
             orig_matrix = pdfont->u.simple.s.type3.FontMatrix;
         else if (cfont != 0) {
             /*
@@ -2642,6 +2661,7 @@ static int install_charproc_accumulator(gx_device_pdf *pdev, gs_text_enum_t *pte
 
     pdev->charproc_ctm = penum->pis->ctm;
     if ((penum->current_font->FontType == ft_user_defined ||
+        penum->current_font->FontType == ft_PCL_user_defined ||
         penum->current_font->FontType == ft_GL2_stick_user_defined) &&
             penum->outer_CID == GS_NO_GLYPH &&
             !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
@@ -2697,7 +2717,6 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 {
     gs_const_string gnstr;
     int code;
-    unsigned char unknown_glyph[10];
 
     code = pdf_choose_output_glyph_hame(pdev, penum, &gnstr, pte_default->returned.current_glyph);
     if (code < 0) {
@@ -2705,6 +2724,7 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
     }
 
     if ((penum->current_font->FontType == ft_user_defined ||
+       penum->current_font->FontType == ft_PCL_user_defined ||
        penum->current_font->FontType == ft_GL2_stick_user_defined) &&
        stell(pdev->strm) == 0)
     {
@@ -2749,10 +2769,10 @@ static int complete_charproc(gx_device_pdf *pdev, gs_text_enum_t *pte,
 }
 
 /* Nasty hackery. The PCL 'stick font' is drawn by constructing a path, and then stroking it.
- * The stroke width is calculated under the influence of the device default matrix, whic
- * ensures it is the same, not matter what size the font is drawn at. Of course we are
+ * The stroke width is calculated under the influence of the device default matrix, which
+ * ensures it is the same, no matter what size the font is drawn at. Of course we are
  * capturing the glyph under an identity matrix, so using the device matrix blows it up.
- * What we do is replace the get_initial_matrix method for teh course of the charproc
+ * What we do is replace the get_initial_matrix method for the course of the charproc
  * accumulation *only*, and return a more sensible 'device' matrix.
  * We know that the Charproc CTM is a combination of the font point size, and the default device
  * matrix, so we just take off the default matrix, and invert the font scaling.
@@ -2816,6 +2836,7 @@ pdf_text_process(gs_text_enum_t *pte)
         }
     }
     if ((penum->current_font->FontType == ft_user_defined ||
+        penum->current_font->FontType == ft_PCL_user_defined ||
         penum->current_font->FontType == ft_GL2_stick_user_defined) &&
         (penum->text.operation & TEXT_DO_ANY_CHARPATH)
         && !pdev->type3charpath) {
@@ -2832,14 +2853,18 @@ pdf_text_process(gs_text_enum_t *pte)
  top:
     pte_default = penum->pte_default;
     /* pte_default is a signal that we can't handle the glyph in the current
-     * font 'natively. This means either a type 3 font (for PostScript we
+     * font 'natively'. This means either a type 3 font (for PostScript we
      * need to return to the PS interpreter to run the BuildChar), or a font
      * type we can't or don't support in PDF. In the latter case we have the
-     * BuildChar render the glyph and store it in the cache, and then we pull
-     * the bitmap and store it in a Type 3 font. NB if the glyph is uncached
-     * the it just ends up in the output as a bitmap image.
+     * BuildChar render the glyph and store it in the cache, spot the usage
+     * in the pdfwrite image routine and we store the resluting bitmap in a
+     * Type 3 font. NB if the glyph is uncached then it just ends up in the
+     * output as a bitmap image.
      */
     if (pte_default) {
+        gs_char *cdata;
+
+        cdata = (gs_char *)pte->text.data.chars;
         if (penum->charproc_accum) {
             /* We've been accumulating a Type 3 CharProc, so now we need to
              * finish off and store it in the font.
@@ -2853,14 +2878,32 @@ pdf_text_process(gs_text_enum_t *pte)
                 goto default_impl;
         }
 
-        /* If this is a type 3 font, and the BuildChar is not gs_no_build_char then
-         * assume we're a PCL type 3 font. If so, and we're not doing a charpath, then
-         * we want to accumulate the BuildChar into a font.
-         */
-        if (penum->current_font->procs.build_char != gs_no_build_char && penum->current_font->FontType == ft_user_defined
-            && operation & TEXT_FROM_CHARS && !pdev->type3charpath)
-            early_accumulator = 1;
-        if (penum->current_font->FontType == ft_GL2_stick_user_defined) {
+        /* Sepcial checks for PCL bitmap fonts, or the HP/GL-2 stick font */
+        if (penum->current_font->FontType == ft_PCL_user_defined
+            && operation & TEXT_FROM_CHARS && !pdev->type3charpath &&
+            cdata[pte->index] <= 255) {
+            /* We can only get to this point with the character already in use
+             * if we detected in process_text_return_width that the glyph had
+             * been flushed from teh cache. If this happens with PCL bitmap
+             * fonts then we assume that the 'slot' has been reused. In this
+             * case we cannot add the glyph to the current font. By not
+             * capturing at this level the bitmap will still be added to a
+             * type 3 font, but a new one. Best we can do as PS/PDF do not
+             * allow redefinition of fonts.
+             */
+            pdf_font_resource_t *pdfont;
+
+            code = pdf_attached_font_resource(pdev, (gs_font *)penum->current_font, &pdfont, NULL, NULL, NULL, NULL);
+            if (code < 0)
+                return code;
+
+            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
+                early_accumulator = 0;
+            else
+                early_accumulator = 1;
+        }
+        if (penum->current_font->FontType == ft_GL2_stick_user_defined
+            && operation & TEXT_FROM_CHARS && !pdev->type3charpath) {
             /* Check for anamorphic sacling, we msut not cache stick font
              * in this case, as the stroke width will vary with the scaling.
              */
@@ -2896,14 +2939,11 @@ pdf_text_process(gs_text_enum_t *pte)
                 early_accumulator = 1;
         }
         if (early_accumulator) {
-            gs_char *cdata;
-
-            cdata = (gs_char *)pte->text.data.chars;
             if (cdata[pte->index] <= 255) {
                 gs_state *pgs = (gs_state *)penum->pis;
                 gs_text_enum_procs_t const *save_procs = pte_default->procs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
-                void *save_proc = pdev->procs.get_initial_matrix;
+                void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
 
                 special_procs.set_cache = pdf_text_set_cache;
                 pte_default->procs = &special_procs;
@@ -2939,6 +2979,70 @@ pdf_text_process(gs_text_enum_t *pte)
                     return code;
 
                 code = complete_charproc(pdev, pte, pte_default, penum, false);
+                if (penum->current_font->FontType == ft_PCL_user_defined)
+                {
+                    /* PCL bitmap fonts can have glyphs 'reused'. We can't handle
+                     * handle this in a single PDF font, so we need to know when
+                     * it has happened and fall back to the 'default' implementation.
+                     * In order to do this, we create a cached character representation
+                     * and add it to the cache. If the glyph is reused then the
+                     * act of redefining it will remove this entry from the cache.
+                     * We check if the glyph is in the cache in process_text_return_width
+                     * and come back into this code. In the test above for PCL bitmap
+                     * fonts we also check to see if the PDF font already has a
+                     *'used' entry. If it does we know that its a redefinition, and
+                     * we don't try to capture the glyph.
+                     */
+                    cached_char *cc;
+                    cached_fm_pair *pair;
+                    gs_log2_scale_point log2_scale;
+                    gs_font *rfont = (pte->fstack.depth < 0 ? pte->current_font : pte->fstack.items[0].font);
+                    int wmode = rfont->WMode;
+
+                    /* This code copied from show_cache_setup */
+                    gs_memory_t *mem = penum->memory;
+                    gx_device_memory *dev =
+                        gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+                        "show_cache_setup(dev_cache)");
+
+                    if (dev == 0) {
+                        gs_free_object(mem, dev, "show_cache_setup(dev_cache)");
+                        return_error(gs_error_VMerror);
+                    }
+                    gs_make_mem_mono_device(dev, mem, penum->dev);
+                    dev->HWResolution[0] = pgs->device->HWResolution[0];
+                    dev->HWResolution[1] = pgs->device->HWResolution[1];
+                    /* Retain these devices. */
+                    gx_device_retain((gx_device *)dev, true);
+                    /* end of code copied from show_cache_setup */
+
+                    /* This copied from set_cache */
+                    code = gx_alloc_char_bits(pte->current_font->dir, dev, NULL,
+                                0, 0, &pte->fapi_log2_scale, 1, &cc);
+                    if (code < 0)
+                        return code;
+
+                    /* The following code is copied from show_update, case sws_cache */
+                    code = gx_lookup_fm_pair(pte->current_font, &ctm_only(pte->pis),
+                            &pte->fapi_log2_scale, false, &pair);
+                    if (code < 0)
+                        return code;
+
+                    /* These members of the cached character are required
+                     * in order to find the cache entry later
+                     */
+                    cc->code = penum->returned.current_char;
+                    cc->wmode = wmode;
+                    log2_scale.x = log2_scale.y = 0;
+                    code = gx_add_cached_char(pte->current_font->dir, dev,
+                               cc, pair, &log2_scale);
+                    if (code < 0)
+                        return code;
+                    /* End of code from show_update */
+
+                    /* Finally, dispose of the device, which we don't actually need */
+                    gx_device_retain((gx_device *)dev, false);
+                }
                 pte_default->procs = save_procs;
                 size = pte->text.size - pte->index;
                 if (code < 0)
@@ -2951,12 +3055,18 @@ pdf_text_process(gs_text_enum_t *pte)
         }
 
         /* Now we run the default text procedure to see what happens.
-         * Non-PS type 3 fonts and the PCL stick font are handled above.
+         * PCL bitmap fonts and the HP/GL-2 stick font are handled above.
          * If its a PostScript type 3 font (and some other kinds)
          * then it will return TEXT_PROCESS_RENDER and we need to exit
          * to the interpreter to run the glyph description. Otherwise we just
          * run the BuildChar, and later capture the cached bitmap for incorporation
-         * into a type 3 font.
+         * into a type 3 font. Note that sometimes we will handle PCL or HP/GL-2
+         * fonts by not capturing them above, and they will come through here.
+         * The stick font will not be captured as a font at all, just vectors
+         * stored into the content stream (for osme kinds of scale/shear),
+         * bitmap fonts will be captured in the pdfwrite image routine. These
+         * are added to a type 3 font in the same way as glyphs which need to
+         * be rendered.
          */
         pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
         code = gs_text_process(pte_default);
@@ -2965,7 +3075,8 @@ pdf_text_process(gs_text_enum_t *pte)
 
         /* If the BuildChar returned TEXT_PROCESS_RENDER then we want to try and
          * capture this as a type 3 font, so start the accumulator now. Note
-         * that the setcachedevice handling can still abort this later.
+         * that the setcachedevice handling can still abort this later. In which
+         * case we get the rendered bitmap, just as for non type 3 fonts.
          */
         if (code == TEXT_PROCESS_RENDER && !pdev->type3charpath) {
             int code1;
@@ -2996,6 +3107,7 @@ pdf_text_process(gs_text_enum_t *pte)
         case ft_encrypted2:
         case ft_TrueType:
         case ft_user_defined:
+        case ft_PCL_user_defined:
         case ft_GL2_stick_user_defined:
             /* The data may be either glyphs or characters. */
             process = process_plain_text;
@@ -3056,6 +3168,7 @@ pdf_text_process(gs_text_enum_t *pte)
  skip:
     if (code < 0 ||
             ((pte->current_font->FontType == ft_user_defined ||
+            pte->current_font->FontType == ft_PCL_user_defined ||
             pte->current_font->FontType == ft_GL2_stick_user_defined) &&
              code != TEXT_PROCESS_INTERVENE &&
             penum->index < penum->text.size)) {
