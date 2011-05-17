@@ -1560,7 +1560,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     code = dev_proc(dev, get_profile)(dev, gs_current_object_tag(pis->memory), 
                                       &(pcs->cmm_icc_profile_data), 
                                       &rendering_intent);
-    /* Increment to match the release of the pcs below */
+    /* pcs takes a reference to the profile data it just retrieved. */
     rc_increment(pcs->cmm_icc_profile_data);
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
@@ -7375,12 +7375,13 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
         pdev->smaskcolor->ref_count++;
     } else {
         /* Allocate and swap out the current profiles.  The softmask
-           profiles should already b in place */
+           profiles should already be in place */
         result = gs_alloc_struct(pdev->memory, pdf14_smaskcolor_t,
                                 &st_pdf14_smaskcolor,
                                 "pdf14_increment_smask_color");
         if (result == NULL ) return(-1);
         result->profiles = gsicc_new_iccsmask(pdev->memory);
+        if (result->profiles == NULL ) return(-1);
         pdev->smaskcolor = result;
         /* Theoretically there should not be any reason to change ref counts
             on the profiles for a well-formed PDF with clean soft mask groups.
