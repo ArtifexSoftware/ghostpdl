@@ -27,6 +27,8 @@
 #include "srlx.h"		/* ditto */
 #include "gsdcolor.h"
 
+#define CMM_THREAD_SAFE 0        
+
 /* ---------------- Commands ---------------- */
 
 /* Define the compression modes for bitmaps. */

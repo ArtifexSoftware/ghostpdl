@@ -113,6 +113,8 @@ gsicc_cache_new(gs_memory_t *memory)
     result->head = NULL;
     result->num_links = 0;
     result->memory = memory->stable_memory;
+    if_debug2('{',"[{]Allocating link cache = 0x%x memory = 0x%x\n", result,
+        result->memory);
     return(result);
 }
 
@@ -133,6 +135,8 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 #endif
     gs_free_object(mem->stable_memory, link_cache->lock, "rc_gsicc_link_cache_free(lock)");
     gs_free_object(mem->stable_memory, link_cache->wait, "rc_gsicc_link_cache_free(wait)");
+    if_debug2('{',"[{]Removing link cache = 0x%x memory = 0x%x\n", link_cache,
+        link_cache->memory);
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
 }
 
@@ -394,6 +398,8 @@ gsicc_remove_link(gsicc_link_t *link, gs_memory_t *memory)
     gsicc_link_t *curr, *prev;
     gsicc_link_cache_t *icc_link_cache = link->icc_link_cache;
 
+    if_debug2('{',"[{]Removing link = 0x%x memory = 0x%x\n", link,
+        memory->stable_memory);
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
     curr = icc_link_cache->head;
@@ -534,7 +540,9 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     }
     /* insert an empty link that we will reserve so we */
     /* can unlock while building the link contents     */
+    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n", dev, icc_link_cache, cache_mem->stable_memory, icc_link_cache->num_links);
     link = gsicc_alloc_link(cache_mem->stable_memory, hash);
+    if_debug1('{',"[{]link = 0x%x \n", link);
     link->icc_link_cache = icc_link_cache;
     link->next = icc_link_cache->head;
     icc_link_cache->head = link;
@@ -598,8 +606,13 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
             }
         }
     }
+    /* Profile reading of same structure not thread safe in lcms */
+    gx_monitor_enter(gs_input_profile->lock);
+    gx_monitor_enter(gs_output_profile->lock);
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                     rendering_params);
+    gx_monitor_leave(gs_output_profile->lock);	
+    gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
         gsicc_set_link_data(link, link_handle, contextptr, hash, icc_link_cache->lock);
     } else {

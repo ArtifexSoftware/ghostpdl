@@ -99,7 +99,6 @@ errno__h=$(GLSRC)errno_.h $(std_h)
 fcntl__h=$(GLSRC)fcntl_.h $(std_h)
 locale__h=$(GLSRC)locale_.h $(std_h) $(MAKEFILE)
 malloc__h=$(GLSRC)malloc_.h $(std_h)
-memento_h=$(GLSRC)memento.h $(std_h)
 math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
 memory__h=$(GLSRC)memory_.h $(std_h)
 setjmp__h=$(GLSRC)setjmp_.h
@@ -194,9 +193,6 @@ $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
 
-$(GLOBJ)memento.$(OBJ) : $(GLSRC)memento.c $(malloc__h) $(memento_h)
-	$(GLCC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
-
 $(GLOBJ)gsmemory.$(OBJ) : $(GLSRC)gsmemory.c $(memory__h)\
  $(gdebug_h)\
  $(gsmdebug_h) $(gsmemory_h) $(gsrefct_h) $(gsstruct_h) $(gstypes_h)
@@ -261,7 +257,7 @@ $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
 	$(GLCC) $(GLO_)gsargs.$(OBJ) $(C_) $(GLSRC)gsargs.c
 
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
- $(vmsmath_h) $(memento_h)\
+ $(vmsmath_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
  $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
@@ -1145,7 +1141,7 @@ LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ) $(GLOB
 LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gswts.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
-LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)memento.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
+LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ)
 LIB11s=$(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmemret.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) $(GLOBJ)gsnotify.$(OBJ) $(GLOBJ)gslibctx.$(OBJ) 
 LIB12s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
 LIB13s=$(GLOBJ)gsserial.$(OBJ) $(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ)\
@@ -1846,7 +1842,7 @@ $(GLOBJ)gxclzlib.$(OBJ) : $(GLSRC)gxclzlib.c $(std_h)\
 # is used to prevent mutex (locking) contention among threads. The underlying
 # memory allocator must implement the mutex (non-gc memory is usually gsmalloc)
 $(GLOBJ)gxclthrd.$(OBJ) :  $(GLSRC)gxclthrd.c $(gxclist_h) $(gxsync_h) $(gxclthrd_h)\
-	$(gdevdevn_h)
+	$(gdevdevn_h) $(gsicc_cache_h)
 	$(GLCC) $(GLO_)gxclthrd.$(OBJ) $(C_) $(GLSRC)gxclthrd.c
 
 $(GLOBJ)gsmchunk.$(OBJ) :  $(GLSRC)gsmchunk.c $(gx_h) $(gsstype_h) $(gserrors_h)\

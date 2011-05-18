@@ -288,7 +288,8 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
 /* Create the link */
     return(cmsCreateTransform(lcms_srchandle, src_data_type, lcms_deshandle,
                         des_data_type, rendering_params->rendering_intent,
-               (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC)));
+               (cmsFLAGS_BLACKPOINTCOMPENSATION | cmsFLAGS_HIGHRESPRECALC |
+                cmsFLAGS_NOTCACHE )));
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 

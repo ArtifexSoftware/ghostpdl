@@ -31,6 +31,7 @@
 #include "gsmemlok.h"
 #include "gxclthrd.h"
 #include "gdevdevn.h"
+#include "gsicc_cache.h"
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
@@ -53,7 +54,6 @@ clist_setup_render_threads(gx_device *dev, int y)
     int band_count = cdev->nbands;
     char fmode[4];
     gs_devn_params *pclist_devn_params;
-
     crdev->num_render_threads = pdev->num_render_threads_requested;
 
     if(gs_debug[':'] != 0)
@@ -144,9 +144,10 @@ clist_setup_render_threads(gx_device *dev, int y)
                 ncdev->bandlist_memory = thread->memory;
         gs_c_param_list_read(&paramlist);
         ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
-        /* Set the icc_array before putdeviceparams so we don't need to load profiles */
-        ncdev->icc_array =  cdev->icc_array;
-        rc_increment(cdev->icc_array);	    /* freeing the thread's device will decrement this */
+#if CMM_THREAD_SAFE
+        ndev->icc_array = dev->icc_array;  /* Set before put params */
+        rc_increment(ndev->icc_array);
+#endif
         if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
             break;
         /* In the case of a separation device, we need to make sure we get the
@@ -157,6 +158,10 @@ clist_setup_render_threads(gx_device *dev, int y)
             if (code < 0) return_error(gs_error_VMerror);
         }
         ncdev->page_uses_transparency = cdev->page_uses_transparency;
+        if_debug3('{',"[{]MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
+                  ncdev,
+                  ncdev->icc_array->device_profile[0],
+                  ncdev->icc_array->device_profile[0]->profile_handle);
         /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
          * We need  to unlink those files and open the main thread's files, then
          * reset the clist state for reading/rendering
@@ -179,7 +184,11 @@ clist_setup_render_threads(gx_device *dev, int y)
            The threads are maintained until clist_finish_page.  At which
            point, the threads are torn down and the master clist reader device
            is destroyed along with the icc_table and the icc_cache_cl */
+#if CMM_THREAD_SAFE
         ncdev->icc_cache_cl = cdev->icc_cache_cl;
+#else
+        ncdev->icc_cache_cl = gsicc_cache_new(crdev->memory);
+#endif
         ncdev->icc_table = cdev->icc_table;
         /* create the buf device for this thread, and allocate the semaphores */
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,

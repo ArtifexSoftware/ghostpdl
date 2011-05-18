@@ -976,6 +976,12 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
     result->spotnames = NULL;
     result->dev = NULL;
     result->memory = mem_nongc;
+    result->lock = gx_monitor_alloc(mem_nongc);
+    if (result->lock == NULL ) {
+        gs_free_object(mem_nongc, result, "gsicc_profile_new");
+        return(NULL);
+    }
+    if_debug1('}',"[}]allocating ICC profile = 0x%x\n", result);
     return(result);
 }
 
@@ -987,19 +993,20 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gsicc_colorname_t *curr_name, *next_name;
     gs_memory_t *mem_nongc =  profile->memory;
 
+    if_debug2('}',"[}]rc decrement profile = 0x%x rc = %ld\n", 
+        ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
         if(profile->buffer != NULL) {
             gs_free_object(mem_nongc, profile->buffer, "rc_free_icc_profile");
             profile->buffer = NULL;
         }
-
+        if_debug0('}',"[}]profile freed\n");
         /* Release this handle if it has been set */
         if(profile->profile_handle != NULL) {
             gscms_release_profile(profile->profile_handle);
             profile->profile_handle = NULL;
         }
-
         /* Release the name if it has been set */
         if(profile->name != NULL) {
             gs_free_object(mem_nongc ,profile->name,"rc_free_icc_profile");
@@ -1007,7 +1014,9 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             profile->name_length = 0;
         }
         profile->hash_is_valid = 0;
-
+        if (profile->lock != NULL) {
+            gs_free_object(mem_nongc ,profile->lock,"rc_free_icc_profile");
+        }
         /* If we had a DeviceN profile with names
            deallocate that now */
         if (profile->spotnames != NULL) {
