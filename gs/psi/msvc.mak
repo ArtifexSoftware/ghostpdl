@@ -13,7 +13,7 @@
 # $Id: msvc32.mak 12087 2011-02-01 11:57:26Z robin $
 # makefile for 32-bit Microsoft Visual C++, Windows NT or Windows 95 platform.
 #
-# All configurable options are surrounded by !ifndef/!endif to allow 
+# All configurable options are surrounded by !ifndef/!endif to allow
 # preconfiguration from within another makefile.
 #
 # Optimization /O2 seems OK with MSVC++ 4.1, but not with 5.0.
@@ -146,7 +146,7 @@ GS_INIT=gs_init.ps
 #    tracing and self-validation code fragments into compilation.
 #    Particularly it enables the -Z and -T switches in Ghostscript.
 # 2. It compiles code fragments for C stack overflow checks.
-# Code produced with this option is somewhat larger and runs 
+# Code produced with this option is somewhat larger and runs
 # somewhat slower.
 
 !ifndef DEBUG
@@ -342,7 +342,7 @@ SHARE_LCUPS=0
 LCUPS_NAME=
 LCUPSSRCDIR=cups
 LCUPSBUILDTYPE=win
-CUPS_CC=$(CC) $(CFLAGS) -DWIN32 
+CUPS_CC=$(CC) $(CFLAGS) -DWIN32
 !endif
 
 !ifndef LCUPSISRCDIR
@@ -573,7 +573,7 @@ LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\L
 
 !if $(MSVC_VERSION) == 10
 ! ifndef DEVSTUDIO
-!ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
 DEVSTUDIO=C:\Program Files (x86)\Microsoft Visual Studio 10.0
 !else
 DEVSTUDIO=C:\Program Files\Microsoft Visual Studio 10.0
@@ -587,19 +587,28 @@ SHAREDBASE=
 # "v6.0"=Vista, "v6.0A"=Visual Studio 2008,
 # "v6.1"=Windows Server 2008, "v7.0"=Windows 7
 ! ifdef MSSDK
+!  ifdef WIN64
+RCDIR=$(MSSDK)\bin\x64
+!  else
 RCDIR=$(MSSDK)\bin
+!  endif
 ! else
 !ifdef WIN64
-RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin
+RCDIR=C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0\bin
 !else
-RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin
+RCDIR=C:\Program Files\Microsoft SDKs\Windows\v7.0\bin
 !endif
 ! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\VC
 !ifdef WIN64
+!if $(BUILD_SYSTEM) == 64
 COMPDIR64=$(COMPBASE)\bin\amd64
-LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\AMD64"   
+LINKLIBPATH=/LIBPATH:"$(MSSDK)\lib\x64" /LIBPATH:"$(COMPBASE)\lib\amd64"
+!else
+COMPDIR64=$(COMPBASE)\bin\x86_amd64
+LINKLIBPATH=/LIBPATH:"$(COMPBASE)\lib\amd64" /LIBPATH:"$(COMPBASE)\PlatformSDK\Lib\x64"
+!endif
 !endif
 !endif
 !endif
@@ -1078,7 +1087,7 @@ UFSTDEFS=BINDIR=.\ufstbin GLGENDIR=.\ufstobj GLOBJDIR=.\ufstobj PSLIBDIR=.\lib P
 !endif
 
 ufst-lib:
-#	Could make this call a makefile in the ufst code? 
+#	Could make this call a makefile in the ufst code?
 #	cd $(UFST_ROOT)\rts\lib
 #	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
 
