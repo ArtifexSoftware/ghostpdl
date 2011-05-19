@@ -796,8 +796,10 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
             font->FontType == ft_PCL_user_defined ||
             font->FontType == ft_GL2_stick_user_defined) &&
             (i > 0 || !pdev->charproc_just_accumulated) &&
-            !(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7))))
+            !(pdfont->u.simple.s.type3.cached[ch >> 3] & (0x80 >> (ch & 7)))){
+//            eprintf1("New Glyph %d\n", ch);
             code = gs_error_undefined;
+        }
         else {
             if (font->FontType == ft_PCL_user_defined) {
                 /* Check the cache, if the glyph has been flushed, assume that
@@ -812,19 +814,19 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
                 gs_font *pfont = (pte->fstack.depth < 0 ? pte->current_font :
                     pte->fstack.items[pte->fstack.depth].font);
                 int wmode = rfont->WMode;
-                gs_log2_scale_point log2_scale;
-                int alpha_bits, depth;
+                gs_log2_scale_point log2_scale = {0,0};
+//                int alpha_bits, depth;
                 gs_fixed_point subpix_origin;
                 cached_fm_pair *pair;
 
                 /* Copied from compute_glyph_raster_params */
-                alpha_bits = (*dev_proc(pte->dev, get_alpha_bits)) (pte->dev, go_text);
+/*                alpha_bits = (*dev_proc(pte->dev, get_alpha_bits)) (pte->dev, go_text);
                 if (pte->fapi_log2_scale.x != -1)
                     log2_scale = pte->fapi_log2_scale;
                 else
                     gx_compute_text_oversampling(pte, pte->current_font, alpha_bits, &log2_scale);
                 depth = (log2_scale.x + log2_scale.y == 0 ?
-                    1 : min(log2_scale.x + log2_scale.y, alpha_bits));
+                    1 : min(log2_scale.x + log2_scale.y, alpha_bits));*/
                 subpix_origin.x = subpix_origin.y = 0;
                 /* End of code copied from compute_glyph_raster_params */
 
@@ -833,15 +835,19 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
                 if (code < 0)
                     return code;
                 if (gx_lookup_cached_char(pfont, pair, ch, wmode,
-                                           depth, &subpix_origin) == 0)
+                    1, &subpix_origin) == 0) {
                         /* Character is not in cache, must have been redefined. */
+//                    eprintf1("Glyph reused! %d\n", ch);
                     code = gs_error_undefined;
-                else
+                }
+                else {
                     /* Character is in cache, go ahead and use it */
                     code = pdf_char_widths((gx_device_pdf *)pte->dev,
                                    ppts->values.pdfont, ch, font, &cw);
+//                    eprintf1("Existing Glyph %d\n", ch);
+                }
             } else
-                /* Not a PCL bitmap font, we don't need to worry abou redefined glyphs */
+                /* Not a PCL bitmap font, we don't need to worry about redefined glyphs */
                 code = pdf_char_widths((gx_device_pdf *)pte->dev,
                                    ppts->values.pdfont, ch, font, &cw);
         }

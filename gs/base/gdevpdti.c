@@ -590,6 +590,12 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, double *pw, int narg,
         However comparefiles/Bug687044.ps doesn't follow that. */
         pdev->skip_colors = false;
         pprintg1(pdev->strm, "%g 0 d0\n", (float)pw[0]);
+        /* The colour change described above can't affect PCL fonts and we need
+         * all glyphs to be noted as cached in order for the bitmap font cache
+         * probing to work properly.
+         */
+        if (font->FontType == ft_PCL_user_defined || font->FontType == ft_GL2_stick_user_defined)
+            pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     } else {
         double d;
         pdev->skip_colors = true;

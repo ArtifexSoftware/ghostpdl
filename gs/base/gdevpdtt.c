@@ -2897,8 +2897,10 @@ pdf_text_process(gs_text_enum_t *pte)
             if (code < 0)
                 return code;
 
-            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
+            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7))) {
+//                eprintf1("Glyph reused %d\n", cdata[pte->index]);
                 early_accumulator = 0;
+            }
             else
                 early_accumulator = 1;
         }
@@ -2995,7 +2997,7 @@ pdf_text_process(gs_text_enum_t *pte)
                      */
                     cached_char *cc;
                     cached_fm_pair *pair;
-                    gs_log2_scale_point log2_scale;
+                    gs_log2_scale_point log2_scale = {0,0};
                     gs_font *rfont = (pte->fstack.depth < 0 ? pte->current_font : pte->fstack.items[0].font);
                     int wmode = rfont->WMode;
 
@@ -3018,13 +3020,13 @@ pdf_text_process(gs_text_enum_t *pte)
 
                     /* This copied from set_cache */
                     code = gx_alloc_char_bits(pte->current_font->dir, dev, NULL,
-                                0, 0, &pte->fapi_log2_scale, 1, &cc);
+                                0, 0, &log2_scale, 1, &cc);
                     if (code < 0)
                         return code;
 
                     /* The following code is copied from show_update, case sws_cache */
                     code = gx_lookup_fm_pair(pte->current_font, &ctm_only(pte->pis),
-                            &pte->fapi_log2_scale, false, &pair);
+                            &log2_scale, false, &pair);
                     if (code < 0)
                         return code;
 
@@ -3033,6 +3035,7 @@ pdf_text_process(gs_text_enum_t *pte)
                      */
                     cc->code = penum->returned.current_char;
                     cc->wmode = wmode;
+                    cc->subpix_origin.x = cc->subpix_origin.y = 0;
                     log2_scale.x = log2_scale.y = 0;
                     code = gx_add_cached_char(pte->current_font->dir, dev,
                                cc, pair, &log2_scale);
@@ -3042,6 +3045,8 @@ pdf_text_process(gs_text_enum_t *pte)
 
                     /* Finally, dispose of the device, which we don't actually need */
                     gx_device_retain((gx_device *)dev, false);
+//                    eprintf3("Created cache entry. cc->code = %d, cc->pair = %x, cc->wmode = %d\n",
+//                        cc->code, cc->pair, cc->wmode);
                 }
                 pte_default->procs = save_procs;
                 size = pte->text.size - pte->index;
