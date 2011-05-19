@@ -370,7 +370,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
         if (pcs->cmm_icc_profile_data != NULL) {
             device_color = false;
         } else {
-        device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
+            device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
         }
 
         image_init_colors(penum, bps, spp, format, decode, pis, dev,

@@ -272,8 +272,9 @@ pdf14_put_devn_params(gx_device * pdev, gs_devn_params * pdevn_params,
 /* Used to passed along information about the buffer created by the
    pdf14 device.  This is used by the pattern accumulator when the
    pattern contains transparency */
-
-int pdf14_get_buffer_information(const gx_device * dev, gx_pattern_trans_t *transbuff);
+int pdf14_get_buffer_information(const gx_device * dev,
+                                 gx_pattern_trans_t *transbuff, gs_memory_t *mem,
+                                 bool free_device);
 
 /* Not static due to call from pattern logic */
 int pdf14_disable_device(gx_device * dev);

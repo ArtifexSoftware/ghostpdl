@@ -374,6 +374,7 @@ zimage3x(i_ctx_t *i_ctx_p)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
+    memset(&image, 0, sizeof(gs_image3x_t));
     gs_image3x_t_init(&image, NULL);
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
         return_error(e_rangecheck);
@@ -451,7 +452,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_type(*op, t_integer);
-    code = gs_push_pdf14trans_device(igs);
+    code = gs_push_pdf14trans_device(igs, false);
     if (code < 0)
         return code;
     pop(1);
@@ -463,7 +464,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
 static int
 zpoppdf14devicefilter(i_ctx_t *i_ctx_p)
 {
-    return gs_pop_pdf14trans_device(igs);
+    return gs_pop_pdf14trans_device(igs, false);
 }
 
 /* This is used to communicate to the transparency compositor

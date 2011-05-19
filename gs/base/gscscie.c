@@ -148,40 +148,48 @@ static void
 gx_final_CIEDEFG(const gs_color_space * pcs)
 {
     if (pcs->icc_equivalent != NULL) {
-        rc_decrement(pcs->icc_equivalent->cmm_icc_profile_data,"gx_final_CIEDEFG");
-        rc_adjust_const(pcs->icc_equivalent,-1,"gx_final_CIEDEFG");
+        rc_decrement_only(pcs->icc_equivalent, "gx_final_CIEDEFG");
     }
-    rc_adjust_const(pcs->params.defg, -1, "gx_adjust_cspace_CIEDEFG");
+    if (pcs->cmm_icc_profile_data != NULL) {
+        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_CIEDEFG");
+    }
+    rc_decrement_only(pcs->params.defg, "gx_final_CIEDEFG");
 }
 
 static void
 gx_final_CIEDEF(const gs_color_space * pcs)
 {
     if (pcs->icc_equivalent != NULL) {
-        rc_decrement(pcs->icc_equivalent->cmm_icc_profile_data,"gx_final_CIEDEF");
-        rc_adjust_const(pcs->icc_equivalent,-1,"gx_final_CIEDEF");
+        rc_decrement_only(pcs->icc_equivalent,"gx_final_CIEDEF");
     }
-    rc_adjust_const(pcs->params.def, -1, "gx_adjust_cspace_CIEDEF");
+    if (pcs->cmm_icc_profile_data != NULL) {
+        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_CIEDEF");
+    }
+    rc_decrement_only(pcs->params.def, "gx_final_CIEDEF");
 }
 
 static void
 gx_final_CIEABC(const gs_color_space * pcs)
 {
     if (pcs->icc_equivalent != NULL) {
-        rc_decrement(pcs->icc_equivalent->cmm_icc_profile_data,"gx_final_CIEABC");
-        rc_adjust_const(pcs->icc_equivalent,-1,"gx_final_CIEABC");
+        rc_decrement_only(pcs->icc_equivalent,"gx_final_CIEABC");
     }
-    rc_adjust_const(pcs->params.abc, -1, "gx_adjust_cspace_CIEABC");
+    if (pcs->cmm_icc_profile_data != NULL) {
+        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_CIEABC");
+    }
+    rc_decrement_only(pcs->params.abc, "gx_final_CIEABC");
 }
 
 static void
 gx_final_CIEA(const gs_color_space * pcs)
 {
     if (pcs->icc_equivalent != NULL) {
-        rc_decrement(pcs->icc_equivalent->cmm_icc_profile_data,"gx_final_CIEA");
-        rc_adjust_const(pcs->icc_equivalent,-1,"gx_final_CIEA");
+        rc_decrement_only(pcs->icc_equivalent,"gx_final_CIEA");
     }
-    rc_adjust_const(pcs->params.a, -1, "gx_adjust_cspace_CIEA");
+    if (pcs->cmm_icc_profile_data != NULL) {
+        rc_decrement_only(pcs->cmm_icc_profile_data, "gx_final_CIEA");
+    }
+    rc_decrement_only(pcs->params.a, "gx_adjust_cspace_CIEA");
 }
 
 /* ---------------- Procedures ---------------- */

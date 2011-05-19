@@ -159,13 +159,14 @@ struct gx_pattern_trans_s {
 
     const gx_device *pdev14;
     byte *transbytes;
+    gs_memory_t *mem;
     gx_pattern_trans_t *fill_trans_buffer;  /* buffer to fill */
     gs_int_rect rect;
     int rowstride;
     int planestride;
     int n_chan; /* number of pixel planes including alpha */
     bool has_shape;  /* extra plane inserted */
-    int width;
+    int width; /* Complete plane width/height; rect may be a subset of this */
     int height;
     const pdf14_nonseparable_blending_procs_t *blending_procs;
     bool is_additive;
@@ -284,6 +285,16 @@ gx_device_forward * gx_pattern_accum_alloc(gs_memory_t * mem,
                        gs_memory_t * stoarge_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname);
 
+/* Given the size of a new pattern tile, free entries from the cache until  */
+/* enough space is available (or nothing left to free).			    */
+/* This will allow 1 oversized entry					    */
+void gx_pattern_cache_ensure_space(gs_imager_state * pis, int needed);
+
+void gx_pattern_cache_update_used(gs_imager_state *pis, ulong used);
+
+/* Update cache tile space */
+void gx_pattern_cache_update_space(gs_imager_state * pis, int64_t used);
+
 /* Add an accumulated pattern to the cache. */
 /* Note that this does not free any of the data in the accumulator */
 /* device, but it may zero out the bitmap_memory pointers to prevent */
@@ -315,7 +326,8 @@ dev_proc_open_device(pattern_clist_open_device);
 int gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                                gx_color_tile *ptile,
                                gx_pattern_trans_t *fill_trans_buffer,
-                               gs_int_point phase);
+                               gs_int_point phase, gx_device *dev,
+                               const gx_device_color * pdevc);
 
 gx_pattern_trans_t* new_pattern_trans_buff(gs_memory_t *mem);
 

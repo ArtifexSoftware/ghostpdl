@@ -770,7 +770,7 @@ get_num_pdf14_spot_colors(gs_state * pgs)
 }
 
 int
-gs_push_pdf14trans_device(gs_state * pgs)
+gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
 {
     gs_pdf14trans_params_t params = { 0 };
     cmm_profile_t *icc_profile;
@@ -790,6 +790,7 @@ gs_push_pdf14trans_device(gs_state * pgs)
      * and convert spot colors into process colors.
      */
     params.num_spot_colors = get_num_pdf14_spot_colors(pgs);
+    params.is_pattern = is_pattern;
     /* If we happen to be in a situation where we are going out to a device
        whose profile is CIELAB then we will need to make sure that we
        do our blending in RGB and convert to CIELAB when we do the put_image
@@ -802,10 +803,11 @@ gs_push_pdf14trans_device(gs_state * pgs)
 }
 
 int
-gs_pop_pdf14trans_device(gs_state * pgs)
+gs_pop_pdf14trans_device(gs_state * pgs, bool is_pattern)
 {
     gs_pdf14trans_params_t params = { 0 };
 
+    params.is_pattern = is_pattern;
     params.pdf14_op = PDF14_POP_DEVICE;  /* Other parameters not used */
     return gs_state_update_pdf14trans(pgs, &params);
 }

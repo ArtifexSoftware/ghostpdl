@@ -546,11 +546,13 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
     /* See if we have an ICC profile that we can associate with
        this DeviceN color space */
     if (pgs->icc_manager->device_n != NULL) {
-        /* An nclr profile is in the manager.  Grab one
-           that matches */
-        pcs->cmm_icc_profile_data = gsicc_finddevicen(pcs, pgs->icc_manager);
+        /* An nclr profile is in the manager.  Grab one that matches. */
+        cmm_profile_t *profdata = gsicc_finddevicen(pcs, pgs->icc_manager);
+        if (profdata != NULL)
+            rc_increment(profdata);
         if (pcs->cmm_icc_profile_data != NULL)
-            rc_adjust(pcs->cmm_icc_profile_data, pcs->rc.ref_count, "gs_install_DeviceN");
+            rc_decrement(pcs->cmm_icc_profile_data, "gx_install_DeviceN");
+        pcs->cmm_icc_profile_data = profdata;
     }
     /* {csrc} was pgs->color_space->params.device_n.use_alt_cspace */
     ((gs_color_space *)pcs)->params.device_n.use_alt_cspace =
@@ -564,7 +566,8 @@ gx_install_DeviceN(gs_color_space * pcs, gs_state * pgs)
         /* Need to install the nclr cspace */
         code = gs_cspace_build_ICC(&nclr_pcs, NULL, pgs->memory);
         nclr_pcs->cmm_icc_profile_data = pcs->cmm_icc_profile_data;
-        rc_increment_cs(nclr_pcs);
+        rc_increment(pcs->cmm_icc_profile_data);
+        rc_increment_cs(nclr_pcs); // Suspicious - RJW
         rc_decrement_cs(pcs->base_space, "gx_install_DeviceN");
         pcs->base_space = nclr_pcs;
     }

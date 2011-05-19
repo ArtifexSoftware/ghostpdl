@@ -517,6 +517,17 @@ gx_pattern1_get_transptr(const gx_device_color *pdevc)
     return pdevc->colors.pattern.p_tile->ttrans;
 }
 
+/* Check for if the clist in the pattern has transparency */
+int
+gx_pattern1_clist_has_trans(const gx_device_color *pdevc)
+{
+    if (pdevc->colors.pattern.p_tile->cdev != NULL) {
+        return pdevc->colors.pattern.p_tile->cdev->common.page_uses_transparency;
+    } else {
+        return 0;
+    }
+}
+
 /* Check device color for Pattern Type 1. */
 bool
 gx_dc_is_pattern1_color_clist_based(const gx_device_color *pdevc)
@@ -867,6 +878,8 @@ gs_makepixmappattern(
          * If this is not a masked pattern and if the white pixel index
          * is outside of the representable range, we don't need to go to
          * the trouble of accumulating a mask that will just be all 1s.
+         * Also, patterns that use transparency don't need a mask since
+         * the alpha plane of the transparency buffers will be used.
          */
         gs_pattern1_instance_t *pinst =
             (gs_pattern1_instance_t *)pcc->pattern;
@@ -1467,22 +1480,16 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
     /* check if we have written it all */
 
     if (offset1 <= size) {
-
         /* Get the most that we can write */
-
         int u = min(size, left);
 
         /* copy that amount */
-
         ptr = ptile->ttrans->transbytes;
-
         memcpy(dp, ptr + (offset1 - size_h), u);
         left -= u;
         dp += u;
         offset1 += u;
-
     }
-
     return 0;
 }
 
@@ -1530,6 +1537,7 @@ gx_dc_pattern_write(
 
     if (ptile->cdev == NULL)
         return gx_dc_pattern_write_raster(ptile, offset, data, psize);
+    /* Here is where we write pattern-clist data */
     size_b = clist_data_size(ptile->cdev, 0);
     if (size_b < 0)
         return_error(gs_error_unregistered);
@@ -1555,6 +1563,7 @@ gx_dc_pattern_write(
         buf.tiling_type = ptile->tiling_type;
         buf.is_simple = ptile->is_simple;
         buf.has_overlap = ptile->has_overlap;
+        buf.uses_transparency = ptile->cdev->common.page_uses_transparency;
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1669,17 +1678,13 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset,
     int data_size;
 
     data_size = trans_pat->planestride * trans_pat->n_chan;
-
     /* Allocate the bytes */
-
     if (trans_pat->transbytes == NULL){
-
         trans_pat->transbytes = gs_alloc_bytes(mem, data_size, "gx_dc_pattern_read_raster");
+        trans_pat->mem = mem;
         if (trans_pat->transbytes == NULL)
                 return_error(gs_error_VMerror);
-
     }
-
     /* Read transparency buffer */
     if (offset1 <= sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t) + data_size ) {
 
@@ -1693,7 +1698,6 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset,
         offset1 += u;
         dp += u;
     }
-
      return size - left;
 }
 
@@ -1716,6 +1720,7 @@ gx_dc_pattern_read(
     gx_color_tile *ptile;
     int code, l;
     tile_trans_clist_info_t trans_info;
+    int cache_space_needed;
 
     if (offset == 0) {
         pdevc->mask.id = gx_no_bitmap_id;
@@ -1746,10 +1751,31 @@ gx_dc_pattern_read(
         left -= sizeof(buf);
         offset1 += sizeof(buf);
 
+        if (buf.uses_transparency && !buf.is_clist){
+
+            if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
+                return_error(gs_error_unregistered); /* Must not happen. */
+            }
+
+            memcpy(&trans_info, dp, sizeof(trans_info));
+            dp += sizeof(trans_info);
+            left -= sizeof(trans_info);
+            offset1 += sizeof(trans_info);
+
+                /* limit our upper bound to avoid int overflow */
+            cache_space_needed = trans_info.planestride > (0x7fffffff / 6) ? 0x7fff0000 :
+                        trans_info.planestride * trans_info.n_chan;
+        } else {
+            /* the following works for raster or clist patterns */
+            cache_space_needed = buf.size_b + buf.size_c;
+        }
+        gx_pattern_cache_ensure_space((gs_imager_state *)pis, cache_space_needed);
+
         code = gx_pattern_cache_get_entry((gs_imager_state *)pis, /* Break 'const'. */
                         buf.id, &ptile);
         if (code < 0)
             return code;
+        gx_pattern_cache_update_used((gs_imager_state *)pis, cache_space_needed);
         pdevc->type = &gx_dc_pattern;
         pdevc->colors.pattern.p_tile = ptile;
         ptile->id = buf.id;
@@ -1769,15 +1795,7 @@ gx_dc_pattern_read(
                 /* Make a new ttrans object */
 
                 ptile->ttrans = new_pattern_trans_buff(mem);
-
-                if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
-                    return_error(gs_error_unregistered); /* Must not happen. */
-                }
-
-                memcpy(&trans_info, dp, sizeof(trans_info));
-                dp += sizeof(trans_info);
-                left -= sizeof(trans_info);
-                offset1 += sizeof(trans_info);
+                /* trans_info was loaded above */
 
                 ptile->ttrans->height = trans_info.height;
                 ptile->ttrans->n_chan = trans_info.n_chan;
@@ -1797,14 +1815,15 @@ gx_dc_pattern_read(
                 return code + sizeof(buf)+sizeof(trans_info);
 
             } else {
-            code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
-            if (code < 0)
-                return code;
-            return code + sizeof(buf);
-        }
+                code = gx_dc_pattern_read_raster(ptile, &buf, offset1, dp, left, mem);
+                if (code < 0)
+                    return code;
+                return code + sizeof(buf);
+            }
 
         }
 
+        /* Here is where we read back from the clist */
         size_b = buf.size_b;
         size_c = buf.size_c;
         ptile->tbits.size.x = size_b; /* HACK: Use unrelated field for saving size_b between calls. */
@@ -1821,11 +1840,14 @@ gx_dc_pattern_read(
             inst.size.x = buf.size.x;
             inst.size.y = buf.size.y;
             inst.saved = &state;
-            inst.is_clist = buf.is_clist;       /* tell gx_pattern_accum_alloc to use clist */
+            inst.is_clist = buf.is_clist;	/* tell gx_pattern_accum_alloc to use clist */
             ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem,
                                &inst, "gx_dc_pattern_read");
             if (ptile->cdev == NULL)
                 return_error(gs_error_VMerror);
+            ptile->cdev->common.band_params.page_uses_transparency =
+                                                        buf.uses_transparency;
+            ptile->cdev->common.page_uses_transparency = buf.uses_transparency;
             code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
             if (code < 0)
                 return code;

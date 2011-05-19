@@ -74,6 +74,7 @@ proc add0-1 {il addr} [info body add0+0]
 proc read_trace {{fname %stdin}} {
     global A lines next
     set n $next
+    set i 0
     if {$fname == "%stdin"} {
 	set in stdin
     } else {
@@ -82,10 +83,11 @@ proc read_trace {{fname %stdin}} {
     # Skip to the first "allocated" line.  See below for why we bother
     # checking for EOF.
     while {[gets $in l] >= 0} {
+        incr i
 	if [regexp "memory allocated" $l] break
 	incr n
     }
-    if {$n == 0} {
+    if {$i == 0} {
 	puts stderr "Empty input file!"
 	if {$fname != "%stdin"} {close $in}
 	exit

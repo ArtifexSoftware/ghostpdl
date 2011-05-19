@@ -241,7 +241,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
         gs_setdevice_no_init(pgs, (gx_device *)pdev);
         if (pinst->template.uses_transparency) {
             if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
-            if ((code = gs_push_pdf14trans_device(pgs)) < 0)
+            if ((code = gs_push_pdf14trans_device(pgs, true)) < 0)
                 return code;
         } else { /* not transparent */
             if (pinst->template.PaintType == 1)
@@ -304,12 +304,22 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
         if (pinst->template.uses_transparency) {
             gs_state *pgs = igs;
             int code;
-            /* Get PDF14 buffer information */
-            code = pdf14_get_buffer_information(pgs->device,padev->transbuff);
-            /* PDF14 device (and buffer) is destroyed when pattern cache
-               entry is removed */
-            if (code < 0)
-                return code;
+
+            if (pinst->is_clist) {
+                /* Send the compositor command to close the PDF14 device */
+                code = (gs_pop_pdf14trans_device(pgs, true) < 0);
+                if (code < 0)
+                    return code;
+            } else {
+                /* Not a clist, get PDF14 buffer information */
+                code = pdf14_get_buffer_information(pgs->device,
+                                                    padev->transbuff, pgs->memory,
+                                                    true);
+                /* PDF14 device (and buffer) is destroyed when pattern cache
+                   entry is removed */
+                if (code < 0)
+                    return code;
+            }
         }
         code = gx_pattern_cache_add_entry((gs_imager_state *)igs, pdev, &ctile);
         if (code < 0)

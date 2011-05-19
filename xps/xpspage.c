@@ -208,7 +208,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     if (ctx->use_transparency && has_transparency)
     {
-        code = gs_push_pdf14trans_device(ctx->pgs);
+        code = gs_push_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
         {
             gs_grestore(ctx->pgs);
@@ -233,7 +233,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
             code = xps_parse_resource_dictionary(ctx, &dict, base_uri, xps_down(node));
             if (code)
             {
-                gs_pop_pdf14trans_device(ctx->pgs);
+                gs_pop_pdf14trans_device(ctx->pgs, false);
                 gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot load FixedPage.Resources");
             }
@@ -241,7 +241,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         code = xps_parse_element(ctx, base_uri, dict, node);
         if (code)
         {
-            gs_pop_pdf14trans_device(ctx->pgs);
+            gs_pop_pdf14trans_device(ctx->pgs, false);
             gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse child of FixedPage");
         }
@@ -249,7 +249,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     if (ctx->use_transparency && has_transparency)
     {
-        code = gs_pop_pdf14trans_device(ctx->pgs);
+        code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
         {
             gs_grestore(ctx->pgs);

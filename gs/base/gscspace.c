@@ -222,16 +222,18 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
 static int
 gx_install_DeviceGray(gs_color_space * pcs, gs_state * pgs)
 {
-    if (pcs->cmm_icc_profile_data == NULL) {
-        if (pgs->icc_manager->default_gray == NULL) {
-            /* User params have not yet been set for the icc manager
-               go ahead and init */
-            gsicc_init_iccmanager(pgs);
-        }
-        pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
-        pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_gray, pcs->rc.ref_count, "gx_install_DeviceGray");
-    }
+    /* If we already have profile data installed, nothing to do here. */
+    if (pcs->cmm_icc_profile_data != NULL)
+        return 0;
+
+    /* If we haven't initialised the iccmanager, do it now. */
+    if (pgs->icc_manager->default_gray == NULL)
+        gsicc_init_iccmanager(pgs);
+
+    /* pcs takes a reference to the default_gray profile data */
+    pcs->cmm_icc_profile_data = pgs->icc_manager->default_gray;
+    rc_increment(pgs->icc_manager->default_gray);
+    pcs->type = &gs_color_space_type_ICC;
     return 0;
 }
 
@@ -268,19 +270,11 @@ gs_cspace_base_space(const gs_color_space * pcspace)
 void rc_increment_cs(gs_color_space *pcs)
 {
     rc_increment(pcs);
-    if (pcs) {
-        if (pcs->cmm_icc_profile_data != NULL) {
-            rc_increment(pcs->cmm_icc_profile_data);
-        }
-    }
 }
 
 void rc_decrement_cs(gs_color_space *pcs, const char *cname) {
 
     if (pcs) {
-        if (pcs->cmm_icc_profile_data != NULL) {
-            rc_decrement(pcs->cmm_icc_profile_data, cname);
-        }
         rc_decrement(pcs, cname);
     }
 }
@@ -288,9 +282,6 @@ void rc_decrement_cs(gs_color_space *pcs, const char *cname) {
 void rc_decrement_only_cs(gs_color_space *pcs, const char *cname)
 {
     if (pcs) {
-        if (pcs->cmm_icc_profile_data != NULL) {
-            rc_decrement(pcs->cmm_icc_profile_data, cname);
-        }
         rc_decrement_only(pcs, cname);
     }
 }
@@ -300,9 +291,6 @@ void cs_adjust_counts_icc(gs_state *pgs, int delta)
     gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
 
     if (pcs) {
-        if (pcs->cmm_icc_profile_data != NULL) {
-            rc_adjust(pcs->cmm_icc_profile_data, delta, "cs_adjust_counts_icc");
-        }
         cs_adjust_counts(pgs, delta);
     }
 }
@@ -320,16 +308,18 @@ gx_no_install_cspace(gs_color_space * pcs, gs_state * pgs)
 static int
 gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 {
-    if (pcs->cmm_icc_profile_data == NULL) {
-        if (pgs->icc_manager->default_rgb == NULL) {
-            /* User params have not yet been set for the icc manager
-               go ahead and init */
-            gsicc_init_iccmanager(pgs);
-        }
-        pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
-        pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_rgb, pcs->rc.ref_count, "gx_install_DeviceRGB");
-    }
+    /* If we already have profile_data, nothing to do here. */
+    if (pcs->cmm_icc_profile_data != NULL)
+        return 0;
+
+    /* If the icc manager hasn't been set up yet, then set it up. */
+    if (pgs->icc_manager->default_rgb == NULL)
+        gsicc_init_iccmanager(pgs);
+
+    /* pcs takes a reference to default_rgb */
+    pcs->cmm_icc_profile_data = pgs->icc_manager->default_rgb;
+    rc_increment(pcs->cmm_icc_profile_data);
+    pcs->type = &gs_color_space_type_ICC;
     return 0;
 }
 
@@ -337,16 +327,18 @@ gx_install_DeviceRGB(gs_color_space * pcs, gs_state * pgs)
 static int
 gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
 {
-    if (pcs->cmm_icc_profile_data == NULL) {
-        if (pgs->icc_manager->default_cmyk == NULL) {
-            /* User params have not yet been set for the icc manager
-               go ahead and init */
-            gsicc_init_iccmanager(pgs);
-        }
-        pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
-        pcs->type = &gs_color_space_type_ICC;
-        rc_adjust(pgs->icc_manager->default_cmyk, pcs->rc.ref_count, "gx_install_DeviceCMYK");
-    }
+    /* If we already have profile data, nothing to do here. */
+    if (pcs->cmm_icc_profile_data != NULL)
+        return 0;
+
+    /* If the icc manager hasn't been set up yet, then set it up. */
+    if (pgs->icc_manager->default_cmyk == NULL)
+        gsicc_init_iccmanager(pgs);
+
+    /* pcs takes a reference to default_cmyk */
+    pcs->cmm_icc_profile_data = pgs->icc_manager->default_cmyk;
+    rc_increment(pcs->cmm_icc_profile_data);
+    pcs->type = &gs_color_space_type_ICC;
     return 0;
 }
 
