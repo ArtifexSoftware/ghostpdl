@@ -26,7 +26,7 @@ void *MEMENTO_UNDERLYING_CALLOC(size_t,size_t);
  * files, just in case they pull in unexpected others. */
 int atoi(const char *);
 char *getenv(const char *);
-void *memset(void *,unsigned char,size_t);
+void *memset(void *,int,size_t);
 int atexit(void (*)(void));
 
 #ifdef MEMENTO
