@@ -7141,11 +7141,11 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                needs to inherit the ICC profile from the clist thread device 
                not the target device.   */
 #if !CMM_THREAD_SAFE
+            rc_increment(cl_icc_profile); 
             gx_monitor_enter(p14_icc_profile->lock);
             rc_decrement(p14_icc_profile, "c_pdf14trans_clist_read_update");
             gx_monitor_leave(p14_icc_profile->lock);
             p14dev->icc_array->device_profile[0] = cl_icc_profile;
-            rc_increment(cl_icc_profile); 
 #endif
             /*
              * If we are blending using spot colors (i.e. the output device
