@@ -120,7 +120,7 @@ ufst: ufst_built
 #### script from a makefile - once ghostpdls get their own configures, do it there.
 
 tiff:
-	cd ./gs/tiff && ./configure
+	cd ./gs/tiff && ./configure --disable-jbig
 	touch tiff
 
 tiff_clean:
