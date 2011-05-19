@@ -218,6 +218,7 @@ struct cmm_profile_s {
                                  * so that we avoid resetting them everytime the user params
                                  * are reloaded. */
     gs_memory_t *memory;        /* In case we have some in non-gc and some in gc memory */
+    gx_monitor_t *lock;		/* handle for the monitor */
 };
 
 #ifndef cmm_profile_DEFINED

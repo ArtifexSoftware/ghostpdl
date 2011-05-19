@@ -67,6 +67,42 @@
  *
  *    Memento_find(address) will tell you what block (if any) the given
  *    address is in.
+ *
+ * An example:
+ *    Suppose we have a gs invocation that crashes with memory corruption.
+ *     * Build with -DMEMENTO.
+ *     * In your debugger put breakpoints on Memento_inited and
+ *       Memento_Breakpoint.
+ *     * Run the program. It will stop in Memento_inited.
+ *     * Execute Memento_setParanoia(1);  (In VS use Ctrl-Alt-Q). (Note #1)
+ *     * Continue execution.
+ *     * It will detect the memory corruption on the next allocation event
+ *       after it happens, and stop in Memento_breakpoint. The console should
+ *       show something like:
+ *
+ *       Freed blocks:
+ *         0x172e610(size=288,num=1415) index 256 (0x172e710) onwards corrupted
+ *           Block last checked OK at allocation 1457. Now 1458.
+ *
+ *     * This means that the block became corrupted between allocation 1457
+ *       and 1458 - so if we rerun and stop the program at 1457, we can then
+ *       step through, possibly with a data breakpoint at 0x172e710 and see
+ *       when it occurs.
+ *     * So restart the program from the beginning. When we hit Memento_inited
+ *       execute Memento_breakAt(1457); (and maybe Memento_setParanoia(1), or
+ *       Memento_setParanoidAt(1457))
+ *     * Continue execution until we hit Memento_breakpoint.
+ *     * Now you can step through and watch the memory corruption happen.
+ *
+ *    Note #1: Using Memento_setParanoia(1) can cause your program to run
+ *    very slowly. You may instead choose to use Memento_setParanoia(100)
+ *    (or some other figure). This will only exhaustively check memory on
+ *    every 100th allocation event. This trades speed for the size of the
+ *    average allocation event range in which detection of memory corruption
+ *    occurs. You may (for example) choose to run once checking every 100
+ *    allocations and discover that the corruption happens between events
+ *    X and X+100. You can then rerun using Memento_paranoidAt(X), and
+ *    it'll only start exhaustively checking when it reaches X.
  */
 
 #ifndef MEMENTO_H
@@ -99,16 +135,17 @@
 
 #define MEMENTO_FREELIST_MAX 0x2000000
 
-void Memento_checkBlock(void *);
-void Memento_checkAllMemory(void);
-void Memento_check(void);
+int Memento_checkBlock(void *);
+int Memento_checkAllMemory(void);
+int Memento_check(void);
 
-void Memento_setParanoia(int);
-void Memento_paranoidAt(int);
-void Memento_breakAt(int);
-int  Memento_getBlockNum(void *);
-void Memento_find(void *a);
+int Memento_setParanoia(int);
+int Memento_paranoidAt(int);
+int Memento_breakAt(int);
+int Memento_getBlockNum(void *);
+int Memento_find(void *a);
 void Memento_breakpoint(void);
+int Memento_failAt(int);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -131,15 +168,16 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_realloc MEMENTO_UNDERLYING_REALLOC
 #define Memento_calloc  MEMENTO_UNDERLYING_CALLOC
 
-#define Memento_checkBlock(A)    do {} while (0)
-#define Memento_checkAllMemory() do {} while (0)
-#define Memento_check()          do {} while (0)
-#define Memento_setParanoia(A)   do {} while (0)
-#define Memento_paranoidAt(A)    do {} while (0)
-#define Memento_breakAt(A)       do {} while (0)
+#define Memento_checkBlock(A)    0
+#define Memento_checkAllMemory() 0
+#define Memento_check()          0
+#define Memento_setParanoia(A)   0
+#define Memento_paranoidAt(A)    0
+#define Memento_breakAt(A)       0
 #define Memento_getBlockNum(A)   0
-#define Memento_find(A)          do {} while (0)
-#define Memento_breakpoint(void) do {} while (0)
+#define Memento_find(A)          0
+#define Memento_breakpoint()     do {} while (0)
+#define Memento_failAt(A)        0
 
 #endif /* MEMENTO */
 

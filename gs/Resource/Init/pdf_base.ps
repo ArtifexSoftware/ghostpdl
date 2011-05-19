@@ -822,8 +822,10 @@ currentdict /no_debug_dict undef
 % may have preceded the EOL, such as spaces or tabs. Thus we back up one
 % character and scan until we find the \n terminator.
 /stream {	% <dict> stream <modified_dict>
-  dup /Length oget 0 eq {
-    dup /Filter undef	% don't confuse any filters that require data
+  dup /Length knownoget { 
+    0 eq {
+      dup /Filter undef	% don't confuse any filters that require data
+    } if
   } if
   dup /F known dup PDFsource PDFfile eq or {
     not {
@@ -853,14 +855,15 @@ currentdict /no_debug_dict undef
     % Some (bad) PDf files have invalid stream lengths.  This causes problems
     % if we reposition beyond the end of the file.  So we compare the given
     % length to number of bytes left in the file.
-    dup /Length oget
-    dup PDFfile bytesavailable lt {	% compare to to bytes left in file
-      PDFfile fileposition 		% reposition to the end of stream
-      add PDFfile exch setfileposition
-    } {
-      pop				% bad stream length - do not reposition.
+    dup /Length knownoget {
+      dup PDFfile bytesavailable lt {	% compare to to bytes left in file
+        PDFfile fileposition 		% reposition to the end of stream
+        add PDFfile exch setfileposition
+      } {
+        pop				% bad stream length - do not reposition.
                                         % This will force a length warning below
-    } ifelse
+      } ifelse
+    } if
   } {
     pop
         % We're already reading from a stream, which we can't reposition.

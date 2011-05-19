@@ -1997,7 +1997,11 @@ idata:                  data_size = 0;
             case cmd_op_fill_rect >> 4:
                 if (state.rect.width == 0 && state.rect.height == 0 &&
                     state.rect.x == 0 && state.rect.y == 0) {
-                    code = (*dev_proc(tdev, fillpage))(tdev, &imager_state, &dev_color);
+                    /* FIXME: This test should be unnecessary. Bug 692076
+                     * is open pending a proper fix. */
+                    code = (dev_proc(tdev, fillpage) == NULL ? 0 :
+                            (*dev_proc(tdev, fillpage))(tdev, &imager_state,
+                                                        &dev_color));
                     break;
                 }
             case cmd_op_fill_rect_short >> 4:

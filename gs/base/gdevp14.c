@@ -1117,6 +1117,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
             ctx->mask_stack = NULL;
         } else {
             /* Assign as mask buffer */
+            if (ctx->mask_stack != NULL) {
+                gs_free_object(ctx->memory, ctx->mask_stack, 
+                               "pdf14_pop_transparency_group");
+            }
             ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
             ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
             ctx->mask_stack->rc_mask->mask_buf = tos;
@@ -1218,6 +1222,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
          tos->n_chan = 1;
          tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
+        if (ctx->mask_stack != NULL) {
+            gs_free_object(ctx->memory, ctx->mask_stack, 
+                           "pdf14_pop_transparency_group");
+        }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
         ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
         ctx->mask_stack->rc_mask->mask_buf = tos;
@@ -1785,7 +1793,9 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
             dev_proc((gx_device *) target, get_profile)((gx_device *) target, 
                                           &(profile_targ));
         profile_dev14->device_profile[0] = profile_targ->device_profile[0];
+        gx_monitor_enter(profile_dev14->device_profile[0]->lock);
         rc_increment(profile_dev14->device_profile[0]);
+        gx_monitor_leave(profile_dev14->device_profile[0]->lock);
         profile_dev14->intent[0] = profile_targ->intent[0];
     }
 #undef COPY_ARRAY_PARAM
@@ -4125,8 +4135,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                 dev->icc_array->device_profile[0] = parent_color->icc_profile;
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
+            }
         }
-    }
     }
     return ok;
 }
@@ -7107,14 +7117,18 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     gs_pdf14trans_t * pdf14pct = (gs_pdf14trans_t *) pcte;
     gs_devn_params * pclist_devn_params;
     gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)cdev;
-    cmm_profile_t *icc_profile;
+    cmm_profile_t *cl_icc_profile, *p14_icc_profile;
     gsicc_rendering_intents_t rendering_intent;
     int code;
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(cdev, get_profile)(cdev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile, 
                           &rendering_intent); 
+    code = dev_proc(p14dev, get_profile)(p14dev,  &dev_profile); 
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile, 
+                          &rendering_intent); 
+
     /*
      * We only handle the push/pop operations. Save and restore the color_info
      * field for the clist device.  (This is needed since the process color
@@ -7123,12 +7137,16 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
      */
     switch (pdf14pct->params.pdf14_op) {
         case PDF14_PUSH_DEVICE:
-#	    if 0 /* Disabled because *p14dev has no forwarding methods during the clist playback.
-                    This code is not executed while clist writing. */
-            p14dev->saved_target_color_info = cdev->color_info;
-            cdev->color_info = p14dev->color_info;
-             */
-#	    endif
+            /* If the CMM is not threadsafe, then the pdf14 device actually 
+               needs to inherit the ICC profile from the clist thread device 
+               not the target device.   */
+#if !CMM_THREAD_SAFE
+            gx_monitor_enter(p14_icc_profile->lock);
+            rc_decrement(p14_icc_profile, "c_pdf14trans_clist_read_update");
+            gx_monitor_leave(p14_icc_profile->lock);
+            p14dev->icc_array->device_profile[0] = cl_icc_profile;
+            rc_increment(cl_icc_profile); 
+#endif
             /*
              * If we are blending using spot colors (i.e. the output device
              * supports spot colors) then we need to transfer compressed
@@ -7185,13 +7203,13 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                device.  This will occur if our source profile for our device
                happens to be something like CIELAB.  Then we will blend in
                RGB (unless a trans group is specified) */
-            if (icc_profile->data_cs == gsCIELAB) {
-                rc_decrement(icc_profile,
+            if (cl_icc_profile->data_cs == gsCIELAB) {
+                rc_decrement(cl_icc_profile,
                              "c_pdf14trans_clist_read_update");
-                icc_profile = 
+                cl_icc_profile = 
                     gsicc_read_serial_icc(cdev, pcrdev->trans_dev_icc_hash);
                 /* Keep a pointer to the clist device */
-                icc_profile->dev = (gx_device *) cdev;
+                cl_icc_profile->dev = (gx_device *) cdev;
                 /* There is a question of how the profile should be ref counted.
                    I have a concern that it should be initialized based
                    upon the device ref count */
