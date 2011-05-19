@@ -379,10 +379,20 @@ void rop_release_run_op(rop_run_op *op);
 
 #elif defined(__GNUC__) /* Are we using GCC? */
 
+/* ARM GCC has byteswap.h, but at the time of writing, in the compiler I'm
+ * using, it generates hugely inefficient code, so leaving it disabled. RJW. */
+
 #ifdef __i386__ /* Are we on an x86? */
 #define GCC_VERSION (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
 #if GCC_VERSION >= 40300 /* Modern enough to have byteswap intrinsics? */
 
+/* In GCC >= 4.3 we use the built in intrinsics. */
+/* Q: Why couldn't byteswap.h point us to these? */
+#define ENDIAN_SWAP_INT __builtin_bswap32
+
+#elif GCC_VERSION >= 20000 /* 'Modern' enough to offer byteswap.h */
+
+/* In GCC >= 2.0 we use the function in byteswap.h. */ 
 #include <byteswap.h>
 
 #define ENDIAN_SWAP_INT bswap_32
