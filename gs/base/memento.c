@@ -179,7 +179,6 @@ static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
 }
 
 static void Memento_removeBlock(Memento_Blocks    *blks,
-                                const char        *listName,
                                 Memento_BlkHeader *b)
 {
     Memento_BlkHeader *head = blks->head;
@@ -210,7 +209,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
 static int Memento_Internal_makeSpace(size_t space)
 {
     Memento_BlkHeader *head, *prev;
-    size_t listSize = globals.freeListSize;
+    size_t listSize;
     /* If too big, it can never go on the freelist */
     if (space > MEMENTO_FREELIST_MAX)
         return 0;
@@ -490,7 +489,7 @@ void Memento_free(void *blk)
     globals.alloc -= memblk->rawsize;
     globals.numFrees++;
 
-    Memento_removeBlock(&globals.used, "allocated", memblk);
+    Memento_removeBlock(&globals.used, memblk);
 
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     if (Memento_Internal_makeSpace(MEMBLK_SIZE(memblk->rawsize))) {
@@ -507,7 +506,7 @@ void Memento_free(void *blk)
 void *Memento_realloc(void *blk, size_t newsize)
 {
     Memento_BlkHeader *memblk, *newmemblk;
-    size_t             rawsize, newsizemem;
+    size_t             newsizemem;
 
     if (!globals.inited)
         Memento_init();
@@ -529,8 +528,7 @@ void *Memento_realloc(void *blk, size_t newsize)
         return NULL;
 
     newsizemem = MEMBLK_SIZE(newsize);
-    rawsize    = memblk->rawsize;
-    Memento_removeBlock(&globals.used, "allocated", memblk);
+    Memento_removeBlock(&globals.used, memblk);
     newmemblk  = MEMENTO_UNDERLYING_REALLOC(memblk, newsizemem);
     if (newmemblk == NULL)
     {
