@@ -187,7 +187,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
     while ((head) && (head != b)) {
         VALGRIND_MAKE_MEM_DEFINED(head, sizeof(*head));
         prev = head;
-	head = head->next;
+        head = head->next;
         VALGRIND_MAKE_MEM_NOACCESS(prev, sizeof(*prev));
     }
     if (head == NULL) {
@@ -230,8 +230,8 @@ static int Memento_Internal_makeSpace(size_t space)
             break;
         }
         listSize -= MEMBLK_SIZE(head->rawsize);
-	prev = head;
-	head = head->next;
+        prev = head;
+        head = head->next;
         VALGRIND_MAKE_MEM_NOACCESS(prev, sizeof(*prev));
     }
     /* Free all blocks forwards from here */
@@ -306,7 +306,7 @@ static int Memento_listBlock(Memento_BlkHeader *b,
                               void              *arg)
 {
     int *counts = (int *)arg;
-    fprintf(stderr, "    %x:(size=%d,num=%d)\n",
+    fprintf(stderr, "    0x%x:(size=%d,num=%d)\n",
             MEMBLK_TOBLK(b), b->rawsize, b->sequence);
     counts[0]++;
     counts[1]+= b->rawsize;
@@ -338,6 +338,11 @@ static void Memento_fin(void)
     }
 }
 
+static void Memento_inited(void)
+{
+    /* A good place for a breakpoint */
+}
+
 static void Memento_init(void)
 {
     char *env;
@@ -360,6 +365,8 @@ static void Memento_init(void)
     globals.paranoidAt = (env ? atoi(env) : 0);
 
     atexit(Memento_fin);
+
+    Memento_inited();
 }
 
 static void Memento_event(void)
@@ -374,11 +381,11 @@ static void Memento_event(void)
         globals.failing = 1;
     }
 
+    globals.sequence++;
     if (--globals.countdown == 0) {
         Memento_checkAllMemory();
         globals.countdown = globals.paranoia;
     }
-    globals.sequence++;
 
     if (globals.sequence == globals.breakAt)
         Memento_breakpoint();
@@ -441,12 +448,12 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
                      &data, memblk);
     if (!data.found) {
         /* Failure! */
-        fprintf(stderr, "Attempt to %s block %x(size=%d,num=%d) not on allocated list!\n",
+        fprintf(stderr, "Attempt to %s block 0x%x(size=%d,num=%d) not on allocated list!\n",
                 action, memblk, memblk->rawsize, memblk->sequence);
         Memento_breakpoint();
         return 1;
     } else if (data.preCorrupt || data.postCorrupt) {
-        fprintf(stderr, "Block %x(size=%d,num=%d) found to be corrupted on %s!\n",
+        fprintf(stderr, "Block 0x%x(size=%d,num=%d) found to be corrupted on %s!\n",
                 action, memblk->rawsize, memblk->sequence, action);
         if (data.preCorrupt) {
             fprintf(stderr, "Preguard corrupted\n");
@@ -568,7 +575,7 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
             fprintf(stderr, "Allocated blocks:\n");
             data->found |= 2;
         }
-        fprintf(stderr, "  Block %x(size=%d,num=%d)",
+        fprintf(stderr, "  Block 0x%x(size=%d,num=%d)",
                 memblk, memblk->rawsize, memblk->sequence);
         if (data->preCorrupt) {
             fprintf(stderr, " Preguard ");
@@ -597,10 +604,11 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
             fprintf(stderr, "Freed blocks:\n");
             data->found |= 4;
         }
-        fprintf(stderr, "  Block %x(size=%d,num=%d) ",
-                memblk, memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "  0x%x(size=%d,num=%d) ",
+                MEMBLK_TOBLK(memblk), memblk->rawsize, memblk->sequence);
         if (data->freeCorrupt) {
-            fprintf(stderr, "index %d onwards ", data->index);
+            fprintf(stderr, "index %d (address 0x%x) onwards ", data->index,
+                    &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
                 fprintf(stderr, "+ preguard ");
             }
@@ -712,7 +720,7 @@ int Memento_find(void *a)
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address %x is in %sallocated block %x(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%x is in %sallocated block 0x%x(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
                                          "preguard of " : "postguard of ")),
@@ -723,7 +731,7 @@ int Memento_find(void *a)
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address %x is in %sfreed block %x(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%x is in %sfreed block 0x%x(size=%d,num=%d)\n",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
                                          "preguard of " : "postguard of ")),
