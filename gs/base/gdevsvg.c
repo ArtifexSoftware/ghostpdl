@@ -55,7 +55,7 @@ typedef struct gx_device_svg_s {
     int dirty;		/* whether we need to rewrite the <g> element */
     int mark;		/* <g> nesting level */
     int page_count;	/* how many output_page calls we've seen */
-    char *strokecolor, *fillcolor;
+    gx_color_index strokecolor, fillcolor;
     double linewidth;
     gs_line_cap linecap;
     gs_line_join linejoin;
@@ -118,13 +118,10 @@ static dev_proc_put_params(svg_put_params);
         NULL			/* strip_copy_rop */\
 }
 
-gs_public_st_suffix_string2_final(st_device_svg, gx_device_svg,
+gs_public_st_suffix_add0_final(st_device_svg, gx_device_svg,
                                "gx_device_svg",
-                               device_svg_enum_ptrs,
-                               device_svg_reloc_ptrs,
-                               gx_device_finalize,
-                               st_device_vector,
-                               strokecolor, fillcolor);
+                               device_svg_enum_ptrs, device_svg_reloc_ptrs,
+                               gx_device_finalize, st_device_vector);
 
 /* The output device is named 'svg' but we're referred to as the
    'svgwrite' device by the build system to avoid conflicts with
@@ -244,8 +241,8 @@ svg_open_device(gx_device *dev)
     svg->dirty = 0;
     svg->mark = 0;
     svg->page_count = 0;
-    svg->strokecolor = NULL;
-    svg->fillcolor = NULL;
+    svg->strokecolor = gx_no_color_index;
+    svg->fillcolor = gx_no_color_index;
     /* these should be the graphics library defaults instead? */
     svg->linewidth = SVG_DEFAULT_LINEWIDTH;
     svg->linecap = SVG_DEFAULT_LINECAP;
@@ -286,11 +283,6 @@ svg_close_device(gx_device *dev)
       svg_write(svg, "</svg>\n");
       svg->header = 0;
     }
-
-    if (svg->fillcolor) gs_free_string(svg->memory,
-        (byte *)svg->fillcolor, 8, "svg_close_device");
-    if (svg->strokecolor) gs_free_string(svg->memory,
-        (byte *)svg->strokecolor, 8, "svg_close_device");
 
     if (ferror(svg->file))
       return gs_throw_code(gs_error_ioerror);
@@ -399,28 +391,15 @@ svg_write_header(gx_device_svg *svg)
     return 0;
 }
 
-static char *
-svg_make_color(gx_device_svg *svg, const gx_drawing_color *pdc)
+static gx_color_index
+svg_get_color(gx_device_svg *svg, const gx_drawing_color *pdc)
 {
-    char *paint = (char *)gs_alloc_string(svg->memory, 8, "svg_make_color");
 
-    if (!paint) {
-      gs_throw(gs_error_VMerror, "string allocation failed");
-      return NULL;
-    }
+    gx_color_index color = gx_no_color_index;
 
-    if (gx_dc_is_pure(pdc)) {
-      gx_color_index color = gx_dc_pure_color(pdc);
-      sprintf(paint, "#%06x", (int)(color & 0xffffffL));
-    } else if (gx_dc_is_null(pdc)) {
-      sprintf(paint, "None");
-    } else {
-      gs_free_string(svg->memory, (byte *)paint, 8, "svg_make_color");
-      gs_throw(gs_error_rangecheck, "unknown color type");
-      return NULL;
-    }
-
-    return paint;
+    if (gx_dc_is_pure(pdc))
+	color = gx_dc_pure_color(pdc);
+    return color;
 }
 
 static int
@@ -439,14 +418,14 @@ svg_write_state(gx_device_svg *svg)
     }
     /* write out the new current state */
     svg_write(svg, "<g ");
-    if (svg->strokecolor) {
-        sprintf(line, " stroke='%s'", svg->strokecolor);
+    if (svg->strokecolor != gx_no_color_index) {
+	sprintf(line, " stroke='#%06x'", svg->strokecolor & 0xffffffL);
         svg_write(svg, line);
     } else {
         svg_write(svg, " stroke='none'");
     }
-    if (svg->fillcolor) {
-        sprintf(line, " fill='%s'", svg->fillcolor);
+    if (svg->fillcolor != gx_no_color_index) {
+        sprintf(line, "#%06x", svg->fillcolor & 0xffffffL);
         svg_write(svg, line);
     } else {
       svg_write(svg, " fill='none'");
@@ -593,24 +572,16 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
                  const gx_drawing_color *pdc)
 {
     gx_device_svg *svg = (gx_device_svg*)vdev;
-    char *fill;
+    gx_color_index fill = svg_get_color(svg, pdc);
 
     if_debug0('_', "svg_setfillcolor\n");
 
-    fill = svg_make_color(svg, pdc);
-    if (!fill)
-      return gs_rethrow_code(gs_error_VMerror);
-    if (svg->fillcolor && !strcmp(fill, svg->fillcolor))
+    if (svg->fillcolor != fill)
       return 0; /* not a new color */
-
     /* update our state with the new color */
-    if (svg->fillcolor)
-        gs_free_string(svg->memory, (byte *)svg->fillcolor, 8,
-                "svg_setfillcolor");
     svg->fillcolor = fill;
     /* request a new group element */
     svg->dirty++;
-
     return 0;
 }
 
@@ -619,20 +590,14 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
                    const gx_drawing_color *pdc)
 {
     gx_device_svg *svg = (gx_device_svg*)vdev;
-    char *stroke;
+    gx_color_index stroke = svg_get_color(svg, pdc);
 
     if_debug0('_', "svg_setstrokecolor\n");
 
-    stroke = svg_make_color(svg, pdc);
-    if (!stroke)
-      return gs_rethrow_code(gs_error_VMerror);
-    if (svg->strokecolor && !strcmp(stroke, svg->strokecolor))
+    if (svg->strokecolor != stroke)
       return 0; /* not a new color */
 
     /* update our state with the new color */
-    if (svg->strokecolor)
-        gs_free_string(svg->memory, (byte *)svg->strokecolor, 8,
-                "svg_setstrokecolor");
     svg->strokecolor = stroke;
     /* request a new group element */
     svg->dirty++;
@@ -682,10 +647,10 @@ svg_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         fixed2float(x1 - x0), fixed2float(y1 - y0));
     svg_write(svg, line);
     /* override the inherited stroke attribute if we're not stroking */
-    if (!(type & gx_path_type_stroke) && svg->strokecolor)
+    if (!(type & gx_path_type_stroke) && (svg->strokecolor != gx_no_color_index))
         svg_write(svg, " stroke='none'");
     /* override the inherited fill attribute if we're not filling */
-    if (!(type & gx_path_type_fill) && svg->fillcolor)
+    if (!(type & gx_path_type_fill) && (svg->fillcolor != gx_no_color_index))
         svg_write(svg, " fill='none'");
     svg_write(svg, "/>\n");
 
@@ -840,11 +805,11 @@ svg_endpath(gx_device_vector *vdev, gx_path_type_t type)
     svg_write(svg, "'");
 
     /* override the inherited stroke attribute if we're not stroking */
-    if (!(type & gx_path_type_stroke) && svg->strokecolor)
+    if (!(type & gx_path_type_stroke) && (svg->strokecolor != gx_no_color_index))
       svg_write(svg, " stroke='none'");
 
     /* override the inherited fill attribute if we're not filling */
-    if (!(type & gx_path_type_fill) && svg->fillcolor)
+    if (!(type & gx_path_type_fill) && (svg->fillcolor != gx_no_color_index))
       svg_write(svg, " fill='none'");
 
     svg_write(svg, "/>\n");
