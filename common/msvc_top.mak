@@ -99,8 +99,8 @@ CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 FORCE:
 
 $(GENDIR)/ldgs.tr: FORCE
-	-mkdir $(GLGENDIR)
-	-mkdir $(GLOBJDIR)
+	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
 	$(MAKE) /F $(PSSRCDIR)\msvc32.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) \
@@ -146,8 +146,8 @@ FORCE:
 # to avoid having to define everything in the top level makefiles (also of a hack)
 $(GENDIR)/ldgs.tr: FORCE
 	-echo $(PSICFLAGS)
-	-mkdir $(GLGENDIR)
-	-mkdir $(GLOBJDIR)
+	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
 	echo > $(GLOBJDIR)/gs_init.ps
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
