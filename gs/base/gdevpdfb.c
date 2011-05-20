@@ -18,14 +18,14 @@
 #include "gserrors.h"
 #include "gdevpdfx.h"
 #include "gdevpdfg.h"
-#include "gdevpdfo.h"		/* for data stream */
+#include "gdevpdfo.h"                /* for data stream */
 #include "gxcspace.h"
 #include "gxdcolor.h"
 #include "gxpcolor.h"
 #include "gxhldevc.h"
 #include "gxchar.h"
-#include "gdevpdtf.h"		/* Required to include gdevpdti.h */
-#include "gdevpdti.h"		/* For pdf_charproc_x_offset */
+#include "gdevpdtf.h"                /* Required to include gdevpdti.h */
+#include "gdevpdti.h"                /* For pdf_charproc_x_offset */
 #include "gsptype1.h"
 
 /* We need this color space type for constructing temporary color spaces. */
@@ -162,7 +162,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
             else
                 pdev->char_width.x = fixed2float(show_enum->wxy.x);
             pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
-            if (pres == 0) {	/* Define the character in an embedded font. */
+            if (pres == 0) {        /* Define the character in an embedded font. */
                 gs_image_t_init_mask(&image, false);
                 invert = 0xff;
                 x_offset = x - (int)show_enum->pis->current_point.x;
@@ -318,7 +318,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
         switch ((code = pdf_end_write_image(pdev, &writer))) {
-            default:		/* error */
+            default:                /* error */
                 return code;
             case 1:
                 return 0;
@@ -327,11 +327,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
                                     true);
         }
     }
-    writer.end_string = "";	/* no Q */
+    writer.end_string = "";        /* no Q */
     switch ((code = pdf_end_write_image(pdev, &writer))) {
-    default:		/* error */
+    default:                /* error */
         return code;
-    case 0:			/* not possible */
+    case 0:                        /* not possible */
         return_error(gs_error_Fatal);
     case 1:
         break;
@@ -383,7 +383,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     bool in_line;
 
     if (code < 0)
-        return code;		/* can't happen */
+        return code;                /* can't happen */
     gs_image_t_init(pim, pcs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;
@@ -466,7 +466,7 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
                                &image, &writer, 0);
     switch (code) {
         default:
-            return code;	/* error */
+            return code;        /* error */
         case 1:
             return 0;
         case 0:
@@ -598,10 +598,10 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                              tile_id, 0, 0, tw, th, &image, &writer, -1);
             switch (code) {
             default:
-                return code;	/* error */
+                return code;        /* error */
             case 1:
                 break;
-            case 0:			/* not possible */
+            case 0:                        /* not possible */
                 return_error(gs_error_Fatal);
             }
             end = pdf_stell(pdev);

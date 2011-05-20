@@ -698,7 +698,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
 /* Fill in bitmap font boilerplate. */
 void
 pl_fill_in_bitmap_font(gs_font_base *pfont, long unique_id)
-{	pfont->FontType = ft_user_defined;
+{	pfont->FontType = ft_PCL_user_defined;
         pfont->BitmapWidths = true;
         pfont->ExactSize = fbit_use_bitmaps;
         pfont->InBetweenSize = fbit_use_bitmaps;

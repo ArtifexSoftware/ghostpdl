@@ -26,7 +26,7 @@
 #include "gdevpdtw.h"
 #include "gdevpdtt.h"
 #include "gdevpdfo.h"
-#include "gxchar.h"	/* For gs_show_enum */
+#include "gxchar.h"        /* For gs_show_enum */
 
 /* ---------------- Private ---------------- */
 
@@ -35,10 +35,10 @@
 struct pdf_char_proc_s {
     pdf_resource_common(pdf_char_proc_t);
     pdf_char_proc_ownership_t *owner_fonts; /* fonts using this charproc. */
-    int y_offset;		/* of character (0,0) */
-    int x_offset;		/* of character (0,0) */
+    int y_offset;                /* of character (0,0) */
+    int x_offset;                /* of character (0,0) */
     gs_point real_width;        /* Not used with synthesised bitmap fonts. */
-    gs_point v;			/* Not used with synthesised bitmap fonts. */
+    gs_point v;                        /* Not used with synthesised bitmap fonts. */
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
@@ -48,11 +48,11 @@ gs_public_st_suffix_add1(st_pdf_char_proc, pdf_char_proc_t,
 
 struct pdf_char_proc_ownership_s {
     pdf_char_proc_t *char_proc;
-    pdf_char_proc_ownership_t *font_next;	/* next char_proc for same font */
-    pdf_char_proc_ownership_t *char_next;	/* next char_proc for same charproc */
+    pdf_char_proc_ownership_t *font_next;        /* next char_proc for same font */
+    pdf_char_proc_ownership_t *char_next;        /* next char_proc for same charproc */
     pdf_font_resource_t *font;
-    gs_char char_code;		/* Character code in PDF font. */
-    gs_glyph glyph;		/* Glyph id in Postscript font. */
+    gs_char char_code;                /* Character code in PDF font. */
+    gs_glyph glyph;                /* Glyph id in Postscript font. */
     gs_const_string char_name;
     bool duplicate_char_name;
 };
@@ -327,7 +327,9 @@ pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
      * font we created has a non-identity FontMatrix we can't use it and must
      * go back to collecting the bitmap into our fallback font.
      */
-    if (show_enum->current_font->FontType == ft_user_defined && allowed_op &&
+    if ((show_enum->current_font->FontType == ft_user_defined ||
+        show_enum->current_font->FontType == ft_PCL_user_defined ||
+        show_enum->current_font->FontType == ft_GL2_stick_user_defined) && allowed_op &&
         show_enum->current_font->FontMatrix.xx == 1 && show_enum->current_font->FontMatrix.xy == 0 &&
         show_enum->current_font->FontMatrix.yx == 0 && show_enum->current_font->FontMatrix.yy == 1) {
         pdf_char_proc_ownership_t *pcpo;
@@ -474,7 +476,9 @@ pdf_mark_glyph_names(const pdf_font_resource_t *pdfont, const gs_memory_t *memor
              if (pdfont->u.simple.Encoding[i].glyph != GS_NO_GLYPH)
                 pdfont->mark_glyph(memory, pdfont->u.simple.Encoding[i].glyph, pdfont->mark_glyph_data);
      }
-    if (pdfont->FontType == ft_user_defined) {
+    if (pdfont->FontType == ft_user_defined ||
+        pdfont->FontType == ft_PCL_user_defined ||
+        pdfont->FontType == ft_GL2_stick_user_defined) {
         const pdf_char_proc_ownership_t *pcpo = pdfont->u.simple.s.type3.char_procs;
 
         for (; pcpo != NULL; pcpo = pcpo->font_next)
@@ -562,8 +566,8 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
  * Install charproc accumulator for a Type 3 font.
  */
 int
-pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-                gs_text_cache_control_t control, gs_char ch)
+pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, double *pw, int narg,
+                gs_text_cache_control_t control, gs_char ch, bool scale_100)
 {
     pdf_font_resource_t *pdfont;
     pdf_resource_t *pres = pdev->accumulating_substream_resource;
@@ -586,8 +590,25 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
         However comparefiles/Bug687044.ps doesn't follow that. */
         pdev->skip_colors = false;
         pprintg1(pdev->strm, "%g 0 d0\n", (float)pw[0]);
+        /* The colour change described above can't affect PCL fonts and we need
+         * all glyphs to be noted as cached in order for the bitmap font cache
+         * probing to work properly.
+         */
+        if (font->FontType == ft_PCL_user_defined || font->FontType == ft_GL2_stick_user_defined)
+            pdfont->u.simple.s.type3.cached[ch >> 3] |= 0x80 >> (ch & 7);
     } else {
+        double d;
         pdev->skip_colors = true;
+        if (pw[4] < pw[2]) {
+            d = pw[2];
+            pw[2] = pw[4];
+            pw[4] = d;
+        }
+        if (pw[5] < pw[3]) {
+            d = pw[5];
+            pw[5] = pw[3];
+            pw[3] = d;
+        }
         pprintg6(pdev->strm, "%g %g %g %g %g %g d1\n",
             (float)pw[0], (float)0.0, (float)pw[2],
             (float)pw[3], (float)pw[4], (float)pw[5]);
@@ -599,9 +620,11 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int
      * operator. We write the scale matrix here because this is *after* the
      * 'd1' has been emitted above, and so does not affect it.
      */
+    if (scale_100) {
     code = stream_puts(pdev->strm, "0.01 0 0 0.01 0 0 cm\n");
     if (code < 0)
         return code;
+    }
     return 0;
 }
 

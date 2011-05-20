@@ -134,7 +134,7 @@ typedef enum {
     resourceMetadata,
     resourceICC,
     resourceAnnotation,
-    resourceNone	/* Special, used when this isn't a resource at all
+    resourceNone        /* Special, used when this isn't a resource at all
                          * eg when we execute a resource we've just written, such as
                          * a Pattern.
                          */
@@ -145,17 +145,17 @@ typedef enum {
   0, "/Font", "/CMap", "/FontDescriptor", "/Group", "/Mask", 0, 0, 0, 0, 0,\
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 #define PDF_RESOURCE_TYPE_STRUCTS\
-  &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
-  &st_pdf_resource,		/* see below */\
+  &st_pdf_color_space,                /* gdevpdfg.h / gdevpdfc.c */\
+  &st_pdf_resource,                /* see below */\
   &st_pdf_pattern,\
   &st_pdf_resource,\
-  &st_pdf_x_object,		/* see below */\
+  &st_pdf_x_object,                /* see below */\
   &st_pdf_resource,\
-  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
-  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font_resource,        /* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_char_proc,                /* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font_resource,        /* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
-  &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font_descriptor,        /* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_resource,\
@@ -167,13 +167,13 @@ typedef enum {
  */
 
 #define pdf_resource_common(typ)\
-    typ *next;			/* next resource of this type */\
-    pdf_resource_t *prev;	/* previously allocated resource */\
-    gs_id rid;			/* optional ID key */\
+    typ *next;                        /* next resource of this type */\
+    pdf_resource_t *prev;        /* previously allocated resource */\
+    gs_id rid;                        /* optional ID key */\
     bool named;\
     bool global;                /* ps2write only */\
     char rname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];\
-    ulong where_used;		/* 1 bit per level of content stream */\
+    ulong where_used;                /* 1 bit per level of content stream */\
     cos_object_t *object
 typedef struct pdf_resource_s pdf_resource_t;
 struct pdf_resource_s {
@@ -193,8 +193,8 @@ extern_st(st_pdf_resource);
 typedef struct pdf_x_object_s pdf_x_object_t;
 struct pdf_x_object_s {
     pdf_resource_common(pdf_x_object_t);
-    int width, height;		/* specified width and height for images */
-    int data_height;		/* actual data height for images */
+    int width, height;                /* specified width and height for images */
+    int data_height;                /* actual data height for images */
 };
 #define private_st_pdf_x_object()  /* in gdevpdfu.c */\
   gs_private_st_suffix_add0(st_pdf_x_object, pdf_x_object_t,\
@@ -213,8 +213,8 @@ typedef enum {
 /* ------ Fonts ------ */
 
 /* Define abstract types. */
-typedef struct pdf_char_proc_s pdf_char_proc_t;	/* gdevpdff.h */
-typedef struct pdf_char_proc_ownership_s pdf_char_proc_ownership_t;	/* gdevpdff.h */
+typedef struct pdf_char_proc_s pdf_char_proc_t;        /* gdevpdff.h */
+typedef struct pdf_char_proc_ownership_s pdf_char_proc_ownership_t;        /* gdevpdff.h */
 typedef struct pdf_font_s pdf_font_t;  /* gdevpdff.h */
 typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
@@ -280,8 +280,8 @@ typedef struct pdf_stream_position_s {
  * and one for the whole document (for AutoRotate /All).
  */
 typedef struct pdf_text_rotation_s {
-    long counts[5];		/* 0, 90, 180, 270, other */
-    int Rotate;			/* computed rotation, -1 means none */
+    long counts[5];                /* 0, 90, 180, 270, other */
+    int Rotate;                        /* computed rotation, -1 means none */
 } pdf_text_rotation_t;
 #define pdf_text_rotation_angle_values 0, 90, 180, 270, -1
 
@@ -289,8 +289,8 @@ typedef struct pdf_text_rotation_s {
  * Define document and page information derived from DSC comments.
  */
 typedef struct pdf_page_dsc_info_s {
-    int orientation;		/* -1 .. 3 */
-    int viewing_orientation;	/* -1 .. 3 */
+    int orientation;                /* -1 .. 3 */
+    int viewing_orientation;        /* -1 .. 3 */
     gs_rect bounding_box;
 } pdf_page_dsc_info_t;
 
@@ -312,7 +312,7 @@ typedef struct pdf_page_s {
     bool NumCopies_set; /* ps2write only. */
     int NumCopies;      /* ps2write only. */
 } pdf_page_t;
-#define private_st_pdf_page()	/* in gdevpdf.c */\
+#define private_st_pdf_page()        /* in gdevpdf.c */\
   gs_private_st_ptrs2(st_pdf_page, pdf_page_t, "pdf_page_t",\
     pdf_page_enum_ptrs, pdf_page_reloc_ptrs, Page, Annots)
 
@@ -325,7 +325,7 @@ typedef struct pdf_temp_file_s {
     FILE *file;
     stream *strm;
     byte *strm_buf;
-    stream *save_strm;		/* save pdev->strm while writing here */
+    stream *save_strm;                /* save pdev->strm while writing here */
 } pdf_temp_file_t;
 
 #ifndef gx_device_pdf_DEFINED
@@ -340,12 +340,12 @@ typedef struct pdf_font_cache_elem_s pdf_font_cache_elem_t;
 struct pdf_font_cache_elem_s {
     pdf_font_cache_elem_t *next;
     gs_id font_id;
-    int num_chars;		/* safety purpose only */
-    int num_widths;		/* safety purpose only */
+    int num_chars;                /* safety purpose only */
+    int num_widths;                /* safety purpose only */
     struct pdf_font_resource_s *pdfont;
     byte *glyph_usage;
-    double *real_widths;	/* [count] (not used for Type 0) */
-    gx_device_pdf *pdev;	/* For pdf_remove_font_cache_elem */
+    double *real_widths;        /* [count] (not used for Type 0) */
+    gx_device_pdf *pdev;        /* For pdf_remove_font_cache_elem */
 };
 
 #define private_st_pdf_font_cache_elem()\
@@ -360,7 +360,7 @@ struct pdf_font_cache_elem_s {
  * immediately when it is generated.
  */
 typedef struct pdf_viewer_state_s {
-    int transfer_not_identity;	/* bitmask */
+    int transfer_not_identity;        /* bitmask */
     gs_id transfer_ids[4];
     float opacity_alpha; /* state.opacity.alpha */
     float shape_alpha; /* state.shape.alpha */
@@ -389,22 +389,22 @@ typedef struct pdf_viewer_state_s {
  * a contents stream accumulation mode (charproc, Type 1 pattern).
  */
 typedef struct pdf_substream_save_s {
-    pdf_context_t	context;
-    pdf_text_state_t	*text_state;
-    gx_path		*clip_path;
-    gs_id		clip_path_id;
-    int			vgstack_bottom;
-    stream		*strm;
-    cos_dict_t		*substream_Resources;
-    pdf_procset_t	procsets;
-    bool		skip_colors;
+    pdf_context_t        context;
+    pdf_text_state_t        *text_state;
+    gx_path                *clip_path;
+    gs_id                clip_path_id;
+    int                        vgstack_bottom;
+    stream                *strm;
+    cos_dict_t                *substream_Resources;
+    pdf_procset_t        procsets;
+    bool                skip_colors;
     pdf_resource_t      *font3;
-    pdf_resource_t	*accumulating_substream_resource;
-    bool		charproc_just_accumulated;
-    bool		accumulating_a_global_object;
+    pdf_resource_t        *accumulating_substream_resource;
+    bool                charproc_just_accumulated;
+    bool                accumulating_a_global_object;
     pdf_resource_t      *pres_soft_mask_dict;
-    gs_const_string		objname;
-    int			last_charpath_op;
+    gs_const_string                objname;
+    int                        last_charpath_op;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
@@ -419,7 +419,7 @@ typedef struct pdf_substream_save_s {
 
 typedef enum {
     pdf_compress_none,
-    pdf_compress_LZW,	/* not currently used, thanks to Unisys */
+    pdf_compress_LZW,        /* not currently used, thanks to Unisys */
     pdf_compress_Flate
 } pdf_compression_type;
 
@@ -461,13 +461,13 @@ struct gx_device_pdf_s {
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
     bool HaveStrokeColor;      /* PS2WRITE only. */
-    bool ProduceDSC;	       /* PS2WRITE only. */
+    bool ProduceDSC;               /* PS2WRITE only. */
     bool HaveTransparency;
     bool PatternImagemask; /* The target viewer|printer handles imagemask
                               with pattern color. */
-    bool PDFX;		   /* Generate PDF/X */
-    bool PDFA;		   /* Generate PDF/A */
-    bool AbortPDFAX;	    /* Abort generation of PDFA or X, produce regular PDF */
+    bool PDFX;                   /* Generate PDF/X */
+    bool PDFA;                   /* Generate PDF/A */
+    bool AbortPDFAX;            /* Abort generation of PDFA or X, produce regular PDF */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
                               that the target viewer|printer can handle. */
     long MaxViewerMemorySize;
@@ -500,7 +500,7 @@ struct gx_device_pdf_s {
     int overprint_mode;
     gs_id halftone_id;
     gs_id transfer_ids[4];
-    int transfer_not_identity;	/* bitmask */
+    int transfer_not_identity;        /* bitmask */
     gs_id black_generation_id, undercolor_removal_id;
     /* Following are set when device is opened. */
     pdf_compression_type compression;
@@ -549,13 +549,13 @@ struct gx_device_pdf_s {
     pdf_context_t context;
     long contents_length_id;
     long contents_pos;
-    pdf_procset_t procsets;	/* used on this page */
+    pdf_procset_t procsets;        /* used on this page */
     pdf_text_data_t *text;
     pdf_text_rotation_t text_rotation;
 #define initial_num_pages 50
     pdf_page_t *pages;
     int num_pages;
-    ulong used_mask;		/* for where_used: page level = 1 */
+    ulong used_mask;                /* for where_used: page level = 1 */
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
     /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
     pdf_resource_t *cs_Patterns[5];
@@ -628,7 +628,7 @@ struct gx_device_pdf_s {
      */
     pdf_viewer_state vgstack[11];
     int vgstack_depth;
-    int vgstack_bottom;		 /* Stack bottom for the current substream. */
+    int vgstack_bottom;                 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
     bool vg_initial_set;
 
@@ -657,6 +657,8 @@ struct gx_device_pdf_s {
     bool charproc_just_accumulated; /* A flag for controlling
                         the glyph variation recognition.
                         Used only with uncached charprocs. */
+    bool PS_accumulator; /* A flag to determine whether a given
+                         accumulator is for a PostScript type 3 font or not. */
     bool accumulating_a_global_object; /* ps2write only.
                         Accumulating a global object (such as a named Form,
                         so that resources used in it must also be global.
@@ -742,7 +744,7 @@ struct gx_device_pdf_s {
    NUM_RESOURCE_TYPES * NUM_RESOURCE_CHAINS /* resources[].chains[] */ +\
    MAX_OUTLINE_DEPTH * 2 /* outline_levels[].{first,last}.action */
 
-#define private_st_device_pdfwrite()	/* in gdevpdf.c */\
+#define private_st_device_pdfwrite()        /* in gdevpdf.c */\
   gs_private_st_composite_final(st_device_pdfwrite, gx_device_pdf,\
     "gx_device_pdf", device_pdfwrite_enum_ptrs, device_pdfwrite_reloc_ptrs,\
     device_pdfwrite_finalize)
@@ -1017,7 +1019,7 @@ void pdf_remove_masked_image_converter(gx_device_pdf *pdev, pdf_lcvd_t *cvd, boo
 
 /* ------ Miscellaneous output ------ */
 
-#define PDF_MAX_PRODUCER 200	/* adhoc */
+#define PDF_MAX_PRODUCER 200        /* adhoc */
 /* Generate the default Producer string. */
 void pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER]);
 
@@ -1079,10 +1081,10 @@ typedef struct pdf_data_writer_s {
  * the << and any desired dictionary keys.
  */
 #define DATA_STREAM_NOT_BINARY 0  /* data are text, not binary */
-#define DATA_STREAM_BINARY 1	/* data are binary */
-#define DATA_STREAM_COMPRESS 2	/* OK to compress data */
-#define DATA_STREAM_NOLENGTH 4	/* Skip the length reference and filter names writing. */
-#define DATA_STREAM_ENCRYPT  8	/* Encrypt data. */
+#define DATA_STREAM_BINARY 1        /* data are binary */
+#define DATA_STREAM_COMPRESS 2        /* OK to compress data */
+#define DATA_STREAM_NOLENGTH 4        /* Skip the length reference and filter names writing. */
+#define DATA_STREAM_ENCRYPT  8        /* Encrypt data. */
 int pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
                           int options, gs_id object_id);
 int pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
@@ -1276,8 +1278,8 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 /* Start charproc accumulation for a Type 3 font. */
 int pdf_start_charproc_accum(gx_device_pdf *pdev);
 /* Install charproc accumulator for a Type 3 font. */
-int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
-                gs_text_cache_control_t control, gs_char ch);
+int pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, double *pw, int narg,
+                gs_text_cache_control_t control, gs_char ch, bool scale_100);
 /* Complete charproc accumulation for aType 3 font. */
 int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_pairs_t *cgp,
                        gs_glyph glyph, gs_char output_char_code, const gs_const_string *gnstr);

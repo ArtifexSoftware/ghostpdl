@@ -172,7 +172,7 @@ static void
 hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 {	/* The way the code is written requires FontMatrix = identity. */
         gs_make_identity(&pfont->FontMatrix);
-        pfont->FontType = ft_user_defined;
+        pfont->FontType = ft_GL2_stick_user_defined;
         pfont->PaintType = 1;		/* stroked fonts */
         pfont->BitmapWidths = false;
         pfont->ExactSize = fbit_use_outlines;

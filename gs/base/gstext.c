@@ -242,6 +242,8 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
        to compute a text width.
        Note : FontType 3 throws error in setcachedevice. */
     if (pgs->font->FontType != ft_user_defined &&
+        pgs->font->FontType != ft_GL2_stick_user_defined &&
+        pgs->font->FontType != ft_PCL_user_defined &&
         pgs->font->FontMatrix.xx == 0 && pgs->font->FontMatrix.xy == 0 &&
         pgs->font->FontMatrix.yx == 0 && pgs->font->FontMatrix.yy == 0)
         return_error(gs_error_undefinedresult); /* sic! : CPSI compatibility */
