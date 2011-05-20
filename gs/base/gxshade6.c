@@ -893,7 +893,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
     fixed xright = (swap_axes ? pfs->rect.q.y : pfs->rect.q.x);
     vd_save;
 
-    if (ybot > ytop)
+    if (ybot >= ytop)
         return 0;
 #   if NOFILL_TEST
         if (dbg_nofill)
