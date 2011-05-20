@@ -158,11 +158,6 @@ gx_lookup_cached_char(const gs_font * pfont, const cached_fm_pair * pair,
                       (ulong) cc, cc_depth(cc), (ulong) glyph, wmode);
             return cc;
         }
-/*        eprintf6("code = %d, cc->code = %d. pair = %x, cc->pair = %x. wmode = %d, cc->wmode = %d\n",
-            glyph, cc->code, pair, cc->pair, wmode, cc->wmode);
-        eprintf4("subpix.x = %d, cc->subpix.x = %d. subpix.y = %d, cc->subpix.y = %d\n",
-            subpix_origin->x, subpix_origin->y, cc->subpix_origin.x, cc->subpix_origin.y);
-        eprintf2("depth = %d, cc->depth = %d.\n", depth, cc->head.depth);*/
         chi++;
     }
     if_debug3('K', "[K]not found: glyph=0x%lx, wmode=%d, depth=%d\n",

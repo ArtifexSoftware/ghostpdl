@@ -2897,10 +2897,8 @@ pdf_text_process(gs_text_enum_t *pte)
             if (code < 0)
                 return code;
 
-            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7))) {
-//                eprintf1("Glyph reused %d\n", cdata[pte->index]);
+            if (pdfont->u.simple.s.type3.cached[cdata[pte->index] >> 3] & (0x80 >> (cdata[pte->index] & 7)))
                 early_accumulator = 0;
-            }
             else
                 early_accumulator = 1;
         }
@@ -2963,7 +2961,7 @@ pdf_text_process(gs_text_enum_t *pte)
                  * makes sure that when we make the CTM into the identity it
                  * affects both.
                  */
-                psenum.pgs = psenum.pis;
+                psenum.pgs = (gs_state *)psenum.pis;
                 /* Save the current FontMatrix */
                 savem = pgs->font->FontMatrix;
                 /* Make the FontMatrix the identity otherwise we will apply
@@ -3078,8 +3076,6 @@ pdf_text_process(gs_text_enum_t *pte)
 
                     /* Finally, dispose of the device, which we don't actually need */
                     gx_device_retain((gx_device *)dev, false);
-//                    eprintf3("Created cache entry. cc->code = %d, cc->pair = %x, cc->wmode = %d\n",
-//                        cc->code, cc->pair, cc->wmode);
                 }
                 pte_default->procs = save_procs;
                 size = pte->text.size - pte->index;
