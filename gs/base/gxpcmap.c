@@ -409,6 +409,9 @@ pattern_accum_open(gx_device * dev)
         padev->transbuff->mem = NULL;
         padev->transbuff->pdev14 = NULL;
         padev->transbuff->fill_trans_buffer = NULL;
+        /* RJW: Serves as an indication that padev->transbuff is
+         * uninitialised. FIXME: Check with MJV. */
+        padev->transbuff->n_chan = 0;
     } else {
         padev->transbuff = NULL;
     }
@@ -441,7 +444,7 @@ pattern_accum_open(gx_device * dev)
                best just to keep the data in that form */
             gx_device_set_target((gx_device_forward *)padev, target);
         } else {
-        switch (pinst->template.PaintType) {
+            switch (pinst->template.PaintType) {
             case 2:             /* uncolored */
                 gx_device_set_target((gx_device_forward *)padev, target);
                 break;
@@ -463,8 +466,8 @@ pattern_accum_open(gx_device * dev)
                     gx_device_set_target((gx_device_forward *)padev,
                                          (gx_device *)bits);
                 }
+            }
         }
-    }
     }
     if (code < 0) {
         if (bits != 0)
@@ -765,8 +768,9 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 
             if ( ctile->ttrans->pdev14 == NULL) {
                 /* This can happen if we came from the clist */
-                gs_free_object(ctile->ttrans->mem ,ctile->ttrans->transbytes,
-                               "free_pattern_cache_entry(transbytes)");
+                if (ctile->ttrans->mem != NULL)
+                    gs_free_object(ctile->ttrans->mem ,ctile->ttrans->transbytes,
+                                   "free_pattern_cache_entry(transbytes)");
                 gs_free_object(mem,ctile->ttrans->fill_trans_buffer,
                                 "free_pattern_cache_entry(fill_trans_buffer)");
                 ctile->ttrans->transbytes = NULL;

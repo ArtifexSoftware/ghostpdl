@@ -231,6 +231,10 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     byte *composed_ptr = NULL;
 #endif
 
+    /* Spot uninitialised tiles. FIXME: Check with MJV. */
+    if ((tos->n_chan == 0) || (nos->n_chan == 0))
+        return;
+
     rect_merge(nos->bbox, tos->bbox);
 
     if_debug6('v', "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag =  bm = %d\n",
