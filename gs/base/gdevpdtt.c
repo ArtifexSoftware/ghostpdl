@@ -2942,16 +2942,37 @@ pdf_text_process(gs_text_enum_t *pte)
         }
         if (early_accumulator) {
             if (cdata[pte->index] <= 255) {
+                /* The enumerator is created in pdf_default_text_begin and *is*
+                 * a show enumerator, so this is safe. We need to update the
+                 * graphics state pointer below which is why we need this.
+                 */
+                gs_show_enum psenum = *(gs_show_enum *)pte;
                 gs_state *pgs = (gs_state *)penum->pis;
                 gs_text_enum_procs_t const *save_procs = pte_default->procs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
                 void (*save_proc)(gx_device *, gs_matrix *) = pdev->procs.get_initial_matrix;
+                extern_st(st_gs_show_enum);
+                gs_matrix m, savem;
 
                 special_procs.set_cache = pdf_text_set_cache;
                 pte_default->procs = &special_procs;
 
                 /* charproc completion will restore a gstate */
                 gs_gsave(pgs);
+                /* Assigning the imager state pointer to the graphics state pointer
+                 * makes sure that when we make the CTM into the identity it
+                 * affects both.
+                 */
+                psenum.pgs = psenum.pis;
+                /* Save the current FontMatrix */
+                savem = pgs->font->FontMatrix;
+                /* Make the FontMatrix the identity otherwise we will apply
+                 * it twice, once in the glyph description and again in the
+                 * text matrix.
+                 */
+                gs_make_identity(&m);
+                pgs->font->FontMatrix = m;
+
                 pgs->char_tm_valid = 0;
                 pgs->char_tm.txy_fixed_valid = 0;
                 pgs->current_point.x = pgs->current_point.y = 0;
@@ -2964,8 +2985,15 @@ pdf_text_process(gs_text_enum_t *pte)
                 if (code < 0)
                     return code;
 
+                /* We can't capture more than one glyph at a time, so amek this one
+                 * otherwise the gs_text_process would try to render all the glyphs
+                 * in the string.
+                 */
                 if (pte->text.size != 1)
                     pte_default->text.size = pte->index + 1;
+                /* We need a special 'initial matrix' method for stick fonts,
+                 * See pdf_type3_get_initial_matrix above.
+                 */
                 pdev->procs.get_initial_matrix = pdf_type3_get_initial_matrix;
 
                 pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
@@ -2973,6 +3001,11 @@ pdf_text_process(gs_text_enum_t *pte)
                 pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
                 pdev->charproc_just_accumulated = false;
 
+                /* Restore the saved FontMatrix, so that it gets applied
+                 * as part of the text matrix
+                 */
+                pgs->font->FontMatrix = savem;
+                /* Restore the default 'initial matrix' mathod. */
                 pdev->procs.get_initial_matrix = save_proc;
                 penum->returned.current_char = pte_default->returned.current_char;
                 penum->returned.current_glyph = pte_default->returned.current_glyph;
