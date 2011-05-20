@@ -721,14 +721,13 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
 {
     pdf_font_descriptor_t *pfd = pdfont->FontDescriptor;
     pdf_base_font_t *pbfont = pfd->base_font;
-    int num_CIDs = pbfont->num_glyphs;
-    int length_CIDSet = (num_CIDs + 7) / 8;
-    int length_CIDToGIDMap = num_CIDs * sizeof(ushort);
     gs_font *pfont = (gs_font *)pbfont->copied;
     gs_char ch;
     /* Save the simple font descriptor data because CID font data overlap them. */
     int FirstChar = pdfont->u.simple.FirstChar, LastChar = pdfont->u.simple.LastChar;
     pdf_encoding_element_t *Encoding = pdfont->u.simple.Encoding;
+    int length_CIDSet = ((LastChar + 1)+ 7) / 8;
+    int length_CIDToGIDMap = (LastChar + 1) * sizeof(ushort);
 
     pfd->FontType = ft_CID_TrueType;
     pdfont->u.simple.Encoding = NULL; /* Drop due to overlapping against a garbager problem. */
