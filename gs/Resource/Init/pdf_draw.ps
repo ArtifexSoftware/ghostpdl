@@ -672,6 +672,14 @@ def
   /Indexed  //DeviceGray def
 currentdict end readonly def
 
+% <colorspace> csncomp <n>
+/csncomp {
+  dup dup type /arraytype eq { 0 oget } if
+  //csncompdict exch get exec
+} bdef
+
+% currentdict /csncompdict undef
+
 /ICCBased-resolve {
   PDFfile fileposition exch
   dup dup 1 oget

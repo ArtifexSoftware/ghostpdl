@@ -2050,7 +2050,7 @@ currentdict /PDF2PS_matrix_key undef
 %
 % If any color space substitution is used, and the current color space is a
 % device dependent color space, make sure the current color space is updated.
-% There is an optimization in the setcolorspace pseudo-operator that does
+% There is an optimization in the setcolorspace operator that does
 % nothing if both the current and operand color spaces are the same. For
 % PostScript this optimization is disabled if the UseCIEColor page device
 % parameter is true. This is not the case for PDF, as performance suffers
@@ -2059,34 +2059,54 @@ currentdict /PDF2PS_matrix_key undef
 % is a device dependent color space, we must make sure to "transition" the
 % current color space.
 %
-/pdfshowpage_setcspacesub
-  {
-    //false
-      { /DefaultGray /DefaultRGB /DefaultCMYK }
-      {
-        dup 3 index /ColorSpace //rget exec
-          { resolvecolorspace /ColorSpace defineresource pop }
-          { pop }
-        ifelse
-      }
-    forall
+/pdfshowpage_setcspacesub  {
+  //false
+  /DefaultGray 2 index /ColorSpace //rget exec {
+    resolvecolorspace dup csncomp 1 eq {
+      /DefaultGray exch /ColorSpace defineresource pop
+      pop //true
+    } {
+      pop 
+      (   **** Warning: ignoring invalid /DefaultGray color space.\n)
+      pdfformaterror
+    } ifelse
+  } if
 
-    % if using color space substitution, "transition" the current color space
-      {
-        currentcolorspace dup length 1 eq   % always an array
-          {
-            0 get
-            dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK or
-              { /Pattern setcolorspace setcolorspace }
-              { pop }
-            ifelse
-          }
-          { pop }
-        if
-      }
-    if
-  }
-bind def
+  /DefaultRGB 2 index /ColorSpace //rget exec {
+    resolvecolorspace dup csncomp 3 eq {
+      /DefaultRGB exch /ColorSpace defineresource pop
+      pop //true
+    } {
+      pop
+      (   **** Warning: ignoring invalid /DefaultCMYK color space.\n)
+      pdfformaterror
+    } ifelse
+  } if
+
+  /DefaultCMYK 2 index /ColorSpace //rget exec {
+    resolvecolorspace dup csncomp 4 eq {
+      /DefaultCMYK exch /ColorSpace defineresource pop
+      pop //true
+    } {
+      pop
+      (   **** Warning: ignoring invalid /DefaultCMYK color space.\n)
+      pdfformaterror
+    } ifelse
+  } if
+
+  { % if using color space substitution, "transition" the current color space
+    currentcolorspace dup length 1 eq {  % always an array
+      0 get
+      dup /DeviceGray eq 1 index /DeviceRGB eq or 1 index /DeviceCMYK eq or { 
+        /Pattern setcolorspace setcolorspace 
+      } { 
+        pop 
+      } ifelse
+    } { 
+      pop 
+    } ifelse
+  } if
+} bind def
 
 % Write OutputIntents to device if the device handles it
 /writeoutputintents {
