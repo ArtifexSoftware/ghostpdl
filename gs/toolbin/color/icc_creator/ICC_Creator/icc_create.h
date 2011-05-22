@@ -37,5 +37,7 @@ int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab, bool cpsi_mode, ucrb
 int create_psgray_profile(TCHAR FileName[]);
 int  create_gray_threshold_profile(TCHAR FileName[], float threshold);
 int  create_rgb_threshold_profile(TCHAR FileName[], float threshold);
+int create_effect_profile(TCHAR FileName[], ucrbg_t *effect_data, char desc_ptr[]);
+
 
 #endif

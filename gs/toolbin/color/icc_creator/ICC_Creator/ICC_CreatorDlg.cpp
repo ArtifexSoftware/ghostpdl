@@ -62,6 +62,7 @@ END_MESSAGE_MAP()
 
 CICC_CreatorDlg::CICC_CreatorDlg(CWnd* pParent /*=NULL*/)
 	: CDialog(CICC_CreatorDlg::IDD, pParent)
+        , m_effect_desc(_T(""))
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -70,6 +71,8 @@ void CICC_CreatorDlg::DoDataExchange(CDataExchange* pDX)
 {
     CDialog::DoDataExchange(pDX);
     DDX_Control(pDX, IDC_EDITTHRESH, m_graythreshold);
+    DDX_Text(pDX, IDC_EDIT1, m_effect_desc);
+    DDX_Control(pDX, IDC_EDIT1, m_desc_effect_str);
 }
 
 BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
@@ -90,6 +93,9 @@ BEGIN_MESSAGE_MAP(CICC_CreatorDlg, CDialog)
         ON_EN_CHANGE(IDC_EDITTHRESH, &CICC_CreatorDlg::OnEnChangeEditthresh)
         ON_BN_CLICKED(IDC_PSTABLES, &CICC_CreatorDlg::OnBnClickedPstables)
         ON_BN_CLICKED(IDC_CHECK1, &CICC_CreatorDlg::OnBnClickedCheck1)
+        ON_BN_CLICKED(IDC_EFFECTTABLES2, &CICC_CreatorDlg::OnBnClickedEffecttables2)
+        ON_BN_CLICKED(IDC_EFFECTICC3, &CICC_CreatorDlg::OnBnClickedEffecticc3)
+        ON_EN_CHANGE(IDC_EDIT1, &CICC_CreatorDlg::OnEnChangeEdit1)
 END_MESSAGE_MAP()
 
 
@@ -131,8 +137,10 @@ BOOL CICC_CreatorDlg::OnInitDialog()
         this->m_colorant_names = NULL;  
         this->m_cpsi_mode = false;
         this->m_ucr_bg_data = NULL;
+        this->m_effect_data = NULL;
         this->SetDlgItemText(IDC_STATUS,_T("Ready."));
         this->m_floatthreshold_gray = 50;
+        this->m_effect_desc.Preallocate(0);
         this->m_graythreshold.SetWindowText(_T("50"));
 
         return TRUE;  // return TRUE  unless you set the focus to a control
@@ -621,8 +629,6 @@ void CICC_CreatorDlg::OnBnClickedPsicc()
         if (ok == 0)
             this->SetDlgItemText(IDC_STATUS,_T("Created PS CMYK Profile"));
     } 
-
-
 }
 
 void CICC_CreatorDlg::OnBnClickedGraythresh()
@@ -678,27 +684,35 @@ void CICC_CreatorDlg::OnEnChangeEditthresh()
         }
 }
 
-int CICC_CreatorDlg::ParseData(char pszInFile[]) {
+int CICC_CreatorDlg::ParseData(char pszInFile[], bool is_ucr) {
 
     FILE *fid = NULL;
     unsigned char num_read;
     char header[256];
     int r, g, b, c, m, y, k;
     int j;
+    ucrbg_t *data;
 
+    
     /* Allocate space for the data */
-    this->m_ucr_bg_data = (ucrbg_t*) malloc(sizeof(ucrbg_t));
-    if (this->m_ucr_bg_data == NULL) {
+    if (is_ucr) {
+        this->m_ucr_bg_data = (ucrbg_t*) malloc(sizeof(ucrbg_t));
+        data = this->m_ucr_bg_data;
+    } else {
+        this->m_effect_data = (ucrbg_t*) malloc(sizeof(ucrbg_t));
+        data = this->m_effect_data;
+    }
+    if (data == NULL) {
         return -1;
     }
-    this->m_ucr_bg_data->cyan = (unsigned char*) malloc(256);
-    this->m_ucr_bg_data->magenta = (unsigned char*) malloc(256);
-    this->m_ucr_bg_data->yellow = (unsigned char*) malloc(256);
-    this->m_ucr_bg_data->black = (unsigned char*) malloc(256);
-    if (this->m_ucr_bg_data->cyan == NULL ||
-        this->m_ucr_bg_data->magenta == NULL ||
-        this->m_ucr_bg_data->yellow == NULL ||
-        this->m_ucr_bg_data->black == NULL) {
+    data->cyan = (unsigned char*) malloc(256);
+    data->magenta = (unsigned char*) malloc(256);
+    data->yellow = (unsigned char*) malloc(256);
+    data->black = (unsigned char*) malloc(256);
+    if (data->cyan == NULL ||
+        data->magenta == NULL ||
+        data->yellow == NULL ||
+        data->black == NULL) {
         return -1;
     }
     fid = fopen(pszInFile, "r");
@@ -719,10 +733,10 @@ int CICC_CreatorDlg::ParseData(char pszInFile[]) {
         if (y < 0) y = 0;
         if (k > 255) k = 255;
         if (k < 0) k = 0;
-        this->m_ucr_bg_data->cyan[j] = (unsigned char) c;
-        this->m_ucr_bg_data->magenta[j] = (unsigned char) m;
-        this->m_ucr_bg_data->yellow[j] = (unsigned char) y;
-        this->m_ucr_bg_data->black[j] = (unsigned char) k;
+        data->cyan[j] = (unsigned char) c;
+        data->magenta[j] = (unsigned char) m;
+        data->yellow[j] = (unsigned char) y;
+        data->black[j] = (unsigned char) k;
     }
     fclose(fid);
     return(0);
@@ -748,7 +762,7 @@ void CICC_CreatorDlg::OnBnClickedPstables()
     ofn.lpstrFile = szFile;
     ofn.nMaxFile = MAX_PATH;
     if (IDOK == GetOpenFileName(&ofn)) {
-        returnval = ParseData(szFile);
+        returnval = ParseData(szFile, true);
         if (returnval == 0) {
             this->SetDlgItemText(IDC_STATUS,"Data Loaded OK");
         } else {
@@ -769,4 +783,79 @@ void CICC_CreatorDlg::OnBnClickedCheck1()
     } else {
         this->m_cpsi_mode = true;
     }
+}
+
+void CICC_CreatorDlg::OnBnClickedEffecttables2()
+{
+    int returnval;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize = sizeof(OPENFILENAME);
+    ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_HIDEREADONLY;
+    ofn.hwndOwner = this->m_hWnd;
+
+    ofn.lpstrFilter = _T("Supported Files Types(*.txt)\0*.txt\0TXT Files (*.)\0*.TXT\0\0");
+
+    ofn.lpstrTitle = _T("Load Table Data");
+    ofn.lpstrFile = szFile;
+    ofn.nMaxFile = MAX_PATH;
+    if (IDOK == GetOpenFileName(&ofn)) {
+        returnval = ParseData(szFile, false);
+        if (returnval == 0) {
+            this->SetDlgItemText(IDC_STATUS,"Data Loaded OK");
+        } else {
+            this->SetDlgItemText(IDC_STATUS,"Data Load Failed!");
+            free(this->m_effect_data->cyan);
+            free(this->m_effect_data->magenta);
+            free(this->m_effect_data->yellow);
+            free(this->m_effect_data->black);
+            free(this->m_effect_data);
+            this->m_effect_data = NULL;
+        }
+    }
+}
+
+void CICC_CreatorDlg::OnBnClickedEffecticc3()
+{
+    int ok;
+    TCHAR szFile[MAX_PATH];
+    ZeroMemory(szFile, MAX_PATH);
+    OPENFILENAME ofn;
+    char des_ptr[25];
+    int data;
+
+    ZeroMemory(&ofn, sizeof(OPENFILENAME));
+    ofn.lStructSize	= sizeof(OPENFILENAME);
+    ofn.Flags		= OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST |OFN_HIDEREADONLY;
+    ofn.hwndOwner	= this->m_hWnd;
+    ofn.lpstrFilter	= _T("Supported Files Types(*.icc)\0*.icc;*.ICC\0\0");
+    ofn.lpstrTitle	= _T("Save Effect Profile");
+    ofn.lpstrFile	= szFile;
+    ofn.nMaxFile	= MAX_PATH;
+
+    if (IDOK == GetSaveFileName(&ofn)) {
+	this->m_desc_effect_str.GetWindowTextA(des_ptr,24);
+        /* Get the description string */
+        ok = create_effect_profile(szFile, this->m_effect_data, des_ptr);
+        if (ok == 0)
+            this->SetDlgItemText(IDC_STATUS,_T("Created Effect Profile"));
+    } 
+}
+
+void CICC_CreatorDlg::OnEnChangeEdit1()
+{
+    // TODO:  If this is a RICHEDIT control, the control will not
+    // send this notification unless you override the CDialog::OnInitDialog()
+    // function and call CRichEditCtrl().SetEventMask()
+    // with the ENM_CHANGE flag ORed into the mask.
+
+    // TODO:  Add your control notification handler code here
+
+    int zz;
+
+    zz = 1;
+
+    return;
 }

@@ -1099,6 +1099,28 @@ color_rgb_to_cmyk(float r, float g, float b, float cmyk[4], ucrbg_t *ucr_data)
     }
 }
 
+void 
+luminance_to_cmyk(float lum, float cmyk[4], ucrbg_t *effect_data)
+{
+    int l_int;
+
+    if (effect_data == NULL) {
+	cmyk[0] = 0, cmyk[1] = 0, cmyk[2] = 0, cmyk[3] = 0;
+        return;
+    } else {
+        /* index and get the value */
+
+        l_int = ROUND(lum * 255.0);
+        if (l_int > 255) l_int = 255;
+        if (l_int < 0) l_int = 0;
+
+        cmyk[0] = effect_data->cyan[l_int]/255.0;
+        cmyk[1] = effect_data->magenta[l_int]/255.0;
+        cmyk[2] = effect_data->yellow[l_int]/255.0;
+        cmyk[3] = effect_data->black[l_int]/255.0;
+    }
+}
+
 static void
 create_cmyk2gray(unsigned short *table_data, int mlut_size, int num_samples)
 {
@@ -1411,6 +1433,149 @@ create_lab2cmyk(unsigned short *table_data, int mlut_size, int num_samples, ucrb
             }
         }
     }
+}
+
+static void
+create_xyz2cmyk_effect(unsigned short *table_data, int mlut_size, int num_samples, ucrbg_t *effect_data)
+{
+    int x,y,z,jj;
+    float xval,yval,zval;
+    unsigned short *buffptr = table_data;
+    float rgb_values[3];
+    float xyz[3], cmyk[4];
+    float luminance_float;
+
+    /* Step through the xyz indices, convert to RGB, 
+       then to CMYK then encode into 16 bit form */
+    for (x = 0; x < num_samples; x++) {
+        xval = (float) x / (float) (num_samples - 1);
+        for (y = 0; y < num_samples; y++) {
+            yval = (float) y / (float) (num_samples - 1);
+            for (z = 0; z < num_samples; z++) {
+                zval = (float) z / (float) (num_samples - 1);
+                xyz[0] = D50WhitePoint[0]*xval;
+                xyz[1] = D50WhitePoint[1]*yval;
+                xyz[2] = D50WhitePoint[2]*zval;
+                /* To RGB.  Using Inverse of AdobeRGB Mapping */
+                rgb_values[0] = xyz[0] * 1.96253 + xyz[1] * (-0.61068) + xyz[2] * (-0.34137);
+                rgb_values[1] = xyz[0] * (-0.97876) + xyz[1] * 1.91615 + xyz[2] * 0.03342;
+                rgb_values[2] = xyz[0] * 0.028693 + xyz[1] * (-0.14067) + xyz[2] * 1.34926;
+                /* Now RGB to Luminance CMYK */
+                luminance_float = rgb_values[0]*0.3 + rgb_values[1]*0.59 + rgb_values[2]*0.11;
+                luminance_to_cmyk(luminance_float, cmyk, effect_data);
+                /* Now store the CMYK value */                
+                for (jj = 0; jj < 4; jj++) {
+                    if (cmyk[jj] < 0) cmyk[jj] = 0;
+                    if (cmyk[jj] > 1) cmyk[jj] = 1;
+                    *buffptr ++= ROUND(cmyk[jj] * 65535);
+                }
+            }
+        }
+    }
+}
+
+/* Create a special effect profile for mapping from Luminance to a set of CMYK
+   valuse.  Useful for showing object based color management working */
+int create_effect_profile(TCHAR FileName[], ucrbg_t *effect_data, char desc_ptr[])
+{
+    icProfile iccprofile;
+    icHeader  *header = &(iccprofile.header);
+    int profile_size,k;
+    int num_tags;
+    gsicc_tag *tag_list;
+    int tag_offset = 0;
+    unsigned char *curr_ptr;
+    int last_tag;
+    icS15Fixed16Number temp_XYZ[3];
+    int tag_location;
+    int debug_catch = 1;
+    unsigned char *buffer;
+    int numout = 3;              /* Number of output colorants */
+    int tag_size;
+    int num_colors = 4;
+    int num_samples = 5;
+    int mlut_size_atob, mlut_size_btoa;
+    int numinentries = 2;        /* input 1-D LUT samples */
+    int numoutentries = 2;       /* output 1-D LUT samples */
+    unsigned short *table_data_AtoB, *table_data_BtoA;
+
+    /* Fill in the common stuff */
+    setheader_common(header);
+    header->pcs = icSigXYZData;
+    profile_size = HEADER_SIZE;
+    header->deviceClass = icSigOutputClass;
+    header->colorSpace = icSigCmykData;
+    num_tags = 6;  /* common (2) + ATOB0,BTOA0,bkpt,wtpt */   
+    tag_list = (gsicc_tag*) malloc(sizeof(gsicc_tag)*num_tags);
+    /* Let us precompute the sizes of everything and all our offsets */
+    profile_size += TAG_SIZE*num_tags;
+    profile_size += 4; /* number of tags.... */
+    last_tag = -1;
+    if (desc_ptr == NULL) {
+        init_common_tags(tag_list, num_tags, &last_tag, desc_pscmyk_name);
+    } else {
+        init_common_tags(tag_list, num_tags, &last_tag, desc_ptr);
+    }
+    init_tag(tag_list, &last_tag, icSigMediaWhitePointTag, XYZPT_SIZE);
+    init_tag(tag_list, &last_tag, icSigMediaBlackPointTag, XYZPT_SIZE);
+    /* Now the ATOB0 Tag */
+    mlut_size_atob = (int) pow((float) num_samples, (int) num_colors);
+    tag_size = 52+num_colors*numinentries*2+numout*numoutentries*2+mlut_size_atob*numout*2;
+    init_tag(tag_list, &last_tag, icSigAToB0Tag, tag_size);
+    /* Now the ATOB0 Tag.  numcolors and numout switch! */
+    mlut_size_btoa = (int) pow((float) num_samples, (int) numout);
+    tag_size = 52+num_colors*numinentries*2+numout*numoutentries*2+mlut_size_btoa*num_colors*2;
+    init_tag(tag_list, &last_tag, icSigBToA0Tag, tag_size);
+    for(k = 0; k < num_tags; k++) {
+        profile_size += tag_list[k].size;
+    }
+    /* Now we can go ahead and fill our buffer with the data */
+    buffer = (unsigned char*) malloc(profile_size);
+    curr_ptr = buffer;
+
+    /* The header */
+    header->size = profile_size;
+    copy_header(curr_ptr,header);
+    curr_ptr += HEADER_SIZE;
+    /* Tag table */
+    copy_tagtable(curr_ptr,tag_list,num_tags);
+    curr_ptr += TAG_SIZE*num_tags;
+    curr_ptr += 4;
+
+    /* Now the data.  Must be in same order as we created the tag table */
+    /* First the common tags */
+    if (desc_ptr == NULL) {
+        add_common_tag_data(curr_ptr, tag_list, desc_pscmyk_name);
+    } else {
+        add_common_tag_data(curr_ptr, tag_list, desc_ptr);
+    }
+    for (k = 0; k< NUMBER_COMMON_TAGS; k++) {
+        curr_ptr += tag_list[k].size;
+    }
+    tag_location = NUMBER_COMMON_TAGS;
+    /* White and black points */
+    get_XYZ_floatptr(temp_XYZ,(float*) &(D50WhitePoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    get_XYZ_floatptr(temp_XYZ,(float*) &(BlackPoint[0]));
+    add_xyzdata(curr_ptr,temp_XYZ);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Create the table data that we will stuff in */
+    table_data_AtoB = (unsigned short*) malloc(mlut_size_atob*sizeof(unsigned short)*numout);
+    create_cmyk2xyz(table_data_AtoB, mlut_size_atob, num_samples, false);
+    table_data_BtoA = (unsigned short*) malloc(mlut_size_btoa*sizeof(unsigned short)*num_colors);
+    create_xyz2cmyk_effect(table_data_BtoA, mlut_size_atob, num_samples, effect_data);
+    /* Now the ATOB0 */
+    add_tabledata(curr_ptr, (void*) table_data_AtoB, num_colors, num_samples, 1, 3, false);
+    curr_ptr += tag_list[tag_location].size;
+    tag_location++;
+    /* Now the BTOA0 */
+    add_tabledata(curr_ptr, (void*) table_data_BtoA, 3, num_samples, 1, num_colors, true);
+    /* Dump the buffer to a file for testing if its a valid ICC profile */
+    save_profile(buffer,FileName,profile_size);
+    return(0);
 }
 
 int create_pscmyk_profile(TCHAR FileName[], bool pcs_islab, bool cpsi_mode, ucrbg_t *ucr_data)

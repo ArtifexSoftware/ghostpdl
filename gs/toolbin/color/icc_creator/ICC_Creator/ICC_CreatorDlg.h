@@ -36,12 +36,13 @@ protected:
 
         int GetCIELAB(LPCTSTR lpszPathName);
         int GetNames(LPCTSTR lpszPathName);
-        int ParseData(char pszInFile[]);
+        int ParseData(char pszInFile[], bool is_ucr);
         int CreateICC(void);
         cielab_t *m_cielab;
         colornames_t *m_colorant_names;
         bool m_cpsi_mode;
         ucrbg_t *m_ucr_bg_data;
+        ucrbg_t *m_effect_data;
 
         int m_num_colorant_names;
         int m_num_icc_colorants;
@@ -71,4 +72,9 @@ public:
     float m_floatthreshold_gray;
     afx_msg void OnBnClickedPstables();
     afx_msg void OnBnClickedCheck1();
+    afx_msg void OnBnClickedEffecttables2();
+    afx_msg void OnBnClickedEffecticc3();
+    CString m_effect_desc;
+    afx_msg void OnEnChangeEdit1();
+    CEdit m_desc_effect_str;
 };
