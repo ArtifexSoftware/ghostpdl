@@ -663,9 +663,9 @@ def
   /DeviceCMYK { pop 4 } bdef
   /CIEBasedA //DeviceGray def
   /CIEBasedABC //DeviceRGB def
-  /CalGray { pop 1 } bdef
-  /CalRGB { pop 3 } bdef
-  /Lab { pop 3 } bdef
+  /CalGray //DeviceGray def
+  /CalRGB //DeviceRGB def
+  /Lab //DeviceRGB def
   /ICCBased { 1 oget /N oget } bdef
   /Separation //DeviceGray def
   /DeviceN { 1 oget length } bdef
@@ -678,7 +678,7 @@ currentdict end readonly def
   //csncompdict exch get exec
 } bdef
 
-% currentdict /csncompdict undef
+currentdict /csncompdict undef
 
 /ICCBased-resolve {
   PDFfile fileposition exch
@@ -783,9 +783,7 @@ currentdict end readonly def
                 % Stack: Length filepos /Indexed basespace hival lookupstream
         1 index 1 add
                 % Stack: Length filepos /Indexed basespace hival lookupstream len
-        3 index
-          dup dup type /arraytype eq { 0 get } if
-          //csncompdict exch get exec mul
+        3 index csncomp mul
         % Bring length of stream to top and copy
         8 -1 roll dup
         % copy calculated string length
@@ -1872,9 +1870,7 @@ drawopdict begin
     } {
       Width
       1 index /ImageMask knownoget dup { and } if not {
-        1 index /ColorSpace oget
-        dup type /arraytype eq { 0 oget } if
-        //csncompdict exch get exec
+        1 index /ColorSpace oget csncomp mul
         BitsPerComponent mul
       } if
       7 add 8 idiv Height mul
