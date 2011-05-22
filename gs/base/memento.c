@@ -71,6 +71,9 @@ static struct {
     int            breakAt;
     int            failAt;
     int            failing;
+    int            squeezeAt;
+    int            squeezing;
+    int            squeezed;
     size_t         alloc;
     size_t         peakAlloc;
     size_t         totalAlloc;
@@ -335,6 +338,9 @@ static void Memento_fin(void)
         Memento_listBlocks();
         Memento_breakpoint();
     }
+    if (globals.squeezed) {
+        fprintf(stderr, "Memory squeezing @ %d complete\n", globals.squeezed);
+    }
 }
 
 static void Memento_inited(void)
@@ -349,7 +355,7 @@ static void Memento_init(void)
     globals.inited    = 1;
     globals.used.head = NULL;
     globals.free.head = NULL;
-    globals.sequence  = 1;
+    globals.sequence  = 0;
     globals.countdown = 1024;
 
     env = getenv("MEMENTO_FAILAT");
@@ -363,6 +369,9 @@ static void Memento_init(void)
     env = getenv("MEMENTO_PARANOIDAT");
     globals.paranoidAt = (env ? atoi(env) : 0);
 
+    env = getenv("MEMENTO_SQUEEZEAT");
+    globals.squeezeAt = (env ? atoi(env) : 0);
+    
     atexit(Memento_fin);
 
     Memento_inited();
@@ -370,17 +379,18 @@ static void Memento_init(void)
 
 static void Memento_event(void)
 {
-    if ((globals.sequence == globals.paranoidAt) &&
-        (globals.sequence != 0)) {
+    globals.sequence++;
+    if ((globals.sequence >= globals.paranoidAt) && (globals.paranoidAt != 0)) {
         globals.paranoia = 1;
         globals.countdown = 1;
     }
-    if ((globals.sequence == globals.failAt) &&
-        (globals.sequence != 0)) {
+    if ((globals.sequence >= globals.failAt) && (globals.failAt != 0)) {
         globals.failing = 1;
     }
+    if ((globals.sequence >= globals.squeezeAt) && (globals.squeezeAt != 0)) {
+        globals.squeezing = 1;
+    }
 
-    globals.sequence++;
     if (--globals.countdown == 0) {
         Memento_checkAllMemory();
         globals.countdown = globals.paranoia;
@@ -396,6 +406,67 @@ int Memento_breakAt(int event)
     return event;
 }
 
+#ifdef MEMENTO_HAS_FORK
+#include <unistd.h>
+#include <sys/syslimits.h>
+#include <sys/wait.h>
+#include <signal.h>
+
+/* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
+int stashed_map[OPEN_MAX];
+
+static void Memento_signal(void)
+{
+    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezed);
+    exit(1);
+}
+
+static void squeeze(void)
+{
+    pid_t pid;
+    int i, status;
+    
+    fprintf(stderr, "Memory squeezing @ %d\n", globals.sequence);
+
+    /* When we fork below, the child is going to snaffle all our file pointers
+     * and potentially corrupt them. Let's make copies of all of them before
+     * we fork, so we can restore them when we restart. */
+    for (i = 0; i < OPEN_MAX; i++) {
+        if (stashed_map[i] == 0) {
+            int j = dup(i);
+            stashed_map[j] = i+1;
+        }
+    }
+
+    pid = fork();
+    if (pid == 0) {
+        /* Child */
+        signal(SIGSEGV, Memento_signal);
+        /* We must fail all new allocations from here */
+        globals.failing  = 1;
+        globals.squeezed = globals.sequence;
+        return;
+    }
+
+    /* Wait for pid to finish */
+    waitpid(pid, &status, 0);
+    
+    /* Put the files back */
+    for (i = 0; i < OPEN_MAX; i++) {
+        if (stashed_map[i] != 0) {
+            dup2(i, stashed_map[i]-1);
+            close(i);
+            stashed_map[i] = 0;
+        }
+    }
+}
+#else
+void squeeze(void) 
+{
+    fprintf(stderr, "Memento memory squeezing disabled as no fork!\n");
+}
+#endif
+
 void *Memento_malloc(size_t s)
 {
     Memento_BlkHeader *memblk;
@@ -405,6 +476,9 @@ void *Memento_malloc(size_t s)
         Memento_init();
 
     Memento_event();
+
+    if ((globals.squeezing) && (!globals.squeezed))
+        squeeze();
 
     if (globals.failing)
         return NULL;
@@ -417,6 +491,7 @@ void *Memento_malloc(size_t s)
     memblk = MEMENTO_UNDERLYING_MALLOC(smem);
     if (memblk == NULL)
         return NULL;
+    
     globals.alloc      += s;
     globals.totalAlloc += s;
     if (globals.peakAlloc < globals.alloc)
@@ -517,6 +592,8 @@ void *Memento_realloc(void *blk, size_t newsize)
         Memento_free(blk);
         return NULL;
     }
+    if ((globals.squeezing) && (!globals.squeezed))
+        squeeze();
     if (globals.failing)
         return NULL;
 
@@ -694,7 +771,7 @@ static int Memento_containsAddr(Memento_BlkHeader *b,
         data->flags = 1;
         return 1;
     }
-    if ((b <= data->addr) &&
+    if (((void *)b <= data->addr) &&
         (MEMBLK_TOBLK(b) > data->addr)) {
         data->blk = b;
         data->flags = 2;
