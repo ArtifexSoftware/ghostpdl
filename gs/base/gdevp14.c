@@ -1535,12 +1535,6 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
             return 0;
         }
     }
-#if 0
-    /* Set graphics state device to target, so that image can set up
-       the color mapping properly. */
-    rc_increment(pdev);
-    gs_setdevice_no_init(pgs, target);
-#endif
     /*
      * Set color space to either Gray, RGB, or CMYK in preparation for sending
      * an image.
@@ -1633,11 +1627,6 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     }
     gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
     info->procs->end_image(info, true);
-#if 0
-    /* Restore device in graphics state.*/
-    gs_setdevice_no_init(pgs, (gx_device*) pdev);
-    rc_decrement_only(pdev, "pdf_14_put_image");
-#endif
     /* This will also decrement the device profile */
     rc_decrement_only_cs(pcs, "pdf14_put_image");
     return code;
@@ -1861,11 +1850,6 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
         }
         gs_pdf14_device_copy_params(dev, tdev);
     }
-#if 0
-    put_param_compressed_color_list_elem(pdev, plist, &pret_comp_list,
-                  PDF14CompressedColorListParamName, TOP_ENCODED_LEVEL);
-    put_param_pdf14_spot_names(dev, &pdev->devn_params, plist);
-#endif
     return code;
 }
 
@@ -2807,64 +2791,6 @@ pdf14_determine_default_blend_cs(gx_device * pdev)
     }
 }
 
-#if 0
-static void
-pdf14_init_icc_name_struct(gx_device *target, pdf14_device *proto, 
-                           cmm_dev_profile_t *dev_profile,
-                           pdf14_default_colorspace_t dev_cs) 
-{
-    cmm_dev_profile_name_array_t *target_pro = target->color_info.icc_locations;
-    cmm_dev_profile_name_t *proto_name;
-    gs_memory_t *mem;
-
-    /* Check if the target device has a structure and that it has a default.
-       It if does just use that one */
-    if (target_pro != NULL && target_pro->file_names[0].name != '\0'
-        && dev_profile != NULL && 
-        dev_profile->device_profile[0]->data_cs != gsCIELAB) {
-        proto->color_info.icc_locations = target->color_info.icc_locations;
-        rc_increment(proto->color_info.icc_locations);
-    } else {
-        /* target is not set up with a proper color space create a new one */
-        proto->color_info.icc_locations = gsicc_new_dev_icc_names(target->memory);
-        proto_name = proto->color_info.icc_locations->file_names;
-        mem = proto->color_info.icc_locations->memory;
-        /* Just set the default one */
-        switch (dev_cs) {
-            case PDF14_DeviceGray:
-                proto_name[0].name = 
-                    (char *) gs_alloc_bytes(mem, sizeof(DEFAULT_GRAY_ICC)+1,
-                                            "pdf14_init_icc_name_struct");
-                strcpy(proto_name[0].name, DEFAULT_GRAY_ICC);
-             break;
-            case PDF14_DeviceRGB:
-                proto_name[0].name = 
-                    (char *) gs_alloc_bytes(mem, sizeof(DEFAULT_RGB_ICC)+1,
-                                            "pdf14_init_icc_name_struct");
-                strcpy(proto_name[0].name, DEFAULT_RGB_ICC);
-             break;
-            case PDF14_DeviceCMYK:
-                proto_name[0].name = 
-                    (char *) gs_alloc_bytes(mem, sizeof(DEFAULT_CMYK_ICC)+1,
-                                            "pdf14_init_icc_name_struct");
-                strcpy(proto_name[0].name, DEFAULT_CMYK_ICC);
-             break;
-            case PDF14_DeviceCMYKspot:
-                proto_name[0].name = 
-                    (char *) gs_alloc_bytes(mem, sizeof(DEFAULT_CMYK_ICC)+1,
-                                            "pdf14_init_icc_name_struct");
-                strcpy(proto_name[0].name, DEFAULT_CMYK_ICC);
-             break;
-            case PDF14_DeviceCustom:
-                proto_name[0].name = 
-                    (char *) gs_alloc_bytes(mem, sizeof(DEFAULT_CMYK_ICC)+1,
-                                            "pdf14_init_icc_name_struct");
-                strcpy(proto_name[0].name, DEFAULT_CMYK_ICC);
-             break;
-        }
-    }
-}
-#endif
 /*
  * the PDF 1.4 transparency spec says that color space for blending
  * operations can be based upon either a color space specified in the
@@ -5938,9 +5864,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
        proper blending.  During put_image we will convert from RGB to
        CIELAB */
     if (target_profile->data_cs == gsCIELAB) {
-        rc_decrement(pdev->icc_array->device_profile[0], "pdf14_create_clist_device");
-        pdev->icc_array->device_profile[0] = pis->icc_manager->default_rgb;
-        rc_increment(pis->icc_manager->default_rgb);
+        rc_assign(pdev->icc_array->device_profile[0], 
+                  pis->icc_manager->default_rgb, "pdf14_create_clist_device"); 
     }
     pdev->my_encode_color = pdev->procs.encode_color;
     pdev->my_decode_color = pdev->procs.decode_color;
@@ -7141,11 +7066,10 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                needs to inherit the ICC profile from the clist thread device 
                not the target device.   */
 #if !CMM_THREAD_SAFE
-            rc_increment(cl_icc_profile); 
             gx_monitor_enter(p14_icc_profile->lock);
-            rc_decrement(p14_icc_profile, "c_pdf14trans_clist_read_update");
+            rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile, 
+                      "c_pdf14trans_clist_read_update");
             gx_monitor_leave(p14_icc_profile->lock);
-            p14dev->icc_array->device_profile[0] = cl_icc_profile;
 #endif
             /*
              * If we are blending using spot colors (i.e. the output device
@@ -7204,15 +7128,17 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                happens to be something like CIELAB.  Then we will blend in
                RGB (unless a trans group is specified) */
             if (cl_icc_profile->data_cs == gsCIELAB) {
-                rc_decrement(cl_icc_profile,
-                             "c_pdf14trans_clist_read_update");
                 cl_icc_profile = 
                     gsicc_read_serial_icc(cdev, pcrdev->trans_dev_icc_hash);
                 /* Keep a pointer to the clist device */
                 cl_icc_profile->dev = (gx_device *) cdev;
-                /* There is a question of how the profile should be ref counted.
-                   I have a concern that it should be initialized based
-                   upon the device ref count */
+                gx_monitor_enter(p14_icc_profile->lock);
+                rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile, 
+                          "c_pdf14trans_clist_read_update");
+                /* Initial ref count was ok.  remove increment from assign */
+                rc_decrement(p14dev->icc_array->device_profile[0], 
+                             "c_pdf14trans_clist_read_update");
+                gx_monitor_leave(p14_icc_profile->lock);
             }
             break;
 

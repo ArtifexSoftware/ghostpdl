@@ -767,11 +767,40 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
 
     for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
         result->device_profile[k] = NULL;
+        result->intent[k] = gsPERCEPTUAL;
     }
     result->icc_dir = NULL;
     result->dir_length = 0;
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
+}
+
+int 
+gsicc_set_device_profile_intent(gx_device *dev, char *intent_str, 
+                                gsicc_profile_types_t profile_type)
+{
+    int code;
+    cmm_dev_profile_t *profile_struct;
+    
+    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    if (profile_struct ==  NULL)
+        return 0;
+    if (strncmp(intent_str, "per", 3) == 0) {
+        profile_struct->intent[profile_type] = gsPERCEPTUAL;
+        return 0;
+    }
+    if (strncmp(intent_str, "col", 3) == 0) {
+        profile_struct->intent[profile_type] = gsRELATIVECOLORIMETRIC;
+        return 0;
+    }
+    if (strncmp(intent_str, "sat", 3) == 0) {
+        profile_struct->intent[profile_type] = gsSATURATION;
+        return 0;
+    }
+    if (strncmp(intent_str, "abs", 3) == 0) {
+        profile_struct->intent[profile_type] = gsABSOLUTECOLORIMETRIC;
+        return 0;
+    }
 }
 
 /* This sets the device profile. If the device does not have a defined

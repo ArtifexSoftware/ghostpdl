@@ -23,6 +23,11 @@
 #include "gxfixed.h"
 #include "gsicc_manage.h"
 
+
+static const char *const std_intent_keys[] = {
+        GSICC_STANDARD_INTENT_KEYS
+    };
+
 /* Define whether we accept PageSize as a synonym for MediaSize. */
 /* This is for backward compatibility only. */
 #define PAGESIZE_IS_MEDIASIZE
@@ -73,10 +78,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES], icc_dir;
+    gs_param_string profile_intent[NUM_DEVICE_PROFILES];
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
     char null_str[1]={'\0'};
+    gs_param_string temp_str;
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
@@ -129,9 +136,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             if (dev_profile->device_profile[k] == NULL) {
                 param_string_from_string(profile_array[k], null_str);
+                param_string_from_string(profile_intent[k], null_str);
             } else {
                 param_string_from_string(profile_array[k], 
                     dev_profile->device_profile[k]->name);
+                param_string_from_string(profile_intent[k], 
+                    std_intent_keys[dev_profile->intent[k]]);
             }
         }
         /* This probably should be set to the default */
@@ -143,6 +153,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
+            param_string_from_string(profile_intent[k], null_str);
         }
         param_string_from_string(icc_dir, null_str); 
     }
@@ -174,11 +185,15 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         /* Non-standard parameters */
         /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
            that profile here for the device parameter on the command line */
-        (code = param_write_name(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
-        (code = param_write_name(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
-        (code = param_write_name(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
-        (code = param_write_name(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
-        (code = param_write_name(plist,"OutputICCDir", &(icc_dir))) < 0 ||
+        (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
+        (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
+        (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
+        (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
+        (code = param_write_string(plist,"OutputICCDir", &(icc_dir))) < 0 ||
+        (code = param_write_string(plist,"OutputIntent", &(profile_intent[0]))) < 0 ||
+        (code = param_write_string(plist,"GraphicIntent", &(profile_intent[1]))) < 0 ||
+        (code = param_write_string(plist,"ImageIntent", &(profile_intent[2]))) < 0 ||
+        (code = param_write_string(plist,"TextIntent", &(profile_intent[3]))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
         (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
         (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||
@@ -449,6 +464,29 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
 }
 
 static void
+gx_default_put_intent(gs_param_string *icc_intent, gx_device * dev,  
+                   gsicc_profile_types_t index) 
+{
+    char *tempstr;
+    int code;
+    cmm_dev_profile_t *profile_struct;
+
+    if (icc_intent->size != 3) return;
+    tempstr = (char *) gs_alloc_bytes(dev->memory, 4, "gx_default_put_intent");
+    memcpy(tempstr, icc_intent->data, icc_intent->size);
+    /* Set last position to NULL. */
+    tempstr[icc_intent->size] = 0;
+    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    if (profile_struct == NULL) {
+        /* Intializes the device structure.  Not the profile though for index */
+        code = gsicc_init_device_profile_struct(dev, NULL, 0);
+    }
+    code = gsicc_set_device_profile_intent(dev, tempstr, index);
+    gs_free_object(dev->memory, tempstr, "gx_default_put_intent");
+}
+
+
+static void
 gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,  
                    gsicc_profile_types_t index) 
 {
@@ -456,7 +494,7 @@ gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,
     int code;
 
     if (icc_pro->size == 0) return;
-
+    if (dev->procs.get_profile == NULL) return;
     if (icc_pro->size < gp_file_name_sizeof) {
         tempstr = (char *) gs_alloc_bytes(dev->memory, icc_pro->size+1, 
                                           "gx_default_put_icc");
@@ -715,6 +753,18 @@ nce:
     }
     if (param_read_string(plist, "TextICCProfile", &icc_pro) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsTEXTPROFILE); 
+    }
+    if (param_read_string(plist, "OutputIntent", &icc_pro) != 1) {
+        gx_default_put_intent(&icc_pro, dev, gsDEFAULTPROFILE); 
+    }
+    if (param_read_string(plist, "GraphicIntent", &icc_pro) != 1) {
+        gx_default_put_intent(&icc_pro, dev, gsGRAPHICPROFILE); 
+    }
+    if (param_read_string(plist, "ImageIntent", &icc_pro) != 1) {
+        gx_default_put_intent(&icc_pro, dev, gsIMAGEPROFILE); 
+    }
+    if (param_read_string(plist, "TextIntent", &icc_pro) != 1) {
+        gx_default_put_intent(&icc_pro, dev, gsTEXTPROFILE); 
     }
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
         ecode = code;

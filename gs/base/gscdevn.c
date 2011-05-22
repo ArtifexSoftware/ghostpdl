@@ -422,6 +422,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
         tcode = (*pcs->params.device_n.map->tint_transform)
              (pc->paint.values, &cc.paint.values[0],
              pis, pcs->params.device_n.map->tint_transform_data);
+        (*pacs->type->restrict_color)(&cc, pacs);
         if (tcode < 0)
             return tcode;
         /* First check if this was PS based. */

@@ -168,6 +168,9 @@ clist_setup_render_threads(gx_device *dev, int y)
          */
         if ((code = gdev_prn_allocate_memory(ndev, NULL, ndev->width, ndev->height)) < 0)
             break;
+        /* Needed for case when the target has cielab profile and pdf14 device
+           has a RGB profile stored in the profile list of the clist */
+        ncdev->trans_dev_icc_hash = cdev->trans_dev_icc_hash;
         thread->cdev = ndev;
         /* close and unlink the temp files just created */
         cdev->page_info.io_procs->fclose(ncdev->page_cfile, ncdev->page_cfname, true);

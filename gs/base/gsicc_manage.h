@@ -37,6 +37,8 @@
 #define GSICC_STANDARD_PROFILES\
   "srgb.icc", "sgray.icc"
 #define GSICC_NUMBER_STANDARD_PROFILES 2
+#define GSICC_STANDARD_INTENT_KEYS\
+  "per", "col" , "sat", "abs"
 
 #include "gsicc_cms.h"
 
@@ -51,6 +53,8 @@ int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
+int gsicc_set_device_profile_intent(gx_device *dev, char *intent_str, 
+                                gsicc_profile_types_t profile_type);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
                                      gsicc_profile_types_t profile_type);
 cmm_dev_profile_name_array_t* gsicc_new_dev_icc_names(gs_memory_t *memory);

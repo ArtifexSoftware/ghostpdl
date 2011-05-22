@@ -336,7 +336,31 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
         NULL,	/* create_compositor */\
         NULL,	/* get_hardware_params */\
         NULL,	/* text_begin */\
-        NULL	/* finish_copydevice */\
+        NULL,	/* finish_copydevice */\
+        NULL,	/* begin_transparency_group */\
+        NULL,	/* end_transparency_group */\
+        NULL,	/* begin_transparency_mask */\
+        NULL,	/* end_transparency_mask */\
+        NULL,	/* discard_transparency_layer */\
+        NULL,  /* get_color_mapping_procs */\
+        NULL,  /* get_color_comp_index */\
+        NULL,  /* encode_color */\
+        NULL,  /* decode_color */\
+        NULL,  /* pattern_manage */\
+        NULL,  /* fill_rectangle_hl_color */\
+        NULL,  /* include_color_space */\
+        NULL,  /* fill_linear_color_scanline */\
+        NULL,  /* fill_linear_color_trapezoid */\
+        NULL,  /* fill_linear_color_triangle */\
+        NULL,  /* update_spot_equivalent_colors */\
+        NULL,  /* ret_devn_params */\
+        NULL,  /* fillpage */\
+        NULL,  /* push_transparency_state */\
+        NULL,  /* pop_transparency_state */\
+        NULL,  /* put_image */\
+        NULL,  /* dev_spec_op */\
+        NULL,  /* copy plane */\
+        gx_default_get_profile /* get_profile */\
 }
 
 /* The standard printer device procedures */
