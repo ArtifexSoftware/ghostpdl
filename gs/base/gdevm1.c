@@ -214,16 +214,67 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
     if (textures == NULL) {
         int dbit = x & 7;
         int sbit = sourcex & 7;
-        drow += (x >> 3);
-        srow += (sourcex >> 3);
-        /* Use Rop run */
-        rop_get_run_op(&ropper, rop, 1, 0);
-        /* Loop over scan lines. */
-        for (; line_count-- > 0; drow += draster, srow += sraster) {
-            rop_set_s_bitmap_subbyte(&ropper, srow, sbit);
-            rop_run_subbyte(&ropper, drow, dbit, width);
+        drow += (x>>3);
+        srow += (sourcex>>3);
+        if (width < 32) {
+            /* Do it the old, 'slow' way. rop runs of less than 1 word are
+             * not likely to be a win with rop_run. */
+            /* Loop over scan lines. */
+            int sskew = sbit - dbit;
+            const rop_proc proc = rop_proc_table[rop];
+            byte lmask, rmask;
+
+            lmask = 0xff >> dbit;
+            width += dbit;
+            rmask = 0xff << (~(width - 1) & 7);
+            if (sskew < 0)
+                --srow, sskew += 8;
+            if (width < 8)
+                lmask &= rmask;
+            for (; line_count-- > 0; drow += draster, srow += sraster) {
+                byte *dptr = drow;
+                const byte *sptr = srow;
+                int left = width-8;
+#define fetch1(ptr, skew)\
+  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+                {
+                    /* Left hand byte */
+                    byte dbyte = *dptr;
+                    byte sbyte = fetch1(sptr, sskew);
+                    byte result = (*proc)(dbyte,sbyte,0);
+                    sptr++;
+                    *dptr++ = (result & lmask) | (dbyte & ~lmask);
+                }
+                if (left <= 0) /* if (width <= 8) we're done */
+                    continue;
+                left -= 8; /* left = bits to go - 8 */
+                while (left > 0)
+                {
+                    byte dbyte = *dptr;
+                    byte sbyte = fetch1(sptr, sskew);
+                    sptr++;
+                    *dptr++ = (*proc)(dbyte,sbyte,0);
+                    left -= 8;
+                }
+                left += 8; /* left = bits to go < 8 */
+                {
+                    byte dbyte = *dptr;
+                    byte sbyte = fetch1(sptr, sskew);
+                    byte result = (*proc)(dbyte,sbyte,0);
+                    *dptr = (result & rmask) | (dbyte & ~rmask);
+                }
+#undef fetch1
+            }
+        } else {
+            /* Use Rop run */
+            rop_get_run_op(&ropper, rop, 1, 0);
+            /* Loop over scan lines. */
+            for (; line_count-- > 0; drow += draster, srow += sraster) {
+                rop_set_s_bitmap_subbyte(&ropper, srow, sbit);
+                rop_run_subbyte(&ropper, drow, dbit, width);
+            }
+            rop_release_run_op(&ropper);
         }
-        rop_release_run_op(&ropper);
     } else if (textures->rep_width > 32) {
         /* Use Rop run */
         rop_get_run_op(&ropper, rop, 1, 0);
@@ -256,6 +307,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
         /* Do it the old, 'slow' way. rop runs of less than 1 word are
          * not likely to be a win with rop_run. */
         /* Loop over scan lines. */
+        const rop_proc proc = rop_proc_table[rop];
         for (; line_count-- > 0; drow += draster, ++ty) {
             int dx = x;
             int w = width;
@@ -290,7 +342,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                     byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                    byte result = (*rop_proc_table[rop])(dbyte,0,tbyte);
+                    byte result = (*proc)(dbyte,0,tbyte);
 
                     if (left <= nx)
                         mask &= rmask;
@@ -303,6 +355,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
         /* Do it the old, 'slow' way. rop runs of less than 1 word are
          * not likely to be a win with rop_run. */
         /* Loop over scan lines. */
+        const rop_proc proc = rop_proc_table[rop];
         for (; line_count-- > 0; drow += draster, srow += sraster, ++ty) {
             int sx = sourcex;
             int dx = x;
@@ -344,7 +397,7 @@ mem_mono_strip_copy_rop_dev(gx_device * dev, const byte * sdata,
                     byte tbyte = fetch1(tptr, tskew);
 
 #undef fetch1
-                    byte result = (*rop_proc_table[rop])(dbyte,sbyte,tbyte);
+                    byte result = (*proc)(dbyte,sbyte,tbyte);
 
                     if (left <= nx)
                         mask &= rmask;
