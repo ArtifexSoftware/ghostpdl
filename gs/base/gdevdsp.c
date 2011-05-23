@@ -1273,7 +1273,7 @@ static int
 display_raster(gx_device_display *dev)
 {
     int align = 0;
-    int bytewidth = dev->width * dev->color_info.depth/8;
+    int bytewidth = ((dev->width * dev->color_info.depth) + 7) /8;
     switch (dev->nFormat & DISPLAY_ROW_ALIGN_MASK) {
         case DISPLAY_ROW_ALIGN_4:
             align = 4;
