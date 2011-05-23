@@ -2996,6 +2996,8 @@ pdf_text_process(gs_text_enum_t *pte)
 
                 pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
                 code = gs_text_process(pte_default);
+                if (code < 0)
+                    return code;
                 pdev->pte = NULL;         /* CAUTION: See comment in gdevpdfx.h . */
                 pdev->charproc_just_accumulated = false;
 
