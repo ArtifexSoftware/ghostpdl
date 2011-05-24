@@ -121,6 +121,11 @@ GENOPT=
 
 # Choose capability options.
 
+# -DHAVE_BSWAP32
+#       use bswap32 intrinsic
+# -DHAVE_BYTESWAP_H
+#       use byteswap.h functions
+#
 # -DHAVE_MKSTEMP
 #	uses mkstemp instead of mktemp
 #		This uses the more secure temporary file creation call
@@ -142,7 +147,7 @@ GENOPT=
 # -DHAVE_SSE2
 #       use sse2 intrinsics
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@ @HAVE_DBUS@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@ @HAVE_DBUS@ @HAVE_BSWAP32@ @HAVE_BYTESWAP_H@
 
 # Define the name of the executable file.
 

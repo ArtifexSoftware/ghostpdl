@@ -1554,6 +1554,49 @@ AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
 AC_SUBST(HAVE_SSE2)
 
 dnl --------------------------------------------------
+dnl check for byte swap intrinsics
+dnl --------------------------------------------------
+
+HAVE_BSWAP32=""
+AC_COMPILE_IFELSE([
+int main (int argc, char *argv[])
+{
+  int a = __builtin_bswap32(argc);
+  return(0);
+}
+],HAVE_BSWAP32="-DHAVE_BSWAP32", HAVE_BSWAP32="")
+
+AC_ARG_ENABLE([bswap32], AC_HELP_STRING([--disable-bswap32],
+       [Do not use bswap32 instrinsic]), [
+             if test "x$enable_bswap32" = xno; then
+                HAVE_BSWAP32=""
+             fi])
+ 
+AC_SUBST(HAVE_BSWAP32)
+
+dnl --------------------------------------------------
+dnl check for byte swap header
+dnl --------------------------------------------------
+
+HAVE_BYTESWAP_H=""
+AC_COMPILE_IFELSE([
+#include "byteswap.h"
+int main (int argc, char *argv[])
+{
+  int a = bswap_32(argc);
+  return(0);
+}
+],HAVE_BYTESWAP_H="-DHAVE_BYTESWAP_H", HAVE_BYTESWAP_H="")
+
+AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
+       [Do not use byteswap.h functions]), [
+             if test "x$enable_byteswap-h" = xno; then
+                HAVE_BYTESWAP_H=""
+             fi])
+ 
+AC_SUBST(HAVE_BYTESWAP_H)
+
+dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
 
