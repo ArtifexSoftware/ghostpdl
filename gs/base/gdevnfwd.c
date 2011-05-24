@@ -899,10 +899,15 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
+    int code;
 
-    return (tdev == 0 ?
-        gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev) :
-        dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pis, memory, cdev));
+    if (tdev == 0)
+        return gx_no_create_compositor(dev, pcdev, pcte, pis, memory, cdev);
+    /* else do the compositor action */
+    code = dev_proc(tdev, create_compositor)(tdev, pcdev, pcte, pis, memory, cdev);
+    /* the compositor may have changed color_info. Pick up the new value */
+    dev->color_info = tdev->color_info;
+    return code;
 }
 
 int
