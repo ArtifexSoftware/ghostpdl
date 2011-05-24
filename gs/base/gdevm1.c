@@ -20,7 +20,7 @@
 #include "gsrop.h"
 
 /* Either we can implement copy_mono directly, or we can call copy_rop to do
- * its work. It used to be faster to do it directly, but no more. */
+ * its work. We still do it directly for 'thin' regions by default. */
 #define DO_COPY_MONO_BY_COPY_ROP
 
 /* Either we can implement tile_rect directly, or we can call copy_rop to do
@@ -598,15 +598,6 @@ mem_mono_copy_mono(gx_device * dev,
 #define WRITE_STORE(bits) *optr = CINVERT(bits)
 #define WRITE_AND(bits) *optr &= CINVERT(bits)
 
-#ifdef DO_COPY_MONO_BY_COPY_ROP
-    return mem_mono_strip_copy_rop_dev(dev, source_data, source_x, source_raster,
-                             id, NULL, NULL, NULL,
-                             x, y, w, h, 0, 0,
-                             ((color0 == gx_no_color_index ? rop3_D :
-                               color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
-                             ((color1 == gx_no_color_index ? rop3_D :
-                               color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
-#else /* !DO_COPY_MONO_BY_COPY_ROP */
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     register const byte *bptr;	/* actually chunk * */
     int dbit, wleft;
@@ -619,6 +610,18 @@ mem_mono_copy_mono(gx_device * dev,
     register uint invert;
 
     fit_copy(dev, source_data, source_x, source_raster, id, x, y, w, h);
+#ifdef DO_COPY_MONO_BY_COPY_ROP
+    if (w >= 32) {
+        return mem_mono_strip_copy_rop_dev(dev, source_data, source_x,
+                                           source_raster,
+                                           id, NULL, NULL, NULL,
+                                           x, y, w, h, 0, 0,
+                                           ((color0 == gx_no_color_index ? rop3_D :
+                                             color0 == 0 ? rop3_0 : rop3_1) & ~rop3_S) |
+                                           ((color1 == gx_no_color_index ? rop3_D :
+                                             color1 == 0 ? rop3_0 : rop3_1) & rop3_S));
+    }
+#endif /* !DO_COPY_MONO_BY_COPY_ROP */
 #if gx_no_color_index_value != -1       /* hokey! */
     if (color0 == gx_no_color_index)
         color0 = -1;
@@ -836,7 +839,6 @@ mem_mono_copy_mono(gx_device * dev,
 #undef NEXT_X_CHUNK
     return 0;
 #undef optr
-#endif /* !USE_COPY_ROP */
 }
 
 /* Strip-tile with a monochrome halftone. */
