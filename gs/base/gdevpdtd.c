@@ -751,6 +751,8 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
             pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
         }
     }
+    /* Set the CIDSet bit for CID 0 (the /.notdef) which must always be present */
+    pbfont->CIDSet[0] |= 0x80;
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.used2 = NULL;
     pdfont->u.cidfont.v = NULL;
