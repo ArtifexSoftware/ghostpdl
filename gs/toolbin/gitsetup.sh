@@ -10,7 +10,7 @@ git config alias.logg "log --graph --oneline --decorate --all"
 git config ui.color true
 
 echo "Git configuration (local):"
-git config --local -l
+git config -l
 
 echo
 echo "Git configuraton (global):"
