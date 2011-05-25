@@ -41,6 +41,13 @@ while ($t1=shift) {
   }
 }
 
+# Strip the stray space off the end. This can probably be done far more
+# efficiently with some unreadable bit of perl, but I am too simple for
+# that.
+while (substr($product,-1) eq " ") {
+  $product = substr($product,0,-1);
+}
+
 $product="" if (!$product);
 $user=""    if (!$user);
 
@@ -53,6 +60,11 @@ my $host="casper.ghostscript.com";
 my $dir="/home/regression/cluster/users";
 if (!$user) {
   $user=`echo \$USER`;
+  chomp $user;
+}
+# Msys Bash seems to set USERNAME, not USER
+if (!$user) {
+  $user=`echo \$USERNAME`;
   chomp $user;
 }
 
@@ -97,10 +109,22 @@ foreach my $i (@a) {
   }
 }
 
+# Detect if we are running under msys
+my $bashversion=`bash --version`;
+my $msys=0;
+if ($bashversion =~ /pc-msys/) {
+   $msys=1;
+}
+my $ssh="ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"";
+my $hostpath="regression\@$host:$dir/$user/$directory";
+if ($msys) {
+  $ssh="cygnative plink";
+  $hostpath="regression:$dir/$user/$directory";
+}
 
-my $cmd="rsync -avxcz".
-" --delete".
+my $cmd="rsync -avxcz ".
 " --max-size=2500000".
+" --delete".
 " --exclude .svn --exclude .git".
 " --exclude _darcs --exclude .bzr --exclude .hg".
 " --exclude .deps --exclude .libs --exclude autom4te.cache".
@@ -109,9 +133,9 @@ my $cmd="rsync -avxcz".
 " --exclude ufst --exclude ufst-obj".
 " --exclude Makefile --exclude config.log".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
-" -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
+" -e \"$ssh\" ".
 " .".
-" regression\@$host:$dir/$user/$directory";
+" $hostpath";
 
 if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
   print STDERR "syncing\n";
@@ -131,9 +155,9 @@ print F "$command\n";
 close(F);
 
 $cmd="rsync -avxcz".
-" -e \"ssh -l regression -i \\\"\$HOME/.ssh/cluster_key\\\"\"".
+" -e \"$ssh\"".
 " cluster_command.run".
-" regression\@$host:$dir/$user/$directory";
+" $hostpath";
 
 if ($product ne "abort") {
   print STDERR "\nqueueing\n";
