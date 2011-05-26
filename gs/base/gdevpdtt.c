@@ -2944,7 +2944,7 @@ pdf_text_process(gs_text_enum_t *pte)
                  * a show enumerator, so this is safe. We need to update the
                  * graphics state pointer below which is why we need this.
                  */
-                gs_show_enum psenum = *(gs_show_enum *)pte;
+                gs_show_enum psenum = *(gs_show_enum *)pte_default;
                 gs_state *pgs = (gs_state *)penum->pis;
                 gs_text_enum_procs_t const *save_procs = pte_default->procs;
                 gs_text_enum_procs_t special_procs = *pte_default->procs;
