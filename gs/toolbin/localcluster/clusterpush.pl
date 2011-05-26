@@ -131,7 +131,7 @@ my $cmd="rsync -avxcz ".
 " --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
 " --exclude sobin --exclude soobj".
 " --exclude ufst --exclude ufst-obj".
-" --exclude Makefile --exclude config.log".
+" --exclude config.log".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
 " -e \"$ssh\" ".
 " .".
