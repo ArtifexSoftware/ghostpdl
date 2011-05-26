@@ -895,8 +895,18 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                     code = param_write_bool((gs_param_list *)params, arg_heap_copy(arg), &bval);
                     continue;
                 }
+
+                if (value && value[0] == '/') {
+                    gs_param_string str;
+                    strncpy(buffer, arg, eqp - arg);
+                    buffer[eqp - arg] = '\0';
+                    param_string_from_transient_string(str, value + 1);
+                    code = param_write_name((gs_param_list *)params, 
+                                            arg_heap_copy(buffer),&str);
+                    continue;
+                }
                 /* Search for a non-decimal 'radix' number */
-                if ( strchr(value, '#') ) {
+                else if ( strchr(value, '#') ) {
                     int base, number = 0;
                     char *val = strchr(value, '#');
 
