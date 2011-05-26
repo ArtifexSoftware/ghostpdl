@@ -594,7 +594,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
             finalize(ptr);
 #ifdef DEBUG
         if (cmem->in_use != 0)
-            dprintf1("*** chunk_obj_alloc: this memory allocator is not idle, used for: %s\n",
+            dprintf1("*** chunk_free_object: this memory allocator is not idle, used for: %s\n",
                     cmem->in_use < 0 ? "free" : "alloc");
         cmem->in_use = -1;	/* free */
 #endif
