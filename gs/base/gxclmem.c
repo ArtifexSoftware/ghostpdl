@@ -527,7 +527,7 @@ memfile_unlink(const char *fname)
     MEMFILE *f;
 
     /* memfile file names begin with a flag byte == 0xff */
-    if (fname[0] == '\377' && (code = sscanf(fname+1, "0x%x", &f) == 1)) {
+    if (fname[0] == '\377' && (code = sscanf(fname+1, "%p", &f) == 1)) {
         return memfile_fclose((clist_file_ptr)f, fname, true);
     } else
         return_error(gs_error_invalidfileaccess);
