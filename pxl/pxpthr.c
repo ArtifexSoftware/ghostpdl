@@ -76,9 +76,6 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
 {
     /* xl cursor -> pcl cursor position */
     gs_point xlcp, pclcp, dp;
-    int code1 = 0;
-    int code2 = 0;
-    int code3 = 0;
 
     /* make the pcl ctm active, after resets the hpgl/2 ctm is
        active. */
@@ -87,9 +84,9 @@ pxPassthrough_pcl_state_nonpage_exceptions(px_state_t *pxs)
        point.  If anything fails we assume the current
        point is not valid and use the cap from the pcl
        state initialization - pcl's origin */
-    if ((code1 = gs_currentpoint(pxs->pgs, &xlcp)) ||
-        (code2 = gs_transform(pxs->pgs, xlcp.x, xlcp.y, &dp)) ||
-        (code3 = gs_itransform(global_pcs->pgs, dp.x, dp.y, &pclcp)) ) {
+    if (gs_currentpoint(pxs->pgs, &xlcp) ||
+        gs_transform(pxs->pgs, xlcp.x, xlcp.y, &dp) ||
+        gs_itransform(global_pcs->pgs, dp.x, dp.y, &pclcp)) {
         global_pcs->cap.x = 0;
         global_pcs->cap.y = inch2coord(2.0/6.0); /* 1/6" off by 2x in resolution. */
         if (gs_debug_c('i'))
@@ -363,12 +360,19 @@ int pxpcl_selectfont(px_args_t *par, px_state_t *pxs)
     }
     r.ptr = str - 1;
     r.limit = str + len - 1;
-    code = pcl_process(&global_pcl_parser_state, global_pcs, &r);
 
-    pcl_recompute_font(global_pcs, false);       /* select font */
+    code = pcl_process(&global_pcl_parser_state, global_pcs, &r);
+    if (code < 0)
+        return code;
+
+    code = pcl_recompute_font(global_pcs, false);       /* select font */
+    if (code < 0)
+        return code;
+
     code = gs_setfont(pxs->pgs, global_pcs->font->pfont);
     if (code < 0)
         return code;
+
     pfp = &global_pcs->font_selection[global_pcs->font_selected];
 
     {
