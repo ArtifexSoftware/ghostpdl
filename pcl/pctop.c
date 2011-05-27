@@ -186,7 +186,7 @@ typedef struct pcl_interp_instance_s {
 } pcl_interp_instance_t;
 
 /* Get implemtation's characteristics */
-const pl_interp_characteristics_t * /* always returns a descriptor */
+static const pl_interp_characteristics_t * /* always returns a descriptor */
 pcl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
