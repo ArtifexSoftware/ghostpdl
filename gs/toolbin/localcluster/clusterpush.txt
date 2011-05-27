@@ -18,9 +18,12 @@ last svn commit should be performed.
 lores or hires indicates to only perform a low-resolution or
 high-resolution cluster run; by default both are performed.
 
-user is your username, if you don't specify one clusterpush.pl uses the
-value of $USER.  This makes sense on Linux and Mac OS X and probably
-cygwin, but I'm not sure what happens when run under Windows.
+user is your cluster user name, if you don't specify one, clusterpush.pl
+uses, in order of preference, the value of one of the following environment
+variables: CLUSTER_USER, USER or USERNAME (USER and USERNAME being the normal
+environment variables in Unix type shells). This makes sense on Linux and Mac
+OS X and probably cygwin, but I'm not sure what happens when run under
+Windows.
 
 The order of the options is not important.
 

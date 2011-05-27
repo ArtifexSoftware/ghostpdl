@@ -58,19 +58,23 @@ unlink "cluster_command.run";
 
 my $host="casper.ghostscript.com";
 my $dir="/home/regression/cluster/users";
+
+# To cater for those whose cluster user name doesn't match the user name
+# on their development machine.
+if (!$user) {
+  $user=`echo \$CLUSTER_USER`;
+  chomp $user;
+}
+
 if (!$user) {
   $user=`echo \$USER`;
   chomp $user;
 }
+
 # Msys Bash seems to set USERNAME, not USER
 if (!$user) {
   $user=`echo \$USERNAME`;
   chomp $user;
-}
-
-# This is horrid, but it works. Replace it when I find a better way
-if ($user eq 'Robin Watts') {
-  $user = "robin";
 }
 
 my $directory=`pwd`;
