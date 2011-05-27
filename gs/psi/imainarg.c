@@ -60,6 +60,12 @@ extern int zflushpage(i_ctx_t *);
 #  define GS_OPTIONS "GS_OPTIONS"
 #endif
 
+/* This is now the default number of entries we initially
+ * allocate for the search path array objects. The arrays
+ * will now enlarge as required -
+ * see imain.c: file_path_add()/extend_path_list_container()
+ */
+
 #ifndef GS_MAX_LIB_DIRS
 #  define GS_MAX_LIB_DIRS 25
 #endif
