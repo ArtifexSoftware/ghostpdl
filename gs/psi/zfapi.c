@@ -1416,14 +1416,11 @@ static int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, c
         if (dict_find_string(op, "FontBBox", &v) > 0) {
             if(!r_has_type(v, t_array) && !r_has_type(v, t_shortarray) && !r_has_type(v, t_mixedarray))
                 return_error(e_invalidfont);
-            if (r_size(v) < 4)
-                return_error(e_invalidfont);
-
             make_real(&mat[0], pbfont->FontBBox.p.x);
             make_real(&mat[1], pbfont->FontBBox.p.y);
             make_real(&mat[2], pbfont->FontBBox.q.x);
             make_real(&mat[3], pbfont->FontBBox.q.y);
-            if(r_has_type(v, t_shortarray) || r_has_type(v, t_mixedarray)) {
+            if(r_has_type(v, t_shortarray) || r_has_type(v, t_mixedarray) || r_size(v) < 4) {
                 /* Create a new full blown array in case the values are reals */
                 code = ialloc_ref_array(&arr, a_all, 4, "array");
                 if (code < 0)
