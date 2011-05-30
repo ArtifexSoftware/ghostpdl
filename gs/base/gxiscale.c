@@ -770,7 +770,9 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             if (pcs->type->index != gs_color_space_index_Indexed) {
                 /* An issue here is that we may not be "device color" due to
                    how the data is encoded.  Need to check for that case here */
-                if (penum->device_color || gs_color_space_is_CIE(pcs) || islab){
+                if ((penum->device_color ||
+                     gs_color_space_is_CIE(pcs) ||
+                     islab) && (penum->icc_setup.need_decode == 0)) {
                     /* 8-bit color values, possibly device  indep. or device
                        depend., not indexed. Decode range was [0 1] */
                     if (penum->matrix.xx >= 0) {
