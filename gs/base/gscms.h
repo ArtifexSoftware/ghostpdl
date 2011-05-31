@@ -26,6 +26,7 @@
 
 #define ICC_MAX_CHANNELS 15
 #define NUM_DEVICE_PROFILES 4
+#define NUM_SOURCE_PROFILES 3
 
 /* Define the preferred size of the output by the CMS */
 /* This can be different than the size of gx_color_value
@@ -103,6 +104,20 @@ typedef enum {
     gsTEXTPROFILE
 } gsicc_profile_types_t;
 
+/* Source profiles for different objects.  only CMYK and RGB */
+typedef struct cmm_srcobj_profile_s {
+        cmm_profile_t  *rgb_profiles[NUM_SOURCE_PROFILES];
+        gsicc_rendering_intents_t rgb_intent[NUM_SOURCE_PROFILES];
+        cmm_profile_t  *cmyk_profiles[NUM_SOURCE_PROFILES];
+        gsicc_rendering_intents_t cmyk_intent[NUM_SOURCE_PROFILES];
+        cmm_profile_t  *color_warp_profile;
+        gs_memory_t *memory;
+        int name_length;            /* Length of file name */
+        char *name;                 /* Name of file name where this is found */
+        rc_header rc;
+} cmm_srcobj_profile_t;
+
+/* Destination profiles for different objects */
 typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
@@ -358,6 +373,8 @@ typedef struct gsicc_manager_s {
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     char *profiledir;               /* Directory used in searching for ICC profiles */
+    bool override_internal;         /* Set via the user params */
+    cmm_srcobj_profile_t *srcobj_profile;
     uint namelen;
     gs_memory_t *memory;
     rc_header rc;

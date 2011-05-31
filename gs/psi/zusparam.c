@@ -642,6 +642,43 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static void
+current_srcobj_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+
+    if (pis->icc_manager->srcobj_profile == NULL) {
+        pval->data = NULL;
+        pval->size = 0;
+        pval->persistent = true;
+    } else {
+        pval->data = pis->icc_manager->srcobj_profile->name;
+        pval->size = strlen((const char *)pval->data);
+        pval->persistent = true;
+    }
+}
+
+static int
+set_srcobj_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    int code;
+    char *pname;
+    int namelen = (pval->size)+1;
+    const gs_imager_state * pis = (gs_imager_state *) igs;
+    gs_memory_t *mem = pis->memory;
+
+    if (pval->size == 0) return 0;
+    pname = (char *)gs_alloc_bytes(mem, namelen, "set_srcobj_icc");
+    memcpy(pname,pval->data,namelen-1);
+    pname[namelen-1] = 0;
+    code = gsicc_set_srcobj_struct(pis->icc_manager, (const char*) pname, 
+                                   namelen);
+    gs_free_object(mem, pname, "set_srcobj_icc");
+    if (code < 0)
+        return gs_rethrow(code, "cannot find srcobj file");
+    return(code);
+}
+
+static void
 current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_RGB_ICC;
@@ -872,8 +909,8 @@ static const string_param_def_t user_string_params[] =
     {"DeviceLinkProfile", current_link_icc, set_link_profile_icc},
     {"ICCProfilesDir", current_icc_directory, set_icc_directory},
     {"LabProfile", current_lab_icc, set_lab_icc},
-    {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc}
-
+    {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc},
+    {"SourceObjectICC", current_srcobj_icc, set_srcobj_icc}
 };
 
 /* Boolean values */

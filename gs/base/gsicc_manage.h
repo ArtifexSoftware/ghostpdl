@@ -53,13 +53,15 @@ int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
-int gsicc_set_device_profile_intent(gx_device *dev, char *intent_str, 
+int gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent, 
                                 gsicc_profile_types_t profile_type);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
                                      gsicc_profile_types_t profile_type);
 cmm_dev_profile_name_array_t* gsicc_new_dev_icc_names(gs_memory_t *memory);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
                       int namelen, gsicc_profile_t defaulttype);
+int gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname, 
+                            int namelen);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
                                              gs_memory_t *mem);
 void gsicc_init_profile_info(cmm_profile_t *profile);

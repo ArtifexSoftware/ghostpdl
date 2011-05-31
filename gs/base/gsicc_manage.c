@@ -467,6 +467,15 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
     }
 }
 
+/* This inititializes the srcobj structure in the ICC manager */
+int 
+gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname, 
+                        int namelen) {
+
+
+    return 0;
+} 
+
 /*  This computes the hash code for the ICC data and assigns the code and the
     profile to the appropriate member variable in the ICC manager */
 int
@@ -729,6 +738,60 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     return(str);
 }
 
+/* Free source object icc array structure.  */
+static void
+rc_free_srcobj_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    cmm_srcobj_profile_t *srcobj_profile = (cmm_srcobj_profile_t *)ptr_in;
+    int k;
+    gs_memory_t *mem_nongc =  srcobj_profile->memory;
+
+    if (srcobj_profile->rc.ref_count <= 1 ) {
+        /* Decrement any profiles. */
+        for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
+            if (srcobj_profile->rgb_profiles[k] != NULL) {
+                rc_decrement(srcobj_profile->rgb_profiles[k], 
+                             "rc_free_srcobj_profile");
+            }
+            if (srcobj_profile->cmyk_profiles[k] != NULL) {
+                rc_decrement(srcobj_profile->cmyk_profiles[k], 
+                             "rc_free_srcobj_profile");
+            }
+            if (srcobj_profile->color_warp_profile != NULL) {
+                rc_decrement(srcobj_profile->color_warp_profile, 
+                             "rc_free_srcobj_profile");
+            }
+        }
+        gs_free_object(mem_nongc, srcobj_profile->name, "rc_free_srcobj_profile");
+        gs_free_object(mem_nongc, srcobj_profile, "rc_free_srcobj_profile");
+    }
+}
+
+/* Allocate source object icc structure. */
+cmm_srcobj_profile_t*
+gsicc_new_srcobj_profile(gs_memory_t *memory)
+{
+    cmm_srcobj_profile_t *result;
+    int k;
+
+    result = (cmm_srcobj_profile_t *) gs_alloc_bytes(memory->non_gc_memory, 
+                                            sizeof(cmm_srcobj_profile_t),
+                                            "gsicc_new_srcobj_profile");
+    result->memory = memory->non_gc_memory;
+
+    for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
+        result->rgb_profiles[k] = NULL;
+        result->rgb_intent[k] = gsPERCEPTUAL;
+        result->cmyk_profiles[k] = NULL;
+        result->cmyk_intent[k] = gsPERCEPTUAL;
+        result->color_warp_profile = NULL;
+    }
+    result->name = NULL;
+    result->name_length = 0;
+    rc_init_free(result, memory->non_gc_memory, 1, rc_free_srcobj_profile);
+    return(result);
+}
+
 /* Free device icc array structure.  */
 static void
 rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
@@ -776,7 +839,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
 }
 
 int 
-gsicc_set_device_profile_intent(gx_device *dev, char *intent_str, 
+gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent, 
                                 gsicc_profile_types_t profile_type)
 {
     int code;
@@ -785,22 +848,8 @@ gsicc_set_device_profile_intent(gx_device *dev, char *intent_str,
     code = dev_proc(dev, get_profile)(dev,  &profile_struct);
     if (profile_struct ==  NULL)
         return 0;
-    if (strncmp(intent_str, "per", 3) == 0) {
-        profile_struct->intent[profile_type] = gsPERCEPTUAL;
-        return 0;
-    }
-    if (strncmp(intent_str, "col", 3) == 0) {
-        profile_struct->intent[profile_type] = gsRELATIVECOLORIMETRIC;
-        return 0;
-    }
-    if (strncmp(intent_str, "sat", 3) == 0) {
-        profile_struct->intent[profile_type] = gsSATURATION;
-        return 0;
-    }
-    if (strncmp(intent_str, "abs", 3) == 0) {
-        profile_struct->intent[profile_type] = gsABSOLUTECOLORIMETRIC;
-        return 0;
-    }
+    profile_struct->intent[profile_type] = intent;
+    return 0;
 }
 
 /* This sets the device profile. If the device does not have a defined
@@ -1134,6 +1183,8 @@ gsicc_manager_new(gs_memory_t *memory)
    result->smask_profiles = NULL;
    result->memory = memory->stable_memory;
    result->profiledir = NULL;
+   result->srcobj_profile = NULL;
+   result->override_internal = false;
    result->namelen = 0;
    return(result);
 }
@@ -1154,6 +1205,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    rc_decrement(icc_manager->output_link, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->proof_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->srcobj_profile, "rc_gsicc_manager_free");
 
    /* Loop through the DeviceN profiles */
    if ( icc_manager->device_n != NULL) {

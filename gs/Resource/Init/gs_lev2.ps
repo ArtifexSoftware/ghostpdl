@@ -701,6 +701,11 @@ mark exch /DeviceLinkProfile exch .dicttomark
 .setuserparams
 } if
 
+//systemdict /SourceObjectICC .knownget{
+mark exch /SourceObjectICC exch .dicttomark
+.setuserparams
+} if
+
 pop		% currentsystemparams
 
 % Flag the current dictionary so it will be swapped when we
