@@ -986,7 +986,13 @@ currentdict /xref-char-dict undef
       (   **** Warning: Outline has invalid link that was discarded.\n)
       pdfformaterror
     } {
-      /Title oget /Title exch /OUT pdfmark
+      /Title knownoget { 
+        /Title exch /OUT pdfmark
+      } {
+        cleartomark
+        (   **** Warning: Outline without /Title attribute was discarded.\n)
+        pdfformaterror
+      } ifelse
     }
    ifelse
    /First knownoget
