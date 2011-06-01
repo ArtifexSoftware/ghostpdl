@@ -40,7 +40,7 @@
 # include "config_types.h"
 #elif defined(_WIN32) || defined(__WIN32__)
 # include "config_win32.h"
-#else
+#elif !defined(HAVE_STDINT_H)
    typedef unsigned char  uint8_t;
    typedef unsigned short uint16_t;
    typedef unsigned int   uint32_t;
