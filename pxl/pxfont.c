@@ -788,5 +788,5 @@ pxRemoveFont(px_args_t *par, px_state_t *pxs)
           }
         /****** WHAT IF THIS IS THE CURRENT FONT? ******/
         px_dict_undef(&pxs->font_dict, par->pv[0]);
-        return 0;
+        return code;
 }

@@ -899,7 +899,6 @@ hpgl_set_drawing_color(
 {
     int                     code = 0;
     pcl_pattern_set_proc_t  set_proc;
-    byte pixel_placement_mode = 0;
     switch (render_mode) {
 
       case hpgl_rm_clip_and_fill_polygon:
@@ -935,8 +934,6 @@ hpgl_set_drawing_color(
         /* fill like a polygon */
       case hpgl_rm_polygon:
 fill:
-        /* pixel placement mode is only relevant to polygon fills */
-        pixel_placement_mode = pgls->pp_mode;
         set_proc = pcl_pattern_get_proc_FT(pgls->g.fill.type);
         switch (pgls->g.fill.type) {
 
@@ -1425,7 +1422,7 @@ hpgl_close_path(
    object in size by 1 pixel left/bottom for some user scale factors.  This is not a
    grave concern as the objects will still seam together. */
 
-int
+static int
 hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
     if ( pgls->pp_mode == 1 ) {

@@ -374,15 +374,24 @@ pcl_impl_set_device(
     /* Initialize device ICC profile  */
     code = gsicc_init_device_profile_struct(device, NULL, 0);
     if (code < 0)
-        return code;
+        goto pisdEnd;
 
     stage = Sinitg;
     /* Do inits of gstate that may be reset by setdevice */
     /* PCL no longer uses the graphic library transparency mechanism */
-    gs_setsourcetransparent(pcli->pcs.pgs, false);
-    gs_settexturetransparent(pcli->pcs.pgs, false);
+    code = gs_setsourcetransparent(pcli->pcs.pgs, false);
+    if (code < 0)
+        goto pisdEnd;
+
+    code = gs_settexturetransparent(pcli->pcs.pgs, false);
+    if (code < 0)
+        goto pisdEnd;
+
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
-    gs_setfilladjust(pcli->pcs.pgs, 0, 0);
+
+    code = gs_setfilladjust(pcli->pcs.pgs, 0, 0);
+    if (code < 0)
+        goto pisdEnd;
 
     stage = Sgsave1;
     if ( (code = gs_gsave(pcli->pcs.pgs)) < 0 )
@@ -401,6 +410,7 @@ pcl_impl_set_device(
     if ( (code = pcl_gsave(&pcli->pcs)) < 0 )
         goto pisdEnd;
     stage = Sdone;	/* success */
+
     /* Unwind any errors */
  pisdEnd:
     switch (stage) {

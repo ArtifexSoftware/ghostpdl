@@ -978,14 +978,12 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             return code;
 
         {
-            bool madesub = false;
             /* Check for a vertical substitute. */
             if ( plfont->allow_vertical_substitutes ) {
                 pl_font_t *plfont = pfont->client_data;
                 gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
                 if ( vertical != gs_no_glyph ) {
                     glyph = vertical;
-                    madesub = true;
                 }
             }
             /* now check for rotation.  This is the ringer, fonts with
@@ -1244,7 +1242,7 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
             int llx, lly, urx, ury; /* character bounding box */
             int x, y;
             int xAux, yAux;
-            int *xLimit, *yLimit, *xScan, *yScan, *xLast;
+            int *xScan, *yScan, *xLast;
             int pointBufferSize;
             uint sz;
 
@@ -1294,8 +1292,6 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
                 return_error(gs_error_VMerror);
             }
 
-            xLimit = xBuffer + pointBufferSize;
-            yLimit = yBuffer + pointBufferSize;
             xLast = NULL;
 
             if_debug2('1', "[1]num_points=%u num_aux_points=%u\n", num_points, num_aux_points);
