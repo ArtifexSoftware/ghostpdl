@@ -83,7 +83,7 @@ dnl check for sse2 intrinsics
 dnl --------------------------------------------------
 
 HAVE_SSE2=""
-AC_COMPILE_IFELSE([
+AC_LINK_IFELSE([
 #include <emmintrin.h>
 int main (int argc, char *argv[])
 {
@@ -105,7 +105,7 @@ dnl check for byte swap intrinsics
 dnl --------------------------------------------------
 
 HAVE_BSWAP32=""
-AC_COMPILE_IFELSE([
+AC_LINK_IFELSE([
 int main (int argc, char *argv[])
 {
   int a = __builtin_bswap32(argc);
