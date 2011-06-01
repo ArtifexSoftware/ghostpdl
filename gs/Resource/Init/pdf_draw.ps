@@ -910,15 +910,17 @@ currentdict /ICCBased-resolve undef
   } ifelse
 
   % Save old values on opstack, set pdfemptycount to new value.
-  pdfemptycount countdictstack
-  /pdfemptycount count 3 sub def 4 2 roll
+  pdfemptycount countdictstack mark
+  
+  /pdfemptycount count 3 sub def 5 3 roll
   %
-  % Stack: ... <old emptycount> <dictcount> <patdict> <resdict>
-  %                                            |
-  %           New empty count points here -----+
+  % Stack: ... <old emptycount> <dictcount> mark <patdict> <resdict>
+  %                                                  |
+  %           New empty count points here -----------+
 
   exch //false resolvestream pdfopdict .pdfruncontext
-
+  cleartomark
+  
   countdictstack exch sub dup 0 gt {
      (   **** Warning: Pattern stream has unbalanced q/Q operators \(too many q's\)\n)
      pdfformaterror
