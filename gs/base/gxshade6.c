@@ -39,6 +39,32 @@
 
 #define VD_TRACE_TENSOR_PATCH 1
 
+/* The original version of the shading code 'decompose's shadings into
+ * smaller and smaller regions until they are smaller than 1 pixel, and then
+ * fills them. (Either with a constant colour, or with a linear filled trap).
+ *
+ * Previous versions of the code (from svn revision 7936 until June 2011
+ * (shortly after the switch to git)) changed this limit to be 1 point or 1
+ * pixel (whichever is larger) (on the grounds that as resolution increases,
+ * we are unlikely to be able to notice increasingly small inaccuracies in
+ * the shading). Given how people abuse the resolution at which things are
+ * rendered (especially when rendering to images that can subsequently be
+ * zoomed), this seems a poor trade off. See bug 691152.
+ *
+ * The code has now been changed back to operate with the proper 1 pixel
+ * decomposition, which will cost us performance in some cases. Should
+ * people want to restore the previous operation, they should build with
+ * MAX_SHADING_RESOLUTION predefined to 72. In general, this symbol can be
+ * set to the maximum dpi that shading should ever be performed at. Leaving
+ * it undefined will leave the default (1 pixel limit) in place.
+ *
+ * A possible future optimisation here may be to use different max shading
+ * resolutions for linear and non-linear shadings; linear shadings appear to
+ * result in calls to "fill linear traps", and non linear ones appear to
+ * result in calls to "fill constant color". As such linear shadings are much
+ * more forgiving of a higher decomposition threshold.
+ */
+
 #if NOFILL_TEST
 static bool dbg_nofill = false;
 #endif
@@ -245,9 +271,13 @@ init_patch_fill_state(patch_fill_state_t *pfs)
     pfs->linear_color = false;
     pfs->inside = false;
     pfs->n_color_args = 1;
+#ifdef MAX_SHADING_RESOLUTION
     pfs->decomposition_limit = float2fixed(min(pfs->dev->HWResolution[0],
-                                               pfs->dev->HWResolution[1]) / 72);
+                                               pfs->dev->HWResolution[1]) / MAX_SHADING_RESOLUTION);
     pfs->decomposition_limit = max(pfs->decomposition_limit, fixed_1);
+#else
+    pfs->decomposition_limit = fixed_1;
+#endif
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     /* Restrict the pfs->smoothness with 1/min_linear_grades, because cs_is_linear
        can't provide a better precision due to the color
@@ -3048,8 +3078,13 @@ gx_init_patch_fill_state_for_clist(gx_device *dev, patch_fill_state_t *pfs, gs_m
     for (i = 0; i < pfs->num_components; i++)
         pfs->color_domain.paint.values[i] = (float)0x7fffffff;
     /* decomposition_limit must be same as one in init_patch_fill_state */
+#ifdef MAX_SHADING_RESOLUTION
     pfs->decomposition_limit = float2fixed(min(pfs->dev->HWResolution[0],
-                                               pfs->dev->HWResolution[1]) / 72);
+                                               pfs->dev->HWResolution[1]) / MAX_SHADING_RESOLUTION);
+    pfs->decomposition_limit = max(pfs->decomposition_limit, fixed_1);
+#else
+    pfs->decomposition_limit = fixed_1;
+#endif
     pfs->fixed_flat = 0; /* unused */
     pfs->smoothness = 0; /* unused */
     pfs->maybe_self_intersecting = false; /* unused */
