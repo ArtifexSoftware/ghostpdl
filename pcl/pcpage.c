@@ -571,6 +571,9 @@ pcl_end_page(
                                       pcl_reset_overlay,
                                       pcl_copy_after_overlay
                                       );
+            if (code < 0)
+                return code;
+
             pcs->overlay_enabled = true; /**** IN copy_after ****/
         }
     }
