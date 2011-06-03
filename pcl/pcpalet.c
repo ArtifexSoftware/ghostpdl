@@ -19,7 +19,6 @@
 #include "pcursor.h"
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
-#include "pccrd.h"
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "gxcmap.h"
@@ -44,8 +43,6 @@ free_palette(
 
     if (ppalet->pindexed != 0)
         pcl_cs_indexed_release(ppalet->pindexed);
-    if (ppalet->pcrd != 0)
-        pcl_crd_release(ppalet->pcrd);
     if (ppalet->pht != 0)
         pcl_ht_release(ppalet->pht);
     gs_free_object(pmem, pvpalet, cname);
@@ -66,18 +63,14 @@ pcl_free_default_objects(
         rc_decrement(ppalette->pindexed, "free_default_palette cs indexed released");
         if (ppalette->pht)
           rc_decrement(ppalette->pht, "free_default_palette ht released");
-        if (ppalette->pcrd)
-          rc_decrement(ppalette->pcrd, "free_default_palette pcl_crd_release");
         gs_free_object(mem, ppalette, "free_default_palette ppalette free");
         pcs->pdflt_palette = 0;
     }
+    /* what on earth is this? */
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
     rc_decrement(pcs->pdflt_ht, "free_default_palette pdflt_ht release");
-
-    if(pcs->pcl_default_crd)
-          free_crd(mem, pcs->pcl_default_crd, "free_default_palette pcl_default_crd free");
 }
 /*
  * Free procedure for palettes to be used by the dictionary which implements
@@ -118,7 +111,6 @@ alloc_palette(
     ppalet->rc.free = free_palette;
     ppalet->id = pcl_next_id(pcs);
     ppalet->pindexed = 0;
-    ppalet->pcrd = 0;
     ppalet->pht = 0;
     *pppalet = ppalet;
     return 0;
@@ -174,7 +166,6 @@ unshare_palette(
         return code;
     if (ppalet != 0) {
         pcl_cs_indexed_init_from(pnew->pindexed, ppalet->pindexed);
-        pcl_crd_init_from(pnew->pcrd, ppalet->pcrd);
         pcl_ht_init_from(pnew->pht, ppalet->pht);
     }
 
@@ -206,10 +197,6 @@ build_default_palette(
                                                         &(ppalet->pindexed),
                                                         pmem
                                                        );
-        if ((code == 0) && (pcs->pcl_default_crd == 0))
-            code = pcl_crd_build_default_crd(pcs);
-        if (code == 0)
-            pcl_crd_init_from(ppalet->pcrd, pcs->pcl_default_crd);
         if (code == 0)
             code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pmem);
         if (code < 0) {
@@ -700,15 +687,8 @@ pcl_palette_set_view_illuminant(
     const gs_vector3 *  pwht_pt
 )
 {
-    int                 code = unshare_palette(pcs);
-
-    if ((code == 0) && (pcs->ppalet->pcrd == 0)) {
-        if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
-    }
-    if (code == 0)
-        code = pcl_crd_set_view_illuminant(pcs, &(pcs->ppalet->pcrd), pwht_pt);
-    return code;
+    /* should be reimplemented with icc profiles */
+    return 0;
 }
 
 /*
@@ -730,7 +710,6 @@ pcl_palette_check_complete(
 
     if ( (ppalet != 0)           &&
          (ppalet->pindexed != 0) &&
-         (ppalet->pcrd != 0)     &&
          (ppalet->pht != 0)        )
         return 0;
 
@@ -742,10 +721,6 @@ pcl_palette_check_complete(
                                                     &(ppalet->pindexed),
                                                     pcs->memory
                                                     );
-    if ((code == 0) && (ppalet->pcrd == 0)) {
-        if ((code = pcl_crd_build_default_crd(pcs)) == 0)
-            pcl_crd_init_from(pcs->ppalet->pcrd, pcs->pcl_default_crd);
-    }
     if ((code == 0) && (ppalet->pht == 0))
         code = pcl_ht_build_default_ht(pcs, &(ppalet->pht), pcs->memory);
     return code;
@@ -1104,7 +1079,6 @@ palette_do_reset(
           /* stefan foo: free or decrement reference counts? */
             gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
             gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
-            gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
             gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
         }
     }

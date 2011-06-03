@@ -36,8 +36,6 @@ free_foreground(
         pcl_cs_base_release(pfrgrnd->pbase);
     if (pfrgrnd->pht != 0)
         pcl_ht_release(pfrgrnd->pht);
-    if (pfrgrnd->pcrd != 0)
-        pcl_crd_release(pfrgrnd->pcrd);
     gs_free_object(pmem, pvfrgrnd, cname);
 }
 
@@ -65,7 +63,6 @@ alloc_foreground(
     pfrgrnd->id = pcl_next_id(pcs);
     pfrgrnd->pbase = 0;
     pfrgrnd->pht = 0;
-    pfrgrnd->pcrd = 0;
     *ppfrgrnd = pfrgrnd;
     return 0;
 }
@@ -140,7 +137,6 @@ build_foreground(
     pfrgrnd->color[2] = pindexed->palette.data[3 * pal_entry + 2];
     pcl_cs_base_init_from(pfrgrnd->pbase, ppalet->pindexed->pbase);
     pcl_ht_init_from(pfrgrnd->pht, ppalet->pht);
-    pcl_crd_init_from(pfrgrnd->pcrd, ppalet->pcrd);
 
     if (is_default)
         pcl_frgrnd_init_from(pcs->pdflt_frgrnd, pfrgrnd);

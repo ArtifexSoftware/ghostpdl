@@ -21,7 +21,6 @@
 #include "gxfixed.h"
 #include "pcstate.h"
 #include "pcht.h"
-#include "pccrd.h"
 #include "pcpatrn.h"
 #include "pcdraw.h"
 
@@ -113,7 +112,6 @@ pcl_gsave(
         return e_Memory;
 
     pids->pht = 0;
-    pids->pcrd = 0;
     pids->pccolor = 0;
 
     if ((code = gs_gsave(pcs->pgs)) >= 0) {
@@ -121,7 +119,6 @@ pcl_gsave(
         pcs->pids->prev = pids;
         pcl_ccolor_init_from(pids->pccolor, pcs->pids->pccolor);
         pcl_ht_init_from(pids->pht, pcs->pids->pht);
-        pcl_crd_init_from(pids->pcrd, pcs->pids->pcrd);
     } else
         gs_free_object(pcs->memory, pids, "PCL gsave");
 
@@ -144,8 +141,6 @@ pcl_grestore(
         pcl_ccolor_release(pids->pccolor);
         pcl_ht_copy_from(pcs->pids->pht, pids->pht);
         pcl_ht_release(pids->pht);
-        pcl_crd_copy_from(pcs->pids->pcrd, pids->pcrd);
-        pcl_crd_release(pids->pcrd);
         gs_free_object(pcs->memory, pids, "PCL grestore");
     }
 
@@ -166,7 +161,6 @@ pcl_init_gstate_stk(
         pids->prev = 0;
         pids->pccolor = 0;
         pids->pht = 0;
-        pids->pcrd = 0;
     }
     pcs->pids = pids;
 }

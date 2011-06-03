@@ -75,11 +75,6 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
 typedef struct pcl_ht_s         pcl_ht_t;
 #endif
 
-#ifndef pcl_crd_DEFINED
-#define pcl_crd_DEFINED
-typedef struct pcl_crd_s        pcl_crd_t;
-#endif
-
 /*
  * Structure to track what has been installed in the graphic state. This is
  * used to avoid unnecessary re-installation, and to avoid memory handling
@@ -93,19 +88,17 @@ typedef struct pcl_gstate_ids_s {
     struct pcl_gstate_ids_s *   prev;       /* stack back pointer */
     pcl_ccolor_t *              pccolor;
     pcl_ht_t *                  pht;
-    pcl_crd_t *                 pcrd;
 } pcl_gstate_ids_t;
 
 #define private_st_gstate_ids_t()   /* in pcdraw.c */   \
-    gs_private_st_ptrs4( st_gstate_ids_t,               \
+    gs_private_st_ptrs3( st_gstate_ids_t,               \
                          pcl_gstate_ids_t,              \
                          "PCL graphics state tracker",  \
                          gstate_ids_enum_ptrs,          \
                          gstate_ids_reloc_ptrs,         \
                          prev,                          \
                          pccolor,                       \
-                         pht,                           \
-                         pcrd                           \
+                         pht                            \
                          )
 
 #endif			/* pcpattyp_INCLUDED */

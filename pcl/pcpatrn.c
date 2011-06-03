@@ -92,10 +92,8 @@ set_ht_crd_from_palette(
     pcl_palette_check_complete(pcs);
     ppalet = pcs->ppalet;
 
-    /* install crd and ht */
+    /* install ht */
     code = pcl_ht_set_halftone(pcs, &(ppalet->pht), cstype, false);
-    if (code == 0)
-        code = pcl_crd_set_crd(&(ppalet->pcrd), pcs);
     return code;
 }
 
@@ -116,8 +114,6 @@ set_ht_crd_from_foreground(
 
     /* install crd and ht */
     code = pcl_ht_set_halftone(pcs, &(pfrgrnd->pht), cstype, false);
-    if (code == 0)
-        code = pcl_crd_set_crd(&(pfrgrnd->pcrd), pcs);
     return code;
 }
 
@@ -549,9 +545,9 @@ set_frgrnd_pattern(
     if (code < 0)
         return code;
 
-    if ( (pfrgrnd->pht == pcs->ppalet->pht)  &&
-         (pfrgrnd->pcrd == pcs->ppalet->pcrd)  )
+    if (pfrgrnd->pht == pcs->ppalet->pht)
         for_image = false;
+
     colored = (for_image || !pcs->pattern_transparent);
 
     convert_color_to_paint(pfrgrnd->color, &paint);
@@ -958,8 +954,7 @@ pattern_set_frgrnd(
 
     /* check if a solid pattern should be substituted */
     if ( for_image ) {
-        if ((pfrgrnd->pht != ppalet->pht)  ||
-            (pfrgrnd->pcrd != ppalet->pcrd)  ) {
+        if (pfrgrnd->pht != ppalet->pht)  {
             code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
             if (code >= 0)
                 code = set_ht_crd_from_palette(pcs);

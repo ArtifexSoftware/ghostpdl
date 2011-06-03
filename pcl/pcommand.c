@@ -241,7 +241,6 @@ pcl_init_state(
     pcs->configure_appletalk = 0;
     pcs->uom_cp = 7200L / 300L;
     pcs->palette_stack = 0;
-    pcs->pcl_default_crd = 0;
     pcs->pdflt_palette = 0;
     pcs->pdflt_frgrnd = 0;
     pcs->pdflt_ht = 0;
