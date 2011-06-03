@@ -797,7 +797,7 @@ JPXSRCDIR=jasper
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
