@@ -30,6 +30,7 @@
 static dev_proc_open_device(clip_open);
 static dev_proc_fill_rectangle(clip_fill_rectangle);
 static dev_proc_copy_mono(clip_copy_mono);
+static dev_proc_copy_plane(clip_copy_plane);
 static dev_proc_copy_color(clip_copy_color);
 static dev_proc_copy_alpha(clip_copy_alpha);
 static dev_proc_fill_mask(clip_fill_mask);
@@ -108,7 +109,7 @@ static const gx_device_clip gs_clip_device =
   NULL,                      /* pop_transparency_state */
   NULL,                      /* put_image */
   gx_forward_dev_spec_op,
-  NULL,                      /* copy plane */
+  clip_copy_plane,           /* copy plane */
   gx_forward_get_profile
  }
 };
@@ -412,6 +413,48 @@ clip_copy_mono(gx_device * dev,
     ccdata.color[0] = color0, ccdata.color[1] = color1;
     return clip_enumerate_rest(rdev, x, y, xe, ye,
                                clip_call_copy_mono, &ccdata);
+}
+
+/* Copy a plane */
+int
+clip_call_copy_plane(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
+{
+    return (*dev_proc(pccd->tdev, copy_plane))
+        (pccd->tdev, pccd->data + (yc - pccd->y) * pccd->raster,
+         pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
+         xc, yc, xec - xc, yec - yc, pccd->plane);
+}
+static int
+clip_copy_plane(gx_device * dev,
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h, int plane)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+    /* We handle the fastest case in-line here. */
+    gx_device *tdev = rdev->target;
+    const gx_clip_rect *rptr = rdev->current;
+    int xe, ye;
+
+    if (w <= 0 || h <= 0)
+        return 0;
+    x += rdev->translation.x;
+    xe = x + w;
+    y += rdev->translation.y;
+    ye = y + h;
+    if (y >= rptr->ymin && ye <= rptr->ymax) {
+        INCR(in_y);
+        if (x >= rptr->xmin && xe <= rptr->xmax) {
+            INCR(in);
+            return dev_proc(tdev, copy_plane)
+                (tdev, data, sourcex, raster, id, x, y, w, h, plane);
+        }
+    }
+    ccdata.tdev = tdev;
+    ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
+    ccdata.plane = plane;
+    return clip_enumerate_rest(rdev, x, y, xe, ye,
+                               clip_call_copy_plane, &ccdata);
 }
 
 /* Copy a color rectangle */
