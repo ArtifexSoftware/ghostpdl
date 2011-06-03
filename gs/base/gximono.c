@@ -316,7 +316,11 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     }
     run = *psrc;
     /* Find the last transition in the input. */
-    {
+    if (masked &&
+        (penum->posture != image_portrait) &&
+        (penum->posture != image_landscape)) {
+        /* No need to calculate stop */
+    } else {
         byte last = stop[-1];
 
         while (stop > psrc && stop[-1] == last)
@@ -347,7 +351,9 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             code = gx_color_load(pdevc, pis, dev);
             if (code < 0)
                 return code;
-            if (stop <= psrc)
+            if ((stop <= psrc) && (penum->adjust == 0) &&
+                ((penum->posture == image_portrait) ||
+                 (penum->posture == image_landscape)))
                 goto last;
             if (penum->posture == image_portrait) {
 
@@ -454,27 +460,40 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
                 /**************************************
                  * Slow case, masked, not orthogonal. *
                  **************************************/
-
+                /* FIXME: RJW: This code doesn't do adjustment. Should it?
+                 * In the grand scheme of things it almost certainly doesn't
+                 * matter (as adjust should only be used when plotting chars,
+                 * and we use freetype now), but we record the fact that this
+                 * may be a defect here. */
+                /* Previous code here used to skip blocks of matching pixels
+                 * and plot them all in one go. We can't do that, as it can
+                 * cause rounding errors and mismatches with the image pixels
+                 * that will be plotted after us. */
+                stop = endp;
                 for (;;) {
+                    /* skip forward until we find a 1 bit */
                     for (; !*psrc; ++psrc) {
                         dda_next(next.x);
                         dda_next(next.y);
                     }
-                    yrun = ytf;
-                    xrun = xl;
-                    if (psrc >= stop)
+                    if (psrc >= endp) /* Note, endp NOT stop! */
                         break;
-                    for (; *psrc; ++psrc) {
+                    /* Then draw the pgram and step forward until we find a
+                     * 0 bit. */
+                    do {
+                        yrun = ytf;
+                        xrun = xl;
                         dda_next(next.x);
                         dda_next(next.y);
-                    }
-                    code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
-                                         ytf - yrun, pdyx, pdyy, pdevc, lop);
-                    if (code < 0)
-                        goto err;
-                    rsrc = psrc;
-                    if (psrc >= stop)
-                        break;
+                        code = (*fill_pgram)(dev, xrun, yrun, xl - xrun,
+                                             ytf - yrun, pdyx, pdyy, pdevc, lop);
+                        if (code < 0)
+                            goto err;
+                        psrc++;
+                        rsrc = psrc;
+                        if (psrc >= stop)
+                            break;
+                    } while (*psrc);
                 }
 
             }
