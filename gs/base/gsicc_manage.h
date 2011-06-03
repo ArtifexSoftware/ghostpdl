@@ -39,6 +39,22 @@
 #define GSICC_NUMBER_STANDARD_PROFILES 2
 #define GSICC_STANDARD_INTENT_KEYS\
   "per", "col" , "sat", "abs"
+/* This enumeration has to be in sync with GSICC_SRCOBJ_KEYS */
+typedef enum {
+    COLOR_TUNE,   
+    GRAPHIC_CMYK,
+    IMAGE_CMYK,
+    TEXT_CMYK,
+    GRAPHIC_RGB,
+    IMAGE_RGB,
+    TEXT_RGB
+} gsicc_srcobjkey_t;
+
+#define GSICC_SRCOBJ_KEYS\
+  "ColorTune", "Graphic_CMYK", "Image_CMYK", "Text_CMYK",\
+  "Graphic_RGB", "Image_RGB", "Text_RGB"
+#define GSICC_NUM_SRCOBJ_KEYS 7
+#define GSICC_SRC_OBJ_MAX_KEY 12
 
 #include "gsicc_cms.h"
 

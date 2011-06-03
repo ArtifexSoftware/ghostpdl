@@ -71,6 +71,7 @@ static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
                                       int64_t icc_hashcode, int *size);
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
                           gs_memory_t *memory);
+static cmm_srcobj_profile_t* gsicc_new_srcobj_profile(gs_memory_t *memory);
 
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
@@ -470,9 +471,166 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
 /* This inititializes the srcobj structure in the ICC manager */
 int 
 gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname, 
-                        int namelen) {
+                        int namelen) 
+{
+    gs_memory_t *mem;
+    stream *str;
+    int code;
+    int info_size;
+    char *buffer_ptr, *curr_ptr;
+    int num_bytes;
+    char str_format_key[6], str_format_file[6]; 
+    int count;
+    int k;
+    static const char *const srcobj_keys[] = {GSICC_SRCOBJ_KEYS};
+    cmm_profile_t *icc_profile;
+    int ri;
+    cmm_srcobj_profile_t *srcobj;
+    bool start = true;
 
+    /* If we don't have an icc manager or if this thing is already set
+       then ignore the call.  For now, I am going going to allow it to
+       be set one time. */
+    if (icc_manager == NULL || icc_manager->srcobj_profile != NULL) {
+        return 0;
+    } else {
+        mem = icc_manager->memory;
+        str = gsicc_open_search(pname, namelen, mem, icc_manager->profiledir,
+                                icc_manager->namelen);
+    }
+    if (str != NULL) {
+        /* Get the information in the file */
+        code = sfseek(str,0,SEEK_END);
+        info_size = sftell(str);
+        code = srewind(str);
+        if (info_size > (GSICC_NUM_SRCOBJ_KEYS + 1) * FILENAME_MAX) {
+            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+                               pname);
+        }
+        /* Allocate the buffer, stuff with the data */
+        buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1, "gsicc_set_srcobj_struct");
+        if (buffer_ptr == NULL) {
+            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+                               pname);
+        }
+        num_bytes = sfread(buffer_ptr,sizeof(unsigned char), info_size, str);
+        code = sfclose(str);
+        buffer_ptr[info_size] = 0;
+        if (num_bytes != info_size) {
+            gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+                               pname);
+        }
+        /* Create the structure in which we will store this data */
+        srcobj = gsicc_new_srcobj_profile(mem);
+        /* Now parse through the data opening the profiles that are needed */
+        /* First create the format that we should read for the key */
+        sprintf(str_format_key, "%%%ds", GSICC_SRC_OBJ_MAX_KEY);
+        sprintf(str_format_file, "%%%ds", FILENAME_MAX);
+        curr_ptr = buffer_ptr;
 
+        while (start || strlen(curr_ptr) > 0) {
+            if (start) {
+                curr_ptr = strtok(buffer_ptr, "\t,\32\n\r");
+                start = false;
+            } else {
+                curr_ptr = strtok(NULL, "\t,\32\n\r");
+            }
+            if (curr_ptr == NULL) break;
+            /* Now go ahead and see if we have a match */
+            for (k = 0; k < GSICC_NUM_SRCOBJ_KEYS; k++) {
+                if (strncmp(curr_ptr, srcobj_keys[k], strlen(srcobj_keys[k])) == 0 ) {
+                    /* Try to open the file and set the profile */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    str = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem, 
+                                            icc_manager->profiledir,
+                                            icc_manager->namelen);
+                    if (str != NULL) {
+                        icc_profile =
+                            gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
+                        code = sfclose(str);
+                        gsicc_init_profile_info(icc_profile); 
+                        break;
+                    } else {
+                        /* Failed to open profile file. End this now. */
+                        gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+                        rc_decrement(srcobj, "gsicc_set_srcobj_struct");
+                        return gs_rethrow1(-1, 
+                                "setting of %s src obj color info failed", pname);
+                    }
+                }
+            }
+            /* Get the intent now and set the profile. If GSICC_SRCOBJ_KEYS
+               order changes this switch needs to change also */
+            switch (k) {
+                case COLOR_TUNE:
+                    /* Color tune profile. No intent */
+                    srcobj->color_warp_profile = icc_profile;
+                    break;
+                case GRAPHIC_CMYK:
+                    srcobj->cmyk_profiles[gsGRAPHICPROFILE] = icc_profile;
+                    /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsGRAPHICPROFILE] = ri;
+                    break;
+                case IMAGE_CMYK:
+                    srcobj->cmyk_profiles[gsIMAGEPROFILE] = icc_profile;
+                    /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsIMAGEPROFILE] = ri;
+                    break;
+                case TEXT_CMYK:
+                    srcobj->cmyk_profiles[gsTEXTPROFILE] = icc_profile;
+                    /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsTEXTPROFILE] = ri;
+                    break;
+                case GRAPHIC_RGB:
+                    srcobj->rgb_profiles[gsGRAPHICPROFILE] = icc_profile;
+                     /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsGRAPHICPROFILE] = ri;
+                   break;
+                case IMAGE_RGB:
+                    srcobj->rgb_profiles[gsIMAGEPROFILE] = icc_profile;
+                    /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsIMAGEPROFILE] = ri;
+                    break;
+                case TEXT_RGB:
+                    srcobj->rgb_profiles[gsTEXTPROFILE] = icc_profile;
+                    /* Get the intent */
+                    curr_ptr = strtok(NULL, "\t,\32\n\r");
+                    count = sscanf(curr_ptr, "%d", &ri);
+                    srcobj->cmyk_intent[gsTEXTPROFILE] = ri;
+                    break;
+                case GSICC_NUM_SRCOBJ_KEYS:
+                    /* Failed to match the key */
+                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+                    rc_decrement(srcobj, "gsicc_set_srcobj_struct");
+                    return gs_rethrow1(-1, "failed to find key in %s", pname);
+                    break;
+                default:
+                    /* Some issue */
+                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+                    rc_decrement(srcobj, "gsicc_set_srcobj_struct");
+                    return gs_rethrow1(-1, "Error in srcobj data %s", pname);
+                    break;
+            }
+        }
+    } else {
+        return gs_rethrow1(-1, "setting of %s src obj color info failed", pname);
+    }
+    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+    srcobj->name_length = strlen(pname);
+    srcobj->name = (char*) gs_alloc_bytes(mem, srcobj->name_length, 
+                                  "gsicc_set_srcobj_struct");
+    strncpy(srcobj->name, pname, srcobj->name_length);
     return 0;
 } 
 
@@ -768,7 +926,7 @@ rc_free_srcobj_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 }
 
 /* Allocate source object icc structure. */
-cmm_srcobj_profile_t*
+static cmm_srcobj_profile_t*
 gsicc_new_srcobj_profile(gs_memory_t *memory)
 {
     cmm_srcobj_profile_t *result;

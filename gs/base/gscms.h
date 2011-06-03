@@ -98,10 +98,10 @@ typedef enum {
 
 /* Enumerate the types of profiles */
 typedef enum {
-    gsDEFAULTPROFILE = 0,
-    gsGRAPHICPROFILE,
+    gsGRAPHICPROFILE = 0,
     gsIMAGEPROFILE,
-    gsTEXTPROFILE
+    gsTEXTPROFILE,
+    gsDEFAULTPROFILE
 } gsicc_profile_types_t;
 
 /* Source profiles for different objects.  only CMYK and RGB */
