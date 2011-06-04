@@ -927,7 +927,7 @@ rinkj_set_luts(rinkj_device *rdev,
                RinkjDevice *printer_dev, RinkjDevice *cmyk_dev,
                const char *config_fn, const RinkjDeviceParams *params)
 {
-    FILE *f = fopen(config_fn, "r");
+    FILE *f = gp_fopen(config_fn, "r");
     char linebuf[256];
     char key[256];
     char *val;

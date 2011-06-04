@@ -280,7 +280,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
         }
         memcpy(tdev->fname, ofs.data, ofs.size);
         tdev->fname[ofs.size] = 0;
-        tdev->file = fopen(tdev->fname, "wb");
+        tdev->file = gp_fopen(tdev->fname, "wb");
         if (tdev->file == 0)
             return_error(gs_error_ioerror);
     }

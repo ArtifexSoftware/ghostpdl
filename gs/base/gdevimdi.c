@@ -196,7 +196,7 @@ imdi_print_page(gx_device_printer *pdev, FILE *prn_stream)
 
         dprintf1("output file: %s\n", name);
 
-        fp[k] = fopen(name, "wb");
+        fp[k] = gp_fopen(name, "wb");
         if (!fp[k])
         {
             code = gs_throw2(-1, "could not open file: %s (%s)", name, strerror(errno));

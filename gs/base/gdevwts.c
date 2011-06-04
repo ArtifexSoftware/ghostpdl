@@ -290,7 +290,7 @@ wts_halftone_line_8(wts_cooked_halftone *wch, int y, int width, int n_planes,
 static int
 wts_load_halftone(gs_memory_t *mem, wts_cooked_halftone *wch, const char *fn)
 {
-    FILE *f = fopen(fn, "rb");
+    FILE *f = gp_fopen(fn, "rb");
     int size;
     byte *buf;
     wts_screen_t *wts;
@@ -353,7 +353,7 @@ wts_init_halftones(gx_device_wts *wdev, int n_planes)
             sprintf(wts_fn, "wts_plane_%d", i);
             {
               FILE *f;
-              if ((f=fopen(wts_fn,"r"))) {
+              if ((f=gp_fopen(wts_fn,"r"))) {
                 fclose(f);
               } else {
                 sprintf(wts_fn, "/usr/local/lib/ghostscript/wts_plane_%d", i);
@@ -414,7 +414,7 @@ wtscmyk_print_page(gx_device_printer *pdev, FILE *prn_stream)
                 if (!strcmp(fn + fname_len - 5, "c.pbm"))
                     fn[fname_len - 5] = plane_name[i];
             }
-            ostream[i] = fopen(fn, "wb");
+            ostream[i] = gp_fopen(fn, "wb");
         }
         fprintf(ostream[i], "P4\n%d %d\n", pdev->width, pdev->height);
     }

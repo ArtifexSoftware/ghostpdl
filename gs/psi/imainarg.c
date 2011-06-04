@@ -879,7 +879,7 @@ try_stdout_redirect(gs_main_instance * minst,
                 minst->heap->gs_lib_ctx->stdout_to_stderr = 1;
             }
             else if ((minst->heap->gs_lib_ctx->fstdout2 =
-                      fopen(filename, "w")) == (FILE *)NULL)
+                      gp_fopen(filename, "w")) == (FILE *)NULL)
                 return_error(e_invalidfileaccess);
             minst->heap->gs_lib_ctx->stdout_is_redirected = 1;
         }
