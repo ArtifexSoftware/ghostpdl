@@ -130,9 +130,6 @@ GENOPT=
 #	uses mkstemp instead of mktemp
 #		This uses the more secure temporary file creation call
 #		Enable this if it is available on your platform.
-# -DHAVE_HYPOT
-#	use the system hypot() call
-#
 # -DHAVE_FILE64
 #	use marked versions of the stdio FILE calls, fopen64() et al.
 #
@@ -147,7 +144,7 @@ GENOPT=
 # -DHAVE_SSE2
 #       use sse2 intrinsics
 
-CAPOPT= @HAVE_MKSTEMP@ @HAVE_HYPOT@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@ @HAVE_DBUS@ @HAVE_BSWAP32@ @HAVE_BYTESWAP_H@
+CAPOPT= @HAVE_MKSTEMP@ @HAVE_FILE64@ @HAVE_MKSTEMP64@ @HAVE_FONTCONFIG@ @HAVE_LIBIDN@ @HAVE_SETLOCALE@ @HAVE_SSE2@ @HAVE_DBUS@ @HAVE_BSWAP32@ @HAVE_BYTESWAP_H@
 
 # Define the name of the executable file.
 

@@ -102,8 +102,6 @@ GENOPT=
 #       uses mkstemp instead of mktemp
 #               This uses the more secure temporary file creation call
 #               Enable this if it is available on your platform.
-# -DHAVE_HYPOT
-#       use the system hypot() call
 
 CAPOPT= -DHAVE_MKSTEMP
 
