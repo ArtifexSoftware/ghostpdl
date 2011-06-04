@@ -338,13 +338,51 @@ display_callback display = {
  */
 
 /*********************************************************************/
+/* Would be nicer to have this in the DLL, but we haven't loaded the
+ * DLL by the time this is required.
+ */
+static int wchar_to_utf8(char *out, const wchar_t *in)
+{
+    unsigned int i;
+    unsigned int len = 1;
+
+    if (out) {
+        while (i = (unsigned int)*in++) {
+            if (i < 0x80) {
+                *out++ = (char)i;
+                len++;
+            } else if (i < 0x800) {
+                *out++ = 0xC0 | ( i>> 6        );
+                *out++ = 0x80 | ( i      & 0x3F);
+                len++;
+            } else /* if (i < 0x10000) */ {
+                *out++ = 0xE0 | ( i>>12        );
+                *out++ = 0x80 | ((i>> 6) & 0x3F);
+                *out++ = 0x80 | ( i      & 0x3F);
+                len++;
+            }
+        }
+        *out = 0;
+    } else {
+        while (i = (unsigned int)*in++) {
+            if (i < 0x80) {
+                len++;
+            } else if (i < 0x800) {
+                len += 2;
+            } else /* if (i < 0x10000) */ {
+                len += 3;
+            }
+        }
+    }
+    return len;
+}
 
 /* Our 'main' routine sets up the separate thread to look after the
  * display window, and inserts the relevant defaults for the display device.
  * If the user specifies a different device, or different parameters to
  * the display device, the later ones should take precedence.
  */
-int main(int argc, char *argv[])
+static int main_utf8(int argc, char *argv[])
 {
     int code, code1;
     int exit_code;
@@ -431,4 +469,36 @@ int main(int argc, char *argv[])
     }
 
     return exit_status;
+}
+
+int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
+    /* Duplicate args as utf8 */
+    char **nargv;
+    int i, code;
+
+    nargv = calloc(argc, sizeof(nargv[0]));
+    if (nargv == NULL)
+        goto err;
+    for (i=0; i < argc; i++) {
+        nargv[i] = malloc(wchar_to_utf8(NULL, argv[i]));
+        if (nargv[i] == NULL)
+            goto err;
+        (void)wchar_to_utf8(nargv[i], argv[i]);
+    }
+    code = main_utf8(argc, nargv);
+
+    if (0) {
+err:
+        wprintf(L"Ghostscript failed to initialise due to malloc failure\n");
+        code = -1;
+    }
+
+    if (nargv) {
+        for (i=0; i<argc; i++) {
+            free(nargv[i]);
+        }
+        free(nargv);
+    }
+
+    return code;
 }

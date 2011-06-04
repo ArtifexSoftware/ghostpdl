@@ -67,6 +67,60 @@ BOOL is_win32s = FALSE;
 const LPSTR szAppName = "Ghostscript";
 static int is_printer(const char *name);
 
+static int utf8_to_wchar(wchar_t *out, const char *in)
+{
+    unsigned int i;
+    unsigned int len = 1;
+    unsigned char c;
+
+    if (out) {
+        while (i = *(unsigned char *)in++) {
+            if (i < 0x80) {
+                *out++ = (wchar_t)i;
+                len++;
+            } else if ((i & 0xE0) == 0xC0) {
+                i &= 0x1F;
+                c = (unsigned char)*in++;
+                if ((c & 0xC0) != 0x80)
+                    return -1;
+                i = (i<<6) | (c & 0x3f);
+                *out++ = (wchar_t)i;
+                len++;
+            } else if ((i & 0xF0) == 0xE0) {
+                i &= 0xF;
+                c = (unsigned char)*in++;
+                if ((c & 0xC0) != 0x80)
+                    return -1;
+                i = (i<<6) | (c & 0x3f);
+                c = (unsigned char)*in++;
+                if ((c & 0xC0) != 0x80)
+                    return -1;
+                i = (i<<6) | (c & 0x3f);
+                *out++ = (wchar_t)i;
+                len++;
+            } else {
+                return -1;
+            }
+        }
+        *out = 0;
+    } else {
+        while (i = *(unsigned char *)in++) {
+            if (i < 0x80) {
+                len++;
+            } else if ((i & 0xE0) == 0xC0) {
+                in++;
+                len += 2;
+            } else if ((i & 0xF0) == 0xE0) {
+                in+=2;
+                len += 3;
+            } else {
+                return -1;
+            }
+        }
+    }
+    return len;
+}
+
 /* ====== Generic platform procedures ====== */
 
 /* ------ Initialization/termination (from gp_itbc.c) ------ */
@@ -129,11 +183,11 @@ gp_open_printer(const gs_memory_t *mem,
                                      win_prntmp, "wb");
         return pfile;
     } else if (fname[0] == '|') 	/* pipe */
-        return popen(fname + 1, (binary_mode ? "wb" : "w"));
+        return mswin_popen(fname + 1, (binary_mode ? "wb" : "w"));
     else if (strcmp(fname, "LPT1:") == 0)
         return NULL;	/* not supported, use %printer%name instead  */
     else
-        return fopen(fname, (binary_mode ? "wb" : "w"));
+        return gp_fopen(fname, (binary_mode ? "wb" : "w"));
 }
 
 /* Close the connection to the printer. */
@@ -365,7 +419,7 @@ gp_printfile_win32(const char *filename, char *port)
     if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL)
         return FALSE;
 
-    if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
+    if ((f = gp_fopen(filename, "rb")) == (FILE *) NULL) {
         free(buffer);
         return FALSE;
     }
@@ -430,7 +484,7 @@ gp_printfile_win32(const char *filename, char *port)
 FILE *mswin_popen(const char *cmd, const char *mode)
 {
     SECURITY_ATTRIBUTES saAttr;
-    STARTUPINFO siStartInfo;
+    STARTUPINFOW siStartInfo;
     PROCESS_INFORMATION piProcInfo;
     HANDLE hPipeTemp = INVALID_HANDLE_VALUE;
     HANDLE hChildStdinRd = INVALID_HANDLE_VALUE;
@@ -439,7 +493,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     HANDLE hChildStderrWr = INVALID_HANDLE_VALUE;
     HANDLE hProcess = GetCurrentProcess();
     int handle = 0;
-    char *command = NULL;
+    wchar_t *command = NULL;
     FILE *pipe = NULL;
 
     if (strcmp(mode, "wb") != 0)
@@ -477,23 +531,23 @@ FILE *mswin_popen(const char *cmd, const char *mode)
             handle = -1;
 
     /* Set up members of STARTUPINFO structure. */
-    memset(&siStartInfo, 0, sizeof(STARTUPINFO));
-    siStartInfo.cb = sizeof(STARTUPINFO);
+    memset(&siStartInfo, 0, sizeof(STARTUPINFOW));
+    siStartInfo.cb = sizeof(STARTUPINFOW);
     siStartInfo.dwFlags = STARTF_USESTDHANDLES;
     siStartInfo.hStdInput = hChildStdinRd;
     siStartInfo.hStdOutput = hChildStdoutWr;
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
-        command = (char *)malloc(strlen(cmd)+1);
+        command = (wchar_t *)malloc(sizeof(wchar_t)*utf8_to_wchar(NULL, cmd));
         if (command)
-            strcpy(command, cmd);
+            utf8_to_wchar(command, cmd);
         else
             handle = -1;
     }
 
     if (handle == 0)
-        if (!CreateProcess(NULL,
+        if (!CreateProcessW(NULL,
             command,  	   /* command line                       */
             NULL,          /* process security attributes        */
             NULL,          /* primary thread security attributes */
@@ -587,11 +641,20 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
         }
         if (n != 0) {
-            hfile = CreateFile(sTempFileName,
-                GENERIC_READ | GENERIC_WRITE | DELETE,
-                FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS,
-                FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
-                NULL);
+            int len = utf8_to_wchar(NULL, sTempFileName);
+            wchar_t *uni = (len > 0 ? malloc(sizeof(wchar_t)*len) : NULL);
+            if (uni == NULL)
+                hfile = INVALID_HANDLE_VALUE;
+            else {
+                utf8_to_wchar(uni, sTempFileName);
+                hfile = CreateFileW(uni,
+                                    GENERIC_READ | GENERIC_WRITE | DELETE,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    NULL, CREATE_ALWAYS,
+                                    FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
+                                    NULL);
+                free(uni);
+            }
             /*
              * Can't apply FILE_FLAG_DELETE_ON_CLOSE due to
              * the logics of clist_fclose. Also note that
@@ -631,7 +694,21 @@ gp_open_scratch_file(const gs_memory_t *mem,
 FILE *
 gp_fopen(const char *fname, const char *mode)
 {
-    return fopen(fname, mode);
+    int len = utf8_to_wchar(NULL, fname);
+    wchar_t *uni;
+    wchar_t wmode[4];
+    FILE *file;
+
+    if (len <= 0)
+        return NULL;
+    uni = malloc(len*sizeof(wchar_t));
+    if (uni == NULL)
+        return NULL;
+    utf8_to_wchar(uni, fname);
+    utf8_to_wchar(wmode, mode);
+    file = _wfopen(uni, wmode);
+    free(uni);
+    return file;
 }
 
 /* ------ Font enumeration ------ */
@@ -665,7 +742,7 @@ void gp_enumerate_fonts_free(void *enum_state)
 
 FILE *gp_fopen_64(const char *filename, const char *mode)
 {
-    return fopen(filename, mode);
+    return gp_fopen(filename, mode);
 }
 
 FILE *gp_open_scratch_file_64(const gs_memory_t *mem,

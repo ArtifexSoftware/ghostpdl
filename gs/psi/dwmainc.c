@@ -321,7 +321,46 @@ display_callback display = {
 
 /*********************************************************************/
 
-int main(int argc, char *argv[])
+/* Would be nicer to have this in the DLL, but we haven't loaded the
+ * DLL by the time this is required.
+ */
+static int wchar_to_utf8(char *out, const wchar_t *in)
+{
+    unsigned int i;
+    unsigned int len = 1;
+
+    if (out) {
+        while (i = (unsigned int)*in++) {
+            if (i < 0x80) {
+                *out++ = (char)i;
+                len++;
+            } else if (i < 0x800) {
+                *out++ = 0xC0 | ( i>> 6        );
+                *out++ = 0x80 | ( i      & 0x3F);
+                len++;
+            } else /* if (i < 0x10000) */ {
+                *out++ = 0xE0 | ( i>>12        );
+                *out++ = 0x80 | ((i>> 6) & 0x3F);
+                *out++ = 0x80 | ( i      & 0x3F);
+                len++;
+            }
+        }
+        *out = 0;
+    } else {
+        while (i = (unsigned int)*in++) {
+            if (i < 0x80) {
+                len++;
+            } else if (i < 0x800) {
+                len += 2;
+            } else /* if (i < 0x10000) */ {
+                len += 3;
+            }
+        }
+    }
+    return len;
+}
+
+static int main_utf8(int argc, char *argv[])
 {
     int code, code1;
     int exit_code;
@@ -403,37 +442,40 @@ int main(int argc, char *argv[])
     }
     nargc = argc + 2;
     nargv = (char **)malloc((nargc + 1) * sizeof(char *));
-    nargv[0] = argv[0];
-    nargv[1] = dformat;
-    nargv[2] = ddpi;
-    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
+    if (nargv == NULL) {
+        fprintf(stderr, "Malloc failure!\n");
+    } else {
+        nargv[0] = argv[0];
+        nargv[1] = dformat;
+        nargv[2] = ddpi;
+        memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
 #if defined(_MSC_VER) || defined(__BORLANDC__)
-    __try {
+        __try {
 #endif
-    code = gsdll.init_with_args(instance, nargc, nargv);
-    if (code == 0)
-        code = gsdll.run_string(instance, start_string, 0, &exit_code);
-    code1 = gsdll.exit(instance);
-    if (code == 0 || (code == e_Quit && code1 != 0))
-        code = code1;
+            code = gsdll.init_with_args(instance, nargc, nargv);
+            if (code == 0)
+                code = gsdll.run_string(instance, start_string, 0, &exit_code);
+            code1 = gsdll.exit(instance);
+            if (code == 0 || (code == e_Quit && code1 != 0))
+                code = code1;
 #if defined(_MSC_VER) || defined(__BORLANDC__)
-    } __except(exception_code() == EXCEPTION_STACK_OVERFLOW) {
-        code = e_Fatal;
-        fprintf(stderr, "*** C stack overflow. Quiting...\n");
-    }
+        } __except(exception_code() == EXCEPTION_STACK_OVERFLOW) {
+            code = e_Fatal;
+            fprintf(stderr, "*** C stack overflow. Quiting...\n");
+        }
 #endif
 
-    gsdll.delete_instance(instance);
+        gsdll.delete_instance(instance);
 
 #ifdef DEBUG
-    visual_tracer_close();
+        visual_tracer_close();
 #endif
 
-    unload_dll(&gsdll);
+        unload_dll(&gsdll);
 
-    free(nargv);
-
+        free(nargv);
+    }
     /* close other thread */
     quitnow = TRUE;
     PostThreadMessage(thread_id, WM_QUIT, 0, (LPARAM)0);
@@ -453,4 +495,37 @@ int main(int argc, char *argv[])
     }
 
     return exit_status;
+}
+
+int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
+    /* Duplicate args as utf8 */
+    char **nargv;
+    int i, code;
+
+    nargv = calloc(argc, sizeof(nargv[0]));
+    if (nargv == NULL)
+        goto err;
+    for (i=0; i < argc; i++) {
+        nargv[i] = malloc(wchar_to_utf8(NULL, argv[i]));
+        if (nargv[i] == NULL)
+            goto err;
+        (void)wchar_to_utf8(nargv[i], argv[i]);
+    }
+    code = main_utf8(argc, nargv);
+
+    if (0) {
+err:
+        fprintf(stderr,
+                "Ghostscript failed to initialise due to malloc failure\n");
+        code = -1;
+    }
+
+    if (nargv) {
+        for (i=0; i<argc; i++) {
+            free(nargv[i]);
+        }
+        free(nargv);
+    }
+
+    return code;
 }
