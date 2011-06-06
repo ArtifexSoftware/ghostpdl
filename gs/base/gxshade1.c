@@ -826,13 +826,18 @@ compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0
     double cc, c;
     bool have_root[2] = {false, false};
     double t[2];
-    bool by_x = (rsa->p[point_index].x == rsa->p[point_index + 1].x);
+    bool by_x = (rsa->p[point_index].x != rsa->p[point_index + 1].x);
     int i;
 
-    /* Assuming x0 = y0 = 0 :
-       cc * t +- (r0 + (r1 - r0) * t) == c
-       t0 := (c - r0) / (cc + (r1 - r0))
-       t1 := (c + r0) / (cc - (r1 - r0))
+    /* As t moves from 0 to 1, the circles move from r0 to r1, and from
+     * from position p0 to py. For simplicity, adjust so that p0 is at
+     * the origin. Consider the projection of the circle drawn at any given
+     * time onto the x axis. The range of points would be:
+     * p1x*t +/- (r0+(r1-r0)*t). We are interested in the first (and last)
+     * moments when the range includes a point c on the x axis. So solve for:
+     * p1x*t +/- (r0+(r1-r0)*t) = c. Let cc = p1x.
+     * So p1x*t0 + (r1-r0)*t0 = c - r0 => t0 = (c - r0)/(p1x + r1 - r0)
+     *    p1x*t1 - (r1-r0)*t1 = c + r0 => t1 = (c + r0)/(p1x - r1 + r0)
      */
     if (by_x) {
         c = rsa->p[point_index].x - rsa->x0;
@@ -844,8 +849,9 @@ compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0
     t[0] = (c - r0) / (cc + r1 - r0);
     t[1] = (c + r0) / (cc - r1 + r0);
     if (t[0] > t[1]) {
+        c    = t[0];
         t[0] = t[1];
-        t[1] = (c - r0) / (cc + r1 - r0);
+        t[1] = c;
     }
     for (i = 0; i < 2; i++) {
         double d, d0, d1;
@@ -868,38 +874,64 @@ compute_radial_shading_span_extended_side(radial_shading_attrs_t *rsa, double r0
 static int
 compute_radial_shading_span_extended_point(radial_shading_attrs_t *rsa, double r0, double r1, int point_index)
 {
+    /* As t moves from 0 to 1, the circles move from r0 to r1, and from
+     * from position p0 to py. At any given time t, therefore, we
+     * paint the points that are distance r0+(r1-r0)*t from point
+     * (p0x+(p1x-p0x)*t,p0y+(p1y-p0y)*t) = P(t).
+     *
+     * To simplify our algebra, adjust so that (p0x, p0y) is at the origin.
+     * To find the time(s) t at which the a point q is painted, we therefore
+     * solve for t in:
+     *
+     * |q-P(t)| = r0+(r1-r0)*t
+     *
+     *   (qx-p1x*t)^2 + (qy-p1y*t)^2 - (r0+(r1-r0)*t)^2 = 0
+     * = qx^2 - 2qx.p1x.t + p1x^2.t^2 + qy^2 - 2qy.p1y.t + p1y^2.t^2 -
+     *                                   (r0^2 + 2r0(r1-r0)t + (r1-r0)^2.t^2)
+     * =   qx^2 + qy^2 - r0^2
+     *   + -2(qx.p1x + qy.p1y + r0(r1-r0)).t
+     *   + (p1x^2 + p1y^2 - (r1-r0)^2).t^2
+     *
+     * So solve using the usual t = (-b +/- SQRT(b^2 - 4ac)) where
+     *   a = p1x^2 + p1y^2 - (r1-r0)^2
+     *   b = -2(qx.p1x + qy.p1y + r0(r1-r0))
+     *   c = qx^2 + qy^2 - r0^2
+     */
     double p1x = rsa->x1 - rsa->x0;
     double p1y = rsa->y1 - rsa->y0;
-    double qx = rsa->p[point_index].x - rsa->x0;
-    double qy = rsa->p[point_index].y - rsa->y0;
-    double div = (Pw2(p1x) + Pw2(p1y) - Pw2(r0 - r1));
+    double qx  = rsa->p[point_index].x - rsa->x0;
+    double qy  = rsa->p[point_index].y - rsa->y0;
+    double a   = (Pw2(p1x) + Pw2(p1y) - Pw2(r0 - r1));
     bool have_root[2] = {false, false};
     double t[2];
 
-    if (fabs(div) < 1e-8) {
+    if (fabs(a) < 1e-8) {
         /* Linear equation. */
-        /* This case is always the ongoing eclipese contact. */
+        /* This case is always the ongoing ellipse contact. */
         double cx = rsa->x0 - (rsa->x1 - rsa->x0) * r0 / (r1 - r0);
         double cy = rsa->y0 - (rsa->y1 - rsa->y0) * r0 / (r1 - r0);
 
         t[0] = (Pw2(qx) + Pw2(qy))/(cx*qx + cy*qy) / 2;
         have_root[0] = true;
     } else {
-        /* Square equation. */
-        double desc2 = -((Pw2(qx) + Pw2(qy) - Pw2(r0))*(Pw2(p1x) + Pw2(p1y) - Pw2(r0 - r1))) + Pw2(p1x*qx + p1y*qy + r0*(-r0 + r1));
+        /* Square equation.  No solution if b^2 - 4ac = 0. Equivalently if
+         * (b^2)/4 -a.c = 0 === (b/2)^2 - a.c = 0 ===  (-b/2)^2 - a.c = 0 */
+        double minushalfb = r0*(r1-r0) + p1x*qx + p1y*qy;
+        double c          = Pw2(qx) + Pw2(qy) - Pw2(r0);
+        double desc2      = Pw2(minushalfb) - a*c; /* desc2 = 1/4 (b^2-4ac) */
 
         if (desc2 < 0) {
             return -1; /* The point is outside the shading coverage.
                           Do not shorten, because we didn't observe it in practice. */
         } else {
-            double desc1 = sqrt(desc2);
+            double desc1 = sqrt(desc2); /* desc1 = 1/2 SQRT(b^2-4ac) */
 
-            if (div > 0) {
-                t[0] = (p1x*qx + p1y*qy + r0*(-r0 + r1) - desc1) / div;
-                t[1] = (p1x*qx + p1y*qy + r0*(-r0 + r1) + desc1) / div;
+            if (a > 0) {
+                t[0] = (minushalfb - desc1) / a;
+                t[1] = (minushalfb + desc1) / a;
             } else {
-                t[0] = (p1x*qx + p1y*qy + r0*(-r0 + r1) + desc1) / div;
-                t[1] = (p1x*qx + p1y*qy + r0*(-r0 + r1) - desc1) / div;
+                t[0] = (minushalfb + desc1) / a;
+                t[1] = (minushalfb - desc1) / a;
             }
             have_root[0] = have_root[1] = true;
         }
@@ -1090,7 +1122,7 @@ shorten_radial_shading(float *x0, float *y0, floatp *r0, float *d0, float *x1, f
 }
 
 static bool inline
-is_radial_shading_large(double x0, double y0, double r0, double d0, double x1, double y1, double r1, const gs_rect * rect)
+is_radial_shading_large(double x0, double y0, double r0, double x1, double y1, double r1, const gs_rect * rect)
 {
     const double d = hypot(x1 - x0, y1 - y0);
     const double area0 = M_PI * r0 * r0 / 2;
@@ -1141,7 +1173,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     pfs1.function_arg_shift = 1;
     pfs1.rect = *clip_rect;
     pfs1.maybe_self_intersecting = false;
-    if (is_radial_shading_large(x0, y0, r0, d0, x1, y1, r1, rect))
+    if (is_radial_shading_large(x0, y0, r0, x1, y1, r1, rect))
         span_type = compute_radial_shading_span(&rsa, x0, y0, r0, x1, y1, r1, rect);
     else
         span_type = -1;
@@ -1161,22 +1193,21 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         code = 0;
         if (span_type & 1)
             code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
-        if (code >= 0) {
+        if ((code >= 0) && (span_type & 2)) {
             float X0 = x0, Y0 = y0, D0 = d0, X1 = x1, Y1 = y1, D1 = d1;
             floatp R0 = r0, R1 = r1;
 
-            if ((span_type & 2) && (span_type & 4) && rsa.span[0][1] >= rsa.span[1][0]) {
+            if ((span_type & 4) && rsa.span[0][1] >= rsa.span[1][0]) {
                 double united[2];
 
                 united[0] = rsa.span[0][0];
                 united[1] = rsa.span[1][1];
                 shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, united);
                 second_interval = false;
-                code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
-            } else if (span_type & 2) {
+            } else {
                 second_interval = shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[0]);
-                code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
             }
+            code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
         }
         if (code >= 0 && second_interval) {
             if (span_type & 4) {
