@@ -1938,6 +1938,11 @@ drawopdict begin
 
   /Tform { Tform } def  % Text formatting and painting for AcroForm
                         % without appearance streams.
+  /inf { 
+    0 
+    (   **** Warning: invalid number 'inf' is replaced with 0 .\n)
+    pdfformaterror  % Bug 692252
+  } def       
 end
 
 % ======================= Invalid operators ============================ %
