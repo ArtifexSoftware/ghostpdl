@@ -97,28 +97,28 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
  {
      /* NOTE: all drawing procedures must be defaulted, not forwarded. */
      pattern_accum_open,
-     NULL,
-     NULL,
-     NULL,
+     NULL,                              /* get_initial_matrix */
+     NULL,                              /* sync_output */
+     NULL,                              /* output_page */
      pattern_accum_close,
-     NULL,
-     NULL,
+     NULL,                              /* map_rgb_color */
+     NULL,                              /* map_color_rgb */
      pattern_accum_fill_rectangle,
      gx_default_tile_rectangle,
      pattern_accum_copy_mono,
      pattern_accum_copy_color,
-     NULL,
+     NULL,                              /* obselete_draw_line */
      gx_default_get_bits,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
+     NULL,                              /* get_params */
+     NULL,                              /* put_params */
+     NULL,                              /* map_cmyk_color */
+     NULL,                              /* get_xfont_procs */
+     NULL,                              /* get_xfont_device */
+     NULL,                              /* map_rgb_alpha_color */
+     NULL,                              /* get_page_device */
+     NULL,                              /* get_alpha_bits */
      gx_default_copy_alpha,
-     NULL,
+     NULL,                              /* get_band */
      gx_default_copy_rop,
      gx_default_fill_path,
      gx_default_stroke_path,
@@ -135,21 +135,36 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      gx_get_largest_clipping_box,
      gx_default_begin_typed_image,
      pattern_accum_get_bits_rectangle,
-     NULL,
+     NULL,                              /* map_color_rgb_alpha */
      gx_default_create_compositor,
-     NULL,
+     NULL,                              /* create_compositor */
      gx_default_text_begin,
      gx_default_finish_copydevice,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL,
-     NULL
- },
+     NULL,                              /* begin_transparency_group */
+     NULL,                              /* end_transparency_group */
+     NULL,                              /* begin_transparency_mask */
+     NULL,                              /* end_transparency_mask */
+     NULL,                              /* discard_transparency_layer */
+     NULL,                              /* get_color_mapping_procs */
+     NULL,                              /* get_color_comp_index */
+     NULL,                              /* encode_color */
+     NULL,                              /* decode_color */
+     NULL,                              /* pattern_manage */
+     NULL,                              /* fill_rectangle_hl_color */
+     NULL,                              /* include_color_space */
+     NULL,                              /* fill_linear_color_scanline */
+     NULL,                              /* fill_linear_color_trapezoid */
+     NULL,                              /* fill_linear_color_triangle */
+     NULL,                              /* update_spot_equivalent_colors */
+     NULL,                              /* ret_devn_params */
+     NULL,                              /* fillpage */
+     NULL,                              /* push_transparency_state */
+     NULL,                              /* pop_transparency_state */
+     NULL,                              /* put_image */
+     NULL,                              /* dev_spec_op */
+     NULL,                              /* copy_plane */
+     NULL                               /* get_profile */
+},
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
 };
@@ -186,7 +201,6 @@ static dev_proc_setup_buf_device(dummy_setup_buf_device)
 static dev_proc_destroy_buf_device(dummy_destroy_buf_device)
 {
 }
-
 /* Attempt to determine the size of a pattern (the approximate amount that will */
 /* be needed in the pattern cache). If we end up using the clist, this is only  */
 /* a guess -- we use the tile size which will _probably_ be too large.          */
@@ -398,6 +412,12 @@ pattern_accum_open(gx_device * dev)
 
     PDSET(padev);
     padev->color_info = target->color_info;
+    /* Bug 689737: If PaintType == 2 (Uncolored tiling pattern), pattern is
+     * 1bpp bitmap. No antialiasing in this case! */
+    if (pinst->template.PaintType == 2) {
+        padev->color_info.anti_alias.text_bits = 1;
+        padev->color_info.anti_alias.graphics_bits = 1;
+    }
     /* If we have transparency, then fix the color info
        now so that the mem device allocates the proper
        buffer space for the pattern template.  We can
@@ -409,8 +429,7 @@ pattern_accum_open(gx_device * dev)
         padev->transbuff->mem = NULL;
         padev->transbuff->pdev14 = NULL;
         padev->transbuff->fill_trans_buffer = NULL;
-        /* RJW: Serves as an indication that padev->transbuff is
-         * uninitialised. FIXME: Check with MJV. */
+        /* n_chan = 0 => padev->transbuff isn't inited. */
         padev->transbuff->n_chan = 0;
     } else {
         padev->transbuff = NULL;
@@ -608,10 +627,10 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         return (*dev_proc(padev->target, get_bits_rectangle))
             (padev->target, prect, params, unread);
 
-        if (pinst->template.PaintType == 2)
-                return 0;
-        else
-                return_error(gs_error_Fatal); /* shouldn't happen */
+    if (pinst->template.PaintType == 2)
+        return 0;
+    else
+        return_error(gs_error_Fatal); /* shouldn't happen */
 }
 
 /* ------ Color space implementation ------ */
