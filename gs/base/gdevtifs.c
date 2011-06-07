@@ -219,9 +219,9 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     }
     switch (code = param_read_long(plist, (param_name = "AdjustWidth"), &aw)) {
         case 0:
-            if (aw != 0)
-                aw = 1;
-            break;
+            if (aw >= 0)
+                break;
+            code = gs_error_rangecheck;
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
@@ -327,8 +327,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 int                adjustWidth)
 {
     int width = pdev->width/factor;
-    if (adjustWidth)
-        width = fax_adjusted_width(width);
+    width = fax_adjusted_width(width, adjustWidth);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
     TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height/factor);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -456,7 +455,7 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif, int factor,
         return code;
 
     code = gx_downscaler_init(&ds, (gx_device *)dev, 8, bpc, num_comps,
-                              factor, mfs, &fax_adjusted_width);
+                              factor, mfs, &fax_adjusted_width, aw);
     if (code < 0)
         return code;
 

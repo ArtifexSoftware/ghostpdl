@@ -31,7 +31,7 @@ typedef struct gx_device_tiff_s {
     uint16 Compression;         /* same values as TIFFTAG_COMPRESSION */
     long MaxStripSize;
     long DownScaleFactor;
-    long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values */
+    long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values, >1 = adjust to this */
     long MinFeatureSize;         /* < 2 == no darkening */
     TIFF *tif;                  /* TIFF file opened on gx_device_common.file */
 } gx_device_tiff;

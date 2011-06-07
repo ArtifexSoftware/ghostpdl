@@ -64,7 +64,8 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int                num_comps,
                        int                factor,
                        int                mfs,
-                       int              (*adjust_width)(int));
+                       int              (*adjust_width_proc)(int, int),
+                       int 				  adjust_width);
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,
                           byte            *out_data,

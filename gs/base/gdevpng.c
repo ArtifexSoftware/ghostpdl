@@ -556,7 +556,7 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
      * hit. So ensure that we only trigger downscales when we need them.
      */
     code = gx_downscaler_init(&ds, (gx_device *)pdev, src_bpc, dst_bpc,
-                              depth/dst_bpc, factor, mfs, NULL);
+                              depth/dst_bpc, factor, mfs, NULL, 0);
     if (code >= 0)
     {
         /* Write the contents of the image. */

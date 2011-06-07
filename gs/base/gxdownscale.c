@@ -729,7 +729,8 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int                num_comps,
                        int                factor,
                        int                mfs,
-                       int              (*adjust_width)(int))
+                       int              (*adjust_width_proc)(int, int),
+                       int				  adjust_width)
 {
     int                size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int                span;
@@ -740,7 +741,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     gx_downscale_core *core;
     
     if (adjust_width != NULL)
-        awidth = adjust_width(width);
+        awidth = (*adjust_width_proc)(width, adjust_width);
     pad_white = awidth - width;
     if (pad_white < 0)
         pad_white = 0;

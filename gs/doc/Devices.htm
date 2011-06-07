@@ -592,14 +592,16 @@ composite cmyk file.  It defaults to <code>g4</code> for the
 The black-and-white TIFF devices also provide the following parameters:
 
 <blockquote><dl>
-<dt><code>-dAdjustWidth=<em>state</em></code> (0 or 1; default = 1)
-<dd>If this option is set then if the requested page width is in the range
+<dt><code>-dAdjustWidth=<em>state</em></code> (0, 1, or value; default = 1)
+<dd>If this option is 1 then if the requested page width is in the range
 of either 1680..1736 or 2000..2056 columns, set the page width to A4
-(1728 columns) or B4 (2048 columns) respectively.
+(1728 columns) or B4 (2048 columns) respectively. If this option is set
+to a value &gt;1 then the width is unconditionally adjusted to this value.
+
 This behavior is the default for all the fax based devices (i.e. all the black
 and white devices except <tt>tifflzw</tt>, <tt>tiffpack</tt> and
 <tt>tiffscaled</tt>). Pass <tt>-dAdjustWidth=0</tt> to force this behaviour
-off, and <tt>-dAdjustWidth=1</tt> to force it on.
+off.
 
 <dd>When using this option with <tt>tiffscaled</tt> it is the downsampled size
 that triggers the adjustment.

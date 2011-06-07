@@ -76,7 +76,7 @@ gdev_fax_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_int(plist, (param_name = "AdjustWidth"), &aw)) {
         case 0:
-            if (aw >= 0 && aw <= 1)
+            if (aw >= 0)
                 break;
             code = gs_error_rangecheck;
         default:
@@ -121,8 +121,7 @@ gdev_fax_init_state_adjust(stream_CFE_state *ss,
     ss->Columns = fdev->width;
     ss->Rows = fdev->height;
     ss->BlackIs1 = true;
-    if (adjust_width > 0)
-        ss->Columns = fax_adjusted_width(ss->Columns);
+    ss->Columns = fax_adjusted_width(ss->Columns, adjust_width);
 }
 
 void
