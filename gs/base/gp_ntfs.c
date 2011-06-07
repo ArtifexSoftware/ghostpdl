@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -82,7 +82,11 @@ const char gp_fmode_wb[] = "wb";
 /* ------ File enumeration ------ */
 
 struct file_enum_s {
+#ifdef WINDOWS_NO_UNICODE
     WIN32_FIND_DATA find_data;
+#else
+    WIN32_FIND_DATAW find_data;
+#endif
     HANDLE find_handle;
     char *pattern;		/* orig pattern + modified pattern */
     int patlen;			/* orig pattern length */
@@ -149,44 +153,75 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;
-    for(;;)
-      { if (pfen->first_time)
-          { pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
-            if (pfen->find_handle == INVALID_HANDLE_VALUE)
-              { code = -1;
+#ifdef WINDOWS_NO_UNICODE
+    char *outfname;
+#else
+    char outfname[(sizeof(pfen->find_data.cFileName)*3+1)/2];
+#endif
+    for(;;) {
+        if (pfen->first_time) {
+#ifdef WINDOWS_NO_UNICODE
+            pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
+#else
+            wchar_t *pat;
+            pat = malloc(utf8_to_wchar(NULL, pfen->pattern)*sizeof(wchar_t));
+            if (pat == NULL) {
+                code = -1;
                 break;
-              }
+            }
+            utf8_to_wchar(pat, pfen->pattern);
+            pfen->find_handle = FindFirstFileW(pat, &(pfen->find_data));
+            free(pat);
+#endif
+            if (pfen->find_handle == INVALID_HANDLE_VALUE) {
+                code = -1;
+                break;
+            }
             pfen->first_time = 0;
-          }
-        else
-          { if (!FindNextFile(pfen->find_handle, &(pfen->find_data)))
-              { code = -1;
+        } else {
+#ifdef WINDOWS_NO_UNICODE
+            if (!FindNextFile(pfen->find_handle, &(pfen->find_data))) {
+#else
+            if (!FindNextFileW(pfen->find_handle, &(pfen->find_data))) {
+#endif
+                code = -1;
                 break;
-              }
-          }
+            }
+        }
+#ifdef WINDOWS_NO_UNICODE
         if ( strcmp(".",  pfen->find_data.cFileName)
           && strcmp("..", pfen->find_data.cFileName)
           && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
             break;
-      }
+#else
+        if ( wcscmp(L".",  pfen->find_data.cFileName)
+          && wcscmp(L"..", pfen->find_data.cFileName)
+          && (pfen->find_data.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY))
+            break;
+#endif
+    }
 
     if (code != 0) {		/* All done, clean up. */
         gp_enumerate_files_close(pfen);
         return ~(uint) 0;
     }
-    len = strlen(pfen->find_data.cFileName);
+#ifdef WINDOWS_NO_UNICODE
+    outfname = pfen->find_data.cFileName;
+#else
+    wchar_to_utf8(outfname, pfen->find_data.cFileName);
+#endif
+    len = strlen(outfname);
 
     if (pfen->head_size + len < maxlen) {
         memcpy(ptr, pfen->pattern, pfen->head_size);
-        strcpy(ptr + pfen->head_size, pfen->find_data.cFileName);
+        strcpy(ptr + pfen->head_size, outfname);
         return pfen->head_size + len;
     }
     if (pfen->head_size >= maxlen)
         return 0;		/* no hope at all */
 
     memcpy(ptr, pfen->pattern, pfen->head_size);
-    strncpy(ptr + pfen->head_size, pfen->find_data.cFileName,
-            maxlen - pfen->head_size - 1);
+    strncpy(ptr + pfen->head_size, outfname, maxlen - pfen->head_size - 1);
     return maxlen;
 }
 

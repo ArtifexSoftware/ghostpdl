@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -92,7 +92,7 @@ void mswin_printer_thread(void *arg)
 
     while ( (count = read(fd, data, sizeof(data))) > 0 ) {
         if (hprinter == INVALID_HANDLE_VALUE) {
-            if (!OpenPrinter(pname, &hprinter, NULL)) {
+            if (!gp_OpenPrinter(pname, &hprinter)) {
                 close(fd);
                 return;
             }
@@ -161,7 +161,7 @@ mswin_printer_fopen(gx_io_device * iodev, const char *fname, const char *access,
         return_error(gs_error_invalidfileaccess);
 
     /* Make sure that printer exists. */
-    if (!OpenPrinter((LPTSTR)fname, &hprinter, NULL))
+    if (!gp_OpenPrinter((LPTSTR)fname, &hprinter))
         return_error(gs_error_invalidfileaccess);
     ClosePrinter(hprinter);
 

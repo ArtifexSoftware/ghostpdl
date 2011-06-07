@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2008 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -399,6 +399,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     int argc;
     LPSTR argv[MAXCMDTOKENS];
     LPSTR p;
+#ifndef WINDOWS_NO_UNICODE
+    LPSTR pstart;
+#endif
     char command[256];
     char *args;
     char *d, *e;
@@ -426,7 +429,16 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
      *          if called with CreateProcess(command, args, ...)
      * Consequently we must use GetCommandLine()
      */
+#ifdef WINDOWS_NO_UNICODE
     p = GetCommandLine();
+#else
+    {
+        wchar_t *uni = GetCommandLineW();
+        pstart = p = malloc(wchar_to_utf8(NULL, uni));
+        if (p != NULL)
+            wchar_to_utf8(p, uni);
+    }
+#endif
 
     argc = 0;
     args = (char *)malloc(lstrlen(p)+1);
@@ -464,6 +476,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
             p++;	/* Skip over trailing spaces */
     }
     argv[argc] = NULL;
+
+#ifndef WINDOWS_NO_UNICODE
+    free(pstart);
+#endif
 
     if (strlen(argv[0]) == 0) {
         GetModuleFileName(hInstance, command, sizeof(command)-1);

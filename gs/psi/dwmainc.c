@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2008 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -321,46 +321,11 @@ display_callback display = {
 
 /*********************************************************************/
 
-/* Would be nicer to have this in the DLL, but we haven't loaded the
- * DLL by the time this is required.
- */
-static int wchar_to_utf8(char *out, const wchar_t *in)
-{
-    unsigned int i;
-    unsigned int len = 1;
-
-    if (out) {
-        while (i = (unsigned int)*in++) {
-            if (i < 0x80) {
-                *out++ = (char)i;
-                len++;
-            } else if (i < 0x800) {
-                *out++ = 0xC0 | ( i>> 6        );
-                *out++ = 0x80 | ( i      & 0x3F);
-                len++;
-            } else /* if (i < 0x10000) */ {
-                *out++ = 0xE0 | ( i>>12        );
-                *out++ = 0x80 | ((i>> 6) & 0x3F);
-                *out++ = 0x80 | ( i      & 0x3F);
-                len++;
-            }
-        }
-        *out = 0;
-    } else {
-        while (i = (unsigned int)*in++) {
-            if (i < 0x80) {
-                len++;
-            } else if (i < 0x800) {
-                len += 2;
-            } else /* if (i < 0x10000) */ {
-                len += 3;
-            }
-        }
-    }
-    return len;
-}
-
+#ifdef WINDOWS_NO_UNICODE
+int main(int argc, char *argv[])
+#else
 static int main_utf8(int argc, char *argv[])
+#endif
 {
     int code, code1;
     int exit_code;
@@ -497,6 +462,7 @@ static int main_utf8(int argc, char *argv[])
     return exit_status;
 }
 
+#ifndef WINDOWS_NO_UNICODE
 int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     /* Duplicate args as utf8 */
     char **nargv;
@@ -529,3 +495,4 @@ err:
 
     return code;
 }
+#endif

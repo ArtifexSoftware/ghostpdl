@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -66,60 +66,6 @@ BOOL is_win32s = FALSE;
 
 const LPSTR szAppName = "Ghostscript";
 static int is_printer(const char *name);
-
-static int utf8_to_wchar(wchar_t *out, const char *in)
-{
-    unsigned int i;
-    unsigned int len = 1;
-    unsigned char c;
-
-    if (out) {
-        while (i = *(unsigned char *)in++) {
-            if (i < 0x80) {
-                *out++ = (wchar_t)i;
-                len++;
-            } else if ((i & 0xE0) == 0xC0) {
-                i &= 0x1F;
-                c = (unsigned char)*in++;
-                if ((c & 0xC0) != 0x80)
-                    return -1;
-                i = (i<<6) | (c & 0x3f);
-                *out++ = (wchar_t)i;
-                len++;
-            } else if ((i & 0xF0) == 0xE0) {
-                i &= 0xF;
-                c = (unsigned char)*in++;
-                if ((c & 0xC0) != 0x80)
-                    return -1;
-                i = (i<<6) | (c & 0x3f);
-                c = (unsigned char)*in++;
-                if ((c & 0xC0) != 0x80)
-                    return -1;
-                i = (i<<6) | (c & 0x3f);
-                *out++ = (wchar_t)i;
-                len++;
-            } else {
-                return -1;
-            }
-        }
-        *out = 0;
-    } else {
-        while (i = *(unsigned char *)in++) {
-            if (i < 0x80) {
-                len++;
-            } else if ((i & 0xE0) == 0xC0) {
-                in++;
-                len += 2;
-            } else if ((i & 0xF0) == 0xE0) {
-                in+=2;
-                len += 3;
-            } else {
-                return -1;
-            }
-        }
-    }
-    return len;
-}
 
 /* ====== Generic platform procedures ====== */
 
@@ -298,7 +244,18 @@ gp_printfile(const char *filename, const char *pmport)
 
         /* WinNT stores default printer in registry and win.ini */
         /* Win95 stores default printer in win.ini */
+#ifdef WINDOWS_NO_UNICODE
         GetProfileString("windows", "device", "", buf, sizeof(buf));
+#else
+        wchar_t wbuf[512];
+        int l;
+
+        GetProfileStringW(L"windows", L"device", L"",  wbuf, sizeof(wbuf));
+        l = wchar_to_utf8(NULL, wbuf);
+        if (l < 0 || l > sizeof(buf))
+            return gs_error_undefinedfilename;
+        wchar_to_utf8(buf, wbuf);
+#endif
         if ((p = strchr(buf, ',')) != NULL)
             *p = '\0';
         return gp_printfile_win32(filename, buf);
@@ -400,6 +357,21 @@ get_queuename(char *portname, const char *queue)
     return TRUE;
 }
 
+BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
+{
+#ifdef WINDOWS_NO_UNICODE
+    return OpenPrinter(port, printer, NULL);
+#else
+    BOOL opened;
+    wchar_t *uni = malloc(utf8_to_wchar(NULL, port) * sizeof(wchar_t));
+    if (uni)
+        utf8_to_wchar(uni, port);
+    opened = OpenPrinterW(uni, printer, NULL);
+    free(uni);
+    return opened;
+#endif
+}
+
 /* True Win32 method, using OpenPrinter, WritePrinter etc. */
 static int
 gp_printfile_win32(const char *filename, char *port)
@@ -424,7 +396,7 @@ gp_printfile_win32(const char *filename, char *port)
         return FALSE;
     }
     /* open a printer */
-    if (!OpenPrinter(port, &printer, NULL)) {
+    if (!gp_OpenPrinter(port, &printer)) {
         char buf[256];
 
         sprintf(buf, "OpenPrinter() failed for \042%s\042, error code = %d", port, GetLastError());
@@ -484,7 +456,11 @@ gp_printfile_win32(const char *filename, char *port)
 FILE *mswin_popen(const char *cmd, const char *mode)
 {
     SECURITY_ATTRIBUTES saAttr;
+#ifdef WINDOWS_NO_UNICODE
+    STARTUPINFO siStartInfo;
+#else
     STARTUPINFOW siStartInfo;
+#endif
     PROCESS_INFORMATION piProcInfo;
     HANDLE hPipeTemp = INVALID_HANDLE_VALUE;
     HANDLE hChildStdinRd = INVALID_HANDLE_VALUE;
@@ -493,7 +469,11 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     HANDLE hChildStderrWr = INVALID_HANDLE_VALUE;
     HANDLE hProcess = GetCurrentProcess();
     int handle = 0;
+#ifdef WINDOWS_NO_UNICODE
+    char *command = NULL;
+#else
     wchar_t *command = NULL;
+#endif
     FILE *pipe = NULL;
 
     if (strcmp(mode, "wb") != 0)
@@ -531,23 +511,33 @@ FILE *mswin_popen(const char *cmd, const char *mode)
             handle = -1;
 
     /* Set up members of STARTUPINFO structure. */
-    memset(&siStartInfo, 0, sizeof(STARTUPINFOW));
-    siStartInfo.cb = sizeof(STARTUPINFOW);
+    memset(&siStartInfo, 0, sizeof(siStartInfo));
+    siStartInfo.cb = sizeof(siStartInfo);
     siStartInfo.dwFlags = STARTF_USESTDHANDLES;
     siStartInfo.hStdInput = hChildStdinRd;
     siStartInfo.hStdOutput = hChildStdoutWr;
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
+#ifdef WINDOWS_NO_UNICODE
+        command = (char *)malloc(strlen(cmd)+1);
+        if (command)
+            strcpy(command, cmd);
+#else
         command = (wchar_t *)malloc(sizeof(wchar_t)*utf8_to_wchar(NULL, cmd));
         if (command)
             utf8_to_wchar(command, cmd);
+#endif
         else
             handle = -1;
     }
 
     if (handle == 0)
+#ifdef WINDOWS_NO_UNICODE
+        if (!CreateProcess(NULL,
+#else
         if (!CreateProcessW(NULL,
+#endif
             command,  	   /* command line                       */
             NULL,          /* process security attributes        */
             NULL,          /* primary thread security attributes */
@@ -641,6 +631,14 @@ gp_open_scratch_file(const gs_memory_t *mem,
                 n = GetTempFileName(sTempDir, sTempDir + i, 0, sTempFileName);
         }
         if (n != 0) {
+#ifdef WINDOWS_NO_UNICODE
+            hfile = CreateFile(sTempFileName,
+                               GENERIC_READ | GENERIC_WRITE | DELETE,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE,
+                               NULL, CREATE_ALWAYS,
+                               FILE_ATTRIBUTE_NORMAL /* | FILE_FLAG_DELETE_ON_CLOSE */,
+                               NULL);
+#else
             int len = utf8_to_wchar(NULL, sTempFileName);
             wchar_t *uni = (len > 0 ? malloc(sizeof(wchar_t)*len) : NULL);
             if (uni == NULL)
@@ -655,6 +653,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
                                     NULL);
                 free(uni);
             }
+#endif
             /*
              * Can't apply FILE_FLAG_DELETE_ON_CLOSE due to
              * the logics of clist_fclose. Also note that
@@ -694,6 +693,9 @@ gp_open_scratch_file(const gs_memory_t *mem,
 FILE *
 gp_fopen(const char *fname, const char *mode)
 {
+#ifdef WINDOWS_NO_UNICODE
+    return fopen(fname, mode);
+#else
     int len = utf8_to_wchar(NULL, fname);
     wchar_t *uni;
     wchar_t wmode[4];
@@ -709,6 +711,7 @@ gp_fopen(const char *fname, const char *mode)
     file = _wfopen(uni, wmode);
     free(uni);
     return file;
+#endif
 }
 
 /* ------ Font enumeration ------ */

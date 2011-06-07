@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -858,8 +858,6 @@ static int
 win_pr2_getdc(gx_device_win_pr2 * wdev)
 {
     char *device;
-    char *devices;
-    char *p;
     char driverbuf[512];
     char *driver;
     char *output;
@@ -890,27 +888,70 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
 
     /* now try to match the printer name against the [Devices] section */
-    if ((devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc")) == (char *)NULL)
-        return FALSE;
-    GetProfileString("Devices", NULL, "", devices, 4096);
-    p = devices;
-    while (*p) {
-        if (stricmp(p, device) == 0)
-            break;
-        p += strlen(p) + 1;
-    }
-    if (*p == '\0')
-        p = NULL;
-    gs_free(wdev->memory, devices, 4096, 1, "win_pr2_getdc");
-    if (p == NULL)
-        return FALSE;		/* doesn't match an available printer */
+#ifdef WINDOWS_NO_UNICODE
+    {
+        char *devices = gs_malloc(wdev->memory, 4096, 1, "win_pr2_getdc");
+        char *p;
+        if (devices == (char *)NULL)
+            return FALSE;
+        GetProfileString("Devices", NULL, "", devices, 4096);
+        p = devices;
+        while (*p) {
+            if (stricmp(p, device) == 0)
+                break;
+            p += strlen(p) + 1;
+        }
+        if (*p == '\0')
+            p = NULL;
+        gs_free(wdev->memory, devices, 4096, 1, "win_pr2_getdc");
+        if (p == NULL)
+            return FALSE;  /* doesn't match an available printer */
 
-    /* the printer exists, get the remaining information from win.ini */
-    GetProfileString("Devices", device, "", driverbuf, sizeof(driverbuf));
+        /* the printer exists, get the remaining information from win.ini */
+        GetProfileString("Devices", device, "", driverbuf, sizeof(driverbuf));
+    }
+#else
+    {
+        wchar_t unidrvbuf[sizeof(driverbuf)];
+        wchar_t *devices;
+        wchar_t *p;
+        wchar_t *unidev = malloc(utf8_to_wchar(NULL, device)*sizeof(wchar_t));
+        if (unidev == NULL)
+            return FALSE;
+        utf8_to_wchar(unidev, device);
+        devices = gs_malloc(wdev->memory, 8192, 1, "win_pr2_getdc");
+        if (devices == (wchar_t *)NULL) {
+            free(unidev);
+            return FALSE;
+        }
+        GetProfileStringW(L"Devices", NULL, L"", devices, 8192);
+        p = devices;
+        while (*p) {
+            if (wcsicmp(p, unidev) == 0)
+                break;
+            p += wcslen(p) + 1;
+        }
+        if (*p == '\0')
+            p = NULL;
+        gs_free(wdev->memory, devices, 8192, 1, "win_pr2_getdc");
+        if (p == NULL) {
+            free(unidev);
+            return FALSE;  /* doesn't match an available printer */
+        }
+
+        /* the printer exists, get the remaining information from win.ini */
+        GetProfileStringW(L"Devices", unidev, L"", unidrvbuf, sizeof(unidrvbuf));
+        free(unidev);
+        i = wchar_to_utf8(NULL, unidrvbuf);
+        if (i < 0 || i > sizeof(driverbuf))
+            return FALSE;
+        wchar_to_utf8(driverbuf, unidrvbuf);
+    }
+#endif
     driver = strtok(driverbuf, ",");
     output = strtok(NULL, ",");
 
-    if (!OpenPrinter(device, &hprinter, NULL))
+    if (!gp_OpenPrinter(device, &hprinter))
         return FALSE;
     devmode_size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
     if ((podevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))

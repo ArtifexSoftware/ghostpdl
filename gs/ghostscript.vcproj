@@ -339,6 +339,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\base\gp_wutf8.c"
+					>
+				</File>
+				<File
 					RelativePath="base\gpmisc.c"
 					>
 				</File>
@@ -4928,10 +4932,6 @@
 				</File>
 				<File
 					RelativePath="base\gxdevrop.h"
-					>
-				</File>
-				<File
-					RelativePath=".\base\gxdevsop.h"
 					>
 				</File>
 				<File

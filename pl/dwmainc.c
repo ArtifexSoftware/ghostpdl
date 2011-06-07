@@ -45,7 +45,7 @@
 #endif
 
 /* includes for Windows and the display procedures */
-#include <windows.h>
+#include "windows_.h"
 #include "dwimg.h"
 #include "dwres.h"
 
@@ -337,52 +337,16 @@ display_callback display = {
  * device
  */
 
-/*********************************************************************/
-/* Would be nicer to have this in the DLL, but we haven't loaded the
- * DLL by the time this is required.
- */
-static int wchar_to_utf8(char *out, const wchar_t *in)
-{
-    unsigned int i;
-    unsigned int len = 1;
-
-    if (out) {
-        while (i = (unsigned int)*in++) {
-            if (i < 0x80) {
-                *out++ = (char)i;
-                len++;
-            } else if (i < 0x800) {
-                *out++ = 0xC0 | ( i>> 6        );
-                *out++ = 0x80 | ( i      & 0x3F);
-                len++;
-            } else /* if (i < 0x10000) */ {
-                *out++ = 0xE0 | ( i>>12        );
-                *out++ = 0x80 | ((i>> 6) & 0x3F);
-                *out++ = 0x80 | ( i      & 0x3F);
-                len++;
-            }
-        }
-        *out = 0;
-    } else {
-        while (i = (unsigned int)*in++) {
-            if (i < 0x80) {
-                len++;
-            } else if (i < 0x800) {
-                len += 2;
-            } else /* if (i < 0x10000) */ {
-                len += 3;
-            }
-        }
-    }
-    return len;
-}
-
 /* Our 'main' routine sets up the separate thread to look after the
  * display window, and inserts the relevant defaults for the display device.
  * If the user specifies a different device, or different parameters to
  * the display device, the later ones should take precedence.
  */
+#ifdef WINDOWS_NO_UNICODE
+int main(int argc, char *argv[])
+#else
 static int main_utf8(int argc, char *argv[])
+#endif
 {
     int code, code1;
     int exit_code;
@@ -471,6 +435,7 @@ static int main_utf8(int argc, char *argv[])
     return exit_status;
 }
 
+#ifndef WINDOWS_NO_UNICODE
 int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     /* Duplicate args as utf8 */
     char **nargv;
@@ -502,3 +467,4 @@ err:
 
     return code;
 }
+#endif

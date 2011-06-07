@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,9 +17,18 @@
 #ifndef windows__INCLUDED
 #  define windows__INCLUDED
 
+/* This is a good place to define WINDOWS_NO_UNICODE */
+
 #define STRICT
 #include <windows.h>
 #include <process.h>
+
+/* Unicode/UTF-8 wrappers that we provide */
+BOOL gp_OpenPrinter(char *device, LPHANDLE printer);
+#ifndef WINDOWS_NO_UNICODE
+int utf8_to_wchar(wchar_t *out, const char *in);
+int wchar_to_utf8(char *out, const wchar_t *in);
+#endif
 
 #ifdef __WATCOMC__
 typedef RGBQUAD FAR * LPRGBQUAD;

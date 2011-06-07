@@ -916,25 +916,25 @@ $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE)
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE) $(GLOBJ)gp_wutf8.$(OBJ)
 	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dwmain64.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
 !else
 	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(DWOBJ) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(DWOBJ) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
 	del $(PSGEN)gswin.rsp
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_wutf8.$(OBJ)
 	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin.rsp
 !ifdef WIN64
 	echo  /DEF:$(PSSRCDIR)\dw64c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !else
 	echo  /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
 	del $(PSGEN)gswin.rsp
 
 # The big DLL
