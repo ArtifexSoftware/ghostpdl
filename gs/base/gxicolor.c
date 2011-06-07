@@ -164,7 +164,7 @@ gs_image_class_4_color(gx_image_enum * penum)
             /* If num components is 1 or if we are going to CMYK planar device
                then we will may use the thresholding if it is a halftone
                device*/
-            is_planar_dev = !dev_proc(penum->dev, dev_spec_op)(penum->dev,
+            is_planar_dev = dev_proc(penum->dev, dev_spec_op)(penum->dev,
                                  gxdso_is_native_planar, NULL, 0);
             if ((penum->dev->color_info.num_components == 1 || is_planar_dev) &&
                  penum->bps == 8 ) {
@@ -512,7 +512,6 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             break;
     }
     /* Get the pointers to our buffers */
-
     if (flush_buff) goto flush;  /* All done */
     /* Set up the dda.  We could move this out but the cost is pretty small */
     dda_init(dda_ht, 0, src_size, data_length-1);
@@ -520,7 +519,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* For now we have 3 cases.  A CMYK (4 channel), gray, or other case
        the latter of which is not yet implemented */
     for (k = 0; k < spp_out; k++) {
-        devc_contone[k] = penum->line + offset_contone[k] * k;
+        devc_contone[k] = penum->line + offset_contone[k];
         psrc_plane[k] = psrc_cm + psrc_planestride * k;
     }
     switch (spp_out)
@@ -717,10 +716,13 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
 flush:
     for (k = 0; k < spp_out; k++) {
         d_order = &(penum->pis->dev_ht->components[k].corder);
-        contone_align = penum->line + offset_contone[k] * k;
-        thresh_align = penum->thresh_buffer + offset_threshold[k] * k;
+        contone_align = penum->line + contone_stride * k + 
+                        offset_contone[k];
+        thresh_align = penum->thresh_buffer + contone_stride * vdi * k + 
+                       offset_threshold[k];
         code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
-                                 thresh_align, contone_align, contone_stride, dev);
+                                 thresh_align, contone_align, contone_stride, 
+                                 dev, k);
     }
     return code;
 }

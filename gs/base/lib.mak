@@ -662,7 +662,7 @@ $(GLOBJ)gxhtbit.$(OBJ) : $(GLSRC)gxhtbit.c $(GXERR) $(memory__h)\
 
 $(GLOBJ)gxht_thresh.$(OBJ) : $(GLSRC)gxht_thresh.c $(GXERR) $(memory__h)\
  $(gx_h) $(gxistate_h) $(gsiparam_h) $(math__h) $(gxfixed_h) $(gximage_h)\
- $(gxdevice_h) $(gxdht_h) $(gxht_thresh_h) $(gzht_h)
+ $(gxdevice_h) $(gxdht_h) $(gxht_thresh_h) $(gzht_h) $(gxdevsop_h)
 	$(GLCC) $(GLO_)gxht_thresh.$(OBJ) $(C_) $(GLSRC)gxht_thresh.c
 
 $(GLOBJ)gxwts.$(OBJ) : $(GLSRC)gxwts.c $(GXERR) $(gxwts_h)\

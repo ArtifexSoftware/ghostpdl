@@ -25,6 +25,7 @@
 #include "gxdht.h"
 #include "gxht_thresh.h"
 #include "gzht.h"
+#include "gxdevsop.h"
 
 /* Enable the following define to perform a little extra work to stop
  * spurious valgrind errors. The code should perform perfectly even without
@@ -611,7 +612,7 @@ int
 gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                   fixed xrun, int dest_width, int dest_height,
                   byte *thresh_align, byte *contone_align, int contone_stride,
-                  gx_device * dev)
+                  gx_device * dev, int plane_number)
 {
     int thresh_width, thresh_height, dx;
     int left_rem_end, left_width, vdi;
@@ -629,6 +630,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
     int offset_bits = penum->ht_offset_bits;
     byte *halftone = penum->ht_buffer;
     int dithered_stride = penum->ht_stride;
+    bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, 
+                                                gxdso_is_native_planar, NULL, 0);
 
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
        First just grab the row or column that we are going to tile with and
@@ -690,15 +693,21 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
              *
              * This would enable us to do just one aligned copy_mono call for
              * the entire scanline. */
-            /* Now do the copy mono operation */
+            /* Now do the copy mono or copy plane operation */
             /* First the left remainder bits */
             if (offset_bits > 0) {
                 int x_pos = fixed2int_var(xrun);
-                (*dev_proc(dev, copy_mono)) (dev, halftone, 0, dithered_stride,
-                                             gx_no_bitmap_id, x_pos, y_pos,
-                                             offset_bits, vdi,
-                                             (gx_color_index) 0,
-                                             (gx_color_index) 1);
+                if (!is_planar_dev) {
+                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, dithered_stride,
+                                                 gx_no_bitmap_id, x_pos, y_pos,
+                                                 offset_bits, vdi,
+                                                 (gx_color_index) 0,
+                                                 (gx_color_index) 1);
+                } else {
+                    (*dev_proc(dev, copy_plane)) (dev, halftone, 0, dithered_stride,
+                                                 gx_no_bitmap_id, x_pos, y_pos,
+                                                 offset_bits, vdi, plane_number);
+                }
             }
             if ((dest_width - offset_bits) > 0 ) {
                 /* Now the primary aligned bytes */
@@ -708,10 +717,17 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 if (offset_bits > 0) {
                     curr_ptr += 2; /* If the first 2 bytes had the left part then increment */
                 }
-                (*dev_proc(dev, copy_mono)) (dev, curr_ptr, 0, dithered_stride,
-                                             gx_no_bitmap_id, x_pos, y_pos,
-                                             curr_width, vdi,
-                                             (gx_color_index) 0, (gx_color_index) 1);
+                if (!is_planar_dev) {
+                    (*dev_proc(dev, copy_mono)) (dev, curr_ptr, 0, dithered_stride,
+                                                 gx_no_bitmap_id, x_pos, y_pos,
+                                                 curr_width, vdi,
+                                                 (gx_color_index) 0, 
+                                                 (gx_color_index) 1);
+                } else {
+                    (*dev_proc(dev, copy_plane)) (dev, curr_ptr, 0, dithered_stride,
+                                                 gx_no_bitmap_id, x_pos, y_pos,
+                                                 curr_width, vdi, plane_number);
+                }
             }
 #endif
             break;
@@ -794,21 +810,39 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 /* Perform the copy mono */
                 penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
-                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
-                                                 gx_no_bitmap_id,
-                                                 penum->ht_landscape.xstart - width + 1,
-                                                 penum->ht_landscape.y_pos,
-                                                 width, dest_height,
-                                                 (gx_color_index) 0,
-                                                 (gx_color_index) 1);
+                    if (!is_planar_dev) {
+                        (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
+                                                     gx_no_bitmap_id,
+                                                     penum->ht_landscape.xstart - width + 1,
+                                                     penum->ht_landscape.y_pos,
+                                                     width, dest_height,
+                                                     (gx_color_index) 0,
+                                                     (gx_color_index) 1);
+                    } else {
+                        (*dev_proc(dev, copy_plane)) (dev, halftone, 0, LAND_BITS>>3,
+                                                     gx_no_bitmap_id,
+                                                     penum->ht_landscape.xstart - width + 1,
+                                                     penum->ht_landscape.y_pos,
+                                                     width, dest_height,
+                                                     plane_number);
+                    }
                 } else {
-                    (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
-                                                 gx_no_bitmap_id,
-                                                 penum->ht_landscape.xstart,
-                                                 penum->ht_landscape.y_pos,
-                                                 width, dest_height,
-                                                 (gx_color_index) 0,
-                                                 (gx_color_index) 1);
+                    if (!is_planar_dev) {
+                        (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
+                                                     gx_no_bitmap_id,
+                                                     penum->ht_landscape.xstart,
+                                                     penum->ht_landscape.y_pos,
+                                                     width, dest_height,
+                                                     (gx_color_index) 0,
+                                                     (gx_color_index) 1);
+                    } else {
+                        (*dev_proc(dev, copy_plane)) (dev, halftone, 0, LAND_BITS>>3,
+                                                     gx_no_bitmap_id,
+                                                     penum->ht_landscape.xstart,
+                                                     penum->ht_landscape.y_pos,
+                                                     width, dest_height, 
+                                                     plane_number);
+                    }
                 }
                 /* Clean up and reset our buffer.  We may have a line left
                    over that has to be maintained due to line replication in the
