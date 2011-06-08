@@ -13,19 +13,29 @@
 
 /* $Id$ */
 
-/* Microsoft Windows text window for Ghostscript.
+/* Microsoft Windows text window for Ghostscript. */
 
 #include <stdlib.h>
 #include <string.h> 	/* use only far items */
+#include <wchar.h>
 #include <ctype.h>
 
 #define STRICT
-#include <windows.h>
 #include <windowsx.h>
+#include "windows_.h"
 #include <commdlg.h>
 #include <shellapi.h>
 
 #include "dwtext.h"
+
+#ifdef WINDOWS_NO_UNICODE
+#define CHARSIZE 1
+#else
+#define CHARSIZE 2
+#ifndef WM_UNICHAR
+#define WM_UNICHAR 0x109
+#endif
+#endif
 
 /* Define  min and max, but make sure to use the identical definition */
 /* to the one that all the compilers seem to have.... */
@@ -52,7 +62,11 @@ static void text_drag_drop(TW *tw, HDROP hdrop);
 static void text_copy_to_clipboard(TW *tw);
 static void text_paste_from_clipboard(TW *tw);
 
+#ifdef WINDOWS_NO_UNICODE
 static const char* TextWinClassName = "rjlTextWinClass";
+#else
+static const wchar_t* TextWinClassName = L"rjlTextWinClass";
+#endif
 static const POINT TextWinMinSize = {16, 4};
 
 static void
@@ -104,7 +118,11 @@ text_new_line(TW *tw)
         if (tw->CursorPos.y >= tw->ScreenSize.y) {
             int i =  tw->ScreenSize.x * (tw->ScreenSize.y - 1);
                 memmove(tw->ScreenBuffer, tw->ScreenBuffer+tw->ScreenSize.x, i);
+#ifdef WINDOWS_NO_UNICODE
                 memset(tw->ScreenBuffer + i, ' ', tw->ScreenSize.x);
+#else
+                wmemset(tw->ScreenBuffer + i, ' ', tw->ScreenSize.x);
+#endif
                 tw->CursorPos.y--;
                 ScrollWindow(tw->hwnd,0,-tw->CharSize.y,NULL,NULL);
                 UpdateWindow(tw->hwnd);
@@ -126,9 +144,17 @@ int xpos, ypos;
         ypos = tw->CursorPos.y*tw->CharSize.y - tw->ScrollPos.y;
         hdc = GetDC(tw->hwnd);
         SelectFont(hdc, tw->hfont);
+#ifdef WINDOWS_NO_UNICODE
         TextOut(hdc,xpos,ypos,
                 (LPSTR)(tw->ScreenBuffer + tw->CursorPos.y*tw->ScreenSize.x
                 + tw->CursorPos.x), count);
+#else
+        TextOutW(hdc,xpos,ypos,
+                 (LPCWSTR)(tw->ScreenBuffer +
+                           tw->CursorPos.y*tw->ScreenSize.x +
+                           tw->CursorPos.x),
+                 count);
+#endif
         (void)ReleaseDC(tw->hwnd,hdc);
         tw->CursorPos.x += count;
         if (tw->CursorPos.x >= tw->ScreenSize.x)
@@ -270,6 +296,9 @@ text_new(void)
     tw->y = CW_USEDEFAULT;
     tw->cx = CW_USEDEFAULT;
     tw->cy = CW_USEDEFAULT;
+#ifndef WINDOWS_NO_UNICODE
+    tw->utf8shift = 0;
+#endif
     return tw;
 }
 
@@ -310,7 +339,11 @@ text_destroy(TW *tw)
 int
 text_register_class(TW *tw, HICON hicon)
 {
+#ifdef WINDOWS_NO_UNICODE
     WNDCLASS wndclass;
+#else
+    WNDCLASSW wndclass;
+#endif
     HINSTANCE hInstance = GetModuleHandle(NULL);
     tw->hIcon = hicon;
 
@@ -325,12 +358,15 @@ text_register_class(TW *tw, HICON hicon)
     wndclass.hbrBackground = GetStockBrush(WHITE_BRUSH);
     wndclass.lpszMenuName = NULL;
     wndclass.lpszClassName = TextWinClassName;
+#ifdef WINDOWS_NO_UNICODE
     return RegisterClass(&wndclass);
+#else
+    return RegisterClassW(&wndclass);
+#endif
 }
 
 /* Show the window */
-int
-text_create(TW *tw, const char *app_name, int show_cmd)
+int text_create(TW *tw, const char *app_name, int show_cmd)
 {
     HMENU sysmenu;
     HINSTANCE hInstance = GetModuleHandle(NULL);
@@ -354,17 +390,28 @@ text_create(TW *tw, const char *app_name, int show_cmd)
         text_error("Out of memory");
         return 1;
     }
-    tw->ScreenBuffer = malloc(tw->ScreenSize.x * tw->ScreenSize.y);
+    tw->ScreenBuffer = malloc(tw->ScreenSize.x * tw->ScreenSize.y * CHARSIZE);
     if (tw->ScreenBuffer == NULL) {
         text_error("Out of memory");
         return 1;
     }
+#ifdef WINDOWS_NO_UNICODE
     memset(tw->ScreenBuffer, ' ', tw->ScreenSize.x * tw->ScreenSize.y);
+#else
+    wmemset(tw->ScreenBuffer, ' ', tw->ScreenSize.x * tw->ScreenSize.y);
+#endif
 
+#ifdef WINDOWS_NO_UNICODE
     tw->hwnd = CreateWindow(TextWinClassName, tw->Title,
                   WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
                   tw->x, tw->y, tw->cx, tw->cy,
                   NULL, NULL, hInstance, tw);
+#else
+    tw->hwnd = CreateWindowW(TextWinClassName, (LPCWSTR)tw->Title,
+                  WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
+                  tw->x, tw->y, tw->cx, tw->cy,
+                  NULL, NULL, hInstance, tw);
+#endif
 
     if (tw->hwnd == NULL) {
         MessageBox((HWND)NULL,"Couldn't open text window",(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
@@ -385,6 +432,10 @@ text_putch(TW *tw, int ch)
 {
 int pos;
 int n;
+#ifndef WINDOWS_NO_UNICODE
+int shift = tw->utf8shift;
+    tw->utf8shift=0;
+#endif
     if (tw->quitnow)
         return ch;	/* don't write error message as we shut down */
     switch(ch) {
@@ -419,8 +470,27 @@ int n;
                 break;
         default:
                 pos = tw->CursorPos.y*tw->ScreenSize.x + tw->CursorPos.x;
-                tw->ScreenBuffer[pos] = ch;
-                text_update_text(tw, 1);
+#ifndef WINDOWS_NO_UNICODE
+                /* Are we continuing a unicode char? */
+                if ((ch & 0xC0) == 0x80) {
+                    tw->ScreenBuffer[pos] |= (ch & 0x3F)<<shift;
+                    if (shift > 0)
+                        tw->utf8shift = shift-6;
+                    else
+                        text_update_text(tw, 1); /* Only update when complete */
+                } else if (ch >= 0xe0) { /* 2 more to come */
+                    tw->ScreenBuffer[pos] = (ch & 0x0f)<<12;
+                    tw->utf8shift = 6;
+                } else if (ch >= 0xC0) { /* 1 more to come */
+                    tw->ScreenBuffer[pos] = (ch & 0x01f)<<6;
+                    tw->utf8shift = 0;
+                }
+                else
+#endif
+                {
+                    tw->ScreenBuffer[pos] = ch;
+                    text_update_text(tw, 1);
+                }
     }
     return ch;
 }
@@ -428,7 +498,11 @@ int n;
 void
 text_write_buf(TW *tw, const char *str, int cnt)
 {
+#ifdef WINDOWS_NO_UNICODE
 BYTE *p;
+#else
+wchar_t *p;
+#endif
 int count, limit;
 int n;
     if (tw->quitnow)
@@ -437,7 +511,13 @@ int n;
         p = tw->ScreenBuffer + tw->CursorPos.y*tw->ScreenSize.x + tw->CursorPos.x;
         limit = tw->ScreenSize.x - tw->CursorPos.x;
         for (count=0; (count < limit) && (cnt>0) &&
-            (isprint((unsigned char)(*str)) || *str=='\t'); count++) {
+            (
+#ifdef WINDOWS_NO_UNICODE
+             isprint((unsigned char)(*str))
+#else
+             ((*str >= 32) && (*str <= 0x7F))
+#endif
+             || *str=='\t'); count++) {
             if (*str=='\t') {
                 for (n = 8 - ((tw->CursorPos.x+count) % 8); (count < limit) & (n>0); n--, count++ )
                     *p++ = ' ';
@@ -458,7 +538,13 @@ int n;
                 str++;
                 cnt--;
             }
-            else if (!isprint((unsigned char)(*str)) && *str!='\t') {
+            else if (!
+#ifdef WINDOWS_NO_UNICODE
+                isprint((unsigned char)(*str))
+#else
+                ((*str >= 32) && (*str <= 0x7f))
+#endif
+                && *str!='\t') {
                 text_putch(tw, *str++);
                 cnt--;
             }
@@ -496,21 +582,38 @@ text_getch(TW *tw)
         ShowCaret(tw->hwnd);
     }
 
+#ifdef WINDOWS_NO_UNICODE
     while (PeekMessage(&msg, (HWND)NULL, 0, 0, PM_NOREMOVE)) {
         if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
     }
+#else
+    while (PeekMessageW(&msg, (HWND)NULL, 0, 0, PM_NOREMOVE)) {
+        if (GetMessageW(&msg, (HWND)NULL, 0, 0)) {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+    }
+#endif
+
     if (tw->quitnow)
        return EOF;	/* window closed */
 
     while (!text_kbhit(tw)) {
         if (!tw->quitnow) {
+#ifdef WINDOWS_NO_UNICODE
             if (GetMessage(&msg, (HWND)NULL, 0, 0)) {
                 TranslateMessage(&msg);
                 DispatchMessage(&msg);
             }
+#else
+            if (GetMessageW(&msg, (HWND)NULL, 0, 0)) {
+                TranslateMessage(&msg);
+                DispatchMessageW(&msg);
+            }
+#endif
         }
         else
            return EOF;	/* window closed */
@@ -555,6 +658,15 @@ int ch;
                     text_putch(tw, '\b');
                     text_putch(tw, ' ');
                     text_putch(tw, '\b');
+#ifndef WINDOWS_NO_UNICODE
+                    while ((tw->line_end) &&
+                           ((tw->line_buf[tw->line_end-1] & 0xC0) == 0x80)) {
+                        /* It's a UTF-8 continuation char. */
+                        --(tw->line_end);
+                    }
+                    if (tw->line_end == 0)
+                        break;
+#endif
                     --(tw->line_end);
                 }
                 break;
@@ -618,6 +730,15 @@ int ch;
                     text_putch(tw, '\b');
                     text_putch(tw, ' ');
                     text_putch(tw, '\b');
+#ifndef WINDOWS_NO_UNICODE
+                    while ((dest > line) &&
+                           ((dest[-1] & 0xC0) == 0x80)) {
+                        /* It's a UTF-8 continuation char. */
+                        --(dest);
+                    }
+                    if (dest == line)
+                        break;
+#endif
                     --dest;
                 }
                 break;
@@ -680,21 +801,30 @@ text_copy_to_clipboard(TW *tw)
 {
     int size, count;
     HGLOBAL hGMem;
+#ifdef WINDOWS_NO_UNICODE
     LPSTR cbuf, cp;
-    TEXTMETRIC tm;
-    UINT type;
     HDC hdc;
+    TEXTMETRIC tm;
+#else
+    LPWSTR cbuf, cp;
+#endif
+    UINT type;
     int i;
 
     size = tw->ScreenSize.y * (tw->ScreenSize.x + 2) + 1;
+    size *= CHARSIZE;
     hGMem = GlobalAlloc(GHND | GMEM_SHARE, (DWORD)size);
+#ifdef WINDOWS_NO_UNICODE
     cbuf = cp = (LPSTR)GlobalLock(hGMem);
-    if (cp == (LPSTR)NULL)
+#else
+    cbuf = cp = (LPWSTR)GlobalLock(hGMem);
+#endif
+    if (cp == NULL)
         return;
 
     for (i=0; i<tw->ScreenSize.y; i++) {
         count = tw->ScreenSize.x;
-        memcpy(cp, tw->ScreenBuffer + tw->ScreenSize.x*i, count);
+        memcpy(cp, tw->ScreenBuffer + tw->ScreenSize.x*i, count*CHARSIZE);
         /* remove trailing spaces */
         for (count=count-1; count>=0; count--) {
                 if (cp[count]!=' ')
@@ -706,9 +836,21 @@ text_copy_to_clipboard(TW *tw)
         cp[++count] = '\0';
         cp += count;
     }
+    /* Now remove completely empty trailing lines */
+    while (cp >= cbuf+4) {
+        if ((cp[-3] != '\n') || (cp[-4] != '\r'))
+            break;
+        cp -= 2;
+        *cp = '\0';
+    }
+#ifdef WINDOWS_NO_UNICODE
     size = strlen(cbuf) + 1;
+#else
+    size = CHARSIZE*wcslen(cbuf) + 1;
+#endif
     GlobalUnlock(hGMem);
     hGMem = GlobalReAlloc(hGMem, (DWORD)size, GHND | GMEM_SHARE);
+#ifdef WINDOWS_NO_UNICODE
     /* find out what type to put into clipboard */
     hdc = GetDC(tw->hwnd);
     SelectFont(hdc, tw->hfont);
@@ -718,6 +860,9 @@ text_copy_to_clipboard(TW *tw)
     else
         type = CF_TEXT;
     ReleaseDC(tw->hwnd, hdc);
+#else
+    type = CF_UNICODETEXT;
+#endif
     /* give buffer to clipboard */
     OpenClipboard(tw->hwnd);
     EmptyClipboard();
@@ -729,21 +874,56 @@ void
 text_paste_from_clipboard(TW *tw)
 {
     HGLOBAL hClipMemory;
+#ifdef WINDOWS_NO_UNICODE
     BYTE *p;
+#else
+    wchar_t *p;
+#endif
     long count;
     OpenClipboard(tw->hwnd);
+#ifdef WINDOWS_NO_UNICODE
     if (IsClipboardFormatAvailable(CF_TEXT)) {
         hClipMemory = GetClipboardData(CF_TEXT);
+#else
+    if (IsClipboardFormatAvailable(CF_UNICODETEXT)) {
+        hClipMemory = GetClipboardData(CF_UNICODETEXT);
+#endif
         p = GlobalLock(hClipMemory);
         while (*p) {
             /* transfer to keyboard circular buffer */
             count = tw->KeyBufIn - tw->KeyBufOut;
             if (count < 0)
                 count += tw->KeyBufSize;
+#ifndef WINDOWS_NO_UNICODE
+            /* The clipboard contains unicode, but we put it into the key
+             * buffer as if it was typing utf8 */
+            if (*p >= 0x800) {
+                if (count < tw->KeyBufSize-3) {
+                    *tw->KeyBufIn++ = 0xE0 | (*p>>12);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | ((*p>>6) & 0x3F);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | (*p & 0x3f);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                }
+            } else if (*p >= 0x80) {
+                if (count < tw->KeyBufSize-2) {
+                    *tw->KeyBufIn++ = 0xC0 | (*p>>6);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | (*p & 0x3f);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                }
+            } else
+#endif
             if (count < tw->KeyBufSize-1) {
                 *tw->KeyBufIn++ = *p;
                 if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
-                    tw->KeyBufIn = tw->KeyBuf;	/* wrap around */
+                    tw->KeyBufIn = tw->KeyBuf; /* wrap around */
             }
             p++;
         }
@@ -929,14 +1109,45 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                       break;
             }
             break;
+#ifdef WM_UNICHAR
+        case WM_UNICHAR: /* Belt and braces */
+#endif
         case WM_CHAR:
-            { /* store key in circular buffer */
+            { /* We get unicode in, but we put it into the buffer as if the
+               * user was typing UTF8.
+               */
                 long count = tw->KeyBufIn - tw->KeyBufOut;
                 if (count < 0) count += tw->KeyBufSize;
-                if (count < tw->KeyBufSize-1) {
+#ifndef WINDOWS_NO_UNICODE
+                if (wParam >= 0x800) {
+                    if (count >= tw->KeyBufSize-3)
+                        return 0; /* Silently drop the chars! */
+                    *tw->KeyBufIn++ = 0xE0 | (wParam>>12);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | ((wParam>>6) & 0x3F);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | (wParam & 0x3f);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                } else if (wParam >= 0x80) {
+                    if (count >= tw->KeyBufSize-2)
+                        return 0; /* Silently drop the chars! */
+                    *tw->KeyBufIn++ = 0xC0 | (wParam>>6);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                    *tw->KeyBufIn++ = 0x80 | (wParam & 0x3f);
+                    if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
+                } else
+#endif
+                {
+                    if (count >= tw->KeyBufSize-1)
+                        return 0; /* Silently drop the char! */
                     *tw->KeyBufIn++ = wParam;
                     if (tw->KeyBufIn - tw->KeyBuf >= tw->KeyBufSize)
-                        tw->KeyBufIn = tw->KeyBuf;	/* wrap around */
+                        tw->KeyBufIn = tw->KeyBuf; /* wrap around */
                 }
             }
             return(0);
@@ -964,9 +1175,15 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     width.y = tw->ScreenSize.y - source.y;
             /* for each line */
             while (width.y>0) {
+#ifdef WINDOWS_NO_UNICODE
                     TextOut(hdc,dest.x,dest.y,
                         (LPSTR)(tw->ScreenBuffer + source.y*tw->ScreenSize.x + source.x),
                         width.x);
+#else
+                    TextOutW(hdc,dest.x,dest.y,
+                        (LPCWSTR)(tw->ScreenBuffer + source.y*tw->ScreenSize.x + source.x),
+                        width.x);
+#endif
                     dest.y += tw->CharSize.y;
                     source.y++;
                     width.y--;
