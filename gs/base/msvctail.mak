@@ -23,12 +23,12 @@
 # This also creates the subdirectories since this (hopefully) will be the
 # first need. Too bad nmake doesn't have .BEFORE symbolic target.
 $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
-	-mkdir $(PSOBJDIR)
-	-mkdir $(PSGENDIR)
-	-mkdir $(PSGENDIR)$(D)cups
-	-mkdir $(GLOBJDIR)
-	-mkdir $(GLGENDIR)
-	-mkdir $(BINDIR)
+	-if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
+	-if not exist $(PSGENDIR) mkdir $(PSGENDIR)
+	-if not exist $(PSGENDIR)$(D)cups mkdir $(PSGENDIR)$(D)cups
+	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	-if not exist $(BINDIR) mkdir $(BINDIR)
 	echo $(GENOPT) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c

@@ -146,6 +146,16 @@ GLGENDIR=$(GENDIR)
 GLOBJDIR=$(GENDIR)
 !endif
 
+# The PSGENDIR and PSOBJDIR are not strictly speaking required, but adding
+# them here prevents noisy warnings later on.
+!ifndef PSGENDIR
+PSGENDIR=$(GENDIR)
+!endif
+
+!ifndef PSOBJDIR
+PSOBJDIR=$(GENDIR)
+!endif
+
 !ifndef PLGENDIR
 PLGENDIR=$(GENDIR)
 !endif
