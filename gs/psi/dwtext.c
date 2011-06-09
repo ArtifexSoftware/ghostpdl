@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2011 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -72,7 +72,7 @@ static const POINT TextWinMinSize = {16, 4};
 static void
 text_error(char *message)
 {
-    MessageBox((HWND)NULL,message,(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
+    MessageBoxA((HWND)NULL,message,(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
 }
 
 /* Bring Cursor into text window */
@@ -117,7 +117,8 @@ text_new_line(TW *tw)
         tw->CursorPos.y++;
         if (tw->CursorPos.y >= tw->ScreenSize.y) {
             int i =  tw->ScreenSize.x * (tw->ScreenSize.y - 1);
-                memmove(tw->ScreenBuffer, tw->ScreenBuffer+tw->ScreenSize.x, i);
+                memmove(tw->ScreenBuffer, tw->ScreenBuffer+tw->ScreenSize.x,
+                        i * CHARSIZE);
 #ifdef WINDOWS_NO_UNICODE
                 memset(tw->ScreenBuffer + i, ' ', tw->ScreenSize.x);
 #else
@@ -414,15 +415,15 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
 #endif
 
     if (tw->hwnd == NULL) {
-        MessageBox((HWND)NULL,"Couldn't open text window",(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
+        MessageBoxA((HWND)NULL,"Couldn't open text window",(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
         return 1;
     }
 
     ShowWindow(tw->hwnd, tw->nCmdShow);
     sysmenu = GetSystemMenu(tw->hwnd,0);	/* get the sysmenu */
     AppendMenu(sysmenu, MF_SEPARATOR, 0, NULL);
-    AppendMenu(sysmenu, MF_STRING, M_COPY_CLIP, "Copy to Clip&board");
-    AppendMenu(sysmenu, MF_STRING, M_PASTE_CLIP, "&Paste");
+    AppendMenuA(sysmenu, MF_STRING, M_COPY_CLIP, "Copy to Clip&board");
+    AppendMenuA(sysmenu, MF_STRING, M_PASTE_CLIP, "&Paste");
 
     return 0;
 }
@@ -545,7 +546,7 @@ int n;
                 ((*str >= 32) && (*str <= 0x7f))
 #endif
                 && *str!='\t') {
-                text_putch(tw, *str++);
+                text_putch(tw, *(const unsigned char *)str++);
                 cnt--;
             }
         }
@@ -765,27 +766,28 @@ int ch;
 void
 text_drag_drop(TW *tw, HDROP hdrop)
 {
-    char *szFile;
+    TCHAR *szFile;
     int i, cFiles;
     unsigned int Len, error;
     const char *p;
+    const TCHAR *t;
     if ( (tw->DragPre==NULL) || (tw->DragPost==NULL) )
             return;
 
-    cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPSTR)NULL, 0);
+    cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPTSTR)NULL, 0);
     for (i=0; i<cFiles; i++) {
         Len = DragQueryFile(hdrop, i, NULL, 0);
-        szFile = (char *)malloc(Len+1);
+        szFile = (TCHAR *)malloc((Len+1)*sizeof(TCHAR));
         if (szFile != 0) {
             error = DragQueryFile(hdrop, i, szFile, Len+1);
             if (error != 0) {
                 for (p=tw->DragPre; *p; p++)
                     SendMessage(tw->hwnd,WM_CHAR,*p,1L);
-                for (p=szFile; *p; p++) {
-                    if (*p == '\\')
+                for (t=szFile; *t; t++) {
+                    if (*t == '\\')
                         SendMessage(tw->hwnd,WM_CHAR,'/',1L);
                     else
-                        SendMessage(tw->hwnd,WM_CHAR,*p,1L);
+                        SendMessage(tw->hwnd,WM_CHAR,*t,1L);
                 }
                 for (p=tw->DragPost; *p; p++)
                     SendMessage(tw->hwnd,WM_CHAR,*p,1L);
@@ -846,7 +848,7 @@ text_copy_to_clipboard(TW *tw)
 #ifdef WINDOWS_NO_UNICODE
     size = strlen(cbuf) + 1;
 #else
-    size = CHARSIZE*wcslen(cbuf) + 1;
+    size = CHARSIZE*(wcslen(cbuf) + 1);
 #endif
     GlobalUnlock(hGMem);
     hGMem = GlobalReAlloc(hGMem, (DWORD)size, GHND | GMEM_SHARE);
@@ -1218,9 +1220,10 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
         case WM_CLOSE:
             /* Tell user that we heard them */
             if (!tw->quitnow) {
-                char title[256];
-                int count = GetWindowText(hwnd, title, sizeof(title)-11);
-                strcpy(title+count, " - closing");
+                TCHAR title[256];
+                int count = GetWindowText(hwnd, title,
+                                          sizeof(title)/sizeof(TCHAR)-11);
+                lstrcpy(title+count, " - closing");
                 SetWindowText(hwnd, title);
             }
             tw->quitnow = TRUE;
@@ -1245,18 +1248,18 @@ HWND text_get_handle(TW *tw)
 
 #ifdef NOTUSED
 /* test program */
-#pragma argsused
 
 int PASCAL
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
+        TW *tw;
 
         /* make a test window */
         tw = text_new();
 
         if (!hPrevInstance) {
             HICON hicon = LoadIcon(NULL, IDI_APPLICATION);
-            text_register_class(hicon);
+            text_register_class(tw, hicon);
         }
         text_font(tw, "Courier New", 10);
         text_size(tw, 80, 80);
@@ -1268,7 +1271,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCm
             /* TESTING */
             int ch;
             int len;
-            char *line = new char[256];
+            char line[256];
             while ( (len = text_read_line(tw, line, 256-1)) != 0 ) {
                 text_write_buf(tw, line, len);
             }
