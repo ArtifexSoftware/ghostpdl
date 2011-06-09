@@ -41,7 +41,7 @@ void *instance;
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
-HWND hwndforeground;	/* our best guess for our console window handle */
+HWND hwndforeground;    /* our best guess for our console window handle */
 
 char start_string[] = "systemdict /start get exec\n";
 
@@ -69,6 +69,165 @@ gsdll_stderr(void *instance, const char *str, int len)
     fflush(stderr);
     return len;
 }
+
+#ifndef WINDOWS_NO_UNICODE
+/* stdio functions - versions that translate to/from utf-8 */
+static int GSDLLCALL
+gsdll_stdin_utf8(void *instance, char *buf, int len)
+{
+    static WCHAR thiswchar = 0; /* wide character to convert to multiple bytes */
+    static int nmore = 0;       /* number of additional encoding bytes to generate */
+    UINT consolecp = 0;
+    int nret = 0;               /* number of bytes returned to caller */
+    int i;
+
+    while (len) {
+        while (len && nmore) {
+            nmore--;
+            *buf++ = 0x80 | ((thiswchar >> (6 * nmore)) & 0x3F), nret++;
+            len--;
+        }
+        while (len) {
+            if (0 >= _read(fileno(stdin), buf, 1))
+                return nret;
+            nret++, buf++, len--;
+            if (buf[-1] == '\n')
+                /* return at end of line (note: no traslation needed) */
+                return nret;
+            else if ((unsigned char)buf[-1] <= 0x7F)
+                /* no translation needed for 7-bit ASCII codes */
+                continue;
+            else {
+                /* extended character, may be double */
+                BYTE dbcsstr[2];
+
+                dbcsstr[0] = buf[-1];
+                if (!consolecp)
+                    consolecp = GetConsoleCP();
+                thiswchar = L'?'; /* initialize in case the conversion below fails */
+                if (IsDBCSLeadByteEx(consolecp, dbcsstr[0])) {
+                    /* double-byte character code, fetch the trail byte */
+                    _read(fileno(stdin), &dbcsstr[1], 1);
+                    MultiByteToWideChar(consolecp, 0, dbcsstr, 2, &thiswchar, 1);
+                }
+                else {
+                    MultiByteToWideChar(consolecp, 0, dbcsstr, 1, &thiswchar, 1);
+                }
+                /* convert thiswchar to utf-8 */
+                if (thiswchar <= 0x007F) {          /* encoded as single byte */
+                    buf[-1] = (char)thiswchar;
+                } else if (thiswchar <= 0x07FF) {   /* encoded as 2 bytes */
+                    buf[-1] = 0xC0 | ((thiswchar >> 6) & 0x1F);
+                    nmore = 1;
+                    break;
+                } else if (thiswchar <= 0xFFFF) {   /* encoded as 3 bytes */
+                    buf[-1] = 0xE0 | ((thiswchar >> 12) & 0xF);
+                    nmore = 2;
+                    break;
+                } else
+                    /* note: codes outside the BMP not handled */
+                    buf[-1] = '?';
+            }
+        }
+    }
+    return nret;
+}
+
+static void
+gsdll_utf8write(FILE *stdwr, const char *str, int len, WCHAR *thiswchar, int *nmore)
+{
+    UINT consolecp = 0;
+
+    while (len) {
+        const char *str0;
+
+        /* write ASCII chars without translation */
+        for (str0 = str; len && !(*str & 0x80); str++, len--);
+        if (str > str0) {
+            if (*nmore) {
+                /* output previous, incomplete utf-8 sequence as ASCII "?" */
+                fwrite("?", 1, 1, stdwr);
+                *nmore = 0, *thiswchar = 0;
+            }
+            fwrite(str0, 1, str - str0, stdwr);
+        }
+        /* accumulate lead/trail bytes into *thiswchar */
+        for (; len; str++, len--) {
+            switch (*str & 0xC0) {
+                case 0x80:      /* trail byte */
+                    if (*nmore) {
+                        (*nmore)--;
+                        *thiswchar |= (WCHAR)(unsigned char)(*str & 0x3F) << (6 * *nmore);
+                        }
+                    else {
+                        /* lead byte missing; output unexpected trail byte as ASCII "?" */
+                        *nmore = 0;
+                        *thiswchar = L'?';
+                    }
+                    break;
+                case 0xC0:      /* lead byte */
+                    if (*nmore)
+                        /* output previous, incomplete utf-8 sequence as ASCII "?" */
+                        fwrite("?", 1, 1, stdwr);
+                    if (!(*str & 0x20))
+                        *nmore = 1;     /* 2-byte encoding */
+                    else if (!(*str & 0x10))
+                        *nmore = 2;     /* 3-byte encoding */
+                    else if (!(*str & 0x08))
+                        *nmore = 3;     /* 4-byte encoding */
+                    else
+                        *nmore = 0;     /* restricted (> 4) or invalid encodings */
+                    if (*nmore)
+                        *thiswchar = (WCHAR)(unsigned char)(*str & (0x3F >> *nmore)) << (6 * *nmore);
+                    else {
+                        /* output invalid encoding as ASCII "?" */
+                        *thiswchar = L'?';
+                    }
+                    break;
+                default:        /* cannot happen because *str has MSB set */
+                    break;
+            }
+            /* output wide character if finished */
+            if (!*nmore) {
+                char mbstr[8];
+                int n_mbstr;
+
+                if (!consolecp)
+                    consolecp = GetConsoleOutputCP();
+                n_mbstr = WideCharToMultiByte(consolecp, 0, thiswchar, 1, mbstr, sizeof mbstr, NULL, NULL);
+                if (n_mbstr <= 0)
+                    fwrite("?", 1, 1, stdwr);
+                else
+                    fwrite(mbstr, 1, n_mbstr, stdwr);
+                *thiswchar = 0; /* cleanup */
+                str++, len--;
+                break;
+            }
+        }
+    }
+    fflush(stdwr);
+}
+
+static int GSDLLCALL
+gsdll_stdout_utf8(void *instance, const char *utf8str, int bytelen)
+{
+    static WCHAR thiswchar = 0; /* accumulates the bits from multiple encoding bytes */
+    static int nmore = 0;       /* expected number of additional encoding bytes */
+
+    gsdll_utf8write(stdout, utf8str, bytelen, &thiswchar, &nmore);
+    return bytelen;
+}
+
+static int GSDLLCALL
+gsdll_stderr_utf8(void *instance, const char *utf8str, int bytelen)
+{
+    static WCHAR thiswchar = 0; /* accumulates the bits from multiple encoding bytes */
+    static int nmore = 0;       /* expected number of additional encoding bytes */
+
+    gsdll_utf8write(stderr, utf8str, bytelen, &thiswchar, &nmore);
+    return bytelen;
+}
+#endif
 
 /*********************************************************************/
 /* dll device */
@@ -139,7 +298,7 @@ int display_open(void *handle, void *device)
 #ifdef DISPLAY_DEBUG
     fprintf(stdout, "display_open(0x%x, 0x%x)\n", handle, device);
 #endif
-    img = image_new(handle, device);	/* create and add to list */
+    img = image_new(handle, device);    /* create and add to list */
     img->hmutex = CreateMutex(NULL, FALSE, NULL);
     if (img)
         PostThreadMessage(thread_id, DISPLAY_OPEN, 0, (LPARAM)img);
@@ -172,7 +331,7 @@ int display_close(void *handle, void *device)
         if (GetForegroundWindow() == img->hwnd)
             SetForegroundWindow(hwndforeground);
 
-        image_delete(img);	/* remove from list, but don't free */
+        image_delete(img);      /* remove from list, but don't free */
         PostThreadMessage(thread_id, DISPLAY_CLOSE, 0, (LPARAM)img);
     }
     return 0;
@@ -310,11 +469,11 @@ display_callback display = {
     display_page,
     display_update,
 #ifdef DISPLAY_DEBUG_USE_ALLOC
-    display_memalloc,	/* memalloc */
-    display_memfree,	/* memfree */
+    display_memalloc,   /* memalloc */
+    display_memfree,    /* memfree */
 #else
-    NULL,	/* memalloc */
-    NULL,	/* memfree */
+    NULL,       /* memalloc */
+    NULL,       /* memfree */
 #endif
     display_separation
 };
@@ -341,7 +500,7 @@ static int main_utf8(int argc, char *argv[])
     _setmode(fileno(stdout), _O_BINARY);
     _setmode(fileno(stderr), _O_BINARY);
 
-    hwndforeground = GetForegroundWindow();	/* assume this is ours */
+    hwndforeground = GetForegroundWindow();     /* assume this is ours */
     memset(buf, 0, sizeof(buf));
     if (load_dll(&gsdll, buf, sizeof(buf))) {
         fprintf(stderr, "Can't load Ghostscript DLL\n");
@@ -378,12 +537,19 @@ static int main_utf8(int argc, char *argv[])
             fprintf(stderr, "Can't post message to GUI thread\n");
     }
 
+#ifdef WINDOWS_NO_UNICODE
     gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
+#else
+    gsdll.set_stdio(instance,
+        _isatty(fileno(stdin)) ?  gsdll_stdin_utf8 : gsdll_stdin,
+        _isatty(fileno(stdout)) ?  gsdll_stdout_utf8 : gsdll_stdout,
+        _isatty(fileno(stderr)) ?  gsdll_stderr_utf8 : gsdll_stderr);
+#endif
     gsdll.set_display_callback(instance, &display);
 
     {   int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_1 | DISPLAY_LITTLEENDIAN | DISPLAY_BOTTOMFIRST;
-        HDC hdc = GetDC(NULL);	/* get hdc for desktop */
+        HDC hdc = GetDC(NULL);  /* get hdc for desktop */
         int depth = GetDeviceCaps(hdc, PLANES) * GetDeviceCaps(hdc, BITSPIXEL);
         sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
