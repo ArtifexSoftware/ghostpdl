@@ -113,30 +113,126 @@ DumpMediaSizes
  /Times-BoldItalic /Helvetica-BoldOblique /Courier-BoldOblique
 ] def
 
+/res-type-dict 10 dict begin
+  /Font {
+    { 
+      exch pop oforce 
+      dup //null ne {
+        dup /DescendantFonts knownoget {
+           exch pop 0 get oforce
+        } if
+        dup /FontDescriptor knownoget {
+          dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
+          /ShowEmbeddedFonts where { pop pop //false } if {
+            pop			% skip embedded fonts
+          } {
+            /BaseFont knownoget { %  not embedded
+              FontsUsed exch //null put
+            } if
+          } ifelse
+        } {
+          /BaseFont knownoget { % no FontDescriptor, not embedded
+            FontsUsed exch //null put
+          } if
+        } ifelse
+      } {
+        pop
+      } ifelse
+    } forall	% traverse the dictionary
+  } bind def
+
+  /XObject {
+    { 
+      exch pop oforce
+      dup //null ne {
+        dup /Subtype knownoget {
+          /Form eq {
+            /Resources knownoget {
+              get-fonts-from-res
+            } if
+          } {
+            pop
+          } ifelse
+        } {
+          pop
+        } ifelse
+      } {
+        pop
+      } ifelse
+    } forall
+  } bind def
+  
+  /Pattern {
+    { 
+      exch pop oforce
+      dup //null ne {
+        /Resources knownoget {
+          get-fonts-from-res
+        } if
+      } {
+        pop
+      } ifelse
+    } forall
+  } bind def
+currentdict end readonly def
+
+% <<res-dict>> get-fonts-from-res -
+/get-fonts-from-res {
+  oforce 
+  dup //null ne {
+    { 
+      oforce
+      dup //null ne {
+        //res-type-dict 3 -1 roll 
+        .knownget {
+          exec
+        } {
+          pop
+        } ifelse
+      } {
+        pop pop
+      } ifelse
+    } forall
+  } {
+    pop
+  } ifelse
+} bind def
+
+currentdict /res-type-dict undef
+
 /getPDFfonts {	%	(filename) getPDFfonts array_of_font_names
   /FontsUsed 1000 dict def	% this will increase if needed
   mark
   1 1 PDFPageCount {
     pdfgetpage			% get pagedict
-    /Resources pget {
-      /Font knownoget {
-        { exch pop oforce
-          dup /DescendantFonts knownoget {
-            exch pop 0 get oforce
+    dup /Resources pget { get-fonts-from-res } if
+    /Annots knownoget {
+      { oforce
+        dup //null ne {
+          /AP knownoget {
+            { exch pop oforce 
+              dup //null ne {
+                dup /Resources knownoget {
+                  get-fonts-from-res
+                } if
+                { exch pop oforce
+                  dup type /dicttype eq {
+                    /Resources knownoget {
+                      get-fonts-from-res
+                    } if
+                  } {
+                    pop
+                  } ifelse
+                } forall
+              } {
+                pop
+              } ifelse
+            } forall
           } if
-          dup /FontDescriptor knownoget {
-            dup /FontFile known 1 index /FontFile2 known or exch /FontFile3 known or
-            /ShowEmbeddedFonts where { pop pop false} if {
-              pop			% skip embedded fonts
-            } {
-              /BaseFont knownoget pop	%  not embedded
-            } ifelse
-          } {
-            /BaseFont knownoget pop	% no FontDescriptor, not embedded
-          } ifelse
-          counttomark 0 gt { FontsUsed exch null put } if	% stick it in the dict
-        } forall		% traverse the dictionary
-      } if
+        } {
+          pop
+        } ifelse
+      } forall
     } if
   } for
   % If DumpFontsUsed is not true, then remove the 'standard' fonts from the list
