@@ -1846,6 +1846,45 @@ cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * de
     }
 }
 
+/* A planar version which applies only one transfer function */
+void
+cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis, 
+                    gx_device *dev, int plane)
+{
+    int ncomps = dev->color_info.num_components;
+    frac frac_value;
+    int i;
+    frac cv_frac;
+
+    /* apply the transfer function(s) */
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        frac_value = cv2frac(pconc[0]);
+        cv_frac = gx_map_color_frac(pis, frac_value, effective_transfer[plane]);
+        pconc[0] = frac2cv(cv_frac);
+    } else {
+        if (dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN) {
+            check_cmyk_color_model_comps(dev);
+        }
+        if (dev->color_info.opmode == GX_CINFO_OPMODE) {  /* CMYK-like color space */
+            int k = dev->color_info.black_component;
+            frac_value = cv2frac(pconc[0]);
+            if (plane == k) {
+                cv_frac = frac_1 - gx_map_color_frac(pis,
+                (frac)(frac_1 - frac_value), effective_transfer[plane]);
+            } else {
+                cv_frac = cv2frac(pconc[0]);  /* Ignore transfer, see PLRM3 p. 494 */
+            }
+            pconc[0] = frac2cv(cv_frac);
+        } else {
+            frac_value = cv2frac(pconc[0]);
+            cv_frac = frac_1 - gx_map_color_frac(pis,
+                    (frac)(frac_1 - frac_value), effective_transfer[plane]);
+            pconc[0] = frac2cv(cv_frac);
+        }
+    }
+}
+
+
 bool
 gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
 {

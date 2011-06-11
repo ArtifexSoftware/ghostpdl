@@ -200,6 +200,18 @@ gscms_transform_color_buffer(gsicc_link_t *icclink,
            need to take a closer look at this. */
         cmsDoTransform(hTransform,inputpos,outputpos,
                         input_buff_desc->plane_stride);
+#if DUMP_CMS_BUFFER
+        fid_in = fopen("CM_Input.raw","ab");
+        fid_out = fopen("CM_Output.raw","ab");
+        fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),
+                                input_buff_desc->plane_stride * 
+                                input_buff_desc->num_chan, fid_in);
+        fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),
+                                output_buff_desc->plane_stride * 
+                                output_buff_desc->num_chan, fid_out);
+        fclose(fid_in);
+        fclose(fid_out);
+#endif
     } else {
         /* Do row by row. */
         for(k = 0; k < input_buff_desc->num_rows ; k++){
@@ -208,17 +220,17 @@ gscms_transform_color_buffer(gsicc_link_t *icclink,
             inputpos += input_buff_desc->row_stride;
             outputpos += output_buff_desc->row_stride;
         }
-    }
 #if DUMP_CMS_BUFFER
-    fid_in = fopen("CM_Input.raw","ab");
-    fid_out = fopen("CM_Output.raw","ab");
-    fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),
-                            input_buff_desc->row_stride,fid_in);
-    fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),
-                            output_buff_desc->row_stride,fid_out);
-    fclose(fid_in);
-    fclose(fid_out);
+        fid_in = fopen("CM_Input.raw","ab");
+        fid_out = fopen("CM_Output.raw","ab");
+        fwrite((unsigned char*) inputbuffer,sizeof(unsigned char),
+                                input_buff_desc->row_stride,fid_in);
+        fwrite((unsigned char*) outputbuffer,sizeof(unsigned char),
+                                output_buff_desc->row_stride,fid_out);
+        fclose(fid_in);
+        fclose(fid_out);
 #endif
+    }
 }
 
 /* Transform a single color. We assume we have passed to us the proper number

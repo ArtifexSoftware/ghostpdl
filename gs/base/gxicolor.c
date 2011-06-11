@@ -397,7 +397,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     int dest_width, dest_height, data_length;
     int spp_out = dev->color_info.num_components;
     gx_ht_order *d_order;
-    int position, k;
+    int position, k, j;
     int offset_bits = penum->ht_offset_bits;
     int contone_stride = 0;  /* Not used in landscape case */
     fixed scale_factor, offset;
@@ -410,14 +410,28 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     int code = 0;
     int spp_cm = 0;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
-    byte *bufend = NULL;
+    byte *bufend = NULL, *curr_ptr;
     int psrc_planestride = w/penum->spp;
+    gx_color_value conc;
+    int num_des_comp = penum->dev->color_info.num_components;
 
     if (h != 0) {
         /* Get the buffer into the device color space */
         code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
                                     &psrc_cm_start, &psrc_decode, &bufend,
                                     true);
+        /* Also, if need apply the transfer function at this time.  This
+           should be reworked so that we are not doing all these conversions */
+        if (penum->icc_setup.has_transfer) {
+            for (k = 0; k < num_des_comp; k++) {
+                curr_ptr = psrc_cm + psrc_planestride * k;
+                for (j = 0; j < psrc_planestride; j++, curr_ptr++) {
+                    conc = gx_color_value_from_byte(curr_ptr[0]);
+                    cmap_transfer_plane(&(conc), penum->pis, penum->dev, k);
+                    curr_ptr[0] = gx_color_value_to_byte(conc);
+                }
+            }
+        }
     } else {
         if (penum->ht_landscape.count == 0 || posture == image_portrait) {
             return 0;

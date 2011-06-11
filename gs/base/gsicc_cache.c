@@ -233,7 +233,8 @@ gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, in
 static void
 gsicc_mash_hash(gsicc_hashlink_t *hash)
 {
-    hash->link_hashcode = (hash->des_hash) ^ (hash->rend_hash) ^ (hash->src_hash);
+    hash->link_hashcode = 
+        (hash->des_hash >> 1) ^ (hash->rend_hash) ^ (hash->src_hash);
 }
 
 void
@@ -486,7 +487,6 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     gsicc_manager_t *icc_manager = pis->icc_manager;
     gsicc_link_cache_t *icc_link_cache = pis->icc_link_cache;
     gs_memory_t *cache_mem = pis->icc_link_cache->memory;
-
     gcmmhprofile_t *cms_input_profile;
     gcmmhprofile_t *cms_output_profile;
 
@@ -494,15 +494,18 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     /* If the output color space is NULL we will use the device profile for the output color space */
     gsicc_compute_linkhash(icc_manager, dev, gs_input_profile, gs_output_profile,
                             rendering_params, &hash);
-
     /* Check the cache for a hit.  Need to check if softproofing was used */
     found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
-
     /* Got a hit, return link (ref_count for the link was already bumped */
-    if (found_link != NULL)
-        return(found_link);  /* TO FIX: We are really not going to want to have the members
-                          of this object visible outside gsiccmange */
-
+    if (found_link != NULL) {
+        if_debug2('{',"[{]Found Link = 0x%x, hash = %I64d \n", link, 
+                  hash.link_hashcode); 
+        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n", 
+                  gs_input_profile->num_comps, gs_input_profile->hashcode);
+        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n", 
+                  gs_output_profile->num_comps, gs_output_profile->hashcode);
+        return(found_link); 
+    }
     /* If not, then lets create a new one if there is room or return NULL */
     /* Caller will need to try later */
 
@@ -517,16 +520,13 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
             gx_monitor_leave(icc_link_cache->lock);
             /* we get signalled (released from wait) when a link goes to zero ref */
             gx_semaphore_wait(icc_link_cache->wait);
-
             /* repeat the findcachelink to see if some other thread has	*/
             /*already started building the link	we need			*/
             found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
-
             /* Got a hit, return link (ref_count for the link was already bumped */
             if (found_link != NULL)
                 return(found_link);  /* TO FIX: We are really not going to want to have the members
                                   of this object visible outside gsiccmange */
-
             gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
             /* we will re-test the num_links above while locked to insure */
             /* that some other thread didn't grab the slot and max us out */
@@ -540,9 +540,10 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     }
     /* insert an empty link that we will reserve so we */
     /* can unlock while building the link contents     */
-    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n", dev, icc_link_cache, cache_mem->stable_memory, icc_link_cache->num_links);
+    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n", 
+              dev, icc_link_cache, cache_mem->stable_memory, 
+              icc_link_cache->num_links);
     link = gsicc_alloc_link(cache_mem->stable_memory, hash);
-    if_debug1('{',"[{]link = 0x%x \n", link);
     link->icc_link_cache = icc_link_cache;
     link->next = icc_link_cache->head;
     icc_link_cache->head = link;
@@ -614,7 +615,14 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     gx_monitor_leave(gs_output_profile->lock);	
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
-        gsicc_set_link_data(link, link_handle, contextptr, hash, icc_link_cache->lock);
+        gsicc_set_link_data(link, link_handle, contextptr, hash, 
+                            icc_link_cache->lock);
+        if_debug2('{',"[{]New Link = 0x%x, hash = %I64d \n", link, 
+                  hash.link_hashcode); 
+        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n", 
+                  gs_input_profile->num_comps, gs_input_profile->hashcode);
+        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n", 
+                  gs_output_profile->num_comps, gs_output_profile->hashcode);
     } else {
         gsicc_remove_link(link, cache_mem);
         icc_link_cache->num_links--;

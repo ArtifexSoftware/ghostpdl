@@ -931,19 +931,19 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 gs_transform_color_buffer_generic(tos->data, tos->rowstride,
                             tos->planestride,curr_num_color_comp, tos->rect,
                             new_data_buf, num_newcolor_planes, num_noncolor_planes);
-             /* Free the old object */
-              gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+                /* Free the old object */
+                gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
                  tos->data = new_data_buf;
             }
              /* Adjust the plane and channel size now */
              tos->n_chan = nos->n_chan;
              tos->n_planes = nos->n_planes;
 #if RAW_DUMP
-                        /* Dump the current buffer to see what we have. */
-                        dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
-                                                ctx->stack->rowstride, ctx->stack->n_planes,
-                                                ctx->stack->planestride, ctx->stack->rowstride,
-                                                "Trans_Group_ColorConv",ctx->stack->data);
+            /* Dump the current buffer to see what we have. */
+            dump_raw_buffer(ctx->stack->rect.q.y-ctx->stack->rect.p.y,
+                            ctx->stack->rowstride, ctx->stack->n_planes,
+                            ctx->stack->planestride, ctx->stack->rowstride,
+                            "Trans_Group_ColorConv",ctx->stack->data);
 #endif
              /* compose */
              pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,

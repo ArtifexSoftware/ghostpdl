@@ -293,4 +293,6 @@ void cmap_transfer_halftone(gx_color_value *pconc, gx_device_color * pdc,
      bool has_halftone, gs_color_select_t select);
 void cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis,
                    gx_device * dev);
+void cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis, 
+                    gx_device *dev, int plane);
 #endif /* gxcmap_INCLUDED */
