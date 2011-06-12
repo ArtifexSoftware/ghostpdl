@@ -1319,7 +1319,11 @@ end readonly def
            //viewdestprocs 1 index 0 get get exec
            3 -1 roll
          } {
-           pop
+           dup type /integertype eq {
+             /Page exch 1 add 4 2 roll
+           } {
+             pop
+           } ifelse
            dup length 1 sub 1 exch getinterval /View exch 3 -1 roll
          } ifelse
        }
