@@ -972,15 +972,15 @@ gx_path_print(const gx_path * ppath)
 {
     const segment *pseg = (const segment *)ppath->first_subpath;
 
-    dlprintf5("   state_flags=%d subpaths=%d, curves=%d, point=(%f,%f)\n",
+    dlprintf5(" %% state_flags=%d subpaths=%d, curves=%d, point=(%f,%f)\n",
               ppath->state_flags, ppath->subpath_count, ppath->curve_count,
               fixed2float(ppath->position.x),
               fixed2float(ppath->position.y));
-    dlprintf5("   box=(%f,%f),(%f,%f) last=0x%lx\n",
+    dlprintf5(" %% box=(%f,%f),(%f,%f) last=0x%lx\n",
               fixed2float(ppath->bbox.p.x), fixed2float(ppath->bbox.p.y),
               fixed2float(ppath->bbox.q.x), fixed2float(ppath->bbox.q.y),
               (ulong) ppath->box_last);
-    dlprintf4("   segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
+    dlprintf4(" %% segments=0x%lx (refct=%ld, first=0x%lx, current=0x%lx)\n",
               (ulong) ppath->segments, (long)ppath->segments->rc.ref_count,
               (ulong) ppath->segments->contents.subpath_first,
               (ulong) ppath->segments->contents.subpath_current);
@@ -997,45 +997,48 @@ gx_print_segment(const segment * pseg)
     double py = fixed2float(pseg->pt.y);
     char out[80];
 
-    sprintf(out, "   0x%lx<0x%lx,0x%lx>:%u",
+    sprintf(out, "0x%lx<0x%lx,0x%lx>:%u",
          (ulong) pseg, (ulong) pseg->prev, (ulong) pseg->next, pseg->notes);
     switch (pseg->type) {
         case s_start:{
                 const subpath *const psub = (const subpath *)pseg;
 
-                dprintf5("%s: %1.4f %1.4f moveto\t%% #curves=%d last=0x%lx\n",
-                         out, px, py, psub->curve_count, (ulong) psub->last);
+                dprintf5("   %1.4f %1.4f moveto\t%% %s #curves=%d last=0x%lx\n",
+                         px, py, out, psub->curve_count, (ulong) psub->last);
                 break;
             }
         case s_curve:{
                 const curve_segment *const pcur = (const curve_segment *)pseg;
 
-                dprintf7("%s: %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\n",
-                      out, fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
-                  fixed2float(pcur->p2.x), fixed2float(pcur->p2.y), px, py);
+                dprintf7("   %1.4f %1.4f %1.4f %1.4f %1.4f %1.4f curveto\t%% %s\n",
+                         fixed2float(pcur->p1.x), fixed2float(pcur->p1.y),
+                         fixed2float(pcur->p2.x), fixed2float(pcur->p2.y),
+                         px, py, out);
                 break;
             }
         case s_line:
-            dprintf3("%s: %1.4f %1.4f lineto\n", out, px, py);
+            dprintf3("   %1.4f %1.4f lineto\t%% %s\n", px, py, out);
             break;
         case s_dash:{
                 const dash_segment *const pd = (const dash_segment *)pseg;
 
-                dprintf5("%s: %1.4f %1.4f %1.4f  %1.4f dash\n", out,
-                    fixed2float(pd->pt.x), fixed2float(pd->pt.y),
-                    fixed2float(pd->tangent.x), fixed2float(pd->tangent.y));
+                dprintf5("   %1.4f %1.4f %1.4f  %1.4f dash\t%% %s\n",
+                         fixed2float(pd->pt.x), fixed2float(pd->pt.y),
+                         fixed2float(pd->tangent.x),fixed2float(pd->tangent.y),
+                         out);
                 break;
             }
         case s_line_close:{
                 const line_close_segment *const plc =
                 (const line_close_segment *)pseg;
 
-                dprintf4("%s: closepath\t%% %1.4f %1.4f 0x%lx\n",
+                dprintf4("   closepath\t%% %s %1.4f %1.4f 0x%lx\n",
                          out, px, py, (ulong) (plc->sub));
                 break;
             }
         default:
-            dprintf4("%s: %1.4f %1.4f <type 0x%x>\n", out, px, py, pseg->type);
+            dprintf4("   %1.4f %1.4f <type 0x%x>\t%% %s\n",
+                     px, py, pseg->type, out);
     }
 }
 
