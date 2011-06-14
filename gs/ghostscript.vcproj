@@ -867,6 +867,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\base\memento.c"
+					>
+				</File>
+				<File
 					RelativePath="base\minftrsz.c"
 					>
 				</File>
@@ -5268,6 +5272,10 @@
 				</File>
 				<File
 					RelativePath="base\md5.h"
+					>
+				</File>
+				<File
+					RelativePath=".\base\memento.h"
 					>
 				</File>
 				<File
