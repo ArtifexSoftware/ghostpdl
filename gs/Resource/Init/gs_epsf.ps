@@ -112,25 +112,63 @@
 } bind def
 
 /ProcessEPSComment { % file comment --  file comment
-  //systemdict /EPSBoundingBoxState get 3 lt {
+  /EPSBoundingBoxState .systemvar 3 lt {
     dup
-    (%%EndComments) anchorsearch {
-      pop pop
-      % ignore any following bounding boxes
-      5 EPSBoundingBoxSetState
+    (%%BoundingBox:) anchorsearch {
+      pop
+      EPSDEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
+      1 EPSBoundingBoxProcess
     } {
-      (%%BoundingBox:) anchorsearch {
+      (%%HiResBoundingBox:) anchorsearch {
         pop
-        EPSDEBUG { (gs_epsf.ps: found %%BoundingBox\n) print flush } if
-        1 EPSBoundingBoxProcess
+        EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
+      3 EPSBoundingBoxProcess
       } {
-        (%%HiResBoundingBox:) anchorsearch {
-          pop
-          EPSDEBUG { (gs_epsf.ps: found %%HiResBoundingBox\n) print flush } if
-        3 EPSBoundingBoxProcess
+        pop % Not interested in this DSC comment
+      } ifelse
+    } ifelse
+  } if
+  /EPSBoundingBoxState .systemvar 5 lt {
+    dup (%%DocumentCustomColors:) anchorsearch {
+      pop
+      [ exch
+        { {
+            token not { exit } if
+            dup type /stringtype ne { stop } if
+            dup (atend) eq { stop } if
+            exch
+          } loop
+          {
+            counttomark 2 add index
+            dup (123) .peekstring not { stop } if
+            (%%+) eq {
+              dup (123) readstring pop pop
+              256 string readline pop
+              cvx exec
+            } {
+              pop exit
+            } ifelse
+          } loop
+        } stopped {
+          cleartomark
         } {
-          pop % Not interested in this DSC comment
+          counttomark 0 gt {
+            currentpagedevice /MaxSeparations get 4 gt {
+              ] << /SeparationColorNames 3 -1 roll >> setpagedevice
+            } {
+              cleartomark
+            } ifelse
+          } {
+            cleartomark
+          } ifelse
         } ifelse
+    } {
+      (%%EndComments) anchorsearch {
+        pop pop
+        % Ignore any following comments
+        5 EPSBoundingBoxSetState
+      } {
+        pop
       } ifelse
     } ifelse
   } if

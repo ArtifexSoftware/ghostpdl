@@ -3602,38 +3602,6 @@ static int septransform(i_ctx_t *i_ctx_p, ref *sepspace, int *usealternate, int 
     } else
         *usealternate = 1;
 
-    if (r_size(&sname) == 4 &&
-        strncmp("Gray", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 4 &&
-        strncmp("Cyan", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 7 &&
-        strncmp("Magenta", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 6 &&
-        strncmp("Yellow", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 5 &&
-        strncmp("Black", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 3 &&
-        strncmp("Red", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 5 &&
-        strncmp("Green", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
-    if (r_size(&sname) == 4 &&
-        strncmp("Blue", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-        *usealternate = 1;
-    }
     if (*usealternate && *stage == 0) {
         (*stage)++;
         esp++;
@@ -4250,46 +4218,6 @@ static int devicentransform(i_ctx_t *i_ctx_p, ref *devicenspace, int *usealterna
         colorant_number = (*dev_proc(dev, get_color_comp_index))
                 (dev, (const char *)sname.value.bytes, r_size(&sname), SEPARATION_NAME);
         if (colorant_number < 0) {		/* If not valid colorant name */
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 4 &&
-            strncmp("Gray", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 4 &&
-            strncmp("Cyan", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 7 &&
-            strncmp("Magenta", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 6 &&
-            strncmp("Yellow", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 5 &&
-            strncmp("Black", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 3 &&
-            strncmp("Red", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 5 &&
-            strncmp("Green", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
-            *usealternate = 1;
-            break;
-        }
-        if (r_size(&sname) == 4 &&
-            strncmp("Blue", (const char *)sname.value.bytes, r_size(&sname)) == 0) {
             *usealternate = 1;
             break;
         }
