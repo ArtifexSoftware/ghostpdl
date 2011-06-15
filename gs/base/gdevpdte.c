@@ -115,7 +115,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 
                 num_codes = pfcid->cidata.common.CIDCount;
                 key_size = 2;
-            } else if (font->FontType == ft_CID_TrueType) {
+            } else if (font->FontType == ft_CID_TrueType || font->FontType == ft_composite) {
                 key_size = 2;
 #if 0
                 gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
