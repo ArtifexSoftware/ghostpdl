@@ -88,12 +88,10 @@ DumpMediaSizes
     dup (Page ) print =print
     pdfgetpage dup
     /MediaBox pget {
-      aload pop exch 4 1 roll exch sub 3 1 roll sub
-      ( MediaBox: [ ) print =print ( ) print =print ( ]) print
+      ( MediaBox: ) print oforce_array ==only
     } if
     dup /CropBox pget {
-      aload pop exch 4 1 roll exch sub 3 1 roll sub
-      ( CropBox: [ ) print =print ( ) print =print ( ]) print
+      ( CropBox: ) print oforce_array ==only
     } if
     dup /Rotate pget {
        (    Rotate = ) print =print
