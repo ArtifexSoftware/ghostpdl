@@ -512,13 +512,16 @@ pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf,
 static int
 pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
-    if (pdev->InstanceUUID.size) {
-        int l = min(buf_length - 1, pdev->InstanceUUID.size);
+    char URI_prefix[5] = "uuid:";
 
-        memcpy(buf, pdev->InstanceUUID.data, l);
+    memcpy(buf, URI_prefix, 5);
+    if (pdev->InstanceUUID.size) {
+        int l = min(buf_length - 6, pdev->InstanceUUID.size);
+
+        memcpy(buf+5, pdev->InstanceUUID.data, l);
         buf[l] = 0;
     } else
-        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length);
+        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length - 5);
     return 0;
 }
 
