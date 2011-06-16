@@ -165,11 +165,6 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	pksm		Portable Separated map (plain format) (4-bit CMYK => 4 pages)
 #	pksmraw		Portable Separated map (raw format) (4-bit CMYK => 4 pages)
 # *	plan9bm		Plan 9 bitmap format
-#	plan		PLANar device (24 bit RGB)
-#	planm		PLANar device (1 bit Mono)
-#	plang		PLANar device (8 bit Gray)
-#	planc		PLANar device (32 bit CMYK)
-#	plank		PLANar device (4 bit CMYK)
 #	plib		PLanar Interleaved Band buffer device (24 bit RGB)
 #	plibm		PLanar Interleaved Band buffer device (1 bit Mono)
 #	plibg		PLanar Interleaved Band buffer device (8 bit Gray)
@@ -1814,31 +1809,6 @@ $(DD)tiffsep.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev $(minf
 $(DD)tiffsep1.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev $(minftrsz_h)
 	$(SETPDEV2) $(DD)tiffsep1 $(tiffsep_)
 	$(ADDMOD) $(DD)tiffsep1 -include $(DD)tiffs
-
-#
-# PLANar device
-
-plan_=$(GLOBJ)gdevplan.$(OBJ) $(GLOBJ)gdevppla.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
-
-$(GLOBJ)gdevplan.$(OBJ) : $(GLSRC)gdevplan.c $(PDEVH)\
- $(gdevmpla_h) $(gdevplnx_h) $(gdevppla_h)\
- $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)
-	$(GLCC) $(GLO_)gdevplan.$(OBJ) $(C_) $(GLSRC)gdevplan.c
-
-$(DD)plan.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)plan $(plan_)
-
-$(DD)plang.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)plang $(plan_)
-
-$(DD)planm.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)planm $(plan_)
-
-$(DD)planc.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)planc $(plan_)
-
-$(DD)plank.dev : $(DEVS_MAK) $(plan_) $(GLD)page.dev
-	$(SETPDEV2) $(DD)plank $(plan_)
 
 #
 # PLanar Interlaced Buffer device

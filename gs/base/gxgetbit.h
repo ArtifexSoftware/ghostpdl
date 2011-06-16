@@ -80,7 +80,7 @@ struct gs_get_bits_params_s {
 int gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                                gs_get_bits_params_t * params,
                                const gs_get_bits_params_t *stored,
-                               byte ** stored_base);
+                               byte * stored_base);
 
 /* Implement get_bits_rectangle by copying. */
 int gx_get_bits_copy(gx_device * dev, int x, int w, int h,
