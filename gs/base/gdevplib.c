@@ -666,7 +666,7 @@ plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
      * pointers to the existing data. */
     {
         gs_get_bits_params_t copy_params;
-        byte *base = scan_line_base(mdev, y);
+        byte **base = &scan_line_base(mdev, y);
         int code;
 
         copy_params.options =

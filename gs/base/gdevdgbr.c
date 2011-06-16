@@ -106,7 +106,7 @@ int
 gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                            gs_get_bits_params_t *params,
                            const gs_get_bits_params_t *stored,
-                           byte * stored_base)
+                           byte **stored_base)
 {
     gs_get_bits_options_t options = params->options;
     gs_get_bits_options_t both = options & stored->options;
@@ -150,7 +150,7 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                  options & GB_OFFSET_0 ? 0 : params->x_offset);
 
             if (x_offset == x) {
-                base = stored_base;
+                base = stored_base[0];
                 params->x_offset = x;
             } else {
                 uint align_mod =
@@ -169,7 +169,7 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                     /* Use a faster algorithm if depth is a power of 2. */
                     bytes = bit_offset & (-depth & -(int)align_mod);
                 }
-                base = stored_base + arith_rshift(bytes, 3);
+                base = stored_base[0] + arith_rshift(bytes, 3);
                 params->x_offset = (bit_offset - bytes) / depth;
             }
             params->options =
@@ -188,11 +188,15 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                         dev->color_info.num_components));
                 int i;
 
-                for (i = 0; i < n; ++i)
+                for (i = 0; i < n; ++i) {
                     if (!(both & GB_SELECT_PLANES) || stored->data[i] != 0) {
                         params->data[i] = base;
-                        base += dev_raster * dev->height;
                     }
+                    if (i < n-1) {
+                        base += stored_base[dev->height]-stored_base[0];
+                        stored_base += dev->height;
+                    }
+                }
             }
             return 0;
         }
