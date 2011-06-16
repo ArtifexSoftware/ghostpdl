@@ -474,11 +474,14 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)data;
     gx_bitmap_id id = (gx_bitmap_id)size;
+    gx_device_clist_common * const cdev = &((gx_device_clist *)pdev)->common;
 
     if (dev_spec_op == gxdso_pattern_handles_clip_path)
         return 1;
     if (dev_spec_op == gxdso_pattern_shfill_doesnt_need_path)
         return 1;
+    if (dev_spec_op == gxdso_is_native_planar)
+        return cdev->is_planar;
     return gx_default_dev_spec_op(pdev, dev_spec_op, pinst, id);
 }
 
@@ -618,7 +621,7 @@ clist_copy_mono(gx_device * dev,
 copy:{
         gx_cmd_rect rect;
         int rsize;
-        byte op = (byte) cmd_op_copy_mono;
+        byte op = (byte) cmd_op_copy_mono_plane;
         byte *dp;
         uint csize;
         uint compress;
@@ -626,7 +629,7 @@ copy:{
 
         rect.x = rx, rect.y = re.y;
         rect.width = w1, rect.height = re.height;
-        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect);
+        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(255);
         do {
             code = cmd_put_bits(cdev, re.pcls, row, w1, re.height, raster,
                                 rsize, (orig_id == gx_no_bitmap_id ?
@@ -673,6 +676,121 @@ copy:{
             *dp++ = cmd_set_misc_data_x + dx;
         }
         *dp++ = cmd_count_op(op, csize);
+        /* Store the plane count */
+        cmd_putw(255, dp);
+        cmd_put2w(rx, re.y, dp);
+        cmd_put2w(w1, re.height, dp);
+        re.pcls->rect = rect;
+        }
+        continue;
+error_in_rect:
+        if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+                SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+            return re.band_code;
+        re.y -= re.height;
+    } while ((re.y += re.height) < re.yend);
+    return 0;
+}
+
+/* The code duplication between this and clist_copy_mono needs to be removed */
+int
+clist_copy_plane(gx_device * dev,
+                const byte * data, int data_x, int raster, gx_bitmap_id id,
+                int rx, int ry, int rwidth, int rheight, int plane)
+{
+    gx_device_clist_writer * const cdev =
+        &((gx_device_clist *)dev)->writer;
+    int y0;
+    gx_bitmap_id orig_id = id;
+    cmd_rects_enum_t re;
+
+    if (plane < 0)
+        return gs_error_rangecheck;
+    if (rwidth <= 0 || rheight <= 0)
+        return 0;
+
+    fit_copy(dev, data, data_x, raster, id, rx, ry, rwidth, rheight);
+
+    y0 = ry;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+        int dx = data_x & 7;
+        int w1 = dx + rwidth;
+        const byte *row = data + (re.y - y0) * raster + (data_x >> 3);
+        int code;
+
+        RECT_STEP_INIT(re);
+        do {
+            code = cmd_disable_lop(cdev, re.pcls);
+            if (code >= 0)
+                code = cmd_disable_clip(cdev, re.pcls);
+        } while (RECT_RECOVER(code));
+        if (code < 0 && SET_BAND_CODE(code))
+            goto error_in_rect;
+        /* Don't bother to check for a possible cache hit: */
+        /* tile_rectangle and fill_mask handle those cases. */
+copy:{
+        gx_cmd_rect rect;
+        int rsize;
+        byte op = (byte) cmd_op_copy_mono_plane;
+        byte *dp;
+        uint csize;
+        uint compress;
+        int code;
+
+        rect.x = rx, rect.y = re.y;
+        rect.width = w1, rect.height = re.height;
+        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(plane);
+        do {
+            code = cmd_put_bits(cdev, re.pcls, row, w1, re.height, raster,
+                                rsize, (orig_id == gx_no_bitmap_id ?
+                                        1 << cmd_compress_rle :
+                                        cmd_mask_compress_any),
+                                &dp, &csize);
+        } while (RECT_RECOVER(code));
+        if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+            goto error_in_rect;
+        compress = (uint)code;
+        if (code < 0) {
+            /* The bitmap was too large; split up the transfer. */
+            if (re.height > 1) {
+                /*
+                 * Split the transfer by reducing the height.
+                 * See the comment above FOR_RECTS in gxcldev.h.
+                 */
+                re.height >>= 1;
+                goto copy;
+            } else {
+                /* Split a single (very long) row. */
+                int w2 = w1 >> 1;
+
+                ++cdev->driver_call_nesting;
+                {
+                    code = clist_copy_plane(dev, row, dx, raster, 
+                                            gx_no_bitmap_id, rx, re.y,
+                                            w2, 1, plane);
+                    if (code >= 0)
+                        code = clist_copy_plane(dev, row, dx + w2,
+                                               raster, gx_no_bitmap_id,
+                                               rx + w2, re.y,
+                                               w1 - w2, 1, plane);
+                }
+                --cdev->driver_call_nesting;
+                if (code < 0 && SET_BAND_CODE(code))
+                    goto error_in_rect;
+                continue;
+            }
+        }
+        op += compress;
+        if (dx) {
+            *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+            *dp++ = cmd_set_misc_data_x + dx;
+        }
+        *dp++ = cmd_count_op(op, csize);
+        /* Store the plane count */
+        cmd_putw(plane, dp);
         cmd_put2w(rx, re.y, dp);
         cmd_put2w(w1, re.height, dp);
         re.pcls->rect = rect;

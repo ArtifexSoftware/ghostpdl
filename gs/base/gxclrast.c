@@ -533,6 +533,7 @@ clist_playback_band(clist_playback_action playback_action,
     bool clipper_dev_open;
     patch_fill_state_t pfs;
     int op = 0;
+    short plane = 0;
 
 #ifdef DEBUG
     stream_state *st = s->state; /* Save because s_close resets s->state. */
@@ -931,7 +932,8 @@ in:                             /* Initialize for a new page. */
                 }
                 state.rect.width += (op & 7) + cmd_min_dw_tiny;
                 break;
-            case cmd_op_copy_mono >> 4:
+            case cmd_op_copy_mono_plane >> 4:
+                cmd_getw(plane, cbp);
                 depth = 1;
                 goto copy;
             case cmd_op_copy_color_alpha >> 4:
@@ -2046,7 +2048,7 @@ idata:                  data_size = 0;
                      state.tile_colors[0], state.tile_colors[1],
                      tile_phase.x, tile_phase.y);
                 break;
-            case cmd_op_copy_mono >> 4:
+            case cmd_op_copy_mono_plane >> 4:
                 if (state.lop_enabled) {
                     pcolor = state.colors;
                     log_op = state.lop;
@@ -2061,12 +2063,22 @@ idata:                  data_size = 0;
                          state.rect.x - x0, state.rect.y - y0,
                          state.rect.width - data_x, state.rect.height,
                          &dev_color, 1, imager_state.log_op, pcpath);
-                } else
-                    code = (*dev_proc(tdev, copy_mono))
-                        (tdev, source, data_x, raster, gx_no_bitmap_id,
-                         state.rect.x - x0, state.rect.y - y0,
-                         state.rect.width - data_x, state.rect.height,
-                         state.colors[0], state.colors[1]);
+                } else {
+                    if (plane == 255) {
+                        code = (*dev_proc(tdev, copy_mono))
+                             (tdev, source, data_x, raster, gx_no_bitmap_id,
+                              state.rect.x - x0, state.rect.y - y0,
+                              state.rect.width - data_x, state.rect.height,
+                              state.colors[0], state.colors[1]);
+                    } else {
+                        code = (*dev_proc(tdev, copy_plane))
+                             (tdev, source, data_x, raster, gx_no_bitmap_id,
+                              state.rect.x - x0, state.rect.y - y0,
+                              state.rect.width - data_x, state.rect.height,
+                              plane);
+                    }
+                }
+                plane = -1;
                 data_x = 0;
                 break;
             case cmd_op_copy_color_alpha >> 4:

@@ -28,6 +28,7 @@
 #include "gscms.h"
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 extern dev_proc_open_device(pattern_clist_open_device);
 
@@ -192,7 +193,7 @@ const gx_device_procs gs_clist_device_procs = {
     NULL,                      /* pop_transparency_state */
     NULL,                      /* put_image */
     clist_dev_spec_op,
-    NULL,                      /* copy plane */
+    clist_copy_plane,          /* copy plane */
     gx_default_get_profile
 };
 
@@ -677,6 +678,18 @@ clist_close_output_file(gx_device *dev)
     return clist_close_page_info(&cdev->page_info);
 }
 
+static void
+clist_set_planar(gx_device *dev)
+{
+    gx_device_clist_common * cdev = &((gx_device_clist *)dev)->common;
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0)) {
+        cdev->is_planar = true;
+    } else {
+        cdev->is_planar = false;
+    }
+}
+
 /* Open the device by initializing the device state and opening the */
 /* scratch files. */
 int
@@ -689,6 +702,7 @@ clist_open(gx_device *dev)
 
     cdev->permanent_error = 0;
     cdev->is_open = false;
+    clist_set_planar(dev);
     code = clist_init(dev);
     if (code < 0)
         return code;

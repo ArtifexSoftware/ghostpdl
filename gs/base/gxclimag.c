@@ -71,7 +71,7 @@ clist_fill_mask(gx_device * dev,
     int data_x_bit;
     byte copy_op =
         (depth > 1 ? cmd_op_copy_color_alpha :
-         cmd_op_copy_mono + cmd_copy_ht_color);
+         cmd_op_copy_mono_plane + cmd_copy_ht_color);  /* Plane not needed here */
     bool slow_rop =
         cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor) ||
         cmd_slow_rop(dev, lop_know_S_1(lop), pdcolor);
@@ -179,6 +179,7 @@ clist_fill_mask(gx_device * dev,
             rect.x = orig_x, rect.y = y0;
             rect.width = orig_width, rect.height = re.yend - y0;
             rsize = 1 + cmd_sizexy(rect);
+            if (depth == 1) rsize = rsize + cmd_sizew(255);  /* need planar 255 setting */
             do {
                 code = (orig_data_x ?
                         cmd_put_set_data_x(cdev, re.pcls, orig_data_x) : 0);
@@ -196,6 +197,9 @@ clist_fill_mask(gx_device * dev,
                      */
                     if (code >= 0) {
                         dp++;
+                        if (depth == 1) {
+                            cmd_putw(255, dp);
+                        } 
                         cmd_putxy(rect, dp);
                     }
                 }

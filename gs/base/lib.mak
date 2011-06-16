@@ -1741,7 +1741,7 @@ $(GLD)clist.dev : $(LIB_MAK) $(ECHOGS_XE) $(clist_)\
 $(GLOBJ)gxclist.$(OBJ) : $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
  $(gp_h) $(gpcheck_h) $(gsparams_h)\
  $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h) $(gxdcolor_h) $(gscms_h)\
- $(gsicc_manage_h) $(gsicc_cache_h)
+ $(gsicc_manage_h) $(gsicc_cache_h) $(gxdevsop_h)
 	$(GLCC) $(GLO_)gxclist.$(OBJ) $(C_) $(GLSRC)gxclist.c
 
 $(GLOBJ)gxclbits.$(OBJ) : $(GLSRC)gxclbits.c $(GXERR) $(memory__h) $(gpcheck_h)\

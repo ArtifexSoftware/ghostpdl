@@ -78,13 +78,6 @@ typedef enum {
 #define cmd_set_misc_halftone (3 << 6)	/* 11: type(6), num_comp# */
     cmd_opv_enable_lop = 0x07,	/* (nothing) */
     cmd_opv_disable_lop = 0x08,	/* (nothing) */
-    /* obsolete */
-    /* cmd_opv_set_ht_order = 0x09, */	/* component+1#[, cname#], */
-                                /* width#, height#, raster#, */
-                                /* shift#, num_levels#, num_bits#, */
-                                /* order_procs_index */
-    /* obsolete */
-    /* cmd_opv_set_ht_data = 0x0a, */	/* n, n x (uint|gx_ht_bit|ushort) */
     cmd_opv_end_page = 0x0b,	/* (nothing) */
     cmd_opv_delta_color0 = 0x0c,	/* See cmd_put_color in gxclutil.c */
     cmd_opv_delta_color1 = 0x0d,	/* <<same as color0>> */
@@ -99,8 +92,8 @@ typedef enum {
     cmd_op_tile_rect = 0x60,	/* +dy2dh2, x#, w# | +0, rect# */
     cmd_op_tile_rect_short = 0x70,	/* +dh, dx, dw | +0, rect_short */
     cmd_op_tile_rect_tiny = 0x80,	/* +dw+0, rect_tiny | +dw+8 */
-    cmd_op_copy_mono = 0x90,	/* +compress, x#, y#, (w+data_x)#, */
-                                /* h#, <bits> | */
+    cmd_op_copy_mono_plane = 0x90,	/* +compress, plane, x#, y#, (w+data_x)#, */
+                                        /* h#, <bits> | */
 #define cmd_copy_ht_color 4
                                 /* +4+compress, x#, y#, (w+data_x)#, */
                                 /* h#, <bits> | */
@@ -118,13 +111,13 @@ typedef enum {
 #define cmd_op_name_strings\
   "(misc)", "set_color[0]", "set_color[1]", "fill_rect",\
   "fill_rect_short", "fill_rect_tiny", "tile_rect", "tile_rect_short",\
-  "tile_rect_tiny", "copy_mono", "copy_color_alpha", "delta_tile_index",\
+  "tile_rect_tiny", "copy_mono_plane", "copy_color_alpha", "delta_tile_index",\
   "set_tile_index", "(misc2)", "(segment)", "(path)"
 
 #define cmd_misc_op_name_strings\
   "end_run", "set_tile_size", "set_tile_phase", "set_tile_bits",\
   "set_bits", "set_tile_color", "set_misc", "enable_lop",\
-  "disable_lop", "set_ht_order", "set_ht_data", "end_page",\
+  "disable_lop", "invalid", "invalid", "end_page",\
   "delta2_color0", "delta2_color1", "set_copy_color", "set_copy_alpha",
 
 #ifdef DEBUG
@@ -290,6 +283,7 @@ dev_proc_fill_trapezoid(clist_fill_trapezoid);
 dev_proc_fill_linear_color_trapezoid(clist_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(clist_fill_linear_color_triangle);
 dev_proc_dev_spec_op(clist_dev_spec_op);
+dev_proc_copy_plane(clist_copy_plane);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);
