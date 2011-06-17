@@ -483,11 +483,11 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         /* In order to get the metrics in the form we need them, we have to remove the size scaling
          * the resolution scaling, and convert to points.
          */
-        hx = (FT_Long)((((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
-        hy = (FT_Long)((((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
+        hx = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingX * ft_face->units_per_EM * 72.0) / ((double)face->width * face->horz_res));
+        hy = (FT_Long)(((double)ft_face->glyph->metrics.horiBearingY * ft_face->units_per_EM * 72.0) / ((double)face->height * face->vert_res));
 
-        w = (FT_Long)((((double)ft_face->glyph->metrics.width * ft_face->units_per_EM / face->width) / face->horz_res) * 72);
-        h = (FT_Long)((((double)ft_face->glyph->metrics.height * ft_face->units_per_EM / face->height) / face->vert_res) * 72);
+        w = (FT_Long)(((double)ft_face->glyph->metrics.width * ft_face->units_per_EM * 72.0) / ((double)face->width * face->horz_res));
+        h = (FT_Long)(((double)ft_face->glyph->metrics.height * ft_face->units_per_EM * 72.0) / ((double)face->height * face->vert_res));
 
         /* Ugly. FreeType creates verticla metrics for TT fonts, normally we override them in the
          * metrics callbacks, but those only work for incremental interface fonts, and TrueType fonts
@@ -677,7 +677,8 @@ make_rotation(FT_Matrix *a_transform, const FT_Vector *a_vector)
  * The scaling part is used for setting the pixel size for hinting.
  */
 static void
-transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
+transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
+                    FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
     FT_Matrix ftscale_mat;
@@ -689,9 +690,9 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
     scaley = hypot ((double)a_transform->yx, (double)a_transform->yy);
 
     if (*xresp != *yresp) {
-        /* We need to give the resolution in "glyph space", taking account of rotation and
-         * shearing, so that makes life a little complicated when non-square resolutions
-         * are used.
+        /* We need to give the resolution in "glyph space", taking account
+         * of rotation and shearing, so that makes life a little complicated
+         * when non-square resolutions are used.
          */
         ftscale_mat.xx = scalex;
         ftscale_mat.xy = ftscale_mat.yx = 0;
@@ -707,8 +708,8 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
 
         FT_Vector_Transform (&vectx, &ftscale_mat);
         FT_Vector_Transform (&vecty, &ftscale_mat);
-        xres = (FT_UInt)((hypot ((double)vectx.x, (double)vecty.x) / 65536.0) + 0.5);
-        yres = (FT_UInt)((hypot ((double)vectx.y, (double)vecty.y) / 65536.0) + 0.5);
+        xres = (FT_UInt)((hypot ((double)vectx.x, (double)vecty.x) * (1.0/65536.0)) + 0.5);
+        yres = (FT_UInt)((hypot ((double)vectx.y, (double)vecty.y) * (1.0/65536.0)) + 0.5);
     }
     else {
         /* Life is considerably easier when square resolutions are in use! */
@@ -716,8 +717,8 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
         yres = *yresp;
     }
 
-    scalex /= 65536.0;
-    scaley /= 65536.0;
+    scalex *= 1.0/65536.0;
+    scaley *= 1.0/65536.0;
     /* FT clamps the width and height to a lower limit of 1.0 units
      * (note: as FT stores it in 64ths of a unit, that is 64)
      * So if either the width or the height are <1.0 here, we scale
@@ -745,17 +746,17 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
             scalex = scalex * fact;
         }
 
-        /* These seemingly arbitrary numbers are derived from a) using 64ths of a unit
-           and b) the calculations done in FT_Request_Metrics() to derive the ppem.
-           This is necessary due to FT's need for them ppem to be an in larger than 1
-           - see tt_size_reset().
+        /* These seemingly arbitrary numbers are derived from a) using 64ths
+           of a unit and b) the calculations done in FT_Request_Metrics() to
+           derive the ppem. This is necessary due to FT's need for them ppem
+           to be an in larger than 1 - see tt_size_reset().
 
-           The calculation has been rearranged to reduce (in particular) the number of
-           floating point divisions.
+           The calculation has been rearranged to reduce (in particular) the
+           number of floating point divisions.
          */
-        if ((scaley * 64 * yres) < 2268.0)
+        if (scaley * yres < 2268.0/64.0)
         {
-            fact = 2400.0 / (64 * yres) / scaley;
+            fact = (2400.0/64.0) / (yres * scaley);
 
             scaley *= fact;
             scalex *= fact;
@@ -766,11 +767,11 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
          * almost always a larger value than the text size, and therefore
          * we have more scope to manipulate it.
          */
-        fact = 1;
-        while (((scalex * xres) / 72) > 256.0 && xres > 0 && yres > 0) {
-            xres /= 2;
-            yres /= 2;
-            fact *= 2;
+        fact = 1.0;
+        while (scalex * xres > 256.0 * 72 && xres > 0 && yres > 0) {
+            xres >>= 1;
+            yres >>= 1;
+            fact *= 2.0;
         }
     }
     else
@@ -783,28 +784,28 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp, FT_F
         }
 
         /* see above */
-        if ((scalex * 64 * xres) < 2268.0)
+        if (scalex * xres < 2268.0/64.0)
         {
-            fact = 2400.0 / (64 * xres) / scalex;
+            fact = (2400.0/64.0) / (xres * scalex);
 
             scaley *= fact;
             scalex *= fact;
         }
 
         /* see above */
-        fact = 1;
-        while (((scaley * yres) / 72) > 256.0 && xres > 0 && yres > 0) {
-            xres /= 2;
-            yres /= 2;
+        fact = 1.0;
+        while (scaley * yres > 256.0 * 72.0 && xres > 0 && yres > 0) {
+            xres >>= 1;
+            yres >>= 1;
 
-            fact *= 2;
+            fact *= 2.0;
         }
     }
 
-    ftscale_mat.xx = (FT_Fixed)(((1.0 / scalex)) * 65536.0) * fact;
+    ftscale_mat.xx = (FT_Fixed)(65536.0 / scalex) * fact;
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
-    ftscale_mat.yy = (FT_Fixed)(((1.0 / scaley)) * 65536.0) * fact;
+    ftscale_mat.yy = (FT_Fixed)(65536.0 / scaley) * fact;
 
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
