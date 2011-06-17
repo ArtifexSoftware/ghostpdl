@@ -283,7 +283,10 @@ typedef enum {
 
 /* The link object. */
 
+#ifndef gsicc_link_DEFINED
 typedef struct gsicc_link_s gsicc_link_t;
+#  define gsicc_link_DEFINED
+#endif
 
 typedef struct gsicc_hashlink_s {
     int64_t link_hashcode;

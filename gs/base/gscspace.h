@@ -20,7 +20,6 @@
 #include "gsmemory.h"
 #include "gsiparam.h"
 #include "gsrefct.h"
-#include "gscms.h"
 
 /*
  * Previous versions had a complicated lifecycle discipline for
@@ -130,6 +129,18 @@
       XPS has to have an ICC profile for a "Named" Color Space.
 
 */
+
+/* Opaque types for a graphics state stuff */
+#ifndef gs_state_DEFINED
+#  define gs_state_DEFINED
+typedef struct gs_state_s gs_state;
+#endif
+
+#ifndef gsicc_link_DEFINED
+typedef struct gsicc_link_s gsicc_link_t;
+#  define gsicc_link_DEFINED
+#endif
+
 
 /* Define ICC profile structure type */
 #ifndef cmm_profile_DEFINED
