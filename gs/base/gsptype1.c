@@ -455,8 +455,15 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_state * saved,
     pbbox->p.y -= dy;
     pbbox->q.x -= dx;
     pbbox->q.y -= dy;
-    code = gx_translate_to_fixed(saved, float2fixed_rounded(saved->ctm.tx - dx),
-                                        float2fixed_rounded(saved->ctm.ty - dy));
+    if (saved->ctm.txy_fixed_valid) {
+        code = gx_translate_to_fixed(saved, float2fixed_rounded(saved->ctm.tx - dx),
+                                            float2fixed_rounded(saved->ctm.ty - dy));
+    } else {         /* the ctm didn't fit in a fixed. Just adjust the float values */
+        saved->ctm.tx -= dx;
+        saved->ctm.ty -= dy;
+        /* not sure if this is needed for patterns, but lifted from gx_translate_to_fixed */
+        code = gx_path_translate(saved->path, float2fixed(-dx), float2fixed(-dy));
+    }
     if (code < 0)
         return code;
 
