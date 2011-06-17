@@ -1686,6 +1686,10 @@
 						>
 					</File>
 					<File
+						RelativePath="base\gdevplan.c"
+						>
+					</File>
+					<File
 						RelativePath="base\gdevplib.c"
 						>
 					</File>
