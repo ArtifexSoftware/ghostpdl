@@ -14,7 +14,7 @@
 /* $Id$ */
 /* Path stroking procedures for Ghostscript library */
 #include "math_.h"
-#include "stdlib.h" /* abs() */
+#include <stdlib.h> /* abs() */
 #include "gx.h"
 #include "gpcheck.h"
 #include "gserrors.h"
@@ -89,10 +89,10 @@
  *      otherwise, K = E.
  *
  * If the following conditions apply, K = E yields an exact result:
- *	- The CTM is of the form [X 0 0 Y] or [0 X Y 0].
- *	- Square or round caps are used, or all subpaths are closed.
- *	- All segments (including the implicit segment created by
- *	  closepath) are vertical or horizontal lines.
+ *      - The CTM is of the form [X 0 0 Y] or [0 X Y 0].
+ *      - Square or round caps are used, or all subpaths are closed.
+ *      - All segments (including the implicit segment created by
+ *        closepath) are vertical or horizontal lines.
  *
  * Note that these conditions are sufficient, but not necessary, to get an
  * exact result.  We choose this set of conditions because it is easy to
@@ -146,10 +146,10 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
                 if (!(pseg->pt.x == prev.x || pseg->pt.y == prev.y))
                     goto not_exact;
                 break;
-            default:		/* other/unknown segment type */
+            default:            /* other/unknown segment type */
                 goto not_exact;
             }
-        result = 0;		/* exact result */
+        result = 0;             /* exact result */
     }
 not_exact:
     if (result) {
@@ -214,18 +214,18 @@ join_expansion_factor(const gs_imager_state *pis, gs_line_join join)
  */
 typedef gs_fixed_point *p_ptr;
 typedef struct endpoint_s {
-    gs_fixed_point p;		/* the end of the line */
-    gs_fixed_point co, ce;	/* ends of the cap, p +/- width */
-    gs_fixed_point cdelta;	/* +/- cap length */
+    gs_fixed_point p;           /* the end of the line */
+    gs_fixed_point co, ce;      /* ends of the cap, p +/- width */
+    gs_fixed_point cdelta;      /* +/- cap length */
 } endpoint;
 typedef endpoint *ep_ptr;
 typedef const endpoint *const_ep_ptr;
 typedef struct partial_line_s {
-    endpoint o;			/* starting coordinate */
-    endpoint e;			/* ending coordinate */
-    gs_fixed_point width;	/* one-half line width, see above */
-    gs_fixed_point vector;	/* The line segment direction */
-    bool thin;			/* true if minimum-width line */
+    endpoint o;                 /* starting coordinate */
+    endpoint e;                 /* ending coordinate */
+    gs_fixed_point width;       /* one-half line width, see above */
+    gs_fixed_point vector;      /* The line segment direction */
+    bool thin;                  /* true if minimum-width line */
 } partial_line;
 typedef partial_line *pl_ptr;
 
@@ -376,8 +376,8 @@ static int stroke_add_initial_cap_compat(gx_path * ppath, pl_ptr plp, bool adlus
 /* Define the orientations we handle specially. */
 typedef enum {
     orient_other = 0,
-    orient_portrait,		/* [xx 0 0 yy tx ty] */
-    orient_landscape		/* [0 xy yx 0 tx ty] */
+    orient_portrait,            /* [xx 0 0 yy tx ty] */
+    orient_landscape            /* [0 xy yx 0 tx ty] */
 } orientation;
 
 /*
@@ -480,7 +480,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
         (pgs_lp->curve_join >= 0 ? (gs_line_join)pgs_lp->curve_join :
          pgs_lp->join == gs_join_none || pgs_lp->join == gs_join_round ?
             gs_join_bevel : pgs_lp->join);
-    float line_width = pgs_lp->half_width;	/* (*half* the line width) */
+    float line_width = pgs_lp->half_width;      /* (*half* the line width) */
     bool always_thin;
     double line_width_and_scale;
     double device_line_width_scale = 0; /* Quiet compiler. */
@@ -614,7 +614,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 if (ya < 0)
                     ya = -ya;
                 always_thin = (max(xa, ya) * line_width < 0.5);
-                if (!always_thin && uniform) {	/* Precompute a value we'll need later. */
+                if (!always_thin && uniform) {  /* Precompute a value we'll need later. */
                     device_line_width_scale = line_width_and_scale * xa;
                 }
                 break;
@@ -729,7 +729,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                      ((pseg->notes & sn_dash_tail) ? nf_dash_tail : 0)    |
                      (flags & ~nf_all_from_arc));
             pl.e.p.x = sx, pl.e.p.y = sy;
-            if (!(udx | udy) || pseg->type == s_dash) {	/* degenerate or short */
+            if (!(udx | udy) || pseg->type == s_dash) { /* degenerate or short */
                 /*
                  * If this is the first segment of the subpath,
                  * check the entire subpath for degeneracy.
@@ -778,7 +778,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                     if (is_dash_segment) {
                         /* Nothing. */
                     } else if (end != 0 && (end->pt.x != x || end->pt.y != y))
-                        sx = end->pt.x, sy = end->pt.y,	udx = sx - x, udy = sy - y;
+                        sx = end->pt.x, sy = end->pt.y, udx = sx - x, udy = sy - y;
                 }
                 /*
                  * Compute the properly oriented dot length, and then
@@ -847,11 +847,11 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                         pl.width.x = pl.e.cdelta.y, pl.width.y = -pl.e.cdelta.x;
                     else
                         pl.width.x = -pl.e.cdelta.y, pl.width.y = pl.e.cdelta.x;
-                    pl.thin = false;	/* if not always_thin, */
+                    pl.thin = false;    /* if not always_thin, */
                     /* then never thin. */
 
                 } else {
-                    gs_point dpt;	/* unscaled */
+                    gs_point dpt;       /* unscaled */
                     float wl;
 
                     gs_imager_idtransform(pis,
@@ -987,7 +987,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
     if (dev == (gx_device *)&cdev)
         cdev.target->sgr = cdev.sgr;
     if (to_path == &stroke_path_body)
-        gx_path_free(&stroke_path_body, "gx_stroke_path_only error");	/* (only needed if error) */
+        gx_path_free(&stroke_path_body, "gx_stroke_path_only error");   /* (only needed if error) */
     if (to_path_reverse == &stroke_path_reverse)
         gx_path_free(&stroke_path_reverse, "gx_stroke_path_only error");
     if (dash_count)
@@ -1091,9 +1091,9 @@ adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bo
     /* may not produce the correct result. */
     w = *pw;
     if (w > 0)
-        w2 = fixed_rounded(w << 1);	/* full line width */
+        w2 = fixed_rounded(w << 1);     /* full line width */
     else
-        w2 = -fixed_rounded(-w << 1);	/* full line width */
+        w2 = -fixed_rounded(-w << 1);   /* full line width */
     if (w2 == 0 && *pw != 0) {
         /* Make sure thin lines don't disappear. */
         w2 = (*pw < 0 ? -fixed_1 + adj2 : fixed_1 - adj2);
@@ -1107,9 +1107,9 @@ adjust_stroke_transversal(pl_ptr plp, const gs_imager_state * pis, bool thin, bo
             w2 += adj2;
         else
             w2 = adj2 - w2;
-        if (w2 & fixed_1)	/* odd width, move to half-pixel */
+        if (w2 & fixed_1)       /* odd width, move to half-pixel */
             *pov = *pev = fixed_floor(*pov) + fixed_half;
-        else			/* even width, move to pixel */
+        else                    /* even width, move to pixel */
             *pov = *pev = fixed_rounded(*pov);
 
     }
@@ -1186,7 +1186,7 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
 
     if (!pis->stroke_adjust && (plp->width.x != 0 && plp->width.y != 0)) {
         dev->sgr.stroke_stored = false;
-        return;			/* don't adjust */
+        return;                 /* don't adjust */
     }
     /* Recognizing gradients, which some obsolete software
        represent as a set of parallel strokes.
@@ -1286,12 +1286,12 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
 /* the direction determined by *pd1 and *pd2, and 1 otherwise. */
 static int
 line_intersect(
-                  p_ptr pp1,	/* point on 1st line */
-                  p_ptr pd1,	/* slope of 1st line (dx,dy) */
-                  p_ptr pp2,	/* point on 2nd line */
-                  p_ptr pd2,	/* slope of 2nd line */
+                  p_ptr pp1,    /* point on 1st line */
+                  p_ptr pd1,    /* slope of 1st line (dx,dy) */
+                  p_ptr pp2,    /* point on 2nd line */
+                  p_ptr pd2,    /* slope of 2nd line */
                   p_ptr pi)
-{				/* return intersection here */
+{                               /* return intersection here */
     /* We don't have to do any scaling, the factors all work out right. */
     double u1 = pd1->x, v1 = pd1->y;
     double u2 = pd2->x, v2 = pd2->y;
@@ -1530,7 +1530,7 @@ stroke_add(gx_path * ppath, gx_path * rpath, bool ensure_closed, int first,
             return code;
         code = add_pie_join(ppath, plp, nplp, reflected, false);
         goto done;
-    } else			/* non-round join */
+    } else                      /* non-round join */
        code = line_join_points(pgs_lp, plp, nplp, points + npoints,
                                 (uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
                                 join, reflected);
@@ -1813,9 +1813,9 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
         if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
             return code;
         return add_round_cap(ppath, &plp->e);
-    } else if (nplp->thin) {	/* no join */
+    } else if (nplp->thin) {    /* no join */
         npoints = 0;
-    } else {			/* non-round join */
+    } else {                    /* non-round join */
         bool ccw =
             (double)(plp->width.x) /* x1 */ * (nplp->width.y) /* y2 */ >
             (double)(nplp->width.x) /* x2 */ * (plp->width.y) /* y1 */;
@@ -1988,7 +1988,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
      * depending on the orientations of the lines.
      * Fortunately we know the relative orientations already.
      */
-    if (!ccw0)		/* have plp - nplp, want vice versa */
+    if (!ccw0)          /* have plp - nplp, want vice versa */
         num = -num;
 #ifdef DEBUG
     if (gs_debug_c('O')) {
@@ -2057,7 +2057,7 @@ check_miter(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
             dirn2.x = (fixed)(-nplp->vector.x*scale);
             dirn2.y = (fixed)(-nplp->vector.y*scale);
         }
-        if_debug0('O', "	... passes.\n");
+        if_debug0('O', "        ... passes.\n");
         /* Compute the intersection of the extended edge lines. */
         if (line_intersect(outp, &dirn1, np, &dirn2, mpt) == 0)
             return 0;
@@ -2561,12 +2561,12 @@ cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
             PUT_POINT(0, xo + cdx, yo + cdy);
             PUT_POINT(1, xe + cdx, ye + cdy);
             return 2;
-        case gs_cap_triangle:	/* (not supported by PostScript) */
+        case gs_cap_triangle:   /* (not supported by PostScript) */
             PUT_POINT(0, xo, yo);
             PUT_POINT(1, px + cdx, py + cdy);
             PUT_POINT(2, xe, ye);
             return 3;
-        default:		/* can't happen */
+        default:                /* can't happen */
             return_error(gs_error_unregistered);
     }
 #undef PUT_POINT
