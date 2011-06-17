@@ -20,6 +20,7 @@
 #include "gsccolor.h"
 #include "gsrefct.h"
 #include "gscspace.h"
+#include "stdint_.h"
 
 /* Define the names of the known blend modes. */
 typedef enum {
