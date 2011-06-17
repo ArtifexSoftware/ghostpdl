@@ -1175,7 +1175,8 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # We include some optional library modules in the dependency list,
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
-$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev
+$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev \
+                 $(GLD)clist.dev
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1195,6 +1196,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(G
 	$(ADDMOD) $(GLD)libs -init gshtscr
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 	$(ADDMOD) $(GLD)libs -include $(GLD)translib
+	$(ADDMOD) $(GLD)libs -include $(GLD)clist
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(SETMOD) $(GLD)libx $(LIB1x)
 	$(ADDMOD) $(GLD)libx $(LIB2x)
@@ -1665,7 +1667,7 @@ $(GLD)page.dev : $(LIB_MAK) $(ECHOGS_XE) $(page_)
 
 $(GLOBJ)gdevprn.$(OBJ) : $(GLSRC)gdevprn.c $(ctype__h)\
  $(gdevprn_h) $(gp_h) $(gsdevice_h) $(gsfname_h) $(gsparam_h)\
- $(gxclio_h) $(gxgetbit_h) $(gdevplnx_h) $(gstrans_h) $(GLD)clist.dev\
+ $(gxclio_h) $(gxgetbit_h) $(gdevplnx_h) $(gstrans_h) \
  $(gxdownscale_h)
 	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
 
