@@ -533,7 +533,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* For now we have 3 cases.  A CMYK (4 channel), gray, or other case
        the latter of which is not yet implemented */
     for (k = 0; k < spp_out; k++) {
-        devc_contone[k] = penum->line + offset_contone[k];
+        devc_contone[k] = penum->line + contone_stride * k + offset_contone[k];
         psrc_plane[k] = psrc_cm + psrc_planestride * k;
     }
     switch (spp_out)
@@ -726,7 +726,8 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             /* Not yet handled (e.g. CMY case) */
         break;
     }
-    /* Apply threshold array to image data */
+    /* Apply threshold array to image data. It may be neccessary to invert
+       depnding upon the polarity of the device */
 flush:
     for (k = 0; k < spp_out; k++) {
         d_order = &(penum->pis->dev_ht->components[k].corder);
