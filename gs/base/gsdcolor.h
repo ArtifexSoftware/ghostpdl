@@ -321,7 +321,7 @@ struct gx_device_color_s {
 
     struct _mask {
         struct mp_ {
-            short x, y;
+            int x, y;
         } m_phase;
         gx_bitmap_id id;
         gx_color_tile *m_tile;
