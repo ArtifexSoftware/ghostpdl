@@ -7207,28 +7207,9 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
             }
         case PDF14_END_TRANS_GROUP: return POPCROP; /* Pop cropping. */
         case PDF14_END_TRANS_MASK: return POPCROP;   /* Pop the cropping */
-
         case PDF14_PUSH_TRANS_STATE: return CURRBANDS;
         case PDF14_POP_TRANS_STATE: return CURRBANDS;
-
-        case PDF14_SET_BLEND_PARAMS:
-            {	gs_int_rect rect;
-                int code;
-
-                if (pdf14pct->params.crop_blend_params) {
-                    code = pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
-                                                &pdf14pct->params.bbox, &rect);
-                    /* We have to crop this by the parent object.   */
-                    *ry = max(rect.p.y, cropping_min);
-                    *rheight = min(rect.q.y, cropping_max) - *ry;
-                    return SAMEAS_PUSHCROP_BUTNOPUSH;
-                    /* A special case were we write out to the same bands as the
-                       last group, but we will not push a cropping onto the
-                       cropping statck */
-                } else {
-                    return CURRBANDS;
-                }
-               }
+        case PDF14_SET_BLEND_PARAMS: return ALLBANDS;
         case PDF14_PUSH_SMASK_COLOR: return POPCROP; /* Pop cropping. */
         case PDF14_POP_SMASK_COLOR: return POPCROP;   /* Pop the cropping */
     }
