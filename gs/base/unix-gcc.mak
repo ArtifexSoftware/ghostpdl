@@ -414,7 +414,8 @@ DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev
 DEVICE_DEVS16=$(DD)bbox.dev
 
-DEVICE_DEVS17=
+DEVICE_DEVS17=$(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev
+
 DEVICE_DEVS18=
 DEVICE_DEVS19=
 DEVICE_DEVS20=$(DD)cljet5.dev $(DD)cljet5c.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev
