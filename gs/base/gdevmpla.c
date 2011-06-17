@@ -21,6 +21,7 @@
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* private definitions */
 #include "gdevmpla.h"           /* interface */
+#include "gxdevsop.h"
 
 /* procedures */
 static dev_proc_open_device(mem_planar_open);
@@ -30,6 +31,15 @@ static dev_proc_copy_color(mem_planar_copy_color_4to1);
 static dev_proc_copy_plane(mem_planar_copy_plane);
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
+
+static int
+mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
+                       void *data, int size)
+{
+    if (dev_spec_op == gxdso_is_native_planar)
+        return 1;
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+}
 
 /*
  * Set up a planar memory device, after calling gs_make_mem_device but
@@ -106,6 +116,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, copy_plane, mem_planar_copy_plane);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
+        set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
     }
     set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
     return 0;

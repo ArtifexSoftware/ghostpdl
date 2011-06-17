@@ -23,7 +23,6 @@
 #include "gdevppla.h"
 #include "gdevplib.h" /* Band donor functions */
 #include "gdevmem.h"
-#include "gxdevsop.h"
 
 /* This file defines 5 different devices:
  *
@@ -333,7 +332,7 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL,   /* push_transparency_state */\
         NULL,   /* pop_transparency_state */\
         NULL,   /* put_image */\
-        plib_dev_spec_op  /* dev_spec_op */\
+        NULL    /* dev_spec_op */\
 }
 
 static const gx_device_procs plibm_procs =
@@ -985,13 +984,4 @@ plibc_print_page(gx_device_printer * pdev, FILE * pstream)
     eprintf("plibc_print_page\n");
 #endif
     return plib_print_page_loop(pdev, 3, 4, pstream);
-}
-
-static int
-plib_dev_spec_op(gx_device *pdev, int dev_spec_op,
-                  void *data, int size)
-{
-    if (dev_spec_op == gxdso_is_native_planar)
-        return 1;
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }

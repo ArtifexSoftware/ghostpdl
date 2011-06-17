@@ -22,7 +22,6 @@
 #include "gdevplnx.h"
 #include "gdevppla.h"
 #include "gdevmem.h"
-#include "gxdevsop.h"
 
 /* This file defines 5 different devices:
  *
@@ -62,8 +61,6 @@ static dev_proc_map_cmyk_color(planc_map_cmyk_color);
 
 static dev_proc_open_device(plan_open);
 static dev_proc_close_device(plan_close);
-
-static dev_proc_dev_spec_op(plan_dev_spec_op);
 
 /* And of course we need our own print-page routines. */
 static dev_proc_print_page(plan_print_page);
@@ -143,7 +140,7 @@ static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL,   /* push_transparency_state */\
         NULL,   /* pop_transparency_state */\
         NULL,   /* put_image */\
-        plan_dev_spec_op  /* dev_spec_op */\
+        NULL    /* dev_spec_op */\
 }
 
 static const gx_device_procs planm_procs =
@@ -528,13 +525,4 @@ planc_print_page(gx_device_printer * pdev, FILE * pstream)
     eprintf("planc_print_page\n");
 #endif
     return plan_print_page_loop(pdev, 3, 4, pstream);
-}
-
-static int
-plan_dev_spec_op(gx_device *pdev, int dev_spec_op,
-                  void *data, int size)
-{
-    if (dev_spec_op == gxdso_is_native_planar)
-        return 1;
-    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
