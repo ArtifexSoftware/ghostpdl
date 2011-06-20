@@ -88,8 +88,21 @@ RELOC_PTRS_END
 
 /* Define an empty clip list. */
 static const gx_clip_list clip_list_empty = {
-    {0, 0, min_int, max_int, 0, 0},
-    0, 0, 0, 0, 0
+    {
+        0,       /* next */
+        0,       /* prev */
+        min_int, /* ymin */
+        max_int, /* ymax */
+        0,       /* xmin */
+        0,       /* xmax */
+        0        /* to_visit */
+    }, /* single */
+    0, /* head */
+    0, /* tail */
+    0, /* insert */
+    0, /* xmin */
+    0, /* xmax */
+    0  /* count */
 };
 
 /* ------ Clipping path memory management ------ */

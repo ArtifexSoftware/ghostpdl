@@ -375,6 +375,7 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
         tail->prev = single;
         adev->list.head = head;
         adev->list.tail = tail;
+        adev->list.insert = tail;
     }
     return ar;
 }
@@ -492,15 +493,31 @@ top:
         return 0;
     }
     ACCUM_ALLOC("accum", nr, x, y, xe, ye);
-    rptr = adev->list.tail->prev;
-    /* Work backwards till we find the insertion point. */
-    while (ye <= rptr->ymin)
+    /* Previously we used to always search back from the tail here. Now we
+     * base our search on the previous insertion point, in the hopes that
+     * locality of reference will save us time. */
+    rptr = adev->list.insert->prev;
+    /* We want to find the value of rptr nearest the tail, s.t.
+     * ye > rptr->ymin */
+    if (ye <= rptr->ymin) {
+        /* Work backwards till we find the insertion point. */
+        do {
+            rptr = rptr->prev;
+        } while (ye <= rptr->ymin);
+    } else {
+        /* Search forwards */
+        do {
+            rptr = rptr->next;
+        } while (ye > rptr->ymin);
+        /* And we've gone one too far */
         rptr = rptr->prev;
+    }
     ymin = rptr->ymin;
     ymax = rptr->ymax;
     if (ye > ymax) {
         if (y >= ymax) {	/* Insert between two bands. */
             ACCUM_ADD_AFTER(nr, rptr);
+            adev->list.insert = nr;
             return 0;
         }
         /* Split off the top part of the new rectangle. */
@@ -556,8 +573,10 @@ top:
             clip_rect_print('Q', "widen", rptr);
         }
         ACCUM_FREE("free", nr);
-        if (x >= rptr->xmin)
+        if (x >= rptr->xmin) {
+            adev->list.insert = rptr;
             goto out;
+        }
         /* Might overlap other rectangles to the left. */
         rptr->xmin = x;
         nr = rptr;
@@ -565,6 +584,7 @@ top:
         clip_rect_print('Q', "merge", nr);
     }
     ACCUM_ADD_AFTER(nr, rptr);
+    adev->list.insert = nr;
 out:
     /* Check whether there are only 0 or 1 rectangles left. */
     if (adev->list.count <= 1) {
@@ -582,6 +602,7 @@ out:
         gs_free_object(mem, adev->list.head, "accum_free_rect(head)");
         adev->list.head = 0;
         adev->list.tail = 0;
+        adev->list.insert = 0;
     }
     /* Check whether there is still more of the new band to process. */
     if (y < ymin) {

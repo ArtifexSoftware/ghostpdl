@@ -69,6 +69,7 @@ struct gx_clip_list_s {
     gx_clip_rect single;	/* (has next = prev = 0) */
     gx_clip_rect *head;
     gx_clip_rect *tail;
+    gx_clip_rect *insert;
     int xmin, xmax;		/* min and max X over all but head/tail */
     int count;			/* # of rectangles not counting */
                                 /* head or tail */
