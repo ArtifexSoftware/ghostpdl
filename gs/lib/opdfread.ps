@@ -134,6 +134,7 @@ errordict /handleerror
 
 end % A dictionary for local binding
 
+
 50 dict begin
 
 % ===================== Debugging =========================================
@@ -262,7 +263,12 @@ def
 
 /BlockBuffer 65535 string def % Make it big to load entire TrueType font
 /PDFReader currentdict def
-/ObjectRegistry 50 array def % may grow later
+/ObjectRegistryMaxLength 50000 def
+/ObjectRegistry 10 dict def
+ObjectRegistry
+begin
+  0 ObjectRegistryMaxLength dict def
+end
 /CurrentObject null def
 /DoneDocumentStructure false def
 /GraphicState 20 dict begin
@@ -314,61 +320,83 @@ currentdict end readonly def
 
 /ReadFontProcs 10 dict def % Will be filled below.
 
+/GetObject % <id> GetObject obj true
+           % <id> GetObject false
+{
+  dup ObjectRegistryMaxLength idiv
+  //PDFReader /ObjectRegistry get exch knownget {
+    exch knownget
+  } {
+    pop false
+  }ifelse
+} bind def
+
+/PutObject % <id> <obj> PutObject
+{
+  1 index ObjectRegistryMaxLength idiv   %  id obj oregnr
+  //PDFReader /ObjectRegistry get 1 index knownget {
+            % object already defined in Objectregistry
+                                                        % id obj oregnr dict
+            exch pop                                    % id obj dict
+            3 1 roll put
+  }{
+           % object not already defined in ObjectRegistry
+                                                        % id obj oregnr
+           //PDFReader /ObjectRegistry get dup
+           begin    					% new Objectregistry entry:
+           1 index ObjectRegistryMaxLength dict def
+           end
+           exch get      % id obj dict
+           3 1 roll put
+  }ifelse
+} bind def
+
 % ===================== Reading PDF objects ===============================
 
 /Register % <DefaultDaemon> <id> <obj> Register -
 {
-  exch dup                                              % d obj id id
-  //PDFReader /ObjectRegistry get length ge {
-    dup dup 2 idiv add array dup                        % d obj id [n] [n]
-    //PDFReader /ObjectRegistry get dup length          % d obj id [n] [n] [o] l
-    3 2 roll exch                                       % d obj id [n] [o] [n] l
-    0 exch getinterval copy pop                         % d obj id [n]
-    //PDFReader exch /ObjectRegistry exch put           % d obj id
-  } if
-  exch //PDFReader /ObjectRegistry get                  % d id obj r
-  3 1 roll                                              % d r id obj
-  3 copy pop get                                        % d r id obj e
-  dup xcheck {                                          % d r id obj e
-    5 4 roll pop                                        % r id obj e
-    //PDFR_DEBUG {
-      (Have a daemon for ) print 2 index =
-    } if
-    % We've got a definition daemon, execute it :
-    exec
-  } {                                                   % d r id obj e
-    dup null ne {                                       % d r id obj e
-      mark (The object ) 4 index ( already defined : ) 4 index //error exec
-    } {
-      pop
-    } ifelse
-    4 3 roll                                            % r id obj d
-    % Execute the default daemon :
-    exec
-  } ifelse                                              % r id obj
-  put                                                   %
+  1 index GetObject {
+                                                                % d id obj e
+      dup xcheck {
+         4 3 roll pop    					%  id obj e
+         //PDFR_DEBUG {
+           (Have a daemon for ) print 2 index ==
+         } if
+         %% We've got a definition daamon, execute it:
+         exec
+      } {
+         dup null ne {
+             mark (The object ) 4 index (is already defined : ) 4 index //error exec
+         } {
+           pop             					% d id obj
+         } ifelse
+         3 2 roll        					% id obj d
+         %% Execute the default Daemon
+         exec
+      }ifelse
+  } {
+                                                                % d id obj
+   3 2 roll              					% id obj d
+   exec                  					% execute the default deamon
+  }ifelse
+  PutObject
 } bind def
 
 /IsRegistered % <id> GetRegistered <bool>
 {
-  //PDFReader /ObjectRegistry get                       % id r
-  dup length                                            % id r l
-  2 index le {                                          % id r
-    pop pop false
-  } {
-    exch get                                            % id e
+  GetObject {
     null ne
-  } ifelse
+  } {
+    false
+  }ifelse
 } bind def
 
 /GetRegistered % <id> GetRegistered <obj>
 {
-  //PDFReader /ObjectRegistry get                       % id r
-  dup length                                            % id r l
-  2 index le {                                          % id r
+  dup GetObject not {
     exch mark exch (Object ) exch ( isn't defined before needed (1).) //error exec
   } if
-  1 index get                                           % id e
+  % id obj
   dup xcheck {
     exch mark exch (Object ) exch ( isn't defined before needed (2).) //error exec
   } {
@@ -400,27 +428,28 @@ currentdict end readonly def
 { //PDFR_DEBUG {
     (CleanAllResources beg) =
   } if
-  //PDFReader /ObjectRegistry get
-  dup length 0 exch 1 exch 1 sub {                     % R i
-    2 copy get dup xcheck {
+  //PDFReader /ObjectRegistry get {
+    dup length 0 exch 1 exch 1 sub {                     % R i
+      2 copy get dup xcheck {
       % Don't clean a daemon.
-      pop pop
-    } {
-      dup null eq {
         pop pop
       } {
-        dup type /dicttype eq { /.Global known } { pop false } ifelse {
-          pop
+        dup null eq {
+          pop pop
         } {
-          //PDFR_DEBUG {
-            (Dropping ) print dup =
-          } if
-          1 index exch /DroppedObject put
+          dup type /dicttype eq { /.Global known } { pop false } ifelse {
+            pop
+          } {
+            //PDFR_DEBUG {
+              (Dropping ) print dup =
+            } if
+            1 index exch /DroppedObject put
+          } ifelse
         } ifelse
       } ifelse
-    } ifelse
-  } for
-  pop
+    } for
+    pop
+  }forall  % Check each dictionary in the ObjectRegistry
   FontDirectory length dict begin
   FontDirectory {
     pop
@@ -723,19 +752,16 @@ currentdict end readonly def
     1 index =only ( stream) =
   } if                                                  % id obj
   % Run the object definition daemon, if exists :
-  //PDFReader /ObjectRegistry get dup length 3 index    % id obj r l id
-  gt {                                                  % id obj r
-    2 index get
+  1 index GetObject {
+                                                    % id obj e
     dup xcheck {
       exec
       % Disable the daemon :
-      //PDFReader /ObjectRegistry get 2 index null put
+      1 index null PutObject
     } {
       pop
     } ifelse
-  } {
-    pop
-  } ifelse                                              % id obj
+  }if
   dup /ImmediateExec known {
     dup /GlobalExec //knownget exec {
       currentglobal 4 1 roll
@@ -2077,7 +2103,7 @@ end
             0.001 div
             //ScaleMetrics exec
           }{
-                % Check if we got a /sfnts key in the dict
+            % Check if we got a /sfnts key in the dict
             % If we did then we are probably OK (TT font from GS)
             1 index /sfnts known not {
               % otherwise we need to check the FontMatrix
@@ -2805,8 +2831,8 @@ end
     exch                                                % d [] cmap
     1 index length 1 sub -1 0 {                         % d [] cmap code
       dup 3 index exch get exch                         % d [] cmap name code
-      dup 0 eq 2 index /.notdef eq or {			  % do not re-encode GID 0, or the
-                                                                          % /.notdef glyph name
+      dup 0 eq 2 index /.notdef eq or {			% do not re-encode GID 0, or the
+                                                        % /.notdef glyph name
         pop pop
       } {
         def
@@ -2978,6 +3004,7 @@ end
   } for                                                 % a1' ... an' []
   pop                                                   % a1' ... an'
 } bind def
+
 
 /ComputeFunction_10 % <scaled_arg> <sample_array> ComputeFunction_10 <result>
 { % Assuming a 1-argument 1-result function type 0.
@@ -3376,6 +3403,7 @@ end
     (FunctionType2Proc : ) print dup ==
   } if
 } bind def
+
 
 /FunctionToProc14 % <function_dict> FunctionToProc14 <proc>
 { //MakeStreamReader exec cvx exec
@@ -3982,6 +4010,7 @@ currentdict end readonly def
   //GraphicState copy pop
 } bind def
 
+
 % ===================== Interpret Data Streams ===============
 
 /SetFont  % <resource_name> <size> SetFont -
@@ -4193,6 +4222,7 @@ currentdict end readonly def
     } if
   } if
 } bind def
+
 
 /SetExtGState % <name> SetExtGState -
 {
@@ -4557,6 +4587,7 @@ currentdict end def
 /.findencoding
 { load
 } bind def
+
 
 % Leaving the procset on the dictionary stack to provide
 % definitions of obj, endobj, stream, endstream, R, xref.
