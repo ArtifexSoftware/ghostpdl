@@ -776,7 +776,7 @@ pxSetLineDash(px_args_t *par, px_state_t *pxs)
 
             if ( par->pv[2] )
               return_error(errorIllegalAttributeCombination);
-            if ( size > MAX_DASH_ELEMENTS )
+            if ( size > MAX_DASH_ELEMENTS || size == 0 )
               return_error(errorIllegalArraySize);
 
             /*

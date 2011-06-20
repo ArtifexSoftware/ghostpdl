@@ -91,12 +91,11 @@ px_stream_header_process(
 {
         while (cursor->ptr != cursor->limit)
           {
-          byte chr;
           switch (process->state)
             {
           case PSHPReady:
             process->state = PSHPSkipping;   /* switch to next state */
-            switch ( (chr = *++cursor->ptr) )
+            switch ( (*++cursor->ptr) )
               {
             case '(':
               px_top_init(process->st, process->pxs, true);
@@ -111,7 +110,7 @@ px_stream_header_process(
               }
             break;
           case PSHPSkipping:
-            if ( (chr = *++cursor->ptr) == '\n' )
+            if ( (*++cursor->ptr) == '\n' )
               {
               process->state = PSHPDone;
               return 1;
@@ -317,7 +316,9 @@ pxl_impl_set_device(
 
         enum {Sbegin, Ssetdevice, Sinitg, Sgsave, Serase, Sdone} stage;
         stage = Sbegin;
-        gs_opendevice(device);
+
+        if ((code = gs_opendevice(device)) < 0)
+            goto pisdEnd;
 
         pxs->interpolate = pxl_get_interpolation(instance);
         /* Set the device into the gstate */
@@ -407,59 +408,55 @@ pxl_impl_process(
         stream_cursor_read   *cursor           /* data to process */
 )
 {
-        pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
-        int code;
+    pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
+    int code = 0;
 
-        /* Process some input */
-        switch (pxli->processState)
-          {
-        case PSDone:
-          return e_ExitLanguage;
-        case PSHeader:		/* Input stream header */
-          code = px_stream_header_process(&pxli->headerState, cursor);
-          if (code == 0)
+    /* Process some input */
+    switch (pxli->processState) {
+    case PSDone:
+        return e_ExitLanguage;
+    case PSHeader:		/* Input stream header */
+        code = px_stream_header_process(&pxli->headerState, cursor);
+        if (code == 0)
             break;    /* need more input later */
-          else
-                 /* stream header termination */
-            if (code < 0)
-              {
-              pxli->processState = PSDone;
-              return code;   /* return error */
-              }
-            else
-              {
-              code = 0;
-              pxli->processState = PSXL;
-              }
-            /* fall thru to PSXL */
-        case PSXL:		/* PCL XL */
-          code = px_process(pxli->st, pxli->pxs, cursor);
-          if ( code == e_ExitLanguage )
-            { pxli->processState = PSDone;
-              code = 0;
-            }
-          else if ( code == errorWarningsReported )
-            { /* The parser doesn't skip over the EndSession */
-              /* operator, because an "error" occurred. */
-              cursor->ptr++;
-            }
-          else if (code < 0)
+        else if (code < 0) /* stream header termination */ {
+            pxli->processState = PSDone;
+            return code;   /* return error */
+        } else {
+            pxli->processState = PSXL;
+        }
+        /* fall thru to PSXL */
+    case PSXL:		/* PCL XL */
+        code = px_process(pxli->st, pxli->pxs, cursor);
+        if ( code == e_ExitLanguage ) { 
+            pxli->processState = PSDone;
+            code = 0;
+        } else if ( code == errorWarningsReported ) { 
+            /* The parser doesn't skip over the EndSession */
+            /* operator, because an "error" occurred. */
+            cursor->ptr++;
+        } else if (code < 0)
             /* Map library error codes to PCL XL codes when possible. */
-       switch ( code )
-              {
-#define subst(gs_error, px_error)\
-  case gs_error: code = px_error; break
-              subst(gs_error_invalidfont, errorIllegalFontData);
-              subst(gs_error_limitcheck, errorInternalOverflow);
-              subst(gs_error_nocurrentpoint, errorCurrentCursorUndefined);
-              subst(gs_error_rangecheck, errorIllegalAttributeValue);
-              subst(gs_error_VMerror, errorInsufficientMemory);
-#undef subst
-              }
-          break;   /* may need more input later */
-          }
-
-        return code;
+            switch ( code ) {
+            case gs_error_invalidfont:
+                code = errorIllegalFontData;
+                break;
+            case gs_error_limitcheck:
+                code = errorInternalOverflow;
+                break;
+            case gs_error_nocurrentpoint:
+                code = errorCurrentCursorUndefined;
+                break;
+            case gs_error_rangecheck:
+                code = errorIllegalAttributeValue;
+                break;
+            case gs_error_VMerror:
+                code = errorInsufficientMemory;
+                break;
+            }
+        break;   /* may need more input later */
+    }
+    return code;
 }
 
 /* Skip to end of job ret 1 if done, 0 ok but EOJ not found, else -ve error code */

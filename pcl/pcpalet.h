@@ -27,7 +27,6 @@
 #include "pccid.h"
 #include "pcindxed.h"
 #include "pcht.h"
-#include "pccrd.h"
 
 /*
  * The PCL palette.
@@ -55,7 +54,6 @@ struct pcl_palette_s {
     rc_header           rc;
     pcl_gsid_t          id;
     pcl_cs_indexed_t *  pindexed;
-    pcl_crd_t *         pcrd;
     pcl_ht_t *          pht;
 };
 
@@ -65,13 +63,12 @@ typedef struct pcl_palette_s    pcl_palette_t;
 #endif
 
 #define private_st_palette_t()                  \
-    gs_private_st_ptrs3( st_palette_t,          \
+    gs_private_st_ptrs2( st_palette_t,          \
                          pcl_palette_t,         \
                          "pcl palette object",  \
                          palette_enum_ptrs,     \
                          palette_reloc_ptrs,    \
                          pindexed,              \
-                         pcrd,                  \
                          pht                    \
                          )
 

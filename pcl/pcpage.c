@@ -571,6 +571,9 @@ pcl_end_page(
                                       pcl_reset_overlay,
                                       pcl_copy_after_overlay
                                       );
+            if (code < 0)
+                return code;
+
             pcs->overlay_enabled = true; /**** IN copy_after ****/
         }
     }
@@ -998,16 +1001,23 @@ set_paper_width(
 )
 {
     uint                        decipoints = uint_arg(pargs);
+    bool                        found = false;
     int                         i;
     pcl_paper_size_t          * psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
         if (101 == paper_sizes[i].tag) {
             psize = &(paper_sizes[i].psize);
+            found = true;
             break;
         }
     }
-    psize->width = decipoints * 10L;
+
+    if (found)
+        psize->width = decipoints * 10L;
+    else
+        gs_warn("Page table does not contain a custom entry");
+
     return 0;
 }
 

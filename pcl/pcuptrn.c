@@ -427,7 +427,6 @@ download_pcl_pattern(
     pixinfo.raster = (pixinfo.size.x * depth + 7) / 8;
     rsize = pixinfo.raster * pixinfo.size.y;
     dsize = min(count - ndsize, rsize);
-    patsize = (((pixinfo.size.y) * (pixinfo.size.x) * depth) + 7) / 8;
 
     /* check for legitimate format */
     if ((format == 0) || (format == 20)) {

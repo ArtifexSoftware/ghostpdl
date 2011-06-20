@@ -878,7 +878,6 @@ pcl_cs_indexed_set_default_palette_entry(
     /* get a unique copy of the indexed color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
-    pindexed = *ppindexed;
 
     return set_default_entries(*ppindexed, indx, 1, true);
 }

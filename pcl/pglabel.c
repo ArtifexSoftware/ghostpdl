@@ -431,6 +431,8 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
             nx = -spaces, ny = -lines; break;
         case hpgl_text_up:
             nx = -lines, ny = spaces; break;
+        default:
+            return -1;
         }
     /* calculate the next label position in relative coordinates. */
     if ( nx != 0 ) {

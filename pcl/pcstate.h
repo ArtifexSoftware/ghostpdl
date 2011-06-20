@@ -297,13 +297,6 @@ struct pcl_state_s {
     pcl_gsid_t          frgnd_cache_id;
 
     pcl_gstate_ids_t *  pids;
-    /*
-     * Unlike other elements of the PCL "palette", color rendering dictionaries
-     * are for the most part not a feature that can be controlled from the language.
-     * Except for the white point, the parameters of a color rendering dictionary
-     * are determined by the output device rather than the language.
-     */
-    pcl_crd_t *         pcl_default_crd;
 
     /* internal dithers */
     pcl_ht_builtin_dither_t  ordered_dither;

@@ -323,7 +323,7 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 
     /* check for a quoted string.  It should not span a line */
     if ( c == '"' ) {
-        c = pst->line[pst->pos++];
+        pst->pos++;
         while ((c = pst->line[pst->pos]) != '"' &&
                c != '\0' &&
                c != '\n')

@@ -124,18 +124,6 @@ pccid_h     = $(PCLSRC)pccid.h    \
               $(gsstruct_h)       \
               $(pcommand_h)
 
-pccrd_h     = $(PCLSRC)pccrd.h    \
-              $(gx_h)             \
-              $(gsstruct_h)       \
-              $(gsrefct_h)        \
-              $(gsmatrix_h)       \
-              $(gscspace_h)       \
-              $(gscolor2_h)       \
-              $(gscie_h)          \
-              $(gscrd_h)          \
-              $(pcident_h)        \
-              $(pcstate_h)
-
 pcdither_h  = $(PCLSRC)pcdither.h \
               $(gx_h)             \
               $(gsstruct_h)       \
@@ -198,9 +186,8 @@ pcpalet_h   = $(PCLSRC)pcpalet.h  \
               $(pclookup_h)       \
               $(pcdither_h)       \
               $(pccid_h)          \
-              $(pcindxed_h)      \
-              $(pcht_h)           \
-              $(pccrd_h)
+              $(pcindxed_h)       \
+              $(pcht_h)
 
 pcfrgrnd_h  = $(PCLSRC)pcfrgrnd.h \
               $(gx_h)             \
@@ -210,7 +197,6 @@ pcfrgrnd_h  = $(PCLSRC)pcfrgrnd.h \
               $(pcommand_h)       \
               $(pccsbase_h)       \
               $(pcht_h)           \
-              $(pccrd_h)          \
               $(pcpalet_h)
 
 pcpage_h    = $(PCLSRC)pcpage.h   \
@@ -300,7 +286,6 @@ $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c   \
                         $(gxfixed_h)        \
                         $(pcstate_h)        \
                         $(pcht_h)           \
-                        $(pccrd_h)          \
                         $(pcpatrn_h)        \
                         $(pcdraw_h)
 	$(PCLCCC) $(PCLSRC)pcdraw.c $(PCLO_)pcdraw.$(OBJ)
@@ -431,24 +416,6 @@ $(PCLOBJ)pccolor.$(OBJ): $(PCLSRC)pccolor.c \
                          $(pcpalet_h)
 	$(PCLCCC) $(PCLSRC)pccolor.c $(PCLO_)pccolor.$(OBJ)
 
-$(PCLOBJ)pccrd.$(OBJ): $(PCLSRC)pccrd.c \
-		       $(string__h)     \
-                       $(gx_h)          \
-                       $(gsmatrix_h)    \
-                       $(gsmemory_h)    \
-                       $(gsstruct_h)    \
-                       $(gsrefct_h)     \
-                       $(gsparam_h)     \
-                       $(gsdevice_h)    \
-                       $(gscspace_h)    \
-                       $(gscolor2_h)    \
-                       $(gscie_h)       \
-                       $(gscrd_h)       \
-                       $(gscrdp_h)      \
-                       $(pcommand_h)    \
-                       $(pccrd_h)
-	$(PCLCCC) $(PCLSRC)pccrd.c $(PCLO_)pccrd.$(OBJ)
-
 $(PCLOBJ)pccsbase.$(OBJ): $(PCLSRC)pccsbase.c   \
                           $(gx_h)               \
                           $(math__h)            \
@@ -534,7 +501,6 @@ $(PCLOBJ)pcpalet.$(OBJ): $(PCLSRC)pcpalet.c \
                          $(pcursor_h)       \
                          $(pcpalet_h)       \
                          $(pcfrgrnd_h)      \
-                         $(pccrd_h)         \
                          $(gsparam_h)       \
                          $(gsdevice_h)      \
                          $(gxcmap_h)        \
@@ -623,14 +589,14 @@ $(PCLOBJ)rtrstcmp.$(OBJ): $(PCLSRC)rtrstcmp.c   \
 
 
 rtlbasec_   = $(PCLOBJ)pcbiptrn.$(OBJ) $(PCLOBJ)pccid.$(OBJ)    \
-              $(PCLOBJ)pccolor.$(OBJ) $(PCLOBJ)pccrd.$(OBJ)     \
+              $(PCLOBJ)pccolor.$(OBJ)                           \
               $(PCLOBJ)pccsbase.$(OBJ) $(PCLOBJ)pcdither.$(OBJ) \
               $(PCLOBJ)pcfrgrnd.$(OBJ) $(PCLOBJ)pcht.$(OBJ)     \
-              $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindxed.$(OBJ) \
+              $(PCLOBJ)pcident.$(OBJ) $(PCLOBJ)pcindxed.$(OBJ)  \
               $(PCLOBJ)pclookup.$(OBJ) $(PCLOBJ)pcmtx3.$(OBJ)   \
               $(PCLOBJ)pcpalet.$(OBJ) $(PCLOBJ)pcpatrn.$(OBJ)   \
               $(PCLOBJ)pcpatxfm.$(OBJ) $(PCLOBJ)pcuptrn.$(OBJ)  \
-              $(PCLOBJ)pcwhtidx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ) \
+              $(PCLOBJ)pcwhtidx.$(OBJ) $(PCLOBJ)rtgmode.$(OBJ)  \
               $(PCLOBJ)rtrstcmp.$(OBJ)
 
 $(PCLOBJ)rtlbasec.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbasec_) $(PCLOBJ)rtlbase.dev
@@ -687,7 +653,6 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(pjparse_h)                \
                         $(pltop_h)                  \
                         $(pctop_h)                  \
-                        $(pccrd_h)                  \
                         $(pcpalet_h)                \
                         $(gsicc_manage_h)           \
                         $(PCLGEN)pconf.h

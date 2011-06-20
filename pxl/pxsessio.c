@@ -598,7 +598,6 @@ pxBeginPageFromPassthrough(px_state_t *pxs)
 {
     int code;
     gs_state *pgs = pxs->pgs;
-    gx_device *dev = gs_currentdevice(pgs);
     gs_point page_size_pixels;
     gs_matrix points2device;
 
