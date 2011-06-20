@@ -172,6 +172,7 @@ struct pdf_base_font_s {
      */
     int num_glyphs;
     byte *CIDSet;		/* for CIDFonts */
+    int CIDSetLength;
     gs_string font_name;
     bool written;
     cos_dict_t *FontFile;
@@ -244,6 +245,7 @@ struct pdf_font_resource_s {
             /* [D]W[2] is Widths. */
             long CIDSystemInfo_id; /* (written when font is allocated) */
             ushort *CIDToGIDMap; /* (CIDFontType 2 only) [count] */
+            unsigned int CIDToGIDMapLength;
             gs_id glyphshow_font_id;
             double *Widths2;	/* [count * 2] (x, y) */
             double *v;		/* [count] */

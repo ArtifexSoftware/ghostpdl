@@ -539,7 +539,7 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
                     /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
                        See comment in pdf_begin_encrypt. */
                     map_id);
-        for (i = 0; i < count; ++i) {
+        for (i = 0; i < pdfont->u.cidfont.CIDToGIDMapLength; ++i) {
             uint gid = pdfont->u.cidfont.CIDToGIDMap[i];
 
             stream_putc(writer.binary.strm, (byte)(gid >> 8));

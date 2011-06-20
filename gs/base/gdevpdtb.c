@@ -194,6 +194,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
             code = gs_note_error(gs_error_VMerror);
             goto fail;
         }
+        pbfont->CIDSetLength = (pbfont->num_glyphs + 7) / 8;
         memset(pbfont->CIDSet, 0, (pbfont->num_glyphs + 7) / 8);
         break;
     default:
@@ -691,7 +692,7 @@ pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
     if (code < 0)
         return code;
     stream_write(writer.binary.strm, pbfont->CIDSet,
-                 (pbfont->num_glyphs + 7) / 8);
+                 pbfont->CIDSetLength);
     code = pdf_end_data(&writer);
     if (code < 0)
         return code;

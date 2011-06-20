@@ -950,6 +950,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
         return code;
     pdfont->FontDescriptor = pfd;
     pdfont->u.cidfont.CIDToGIDMap = map;
+    pdfont->u.cidfont.CIDToGIDMapLength = chars_count;
     /* fixme : Likely pdfont->u.cidfont.CIDToGIDMap duplicates
        pdfont->FontDescriptor->base_font->copied->client_data->CIDMap.
        Only difference is 0xFFFF designates unmapped CIDs.
