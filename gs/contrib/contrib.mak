@@ -550,7 +550,7 @@ $(GLOBJ)gdevl4r.$(OBJ) : $(LIPS_SRC)gdevl4r.c $(LIPS_SRC)gdevlips.h $(PDEVH)
 	$(GLCC) -DA4 $(GLO_)gdevl4r.$(OBJ) $(LIPS_OPT) $(C_)\
  $(LIPS_SRC)gdevl4r.c
 
-$(GLOBJ)gdevlips.$(OBJ) : $(GX) $(LIPS_SRC)gdevlips.c
+$(GLOBJ)gdevlips.$(OBJ) : $(GX) $(LIPS_SRC)gdevlips.c $(std_h)
 	$(GLCC) $(GLO_)gdevlips.$(OBJ) $(LIPS_OPT) $(C_) $(LIPS_SRC)gdevlips.c
 
 $(DD)lips4.dev : $(lipsr_) $(DD)page.dev

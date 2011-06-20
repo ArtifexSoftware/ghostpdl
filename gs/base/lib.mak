@@ -292,7 +292,7 @@ md5_h=$(GLSRC)md5.h
 # We have to use a slightly different compilation approach in order to
 # get std.h included when compiling md5.c.
 md5_=$(GLOBJ)md5.$(OBJ)
-$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h)
+$(GLOBJ)md5.$(OBJ) : $(GLSRC)md5.c $(AK) $(md5_h) $(std_h)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)md5.h -x 23 include -x 2022 memory_.h -x 22
 	$(EXP)$(ECHOGS_XE) -a $(GLGEN)md5.h -+R $(GLSRC)md5.h
 	$(CP_) $(GLSRC)md5.c $(GLGEN)md5.c
@@ -2243,7 +2243,7 @@ $(GLOBJ)seexec.$(OBJ) : $(GLSRC)seexec.c $(AK) $(stdio__h)\
 	$(GLCC) $(GLO_)seexec.$(OBJ) $(C_) $(GLSRC)seexec.c
 
 $(GLOBJ)gscrypt1.$(OBJ) : $(GLSRC)gscrypt1.c $(stdpre_h)\
- $(gscrypt1_h) $(gstypes_h)
+ $(gscrypt1_h) $(gstypes_h) $(std_h)
 	$(GLCC) $(GLO_)gscrypt1.$(OBJ) $(C_) $(GLSRC)gscrypt1.c
 
 # Type 1 charstrings
