@@ -771,7 +771,7 @@ if ( test -d cups ); then
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
 	    AC_PATH_PROG(CUPSCONFIG,cups-config)
-	    dnl AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
+	    AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
 	    if test "x$CUPSCONFIG" != x; then
 	        dnl Use values from CUPS config...
 	        CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
