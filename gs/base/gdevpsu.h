@@ -22,7 +22,7 @@ typedef struct gx_device_pswrite_common_s {
     float LanguageLevel;
     bool ProduceEPS;
     int ProcSet_version;
-    long bbox_position;		/* set when writing file header */
+    int64_t bbox_position;		/* set when writing file header */
 } gx_device_pswrite_common_t;
 #define PSWRITE_COMMON_PROCSET_VERSION 1000 /* for definitions in gdevpsu.c */
 #define PSWRITE_COMMON_VALUES(ll, eps, psv)\

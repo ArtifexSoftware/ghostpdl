@@ -48,7 +48,7 @@ struct cos_element_s {
  */
 struct cos_stream_piece_s {
     cos_element_common(cos_stream_piece_t);
-    long position;		/* in streams file */
+    int64_t position;		/* in streams file */
     uint size;
 };
 #define private_st_cos_stream_piece()	/* in gdevpdfo.c */\
@@ -1342,7 +1342,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     cos_stream_piece_t *pcsp = pcs->pieces;
     FILE *sfile = pdev->streams.file;
     byte *ptr;
-    long position_save = ftell(sfile);
+    int64_t position_save = gp_ftell_64(sfile);
     int result;
 
     if (!pcsp)
@@ -1351,7 +1351,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     gs_md5_init(md5);
     while(pcsp) {
         ptr = gs_malloc(pdev->memory, sizeof (byte), pcsp->size, "hash_cos_stream");
-        fseek(sfile, pcsp->position, SEEK_SET);
+        gp_fseek_64(sfile, pcsp->position, SEEK_SET);
         if (fread(ptr, 1, pcsp->size, sfile) != pcsp->size) {
             result = gs_note_error(gs_error_ioerror);
             return result;
@@ -1360,7 +1360,7 @@ static int hash_cos_stream(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
         gs_free(pdev->memory, ptr, sizeof (byte), pcsp->size, "hash_cos_stream");
         pcsp = pcsp->next;
     }
-    fseek(sfile, position_save, SEEK_SET);
+    gp_fseek_64(sfile, position_save, SEEK_SET);
     gs_md5_finish(md5, (gs_md5_byte_t *)hash);
     return 0;
 }
@@ -1433,7 +1433,7 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     cos_stream_piece_t *last;
     cos_stream_piece_t *next;
     FILE *sfile = pdev->streams.file;
-    long end_pos;
+    int64_t end_pos;
     bool same_file = (pdev->sbstack_depth > 0);
     int code;
     stream_arcfour_state sarc4, *ss = NULL;
@@ -1454,10 +1454,10 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
         if (same_file)
             pdf_copy_data_safe(s, sfile, pcsp->position, pcsp->size);
         else {
-            end_pos = ftell(sfile);
-            fseek(sfile, pcsp->position, SEEK_SET);
+            end_pos = gp_ftell_64(sfile);
+            gp_fseek_64(sfile, pcsp->position, SEEK_SET);
             pdf_copy_data(s, sfile, pcsp->size, ss);
-            fseek(sfile, end_pos, SEEK_SET);
+            gp_fseek_64(sfile, end_pos, SEEK_SET);
         }
     }
     /* Reverse the elements back. */

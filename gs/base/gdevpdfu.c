@@ -640,12 +640,12 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
     } else {
         long pos = pdf_stell(pdev);
         FILE *tfile = pdev->xref.file;
-        long tpos = ftell(tfile);
+        int64_t tpos = gp_ftell_64(tfile);
 
-        fseek(tfile, (id - pdev->FirstObjectNumber) * sizeof(pos),
+        gp_fseek_64 (tfile, ((int64_t)(id - pdev->FirstObjectNumber)) * sizeof(pos),
               SEEK_SET);
         fwrite(&pos, sizeof(pos), 1, tfile);
-        fseek(tfile, tpos, SEEK_SET);
+        gp_fseek_64(tfile, tpos, SEEK_SET);
     }
     if (pdev->ForOPDFRead && pdev->ProduceDSC) {
         switch(type) {
@@ -1654,22 +1654,22 @@ pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss)
 /* Copy data from a temporary file to a stream,
    which may be targetted to the same file. */
 void
-pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
+pdf_copy_data_safe(stream *s, FILE *file, int64_t position, long count)
 {
     long r, left = count, code;
 
     while (left > 0) {
         byte buf[sbuf_size];
         long copy = min(left, (long)sbuf_size);
-        long end_pos = ftell(file);
+        int64_t end_pos = gp_ftell_64(file);
 
-        fseek(file, position + count - left, SEEK_SET);
+        gp_fseek_64(file, position + count - left, SEEK_SET);
         r = fread(buf, 1, copy, file);
         if (r < 1) {
             code = gs_note_error(gs_error_ioerror);
             return;
         }
-        fseek(file, end_pos, SEEK_SET);
+        gp_fseek_64(file, end_pos, SEEK_SET);
         stream_write(s, buf, copy);
         sflush(s);
         left -= copy;

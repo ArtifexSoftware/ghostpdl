@@ -561,7 +561,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 #undef MAX_EXTENT
     if (pdev->FirstObjectNumber != save_dev->FirstObjectNumber) {
         if (pdev->xref.file != 0) {
-            fseek(pdev->xref.file, 0L, SEEK_SET);
+            gp_fseek_64(pdev->xref.file, 0L, SEEK_SET);
             pdf_initialize_ids(pdev);
         }
     }

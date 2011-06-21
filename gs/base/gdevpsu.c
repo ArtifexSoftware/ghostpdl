@@ -174,7 +174,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
         fputs("%%BoundingBox: (atend)\n", f);
         fputs("%%HiResBoundingBox: (atend)\n", f);
     } else {		/* File is seekable, leave room to rewrite bbox. */
-        pdpc->bbox_position = ftell(f);
+        pdpc->bbox_position = gp_ftell_64(f);
         fputs("%...............................................................\n", f);
         fputs("%...............................................................\n", f);
     }
@@ -236,9 +236,9 @@ psw_end_file(FILE *f, const gx_device *dev,
         return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
         if (pdpc->bbox_position >= 0) {
-            long save_pos = ftell(f);
+            int64_t save_pos = gp_ftell_64(f);
 
-            fseek(f, pdpc->bbox_position, SEEK_SET);
+            gp_fseek_64(f, pdpc->bbox_position, SEEK_SET);
             /* Theoretically the bbox device should fill in the bounding box
              * but this does nothing because we don't write on the page.
              * So if bbox = 0 0 0 0, replace with the device page size.
@@ -259,7 +259,7 @@ psw_end_file(FILE *f, const gx_device *dev,
             fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
-            fseek(f, save_pos, SEEK_SET);
+            gp_fseek_64(f, save_pos, SEEK_SET);
         } else
             psw_print_bbox(f, pbbox);
     }

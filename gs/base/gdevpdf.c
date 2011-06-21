@@ -216,7 +216,7 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
-    ptf->file =	gp_open_scratch_file(pdev->memory,
+    ptf->file =	gp_open_scratch_file_64(pdev->memory,
                                      gp_scratch_file_name_prefix,
                                      ptf->file_name,
                                      fmode);
@@ -1060,11 +1060,11 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
             gx_finish_output_page(dev, num_copies, flush));
 }
 
-static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, int resource_pos)
+static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t start, int resource_pos)
 {
-    int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
-    fseek(tfile, start_offset, SEEK_SET);
+    gp_fseek_64(tfile, start_offset, SEEK_SET);
     {
         long i, r;
 
@@ -1085,11 +1085,11 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int start, i
     return pdev->next_id;
 }
 
-static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int start, int end, int resource_pos)
+static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, int resource_pos)
 {
-    int start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
+    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
-    fseek(tfile, start_offset, SEEK_SET);
+    gp_fseek_64(tfile, start_offset, SEEK_SET);
     {
         long i, r;
 
@@ -1124,7 +1124,8 @@ pdf_close(gx_device * dev)
         Pages_id = pdev->Pages->id, Encrypt_id = 0;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
-    int code = 0, code1, start_section, end_section, pagecount=0;
+    int code = 0, code1, pagecount=0;
+    int64_t start_section, end_section;
 
     /*
      * If this is an EPS file, or if the file didn't end with a showpage for
@@ -1355,9 +1356,9 @@ pdf_close(gx_device * dev)
     sflush(pdev->asides.strm);
     {
         FILE *rfile = pdev->asides.file;
-        long res_end = ftell(rfile);
+        int64_t res_end = gp_ftell_64(rfile);
 
-        fseek(rfile, 0L, SEEK_SET);
+        gp_fseek_64(rfile, 0L, SEEK_SET);
         pdf_copy_data(s, rfile, res_end, NULL);
     }
 
