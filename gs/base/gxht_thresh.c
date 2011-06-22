@@ -413,7 +413,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
        data.  */
     if (penum->posture == image_landscape) {
         int col_length =
-            fixed2int_var_rounded(any_abs(penum->x_extent.y)) * spp_out;
+            fixed2int_var_rounded(any_abs(penum->x_extent.y));
         ox = dda_current(penum->dda.pixel0.x);
         oy = dda_current(penum->dda.pixel0.y);
         /* Line_size is col_length rounded up - why? */
@@ -423,9 +423,9 @@ gxht_thresh_image_init(gx_image_enum *penum)
         penum->line_size = temp * LAND_BITS;  /* The stride */
         /* Now we need at most LAND_BITS of these */
         penum->line = gs_alloc_bytes(penum->memory,
-                                     LAND_BITS * penum->line_size + 16,
+                                     LAND_BITS * penum->line_size * spp_out + 16,
                                      "gxht_thresh");
-        /* Same with this */
+        /* Same with this.  However, we only need one plane here */
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
                                            penum->line_size * LAND_BITS + 16,
                                            "gxht_thresh");
@@ -462,7 +462,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         penum->ht_offset_bits = 0; /* Will get set in call to render */
         if (code >= 0) {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-            memset(penum->line, 0, LAND_BITS * penum->line_size + 16);
+            memset(penum->line, 0, LAND_BITS * penum->line_size * spp_out + 16);
             memset(penum->ht_buffer, 0, penum->line_size * (LAND_BITS>>3));
             memset(penum->thresh_buffer, 0, LAND_BITS * penum->line_size + 16);
 #endif
@@ -502,7 +502,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         max_height = (int) ceil(fixed2float(any_abs(penum->dst_height)) /
                                             (float) penum->Height);
         penum->ht_buffer = gs_alloc_bytes(penum->memory,
-                                          penum->ht_stride * max_height * spp_out,
+                                          penum->ht_stride * max_height,
                                           "gxht_thresh");
         /* We want to have 128 bit alignement for our contone and
            threshold strips so that we can use SSE operations
@@ -522,7 +522,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
         penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out,
                                      "gxht_thresh");
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
-                                              penum->line_size * max_height * spp_out,
+                                              penum->line_size * max_height,
                                               "gxht_thresh");
         if (penum->line == NULL || penum->thresh_buffer == NULL ||
             penum->ht_buffer == NULL) {
@@ -530,10 +530,8 @@ gxht_thresh_image_init(gx_image_enum *penum)
         } else {
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
             memset(penum->line, 0, penum->line_size * spp_out);
-            memset(penum->ht_buffer, 0,
-                   penum->ht_stride * max_height * spp_out);
-            memset(penum->thresh_buffer, 0,
-                   penum->line_size * max_height * spp_out);
+            memset(penum->ht_buffer, 0, penum->ht_stride * max_height);
+            memset(penum->thresh_buffer, 0, penum->line_size * max_height);
 #endif
         }
     }
@@ -567,6 +565,31 @@ fill_threshhold_buffer(byte *dest_strip, byte *src_strip, int src_width,
         memset(ptr_out_temp, 0, ii);
 #endif
 }
+/* This only moves the data but does not do a reset of the variables.  Used
+   for case where we have multiple bands of data (e.g. CMYK output) */
+static void
+move_landscape_buffer(ht_landscape_info_t *ht_landscape, byte *contone_align,
+                       int data_length)
+{
+    int k;
+    int position_curr, position_new;
+
+    if (ht_landscape->index < 0) {
+        /* Moving right to left, move column to far right */
+        position_curr = ht_landscape->curr_pos + 1;
+        position_new = LAND_BITS-1;
+    } else {
+        /* Moving left to right, move column to far left */
+        position_curr = ht_landscape->curr_pos - 1;
+        position_new = 0;
+    }
+    for (k = 0; k < data_length; k++) {
+            contone_align[position_new] = contone_align[position_curr];
+            position_curr += LAND_BITS;
+            position_new += LAND_BITS;
+    }
+}
+
 
 /* If we are in here, we had data left over.  Move it to the proper position
    and get ht_landscape_info_t set properly */
@@ -612,7 +635,7 @@ int
 gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                   fixed xrun, int dest_width, int dest_height,
                   byte *thresh_align, byte *contone_align, int contone_stride,
-                  gx_device * dev, int plane_number)
+                  gx_device * dev, int plane_number, bool allow_reset)
 {
     int thresh_width, thresh_height, dx;
     int left_rem_end, left_width, vdi;
@@ -632,6 +655,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
     int dithered_stride = penum->ht_stride;
     bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, 
                                                 gxdso_is_native_planar, NULL, 0);
+    bool done = false;
 
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
        First just grab the row or column that we are going to tile with and
@@ -736,9 +760,9 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
              * partial to get us in sync with the 1 bit devices 16 bit
              * positions. */
             vdi = penum->wci;
-            while (penum->ht_landscape.count >= LAND_BITS ||
+            while ( (penum->ht_landscape.count >= LAND_BITS ||
                    ((penum->ht_landscape.count >= offset_bits) &&
-                    penum->ht_landscape.offset_set)) {
+                    penum->ht_landscape.offset_set)) && !done ) {
                 /* Go ahead and 2D tile in the threshold buffer at this time */
                 /* Always work the tiling from the upper left corner of our
                    LAND_BITS columns */
@@ -808,7 +832,6 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 gx_ht_threshold_landscape(contone_align, thresh_align,
                                     penum->ht_landscape, halftone, dest_height);
                 /* Perform the copy mono */
-                penum->ht_landscape.offset_set = false;
                 if (penum->ht_landscape.index < 0) {
                     if (!is_planar_dev) {
                         (*dev_proc(dev, copy_mono)) (dev, halftone, 0, LAND_BITS>>3,
@@ -846,22 +869,34 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 }
                 /* Clean up and reset our buffer.  We may have a line left
                    over that has to be maintained due to line replication in the
-                   resolution conversion */
-                if (width != penum->ht_landscape.count) {
-                    reset_landscape_buffer(&(penum->ht_landscape), contone_align,
-                                           dest_height, width);
-                } else {
-                    /* Reset the whole buffer */
-                    penum->ht_landscape.count = 0;
-                    if (penum->ht_landscape.index < 0) {
-                        /* Going right to left */
-                        penum->ht_landscape.curr_pos = LAND_BITS-1;
-                    } else {
-                        /* Going left to right */
-                        penum->ht_landscape.curr_pos = 0;
+                   resolution conversion.  However, pay attention to the reset
+                   flag which indicates we are done with our last plane */
+                if (!allow_reset) {
+                    if (width != penum->ht_landscape.count) {
+                        /* move the line do not reset the stuff */
+                        move_landscape_buffer(&(penum->ht_landscape), 
+                                              contone_align, dest_height);
                     }
-                    penum->ht_landscape.num_contones = 0;
-                    memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*LAND_BITS);
+                    done = true;
+                } else {
+                    penum->ht_landscape.offset_set = false;
+                    if (width != penum->ht_landscape.count) {
+                        reset_landscape_buffer(&(penum->ht_landscape), 
+                                               contone_align, dest_height, 
+                                               width);
+                    } else {
+                        /* Reset the whole buffer */
+                        penum->ht_landscape.count = 0;
+                        if (penum->ht_landscape.index < 0) {
+                            /* Going right to left */
+                            penum->ht_landscape.curr_pos = LAND_BITS-1;
+                        } else {
+                            /* Going left to right */
+                            penum->ht_landscape.curr_pos = 0;
+                        }
+                        penum->ht_landscape.num_contones = 0;
+                        memset(&(penum->ht_landscape.widths[0]), 0, sizeof(int)*LAND_BITS);
+                    }
                 }
             }
             break;

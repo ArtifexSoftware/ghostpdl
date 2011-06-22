@@ -36,5 +36,5 @@ int gxht_thresh_image_init(gx_image_enum *penum);
 int  gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                   fixed xrun, int dest_width, int dest_height,
                   byte *thresh_align, byte *contone_align, int contone_stride,
-                  gx_device * dev, int plane_number);
+                  gx_device * dev, int plane_number, bool allow_reset);
 #endif /* gshtx_INCLUDED */

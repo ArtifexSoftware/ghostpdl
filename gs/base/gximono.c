@@ -40,6 +40,7 @@
 #include "gscie.h"
 #include "gxht_thresh.h"
 #include "gxdda.h"
+#include "gxdevsop.h"
 
 #define USE_FAST_CODE 1
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
@@ -72,7 +73,10 @@ gs_image_class_3_mono(gx_image_enum * penum)
     gsicc_rendering_param_t rendering_params;
     int num_des_comps;
     cmm_dev_profile_t *dev_profile;
-
+    bool dev_color_ok = false;
+    bool is_planar_dev = dev_proc(penum->dev, dev_spec_op)(penum->dev,
+                                 gxdso_is_native_planar, NULL, 0);
+            
     if (penum->spp == 1) {
         /* At this point in time, only use the ht approach if our device
            uses halftoning, and our source image is a reasonable size.  We
@@ -82,9 +86,14 @@ gs_image_class_3_mono(gx_image_enum * penum)
            to the limited precision and mismatch of the stepping space in which
            the interpolations occur this can cause a minor mismatch at large
            scalings */
-        if (use_fast_code && penum->pcs != NULL &&
-            penum->dev->color_info.num_components == 1 &&
-            penum->dev->color_info.depth == 1 &&
+
+           /* Allow this for CMYK planar and mono binary halftoned devices */
+           dev_color_ok = ((penum->dev->color_info.num_components == 1 &&
+                            penum->dev->color_info.depth == 1) ||
+                           (penum->dev->color_info.num_components == 4 &&
+                            penum->dev->color_info.depth == 4 && is_planar_dev));
+
+        if (use_fast_code && penum->pcs != NULL && dev_color_ok &&
             penum->bps == 8 && (penum->posture == image_portrait
             || penum->posture == image_landscape) &&
             penum->image_parent_type == gs_image_type1) {
@@ -783,16 +792,18 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int dest_width, dest_height, data_length;
     byte *color_cache;
     gx_ht_order *d_order = &(penum->pis->dev_ht->components[0].corder);
-    int position, k;
+    int position, k, j;
     int offset_bits = penum->ht_offset_bits;
     int contone_stride = 0;  /* Not used in landscape case */
     fixed scale_factor, offset;
     int src_size;
     bool flush_buff = false;
     int offset_contone[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
-    int offset_threshold[GX_DEVICE_COLOR_MAX_COMPONENTS];  /* to ensure 128 bit boundary */
+    int offset_threshold;  /* to ensure 128 bit boundary */
     gx_dda_int_t dda_ht;
     int code = 0;
+    bool allow_reset;
+    byte *dev_value;
 
     if (h == 0) {
         if (penum->ht_landscape.count == 0 || posture == image_portrait) {
@@ -820,12 +831,11 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                 xrun += penum->x_extent.x;
             vdi = penum->hci;
             contone_stride = penum->line_size;
+            offset_threshold = (- (((long)(penum->thresh_buffer)) +
+                                      penum->ht_offset_bits)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- (((long)(penum->line)) +
                                           contone_stride * k +
-                                          penum->ht_offset_bits)) & 15;
-                offset_threshold[k] = (- (((long)(penum->thresh_buffer)) +
-                                          contone_stride * vdi * k +
                                           penum->ht_offset_bits)) & 15;
             }
             data_length = dest_width;
@@ -843,15 +853,15 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                Can't do this earlier as GC may move the buffers.
              */
             vdi = penum->wci;
+            contone_stride = penum->line_size;  
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
             data_length = dest_height;
             scale_factor = float2fixed_rounded((float) src_size / (float) (dest_height - 1));
+            offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k] = (- ((long)(penum->line) +
                                           contone_stride * k)) & 15;
-                offset_threshold[k] = (-((long)(penum->thresh_buffer) +
-                                        contone_stride * vdi * k)) & 15;
             }
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
@@ -886,7 +896,13 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     }
     /* Get the pointers to our buffers */
     for (k = 0; k < spp_out; k++) {
-        devc_contone[k] = penum->line + offset_contone[k];
+        if (posture == image_portrait) {
+            devc_contone[k] = penum->line + contone_stride * k + 
+                              offset_contone[k];
+        } else {
+            devc_contone[k] = penum->line + offset_contone[k] +
+                              LAND_BITS * k * contone_stride;
+        }
     }
     if (flush_buff) goto flush;  /* All done */
     /* Set up the dda.  We could move this out but the cost is pretty small */
@@ -980,17 +996,19 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             case image_portrait:
                 if (penum->dst_width > 0) {
                     if (spp_out == 1) {
+                        /* Mono case */
                         for (k = 0; k < data_length; k++) {
                             *devc_contone_gray++ = color_cache[psrc[dda_ht.state.Q]];
                             dda_next(dda_ht);
                         }
                     } else {
-                        /* CMYK planar case: NEED TO FIX */
+                        /* CMYK case */
                         for (k = 0; k < data_length; k++) {
-                            /* dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                            memcpy(devc_contone, dev_value, spp_out);
-                            devc_contone += spp_out;
-                            dda_next(dda_ht); */
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            for (j = 0; j < spp_out; j++) {
+                                *(devc_contone[j])++ = dev_value[j];
+                            }
+                            dda_next(dda_ht);
                         }
                     }
                 } else {
@@ -1000,12 +1018,16 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                         }
                     } else {
-                        /* CMYK planar case: NEED TO FIX */
+                        /* Move to the other end and we will decrement */
+                        for (j = 0; j < spp_out; j++) {
+                            devc_contone[j] = devc_contone[j] + data_length - 1;
+                        }
                         for (k = 0; k < data_length; k++) {
-                           /*  dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                            memcpy(&(devc_contone[(data_length - k - 1) * spp_out]),
-                                   dev_value, spp_out);
-                            dda_next(dda_ht); */
+                            dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
+                            for (j = 0; j < spp_out; j++) {
+                                *(devc_contone[j])-- = dev_value[j];
+                            }
+                            dda_next(dda_ht); 
                         }
                     }
                 }
@@ -1025,30 +1047,39 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             dda_next(dda_ht);
                         }
                     } else {
-                        /* CMYK planar case: NEED TO FIX */
                         for (k = 0; k < data_length; k++) {
-                         /*   dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                            devc_contone[position] = dev_value[0];  
+                            for (j = 0; j < spp_out; j++) {
+                                *(devc_contone[j] + position) = 
+                                    color_cache[psrc[dda_ht.state.Q] * spp_out + j];
+                            }
                             position -= LAND_BITS;
-                            dda_next(dda_ht);  */
+                            dda_next(dda_ht);
                         }
                     }
-                } else {
+                } else {  /* Not flipped in Y */
                     position = penum->ht_landscape.curr_pos;
                     /* use dda */
                     if (spp_out == 1) {
                         for (k = 0; k < data_length; k++) {
-                            devc_contone_gray[position] = color_cache[psrc[dda_ht.state.Q]];
+                            devc_contone_gray[position] = 
+                                color_cache[psrc[dda_ht.state.Q]];
                             position += LAND_BITS;
                             dda_next(dda_ht);
                         }
                     } else {
-                        /* CMYK planar case: NEED TO FIX */
+                        /* CMYK case */
+                        /* Apply initial offset */
+                        for (k = 0; k < spp_out; k++) {
+                            devc_contone[k] = devc_contone[k] + position;
+                        }
                         for (k = 0; k < data_length; k++) {
-                           /*  dev_value = color_cache + psrc[dda_ht.state.Q] * spp_out;
-                            devc_contone[position] = dev_value[0]; 
-                            position += LAND_BITS;
-                            dda_next(dda_ht); */
+                            /* Is it better to unwind this?  We know it is 4 */
+                            for (j = 0; j < spp_out; j++) {
+                                *(devc_contone[j]) = 
+                                    color_cache[psrc[dda_ht.state.Q] * spp_out + j];
+                                devc_contone[j] += LAND_BITS;
+                            }
+                            dda_next(dda_ht);
                         }
                     }
                 }
@@ -1065,15 +1096,25 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     }
     /* Apply threshold array to image data */
 flush:
+    thresh_align = penum->thresh_buffer + offset_threshold;
     for (k = 0; k < spp_out; k++) {
         d_order = &(penum->pis->dev_ht->components[k].corder);
-        contone_align = penum->line + contone_stride * k + 
-                        offset_contone[k];
-        thresh_align = penum->thresh_buffer + contone_stride * vdi * k + 
-                       offset_threshold[k];
+        if (posture == image_portrait) {
+            contone_align = penum->line + contone_stride * k + 
+                            offset_contone[k];
+            allow_reset = true;
+        } else {
+            contone_align = penum->line + offset_contone[k] +
+                              LAND_BITS * k * contone_stride;
+            if (k == spp_out - 1) {
+                allow_reset = true;
+            } else {
+                allow_reset = false;
+            }
+        }
         code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
                                  thresh_align, contone_align, contone_stride, 
-                                 dev, k);
+                                 dev, k, allow_reset);
     }
     return code;
 }

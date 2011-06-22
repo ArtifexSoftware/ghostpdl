@@ -405,7 +405,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     bool flush_buff = false;
     byte *psrc_temp;
     int offset_contone[GX_DEVICE_COLOR_MAX_COMPONENTS];    /* to ensure 128 bit boundary */
-    int offset_threshold[GX_DEVICE_COLOR_MAX_COMPONENTS];  /* to ensure 128 bit boundary */
+    int offset_threshold;  /* to ensure 128 bit boundary */
     gx_dda_int_t dda_ht;
     int code = 0;
     int spp_cm = 0;
@@ -414,6 +414,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     int psrc_planestride = w/penum->spp;
     gx_color_value conc;
     int num_des_comp = penum->dev->color_info.num_components;
+    bool allow_reset;
 
     if (h != 0) {
         /* Get the buffer into the device color space */
@@ -455,12 +456,11 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             /* Can't do this earlier, as GC might move the buffers. */
             vdi = penum->hci;
             contone_stride = penum->line_size;
+            offset_threshold = (- (((long)(penum->thresh_buffer)) +
+                                      penum->ht_offset_bits)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- (((long)(penum->line)) +
                                           contone_stride * k +
-                                          penum->ht_offset_bits)) & 15;
-                offset_threshold[k] = (- (((long)(penum->thresh_buffer)) +
-                                          contone_stride * vdi * k +
                                           penum->ht_offset_bits)) & 15;
             }
             xrun = dda_current(penum->dda.pixel0.x);
@@ -473,7 +473,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             scale_factor = float2fixed_rounded((float) src_size / (float) (dest_width - 1));
 #ifdef DEBUG
             /* Help in spotting problems */
-            memset(penum->ht_buffer,0x00, penum->ht_stride * vdi * spp_out);
+            memset(penum->ht_buffer, 0x00, penum->ht_stride * vdi);
 #endif
             break;
         case image_landscape:
@@ -483,12 +483,11 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                Can't do this earlier as GC may move the buffers.
              */
             vdi = penum->wci;
-            contone_stride = penum->line_size;
+            contone_stride = penum->line_size;  
+            offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- ((long)(penum->line) +
                                           contone_stride * k)) & 15;
-                offset_threshold[k] = (-((long)(penum->thresh_buffer) +
-                                        contone_stride * vdi * k)) & 15;
             }
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
@@ -533,14 +532,22 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* For now we have 3 cases.  A CMYK (4 channel), gray, or other case
        the latter of which is not yet implemented */
     for (k = 0; k < spp_out; k++) {
-        devc_contone[k] = penum->line + contone_stride * k + offset_contone[k];
+        if (posture == image_portrait) {
+            devc_contone[k] = penum->line + contone_stride * k + 
+                              offset_contone[k];
+        } else {
+            devc_contone[k] = penum->line + offset_contone[k] +
+                              LAND_BITS * k * contone_stride;
+        }
         psrc_plane[k] = psrc_cm + psrc_planestride * k;
     }
     switch (spp_out)
     {
+        /* Monochrome output case */
         case 1:
             devc_contone_gray = devc_contone[0];
             switch (posture) {
+                /* Monochrome portrait */
                 case image_portrait:
                     if (penum->dst_width > 0) {
                         if (scale_factor == fixed_1) {
@@ -567,16 +574,17 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         }
                     }
                     break;
+                /* Monochrome landscape */
                 case image_landscape:
                     /* We store the data at this point into a column. Depending
                        upon our landscape direction we may be going left to right
                        or right to left. */
                     if (penum->ht_landscape.flipy) {
                         position = penum->ht_landscape.curr_pos +
-                                    16 * (data_length - 1);
+                                    LAND_BITS * (data_length - 1);
                         for (k = 0; k < data_length; k++) {
                             devc_contone_gray[position] = psrc_cm[dda_ht.state.Q];
-                            position -= 16;
+                            position -= LAND_BITS;
                             dda_next(dda_ht);
                         }
                     } else {
@@ -587,22 +595,22 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         if (scale_factor == fixed_1) {
                             for (k = 0; k < data_length; k++) {
                                 devc_contone_gray[position] = psrc_cm[k];
-                                position += 16;
+                                position += LAND_BITS;
                             }
                         } else if (scale_factor == fixed_half) {
                             for (k = 0; k < data_length; k+=2) {
                                 offset = fixed2int_rounded(scale_factor * k);
                                 devc_contone_gray[position] =
-                                    devc_contone_gray[position + 16] =
+                                    devc_contone_gray[position + LAND_BITS] =
                                     psrc_cm[offset];
-                                position += 32;
+                                position += 2*LAND_BITS;
                             }
                         } else {
                             /* use dda */
                             for (k = 0; k < data_length; k++) {
                                 devc_contone_gray[position] =
                                     psrc_cm[dda_ht.state.Q];
-                                position += 16;
+                                position += LAND_BITS;
                                 dda_next(dda_ht);
                             }
                         }
@@ -619,8 +627,10 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             }
         break;
 
+        /* CMYK case */
         case 4:
             switch (posture) {
+                /* CMYK portrait */
                 case image_portrait:
                     if (penum->dst_width > 0) {
                         if (scale_factor == fixed_1) {
@@ -670,18 +680,21 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         }
                     }
                     break;
+                /* CMYK landscape */
                 case image_landscape:
-#if 0
-                    /* THIS WILL NOT WORK YET */
-                    /* We store the data at this point into a column. Depending
-                       upon our landscape direction we may be going left to right
-                       or right to left. */
+                    /* Data is already color managed. */
+                    /* We store the data at this point into a columns in 
+                       seperate planes. Depending upon our landscape direction 
+                       we may be going left to right or right to left. */
                     if (penum->ht_landscape.flipy) {
                         position = penum->ht_landscape.curr_pos +
-                                    16 * (data_length - 1);
+                                    LAND_BITS * (data_length - 1);
                         for (k = 0; k < data_length; k++) {
-                            devc_contone[position] = psrc_cm[dda_ht.state.Q];
-                            position -= 16;
+                            for (j = 0; j < spp_out; j++) {
+                                *(devc_contone[j] + position) = 
+                                    (psrc_plane[j])[dda_ht.state.Q];
+                            }
+                            position -= LAND_BITS;
                             dda_next(dda_ht);
                         }
                     } else {
@@ -689,23 +702,38 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         /* Code up special cases for when we have no scaling
                            and 2x scaling which we will run into in 300 and
                            600dpi devices and content */
+                        /* Apply initial offset */
+                        for (k = 0; k < spp_out; k++) {
+                            devc_contone[k] = devc_contone[k] + position;
+                        }
                         if (scale_factor == fixed_1) {
                             for (k = 0; k < data_length; k++) {
-                                devc_contone[position] = psrc_cm[k];
-                                position += 16;
+                                /* Is it better to unwind this?  We know it is 4 */
+                                for (j = 0; j < spp_out; j++) {
+                                    *(devc_contone[j]) = (psrc_plane[j])[k];
+                                    devc_contone[j] += LAND_BITS;
+                                }
                             }
                         } else if (scale_factor == fixed_half) {
                             for (k = 0; k < data_length; k+=2) {
                                 offset = fixed2int_rounded(scale_factor * k);
-                                devc_contone[position] =
-                                    devc_contone[position + 16] = psrc_cm[offset];
-                                position += 32;
+                                /* Is it better to unwind this?  We know it is 4 */
+                                for (j = 0; j < spp_out; j++) {
+                                    *(devc_contone[j]) =
+                                      *(devc_contone[j] + LAND_BITS) = 
+                                      (psrc_plane[j])[offset];
+                                    devc_contone[j] += 2 * LAND_BITS;
+                                }
                             }
                         } else {
                             /* use dda */
                             for (k = 0; k < data_length; k++) {
-                                devc_contone[position] = psrc_cm[dda_ht.state.Q];
-                                position += 16;
+                                /* Is it better to unwind this?  We know it is 4 */
+                                for (j = 0; j < spp_out; j++) {
+                                    *(devc_contone[j]) =  
+                                        (psrc_plane[j])[dda_ht.state.Q];
+                                    devc_contone[j] += LAND_BITS;
+                                }
                                 dda_next(dda_ht);
                             }
                         }
@@ -715,7 +743,6 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                     penum->ht_landscape.widths[penum->ht_landscape.curr_pos] = vdi;
                     penum->ht_landscape.curr_pos += penum->ht_landscape.index;
                     penum->ht_landscape.num_contones++;
-#endif
                     break;
                 default:
                     /* error not allowed */
@@ -729,15 +756,25 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* Apply threshold array to image data. It may be neccessary to invert
        depnding upon the polarity of the device */
 flush:
+    thresh_align = penum->thresh_buffer + offset_threshold;
     for (k = 0; k < spp_out; k++) {
         d_order = &(penum->pis->dev_ht->components[k].corder);
-        contone_align = penum->line + contone_stride * k + 
-                        offset_contone[k];
-        thresh_align = penum->thresh_buffer + contone_stride * vdi * k + 
-                       offset_threshold[k];
+        if (posture == image_portrait) {
+            contone_align = penum->line + contone_stride * k + 
+                            offset_contone[k];
+            allow_reset = true;
+        } else {
+            contone_align = penum->line + offset_contone[k] +
+                              LAND_BITS * k * contone_stride;
+            if (k == spp_out - 1) {
+                allow_reset = true;
+            } else {
+                allow_reset = false;
+            }
+        }
         code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
-                                 thresh_align, contone_align, contone_stride, 
-                                 dev, k);
+                                 thresh_align, contone_align, 
+                                 contone_stride, dev, k, allow_reset);
     }
     return code;
 }

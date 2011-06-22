@@ -476,12 +476,10 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
         gs_free_object(mem, penum->color_cache, "image color cache");
     }
     if (penum->thresh_buffer != NULL) {
-        gs_free_object(mem, penum->thresh_buffer,
-                       "image thresh_buffer");
+        gs_free_object(mem, penum->thresh_buffer, "image thresh_buffer");
     }
     if (penum->ht_buffer != NULL) {
-        gs_free_object(mem, penum->ht_buffer,
-                       "image ht_buffer");
+        gs_free_object(mem, penum->ht_buffer, "image ht_buffer");
     }
     if (penum->clues != NULL) {
         gs_free_object(mem,penum->clues, "image clues");
