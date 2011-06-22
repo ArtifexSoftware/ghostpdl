@@ -302,14 +302,19 @@ the number of characters written.
 
 <h3><a name="set_poll"></a><code>gsapi_set_poll()</code></h3>
 <blockquote>
-Set the callback function for polling.
-This is used for handling window events or cooperative
-multitasking.  This function will only be called if
+Set the callback function for polling. This function will only be called if
 the Ghostscript interpreter was compiled with <code>CHECK_INTERRUPTS</code>
 as described in <code><a href="../base/gpcheck.h">gpcheck.h</a></code>.
-The polling function should return zero if all is well,
-and return negative if it wants ghostscript to abort.
-The polling function must be fast.
+<p>
+The polling function should return zero if all is well, and return
+negative if it wants ghostscript to abort. This is often
+used for checking for a user cancel. This can also be used for
+handling window events or cooperative multitasking.
+<p>
+The polling function is called very frequently during interpretation and
+rendering so it must be fast. If the function is slow, then using a counter
+to return 0 immediately some number of times can be used to reduce the
+performance impact.
 </blockquote>
 
 <h3><a name="set_display_callback"></a><code>gsapi_set_display_callback()</code></h3>
