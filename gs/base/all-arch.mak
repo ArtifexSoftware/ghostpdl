@@ -157,6 +157,8 @@ DD			= $(GLD)
 GLD			= $(GLGENDIR)/
 GLGENDIR		= ./obj
 GLOBJ			= ./obj/
+AUXDIR                  = ./aux
+AUX                     = ./aux/
 PSD			= $(PSGENDIR)/
 PSGENDIR		= ./obj
 
@@ -275,6 +277,7 @@ clean mostlyclean clobber distclean maintainer-clean:
 
 init:
 	-if test ! -d obj ; then mkdir obj ; fi
+	-if test ! -d obj ; then mkdir aux ; fi
 
 install:	install-binary install-fontmap install-pdfsec
 

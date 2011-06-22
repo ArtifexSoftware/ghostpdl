@@ -220,6 +220,7 @@ PNGGENDIR=$(GLGENDIR)
 PNGOBJDIR=$(GLOBJDIR)
 ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
+ZAUXDIR=$(AUXDIR)
 TIFFGENDIR=$(GLGENDIR)
 TIFFOBJDIR=$(GLOBJDIR)
 JBIG2GENDIR=$(GLGENDIR)
@@ -252,14 +253,13 @@ GS_MAK=$(GLSRCDIR)$(D)gs.mak
 
 # Define the names of the executables.
 GS_XE=$(BINDIR)$(D)$(GS)$(XE)
-AUXGENDIR=$(GLGENDIR)
-AUXGEN=$(AUXGENDIR)$(D)
-ECHOGS_XE=$(AUXGEN)echogs$(XEAUX)
-GENARCH_XE=$(AUXGEN)genarch$(XEAUX)
-GENCONF_XE=$(AUXGEN)genconf$(XEAUX)
-GENDEV_XE=$(AUXGEN)gendev$(XEAUX)
-GENHT_XE=$(AUXGEN)genht$(XEAUX)
-MKROMFS_XE=$(AUXGEN)mkromfs$(XEAUX)
+AUX=$(AUXDIR)$(D)
+ECHOGS_XE=$(AUX)echogs$(XEAUX)
+GENARCH_XE=$(AUX)genarch$(XEAUX)
+GENCONF_XE=$(AUX)genconf$(XEAUX)
+GENDEV_XE=$(AUX)gendev$(XEAUX)
+GENHT_XE=$(AUX)genht$(XEAUX)
+MKROMFS_XE=$(AUX)mkromfs$(XEAUX)
 
 # Define the names of the generated header files.
 # gconfig*.h and gconfx*.h are generated dynamically.

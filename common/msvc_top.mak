@@ -41,16 +41,15 @@ clean_gs:
 	erase $(TARGET_XE).lib
 
 # Define names of utility programs
-AUXGENDIR=$(GLGENDIR)
-AUXGEN=$(AUXGENDIR)$(D)
-ANSI2KNR_XE=$(AUXGEN)ansi2knr.exe
-ECHOGS_XE=$(AUXGEN)echogs.exe
-GENARCH_XE=$(AUXGEN)genarch.exe
-GENCONF_XE=$(AUXGEN)genconf.exe
-GENDEV_XE=$(AUXGEN)gendev.exe
-GENINIT_XE=$(AUXGEN)geninit.exe
-GENHT_XE=$(AUXGEN)genht.exe
-MKROMFS_XE=$(AUXGEN)mkromfs$(XEAUX)
+AUX=$(AUXDIR)$(D)
+ANSI2KNR_XE=$(AUX)ansi2knr.exe
+ECHOGS_XE=$(AUX)echogs.exe
+GENARCH_XE=$(AUX)genarch.exe
+GENCONF_XE=$(AUX)genconf.exe
+GENDEV_XE=$(AUX)gendev.exe
+GENINIT_XE=$(AUX)geninit.exe
+GENHT_XE=$(AUX)genht.exe
+MKROMFS_XE=$(AUX)mkromfs$(XEAUX)
 
 
 # Platform specification
@@ -101,9 +100,10 @@ FORCE:
 $(GENDIR)/ldgs.tr: FORCE
 	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
 	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	$(MAKE) /F $(PSSRCDIR)\msvc32.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
-	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) \
+	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) AUXDIR="$(AUXDIR)" \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
 	EXPATSRCDIR="$(EXPATSRCDIR)" SHARE_EXPAT="$(SHARE_EXPAT)" \
 	EXPAT_CFLAGS="$(EXPAT_CFLAGS)" LCMSSRCDIR="$(LCMSSRCDIR)" \
@@ -129,7 +129,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
 	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
 	CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
-	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
+	$(GLOBJDIR)\gsargs.$(OBJ) $(AUXDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\iconfig.$(OBJ) \
 	$(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
@@ -148,10 +148,11 @@ $(GENDIR)/ldgs.tr: FORCE
 	-echo $(PSICFLAGS)
 	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
 	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	echo > $(GLOBJDIR)/gs_init.ps
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
-	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) \
+	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) AUXDIR="$(AUXDIR)" \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
 	EXPATSRCDIR="$(EXPATSRCDIR)" SHARE_EXPAT="$(SHARE_EXPAT)" \
 	EXPAT_CFLAGS="$(EXPAT_CFLAGS)" LCMSSRCDIR="$(LCMSSRCDIR)" \
@@ -179,7 +180,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	BAND_LIST_STORAGE=$(BAND_LIST_STORAGE) BAND_LIST_COMPRESSOR=$(BAND_LIST_COMPRESSOR) \
 	GLOBJ=$(GLOBJ) GLGEN=$(GLGEN) \
 	CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
-	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
+	$(GLOBJDIR)\gsargs.$(OBJ) $(AUXDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ) $(GLOBJDIR)\gsromfs$(COMPILE_INITS).$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
@@ -187,8 +188,8 @@ $(GENDIR)/ldgs.tr: FORCE
 !ENDIF
 
 # Build the configuration file.
-$(GENDIR)\pconf.h $(GENDIR)\ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
-	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf.h -ol $(GENDIR)\ldconf.tr
+$(GENDIR)\pconf.h $(GENDIR)\ldconf.tr: $(TARGET_DEVS) $(AUXDIR)\genconf$(XE)
+	$(AUXDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf.h -ol $(GENDIR)\ldconf.tr
 
 !if "$(TDEBUG)" == "1"
 $(GENDIR)\lib32.rsp: $(MAKEFILE)

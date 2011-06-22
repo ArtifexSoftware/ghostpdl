@@ -33,6 +33,14 @@ GENDIR=.\obj
 !endif
 !endif
 
+!ifndef AUXDIR
+!if "$(DEBUG)"=="1"
+AUXDIR=.\debugaux
+!else
+AUXDIR=.\relaux
+!endif
+!endif
+
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
 GLSRCDIR=..\gs\base

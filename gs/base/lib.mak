@@ -21,11 +21,14 @@
 GLSRC=$(GLSRCDIR)$(D)
 GLGEN=$(GLGENDIR)$(D)
 GLOBJ=$(GLOBJDIR)$(D)
+AUX=$(AUXDIR)$(D)
 GLO_=$(O_)$(GLOBJ)
+AUXO_=$(O_)$(AUX)
 GLI_=$(GLGENDIR) $(II)$(GLSRCDIR)
 GLF_=
 GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_) -DWHICH_CMS="$(WHICH_CMS)"
 GLCC=$(CC_) $(GLCCFLAGS)
+GLCCAUX=$(CCAUX_) $(GLCCFLAGS)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
@@ -201,6 +204,10 @@ $(GLOBJ)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
  $(malloc__h)
 	$(GLCC) $(GLO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
 
+$(AUX)memento.$(OBJ) : $(GLSRC)memento.c $(valgrind_h) $(memento_h)\
+ $(malloc__h)
+	$(GLCCAUX) $(AUXO_)memento.$(OBJ) $(C_) $(GLSRC)memento.c
+
 $(GLOBJ)gsmemory.$(OBJ) : $(GLSRC)gsmemory.c $(memory__h)\
  $(gdebug_h)\
  $(gsmdebug_h) $(gsmemory_h) $(gsrefct_h) $(gsstruct_h) $(gstypes_h)
@@ -257,6 +264,11 @@ $(GLOBJ)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
  $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) $(gpmisc_h)
 	$(GLCC) $(GLO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
 
+$(AUX)gpmisc.$(OBJ) : $(GLSRC)gpmisc.c\
+ $(unistd__h) $(fcntl__h) $(stat__h) $(stdio__h)\
+ $(memory__h) $(string__h) $(gp_h) $(gpgetenv_h) $(gpmisc_h)
+	$(GLCCAUX) $(AUXO_)gpmisc.$(OBJ) $(C_) $(GLSRC)gpmisc.c
+
 # Command line argument list management
 $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
  $(ctype__h) $(stdio__h) $(string__h)\
@@ -270,9 +282,19 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
+$(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
+ $(vmsmath_h) $(std_h)\
+ $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
+ $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)
+	$(GLCCAUX) $(AUXO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
+
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
   $(gslibctx_h) $(stdio__h) $(string__h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
+
+$(AUX)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
+  $(gslibctx_h) $(stdio__h) $(string__h)
+	$(GLCCAUX) $(AUXO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsnotify_h) $(gsstruct_h)
@@ -286,6 +308,11 @@ $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
  $(gstypes_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
+
+$(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
+ $(gstypes_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h)
+	$(GLCCAUX) $(AUXO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 # MD5 digest
 md5_h=$(GLSRC)md5.h
@@ -570,6 +597,12 @@ $(GLOBJ)gscdefs.$(OBJ) : $(GLSRC)gscdef.c\
 	$(RM_) $(GLGEN)gscdefs.c
 	$(CP_) $(GLSRC)gscdef.c $(GLGEN)gscdefs.c
 	$(GLCC) $(GLO_)gscdefs.$(OBJ) $(C_) $(GLGEN)gscdefs.c
+
+$(AUX)gscdefs.$(OBJ) : $(GLSRC)gscdef.c\
+ $(std_h) $(gscdefs_h) $(gconfigd_h) $(TOP_MAKEFILES)
+	$(RM_) $(AUX)gscdefs.c
+	$(CP_) $(GLSRC)gscdef.c $(AUX)gscdefs.c
+	$(GLCCAUX) $(AUXO_)gscdefs.$(OBJ) $(C_) $(AUX)gscdefs.c
 
 $(GLOBJ)gxacpath.$(OBJ) : $(GLSRC)gxacpath.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsdcolor_h) $(gsrop_h) $(gsstate_h) $(gsstruct_h) $(gsutil_h)\
@@ -2868,9 +2901,9 @@ $(GLOBJ)gsromfs0.$(OBJ) : $(GLSRC)gsromfs0.c $(stdint__h)
 
 # Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
-MKROMFS_ZLIB_OBJS=$(GLOBJ)compress.$(OBJ) $(GLOBJ)deflate.$(OBJ) \
-	$(GLOBJ)zutil.$(OBJ) $(GLOBJ)adler32.$(OBJ) $(GLOBJ)crc32.$(OBJ) \
-	$(GLOBJ)trees.$(OBJ)
+MKROMFS_ZLIB_OBJS=$(AUX)compress.$(OBJ) $(AUX)deflate.$(OBJ) \
+	$(AUX)zutil.$(OBJ) $(AUX)adler32.$(OBJ) $(AUX)crc32.$(OBJ) \
+	$(AUX)trees.$(OBJ)
 
 MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 	$(gsmemret_h) $(gsmalloc_h) $(gsstype_h) $(gp_h) $(time__h)
@@ -2931,6 +2964,10 @@ $(GLOBJ)gp_getnv.$(OBJ) : $(GLSRC)gp_getnv.c $(AK) $(stdio__h) $(string__h)\
  $(gp_h) $(gsmemory_h) $(gstypes_h)
 	$(GLCC) $(GLO_)gp_getnv.$(OBJ) $(C_) $(GLSRC)gp_getnv.c
 
+$(AUX)gp_getnv.$(OBJ) : $(GLSRC)gp_getnv.c $(AK) $(stdio__h) $(string__h)\
+ $(gp_h) $(gsmemory_h) $(gstypes_h)
+	$(GLCCAUX) $(AUXO_)gp_getnv.$(OBJ) $(C_) $(GLSRC)gp_getnv.c
+
 # Standard implementation of gp_defaultpapersize.
 $(GLOBJ)gp_paper.$(OBJ) : $(GLSRC)gp_paper.c $(AK) $(gp_h) $(gx_h)
 	$(GLCC) $(GLO_)gp_paper.$(OBJ) $(C_) $(GLSRC)gp_paper.c
@@ -2959,10 +2996,20 @@ $(GLOBJ)gp_unifs.$(OBJ) : $(GLSRC)gp_unifs.c $(AK)\
  $(stat__h) $(dirent__h)
 	$(GLCC) $(GLO_)gp_unifs.$(OBJ) $(C_) $(GLSRC)gp_unifs.c
 
+$(AUX)gp_unifs.$(OBJ) : $(GLSRC)gp_unifs.c $(AK)\
+ $(memory__h) $(string__h) $(stdio__h) $(unistd__h) \
+ $(gx_h) $(gp_h) $(gpmisc_h) $(gsstruct_h) $(gsutil_h) \
+ $(stat__h) $(dirent__h)
+	$(GLCCAUX) $(AUXO_)gp_unifs.$(OBJ) $(C_) $(GLSRC)gp_unifs.c
+
 # Unix(-like) file name syntax, *not* used by Desqview/X.
 $(GLOBJ)gp_unifn.$(OBJ) : $(GLSRC)gp_unifn.c $(AK) $(gx_h) $(gp_h) $(gpmisc_h)\
  $(gsutil_h)
 	$(GLCC) $(GLO_)gp_unifn.$(OBJ) $(C_) $(GLSRC)gp_unifn.c
+
+$(AUX)gp_unifn.$(OBJ) : $(GLSRC)gp_unifn.c $(AK) $(gx_h) $(gp_h) $(gpmisc_h)\
+ $(gsutil_h)
+	$(GLCCAUX) $(AUXO_)gp_unifn.$(OBJ) $(C_) $(GLSRC)gp_unifn.c
 
 # Pipes.  These are actually the same on all platforms that have them.
 

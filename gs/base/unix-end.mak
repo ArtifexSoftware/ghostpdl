@@ -19,6 +19,7 @@ STDDIRS:
 	@if test ! -d $(BINDIR); then mkdir $(BINDIR); fi
 	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
 	@if test ! -d $(GLOBJDIR); then mkdir $(GLOBJDIR); fi
+	@if test ! -d $(AUXDIR); then mkdir $(AUXDIR); fi
 	@if test ! -d $(PSGENDIR); then mkdir $(PSGENDIR); fi
 	@if test ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
 	@if test ! -d $(PSOBJDIR); then mkdir $(PSOBJDIR); fi

@@ -27,12 +27,17 @@ include $(COMMONDIR)/generic.mak
 # these gems were plucked from the old ugcclib.mak.  The CC options
 # seem to be out of sync.
 
-BINDIR=./libobj
+
+CCLD=$(CC)
+CCAUXLD=$(CCAUX)
+
+CCFLAGS=$(GENOPT) $(CFLAGS) $(XCFLAGS)
+CC_=$(CC) $(CCFLAGS) -c
+CCAUX_=$(CCAUX) $(CFLAGS) -c
+
 GLD=$(GLGENDIR)/
-CCFLAGS=$(GENOPT) $(CFLAGS)
-CC_=$(CC) $(CCFLAGS)
-CCAUX=$(CC)
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
+CCAUX_NO_WARN=$(CCAUX_) -Wno-cast-qual -Wno-traditional
 CC_SHARED=$(CC_)
 
 # Which CMS are we using?
@@ -62,6 +67,7 @@ include $(GLSRCDIR)/freetype.mak
 
 UGCC_TOP_DIR:
 	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
+	@if test ! -d $(AUXDIR); then mkdir $(AUXDIR); fi
 
 # Configure for debugging
 pdl-debug: UGCC_TOP_DIR
@@ -97,8 +103,8 @@ pdl-clean:
 
 
 # Build the configuration file.
-$(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)/genconf$(XE)
-	$(GLOBJDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
+$(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(AUXDIR)/genconf$(XE)
+	$(AUXDIR)/genconf -n - $(TARGET_DEVS) -h $(GENDIR)/pconf.h -p "%s&s&&" -o $(GENDIR)/ldconf.tr
 
 # Create a library
 $(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)

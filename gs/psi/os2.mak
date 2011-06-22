@@ -31,6 +31,7 @@ BINDIR=bin
 GLSRCDIR=base
 GLGENDIR=obj
 GLOBJDIR=obj
+AUXDIR=aux
 PSSRCDIR=psi
 PSLIBDIR=lib
 PSRESDIR=Resource
@@ -381,8 +382,11 @@ GENOPT=$(CD) $(CGDB) $(CDLL) $(CO) $(CPNG)
 CCFLAGS0=$(GENOPT) $(PLATOPT) -D__OS2__ $(GCIFLAGS)
 CCFLAGS=$(CCFLAGS0) 
 CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
+CCAUX=$(CC)
 CC_=$(CC)
+CCAUX_=$(CCAUX)
 CC_NO_WARN=$(CC_)
+CCAUX_NO_WARN=$(CCAUX_)
 CC_SHARED=$(CC_)
 
 # ------ Devices and features ------ #
@@ -524,6 +528,7 @@ $(ECHOGS_XE): $(GLSRCDIR)\echogs.c
 $(GENARCH_XE): $(GLSRCDIR)\genarch.c $(GENARCH_DEPS)
 	-mkdir $(GLGENDIR)
 	-mkdir $(BINDIR)
+	-mkdir $(AUXDIR)
 !if $(EMX)
 	$(CCAUX) -DHAVE_LONG_LONG -o $(AUXGEN)genarch $(GLSRCDIR)\genarch.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)

@@ -69,8 +69,8 @@
 GS_XE=$(GLOBJDIR)$(D)gs$(XE)
 
 # Define the echogs executable.
-# Currently it always lives in the GLOBJ directory.
-ECHOGS_XE=$(GLOBJDIR)$(D)echogs$(XE)
+# Currently it always lives in the AUX directory.
+ECHOGS_XE=$(AUXDIR)$(D)echogs$(XE)
 
 # Define the commands for building module descriptions.
 SETMOD=$(ECHOGS_XE) -e .dev -w- -Q-obj

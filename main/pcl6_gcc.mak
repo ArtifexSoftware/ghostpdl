@@ -30,6 +30,7 @@ XCFLAGS?=
 
 # The build process will put all of its output in this directory
 GENDIR?=./obj
+AUXDIR?=./aux
 PGGENDIR?=./pgobj
 
 # The sources are taken from these directories:
@@ -46,6 +47,7 @@ PSSRCDIR?=../gs/psi
 ZSRCDIR?=../gs/zlib
 ZGENDIR?=$(GENDIR)
 ZOBJDIR?=$(GENDIR)
+ZAUXDIR?=$(AUXDIR)
 SHARE_ZLIB?=0
 
 # Specify the location of libpng.
