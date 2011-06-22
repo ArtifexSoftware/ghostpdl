@@ -831,11 +831,11 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
     FT_Error ft_error = 0;
 
     if (s->bitmap_glyph) {
-        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+        FT_Done_Glyph(&s->bitmap_glyph->root);
         s->bitmap_glyph = NULL;
     }
     if (s->outline_glyph) {
-        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+        FT_Done_Glyph(&s->outline_glyph->root);
         s->outline_glyph = NULL;
     }
 
@@ -1286,11 +1286,11 @@ static FAPI_retcode release_char_data(FAPI_server *a_server)
     FF_server *s = (FF_server*)a_server;
 
     if (s->outline_glyph) {
-        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+        FT_Done_Glyph(&s->bitmap_glyph->root);
     }
 
     if (s->bitmap_glyph) {
-        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+        FT_Done_Glyph(&s->outline_glyph->root);
     }
 
     s->outline_glyph = NULL;
