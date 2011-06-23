@@ -598,12 +598,6 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
     }
 }
 
-static bool
-purge_all(const gs_memory_t *mem, cached_char * cc, void *dummy)
-{
-    return true;
-}
-
 static void
 pcl_unload_resident_fonts(pcl_state_t *pcs)
 {
