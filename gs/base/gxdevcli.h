@@ -726,6 +726,7 @@ typedef struct gx_device_cached_colors_s {
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
         cmm_dev_profile_t *icc_array;      /* object dependent profiles */\
+        gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
         gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\
         gx_device_procs procs	/* object procedures */
@@ -1432,6 +1433,11 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_get_profile(proc)\
   dev_t_proc_get_profile(proc, gx_device)
 
+#define dev_t_proc_set_graphics_type_tag(proc, dev_t)\
+  void proc(dev_t *dev, gs_graphics_type_tag_t)
+#define dev_proc_set_graphics_type_tag(proc)\
+  dev_t_proc_set_graphics_type_tag(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1503,6 +1509,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_dev_spec_op((*dev_spec_op), dev_t); \
         dev_t_proc_copy_plane((*copy_plane), dev_t); \
         dev_t_proc_get_profile((*get_profile), dev_t); \
+        dev_t_proc_set_graphics_type_tag((*set_graphics_type_tag), dev_t); \
 }
 
 /*

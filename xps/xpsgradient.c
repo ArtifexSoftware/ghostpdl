@@ -79,7 +79,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
 
                 /* Set the rendering parameters */
                 rendering_params.black_point_comp = BP_ON;
-                rendering_params.object_type = GS_PATH_TAG;
+                rendering_params.graphics_type_tag = GS_PATH_TAG;
                 rendering_params.rendering_intent = gsPERCEPTUAL;
 
                 /* Get link to map from source to sRGB */

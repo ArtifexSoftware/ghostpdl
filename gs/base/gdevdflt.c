@@ -642,6 +642,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     set_dev_proc(dev, decode_color, get_decode_color(dev));
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
     fill_dev_proc(dev, get_profile, gx_default_get_profile);
+    fill_dev_proc(dev, set_graphics_type_tag, gx_default_set_graphics_type_tag);
 
     /*
      * If the device is known not to support overprint mode, indicate this now.
@@ -984,4 +985,11 @@ int
 gx_default_end_page(gx_device * dev, int reason, gs_state * pgs)
 {
     return (reason != 2 ? 1 : 0);
+}
+
+void
+gx_default_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics_type_tag)
+{
+    /* set the tag but carefully preserve GS_DEVICE_ENCODES_TAGS */
+    dev->graphics_type_tag = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
 }

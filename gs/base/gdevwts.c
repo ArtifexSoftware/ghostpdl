@@ -502,7 +502,7 @@ wtsimdi_open_device(gx_device *dev)
 
     /* Set up the rendering parameters */
     rendering_params.black_point_comp = true;
-    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
     rendering_params.rendering_intent = gsRELATIVECOLORIMETRIC;
 
     idev->icc_link->link_handle = gscms_get_link(postrender_cm->rgb_profile->profile_handle,

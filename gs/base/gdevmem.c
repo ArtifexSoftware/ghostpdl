@@ -161,12 +161,14 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
             dev->cached_colors.black = 0;
             dev->cached_colors.white = (1 << dev->color_info.depth) - 1;
         }
+        dev->graphics_type_tag = GS_UNKNOWN_TAG;
     } else {
         gx_device_set_target((gx_device_forward *)dev, target);
         /* Forward the color mapping operations to the target. */
         gx_device_forward_color_procs((gx_device_forward *) dev);
         gx_device_copy_color_procs((gx_device *)dev, target);
         dev->cached_colors = target->cached_colors;
+        dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
         /* Do a copy of put_image since it needs the source buffer */
 #define COPY_PROC(p) set_dev_proc(dev, p, target->procs.p)
         COPY_PROC(put_image);
@@ -223,12 +225,14 @@ gs_make_mem_device_with_copydevice(gx_device_memory ** ppdev,
             pdev->cached_colors.black = 0;
             pdev->cached_colors.white = (1 << pdev->color_info.depth) - 1;
         }
+        pdev->graphics_type_tag = GS_UNKNOWN_TAG;
     } else {
         gx_device_set_target((gx_device_forward *)pdev, target);
         /* Forward the color mapping operations to the target. */
         gx_device_forward_color_procs((gx_device_forward *) pdev);
         gx_device_copy_color_procs((gx_device *)pdev, target);
         pdev->cached_colors = target->cached_colors;
+        pdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     }
     if (pdev->color_info.depth == 1) {
         gx_color_value cv[3];
@@ -285,6 +289,9 @@ gs_make_mem_mono_device(gx_device_memory * dev, gs_memory_t * mem,
     gx_device_fill_in_procs((gx_device *)dev);
     /* Should this be forwarding or monochrome profile? */
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    /* initialize to same tag as target */
+    dev->graphics_type_tag = target ? target->graphics_type_tag : GS_UNKNOWN_TAG;
 }
 
 /* Define whether a monobit memory device is inverted (black=1). */

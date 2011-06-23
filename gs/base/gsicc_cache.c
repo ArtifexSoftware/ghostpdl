@@ -233,7 +233,7 @@ gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, in
 static void
 gsicc_mash_hash(gsicc_hashlink_t *hash)
 {
-    hash->link_hashcode = 
+    hash->link_hashcode =
         (hash->des_hash >> 1) ^ (hash->rend_hash) ^ (hash->src_hash);
 }
 
@@ -290,7 +290,7 @@ gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
     /* now for the rendering paramaters, just use the word itself */
     hash->rend_hash = ((rendering_params->black_point_comp) << BP_SHIFT) +
                       ((rendering_params->rendering_intent) << REND_SHIFT) +
-                      ((rendering_params->object_type) << TYPE_SHIFT);
+                      ((rendering_params->graphics_type_tag) << TYPE_SHIFT);
 
    /* for now, mash all of these into a link hash */
    gsicc_mash_hash(hash);
@@ -306,9 +306,9 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
     int code;
 
     if (cmm_icc_profile_data == NULL ) {
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-        gsicc_extract_profile(gs_current_object_tag(dev->memory), dev_profile,
-                               &(icc_profile), &rendering_intent); 
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                               &(icc_profile), &rendering_intent);
         *hash = icc_profile->hashcode;
         return;
     }
@@ -459,9 +459,9 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     } else {
         /* Use the device profile */
 
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-        gsicc_extract_profile(gs_current_object_tag(dev->memory), dev_profile,
-                               &(gs_output_profile), &rendering_intent); 
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                               &(gs_output_profile), &rendering_intent);
     }
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, include_softproof));
@@ -498,13 +498,13 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
     /* Got a hit, return link (ref_count for the link was already bumped */
     if (found_link != NULL) {
-        if_debug2('{',"[{]Found Link = 0x%x, hash = %I64d \n", link, 
-                  hash.link_hashcode); 
-        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n", 
+        if_debug2('{',"[{]Found Link = 0x%x, hash = %I64d \n", link,
+                  hash.link_hashcode);
+        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n",
                   gs_input_profile->num_comps, gs_input_profile->hashcode);
-        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n", 
+        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n",
                   gs_output_profile->num_comps, gs_output_profile->hashcode);
-        return(found_link); 
+        return(found_link);
     }
     /* If not, then lets create a new one if there is room or return NULL */
     /* Caller will need to try later */
@@ -540,8 +540,8 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     }
     /* insert an empty link that we will reserve so we */
     /* can unlock while building the link contents     */
-    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n", 
-              dev, icc_link_cache, cache_mem->stable_memory, 
+    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n",
+              dev, icc_link_cache, cache_mem->stable_memory,
               icc_link_cache->num_links);
     link = gsicc_alloc_link(cache_mem->stable_memory, hash);
     link->icc_link_cache = icc_link_cache;
@@ -612,16 +612,16 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     gx_monitor_enter(gs_output_profile->lock);
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                     rendering_params);
-    gx_monitor_leave(gs_output_profile->lock);	
+    gx_monitor_leave(gs_output_profile->lock);
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
-        gsicc_set_link_data(link, link_handle, contextptr, hash, 
+        gsicc_set_link_data(link, link_handle, contextptr, hash,
                             icc_link_cache->lock);
-        if_debug2('{',"[{]New Link = 0x%x, hash = %I64d \n", link, 
-                  hash.link_hashcode); 
-        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n", 
+        if_debug2('{',"[{]New Link = 0x%x, hash = %I64d \n", link,
+                  hash.link_hashcode);
+        if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n",
                   gs_input_profile->num_comps, gs_input_profile->hashcode);
-        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n", 
+        if_debug2('{',"[{]output_numcomps = %d, output_hash = %I64d \n",
                   gs_output_profile->num_comps, gs_output_profile->hashcode);
     } else {
         gsicc_remove_link(link, cache_mem);
@@ -872,10 +872,10 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                     curr_output_profile = gs_output_profile;
                 } else {
                     /* Use the device profile */
-                    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-                    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                                          dev_profile, &(curr_output_profile), 
-                                          &rendering_intent); 
+                    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                    gsicc_extract_profile(dev->graphics_type_tag,
+                                          dev_profile, &(curr_output_profile),
+                                          &rendering_intent);
                 }
                 icc_link = gsicc_get_link_profile(pis, dev,
                                                 pis->icc_manager->lab_profile,

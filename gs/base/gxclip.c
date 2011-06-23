@@ -110,7 +110,8 @@ static const gx_device_clip gs_clip_device =
   NULL,                      /* put_image */
   gx_forward_dev_spec_op,
   clip_copy_plane,           /* copy plane */
-  gx_forward_get_profile
+  gx_forward_get_profile,
+  gx_forward_set_graphics_type_tag
  }
 };
 
@@ -126,6 +127,7 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
     dev->target = target;
+    dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }

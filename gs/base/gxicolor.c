@@ -128,7 +128,7 @@ gs_image_class_4_color(gx_image_enum * penum)
         }
         /* Define the rendering intents */
         rendering_params.black_point_comp = BP_ON;
-        rendering_params.object_type = GS_IMAGE_TAG;
+        rendering_params.graphics_type_tag = GS_IMAGE_TAG;
         rendering_params.rendering_intent = penum->pis->renderingintent;
         if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
             pcs = penum->pcs->icc_equivalent;
@@ -483,7 +483,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                Can't do this earlier as GC may move the buffers.
              */
             vdi = penum->wci;
-            contone_stride = penum->line_size;  
+            contone_stride = penum->line_size;
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k]   = (- ((long)(penum->line) +

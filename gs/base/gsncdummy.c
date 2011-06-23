@@ -515,7 +515,7 @@ convert_intensity_into_device_color(const frac intensity,
 {
     frac cc, cm, cy, ck;
 
-    switch (pis->object_tag) {
+    switch (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
         case GS_TEXT_TAG:		/* Make text red. */
                 cc = ck = 0;
                 cm = cy = frac_1 - intensity;

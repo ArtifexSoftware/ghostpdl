@@ -981,7 +981,7 @@ gx_default_begin_image(gx_device * dev,
     int code;
 
     /* Processing an image object operation */
-    gs_set_object_tag(pis, GS_IMAGE_TAG);
+    dev_proc(dev, set_graphics_type_tag)(dev, GS_IMAGE_TAG);
 
     set_dev_proc(dev, begin_image, gx_no_begin_image);
     if (pim->format == format)
@@ -1007,7 +1007,7 @@ gx_default_begin_typed_image(gx_device * dev,
 {
     /* Processing an image object operation */
     if (pis != NULL)   /* Null can happen when generating image3 mask */
-        gs_set_object_tag(pis, GS_IMAGE_TAG);
+        dev_proc(dev, set_graphics_type_tag)(dev, GS_IMAGE_TAG);
 
     /* If this is an ImageType 1 image using the imager's CTM,
          * defer to begin_image.

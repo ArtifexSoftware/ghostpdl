@@ -125,7 +125,7 @@ imdi_open_device(gx_device *dev)
                     idev->icc_link_profile->num_comps_out);
 
     rendering_params.black_point_comp = false;
-    rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+    rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
     rendering_params.rendering_intent = gsPERCEPTUAL;
 
     idev->icc_link = gscms_get_link(idev->icc_link_profile,

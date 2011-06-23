@@ -41,7 +41,7 @@
   "per", "col" , "sat", "abs"
 /* This enumeration has to be in sync with GSICC_SRCOBJ_KEYS */
 typedef enum {
-    COLOR_TUNE,   
+    COLOR_TUNE,  
     GRAPHIC_CMYK,
     IMAGE_CMYK,
     TEXT_CMYK,
@@ -60,23 +60,23 @@ typedef enum {
 
 /* Prototypes */
 void gsicc_profile_reference(cmm_profile_t *icc_profile, int delta);
-void gsicc_extract_profile(gs_object_tag_type_t object_type,
+void gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile,
-                       gsicc_rendering_intents_t *rendering_intent); 
+                       gsicc_rendering_intents_t *rendering_intent);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);
 void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
-int gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent, 
+int gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
                                 gsicc_profile_types_t profile_type);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
                                      gsicc_profile_types_t profile_type);
 cmm_dev_profile_name_array_t* gsicc_new_dev_icc_names(gs_memory_t *memory);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
                       int namelen, gsicc_profile_t defaulttype);
-int gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname, 
+int gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
                             int namelen);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
                                              gs_memory_t *mem);

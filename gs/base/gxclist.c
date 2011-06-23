@@ -194,7 +194,8 @@ const gx_device_procs gs_clist_device_procs = {
     NULL,                      /* put_image */
     clist_dev_spec_op,
     clist_copy_plane,          /* copy plane */
-    gx_default_get_profile
+    gx_default_get_profile,
+    gx_default_set_graphics_type_tag
 };
 
 /*------------------- Choose the implementation -----------------------
@@ -397,6 +398,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     cdev->clist_color_info.depth = dev->color_info.depth;
     cdev->clist_color_info.polarity = dev->color_info.polarity;
     cdev->clist_color_info.num_components = dev->color_info.num_components;
+    cdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 
     /* Call create_buf_device to get the memory planarity set up. */
     cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));

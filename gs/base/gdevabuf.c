@@ -47,6 +47,7 @@ gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
     adev->color_info = gdev_mem_device_for_bits(1)->color_info;
     /* ... but it has multiple bits per pixel ... */
     adev->color_info.depth = alpha_bits;
+    adev->graphics_type_tag = target->graphics_type_tag;
     /* ... and different color mapping. */
     set_dev_proc(adev, map_rgb_color, mem_alpha_map_rgb_color);
     set_dev_proc(adev, map_color_rgb, mem_alpha_map_color_rgb);
@@ -168,6 +169,7 @@ gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
     adev->color_info.anti_alias.text_bits =
       adev->color_info.anti_alias.graphics_bits =
         alpha_bits;
+    adev->graphics_type_tag = target->graphics_type_tag;
 }
 
 /* Test whether a device is an alpha-buffering device. */

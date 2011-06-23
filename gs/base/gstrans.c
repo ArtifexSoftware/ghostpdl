@@ -778,9 +778,9 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
-                          &rendering_intent); 
+    code = dev_proc(pgs->device, get_profile)(pgs->device,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+                          &rendering_intent);
 
     params.pdf14_op = PDF14_PUSH_DEVICE;
     /*

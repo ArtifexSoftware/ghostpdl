@@ -476,9 +476,9 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
 }
 
 /* This inititializes the srcobj structure in the ICC manager */
-int 
-gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname, 
-                        int namelen) 
+int
+gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
+                        int namelen)
 {
     gs_memory_t *mem;
     stream *str;
@@ -486,7 +486,7 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
     int info_size;
     char *buffer_ptr, *curr_ptr;
     int num_bytes;
-    char str_format_key[6], str_format_file[6]; 
+    char str_format_key[6], str_format_file[6];
     int count;
     int k;
     static const char *const srcobj_keys[] = {GSICC_SRCOBJ_KEYS};
@@ -511,13 +511,13 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
         info_size = sftell(str);
         code = srewind(str);
         if (info_size > (GSICC_NUM_SRCOBJ_KEYS + 1) * FILENAME_MAX) {
-            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+            return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
         }
         /* Allocate the buffer, stuff with the data */
         buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1, "gsicc_set_srcobj_struct");
         if (buffer_ptr == NULL) {
-            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+            return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
         }
         num_bytes = sfread(buffer_ptr,sizeof(unsigned char), info_size, str);
@@ -525,7 +525,7 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
         buffer_ptr[info_size] = 0;
         if (num_bytes != info_size) {
             gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
-            return gs_rethrow1(-1, "setting of %s src obj color info failed", 
+            return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
         }
         /* Create the structure in which we will store this data */
@@ -549,20 +549,20 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
                 if (strncmp(curr_ptr, srcobj_keys[k], strlen(srcobj_keys[k])) == 0 ) {
                     /* Try to open the file and set the profile */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
-                    str = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem, 
+                    str = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem,
                                             icc_manager->profiledir,
                                             icc_manager->namelen);
                     if (str != NULL) {
                         icc_profile =
                             gsicc_profile_new(str, mem, curr_ptr, strlen(curr_ptr));
                         code = sfclose(str);
-                        gsicc_init_profile_info(icc_profile); 
+                        gsicc_init_profile_info(icc_profile);
                         break;
                     } else {
                         /* Failed to open profile file. End this now. */
                         gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
                         rc_decrement(srcobj, "gsicc_set_srcobj_struct");
-                        return gs_rethrow1(-1, 
+                        return gs_rethrow1(-1,
                                 "setting of %s src obj color info failed", pname);
                     }
                 }
@@ -635,11 +635,11 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
     }
     gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
     srcobj->name_length = strlen(pname);
-    srcobj->name = (char*) gs_alloc_bytes(mem, srcobj->name_length, 
+    srcobj->name = (char*) gs_alloc_bytes(mem, srcobj->name_length,
                                   "gsicc_set_srcobj_struct");
     strncpy(srcobj->name, pname, srcobj->name_length);
     return 0;
-} 
+}
 
 /*  This computes the hash code for the ICC data and assigns the code and the
     profile to the appropriate member variable in the ICC manager */
@@ -915,15 +915,15 @@ rc_free_srcobj_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         /* Decrement any profiles. */
         for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
             if (srcobj_profile->rgb_profiles[k] != NULL) {
-                rc_decrement(srcobj_profile->rgb_profiles[k], 
+                rc_decrement(srcobj_profile->rgb_profiles[k],
                              "rc_free_srcobj_profile");
             }
             if (srcobj_profile->cmyk_profiles[k] != NULL) {
-                rc_decrement(srcobj_profile->cmyk_profiles[k], 
+                rc_decrement(srcobj_profile->cmyk_profiles[k],
                              "rc_free_srcobj_profile");
             }
             if (srcobj_profile->color_warp_profile != NULL) {
-                rc_decrement(srcobj_profile->color_warp_profile, 
+                rc_decrement(srcobj_profile->color_warp_profile,
                              "rc_free_srcobj_profile");
             }
         }
@@ -939,7 +939,7 @@ gsicc_new_srcobj_profile(gs_memory_t *memory)
     cmm_srcobj_profile_t *result;
     int k;
 
-    result = (cmm_srcobj_profile_t *) gs_alloc_bytes(memory->non_gc_memory, 
+    result = (cmm_srcobj_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
                                             sizeof(cmm_srcobj_profile_t),
                                             "gsicc_new_srcobj_profile");
     result->memory = memory->non_gc_memory;
@@ -969,12 +969,12 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         /* Decrement any profiles. */
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             if (icc_array->device_profile[k] != NULL) {
-                rc_decrement(icc_array->device_profile[k], 
+                rc_decrement(icc_array->device_profile[k],
                              "rc_free_profile_array");
             }
         }
         if (icc_array->icc_dir == NULL) {
-            gs_free_object(mem_nongc, icc_array->icc_dir, 
+            gs_free_object(mem_nongc, icc_array->icc_dir,
                            "rc_free_profile_array");
         }
         gs_free_object(mem_nongc, icc_array, "rc_free_profile_array");
@@ -988,7 +988,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     cmm_dev_profile_t *result;
     int k;
 
-    result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory, 
+    result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
                                             sizeof(cmm_dev_profile_t),
                                             "gsicc_new_device_profile_array");
     result->memory = memory->non_gc_memory;
@@ -1003,13 +1003,13 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     return(result);
 }
 
-int 
-gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent, 
+int
+gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
                                 gsicc_profile_types_t profile_type)
 {
     int code;
     cmm_dev_profile_t *profile_struct;
-    
+   
     code = dev_proc(dev, get_profile)(dev,  &profile_struct);
     if (profile_struct ==  NULL)
         return 0;
@@ -1020,7 +1020,7 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
 /* This sets the device profile. If the device does not have a defined
    profile, then a default one is selected.  Name and dir may be NULL */
 int
-gsicc_init_device_profile_struct(gx_device * dev, 
+gsicc_init_device_profile_struct(gx_device * dev,
                                  char *profile_name,
                                  gsicc_profile_types_t profile_type)
 {
@@ -1029,14 +1029,14 @@ gsicc_init_device_profile_struct(gx_device * dev,
     cmm_dev_profile_t *profile_struct;
     char *profile_dir = NULL;
 
-    /* See if the device has a profile structure.  If it does, then do a 
-       check to see if the profile that we are trying to set is already 
+    /* See if the device has a profile structure.  If it does, then do a
+       check to see if the profile that we are trying to set is already
        set and the same.  If it is not, then we need to free it and then
        reset. */
     code = dev_proc(dev, get_profile)(dev,  &profile_struct);
     if (profile_struct != NULL) {
         /* Get the profile of interest */
-        curr_profile = profile_struct->device_profile[profile_type];       
+        curr_profile = profile_struct->device_profile[profile_type];      
         /* See if we have the same profile in this location */
         if (curr_profile == NULL) {
             /* A new one that we need to set,  get the file and dir names
@@ -1075,7 +1075,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
             }
         }
     } else {
-        /* We have no profile structure at all. Allocate the structure in 
+        /* We have no profile structure at all. Allocate the structure in
            non-GC memory.  */
         dev->icc_array = gsicc_new_device_profile_array(dev->memory);
         profile_struct = dev->icc_array;
@@ -1113,15 +1113,15 @@ gsicc_init_device_profile_struct(gx_device * dev,
     really occur only one time, but may occur twice if a color model is
     specified or a nondefault profile is specified on the command line */
 static int
-gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *dir_name, 
+gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *dir_name,
                          char *file_name, gsicc_profile_types_t pro_enum)
 {
     cmm_profile_t *icc_profile;
     stream *str;
     int code;
 
-    /* Check if device has a profile for this slot. Note that we already 
-       decremented for any profile that we might be replacing 
+    /* Check if device has a profile for this slot. Note that we already
+       decremented for any profile that we might be replacing
        in gsicc_init_device_profile_struct */
     if (file_name != '\0') {
         str = gsicc_open_search(file_name, strlen(file_name), mem, dir_name,
@@ -1244,7 +1244,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gsicc_colorname_t *curr_name, *next_name;
     gs_memory_t *mem_nongc =  profile->memory;
 
-    if_debug2('}',"[}]rc decrement profile = 0x%x rc = %ld\n", 
+    if_debug2('}',"[}]rc decrement profile = 0x%x rc = %ld\n",
         ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
@@ -1805,16 +1805,15 @@ gsicc_profile_reference(cmm_profile_t *icc_profile, int delta)
 }
 
 void
-gsicc_extract_profile(gs_object_tag_type_t object_type,
+gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile,
-                       gsicc_rendering_intents_t *rendering_intent) 
+                       gsicc_rendering_intents_t *rendering_intent)
 {
-    switch (object_type) {
-        case GS_DEVICE_DOESNT_SUPPORT_TAGS:
+    switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
         case GS_UNKNOWN_TAG:
         case GS_UNTOUCHED_TAG:
-        default: 
+        default:
             (*profile) = profile_struct->device_profile[0];
             *rendering_intent =  profile_struct->intent[0];
             break;
@@ -1888,9 +1887,9 @@ gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir)
         if (profile_struct->icc_dir == NULL ||
             strncmp(profile_struct->icc_dir, profile_dir, size) != 0) {
             memory = profile_struct->memory;
-            gs_free_object(memory, profile_struct->icc_dir, 
+            gs_free_object(memory, profile_struct->icc_dir,
                            "gsicc_init_device_profile_dir");
-            profile_struct->icc_dir = (char *) gs_alloc_bytes(memory, 
+            profile_struct->icc_dir = (char *) gs_alloc_bytes(memory,
                         size+1, "gsicc_init_device_profile_dir");
             memcpy(profile_struct->icc_dir, profile_dir, size);
             /* Set last position to NULL. */

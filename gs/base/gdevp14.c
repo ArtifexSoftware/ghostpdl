@@ -613,13 +613,12 @@ pdf14_rcmask_new(gs_memory_t *memory)
 }
 
 static	pdf14_ctx *
-pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gs_memory_t	*memory)
+pdf14_ctx_new(gs_int_rect *rect, int n_chan, bool additive, gx_device *dev)
 {
     pdf14_ctx *result;
     pdf14_buf *buf;
-    bool has_tags;
-
-    has_tags = (memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    gs_memory_t	*memory = dev->memory;
+    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
 
     result = gs_alloc_struct(memory, pdf14_ctx, &st_pdf14_ctx,
                              "pdf14_ctx_new");
@@ -858,7 +857,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                 /* Use the ICC color management for buffer color conversion */
                 /* Define the rendering intents */
                 rendering_params.black_point_comp = BP_ON;
-                rendering_params.object_type = GS_IMAGE_TAG;
+                rendering_params.graphics_type_tag = GS_IMAGE_TAG;
                 rendering_params.rendering_intent = gsPERCEPTUAL;
                 /* Request the ICC link for the transform that we will need to use */
                 /* Note that if pis is NULL we assume the same color space.  This
@@ -1073,9 +1072,9 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &src_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &src_profile,
+                          &rendering_intent);
     ctx->smask_depth -= 1;
     /* icc_match == -1 means old non-icc code.
        icc_match == 0 means use icc code
@@ -1118,7 +1117,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
         } else {
             /* Assign as mask buffer */
             if (ctx->mask_stack != NULL) {
-                gs_free_object(ctx->memory, ctx->mask_stack, 
+                gs_free_object(ctx->memory, ctx->mask_stack,
                                "pdf14_pop_transparency_group");
             }
             ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
@@ -1202,7 +1201,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     /* ICC case where we use the CMM */
                     /* Request the ICC link for the transform that we will need to use */
                     rendering_params.black_point_comp = BP_OFF;
-                    rendering_params.object_type = GS_IMAGE_TAG;
+                    rendering_params.graphics_type_tag = GS_IMAGE_TAG;
                     rendering_params.rendering_intent = gsPERCEPTUAL;
                     icc_link = gsicc_get_link_profile(pis, dev, des_profile,
                         src_profile, &rendering_params, pis->memory, false);
@@ -1223,7 +1222,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
          tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
         if (ctx->mask_stack != NULL) {
-            gs_free_object(ctx->memory, ctx->mask_stack, 
+            gs_free_object(ctx->memory, ctx->mask_stack,
                            "pdf14_pop_transparency_group");
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
@@ -1318,7 +1317,7 @@ pdf14_open(gx_device *dev)
     rect.q.x = dev->width;
     rect.q.y = dev->height;
     pdev->ctx = pdf14_ctx_new(&rect, dev->color_info.num_components,
-        pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev->memory);
+        pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, dev);
     if (pdev->ctx == NULL)
         return_error(gs_error_VMerror);
     pdev->free_devicen = true;
@@ -1561,10 +1560,10 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
        default RGB to CIELAB in the put image operation.  That will happen
        here as we should have set the profile for the pdf14 device to RGB
        and the target will be CIELAB */
-    
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, 
-                          &(pcs->cmm_icc_profile_data), &rendering_intent); 
+
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
+                          &(pcs->cmm_icc_profile_data), &rendering_intent);
     /* pcs takes a reference to the profile data it just retrieved. */
     rc_increment(pcs->cmm_icc_profile_data);
     gs_image_t_init_adjust(&image, pcs, false);
@@ -1773,13 +1772,13 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     COPY_PARAM(MaxPatternBitmap);
     /* The PDF14 device copies only the default profile not the text etc.
        TODO: MJV.  It has to make its own device structure but
-       can grab a copy of the profile.  This allows swapping of profiles 
+       can grab a copy of the profile.  This allows swapping of profiles
        in the PDF14 device without messing up the target device profile */
     if (dev->icc_array == NULL) {
         dev->icc_array = gsicc_new_device_profile_array(dev->memory);
         profile_dev14 = dev->icc_array;
-        code = 
-            dev_proc((gx_device *) target, get_profile)((gx_device *) target, 
+        code =
+            dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
         profile_dev14->device_profile[0] = profile_targ->device_profile[0];
         gx_monitor_enter(profile_dev14->device_profile[0]->lock);
@@ -1787,6 +1786,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
         gx_monitor_leave(profile_dev14->device_profile[0]->lock);
         profile_dev14->intent[0] = profile_targ->intent[0];
     }
+    dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 #undef COPY_ARRAY_PARAM
 #undef COPY_PARAM
 }
@@ -2025,7 +2025,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
-    gs_object_tag_type_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
+    gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
@@ -2251,11 +2251,11 @@ pdf14_fill_mask(gx_device * orig_dev,
                                           x, y, w, h, dev, lop, false);
     }
     if (has_pattern_trans) {
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         code = pdf14_pop_transparency_group(NULL, p14dev->ctx,
                                             p14dev->blend_procs,
                                             p14dev->color_info.num_components,
-                                            dev_profile->device_profile[0], 
+                                            dev_profile->device_profile[0],
                                             orig_dev);
         gs_free_object(p14dev->memory, ptile->ttrans->fill_trans_buffer,
                        "pdf14_fill_mask");
@@ -2700,6 +2700,7 @@ pdf14_forward_device_procs(gx_device * dev)
     set_dev_proc(dev, strip_tile_rectangle, gx_forward_strip_tile_rectangle);
     set_dev_proc(dev, copy_alpha, gx_forward_copy_alpha);
     set_dev_proc(dev, get_profile, gx_forward_get_profile);
+    set_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     /* These are forwarding devices with minor tweaks. */
     set_dev_proc(dev, open_device, pdf14_forward_open_device);
     set_dev_proc(dev, put_params, pdf14_forward_put_params);
@@ -2810,9 +2811,9 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             *pdevproto = (pdf14_device *)&gs_pdf14_Gray_device;
             *ptempdevproto = **pdevproto;
             ptempdevproto->color_info.max_components = 1;
-            ptempdevproto->color_info.num_components = 
+            ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
-           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -2826,7 +2827,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
         case PDF14_DeviceCMYK:
             *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
             *ptempdevproto = **pdevproto;
-            /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+            /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -2852,7 +2853,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
                         ptempdevproto->color_info.max_components;
                 *pdevproto = ptempdevproto;
             }
-           /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+           /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             break;
         case PDF14_DeviceCustom:
@@ -2872,7 +2873,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             ptempdevproto->color_info.dither_colors = 256;
 
             *pdevproto = ptempdevproto;
-           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             break;
         default:			/* Should not occur */
@@ -3238,9 +3239,9 @@ pdf14_begin_transparency_group(gx_device *dev,
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
+                          &rendering_intent);
 
 
     /* If the target device supports separations, then
@@ -3338,9 +3339,9 @@ pdf14_end_transparency_group(gx_device *dev,
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
+                          &rendering_intent);
     if_debug0('v', "[v]pdf14_end_transparency_group\n");
     vd_get_dc('c');
     vd_set_shift(0, 0);
@@ -3408,8 +3409,7 @@ pdf14_update_device_color_procs(gx_device *dev,
     byte comp_bits[] = {0,0,0,0};
     byte comp_shift[] = {0,0,0,0};
     int k;
-    bool has_tags = (dev->memory->gs_lib_ctx->BITTAG !=
-                        GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     gsicc_rendering_intents_t rendering_intent;
     int code;
     cmm_dev_profile_t *dev_profile;
@@ -3559,10 +3559,10 @@ pdf14_update_device_color_procs(gx_device *dev,
         /* Don't increment the space since we are going to remove it from the
            ICC manager anyway.  */
         if (group_color == ICC && iccprofile != NULL) {
-            code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-            gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, 
-                                  &(parent_color_info->icc_profile), 
-                                  &rendering_intent); 
+            code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+            gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
+                                  &(parent_color_info->icc_profile),
+                                  &rendering_intent);
         }
         /* Set new information */
         /* If we are in a soft mask and we are using compressed color
@@ -3629,8 +3629,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
     byte comp_bits[] = {0,0,0,0};
     byte comp_shift[] = {0,0,0,0};
     int k;
-    bool has_tags = (dev->memory->gs_lib_ctx->BITTAG !=
-                        GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    bool has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *icc_profile_dev;
     gsicc_rendering_intents_t rendering_intent;
     int code;
@@ -3704,9 +3703,9 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                 break;
             case ICC:
                 /* Check if the profile is different. */
-                code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-                gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev, 
-                                      &rendering_intent); 
+                code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
+                                      &rendering_intent);
                 if (icc_profile_dev->hashcode != icc_profile->hashcode) {
                     update_color_info = true;
                     new_num_comps = icc_profile->num_comps;
@@ -3885,9 +3884,9 @@ pdf14_push_parent_color(gx_device *dev, const gs_imager_state *pis)
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+                          &rendering_intent);
     if_debug0('v', "[v]pdf14_push_parent_color\n");
     /* Allocate a new one */
     new_parent_color = gs_alloc_struct(dev->memory, pdf14_parent_color_t,
@@ -4002,7 +4001,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     }
     /* Always update the color mapping procs.  Otherwise we end up
        fowarding to the target device. */
-    code = pdf14_update_device_color_procs(dev, group_color, ptmp->icc_hashcode, 
+    code = pdf14_update_device_color_procs(dev, group_color, ptmp->icc_hashcode,
                                            pis, ptmp->iccprofile);
     if (code < 0)
         return code;
@@ -4081,7 +4080,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
     int planestride = buf->planestride;
-    gs_object_tag_type_t curr_tag;
+    gs_graphics_type_tag_t curr_tag;
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
@@ -4226,7 +4225,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
                   (has_shape ? planestride : 0);
     bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
-    gs_object_tag_type_t curr_tag;
+    gs_graphics_type_tag_t curr_tag = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
 
     if (buf->data == NULL)
         return 0;
@@ -4758,14 +4757,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
     pdf14_device * dev_proto;
     pdf14_device * p14dev, temp_dev_proto;
     int code;
-    bool has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *icc_profile;
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(target, get_profile)(target,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
-                          &rendering_intent); 
+    code = dev_proc(target, get_profile)(target,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+                          &rendering_intent);
     if_debug0('v', "[v]gs_pdf14_device_push\n");
     code = get_pdf14_device_proto(target, &dev_proto,
                                  &temp_dev_proto, pis, pdf14pct);
@@ -4783,7 +4782,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
        will not be the case if we are coming from the clist reader */
     if (icc_profile->data_cs == gsCIELAB
         && pis->icc_manager->default_rgb != NULL) {
-        p14dev->icc_array->device_profile[0] = 
+        p14dev->icc_array->device_profile[0] =
                                         pis->icc_manager->default_rgb;
         rc_increment(pis->icc_manager->default_rgb);
     }
@@ -4905,10 +4904,10 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev, 
-                                                     &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile, 
-                          &rendering_intent); 
+    code = dev_proc((gx_device *) cdev, get_profile)((gx_device *) cdev,
+                                                     &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile,
+                          &rendering_intent);
     *pbuf++ = opcode;			/* 1 byte */
     switch (opcode) {
         default:			/* Should not occur. */
@@ -5753,7 +5752,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
-          /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+          /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -5767,7 +5766,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
         case PDF14_DeviceCMYK:
             *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYK_device;
             *ptempdevproto = **pdevproto;
-       /*     pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+       /*     pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -5790,7 +5789,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                     ptempdevproto->color_info.num_components =
                         ptempdevproto->color_info.max_components;
             }
-         /*   pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+         /*   pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -5809,7 +5808,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_color = 255;
             ptempdevproto->color_info.dither_grays = 256;
             ptempdevproto->color_info.dither_colors = 256;
-     /*       pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array, 
+     /*       pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
                                        dev_cs); */
             *pdevproto = ptempdevproto;
             break;
@@ -5827,14 +5826,14 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     pdf14_clist_device * dev_proto;
     pdf14_clist_device * pdev, temp_dev_proto;
     int code;
-    bool has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    bool has_tags = target->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     cmm_profile_t *target_profile;
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(target, get_profile)(target,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &target_profile, 
-                          &rendering_intent); 
+    code = dev_proc(target, get_profile)(target,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &target_profile,
+                          &rendering_intent);
     if_debug0('v', "[v]pdf14_create_clist_device\n");
     code = get_pdf14_clist_device_proto(target, &dev_proto,
                                  &temp_dev_proto, pis, pdf14pct);
@@ -5864,8 +5863,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
        proper blending.  During put_image we will convert from RGB to
        CIELAB */
     if (target_profile->data_cs == gsCIELAB) {
-        rc_assign(pdev->icc_array->device_profile[0], 
-                  pis->icc_manager->default_rgb, "pdf14_create_clist_device"); 
+        rc_assign(pdev->icc_array->device_profile[0],
+                  pis->icc_manager->default_rgb, "pdf14_create_clist_device");
     }
     pdev->my_encode_color = pdev->procs.encode_color;
     pdev->my_decode_color = pdev->procs.decode_color;
@@ -6603,13 +6602,13 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     gsicc_rendering_intents_t rendering_intent;
     cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    code = dev_proc(fdev->target, get_profile)(fdev->target,  &fwd_profile); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    code = dev_proc(fdev->target, get_profile)(fdev->target,  &fwd_profile);
 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd, 
-                          &rendering_intent); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev, 
-                          &rendering_intent); 
+    gsicc_extract_profile(GS_UNKNOWN_TAG, fwd_profile, &icc_profile_fwd,
+                          &rendering_intent);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &icc_profile_dev,
+                          &rendering_intent);
 
     /*
      * Ensure that that the PDF 1.4 reading compositor will have the current
@@ -6920,7 +6919,7 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
                 p14dev->my_encode_color != pdf14_compressed_encode_color) {
                     int i = (cdev->clist_color_info.num_components);
 
-                    i += mem->gs_lib_ctx->BITTAG == GS_DEVICE_DOESNT_SUPPORT_TAGS ? 0 : 1;
+                    i += (cdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) == 0 ? 0 : 1;
                     cdev->clist_color_info.depth = 8 * i;
             }
             p14dev->saved_target_color_info = dev->color_info;
@@ -7047,12 +7046,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     int code;
     cmm_dev_profile_t *dev_profile;
 
-    code = dev_proc(cdev, get_profile)(cdev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile, 
-                          &rendering_intent); 
-    code = dev_proc(p14dev, get_profile)(p14dev,  &dev_profile); 
-    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile, 
-                          &rendering_intent); 
+    code = dev_proc(cdev, get_profile)(cdev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile,
+                          &rendering_intent);
+    code = dev_proc(p14dev, get_profile)(p14dev,  &dev_profile);
+    gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile,
+                          &rendering_intent);
 
     /*
      * We only handle the push/pop operations. Save and restore the color_info
@@ -7062,12 +7061,12 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
      */
     switch (pdf14pct->params.pdf14_op) {
         case PDF14_PUSH_DEVICE:
-            /* If the CMM is not threadsafe, then the pdf14 device actually 
-               needs to inherit the ICC profile from the clist thread device 
+            /* If the CMM is not threadsafe, then the pdf14 device actually
+               needs to inherit the ICC profile from the clist thread device
                not the target device.   */
 #if !CMM_THREAD_SAFE
             gx_monitor_enter(p14_icc_profile->lock);
-            rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile, 
+            rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile,
                       "c_pdf14trans_clist_read_update");
             gx_monitor_leave(p14_icc_profile->lock);
 #endif
@@ -7128,15 +7127,15 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                happens to be something like CIELAB.  Then we will blend in
                RGB (unless a trans group is specified) */
             if (cl_icc_profile->data_cs == gsCIELAB) {
-                cl_icc_profile = 
+                cl_icc_profile =
                     gsicc_read_serial_icc(cdev, pcrdev->trans_dev_icc_hash);
                 /* Keep a pointer to the clist device */
                 cl_icc_profile->dev = (gx_device *) cdev;
                 gx_monitor_enter(p14_icc_profile->lock);
-                rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile, 
+                rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile,
                           "c_pdf14trans_clist_read_update");
                 /* Initial ref count was ok.  remove increment from assign */
-                rc_decrement(p14dev->icc_array->device_profile[0], 
+                rc_decrement(p14dev->icc_array->device_profile[0],
                              "c_pdf14trans_clist_read_update");
                 gx_monitor_leave(p14_icc_profile->lock);
             }
@@ -7343,9 +7342,9 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
         pis->icc_manager->default_rgb = smask_profiles->smask_rgb;
         pis->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
         pdev->smaskcolor->ref_count = 1;
-        /* We also need to update the profile that is currently in the 
+        /* We also need to update the profile that is currently in the
            color spaces of the graphic state.  Otherwise this can be
-           referenced, which will result in a mismatch.  What we want to do 
+           referenced, which will result in a mismatch.  What we want to do
            is see if it was the original default and only swap in that case. */
         if (pis->is_gstate) {
             gs_state *pgs = (gs_state*) pis;
@@ -7413,21 +7412,21 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
                             case gsGRAY:
                                 if (profile->hashcode ==
                                     pis->icc_manager->default_gray->hashcode) {
-                                        profile = 
+                                        profile =
                                             smaskcolor->profiles->smask_gray;
                                 }
                                 break;
                             case gsRGB:
                                 if (profile->hashcode ==
                                     pis->icc_manager->default_rgb->hashcode) {
-                                        profile = 
+                                        profile =
                                             smaskcolor->profiles->smask_rgb;
                                 }
                                 break;
                             case gsCMYK:
                                 if (profile->hashcode ==
                                     pis->icc_manager->default_cmyk->hashcode) {
-                                        profile = 
+                                        profile =
                                             smaskcolor->profiles->smask_cmyk;
                                 }
                                 break;
@@ -7441,7 +7440,7 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
                             rc_increment(profile);
                             pcs->cmm_icc_profile_data = profile;
                         }
-                    } 
+                    }
                 }
             }
 

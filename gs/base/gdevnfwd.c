@@ -42,6 +42,7 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
     if (target && !fdev->finalize)
         fdev->finalize = gx_device_forward_finalize;
     rc_assign(fdev->target, target, "gx_device_set_target");
+    fdev->graphics_type_tag = target != NULL ? target->graphics_type_tag : 0;	/* initialize to same as target */
 }
 
 /* Fill in NULL procedures in a forwarding device procedure record. */
@@ -108,6 +109,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, ret_devn_params, gx_forward_ret_devn_params);
     fill_dev_proc(dev, fillpage, gx_forward_fillpage);
     fill_dev_proc(dev, get_profile, gx_forward_get_profile);
+    fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -123,8 +125,9 @@ gx_device_forward_color_procs(gx_device_forward * dev)
     set_dev_proc(dev, get_color_comp_index, gx_forward_get_color_comp_index);
     set_dev_proc(dev, encode_color, gx_forward_encode_color);
     set_dev_proc(dev, decode_color, gx_forward_decode_color);
-    set_dev_proc(dev, get_profile, gx_forward_get_profile); 
-    /* Not strictly a color proc, but affected by it */
+    set_dev_proc(dev, get_profile, gx_forward_get_profile);
+    /* Not strictly a color proc, but may affect color encoding */
+    fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
     fill_dev_proc(dev, dev_spec_op, gx_forward_dev_spec_op);
 }
 
@@ -911,7 +914,7 @@ gx_forward_create_compositor(gx_device * dev, gx_device ** pcdev,
 }
 
 int
-gx_forward_get_profile(gx_device *dev,  cmm_dev_profile_t **profile) 
+gx_forward_get_profile(gx_device *dev,  cmm_dev_profile_t **profile)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
@@ -919,6 +922,18 @@ gx_forward_get_profile(gx_device *dev,  cmm_dev_profile_t **profile)
         (tdev == 0 ? (tdev = dev, gx_default_get_profile) :
          dev_proc(tdev, get_profile));
     return proc(tdev, profile);
+}
+
+void
+gx_forward_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics_type_tag)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev != 0)
+        dev_proc(tdev, set_graphics_type_tag)(tdev, graphics_type_tag);
+    /* Keep copy in this device current, and preserve GS_DEVICE_ENCODES_TAGS */
+    dev->graphics_type_tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
 }
 
 /* ---------------- The null device(s) ---------------- */
