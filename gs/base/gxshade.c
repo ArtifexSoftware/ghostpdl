@@ -384,7 +384,7 @@ top:
         gs_colorspace_set_icc_equivalent(pcs, &(is_lab), pis->memory);
     }
     rendering_params.black_point_comp = BP_ON;
-    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.graphics_type_tag = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {

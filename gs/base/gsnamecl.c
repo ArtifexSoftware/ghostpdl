@@ -203,11 +203,6 @@ custom_color_callback_put_params(gs_state * pgs, gs_param_list * plist)
     }
     else if (pgs->memory->gs_lib_ctx->custom_color_callback != (void *)iptr) {
         pgs->memory->gs_lib_ctx->custom_color_callback = (void *)iptr;
-        /*
-         * Custom color processing can depend upon the type of object
-         * being imaged so we enable object type tagging.
-         */
-    gs_enable_object_tagging(pgs->memory);
     }
 
     return 0;

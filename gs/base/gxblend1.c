@@ -447,7 +447,7 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
     int ncomp = dev->color_info.num_components;
 
     /* Add in the tag information */
-    color = gs_current_object_tag(dev->memory);
+    color = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
     for (i = 0; i < ncomp; i++) {
         color <<= 8;
         color |= (colors[i] >> drop);

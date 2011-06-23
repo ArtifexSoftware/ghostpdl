@@ -234,7 +234,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
                        gs_pattern1_instance_t *pinst, client_name_t cname)
 {
     gx_device *tdev = pinst->saved->device;
-    int has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    int has_tags = tdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     int size = gx_pattern_size_estimate(pinst, has_tags);
     gx_device_forward *fdev;
     int force_no_clist = 0;
@@ -366,6 +366,8 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->pinst = pinst;
         set_dev_proc(cwdev, get_clipping_box, gx_default_get_clipping_box);
         set_dev_proc(cwdev, get_profile, gx_forward_get_profile);
+        set_dev_proc(cwdev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+        cwdev->graphics_type_tag = tdev->graphics_type_tag;	/* initialize to same as target */
         fdev = (gx_device_forward *)cdev;
     }
     check_device_separable((gx_device *)fdev);
@@ -1180,7 +1182,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     gs_state *saved;
     gx_color_tile *ctile;
     gs_memory_t *mem = pis->memory;
-    int has_tags = (mem->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS);
+    int has_tags = dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS;
     int code;
 
     if (pis->pattern_cache == NULL)

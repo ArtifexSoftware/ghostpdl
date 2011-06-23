@@ -467,7 +467,7 @@ rinkj_open_profile(rinkj_device *rdev)
         /* Set up the rendering parameters */
 
         rendering_params.black_point_comp = false;
-        rendering_params.object_type = GS_DEVICE_DOESNT_SUPPORT_TAGS;  /* Already rendered */
+        rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
         rendering_params.rendering_intent = gsPERCEPTUAL;
 
         /* Call with a NULL destination profile since we are using a device link profile here */

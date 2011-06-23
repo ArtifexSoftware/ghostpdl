@@ -575,6 +575,8 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
         set_dev_proc(dn, encode_color, gx_forward_encode_color);
         set_dev_proc(dn, decode_color, gx_forward_decode_color);
         set_dev_proc(dn, get_profile, gx_forward_get_profile);
+        set_dev_proc(dn, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+        dn->graphics_type_tag = dev->graphics_type_tag;	/* initialize to same as target */
         gx_device_copy_color_params(dn, dev);
     }
 }

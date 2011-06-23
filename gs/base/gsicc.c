@@ -330,7 +330,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = dev_profile->device_profile[0]->num_comps;
     rendering_params.black_point_comp = BP_ON;
-    rendering_params.object_type = gs_current_object_tag(pis->memory);
+    rendering_params.graphics_type_tag = dev->graphics_type_tag;
     /* Need to figure out which one rules here on rendering intent.  The
        source of the device */
     rendering_params.rendering_intent = pis->renderingintent;
@@ -416,7 +416,7 @@ gx_concretize_ICC(
     num_des_comps = dev_profile->device_profile[0]->num_comps;
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
-    rendering_params.object_type = gs_current_object_tag(pis->memory);
+    rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.rendering_intent = pis->renderingintent;
     for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
@@ -524,5 +524,3 @@ gx_default_get_profile(gx_device *dev, cmm_dev_profile_t **profile)
     *profile = dev->icc_array;
     return 0;
 }
-
-

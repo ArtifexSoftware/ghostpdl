@@ -279,32 +279,3 @@ int_rect_difference(gs_int_rect * outer, const gs_int_rect * inner,
     }
     return count;
 }
-
-void
-gs_enable_object_tagging(gs_memory_t * mem)
-{
-    if (mem->gs_lib_ctx->BITTAG == GS_DEVICE_DOESNT_SUPPORT_TAGS)
-        mem->gs_lib_ctx->BITTAG = GS_UNKNOWN_TAG;
-}
-
-void
-gs_set_object_tag(gs_imager_state * pis, const gs_object_tag_type_t tag)
-{
-    if (pis->memory->gs_lib_ctx->BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
-        pis->object_tag = tag;
-        /* mkromfs breaks this dependance
-           NB: needs to be fixed.
-           gx_unset_dev_color(pgs);
-         **/
-        pis->memory->gs_lib_ctx->BITTAG = tag;
-        /* the assumption is made that the caller will:
-         * gx_set_dev_color(pgs);
-         */
-    }
-}
-
-gs_object_tag_type_t
-gs_current_object_tag(gs_memory_t * mem)
-{
-    return mem->gs_lib_ctx->BITTAG;
-}

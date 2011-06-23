@@ -1125,10 +1125,10 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                          dev_profile, &des_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag,
+                          dev_profile, &des_profile,
+                          &rendering_intent);
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
     if (pis->color_component_map.sep_type == SEP_ALL) {
@@ -1176,11 +1176,11 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         unsigned short psrc[GS_CLIENT_COLOR_MAX_COMPONENTS], psrc_cm[GS_CLIENT_COLOR_MAX_COMPONENTS];
 
         rendering_params.black_point_comp = BP_ON;
-        rendering_params.object_type = GS_PATH_TAG;
+        rendering_params.graphics_type_tag = GS_PATH_TAG;
         rendering_params.rendering_intent = pis->renderingintent;
 
         icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb,
-                                          des_profile, &rendering_params, 
+                                          des_profile, &rendering_params,
                                           pis->memory, false);
         /* Transform the color */
         for (i = 0; i < ncomps; i++) {
@@ -1234,13 +1234,13 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                          dev_profile, &des_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag,
+                          dev_profile, &des_profile,
+                          &rendering_intent);
     /* Define the rendering intents. */
     rendering_params.black_point_comp = BP_ON;
-    rendering_params.object_type = GS_PATH_TAG;
+    rendering_params.graphics_type_tag = GS_PATH_TAG;
     rendering_params.rendering_intent = pis->renderingintent;
     /* Sigh, frac to full 16 bit.  Need to clean this up */
     for (k = 0; k < 4; k++){
@@ -1283,10 +1283,10 @@ cmap_devicen_halftoned(const frac * pcc,
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                          dev_profile, &des_profile, 
-                          &rendering_intent); 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag,
+                          dev_profile, &des_profile,
+                          &rendering_intent);
     /* map to the color model */
     for (i=0; i < ncomps; i++)
         cm_comps[i] = 0;
@@ -1330,9 +1330,9 @@ cmap_devicen_direct(const frac * pcc,
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                          dev_profile, &des_profile, 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag,
+                          dev_profile, &des_profile,
                           &rendering_intent);
     /*   See the comment below */
     /* map to the color model */
@@ -1848,7 +1848,7 @@ cmap_transfer(gx_color_value *pconc, const gs_imager_state * pis, gx_device * de
 
 /* A planar version which applies only one transfer function */
 void
-cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis, 
+cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis,
                     gx_device *dev, int plane)
 {
     int ncomps = dev->color_info.num_components;
@@ -1894,9 +1894,9 @@ gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
 
-    code = dev_proc(dev, get_profile)(dev,  &dev_profile); 
-    gsicc_extract_profile(gs_current_object_tag(pis->memory), 
-                          dev_profile, &des_profile, 
+    code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag,
+                          dev_profile, &des_profile,
                           &rendering_intent);
 
     if (des_profile != NULL) {

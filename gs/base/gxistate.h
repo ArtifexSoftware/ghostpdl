@@ -144,7 +144,6 @@ typedef struct gx_transfer_s {
                 /* effective_transfer are always the same.) */\
         gx_transfer set_transfer;		/* members are (RC) */\
         gx_transfer_map *effective_transfer[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* see below */\
-        int object_tag; /* */\
 \
                 /* Color caches: */\
 \

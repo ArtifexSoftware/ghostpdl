@@ -290,6 +290,7 @@ const gx_device_bit gs_bitrgbtags_device =
         {false},
         0,
         0,
+        GS_UNKNOWN_TAG,         /* this device supports tags */
         {
             gx_default_install,
             gx_default_begin_page,
@@ -371,7 +372,7 @@ bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
         ((cv[2]) >> ((sizeof(gx_color_value) * 8) - 8)) +
         ((uint) ((cv[1]) >> ((sizeof(gx_color_value) * 8) - 8)) << 8) +
         ((ulong) ((cv[0]) >> ((sizeof(gx_color_value) * 8) - 8)) << 16) +
-        ((ulong)gs_current_object_tag(dev->memory) << 24);
+        ((ulong)(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) << 24);
 }
 
 static int
@@ -499,7 +500,7 @@ bit_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 static int
 bittag_put_params(gx_device * pdev, gs_param_list * plist)
 {
-    gs_enable_object_tagging(pdev->memory);
+    pdev->graphics_type_tag |= GS_DEVICE_ENCODES_TAGS;		/* the bittags devices use tags in the color */
     return gdev_prn_put_params(pdev, plist);
 }
 /* Get parameters.  We provide a default CRD. */

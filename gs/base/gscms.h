@@ -19,7 +19,7 @@
 #include "std.h"
 #include "stdpre.h"
 #include "gstypes.h"
-#include "gsutil.h"       /* Need for the object types */
+#include "gscspace.h"      /* for gs_color_space */
 #include "gsdevice.h"     /* Need to carry pointer to clist reader */
 #include "gxsync.h"       /* for semaphore and monitors */
 #include "stdint_.h"
@@ -389,10 +389,22 @@ typedef struct gsicc_manager_s {
     rc_header rc;
 } gsicc_manager_t;
 
+/* --------------- graphical object tags ------------ */
+
+/* The default is "unknown" which has value 0 and by default devices don't encode tags */
+typedef enum {
+    GS_UNKNOWN_TAG = 0x0,
+    GS_TEXT_TAG = 0x1,
+    GS_IMAGE_TAG = 0x2,
+    GS_PATH_TAG = 0x4,
+    GS_UNTOUCHED_TAG = 0x8,
+    GS_DEVICE_ENCODES_TAGS = 0x80
+} gs_graphics_type_tag_t;
+
 typedef struct gsicc_rendering_param_s {
     gsicc_rendering_intents_t rendering_intent;
-    gs_object_tag_type_t    object_type;
-    gsicc_black_point_comp_t black_point_comp;
+    gs_graphics_type_tag_t           graphics_type_tag;
+    gsicc_black_point_comp_t  black_point_comp;
 } gsicc_rendering_param_t;
 
 #endif /* ifndef gscms_INCLUDED */

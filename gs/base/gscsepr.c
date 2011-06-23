@@ -323,7 +323,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 
             /* Define the rendering intents. */
             rendering_params.black_point_comp = BP_ON;
-            rendering_params.object_type = GS_PATH_TAG;
+            rendering_params.graphics_type_tag = GS_PATH_TAG;
             rendering_params.rendering_intent = pis->renderingintent;
 
             pcs->params.separation.get_colorname_string(pis->memory, name,

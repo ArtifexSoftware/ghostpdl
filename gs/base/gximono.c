@@ -110,7 +110,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             num_des_comps = dev_profile->device_profile[0]->num_comps;
             /* Define the rendering intents */
             rendering_params.black_point_comp = BP_ON;
-            rendering_params.object_type = GS_IMAGE_TAG;
+            rendering_params.graphics_type_tag = GS_IMAGE_TAG;
             rendering_params.rendering_intent = penum->pis->renderingintent;
             if (gs_color_space_get_index(penum->pcs) ==
                 gs_color_space_index_Indexed) {

@@ -69,7 +69,6 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     pio->stdin_is_interactive = true;
     /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
     pio->gs_next_id           = 5;  /* this implies that each thread has its own complete state */
-    pio->BITTAG               = GS_DEVICE_DOESNT_SUPPORT_TAGS;
 
     gp_get_realtime(pio->real_time_0);
 

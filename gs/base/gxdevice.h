@@ -104,6 +104,7 @@
         0/*IgnoreNumCopies*/, 0/*UseCIEColor*/, 0/*LockSafetyParams*/,\
         0/*band_offset_x*/, 0/*band_offset_y*/, {false}/* sgr */, 0/* MaxPatternBitmap */,\
         0/*Profile Array*/,\
+        0/* graphics_type_tag default GS_UNKNOWN_TAG */,\
         { gx_default_install, gx_default_begin_page, gx_default_end_page }
 /*
  * We need a number of different variants of the std_device_ macro simply
@@ -278,6 +279,7 @@ dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors)
 dev_proc_ret_devn_params(gx_default_ret_devn_params);
 dev_proc_fillpage(gx_default_fillpage);
 dev_proc_get_profile(gx_default_get_profile);
+dev_proc_set_graphics_type_tag(gx_default_set_graphics_type_tag);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -363,6 +365,7 @@ dev_proc_ret_devn_params(gx_forward_ret_devn_params);
 dev_proc_fillpage(gx_forward_fillpage);
 dev_proc_create_compositor(gx_forward_create_compositor);
 dev_proc_get_profile(gx_forward_get_profile);
+dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
 
 /* ---------------- Implementation utilities ---------------- */
 
@@ -586,7 +589,7 @@ int gdev_write_output_media(int index, gs_param_dict * pdict,
                             const gdev_output_media_t * pom);
 
 /* Can be called from set user params */
-void gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev); 
+void gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev);
 
 int gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict);
 

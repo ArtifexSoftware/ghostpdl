@@ -114,7 +114,8 @@ static const gx_device_rop_texture gs_rop_texture_device = {
      NULL,                              /* put_image */
      gx_forward_dev_spec_op,
      rop_texture_copy_plane,            /* copy plane */
-     gx_forward_get_profile
+     gx_forward_get_profile,
+     gx_forward_set_graphics_type_tag
     },
     0,				/* target */
     lop_default			/* log_op */
@@ -144,6 +145,7 @@ gx_make_rop_texture_device(gx_device_rop_texture * dev, gx_device * target,
     check_device_separable((gx_device *) dev);
     gx_device_fill_in_procs((gx_device *) dev);
     gx_device_copy_params((gx_device *)dev, target);
+    dev->graphics_type_tag = target->graphics_type_tag;	/* Init from device */
     dev->log_op = log_op;
     dev->texture = *texture;
 }

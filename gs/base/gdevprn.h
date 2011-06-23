@@ -360,7 +360,8 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
         NULL,  /* put_image */\
         NULL,  /* dev_spec_op */\
         NULL,  /* copy plane */\
-        gx_default_get_profile /* get_profile */\
+        gx_default_get_profile, /* get_profile */\
+        gx_default_set_graphics_type_tag /* set_graphics_type_tag */\
 }
 
 /* The standard printer device procedures */
