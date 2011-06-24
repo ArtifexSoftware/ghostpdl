@@ -681,10 +681,12 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
                     FT_Fixed *a_x_scale, FT_Fixed *a_y_scale)
 {
     double scalex, scaley, fact = 1.0;
+    double factx = 1.0, facty = 1.0;
     FT_Matrix ftscale_mat;
     FT_UInt xres;
     FT_UInt yres;
     FT_Vector vectx, vecty;
+    bool indep_scale;
 
     scalex = hypot ((double)a_transform->xx, (double)a_transform->xy);
     scaley = hypot ((double)a_transform->yx, (double)a_transform->yy);
@@ -717,6 +719,16 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
         yres = *yresp;
     }
 
+    /*
+     * If the x and y scales differ by more than a factor of 512, we
+     * manipulate them independently. As the difference between magnitudes
+     * of the x and y scales tends towards 1000 we start to run out of
+     * accuracy and magnitude in the FT fixed point representation.
+     * As these are scaled fixed point values, we should be safe forcing
+     * them into integer operations.
+     */
+    indep_scale = (((((int)scalex) / ((int)scaley)) > 512) || ((((int)scaley) / ((int)scalex)) > 512));
+
     scalex *= 1.0/65536.0;
     scaley *= 1.0/65536.0;
     /* FT clamps the width and height to a lower limit of 1.0 units
@@ -737,13 +749,10 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
       * affect the ultimate size of the glyph since we recalculate the
       * final scale matrix to suit below.
       */
-    if (scalex > scaley)
-    {
-        if (scaley < 10.0)
-        {
-            fact = 10.016 / scaley;
-            scaley = scaley * fact;
-            scalex = scalex * fact;
+    if (indep_scale) {
+        if (scaley < 10.0) {
+            facty = 10.016 / scaley;
+            scaley = scaley * facty;
         }
 
         /* These seemingly arbitrary numbers are derived from a) using 64ths
@@ -754,12 +763,9 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
            The calculation has been rearranged to reduce (in particular) the
            number of floating point divisions.
          */
-        if (scaley * yres < 2268.0/64.0)
-        {
-            fact = (2400.0/64.0) / (yres * scaley);
-
-            scaley *= fact;
-            scalex *= fact;
+        if (scaley * yres < 2268.0/64.0) {
+            facty = (2400.0/64.0) / (yres * scaley);
+            scaley *= facty;
         }
 
         /* We also have to watch for variable overflow in Freetype.
@@ -767,45 +773,97 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
          * almost always a larger value than the text size, and therefore
          * we have more scope to manipulate it.
          */
-        fact = 1.0;
-        while (scalex * xres > 256.0 * 72 && xres > 0 && yres > 0) {
-            xres >>= 1;
+        facty = 1.0;
+        while (scaley * yres > 256.0 * 72 && yres > 0) {
             yres >>= 1;
-            fact *= 2.0;
+            facty *= 2.0;
         }
-    }
-    else
-    {
-        if (scalex < 10.0)
-        {
-            fact = 10.016 / scalex;
-            scalex = scalex * fact;
-            scaley = scaley * fact;
+
+        if (scalex < 10.0) {
+            factx = 10.016 / scalex;
+            scalex = scalex * factx;
         }
 
         /* see above */
-        if (scalex * xres < 2268.0/64.0)
-        {
-            fact = (2400.0/64.0) / (xres * scalex);
-
-            scaley *= fact;
-            scalex *= fact;
+        if (scalex * xres < 2268.0/64.0) {
+            factx = (2400.0/64.0) / (xres * scalex);
+            scalex *= factx;
         }
 
         /* see above */
-        fact = 1.0;
-        while (scaley * yres > 256.0 * 72.0 && xres > 0 && yres > 0) {
+        factx = 1.0;
+        while (scalex * xres > 256.0 * 72.0 && xres > 0) {
             xres >>= 1;
-            yres >>= 1;
-
-            fact *= 2.0;
+            factx *= 2.0;
         }
     }
+    else {
+        /*
+         * But we prefer to scale both axes together, as the results are
+         * more accurate.
+         */
+        if (scalex > scaley) {
+            if (scaley < 10.0) {
+                fact = 10.016 / scaley;
+                scaley = scaley * fact;
+                scalex = scalex * fact;
+            }
 
-    ftscale_mat.xx = (FT_Fixed)(65536.0 / scalex) * fact;
+            /* These seemingly arbitrary numbers are derived from a) using 64ths
+               of a unit and b) the calculations done in FT_Request_Metrics() to
+               derive the ppem. This is necessary due to FT's need for them ppem
+               to be an in larger than 1 - see tt_size_reset().
+
+               The calculation has been rearranged to reduce (in particular) the
+               number of floating point divisions.
+             */
+            if (scaley * yres < 2268.0/64.0) {
+                fact = (2400.0/64.0) / (yres * scaley);
+                scaley *= fact;
+                scalex *= fact;
+            }
+
+            /* We also have to watch for variable overflow in Freetype.
+             * I've opted to fiddle with the resolution here, as it is
+             * almost always a larger value than the text size, and therefore
+             * we have more scope to manipulate it.
+             */
+            fact = 1.0;
+            while (scalex * xres > 256.0 * 72 && xres > 0 && yres > 0) {
+                xres >>= 1;
+                yres >>= 1;
+                fact *= 2.0;
+            }
+        }
+        else {
+            if (scalex < 10.0) {
+                fact = 10.016 / scalex;
+                scalex = scalex * fact;
+                scaley = scaley * fact;
+            }
+
+            /* see above */
+            if (scalex * xres < 2268.0/64.0) {
+                fact = (2400.0/64.0) / (xres * scalex);
+                scaley *= fact;
+                scalex *= fact;
+            }
+
+            /* see above */
+            fact = 1.0;
+            while (scaley * yres > 256.0 * 72.0 && xres > 0 && yres > 0) {
+                xres >>= 1;
+                yres >>= 1;
+
+                fact *= 2.0;
+            }
+        }
+        factx = facty = fact;
+    }
+    ftscale_mat.xx = (FT_Fixed)(65536.0 / scalex) * factx;
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
-    ftscale_mat.yy = (FT_Fixed)(65536.0 / scaley) * fact;
+    ftscale_mat.yy = (FT_Fixed)(65536.0 / scaley) * facty;
 
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));
