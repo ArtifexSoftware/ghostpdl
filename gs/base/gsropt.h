@@ -209,6 +209,15 @@ typedef enum {
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
 #define lop_pdf14 0x400
+
+/* Also, we abuse the lop even further, by allowing it to specify a specific
+ * plane for an operation to work on (in a planar device context). To specify
+ * a particularp plane, set lop_planar, and then or in the plane number
+ * shifted up by lop_planar_shift.
+ */
+#define lop_planar 0x800
+#define lop_planar_shift 12
+
 typedef uint gs_logical_operation_t;
 
 #define lop_default\

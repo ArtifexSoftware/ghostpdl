@@ -41,6 +41,7 @@ static RELOC_PTRS_BEGIN(device_rop_texture_reloc_ptrs) {
 static dev_proc_fill_rectangle(rop_texture_fill_rectangle);
 static dev_proc_copy_mono(rop_texture_copy_mono);
 static dev_proc_copy_color(rop_texture_copy_color);
+static dev_proc_copy_plane(rop_texture_copy_plane);
 
 /* The device descriptor. */
 static const gx_device_rop_texture gs_rop_texture_device = {
@@ -112,7 +113,7 @@ static const gx_device_rop_texture gs_rop_texture_device = {
      NULL,                              /* pop_transparency_state */
      NULL,                              /* put_image */
      gx_forward_dev_spec_op,
-     NULL,                              /* copy plane */
+     rop_texture_copy_plane,            /* copy plane */
      gx_forward_get_profile
     },
     0,				/* target */
@@ -212,4 +213,26 @@ rop_texture_copy_color(gx_device * dev,
     return gx_device_color_fill_rectangle(&rtdev->texture,
                                           x, y, w, h, rtdev->target,
                                           rtdev->log_op, &source);
+}
+
+/* Copy a color rectangle */
+static int
+rop_texture_copy_plane(gx_device * dev,
+                 const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                       int x, int y, int w, int h, int plane)
+{
+    gx_device_rop_texture *const rtdev = (gx_device_rop_texture *)dev;
+    gx_rop_source_t source;
+
+    source.sdata = data;
+    source.sourcex = sourcex;
+    source.sraster = raster;
+    source.id = id;
+    source.scolors[0] = source.scolors[1] = gx_no_color_index;
+    source.use_scolors = false;
+    return gx_device_color_fill_rectangle(&rtdev->texture,
+                                          x, y, w, h, rtdev->target,
+                                          (rtdev->log_op | lop_planar |
+                                           (plane<<lop_planar_shift)),
+                                          &source);
 }
