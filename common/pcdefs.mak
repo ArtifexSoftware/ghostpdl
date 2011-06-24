@@ -16,5 +16,5 @@ _I=
 XE=.exe
 
 CP_=copy /B
-RM_=erase
-RMN_=call $(COMMONDIR)\rm.bat
+RM_=-erase
+RMN_=-call $(COMMONDIR)\rm.bat

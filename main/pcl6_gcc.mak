@@ -30,7 +30,7 @@ XCFLAGS?=
 
 # The build process will put all of its output in this directory
 GENDIR?=./obj
-AUXDIR?=./aux
+AUXDIR?=$(GENDIR)/aux
 PGGENDIR?=./pgobj
 
 # The sources are taken from these directories:

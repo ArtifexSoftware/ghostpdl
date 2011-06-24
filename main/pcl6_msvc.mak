@@ -34,11 +34,7 @@ GENDIR=.\obj
 !endif
 
 !ifndef AUXDIR
-!if "$(DEBUG)"=="1"
-AUXDIR=.\debugaux
-!else
-AUXDIR=.\relaux
-!endif
+AUXDIR=$(GENDIR)\aux_
 !endif
 
 # The sources are taken from these directories:
@@ -411,7 +407,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\tiffscaled.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev\
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\pngmonod.dev $(DD)\jpeg.dev \
  $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
- $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev 
+ $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev
 !endif
 
 # GS options

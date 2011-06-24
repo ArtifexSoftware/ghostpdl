@@ -35,10 +35,10 @@ clean_gs:
 	nmake /f $(GLSRCDIR)\msvclib.mak \
 	GLSRCDIR=$(GLSRCDIR) GLGENDIR=$(GLGENDIR) \
 	GLOBJDIR=$(GLOBJDIR) clean
-	erase $(TARGET_XE).ilk
-	erase $(TARGET_XE).pdb
-	erase $(TARGET_XE).exp
-	erase $(TARGET_XE).lib
+	-erase $(TARGET_XE).ilk
+	-erase $(TARGET_XE).pdb
+	-erase $(TARGET_XE).exp
+	-erase $(TARGET_XE).lib
 
 # Define names of utility programs
 AUX=$(AUXDIR)$(D)

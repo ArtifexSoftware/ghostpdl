@@ -58,26 +58,8 @@ DEFAULT_OBJ_DIR=.\obj
 !endif
 !endif
 
-!if "$(DEBUG)"=="1"
-!ifdef WIN64
-AUXDIR=.\debugaux64
-!else
-AUXDIR=.\debugaux
-!endif
-!else
-!if "$(DEBUGSYM)"=="1"
-!ifdef WIN64
-AUXDIR=.\profaux64
-!else
-AUXDIR=.\profaux
-!endif
-!else
-!ifdef WIN64
-AUXDIR=.\aux64
-!else
-AUXDIR=.\aux32
-!endif
-!endif
+!ifndef AUXDIR
+AUXDIR=$(DEFAULT_OBJ_DIR)\aux_
 !endif
 
 # Note that 32-bit and 64-bit binaries reside in a common directory
