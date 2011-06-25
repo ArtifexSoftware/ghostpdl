@@ -105,6 +105,8 @@ gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
 void gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname);
 void gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir);
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
+int gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs);
+
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
 #endif

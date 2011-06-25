@@ -64,7 +64,7 @@ static stream* gsicc_open_search(const char* pname, int namelen,
                                  const char* dirname, int dir_namelen);
 static int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                                     char *dir_name, char *file_name,
-                                    gsicc_profile_t defaulttype);
+                                    gsicc_profile_types_t defaulttype);
 static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type,
                                         gsicc_manager_t *icc_manager );
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
@@ -132,8 +132,15 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
     if (icc_manager->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
         return;
     }
+    if (icc_manager->namelen > 0) {
+        if (strncmp(pname, icc_manager->profiledir, icc_manager->namelen) == 0) {
+            return;
+        }
+        gs_free_object(mem_gc->non_gc_memory, icc_manager->profiledir,
+                       "gsicc_set_icc_directory");
+    }
     /* User param string.  Must allocate in non-gc memory */
-    result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, namelen,
+    result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, namelen+1,
                                      "gsicc_set_icc_directory");
     if (result != NULL) {
         strcpy(result, pname);
@@ -568,46 +575,46 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
                     srcobj->color_warp_profile = icc_profile;
                     break;
                 case GRAPHIC_CMYK:
-                    srcobj->cmyk_profiles[gsGRAPHICPROFILE] = icc_profile;
+                    srcobj->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsGRAPHICPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_GRAPPRO] = ri;
                     break;
                 case IMAGE_CMYK:
-                    srcobj->cmyk_profiles[gsIMAGEPROFILE] = icc_profile;
+                    srcobj->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsIMAGEPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_IMAGPRO] = ri;
                     break;
                 case TEXT_CMYK:
-                    srcobj->cmyk_profiles[gsTEXTPROFILE] = icc_profile;
+                    srcobj->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsTEXTPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_TEXTPRO] = ri;
                     break;
                 case GRAPHIC_RGB:
-                    srcobj->rgb_profiles[gsGRAPHICPROFILE] = icc_profile;
+                    srcobj->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                      /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsGRAPHICPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_GRAPPRO] = ri;
                    break;
                 case IMAGE_RGB:
-                    srcobj->rgb_profiles[gsIMAGEPROFILE] = icc_profile;
+                    srcobj->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsIMAGEPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_IMAGPRO] = ri;
                     break;
                 case TEXT_RGB:
-                    srcobj->rgb_profiles[gsTEXTPROFILE] = icc_profile;
+                    srcobj->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsTEXTPROFILE] = ri;
+                    srcobj->cmyk_intent[gsSRC_TEXTPRO] = ri;
                     break;
                 case GSICC_NUM_SRCOBJ_KEYS:
                     /* Failed to match the key */
@@ -1028,32 +1035,43 @@ gsicc_init_device_profile_struct(gx_device * dev,
        reset. */
     code = dev_proc(dev, get_profile)(dev,  &profile_struct);
     if (profile_struct != NULL) {
-        if (profile_name == NULL) {
-            return 0;  /* A strange case */
-        }
         /* Get the profile of interest */
         curr_profile = profile_struct->device_profile[profile_type];       
         /* See if we have the same profile in this location */
         if (curr_profile == NULL) {
             /* A new one that we need to set,  get the file and dir names
                set up now */
-            /* The file name cannot be NULL in this case */
             if (profile_name == NULL) {
-                return gs_rethrow(-1, "Trying to set object profile with NULL");
+                switch(dev->color_info.num_components) {
+                    case 1:
+                        profile_name = DEFAULT_GRAY_ICC;
+                        break;
+                    case 3:
+                       profile_name = DEFAULT_RGB_ICC;
+                        break;
+                    case 4:
+                        profile_name = DEFAULT_CMYK_ICC;
+                        break;
+                    default:
+                        profile_name = DEFAULT_CMYK_ICC;
+                        break;
+                }
             }
         } else {
             /* There is something there now.  See if what we have coming in
                is different.  If it is, then we need to free and the create
                the new one else we just return */
-            if (strncmp(curr_profile->name, profile_name, 
-                        strlen(profile_name) != 0 )) {
+            if (profile_name != NULL) {
+                if (strncmp(curr_profile->name, profile_name,
+                            strlen(profile_name) != 0 )) {
                 /* A change in the profile.  rc decrement this one as it will
                    be replaced */
-                rc_decrement(dev->icc_array->device_profile[profile_type],
-                             "gsicc_init_device_profile_struct");
-            } else {
-                /* Nothing to change */
-                return 0;
+                    rc_decrement(dev->icc_array->device_profile[profile_type],
+                                 "gsicc_init_device_profile_struct");
+                } else {
+                    /* Nothing to change */
+                    return 0;
+                }
             }
         }
     } else {
@@ -1074,7 +1092,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
                 profile_name = DEFAULT_GRAY_ICC;
                 break;
             case 3:
-               profile_name = DEFAULT_RGB_ICC;
+                profile_name = DEFAULT_RGB_ICC;
                 break;
             case 4:
                 profile_name = DEFAULT_CMYK_ICC;
@@ -1096,7 +1114,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
     specified or a nondefault profile is specified on the command line */
 static int
 gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *dir_name, 
-                         char *file_name, gsicc_profile_t pro_enum)
+                         char *file_name, gsicc_profile_types_t pro_enum)
 {
     cmm_profile_t *icc_profile;
     stream *str;
@@ -1845,6 +1863,7 @@ gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname)
     if (pgs != NULL && pgs->device != NULL) {
         gsicc_init_device_profile_dir(pgs->device, pname);
     }
+    return 0;
 }
 
 void
@@ -1855,9 +1874,17 @@ gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir)
     gs_memory_t *memory;
     int size = strlen(profile_dir);
 
-    if (profile_dir != NULL && dev->procs.get_profile != NULL) {
-        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
-        if (profile_struct == NULL) return;
+    if (profile_dir != NULL) {
+        fill_dev_proc(dev, get_profile, gx_default_get_profile);
+        code = dev_proc(dev, get_profile)(dev, &profile_struct);
+        if (profile_struct == NULL) {
+            /* Allocate one */
+            dev->icc_array = gsicc_new_device_profile_array(dev->memory);
+            profile_struct = dev->icc_array;
+        }
+        if (profile_struct == NULL) {
+            return;
+        }
         /* Check if they are the same, if so then return */
         if (profile_struct->icc_dir == NULL ||
             strncmp(profile_struct->icc_dir, profile_dir, size) != 0) {
@@ -1875,6 +1902,18 @@ gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir)
         }
     }
 }
+
+int
+gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs)
+{
+    const gs_imager_state *pis = (const gs_imager_state* ) pgs;
+
+    if (pis->icc_manager != NULL &&  pis->icc_manager->profiledir != NULL) {
+        gsicc_init_device_profile_dir(dev, pis->icc_manager->profiledir);
+    }
+    return 0;
+}
+
 
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */

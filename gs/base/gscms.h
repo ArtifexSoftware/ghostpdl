@@ -98,11 +98,17 @@ typedef enum {
 
 /* Enumerate the types of profiles */
 typedef enum {
-    gsGRAPHICPROFILE = 0,
+    gsDEFAULTPROFILE = 0,
+    gsGRAPHICPROFILE,
     gsIMAGEPROFILE,
     gsTEXTPROFILE,
-    gsDEFAULTPROFILE
 } gsicc_profile_types_t;
+
+typedef enum {
+    gsSRC_GRAPPRO = 0,
+    gsSRC_IMAGPRO,
+    gsSRC_TEXTPRO,
+} gsicc_profile_srctypes_t;
 
 /* Source profiles for different objects.  only CMYK and RGB */
 typedef struct cmm_srcobj_profile_s {

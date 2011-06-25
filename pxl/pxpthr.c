@@ -147,6 +147,9 @@ pxPassthrough_init(px_state_t *pxs)
     code = gs_setdevice_no_erase(global_pcs->pgs, gs_currentdevice(pxs->pgs));
     if ( code < 0 )
         return code;
+    code = gsicc_sync_iccdir(gs_currentdevice(pxs->pgs), pxs->pgs);
+    if (code < 0)
+        return code;
     /* Also, check if the device profile was set int the global_pcs pgs.
        If not then initialize. Fix for seg fault with T427.BIN .  
        NEED TO TEST IF THIS IS STILL NEEDED WITH THE CHANGES IN THE

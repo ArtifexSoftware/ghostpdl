@@ -404,6 +404,12 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
         return code;
     old_width = dev->width;
     old_height = dev->height;
+    /* The ICC directory is a unique device parameter that has to be put
+       in sync with the icc managers user parameter.  A slightly messy
+       affair to ensure we have the directory during clist play back.  So
+       force those to be insync now before we start trying to set the
+       profile device parameters.   */
+    code = gsicc_sync_iccdir(dev, igs);
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
     /* The color  model may have been changed */
     /* code2 = gsicc_init_device_profile_struct(dev, NULL, 0);
