@@ -880,7 +880,8 @@ $(GLOBJ)gsdevice.$(OBJ) : $(GLSRC)gsdevice.c $(AK) $(gx_h) $(gserrors_h)\
  $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
  $(gscdefs_h) $(gsfname_h) $(gsstruct_h) $(gspath_h)\
  $(gspaint_h) $(gsmatrix_h) $(gscoord_h) $(gzstate_h)\
- $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gxcspace_h)
+ $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gxiodev_h) $(gxcspace_h)\
+ $(gsicc_manage_h) $(gscms_h)
 	$(GLCC) $(GLO_)gsdevice.$(OBJ) $(C_) $(GLSRC)gsdevice.c
 
 $(GLOBJ)gsdfilt.$(OBJ) : $(GLSRC)gsdfilt.c $(AK) $(gx_h) $(gserrors_h)\

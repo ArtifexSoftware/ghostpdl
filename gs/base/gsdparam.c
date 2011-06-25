@@ -485,7 +485,13 @@ gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,
     int code;
 
     if (icc_pro->size == 0) return;
-    if (dev->procs.get_profile == NULL) return;
+    /* If this has not yet been set, then set it to the default.
+       I don't like doing this here but if we are in here trying to
+       set a profile for our device and if the proc for this has not
+       yet been set, we are going to lose the chance to set the profile.
+       Much like open, this proc should be set early on.  I leave that
+       exercise to the device start-up experts */
+    fill_dev_proc(dev, get_profile, gx_default_get_profile);
     if (icc_pro->size < gp_file_name_sizeof) {
         tempstr = (char *) gs_alloc_bytes(dev->memory, icc_pro->size+1, 
                                           "gx_default_put_icc");
