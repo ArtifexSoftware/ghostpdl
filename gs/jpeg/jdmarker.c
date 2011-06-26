@@ -285,7 +285,7 @@ get_sof (j_decompress_ptr cinfo, boolean is_baseline, boolean is_prog,
     int j;
 
     compptr->component_index = ci;
-    INPUT_BYTE(cinfo, compptr->component_id, return FALSE);
+    INPUT_BYTE(cinfo, component_id, return FALSE);
     for (j = 0; j < ci; j++) {
       /* Check to see whether component id has already been seen
 	 (in violation of the spec, but unfortunately seen in some
@@ -350,9 +350,25 @@ get_sos (j_decompress_ptr cinfo)
   /* Collect the component-spec parameters */
 
   for (i = 0; i < n; i++) {
+    int j;
     INPUT_BYTE(cinfo, cc, return FALSE);
     INPUT_BYTE(cinfo, c, return FALSE);
     
+    /* Detect the case where component id's are not unique, and, if so,
+       create a fake component id using the same logic as in get_sof. */
+    for (j = 0; j < i; j++) {
+      if (cc == cinfo->cur_comp_info[j]->component_id) {
+	int k;
+	int max_id = cinfo->cur_comp_info[0]->component_id;
+	for (k = 1; k < i; k++) {
+	  int k_id = cinfo->cur_comp_info[k]->component_id;
+	  if (k_id > max_id) max_id = k_id;
+	}
+	cc = max_id + 1;
+	break;
+      }
+    }
+
     for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
 	 ci++, compptr++) {
       if (cc == compptr->component_id)
