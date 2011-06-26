@@ -281,8 +281,30 @@ get_sof (j_decompress_ptr cinfo, boolean is_baseline, boolean is_prog,
   
   for (ci = 0, compptr = cinfo->comp_info; ci < cinfo->num_components;
        ci++, compptr++) {
+    int component_id;
+    int j;
+
     compptr->component_index = ci;
     INPUT_BYTE(cinfo, compptr->component_id, return FALSE);
+    for (j = 0; j < ci; j++) {
+      /* Check to see whether component id has already been seen
+	 (in violation of the spec, but unfortunately seen in some
+	 files). If so, create "fake" component id equal to the
+	 max id seen so far + 1. */
+      if (cinfo->comp_info[j].component_id == component_id) {
+	int max_id = cinfo->comp_info[0].component_id;
+	int k;
+	for (k = 1; k < ci; k++) {
+	  int k_id = cinfo->comp_info[k].component_id;
+	  if (k_id > max_id) max_id = k_id;
+	}
+	component_id = max_id + 1;
+	break;
+      }
+    }
+    compptr->component_id = component_id;
+
+
     INPUT_BYTE(cinfo, c, return FALSE);
     compptr->h_samp_factor = (c >> 4) & 15;
     compptr->v_samp_factor = (c     ) & 15;
