@@ -998,29 +998,6 @@ currentdict /pdf_rules_dict undef
   } if
 } bind def
 
-% When used with a PDF image dict, the JPXDecode filter needs to know
-% about any ColorSpace entries, since this overrides whatever is in
-% the image stream itself. We therefore propagate any such key into
-% a filter's DecodeParms.
-/jpxparmfix {	% <streamdict> <readdata?> jpxparmfix <streamdict <readdata?>
-  1 index /Filter .knownget
-    { /JPXDecode eq % we only need to do this for JPXDecode filters
-        % TODO: handle filter arrays
-      {
-        1 index /ColorSpace knownoget {
-          2 index /DecodeParms knownoget {
-            % insert in the existing DecodeParms dict
-            /ColorSpace 3 -1 roll put
-          }{
-            1 dict % need to create a custom DecodeParms dict
-            dup /ColorSpace 4 -1 roll put
-            2 index exch /DecodeParms exch put
-          } ifelse
-        } if
-      } if
-    } if
-} bind def
-
 % Resolve a stream dictionary to a PostScript stream.
 % Streams with no filters require special handling:
 %     - Whether we are going to interpret the stream, or If we are just
@@ -1029,7 +1006,6 @@ currentdict /pdf_rules_dict undef
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
-  jpxparmfix
   1 index /F knownoget {
                 % This stream is stored on an external file.
     (r) file 3 -1 roll
