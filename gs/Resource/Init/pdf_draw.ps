@@ -1316,7 +1316,17 @@ currentdict /jp2_csp_dict .undef
     } ifelse
     4 2 roll put                         % <resdict> obj
   } {
+                                         % <resdict> <key> <value>
     mark 3 1 roll .dicttomark            % <resdict> obj
+    1 index /Filter knownoget {
+      dup type /arraytype eq {
+        length array                     % <resdict> obj [...]
+        dup dup length 1 sub             % <resdict> obj [...] [...] len-1
+        4 -1 roll put                    % <resdict> [... obj]
+      } {
+        pop 
+      } ifelse
+    } if
   } ifelse
   1 index exch
   /DecodeParms exch put                  % <resdict>
