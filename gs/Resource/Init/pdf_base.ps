@@ -217,7 +217,8 @@ pdfdict begin
   }
   aload pop .packtomark cvx             % file [ {cnt <<>> file ... }
   { loop } 0 get 2 packedarray cvx      % file [ { {cnt <<>> file ... } loop }
-  { stopped } 0 get                     % file [ { {cnt <<>> file ... } loop } stopped
+  PDFNOSTOPPED { {exec //false} } { {stopped} } ifelse
+  aload pop                             % file [ { {cnt <<>> file ... } loop } stopped
   /PDFScanRules .getuserparam //null eq {
     //PDFScanRules_null { setuserparams } 0 get % reset PDF scannig mode if it was off
   } if
