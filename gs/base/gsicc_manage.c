@@ -1863,7 +1863,6 @@ gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname)
     if (pgs != NULL && pgs->device != NULL) {
         gsicc_init_device_profile_dir(pgs->device, pname);
     }
-    return 0;
 }
 
 void
