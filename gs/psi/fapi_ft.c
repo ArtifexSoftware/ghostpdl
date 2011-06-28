@@ -440,7 +440,9 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         }
     }
 
-    if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index) {
+    if (ft_error == FT_Err_Too_Many_Hints || ft_error == FT_Err_Invalid_Argument
+        || ft_error == FT_Err_Too_Many_Function_Defs || ft_error == FT_Err_Invalid_Glyph_Index
+        || ft_error == FT_Err_Invalid_Reference) {
         a_fapi_font->char_data = saved_char_data;
         /* We want to prevent hinting, even for a "tricky" font - it shouldn't matter for the notdef */
         fflags = ft_face->face_flags;
