@@ -2150,7 +2150,7 @@ static inline int sign(int a)
 static int
 spot_into_trapezoids(line_list *ll, fixed band_mask)
 {
-    /* For better porformance, choose a specialized algorithm : */
+    /* For better performance, choose a specialized algorithm : */
     const fill_options * const fo = ll->fo;
 
     if (fo->is_spotan)
