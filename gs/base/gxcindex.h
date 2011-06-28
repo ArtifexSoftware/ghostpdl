@@ -133,6 +133,7 @@ typedef gx_color_index_data gx_color_index;
         }
 #define LINE_ACCUM_FLUSH_AND_RESTART(dev, line, bpp, xo, xe, raster, y)\
         { LINE_ACCUM_COPY(dev, line, bpp, xo, xe, raster, y);\
+          sample_store_reset(l_dptr, l_dbit, l_dbyte, line, 0, bpp);\
           l_xprev = xe+1; }
 
 #endif /* gxcindex_INCLUDED */

@@ -169,6 +169,12 @@
 #define sample_store_preload(dbbyte, dptr, dbit, dbpv)\
   dbbyte = ((dbit) ? (byte)(*(dptr) & (0xff00 >> (dbit))) : 0)
 
+/* Reset (do the same as sample_store_declare, without the declare) */
+#define sample_store_reset(dptr, dbit, dbbyte, ptr, bitno, dbpv)\
+  dptr = (ptr);\
+  dbit = (bitno);\
+  sample_store_preload(dbbyte, dptr, dbit, dbpv)
+
 /* Store a value and increment the pointer. */
 #define sample_store_next8_(value, dptr, dbit, dbpv, dbbyte)\
   BEGIN\
