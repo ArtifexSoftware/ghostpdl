@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2009 Artifex Software, Inc.
+#  Copyright (C) 2001-2011 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -26,8 +26,8 @@
 #  export GS_LIB=/insert-path-here/lib
 
 # Location for building shared object
-SOOBJRELDIR=../soobj
-SOBINRELDIR=../sobin
+SODIRPREFIX=so
+SODEBUGDIRPREFIX=sodebug
 
 # ------------------- Ghostscript shared object --------------------------- #
 
@@ -36,7 +36,7 @@ SOBINRELDIR=../sobin
 # simple loader (no support for display device)
 GSSOC_XENAME=$(GS)c$(XE)
 GSSOC_XE=$(BINDIR)/$(GSSOC_XENAME)
-GSSOC=$(BINDIR)/$(SOBINRELDIR)/$(GSSOC_XENAME)
+GSSOC=$(BINDIR)/$(GSSOC_XENAME)
 
 # shared library
 SOPREF=lib
@@ -80,27 +80,33 @@ $(GSSOC_XE): $(GS_SO) $(PSSRC)dxmainc.c
 # compatibility versions.
 
 SODEFS=LDFLAGS='$(LDFLAGS) $(CFLAGS_SO) -dynamiclib'\
- GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
+ GS_XE=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)\
  STDIO_IMPLEMENTATION=c\
- DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
- BINDIR=$(BINDIR)/$(SOBINRELDIR)\
- GLGENDIR=$(GLGENDIR)/$(SOOBJRELDIR)\
- GLOBJDIR=$(GLOBJDIR)/$(SOOBJRELDIR)\
- PSGENDIR=$(PSGENDIR)/$(SOOBJRELDIR)\
- PSOBJDIR=$(PSOBJDIR)/$(SOOBJRELDIR)
+ DISPLAY_DEV=$(DD)display.dev\
+ BUILDDIRPREFIX=$(BUILDDIRPREFIX)
 
+# This is a bit nasty; because of the directory name rewriting that happens
+# on a recursive build, we have to recurse twice before we are sure that
+# all the targets are correct.
 
 # Normal shared object
-so: SODIRS
+so:
+	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+
+so-subtarget:
 	$(MAKE) $(SODEFS) CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
 
 # Debug shared object
-# Note that this is in the same directory as the normal shared
-# object, so you will need to use 'make soclean', 'make sodebug'
-sodebug: SODIRS
+sodebug:
+	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+
+sodebug-subtarget:
 	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
 
-install-so: so
+install-so:
+	$(MAKE) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+
+install-so-subtarget: so-subtarget
 	-mkdir $(prefix)
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
@@ -109,15 +115,18 @@ install-so: so
 	-mkdir $(libdir)
 	$(INSTALL_PROGRAM) $(GSSOC) $(bindir)/$(GSSOC_XENAME)
 	$(INSTALL_PROGRAM) $(GSSOX) $(bindir)/$(GSSOX_XENAME)
-	$(INSTALL_PROGRAM) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME_MAJOR_MINOR)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME_MAJOR_MINOR)
 	$(RM_) $(libdir)/$(GS_SONAME)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME)
 	$(RM_) $(libdir)/$(GS_SONAME_MAJOR)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(libdir)/$(GS_SONAME_MAJOR)
 
-soinstall: install-so install-scripts install-data
+soinstall:
+	$(MAKE) soinstall-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
-GS_FRAMEWORK=$(BINDIR)/$(SOBINRELDIR)/$(FRAMEWORK_NAME)$(FRAMEWORK_EXT)
+soinstall-subtarget: install-so-subtarget install-scripts install-data
+
+GS_FRAMEWORK=$(BINDIR)/$(FRAMEWORK_NAME)$(FRAMEWORK_EXT)
 
 framework: so lib/Info-macos.plist
 	rm -rf $(GS_FRAMEWORK)
@@ -137,7 +146,7 @@ framework: so lib/Info-macos.plist
 	cp psi/iapi.h psi/ierrors.h base/gdevdsp.h $(GS_FRAMEWORK)/Headers/
 	cp lib/Info-macos.plist $(GS_FRAMEWORK)/Resources/
 	cp -r lib $(GS_FRAMEWORK)/Resources/
-	cp $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(GS_FRAMEWORK)/Versions/Current/$(FRAMEWORK_NAME)
+	cp $(BINDIR)/$(GS_SONAME_MAJOR_MINOR) $(GS_FRAMEWORK)/Versions/Current/$(FRAMEWORK_NAME)
 	cp -r man $(GS_FRAMEWORK)/Versions/Current
 	cp -r doc $(GS_FRAMEWORK)/Versions/Current
 
@@ -145,19 +154,13 @@ framework_install : framework
 	rm -rf $(prefix)
 	cp -r $(GS_FRAMEWORK) $(prefix)
 
-# Make the build directories
-SODIRS: STDDIRS
-	@if test ! -d $(BINDIR)/$(SOBINRELDIR); then mkdir $(BINDIR)/$(SOBINRELDIR); fi
-	@if test ! -d $(GLGENDIR)/$(SOOBJRELDIR); then mkdir $(GLGENDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(GLOBJDIR)/$(SOOBJRELDIR); then mkdir $(GLOBJDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(PSGENDIR)/$(SOOBJRELDIR); then mkdir $(PSGENDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(PSOBJDIR)/$(SOOBJRELDIR); then mkdir $(PSOBJDIR)/$(SOOBJRELDIR); fi
+soclean:
+	$(MAKE) soclean-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
-
-soclean: SODIRS
+soclean-subtarget:
 	$(MAKE) $(SODEFS) clean
-	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME)
-	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR)
+	$(RM_) $(BINDIR)/$(GS_SONAME)
+	$(RM_) $(BINDIR)/$(GS_SONAME_MAJOR)
 	$(RM_) $(GSSOC)
 	$(RM_) $(GSSOX)
 

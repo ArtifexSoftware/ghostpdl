@@ -214,11 +214,11 @@ dnl Check for *BSD and apply BSD Make workaround
 dnl - BSD Make treats obj special and cd into it first.
 dnl --------------------------------------------------
 
-OBJDIR_BSDMAKE_WORKAROUND=./obj
+OBJDIR_BSDMAKE_WORKAROUND=obj
 
 case `uname` in
 	*BSD)
-	OBJDIR_BSDMAKEWORKAOROUND="./notobj"
+	OBJDIR_BSDMAKEWORKAOROUND="notobj"
 	;;
 esac
 AC_SUBST(OBJDIR_BSDMAKE_WORKAROUND)
