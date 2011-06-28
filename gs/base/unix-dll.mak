@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2007 Artifex Software, Inc.
+#  Copyright (C) 2001-2011 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -24,8 +24,8 @@
 #  export GS_LIB=/insert-path-here/lib
 
 # Location for building shared object
-SOOBJRELDIR=../soobj
-SOBINRELDIR=../sobin
+SODIRPREFIX=so
+SODEBUGDIRPREFIX=sodebug
 
 # ------------------- Ghostscript shared object --------------------------- #
 
@@ -34,12 +34,12 @@ SOBINRELDIR=../sobin
 # simple loader (no support for display device)
 GSSOC_XENAME=$(GS)c$(XE)
 GSSOC_XE=$(BINDIR)/$(GSSOC_XENAME)
-GSSOC=$(BINDIR)/$(SOBINRELDIR)/$(GSSOC_XENAME)
+GSSOC=$(BINDIR)/$(GSSOC_XENAME)
 
 # loader suporting display device using Gtk+
 GSSOX_XENAME=$(GS)x$(XE)
 GSSOX_XE=$(BINDIR)/$(GSSOX_XENAME)
-GSSOX=$(BINDIR)/$(SOBINRELDIR)/$(GSSOX_XENAME)
+GSSOX=$(BINDIR)/$(GSSOX_XENAME)
 
 # shared library
 GS_SONAME_BASE=lib$(GS)
@@ -94,44 +94,50 @@ $(GSSOX_XE): $(GS_SO) $(PSSRC)$(SOC_LOADER)
 # ------------------------- Recursive make targets ------------------------- #
 
 SODEFS=\
- GS_XE=$(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR)\
+ GS_XE=$(BINDIR)/$(GS_SONAME_MAJOR_MINOR)\
+ DISPLAY_DEV=$(DD)display.dev\
  STDIO_IMPLEMENTATION=c\
- DISPLAY_DEV=$(DD)$(SOOBJRELDIR)/display.dev\
- BINDIR=$(BINDIR)/$(SOBINRELDIR)\
- GLGENDIR=$(GLGENDIR)/$(SOOBJRELDIR)\
- GLOBJDIR=$(GLOBJDIR)/$(SOOBJRELDIR)\
- PSGENDIR=$(PSGENDIR)/$(SOOBJRELDIR)\
- PSOBJDIR=$(PSOBJDIR)/$(SOOBJRELDIR)
+ BUILDDIRPREFIX=$(BUILDDIRPREFIX)
 
+# This is a bit nasty; because of the directory name rewriting that happens
+# on a recursive build, we have to recurse twice before we are sure that
+# all the targets are correct.
 
 # Normal shared object
-so: SODIRS
+so:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) \
-                $(GLOBJDIR)/$(SOOBJRELDIR)/echogs$(XEAUX) $(GLOBJDIR)/$(SOOBJRELDIR)/genarch$(XEAUX)
-	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' \
-                prefix=$(prefix)
-	$(MAKE) $(SODEFS) LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
+	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 # Debug shared object
-# Note that this is in the same directory as the normal shared
-# object, so you will need to use 'make soclean', 'make sodebug'
-sodebug: SODIRS
+sodebug:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) \
-                $(GLOBJDIR)/$(SOOBJRELDIR)/echogs$(XEAUX) $(GLOBJDIR)/$(SOOBJRELDIR)/genarch$(XEAUX)
-	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)' CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' \
-                prefix=$(prefix)
-	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' LDFLAGS='$(LDFLAGS)' CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix) $(GSSOC) $(GSSOX)
+	$(MAKE) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
+so-subtarget:
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 STDDIRS
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)'\
+	 prefix=$(prefix)
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 $(GSSOC_XE) $(GSSOX_XE)
 
-#	$(MAKE) $(SODEFS) GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)' $(GSSOC) $(GSSOX)
+install-so:
+	$(MAKE) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
-install-so: so
+install-sodebug:
+	$(MAKE) install-so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+
+install-so-subtarget: so-subtarget
 	-mkdir -p $(DESTDIR)$(prefix)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
@@ -141,7 +147,7 @@ install-so: so
 	-mkdir -p $(DESTDIR)$(gsincludedir)
 	$(INSTALL_PROGRAM) $(GSSOC) $(DESTDIR)$(bindir)/$(GSSOC_XENAME)
 	$(INSTALL_PROGRAM) $(GSSOX) $(DESTDIR)$(bindir)/$(GSSOX_XENAME)
-	$(INSTALL_PROGRAM) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR_MINOR)
+	$(INSTALL_PROGRAM) $(BINDIR)/$(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR_MINOR)
 	$(RM_) $(DESTDIR)$(libdir)/$(GS_SONAME)
 	ln -s $(GS_SONAME_MAJOR_MINOR) $(DESTDIR)$(libdir)/$(GS_SONAME)
 	$(RM_) $(DESTDIR)$(libdir)/$(GS_SONAME_MAJOR)
@@ -150,23 +156,32 @@ install-so: so
 	$(INSTALL_DATA) $(PSSRC)ierrors.h $(DESTDIR)$(gsincludedir)ierrors.h
 	$(INSTALL_DATA) $(GLSRC)gdevdsp.h $(DESTDIR)$(gsincludedir)gdevdsp.h
 
-soinstall: install-so install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
+soinstall:
+	$(MAKE) soinstall-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
-# Make the build directories
-SODIRS: STDDIRS
-	@if test ! -d $(BINDIR)/$(SOBINRELDIR); then mkdir -p $(BINDIR)/$(SOBINRELDIR); fi
-	@if test ! -d $(GLGENDIR)/$(SOOBJRELDIR); then mkdir -p $(GLGENDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(GLOBJDIR)/$(SOOBJRELDIR); then mkdir -p $(GLOBJDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(PSGENDIR)/$(SOOBJRELDIR); then mkdir -p $(PSGENDIR)/$(SOOBJRELDIR); fi
-	@if test ! -d $(PSOBJDIR)/$(SOOBJRELDIR); then mkdir -p $(PSOBJDIR)/$(SOOBJRELDIR); fi
+sodebuginstall:
+	$(MAKE) soinstall-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
+soinstall-subtarget: install-so install-scripts install-data $(INSTALL_SHARED) $(INSTALL_CONTRIB)
 
-soclean: SODIRS
-	$(MAKE) $(SODEFS) clean
-	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME)
-	$(RM_) $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR)
+# Clean targets
+soclean:
+	$(MAKE) BUILDDIRPREFIX=$(SODIRPREFIX) clean-so-subtarget
+
+clean-so-subtarget:
+	$(MAKE) $(SODEFS) clean-so-subsubtarget
+
+clean-so-subsubtarget: clean
+	$(RM_) $(BINDIR)/$(GS_SONAME)
+	$(RM_) $(BINDIR)/$(GS_SONAME_MAJOR)
 	$(RM_) $(GSSOC)
 	$(RM_) $(GSSOX)
-	@-rmdir $(BINDIR)/$(SOBINRELDIR) $(GLGENDIR)/$(SOOBJRELDIR) $(GLOBJDIR)/$(SOOBJRELDIR) $(PSGENDIR)/$(SOOBJRELDIR) $(PSOBJDIR)/$(SOOBJRELDIR) || true 
+	@-rmdir $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR) || true 
+
+sodebugclean:
+	$(MAKE)  BUILDDIRPREFIX=$(SODEBUGDIRPREFIX) clean-sodebug-subtarget
+
+clean-sodebug-subtarget:
+	$(MAKE) $(SODEFS) clean-so-subsubtarget
 
 # End of unix-dll.mak

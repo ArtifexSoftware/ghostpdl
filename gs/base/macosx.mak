@@ -21,15 +21,16 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-BINDIR=./bin
+BINDIR=./$(BUILDDIRPREFIX)bin
 GLSRCDIR=./base
-GLGENDIR=./obj
-GLOBJDIR=./obj
+GLGENDIR=./$(BUILDDIRPREFIX)obj
+GLOBJDIR=./$(BUILDDIRPREFIX)obj
+AUXDIR=$(GLGENDIR)/aux
 PSSRCDIR=./psi
 PSLIBDIR=./lib
 PSRESDIR=./Resource
-PSGENDIR=./obj
-PSOBJDIR=./obj
+PSGENDIR=./$(BUILDDIRPREFIX)obj
+PSOBJDIR=./$(BUILDDIRPREFIX)obj
 
 # Do not edit the next group of lines.
 
@@ -112,9 +113,9 @@ GS=gs
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
 
-DEBUGRELDIR=../debugobj
-PGRELDIR=../pgobj
-SORELDIR=../soobj
+DEBUGDIRPREFIX=debug
+PGDIRPREFIX=pg
+SODIRPREFIX=so
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.

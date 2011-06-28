@@ -22,16 +22,16 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-BINDIR=./bin
+BINDIR=./$(BUILDDIRPREFIX)bin
 GLSRCDIR=./base
-GLGENDIR=@OBJDIR_BSDMAKE_WORKAROUND@
-GLOBJDIR=@OBJDIR_BSDMAKE_WORKAROUND@
-AUXDIR=./aux
+GLGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+GLOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+AUXDIR=$(GLGENDIR)/aux
 PSSRCDIR=./psi
 PSLIBDIR=./lib
 PSRESDIR=./Resource
-PSGENDIR=@OBJDIR_BSDMAKE_WORKAROUND@
-PSOBJDIR=@OBJDIR_BSDMAKE_WORKAROUND@
+PSGENDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
+PSOBJDIR=./$(BUILDDIRPREFIX)@OBJDIR_BSDMAKE_WORKAROUND@
 CONTRIBDIR=./contrib
 
 # Do not edit the next group of lines.
@@ -154,8 +154,8 @@ GS=@GS@@EXEEXT@
 # Define the directories for debugging and profiling binaries, relative to
 # the standard binaries.
 
-DEBUGRELDIR=../debugobj
-PGRELDIR=../pgobj
+DEBUGDIRPREFIX=debug
+PGDIRPREFIX=pg
 
 # Define whether to compile in the FreeType library, and if so, where
 # the source tree is location. Otherwise, what library name to use

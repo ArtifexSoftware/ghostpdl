@@ -38,8 +38,8 @@ GENOPT=
 GS=gslib
 
 # We don't expect to build debug or profiling configurations....
-DEBUGRELDIR=.
-PGRELDIR=.
+DEBUGDIRPREFIX=
+PGDIRPREFIX=
 
 JSRCDIR=jpeg
 SHARE_JPEG=0
