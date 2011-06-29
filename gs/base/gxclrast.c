@@ -2540,16 +2540,16 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
         code = gs_cspace_build_ICC(&pcs, NULL, mem);
         /* Don't bother getting the ICC stuff from the clist yet */
         picc_profile = gsicc_profile_new(NULL, cdev->memory, NULL, 0);
+        if (picc_profile == NULL)
+            return gs_rethrow(-1, "Failed to find ICC profile during clist read");
         picc_profile->num_comps = icc_information.icc_num_components;
         picc_profile->hashcode = icc_information.icc_hash;
         picc_profile->hash_is_valid = true;
         picc_profile->islab = icc_information.is_lab;
-        if (picc_profile == NULL)
-            return gs_rethrow(-1, "Failed to find ICC profile during clist read");
         /* Store the clist reader address in the profile
            structure so that we can get to the buffer
            data if we really neeed it.  Ideally, we
-           will use a cached link and only acess this once. */
+           will use a cached link and only access this once. */
         picc_profile->dev = (gx_device*) cdev;
         /* Assign it to the colorspace */
         code = gsicc_set_gscs_profile(pcs, picc_profile, mem);
