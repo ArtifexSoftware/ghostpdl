@@ -493,3 +493,7 @@ $(GS_XE):  $(GS_ALL) $(DEVS_ALL) $(LIB_ONLY) $(LIBCTR)
 	$(LINK) $(LCT) @$(GLGENDIR)\gslib32.rsp $(GLOBJ)gslib @$(GLGENDIR)\gslib32.tr @$(LIBCTR)
 	-del $(GLGENDIR)\gslib32.rsp
 	-del $(GLGENDIR)\gslib32.tr
+
+# ----------------- Dummy rule to make directories ------------------------ #
+
+STDDIRS:

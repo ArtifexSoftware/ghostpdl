@@ -152,6 +152,11 @@ sub check_depend
                     # Silently accept the AKs
                     $a = shift @deplist;
                 }
+                elsif ($a eq "STDDIRS") {
+                    # Silently accept the STDDIRSs (should probably insist on
+                    # these!)
+                    $a = shift @deplist;
+                }
                 elsif (defined($a) && ($a lt $b || !defined($b))) {
                     print "$d.\$(OBJ): extra dependency on $a\n";
                     $a = shift @deplist;

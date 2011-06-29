@@ -16,13 +16,13 @@
 
 # Define the rule for building standard configurations.
 STDDIRS:
-	@if test ! -d $(BINDIR); then mkdir $(BINDIR); fi
-	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi
-	@if test ! -d $(GLOBJDIR); then mkdir $(GLOBJDIR); fi
-	@if test ! -d $(AUXDIR); then mkdir $(AUXDIR); fi
-	@if test ! -d $(PSGENDIR); then mkdir $(PSGENDIR); fi
-	@if test ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
-	@if test ! -d $(PSOBJDIR); then mkdir $(PSOBJDIR); fi
+	@if test "$(BINDIR)"   != "" -a ! -d $(BINDIR);        then mkdir $(BINDIR);        fi
+	@if test "$(GLGENDIR)" != "" -a ! -d $(GLGENDIR);      then mkdir $(GLGENDIR);      fi
+	@if test "$(GLOBJDIR)" != "" -a ! -d $(GLOBJDIR);      then mkdir $(GLOBJDIR);      fi
+	@if test "$(AUXDIR)"   != "" -a ! -d $(AUXDIR);        then mkdir $(AUXDIR);        fi
+	@if test "$(PSGENDIR)" != "" -a ! -d $(PSGENDIR);      then mkdir $(PSGENDIR);      fi
+	@if test "$(PSGENDIR)" != "" -a ! -d $(PSGENDIR)/cups; then mkdir $(PSGENDIR)/cups; fi
+	@if test "$(PSOBJDIR)" != "" -a ! -d $(PSOBJDIR);      then mkdir $(PSOBJDIR);      fi
 
 # Define a rule for building profiling configurations.
 PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
@@ -30,7 +30,7 @@ PGDEFS=GENOPT='-DPROFILE' CFLAGS='$(CFLAGS_PROFILE) $(GCFLAGS) $(XCFLAGS)'\
  BUILDDIRPREFIX=$(PGDIRPREFIX)
 
 pg:
-	$(MAKE) $(PGDEFS) std
+	$(MAKE) $(PGDEFS) default
 
 pgclean:
 	$(MAKE) $(PGDEFS) clean
@@ -40,7 +40,7 @@ DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
  BUILDDIRPREFIX=$(DEBUGDIRPREFIX)
 
 debug:
-	$(MAKE) $(DEBUGDEFS) std
+	$(MAKE) $(DEBUGDEFS) default
 
 debugclean:
 	$(MAKE) $(DEBUGDEFS) clean
