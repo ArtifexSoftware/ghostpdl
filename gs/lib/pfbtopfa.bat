@@ -7,7 +7,7 @@ if %2/==/ goto usage
 if not %3/==/ goto usage
 call "%~dp0gssetgs.bat"
 
-%GSC% -P- -dSAFER -q -dNODISPLAY -- pfbtopfa.ps %1 %2
+%GSC% -P- -q -dNODISPLAY -- pfbtopfa.ps %1 %2
 goto end
 
 :usage
