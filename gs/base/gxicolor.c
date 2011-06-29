@@ -776,6 +776,11 @@ flush:
                                  thresh_align, contone_align, 
                                  contone_stride, dev, k, allow_reset);
     }
+    /* Free cm buffer, if it was used */
+    if (psrc_cm_start != NULL) {
+        gs_free_object(penum->pis->memory, (byte *)psrc_cm_start,
+                       "image_render_color_thresh");
+    }
     return code;
 }
 
@@ -976,7 +981,7 @@ inc:	xprev = dda_current(pnext.x);
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
         gs_free_object(pis->memory, (byte *)psrc_cm_start, "image_render_color_icc");
-            }
+    }
     return (code < 0 ? code : 1);
     /* Save position if error, in case we resume. */
 err:

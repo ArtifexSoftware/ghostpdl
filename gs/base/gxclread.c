@@ -424,7 +424,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     clist_icctable_t *icc_table = crdev->icc_table;
     int64_t save_pos;
     int number_entries, size_data;
-    unsigned char *buf;
+    unsigned char *buf, *buf_start;
     clist_icctable_entry_t *curr_entry;
     int k;
 
@@ -437,6 +437,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     /* Allocate the space */
     size_data = number_entries*sizeof(clist_icc_serial_entry_t);
     buf = gs_alloc_bytes(crdev->memory, size_data, "clist_read_icctable");
+    buf_start = buf;
     if (buf == NULL)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     /* Get the data */
@@ -444,8 +445,10 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     icc_table = gs_alloc_struct(crdev->memory,
                 clist_icctable_t,
                 &st_clist_icctable, "clist_read_icctable");
-    if (icc_table == NULL)
+    if (icc_table == NULL) {
+        gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
+    }
     icc_table->head = NULL;
     icc_table->final = NULL;
    /* Allocate and fill each entry */
@@ -455,8 +458,10 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
         curr_entry = gs_alloc_struct(crdev->memory,
                 clist_icctable_entry_t,
                 &st_clist_icctable_entry, "clist_read_icctable");
-        if (curr_entry == NULL)
+        if (curr_entry == NULL) {
+            gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
             return gs_rethrow(-1, "insufficient memory for icc table entry");
+        }
         memcpy(&(curr_entry->serial_data), buf, sizeof(clist_icc_serial_entry_t));
         buf += sizeof(clist_icc_serial_entry_t);
         curr_entry->icc_profile = NULL;
@@ -469,6 +474,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
         }
         curr_entry->next = NULL;
     }
+    gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
     crdev->page_info.io_procs->fseek(cfile, save_pos, SEEK_SET, crdev->page_info.cfname);
     return(0);
 }
