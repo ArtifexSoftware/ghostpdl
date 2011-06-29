@@ -66,9 +66,3 @@ CONFLDTR=-ol
 # Define the compilation rules and flags.
 
 BEGINFILES=
-
-# Define the default build rule, so the object directories get created
-# automatically.
-
-std: STDDIRS default
-	$(NO_OP)

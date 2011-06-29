@@ -30,7 +30,6 @@ $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	-if not exist $(GLGENDIR) mkdir $(GLGENDIR)
 	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	-if not exist $(BINDIR) mkdir $(BINDIR)
-        echo msvctail.mak  auxdir=$(AUXDIR)
 	echo $(GENOPT) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c
