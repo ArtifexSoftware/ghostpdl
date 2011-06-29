@@ -132,7 +132,7 @@ gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
     if (icc_manager->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
         return;
     }
-    if (icc_manager->namelen > 0) {
+    if (icc_manager->profiledir) {
         if (strncmp(pname, icc_manager->profiledir, icc_manager->namelen) == 0) {
             return;
         }
