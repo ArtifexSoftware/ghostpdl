@@ -326,7 +326,7 @@ plan_close(gx_device *pdev)
     eprintf("plan_close\n");
 #endif
 
-    return 0;
+    return gdev_prn_close(pdev);
 }
 
 /* ------ Color mapping routines ------ */
