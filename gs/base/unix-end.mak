@@ -15,7 +15,7 @@
 # This is the next-to-last part of the makefile for these configurations.
 
 # Define the rule for building standard configurations.
-STDDIRS:
+directories:
 	@if test "$(BINDIR)"   != "" -a ! -d $(BINDIR);        then mkdir $(BINDIR);        fi
 	@if test "$(GLGENDIR)" != "" -a ! -d $(GLGENDIR);      then mkdir $(GLGENDIR);      fi
 	@if test "$(GLOBJDIR)" != "" -a ! -d $(GLOBJDIR);      then mkdir $(GLOBJDIR);      fi

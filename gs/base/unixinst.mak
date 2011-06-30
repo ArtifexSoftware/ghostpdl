@@ -24,7 +24,7 @@ install: install-exec install-scripts install-data $(INSTALL_SHARED) $(INSTALL_C
 # We include mkdirs for datadir, gsdir, and gsdatadir in all 3 install
 # rules, just in case bindir or scriptdir is a subdirectory of any of these.
 
-install-exec: STDDIRS $(GS_XE)
+install-exec: $(GS_XE) $(MAKEDIRS)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)
 	-mkdir -p $(DESTDIR)$(gsdatadir)

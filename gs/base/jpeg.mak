@@ -93,35 +93,36 @@ jmorecf__h=$(GLGEN)jmorecf_.h
 jconfig_h=$(GLGEN)jconfig.h
 jmorecfg_h=$(GLGEN)jmorecfg.h
 
-$(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(MAKEFILE)
+$(GLGEN)jconfig_.h : $(GLGEN)jconfig$(SHARE_JPEG).h $(MAKEFILE) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig$(SHARE_JPEG).h $(GLGEN)jconfig_.h
 
-$(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(MAKEFILE)
+$(GLGEN)jconfig0.h : $(ECHOGS_XE) $(GLSRC)gsjconf.h $(stdpre_h) $(MAKEFILE)\
+ $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig0.h -+R $(GLSRC)stdpn.h -+R $(GLSRC)stdpre.h -+R $(GLSRC)gsjconf.h
 	$(RM_) $(GLGEN)jconfig1.h
 
-$(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK)
+$(GLGEN)jconfig1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jconfig1.h -x 23 include -x 203c jconfig.h -x 3e
 	$(RMN_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
-$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h
+$(GLGEN)jconfig.h : $(GLGEN)jconfig0.h $(MAKEDIRS)
 	$(CP_) $(GLGEN)jconfig0.h $(GLGEN)jconfig.h
 
-$(GLGEN)jmorecf_.h : $(GLGEN)jmorecf$(SHARE_JPEG).h $(MAKEFILE)
+$(GLGEN)jmorecf_.h : $(GLGEN)jmorecf$(SHARE_JPEG).h $(MAKEFILE) $(MAKEDIRS)
 	$(CP_) $(GLGEN)jmorecf$(SHARE_JPEG).h $(GLGEN)jmorecf_.h
 
-$(GLGEN)jmorecf0.h : $(GLSRC)gsjmorec.h $(GLGEN)jmcorig.h
+$(GLGEN)jmorecf0.h : $(GLSRC)gsjmorec.h $(GLGEN)jmcorig.h $(MAKEDIRS)
 	$(CP_) $(GLSRC)gsjmorec.h $(GLGEN)jmorecf0.h
 	$(RM_) $(GLGEN)jmorecf1.h
 
-$(GLGEN)jmorecf1.h : $(ECHOGS_XE) $(JPEG_MAK)
+$(GLGEN)jmorecf1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jmorecf1.h -x 23 include -x 203c jmorecfg.h -x 3e
 	$(RMN_) $(GLGEN)jmorecf0.h $(GLGEN)jmorecfg.h
 
-$(GLGEN)jmorecfg.h : $(GLGEN)jmorecf0.h
+$(GLGEN)jmorecfg.h : $(GLGEN)jmorecf0.h $(MAKEDIRS)
 	$(CP_) $(GLGEN)jmorecf0.h $(GLGEN)jmorecfg.h
 
-$(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h
+$(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h $(MAKEDIRS)
 	$(CP_) $(JSRC)jmorecfg.h $(GLGEN)jmcorig.h
 
 # Contrary to what some portability bigots assert as fact, C compilers are
@@ -137,23 +138,23 @@ $(GLGEN)jmcorig.h : $(JSRC)jmorecfg.h
 
 JHCOPY=$(GLGEN)jinclude.h $(GLGEN)jpeglib.h
 
-$(GLGEN)jinclude.h : $(JSRC)jinclude.h
+$(GLGEN)jinclude.h : $(JSRC)jinclude.h $(MAKEDIRS)
 	$(CP_) $(JSRC)jinclude.h $(GLGEN)jinclude.h
 
 # jpeglib_.h doesn't really depend on jconfig.h or jmcorig.h,
 # but we choose to put the dependencies here rather than in the
 # definition of jpeglib__h.
-$(GLGEN)jpeglib_.h : $(GLGEN)jpeglib$(SHARE_JPEG).h $(MAKEFILE)
+$(GLGEN)jpeglib_.h : $(GLGEN)jpeglib$(SHARE_JPEG).h $(MAKEDIRS)
 	$(CP_) $(GLGEN)jpeglib$(SHARE_JPEG).h $(GLGEN)jpeglib_.h
 
-$(GLGEN)jpeglib0.h : $(JSRC)jpeglib.h $(jconfig_h) $(jmorecfg_h)
+$(GLGEN)jpeglib0.h : $(JSRC)jpeglib.h $(jconfig_h) $(jmorecfg_h) $(MAKEDIRS)
 	$(CP_) $(JSRC)jpeglib.h $(GLGEN)jpeglib0.h
 
-$(GLGEN)jpeglib1.h : $(ECHOGS_XE) $(JPEG_MAK)
+$(GLGEN)jpeglib1.h : $(ECHOGS_XE) $(JPEG_MAK) $(MAKEDIRS)
 	$(EXP)$(ECHOGS_XE) -w $(GLGEN)jpeglib1.h -x 23 include -x 203c jpeglib.h -x 3e
 
 # We also need jpeglib.h for #includes in the library itself.
-$(GLGEN)jpeglib.h : $(JSRC)jpeglib.h
+$(GLGEN)jpeglib.h : $(JSRC)jpeglib.h $(MAKEDIRS)
 	$(CP_) $(JSRC)jpeglib.h $(GLGEN)jpeglib.h
 
 # In order to avoid having to keep the dependency lists for the IJG code
@@ -162,7 +163,7 @@ $(GLGEN)jpeglib.h : $(JSRC)jpeglib.h
 # This is too conservative, but only hurts us if we are changing our own
 # j*.h files, which happens only rarely during development.
 
-JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY)
+JDEP=$(AK) $(jconfig_h) $(jmorecfg_h) $(JHCOPY) $(MAKEDIRS)
 
 # Code common to compression and decompression.
 

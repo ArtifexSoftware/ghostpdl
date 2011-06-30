@@ -397,10 +397,10 @@ CONFLDTR=-o
 # automatically.
 
 # I wasn't able to find a "do nothing" command in the DCL manual!
-std: STDDIRS default
+std: directories default
 	WRITE SYS$$OUTPUT "Done."
 
-STDDIRS:
+directories:
 	$$ If F$$Search("$(BIN_DIR)") .EQS. "" Then Create/Directory/Log $(BINDIR)
 	$$ If F$$Search("$(OBJ_DIR)") .EQS. "" Then Create/Directory/Log $(GLOBJDIR)
 
