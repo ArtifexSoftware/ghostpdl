@@ -25,6 +25,7 @@
 #include "gxcolor2.h"
 #include "gxhldevc.h"
 #include "gsstate.h"
+#include "gxstate.h"
 #include "gserrors.h"
 #include "gsptype2.h"
 #include "gsshade.h"
