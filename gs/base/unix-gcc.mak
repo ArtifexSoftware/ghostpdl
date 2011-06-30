@@ -455,6 +455,12 @@ CC_SHARED=$(CC_) $(CFLAGS_SO)
 
 LD_SET_DT_SONAME=-soname=
 
+# MAKEDIRS = the dependency on ALL object files (must be the last one on
+# the line. Requires GNU make to make it an 'order only' dependency
+# MAKEDIRSTOP = the topmost dependency - set this if you can't set MAKEDIRS
+MAKEDIRS=
+MAKEDIRSTOP=directories
+
 # ---------------- End of platform-specific section ---------------- #
 
 include $(GLSRCDIR)/unixhead.mak
