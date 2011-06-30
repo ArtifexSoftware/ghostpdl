@@ -32,27 +32,27 @@ $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync
 	$(ADDMOD) $(GLGEN)unix_ -include $(GLD)smd5
 
-$(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c STDDIRS $(AK)\
- $(pipe__h) $(string__h) $(time__h)\
- $(gx_h) $(gsexit_h) $(gp_h)
+$(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
+ $(pipe__h) $(string__h) $(time__h) $(gx_h) $(gsexit_h) $(gp_h) $(MAKEDIRS)
 	$(GLCC) $(FONTCONFIG_CFLAGS) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
-$(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c STDDIRS $(AK)\
+$(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(pipe__h) $(string__h) $(time__h)\
- $(gx_h) $(gsexit_h) $(gp_h)
+ $(gx_h) $(gsexit_h) $(gp_h) $(MAKEDIRS)
 	$(GLCCAUX) $(FONTCONFIG_CFLAGS) $(AUXO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
-$(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c STDDIRS $(AK)\
- $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(md5_h)
+$(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c $(AK)\
+ $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(md5_h)\
+ $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_unix_cache.$(OBJ) $(C_) $(GLSRC)gp_unix_cache.c
 
 # assume all Unix platforms support unbuffered read
-$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c STDDIRS $(AK)\
-  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
-$(AUX)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c STDDIRS $(AK)\
-  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
+$(AUX)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+  $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
 
 # System V platforms other than SVR4, which lack some system calls,
@@ -61,26 +61,27 @@ sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(
 $(GLGEN)sysv_.dev: $(sysv__) $(GLD)nosync.dev
 	$(SETMOD) $(GLGEN)sysv_ $(sysv__) -include $(GLD)nosync
 
-$(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) STDDIRS $(AK)
+$(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(stdio__h) $(time__h) $(AK)\
+ $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_sysv.$(OBJ) $(C_) $(GLSRC)gp_sysv.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(ECHOGS_XE): $(GLSRC)echogs.c STDDIRS $(AK) $(stdpre_h)
+$(ECHOGS_XE): $(GLSRC)echogs.c $(AK) $(stdpre_h) $(MAKEDIRS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c
 
 # On the RS/6000 (at least), compiling genarch.c with gcc with -O
 # produces a buggy executable.
-$(GENARCH_XE): $(GLSRC)genarch.c STDDIRS $(AK) $(GENARCH_DEPS)
+$(GENARCH_XE): $(GLSRC)genarch.c $(AK) $(GENARCH_DEPS) $(MAKEDIRS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENARCH_XE) $(GLSRC)genarch.c
 
-$(GENCONF_XE): $(GLSRC)genconf.c STDDIRS $(AK) $(GENCONF_DEPS)
+$(GENCONF_XE): $(GLSRC)genconf.c $(AK) $(GENCONF_DEPS) $(MAKEDIRS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENCONF_XE) $(GLSRC)genconf.c
 
-$(GENDEV_XE): $(GLSRC)gendev.c STDDIRS $(AK) $(GENDEV_DEPS)
+$(GENDEV_XE): $(GLSRC)gendev.c $(AK) $(GENDEV_DEPS) $(MAKEDIRS)
 	$(CCAUX) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENDEV_XE) $(GLSRC)gendev.c
 
-$(GENHT_XE): $(GLSRC)genht.c STDDIRS $(AK) $(GENHT_DEPS)
+$(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS) $(MAKEDIRS)
 	$(CCAUX) $(GENHT_CFLAGS) $(O_)$(GENHT_XE) $(GLSRC)genht.c
 
 # To get GS to use the system zlib, you remove/hide the gs/zlib directory
@@ -91,8 +92,7 @@ MKROMFS_OBJS_0=$(MKROMFS_ZLIB_OBJS) $(AUX)gscdefs.$(OBJ) $(AUX)gsmisc.$(OBJ) \
  $(AUX)gp_unix.$(OBJ) $(AUX)gp_unifs.$(OBJ) $(AUX)gp_unifn.$(OBJ) \
  $(AUX)gp_stdia.$(OBJ) $(AUX)gsutil.$(OBJ) $(AUX)memento.$(OBJ)
 
-$(MKROMFS_XE)_0: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_0)\
- STDDIRS
+$(MKROMFS_XE)_0: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_0)
 	$(CCAUX) $(GENOPT) $(CFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE)_0 $(MKROMFS_OBJS_0) -lm $(EXTRALIBS)
 
 # .... and one using the zlib library linked via the command line
@@ -101,11 +101,10 @@ MKROMFS_OBJS_1=$(GLOBJ)gscdefs.$(OBJ) $(GLOBJ)gsmisc.$(OBJ) \
  $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) \
  $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
 
-$(MKROMFS_XE)_1: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_1)\
- STDDIRS
+$(MKROMFS_XE)_1: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_1)
 	$(CCAUX) $(GENOPT) $(CFLAGS) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE)_1 $(MKROMFS_OBJS_1) -lm $(EXTRALIBS)
 
-$(MKROMFS_XE): STDDIRS $(MKROMFS_XE)_$(SHARE_ZLIB)
+$(MKROMFS_XE): $(MKROMFS_XE)_$(SHARE_ZLIB) $(MAKEDIRS)
 	$(CP_) $(MKROMFS_XE)_$(SHARE_ZLIB) $(MKROMFS_XE)
 
 # Query the environment to construct gconfig_.h.

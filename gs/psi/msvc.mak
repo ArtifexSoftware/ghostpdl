@@ -1118,9 +1118,4 @@ ufst-bsc: ufst-lib
 bsc:
 	bscmake /o $(SBRDIR)\ghostscript.bsc /v $(GLOBJDIR)\*.sbr
 
-# ---------------------- Browse information step ---------------------- #
-# Empty rule for making output dirs.
-
-STDDIRS:
-
 # end of makefile
