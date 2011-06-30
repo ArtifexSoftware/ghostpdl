@@ -631,17 +631,41 @@ gs_cachestatus(register const gs_font_dir * pdir, register uint pstat[7])
 /* setcacheparams */
 int
 gs_setcachesize(gs_state * pgs, gs_font_dir * pdir, uint size)
-{   /* This doesn't delete anything from the cache yet. */
-    bool CPSI_mode = gs_currentcpsimode(pgs->memory);
+{
+    int code;
 
-    if (CPSI_mode) {
-        if (size < 100000)             /* for CET 27-07 */
-            size = 100000;
-        else if (size > 100000000)     /* for CET 27-02-01 */
-            size = 100000000;
-    }
+    if (size < 100000)             /* limits derived from CPSI emulation (CET 27-07) */
+        size = 100000;
+    else if (size > 100000000)
+        size = 100000000;
+
     pdir->ccache.bmax = size;
-    return 0;
+
+    /* Changing the cache size precipitates rebuilding the cache data
+       structures.  Start with freeing cached chars and fm pairs. */
+    {
+        gs_font *pfont;
+
+        for (pfont = pdir->scaled_fonts; pfont != 0; pfont = pfont->next) {
+            /* NB see the note in the following procedure, it is not
+               clear we are freeing all the cache data we need to */
+            code = gs_purge_font_from_char_caches_completely(pfont);
+            if (code != 0)
+                gs_rethrow_code(code);
+
+        }
+    }
+
+    /* now free the cache structures and rebuild everything with the
+       new cache size */
+    gs_free_object(pgs->memory->stable_memory, pdir->fmcache.mdata, "gs_setcachesize(mdata)");
+    gs_free_object(pgs->memory->stable_memory, pdir->ccache.table, "gs_setcachesize(table)");
+
+    code = gx_char_cache_alloc(pgs->memory->stable_memory, pgs->memory->stable_memory->non_gc_memory, pdir,
+                               pdir->ccache.bmax, pdir->fmcache.mmax,
+                               pdir->ccache.cmax, pdir->ccache.upper);
+        
+    return code;
 }
 int
 gs_setcachelower(gs_font_dir * pdir, uint size)
