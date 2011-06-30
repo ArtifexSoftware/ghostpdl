@@ -404,6 +404,13 @@ directories:
 	$$ If F$$Search("$(BIN_DIR)") .EQS. "" Then Create/Directory/Log $(BINDIR)
 	$$ If F$$Search("$(OBJ_DIR)") .EQS. "" Then Create/Directory/Log $(GLOBJDIR)
 
+# MAKEDIRS = the dependency on ALL object files (must be the last one on
+# the line. Requires GNU make to make it an 'order only' dependency
+# MAKEDIRSTOP = the topmost dependency - set this if you can't set MAKEDIRS
+
+MAKEDIRS=
+MAKEDIRSTOP=directories
+
 # ------------------- Include the generic makefiles ---------------------- #
 
 #include $(COMMONDIR)/ansidefs.mak

@@ -66,5 +66,3 @@ CONFLDTR=-ol
 # Define the compilation rules and flags.
 
 BEGINFILES=
-
-MAKEDIRS=| directories
