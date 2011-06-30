@@ -754,7 +754,7 @@ plib_close(gx_device *pdev)
     gs_band_donor_fin(pldev->opaque);
     pldev->opaque = NULL;
 
-    return 0;
+    return gdev_prn_close(pdev);
 }
 
 /* ------ Color mapping routines ------ */
