@@ -21,6 +21,7 @@
 #include "gsstruct.h"
 #include "gxalloc.h"
 #include "stream.h"		/* for clearing stream list */
+#include "malloc_.h" /* For MEMENTO */
 
 /*
  * Define whether to try consolidating space before adding a new chunk.
@@ -199,7 +200,11 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
     iimem->non_gc_memory = parent;
     iimem->thread_safe_memory = parent->thread_safe_memory;
     iimem->chunk_size = chunk_size;
+#ifdef MEMENTO
+    iimem->large_size = 1;
+#else
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
+#endif
     iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = chunk_size * 3L;
     iimem->gc_status.max_vm = 0x7fffffff;

@@ -20,6 +20,8 @@
 /* We must include std.h before any file that includes sys/types.h. */
 #include "std.h"
 
+/* This is a good place to #define MEMENTO, if you're using it. */
+
 #include "memento.h"
 
 #ifdef __TURBOC__

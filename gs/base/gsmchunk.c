@@ -20,6 +20,7 @@
 #include "gserrors.h"
 #include "gsmchunk.h"
 #include "gxsync.h"
+#include "malloc_.h" /* For MEMENTO */
 
 /* Raw memory procedures */
 static gs_memory_proc_alloc_bytes(chunk_alloc_bytes_immovable);
@@ -274,8 +275,14 @@ round_up_to_align(uint size)
     return num_node_headers * sizeof(chunk_obj_node_t);
 }
 
+#ifdef MEMENTO
+/* If we're using memento, make ALL objects single objects (i.e. put them all
+ * in their own chunk. */
+#define IS_SINGLE_OBJ_SIZE(chunk_size) (1)
+#else
 #define IS_SINGLE_OBJ_SIZE(chunk_size) \
     (chunk_size > (CHUNK_SIZE>>1))
+#endif
 #define MULTIPLE_OBJ_CHUNK_SIZE \
     (sizeof(chunk_mem_node_t) + round_up_to_align(CHUNK_SIZE))
 
