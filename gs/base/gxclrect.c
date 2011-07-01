@@ -1260,7 +1260,7 @@ clist_strip_copy_rop(gx_device * dev,
         re.pcls->lop_enabled = -1;
         ++cdev->driver_call_nesting;
         {
-            if (scolors != 0) {
+            if (scolors != NULL) {
                 if (scolors[0] == scolors[1])
                     code = clist_fill_rectangle(dev, rx, re.y, rwidth, re.height,
                                                 scolors[1]);
@@ -1268,9 +1268,14 @@ clist_strip_copy_rop(gx_device * dev,
                     code = clist_copy_mono(dev, row, sourcex, sraster, id,
                                            rx, re.y, rwidth, re.height,
                                            scolors[0], scolors[1]);
-            } else
+            } else if (lop & lop_planar) {
+                code = clist_copy_plane(dev, row, sourcex, sraster, id,
+                                        rx, re.y, rwidth, re.height,
+                                        (lop >> lop_planar_shift));
+            } else {
                 code = clist_copy_color(dev, row, sourcex, sraster, id,
                                         rx, re.y, rwidth, re.height);
+            }
         }
         --cdev->driver_call_nesting;
         re.pcls->lop_enabled = 1;
