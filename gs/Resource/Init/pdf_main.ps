@@ -1075,7 +1075,7 @@ currentdict /xref-char-dict undef
 /pdfpagecount		% - pdfpagecount <int>
  { Trailer /Root oget /Pages oget
    dup /Count knownoget {
-     dup 0 le {
+     dup type /integertype eq { dup 0 le } { //true } ifelse {
        pop
        dup /Kids knownoget {
          pop
