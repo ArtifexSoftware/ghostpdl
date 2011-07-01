@@ -16,6 +16,16 @@
 #include "gdevprn.h"
 #include "gdevmpla.h"
 #include "gdevppla.h"
+#include "gxdevsop.h"
+
+static int
+prn_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
+                       void *data, int size)
+{
+    if (dev_spec_op == gxdso_is_native_planar)
+        return 1;
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+}
 
 /* Set the buf_procs in a printer device to planar mode. */
 int
@@ -27,6 +37,8 @@ gdev_prn_set_procs_planar(gx_device *dev)
         gdev_prn_create_buf_planar;
     pdev->printer_procs.buf_procs.size_buf_device =
         gdev_prn_size_buf_planar;
+    if (dev_proc(pdev, dev_spec_op) == gx_default_dev_spec_op)
+        set_dev_proc(pdev, dev_spec_op, prn_planar_dev_spec_op);
     return 0;
 }
 
