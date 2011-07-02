@@ -52,8 +52,7 @@ mem_mono_strip_copy_rop(gx_device * dev, const byte * sdata,
         gx_color_value cv[3];
         cv[0] = cv[1] = cv[2] = 0;
         gdev_mem_mono_set_inverted(mdev,
-                                   (*dev_proc(dev, map_rgb_color))
-                                   (dev, cv) != 0);
+                                   (*dev_proc(dev, encode_color)) (dev, cv) != 0);
     }
     invert = mdev->palette.data[0] != 0;
 
