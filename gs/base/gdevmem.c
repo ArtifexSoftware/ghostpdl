@@ -177,7 +177,7 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 
        cv[0] = cv[1] = cv[2] = 0;
         gdev_mem_mono_set_inverted(dev, (target == 0 ||
-                                   (*dev_proc(dev, map_rgb_color))((gx_device *)dev, cv) != 0));
+                                   (*dev_proc(dev, encode_color))((gx_device *)dev, cv) != 0));
     }
     check_device_separable((gx_device *)dev);
     gx_device_fill_in_procs((gx_device *)dev);
@@ -235,7 +235,7 @@ gs_make_mem_device_with_copydevice(gx_device_memory ** ppdev,
 
        cv[0] = cv[1] = cv[2] = 0;
         gdev_mem_mono_set_inverted(pdev, (target == 0 ||
-                                   (*dev_proc(pdev, map_rgb_color))((gx_device *)pdev, cv) != 0));
+                                   (*dev_proc(pdev, encode_color))((gx_device *)pdev, cv) != 0));
     }
     check_device_separable((gx_device *)pdev);
     gx_device_fill_in_procs((gx_device *)pdev);
