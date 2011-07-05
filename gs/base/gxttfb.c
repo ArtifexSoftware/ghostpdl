@@ -245,7 +245,7 @@ static int DebugPrint(ttfFont *ttf, const char *fmt, ...)
 
     if (gs_debug_c('Y')) {
         va_start(args, fmt);
-        count = vsprintf(buf, fmt, args);
+        count = vsnprintf(buf, sizeof(buf), fmt, args);
         /* NB: moved debug output from stdout to stderr
          */
         errwrite(ttf->DebugMem, buf, count);

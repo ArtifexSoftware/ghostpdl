@@ -43,7 +43,7 @@ rinkj_byte_stream_printf (RinkjByteStream *bs, const char *fmt, ...)
   va_list ap;
 
   va_start (ap, fmt);
-  len = vsprintf (str, fmt, ap);
+  len = vsnprintf (str, sizeof(str), fmt, ap);
   va_end (ap);
   return rinkj_byte_stream_write (bs, str, len);
 }
