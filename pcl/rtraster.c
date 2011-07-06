@@ -928,11 +928,13 @@ process_adaptive_compress(
     byte *              pdata = pseed_row->pdata;
     uint                row_size = pseed_row->size;
     int                 code = 0;
+    int                 cmd = NO_COMPRESS;
+    uint                param = 0;
 
     prast->plane_index = 0;
     while ((insize >= 3) && (code >= 0)) {
-        int     cmd = *pin++;
-        uint    param = *pin++;
+        cmd = *pin++;
+        param = *pin++;
 
         param = (param << 8) + *pin++;
         insize -= 3;
@@ -983,6 +985,13 @@ process_adaptive_compress(
             }
         } else
             break;
+    }
+
+    /* clear the seed rows if Delta Row Compression at end of raster block */
+    if (cmd == DELTA_ROW_COMPRESS)
+    {
+        memset(pdata, 0, row_size);
+        pseed_row->is_blank = true;
     }
 
     return code;
