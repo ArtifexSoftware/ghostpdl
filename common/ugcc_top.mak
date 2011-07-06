@@ -32,8 +32,8 @@ CCLD=$(CC)
 CCAUXLD=$(CCAUX)
 
 CCFLAGS=$(GENOPT) $(CFLAGS) $(XCFLAGS)
-CC_=$(CC) $(CCFLAGS) -c
-CCAUX_=$(CCAUX) $(CFLAGS) -c
+CC_=$(CC) $(CCFLAGS)
+CCAUX_=$(CCAUX) $(CFLAGS)
 
 GLD=$(GLGENDIR)/
 CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
