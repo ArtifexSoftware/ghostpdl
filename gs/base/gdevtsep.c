@@ -408,7 +408,7 @@ static dev_proc_fill_path(sep1_fill_path);
                                    TIFFTAG_COMPRESSION */\
     long MaxStripSize;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
-    equivalent_cmyk_color_params equiv_cmyk_colors
+    equivalent_cmyk_color_params equiv_cmyk_colors\
 
 /*
  * A structure definition for a DeviceN type device
@@ -1574,6 +1574,11 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     /* Set up the separation output files */
     num_comp = number_output_separations( tfdev->color_info.num_components,
                                         num_std_colorants, num_order, num_spot);
+
+    if (!num_order && num_comp < num_std_colorants + num_spot) {
+        dlprintf("Warning: skipping one or more colour separations, see: Devices.htm#TIFF\n");
+    }
+
     for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
         int sep_num = map_comp_to_sep[comp_num];
 

@@ -425,6 +425,12 @@ SeparationOrder parameter, the composite CMYK output contains
 the equivalent CMYK data only for the selected colorants.  
 
 <p>
+NOTE: the composite CMYK output, because it uses the tint transformed
+colour equivalents for any spot colours (see Postscript Language
+Reference "Separation Color Spaces" and "DeviceN Color Spaces"), may
+not produce an accurate preview, if the job uses overprinting.
+
+<p>
 The tiffsep device also prints the names of any spot colors
 detected within a document to stderr.  (stderr is also used for the
 output from the bbox device.)  For each spot color the name of

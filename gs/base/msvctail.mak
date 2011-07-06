@@ -33,33 +33,33 @@ $(GLGENDIR)\ccf32.tr: $(TOP_MAKEFILES)
 	echo $(GENOPT) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ > $(GLGENDIR)\ccf32.tr
 
 $(ECHOGS_XE): $(GLSRC)echogs.c
-	$(CCAUX) $(GLSRC)echogs.c /Fo$(GLOBJ)echogs.obj /Fe$(ECHOGS_XE) $(CCAUX_TAIL)
+	$(CCAUX_) $(GLSRC)echogs.c /Fo$(GLOBJ)echogs.obj /Fe$(ECHOGS_XE) $(CCAUX_TAIL)
 
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
 !ifdef WIN64
 # The genarch.exe that is generated is 64-bit, so the OS must be able to run it
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
-	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(AUXDIR)genarch.obj $(GLSRC)genarch.c
+	$(CCAUX_) @$(GLGENDIR)\ccf32.tr /Fo$(AUXDIR)genarch.obj $(GLSRC)genarch.c
 	$(LINK) $(LCT) $(LINKLIBPATH) $(AUX)genarch.obj /OUT:$(GENARCH_XE)
 !else
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
-	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
+	$(CCAUX_) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
 !endif
 !endif
 
 $(GENCONF_XE): $(GLSRC)genconf.c $(GENCONF_DEPS)
-	$(CCAUX) $(GLSRC)genconf.c /Fo$(AUX)genconf.obj /Fe$(GENCONF_XE) $(CCAUX_TAIL)
+	$(CCAUX_) $(GLSRC)genconf.c /Fo$(AUX)genconf.obj /Fe$(GENCONF_XE) $(CCAUX_TAIL)
 
 $(GENDEV_XE): $(GLSRC)gendev.c $(GENDEV_DEPS)
-	$(CCAUX) $(GLSRC)gendev.c /Fo$(AUX)gendev.obj /Fe$(GENDEV_XE) $(CCAUX_TAIL)
+	$(CCAUX_) $(GLSRC)gendev.c /Fo$(AUX)gendev.obj /Fe$(GENDEV_XE) $(CCAUX_TAIL)
 
 $(GENHT_XE): $(GLSRC)genht.c $(GENHT_DEPS)
-	$(CCAUX) $(GENHT_CFLAGS) $(GLSRC)genht.c /Fo$(AUX)genht.obj /Fe$(GENHT_XE) $(CCAUX_TAIL)
+	$(CCAUX_) $(GENHT_CFLAGS) $(GLSRC)genht.c /Fo$(AUX)genht.obj /Fe$(GENHT_XE) $(CCAUX_TAIL)
 
 MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(winplat_) $(GLOBJ)gpmisc.$(OBJ) $(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
-	$(CCAUX) -I$(GLOBJ) -I$(ZSRCDIR) @$(GLGENDIR)\ccf32.tr $(GLSRC)mkromfs.c /Fo$(AUX)mkromfs.obj /Fe$(MKROMFS_XE) $(MKROMFS_OBJS) $(CCAUX_TAIL) /DEBUG
+	$(CCAUX_) -I$(GLOBJ) -I$(ZSRCDIR) @$(GLGENDIR)\ccf32.tr $(GLSRC)mkromfs.c /Fo$(AUX)mkromfs.obj /Fe$(MKROMFS_XE) $(MKROMFS_OBJS) $(CCAUX_TAIL) /DEBUG
 
 # -------------------------------- Library -------------------------------- #
 
