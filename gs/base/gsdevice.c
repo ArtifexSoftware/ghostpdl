@@ -434,15 +434,24 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
            before we start filling pages, if we can */
         if (dev->procs.get_profile != NULL) {
             code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            if (code < 0) {
+                return(code);
+            }
             if (dev_profile == NULL ||
                 dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
                 /* Go ahead and set the directory in the device params. */
                 gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
                 code = gsicc_init_device_profile_struct(dev, NULL,
                                                         gsDEFAULTPROFILE);
-                /* set the intent too */
+                if (code < 0) {
+                    return(code);
+                }
+               /* set the intent too */
                 code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
                                                        gsDEFAULTPROFILE);
+                if (code < 0) {
+                    return(code);
+                }
             }
         }
     }
@@ -461,15 +470,24 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
             const gs_imager_state *pis = (const gs_imager_state* ) pgs;
             if (dev->procs.get_profile != NULL) {
                 code = dev_proc(dev, get_profile)(dev, &dev_profile);
+                if (code < 0) {
+                    return(code);
+                }
                 if (dev_profile == NULL ||
                     dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
                     /* Go ahead and set the directory in the device params. */
                     gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
                     code = gsicc_init_device_profile_struct(dev, NULL,
                                                             gsDEFAULTPROFILE);
+                    if (code < 0) {
+                        return(code);
+                    }
                     /* set the intent too */
                     code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
                                                            gsDEFAULTPROFILE);
+                    if (code < 0) {
+                        return(code);
+                    }
                 }
             }
         }
