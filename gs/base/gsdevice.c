@@ -421,9 +421,59 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
     int open_code = 0, code;
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(pgs->memory);
 
+    /* If the ICC manager is not yet initialized, set it up now.  But only
+       if we have file io capability now */
+    if (libctx->io_device_table != NULL) {
+        cmm_dev_profile_t *dev_profile;
+        const gs_imager_state *pis = (const gs_imager_state* ) pgs;
+        if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
+            gsicc_set_icc_directory(pis, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
+            gsicc_init_iccmanager(pgs);
+        }
+        /* Also, if the device profile is not yet set then take care of that
+           before we start filling pages, if we can */
+        if (dev->procs.get_profile != NULL) {
+            code = dev_proc(dev, get_profile)(dev, &dev_profile);
+            if (dev_profile == NULL ||
+                dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
+                /* Go ahead and set the directory in the device params. */
+                gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
+                code = gsicc_init_device_profile_struct(dev, NULL,
+                                                        gsDEFAULTPROFILE);
+                /* set the intent too */
+                code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                       gsDEFAULTPROFILE);
+            }
+        }
+    }
+
     /* Initialize the device */
     if (!dev->is_open) {
         gx_device_fill_in_procs(dev);
+
+        /* If we have not yet done so, and if we can, set the device profile
+         * Doing so *before* the device is opened means that a device which
+         * opens other devices can pass a profile on - for example, pswrite
+         * also opens a bbox device
+         */
+        if (libctx->io_device_table != NULL) {
+            cmm_dev_profile_t *dev_profile;
+            const gs_imager_state *pis = (const gs_imager_state* ) pgs;
+            if (dev->procs.get_profile != NULL) {
+                code = dev_proc(dev, get_profile)(dev, &dev_profile);
+                if (dev_profile == NULL ||
+                    dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
+                    /* Go ahead and set the directory in the device params. */
+                    gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
+                    code = gsicc_init_device_profile_struct(dev, NULL,
+                                                            gsDEFAULTPROFILE);
+                    /* set the intent too */
+                    code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                           gsDEFAULTPROFILE);
+                }
+            }
+        }
+
         if (gs_device_is_memory(dev)) {
             /* Set the target to the current device. */
             gx_device *odev = gs_currentdevice_inline(pgs);
@@ -442,31 +492,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
         (code = gs_initclip(pgs)) < 0
         )
         return code;
-    /* If the ICC manager is not yet initialized, set it up now.  But only
-       if we have file io capability now */
-    if (libctx->io_device_table != NULL) {
-        cmm_dev_profile_t *dev_profile;
-        const gs_imager_state *pis = (const gs_imager_state* ) pgs;
-        if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
-            gsicc_set_icc_directory(pis, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
-            gsicc_init_iccmanager(pgs);
-        }
-        /* Also, if the device profile is not yet set then take care of that
-           before we start filling pages */
-        if (dev->procs.get_profile != NULL) {
-            code = dev_proc(dev, get_profile)(dev, &dev_profile);
-            if (dev_profile == NULL ||
-                dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
-                /* Go ahead and set the directory in the device params. */
-                gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
-                code = gsicc_init_device_profile_struct(dev, NULL,
-                                                        gsDEFAULTPROFILE);
-                /* set the intent too */
-                code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                       gsDEFAULTPROFILE);
-            }
-        }
-    }
     /* If we were in a charpath or a setcachedevice, */
     /* we aren't any longer. */
     pgs->in_cachedevice = 0;

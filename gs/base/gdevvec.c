@@ -316,6 +316,10 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
     if (vdev->bbox_device) {
         gx_device_bbox_init(vdev->bbox_device, NULL, vdev->v_memory);
         rc_increment(vdev->bbox_device);
+
+        code = dev_proc(vdev, get_profile)((gx_device *)vdev, &vdev->bbox_device->icc_array);
+        rc_increment(vdev->bbox_device->icc_array);
+
         gx_device_set_resolution((gx_device *) vdev->bbox_device,
                                  vdev->HWResolution[0],
                                  vdev->HWResolution[1]);
@@ -802,9 +806,14 @@ gdev_vector_close_file(gx_device_vector * vdev)
     FILE *f = vdev->file;
     int err;
 
-    gs_free_object(vdev->v_memory, vdev->bbox_device,
+    if (vdev->bbox_device) {
+        rc_decrement(vdev->bbox_device->icc_array, "vector_close(bbox_device->icc_array");
+        vdev->bbox_device->icc_array = NULL;
+        gs_free_object(vdev->v_memory, vdev->bbox_device,
                    "vector_close(bbox_device)");
-    vdev->bbox_device = 0;
+        vdev->bbox_device = 0;
+    }
+
     if (vdev->strm) {
         sclose(vdev->strm);
         gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
