@@ -263,6 +263,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 {
     bool binary = !(open_options & VECTOR_OPEN_FILE_ASCII);
     int code = -1;		/* (only for testing, never returned) */
+    cmm_dev_profile_t *icc_array;
 
     /* Open the file as seekable or sequential, as requested. */
     if (!(open_options & VECTOR_OPEN_FILE_SEQUENTIAL)) {
@@ -277,6 +278,10 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         code = gx_device_open_output_file((gx_device *)vdev, vdev->fname,
                                           binary, false, &vdev->file);
     }
+    if (code > 0) {
+        code = dev_proc(vdev, get_profile)((gx_device *)vdev, &icc_array);
+    }
+
     if (code < 0)
         return code;
     if ((vdev->strmbuf = gs_alloc_bytes(vdev->v_memory, strmbuf_size,
@@ -317,7 +322,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         gx_device_bbox_init(vdev->bbox_device, NULL, vdev->v_memory);
         rc_increment(vdev->bbox_device);
 
-        code = dev_proc(vdev, get_profile)((gx_device *)vdev, &vdev->bbox_device->icc_array);
+        vdev->bbox_device->icc_array = icc_array;
         rc_increment(vdev->bbox_device->icc_array);
 
         gx_device_set_resolution((gx_device *) vdev->bbox_device,
