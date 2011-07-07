@@ -549,6 +549,10 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
     if (bbdev == 0)
         return_error(gs_error_VMerror);
     gx_device_bbox_init(bbdev, dev, mem);
+
+    code = dev_proc(dev, get_profile)(dev, &bbdev->icc_array);
+    rc_increment(bbdev->icc_array);
+
     gx_device_bbox_fwd_open_close(bbdev, false);
     code = dev_proc(bbdev, begin_typed_image)
         ((gx_device *)bbdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
@@ -857,6 +861,9 @@ gx_image3x_end_image(gx_image_enum_common_t * info, bool draw_last)
          0);
     gx_device *pcdev = penum->pcdev;
     int pcode = gx_image_end(penum->pixel.info, draw_last);
+
+    rc_decrement(pcdev->icc_array, "gx_image3x_end_image(pcdev->icc_array)");
+    pcdev->icc_array = NULL;
 
     gs_closedevice(pcdev);
     if (mdev0)

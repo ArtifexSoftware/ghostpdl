@@ -120,6 +120,10 @@ main(int argc, const char *argv[])
         gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
                                   "bbox");
     gx_device_bbox_init(bbdev, dev, mem);
+
+    code = dev_proc(dev, get_profile)(dev, &bbdev->icc_array);
+    rc_increment(bbdev->icc_array);
+
     /* Print out the device name just to test the gsparam.c API. */
     {
         gs_c_param_list list;
