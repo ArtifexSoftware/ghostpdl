@@ -541,16 +541,24 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
      * that can be freed at the end and that simply forwards all calls.
      * The most convenient device for this purpose is the bbox device.
      */
-    gx_device_bbox *bbdev =
-        gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
-                                  "make_mcdex_default");
+    gx_device_bbox *bbdev;
     int code;
+    cmm_dev_profile_t *icc_array;
+
+    code = dev_proc(dev, get_profile)(dev, &icc_array);
+    if (code < 0) {
+        return(code);
+    }
+
+    bbdev = gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
+                                  "make_mcdex_default");
 
     if (bbdev == 0)
         return_error(gs_error_VMerror);
+
     gx_device_bbox_init(bbdev, dev, mem);
 
-    code = dev_proc(dev, get_profile)(dev, &bbdev->icc_array);
+    bbdev->icc_array = icc_array;
     rc_increment(bbdev->icc_array);
 
     gx_device_bbox_fwd_open_close(bbdev, false);
