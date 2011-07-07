@@ -350,8 +350,12 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
         if (code < 0)
             return code;
         code = clist_render_init(cldev);
+        if (code < 0)
+            return code;
          /* Check for and get ICC profile table */
         code = clist_read_icctable(crdev);
+        if (code < 0)
+            return code;
         /* Allocate the icc cache for the clist reader */
         /* Since we may be rendering in multiple threads, make sure the memory */
         /* is thread safe by using a known thread_safe memory allocator */
