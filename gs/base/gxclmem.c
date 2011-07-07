@@ -803,19 +803,18 @@ memfile_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
     while (count) {
         uint move_count = f->pdata_end - f->pdata;
 
-        if (move_count == 0) {
+        if (move_count > count)
+            move_count = count;
+        memmove(f->pdata, str, move_count);
+        f->pdata += move_count;
+        str += move_count;
+        count -= move_count;
+        if (f->pdata == f->pdata_end) {
             if ((ecode = memfile_next_blk(f)) != 0) {
                 f->error_code = ecode;
                 if (ecode < 0)
                     return 0;
             }
-        } else {
-            if (move_count > count)
-                move_count = count;
-            memmove(f->pdata, str, move_count);
-            f->pdata += move_count;
-            str += move_count;
-            count -= move_count;
         }
     }
     f->log_curr_pos += len;
