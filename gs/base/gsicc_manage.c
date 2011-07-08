@@ -71,7 +71,7 @@ static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
                                       int64_t icc_hashcode, int *size);
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
                           gs_memory_t *memory);
-static cmm_srcobj_profile_t* gsicc_new_srcobj_profile(gs_memory_t *memory);
+static cmm_srcgtag_profile_t* gsicc_new_srcgtag_profile(gs_memory_t *memory);
 
 /* profile data structure */
 /* profile_handle should NOT be garbage collected since it is allocated by the external CMS */
@@ -475,9 +475,9 @@ gsicc_get_default_type(cmm_profile_t *profile_data)
     }
 }
 
-/* This inititializes the srcobj structure in the ICC manager */
+/* This inititializes the srcgtag structure in the ICC manager */
 int
-gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
+gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                         int namelen)
 {
     gs_memory_t *mem;
@@ -489,16 +489,16 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
     char str_format_key[6], str_format_file[6];
     int count;
     int k;
-    static const char *const srcobj_keys[] = {GSICC_SRCOBJ_KEYS};
+    static const char *const srcgtag_keys[] = {GSICC_SRCGTAG_KEYS};
     cmm_profile_t *icc_profile;
     int ri;
-    cmm_srcobj_profile_t *srcobj;
+    cmm_srcgtag_profile_t *srcgtag;
     bool start = true;
 
     /* If we don't have an icc manager or if this thing is already set
        then ignore the call.  For now, I am going going to allow it to
        be set one time. */
-    if (icc_manager == NULL || icc_manager->srcobj_profile != NULL) {
+    if (icc_manager == NULL || icc_manager->srcgtag_profile != NULL) {
         return 0;
     } else {
         mem = icc_manager->memory;
@@ -510,12 +510,13 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
         code = sfseek(str,0,SEEK_END);
         info_size = sftell(str);
         code = srewind(str);
-        if (info_size > (GSICC_NUM_SRCOBJ_KEYS + 1) * FILENAME_MAX) {
+        if (info_size > (GSICC_NUM_SRCGTAG_KEYS + 1) * FILENAME_MAX) {
             return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
         }
         /* Allocate the buffer, stuff with the data */
-        buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1, "gsicc_set_srcobj_struct");
+        buffer_ptr = (char*) gs_alloc_bytes(mem, info_size+1, 
+                                            "gsicc_set_srcgtag_struct");
         if (buffer_ptr == NULL) {
             return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
@@ -524,15 +525,15 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
         code = sfclose(str);
         buffer_ptr[info_size] = 0;
         if (num_bytes != info_size) {
-            gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
+            gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
             return gs_rethrow1(-1, "setting of %s src obj color info failed",
                                pname);
         }
         /* Create the structure in which we will store this data */
-        srcobj = gsicc_new_srcobj_profile(mem);
+        srcgtag = gsicc_new_srcgtag_profile(mem);
         /* Now parse through the data opening the profiles that are needed */
         /* First create the format that we should read for the key */
-        sprintf(str_format_key, "%%%ds", GSICC_SRC_OBJ_MAX_KEY);
+        sprintf(str_format_key, "%%%ds", GSICC_SRCGTAG_MAX_KEY);
         sprintf(str_format_file, "%%%ds", FILENAME_MAX);
         curr_ptr = buffer_ptr;
 
@@ -545,8 +546,8 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
             }
             if (curr_ptr == NULL) break;
             /* Now go ahead and see if we have a match */
-            for (k = 0; k < GSICC_NUM_SRCOBJ_KEYS; k++) {
-                if (strncmp(curr_ptr, srcobj_keys[k], strlen(srcobj_keys[k])) == 0 ) {
+            for (k = 0; k < GSICC_NUM_SRCGTAG_KEYS; k++) {
+                if (strncmp(curr_ptr, srcgtag_keys[k], strlen(srcgtag_keys[k])) == 0 ) {
                     /* Try to open the file and set the profile */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     str = gsicc_open_search(curr_ptr, strlen(curr_ptr), mem,
@@ -560,84 +561,84 @@ gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
                         break;
                     } else {
                         /* Failed to open profile file. End this now. */
-                        gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
-                        rc_decrement(srcobj, "gsicc_set_srcobj_struct");
+                        gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+                        rc_decrement(srcgtag, "gsicc_set_srcgtag_struct");
                         return gs_rethrow1(-1,
                                 "setting of %s src obj color info failed", pname);
                     }
                 }
             }
-            /* Get the intent now and set the profile. If GSICC_SRCOBJ_KEYS
+            /* Get the intent now and set the profile. If GSICC_SRCGTAG_KEYS
                order changes this switch needs to change also */
             switch (k) {
                 case COLOR_TUNE:
                     /* Color tune profile. No intent */
-                    srcobj->color_warp_profile = icc_profile;
+                    srcgtag->color_warp_profile = icc_profile;
                     break;
                 case GRAPHIC_CMYK:
-                    srcobj->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
+                    srcgtag->cmyk_profiles[gsSRC_GRAPPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_GRAPPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_GRAPPRO] = ri;
                     break;
                 case IMAGE_CMYK:
-                    srcobj->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
+                    srcgtag->cmyk_profiles[gsSRC_IMAGPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_IMAGPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_IMAGPRO] = ri;
                     break;
                 case TEXT_CMYK:
-                    srcobj->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
+                    srcgtag->cmyk_profiles[gsSRC_TEXTPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_TEXTPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_TEXTPRO] = ri;
                     break;
                 case GRAPHIC_RGB:
-                    srcobj->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
+                    srcgtag->rgb_profiles[gsSRC_GRAPPRO] = icc_profile;
                      /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_GRAPPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_GRAPPRO] = ri;
                    break;
                 case IMAGE_RGB:
-                    srcobj->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
+                    srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_IMAGPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_IMAGPRO] = ri;
                     break;
                 case TEXT_RGB:
-                    srcobj->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
+                    srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcobj->cmyk_intent[gsSRC_TEXTPRO] = ri;
+                    srcgtag->cmyk_intent[gsSRC_TEXTPRO] = ri;
                     break;
-                case GSICC_NUM_SRCOBJ_KEYS:
+                case GSICC_NUM_SRCGTAG_KEYS:
                     /* Failed to match the key */
-                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
-                    rc_decrement(srcobj, "gsicc_set_srcobj_struct");
+                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+                    rc_decrement(srcgtag, "gsicc_set_srcgtag_struct");
                     return gs_rethrow1(-1, "failed to find key in %s", pname);
                     break;
                 default:
                     /* Some issue */
-                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
-                    rc_decrement(srcobj, "gsicc_set_srcobj_struct");
-                    return gs_rethrow1(-1, "Error in srcobj data %s", pname);
+                    gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+                    rc_decrement(srcgtag, "gsicc_set_srcgtag_struct");
+                    return gs_rethrow1(-1, "Error in srcgtag data %s", pname);
                     break;
             }
         }
     } else {
         return gs_rethrow1(-1, "setting of %s src obj color info failed", pname);
     }
-    gs_free_object(mem, buffer_ptr, "gsicc_set_srcobj_struct");
-    srcobj->name_length = strlen(pname);
-    srcobj->name = (char*) gs_alloc_bytes(mem, srcobj->name_length,
-                                  "gsicc_set_srcobj_struct");
-    strncpy(srcobj->name, pname, srcobj->name_length);
+    gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+    srcgtag->name_length = strlen(pname);
+    srcgtag->name = (char*) gs_alloc_bytes(mem, srcgtag->name_length,
+                                  "gsicc_set_srcgtag_struct");
+    strncpy(srcgtag->name, pname, srcgtag->name_length);
     return 0;
 }
 
@@ -905,43 +906,43 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
 
 /* Free source object icc array structure.  */
 static void
-rc_free_srcobj_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+rc_free_srcgtag_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
-    cmm_srcobj_profile_t *srcobj_profile = (cmm_srcobj_profile_t *)ptr_in;
+    cmm_srcgtag_profile_t *srcgtag_profile = (cmm_srcgtag_profile_t *)ptr_in;
     int k;
-    gs_memory_t *mem_nongc =  srcobj_profile->memory;
+    gs_memory_t *mem_nongc =  srcgtag_profile->memory;
 
-    if (srcobj_profile->rc.ref_count <= 1 ) {
+    if (srcgtag_profile->rc.ref_count <= 1 ) {
         /* Decrement any profiles. */
         for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
-            if (srcobj_profile->rgb_profiles[k] != NULL) {
-                rc_decrement(srcobj_profile->rgb_profiles[k],
-                             "rc_free_srcobj_profile");
+            if (srcgtag_profile->rgb_profiles[k] != NULL) {
+                rc_decrement(srcgtag_profile->rgb_profiles[k],
+                             "rc_free_srcgtag_profile");
             }
-            if (srcobj_profile->cmyk_profiles[k] != NULL) {
-                rc_decrement(srcobj_profile->cmyk_profiles[k],
-                             "rc_free_srcobj_profile");
+            if (srcgtag_profile->cmyk_profiles[k] != NULL) {
+                rc_decrement(srcgtag_profile->cmyk_profiles[k],
+                             "rc_free_srcgtag_profile");
             }
-            if (srcobj_profile->color_warp_profile != NULL) {
-                rc_decrement(srcobj_profile->color_warp_profile,
-                             "rc_free_srcobj_profile");
+            if (srcgtag_profile->color_warp_profile != NULL) {
+                rc_decrement(srcgtag_profile->color_warp_profile,
+                             "rc_free_srcgtag_profile");
             }
         }
-        gs_free_object(mem_nongc, srcobj_profile->name, "rc_free_srcobj_profile");
-        gs_free_object(mem_nongc, srcobj_profile, "rc_free_srcobj_profile");
+        gs_free_object(mem_nongc, srcgtag_profile->name, "rc_free_srcgtag_profile");
+        gs_free_object(mem_nongc, srcgtag_profile, "rc_free_srcgtag_profile");
     }
 }
 
 /* Allocate source object icc structure. */
-static cmm_srcobj_profile_t*
-gsicc_new_srcobj_profile(gs_memory_t *memory)
+static cmm_srcgtag_profile_t*
+gsicc_new_srcgtag_profile(gs_memory_t *memory)
 {
-    cmm_srcobj_profile_t *result;
+    cmm_srcgtag_profile_t *result;
     int k;
 
-    result = (cmm_srcobj_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
-                                            sizeof(cmm_srcobj_profile_t),
-                                            "gsicc_new_srcobj_profile");
+    result = (cmm_srcgtag_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
+                                            sizeof(cmm_srcgtag_profile_t),
+                                            "gsicc_new_srcgtag_profile");
     result->memory = memory->non_gc_memory;
 
     for (k = 0; k < NUM_SOURCE_PROFILES; k++) {
@@ -953,7 +954,7 @@ gsicc_new_srcobj_profile(gs_memory_t *memory)
     }
     result->name = NULL;
     result->name_length = 0;
-    rc_init_free(result, memory->non_gc_memory, 1, rc_free_srcobj_profile);
+    rc_init_free(result, memory->non_gc_memory, 1, rc_free_srcgtag_profile);
     return(result);
 }
 
@@ -1359,7 +1360,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->smask_profiles = NULL;
    result->memory = memory->stable_memory;
    result->profiledir = NULL;
-   result->srcobj_profile = NULL;
+   result->srcgtag_profile = NULL;
    result->override_internal = false;
    result->namelen = 0;
    return(result);
@@ -1381,7 +1382,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    rc_decrement(icc_manager->output_link, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->proof_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
-   rc_decrement(icc_manager->srcobj_profile, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->srcgtag_profile, "rc_gsicc_manager_free");
 
    /* Loop through the DeviceN profiles */
    if ( icc_manager->device_n != NULL) {
