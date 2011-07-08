@@ -770,9 +770,19 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             if (pcs->type->index != gs_color_space_index_Indexed) {
                 /* An issue here is that we may not be "device color" due to
                    how the data is encoded.  Need to check for that case here */
-                if ((penum->device_color ||
-                     gs_color_space_is_CIE(pcs) ||
-                     islab) && (penum->icc_setup.need_decode == 0)) {
+                /* Decide here if we need to decode or not. Essentially, as
+                 * far as I can gather, we use the top case if we DON'T need
+                 * to decode. This is fairly obviously conditional on
+                 * need_decode being set to 0. The major exception to this is
+                 * that if the colorspace is CIE, we interpolate, THEN decode,
+                 * so the decode is done later in the pipeline, so we needn't
+                 * decode here (see Bugs 692225 and 692331). */
+                /* It is possible that islab should be moved out of conjuction
+                 * with need_decode below, but in the absence of a test file,
+                 * I'm leaving it where it is. */
+                if (((penum->device_color || islab) &&
+                     (penum->icc_setup.need_decode == 0)) ||
+                     gs_color_space_is_CIE(pcs)) {
                     /* 8-bit color values, possibly device  indep. or device
                        depend., not indexed. Decode range was [0 1] */
                     if (penum->matrix.xx >= 0) {
