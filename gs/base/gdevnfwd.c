@@ -933,7 +933,7 @@ gx_forward_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t graphics
     if (tdev != 0)
         dev_proc(tdev, set_graphics_type_tag)(tdev, graphics_type_tag);
     /* Keep copy in this device current, and preserve GS_DEVICE_ENCODES_TAGS */
-    dev->graphics_type_tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
+    dev->graphics_type_tag = (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) | graphics_type_tag;
 }
 
 /* ---------------- The null device(s) ---------------- */
