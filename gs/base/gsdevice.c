@@ -615,18 +615,13 @@ gs_nulldevice(gs_state * pgs)
          * Internal devices have a reference count of 0, not 1,
          * aside from references from graphics states.
          */
-        /* There is some strange use of the null device in the code.  I need
-           to sort out how the icc profile is best handled with this device.
-           It seems to inherit properties from the current device if there
-           is one */
         rc_init(ndev, pgs->memory, 0);
-        if (pgs->device != NULL) {
-            code = dev_proc(pgs->device, get_profile)(pgs->device, 
-                                                      &(ndev->icc_array));        
-            rc_increment(ndev->icc_array);
+        if (pgs->memory->gs_lib_ctx->io_device_table != NULL) {
+            /* Set the default profile(s) from this device's color_info defaults */
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
-        } 
-
+            if ((code = gsicc_init_device_profile_struct(ndev, NULL, gsPERCEPTUAL)) < 0)
+                return code;
+        }
         return gs_setdevice_no_erase(pgs, ndev);
     }
     return 0;
