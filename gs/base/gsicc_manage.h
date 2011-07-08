@@ -39,7 +39,7 @@
 #define GSICC_NUMBER_STANDARD_PROFILES 2
 #define GSICC_STANDARD_INTENT_KEYS\
   "per", "col" , "sat", "abs"
-/* This enumeration has to be in sync with GSICC_SRCOBJ_KEYS */
+/* This enumeration has to be in sync with GSICC_SRCGTAG_KEYS */
 typedef enum {
     COLOR_TUNE,  
     GRAPHIC_CMYK,
@@ -48,13 +48,13 @@ typedef enum {
     GRAPHIC_RGB,
     IMAGE_RGB,
     TEXT_RGB
-} gsicc_srcobjkey_t;
+} gsicc_srcgtagkey_t;
 
-#define GSICC_SRCOBJ_KEYS\
+#define GSICC_SRCGTAG_KEYS\
   "ColorTune", "Graphic_CMYK", "Image_CMYK", "Text_CMYK",\
   "Graphic_RGB", "Image_RGB", "Text_RGB"
-#define GSICC_NUM_SRCOBJ_KEYS 7
-#define GSICC_SRC_OBJ_MAX_KEY 12
+#define GSICC_NUM_SRCGTAG_KEYS 7
+#define GSICC_SRCGTAG_MAX_KEY 12
 
 #include "gsicc_cms.h"
 
@@ -76,7 +76,7 @@ int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
 cmm_dev_profile_name_array_t* gsicc_new_dev_icc_names(gs_memory_t *memory);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
                       int namelen, gsicc_profile_t defaulttype);
-int gsicc_set_srcobj_struct(gsicc_manager_t *icc_manager, const char* pname,
+int gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                             int namelen);
 cmm_profile_t* gsicc_get_profile_handle_file(const char* pname, int namelen,
                                              gs_memory_t *mem);
