@@ -1061,29 +1061,29 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     while (psrc < bufend) {
         dda_next(pnext.x);
         dda_next(pnext.y);
-            if (posture != image_skewed && !memcmp(psrc, run.v, spp)) {
-                psrc += spp;
-                goto inc;
-            }
-            memcpy(next.v, psrc, spp);
+        if (posture != image_skewed && !memcmp(psrc, run.v, spp)) {
             psrc += spp;
-        /* Check for transparent color. */
-            if ((next.all[0] & mask) == test &&
+            goto inc;
+        }
+        memcpy(next.v, psrc, spp);
+        psrc += spp;
+    /* Check for transparent color. */
+        if ((next.all[0] & mask) == test &&
             (penum->mask_color.exact ||
-            mask_color_matches(next.v, penum, spp))) {
-                color_set_null(pdevc_next);
-                goto mapped;
-            }
-            for (i = 0; i < spp; ++i)
-                decode_sample(next.v[i], cc, i);
+             mask_color_matches(next.v, penum, spp))) {
+            color_set_null(pdevc_next);
+            goto mapped;
+        }
+        for (i = 0; i < spp; ++i)
+            decode_sample(next.v[i], cc, i);
 #ifdef DEBUG
-            if (gs_debug_c('B')) {
-                dprintf2("[B]cc[0..%d]=%g", spp - 1,
-                         cc.paint.values[0]);
-                for (i = 1; i < spp; ++i)
-                    dprintf1(",%g", cc.paint.values[i]);
-                dputs("\n");
-            }
+        if (gs_debug_c('B')) {
+            dprintf2("[B]cc[0..%d]=%g", spp - 1,
+                     cc.paint.values[0]);
+            for (i = 1; i < spp; ++i)
+                dprintf1(",%g", cc.paint.values[i]);
+            dputs("\n");
+        }
 #endif
         mcode = remap_color(&cc, pcs, pdevc_next, pis, dev,
                            gs_color_select_source);
@@ -1106,7 +1106,7 @@ mapped:	if (mcode < 0)
                   (ulong)pdevc_next->colors.binary.color[1],
                   (ulong) pdevc_next->type);
         /* NB: printf above fails to account for sizeof gx_color_index 4 or 8 bytes */
-        if (posture != image_skewed && next.all[0] == run.all[0])
+        if (posture != image_skewed && dev_color_eq(*pdevc, *pdevc_next))
             goto set;
 fill:	/* Fill the region between */
         /* xrun/irun and xprev */
@@ -1140,7 +1140,7 @@ fill:	/* Fill the region between */
                     code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
                                                         pdevc, dev, lop);
             }
-            break;
+            break; 
         default:
             {		/* Parallelogram */
                 code = (*dev_proc(dev, fill_parallelogram))
