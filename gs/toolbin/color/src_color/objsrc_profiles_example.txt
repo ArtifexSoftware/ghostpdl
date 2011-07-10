@@ -1,7 +1,6 @@
-Graphic_CMYK	srsc_graphic_cmyk.icc	0
-Image_CMYK	src_image_cmyk.icc	0
-Text_CMYK	src_text_cmyk.icc	0
-Graphic_RGB	srsc_graphic_rgb.icc	0
-Image_RGB	src_image_rgb.icc	0
-Text_RGB	src_text_rgb.icc	0
-ColorTune	lab2lab.icc
+Graphic_CMYK	cmyk_src_cyan.icc	0
+Image_CMYK	cmyk_src_magenta.icc	0
+Text_CMYK	cmyk_src_yellow.icc	0
+Graphic_RGB	rgb_source_red.icc	0
+Image_RGB	rgb_source_green.icc	0
+Text_RGB	rgb_source_blue.icc	0
