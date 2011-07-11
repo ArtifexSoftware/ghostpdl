@@ -403,7 +403,6 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     png_info *info_ptr =
     png_create_info_struct(png_ptr);
-    int height;
     int depth = pdev->color_info.depth;
     int y;
     int code;			/* return code */
@@ -414,6 +413,21 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     bool errdiff = 0;
     int factor = pdev->downscale_factor;
     int mfs = pdev->min_feature_size;
+
+    bool invert = false, endian_swap = false, bg_needed = false;
+    png_byte bit_depth = 0;
+    png_byte color_type = 0;
+    png_uint_32 x_pixels_per_unit;
+    png_uint_32 y_pixels_per_unit;
+    png_byte phys_unit_type;
+    png_color_16 background;
+    png_uint_32 width, height;
+#if PNG_LIBPNG_VER_MINOR >= 5
+    png_color palette[256];
+#endif
+    png_color *palettep;
+    png_uint_16 num_palette;
+    png_uint_32 valid = 0;
 
     /* Sanity check params */
     if (factor < 1)
@@ -434,7 +448,12 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
         goto done;
     }
     /* set error handling */
-    if (setjmp(png_ptr->jmpbuf)) {
+#if PNG_LIBPNG_VER_MINOR >= 5
+    code = setjmp(png_jmpbuf(png_ptr));
+#else
+    code = setjmp(png_ptr->jmpbuf);
+#endif
+    if (code) {
         /* If we get here, we had a problem reading the file */
         code = gs_note_error(gs_error_VMerror);
         goto done;
@@ -445,84 +464,95 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
 
     /* set the file information here */
     /* resolution is in pixels per meter vs. dpi */
-    info_ptr->x_pixels_per_unit =
+    x_pixels_per_unit =
         (png_uint_32) (pdev->HWResolution[0] * (100.0 / 2.54) / factor + 0.5);
-    info_ptr->y_pixels_per_unit =
+    y_pixels_per_unit =
         (png_uint_32) (pdev->HWResolution[1] * (100.0 / 2.54) / factor + 0.5);
-    info_ptr->phys_unit_type = PNG_RESOLUTION_METER;
-    info_ptr->valid |= PNG_INFO_pHYs;
+
+    phys_unit_type = PNG_RESOLUTION_METER;
+    valid |= PNG_INFO_pHYs;
+
     switch (depth) {
         case 32:
-            info_ptr->bit_depth = 8;
-            info_ptr->color_type = PNG_COLOR_TYPE_RGB_ALPHA;
-            png_set_invert_alpha(png_ptr);
+            bit_depth = 8;
+            color_type = PNG_COLOR_TYPE_RGB_ALPHA;
+            invert = true;
+
             {   gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
-                png_color_16 background;
                 background.index = 0;
                 background.red =   (ppdev->background >> 16) & 0xff;
                 background.green = (ppdev->background >> 8)  & 0xff;
                 background.blue =  (ppdev->background)       & 0xff;
                 background.gray = 0;
-                png_set_bKGD(png_ptr, info_ptr, &background);
+                bg_needed = true;
             }
             break;
         case 48:
-            info_ptr->bit_depth = 16;
-            info_ptr->color_type = PNG_COLOR_TYPE_RGB;
+            bit_depth = 16;
+            color_type = PNG_COLOR_TYPE_RGB;
 #if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
-            png_set_swap(png_ptr);
+            endian_swap = true;
 #endif
             break;
         case 24:
-            info_ptr->bit_depth = 8;
-            info_ptr->color_type = PNG_COLOR_TYPE_RGB;
+            bit_depth = 8;
+            color_type = PNG_COLOR_TYPE_RGB;
             errdiff = 1;
             break;
         case 8:
-            info_ptr->bit_depth = 8;
+            bit_depth = 8;
             if (gx_device_has_color(pdev)) {
-                info_ptr->color_type = PNG_COLOR_TYPE_PALETTE;
+                color_type = PNG_COLOR_TYPE_PALETTE;
                 errdiff = 0;
             } else {
-                info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
+                color_type = PNG_COLOR_TYPE_GRAY;
                 errdiff = 1;
             }
             break;
         case 4:
-            info_ptr->bit_depth = 4;
-            info_ptr->color_type = PNG_COLOR_TYPE_PALETTE;
+            bit_depth = 4;
+            color_type = PNG_COLOR_TYPE_PALETTE;
             break;
         case 1:
-            info_ptr->bit_depth = 1;
-            info_ptr->color_type = PNG_COLOR_TYPE_GRAY;
+            bit_depth = 1;
+            color_type = PNG_COLOR_TYPE_GRAY;
             /* invert monocrome pixels */
-            if (!monod)
-                png_set_invert_mono(png_ptr);
+            if (!monod) {
+                invert = true;
+            }
             break;
     }
 
     /* set the palette if there is one */
-    if (info_ptr->color_type == PNG_COLOR_TYPE_PALETTE) {
+    if (color_type == PNG_COLOR_TYPE_PALETTE) {
         int i;
         int num_colors = 1 << depth;
         gx_color_value rgb[3];
 
-        info_ptr->palette =
+#if PNG_LIBPNG_VER_MINOR >= 5
+        palettep = palette;
+#else
+        palettep =
             (void *)gs_alloc_bytes(mem, 256 * sizeof(png_color),
                                    "png palette");
-        if (info_ptr->palette == 0) {
+        if (palettep == 0) {
             code = gs_note_error(gs_error_VMerror);
             goto done;
         }
-        info_ptr->num_palette = num_colors;
-        info_ptr->valid |= PNG_INFO_PLTE;
+#endif
+        num_palette = num_colors;
+        valid |= PNG_INFO_PLTE;
         for (i = 0; i < num_colors; i++) {
             (*dev_proc(pdev, map_color_rgb)) ((gx_device *) pdev,
                                               (gx_color_index) i, rgb);
-            info_ptr->palette[i].red = gx_color_value_to_byte(rgb[0]);
-            info_ptr->palette[i].green = gx_color_value_to_byte(rgb[1]);
-            info_ptr->palette[i].blue = gx_color_value_to_byte(rgb[2]);
+            palettep[i].red = gx_color_value_to_byte(rgb[0]);
+            palettep[i].green = gx_color_value_to_byte(rgb[1]);
+            palettep[i].blue = gx_color_value_to_byte(rgb[2]);
         }
+    }
+    else {
+        palettep = NULL;
+        num_palette = 0;
     }
     /* add comment */
     strncpy(software_key, "Software", sizeof(software_key));
@@ -532,24 +562,68 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     text_png.key = software_key;
     text_png.text = software_text;
     text_png.text_length = strlen(software_text);
-    info_ptr->text = &text_png;
-    info_ptr->num_text = 1;
 
-    dst_bpc = info_ptr->bit_depth;
+    dst_bpc = bit_depth;
     src_bpc = dst_bpc;
     if (errdiff)
         src_bpc = 8;
     else
         factor = 1;
-    info_ptr->width = pdev->width/factor;
-    height = info_ptr->height = pdev->height/factor;
+    width = pdev->width/factor;
+    height = pdev->height/factor;
+
+#if PNG_LIBPNG_VER_MINOR >= 5
+    png_set_pHYs(png_ptr, info_ptr,
+                 x_pixels_per_unit, y_pixels_per_unit, phys_unit_type);
+
+    png_set_IHDR(png_ptr, info_ptr,
+                 width, height, bit_depth,
+                 color_type, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT,
+                 PNG_FILTER_TYPE_DEFAULT);
+    if (palettep)
+        png_set_PLTE(png_ptr, info_ptr, palettep, num_palette);
+
+    png_set_text(png_ptr, info_ptr, &text_png, 1);
+#else
+    info_ptr->bit_depth = bit_depth;
+    info_ptr->color_type = color_type;
+    info_ptr->width = width;
+    info_ptr->height = height;
+    info_ptr->x_pixels_per_unit = x_pixels_per_unit;
+    info_ptr->y_pixels_per_unit = y_pixels_per_unit;
+    info_ptr->phys_unit_type = phys_unit_type;
+    info_ptr->palette = palettep;
+    info_ptr->num_palette = num_palette;
+    info_ptr->valid |= valid;
+    info_ptr->text = &text_png;
+    info_ptr->num_text = 1;
+#endif
+
+    if (invert) {
+        if (depth == 32)
+            png_set_invert_alpha(png_ptr);
+        else
+            png_set_invert_mono(png_ptr);
+    }
+    if (bg_needed) {
+        png_set_bKGD(png_ptr, info_ptr, &background);
+    }
+#if defined(ARCH_IS_BIG_ENDIAN) && (!ARCH_IS_BIG_ENDIAN)
+    if (endian_swap) {
+        png_set_swap(png_ptr);
+    }
+#endif
 
     /* write the file information */
     png_write_info(png_ptr, info_ptr);
 
+#if PNG_LIBPNG_VER_MINOR >= 5
+#else
     /* don't write the comments twice */
     info_ptr->num_text = 0;
     info_ptr->text = NULL;
+#endif
 
     /* For simplicity of code, we always go through the downscaler. For
      * non-supported depths, it will pass through with minimal performance
@@ -570,8 +644,11 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     /* write the rest of the file */
     png_write_end(png_ptr, info_ptr);
 
+#if PNG_LIBPNG_VER_MINOR >= 5
+#else
     /* if you alloced the palette, free it here */
-    gs_free_object(mem, info_ptr->palette, "png palette");
+    gs_free_object(mem, palettep, "png palette");
+#endif
 
   done:
     /* free the structures */
