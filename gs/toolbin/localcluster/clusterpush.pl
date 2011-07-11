@@ -133,7 +133,7 @@ my $cmd="rsync -avxcz ".
 " --exclude _darcs --exclude .bzr --exclude .hg".
 " --exclude .deps --exclude .libs --exclude autom4te.cache".
 " --exclude bin --exclude obj --exclude debugobj --exclude pgobj".
-" --exclude sobin --exclude soobj".
+" --exclude sobin --exclude soobj --exclude debugbin".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
 " --exclude config.log".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
