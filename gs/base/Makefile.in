@@ -226,7 +226,8 @@ ZSRCDIR=@ZLIBDIR@
 ZLIB_NAME=z
 
 # Choose shared or compiled in libjbig2dec and source location
-JBIG2_LIB=jbig2dec
+# JBIG2_LIB=jbig2dec
+JBIG2_LIB=@JBIG2_DECODER@
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
 JBIG2_CFLAGS=@JBIG2_AUTOCONF_CFLAGS@
@@ -243,10 +244,10 @@ JBIG2_CFLAGS=@JBIG2_AUTOCONF_CFLAGS@
 # Choose the library to use for (JPXDecode support)
 # whether to link to an external build or compile in from source
 # and source location and configuration flags for compiling in
-JPX_LIB=jasper
+JPX_LIB=@JPX_DECODER@
 SHARE_JPX=@SHARE_JASPER@
-JPXSRCDIR=@JASPERDIR@
-JPX_CFLAGS=-DJAS_CONFIGURE
+JPXSRCDIR=@JPXDIR@
+JPX_CFLAGS=@JPX_AUTOCONF_CFLAGS@
 
 # uncomment the following three lines and one of the last two to
 # compile in the Luratech lwf_jp2 codec

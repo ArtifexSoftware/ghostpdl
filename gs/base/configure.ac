@@ -857,102 +857,157 @@ AC_SUBST(SHAREIJS)
 AC_SUBST(IJSLIB)
 #AC_SUBST(IJSDEVS)
 
-dnl look for jbig2dec
-AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
-    [disable JBIG2 decode support]))
+
+JBIG2_DECODER=
 JBIG2DIR=src
 SHARE_JBIG2=0
 JBIG2DEVS=''
 JBIG2_AUTOCONF_CFLAGS=
-if test x$with_jbig2dec != xno; then
-  AC_MSG_CHECKING([for local jbig2dec library source])
-  for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
-    test -d "$d" && JBIG2DIR=$d && break
-  done
-  if test "x$JBIG2DIR" != xsrc; then
-      echo "Running jbig2dec configure script..."
-      olddir=`pwd`
-      cd $JBIG2DIR && ./configure $SUBCONFIG_OPTS
-      status=$?
-      if test "$status" -ne 0 ; then
-        AC_MSG_ERROR([jbig2dec configure script failed], $status)
-      fi
-      if test "$status" -eq 0 ; then
-        JBIG2_AUTOCONF_CFLAGS=-DHAVE_CONFIG_H
-      fi
-      cd $olddir
-      echo
-      echo "Continuing with Ghostscript configuration..."
-    AC_MSG_RESULT([$JBIG2DIR])
+
+dnl Luratech detection
+LURATECHDIR=luratech
+
+AC_ARG_WITH([luratech], AC_HELP_STRING([--without-luratech],
+    [do not try to use the Luratech library for JBIG2 nor JPX decoding]))
+
+
+if test x$with_luratech != xno; then
+  AC_MSG_CHECKING([for local Luratech JBIG2 library source])
+  if test -d ldf_jb2; then
+    AC_MSG_RESULT([yes])
+    JBIG2_DECODER=luratech
+    SHARE_JBIG2=0
+    JBIG2DIR=ldf_jb2
+    if test `uname` = Darwin*; then
+      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
+    else
+      JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
+    fi
+    JBIG2DEVS='$(PSD)jbig2.dev'
   else
     AC_MSG_RESULT([no])
-    AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
-	SHARE_JBIG2=1
-    ], [
-	AC_MSG_WARN([disabling support for JBIG2 files])
-        with_jbig2dec=no
-    ])
-  fi
-fi
-if test x$with_jbig2dec != xno; then
-  if test x$ac_cv_header_stdint_h != xyes && test x$ac_cv_header_inttypes_h != xyes; then
-    AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
-  else
-    JBIG2DEVS='$(PSD)jbig2.dev'
   fi
 fi
 
+if test "x$JBIG2_DECODER" = x; then
+  dnl look for jbig2dec
+  AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
+      [disable JBIG2 decode support]))
+  if test x$with_jbig2dec != xno; then
+    AC_MSG_CHECKING([for local jbig2dec library source])
+    for d in jbig2dec jbig2dec-0.2 jbig2dec-0.3; do
+      test -d "$d" && JBIG2DIR=$d && break
+    done
+    if test "x$JBIG2DIR" != xsrc; then
+        JBIG2_DECODER=jbig2dec
+        echo "Running jbig2dec configure script..."
+        olddir=`pwd`
+        cd $JBIG2DIR && ./configure $SUBCONFIG_OPTS
+        status=$?
+        if test "$status" -ne 0 ; then
+          AC_MSG_ERROR([jbig2dec configure script failed], $status)
+        fi
+        if test "$status" -eq 0 ; then
+          JBIG2_AUTOCONF_CFLAGS=-DHAVE_CONFIG_H
+        fi
+        cd $olddir
+        echo
+        echo "Continuing with Ghostscript configuration..."
+        AC_MSG_RESULT([$JBIG2DIR])
+    else
+      AC_MSG_RESULT([no])
+      AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
+          SHARE_JBIG2=1
+      ], [
+          AC_MSG_WARN([disabling support for JBIG2 files])
+          with_jbig2dec=no
+    ])
+    fi
+  fi
+  if test x$with_jbig2dec != xno; then
+    if test x$ac_cv_header_stdint_h != xyes && test x$ac_cv_header_inttypes_h != xyes; then
+      AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
+    else
+      JBIG2DEVS='$(PSD)jbig2.dev'
+    fi
+  fi
+fi
+
+AC_SUBST(JBIG2_DECODER)
 AC_SUBST(JBIG2DIR)
 AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
 AC_SUBST(JBIG2_AUTOCONF_CFLAGS)
 
-dnl look for the jasper JPEG 2000 library
-AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
-  [don't use the JasPer library for JPEG 2000]))
-JASPERDIR=src
+JPXDIR=src
 SHARE_JASPER=0
 JPXDEVS=''
-if test x$with_jasper != xno; then
-  AC_MSG_CHECKING([for local jasper library source])
-  for d in jasper jasper-1.7*; do
-    test -d "$d" && JASPERDIR=$d && break
-  done
-  if test "x$JASPERDIR" != xsrc; then
-    AC_MSG_RESULT([$JASPERDIR])
-    AC_MSG_CHECKING([for local jasper configure script])
-    if test -x $JASPERDIR/configure; then
-      AC_MSG_RESULT([yes])
-      echo
-      echo "Running jasper configure script..."
-      olddir=`pwd`
-      cd $JASPERDIR && ./configure $SUBCONFIG_OPTS
-      status=$?
-      if test "$status" -ne 0 ; then
-        AC_MSG_ERROR([jasper configure script failed], $status)
-      fi
-      cd $olddir
-      echo
-      echo "Continuing with Ghostscript configuration..."
+JPX_DECODER=
+JPX_AUTOCONF_CFLAGS=
+
+if test x$with_luratech != xno; then
+  AC_MSG_CHECKING([for local Luratech JPEG2K library source])
+  if test -d lwf_jp2; then
+    AC_MSG_RESULT([yes])
+    JPX_DECODER=luratech
+    SHARE_JASPER=0
+    JPXDIR=lwf_jp2
+    if test `uname` = Darwin*; then
+      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
     else
-      AC_MSG_RESULT([no])
-      AC_MSG_CHECKING([for local jasper autogen.sh script])
-      if test -x $JASPERDIR/autogen.sh; then
+      JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
+    fi
+    JPXDEVS='$(PSD)jpx.dev'
+  else
+    AC_MSG_RESULT([no])
+  fi
+fi
+
+
+if test "x$JPX_DECODER" = x; then
+  dnl look for the jasper JPEG 2000 library
+  AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
+    [don't use the JasPer library for JPEG 2000]))
+  if test x$with_jasper != xno; then
+    AC_MSG_CHECKING([for local jasper library source])
+    for d in jasper jasper-1.7*; do
+      test -d "$d" && JPXDIR=$d && break
+    done
+    if test "x$JPXDIR" != xsrc; then
+      AC_MSG_RESULT([$JPXDIR])
+      AC_MSG_CHECKING([for local jasper configure script])
+      if test -x $JPXDIR/configure; then
         AC_MSG_RESULT([yes])
         echo
-        echo "Running jasper autogen script..."
+        echo "Running jasper configure script..."
         olddir=`pwd`
-        cd $JASPERDIR && ./autogen.sh
+        cd $JPXDIR && ./configure $SUBCONFIG_OPTS
         status=$?
         if test "$status" -ne 0 ; then
-          AC_MSG_ERROR([jasper autogen script failed], $status)
+          AC_MSG_ERROR([jasper configure script failed], $status)
         fi
         cd $olddir
         echo
         echo "Continuing with Ghostscript configuration..."
       else
-        AC_MSG_ERROR([
-Unable to find $JASPERDIR/src/libjasper/include/jas_config.h,
+        AC_MSG_RESULT([no])
+        AC_MSG_CHECKING([for local jasper autogen.sh script])
+        if test -x $JPXDIR/autogen.sh; then
+          AC_MSG_RESULT([yes])
+          echo
+          echo "Running jasper autogen script..."
+          olddir=`pwd`
+          cd $JPXDIR && ./autogen.sh
+          status=$?
+          if test "$status" -ne 0 ; then
+            AC_MSG_ERROR([jasper autogen script failed], $status)
+          fi
+          cd $olddir
+          echo
+          echo "Continuing with Ghostscript configuration..."
+        else
+          AC_MSG_ERROR([
+Unable to find $JPXDIR/src/libjasper/include/jas_config.h,
 or generate generate such a file for this system. You will
 have to build one by hand, or configure, build and install
 the jasper library separately.
@@ -960,23 +1015,29 @@ the jasper library separately.
 You can also pass --without-jasper to configure to disable
 JPEG 2000 PDF image support entirely.
 ])
+        fi
       fi
+    else
+      AC_MSG_RESULT([no])
+      AC_CHECK_LIB([jasper], [jas_image_create], [
+          SHARE_JASPER=1
+      ], [
+          AC_MSG_WARN([disabling support for JPEG 2000 images])
+          with_jasper=no
+      ])
     fi
-  else
-    AC_MSG_RESULT([no])
-    AC_CHECK_LIB([jasper], [jas_image_create], [
-	SHARE_JASPER=1
-    ], [
-	AC_MSG_WARN([disabling support for JPEG 2000 images])
-        with_jasper=no
-    ])
+  fi
+  if test x$with_jasper != xno; then
+    JPX_DECODER=jasper
+    JPX_AUTOCONF_CFLAGS="-DJAS_CONFIGURE"
+    JPXDEVS='$(PSD)jpx.dev'
   fi
 fi
-if test x$with_jasper != xno; then
-  JPXDEVS='$(PSD)jpx.dev'
-fi
 
-AC_SUBST(JASPERDIR)
+
+AC_SUBST(JPX_DECODER)
+AC_SUBST(JPX_AUTOCONF_CFLAGS)
+AC_SUBST(JPXDIR)
 AC_SUBST(SHARE_JASPER)
 AC_SUBST(JPXDEVS)
 

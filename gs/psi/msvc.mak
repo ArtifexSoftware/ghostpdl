@@ -276,6 +276,12 @@ ZSRCDIR=zlib
 !endif
 
 # Define which jbig2 library to use
+!if !defined(JBIG2_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
+!if exist("ldf_jb2")
+JBIG2_LIB=luratech
+!endif
+!endif
+
 !ifndef JBIG2_LIB
 JBIG2_LIB=jbig2dec
 !endif
@@ -302,6 +308,13 @@ JBIG2SRCDIR=jbig2dec
 # and define SHARE_JBIG2=1 in src/winlib.mak
 
 # Define which jpeg2k library to use
+!if !defined(JPX_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
+!if exist("lwf_jp2")
+JPX_LIB=luratech
+!endif
+!endif
+
+
 !ifndef JPX_LIB
 JPX_LIB=jasper
 !endif
