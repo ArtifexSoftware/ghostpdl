@@ -67,7 +67,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     code = gs_cspace_build_ICC(&pcs, NULL, gs_state_memory(igs));
     if (code < 0)
         return gs_rethrow(code, "building color space object");
-
     /*  For now, dump the profile into a buffer
         and obtain handle from the buffer when we need it.
         We may want to change this later.
@@ -181,6 +180,28 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
             picc_profile->Range.ranges[i].rmax = range_buff[2 * i + 1];
         }
     }
+    /* Now see if we are in an overide situation.  We have to wait until now
+       in case this is an LAB profile which we will not overide */
+    if (gs_currentoverrideicc(pis) && picc_profile->data_cs != gsCIELAB) {
+        /* Free up the profile structure */
+        switch( picc_profile->data_cs ) {
+            case gsRGB:
+                pcs->cmm_icc_profile_data = pis->icc_manager->default_rgb;
+                break;
+            case gsGRAY:
+                pcs->cmm_icc_profile_data = pis->icc_manager->default_gray;
+                break;
+            case gsCMYK:
+                pcs->cmm_icc_profile_data = pis->icc_manager->default_cmyk;
+                break;
+            default:
+                break;
+        }
+        /* Have one increment from the color space.  Having these tied 
+           together is not really correct.  Need to fix that.  ToDo.  MJV */
+        rc_adjust(picc_profile, -2, "seticc");
+        rc_increment(pcs->cmm_icc_profile_data);
+    } 
     /* Set the color space.  We are done.  No joint cache here... */
     code = gs_setcolorspace(igs, pcs);
     /* The context has taken a reference to the colorspace. We no longer need
