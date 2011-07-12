@@ -531,9 +531,15 @@ system and compiler before building Ghostscript.
 
 <p>
 To compile Ghostscript against the proprietary Luratech JBIG2 and JPEG 
-2000 implementations, edit the JBIG2_* and JPX_* defines in the 
-third-party library section of the toplevel makefile. The autoconf
-makefile has a commented-out example of the useful form.
+2000 implementations, simply ensure that the <code>ldf_jb2</code> and
+<code>lwf_jb2</code> containing the Luratech code exist in the top level
+gs source directory, and (re-)run the configure script. The configure
+script will detect the presence of the directories, and apply the appropriate
+settings in the Makefile.
+<p>
+If you have the Luratech directories in place, but want Ghostscript built
+without it, you can run configure with the --without-luratech option, and
+the script will behave as if the directories did not exist.
  
 <h3><a name="Preparing_makefiles"></a>Changes for your environment</h3>
 
@@ -1265,10 +1271,13 @@ If you have an appropriately licensed source distribution this should
 already have been done.
 
 <p>
-To enable the Luratech code, you need to pass 
-<code>JBIG2_LIB=ldf_jb2</code> and 
-<code>JPX_LIB=lwf_jp2</code> on the <tt>nmake</tt> command line, or 
-add these defines to your Visual Studio project.
+With the Luratech source in the <code>ldf_jb2</code> and <code>lwf_jb2</code>
+directories in the top level gs source directory, the nmake makefile will
+detect their presence, and use them automatically.
+<p>
+If you have the Luratech code in place, but wish Ghostsrcipt to be built
+without the Luratech decoders, you can do so by passing NO_LURATECH=1 on
+the nmake command line, or add the define to your Visual Studio project.
 
 <h3><a name="Microsoft_build_64"></a>Microsoft Environment for 64-bit</h3>
 
@@ -1283,7 +1292,7 @@ but with the addition of a WIN64 define.
 
 To make ghostscript use
 <blockquote><code>
-  nmake -f psi/msvc32.mak WIN64=
+  nmake -f psi/msvc.mak WIN64=
 </code></blockquote>
 <p>
 Cross-compiling of Win64 ghostscript on 32-bit windows follows the generic
