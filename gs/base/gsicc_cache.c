@@ -431,6 +431,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                gs_memory_t *memory, bool include_softproof)
 {
     cmm_profile_t *gs_input_profile;
+    cmm_profile_t *gs_srcgtag_profile = NULL;
     cmm_profile_t *gs_output_profile;
     gs_state *pgs;
     gx_device *dev;
@@ -453,7 +454,20 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     } else {
         gs_input_profile = input_colorspace->cmm_icc_profile_data;
     }
-
+    /* If present, use an graphic object defined source profile */
+    if (pis->icc_manager != NULL && 
+        pis->icc_manager->srcgtag_profile != NULL) {
+            if (gs_input_profile->data_cs == gsRGB
+                || gs_input_profile->data_cs == gsCMYK) {
+                    gsicc_get_srcprofile(gs_input_profile->data_cs,
+                                      dev->graphics_type_tag,
+                                      pis->icc_manager->srcgtag_profile,
+                                      &(gs_srcgtag_profile), &rendering_intent);
+                if (gs_srcgtag_profile != NULL) {
+                    gs_input_profile = gs_srcgtag_profile;
+                }
+            }
+    }
     if ( output_colorspace != NULL ) {
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
     } else {

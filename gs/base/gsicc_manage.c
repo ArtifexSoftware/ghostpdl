@@ -639,6 +639,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     srcgtag->name = (char*) gs_alloc_bytes(mem, srcgtag->name_length,
                                   "gsicc_set_srcgtag_struct");
     strncpy(srcgtag->name, pname, srcgtag->name_length);
+    icc_manager->srcgtag_profile = srcgtag;
     return 0;
 }
 
@@ -1803,6 +1804,50 @@ gsicc_profile_reference(cmm_profile_t *icc_profile, int delta)
 {
     if (icc_profile != NULL)
         rc_adjust(icc_profile, delta, "gsicc_profile_reference");
+}
+
+void
+gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
+                     gs_graphics_type_tag_t graphics_type_tag,
+                     cmm_srcgtag_profile_t *srcgtag_profile,
+                     cmm_profile_t **profile, 
+                     gsicc_rendering_intents_t *rendering_intent)
+{
+    (*profile) = NULL;
+    *rendering_intent = gsPERCEPTUAL;
+    switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
+        case GS_UNKNOWN_TAG:
+        case GS_UNTOUCHED_TAG:
+        default:
+            break;
+        case GS_PATH_TAG:
+            if (data_cs == gsRGB) {
+                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_GRAPPRO];
+                *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_GRAPPRO];
+            } else if (data_cs == gsCMYK) {
+                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_GRAPPRO];
+                *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_GRAPPRO];
+            }
+            break;
+        case GS_IMAGE_TAG:
+            if (data_cs == gsRGB) {
+                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
+                *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_IMAGPRO];
+            } else if (data_cs == gsCMYK) {
+                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
+                *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_IMAGPRO];
+            }
+            break;
+        case GS_TEXT_TAG:
+            if (data_cs == gsRGB) {
+                (*profile) = srcgtag_profile->rgb_profiles[gsSRC_TEXTPRO];
+                *rendering_intent =  srcgtag_profile->rgb_intent[gsSRC_TEXTPRO];
+            } else if (data_cs == gsCMYK) {
+                (*profile) = srcgtag_profile->cmyk_profiles[gsSRC_TEXTPRO];
+                *rendering_intent =  srcgtag_profile->cmyk_intent[gsSRC_TEXTPRO];
+            }
+            break;
+        }
 }
 
 void
