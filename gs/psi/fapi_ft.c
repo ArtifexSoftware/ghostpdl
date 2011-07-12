@@ -361,9 +361,10 @@ ft_to_gs_error(FT_Error a_error)
  * If a_bitmap is true convert the glyph to a bitmap.
  */
 static FAPI_retcode
-load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
+load_glyph(FAPI_server *a_server, FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
         FAPI_metrics *a_metrics, FT_Glyph *a_glyph, bool a_bitmap, int max_bitmap)
 {
+    FF_server *s = (FF_server*)a_server;
     FT_Error ft_error = 0;
     FT_Error ft_error_fb = 1;
     FF_face *face = (FF_face*)a_fapi_font->server_font_data;
@@ -379,6 +380,17 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
      */
     const void *saved_char_data = a_fapi_font->char_data;
     const int saved_char_data_len = a_fapi_font->char_data_len;
+
+    if (s->bitmap_glyph) {
+        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+        FF_free(s->ftmemory, s->bitmap_glyph);
+        s->bitmap_glyph = NULL;
+    }
+    if (s->outline_glyph) {
+        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+        FF_free(s->ftmemory, s->outline_glyph);
+        s->outline_glyph = NULL;
+    }
 
     if (!a_char_ref->is_glyph_index)
     {
@@ -544,6 +556,24 @@ load_glyph(FAPI_font *a_fapi_font, const FAPI_char_ref *a_char_ref,
 
     if ((!ft_error || !ft_error_fb) && a_glyph) {
         ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
+    }
+    else {
+        if (a_bitmap == true) {
+            FT_BitmapGlyph bmg;
+            ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *)&bmg);
+            if (!ft_error) {
+                FT_Bitmap_Done (s->freetype_library, &bmg->bitmap);
+                FF_free(s->ftmemory, bmg);
+            }
+        }
+        else {
+            FT_OutlineGlyph olg;
+            ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *)&olg);
+            if (!ft_error) {
+                FT_Outline_Done (s->freetype_library, &olg->outline);
+                FF_free(s->ftmemory, olg);
+            }
+        }
     }
 
     if (ft_error == FT_Err_Too_Many_Hints) {
@@ -891,11 +921,13 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
     FT_Error ft_error = 0;
 
     if (s->bitmap_glyph) {
-        FT_Done_Glyph(&s->bitmap_glyph->root);
+        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+        FF_free(s->ftmemory, s->bitmap_glyph);
         s->bitmap_glyph = NULL;
     }
     if (s->outline_glyph) {
-        FT_Done_Glyph(&s->outline_glyph->root);
+        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+        FF_free(s->ftmemory, s->outline_glyph);
         s->outline_glyph = NULL;
     }
 
@@ -1152,8 +1184,9 @@ static FAPI_retcode
 get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    return load_glyph(a_font, a_char_ref, a_metrics, a_server->max_bitmap > 0 ? (FT_Glyph*)&s->bitmap_glyph : (FT_Glyph*)&s->outline_glyph,
-                           a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
+    return load_glyph(a_server, a_font, a_char_ref, a_metrics,
+                      a_server->max_bitmap > 0 ? (FT_Glyph*)&s->bitmap_glyph : (FT_Glyph*)&s->outline_glyph,
+                      a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
 }
 
 static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
@@ -1177,7 +1210,8 @@ get_char_raster_metrics(FAPI_server *a_server, FAPI_font *a_font,
         FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    FAPI_retcode error = load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->bitmap_glyph, true, a_server->max_bitmap);
+    FAPI_retcode error = load_glyph(a_server, a_font, a_char_ref, a_metrics,
+                                    (FT_Glyph*)&s->bitmap_glyph, true, a_server->max_bitmap);
     return error;
 }
 
@@ -1210,7 +1244,8 @@ get_char_outline_metrics(FAPI_server *a_server, FAPI_font *a_font,
         FAPI_char_ref *a_char_ref, FAPI_metrics *a_metrics)
 {
     FF_server *s = (FF_server*)a_server;
-    return load_glyph(a_font, a_char_ref, a_metrics, (FT_Glyph*)&s->outline_glyph, false, a_server->max_bitmap);
+    return load_glyph(a_server, a_font, a_char_ref, a_metrics,
+                      (FT_Glyph*)&s->outline_glyph, false, a_server->max_bitmap);
 }
 
 typedef struct FF_path_info_s
@@ -1346,11 +1381,13 @@ static FAPI_retcode release_char_data(FAPI_server *a_server)
     FF_server *s = (FF_server*)a_server;
 
     if (s->outline_glyph) {
-        FT_Done_Glyph(&s->bitmap_glyph->root);
+        FT_Outline_Done (s->freetype_library, &s->outline_glyph->outline);
+        FF_free(s->ftmemory, s->outline_glyph);
     }
 
     if (s->bitmap_glyph) {
-        FT_Done_Glyph(&s->outline_glyph->root);
+        FT_Bitmap_Done (s->freetype_library, &s->bitmap_glyph->bitmap);
+        FF_free(s->ftmemory, s->bitmap_glyph);
     }
 
     s->outline_glyph = NULL;
