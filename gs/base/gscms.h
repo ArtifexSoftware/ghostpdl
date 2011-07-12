@@ -403,7 +403,7 @@ typedef enum {
 
 typedef struct gsicc_rendering_param_s {
     gsicc_rendering_intents_t rendering_intent;
-    gs_graphics_type_tag_t           graphics_type_tag;
+    gs_graphics_type_tag_t    graphics_type_tag;
     gsicc_black_point_comp_t  black_point_comp;
 } gsicc_rendering_param_t;
 

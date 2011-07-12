@@ -64,6 +64,11 @@ void gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile,
                        gsicc_rendering_intents_t *rendering_intent);
+void gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
+                     gs_graphics_type_tag_t graphics_type_tag,
+                     cmm_srcgtag_profile_t *srcgtag_profile,
+                     cmm_profile_t **profile, 
+                     gsicc_rendering_intents_t *rendering_intent);
 int gsicc_getsrc_channel_count(cmm_profile_t *icc_profile);
 int gsicc_init_iccmanager(gs_state * pgs);
 int gsicc_init_gs_colors(gs_state *pgs);

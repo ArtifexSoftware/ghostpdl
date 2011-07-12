@@ -351,6 +351,8 @@ clist_begin_typed_image(gx_device * dev,
     int code;
     bool mask_use_hl;
     clist_icc_color_t icc_zero_init = { 0 };
+    cmm_profile_t *src_profile;
+    cmm_srcgtag_profile_t *srcgtag_profile;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -485,24 +487,31 @@ clist_begin_typed_image(gx_device * dev,
             /* Get the hash code of the ICC space */
             if ( base_index == gs_color_space_index_ICC ) {
                 if (!indexed) {
-                    pie->color_space.icc_info.icc_hash =
-                        pim->ColorSpace->cmm_icc_profile_data->hashcode;
-                    pie->color_space.icc_info.icc_num_components =
-                        pim->ColorSpace->cmm_icc_profile_data->num_comps;
-                    pie->color_space.icc_info.is_lab =
-                        pim->ColorSpace->cmm_icc_profile_data->islab;
-                    clist_icc_addentry(cdev, pim->ColorSpace->cmm_icc_profile_data->hashcode,
-                        pim->ColorSpace->cmm_icc_profile_data);
+                    src_profile = pim->ColorSpace->cmm_icc_profile_data;
                 } else {
-                    pie->color_space.icc_info.icc_hash =
-                        pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode;
-                    pie->color_space.icc_info.icc_num_components =
-                        pim->ColorSpace->base_space->cmm_icc_profile_data->num_comps;
-                    pie->color_space.icc_info.is_lab =
-                        pim->ColorSpace->base_space->cmm_icc_profile_data->islab;
-                    clist_icc_addentry(cdev, pim->ColorSpace->base_space->cmm_icc_profile_data->hashcode,
-                        pim->ColorSpace->base_space->cmm_icc_profile_data);
-        }
+                    src_profile =  
+                        pim->ColorSpace->base_space->cmm_icc_profile_data;
+                }
+                /* We may need to do some substitions for the source profile */
+                if (pis->icc_manager->srcgtag_profile != NULL) {
+                    srcgtag_profile = pis->icc_manager->srcgtag_profile;
+                    if (src_profile->data_cs == gsRGB) {
+                        if (srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO] != NULL) {
+                            src_profile = 
+                                srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
+                        }
+                    } else if (src_profile->data_cs == gsCMYK) {
+                        if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
+                            src_profile = 
+                                srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
+                        }
+                    }
+                }
+                pie->color_space.icc_info.icc_hash = src_profile->hashcode;
+                pie->color_space.icc_info.icc_num_components = 
+                    src_profile->num_comps;
+                pie->color_space.icc_info.is_lab = src_profile->islab;
+                clist_icc_addentry(cdev, src_profile->hashcode, src_profile);
             } else {
                 pie->color_space.icc_info = icc_zero_init;
             }
