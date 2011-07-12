@@ -1913,6 +1913,24 @@ gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs)
     return 0;
 }
 
+/* internal ICC override control */
+void
+gs_setoverrideicc(gs_imager_state *pis, bool value)
+{
+    if (pis->icc_manager != NULL) {
+        pis->icc_manager->override_internal = value;
+    }
+}
+bool
+gs_currentoverrideicc(const gs_imager_state *pis)
+{
+    if (pis->icc_manager != NULL) {
+        return pis->icc_manager->override_internal;
+    } else {
+        return false;
+    }
+}
+
 
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */
