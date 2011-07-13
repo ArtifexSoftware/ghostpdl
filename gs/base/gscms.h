@@ -129,8 +129,6 @@ typedef struct cmm_dev_profile_s {
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         gs_memory_t *memory;
         rc_header rc;
-        char *icc_dir;
-        char dir_length;
 } cmm_dev_profile_t;
 
 typedef struct cmm_dev_profile_name_s {
@@ -381,10 +379,8 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
-    char *profiledir;               /* Directory used in searching for ICC profiles */
     bool override_internal;         /* Set via the user params */
     cmm_srcobj_profile_t *srcobj_profile;
-    uint namelen;
     gs_memory_t *memory;
     rc_header rc;
 } gsicc_manager_t;

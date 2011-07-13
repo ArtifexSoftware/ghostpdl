@@ -289,11 +289,11 @@ $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCCAUX) $(AUXO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
-  $(gslibctx_h) $(stdio__h) $(string__h)
+  $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
 $(AUX)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(AK) $(gp_h) $(gsmemory_h)\
-  $(gslibctx_h) $(stdio__h) $(string__h)
+  $(gslibctx_h) $(stdio__h) $(string__h) $(gsicc_manage_h)
 	$(GLCCAUX) $(AUXO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
 
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(AK) $(gx_h) $(gserrors_h)\

@@ -427,7 +427,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
         cmm_dev_profile_t *dev_profile;
         const gs_imager_state *pis = (const gs_imager_state* ) pgs;
         if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
-            gsicc_set_icc_directory(pis, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
             gsicc_init_iccmanager(pgs);
         }
         /* Also, if the device profile is not yet set then take care of that
@@ -439,19 +438,13 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
             }
             if (dev_profile == NULL ||
                 dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
-                /* Go ahead and set the directory in the device params. */
-                gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
-                code = gsicc_init_device_profile_struct(dev, NULL,
-                                                        gsDEFAULTPROFILE);
-                if (code < 0) {
+                if ((code = gsicc_init_device_profile_struct(dev, NULL,
+                                                        gsDEFAULTPROFILE)) < 0)
                     return(code);
-                }
-               /* set the intent too */
-                code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                       gsDEFAULTPROFILE);
-                if (code < 0) {
+                /* set the intent too */
+                if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                       gsDEFAULTPROFILE)) < 0)
                     return(code);
-                }
             }
         }
     }
@@ -475,19 +468,13 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
                 }
                 if (dev_profile == NULL ||
                     dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
-                    /* Go ahead and set the directory in the device params. */
-                    gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
-                    code = gsicc_init_device_profile_struct(dev, NULL,
-                                                            gsDEFAULTPROFILE);
-                    if (code < 0) {
+                    if ((code = gsicc_init_device_profile_struct(dev, NULL,
+                                                            gsDEFAULTPROFILE)) < 0)
                         return(code);
-                    }
                     /* set the intent too */
-                    code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                           gsDEFAULTPROFILE);
-                    if (code < 0) {
+                    if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                           gsDEFAULTPROFILE)) < 0)
                         return(code);
-                    }
                 }
             }
         }

@@ -297,7 +297,6 @@ ps_impl_set_device(
     ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
     gs_state *pgs = psi->minst->i_ctx_p->pgs;
 
-    code = gsicc_sync_iccdir(device, pgs);
     if (code < 0)
         return code;
 

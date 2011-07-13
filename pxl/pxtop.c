@@ -327,9 +327,6 @@ pxl_impl_set_device(
           goto pisdEnd;
 
         /* Initialize device ICC profile  */
-        code = gsicc_sync_iccdir(device, pxli->pgs);
-        if (code < 0)
-          goto pisdEnd;
         code = gsicc_init_device_profile_struct(device, NULL, 0);
         if (code < 0)
           goto pisdEnd;

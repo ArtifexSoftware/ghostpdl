@@ -80,6 +80,11 @@ typedef struct gs_lib_ctx_s
      * state, but this can't be done due to problems detecting changes in it
      * for the clist based devices. */
     bool CPSI_mode;
+    /* Keep the path for the ICCProfiles here so devices and the icc_manager 
+     * can get to it. Prevents needing two copies, one in the icc_manager
+     * and one in the device */
+    char *profiledir;               /* Directory used in searching for ICC profiles */
+    int profiledir_len;             /* length of directory name (allows for Unicode) */
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.
@@ -94,5 +99,8 @@ gs_lib_ctx_t *gs_lib_ctx_get_interp_instance( const gs_memory_t *mem );
  *
  */
 gs_memory_t * gs_lib_ctx_get_non_gc_memory_t(void);
+
+void gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
+                        int dir_namelen);
 
 #endif /* GSLIBCTX_H */
