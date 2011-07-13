@@ -619,6 +619,8 @@ gs_nulldevice(gs_state * pgs)
         if (pgs->memory->gs_lib_ctx->io_device_table != NULL) {
             /* Set the default profile(s) from this device's color_info defaults */
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
+            /* When creating this we may need to get the iccdir synced */
+            gsicc_sync_iccdir(ndev, pgs);
             if ((code = gsicc_init_device_profile_struct(ndev, NULL, gsPERCEPTUAL)) < 0)
                 return code;
         }
