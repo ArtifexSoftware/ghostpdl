@@ -278,7 +278,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         code = gx_device_open_output_file((gx_device *)vdev, vdev->fname,
                                           binary, false, &vdev->file);
     }
-    if (code > 0) {
+    if (code >= 0) {
         code = dev_proc(vdev, get_profile)((gx_device *)vdev, &icc_array);
     }
 
