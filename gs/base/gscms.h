@@ -383,6 +383,7 @@ typedef struct gsicc_manager_s {
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     char *profiledir;               /* Directory used in searching for ICC profiles */
     bool override_internal;         /* Set via the user params */
+    bool override_ri;               /* Override rend intent. Set via the user params */
     cmm_srcgtag_profile_t *srcgtag_profile;
     uint namelen;
     gs_memory_t *memory;

@@ -1363,6 +1363,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->profiledir = NULL;
    result->srcgtag_profile = NULL;
    result->override_internal = false;
+   result->override_ri = false;
    result->namelen = 0;
    return(result);
 }
@@ -1958,7 +1959,7 @@ gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs)
     return 0;
 }
 
-/* internal ICC override control */
+/* internal ICC and rendering intent override control */
 void
 gs_setoverrideicc(gs_imager_state *pis, bool value)
 {
@@ -1976,6 +1977,22 @@ gs_currentoverrideicc(const gs_imager_state *pis)
     }
 }
 
+void
+gs_setoverride_ri(gs_imager_state *pis, bool value)
+{
+    if (pis->icc_manager != NULL) {
+        pis->icc_manager->override_ri = value;
+    }
+}
+bool
+gs_currentoverride_ri(const gs_imager_state *pis)
+{
+    if (pis->icc_manager != NULL) {
+        return pis->icc_manager->override_ri;
+    } else {
+        return false;
+    }
+}
 
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */

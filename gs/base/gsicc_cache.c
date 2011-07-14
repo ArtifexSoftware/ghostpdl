@@ -436,6 +436,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     gs_state *pgs;
     gx_device *dev;
     gsicc_rendering_intents_t rendering_intent;
+    bool use_src_intent = false;
     cmm_dev_profile_t *dev_profile;
     int code;
 
@@ -464,18 +465,28 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                                       pis->icc_manager->srcgtag_profile,
                                       &(gs_srcgtag_profile), &rendering_intent);
                 if (gs_srcgtag_profile != NULL) {
+                    /* In this case, the user is letting the source profiles
+                       drive the color management.  Let that set the 
+                       rendering intent too as they must know what they 
+                       are doing. */
                     gs_input_profile = gs_srcgtag_profile;
+                    rendering_params->rendering_intent = rendering_intent; 
+                    use_src_intent = true;
                 }
             }
     }
     if ( output_colorspace != NULL ) {
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
     } else {
-        /* Use the device profile */
-
+        /* Use the device profile. Only use the rendering intent if override_ri
+           is set. Note that this can conflict with intents set from the source
+           objects so the user needs to understand what options to set.  */
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                &(gs_output_profile), &rendering_intent);
+        if (pis->icc_manager != NULL && pis->icc_manager->override_ri == true) {
+            rendering_params->rendering_intent = rendering_intent;      
+        }
     }
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, include_softproof));

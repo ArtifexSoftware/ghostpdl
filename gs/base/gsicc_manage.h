@@ -113,6 +113,8 @@ cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
 int gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs);
 void gs_setoverrideicc(gs_imager_state *pis, bool value);
 bool gs_currentoverrideicc(const gs_imager_state *pis);
+void gs_setoverride_ri(gs_imager_state *pis, bool value);
+bool gs_currentoverride_ri(const gs_imager_state *pis);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);
