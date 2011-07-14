@@ -988,7 +988,6 @@ gsicc_init_device_profile_struct(gx_device * dev,
     int code;
     cmm_profile_t *curr_profile;
     cmm_dev_profile_t *profile_struct;
-    char *profile_dir = dev->memory->gs_lib_ctx->profiledir;
 
     /* See if the device has a profile structure.  If it does, then do a 
        check to see if the profile that we are trying to set is already 

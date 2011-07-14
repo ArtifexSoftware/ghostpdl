@@ -425,7 +425,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
        if we have file io capability now */
     if (libctx->io_device_table != NULL) {
         cmm_dev_profile_t *dev_profile;
-        const gs_imager_state *pis = (const gs_imager_state* ) pgs;
         if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
             gsicc_init_iccmanager(pgs);
         }
@@ -460,7 +459,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
          */
         if (libctx->io_device_table != NULL) {
             cmm_dev_profile_t *dev_profile;
-            const gs_imager_state *pis = (const gs_imager_state* ) pgs;
             if (dev->procs.get_profile != NULL) {
                 code = dev_proc(dev, get_profile)(dev, &dev_profile);
                 if (code < 0) {
