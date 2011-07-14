@@ -1540,7 +1540,7 @@ currentdict /CMap_read_dict undef
       exit
     } if
     QUIET not {
-      (Can't find CID font ") print dup =string cvs print (".) =
+      (Can't find CID font ") print dup =string cvs print (".) = flush
     } if
     pop
 
@@ -1549,7 +1549,7 @@ currentdict /CMap_read_dict undef
     cvn
     QUIET not {
       (Substituting CID font ) print dup ==only
-      ( for ) print 1 index ==only (, see doc/Use.htm#CIDFontSubstitution.) =
+      ( for ) print 1 index ==only (, see doc/Use.htm#CIDFontSubstitution.) = flush
     } if
     exch pop
     dup /CIDFont resourcestatus {
@@ -1557,7 +1557,14 @@ currentdict /CMap_read_dict undef
     } if
     QUIET not {
       (The substitute CID font ") print dup =string cvs print
-      (" is not provided either. Will exit with error.) =
+      (" is not provided either. ) print
+      PDFSTOPONERROR
+      {
+        (Will exit with error.) = flush
+      }
+      {
+        (Will continue, but content may be missing.) = flush
+      } ifelse
     } if
     /findresource cvx /undefined signalerror
   } loop
