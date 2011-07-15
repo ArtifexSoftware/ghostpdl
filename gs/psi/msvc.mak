@@ -294,7 +294,11 @@ JBIG2SRCDIR=ldf_jb2
 !endif
 !ifndef JBIG2_CFLAGS
 # required compiler flags
+!ifdef WIN64
+JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN64
+!else
 JBIG2_CFLAGS=-DUSE_LDF_JB2 -DWIN32
+!endif
 !endif
 !else
 # Use jbig2dec by default. See jbig2.mak for more information.
@@ -800,7 +804,11 @@ JPXSRCDIR=lwf_jp2
 !endif
 !ifndef JPX_CFLAGS
 # required compiler flags
+!ifdef WIN64
+JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN64 -DNO_ASSEMBLY
+!else
 JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
+!endif
 !endif
 !else
 # Use jasper by default. See jasper.mak for more information.
