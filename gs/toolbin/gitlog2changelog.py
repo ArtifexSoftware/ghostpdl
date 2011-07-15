@@ -77,7 +77,7 @@ else:
 
     sys.stdout.write ("<p>\n")
     sys.stdout.write ("</blockquote>\n")
-    sys.stdout.write ("<hb><hr>\n")
+    sys.stdout.write ("<hb>\n")
 
   sys.stdout.write ("</body>\n")
   sys.stdout.write ("</html>\n")
