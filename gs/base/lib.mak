@@ -559,7 +559,7 @@ sstring_h=$(GLSRC)sstring.h
 strimpl_h=$(GLSRC)strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
 szlibx_h=$(GLSRC)szlibx.h
 zlib_h=$(ZSRCDIR)$(D)zlib.h
-szlibxx_h=$(GLSRC)szlibxx.h $(szlibx_h) $(zlib_h)
+szlibxx_h=$(GLSRC)szlibxx.h $(szlibx_h)
 # Out of order
 scf_h=$(GLSRC)scf.h $(shc_h)
 scfx_h=$(GLSRC)scfx.h $(shc_h)
@@ -1415,10 +1415,18 @@ $(GLOBJ)sdctc.$(OBJ) : $(GLSRC)sdctc.c $(AK) $(stdio__h) $(jpeglib__h)\
  $(strimpl_h) $(sdct_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sdctc.$(OBJ) $(C_) $(GLSRC)sdctc.c
 
-$(GLOBJ)sjpegc.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
+$(GLOBJ)sjpegc_1.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
+ $(gx_h) $(jpeglib__h) $(gconfig__h) \
+ $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
+	$(GLJCC) $(GLO_)sjpegc_1.$(OBJ) $(C_) $(GLSRC)sjpegc.c
+
+$(GLOBJ)sjpegc_0.$(OBJ) : $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h)\
  $(gx_h) $(jerror__h) $(jpeglib__h) $(gconfig__h) $(JSRCDIR)$(D)jmemsys.h\
  $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
-	$(GLJCC) $(GLO_)sjpegc.$(OBJ) $(C_) $(GLSRC)sjpegc.c
+	$(GLJCC) $(GLO_)sjpegc_0.$(OBJ) $(C_) $(GLSRC)sjpegc.c
+
+$(GLOBJ)sjpegc.$(OBJ) : $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ)
+	$(CP_) $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sjpegc.$(OBJ)
 
 # sdcparam is used by the filter operator and the PS/PDF writer.
 # It is not included automatically in sdcte/d.
@@ -1435,16 +1443,34 @@ $(GLD)sdcte.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) $(JGENDIR)$(D)jpege.dev
 	$(SETMOD) $(GLD)sdcte $(sdcte_)
 	$(ADDMOD) $(GLD)sdcte -include $(JGENDIR)$(D)jpege.dev
 
-$(GLOBJ)sdcte.$(OBJ) : $(GLSRC)sdcte.c $(AK)\
+$(GLOBJ)sdcte_1.$(OBJ) : $(GLSRC)sdcte.c $(AK)\
+ $(memory__h) $(stdio__h) $(jpeglib__h)\
+ $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h) $(MAKEDIRS)
+	$(GLJCC) $(GLO_)sdcte_1.$(OBJ) $(C_) $(GLSRC)sdcte.c
+
+$(GLOBJ)sdcte_0.$(OBJ) : $(GLSRC)sdcte.c $(AK)\
  $(memory__h) $(stdio__h) $(jerror__h) $(jpeglib__h)\
  $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h) $(MAKEDIRS)
-	$(GLJCC) $(GLO_)sdcte.$(OBJ) $(C_) $(GLSRC)sdcte.c
+	$(GLJCC) $(GLO_)sdcte_0.$(OBJ) $(C_) $(GLSRC)sdcte.c
 
-$(GLOBJ)sjpege.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
+$(GLOBJ)sdcte.$(OBJ) : $(GLOBJ)sdcte_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sdcte_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sdcte.$(OBJ)
+
+
+$(GLOBJ)sjpege_1.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
+ $(stdio__h) $(string__h) $(gx_h)\
+ $(jpeglib__h)\
+ $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
+	$(GLJCC) $(GLO_)sjpege_1.$(OBJ) $(C_) $(GLSRC)sjpege.c
+
+$(GLOBJ)sjpege_0.$(OBJ) : $(GLSRC)sjpege.c $(AK)\
  $(stdio__h) $(string__h) $(gx_h)\
  $(jerror__h) $(jpeglib__h)\
  $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
-	$(GLJCC) $(GLO_)sjpege.$(OBJ) $(C_) $(GLSRC)sjpege.c
+	$(GLJCC) $(GLO_)sjpege_0.$(OBJ) $(C_) $(GLSRC)sjpege.c
+
+$(GLOBJ)sjpege.$(OBJ) : $(GLOBJ)sjpege_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sjpege_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sjpege.$(OBJ)
 
 # sdeparam is used by the filter operator and the PS/PDF writer.
 # It is not included automatically in sdcte.
@@ -1465,16 +1491,35 @@ $(GLD)sdctd.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) $(JGENDIR)$(D)jpegd.dev
 	$(SETMOD) $(GLD)sdctd $(sdctd_)
 	$(ADDMOD) $(GLD)sdctd -include $(JGENDIR)$(D)jpegd.dev
 
-$(GLOBJ)sdctd.$(OBJ) : $(GLSRC)sdctd.c $(AK)\
+$(GLOBJ)sdctd_1.$(OBJ) : $(GLSRC)sdctd.c $(AK)\
+ $(memory__h) $(stdio__h) $(jpeglib__h)\
+ $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h) $(MAKEDIRS)
+	$(GLJCC) $(GLO_)sdctd_1.$(OBJ) $(C_) $(GLSRC)sdctd.c
+
+$(GLOBJ)sdctd_0.$(OBJ) : $(GLSRC)sdctd.c $(AK)\
  $(memory__h) $(stdio__h) $(jerror__h) $(jpeglib__h)\
  $(gdebug_h) $(gsmemory_h) $(strimpl_h) $(sdct_h) $(sjpeg_h) $(MAKEDIRS)
-	$(GLJCC) $(GLO_)sdctd.$(OBJ) $(C_) $(GLSRC)sdctd.c
+	$(GLJCC) $(GLO_)sdctd_0.$(OBJ) $(C_) $(GLSRC)sdctd.c
 
-$(GLOBJ)sjpegd.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
+$(GLOBJ)sdctd.$(OBJ) : $(GLOBJ)sdctd_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sdctd_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sdctd.$(OBJ)
+
+
+$(GLOBJ)sjpegd_1.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
+ $(stdio__h) $(string__h) $(gx_h)\
+ $(jpeglib__h)\
+ $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
+	$(GLJCC) $(GLO_)sjpegd_1.$(OBJ) $(C_) $(GLSRC)sjpegd.c
+
+$(GLOBJ)sjpegd_0.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
  $(stdio__h) $(string__h) $(gx_h)\
  $(jerror__h) $(jpeglib__h)\
  $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
-	$(GLJCC) $(GLO_)sjpegd.$(OBJ) $(C_) $(GLSRC)sjpegd.c
+	$(GLJCC) $(GLO_)sjpegd_0.$(OBJ) $(C_) $(GLSRC)sjpegd.c
+
+
+$(GLOBJ)sjpegd.$(OBJ) : $(GLOBJ)sjpegd_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sjpegd_$(SHARE_JPEG).$(OBJ) $(GLOBJ)sjpegd.$(OBJ)
 
 # sddparam is used by the filter operator.
 # It is not included automatically in sdctd.
@@ -1712,29 +1757,52 @@ $(GLOBJ)spsdf.$(OBJ) : $(GLSRC)spsdf.c $(AK) $(stdio__h) $(string__h)\
 szlibc_=$(GLOBJ)szlibc.$(OBJ)
 
 zconf_h=$(ZSRCDIR)$(D)zconf.h
-$(GLOBJ)szlibc.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(zconf_h)\
+$(GLOBJ)szlibc_1.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) \
  $(gsstruct_h) $(gstypes_h)\
  $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
-	$(GLZCC) $(GLO_)szlibc.$(OBJ) $(C_) $(GLSRC)szlibc.c
+	$(GLZCC) $(GLO_)szlibc_1.$(OBJ) $(C_) $(GLSRC)szlibc.c
+
+$(GLOBJ)szlibc_0.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(zconf_h)\
+ $(gsstruct_h) $(gstypes_h) $(zlib_h)\
+ $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
+	$(GLZCC) $(GLO_)szlibc_0.$(OBJ) $(C_) $(GLSRC)szlibc.c
+
+$(GLOBJ)szlibc.$(OBJ) : $(GLOBJ)szlibc_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)szlibc_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibc.$(OBJ)
 
 szlibe_=$(szlibc_) $(GLOBJ)szlibe.$(OBJ)
 $(GLD)szlibe.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
 	$(SETMOD) $(GLD)szlibe $(szlibe_)
 	$(ADDMOD) $(GLD)szlibe -include $(ZGENDIR)$(D)zlibe.dev
 
-$(GLOBJ)szlibe.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
+$(GLOBJ)szlibe_1.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
  $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
-	$(GLZCC) $(GLO_)szlibe.$(OBJ) $(C_) $(GLSRC)szlibe.c
+	$(GLZCC) $(GLO_)szlibe_1.$(OBJ) $(C_) $(GLSRC)szlibe.c
+
+$(GLOBJ)szlibe_0.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
+ $(strimpl_h) $(szlibxx_h) $(zlib_h) $(MAKEDIRS)
+	$(GLZCC) $(GLO_)szlibe_0.$(OBJ) $(C_) $(GLSRC)szlibe.c
+
+$(GLOBJ)szlibe.$(OBJ) : $(GLOBJ)szlibe_$(SHARE_ZLIB).$(OBJ)  $(MAKEDIRS)
+	$(CP_) $(GLOBJ)szlibe_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibe.$(OBJ)
 
 szlibd_=$(szlibc_) $(GLOBJ)szlibd.$(OBJ)
 $(GLD)szlibd.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
 	$(SETMOD) $(GLD)szlibd $(szlibd_)
 	$(ADDMOD) $(GLD)szlibd -include $(ZGENDIR)$(D)zlibd.dev
 
-$(GLOBJ)szlibd.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
+$(GLOBJ)szlibd_1.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
  $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
-	$(GLZCC) $(GLO_)szlibd.$(OBJ) $(C_) $(GLSRC)szlibd.c
+	$(GLZCC) $(GLO_)szlibd_1.$(OBJ) $(C_) $(GLSRC)szlibd.c
+
+$(GLOBJ)szlibd_0.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
+ $(strimpl_h) $(szlibxx_h) $(zlib_h) $(MAKEDIRS)
+	$(GLZCC) $(GLO_)szlibd_0.$(OBJ) $(C_) $(GLSRC)szlibd.c
+
+$(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibd.$(OBJ)
 
 # ---------------- Page devices ---------------- #
 # We include this here, rather than in devs.mak, because it is more like
@@ -2660,24 +2728,48 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 
-$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
-	$(GLLCMSCC) $(GLO_)gsicc_lcms.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
+$(GLOBJ)gsicc_lcms_1.$(OBJ) : $(GLSRC)gsicc_lcms.c\
+ $(gsicc_cms_h) $(gserror_h) $(gslibctx_h)
+	$(GLLCMSCC) $(GLO_)gsicc_lcms_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
-$(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
+$(GLOBJ)gsicc_lcms_0.$(OBJ) : $(GLSRC)gsicc_lcms.c\
+ $(gsicc_cms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
+	$(GLLCMSCC) $(GLO_)gsicc_lcms_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
+
+$(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ)
+	$(CP_) $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms.$(OBJ)
+
+
+$(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
  $(gsicc_cms_h) $(lcms2_h) $(gserror_h) $(gslibctx_h) $(lcms2_plugin_h)
-	$(GLLCMS2CC) $(GLO_)gsicc_lcms2.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
+	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
+
+$(GLOBJ)gsicc_lcms2_0.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
+ $(gsicc_cms_h) $(lcms2_h) $(gserror_h) $(gslibctx_h) $(lcms2_plugin_h)
+	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
+
+$(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ)
+	$(CP_) $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_lcms2.$(OBJ)
 
 # Note that gsicc_create requires compile with lcms to obtain icc34.h
 # header file that is used for creating ICC structures from PS objects.
 # This is needed even if PDF/PS interpreter is built with a different CMS.
 # This object is here instead of in psi since it is used lazily by the
 # remap operations.
-$(GLOBJ)gsicc_create.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
+$(GLOBJ)gsicc_create_1.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
+ $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
+ $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
+ $(math__h) $(gscolor2_h) $(gxcie_h) $(MAKEDIRS)
+	$(GLLCMSCC) $(GLO_)gsicc_create_1.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+
+$(GLOBJ)gsicc_create_0.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxistate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
  $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h) $(MAKEDIRS)
-	$(GLLCMSCC) $(GLO_)gsicc_create.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+	$(GLLCMSCC) $(GLO_)gsicc_create_0.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
+
+$(GLOBJ)gsicc_create.$(OBJ) : $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(GLOBJ)gsicc_create.$(OBJ)
 
 
 #include "icc34.h"   /* Note this header is needed even if lcms is not compiled as default CMS */
@@ -2952,11 +3044,20 @@ $(GLGEN)gsromfs1.c : $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(MAKEDIRS)
 	$(CP_) $(GLGEN)gsromfs1_$(UFST_BRIDGE).c $(GLGEN)gsromfs1.c
 
 # the following module is only included if the romfs.dev FEATURE is enabled
-$(GLOBJ)gsiorom.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
+$(GLOBJ)gsiorom_1.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
+ $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h) $(stat__h)\
+ $(gpcheck_h) $(gsutil_h) $(stdint__h) $(stream_h) $(string__h) \
+ $(MAKEDIRS)
+	$(GLCC) $(GLO_)gsiorom_1.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
+
+$(GLOBJ)gsiorom_0.$(OBJ) : $(GLSRC)gsiorom.c $(gsiorom_h) \
  $(std_h) $(gx_h) $(gserrors_h) $(gsstruct_h) $(gxiodev_h) $(stat__h)\
  $(gpcheck_h) $(gsutil_h) $(stdint__h) $(stream_h) $(string__h) $(zlib_h)\
  $(MAKEDIRS)
-	$(GLCC) $(GLO_)gsiorom.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
+	$(GLCC) $(GLO_)gsiorom_0.$(OBJ) $(I_)$(ZI_)$(_I) $(C_) $(GLSRC)gsiorom.c
+
+$(GLOBJ)gsiorom.$(OBJ) : $(GLOBJ)gsiorom_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)gsiorom_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)gsiorom.$(OBJ)
 
 $(GLOBJ)gsromfs1.$(OBJ) : $(GLOBJ)gsromfs1.c $(time__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsromfs1.$(OBJ) $(C_) $(GLOBJ)gsromfs1.c
