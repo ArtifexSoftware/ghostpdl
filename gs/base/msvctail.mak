@@ -45,7 +45,7 @@ $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
 	$(LINK) $(LCT) $(LINKLIBPATH) $(AUX)genarch.obj /OUT:$(GENARCH_XE)
 !else
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
-	$(CCAUX_) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
+	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
 !endif
 !endif
 
