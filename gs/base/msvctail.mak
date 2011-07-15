@@ -41,11 +41,11 @@ $(ECHOGS_XE): $(GLSRC)echogs.c
 !ifdef WIN64
 # The genarch.exe that is generated is 64-bit, so the OS must be able to run it
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
-	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(AUXDIR)genarch.obj $(GLSRC)genarch.c
+	$(CCAUX_) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj $(GLSRC)genarch.c
 	$(LINK) $(LCT) $(LINKLIBPATH) $(AUX)genarch.obj /OUT:$(GENARCH_XE)
 !else
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
-	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
+	$(CCAUX_) @$(GLGENDIR)\ccf32.tr /Fo$(AUX)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
 !endif
 !endif
 
