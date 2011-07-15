@@ -292,9 +292,11 @@ mostlyclean : config-clean
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GSGEN)gs_init.ps $(BEGINFILES)
 	$(RMN_) $(MKROMFS_XE)
+	$(RMN_) $(MKROMFS_XE)_0
+	$(RMN_) $(MKROMFS_XE)_1
 	$(RMN_) $(PSGEN)$(GS_INIT)
 	$(RMN_) $(GSGEN)gsromfs1.c $(GSGEN)gsromfs1_.c $(GSGEN)gsromfs1_1.c
-	$(RMN_) $(AUX)*.$(OBJ)
+	$(RMN_) $(AUX)*.$(OBJ) $(AUX)gscdefs*.c
 
 # Remove only configuration-dependent information.
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******

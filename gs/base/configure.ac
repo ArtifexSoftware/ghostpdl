@@ -922,6 +922,9 @@ if test "x$JBIG2_DECODER" = x; then
           AC_MSG_WARN([disabling support for JBIG2 files])
           with_jbig2dec=no
     ])
+      if test x$with_jbig2dec != xno; then
+        JBIG2_DECODER=jbig2dec
+      fi
     fi
   fi
   if test x$with_jbig2dec != xno; then
