@@ -16,14 +16,8 @@ MAKEFILE+= ../main/pcl6_gcc.mak
 # PL_SCALER?=ufst
 PL_SCALER?=afs
 
-# if 1 this will build the x11 devices.
-WANT_X11?=1
-
 # Embed the fonts in the executable.
 BUNDLE_FONTS?=1
-
-# define if this is a cygwin system, we should get rid of this.
-CYGWIN?=
 
 # extra cflags
 XCFLAGS?=
@@ -128,6 +122,8 @@ XPSOBJDIR?=$(GENDIR)
 SVGGENDIR?=$(GENDIR)
 SVGOBJDIR?=$(GENDIR)
 
+DD?=$(GLGENDIR)/
+
 TARGET_DEVS?=$(PXLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
 TARGET_XE?=$(GENDIR)/pcl6
 TARGET_LIB?=$(GENDIR)/pcl6.a
@@ -204,17 +200,9 @@ GCFLAGS?=-Wall -Wundef -Wstrict-prototypes -Wmissing-declarations \
 
 CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
-XINCLUDE?=-I/usr/X11R6/include
-XLIBDIRS?=-L/usr/X11R6/lib
-XLIBDIR?=
-XLIBS?=Xt SM ICE Xext X11
-
 CCLD?=gcc
 
-DD?=$(GLGENDIR)/
-
-
-DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
+DEVICE_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
    $(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev\
    $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev\
@@ -228,6 +216,7 @@ DEVICES_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev\
    $(DD)wtscmyk.dev $(DD)wtsimdi.dev\
+   $(X11DEVS)\
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
@@ -238,24 +227,6 @@ FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev $(DD)psl2lib.dev\
 	     $(DD)cidlib.dev $(DD)psf0lib.dev $(DD)psf1lib.dev $(DD)psf2lib.dev\
 	     $(DD)lzwd.dev $(DD)sicclib.dev
-
-# cygwin does not have threads at this time, so we don't include the
-# thread library
-ifeq ($(CYGWIN), TRUE)
-  SYNC=nosync
-  CFLAGS+=-DHAVE_STDINT_H
-  STDLIBS=-lm
-else
-  SYNC=posync
-  # some systems may need -ldl as well as pthread
-  STDLIBS=-lm -lpthread -ldl
-endif
-
-ifeq ($(WANT_X11), 1)
-  DEVICE_DEVS?=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS)
-else
-  DEVICE_DEVS?=$(DEVICES_DEVS)
-endif
 
 #miscellaneous
 XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o $(GLOBJDIR)/gscdefs.o
