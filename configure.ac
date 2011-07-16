@@ -140,4 +140,49 @@ AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
  
 AC_SUBST(HAVE_BYTESWAP_H)
 
+dnl --------------------------------------------------
+dnl Check for libraries and x11 includes/libraries
+dnl --------------------------------------------------
+
+SYNC="nosync"
+PTHREAD_LIBS=""
+AC_CHECK_LIB(pthread, pthread_create, [
+  SYNC=posync;
+  PTHREAD_LIBS="-lpthread"
+])
+AC_SUBST(SYNC)
+AC_SUBST(PTHREAD_LIBS)
+
+AC_PATH_X
+
+XINCLUDE=""
+XLIBDIRS=""
+XLIBDIR=""
+XLIBS=""
+X11DEVS=""
+
+if test -z "$no_x"; then
+  # workaround autoconf bug which used to depend on xmkmf to set the
+  # $x_includes directory.  Danger quadrigraph ahead!
+  if test ! -z "$x_libraries && test -z "$x_includes; then
+     includedir="include"
+     x_includes=$(echo $x_libraries | sed 's|@<:@^/@:>@*$||')
+     x_includes="$x_includes$includedir"
+  fi
+  if test ! -z "$x_includes"; then
+     XINCLUDE=-I$x_includes
+  fi
+  if test ! -z "$x_libraries"; then
+    XLIBDIRS=-L$x_libraries
+    XLIBDIR=-L$x_libraries
+  fi
+  XLIBS="Xt SM ICE Xext X11"
+  X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev'
+fi
+
+AC_SUBST(XINCLUDE)
+AC_SUBST(XLIBDIRS)
+AC_SUBST(XLIBDIR)
+AC_SUBST(XLIBS)
+AC_SUBST(X11DEVS)
 AC_OUTPUT(config.mak)
