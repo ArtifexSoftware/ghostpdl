@@ -87,6 +87,7 @@ static dev_proc_close_device(pattern_accum_close);
 static dev_proc_fill_rectangle(pattern_accum_fill_rectangle);
 static dev_proc_copy_mono(pattern_accum_copy_mono);
 static dev_proc_copy_color(pattern_accum_copy_color);
+static dev_proc_copy_plane(pattern_accum_copy_plane);
 static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 
 /* The device descriptor */
@@ -162,7 +163,7 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,                              /* pop_transparency_state */
      NULL,                              /* put_image */
      NULL,                              /* dev_spec_op */
-     NULL,                              /* copy_plane */
+     pattern_accum_copy_plane,          /* copy_plane */
      NULL                               /* get_profile */
 },
  0,                             /* target */
@@ -483,9 +484,25 @@ pattern_accum_open(gx_device * dev)
 #undef PDSET
                     bits->color_info = padev->color_info;
                     bits->bitmap_memory = mem;
-                    code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
-                    gx_device_set_target((gx_device_forward *)padev,
-                                         (gx_device *)bits);
+                    if (dev_proc(target, dev_spec_op)(target, gxdso_is_native_planar, NULL, 0))
+                    {
+                        gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
+                        int num_comp = padev->color_info.num_components;
+                        int depth = padev->color_info.depth;
+                        int i;
+                        for (i = 0; i < num_comp; i++)
+                        {
+                            planes[i].shift = depth * (num_comp - 1 - i);
+                            planes[i].depth = depth/num_comp;
+                            planes[i].index = i;
+                        }
+                        code = gdev_mem_set_planar(bits, num_comp, planes);
+                    }
+                    if (code >= 0) {
+                        code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
+                        gx_device_set_target((gx_device_forward *)padev,
+                                             (gx_device *)bits);
+                    }
                 }
             }
         }
@@ -609,6 +626,24 @@ pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
     if (padev->bits)
         (*dev_proc(padev->target, copy_color))
             (padev->target, data, data_x, raster, id, x, y, w, h);
+    if (padev->mask)
+        return (*dev_proc(padev->mask, fill_rectangle))
+            ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+    else
+        return 0;
+}
+
+/* Copy a color plane. */
+static int
+pattern_accum_copy_plane(gx_device * dev, const byte * data, int data_x,
+                         int raster, gx_bitmap_id id,
+                         int x, int y, int w, int h, int plane)
+{
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
+    if (padev->bits)
+        (*dev_proc(padev->target, copy_plane))
+            (padev->target, data, data_x, raster, id, x, y, w, h, plane);
     if (padev->mask)
         return (*dev_proc(padev->mask, fill_rectangle))
             ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
