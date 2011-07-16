@@ -199,6 +199,7 @@ struct gx_color_tile_s {
     /* for use in selective cache purging. */
     gs_uid uid;
     /* ------ The following are the cache 'value'. ------ */
+    int bits_used;              /* The number of bits this uses in the cache */
     /* Note that if tbits and tmask both have data != 0, */
     /* both must have the same rep_shift. */
 /****** NON-ZERO shift VALUES ARE NOT SUPPORTED YET. ******/

@@ -679,6 +679,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
         tiles->id = gx_no_bitmap_id;
         /* Clear the pointers to pacify the GC. */
         uid_set_invalid(&tiles->uid);
+        tiles->bits_used = 0;
         tiles->tbits.data = 0;
         tiles->tmask.data = 0;
         tiles->index = i;
@@ -731,47 +732,25 @@ static void
 gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
 {
     gx_device *temp_device;
-    int size_b, size_c;
 
     if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy) {
         gs_memory_t *mem = pcache->memory;
-        gx_device_memory *pmdev;
-        ulong used = 0;
 
         /*
          * We must initialize the memory device properly, even though
          * we aren't using it for drawing.
          */
-        gs_make_mem_mono_device_with_copydevice(&pmdev, mem, NULL);
         if (ctile->tmask.data != 0) {
-            pmdev->width = ctile->tmask.size.x;
-            pmdev->height = ctile->tmask.size.y;
-            /*mdev.color_info.depth = 1;*/
-            gdev_mem_bitmap_size(pmdev, &used);
             gs_free_object(mem, ctile->tmask.data,
                            "free_pattern_cache_entry(mask data)");
             ctile->tmask.data = 0;      /* for GC */
         }
         if (ctile->tbits.data != 0) {
-            ulong tbits_used = 0;
-
-            pmdev->width = ctile->tbits.size.x;
-            pmdev->height = ctile->tbits.size.y;
-            pmdev->color_info.depth = ctile->depth;
-            gdev_mem_bitmap_size(pmdev, &tbits_used);
-            used += tbits_used;
             gs_free_object(mem, ctile->tbits.data,
                            "free_pattern_cache_entry(bits data)");
             ctile->tbits.data = 0;      /* for GC */
         }
         if (ctile->cdev != NULL) {
-            size_b = clist_data_size(ctile->cdev, 0);
-            if (size_b < 0)
-                return;         /* gs_error_unregistered) */
-            size_c = clist_data_size(ctile->cdev, 1);
-            if (size_c < 0)
-                return;         /* gs_error_unregistered) */
-            used = size_b + size_c;
             ctile->cdev->common.do_not_open_or_close_bandfiles = false;  /* make sure memfile gets freed/closed */
             dev_proc(&ctile->cdev->common, close_device)((gx_device *)&ctile->cdev->common);
             /* Free up the icc based stuff in the clist device.  I am puzzled
@@ -806,7 +785,6 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                 ctile->ttrans->fill_trans_buffer = NULL; /* This is always freed */
             }
 
-            used += ctile->ttrans->n_chan*ctile->ttrans->planestride;
             gs_free_object(mem, ctile->ttrans,
                            "free_pattern_cache_entry(ttrans)");
             ctile->ttrans = NULL;
@@ -814,12 +792,8 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
         }
 
         pcache->tiles_used--;
-        if (pcache->bits_used < used)           /* FIXME: tile 'used' doesn't match cache */
-            pcache->bits_used = 0;              /* FIXME: tile 'used' doesn't match cache */
-        else                                    /* FIXME: tile 'used' doesn't match cache */
-        pcache->bits_used -= used;
+        pcache->bits_used -= ctile->bits_used;
         ctile->id = gx_no_bitmap_id;
-        gx_device_retain((gx_device *)pmdev, false);
     }
 }
 
@@ -882,6 +856,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     if (code < 0)
         return code;
     pcache = pis->pattern_cache;
+
     if (fdev->procs.open_device != pattern_clist_open_device) {
         gx_device_pattern_accum *padev = (gx_device_pattern_accum *)fdev;
 
@@ -923,7 +898,6 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
             trans_used = trans->planestride*trans->n_chan;
             used += trans_used;
         }
-
     } else {
         gx_device_clist *cdev = (gx_device_clist *)fdev;
         gx_device_clist_writer * cldev = (gx_device_clist_writer *)cdev;
@@ -992,6 +966,11 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
         /* Prevent freeing files on pattern_paint_cleanup : */
         cwdev->do_not_open_or_close_bandfiles = true;
     }
+    /* In the clist case, used is accurate. In the non-clist case, it may
+     * not be. The important thing is that we account the same for tiles
+     * going in and coming out of the cache. Therefore we store the used
+     * figure in the tile so we always remove the same amount. */
+    ctile->bits_used = used;
     gx_pattern_cache_update_used(pis, used);
 
     *pctile = ctile;
@@ -1053,6 +1032,7 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     memset(&ctile->tmask, 0 , sizeof(ctile->tmask));
     ctile->cdev = NULL;
     ctile->ttrans = NULL;
+    ctile->bits_used = 0;
     pcache->tiles_used++;
     return 0;
 }

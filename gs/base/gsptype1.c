@@ -1783,6 +1783,7 @@ gx_dc_pattern_read(
         if (code < 0)
             return code;
         gx_pattern_cache_update_used((gs_imager_state *)pis, cache_space_needed);
+        ptile->bits_used = cache_space_needed;
         pdevc->type = &gx_dc_pattern;
         pdevc->colors.pattern.p_tile = ptile;
         ptile->id = buf.id;
