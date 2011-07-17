@@ -385,7 +385,7 @@ XCFLAGS=
 CFLAGS=
 !endif
 
-CFLAGS=$(CFLAGS) $(XCFLAGS)
+CFLAGS=$(CFLAGS) $(XCFLAGS) /DWINDOWS_NO_UNICODE
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
