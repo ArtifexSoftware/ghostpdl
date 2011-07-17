@@ -112,7 +112,7 @@ arg_next(arg_list * pal, int *code)
     else
         astr = pas->u.s.str, f = NULL, endc = 0;
     result = cstr = pal->cstr;
-#define cfsgetc() (f == NULL ? (*astr ? *astr++ : 0) : fgetc(f))
+#define cfsgetc() (f == NULL ? (int)(unsigned char)(*astr ? *astr++ : 0) : fgetc(f))
 #define is_eol(c) (c == '\r' || c == '\n')
     i = 0;
     in_quote = false;

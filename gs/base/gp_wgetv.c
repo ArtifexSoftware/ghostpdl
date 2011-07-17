@@ -69,7 +69,7 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     wchar_t *wptr;
     wchar_t *wp = NULL;
     wchar_t *wname;
-    int l;
+    int l = -1;
 
     if (*plen) {
         wp = malloc((*plen)*sizeof(wchar_t));
@@ -80,14 +80,16 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
 
     wname = malloc(utf8_to_wchar(NULL, name)*sizeof(wchar_t));
     if (wname == NULL) {
-        free(wp);
+        if (wp)
+            free(wp);
         return 1;
     }
     utf8_to_wchar(wname, name);
 
     if (RegOpenKeyExW(hkeyroot, key, 0, KEY_READ, &hkey) != ERROR_SUCCESS) {
         free(wname);
-        free(wp);
+        if (wp)
+            free(wp);
         return 1; /* Not found */
     }
     keytype = REG_SZ;
@@ -96,32 +98,41 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
         wptr = &w;	                /* ERROR_MORE_DATA if ptr is NULL */
     rc = RegQueryValueExW(hkey, wname, 0, &keytype, (BYTE *)wptr, &cbData);
     RegCloseKey(hkey);
-    if ((rc == ERROR_MORE_DATA) || (wp == NULL)) {
-        /* buffer wasn't large enough */
-        /* Yuck. If we're probing for the size, then worst case, it can
-         * take 3 bytes out for every 2 bytes in. */
-        *plen = (cbData*3+1)/2;
-        free(wp);
-        free(wname);
-        return -1;
+    /* Process string keys, ignore keys that are not strings */
+    if (keytype == REG_SZ) {
+        switch (rc) {
+            case ERROR_SUCCESS:
+                if (wp) {
+                    l = wchar_to_utf8(NULL, wp);
+                    if (l <= *plen) {
+                        *plen = wchar_to_utf8(ptr, wp);
+                        free(wp);
+                        free(wname);
+                        return 0;       /* found environment variable and copied it */
+                    } else;             /* buffer too small, so fall through */
+                }                       /* caller only asked for the size, so fall through */
+            case ERROR_MORE_DATA:
+                /* buffer wasn't large enough or caller only asked for the size */
+                if (l >= 0L) {
+                    /* buffer size already computed above */
+                    *plen = l;
+                } else {
+                    /* If we're probing for the size, then worst case, it can
+                     * take 3 bytes out for every 2 bytes in. */
+                    *plen = (cbData*3+1)/2;
+                }
+                if (wp)
+                    free(wp);
+                free(wname);
+                return -1;              /* found environment variable, but buffer too small */
+            default:
+                break;
+        }
     }
-    if ((rc != ERROR_SUCCESS) || (keytype != REG_SZ)) {
-        /* Failed, or not a string - pretend key didn't exist */
+    if (wp)
         free(wp);
-        free(wname);
-        return 1;
-    }
-    l = wchar_to_utf8(NULL, wp);
-    if (l > *plen) {
-        *plen = l;
-        free(wp);
-        free(wname);
-        return -1;
-    }
-    *plen = wchar_to_utf8(ptr, wp);
-    free(wp);
     free(wname);
-    return 0;	/* found environment variable and copied it */
+    return 1;                           /* environment variable does not exist */
 }
 #endif
 #endif
