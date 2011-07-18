@@ -37,7 +37,6 @@
 #include "gscdefs.h"
 #include "gxdownscale.h"
 
-#define PNG_INTERNAL
 /*
  * libpng versions 1.0.3 and later allow disabling access to the stdxxx
  * files while retaining support for FILE * I/O.
