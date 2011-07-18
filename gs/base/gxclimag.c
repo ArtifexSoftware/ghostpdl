@@ -35,6 +35,7 @@
 #include "gsserial.h"
 #include "gxdhtserial.h"
 #include "gsptype1.h"
+#include "gsicc_manage.h"
 
 extern_gx_image_type_table();
 
@@ -353,6 +354,11 @@ clist_begin_typed_image(gx_device * dev,
     clist_icc_color_t icc_zero_init = { 0 };
     cmm_profile_t *src_profile;
     cmm_srcgtag_profile_t *srcgtag_profile;
+    gsicc_rendering_intents_t renderingintent = pis->renderingintent;
+    gs_imager_state *pis_nonconst = (gs_imager_state*) pis;   
+    bool intent_changed = false;
+    cmm_dev_profile_t *dev_profile;
+    cmm_profile_t *gs_output_profile;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -499,14 +505,33 @@ clist_begin_typed_image(gx_device * dev,
                         if (srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO] != NULL) {
                             src_profile = 
                                 srcgtag_profile->rgb_profiles[gsSRC_IMAGPRO];
+                            pis_nonconst->renderingintent = 
+                                srcgtag_profile->rgb_intent[gsSRC_IMAGPRO];
                         }
                     } else if (src_profile->data_cs == gsCMYK) {
                         if (srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO] != NULL) {
                             src_profile = 
                                 srcgtag_profile->cmyk_profiles[gsSRC_IMAGPRO];
+                            pis_nonconst->renderingintent = 
+                                srcgtag_profile->cmyk_intent[gsSRC_IMAGPRO];
                         }
                     }
                 }
+                /* If override is set to true and we are not overriding from
+                   setting the RI by the source structure, then override any
+                   rendering intent specified in the document by the ri 
+                   specified for the device */ 
+                if (!(pis_nonconst->renderingintent & gsRI_OVERRIDE)) {
+                    if (pis->icc_manager != NULL && 
+                        pis->icc_manager->override_ri == true) {
+                        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+                        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                              &(gs_output_profile), 
+                                              &(pis_nonconst->renderingintent));
+                    }
+                }
+                if (renderingintent != pis_nonconst->renderingintent)
+                    intent_changed = true;
                 pie->color_space.icc_info.icc_hash = src_profile->hashcode;
                 pie->color_space.icc_info.icc_num_components = 
                     src_profile->num_comps;
@@ -589,7 +614,6 @@ clist_begin_typed_image(gx_device * dev,
             }
         }
     }
-
     pie->colors_used.or = colors_used;
     pie->colors_used.slow_rop =
         cmd_slow_rop(dev, pis->log_op, (uses_color ? pdcolor : NULL));
@@ -612,6 +636,11 @@ clist_begin_typed_image(gx_device * dev,
      * are known at the time of the begin_image command.
      */
     cmd_clear_known(cdev, clist_image_unknowns(dev, pie) | begin_image_known);
+    /* Because the rendering intent may be driven by the source color 
+       settings we may have needed to overide the intent.  Need to break the const
+       on the pis here for this and reset back */    
+    if (intent_changed)
+        pis_nonconst->renderingintent = renderingintent;
 
     cdev->image_enum_id = pie->id;
     return 0;
@@ -1553,12 +1582,14 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
     if (cdev->imager_state.overprint != pis->overprint ||
         cdev->imager_state.overprint_mode != pis->overprint_mode ||
         cdev->imager_state.blend_mode != pis->blend_mode ||
-        cdev->imager_state.text_knockout != pis->text_knockout) {
+        cdev->imager_state.text_knockout != pis->text_knockout ||
+        cdev->imager_state.renderingintent != pis->renderingintent) {
         unknown |= op_bm_tk_known;
         cdev->imager_state.overprint = pis->overprint;
         cdev->imager_state.overprint_mode = pis->overprint_mode;
         cdev->imager_state.blend_mode = pis->blend_mode;
         cdev->imager_state.text_knockout = pis->text_knockout;
+        cdev->imager_state.renderingintent = pis->renderingintent;
     }
     if (cdev->imager_state.opacity.alpha != pis->opacity.alpha) {
         unknown |= opacity_alpha_known;

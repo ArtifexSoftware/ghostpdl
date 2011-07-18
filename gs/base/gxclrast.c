@@ -2472,6 +2472,8 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
     }
     if (mask & op_bm_tk_known) {
         cb = *cbp++;
+        pis->renderingintent = (cb & 0xf0) >> 4;
+        cb = cb & 0x0f;
         pis->blend_mode = cb >> 3;
         pis->text_knockout = (cb & 4) != 0;
         /* the following usually have no effect; see gxclpath.c */

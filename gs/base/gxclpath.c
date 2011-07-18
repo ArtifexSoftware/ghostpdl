@@ -341,13 +341,14 @@ cmd_check_fill_known(gx_device_clist_writer *cdev, const gs_imager_state *pis,
      * has no effect.
      */
     if (state_neq(overprint) || state_neq(overprint_mode) ||
-        state_neq(blend_mode) || state_neq(text_knockout)
-        ) {
+        state_neq(blend_mode) || state_neq(text_knockout) ||
+        state_neq(renderingintent)) {
         *punknown |= op_bm_tk_known;
         state_update(overprint);
         state_update(overprint_mode);
         state_update(blend_mode);
         state_update(text_knockout);
+        state_update(renderingintent);
     }
     if (state_neq(opacity.alpha)) {
         *punknown |= opacity_alpha_known;
@@ -459,6 +460,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         if (unknown & op_bm_tk_known) {
             *bp++ =
+                (cldev->imager_state.renderingintent << 4) +
                 ((int)cldev->imager_state.blend_mode << 3) +
                 (cldev->imager_state.text_knockout << 2) +
                 (cldev->imager_state.overprint_mode << 1) +
