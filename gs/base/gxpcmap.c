@@ -488,12 +488,12 @@ pattern_accum_open(gx_device * dev)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         int num_comp = padev->color_info.num_components;
-                        int depth = padev->color_info.depth;
+                        int depth = padev->color_info.depth/num_comp;
                         int i;
                         for (i = 0; i < num_comp; i++)
                         {
                             planes[i].shift = depth * (num_comp - 1 - i);
-                            planes[i].depth = depth/num_comp;
+                            planes[i].depth = depth;
                             planes[i].index = i;
                         }
                         code = gdev_mem_set_planar(bits, num_comp, planes);
