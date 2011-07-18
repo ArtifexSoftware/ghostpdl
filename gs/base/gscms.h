@@ -93,8 +93,15 @@ typedef enum {
     gsPERCEPTUAL = 0,
     gsRELATIVECOLORIMETRIC,
     gsSATURATION,
-    gsABSOLUTECOLORIMETRIC
+    gsABSOLUTECOLORIMETRIC,
+    gsPERCEPTUAL_OR,            /* These are needed for keeping track  */                                   
+    gsRELATIVECOLORIMETRIC_OR,  /* of when the source ri is going to */
+    gsSATURATION_OR,            /* override the destination profile intent */
+    gsABSOLUTECOLORIMETRIC_OR   /* in particular through the clist */
 } gsicc_rendering_intents_t;
+
+#define gsRI_OVERRIDE 0x4
+#define gsRI_MASK 0x3;
 
 /* Enumerate the types of profiles */
 typedef enum {

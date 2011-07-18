@@ -448,7 +448,6 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     } else {
         dev = dev_in;
     }
-
     if ( input_colorspace->cmm_icc_profile_data == NULL ) {
         /* Use default type */
         gs_input_profile = gsicc_get_gscs_profile(input_colorspace, pis->icc_manager);
@@ -484,10 +483,16 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                &(gs_output_profile), &rendering_intent);
-        if (pis->icc_manager != NULL && pis->icc_manager->override_ri == true) {
-            rendering_params->rendering_intent = rendering_intent;      
+        /* Check if the incoming rendering itent was source based
+           (this can occur for high level images in the clist) in
+           that case we need to use the source ri and not the device one */
+        if (!(rendering_params->rendering_intent & gsRI_OVERRIDE)) {
+            if (pis->icc_manager != NULL && pis->icc_manager->override_ri == true) {
+                rendering_params->rendering_intent = rendering_intent;      
+            }
         }
     }
+    rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, include_softproof));
 }
