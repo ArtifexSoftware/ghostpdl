@@ -567,11 +567,13 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
                     GS_UNTOUCHED_TAG, planestride);
         }
     }
-    /* Initialize bbox with the reversed rectangle for further accumulation : */
-    result->bbox.p.x = rect->q.x;
-    result->bbox.p.y = rect->q.y;
-    result->bbox.q.x = rect->p.x;
-    result->bbox.q.y = rect->p.y;
+    /* Initialize dirty box with an invalid rectangle (the reversed rectangle).
+     * Any future drawing will make it valid again, so we won't blend back
+     * more than we need. */
+    result->dirty.p.x = rect->q.x;
+    result->dirty.p.y = rect->q.y;
+    result->dirty.q.x = rect->p.x;
+    result->dirty.q.y = rect->p.y;
     return result;
 }
 
@@ -731,7 +733,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect,
     buf->shape = shape;
     buf->blend_mode = blend_mode;
     buf->mask_id = mask_id;
-    buf->mask_stack = ctx->mask_stack; /* Save becasuse the group rendering may
+    buf->mask_stack = ctx->mask_stack; /* Save because the group rendering may
                                           set up another (nested) mask. */
     ctx->mask_stack = NULL; /* Clean the mask field for rendering this group.
                             See pdf14_pop_transparency_group how to handle it. */
@@ -787,10 +789,16 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     }
     if (nos == NULL)
         return_error(gs_error_rangecheck);
-    y0 = max(tos->rect.p.y, nos->rect.p.y);
-    y1 = min(tos->rect.q.y, nos->rect.q.y);
-    x0 = max(tos->rect.p.x, nos->rect.p.x);
-    x1 = min(tos->rect.q.x, nos->rect.q.x);
+    /* Sanitise the dirty rectangles, in case some of the drawing routines
+     * have made them overly large. */
+    rect_intersect(tos->dirty, tos->rect);
+    rect_intersect(nos->dirty, nos->rect);
+    /* dirty = the marked bbox. rect = the entire bounds of the buffer. */
+    /* Everything marked on tos that fits onto nos needs to be merged down. */
+    y0 = max(tos->dirty.p.y, nos->rect.p.y);
+    y1 = min(tos->dirty.q.y, nos->rect.q.y);
+    x0 = max(tos->dirty.p.x, nos->rect.p.x);
+    x1 = min(tos->dirty.q.x, nos->rect.q.x);
     if (ctx->mask_stack) {
         /* This can occur when we have a situation where we are ending out of
            a group that has internal to it a soft mask and another group.
@@ -875,6 +883,9 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                        smaller go ahead and allocate).  We could reuse it in this
                        case too.  We need to do a bit of testing to determine what
                        would be best.  */
+                    /* FIXME: RJW: Could we get away with just color converting
+                     * the area that's actually active (i.e. dirty, not rect)?
+                     */
                     if( num_newcolor_planes != curr_num_color_comp ) {
                         /* Different size.  We will need to allocate */
                         new_data_buf = gs_alloc_bytes(ctx->memory,
@@ -1354,7 +1365,7 @@ pdf14_get_buffer_information(const gx_device * dev,
     }
     buf = pdev->ctx->stack;
     rect = buf->rect;
-    rect_intersect(rect, buf->bbox);
+    transbuff->dirty = &buf->dirty;
     x1 = min(pdev->width, rect.q.x);
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;
@@ -1466,7 +1477,7 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
     cmm_dev_profile_t *dev_profile;
 
     if_debug0('v', "[v]pdf14_put_image\n");
-    rect_intersect(rect, buf->bbox);
+    rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;
@@ -1658,7 +1669,7 @@ pdf14_cmykspot_put_image(gx_device * dev, gs_imager_state * pis, gx_device * tar
     byte *buf_ptr;
 
     if_debug0('v', "[v]pdf14_cmykspot_put_image\n");
-    rect_intersect(rect, buf->bbox);
+    rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;
@@ -1707,7 +1718,7 @@ pdf14_custom_put_image(gx_device * dev, gs_imager_state * pis, gx_device * targe
     byte *buf_ptr;
 
     if_debug0('v', "[v]pdf14_custom_put_image\n");
-    rect_intersect(rect, buf->bbox);
+    rect_intersect(rect, buf->dirty);
     x1 = min(pdev->width, rect.q.x);
     y1 = min(pdev->height, rect.q.y);
     width = x1 - rect.p.x;
@@ -2054,6 +2065,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
         shape = (byte)floor (255 * pdev->shape + 0.5);
+    /* Limit the area we write to the bounding rectangle for this buffer */
     if (x < buf->rect.p.x) {
         w += x - buf->rect.p.x;
         x = buf->rect.p.x;
@@ -2064,10 +2076,11 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
-    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
-    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
-    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
-    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
+    /* Update the dirty rectangle. */
+    if (x < buf->dirty.p.x) buf->dirty.p.x = x;
+    if (y < buf->dirty.p.y) buf->dirty.p.y = y;
+    if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
+    if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
     memset(&(white[0]), 255, num_comp);
@@ -2101,16 +2114,16 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 if (dst[num_comp] == 0) {  /* nothing at destination yet */
                     alpha_aa_act =  (255 * alpha_aa) / 15;
                     for (k = 0; k < num_comp; ++k) {
-                        src_aa[k] = ((float) alpha_aa_act * (float) src[k]
-                                 + (float) white[k] * (255.0 -  (float) alpha_aa_act))/255.0;
+                        src_aa[k] = (byte)(((float) alpha_aa_act * (float) src[k]
+                                 + (float) white[k] * (255.0 -  (float) alpha_aa_act))/255.0);
                     }
                     src_use = &(src_aa[0]);
                     src_aa[num_comp] = src_alpha;
                 } else {
                     alpha_aa_act =  (255 * alpha_aa) / 15;
                     for (k = 0; k < num_comp; ++k) {
-                        src_aa[k] = ((float) alpha_aa_act * (float) src[k]
-                                 + (float) dst[k] * (255.0 -  (float) alpha_aa_act))/255.0;
+                        src_aa[k] = (byte)(((float) alpha_aa_act * (float) src[k]
+                                 + (float) dst[k] * (255.0 -  (float) alpha_aa_act))/255.0);
                     }
                     src_use = &(src_aa[0]);
                     src_aa[num_comp] = src_alpha;
@@ -2219,11 +2232,6 @@ pdf14_fill_mask(gx_device * orig_dev,
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
                      1, 0, 255,255, ptile->ttrans->blending_mode, 0, 0,
                      ptile->ttrans->n_chan-1);
-                /* Fix the reversed bbox. */
-                p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
-                p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
-                p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
-                p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
                 /* Set up the output buffer information now that we have
                    pushed the group */
                 fill_trans_buffer = new_pattern_trans_buff(p14dev->memory);
@@ -2373,11 +2381,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
                 ptile->ttrans->is_additive = false;
             }
         }
-        /* pdf14_push_transparency_group leaves the groups bbox with an
-         * invalid rectangle, presumably so that future accumulations will
-         * turn it into a valid one. Given that we have no more acumulations
-         * to do, force the bbox to our known target. */
-        *&p14dev->ctx->stack->bbox = *&rect;
         /* Now lets go through the rect list and fill with the pattern */
         /* First get the buffer that we will be filling */
         if (ptile->cdev == NULL) {
@@ -2562,11 +2565,6 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_imager_state * pis,
              1, 0, 255,255,
              pis->blend_mode, 0,
              0, ptile->ttrans->n_chan-1);
-        /* Fix the reversed bbox. Not clear on why the push group does that */
-        p14dev->ctx->stack->bbox.p.x = p14dev->ctx->rect.p.x;
-        p14dev->ctx->stack->bbox.p.y = p14dev->ctx->rect.p.y;
-        p14dev->ctx->stack->bbox.q.x = p14dev->ctx->rect.q.x;
-        p14dev->ctx->stack->bbox.q.y = p14dev->ctx->rect.q.y;
         /* Set up the output buffer information now that we have
            pushed the group */
         fill_trans_buffer = new_pattern_trans_buff(pis->memory);
@@ -4119,6 +4117,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
         shape = (byte)floor (255 * pdev->shape + 0.5);
+    /* Fit the mark into the bounds of the buffer */
     if (x < buf->rect.p.x) {
         w += x - buf->rect.p.x;
         x = buf->rect.p.x;
@@ -4129,10 +4128,11 @@ pdf14_mark_fill_rectangle(gx_device * dev,
     }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
-    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
-    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
-    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
-    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
+    /* Update the dirty rectangle with the mark */
+    if (x < buf->dirty.p.x) buf->dirty.p.x = x;
+    if (y < buf->dirty.p.y) buf->dirty.p.y = y;
+    if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
+    if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
     for (j = 0; j < h; ++j) {
         dst_ptr = line;
@@ -4248,6 +4248,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     }
     pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
     src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
+    /* Fit the mark into the bounds of the buffer */
     if (x < buf->rect.p.x) {
         w += x - buf->rect.p.x;
         x = buf->rect.p.x;
@@ -4258,11 +4259,11 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev,
     }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
     if (y + h > buf->rect.q.y) h = buf->rect.q.y - y;
-
-    if (x < buf->bbox.p.x) buf->bbox.p.x = x;
-    if (y < buf->bbox.p.y) buf->bbox.p.y = y;
-    if (x + w > buf->bbox.q.x) buf->bbox.q.x = x + w;
-    if (y + h > buf->bbox.q.y) buf->bbox.q.y = y + h;
+    /* Update the dirty rectangle with the mark. */
+    if (x < buf->dirty.p.x) buf->dirty.p.x = x;
+    if (y < buf->dirty.p.y) buf->dirty.p.y = y;
+    if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
+    if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
 
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
@@ -7049,7 +7050,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
     code = dev_proc(cdev, get_profile)(cdev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &cl_icc_profile,
                           &rendering_intent);
-    code = dev_proc(p14dev, get_profile)(p14dev,  &dev_profile);
+    code = dev_proc(p14dev, get_profile)((gx_device *)p14dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &p14_icc_profile,
                           &rendering_intent);
 
