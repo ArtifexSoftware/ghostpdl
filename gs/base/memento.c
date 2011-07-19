@@ -147,6 +147,7 @@ static void Memento_addBlockTail(Memento_Blocks    *blks,
     VALGRIND_MAKE_MEM_DEFINED(blks->tail, sizeof(Memento_BlkHeader *));
     *blks->tail = b;
     blks->tail  = &b->next;
+    b->next = NULL;
     VALGRIND_MAKE_MEM_NOACCESS(blks->tail, sizeof(Memento_BlkHeader *));
 #ifndef MEMENTO_LEAKONLY
     memset(b->preblk, MEMENTO_PREFILL, Memento_PreSize);
@@ -772,6 +773,7 @@ int Memento_checkAllMemory(void)
 int Memento_setParanoia(int i)
 {
     globals.paranoia = i;
+    globals.countdown = globals.paranoia;
     return i;
 }
 
