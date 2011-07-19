@@ -31,6 +31,8 @@
 #include "gxblend.h"
 #include "gsicc_cache.h"
 
+#include "gdevp14.h"
+
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
 /* Define the state for tile filling. */
@@ -588,6 +590,16 @@ tile_rect_trans_simple(int xmin, int ymin, int xmax, int ymax,
     int tile_width  = ptile->ttrans->width;
     int tile_height = ptile->ttrans->height;
 
+    /* Update the bbox in the topmost stack entry to reflect the fact that we
+     * have drawn into it. FIXME: This makes the groups too large! */
+    if (fill_trans_buffer->dirty->p.x > xmin)
+        fill_trans_buffer->dirty->p.x = xmin;
+    if (fill_trans_buffer->dirty->p.y > ymin)
+        fill_trans_buffer->dirty->p.y = ymin;
+    if (fill_trans_buffer->dirty->q.x < xmax)
+        fill_trans_buffer->dirty->q.x = xmax;
+    if (fill_trans_buffer->dirty->q.y < ymax)
+        fill_trans_buffer->dirty->q.y = ymax;
     buff_out_y_offset = ymin - fill_trans_buffer->rect.p.y;
     buff_out_x_offset = xmin - fill_trans_buffer->rect.p.x;
 
@@ -701,6 +713,16 @@ tile_rect_trans_blend(int xmin, int ymin, int xmax, int ymax,
     int tile_height = ptile->ttrans->height;
     int num_chan    = ptile->ttrans->n_chan;  /* Includes alpha */
 
+    /* Update the bbox in the topmost stack entry to reflect the fact that we
+     * have drawn into it. FIXME: This makes the groups too large! */
+    if (fill_trans_buffer->dirty->p.x > xmin)
+        fill_trans_buffer->dirty->p.x = xmin;
+    if (fill_trans_buffer->dirty->p.y > ymin)
+        fill_trans_buffer->dirty->p.y = ymin;
+    if (fill_trans_buffer->dirty->q.x < xmax)
+        fill_trans_buffer->dirty->q.x = xmax;
+    if (fill_trans_buffer->dirty->q.y < ymax)
+        fill_trans_buffer->dirty->q.y = ymax;
     buff_out_y_offset = ymin - fill_trans_buffer->rect.p.y;
     buff_out_x_offset = xmin - fill_trans_buffer->rect.p.x;
 
