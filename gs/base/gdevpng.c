@@ -316,7 +316,7 @@ png_put_params_downscale(gx_device *dev, gs_param_list *plist)
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
     int dsf = pdev->downscale_factor;
-    char *param_name;
+    const char *param_name;
     
     ecode = 0;
     switch (code = param_read_int(plist, (param_name = "DownScaleFactor"), &dsf)) {
@@ -362,7 +362,7 @@ png_put_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
     int mfs = pdev->min_feature_size;
-    char *param_name;
+    const char *param_name;
     
     ecode = 0;
     switch (code = param_read_int(plist, (param_name = "MinFeatureSize"), &mfs)) {
@@ -669,6 +669,8 @@ png_print_page_monod(gx_device_printer * pdev, FILE * file)
     return do_png_print_page((gx_device_png *)pdev, file, 1);
 }
 
+#if PNG_LIBPNG_VER_MINOR < 5
+
 /*
  * Patch around a static reference to a never-used procedure.
  * This could be avoided if we were willing to edit pngconf.h to
@@ -681,10 +683,13 @@ png_print_page_monod(gx_device_printer * pdev, FILE * file)
 #    define PPFB_LENGTH_T png_uint_32
 #  endif
 void
+png_push_fill_buffer(png_structp, png_bytep, PPFB_LENGTH_T);
+void
 png_push_fill_buffer(png_structp png_ptr, png_bytep buffer,
                      PPFB_LENGTH_T length)
 {
 }
+#endif
 #endif
 
 static int
