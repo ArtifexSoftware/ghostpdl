@@ -465,6 +465,8 @@ static void *cups_read(ImageReader *im,
             b >>= 1;
             if (b == 0) {
                 c = fgetc(im->file);
+                if (colspace == 0)
+                    c ^= 0xff;
                 b = 0x80;
             }
             if (c & b) {
