@@ -425,9 +425,7 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
        if we have file io capability now */
     if (libctx->io_device_table != NULL) {
         cmm_dev_profile_t *dev_profile;
-        const gs_imager_state *pis = (const gs_imager_state* ) pgs;
         if (pgs->icc_manager->lab_profile == NULL) {  /* pick one not set externally */
-            gsicc_set_icc_directory(pis, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
             gsicc_init_iccmanager(pgs);
         }
         /* Also, if the device profile is not yet set then take care of that
@@ -439,19 +437,13 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
             }
             if (dev_profile == NULL ||
                 dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
-                /* Go ahead and set the directory in the device params. */
-                gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
-                code = gsicc_init_device_profile_struct(dev, NULL,
-                                                        gsDEFAULTPROFILE);
-                if (code < 0) {
+                if ((code = gsicc_init_device_profile_struct(dev, NULL,
+                                                        gsDEFAULTPROFILE)) < 0)
                     return(code);
-                }
-               /* set the intent too */
-                code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                       gsDEFAULTPROFILE);
-                if (code < 0) {
+                /* set the intent too */
+                if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                       gsDEFAULTPROFILE)) < 0)
                     return(code);
-                }
             }
         }
     }
@@ -467,7 +459,6 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
          */
         if (libctx->io_device_table != NULL) {
             cmm_dev_profile_t *dev_profile;
-            const gs_imager_state *pis = (const gs_imager_state* ) pgs;
             if (dev->procs.get_profile != NULL) {
                 code = dev_proc(dev, get_profile)(dev, &dev_profile);
                 if (code < 0) {
@@ -475,19 +466,13 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
                 }
                 if (dev_profile == NULL ||
                     dev_profile->device_profile[gsDEFAULTPROFILE] == NULL) {
-                    /* Go ahead and set the directory in the device params. */
-                    gsicc_set_device_icc_dir(pis, pis->icc_manager->profiledir);
-                    code = gsicc_init_device_profile_struct(dev, NULL,
-                                                            gsDEFAULTPROFILE);
-                    if (code < 0) {
+                    if ((code = gsicc_init_device_profile_struct(dev, NULL,
+                                                            gsDEFAULTPROFILE)) < 0)
                         return(code);
-                    }
                     /* set the intent too */
-                    code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
-                                                           gsDEFAULTPROFILE);
-                    if (code < 0) {
+                    if ((code = gsicc_set_device_profile_intent(dev, gsPERCEPTUAL,
+                                                           gsDEFAULTPROFILE)) < 0)
                         return(code);
-                    }
                 }
             }
         }
@@ -615,15 +600,18 @@ gs_nulldevice(gs_state * pgs)
          * Internal devices have a reference count of 0, not 1,
          * aside from references from graphics states.
          */
+        /* There is some strange use of the null device in the code.  I need
+           to sort out how the icc profile is best handled with this device.
+           It seems to inherit properties from the current device if there
+           is one */
         rc_init(ndev, pgs->memory, 0);
-        if (pgs->memory->gs_lib_ctx->io_device_table != NULL) {
-            /* Set the default profile(s) from this device's color_info defaults */
+        if (pgs->device != NULL) {
+            code = dev_proc(pgs->device, get_profile)(pgs->device, 
+                                                      &(ndev->icc_array));        
+            rc_increment(ndev->icc_array);
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
-            /* When creating this we may need to get the iccdir synced */
-            gsicc_sync_iccdir(ndev, pgs);
-            if ((code = gsicc_init_device_profile_struct(ndev, NULL, gsPERCEPTUAL)) < 0)
-                return code;
-        }
+        } 
+
         return gs_setdevice_no_erase(pgs, ndev);
     }
     return 0;

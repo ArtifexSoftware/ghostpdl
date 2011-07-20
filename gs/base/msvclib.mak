@@ -384,7 +384,7 @@ FEATURE_DEVS=$(GLD)psl3lib.dev $(GLD)path1lib.dev $(GLD)dps2lib.dev $(GLD)psl2cs
 # See gs.mak for details.
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=0
+COMPILE_INITS=1
 !endif
 
 # Choose whether to store band lists on files or in memory.
