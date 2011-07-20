@@ -307,8 +307,6 @@ ps_impl_set_device(
         return code;
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
-    if (code >= 0 )
-        code = gs_erasepage(pgs);
 
     if (code < 0)
         return code;
