@@ -21,6 +21,7 @@
 #include "stdio_.h"
 #include "string_.h" /* memset */
 #include "gp.h"
+#include "gsicc_manage.h"
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
@@ -40,6 +41,39 @@ gs_lib_ctx_get_non_gc_memory_t()
 {
     return mem_err_print ? mem_err_print->non_gc_memory : NULL;
 }
+
+/*  This sets the directory to prepend to the ICC profile names specified for
+    defaultgray, defaultrgb, defaultcmyk, proofing, linking, named color and device */
+void
+gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
+                        int dir_namelen)
+{
+    char *result;
+    gs_lib_ctx_t *p_ctx = mem_gc->gs_lib_ctx;
+
+    /* If it is already set and the incoming is the default then don't set
+       as we are coming from a VMreclaim which is trying to reset the user
+       parameter */
+    if (p_ctx->profiledir != NULL && strcmp(pname,DEFAULT_DIR_ICC) == 0) {
+        return;
+    }
+    if (p_ctx->profiledir_len > 0) {
+        if (strncmp(pname, p_ctx->profiledir, p_ctx->profiledir_len) == 0) {
+            return;
+        }
+        gs_free_object(mem_gc->non_gc_memory, p_ctx->profiledir,
+                       "gsicc_set_icc_directory");
+    }
+    /* User param string.  Must allocate in non-gc memory */
+    result = (char*) gs_alloc_bytes(mem_gc->non_gc_memory, dir_namelen+1,
+                                     "gsicc_set_icc_directory");
+    if (result != NULL) {
+        strcpy(result, pname);
+        p_ctx->profiledir = result;
+        p_ctx->profiledir_len = dir_namelen;
+    }
+}
+
 
 int gs_lib_ctx_init( gs_memory_t *mem )
 {
@@ -70,6 +104,11 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
     pio->gs_next_id           = 5;  /* this implies that each thread has its own complete state */
 
+    /* Initialize our default ICCProfilesDir */
+    pio->profiledir = NULL;
+    pio->profiledir_len = 0;
+    gs_lib_ctx_set_icc_directory(mem, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
+ 
     gp_get_realtime(pio->real_time_0);
 
     return 0;

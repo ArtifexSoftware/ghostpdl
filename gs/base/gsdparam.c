@@ -77,7 +77,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Standard page device parameters: */
 
     bool seprs = false;
-    gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES], icc_dir;
+    gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
@@ -143,18 +143,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 profile_intents[k] = dev_profile->intent[k];
             }
         }
-        /* This probably should be set to the default */
-        if (dev_profile->icc_dir != NULL) {
-            param_string_from_string(icc_dir, dev_profile->icc_dir); 
-        } else {
-            param_string_from_string(icc_dir, null_str); 
-        }
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
             profile_intents[k] = gsPERCEPTUAL;
         }
-        param_string_from_string(icc_dir, null_str); 
     }
     /* Transmit the values. */
     if (
@@ -187,7 +180,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
-        (code = param_write_string(plist,"OutputICCDir", &(icc_dir))) < 0 ||
         (code = param_write_int(plist,"RenderIntent", &(profile_intents[0]))) < 0 ||
         (code = param_write_int(plist,"GraphicIntent", &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", &(profile_intents[2]))) < 0 ||
@@ -503,26 +495,6 @@ gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,
     }
 }
 
-/* This is set when the ICCDir user params is set.  In general they stay in
-   sync.  The dir is stored in the device so that it can be obtained during
-   clist rendering.  It is also stored in the graphic state to enable getting
-   the default profiles for the icc manager.  */
-void
-gx_default_put_icc_dir(gs_param_string *icc_pro, gx_device * dev) 
-{
-    char *tempstr;
-
-    if (icc_pro->size < gp_file_name_sizeof) {
-        tempstr = (char *) gs_alloc_bytes(dev->memory, icc_pro->size+1, 
-                                          "gx_default_put_icc");
-        memcpy(tempstr, icc_pro->data, icc_pro->size);
-        /* Set last position to NULL. */
-        tempstr[icc_pro->size] = 0;
-        gsicc_init_device_profile_dir(dev, tempstr);
-        gs_free_object(dev->memory, tempstr, "gx_default_put_icc");
-    }
-}
-
 /* Set standard parameters. */
 /* Note that setting the size or resolution closes the device. */
 /* Window devices that don't want this to happen must temporarily */
@@ -746,9 +718,6 @@ nce:
     }
     }
     /* Set the directory first */
-    if ((code = param_read_string(plist, "OutputICCDir", &icc_pro)) != 1) {
-        gx_default_put_icc_dir(&icc_pro, dev); 
-    }    
     if ((code = param_read_string(plist, "OutputICCProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsDEFAULTPROFILE); 
     }

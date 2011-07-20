@@ -98,8 +98,6 @@ gcmmhprofile_t gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile,
                                               gs_memory_t *memory);
 gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
                                                int profile_size);
-void gsicc_set_icc_directory(const gs_imager_state *pis, const char* pname,
-                             int namelen);
 gsicc_smask_t* gsicc_new_iccsmask(gs_memory_t *memory);
 int gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
@@ -107,8 +105,6 @@ cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
                                  gsicc_manager_t *icc_manager);
 gs_color_space_index gsicc_get_default_type(cmm_profile_t *profile_data);
-void gsicc_set_device_icc_dir(const gs_imager_state *pis, const char *pname);
-void gsicc_init_device_profile_dir(gx_device *dev, char *profile_dir);
 cmm_dev_profile_t* gsicc_new_device_profile_array(gs_memory_t *memory);
 int gsicc_sync_iccdir(gx_device *dev, const gs_state *pgs);
 void gs_setoverrideicc(gs_imager_state *pis, bool value);

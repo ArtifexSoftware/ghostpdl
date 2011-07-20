@@ -41,6 +41,7 @@
 #include "gsparamx.h"
 #include "gx.h"
 #include "gxistate.h"
+#include "gslibctx.h"
 
 
 /* The (global) font directory */
@@ -608,11 +609,15 @@ static void
 current_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_DIR_ICC;   /* as good as any other */
-    const gs_imager_state * pis = (gs_imager_state *) igs;
+    const gs_lib_ctx_t *lib_ctx = ((gs_imager_state *)igs)->memory->gs_lib_ctx;
 
-    pval->data = (const byte *)( (pis->icc_manager->profiledir == NULL) ?
-                  rfs : pis->icc_manager->profiledir);
-    pval->size = strlen((const char *)pval->data);
+    if (lib_ctx->profiledir == NULL) {
+        pval->data = (const byte *)rfs;
+        pval->size = strlen(rfs);
+    } else {
+        pval->data = (const byte *)(lib_ctx->profiledir);
+        pval->size = lib_ctx->profiledir_len;
+    }
     pval->persistent = true;
 }
 
@@ -621,22 +626,18 @@ set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     char *pname;
     int namelen = (pval->size)+1;
-    const gs_imager_state * pis = (gs_imager_state *) igs;
+    const gs_memory_t *mem = ((gs_imager_state *)igs)->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0 ) {
-        pname = (char *)gs_alloc_bytes(pis->icc_manager->memory, namelen,
-                                     "set_icc_directory");
+        pname = (char *)gs_alloc_bytes((gs_memory_t *)mem, namelen,
+		   		     "set_icc_directory");
         if (pname == NULL)
             return gs_rethrow(-1, "cannot allocate directory name");
-        memcpy(pname, pval->data,namelen-1);
+        memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        gsicc_set_icc_directory(pis, (const char*) pname, namelen);
-        /* Also go ahead and set it in the device params. */
-        gsicc_set_device_icc_dir(pis, (const char*) pname);
-        gs_free_object(pis->icc_manager->memory, pname,
-                "set_icc_directory");
-        return(0);
+        gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen);
+        gs_free_object((gs_memory_t *)mem, pname, "set_icc_directory");
     }
     return(0);
 }
@@ -651,7 +652,7 @@ current_srcgtag_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
         pval->size = 0;
         pval->persistent = true;
     } else {
-        pval->data = pis->icc_manager->srcgtag_profile->name;
+        pval->data = (byte *)pis->icc_manager->srcgtag_profile->name;
         pval->size = strlen((const char *)pval->data);
         pval->persistent = true;
     }
@@ -674,7 +675,7 @@ set_srcgtag_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
                                    namelen);
     gs_free_object(mem, pname, "set_srcgtag_icc");
     if (code < 0)
-        return gs_rethrow(code, "cannot find srcobj file");
+        return gs_rethrow(code, "cannot find srctag file");
     return(code);
 }
 
