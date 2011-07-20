@@ -1158,15 +1158,18 @@ currentdict /eexec_pdf_param_dict .undef
 currentdict end readonly def
 
 % Read embedded CMap stream.
+% if the <wmode> parameter is null, it indicates there is no WMode, and we
+% should not add one.
 % Following Acrobat we ignore everything outside
 % begincodespacerange .. endcmap.
-/read_CMap {  % <name> <1> <stream> read_CMap <CMap>
-              %        <2> <stream> read_CMap <CMap>
+/read_CMap {  % <wmode> <name> <1> <stream> read_CMap <CMap>
+              % <wmode> <2> <stream> read_CMap <CMap>
   dup 0 (begincodespacerange) /SubFileDecode filter flushfile
 
   //CMap_read_dict begin
   /CIDInit /ProcSet findresource begin
   12 dict begin
+  5 2 index sub -1 roll dup //null eq {pop} {/WMode exch def} ifelse
   /.last_CMap_def currentdict def % establish binding
   /CMapType 3 -1 roll def
   mark exch % emulate 'begincodespacerange'
@@ -1195,6 +1198,7 @@ currentdict /CMap_read_dict undef
     } ifelse
   } {
     PDFfile fileposition exch
+    dup /WMode knownoget not {//null} if exch
     dup /CMapName oget exch
     //true resolvestream
     1 exch read_CMap
