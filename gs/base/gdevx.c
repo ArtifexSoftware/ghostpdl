@@ -67,7 +67,6 @@ static dev_proc_copy_mono(x_copy_mono);
 static dev_proc_copy_color(x_copy_color);
 /*extern dev_proc_get_params(gdev_x_get_params);*/
 /*extern dev_proc_put_params(gdev_x_put_params);*/
-/*extern dev_proc_get_xfont_procs(gdev_x_get_xfont_procs);*/
 static dev_proc_get_page_device(x_get_page_device);
 static dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
 static dev_proc_begin_typed_image(x_begin_typed_image);
@@ -95,7 +94,7 @@ const gx_device_X this_device = { \
         gdev_x_get_params, \
         gdev_x_put_params, \
         NULL,			/* map_cmyk_color */ \
-        gdev_x_get_xfont_procs, \
+        NULL, \
         NULL,			/* get_xfont_device */ \
         NULL,			/* map_rgb_alpha_color */ \
         x_get_page_device, \
@@ -191,10 +190,6 @@ const gx_device_X this_device = { \
     NULL,			/* geometry */ \
     128, 5,			/* maxGrayRamp, maxRGBRamp */ \
     NULL,			/* palette */ \
-    NULL, NULL, NULL,		/* regularFonts, symbolFonts, dingbatFonts */ \
-    NULL, NULL, NULL,		/* regular_fonts, symbol_fonts, dingbat_fonts */ \
-    1, 1,			/* useXFonts, useFontExtensions */ \
-    1, 0,			/* useScalableFonts, logXFonts */ \
     0.0, 0.0,			/* xResolution, yResolution */ \
     1,				/* useBackingPixmap */ \
     1, 1,			/* useXPutImage, useXSetTile */ \

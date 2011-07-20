@@ -355,7 +355,7 @@ int  gx_provide_fm_pair_attributes(gs_font_dir * dir,
                const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
                bool design_grid);
 int  gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair);
-void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
+
 void gs_clean_fm_pair(gs_font_dir * dir, cached_fm_pair * pair);
 int  gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
 int  gs_purge_font_from_char_caches(gs_font *);

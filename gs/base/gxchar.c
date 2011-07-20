@@ -1051,46 +1051,7 @@ show_proceed(gs_show_enum * penum)
                                                    depth, &subpix_origin);
                     }
                     if (cc == 0) {
-                        /* Character is not in cache. */
-                        /* If possible, try for an xfont before */
-                        /* rendering from the outline. */
-
-                        /* If antialiasing is in effect, don't use xfont */
-                        if (log2_scale.x + log2_scale.y > 0)
-                            goto no_cache;
-                        /* Don't use xfont for outline (stroked) fonts or
-                         * as the descendant of a type 0 font.
-                         */
-                        if (pfont->ExactSize == fbit_use_outlines ||
-                            pfont->PaintType == 2 || rfont->FontType == 0
-                            )
-                            goto no_cache;
-                        if (pfont->BitmapWidths) {
-                            code = gx_lookup_xfont_char(pgs, pair, chr,
-                                     glyph, wmode, &cc);
-                            if (code < 0)
-                                return code;
-                            if (code == 0)
-                                goto no_cache;
-                        } else {
-                            if (!SHOW_USES_OUTLINE(penum) ||
-                                (penum->charpath_flag != cpm_show &&
-                                 penum->charpath_flag != cpm_charwidth)
-                                )
-                                goto no_cache;
-                            /* We might have an xfont, but we still */
-                            /* want the scalable widths. */
-                            code = gx_lookup_xfont_char(pgs, pair, chr,
-                                     glyph, wmode, &cc);
-                            if (code < 0)
-                                return code;
-                            /* Render up to the point of */
-                            /* setcharwidth or setcachedevice, */
-                            /* just as for stringwidth. */
-                            /* This is the only case in which we can */
-                            /* to go no_cache with cc != 0. */
-                            goto no_cache;
-                        }
+                        goto no_cache;
                     }
                     /* Character is in cache. */
                     /* We might be doing .charboxpath or stringwidth; */

@@ -29,26 +29,6 @@ extern XtResource gdev_x_resources[];
 extern const int gdev_x_resource_count;
 extern String gdev_x_fallback_resources[];
 
-/* Define PostScript to X11 font name mapping */
-/*
- * x11fontlist is only used within x11fontmap.
- * The names array is managed by Xlib, so the structure is simple.
- */
-typedef struct x11fontlist_s {
-    char **names;
-    int count;
-} x11fontlist;
-typedef struct x11fontmap_s x11fontmap;
-struct x11fontmap_s {
-    char *ps_name;
-    char *x11_name;
-    x11fontlist std, iso;
-    x11fontmap *next;
-};
-#define private_st_x11fontmap()	/* in gdevxini.c */\
-  gs_private_st_ptrs3(st_x11fontmap, x11fontmap, "x11fontmap",\
-    x11fontmap_enum_ptrs, x11fontmap_reloc_ptrs, ps_name, x11_name, next)
-
 /* Define the X Windows device */
 typedef struct gx_device_X_s {
     gx_device_bbox_common;	/* if target != 0, is image buffer */
@@ -168,13 +148,6 @@ typedef struct gx_device_X_s {
     String geometry;
     int maxGrayRamp, maxRGBRamp;
     String palette;
-    String regularFonts;
-    String symbolFonts;
-    String dingbatFonts;
-    x11fontmap *regular_fonts;
-    x11fontmap *symbol_fonts;
-    x11fontmap *dingbat_fonts;
-    Boolean useXFonts, useFontExtensions, useScalableFonts, logXFonts;
     float xResolution, yResolution;
 
     /* Flags work around various X server problems. */
@@ -234,10 +207,9 @@ typedef struct gx_device_X_s {
 
 } gx_device_X;
 #define private_st_device_X()	/* in gdevx.c */\
-  gs_public_st_suffix_add4_final(st_device_X, gx_device_X,\
+  gs_public_st_suffix_add1_final(st_device_X, gx_device_X,\
     "gx_device_X", device_x_enum_ptrs, device_x_reloc_ptrs,\
-    gx_device_finalize, st_device_bbox, buffer, regular_fonts,\
-    symbol_fonts, dingbat_fonts)
+    gx_device_finalize, st_device_bbox, buffer)
 
 /* Send an event to the Ghostview process */
 void gdev_x_send_event(gx_device_X *xdev, Atom msg);
@@ -266,7 +238,6 @@ dev_proc_map_rgb_color(gdev_x_map_rgb_color);  /* gdevxcmp.c */
 dev_proc_map_color_rgb(gdev_x_map_color_rgb);  /* gdevxcmp.c */
 dev_proc_get_params(gdev_x_get_params);  /* gdevxini.c */
 dev_proc_put_params(gdev_x_put_params);  /* gdevxini.c */
-dev_proc_get_xfont_procs(gdev_x_get_xfont_procs);  /* gdevxxf.c */
 dev_proc_finish_copydevice(gdev_x_finish_copydevice);  /* gdevxini.c */
 
 #endif /* gdevx_INCLUDED */

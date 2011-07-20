@@ -124,8 +124,7 @@ int  gx_add_cached_char(gs_font_dir *, gx_device_memory *, cached_char *, cached
 void gx_add_char_bits(gs_font_dir *, cached_char *, const gs_log2_scale_point *);
 cached_char *
             gx_lookup_cached_char(const gs_font *, const cached_fm_pair *, gs_glyph, int, int, gs_fixed_point *);
-int gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
-                     gs_char chr, gs_glyph glyph, int wmode, cached_char **pcc);
+
 int gx_image_cached_char(gs_show_enum *, cached_char *);
 void gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
                                   int alpha_bits, gs_log2_scale_point *p_log2_scale);
