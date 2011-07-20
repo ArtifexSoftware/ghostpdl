@@ -1025,7 +1025,11 @@ currentdict /pdf_rules_dict undef
                 % Stack: readdata? dict
       /DecodeParms /Filter filterparms
                 % Stack: readdata? dict parms filternames
-      2 index /File get exch
+      2 index /File .knownget not { 
+        (   **** Warning: Stream object is missing the stream data.\n)
+        pdfformaterror
+        () 
+      } if exch
                 % Stack: readdata? dict parms file/string filternames
       dup length 0 eq {
                 % All the PDF filters have EOD markers, but in this case
