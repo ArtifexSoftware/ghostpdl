@@ -229,6 +229,12 @@ gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
 #  define MaxPatternBitmap_DEFAULT (8*1024*1024) /* reasonable on most modern hosts */
 #endif
 
+static void gx_pattern_accum_finalize_cw(gx_device * dev)
+{
+    gx_device_clist_writer *cwdev = (gx_device_clist_writer *)dev;
+    rc_decrement_only(cwdev->target, "gx_pattern_accum_finalize_cw");
+}
+
 /* Allocate a pattern accumulator, with an initial refct of 0. */
 gx_device_forward *
 gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
@@ -310,7 +316,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->memory = mem;
         cwdev->stype = &st_device_clist;
         cwdev->stype_is_dynamic = false;
-        cwdev->finalize = NULL;
+        cwdev->finalize = gx_pattern_accum_finalize_cw;
         rc_init(cwdev, mem, 1);
         cwdev->retained = true;
         cwdev->is_open = false;
