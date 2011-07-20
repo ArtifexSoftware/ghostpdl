@@ -655,6 +655,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
     int dithered_stride = penum->ht_stride;
     bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, 
                                                 gxdso_is_native_planar, NULL, 0);
+    gx_color_index dev_white = gx_device_white(dev);
+    gx_color_index dev_black = gx_device_black(dev);
     bool done = false;
 
     /* Go ahead and fill the threshold line buffer with tiled threshold values.
@@ -705,9 +707,17 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
 #else
             if (offset_bits > dest_width)
                 offset_bits = dest_width;
-            gx_ht_threshold_row_bit(contone_align, thresh_align, contone_stride,
-                              halftone, dithered_stride, dest_width, vdi,
-                              offset_bits);
+
+            if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
+                && is_planar_dev) {
+                gx_ht_threshold_row_bit(thresh_align, contone_align, contone_stride,
+                                  halftone, dithered_stride, dest_width, vdi,
+                                  offset_bits);
+            } else {
+                gx_ht_threshold_row_bit(contone_align, thresh_align, contone_stride,
+                      halftone, dithered_stride, dest_width, vdi,
+                      offset_bits);
+            }
             /* FIXME: An improvement here would be to generate the initial
              * offset_bits at the correct offset within the byte so that they
              * align with the remainder of the line. This would mean not
@@ -724,9 +734,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 if (!is_planar_dev) {
                     (*dev_proc(dev, copy_mono)) (dev, halftone, 0, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
-                                                 offset_bits, vdi,
-                                                 (gx_color_index) 0,
-                                                 (gx_color_index) 1);
+                                                 offset_bits, vdi, dev_white,
+                                                 dev_black);
                 } else {
                     (*dev_proc(dev, copy_plane)) (dev, halftone, 0, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
@@ -744,9 +753,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                 if (!is_planar_dev) {
                     (*dev_proc(dev, copy_mono)) (dev, curr_ptr, 0, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
-                                                 curr_width, vdi,
-                                                 (gx_color_index) 0, 
-                                                 (gx_color_index) 1);
+                                                 curr_width, vdi, dev_white, 
+                                                 dev_black);
                 } else {
                     (*dev_proc(dev, copy_plane)) (dev, curr_ptr, 0, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
@@ -829,8 +837,14 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                     memcpy(ptr_out, thresh_align, LAND_BITS * tile_remainder);
                 }
                 /* Apply the threshold operation */
-                gx_ht_threshold_landscape(contone_align, thresh_align,
-                                    penum->ht_landscape, halftone, dest_height);
+                if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
+                    && is_planar_dev) {
+                    gx_ht_threshold_landscape(thresh_align, contone_align,
+                                        penum->ht_landscape, halftone, dest_height);
+                } else {
+                    gx_ht_threshold_landscape(contone_align, thresh_align,
+                                        penum->ht_landscape, halftone, dest_height);
+                }
                 /* Perform the copy mono */
                 if (penum->ht_landscape.index < 0) {
                     if (!is_planar_dev) {
@@ -838,9 +852,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                                                      gx_no_bitmap_id,
                                                      penum->ht_landscape.xstart - width + 1,
                                                      penum->ht_landscape.y_pos,
-                                                     width, dest_height,
-                                                     (gx_color_index) 0,
-                                                     (gx_color_index) 1);
+                                                     width, dest_height, 
+                                                     dev_white, dev_black);
                     } else {
                         (*dev_proc(dev, copy_plane)) (dev, halftone, 0, LAND_BITS>>3,
                                                      gx_no_bitmap_id,
@@ -856,8 +869,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
                                                      penum->ht_landscape.xstart,
                                                      penum->ht_landscape.y_pos,
                                                      width, dest_height,
-                                                     (gx_color_index) 0,
-                                                     (gx_color_index) 1);
+                                                     dev_white, dev_black);
                     } else {
                         (*dev_proc(dev, copy_plane)) (dev, halftone, 0, LAND_BITS>>3,
                                                      gx_no_bitmap_id,
