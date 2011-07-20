@@ -39,7 +39,7 @@ gx_device_procs gs_mac_procs = {
         mac_get_params,						/* get_params */
         mac_put_params,						/* put_params */
         NULL,								/* map_cmyk_color */
-        mac_get_xfont_procs,				/* get_xfont_procs */
+        NULL,				/* get_xfont_procs */
         NULL, 								/* get_xfont_device */
         NULL, 								/* map_rgb_alpha_color */
         gx_page_device_get_page_device,		/* get_page_device */
@@ -77,7 +77,6 @@ gx_device_macos gs_macos_device = {
         NULL,			/* PicHandle to "draw" into */
         NULL,			/* PicPtr */
         false,			/* outputPage */
-        false,			/* use XFont interface (render with local TrueType fonts) */
         -1,				/* lastFontFace */
         -1,				/* lastFontSize */
         -1,				/* lastFontID */
@@ -571,14 +570,8 @@ mac_put_params(gx_device *dev, gs_param_list *plist)
 
         int						isOpen = mdev->is_open;
         int						code;
-    bool					useXFonts;
         int						depth;
     gs_param_string			outputFile;
-
-        // Get the UseExternalFonts Parameter
-        code = param_read_bool(plist, "UseExternalFonts", &useXFonts);
-        if (!code)
-                mdev->useXFonts = useXFonts;
 
         // Get the BitsPerPixel Parameter
         code = param_read_int(plist, "BitsPerPixel", &depth);
@@ -642,9 +635,6 @@ mac_get_params(gx_device *dev, gs_param_list *plist)
         code = gx_default_get_params(dev, plist);
         if (code < 0)
                 return code;
-
-        // UseExternalFonts
-        code = param_write_bool(plist, "UseExternalFonts", &(mdev->useXFonts));
 
         // color depth
         code = param_write_int(plist, "BitsPerPixel", &(mdev->color_info.depth));

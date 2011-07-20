@@ -57,7 +57,6 @@ static RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
 RELOC_PTRS_END
 
 /* Forward references */
-static gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
 static int alloc_char(gs_font_dir *, ulong, cached_char **);
 static int alloc_char_in_chunk(gs_font_dir *, ulong, cached_char **);
 static void hash_remove_cached_char(gs_font_dir *, uint);
@@ -378,75 +377,6 @@ gx_touch_fm_pair(gs_font_dir *dir, cached_fm_pair *pair)
     return 0;
 }
 
-/* Look up the xfont for a font/matrix pair. */
-/* (This is only exported for gxccache.c.) */
-void
-gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
-{
-    gx_device *dev = gs_currentdevice(pgs);
-    gx_device *fdev = (*dev_proc(dev, get_xfont_device)) (dev);
-    gs_font *font = pair->font;
-    const gx_xfont_procs *procs = (*dev_proc(fdev, get_xfont_procs)) (fdev);
-    gx_xfont *xf = 0;
-
-    /* We mustn't attempt to use xfonts for stroked characters, */
-    /* because such characters go outside their bounding box. */
-    if (procs != 0 && font->PaintType == 0) {
-        gs_matrix mat;
-
-        mat.xx = pair->mxx, mat.xy = pair->mxy;
-        mat.yx = pair->myx, mat.yy = pair->myy;
-        mat.tx = 0, mat.ty = 0;
-        /* xfonts can outlive their invocations, */
-        /* but restore purges them properly. */
-        pair->memory = pgs->memory;
-        if (font->key_name.size != 0)
-            xf = lookup_xfont_by_name(fdev, procs,
-                                      &font->key_name, encoding_index,
-                                      pair, &mat);
-#define font_name_eq(pfn1,pfn2)\
-  ((pfn1)->size == (pfn2)->size && (pfn1)->size != 0 &&\
-   !memcmp((char *)(pfn1)->chars, (char *)(pfn2)->chars, (pfn1)->size))
-        if (xf == 0 && font->font_name.size != 0 &&
-        /* Avoid redundant lookup */
-            !font_name_eq(&font->font_name, &font->key_name)
-            )
-            xf = lookup_xfont_by_name(fdev, procs,
-                                      &font->font_name, encoding_index,
-                                      pair, &mat);
-        if (xf == 0 && font->FontType != ft_composite &&
-            uid_is_valid(&((gs_font_base *) font)->UID)
-            ) {			/* Look for an original font with the same UID. */
-            gs_font_dir *pdir = font->dir;
-            gs_font *pfont;
-
-            for (pfont = pdir->orig_fonts; pfont != 0;
-                 pfont = pfont->next
-                ) {
-                if (pfont->FontType != ft_composite &&
-                    uid_equal(&((gs_font_base *) pfont)->UID,
-                              &((gs_font_base *) font)->UID) &&
-                    pfont->key_name.size != 0 &&
-                    !font_name_eq(&font->key_name,
-                                  &pfont->key_name)
-                    ) {
-                    xf = lookup_xfont_by_name(fdev, procs,
-                                              &pfont->key_name,
-                                              encoding_index, pair, &mat);
-                    if (xf != 0)
-                        break;
-                }
-            }
-        }
-    }
-
-    if (xf) {
-        emprintf(pgs->memory, "Warning: the Xfonts feature is deprecated and will be removed in a future release.\n");
-    }
-
-    pair->xfont = xf;
-}
-
 /* ------ Internal routines ------ */
 
 /* Purge from the caches all references to a given font/matrix pair, */
@@ -456,11 +386,6 @@ static bool
 purge_fm_pair_char(const gs_memory_t *mem, cached_char * cc, void *vpair)
 {
     return cc_pair(cc) == cpair;
-}
-static bool
-purge_fm_pair_char_xfont(const gs_memory_t *mem, cached_char * cc, void *vpair)
-{
-    return cc_pair(cc) == cpair && cpair->xfont == 0 && !cc_has_bits(cc);
 }
 #undef cpair
 
@@ -495,8 +420,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
         pair->xfont = 0;
     }
     gx_purge_selected_cached_chars(dir,
-                                   (xfont_only ? purge_fm_pair_char_xfont :
-                                    purge_fm_pair_char),
+                                    purge_fm_pair_char,
                                    pair);
     gs_clean_fm_pair_attributes(dir, pair);
     if (!xfont_only) {
@@ -525,25 +449,6 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
     return 0;
 }
 
-/* Look up an xfont by name. */
-/* The caller must already have done get_xfont_device to get the proper */
-/* device to pass as the first argument to lookup_font. */
-static gx_xfont *
-lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
-      gs_font_name * pfstr, int encoding_index, const cached_fm_pair * pair,
-                     const gs_matrix * pmat)
-{
-    gx_xfont *xf;
-
-    if_debug5('k', "[k]lookup xfont %s [%g %g %g %g]\n",
-              pfstr->chars, pmat->xx, pmat->xy, pmat->yx, pmat->yy);
-    xf = (*procs->lookup_font) (fdev,
-                                &pfstr->chars[0], pfstr->size,
-                                encoding_index, &pair->UID,
-                                pmat, pair->memory);
-    if_debug1('k', "[k]... xfont=0x%lx\n", (ulong) xf);
-    return xf;
-}
 
 /* ====== Character-level routines ====== */
 

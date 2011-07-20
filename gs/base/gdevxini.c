@@ -39,13 +39,9 @@ typedef enum {
     Seascape = 270		/* Landscape rotated the wrong way */
 } orientation;
 
-/* GC descriptors */
-private_st_x11fontmap();
-
 /* ---------------- Opening/initialization ---------------- */
 
 /* Forward references */
-static void gdev_x_setup_fontmap(gx_device_X *);
 static void x_get_work_area(gx_device_X *xdev, int *pwidth, int *pheight);
 static long *x_get_win_property(gx_device_X *xdev, const char *atom_name);
 
@@ -307,8 +303,6 @@ gdev_x_open(gx_device_X * xdev)
     }
     /* Now that the color map is setup check if the device is separable. */
     check_device_separable((gx_device *)xdev);
-
-    gdev_x_setup_fontmap(xdev);
 
     if (!xdev->ghostview) {
         XWMHints wm_hints;
@@ -735,125 +729,6 @@ gdev_x_clear_window(gx_device_X * xdev)
     xdev->colors_or = xdev->colors_and = xdev->background;
 }
 
-/* ------ Initialize font mapping ------ */
-
-/* Extract the PostScript font name from the font map resource. */
-static const char *
-get_ps_name(const char **cpp, int *len)
-{
-    const char *ret;
-
-    *len = 0;
-    /* skip over whitespace and newlines */
-    while (**cpp == ' ' || **cpp == '\t' || **cpp == '\n') {
-        (*cpp)++;
-    }
-    /* return font name up to ":", whitespace, or end of string */
-    if (**cpp == ':' || **cpp == '\0') {
-        return NULL;
-    }
-    ret = *cpp;
-    while (**cpp != ':' &&
-           **cpp != ' ' && **cpp != '\t' && **cpp != '\n' &&
-           **cpp != '\0') {
-        (*cpp)++;
-        (*len)++;
-    }
-    return ret;
-}
-
-/* Extract the X11 font name from the font map resource. */
-static const char *
-get_x11_name(const char **cpp, int *len)
-{
-    const char *ret;
-    int dashes = 0;
-
-    *len = 0;
-    /* skip over whitespace and the colon */
-    while (**cpp == ' ' || **cpp == '\t' ||
-           **cpp == ':') {
-        (*cpp)++;
-    }
-    /* return font name up to end of line or string */
-    if (**cpp == '\0' || **cpp == '\n') {
-        return NULL;
-    }
-    ret = *cpp;
-    while (dashes != 7 &&
-           **cpp != '\0' && **cpp != '\n') {
-        if (**cpp == '-')
-            dashes++;
-        (*cpp)++;
-        (*len)++;
-    }
-    while (**cpp != '\0' && **cpp != '\n') {
-        (*cpp)++;
-    }
-    if (dashes != 7)
-        return NULL;
-    return ret;
-}
-
-/* Scan one resource and build font map records. */
-static void
-scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
-{
-    const char *ps_name;
-    const char *x11_name;
-    int ps_name_len;
-    int x11_name_len;
-    x11fontmap *font;
-    const char *cp = resource;
-
-    while ((ps_name = get_ps_name(&cp, &ps_name_len)) != 0) {
-        x11_name = get_x11_name(&cp, &x11_name_len);
-        if (x11_name) {
-            font = gs_alloc_struct(mem, x11fontmap, &st_x11fontmap,
-                                   "scan_font_resource(font)");
-            if (font == NULL)
-                continue;
-            font->ps_name = (char *)
-                gs_alloc_byte_array(mem, ps_name_len + 1, sizeof(char),
-                                    "scan_font_resource(ps_name)");
-            if (font->ps_name == NULL) {
-                gs_free_object(mem, font, "scan_font_resource(font)");
-                continue;
-            }
-            strncpy(font->ps_name, ps_name, ps_name_len);
-            font->ps_name[ps_name_len] = '\0';
-            font->x11_name = (char *)
-                gs_alloc_byte_array(mem, x11_name_len, sizeof(char),
-                                    "scan_font_resource(x11_name)");
-            if (font->x11_name == NULL) {
-                gs_free_object(mem, font->ps_name,
-                               "scan_font_resource(ps_name)");
-                gs_free_object(mem, font, "scan_font_resource(font)");
-                continue;
-            }
-            strncpy(font->x11_name, x11_name, x11_name_len - 1);
-            font->x11_name[x11_name_len - 1] = '\0';
-            font->std.names = NULL;
-            font->std.count = -1;
-            font->iso.names = NULL;
-            font->iso.count = -1;
-            font->next = *pmaps;
-            *pmaps = font;
-        }
-    }
-}
-
-/* Scan all the font resources and set up the maps. */
-static void
-gdev_x_setup_fontmap(gx_device_X * xdev)
-{
-    if (!xdev->useXFonts)
-        return;			/* If no external fonts, don't bother */
-
-    scan_font_resource(xdev->regularFonts, &xdev->regular_fonts, xdev->memory);
-    scan_font_resource(xdev->symbolFonts, &xdev->symbol_fonts, xdev->memory);
-    scan_font_resource(xdev->dingbatFonts, &xdev->dingbat_fonts, xdev->memory);
-}
 
 /* Clean up the instance after making a copy. */
 int
@@ -863,11 +738,6 @@ gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 
     /* Mark the new instance as closed. */
     xdev->is_open = false;
-
-    /* Prevent dangling references from the *_fonts lists. */
-    xdev->regular_fonts = 0;
-    xdev->symbol_fonts = 0;
-    xdev->dingbat_fonts = 0;
 
     /* Clear all other pointers. */
     xdev->target = 0;
@@ -1048,25 +918,6 @@ gdev_x_put_params(gx_device * dev, gs_param_list * plist)
 }
 
 /* ---------------- Closing/finalization ---------------- */
-
-/* Free fonts when closing the device. */
-static void
-free_x_fontmaps(x11fontmap **pmaps, gs_memory_t *mem)
-{
-    while (*pmaps) {
-        x11fontmap *font = *pmaps;
-
-        *pmaps = font->next;
-        if (font->std.names)
-            XFreeFontNames(font->std.names);
-        if (font->iso.names)
-            XFreeFontNames(font->iso.names);
-        gs_free_object(mem, font->x11_name, "free_x_fontmaps(x11_name)");
-        gs_free_object(mem, font->ps_name, "free_x_fontmaps(ps_name)");
-        gs_free_object(mem, font, "free_x_fontmaps(font)");
-    }
-}
-
 /* Close the device. */
 int
 gdev_x_close(gx_device_X *xdev)
@@ -1078,9 +929,6 @@ gdev_x_close(gx_device_X *xdev)
         xdev->vinfo = NULL;
     }
     gdev_x_free_colors(xdev);
-    free_x_fontmaps(&xdev->dingbat_fonts, xdev->memory);
-    free_x_fontmaps(&xdev->symbol_fonts, xdev->memory);
-    free_x_fontmaps(&xdev->regular_fonts, xdev->memory);
     if (xdev->cmap != DefaultColormapOfScreen(xdev->scr))
         XFreeColormap(xdev->dpy, xdev->cmap);
     XCloseDisplay(xdev->dpy);

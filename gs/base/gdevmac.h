@@ -58,7 +58,6 @@ typedef struct gx_device_macos_s
         PicHandle		pic;
         short			*currPicPos;
         bool			outputPage;
-        bool			useXFonts;
         FMFontStyle		lastFontFace;
         FMFontSize		lastFontSize;
         FMFontFamily	lastFontID;
@@ -83,14 +82,6 @@ dev_proc_copy_mono(mac_copy_mono);
 dev_proc_copy_color(mac_copy_color);
 dev_proc_draw_line(mac_draw_line);
 dev_proc_copy_alpha(mac_copy_alpha);
-dev_proc_get_xfont_procs(mac_get_xfont_procs);
-
-/* Declare the xfont procedures */
-static xfont_proc_lookup_font(mac_lookup_font);
-static xfont_proc_char_xglyph(mac_char_xglyph);
-static xfont_proc_char_metrics(mac_char_metrics);
-static xfont_proc_render_char(mac_render_char);
-static xfont_proc_release(mac_release);
 
 /* Define a MacOS xfont. */
 

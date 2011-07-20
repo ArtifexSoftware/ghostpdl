@@ -453,7 +453,7 @@ gdevx_h=$(GLSRC)gdevx.h $(gdevbbox_h) $(gdevxcmp_h)
 
 # See the main makefile for the definition of XLIBDIRS and XLIBS.
 x11_=$(GLOBJ)gdevx.$(OBJ) $(GLOBJ)gdevxcmp.$(OBJ) $(GLOBJ)gdevxini.$(OBJ)\
- $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gdevxxf.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
+ $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
 $(DD)x11_.dev : $(DEVS_MAK) $(x11_) $(GLD)bboxutil.dev $(GDEV)
 	$(SETMOD) $(DD)x11_ $(x11_)
 	$(ADDMOD) $(DD)x11_ -link $(XLIBDIRS)
@@ -482,10 +482,6 @@ $(GLOBJ)gdevxini.$(OBJ) : $(GLSRC)gdevxini.c $(GDEVX) $(memory__h)\
 $(GLOBJ)gdevxres.$(OBJ) : $(GLSRC)gdevxres.c $(std_h) $(x__h)\
  $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gdevx_h)
 	$(CC_NO_WARN) $(GLCCFLAGS) $(XINCLUDE) $(GLO_)gdevxres.$(OBJ) $(C_) $(GLSRC)gdevxres.c
-
-$(GLOBJ)gdevxxf.$(OBJ) : $(GLSRC)gdevxxf.c $(GDEVX) $(math__h) $(memory__h)\
- $(gsstruct_h) $(gsutil_h) $(gxxfont_h)
-	$(GLCCSHARED) $(XINCLUDE) $(GLO_)gdevxxf.$(OBJ) $(C_) $(GLSRC)gdevxxf.c
 
 # Alternate X11-based devices to help debug other drivers.
 # x11alpha pretends to have 4 bits of alpha channel.
