@@ -606,8 +606,9 @@ gs_nulldevice(gs_state * pgs)
            is one */
         rc_init(ndev, pgs->memory, 0);
         if (pgs->device != NULL) {
-            code = dev_proc(pgs->device, get_profile)(pgs->device, 
-                                                      &(ndev->icc_struct));        
+            if ((code = dev_proc(pgs->device, get_profile)(pgs->device, 
+                                               &(ndev->icc_struct))) < 0)
+                return code;
             rc_increment(ndev->icc_struct);
             set_dev_proc(ndev, get_profile, gx_default_get_profile);
         } 

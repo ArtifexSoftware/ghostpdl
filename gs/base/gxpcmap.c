@@ -33,6 +33,7 @@
 #include "gxcldev.h"
 #include "gzstate.h"
 #include "gxdevsop.h"
+#include "gdevmpla.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
