@@ -21,10 +21,19 @@
 #define _Windows
 #endif
 
+#ifndef WINDOWS_NO_UNICODE
+#define UNICODE
+#endif
+
 #include "windows_.h"
+
+#undef UNICODE
 
 typedef struct TEXTWINDOW_S {
     const char *Title;		/* required */
+#ifndef WINDOWS_NO_UNICODE
+    wchar_t *TitleW;             /* required */
+#endif
     HICON hIcon;		/* optional */
 #ifdef WINDOWS_NO_UNICODE
     BYTE *ScreenBuffer;
