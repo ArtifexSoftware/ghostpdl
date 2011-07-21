@@ -376,17 +376,15 @@ display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 static gx_color_index
 display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
 {
-    /* palette of 96 colors */
-    /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
+    /* palette of 256 colors */
+    /* 0->215 = 6x6x6 RGB cube, 216->255 = greyscale */
     gx_color_value r = cv[0];
     gx_color_value g = cv[1];
     gx_color_value b = cv[2];
     gx_color_value k = cv[3]; /* 0 = black */
     if ((r == 0) && (g == 0) && (b == 0)) {
-        k = ((k >> (gx_color_value_bits - 6)) + 1) >> 1;
-        if (k > 0x1f)
-            k = 0x1f;
-        return (k + 0x40);
+        k = (k * 39 + (gx_max_color_value>>1))/gx_max_color_value;
+        return (k + 216);
     }
     if (k > 0) {
         /* The RGB->RGBK color mapping shouldn't generate this. */
@@ -397,16 +395,10 @@ display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
         b = ((b+k) > gx_max_color_value) ? gx_max_color_value :
             (gx_color_value)(b+k);
     }
-    r = ((r >> (gx_color_value_bits - 3)) + 1) >> 1;
-    if (r > 0x3)
-        r = 0x3;
-    g = ((g >> (gx_color_value_bits - 3)) + 1) >> 1;
-    if (g > 0x3)
-        g = 0x3;
-    b = ((b >> (gx_color_value_bits - 3)) + 1) >> 1;
-    if (b > 0x3)
-        b = 0x3;
-    return (r << 4) + (g << 2) + b;
+    r = (r*5 + (gx_max_color_value>>1))/gx_max_color_value;
+    g = (g*5 + (gx_max_color_value>>1))/gx_max_color_value;
+    b = (b*5 + (gx_max_color_value>>1))/gx_max_color_value;
+    return (r * 6 + g) * 6 + b;
 }
 
 /* Map a color code to r-g-b-k. */
@@ -414,20 +406,22 @@ static int
 display_decode_color_device8(gx_device * dev, gx_color_index color,
                  gx_color_value prgb[4])
 {
-    gx_color_value one;
-    /* palette of 96 colors */
-    /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
-    if (color < 64) {
-        one = (gx_color_value) (gx_max_color_value / 3);
-        prgb[0] = (gx_color_value) (((color >> 4) & 3) * one);
-        prgb[1] = (gx_color_value) (((color >> 2) & 3) * one);
-        prgb[2] = (gx_color_value) (((color) & 3) * one);
+    /* palette of 256 colors */
+    /* 0->215 = RGB cube, 216->255 = greyscale */
+    if (color < 216) {
+        int r, g, b;
+        r = color/36;
+        color -= r*36;
+        g = color/6;
+        b = color-g*6;
+        prgb[0] = (gx_color_value) (r * gx_max_color_value / 5);
+        prgb[1] = (gx_color_value) (g * gx_max_color_value / 5);
+        prgb[2] = (gx_color_value) (b * gx_max_color_value / 5);
         prgb[3] = 0;
     }
-    else if (color < 96) {
-        one = (gx_color_value) (gx_max_color_value / 31);
+    else if (color < 255) {
         prgb[0] = prgb[1] = prgb[2] = 0;
-        prgb[3] = (gx_color_value) ((color & 0x1f) * one);
+        prgb[3] = (gx_color_value) ((color-216) * gx_max_color_value/39);
     }
     else {
         prgb[0] = prgb[1] = prgb[2] = prgb[3] = 0;
@@ -1494,7 +1488,7 @@ set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model,
         case DISPLAY_MODEL_RGBK:
             pdci->polarity = GX_CINFO_POLARITY_ADDITIVE;
             pdci->cm_name = "DeviceRGBK";
-            pdci->gray_index = 3;
+            pdci->gray_index = 216;
             break;
         case DISPLAY_MODEL_CMYK:
             pdci->polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
@@ -1676,8 +1670,8 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                                                 display_map_color_rgb_device4);
                     break;
                 case DISPLAY_DEPTH_8:
-                    /* 8bit/pixel 96 color palette */
-                    set_color_info(&dci, DISPLAY_MODEL_RGBK, 4, 8, 31, 3);
+                    /* 8bit/pixel 256 color palette */
+                    set_color_info(&dci, DISPLAY_MODEL_RGBK, 4, 8, 39, 5);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
                     set_rgbk_color_procs(pdev, display_encode_color_device8,
                                                 display_decode_color_device8);

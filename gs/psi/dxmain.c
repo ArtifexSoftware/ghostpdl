@@ -542,25 +542,28 @@ static int display_size(void *handle, void *device, int width, int height,
     switch (color) {
         case DISPLAY_COLORS_NATIVE:
             if (depth == DISPLAY_DEPTH_8) {
-                /* palette of 96 colors */
-                guint32 color[96];
-                int i;
-                int one = 255 / 3;
-                for (i=0; i<96; i++) {
-                    /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
-                    if (i < 64) {
-                        color[i] =
-                            (((i & 0x30) >> 4) * one << 16) + 	/* r */
-                            (((i & 0x0c) >> 2) * one << 8) + 	/* g */
-                            (i & 0x03) * one;		        /* b */
+                    /* palette of 256 colors */
+                    if (index < 216) {
                     }
                     else {
-                        int val = i & 0x1f;
-                        val = (val << 3) + (val >> 2);
-                        color[i] = (val << 16) + (val << 8) + val;
+                        int val = index-216;
+                        *r = *g = *b = val*255/39;
                     }
+                /* palette of 256 colors */
+                guint32 color[256];
+                int r, g, b, i;
+                /* 0->215 = 6x6x6 RGB cube, 216->255 = greyscale */
+                for (r=0; r<6; r++)
+                    for (g=0; g<6; g++)
+                        for (b=0; b<6; b++)
+                            color[(r*6+g)*6+b] = ((r*255/5)<<16) |
+                                                 ((g*255/5)<<8) |
+                                                  (b*255/5);
+                for (i=0; i<40; i++) {
+                    g = i*255/39;
+                    color[216+i] = (g<<16) | (g<<8) | g;
                 }
-                img->cmap = gdk_rgb_cmap_new(color, 96);
+                img->cmap = gdk_rgb_cmap_new(color, 256);
                 break;
             }
             else if (depth == DISPLAY_DEPTH_16) {
