@@ -22,11 +22,9 @@
 
 #define STRICT
 #include <windowsx.h>
-#include "windows_.h"
+#include "dwtext.h"
 #include <commdlg.h>
 #include <shellapi.h>
-
-#include "dwtext.h"
 
 #ifdef WINDOWS_NO_UNICODE
 #define CHARSIZE 1
@@ -173,7 +171,7 @@ void
 text_font(TW *tw, const char *name, int size)
 {
     /* make a new font */
-    LOGFONT lf;
+    LOGFONTA lf;
     TEXTMETRIC tm;
     LPSTR p;
     HDC hdc;
@@ -185,8 +183,7 @@ text_font(TW *tw, const char *name, int size)
         return;
 
     /* set new name and size */
-    if (tw->fontname)
-        free(tw->fontname);
+    free(tw->fontname);
     tw->fontname = (char *)malloc(strlen(name)+1);
     if (tw->fontname == NULL)
         return;
@@ -195,7 +192,7 @@ text_font(TW *tw, const char *name, int size)
 
     /* if window not open, hwnd == 0 == HWND_DESKTOP */
     hdc = GetDC(tw->hwnd);
-    memset(&lf, 0, sizeof(LOGFONT));
+    memset(&lf, 0, sizeof(LOGFONTA));
     strncpy(lf.lfFaceName,tw->fontname,LF_FACESIZE);
     lf.lfHeight = -MulDiv(tw->fontsize, GetDeviceCaps(hdc, LOGPIXELSY), 72);
     lf.lfPitchAndFamily = FIXED_PITCH;
@@ -211,7 +208,7 @@ text_font(TW *tw, const char *name, int size)
     if (tw->hfont)
         DeleteFont(tw->hfont);
 
-    tw->hfont = CreateFontIndirect((LOGFONT FAR *)&lf);
+    tw->hfont = CreateFontIndirectA((LOGFONTA FAR *)&lf);
 
     /* get text size */
     SelectFont(hdc, tw->hfont);
@@ -234,11 +231,9 @@ void
 text_drag(TW *tw, const char *pre, const char *post)
 {
     /* remove old strings */
-    if (tw->DragPre)
-        free((char *)tw->DragPre);
+    free((char *)tw->DragPre);
     tw->DragPre = NULL;
-    if (tw->DragPost)
-        free((char *)tw->DragPost);
+    free((char *)tw->DragPost);
     tw->DragPost = NULL;
 
     /* add new strings */
@@ -315,25 +310,25 @@ text_destroy(TW *tw)
         DeleteFont(tw->hfont);
     tw->hfont = NULL;
 
-    if (tw->KeyBuf)
-        free((char *)tw->KeyBuf);
+    free((char *)tw->KeyBuf);
     tw->KeyBuf = NULL;
 
-    if (tw->ScreenBuffer)
-        free((char *)tw->ScreenBuffer);
+    free((char *)tw->ScreenBuffer);
     tw->ScreenBuffer = NULL;
 
-    if (tw->DragPre)
-        free((char *)tw->DragPre);
+    free((char *)tw->DragPre);
     tw->DragPre = NULL;
 
-    if (tw->DragPost)
-        free((char *)tw->DragPost);
+    free((char *)tw->DragPost);
     tw->DragPost = NULL;
 
-    if (tw->fontname)
-        free((char *)tw->fontname);
+    free((char *)tw->fontname);
     tw->fontname = NULL;
+
+#ifndef WINDOWS_NO_UNICODE
+    free((char *)tw->TitleW);
+    tw->TitleW = NULL;
+#endif
 }
 
 /* register the window class */
@@ -371,6 +366,20 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
 {
     HMENU sysmenu;
     HINSTANCE hInstance = GetModuleHandle(NULL);
+#ifndef WINDOWS_NO_UNICODE
+    wchar_t *app_nameW, *d;
+    const char *s;
+
+    app_nameW = malloc(strlen(app_name)*2+2);
+    if (app_nameW == NULL) {
+        text_error("Out of memory");
+        return 1;
+    }
+    d = app_nameW;
+    s = app_name;
+    while ((*d++ = (wchar_t)(unsigned char)(*s++)) != 0);
+    tw->TitleW = app_nameW;
+#endif
 
     tw->Title = app_name;
     tw->nCmdShow = show_cmd;
@@ -408,7 +417,7 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
                   tw->x, tw->y, tw->cx, tw->cy,
                   NULL, NULL, hInstance, tw);
 #else
-    tw->hwnd = CreateWindowW(TextWinClassName, (LPCWSTR)tw->Title,
+    tw->hwnd = CreateWindowW(TextWinClassName, app_nameW,
                   WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
                   tw->x, tw->y, tw->cx, tw->cy,
                   NULL, NULL, hInstance, tw);
@@ -1223,7 +1232,11 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 TCHAR title[256];
                 int count = GetWindowText(hwnd, title,
                                           sizeof(title)/sizeof(TCHAR)-11);
-                lstrcpy(title+count, " - closing");
+#ifdef WINDOWS_NO_UNICODE
+                lstrcpyA(title+count, " - closing");
+#else
+                lstrcpyW(title+count, L" - closing");
+#endif
                 SetWindowText(hwnd, title);
             }
             tw->quitnow = TRUE;
