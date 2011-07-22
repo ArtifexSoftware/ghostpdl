@@ -717,7 +717,7 @@ typedef struct gx_device_cached_colors_s {
         long PageCount;			/* number of pages written */\
         long ShowpageCount;		/* number of calls on showpage */\
         int NumCopies;\
-          bool NumCopies_set;\
+        bool NumCopies_set;\
         bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
         bool UseCIEColor;		/* for PS LL3 */\
         bool LockSafetyParams;		/* If true, prevent unsafe changes */\
@@ -725,7 +725,7 @@ typedef struct gx_device_cached_colors_s {
         long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
-        cmm_dev_profile_t *icc_array;      /* object dependent profiles */\
+        cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
         gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\

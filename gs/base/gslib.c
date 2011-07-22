@@ -121,8 +121,8 @@ main(int argc, const char *argv[])
                                   "bbox");
     gx_device_bbox_init(bbdev, dev, mem);
 
-    code = dev_proc(dev, get_profile)(dev, &bbdev->icc_array);
-    rc_increment(bbdev->icc_array);
+    code = dev_proc(dev, get_profile)(dev, &bbdev->icc_struct);
+    rc_increment(bbdev->icc_struct);
 
     /* Print out the device name just to test the gsparam.c API. */
     {

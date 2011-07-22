@@ -228,8 +228,8 @@ gx_begin_image3x_generic(gx_device * dev,
                         (int)ceil(mrect.q.x) - origin[i].x,
                         (int)ceil(mrect.q.y) - origin[i].y,
                         penum->mask[i].depth, mem);
-        code = dev_proc(dev, get_profile)(dev, &mdev->icc_array);
-        rc_increment(mdev->icc_array);
+        code = dev_proc(dev, get_profile)(dev, &mdev->icc_struct);
+        rc_increment(mdev->icc_struct);
         if (code < 0)
             goto out1;
         penum->mask[i].mdev = mdev;
@@ -543,9 +543,9 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
      */
     gx_device_bbox *bbdev;
     int code;
-    cmm_dev_profile_t *icc_array;
+    cmm_dev_profile_t *icc_struct;
 
-    code = dev_proc(dev, get_profile)(dev, &icc_array);
+    code = dev_proc(dev, get_profile)(dev, &icc_struct);
     if (code < 0) {
         return(code);
     }
@@ -558,8 +558,8 @@ make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
 
     gx_device_bbox_init(bbdev, dev, mem);
 
-    bbdev->icc_array = icc_array;
-    rc_increment(bbdev->icc_array);
+    bbdev->icc_struct = icc_struct;
+    rc_increment(bbdev->icc_struct);
 
     gx_device_bbox_fwd_open_close(bbdev, false);
     code = dev_proc(bbdev, begin_typed_image)
@@ -870,8 +870,8 @@ gx_image3x_end_image(gx_image_enum_common_t * info, bool draw_last)
     gx_device *pcdev = penum->pcdev;
     int pcode = gx_image_end(penum->pixel.info, draw_last);
 
-    rc_decrement(pcdev->icc_array, "gx_image3x_end_image(pcdev->icc_array)");
-    pcdev->icc_array = NULL;
+    rc_decrement(pcdev->icc_struct, "gx_image3x_end_image(pcdev->icc_struct)");
+    pcdev->icc_struct = NULL;
 
     gs_closedevice(pcdev);
     if (mdev0)

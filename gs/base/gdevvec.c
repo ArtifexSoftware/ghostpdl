@@ -263,7 +263,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 {
     bool binary = !(open_options & VECTOR_OPEN_FILE_ASCII);
     int code = -1;		/* (only for testing, never returned) */
-    cmm_dev_profile_t *icc_array;
+    cmm_dev_profile_t *icc_struct;
 
     /* Open the file as seekable or sequential, as requested. */
     if (!(open_options & VECTOR_OPEN_FILE_SEQUENTIAL)) {
@@ -279,7 +279,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
                                           binary, false, &vdev->file);
     }
     if (code >= 0) {
-        code = dev_proc(vdev, get_profile)((gx_device *)vdev, &icc_array);
+        code = dev_proc(vdev, get_profile)((gx_device *)vdev, &icc_struct);
     }
 
     if (code < 0)
@@ -322,8 +322,8 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         gx_device_bbox_init(vdev->bbox_device, NULL, vdev->v_memory);
         rc_increment(vdev->bbox_device);
 
-        vdev->bbox_device->icc_array = icc_array;
-        rc_increment(vdev->bbox_device->icc_array);
+        vdev->bbox_device->icc_struct = icc_struct;
+        rc_increment(vdev->bbox_device->icc_struct);
 
         gx_device_set_resolution((gx_device *) vdev->bbox_device,
                                  vdev->HWResolution[0],
@@ -812,8 +812,8 @@ gdev_vector_close_file(gx_device_vector * vdev)
     int err;
 
     if (vdev->bbox_device) {
-        rc_decrement(vdev->bbox_device->icc_array, "vector_close(bbox_device->icc_array");
-        vdev->bbox_device->icc_array = NULL;
+        rc_decrement(vdev->bbox_device->icc_struct, "vector_close(bbox_device->icc_struct");
+        vdev->bbox_device->icc_struct = NULL;
         gs_free_object(vdev->v_memory, vdev->bbox_device,
                    "vector_close(bbox_device)");
         vdev->bbox_device = 0;

@@ -127,7 +127,7 @@ static void gscms_set_icc_range(cmm_profile_t **icc_profile)
     }
 }
 
-static cmm_profile_t*
+cmm_profile_t*
 gsicc_set_iccsmaskprofile(const char *pname,
                           int namelen, gsicc_manager_t *icc_manager,
                           gs_memory_t *mem)
@@ -929,19 +929,19 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
 static void
 rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
-    cmm_dev_profile_t *icc_array = (cmm_dev_profile_t *)ptr_in;
+    cmm_dev_profile_t *icc_struct = (cmm_dev_profile_t *)ptr_in;
     int k;
-    gs_memory_t *mem_nongc =  icc_array->memory;
+    gs_memory_t *mem_nongc =  icc_struct->memory;
 
-    if (icc_array->rc.ref_count <= 1 ) {
+    if (icc_struct->rc.ref_count <= 1 ) {
         /* Decrement any profiles. */
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            if (icc_array->device_profile[k] != NULL) {
-                rc_decrement(icc_array->device_profile[k],
+            if (icc_struct->device_profile[k] != NULL) {
+                rc_decrement(icc_struct->device_profile[k],
                              "rc_free_profile_array");
             }
         }
-        gs_free_object(mem_nongc, icc_array, "rc_free_profile_array");
+        gs_free_object(mem_nongc, icc_struct, "rc_free_profile_array");
     }
 }
 
@@ -961,6 +961,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
         result->device_profile[k] = NULL;
         result->intent[k] = gsPERCEPTUAL;
     }
+    result->devicegraytok = true;  /* Default is to map gray to pure K */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
 }
@@ -972,7 +973,11 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
     int code;
     cmm_dev_profile_t *profile_struct;
    
-    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    if (dev->procs.get_profile == NULL) {
+        profile_struct = dev->icc_struct;
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    }
     if (profile_struct ==  NULL)
         return 0;
     profile_struct->intent[profile_type] = intent;
@@ -994,7 +999,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
        check to see if the profile that we are trying to set is already
        set and the same.  If it is not, then we need to free it and then
        reset. */
-    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+    profile_struct = dev->icc_struct;
     if (profile_struct != NULL) {
         /* Get the profile of interest */
         curr_profile = profile_struct->device_profile[profile_type];      
@@ -1027,7 +1032,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
                             strlen(profile_name) != 0 )) {
                 /* A change in the profile.  rc decrement this one as it will
                    be replaced */
-                    rc_decrement(dev->icc_array->device_profile[profile_type],
+                    rc_decrement(dev->icc_struct->device_profile[profile_type],
                                  "gsicc_init_device_profile_struct");
                 } else {
                     /* Nothing to change */
@@ -1038,8 +1043,8 @@ gsicc_init_device_profile_struct(gx_device * dev,
     } else {
         /* We have no profile structure at all. Allocate the structure in
            non-GC memory.  */
-        dev->icc_array = gsicc_new_device_profile_array(dev->memory);
-        profile_struct = dev->icc_array;
+        dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        profile_struct = dev->icc_struct;
     }
     /* Either use the incoming or a default */
     if (profile_name == NULL) {
@@ -1064,7 +1069,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
 }
 
 /*  This computes the hash code for the device profile and assigns the profile
-    in the icc_array member variable of the device.  This should
+    in the icc_struct member variable of the device.  This should
     really occur only one time, but may occur twice if a color model is
     specified or a nondefault profile is specified on the command line */
 static int
@@ -1086,7 +1091,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *file_name,
             icc_profile =
                 gsicc_profile_new(str, mem, file_name, strlen(file_name));
             code = sfclose(str);
-            pdev->icc_array->device_profile[pro_enum] = icc_profile;
+            pdev->icc_struct->device_profile[pro_enum] = icc_profile;
 
             /* Get the profile handle */
             icc_profile->profile_handle =
@@ -1308,6 +1313,7 @@ gsicc_manager_new(gs_memory_t *memory)
    result->default_rgb = NULL;
    result->default_cmyk = NULL;
    result->lab_profile = NULL;
+   result->graytok_profile = NULL;
    result->device_named = NULL;
    result->output_link = NULL;
    result->proof_profile = NULL;
@@ -1336,6 +1342,7 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    rc_decrement(icc_manager->output_link, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->proof_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
+   rc_decrement(icc_manager->graytok_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->srcgtag_profile, "rc_gsicc_manager_free");
 
    /* Loop through the DeviceN profiles */
@@ -1861,7 +1868,6 @@ gs_currentoverrideicc(const gs_imager_state *pis)
         return false;
     }
 }
-
 void
 gs_setoverride_ri(gs_imager_state *pis, bool value)
 {

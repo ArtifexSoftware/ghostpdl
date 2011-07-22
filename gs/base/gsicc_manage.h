@@ -26,6 +26,7 @@
 #define SMASK_GRAY_ICC    "ps_gray.icc"
 #define SMASK_RGB_ICC     "ps_rgb.icc"
 #define SMASK_CMYK_ICC    "ps_cmyk.icc"
+#define GRAY_TO_K         "gray_to_k.icc"
 #define DEFAULT_DIR_ICC   "%rom%iccprofiles/"
 
 /* Key names for special common canned profiles.
@@ -111,6 +112,9 @@ void gs_setoverrideicc(gs_imager_state *pis, bool value);
 bool gs_currentoverrideicc(const gs_imager_state *pis);
 void gs_setoverride_ri(gs_imager_state *pis, bool value);
 bool gs_currentoverride_ri(const gs_imager_state *pis);
+cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen, 
+                                         gsicc_manager_t *icc_manager, 
+                                         gs_memory_t *mem);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);

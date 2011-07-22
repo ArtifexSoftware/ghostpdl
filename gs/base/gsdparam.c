@@ -79,6 +79,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
+    bool devicegraytokoff = false;  /* Default if device profile stuct not set */
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
@@ -143,6 +144,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 profile_intents[k] = dev_profile->intent[k];
             }
         }
+        devicegraytokoff = !(dev_profile->devicegraytok);
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
@@ -150,7 +152,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         }
     }
     /* Transmit the values. */
-    if (
+       if (
         /* Standard parameters */
         (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
@@ -172,10 +174,10 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
         (code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
         (code = param_write_bool(plist, "UseCIEColor", &dev->UseCIEColor)) < 0 ||
-
         /* Non-standard parameters */
         /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
            that profile here for the device parameter on the command line */
+        (code = param_write_bool(plist, "DeviceGrayToKOff", &devicegraytokoff)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
@@ -452,6 +454,32 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
     code = (*dev_proc(dev, put_params)) (dev, plist);
     return (code < 0 ? code : was_open && !dev->is_open ? 1 : code);
 }
+  
+static void
+gx_default_put_graytok(bool graytok, gx_device * dev) 
+{
+    int code;
+    cmm_dev_profile_t *profile_struct;
+
+    if (dev->procs.get_profile == NULL) {
+        /* This is an odd case where the device has not yet fully been 
+           set up with its procedures yet.  We want to make sure that
+           we catch this so we assume here that we are dealing with 
+           the target device */
+        if (dev->icc_struct == NULL) {
+            /* Intializes the device structure.  Not the profile though for index */
+            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        }
+        dev->icc_struct->devicegraytok = graytok;
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (profile_struct == NULL) {
+            /* Intializes the device structure.  Not the profile though for index */
+            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        }
+        profile_struct->devicegraytok = graytok;
+    }
+}
 
 static void
 gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,  
@@ -460,14 +488,25 @@ gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,
     int code;
     cmm_dev_profile_t *profile_struct;
 
-    code = dev_proc(dev, get_profile)(dev,  &profile_struct);
-    if (profile_struct == NULL) {
-        /* Intializes the device structure.  Not the profile though for index */
-        code = gsicc_init_device_profile_struct(dev, NULL, 0);
+    if (dev->procs.get_profile == NULL) {
+        /* This is an odd case where the device has not yet fully been 
+           set up with its procedures yet.  We want to make sure that
+           we catch this so we assume here that we are dealing with 
+           the target device */
+        if (dev->icc_struct == NULL) {
+            /* Intializes the device structure.  Not the profile though for index */
+            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        }
+        code = gsicc_set_device_profile_intent(dev, icc_intent, index);
+    } else {
+        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
+        if (profile_struct == NULL) {
+            /* Intializes the device structure.  Not the profile though for index */
+            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+        }
+        code = gsicc_set_device_profile_intent(dev, icc_intent, index);
     }
-    code = gsicc_set_device_profile_intent(dev, icc_intent, index);
 }
-
 
 static void
 gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,  
@@ -533,11 +572,14 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string cms;
     int leadingedge = dev->LeadingEdge;
     int k;
+    bool devicegraytokoff = false;
 
-    if (dev->icc_array != NULL) {
+
+    if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            rend_intent[k] = dev->icc_array->intent[k];
+            rend_intent[k] = dev->icc_struct->intent[k];
         }
+        devicegraytokoff = !(dev->icc_struct->devicegraytok);
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = gsPERCEPTUAL;
@@ -752,6 +794,11 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
+    if ((code = param_read_bool(plist, (param_name = "DeviceGrayToKOff"), 
+                                                        &devicegraytokoff)) < 0) {
+        ecode = code;
+        param_signal_error(plist, param_name, ecode);
+    }
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
@@ -946,12 +993,13 @@ nce:
     gx_device_decache_colors(dev);
 
     /* Take care of the rendering intents */
-    if (dev->icc_array != NULL) {
+    if (dev->icc_struct != NULL) {
         gx_default_put_intent(rend_intent[0], dev, gsDEFAULTPROFILE); 
         gx_default_put_intent(rend_intent[1], dev, gsGRAPHICPROFILE); 
         gx_default_put_intent(rend_intent[2], dev, gsIMAGEPROFILE); 
         gx_default_put_intent(rend_intent[3], dev, gsTEXTPROFILE); 
-    } 
+    }
+    gx_default_put_graytok(!devicegraytokoff, dev);
     return 0;
 }
 

@@ -439,6 +439,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     bool use_src_intent = false;
     cmm_dev_profile_t *dev_profile;
     int code;
+    bool devicegraytok;
 
     if (dev_in == NULL) {
         /* Get from the imager state which is going to be a graphic state.
@@ -476,6 +477,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     }
     if ( output_colorspace != NULL ) {
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
+        devicegraytok = false;
     } else {
         /* Use the device profile. Only use the rendering intent if override_ri
            is set. Note that this can conflict with intents set from the source
@@ -491,10 +493,14 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                 rendering_params->rendering_intent = rendering_intent;      
             }
         }
+        devicegraytok = dev_profile->devicegraytok;
     }
+    /* If we are going from DeviceGray to DeviceCMYK and devicegraytok
+       is true then use the ps_gray and ps_cmyk profiles instead of these
+       profiles */
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
-                    rendering_params, memory, include_softproof));
+                    rendering_params, memory, include_softproof, devicegraytok));
 }
 
 /* This is the main function called to obtain a linked transform from the ICC cache
@@ -508,7 +514,8 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
                        cmm_profile_t *gs_input_profile,
                        cmm_profile_t *gs_output_profile,
                        gsicc_rendering_param_t *rendering_params,
-                       gs_memory_t *memory, bool include_softproof)
+                       gs_memory_t *memory, bool include_softproof,
+                       bool devicegraytok)
 {
     gsicc_hashlink_t hash;
     gsicc_link_t *link, *found_link;
@@ -519,6 +526,7 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     gs_memory_t *cache_mem = pis->icc_link_cache->memory;
     gcmmhprofile_t *cms_input_profile;
     gcmmhprofile_t *cms_output_profile;
+    int code;
 
     /* First compute the hash code for the incoming case */
     /* If the output color space is NULL we will use the device profile for the output color space */
@@ -614,9 +622,9 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     cms_output_profile = gs_output_profile->profile_handle;
     if (cms_output_profile == NULL) {
         if (gs_output_profile->buffer != NULL) {
-            cms_input_profile =
-                gsicc_get_profile_handle_buffer(gs_input_profile->buffer,
-                                                gs_input_profile->buffer_size);
+            cms_output_profile =
+                gsicc_get_profile_handle_buffer(gs_output_profile->buffer,
+                                                gs_output_profile->buffer_size);
             gs_output_profile->profile_handle = cms_output_profile;
         } else {
               /* See if we have a clist device pointer. */
@@ -640,6 +648,28 @@ gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
     /* Profile reading of same structure not thread safe in lcms */
     gx_monitor_enter(gs_input_profile->lock);
     gx_monitor_enter(gs_output_profile->lock);
+    /* We may have to worry about special handling for DeviceGray to
+       DeviceCMYK to ensure that Gray is mapped to K only.  This is only
+       done once and then it is cached and the link used */
+    if (gs_output_profile->data_cs == gsCMYK && 
+        gs_input_profile->data_cs == gsGRAY && pis->icc_manager != NULL &&
+        devicegraytok) {
+        if (icc_manager->graytok_profile == NULL) {
+            icc_manager->graytok_profile =
+                gsicc_set_iccsmaskprofile(GRAY_TO_K, strlen(GRAY_TO_K), 
+                pis->icc_manager, pis->icc_manager->memory->stable_memory);
+                if (icc_manager->graytok_profile == NULL) {
+                    return NULL;
+                }
+        }
+        if (icc_manager->smask_profiles == NULL) {
+            code = gsicc_initialize_iccsmask(icc_manager);
+        }
+        cms_input_profile = 
+            icc_manager->smask_profiles->smask_gray->profile_handle;
+        cms_output_profile = 
+            icc_manager->graytok_profile->profile_handle;
+    }
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                     rendering_params);
     gx_monitor_leave(gs_output_profile->lock);
@@ -910,7 +940,8 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                 icc_link = gsicc_get_link_profile(pis, dev,
                                                 pis->icc_manager->lab_profile,
                                                 curr_output_profile, rendering_params,
-                                                pis->memory, false);
+                                                pis->memory, false, 
+                                                false);
                 if (icc_link->is_identity) {
                     psrc_temp = &(psrc[0]);
                 } else {

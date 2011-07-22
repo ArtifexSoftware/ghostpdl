@@ -145,8 +145,8 @@ clist_setup_render_threads(gx_device *dev, int y)
         gs_c_param_list_read(&paramlist);
         ndev->PageCount = dev->PageCount;       /* copy to prevent mismatch error */
 #if CMM_THREAD_SAFE
-        ndev->icc_array = dev->icc_array;  /* Set before put params */
-        rc_increment(ndev->icc_array);
+        ndev->icc_struct = dev->icc_struct;  /* Set before put params */
+        rc_increment(ndev->icc_struct);
 #endif
         if ((code = gs_putdeviceparams(ndev, (gs_param_list *)&paramlist)) < 0)
             break;
@@ -160,8 +160,8 @@ clist_setup_render_threads(gx_device *dev, int y)
         ncdev->page_uses_transparency = cdev->page_uses_transparency;
         if_debug3('{',"[{]MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
                   ncdev,
-                  ncdev->icc_array->device_profile[0],
-                  ncdev->icc_array->device_profile[0]->profile_handle);
+                  ncdev->icc_struct->device_profile[0],
+                  ncdev->icc_struct->device_profile[0]->profile_handle);
         /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
          * We need  to unlink those files and open the main thread's files, then
          * reset the clist state for reading/rendering
@@ -308,7 +308,7 @@ clist_teardown_render_threads(gx_device *dev)
             gdev_prn_free_memory((gx_device *)thread_cdev);
             /* Free the device copy this thread used.  Note that the
                deviceN stuff if was allocated and copied earlier for the device
-               will be freed with this call and the icc_array ref count will be decremented. */
+               will be freed with this call and the icc_struct ref count will be decremented. */
             gs_free_object(thread->memory, thread_cdev, "clist_teardown_render_threads");
 #ifdef DEBUG
             if (gs_debug[':'])

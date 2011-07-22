@@ -875,7 +875,8 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                    and the child will have the same color space anyway */
                 icc_link = gsicc_get_link_profile(pis, dev, curr_icc_profile,
                                     nos->parent_color_info_procs->icc_profile,
-                                    &rendering_params, pis->memory, false);
+                                    &rendering_params, pis->memory, false,
+                                    false);
                 /* If the link is the identity, then we don't need to do
                    any color conversions */
                 if ( !(icc_link->is_identity) ) {
@@ -1216,7 +1217,8 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     rendering_params.graphics_type_tag = GS_IMAGE_TAG;
                     rendering_params.rendering_intent = gsPERCEPTUAL;
                     icc_link = gsicc_get_link_profile(pis, dev, des_profile,
-                        src_profile, &rendering_params, pis->memory, false);
+                        src_profile, &rendering_params, pis->memory, false,
+                        false);
                     smask_icc(tos->rect.q.y - tos->rect.p.y ,
                                         tos->rect.q.x - tos->rect.p.x,tos->n_chan,
                                         tos->rowstride, tos->planestride,
@@ -1771,13 +1773,14 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
        TODO: MJV.  It has to make its own device structure but
        can grab a copy of the profile.  This allows swapping of profiles
        in the PDF14 device without messing up the target device profile */
-    if (dev->icc_array == NULL) {
-        dev->icc_array = gsicc_new_device_profile_array(dev->memory);
-        profile_dev14 = dev->icc_array;
+    if (dev->icc_struct == NULL) {
+        dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+        profile_dev14 = dev->icc_struct;
         code =
             dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
         profile_dev14->device_profile[0] = profile_targ->device_profile[0];
+        dev->icc_struct->devicegraytok = profile_targ->devicegraytok;
         gx_monitor_enter(profile_dev14->device_profile[0]->lock);
         rc_increment(profile_dev14->device_profile[0]);
         gx_monitor_leave(profile_dev14->device_profile[0]->lock);
@@ -2441,7 +2444,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
         /* pop our transparency group which will force the blending */
         code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs,
                             p14dev->color_info.num_components,
-                            p14dev->icc_array->device_profile[0], pdev);
+                            p14dev->icc_struct->device_profile[0], pdev);
     }
     return(code);
 }
@@ -2474,7 +2477,7 @@ pdf14_pattern_trans_render(gx_image_enum * penum, const byte * buffer, int data_
                image in clist */
             code = pdf14_pop_transparency_group(NULL, p14dev->ctx, p14dev->blend_procs,
                     p14dev->color_info.num_components,
-                    dev->icc_array->device_profile[0], (gx_device *) p14dev);
+                    dev->icc_struct->device_profile[0], (gx_device *) p14dev);
         }
         pdcolor->colors.pattern.p_tile->trans_group_popped = true;
         gs_free_object(pis->memory, ptile->ttrans->fill_trans_buffer,
@@ -2797,22 +2800,16 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
-           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
             *pdevproto = (pdf14_device *)&gs_pdf14_RGB_device;
             *ptempdevproto = **pdevproto;
-           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYK:
             *pdevproto = (pdf14_device *)&gs_pdf14_CMYK_device;
             *ptempdevproto = **pdevproto;
-            /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYKspot:
@@ -2837,8 +2834,6 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
                         ptempdevproto->color_info.max_components;
                 *pdevproto = ptempdevproto;
             }
-           /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             break;
         case PDF14_DeviceCustom:
             /*
@@ -2857,8 +2852,6 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             ptempdevproto->color_info.dither_colors = 256;
 
             *pdevproto = ptempdevproto;
-           /* pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             break;
         default:			/* Should not occur */
             return_error(gs_error_rangecheck);
@@ -3366,7 +3359,7 @@ pdf14_end_transparency_group(gx_device *dev,
             /* make sure to decrement the device profile.  If it was allocated
                with the push then it will be freed. */
             rc_decrement(group_profile,"pdf14_end_transparency_group");
-            dev->icc_array->device_profile[0] = parent_color->icc_profile;
+            dev->icc_struct->device_profile[0] = parent_color->icc_profile;
             rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_group");
             parent_color->icc_profile = NULL;
         }
@@ -3588,7 +3581,7 @@ pdf14_update_device_color_procs(gx_device *dev,
             /* iccprofile was incremented above if we had not just created
                it.  when we do the pop we will decrement and if we just
                created it, it will be destroyed */
-            dev->icc_array->device_profile[0] = iccprofile;
+            dev->icc_struct->device_profile[0] = iccprofile;
             rc_increment(parent_color_info->icc_profile);
         }
         return(1);  /* Lets us detect that we did do an update */
@@ -3784,7 +3777,7 @@ pdf14_update_device_color_procs_push_c(gx_device *dev,
                device in the ICC manager.  We already stored in in pdf14_parent_color_t.
                That will be stored in the clist and restored during the reading phase. */
            if (group_color == ICC) {
-                dev->icc_array->device_profile[0] = icc_profile;
+                dev->icc_struct->device_profile[0] = icc_profile;
             }
             if (pdev->ctx) {
                pdev->ctx->additive = new_additive;
@@ -3845,7 +3838,7 @@ pdf14_update_device_color_procs_pop_c(gx_device *dev,gs_imager_state *pis)
           A match with pdf14_update_device_color_procs_push_c.  There functions
           are closely integrated with pdf14_pop_parent_color and pdf14_push_parent color.
           All four are used only on the clist writer side of the transparency code */
-         dev->icc_array->device_profile[0] = parent_color->icc_profile;
+         dev->icc_struct->device_profile[0] = parent_color->icc_profile;
          if_debug0('v', "[v]procs updated\n");
     } else {
         if_debug0('v', "[v]pdf14_update_device_color_procs_pop_c ERROR \n");
@@ -4040,8 +4033,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
                                 GX_DEVICE_COLOR_MAX_COMPONENTS);
             /* Take care of the ICC profile */
             if (parent_color->icc_profile != NULL) {
-                rc_decrement(dev->icc_array->device_profile[0],"pdf14_end_transparency_mask");
-                dev->icc_array->device_profile[0] = parent_color->icc_profile;
+                rc_decrement(dev->icc_struct->device_profile[0],"pdf14_end_transparency_mask");
+                dev->icc_struct->device_profile[0] = parent_color->icc_profile;
                 rc_decrement(parent_color->icc_profile,"pdf14_end_transparency_mask");
                 parent_color->icc_profile = NULL;
             }
@@ -4769,7 +4762,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
        will not be the case if we are coming from the clist reader */
     if (icc_profile->data_cs == gsCIELAB
         && pis->icc_manager->default_rgb != NULL) {
-        p14dev->icc_array->device_profile[0] =
+        p14dev->icc_struct->device_profile[0] =
                                         pis->icc_manager->default_rgb;
         rc_increment(pis->icc_manager->default_rgb);
     }
@@ -5739,22 +5732,16 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
-          /*  pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
             *pdevproto = (pdf14_clist_device *)&pdf14_clist_RGB_device;
             *ptempdevproto = **pdevproto;
-        /*    pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYK:
             *pdevproto = (pdf14_clist_device *)&pdf14_clist_CMYK_device;
             *ptempdevproto = **pdevproto;
-       /*     pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCMYKspot:
@@ -5776,8 +5763,6 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                     ptempdevproto->color_info.num_components =
                         ptempdevproto->color_info.max_components;
             }
-         /*   pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceCustom:
@@ -5795,8 +5780,6 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_color = 255;
             ptempdevproto->color_info.dither_grays = 256;
             ptempdevproto->color_info.dither_colors = 256;
-     /*       pdf14_init_icc_name_struct(dev, ptempdevproto, dev->icc_array,
-                                       dev_cs); */
             *pdevproto = ptempdevproto;
             break;
         default:			/* Should not occur */
@@ -5850,7 +5833,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
        proper blending.  During put_image we will convert from RGB to
        CIELAB */
     if (target_profile->data_cs == gsCIELAB) {
-        rc_assign(pdev->icc_array->device_profile[0],
+        rc_assign(pdev->icc_struct->device_profile[0],
                   pis->icc_manager->default_rgb, "pdf14_create_clist_device");
     }
     pdev->my_encode_color = pdev->procs.encode_color;
@@ -7053,7 +7036,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                not the target device.   */
 #if !CMM_THREAD_SAFE
             gx_monitor_enter(p14_icc_profile->lock);
-            rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile,
+            rc_assign(p14dev->icc_struct->device_profile[0], cl_icc_profile,
                       "c_pdf14trans_clist_read_update");
             gx_monitor_leave(p14_icc_profile->lock);
 #endif
@@ -7119,10 +7102,10 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                 /* Keep a pointer to the clist device */
                 cl_icc_profile->dev = (gx_device *) cdev;
                 gx_monitor_enter(p14_icc_profile->lock);
-                rc_assign(p14dev->icc_array->device_profile[0], cl_icc_profile,
+                rc_assign(p14dev->icc_struct->device_profile[0], cl_icc_profile,
                           "c_pdf14trans_clist_read_update");
                 /* Initial ref count was ok.  remove increment from assign */
-                rc_decrement(p14dev->icc_array->device_profile[0],
+                rc_decrement(p14dev->icc_struct->device_profile[0],
                              "c_pdf14trans_clist_read_update");
                 gx_monitor_leave(p14_icc_profile->lock);
             }
