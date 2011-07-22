@@ -65,14 +65,14 @@ typedef struct gsicc_device_cm_s {
 
 /*  The buffer description.  We handle a variety of different types */
 typedef enum {
+    gsUNDEFINED = 0, 
     gsGRAY,
     gsRGB,
     gsCMYK,
     gsNCHANNEL,
     gsCIEXYZ,
     gsCIELAB,
-    gsNAMED,
-    gsUNDEFINED
+    gsNAMED
 } gsicc_colorbuffer_t;
 
 typedef struct gsicc_bufferdesc_s {
@@ -134,6 +134,7 @@ typedef struct cmm_srcgtag_profile_s {
 typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
+        bool devicegraytok;        /* Used for forcing gray to pure black */
         gs_memory_t *memory;
         rc_header rc;
 } cmm_dev_profile_t;
@@ -384,6 +385,7 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *proof_profile;   /* Proofing profile */
     cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
+    cmm_profile_t *graytok_profile; /* A specialized profile for mapping gray to K */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */
     gsicc_smask_t *smask_profiles;  /* Profiles used when we are in a softmask group */
     bool override_internal;         /* Set via the user params */

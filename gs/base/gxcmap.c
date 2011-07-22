@@ -1203,7 +1203,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
 
         icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb,
                                           des_profile, &rendering_params,
-                                          pis->memory, false);
+                                          pis->memory, false, 
+                                          dev_profile->devicegraytok);
         /* Transform the color */
         for (i = 0; i < ncomps; i++) {
             psrc[i] = cv[i];
@@ -1269,7 +1270,8 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
         psrc[k] = frac2cv(cm_comps[k]);
     }
     icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_cmyk,
-                des_profile, &rendering_params, pis->memory, false);
+                des_profile, &rendering_params, pis->memory, false, 
+                dev_profile->devicegraytok);
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
@@ -1927,24 +1929,19 @@ gx_device_uses_std_cmap_procs(gx_device * dev, const gs_imager_state * pis)
         if (fwd_uses_fwd_cmap_procs(dev)) {
             pprocs = fwd_get_target_cmap_procs(dev);
         }
-        switch(des_profile->data_cs) {
-            case gsGRAY:
+        switch(des_profile->num_comps) {
+            case 1:
                 if (pprocs == &DeviceGray_procs) {
                     return true;
                 }
                 break;
-            case gsRGB:
+            case 3:
                 if (pprocs == &DeviceRGB_procs) {
                     return true;
                 }
                 break;
-            case gsCMYK:
+            case 4:
                 if (pprocs == &DeviceCMYK_procs) {
-                    return true;
-                }
-                break;
-            case gsCIELAB:
-                if (pprocs == &DeviceRGB_procs) {
                     return true;
                 }
                 break;
