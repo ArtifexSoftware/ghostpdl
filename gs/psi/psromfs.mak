@@ -24,14 +24,17 @@
 
 PDF_RESOURCE_LIST=CMap$(D)*
 
-MISC_INIT_FILES=FCOfontmap-PCLPS2 cidfmap gs_cet.ps pdf_cslayer.ps
+MISC_INIT_FILES=FCOfontmap-PCLPS2 cidfmap gs_cet.ps pdf_cslayer.ps \
+ FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap gs_cet.ps \
+ gs_diskf.ps gs_diskn.ps gs_dscp.ps gs_trap.ps xlatmap
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
-RESOURCE_LIST=CIDFont$(D) $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -b Font$(D)* -c IdiomSet$(D)* ProcSet$(D)* Init$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ $(MISC_INIT_FILES)
+RESOURCE_LIST=CIDFont$(D) -C $(PDF_RESOURCE_LIST) ColorSpace$(D)* Decoding$(D)* Encoding$(D)* -B -b Font$(D)* -c -C IdiomSet$(D)* ProcSet$(D)* -P $(PSRESDIR)$(D)Init$(D) -d Resource/Init/ $(MISC_INIT_FILES) -B
 
-#	Note: gs_cet.ps is only needed to match Adobe CPSI defaults
+#	Notes: gs_cet.ps is only needed to match Adobe CPSI defaults
 PS_ROMFS_ARGS=-c \
-  -P $(PSRESDIR)$(D) -d Resource/ $(RESOURCE_LIST) \
+  -d Resource/Init/ -P $(PSRESDIR)$(D)Init$(D) -g gs_init.ps $(gconfig_h) \
+  -d Resource/ -P $(PSRESDIR)$(D) $(RESOURCE_LIST) \
   -d lib/ -P $(PSLIBDIR)$(D) $(EXTRA_INIT_FILES)
 
 # If you add a file remember to add it here. If you forget then builds from
@@ -386,7 +389,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_icc.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_il1_e.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_img.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_init.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_l2img.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_lev2.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_ll3.ps \
