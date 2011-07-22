@@ -56,6 +56,7 @@
 #include "gximage.h"
 #include "gsmatrix.h"
 #include "gxdevsop.h"
+#include "gsicc.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -1546,23 +1547,9 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
         }
     }
     /*
-     * Set color space to either Gray, RGB, or CMYK in preparation for sending
-     * an image.
+     * Set color space in preparation for sending an image.
      */
-    switch (num_comp) {
-        case 1:				/* DeviceGray */
-            pcs = gs_cspace_new_DeviceGray(pis->memory);
-            break;
-        case 3:				/* DeviceRGB */
-            pcs = gs_cspace_new_DeviceRGB(pis->memory);
-            break;
-        case 4:				/* DeviceCMYK */
-            pcs = gs_cspace_new_DeviceCMYK(pis->memory);
-            break;
-        default:			/* Should never occur */
-            return_error(gs_error_rangecheck);
-            break;
-    }
+    code = gs_cspace_build_ICC(&pcs, NULL, pis->memory);
     if (pcs == NULL)
         return_error(gs_error_VMerror);
     /* Need to set this to avoid color management during the
@@ -1571,7 +1558,6 @@ pdf14_put_image(gx_device * dev, gs_imager_state * pis, gx_device * target)
        default RGB to CIELAB in the put image operation.  That will happen
        here as we should have set the profile for the pdf14 device to RGB
        and the target will be CIELAB */
-
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile,
                           &(pcs->cmm_icc_profile_data), &rendering_intent);
