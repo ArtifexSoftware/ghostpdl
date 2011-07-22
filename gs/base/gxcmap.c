@@ -32,6 +32,7 @@
 #include "gdevdevn.h"
 #include "gsicc_cache.h"
 #include "gscms.h"
+#include "gsicc.h"
 
 /* Structure descriptor */
 public_st_device_color();
@@ -637,8 +638,29 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
                     gs_color_select_t select)
 {
     frac fgray = gx_unit_frac(pc->paint.values[0]);
+    int code;
 
-    /* Save original color space and color info into dev color */
+    /* We are in here due to the fact that we are using a color space that
+       was set in the graphic state before the ICC manager was intitialized 
+       and the color space was never actually "installed" and hence set
+       over to a proper ICC color space. We will "install" this color space 
+       at this time */
+    if (pis->icc_manager->default_gray != NULL) {
+        gs_color_space *pcs_notconst = (gs_color_space*) pcs;
+        gs_state *pgs = (gs_state*) pis;
+        pcs_notconst->cmm_icc_profile_data = pis->icc_manager->default_gray;
+        rc_increment(pis->icc_manager->default_gray);
+        pcs_notconst->type = &gs_color_space_type_ICC;
+        code = 
+            (*pcs_notconst->type->remap_color)(gs_currentcolor_inline(pgs),
+                                               pcs_notconst, 
+                                               gs_currentdevicecolor_inline(pgs),
+                                               pis, pgs->device, 
+                                               gs_color_select_texture);
+        return code;
+    }
+
+    /* Save orgxiginal color space and color info into dev color */
     pdc->ccolor.paint.values[0] = pc->paint.values[0];
     pdc->ccolor_valid = true;
     if (pis->alpha == gx_max_color_value)
