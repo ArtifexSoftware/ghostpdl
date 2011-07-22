@@ -44,6 +44,8 @@
  *              -d romprefix    directory in %rom% file system (a prefix string on filename)
  *		-c		compression on
  *		-b		compression off (binary).
+ *		-C		postscript 'compaction' on
+ *		-B		postscript 'compaction' off
  *		-g initfile gconfig_h
  *				special handling to read the 'gs_init.ps' file (from
  *				the current -P prefix path), and read the gconfig.h for
@@ -95,6 +97,7 @@
  */
 
 typedef struct romfs_inode_s {
+    unsigned long disc_length;		/* length of file on disc */
     unsigned long length;		/* blocks is (length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE */
     char *name;				/* nul terminated */
     unsigned long *data_lengths;	/* this could be short if ROMFS_BLOCKSIZE */
@@ -205,8 +208,8 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len);
 void inode_clear(romfs_inode* node);
 void inode_write(FILE *out, romfs_inode *node, int compression, int inode_count, int*totlen);
 void process_path(char *path, const char *os_prefix, const char *rom_prefix,
-                  Xlist_element *Xlist_head,
-                  int compression, int *inode_count, int *totlen, FILE *out);
+                  Xlist_element *Xlist_head, int compression,
+                  int compaction, int *inode_count, int *totlen, FILE *out);
 int process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
                      const char *rom_prefix,
                      int compression, int *inode_count, int *totlen, FILE *out);
@@ -264,7 +267,7 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
 /* clear the internal memory of an inode */
 void inode_clear(romfs_inode* node)
 {
-    int i, blocks = (node->length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
+    int i, blocks = (node->disc_length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
 
     if (node) {
         if (node->data) {
@@ -339,11 +342,98 @@ prefix_add(const char *prefix, const char *filename, char *prefixed_path)
 #endif
 }
 
+/* Simple ps compaction routines; strip comments, compact whitespace */
+typedef struct {
+    int start;
+    int in_comment;
+    int in_whitespace;
+    int in_string;
+    int in_literal;
+} pscompstate;
+
+static void pscompact_start(pscompstate *psc)
+{
+    psc->start = 1;
+    psc->in_comment = 0;
+    psc->in_whitespace = 0;
+    psc->in_literal = 0;
+    psc->in_string = 0;
+}
+
+static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char *ubuf, unsigned long ulen, FILE *file)
+{
+    unsigned char *out;
+    int c;
+
+    if (ulen == 0)
+        return 0;
+    out = ubuf;
+    do {
+        c = fgetc(file);
+        if (c == EOF)
+            break;
+        if (psc->in_literal) {
+            /* Just write it out, no change */
+            *out++ = c;
+            psc->in_literal = 0;
+        } else if (psc->in_string) {
+            /* Just write it out, no change */
+            *out++ = c;
+            if (c == ')') {
+                psc->in_string = 0;
+                psc->start = 1;
+            }
+        } else if (psc->in_comment) {
+            /* Watch for an EOL, otherwise swallow */
+            if ((c == 13) || (c == 10)) {
+                psc->in_comment = 0;
+                psc->in_whitespace = 1;
+            }
+        } else if (c == '%') {
+            /* Start a comment */
+            psc->in_comment = 1;
+            psc->in_whitespace = 0;
+        } else if (psc->in_whitespace) {
+            if (c <= 32) {
+                /* swallow */
+            } else {
+                /* We've reached the end of whitespace, so output it. Put
+                 * the char back into the file so we'll handle it again next
+                 * time around the loop. */
+                if ((psc->start == 0) && (c != '(') && (c != '[') &&
+                    (c != ']') && (c != '<') && (c != '/') && (c != '{') &&
+                    (c != '}')) {
+                    *out++ = 32;
+                }
+                ungetc(c, file);
+                psc->in_whitespace = 0;
+                psc->start = 0;
+            }
+        } else if ((c == '{') || (c == '}') || (c == ')') || (c == '>')) {
+            psc->start = 1;
+            *out++ = c;
+        } else if (c == '\\') {
+            psc->in_literal = 1;
+            *out++ = c;
+        } else if (c == '(') {
+            psc->in_string = 1;
+            *out++ = c;
+        } else if (c <= 32) {
+            psc->in_whitespace = 1;
+        } else {
+            *out++ = c;
+            psc->start = 0;
+        }
+    } while (out-ubuf != ulen);
+    return out-ubuf;
+}
+
 /* This relies on the gp_enumerate_* which should not return directories, nor	*/
 /* should it recurse into directories (unlike Adobe's implementation)		*/
 /* paths are checked to see if they are an ordinary file or a path		*/
-void process_path(char *path, const char *os_prefix, const char *rom_prefix, Xlist_element *Xlist_head,
-                int compression, int *inode_count, int *totlen, FILE *out)
+void process_path(char *path, const char *os_prefix, const char *rom_prefix,
+                  Xlist_element *Xlist_head, int compression,
+                  int compaction, int *inode_count, int *totlen, FILE *out)
 {
     int namelen, excluded, save_count=*inode_count;
     Xlist_element *Xlist_scan;
@@ -355,6 +445,8 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix, Xli
     unsigned char *ubuf, *cbuf;
     unsigned long ulen, clen;
     FILE *in;
+    unsigned long psc_len;
+    pscompstate psc = {};
 
     prefixed_path = malloc(1024);
     found_path = malloc(1024);
@@ -406,15 +498,23 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix, Xli
         strcat(rom_filename, found_path + strlen(os_prefix));
         node->name = rom_filename;	/* without -P prefix, with -d rom_prefix */
         fseek(in, 0, SEEK_END);
-        node->length = ftell(in);
+        node->disc_length = node->length = ftell(in);
         blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
         node->data_lengths = calloc(blocks, sizeof(*node->data_lengths));
         node->data = calloc(blocks, sizeof(*node->data));
         fclose(in);
         in = fopen(found_path, "rb");
+        ulen = strlen(found_path);
         block = 0;
+        psc_len = 0;
+        if (compaction)
+            pscompact_start(&psc);
         while (!feof(in)) {
-            ulen = fread(ubuf, 1, ROMFS_BLOCKSIZE, in);
+            if (compaction)
+                ulen = pscompact_getcompactedblock(&psc, ubuf, ROMFS_BLOCKSIZE, in);
+            else
+                ulen = fread(ubuf, 1, ROMFS_BLOCKSIZE, in);
+            psc_len += ulen;
             if (!ulen) break;
             clen = ROMFS_CBUFSIZE;
             if (compression) {
@@ -434,6 +534,11 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix, Xli
             block++;
         }
         fclose(in);
+        if (compaction) {
+            /* printf("%s: Compaction saved %d bytes (before compression)\n",
+             *        found_path, node->length - psc_len); */
+            node->length = psc_len;
+        }
         /* write out data for this file */
         inode_write(out, node, compression, *inode_count, totlen);
         /* clean up */
@@ -487,7 +592,7 @@ struct in_block_s {
     unsigned char data[ROMFS_BLOCKSIZE];
 };
 
-#define LINE_SIZE 128
+#define LINE_SIZE 1024
 
 /* Globals used for gs_init processing */
 char linebuf[LINE_SIZE * 2];		/* make it plenty long to avoid overflow */
@@ -551,6 +656,7 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
             in_block != in_block_tail ? ROMFS_BLOCKSIZE : curr_block_p - in_block->data;
         in_block = in_block->next;
     }
+    node->disc_length = node->length;
 
     blocks = (node->length+ROMFS_BLOCKSIZE-1) / ROMFS_BLOCKSIZE + 1;
     node->data_lengths = calloc(blocks, sizeof(*node->data_lengths));
@@ -599,6 +705,7 @@ void
 flush_line_buf(int len) {
     int remaining_len = len;
     int move_len;
+    int line_offset = 0;
 
     if (len > LINE_SIZE) {
         printf("*** warning, flush_line called with len (%d) > LINE_SIZE (%d)\n",
@@ -615,8 +722,9 @@ flush_line_buf(int len) {
     /* move the data into the in_block buffer */
     do {
         move_len = min(remaining_len, curr_block_end - curr_block_p);
-        memcpy(curr_block_p, linebuf, move_len);
+        memcpy(curr_block_p, linebuf + line_offset, move_len);
         curr_block_p += move_len;
+        line_offset += move_len;
         if (curr_block_p == curr_block_end) {
             /* start a new data block appended to the list of blocks */
             in_block_tail->next =  calloc(1, sizeof(in_block_t));
@@ -853,6 +961,7 @@ prefix_open(const char *os_prefix, const char *filename)
         return NULL;
     }
     prefix_add(os_prefix, filename, prefixed_path);
+    printf("including: '%s'\n", prefixed_path);
     filep = fopen(prefixed_path, "rb");
     free(prefixed_path);
     return filep;
@@ -886,8 +995,10 @@ mergefile(const char *os_prefix, const char *inname, FILE * in, FILE * config,
 
                 psname[strlen(psname) - 1] = 0;
                 ps = prefix_open(os_prefix, psname + 1);
-                if (ps == 0)
+                if (ps == 0) {
+                    fprintf(stderr, "Failed to open '%s' - aborting\n", psname+1);
                     exit(1);
+                }
                 mergefile(os_prefix, psname + 1, ps, config, intact || do_intact);
             } else if (!strcmp(psname, "INITFILES")) {
                 /*
@@ -980,6 +1091,7 @@ main(int argc, char *argv[])
     char *initfile, *gconfig_h;
     int atarg = 1;
     int compression = 1;			/* default to doing compression */
+    int compaction = 0;
     Xlist_element *Xlist_scan, *Xlist_head = NULL;
 
     if (argc < 2) {
@@ -996,6 +1108,8 @@ main(int argc, char *argv[])
                 "               -d romprefix    directory in %%rom file system (just a prefix string on filename)\n"
                 "               -c              compression on\n"
                 "               -b              compression off (binary).\n"
+                "               -C              postscript 'compaction' on\n"
+                "               -B              postscript 'compaction' off\n"
                 "               -g initfile gconfig_h \n"
                 "                       special handling to read the 'gs_init.ps' file (from\n"
                 "                       the current -P prefix path), and read the gconfig.h for\n"
@@ -1046,6 +1160,12 @@ main(int argc, char *argv[])
               case 'c':
                 compression = 1;
                 break;
+              case 'B':
+                compaction = 0;
+                break;
+              case 'C':
+                compaction = 1;
+                break;
               case 'd':
                 if (++atarg == argc) {
                     printf("   option %s missing required argument\n", argv[atarg-1]);
@@ -1090,7 +1210,7 @@ main(int argc, char *argv[])
         }
         /* process a path or file */
         process_path(argv[atarg], os_prefix, rom_prefix, Xlist_head,
-                    compression, &inode_count, &totlen, out);
+                    compression, compaction, &inode_count, &totlen, out);
 
     }
     /* now write out the array of nodes */
