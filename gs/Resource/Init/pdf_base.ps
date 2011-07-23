@@ -192,7 +192,10 @@ pdfdict begin
     mark 5 2 roll                % file [ [ cnt <<>> file
   } ifelse
   {	% Stack: ..operands.. count opdict file
-    token { 
+    { token } stopped {
+      dup type /filetype eq { pop } if
+      pop pop stop
+    } if { 
       dup type /nametype eq {
         dup xcheck {
           .pdfexectoken
