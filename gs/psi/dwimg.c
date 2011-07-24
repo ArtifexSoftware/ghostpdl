@@ -208,8 +208,8 @@ image_size(IMAGE *img, int new_width, int new_height, int new_raster,
                 case DISPLAY_DEPTH_8:
                     /* Fixed color palette */
                     img->bmih.biBitCount = 8;
-                    img->bmih.biClrUsed = 256;
-                    img->bmih.biClrImportant = 256;
+                    img->bmih.biClrUsed = 96;
+                    img->bmih.biClrImportant = 96;
                     break;
                 case DISPLAY_DEPTH_16:
                     /* RGB bitfields */
@@ -653,19 +653,17 @@ image_color(unsigned int format, int index,
                     }
                     break;
                 case DISPLAY_DEPTH_8:
-                    /* palette of 256 colors */
-                    /* 0->215 = 6x6x6 RGB cube, 216->255 = greyscale */
-                    if (index < 216) {
-                        int i;
-                        i = index/36; index -= i*36;
-                        *r = i * 255 / 5;
-                        i = index/6; index -= i*6;
-                        *g = i * 255 / 5;
-                        *b = index * 255 / 5;
+                    /* palette of 96 colors */
+                    /* 0->63 = 00RRGGBB, 64->95 = 010YYYYY */
+                    if (index < 64) {
+                        int one = 255 / 3;
+                        *r = ((index & 0x30) >> 4) * one;
+                        *g = ((index & 0x0c) >> 2) * one;
+                        *b =  (index & 0x03) * one;
                     }
                     else {
-                        int val = index-216;
-                        *r = *g = *b = val*255/39;
+                        int val = index & 0x1f;
+                        *r = *g = *b = (val << 3) + (val >> 2);
                     }
                     break;
             }
