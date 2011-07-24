@@ -849,8 +849,8 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     }
     /* If the color spaces are different and we actually did do a swap of
        the procs for color */
-    if ( (nos->parent_color_info_procs->num_components != curr_num_color_comp &&
-        nos->parent_color_info_procs->parent_color_mapping_procs != NULL)
+    if ( (nos->parent_color_info_procs->parent_color_mapping_procs != NULL &&
+          nos->parent_color_info_procs->num_components != curr_num_color_comp)
                     || icc_match ) {
         if (x0 < x1 && y0 < y1) {
             /* The NOS blending color space is different than that of the
