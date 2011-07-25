@@ -456,7 +456,6 @@ struct gx_device_pdf_s {
     gs_param_string InstanceUUID;
     int DocumentTimeSeq;
     bool ForOPDFRead;          /* PS2WRITE only. */
-    gs_param_string OPDFReadProcsetPath; /* PS2WRITE only. */
     bool CompressEntireFile;  /* PS2WRITE only. */
     bool ResourcesBeforeUsage; /* PS2WRITE only. */
     bool HavePDFWidths;        /* PS2WRITE only. */
@@ -732,9 +731,9 @@ struct gx_device_pdf_s {
  m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])
 #define gx_device_pdf_num_ptrs 38
 #define gx_device_pdf_do_param_strings(m)\
-    m(0, OPDFReadProcsetPath) m(1, OwnerPassword) m(2, UserPassword) m(3, NoEncrypt)\
-    m(4, DocumentUUID) m(5, InstanceUUID)
-#define gx_device_pdf_num_param_strings 6
+    m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
+    m(3, DocumentUUID) m(4, InstanceUUID)
+#define gx_device_pdf_num_param_strings 5
 #define gx_device_pdf_do_const_strings(m)\
     m(0, objname)
 #define gx_device_pdf_num_const_strings 1

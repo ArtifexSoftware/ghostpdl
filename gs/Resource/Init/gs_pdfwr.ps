@@ -868,34 +868,6 @@ currentdict /.pdf_hook_DSC_Creator undef
     dup type /booleantype eq not { cleartomark pop } if pop pop
 } bind .schedule_init
 
-% Set a path to library files (ps2write)
-.defaultdevicename /ps2write eq {
-  mark
-  /OPDFReadProcsetPath
-  systemdict /OPDFReadProcsetPath .knownget dup {   % check for a value on the command-line
-    1 index () eq {
-      (Configuration warning : empty OPDFReadProcsetPath, will use defaults.) =
-      systemdict /OPDFReadProcsetPath undef
-      pop pop //false
-    } if
-  } if
-  not {                                             % if necessary, compute a default
-    mark
-    (gs_mgl_e.ps) (gs_mro_e.ps) (gs_agl.ps) % Reverse order !
-    () counttomark 1 sub {
-      exch
-      .libfile { .filename } { //false } ifelse not {
-        (Configuration error : library file opdfread.ps not found !) =
-        (opdfread.ps) /undefinedfilename signalerror
-      } if
-      .filenamelistseparator concatstrings concatstrings
-    } repeat
-    exch pop
-  } if
-  %stack: mark /OPDFReadProcsetPath <filelist>
-  /ps2write finddevice putdeviceprops pop           % set the default instance's procset path
-} if
-
 2000 % priority
 { % Note, this may not work if the initial device is not pdfwrite
   currentdevice .devicename dup /pdfwrite eq exch /ps2write eq or {

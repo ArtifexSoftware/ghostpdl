@@ -1491,7 +1491,7 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
+    if (pdev->ForOPDFRead) {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */
         int status;
