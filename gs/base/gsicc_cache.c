@@ -133,8 +133,8 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         eprintf1("num_links is %d, should be 0.\n", link_cache->num_links);
     }
 #endif
-    gs_free_object(mem->stable_memory, link_cache->lock, "rc_gsicc_link_cache_free(lock)");
-    gs_free_object(mem->stable_memory, link_cache->wait, "rc_gsicc_link_cache_free(wait)");
+    gx_semaphore_free(link_cache->wait);
+    gx_monitor_free(link_cache->lock);
     if_debug2('{',"[{]Removing link cache = 0x%x memory = 0x%x\n", link_cache,
         link_cache->memory);
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
@@ -205,7 +205,7 @@ static void
 gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 {
     gscms_release_link(icc_link);
-    gs_free_object(memory->stable_memory, icc_link->wait, "gsicc_link_free(wait)");
+    gx_semaphore_free(icc_link->wait);
     gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
 }
 
