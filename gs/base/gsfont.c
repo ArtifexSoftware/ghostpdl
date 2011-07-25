@@ -270,6 +270,15 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->hash = 42;  /* initialize the hash to a randomly picked number */
     return pdir;
 }
+static void
+gs_font_dir_finalize(void *vptr)
+{
+    gs_font_dir *pdir = vptr;
+    if (pdir == pdir->memory->gs_lib_ctx->font_dir) {
+        pdir->memory->gs_lib_ctx->font_dir = NULL;
+    }
+}
+
 
 /* Allocate and minimally initialize a font. */
 gs_font *

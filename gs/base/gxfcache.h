@@ -319,8 +319,8 @@ struct gs_font_dir_s {
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\
-  gs_private_st_composite(st_font_dir, gs_font_dir, "gs_font_dir",\
-    font_dir_enum_ptrs, font_dir_reloc_ptrs)
+  gs_private_st_composite_final(st_font_dir, gs_font_dir, "gs_font_dir",\
+    font_dir_enum_ptrs, font_dir_reloc_ptrs, gs_font_dir_finalize)
 
 /* Enumerate the pointers in a font directory, except for orig_fonts. */
 #define font_dir_do_ptrs(m)\
