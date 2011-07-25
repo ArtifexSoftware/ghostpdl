@@ -40,8 +40,9 @@
 <li><a href="#PS">PostScript file output</a>
 <li><a href="#EPS">EPS file output</a>
 <li><a href="#PXL">PCL-XL file output</a>
+<li><a href="#TXT">Text output</a>
 </ul>
-<li><a href="#Display_devices">Display devices</a>
+<li><a href="#Dis	play_devices">Display devices</a>
 <ul>
 <li><a href="#x11_devices">X Window System</a>
 <li><a href="#display_device">display device (MS Windows, OS/2, gtk+)</a>
@@ -749,6 +750,22 @@ a graphic language understood by many recent laser printers.
 <dl>
 <dt><code>-dCompressMode=<em>1 | 3</em></code> (default is 1)
 <dd>Set the compression algorithm used for bitmap graphics. RLE=1, DeltaRow=3. (JPEG=2 is unimplemented)
+</dl></blockquote>
+
+<h3><a name="TXT"></a>Text output</h3>
+
+<p> The txtwrite device will output the text contained in the original
+document as Unicode (UTF-16). This device is currently under development
+and should not be considered as being of production quality.
+
+<h4>Options</h4>
+<blockquote>
+<dl>
+<dt><code>-dTextFormat=<em>0 | 1</em></code> (default is 0)
+<dd>Format 0 outputs Unicode text (with a Byte Order Mark) which approximates
+to the layout of the text in the original document. Format 1 is intended
+for use by developers and outputs Unicode along with information regarding
+the format of the text (position, font name, point size, etc).
 </dl></blockquote>
 
 <p>
