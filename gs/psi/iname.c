@@ -37,13 +37,15 @@ static const byte nt_1char_names[NT_1CHAR_SIZE] = {
     NT_1CHAR_NAMES_DATA
 };
 
+static void gs_names_finalize(void *);
+
 /* Structure descriptors */
 gs_private_st_simple(st_name_sub_table, name_sub_table, "name_sub_table");
 gs_private_st_composite(st_name_string_sub_table, name_string_sub_table_t,
                         "name_string_sub_table_t",
                         name_string_sub_enum_ptrs, name_string_sub_reloc_ptrs);
-gs_private_st_composite(st_name_table, name_table, "name_table",
-                        name_table_enum_ptrs, name_table_reloc_ptrs);
+gs_private_st_composite_final(st_name_table, name_table, "name_table",
+                        name_table_enum_ptrs, name_table_reloc_ptrs,gs_names_finalize);
 
 /* Forward references */
 static int name_alloc_sub(name_table *);
@@ -125,6 +127,13 @@ names_init(ulong count, gs_ref_memory_t *imem)
     nt->free = 0;
     names_trace_finish(nt, NULL);
     return nt;
+}
+
+static void
+gs_names_finalize(void *vptr)
+{
+    name_table *nt = vptr;
+    nt->memory->gs_lib_ctx->gs_name_table = NULL;
 }
 
 /* Get the allocator for the name table. */

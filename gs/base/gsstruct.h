@@ -620,6 +620,24 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
 #define gs_private_st_element(stname, stype, sname, penum, preloc, basest)\
   gs__st_element(private_st, stname, stype, sname, penum, preloc, basest)
 
+#define gs__st_element_final(scope_st, stname, stype, sname, penum, preloc, basest, pfinal)\
+  static ENUM_PTRS_BEGIN_PROC(penum) {\
+    uint count = size / (uint)sizeof(stype);\
+    if ( count == 0 ) return 0;\
+    return ENUM_USING(basest, (EV_CONST char *)vptr + (index % count) * sizeof(stype),\
+      sizeof(stype), index / count);\
+  } ENUM_PTRS_END_PROC\
+  static RELOC_PTRS_BEGIN(preloc) {\
+    uint count = size / (uint)sizeof(stype);\
+    for ( ; count; count--, vptr = (char *)vptr + sizeof(stype) )\
+      RELOC_USING(basest, vptr, sizeof(stype));\
+  } RELOC_PTRS_END\
+  gs__st_composite_final(scope_st, stname, stype, sname, penum, preloc,pfinal)
+#define gs_public_st_element_final(stname, stype, sname, penum, preloc, basest,pfinal)\
+  gs__st_element_final(public_st, stname, stype, sname, penum, preloc, basest,pfinal)
+#define gs_private_st_element_final(stname, stype, sname, penum, preloc, basest,pfinal)\
+  gs__st_element_final(private_st, stname, stype, sname, penum, preloc, basest,pfinal)
+
         /* A "structure" just consisting of a pointer. */
         /* Note that in this case only, stype is a pointer type. */
         /* Fortunately, C's bizarre 'const' syntax does what we want here. */

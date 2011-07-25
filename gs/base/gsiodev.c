@@ -31,9 +31,9 @@ extern_gx_io_device_table();
 private_st_io_device();
 gs_private_st_ptr(st_io_device_ptr, gx_io_device *, "gx_io_device *",
                   iodev_ptr_enum_ptrs, iodev_ptr_reloc_ptrs);
-gs_private_st_element(st_io_device_ptr_element, gx_io_device *,
+gs_private_st_element_final(st_io_device_ptr_element, gx_io_device *,
       "gx_io_device *[]", iodev_ptr_elt_enum_ptrs, iodev_ptr_elt_reloc_ptrs,
-                      st_io_device_ptr);
+                      st_io_device_ptr,gs_iodev_finalize);
 
 /* Define the OS (%os%) device. */
 iodev_proc_fopen(iodev_os_fopen);
@@ -61,7 +61,7 @@ int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
     gx_io_device **table =
-        gs_alloc_struct_array(mem, gx_io_device_table_count,
+        gs_alloc_struct_array(mem, gx_io_device_table_count + 1,
                               gx_io_device *, &st_io_device_ptr_element,
                               "gs_iodev_init(table)");
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
@@ -80,6 +80,14 @@ gs_iodev_init(gs_memory_t * mem)
         table[i] = iodev;
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
     }
+    /* FIXME: we allocate an extra pointer in the array and stuff
+     * the memory context in there, as we need access to it in the
+     * finalize method below. We get away it because everywhere that
+     * searches the table uses gx_io_device_table_count, rather than
+     * the actuall allocated length.
+     * A less naff solution would be preferable!
+     */
+    table[gx_io_device_table_count] = (gx_io_device *) mem;
     libctx->io_device_table = table;
     code = gs_register_struct_root(mem, NULL,
                                    (void **)&libctx->io_device_table,
@@ -101,6 +109,16 @@ gs_iodev_init(gs_memory_t * mem)
     libctx->io_device_table = 0;
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
+
+static void
+gs_iodev_finalize(void *vptr)
+{
+    gx_io_device **table = vptr;
+    gs_memory_t * mem = ((gs_memory_t *)table[gx_io_device_table_count]);
+
+    mem->gs_lib_ctx->io_device_table = NULL;
+}
+
 
 /* ------ Default (unimplemented) IODevice procedures ------ */
 
