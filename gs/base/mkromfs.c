@@ -343,24 +343,530 @@ prefix_add(const char *prefix, const char *filename, char *prefixed_path)
 }
 
 /* Simple ps compaction routines; strip comments, compact whitespace */
+typedef enum {
+    PSC_BufferIn = 0,
+    PSC_InComment,
+    PSC_InString,
+    PSC_InHexString,
+    PSC_BufferOut,
+    PSC_BufferCopy,
+} psc_state;
+
+typedef int (psc_getc)(void *);
+typedef void (psc_ungetc)(int, void *);
+typedef int (psc_feof)(void *);
+
 typedef struct {
-    int start;
-    int in_comment;
-    int in_whitespace;
-    int in_string;
-    int in_literal;
+    psc_state state;
+    int inpos;
+    int inmax;
+    int outpos;
+    int outend;
+    int outmax;
+    int buffercopy;
+    int wasascii;
+    char *bufferin;
+    char *bufferout;
+    psc_getc *fgetc;
+    psc_ungetc *ungetc;
+    psc_feof *feof;
+    void *file;
+    int names;
+    int binary;
+    int noescape;
+    int escaping;
+    int paren;
+    int firstnum;
 } pscompstate;
 
-static void pscompact_start(pscompstate *psc)
+static void pscompact_start(pscompstate *psc, psc_getc *myfgetc, psc_ungetc *myungetc, psc_feof *myfeof, void *myfile, int names, int binary, int firstnum)
 {
-    psc->start = 1;
-    psc->in_comment = 0;
-    psc->in_whitespace = 0;
-    psc->in_literal = 0;
-    psc->in_string = 0;
+    psc->state = PSC_BufferIn;
+    psc->bufferin = malloc(80);
+    psc->bufferout = malloc(80);
+    if ((psc->bufferin == NULL) || (psc->bufferout == NULL)) {
+        fprintf(stderr, "Malloc failed in ps compaction\n");
+        exit(1);
+    }
+    psc->inmax = 80;
+    psc->outmax = 80;
+    psc->inpos = 0;
+    psc->wasascii = 0;
+    psc->fgetc = myfgetc;
+    psc->ungetc = myungetc;
+    psc->feof = myfeof;
+    psc->file = myfile;
+    psc->names = names;
+    psc->binary = binary;
+    psc->noescape = 0;
+    psc->escaping = 0;
+    psc->paren = 0;
+    psc->firstnum = firstnum;
 }
 
-static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char *ubuf, unsigned long ulen, FILE *file)
+static void pscompact_end(pscompstate *psc)
+{
+    free(psc->bufferin);
+    free(psc->bufferout);
+}
+
+static void pscompact_copy(pscompstate *psc, int c, int n)
+{
+    psc->bufferout[0] = c;
+    psc->outend = 1;
+    psc->outpos = 0;
+    psc->buffercopy = n;
+    if (n == 0)
+        psc->state = PSC_BufferOut;
+    else
+        psc->state = PSC_BufferCopy;
+}
+
+static void pscompact_copy2(pscompstate *psc, int c1, int c2, int n)
+{
+    psc->bufferout[0] = c1;
+    psc->bufferout[1] = c2;
+    psc->outend = 2;
+    psc->outpos = 0;
+    psc->buffercopy = n;
+    if (n == 0)
+        psc->state = PSC_BufferOut;
+    else
+        psc->state = PSC_BufferCopy;
+}
+
+static void pscompact_copy3(pscompstate *psc, int c1, int c2, int c3, int n)
+{
+    psc->bufferout[0] = c1;
+    psc->bufferout[1] = c2;
+    psc->bufferout[2] = c3;
+    psc->outend = 3;
+    psc->outpos = 0;
+    psc->buffercopy = n;
+    if (n == 0)
+        psc->state = PSC_BufferOut;
+    else
+        psc->state = PSC_BufferCopy;
+}
+
+static void pscompact_buffer(pscompstate *psc, int c)
+{
+    if (psc->inpos == psc->inmax) {
+        psc->inmax *= 2;
+        psc->bufferin = realloc(psc->bufferin, psc->inmax * 2);
+        if (psc->bufferin == NULL) {
+            fprintf(stderr, "Realloc failed in pscompaction\n");
+            exit(1);
+        }
+    }
+    psc->bufferin[psc->inpos++] = c;
+}
+
+static void pscompact_bufferatstart(pscompstate *psc, int c)
+{
+    if (psc->inpos == psc->inmax) {
+        psc->inmax *= 2;
+        psc->bufferin = realloc(psc->bufferin, psc->inmax * 2);
+        if (psc->bufferin == NULL) {
+            fprintf(stderr, "Realloc failed in pscompaction\n");
+            exit(1);
+        }
+    }
+    memmove(psc->bufferin+1, psc->bufferin, psc->inpos);
+    psc->inpos++;
+    psc->bufferin[0] = c;
+}
+
+static void pscompact_copyinout(pscompstate *psc)
+{
+    if (psc->outmax < psc->inpos) {
+        psc->outmax = psc->inmax;
+        psc->bufferout = realloc(psc->bufferout, psc->outmax);
+        if (psc->bufferout == NULL) {
+            fprintf(stderr, "Realloc failed in pscompaction\n");
+            exit(1);
+        }
+    }
+    memcpy(psc->bufferout, psc->bufferin, psc->inpos);
+    psc->outpos = 0;
+    psc->outend = psc->inpos;
+    psc->state = PSC_BufferOut;
+    psc->inpos = 0;
+}
+
+static void pscompact_copyinout_bin(pscompstate *psc)
+{
+    pscompact_copyinout(psc);
+    psc->noescape = 1;
+}
+
+static void pscompact_hex2ascii(pscompstate *psc)
+{
+    int i = 0;
+    int o = 0;
+
+    while (i < psc->inpos) {
+        int v = 0;
+
+        if ((psc->bufferin[i] >= '0') && (psc->bufferin[i] <= '9')) {
+            v = (psc->bufferin[i] - '0')<<4;
+        } else if ((psc->bufferin[i] >= 'a') && (psc->bufferin[i] <= 'f')) {
+            v = (psc->bufferin[i] - 'a' + 10)<<4;
+        } else if ((psc->bufferin[i] >= 'A') && (psc->bufferin[i] <= 'F')) {
+            v = (psc->bufferin[i] - 'A' + 10)<<4;
+        } else {
+            fprintf(stderr, "Malformed hexstring in pscompaction!\n");
+            exit(1);
+        }
+        i++;
+
+        if (i == psc->inpos) {
+            /* End of string */
+        } else if ((psc->bufferin[i] >= '0') && (psc->bufferin[i] <= '9')) {
+            v += psc->bufferin[i] - '0';
+        } else if ((psc->bufferin[i] >= 'a') && (psc->bufferin[i] <= 'f')) {
+            v += psc->bufferin[i] - 'a' + 10;
+        } else if ((psc->bufferin[i] >= 'A') && (psc->bufferin[i] <= 'F')) {
+            v += psc->bufferin[i] - 'A' + 10;
+        } else {
+            fprintf(stderr, "Malformed hexstring in pscompaction!\n");
+            exit(1);
+        }
+        i++;
+        psc->bufferin[o++] = v;
+    }
+    psc->inpos = o;
+}
+
+static const char *pscompact_names[] =
+{
+  "abs",
+  "add",
+  "aload",
+  "anchorsearch",
+  "and",
+  "arc",
+  "arcn",
+  "arct",
+  "arcto",
+  "array",
+  "ashow",
+  "astore",
+  "awidthshow",
+  "begin",
+  "bind",
+  "bitshift",
+  "ceiling",
+  "charpath",
+  "clear",
+  "cleartomark",
+  "clip",
+  "clippath",
+  "closepath",
+  "concat",
+  "concatmatrix",
+  "copy",
+  "count",
+  "counttomark",
+  "currentcmykcolor",
+  "currentdash",
+  "currentdict",
+  "currentfile",
+  "currentfont",
+  "currentgray",
+  "currentgstate",
+  "currenthsbcolor",
+  "currentlinecap",
+  "currentlinejoin",
+  "currentlinewidth",
+  "currentmatrix",
+  "currentpoint",
+  "currentrgbcolor",
+  "currentshared",
+  "curveto",
+  "cvi",
+  "cvlit",
+  "cvn",
+  "cvr",
+  "cvrs",
+  "cvs",
+  "cvx",
+  "def",
+  "defineusername",
+  "dict",
+  "div",
+  "dtransform",
+  "dup",
+  "end",
+  "eoclip",
+  "eofill",
+  "eoviewclip",
+  "eq",
+  "exch",
+  "exec",
+  "exit",
+  "file",
+  "fill",
+  "findfont",
+  "flattenpath",
+  "floor",
+  "flush",
+  "flushfile",
+  "for",
+  "forall",
+  "ge",
+  "get",
+  "getinterval",
+  "grestore",
+  "gsave",
+  "gstate",
+  "gt",
+  "identmatrix",
+  "idiv",
+  "idtransform",
+  "if",
+  "ifelse",
+  "image",
+  "imagemask",
+  "index",
+  "ineofill",
+  "infill",
+  "initviewclip",
+  "inueofill",
+  "inufill",
+  "invertmatrix",
+  "itransform",
+  "known",
+  "le",
+  "length",
+  "lineto",
+  "load",
+  "loop",
+  "lt",
+  "makefont",
+  "matrix",
+  "maxlength",
+  "mod",
+  "moveto",
+  "mul",
+  "ne",
+  "neg",
+  "newpath",
+  "not",
+  "null",
+  "or",
+  "pathbbox",
+  "pathforall",
+  "pop",
+  "print",
+  "printobject",
+  "put",
+  "putinterval",
+  "rcurveto",
+  "read",
+  "readhexstring",
+  "readline",
+  "readstring",
+  "rectclip",
+  "rectfill",
+  "rectstroke",
+  "rectviewclip",
+  "repeat",
+  "restore",
+  "rlineto",
+  "rmoveto",
+  "roll",
+  "rotate",
+  "round",
+  "save",
+  "scale",
+  "scalefont",
+  "search",
+  "selectfont",
+  "setbbox",
+  "setcachedevice",
+  "setcachedevice2",
+  "setcharwidth",
+  "setcmykcolor",
+  "setdash",
+  "setfont",
+  "setgray",
+  "setgstate",
+  "sethsbcolor",
+  "setlinecap",
+  "setlinejoin",
+  "setlinewidth",
+  "setmatrix",
+  "setrgbcolor",
+  "setshared",
+  "shareddict",
+  "show",
+  "showpage",
+  "stop",
+  "stopped",
+  "store",
+  "string",
+  "stringwidth",
+  "stroke",
+  "strokepath",
+  "sub",
+  "systemdict",
+  "token",
+  "transform",
+  "translate",
+  "truncate",
+  "type",
+  "uappend",
+  "ucache",
+  "ueofill",
+  "ufill",
+  "undef",
+  "upath",
+  "userdict",
+  "ustroke",
+  "viewclip",
+  "viewclippath",
+  "where",
+  "widthshow",
+  "write",
+  "writehexstring",
+  "writeobject",
+  "writestring",
+  "wtranslation",
+  "xor",
+  "xshow",
+  "xyshow",
+  "yshow",
+  "FontDirectory",
+  "SharedFontDirectory",
+  "Courier%",
+  "Courier-Bold",
+  "Courier-BoldOblique",
+  "Courier-Oblique",
+  "Helvetica",
+  "Helvetica-Bold",
+  "Helvetica-BoldOblique",
+  "Helvetica-Oblique",
+  "Symbol",
+  "Times-Bold",
+  "Times-BoldItalic",
+  "Times-Italic",
+  "Times-Roman",
+  "execuserobject",
+  "currentcolor",
+  "currentcolorspace",
+  "currentglobal",
+  "execform",
+  "filter",
+  "findresource",
+  "globaldict",
+  "makepattern",
+  "setcolor",
+  "setcolorspace",
+  "setglobal",
+  "setpagedevice",
+  "setpattern"
+};
+
+static int pscompact_isname(pscompstate *psc, int *i)
+{
+    int off = 0;
+    int n;
+
+    if (psc->bufferin[0] == '/')
+        off = 1;
+    for (n = 0; n < sizeof(pscompact_names)/sizeof(char *); n++) {
+        if (strncmp(pscompact_names[n], &psc->bufferin[off], psc->inpos-off) == 0) {
+            /* Match! */
+            if (off)
+                *i = -1-n;
+            else
+                *i = n;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static int pscompact_isint(pscompstate *psc, int *i)
+{
+    int pos = 0;
+
+    if ((psc->bufferin[0] == '+') || (psc->bufferin[0] == '-')) {
+        pos = 1;
+    }
+    if (pos >= psc->inpos)
+        return 0;
+    if ((psc->inpos > pos+3) &&
+        (strncmp(&psc->bufferin[pos], "16#", 3) == 0)) {
+        /* hex */
+        int v = 0;
+        pos += 3;
+        while (pos < psc->inpos) {
+            if ((psc->bufferin[pos] >= '0') && (psc->bufferin[pos] <= '9'))
+                v = v*16 + psc->bufferin[pos] - '0';
+            else if ((psc->bufferin[pos] >= 'a') && (psc->bufferin[pos] <= 'f'))
+                v = v*16 + psc->bufferin[pos] - 'a' + 10;
+            else if ((psc->bufferin[pos] >= 'A') && (psc->bufferin[pos] <= 'F'))
+                v = v*16 + psc->bufferin[pos] - 'A' + 10;
+            else
+                return 0;
+            pos++;
+        }
+        if (psc->bufferin[0] == '-')
+            v = -v;
+        *i = v;
+        return 1;
+    }
+
+    do {
+        if ((psc->bufferin[pos] < '0') || (psc->bufferin[pos] > '9'))
+            return 0;
+        pos++;
+    } while (pos < psc->inpos);
+
+    if (psc->inpos == psc->inmax) {
+        psc->inmax *= 2;
+        psc->bufferin = realloc(psc->bufferin, psc->inmax);
+    }
+    psc->bufferin[psc->inpos] = 0;
+    *i = atoi(psc->bufferin);
+    return 1;
+}
+
+static int pscompact_isfloat(pscompstate *psc, float *f)
+{
+    int pos = 0;
+    int point = 0;
+
+    if ((psc->bufferin[0] == '+') || (psc->bufferin[0] == '-')) {
+        pos = 1;
+    }
+    if (pos >= psc->inpos)
+        return 0;
+    do {
+        if ((psc->bufferin[pos] >= '0') && (psc->bufferin[pos] <= '9')) {
+            /* Digits are OK */
+        } else if ((psc->bufferin[pos] == '.') && (point == 0)) {
+            /* as are points, but only the first one */
+            point = 1;
+        } else {
+            /* Anything else is a failure */
+            return 0;
+        }
+        pos++;
+    } while (pos < psc->inpos);
+
+    if (psc->inpos == psc->inmax) {
+        psc->inmax *= 2;
+        psc->bufferin = realloc(psc->bufferin, psc->inmax);
+    }
+    psc->bufferin[psc->inpos] = 0;
+    *f = atof(psc->bufferin);
+    return 1;
+}
+
+static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char *ubuf, unsigned long ulen)
 {
     unsigned char *out;
     int c;
@@ -369,62 +875,518 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
         return 0;
     out = ubuf;
     do {
-        c = fgetc(file);
-        if (c == EOF)
-            break;
-        if (psc->in_literal) {
-            /* Just write it out, no change */
-            *out++ = c;
-            psc->in_literal = 0;
-        } else if (psc->in_string) {
-            /* Just write it out, no change */
-            *out++ = c;
-            if (c == ')') {
-                psc->in_string = 0;
-                psc->start = 1;
-            }
-        } else if (psc->in_comment) {
-            /* Watch for an EOL, otherwise swallow */
-            if ((c == 13) || (c == 10)) {
-                psc->in_comment = 0;
-                psc->in_whitespace = 1;
-            }
-        } else if (c == '%') {
-            /* Start a comment */
-            psc->in_comment = 1;
-            psc->in_whitespace = 0;
-        } else if (psc->in_whitespace) {
-            if (c <= 32) {
-                /* swallow */
-            } else {
-                /* We've reached the end of whitespace, so output it. Put
-                 * the char back into the file so we'll handle it again next
-                 * time around the loop. */
-                if ((psc->start == 0) && (c != '(') && (c != '[') &&
-                    (c != ']') && (c != '<') && (c != '/') && (c != '{') &&
-                    (c != '}')) {
-                    *out++ = 32;
+        switch (psc->state) {
+            case PSC_BufferIn:
+                c = psc->fgetc(psc->file);
+                if ((c <= 32) || (c == EOF)) {
+                    /* Whitespace */
+                    if (psc->inpos == 0) {
+                        /* Leading whitespace, just bin it */
+                        break;
+                    }
+                } else if (c == '(') {
+                    /* Start of a string */
+                    if (psc->inpos == 0) {
+                        /* Go into string state */
+                        psc->state = PSC_InString;
+                        psc->paren = 1;
+                        break;
+                    }
+                } else if (c == '>') {
+                    /* End of a dictionary */
+                    if (psc->inpos == 0) {
+                        /* Just output it (with no whitespace) */
+                        *out++ = c;
+                        break;
+                    }
+                } else if ((c == '{') || (c == '}') ||
+                           (c == '[') || (c == ']')) {
+                    /* Stand alone token bytes */
+                    if (psc->inpos == 0) {
+                        /* Process now and be done with it */
+                        *out++ = c;
+                        psc->wasascii = 0;
+                        break;
+                    }
+                } else if ((c >= 128) && (c <= 131)) {
+                    fprintf(stderr, "Can't compact files with binary object sequences in!");
+                    exit(1);
+                } else if ((c == 132) || (c == 133) || (c == 138) || (c == 139) || (c == 140)) {
+                    /* 32 bit integers or reals */
+                    if (psc->inpos == 0) {
+                        pscompact_copy(psc, c, 4);
+                        break;
+                    }
+                } else if ((c == 134) || (c == 135)) {
+                    /* 16 bit integers */
+                    if (psc->inpos == 0) {
+                        pscompact_copy(psc, c, 2);
+                        break;
+                    }
+                } else if ((c == 136) || (c == 141) || (c == 145) ||
+                           (c == 146) || (c == 147) || (c == 148)) {
+                    /* 8 bit integers or bools or pool name */
+                    if (psc->inpos == 0) {
+                        pscompact_copy(psc, c, 1);
+                        break;
+                    }
+                } else if (c == 137) {
+                    /* fixed point */
+                    if (psc->inpos == 0) {
+                        int r = psc->fgetc(psc->file);
+                        if (r & 32) {
+                            pscompact_copy2(psc, c, r, 2);
+                        } else {
+                            pscompact_copy2(psc, c, r, 4);
+                        }
+                        break;
+                    }
+                } else if (c == 142) {
+                    /* short string */
+                    if (psc->inpos == 0) {
+                        int n = psc->fgetc(psc->file);
+                        pscompact_copy2(psc, c, n, n);
+                        break;
+                    }
+                } else if (c == 143) {
+                    /* long string */
+                    if (psc->inpos == 0) {
+                        int n1 = psc->fgetc(psc->file);
+                        int n2 = psc->fgetc(psc->file);
+                        pscompact_copy3(psc, c, n1, n2, (n1<<8) + n2);
+                        break;
+                    }
+                } else if (c == 144) {
+                    /* long string */
+                    if (psc->inpos == 0) {
+                        int n1 = psc->fgetc(psc->file);
+                        int n2 = psc->fgetc(psc->file);
+                        pscompact_copy3(psc, c, n1, n2, n1 + (n2<<8));
+                        break;
+                    }
+                } else if ((c >= 149) && (c <= 159)) {
+                    fprintf(stderr, "Can't compact files with binary postscript byte %d in!", c);
+                    exit(1);
+                } else if (c == '%') {
+                    if (psc->inpos == 0) {
+                        psc->state = PSC_InComment;
+                        break;
+                    }
+                } else if (c == '<') {
+                    if (psc->inpos == 0) {
+                        psc->state = PSC_InHexString;
+                        break;
+                    }
+                } else if ((c == '/') &&
+                           (psc->inpos > 0) &&
+                           (psc->bufferin[psc->inpos-1] != '/')) {
+                    /* We hit a / while not in a prefix of them - stop the
+                     * buffering. */
+                } else {
+                    /* Stick c into the buffer and continue */
+                    pscompact_buffer(psc, c);
+                    break;
                 }
-                ungetc(c, file);
-                psc->in_whitespace = 0;
-                psc->start = 0;
+                /* If we reach here, we have a complete buffer full. We need
+                 * to write it (or something equivalent to it) out. */
+                if (c > 32) {
+                    /* Put c back into the file to process next time */
+                    psc->ungetc(c, psc->file);
+                }
+                if (psc->binary) {
+                    int i;
+                    float f;
+                    /* Is it a number? */
+                    if (pscompact_isint(psc, &i)) {
+                        if (psc->firstnum) {
+                            /* Don't alter the first number in a file */
+                            psc->firstnum = 0;
+                        } else if ((i >= -128) && (i <= 127)) {
+                            /* Encode as a small integer */
+                            psc->bufferout[0] = 136;
+                            psc->bufferout[1] = i & 255;
+                            psc->inpos = 0;
+                            psc->outend = 2;
+                            psc->wasascii = 0;
+                            psc->noescape = 1;
+                            psc->state = PSC_BufferOut;
+                            break;
+                        } else if ((i >= -0x8000) && (i <= 0x7FFF)) {
+                            /* Encode as a 16 bit integer */
+                            psc->bufferout[0] = 135;
+                            psc->bufferout[1] = i & 255;
+                            psc->bufferout[2] = (i>>8) & 255;
+                            psc->inpos = 0;
+                            psc->outpos = 0;
+                            psc->outend = 3;
+                            psc->wasascii = 0;
+                            psc->noescape = 1;
+                            psc->state = PSC_BufferOut;
+                            break;
+                        } else {
+                            /* Encode as a 32 bit integer */
+                            psc->bufferout[0] = 133;
+                            psc->bufferout[1] = i & 255;
+                            psc->bufferout[2] = (i>>8) & 255;
+                            psc->bufferout[3] = (i>>16) & 255;
+                            psc->bufferout[4] = (i>>24) & 255;
+                            psc->inpos = 0;
+                            psc->outpos = 0;
+                            psc->outend = 5;
+                            psc->wasascii = 0;
+                            psc->noescape = 1;
+                            psc->state = PSC_BufferOut;
+                            break;
+                        }
+                    } else if ((sizeof(float) == 4) && pscompact_isfloat(psc, &f)) {
+                        /* Encode as a 32 bit float */
+                        union {
+                            float f;
+                            unsigned char c[4];
+                        } fc;
+                        fc.f = 1.0;
+                        if ((fc.c[0] == 0) && (fc.c[1] == 0) &&
+                            (fc.c[2] == 0x80) && (fc.c[3] == 0x3f)) {
+                            fc.f = f;
+                            psc->bufferout[0] = 139;
+                            psc->bufferout[1] = (char)fc.c[0];
+                            psc->bufferout[2] = (char)fc.c[1];
+                            psc->bufferout[3] = (char)fc.c[2];
+                            psc->bufferout[4] = (char)fc.c[3];
+                            psc->inpos = 0;
+                            psc->outpos = 0;
+                            psc->outend = 5;
+                            psc->wasascii = 0;
+                            psc->noescape = 1;
+                            psc->state = PSC_BufferOut;
+                            break;
+                        } else if ((fc.c[0] == 0x3f) && (fc.c[1] == 0x80) &&
+                                   (fc.c[2] == 0) && (fc.c[3] == 0)) {
+                            fc.f = f;
+                            psc->bufferout[0] = 139;
+                            psc->bufferout[1] = (char)fc.c[3];
+                            psc->bufferout[2] = (char)fc.c[2];
+                            psc->bufferout[3] = (char)fc.c[1];
+                            psc->bufferout[4] = (char)fc.c[0];
+                            psc->inpos = 0;
+                            psc->outpos = 0;
+                            psc->outend = 5;
+                            psc->wasascii = 0;
+                            psc->noescape = 1;
+                            psc->state = PSC_BufferOut;
+                            break;
+                        }
+                    }
+                    if ((psc->inpos == 4) &&
+                        (strncmp(psc->bufferin, "true", 4) == 0)) {
+                        /* Encode as a 32 bit integer */
+                        psc->bufferout[0] = 141;
+                        psc->bufferout[1] = 1;
+                        psc->inpos = 0;
+                        psc->outpos = 0;
+                        psc->outend = 2;
+                        psc->wasascii = 0;
+                        psc->noescape = 1;
+                        psc->state = PSC_BufferOut;
+                        break;
+                    }
+                    if ((psc->inpos == 5) &&
+                        (strncmp(psc->bufferin, "false", 5) == 0)) {
+                        /* Encode as a 32 bit integer */
+                        psc->bufferout[0] = 141;
+                        psc->bufferout[1] = 0;
+                        psc->inpos = 0;
+                        psc->outpos = 0;
+                        psc->outend = 2;
+                        psc->wasascii = 0;
+                        psc->noescape = 1;
+                        psc->state = PSC_BufferOut;
+                        break;
+                    }
+                    if (psc->binary && psc->names && pscompact_isname(psc, &i)) {
+                        /* Encode as a name lookup */
+                        if (i >= 0) {
+                            /* Executable */
+                            psc->bufferout[0] = 146;
+                            psc->bufferout[1] = i;
+                        } else {
+                            /* Literal */
+                            psc->bufferout[0] = 145;
+                            psc->bufferout[1] = 1-i;
+                        }
+                        psc->inpos = 0;
+                        psc->outpos = 0;
+                        psc->outend = 2;
+                        psc->wasascii = 0;
+                        psc->noescape = 1;
+                        psc->state = PSC_BufferOut;
+                        break;
+                    }
+                }
+                if ((psc->wasascii) && (psc->bufferin[0]!='/'))
+                    *out++ = 32;
+                pscompact_copyinout(psc);
+                psc->wasascii = 1;
+                break;
+            case PSC_BufferOut:
+            {
+                unsigned char c = psc->bufferout[psc->outpos++];
+                if (psc->noescape) {
+                } else if ((c == 10) && (psc->outpos < psc->outend)) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = 'n';
+                        psc->escaping = 0;
+                    }
+                } else if (c == 9) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = 't';
+                        psc->escaping = 0;
+                    }
+                } else if (c == 8) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = 'b';
+                        psc->escaping = 0;
+                    }
+                } else if (c == 12) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = 'f';
+                        psc->escaping = 0;
+                    }
+                } else if (c == 13) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = 'r';
+                        psc->escaping = 0;
+                    }
+                } else if (c == '\\') {
+                    if (!psc->escaping) {
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        psc->escaping = 0;
+                    }
+                } else if ((c == ')') && (psc->outpos < psc->outend)) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = ')';
+                        psc->escaping = 0;
+                    }
+                } else if ((c == '(') && (psc->outpos > 1)) {
+                    if (!psc->escaping) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else {
+                        c = '(';
+                        psc->escaping = 0;
+                    }
+                } else if (((c < 32) && (c != 10)) || (c >= 128)) {
+                    if (psc->escaping == 0) {
+                        c = '\\';
+                        psc->outpos--;
+                        psc->escaping = 1;
+                    } else if (psc->escaping == 1) {
+                        c = '0' + ((c >> 6)&3);
+                        psc->outpos--;
+                        psc->escaping = 2;
+                    } else if (psc->escaping == 2) {
+                        c = '0' + ((c >> 3)&7);
+                        psc->outpos--;
+                        psc->escaping = 3;
+                    } else if (psc->escaping == 3) {
+                        c = '0' + (c&7);
+                        psc->escaping = 0;
+                    }
+                }
+                *out++ = c;
+                if (psc->outpos == psc->outend) {
+                    psc->outpos = 0;
+                    psc->outend = 0;
+                    psc->noescape = 0;
+                    psc->state = PSC_BufferIn;
+                }
+                break;
             }
-        } else if ((c == '{') || (c == '}') || (c == ')') || (c == '>')) {
-            psc->start = 1;
-            *out++ = c;
-        } else if (c == '\\') {
-            psc->in_literal = 1;
-            *out++ = c;
-        } else if (c == '(') {
-            psc->in_string = 1;
-            *out++ = c;
-        } else if (c <= 32) {
-            psc->in_whitespace = 1;
-        } else {
-            *out++ = c;
-            psc->start = 0;
+            case PSC_BufferCopy:
+                if (psc->outpos < psc->outend) {
+                    *out++ = psc->bufferout[psc->outpos++];
+                    break;
+                }
+                *out++ = psc->fgetc(psc->file);
+                psc->buffercopy--;
+                if (psc->buffercopy == 0) {
+                    psc->outpos = 0;
+                    psc->outend = 0;
+                    psc->state = PSC_BufferIn;
+                }
+                break;
+            case PSC_InString:
+                c = psc->fgetc(psc->file);
+                if ((c == ')') && (--psc->paren == 0)) {
+                    psc->wasascii = 0;
+                    if (psc->binary) {
+                        /* Write out the string as binary */
+                        if (psc->inpos < 256) {
+                            pscompact_bufferatstart(psc, psc->inpos);
+                            pscompact_bufferatstart(psc, 142);
+                            pscompact_copyinout_bin(psc);
+                            break;
+                        } else if (psc->inpos < 65536) {
+                            pscompact_bufferatstart(psc, psc->inpos>>8);
+                            pscompact_bufferatstart(psc, psc->inpos & 255);
+                            pscompact_bufferatstart(psc, 144);
+                            pscompact_copyinout_bin(psc);
+                            break;
+                        }
+                    }
+                    /* if all else fails, just write it out as an ascii
+                     * string. */
+                    pscompact_bufferatstart(psc, '(');
+                    pscompact_buffer(psc, ')');
+                    pscompact_copyinout(psc);
+                    break;
+                } else if (c == '\\') {
+                    c = psc->fgetc(psc->file);
+                    if (c == 10)
+                        break;
+                    else if (c == 'b')
+                        c = 8;
+                    else if (c == 't')
+                        c = 9;
+                    else if (c == 'n')
+                        c = 10;
+                    else if (c == 'f')
+                        c = 12;
+                    else if (c == 'r')
+                        c = 13;
+                    else if ((c >= '0') && (c <= '7')) {
+                        int d;
+                        c = (c - '0');
+                        d = psc->fgetc(psc->file);
+                        if ((d >= '0') && (d <= '7')) {
+                            c = (c<<3) + (d-'0');
+                            d = psc->fgetc(psc->file);
+                            if ((d >= '0') && (d <= '7')) {
+                                c = (c<<3) + (d-'0');
+                            } else {
+                                psc->ungetc(d, psc->file);
+                            }
+                        } else {
+                            psc->ungetc(d, psc->file);
+                        }
+                        c &= 0xFF;
+                    }
+                } else if (c == '(') {
+                    psc->paren++;
+                }
+                pscompact_buffer(psc, c);
+                break;
+            case PSC_InComment:
+                /* Watch for an EOL, otherwise swallow */
+                c = psc->fgetc(psc->file);
+                if ((c == 13) || (c == 10)) {
+                    if ((psc->inpos >= 3) &&
+                        (strncmp(psc->bufferin, "END", 3) == 0)) {
+                        /* Special comment to retain */
+                        pscompact_bufferatstart(psc, '%');
+                        pscompact_buffer(psc, 10);
+                        pscompact_copyinout(psc);
+                        break;
+                    }
+                    if ((psc->inpos >= 7) &&
+                        (strncmp(psc->bufferin, "NAMESOK", 7) == 0)) {
+                        psc->names = 1;
+                        pscompact_bufferatstart(psc, '%');
+                        pscompact_buffer(psc, 10);
+                        pscompact_copyinout(psc);
+                        break;
+                    }
+                    if ((psc->inpos >= 8) &&
+                        (strncmp(psc->bufferin, "BINARYOK", 8) == 0)) {
+                        psc->binary = 1;
+                        pscompact_bufferatstart(psc, '%');
+                        pscompact_buffer(psc, 10);
+                        pscompact_copyinout(psc);
+                        break;
+                    }
+                    /* Throw the buffered line away, and go back to buffering */
+                    psc->inpos = 0;
+                    psc->state = PSC_BufferIn;
+                    break;
+                }
+                pscompact_buffer(psc, c);
+                break;
+            case PSC_InHexString:
+                c = psc->fgetc(psc->file);
+                if (c == '<') {
+                    /* Dictionary */
+                    pscompact_copy2(psc, '<', '<', 0);
+                    break;
+                } else if (c == '~') {
+                    /* FIXME: ASCII85 encoded! */
+                    fprintf(stderr, "ASCII85 encoded strings unsupported in pscompaction\n");
+                    exit(1);
+                } else if (c == '>') {
+                    psc->wasascii = 0;
+                    if (psc->binary) {
+                        pscompact_hex2ascii(psc);
+                        if (psc->inpos < 256) {
+                            pscompact_bufferatstart(psc, psc->inpos);
+                            pscompact_bufferatstart(psc, 142);
+                            pscompact_copyinout_bin(psc);
+                        } else if (psc->inpos < 65536) {
+                            pscompact_bufferatstart(psc, psc->inpos>>8);
+                            pscompact_bufferatstart(psc, psc->inpos & 255);
+                            pscompact_bufferatstart(psc, 144);
+                            pscompact_copyinout_bin(psc);
+                        } else {
+                            fprintf(stderr, "HexString more than 64K in pscompaction\n");
+                            exit(1);
+                        }
+                        break;
+                    }
+                    /* If all else fails, write it out as an ascii hexstring
+                     * again */
+                    pscompact_bufferatstart(psc, '<');
+                    pscompact_buffer(psc, '>');
+                    pscompact_copyinout(psc);
+                    break;
+                } else if (c <= 32) {
+                    /* Swallow whitespace */
+                    break;
+                } else if (((c >= 'A') && (c <= 'Z')) ||
+                           ((c >= 'a') && (c <= 'z')) ||
+                           ((c >= '0') && (c <= '9'))) {
+                    pscompact_buffer(psc, c);
+                } else {
+                    fprintf(stderr, "Unexpected char when parsing hexstring in pscompaction\n");
+                    exit(1);
+                }
+                break;
         }
-    } while (out-ubuf != ulen);
+    } while ((out-ubuf != ulen) && (!psc->feof(psc->file)));
     return out-ubuf;
 }
 
@@ -446,7 +1408,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
     unsigned long ulen, clen;
     FILE *in;
     unsigned long psc_len;
-    pscompstate psc = {};
+    pscompstate psc = { 0 };
 
     prefixed_path = malloc(1024);
     found_path = malloc(1024);
@@ -492,6 +1454,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
             printf("unable to open file for processing: %s\n", found_path);
             continue;
         }
+        /* printf("compacting %s\n", found_path); */
         /* rom_filename + strlen(rom_prefix) is first char after the new prefix we want to add */
         /* found_path + strlen(os_prefix) is the file name after the -P prefix */
         rom_filename[strlen(rom_prefix)] = 0;		/* truncate afater prefix */
@@ -508,10 +1471,10 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         block = 0;
         psc_len = 0;
         if (compaction)
-            pscompact_start(&psc);
+            pscompact_start(&psc, (psc_getc*)&fgetc, (psc_ungetc*)&ungetc, (psc_feof*)&feof, in, 1, 0, 0);
         while (!feof(in)) {
             if (compaction)
-                ulen = pscompact_getcompactedblock(&psc, ubuf, ROMFS_BLOCKSIZE, in);
+                ulen = pscompact_getcompactedblock(&psc, ubuf, ROMFS_BLOCKSIZE);
             else
                 ulen = fread(ubuf, 1, ROMFS_BLOCKSIZE, in);
             psc_len += ulen;
@@ -537,6 +1500,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         if (compaction) {
             /* printf("%s: Compaction saved %d bytes (before compression)\n",
              *        found_path, node->length - psc_len); */
+            pscompact_end(&psc);
             node->length = psc_len;
         }
         /* write out data for this file */
@@ -600,6 +1564,35 @@ in_block_t *in_block_head = NULL;
 in_block_t *in_block_tail = NULL;
 unsigned char *curr_block_p, *curr_block_end;
 
+typedef struct {
+    in_block_t *block;
+    int pos;
+    int eof;
+} in_block_file;
+
+static int ib_getc(in_block_file *ibf) {
+    if ((ibf->block == in_block_tail) &&
+        (ibf->pos == curr_block_p - in_block_tail->data)) {
+        ibf->eof = 1;
+        return -1;
+    }
+    if (ibf->pos == ROMFS_BLOCKSIZE) {
+        ibf->block = ibf->block->next;
+        ibf->pos = 0;
+    }
+    return ibf->block->data[ibf->pos++];
+}
+
+static void ib_ungetc(int c, in_block_file *ibf)
+{
+    ibf->pos--;
+}
+
+static int ib_feof(in_block_file *ibf)
+{
+    return ibf->eof;
+}
+
 int
 process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
                  const char *rom_prefix, int compression, int *inode_count,
@@ -613,6 +1606,7 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     FILE *in;
     FILE *config;
     in_block_t *in_block = NULL;
+    int compaction = 1;
 
     ubuf = malloc(ROMFS_BLOCKSIZE);
     cbuf = malloc(ROMFS_CBUFSIZE);
@@ -649,6 +1643,40 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     fclose(config);
 
 /**********/
+    if (compaction)
+    {
+        in_block_t *comp_block_head;
+        in_block_t *comp_block;
+        pscompstate psc;
+        in_block_file ibf;
+        int ulen;
+
+        ibf.block = in_block_head;
+        ibf.pos = 0;
+        ibf.eof = 0;
+
+        comp_block = malloc(sizeof(*comp_block));
+        comp_block_head = comp_block;
+        pscompact_start(&psc, (psc_getc*)&ib_getc, (psc_ungetc*)&ib_ungetc, (psc_feof*)&ib_feof, &ibf, 0, 0, 1);
+        do {
+            ulen = pscompact_getcompactedblock(&psc, comp_block->data, ROMFS_BLOCKSIZE);
+            comp_block->next = NULL;
+            if (ulen == ROMFS_BLOCKSIZE) {
+                comp_block->next = malloc(sizeof(*comp_block));
+                comp_block = comp_block->next;
+            }
+        } while (ulen == ROMFS_BLOCKSIZE);
+        pscompact_end(&psc);
+        while (in_block_head != NULL) {
+            in_block = in_block_head->next;
+            free(in_block_head);
+            in_block_head = in_block;
+        }
+        in_block_head = comp_block_head;
+        in_block_tail = comp_block;
+        curr_block_p = in_block_tail->data + ulen;
+    }
+
     node->length = 0;
     in_block = in_block_head;
     while (in_block != NULL) {
