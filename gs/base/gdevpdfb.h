@@ -123,7 +123,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0, 0, 0},			/* InstanceUUID */
  0,				/* DocumentTimeSeq */
  PDF_FOR_OPDFREAD,		/* ForOPDFRead */
- {0, 0, 0},			/* OPDFReadProcsetPath */
  false,				/* CompressEntireFile */
  0 /*false*/,			/* ResourcesBeforeUsage */
  1 /*true*/,			/* HavePDFWidths */

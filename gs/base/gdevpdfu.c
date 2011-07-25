@@ -354,53 +354,8 @@ static int write_tt_encodings(stream *s, bool HaveTrueTypes)
 }
 
 static int
-copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool stripping)
+copy_procsets(stream *s, bool HaveTrueTypes, bool stripping)
 {
-#ifdef PS2WRITE_USES_ROMFS
-    char fname[gp_file_name_sizeof];
-    const byte *p = path->data, *e = path->data + path->size;
-    int l, i = 0, code;
-    const char *tt_encs[] = {"gs_agl.ps", "gs_mgl_e.ps"};
-
-    if (p != NULL) {
-        for (;; i++) {
-            const byte *c = memchr(p, gp_file_name_list_separator, e - p);
-            int k = 0; /* Initializing against a compiler warning only. */
-
-            if (c == NULL)
-                c = e;
-            l = c - p;
-            if (l > 0) {
-                if (l > sizeof(fname) - 1)
-                    return_error(gs_error_limitcheck);
-                memcpy(fname, p, l);
-                fname[l] = 0;
-                if (!HaveTrueTypes) {
-                    for (k = count_of(tt_encs) - 1; k >= 0; k--) {
-                        int L = strlen(tt_encs[k]);
-
-                        if (!strcmp(fname + strlen(fname) - L, tt_encs[k]))
-                            break;
-                    }
-                }
-                if (HaveTrueTypes || k < 0) {
-                    if (stripping)
-                        code = copy_ps_file_stripping_all(s, fname, HaveTrueTypes);
-                    else
-                        code = copy_ps_file_strip_comments(s, fname, HaveTrueTypes);
-                    if (code < 0)
-                        return code;
-                }
-            }
-            if (c == e)
-                break;
-            p = c + 1;
-        }
-    }
-    if (!i)
-        return_error(gs_error_undefinedfilename);
-    return 0;
-#else
     int code;
 
     code = write_opdfread(s);
@@ -410,7 +365,6 @@ copy_procsets(stream *s, const gs_param_string *path, bool HaveTrueTypes, bool s
     code = write_tt_encodings(s, HaveTrueTypes);
     return code;
 
-#endif
 }
 
 static int
@@ -477,7 +431,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
         stream_puts(s, "/DSC_OPDFREAD true def\n");
         stream_puts(s, "/SetPageSize true def\n");
 
-        code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, false);
+        code = copy_procsets(s, pdev->HaveTrueTypes, false);
         if (code < 0)
             return code;
         status = s_close_filters(&s, pdev->strm);
@@ -498,7 +452,7 @@ pdf_open_document(gx_device_pdf * pdev)
         int level = (int)(pdev->CompatibilityLevel * 10 + 0.5);
 
         pdev->binary_ok = !pdev->params.ASCII85EncodePages;
-        if (pdev->ForOPDFRead && pdev->OPDFReadProcsetPath.size) {
+        if (pdev->ForOPDFRead) {
             int code, status;
             char BBox[256];
             int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
@@ -526,7 +480,7 @@ pdf_open_document(gx_device_pdf * pdev)
                         return code;
                 }
                 stream_puts(s, "/DSC_OPDFREAD false def\n");
-                code = copy_procsets(s, &pdev->OPDFReadProcsetPath, pdev->HaveTrueTypes, true);
+                code = copy_procsets(s, pdev->HaveTrueTypes, true);
                 if (code < 0)
                     return code;
                 if (!pdev->CompressEntireFile) {
