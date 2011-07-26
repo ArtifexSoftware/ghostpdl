@@ -45,11 +45,13 @@
 #endif
 
 #include "opdfread.h"
-#include "gs_agl.h"
+#include "gdevagl.h"
 #include "gs_mgl_e.h"
 #include "gs_mro_e.h"
 
-/* Define the size of internal stream buffers. */
+extern single_glyph_list_t *SingleGlyphList;
+
+    /* Define the size of internal stream buffers. */
 /* (This is not a limitation, it only affects performance.) */
 #define sbuf_size 512
 
@@ -334,13 +336,18 @@ static int write_tt_encodings(stream *s, bool HaveTrueTypes)
     } while (1);
 
     if (HaveTrueTypes) {
-        index = 0;
-        do {
-            if (gs_agl_ps[index] == 0x00)
-                break;
-            stream_write(s, gs_agl_ps[index], strlen(gs_agl_ps[index]));
-            index++;
-        } while (1);
+        char Buffer[256];
+        single_glyph_list_t *entry = (single_glyph_list_t *)&SingleGlyphList;
+
+        sprintf(Buffer, "/AdobeGlyphList mark\n");
+        stream_write(s, Buffer, strlen(Buffer));
+        while (entry->Glyph) {
+            sprintf(Buffer, "/%s 16#%04x\n", entry->Glyph, entry->Unicode);
+            stream_write(s, Buffer, strlen(Buffer));
+            entry++;
+        };
+        sprintf(Buffer, ".dicttomark readonly def\n");
+        stream_write(s, Buffer, strlen(Buffer));
 
         index = 0;
         do {

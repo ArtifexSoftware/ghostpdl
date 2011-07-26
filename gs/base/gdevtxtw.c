@@ -28,6 +28,10 @@
 #include "gdevagl.h"
 #include "string.h"
 
+extern single_glyph_list_t *SingleGlyphList;
+extern double_glyph_list_t *DoubleGlyphList;
+extern treble_glyph_list_t *TrebleGlyphList;
+extern quad_glyph_list_t *QuadGlyphList;
 /*
  * Define the structure used to return glyph width information.  Note that
  * there are two different sets of width information: real-number (x,y)

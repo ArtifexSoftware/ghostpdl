@@ -801,13 +801,21 @@ $(GLOBJ)gdevps.$(OBJ) : $(GLSRC)gdevps.c $(GDEV)\
 
 # Plain text writer
 
-txtwrite_=$(GLOBJ)gdevtxtw.$(OBJ)
-$(DD)txtwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(txtwrite_) $(GDEV)
+gdevagl_h=$(GLSRC)gdevagl.h
+
+txtwrite_=$(GLOBJ)gdevtxtw.$(OBJ) $(GLOBJ)gdevagl.$(OBJ)
+
+$(DD)txtwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
+ $(gdevagl_h)
 	$(SETDEV2) $(DD)txtwrite $(txtwrite_)
 
 $(GLOBJ)gdevtxtw.$(OBJ) : $(GLSRC)gdevtxtw.c $(GDEV)\
  $(math__h) $(memory__h) $(string__h) $(time__h)
 	$(GLCC) $(GLO_)gdevtxtw.$(OBJ) $(C_) $(GLSRC)gdevtxtw.c
+
+$(GLOBJ)gdevagl.$(OBJ) : $(GLSRC)gdevagl.c $(GDEV)\
+ $(gdevagl_h)
+        $(GLCC) $(GLO_)gdevagl.$(OBJ) $(C_) $(GLSRC)gdevagl.c
 
 
 ################ BEGIN PDF WRITER ################
@@ -824,7 +832,7 @@ pdfwrite4_=$(GLOBJ)gdevpdfi.$(OBJ) $(GLOBJ)gdevpdfj.$(OBJ) $(GLOBJ)gdevpdfk.$(OB
 pdfwrite5_=$(GLOBJ)gdevpdfm.$(OBJ)
 pdfwrite6_=$(GLOBJ)gdevpdfo.$(OBJ) $(GLOBJ)gdevpdfp.$(OBJ) $(GLOBJ)gdevpdft.$(OBJ)
 pdfwrite7_=$(GLOBJ)gdevpdfr.$(OBJ)
-pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ)
+pdfwrite8_=$(GLOBJ)gdevpdfu.$(OBJ) $(GLOBJ)gdevpdfv.$(OBJ) $(GLOBJ)gdevagl.$(OBJ)
 pdfwrite9_= $(GLOBJ)ConvertUTF.$(OBJ)
 pdfwrite10_=$(GLOBJ)gsflip.$(OBJ)
 pdfwrite11_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)sfilter2.$(OBJ)
@@ -873,7 +881,6 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(spprint_h) $(stream_h) $(gdevpsdf_h) $(gxdevmem_h) $(sarc4_h) 
 
 opdfread_h=$(GLSRC)opdfread.h
-gs_agl_h=$(GLSRC)gs_agl.h
 gs_mro_e_h=$(GLSRC)gs_mro_e.h
 gs_mgl_e_h=$(GLSRC)gs_mgl_e.h
 
@@ -970,7 +977,7 @@ $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(sa85x_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sarc4_h) $(smd5_h) $(sstring_h) $(strimpl_h) $(szlibx_h)\
  $(strmio_h) $(sjbig2_luratech_h) $(sjpx_luratech_h)\
- $(opdfread_h) $(gs_agl_h) $(gs_mro_e_h) $(gs_mgl_e_h)
+ $(opdfread_h) $(gdevagl_h) $(gs_mro_e_h) $(gs_mgl_e_h)
 	$(GDEVLWFJB2JPXCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
 
 $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
