@@ -3,7 +3,7 @@
 %%IncludeResource: ProcSet (CIDInit)
 %%BeginResource: CMap (UniJIS2004-UTF8-H)
 %%Title: (UniJIS2004-UTF8-H Adobe Japan1 6)
-%%Version: 1.007
+%%Version: 1.010
 %%Copyright: -----------------------------------------------------------
 %%Copyright: Copyright 1990-2010 Adobe Systems Incorporated.
 %%Copyright: All rights reserved.
@@ -55,7 +55,7 @@ begincmap
 end def
 
 /CMapName /UniJIS2004-UTF8-H def
-/CMapVersion 1.007 def
+/CMapVersion 1.010 def
 /CMapType 1 def
 
 /XUID [1 10 25631] def
@@ -13253,18 +13253,11 @@ endcidchar
 <efbfa5> 711
 <efbfa8> 323
 <f09f8480> 8061
-<f09f84b1> 10902
-<f09f84bd> 10914
+<f09f8882> 10985
+<f09f88b7> 11024
 endcidchar
 
 100 begincidchar
-<f09f84bf> 10916
-<f09f8582> 10919
-<f09f8586> 10923
-<f09f8597> 10638
-<f09f859f> 10646
-<f09f85b9> 11722
-<f09f85bf> 11728
 <f0a0808b> 13839
 <f0a08289> 17233
 <f0a0828a> 14108
@@ -13358,9 +13351,6 @@ endcidchar
 <f0a2ad86> 17680
 <f0a2aea6> 17683
 <f0a2b09d> 17682
-endcidchar
-
-100 begincidchar
 <f0a2b0a4> 17686
 <f0a2b7a1> 17710
 <f0a2b982> 20124
@@ -13368,6 +13358,9 @@ endcidchar
 <f0a386b6> 17744
 <f0a38783> 17742
 <f0a38784> 16888
+endcidchar
+
+100 begincidchar
 <f0a387b5> 17743
 <f0a38db2> 17761
 <f0a38f8c> 14140
@@ -13397,6 +13390,7 @@ endcidchar
 <f0a39da3> 16916
 <f0a39da4> 17867
 <f0a39fa7> 17875
+<f0a39fb1> 20152
 <f0a39fbf> 17874
 <f0a3a0a4> 17880
 <f0a3a0bd> 17885
@@ -13461,15 +13455,15 @@ endcidchar
 <f0a5abb1> 18278
 <f0a5aeb2> 18293
 <f0a5b18b> 18302
-endcidchar
-
-100 begincidchar
 <f0a5b1a4> 18303
 <f0a5b6a1> 17033
 <f0a5b8ae> 18318
 <f0a5b996> 18319
 <f0a5b9a2> 18322
 <f0a5b9a5> 18320
+endcidchar
+
+100 begincidchar
 <f0a5bb82> 18327
 <f0a5bb98> 18325
 <f0a5bba8> 18329
@@ -13564,15 +13558,15 @@ endcidchar
 <f0a8aba4> 18862
 <f0a8af81> 18874
 <f0a8afaf> 18875
-endcidchar
-
-91 begincidchar
 <f0a8b39d> 7641
 <f0a8b490> 18882
 <f0a8b5b1> 18883
 <f0a8b7bb> 18885
 <f0a8b897> 14256
 <f0a8b89f> 18886
+endcidchar
+
+100 begincidchar
 <f0a8b8b6> 18890
 <f0a8ba89> 18893
 <f0a8bbab> 18895
@@ -13613,6 +13607,31 @@ endcidchar
 <f0aa989a> 20316
 <f0aa9ab2> 19129
 <f0aaa7a6> 14145
+<f0ab9d86> 13780
+<f0ab9d91> 13866
+<f0ab9d93> 20088
+<f0ab9d9a> 20096
+<f0ab9d9c> 20097
+<f0ab9da5> 20247
+<f0ab9db6> 20114
+<f0ab9db7> 13782
+<f0ab9dbc> 20125
+<f0ab9e82> 20141
+<f0ab9e89> 14064
+<f0ab9e8b> 20149
+<f0ab9e8e> 13724
+<f0ab9e94> 20153
+<f0ab9eac> 20176
+<f0ab9eaf> 20180
+<f0ab9ebd> 14174
+<f0ab9f89> 20194
+<f0ab9f8f> 20201
+<f0ab9f92> 20204
+<f0ab9f98> 13651
+<f0ab9fb0> 20240
+<f0aba08d> 20256
+<f0aba097> 20260
+<f0aba09a> 14278
 <f0afa084> 15388
 <f0afa08f> 7814
 <f0afa095> 20061
@@ -13648,6 +13667,9 @@ endcidchar
 <f0afa48b> 13801
 <f0afa48f> 13932
 <f0afa49a> 13916
+endcidchar
+
+10 begincidchar
 <f0afa4a0> 7839
 <f0afa4a1> 13809
 <f0afa585> 13357
@@ -14381,7 +14403,7 @@ endcidrange
 <e9b49d> <e9b49e> 17218
 endcidrange
 
-56 begincidrange
+60 begincidrange
 <e9b4b3> <e9b4b4> 22988
 <e9b593> <e9b594> 22993
 <e9b59d> <e9b59e> 7380
@@ -14433,7 +14455,11 @@ endcidrange
 <efbe80> <efbe9f> 358
 <efbfa0> <efbfa1> 713
 <f09f8490> <f09f84a9> 10004
-<f09f85bb> <f09f85bc> 11724
+<f09f84b0> <f09f84bf> 10901
+<f09f8580> <f09f8589> 10917
+<f09f8590> <f09f85a9> 10631
+<f09f85b0> <f09f85bf> 11713
+<f09f8680> <f09f8689> 11729
 <f0a2ad8f> <f0a2ad90> 17671
 <f0a6bfb6> <f0a6bfb7> 18554
 <f0a89788> <f0a89789> 18773
