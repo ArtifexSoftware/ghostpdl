@@ -752,6 +752,10 @@ AC_ARG_WITH([local-cups], AC_HELP_STRING([--with-local-cups],
 					     [Force using the GS supplied cups code - only useful for debugging]),
 	    [with_local_cups=yes], [with_local_cups=no])
 
+AC_ARG_WITH([install-cups], AC_HELP_STRING([--with-install-cups],
+					     [Install the cups conversion tools]),
+	    [CUPSINSTALL=install-cups], [CUPSINSTALL=])
+
 CUPSDEV=""
 CUPSINCLUDE=""
 CUPSCFLAGS=""
@@ -816,6 +820,7 @@ AC_SUBST(CUPSINCLUDE)
 AC_SUBST(CUPSSERVERBIN)
 AC_SUBST(CUPSSERVERROOT)
 AC_SUBST(CUPSDATA)
+AC_SUBST(CUPSINSTALL)
 
 AC_SUBST(SHARELCUPS)
 AC_SUBST(SHARELCUPSI)

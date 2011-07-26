@@ -48,7 +48,7 @@ $(GSTORASTER_XE): $(gstoraster_)
 	fi
 
 
-install:	install-cups
+install:	$(CUPSINSTTARGET)
 
 install-cups: cups
 	-mkdir -p $(DESTDIR)$(CUPSSERVERBIN)/filter
