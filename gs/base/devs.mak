@@ -815,7 +815,7 @@ $(GLOBJ)gdevtxtw.$(OBJ) : $(GLSRC)gdevtxtw.c $(GDEV)\
 
 $(GLOBJ)gdevagl.$(OBJ) : $(GLSRC)gdevagl.c $(GDEV)\
  $(gdevagl_h)
-        $(GLCC) $(GLO_)gdevagl.$(OBJ) $(C_) $(GLSRC)gdevagl.c
+	$(GLCC) $(GLO_)gdevagl.$(OBJ) $(C_) $(GLSRC)gdevagl.c
 
 
 ################ BEGIN PDF WRITER ################
