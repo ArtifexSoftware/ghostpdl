@@ -756,6 +756,16 @@ AC_ARG_WITH([install-cups], AC_HELP_STRING([--with-install-cups],
 					     [Install the cups conversion tools]),
 	    [CUPSINSTALL=install-cups], [CUPSINSTALL=])
 
+AC_ARG_WITH([cups-serverbin],  AC_HELP_STRING([--with-cups-serverbin],
+    [override the "cups-config --serverbin" path]), CUPS_SERVERBIN="$withval", CUPS_SERVERBIN="")
+
+AC_ARG_WITH([cups-serverroot],  AC_HELP_STRING([--with-cups-serverroot],
+    [override the "cups-config --serverroot" path]), CUPS_SERVERROOT="$withval", CUPS_SERVERROOT="")
+
+
+AC_ARG_WITH([cups-datadir],  AC_HELP_STRING([--with-cups-datadir],
+    [override the "cups-config --datadir" path]), CUPS_DATADIR="$withval", CUPS_DATADIR="")
+
 CUPSDEV=""
 CUPSINCLUDE=""
 CUPSCFLAGS=""
@@ -783,10 +793,26 @@ if ( test -d cups ); then
 	        CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
 	        GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
 	        GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
-	        CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
-	        CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
-	        CUPSDATA="`$CUPSCONFIG --datadir`"
-	        CUPSINCLUDE="include cups/cups.mak"
+
+	        if test "x$CUPS_SERVERROOT" != "x"; then
+                  CUPSSERVERROOT="$CUPS_SERVERROOT"
+	        else
+                  CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
+                fi
+
+	        if test "x$CUPS_SERVERBIN" != "x"; then
+                  CUPSSERVERBIN="$CUPS_SERVERBIN"
+                else
+                  CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
+	        fi
+
+	        if test "x$CUPS_DATADIR" != "x"; then
+                  CUPSDATA="$CUPS_DATADIR"
+                else
+                  CUPSDATA="`$CUPSCONFIG --datadir`"
+	        fi
+
+                CUPSINCLUDE="include cups/cups.mak"
 	        CUPSDEV="cups"
 	        CUPSVERSION="`$CUPSCONFIG --version`"
 	        LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
