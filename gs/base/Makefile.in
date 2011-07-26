@@ -85,6 +85,8 @@ CUPSSERVERROOT=@CUPSSERVERROOT@
 CUPSDATA=@CUPSDATA@
 CUPSPDFTORASTER=@CUPSPDFTORASTER@
 
+CUPSINSTTARGET=@CUPSINSTALL@
+
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
