@@ -337,7 +337,8 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     }
     LINE_ACCUM_STORE(depth);
   gx:gs_free_object(mem, row, "x_wrap_get_bits");
-    *actual_data = str;
+    if (actual_data)
+        *actual_data = str;
     return code;
 }
 
