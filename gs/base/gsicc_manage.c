@@ -1004,26 +1004,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
         /* Get the profile of interest */
         curr_profile = profile_struct->device_profile[profile_type];      
         /* See if we have the same profile in this location */
-        if (curr_profile == NULL) {
-            /* A new one that we need to set,  get the file and dir names
-               set up now */
-            if (profile_name == NULL) {
-                switch(dev->color_info.num_components) {
-                    case 1:
-                        profile_name = DEFAULT_GRAY_ICC;
-                        break;
-                    case 3:
-                       profile_name = DEFAULT_RGB_ICC;
-                        break;
-                    case 4:
-                        profile_name = DEFAULT_CMYK_ICC;
-                        break;
-                    default:
-                        profile_name = DEFAULT_CMYK_ICC;
-                        break;
-                }
-            }
-        } else {
+        if (curr_profile != NULL) {
             /* There is something there now.  See if what we have coming in
                is different.  If it is, then we need to free and the create
                the new one else we just return */
@@ -1491,6 +1472,8 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
     gx_device_clist_reader *pcrdev = (gx_device_clist_reader*) picc_profile->dev;
     unsigned char *buffer_ptr;
     int64_t position;
+    gsicc_serialized_profile_t profile_header;
+    int k;
 
     if( pcrdev != NULL) {
 
@@ -1515,6 +1498,22 @@ gsicc_get_profile_handle_clist(cmm_profile_t *picc_profile, gs_memory_t *memory)
         clist_read_chunk(pcrdev, position+sizeof(gsicc_serialized_profile_t),
             profile_size, (unsigned char *) buffer_ptr);
         profile_handle = gscms_get_profile_handle_mem(buffer_ptr, profile_size);
+        /* We also need to get some of the serialized information */
+        clist_read_chunk(pcrdev, position, sizeof(gsicc_serialized_profile_t),
+                        (unsigned char *) (&profile_header));
+        picc_profile->buffer_size = profile_header.buffer_size;
+        picc_profile->data_cs = profile_header.data_cs;
+        picc_profile->default_match = profile_header.default_match;
+        picc_profile->hash_is_valid = profile_header.hash_is_valid;
+        picc_profile->hashcode = profile_header.hashcode;
+        picc_profile->islab = profile_header.islab;
+        picc_profile->num_comps = profile_header.num_comps;
+        for ( k = 0; k < profile_header.num_comps; k++ ) {
+            picc_profile->Range.ranges[k].rmax =
+                profile_header.Range.ranges[k].rmax;
+            picc_profile->Range.ranges[k].rmin =
+                profile_header.Range.ranges[k].rmin;
+        }
         return(profile_handle);
      }
      return(0);
