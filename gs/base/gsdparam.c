@@ -79,7 +79,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
-    bool devicegraytokoff = false;  /* Default if device profile stuct not set */
+    bool devicegraytok = true;  /* Default if device profile stuct not set */
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
@@ -144,7 +144,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 profile_intents[k] = dev_profile->intent[k];
             }
         }
-        devicegraytokoff = !(dev_profile->devicegraytok);
+        devicegraytok = dev_profile->devicegraytok;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
@@ -177,7 +177,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         /* Non-standard parameters */
         /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
            that profile here for the device parameter on the command line */
-        (code = param_write_bool(plist, "DeviceGrayToKOff", &devicegraytokoff)) < 0 ||
+        (code = param_write_bool(plist, "DeviceGrayToK", &devicegraytok)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
@@ -465,17 +465,20 @@ gx_default_put_graytok(bool graytok, gx_device * dev)
         /* This is an odd case where the device has not yet fully been 
            set up with its procedures yet.  We want to make sure that
            we catch this so we assume here that we are dealing with 
-           the target device */
+           the target device.  For now allocate the profile structure
+           but do not intialize the profile yet as the color info 
+           may not be fully set up at this time.  */
         if (dev->icc_struct == NULL) {
-            /* Intializes the device structure.  Not the profile though for index */
-            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            /* Allocate at this time the structure */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
         }
         dev->icc_struct->devicegraytok = graytok;
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
-            /* Intializes the device structure.  Not the profile though for index */
-            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
+            profile_struct =  dev->icc_struct;
         }
         profile_struct->devicegraytok = graytok;
     }
@@ -495,14 +498,14 @@ gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,
            the target device */
         if (dev->icc_struct == NULL) {
             /* Intializes the device structure.  Not the profile though for index */
-            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
         }
         code = gsicc_set_device_profile_intent(dev, icc_intent, index);
     } else {
         code = dev_proc(dev, get_profile)(dev,  &profile_struct);
         if (profile_struct == NULL) {
-            /* Intializes the device structure.  Not the profile though for index */
-            code = gsicc_init_device_profile_struct(dev, NULL, 0);
+            /* Create now  */
+            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
         }
         code = gsicc_set_device_profile_intent(dev, icc_intent, index);
     }
@@ -572,14 +575,14 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_string cms;
     int leadingedge = dev->LeadingEdge;
     int k;
-    bool devicegraytokoff = false;
+    bool devicegraytok = true;
 
 
     if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = dev->icc_struct->intent[k];
         }
-        devicegraytokoff = !(dev->icc_struct->devicegraytok);
+        devicegraytok = dev->icc_struct->devicegraytok;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = gsPERCEPTUAL;
@@ -794,8 +797,8 @@ nce:
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
-    if ((code = param_read_bool(plist, (param_name = "DeviceGrayToKOff"), 
-                                                        &devicegraytokoff)) < 0) {
+    if ((code = param_read_bool(plist, (param_name = "DeviceGrayToK"), 
+                                                        &devicegraytok)) < 0) {
         ecode = code;
         param_signal_error(plist, param_name, ecode);
     }
@@ -999,7 +1002,7 @@ nce:
         gx_default_put_intent(rend_intent[2], dev, gsIMAGEPROFILE); 
         gx_default_put_intent(rend_intent[3], dev, gsTEXTPROFILE); 
     }
-    gx_default_put_graytok(!devicegraytokoff, dev);
+    gx_default_put_graytok(devicegraytok, dev);
     return 0;
 }
 
