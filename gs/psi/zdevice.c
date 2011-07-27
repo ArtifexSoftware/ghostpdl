@@ -405,9 +405,6 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     old_width = dev->width;
     old_height = dev->height;
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
-    /* The color  model may have been changed */
-    /* code2 = gsicc_init_device_profile_struct(dev, NULL, 0);
-    if (code2 < 0) return code2; */
     /* Check for names that were undefined or caused errors. */
     for (dest = count - 2, i = 0; i < count >> 1; i++)
         if (list.results[i] < 0) {

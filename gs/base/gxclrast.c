@@ -607,15 +607,6 @@ in:                             /* Initialize for a new page. */
     if (code < 0)
         goto out;
 
-    /* Initialize the ICC manger with the output device profile.
-       The default profiles must be packed in the cfile. */
-    /*
-    if (target != 0)
-        code = gsicc_init_device_profile_struct(target, NULL, 0);
-    
-    if (code < 0)
-        goto out;
-    */
     imager_state.line_params.dash.pattern = dash_pattern;
     if (tdev != 0)
         gx_set_cmap_procs(&imager_state, tdev);
