@@ -32,6 +32,7 @@
 #include "gdevpxut.h"
 #include "gxlum.h"
 #include "gdevpcl.h" /* for gdev_pcl_mode3compress() */
+#include "gsicc_manage.h"
 #include <stdlib.h> /* abs() */
 
 /* ---------------- Device definition ---------------- */
@@ -324,6 +325,12 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
         index =
             gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
     }
+    else if (index == gs_color_space_index_ICC)
+    {
+        index = gsicc_get_default_type(pcs->cmm_icc_profile_data);
+        return ((index < gs_color_space_index_DevicePixel) ? true : false);
+    }
+
     return !(index == gs_color_space_index_Separation ||
              index == gs_color_space_index_Pattern ||
              index == gs_color_space_index_ICC);
