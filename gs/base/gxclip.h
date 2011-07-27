@@ -46,6 +46,9 @@ typedef struct clip_callback_data_s {
     const gx_strip_bitmap *textures;    /* ibid. */
     const gx_color_index *tcolors;      /* ibid. */
     int plane;                          /* copy_plane */
+    const gs_imager_state * pis;        /* fill_path */
+    gx_path * ppath;                    /* fill_path */
+    const gx_fill_params * params;      /* fill_path */
 } clip_callback_data_t;
 
 /* Declare the callback procedures. */
