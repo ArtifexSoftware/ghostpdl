@@ -2249,11 +2249,12 @@ pdf14_fill_mask(gx_device * orig_dev,
     }
     if (has_pattern_trans) {
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-        code = pdf14_pop_transparency_group(NULL, p14dev->ctx,
-                                            p14dev->blend_procs,
-                                            p14dev->color_info.num_components,
-                                            dev_profile->device_profile[0],
-                                            orig_dev);
+        if (code >= 0)
+            code = pdf14_pop_transparency_group(NULL, p14dev->ctx,
+                                                p14dev->blend_procs,
+                                                p14dev->color_info.num_components,
+                                                dev_profile->device_profile[0],
+                                                orig_dev);
         gs_free_object(p14dev->memory, ptile->ttrans->fill_trans_buffer,
                        "pdf14_fill_mask");
         ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
