@@ -381,11 +381,19 @@ CUPS_CC=$(CC) $(CFLAGS) -DWIN32 -DHAVE_BOOLEAN
 XCFLAGS=
 !endif
 
+# To try the UNICODE/UTF8 you can comment out the following
+# or specify USEUNICODE=1 when you invoke nmake
+!if !defined(USEUNICODE) || "$(USEUNICODE)" != "1"
+UNICODECFLAGS=/DWINDOWS_NO_UNICODE
+!else
+UNICODECFLAGS=
+!endif
+
 !ifndef CFLAGS
 CFLAGS=
 !endif
 
-CFLAGS=$(CFLAGS) $(XCFLAGS)
+CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
@@ -863,7 +871,7 @@ STDIO_IMPLEMENTATION=c
 # if we're using Visual Studio 2003 (Visual C 7) or earlier
 # disable the Unicode path string handling (VC7 doesn't have
 # the required wchar related library functions
-!if $(MSVC_VERSION) <= 7
+!if $(MSVC_VERSION) <= 7 && !defined(UNICODECFLAGS)
 CFLAGS=$(CFLAGS) /DWINDOWS_NO_UNICODE
 !endif
 
