@@ -1008,7 +1008,12 @@ int WriteInputLUT(LPMEMSTREAM m, cmsHPROFILE hProfile, int Intent)
     nChannels   = _cmsChannelsOf(ColorSpace);
     InputFormat = CHANNELS_SH(nChannels) | BYTES_SH(2);
 
-    cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile, Intent,LCMS_BPFLAGS_D50_ADAPTED);
+    if (cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile,
+                            Intent,LCMS_BPFLAGS_D50_ADAPTED) < 0)
+    {
+        cmsSignalError(LCMS_ERRC_ABORTED, "Blackpoint detection failed");
+        return 0;
+    }
 
     // Is a devicelink profile?
     if (cmsGetDeviceClass(hProfile) == icSigLinkClass) {
@@ -1102,7 +1107,12 @@ int WriteInputMatrixShaper(LPMEMSTREAM m, cmsHPROFILE hProfile)
     ColorSpace = cmsGetColorSpace(hProfile);
     MatShaper  = cmsBuildInputMatrixShaper(hProfile);
 
-    cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile, INTENT_RELATIVE_COLORIMETRIC, LCMS_BPFLAGS_D50_ADAPTED);
+    if (cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile,
+                            INTENT_RELATIVE_COLORIMETRIC,
+                            LCMS_BPFLAGS_D50_ADAPTED) < 0) {
+        cmsSignalError(LCMS_ERRC_ABORTED, "Blackpoint detection failed");
+        return 0;
+    }
 
     if (MatShaper == NULL) {
 
@@ -1514,8 +1524,11 @@ int WriteOutputLUT(LPMEMSTREAM m, cmsHPROFILE hProfile, int Intent, DWORD dwFlag
     Writef(m, "<<\n");
     Writef(m, "/ColorRenderingType 1\n");
 
-
-    cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile, Intent, LCMS_BPFLAGS_D50_ADAPTED);
+    if (cmsDetectBlackPoint(&BlackPointAdaptedToD50, hProfile,
+                            Intent, LCMS_BPFLAGS_D50_ADAPTED) < 0) {
+        cmsSignalError(LCMS_ERRC_ABORTED, "Blackpoint detection failed");
+        return 0;
+    }
 
     // Emit headers, etc.
     EmitWhiteBlackD50(m, &BlackPointAdaptedToD50);
