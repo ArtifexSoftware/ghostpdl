@@ -2483,9 +2483,9 @@ proves its reliability.
 The value is platform dependent. It must end with a directory separator.
 <p>
 <b><font size="+1">
-A note for Windows users, Artifex recommends the use of the 
+A note for Windows users, Artifex recommends the use of the
 forward slash delimiter due to the special interpretation of \" by
-the Microsoft C startup code.  See 
+the Microsoft C startup code.  See
 <a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
 for more information.
 </font></b>
@@ -2730,13 +2730,129 @@ device supports those colorants.
 </dl>
 
 <dl>
+<dt><code>-sRenderIntent=</code><em>intent</em>
+<dd>Set the rendering intent that should be used with the
+profile specified above by -sOutputICCProfile.  The 
+options for <em>intent</em> are  per, col , sat, and abs,
+which correspond to the ICC intents of Perceptual, Colorimetric,
+Saturation, and Absolute Colorimetric.
+Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-sGraphicICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device for vector-based graphics (e.g. Fill, 
+Stroke operations).  
+Care should be taken to ensure that the
+number of colorants associated with the device is the same
+as the profile.  This can be used to obtain more saturated
+colors for graphics.  
+</dl>
+
+<dl>
+<dt><code>-sGraphicIntent=</code><em>intent</em>
+<dd>Set the rendering intent that should be used with the
+profile specified above by -sGraphicICCProfile.  The
+options are the same as specified for -sRenderIntent.
+Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-sImageICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device for images.
+Care should be taken to ensure that the
+number of colorants associated with the device is the same
+as the profile.  This can be used to obtain perceptually
+pleasing images.
+</dl>
+
+<dl>
+<dt><code>-sImageIntent=</code><em>intent</em>
+<dd>Set the rendering intent that should be used with the
+profile specified above by -sImageICCProfile.  The
+options are the same as specified for -sRenderIntent.
+Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-sTextICCProfile=</code><em>filename</em>
+<dd>Set the ICC profile that will be associated with
+the output device for text.
+Care should be taken to ensure that the
+number of colorants associated with the device is the same
+as the profile.  This can be used ensure K only text.
+</dl>
+
+<dl>
+<dt><code>-sTextIntent=</code><em>intent</em>
+<dd>Set the rendering intent that should be used with the
+profile specified above by -sTextICCProfile.  The
+options are the same as specified for -sRenderIntent.
+Also see <a href="#OverrideRI">OverrideRI</a>.
+</dl>
+
+<dl>
+<dt><code>-dOverrideICC</code>
+<dd>Override any ICC profiles contained in the source
+document with the profiles specified by
+sDefaultGrayProfile, sDefaultRGBProfile, sDefaultCMYKProfile.
+Note that if no profiles are specified for the default
+Device color spaces, then
+the system default profiles will be used.  For detailed override
+control in the specification of source colors see
+<a href="#SourceObjectICC">SourceObjectICC</a>.
+</dl>
+
+<dl>
+<dt><a name="OverrideRI"></a><code>-dOverrideRI</code>
+<dd>Override the rendering intent contained in the source
+document with the rendering intents specified by -sRenderIntent,
+-sGraphicIntent,  -sTextIntent, -sGraphicIntent.  Note that 
+unless -dOverrideRI is specified, the above rendering intent
+settings are essentially ignored.  For detailed control over
+rendering intent with specific object types, see 
+<a href="#SourceObjectICC">SourceObjectICC</a>.
+</dl>
+
+<dl>
+<dt><a name="SourceObjectICC"></a><code>-sSourceObjectICC=</code><em>filename</em>
+<dd>
+This option provides an extreme level of override control to
+specify the source color spaces and rendering intents to use
+with graphics, images and text for both RGB and CMYK source
+objects.  The specification is made through a file that contains
+on a line a key name to specify the object type (e.g. Image_CMYK)
+followed by an ICC profile file name and a rendering intent 
+number (0 for perceptual, 1 for colorimetric, 2 for saturation,
+3 for absolute colorimetric).  An example file is given in 
+./gs/toolbin/color/src_color/objsrc_profiles_example.txt.  
+Profiles to demonstrate this method of specification are also 
+included in this folder.  Note that if objects are colorimetrically
+specified through this mechanism other operations like -sImageIntent,
+-dOverrideICC, have no real affect.
+</dl>
+
+<dl>
+<dt><code>-dDeviceGrayToK=</code><em>true/false</em>
+<dd>
+By default, Ghostscript will map DeviceGray color spaces to 
+pure K when the output device is CMYK based.  This may not 
+always be desired.  In particular, it may be desired to map
+from the gray ICC profile specified by -sDefaultGrayProfile
+to the output device profile.  To achieve this, one should 
+specify -dDeviceGrayToK=false. 
+</dl>
+
+<dl>
 <dt><code>-sICCProfilesDir=</code><em>path</em>
-<dd>Set a directory in which to search for the above profiles.  
-The directory path must end with a file system delimiter.  
+<dd>Set a directory in which to search for the above profiles.
+The directory path must end with a file system delimiter.
 <p>
-If the user doesn't use the -sICCProfilesDir= command line option, 
-Ghostscript creates a default value for it by looking on the 
-directory paths explained in <a href="#Finding_files">How 
+If the user doesn't use the -sICCProfilesDir= command line option,
+Ghostscript creates a default value for it by looking on the
+directory paths explained in <a href="#Finding_files">How
 Ghostscript finds files</a>.  If the current directory is the first
 path a test is made for the iccprofiles directory. Next, the remaining
 paths with the string Resource in it are tested.  The prefix up to
@@ -2744,16 +2860,16 @@ the path separator character preceding the string Resource, concatenated
 with the string iccprofiles is used and if this exists, then this
 path will be used for ICCProfilesDir.
 <p>
-Note that if the build is performed with COMPILE_INITS=1, 
-then the profiles contained in gs/iccprofiles will be placed in 
-the ROM file system.  If a directory is specified on the command 
-line using -sICCProfilesDir=, that directory is searched before 
+Note that if the build is performed with COMPILE_INITS=1,
+then the profiles contained in gs/iccprofiles will be placed in
+the ROM file system.  If a directory is specified on the command
+line using -sICCProfilesDir=, that directory is searched before
 the iccprofiles/ directory of the ROM file system is searched.
 <p>
 <b><font size="+1">
-A note for Windows users, Artifex recommends the use of the 
+A note for Windows users, Artifex recommends the use of the
 forward slash delimiter due to the special interpretation of \" by
-the Microsoft C startup code.  See 
+the Microsoft C startup code.  See
 <a href="http://msdn.microsoft.com/en-us/library/a1y7w461.aspx">Parsing C Command-Line Arguments</a>
 for more information.
 </font></b>
@@ -2947,7 +3063,7 @@ be used to adjust this threshold, smaller to reduce memory requirements and
 larger to avoid performance impacts due to clist based pattern handling.
 <p>
 For example, <code>-dMaxPatternBitmap=200000</code> will use clist based
-patterns for pattern tiles larger than 200,000 bytes. 
+patterns for pattern tiles larger than 200,000 bytes.
 </ul>
 
 <h2><a name="Environment_variables"></a>Summary of environment variables</h2>
@@ -3039,7 +3155,7 @@ Normally, PDF interpreter tries to repair all problems in PDF files.
 <code>-dPDFSTOPONERROR</code> skips some of the stopped contexts. On error,
 instead of printing a warning and continue, PDF interpreter drops into
 a PostScript error handler that prints detailed information about the problem and
-kills the job. 
+kills the job.
 </p>
 
 <p>With switching to freetype 2 as the default font renderer in April 2010, we
