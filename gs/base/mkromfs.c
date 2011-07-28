@@ -367,9 +367,9 @@ typedef struct {
     int wasascii;
     char *bufferin;
     char *bufferout;
-    psc_getc *fgetc;
-    psc_ungetc *ungetc;
-    psc_feof *feof;
+    psc_getc *pgetc;
+    psc_ungetc *unpgetc;
+    psc_feof *peof;
     void *file;
     int names;
     int binary;
@@ -392,9 +392,9 @@ static void pscompact_start(pscompstate *psc, psc_getc *myfgetc, psc_ungetc *myu
     psc->outmax = 80;
     psc->inpos = 0;
     psc->wasascii = 0;
-    psc->fgetc = myfgetc;
-    psc->ungetc = myungetc;
-    psc->feof = myfeof;
+    psc->pgetc = myfgetc;
+    psc->unpgetc = myungetc;
+    psc->peof = myfeof;
     psc->file = myfile;
     psc->names = names;
     psc->binary = binary;
@@ -877,7 +877,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
     do {
         switch (psc->state) {
             case PSC_BufferIn:
-                c = psc->fgetc(psc->file);
+                c = psc->pgetc(psc->file);
                 if ((c <= 32) || (c == EOF)) {
                     /* Whitespace */
                     if (psc->inpos == 0) {
@@ -933,7 +933,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 } else if (c == 137) {
                     /* fixed point */
                     if (psc->inpos == 0) {
-                        int r = psc->fgetc(psc->file);
+                        int r = psc->pgetc(psc->file);
                         if (r & 32) {
                             pscompact_copy2(psc, c, r, 2);
                         } else {
@@ -944,23 +944,23 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 } else if (c == 142) {
                     /* short string */
                     if (psc->inpos == 0) {
-                        int n = psc->fgetc(psc->file);
+                        int n = psc->pgetc(psc->file);
                         pscompact_copy2(psc, c, n, n);
                         break;
                     }
                 } else if (c == 143) {
                     /* long string */
                     if (psc->inpos == 0) {
-                        int n1 = psc->fgetc(psc->file);
-                        int n2 = psc->fgetc(psc->file);
+                        int n1 = psc->pgetc(psc->file);
+                        int n2 = psc->pgetc(psc->file);
                         pscompact_copy3(psc, c, n1, n2, (n1<<8) + n2);
                         break;
                     }
                 } else if (c == 144) {
                     /* long string */
                     if (psc->inpos == 0) {
-                        int n1 = psc->fgetc(psc->file);
-                        int n2 = psc->fgetc(psc->file);
+                        int n1 = psc->pgetc(psc->file);
+                        int n2 = psc->pgetc(psc->file);
                         pscompact_copy3(psc, c, n1, n2, n1 + (n2<<8));
                         break;
                     }
@@ -991,7 +991,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                  * to write it (or something equivalent to it) out. */
                 if (c > 32) {
                     /* Put c back into the file to process next time */
-                    psc->ungetc(c, psc->file);
+                    psc->unpgetc(c, psc->file);
                 }
                 if (psc->binary) {
                     int i;
@@ -1234,7 +1234,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                     *out++ = psc->bufferout[psc->outpos++];
                     break;
                 }
-                *out++ = psc->fgetc(psc->file);
+                *out++ = psc->pgetc(psc->file);
                 psc->buffercopy--;
                 if (psc->buffercopy == 0) {
                     psc->outpos = 0;
@@ -1243,7 +1243,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 }
                 break;
             case PSC_InString:
-                c = psc->fgetc(psc->file);
+                c = psc->pgetc(psc->file);
                 if ((c == ')') && (--psc->paren == 0)) {
                     psc->wasascii = 0;
                     if (psc->binary) {
@@ -1268,7 +1268,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                     pscompact_copyinout(psc);
                     break;
                 } else if (c == '\\') {
-                    c = psc->fgetc(psc->file);
+                    c = psc->pgetc(psc->file);
                     if (c == 10)
                         break;
                     else if (c == 'b')
@@ -1284,17 +1284,17 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                     else if ((c >= '0') && (c <= '7')) {
                         int d;
                         c = (c - '0');
-                        d = psc->fgetc(psc->file);
+                        d = psc->pgetc(psc->file);
                         if ((d >= '0') && (d <= '7')) {
                             c = (c<<3) + (d-'0');
-                            d = psc->fgetc(psc->file);
+                            d = psc->pgetc(psc->file);
                             if ((d >= '0') && (d <= '7')) {
                                 c = (c<<3) + (d-'0');
                             } else {
-                                psc->ungetc(d, psc->file);
+                                psc->unpgetc(d, psc->file);
                             }
                         } else {
-                            psc->ungetc(d, psc->file);
+                            psc->unpgetc(d, psc->file);
                         }
                         c &= 0xFF;
                     }
@@ -1305,7 +1305,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 break;
             case PSC_InComment:
                 /* Watch for an EOL, otherwise swallow */
-                c = psc->fgetc(psc->file);
+                c = psc->pgetc(psc->file);
                 if ((c == 13) || (c == 10)) {
                     if ((psc->inpos >= 3) &&
                         (strncmp(psc->bufferin, "END", 3) == 0)) {
@@ -1339,7 +1339,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 pscompact_buffer(psc, c);
                 break;
             case PSC_InHexString:
-                c = psc->fgetc(psc->file);
+                c = psc->pgetc(psc->file);
                 if (c == '<') {
                     /* Dictionary */
                     pscompact_copy2(psc, '<', '<', 0);
@@ -1386,7 +1386,7 @@ static unsigned long pscompact_getcompactedblock(pscompstate *psc, unsigned char
                 }
                 break;
         }
-    } while ((out-ubuf != ulen) && (!psc->feof(psc->file)));
+    } while ((out-ubuf != ulen) && (!psc->peof(psc->file)));
     return out-ubuf;
 }
 
