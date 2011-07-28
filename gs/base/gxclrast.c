@@ -598,7 +598,7 @@ in:                             /* Initialize for a new page. */
     code = gs_imager_state_initialize(&imager_state, mem);
     /* Remove the ICC link cache and replace with the device link cache
        so that we share the cache across bands */
-    rc_decrement(imager_state.icc_link_cache,"clist_plaback_band");
+    rc_decrement(imager_state.icc_link_cache,"clist_playback_band");
     imager_state.icc_link_cache = cdev->icc_cache_cl;
     /* Need to lock during the increment of the link cache */
     gx_monitor_enter(cdev->icc_cache_cl->lock);
