@@ -220,6 +220,9 @@ LPLUT LCMSEXPORT cmsAlloc3DGrid(LPLUT NewLUT, int clutPoints, int inputChan, int
 {
     DWORD nTabSize;
 
+    if (NewLUT == NULL)
+        return NULL;
+
        NewLUT -> wFlags       |= LUT_HAS3DGRID;  
        NewLUT -> cLutPoints    = clutPoints;
        NewLUT -> InputChan     = inputChan;

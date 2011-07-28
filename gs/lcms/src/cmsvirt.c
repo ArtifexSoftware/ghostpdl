@@ -490,7 +490,7 @@ cmsHPROFILE LCMSEXPORT cmsCreateInkLimitingDeviceLink(icColorSpaceSignature Colo
                                                         double Limit)
 {
        cmsHPROFILE hICC;
-       LPLUT Lut;
+       LPLUT Lut, Lut2;
            
        if (ColorSpace != icSigCmykData) {
             cmsSignalError(LCMS_ERRC_ABORTED, "InkLimiting: Only CMYK currently supported");
@@ -524,8 +524,13 @@ cmsHPROFILE LCMSEXPORT cmsCreateInkLimitingDeviceLink(icColorSpaceSignature Colo
            }
 
 
-       cmsAlloc3DGrid(Lut, 17, _cmsChannelsOf(ColorSpace), 
-                               _cmsChannelsOf(ColorSpace));
+       Lut2 = cmsAlloc3DGrid(Lut, 17, _cmsChannelsOf(ColorSpace),
+                             _cmsChannelsOf(ColorSpace));
+       if (Lut2 == NULL) {
+                cmsFreeLUT(Lut);
+                cmsCloseProfile(hICC);
+                return NULL;
+       }
 
        if (!cmsSample3DGrid(Lut, InkLimitingSampler, (LPVOID) &Limit, 0)) {
 
@@ -793,7 +798,7 @@ cmsHPROFILE LCMSEXPORT cmsCreateBCHSWabstractProfile(int nLUTPoints,
                                                      int TempDest)
 {
      cmsHPROFILE hICC;
-     LPLUT Lut;
+     LPLUT Lut, Lut2;
      BCHSWADJUSTS bchsw;
      cmsCIExyY WhitePnt;
 
@@ -827,7 +832,12 @@ cmsHPROFILE LCMSEXPORT cmsCreateBCHSWabstractProfile(int nLUTPoints,
            return NULL;
            }
 
-       cmsAlloc3DGrid(Lut, nLUTPoints, 3, 3);
+       Lut2 = cmsAlloc3DGrid(Lut, nLUTPoints, 3, 3);
+       if (Lut == NULL) {
+            cmsFreeLUT(Lut);
+            cmsCloseProfile(hICC);
+            return NULL;
+       }
 
        if (!cmsSample3DGrid(Lut, bchswSampler, (LPVOID) &bchsw, 0)) {
 

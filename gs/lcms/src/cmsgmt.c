@@ -794,7 +794,7 @@ static
 LPLUT ComputeGamutWithInput(cmsHPROFILE hInput, cmsHPROFILE hProfile, int Intent)
 {
     cmsHPROFILE hLab;
-    LPLUT Gamut;
+    LPLUT Gamut, Gamut2;
     DWORD dwFormat;
     GAMUTCHAIN Chain;
     int nErrState, nChannels, nGridpoints;
@@ -865,25 +865,35 @@ LPLUT ComputeGamutWithInput(cmsHPROFILE hInput, cmsHPROFILE hProfile, int Intent
     // All ok?
     if (Chain.hForward && Chain.hReverse) {
            
-    // Go on, try to compute gamut LUT from PCS.
-    // This consist on a single channel containing 
-    // dE when doing a transform back and forth on
-    // the colorimetric intent. 
+        // Go on, try to compute gamut LUT from PCS.
+        // This consist on a single channel containing
+        // dE when doing a transform back and forth on
+        // the colorimetric intent.
 
-    Gamut = cmsAllocLUT();
-    Gamut = cmsAlloc3DGrid(Gamut, nGridpoints, nChannels, 1);
-     
-    // If no input, then this is a gamut tag operated by Lab,
-    // so include pertinent prelinearization
-    if (hInput == NULL) {
+        Gamut = cmsAllocLUT();
+        Gamut2 = cmsAlloc3DGrid(Gamut, nGridpoints, nChannels, 1);
+        if (!Gamut || !Gamut2) {
+            cmsFreeLUT(Gamut);
+            Gamut = NULL;
+        }
+        if (Gamut) {
+            // If no input, then this is a gamut tag operated by Lab,
+            // so include pertinent prelinearization
+            if (hInput == NULL) {
        
-        CreateLabPrelinearization(Trans);               
-        cmsAllocLinearTable(Gamut, Trans, 1);              
-        cmsFreeGammaTriple(Trans);
-    }
-
+                CreateLabPrelinearization(Trans);
+                Gamut2 = cmsAllocLinearTable(Gamut, Trans, 1);
+                if (!Gamut2) {
+                    cmsFreeLUT(Gamut);
+                    Gamut = NULL;
+                }
+                cmsFreeGammaTriple(Trans);
+            }
    
-    cmsSample3DGrid(Gamut, GamutSampler, (LPVOID) &Chain, Gamut ->wFlags);          
+            if (Gamut) {
+                cmsSample3DGrid(Gamut, GamutSampler, (LPVOID) &Chain, Gamut ->wFlags);
+            }
+        }
     }
     else 
         Gamut = NULL;   // Didn't work...
@@ -942,7 +952,7 @@ int SoftProofSampler(register WORD In[], register WORD Out[], register LPVOID Ca
 LPLUT _cmsComputeSoftProofLUT(cmsHPROFILE hProfile, int nIntent)
 {
     cmsHPROFILE hLab;
-    LPLUT SoftProof;
+    LPLUT SoftProof, SoftProof2;
     DWORD dwFormat;
     GAMUTCHAIN Chain;
     int nErrState;
@@ -982,15 +992,25 @@ LPLUT _cmsComputeSoftProofLUT(cmsHPROFILE hProfile, int nIntent)
     // All ok?
     if (Chain.hForward && Chain.hReverse) {
                 
-    // This is Lab -> Lab, so 33 point should hold anything
-    SoftProof = cmsAllocLUT();
-    SoftProof = cmsAlloc3DGrid(SoftProof, 33, 3, 3);
+        // This is Lab -> Lab, so 33 point should hold anything
+        SoftProof = cmsAllocLUT();
+        SoftProof2 = cmsAlloc3DGrid(SoftProof, 33, 3, 3);
 
-    CreateLabPrelinearization(Trans);
-    cmsAllocLinearTable(SoftProof, Trans, 1);
-    cmsFreeGammaTriple(Trans);
-
-    cmsSample3DGrid(SoftProof, SoftProofSampler, (LPVOID) &Chain, SoftProof->wFlags);
+        if (!SoftProof || !SoftProof2) {
+            cmsFreeLUT(SoftProof);
+            SoftProof = NULL;
+        } else {
+            CreateLabPrelinearization(Trans);
+            SoftProof2 = cmsAllocLinearTable(SoftProof, Trans, 1);
+            if (!SoftProof2) {
+                cmsFreeLUT(SoftProof);
+                SoftProof = NULL;
+            }
+            cmsFreeGammaTriple(Trans);
+            if (SoftProof) {
+                cmsSample3DGrid(SoftProof, SoftProofSampler, (LPVOID) &Chain, SoftProof->wFlags);
+            }
+        }
     }
     else 
         SoftProof = NULL;   // Didn't work...
