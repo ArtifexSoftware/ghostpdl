@@ -38,8 +38,11 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
                      const gs_fixed_rect * rect_clip, gx_device * dev,
                      gs_imager_state * pis)
 {
-    shade_init_fill_state((shading_fill_state_t *) pfs,
-                          (const gs_shading_t *)psh, dev, pis);
+    int code;
+    code = shade_init_fill_state((shading_fill_state_t *) pfs,
+                                 (const gs_shading_t *)psh, dev, pis);
+    if (code < 0)
+        return code;
     pfs->pshm = psh;
     pfs->rect = *rect_clip;
     return 0;
@@ -104,8 +107,10 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         vd_set_scale(0.01);
         vd_set_origin(0, 0);
     }
-    shade_init_fill_state((shading_fill_state_t *)&pfs,
-                          (const gs_shading_t *)psh, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs,
+                                 (const gs_shading_t *)psh, dev, pis);
+    if (code < 0)
+        return code;
     pfs.Function = pshm->params.Function;
     pfs.rect = *rect_clip;
     code = init_patch_fill_state(&pfs);
@@ -152,11 +157,11 @@ v2:		if ((code = Gt_next_vertex(pshm, &cs, &vc, cc)) < 0)
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s'))
         vd_release_dc;
     release_colors(&pfs, pfs.color_stack, 3);
+    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     if (term_patch_fill_state(&pfs))
         return_error(gs_error_unregistered); /* Must not happen. */
     if (!cs.is_eod(&cs))
         return_error(gs_error_rangecheck);
-    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     return code;
 }
 
@@ -183,8 +188,10 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
         vd_set_scale(0.01);
         vd_set_origin(0, 0);
     }
-    shade_init_fill_state((shading_fill_state_t *)&pfs,
-                          (const gs_shading_t *)psh, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs,
+                                 (const gs_shading_t *)psh, dev, pis);
+    if (code < 0)
+        return code;
     pfs.Function = pshm->params.Function;
     pfs.rect = *rect_clip;
     code = init_patch_fill_state(&pfs);
@@ -250,8 +257,8 @@ out:
     gs_free_object(pis->memory, color_buffer, "gs_shading_LfGt_render");
     gs_free_object(pis->memory, color_buffer_ptrs, "gs_shading_LfGt_render");
     release_colors(&pfs, pfs.color_stack, 1);
+    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     if (term_patch_fill_state(&pfs))
         return_error(gs_error_unregistered); /* Must not happen. */
-    if (pfs.icclink != NULL) gsicc_release_link(pfs.icclink);
     return code;
 }
