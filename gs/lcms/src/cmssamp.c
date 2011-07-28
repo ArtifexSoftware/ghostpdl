@@ -227,7 +227,7 @@ int XFormSampler(register WORD In[], register WORD Out[], register LPVOID Cargo)
 LPLUT _cmsPrecalculateDeviceLink(cmsHTRANSFORM h, DWORD dwFlags)
 {
        _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) h;
-       LPLUT Grid;
+       LPLUT Grid, Grid2;
        int nGridPoints;
        DWORD dwFormatIn, dwFormatOut;
        DWORD SaveFormatIn, SaveFormatOut;
@@ -247,7 +247,11 @@ LPLUT _cmsPrecalculateDeviceLink(cmsHTRANSFORM h, DWORD dwFlags)
        Grid =  cmsAllocLUT();
        if (!Grid) return NULL;
 
-       Grid = cmsAlloc3DGrid(Grid, nGridPoints, ChannelsIn, ChannelsOut);
+       Grid2 = cmsAlloc3DGrid(Grid, nGridPoints, ChannelsIn, ChannelsOut);
+       if (!Grid2) {
+            cmsFreeLUT(Grid);
+            return NULL;
+       }
 
        // Compute device link on 16-bit basis
        dwFormatIn   = (CHANNELS_SH(ChannelsIn)|BYTES_SH(2));
@@ -471,7 +475,7 @@ LPLUT _cmsPrecalculateBlackPreservingDeviceLink(cmsHTRANSFORM hCMYK2CMYK, DWORD 
 {
        _LPcmsTRANSFORM p = (_LPcmsTRANSFORM) hCMYK2CMYK;
        BPCARGO Cargo;      
-       LPLUT Grid;
+       LPLUT Grid, Grid2;
        DWORD LocalFlags;
        cmsHPROFILE hLab = cmsCreateLabProfile(NULL);
        int nGridPoints;    
@@ -525,7 +529,12 @@ LPLUT _cmsPrecalculateBlackPreservingDeviceLink(cmsHTRANSFORM hCMYK2CMYK, DWORD 
        Grid =  cmsAllocLUT();
        if (!Grid) goto Cleanup;
 
-       Grid = cmsAlloc3DGrid(Grid, nGridPoints, 4, 4);
+       Grid2 = cmsAlloc3DGrid(Grid, nGridPoints, 4, 4);
+       if (!Grid2) {
+                cmsFreeLUT(Grid);
+                Grid = NULL;
+                goto Cleanup;
+       }
 
        // Setup formatters
        p -> FromInput = _cmsIdentifyInputFormat(p,  TYPE_CMYK_16);

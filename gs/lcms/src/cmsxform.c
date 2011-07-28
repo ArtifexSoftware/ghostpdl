@@ -1541,7 +1541,7 @@ cmsHTRANSFORM LCMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
     cmsHPROFILE hLab, hXYZ, hProfile;
     icColorSpaceSignature ColorSpace, CurrentColorSpace;
     icColorSpaceSignature ColorSpaceIn, ColorSpaceOut;
-    LPLUT Grid;
+    LPLUT Grid, Grid2;
     int nGridPoints, ChannelsInput, ChannelsOutput = 3, i;
     _LPcmsTRANSFORM p;
     int nNamedColor;
@@ -1715,7 +1715,11 @@ cmsHTRANSFORM LCMSEXPORT cmsCreateMultiprofileTransform(cmsHPROFILE hProfiles[],
 
     ChannelsInput  = _cmsChannelsOf(cmsGetColorSpace(p ->InputProfile));
 
-    Grid = cmsAlloc3DGrid(Grid, nGridPoints, ChannelsInput, ChannelsOutput);
+    Grid2 = cmsAlloc3DGrid(Grid, nGridPoints, ChannelsInput, ChannelsOutput);
+    if (Grid2 == NULL) {
+        cmsFreeLUT(Grid);
+        goto ErrorCleanup;
+    }
 
     if (!(dwFlags & cmsFLAGS_NOPRELINEARIZATION))
            _cmsComputePrelinearizationTablesFromXFORM(Transforms, nProfiles, Grid);

@@ -462,6 +462,8 @@ void _cmsIdentifyWhitePoint(char *Buffer, LPcmsCIEXYZ WhitePt)
 
 
 // Use darker colorant to obtain black point
+// Returns negative for failure, 0 for uncalculated black point, 1 for
+// calculated black point
 
 static
 int BlackPointAsDarkerColorant(cmsHPROFILE hInput,                               
@@ -498,10 +500,16 @@ int BlackPointAsDarkerColorant(cmsHPROFILE hInput,
     dwFormat = CHANNELS_SH(nChannels)|BYTES_SH(2);
 
     hLab = cmsCreateLabProfile(NULL);
+    if (hLab == NULL) {
+        return -1;
+    }
     
     xform = cmsCreateTransform(hInput, dwFormat,
                                 hLab, TYPE_Lab_DBL, Intent, cmsFLAGS_NOTPRECALC);
-    
+    if (xform == NULL) {
+        cmsCloseProfile(hLab);
+        return -1;
+    }
     
     cmsDoTransform(xform, Black, &Lab, 1);
 
@@ -537,7 +545,8 @@ int BlackPointAsDarkerColorant(cmsHPROFILE hInput,
 // Get a black point of output CMYK profile, discounting any ink-limiting embedded 
 // in the profile. For doing that, use perceptual intent in input direction:
 // Lab (0, 0, 0) -> [Perceptual] Profile -> CMYK -> [Rel. colorimetric] Profile -> Lab
-
+// Returns negative for failure, 0 for uncalculated black point, 1 for
+// calculated black point
 static
 int BlackPointUsingPerceptualBlack(LPcmsCIEXYZ BlackPoint, 
                                    cmsHPROFILE hProfile, 
@@ -557,14 +566,25 @@ int BlackPointUsingPerceptualBlack(LPcmsCIEXYZ BlackPoint,
     }
    
     hLab = cmsCreateLabProfile(NULL);
+    if (hLab == NULL)
+        return -1;
 
     hPercLab2CMYK  = cmsCreateTransform(hLab, TYPE_Lab_DBL, 
                                         hProfile, TYPE_CMYK_16, 
                                         INTENT_PERCEPTUAL, cmsFLAGS_NOTPRECALC);
+    if (hPercLab2CMYK == NULL) {
+        cmsCloseProfile(hLab);
+        return -1;
+    }
 
     hRelColCMYK2Lab = cmsCreateTransform(hProfile, TYPE_CMYK_16, 
                                          hLab, TYPE_Lab_DBL, 
                                          INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_NOTPRECALC);
+    if (hRelColCMYK2Lab == NULL) {
+        cmsCloseProfile(hLab);
+        cmsDeleteTransform(hPercLab2CMYK);
+        return -1;
+    }
 
     LabIn.L = LabIn.a = LabIn.b = 0;
 
