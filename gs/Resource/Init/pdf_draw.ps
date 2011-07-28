@@ -1089,9 +1089,11 @@ drawopdict begin
   /b* { b* } def
   /W { W } def
   /W* { W* } def
+  /sh_save 1 array def
   /sh {
       OFFlevels length 0 eq {
         setfillstate resolvesh
+        //sh_save 0 save put
         gsave 0 .setoverprintmode
         dup /.shading .knownget {
           exch
@@ -1102,10 +1104,12 @@ drawopdict begin
           dup 3 1 roll /.shading exch put
         } ifelse
         .shfill grestore
+        //sh_save 0 get restore
       } {
         pop
       } ifelse
     } bdef
+  currentdict /sh_save undef
 end
 
 % ---------------- XObjects ---------------- %
