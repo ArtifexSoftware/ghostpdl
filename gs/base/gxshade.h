@@ -204,9 +204,9 @@ typedef struct shading_fill_state_s {
 } shading_fill_state_t;
 
 /* Initialize the common parts of the recursion state. */
-void shade_init_fill_state(shading_fill_state_t * pfs,
-                           const gs_shading_t * psh, gx_device * dev,
-                           gs_imager_state * pis);
+int shade_init_fill_state(shading_fill_state_t * pfs,
+                          const gs_shading_t * psh, gx_device * dev,
+                          gs_imager_state * pis);
 
 /* Fill one piece of a shading. */
 #ifndef gx_device_color_DEFINED

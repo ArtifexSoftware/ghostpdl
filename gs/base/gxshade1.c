@@ -130,7 +130,9 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     float x[2], y[2];
     Fb_fill_state_t state;
 
-    shade_init_fill_state((shading_fill_state_t *) & state, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *) & state, psh0, dev, pis);
+    if (code < 0)
+        return code;
     state.psh = psh;
     /****** HACK FOR FIXED-POINT MATRIX MULTIPLY ******/
     gs_currentmatrix((gs_state *) pis, &save_ctm);
@@ -227,7 +229,9 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     int code;
 
     state.psh = psh;
-    shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    if (code < 0)
+        return code;
     pfs1.Function = pfn;
     pfs1.rect = *clip_rect;
     code = init_patch_fill_state(&pfs1);
@@ -285,9 +289,9 @@ gs_shading_A_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         state.t0 = state.t1 = t1 * dd + d0;
         code = A_fill_region(&state, &pfs1);
     }
+    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     if (term_patch_fill_state(&pfs1))
         return_error(gs_error_unregistered); /* Must not happen. */
-    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     return code;
 }
 
@@ -1163,7 +1167,9 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 
     if (r0 == 0 && r1 == 0)
         return 0; /* PLRM requires to paint nothing. */
-    shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    code = shade_init_fill_state((shading_fill_state_t *)&pfs1, psh0, dev, pis);
+    if (code < 0)
+        return code;
     pfs1.Function = psh->params.Function;
     code = init_patch_fill_state(&pfs1);
     if (code < 0) {
@@ -1221,9 +1227,9 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
         if (code >= 0 && (span_type & 8))
             code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
     }
+    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     if (term_patch_fill_state(&pfs1))
         return_error(gs_error_unregistered); /* Must not happen. */
-    if (pfs1.icclink != NULL) gsicc_release_link(pfs1.icclink);
     return code;
 }
 

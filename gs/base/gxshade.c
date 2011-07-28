@@ -308,7 +308,7 @@ shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex, patch_co
 /* ================ Shading rendering ================ */
 
 /* Initialize the common parts of the recursion state. */
-void
+int
 shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
                       gx_device * dev, gs_imager_state * pis)
 {
@@ -390,6 +390,8 @@ top:
     if (pcs->cmm_icc_profile_data != NULL) {
         pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
                                       &rendering_params, pis->memory, false);
+        if (pfs->icclink == NULL)
+            return gs_error_VMerror;
     } else {
         if (pcs->icc_equivalent != NULL ) {
             /* We have a PS equivalent ICC profile.  We may need to go
@@ -397,10 +399,13 @@ top:
             pfs->icclink = gsicc_get_link(pis, pis->trans_device,
                                           pcs->icc_equivalent, NULL,
                                           &rendering_params, pis->memory, false);
+            if (pfs->icclink == NULL)
+                return gs_error_VMerror;
         } else {
             pfs->icclink = NULL;
         }
     }
+    return 0;
 }
 
 /* Fill one piece of a shading. */
