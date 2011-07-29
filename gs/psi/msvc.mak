@@ -277,7 +277,7 @@ ZSRCDIR=zlib
 
 # Define which jbig2 library to use
 !if !defined(JBIG2_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
-!if exist("ldf_jb2")
+!if exist("luratech\ldf_jb2")
 JBIG2_LIB=luratech
 !endif
 !endif
@@ -290,7 +290,7 @@ JBIG2_LIB=jbig2dec
 # Set defaults for using the Luratech JB2 implementation
 !ifndef JBIG2SRCDIR
 # CSDK source code location
-JBIG2SRCDIR=ldf_jb2
+JBIG2SRCDIR=luratech\ldf_jb2
 !endif
 !ifndef JBIG2_CFLAGS
 # required compiler flags
@@ -313,7 +313,7 @@ JBIG2SRCDIR=jbig2dec
 
 # Define which jpeg2k library to use
 !if !defined(JPX_LIB) && (!defined(NO_LURATECH) || "$(NO_LURATECH)" != "1")
-!if exist("lwf_jp2")
+!if exist("luratech\lwf_jp2")
 JPX_LIB=luratech
 !endif
 !endif
@@ -808,7 +808,7 @@ SYNC=winsync
 # Set defaults for using the Luratech JP2 implementation
 !ifndef JPXSRCDIR
 # CSDK source code location
-JPXSRCDIR=lwf_jp2
+JPXSRCDIR=luratech\lwf_jp2
 !endif
 !ifndef JPX_CFLAGS
 # required compiler flags
