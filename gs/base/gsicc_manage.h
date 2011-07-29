@@ -115,6 +115,8 @@ bool gs_currentoverride_ri(const gs_imager_state *pis);
 cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen, 
                                          gsicc_manager_t *icc_manager, 
                                          gs_memory_t *mem);
+int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, 
+                             char *file_name, gsicc_profile_types_t defaulttype);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);

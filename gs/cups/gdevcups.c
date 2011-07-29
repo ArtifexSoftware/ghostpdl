@@ -69,6 +69,7 @@
 #include "gdevprn.h"
 #include "gsparam.h"
 #include "arch.h"
+#include "gsicc_manage.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -625,14 +626,13 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    compare_color_names(pname, name_size, "Transparency"))
 	    return 3;
     case CUPS_CSPACE_RGBW :
-        /* This behaves like CMYK */
-        if (compare_color_names(pname, name_size, "Cyan"))
+        if (compare_color_names(pname, name_size, "Red"))
 	    return 0;
-	if (compare_color_names(pname, name_size, "Magenta"))
+	if (compare_color_names(pname, name_size, "Green"))
 	    return 1;
-	if (compare_color_names(pname, name_size, "Yellow"))
-	    return 2;
-        if (compare_color_names(pname, name_size, "Black"))
+	if (compare_color_names(pname, name_size, "Blue"))
+            return 2;
+	if (compare_color_names(pname, name_size, "White"))
             return 3;
 	else
 	    return -1;
@@ -644,8 +644,6 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    return 1;
 	if (compare_color_names(pname, name_size, "Blue"))
             return 2;
-	else
-	    return -1;
         break;
     case CUPS_CSPACE_CMYK :
 #  ifdef CUPS_RASTER_HAVE_COLORIMETRIC
@@ -2037,23 +2035,29 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
 	*/
 
         k = cups->DecodeLUT[c3];
-        c = cups->DecodeLUT[c0] + k;
-        m = cups->DecodeLUT[c1] + k;
-        y = cups->DecodeLUT[c2] + k;
+        c = cups->DecodeLUT[c0] + k - gx_max_color_value;
+        m = cups->DecodeLUT[c1] + k - gx_max_color_value;
+        y = cups->DecodeLUT[c2] + k - gx_max_color_value;
 
         if (c > gx_max_color_value)
 	  prgb[0] = gx_max_color_value;
-	else
+	else if (c < 0)
+          prgb[0] = 0;
+        else
 	  prgb[0] = c;
 
         if (m > gx_max_color_value)
 	  prgb[1] = gx_max_color_value;
+        else if (m < 0)
+          prgb[1] = 0;
 	else
 	  prgb[1] = m;
 
         if (y > gx_max_color_value)
 	  prgb[2] = gx_max_color_value;
-	else
+	else if (y < 0)
+          prgb[2] = 0;
+        else
 	  prgb[2] = y;
         break;
 
@@ -3618,7 +3622,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   return (0);
 }
 
-
 /*
  * 'cups_set_color_info()' - Set the color information structure based on
  *                           the required output.
@@ -3633,7 +3636,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   float		m[3][3];		/* Color correction matrix */
   char		resolution[41];		/* Resolution string */
   ppd_profile_t	*profile;		/* Color profile information */
-
+  int           code;
 
 #ifdef DEBUG
   dprintf1("DEBUG2: cups_set_color_info(%p)\n", pdev);
@@ -3714,7 +3717,6 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
         cups->color_info.depth          = 4 * cups->header.cupsBitsPerColor;
         cups->color_info.num_components = 4;
-        cups->color_info.num_components = 4;
         break;
 
 #ifdef CUPS_RASTER_HAVE_COLORIMETRIC
@@ -3790,6 +3792,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   switch (cups->header.cupsColorSpace)
   {
     default :
+    case CUPS_CSPACE_RGBW :
     case CUPS_CSPACE_W :
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_RGB :
@@ -3816,7 +3819,6 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         cups->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
         break;
 
-    case CUPS_CSPACE_RGBW :
     case CUPS_CSPACE_K :
     case CUPS_CSPACE_GOLD :
     case CUPS_CSPACE_SILVER :
@@ -4035,8 +4037,24 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     for (k = 0; k <= CUPS_MAX_VALUE; k ++)
       cups->Density[k] = k;
   }
+  /* Set up the ICC profile for ghostscript to use based upon the color space.
+     This is different than the PPD profile above which appears to be some sort
+     of matrix based TRC profile */
+  switch (cups->header.cupsColorSpace) {
+      /* Use RGB profile for this */
+    case CUPS_CSPACE_RGBW:
+      if (pdev->icc_struct == NULL) {
+        pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+      }
+      if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE] == NULL) {
+            code = gsicc_set_device_profile(pdev, pdev->memory, 
+                DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+      }
+      break;
+    default:
+      break;
+  }
 }
-
 
 /*
  * 'cups_sync_output()' - Keep the user informed of our status...
