@@ -211,10 +211,47 @@ static int Memento_Internal_checkFreedBlock(Memento_BlkHeader *b, void *arg)
 
     p = MEMBLK_TOBLK(b);
     i = b->rawsize;
+    /* Attempt to speed this up by checking an (aligned) int at a time */
     do {
-        if (*p++ != (char)MEMENTO_FREEFILL)
-            break;
-    } while (--i);
+        if (((int)p) & 1) {
+            if (*p++ != (char)MEMENTO_FREEFILL)
+                break;
+            i--;
+            if (i == 0)
+                break;
+        }
+        if ((i >= 2) && (((int)p) & 2)) {
+            if (*(short *)p != (short)(MEMENTO_FREEFILL | (MEMENTO_FREEFILL<<8)))
+                goto mismatch;
+            p += 2;
+            i -= 2;
+            if (i == 0)
+                break;
+        }
+        i -= 4;
+        while (i >= 0) {
+            if (*(int *)p != (MEMENTO_FREEFILL |
+                              (MEMENTO_FREEFILL<<8) |
+                              (MEMENTO_FREEFILL<<16) |
+                              (MEMENTO_FREEFILL<<24)))
+                goto mismatch;
+            p += 4;
+            i -= 4;
+        }
+        i += 4;
+        if ((i >= 2) && (((int)p) & 2)) {
+            if (*(short *)p != (short)(MEMENTO_FREEFILL | (MEMENTO_FREEFILL<<8)))
+                goto mismatch;
+            p += 2;
+            i -= 2;
+        }
+mismatch:
+        while (i) {
+            if (*p++ != (char)MEMENTO_FREEFILL)
+                break;
+            i--;
+        }
+    } while (0);
     if (i) {
         data->freeCorrupt = 1;
         data->index       = b->rawsize-i;
