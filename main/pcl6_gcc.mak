@@ -202,7 +202,8 @@ CFLAGS?= $(GCFLAGS) $(XCFLAGS)
 
 CCLD?=gcc
 
-DEVICE_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
+DEVICE_DEVS?=$(X11DEVS) \
+   $(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev \
    $(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev\
    $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev\
@@ -216,7 +217,6 @@ DEVICE_DEVS?=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev\
    $(DD)wtscmyk.dev $(DD)wtsimdi.dev\
-   $(X11DEVS)\
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
