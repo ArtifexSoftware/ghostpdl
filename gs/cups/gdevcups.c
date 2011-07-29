@@ -3704,6 +3704,10 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
         cups->color_info.depth          = 4 * cups->header.cupsBitsPerColor;
         cups->color_info.num_components = 4;
+        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
+            /* This is to ensure that we pick an RGB ICC profile */
+            cups->color_info.num_components = 3;
+        }
         break;
 
 #ifdef CUPS_RASTER_HAVE_COLORIMETRIC
@@ -3768,7 +3772,6 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         cups->color_info.gray_index = 0;
 	break;
 
-    case CUPS_CSPACE_RGBW :
     case CUPS_CSPACE_CMYK :
     case CUPS_CSPACE_YMCK :
     case CUPS_CSPACE_GMCK :
