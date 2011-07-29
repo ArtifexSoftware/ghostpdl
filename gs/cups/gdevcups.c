@@ -625,8 +625,18 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    compare_color_names(pname, name_size, "Transparency"))
 	    return 3;
     case CUPS_CSPACE_RGBW :
-        if (compare_color_names(pname, name_size, "White"))
-	    return 3;
+        /* This behaves like CMYK */
+        if (compare_color_names(pname, name_size, "Cyan"))
+	    return 0;
+	if (compare_color_names(pname, name_size, "Magenta"))
+	    return 1;
+	if (compare_color_names(pname, name_size, "Yellow"))
+	    return 2;
+        if (compare_color_names(pname, name_size, "Black"))
+            return 3;
+	else
+	    return -1;
+        break;
     case CUPS_CSPACE_RGB :
         if (compare_color_names(pname, name_size, "Red"))
 	    return 0;
@@ -3704,10 +3714,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
         cups->color_info.depth          = 4 * cups->header.cupsBitsPerColor;
         cups->color_info.num_components = 4;
-        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
-            /* This is to ensure that we pick an RGB ICC profile */
-            cups->color_info.num_components = 3;
-        }
+        cups->color_info.num_components = 4;
         break;
 
 #ifdef CUPS_RASTER_HAVE_COLORIMETRIC
@@ -3787,7 +3794,6 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     case CUPS_CSPACE_WHITE :
     case CUPS_CSPACE_RGB :
     case CUPS_CSPACE_RGBA :
-    case CUPS_CSPACE_RGBW :
 #  ifdef CUPS_RASTER_HAVE_COLORIMETRIC
     case CUPS_CSPACE_CIEXYZ :
     case CUPS_CSPACE_CIELab :
@@ -3810,6 +3816,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         cups->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
         break;
 
+    case CUPS_CSPACE_RGBW :
     case CUPS_CSPACE_K :
     case CUPS_CSPACE_GOLD :
     case CUPS_CSPACE_SILVER :
