@@ -59,9 +59,6 @@ static void rc_free_icc_profile(gs_memory_t * mem, void *ptr_in,
                                 client_name_t cname);
 static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
                                      gs_memory_t *memory);
-static int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
-                                    char *file_name,
-                                    gsicc_profile_types_t defaulttype);
 static stream* gsicc_open_search(const char* pname, int namelen,
                                  gs_memory_t *mem_gc,
                                  const char* dirname, int dir_namelen);
@@ -1053,7 +1050,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
     in the icc_struct member variable of the device.  This should
     really occur only one time, but may occur twice if a color model is
     specified or a nondefault profile is specified on the command line */
-static int
+int
 gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *file_name,
                          gsicc_profile_types_t pro_enum)
 {
