@@ -162,7 +162,7 @@ echo "DEBUG: PPD options: $ppd_opts" >&2
 echo "DEBUG: PostScript code from options: $ps_code" >&2
 
 # Options we use with Ghostscript...
-gsopts="-dQUIET -dPARANOIDSAFER -dNOPAUSE -dBATCH"
+gsopts="-dQUIET -dPARANOIDSAFER -dNOPAUSE -dBATCH -dNOINTERPOLATE"
 gsopts="$gsopts -sDEVICE=$device -sstdout=%stderr"
 
 # See if we have a filename on the command-line...
