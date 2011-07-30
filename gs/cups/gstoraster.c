@@ -628,6 +628,7 @@ main (int argc, char **argv, char *envp[])
   cupsArrayAdd(gs_args, strdup("-dPARANOIDSAFER"));
   cupsArrayAdd(gs_args, strdup("-dNOPAUSE"));
   cupsArrayAdd(gs_args, strdup("-dBATCH"));
+  cupsArrayAdd(gs_args, strdup("-dNOINTERPOLATE"));
   if (doc_type == GS_DOC_TYPE_PS)
     cupsArrayAdd(gs_args, strdup("-dNOMEDIAATTRS"));
   cupsArrayAdd(gs_args, strdup("-sDEVICE=cups"));
