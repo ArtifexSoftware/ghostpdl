@@ -67,6 +67,19 @@ static const wchar_t* TextWinClassName = L"rjlTextWinClass";
 #endif
 static const POINT TextWinMinSize = {16, 4};
 
+#if !defined(WINDOWS_NO_UNICODE) && defined(_MSC_VER) && _MSC_VER < 1400
+/*
+ * 'wmemset()' is documented for both Visual Studio 6.0 and .NET 2003, but
+ * a bug in the shipped "wctype.h" makes it available only for C++ programs.
+ * As this is an inline function, it's not found in the libs.
+ */
+static wchar_t *wmemset(wchar_t *buf, wchar_t w, int count) {
+    while (count > 0)
+        buf[--count] = w;
+    return buf;
+}
+#endif
+
 static void
 text_error(char *message)
 {

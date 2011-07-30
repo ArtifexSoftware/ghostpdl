@@ -868,13 +868,6 @@ FILE_IMPLEMENTATION=stdio
 STDIO_IMPLEMENTATION=c
 !endif
 
-# if we're using Visual Studio 2003 (Visual C 7) or earlier
-# disable the Unicode path string handling (VC7 doesn't have
-# the required wchar related library functions
-!if $(MSVC_VERSION) <= 7 && !defined(UNICODECFLAGS)
-CFLAGS=$(CFLAGS) /DWINDOWS_NO_UNICODE
-!endif
-
 # Choose the device(s) to include.  See devs.mak for details,
 # devs.mak and contrib.mak for the list of available devices.
 
