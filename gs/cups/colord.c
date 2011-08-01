@@ -316,8 +316,13 @@ char *
 colord_get_profile_for_device_id (const char *device_id,
                               const char **qualifier_tuple)
 {
-  DBusConnection *con;
+  DBusConnection *con = NULL;
   char *filename = NULL;
+
+  if (device_id == NULL) {
+    fprintf(stderr, "DEBUG: No colord device ID available\n");
+    goto out;
+  }
 
   /* connect to system bus */
   con = dbus_bus_get(DBUS_BUS_SYSTEM, NULL);
