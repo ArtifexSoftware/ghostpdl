@@ -1,29 +1,25 @@
 
 The clusterpush.pl script allows you to run a cluster regression using
-code that has not been committed to svn.  It's supposed to be a
-replacement for clusterpush.sh.
+code that has not been committed to git. 
 
 Usage:
 
-  clusterpush.pl [type] ['bmpcmp'] ['lowres'|'hires']  [user]
+  clusterpush.pl [prduct] ['bmpcmp'] ['lowres'|'hires']  [user]
 
 
-Where type gs, pcl, xps, and/or ls (standing for language switch).
-If you do not specify a type clusterpush.pl will guess what you want to
-do based on the current directory.
+Where product gs, pcl, xps, and/or ls ('ls' standing for language switch).
+If you do not specify a produt all products will be tested.
 
 bmpcmp indicates that a bitmap comparison of your output to that of the
 last svn commit should be performed.
 
-lores or hires indicates to only perform a low-resolution or
+lowres or hires indicates to only perform a low-resolution or
 high-resolution cluster run; by default both are performed.
 
 user is your cluster user name, if you don't specify one, clusterpush.pl
-uses, in order of preference, the value of one of the following environment
-variables: CLUSTER_USER, USER or USERNAME (USER and USERNAME being the normal
-environment variables in Unix type shells). This makes sense on Linux and Mac
-OS X and probably cygwin, but I'm not sure what happens when run under
-Windows.
+uses, in order of preference, the value of one of the following
+environment variables: CLUSTER_USER, USER, and USERNAME This works under
+Linux, Mac OS X, Msys,  and probably cygwin.
 
 The order of the options is not important.
 
@@ -32,7 +28,7 @@ directory from where you normally run 'make').  Clusterpush prints and
 error if you try to run it from a different directory.
 
 Results will be sent via email after the run is completed, which takes
-about 25 minuts, presuming the cluster isn't busy.  Your code is compared
+about 30 minutes, presuming the cluster isn't busy.  Your code is compared
 to the most recent baseline, so for meaningful results you will want
 to sync your code with head if recent changes to head have resulted in
 regression differences.
@@ -42,10 +38,13 @@ to rsync your source to the master machine and then from the master to
 the nodes.  After that things will go much quicker (unless, like me,
 you accidently leave giant .ppm files in the current directory).
 
-bmpcmp mode:
+Futhermore the first time clusterpush.pl is run each cluster node has to
+transfer your source tree from the cluster master; some of the nodes have
+relatively slow internet connections and may time out.  The transfers
+will complete, so the next time a clusterpush.pl is run everything will
+proceed normally.
 
-Starting with r10876 the local cluster can now generate bitmaps that
-show differences between clusterpush jobs and trunk.  
+bmpcmp mode:
 
 To use the feature run clusterpush.pl with the option bmpcmp (i.e.
 "toolbin/localcluster/clusterpush.pl bmpcmp").  This will queue a job
@@ -57,9 +56,17 @@ an email telling you that it's done.  Since some of the test files
 are customer confidential this directory is password protected, I've
 emailed out passwords, contact me if you have misplaced your password.
 BTW, I consider the fact that can look at output from other users, e.g.
-<http://www.ghostscript.com/~regression/marcos>, a feature.
+<http://www.ghostscript.com/~regression/marcos>, a feature since this
+allows users to refer to bmpcmp output in email and IRC disucssions
+without having to email files around.
 
-Starting with r12230 you can add bmpcmp to a normal clusterpush
-(i.e. 'clusterpush gs bmpcmp' or 'clusterpush gs pcl xps ls bmpcmp').
-This will queueu both jobs in the correct sequence.
+You can add bmpcmp to a normal clusterpush (i.e. 'clusterpush gs bmpcmp'
+or 'clusterpush gs pcl xps ls bmpcmp').  This will queueu both jobs in
+the correct sequence.
+
+abort mode:
+
+If you want to abort a queued or currently running cluster job you can
+specify abort to the clusterpush.pl option: 'clusterpush.pl abort'.
+
 
