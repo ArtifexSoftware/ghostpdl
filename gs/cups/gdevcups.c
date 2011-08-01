@@ -1097,11 +1097,14 @@ cups_get_space_params(const gx_device_printer *pdev,
      fix gets into place.
 
      See http://bugs.ghostscript.com/show_bug.cgi?id=691586 */
+#define WORKAROUND_BUG_691586
+
 #ifdef DEBUG
   dprintf("DEBUG2: cups_get_space_params: RIP_MAX_CACHE ignored due to bug #691586\n");
 #endif /* DEBUG */
+#ifdef WORKAROUND_BUG_691586
   return;
-
+#else
   if ((cache_env = getenv("RIP_MAX_CACHE")) != NULL)
   {
     switch (sscanf(cache_env, "%f%254s", &cache_size, cache_units))
@@ -1135,6 +1138,7 @@ cups_get_space_params(const gx_device_printer *pdev,
 
   space_params->MaxBitmap   = (long)cache_size;
   space_params->BufferSpace = (long)cache_size;
+#endif
 }
 
 
