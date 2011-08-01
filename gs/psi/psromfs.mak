@@ -26,7 +26,7 @@ PDF_RESOURCE_LIST=CMap$(D)*
 
 MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
  FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap \
- gs_cet.ps gs_diskf.ps gs_diskn.ps gs_dscp.ps gs_trap.ps gs_cet.ps \
+ gs_cet.ps gs_diskf.ps gs_diskn.ps gs_dscp.ps gs_trap.ps \
  pdf_cslayer.ps -B
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
