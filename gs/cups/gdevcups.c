@@ -1079,6 +1079,29 @@ cups_get_space_params(const gx_device_printer *pdev,
   dprintf2("DEBUG2: cups_get_space_params(%p, %p)\n", pdev, space_params);
 #endif /* DEBUG */
 
+  /* Ghostscript is (at least currently) not able to work with
+     hard-limited space parameters. It crashes with a segmentation
+     fault on many input files then. Leaving the setting of these
+     parameters fully automatic Ghostscript works just fine. As in
+     most distributions (Currently all except Debian, Ubuntu, and
+     their derivatives) CUPS imposes a hard limit via the
+     RIP_MAX_CACHE environment variable, the only way to assure
+     reliable working of Ghostscript is to ignore the parameter,
+     leaving the space parameters in automatic mode. For CUPS this
+     should be no regression, as print queues with other Ghostscript
+     drivers (like pxlcolor, ljet4, ...) worked without hard limits
+     all the time and no one complained. 
+
+     To ignore this RIP_MAX_CACHE we simply add a "return" right at
+     the beginning of this function. It will be removed when a real
+     fix gets into place.
+
+     See http://bugs.ghostscript.com/show_bug.cgi?id=691586 */
+#ifdef DEBUG
+  dprintf("DEBUG2: cups_get_space_params: RIP_MAX_CACHE ignored due to bug #691586\n");
+#endif /* DEBUG */
+  return;
+
   if ((cache_env = getenv("RIP_MAX_CACHE")) != NULL)
   {
     switch (sscanf(cache_env, "%f%254s", &cache_size, cache_units))
