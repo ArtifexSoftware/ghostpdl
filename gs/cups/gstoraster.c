@@ -381,7 +381,7 @@ gs_spawn (const char *filename,
   {
     fds[0] = -1;
     fds[1] = -1;
-    fprintf(stderr, "ERROR: Unable to establish pipe for Ghostscript call");
+    fprintf(stderr, "ERROR: Unable to establish pipe for Ghostscript call\n");
     goto out;
   }
 
@@ -392,14 +392,14 @@ gs_spawn (const char *filename,
     close(fds[1]);
     fds[0] = -1;
     fds[1] = -1;
-    fprintf(stderr, "ERROR: Unable to set \"close on exec\" flag on read end of the pipe for Ghostscript call");
+    fprintf(stderr, "ERROR: Unable to set \"close on exec\" flag on read end of the pipe for Ghostscript call\n");
     goto out;
   }
   if (fcntl(fds[1], F_SETFD, fcntl(fds[1], F_GETFD) | FD_CLOEXEC))
   {
     close(fds[0]);
     close(fds[1]);
-    fprintf(stderr, "ERROR: Unable to set \"close on exec\" flag on write end of the pipe for Ghostscript call");
+    fprintf(stderr, "ERROR: Unable to set \"close on exec\" flag on write end of the pipe for Ghostscript call\n");
     goto out;
   }
 
@@ -411,7 +411,7 @@ gs_spawn (const char *filename,
       if (fds[0] > 0)
         dup(fds[0]);
       else {
-        fprintf(stderr, "ERROR: Unable to couple pipe with STDIN of Ghostscript process");
+        fprintf(stderr, "ERROR: Unable to couple pipe with STDIN of Ghostscript process\n");
         goto out;
       }
     }
@@ -425,7 +425,7 @@ gs_spawn (const char *filename,
   /* Feed job data into Ghostscript */
   while ((n = fread(buf, 1, BUFSIZ, fp)) > 0) {
     if (write(fds[1], buf, n) != n) {
-      fprintf(stderr, "ERROR: Can't feed job data into Ghostscript");
+      fprintf(stderr, "ERROR: Can't feed job data into Ghostscript\n");
       goto out;
     }
   }
@@ -542,7 +542,7 @@ main (int argc, char **argv, char *envp[])
 
   t = getenv("PPD");
   if ((ppd = ppdOpenFile(t)) == NULL) {
-    fprintf(stderr, "ERROR: Failed to open PPD: %s", t);
+    fprintf(stderr, "ERROR: Failed to open PPD: %s\n", t);
     goto out;
   }
 
@@ -554,7 +554,7 @@ main (int argc, char **argv, char *envp[])
 
     fd = cupsTempFd(buf,BUFSIZ);
     if (fd < 0) {
-      fprintf(stderr, "ERROR: Can't create temporary file");
+      fprintf(stderr, "ERROR: Can't create temporary file\n");
       goto out;
     }
     /* remove name */
@@ -563,19 +563,19 @@ main (int argc, char **argv, char *envp[])
     /* copy stdin to the tmp file */
     while ((n = read(0,buf,BUFSIZ)) > 0) {
       if (write(fd,buf,n) != n) {
-        fprintf(stderr, "ERROR: Can't copy stdin to temporary file");
+        fprintf(stderr, "ERROR: Can't copy stdin to temporary file\n");
         close(fd);
         goto out;
       }
     }
     if (lseek(fd,0,SEEK_SET) < 0) {
-        fprintf(stderr, "ERROR: Can't rewind temporary file");
+        fprintf(stderr, "ERROR: Can't rewind temporary file\n");
         close(fd);
         goto out;
     }
 
     if ((fp = fdopen(fd,"rb")) == 0) {
-        fprintf(stderr, "ERROR: Can't fdopen temporary file");
+        fprintf(stderr, "ERROR: Can't fdopen temporary file\n");
         close(fd);
         goto out;
     }
@@ -583,7 +583,7 @@ main (int argc, char **argv, char *envp[])
     /* argc == 7 filename is specified */
 
     if ((fp = fopen(argv[6],"rb")) == 0) {
-        fprintf(stderr, "ERROR: Can't open input file %s",argv[6]);
+        fprintf(stderr, "ERROR: Can't open input file %s\n",argv[6]);
         goto out;
     }
   }
@@ -591,7 +591,7 @@ main (int argc, char **argv, char *envp[])
   /* find out file type */
   doc_type = parse_doc_type(fp);
   if (doc_type == GS_DOC_TYPE_UNKNOWN) {
-    fprintf(stderr, "ERROR: Can't detect file type");
+    fprintf(stderr, "ERROR: Can't detect file type\n");
     goto out;
   }
 
