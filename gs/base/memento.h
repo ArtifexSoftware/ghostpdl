@@ -103,6 +103,33 @@
  *    allocations and discover that the corruption happens between events
  *    X and X+100. You can then rerun using Memento_paranoidAt(X), and
  *    it'll only start exhaustively checking when it reaches X.
+ *
+ * More than one memory allocator?
+ *
+ *    If you have more than one memory allocator in the system (like for
+ *    instance the ghostscript chunk allocator, that builds on top of the
+ *    standard malloc and returns chunks itself), then there are some things
+ *    to note:
+ *
+ *    * If the secondary allocator gets its underlying blocks from calling
+ *      malloc, then those will be checked by Memento, but 'subblocks' that
+ *      are returned to the secondary allocator will not. There is currently
+ *      no way to fix this other than trying to bypass the secondary
+ *      allocator. One way I have found to do this with the chunk allocator
+ *      is to tweak its idea of a 'large block' so that it puts every
+ *      allocation in its own chunk. Clearly this negates the point of having
+ *      a secondary allocator, and is therefore not recommended for general
+ *      use.
+ *
+ *    * Again, if the secondary allocator gets its underlying blocks from
+ *      calling malloc (and hence Memento) leak detection should still work
+ *      (but whole blocks will be detected rather than subblocks).
+ *
+ *    * If on every allocation attempt the secondary allocator calls into
+ *      Memento_failThisEvent(), and fails the allocation if it returns true
+ *      then more useful features can be used; firstly memory squeezing will
+ *      work, and secondly, Memento will have a "finer grained" paranoia
+ *      available to it.
  */
 
 #ifndef MEMENTO_H
@@ -146,6 +173,7 @@ int Memento_getBlockNum(void *);
 int Memento_find(void *a);
 void Memento_breakpoint(void);
 int Memento_failAt(int);
+int Memento_failThisEvent(void);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -178,6 +206,7 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_find(A)          0
 #define Memento_breakpoint()     do {} while (0)
 #define Memento_failAt(A)        0
+#define Memento_failThisEvent()  0
 
 #endif /* MEMENTO */
 

@@ -537,6 +537,11 @@ i_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     obj_header_t *obj;
     obj_header_t **pfl;
 
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
     IF_FREELIST_ALLOC(obj, imem, size, &st_bytes, pfl)
         alloc_trace(":+bf", imem, cname, NULL, size, obj);
     ELSEIF_BIG_FREELIST_ALLOC(obj, imem, size, &st_bytes)
@@ -559,9 +564,15 @@ static byte *
 i_alloc_bytes_immovable(gs_memory_t * mem, uint size, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    obj_header_t *obj = alloc_obj(imem, size, &st_bytes,
-                                  ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
+    obj_header_t *obj;
 
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
+    obj = alloc_obj(imem, size, &st_bytes,
+                    ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
     if (obj == 0)
         return 0;
     alloc_trace("|+b.", imem, cname, NULL, size, obj);
@@ -575,6 +586,11 @@ i_alloc_struct(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
     uint size = pstype->ssize;
     obj_header_t *obj;
     obj_header_t **pfl;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
 
     ALLOC_CHECK_SIZE(pstype);
     IF_FREELIST_ALLOC(obj, imem, size, pstype, pfl)
@@ -603,6 +619,11 @@ i_alloc_struct_immovable(gs_memory_t * mem, gs_memory_type_ptr_t pstype,
     uint size = pstype->ssize;
     obj_header_t *obj;
 
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
     ALLOC_CHECK_SIZE(pstype);
     obj = alloc_obj(imem, size, pstype, ALLOC_IMMOVABLE | ALLOC_DIRECT, cname);
     alloc_trace("|+<.", imem, cname, pstype, size, obj);
@@ -613,8 +634,15 @@ i_alloc_byte_array(gs_memory_t * mem, uint num_elements, uint elt_size,
                    client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    obj_header_t *obj = alloc_obj(imem, (ulong) num_elements * elt_size,
-                                  &st_bytes, ALLOC_DIRECT, cname);
+    obj_header_t *obj;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
+    obj = alloc_obj(imem, (ulong) num_elements * elt_size,
+                    &st_bytes, ALLOC_DIRECT, cname);
 
     if_debug6('A', "[a%d:+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
               alloc_trace_space(imem), client_name_string(cname),
@@ -627,9 +655,16 @@ i_alloc_byte_array_immovable(gs_memory_t * mem, uint num_elements,
                              uint elt_size, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
-    obj_header_t *obj = alloc_obj(imem, (ulong) num_elements * elt_size,
-                                  &st_bytes, ALLOC_IMMOVABLE | ALLOC_DIRECT,
-                                  cname);
+    obj_header_t *obj;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
+    obj = alloc_obj(imem, (ulong) num_elements * elt_size,
+                    &st_bytes, ALLOC_IMMOVABLE | ALLOC_DIRECT,
+                    cname);
 
     if_debug6('A', "[a%d|+b.]%s -bytes-*(%lu=%u*%u) = 0x%lx\n",
               alloc_trace_space(imem), client_name_string(cname),
@@ -643,6 +678,11 @@ i_alloc_struct_array(gs_memory_t * mem, uint num_elements,
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
 
     ALLOC_CHECK_SIZE(pstype);
 #ifdef DEBUG
@@ -669,6 +709,11 @@ i_alloc_struct_array_immovable(gs_memory_t * mem, uint num_elements,
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     obj_header_t *obj;
 
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
+
     ALLOC_CHECK_SIZE(pstype);
     obj = alloc_obj(imem,
                     (ulong) num_elements * pstype->ssize,
@@ -692,6 +737,11 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     ulong old_size_rounded = obj_align_round(old_size);
     ulong new_size_rounded = obj_align_round(new_size);
     void *new_obj = NULL;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
 
     if (old_size_rounded == new_size_rounded) {
         pp->o_size = new_size;
@@ -881,6 +931,11 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
     /*
      * Cycle through the chunks at the current save level, starting
      * with the currently open one.
@@ -939,6 +994,11 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
+
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
     /* Give it a chunk all its own. */
     uint asize = string_chunk_space(nbytes) + sizeof(chunk_head_t);
     chunk_t *cp = alloc_acquire_chunk(imem, (ulong) asize, true,
