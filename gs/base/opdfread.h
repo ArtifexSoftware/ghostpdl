@@ -2780,7 +2780,7 @@ const char *opdfread_ps [] = {
 "[4 1 roll\n",
 "{\n",
 "4 2 roll\n",
-"excp mul add\n",
+"exp mul add\n",
 "}aload pop\n",
 "]cvx\n",
 "}{\n",
