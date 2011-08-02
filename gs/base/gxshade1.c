@@ -317,7 +317,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /* ---------------- Radial shading ---------------- */
 
 static int
-R_tensor_annulus(patch_fill_state_t *pfs, /*@unused@*/const gs_rect *rect0,
+R_tensor_annulus(patch_fill_state_t *pfs,
     double x0, double y0, double r0, double t0,
     double x1, double y1, double r1, double t1)
 {
@@ -327,8 +327,11 @@ R_tensor_annulus(patch_fill_state_t *pfs, /*@unused@*/const gs_rect *rect0,
     int k, j, code;
     bool inside = 0;
 
+    /* pc0 and pc1 are the centres of the respective circles. */
     pc0.x = x0, pc0.y = y0;
     pc1.x = x1, pc1.y = y1;
+    /* Set p0 up so it's a unit vector giving the direction of 90 degrees
+     * to the right of the major axis as we move from p0c to p1c. */
     if (r0 + d <= r1 || r1 + d <= r0) {
         /* One circle is inside another one.
            Use any subdivision,
@@ -357,11 +360,12 @@ R_tensor_annulus(patch_fill_state_t *pfs, /*@unused@*/const gs_rect *rect0,
         gs_point p[12];
         patch_curve_t curve[4];
 
+        /* Set p1 to be 90 degrees anticlockwise from p0 */
         p1.x = -p0.y; p1.y = p0.x;
-        if ((k & 1) == k >> 1) {
+        if ((k & 1) == k >> 1) { /* k == 0 || k == 3 */
             make_quadrant_arc(p + 0, &pc0, &p1, &p0, r0);
             make_quadrant_arc(p + 6, &pc1, &p0, &p1, r1);
-        } else {
+        } else { /* k == 1 || k == 2 */
             make_quadrant_arc(p + 0, &pc0, &p0, &p1, r0);
             make_quadrant_arc(p + 6, &pc1, &p1, &p0, r1);
         }
@@ -553,14 +557,14 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
         ex = x0 + dx * es;
         ey = y0 + dy * es;
         /* Fill the annulus: */
-        code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, ex, ey, er, t0);
+        code = R_tensor_annulus(pfs, x0, y0, r0, t0, ex, ey, er, t0);
         if (code < 0)
             return code;
         /* Fill entire ending circle to ensure entire rect is covered, but
          * only if we are filling "inwards" (as otherwise we will overwrite
          * all the hard work we have done to this point) */
         if (inwards)
-            code = R_tensor_annulus(pfs, rect, ex, ey, er, t0, ex, ey, 0, t0);
+            code = R_tensor_annulus(pfs, ex, ey, er, t0, ex, ey, 0, t0);
         return code;
     }
 }
@@ -574,7 +578,7 @@ R_tensor_cone_apex(patch_fill_state_t *pfs, const gs_rect *rect,
     double ax = x0 + (x1 - x0) * as;
     double ay = y0 + (y1 - y0) * as;
 
-    return R_tensor_annulus(pfs, rect, x1, y1, r1, t, ax, ay, 0, t);
+    return R_tensor_annulus(pfs, x1, y1, r1, t, ax, ay, 0, t);
 }
 
 /*
@@ -641,24 +645,24 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
             if (Extend0) {
                 r = R_rect_radius(rect, x0, y0);
                 if (r > r0) {
-                    code = R_tensor_annulus(pfs, rect, x0, y0, r, t0, x0, y0, r0, t0);
+                    code = R_tensor_annulus(pfs, x0, y0, r, t0, x0, y0, r0, t0);
                     if (code < 0)
                         return code;
                 }
             }
             if (Extend1 && r1 > 0)
-                return R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x1, y1, 0, t1);
+                return R_tensor_annulus(pfs, x1, y1, r1, t1, x1, y1, 0, t1);
         } else {
             if (Extend1) {
                 r = R_rect_radius(rect, x1, y1);
                 if (r > r1) {
-                    code = R_tensor_annulus(pfs, rect, x1, y1, r, t1, x1, y1, r1, t1);
+                    code = R_tensor_annulus(pfs, x1, y1, r, t1, x1, y1, r1, t1);
                     if (code < 0)
                         return code;
                 }
             }
             if (Extend0 && r0 > 0)
-                return R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x0, y0, 0, t0);
+                return R_tensor_annulus(pfs, x0, y0, r0, t0, x0, y0, 0, t0);
         }
     } else if (dr > d / 3) {
         /* Obtuse cone. */
@@ -691,7 +695,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
             if (code < 0)
                 return code;
             if (x3 != x1 || y3 != y1) {
-                code = R_tensor_annulus(pfs, rect, x0, y0, r0, t0, x3, y3, r3, t0);
+                code = R_tensor_annulus(pfs, x0, y0, r0, t0, x3, y3, r3, t0);
                 if (code < 0)
                     return code;
             }
@@ -701,7 +705,7 @@ R_extensions(patch_fill_state_t *pfs, const gs_shading_R_t *psh, const gs_rect *
             if (code < 0)
                 return code;
             if (x2 != x0 || y2 != y0) {
-                code = R_tensor_annulus(pfs, rect, x1, y1, r1, t1, x2, y2, r2, t1);
+                code = R_tensor_annulus(pfs, x1, y1, r1, t1, x2, y2, r2, t1);
                 if (code < 0)
                     return code;
             }
@@ -1186,7 +1190,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
     if (span_type < 0) {
         code = R_extensions(&pfs1, psh, rect, d0, d1, psh->params.Extend[0], false);
         if (code >= 0)
-            code = R_tensor_annulus(&pfs1, rect, x0, y0, r0, d0, x1, y1, r1, d1);
+            code = R_tensor_annulus(&pfs1, x0, y0, r0, d0, x1, y1, r1, d1);
         if (code >= 0)
             code = R_extensions(&pfs1, psh, rect, d0, d1, false, psh->params.Extend[1]);
     } else if (span_type == 1) {
@@ -1213,7 +1217,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
             } else {
                 second_interval = shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[0]);
             }
-            code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
+            code = R_tensor_annulus(&pfs1, X0, Y0, R0, D0, X1, Y1, R1, D1);
         }
         if (code >= 0 && second_interval) {
             if (span_type & 4) {
@@ -1221,7 +1225,7 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
                 floatp R0 = r0, R1 = r1;
 
                 shorten_radial_shading(&X0, &Y0, &R0, &D0, &X1, &Y1, &R1, &D1, rsa.span[1]);
-                code = R_tensor_annulus(&pfs1, rect, X0, Y0, R0, D0, X1, Y1, R1, D1);
+                code = R_tensor_annulus(&pfs1, X0, Y0, R0, D0, X1, Y1, R1, D1);
             }
         }
         if (code >= 0 && (span_type & 8))

@@ -832,6 +832,11 @@ draw_quadrangle(const quadrangle_patch *p, ulong rgbcolor)
 #endif
 }
 
+/* For a given set of poles in the tensor patch (for instance
+ * [0][0], [0][1], [0][2], [0][3] or [0][2], [1][2], [2][2], [3][2])
+ * return the number of subdivisions required to flatten the bezier
+ * given by those poles to the required flatness.
+ */
 static inline int
 curve_samples(patch_fill_state_t *pfs,
                 const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
@@ -2468,7 +2473,7 @@ fill_wedges(patch_fill_state_t *pfs, int k0, int k1,
 
     if (!(wedge_type & interpatch_padding) && k0 == k1)
         return 0; /* Wedges are zero area. */
-    if (k0 > k1) {
+    if (k0 > k1) { /* Swap if required, so that k0 <= k1 */
         k0 ^= k1; k1 ^= k0; k0 ^= k1;
     }
     p[0] = pole[0];
@@ -4053,7 +4058,7 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv, int kv0, int 
 
         if (!pfs->inside) {
             gs_fixed_rect r, r1;
-
+            
             tensor_patch_bbox(&r, p);
             r.p.x -= INTERPATCH_PADDING;
             r.p.y -= INTERPATCH_PADDING;
@@ -4307,6 +4312,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
             goto out;
     }
     /* draw_patch(&p, true, RGB(0, 0, 0)); */
+    /* How many subdividions of the patch in the u and v direction? */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);
     kv[2] = curve_samples(pfs, &p.pole[0][2], 4, pfs->fixed_flat);
@@ -4317,12 +4323,12 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     ku[2] = curve_samples(pfs, p.pole[2], 1, pfs->fixed_flat);
     ku[3] = curve_samples(pfs, p.pole[3], 1, pfs->fixed_flat);
     kum = max(max(ku[0], ku[1]), max(ku[2], ku[3]));
-    km = max(kvm, kum);
+    //km = max(kvm, kum);
 #   if NOFILL_TEST
         dbg_nofill = false;
 #   endif
-    code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, p.c[0][0], p.c[0][1],
-                interpatch_padding | inpatch_wedge);
+        code = fill_wedges(pfs, ku[0], kum, p.pole[0], 1, p.c[0][0], p.c[0][1],
+        interpatch_padding | inpatch_wedge);
     if (code >= 0) {
         /* We would like to apply iterations for enumerating the kvm curve parts,
            but the roundinmg errors would be too complicated due to
@@ -4335,7 +4341,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
             code = fill_patch(pfs, &p, kvm, kv[0], kv[3]);
             dbg_nofill = true;
 #       endif
-        code = fill_patch(pfs, &p, kvm, kv[0], kv[3]);
+            code = fill_patch(pfs, &p, kvm, kv[0], kv[3]);
     }
     if (code >= 0)
         code = fill_wedges(pfs, ku[3], kum, p.pole[3], 1, p.c[1][0], p.c[1][1],
