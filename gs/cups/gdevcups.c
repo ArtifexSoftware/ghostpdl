@@ -3484,6 +3484,12 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       height *= cups->header.cupsBorderlessScalingFactor;
     }
 #endif /* CUPS_RASTER_SYNCv1 */
+
+    /* pdev->width/height may have been changed by the call to
+     * gdev_prn_put_params()
+     */
+    width_old = pdev->width;
+    height_old = pdev->height;
     pdev->width  = width;
     pdev->height = height;
 
