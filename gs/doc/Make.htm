@@ -396,8 +396,8 @@ directory.
 <p>Ghostscript has optional support for the Luratech proprietary JBIG2 
 and JPEG 2000 implementations. If you have the source code for these 
 and wish the compile them into Ghostscript, the build system expects 
-them to be in directories named <code>ldf_jb2</code> and 
-<code>lwf_jb2</code> in the top level gs source directory, alongside 
+them to be in directories named <code>luratech/ldf_jb2</code> and
+<code>luratech/lwf_jp2</code> in the top level gs source directory, alongside
 the other third-party libraries.
 
 <hr>
@@ -531,8 +531,8 @@ system and compiler before building Ghostscript.
 
 <p>
 To compile Ghostscript against the proprietary Luratech JBIG2 and JPEG 
-2000 implementations, simply ensure that the <code>ldf_jb2</code> and
-<code>lwf_jb2</code> containing the Luratech code exist in the top level
+2000 implementations, simply ensure that the <code>luratech/ldf_jb2</code> and
+<code>luratech/lwf_jp2</code> containing the Luratech code exist in the top level
 gs source directory, and (re-)run the configure script. The configure
 script will detect the presence of the directories, and apply the appropriate
 settings in the Makefile.
@@ -1271,9 +1271,10 @@ If you have an appropriately licensed source distribution this should
 already have been done.
 
 <p>
-With the Luratech source in the <code>ldf_jb2</code> and <code>lwf_jb2</code>
-directories in the top level gs source directory, the nmake makefile will
-detect their presence, and use them automatically.
+With the Luratech source in the <code>luratech/ldf_jb2</code> and
+<code>luratech/lwf_jp2</code> directories in the top level gs source
+directory, the nmake makefile will detect their presence, and use them
+automatically.
 <p>
 If you have the Luratech code in place, but wish Ghostsrcipt to be built
 without the Luratech decoders, you can do so by passing NO_LURATECH=1 on
