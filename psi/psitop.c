@@ -301,11 +301,12 @@ ps_impl_set_device(
     code = gsicc_init_device_profile_struct(device, NULL, 0);
     if (code < 0)
         return code;
+
     /* Set the device into the gstate */
     code = gs_setdevice_no_erase(pgs, device);
-
     if (code < 0)
         return code;
+
     /* install a screen appropriate for the device */
     {
         const char *screen_str = ".setdefaultscreen\n";
@@ -319,6 +320,12 @@ ps_impl_set_device(
         if (code < 0)
             return code;
     }
+
+    /* this shouldn't fail */
+    code = gs_erasepage(pgs);
+    if (code < 0)
+        return code;
+
     return exit_code;
 }
 
