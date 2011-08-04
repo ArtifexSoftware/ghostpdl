@@ -330,7 +330,7 @@ escv_opts=-DGS_VERSION_MAJOR=$(GS_VERSION_MAJOR)
 
 escv_=$(GLOBJ)gdevescv.$(OBJ)
 
-$(GLOBJ)gdevescv.$(OBJ) : $(ESCV_SRC)gdevescv.c $(ESCV_SRC)gdevescv.h $(PDEVH)
+$(GLOBJ)gdevescv.$(OBJ) : $(ESCV_SRC)gdevescv.c $(ESCV_SRC)gdevescv.h $(PDEVH) $(time__h)
 	$(GLCC) -DA4 $(GLO_)gdevescv.$(OBJ) $(C_) $(escv_opts) $(ESCV_SRC)gdevescv.c
 
 $(DD)alc1900.dev : $(escv_) $(DD)page.dev
