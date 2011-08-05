@@ -199,7 +199,7 @@ UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_RO
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
 
 !ifndef XCFLAGS
-XCFLAGS=/DPSI_INCLUDED
+XCFLAGS=/DPSI_INCLUDED /DWINDOWS_NO_UNICODE
 !endif
 !ifndef PSICFLAGS
 PSICFLAGS=/DPSI_INCLUDED
