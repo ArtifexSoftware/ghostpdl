@@ -1079,9 +1079,6 @@ cups_get_space_params(const gx_device_printer *pdev,
   dprintf2("DEBUG2: cups_get_space_params(%p, %p)\n", pdev, space_params);
 #endif /* DEBUG */
 
-#ifdef DEBUG
-  dprintf("DEBUG2: cups_get_space_params: RIP_MAX_CACHE ignored due to bug #691586\n");
-#endif /* DEBUG */
   if ((cache_env = getenv("RIP_MAX_CACHE")) != NULL)
   {
     switch (sscanf(cache_env, "%f%254s", &cache_size, cache_units))
