@@ -1,3 +1,17 @@
+This file highlights changes unique to the GhostPDL languages:
+PCL/PXL, XPS, SVG and the language switch configuration.  Ghostscript
+changes are documented in its own NEWS file.  GhostPDL uses a lot of
+Ghostscript's code, in particular the graphics library and many output
+devices are shared, so many items in the Ghostscript NEWS file are
+relevant to GhostPDL.  GhostPDL users should consult both files.
+
+GhostPDL Release 9.0.4 (August 2011)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* This release is primarily a bug fixing release with some
+  improvements to auto configuration for unix and Mac OS X
+  environments.
+
  
 GhostPDL Release 9.0.2 (March 2011)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
