@@ -4246,7 +4246,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
 {
     tensor_patch p;
     patch_color_t *c[4];
-    int kv[4], kvm, ku[4], kum, km;
+    int kv[4], kvm, ku[4], kum;
     int code = 0;
     byte *color_stack_ptr = reserve_colors_inline(pfs, c, 4); /* Can't fail */
 
@@ -4323,7 +4323,6 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     ku[2] = curve_samples(pfs, p.pole[2], 1, pfs->fixed_flat);
     ku[3] = curve_samples(pfs, p.pole[3], 1, pfs->fixed_flat);
     kum = max(max(ku[0], ku[1]), max(ku[2], ku[3]));
-    //km = max(kvm, kum);
 #   if NOFILL_TEST
         dbg_nofill = false;
 #   endif
