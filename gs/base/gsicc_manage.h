@@ -117,6 +117,8 @@ cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen,
                                          gs_memory_t *mem);
 int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, 
                              char *file_name, gsicc_profile_types_t defaulttype);
+void gsicc_setrange_lab(cmm_profile_t *profile);
+void gsicc_setrange_default(cmm_profile_t *profile);
 
 #if ICC_DUMP
 static void dump_icc_buffer(int buffersize, char filename[],byte *Buffer);

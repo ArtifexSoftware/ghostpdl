@@ -33,6 +33,7 @@
 #include "gxcolor2.h"
 #include "gxhldevc.h"
 #include "gxdevsop.h"
+#include "gsicc_manage.h"
 
 /* Forward references */
 static image_enum_proc_plane_data(pdf_image_plane_data);
@@ -657,9 +658,17 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
              */
             cos_c_string_value(&cs_value, names->DeviceRGB);
         } else {
-            code = pdf_color_space_named(pdev, &cs_value, &pranges,
-                                     pcs,
-                                     names, in_line, NULL, 0);
+            /* A minor hack to deal with CIELAB images. */
+            if (pcs->cmm_icc_profile_data != NULL &&
+                pcs->cmm_icc_profile_data->islab) {
+                gsicc_setrange_default(pcs->cmm_icc_profile_data);
+            }
+            code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names, 
+                                         in_line, NULL, 0);
+            if (pcs->cmm_icc_profile_data != NULL &&
+                pcs->cmm_icc_profile_data->islab) {
+                gsicc_setrange_lab(pcs->cmm_icc_profile_data);
+            }
             if (code < 0)
                 convert_to_process_colors = true;
         }

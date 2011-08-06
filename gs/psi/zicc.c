@@ -174,6 +174,7 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         picc_profile->Range.ranges[1].rmax = 127.0;
         picc_profile->Range.ranges[2].rmin = -128.0;
         picc_profile->Range.ranges[2].rmax = 127.0;
+        picc_profile->islab = true;
     } else {
         for (i = 0; i < ncomps; i++) {
             picc_profile->Range.ranges[i].rmin = range_buff[2 * i];
