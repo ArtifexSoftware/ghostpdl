@@ -5,10 +5,25 @@
 # Please feel free to tidy it up.
 
 # Syntax: squeeze2html.pl < in > out.html
+# or (more usefully):
+#         squeeze2html.pl -q < in > out.html
+# (to hide the ones that passed)
 
 # Setup steps:
 # 1) make debug XCFLAGS="-DMEMENTO"
 # 2) MEMENTO_SQUEEZEAT=1 gs -sDEVICE=png16m -o /dev/null 2>&1 > log
+
+# Options
+my $quiet = 0;
+
+# Handle options:
+use Getopt::Std;
+
+my %opts;
+getopts('q', \%opts);
+if ($opts{q} == 1) {
+    $quiet = 1;
+}
 
 # First we output the headers, our javascript code, and an empty table.
 
@@ -83,6 +98,9 @@ print "</table>";
 
 my $at = 1;
 my $i;
+my $text = "";
+my $status;
+my $started;
 
 LINE: while (my $line = <>)
 {
@@ -95,30 +113,35 @@ LINE: while (my $line = <>)
     {
 	$status |= 2;
 	if ($started) {
-	    print "</pre></div>";
+            if (($quiet == 0) || (($at & 1) == 1) || (($status & 12) != 0)) {
+                print "$text</pre></div>";
+	    }
   	    if ($at & 1) {
 	    } elsif ($status & 8) {
 		print "<script>r($at)</script>";
 	    } elsif ($status & 4) {
 		print "<script>y($at)</script>";
-	    } else {
+	    } elsif ($quiet == 0) {
 		print "<script>g($at)</script>";
 	    }
 	}
 	$started = 0;
+	$text = "";
         $at |= 1;
 	next LINE;
     }
     elsif (($i) = $line =~ m/Memory squeezing @ (\d+)/)
     {
 	if ($started) {
-	    print "</pre></div>";
+            if (($quiet == 0) || (($at & 1) == 1) || (($status & 12) != 0)) {
+                print "$text</pre></div>";
+            }
 	    if ($at & 1) {
 	    } elsif ($status & 8) {
 		print "<script>r($at)</script>";
 	    } elsif ($status & 4) {
 		print "<script>y($at)</script>";
-	    } else {
+	    } elsif ($quiet == 0) {
 		print "<script>g($at)</script>";
 	    }
 	}
@@ -132,19 +155,22 @@ LINE: while (my $line = <>)
 	$status |= 4;
     }
     if ($started == 0) {
-	print "<div id='point$at'><pre>";
+        $text = "<div id='point$at'><pre>$line";
 	$started = 1;
+    } else {
+        $text = $text."\n".$line;
     }
-    print "$line\n";
 }
 if ($started) {
-  print "</pre></div>";
+  if (($quiet == 0) || (($at & 1) == 1) || (($status & 12) != 0)) {
+    print "$text</pre></div>";
+  }
   if ($at & 1) {
   } elsif ($status & 8) {
     print "<script>r($at)</script>";
   } elsif ($status & 4) {
     print "<script>y($at)</script>";
-  } else {
+  } elsif ($quiet == 0) {
     print "<script>g($at)</script>";
   }
 }
