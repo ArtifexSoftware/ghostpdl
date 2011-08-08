@@ -17,6 +17,12 @@
  * to speed the operation */
 #undef MEMENTO_LEAKONLY
 
+#ifndef MEMENTO_STACKTRACE_METHOD
+#ifdef __GNUC__
+#define MEMENTO_STACKTRACE_METHOD 1
+#endif
+#endif
+
 /* Don't keep blocks around if they'd mean losing more than a quarter of
  * the freelist. */
 #define MEMENTO_FREELIST_MAX_SINGLE_BLOCK (MEMENTO_FREELIST_MAX/4)
@@ -488,6 +494,11 @@ int Memento_breakAt(int event)
 #include <unistd.h>
 #include <sys/wait.h>
 #include <signal.h>
+#ifdef MEMENTO_STACKTRACE_METHOD
+#if MEMENTO_STACKTRACE_METHOD == 1
+#include <signal.h>
+#endif
+#endif
 
 /* FIXME: Find some portable way of getting this */
 /* MacOSX has 10240, Ubuntu seems to have 256 */
@@ -499,6 +510,22 @@ int stashed_map[OPEN_MAX];
 static void Memento_signal(void)
 {
     fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezed);
+
+#ifdef MEMENTO_STACKTRACE_METHOD
+#if MEMENTO_STACKTRACE_METHOD == 1
+    {
+      void *array[100];
+      size_t size;
+
+      size = backtrace(array, 100);
+      fprintf(stderr, "------------------------------------------------------------------------\n");
+      fprintf(stderr, "Backtrace:\n");
+      backtrace_symbols_fd(array, size, 2);
+      fprintf(stderr, "------------------------------------------------------------------------\n");
+    }
+#endif
+#endif
+
     exit(1);
 }
 
