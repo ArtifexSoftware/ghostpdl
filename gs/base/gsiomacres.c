@@ -36,7 +36,6 @@
 #include "string_.h"
 #include "malloc_.h"
 #include "ierrors.h"
-#include "gserror.h"
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "stream.h"

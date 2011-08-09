@@ -17,7 +17,7 @@
 #ifndef pxoper_INCLUDED
 #  define pxoper_INCLUDED
 
-#include "gserror.h"
+#include "gserrors.h"
 #include "pxattr.h"
 #include "pxerrors.h"
 #include "pxvalue.h"

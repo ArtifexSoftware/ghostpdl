@@ -14,7 +14,6 @@
 /* $Id$ */
 /* CCITTFax filter parameter setting and reading */
 #include "std.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

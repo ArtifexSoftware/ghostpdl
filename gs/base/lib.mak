@@ -131,7 +131,6 @@ gslibctx_h=$(GLSRC)gslibctx.h $(std_h) $(stdio__h) $(gs_dll_call_h)
 gdebug_h=$(GLSRC)gdebug.h
 gsalloc_h=$(GLSRC)gsalloc.h
 gsargs_h=$(GLSRC)gsargs.h
-gserror_h=$(GLSRC)gserror.h
 gserrors_h=$(GLSRC)gserrors.h
 gsexit_h=$(GLSRC)gsexit.h
 gsgc_h=$(GLSRC)gsgc.h
@@ -147,7 +146,7 @@ gsrefct_h=$(GLSRC)gsrefct.h
 gsserial_h=$(GLSRC)gsserial.h
 gsstype_h=$(GLSRC)gsstype.h
 gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
- $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
+ $(gsio_h) $(gsmemory_h) $(gstypes_h)
 gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
 gxclthrd_h=$(GLSRC)gxclthrd.h $(gxsync_h)
 # Out of order
@@ -192,7 +191,7 @@ $(GLOBJ)gsalloc.$(OBJ) : $(GLSRC)gsalloc.c $(AK) $(gx_h) $(gserrors_h)\
 
 $(GLOBJ)gsmalloc.$(OBJ) : $(GLSRC)gsmalloc.c $(malloc__h)\
  $(gdebug_h)\
- $(gserror_h) $(gserrors_h)\
+ $(gserrors_h)\
  $(gsmalloc_h) $(gsmdebug_h) $(gsmemret_h)\
  $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
@@ -235,7 +234,7 @@ $(GLOBJ)gsbitcom.$(OBJ) : $(GLSRC)gsbitcom.c $(AK) $(std_h)\
 	$(GLCC) $(GLO_)gsbitcom.$(OBJ) $(C_) $(GLSRC)gsbitcom.c
 
 $(GLOBJ)gsbitops.$(OBJ) : $(GLSRC)gsbitops.c $(AK) $(memory__h)\
- $(stdio__h) $(gdebug_h) $(gsbittab_h) $(gserror_h) $(gserrors_h) $(gstypes_h)\
+ $(stdio__h) $(gdebug_h) $(gsbittab_h) $(gserrors_h) $(gstypes_h)\
  $(gxbitops_h) $(gxcindex_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsbitops.$(OBJ) $(C_) $(GLSRC)gsbitops.c
 
@@ -281,14 +280,14 @@ $(GLOBJ)gsargs.$(OBJ) : $(GLSRC)gsargs.c\
 $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(vmsmath_h) $(std_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
- $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
+ $(gpcheck_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
 $(AUX)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(AK) $(gx_h) $(gserrors_h)\
  $(vmsmath_h) $(std_h)\
  $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
- $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
+ $(gpcheck_h) $(gxfarith_h) $(gxfixed_h) $(stdint__h) $(stdio__h)\
  $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
@@ -309,12 +308,12 @@ $(GLOBJ)gsserial.$(OBJ) : $(GLSRC)gsserial.c $(stdpre_h) $(gstypes_h)\
 	$(GLCC) $(GLO_)gsserial.$(OBJ) $(C_) $(GLSRC)gsserial.c
 
 $(GLOBJ)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h)\
- $(string__h) $(gstypes_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(string__h) $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 $(AUX)gsutil.$(OBJ) : $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
- $(gstypes_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(gstypes_h) $(gserrors_h) $(gsmemory_h)\
  $(gsrect_h) $(gsuid_h) $(gsutil_h) $(gzstate_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCCAUX) $(AUXO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
@@ -843,7 +842,7 @@ $(GLOBJ)gscedata.$(OBJ) : $(GLSRC)gscedata.c\
 	$(GLCC) $(GLO_)gscedata.$(OBJ) $(C_) $(GLSRC)gscedata.c
 
 $(GLOBJ)gscencs.$(OBJ) : $(GLSRC)gscencs.c\
- $(memory__h) $(gscedata_h) $(gscencs_h) $(gserror_h) $(gserrors_h) $(MAKEDIRS)
+ $(memory__h) $(gscedata_h) $(gscencs_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gscencs.$(OBJ) $(C_) $(GLSRC)gscencs.c
 
 $(GLOBJ)gschar.$(OBJ) : $(GLSRC)gschar.c $(AK) $(gx_h) $(gserrors_h)\
@@ -914,7 +913,7 @@ $(GLOBJ)gsdparam.$(OBJ) : $(GLSRC)gsdparam.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gsdparam.$(OBJ) $(C_) $(GLSRC)gsdparam.c
 
 $(GLOBJ)gsfname.$(OBJ) : $(GLSRC)gsfname.c $(AK) $(memory__h)\
- $(gserror_h) $(gserrors_h) $(gsfname_h) $(gsmemory_h) $(gstypes_h)\
+ $(gserrors_h) $(gsfname_h) $(gsmemory_h) $(gstypes_h)\
  $(gxiodev_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsfname.$(OBJ) $(C_) $(GLSRC)gsfname.c
 
@@ -993,7 +992,7 @@ $(GLOBJ)gsparam.$(OBJ) : $(GLSRC)gsparam.c $(AK) $(gx_h) $(gserrors_h)\
 
 # gsparamx is not included in the base configuration.
 $(GLOBJ)gsparamx.$(OBJ) : $(AK) $(GLSRC)gsparamx.c $(string__h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gsparamx_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gsparamx_h)\
  $(gstypes_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsparamx.$(OBJ) $(C_) $(GLSRC)gsparamx.c
 
@@ -1021,7 +1020,7 @@ $(GLOBJ)gsstate.$(OBJ) : $(GLSRC)gsstate.c $(AK) $(gx_h) $(gserrors_h)\
 	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
 $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(AK) $(memory__h) $(gdebug_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
  $(gxfcache_h) $(gxdevcli_h) $(gxdcolor_h) $(gxfont_h) $(gxpath_h)\
  $(gxtext_h) $(gzstate_h) $(gsutil_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
@@ -1049,7 +1048,8 @@ $(GLOBJ)gdevmem.$(OBJ) : $(GLSRC)gdevmem.c $(AK) $(gx_h) $(gserrors_h) \
 	$(GLCC) $(GLO_)gdevmem.$(OBJ) $(C_) $(GLSRC)gdevmem.c
 
 $(GLOBJ)gdevm1.$(OBJ) : $(GLSRC)gdevm1.c $(AK) $(gx_h) $(memory__h)\
- $(gsrop_h) $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(MAKEDIRS)
+ $(gsrop_h) $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(MAKEDIRS)\
+ $(gserrors_h)
 	$(GLCC) $(GLO_)gdevm1.$(OBJ) $(C_) $(GLSRC)gdevm1.c
 
 $(GLOBJ)gdevm2.$(OBJ) : $(GLSRC)gdevm2.c $(AK) $(gx_h) $(memory__h)\
@@ -1126,7 +1126,7 @@ $(GLOBJ)gdevbbox.$(OBJ) : $(GLSRC)gdevbbox.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gdevbbox.$(OBJ) $(C_) $(GLSRC)gdevbbox.c
 
 $(GLOBJ)gdevhit.$(OBJ) : $(GLSRC)gdevhit.c $(AK) $(std_h)\
-  $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxdevice_h)\
+  $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxdevice_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevhit.$(OBJ) $(C_) $(GLSRC)gdevhit.c
 
@@ -1160,7 +1160,7 @@ $(GLD)tracedev.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevtrac.$(OBJ)
 ### Default driver procedure implementations
 
 $(GLOBJ)gdevdbit.$(OBJ) : $(GLSRC)gdevdbit.c $(AK) $(gx_h)\
- $(gserrors_h) $(gserror_h) $(gpcheck_h)\
+ $(gserrors_h) $(gpcheck_h)\
  $(gdevmem_h) $(gsbittab_h) $(gsrect_h) $(gsropt_h)\
  $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevdbit.$(OBJ) $(C_) $(GLSRC)gdevdbit.c
@@ -1204,7 +1204,7 @@ gxdownscale_h=$(GLSRC)gxdownscale.h $(gsmemory_h) $(gxdevcli_h) $(ctype__h) \
 downscale_=$(GLOBJ)gxdownscale.$(OBJ)
 
 $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) \
- $(gxdownscale_h) $(gserrors_h) $(gserror_h) $(gdevprn_h) $(MAKEDIRS)
+ $(gxdownscale_h) $(gserrors_h) $(gdevprn_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxdownscale.$(OBJ) $(C_) $(GLSRC)gxdownscale.c
 
 ###### Create a pseudo-"feature" for the entire graphics library.
@@ -1333,13 +1333,13 @@ $(GLD)sfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
 	$(SETMOD) $(GLD)sfile $(sfile_)
 
 $(GLOBJ)sfxcommon.$(OBJ) : $(GLSRC)sfxcommon.c $(AK) $(stdio__h)\
- $(memory__h) $(unistd__h) $(gsmemory_h) $(gp_h) $(stream_h) $(gserror_h)\
+ $(memory__h) $(unistd__h) $(gsmemory_h) $(gp_h) $(stream_h)\
  $(gserrors_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sfxcommon.$(OBJ) $(C_) $(GLSRC)sfxcommon.c
 
 $(GLOBJ)sfxstdio.$(OBJ) : $(GLSRC)sfxstdio.c $(AK) $(stdio__h)\
  $(memory__h) $(unistd__h) $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)\
- $(gp_h) $(gserror_h) $(gserrors_h) $(gsmemory_h) $(MAKEDIRS)
+ $(gp_h) $(gserrors_h) $(gsmemory_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sfxstdio.$(OBJ) $(C_) $(GLSRC)sfxstdio.c
 
 $(GLOBJ)sfxfd.$(OBJ) : $(GLSRC)sfxfd.c $(AK)\
@@ -1399,7 +1399,7 @@ $(GLOBJ)scfdtab.$(OBJ) : $(GLSRC)scfdtab.c $(AK) $(std_h) $(scommon_h)\
 # scfparam is used by the filter operator and the PS/PDF writer.
 # It is not included automatically in cfe or cfd.
 $(GLOBJ)scfparam.$(OBJ) : $(GLSRC)scfparam.c $(AK) $(std_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
  $(scommon_h) $(scf_h) $(scfx_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)scfparam.$(OBJ) $(C_) $(GLSRC)scfparam.c
 
@@ -1433,7 +1433,7 @@ $(GLOBJ)sjpegc.$(OBJ) : $(GLOBJ)sjpegc_$(SHARE_JPEG).$(OBJ)
 # It is not included automatically in sdcte/d.
 $(GLOBJ)sdcparam.$(OBJ) : $(GLSRC)sdcparam.c $(AK) $(memory__h)\
  $(jpeglib__h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
  $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sdcparam.$(OBJ) $(C_) $(GLSRC)sdcparam.c
 
@@ -1481,7 +1481,7 @@ $(GLD)sdeparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sdeparam_)
 
 $(GLOBJ)sdeparam.$(OBJ) : $(GLSRC)sdeparam.c $(AK) $(memory__h)\
  $(jpeglib__h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
  $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sdeparam.$(OBJ) $(C_) $(GLSRC)sdeparam.c
 
@@ -1508,7 +1508,7 @@ $(GLOBJ)sdctd.$(OBJ) : $(GLOBJ)sdctd_$(SHARE_JPEG).$(OBJ) $(MAKEDIRS)
 
 $(GLOBJ)sjpegd_1.$(OBJ) : $(GLSRC)sjpegd.c $(AK)\
  $(stdio__h) $(string__h) $(gx_h)\
- $(jpeglib__h)\
+ $(jpeglib__h) $(gserrors_h)\
  $(sjpeg_h) $(sdct_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLJCC) $(GLO_)sjpegd_1.$(OBJ) $(C_) $(GLSRC)sjpegd.c
 
@@ -1530,7 +1530,7 @@ $(GLD)sddparam.dev : $(LIB_MAK) $(ECHOGS_XE) $(sddparam_)
 
 $(GLOBJ)sddparam.$(OBJ) : $(GLSRC)sddparam.c $(AK) $(std_h)\
  $(jpeglib__h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
  $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sddparam.$(OBJ) $(C_) $(GLSRC)sddparam.c
 
@@ -1593,7 +1593,7 @@ $(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
 	$(SETMOD) $(GLD)sarc4 $(sarc4_)
 
 $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
- $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h) $(MAKEDIRS)
+ $(gserrors_h) $(sarc4_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)sarc4.$(OBJ) $(C_) $(GLSRC)sarc4.c
 
 # -------------- AES cipher filter --------------- #
@@ -1603,7 +1603,7 @@ $(GLD)saes.dev : $(LIB_MAK) $(ECHOGS_XE) $(saes_) $(aes_)
 	$(SETMOD) $(GLD)saes $(saes_) $(aes_)
 
 $(GLOBJ)saes.$(OBJ) : $(GLSRC)saes.c $(AK) $(memory__h)\
- $(gserror_h) $(gserrors_h) $(strimpl_h) $(saes_h) $(MAKEDIRS)
+ $(gserrors_h) $(strimpl_h) $(saes_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)saes.$(OBJ) $(C_) $(GLSRC)saes.c
 
 # ---------------- JBIG2 compression filter ---------------- #
@@ -1622,7 +1622,7 @@ $(GLD)sjbig2_jbig2dec.dev : $(LIB_MAK) $(ECHOGS_XE) \
 # jbig2dec.dev is defined in jbig2.mak
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
- $(stdint__h) $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
+ $(stdint__h) $(memory__h) $(stdio__h) $(gserrors_h) $(gdebug_h) \
  $(sjbig2_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
@@ -1637,7 +1637,7 @@ $(GLD)sjbig2_luratech.dev : $(LIB_MAK) $(ECHOGS_XE) \
 # ldf_jb2.dev is defined in jbig2_luratech.mak
 
 $(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
- $(memory__h) $(malloc__h) $(gserrors_h) $(gserror_h) $(gdebug_h) \
+ $(memory__h) $(malloc__h) $(gserrors_h) $(gdebug_h) \
  $(strimpl_h) $(sjbig2_luratech_h) $(MAKEDIRS)
 	$(GLLDFJB2CC) $(GLO_)sjbig2_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjbig2_luratech.c
@@ -1657,7 +1657,7 @@ $(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
 # jasper.dev is created in jasper.mak
 
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
- $(memory__h) $(gsmalloc_h) $(gserror_h) \
+ $(memory__h) $(gsmalloc_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h) $(MAKEDIRS)
 	$(GLJASCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
@@ -1672,7 +1672,7 @@ $(GLD)luratech_jp2.dev : $(TOP_MAKEFILES) $(LIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(GLD)luratech_jp2 $(GLD)liblwf_jp2.a
 
 $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
- $(memory__h) $(malloc__h) $(gserror_h) $(gserrors_h) \
+ $(memory__h) $(malloc__h) $(gserrors_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_luratech_h) $(MAKEDIRS)
 	$(GLLWFJPXCC) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
@@ -1747,7 +1747,7 @@ $(GLOBJ)spprint.$(OBJ) : $(GLSRC)spprint.c $(AK)\
 	$(GLCC) $(GLO_)spprint.$(OBJ) $(C_) $(GLSRC)spprint.c
 
 $(GLOBJ)spsdf.$(OBJ) : $(GLSRC)spsdf.c $(AK) $(stdio__h) $(string__h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gstypes_h)\
+ $(gserrors_h) $(gsmemory_h) $(gstypes_h)\
  $(sa85x_h) $(scanchar_h) $(spprint_h) $(spsdf_h)\
  $(sstring_h) $(stream_h) $(strimpl_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)spsdf.$(OBJ) $(C_) $(GLSRC)spsdf.c
@@ -1759,13 +1759,13 @@ szlibc_=$(GLOBJ)szlibc.$(OBJ)
 
 zconf_h=$(ZSRCDIR)$(D)zconf.h
 $(GLOBJ)szlibc_1.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) \
+ $(gserrors_h) $(gsmemory_h) \
  $(gsstruct_h) $(gstypes_h)\
  $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibc_1.$(OBJ) $(C_) $(GLSRC)szlibc.c
 
 $(GLOBJ)szlibc_0.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(zconf_h)\
+ $(gserrors_h) $(gsmemory_h) $(zconf_h)\
  $(gsstruct_h) $(gstypes_h) $(zlib_h)\
  $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibc_0.$(OBJ) $(C_) $(GLSRC)szlibc.c
@@ -1977,7 +1977,7 @@ $(GLD)clfile.dev : $(LIB_MAK) $(ECHOGS_XE) $(clfile_)
 	$(ADDMOD) $(GLD)clfile -init gxclfile
 
 $(GLOBJ)gxclfile.$(OBJ) : $(GLSRC)gxclfile.c $(stdio__h) $(string__h)\
- $(gp_h) $(gsmemory_h) $(gserror_h) $(gserrors_h) $(gxclio_h) $(unistd__h)
+ $(gp_h) $(gsmemory_h) $(gserrors_h) $(gxclio_h) $(unistd__h)
 	$(GLCC) $(GLO_)gxclfile.$(OBJ) $(C_) $(GLSRC)gxclfile.c
 
 # Implement band lists in memory (RAM).
@@ -2066,7 +2066,7 @@ $(GLD)simscale.dev : $(LIB_MAK) $(ECHOGS_XE) $(simscale_)
 	$(SETMOD) $(GLD)simscale $(simscale_)
 
 $(GLOBJ)simscale.$(OBJ) : $(GLSRC)simscale.c $(AK) $(memory__h)\
- $(gserror_h) $(gserrors_h) $(simscale_h) $(strimpl_h) $(sisparam_h)\
+ $(gserrors_h) $(simscale_h) $(strimpl_h) $(sisparam_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)simscale.$(OBJ) $(C_) $(GLSRC)simscale.c
 
@@ -2730,11 +2730,11 @@ $(GLOBJ)gsicc_profilecache.$(OBJ) : $(GLSRC)gsicc_profilecache.c $(AK)\
 	$(GLCC) $(GLO_)gsicc_profilecache.$(OBJ) $(C_) $(GLSRC)gsicc_profilecache.c
 
 $(GLOBJ)gsicc_lcms_1.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(gserror_h) $(gslibctx_h)
+ $(gsicc_cms_h) $(gslibctx_h)
 	$(GLLCMSCC) $(GLO_)gsicc_lcms_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
 $(GLOBJ)gsicc_lcms_0.$(OBJ) : $(GLSRC)gsicc_lcms.c\
- $(gsicc_cms_h) $(lcms_h) $(gserror_h) $(gslibctx_h)
+ $(gsicc_cms_h) $(lcms_h) $(gslibctx_h)
 	$(GLLCMSCC) $(GLO_)gsicc_lcms_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms.c
 
 $(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ)
@@ -2742,11 +2742,11 @@ $(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ)
 
 
 $(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
- $(gsicc_cms_h) $(lcms2_h) $(gserror_h) $(gslibctx_h) $(lcms2_plugin_h)
+ $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
 $(GLOBJ)gsicc_lcms2_0.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
- $(gsicc_cms_h) $(lcms2_h) $(gserror_h) $(gslibctx_h) $(lcms2_plugin_h)
+ $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_0.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
 $(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ)
@@ -3094,7 +3094,7 @@ $(GLD)macres.dev : $(LIB_MAK) $(ECHOGS_XE) $(macres_)
 
 # The following module is included only if the macres.dev FEATURE is enabled
 $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c $(gdebug_h) $(gp_h)\
- $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h) $(gserror_h) $(ierrors_h)\
+ $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h) $(ierrors_h)\
  $(malloc__h) $(stdio__h) $(stream_h) $(string__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
 
@@ -3190,7 +3190,7 @@ $(GLD)pipe.dev : $(LIB_MAK) $(ECHOGS_XE) $(pipe_)
 
 $(GLOBJ)gdevpipe.$(OBJ) : $(GLSRC)gdevpipe.c $(AK)\
  $(errno__h) $(pipe__h) $(stdio__h) $(string__h) \
- $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)\
+ $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxiodev_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevpipe.$(OBJ) $(C_) $(GLSRC)gdevpipe.c
 
@@ -3202,7 +3202,7 @@ $(GLD)nosync.dev : $(LIB_MAK) $(ECHOGS_XE) $(nosync_)
 	$(SETMOD) $(GLD)nosync $(nosync_)
 
 $(GLOBJ)gp_nsync.$(OBJ) : $(GLSRC)gp_nsync.c $(AK) $(std_h)\
- $(gpsync_h) $(gserror_h) $(gserrors_h) $(MAKEDIRS)
+ $(gpsync_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_nsync.$(OBJ) $(C_) $(GLSRC)gp_nsync.c
 
 # POSIX pthreads-based implementation.
@@ -3212,7 +3212,7 @@ $(GLD)posync.dev : $(LIB_MAK) $(ECHOGS_XE) $(pthreads_)
 	$(ADDMOD) $(GLD)posync -replace $(GLD)nosync
 
 $(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h)\
- $(std_h) $(gpsync_h) $(gserror_h) $(gserrors_h) $(MAKEDIRS)
+ $(std_h) $(gpsync_h) $(gserrors_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gp_psync.$(OBJ) $(C_) $(GLSRC)gp_psync.c
 
 # Other stuff.

@@ -17,7 +17,6 @@
 #include "string_.h"
 #include "gstypes.h"
 #include "gsmemory.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "spprint.h"
 #include "spsdf.h"

@@ -18,7 +18,6 @@
 #include "stdio_.h"
 #include <stdlib.h>		/* for qsort */
 #include "gdebug.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gsmemory.h"
 #include "scommon.h"

@@ -17,7 +17,6 @@
 #include "memory_.h"
 #include "gscedata.h"
 #include "gscencs.h"
-#include "gserror.h"
 #include "gserrors.h"
 
 /*

@@ -50,7 +50,7 @@ pxsymbol_h=$(PXLGEN)pxsymbol.h
 pxvalue_h=$(PXLSRC)pxvalue.h $(gstypes_h) $(pxattr_h) $(stdint__h)
 pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
 pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(gxfixed_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
-pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
+pxoper_h=$(PXLSRC)pxoper.h $(gserrors_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
 pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pltop_h)
 pxpthr_h=$(PXLSRC)pxpthr.h
@@ -68,7 +68,7 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
 
 $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h)\
- $(gdebug_h) $(gserror_h) $(gsio_h) $(gstypes_h)\
+ $(gdebug_h) $(gserrors_h) $(gsio_h) $(gstypes_h)\
  $(plparse_h) $(pxpthr_h)\
  $(pxattr_h) $(pxenum_h) $(pxerrors_h) $(pxoper_h) $(pxparse_h) $(pxptable_h)\
  $(pxstate_h) $(pxtag_h) $(pxvalue_h) $(gsstruct_h)

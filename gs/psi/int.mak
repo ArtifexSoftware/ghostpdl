@@ -1119,7 +1119,7 @@ $(PSOBJ)sbwbs.$(OBJ) : $(PSSRC)sbwbs.c $(AK) $(stdio__h) $(memory__h)\
 	$(PSCC) $(PSO_)sbwbs.$(OBJ) $(C_) $(PSSRC)sbwbs.c
 
 $(PSOBJ)shcgen.$(OBJ) : $(PSSRC)shcgen.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
+ $(gdebug_h) $(gserrors_h) $(gsmemory_h)\
  $(scommon_h) $(shc_h) $(shcgen_h)
 	$(PSCC) $(PSO_)shcgen.$(OBJ) $(C_) $(PSSRC)shcgen.c
 
@@ -1700,7 +1700,7 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gxcspace_h) $(stream_h) $(files_h) $(gscolor2_h)\
  $(gsicc_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h)\
  $(icie_h) $(ialloc_h) $(zicc_h) $(gsicc_manage_h) $(GX) $(gxistate_h)\
- $(gserror_h) $(gsicc_create_h) $(gsicc_profilecache_h)
+ $(gsicc_create_h) $(gsicc_profilecache_h)
 	$(PSCC) $(PSO_)zicc.$(OBJ) $(C_) $(PSSRC)zicc.c
 
 # ---------------- Support for %disk IODevices ---------------- #
@@ -1940,7 +1940,7 @@ $(PSD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)fapi_ft.$(OBJ) \
 	$(ADDMOD) $(PSD)fapif1 -include $(GLD)freetype
 
 $(PSOBJ)fapi_ft.$(OBJ) : $(PSSRC)fapi_ft.c $(AK)\
- $(stdio__h) $(math__h) $(ifapi_h) $(gserror_h)\
+ $(stdio__h) $(math__h) $(ifapi_h) $(gserrors_h)\
  $(write_t1_h) $(write_t2_h)
 	$(PSCC) $(FT_CFLAGS) $(PSO_)fapi_ft.$(OBJ) $(C_) $(PSSRC)fapi_ft.c
 
@@ -2033,7 +2033,7 @@ $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
 
 #****** $(CCINT) interp.c
 $(PSOBJ)interp.$(OBJ) : $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
- $(gsstruct_h) $(gserror_h) $(idebug_h)\
+ $(gsstruct_h) $(idebug_h)\
  $(dstack_h) $(ierrors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iastruct_h) $(icontext_h) $(icremap_h) $(iddict_h) $(igstate_h)\
  $(iname_h) $(inamedef_h) $(interp_h) $(ipacked_h)\

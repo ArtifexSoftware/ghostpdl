@@ -15,7 +15,6 @@
 /* Common drawing routines for PCL5 and PCL XL */
 #include "std.h"
 #include "gstypes.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gsmemory.h"
 #include "gxdevice.h"

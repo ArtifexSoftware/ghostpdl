@@ -28,7 +28,6 @@
 #include "scfx.h"
 #include "memory_.h"
 #include "gslt_image.h"
-#include "gserror.h"
 
 /* import the gs structure descriptor for gslt_image_t */
 extern const gs_memory_struct_type_t st_gslt_image;

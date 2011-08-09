@@ -16,7 +16,6 @@
 #include "std.h"
 #include "malloc_.h"
 #include <pthread.h>
-#include "gserror.h"
 #include "gserrors.h"
 #include "gpsync.h"
 

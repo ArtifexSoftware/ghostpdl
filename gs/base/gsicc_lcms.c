@@ -18,7 +18,6 @@
 #endif
 
 #include "gsicc_cms.h"
-#include "gserror.h"
 #include "lcms.h"
 #include "gslibctx.h"
 

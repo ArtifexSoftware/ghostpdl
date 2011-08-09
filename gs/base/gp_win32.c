@@ -19,7 +19,6 @@
 #include "string_.h"		/* for strerror */
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gp.h */
-#include "gserror.h"
 #include "gserrors.h"
 #include "gp.h"
 #include "windows_.h"

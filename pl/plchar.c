@@ -17,7 +17,6 @@
 #include "memory_.h"
 #include "stdio_.h"             /* for gdebug.h */
 #include "gdebug.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

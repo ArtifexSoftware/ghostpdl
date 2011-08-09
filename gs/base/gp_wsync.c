@@ -15,7 +15,6 @@
 /* MS Windows (Win32) thread / semaphore / monitor implementation */
 /* original multi-threading code by John Desrosiers */
 #include "malloc_.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gpsync.h"
 #include "windows_.h"

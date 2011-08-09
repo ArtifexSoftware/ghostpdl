@@ -1148,7 +1148,6 @@ $(PCLOBJ)pgfdata.$(OBJ): $(PCLSRC)pgfdata.c  \
                          $(gsccode_h)        \
                          $(gsstate_h)        \
                          $(gspath_h)         \
-                         $(gserror_h)        \
                          $(gserrors_h)       \
                          $(gxarith_h)        \
                          $(pgfdata_h)

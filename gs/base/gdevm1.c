@@ -13,6 +13,7 @@
 /* $Id$ */
 /* Monobit "memory" (stored bitmap) device */
 #include "memory_.h"
+#include "gserrors.h"
 #include "gx.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"           /* semi-public definitions */

@@ -14,7 +14,6 @@
 /* $Id$ */
 /* File name utilities */
 #include "memory_.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gsmemory.h"
 #include "gstypes.h"

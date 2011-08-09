@@ -28,7 +28,6 @@
 #include "gsparam.h"
 #include "gsdevice.h"
 #include "scommon.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gspaint.h"
 #include "gspath.h"

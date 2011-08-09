@@ -25,7 +25,6 @@
 #include "gp.h"
 
 #include "gscdefs.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gslib.h"
 #include "gsmatrix.h"

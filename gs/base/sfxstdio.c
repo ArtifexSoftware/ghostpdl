@@ -20,7 +20,6 @@
 #include "gdebug.h"
 #include "gpcheck.h"
 #include "gp.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "stream.h"
 #include "strimpl.h"

@@ -16,7 +16,6 @@
 
 #include "memory_.h"
 #include "gserrors.h"
-#include "gserror.h"
 #include "strimpl.h"
 #include "sisparam.h"
 #include "simscale.h"

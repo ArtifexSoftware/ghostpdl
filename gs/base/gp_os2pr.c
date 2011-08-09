@@ -29,7 +29,6 @@
 #include "gp.h"
 #include "gscdefs.h"
 #include "gserrors.h"
-#include "gserror.h"
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gxiodev.h */
 #include "gxiodev.h"
