@@ -1875,9 +1875,7 @@ void
 cmap_transfer_plane(gx_color_value *pconc, const gs_imager_state *pis,
                     gx_device *dev, int plane)
 {
-    int ncomps = dev->color_info.num_components;
     frac frac_value;
-    int i;
     frac cv_frac;
 
     /* apply the transfer function(s) */

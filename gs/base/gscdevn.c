@@ -384,7 +384,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 {
     int code, tcode = 0;
     gs_client_color cc;
-    const gs_color_space *pacs = pcs->base_space;
+    gs_color_space *pacs = (gs_color_space*) (pcs->base_space);
     gs_device_n_map *map = pcs->params.device_n.map;
     bool is_lab;
 

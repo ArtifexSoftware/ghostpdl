@@ -146,8 +146,8 @@ get_cie_range( const gs_color_space * pcs )
 }
 
 static void
-rescale_input_color(gs_range *ranges, int num_colorants, gs_client_color *src,
-                    gs_client_color *des)
+rescale_input_color(gs_range *ranges, int num_colorants, 
+                    const gs_client_color *src, gs_client_color *des)
 {
     int k;
 
@@ -215,13 +215,14 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
 }
 
 int
-gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                 gs_color_select_t select)
 {
     gs_color_space *pcs_icc;
     int code, i;
     gs_client_color scale_pc;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug4('c', "[c]remap CIEDEFG [%g %g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -252,13 +253,13 @@ gx_remap_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* Render a CIEBasedDEFG color. */
 int
-gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
+gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs_in,
                       frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
-    const gs_cie_defg *pcie = pcs->params.defg;
     int code;
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -484,13 +485,14 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     }
 
 int
-gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                 gs_color_select_t select)
 {
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
     int i,code;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug3('c', "[c]remap CIEDEF [%g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -521,13 +523,13 @@ gx_remap_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* Render a CIEBasedDEF color. */
 int
-gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
+gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs_in,
                      frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
-    const gs_cie_def *pcie = pcs->params.def;
     int code;
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -582,7 +584,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
 /* We provide both remap and concretize, but only the former */
 /* needs to be efficient. */
 int
-gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
+gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                 gs_color_select_t select)
 {
@@ -590,6 +592,8 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     gs_client_color scale_pc;
     bool islab;
     int i,code;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
+
 
     if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -620,12 +624,13 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 }
 
 int
-gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
+gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs_in,
                      frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
     bool islab;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
               pc->paint.values[0], pc->paint.values[1],
@@ -675,13 +680,14 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
 }
 
 int
-gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
+gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
         gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
                 gs_color_select_t select)
 {
     int code;
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug1('c', "[c]remap CIEA [%g]\n",pc->paint.values[0]);
    /* If we are coming in here then we may have not completed
@@ -710,12 +716,13 @@ gx_remap_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* Render a CIEBasedA color. */
 int
-gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
+gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs_in,
                    frac * pconc, const gs_imager_state * pis, gx_device *dev)
 {
     int code;
     gs_color_space *pcs_icc;
     gs_client_color scale_pc;
+    gs_color_space *pcs = (gs_color_space *) pcs_in;
 
     if_debug1('c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
     /* If we are comming in here then we have not completed

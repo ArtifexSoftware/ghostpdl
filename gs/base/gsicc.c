@@ -32,20 +32,6 @@
 #define SAVEICCPROFILE 0
 
 /*
- * Discard a gs_cie_icc_s structure. This requires that we call the
- * destructor for ICC profile, lookup, and file objects (which are
- * stored in "foreign" memory).
- *
- * No special action is taken with respect to the stream pointer; that is
- * the responsibility of the client.  */
-static void
-cie_icc_finalize(const gs_memory_t *cmem, void * pvicc_info)
-{
-    (void)cmem; /* unused */
-    (void)pvicc_info; /* unused */
-}
-
-/*
  * Color space methods for ICCBased color spaces.
    ICC spaces are now considered to be concrete in that
    they always provide a mapping to a specified destination

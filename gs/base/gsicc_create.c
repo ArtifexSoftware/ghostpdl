@@ -234,83 +234,6 @@ gsicc_make_diag_matrix(gs_matrix3 *matrix, gs_vector3 * vec)
     matrix->is_identity = (vec->u == 1.0)&&(vec->v == 1.0)&&(vec->w == 1.0);
 }
 
-static bool
-gsicc_diagmatrix_init(gs_vector3 * vec)
-{
-    return(vec->u == 1.0 && vec->v == 1.0 && vec->w == 1.0);
-}
-
-/* The following were borrowed from static functions in gdevpdfc.c
-   for detecting CIELAB PS definitions */
-
-#define CC_KEY(i) ((i) / (double)CC_INDEX_1)
-#define CC_INDEX_1 (gx_cie_cache_size - 1)
-
-static bool
-cie_vector_cache_is_lab_abc(const gx_cie_vector_cache3_t *pvc, int i)
-{
-    const gx_cie_vector_cache *const pc3 = pvc->caches;
-    double k = CC_KEY(i);
-    double l0 = pc3[0].vecs.params.base,
-        l = l0 + k * (pc3[0].vecs.params.limit - l0);
-    double a0 = pc3[1].vecs.params.base,
-        a = a0 + k * (pc3[1].vecs.params.limit - a0);
-    double b0 = pc3[2].vecs.params.base,
-        b = b0 + k * (pc3[2].vecs.params.limit - b0);
-
-    return (fabs(cie_cached2float(pc3[0].vecs.values[i].u) -
-                 (l + 16) / 116) < 0.001 &&
-            fabs(cie_cached2float(pc3[1].vecs.values[i].u) -
-                 a / 500) < 0.001 &&
-            fabs(cie_cached2float(pc3[2].vecs.values[i].w) -
-                 b / -200) < 0.001
-            );
-}
-
-static bool
-cie_scalar_cache_is_lab_lmn(const gs_cie_abc *pcie, int i)
-{
-    double k = CC_KEY(i);
-    double g = (k >= 6.0 / 29 ? k * k * k :
-                (k - 4.0 / 29) * (108.0 / 841));
-
-#define CC_V(j,i) (pcie->common.caches.DecodeLMN[j].floats.values[i])
-#define CC_WP(uvw) (pcie->common.points.WhitePoint.uvw)
-
-    return (fabs(CC_V(0, i) - g * CC_WP(u)) < 0.001 &&
-            fabs(CC_V(1, i) - g * CC_WP(v)) < 0.001 &&
-            fabs(CC_V(2, i) - g * CC_WP(w)) < 0.001
-            );
-
-#undef CC_V
-#undef CC_WP
-}
-
-static bool
-cie_is_lab(const gs_cie_abc *pcie)
-{
-    int i;
-
-    /* Check MatrixABC and MatrixLMN. */
-    if (!(pcie->MatrixABC.cu.u == 1 && pcie->MatrixABC.cu.v == 1 &&
-          pcie->MatrixABC.cu.w == 1 &&
-          pcie->MatrixABC.cv.u == 1 && pcie->MatrixABC.cv.v == 0 &&
-          pcie->MatrixABC.cv.w == 0 &&
-          pcie->MatrixABC.cw.u == 0 && pcie->MatrixABC.cw.v == 0 &&
-          pcie->MatrixABC.cw.w == -1 &&
-          pcie->common.MatrixLMN.is_identity
-          ))
-        return false;
-    /* Check DecodeABC and DecodeLMN. */
-    for (i = 0; i <= CC_INDEX_1; ++i)
-        if (!(cie_vector_cache_is_lab_abc(&pcie->caches.DecodeABC, i) &&
-              cie_scalar_cache_is_lab_lmn(pcie, i)
-              ))
-            return false;
-
-    return true;
-}
-
 /* This function maps a gs matrix type to an ICC CLUT.
    This is required due to the multiple matrix and 1-D LUT
    forms for postscript management, which the ICC does not
@@ -533,16 +456,6 @@ save_profile(unsigned char *buffer, char filename[], int buffer_size)
 }
 #endif
 
-static
-ulong swapbytes32(ulong input)
-{
-    ulong output = (((0x000000ff) & (input >> 24))
-                    | ((0x0000ff00) & (input >> 8))
-                    | ((0x00ff0000) & (input << 8))
-                    | ((0xff000000) & (input << 24)));
-    return output;
-}
-
 static void
 write_bigendian_4bytes(unsigned char *curr_ptr,ulong input)
 {
@@ -619,35 +532,6 @@ float2u8Fixed8(float number_in)
     return( m );
 }
 
-static unsigned short
-lstar2_16bit(float number_in)
-{
-    unsigned short returnval;
-    float temp;
-
-    temp = number_in/((float) 100.0);
-    if (temp > 1)
-        temp = 1;
-    if (temp < 0)
-        temp = 0;
-    returnval = (unsigned short) ( (float) temp * (float) 0xff00);
-    return(returnval);
-}
-
-static unsigned short
-abstar2_16bit(float number_in)
-{
-    float temp;
-
-    temp = number_in + ((float) 128.0);
-    if (temp < 0)
-        temp = 0;
-    temp = (0x8000 * temp)/ (float) 128.0;
-    if (temp > 0xffff)
-        temp = 0xffff;
-    return((unsigned short) temp);
-}
-
 static
 void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
 {
@@ -679,48 +563,6 @@ void  init_common_tags(gsicc_tag tag_list[],int num_tags, int *last_tag)
     tag_list[curr_tag].byte_padding = get_padding(temp_size);
     tag_list[curr_tag].size = temp_size + tag_list[curr_tag].byte_padding;
     *last_tag = curr_tag;
-}
-
-static void
-add_desc_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[],
-                                        int curr_tag)
-{
-    ulong value;
-    unsigned char *curr_ptr;
-
-    curr_ptr = buffer;
-    write_bigendian_4bytes(curr_ptr,icSigProfileDescriptionTag);
-    curr_ptr += 4;
-    memset(curr_ptr,0,4);
-    curr_ptr += 4;
-    value = strlen(text);
-    write_bigendian_4bytes(curr_ptr,value+1); /* count includes NULL */
-    curr_ptr += 4;
-    memcpy(curr_ptr,text,value);
-    curr_ptr += value;
-    memset(curr_ptr,0,79);  /* Null + Unicode and Scriptcode */
-    curr_ptr += value;
-    memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
-}
-
-static void
-add_text_tag(unsigned char *buffer,const char text[], gsicc_tag tag_list[],
-             int curr_tag)
-{
-    ulong value;
-    unsigned char *curr_ptr;
-
-    curr_ptr = buffer;
-    write_bigendian_4bytes(curr_ptr,icSigTextType);
-    curr_ptr += 4;
-    memset(curr_ptr,0,4);
-    curr_ptr += 4;
-    value = strlen(text);
-    memcpy(curr_ptr,text,value);
-    curr_ptr += value;
-    memset(curr_ptr,0,1);  /* Null */
-    curr_ptr++;
-    memset(curr_ptr,0,tag_list[curr_tag].byte_padding);  /* padding */
 }
 
 /* Code to write out v4 text type which is a table of unicode text
@@ -895,29 +737,6 @@ get_XYZ_floatptr(icS15Fixed16Number XYZ[], float *vector)
     XYZ[0] = double2XYZtype(vector[0]);
     XYZ[1] = double2XYZtype(vector[1]);
     XYZ[2] = double2XYZtype(vector[2]);
-}
-
-static void
-get_matrix_floatptr(icS15Fixed16Number matrix_fixed[], float *matrix)
-{
-    int k;
-
-    for (k = 0; k < 9; k++) {
-        matrix_fixed[k] = double2XYZtype(matrix[k]);
-    }
-}
-
-static void
-add_matrixdata(unsigned char *input_ptr, icS15Fixed16Number matrix_fixed[])
-{
-    int j;
-    unsigned char *curr_ptr;
-
-    curr_ptr = input_ptr;
-    for (j = 0; j < 9; j++) {
-        write_bigendian_4bytes(curr_ptr, matrix_fixed[j]);
-        curr_ptr += 4;
-    }
 }
 
 static void
@@ -1340,90 +1159,6 @@ add_lutAtoBtype(unsigned char *input_ptr, gsicc_lutatob *lutatobparts)
             curr_ptr += numin*(12 + IDENT_CURVE_SIZE*2);
         }
 
-    }
-}
-
-static void
-add_clut_labdata_16bit(unsigned char *input_ptr, cielab_t *cielab,
-                       int num_colors, int num_samples)
-{
-    int k;
-    unsigned short encoded_value;
-    unsigned char *curr_ptr;
-    long mlut_size;
-
-    mlut_size = (long) pow((float) num_samples, (long) num_colors);
-    curr_ptr = input_ptr;
-    for ( k = 0; k < mlut_size; k++) {
-        encoded_value = lstar2_16bit(cielab[k].lstar);
-        write_bigendian_2bytes( curr_ptr, encoded_value);
-        curr_ptr += 2;
-        encoded_value = abstar2_16bit(cielab[k].astar);
-        write_bigendian_2bytes( curr_ptr, encoded_value);
-        curr_ptr += 2;
-        encoded_value = abstar2_16bit(cielab[k].bstar);
-        write_bigendian_2bytes( curr_ptr, encoded_value);
-        curr_ptr += 2;
-    }
-}
-
-/* Add 16bit CLUT data that is in CIELAB color space */
-static void
-add_tabledata(unsigned char *input_ptr, cielab_t *cielab, int num_colors,
-              int num_samples)
-{
-   int gridsize, numin, numout, numinentries, numoutentries;
-   unsigned char *curr_ptr;
-   icS15Fixed16Number matrix_fixed[9];
-   float ident[] = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-   int mlut_size;
-   int k;
-
-   gridsize = num_samples;  /* Sampling points in MLUT */
-   numin = num_colors;      /* Number of input colorants */
-   numout = 3;              /* Number of output colorants */
-   numinentries = 2;        /* input 1-D LUT samples */
-   numoutentries = 2;       /* output 1-D LUT samples */
-   /* Signature */
-    curr_ptr = input_ptr;
-    write_bigendian_4bytes(curr_ptr,icSigLut16Type);
-    curr_ptr += 4;
-    /* Reserved */
-    memset(curr_ptr,0,4);
-    curr_ptr += 4;
-    /* Padded sizes */
-    *curr_ptr++ = numin;
-    *curr_ptr++ = numout;
-    *curr_ptr++ = gridsize;
-    *curr_ptr++ = 0;
-   /* Identity Matrix */
-    get_matrix_floatptr(matrix_fixed,(float*) &(ident[0]));
-    add_matrixdata(curr_ptr,matrix_fixed);
-    curr_ptr += 4*9;
-    /* 1-D LUT sizes */
-    write_bigendian_2bytes(curr_ptr, numinentries);
-    curr_ptr += 2;
-    write_bigendian_2bytes(curr_ptr, numoutentries);
-    curr_ptr += 2;
-
-    /* Now the input curve data */
-    for (k = 0; k < num_colors; k++) {
-        write_bigendian_2bytes(curr_ptr, 0);
-        curr_ptr += 2;
-        write_bigendian_2bytes(curr_ptr, 0xFFFF);
-        curr_ptr += 2;
-    }
-
-    /* Now the CLUT data */
-    add_clut_labdata_16bit(curr_ptr, cielab, num_colors, num_samples);
-    mlut_size = (int) pow((float) num_samples, (int) num_colors) * 2 * numout;
-    curr_ptr += mlut_size;
-    /* Now the output curve data */
-    for (k = 0; k < numout; k++) {
-        write_bigendian_2bytes(curr_ptr, 0);
-        curr_ptr += 2;
-        write_bigendian_2bytes(curr_ptr, 0xFFFF);
-        curr_ptr += 2;
     }
 }
 
@@ -2168,8 +1903,8 @@ gsicc_create_defg_common(gs_cie_abc *pcie, gsicc_lutatob *icc_luta2bparts,
      if we have MatrixABC, LMN Decode and Matrix LMN, otherwise we can encode
      the table directly and squash the rest into the curves matrix curve portion
      of the ICC form */
-    if ( !(pcie->MatrixABC.is_identity) && has_lmn_procs &&
-                   !(pcie->common.MatrixLMN.is_identity) || 1 ) {
+    if ( (!(pcie->MatrixABC.is_identity) && has_lmn_procs &&
+                   !(pcie->common.MatrixLMN.is_identity)) || 1 ) {
         /* Table must take over some of the other elements. We are going to
            go to a 16 bit table in this case.  For now, we are going to
            mash all the elements in the table.  We may want to revisit this later. */

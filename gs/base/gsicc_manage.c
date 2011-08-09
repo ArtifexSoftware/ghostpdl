@@ -62,8 +62,6 @@ static int gsicc_load_profile_buffer(cmm_profile_t *profile, stream *s,
 static stream* gsicc_open_search(const char* pname, int namelen,
                                  gs_memory_t *mem_gc,
                                  const char* dirname, int dir_namelen);
-static cmm_profile_t* gsicc_get_profile( gsicc_profile_t profile_type,
-                                        gsicc_manager_t *icc_manager );
 static int64_t gsicc_search_icc_table(clist_icctable_t *icc_table,
                                       int64_t icc_hashcode, int *size);
 static int gsicc_load_namedcolor_buffer(cmm_profile_t *profile, stream *s,
@@ -94,11 +92,11 @@ static const gs_color_space_type gs_color_space_type_icc = {
 };
 
 typedef struct default_profile_def_s {
-    char *path;
+    const char *path;
     gsicc_profile_t default_type;
 } default_profile_def_t;
 
-static const default_profile_def_t default_profile_params[] =
+static default_profile_def_t default_profile_params[] =
 {
     {DEFAULT_GRAY_ICC, DEFAULT_GRAY},
     {DEFAULT_RGB_ICC, DEFAULT_RGB},
@@ -1026,24 +1024,40 @@ gsicc_init_device_profile_struct(gx_device * dev,
     }
     /* Either use the incoming or a default */
     if (profile_name == NULL) {
+        profile_name = 
+            (char *) gs_alloc_bytes(dev->memory, 
+                                    MAX_DEFAULT_ICC_LENGTH,
+                                    "gsicc_init_device_profile_struct");
         switch(dev->color_info.num_components) {
             case 1:
-                profile_name = DEFAULT_GRAY_ICC;
+                strncpy(profile_name, DEFAULT_GRAY_ICC, strlen(DEFAULT_GRAY_ICC));
+                profile_name[strlen(DEFAULT_GRAY_ICC)] = 0;
                 break;
             case 3:
-                profile_name = DEFAULT_RGB_ICC;
+                strncpy(profile_name, DEFAULT_RGB_ICC, strlen(DEFAULT_RGB_ICC));
+                profile_name[strlen(DEFAULT_RGB_ICC)] = 0;
                 break;
             case 4:
-                profile_name = DEFAULT_CMYK_ICC;
+                strncpy(profile_name, DEFAULT_CMYK_ICC, strlen(DEFAULT_CMYK_ICC));
+                profile_name[strlen(DEFAULT_CMYK_ICC)] = 0;
                 break;
             default:
-                profile_name = DEFAULT_CMYK_ICC;
+                strncpy(profile_name, DEFAULT_CMYK_ICC, strlen(DEFAULT_CMYK_ICC));
+                profile_name[strlen(DEFAULT_CMYK_ICC)] = 0;
                 break;
         }
+        /* Go ahead and set the profile */
+        code = gsicc_set_device_profile(dev, dev->memory, profile_name, 
+                                        profile_type);
+        gs_free_object(dev->memory, profile_name, 
+                       "gsicc_init_device_profile_struct");
+        return code;
+    } else {
+        /* Go ahead and set the profile */
+        code = gsicc_set_device_profile(dev, dev->memory, profile_name, 
+                                        profile_type);
+        return code;
     }
-    /* Go ahead and set the profile */
-    code = gsicc_set_device_profile(dev, dev->memory, profile_name, profile_type);
-    return code;
 }
 
 /*  This computes the hash code for the device profile and assigns the profile
@@ -1051,8 +1065,8 @@ gsicc_init_device_profile_struct(gx_device * dev,
     really occur only one time, but may occur twice if a color model is
     specified or a nondefault profile is specified on the command line */
 int
-gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, char *file_name,
-                         gsicc_profile_types_t pro_enum)
+gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, 
+                         char *file_name, gsicc_profile_types_t pro_enum)
 {
     cmm_profile_t *icc_profile;
     stream *str;
@@ -1631,35 +1645,6 @@ gsicc_get_profile_handle_buffer(unsigned char *buffer, int profile_size)
             break;
      }
     return(0);
- }
-
-static cmm_profile_t*
-gsicc_get_profile( gsicc_profile_t profile_type, gsicc_manager_t *icc_manager )
-{
-
-    switch (profile_type) {
-        case DEFAULT_GRAY:
-            return(icc_manager->default_gray);
-        case DEFAULT_RGB:
-            return(icc_manager->default_rgb);
-        case DEFAULT_CMYK:
-             return(icc_manager->default_cmyk);
-        case PROOF_TYPE:
-             return(icc_manager->proof_profile);
-        case NAMED_TYPE:
-             return(icc_manager->device_named);
-        case LINKED_TYPE:
-             return(icc_manager->output_link);
-        case LAB_TYPE:
-             return(icc_manager->lab_profile);
-        case DEVICEN_TYPE:
-            /* TO DO */
-            return(NULL);
-        case DEFAULT_NONE:
-        default:
-            return(NULL);
-    }
-    return(NULL);
  }
 
 static int64_t

@@ -210,27 +210,6 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 }
 
 static void
-gsicc_get_gscs_hash(gsicc_manager_t *icc_manager, gs_color_space *colorspace, int64_t *hash)
-{
-    /* There may be some work to do here with respect to pattern and indexed spaces */
-    const gs_color_space_type *pcst = colorspace->type;
-
-      switch(pcst->index) {
-        case gs_color_space_index_DeviceGray:
-            *hash =  icc_manager->default_gray->hashcode;
-            break;
-        case gs_color_space_index_DeviceRGB:
-            *hash =  icc_manager->default_rgb->hashcode;
-            break;
-        case gs_color_space_index_DeviceCMYK:
-            *hash =  icc_manager->default_cmyk->hashcode;
-            break;
-        default:
-            break;
-    }
-}
-
-static void
 gsicc_mash_hash(gsicc_hashlink_t *hash)
 {
     hash->link_hashcode =
@@ -425,7 +404,7 @@ gsicc_remove_link(gsicc_link_t *link, gs_memory_t *memory)
 
 gsicc_link_t*
 gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
-               const gs_color_space  *input_colorspace,
+               const gs_color_space *pcs_in,
                gs_color_space *output_colorspace,
                gsicc_rendering_param_t *rendering_params,
                gs_memory_t *memory, bool include_softproof)
@@ -440,6 +419,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     cmm_dev_profile_t *dev_profile;
     int code;
     bool devicegraytok;
+    gs_color_space *input_colorspace = (gs_color_space*) pcs_in;
 
     if (dev_in == NULL) {
         /* Get from the imager state which is going to be a graphic state.
@@ -510,7 +490,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
    is updating a reference count) */
 
 gsicc_link_t*
-gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
+gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                        cmm_profile_t *gs_input_profile,
                        cmm_profile_t *gs_output_profile,
                        gsicc_rendering_param_t *rendering_params,
@@ -758,7 +738,7 @@ typedef struct gsicc_namedcolortable_s {
 /* Support functions for parsing buffer */
 
 static int
-get_to_next_line(unsigned char **buffptr, int *buffer_count)
+get_to_next_line(char **buffptr, int *buffer_count)
 {
     while (1) {
         if (**buffptr == ';') {
@@ -791,7 +771,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
     gsicc_namedcolortable_t *namedcolor_table;
     int k,j;
     float lab[3];
-    const char *buffptr;
+    char *buffptr;
     int buffer_count;
     int count;
     int code;
@@ -824,7 +804,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                                                     "gsicc_transform_named_color");
                 if (namedcolor_table == NULL) return(-1);
                 /* Parse buffer and load the structure we will be searching */
-                buffptr = (const char*) named_profile->buffer;
+                buffptr = (char*) named_profile->buffer;
                 buffer_count = named_profile->buffer_size;
                 count = sscanf(buffptr,"%d",&num_entries);
                 if (num_entries < 1 || count == 0) {

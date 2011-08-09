@@ -28,6 +28,7 @@
 #define SMASK_CMYK_ICC    "ps_cmyk.icc"
 #define GRAY_TO_K         "gray_to_k.icc"
 #define DEFAULT_DIR_ICC   "%rom%iccprofiles/"
+#define MAX_DEFAULT_ICC_LENGTH 17
 
 /* Key names for special common canned profiles.
    These are found in some image file formats as

@@ -84,7 +84,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
     char null_str[1]={'\0'};
-    gs_param_string temp_str;
 
 #define set_param_array(a, d, s)\
   (a.data = d, a.size = s, a.persistent = false);
@@ -182,10 +181,10 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
-        (code = param_write_int(plist,"RenderIntent", &(profile_intents[0]))) < 0 ||
-        (code = param_write_int(plist,"GraphicIntent", &(profile_intents[1]))) < 0 ||
-        (code = param_write_int(plist,"ImageIntent", &(profile_intents[2]))) < 0 ||
-        (code = param_write_int(plist,"TextIntent", &(profile_intents[3]))) < 0 ||
+        (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
+        (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
+        (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
+        (code = param_write_int(plist,"TextIntent", (const int *) &(profile_intents[3]))) < 0 ||
         (code = param_write_int_array(plist, "HWSize", &hwsa)) < 0 ||
         (code = param_write_float_array(plist, ".HWMargins", &hwma)) < 0 ||
         (code = param_write_float_array(plist, ".MarginsHWResolution", &mhwra)) < 0 ||

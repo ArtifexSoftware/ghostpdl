@@ -36,7 +36,7 @@ gsicc_link_t* gsicc_get_link(const gs_imager_state * pis, gx_device *dev,
                              gs_color_space *output_colorspace,
                              gsicc_rendering_param_t *rendering_params,
                              gs_memory_t *memory, bool include_softproof);
-gsicc_link_t* gsicc_get_link_profile(gs_imager_state *pis, gx_device *dev,
+gsicc_link_t* gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                                      cmm_profile_t *gs_input_profile,
                                      cmm_profile_t *gs_output_profile,
                                      gsicc_rendering_param_t *rendering_params,
