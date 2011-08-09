@@ -17,8 +17,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <gserror.h>
-
 #include "gslt.h"
 #include "gslt_font_api.h"
 

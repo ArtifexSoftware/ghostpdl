@@ -16,7 +16,7 @@
 
 #include "memory_.h"
 #include "gdebug.h"
-#include "gserror.h"
+#include "gserrors.h"
 #include "gsio.h"
 #include "gstypes.h"
 #include "plparse.h"

@@ -17,7 +17,6 @@
 #include "memory_.h"
 #include "malloc_.h"  /* should use a gs mem pointer */
 #include "gserrors.h"
-#include "gserror.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjbig2_luratech.h"

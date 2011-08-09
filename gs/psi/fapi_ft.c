@@ -25,7 +25,7 @@
 #include "write_t1.h"
 #include "write_t2.h"
 #include "math_.h"
-#include "gserror.h"
+#include "gserrors.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gxfixed.h"

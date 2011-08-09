@@ -18,7 +18,7 @@
 #  define gx_INCLUDED
 
 #include "stdio_.h"		/* includes std.h */
-#include "gserror.h"
+#include "gserrors.h"
 #include "gsio.h"
 #include "gstypes.h"
 #include "gsmemory.h"

@@ -40,7 +40,6 @@ orig_sqrt(double x)
 #include "string_.h"
 #include "gx.h"
 #include "gpcheck.h"            /* for gs_return_check_interrupt */
-#include "gserror.h"            /* for prototype */
 #include "gserrors.h"
 #include "gxfarith.h"
 #include "gxfixed.h"

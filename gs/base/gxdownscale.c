@@ -13,7 +13,6 @@
 
 #include "gxdownscale.h"
 #include "gserrors.h"
-#include "gserror.h"
 #include "gdevprn.h"
 
 /* Error diffusion data is stored in errors block.

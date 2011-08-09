@@ -26,7 +26,6 @@
 #include "plvalue.h"
 #include "plvocab.h"
 #include "gdebug.h"
-#include "gserror.h"
 #include "gsstate.h"
 #include "gxfont.h"
 #include "uconfig.h"

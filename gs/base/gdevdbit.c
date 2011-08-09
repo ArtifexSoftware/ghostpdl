@@ -14,7 +14,6 @@
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gsbittab.h"
 #include "gsrect.h"

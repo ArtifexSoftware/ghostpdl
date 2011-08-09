@@ -17,7 +17,6 @@
 #include "pipe_.h"
 #include "stdio_.h"
 #include "string_.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gxiodev.h */

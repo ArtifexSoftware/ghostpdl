@@ -18,7 +18,6 @@
 #include "gsccode.h"
 #include "gsstate.h"
 #include "gspath.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gxarith.h"		/* for any_abs */
 #include "pgfdata.h"

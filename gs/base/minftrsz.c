@@ -14,7 +14,6 @@
 /* Support functions for 1bpp Fax/Tiff devices */
 #include "minftrsz.h"
 #include "gserrors.h"
-#include "gserror.h"
 #include "gsmalloc.h"
 #include "memory_.h"
 

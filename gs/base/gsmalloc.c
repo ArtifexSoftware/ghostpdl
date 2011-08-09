@@ -15,7 +15,6 @@
 /* C heap allocator */
 #include "malloc_.h"
 #include "gdebug.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

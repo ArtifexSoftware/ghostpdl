@@ -15,7 +15,6 @@
 /* JPXDecode filter implementation -- hooks in libjasper */
 
 #include "memory_.h"
-#include "gserror.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "gsmalloc.h"

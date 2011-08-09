@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Dummy thread / semaphore / monitor implementation */
 #include "std.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gpsync.h"
 

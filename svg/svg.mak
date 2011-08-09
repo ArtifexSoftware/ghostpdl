@@ -37,7 +37,7 @@ svg.config-clean: clean_gs
 ghostsvg_h=$(SVGSRC)ghostsvg.h $(memory__h) $(math__h) \
 	$(gsgc_h) $(gstypes_h) $(gsstate_h) $(gsmatrix_h) $(gscoord_h) \
 	$(gsmemory_h) $(gsparam_h) $(gsdevice_h) $(scommon_h) \
-	$(gserror_h) $(gserrors_h) $(gspaint_h) $(gspath_h) $(gsimage_h) \
+	$(gserrors_h) $(gspaint_h) $(gspath_h) $(gsimage_h) \
 	$(gscspace_h) $(gsptype1_h) $(gscolor2_h) $(gscolor3_h) \
 	$(gsutil_h) $(gsicc_h) $(gstrans_h) $(gxpath_h) $(gxfixed_h) \
 	$(gxmatrix_h) $(gsshade_h) $(gsfunc_h) $(gsfunc3_h) \

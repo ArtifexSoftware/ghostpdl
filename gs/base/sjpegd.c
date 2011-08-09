@@ -17,6 +17,7 @@
 #include "string_.h"
 #include "jpeglib_.h"
 #include "jerror_.h"
+#include "gserrors.h"
 #include "gx.h"
 #include "strimpl.h"
 #include "sdct.h"

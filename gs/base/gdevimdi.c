@@ -27,7 +27,7 @@
 #include "errno_.h"
 #include "string_.h"
 
-#include "gserror.h"
+#include "gserrors.h"
 #include "gdevprn.h"
 #include "gxfrac.h"
 #include "gscms.h"

@@ -19,7 +19,6 @@
 #include "stdio_.h" /* sprintf() for debug output */
 
 #include "gserrors.h"
-#include "gserror.h"
 #include "gdebug.h"
 #include "strimpl.h"
 #include "sjbig2.h"

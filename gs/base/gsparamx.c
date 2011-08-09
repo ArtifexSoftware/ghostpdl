@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Extended parameter dictionary utilities */
 #include "string_.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

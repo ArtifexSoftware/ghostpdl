@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -4444,10 +4444,6 @@
 				</File>
 				<File
 					RelativePath="base\gsequivc.h"
-					>
-				</File>
-				<File
-					RelativePath="base\gserror.h"
 					>
 				</File>
 				<File

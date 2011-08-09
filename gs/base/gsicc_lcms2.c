@@ -14,7 +14,6 @@
 /* gsicc interface to littleCMS */
 
 #include "gsicc_cms.h"
-#include "gserror.h"
 #include "lcms2.h"
 #include "lcms2_plugin.h"
 #include "gslibctx.h"

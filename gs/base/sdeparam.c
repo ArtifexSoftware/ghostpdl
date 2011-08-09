@@ -15,7 +15,6 @@
 /* DCTEncode filter parameter setting and reading */
 #include "memory_.h"
 #include "jpeglib_.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

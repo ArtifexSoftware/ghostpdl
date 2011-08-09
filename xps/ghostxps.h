@@ -31,7 +31,6 @@
 #include "gsdevice.h"
 #include "scommon.h"
 #include "gdebug.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gspaint.h"
 #include "gspath.h"

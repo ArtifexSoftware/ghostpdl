@@ -17,7 +17,6 @@
 #include "string_.h"
 #include "memory_.h"
 #include "gstypes.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gsmemory.h"		/* for init procedure */
 #include "gsrect.h"		/* for prototypes */

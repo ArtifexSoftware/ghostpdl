@@ -34,7 +34,6 @@
 #include "gsicc_manage.h"
 #include "gx.h"
 #include "gxistate.h"
-#include "gserror.h"
 #include "gsicc_create.h"
 #include "gsicc_profilecache.h"
 

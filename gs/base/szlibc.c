@@ -14,7 +14,6 @@
 /* $Id$ */
 /* Code common to zlib encoding and decoding streams */
 #include "std.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"

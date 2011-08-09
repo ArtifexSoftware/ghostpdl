@@ -26,7 +26,6 @@
 #include "sjpeg.h"
 #include "gdebug.h"
 #include "gsutil.h"
-#include "gserror.h"
 
 /* gs memory management structure descriptor for gslt_image_t */
 /* normally this would be in the header with the structure

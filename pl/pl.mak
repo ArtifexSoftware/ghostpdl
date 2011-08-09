@@ -122,7 +122,7 @@ plfont_h=$(PLSRC)plfont.h $(gsccode_h) $(plsymbol_h)
 # artifex character module.
 $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
- $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gsimage_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
@@ -133,7 +133,7 @@ $(PLOBJ)plchar.$(OBJ): $(PLSRC)plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h
 # agfa ufst character module.
 $(PLOBJ)pluchar.$(OBJ): $(PLSRC)pluchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
- $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsbittab_h) $(gschar_h) $(gscoord_h) $(gserrors_h) $(gsimage_h)\
  $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
@@ -164,7 +164,7 @@ $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
 #artifex font module.
 $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gp_h)\
- $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
+ $(gschar_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
@@ -173,7 +173,7 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
 #ufst font module.
 $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
- $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
+ $(gschar_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
@@ -228,7 +228,7 @@ $(uconfig_h): $(PLSRC)pl.mak
 	$(AUX)echogs$(XE) -e .h -w $(PLOBJ)uconfig -x 23 "define UFSTFONTDIR" -s -x 22 $(UFSTFONTDIR) -x 22
 
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(pllfont_h) $(uconfig_h) $(AK)\
-	$(stdio__h) $(string__h) $(gserror_h)\
+	$(stdio__h) $(string__h)\
         $(gpgetenv_h) $(gsmemory_h) $(gp_h) $(gstypes_h)\
 	$(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
 	$(plftable_h) $(plvocab_h) $(uconfig_h)
