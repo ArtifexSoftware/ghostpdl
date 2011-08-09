@@ -527,7 +527,8 @@ clist_begin_typed_image(gx_device * dev,
                         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
                         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                               &(gs_output_profile), 
-                                              &(pis_nonconst->renderingintent));
+                                              (gsicc_rendering_intents_t *)\
+                                              (&(pis_nonconst->renderingintent)));
                     }
                 }
                 if (renderingintent != pis_nonconst->renderingintent)

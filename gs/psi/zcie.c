@@ -377,11 +377,6 @@ cie_set_finish(i_ctx_t *i_ctx_p, gs_color_space * pcs,
 }
 
 /* Forward references */
-static int cache_common(i_ctx_t *, gs_cie_common *, const ref_cie_procs *,
-                         void *, gs_ref_memory_t *);
-static int cache_abc_common(i_ctx_t *, gs_cie_abc *, const ref_cie_procs *,
-                             void *, gs_ref_memory_t *);
-
 static int cie_defg_finish(i_ctx_t *);
 
 static int
@@ -717,34 +712,6 @@ cie_a_finish(i_ctx_t *i_ctx_p)
     gs_cie_a_complete(pcie);
     pop(1);
     return 0;
-}
-
-/* Common cache code */
-
-static int
-cache_abc_common(i_ctx_t *i_ctx_p, gs_cie_abc * pcie,
-                 const ref_cie_procs * pcprocs,
-                 void *container, gs_ref_memory_t * imem)
-{
-    int code =
-        cie_prepare_cache3(i_ctx_p, &pcie->RangeABC,
-                           pcprocs->Decode.ABC.value.const_refs,
-                           pcie->caches.DecodeABC.caches, pcie, imem,
-                           "Decode.ABC");
-
-    return (code < 0 ? code :
-            cache_common(i_ctx_p, &pcie->common, pcprocs, pcie, imem));
-}
-
-static int
-cache_common(i_ctx_t *i_ctx_p, gs_cie_common * pcie,
-             const ref_cie_procs * pcprocs,
-             void *container, gs_ref_memory_t * imem)
-{
-    return cie_prepare_cache3(i_ctx_p, &pcie->RangeLMN,
-                              pcprocs->DecodeLMN.value.const_refs,
-                              &pcie->caches.DecodeLMN[0], container, imem,
-                              "Decode.LMN");
 }
 
 /* ------ Internal routines ------ */
