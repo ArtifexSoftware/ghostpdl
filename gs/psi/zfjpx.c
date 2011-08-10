@@ -31,10 +31,12 @@
 #include "iname.h"
 #include "gdebug.h"
 
-#ifdef USE_LWF_JP2
-#include "sjpx_luratech.h"
+#if defined(USE_LWF_JP2)
+#  include "sjpx_luratech.h"
+#elif defined(USE_OPENJPEG_JP2)
+#  include "sjpx_openjpeg.h"
 #else
-#include "sjpx.h"
+#  include "sjpx.h"
 #endif
 
 /* macro to test a name ref against a C string */

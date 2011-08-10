@@ -35,6 +35,7 @@ GLJBIG2CC=$(CC_) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GLJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(GLI_)$(_I) $(JB2CF_) $(GLF_)
 GLLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
+GLJPXOPJCC=$(CC_) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_)
 GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 # We can't use $(CC_) for GLLCMSCC becuase that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
@@ -549,6 +550,7 @@ sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
 sjbig2_luratech_h=$(GLSRC)sjbig2_luratech.h $(scommon_h)
 sjpx_h=$(GLSRC)sjpx.h $(scommon_h)
 sjpx_luratech_h=$(GLSRC)sjpx_luratech.h $(scommon_h)
+sjpx_openjpeg_h=$(GLSRC)sjpx_openjpeg.h $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1677,6 +1679,18 @@ $(GLOBJ)sjpx_luratech.$(OBJ) : $(GLSRC)sjpx_luratech.c $(AK) \
 	$(GLLWFJPXCC) $(GLO_)sjpx_luratech.$(OBJ) \
 		$(C_) $(GLSRC)sjpx_luratech.c
 
+# openjpeg version
+sjpx_openjpeg=$(GLOBJ)sjpx_openjpeg.$(OBJ)
+$(GLD)sjpx_openjpeg.dev : $(LIB_MAK) $(ECHOGS_XE) \
+ $(GLD)openjpeg.dev $(sjpx_openjpeg)
+	$(SETMOD) $(GLD)sjpx_openjpeg $(sjpx_openjpeg)
+	$(ADDMOD) $(GLD)sjpx_openjpeg -include $(GLD)openjpeg.dev
+
+$(GLOBJ)sjpx_openjpeg.$(OBJ) : $(GLSRC)sjpx_openjpeg.c $(AK) \
+ $(memory__h) $(malloc__h) $(gserror_h) $(gserrors_h) \
+ $(gdebug_h) $(strimpl_h) $(sjpx_openjpeg_h) $(MAKEDIRS)
+	$(GLJPXOPJCC) $(GLO_)sjpx_openjpeg.$(OBJ) \
+		$(C_) -DOPJ_STATIC $(GLSRC)sjpx_openjpeg.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.

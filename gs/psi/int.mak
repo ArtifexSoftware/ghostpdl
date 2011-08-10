@@ -33,6 +33,7 @@ PSJBIG2CC=$(CC_) $(I_)$(JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSJASCC=$(CC_) $(I_)$(JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
 PSLDFJB2CC=$(CC_) $(I_)$(LDF_JB2I_) $(II)$(LDF_JB2I_) $(II)$(PSI_)$(_I) $(JB2CF_) $(PSF_)
 PSLWFJPXCC=$(CC_) $(I_)$(LWF_JPXI_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
+PSOPJJPXCC=$(CC_) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(PSI_)$(_I) $(JPXCF_) $(PSF)
 
 # All top-level makefiles define PSD.
 #PSD=$(PSGEN)
@@ -1232,6 +1233,20 @@ $(PSOBJ)zfjpx_luratech.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjpx_luratech_h)
 	$(PSLWFJPXCC) $(PSO_)zfjpx_luratech.$(OBJ) \
+		$(C_) $(PSSRC)zfjpx.c
+
+fjpx_openjpeg=$(PSOBJ)zfjpx_openjpeg.$(OBJ)
+
+$(PSD)jpx_openjpeg.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_openjpeg) $(GLD)sjpx.dev
+	$(SETMOD) $(PSD)jpx_openjpeg $(fjpx_openjpeg)
+	$(ADDMOD) $(PSD)jpx_openjpeg -include $(GLD)sjpx
+	$(ADDMOD) $(PSD)jpx_openjpeg -include $(GLD)openjpeg
+	$(ADDMOD) $(PSD)jpx_openjpeg -oper zfjpx
+
+$(PSOBJ)zfjpx_openjpeg.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(store_h) $(stream_h) $(strimpl_h) $(sjpx_openjpeg_h)
+	$(PSOPJJPXCC) $(PSO_)zfjpx_openjpeg.$(OBJ) \
 		$(C_) $(PSSRC)zfjpx.c
 
 
