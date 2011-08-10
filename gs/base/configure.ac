@@ -909,7 +909,7 @@ if test x$with_luratech != xno; then
     JBIG2_DECODER=luratech
     SHARE_JBIG2=0
     JBIG2DIR=luratech/ldf_jb2
-    if test `uname` = Darwin*; then
+    if test "$(uname)" = "Darwin"; then
       JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DMAC -DMAC_OS_X_BUILD"
     else
       JBIG2_AUTOCONF_CFLAGS="-DUSE_LDF_JB2 -DLINUX"
@@ -986,7 +986,7 @@ if test x$with_luratech != xno; then
     JPX_DECODER=luratech
     SHARE_JASPER=0
     JPXDIR=luratech/lwf_jp2
-    if test `uname` = Darwin*; then
+    if test "$(uname)" = "Darwin"; then
       JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
     else
       JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DLINUX"
