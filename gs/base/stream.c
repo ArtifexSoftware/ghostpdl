@@ -72,9 +72,10 @@ RELOC_PTRS_END
 /* We only do this for file streams, because other kinds of streams */
 /* may attempt to free storage when closing. */
 static void
-stream_finalize(void *vptr)
+stream_finalize(const gs_memory_t *cmem, void *vptr)
 {
     stream *const st = vptr;
+    (void)cmem; /* unused */
 
     if_debug2('u', "[u]%s 0x%lx\n",
               (!s_is_valid(st) ? "already closed:" :

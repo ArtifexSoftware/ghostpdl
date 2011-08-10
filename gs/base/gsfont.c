@@ -150,12 +150,13 @@ RELOC_PTRS_END
  * See above for more information.
  */
 void
-gs_font_finalize(void *vptr)
+gs_font_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gs_font *const pfont = vptr;
     gs_font **ppfirst;
     gs_font *next = pfont->next;
     gs_font *prev = pfont->prev;
+    (void)cmem; /* unused */
 
     if_debug4('u', "[u]unlinking font 0x%lx, base=0x%lx, prev=0x%lx, next=0x%lx\n",
             (ulong) pfont, (ulong) pfont->base, (ulong) prev, (ulong) next);
@@ -271,11 +272,11 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     return pdir;
 }
 static void
-gs_font_dir_finalize(void *vptr)
+gs_font_dir_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gs_font_dir *pdir = vptr;
-    if (pdir == pdir->memory->gs_lib_ctx->font_dir) {
-        pdir->memory->gs_lib_ctx->font_dir = NULL;
+    if (pdir == cmem->gs_lib_ctx->font_dir) {
+        cmem->gs_lib_ctx->font_dir = NULL;
     }
 }
 

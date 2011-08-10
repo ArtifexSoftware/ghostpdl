@@ -590,7 +590,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     {
         /* back up to obj header */
         chunk_obj_node_t *obj = ((chunk_obj_node_t *)ptr) - 1;
-        void (*finalize)(void *ptr) = obj->type->finalize;
+        struct_proc_finalize((*finalize)) = obj->type->finalize;
         chunk_mem_node_t *current;
         chunk_obj_node_t *free_obj, *prev_free;
         chunk_obj_node_t *scan_obj, *prev_obj;
@@ -598,7 +598,7 @@ chunk_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         uint freed_size = round_up_to_align(obj->size + sizeof(chunk_obj_node_t));
 
         if ( finalize != NULL )
-            finalize(ptr);
+            finalize(mem, ptr);
 #ifdef DEBUG
         if (cmem->in_use != 0)
             dprintf1("*** chunk_free_object: this memory allocator is not idle, used for: %s\n",

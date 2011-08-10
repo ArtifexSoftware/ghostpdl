@@ -71,7 +71,7 @@ typedef struct enum_ptr_s {
                  */
 
 #define struct_proc_finalize(proc)\
-  void proc(void /*obj_header_t*/ *ptr)
+  void proc(const gs_memory_t *cmem, void /*obj_header_t*/ *ptr)
 
 /*
  * A descriptor for an object (structure) type.

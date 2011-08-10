@@ -39,10 +39,11 @@
  * No special action is taken with respect to the stream pointer; that is
  * the responsibility of the client.  */
 static void
-cie_icc_finalize(void * pvicc_info)
+cie_icc_finalize(const gs_memory_t *cmem, void * pvicc_info)
 {
-
-    }
+    (void)cmem; /* unused */
+    (void)pvicc_info; /* unused */
+}
 
 /*
  * Color space methods for ICCBased color spaces.

@@ -930,7 +930,7 @@ restore_finalize(gs_ref_memory_t * mem)
             if_debug2('u', "[u]restore finalizing %s 0x%lx\n",
                       struct_type_name_string(pre->o_type),
                       (ulong) (pre + 1));
-            (*finalize) (pre + 1);
+            (*finalize) ((gs_memory_t *) mem, pre + 1);
         }
         END_OBJECTS_SCAN
     }
