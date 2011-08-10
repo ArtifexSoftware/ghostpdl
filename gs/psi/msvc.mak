@@ -318,6 +318,11 @@ JPX_LIB=luratech
 !endif
 !endif
 
+!if !defined(JPX_LIB) && (defined(USE_OPENJPEG))
+!if exist("openjpeg\libopenjpeg")
+JPX_LIB=openjpeg
+!endif
+!endif
 
 !ifndef JPX_LIB
 JPX_LIB=jasper
@@ -818,12 +823,30 @@ JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN64 -DNO_ASSEMBLY
 JPX_CFLAGS=-DUSE_LWF_JP2 -DWIN32 -DNO_ASSEMBLY
 !endif
 !endif
+!endif
+
+# OpenJPEG compiler flags
+#
+!if "$(JPX_LIB)" == "openjpeg"
+!ifndef JPXSRCDIR
+JPXSRCDIR=openjpeg
+!endif
+!ifndef JPX_CFLAGS
+!ifdef WIN64
+JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DWIN64 
 !else
-# Use jasper by default. See jasper.mak for more information.
+JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DWIN32 
+!endif
+!else
+JPX_CFLAGS = $JPX_CFLAGS -DUSE_OPENJPEG_JP2
+!endif
+!endif
+
+# Use jasper if nothing else works. See jasper.mak for more information.
 !ifndef JPXSRCDIR
 JPXSRCDIR=jasper
 !endif
-!endif
+
 
 # ------ Devices and features ------ #
 

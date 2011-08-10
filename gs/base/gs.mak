@@ -347,6 +347,7 @@ LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
 JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
 LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
 JPXCF_=$(JPX_CFLAGS)
+JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)libopenjpeg
 
 ######################## How to define new 'features' #######################
 #
