@@ -21,6 +21,7 @@
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gxiodev.h */
 #include "gxiodev.h"
+#include "gserrors.h"
 
 /* The MS-Windows handle IODevice */
 

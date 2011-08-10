@@ -206,7 +206,7 @@ $(GLD)mshandle.dev: $(ECHOGS_XE) $(mshandle_)
 
 $(GLOBJ)gp_mshdl.$(OBJ): $(GLSRC)gp_mshdl.c $(AK)\
  $(ctype__h) $(errno__h) $(stdio__h) $(string__h)\
- $(gsmemory_h) $(gstypes_h) $(gxiodev_h)
+ $(gsmemory_h) $(gstypes_h) $(gxiodev_h) $(gserrors_h)
 	$(GLCC) $(GLO_)gp_mshdl.$(OBJ) $(C_) $(GLSRC)gp_mshdl.c
 
 # Define MS-Windows printer (file system) as a separable feature.
