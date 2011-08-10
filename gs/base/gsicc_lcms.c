@@ -20,6 +20,7 @@
 #include "gsicc_cms.h"
 #include "lcms.h"
 #include "gslibctx.h"
+#include "gserrors.h"
 
 #define DUMP_CMS_BUFFER 0
 #define DEBUG_LCMS_MEM 0
