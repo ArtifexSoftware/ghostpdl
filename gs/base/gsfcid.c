@@ -105,9 +105,10 @@ static RELOC_PTRS_WITH(subst_CID_on_WMode_reloc_ptrs, gs_subst_CID_on_WMode_t *s
 } RELOC_PTRS_END
 
 static void
-subst_CID_on_WMode_finalize(void *data)
+subst_CID_on_WMode_finalize(const gs_memory_t *cmem, void *data)
 {
     gs_subst_CID_on_WMode_t *subst = (gs_subst_CID_on_WMode_t *)data;
+    (void)cmem; /* unused */
 
     gs_free_object(subst->rc.memory, subst->data + 0, "subst_CID_on_WMode_finalize");
     subst->data[0] = NULL;

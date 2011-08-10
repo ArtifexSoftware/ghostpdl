@@ -843,7 +843,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
         if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
                   struct_type_name_string(pstype),
                   (ulong) ptr, client_name_string(cname));
-        (*finalize) (ptr);
+        (*finalize) (mem, ptr);
 
         if (gs_debug['a'] || gs_debug['A'])
             pstype = &saved_stype;

@@ -61,7 +61,7 @@ int
 gs_iodev_init(gs_memory_t * mem)
 {				/* Make writable copies of all IODevices. */
     gx_io_device **table =
-        gs_alloc_struct_array(mem, gx_io_device_table_count + 1,
+        gs_alloc_struct_array(mem, gx_io_device_table_count,
                               gx_io_device *, &st_io_device_ptr_element,
                               "gs_iodev_init(table)");
     gs_lib_ctx_t *libctx = gs_lib_ctx_get_interp_instance(mem);
@@ -70,6 +70,7 @@ gs_iodev_init(gs_memory_t * mem)
 
     if ((table == NULL) || (libctx == NULL))
         return_error(gs_error_VMerror);
+
     for (i = 0; i < gx_io_device_table_count; ++i) {
         gx_io_device *iodev =
             gs_alloc_struct(mem, gx_io_device, &st_io_device,
@@ -80,14 +81,6 @@ gs_iodev_init(gs_memory_t * mem)
         table[i] = iodev;
         memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
     }
-    /* FIXME: we allocate an extra pointer in the array and stuff
-     * the memory context in there, as we need access to it in the
-     * finalize method below. We get away it because everywhere that
-     * searches the table uses gx_io_device_table_count, rather than
-     * the actuall allocated length.
-     * A less naff solution would be preferable!
-     */
-    table[gx_io_device_table_count] = (gx_io_device *) mem;
     libctx->io_device_table = table;
     code = gs_register_struct_root(mem, NULL,
                                    (void **)&libctx->io_device_table,
@@ -103,20 +96,19 @@ gs_iodev_init(gs_memory_t * mem)
     /****** CAN'T FIND THE ROOT ******/
     /*gs_unregister_root(mem, root, "io_device_table");*/
  fail:
-    for (; i >= 0; --i)
+    for (; i > 0; --i)
         gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
     gs_free_object(mem, table, "gs_iodev_init(table)");
-    libctx->io_device_table = 0;
+    libctx->io_device_table = NULL;
     return (code < 0 ? code : gs_note_error(gs_error_VMerror));
 }
 
 static void
-gs_iodev_finalize(void *vptr)
+gs_iodev_finalize(const gs_memory_t *cmem, void *vptr)
 {
-    gx_io_device **table = vptr;
-    gs_memory_t * mem = ((gs_memory_t *)table[gx_io_device_table_count]);
-
-    mem->gs_lib_ctx->io_device_table = NULL;
+    if (cmem->gs_lib_ctx->io_device_table == vptr) {
+        cmem->gs_lib_ctx->io_device_table = NULL;
+    }
 }
 
 

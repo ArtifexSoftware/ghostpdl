@@ -102,9 +102,9 @@ RELOC_PTRS_END
 /* we need to implement it separately because st_composite_final */
 /* declares all 3 procedures as private. */
 static void
-device_pdfwrite_finalize(void *vpdev)
+device_pdfwrite_finalize(const gs_memory_t *cmem, void *vpdev)
 {
-    gx_device_finalize(vpdev);
+    gx_device_finalize(cmem, vpdev);
 }
 
 /* Driver procedures */

@@ -415,6 +415,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     /* Compute relocation based on marks, in the spaces */
     /* we are going to compact.  Also finalize freed objects. */
+    state.cur_mem = (gs_memory_t *)mem;
 
     for_collected_chunks(mem, cp) {
         gc_objects_set_reloc(&state, cp);
@@ -1170,7 +1171,7 @@ gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
             if_debug2('u', "[u]GC finalizing %s 0x%lx\n",
                       struct_type_name_string(pre->o_type),
                       (ulong) (pre + 1));
-            (*finalize) (pre + 1);
+            (*finalize) (gcst->cur_mem, pre + 1);
         }
         pfree = (byte *) pre;
         pre->o_back = (pfree - (byte *) chead) >> obj_back_shift;

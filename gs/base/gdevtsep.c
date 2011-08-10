@@ -463,12 +463,12 @@ RELOC_PTRS_END
 /* we need to implement it separately because st_composite_final */
 /* declares all 3 procedures as private. */
 static void
-tiffsep_device_finalize(void *vpdev)
+tiffsep_device_finalize(const gs_memory_t *cmem, void *vpdev)
 {
     /* We need to deallocate the compressed_color_list.
        and the names. */
     devn_free_params((gx_device*) vpdev);
-    gx_device_finalize(vpdev);
+    gx_device_finalize(cmem, vpdev);
 }
 
 gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,

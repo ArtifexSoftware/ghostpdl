@@ -45,7 +45,7 @@
    a finalize method to deallocate it when the reference
    is no longer in use. */
 
-static void jbig2_global_data_finalize(void *vptr);
+static void jbig2_global_data_finalize(const gs_memory_t *cmem, void *vptr);
 gs_private_st_simple_final(st_jbig2_global_data_t, s_jbig2_global_data_t,
         "jbig2globaldata", jbig2_global_data_finalize);
 
@@ -119,9 +119,10 @@ z_jbig2makeglobalctx(i_ctx_t * i_ctx_p)
 }
 
 /* free our referenced global context data */
-static void jbig2_global_data_finalize(void *vptr)
+static void jbig2_global_data_finalize(const gs_memory_t *cmem, void *vptr)
 {
         s_jbig2_global_data_t *st = vptr;
+        (void)cmem; /* unused */
 
         if (st->data) s_jbig2decode_free_global_data(st->data);
         st->data = NULL;

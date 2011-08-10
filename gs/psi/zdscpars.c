@@ -101,7 +101,7 @@ typedef struct dsc_data_s {
 } dsc_data_t;
 
 /* Structure descriptors */
-static void dsc_finalize(void *vptr);
+static void dsc_finalize(const gs_memory_t *cmem, void *vptr);
 gs_private_st_simple_final(st_dsc_data_t, dsc_data_t, "dsc_data_struct", dsc_finalize);
 
 /* Define the key name for storing the instance pointer in a dictionary. */
@@ -153,9 +153,10 @@ zinitialize_dsc_parser(i_ctx_t *i_ctx_p)
  * This routine will free the memory associated with Russell's parser.
  */
 static void
-dsc_finalize(void *vptr)
+dsc_finalize(const gs_memory_t *cmem, void *vptr)
 {
     dsc_data_t * const st = vptr;
+    (void)cmem; /* unused */
 
     if (st->dsc_data_ptr)
         dsc_free(st->dsc_data_ptr);

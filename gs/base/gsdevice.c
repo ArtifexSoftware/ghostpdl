@@ -44,9 +44,10 @@ extern_gs_lib_device_list();
  * descriptor if it is dynamic.
  */
 void
-gx_device_finalize(void *vptr)
+gx_device_finalize(const gs_memory_t *cmem, void *vptr)
 {
     gx_device * const dev = (gx_device *)vptr;
+    (void)cmem; /* unused */
 
     if (dev->icc_struct != NULL) {
         rc_decrement(dev->icc_struct, "gx_device_finalize(icc_profile)");
@@ -63,7 +64,7 @@ gx_device_finalize(void *vptr)
 void
 gx_device_free_local(gx_device *dev)
 {
-    gx_device_finalize(dev);
+    gx_device_finalize(dev->memory, dev);
 }
 
 /* GC procedures */

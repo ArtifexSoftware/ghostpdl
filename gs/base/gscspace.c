@@ -88,9 +88,10 @@ public_st_base_color_space();
 /* ------ Create/copy/destroy ------ */
 
 static void
-gs_cspace_final(void *vptr)
+gs_cspace_final(const gs_memory_t *cmem, void *vptr)
 {
     gs_color_space *pcs = (gs_color_space *)vptr;
+    (void)cmem; /* unused */
 
     if (pcs->type->final)
         pcs->type->final(pcs);
