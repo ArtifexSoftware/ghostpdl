@@ -57,7 +57,7 @@ sunhmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Output bytes have to be padded to 16 bits. */
     int rasLineBytes = ROUND_UP(gsLineBytes, 2);
     int lineCnt;
-    char *lineStorage; /* Allocated for passing storage to gdev_prn_get_bits() */
+    byte *lineStorage; /* Allocated for passing storage to gdev_prn_get_bits() */
     byte *data;
     sun_rasterfile_t ras;
     int code = 0;
