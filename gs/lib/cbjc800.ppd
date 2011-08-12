@@ -7,12 +7,15 @@
 *% End of Copyright statement
 *FormatVersion: "4.1"
 *FileVersion: "1.0"
+*LanguageEncoding: ISOLatin1
 *LanguageVersion: English
 *PCFileName: "CBJC800.PPD"
 *Product: "(Canon Bubble Jet Color 800)"
 *PSVersion: "(2010.351) 0"
 *ModelName: "Canon Bubble Jet Color 800"
 *NickName: "BJC-800"
+*ShortNickName: "BJC-800"
+*Manufacturer: "Canon"
 
 *% This file is not complete, and may lack some useful information...
 
@@ -114,6 +117,7 @@ save
 "
 *End
 
+*DefaultPaperDimension: Letter
 *PaperDimension A4: "595 842"
 *PaperDimension A5: "421 595"
 *PaperDimension A6: "297 421"
@@ -342,7 +346,7 @@ counttomark 1 add 1 roll cleartomark
 
 *OpenUI *ThickMedia/Thick Media: PickOne
 *OrderDependency: 30 AnySetup *ThickMedia
-*Default ThickMedia: Thin
+*DefaultThickMedia: Thin
 *ThickMedia Thin/No: "
  1 dict dup /MediaWeight 80 
  put setpagedevice"
