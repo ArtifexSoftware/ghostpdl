@@ -221,7 +221,11 @@ typedef void *LPVOID;
 
 // The specification for "inline" is section 6.7.4 of the C99 standard (ISO/IEC 9899:1999). 
 
+#ifdef __HP_cc
+#define LCMS_INLINE static __inline
+#else
 #define LCMS_INLINE static inline
+#endif
 
 #else
 
