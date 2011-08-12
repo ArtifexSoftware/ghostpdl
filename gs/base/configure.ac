@@ -974,7 +974,7 @@ AC_SUBST(JBIG2DEVS)
 AC_SUBST(JBIG2_AUTOCONF_CFLAGS)
 
 JPXDIR=src
-SHARE_JASPER=0
+SHARE_JPX=0
 JPXDEVS=''
 JPX_DECODER=
 JPX_AUTOCONF_CFLAGS=
@@ -984,7 +984,7 @@ if test x$with_luratech != xno; then
   if test -d luratech/lwf_jp2; then
     AC_MSG_RESULT([yes])
     JPX_DECODER=luratech
-    SHARE_JASPER=0
+    SHARE_JPX=0
     JPXDIR=luratech/lwf_jp2
     if test "$(uname)" = "Darwin"; then
       JPX_AUTOCONF_CFLAGS="-DUSE_LWF_JP2 -DMAC -DMAC_OS_X_BUILD"
@@ -997,8 +997,28 @@ if test x$with_luratech != xno; then
   fi
 fi
 
+OPENJPEGDIR=openjpeg
 
-if test "x$JPX_DECODER" = x; then
+AC_ARG_WITH([openjpeg], AC_HELP_STRING([--with-openjpeg],
+    [Try to use OpenJPEG for JPX decoding]))
+
+if test "x$JPX_DECODER" = "x"; then
+  if test "x$with_openjpeg" = "xyes"; then
+    AC_MSG_CHECKING([for local OpenJPEG library source])
+    if test -e $OPENJPEGDIR/libopenjpeg/openjpeg.h; then
+      AC_MSG_RESULT([yes])
+      JPXDIR="$OPENJPEGDIR"
+      JPX_DECODER=openjpeg
+      SHARE_JPX=0
+      JPX_AUTOCONF_CFLAGS="-DUSE_OPENJPEG_JP2"
+      JPXDEVS='$(PSD)jpx.dev'
+    else
+      AC_MSG_RESULT([no])
+    fi
+  fi
+fi
+
+if test "x$JPX_DECODER" = "x"; then
   dnl look for the jasper JPEG 2000 library
   AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
     [don't use the JasPer library for JPEG 2000]))
@@ -1054,7 +1074,7 @@ JPEG 2000 PDF image support entirely.
     else
       AC_MSG_RESULT([no])
       AC_CHECK_LIB([jasper], [jas_image_create], [
-          SHARE_JASPER=1
+          SHARE_JPX=1
       ], [
           AC_MSG_WARN([disabling support for JPEG 2000 images])
           with_jasper=no
@@ -1072,7 +1092,7 @@ fi
 AC_SUBST(JPX_DECODER)
 AC_SUBST(JPX_AUTOCONF_CFLAGS)
 AC_SUBST(JPXDIR)
-AC_SUBST(SHARE_JASPER)
+AC_SUBST(SHARE_JPX)
 AC_SUBST(JPXDEVS)
 
 dnl check if we can/should build the gtk loader

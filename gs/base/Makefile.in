@@ -247,7 +247,7 @@ JBIG2_CFLAGS=@JBIG2_AUTOCONF_CFLAGS@
 # whether to link to an external build or compile in from source
 # and source location and configuration flags for compiling in
 JPX_LIB=@JPX_DECODER@
-SHARE_JPX=@SHARE_JASPER@
+SHARE_JPX=@SHARE_JPX@
 JPXSRCDIR=@JPXDIR@
 JPX_CFLAGS=@JPX_AUTOCONF_CFLAGS@
 
@@ -263,7 +263,7 @@ JPX_CFLAGS=@JPX_AUTOCONF_CFLAGS@
 #JPX_LIB=openjpeg
 #SHARE_JPX=0
 #JPXSRCDIR=openjpeg
-#JPX_CFLAGS=-DUSE_OPENJPEG_JP2
+#JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DOPJ_STATIC
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information

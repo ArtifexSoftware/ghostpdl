@@ -35,6 +35,8 @@ OPEN_JPEG_GEN=$(JPXOBJDIR)$(D)
 
 OPEN_JPEG_PREFIX=opj_
 OPEN_JPEG_OBJ=$(JPXOBJDIR)$(D)
+OPEN_JPEG_CONFIG_H=$(OPEN_JPEG_GEN)opj_config.h
+
 
 # source files to build from the CSDK source
 
@@ -83,6 +85,9 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)tcd.h		\
 	$(OPEN_JPEG_SRC)tgt.h	\
 
+$(OPEN_JPEG_CONFIG_H): $(TOP_MAKEFILES) $(JPXSRCDIR)$(D)opj_config.h.in.user
+	$(CP_) $(JPXSRCDIR)$(D)opj_config.h.in.user $(OPEN_JPEG_CONFIG_H)
+
 # switch in the selected library .dev
 $(OPEN_JPEG_GEN)openjpeg.dev : $(TOP_MAKEFILES) $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev
 	$(CP_) $(OPEN_JPEG_GEN)openjpeg_$(SHARE_JPX).dev $(OPEN_JPEG_GEN)openjpeg.dev
@@ -96,7 +101,7 @@ $(OPEN_JPEG_GEN)openjpeg_0.dev : $(TOP_MAKEFILES) $(OPEN_JPEG_MAK) $(ECHOGS_XE) 
 	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_0 $(open_jpeg_OBJS)
 
 # define our specific compiler
-OPEN_JPEG_CC=$(CC) $(CFLAGS) -DOPJ_STATIC $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(D)..$(_I) $(JPXCF_)
+OPEN_JPEG_CC=$(CC) $(CFLAGS) $(D_)OPJ_STATIC$(_D) $(I_)$(OPEN_JPEG_GEN)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(D)..$(_I) $(JPXCF_)
 OPEN_JPEG_O=$(O_)$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)
 
 OPEN_JPEG_DEP=$(AK) $(OPEN_JPEG_MAK)
@@ -104,58 +109,58 @@ OPEN_JPEG_DEP=$(AK) $(OPEN_JPEG_MAK)
 # explicit rules for building each source file
 # for simplicity we have every source file depend on all headers
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)bio.$(OBJ) : $(OPEN_JPEG_SRC)bio.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)bio.$(OBJ) : $(OPEN_JPEG_SRC)bio.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)bio.$(OBJ) $(C_) $(OPEN_JPEG_SRC)bio.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)cio.$(OBJ) : $(OPEN_JPEG_SRC)cio.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)cio.$(OBJ) : $(OPEN_JPEG_SRC)cio.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)cio.$(OBJ) $(C_) $(OPEN_JPEG_SRC)cio.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)dwt.$(OBJ) : $(OPEN_JPEG_SRC)dwt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)dwt.$(OBJ) : $(OPEN_JPEG_SRC)dwt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)dwt.$(OBJ) $(C_) $(OPEN_JPEG_SRC)dwt.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)event.$(OBJ) : $(OPEN_JPEG_SRC)event.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)event.$(OBJ) : $(OPEN_JPEG_SRC)event.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)event.$(OBJ) $(C_) $(OPEN_JPEG_SRC)event.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)image.$(OBJ) : $(OPEN_JPEG_SRC)image.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)image.$(OBJ) : $(OPEN_JPEG_SRC)image.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)image.$(OBJ) $(C_) $(OPEN_JPEG_SRC)image.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)j2k.$(OBJ) : $(OPEN_JPEG_SRC)j2k.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)j2k.$(OBJ) : $(OPEN_JPEG_SRC)j2k.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)j2k.$(OBJ) $(C_) $(OPEN_JPEG_SRC)j2k.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)j2k_lib.$(OBJ) : $(OPEN_JPEG_SRC)j2k_lib.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)j2k_lib.$(OBJ) : $(OPEN_JPEG_SRC)j2k_lib.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)j2k_lib.$(OBJ) $(C_) $(OPEN_JPEG_SRC)j2k_lib.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)jp2.$(OBJ) : $(OPEN_JPEG_SRC)jp2.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)jp2.$(OBJ) : $(OPEN_JPEG_SRC)jp2.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)jp2.$(OBJ) $(C_) $(OPEN_JPEG_SRC)jp2.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)jpt.$(OBJ) : $(OPEN_JPEG_SRC)jpt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)jpt.$(OBJ) : $(OPEN_JPEG_SRC)jpt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)jpt.$(OBJ) $(C_) $(OPEN_JPEG_SRC)jpt.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)mct.$(OBJ) : $(OPEN_JPEG_SRC)mct.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)mct.$(OBJ) : $(OPEN_JPEG_SRC)mct.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)mct.$(OBJ) $(C_) $(OPEN_JPEG_SRC)mct.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)mqc.$(OBJ) : $(OPEN_JPEG_SRC)mqc.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)mqc.$(OBJ) : $(OPEN_JPEG_SRC)mqc.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)mqc.$(OBJ) $(C_) $(OPEN_JPEG_SRC)mqc.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)openjpeg.$(OBJ) : $(OPEN_JPEG_SRC)openjpeg.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)openjpeg.$(OBJ) : $(OPEN_JPEG_SRC)openjpeg.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)openjpeg.$(OBJ) $(C_) $(OPEN_JPEG_SRC)openjpeg.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)pi.$(OBJ) : $(OPEN_JPEG_SRC)pi.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)pi.$(OBJ) : $(OPEN_JPEG_SRC)pi.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)pi.$(OBJ) $(C_) $(OPEN_JPEG_SRC)pi.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)raw.$(OBJ) : $(OPEN_JPEG_SRC)raw.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)raw.$(OBJ) : $(OPEN_JPEG_SRC)raw.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)raw.$(OBJ) $(C_) $(OPEN_JPEG_SRC)raw.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t1.$(OBJ) : $(OPEN_JPEG_SRC)t1.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t1.$(OBJ) : $(OPEN_JPEG_SRC)t1.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)t1.$(OBJ) $(C_) $(OPEN_JPEG_SRC)t1.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t2.$(OBJ) : $(OPEN_JPEG_SRC)t2.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t2.$(OBJ) : $(OPEN_JPEG_SRC)t2.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)t2.$(OBJ) $(C_) $(OPEN_JPEG_SRC)t2.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tcd.$(OBJ) : $(OPEN_JPEG_SRC)tcd.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tcd.$(OBJ) : $(OPEN_JPEG_SRC)tcd.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)tcd.$(OBJ) $(C_) $(OPEN_JPEG_SRC)tcd.c
 
-$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ) : $(OPEN_JPEG_SRC)tgt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS)
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ) : $(OPEN_JPEG_SRC)tgt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)tgt.$(OBJ) $(C_) $(OPEN_JPEG_SRC)tgt.c
 
 # end of file
