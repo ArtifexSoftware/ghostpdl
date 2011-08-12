@@ -78,6 +78,8 @@
 #include "gdevvec.h"
 #if 0
 #include "gdevpstr.h"
+#else
+#include "spprint.h"
 #endif
 #include "ghost.h"
 #include "gzstate.h"
