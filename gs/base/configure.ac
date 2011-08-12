@@ -1303,7 +1303,8 @@ SVGDEV='svgwrite'
 while test -n "$drivers"; do
 	if echo $drivers |grep "," >/dev/null; then
 		THIS="`echo $drivers |sed -e 's/,.*//'`"
-		drivers="`echo $drivers |sed -e \"s/$THIS,//\"`"
+		SEDCMD="s/$THIS,//"
+		drivers="`echo $drivers |sed -e $SEDCMD`"
 	else
 		THIS=$drivers
 		drivers=""
