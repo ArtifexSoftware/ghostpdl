@@ -150,7 +150,7 @@ const gx_device_wtsimdi gs_wtsimdi_device = {
                         3, 24, 255, 255, 256, 256, wtsimdi_print_page)
 };
 
-#if DUMMY_WTS_HALFTONE_LINE
+#if defined(DUMMY_WTS_HALFTONE_LINE) && DUMMY_WTS_HALFTONE_LINE == 1
 static void
 wts_halftone_line(void **wts, int y, int width, int n_planes,
                   long band_offset_x, long band_offset_y,

@@ -925,8 +925,8 @@ typedef	struct {
 
 static int		photoex_open( gx_device *pdev );
 static	int		photoex_print_page( PDEV *dev, FILE *prn_stream );
-static	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b );
-static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] );
+static	CINX	photoex_map_rgb_color( DEV *dev, const CVAL prgb[] );
+static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[] );
 static	int		photoex_get_params( DEV *dev, PLIST *plist );
 static	int		photoex_put_params( DEV *dev, PLIST *plist );
 
@@ -1004,7 +1004,7 @@ static	const HFUNCS	htable[ MAXHTONE ] = {
 *	define here are the photoex_ functions.
 */
 
-static	gx_device_procs photoex_device_procs = prn_color_params_procs(
+static	const gx_device_procs photoex_device_procs = prn_color_params_procs(
 
         photoex_open,					/* Opens the device						*/
         gdev_prn_output_page,
@@ -1366,8 +1366,9 @@ float	margins[ 4 ];						/* L, B, R, T					*/
 *	color_index being at least 32 bit !!!
 */
 
-static	CINX	photoex_map_rgb_color( DEV *dev, CVAL r, CVAL g, CVAL b )
+static	CINX	photoex_map_rgb_color( DEV *dev, const CVAL prgb[] )
 {
+CVAL            r = prgb[0], g = prgb[1], b = prgb[2];
 int		c, y, m, k;
 int		a, s, f;
 EDEV	*edev;
@@ -1433,7 +1434,7 @@ int		i;
 *	It does not do any ink transfer compensation, colour compensation etc.
 */
 
-static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[3] )
+static int		photoex_map_color_rgb( DEV *dev, CINX index, CVAL prgb[] )
 {
 uint	c, m, y, k;
 CVAL	r, g, b;
@@ -2355,7 +2356,7 @@ static	void	PackLine( byte *input, int pixnum, int lev_on, int step,
                                                   RAWLINE *line )
 {
 byte	bits;
-char	*result;
+byte	*result;
 int		i, j, k;
 
         result = line->data;

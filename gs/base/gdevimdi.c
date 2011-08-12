@@ -88,16 +88,6 @@ const gx_device_imdi gs_imdi_device =
             3, 24, 255, 255, 256, 256, imdi_print_page)
 };
 
-static double incurve(void *ctx, int ch, double val)
-{
-    return val;
-}
-
-static double outcurve(void *ctx, int ch, double val)
-{
-    return val;
-}
-
 /*
  * Open IMDI device.
  * Load ICC device link profile (to map sRGB to FOGRA CMYK).

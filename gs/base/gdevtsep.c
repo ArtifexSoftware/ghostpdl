@@ -385,10 +385,13 @@ static dev_proc_put_params(tiffsep_put_params);
 static dev_proc_print_page(tiffsep_print_page);
 static dev_proc_get_color_mapping_procs(tiffsep_get_color_mapping_procs);
 static dev_proc_get_color_comp_index(tiffsep_get_color_comp_index);
-static dev_proc_encode_color(tiffsep_encode_color);
-static dev_proc_decode_color(tiffsep_decode_color);
+#if USE_COMPRESSED_ENCODING
 static dev_proc_encode_color(tiffsep_encode_compressed_color);
 static dev_proc_decode_color(tiffsep_decode_compressed_color);
+#else
+static dev_proc_encode_color(tiffsep_encode_color);
+#endif
+static dev_proc_decode_color(tiffsep_decode_color);
 static dev_proc_update_spot_equivalent_colors(tiffsep_update_spot_equivalent_colors);
 static dev_proc_ret_devn_params(tiffsep_ret_devn_params);
 static dev_proc_open_device(tiffsep1_prn_open);
@@ -697,6 +700,7 @@ tiffsep_get_color_mapping_procs(const gx_device * dev)
     return &tiffsep_cm_procs;
 }
 
+#if USE_COMPRESSED_ENCODING
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  * With 64 bit gx_color_index values, we compress the colorant values.  This
@@ -719,7 +723,7 @@ tiffsep_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_
     return devn_decode_compressed_color(dev, color, out,
                     &(((tiffsep_device *)dev)->devn_params));
 }
-
+#else
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  * With 32 bit gx_color_index values, we simply pack values.
@@ -739,6 +743,7 @@ tiffsep_encode_color(gx_device *dev, const gx_color_value colors[])
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
+#endif
 
 /*
  * Decode a gx_color_index value back to a list of colorant values.
