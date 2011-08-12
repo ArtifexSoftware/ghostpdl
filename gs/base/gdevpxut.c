@@ -115,11 +115,7 @@ px_write_file_header(stream *s, const gx_device *dev)
 int
 px_write_page_header(stream *s, const gx_device *dev)
 {
-    static const byte page_header_1[] = {
-        DUB(ePortraitOrientation), DA(pxaOrientation)
-    };
-
-    PX_PUT_LIT(s, page_header_1);
+    /* Orientation is deferred until px_write_select_media... */
     return 0;
 }
 
@@ -145,6 +141,7 @@ px_write_select_media(stream *s, const gx_device *dev,
     int i;
     pxeMediaSize_t size = eDefaultPaperSize;
     byte tray = eAutoSelect;
+    byte orientation = ePortraitOrientation;
     bool match_found = false;
 
     /* The default is eDefaultPaperSize (=96), but we'll emit CustomMediaSize */
@@ -156,11 +153,19 @@ px_write_select_media(stream *s, const gx_device *dev,
             match_found = true;
             size = media_sizes[i].ms;
             break;
+	} else if (fabs(media_sizes[i].height - w) < 0.05 &&
+		   fabs(media_sizes[i].width - h) < 0.05
+		   ) {
+	    match_found = true;
+	    size = media_sizes[i].ms;
+	    orientation = eLandscapeOrientation;
+	    break;
         }
     /*
      * According to the PCL XL documentation, MediaSize/CustomMediaSize must always
      * be specified, but MediaSource is optional.
      */
+    px_put_uba(s, orientation, pxaOrientation);
     if (match_found) {
         /* standard media */
         px_put_uba(s, (byte)size, pxaMediaSize);
