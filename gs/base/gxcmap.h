@@ -20,6 +20,7 @@
 
 #include "gscsel.h"
 #include "gxfmap.h"
+#include "gscspace.h"
 
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
@@ -40,7 +41,8 @@ typedef struct gx_device_color_s gx_device_color;
             gx_device *, gs_color_select_t)
 #define cmap_proc_cmyk(proc)\
   void proc(frac, frac, frac, frac, gx_device_color *,\
-            const gs_imager_state *, gx_device *, gs_color_select_t)
+            const gs_imager_state *, gx_device *, gs_color_select_t,\
+            const gs_color_space *)
 #define cmap_proc_rgb_alpha(proc)\
   void proc(frac, frac, frac, frac, gx_device_color *,\
                const gs_imager_state *, gx_device *, gs_color_select_t)
@@ -143,8 +145,8 @@ void gx_set_cmap_procs(gs_imager_state *, const gx_device *);
   ((pis)->cmap_procs->map_gray)(cgray, pdc, pis, dev, select)
 #define gx_remap_concrete_rgb(cr, cg, cb, pdc, pis, dev, select)\
   ((pis)->cmap_procs->map_rgb)(cr, cg, cb, pdc, pis, dev, select)
-#define gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pis, dev, select)\
-  ((pis)->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pis, dev, select)
+#define gx_remap_concrete_cmyk(cc, cm, cy, ck, pdc, pis, dev, select, pcs)\
+  ((pis)->cmap_procs->map_cmyk)(cc, cm, cy, ck, pdc, pis, dev, select, pcs)
 #define gx_remap_concrete_rgb_alpha(cr, cg, cb, ca, pdc, pis, dev, select)\
   ((pis)->cmap_procs->map_rgb_alpha)(cr, cg, cb, ca, pdc, pis, dev, select)
 #define gx_remap_concrete_separation(pcc, pdc, pis, dev, select)\
