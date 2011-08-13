@@ -736,7 +736,7 @@ gx_remap_concrete_DCMYK(const frac * pconc, const gs_color_space * pcs,
 {
 /****** IGNORE alpha ******/
     gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3], pdc,
-                           pis, dev, select);
+                           pis, dev, select, pcs);
     return 0;
 }
 int
@@ -755,7 +755,7 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
                            gx_unit_frac(pc->paint.values[1]),
                            gx_unit_frac(pc->paint.values[2]),
                            gx_unit_frac(pc->paint.values[3]),
-                           pdc, pis, dev, select);
+                           pdc, pis, dev, select, pcs);
     return 0;
 }
 
@@ -917,12 +917,18 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
 
 static void
 cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
-     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select,
+     const gs_color_space *source_pcs)
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
+    int black_index;
+    cmm_dev_profile_t *dev_profile;
+    gsicc_colorbuffer_t src_space = gsUNDEFINED;
+    int code;
+    bool gray_to_k;
 
     /* map to the color model */
     for (i=0; i < ncomps; i++)
@@ -934,11 +940,30 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         for (i = 0; i < ncomps; i++)
             cm_comps[i] = gx_map_color_frac(pis,
                                 cm_comps[i], effective_transfer[i]);
-    else
-        for (i = 0; i < ncomps; i++)
-            cm_comps[i] = frac_1 - gx_map_color_frac(pis,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-
+    else {
+        /* Check if source space is gray.  In this case we are to use only the
+           transfer function on the K channel.  Do this only if gray to K is
+           also set */
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        gray_to_k = dev_profile->devicegraytok;
+        if (source_pcs != NULL && source_pcs->cmm_icc_profile_data != NULL) {
+            src_space = source_pcs->cmm_icc_profile_data->data_cs;
+        } else if (source_pcs != NULL && source_pcs->icc_equivalent != NULL) {
+            src_space = source_pcs->icc_equivalent->cmm_icc_profile_data->data_cs;
+        }
+        if (src_space == gsGRAY && gray_to_k) {
+            /* Find the black channel location */
+            black_index = dev_proc(dev, get_color_comp_index)(dev, "Black",
+                                    strlen("Black"), SEPARATION_NAME);
+            cm_comps[black_index] = frac_1 - gx_map_color_frac(pis,
+                                    (frac)(frac_1 - cm_comps[black_index]), 
+                                    effective_transfer[black_index]);
+        } else {
+            for (i = 0; i < ncomps; i++)
+                cm_comps[i] = frac_1 - gx_map_color_frac(pis,
+                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
+        }
+    }
     /* We make a test for direct vs. halftoned, rather than */
     /* duplicating most of the code of this procedure. */
     if (gx_device_must_halftone(dev)) {

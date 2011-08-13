@@ -96,6 +96,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             use_icc = true;
         }
     }
+    if (!(penum->bps <= 8 || penum->bps == 16)) {
+        use_icc = false;
+    }
     /* Do not allow mismatch in devices component output with the
        profile output size.  For example sep device with CMYK profile should
        not go through the fast method */

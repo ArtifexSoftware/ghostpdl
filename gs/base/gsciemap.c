@@ -211,6 +211,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     gsicc_init_profile_info((*ppcs_icc)->cmm_icc_profile_data);
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEFG;
     pcs->icc_equivalent = *ppcs_icc;
+    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsCMYK;
     return(0);
 }
 
@@ -481,6 +482,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_DEF;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
+    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsUNDEFINED;
     return(0);
     }
 
@@ -577,7 +579,8 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_ABC;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
-                                return(0);
+    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsRGB;
+    return(0);
     }
 
 /* Render a CIEBasedABC color. */
@@ -676,6 +679,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     (*ppcs_icc)->cmm_icc_profile_data->default_match = CIE_A;
     /* Assign to the icc_equivalent member variable */
     pcs->icc_equivalent = *ppcs_icc;
+    pcs->icc_equivalent->cmm_icc_profile_data->data_cs = gsGRAY;
     return(code);
 }
 

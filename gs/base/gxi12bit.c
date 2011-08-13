@@ -291,7 +291,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                     (*map_cmyk) (next.v[0], next.v[1],
                                  next.v[2], next.v[3],
                                  pdevc_next, pis, dev,
-                                 gs_color_select_source);
+                                 gs_color_select_source, NULL);
                     goto f;
                 }
                 decode_frac(next.v[0], cc, 0);

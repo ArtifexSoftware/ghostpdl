@@ -4402,7 +4402,8 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
 
 static	void
 pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
-     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select,
+     const gs_color_space *pcs)
 {
     int i,ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -4528,7 +4529,8 @@ pdf14_cmap_rgb_direct_group(frac r, frac g, frac b, gx_device_color *	pdc,
 /* color mapping for when we have an smask or a isolated transparency group with another color space */
 static	void
 pdf14_cmap_cmyk_direct_group(frac c, frac m, frac y, frac k, gx_device_color * pdc,
-     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
+     const gs_imager_state * pis, gx_device * dev, gs_color_select_t select,
+     const gs_color_space *pcs)
 {
     int i, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];

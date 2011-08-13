@@ -290,7 +290,7 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
             code = -1;
             break;
         }
-    return(code);
+    return code;
     }
 
 /*

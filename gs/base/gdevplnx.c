@@ -860,7 +860,8 @@ plane_cmap_rgb(frac r, frac g, frac b, gx_device_color * pdc,
 }
 static void
 plane_cmap_cmyk(frac c, frac m, frac y, frac k, gx_device_color * pdc,
-    const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select)
+    const gs_imager_state *pis_image, gx_device *dev, gs_color_select_t select,
+    const gs_color_space *source_pcs)
 {
     const plane_image_enum_t *ppie =
         (const plane_image_enum_t *)pis_image->client_data;
@@ -870,7 +871,7 @@ plane_cmap_cmyk(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     gx_device_color dcolor;
 
     gx_remap_concrete_cmyk(c, m, y, k, &dcolor, ppie->pis,
-                           (gx_device *)edev, select);
+                           (gx_device *)edev, select, NULL);
     reduce_drawing_color(pdc, edev, &dcolor, &lop);
 }
 static void
