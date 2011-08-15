@@ -1182,16 +1182,17 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 
     case CUPS_CSPACE_RGB :
     case CUPS_CSPACE_RGBW :
-        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
-	  c0 = c;
-	  c1 = m;
-	  c2 = y;
-	  c3 = k;
-	} else {
-	  c0 = c + k;
-	  c1 = m + k;
-	  c2 = y + k;
-	}
+        c0 = c + k;
+        c1 = m + k;
+        c2 = y + k;
+        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW)
+	  if (k >= frac_1) {
+	    c0 = frac_1;
+	    c1 = frac_1;
+	    c2 = frac_1;
+	    c3 = frac_1;
+	  } else
+	    c3 = 0;
 
         if (c0 < 0)
 	  c0 = 0;
@@ -1212,11 +1213,12 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	out[2] = frac_1 - (frac)cups->Density[c2];
 
         if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
-	  if (c3 < 0)
-	    c3 = 0;
-	  else if (c3 > frac_1)
-	    c3 = frac_1;
-	  out[3] = frac_1 - (frac)cups->Density[c3];
+	  if (c3 == 0)
+	    out[3] = frac_1;
+	  else if (c3 == frac_1)
+	    out[3] = 0;
+	  else
+	    out[3] = frac_1;
 	}
         break;
 
@@ -2034,10 +2036,15 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
         * cups->DecodeLUT actually maps to RGBW, not CMYK...
 	*/
 
-        k = cups->DecodeLUT[c3];
-        c = cups->DecodeLUT[c0] + k - gx_max_color_value;
-        m = cups->DecodeLUT[c1] + k - gx_max_color_value;
-        y = cups->DecodeLUT[c2] + k - gx_max_color_value;
+        if (c3 == 0) {
+	  c = 0;
+	  m = 0;
+	  y = 0;
+	} else {
+	  c = cups->DecodeLUT[c0];
+	  m = cups->DecodeLUT[c1];
+	  y = cups->DecodeLUT[c2];
+	}
 
         if (c > gx_max_color_value)
 	  prgb[0] = gx_max_color_value;
@@ -2282,20 +2289,20 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
           switch (cups->header.cupsBitsPerColor)
           {
             default :
-        	i = 0x0e;
+        	i = 0x00;
         	break;
             case 2 :
-        	i = 0xfc;
+        	i = 0x00;
         	break;
             case 4 :
-        	i = 0xfff0;
+        	i = 0x0000;
         	break;
             case 8 :
-        	i = 0xffffff00;
+        	i = 0x00000000;
         	break;
 #ifdef GX_COLOR_INDEX_TYPE
 	    case 16 :
-		i = 0xffffffffffff0000;
+		i = 0x0000000000000000;
 		break;
 #endif /* GX_COLOR_INDEX_TYPE */
           }
