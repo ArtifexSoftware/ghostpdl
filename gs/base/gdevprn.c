@@ -1277,6 +1277,28 @@ gdev_prn_close_printer(gx_device * pdev)
     return 0;
 }
 
+int compare_gdev_prn_space_params(gdev_prn_space_params sp1, gdev_prn_space_params sp2) {
+  if (sp1.MaxBitmap != sp2.MaxBitmap)
+    return(1);
+  if (sp1.BufferSpace != sp2.BufferSpace)
+    return(1);
+  if (sp1.band.page_uses_transparency != sp2.band.page_uses_transparency)
+    return(1);
+  if (sp1.band.BandWidth != sp2.band.BandWidth)
+    return(1);
+  if (sp1.band.BandHeight != sp2.band.BandHeight)
+    return(1);
+  if (sp1.band.BandBufferSpace != sp2.band.BandBufferSpace)
+    return(1);
+  if (sp1.params_are_read_only != sp2.params_are_read_only)
+    return(1);
+  if (sp1.banding_type != sp2.banding_type)
+    return(1);
+ 
+  return(0); 
+}
+
+
 /* If necessary, free and reallocate the printer memory after changing params */
 int
 gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
@@ -1297,7 +1319,7 @@ gdev_prn_maybe_realloc_memory(gx_device_printer *prdev,
      * for these filesets.
      */
     if (prdev->is_open &&
-        (memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
+        (compare_gdev_prn_space_params(prdev->space_params, *old_sp) != 0 ||
          prdev->width != old_width || prdev->height != old_height ||
          prdev->page_uses_transparency != old_page_uses_transparency)
         ) {
