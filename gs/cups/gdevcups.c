@@ -1185,7 +1185,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
         c0 = c + k;
         c1 = m + k;
         c2 = y + k;
-        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW)
+        if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
 	  if (k >= frac_1) {
 	    c0 = frac_1;
 	    c1 = frac_1;
@@ -1193,6 +1193,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	    c3 = frac_1;
 	  } else
 	    c3 = 0;
+	}
 
         if (c0 < 0)
 	  c0 = 0;
