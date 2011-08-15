@@ -225,6 +225,7 @@ typedef struct gx_device_cups_s
   unsigned short	EncodeLUT[gx_max_color_value + 1];/* RGB value to output color LUT */
   int			Density[CUPS_MAX_VALUE + 1];/* Density LUT */
   int			Matrix[3][3][CUPS_MAX_VALUE + 1];/* Color transform matrix LUT */
+  int                   user_icc;
   int                   cupsRasterVersion;
 
   /* Used by cups_put_params(): */
@@ -426,6 +427,7 @@ gx_device_cups	gs_cups_device =
   {0x00},                                  /* EncodeLUT */
   {0x00},                                  /* Density */
   {0x00},                                  /* Matrix */
+  0,
   3                                     /* cupsRasterVersion */
 };
 
@@ -2937,6 +2939,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int                   xflip = 0,
                         yflip = 0;
   int                   found = 0;
+  gs_param_string icc_pro_dummy;
 
 #ifdef DEBUG
   dprintf2("DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
@@ -3032,6 +3035,11 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   margins_set = param_read_float_array(plist, "Margins", &arrayval) == 0;
   color_set   = param_read_int(plist, "cupsColorSpace", &intval) == 0 ||
                 param_read_int(plist, "cupsBitsPerColor", &intval) == 0;
+
+  if (!cups->user_icc) {
+      cups->user_icc = param_read_string(plist, "OutputICCProfile", &icc_pro_dummy) == 0;
+  }
+
   /* We set the old dimensions to 1 if we have a color depth change, so
      that memory reallocation gets forced. This is perhaps not the correct
      approach to prevent crashes like in bug 690435. We keep it for the
@@ -4052,22 +4060,80 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     for (k = 0; k <= CUPS_MAX_VALUE; k ++)
       cups->Density[k] = k;
   }
-  /* Set up the ICC profile for ghostscript to use based upon the color space.
-     This is different than the PPD profile above which appears to be some sort
-     of matrix based TRC profile */
-  switch (cups->header.cupsColorSpace) {
-      /* Use RGB profile for this */
-    case CUPS_CSPACE_RGBW:
-      if (pdev->icc_struct == NULL) {
-        pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
-      }
-      if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE] == NULL) {
-            code = gsicc_set_device_profile(pdev, pdev->memory, 
-                DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
-      }
-      break;
-    default:
-      break;
+  if (!cups->user_icc) {
+    /* Set up the ICC profile for ghostscript to use based upon the color space.
+       This is different than the PPD profile above which appears to be some sort
+       of matrix based TRC profile */
+    switch (cups->header.cupsColorSpace)
+    {
+      default :
+      case CUPS_CSPACE_RGBW :
+      case CUPS_CSPACE_W :
+      case CUPS_CSPACE_WHITE :
+      case CUPS_CSPACE_RGB :
+      case CUPS_CSPACE_RGBA :
+#    ifdef CUPS_RASTER_HAVE_COLORIMETRIC
+      case CUPS_CSPACE_CIEXYZ :
+      case CUPS_CSPACE_CIELab :
+      case CUPS_CSPACE_ICC1 :
+      case CUPS_CSPACE_ICC2 :
+      case CUPS_CSPACE_ICC3 :
+      case CUPS_CSPACE_ICC4 :
+      case CUPS_CSPACE_ICC5 :
+      case CUPS_CSPACE_ICC6 :
+      case CUPS_CSPACE_ICC7 :
+      case CUPS_CSPACE_ICC8 :
+      case CUPS_CSPACE_ICC9 :
+      case CUPS_CSPACE_ICCA :
+      case CUPS_CSPACE_ICCB :
+      case CUPS_CSPACE_ICCC :
+      case CUPS_CSPACE_ICCD :
+      case CUPS_CSPACE_ICCE :
+      case CUPS_CSPACE_ICCF :
+#    endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
+        if (pdev->icc_struct == NULL) {
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+        }
+        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
+          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
+          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
+        }
+        code = gsicc_set_device_profile(pdev, pdev->memory, 
+            (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+        break;
+
+      case CUPS_CSPACE_K :
+        if (pdev->icc_struct == NULL) {
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+        }
+        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
+          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
+          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
+        }
+        code = gsicc_set_device_profile(pdev, pdev->memory, 
+            (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
+          break;
+      case CUPS_CSPACE_GOLD :
+      case CUPS_CSPACE_SILVER :
+      case CUPS_CSPACE_CMY :
+      case CUPS_CSPACE_YMC :
+      case CUPS_CSPACE_KCMYcm :
+      case CUPS_CSPACE_CMYK :
+      case CUPS_CSPACE_YMCK :
+      case CUPS_CSPACE_KCMY :
+      case CUPS_CSPACE_GMCK :
+      case CUPS_CSPACE_GMCS :
+        if (pdev->icc_struct == NULL) {
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+        }
+        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
+          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
+          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
+        }
+        code = gsicc_set_device_profile(pdev, pdev->memory, 
+            (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);
+          break;
+    }
   }
 }
 
