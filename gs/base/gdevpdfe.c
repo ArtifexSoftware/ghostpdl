@@ -485,7 +485,7 @@ static void writehex(char **p, ulong v, int l)
 static void
 pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf, int buf_length)
 {
-    char b[40], *p = b;
+    char b[45], *p = b;
     ulong  uuid_time_lo = (ulong)(uuid_time & 0xFFFFFFFF);       /* MSVC 7.1.3088           */
     ushort uuid_time_md = (ushort)((uuid_time >> 32) & 0xFFFF);  /* cannot compile this     */
     ushort uuid_time_hi = (ushort)((uuid_time >> 48) & 0x0FFF);  /* as function arguments.  */
@@ -521,7 +521,7 @@ pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int
         memcpy(buf+5, pdev->InstanceUUID.data, l);
         buf[l] = 0;
     } else
-        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf, buf_length - 5);
+        pdf_make_uuid(digest, pdf_uuid_time(pdev), pdev->DocumentTimeSeq, buf + 5, buf_length - 5);
     return 0;
 }
 
@@ -549,7 +549,7 @@ static const char dd[]={'\'', '\357', '\273', '\277', '\'', 0};
 static int
 pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 {
-    char instance_uuid[40], document_uuid[40], cre_date_time[40], mod_date_time[40], date_time_buf[40];
+    char instance_uuid[45], document_uuid[45], cre_date_time[40], mod_date_time[40], date_time_buf[40];
     int cre_date_time_len, mod_date_time_len;
     int code;
     stream *s = pdev->strm;
