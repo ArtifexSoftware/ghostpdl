@@ -2941,7 +2941,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
                         yflip = 0;
   int                   found = 0;
   gs_param_string icc_pro_dummy;
-
+  int old_cmps = cups->color_info.num_components;
+  int old_depth = cups->color_info.depth;
+  
 #ifdef DEBUG
   dprintf2("DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
 #endif /* DEBUG */
@@ -3151,12 +3153,20 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   if ((code = gdev_prn_put_params(pdev, plist)) < 0)
     return (code);
 
+  /* If cups_set_color_info() changed the color model of the device we want to
+   * force the raster memory to be recreated/reinitialized
+   */
+  if (cups->color_info.num_components != old_cmps || cups->color_info.depth != old_depth) {
+      width_old = 0;
+      height_old = 0;
+  }
+  else {
   /* pdev->width/height may have been changed by the call to
    * gdev_prn_put_params()
    */
-  width_old = pdev->width;
-  height_old = pdev->height;
-
+     width_old = pdev->width;
+     height_old = pdev->height;
+  }
  /*
   * Update margins/sizes as needed...
   */
@@ -4069,12 +4079,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
     {
       default :
       case CUPS_CSPACE_RGBW :
-      case CUPS_CSPACE_W :
-      case CUPS_CSPACE_WHITE :
       case CUPS_CSPACE_RGB :
       case CUPS_CSPACE_RGBA :
+      case CUPS_CSPACE_CMY :
+      case CUPS_CSPACE_YMC :
 #    ifdef CUPS_RASTER_HAVE_COLORIMETRIC
-      case CUPS_CSPACE_CIEXYZ :
       case CUPS_CSPACE_CIELab :
       case CUPS_CSPACE_ICC1 :
       case CUPS_CSPACE_ICC2 :
@@ -4092,48 +4101,57 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
       case CUPS_CSPACE_ICCE :
       case CUPS_CSPACE_ICCF :
 #    endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
-        if (pdev->icc_struct == NULL) {
+        if (!pdev->icc_struct || (pdev->icc_struct &&
+             pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsRGB)) {
+
+          if (pdev->icc_struct) {
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+          }
           pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
-        }
-        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
-          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
-          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
-        }
-        code = gsicc_set_device_profile(pdev, pdev->memory, 
-            (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+
+          code = gsicc_set_device_profile(pdev, pdev->memory, 
+              (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+          }
         break;
 
+      case CUPS_CSPACE_W :
+      case CUPS_CSPACE_WHITE :
       case CUPS_CSPACE_K :
-        if (pdev->icc_struct == NULL) {
-          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
-        }
-        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
-          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
-          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
-        }
-        code = gsicc_set_device_profile(pdev, pdev->memory, 
-            (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
-          break;
       case CUPS_CSPACE_GOLD :
       case CUPS_CSPACE_SILVER :
-      case CUPS_CSPACE_CMY :
-      case CUPS_CSPACE_YMC :
+        if (!pdev->icc_struct || (pdev->icc_struct &&
+             pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsGRAY)) {
+
+          if (pdev->icc_struct) {
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+          }
+          pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
+
+          code = gsicc_set_device_profile(pdev, pdev->memory->non_gc_memory, 
+              (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
+        }
+        break;
       case CUPS_CSPACE_KCMYcm :
+#    ifdef CUPS_RASTER_HAVE_COLORIMETRIC
+      case CUPS_CSPACE_CIEXYZ :
+#endif
       case CUPS_CSPACE_CMYK :
       case CUPS_CSPACE_YMCK :
       case CUPS_CSPACE_KCMY :
       case CUPS_CSPACE_GMCK :
       case CUPS_CSPACE_GMCS :
-        if (pdev->icc_struct == NULL) {
+        if (!pdev->icc_struct || (pdev->icc_struct &&
+             pdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsCMYK)) {
+
+          if (pdev->icc_struct) {
+              rc_decrement(pdev->icc_struct, "cups_set_color_info");            
+          }
           pdev->icc_struct = gsicc_new_device_profile_array(pdev->memory);
-        }
-        if (pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
-          rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "cups_set_color_info");
-          pdev->icc_struct->device_profile[gsDEFAULTPROFILE] = NULL;
-        }
-        code = gsicc_set_device_profile(pdev, pdev->memory, 
-            (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);
-          break;
+
+          code = gsicc_set_device_profile(pdev, pdev->memory, 
+              (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);
+          }
+        break;
     }
   }
 }
