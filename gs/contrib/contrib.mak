@@ -101,7 +101,6 @@ CONTRIBSRC=$(CONTRIBDIR)$(D)
 #	lips4v	 Canon LIPS IV vector mode driver
 #	lips4	 Canon LIPS IV raster mode driver
 #       ln03     DEC LN03
-#	lx5000   Lexmark 5000
 #       lxm3200  Lexmark 3200, Z31, Z12
 #	md1xMono Alps MD-1000/1300/1500 (monochrome mode, japanese)
 #	md2k	 Alps MD-2000/2010/4000/1000/1300/1500
@@ -509,18 +508,6 @@ $(DD)lex2050.dev : $(lex2050_) $(DD)page.dev
 
 $(GLOBJ)gdevlx7.$(OBJ) : $(CONTRIBSRC)gdevlx7.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevlx7.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx7.c
-
-
-### ----------------- LexMark 5000 printer ----------------------------- ###
-### Note: this driver was contributed by users.  Please contact:         ###
-###   Peter B. West <p.west@uq.net.au>                                   ###
-
-lx5000_=$(GLOBJ)gdevlx50.$(OBJ)
-$(DD)lx5000.dev :    $(lx5000_)
-	$(SETPDEV) $(DD)lx5000 $(lx5000_)
-
-$(GLOBJ)gdevlx50.$(OBJ) : $(CONTRIBSRC)gdevlx50.c $(PDEVH)
-	$(GLCC) $(GLO_)gdevlx50.$(OBJ) $(C_) $(CONTRIBSRC)gdevlx50.c
 
 
 ### ----------- Lexmark 3200 device ------------ ###
