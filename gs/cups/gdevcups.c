@@ -1188,7 +1188,8 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
         c1 = m + k;
         c2 = y + k;
         if (cups->header.cupsColorSpace == CUPS_CSPACE_RGBW) {
-	  if (k >= frac_1) {
+	  if ((k >= frac_1 - 1) ||
+	      ((c0 >= frac_1) && (c1 >= frac_1) && (c2 >= frac_1))) {
 	    c0 = frac_1;
 	    c1 = frac_1;
 	    c2 = frac_1;
