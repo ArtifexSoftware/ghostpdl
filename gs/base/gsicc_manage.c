@@ -1005,7 +1005,7 @@ gsicc_init_device_profile_struct(gx_device * dev,
                the new one else we just return */
             if (profile_name != NULL) {
                 if (strncmp(curr_profile->name, profile_name,
-                            strlen(profile_name) != 0 )) {
+                            strlen(profile_name)) != 0 ) {
                 /* A change in the profile.  rc decrement this one as it will
                    be replaced */
                     rc_decrement(dev->icc_struct->device_profile[profile_type],
