@@ -329,7 +329,7 @@ epsc_print_page(gx_device_printer *pdev, FILE *prn_stream)
 **	but lets check anyway
 */
                         if (current_color)
-                                fprintf(prn_stream,"\033r%d",current_color ^ 7);
+                                fprintf(prn_stream,"\033r%c",current_color ^ 7);
                         }
 
                 /* We have to 'transpose' blocks of 8 pixels x 8 lines, */
