@@ -57,9 +57,6 @@ SHARE_LCMS?=0
 # Specify the location of lcms2
 LCMS2SRCDIR?=../gs/lcms2
 
-# Specify the location of imdi
-IMDISRCDIR?=../gs/imdi
-
 # PCL_INCLUDED means PCL + PCL XL
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED
 
@@ -216,7 +213,6 @@ DEVICE_DEVS?=$(X11DEVS) \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev\
-   $(DD)wtscmyk.dev $(DD)wtsimdi.dev\
    $(DD)romfs$(COMPILE_INITS).dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\

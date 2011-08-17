@@ -92,11 +92,6 @@ LCMSSRCDIR=..\gs\lcms
 LCMS2SRCDIR=..\gs\lcms2
 !endif
 
-# Specify the location of imdi
-!ifndef IMDISRCDIR
-IMDISRCDIR=..\gs\imdi
-!endif
-
 # PCL_INCLUDED means pcl + pcl xl
 !ifndef PDL_INCLUDE_FLAGS
 PDL_INCLUDE_FLAGS=/DPCL_INCLUDED
@@ -391,7 +386,7 @@ TARGET_DEVS= $(TARGET_DEVS) $(XPSOBJDIR)/xps.dev
 
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)\display.dev\
- $(DD)\ljet4.dev $(DD)\wtsimdi.dev\
+ $(DD)\ljet4.dev\
  $(DD)\bmpmono.dev $(DD)\bmp16m.dev $(DD)\bmp32b.dev\
  $(DD)\bitcmyk.dev $(DD)\bitrgb.dev $(DD)\bit.dev\
  $(DD)\pkmraw.dev $(DD)\ppmraw.dev $(DD)\pgmraw.dev $(DD)\pbmraw.dev\
@@ -407,8 +402,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\tiffscaled.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev\
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\pngmonod.dev $(DD)\jpeg.dev \
  $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
- $(DD)\plan.dev $(DD)\planm.dev $(DD)\plang.dev $(DD)\planc.dev $(DD)\plank.dev \
- $(DD)\wtscmyk.dev $(DD)\wtsimdi.dev
+ $(DD)\plan.dev $(DD)\planm.dev $(DD)\plang.dev $(DD)\planc.dev $(DD)\plank.dev
 !endif
 
 # GS options
