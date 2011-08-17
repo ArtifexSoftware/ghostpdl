@@ -140,11 +140,6 @@ WHICH_CMS=lcms
 #IJSSRCDIR=ijs
 #IJSEXECTYPE=unix
 
-# Define the directory where the imdi library source is stored.
-# See devs.mak for more information
-
-IMDISRCDIR=imdi
-
 # ------ Platform-specific options ------ #
 
 # Define the name of the C compiler.

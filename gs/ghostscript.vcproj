@@ -1130,10 +1130,6 @@
 					RelativePath="base\vdtrace.c"
 					>
 				</File>
-				<File
-					RelativePath="base\wtsimdi.c"
-					>
-				</File>
 				<Filter
 					Name="rinkj"
 					>
@@ -1371,10 +1367,6 @@
 					</File>
 					<File
 						RelativePath="base\gdevijs.c"
-						>
-					</File>
-					<File
-						RelativePath="base\gdevimdi.c"
 						>
 					</File>
 					<File
@@ -3624,66 +3616,6 @@
 				</File>
 				<File
 					RelativePath="ijs\unistd_.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="imdi"
-				>
-				<File
-					RelativePath="imdi\arch.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\cctiff.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\cgen.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\config.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\copyright.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_gen.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_gen.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_imp.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_k.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_k.h"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_tab.c"
-					>
-				</File>
-				<File
-					RelativePath="imdi\imdi_tab.h"
 					>
 				</File>
 			</Filter>

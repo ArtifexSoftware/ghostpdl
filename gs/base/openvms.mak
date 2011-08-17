@@ -154,11 +154,6 @@ WHICH_CMS=lcms
 #IJSSRCDIR=[.ijs]
 #IJSEXECTYPE=unix
 
-# Define the directory where the imdi source are stored.
-# See imdi.mak for more information
-
-IMDISRCDIR=[.imdi]
-
 # Note that built-in third-party libraries aren't available.
 
 SHARE_JPEG=0

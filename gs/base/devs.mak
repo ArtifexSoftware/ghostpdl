@@ -1571,56 +1571,6 @@ $(DD)pngalpha.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev $(GDEV)
 	$(SETPDEV2) $(DD)pngalpha $(png_)
 	$(ADDMOD) $(DD)pngalpha $(png_i_)
 
-### --------------------- WTS Halftoning drivers ----------------------  ###
-
-### IMDI from Argyll
-
-IMDISRC=$(IMDISRCDIR)$(D)
-
-simdi_=$(GLOBJ)imdi.$(OBJ) $(GLOBJ)imdi_tab.$(OBJ)
-
-$(GLOBJ)imdi.$(OBJ) : $(IMDISRC)imdi.c
-	$(GLCC) $(GLO_)imdi.$(OBJ) $(C_) $(IMDISRC)imdi.c
-
-$(GLOBJ)imdi_tab.$(OBJ) : $(IMDISRC)imdi_tab.c
-	$(GLCC) $(GLO_)imdi_tab.$(OBJ) $(C_) $(IMDISRC)imdi_tab.c
-
-$(DD)simdi.dev : $(DEVS_MAK) $(simdi_) $(GDEV)
-	$(SETMOD) $(DD)simdi $(simdi_)
-
-### WTS halftoning CMYK device
-
-wts_=$(GLOBJ)gdevwts.$(OBJ)
-
-$(GLOBJ)gdevwts.$(OBJ) : $(GLSRC)gdevwts.c $(PDEVH)\
- $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
- $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h)
-	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevwts.$(OBJ) $(C_) $(GLSRC)gdevwts.c
-
-$(DD)wtscmyk.dev : $(DEVS_MAK) $(wts_) $(GLD)page.dev $(GDEV)
-	$(SETPDEV2) $(DD)wtscmyk $(wts_)
-
-$(DD)wtsimdi.dev : $(DEVS_MAK) $(wts_) $(GLD)sicclib.dev $(GLD)simdi.dev\
- $(GLD)page.dev $(GDEV)
-	$(SETPDEV2) $(DD)wtsimdi $(wts_)
-	$(ADDMOD) $(DD)wtsimdi -include $(GLD)sicclib
-	$(ADDMOD) $(DD)wtsimdi -include $(GLD)simdi
-
-### IMDI color converting device
-
-imdi_=$(GLOBJ)gdevimdi.$(OBJ)
-
-$(GLOBJ)gdevimdi.$(OBJ) : $(GLSRC)gdevimdi.c $(PDEVH) \
-    $(gscdefs_h) $(gscspace_h) $(gxgetbit_h) $(gxiparam_h) $(gxlum_h)\
-    $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h)
-	$(GLCC) -I$(IMDISRCDIR) $(GLO_)gdevimdi.$(OBJ) $(C_) $(GLSRC)gdevimdi.c
-
-$(DD)imdi.dev : $(DEVS_MAK) $(imdi_) $(GLD)page.dev $(GLD)sicclib.dev\
- $(GLD)simdi.dev $(GDEV)
-	$(SETPDEV2) $(DD)imdi $(imdi_)
-	$(ADDMOD) $(DD)imdi -include $(GLD)sicclib
-	$(ADDMOD) $(DD)imdi -include $(GLD)simdi
-
 ### ---------------------- PostScript image format ---------------------- ###
 ### These devices make it possible to print monochrome Level 2 files on a ###
 ###   Level 1 printer, by converting them to a bitmap in PostScript       ###
