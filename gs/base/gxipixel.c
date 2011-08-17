@@ -734,8 +734,9 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     return -1;
 }
 
+
 static void
-image_cache_decode(gx_image_enum *penum, byte input, byte *output)
+image_cache_decode(gx_image_enum *penum, byte input, byte *output, bool scale)
 {
     float temp;
 
@@ -752,7 +753,9 @@ image_cache_decode(gx_image_enum *penum, byte input, byte *output)
         case sd_compute:
             temp = penum->map[0].decode_base +
                 (float) input * penum->map[0].decode_factor;
-            temp *= 255;
+            if (scale) {
+                temp = temp * 255.0;
+            }
             if (temp > 255) temp = 255;
             if (temp < 0 ) temp = 0;
             *output = (unsigned char) temp;
@@ -761,6 +764,21 @@ image_cache_decode(gx_image_enum *penum, byte input, byte *output)
             *output = 0;
             break;
     }
+}
+
+static bool
+decode_range_needed(gx_image_enum *penum)
+{
+    float temp0, temp1, max_temp;
+    bool scale = true;
+
+    if (penum->map[0].decoding == sd_compute) {
+        if (!(gs_color_space_is_ICC(penum->pcs) || 
+            gs_color_space_is_PSCIE(penum->pcs))) {
+            scale = false;
+        } 
+    } 
+    return scale;
 }
 
 /* A special case where we go ahead and initialize the whole index cache with
@@ -777,6 +795,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     bool need_decode = penum->icc_setup.need_decode;
     bool has_transfer = penum->icc_setup.has_transfer;
     byte value;
+    bool decode_scale;
     int k, kk;
     byte psrc[4];
     byte *temp_buffer;
@@ -819,6 +838,11 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
        the manner shown below so that the common case of no decode and indexed
        image with a look-up-table uses the table data directly or does as many
        operations with memcpy as we can */
+    /* Need to check the decode output range so we know how we need to scale.
+       We want 8 bit output */
+    if (need_decode) {
+        decode_scale = decode_range_needed(penum);
+    }
     if (penum->icc_link->is_identity) {
         /* No CM needed.  */
         if (need_decode || has_transfer) {
@@ -827,7 +851,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
             for (k = 0; k < num_entries; k++) {
                 /* Data is in k */
                 if (need_decode) {
-                    image_cache_decode(penum, k, &value);
+                    image_cache_decode(penum, k, &value, decode_scale);
                 } else {
                     value = k;
                 }
@@ -882,14 +906,14 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
             if (is_indexed) {
                 /* Decode and un-indexed */
                 for (k = 0; k < num_entries; k++) {
-                    image_cache_decode(penum, k, &value);
+                    image_cache_decode(penum, k, &value, decode_scale);
                     gs_cspace_indexed_lookup_bytes(penum->pcs, value, psrc);
                     memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
                 }
             } else {
                 /* Decode only */
                 for (k = 0; k < num_entries; k++) {
-                    image_cache_decode(penum, k, &(temp_buffer[k]));
+                    image_cache_decode(penum, k, &(temp_buffer[k]), decode_scale);
                 }
             }
         } else {
