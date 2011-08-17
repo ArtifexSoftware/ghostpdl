@@ -146,11 +146,6 @@ JBIG2SRCDIR=jbig2dec
 #IJSSRCDIR=ijs
 #IJSEXECTYPE=win
 
-# Define the directory where the imdi library source is stored.
-# See devs.mak for more information
-
-IMDISRCDIR=imdi
-
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
 USE_LARGE_COLOR_INDEX=1

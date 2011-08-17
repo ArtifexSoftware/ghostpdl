@@ -1242,8 +1242,6 @@ AC_ARG_WITH(drivers,
 			  PNG      = Output to PNG
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
-			  WTS      = WTS Halftoning devices
-			  ETS      = ETS Halftoning devices
                           You can mix both variants, e.g.
                           --with-drivers=HP,stcolor would build HP drivers and
                           the Epson stcolor driver.
@@ -1296,7 +1294,6 @@ TIFF_DEVS='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw t
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox'
-WTS_HALFTONING_DEVS='imdi simdi wtsimdi wtscmyk'
 MISC_FDEVS='ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf'
 SVGDEV='svgwrite'
 
@@ -1323,7 +1320,7 @@ while test -n "$drivers"; do
                 IJS_DEVS0="$IJSDEVS"
 		;;
 	FILES)
-		F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $WTS_HALFTONING_DEVS $MISC_FDEVS"
+		F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
 		CUPS_DEVS0="$CUPSDEV"
 		JBIG2_DEVS="$JBIG2DEVS"
 		PNG_DEVS0="$PNGDEVS"
@@ -1415,10 +1412,6 @@ while test -n "$drivers"; do
 	SVG)
 		# PostScript/PDF writing
 		SVG_DEVS0="$SVGDEV"
-		;;
-	WTS)
-		# WTS Halftoning devices
-		F_DEVS0="$F_DEVS0 $WTS_HALFTONING_DEVS"
 		;;
 	ETS)
 		# ETS Halftoning devices
