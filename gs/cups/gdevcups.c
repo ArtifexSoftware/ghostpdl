@@ -171,7 +171,7 @@ private int cups_get_params(gx_device *, gs_param_list *);
 private dev_proc_open_device(cups_open);
 private int cups_print_pages(gx_device_printer *, FILE *, int);
 private int cups_put_params(gx_device *, gs_param_list *);
-private void cups_set_color_info(gx_device *);
+private int cups_set_color_info(gx_device *);
 private dev_proc_sync_output(cups_sync_output);
 private prn_dev_proc_get_space_params(cups_get_space_params);
 
@@ -426,8 +426,10 @@ gx_device_cups	gs_cups_device =
   {0x00},                                  /* DecodeLUT */
   {0x00},                                  /* EncodeLUT */
   {0x00},                                  /* Density */
-  {0x00},                                  /* Matrix */
-  0,
+  {{{0x00},{0x00},{0x00}},
+   {{0x00},{0x00},{0x00}},
+   {{0x00},{0x00},{0x00}}},                /* Matrix */
+  0,                                       /* user_icc */
   3                                     /* cupsRasterVersion */
 };
 
@@ -732,6 +734,8 @@ cups_get_color_comp_index(gx_device * pdev, const char * pname,
 	    return 0;
 	else
 	    return -1;
+        break;
+    default:
         break;
   }
   return -1;
@@ -1747,8 +1751,10 @@ cups_map_cmyk_color(gx_device      *pdev,
   * Setup the color info data as needed...
   */
 
-  if (pdev->color_info.num_components == 0)
-    cups_set_color_info(pdev);
+  if (pdev->color_info.num_components == 0) {
+    if (cups_set_color_info(pdev) < 0)
+      return(gx_no_color_index);
+  }
 
  /*
   * Density correct...
@@ -1907,8 +1913,10 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
   * Setup the color info data as needed...
   */
 
-  if (pdev->color_info.num_components == 0)
-    cups_set_color_info(pdev);
+  if (pdev->color_info.num_components == 0) {
+    if (cups_set_color_info(pdev) < 0)
+      return(gx_no_color_index);
+  }
 
 #ifdef DEBUG
   dprintf1("DEBUG2: COLOR %08x = ", (unsigned)color);
@@ -2178,8 +2186,10 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
   * Setup the color info data as needed...
   */
 
-  if (pdev->color_info.num_components == 0)
-    cups_set_color_info(pdev);
+  if (pdev->color_info.num_components == 0) {
+    if (cups_set_color_info(pdev) < 0)
+        return(gx_no_color_index);
+  }
 
  /*
   * Do color correction as needed...
@@ -2719,7 +2729,9 @@ cups_open(gx_device *pdev)		/* I - Device info */
     cups->page = 1;
   }
 
-  cups_set_color_info(pdev);
+  if ((code = cups_set_color_info(pdev)) < 0) {
+    return(code);
+  }
 
   if ((code = gdev_prn_open(pdev)) != 0)
     return (code);
@@ -3144,7 +3156,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     cups->Profile = strdup((char *)stringval.data);
   }
 
-  cups_set_color_info(pdev);
+  if ((code = cups_set_color_info(pdev)) < 0) {
+      return(code);
+  }
 
   /*
   * Then process standard page device options...
@@ -3661,7 +3675,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
  *                           the required output.
  */
 
-private void
+private int
 cups_set_color_info(gx_device *pdev)	/* I - Device info */
 {
   int		i, j, k;		/* Looping vars */
@@ -3670,7 +3684,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   float		m[3][3];		/* Color correction matrix */
   char		resolution[41];		/* Resolution string */
   ppd_profile_t	*profile;		/* Color profile information */
-  int           code;
+  int           code = 0;
 
 #ifdef DEBUG
   dprintf1("DEBUG2: cups_set_color_info(%p)\n", pdev);
@@ -4154,6 +4168,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
         break;
     }
   }
+  return(code);
 }
 
 /*
