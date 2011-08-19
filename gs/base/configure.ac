@@ -255,7 +255,11 @@ if test "$ac_cv_c_const" != yes; then
 	GCFLAGS="$GCFLAGS -Dconst="
 fi
 if test "x$ac_cv_header_stdint_h" = xyes; then
-	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H"
+	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H=1"
+fi
+
+if test "x$ac_cv_header_sys_time_h" = xyes; then
+	GCFLAGS="$GCFLAGS -DHAVE_SYS_TIME_H=1"
 fi
 
 dnl try to find a 64 bit type for devicen color index
