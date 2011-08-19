@@ -22,6 +22,9 @@
 /*
  * Define the parameters controlling banding.
  */
+/* if you make any additions/changes to this structure you need to make
+   the appropriate additions/changes to the compare_gdev_prn_space_params()
+   function in gdevprn.c */
 typedef struct gx_band_params_s {
     bool page_uses_transparency; /* PDF 1.4 transparency is used on the page */
     int BandWidth;		/* (optional) band width in pixels */
