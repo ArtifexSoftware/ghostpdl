@@ -769,7 +769,6 @@ image_cache_decode(gx_image_enum *penum, byte input, byte *output, bool scale)
 static bool
 decode_range_needed(gx_image_enum *penum)
 {
-    float temp0, temp1, max_temp;
     bool scale = true;
 
     if (penum->map[0].decoding == sd_compute) {
@@ -795,7 +794,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     bool need_decode = penum->icc_setup.need_decode;
     bool has_transfer = penum->icc_setup.has_transfer;
     byte value;
-    bool decode_scale;
+    bool decode_scale = true;
     int k, kk;
     byte psrc[4];
     byte *temp_buffer;
