@@ -1,18 +1,18 @@
 #******************************************************************************
-# File:     @(#)$Id: reports.txt,v 2.13 2001/08/14 16:20:35 Martin Rel $
+# File:     @(#)$Id: reports.txt,v 2.16+ 2003/05/07 15:24:17 Martin Exp $
 # Contents: Hardware compatibility reports for pcl3
 # Author:   Martin Lottermoser, Greifswaldstrasse 28, 38124 Braunschweig,
-#           Germany. E-mail: Martin.Lottermoser@t-online.de.
+#           Germany. Electronically: Martin.Lottermoser at t-online.de.
 #
 #******************************************************************************
 #									      *
-#	Copyright (C) 2000, 2001 by Martin Lottermoser			      *
+#	Copyright (C) 2000, 2001, 2002, 2003 by Martin Lottermoser	      *
 #	All rights reserved						      *
 #									      *
 #******************************************************************************
 #
 # For a description of the format and the meaning of the entries in this file,
-# see how-to-report.txt.
+# see how-to-report.txt in the pcl3 distribution.
 #
 # The reports are sorted by the following criteria:
 # - company and printer name (basically alphabetically ascending)
@@ -37,7 +37,6 @@
 # (includes 2000Cse, 2000Cxi, and 2000CN)
 
 Name: Torsten Ian Smith
-E-mail address: torstenian@get2net.dk
 Date: 2001-04-18
 Printer: HP 2000C Version 9.5.1.R
 Ghostscript version: 6.50
@@ -47,7 +46,6 @@ Success: -sDEVICE=pcl3 -sColorModel=CMYK -dCompressionMethod=9
   -sSubdevice=unspec -sMedium=plain -sPrintQuality=1
 
 Name: Torsten Ian Smith
-E-mail address: torstenian@get2net.dk
 Date: 2001-04-08
 Printer: HP 2000C Version 9.5.1.R
 Ghostscript version: 6.01
@@ -62,7 +60,6 @@ Success: gs -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs -sPJLLanguage=PCL3GUI
 # Hewlett-Packard 2500CM Professional Series Color Printer (model C2685A)
 
 Name: Ian Leonard
-E-mail address: ghostscript@denver.com.au
 Date: 2001-07-17
 Printer: HP Deskjet 2500CM C2685A FW-8.3.6
 Ghostscript version: 6.50
@@ -79,17 +76,56 @@ Success: -sDEVICE=pcl3 -sColorModel=CMYK -sSubdevice=unspec
 Success: -sDEVICE=pcl3 -sSubdevice=unspec -dSendNULs=600
          -sPJLLanguage=PCL3GUI -dOnlyCRD -r300 -sColourModel=CMYK
          -dBlackLevels=4 -dCMYLevels=4 -sPrintQuality=presentation
-         -sMedium=transparency -dCompressionMethod=9
+         -sMedium=transparency -dCompressionMethod=9.
   The above worked only if the command
    << /PCLInit1 <1B2A6F375708090000070101> >> setpagedevice
   was included before the document to be printed.
 
 #******************************************************************************
 
+# Hewlett-Packard DesignJet 500 42" (non-PS) (Wide-format printer)
+
+Name: Sergey Zaikov
+Date: 21.04.2003
+Printer: HP DesignJet 500 42", Engine F/W:A.02.01
+Ghostscript version: AFPL, revision 704
+pcl3 version: 3.3
+Remarks: 1. Really needs gamma-correction.
+         2. I didn't try to print with 300dpi.
+Success: gs -sDEVICE=pcl3 -sSubdevice=unspec -sPJLLanguage=PCL3GUI -dOnlyCRD \
+            -r600 -sColourModel=CMYK -dCMYLevels=4 -sPrintQuality=presentation\
+            -sMedium=plain -sIntensityRendering=Floyd-Steinberg \
+            -sOutputFile=levels-test.prn levels-test.ps
+Remarks: -sIntensityRendering other then Floyd-Steinberg gives blank fields
+            from 0 to 17 at test with 43 levels.
+	-sIntensityRendering=halftone doesn't need gamma-correction,
+            but black fields from 0 to 27 are blank.
+        -dCMYLevels=2 leads to the insertion of broad white horizontal stripes
+        (height 13+/-0.5 mm) between parts of the page.
+
+#******************************************************************************
+
+# Hewlett-Packard DeskJet 670C
+
+Name: Francesco Potortì
+Date: 2003-02-20
+Printer: hp deskjet 670c
+Ghostscript version: Debian gs 6.53-3 (GPL)
+pcl3 version: 3.3
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r300 -sColourMode=mono -sPrintQuality=draft.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=mono -sPrintQuality=draft.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=mono -sPrintQuality=presentation.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=CMYK -sPrintQuality=presentation.
+
+#******************************************************************************
+
 # Hewlett-Packard DeskJet 697C
 
 Name: Oliver Schurr
-E-mail address: schurro@georgetown.edu
 Date: 2001-02-02
 Printer: Hewlett-Packard DeskJet 697C
 Ghostscript version: AFPL GS 6.50
@@ -107,7 +143,6 @@ Remarks: in each case I used 'lpr -Praw test.pcl' to send the file to the
 # Hewlett-Packard DeskJet 850C (model C2145A)
 
 Name: Martin Lottermoser
-E-mail address: Martin.Lottermoser@t-online.de
 Date: 2000-10-21
 Printer: Hewlett-Packard DeskJet 850C, model C2145A, revision: 9.20 01/14/95
 Ghostscript version: Aladdin ghostscript 6.01
@@ -162,10 +197,27 @@ Success: -sDEVICE=hpdj850c -r300 -sColourModel=CMYK -dBlackLevels=4
 
 #******************************************************************************
 
+# Hewlett-Packard DeskJet 940C
+
+Name: Francesco Potortì
+Date: 2003-02-20
+Printer: hp deskjet 940c
+Ghostscript version: Debian gs 6.53-3 (GPL)
+pcl3 version: 3.3
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r300 -sColourMode=mono -sPrintQuality=draft.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=mono -sPrintQuality=draft.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=mono -sPrintQuality=presentation.
+Success:  -sDEVICE=pcl3 -sModel=unspec
+	  -r600 -sColourMode=CMYK -sPrintQuality=presentation.
+
+#******************************************************************************
+
 # Hewlett-Packard DeskJet 970C (model C6429A)
 
 Name: Patrick Brison
-E-mail address: pbn@rtbf.be
 Date: 2001/01/29
 Printer: DeskJet970Cxi (model C6429A)
          Serial Number: ES989130ZPJQ
@@ -293,7 +345,6 @@ Success: -sDEVICE=pcl3
 # Hewlett-Packard DeskJet 1100C
 
 Name: Klaus Reimann
-E-mail address: Klaus.Reimann@itap.physik.uni-stuttgart.de
 Date: 2000-12-08
 Printer: HP DJ 1100C
 Ghostscript version: 6.30
@@ -304,7 +355,6 @@ Success: -sPJLLanguage=PCL3GUI -dOnlyCRD -sDEVICE=pcl3 -sSubdevice=unspec
 
 
 Name: Klaus Reimann
-E-mail address: Klaus.Reimann@itap.physik.uni-stuttgart.de
 Date: 2000-12-08
 Printer: HP DJ 1100C
 Ghostscript version: 6.30
@@ -487,3 +537,43 @@ Success: -sDEVICE=pcl3 -sSubdevice=unspec -r600 -sPrintQuality=normal
         BOTTOM: 17/48"
         LEFT: 7/48"
         RIGHT: 17/48"
+
+#******************************************************************************
+
+# Xerox WorkCentre M940
+
+Name: Rafael Escovar
+Date: 2002-03-18
+Printer: Xerox WorkCentre M940
+Ghostscript version: GNU 6.53
+pcl3 version: 3.3
+
+Remarks: I have problems when printing multipage documents. 
+  This is fixed using -dConfigureEveryPage=true (which I shall omit
+  in the Success and Failure lines). 
+
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -r600 -sPrintQuality=normal
+        -sMedium=plain -sColorModel=Gray.
+  I get perfect output. Grayscaling seems to be correct.
+  There was an excess of black ink which was fixed preprocessing a file
+  with postscript  command:
+  {0.3 exp} settransfer
+
+Success: -sDEVICE=pcl3 -sSubdevice=unspec -r600 -sPrintQuality=normal
+        -sMedium=plain -sColorModel=CMY+K.
+  I get perfect output. 
+
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r600x300 -sPrintQuality=normal
+        -sMedium=plain -sColorModel=Gray or CMY+K.
+  The output is Ok, but flat. What was printed in one page before gets
+  printed in half a page.
+
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r300 -sPrintQuality=normal
+        -sMedium=plain -sColorModel=Gray or CMY+K.
+  The output is partly readable but very overlapped.
+
+Failure: -sDEVICE=pcl3 -sSubdevice=unspec -r600 -sPrintQuality=normal
+        -sMedium=plain -sColorModel=CMYK.
+  CMYK mode seems not to work with my printer. Although I get perfectly clear
+  output the color disposition is not correct (I get blanks where there should
+  be color). 
