@@ -209,10 +209,14 @@ typedef enum {
     BandingAlways,
     BandingNever
 } gdev_prn_banding_type;
+
+/* if you make any additions/changes to this structure you need to make
+   the appropriate additions/changes to the compare_gdev_prn_space_params()
+   function in gdevprn.c */
 struct gdev_prn_space_params_s {
     long MaxBitmap;		/* max size of non-buffered bitmap */
     long BufferSpace;		/* space to use for buffer */
-    gx_band_params_t band;	/* see gxclist.h */
+    gx_band_params_t band;	/* see gxband.h */
     bool params_are_read_only;	/* true if put_params may not modify this struct */
     gdev_prn_banding_type banding_type;	/* used to force banding or bitmap */
 };
