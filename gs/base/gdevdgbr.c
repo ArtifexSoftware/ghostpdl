@@ -41,7 +41,7 @@ gx_default_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
     rect.p.x = 0, rect.p.y = y;
     rect.q.x = dev->width, rect.q.y = y + 1;
     params.options =
-        GB_RETURN_POINTER | GB_RETURN_COPY |        
+        (actual_data ? GB_RETURN_POINTER : 0) | GB_RETURN_COPY |
         (GB_ALIGN_STANDARD | GB_OFFSET_0 | GB_RASTER_STANDARD |
     /* No depth specified, we always use native colors. */
          GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE);
