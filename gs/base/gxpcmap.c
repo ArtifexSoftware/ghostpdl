@@ -248,6 +248,12 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int force_no_clist = 0;
     int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
+
+    /* For now, if the target is planar force us to use pattern in clist 
+       mode until we fix the drawing procs */
+    if (dev_proc(tdev, dev_spec_op)(tdev, gxdso_is_native_planar, NULL, 0)) {
+        max_pattern_bitmap = 0;
+    }
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
