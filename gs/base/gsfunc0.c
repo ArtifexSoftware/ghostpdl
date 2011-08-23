@@ -21,6 +21,7 @@
 #include "gxfarith.h"
 #include "gxfunc.h"
 #include "stream.h"
+#include "gsccolor.h"           /* Only for GS_CLIENT_COLOR_MAX_COMPONENTS */
 
 #define POLE_CACHE_DEBUG 0      /* A temporary development technology need.
                                    Remove after the beta testing. */
@@ -63,8 +64,13 @@ RELOC_PTRS_END
 
 /* Define the maximum plausible number of inputs and outputs */
 /* for a Sampled function. */
-#define max_Sd_m 16
-#define max_Sd_n 16
+#ifndef GS_CLIENT_SAMPLED_FN_MAX_COMPONENTS		/* Allow override with XCFLAGS */
+#  define max_Sd_m GS_CLIENT_COLOR_MAX_COMPONENTS
+#  define max_Sd_n GS_CLIENT_COLOR_MAX_COMPONENTS
+#else
+#  define max_Sd_m GS_CLIENT_SAMPLED_FN_MAX_COMPONENTS
+#  define max_Sd_n GS_CLIENT_SAMPLED_FN_MAX_COMPONENTS
+#endif
 
 /* Get one set of sample values. */
 #define SETUP_SAMPLES(bps, nbytes)\
