@@ -30,6 +30,7 @@
 #include "gxcldev.h"
 #include "gxblend.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 #include "gdevp14.h"
 
@@ -51,6 +52,8 @@ typedef struct tile_fill_state_s {
     gx_device *pcdev;           /* original device or &cdev */
     const gx_strip_bitmap *tmask;
     gs_int_point phase;
+    int num_planes;    /* negative if not planar */
+    
 
     /* Following are only for uncolored patterns */
 
@@ -90,8 +93,15 @@ tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
 {
     gx_color_tile *m_tile = pdevc->mask.m_tile;
     int px, py;
+    bool is_planar;
 
     ptfs->pdevc = pdevc;
+    is_planar = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
+    if (is_planar) {
+        ptfs->num_planes = dev->color_info.num_components;
+    } else {
+        ptfs->num_planes = -1;
+    }
     if (m_tile == 0) {          /* no clipping */
         ptfs->pcdev = dev;
         ptfs->phase = pdevc->phase;
@@ -226,19 +236,33 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
     gx_device *dev = ptfs->orig_dev;
     int xoff = ptfs->xoff, yoff = ptfs->yoff;
     gx_strip_bitmap *bits = &ptile->tbits;
+    int plane_step = ptile->tbits.raster * ptile->tbits.rep_height;
     const byte *data = bits->data;
     bool full_transfer = (w == ptfs->w0 && h == ptfs->h0);
     gx_bitmap_id source_id =
     (full_transfer ? rop_source->id : gx_no_bitmap_id);
-    int code;
+    int code = 0;
+    int k;
+    byte *data_plane;
 
-    if (source == NULL && lop_no_S_is_T(lop))
-        code = (*dev_proc(ptfs->pcdev, copy_color))
-            (ptfs->pcdev, data + bits->raster * yoff, xoff,
-             bits->raster,
-             (full_transfer ? bits->id : gx_no_bitmap_id),
-             x, y, w, h);
-    else {
+    if (source == NULL && lop_no_S_is_T(lop)) {
+        if (ptfs->num_planes < 0) {
+                code = (*dev_proc(ptfs->pcdev, copy_color))
+                    (ptfs->pcdev, data + bits->raster * yoff, xoff,
+                     bits->raster,
+                     (full_transfer ? bits->id : gx_no_bitmap_id),
+                     x, y, w, h);
+        } else {
+            for (k = 0; k < ptfs->num_planes; k++) {
+                /* Get the proper pointer to the data plane */
+                data_plane = (byte*) (data + plane_step * k);
+                (*dev_proc(ptfs->pcdev, copy_plane)) (ptfs->pcdev, 
+                    data_plane + bits->raster * yoff, xoff, bits->raster,
+                                             gx_no_bitmap_id, x, y,
+                                             w, h, k);
+            }
+        }
+    } else {
         gx_strip_bitmap data_tile;
 
         data_tile.data = (byte *) data;         /* actually const */
