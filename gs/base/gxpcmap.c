@@ -1091,30 +1091,78 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
    file name */
 static void
 dump_raw_pattern(int height, int width, int n_chan, int depth,
-                byte *Buffer, int raster)
+                byte *Buffer, int raster, const gx_device_memory * mdev)
 {
     char full_file_name[50];
     FILE *fid;
     int max_bands;
-    int j,k;
+    int j, k, m;
     int byte_number, bit_position;
     unsigned char current_byte;
     unsigned char output_val;
+    bool is_planar;
+    byte *curr_ptr = Buffer;
+    int plane_offset;
 
+    is_planar = dev_proc(mdev, dev_spec_op)(mdev, gxdso_is_native_planar, NULL, 0);
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
-    sprintf(full_file_name,"%d)PATTERN_%dx%dx%d.raw",global_pat_index,width,height,max_bands);
-    fid = fopen(full_file_name,"wb");
-    if (depth > 1) {
-        fwrite(Buffer,1,max_bands*height*width,fid);
+    if (is_planar) {
+        sprintf(full_file_name,"%d)PATTERN_PLANE_%dx%dx%d.raw",global_pat_index,
+                width,height,max_bands);
     } else {
-        /* Binary image. Lets get to 8 bit for debugging */
-        for (j = 0; j < height; j++) {
-            for (k = 0; k < width; k++) {
-                byte_number = (int) ceil((( (float) k + 1.0) / 8.0)) - 1;
-                current_byte = Buffer[j*raster+byte_number];
-                bit_position = 7 - (k -  byte_number*8);
-                output_val = ((current_byte >> bit_position) & 0x1) * 255;
-                fwrite(&output_val,1,1,fid);
+        sprintf(full_file_name,"%d)PATTERN_CHUNK_%dx%dx%d.raw",global_pat_index,
+                width,height,max_bands);
+    }
+    fid = fopen(full_file_name,"wb");
+    if (depth == 8 * n_chan) {
+        /* Contone data. */
+        if (is_planar) {
+            for (m = 0; m < max_bands; m++) {
+                curr_ptr = mdev->line_ptrs[m*mdev->height];
+                fwrite(curr_ptr,1,height*width,fid);
+            }
+        } else {
+            /* Just dump it like it is */
+            fwrite(Buffer,1,max_bands*height*width,fid);
+        }
+    } else {
+        /* Binary Data. Lets get to 8 bit for debugging.  We have to 
+           worry about planar vs. chunky.  Note this assumes 1 bit data
+           only. */
+        if (is_planar) {
+            plane_offset = mdev->raster * mdev->height;
+            for (m = 0; m < max_bands; m++) {
+                curr_ptr = mdev->line_ptrs[m*mdev->height];
+                for (j = 0; j < height; j++) {
+                    for (k = 0; k < width; k++) {
+                        byte_number = (int) ceil((( (float) k + 1.0) / 8.0)) - 1;
+                        current_byte = curr_ptr[j*(mdev->raster) + byte_number];
+                        bit_position = 7 - (k -  byte_number*8);
+                        output_val = ((current_byte >> bit_position) & 0x1) * 255;
+                        fwrite(&output_val,1,1,fid);
+                    }
+                }
+            }
+        } else {
+            for (j = 0; j < height; j++) {
+                for (k = 0; k < width; k++) {
+                    for (m = 0; m < max_bands; m++) {
+                        /* index current byte */
+                        byte_number = 
+                            (int) ceil((( (float) k * (float) max_bands + 
+                                          (float) m + 1.0) / 8.0)) - 1;
+                        /* get byte of interest */
+                        current_byte = 
+                                curr_ptr[j*(mdev->raster) + byte_number];
+                        /* get bit position */
+                        bit_position = 
+                                7 - (k * max_bands + m -  byte_number * 8);
+                        /* extract and create byte */
+                        output_val = 
+                                ((current_byte >> bit_position) & 0x1) * 255;
+                        fwrite(&output_val,1,1,fid);
+                    }
+                }
             }
         }
     }
@@ -1140,7 +1188,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
                         mdev->color_info.num_components,
                         mdev->color_info.depth,
                         (unsigned char*) mdev->base,
-                        pbm->raster);
+                        pbm->raster, mdev);
 
         global_pat_index++;
 
