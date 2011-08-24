@@ -408,9 +408,18 @@ pdfdict begin
        exch token pop		% generation #
        exch token pop		% n or f
        exch			% stack: <err count> <obj#> <loc> <gen#> <tag> <remainder of line>
-       dup length 0 ne {
-         % check to make sure trailing garbage is just white space
-         dup { 32 gt { 5 -1 roll 1 add 5 1 roll } if } forall   % bump error count on garbage
+       % check to make sure trailing garbage is just white space
+       //false 1 index { 32 gt or } forall {
+         6 -1 roll 1 add 6 1 roll  % bump error count on garbage
+         dup (\n) search {
+           exch pop exch pop
+         } {
+           (\r) search {
+             exch pop exch pop
+           } if
+         } ifelse
+         length
+         PDFfile fileposition exch sub PDFfile exch setfileposition
        } if
        pop			% Stack: <err count> <obj#> <loc> <gen#> <tag>
        dup /n eq {		% xref line tag is /n
