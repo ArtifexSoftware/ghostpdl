@@ -262,6 +262,9 @@ gx_cpath_unshare(gx_clip_path * pcpath)
 void
 gx_cpath_free(gx_clip_path * pcpath, client_name_t cname)
 {
+    if (pcpath == 0L)
+        return;
+
     rc_decrement(pcpath->rect_list, cname);
     rc_decrement(pcpath->path_list, cname);
     /* Clean up pointers for GC. */
