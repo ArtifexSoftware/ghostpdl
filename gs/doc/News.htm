@@ -80,7 +80,7 @@ but an important change for those develop Ghostscript and GhostPDL.
 <li>
 This release introduces flexibility for controlling color based upon the
 graphic object type.  In particular, it is now possible to specify unique
-output ICC profiles and rendering intents for vector graphic, image and tex
+output ICC profiles and rendering intents for vector graphic, image and text
 portions of a document.  It is also possible to override source color
 specifications and use specified ICC profiles and rendering intents for
 RGB and CMYK vector graphics, images and text portions of a document.  Finally,
@@ -90,7 +90,7 @@ or composite CMYK when the output device supports CMYK colorants.
 <br>
 <li>
 New tiffscaled8 and tiffscaled24 devices. Add new tiffscaled8 and tiffscaled24
-devices, copied and modified from tiffscaled. These output greyscale and 24bit rgb
+devices, copied and modified from tiffscaled. These output grayscale and 24bit rgb
 instead of tiffscaleds mono output. MinFeatureSize is ignored for these devices as
 it's meaningless for contone output. Downscaling is also now supported for png16m
 and pnggray, and a new pngmonod device has been implemented which uses grayscale
@@ -98,7 +98,7 @@ rendering internally and then downscales/min_feature_sizes/error diffuses to mon
 </li>
 <br>
 <li>
-The PDF interpreter will now try continue interpreting a PDF after encountering
+The PDF interpreter will now try to continue interpreting a PDF after encountering
 an error in a stream. The previous bevahior can be reinstated by passing
 -dPDFSTOPONERROR to Ghostscript.
 </li>
@@ -174,7 +174,7 @@ characters in (i.e. codes >= 128) will change. The net benefit of this
 change is that ghostscript will now be able to cope with accessing
 files with unicode characters (i.e. codes >= 256) in their pathnames.
 
-<p>This behaviour is all completely transparent to users, with the exception
+<p>This behavior is all completely transparent to users, with the exception
 of those calling the gsapi functions with strings including 'extended
 ascii' (i.e. characters with codes >= 128 and <= 255). These characters
 include accented latin characters, such as u + umlaut, a + grave etc.
