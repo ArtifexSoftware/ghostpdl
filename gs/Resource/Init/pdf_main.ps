@@ -2052,8 +2052,21 @@ currentdict /PDF2PS_matrix_key undef
   0 dict exch
   % Create a dict to be used to check for reference loops.
   4 dict exch
-  % Check for color spaces in the Resources
+  % Check for color spaces in the Resources  
   resourcespotcolors
+  % now check upwards in the object hierarchy in case of inherited resources
+  2 index
+  {
+    /Parent knownoget
+    {
+      dup 4 1 roll
+      resourcespotcolors
+      3 -1 roll
+    }
+    {
+      exit
+    } ifelse
+  } loop
   % Also check for color spaces in the annotations.
   3 -1 roll
   /Annots knownoget { annotsspotcolors } if
