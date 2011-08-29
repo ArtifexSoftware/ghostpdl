@@ -86,8 +86,15 @@ nodict readonly pop
 } bdef
 
 /gput		% <value> <key> gput -
- { exch currentdict //nodict eq { /self dup load end 5 dict begin def } if
-   def
+ { 
+   currentdict /n known {
+     pop pop
+     (   **** Ignoring changes to the graphic state after operator 'W'.\n)
+     pdfformaterror
+   } {
+     exch currentdict //nodict eq { /self dup load end 5 dict begin def } if
+     def
+   } ifelse  
  } bdef
 
 /q {
@@ -97,6 +104,12 @@ nodict readonly pop
 
 % Some PDF files have excess Q operators!
 /Q {
+  //false
+  { currentdict /n known { end pop //true } { exit } ifelse 
+  } loop {
+    (   **** Dropping unfinished 'W' mode at 'Q'.\n)
+    pdfformaterror
+  } if
   currentdict /self .knownget {
     exec //nodict eq {
       end
