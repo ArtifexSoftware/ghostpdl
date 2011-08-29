@@ -1725,13 +1725,17 @@ currentdict /PDF2PS_matrix_key undef
   << /PageSpotColors -1 >> .setpagedevice
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
-  countdictstack PDFdictstackcount sub dup 0 ne {
+  
+  PDFdictstackcount //false
+  { countdictstack 2 index le { exit } if
+    currentdict /n known not or
+    end
+  } loop {
     (   **** Warning: File has unbalanced q/Q operators \(too many q's\)\n)
     pdfformaterror
-    { end } repeat
-  } {
-    pop
-  } ifelse
+  } if
+  pop
+
   (after exec) VMDEBUG
   Repaired		% pass Repaired state around the restore
   PDFSave restore
