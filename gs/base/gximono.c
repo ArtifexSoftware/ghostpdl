@@ -87,11 +87,16 @@ gs_image_class_3_mono(gx_image_enum * penum)
            the interpolations occur this can cause a minor mismatch at large
            scalings */
 
-           /* Allow this for CMYK planar and mono binary halftoned devices */
-           dev_color_ok = ((penum->dev->color_info.num_components == 1 &&
-                            penum->dev->color_info.depth == 1) ||
-                           (penum->dev->color_info.num_components == 4 &&
-                            penum->dev->color_info.depth == 4 && is_planar_dev));
+        /* Allow this for CMYK planar and mono binary halftoned devices */
+        dev_color_ok = ((penum->dev->color_info.num_components == 1 &&
+                         penum->dev->color_info.depth == 1) ||
+#if 1
+                         /* Don't allow CMYK Planar devices just yet */
+                         0);
+#else
+                        (penum->dev->color_info.num_components == 4 &&
+                         penum->dev->color_info.depth == 4 && is_planar_dev));
+#endif
 
         if (use_fast_code && penum->pcs != NULL && dev_color_ok &&
             penum->bps == 8 && (penum->posture == image_portrait
