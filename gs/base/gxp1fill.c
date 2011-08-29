@@ -338,7 +338,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     code = tile_fill_init(&state, pdevc, dev, false);
     if (code < 0)
         return code;
-    if (ptile->is_simple && ptile->cdev == NULL) {
+    if (ptile->is_simple && ptile->cdev == NULL && state.num_planes == -1) {
         int px =
             imod(-(int)fastfloor(ptile->step_matrix.tx - state.phase.x + 0.5),
                  bits->rep_width);
