@@ -1794,7 +1794,7 @@ static void diff_bmp(unsigned char *bmp,
     }
 }
 
-static void save_meta(BBox *bbox, char *str, int w, int h, int page)
+static void save_meta(BBox *bbox, char *str, int w, int h, int page, int threshold, int window)
 {
     FILE *file;
 
@@ -1802,9 +1802,10 @@ static void save_meta(BBox *bbox, char *str, int w, int h, int page)
     if (file == NULL)
         return;
 
-    fprintf(file, "PW=%d\nPH=%d\nX=%d\nY=%d\nW=%d\nH=%d\nPAGE=%d\n",
+    fprintf(file, "PW=%d\nPH=%d\nX=%d\nY=%d\nW=%d\nH=%d\nPAGE=%d\nTHRESHOLD=%d\nWINDOW=%d\n",
             w, h, bbox->xmin, h-bbox->ymax,
-            bbox->xmax-bbox->xmin, bbox->ymax-bbox->ymin, page);
+            bbox->xmax-bbox->xmin, bbox->ymax-bbox->ymin, page,
+            threshold, window);
     fclose(file);
 }
 
@@ -2393,7 +2394,7 @@ int main(int argc, char *argv[])
                     save_bmp(bmp, boxlist, s, bpp, str3);
 #endif
                     sprintf(str4, "%s.%05d.meta", params.outroot, n);
-                    save_meta(boxlist, str4, w, h, imagecount);
+                    save_meta(boxlist, str4, w, h, imagecount, params.threshold, params.window);
                     n += 3;
                     /* If there is a maximum set */
                     if (params.maxdiffs > 0)
