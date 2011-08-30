@@ -501,7 +501,7 @@ gs_strokepath_aux(gs_state * pgs, bool traditional)
     if (code < 0)
         return code;
     /* NB: needs testing with PCL */
-    if (gs_currentcpsimode(pgs->memory) && gx_path_is_void(pgs->path))
+    if (gx_path_is_void(pgs->path))
         pgs->current_point_valid = false;
     else
         gx_setcurrentpoint(pgs, fixed2float(spath.position.x), fixed2float(spath.position.y));
