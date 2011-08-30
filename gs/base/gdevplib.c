@@ -239,12 +239,11 @@ typedef struct gx_device_plib_s gx_device_plib;
 #define Y_DPI 600
 
 /* For all but mono, we need our own color mapping and alpha procedures. */
-static dev_proc_map_color_rgb(plib_map_color_rgb);
-static dev_proc_map_rgb_color(plibg_map_rgb_color);
-static dev_proc_map_color_rgb(plibg_map_color_rgb);
-static dev_proc_map_rgb_color(plibc_map_rgb_color);
-static dev_proc_map_color_rgb(plibc_map_color_cmyk);
-static dev_proc_map_cmyk_color(plibc_map_cmyk_color);
+static dev_proc_decode_color(plib_decode_color);
+static dev_proc_encode_color(plibg_encode_color);
+static dev_proc_decode_color(plibg_decode_color);
+static dev_proc_decode_color(plibc_decode_color);
+static dev_proc_encode_color(plibc_encode_color);
 
 static dev_proc_open_device(plib_open);
 static dev_proc_close_device(plib_close);
@@ -266,14 +265,14 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
 /* The device procedures */
 
 /* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_map_rgb_color, p_map_color_rgb) {\
+#define pgpm_procs(p_encode_color, p_decode_color) {\
         plib_open,\
         NULL, /* get_initial_matrix */ \
         NULL, /* sync output */ \
         gdev_prn_output_page, \
         plib_close,\
-        p_map_rgb_color, /* map_rgb_color */ \
-        p_map_color_rgb, /* map_color_rgb */ \
+        NULL, /* map_rgb_color */ \
+        NULL, /* map_color_rgb */ \
         NULL, /* fill_rectangle */ \
         NULL, /* tile_rectangle */ \
         NULL, /* copy_mono */ \
@@ -282,7 +281,7 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL, /* get_bits */ \
         gdev_prn_get_params, \
         plib_put_params,\
-        p_map_rgb_color, /* map_cmyk_color */ \
+        NULL, /* map_cmyk_color */ \
         NULL, /* get_xfont_procs */ \
         NULL, /* get_xfont_device */ \
         NULL, /* map_rgb_alpha_color */ \
@@ -318,8 +317,8 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
         NULL,   /* discard_transparency_layer */\
         NULL,   /* get_color_mapping_procs */\
         NULL,   /* get_color_comp_index */\
-        p_map_rgb_color, /* encode_color */\
-        p_map_color_rgb, /* decode_color */\
+        p_encode_color, /* encode_color */\
+        p_decode_color, /* decode_color */\
         NULL,   /* pattern_manage */\
         NULL,   /* fill_rectangle_hl_color */\
         NULL,   /* include_color_space */\
@@ -338,13 +337,13 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
 static const gx_device_procs plibm_procs =
   pgpm_procs(gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
 static const gx_device_procs plibg_procs =
-  pgpm_procs(plibg_map_rgb_color, plibg_map_color_rgb);
+  pgpm_procs(plibg_encode_color, plibg_decode_color);
 static const gx_device_procs plib_procs =
-  pgpm_procs(gx_default_rgb_map_rgb_color, plib_map_color_rgb);
+  pgpm_procs(gx_default_rgb_map_rgb_color, plib_decode_color);
 static const gx_device_procs plibc_procs =
-  pgpm_procs(plibc_map_cmyk_color, plibc_map_color_cmyk);
+  pgpm_procs(plibc_encode_color, plibc_decode_color);
 static const gx_device_procs plibk_procs =
-  pgpm_procs(plibc_map_cmyk_color, plibc_map_color_cmyk);
+  pgpm_procs(plibc_encode_color, plibc_decode_color);
 
 /* Macro for generating device descriptors. */
 /* Ideally we'd use something like:
@@ -761,7 +760,7 @@ plib_close(gx_device *pdev)
 
 /* Map an RGB color to a gray value. */
 static gx_color_index
-plibg_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
+plibg_encode_color(gx_device * pdev, const gx_color_value cv[])
 {                               /* We round the value rather than truncating it. */
     gx_color_value gray;
     gx_color_value r, g, b;
@@ -778,8 +777,8 @@ plibg_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 
 /* Map a gray value back to an RGB color. */
 static int
-plibg_map_color_rgb(gx_device * dev, gx_color_index color,
-                  gx_color_value prgb[3])
+plibg_decode_color(gx_device * dev, gx_color_index color,
+                   gx_color_value prgb[3])
 {
     gx_color_value gray =
     color * gx_max_color_value / dev->color_info.max_gray;
@@ -792,7 +791,7 @@ plibg_map_color_rgb(gx_device * dev, gx_color_index color,
 
 /* Map an rgb color tuple back to an RGB color. */
 static int
-plib_map_color_rgb(gx_device * dev, gx_color_index color,
+plib_decode_color(gx_device * dev, gx_color_index color,
                   gx_color_value prgb[3])
 {
     uint bitspercolor = dev->color_info.depth / 3;
@@ -808,10 +807,10 @@ plib_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-/* Map a cmyk color tuple back to an RGB color. */
+/* Map a cmyk color tuple back to CMYK colorants. */
 static int
-plibc_map_color_cmyk(gx_device * dev, gx_color_index color,
-                       gx_color_value prgb[4])
+plibc_decode_color(gx_device * dev, gx_color_index color,
+                   gx_color_value prgb[4])
 {
     uint bitspercolor = dev->color_info.depth / 4;
     uint colormask = (1 << bitspercolor) - 1;
@@ -826,16 +825,16 @@ plibc_map_color_cmyk(gx_device * dev, gx_color_index color,
     color >>= bitspercolor;
     m = color & colormask;
     c = color >> bitspercolor;
-    k = colormask-k;
-    prgb[0] = cvalue((colormask - c) * k / colormask);
-    prgb[1] = cvalue((colormask - m) * k / colormask);
-    prgb[2] = cvalue((colormask - y) * k / colormask);
+    prgb[0] = cvalue(c);
+    prgb[1] = cvalue(m);
+    prgb[2] = cvalue(y);
+    prgb[3] = cvalue(k);
     return 0;
 }
 
 /* Map CMYK to color. */
 static gx_color_index
-plibc_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
+plibc_encode_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth / 4;
     int drop = sizeof(gx_color_value) * 8 - bpc;
