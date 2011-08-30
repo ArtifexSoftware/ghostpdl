@@ -722,6 +722,8 @@ label:\
         if (ppdev->file != NULL)
             gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
         ppdev->file = NULL;
+        if (sizeof(ppdev->fname) <= ofs.size)
+            return_error(gs_error_limitcheck);
         memcpy(ppdev->fname, ofs.data, ofs.size);
         ppdev->fname[ofs.size] = 0;
     }
