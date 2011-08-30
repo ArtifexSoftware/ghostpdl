@@ -223,7 +223,7 @@ bits_fill_rectangle_masked(byte * dest, int dest_bit, uint draster,
                             ++ptr;
                             for (i = 0; i < last; i++, ptr++)
                                 *ptr = (*ptr & src_mask) | pattern;
-                                *ptr = (*ptr & ~right_mask) | (pattern & right_mask); );
+                            *ptr = (*ptr & ~right_mask) | (pattern & right_mask); );
                 }
         }
     }
