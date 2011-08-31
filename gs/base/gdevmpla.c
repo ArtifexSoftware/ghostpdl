@@ -152,11 +152,16 @@ typedef struct mem_save_params_s {
    msp.line_ptrs = mdev->line_ptrs)
 /* Previous versions of MEM_SET_PARAMS calculated raster as
  * bitmap_raster(mdev->width * plane_depth), but this restricts us to
- * non interleaved frame buffers. */
+ * non interleaved frame buffers. Now we calculate it from the difference
+ * between the first 2 line pointers; this clearly only works if there are
+ * at least 2 line pointers to use. Otherwise, we fall back to the old
+ * method.
+ */
+/* FIXME: Find a nicer way of calculating raster. */
 #define MEM_SET_PARAMS(mdev, plane_depth)\
   (mdev->color_info.depth = plane_depth, /* maybe not needed */\
    mdev->base = mdev->line_ptrs[0],\
-   mdev->raster = mdev->line_ptrs[1]-mdev->line_ptrs[0])
+   mdev->raster = (mdev->height > 1 ? mdev->line_ptrs[1]-mdev->line_ptrs[0] : bitmap_raster(mdev->width * plane_depth)))
 #define MEM_RESTORE_PARAMS(mdev, msp)\
   (mdev->color_info.depth = msp.depth,\
    mdev->base = msp.base,\
