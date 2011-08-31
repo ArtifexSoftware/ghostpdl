@@ -932,16 +932,16 @@ i_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
 
-#ifdef MEMENTO
-    if (Memento_failThisEvent())
-        return NULL;
-#endif
     /*
      * Cycle through the chunks at the current save level, starting
      * with the currently open one.
      */
     chunk_t *cp_orig = imem->pcc;
 
+#ifdef MEMENTO
+    if (Memento_failThisEvent())
+        return NULL;
+#endif
     if (cp_orig == 0) {
         /* Open an arbitrary chunk. */
         cp_orig = imem->pcc = imem->cfirst;
@@ -994,14 +994,16 @@ i_alloc_string_immovable(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     byte *str;
+    uint asize;
+    chunk_t *cp;
 
 #ifdef MEMENTO
     if (Memento_failThisEvent())
         return NULL;
 #endif
     /* Give it a chunk all its own. */
-    uint asize = string_chunk_space(nbytes) + sizeof(chunk_head_t);
-    chunk_t *cp = alloc_acquire_chunk(imem, (ulong) asize, true,
+    asize = string_chunk_space(nbytes) + sizeof(chunk_head_t);
+    cp = alloc_acquire_chunk(imem, (ulong) asize, true,
                                       "large string chunk");
 
     if (cp == 0)
