@@ -421,14 +421,15 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 gx_color_index
 pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
 {
-    int drop = sizeof(gx_color_value) * 8 - 8;
     gx_color_index color = 0;
     int i;
     int ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
 
+    COLROUND_SETUP(8);
     for (i = 0; i < ncomp; i++) {
         color <<= 8;
-        color |= (colors[i] >> drop);
+        color |= COLROUND_ROUND(colors[i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -440,16 +441,17 @@ pdf14_encode_color(gx_device *dev, const gx_color_value	colors[])
 gx_color_index
 pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
 {
-    int drop = sizeof(gx_color_value) * 8 - 8;
     gx_color_index color;
     int i;
     int ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
 
+    COLROUND_SETUP(8);
     /* Add in the tag information */
     color = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
     for (i = 0; i < ncomp; i++) {
         color <<= 8;
-        color |= (colors[i] >> drop);
+        color |= COLROUND_ROUND(colors[i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }

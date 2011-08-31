@@ -369,9 +369,9 @@ static gx_color_index
 bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     return
-        ((cv[2]) >> ((sizeof(gx_color_value) * 8) - 8)) +
-        ((uint) ((cv[1]) >> ((sizeof(gx_color_value) * 8) - 8)) << 8) +
-        ((ulong) ((cv[0]) >> ((sizeof(gx_color_value) * 8) - 8)) << 16) +
+        gx_color_value_to_byte(cv[2]) +
+        (((uint) gx_color_value_to_byte(cv[1])) << 8) +
+        (((ulong) gx_color_value_to_byte(cv[0])) << 16) +
         ((ulong)(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) << 24);
 }
 

@@ -1264,12 +1264,13 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
 {
     int num_comp = pdev->color_info.num_components;
     int comp_num, comp_count = 0, solid_comp_count = 0, bit_pos = 0;
-    int bit_shift, bit_count, group = 0;
+    int bit_count, group = 0;
     int color_resolution = gx_max_color_value / STD_ENCODED_VALUE;
     bool found, added;
     comp_bit_map_list_t new_comp_bit_map = {0};
     comp_bit_map_list_t * pbit_map;
     gx_color_index color = 0, list_index;
+    COLROUND_VARS;
 
     /*
      * Determine what colorants are being used (non zero).  We bit pack
@@ -1377,16 +1378,15 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
      * colorant values.
      */
     bit_count = num_comp_bits[pbit_map->num_non_solid_comp];
-    bit_shift = sizeof(gx_color_value) * 8 - bit_count;
     if (pbit_map->solid_not_100) {
         color = group >> (8 - bit_count);
         bit_pos += bit_count;
     }
+    COLROUND_SETUP(bit_count);
     for (comp_num = 0; comp_num < num_comp; comp_num++) {
         if (colorant_present(pbit_map, colorants, comp_num) &&
            !colorant_present(pbit_map, solid_colorants, comp_num)) {
-            color |=
-                ((gx_color_index)(colors[comp_num] >> bit_shift)) << bit_pos;
+            color |= COLROUND_ROUND(colors[comp_num]) << bit_pos;
             bit_pos += bit_count;
         }
     }
@@ -1819,14 +1819,15 @@ static gx_color_index
 spotcmyk_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color = 0;
     int i = 0;
     int ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
 
+    COLROUND_SETUP(bpc);
     for (; i<ncomp; i++) {
         color <<= bpc;
-        color |= (colors[i] >> drop);
+        color |= COLROUND_ROUND(colors[i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -1838,13 +1839,14 @@ static int
 spotcmyk_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 {
     int bpc = ((spotcmyk_device *)dev)->devn_params.bitspercomponent;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
     int mask = (1 << bpc) - 1;
     int i = 0;
     int ncomp = dev->color_info.num_components;
+    COLDUP_VARS;
 
+    COLDUP_SETUP(bpc);
     for (; i<ncomp; i++) {
-        out[ncomp - i - 1] = (gx_color_value)((color & mask) << drop);
+        out[ncomp - i - 1] = COLDUP_DUP(color & mask);
         color >>= bpc;
     }
     return 0;

@@ -403,14 +403,15 @@ static gx_color_index
 rinkj_encode_color(gx_device *dev, const gx_color_value colors[])
 {
     int bpc = ((rinkj_device *)dev)->bitspercomponent;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
     gx_color_index color = 0;
     int i = 0;
     int ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
 
+    COLROUND_SETUP(bpc);
     for (; i<ncomp; i++) {
         color <<= bpc;
-        color |= (colors[i] >> drop);
+        color |= COLROUND_ROUND(colors[i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
