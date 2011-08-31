@@ -64,8 +64,9 @@ gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
     }
 #endif
     for (i = 0; i < ncomps; i++) {
-        color |= (gx_color_index)(cv[i] >> (gx_color_value_bits - comp_bits[i]))
-                << comp_shift[i];
+        COLROUND_VARS;
+        COLROUND_SETUP(comp_bits[i]);
+        color |= COLROUND_ROUND(cv[i]) << comp_shift[i];
 
     }
     return color;
@@ -163,7 +164,9 @@ gx_error_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value col
 gx_color_index
 gx_default_gray_fast_encode(gx_device * dev, const gx_color_value cv[])
 {
-    return cv[0] >> (gx_color_value_bits - dev->color_info.depth);
+    COLROUND_VARS;
+    COLROUND_SETUP(dev->color_info.depth);
+    return COLROUND_ROUND(cv[0]);
 }
 
 gx_color_index
@@ -1598,11 +1601,13 @@ gx_default_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
             ((uint) gx_color_value_to_byte(cv[1]) << 8) +
             ((ulong) gx_color_value_to_byte(cv[0]) << 16);
     else {
+        COLROUND_VARS;
         int bpc = dev->color_info.depth / 3;
-        int drop = sizeof(gx_color_value) * 8 - bpc;
-        return ( ( (((gx_color_index)cv[0] >> drop) << bpc) +
-                    ((gx_color_index)cv[1] >> drop)         ) << bpc) +
-               ((gx_color_index)cv[2] >> drop);
+        COLROUND_SETUP(bpc);
+
+        return (((COLROUND_ROUND(cv[0]) << bpc) +
+                 COLROUND_ROUND(cv[1])) << bpc) +
+               COLROUND_ROUND(cv[2]);
     }
 }
 

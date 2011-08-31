@@ -444,6 +444,7 @@ display_map_rgb_color_device16(gx_device * dev, const gx_color_value cv[])
     gx_color_value r = cv[0];
     gx_color_value g = cv[1];
     gx_color_value b = cv[2];
+    /* FIXME: Simple truncation isn't ideal. Should round really. */
     if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
         if ((ddev->nFormat & DISPLAY_555_MASK) == DISPLAY_NATIVE_555)
             /* byte0=0RRRRRGG byte1=GGGBBBBB */
@@ -1112,10 +1113,12 @@ display_separation_encode_color(gx_device *dev, const gx_color_value colors[])
     gx_color_index color = 0;
     int i = 0;
     int ncomp = dev->color_info.num_components;
+    COLROUND_VARS;
 
+    COLROUND_SETUP(bpc);
     for (; i<ncomp; i++) {
         color <<= bpc;
-        color |= (colors[i] >> drop);
+        color |= COLROUND_ROUND(colors[i]);
     }
     if (bpc*ncomp < arch_sizeof_color_index * 8)
         color <<= (arch_sizeof_color_index * 8 - ncomp * bpc);
@@ -1134,11 +1137,13 @@ display_separation_decode_color(gx_device * dev, gx_color_index color,
     int mask = (1 << bpc) - 1;
     int i = 0;
     int ncomp = dev->color_info.num_components;
+    COLDUP_VARS;
 
+    COLDUP_SETUP(bpc);
     if (bpc*ncomp < arch_sizeof_color_index * 8)
         color >>= (arch_sizeof_color_index * 8 - ncomp * bpc);
     for (; i<ncomp; i++) {
-        out[ncomp - i - 1] = (gx_color_value) ((color & mask) << drop);
+        out[ncomp - i - 1] = COLDUP_DUP(color & mask);
         color >>= bpc;
     }
     return 0;

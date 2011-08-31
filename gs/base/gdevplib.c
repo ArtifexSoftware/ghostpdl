@@ -838,12 +838,14 @@ static gx_color_index
 plibc_encode_color(gx_device * dev, const gx_color_value cv[])
 {
     int bpc = dev->color_info.depth / 4;
-    int drop = sizeof(gx_color_value) * 8 - bpc;
-    gx_color_index color =
-    (((((((gx_color_index) cv[0] >> drop) << bpc) +
-        (cv[1] >> drop)) << bpc) +
-      (cv[2] >> drop)) << bpc) +
-    (cv[3] >> drop);
+    gx_color_index color;
+    COLROUND_VARS;
+
+    COLROUND_SETUP(bpc);
+    color = ((((((COLROUND_ROUND(cv[0]) << bpc) +
+                 COLROUND_ROUND(cv[1])) << bpc) +
+               COLROUND_ROUND(cv[2])) << bpc) +
+             COLROUND_ROUND(cv[3]));
 
     /* The bitcmyk device does this:
      * return (color == gx_no_color_index ? color ^ 1 : color);

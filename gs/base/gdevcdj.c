@@ -2814,16 +2814,16 @@ gdev_pcl_mode1compress(const byte *row, const byte *end_row, byte *compressed)
     ((cv) << (gx_color_value_bits - (b)))
 
 #define gx_cmyk_value_bits(c, m, y, k, b) \
-    ((gx_color_value_to_bits((k), (b)) << (3 * (b))) | \
-     (gx_color_value_to_bits((c), (b)) << (2 * (b))) | \
-     (gx_color_value_to_bits((m), (b)) << (b)) | \
-     (gx_color_value_to_bits((y), (b))))
+    (((COLROUND_ROUND(k)) << (3 * (b))) | \
+     ((COLROUND_ROUND(c)) << (2 * (b))) | \
+     ((COLROUND_ROUND(m)) << (b)) | \
+     ((COLROUND_ROUND(y))))
 
 #define gx_value_cmyk_bits(v, c, m, y, k, b) \
-    (k) = gx_bits_to_color_value(((v) >> (3 * (b))) & ((1 << (b)) - 1), (b)), \
-    (c) = gx_bits_to_color_value(((v) >> (2 * (b))) & ((1 << (b)) - 1), (b)), \
-    (m) = gx_bits_to_color_value(((v) >> (b)) & ((1 << (b)) - 1), (b)), \
-    (y) = gx_bits_to_color_value((v) & ((1 << (b)) - 1), (b))
+    (k) = COLDUP_DUP(((v) >> (3 * (b))) & ((1 << (b)) - 1)), \
+    (c) = COLDUP_DUP(((v) >> (2 * (b))) & ((1 << (b)) - 1)), \
+    (m) = COLDUP_DUP(((v) >> (b)) & ((1 << (b)) - 1)), \
+    (y) = COLDUP_DUP((v) & ((1 << (b)) - 1))
 
 static gx_color_index
 gdev_cmyk_map_cmyk_color(gx_device* pdev, const gx_color_value cv[])
@@ -2838,10 +2838,11 @@ gdev_cmyk_map_cmyk_color(gx_device* pdev, const gx_color_value cv[])
            break;
 
         default: {
-            int nbits = pdev->color_info.depth;
+            COLROUND_VARS;
+            int nbits = pdev->color_info.depth>>2;
+            COLROUND_SETUP(nbits);
 
-            color = gx_cmyk_value_bits(cyan, magenta, yellow, black,
-                nbits >> 2);
+            color = gx_cmyk_value_bits(cyan, magenta, yellow, black, nbits);
          }
    }
 
@@ -2903,10 +2904,11 @@ gdev_cmyk_map_color_cmyk(gx_device *pdev, gx_color_index color, gx_color_value p
 
         default: {
             unsigned long bcyan, bmagenta, byellow, black;
-            int nbits = pdev->color_info.depth;
+            int nbits = pdev->color_info.depth>>2;
+            COLDUP_VARS;
 
-            gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black,
-                nbits >> 2);
+            COLDUP_SETUP(nbits);
+            gx_value_cmyk_bits(color, bcyan, bmagenta, byellow, black, nbits);
 
             prgb[0] = bcyan;
             prgb[1] = bmagenta;
@@ -2988,6 +2990,7 @@ gdev_pcl_map_rgb_color(gx_device *pdev, const gx_color_value cv[])
                   (ulong)y * blue_weight)
                  >> (gx_color_value_bits + 2)));
     case 16:
+        /* FIXME: Simple truncation is not ideal. Should round really. */
 #define gx_color_value_to_5bits(cv) ((cv) >> (gx_color_value_bits - 5))
 #define gx_color_value_to_6bits(cv) ((cv) >> (gx_color_value_bits - 6))
       return (gx_color_value_to_5bits(y) +
