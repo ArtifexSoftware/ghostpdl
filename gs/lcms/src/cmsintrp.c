@@ -890,7 +890,7 @@ void cmsTetrahedralInterp16(WORD Input[],
 
 #define DENS(i,j,k) (LutTable[(i)+(j)+(k)+OutChan])
 
-
+#if 0 /* old code */
 void cmsTetrahedralInterp16(WORD Input[],
                             WORD Output[],
                             WORD LutTable1[],
@@ -999,7 +999,111 @@ void cmsTetrahedralInterp16(WORD Input[],
     }
 
 }
+#else
+void cmsTetrahedralInterp16(WORD Input[],
+                            WORD Output[],
+                            WORD LutTable1[],
+                            LPL16PARAMS p)
+{
+    Fixed32    fx, fy, fz;
+    Fixed32    rx, ry, rz;
+    int        x0, y0, z0;
+    int        Rest;
+    int        c0, c1, c2, c3;       
+    int        OutChan;
+    Fixed32    X0, X1, Y0, Y1, Z0, Z1;
+    int        TotalOut = p -> nOutputs;
+    register   LPWORD LutTable = LutTable1;
+    WORD       *ptr = Output;
 
+    /* From my analysis doing away with this division by 65535 would
+       reduce the amount of time spent in this function by about 8%
+       a ToDo project.  Also,  cmsTetrahedralInterp8 could likely be 
+       restructured as this one was.  */
+    fx  = ToFixedDomain((int) Input[0] * p -> Domain);
+    fy  = ToFixedDomain((int) Input[1] * p -> Domain);
+    fz  = ToFixedDomain((int) Input[2] * p -> Domain); 
+
+    x0  = FIXED_TO_INT(fx);
+    y0  = FIXED_TO_INT(fy); 
+    z0  = FIXED_TO_INT(fz);
+
+    rx  = FIXED_REST_TO_INT(fx);   
+    ry  = FIXED_REST_TO_INT(fy);      
+    rz  = FIXED_REST_TO_INT(fz);
+
+    X0 = p -> opta3 * x0;
+    X1 = X0 + (Input[0] == 0xFFFFU ? 0 : p->opta3);
+
+    Y0 = p -> opta2 * y0;
+    Y1 = Y0 + (Input[1] == 0xFFFFU ? 0 : p->opta2);
+   
+    Z0 = p -> opta1 * z0;
+    Z1 = Z0 + (Input[2] == 0xFFFFU ? 0 : p->opta1);
+    
+    // These are the 6 Tetrahedral
+    if (rx >= ry && ry >= rz) {
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y0, Z0) - c0;
+            c2 = DENS(X1, Y1, Z0) - DENS(X1, Y0, Z0);
+            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+        }
+    } else if (rx >= rz && rz >= ry) {            
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y0, Z0) - c0;
+            c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+            c3 = DENS(X1, Y0, Z1) - DENS(X1, Y0, Z0);
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+        }
+    } else if (rz >= rx && rx >= ry) {
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y0, Z1) - DENS(X0, Y0, Z1);
+            c2 = DENS(X1, Y1, Z1) - DENS(X1, Y0, Z1);
+            c3 = DENS(X0, Y0, Z1) - c0; 
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+        }
+    } else if (ry >= rx && rx >= rz) {
+         for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y1, Z0) - DENS(X0, Y1, Z0);
+            c2 = DENS(X0, Y1, Z0) - c0;
+            c3 = DENS(X1, Y1, Z1) - DENS(X1, Y1, Z0);
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+         }
+    } else if (ry >= rz && rz >= rx) { 
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+            c2 = DENS(X0, Y1, Z0) - c0;
+            c3 = DENS(X0, Y1, Z1) - DENS(X0, Y1, Z0);
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+        }
+    } else if (rz >= ry && ry >= rx) {             
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            c0 = DENS(X0, Y0, Z0);
+            c1 = DENS(X1, Y1, Z1) - DENS(X0, Y1, Z1);
+            c2 = DENS(X0, Y1, Z1) - DENS(X0, Y0, Z1);
+            c3 = DENS(X0, Y0, Z1) - c0;
+            Rest = ((int) ((c1 * rx + c2 * ry + c3 * rz) + 0xffff)) >> 16;
+            *ptr ++= (WORD) (c0 + Rest);
+        }
+    } else  {
+        for (OutChan=0; OutChan < TotalOut; OutChan++) {
+            Output[OutChan] = 0;
+        }
+    }
+}
+
+#endif
 
 
 #undef DENS
