@@ -193,6 +193,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
         jpeg_decompress_data *jddp = &(benum->jdd);
         /* use the graphics library support for DCT streams */
         ss->memory = benum->mem;
+        ss->template = &s_DCTD_template;
         s_DCTD_template.set_defaults((stream_state *)ss);
         ss->report_error = stream_error;
         ss->data.decompress = jddp;
@@ -215,14 +216,28 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
         w.ptr = data + pos_in_row - 1;
         w.limit = data + data_per_row - 1;
         code = (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
+        /* code = num scanlines processed (0=need more data, -ve=error) */
         used = w.ptr + 1 - data - pos_in_row;
+        if ((code == EOFC) && (used > 0))
+            code = 1;
         pos_in_row += used;
         par->source.position += used;
     }
     used = r.ptr + 1 - data;
     par->source.data = r.ptr + 1;
     par->source.available = avail - used;
-    return ( code == 0 ? pxNeedData : 1);
+    /* The spec for this function says: Return 0 if we've processed all the
+     * data in the block, 1 if we have a complete scan line, pxNeedData for
+     * an incomplete scan line, or <0 for an error condition. The only way
+     * we can return 0 currently is if we get an EOF from the underlying
+     * decoder. */
+    if (code == 0)
+        return pxNeedData;
+    if (code == EOFC)
+        return 0;
+    if (code > 0)
+        return 1;
+    return code;
 }
 
 static int
@@ -289,6 +304,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
     if ( !benum->initialized ) {
         ss->EndOfData = false;
+        ss->template = &s_RLD_template;
         s_RLD_init_inline(ss);
         benum->initialized = true;
     }
@@ -643,7 +659,7 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
         int code = read_bitmap(&pxenum->benum, &data, par);
         if ( code != 1 )
             return code;
-        code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0, 
+        code = pl_image_data(pxs->pgs, pxenum->info, (const byte **)&data, 0,
                              pxenum->benum.data_per_row, 1);
         if ( code < 0 )
             return code;
@@ -654,7 +670,7 @@ pxReadImage(px_args_t *par, px_state_t *pxs)
 const byte apxEndImage[] = {0, 0};
 int
 pxEndImage(px_args_t *par, px_state_t *pxs)
-{	
+{
     px_image_enum_t *pxenum = pxs->image_enum;
     px_bitmap_enum_t *pbenum = &pxenum->benum;
     int code = pl_end_image(pxs->pgs, pxenum->info, true);
