@@ -107,7 +107,7 @@ compact_jpeg_buffer(stream_cursor_read *pr)
     byte *o, *i;
 
     /* Search backwards from the end for 2 consecutive 0xFFs */
-    o = pr->limit;
+    o = (byte *)pr->limit;
     while (o - pr->ptr >= 2) {
         if (*o-- == 0xFF) {
             if (*o == 0xFF)
@@ -271,18 +271,22 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                 pr->ptr =
                     (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
                 if (!read) {
-                    if (src->next_input_byte-1 == pr->ptr) {
-                        /* Suspending, and nothing was consumed. Compact the
-                         * data in the buffer (i.e. strip out long runs of
-                         * 0xFF that cause the stream to jam up). */
-                        /* FIXME: This is still not ideal. What we *ought* to
-                         * do here is to spot that the buffer was is full
-                         * (i.e. subsequent fetches cannot possibly fit any
-                         * more data in), and then if compact_jpeg_buffer
-                         * returns 0 (no bytes saved), we should return an
-                         * error code to prevent an infinite loop. */
-                        compact_jpeg_buffer(pr);
-                    }
+                    /* We are suspending. If nothing was consumed, and the
+                     * buffer was full, compact the data in the buffer. If
+                     * this fails to save anything, then we'll never succeed;
+                     * throw an error to avoid an infinite loop.
+                     * The tricky part here is knowing "if the buffer is
+                     * full"; we do that by comparing the number of bytes in
+                     * the buffer with the min_in_size set for the stream.
+                     */
+                    /* TODO: If we ever find a file with valid data that trips
+                     * this test, we should implement a scheme whereby we keep
+                     * a local buffer and copy the data into it. The local
+                     * buffer can be grown as required. */
+                    if ((src->next_input_byte-1 == pr->ptr) &&
+                        (pr->limit - pr->ptr >= ss->template->min_in_size) &&
+                        (compact_jpeg_buffer(pr) == 0))
+                        return ERRC;
                     return 0;	/* need more data */
                 }
                 if (jddp->scanline_buffer != NULL) {
