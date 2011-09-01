@@ -1329,7 +1329,8 @@ typedef struct gx_dc_serialized_tile_s {
 } gx_dc_serialized_tile_t;
 
 static int
-gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *psize)
+gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
+                           uint *psize, const gx_device *dev)
 {
     int size_b, size_c;
     byte *dp = data;
@@ -1337,6 +1338,9 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *
     int offset1 = offset;
 
     size_b = sizeof(gx_strip_bitmap) + ptile->tbits.size.y * ptile->tbits.raster;
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0)) {
+        size_b = size_b * dev->color_info.num_components; 
+    }
     size_c = ptile->tmask.data ? sizeof(gx_strip_bitmap) + ptile->tmask.size.y * ptile->tmask.raster : 0;
     if (data == NULL) {
         *psize = sizeof(gx_dc_serialized_tile_t) + size_b + size_c;
@@ -1543,7 +1547,7 @@ gx_dc_pattern_write(
         return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
 
     if (ptile->cdev == NULL)
-        return gx_dc_pattern_write_raster(ptile, offset, data, psize);
+        return gx_dc_pattern_write_raster(ptile, offset, data, psize, dev);
     /* Here is where we write pattern-clist data */
     size_b = clist_data_size(ptile->cdev, 0);
     if (size_b < 0)
