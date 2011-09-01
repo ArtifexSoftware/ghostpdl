@@ -101,6 +101,40 @@ s_DCTD_init(stream_state * st)
     return 0;
 }
 
+static int
+compact_jpeg_buffer(stream_cursor_read *pr)
+{
+    byte *o, *i;
+
+    /* Search backwards from the end for 2 consecutive 0xFFs */
+    o = pr->limit;
+    while (o - pr->ptr >= 2) {
+        if (*o-- == 0xFF) {
+            if (*o == 0xFF)
+                goto compact;
+            o--;
+        }
+    }
+    return 0;
+compact:
+    i = o-1;
+    do {
+        /* Skip i backwards over 0xFFs */
+        while ((i != pr->ptr) && (*i == 0xFF))
+            i--;
+        /* Repeatedly copy from i to o */
+        while (i != pr->ptr) {
+            byte c = *i--;
+            *o-- = c;
+            if (c == 0xFF)
+                break;
+        }
+    } while (i != pr->ptr);
+
+    pr->ptr = o;
+    return o - i;
+}
+
 /* Process a buffer */
 static int
 s_DCTD_process(stream_state * st, stream_cursor_read * pr,
@@ -236,8 +270,21 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                           (int)jddp->faked_eoi);
                 pr->ptr =
                     (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
-                if (!read)
+                if (!read) {
+                    if (src->next_input_byte-1 == pr->ptr) {
+                        /* Suspending, and nothing was consumed. Compact the
+                         * data in the buffer (i.e. strip out long runs of
+                         * 0xFF that cause the stream to jam up). */
+                        /* FIXME: This is still not ideal. What we *ought* to
+                         * do here is to spot that the buffer was is full
+                         * (i.e. subsequent fetches cannot possibly fit any
+                         * more data in), and then if compact_jpeg_buffer
+                         * returns 0 (no bytes saved), we should return an
+                         * error code to prevent an infinite loop. */
+                        compact_jpeg_buffer(pr);
+                    }
                     return 0;	/* need more data */
+                }
                 if (jddp->scanline_buffer != NULL) {
                     jddp->bytes_in_scanline = ss->scan_line_size;
                     goto dumpbuffer;
