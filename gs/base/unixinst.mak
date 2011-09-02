@@ -130,7 +130,8 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   Fonts.htm Helpers.htm Hershey.htm \
 	   History1.htm History2.htm History3.htm History4.htm \
 	   History5.htm History6.htm History7.htm History8.htm \
-	   Details.htm Details8.htm \
+	   History9.htm \
+	   Details.htm Details8.htm Details9.htm \
 	   Htmstyle.htm Humor.htm Issues.htm Install.htm Language.htm \
 	   Lib.htm Maintain.htm Make.htm New-user.htm \
 	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
