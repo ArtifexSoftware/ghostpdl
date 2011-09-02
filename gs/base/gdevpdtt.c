@@ -1193,10 +1193,26 @@ pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
                         bfont->nearest_encoding_index, true);
     pdfont->u.simple.s.type3.char_procs = NULL;
     pdfont->u.simple.s.type3.cached = cached;
-    pdfont->u.simple.s.type3.FontBBox.p.x = bfont->FontBBox.p.x;
-    pdfont->u.simple.s.type3.FontBBox.p.y = bfont->FontBBox.p.y;
-    pdfont->u.simple.s.type3.FontBBox.q.x = bfont->FontBBox.q.x;
-    pdfont->u.simple.s.type3.FontBBox.q.y = bfont->FontBBox.q.y;
+    if (pdfont->FontType == ft_user_defined && bfont->FontBBox.p.x == 0.0 &&
+        bfont->FontBBox.p.y == 0.00 && bfont->FontBBox.q.x == 0.00 &&
+        bfont->FontBBox.q.y == 0.0) {
+        /* I think this can only happen with a type 3 (bitmap) font from PCL.
+         * If we leave the BBox as 0 then we end up putting a 0 0 1000 1000 in
+         * the PDF. This causes Acrobat to be unable to search or highlight
+         * the search results. I think that we will always get a consistent
+         * type of font from the PCL interpreter, and if so the correct BBox
+         * sould always is 0 0 1 -1.
+         */
+        pdfont->u.simple.s.type3.FontBBox.p.x = 0;
+        pdfont->u.simple.s.type3.FontBBox.p.y = 0;
+        pdfont->u.simple.s.type3.FontBBox.q.x = 1;
+        pdfont->u.simple.s.type3.FontBBox.q.y = -1;
+    } else {
+        pdfont->u.simple.s.type3.FontBBox.p.x = bfont->FontBBox.p.x;
+        pdfont->u.simple.s.type3.FontBBox.p.y = bfont->FontBBox.p.y;
+        pdfont->u.simple.s.type3.FontBBox.q.x = bfont->FontBBox.q.x;
+        pdfont->u.simple.s.type3.FontBBox.q.y = bfont->FontBBox.q.y;
+    }
     pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
     pdfont->u.simple.s.type3.Resources = cos_dict_alloc(pdev, "pdf_make_font3_resource");
     if (pdfont->u.simple.s.type3.Resources == NULL)
