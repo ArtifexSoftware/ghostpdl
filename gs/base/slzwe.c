@@ -183,6 +183,8 @@ cx:				code = code_eod;
                 else
                   {	if ( code != code_eod )
                           {	q = lzw_put_code(ss, q, code);	/* put out final code */
+                                if (ss->next_code == limit_code && ss->next_code != encode_max)
+                                    ss->code_size++;
                           }
                         q = lzw_put_code(ss, q, code_eod);
                         if ( ss->bits_left < 8 )
