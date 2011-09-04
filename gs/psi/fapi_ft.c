@@ -558,7 +558,7 @@ load_glyph(FAPI_server *a_server, FAPI_font *a_fapi_font, const FAPI_char_ref *a
         ft_error = FT_Get_Glyph(ft_face->glyph, a_glyph);
     }
     else {
-        if (a_bitmap == true) {
+        if (ft_face->glyph->format == FT_GLYPH_FORMAT_BITMAP) {
             FT_BitmapGlyph bmg;
             ft_error = FT_Get_Glyph(ft_face->glyph, (FT_Glyph *)&bmg);
             if (!ft_error) {
