@@ -26,6 +26,32 @@
 # Note: If you are planning to make self-extracting executables,
 # see winint.mak to find out about third-party software you will need.
 
+# If we are building MEMENTO=1, then adjust default debug flags
+!if "$(MEMENTO)"=="1"
+!ifndef DEBUG
+DEBUG=1
+!endif
+!ifndef TDEBUG
+TDEBUG=1
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
+# If we are building PROFILE=1, then adjust default debug flags
+!if "$(PROFILE)"=="1"
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
 # ------------------------------- Options ------------------------------- #
 
 ###### This section is the only part of the file you should need to edit.
@@ -36,26 +62,21 @@
 # source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
 
-!if "$(DEBUG)"=="1"
-!ifdef WIN64
-DEFAULT_OBJ_DIR=.\debugobj64
+!if "$(MEMENTO)"=="1"
+DEFAULT_OBJ_DIR=.\memobj
 !else
-DEFAULT_OBJ_DIR=.\debugobj
-!endif
-!else
-!if "$(DEBUGSYM)"=="1"
-!ifdef WIN64
-DEFAULT_OBJ_DIR=.\profobj64
-!else
+!if "$(PROFILE)"=="1"
 DEFAULT_OBJ_DIR=.\profobj
-!endif
 !else
-!ifdef WIN64
-DEFAULT_OBJ_DIR=.\obj64
+!if "$(DEBUG)"=="1"
+DEFAULT_OBJ_DIR=.\debugobj
 !else
 DEFAULT_OBJ_DIR=.\obj
 !endif
 !endif
+!endif
+!ifdef WIN64
+DEFAULT_OBJ_DIR=$(DEFAULT_OBJ_DIR)64
 !endif
 
 !ifndef AUXDIR
@@ -65,6 +86,9 @@ AUXDIR=$(DEFAULT_OBJ_DIR)\aux_
 # Note that 32-bit and 64-bit binaries reside in a common directory
 # since the names are unique
 !ifndef BINDIR
+!if "$(MEMENTO)"=="1"
+BINDIR=.\membin
+!else
 !if "$(DEBUG)"=="1"
 BINDIR=.\debugbin
 !else
@@ -72,6 +96,7 @@ BINDIR=.\debugbin
 BINDIR=.\profbin
 !else
 BINDIR=.\bin
+!endif
 !endif
 !endif
 !endif
@@ -389,6 +414,10 @@ UNICODECFLAGS=
 
 !ifndef CFLAGS
 CFLAGS=
+!endif
+
+!if "$(MEMENTO)"=="1"
+CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
 
 CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
@@ -1094,7 +1123,21 @@ debugclean:
 debugbsc:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) bsc
 
-# ---------------------- Profile targets ---------------------- #
+# --------------------- Memento targets --------------------- #
+# Simply set some definitions and call ourselves back         #
+
+MEMENTODEFS=$(DEBUGDEFS) MEMENTO=1
+
+memento-target:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS)
+
+mementoclean:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) clean
+
+mementobsc:
+	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) bsc
+
+# --------------------- Profile targets --------------------- #
 # Simply set some definitions and call ourselves back         #
 
 PROFILEDEFS=DEBUGSYM=1

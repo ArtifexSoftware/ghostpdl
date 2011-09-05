@@ -27,7 +27,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
@@ -40,14 +40,14 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\svg\debugobj64"
+			IntermediateDirectory="..\svg\debugobj64"
 			ConfigurationType="0"
 			>
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
@@ -67,7 +67,7 @@
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= clean &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= bsc"
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
@@ -80,14 +80,14 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\svg\obj64"
+			IntermediateDirectory="..\svg\obj64"
 			ConfigurationType="0"
 			>
 			<Tool
 				Name="VCNMakeTool"
 				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= bsc"
 				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;NDEBUG;"
@@ -106,11 +106,11 @@
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 SBR=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; &amp;&amp; nmake -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 SBR=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; &amp;&amp; nmake -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEBUG=0 TDEBUG=0 DEBUGSYM=1 DEVSTUDIO= GENDIR=&quot;.\profobj&quot; clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= PROFILE=1 &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= PROFILE=1 bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= PROFILE=1 clean &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= PROFILE=1 &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= PROFILE=1 bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= PROFILE=1 clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;DEBUGSYM=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -120,15 +120,55 @@
 		</Configuration>
 		<Configuration
 			Name="Profile|x64"
-			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			OutputDirectory="..\svg\profobj64"
+			IntermediateDirectory="..\svg\profobj64"
 			ConfigurationType="0"
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake /A -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 SBR=1 DEVSTUDIO= &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= bsc"
-				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEBUG=1 TDEBUG=1 DEBUGSYM=1 DEVSTUDIO= clean"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= PROFILE=1 &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= PROFILE=1 bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= PROFILE=1 clean &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= PROFILE=1 &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= PROFILE=1 bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= PROFILE=1 clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Memento|Win32"
+			OutputDirectory="..\svg\memobj"
+			IntermediateDirectory="..\svg\memobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= MEMENTO=1 bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= MEMENTO=1 clean &amp;&amp; nmake -f svg_msvc.mak SBR=1 DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= MEMENTO=1 bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak DEVSTUDIO= MEMENTO=1 clean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Memento|x64"
+			OutputDirectory="..\svg\memobj64"
+			IntermediateDirectory="..\svg\memobj64"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= MEMENTO=1 bsc"
+				ReBuildCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= MEMENTO=1 clean &amp;&amp; nmake -f svg_msvc.mak WIN64= SBR=1 DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= MEMENTO=1 bsc"
+				CleanCommandLine="cd ..\svg &amp;&amp; nmake -f svg_msvc.mak WIN64= DEVSTUDIO= MEMENTO=1 clean"
 				Output=""
 				PreprocessorDefinitions="WIN32;_DEBUG;"
 				IncludeSearchPath=""

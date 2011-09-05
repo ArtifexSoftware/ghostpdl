@@ -24,12 +24,49 @@ BUNDLE_FONTS=1
 XCFLAGS=
 !endif
 
+# If we are building MEMENTO=1, then adjust default debug flags
+!if "$(MEMENTO)"=="1"
+!ifndef DEBUG
+DEBUG=1
+!endif
+!ifndef TDEBUG
+TDEBUG=1
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
+# If we are building PROFILE=1, then adjust default debug flags
+!if "$(PROFILE)"=="1"
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
+!if "$(MEMENTO)"=="1"
+GENDIR=.\memobj
+!else
+!if "$(PROFILE)"=="1"
+GENDIR=.\profobj
+!else
 !if "$(DEBUG)"=="1"
 GENDIR=.\debugobj
 !else
 GENDIR=.\obj
+!endif
+!endif
+!endif
+!ifdef WIN64
+GENDIR=$(GENDIR)64
 !endif
 !endif
 
@@ -143,6 +180,11 @@ GLGENDIR=$(GENDIR)
 
 !ifndef GLOBJDIR
 GLOBJDIR=$(GENDIR)
+!endif
+
+# Not strictly speaking necessary, but saves a stray mkdir later on.
+!ifndef BINDIR
+BINDIR=$(GENDIR)
 !endif
 
 # The PSGENDIR and PSOBJDIR are not strictly speaking required, but adding

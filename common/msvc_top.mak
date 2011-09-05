@@ -66,6 +66,9 @@ GLOBJ=$(GLOBJDIR)$(D)
 FTSRCDIR=$(GLSRCDIR)$(D)..$(D)freetype
 #**************** END PATCHES
 
+!if "$(MEMENTO)"=="1"
+CFLAGS=$(CFLAGS) -DMEMENTO
+!endif
 
 !if "$(PSICFLAGS)" == "/DPSI_INCLUDED"
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
@@ -102,6 +105,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	-if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
 	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	$(MAKE) /F $(PSSRCDIR)\msvc32.mak MSVC_VERSION="$(MSVC_VERSION)" \
+	BINDIR="$(BINDIR)" PSOBJDIR="$(PSOBJDIR)"\
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) AUXDIR="$(AUXDIR)" \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
@@ -151,6 +155,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	-if not exist $(AUXDIR) mkdir $(AUXDIR)
 	echo > $(GLOBJDIR)/gs_init.ps
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
+	BINDIR="$(BINDIR)" PSOBJDIR="$(PSOBJDIR)"\
 	GLSRCDIR="$(GLSRCDIR)" DEBUG=$(DEBUG) NOPRIVATE=$(NOPRIVATE) \
 	DEBUGSYM=$(DEBUGSYM) TDEBUG=$(TDEBUG) AUXDIR="$(AUXDIR)" \
 	GLGENDIR="$(GLGENDIR)" GLOBJDIR="$(GLOBJDIR)" \
