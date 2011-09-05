@@ -1,7 +1,7 @@
 #    Copyright (C) 1996-2008 Artifex Software Inc. All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
-# makefile for PS Inteface (PSI) to Ghostscript PostScript.
+# makefile for PS Interface (PSI) to Ghostscript PostScript.
 # Users of this makefile must define the following:
 #	PSSRCDIR - the PS interpreter source directory
 #	GLSRCDIR - the GS library source directory

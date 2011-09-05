@@ -38,6 +38,45 @@ remove any potential confusion between building the solution and building
 the project.
 
 
+Available configurations
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The solution allows you to build for the usual Release and Debug
+configurations, for both 32 and 64bit targets; clearly you will need
+to have the appropriate compilers installed in order to be able to
+build for a given target. In addition, as ghostscript needs to be
+able to run executables during the build, you may have trouble building
+for a 64bit machine on a 32bit one.
+
+In addition, we support 2 'non-standard' configurations, Profile and
+Memento.
+
+Profile builds are (as the name suggests) designed to be used with
+profiling tools; essentially they fall somewhere between Debug and Release
+builds. The compiler optimises Profile builds as if they were Release
+ones, but keeps (limited) debugging information with the binary. This
+means that the timings for most tasks are representative of a Release
+build, but enough information is there for profiling tools to give a
+meaningful trace of where execution was spent. The binary size of
+Profile builds is significantly larger than release builds, so they
+tend to be unsuitable for shipping.
+
+We use Profile builds internally with various profilers, including the
+free 'Very Sleepy' profiler, from http://www.codersnotes.com/sleepy.
+
+Memento builds enable a helpful debugging library (called Memento); this
+traces memory allocations/deallocations and can spot some common flaws
+such as memory overwrites, use of blocks after freeing, double freeing,
+leaks etc. It also has mechanisms to allow 'memory squeezing' (i.e.
+exhaustive testing of code error cleanup paths). Describing the full
+functionality of this module is beyond the scope of this ReadMe, but
+more information can be found in gs/base/memento.{h,c}.
+
+Memento builds are even heavier than Debug builds, due to the additional
+work done by Memento. As such, you will only want to use a Memento
+build when explicitly using Memento functionality.
+
+
 How to debug
 ~~~~~~~~~~~~
 
@@ -117,6 +156,19 @@ settings are as follows:
 To start one of these debugging, either reset the active project, or
 start the program by right hand clicking on the appropriate project and
 choosing "Debug => Start New Instance".
+
+For 64bit builds, the gs executables are gswin64.exe and gswin64c.exe.
+The PCL/XPS/SVG/Language switch executables can be found in different
+directories (add '64' onto the end of the existing dir, hence the 64 bit
+version of main\debugobj\pcl6.exe is main\debugobj64\pcl6.exe).
+
+Profile builds can be found by replacing 'debug' by 'prof' (hence the
+profile version of main\debugobj64\pcl6.exe will be
+main\profobj64\pcl6.exe).
+
+Memento builds can be found by replacing 'debug' with 'mem' (hence the
+memento version of main\debugobj64\pcl6.exe will be
+main\memobj64\pcl6.exe).
 
 
 Other projects

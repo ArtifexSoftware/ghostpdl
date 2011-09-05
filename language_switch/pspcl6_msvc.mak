@@ -16,12 +16,49 @@ MAKEFILE=$(MAKEFILE) ..\language_switch\pspcl6_msvc.mak
 PLPLATFORM=ps
 !endif
 
+# If we are building MEMENTO=1, then adjust default debug flags
+!if "$(MEMENTO)"=="1"
+!ifndef DEBUG
+DEBUG=1
+!endif
+!ifndef TDEBUG
+TDEBUG=1
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
+# If we are building PROFILE=1, then adjust default debug flags
+!if "$(PROFILE)"=="1"
+!ifndef DEBUG
+DEBUG=0
+!endif
+!ifndef TDEBUG
+TDEBUG=0
+!endif
+!ifndef DEBUGSYM
+DEBUGSYM=1
+!endif
+!endif
+
 # The build process will put all of its output in this directory:
 !ifndef GENDIR
+!if "$(MEMENTO)"=="1"
+GENDIR=.\memobj
+!else
+!if "$(PROFILE)"=="1"
+GENDIR=.\profobj
+!else
 !if "$(DEBUG)"=="1"
 GENDIR=.\debugobj
 !else
 GENDIR=.\obj
+!endif
+!endif
+!endif
+!ifdef WIN64
+GENDIR=$(GENDIR)64
 !endif
 !endif
 
@@ -80,11 +117,11 @@ PSGENDIR=$(GENDIR)
 !ifndef PSOBJDIR
 PSOBJDIR=$(GENDIR)
 !endif
-!ifndef GLGEN
-GLGEN=$(GENDIR)
+!ifndef GLGENDIR
+GLGENDIR=$(GENDIR)
 !endif
-!ifndef GLOBJ
-GLOBJ=$(GENDIR)
+!ifndef GLOBJDIR
+GLOBJDIR=$(GENDIR)
 !endif
 !ifndef PSIGENDIR
 PSIGENDIR=$(GENDIR)
