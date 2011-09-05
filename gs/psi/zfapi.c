@@ -2521,7 +2521,7 @@ retry_oversampling:
             if (code < 0)
                 return code;
             if (code == metricsNone) {
-                if (bCID) {
+                if (bCID && (!bIsType1GlyphData && font_file_path)) {
                     cr.sb_x = fapi_round(sbw[2] / 2 * scale);
                     cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
                     cr.aw_y = fapi_round(- pbfont->FontBBox.q.x * scale); /* Sic ! */
