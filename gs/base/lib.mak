@@ -67,7 +67,7 @@ stdpre_h=$(GLSRC)stdpre.h $(stdpn_h)
 stdint__h=$(GLSRC)stdint_.h $(std_h)
 
 $(GLGEN)arch.h : $(GENARCH_XE)
-	$(EXP)$(GENARCH_XE) $(GLGEN)arch.h
+	$(EXP)$(GENARCH_XE) $(GLGEN)arch.h $(TARGET_ARCH_FILE)
 
 # Platform interfaces
 

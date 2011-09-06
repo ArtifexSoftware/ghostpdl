@@ -5035,15 +5035,15 @@
 					>
 				</File>
 				<File
+					RelativePath="base\gxht_thresh.h"
+					>
+				</File>
+				<File
 					RelativePath="base\gxhttile.h"
 					>
 				</File>
 				<File
 					RelativePath="base\gxhttype.h"
-					>
-				</File>
-				<File
-					RelativePath="base\gxht_thresh.h"
 					>
 				</File>
 				<File

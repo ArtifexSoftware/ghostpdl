@@ -52,6 +52,15 @@ DEBUGSYM=1
 !endif
 !endif
 
+# Pick the target architecture file
+!if "$(TARGET_ARCH_FILE)"==""
+!ifdef WIN64
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x64-msvc.h
+!else
+TARGET_ARCH_FILE=$(GLSRCDIR)\..\arch\windows-x86-msvc.h
+!endif
+!endif
+
 # ------------------------------- Options ------------------------------- #
 
 ###### This section is the only part of the file you should need to edit.
