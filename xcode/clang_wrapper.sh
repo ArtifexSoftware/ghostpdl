@@ -1,8 +1,14 @@
 #!/bin/sh
 
+# This script is supposed to simply parrot out all it's arguments with
+# any paths expanded to be absolute. Unfortunately, it fails due to
+# invocations such as:
+#
+# clang_wrapper.sh BLAH="unsigned int" fred.c george.c
+
 # This is a (very) poor mans copy of scan-build.
 
-args=$*
+args="$@"
 
 # Run through the list of args converting any .c files into absolute paths
 newargs=""
@@ -24,6 +30,7 @@ do
    newargs="$newargs $name"
 done
 
+echo $newargs
 clang --analyze $newargs
 gcc $args
 
