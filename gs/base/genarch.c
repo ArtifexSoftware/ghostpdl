@@ -75,10 +75,33 @@ ilog2(int n)
     return i;
 }
 
+static int
+copy_existing_file(FILE *f, char *infname)
+{
+    FILE *in = fopen(infname, "r");
+    char buffer[1024];
+    size_t l;
+
+    if (in == NULL) {
+        fprintf(stderr, "genarch.c: can't open %s for reading\n", infname);
+        fclose(f);
+        return exit_FAILED;
+    }
+    while (!feof(in)) {
+        l = fread(buffer, 1, 1024, in);
+        if (l > 0)
+            fwrite(buffer, 1, l, f);
+    }
+    fclose(in);
+    fclose(f);
+
+    return exit_OK;
+}
+
 int
 main(int argc, char *argv[])
 {
-    char *fname = argv[1];
+    char *fname;
     long one = 1;
     struct {
         char c;
@@ -119,12 +142,25 @@ main(int argc, char *argv[])
         long l;
     } f0, f1, fm1;
     int floats_are_IEEE;
-    FILE *f = fopen(fname, "w");
+    FILE *f;
 
+    if (argc < 2 || argc > 3) {
+        fprintf(stderr, "genarch: Invalid invocation\n"
+                "genarch <output-file> [ <existing-config-file> ]\n");
+        return exit_FAILED;
+    }
+
+    fname = argv[1];
+    f = fopen(fname, "w");
     if (f == NULL) {
         fprintf(stderr, "genarch.c: can't open %s for writing\n", fname);
         return exit_FAILED;
     }
+
+    if (argc == 3) {
+        return copy_existing_file(f, argv[2]);
+    }
+
     fprintf(f, "/* Parameters derived from machine and compiler architecture. */\n");
     fprintf(f, "/* This file is generated mechanically by genarch.c. */\n");
 
