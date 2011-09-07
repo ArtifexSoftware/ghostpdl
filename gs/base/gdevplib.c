@@ -244,6 +244,7 @@ static dev_proc_encode_color(plibg_encode_color);
 static dev_proc_decode_color(plibg_decode_color);
 static dev_proc_decode_color(plibc_decode_color);
 static dev_proc_encode_color(plibc_encode_color);
+static dev_proc_map_color_rgb(plibc_map_color_rgb);
 
 static dev_proc_open_device(plib_open);
 static dev_proc_close_device(plib_close);
@@ -265,14 +266,14 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
 /* The device procedures */
 
 /* See gdevprn.h for the template for the following. */
-#define pgpm_procs(p_encode_color, p_decode_color) {\
+#define pgpm_procs(p_color_rgb, p_encode_color, p_decode_color) {\
         plib_open,\
         NULL, /* get_initial_matrix */ \
         NULL, /* sync output */ \
         gdev_prn_output_page, \
         plib_close,\
         NULL, /* map_rgb_color */ \
-        NULL, /* map_color_rgb */ \
+        p_color_rgb, /* map_color_rgb */ \
         NULL, /* fill_rectangle */ \
         NULL, /* tile_rectangle */ \
         NULL, /* copy_mono */ \
@@ -335,15 +336,15 @@ static int plibk_print_page(gx_device_printer * pdev, FILE * pstream);
 }
 
 static const gx_device_procs plibm_procs =
-  pgpm_procs(gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
+  pgpm_procs(NULL, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
 static const gx_device_procs plibg_procs =
-  pgpm_procs(plibg_encode_color, plibg_decode_color);
+  pgpm_procs(NULL, plibg_encode_color, plibg_decode_color);
 static const gx_device_procs plib_procs =
-  pgpm_procs(gx_default_rgb_map_rgb_color, plib_decode_color);
+  pgpm_procs(NULL, gx_default_rgb_map_rgb_color, plib_decode_color);
 static const gx_device_procs plibc_procs =
-  pgpm_procs(plibc_encode_color, plibc_decode_color);
+  pgpm_procs(plibc_map_color_rgb, plibc_encode_color, plibc_decode_color);
 static const gx_device_procs plibk_procs =
-  pgpm_procs(plibc_encode_color, plibc_decode_color);
+  pgpm_procs(plibc_map_color_rgb, plibc_encode_color, plibc_decode_color);
 
 /* Macro for generating device descriptors. */
 /* Ideally we'd use something like:
@@ -849,6 +850,31 @@ plibc_encode_color(gx_device * dev, const gx_color_value cv[])
      * But I don't understand why.
      */
     return color;
+}
+
+/* Map a cmyk color back to an rgb tuple. */
+static int
+plibc_map_color_rgb(gx_device * dev, gx_color_index color,
+                    gx_color_value prgb[3])
+{
+    uint bitspercolor = dev->color_info.depth / 4;
+    uint colormask = (1 << bitspercolor) - 1;
+    uint max_cmyk = dev->color_info.max_color;
+    uint c, m, y, k;
+
+#define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / colormask))
+
+    k = color & colormask;
+    color >>= bitspercolor;
+    y = color & colormask;
+    color >>= bitspercolor;
+    m = color & colormask;
+    c = color >> bitspercolor;
+    k = colormask - k;
+    prgb[0] = cvalue((colormask - c) * k / colormask);
+    prgb[1] = cvalue((colormask - m) * k / colormask);
+    prgb[2] = cvalue((colormask - y) * k / colormask);
+    return 0;
 }
 
 /* ------ Internal routines ------ */

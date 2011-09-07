@@ -57,6 +57,7 @@ static dev_proc_encode_color(plang_encode_color);
 static dev_proc_decode_color(plang_decode_color);
 static dev_proc_encode_color(planc_encode_color);
 static dev_proc_decode_color(planc_decode_color);
+static dev_proc_map_color_rgb(planc_map_color_rgb);
 
 static dev_proc_open_device(plan_open);
 static dev_proc_close_device(plan_close);
@@ -73,14 +74,14 @@ static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
 /* The device procedures */
 
 /* See gdevprn.h for the template for the following. */
-#define pgpm_procs(encode_color, decode_color) {\
+#define pgpm_procs(p_color_rgb, encode_color, decode_color) {\
         plan_open,\
         NULL, /* get_initial_matrix */ \
         NULL, /* sync output */ \
         gdev_prn_output_page, \
         plan_close,\
         NULL, /* map_rgb_color */ \
-        NULL, /* map_color_rgb */ \
+        p_color_rgb, /* map_color_rgb */ \
         NULL, /* fill_rectangle */ \
         NULL, /* tile_rectangle */ \
         NULL, /* copy_mono */ \
@@ -143,15 +144,15 @@ static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
 }
 
 static const gx_device_procs planm_procs =
-  pgpm_procs(gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
+  pgpm_procs(NULL, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
 static const gx_device_procs plang_procs =
-  pgpm_procs(plang_encode_color, plang_decode_color);
+  pgpm_procs(NULL, plang_encode_color, plang_decode_color);
 static const gx_device_procs plan_procs =
-  pgpm_procs(gx_default_rgb_map_rgb_color, plan_decode_color);
+  pgpm_procs(NULL, gx_default_rgb_map_rgb_color, plan_decode_color);
 static const gx_device_procs planc_procs =
-  pgpm_procs(planc_encode_color, planc_decode_color);
+  pgpm_procs(planc_map_color_rgb, planc_encode_color, planc_decode_color);
 static const gx_device_procs plank_procs =
-  pgpm_procs(planc_encode_color, planc_decode_color);
+  pgpm_procs(planc_map_color_rgb, planc_encode_color, planc_decode_color);
 
 /* Macro for generating device descriptors. */
 #define plan_prn_device(procs, dev_name, num_comp, depth, max_gray, max_rgb, print_page) \
@@ -380,7 +381,7 @@ plan_decode_color(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-/* Map a cmyk color tuple back to an RGB color. */
+/* Map a cmyk color tuple back to an gs color. */
 static int
 planc_decode_color(gx_device * dev, gx_color_index color,
                    gx_color_value prgb[4])
@@ -401,6 +402,31 @@ planc_decode_color(gx_device * dev, gx_color_index color,
     prgb[1] = cvalue(m);
     prgb[2] = cvalue(y);
     prgb[3] = cvalue(k);
+    return 0;
+}
+
+/* Map a cmyk color back to an rgb tuple. */
+static int
+planc_map_color_rgb(gx_device * dev, gx_color_index color,
+                    gx_color_value prgb[3])
+{
+    uint bitspercolor = dev->color_info.depth / 4;
+    uint colormask = (1 << bitspercolor) - 1;
+    uint max_cmyk = dev->color_info.max_color;
+    uint c, m, y, k;
+
+#define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / colormask))
+
+    k = color & colormask;
+    color >>= bitspercolor;
+    y = color & colormask;
+    color >>= bitspercolor;
+    m = color & colormask;
+    c = color >> bitspercolor;
+    k = colormask - k;
+    prgb[0] = cvalue((colormask - c) * k / colormask);
+    prgb[1] = cvalue((colormask - m) * k / colormask);
+    prgb[2] = cvalue((colormask - y) * k / colormask);
     return 0;
 }
 
