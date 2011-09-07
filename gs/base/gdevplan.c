@@ -412,7 +412,6 @@ planc_map_color_rgb(gx_device * dev, gx_color_index color,
 {
     uint bitspercolor = dev->color_info.depth / 4;
     uint colormask = (1 << bitspercolor) - 1;
-    uint max_cmyk = dev->color_info.max_color;
     uint c, m, y, k;
 
 #define cvalue(c) ((gx_color_value)((ulong)(c) * gx_max_color_value / colormask))
