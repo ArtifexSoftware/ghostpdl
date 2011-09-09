@@ -373,6 +373,18 @@ pdfdict begin
   55  1 index   % '7'
   56  1 index   % '8'
   57  1 index   % '9'
+ 116  {         % 't'railer
+        PDFfile 7 string .peekstring not { () } if
+        dup /trailer eq {
+          % Empty xref section
+          pop exit
+        } {
+          (   **** Warning: bad string \() exch concatstrings
+          (\) follows xref section header.\n) concatstrings
+          pdfformaterror
+          /setxrefentry cvx /syntaxerror signalerror
+        } ifelse
+      } bind
 >> readonly def
 
  %  Read original version (pre PDF 1.5) of the xref table.
