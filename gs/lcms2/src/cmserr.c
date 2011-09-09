@@ -78,15 +78,6 @@ cmsBool   _cmsRegisterMemHandlerPlugin(cmsPluginBase* Plugin);
 
 // *********************************************************************************
 
-#ifdef CMS_USER_ALLOC
-
-// The following 3 functions will be provided by the libraries environment
-#define _cmsMallocDefaultFn cmsMallocDefaultFn
-#define _cmsFreeDefaultFn cmsFreeDefaultFn
-#define _cmsReallocDefaultFn cmsReallocDefaultFn
-
-#else
-
 // This is the default memory allocation function. It does a very coarse 
 // check of amout of memory, just to prevent exploits
 static
@@ -98,6 +89,18 @@ void* _cmsMallocDefaultFn(cmsContext ContextID, cmsUInt32Number size)
 
     cmsUNUSED_PARAMETER(ContextID);
 }
+
+// Generic allocate & zero
+static
+void* _cmsMallocZeroDefaultFn(cmsContext ContextID, cmsUInt32Number size)
+{
+    void *pt = _cmsMalloc(ContextID, size);
+    if (pt == NULL) return NULL;
+
+    memset(pt, 0, size);
+    return pt;
+}
+
 
 // The default free function. The only check proformed is against NULL pointers
 static
@@ -122,19 +125,6 @@ void* _cmsReallocDefaultFn(cmsContext ContextID, void* Ptr, cmsUInt32Number size
     return realloc(Ptr, size);
 
     cmsUNUSED_PARAMETER(ContextID);
-}
-#endif
-
-
-// Generic allocate & zero
-static
-void* _cmsMallocZeroDefaultFn(cmsContext ContextID, cmsUInt32Number size)
-{
-    void *pt = _cmsMalloc(ContextID, size);
-    if (pt == NULL) return NULL;
-
-    memset(pt, 0, size);
-    return pt;
 }
 
 
@@ -260,7 +250,7 @@ void* CMSEXPORT _cmsDupMem(cmsContext ContextID, const void* Org, cmsUInt32Numbe
 // Sub allocation takes care of many pointers of small size. The memory allocated in
 // this way have be freed at once. Next function allocates a single chunk for linked list
 // I prefer this method over realloc due to the big inpact on xput realloc may have if 
-// memory is being swapped to disk. This approach is safer (although thats not true on any platform)
+// memory is being swapped to disk. This approach is safer (although that may not be true on all platforms)
 static
 _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32Number Initial)
 {
