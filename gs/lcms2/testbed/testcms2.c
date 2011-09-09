@@ -2008,6 +2008,37 @@ cmsInt32Number Check7DinterpGranular(void)
 
     return 1;
 }
+
+
+static
+cmsInt32Number Check8DinterpGranular(void)
+{
+    cmsPipeline* lut;
+    cmsStage* mpe;
+    cmsUInt32Number Dimensions[] = { 4, 3, 3, 2, 2, 2, 2, 2 };
+
+    lut = cmsPipelineAlloc(DbgThread(), 8, 3);
+    mpe = cmsStageAllocCLut16bitGranular(DbgThread(), Dimensions, 8, 3, NULL);
+    cmsStageSampleCLut16bit(mpe, Sampler8D, NULL, 0);
+    cmsPipelineInsertStage(lut, cmsAT_BEGIN, mpe);
+
+    // Check accuracy
+
+    if (!CheckOne8D(lut, 0, 0, 0, 0, 0, 0, 0, 0)) return 0;
+    if (!CheckOne8D(lut, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff)) return 0; 
+
+    if (!CheckOne8D(lut, 0x8080, 0x8080, 0x8080, 0x8080, 0x1234, 0x1122, 0x0056, 0x0011)) return 0;
+    if (!CheckOne8D(lut, 0x0000, 0xFE00, 0x80FF, 0x8888, 0x8078, 0x2233, 0x0088, 0x2020)) return 0;
+    if (!CheckOne8D(lut, 0x1111, 0x2222, 0x3333, 0x4444, 0x1455, 0x3344, 0x1987, 0x4532)) return 0;
+    if (!CheckOne8D(lut, 0x0000, 0x0012, 0x0013, 0x0014, 0x2333, 0x4455, 0x9988, 0x1200)) return 0; 
+    if (!CheckOne8D(lut, 0x3141, 0x1415, 0x1592, 0x9261, 0x4567, 0x5566, 0xfe56, 0x6666)) return 0; 
+    if (!CheckOne8D(lut, 0xFF00, 0xFF01, 0xFF12, 0xFF13, 0xF344, 0x6677, 0xbabe, 0xface)) return 0; 
+
+    cmsPipelineFree(lut);
+
+    return 1;
+}
+
 // Colorimetric conversions -------------------------------------------------------------------------------------------------
 
 // Lab to LCh and back should be performed at 1E-12 accuracy at least
@@ -3311,6 +3342,7 @@ cmsInt32Number CheckNamedColorLUT(void)
     cmsUInt16Number Inw[3], Outw[3];
 
 
+
     nc = cmsAllocNamedColorList(DbgThread(), 256, 3, "pre", "post");
     if (nc == NULL) return 0;
 
@@ -3323,7 +3355,7 @@ cmsInt32Number CheckNamedColorLUT(void)
         if (!cmsAppendNamedColor(nc, Name, PCS, Colorant)) { rc = 0; break; }
     }
 
-    cmsPipelineInsertStage(lut, cmsAT_END, _cmsStageAllocNamedColor(nc));
+    cmsPipelineInsertStage(lut, cmsAT_END, _cmsStageAllocNamedColor(nc, FALSE));
 
     cmsFreeNamedColorList(nc);
     if (rc == 0) return 0;
@@ -4795,6 +4827,121 @@ cmsInt32Number CheckVCGT(cmsInt32Number Pass,  cmsHPROFILE hProfile)
 }
 
 
+// Only one of the two following may be used, as they share the same tag
+static
+cmsInt32Number CheckDictionary16(cmsInt32Number Pass,  cmsHPROFILE hProfile)
+{
+      cmsHANDLE hDict;
+      const cmsDICTentry* e;
+      switch (Pass) {
+
+        case 1:     
+            hDict = cmsDictAlloc(DbgThread());
+            cmsDictAddEntry(hDict, L"Name0",  NULL, NULL, NULL);
+            cmsDictAddEntry(hDict, L"Name1",  L"", NULL, NULL);
+            cmsDictAddEntry(hDict, L"Name",  L"String", NULL, NULL);
+            cmsDictAddEntry(hDict, L"Name2", L"12",    NULL, NULL);
+            if (!cmsWriteTag(hProfile, cmsSigMetaTag, hDict)) return 0;    
+            cmsDictFree(hDict);
+            return 1;
+
+
+        case 2:
+
+             hDict = cmsReadTag(hProfile, cmsSigMetaTag);
+             if (hDict == NULL) return 0;
+             e = cmsDictGetEntryList(hDict);
+             if (memcmp(e ->Name, L"Name2", sizeof(wchar_t) * 5) != 0) return 0;
+             if (memcmp(e ->Value, L"12",  sizeof(wchar_t) * 2) != 0) return 0;
+             e = cmsDictNextEntry(e);         
+             if (memcmp(e ->Name, L"Name", sizeof(wchar_t) * 4) != 0) return 0;
+             if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 5) != 0) return 0;
+             e = cmsDictNextEntry(e);         
+             if (memcmp(e ->Name, L"Name1", sizeof(wchar_t) *5) != 0) return 0;
+             if (e ->Value == NULL) return 0;
+             if (*e->Value != 0) return 0;
+             e = cmsDictNextEntry(e);         
+             if (memcmp(e ->Name, L"Name0", sizeof(wchar_t) * 5) != 0) return 0;
+             if (e ->Value != NULL) return 0;
+             return 1;
+
+
+        default:;
+    }
+
+    return 0;
+}
+
+
+
+static
+cmsInt32Number CheckDictionary24(cmsInt32Number Pass,  cmsHPROFILE hProfile)
+{
+    cmsHANDLE hDict;
+    const cmsDICTentry* e;
+    cmsMLU* DisplayName;
+    char Buffer[256];
+    cmsInt32Number rc = 1;
+    
+    switch (Pass) {
+
+    case 1:     
+        hDict = cmsDictAlloc(DbgThread());
+
+        DisplayName = cmsMLUalloc(DbgThread(), 0);    
+
+        cmsMLUsetWide(DisplayName, "en", "US", L"Hello, world");
+        cmsMLUsetWide(DisplayName, "es", "ES", L"Hola, mundo");
+        cmsMLUsetWide(DisplayName, "fr", "FR", L"Bonjour, le monde");
+        cmsMLUsetWide(DisplayName, "ca", "CA", L"Hola, mon");
+
+        cmsDictAddEntry(hDict, L"Name",  L"String", DisplayName, NULL);
+        cmsMLUfree(DisplayName);
+
+        cmsDictAddEntry(hDict, L"Name2", L"12",    NULL, NULL);
+        if (!cmsWriteTag(hProfile, cmsSigMetaTag, hDict)) return 0;    
+        cmsDictFree(hDict);
+        
+        return 1;
+
+
+    case 2:
+
+        hDict = cmsReadTag(hProfile, cmsSigMetaTag);
+        if (hDict == NULL) return 0;
+
+        e = cmsDictGetEntryList(hDict);
+        if (memcmp(e ->Name, L"Name2", sizeof(wchar_t) * 5) != 0) return 0;
+        if (memcmp(e ->Value, L"12",  sizeof(wchar_t) * 2) != 0) return 0;
+        e = cmsDictNextEntry(e);         
+        if (memcmp(e ->Name, L"Name", sizeof(wchar_t) * 4) != 0) return 0;
+        if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 5) != 0) return 0;  
+
+        cmsMLUgetASCII(e->DisplayName, "en", "US", Buffer, 256);
+        if (strcmp(Buffer, "Hello, world") != 0) rc = 0;
+
+
+        cmsMLUgetASCII(e->DisplayName, "es", "ES", Buffer, 256);
+        if (strcmp(Buffer, "Hola, mundo") != 0) rc = 0;
+
+
+        cmsMLUgetASCII(e->DisplayName, "fr", "FR", Buffer, 256);
+        if (strcmp(Buffer, "Bonjour, le monde") != 0) rc = 0;
+
+
+        cmsMLUgetASCII(e->DisplayName, "ca", "CA", Buffer, 256);
+        if (strcmp(Buffer, "Hola, mon") != 0) rc = 0;
+
+        if (rc == 0)
+            Fail("Unexpected string '%s'", Buffer);
+        return 1;
+
+    default:;
+    }
+
+    return 0;
+}
+
 static
 cmsInt32Number CheckRAWtags(cmsInt32Number Pass,  cmsHPROFILE hProfile)
 {
@@ -4956,6 +5103,9 @@ cmsInt32Number CheckProfileCreation(void)
         SubTest("RAW tags");
         if (!CheckRAWtags(Pass, h)) return 0;
 
+        SubTest("Dictionary meta tags");
+        // if (!CheckDictionary16(Pass, h)) return 0;
+        if (!CheckDictionary24(Pass, h)) return 0;
 
         if (Pass == 1) {
             cmsSaveProfileToFile(h, "alltags.icc");
@@ -5117,7 +5267,7 @@ cmsInt32Number CheckBadTransforms(void)
 
     {
 
-    cmsHPROFILE h1 = cmsOpenProfileFromFile("USWebCoatedSWOP.icc", "r");
+    cmsHPROFILE h1 = cmsOpenProfileFromFile("test1.icc", "r");
     cmsHPROFILE h2 = cmsCreate_sRGBProfile();
 
     x1 = cmsCreateTransform(h1, TYPE_BGR_8, h2, TYPE_BGR_8, INTENT_PERCEPTUAL, 0);
@@ -5680,6 +5830,7 @@ cmsInt32Number CheckMatrixShaperXFORM16(void)
     hAbove = Create_AboveRGB();
     xform = cmsCreateTransformTHR(DbgThread(), hAbove, TYPE_RGB_16, hAbove, TYPE_RGB_16,  INTENT_RELATIVE_COLORIMETRIC, 0);
     cmsCloseProfile(hAbove);
+
     rc1 = Check16linearXFORM(xform, 3);
     cmsDeleteTransform(xform);
 
@@ -5933,14 +6084,14 @@ cmsInt32Number CheckCMYK(cmsInt32Number Intent, const char *Profile1, const char
 static
 cmsInt32Number CheckCMYKRoundtrip(void)
 {
-    return CheckCMYK(INTENT_RELATIVE_COLORIMETRIC, "USWebCoatedSWOP.icc", "USWebCoatedSWOP.icc");
+    return CheckCMYK(INTENT_RELATIVE_COLORIMETRIC, "test1.icc", "test1.icc");
 }
 
 
 static
 cmsInt32Number CheckCMYKPerceptual(void)
 {
-    return CheckCMYK(INTENT_PERCEPTUAL, "USWebCoatedSWOP.icc", "UncoatedFOGRA29.icc");
+    return CheckCMYK(INTENT_PERCEPTUAL, "test1.icc", "test2.icc");
 }
 
 
@@ -5948,7 +6099,7 @@ cmsInt32Number CheckCMYKPerceptual(void)
 static
 cmsInt32Number CheckCMYKRelCol(void)
 {
-    return CheckCMYK(INTENT_RELATIVE_COLORIMETRIC, "USWebCoatedSWOP.icc", "UncoatedFOGRA29.icc");
+    return CheckCMYK(INTENT_RELATIVE_COLORIMETRIC, "test1.icc", "test2.icc");
 }
 
 
@@ -5956,8 +6107,8 @@ cmsInt32Number CheckCMYKRelCol(void)
 static
 cmsInt32Number CheckKOnlyBlackPreserving(void)
 {
-    cmsHPROFILE hSWOP  = cmsOpenProfileFromFileTHR(DbgThread(), "USWebCoatedSWOP.icc", "r");
-    cmsHPROFILE hFOGRA = cmsOpenProfileFromFileTHR(DbgThread(), "UncoatedFOGRA29.icc", "r");
+    cmsHPROFILE hSWOP  = cmsOpenProfileFromFileTHR(DbgThread(), "test1.icc", "r");
+    cmsHPROFILE hFOGRA = cmsOpenProfileFromFileTHR(DbgThread(), "test2.icc", "r");
     cmsHTRANSFORM xform, swop_lab, fogra_lab;
     cmsFloat32Number CMYK1[4], CMYK2[4];
     cmsCIELab Lab1, Lab2;
@@ -6037,8 +6188,8 @@ cmsInt32Number CheckKOnlyBlackPreserving(void)
 static
 cmsInt32Number CheckKPlaneBlackPreserving(void)
 {
-    cmsHPROFILE hSWOP  = cmsOpenProfileFromFileTHR(DbgThread(), "USWebCoatedSWOP.icc", "r");
-    cmsHPROFILE hFOGRA = cmsOpenProfileFromFileTHR(DbgThread(), "UncoatedFOGRA29.icc", "r");
+    cmsHPROFILE hSWOP  = cmsOpenProfileFromFileTHR(DbgThread(), "test1.icc", "r");
+    cmsHPROFILE hFOGRA = cmsOpenProfileFromFileTHR(DbgThread(), "test2.icc", "r");
     cmsHTRANSFORM xform, swop_lab, fogra_lab;
     cmsFloat32Number CMYK1[4], CMYK2[4];
     cmsCIELab Lab1, Lab2;
@@ -6202,12 +6353,12 @@ cmsInt32Number CheckBlackPoint(void)
     cmsCIEXYZ Black;
     cmsCIELab Lab;
 
-    hProfile  = cmsOpenProfileFromFileTHR(DbgThread(), "sRGB_Color_Space_Profile.icm", "r");  
+    hProfile  = cmsOpenProfileFromFileTHR(DbgThread(), "test5.icc", "r");  
     cmsDetectBlackPoint(&Black, hProfile, INTENT_RELATIVE_COLORIMETRIC, 0);
     cmsCloseProfile(hProfile);
 
 
-    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "USWebCoatedSWOP.icc", "r");
+    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "test1.icc", "r");
     cmsDetectBlackPoint(&Black, hProfile, INTENT_RELATIVE_COLORIMETRIC, 0);
     cmsXYZ2Lab(NULL, &Lab, &Black);
     cmsCloseProfile(hProfile);
@@ -6217,12 +6368,12 @@ cmsInt32Number CheckBlackPoint(void)
     cmsXYZ2Lab(NULL, &Lab, &Black);
     cmsCloseProfile(hProfile);
 
-    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "UncoatedFOGRA29.icc", "r");
+    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "test2.icc", "r");
     cmsDetectBlackPoint(&Black, hProfile, INTENT_RELATIVE_COLORIMETRIC, 0);
     cmsXYZ2Lab(NULL, &Lab, &Black);
     cmsCloseProfile(hProfile);
 
-    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "USWebCoatedSWOP.icc", "r");
+    hProfile = cmsOpenProfileFromFileTHR(DbgThread(), "test1.icc", "r");
     cmsDetectBlackPoint(&Black, hProfile, INTENT_PERCEPTUAL, 0);
     cmsXYZ2Lab(NULL, &Lab, &Black);
     cmsCloseProfile(hProfile);
@@ -6418,18 +6569,18 @@ void GenerateCRD(const char* cOutProf, const char* FileName)
 static 
 cmsInt32Number CheckPostScript(void)
 {
-    GenerateCSA("sRGB_Color_Space_Profile.icm", "sRGB_CSA.ps");
+    GenerateCSA("test5.icc", "sRGB_CSA.ps");
     GenerateCSA("aRGBlcms2.icc", "aRGB_CSA.ps");
-    GenerateCSA("sRGB_v4_ICC_preference.icc", "sRGBV4_CSA.ps");
-    GenerateCSA("USWebCoatedSWOP.icc", "SWOP_CSA.ps");
+    GenerateCSA("test4.icc", "sRGBV4_CSA.ps");
+    GenerateCSA("test1.icc", "SWOP_CSA.ps");
     GenerateCSA(NULL, "Lab_CSA.ps");
     GenerateCSA("graylcms2.icc", "gray_CSA.ps");
     
-    GenerateCRD("sRGB_Color_Space_Profile.icm", "sRGB_CRD.ps");
+    GenerateCRD("test5.icc", "sRGB_CRD.ps");
     GenerateCRD("aRGBlcms2.icc", "aRGB_CRD.ps");
     GenerateCRD(NULL, "Lab_CRD.ps");
-    GenerateCRD("USWebCoatedSWOP.icc", "SWOP_CRD.ps");
-    GenerateCRD("sRGB_v4_ICC_preference.icc", "sRGBV4_CRD.ps");
+    GenerateCRD("test1.icc", "SWOP_CRD.ps");
+    GenerateCRD("test4.icc", "sRGBV4_CRD.ps");
     GenerateCRD("graylcms2.icc", "gray_CRD.ps");
 
     return 1;
@@ -6721,6 +6872,33 @@ cmsInt32Number CheckGBD(void)
     cmsGBDFree(h);
 
     return 1;
+}
+
+
+static
+int CheckMD5(void)
+{
+    _cmsICCPROFILE* h;
+    cmsHPROFILE pProfile = cmsOpenProfileFromFile("sRGBlcms2.icc", "r"); 
+    cmsProfileID ProfileID1, ProfileID2, ProfileID3, ProfileID4;
+
+    h =(_cmsICCPROFILE*) pProfile;
+    if (cmsMD5computeID(pProfile)) cmsGetHeaderProfileID(pProfile, ProfileID1.ID8); 
+    if (cmsMD5computeID(pProfile)) cmsGetHeaderProfileID(pProfile,ProfileID2.ID8); 
+
+    cmsCloseProfile(pProfile);
+    
+
+     pProfile = cmsOpenProfileFromFile("sRGBlcms2.icc", "r");  
+
+      h =(_cmsICCPROFILE*) pProfile;
+    if (cmsMD5computeID(pProfile)) cmsGetHeaderProfileID(pProfile, ProfileID3.ID8); 
+    if (cmsMD5computeID(pProfile)) cmsGetHeaderProfileID(pProfile,ProfileID4.ID8); 
+
+    cmsCloseProfile(pProfile);
+
+    return ((memcmp(ProfileID1.ID8, ProfileID3.ID8, sizeof(ProfileID1)) == 0) && 
+            (memcmp(ProfileID2.ID8, ProfileID4.ID8, sizeof(ProfileID2)) == 0));
 }
 
 
@@ -7030,31 +7208,31 @@ void SpeedTest(void)
     fflush(stdout);
 
     SpeedTest16bits("16 bits on CLUT profiles", 
-        cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
-        cmsOpenProfileFromFile("sRGBSpac.icm", "r"), INTENT_PERCEPTUAL);
+        cmsOpenProfileFromFile("test5.icc", "r"),
+        cmsOpenProfileFromFile("test3.icc", "r"), INTENT_PERCEPTUAL);
 
     SpeedTest8bits("8 bits on CLUT profiles", 
-        cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
-        cmsOpenProfileFromFile("sRGBSpac.icm", "r"),
+        cmsOpenProfileFromFile("test5.icc", "r"),
+        cmsOpenProfileFromFile("test3.icc", "r"),
         INTENT_PERCEPTUAL);
     
     SpeedTest8bits("8 bits on Matrix-Shaper profiles", 
-        cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"), 
+        cmsOpenProfileFromFile("test5.icc", "r"), 
         cmsOpenProfileFromFile("aRGBlcms2.icc", "r"),
         INTENT_PERCEPTUAL);
 
     SpeedTest8bits("8 bits on SAME Matrix-Shaper profiles",
-        cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
-        cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
+        cmsOpenProfileFromFile("test5.icc", "r"),
+        cmsOpenProfileFromFile("test5.icc", "r"),
         INTENT_PERCEPTUAL);
 
     SpeedTest8bits("8 bits on Matrix-Shaper profiles (AbsCol)", 
-       cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
+       cmsOpenProfileFromFile("test5.icc", "r"),
        cmsOpenProfileFromFile("aRGBlcms2.icc", "r"),
         INTENT_ABSOLUTE_COLORIMETRIC);  
 
     SpeedTest16bits("16 bits on Matrix-Shaper profiles", 
-       cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
+       cmsOpenProfileFromFile("test5.icc", "r"),
         cmsOpenProfileFromFile("aRGBlcms2.icc", "r"),
         INTENT_PERCEPTUAL);
 
@@ -7064,7 +7242,7 @@ void SpeedTest(void)
         INTENT_PERCEPTUAL);
 
     SpeedTest16bits("16 bits on Matrix-Shaper profiles (AbsCol)", 
-       cmsOpenProfileFromFile("sRGB_Color_Space_Profile.icm", "r"),
+       cmsOpenProfileFromFile("test5.icc", "r"),
        cmsOpenProfileFromFile("aRGBlcms2.icc", "r"),
         INTENT_ABSOLUTE_COLORIMETRIC);
 
@@ -7079,12 +7257,12 @@ void SpeedTest(void)
         INTENT_PERCEPTUAL);
 
     SpeedTest8bitsCMYK("8 bits on CMYK profiles", 
-        cmsOpenProfileFromFile("USWebCoatedSWOP.icc", "r"),
-        cmsOpenProfileFromFile("UncoatedFOGRA29.icc", "r"));
+        cmsOpenProfileFromFile("test1.icc", "r"),
+        cmsOpenProfileFromFile("test2.icc", "r"));
 
     SpeedTest16bitsCMYK("16 bits on CMYK profiles", 
-        cmsOpenProfileFromFile("USWebCoatedSWOP.icc", "r"),
-        cmsOpenProfileFromFile("UncoatedFOGRA29.icc", "r"));
+        cmsOpenProfileFromFile("test1.icc", "r"),
+        cmsOpenProfileFromFile("test2.icc", "r"));
 
     SpeedTest8bitsGray("8 bits on gray-to-gray",
         cmsOpenProfileFromFile("graylcms2.icc", "r"), 
@@ -7340,12 +7518,46 @@ void CheckProfileZOO(void)
 
 #endif
 
+
+#if 0
+#define TYPE_709 709 
+static double Rec709Math(int Type, const double Params[], double R) 
+{ double Fun; 
+
+switch (Type) 
+{ 
+case 709: 
+
+if (R <= (Params[3]*Params[4])) Fun = R / Params[3]; 
+else Fun = pow(((R - Params[2])/Params[1]), Params[0]); 
+break; 
+
+case -709: 
+
+if (R <= Params[4]) Fun = R * Params[3]; 
+else Fun = Params[1] * pow(R, (1/Params[0])) + Params[2]; 
+break; 
+} 
+return Fun; 
+}
+
+
+// Add nonstandard TRC curves -> Rec709 
+cmsPluginParametricCurves NewCurvePlugin = { 
+{ cmsPluginMagicNumber, 2000, cmsPluginParametricCurveSig, NULL }, 
+1, {TYPE_709}, {5}, Rec709Math}; 
+#endif
+
+
+
+
 // ---------------------------------------------------------------------------------------
 
 int main(int argc, char* argv[])
 {
     cmsInt32Number Exhaustive = 0;
     cmsInt32Number DoSpeedTests = 1;
+
 
 #ifdef _MSC_VER
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF ); 
@@ -7428,7 +7640,7 @@ int main(int argc, char* argv[])
     Check("5D interpolation with granularity", Check5DinterpGranular);
     Check("6D interpolation with granularity", Check6DinterpGranular);
     Check("7D interpolation with granularity", Check7DinterpGranular);
-
+    Check("8D interpolation with granularity", Check8DinterpGranular);
 
     // Encoding of colorspaces
     Check("Lab to LCh and back (float only) ", CheckLab2LCh);
@@ -7545,6 +7757,7 @@ int main(int argc, char* argv[])
     Check("CGATS parser", CheckCGATS);
     Check("PostScript generator", CheckPostScript);
     Check("Segment maxima GBD", CheckGBD);
+    Check("MD5 digest", CheckMD5);
 
 
     if (DoSpeedTests)
@@ -7555,9 +7768,9 @@ int main(int argc, char* argv[])
     cmsUnregisterPlugins();
 
     // Cleanup
-    RemoveTestProfiles();
-    
-    return TotalFail;
+   RemoveTestProfiles();
+
+   return TotalFail;
 }
  
 

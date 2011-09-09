@@ -17,6 +17,7 @@
 #include "lcms2.h"
 #include "lcms2_plugin.h"
 #include "gslibctx.h"
+#include "gserrors.h"
 
 #define DUMP_CMS_BUFFER 0
 #define DEBUG_LCMS_MEM 0
