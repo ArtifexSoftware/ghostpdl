@@ -223,6 +223,12 @@ struct gx_color_tile_s {
     /* The following is neither key nor value. */
     uint index;			/* the index of the tile within */
     bool trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
+    bool is_planar;             /* Has to be stored here due to the device 
+                                   change that can occur when the tile is 
+                                   created and when it is written in the clist
+                                   when we are writing to a transparency 
+                                   device which, is not planar but the target
+                                   is */
     /* the cache (for GC) */
 };
 

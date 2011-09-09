@@ -248,6 +248,12 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     int force_no_clist = 0;
     int max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
+
+     if (dev_proc(tdev, dev_spec_op)(tdev, gxdso_is_native_planar, NULL, 0)) {
+        pinst->is_planar = true;
+     } else {
+        pinst->is_planar = false;
+     }
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
@@ -727,6 +733,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
         tiles->index = i;
         tiles->cdev = NULL;
         tiles->ttrans = NULL;
+        tiles->is_planar = false;
     }
     return pcache;
 }
@@ -961,6 +968,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile = &pcache->tiles[id % pcache->num_tiles];
     gx_pattern_cache_free_entry(pcache, ctile);         /* ensure that this cache slot is empty */
     ctile->id = id;
+    ctile->is_planar = pinst->is_planar;
     ctile->depth = fdev->color_info.depth;
     ctile->uid = pinst->template.uid;
     ctile->tiling_type = pinst->template.TilingType;
