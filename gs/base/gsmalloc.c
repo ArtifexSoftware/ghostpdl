@@ -321,6 +321,29 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     }
     if (mmem->monitor)
         gx_monitor_enter(mmem->monitor);	/* Exclusive access */
+    /* Previously, we used to search through every allocated block to find
+     * the block we are freeing. This gives us safety in that an attempt to
+     * free an unallocated block will not go wrong. This does radically
+     * slow down frees though, so we replace it with this simpler code; we
+     * now assume that the block is valid, and hence avoid the search.
+     */
+#if 1
+    bp = &((gs_malloc_block_t *)ptr)[-1];
+    if (bp->prev)
+        bp->prev->next = bp->next;
+    if (bp->next)
+        bp->next->prev = bp->prev;
+    if (bp == mmem->allocated) {
+        mmem->allocated = bp->next;
+        mmem->allocated->prev = NULL;
+    }
+    mmem->used -= bp->size + sizeof(gs_malloc_block_t);
+    if (mmem->monitor)
+        gx_monitor_leave(mmem->monitor);	/* Done with exclusive access */
+    gs_alloc_fill(bp, gs_alloc_fill_free,
+                  bp->size + sizeof(gs_malloc_block_t));
+    free(bp);
+#else
     bp = mmem->allocated; /* If 'finalize' releases a memory,
                              this function could be called recursively and
                              change mmem->allocated. */
@@ -364,6 +387,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
                  client_name_string(cname), (ulong) ptr);
         free((char *)((gs_malloc_block_t *) ptr - 1));
     }
+#endif
 }
 static byte *
 gs_heap_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
