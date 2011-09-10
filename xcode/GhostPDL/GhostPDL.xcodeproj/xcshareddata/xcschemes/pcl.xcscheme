@@ -70,6 +70,9 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       buildConfiguration = "Release">
+      <PathRunnable
+         FilePath = "/Users/robin/sauce/ghostpdl.git/main/obj/pcl6">
+      </PathRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Release">
