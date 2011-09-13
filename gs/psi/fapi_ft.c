@@ -31,6 +31,7 @@
 #include "gxfixed.h"
 #include "gdebug.h"
 #include "gxbitmap.h"
+#include "gsmchunk.h"
 
 /* FreeType headers */
 #include <ft2build.h>
@@ -55,6 +56,7 @@ typedef struct FF_server_s
     FT_BitmapGlyph bitmap_glyph;
     gs_memory_t *mem;
     FT_Memory ftmemory;
+    struct  FT_MemoryRec_ ftmemory_rec;
 } FF_server;
 
 typedef struct FF_face_s
@@ -111,7 +113,6 @@ FF_realloc(FT_Memory memory, long cur_size, long new_size, void* block)
     }
 
     tmp = gs_malloc (mem, new_size, 1, "FF_realloc");
-
     if (tmp && block) {
         memcpy (tmp, block, min(cur_size, new_size));
 
@@ -651,11 +652,6 @@ ensure_open(FAPI_server *a_server, const byte *server_param, int server_param_si
         /* As we want FT to use our memory management, we cannot use the convenience of
          * FT_Init_FreeType(), we have to do each stage "manually"
          */
-        s->ftmemory = gs_malloc (s->mem, sizeof(*s->ftmemory), 1, "ensure_open");
-        if (!s->ftmemory) {
-            return(-1);
-        }
-
         s->ftmemory->user = s->mem;
         s->ftmemory->alloc = FF_alloc;
         s->ftmemory->free = FF_free;
@@ -1455,11 +1451,21 @@ plugin_instantiation_proc(gs_fapi_ft_instantiate);
 int gs_fapi_ft_instantiate( i_plugin_client_memory *a_memory, i_plugin_instance **a_plugin_instance)
 {
     FF_server *server = (FF_server*) a_memory->alloc(a_memory, sizeof (FF_server), "FF_server");
+    int code;
+    
     if (!server)
         return e_VMerror;
     memset(server, 0, sizeof(*server));
-    server->mem = a_memory->client_data;
+
+    code = gs_memory_chunk_wrap(&(server->mem), a_memory->client_data);
+    if (code != 0) {
+        return(code);
+    }
+
     server->fapi_server = TheFreeTypeServer;
+
+    server->ftmemory = (FT_Memory)(&(server->ftmemory_rec));
+
     *a_plugin_instance = &server->fapi_server.ig;
     return 0;
 }
@@ -1476,7 +1482,6 @@ static void gs_freetype_destroy(i_plugin_instance *a_plugin_instance, i_plugin_c
      * FT_Done_Library () and then discard the memory ourselves
      */
     FT_Done_Library(server->freetype_library);
-    gs_free (server->mem, server->ftmemory, 0, 0, "gs_freetype_destroy");
-
+    gs_memory_chunk_release (server->mem);
     a_memory->free(a_memory, server, "FF_server");
 }
