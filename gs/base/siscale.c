@@ -404,7 +404,7 @@ static void s_IScale_release(stream_state * st);
 static void
 calculate_dst_contrib(stream_IScale_state * ss, int y)
 {
-    uint row_size = ss->params.WidthOut * ss->params.Colors;
+    uint row_size = ss->params.WidthOut * ss->params.spp_interp;
     int last_index =
     calculate_contrib(&ss->dst_next_list, ss->dst_items,
                       (double)ss->params.EntireHeightOut / ss->params.EntireHeightIn,
@@ -470,11 +470,13 @@ do_init(stream_state        *st,
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
 
     ss->src_y = 0;
-    ss->src_size = ss->params.WidthIn * ss->sizeofPixelIn * ss->params.Colors;
+    ss->src_size = 
+        ss->params.WidthIn * ss->sizeofPixelIn * ss->params.spp_interp;
     ss->src_offset = 0;
     ss->dst_y = 0;
     ss->src_y_offset = ss->params.src_y_offset;
-    ss->dst_size = ss->params.WidthOut * ss->sizeofPixelOut * ss->params.Colors;
+    ss->dst_size = 
+        ss->params.WidthOut * ss->sizeofPixelOut * ss->params.spp_interp;
     ss->dst_offset = 0;
 
     /* create intermediate image to hold horizontal zoom */
@@ -486,7 +488,7 @@ do_init(stream_state        *st,
     ss->tmp = (byte *) gs_alloc_byte_array(mem,
                                            ss->max_support,
                                            (ss->params.WidthOut *
-                                            ss->params.Colors * sizeof(float)),
+                                            ss->params.spp_interp * sizeof(float)),
                                            "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
                                                 max(ss->params.WidthOut,
@@ -505,10 +507,12 @@ do_init(stream_state        *st,
                                                     ss->max_support*2,
                                                     sizeof(CONTRIB), "image_scale contrib_dst[*]");
     /* Allocate buffers for 1 row of source and destination. */
-    ss->dst = gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.Colors,
-                                  ss->sizeofPixelOut, "image_scale dst");
-    ss->src = gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.Colors,
-                                  ss->sizeofPixelIn, "image_scale src");
+    ss->dst = 
+        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+                            ss->sizeofPixelOut, "image_scale dst");
+    ss->src = 
+        gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.spp_interp,
+                            ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->contrib == 0 || ss->items == 0 ||
         ss->dst_items == 0 || ss->dst == 0 || ss->src == 0
         ) {
@@ -521,7 +525,7 @@ do_init(stream_state        *st,
                       (double)ss->params.EntireWidthOut / ss->params.EntireWidthIn,
                       0, 0, ss->params.WidthOut, ss->params.WidthIn,
                       ss->params.WidthOut, ss->params.WidthIn, ss->params.WidthIn,
-                      ss->params.Colors, 255. / ss->params.MaxValueIn,
+                      ss->params.spp_interp, 255. / ss->params.MaxValueIn,
                       horiz->filter_width, horiz->filter, horiz->min_scale);
 
     /* Prepare the weights for the first output row. */
@@ -593,8 +597,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
             }
             /* Apply filter to zoom vertically from tmp to dst. */
             zoom_y(row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
-                   ss->params.WidthOut, ss->params.WidthOut, ss->params.Colors,
-                   &ss->dst_next_list, ss->dst_items);
+                   ss->params.WidthOut, ss->params.WidthOut, 
+                   ss->params.spp_interp, &ss->dst_next_list, ss->dst_items);
             /* Idiotic C coercion rules allow T* and void* to be */
             /* inter-assigned freely, but not compared! */
             if ((void *)row != ss->dst)         /* no buffering */
@@ -643,9 +647,9 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
             if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
                       ss->src_y, (ss->src_y % ss->max_support));
             zoom_x(ss->tmp + (ss->src_y % ss->max_support) *
-                   ss->params.WidthOut * ss->params.Colors, row,
+                   ss->params.WidthOut * ss->params.spp_interp, row,
                    ss->sizeofPixelIn, ss->params.WidthOut, ss->params.WidthIn,
-                   ss->params.Colors, ss->contrib, ss->items);
+                   ss->params.spp_interp, ss->contrib, ss->items);
             pr->ptr += rcount;
             ++(ss->src_y);
             goto top;

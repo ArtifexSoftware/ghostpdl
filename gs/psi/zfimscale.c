@@ -46,7 +46,8 @@ z_imscale_d(i_ctx_t * i_ctx_p)
     if (dict_int_param(op, "Height", 0, 1<<24, -1, &height) < 0)
         return_error(e_rangecheck);
 
-    state.params.Colors = 1;
+    state.params.spp_decode = 1;		
+    state.params.spp_interp = 1;            
     state.params.BitsPerComponentIn = 1;
     state.params.MaxValueIn = 1;
     state.params.WidthIn = width;

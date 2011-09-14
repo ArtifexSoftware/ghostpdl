@@ -46,7 +46,8 @@
 
 /* Define image scaling stream parameters. */
 typedef struct stream_image_scale_params_s {
-    int Colors;			/* >= 1 */
+    int spp_decode;		/* >= 1 */
+    int spp_interp;             /* If we do CM first, may not equal spp_decode */
     int BitsPerComponentIn;	/* bits per input value, 8 or 16 */
     uint MaxValueIn;		/* max value of input component, */
                                 /* 0 < MaxValueIn < 1 << BitsPerComponentIn */
@@ -61,6 +62,8 @@ typedef struct stream_image_scale_params_s {
     int EntireHeightIn;		/* Height of entire input image. */
     int EntireWidthOut;		/* Height of entire output image. */
     int EntireHeightOut;	/* Height of entire output image. */
+    bool early_cm;              /* If this is set, then we will perform
+                                   color managment before interpolating */
 } stream_image_scale_params_t;
 
 /* Define a generic image scaling stream state. */

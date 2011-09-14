@@ -41,8 +41,8 @@ typedef struct stream_IIEncode_state_s {
     /* The client sets the params values before initialization. */
     stream_image_scale_state_common;  /* = state_common + params */
     /* The init procedure sets the following. */
-    int sizeofPixelIn;		/* bytes per input pixel, 1 or 2 * Colors */
-    int sizeofPixelOut;		/* bytes per output pixel, 1 or 2 * Colors */
+    int sizeofPixelIn;		/* bytes per input pixel, 1 or 2 * spp_interp */
+    int sizeofPixelOut;		/* bytes per output pixel, 1 or 2 * spp_interp */
     uint src_size;		/* bytes per row of input */
     uint dst_size;		/* bytes per row of output */
     void /*PixelOut */ *prev;	/* previous row of input data in output fmt, */
@@ -75,9 +75,9 @@ s_IIEncode_init(stream_state * st)
     gs_memory_t *mem = ss->memory;
 
     ss->sizeofPixelIn =
-        ss->params.BitsPerComponentIn / 8 * ss->params.Colors;
+        ss->params.BitsPerComponentIn / 8 * ss->params.spp_interp;
     ss->sizeofPixelOut =
-        ss->params.BitsPerComponentOut / 8 * ss->params.Colors;
+        ss->params.BitsPerComponentOut / 8 * ss->params.spp_interp;
     ss->src_size = ss->sizeofPixelIn * ss->params.WidthIn;
     ss->dst_size = ss->sizeofPixelOut * ss->params.WidthOut;
 
@@ -106,7 +106,7 @@ s_IIEncode_init(stream_state * st)
           (ss->params.MaxValueIn == ss->params.MaxValueOut ?
            SCALE_SAME : SCALE_8_8) :
           (ss->params.MaxValueIn == 255 && ss->params.MaxValueOut == frac_1 ?
-           (ss->params.Colors == 3 ? SCALE_8_16_BYTE2FRAC_3 :
+           (ss->params.spp_interp == 3 ? SCALE_8_16_BYTE2FRAC_3 :
             SCALE_8_16_BYTE2FRAC) :
            SCALE_8_16_GENERAL)) :
          (ss->params.BitsPerComponentOut == 8 ? SCALE_16_8 :
@@ -150,14 +150,14 @@ top:
                 break;
             case SCALE_8_8:
             case SCALE_8_8_ALIGNED:
-                for (c = ss->params.Colors; --c >= 0; ++in, ++out)
+                for (c = ss->params.spp_interp; --c >= 0; ++in, ++out)
                     *out = (byte)(*in * ss->params.MaxValueOut /
                                   ss->params.MaxValueIn);
                 break;
             case SCALE_8_16_BYTE2FRAC:
             case SCALE_8_16_BYTE2FRAC_ALIGNED: /* could be optimized */
             case SCALE_8_16_BYTE2FRAC_3: /* could be optimized */
-                for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
+                for (c = ss->params.spp_interp; --c >= 0; ++in, out += 2) {
                     uint b = *in;
                     uint value = byte2frac(b);
 
@@ -178,7 +178,7 @@ top:
                 break;
             case SCALE_8_16_GENERAL:
             case SCALE_8_16_GENERAL_ALIGNED: /* could be optimized */
-                for (c = ss->params.Colors; --c >= 0; ++in, out += 2) {
+                for (c = ss->params.spp_interp; --c >= 0; ++in, out += 2) {
                     uint value = *in * ss->params.MaxValueOut /
                         ss->params.MaxValueIn;
 
@@ -187,14 +187,14 @@ top:
                 break;
             case SCALE_16_8:
             case SCALE_16_8_ALIGNED:
-                for (c = ss->params.Colors; --c >= 0; in += 2, ++out)
+                for (c = ss->params.spp_interp; --c >= 0; in += 2, ++out)
                     *out = (byte)(*(const bits16 *)in *
                                   ss->params.MaxValueOut /
                                   ss->params.MaxValueIn);
                 break;
             case SCALE_16_16:
             case SCALE_16_16_ALIGNED: /* could be optimized */
-                for (c = ss->params.Colors; --c >= 0; in += 2, out += 2) {
+                for (c = ss->params.spp_interp; --c >= 0; in += 2, out += 2) {
                     uint value = *(const bits16 *)in *
                         ss->params.MaxValueOut / ss->params.MaxValueIn;
 

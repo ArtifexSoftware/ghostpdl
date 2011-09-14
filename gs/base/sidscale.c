@@ -66,7 +66,7 @@ static void
 idownscale_x(void /* PixelIn */ * tmp, const void /* PixelIn */ *src, stream_ISpecialDownScale_state *const ss)
 {
     int c, i;
-    int Colors = ss->params.Colors;
+    int Colors = ss->params.spp_interp;
     int WidthIn = ss->params.WidthIn;
     int prev_y;
     int cur_y;
@@ -148,7 +148,7 @@ static void
 idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
              stream_ISpecialDownScale_state *const ss)
 {
-    int kn = ss->params.WidthOut * ss->params.Colors;
+    int kn = ss->params.WidthOut * ss->params.spp_interp;
     int kc;
     float scale = (float) ss->params.MaxValueOut/255.0;
 
@@ -216,8 +216,10 @@ s_ISpecialDownScale_init(stream_state * st)
     ss->sizeofPixelIn = ss->params.BitsPerComponentIn / 8;
     ss->sizeofPixelOut = ss->params.BitsPerComponentOut / 8;
 
-    ss->src_size = ss->params.WidthIn * ss->sizeofPixelIn * ss->params.Colors;
-    ss->dst_size = ss->params.WidthOut * ss->sizeofPixelOut * ss->params.Colors;
+    ss->src_size = 
+        ss->params.WidthIn * ss->sizeofPixelIn * ss->params.spp_interp;
+    ss->dst_size = 
+        ss->params.WidthOut * ss->sizeofPixelOut * ss->params.spp_interp;
 
     /* Initialize destination DDAs. */
     ss->dst_x = 0;
@@ -228,13 +230,16 @@ s_ISpecialDownScale_init(stream_state * st)
     dda_init(ss->dda_y, 0, ss->params.HeightOut, ss->params.HeightIn);
 
     /* create intermediate image to hold horizontal zoom */
-    ss->tmp = gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.Colors,
-                                  ss->sizeofPixelIn, "image_scale tmp");
+    ss->tmp = 
+        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+                            ss->sizeofPixelIn, "image_scale tmp");
     /* Allocate buffers for 1 row of source and destination. */
-    ss->dst = gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.Colors,
-                                  ss->sizeofPixelOut, "image_scale dst");
-    ss->src = gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.Colors,
-                                  ss->sizeofPixelIn, "image_scale src");
+    ss->dst = 
+        gs_alloc_byte_array(mem, ss->params.WidthOut * ss->params.spp_interp,
+                            ss->sizeofPixelOut, "image_scale dst");
+    ss->src = 
+        gs_alloc_byte_array(mem, ss->params.WidthIn * ss->params.spp_interp,
+                            ss->sizeofPixelIn, "image_scale src");
     if (ss->tmp == 0 || ss->dst == 0 || ss->src == 0) {
         s_ISpecialDownScale_release(st);
         return ERRC;
