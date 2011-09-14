@@ -343,7 +343,8 @@ CFLAGS_SO=@DYNAMIC_CFLAGS@
 # We don't include -ansi, because this gets in the way of the platform-
 #   specific stuff that <math.h> typically needs; nevertheless, we expect
 #   gcc to accept ANSI-style function prototypes and function definitions.
-XCFLAGS=@DYNAMIC_FLAGS@
+# CFLAGS from autoconf
+AC_CFLAGS=@DYNAMIC_FLAGS@
 
 # fontconfig flags, used by unix-aux.mak
 FONTCONFIG_CFLAGS=@FONTCONFIG_CFLAGS@
@@ -356,7 +357,7 @@ DBUS_LIBS=@DBUS_LIBS@
 # defines from autoconf; note that we don't use these at present.
 ACDEFS=@DEFS@
 
-CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
+CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)
 
 # Define platform flags for ld.
 # SunOS 4.n may need -Bstatic.
@@ -365,9 +366,10 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 #	-R /usr/local/xxx/lib:/usr/local/lib
 # giving the full path names of the shared library directories.
 # XLDFLAGS can be set from the command line.
-XLDFLAGS=@X_LDFLAGS@
+# AC_LDFLAGS from autoconf
+AC_LDFLAGS=@X_LDFLAGS@
 
-LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
+LDFLAGS=@LDFLAGS@ $(AC_LDFLAGS) $(XLDFLAGS)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
@@ -376,7 +378,7 @@ LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
 # Solaris may need -lnsl -lsocket -lposix4.
 # (Libraries required by individual drivers are handled automatically.)
 
-EXTRALIBS=@LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@
+EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
