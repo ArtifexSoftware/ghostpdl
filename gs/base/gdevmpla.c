@@ -33,11 +33,26 @@ static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(mem_planar_strip_copy_rop);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 
+/* It's a bit nasty to have to fork the planar dev_spec_op like this, but
+ * the forwarding nature of the device means that the function pointer test
+ * for the map_cmyk_color call fails if we let it fall through to the
+ * default device. */
 static int
 mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
                        void *data, int size)
 {
     if (dev_spec_op == gxdso_is_native_planar)
+        return 1;
+    return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
+}
+
+static int
+mem_planar_dev_spec_op_cmyk4(gx_device *pdev, int dev_spec_op,
+                             void *data, int size)
+{
+    if (dev_spec_op == gxdso_is_native_planar)
+        return 1;
+    if (dev_spec_op == gxdso_is_std_cmyk_1bit)
         return 1;
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
@@ -99,6 +114,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     } else {
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
         set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
+        set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
         if ((mdev->color_info.depth == 24) &&
             (mdev->num_planes == 3) &&
             (mdev->planes[0].depth == 8) && (mdev->planes[0].shift == 16) &&
@@ -110,16 +126,16 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
                  (mdev->planes[0].depth == 1) && (mdev->planes[0].shift == 3) &&
                  (mdev->planes[1].depth == 1) && (mdev->planes[1].shift == 2) &&
                  (mdev->planes[2].depth == 1) && (mdev->planes[2].shift == 1) &&
-                 (mdev->planes[3].depth == 1) && (mdev->planes[3].shift == 0))
+                 (mdev->planes[3].depth == 1) && (mdev->planes[3].shift == 0)) {
             set_dev_proc(mdev, copy_color, mem_planar_copy_color_4to1);
-        else
+            set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op_cmyk4);
+        } else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
         set_dev_proc(mdev, copy_plane, mem_planar_copy_plane);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, strip_copy_rop, mem_planar_strip_copy_rop);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
-        set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
     }
     return 0;
 }
