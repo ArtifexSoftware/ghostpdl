@@ -1149,7 +1149,7 @@ mementobsc:
 # --------------------- Profile targets --------------------- #
 # Simply set some definitions and call ourselves back         #
 
-PROFILEDEFS=DEBUGSYM=1
+PROFILEDEFS=PROFILE=1
 
 profile:
 	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS)
