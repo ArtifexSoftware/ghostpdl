@@ -61,8 +61,14 @@
 #include "ipacked.h"	    /* for packed_next */
 #include "iddict.h"
 #include "ifont42.h"        /* for string_array_access_proc */
+#include "gsmalloc.h"
+#include "gsmchunk.h"
 
 #undef frac_bits
+
+#ifndef _MSC_VER
+#define _MSC_VER 0
+#endif
 
 /* UFST includes : */
 #include "cgconfig.h"
@@ -95,6 +101,9 @@
 #endif
 
 #if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#undef true
+#undef false
+
 #define false FALSE
 #define true TRUE
 #define UNICODE UFST_UNICODE
@@ -131,8 +140,7 @@ UW16 CGENTRY CGIFFfont (fc);
 
 typedef struct fapi_ufst_server_s fapi_ufst_server;
 
-static gs_memory_t *gs_mem_ctx = NULL;
-static unsigned long long int font_ids;
+static unsigned int font_ids = 0x7fffffff;
 
 #if UFST_REENTRANT
 #define FSA_FROM_SERVER IF_STATE *pIFS = &r->IFS
@@ -173,7 +181,7 @@ struct fapi_ufst_server_s {
     FAPI_server If;
     int bInitialized;
     FAPI_font *ff;
-    i_plugin_client_memory client_mem;
+    gs_memory_t *mem;
     byte *param;
     int param_size;
     IF_STATE IFS;
@@ -199,6 +207,22 @@ static inline fapi_ufst_server *If_to_I(FAPI_server *If)
 
 static inline fapi_ufst_server *IFS_to_I(IF_STATE *pIFS)
 {   return (fapi_ufst_server *)((char *)pIFS - offset_of(fapi_ufst_server, IFS));
+}
+
+/* assign font_id not based on fchandle value, nor read from font */
+static inline int assign_font_id(void)
+{
+    /* We're only allowed 5 open FCOs at one time
+     * so make sure we don't clash with those
+     */
+     if ((--font_ids) <= (5 << 16)) {
+         /* When we clash with the expected values for FCO's
+          * wrap around. No will ever have enough concurrent
+          * fonts for this to be a problem!
+          */
+         font_ids = 0x7fffffff;
+     }
+     return(font_ids);
 }
 
 /*------------------ FAPI_server members ------------------------------------*/
@@ -248,7 +272,7 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
     FSA_FROM_SERVER;
 
     if (server_param_size > 0 && server_param) {
-        r->param = (byte *)r->client_mem.alloc(&r->client_mem, server_param_size, "server_params");
+        r->param = (byte *)gs_malloc(r->mem, server_param_size, 1, "server_params");
         if (!r->param) {
             return_error (e_VMerror);
         }
@@ -275,17 +299,17 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
             sPlugIn[l] = 0;
             bPlugIn = TRUE;
         } else
-            emprintf(r->client_mem.client_data,
+            emprintf(r->mem,
                      "Warning: Unknown UFST parameter ignored.\n");
     }
 #if !NO_SYMSET_MAPPING
     if (!bSSdir) {
         strcpy(ufst_root_dir, ".");
-        emprintf(r->client_mem.client_data,
+        emprintf(r->mem,
                  "Warning: UFST_SSdir is not specified, will search *.ss files in the curent directory.\n");
     }
 #endif
-    code = gx_UFST_init(r->client_mem.client_data, (const UB8 *)ufst_root_dir);
+    code = gx_UFST_init(r->mem, (const UB8 *)ufst_root_dir);
     if (code < 0)
         return code;
     r->ufst_is_singleton = (code == 1);
@@ -297,7 +321,7 @@ static FAPI_retcode open_UFST(fapi_ufst_server *r, const byte *server_param, int
             return code;
     } else {
 #ifdef FCO_RDR
-        emprintf(r->client_mem.client_data,
+        emprintf(r->mem,
                  "Warning: UFST_PlugIn is not specified, some characters may be missing.\n");
 #endif
     }
@@ -316,7 +340,7 @@ static FAPI_retcode ensure_open(FAPI_server *server, const byte *server_param, i
     {
         code = open_UFST(r, server_param, server_param_size);
         if (code < 0) {
-            emprintf(r->client_mem.client_data, "Error opening the UFST font server.\n");
+            emprintf(r->mem, "Error opening the UFST font server.\n");
             return code;
         }
     }
@@ -440,9 +464,9 @@ static LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
         r->callback_error = e_invalidfont;
         return 0;
     }
-    g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem,
+    g = (pcleo_glyph_list_elem *)gs_malloc(r->mem,
             sizeof(pcleo_glyph_list_elem) +
-            (use_XL_format ? 12 : sizeof(PCLETTO_CHDR)) + glyph_length + 2,
+            (use_XL_format ? 12 : sizeof(PCLETTO_CHDR)) + glyph_length + 2, 1,
             "PCLETTO char");
     if (g == 0) {
         r->callback_error = e_VMerror;
@@ -510,7 +534,7 @@ static LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
         return (NULL);
     }
 
-    cstring = MEMptr(charstring.hdata);
+    cstring = (unsigned char *)MEMptr(charstring.hdata);
 
     if (ff->get_glyph(ff, chId, cstring, glyph_length) != glyph_length)
     {
@@ -537,8 +561,8 @@ static LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
 #else
     ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
     LPUB8 q;
-    pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem,
-                    sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, "PSEO char");
+    pcleo_glyph_list_elem *g = (pcleo_glyph_list_elem *)gs_malloc(r->mem,
+                    sizeof(pcleo_glyph_list_elem) + sizeof(PS_CHAR_HDR) + 2 + 2 + glyph_length + 1, 1, "PSEO char");
     PS_CHAR_HDR *h;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
     FSA_FROM_SERVER;
@@ -657,12 +681,12 @@ static void pack_pseo_word_array(fapi_ufst_server *r, FAPI_font *ff, UB8 **p,
 static void pack_pseo_fhdr(fapi_ufst_server *r, FAPI_font *ff, UB8 *p)
 {   ushort j, n, skip = 0;
 
-    while ((UL32)p & 0x03) /* align to QUADWORD */
+    while (((uint64_t)p) & 0x03) /* align to QUADWORD */
         PACK_ZERO(p);
     pack_long(&p, 1);  /* format = 1 */
     for (j = 0; j < 6; j++)
         pack_float(&p, ff->get_float(ff, FAPI_FONT_FEATURE_FontMatrix, j));
-    while ((UL32)p & 0x03) /* align to QUADWORD */
+    while (((uint64_t)p) & 0x03) /* align to QUADWORD */
         PACK_ZERO(p);
     /* UFST has no definition for PSEO structure, so implement serialization : */
     PACK_LONG(p, 0, FAPI_FONT_FEATURE_UniqueID);
@@ -727,11 +751,11 @@ static void pack_pseo_fhdr(fapi_ufst_server *r, FAPI_font *ff, UB8 *p)
 }
 
 static char *my_strdup(fapi_ufst_server *r, const char *s, const char *cname)
-{   int l = strlen(s) + 1;
-    char *p = (char *)r->client_mem.alloc(&r->client_mem, l, cname);
+{   int len = strlen(s) + 1;
+    char *p = (char *)gs_malloc(r->mem, len, 1, cname);
 
     if (p != 0)
-        memcpy(p, s, l);
+        memcpy(p, s, len);
     return p;
 }
 
@@ -753,7 +777,7 @@ static FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, fc
 
         if ((code = CGIFfco_Open(FSA (UB8 *)font_file_path, &fcHandle)) != 0)
             return code;
-        e = (fco_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(*e), "fco_list_elem");
+        e = (fco_list_elem *)gs_malloc(r->mem, sizeof(*e), 1, "fco_list_elem");
         if (e == 0) {
             CGIFfco_Close(FSA fcHandle);
             return e_VMerror;
@@ -763,7 +787,7 @@ static FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, fc
         e->file_path = my_strdup(r, font_file_path, "fco_file_path");
         if (e->file_path == 0) {
             CGIFfco_Close(FSA fcHandle);
-            r->client_mem.free(&r->client_mem, e, "fco_list_elem");
+            gs_free(r->mem, e, 0, 0, "fco_list_elem");
             return e_VMerror;
         }
         e->next = r->fco_list;
@@ -822,7 +846,7 @@ static FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_pa
 #endif
         area_length += strlen(font_file_path) + 1;
     }
-    buf = r->client_mem.alloc(&r->client_mem, area_length, "ufst font data");
+    buf = gs_malloc(r->mem, area_length, 1, "ufst font data");
     if (buf == 0)
         return e_VMerror;
 
@@ -843,9 +867,9 @@ static FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_pa
              d->font_id = (e->fcHandle << 16) | ff->subfont;
              d->font_type = FC_FCO_TYPE;
          } else {
-            stream *f = sfopen(font_file_path, "rb", (gs_memory_t *)(r->client_mem.client_data));
+            stream *f = sfopen(font_file_path, "rb", r->mem);
             if (f == NULL) {
-                emprintf1((gs_memory_t *)(r->client_mem.client_data),
+                emprintf1(r->mem,
                           "fapiufst: Can't open %s\n",
                           font_file_path);
                 return e_undefinedfilename;
@@ -864,7 +888,7 @@ static FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_pa
         d->font_type = (ff->is_type1 ? FC_PST1_TYPE : FC_TT_TYPE);
         d->font_id = ff->get_long(ff, FAPI_FONT_FEATURE_UniqueID, 0);
         if (d->font_id < 0) {
-            d->font_id = ++font_ids;
+            d->font_id = assign_font_id();
         }
         h = (PCLETTO_FHDR *)(buf + sizeof(ufst_common_font_data));
         h->fontDescriptorSize = PCLETTOFONTHDRSIZE;
@@ -1145,7 +1169,7 @@ static void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
         while (d->glyphs != 0) {
             pcleo_glyph_list_elem *e = d->glyphs;
             d->glyphs = e->next;
-            r->client_mem.free(&r->client_mem, e, "PCLEO char");
+            gs_free(r->mem, e, 0, 0, "PCLEO char");
         }
         d->glyphs = NULL;
     }
@@ -1153,7 +1177,7 @@ static void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
 
 static FAPI_retcode get_fontmatrix(FAPI_server *I, gs_matrix *m)
 {
-#if 0
+#if 1
     gs_matrix *base_font_matrix = &I->initial_FontMatrix;
     m->xx = I->initial_FontMatrix.xx;
     m->xy = I->initial_FontMatrix.xy;
@@ -1265,7 +1289,7 @@ static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *
     ufst_common_font_data *d = (ufst_common_font_data *)ff->server_font_data;
     SW16 design_escapement[2];
     SW16 du_emx, du_emy;
-    char *notdef = ".notdef";
+    const char *notdef = ".notdef";
     const void *client_char_data = ff->char_data;
     const int client_char_data_len = ff->char_data_len;
     bool need_decrypt = ff->need_decrypt;
@@ -1343,12 +1367,12 @@ static FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref *
         r->callback_error = 0;
         ff->char_data = (void *)notdef;
         ff->char_data_len = strlen(notdef);
-        CGIFchIdptr(FSA &c1, notdef);
+        CGIFchIdptr(FSA (void *)&c1, (void *)notdef);
         code2 = CGIFchar_handle(FSA c1, &result, (SW16)0);
         if (code2 && code2 != ERR_fixed_space && code2 != ERR_bm_buff && code2 != ERR_bm_too_big) {
-            ff->char_data = "space";
+            ff->char_data = (void *)"space";
             ff->char_data_len = strlen("space");
-            CGIFchIdptr(FSA &c1, "space");
+            CGIFchIdptr(FSA (void *)&c1, (void *)"space");
             code2 = CGIFchar_handle(FSA c1, &result, (SW16)0);
         }
         if (!code2 || code2 == ERR_fixed_space) {
@@ -1553,8 +1577,8 @@ static void release_fco(fapi_ufst_server *r, SW16 fcHandle)
 
             *e = ee->next;
             CGIFfco_Close(FSA ee->fcHandle);
-            r->client_mem.free(&r->client_mem, ee->file_path, "fco_file_path");
-            r->client_mem.free(&r->client_mem, ee, "fco_list_elem");
+            gs_free(r->mem, ee->file_path, 0, 0, "fco_file_path");
+            gs_free(r->mem, ee, 0, 0, "fco_list_elem");
         } else
             e = &(*e)->next;
 }
@@ -1579,11 +1603,11 @@ static FAPI_retcode FAPIU_release_typeface(FAPI_server *server, void *font_data)
 
     release_glyphs(r, d);
     release_fco(r, (SW16)(d->font_id >> 16));
-    r->client_mem.free(&r->client_mem, font_data, "ufst font data");
+    gs_free(r->mem, font_data, 0, 0, "ufst font data");
     return code;
 }
 
-static FAPI_retcode check_cmap_for_GID(FAPI_server *server, uint index)
+static FAPI_retcode check_cmap_for_GID(FAPI_server *server, uint *index)
 {
     return 0;
 }
@@ -1651,12 +1675,18 @@ int gs_fapiufst_instantiate(i_plugin_client_memory *client_mem, i_plugin_instanc
     gs_main_instance *inst;
     ref entry;
     char tmppath[512];
+    int code = 0;
 
     if (r == 0)
         return e_Fatal;
     memset(r, 0, sizeof(*r));
     r->If = If0;
-    r->client_mem = *client_mem;
+
+    code = gs_memory_chunk_wrap(&(r->mem), client_mem->client_data);
+    if (code != 0) {
+        return(code);
+    }
+
     *p_instance = &r->If.ig;
 
     inst = get_minst_from_memory((const gs_memory_t *)(client_mem->client_data));
@@ -1715,7 +1745,9 @@ static void gs_fapiufst_finit(i_plugin_instance *this, i_plugin_client_memory *m
     if (r->bInitialized && !r->ufst_is_singleton)
         gx_UFST_fini();
     if (r->param) {
-        mem->free (mem, r->param, "server_params");
+        gs_free (r->mem, r->param, 0, 0, "server_params");
     }
+    gs_memory_chunk_release (r->mem);
+
     mem->free(mem, r, "fapi_ufst_server");
 }

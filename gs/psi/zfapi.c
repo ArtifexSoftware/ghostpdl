@@ -2573,7 +2573,7 @@ retry_oversampling:
                 sbw_state = SBW_DONE;
             }
         }
-
+        memset(&metrics, 0x00, sizeof(metrics));
         /* Take metrics from font : */
         if (SHOW_IS(penum, TEXT_DO_NONE)) {
             code = I->get_char_width(I, &I->ff, &cr, &metrics);
