@@ -430,9 +430,9 @@ static void pdf_SepCMYK_ConvertToRGB (float *in, float *out)
 {
     float RGB[3];
 
-    RGB[0] = in[0] + in[4];
-    RGB[1] = in[1] + in[4];
-    RGB[2] = in[2] + in[4];
+    RGB[0] = in[0] + in[3];
+    RGB[1] = in[1] + in[3];
+    RGB[2] = in[2] + in[3];
 
     if (RGB[0] > 1)
         out[0] = 0.0f;
