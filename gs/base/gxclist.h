@@ -235,6 +235,7 @@ typedef struct clist_icctable_s clist_icctable_t;
 
 struct clist_icctable_s {
     int tablesize;
+    gs_memory_t *memory;
     clist_icctable_entry_t *head;
     clist_icctable_entry_t *final;
 };

@@ -1040,7 +1040,6 @@ clist_icc_searchtable(gx_device_clist_writer *cdev, int64_t hashcode)
 int
 clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
 {
-
     int number_entries;
     clist_icctable_entry_t *curr_entry, *next_entry;
     int k;
@@ -1051,10 +1050,10 @@ clist_icc_freetable(clist_icctable_t *icc_table, gs_memory_t *memory)
     curr_entry = icc_table->head;
     for (k = 0; k < number_entries; k++) {
         next_entry = curr_entry->next;
-        gs_free_object(memory, curr_entry, "clist_icc_freetable");
+        gs_free_object(icc_table->memory, curr_entry, "clist_icc_freetable");
         curr_entry = next_entry;
     }
-    gs_free_object(memory, icc_table, "clist_icc_freetable");
+    gs_free_object(icc_table->memory, icc_table, "clist_icc_freetable");
     return(0);
 }
 
@@ -1135,6 +1134,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
     clist_icctable_entry_t *entry, *curr_entry;
     int k;
     int64_t hashcode;
+    gs_memory_t *stable_mem = cdev->memory->stable_memory;
 
     /* If the hash code is not valid then compute it now */
     if (icc_profile->hash_is_valid == false) {
@@ -1146,9 +1146,9 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         hashcode = hashcode_in;
     }
     if ( icc_table == NULL ) {
-        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory,
-                    clist_icctable_entry_t,
-                    &st_clist_icctable_entry, "clist_icc_addentry");
+        entry = (clist_icctable_entry_t *) gs_alloc_struct(stable_mem,
+                               clist_icctable_entry_t, &st_clist_icctable_entry, 
+                               "clist_icc_addentry");
         if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
         entry->next = NULL;
@@ -1157,22 +1157,19 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->serial_data.file_position = -1;
         entry->icc_profile = icc_profile;
         rc_increment(icc_profile);
-        icc_table = gs_alloc_struct(cdev->memory,
-                clist_icctable_t,
-                &st_clist_icctable, "clist_icc_addentry");
-
+        icc_table = gs_alloc_struct(stable_mem, clist_icctable_t, 
+                                    &st_clist_icctable, "clist_icc_addentry");
         if (icc_table == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate icc table");
         icc_table->tablesize = 1;
         icc_table->head = entry;
         icc_table->final = entry;
-
+        icc_table->memory = stable_mem;
         /* For now, we are just going to put the icc_table itself
             at band_range_max + 1.  The ICC profiles are written
             in the cfile at the current stored file position*/
         cdev->icc_table = icc_table;
     } else {
-
         /* First check if we already have this entry */
         curr_entry = icc_table->head;
         for ( k = 0; k < icc_table->tablesize; k++ ) {
@@ -1180,11 +1177,12 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
                 return(0);  /* A hit */
             curr_entry = curr_entry->next;
         }
-
          /* Add a new ICC profile */
-        entry = (clist_icctable_entry_t *) gs_alloc_struct(cdev->memory,
-                    clist_icctable_entry_t,
-                    &st_clist_icctable_entry, "clist_icc_addentry");
+        entry = 
+            (clist_icctable_entry_t *) gs_alloc_struct(icc_table->memory, 
+                                                       clist_icctable_entry_t,
+                                                       &st_clist_icctable_entry, 
+                                                       "clist_icc_addentry");
         if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
         entry->next = NULL;
