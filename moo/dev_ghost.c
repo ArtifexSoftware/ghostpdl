@@ -154,6 +154,7 @@ build_char(gs_show_enum *penum, gs_state *pgs, gs_font *gsfont, gs_char cid, gs_
 static gs_font *
 make_gs_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
 {
+	// gs_font is not safe, gxccache assumes all fonts derive from gs_font_base
 	gs_font_base *gsfont = fz_malloc(sizeof *gsfont);
 
 	gsfont->next = 0;
@@ -196,7 +197,6 @@ make_gs_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
 	gsfont->procs.next_char_glyph = gs_default_next_char_glyph;
 	gsfont->procs.build_char = build_char;
 
-	// gs_font is not safe, gxccache assumes all fonts derive from gs_font_base
 	gsfont->FontBBox.p.x = 0;
 	gsfont->FontBBox.p.y = 0;
 	gsfont->FontBBox.q.x = 0;

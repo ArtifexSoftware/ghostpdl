@@ -79,7 +79,4 @@
 #undef printf
 #undef putchar
 
-int moo_draw_pdf(pl_interp_instance_t *pinstance, gs_memory_t *memory, gs_state *pgs, char *filename);
 fz_device *fz_new_ghost_device(gs_memory_t *memory, gs_state *pgs);
-int moo_show_page(pl_interp_instance_t *pinstance, int num_copies, int flush);
-gs_font *gs_font_from_fz_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir);

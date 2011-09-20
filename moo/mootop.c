@@ -2,6 +2,26 @@
 
 #include "mooscript.h"
 
+#define PARSER_MIN_INPUT_SIZE (8192 * 4)
+
+typedef struct moo_interp_instance_s moo_interp_instance_t;
+
+struct moo_interp_instance_s
+{
+	pl_interp_instance_t pl; /* common part: must be first */
+
+	pl_page_action_t pre_page_action; /* action before page out */
+	void *pre_page_closure; /* closure to call pre_page_action with */
+	pl_page_action_t post_page_action; /* action before page out */
+	void *post_page_closure; /* closure to call post_page_action with */
+
+	FILE *scratch_file;
+	char scratch_name[gp_file_name_sizeof];
+
+	gs_memory_t *memory;
+	gs_state *pgs;
+};
+
 static int moo_install_halftone(gs_state *pgs, gx_device *pdevice);
 
 static fz_matrix
@@ -15,6 +35,39 @@ fz_matrix_from_gs_matrix(gs_matrix ctm)
 	m.e = ctm.tx;
 	m.f = ctm.ty;
 	return m;
+}
+
+static int
+moo_show_page(pl_interp_instance_t *pinstance, int num_copies, int flush)
+{
+	moo_interp_instance_t *instance = (moo_interp_instance_t *)pinstance;
+
+	int code = 0;
+
+	/* do pre-page action */
+	if (instance->pre_page_action)
+	{
+		code = instance->pre_page_action(pinstance, instance->pre_page_closure);
+		if (code < 0)
+			return code;
+		if (code != 0)
+			return 0;    /* code > 0 means abort w/no error */
+	}
+
+	/* output the page */
+	code = gs_output_page(instance->pgs, num_copies, flush);
+	if (code < 0)
+		return code;
+
+	/* do post-page action */
+	if (instance->post_page_action)
+	{
+		code = instance->post_page_action(pinstance, instance->post_page_closure);
+		if (code < 0)
+			return code;
+	}
+
+	return 0;
 }
 
 static fz_error
@@ -104,26 +157,6 @@ moo_draw_pdf(pl_interp_instance_t *instance, gs_memory_t *memory, gs_state *pgs,
 	fz_flush_warnings();
 	return 0;
 }
-
-#define PARSER_MIN_INPUT_SIZE (8192 * 4)
-
-typedef struct moo_interp_instance_s moo_interp_instance_t;
-
-struct moo_interp_instance_s
-{
-	pl_interp_instance_t pl; /* common part: must be first */
-
-	pl_page_action_t pre_page_action; /* action before page out */
-	void *pre_page_closure; /* closure to call pre_page_action with */
-	pl_page_action_t post_page_action; /* action before page out */
-	void *post_page_closure; /* closure to call post_page_action with */
-
-	FILE *scratch_file;
-	char scratch_name[gp_file_name_sizeof];
-
-	gs_memory_t *memory;
-	gs_state *pgs;
-};
 
 /* version and build date are not currently used */
 #define VERSION NULL
@@ -517,39 +550,3 @@ pl_interp_implementation_t const * const pdl_implementation[] = {
 	&moo_implementation,
 	0
 };
-
-/*
- * End-of-page function called by parser.
- */
-int
-moo_show_page(pl_interp_instance_t *pinstance, int num_copies, int flush)
-{
-	moo_interp_instance_t *instance = (moo_interp_instance_t *)pinstance;
-
-	int code = 0;
-
-	/* do pre-page action */
-	if (instance->pre_page_action)
-	{
-		code = instance->pre_page_action(pinstance, instance->pre_page_closure);
-		if (code < 0)
-			return code;
-		if (code != 0)
-			return 0;    /* code > 0 means abort w/no error */
-	}
-
-	/* output the page */
-	code = gs_output_page(instance->pgs, num_copies, flush);
-	if (code < 0)
-		return code;
-
-	/* do post-page action */
-	if (instance->post_page_action)
-	{
-		code = instance->post_page_action(pinstance, instance->post_page_closure);
-		if (code < 0)
-			return code;
-	}
-
-	return 0;
-}
