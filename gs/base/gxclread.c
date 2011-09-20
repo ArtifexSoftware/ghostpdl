@@ -416,7 +416,7 @@ clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsi
     crdev->page_info.io_procs->fread_chars(buf, size, cfile);
     /* Restore our position */
     crdev->page_info.io_procs->fseek(cfile, save_pos, SEEK_SET, crdev->page_info.cfname);
-    return(0);
+    return 0;
 }
 
 /* Unserialize the icc table information stored in the cfile and
@@ -431,6 +431,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     unsigned char *buf, *buf_start;
     clist_icctable_entry_t *curr_entry;
     int k;
+    gs_memory_t *stable_mem = crdev->memory->stable_memory;
 
     if ( icc_table != NULL )
         return(0);
@@ -446,24 +447,23 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     /* Get the data */
     clist_read_chunk(crdev, cb->pos + 4, size_data, buf);
-    icc_table = gs_alloc_struct(crdev->memory,
-                clist_icctable_t,
-                &st_clist_icctable, "clist_read_icctable");
+    icc_table = gs_alloc_struct(stable_mem, clist_icctable_t, 
+                                &st_clist_icctable, "clist_read_icctable");
     if (icc_table == NULL) {
-        gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
+        gs_free_object(stable_mem, buf_start, "clist_read_icctable");
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     }
+    icc_table->memory = stable_mem;
     icc_table->head = NULL;
     icc_table->final = NULL;
    /* Allocate and fill each entry */
     icc_table->tablesize = number_entries;
     crdev->icc_table = icc_table;
     for (k = 0; k < number_entries; k++) {
-        curr_entry = gs_alloc_struct(crdev->memory,
-                clist_icctable_entry_t,
+        curr_entry = gs_alloc_struct(stable_mem, clist_icctable_entry_t,
                 &st_clist_icctable_entry, "clist_read_icctable");
         if (curr_entry == NULL) {
-            gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
+            gs_free_object(stable_mem, buf_start, "clist_read_icctable");
             return gs_rethrow(-1, "insufficient memory for icc table entry");
         }
         memcpy(&(curr_entry->serial_data), buf, sizeof(clist_icc_serial_entry_t));
@@ -480,7 +480,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     }
     gs_free_object(crdev->memory, buf_start, "clist_read_icctable");
     crdev->page_info.io_procs->fseek(cfile, save_pos, SEEK_SET, crdev->page_info.cfname);
-    return(0);
+    return 0;
 }
 
 /* Get the ICC profile table information from the clist */
