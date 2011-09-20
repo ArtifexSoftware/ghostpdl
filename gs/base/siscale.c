@@ -30,7 +30,7 @@
 
 /* Auxiliary structures. */
 typedef struct {
-    float weight;               /* float or scaled fraction */
+    double weight;               /* float or scaled fraction */
 } CONTRIB;
 
 typedef struct {
