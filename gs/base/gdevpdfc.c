@@ -508,14 +508,23 @@ pdf_separation_color_space(gx_device_pdf *pdev,
         code = pdf_make_base_space_function(pdev, &new_pfn, 4, out_low, out_high);
         if (code < 0)
             return code;
-        if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
-            (code = cos_array_add_no_copy(pca, snames)) < 0 ||
-            (code = (int)cos_c_string_value(&v, (const char *)pcsn->DeviceCMYK)) < 0 ||
-            (code = cos_array_add(pca, &v)) < 0 ||
-            (code = pdf_function_scaled(pdev, new_pfn, 0x00, &v)) < 0 ||
-            (code = cos_array_add(pca, &v)) < 0 ||
-            (v_attributes != NULL ? code = cos_array_add(pca, v_attributes) : 0) < 0
-            ) {}
+
+        code = cos_array_add(pca, cos_c_string_value(&v, csname));
+        if (code >= 0) {
+            code = cos_array_add_no_copy(pca, snames);
+            if (code >= 0) {
+                cos_c_string_value(&v, (const char *)pcsn->DeviceCMYK);
+                code = cos_array_add(pca, &v);
+                if (code >= 0) {
+                    code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
+                    if (code >= 0) {
+                        code = cos_array_add(pca, &v);
+                        if (code >= 0 && v_attributes != NULL)
+                            code = cos_array_add(pca, v_attributes);
+                    }
+                }
+            }
+        }
         pdf_delete_base_space_function(pdev, new_pfn);
         return code;
     }
@@ -543,14 +552,23 @@ pdf_separation_color_space(gx_device_pdf *pdev,
         code = pdf_make_base_space_function(pdev, &new_pfn, 3, out_low, out_high);
         if (code < 0)
             return code;
-        if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
-            (code = cos_array_add_no_copy(pca, snames)) < 0 ||
-            (code = (int)cos_c_string_value(&v, pcsn->DeviceRGB)) < 0 ||
-            (code = cos_array_add(pca, &v)) < 0 ||
-            (code = pdf_function_scaled(pdev, new_pfn, 0x00, &v)) < 0 ||
-            (code = cos_array_add(pca, &v)) < 0 ||
-            (v_attributes != NULL ? code = cos_array_add(pca, v_attributes) : 0) < 0
-            ) {}
+
+        code = cos_array_add(pca, cos_c_string_value(&v, csname));
+        if (code >= 0) {
+            code = cos_array_add_no_copy(pca, snames);
+            if (code >= 0) {
+                cos_c_string_value(&v, pcsn->DeviceRGB);
+                code = cos_array_add(pca, &v);
+                if (code >= 0) {
+                    code = pdf_function_scaled(pdev, new_pfn, 0x00, &v);
+                    if (code >= 0) {
+                        code = cos_array_add(pca, &v);
+                        if (code >= 0 && v_attributes != NULL)
+                            code = cos_array_add(pca, v_attributes);
+                    }
+                }
+            }
+        }
         pdf_delete_base_space_function(pdev, new_pfn);
         return code;
     }
