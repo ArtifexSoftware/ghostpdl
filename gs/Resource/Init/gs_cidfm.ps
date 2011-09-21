@@ -25,14 +25,22 @@ languagelevel 2 .setlanguagelevel
 
 /IsMyRecord      % <raw_record> -> <raw_record> bool
 { % Only for client's needs.
-  dup type /nametype eq
+  dup type /stringtype eq exch
+  dup type /nametype eq 3 -1 roll or
 } bind def
 
 /RecordVirtualMethods 3 dict begin
 
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { % We know that currentdict is the category.
-    /Substitute get FindResource            % /Name <<CIDFont>>
+    /Substitute get dup type /stringtype eq
+    {
+      (r) file dup cvx exec closefile
+      dup
+    } if
+
+    FindResource            % /Name <<CIDFont>>
+
     dup length dict copy                    % /Name <<CIDFont>>
     1 index ResourceStatus pop exch pop     % /Name <<CIDFont>> size
   } bind def
@@ -40,24 +48,45 @@ languagelevel 2 .setlanguagelevel
   /GetFilePath  % <scratch> <Name> <record> GetFilePath <filepath>
   { % We know that currentdict is the category.
     exch pop
-    /Substitute get exch ResourceFileName
+    /Substitute get dup type /stringtype eq not
+    {
+      exch ResourceFileName
+    } if
   } bind def
 
   /GetSize   % <Name> <record> GetSize <size>
   { % We know that currentdict is the category.
-    /Substitute get ResourceStatus {
-      exch pop exch pop
-    } {
-      /undefinedresource signalerror
-    } ifelse
+    dup /Substitute get dup type /stringtype eq
+    {
+      % The simplest solution is to instantiate the resource
+      pop //MakeInstance exec
+      3 1 roll pop pop
+    }
+    {
+      exch pop
+      ResourceStatus {
+        exch pop exch pop
+      } {
+        /undefinedresource signalerror
+      } ifelse
+    }ifelse
   } bind def
 
   /GetCSI   % <record> GetCSI null
             % <record> GetCSI dict
   { % We know that currentdict is the category.
     RESMPDEBUG { (cidfm GetCSI beg ) = } if
-    /Substitute get			% /Name
-    GetCIDSystemInfoFromMap
+    dup /Substitute get dup type /stringtype eq
+    {
+      pop
+      dup /Name get exch //MakeInstance exec
+      pop exch pop
+      /CIDSystemInfo get
+    }
+    {
+      exch pop                     % /Name
+      GetCIDSystemInfoFromMap
+    } ifelse
     RESMPDEBUG { (cidfm GetCSI end ) print dup = } if
   } bind def
 
@@ -114,6 +143,7 @@ currentdict end def
 { //IsMyRecord exec {
     1 dict begin
     /Substitute exch def
+    dup /Name exch def
     /RecordVirtualMethods //RecordVirtualMethods def
     currentdict end
     //true

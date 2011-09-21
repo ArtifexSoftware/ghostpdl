@@ -1230,10 +1230,16 @@ on the search path or font path.
 Substitution of CID font resources is controlled by the Ghostscript
 configuration file <code>lib/cidfmap</code>,
 which defines a CID font resource map.
-The file forms a table of records, each of which should use one of two formats,
-explained below. Users may modify <code>lib/cidfmap</code> to configure
-Ghostscript for a specific need.
+The file forms a table of records, each of which should use one of three formats,
+explained below. Users may modify <code>Resource/Init/cidfmap</code> to configure
+Ghostscript for a specific need. Note that the default Ghostscript build includes
+such configuration and resource files in a rom file system built into the executable.
+So, to ensure your changes have an effect, you should do one of the following: rebuild
+the executable; use the "-I" command line option to add the directory containing your
+modified file to Ghostscript's search path; or, finally, build Ghostscript to use disk
+based resources.
 
+<h4>Format 1</h4>
 <p> To substitute a CID font resource with another CID font resource, add a record like this :
 
 <blockquote><code>
@@ -1248,9 +1254,8 @@ etc. CMap resource names must not appear in
 <code>lib/cidfmap</code>. The trailing semicolon and the space before it
 are both required.
 
-<p>
-
-To substitute (emulate) a CID font resource with a TrueType font file, add a record like this :
+<h4>Format 2</h4>
+<p>To substitute (emulate) a CID font resource with a TrueType font file, add a record like this :
 
 <blockquote><code>
 /Substituted &lt;&lt; keys&amp;values &gt;&gt; ;
@@ -1296,15 +1301,36 @@ Currently only CIDFontType 2 can be emulated with a TrueType font.
 The TrueType font must contain enough characters to cover an
 Adobe character collection, which is specified in <code>Ordering</code> and used in documents.
 
+<h4>Format 3</h4>
+<p> To point Ghostscript at a specific CIDFont file outside it's "normal" resource search path :
+
+<blockquote><code>
+/CIDName (path/to/cid/font/file) ;
+</code></blockquote>
+where <code>CIDName</code> is a name of CID font resource being used
+by a document, and <code>"path/to/cid/font/file"</code> is the path to the
+Postscript CIDFont file, including the file name. NOTE: the CIDFont file, when
+executed by the Postscript interpreter, must result in a CIDFont resource being
+defined whose CIDFontName matches the "CIDName" key for the current record.
+I.E. an entry with the key /PingHei-Bold must reference a file which creates a
+CIDFont resource called "PingHei-Bold". To substitute a file based CIDFont for
+a differently named CIDFont, use formats 1 and 3 in combination (the order of the
+entries is not important).
+
+The trailing semicolon and the space before it are both required.
+
+<p>
+
 <p>
 Examples :
 
 
 <blockquote><code>
+<h5>Format 1:</h5>
 /Ryumin-Medium  /ShinGo-Bold ;<br>
 /MS-Mincho &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/msmincho.ttc) /SubfontID 0 /CSI [(Japan1) 3] &gt;&gt; ;<br>
 /Ryumin-Light /MS-Mincho ;<br>
-<br>
+<h5>Format 2:</h5>
 /Batang &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/batang.ttc) /SubfontID 0 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 /Gulim &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 0 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 /Dotum &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 2 /CSI [(Korea1) 3] &gt;&gt; ;<br>
@@ -1316,6 +1342,11 @@ Examples :
 /SimHei &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simhei.ttf) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
 /STSong-Light /SimSun ;<br>
 /STHeiti-Regular /SimHei ;<br>
+<h5>Format 3:</h5>
+/PMingLiU (/usr/local/share/font/cidfont/PMingLiU.cid) ;<br>
+<h5>Format 1 & 3</h5>
+/Ryumin-Light /PMingLiU ;<br>
+/PMingLiU (/usr/local/share/font/cidfont/PMingLiU.cid) ;<br>
 </code></blockquote>
 
 <p>The win32 installer of recent version of ghostscript has a checkbox for
