@@ -458,6 +458,12 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
                 *dp[3]++ = (byte)pixel;
                 shift = 0;
                 break;
+            case 24:
+                *dp[0]++ = (byte)(pixel >> 16);
+                *dp[1]++ = (byte)(pixel >> 8);
+                *dp[2]++ = (byte)pixel;
+                shift = 0;
+                break;
             case 16:
                 *dp[0]++ = (byte)(pixel >> 8);
                 *dp[1]++ = (byte)pixel;
@@ -465,18 +471,38 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
                 break;
             default:            /* 1, 2, 4, 8 */
             {
-                int pshift = 8-pdepth;
                 int pmask = (1<<pdepth)-1;
-                if ((shift -= pdepth) >= 0) {
-                    for (plane = 0; plane < dev->num_planes; pshift+=8,plane++)
-                        buf[plane] += (byte)(((pixel>>pshift) & pmask)<<shift);
-                } else {
+
+#ifdef ORIGINAL_CODE_KEPT_FOR_REFERENCE
+                /* Original code, kept for reference. I believe this copies
+                 * bits in the wrong order (i.e. the 0th component comes from
+                 * the lowest bits in pixel, rather than the highest), and
+                 * gets them from the wrong place (8 bits apart rather than
+                 * pdepth), but as I have no examples that actually tickle
+                 * this code, currently, I don't want to throw it away. */
+                int pshift = 8-pdepth;
+#else
+                /* We have pdepth*num_planes bits in 'pixel'. We need to copy
+                 * them (topmost bits first) into the buffer, packing them at
+                 * shift position. */
+                int pshift = pdepth*(dev->num_planes-1);
+#endif
+                /* Can we fit another pdepth bits into our buffer? */
+                shift -= pdepth;
+                if (shift < 0) {
+                    /* No, so flush the buffer to the planes. */
                     for (plane = 0; plane < dev->num_planes; plane++)
                         *dp[plane]++ = buf[plane];
                     shift += 8;
-                    for (plane = 0; plane < dev->num_planes; pshift+=8,plane++)
-                        buf[plane] = (byte)(((pixel>>pshift) & pmask)<<shift);
                 }
+                /* Copy the next pdepth bits into each planes buffer */
+#ifdef ORIGINAL_CODE_KEPT_FOR_REFERENCE
+                for (plane = 0; plane < dev->num_planes; pshift+=8,plane++)
+                    buf[plane] += (byte)(((pixel>>pshift) & pmask)<<shift);
+#else
+                for (plane = 0; plane < dev->num_planes; pshift-=pdepth,plane++)
+                    buf[plane] += (byte)(((pixel>>pshift) & pmask)<<shift);
+#endif
                 break;
             }
         }
