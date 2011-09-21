@@ -144,11 +144,11 @@ static int plank_print_page(gx_device_printer * pdev, FILE * pstream);
 }
 
 static const gx_device_procs planm_procs =
-  pgpm_procs(NULL, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
+  pgpm_procs(gdev_prn_map_color_rgb, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb);
 static const gx_device_procs plang_procs =
-  pgpm_procs(NULL, plang_encode_color, plang_decode_color);
+  pgpm_procs(plang_decode_color, plang_encode_color, plang_decode_color);
 static const gx_device_procs plan_procs =
-  pgpm_procs(NULL, gx_default_rgb_map_rgb_color, plan_decode_color);
+  pgpm_procs(plan_decode_color, gx_default_rgb_map_rgb_color, plan_decode_color);
 static const gx_device_procs planc_procs =
   pgpm_procs(planc_map_color_rgb, planc_encode_color, planc_decode_color);
 static const gx_device_procs plank_procs =
@@ -441,11 +441,7 @@ planc_encode_color(gx_device * dev, const gx_color_value cv[])
       (cv[2] >> drop)) << bpc) +
     (cv[3] >> drop);
 
-    /* The bitcmyk device does this:
-     * return (color == gx_no_color_index ? color ^ 1 : color);
-     * But I don't understand why.
-     */
-    return color;
+    return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
 /* ------ Internal routines ------ */
