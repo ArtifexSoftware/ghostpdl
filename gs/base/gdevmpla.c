@@ -674,6 +674,38 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 static int
+plane_strip_copy_rop(gx_device_memory * mdev,
+                     const byte * sdata, int sourcex, uint sraster,
+                     gx_bitmap_id id, const gx_color_index * scolors,
+                     const gx_strip_bitmap * textures,
+                     const gx_color_index * tcolors,
+                     int x, int y, int width, int height,
+                     int phase_x, int phase_y,
+                     gs_logical_operation_t lop, int plane)
+{
+    mem_save_params_t save;
+    int code;
+    const gx_device_memory *mdproto;
+
+    MEM_SAVE_PARAMS(mdev, save);
+    mdev->line_ptrs += mdev->height * plane;
+    mdproto = gdev_mem_device_for_bits(mdev->planes[plane].depth);
+    /* strip_copy_rop might end up calling get_bits_rectangle or fill_rectangle, 
+     * so ensure we have the right ones in there. */
+    set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
+    set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
+    code = dev_proc(mdproto, strip_copy_rop)((gx_device *)mdev, sdata, sourcex, sraster,
+                                             id, scolors, textures, tcolors,
+                                             x, y, width, height,
+                                             phase_x, phase_y, lop);
+    set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
+    set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
+    /* The following effectively does: mdev->line_ptrs -= mdev->height * plane; */
+    MEM_RESTORE_PARAMS(mdev, save);
+    return code;
+}
+
+static int
 mem_planar_strip_copy_rop(gx_device * dev,
                           const byte * sdata, int sourcex, uint sraster,
                           gx_bitmap_id id, const gx_color_index * scolors,
@@ -684,35 +716,57 @@ mem_planar_strip_copy_rop(gx_device * dev,
                           gs_logical_operation_t lop)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    mem_save_params_t save;
     int plane, code;
-    const gx_device_memory *mdproto;
 
     if ((lop & lop_planar) == 0) {
-        mdproto = gdev_mem_device_for_bits(mdev->color_info.depth);
-        return dev_proc(mdproto, strip_copy_rop)(dev, sdata, sourcex, sraster,
-                                                 id, scolors, textures, tcolors,
-                                                 x, y, width, height,
-                                                 phase_x, phase_y, lop);
+        /* Not doing a planar lop. If we carry on down the default path here,
+         * we'll end up doing a planar_to_chunky; we may be able to sidestep
+         * that by spotting cases where we can operate directly. */
+        if ((!lop_uses_T(lop) || (tcolors && (tcolors[0] == tcolors[1]))) &&
+            (!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
+            (mdev->num_planes == 1 || mdev->num_planes == 3)) {
+            /* No T in use, or constant T. And no S in use, or constant S.
+             * And either greyscale or rgb.
+             * So we can just do the rop on each plane in turn. */
+            for (plane=0; plane < mdev->num_planes; plane++)
+            {
+                gx_color_index tcolors2[2], scolors2[2];
+                int shift = mdev->planes[plane].shift;
+                int mask = (1<<mdev->planes[plane].depth)-1;
+
+                if (tcolors) {
+                    tcolors2[0] = (tcolors[0] >> shift) & mask;
+                    tcolors2[1] = (tcolors[1] >> shift) & mask;
+                }
+                if (scolors) {
+                    scolors2[0] = (scolors[0] >> shift) & mask;
+                    scolors2[1] = (scolors[1] >> shift) & mask;
+                }
+                code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
+                                            id, (scolors ? scolors2 : NULL),
+                                            textures, (tcolors ? tcolors2 : NULL),
+                                            x, y, width, height,
+                                            phase_x, phase_y, lop, plane);
+                if (code < 0)
+                    return code;
+            }
+            return 0;
+        }
+        /* Fall back to the default implementation (the only one that
+         * guarantees to properly cope with planar data). */
+        return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster,
+                                          id, scolors, textures, tcolors,
+                                          x, y, width, height,
+                                          phase_x, phase_y, lop);
     }
     /* Extract the plane, and sanitise the lop */
     plane = lop>>lop_planar_shift;
     lop &= ~((plane<<lop_planar_shift) | lop_planar);
     if ((plane < 0) || (plane >= mdev->num_planes))
         return gs_error_rangecheck;
-    MEM_SAVE_PARAMS(mdev, save);
-    mdev->line_ptrs += mdev->height * plane;
-    mdproto = gdev_mem_device_for_bits(mdev->planes[plane].depth);
-    /* strip_copy_rop might end up calling get_bits_rectangle, so ensure we
-     * have the right one in there. */
-    set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
-    code = dev_proc(mdproto, strip_copy_rop)(dev, sdata, sourcex, sraster,
-                                             id, scolors, textures, tcolors,
-                                             x, y, width, height,
-                                             phase_x, phase_y, lop);
-    set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
-    MEM_RESTORE_PARAMS(mdev, save);
-    return code;
+    return plane_strip_copy_rop(mdev, sdata, sourcex, sraster, id, scolors,
+                                textures, tcolors, x, y, width, height,
+                                phase_x, phase_y, lop, plane);
 }
 
 /*
