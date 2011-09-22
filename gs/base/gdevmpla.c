@@ -674,6 +674,253 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 }
 
 static int
+planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
+                               const byte * srow, int sourcex, uint sraster,
+                               gx_bitmap_id id, const gx_color_index * scolors,
+                               const gx_strip_bitmap * textures,
+                               const gx_color_index * tcolors,
+                               int x, int y, int width, int height,
+                               int phase_x, int phase_y,
+                               gs_logical_operation_t lop)
+{
+    gs_rop3_t rop = (gs_rop3_t)lop;
+    uint draster = mdev->raster;
+    int line_count;
+    byte *cdrow, *mdrow, *ydrow, *kdrow;
+    byte lmask, rmask;
+    rop_proc cproc, mproc, yproc;
+    int dbit;
+    int cscolor, mscolor, yscolor, kscolor;
+    int ctcolor, mtcolor, ytcolor, ktcolor;
+    int constant_s = 0;
+    int sbit = sourcex & 7;
+    srow += (sourcex>>3);
+
+    /* Modify the raster operation according to the source palette. */
+    fit_copy(mdev, srow, sourcex, sraster, id, x, y, width, height);
+
+    /* This function assumes constant (or unused) scolors and tcolors */
+    if (scolors)
+    {
+        if (scolors[0] == scolors[1]) {
+            kscolor = ((scolors[0] & 1) ? -1 : 0);
+            cscolor = ((scolors[0] & 8) ? -1 : 0) | kscolor;
+            mscolor = ((scolors[0] & 4) ? -1 : 0) | kscolor;
+            yscolor = ((scolors[0] & 2) ? -1 : 0) | kscolor;
+            constant_s = 1;
+        } else {
+            kscolor =  (scolors[0] & 1)     | ((scolors[1] & 1)<<1);
+            cscolor = ((scolors[0] & 8)>>3) | ((scolors[1] & 8)>>2) | kscolor;
+            mscolor = ((scolors[0] & 4)>>2) | ((scolors[1] & 4)>>1) | kscolor;
+            yscolor = ((scolors[0] & 2)>>1) |  (scolors[1] & 2)     | kscolor;
+            switch (cscolor) {
+                case 0:
+                    cproc = rop_proc_table[rop3_know_S_0(rop)];
+                    break;
+                case 1:
+                    cproc = rop_proc_table[rop3_invert_S(rop)];
+                    break;
+                case 2:
+                    break;
+                default: /* 3 */
+                    cproc = rop_proc_table[rop3_know_S_1(rop)];
+                    break;
+            }
+            switch (mscolor) {
+                case 0:
+                    mproc = rop_proc_table[rop3_know_S_0(rop)];
+                    break;
+                case 1:
+                    mproc = rop_proc_table[rop3_invert_S(rop)];
+                    break;
+                case 2:
+                    break;
+                default: /* 3 */
+                    mproc = rop_proc_table[rop3_know_S_1(rop)];
+                    break;
+            }
+            switch (yscolor) {
+                case 0:
+                    yproc = rop_proc_table[rop3_know_S_0(rop)];
+                    break;
+                case 1:
+                    yproc = rop_proc_table[rop3_invert_S(rop)];
+                    break;
+                case 2:
+                    break;
+                default: /* 3 */
+                    yproc = rop_proc_table[rop3_know_S_1(rop)];
+                    break;
+            }
+        }
+    }
+    if (tcolors)
+    {
+        ktcolor = ((tcolors[0] & 1) ? -1 : 0);
+        ctcolor = ((tcolors[0] & 8) ? -1 : 0) | ktcolor;
+        mtcolor = ((tcolors[0] & 4) ? -1 : 0) | ktcolor;
+        ytcolor = ((tcolors[0] & 2) ? -1 : 0) | ktcolor;
+    }
+
+    /* Set up transfer parameters. */
+    line_count = height;
+    dbit = x & 7;
+    cdrow = scan_line_base(mdev, y) + (x>>3);
+    mdrow = cdrow + mdev->height * draster;
+    ydrow = mdrow + mdev->height * draster;
+    kdrow = ydrow + mdev->height * draster;
+
+    lmask = 0xff >> dbit;
+    width += dbit;
+    rmask = 0xff << (~(width - 1) & 7);
+    if (width < 8)
+        lmask &= rmask;
+    if (constant_s) {
+        const rop_proc proc = rop_proc_table[rop];
+        for (; line_count-- > 0; cdrow += draster, mdrow += draster, ydrow += draster, kdrow += draster) {
+            byte *cdptr = cdrow;
+            byte *mdptr = mdrow;
+            byte *ydptr = ydrow;
+            byte *kdptr = kdrow;
+            int left = width-8;
+            {
+                /* Left hand bytes */
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr;
+                byte mdbyte = *mdptr;
+                byte ydbyte = *ydptr;
+                byte cresult = (*proc)(cdbyte | kdbyte,cscolor,ctcolor);
+                byte mresult = (*proc)(mdbyte | kdbyte,mscolor,mtcolor);
+                byte yresult = (*proc)(ydbyte | kdbyte,yscolor,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                cresult &= ~kresult;
+                mresult &= ~kresult;
+                yresult &= ~kresult;
+                *cdptr++ = (cresult & lmask) | (cdbyte & ~lmask);
+                *mdptr++ = (mresult & lmask) | (mdbyte & ~lmask);
+                *ydptr++ = (yresult & lmask) | (ydbyte & ~lmask);
+                *kdptr++ = (kresult & lmask) | (kdbyte & ~lmask);
+            }
+            if (left <= 0) /* if (width <= 8) we're done */
+                continue;
+            left -= 8; /* left = bits to go - 8 */
+            while (left > 0)
+            {
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr | kdbyte;
+                byte mdbyte = *mdptr | kdbyte;
+                byte ydbyte = *ydptr | kdbyte;
+                byte cresult = (*proc)(cdbyte,cscolor,ctcolor);
+                byte mresult = (*proc)(mdbyte,mscolor,mtcolor);
+                byte yresult = (*proc)(ydbyte,yscolor,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                cresult &= ~kresult;
+                mresult &= ~kresult;
+                yresult &= ~kresult;
+                *cdptr++ = cresult & ~kresult;
+                *mdptr++ = mresult & ~kresult;
+                *ydptr++ = yresult & ~kresult;
+                *kdptr++ = kresult;
+                left -= 8;
+            }
+            left += 8; /* left = bits to go < 8 */
+            {
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr;
+                byte mdbyte = *mdptr;
+                byte ydbyte = *ydptr;
+                byte cresult = (*proc)(cdbyte | kdbyte,cscolor,ctcolor);
+                byte mresult = (*proc)(mdbyte | kdbyte,mscolor,mtcolor);
+                byte yresult = (*proc)(ydbyte | kdbyte,yscolor,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                cresult &= ~kresult;
+                mresult &= ~kresult;
+                yresult &= ~kresult;
+                *cdptr++ = (cresult & rmask) | (cdbyte & ~rmask);
+                *mdptr++ = (mresult & rmask) | (mdbyte & ~rmask);
+                *ydptr++ = (yresult & rmask) | (ydbyte & ~rmask);
+                *kdptr++ = (kresult & rmask) | (kdbyte & ~rmask);
+            }
+        }
+    } else {
+        /* Constant T, bitmap S */
+        int sskew = sbit - dbit;
+        if (sskew < 0)
+            --srow, sskew += 8;
+        for (; line_count-- > 0; cdrow += draster, mdrow += draster, ydrow += draster, kdrow += draster, srow += sraster) {
+            const byte *sptr = srow;
+            byte *cdptr = cdrow;
+            byte *mdptr = mdrow;
+            byte *ydptr = ydrow;
+            byte *kdptr = kdrow;
+            int left = width-8;
+            {
+                /* Left hand byte (maybe the only one) */
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr;
+                byte mdbyte = *mdptr;
+                byte ydbyte = *ydptr;
+#define fetch1(ptr, skew)\
+  (skew ? (ptr[0] << skew) + (ptr[1] >> (8 - skew)) : *ptr)
+                byte sbyte = fetch1(sptr, sskew);
+                byte cresult = (*cproc)(cdbyte|kdbyte,sbyte,ctcolor);
+                byte mresult = (*mproc)(mdbyte|kdbyte,sbyte,mtcolor);
+                byte yresult = (*yproc)(ydbyte|kdbyte,sbyte,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                cresult &= ~kresult;
+                mresult &= ~kresult;
+                yresult &= ~kresult;
+                *cdptr++ = (cresult & lmask) | (cdbyte & ~lmask);
+                *mdptr++ = (mresult & lmask) | (mdbyte & ~lmask);
+                *ydptr++ = (yresult & lmask) | (ydbyte & ~lmask);
+                *kdptr++ = (kresult & lmask) | (kdbyte & ~lmask);
+                sptr++;
+                left -= 8;
+            }
+            while (left > 0) {
+                /* Bytes where all 8 bits of S are needed */
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr | kdbyte;
+                byte mdbyte = *mdptr | kdbyte;
+                byte ydbyte = *ydptr | kdbyte;
+                byte sbyte = fetch1(sptr, sskew);
+                byte cresult = (*cproc)(cdbyte,sbyte,ctcolor);
+                byte mresult = (*mproc)(mdbyte,sbyte,mtcolor);
+                byte yresult = (*yproc)(ydbyte,sbyte,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                *cdptr++ = cresult & ~kresult;
+                *mdptr++ = mresult & ~kresult;
+                *ydptr++ = yresult & ~kresult;
+                *kdptr++ = kresult;
+                sptr++;
+                left -= 8;
+            }
+            /* Final byte */
+            if (left > -8) {
+                byte kdbyte = *kdptr;
+                byte cdbyte = *cdptr;
+                byte mdbyte = *mdptr;
+                byte ydbyte = *ydptr;
+                byte sbyte = fetch1(sptr, sskew);
+#undef fetch1
+                byte cresult = (*cproc)(cdbyte | kdbyte,sbyte,ctcolor);
+                byte mresult = (*mproc)(mdbyte | kdbyte,sbyte,mtcolor);
+                byte yresult = (*yproc)(ydbyte | kdbyte,sbyte,ytcolor);
+                byte kresult = cresult & mresult & yresult;
+                cresult &= ~kresult;
+                mresult &= ~kresult;
+                yresult &= ~kresult;
+                *cdptr++ = (cresult & rmask) | (cdbyte & ~rmask);
+                *mdptr++ = (mresult & rmask) | (mdbyte & ~rmask);
+                *ydptr++ = (yresult & rmask) | (ydbyte & ~rmask);
+                *kdptr++ = (kresult & rmask) | (kdbyte & ~rmask);
+            }
+        }
+    }
+    return 0;
+}
+
+static int
 plane_strip_copy_rop(gx_device_memory * mdev,
                      const byte * sdata, int sourcex, uint sraster,
                      gx_bitmap_id id, const gx_color_index * scolors,
@@ -705,6 +952,26 @@ plane_strip_copy_rop(gx_device_memory * mdev,
     return code;
 }
 
+static byte cmykrop[256] =
+{
+    255,127,191,63,223,95,159,31,239,111,175,47,207,79,143,15,
+    247,119,183,55,215,87,151,23,231,103,167,39,199,71,135,7,
+    251,123,187,59,219,91,155,27,235,107,171,43,203,75,139,11,
+    243,115,179,51,211,83,147,19,227,99,163,35,195,67,131,3,
+    253,125,189,61,221,93,157,29,237,109,173,45,205,77,141,13,
+    245,117,181,53,213,85,149,21,229,101,165,37,197,69,133,5,
+    249,121,185,57,217,89,153,25,233,105,169,41,201,73,137,9,
+    241,113,177,49,209,81,145,17,225,97,161,33,193,65,129,1,
+    254,126,190,62,222,94,158,30,238,110,174,46,206,78,142,14,
+    246,118,182,54,214,86,150,22,230,102,166,38,198,70,134,6,
+    250,122,186,58,218,90,154,26,234,106,170,42,202,74,138,10,
+    242,114,178,50,210,82,146,18,226,98,162,34,194,66,130,2,
+    252,124,188,60,220,92,156,28,236,108,172,44,204,76,140,12,
+    244,116,180,52,212,84,148,20,228,100,164,36,196,68,132,4,
+    248,120,184,56,216,88,152,24,232,104,168,40,200,72,136,8,
+    240,112,176,48,208,80,144,16,224,96,160,32,192,64,128,0
+};
+
 static int
 mem_planar_strip_copy_rop(gx_device * dev,
                           const byte * sdata, int sourcex, uint sraster,
@@ -722,35 +989,45 @@ mem_planar_strip_copy_rop(gx_device * dev,
         /* Not doing a planar lop. If we carry on down the default path here,
          * we'll end up doing a planar_to_chunky; we may be able to sidestep
          * that by spotting cases where we can operate directly. */
-        if ((!lop_uses_T(lop) || (tcolors && (tcolors[0] == tcolors[1]))) &&
-            (!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
-            (mdev->num_planes == 1 || mdev->num_planes == 3)) {
-            /* No T in use, or constant T. And no S in use, or constant S.
-             * And either greyscale or rgb.
-             * So we can just do the rop on each plane in turn. */
-            for (plane=0; plane < mdev->num_planes; plane++)
-            {
-                gx_color_index tcolors2[2], scolors2[2];
-                int shift = mdev->planes[plane].shift;
-                int mask = (1<<mdev->planes[plane].depth)-1;
+        if (!lop_uses_T(lop) || (tcolors && (tcolors[0] == tcolors[1]))) {
+            /* No T in use, or constant T. */
+            if ((!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
+                ((mdev->num_planes == 1) || (mdev->num_planes == 3))) {
+                /* No S in use, or constant S. And either greyscale or rgb,
+                 * so we can just do the rop on each plane in turn. */
+                for (plane=0; plane < mdev->num_planes; plane++)
+                {
+                    gx_color_index tcolors2[2], scolors2[2];
+                    int shift = mdev->planes[plane].shift;
+                    int mask = (1<<mdev->planes[plane].depth)-1;
 
-                if (tcolors) {
-                    tcolors2[0] = (tcolors[0] >> shift) & mask;
-                    tcolors2[1] = (tcolors[1] >> shift) & mask;
+                    if (tcolors) {
+                        tcolors2[0] = (tcolors[0] >> shift) & mask;
+                        tcolors2[1] = (tcolors[1] >> shift) & mask;
+                    }
+                    if (scolors) {
+                        scolors2[0] = (scolors[0] >> shift) & mask;
+                        scolors2[1] = (scolors[1] >> shift) & mask;
+                    }
+                    code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
+                                                id, (scolors ? scolors2 : NULL),
+                                                textures, (tcolors ? tcolors2 : NULL),
+                                                x, y, width, height,
+                                                phase_x, phase_y, lop, plane);
+                    if (code < 0)
+                        return code;
                 }
-                if (scolors) {
-                    scolors2[0] = (scolors[0] >> shift) & mask;
-                    scolors2[1] = (scolors[1] >> shift) & mask;
-                }
-                code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
-                                            id, (scolors ? scolors2 : NULL),
-                                            textures, (tcolors ? tcolors2 : NULL),
-                                            x, y, width, height,
-                                            phase_x, phase_y, lop, plane);
-                if (code < 0)
-                    return code;
+                return 0;
             }
-            return 0;
+            if ((mdev->num_planes == 4) && (mdev->plane_depth == 1))
+            {
+                lop = cmykrop[lop & 0xff] | (lop & ~0xff);
+                return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
+                                                      sraster, id, scolors,
+                                                      textures, tcolors,
+                                                      x, y, width, height,
+                                                      phase_x, phase_y, lop);
+            }
         }
         /* Fall back to the default implementation (the only one that
          * guarantees to properly cope with planar data). */
