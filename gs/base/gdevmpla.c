@@ -318,6 +318,13 @@ mem_planar_copy_color_24to8(gx_device * dev, const byte * base, int sourcex,
 }
 
 /* Copy color: Special case the 4 -> 1+1+1+1 case. */
+/* Two versions of this routine; the first does bit comparisons. This should
+ * work well on architectures with small cache and conditional execution
+ * (such as ARM). Hurts on x86 due to the ifs in the loop all causing small
+ * skips ahead that defeat the branch predictor.
+ * Second version uses a table lookup; 1K of table is nothing on x86, and
+ * so this runs much faster. */
+#ifdef PREFER_ALTERNATIION_TO_TABLES
 static int
 mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
                             int sraster, gx_bitmap_id id,
@@ -491,6 +498,208 @@ loop_entry:
     MEM_RESTORE_PARAMS(mdev, save);
     return 0;
 }
+#else
+
+static int expand_4to1[256] =
+{
+0x00000000,0x00000001,0x00000100,0x00000101,
+0x00010000,0x00010001,0x00010100,0x00010101,
+0x01000000,0x01000001,0x01000100,0x01000101,
+0x01010000,0x01010001,0x01010100,0x01010101,
+0x00000002,0x00000003,0x00000102,0x00000103,
+0x00010002,0x00010003,0x00010102,0x00010103,
+0x01000002,0x01000003,0x01000102,0x01000103,
+0x01010002,0x01010003,0x01010102,0x01010103,
+0x00000200,0x00000201,0x00000300,0x00000301,
+0x00010200,0x00010201,0x00010300,0x00010301,
+0x01000200,0x01000201,0x01000300,0x01000301,
+0x01010200,0x01010201,0x01010300,0x01010301,
+0x00000202,0x00000203,0x00000302,0x00000303,
+0x00010202,0x00010203,0x00010302,0x00010303,
+0x01000202,0x01000203,0x01000302,0x01000303,
+0x01010202,0x01010203,0x01010302,0x01010303,
+0x00020000,0x00020001,0x00020100,0x00020101,
+0x00030000,0x00030001,0x00030100,0x00030101,
+0x01020000,0x01020001,0x01020100,0x01020101,
+0x01030000,0x01030001,0x01030100,0x01030101,
+0x00020002,0x00020003,0x00020102,0x00020103,
+0x00030002,0x00030003,0x00030102,0x00030103,
+0x01020002,0x01020003,0x01020102,0x01020103,
+0x01030002,0x01030003,0x01030102,0x01030103,
+0x00020200,0x00020201,0x00020300,0x00020301,
+0x00030200,0x00030201,0x00030300,0x00030301,
+0x01020200,0x01020201,0x01020300,0x01020301,
+0x01030200,0x01030201,0x01030300,0x01030301,
+0x00020202,0x00020203,0x00020302,0x00020303,
+0x00030202,0x00030203,0x00030302,0x00030303,
+0x01020202,0x01020203,0x01020302,0x01020303,
+0x01030202,0x01030203,0x01030302,0x01030303,
+0x02000000,0x02000001,0x02000100,0x02000101,
+0x02010000,0x02010001,0x02010100,0x02010101,
+0x03000000,0x03000001,0x03000100,0x03000101,
+0x03010000,0x03010001,0x03010100,0x03010101,
+0x02000002,0x02000003,0x02000102,0x02000103,
+0x02010002,0x02010003,0x02010102,0x02010103,
+0x03000002,0x03000003,0x03000102,0x03000103,
+0x03010002,0x03010003,0x03010102,0x03010103,
+0x02000200,0x02000201,0x02000300,0x02000301,
+0x02010200,0x02010201,0x02010300,0x02010301,
+0x03000200,0x03000201,0x03000300,0x03000301,
+0x03010200,0x03010201,0x03010300,0x03010301,
+0x02000202,0x02000203,0x02000302,0x02000303,
+0x02010202,0x02010203,0x02010302,0x02010303,
+0x03000202,0x03000203,0x03000302,0x03000303,
+0x03010202,0x03010203,0x03010302,0x03010303,
+0x02020000,0x02020001,0x02020100,0x02020101,
+0x02030000,0x02030001,0x02030100,0x02030101,
+0x03020000,0x03020001,0x03020100,0x03020101,
+0x03030000,0x03030001,0x03030100,0x03030101,
+0x02020002,0x02020003,0x02020102,0x02020103,
+0x02030002,0x02030003,0x02030102,0x02030103,
+0x03020002,0x03020003,0x03020102,0x03020103,
+0x03030002,0x03030003,0x03030102,0x03030103,
+0x02020200,0x02020201,0x02020300,0x02020301,
+0x02030200,0x02030201,0x02030300,0x02030301,
+0x03020200,0x03020201,0x03020300,0x03020301,
+0x03030200,0x03030201,0x03030300,0x03030301,
+0x02020202,0x02020203,0x02020302,0x02020303,
+0x02030202,0x02030203,0x02030302,0x02030303,
+0x03020202,0x03020203,0x03020302,0x03020303,
+0x03030202,0x03030203,0x03030302,0x03030303
+};
+
+static int
+mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
+                            int sraster, gx_bitmap_id id,
+                            int x, int y, int w, int h)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+#define BUF_LONGS 100   /* arbitrary, >= 1 */
+#define BUF_BYTES (BUF_LONGS * ARCH_SIZEOF_LONG)
+    union b_ {
+        ulong l[BUF_LONGS];
+        byte b[BUF_BYTES];
+    } buf0, buf1, buf2, buf3;
+    mem_save_params_t save;
+    const gx_device_memory *mdproto = gdev_mem_device_for_bits(1);
+    uint plane_raster = bitmap_raster(w);
+    int br, bw, bh, cx, cy, cw, ch, ix, iy;
+
+    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
+    MEM_SAVE_PARAMS(mdev, save);
+    MEM_SET_PARAMS(mdev, 1);
+    if (plane_raster > BUF_BYTES) {
+        br = BUF_BYTES;
+        bw = BUF_BYTES<<3;
+        bh = 1;
+    } else {
+        br = plane_raster;
+        bw = w;
+        bh = BUF_BYTES / plane_raster;
+    }
+    for (cy = y; cy < y + h; cy += ch) {
+        ch = min(bh, y + h - cy);
+        for (cx = x; cx < x + w; cx += cw) {
+            int sx = sourcex + cx - x;
+            const byte *source_base = base + sraster * (cy - y) + (sx>>1);
+
+            cw = min(bw, x + w - cx);
+            if ((sx & 1) == 0) {
+                for (iy = 0; iy < ch; ++iy) {
+                    const byte *sptr = source_base;
+                    byte *dptr0 = buf0.b + br * iy;
+                    byte *dptr1 = buf1.b + br * iy;
+                    byte *dptr2 = buf2.b + br * iy;
+                    byte *dptr3 = buf3.b + br * iy;
+                    int roll = 6;
+                    int cmyk = 0;
+                    ix = cw;
+                    do {
+                        cmyk |= expand_4to1[*sptr++]<<roll;
+                        roll -= 2;
+                        if (roll < 0) {
+                            *dptr0++ = cmyk>>24;
+                            *dptr1++ = cmyk>>16;
+                            *dptr2++ = cmyk>>8;
+                            *dptr3++ = cmyk;
+                            cmyk = 0;
+                            roll = 6;
+                        }
+                        ix -= 2;
+                    } while (ix > 0);
+                    if (roll != 6) {
+                        *dptr0++ = cmyk>>24;
+                        *dptr1++ = cmyk>>16;
+                        *dptr2++ = cmyk>>8;
+                        *dptr3++ = cmyk;
+                    }
+                    source_base += sraster;
+                }
+            } else {
+                for (iy = 0; iy < ch; ++iy) {
+                    const byte *sptr = source_base;
+                    byte *dptr0 = buf0.b + br * iy;
+                    byte *dptr1 = buf1.b + br * iy;
+                    byte *dptr2 = buf2.b + br * iy;
+                    byte *dptr3 = buf3.b + br * iy;
+                    int roll = 7;
+                    int cmyk = 0;
+                    byte b = *sptr++ & 0x0f;
+                    ix = cw;
+                    goto loop_entry;
+                    do {
+                        b = *sptr++;
+                        roll -= 2;
+                        if (roll < 0)
+                        {
+                            cmyk |= expand_4to1[b & 0xf0]>>1;
+                            *dptr0++ = cmyk>>24;
+                            *dptr1++ = cmyk>>16;
+                            *dptr2++ = cmyk>>8;
+                            *dptr3++ = cmyk;
+                            cmyk = 0;
+                            roll = 7;
+                            b &= 0x0f;
+                        }
+loop_entry:
+                        cmyk |= expand_4to1[b]<<roll;
+                        ix -= 2;
+                    } while (ix >= 0); /* ix == -2 means 1 extra done */
+                    if ((ix == -2) && (roll == 7)) {
+                        /* We did an extra one, and it was the last thing
+                         * we did. Nothing to store. */
+                    } else {
+                        /* Flush the stored bytes */
+                        *dptr0++ = cmyk>>24;
+                        *dptr1++ = cmyk>>16;
+                        *dptr2++ = cmyk>>8;
+                        *dptr3++ = cmyk;
+                    }
+                    source_base += sraster;
+                }
+            }
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf0.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf1.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf2.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs += mdev->height;
+            dev_proc(mdproto, copy_mono)
+                        (dev, buf3.b, 0, br, gx_no_bitmap_id, cx, cy, cw, ch,
+                         (gx_color_index)0, (gx_color_index)1);
+            mdev->line_ptrs -= 3*mdev->height;
+        }
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    return 0;
+}
+#endif
 
 /* Copy a color bitmap. */
 /* This is slow and messy. */
@@ -937,7 +1146,7 @@ plane_strip_copy_rop(gx_device_memory * mdev,
     MEM_SAVE_PARAMS(mdev, save);
     mdev->line_ptrs += mdev->height * plane;
     mdproto = gdev_mem_device_for_bits(mdev->planes[plane].depth);
-    /* strip_copy_rop might end up calling get_bits_rectangle or fill_rectangle, 
+    /* strip_copy_rop might end up calling get_bits_rectangle or fill_rectangle,
      * so ensure we have the right ones in there. */
     set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
     set_dev_proc(mdev, fill_rectangle, dev_proc(mdproto, fill_rectangle));
