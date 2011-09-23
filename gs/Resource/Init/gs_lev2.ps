@@ -639,7 +639,7 @@ currentuserparams /WaitTimeout known
 
 //systemdict /ICCProfilesDir .knownget {
   % Set the directory sepcified by the command line option
-  mark exch /ICCProfilesDir exch .dicttomark .setuserparams
+  mark exch /ICCProfilesDir exch .dicttomark .setuserparams2
 } {
   % First see if the current value is valid so we don't have to guess
   mark .currentuserparams .dicttomark /ICCProfilesDir get
@@ -654,7 +654,7 @@ currentuserparams /WaitTimeout known
         .file_name_separator concatstrings
         dup (default_gray.icc) concatstrings status {
           pop pop pop pop
-          mark exch /ICCProfilesDir exch .dicttomark .setuserparams
+          mark exch /ICCProfilesDir exch .dicttomark .setuserparams2
           exit
         } {
           pop
