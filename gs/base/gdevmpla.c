@@ -1051,27 +1051,18 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                 byte mdbyte = *mdptr | kdbyte;
                 byte ydbyte = *ydptr | kdbyte;
                 byte cresult, mresult, yresult, kresult;
-                bits32 scol = 0;
+                bits32 scol;
                 if ((sskew & 1) == 0) {
-                    if (sskew >= 0)
-                        scol = expand_4to1[sptr[0]]<<6;
-                    if ((sskew >= -2) && (left > -6))
-                        scol |= expand_4to1[sptr[1]]<<4;
-                    if ((sskew >= -4) && (left > -4))
-                        scol |= expand_4to1[sptr[2]]<<2;
-                    if (left > -2)
-                        scol |= expand_4to1[sptr[3]];
+                    scol  = expand_4to1[sptr[0]]<<6;
+                    scol |= expand_4to1[sptr[1]]<<4;
+                    scol |= expand_4to1[sptr[2]]<<2;
+                    scol |= expand_4to1[sptr[3]];
                 } else {
-                    if (sskew >= 0)
-                        scol = expand_4to1[sptr[0] & 0x0f]<<7;
-                    if ((sskew >= -2) && (left > -7))
-                        scol |= expand_4to1[sptr[1]]<<5;
-                    if ((sskew >= -4) && (left > -5))
-                        scol |= expand_4to1[sptr[2]]<<3;
-                    if ((sskew >= -6) && (left > -3))
-                        scol |= expand_4to1[sptr[3]]<<2;
-                    if (left > -1)
-                        scol |= expand_4to1[sptr[4] & 0xf0]>>1;
+                    scol  = expand_4to1[sptr[0] & 0x0f]<<7;
+                    scol |= expand_4to1[sptr[1]]<<5;
+                    scol |= expand_4to1[sptr[2]]<<3;
+                    scol |= expand_4to1[sptr[3]]<<2;
+                    scol |= expand_4to1[sptr[4] & 0xf0]>>1;
                 }
                 cresult = (*proc)(cdbyte | kdbyte,scol|(scol>>24),ctcolor);
                 mresult = (*proc)(mdbyte | kdbyte,scol|(scol>>16),mtcolor);
@@ -1095,22 +1086,20 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                 byte cresult, mresult, yresult, kresult;
                 bits32 scol = 0;
                 if ((sskew & 1) == 0) {
-                    if (sskew >= 0)
-                        scol = expand_4to1[sptr[0]]<<6;
-                    if ((sskew >= -2) && (left > -6))
+                    scol = expand_4to1[sptr[0]]<<6;
+                    if (left > -6)
                         scol |= expand_4to1[sptr[1]]<<4;
-                    if ((sskew >= -4) && (left > -4))
+                    if (left > -4)
                         scol |= expand_4to1[sptr[2]]<<2;
                     if (left > -2)
                         scol |= expand_4to1[sptr[3]];
                 } else {
-                    if (sskew >= 0)
-                        scol = expand_4to1[sptr[0] & 0x0f]<<7;
-                    if ((sskew >= -2) && (left > -7))
+                    scol = expand_4to1[sptr[0] & 0x0f]<<7;
+                    if (left > -7)
                         scol |= expand_4to1[sptr[1]]<<5;
-                    if ((sskew >= -4) && (left > -5))
+                    if (left > -5)
                         scol |= expand_4to1[sptr[2]]<<3;
-                    if ((sskew >= -6) && (left > -3))
+                    if (left > -3)
                         scol |= expand_4to1[sptr[3]]<<2;
                     if (left > -1)
                         scol |= expand_4to1[sptr[4] & 0xf0]>>1;
