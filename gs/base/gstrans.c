@@ -585,6 +585,8 @@ gs_begin_transparency_mask(gs_state * pgs,
        go ahead and take care of that now */
     if (icc_manager->smask_profiles == NULL) {
         code = gsicc_initialize_iccsmask(icc_manager);
+        if (code < 0)
+            return(code);
     }
     /* A new soft mask group,  make sure the profiles are set */
     if_debug0('v', "[v]pushing soft mask color sending\n");
