@@ -13,6 +13,7 @@
 
 /* $Id$ */
 /* Write an embedded Type 1 font */
+#include "math.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
@@ -179,6 +180,297 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
     return 0;
 }
 
+int WriteNumber (byte *dest, int value)
+{
+    if (value >= -107 && value <= 107) {
+        *dest = value + 139;
+        return 1;
+    } else {
+        if (value >= 108 && value <= 1131) {
+            double working;
+            int quotient = (int)floor((value - 108) / (double)256);
+            dest[0] = quotient + 247;
+            dest[1] = value - 108 - quotient * 256;
+            return 2;
+        } else {
+            if (value <= -108 && value >= -1131) {
+                int quotient = (int)floor((value + 108) / -256);
+                int newval = value + 256 * quotient + 108;
+                dest[0] = quotient + 251;
+                dest[1] = newval * -1;
+                return 2;
+            } else {
+                dest[0] = 255;
+                dest[1] = value >> 24;
+                dest[2] = (value & 0xFF0000) >> 16;
+                dest[3] = (value & 0xFF00) >> 8;
+                dest[4] = value & 0xFF;
+                return 5;
+            }
+        }
+    }
+    return 0;
+}
+
+/* The following 2 routines attempt to parse out Multiple Master 'OtherSubrs'
+ * calls, and replace the multiple arguments to $Blend with the two 'base'
+ * parameters. This works reasonably well but can be defeated. FOr example a
+ * CharString which puts some parameters on the operand stack, then calls a
+ * Subr which puts the remaining parameters on the stack, and calls a MM
+ * OtherSubr (constructions like this have been observed). In general we
+ * work around this by storing the operands on the stack, but it is possible
+ * that the values are calculated (eg x y div) which is a common way to get
+ * float values into the interpreter. This will defeat the code below.
+ *
+ * The only way to solve this is to actually fully interpret the CharString
+ * and any /Subrs it calls, and then emit the result as a non-MM CharString
+ * by blending the values. This would mean writing a new routine like
+ * 'psf_convert_type1_to_type2' (see gdevpsfx.c) or modifying that routine
+ * so that it outputs type 1 CharStrings (which is probably simpler to do).
+ */
+int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
+{
+    crypt_state state = crypt_charstring_seed;
+    int code = 0;
+    gs_bytestring *data = (gs_bytestring *)&gdata->bits;
+    byte *source = data->data, *end = source + data->size;
+    int CurrentNumberIndex = 0, Stack[32];
+
+    gs_type1_decrypt(source, source, data->size, &state);
+
+    if(pfont->data.lenIV)
+        source += pfont->data.lenIV;
+
+    while (source < end) {
+        if (*source < 32) {
+            /* Command */
+            switch (*source) {
+                case 12:
+                    if (*(source + 1) == 16) {
+                        switch(Stack[CurrentNumberIndex-1]) {
+                            case 18:
+                                code = 6;
+                                break;
+                            case 17:
+                                code = 4;
+                                break;
+                            case 16:
+                                code = 3;
+                                break;
+                            case 15:
+                                code = 2;
+                                break;
+                            case 14:
+                                code = 1;
+                                break;
+                            default:
+                                code = 0;
+                                break;
+                        }
+                        source += 2;
+                    } else {
+                        source +=2;
+                    }
+                    break;
+                default:
+                    source++;
+                    break;
+            }
+            CurrentNumberIndex = 0;
+        } else {
+            /* Number */
+            if (*source < 247) {
+                Stack[CurrentNumberIndex++] = *source++ - 139;
+            } else {
+                if (*source < 251) {
+                    Stack[CurrentNumberIndex] = ((*source++ - 247) * 256) + 108;
+                    Stack[CurrentNumberIndex++] += *source++;
+                } else {
+                    if (*source < 255) {
+                        Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
+                        Stack[CurrentNumberIndex++] -= *source++;
+                    } else {
+                        Stack[CurrentNumberIndex] = *source++ << 24;
+                        Stack[CurrentNumberIndex] += *source++ << 16;
+                        Stack[CurrentNumberIndex] += *source++ << 8;
+                        Stack[CurrentNumberIndex] += *source++;
+                    }
+                }
+            }
+        }
+    }
+    state = crypt_charstring_seed;
+    source = data->data;
+    gs_type1_encrypt(source, source, data->size, &state);
+    return code;
+}
+
+int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *stripped, byte *SubrsWithMM)
+{
+    crypt_state state = crypt_charstring_seed;
+    gs_bytestring *data = (gs_bytestring *)&gdata->bits;
+    byte *source = data->data, *dest = stripped, *end = source + data->size;
+    int i, dest_length = 0, CurrentNumberIndex = 0, Stack[64], written, BytesForPopss=0;
+
+    gs_type1_decrypt(source, source, data->size, &state);
+
+    if(pfont->data.lenIV >= 0) {
+        for (i=0;i<pfont->data.lenIV;i++)
+            *dest++ = *source++;
+        dest_length += pfont->data.lenIV;
+    }
+    while (source < end) {
+        if (*source < 32) {
+            /* Command */
+            switch (*source) {
+                case 12:
+                    if (*(source + 1) == 16) {
+                        /* Callothersubsr, the only thing we care about */
+                        switch(Stack[CurrentNumberIndex-1]) {
+                            /* If we find a Multiple Master call, remove all but the
+                             * first set of arguments. Mimics the result of a call.
+                             * Adobe 'encourages' the use of Subrs to do MM, but
+                             * the spec doens't say you have to, so we need to be
+                             * prepared, just in case. I doubt we will ever execute
+                             * this code.
+                             */
+                            case 14:
+                                CurrentNumberIndex -= pfont->data.WeightVector.count - 1;
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                source += 2;
+                                break;
+                            case 15:
+                                CurrentNumberIndex -= (pfont->data.WeightVector.count - 1) * 2;
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                source += 2;
+                                break;
+                            case 16:
+                                CurrentNumberIndex -= (pfont->data.WeightVector.count - 1) * 3;
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                source += 2;
+                                break;
+                            case 17:
+                                CurrentNumberIndex -= (pfont->data.WeightVector.count - 1) * 4;
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                source += 2;
+                                break;
+                            case 18:
+                                CurrentNumberIndex -= (pfont->data.WeightVector.count - 1) * 6;
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                source += 2;
+                                break;
+                            default:
+                                for (i = 0;i < CurrentNumberIndex;i++) {
+                                    written = WriteNumber(dest, Stack[i]);
+                                    dest_length += written;
+                                    dest += written;
+                                }
+                                *dest++ = *source++;
+                                *dest++ = *source++;
+                                dest_length += 2;
+                                break;
+                        }
+                    } else {
+                        for (i = 0;i < CurrentNumberIndex;i++) {
+                            written = WriteNumber(dest, Stack[i]);
+                            dest_length += written;
+                            dest += written;
+                        }
+                        *dest++ = *source++;
+                        *dest++ = *source++;
+                        dest_length += 2;
+                    }
+                    break;
+                case 10:
+                    if (SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0) {
+                        int j, index = Stack[CurrentNumberIndex - 1];
+                        float value;
+                        int AverageValue[6], StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
+
+                        CurrentNumberIndex--; /* Remove the subr index */
+
+                        for (i=0;i < StackBase; i++) {
+                            written = WriteNumber(dest, Stack[i]);
+                            dest_length += written;
+                            dest += written;
+                        }
+                        for (i=0;i<SubrsWithMM[index];i++) {
+                            written = WriteNumber(dest, Stack[StackBase + i]);
+                            dest_length += written;
+                            dest += written;
+                        }
+                        source++;
+                    } else {
+                        for (i = 0;i < CurrentNumberIndex;i++) {
+                            written = WriteNumber(dest, Stack[i]);
+                            dest_length += written;
+                            dest += written;
+                        }
+                        *dest++ = *source++;
+                        dest_length++;
+                    }
+                    break;
+                default:
+                    for (i = 0;i < CurrentNumberIndex;i++) {
+                        written = WriteNumber(dest, Stack[i]);
+                        dest_length += written;
+                        dest += written;
+                    }
+                    *dest++ = *source++;
+                    dest_length++;
+            }
+            CurrentNumberIndex = 0;
+        } else {
+            /* Number */
+            if (*source < 247) {
+                Stack[CurrentNumberIndex++] = *source++ - 139;
+            } else {
+                if (*source < 251) {
+                    Stack[CurrentNumberIndex] = ((*source++ - 247) * 256) + 108;
+                    Stack[CurrentNumberIndex++] += *source++;
+                } else {
+                    if (*source < 255) {
+                        Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
+                        Stack[CurrentNumberIndex++] -= *source++;
+                    } else {
+                        source++;
+                        Stack[CurrentNumberIndex] = *source++ << 24;
+                        Stack[CurrentNumberIndex] += *source++ << 16;
+                        Stack[CurrentNumberIndex] += *source++ << 8;
+                        Stack[CurrentNumberIndex++] += *source++;
+                    }
+                }
+            }
+        }
+    }
+    source = data->data;
+    state = crypt_charstring_seed;
+    gs_type1_encrypt(source, source, data->size, &state);
+    state = crypt_charstring_seed;
+    gs_type1_encrypt(stripped, stripped, dest_length, &state);
+    return dest_length;
+}
+
 /*
  * Write the Private dictionary.  This is a separate procedure only for
  * readability.  write_CharString is a parameter so that we can encrypt
@@ -196,6 +488,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
     printer_param_list_t rlist;
     gs_param_list *const plist = (gs_param_list *)&rlist;
     int code = s_init_param_printer(&rlist, ppp, s);
+    byte *SubrsWithMM = 0;
 
     if (code < 0)
         return 0;
@@ -278,15 +571,52 @@ write_Private(stream *s, gs_font_type1 *pfont,
             if (code >= 0)
                 gs_glyph_data_free(&gdata, "write_Private(Subrs)");
         }
+        if (pfont->data.WeightVector.count != 0)
+            SubrsWithMM = gs_alloc_bytes(pfont->memory, n, "Subrs record");
+
         pprintd1(s, "/Subrs %d array\n", n);
+
+        /* prescan the /Subrs array to see if any of the Subrs call out to OtherSubrs */
+        if (pfont->data.WeightVector.count != 0) {
+            for (i = 0; i < n; ++i) {
+                if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
+                        code = CheckSubrForMM(&gdata, pfont);
+                        if (code < 0) {
+                            if (SubrsWithMM != 0)
+                                gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                            return code;
+                        }
+                        if (SubrsWithMM != 0)
+                            SubrsWithMM[i] = code;
+                }
+            }
+        }
+
         for (i = 0; i < n; ++i)
             if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
                 char buf[50];
 
                 if (gdata.bits.size) {
-                    sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
-                    stream_puts(s, buf);
-                    write_CharString(s, gdata.bits.data, gdata.bits.size);
+                    if (pfont->data.WeightVector.count != 0) {
+                        byte *stripped;
+                        gs_bytestring *data = (gs_bytestring *)&gdata.bits;
+
+                        stripped = gs_alloc_bytes(pfont->memory, data->size, "Subrs copy for OtherSubrs");
+                        code = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
+                        if (code < 0) {
+                            if (SubrsWithMM != 0)
+                                gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                            return code;
+                        }
+                        sprintf(buf, "dup %d %u -| ", i, code);
+                        stream_puts(s, buf);
+                        write_CharString(s, stripped, code);
+                        gs_free_object(pfont->memory, stripped, "free Subrs copy for OtherSubrs");
+                    } else {
+                        sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
+                        stream_puts(s, buf);
+                        write_CharString(s, gdata.bits.data, gdata.bits.size);
+                    }
                     stream_puts(s, " |\n");
                 }
                 gs_glyph_data_free(&gdata, "write_Private(Subrs)");
@@ -328,18 +658,42 @@ write_Private(stream *s, gs_font_type1 *pfont,
                 ) {
                 gs_const_string gstr;
                 int code;
+                byte *stripped;
 
                 code = pfont->procs.glyph_name((gs_font *)pfont, glyph, &gstr);
-                if (code < 0)
+                if (code < 0) {
+                    if (SubrsWithMM != 0)
+                        gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
                     return code;
+                }
+
                 stream_puts(s, "/");
                 stream_write(s, gstr.data, gstr.size);
-                pprintd1(s, " %d -| ", gdata.bits.size);
-                write_CharString(s, gdata.bits.data, gdata.bits.size);
+
+                if (pfont->data.WeightVector.count != 0) {
+                    gs_bytestring *data = (gs_bytestring *)&gdata.bits;
+
+                    stripped = gs_alloc_bytes(pfont->memory, data->size, "CharStrings copy for OtherSubrs");
+                    code = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
+                    if (code < 0) {
+                        if (SubrsWithMM != 0)
+                            gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                        return code;
+                    }
+                    pprintd1(s, " %d -| ", code);
+                    write_CharString(s, stripped, code);
+                    gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
+                } else {
+                    pprintd1(s, " %d -| ", gdata.bits.size);
+                    write_CharString(s, gdata.bits.data, gdata.bits.size);
+                }
+
                 stream_puts(s, " |-\n");
                 gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
             }
     }
+    if (SubrsWithMM != 0)
+        gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
 
     /* Wrap up. */
 
@@ -476,12 +830,19 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
         if (code < 0)
             return code;
     }
+
+    /*
+     * This is nonsense. We cna't write the WeightVector alonr from a Multiple
+     * Master and expect any sensible results. Since its useless alone, there's
+     * no point in emitting it at all. Leaving the code in place in case we
+     * decide to write MM fonts one day.
     {
         const gs_type1_data *const pdata = &pfont->data;
 
         write_float_array(plist, "WeightVector", pdata->WeightVector.values,
                           pdata->WeightVector.count);
     }
+    */
     stream_puts(s, "currentdict end\n");
 
     /* Write the Private dictionary. */
