@@ -974,12 +974,240 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
 
     /* Set up transfer parameters. */
     line_count = height;
+    if (lop_uses_T(lop) && (tcolors == NULL)) { /* && (textures != NULL) */
+        /* Pixmap textures. For now we'll only get into this routine if
+         * textures is a pixmap (or constant, in which case we'll do it
+         * below). */
+        int ty;
+        uint traster;
+
+/* Calculate the X offset for a given Y value, */
+/* taking shift into account if necessary. */
+#define x_offset(px, ty, textures)\
+  ((textures)->shift == 0 ? (px) :\
+   (px) + (ty) / (textures)->rep_height * (textures)->rep_shift)
+
+        cdrow = scan_line_base(mdev, y);
+        mdrow = cdrow + mdev->height * draster;
+        ydrow = mdrow + mdev->height * draster;
+        kdrow = ydrow + mdev->height * draster;
+        traster = (textures ? textures->raster : 0);
+        ty = y + phase_y;
+        for (; line_count-- > 0; cdrow += draster, mdrow += draster, ydrow += draster, kdrow += draster, srow += sraster, ++ty) {
+            int sx = sourcex;
+            int dx = x;
+            int w = width;
+            const byte *trow = textures->data + (ty % textures->rep_height) * traster;
+            int xoff = x_offset(phase_x, ty, textures);
+            int nw;
+            int tx = (dx + xoff) % textures->rep_width;
+
+            /* Loop over (horizontal) copies of the tile. */
+            for (; w > 0; sx += nw, dx += nw, w -= nw, tx = 0) {
+                /* sptr and tptr point to bytes of cmykcmyk. Need to convert
+                 * these to planar format. */
+                int dbit = dx & 7;
+                int tbit = tx & 1;
+                int tskew = tbit - dbit; /* -7 >= tskew >= 1 */
+                int left = (nw = min(w, textures->size.x - tx))-8+dbit;
+                int sbit = sx & 1;
+                int sskew = sbit - dbit; /* -7 >= sskew >= 1 */
+                byte lmask = 0xff >> dbit;
+                byte rmask = 0xff << (~(dbit + nw - 1) & 7);
+                byte *cdptr = cdrow + (dx>>3);
+                byte *mdptr = mdrow + (dx>>3);
+                byte *ydptr = ydrow + (dx>>3);
+                byte *kdptr = kdrow + (dx>>3);
+                const byte *tptr = trow;
+                const rop_proc proc = rop_proc_table[rop];
+                const byte *sptr = srow;
+                sptr += (sskew>>1); /* Backtrack sptr if required. */
+                sptr += (sx>>1);
+                tptr += (tskew>>1); /* Backtrack tptr if required. */
+                tptr += (tx>>1);
+                if (left < 0)
+                    lmask &= rmask;
+                {
+                    /* Left hand bytes */
+                    byte kdbyte = *kdptr;
+                    byte cdbyte = *cdptr;
+                    byte mdbyte = *mdptr;
+                    byte ydbyte = *ydptr;
+                    byte cresult, mresult, yresult, kresult;
+                    bits32 scol = 0, tcol = 0;
+                    if ((sskew & 1) == 0) {
+                        if (sskew >= 0)
+                            scol = expand_4to1[sptr[0]]<<6;
+                        if ((sskew >= -2) && (left > -6))
+                            scol |= expand_4to1[sptr[1]]<<4;
+                        if ((sskew >= -4) && (left > -4))
+                            scol |= expand_4to1[sptr[2]]<<2;
+                        if (left > -2)
+                            scol |= expand_4to1[sptr[3]];
+                    } else {
+                        if (sskew >= 0)
+                            scol = expand_4to1[sptr[0] & 0x0f]<<7;
+                        if ((sskew >= -2) && (left > -7))
+                            scol |= expand_4to1[sptr[1]]<<5;
+                        if ((sskew >= -4) && (left > -5))
+                            scol |= expand_4to1[sptr[2]]<<3;
+                        if ((sskew >= -6) && (left > -3))
+                            scol |= expand_4to1[sptr[3]]<<1;
+                        if (left > -1)
+                            scol |= expand_4to1[sptr[4] & 0xf0]>>1;
+                    }
+                    if ((tskew & 1) == 0) {
+                        if (tskew >= 0)
+                            tcol = expand_4to1[tptr[0]]<<6;
+                        if ((tskew >= -2) && (left > -6))
+                            tcol |= expand_4to1[tptr[1]]<<4;
+                        if ((tskew >= -4) && (left > -4))
+                            tcol |= expand_4to1[tptr[2]]<<2;
+                        if (left > -2)
+                            tcol |= expand_4to1[tptr[3]];
+                    } else {
+                        if (tskew >= 0)
+                            tcol = expand_4to1[tptr[0] & 0x0f]<<7;
+                        if ((tskew >= -2) && (left > -7))
+                            tcol |= expand_4to1[tptr[1]]<<5;
+                        if ((tskew >= -4) && (left > -5))
+                            tcol |= expand_4to1[tptr[2]]<<3;
+                        if ((tskew >= -6) && (left > -3))
+                            tcol |= expand_4to1[tptr[3]]<<1;
+                        if (left > -1)
+                            tcol |= expand_4to1[tptr[4] & 0xf0]>>1;
+                    }
+                    cresult = (*proc)(cdbyte | kdbyte,scol|(scol>>24),tcol|(tcol>>24));
+                    mresult = (*proc)(mdbyte | kdbyte,scol|(scol>>16),tcol|(tcol>>16));
+                    yresult = (*proc)(ydbyte | kdbyte,scol|(scol>> 8),tcol|(tcol>> 8));
+                    kresult = cresult & mresult & yresult;
+                    cresult &= ~kresult;
+                    mresult &= ~kresult;
+                    yresult &= ~kresult;
+                    *cdptr++ = (cresult & lmask) | (cdbyte & ~lmask);
+                    *mdptr++ = (mresult & lmask) | (mdbyte & ~lmask);
+                    *ydptr++ = (yresult & lmask) | (ydbyte & ~lmask);
+                    *kdptr++ = (kresult & lmask) | (kdbyte & ~lmask);
+                }
+                if (left <= 0) /* if (width <= 8) we're done */
+                    continue;
+                sptr += 4;
+                tptr += 4;
+                left -= 8; /* left = bits to go - 8 */
+                while (left > 0)
+                {
+                    byte kdbyte = *kdptr;
+                    byte cdbyte = *cdptr | kdbyte;
+                    byte mdbyte = *mdptr | kdbyte;
+                    byte ydbyte = *ydptr | kdbyte;
+                    byte cresult, mresult, yresult, kresult;
+                    bits32 scol, tcol;
+                    if ((sskew & 1) == 0) {
+                        scol  = expand_4to1[sptr[0]]<<6;
+                        scol |= expand_4to1[sptr[1]]<<4;
+                        scol |= expand_4to1[sptr[2]]<<2;
+                        scol |= expand_4to1[sptr[3]];
+                    } else {
+                        scol  = expand_4to1[sptr[0] & 0x0f]<<7;
+                        scol |= expand_4to1[sptr[1]]<<5;
+                        scol |= expand_4to1[sptr[2]]<<3;
+                        scol |= expand_4to1[sptr[3]]<<1;
+                        scol |= expand_4to1[sptr[4] & 0xf0]>>1;
+                    }
+                    if ((tskew & 1) == 0) {
+                        tcol  = expand_4to1[tptr[0]]<<6;
+                        tcol |= expand_4to1[tptr[1]]<<4;
+                        tcol |= expand_4to1[tptr[2]]<<2;
+                        tcol |= expand_4to1[tptr[3]];
+                    } else {
+                        tcol  = expand_4to1[tptr[0] & 0x0f]<<7;
+                        tcol |= expand_4to1[tptr[1]]<<5;
+                        tcol |= expand_4to1[tptr[2]]<<3;
+                        tcol |= expand_4to1[tptr[3]]<<1;
+                        tcol |= expand_4to1[tptr[4] & 0xf0]>>1;
+                    }
+                    cresult = (*proc)(cdbyte | kdbyte,scol|(scol>>24),tcol|(tcol>>24));
+                    mresult = (*proc)(mdbyte | kdbyte,scol|(scol>>16),tcol|(tcol>>16));
+                    yresult = (*proc)(ydbyte | kdbyte,scol|(scol>> 8),tcol|(tcol>> 8));
+                    kresult = cresult & mresult & yresult;
+                    cresult &= ~kresult;
+                    mresult &= ~kresult;
+                    yresult &= ~kresult;
+                    *cdptr++ = cresult & ~kresult;
+                    *mdptr++ = mresult & ~kresult;
+                    *ydptr++ = yresult & ~kresult;
+                    *kdptr++ = kresult;
+                    sptr += 4;
+                    tptr += 4;
+                    left -= 8;
+                }
+                {
+                    byte kdbyte = *kdptr;
+                    byte cdbyte = *cdptr;
+                    byte mdbyte = *mdptr;
+                    byte ydbyte = *ydptr;
+                    byte cresult, mresult, yresult, kresult;
+                    bits32 scol, tcol;
+                    if ((sskew & 1) == 0) {
+                        scol = expand_4to1[sptr[0]]<<6;
+                        if (left > -6)
+                            scol |= expand_4to1[sptr[1]]<<4;
+                        if (left > -4)
+                            scol |= expand_4to1[sptr[2]]<<2;
+                        if (left > -2)
+                            scol |= expand_4to1[sptr[3]];
+                    } else {
+                        scol = expand_4to1[sptr[0] & 0x0f]<<7;
+                        if (left > -7)
+                            scol |= expand_4to1[sptr[1]]<<5;
+                        if (left > -5)
+                            scol |= expand_4to1[sptr[2]]<<3;
+                        if (left > -3)
+                            scol |= expand_4to1[sptr[3]]<<1;
+                        if (left > -1)
+                            scol |= expand_4to1[sptr[4] & 0xf0]>>1;
+                    }
+                    if ((tskew & 1) == 0) {
+                        tcol = expand_4to1[tptr[0]]<<6;
+                        if (left > -6)
+                            tcol |= expand_4to1[tptr[1]]<<4;
+                        if (left > -4)
+                            tcol |= expand_4to1[tptr[2]]<<2;
+                        if (left > -2)
+                            tcol |= expand_4to1[tptr[3]];
+                    } else {
+                        tcol = expand_4to1[tptr[0] & 0x0f]<<7;
+                        if (left > -7)
+                            tcol |= expand_4to1[tptr[1]]<<5;
+                        if (left > -5)
+                            tcol |= expand_4to1[tptr[2]]<<3;
+                        if (left > -3)
+                            tcol |= expand_4to1[tptr[3]]<<1;
+                        if (left > -1)
+                            tcol |= expand_4to1[tptr[4] & 0xf0]>>1;
+                    }
+                    cresult = (*proc)(cdbyte | kdbyte,scol|(scol>>24),tcol|(tcol>>24));
+                    mresult = (*proc)(mdbyte | kdbyte,scol|(scol>>16),tcol|(tcol>>16));
+                    yresult = (*proc)(ydbyte | kdbyte,scol|(scol>> 8),tcol|(tcol>> 8));
+                    kresult = cresult & mresult & yresult;
+                    cresult &= ~kresult;
+                    mresult &= ~kresult;
+                    yresult &= ~kresult;
+                    *cdptr++ = (cresult & rmask) | (cdbyte & ~rmask);
+                    *mdptr++ = (mresult & rmask) | (mdbyte & ~rmask);
+                    *ydptr++ = (yresult & rmask) | (ydbyte & ~rmask);
+                    *kdptr++ = (kresult & rmask) | (kdbyte & ~rmask);
+                }
+            }
+        }
+        return 0;
+    }
+    /* Texture constant (or unimportant) cases */
     dbit = x & 7;
     cdrow = scan_line_base(mdev, y) + (x>>3);
     mdrow = cdrow + mdev->height * draster;
     ydrow = mdrow + mdev->height * draster;
     kdrow = ydrow + mdev->height * draster;
-
     lmask = 0xff >> dbit;
     width += dbit;
     rmask = 0xff << (~(width - 1) & 7);
@@ -1025,7 +1253,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                     if ((sskew >= -4) && (left > -5))
                         scol |= expand_4to1[sptr[2]]<<3;
                     if ((sskew >= -6) && (left > -3))
-                        scol |= expand_4to1[sptr[3]]<<2;
+                        scol |= expand_4to1[sptr[3]]<<1;
                     if (left > -1)
                         scol |= expand_4to1[sptr[4] & 0xf0]>>1;
                 }
@@ -1043,6 +1271,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
             }
             if (left <= 0) /* if (width <= 8) we're done */
                 continue;
+            sptr += 4;
             left -= 8; /* left = bits to go - 8 */
             while (left > 0)
             {
@@ -1061,7 +1290,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                     scol  = expand_4to1[sptr[0] & 0x0f]<<7;
                     scol |= expand_4to1[sptr[1]]<<5;
                     scol |= expand_4to1[sptr[2]]<<3;
-                    scol |= expand_4to1[sptr[3]]<<2;
+                    scol |= expand_4to1[sptr[3]]<<1;
                     scol |= expand_4to1[sptr[4] & 0xf0]>>1;
                 }
                 cresult = (*proc)(cdbyte | kdbyte,scol|(scol>>24),ctcolor);
@@ -1075,16 +1304,16 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                 *mdptr++ = mresult & ~kresult;
                 *ydptr++ = yresult & ~kresult;
                 *kdptr++ = kresult;
+                sptr += 4;
                 left -= 8;
             }
-            left += 8; /* left = bits to go < 8 */
             {
                 byte kdbyte = *kdptr;
                 byte cdbyte = *cdptr;
                 byte mdbyte = *mdptr;
                 byte ydbyte = *ydptr;
                 byte cresult, mresult, yresult, kresult;
-                bits32 scol = 0;
+                bits32 scol;
                 if ((sskew & 1) == 0) {
                     scol = expand_4to1[sptr[0]]<<6;
                     if (left > -6)
@@ -1100,7 +1329,7 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                     if (left > -5)
                         scol |= expand_4to1[sptr[2]]<<3;
                     if (left > -3)
-                        scol |= expand_4to1[sptr[3]]<<2;
+                        scol |= expand_4to1[sptr[3]]<<1;
                     if (left > -1)
                         scol |= expand_4to1[sptr[4] & 0xf0]>>1;
                 }
@@ -1167,7 +1396,6 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
                 *kdptr++ = kresult;
                 left -= 8;
             }
-            left += 8; /* left = bits to go < 8 */
             {
                 byte kdbyte = *kdptr;
                 byte cdbyte = *cdptr;
@@ -1374,6 +1602,15 @@ mem_planar_strip_copy_rop(gx_device * dev,
                                                       x, y, width, height,
                                                       phase_x, phase_y, lop);
             }
+        }
+        if (!tcolors && !scolors &&
+            (mdev->num_planes == 4) && (mdev->plane_depth == 1)) {
+            lop = cmykrop[lop & 0xff] | (lop & ~0xff);
+            return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
+                                                  sraster, id, scolors,
+                                                  textures, tcolors,
+                                                  x, y, width, height,
+                                                  phase_x, phase_y, lop);
         }
         /* Fall back to the default implementation (the only one that
          * guarantees to properly cope with planar data). */
