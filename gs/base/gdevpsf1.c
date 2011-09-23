@@ -180,14 +180,13 @@ write_Encoding(stream *s, gs_font_type1 *pfont, int options,
     return 0;
 }
 
-int WriteNumber (byte *dest, int value)
+static int WriteNumber (byte *dest, int value)
 {
     if (value >= -107 && value <= 107) {
         *dest = value + 139;
         return 1;
     } else {
         if (value >= 108 && value <= 1131) {
-            double working;
             int quotient = (int)floor((value - 108) / (double)256);
             dest[0] = quotient + 247;
             dest[1] = value - 108 - quotient * 256;
@@ -228,7 +227,7 @@ int WriteNumber (byte *dest, int value)
  * 'psf_convert_type1_to_type2' (see gdevpsfx.c) or modifying that routine
  * so that it outputs type 1 CharStrings (which is probably simpler to do).
  */
-int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
+static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
 {
     crypt_state state = crypt_charstring_seed;
     int code = 0;
@@ -305,12 +304,12 @@ int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
     return code;
 }
 
-int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *stripped, byte *SubrsWithMM)
+static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *stripped, byte *SubrsWithMM)
 {
     crypt_state state = crypt_charstring_seed;
     gs_bytestring *data = (gs_bytestring *)&gdata->bits;
     byte *source = data->data, *dest = stripped, *end = source + data->size;
-    int i, dest_length = 0, CurrentNumberIndex = 0, Stack[64], written, BytesForPopss=0;
+    int i, dest_length = 0, CurrentNumberIndex = 0, Stack[64], written;
 
     gs_type1_decrypt(source, source, data->size, &state);
 
@@ -403,9 +402,8 @@ int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *strippe
                     break;
                 case 10:
                     if (SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0) {
-                        int j, index = Stack[CurrentNumberIndex - 1];
-                        float value;
-                        int AverageValue[6], StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
+                        int index = Stack[CurrentNumberIndex - 1];
+                        int StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
 
                         CurrentNumberIndex--; /* Remove the subr index */
 
