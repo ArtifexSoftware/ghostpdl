@@ -664,7 +664,7 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
        then do memcpy into the buffer */
 
     thresh_width = d_order->width;
-    thresh_height = d_order->height;
+    thresh_height = d_order->full_height;
     /* Figure out the tile steps.  Left offset, Number of tiles, Right offset. */
     switch (posture) {
         case image_portrait:
