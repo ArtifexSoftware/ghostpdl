@@ -1530,11 +1530,19 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
     int code;
     byte init_value = 255;
     bool is_inverting = false;
+    int num_repeat, shift;
+    int row_kk, col_kk, kk;
+
+    /* We can have simple or complete orders.  Simple ones tile the threshold
+       with shifts.   To handle those we simply loop over the number of 
+       repeats making sure to shift columns when we set our threshold values */
+    num_repeat = d_order->full_height / d_order->height;
+    shift = d_order->shift;
 
     if (d_order == NULL) return -1;
     if (d_order->threshold != NULL) return 0;
     d_order->threshold_inverts = is_inverting;
-    thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+    thresh = (byte *)gs_malloc(memory, d_order->width * d_order->full_height, 1,
                               "gx_ht_construct_threshold");
     if (thresh == NULL) {
         return -1 ;         /* error if allocation failed   */
@@ -1615,8 +1623,14 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
                     return code;
                 row = ppt.y;
                 col = ppt.x;
-                if (col < (int)d_order->width)
-                    *(thresh + col + (row * d_order->width)) = t_level;
+                if( col < (int)d_order->width ) {
+                    for (kk = 0; kk < num_repeat; kk++) {
+                        row_kk = row + kk * d_order->height;
+                        col_kk = col + kk * shift;
+                        col_kk = col_kk % d_order->width;
+                        *(thresh + col_kk + (row_kk * d_order->width)) = t_level;
+                    }
+                }
             }
             prev_l = l;
         }
