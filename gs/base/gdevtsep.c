@@ -1443,6 +1443,14 @@ threshold_from_order( gx_ht_order *d_order, int *Width, int *Height, gs_memory_t
    int i, j, l, prev_l;
    unsigned char *thresh;
    gx_ht_bit *bits = (gx_ht_bit *)d_order->bit_data;
+    int num_repeat, shift;
+    int row_kk, col_kk, kk;
+
+    /* We can have simple or complete orders.  Simple ones tile the threshold
+       with shifts.   To handle those we simply loop over the number of 
+       repeats making sure to shift columns when we set our threshold values */
+    num_repeat = d_order->full_height / d_order->height;
+    shift = d_order->shift;
 
 #ifdef DEBUG
 if ( gs_debug_c('h') ) {
@@ -1453,7 +1461,7 @@ if ( gs_debug_c('h') ) {
 }
 #endif
 
-   thresh = (byte *)gs_malloc(memory, d_order->num_bits, 1,
+   thresh = (byte *)gs_malloc(memory, d_order->width * d_order->full_height, 1,
                                   "tiffsep1_threshold_array");
    if( thresh == NULL ) {
 #ifdef DEBUG
@@ -1469,7 +1477,7 @@ if ( gs_debug_c('h') ) {
       thresh[i] = 1;
 
    *Width  = d_order->width;
-   *Height = d_order->height;
+   *Height = d_order->full_height;
 
    prev_l = 0;
    l = 1;
@@ -1498,8 +1506,14 @@ if ( gs_debug_c('h') ) {
                dprintf3("row=%2d, col=%2d, t_level=%3d\n",
                   row, col, t_level);
 #endif
-            if( col < (int)d_order->width )
-               *(thresh+col+(row * d_order->width)) = t_level;
+            if( col < (int)d_order->width ) {
+                for (kk = 0; kk < num_repeat; kk++) {
+                    row_kk = row + kk * d_order->height;
+                    col_kk = col + kk * shift;
+                    col_kk = col_kk % d_order->width;
+                    *(thresh + col_kk + (row_kk * d_order->width)) = t_level;
+                }
+            }
          }
          prev_l = l;
       }
@@ -1507,7 +1521,7 @@ if ( gs_debug_c('h') ) {
    }
 
 #ifdef DEBUG
-   if ( gs_debug_c('h') ) {
+   if (gs_debug_c('h')) {
       for( i=0; i<(int)d_order->height; i++ ) {
          dprintf1("threshold array row %3d= ", i);
          for( j=(int)d_order->width-1; j>=0; j-- )
