@@ -682,7 +682,7 @@ update_overprint_params(
     overprint_device_t *            opdev,
     const gs_overprint_params_t *   pparams )
 {
-    int                             ncomps = opdev->color_info.num_components;
+    int ncomps = opdev->color_info.num_components;
 
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
