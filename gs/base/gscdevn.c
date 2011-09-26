@@ -587,7 +587,14 @@ static int
 gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_devicen_color_map *  pcmap = &pgs->color_component_map;
+    int code;
 
+    /* It is possible that the color map information in the graphic state
+       is not current due to save/restore and or if we are coming from 
+       a color space that is inside a PatternType 2 */
+    code = check_DeviceN_component_names(pcs, pgs);
+    if (code < 0)
+       return code;
     if (pcmap->use_alt_cspace) {
         const gs_color_space_type* base_type = pcs->base_space->type;
 
