@@ -1348,8 +1348,6 @@ planar_cmyk4bit_strip_copy_rop(gx_device_memory * mdev,
         }
     } else if (constant_s) {
         const rop_proc proc = rop_proc_table[rop];
-        int sbit = sourcex & 7;
-        srow += (sourcex>>3);
         for (; line_count-- > 0; cdrow += draster, mdrow += draster, ydrow += draster, kdrow += draster) {
             byte *cdptr = cdrow;
             byte *mdptr = mdrow;
@@ -1593,7 +1591,8 @@ mem_planar_strip_copy_rop(gx_device * dev,
                 }
                 return 0;
             }
-            if ((mdev->num_planes == 4) && (mdev->plane_depth == 1))
+            if ((mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
+                ((lop & (lop_S_transparent | lop_T_transparent)) == 0))
             {
                 lop = cmykrop[lop & 0xff] | (lop & ~0xff);
                 return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
@@ -1604,7 +1603,8 @@ mem_planar_strip_copy_rop(gx_device * dev,
             }
         }
         if (!tcolors && !scolors &&
-            (mdev->num_planes == 4) && (mdev->plane_depth == 1)) {
+            (mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
+            ((lop & (lop_S_transparent | lop_T_transparent)) == 0)) {
             lop = cmykrop[lop & 0xff] | (lop & ~0xff);
             return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
                                                   sraster, id, scolors,
