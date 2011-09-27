@@ -797,14 +797,21 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
         }
 
         /* We also have to watch for variable overflow in Freetype.
-         * I've opted to fiddle with the resolution here, as it is
-         * almost always a larger value than the text size, and therefore
-         * we have more scope to manipulate it.
+         * We fiddle with whichever of the resolution or the scale
+         * is larger for the current iteration, but change the scale
+         * by a smaller multiple, firstly because it is a floating point
+         * value, so we can, but also because varying the scale by larger
+         * amounts is more prone to causing rounding errors.
          */
         facty = 1.0;
-        while (scaley * yres > 256.0 * 72 && yres > 0) {
-            yres >>= 1;
-            facty *= 2.0;
+        while (scaley * yres > 512.0 * 72 && yres > 0 && scaley > 0.0) {
+            if (scaley < yres) {
+                yres >>= 1;
+                facty *= 2.0;
+            }
+            else {
+                scaley /= 1.25;
+            }
         }
 
         if (scalex < 10.0) {
@@ -820,9 +827,14 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
 
         /* see above */
         factx = 1.0;
-        while (scalex * xres > 256.0 * 72.0 && xres > 0) {
-            xres >>= 1;
-            factx *= 2.0;
+        while (scalex * xres > 512.0 * 72.0 && xres > 0 && scalex > 0.0) {
+            if (scalex < xres) {
+                xres >>= 1;
+                factx *= 2.0;
+            }
+            else {
+                scalex /= 1.25;
+            }
         }
     }
     else {
@@ -852,15 +864,21 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
             }
 
             /* We also have to watch for variable overflow in Freetype.
-             * I've opted to fiddle with the resolution here, as it is
-             * almost always a larger value than the text size, and therefore
-             * we have more scope to manipulate it.
+             * We fiddle with whichever of the resolution or the scale
+             * is larger for the current iteration.
              */
             fact = 1.0;
-            while (scalex * xres > 256.0 * 72 && xres > 0 && yres > 0) {
-                xres >>= 1;
-                yres >>= 1;
-                fact *= 2.0;
+            while (scalex * xres > 512.0 * 72 && xres > 0 && yres > 0
+                   && (scalex > 0.0 && scaley > 0.0)) {
+                if (scalex < xres) {
+                    xres >>= 1;
+                    yres >>= 1;
+                    fact *= 2.0;
+                }
+                else {
+                  scalex /= 1.25;
+                  scaley /= 1.25;
+                }
             }
         }
         else {
@@ -879,11 +897,17 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
 
             /* see above */
             fact = 1.0;
-            while (scaley * yres > 256.0 * 72.0 && xres > 0 && yres > 0) {
-                xres >>= 1;
-                yres >>= 1;
-
-                fact *= 2.0;
+            while (scaley * yres > 512.0 * 72.0 && (xres > 0 && yres > 0)
+                   && (scalex > 0.0 && scaley > 0.0)) {
+                if (scaley < yres) {
+                    xres >>= 1;
+                    yres >>= 1;
+                    fact *= 2.0;
+                }
+                else {
+                  scalex /= 1.25;
+                  scaley /= 1.25;
+                }
             }
         }
         factx = facty = fact;
