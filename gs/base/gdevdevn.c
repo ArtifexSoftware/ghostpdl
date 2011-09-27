@@ -1509,9 +1509,10 @@ devn_unpack_row(gx_device * dev, int num_comp, gs_devn_params * pdevn_params,
         int factor, bit_count, bit_mask;
         comp_bit_map_list_t * pbitmap;
         gx_color_index color;
-        gx_color_value solid_color = gx_max_color_value;
 
         for (pixel_num = 0; pixel_num < width; pixel_num++) {
+            gx_color_value solid_color = gx_max_color_value;
+
             /*
              * Get the encoded color value.
              */
