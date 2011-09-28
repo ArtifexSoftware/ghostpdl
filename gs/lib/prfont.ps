@@ -155,7 +155,7 @@
 
   0 128 Unencoded length 1 sub
    { /BlockStart 1 index def
-     dup 128 add Unencoded length .min 1 index sub
+     dup 128 add Unencoded length min 1 index sub
      Unencoded 3 1 roll getinterval TempEncoding copy
      /BlockEncoding exch def
      /BlockCount BlockEncoding length def
@@ -176,7 +176,7 @@
      36 2.4 Inch moveto
     0 32 BlockCount 1 sub {
       0 -0.4 Inch rmoveto gsave
-      dup 31 add BlockCount 1 sub .min
+      dup 31 add BlockCount 1 sub min
       exch BlockStart add exch BlockStart add DoLine
       grestore
     } for
