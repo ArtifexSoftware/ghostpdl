@@ -425,7 +425,7 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                     if (cdefn->actions & pca_byte_data) {
                         uint count = uint_arg(&pst->args);
 
-                        if ((count > 0) && (rlimit - p <= count)) {
+                        if ((count > 0) && (rlimit - p < count)) {
                             pst->args.data =
                                 gs_alloc_bytes(pcs->memory, count,
                                                "command data");
