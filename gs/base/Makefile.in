@@ -157,6 +157,7 @@ GS=@GS@@EXEEXT@
 # the standard binaries.
 
 DEBUGDIRPREFIX=debug
+MEMENTODIRPREFIX=mem
 PGDIRPREFIX=pg
 
 # Define whether to compile in the FreeType library, and if so, where
@@ -621,6 +622,8 @@ distclean : clean config-clean soclean pgclean debugclean
 
 # a debug-clean target for consistency with the ghostpdl builds
 debug-clean : debugclean
+
+memento-clean : mementoclean
 
 maintainer-clean : distclean
 	-$(RM_) configure.ac

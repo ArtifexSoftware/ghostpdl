@@ -39,6 +39,7 @@ GS=gslib
 
 # We don't expect to build debug or profiling configurations....
 DEBUGDIRPREFIX=
+MEMENTODIRPREFIX=
 PGDIRPREFIX=
 
 JSRCDIR=jpeg

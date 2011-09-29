@@ -114,6 +114,7 @@ GS=gs
 # the standard binaries.
 
 DEBUGDIRPREFIX=debug
+MEMENTODIRPREFIX=debug
 PGDIRPREFIX=pg
 SODIRPREFIX=so
 

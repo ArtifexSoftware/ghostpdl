@@ -73,6 +73,10 @@ UGCC_TOP_DIR:
 pdl-debug: UGCC_TOP_DIR
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl-default
 
+# Configure for memento
+pdl-memento: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='-DMEMENTO -DDEBUG' CFLAGS='-ggdb -g3 -O0 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' pdl-default
+
 pdl-pg-with-cov: UGCC_TOP_DIR
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENDIR=$(PGGENDIR) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage' pdl-default
 

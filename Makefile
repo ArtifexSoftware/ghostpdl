@@ -4,9 +4,13 @@ all-lib: pcl-lib xps-lib svg-lib ls-lib
 
 debug: pcl-debug xps-debug svg-debug ls-debug
 
+memento: pcl-memento xps-memento svg-memento ls-memento
+
 clean: pcl-clean xps-clean svg-clean ls-clean
 
 debug-clean: pcl-debug-clean xps-debug-clean svg-debug-clean ls-debug-clean
+
+memento-clean: pcl-memento-clean xps-memento-clean svg-memento-clean ls-memento-clean
 
 test: pcl-test ls-test xps-test svg-test
 
@@ -27,6 +31,9 @@ pcl-lib: tiff
 
 pcl-debug:  tiff
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
+
+pcl-memento:  tiff
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-memento GENDIR="./memobj"
 
 fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
@@ -57,8 +64,15 @@ pcl-debug-clean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./debugobj"
 	rm -f fonts
 
+pcl-memento-clean: tiff_clean
+	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./memobj"
+	rm -f fonts
+
 xps-debug: tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
+
+xps-memento: tiff
+	$(MAKE) -C xps -f xps_gcc.mak pdl-memento GENDIR="./memobj"
 
 xps:  tiff
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
@@ -72,11 +86,17 @@ xps-clean: tiff_clean
 xps-debug-clean: tiff_clean
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./debugobj"
 
+xps-memento-clean: tiff_clean
+	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./memobj"
+
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
 
 svg-debug: tiff
 	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
+
+svg-memento: tiff
+	$(MAKE) -C svg -f svg_gcc.mak pdl-memento GENDIR="./memobj"
 
 svg:  tiff
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
@@ -89,6 +109,9 @@ svg-clean: tiff_clean
 
 svg-debug-clean: tiff_clean
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./debugobj"
+
+svg-memento-clean: tiff_clean
+	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./memobj"
 
 svg-test:
 	./svg/obj/gsvg tools/tiger.svg
@@ -142,6 +165,9 @@ ls-lib: tiff
 ls-debug:  tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
+ls-memento:  tiff
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-memento GENDIR="./memobj"
+
 ls-fonts:
 	mkdir -p /windows/fonts/	# make a font directory. 2 
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
@@ -183,6 +209,11 @@ ls-udebug: ufst tiff
 	cp *.icc ./language_switch/ufst-obj
 	cp wts_* ./language_switch/ufst-obj
 
+ls-umemento: ufst tiff
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
+	cp *.icc ./language_switch/ufst-obj
+	cp wts_* ./language_switch/ufst-obj
+
 ls-uclean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
@@ -190,6 +221,11 @@ ls-uclean: tiff_clean
 
 ls-udebug-clean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
+	rm -f ufst_built
+
+ls-umemento-clean: tiff_clean
+	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
 	rm -f ufst_built
 
@@ -203,6 +239,11 @@ udebug: ufst tiff
 	cp *.icc ./main/ufst-debugobj
 	cp wts_* ./main/ufst-debugobj
 
+umemento: ufst tiff
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
+	cp *.icc ./main/ufst-memobj
+	cp wts_* ./main/ufst-memobj
+
 uclean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
@@ -213,9 +254,16 @@ udebug-clean: tiff_clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
+umemento-clean: tiff_clean
+	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
+	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
+	rm -f ufst_built
+
 all-debug: pcl-debug udebug ls-debug ls-udebug xps-debug
 
-all-clean: clean clean-debug ls-clean ls-debug-clean uclean udebug-clean ls-uclean ls-udebug-clean
+all-memento: pcl-memento umemento ls-memento ls-umemento xps-memento
+
+all-clean: clean clean-debug clean-memento ls-clean ls-debug-clean ls-memento-clean uclean udebug-clean umemento-clean ls-uclean ls-udebug-clean ls-umemento-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 
-.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean xps xps-debug svg svg-debug ls-clean ls-debug-clean ls-test ls-install ls-product ls-profile ls-udebug udebug ufst mupdf
+.PHONY: all clean test check install uninstall product profile pcl pcl-debug pcl-memento pcl-test pcl-install pcl-uninstall pcl-clean pcl-debug-clean pcl-memento-clean xps xps-debug xps-memento svg svg-debug svg-memento ls-clean ls-debug-clean ls-memento-clean ls-test ls-install ls-product ls-profile ls-udebug ls-umemento udebug umemento ufst mupdf

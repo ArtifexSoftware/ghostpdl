@@ -45,6 +45,17 @@ debug:
 debugclean:
 	$(MAKE) $(DEBUGDEFS) clean
 
+# Define a rule for building memento configurations.
+MEMENTODEFS=GENOPT='-DMEMENTO -DDEBUG' \
+ CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
+ BUILDDIRPREFIX=$(MEMENTODIRPREFIX)
+
+memento:
+	$(MAKE) $(MEMENTODEFS) default
+
+mementoclean:
+	$(MAKE) $(MEMENTODEFS) clean
+
 # Emacs tags maintenance.
 
 TAGS:
