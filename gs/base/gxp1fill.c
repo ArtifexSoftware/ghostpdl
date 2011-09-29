@@ -281,7 +281,7 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
              x, y, w, h,
              imod(xoff - x, data_tile.rep_width),
              imod(yoff - y, data_tile.rep_height),
-             lop);
+             lop | (ptfs->num_planes > 0 ? lop_t_is_planar : 0));
     }
     return code;
 }

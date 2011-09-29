@@ -804,10 +804,35 @@ used in new code.  Here is a copy of the relevant part of the file:
  * W and a repetition height of H, the pixel at coordinate (X,Y)
  * corresponds to halftone pixel (X mod W, Y mod H), ignoring phase;
  * for a shifted halftone with shift S, the pixel at (X,Y) corresponds
- * to halftone pixel ((X + S * floor(Y/H)) mod W, Y mod H).  Requirements:
- *      strip_shift &lt; rep_width
- *      strip_height % rep_height = 0
- *      shift = (strip_shift * (size.y / strip_height)) % rep_width
+ * to halftone pixel ((X + S * floor(Y/H)) mod W, Y mod H).    In other words,
+ * each Y increment of H shifts the strip left by S pixels.
+ *
+ * As for non-shifted tiles, a strip bitmap may include multiple copies
+ * in X or Y to reduce loop overhead.  In this case, we must distinguish:
+ *      - The height of an individual strip, which is the same as
+ *      the height of the bitmap being replicated (rep_height, H);
+ *      - The height of the entire bitmap (size.y).
+ * Similarly, we must distinguish:
+ *      - The shift per strip (rep_shift, S);
+ *      - The shift for the entire bitmap (shift).
+ * Note that shift = (rep_shift * size.y / rep_height) mod rep_width,
+ * so the shift member of the structure is only an accelerator.  It is,
+ * however, an important one, since it indicates whether the overall
+ * bitmap requires shifting or not.
+ *
+ * Note that for shifted tiles, size.y is the size of the stored bitmap
+ * (1 or more strips), and NOT the height of the actual tile.  The latter
+ * is not stored in the structure at all: it can be computed as H * W /
+ * gcd(S, W).
+ *
+ * If the bitmap consists of a multiple of W / gcd(S, W) copies in Y, the
+ * effective shift is zero, reducing it to a tile.  For simplicity, we
+ * require that if shift is non-zero, the bitmap height be less than H * W /
+ * gcd(S, W).  I.e., we don't allow strip bitmaps that are large enough to
+ * include a complete tile but that don't include an integral number of
+ * tiles.  Requirements:
+ *      rep_shift &lt; rep_width
+ *      shift = (rep_shift * (size.y / rep_height)) % rep_width
  */
 typedef struct gx_strip_bitmap_s {
         byte *data;
@@ -815,8 +840,7 @@ typedef struct gx_strip_bitmap_s {
         gs_int_point size;              /* width, height */
         gx_bitmap_id id;
         ushort rep_width, rep_height;   /* true size of tile */
-        ushort strip_height;
-        ushort strip_shift;
+        ushort rep_shift;
         ushort shift;
 } gx_strip_bitmap;</pre>
 </blockquote>
@@ -1753,10 +1777,29 @@ replicated or clipped as needed.
 <tr valign=top>	<td>9
 	<td>&nbsp;
 	<td>0 if texture opaque, 1 if texture transparent
-<tr valign=top>	<td>?-10
+<tr valign=top>	<td>10
 	<td>&nbsp;
-	<td>unused, must be 0
+	<td>1 if pdf transparency is in use, 0 otherwise. This makes no
+difference to the rendering, but forces the raster operation to be considered
+non-idempotent by internal routines.
+<tr valign=top>	<td>11
+	<td>&nbsp;
+	<td>1 if the target of this operation is a specific plane, rather
+than all planes. The plane in question is given by bits 13 upwards. This
+is only used by the planar device.
+<tr valign=top>	<td>12
+	<td>&nbsp;
+	<td>1 if the texture plane (T) of this operation is in planar format,
+rather than the default chunky format. This is only used by the planar device.
+<tr valign=top>	<td>13-
+	<td>&nbsp;
+	<td>If bit 12 = 1, then bits 13 upwards give the plane number to
+operate on. Otherwise, should be set to 0.
 </table></blockquote>
+
+<p>In general most devices should just check to see that bits they do not
+handle (11 and above typically) are zero, and should jump to the default
+implementation, or return an error otherwise.
 
 <p>
 The raster operation follows the Microsoft and H-P specification.  It is an
@@ -2011,7 +2054,7 @@ components in the device (process) color model.
 <dd>
 The implementation fills entire triangle.
 The filling rule is same as for <a href="#Polygon_level_drawing">Polygon-level drawing</a>.
-A color for each pixel within the triangle to be computed as a linear interpolation
+The color of each pixel within the triangle is computed as a linear interpolation
 of vertex colors.
 <dd>
 The implementation may reject the request if the area or the color appears too complex
@@ -2022,12 +2065,12 @@ into smaller triangles and call the function again with smaller areas.
 <b><em>Important note :</em></b> Do not try to decompose the area within
 the implementation of <code> fill_linear_color_triangle</code>, because
 it can break the plane coverage contiguity and cause a dropout.
-Instead request that graphics library to perform the decomposition.
+Instead request that the graphics library should perform the decomposition.
 The graphics libary is smart enough to do that properly.
 <dd>
 <b><em>Important note :</em></b>
 The implementation must handle a special case, when only 2 colors are specified.
-It happens if <code>p3</code> one is <code>NULL</code>. 
+It happens if <code>p2</code> is <code>NULL</code>. 
 This means that the color does not depend on the X coordinate,
 i.e. it forms a linear gradient along the Y axis.
 The implementation must not reject (return 0) such cases.
@@ -2041,7 +2084,7 @@ fist drop (ignore) the sign bit, then drop least significant bits -
 so many ones as you need to fit the device color precision.
 <dd>
 <b><em>Important note :</em></b> The <code>fa</code> argument may contain
-the <code>swap_axes</code> bit set. In this case the implementation must swap (transpoze)
+the <code>swap_axes</code> bit set. In this case the implementation must swap (transpose)
 <code>X</code> and <code>Y</code> axes.
 <dd>
 <b><em>Important note :</em></b> The implementation must not paint outside the
@@ -2049,7 +2092,7 @@ clipping rectangle specified in the <code>fa</code> argument.
 If <code>fa-&gt;swap_axes</code> is true, the clipping rectangle is transposed.
 <dd>
 See <code> gx_default_fill_linear_color_triangle </code>
-in <code>gdevddrw.c</code> as a sample code.
+in <code>gdevddrw.c</code> for sample code.
 </dl>
 
 
@@ -2066,9 +2109,9 @@ in <code>gdevddrw.c</code> as a sample code.
 The default implementation of <code> fill_linear_color_triangle </code>
 calls this function 1-2 times per triangle. Besides that,
 this function may be called by the graphics library for other special cases,
-when a decomposition into triangles appears undiserable.
+when a decomposition into triangles appears undesirable.
 <dd>
-Rather the prototype can specify a bilinear color,
+While the prototype can specify a bilinear color,
 we assume that the implementation handles linear colors only.
 This means that the implementation can ignore any of <code> c0, c1, c2, c3 </code>.
 The graphics library takes a special care of the color linearity 
@@ -2076,12 +2119,12 @@ when calling this function. The reason for passing all 4 color arguments
 is to avoid color precision problems.
 <dd>
 Similarly to <code> fill_linear_color_triangle </code>,
-this function may be called with only 2 colors, and may reject too comple areas.
+this function may be called with only 2 colors, and may reject areas as being too complex.
 All those important notes are applicable here.
 <dd>
-A sample code may be found in in <code>gxdtfill.h</code>, rather it's a kind of complicated.
+Sample code may be found in in <code>gxdtfill.h</code>; be aware it's rather complicated.
 A linear color function is generated from it as <code> gx_fill_trapezoid_ns_lc </code>
-with the following template parametres :
+with the following template parameters :
 
 <pre>
 #define LINEAR_COLOR 1 
