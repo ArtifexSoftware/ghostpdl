@@ -35,6 +35,7 @@ gx_default_tile_rectangle(gx_device * dev, const gx_tile_bitmap * tile,
 
     *(gx_tile_bitmap *) & tiles = *tile;
     tiles.shift = tiles.rep_shift = 0;
+    tiles.num_planes = 1;
     return (*dev_proc(dev, strip_tile_rectangle))
         (dev, &tiles, x, y, w, h, color0, color1, px, py);
 }

@@ -271,6 +271,7 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
         data_tile.size.y = data_tile.rep_height = ptile->tbits.size.y;
         data_tile.id = bits->id;
         data_tile.shift = data_tile.rep_shift = 0;
+        data_tile.num_planes = (ptfs->num_planes > 1 ? ptfs->num_planes : 1);
         code = (*dev_proc(dev, strip_copy_rop))
             (dev,
              rop_source->sdata + (y - ptfs->y0) * rop_source->sraster,
@@ -281,7 +282,7 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
              x, y, w, h,
              imod(xoff - x, data_tile.rep_width),
              imod(yoff - y, data_tile.rep_height),
-             lop | (ptfs->num_planes > 0 ? lop_t_is_planar : 0));
+             lop);
     }
     return code;
 }

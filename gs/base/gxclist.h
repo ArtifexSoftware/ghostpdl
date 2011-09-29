@@ -123,6 +123,7 @@ typedef struct {
     ushort rep_shift;
     ushort index;		/* index in table (hash table when writing) */
     ushort num_bands;		/* # of 1-bits in the band mask */
+    byte num_planes;
     /* byte band_mask[]; */
 #define ts_mask(pts) (byte *)((pts) + 1)
     /* byte bits[]; */

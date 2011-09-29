@@ -673,6 +673,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
             tiles.rep_height = tiles.size.y = lh;
             tiles.id = gs_next_ids(pdht->rc.memory, 1);
             tiles.rep_shift = tiles.shift = 0;
+            tiles.num_planes = 1;
             set_color_ht((byte *)tbits, raster, 0, 0, lw, lh, depth,
                          special, nplanes, pdevc->colors.colored.plane_mask,
                          dev, &vp, colors, sbits);

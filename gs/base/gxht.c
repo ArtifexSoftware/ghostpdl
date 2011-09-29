@@ -786,6 +786,7 @@ render_ht(gx_ht_tile * pbt, int level /* [1..num_bits-1] */ ,
         return code;
     pbt->level = level;
     pbt->tiles.id = new_id;
+    pbt->tiles.num_planes = 1;
     /*
      * Check whether we want to replicate the tile in the cache.
      * Since we only do this when all the renderings will fit

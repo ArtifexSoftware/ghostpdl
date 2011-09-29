@@ -127,11 +127,17 @@ typedef struct gx_const_tile_bitmap_s {
  * tiles.  Requirements:
  *      rep_shift < rep_width
  *      shift = (rep_shift * (size.y / rep_height)) % rep_width
+ *
+ * For the benefit of the planar device, we now have a num_planes field.
+ * For chunky data this should be set to 1. For planar data, the data pointer
+ * points to the first plane of data; subsequent planes of data follow
+ * immediately after this as if there were num_planes * height lines of data.
  */
 #define gx_strip_bitmap_common(data_type)\
         gx_tile_bitmap_common(data_type);\
         ushort rep_shift;\
-        ushort shift
+        ushort shift;\
+        int num_planes
 typedef struct gx_strip_bitmap_s {
     gx_strip_bitmap_common(byte);
 } gx_strip_bitmap;

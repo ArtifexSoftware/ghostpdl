@@ -574,6 +574,7 @@ in:                             /* Initialize for a new page. */
     state_tile.id = gx_no_bitmap_id;
     state_tile.shift = state_tile.rep_shift = 0;
     state_tile.size.x = state_tile.size.y = 0;
+    state_tile.num_planes = 1;
     tile_phase.x = color_phase.x = x0;
     tile_phase.y = color_phase.y = y0;
     gx_path_init_local(&path, mem);
@@ -705,6 +706,7 @@ in:                             /* Initialize for a new page. */
                             bitmap_raster(bits.width * bits.cb_depth);
                         bits.x_reps = bits.y_reps = 1;
                         bits.shift = bits.rep_shift = 0;
+                        bits.num_planes = 1;
                         goto stb;
                     case cmd_opv_set_tile_color:
                         set_colors = state.tile_colors;
@@ -1077,6 +1079,7 @@ in:                             /* Initialize for a new page. */
                 state_tile.rep_shift = state_slot->rep_shift;
                 state_tile.shift = state_slot->shift;
                 state_tile.id = state_slot->id;
+                state_tile.num_planes = state_slot->num_planes;
 set_phase:      /*
                  * state.tile_phase is overloaded according to the command
                  * to which it will apply:
@@ -2172,6 +2175,7 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern)
 {
     const byte *cbp = pcb->ptr;
     uint rep_width, rep_height;
+    uint pdepth;
     byte bd = *cbp++;
 
     bits->cb_depth = cmd_code_to_depth(bd);
@@ -2197,14 +2201,21 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits, bool for_pattern)
         cmd_getw(bits->rep_shift, cbp);
     else
         bits->rep_shift = 0;
-    if_debug6('L', " depth=%d size=(%d,%d), rep_size=(%d,%d), rep_shift=%d\n",
+    if (bd & 0x10)
+        bits->num_planes = *cbp++;
+    else
+        bits->num_planes = 1;
+    if_debug7('L', " depth=%d size=(%d,%d), rep_size=(%d,%d), rep_shift=%d, num_planes=%d\n",
               bits->cb_depth, bits->width,
               bits->height, rep_width,
-              rep_height, bits->rep_shift);
+              rep_height, bits->rep_shift, bits->num_planes);
     bits->shift =
         (bits->rep_shift == 0 ? 0 :
          (bits->rep_shift * (bits->height / rep_height)) % rep_width);
-    bits->cb_raster = bitmap_raster(bits->width * bits->cb_depth);
+    pdepth = bits->cb_depth;
+    if (bits->num_planes != 1)
+        pdepth /= bits->num_planes;
+    bits->cb_raster = bitmap_raster(bits->width * pdepth);
     pcb->ptr = cbp;
     return 0;
 }
@@ -2219,19 +2230,25 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
     uint rep_height = bits->height / bits->y_reps;
     uint index;
     ulong offset;
-    uint width_bits = rep_width * bits->cb_depth;
+    uint width_bits;
     uint width_bytes;
     uint raster;
-    uint bytes =
-        clist_bitmap_bytes(width_bits, rep_height,
-                           compress |
-                           (rep_width < bits->width ?
-                            decompress_spread : 0) |
-                           decompress_elsewhere,
-                           &width_bytes,
-                           (uint *)&raster);
+    uint bytes;
     byte *data;
     tile_slot *slot;
+    uint depth = bits->cb_depth;
+
+    if (bits->num_planes != 1)
+        depth /= bits->num_planes;
+    width_bits = rep_width * depth;
+
+    bytes = clist_bitmap_bytes(width_bits, rep_height * bits->num_planes,
+                               compress |
+                               (rep_width < bits->width ?
+                                decompress_spread : 0) |
+                               decompress_elsewhere,
+                               &width_bytes,
+                               (uint *)&raster);
 
     cmd_getw(index, cbp);
     cmd_getw(offset, cbp);
@@ -2317,9 +2334,9 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
     }
     if (bits->width > rep_width)
         bits_replicate_horizontally(data,
-                                    rep_width * bits->cb_depth, rep_height,
+                                    rep_width * depth, rep_height * bits->num_planes,
                                     bits->cb_raster,
-                                    bits->width * bits->cb_depth,
+                                    bits->width * depth,
                                     bits->cb_raster);
     if (bits->height > rep_height)
         bits_replicate_vertically(data,
