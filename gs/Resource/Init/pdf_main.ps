@@ -1843,7 +1843,7 @@ currentdict /PDF2PS_matrix_key undef
 
 % Check if transparency is used in a Pattern
 /patternusestransparency {	% <Pattern dict> patternusestransparency <bool>
-  NOTRANSPARENCY
+  dup //null eq NOTRANSPARENCY or
   { pop //false }
   { //false exch		% Assume no transparency
     {
@@ -1888,15 +1888,20 @@ currentdict /PDF2PS_matrix_key undef
       dup type dup /dicttype eq exch /arraytype eq or {
         //false exch
         { {
-            exch pop oforce dup /Subtype get
-            dup /Image eq {
-              1 index /SMask oknown { pop pop not exit } if
-              1 index /SMaskInData knownoget {
-                0 ne { pop pop not exit } if
+            exch pop oforce 
+            dup //null ne {
+              dup /Subtype get
+              dup /Image eq {
+                1 index /SMask oknown { pop pop not exit } if
+                1 index /SMaskInData knownoget {
+                  0 ne { pop pop not exit } if
+                } if
               } if
-            } if
-            /Form eq {
-              3 index exch resourceusestransparency { not exit } if
+              /Form eq {
+                3 index exch resourceusestransparency { not exit } if
+              } {
+                pop
+              } ifelse
             } {
               pop
             } ifelse
