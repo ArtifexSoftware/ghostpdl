@@ -113,6 +113,7 @@ GS=gs
 # the standard binaries.
 
 DEBUGDIRPREFIX=debug
+MEMENTODIRPREFIX=mem
 PGDIRPREFIX=pg
 
 # Define whether to compile in the FreeType library, and if so, where
