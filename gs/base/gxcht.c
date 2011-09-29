@@ -26,6 +26,7 @@
 #include "gxistate.h"
 #include "gzht.h"
 #include "gsserial.h"
+#include "gxdevsop.h"
 
 /* Define whether to force use of the slow code, for testing. */
 #define USE_SLOW_CODE 0
@@ -583,8 +584,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
 #if USE_SLOW_CODE
          set_ht_colors_gt_4
 #else
-         (dev_proc(dev, map_cmyk_color) == gx_default_encode_color &&
-          dev->color_info.depth == 4) ?
+         (dev_proc(dev, dev_spec_op)(dev, gxdso_is_std_cmyk_1bit, NULL, 0) > 0) ?
             set_cmyk_1bit_colors :
             nplanes <= 4 ? set_ht_colors_le_4 :
                           set_ht_colors_gt_4

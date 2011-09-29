@@ -1524,6 +1524,100 @@ plane_strip_copy_rop(gx_device_memory * mdev,
     return code;
 }
 
+/*
+ * Repack planar into chunky format.  This is an internal procedure that
+ * implements the straightforward chunky case of get_bits_rectangle, and
+ * is also used for the general cases.
+ */
+static int
+planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
+                 int offset, uint draster, byte *dest, byte **line_ptrs,
+                 int plane_height)
+{
+    int num_planes = mdev->num_planes;
+    sample_load_declare(sptr[GX_DEVICE_COLOR_MAX_COMPONENTS],
+                        sbit[GX_DEVICE_COLOR_MAX_COMPONENTS]);
+    sample_store_declare(dptr, dbit, dbbyte);
+    int ddepth = mdev->color_info.depth;
+    int direct =
+        (mdev->color_info.depth != num_planes * mdev->plane_depth ? 0 :
+         mdev->planes[0].shift == 0 ? -mdev->plane_depth : mdev->plane_depth);
+    int pi, ix, iy;
+
+    /* Check whether the planes are of equal size and sequential. */
+    /* If direct != 0, we already know they exactly fill the depth. */
+    if (direct < 0) {
+        for (pi = 0; pi < num_planes; ++pi)
+            if (mdev->planes[pi].shift != pi * -direct) {
+                direct = 0; break;
+            }
+    } else if (direct > 0) {
+        for (pi = 0; pi < num_planes; ++pi)
+            if (mdev->planes[num_planes - 1 - pi].shift != pi * direct) {
+                direct = 0; break;
+            }
+    }
+    for (iy = y; iy < y + h; ++iy) {
+        byte **line_ptr = line_ptrs + iy;
+
+        for (pi = 0; pi < num_planes; ++pi, line_ptr += plane_height) {
+            int plane_depth = mdev->planes[pi].depth;
+            int xbit = x * plane_depth;
+
+            sptr[pi] = *line_ptr + (xbit >> 3);
+            sample_load_setup(sbit[pi], xbit & 7, plane_depth);
+        }
+        {
+            int xbit = offset * ddepth;
+
+            dptr = dest + (iy - y) * draster + (xbit >> 3);
+            sample_store_setup(dbit, xbit & 7, ddepth);
+        }
+        if (direct == -8) {
+            /* 1 byte per component, lsb first. */
+            switch (num_planes) {
+            case 3: {
+                const byte *p0 = sptr[2];
+                const byte *p1 = sptr[1];
+                const byte *p2 = sptr[0];
+
+                for (ix = w; ix > 0; --ix, dptr += 3) {
+                    dptr[0] = *p0++;
+                    dptr[1] = *p1++;
+                    dptr[2] = *p2++;
+                }
+            }
+            continue;
+            case 4:
+                for (ix = w; ix > 0; --ix, dptr += 4) {
+                    dptr[0] = *sptr[3]++;
+                    dptr[1] = *sptr[2]++;
+                    dptr[2] = *sptr[1]++;
+                    dptr[3] = *sptr[0]++;
+                }
+                continue;
+            default:
+                break;
+            }
+        }
+        sample_store_preload(dbbyte, dptr, dbit, ddepth);
+        for (ix = w; ix > 0; --ix) {
+            gx_color_index color = 0;
+
+            for (pi = 0; pi < num_planes; ++pi) {
+                int plane_depth = mdev->planes[pi].depth;
+                uint value;
+
+                sample_load_next16(value, sptr[pi], sbit[pi], plane_depth);
+                color |= (gx_color_index)value << mdev->planes[pi].shift;
+            }
+            sample_store_next_any(color, dptr, dbit, ddepth, dbbyte);
+        }
+        sample_store_flush(dptr, dbit, ddepth, dbbyte);
+    }
+    return 0;
+}
+
 static byte cmykrop[256] =
 {
     255,127,191,63,223,95,159,31,239,111,175,47,207,79,143,15,
@@ -1556,6 +1650,69 @@ mem_planar_strip_copy_rop(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int plane, code;
+
+    if (lop & lop_t_is_planar) {
+        /* T is in planar format; expand it to a temporary buffer, then
+         * call ourselves back with a modified rop to use it, then free
+         * the temporary buffer, and return. */
+        /* Make a temporary buffer that contains both the raster and the line
+         * pointers for the buffer. For now, for the sake of sanity, we
+         * convert whole lines of t, but only as many lines as we have to
+         * (unless it loops). */
+        /* We assume that tcolors == NULL here */
+        int ty, i;
+        uint chunky_t_raster;
+        uint chunky_t_height;
+        uint nbytes;
+        byte **line_ptrs;
+        byte *tbuf, *buf;
+        gx_strip_bitmap newtex;
+
+        ty = (y + phase_y) % textures->rep_height;
+        chunky_t_raster = bitmap_raster(textures->rep_width * mdev->color_info.depth);
+        if (ty + height <= textures->rep_height) {
+            chunky_t_height = height;
+            phase_y = -y;
+        } else {
+            ty = 0;
+            chunky_t_height = textures->rep_height;
+        }
+        nbytes = chunky_t_height * chunky_t_raster;
+        buf = gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(buf)");
+        if (buf == NULL) {
+            return gs_note_error(gs_error_VMerror);
+        }
+        nbytes = sizeof(byte *) * mdev->num_planes * textures->rep_height;
+        line_ptrs = (byte **)gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(line_ptrs)");
+        if (line_ptrs == NULL) {
+            gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
+            return gs_note_error(gs_error_VMerror);
+        }
+        tbuf = textures->data;
+        for (i = textures->rep_height * mdev->num_planes; i > 0; i--) {
+            *line_ptrs++ = tbuf;
+            tbuf += textures->raster;
+        }
+        line_ptrs -= textures->rep_height * mdev->num_planes;
+        planar_to_chunky(mdev, 0, ty, textures->rep_width, chunky_t_height,
+                         0, chunky_t_raster, buf, line_ptrs, textures->rep_height);
+        gs_free_object(mdev->memory, line_ptrs, "mem_planar_strip_copy_rop(line_ptrs)");
+        for (i = 0; i < chunky_t_height * chunky_t_raster; i++) {
+            if ((((buf[i] & 0x01) == 0) && ((buf[i] & 0x0e) != 0)) ||
+                (((buf[i] & 0x10) == 0) && ((buf[i] & 0xee) != 0))) {
+                    dlprintf("ass!\n");
+            }
+        }
+        newtex = *textures;
+        newtex.data = buf;
+        newtex.raster = chunky_t_raster;
+        code = mem_planar_strip_copy_rop(dev, sdata, sourcex, sraster,
+                                         id, scolors, &newtex, tcolors,
+                                         x, y, width, height, phase_x, phase_y,
+                                         lop & ~lop_t_is_planar);
+        gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
+        return code;
+    }
 
     if ((lop & lop_planar) == 0) {
         /* Not doing a planar lop. If we carry on down the default path here,
@@ -1627,99 +1784,6 @@ mem_planar_strip_copy_rop(gx_device * dev,
     return plane_strip_copy_rop(mdev, sdata, sourcex, sraster, id, scolors,
                                 textures, tcolors, x, y, width, height,
                                 phase_x, phase_y, lop, plane);
-}
-
-/*
- * Repack planar into chunky format.  This is an internal procedure that
- * implements the straightforward chunky case of get_bits_rectangle, and
- * is also used for the general cases.
- */
-static int
-planar_to_chunky(gx_device_memory *mdev, int x, int y, int w, int h,
-                 int offset, uint draster, byte *dest)
-{
-    int num_planes = mdev->num_planes;
-    sample_load_declare(sptr[GX_DEVICE_COLOR_MAX_COMPONENTS],
-                        sbit[GX_DEVICE_COLOR_MAX_COMPONENTS]);
-    sample_store_declare(dptr, dbit, dbbyte);
-    int ddepth = mdev->color_info.depth;
-    int direct =
-        (mdev->color_info.depth != num_planes * mdev->plane_depth ? 0 :
-         mdev->planes[0].shift == 0 ? -mdev->plane_depth : mdev->plane_depth);
-    int pi, ix, iy;
-
-    /* Check whether the planes are of equal size and sequential. */
-    /* If direct != 0, we already know they exactly fill the depth. */
-    if (direct < 0) {
-        for (pi = 0; pi < num_planes; ++pi)
-            if (mdev->planes[pi].shift != pi * -direct) {
-                direct = 0; break;
-            }
-    } else if (direct > 0) {
-        for (pi = 0; pi < num_planes; ++pi)
-            if (mdev->planes[num_planes - 1 - pi].shift != pi * direct) {
-                direct = 0; break;
-            }
-    }
-    for (iy = y; iy < y + h; ++iy) {
-        byte **line_ptr = mdev->line_ptrs + iy;
-
-        for (pi = 0; pi < num_planes; ++pi, line_ptr += mdev->height) {
-            int plane_depth = mdev->planes[pi].depth;
-            int xbit = x * plane_depth;
-
-            sptr[pi] = *line_ptr + (xbit >> 3);
-            sample_load_setup(sbit[pi], xbit & 7, plane_depth);
-        }
-        {
-            int xbit = offset * ddepth;
-
-            dptr = dest + (iy - y) * draster + (xbit >> 3);
-            sample_store_setup(dbit, xbit & 7, ddepth);
-        }
-        if (direct == -8) {
-            /* 1 byte per component, lsb first. */
-            switch (num_planes) {
-            case 3: {
-                const byte *p0 = sptr[2];
-                const byte *p1 = sptr[1];
-                const byte *p2 = sptr[0];
-
-                for (ix = w; ix > 0; --ix, dptr += 3) {
-                    dptr[0] = *p0++;
-                    dptr[1] = *p1++;
-                    dptr[2] = *p2++;
-                }
-            }
-            continue;
-            case 4:
-                for (ix = w; ix > 0; --ix, dptr += 4) {
-                    dptr[0] = *sptr[3]++;
-                    dptr[1] = *sptr[2]++;
-                    dptr[2] = *sptr[1]++;
-                    dptr[3] = *sptr[0]++;
-                }
-                continue;
-            default:
-                break;
-            }
-        }
-        sample_store_preload(dbbyte, dptr, dbit, ddepth);
-        for (ix = w; ix > 0; --ix) {
-            gx_color_index color = 0;
-
-            for (pi = 0; pi < num_planes; ++pi) {
-                int plane_depth = mdev->planes[pi].depth;
-                uint value;
-
-                sample_load_next16(value, sptr[pi], sbit[pi], plane_depth);
-                color |= (gx_color_index)value << mdev->planes[pi].shift;
-            }
-            sample_store_next_any(color, dptr, dbit, ddepth, dbbyte);
-        }
-        sample_store_flush(dptr, dbit, ddepth, dbbyte);
-    }
-    return 0;
 }
 
 /* Copy bits back from a planar memory device. */
@@ -1841,7 +1905,8 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             (options & GB_RASTER_SPECIFIED ? params->raster :
              bitmap_raster((offset + w) * mdev->color_info.depth));
 
-        planar_to_chunky(mdev, x, y, w, h, offset, draster, params->data[0]);
+        planar_to_chunky(mdev, x, y, w, h, offset, draster, params->data[0],
+                         mdev->line_ptrs, mdev->height);
     } else {
         /*
          * Do the transfer through an intermediate buffer.
@@ -1895,7 +1960,8 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
             ch = min(bh, y + h - cy);
             for (cx = x; cx < x + w; cx += cw) {
                 cw = min(bw, x + w - cx);
-                planar_to_chunky(mdev, cx, cy, cw, ch, 0, br, buf.b);
+                planar_to_chunky(mdev, cx, cy, cw, ch, 0, br, buf.b,
+                                 mdev->line_ptrs, mdev->height);
                 code = gx_get_bits_copy(dev, 0, cw, ch, &dest_params,
                                         &copy_params, buf.b, br);
                 if (code < 0)

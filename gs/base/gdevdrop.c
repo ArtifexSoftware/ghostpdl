@@ -544,6 +544,11 @@ mem_default_strip_copy_rop(gx_device * dev,
         GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
         GB_PACKING_CHUNKY | GB_RETURN_ALL | GB_ALIGN_STANDARD |
         GB_OFFSET_0 | GB_OFFSET_ANY | GB_RASTER_STANDARD;
+    const gx_bitmap_format_t no_expand_t_options =
+        GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
+        GB_RETURN_ALL | GB_ALIGN_STANDARD |
+        GB_OFFSET_0 | GB_OFFSET_ANY | GB_RASTER_STANDARD |
+        ((lop & lop_t_is_planar) ? GB_PACKING_PLANAR : GB_PACKING_CHUNKY);
     const gx_bitmap_format_t expand_options =
         (rop_depth > 8 ? GB_COLORS_RGB : GB_COLORS_GRAY) |
         GB_ALPHA_NONE | GB_DEPTH_8 |
@@ -578,6 +583,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     gs_get_bits_params_t bit_params;
     gs_get_bits_params_t expand_params;
     gs_get_bits_params_t no_expand_params;
+    gs_get_bits_params_t no_expand_t_params;
     int max_height;
     int block_height, loop_height;
     int code;
@@ -637,6 +643,7 @@ mem_default_strip_copy_rop(gx_device * dev,
     expand_s = scolors == 0 && uses_s;
     expand_t = tcolors == 0 && uses_t;
     no_expand_params.options = no_expand_options;
+    no_expand_t_params.options = no_expand_t_options;
     if (expand_t) {
         /*
          * We don't want to wrap around more than once in Y when
@@ -710,7 +717,7 @@ mem_default_strip_copy_rop(gx_device * dev,
             rect.q.y = py + loop_height;
             expand_params.data[0] = texture_row;
             gx_get_bits_copy(dev, 0, textures->rep_width, loop_height,
-                             &expand_params, &no_expand_params,
+                             &expand_params, &no_expand_t_params,
                              textures->data + rep_y * textures->raster,
                              textures->raster);
             /*
