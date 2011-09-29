@@ -112,6 +112,7 @@ mem_gray_strip_copy_rop(gx_device * dev,
         texture2.rep_width <<= log2_depth;
         texture2.shift <<= log2_depth;
         texture2.rep_shift <<= log2_depth;
+        texture2.num_planes = 1;
         real_texture = &texture2;
     }
     if (tcolors) {

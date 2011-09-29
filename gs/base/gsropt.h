@@ -216,11 +216,7 @@ typedef enum {
  * shifted up by lop_planar_shift.
  */
 #define lop_planar 0x800
-#define lop_planar_shift 13
-
-/* And one final abuse; in strip_copy_rop, we allow the lop to have another
- * flag bit, indicating that the texture is already in planar format. */
-#define lop_t_is_planar 0x1000
+#define lop_planar_shift 12
 
 typedef uint gs_logical_operation_t;
 

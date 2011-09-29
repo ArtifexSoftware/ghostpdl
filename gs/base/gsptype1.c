@@ -1338,10 +1338,7 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data,
     int offset1 = offset;
 
     size_b = sizeof(gx_strip_bitmap) + 
-         ptile->tbits.size.y * ptile->tbits.raster;
-    if (ptile->is_planar) {
-        size_b = size_b * dev->color_info.num_components; 
-    } 
+         ptile->tbits.size.y * ptile->tbits.raster * ptile->tbits.num_planes;
     size_c = ptile->tmask.data ? sizeof(gx_strip_bitmap) + ptile->tmask.size.y * ptile->tmask.raster : 0;
     if (data == NULL) {
         *psize = sizeof(gx_dc_serialized_tile_t) + size_b + size_c;

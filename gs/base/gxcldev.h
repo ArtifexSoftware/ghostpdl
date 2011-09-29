@@ -165,17 +165,32 @@ typedef struct {
  * Encoding for tile depth information.
  *
  * The cmd_opv_set_tile_size command code stores tile depth information
- * as part of the first byte following the command code. Only 5 bits of
- * this byte are available, which held the value depth - 1. The DeviceN
- * code requires depths of > 32 bits, so a new encoding is required. The
- * encoding selected represents depth information either directly (for
- * depth <= 15), or as a multiple of 8. The high-order bit determines
- * which is the case; it is cleared if the depth is represented directly,
- * and set if the depth is represented as a multiple of 8.
+ * as part of the first byte following the command code. Throughout
+ * the history of ghostscript, at least 3 different encodings have been used
+ * here.
+ *
+ * Originally, we used 5 bits of the byte to hold 'depth-1'.
+ *
+ * Later, the DeviceN code required it to cope with depths of >32 bits, so
+ * a new encoding was used that represented depth information either directly
+ * (for depth <= 15), or as a multiple of 8. The high-order bit determined
+ * which was the case; it was cleared if the depth is represented directly,
+ * and set if the depth was represented as a multiple of 8.
+ *
+ * #define cmd_depth_to_code(d)    ((d) > 0xf ? 0x10 | ((d) >> 3) : (d))
+ * #define cmd_code_to_depth(v)    \
+ *    (((v) & 0x10) != 0 ? ((v) & 0xf) << 3 : (v) & 0xf)
+ *
+ * With the advent of the planar device, we needed to use one fewer bit in
+ * the byte, so adopted the following encoding scheme:
+ *   depth:  1  2 (3) 4 (5) (6) (7) 8  12  16  24  32  40  48  56  64
+ *   value:  0  1 (2) 3 (4) (5) (6) 7   8   9  10  11  12  13  14  15
+ * The numbers in brackets represent depths that are represented, but aren't
+ * used by ghostscript (i.e. are available for future use).
  */
-#define cmd_depth_to_code(d)    ((d) > 0xf ? 0x10 | ((d) >> 3) : (d))
+#define cmd_depth_to_code(d)    ((d) > 8 ? 8 | (((d)-5) >> 3) : ((d)-1))
 #define cmd_code_to_depth(v)    \
-    (((v) & 0x10) != 0 ? ((v) & 0xf) << 3 : (v) & 0xf)
+    (((v) & 8) == 0 ? ((v) & 0x7)+1 : ((v) & 0x7 ? ((((v) & 7) << 3) + 8) : 12))
 
 /*
  * When we write bitmaps, we remove raster padding selectively:

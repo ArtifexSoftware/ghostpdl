@@ -1182,6 +1182,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
     pbm->rep_height = pbm->size.y = mdev->height;
     pbm->id = id;
     pbm->rep_shift = pbm->shift = 0;
+    pbm->num_planes = (mdev->num_planes > 1 ? mdev->num_planes : 1);
 
         /* Lets dump this for debug purposes */
 

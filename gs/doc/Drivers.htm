@@ -833,6 +833,11 @@ used in new code.  Here is a copy of the relevant part of the file:
  * tiles.  Requirements:
  *      rep_shift &lt; rep_width
  *      shift = (rep_shift * (size.y / rep_height)) % rep_width
+ *
+ * For the benefit of the planar device, we now have a num_planes field.
+ * For chunky data this should be set to 1. For planar data, the data pointer
+ * points to the first plane of data; subsequent planes of data follow
+ * immediately after this as if there were num_planes * height lines of data.
  */
 typedef struct gx_strip_bitmap_s {
         byte *data;
@@ -842,6 +847,7 @@ typedef struct gx_strip_bitmap_s {
         ushort rep_width, rep_height;   /* true size of tile */
         ushort rep_shift;
         ushort shift;
+        int num_planes;
 } gx_strip_bitmap;</pre>
 </blockquote>
 </dl>
@@ -1787,13 +1793,9 @@ non-idempotent by internal routines.
 	<td>1 if the target of this operation is a specific plane, rather
 than all planes. The plane in question is given by bits 13 upwards. This
 is only used by the planar device.
-<tr valign=top>	<td>12
+<tr valign=top>	<td>12-
 	<td>&nbsp;
-	<td>1 if the texture plane (T) of this operation is in planar format,
-rather than the default chunky format. This is only used by the planar device.
-<tr valign=top>	<td>13-
-	<td>&nbsp;
-	<td>If bit 12 = 1, then bits 13 upwards give the plane number to
+	<td>If bit 11 = 1, then bits 12 upwards give the plane number to
 operate on. Otherwise, should be set to 0.
 </table></blockquote>
 

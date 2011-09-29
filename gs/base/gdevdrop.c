@@ -548,7 +548,7 @@ mem_default_strip_copy_rop(gx_device * dev,
         GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_DEPTH_ALL |
         GB_RETURN_ALL | GB_ALIGN_STANDARD |
         GB_OFFSET_0 | GB_OFFSET_ANY | GB_RASTER_STANDARD |
-        ((lop & lop_t_is_planar) ? GB_PACKING_PLANAR : GB_PACKING_CHUNKY);
+        ((textures && textures->num_planes > 1) ? GB_PACKING_PLANAR : GB_PACKING_CHUNKY);
     const gx_bitmap_format_t expand_options =
         (rop_depth > 8 ? GB_COLORS_RGB : GB_COLORS_GRAY) |
         GB_ALPHA_NONE | GB_DEPTH_8 |
@@ -793,6 +793,7 @@ gx_default_copy_rop(gx_device * dev,
     else {
         *(gx_tile_bitmap *) & tiles = *texture;
         tiles.rep_shift = tiles.shift = 0;
+        tiles.num_planes = 1;
         textures = &tiles;
     }
     return (*dev_proc(dev, strip_copy_rop))
@@ -816,6 +817,7 @@ gx_copy_rop_unaligned(gx_device * dev,
     else {
         *(gx_tile_bitmap *) & tiles = *texture;
         tiles.rep_shift = tiles.shift = 0;
+        tiles.num_planes = 1;
         textures = &tiles;
     }
     return gx_strip_copy_rop_unaligned

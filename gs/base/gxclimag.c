@@ -160,6 +160,7 @@ clist_fill_mask(gx_device * dev,
             tile.size.y = tile.rep_height = orig_height;
             tile.rep_shift = tile.shift = 0;
             tile.id = id;
+            tile.num_planes = 1;
             do {
                 code = clist_change_bits(cdev, re.pcls, &tile, depth);
             } while (RECT_RECOVER(code));

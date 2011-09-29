@@ -1651,7 +1651,7 @@ mem_planar_strip_copy_rop(gx_device * dev,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int plane, code;
 
-    if (lop & lop_t_is_planar) {
+    if (textures && textures->num_planes > 1) {
         /* T is in planar format; expand it to a temporary buffer, then
          * call ourselves back with a modified rop to use it, then free
          * the temporary buffer, and return. */
@@ -1697,19 +1697,14 @@ mem_planar_strip_copy_rop(gx_device * dev,
         planar_to_chunky(mdev, 0, ty, textures->rep_width, chunky_t_height,
                          0, chunky_t_raster, buf, line_ptrs, textures->rep_height);
         gs_free_object(mdev->memory, line_ptrs, "mem_planar_strip_copy_rop(line_ptrs)");
-        for (i = 0; i < chunky_t_height * chunky_t_raster; i++) {
-            if ((((buf[i] & 0x01) == 0) && ((buf[i] & 0x0e) != 0)) ||
-                (((buf[i] & 0x10) == 0) && ((buf[i] & 0xee) != 0))) {
-                    dlprintf("ass!\n");
-            }
-        }
         newtex = *textures;
         newtex.data = buf;
         newtex.raster = chunky_t_raster;
+        newtex.num_planes = 1;
         code = mem_planar_strip_copy_rop(dev, sdata, sourcex, sraster,
                                          id, scolors, &newtex, tcolors,
                                          x, y, width, height, phase_x, phase_y,
-                                         lop & ~lop_t_is_planar);
+                                         lop);
         gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
         return code;
     }

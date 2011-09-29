@@ -144,6 +144,7 @@ make_mcde_default(gx_device *dev, const gs_imager_state *pis,
     bits.size.x = mdev->width;
     bits.size.y = mdev->height;
     bits.id = gx_no_bitmap_id;
+    bits.num_planes = 1;
     code = gx_mask_clip_initialize(mcdev, &gs_mask_clip_device,
                                    (const gx_bitmap *)&bits, dev,
                                    origin->x, origin->y, mem);
