@@ -484,6 +484,19 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
     return gx_set_overprint_cmyk(pcs, pgs);
 }
 
+/* A few comments about ICC profiles and overprint simulation.  In order
+   to do proper overprint simulation, the source ICC profile and the
+   destination ICC profile must be the same.  If they are not, then 
+   we end up mapping the source CMYK data to a different CMYK value.  In 
+   this case, the non-zero components, which with overprint mode = 1 specify 
+   which are to be overprinted will not be correct to produce the proper 
+   overprint simulation.  This is seen with AR when doing output preview, 
+   overprint simulation enabled of the file overprint_icc.pdf (see our
+   test files) which has SWOP ICC based CMYK fills.  In AR, if we use a 
+   simluation ICC profile that is different than the source profile, 
+   overprinting is no longer previewed. We follow the same logic here.  
+   If the source and destination ICC profiles do not match, then there is 
+   effectively no overprinting enabled.  This is bug 692433 */
 int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
 {
     gx_device *             dev = pgs->device;
@@ -491,6 +504,15 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     gx_color_index          drawn_comps = 0;
     gs_overprint_params_t   params;
     gx_device_color        *pdc;
+    cmm_dev_profile_t      *dev_profile;
+    cmm_profile_t          *output_profile;
+    int                     code;
+    bool                    profile_ok = false;
+    gsicc_rendering_intents_t rendering_intent;
+
+    code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
+                          &rendering_intent);
 
     /* check if color model behavior must be determined */
     if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
@@ -500,17 +522,63 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_state * pgs)
     if (drawn_comps == 0)
         return gx_spot_colors_set_overprint(pcs, pgs);
 
-    /* correct for any zero'ed color components */
+    /* correct for any zero'ed color components.  But only if profiles
+       match */
+    if (pcs->cmm_icc_profile_data != NULL && output_profile != NULL) {
+        if (output_profile->hashcode == 
+            pcs->cmm_icc_profile_data->hashcode) {
+            profile_ok = true;        
+        }
+    }
+
     pgs->effective_overprint_mode = 1;
     pdc = gs_currentdevicecolor_inline(pgs);
-    if (color_is_set(pdc)) {
-        gx_color_index  nz_comps;
+    if (color_is_set(pdc) && profile_ok) {
+        gx_color_index  nz_comps, one, temp;
         int             code;
+        int             num_colorant[4], k;
+        bool            colorant_ok;
+
         dev_color_proc_get_nonzero_comps((*procp));
 
         procp = pdc->type->get_nonzero_comps;
-        if ((code = procp(pdc, dev, &nz_comps)) < 0)
-            return code;
+        if (pdc->ccolor_valid) {
+            /* If we have the source colors, then use those in making the 
+               decision as to which ones are non-zero.  Then we avoid 
+               accidently looking at small values that get quantized to zero 
+               Note that to get here in the code, the source color data color 
+               space has to be CMYK. Trick is that we do need to worry about 
+               the colorant order on the target device */
+            num_colorant[0] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Cyan", strlen("Cyan"), NO_COMP_NAME_TYPE);
+            num_colorant[1] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Magenta", strlen("Magenta"), NO_COMP_NAME_TYPE);
+            num_colorant[2] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Yellow", strlen("Yellow"), NO_COMP_NAME_TYPE);
+            num_colorant[3] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Black", strlen("Black"), NO_COMP_NAME_TYPE);
+            nz_comps = 0;
+            one = 1;
+            colorant_ok = true;
+            for (k = 0; k < 4; k++) {
+                if (pdc->ccolor.paint.values[k] != 0) {
+                    if (num_colorant[k] == -1) {
+                        colorant_ok = false;
+                    } else {
+                        temp = one << num_colorant[k];
+                        nz_comps = nz_comps | temp;
+                    }
+                }
+            }
+            /* For some reason we don't have one of the standard colorants */
+            if (!colorant_ok) {
+                if ((code = procp(pdc, dev, &nz_comps)) < 0)
+                    return code;
+            }
+        } else {
+            if ((code = procp(pdc, dev, &nz_comps)) < 0)
+                return code;
+        }
         drawn_comps &= nz_comps;
     }
     params.retain_any_comps = true;
