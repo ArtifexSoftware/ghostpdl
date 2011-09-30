@@ -115,6 +115,7 @@ dnl --------------------------------------------------
 
 CC_OPT_FLAGS_TO_TRY="-O"
 SET_DT_SONAME="-soname="
+SO_FOR_MAC=""
 
 case `uname` in
 	Linux*|GNU*)
@@ -134,6 +135,8 @@ case `uname` in
 	    CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-g -O0"
 	fi
+	SET_DT_SONAME=""
+	SO_FOR_MAC="_1"
 	;;
 	SunOS)
 	CC_OPT_FLAGS_TO_TRY="-O2"
@@ -146,6 +149,7 @@ case `uname` in
 esac
 
 AC_SUBST(SET_DT_SONAME)
+AC_SUBST(SO_FOR_MAC)
 
 
 if test $ac_cv_prog_gcc = yes; then
