@@ -655,9 +655,12 @@ SHARELCMS=0
 if test -f $LCMSDIR/include/lcms.h; then
 	AC_MSG_RESULT([yes])
 else
-AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
-	  AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
-	])
+
+AC_MSG_ERROR([LittleCMS source not found!])
+
+#AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
+#	  AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
+#	])
 fi
 
 AC_MSG_CHECKING([for local lcms2 library source])
@@ -665,9 +668,10 @@ LCMS2DIR=lcms2
 if test -f $LCMS2DIR/include/lcms2.h; then
 	AC_MSG_RESULT([yes])
 else
-AC_CHECK_LIB(lcms2, cmsCreateXYZProfile, [
-	  AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR=""])
-	])
+AC_MSG_RESULT([no])
+# AC_CHECK_LIB(lcms2, cmsCreateXYZProfile, [
+# 	  AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR=""])
+# 	])
 fi
 
 AC_SUBST(SHARELCMS)
