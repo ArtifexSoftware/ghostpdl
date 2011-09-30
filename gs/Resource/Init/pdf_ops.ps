@@ -879,7 +879,9 @@ end readonly def
                       dup dup 1 get 0 eq { 3 }{ 2 } ifelse 1 put
                     } if
                     setmatrix
-                    2 index setfillstate show % Tr was set to graphic state.
+                    currentpoint
+                    4 index setfillstate show % Tr was set to graphic state.
+                    moveto
                     setmatrix
                     % now set the currentpoint using the original matrix
                     gsave
