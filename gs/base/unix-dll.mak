@@ -63,7 +63,7 @@ LDFLAGS_SO=-shared -Wl,$(LD_SET_DT_SONAME)$(LDFLAGS_SO_PREFIX)$(GS_SONAME_MAJOR)
 #GS_SONAME_MAJOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_SOEXT)
 #GS_SONAME_MAJOR_MINOR=$(GS_SONAME_BASE).$(GS_VERSION_MAJOR).$(GS_VERSION_MINOR).$(GS_SOEXT)
 #LDFLAGS_SO=-dynamiclib -flat_namespace
-#LDFLAGS_SO=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
+LDFLAGS_SO_MAC=-dynamiclib -install_name $(GS_SONAME_MAJOR_MINOR)
 #LDFLAGS_SO=-dynamiclib -install_name $(FRAMEWORK_NAME)
 
 GS_SO=$(BINDIR)/$(GS_SONAME)
@@ -108,14 +108,14 @@ so:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
+	$(MAKE) so-subtarget$(FOR_MAC) BUILDDIRPREFIX=$(SODIRPREFIX)
 
 # Debug shared object
 sodebug:
 	@if test -z "$(MAKE)" -o -z "`$(MAKE) --version 2>&1 | grep GNU`";\
 	  then echo "Warning: this target requires gmake";\
 	fi
-	$(MAKE) so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
+	$(MAKE) so-subtarget$(FOR_MAC) GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
 so-subtarget:
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
@@ -131,13 +131,29 @@ so-subtarget:
 	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
+# special so-subtarget for MAC OS X
+so-subtarget_1:
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 directories
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO_MAC)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)'\
+	 prefix=$(prefix)
+	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 $(GSSOC_XE) $(GSSOX_XE)
+
+
 install-so:
 	$(MAKE) install-so-subtarget BUILDDIRPREFIX=$(SODIRPREFIX)
 
 install-sodebug:
 	$(MAKE) install-so-subtarget GENOPT='-DDEBUG' BUILDDIRPREFIX=$(SODEBUGDIRPREFIX)
 
-install-so-subtarget: so-subtarget
+install-so-subtarget: so-subtarget$(FOR_MAC)
 	-mkdir -p $(DESTDIR)$(prefix)
 	-mkdir -p $(DESTDIR)$(datadir)
 	-mkdir -p $(DESTDIR)$(gsdir)

@@ -564,6 +564,7 @@ CCAUX_NO_WARN=$(CCAUX_)
 CC_SHARED=$(CC_) @DYNAMIC_CFLAGS@
 
 LD_SET_DT_SONAME=@SET_DT_SONAME@
+FOR_MAC=@SO_FOR_MAC@
 
 # MAKEDIRS = the dependency on ALL object files (must be the last one on
 # the line. Requires GNU make to make it an 'order only' dependency
