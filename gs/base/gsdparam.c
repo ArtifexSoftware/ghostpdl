@@ -133,8 +133,13 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             code = gsicc_init_device_profile_struct(dev, NULL, 0);
             code = dev_proc(dev, get_profile)(dev,  &dev_profile);
         } 
+        /* It is possible that the current device profile name is NULL if we 
+           have a pdf14 device in line with a transparency group that is in a 
+           color space specified from a source defined ICC profile. Check for 
+           that here to avoid any access violations.  Bug 692558 */
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
-            if (dev_profile->device_profile[k] == NULL) {
+            if (dev_profile->device_profile[k] == NULL 
+                || dev_profile->device_profile[k]->name == NULL) {
                 param_string_from_string(profile_array[k], null_str);
                 profile_intents[k] = gsPERCEPTUAL;
             } else {
