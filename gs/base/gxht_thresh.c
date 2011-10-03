@@ -686,6 +686,8 @@ gxht_thresh_plane(gx_image_enum *penum, gx_ht_order *d_order,
             for (k = 0; k < vdi; k++) {
                 /* Get a pointer to our tile row */
                 dy = (penum->yci + k + penum->dev->band_offset_y) % thresh_height;
+                if (dy < 0)
+                    dy += thresh_height;
                 thresh_tile = threshold + d_order->width * dy;
                 /* Fill the buffer, can be multiple rows.  Make sure
                    to update with stride */
