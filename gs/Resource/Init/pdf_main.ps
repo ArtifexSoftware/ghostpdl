@@ -776,7 +776,7 @@ currentdict /xref-char-dict undef
 
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
-   30 dict begin
+   31 dict begin
    /LocalResources 0 dict def
    /DefaultQstate //null def	% establish binding
    /Printed where { pop } {
@@ -850,6 +850,8 @@ currentdict /xref-char-dict undef
        } forall
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
+
+   /NumObjects Objects llength def  % To check that obj# < NumObjects
 
    % Scan numbers in the range 2147483648..4294967295 in Encrypt dictionary
    % as unsigned integers for compatibility with Acrobat Reader. Bug 689010.

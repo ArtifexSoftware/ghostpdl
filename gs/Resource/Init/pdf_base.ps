@@ -758,8 +758,10 @@ currentdict /no_debug_dict undef
       (%Resolving: ) print 2 copy 2 array astore //== exec
     } if
   } if
-  1 index 0 lt {
-    (   **** Considering object with a negative number as null.\n) pdfformaterror
+  1 index dup 0 lt exch NumObjects ge or {
+    (   **** Considering object with an invalid number ) 
+    2 index 20 string cvs concatstrings   
+    ( as null.\n) concatstrings pdfformaterror
     pop pop //null
   } {
     1 index resolved? {           % If object has already been resolved ...
