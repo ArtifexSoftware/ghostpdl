@@ -330,6 +330,11 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
                 &rendering_params, penum->memory, false);
         }
+        /* We need to make sure that we do the proper unpacking proc if we
+           are doing 16 bit */
+        if (penum->bps == 16) {
+            penum->unpack = sample_unpackicc_16_proc;
+        }
         return &image_render_interpolate_icc;
     } else {
         return &image_render_interpolate;
@@ -343,7 +348,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
    application of color management. */
 static int 
 initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
-               bool need_decode, stream_cursor_read *stream_r) 
+               bool need_decode, stream_cursor_read *stream_r, bool is_icc) 
 {
     stream_image_scale_state *pss = penum->scaler;
     const gs_imager_state *pis = penum->pis;
@@ -517,22 +522,28 @@ initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                 }
                 stream_r->ptr = (byte *) psrc - 1;
                 if_debug0('B', "[B]Remap row:\n[B]");
-                for (i = 0; i < pss->params.WidthIn; i++, psrc += spp_decode) {
-                    /* Lets get directly to a frac type loaded into psrc, and do
-                       the interpolation in the source space. Then we will do
-                       the appropriate remap function after interpolation. */
-                    for (j = 0; j < dc;  ++j) {
-                        DECODE_FRAC_FRAC(((const frac *)pdata)[j], psrc[j], j);
-                    }
-                    pdata += dpd;
-#ifdef DEBUG
-                    if (gs_debug_c('B')) {
-                        int ci;
+                if (is_icc) {
+                    stream_r->ptr = (byte *) pdata - 1;
+                } else {
+                    for (i = 0; i < pss->params.WidthIn; i++, 
+                         psrc += spp_decode) {
+                        /* Lets get directly to a frac type loaded into psrc, 
+                           and do the interpolation in the source space. Then we 
+                           will do the appropriate remap function after 
+                           interpolation. */
+                        for (j = 0; j < dc; ++j) {
+                            DECODE_FRAC_FRAC(((const frac *)pdata)[j], psrc[j], j);
+                        }
+                        pdata += dpd;
+    #ifdef DEBUG
+                        if (gs_debug_c('B')) {
+                            int ci;
 
-                        for (ci = 0; ci < spp_decode; ++ci)
-                            dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+                            for (ci = 0; ci < spp_decode; ++ci)
+                                dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+                        }
+    #endif
                     }
-#endif
                 }
                 out += round_up(pss->params.WidthIn * spp_decode * sizeof(frac),
                                 align_bitmap_mod);
@@ -602,7 +613,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
     }
     /* Perform any decode procedure if needed */
     need_decode = !(penum->device_color || gs_color_space_is_CIE(pcs) || islab);
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r); 
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, false); 
     is_index_space = (pcs->type->index == gs_color_space_index_Indexed);
     /*
      * Process input and/or collect output.  By construction, the pixels are
@@ -790,7 +801,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
     need_decode = !((penum->device_color || penum->icc_setup.is_lab) &&
                      (penum->icc_setup.need_decode == 0) ||
                      gs_color_space_is_CIE(pcs));
-    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r); 
+    initial_decode(penum, buffer, data_x, h, need_decode, &stream_r, true); 
     /*
      * Process input and/or collect output.  By construction, the pixels are
      * 1-for-1 with the device, but the Y coordinate might be inverted.

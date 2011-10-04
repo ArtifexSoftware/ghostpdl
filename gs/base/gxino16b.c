@@ -18,3 +18,4 @@
 #include "gxsample.h"
 
 const sample_unpack_proc_t sample_unpack_16_proc = 0;
+const sample_unpack_proc_t sample_unpackicc_16_proc = 0;
