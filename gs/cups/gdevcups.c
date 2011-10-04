@@ -77,6 +77,10 @@
 #include <cups/ppd.h>
 #include <math.h>
 
+/* the extremely noisy DEBUG2 messages are now dependent on CUPS_DEBUG2 */
+/* this can be enabled during the 'make' or by uncommenting the following */
+/* #define CUPS_DEBUG2 */
+
 #undef private
 #define private
 
@@ -455,9 +459,9 @@ static int	cups_print_planar(gx_device_printer *, unsigned char *,
 private int
 cups_close(gx_device *pdev)		/* I - Device info */
 {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf1("DEBUG2: cups_close(%p)\n", pdev);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   dprintf("INFO: Rendering completed\n");
 
@@ -553,9 +557,9 @@ cups_encode_color(gx_device            *pdev,
        i ++)
     ci = (ci << shift) | cups->EncodeLUT[cv[i]];
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf2("DEBUG2: cv[0]=%d -> %llx\n", cv[0], ci);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Handle 6-color output...
@@ -762,9 +766,9 @@ private void
 cups_get_matrix(gx_device *pdev,	/* I - Device info */
                 gs_matrix *pmat)	/* O - Physical transform matrix */
 {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf2("DEBUG2: cups_get_matrix(%p, %p)\n", pdev, pmat);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Set the raster width and height...
@@ -782,9 +786,9 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
    /*
     * Do landscape orientation...
     */
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
     dprintf("DEBUG2: Landscape matrix: XX=0 XY=+1 YX=+1 YY=0\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
     pmat->xx = 0.0;
     pmat->xy = (float)cups->header.HWResolution[1] / 72.0;
     pmat->yx = (float)cups->header.HWResolution[0] / 72.0;
@@ -797,9 +801,9 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
    /*
     * Do portrait orientation...
     */
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
     dprintf("DEBUG2: Portrait matrix: XX=+1 XY=0 YX=0 YY=-1\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
     pmat->xx = (float)cups->header.HWResolution[0] / 72.0;
     pmat->xy = 0.0;
     pmat->yx = 0.0;
@@ -821,7 +825,7 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
   }
 #endif /* CUPS_RASTER_SYNCv1 */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf2("DEBUG2: width = %d, height = %d\n", cups->header.cupsWidth,
 	   cups->header.cupsHeight);
   dprintf4("DEBUG2: PageSize = [ %d %d ], HWResolution = [ %d %d ]\n",
@@ -832,7 +836,7 @@ cups_get_matrix(gx_device *pdev,	/* I - Device info */
 	     pdev->HWMargins[3]);
   dprintf6("DEBUG2: matrix = [ %.3f %.3f %.3f %.3f %.3f %.3f ]\n",
 	   pmat->xx, pmat->xy, pmat->yx, pmat->yy, pmat->tx, pmat->ty);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 }
 
 
@@ -853,24 +857,24 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
   bool			b;		/* Temporary boolean value */
 
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf2("DEBUG2: cups_get_params(%p, %p)\n", pdev, plist);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * First process the "standard" page device parameters...
   */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf("DEBUG2: before gdev_prn_get_params()\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   if ((code = gdev_prn_get_params(pdev, plist)) < 0)
     return (code);
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf("DEBUG2: after gdev_prn_get_params()\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Then write the CUPS parameters...
@@ -1058,9 +1062,9 @@ cups_get_params(gx_device     *pdev,	/* I - Device info */
     return (code);
 #endif /* CUPS_RASTER_SYNCv1 */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf("DEBUG2: Leaving cups_get_params()\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   return (0);
 }
@@ -1081,9 +1085,9 @@ cups_get_space_params(const gx_device_printer *pdev,
 	cache_units[255];		/* Cache size units */
 
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf2("DEBUG2: cups_get_space_params(%p, %p)\n", pdev, space_params);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   if ((cache_env = getenv("RIP_MAX_CACHE")) != NULL)
   {
@@ -1112,9 +1116,9 @@ cups_get_space_params(const gx_device_printer *pdev,
   if (cache_size == 0)
     return;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf1("DEBUG2: cache_size = %.0f\n", cache_size);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   space_params->MaxBitmap   = (long)cache_size;
   space_params->BufferSpace = (long)cache_size;
@@ -1162,10 +1166,10 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	ciel, ciea, cieb;		/* CIE Lab colors */
 
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf6("DEBUG2: cups_map_cmyk(%p, %d, %d, %d, %d, %p)\n",
           pdev, c, m, y, k, out);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Convert the CMYK color to the destination colorspace...
@@ -1588,7 +1592,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 #  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   switch (cups->color_info.num_components)
   {
     default :
@@ -1606,7 +1610,7 @@ cups_map_cmyk(gx_device *pdev,		/* I - Device info */
 	        out[0], out[1], out[2], out[3]);
 	break;
   }
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 }
 
 
@@ -1619,10 +1623,10 @@ cups_map_gray(gx_device *pdev,		/* I - Device info */
               frac      g,		/* I - Grayscale value */
 	      frac      *out)		/* O - Device colors */
 {
-#ifdef DEBUG2
+#ifdef CUPS_DEBUG22
   dprintf3("DEBUG2: cups_map_gray(%p, %d, %p)\n",
 	   pdev, g, out);
-#endif /* DEBUG2 */
+#endif /* CUPS_DEBUG22 */
 
  /*
   * Just use the CMYK mapper...
@@ -1650,10 +1654,10 @@ cups_map_rgb(gx_device             *pdev,
   int		tc, tm, ty;		/* Temporary color values */
 
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf6("DEBUG2: cups_map_rgb(%p, %p, %d, %d, %d, %p)\n",
 	   pdev, pis, r, g, b, out);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Compute CMYK values...
@@ -1742,10 +1746,10 @@ cups_map_cmyk_color(gx_device      *pdev,
   y = cv[2];
   k = cv[3];
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf5("DEBUG2: cups_map_cmyk_color(%p, %d, %d, %d, %d)\n", pdev,
 	   c, m, y, k);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Setup the color info data as needed...
@@ -1874,10 +1878,10 @@ cups_map_cmyk_color(gx_device      *pdev,
         break;
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf9("DEBUG2: CMYK (%d,%d,%d,%d) -> CMYK %08x (%d,%d,%d,%d)\n",
 	   c, m, y, k, (unsigned)i, ic, im, iy, ik);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Make sure we don't get a CMYK color of 255, 255, 255, 255...
@@ -1904,10 +1908,10 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
   gx_color_value	c, m, y, k, divk; /* Colors, Black & divisor */
 
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf3("DEBUG2: cups_map_color_rgb(%p, %d, %p)\n", pdev,
 	   (unsigned)color, prgb);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Setup the color info data as needed...
@@ -1918,9 +1922,9 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
       return(gx_no_color_index);
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf1("DEBUG2: COLOR %08x = ", (unsigned)color);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Extract the color components from the color index...
@@ -2144,9 +2148,9 @@ cups_map_color_rgb(gx_device      *pdev,/* I - Device info */
 #  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf3("DEBUG2: RGB values: %d,%d,%d\n", prgb[0], prgb[1], prgb[2]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   return (0);
 }
@@ -2178,9 +2182,9 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
   g = cv[1];
   b = cv[2];
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf4("DEBUG2: cups_map_rgb_color(%p, %d, %d, %d)\n", pdev, r, g, b);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Setup the color info data as needed...
@@ -2439,10 +2443,10 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
 #endif /* GX_COLOR_INDEX_TYPE */
         }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
 	dprintf8("DEBUG2: CMY (%d,%d,%d) -> CMYK %08x (%d,%d,%d,%d)\n",
 		 r, g, b, (unsigned)i, ic, im, iy, ik);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
         break;
 
     case CUPS_CSPACE_YMCK :
@@ -2698,9 +2702,9 @@ cups_map_rgb_color(gx_device      *pdev,/* I - Device info */
 #  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf4("DEBUG2: RGB %d,%d,%d = %08x\n", r, g, b, (unsigned)i);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   return (i);
 }
@@ -2716,9 +2720,9 @@ cups_open(gx_device *pdev)		/* I - Device info */
 {
   int	code;				/* Return status */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf1("DEBUG2: cups_open(%p)\n", pdev);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   dprintf("INFO: Start rendering...\n");
   cups->printer_procs.get_space_params = cups_get_space_params;
@@ -2764,10 +2768,10 @@ cups_print_pages(gx_device_printer *pdev,
 
   (void)fp; /* reference unused file pointer to prevent compiler warning */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf3("DEBUG2: cups_print_pages(%p, %p, %d)\n", pdev, fp,
           num_copies);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
  /*
   * Figure out the number of bytes per line...
@@ -2803,11 +2807,11 @@ cups_print_pages(gx_device_printer *pdev,
 
   srcbytes = gdev_prn_raster(pdev);
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
   dprintf4("DEBUG2: cupsBitsPerPixel = %d, cupsWidth = %d, cupsBytesPerLine = %d, srcbytes = %d\n",
 	   cups->header.cupsBitsPerPixel, cups->header.cupsWidth,
 	   cups->header.cupsBytesPerLine, srcbytes);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
 
   src = (unsigned char *)gs_malloc(pdev->memory->non_gc_memory, srcbytes, 1, "cups_print_pages");
 
@@ -2836,9 +2840,9 @@ cups_print_pages(gx_device_printer *pdev,
   {
     RasterVersion = ppdFindAttr(cups->PPD, "cupsRasterVersion", NULL); 
     if (RasterVersion) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG2
       dprintf1("DEBUG2: cupsRasterVersion = %s\n", RasterVersion->value);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG2 */
       cups->cupsRasterVersion = atoi(RasterVersion->value);
       if ((cups->cupsRasterVersion != 2) &&
 	  (cups->cupsRasterVersion != 3)) {
@@ -2870,11 +2874,11 @@ cups_print_pages(gx_device_printer *pdev,
     num_copies = 1;
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf3("DEBUG2: cupsWidth = %d, cupsHeight = %d, cupsBytesPerLine = %d\n",
 	   cups->header.cupsWidth, cups->header.cupsHeight,
 	   cups->header.cupsBytesPerLine);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
   for (copy = num_copies; copy > 0; copy --)
   {
@@ -2956,9 +2960,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   int old_cmps = cups->color_info.num_components;
   int old_depth = cups->color_info.depth;
   
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf2("DEBUG2: cups_put_params(%p, %p)\n", pdev, plist);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
  /*
   * Process other options for CUPS...
@@ -3191,10 +3195,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
     * Compute the page margins...
     */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
     dprintf2("DEBUG: Updating PageSize to [%.0f %.0f]...\n",
 	     cups->MediaSize[0], cups->MediaSize[1]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
     memset(margins, 0, sizeof(margins));
 
@@ -3202,31 +3206,31 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 
     if (cups->PPD != NULL)
     {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf1("DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
       dprintf1("DEBUG2: cups->header.Tumble = %d\n", cups->header.Tumble);
       dprintf1("DEBUG2: cups->page = %d\n", cups->page);
       dprintf1("DEBUG2: cups->PPD = %p\n", cups->PPD);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL); 
       if (backside) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	dprintf1("DEBUG2: cupsBackSide = %s\n", backside->value);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	cups->PPD->flip_duplex = 0;
       }
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf1("DEBUG2: cups->PPD->flip_duplex = %d\n", cups->PPD->flip_duplex);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       backsiderequiresflippedmargins =
 	ppdFindAttr(cups->PPD, "APDuplexRequiresFlippedMargin", NULL);
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       if (backsiderequiresflippedmargins)
 	dprintf1("DEBUG2: APDuplexRequiresFlippedMargin = %s\n",
 		 backsiderequiresflippedmargins->value);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       if (cups->header.Duplex &&
 	  (cups->header.Tumble &&
@@ -3236,14 +3240,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	xflip = 1;
 	if (backsiderequiresflippedmargins &&
 	    !strcasecmp(backsiderequiresflippedmargins->value, "False")) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (1) Flip: X=1 Y=0\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 0;
 	} else {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (1) Flip: X=1 Y=1\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 1;
 	}
       }
@@ -3255,14 +3259,14 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	xflip = 0;
 	if (backsiderequiresflippedmargins &&
 	    !strcasecmp(backsiderequiresflippedmargins->value, "False")) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (2) Flip: X=0 Y=1\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 1;
 	} else {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (2) Flip: X=0 Y=0\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 0;
 	}
       }
@@ -3277,22 +3281,22 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	xflip = 1;
 	if (backsiderequiresflippedmargins &&
 	    !strcasecmp(backsiderequiresflippedmargins->value, "True")) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (3) Flip: X=1 Y=0\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 0;
 	} else {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG2: (3) Flip: X=1 Y=1\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	  yflip = 1;
 	}
       }
       else
       {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	dprintf("DEBUG2: (4) Flip: X=0 Y=0\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 	xflip = 0;
 	yflip = 0;
       }
@@ -3313,9 +3317,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  }
 	if (found == 0) cups->header.cupsPageSizeName[0] = '\0';
       }
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf1("DEBUG2: cups->header.cupsPageSizeName = %s\n", cups->header.cupsPageSizeName);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 #endif /* CUPS_RASTER_SYNCv1 */
 
      /*
@@ -3353,9 +3357,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	* Standard size...
 	*/
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	dprintf1("DEBUG: size = %s\n", size->name);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
 	gx_device_set_media_size(pdev, size->width, size->length);
 
@@ -3412,9 +3416,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  * Standard size in landscape orientation...
 	  */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf1("DEBUG: landscape size = %s\n", size->name);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
 	  gx_device_set_media_size(pdev, size->length, size->width);
 
@@ -3439,9 +3443,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  * Custom size...
 	  */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
 	  dprintf("DEBUG: size = Custom\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
           cups->landscape = 0;
 
@@ -3458,10 +3462,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	}
       }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf4("DEBUG: margins[] = [ %f %f %f %f ]\n",
 	       margins[0], margins[1], margins[2], margins[3]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
     }
 
    /*
@@ -3520,10 +3524,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       * Device is open and size has changed, so reallocate...
       */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf4("DEBUG2: Reallocating memory, [%.0f %.0f] = %dx%d pixels...\n",
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       if ((code = gdev_prn_maybe_realloc_memory((gx_device_printer *)pdev,
                                                 &sp_old, 
@@ -3531,10 +3535,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 						transp_old))
 	  < 0)
 	return (code);
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf4("DEBUG2: Reallocated memory, [%.0f %.0f] = %dx%d pixels...\n",
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
     }
     else
     {
@@ -3542,10 +3546,10 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       * Device isn't yet open, so just save the new width and height...
       */
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf4("DEBUG: Setting initial media size, [%.0f %.0f] = %dx%d pixels...\n",
 	       pdev->MediaSize[0], pdev->MediaSize[1], width, height);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       pdev->width  = width;
       pdev->height = height;
@@ -3651,7 +3655,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   cups->header.cupsWidth  = cups->width;
   cups->header.cupsHeight = cups->height;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf1("DEBUG2: ppd = %p\n", cups->PPD);
   dprintf2("DEBUG2: PageSize = [ %.3f %.3f ]\n",
 	   pdev->MediaSize[0], pdev->MediaSize[1]);
@@ -3665,7 +3669,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   dprintf4("DEBUG2: HWMargins = [ %.3f %.3f %.3f %.3f ]\n",
 	   pdev->HWMargins[0], pdev->HWMargins[1],
 	   pdev->HWMargins[2], pdev->HWMargins[3]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
   return (0);
 }
@@ -3686,9 +3690,9 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   ppd_profile_t	*profile;		/* Color profile information */
   int           code = 0;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf1("DEBUG2: cups_set_color_info(%p)\n", pdev);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
 #ifndef GX_COLOR_INDEX_TYPE
   if (cups->header.cupsBitsPerColor > 8)
@@ -3942,22 +3946,22 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
     cups->EncodeLUT[i] = j;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
     if (i == 0 || cups->EncodeLUT[i] != cups->EncodeLUT[i - 1])
       dprintf2("DEBUG2: cups->EncodeLUT[%d] = %d\n", i, (int)cups->EncodeLUT[i]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf1("DEBUG2: cups->EncodeLUT[0] = %d\n", (int)cups->EncodeLUT[0]);
   dprintf2("DEBUG2: cups->EncodeLUT[%d] = %d\n", gx_max_color_value,
 	   (int)cups->EncodeLUT[gx_max_color_value]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
   for (i = 0; i < cups->color_info.dither_grays; i ++)
     cups->DecodeLUT[i] = gx_max_color_value * i / max_lut;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf2("DEBUG: num_components = %d, depth = %d\n",
 	   cups->color_info.num_components, cups->color_info.depth);
   dprintf2("DEBUG: cupsColorSpace = %d, cupsColorOrder = %d\n",
@@ -3968,7 +3972,7 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	   cups->color_info.max_gray, cups->color_info.dither_grays);
   dprintf2("DEBUG: max_color = %d, dither_colors = %d\n",
 	   cups->color_info.max_color, cups->color_info.dither_colors);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
  /*
   * Set the color profile as needed...
@@ -3982,9 +3986,9 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   if (cups->Profile && cups->header.cupsBitsPerColor == 8)
 #endif /* dev_t_proc_encode_color */
   {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
     dprintf1("DEBUG: Using user-defined profile \"%s\"...\n", cups->Profile);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
     if (sscanf(cups->Profile, "%f,%f,%f,%f,%f,%f,%f,%f,%f,%f,%f", &d, &g,
                m[0] + 0, m[0] + 1, m[0] + 2,
@@ -4039,9 +4043,9 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 
     if (i < cups->PPD->num_profiles)
     {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf("DEBUG: Using color profile in PPD file!\n");
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
       cups->HaveProfile = 1;
 
@@ -4060,11 +4064,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	{
           cups->Matrix[i][j][k] = (int)((float)k * m[i][j] + 0.5);
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
           if ((k & 4095) == 0)
             dprintf4("DEBUG2: cups->Matrix[%d][%d][%d] = %d\n",
 		     i, j, k, cups->Matrix[i][j][k]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
         }
 
 
@@ -4074,10 +4078,10 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
 	                     pow((float)k / (float)CUPS_MAX_VALUE, g) +
 			     0.5);
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       if ((k & 4095) == 0)
         dprintf2("DEBUG2: cups->Density[%d] = %d\n", k, cups->Density[k]);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
     }
   }
   else
@@ -4207,19 +4211,19 @@ cups_print_chunked(gx_device_printer *pdev,
                 ystart, yend, ystep;    /* Loop control for scanline order */   
   ppd_attr_t    *backside = NULL;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf1("DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
   dprintf1("DEBUG2: cups->header.Tumble = %d\n", cups->header.Tumble);
   dprintf1("DEBUG2: cups->page = %d\n", cups->page);
   dprintf1("DEBUG2: cups->PPD = %p\n", cups->PPD);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
   if (cups->PPD) {
     backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL);
     if (backside) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf1("DEBUG2: cupsBackSide = %s\n", backside->value);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
       cups->PPD->flip_duplex = 0;
     }
   }
@@ -4253,10 +4257,10 @@ cups_print_chunked(gx_device_printer *pdev,
     ystep = 1;
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf3("DEBUG: cups_print_chunked: xflip = %d, yflip = %d, height = %d\n",
 	   xflip, yflip, cups->height);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
  /*
   * Loop through the page bitmap and write chunked pixels, reversing as
@@ -4434,19 +4438,19 @@ cups_print_banded(gx_device_printer *pdev,
                 ystart, yend, ystep;    /* Loop control for scanline order */   
   ppd_attr_t    *backside = NULL;
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf1("DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
   dprintf1("DEBUG2: cups->header.Tumble = %d\n", cups->header.Tumble);
   dprintf1("DEBUG2: cups->page = %d\n", cups->page);
   dprintf1("DEBUG2: cups->PPD = %p\n", cups->PPD);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
   if (cups->PPD) {
     backside = ppdFindAttr(cups->PPD, "cupsBackSide", NULL);
     if (backside) {
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
       dprintf1("DEBUG2: cupsBackSide = %s\n", backside->value);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
       cups->PPD->flip_duplex = 0;
     }
   }
@@ -4480,10 +4484,10 @@ cups_print_banded(gx_device_printer *pdev,
     ystep = 1;
   }
 
-#ifdef DEBUG
+#ifdef CUPS_DEBUG
   dprintf3("DEBUG: cups_print_chunked: xflip = %d, yflip = %d, height = %d\n",
 	   xflip, yflip, cups->height);
-#endif /* DEBUG */
+#endif /* CUPS_DEBUG */
 
  /*
   * Loop through the page bitmap and write banded pixels...  We have
