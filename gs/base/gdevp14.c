@@ -6878,28 +6878,20 @@ c_pdf14trans_clist_write_update(const gs_composite_t * pcte, gx_device * dev,
              * The transfer functions will be applied at the end after we
              * have done our PDF 1.4 blend operations.
              */
-
-            /*
-             * Also if the bit depth is not 8 per channel we need to adjust
-             * as all the pdf14 compositing code is for 8 bits per channel.
-             * The clist writer device uses this information to make sure
-             * the proper bit depth is written. If we are using compressed
-             * color enconding, the color is written in a gx_color_index
-             * even for more than 8 components.
-             */
             p14dev = (pdf14_clist_device *)(*pcdev);
-            if (cdev->clist_color_info.num_components * 8 != cdev->clist_color_info.depth &&
-                p14dev->my_encode_color != pdf14_compressed_encode_color) {
-                    int i = (cdev->clist_color_info.num_components);
-
-                    i += (cdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) == 0 ? 0 : 1;
-                    cdev->clist_color_info.depth = 8 * i;
-            }
             p14dev->saved_target_color_info = dev->color_info;
             dev->color_info = (*pcdev)->color_info;
             /* Make sure that we keep the anti-alias information though */
             dev->color_info.anti_alias = p14dev->saved_target_color_info.anti_alias;
             p14dev->color_info.anti_alias = dev->color_info.anti_alias;
+
+            /* adjust the clist_color_info now */
+            cdev->clist_color_info.depth = p14dev->color_info.depth;
+            cdev->clist_color_info.polarity = p14dev->color_info.polarity;
+            cdev->clist_color_info.num_components = p14dev->color_info.num_components;
+            cdev->clist_color_info.max_color = p14dev->color_info.max_color;
+            cdev->clist_color_info.max_gray = p14dev->color_info.max_gray;
+
             p14dev->saved_target_encode_color = dev->procs.encode_color;
             p14dev->saved_target_decode_color = dev->procs.decode_color;
             dev->procs.encode_color = p14dev->procs.encode_color =
