@@ -233,7 +233,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
         imaging_dev = (gx_device *) & cdev;
         if_debug0('K', "[K](clipping)\n");
     }
-    gx_set_dev_color(pgs);
+    code = gx_set_dev_color(pgs);
+    if (code != 0)
+        return code;
     /* If an xfont can render this character, use it. */
     if (xg != gx_no_xglyph && (xf = cc_pair(cc)->xfont) != 0) {
         int cx = x + fixed2int(cc->offset.x);

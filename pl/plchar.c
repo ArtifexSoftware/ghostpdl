@@ -278,7 +278,9 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
         const byte *planes[1];
         int code;
 
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
+        if (code != 0)
+            return code;
         code = (*dev_proc(dev, begin_image))
           (dev, (const gs_imager_state *)pgs, pim, gs_image_format_chunky,
            NULL, gs_currentdevicecolor_inline(pgs), pgs->clip_path,

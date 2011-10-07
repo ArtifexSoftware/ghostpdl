@@ -300,10 +300,8 @@ void gx_set_device_color_1(gs_state * pgs);
 int gx_remap_color(gs_state *);
 
 #define gx_set_dev_color(pgs)\
-  if ( !color_is_set(gs_currentdevicecolor_inline(pgs)) )\
-   { int code_dc = gx_remap_color(pgs);\
-     if ( code_dc != 0 ) return code_dc;\
-   }
+    color_is_set(gs_currentdevicecolor_inline(pgs)) ? 0 :\
+      gx_remap_color(pgs);
 
 /* Indicate that the device color needs remapping. */
 #define gx_unset_dev_color(pgs)\
