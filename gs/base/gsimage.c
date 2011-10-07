@@ -214,7 +214,9 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
     dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_IMAGE_TAG);
 
     if (uses_color) {
-        gx_set_dev_color(pgs);
+        code = gx_set_dev_color(pgs);
+        if (code != 0)
+            return code;
         code = gs_state_color_load(pgs);
         if (code < 0)
             return code;

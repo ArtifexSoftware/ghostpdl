@@ -260,7 +260,9 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
     /* Processing a text object operation */
     dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
 
-    gx_set_dev_color(pgs);
+    code = gx_set_dev_color(pgs);
+    if (code != 0)
+        return code;
     code = gs_state_color_load(pgs);
     if (code < 0)
         return code;
@@ -289,8 +291,11 @@ gs_text_update_dev_color(gs_state * pgs, gs_text_enum_t * pte)
     /* Processing a text object operation */
     dev_proc(pgs->device, set_graphics_type_tag)(pgs->device, GS_TEXT_TAG);
 
-    if (pte->pdcolor != 0)
-        gx_set_dev_color(pgs);
+    if (pte->pdcolor != 0) {
+        int code = gx_set_dev_color(pgs);
+        if (code != 0)
+            return code;
+    }
     return 0;
 }
 
