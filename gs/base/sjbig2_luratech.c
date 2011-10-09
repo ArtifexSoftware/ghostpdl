@@ -188,9 +188,11 @@ s_jbig2_read(unsigned char *buffer,
 
     /* else return data from the image stream */
     offset -= state->global_size;
+    if (state->infill <= offset)
+        return 0;
     available = state->infill - offset;
-    if (available > size) available = size;
-    if (available <= 0) return 0;
+    if (available > size)
+        available = size;
 
     memcpy(buffer, state->inbuf + offset, available);
     return available;
