@@ -67,7 +67,7 @@ static dev_proc_open_device(pngalpha_open);
 static dev_proc_encode_color(pngalpha_encode_color);
 static dev_proc_decode_color(pngalpha_decode_color);
 static dev_proc_copy_alpha(pngalpha_copy_alpha);
-static dev_proc_fill_rectangle(pngalpha_fill_rectangle);
+static dev_proc_fillpage(pngalpha_fillpage);
 static dev_proc_get_params(pngalpha_get_params);
 static dev_proc_put_params(pngalpha_put_params);
 static dev_proc_create_buf_device(pngalpha_create_buf_device);
@@ -193,7 +193,6 @@ struct gx_device_pngalpha_s {
     gx_prn_device_common;
     int downscale_factor;
     int min_feature_size;
-    dev_t_proc_fill_rectangle((*orig_fill_rectangle), gx_device);
     int background;
 };
 static const gx_device_procs pngalpha_procs =
@@ -205,7 +204,7 @@ static const gx_device_procs pngalpha_procs =
         gdev_prn_close,
         pngalpha_encode_color,	/* map_rgb_color */
         pngalpha_decode_color,  /* map_color_rgb */
-        pngalpha_fill_rectangle,
+        NULL,   /* fill_rectangle */
         NULL,	/* tile_rectangle */
         NULL,	/* copy_mono */
         NULL,	/* copy_color */
@@ -250,7 +249,16 @@ static const gx_device_procs pngalpha_procs =
         gx_default_DevRGB_get_color_mapping_procs,
         gx_default_DevRGB_get_color_comp_index,
         pngalpha_encode_color,
-        pngalpha_decode_color
+        pngalpha_decode_color,
+        NULL, 	/* pattern_manage */
+        NULL, 	/* fill_rectangle_hl_color */
+        NULL, 	/* include_color_space */
+        NULL, 	/* fill_linear_color_scanline */
+        NULL, 	/* fill_linear_color_trapezoid */
+        NULL, 	/* fill_linear_color_triangle */
+        NULL, 	/* update_spot_equivalent_colors */
+        NULL, 	/* ret_devn_params */
+        pngalpha_fillpage
 };
 
 const gx_device_pngalpha gs_pngalpha_device = {
@@ -285,7 +293,6 @@ const gx_device_pngalpha gs_pngalpha_device = {
         prn_device_body_rest_(png_print_page),
         1, /* downscale_factor */
         0, /* min_feature_size */
-        NULL,
         0xffffff	/* white background */
 };
 
@@ -698,20 +705,12 @@ pngalpha_open(gx_device * pdev)
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
     int code;
     /* We replace create_buf_device so we can replace copy_alpha
-     * for memory device, but not clist.
+     * for memory device, but not clist. We also replace the fillpage
+     * proc with our own to fill with transparent.
      */
     ppdev->printer_procs.buf_procs.create_buf_device =
         pngalpha_create_buf_device;
     code = gdev_prn_open(pdev);
-    /* We intercept fill_rectangle to translate "fill page with white"
-     * into "fill page with transparent".  We then call the original
-     * implementation of fill_page.
-     */
-    if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
-        (ppdev->procs.fill_rectangle != NULL)) {
-        ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
-        ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
-    }
     return code;
 }
 
@@ -725,6 +724,7 @@ pngalpha_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         render_plane, mem, band_complexity);
     /* Now set copy_alpha to one that handles RGBA */
     set_dev_proc(*pbdev, copy_alpha, ptarget->orig_procs.copy_alpha);
+    set_dev_proc(*pbdev, fillpage, pngalpha_fillpage);
     return code;
 }
 
@@ -750,15 +750,6 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
 
     if (code == 0) {
         code = gdev_prn_put_params(pdev, plist);
-        if ((ppdev->procs.fill_rectangle != pngalpha_fill_rectangle) &&
-            (ppdev->procs.fill_rectangle != NULL)) {
-            /* Get current implementation of fill_rectangle and restore ours.
-             * Implementation is either clist or memory and can change
-             * during put_params.
-             */
-            ppdev->orig_fill_rectangle = ppdev->procs.fill_rectangle;
-            ppdev->procs.fill_rectangle = pngalpha_fill_rectangle;
-        }
     }
     return code;
 }
@@ -803,17 +794,11 @@ pngalpha_decode_color(gx_device * dev, gx_color_index color,
     return 0;
 }
 
+/* fill the page fills with transparent */
 static int
-pngalpha_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-                  gx_color_index color)
+pngalpha_fillpage(gx_device *dev, gs_imager_state * pis, gx_device_color *pdevc)
 {
-    gx_device_pngalpha *pdev = (gx_device_pngalpha *)dev;
-    if ((color == 0xffffff00) && (x==0) && (y==0)
-        && (w==dev->width) && (h==dev->height)) {
-        /* If filling whole page with white, make it transparent */
-        return pdev->orig_fill_rectangle(dev, x, y, w, h, 0xffffffff);
-    }
-    return pdev->orig_fill_rectangle(dev, x, y, w, h, color);
+    return (*dev_proc(dev, fill_rectangle))(dev, 0, 0, dev->width, dev->height,  0xffffffff);
 }
 
 /* Implementation for 32-bit RGBA in a memory buffer */
