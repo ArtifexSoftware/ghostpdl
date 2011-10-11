@@ -244,20 +244,18 @@ main (int argc, char **argv)
             }
             if (prev_lpi >= target_lpi && lpi < target_lpi) {
                 if (prev_lpi == max_lpi) {
-                    printf("Warning lpi will be slightly lower than target.\n");
-                    printf("An increase will result in poor \n");
-                    printf("quantization or a completely stochastic screen!\n");
-                } else {
-                    /* Reset these to previous x */
-                    x_use = x - 1;
-                    y=ROUND((double) x_use / ratio);
-                    true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
-                    lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
-                                            ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
-                    v = -x_use / scaled_x;
-                    u = y * scaled_x;
-                    N = y *u - x_use * v;
-                }
+                    printf("Notice lpi is at the maximimum level possible.\n");
+                    printf("This may result in poor quantization. \n");
+                } 
+                /* Reset these to previous x */
+                x_use = x - 1;
+                y=ROUND((double) x_use / ratio);
+                true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
+                lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
+                                        ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
+                v = -x_use / scaled_x;
+                u = y * scaled_x;
+                N = y *u - x_use * v;
                 use = true;
             }
             if (use == true) {
@@ -447,8 +445,9 @@ main (int argc, char **argv)
     } else {
         num_levels = 1;
     }
-    if (num_levels == 1 && !target_size_specified) {
-        printf("No quantization, creating minimal sized periodic screen\n");
+    if (num_levels < 1) num_levels = 1;
+    if (num_levels == 1) {
+        printf("No additional dithering , creating minimal sized periodic screen\n");
         target_size = 1;
     }
     /* Lower left of the cell is at the origin.  Define the other vertices */
@@ -495,8 +494,8 @@ main (int argc, char **argv)
     if (use_holladay_grid) {
         htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
     } else {
-        if (super_cell.height == dot_grid.height &&
-            super_cell.width == dot_grid.width) {
+        if ((super_cell.height == dot_grid.height &&
+            super_cell.width == dot_grid.width) || num_levels == 1) {
             htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
         } else {
             htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
@@ -617,8 +616,8 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
     htsc_point_t test_point;
 
     if (screen_angle != 0) {
-        slope1 = y / x;
-        slope2 = v / u;
+        slope1 = (double) y / (double) x;
+        slope2 = (double) v / (double) u;
         val_min=MIN(0,v);
         dot_grid->height = abs(val_min) + y;
         dot_grid->width = x + u;
@@ -703,7 +702,7 @@ htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value)
 {
     int kk;
     if (x < 0 || x > dig_grid->width-1 || y < 0 || y > dig_grid->height-1) {
-        kk = 10000;
+        kk = 10000;  /* Here to catch issues during debug */
     }
     dig_grid->data[ y * dig_grid->width + x] = value;
 }
@@ -1010,6 +1009,9 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
                 if (j_circ > (num_rows_sc - 1)) {
                     j_circ = j_circ % num_rows_sc;
                 }
+                /* In case modulo is of a negative number */
+                if (j_circ < 0) 
+                    j_circ = j_circ + num_rows_sc;
                 for (kk = -half_cols_filt; kk <= half_cols_filt; kk++) {
                     k_circ = k + kk;
                     if (k_circ < 0) {
@@ -1019,6 +1021,9 @@ htsc_apply_filter(byte *screen_matrix, int num_cols_sc,
                     if (k_circ > (num_cols_sc - 1)) {
                         k_circ = k_circ % num_cols_sc;
                     }
+                    /* In case modulo is of a negative number */
+                    if (k_circ < 0) 
+                        k_circ = k_circ + num_cols_sc;
                     sum += (double) screen_matrix[k_circ + j_circ * num_cols_sc] *
                             filter[ (jj + half_rows_filt) * num_cols_filt + (kk + half_cols_filt)];
                 }
@@ -1184,6 +1189,7 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
             done = true;
             free(screen_blur);
             free(filter);
+            return 0;
         } else {
             /* We need to update our dot position information */
             /* find where the old white one was and replace it */
@@ -1388,8 +1394,12 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                         /* Assign a offset threshold values */
                         j_index =
                             (pos_y[h] + j - (int) dot_grid_one_index.y) % height_supercell;
+                        /* In case we have modulo of a negative number */
+                        if (j_index < 0) j_index = j_index + height_supercell;
                         k_index =
                             (pos_x[h] + k - (int) dot_grid_one_index.x) % width_supercell;
+                        /* In case we have modulo of a negative number */
+                        if (k_index < 0) k_index = k_index + width_supercell;
                         threshold_value = thresholds[val-1] +
                                           mag_offset * dot_level_sort[h];
                         if (threshold_value > 255) threshold_value = 255;
