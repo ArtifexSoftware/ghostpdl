@@ -729,6 +729,7 @@ fit:				/* Now the tile will definitely fit. */
         tiles.raster = raster;
         tiles.rep_width = tiles.size.x = size_x / depth;
         tiles.rep_shift = tiles.shift = 0;
+        tiles.num_planes = 1;
     }
     while (w) {
         int cy = y, ch = dh, left = h;
