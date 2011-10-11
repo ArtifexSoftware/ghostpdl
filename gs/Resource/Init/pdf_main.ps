@@ -1492,11 +1492,12 @@ end readonly def
     currentpagedevice /.HWMargins get aload pop
     currentpagedevice /PageSize get aload pop
     % Adjust PageSize and .HWMargins for the page portrait/landscape orientation
-    2 copy gt
+    2 copy gt	% PageSize_is_landscape
     7 index aload pop 3 -1 roll sub 3 1 roll exch sub exch
     10 index /Rotate pget not { 0 } if 90 idiv 1 and 0 ne { exch } if
-    gt
+    gt	% Box_is_landscape
     ne {
+      1 index 0 translate 90 rotate	% add in a rotation
       2 copy ne {
         % rotate the .HWMargins
         2 copy lt {
