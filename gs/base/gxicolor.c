@@ -510,10 +510,14 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                 if (penum->ht_landscape.index < 0) {
                     penum->ht_landscape.xstart = penum->xci + vdi - 1;
                     offset_bits = (penum->ht_landscape.xstart % 16) + 1;
+                    /* xci can be negative, so allow for that */
+                    if (offset_bits <= 0) offset_bits += 16;
                 } else {
                     penum->ht_landscape.xstart = penum->xci;
                     offset_bits = 16 - penum->xci % 16;
-                    if (offset_bits == 16) offset_bits = 0;
+                    /* xci can be negative, see Bug 692569. */
+                    offset_bits = 16 - penum->xci % 16;
+                    if (offset_bits >= 16) offset_bits -= 16;
                 }
                 if (offset_bits == 0 || offset_bits == 16) {
                     penum->ht_landscape.offset_set = false;
