@@ -1177,7 +1177,7 @@ static void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
 
 static FAPI_retcode get_fontmatrix(FAPI_server *I, gs_matrix *m)
 {
-#if 1
+#if 0
     gs_matrix *base_font_matrix = &I->initial_FontMatrix;
     m->xx = I->initial_FontMatrix.xx;
     m->xy = I->initial_FontMatrix.xy;
