@@ -1937,13 +1937,39 @@ drawopdict begin
   } bdef
   /Tf {
     1 index Page /Font rget {
-      resourcefont exch Tf pop
+      dup type /dicttype eq {
+        resourcefont exch
+        Tf pop
+      }
+      {
+        PDFSTOPONERROR
+        {
+          /typecheck cvx signalerror
+        }
+        {
+          % Bug 689450
+          type
+          (   **** Warning: Tf refers to a resource key with an invalid value type: ) pdfformaterror
+          .namestring pdfformaterror
+          (. Assuming resource key: ) pdfformaterror
+          1 index .namestring pdfformaterror
+          ( is a font name.\n) pdfformaterror
+          Tf
+        } ifelse
+      }ifelse
     }
-    { % Bug 689037
-      (   **** Warning: Tf refers to an unknown resource name: ) pdfformaterror
-      1 index .namestring pdfformaterror
-      ( Assuming it's a font name.\n) pdfformaterror
-      Tf
+    {
+      PDFSTOPONERROR
+      {
+          pop /undefined cvx signalerror
+      }
+      {
+        % Bug 689037
+        (   **** Warning: Tf refers to an unknown resource name: ) pdfformaterror
+        1 index .namestring pdfformaterror
+        ( Assuming it's a font name.\n) pdfformaterror
+        Tf
+      } ifelse
     } ifelse
   } bdef
 end
