@@ -1669,6 +1669,8 @@ mem_planar_strip_copy_rop(gx_device * dev,
         gx_strip_bitmap newtex;
 
         ty = (y + phase_y) % textures->rep_height;
+        if (ty < 0)
+            ty += textures->rep_height;
         chunky_t_raster = bitmap_raster(textures->rep_width * mdev->color_info.depth);
         if (ty + height <= textures->rep_height) {
             chunky_t_height = height;
@@ -1701,6 +1703,8 @@ mem_planar_strip_copy_rop(gx_device * dev,
         newtex.data = buf;
         newtex.raster = chunky_t_raster;
         newtex.num_planes = 1;
+        newtex.size.x = textures->rep_width;
+        newtex.size.y = textures->rep_height;
         code = mem_planar_strip_copy_rop(dev, sdata, sourcex, sraster,
                                          id, scolors, &newtex, tcolors,
                                          x, y, width, height, phase_x, phase_y,

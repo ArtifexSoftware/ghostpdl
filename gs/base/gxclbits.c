@@ -430,7 +430,7 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
                uint sraster, int depth)
 {
     uint raster = tiles->raster;
-    uint size_bytes = raster * tiles->size.y;
+    uint size_bytes = raster * tiles->size.y * tiles->num_planes;
     uint tsize =
     sizeof(tile_slot) + cldev->tile_band_mask_size + size_bytes;
     gx_cached_bits_head *slot_head;
