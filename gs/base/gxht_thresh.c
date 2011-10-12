@@ -420,7 +420,8 @@ gxht_thresh_image_init(gx_image_enum *penum)
         /* RJW: This was 16 here, but as I don't understand why, I'm using
          * LAND_BITS instead. Check with Michael. */
         temp = (col_length + LAND_BITS-1)/LAND_BITS;
-        penum->line_size = temp * LAND_BITS;  /* The stride */
+        /* bitmap_raster() expects the width in bits, hence "* 8" */
+        penum->line_size = bitmap_raster((temp * LAND_BITS) * 8);  /* The stride */
         /* Now we need at most LAND_BITS of these */
         penum->line = gs_alloc_bytes(penum->memory,
                                      LAND_BITS * penum->line_size * spp_out + 16,
@@ -488,13 +489,11 @@ gxht_thresh_image_init(gx_image_enum *penum)
            the MSBit positions. Note the #define chunk bits16 in
            gdevm1.c.  Allow also for a 15 sample over run.
         */
-        penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & 15;
+        penum->ht_offset_bits = (-fixed2int_var_pixround(ox)) & (bitmap_raster(1) - 1);
         if (penum->ht_offset_bits > 0) {
-            penum->ht_stride = ((7 + (dev_width + 4)) / 8) +
-                                ARCH_SIZEOF_LONG;
+            penum->ht_stride = bitmap_raster((7 + (dev_width + 4)) + (ARCH_SIZEOF_LONG * 8));
         } else {
-            penum->ht_stride = ((7 + (dev_width + 2)) / 8) +
-                            ARCH_SIZEOF_LONG;
+            penum->ht_stride = bitmap_raster((7 + (dev_width + 2)) + (ARCH_SIZEOF_LONG * 8));
         }
         /* We want to figure out the maximum height that we may
            have in taking a single source row and going to device
@@ -518,7 +517,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
            by this remainder portion we should be 128 bit aligned.
            Also allow a 15 sample over run during the execution.  */
         temp = (int) ceil((float) ((dev_width + 15.0) + 15.0)/16.0);
-        penum->line_size = temp * 16;  /* The stride */
+        penum->line_size = bitmap_raster(temp * 16 * 8);  /* The stride */
         penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out,
                                      "gxht_thresh");
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
