@@ -536,8 +536,6 @@ clist_new_tile_params(gx_strip_bitmap * new_tile, const gx_strip_bitmap * tiles,
     rep_width_bits = rep_width * depth;
     max_bytes = cldev->chunk.size / (rep_width_bits * rep_height);
 
-    new_tile->num_planes = tiles->num_planes;
-
     max_bytes -= min(max_bytes, tile_overhead);
     if (max_bytes > max_tile_bytes)
         max_bytes = max_tile_bytes;
@@ -731,13 +729,15 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             uint csize;
             gx_clist_state *bit_pcls = pcls;
             int code;
+            int pdepth = depth;
 
+            if (tiles->num_planes != 1)
+                    pdepth /= loc.tile->num_planes;
             if (loc.tile->num_bands == CHAR_ALL_BANDS_COUNT)
                 bit_pcls = NULL;
-            /* FIXME: Put more planes! */
             code = cmd_put_bits(cldev, bit_pcls, ts_bits(cldev, loc.tile),
-                                loc.tile->width * depth,
-                                loc.tile->height, loc.tile->cb_raster,
+                                loc.tile->width * pdepth,
+                                loc.tile->height * loc.tile->num_planes, loc.tile->cb_raster,
                                 rsize,
                              (1 << cmd_compress_cfe) | decompress_elsewhere,
                                 &dp, &csize);

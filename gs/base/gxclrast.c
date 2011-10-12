@@ -2325,7 +2325,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
             return_error(gs_error_unregistered);
         }
         cbp = r.ptr + 1;
-    } else if (rep_height > 1 && width_bytes != bits->cb_raster) {
+    } else if (rep_height * bits->num_planes > 1 && width_bytes != bits->cb_raster) {
         cbp = cmd_read_short_bits(pcb, data,
                                   width_bytes, rep_height * bits->num_planes,
                                   bits->cb_raster, cbp);
