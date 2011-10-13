@@ -551,9 +551,9 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
     x_entry = tdev->PageData.unsorted_text_list;
     while (x_entry) {
         next_x = x_entry->next;
-        sprintf(TextBuffer, "<FontName=%s, size=%d, render mode=%d, WMode=%d,start=%d,%d, end= %d,%d> ",
+        sprintf(TextBuffer, "<FontName=%s, size=%f, render_mode=%d, WMode=%d, start=[%f,%f], end=[%f,%f]> ",
             x_entry->FontName, x_entry->size, x_entry->render_mode, x_entry->wmode, x_entry->start.x,
-            x_entry->start.y, x_entry->end.x,x_entry->end.y);
+            x_entry->start.y, x_entry->end.x, x_entry->end.y);
         fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
         fwrite(x_entry->Unicode_Text, sizeof (unsigned short), x_entry->Unicode_Text_Size, tdev->file);
         fwrite(&UnicodeEOL, sizeof(unsigned short), 2, tdev->file);
