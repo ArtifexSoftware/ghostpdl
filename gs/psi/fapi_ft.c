@@ -713,7 +713,6 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
     FT_Matrix ftscale_mat;
     FT_UInt xres;
     FT_UInt yres;
-    FT_Vector vectx, vecty;
     bool indep_scale;
 
     scalex = hypot ((double)a_transform->xx, (double)a_transform->xy);
