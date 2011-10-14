@@ -379,7 +379,7 @@ pdf_prepare_text_color(gx_device_pdf *const pdev, gs_imager_state *pis, const gs
                         } else
                             pdev->remap_fill_color = false;
                         gs_swapcolors_quick(pgs);
-                        gx_set_dev_color(pgs);
+                        code = gx_set_dev_color(pgs);
                         if (code == gs_error_Remap_Color)
                             pdev->remap_fill_color = true;
                         if (code != 0)
