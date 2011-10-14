@@ -433,7 +433,7 @@ flush_text_buffer(gx_device_pdf *pdev)
 /*
  * Transition from string context to text context.
  */
-static int
+int
 sync_text_state(gx_device_pdf *pdev)
 {
     pdf_text_state_t *pts = pdev->text->text_state;

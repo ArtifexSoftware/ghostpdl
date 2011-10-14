@@ -805,51 +805,97 @@ end readonly def
         % if the CTM had been unity.
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          2 copy eq {
-          pop
-        }{
-          % non-square scaling reduces to Text matrix in pdfwrite , so
-          % we can ignore it. (wrong answer, but consistent)
-          pop pop currentlinewidth
-        }ifelse setlinewidth
-        .swapcolors show .swapcolors setlinewidth} bind
+          abs 2 copy abs eq {
+            pop
+          }{
+            % non-square scaling reduces to Text matrix in pdfwrite , so
+            % we can ignore it. (wrong answer, but consistent)
+            pop pop currentlinewidth
+          }ifelse setlinewidth
+          show setlinewidth} bind
         % Tr 2 - Fill then Stroke
-        { gsave 0 .settextrenderingmode
-          setfillstate dup show currentpoint 3 -1 roll
-          grestore gsave setstrokestate
-        //false charpath
-        % We need to make sure the matrix used for the stroke
-        % and therefore stroke width does not include the
-        % Text Matrix Tm.
-        TextSaveMatrix setmatrix
-        .swapcolors
-        stroke
-        .swapcolors
-          grestore moveto
-        } bind
+        { currentlinewidth exch setstrokestate
+        % Need to set the stroke width to a value which gives the correct
+        % width under pdfwrite. Pdfwrite uses (in text mode) an identity
+        % CTM, so we need to calculate the stroke width which would result
+        % if the CTM had been unity.
+          currentlinewidth dup
+          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          abs 2 copy abs eq {
+            pop
+          }{
+            % non-square scaling reduces to Text matrix in pdfwrite , so
+            % we can ignore it. (wrong answer, but consistent)
+            pop pop currentlinewidth
+          }ifelse setlinewidth
+          setfillstate show setlinewidth} bind
         % Tr 3 - Neither fill nor stroke
         { setfillstate show } bind
+        %
+        % pdfwrite emits all text inside a gsave/grestore pair. As
+        % a result we can't preserve any of the 'clip' modes, as the
+        % clip gets undone by the restore. We need to handle the clip
+        % separately.
+        %
         % Tr 4 - Fill, add to clip
         { gsave 0 .settextrenderingmode
           setfillstate dup show grestore //true charpath } bind
         % Tr 5 - Stroke, add to clip
         { gsave 1 .settextrenderingmode
-          setstrokestate dup .swapcolors show .swapcolors grestore
-          //true charpath } bind
+          currentlinewidth dup
+          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          abs 2 copy abs eq {
+            pop
+          }{
+            % non-square scaling reduces to Text matrix in pdfwrite , so
+            % we can ignore it. (wrong answer, but consistent)
+            pop pop currentlinewidth
+          }ifelse setlinewidth
+          setstrokestate dup show grestore
+          //true charpath} bind
         % Tr 6 - Fill, stroke, add to clip
-        { gsave 0 .settextrenderingmode
-          setfillstate dup show grestore gsave dup
-          setstrokestate //false charpath
-        % We need to make sure the matrix used for the stroke
-        % and therefore stroke width does not include the
-        % Text Matrix Tm.
-        TextSaveMatrix setmatrix
-        .swapcolors
-        stroke .swapcolors grestore
-          //true charpath } bind
+        { gsave 2 .settextrenderingmode
+          currentlinewidth dup
+          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          abs 2 copy abs eq {
+            pop
+          }{
+            % non-square scaling reduces to Text matrix in pdfwrite , so
+            % we can ignore it. (wrong answer, but consistent)
+            pop pop currentlinewidth
+          }ifelse setlinewidth
+          setstrokestate setfillstate dup show grestore
+          //true charpath} bind
         % Tr 7 - Add to clip
-        { //true charpath } bind
+        { //true charpath} bind
 ] readonly def
+
+/setstrokeforTrpreservation {
+      % Check to see if the current device supports Tr
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      {
+        TextRenderingMode 1 eq TextRenderingMode 2 eq or
+        TextRenderingMode 5 eq TextRenderingMode 6 eq or or {
+          setstrokestate
+          % Need to set the stroke width to a value which gives the correct
+          % width under pdfwrite. Pdfwrite uses (in text mode) an identity
+          % CTM, so we need to calculate the stroke width which would result
+          % if the CTM had been unity. NOTE! Only interested in magnitudes,
+          % not signs.
+          currentlinewidth dup
+          matrix defaultmatrix idtransform TextSaveMatrix dtransform
+          abs 2 copy abs eq {
+            pop
+          }{
+            % non-square scaling reduces to Text matrix in pdfwrite , so
+            % we can ignore it. (wrong answer, but consistent)
+            pop pop currentlinewidth
+          }ifelse
+          setlinewidth
+      } if
+    } if
+} bind def
 
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and FontMatrixNonHV not and
@@ -857,11 +903,11 @@ end readonly def
       % Check to see if the current device supports Tr
       currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
       dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
-        {
-                pdfwrite_textrenderingprocs TextRenderingMode get
-        }
-        {
-                TextRenderingMode 0 eq {
+      {
+              pdfwrite_textrenderingprocs TextRenderingMode get
+      }
+      {
+              TextRenderingMode 0 eq {
                 { setfillstate show }
               } {
                 TextRenderingMode 3 eq {
@@ -894,12 +940,24 @@ end readonly def
                   { //false charpath textrenderingprocs TextRenderingMode get exec }
                 } ifelse
               } ifelse
-        } ifelse
+       } ifelse
     }
-    { TextRenderingMode 0 eq TextRenderingMode 3 eq or
-       % Tr was set to graphic state.
-       { FontMatrixNonHV {
+    {
+      % If we are doing a plain old fill, or no text at all, *or* we are going to
+      % a device supporting text rendering modes, then go through this route.
+      %
+      TextRenderingMode 0 eq TextRenderingMode 3 eq or
+      currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+      dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
+      % pdfwrite can't handle rendering modes which involve clipping
+      TextRenderingMode 4 lt and or
+      % Tr was set to graphic state.
+      {
+        FontMatrixNonHV {
            {
+             % preserve current line width around possible stroke setup
+             currentlinewidth exch
+             setstrokeforTrpreservation
              setfillstate
              [ TextSpacing WordSpacing 3 index
                {					    % str [... weach wword c undef|ythis xthis|undef
@@ -914,20 +972,51 @@ end readonly def
                } if
                cshow pop pop ]
              { xshow } { yshow } Vexch pop exec
+             setlinewidth
            }
          } {
            WordSpacing 0 eq
-            { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
-            { TextSpacing 0 eq
-              { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
-              { { setfillstate WordSpacing 0 Vexch 32
-                   TextSpacing 0 Vexch 6 -1 roll awidthshow } }
+            { {
+              % preserve current line width around possible stroke setup
+              % This *should* work the same as the others by using
+              % currentlinewidth...setlinewidth, but it doesn't. In particular
+              % Bug688796b.pdf throws an error. I am unabel to understand why.
+              /MyDict 5 dict def
+              MyDict begin
+              /SaveLW currentlinewidth def end
+
+              setstrokeforTrpreservation
+              setfillstate TextSpacing 0 Vexch 3 -1 roll ashow
+
+              MyDict begin
+              SaveLW setlinewidth
+              end
+            } }
+            {
+              TextSpacing 0 eq
+              { {
+                % preserve current line width around possible stroke setup
+                currentlinewidth exch
+                setstrokeforTrpreservation
+                setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow
+                setlinewidth
+              } }
+              { {
+                % preserve current line width around possible stroke setup
+                currentlinewidth exch
+                setstrokeforTrpreservation
+                setfillstate WordSpacing 0 Vexch 32
+                TextSpacing 0 Vexch 6 -1 roll awidthshow
+                setlinewidth
+               } }
               ifelse
             }
            ifelse
          } ifelse
        }
-       { { WordSpacing TextSpacing
+       {
+         { currentlinewidth exch
+           WordSpacing TextSpacing
                         % Implement the combination of t3 and false charpath.
                         % Note that we must use cshow for this, because we
                         % can't parse multi-byte strings any other way.
@@ -937,7 +1026,24 @@ end readonly def
                         % Stack: str wword wchar ccode xthis ythis
              Vexch pop currentpoint 6 3 roll
                         % Stack: str wthis xorig yorig wword wchar ccode
-             (x) dup 0 3 index put //false charpath
+             (x) dup 0 3 index put
+             %
+             % for devices which can handle the text rendering mode we don't want
+             % to decompose into paths, we want to do a 'show'. However pdfwrite
+             % can't handle clipping text, so we *do* want to do the clip path
+             % as a 'true charpath'.
+             %
+             currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+             dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse {
+               % NB we must have Tr at least 4 or the test above would have
+               % taken a different path, so we *know* the Tr involves clipping
+               % or we wouldn't be here. Subtract 4 from the Tr and preserve
+               % that mode, then do a charpath so the clip path gets set up
+               % correctly.
+               gsave TextRenderingMode 4 sub .settextrenderingmode
+               setstrokeforTrpreservation
+               setstrokestate setfillstate dup show grestore} if
+             //false charpath
              3 copy 32 eq { add } { exch pop } ifelse
                         % Stack: str wthis xorig yorig wword wchar ccode wextra
              7 -3 roll moveto add
@@ -950,7 +1056,16 @@ end readonly def
               1 1 index length 1 sub getinterval cvx
             } if
            4 -1 roll cshow pop pop
-           textrenderingprocs TextRenderingMode get exec
+           %
+           % If the device doesn't handle text rendering modes then we now have a suitable
+           % path, so call the correct routine to stroke/fill it (clip is handled when we
+           % get ET).
+           %
+           currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
+           dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse not {
+             textrenderingprocs TextRenderingMode get exec
+           } if
+           setlinewidth
          }
        }
       ifelse

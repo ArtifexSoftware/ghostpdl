@@ -323,15 +323,85 @@ static const gs_text_enum_procs_t pdf_text_procs = {
     pdf_text_release
 };
 
+/* Ideally we would set the stroke and fill colours in pdf_prepare_text_drawing
+ * but this is called from pdf_process_text, not pdf_begin_text. The problem is
+ * that if we get a pattern colour we need to exit to the interpreter and run
+ * the PaintProc, we do this by retunring e_ReampColor. But the 'process' routines
+ * aren't set up to accept this, and just throw an error. Trying to rework the
+ * interpreter routines began turning into a gigantic task, so I chose instead
+ * to 'set' the colours here, which is called from text_begin, where the code
+ * allows us to return e_RemapColor. Attempting to write the colour to the PDF file
+ * in this routine as well caused trouble keeping the graphics states synchronised,
+ * so this functionality was left in pdf_prepare_text_drawing.
+ */
+static int
+pdf_prepare_text_color(gx_device_pdf *const pdev, gs_imager_state *pis, const gs_text_params_t *text, gs_font *font)
+{
+    int code=0;
+    if (text->operation & TEXT_DO_DRAW) {
+        gs_state *pgs = (gs_state *)pis;
+        if (!pdev->ForOPDFRead) {
+            if (pis->text_rendering_mode != 3 && pis->text_rendering_mode != 7) {
+                if (font->PaintType == 2) {
+                    /* Bit awkward, if the PaintType is 2 then we want to set the
+                     * current ie 'fill' colour, but as a stroke colour because we
+                     * will later change the text rendering mode to 1 (stroke).
+                     */
+                    code = gx_set_dev_color(pgs);
+                    if (code != 0)
+                        return code;
+                    code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                                 &pdev->stroke_used_process_color,
+                                 &psdf_set_stroke_color_commands);
+                    if (code < 0)
+                        return code;
+                } else {
+                    if ((pis->text_rendering_mode == 0 || pis->text_rendering_mode == 2 ||
+                        pis->text_rendering_mode == 4 || pis->text_rendering_mode == 6) &&
+                        !pdev->remap_stroke_color) {
+                        code = gx_set_dev_color(pgs);
+                        if (code != 0)
+                            return code;
+                    }
+                    if (pis->text_rendering_mode == 1 || pis->text_rendering_mode == 2 ||
+                        pis->text_rendering_mode == 5 || pis->text_rendering_mode == 6) {
+                        if (!pdev->remap_fill_color) {
+                            if (pdev->remap_stroke_color) {
+                                pdev->remap_stroke_color = false;
+                            } else {
+                                gs_swapcolors_quick(pgs);
+                                code = gx_set_dev_color(pgs);
+                                if (code == gs_error_Remap_Color)
+                                    pdev->remap_stroke_color = true;
+                                if (code != 0)
+                                    return code;
+                            }
+                        } else
+                            pdev->remap_fill_color = false;
+                        gs_swapcolors_quick(pgs);
+                        gx_set_dev_color(pgs);
+                        if (code == gs_error_Remap_Color)
+                            pdev->remap_fill_color = true;
+                        if (code != 0)
+                            return code;
+                    }
+                }
+            }
+        }
+    }
+    return code;
+}
+
 static int
 pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
 {
     gs_imager_state * pis = pte->pis;
-    const gx_device_color * pdcolor = pte->pdcolor;
+    gs_state *pgs = (gs_state *)pis;
     const gx_clip_path * pcpath = pte->pcpath;
     const gs_text_params_t *text = &pte->text;
     bool new_clip = false; /* Quiet compiler. */
     int code;
+    gs_font *font = pte->current_font;
 
     if (!(text->operation & TEXT_DO_NONE) || pis->text_rendering_mode == 3) {
         new_clip = pdf_must_put_clip_path(pdev, pcpath);
@@ -362,16 +432,65 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
                 return code;
         }
 
-        if ((code =
-             pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_stroke_color,
-                                   &pdev->stroke_used_process_color,
-                                   &psdf_set_stroke_color_commands)) < 0 ||
-            (code =
-             pdf_set_drawing_color(pdev, pis, pdcolor, &pdev->saved_fill_color,
-                                   &pdev->fill_used_process_color,
-                                   &psdf_set_fill_color_commands)) < 0
-            )
-            return code;
+        if (!pdev->ForOPDFRead) {
+            if (pis->text_rendering_mode != 3 && pis->text_rendering_mode != 7) {
+                if (font->PaintType == 2) {
+                    /* Bit awkward, if the PaintType is 2 then we want to set the
+                     * current ie 'fill' colour, but as a stroke colour because we
+                     * will later change the text rendering mode to 1 (stroke).
+                     */
+                    code = gx_set_dev_color(pgs);
+                    if (code != 0)
+                        return code;
+                    code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                                 &pdev->stroke_used_process_color,
+                                 &psdf_set_stroke_color_commands);
+                    if (code < 0)
+                        return code;
+                } else {
+                    if (pis->text_rendering_mode == 0 || pis->text_rendering_mode == 2 ||
+                        pis->text_rendering_mode == 4 || pis->text_rendering_mode == 6) {
+                        code = gx_set_dev_color(pgs);
+                        if (code != 0)
+                            return code;
+                        code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_fill_color,
+                                     &pdev->fill_used_process_color,
+                                     &psdf_set_fill_color_commands);
+                        if (code < 0)
+                            return code;
+                    }
+                    if (pis->text_rendering_mode == 1 || pis->text_rendering_mode == 2 ||
+                        pis->text_rendering_mode == 5 || pis->text_rendering_mode == 6) {
+                        gs_swapcolors_quick(pgs);
+                        code = gx_set_dev_color(pgs);
+                        if (code != 0)
+                            return code;
+                        code = pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                                     &pdev->stroke_used_process_color,
+                                     &psdf_set_stroke_color_commands);
+                        if (code < 0)
+                            return code;
+
+                        gs_swapcolors_quick(pgs);
+                    }
+                }
+            }
+        } else {
+            code = gx_set_dev_color(pgs);
+            if (code != 0)
+                return code;
+
+            if ((code =
+                 pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_stroke_color,
+                                       &pdev->stroke_used_process_color,
+                                       &psdf_set_stroke_color_commands)) < 0 ||
+                (code =
+                 pdf_set_drawing_color(pdev, pis, pgs->color[0].dev_color, &pdev->saved_fill_color,
+                                       &pdev->fill_used_process_color,
+                                       &psdf_set_fill_color_commands)) < 0
+                )
+                return code;
+        }
     }
     return 0;
 }
@@ -459,7 +578,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 
     if (!user_defined || !(text->operation & TEXT_DO_ANY_CHARPATH)) {
         if (user_defined &&
-            (text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)) {
+            (text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)
+            && pis->text_rendering_mode != 3) {
             /* This is stringwidth, see gx_default_text_begin.
              * We need to prevent writing characters to PS cache,
              * otherwise the font converts to bitmaps.
@@ -476,6 +596,12 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
         else if (text->operation & TEXT_DO_ANY_CHARPATH)
             return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
                                          pcpath, mem, ppte);
+    }
+
+    if (!pdev->ForOPDFRead) {
+    code = pdf_prepare_text_color(pdev, pis, text, font);
+    if (code != 0)
+        return code;
     }
 
     /* Allocate and initialize the enumerator. */
@@ -2294,6 +2420,12 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         float save_width = pis->line_params.half_width;
         int code;
 
+        if (pdev->context == PDF_IN_STRING) {
+            code = sync_text_state(pdev);
+            if (code < 0)
+                return code;
+        }
+
         code = pdf_open_contents(pdev, PDF_IN_STRING);
         if (code < 0)
             return code;
@@ -2302,6 +2434,7 @@ pdf_set_text_process_state(gx_device_pdf *pdev,
         if (code >= 0)
             code = gdev_vector_prepare_stroke((gx_device_vector *)pdev,
                                               pis, NULL, NULL, 1);
+
         pis->line_params.half_width = save_width;
         if (code < 0)
             return code;

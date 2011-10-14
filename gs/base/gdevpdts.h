@@ -134,4 +134,5 @@ int pdf_modify_text_render_mode(pdf_text_state_t *pts, int render_mode);
 int pdf_set_PaintType0_params (gx_device_pdf *pdev, gs_imager_state *pis,
                                float size, double scaled_width,
                                const pdf_text_state_values_t *ptsv);
+int sync_text_state(gx_device_pdf *pdev);
 #endif /* gdevpdts_INCLUDED */
