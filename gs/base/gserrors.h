@@ -43,7 +43,7 @@
 #define gs_error_Fatal (-100)
 
 /* Need the remap color error for high level pattern support */
-#define gs_error_Remap_Color (-107)
+#define gs_error_Remap_Color (-103)
 
 int gs_log_error(int, const char *, int);
 #ifndef DEBUG

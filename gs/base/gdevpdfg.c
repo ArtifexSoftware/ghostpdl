@@ -234,6 +234,8 @@ pdf_reset_graphics_old(gx_device_pdf * pdev)
     }
     pdev->fill_overprint = false;
     pdev->stroke_overprint = false;
+    pdev->remap_fill_color = false;
+    pdev->remap_stroke_color = false;
     pdf_reset_text(pdev);
 }
 

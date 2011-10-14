@@ -496,6 +496,7 @@ struct gx_device_pdf_s {
     pdf_page_dsc_info_t page_dsc_info; /* current page */
     /* Additional graphics state */
     bool fill_overprint, stroke_overprint;
+    bool remap_fill_color, remap_stroke_color;
     int overprint_mode;
     gs_id halftone_id;
     gs_id transfer_ids[4];
