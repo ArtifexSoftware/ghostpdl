@@ -45,10 +45,14 @@ RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
         byte *base_old = mptr->base;
         long reloc;
         int y;
+        int h = mptr->height;
+
+        if (mptr->num_planes > 0)
+            h *= mptr->num_planes;
 
         RELOC_PTR(gx_device_memory, base);
         reloc = base_old - mptr->base;
-        for (y = 0; y < mptr->height; y++)
+        for (y = 0; y < h; y++)
             mptr->line_ptrs[y] -= reloc;
         /* Relocate line_ptrs, which also points into the data area. */
         mptr->line_ptrs = (byte **) ((byte *) mptr->line_ptrs - reloc);
@@ -446,7 +450,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
         gdev_mem_bits_size(mdev, mdev->width, mdev->height, &size);
         mdev->line_ptrs = (byte **)(mdev->base + size);
     }
-    mdev->raster = gdev_mem_raster(mdev);
+    mdev->raster = gdev_mem_raster(mdev); /* RJW: Wrong for planar */
     return gdev_mem_set_line_ptrs(mdev, NULL, 0, NULL, setup_height);
 }
 /*
