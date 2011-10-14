@@ -720,26 +720,25 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
     scaley = hypot ((double)a_transform->yx, (double)a_transform->yy);
 
     if (*xresp != *yresp) {
-        /* We need to give the resolution in "glyph space", taking account
-         * of rotation and shearing, so that makes life a little complicated
-         * when non-square resolutions are used.
+        /* To get good results, we have to pull the implicit scaling from
+         * non-square resolutions, and apply it in the matrix. This means
+         * we get the correct "shearing" effect for rotated glyphs.
+         * The previous solution was only effective for for glyphs whose
+         * axes were coincident with the axes of the page.
          */
-        ftscale_mat.xx = scalex;
+        bool use_x = true;
+                
+        if (*xresp < *yresp) {
+            use_x = false;
+        }
+
+        ftscale_mat.xx = (((double)(*xresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
         ftscale_mat.xy = ftscale_mat.yx = 0;
-        ftscale_mat.yy = scaley;
+        ftscale_mat.yy = (((double)(*yresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
 
-        FT_Matrix_Invert(&ftscale_mat);
+        FT_Matrix_Multiply (&ftscale_mat, a_transform);
 
-        FT_Matrix_Multiply (a_transform, &ftscale_mat);
-
-        vectx.x = *xresp << 16;
-        vecty.y = *yresp << 16;
-        vectx.y = vecty.x = 0;
-
-        FT_Vector_Transform (&vectx, &ftscale_mat);
-        FT_Vector_Transform (&vecty, &ftscale_mat);
-        xres = (FT_UInt)((hypot ((double)vectx.x, (double)vecty.x) * (1.0/65536.0)) + 0.5);
-        yres = (FT_UInt)((hypot ((double)vectx.y, (double)vecty.y) * (1.0/65536.0)) + 0.5);
+        xres = yres = (use_x ? (*xresp) : (*yresp));
     }
     else {
         /* Life is considerably easier when square resolutions are in use! */
