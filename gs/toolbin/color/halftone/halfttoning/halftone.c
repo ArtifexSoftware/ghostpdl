@@ -18,6 +18,17 @@ typedef int bool;
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define ROUND( a )  ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : \
                                                   (int) ( (a) + 0.5 ) )
+typedef enum {
+    CIRCLE = 0,
+    REDBOOK,
+    INVERTED,
+    RHOMBOID,
+    LINE_X,
+    LINE_Y,
+    DIAMOND1,
+    DIAMOND2,
+    CUSTOM  /* Must remain last one */
+} spottype_t;
 
 typedef struct htsc_point_s {
     double x;
@@ -63,8 +74,27 @@ typedef enum {
    OUTPUT_PPM = 2
 } output_format_type;
 
+typedef struct htsc_param_s {
+    double scr_ang;
+    int targ_scr_ang;
+    int targ_lpi;
+    double vert_dpi;
+    double horiz_dpi;
+    bool targ_quant_spec;
+    int targ_quant;
+    int targ_size;
+    bool targ_size_spec;
+    spottype_t spot_type;
+    bool holladay;
+    output_format_type output_format;
+} htsc_param_t;
+
+
 #define RAW_SCREEN_DUMP 1
 
+void htsc_determine_cell_shape(double *x, double *y, double *v, double *u, 
+                               double *N, htsc_param_t params);
+double htsc_spot_value(spottype_t spot_type, double x, double y);
 int htsc_getpoint(htsc_dig_grid_t *dig_grid, int x, int y);
 void htsc_setpoint(htsc_dig_grid_t *dig_grid, int x, int y, int value);
 void  htsc_create_dot_mask(htsc_dig_grid_t *dig_grid, int x, int y, int u, int v,
@@ -78,7 +108,8 @@ int htsc_sumsum(htsc_dig_grid_t dig_grid);
 void htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y,
                             int u, int v, htsc_point_t center, double horiz_dpi,
                             double vert_dpi, htsc_vertices_t vertices,
-                            htsc_point_t *one_index);
+                            htsc_point_t *one_index, spottype_t spot_type,
+                            htsc_matrix_t trans_matrix);
 int htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
                            int v, int target_size, bool use_holladay_grid,
                            htsc_dig_grid_t dot_grid, int N, int *S, int *H, int *L);
@@ -95,6 +126,8 @@ void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
 void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     output_format_type output_format);
+void htsc_set_default_params(htsc_param_t *params);
+
 
 int htsc_gcd(int a, int b);
 int  htsc_lcm(int a, int b);
@@ -111,7 +144,17 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 
 int usage (void) {
     printf ("Usage: halftone [-r resolution] [-l target_lpi] [-q target_quantization_levels] \n");
-    printf ("                [-a target_angle] [-s size_of_supercell] [-ps | -ppm]\n");
+    printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
+    printf ("                [-ps | -ppm]\n");
+    printf ("dot shape codes are as follows (see pdf manual for details): \n");
+    printf ("0  CIRCLE \n");
+    printf ("1  REDBOOK CIRCLE \n");
+    printf ("2  INVERTED \n");
+    printf ("3  RHOMBOID \n");
+    printf ("4  LINE_X \n");
+    printf ("5  LINE_Y \n");
+    printf ("6  DIAMOND1 \n");
+    printf ("7  DIAMOND2 \n");
     return 1;
 }
 
@@ -131,17 +174,9 @@ static const char * get_arg (int argc, char **argv, int *pi, const char *arg) {
 int
 main (int argc, char **argv)
 {
-    double horiz_dpi;
-    double vert_dpi;
-    double screen_angle;
     double num_levels;
-    bool use_dither_grid, use_holladay_grid;
-    double x_scale,frac,scaled_x,scaled_y;
-    int dither_grid[]={3,0,1,2};
-    int target_size;
-    double ratio;
     const double  pi = 3.14159265358979323846f;
-    double x,y,true_angle,lpi,v,u,N;
+    double x,y,v,u,N;
     int rcode = 0;
     htsc_vertices_t vertices;
     htsc_point_t center, one_index;
@@ -151,52 +186,47 @@ main (int argc, char **argv)
     int code;
     int S, H, L;
     double gamma = 1;
-    int target_lpi;
-    int target_quantization, target_screen_angle;
     int i;
-    double prev_lpi, max_lpi;
-    bool use = false;
-    double x_use,y_use;
-    bool target_size_specified = false;
-    bool target_quant_specified = false;
-    output_format_type output_format = OUTPUT_BIN;
+    int temp_int;
+    htsc_param_t params;
+    htsc_matrix_t trans_matrix, trans_matrix_inv;
 
-    horiz_dpi = 300;  /* Default values */
-    vert_dpi = 300;
-    target_lpi = 75;
-    use_dither_grid = true;
-    target_screen_angle = 0;
-    screen_angle = target_screen_angle;
-    target_size = 1;
-    target_quantization = 256;
+    htsc_set_default_params(&params);
 
     for (i = 1; i < argc; i++) {
       const char *arg = argv[i];
       if (arg[0] == '-') {
           switch (arg[1]) {
             case 'a':
-              target_screen_angle = atoi(get_arg(argc, argv, &i, arg + 2));
-              target_screen_angle = target_screen_angle % 90;
-              screen_angle = target_screen_angle;
+              params.targ_scr_ang = atoi(get_arg(argc, argv, &i, arg + 2));
+              params.targ_scr_ang = params.targ_scr_ang % 90;
+              params.scr_ang = params.targ_scr_ang;
               break;
             case 'l':
-              target_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
+              params.targ_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
               break;
             case 'p':
-              output_format = (arg[2] == 's') ? OUTPUT_PS :
+              params.output_format = (arg[2] == 's') ? OUTPUT_PS :
                                 (arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
               break;
             case 'q':
-              target_quantization = atoi(get_arg(argc, argv, &i, arg + 2));
-              target_quant_specified = true;
+              params.targ_quant = atoi(get_arg(argc, argv, &i, arg + 2));
+              params.targ_quant_spec = true;
               break;
             case 'r':
-              horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
-              vert_dpi = horiz_dpi;
+              params.horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
+              params.vert_dpi = params.horiz_dpi;
               break;
             case 's':
-                target_size = atoi(get_arg(argc, argv, &i, arg + 2));
-                target_size_specified = true;
+                params.targ_size = atoi(get_arg(argc, argv, &i, arg + 2));
+                params.targ_size_spec = true;
+                break;
+            case 'd':
+                temp_int = atoi(get_arg(argc, argv, &i, arg + 2));
+                if (temp_int < 0 || temp_int > CUSTOM)  
+                    params.spot_type = CIRCLE;
+                else 
+                    params.spot_type = temp_int;
                 break;
             default:
               return usage();
@@ -206,18 +236,114 @@ main (int argc, char **argv)
     dot_grid.data = NULL;
     super_cell.data = NULL;
     final_mask.data = NULL;
-    num_levels = 6;
-    use_holladay_grid = false;
+    /* Get the vector values that define the small cell shape */
+    htsc_determine_cell_shape(&x, &y, &v, &u, &N, params);
+    /* Figure out how many levels to dither across. */
+    if (params.targ_quant_spec) {
+        num_levels = ROUND((double) params.targ_quant / N);
+    } else {
+        num_levels = 1;
+    }
+    if (num_levels < 1) num_levels = 1;
+    if (num_levels == 1) {
+        printf("No additional dithering , creating minimal sized periodic screen\n");
+        params.targ_size = 1;
+    }
+    /* Lower left of the cell is at the origin.  Define the other vertices */
+    vertices.lower_left.x = 0;
+    vertices.lower_left.y = 0;
+    vertices.upper_left.x = x;
+    vertices.upper_left.y = y;
+    vertices.upper_right.x = x + u;
+    vertices.upper_right.y = y + v;
+    vertices.lower_right.x = u;
+    vertices.lower_right.y = v;
+    center.x = vertices.upper_right.x / 2.0;
+    center.y = vertices.upper_right.y / 2.0;
+    /* Create the matrix that is used to get us correctly into the dot shape
+       function */
+    trans_matrix.row[0].xy[0] = u; 
+    trans_matrix.row[0].xy[1] = x;
+    trans_matrix.row[1].xy[0] = v;
+    trans_matrix.row[1].xy[1] = y;
+    code = htsc_matrix_inverse(trans_matrix, &trans_matrix_inv);
+    if (code < 0) {
+        printf("ERROR! Singular Matrix Inversion!\n");
+        return -1;
+    }
+    /* Create a binary mask that indicates where we need to define the dot turn
+       on sequence or dot profile */
+    htsc_create_dot_mask(&dot_grid, x, y, u, v, params.scr_ang, vertices);
+#if RAW_SCREEN_DUMP
+    htsc_dump_screen(&dot_grid, "mask");
+#endif
+    /* A sanity check */
+    if (htsc_sumsum(dot_grid) != -N) {
+        printf("ERROR! grid size problem!\n");
+        return -1;
+    }
+    /* Now actually determine the turn on sequence */
+    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, params.horiz_dpi,
+                            params.vert_dpi, vertices, &one_index, 
+                            params.spot_type, trans_matrix_inv);
+#if RAW_SCREEN_DUMP
+    htsc_dump_screen(&dot_grid, "dot_profile");
+#endif
+    /* Allocate super cell */
+    code = htsc_allocate_supercell(&super_cell, x, y, u, v, params.targ_size,
+                            params.holladay, dot_grid, N, &S, &H, &L);
+    if (code < 0) {
+        printf("ERROR! grid size problem!\n");
+        return -1;
+    }
+    /* Go ahead and fill up the super cell grid with our growth dot values */
+    htsc_tile_supercell(&super_cell, &dot_grid, x, y, u, v, N);
+#if RAW_SCREEN_DUMP
+    htsc_dump_screen(&super_cell, "super_cell_tiled");
+#endif
+    /* If we are using the Holladay grid (non dithered) then we are done. */
+    if (params.holladay) {
+        htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
+    } else {
+        if ((super_cell.height == dot_grid.height &&
+            super_cell.width == dot_grid.width) || num_levels == 1) {
+            htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
+        } else {
+            htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
+                                    params.vert_dpi, params.horiz_dpi, N, gamma, 
+                                    dot_grid, one_index);
+        }
+    }
+    htsc_save_mask(final_mask, params.holladay, S, params.output_format);
+    if (dot_grid.data != NULL) free(dot_grid.data);
+    if (super_cell.data != NULL) free(super_cell.data);
+    if (final_mask.data != NULL) free(final_mask.data);
+    return rcode;
+}
+
+void
+htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out, 
+                          double *u_out, double *N_out, htsc_param_t params)
+{
+    double x, y, v, u, N;
+    double x_scale, frac, scaled_x, scaled_y;
+    double ratio;
+    const double  pi = 3.14159265358979323846f;
+    double true_angle, lpi;
+    double prev_lpi, max_lpi;
+    bool use = false;
+    double x_use,y_use;
+
     /* Go through and find the rational angle options that gets us to the
        best LPI.  Pick the one that is just over what is requested.
        That is really our limiting factor here.  Pick it and
        then figure out how much dithering we need to do to get to the proper
        number of levels.  */
-    x_scale = horiz_dpi / vert_dpi;
-    frac = tan( screen_angle * pi / 180.0 );
-    ratio = frac * horiz_dpi / vert_dpi;
-    scaled_x = horiz_dpi / vert_dpi;
-    scaled_y = vert_dpi / horiz_dpi;
+    x_scale = params.horiz_dpi / params.vert_dpi;
+    frac = tan( params.scr_ang * pi / 180.0 );
+    ratio = frac * params.horiz_dpi / params.vert_dpi;
+    scaled_x = params.horiz_dpi / params.vert_dpi;
+    scaled_y = params.vert_dpi / params.horiz_dpi;
     /* The minimal step is in x */
     prev_lpi = 0;
     if (ratio < 1 && ratio != 0) {
@@ -226,15 +352,15 @@ main (int argc, char **argv)
         for (x = 1; x < 11; x++) {
             x_use = x;
             y=ROUND((double) x_use / ratio);
-            true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
-            lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
-                                    ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
+            true_angle = 180.0 * atan(((double) x_use / params.horiz_dpi) / ( (double) y / params.vert_dpi) ) / pi;
+            lpi = 1.0/( sqrt( ((double) y / params.vert_dpi) * ( (double) y / params.vert_dpi) +
+                                    ( (double) x_use / params.horiz_dpi) * ((double) x_use / params.horiz_dpi) ));
             v = -x_use / scaled_x;
             u = y * scaled_x;
             N = y *u - x_use * v;
             if (prev_lpi == 0) {
                 prev_lpi = lpi;
-                if (target_lpi > lpi) {
+                if (params.targ_lpi > lpi) {
                     printf("Warning this lpi is not achievable!\n");
                     printf("Resulting screen will be poorly quantized\n");
                     printf("or completely stochastic!\n");
@@ -242,7 +368,7 @@ main (int argc, char **argv)
                 }
                 max_lpi = lpi;
             }
-            if (prev_lpi >= target_lpi && lpi < target_lpi) {
+            if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                 if (prev_lpi == max_lpi) {
                     printf("Notice lpi is at the maximimum level possible.\n");
                     printf("This may result in poor quantization. \n");
@@ -250,9 +376,11 @@ main (int argc, char **argv)
                 /* Reset these to previous x */
                 x_use = x - 1;
                 y=ROUND((double) x_use / ratio);
-                true_angle = 180.0 * atan(((double) x_use / horiz_dpi) / ( (double) y /vert_dpi) ) / pi;
-                lpi = 1.0/( sqrt( ((double) y / vert_dpi) * ( (double) y / vert_dpi) +
-                                        ( (double) x_use / horiz_dpi) * ((double) x_use / horiz_dpi) ));
+                true_angle = 
+                    180.0 * atan(((double) x_use / params.horiz_dpi) / ( (double) y / params.vert_dpi) ) / pi;
+                lpi = 
+                    1.0/( sqrt( ((double) y / params.vert_dpi) * ( (double) y / params.vert_dpi) +
+                                        ( (double) x_use / params.horiz_dpi) * ((double) x_use / params.horiz_dpi) ));
                 v = -x_use / scaled_x;
                 u = y * scaled_x;
                 N = y *u - x_use * v;
@@ -280,15 +408,15 @@ main (int argc, char **argv)
             y_use = y;
             x = ROUND(y_use * ratio);
             /* compute the true angle */
-            true_angle = 180.0 * atan((x / horiz_dpi) / (y_use / vert_dpi)) / pi;
-            lpi = 1.0 / sqrt( (y_use /vert_dpi) * (y_use /vert_dpi) +
-                                (x/horiz_dpi) * (x/horiz_dpi));
+            true_angle = 180.0 * atan((x / params.horiz_dpi) / (y_use / params.vert_dpi)) / pi;
+            lpi = 1.0 / sqrt( (y_use / params.vert_dpi) * (y_use / params.vert_dpi) +
+                                (x / params.horiz_dpi) * (x / params.horiz_dpi));
             v = ROUND(-x / scaled_x);
             u = ROUND(y_use * scaled_x);
             N = y_use * u - x * v;
             if (prev_lpi == 0) {
                 prev_lpi = lpi;
-                if (target_lpi > lpi) {
+                if (params.targ_lpi > lpi) {
                     printf("Warning this lpi is not achievable!\n");
                     printf("Resulting screen will be poorly quantized\n");
                     printf("or completely stochastic!\n");
@@ -296,7 +424,7 @@ main (int argc, char **argv)
                 }
                 max_lpi = lpi;
             }
-            if (prev_lpi >= target_lpi && lpi < target_lpi) {
+            if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                 if (prev_lpi == max_lpi) {
                     printf("Warning lpi will be slightly lower than target.\n");
                     printf("An increase will result in poor \n");
@@ -306,9 +434,9 @@ main (int argc, char **argv)
                     y_use = y - 1;
                     x = ROUND(y_use * ratio);
                     /* compute the true angle */
-                    true_angle = 180.0 * atan((x / horiz_dpi) / (y_use / vert_dpi)) / pi;
-                    lpi = 1.0 / sqrt( (y_use /vert_dpi) * (y_use /vert_dpi) +
-                                        (x/horiz_dpi) * (x/horiz_dpi));
+                    true_angle = 180.0 * atan((x / params.horiz_dpi) / (y_use / params.vert_dpi)) / pi;
+                    lpi = 1.0 / sqrt( (y_use / params.vert_dpi) * (y_use / params.vert_dpi) +
+                                        (x / params.horiz_dpi) * (x / params.horiz_dpi));
                     v = ROUND(-x / scaled_x);
                     u = ROUND(y_use * scaled_x);
                     N = y_use * u - x * v;
@@ -341,11 +469,11 @@ main (int argc, char **argv)
                 u = ROUND(y_use * scaled_x);
                 N = y_use * u - x * v;
                 true_angle = 0;
-                lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) *
-                    (y_use / vert_dpi) + (x / horiz_dpi) * (x / horiz_dpi)) );
+                lpi = 1.0/(double) sqrt( (double) ((y_use / params.vert_dpi) *
+                    (y_use / params.vert_dpi) + (x / params.horiz_dpi) * (x / params.horiz_dpi)) );
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
-                    if (target_lpi > lpi) {
+                    if (params.targ_lpi > lpi) {
                         printf("Warning this lpi is not achievable!\n");
                         printf("Resulting screen will be poorly quantized\n");
                         printf("or completely stochastic!\n");
@@ -353,7 +481,7 @@ main (int argc, char **argv)
                     }
                     max_lpi = lpi;
                 }
-                if (prev_lpi >= target_lpi && lpi < target_lpi) {
+                if (prev_lpi >= params.targ_lpi && lpi < params.targ_lpi) {
                     if (prev_lpi == max_lpi) {
                         printf("Warning lpi will be slightly lower than target.\n");
                         printf("An increase will result in poor \n");
@@ -366,8 +494,8 @@ main (int argc, char **argv)
                         u = ROUND(y_use * scaled_x);
                         N = y_use * u - x * v;
                         true_angle = 0;
-                        lpi = 1.0/(double) sqrt( (double) ((y_use / vert_dpi) *
-                            (y_use / vert_dpi) + (x / horiz_dpi) * (x / horiz_dpi)) );
+                        lpi = 1.0/(double) sqrt( (double) ((y_use / params.vert_dpi) *
+                            (y_use / params.vert_dpi) + (x / params.horiz_dpi) * (x / params.horiz_dpi)) );
                     }
                     use = true;
                 }
@@ -391,14 +519,14 @@ main (int argc, char **argv)
                 x_use = x;
                 y = ROUND(x_use * ratio);
                 true_angle = 0;
-                lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) +
-                            (x_use / horiz_dpi) * (x_use / horiz_dpi) ));
+                lpi = 1.0/( sqrt( (y / params.vert_dpi) * (y / params.vert_dpi) +
+                            (x_use / params.horiz_dpi) * (x_use / params.horiz_dpi) ));
                 v = ROUND( -x_use / scaled_x);
                 u = ROUND( y * scaled_x);
                 N = y  *u - x_use * v;
                 if (prev_lpi == 0) {
                     prev_lpi = lpi;
-                    if (target_lpi > lpi) {
+                    if (params.targ_lpi > lpi) {
                         printf("Warning this lpi is not achievable!\n");
                         printf("Resulting screen will be poorly quantized\n");
                         printf("or completely stochastic!\n");
@@ -406,7 +534,7 @@ main (int argc, char **argv)
                     }
                     max_lpi = lpi;
                 }
-                if (prev_lpi > target_lpi && lpi < target_lpi) {
+                if (prev_lpi > params.targ_lpi && lpi < params.targ_lpi) {
                     if (prev_lpi == max_lpi) {
                         printf("Warning lpi will be slightly lower than target.\n");
                         printf("An increase will result in poor \n");
@@ -416,8 +544,8 @@ main (int argc, char **argv)
                         x_use = x - 1;
                         y = ROUND(x_use * ratio);
                         true_angle = 0;
-                        lpi = 1.0/( sqrt( (y / vert_dpi) * (y / vert_dpi) +
-                                    (x_use / horiz_dpi) * (x_use / horiz_dpi) ));
+                        lpi = 1.0/( sqrt( (y / params.vert_dpi) * (y / params.vert_dpi) +
+                                    (x_use / params.horiz_dpi) * (x_use / params.horiz_dpi) ));
                         v = ROUND( -x_use / scaled_x);
                         u = ROUND( y * scaled_x);
                         N = y  *u - x_use * v;
@@ -439,81 +567,136 @@ main (int argc, char **argv)
             x = x_use;
         }
     }
-    /* Figure out how many levels to dither across. */
-    if (target_quant_specified) {
-        num_levels = ROUND((double) target_quantization / N);
-    } else {
-        num_levels = 1;
-    }
-    if (num_levels < 1) num_levels = 1;
-    if (num_levels == 1) {
-        printf("No additional dithering , creating minimal sized periodic screen\n");
-        target_size = 1;
-    }
-    /* Lower left of the cell is at the origin.  Define the other vertices */
-    vertices.lower_left.x = 0;
-    vertices.lower_left.y = 0;
-    vertices.upper_left.x = x;
-    vertices.upper_left.y = y;
-    vertices.upper_right.x = x + u;
-    vertices.upper_right.y = y + v;
-    vertices.lower_right.x = u;
-    vertices.lower_right.y = v;
-    center.x = vertices.upper_right.x / 2.0;
-    center.y = vertices.upper_right.y / 2.0;
-    /* Create a binary mask that indicates where we need to define the dot turn
-       on sequence or dot profile */
-    htsc_create_dot_mask(&dot_grid, x, y, u, v, screen_angle, vertices);
-#if RAW_SCREEN_DUMP
-    htsc_dump_screen(&dot_grid, "mask");
-#endif
-    /* A sanity check */
-    if (htsc_sumsum(dot_grid) != -N) {
-        printf("ERROR! grid size problem!\n");
-        return -1;
-    }
-    /* Now actually determine the turn on sequence */
-    htsc_create_dot_profile(&dot_grid, N, x, y, u, v, center, horiz_dpi,
-                            vert_dpi, vertices, &one_index);
-#if RAW_SCREEN_DUMP
-    htsc_dump_screen(&dot_grid, "dot_profile");
-#endif
-    /* Allocate super cell */
-    code = htsc_allocate_supercell(&super_cell, x, y, u, v, target_size,
-                            use_holladay_grid, dot_grid, N, &S, &H, &L);
-    if (code < 0) {
-        printf("ERROR! grid size problem!\n");
-        return -1;
-    }
-    /* Go ahead and fill up the super cell grid with our growth dot values */
-    htsc_tile_supercell(&super_cell, &dot_grid, x, y, u, v, N);
-#if RAW_SCREEN_DUMP
-    htsc_dump_screen(&super_cell, "super_cell_tiled");
-#endif
-    /* If we are using the Holladay grid (non dithered) then we are done. */
-    if (use_holladay_grid) {
-        htsc_create_holladay_mask(super_cell, H, L, gamma, &final_mask);
-    } else {
-        if ((super_cell.height == dot_grid.height &&
-            super_cell.width == dot_grid.width) || num_levels == 1) {
-            htsc_create_nondithered_mask(super_cell, H, L, gamma, &final_mask);
-        } else {
-            htsc_create_dither_mask(super_cell, &final_mask, num_levels, y, x,
-                                    vert_dpi, horiz_dpi, N, gamma, dot_grid,
-                                    one_index);
-        }
-    }
-    htsc_save_mask(final_mask, use_holladay_grid, S, output_format);
-    if (dot_grid.data != NULL) free(dot_grid.data);
-    if (super_cell.data != NULL) free(super_cell.data);
-    if (final_mask.data != NULL) free(final_mask.data);
-    return rcode;
+    *x_out = x;
+    *y_out = y;
+    *v_out = v;
+    *u_out = u;
+    *N_out = N;
 }
-
 void
 htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
                         htsc_point_t center, double horiz_dpi, double vert_dpi,
-                        htsc_vertices_t vertices, htsc_point_t *one_index)
+                        htsc_vertices_t vertices, htsc_point_t *one_index,
+                        spottype_t spot_type, htsc_matrix_t trans_matrix)
+{
+    int done, dot_index, hole_index, count, index_x, index_y;
+    htsc_dot_shape_search_t dot_search;
+    int k, val_min;
+    htsc_point_t test_point;
+    htsc_point_t differ;
+    double dist;
+    int j;
+    htsc_vector_t vector_in, vector_out;
+
+    done = 0;
+    dot_index = 1;
+    hole_index = N;
+    count = 0;
+    val_min=MIN(0,v);
+
+    while (!done) {
+        /* First perform a search for largest dot value for those remaining 
+           dots */
+        index_x = 0;
+        dot_search.index_x = 0;
+        dot_search.index_y = 0;
+        dot_search.norm = -100000000; /* Hopefully the dot func is not this small */
+        for (k = 0; k < x + u; k++) {
+            index_y = 0;
+            for (j = val_min; j < y; j++) {
+                test_point.x = k + 0.5;
+                test_point.y = j + 0.5;
+                if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
+                    /* For the spot function we want to make sure that 
+                       we are properly adjusted to be in the range from 
+                       -1 to +1.  j and k are moving in the transformed 
+                       (skewed/rotated) space. First untransform the value */
+                    vector_in.xy[0] = k + 0.5;
+                    vector_in.xy[1] = j + 0.5;
+                    htsc_matrix_vector_mult(trans_matrix, vector_in, 
+                                            &vector_out);
+                    vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
+                    vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
+                    dist = htsc_spot_value(spot_type, vector_out.xy[0], 
+                                           vector_out.xy[1]);
+                    if (dist > dot_search.norm) {
+                        dot_search.norm = dist;
+                        dot_search.index_x = index_x;
+                        dot_search.index_y = index_y;
+                    }
+
+                }
+                index_y++;
+            }
+            index_x++;
+        }
+        /* Assign the index for this position */
+        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y, 
+                      dot_index);
+        dot_index++;
+        count++;
+        if (count == N) {
+            done = 1;
+            break;
+        }
+        /* The ones position for the dig_grid is located at the first dot_search 
+           entry.  We need this later so grab it now */
+        if (count == 1) {
+            one_index->x = dot_search.index_x;
+            one_index->y = dot_search.index_y;
+        }
+        /* Now search for the closest one to a vertex (of those remaining).
+           and assign the current largest index */
+        index_x = 0;
+        dot_search.index_x = 0;
+        dot_search.index_y = 0;
+        dot_search.norm = 10000000000;  /* Or this large */
+        for (k = 0; k < x + u; k++) {
+            index_y = 0;
+            for (j = val_min; j < y; j++) {
+                test_point.x = k + 0.5;
+                test_point.y = j + 0.5;
+                if ( htsc_getpoint(dig_grid, index_x, index_y) == -1 ) {
+                    /* For the spot function we want to make sure that 
+                       we are properly adjusted to be in the range from 
+                       -1 to +1.  j and k are moving in the transformed 
+                       (skewed/rotated) space. First untransform the value */
+                    vector_in.xy[0] = k + 0.5;
+                    vector_in.xy[1] = j + 0.5;
+                    htsc_matrix_vector_mult(trans_matrix, vector_in, 
+                                            &vector_out);
+                    vector_out.xy[0] = 2.0 * vector_out.xy[0] - 1.0;
+                    vector_out.xy[1] = 2.0 * vector_out.xy[1] - 1.0;
+                    dist = htsc_spot_value(spot_type, vector_out.xy[0], 
+                                           vector_out.xy[1]);
+                    if (dist < dot_search.norm) {
+                        dot_search.norm = dist;
+                        dot_search.index_x = index_x;
+                        dot_search.index_y = index_y;
+                    }
+                }
+                index_y++;
+            }
+            index_x++;
+        }
+        /* Assign the index for this position */
+        htsc_setpoint(dig_grid, dot_search.index_x, dot_search.index_y, hole_index);
+        hole_index--;
+        count++;
+        if (count == N) {
+            done = 1;
+            break;
+        }
+    }
+}
+
+/* Older Euclidean distance approach */
+#if 0
+void
+htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
+                        htsc_point_t center, double horiz_dpi, double vert_dpi,
+                        htsc_vertices_t vertices, htsc_point_t *one_index,
+                        spottype_t spot_type, htsc_matrix_t trans_matrix)
 {
     int done, dot_index, hole_index, count, index_x, index_y;
     htsc_dot_shape_search_t dot_search;
@@ -603,6 +786,7 @@ htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, i
         }
     }
 }
+#endif
 
 /* This creates a mask for creating the dot shape */
 void
@@ -1564,6 +1748,108 @@ htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                 );
     }
     fclose(fid);
+}
+
+/* Initialize default values */
+void htsc_set_default_params(htsc_param_t *params)
+{
+    params->scr_ang = 0;
+    params->targ_scr_ang = 0;
+    params->targ_lpi = 75;
+    params->vert_dpi = 300;
+    params->horiz_dpi = 300;
+    params->targ_quant_spec = false;
+    params->targ_quant = 256;
+    params->targ_size = 1;
+    params->targ_size_spec = false;
+    params->spot_type = CIRCLE;
+    params->holladay = false;
+    params->output_format = OUTPUT_BIN;
+}
+
+/* Various spot functions */
+double htsc_spot_circle(double x, double y)
+{
+    return 1.0 - (x*x + y*y);
+}
+
+double htsc_spot_redbook(double x, double y)
+{
+    return (180.0 * (double) cos(x) + 180.0 * (double) cos(y)) / 2.0;
+}
+
+double htsc_spot_inverted_round(double x, double y)
+{
+    return (x*x + y*y) - 1.0;
+}
+
+double htsc_spot_rhomboid(double x, double y)
+{
+    return 1.0 - ((double) fabs(y) * 0.8 + (double) fabs(x)) / 2.0;
+}
+
+double htsc_spot_linex(double x, double y)
+{
+    return 1.0 - (double) fabs(y);
+}
+
+double htsc_spot_liney(double x, double y)
+{
+    return 1.0 - (double) fabs(x);
+}
+
+double htsc_spot_diamond(double x, double y)
+{
+    double abs_y = (double) fabs(y);
+    double abs_x = (double) fabs(x);
+
+    if ((abs_y + abs_x) <= 0.75) {
+        return 1.0 - (abs_x * abs_x + abs_y * abs_y);
+    } else {
+        if ((abs_y + abs_x) <= 1.23) {
+            return 1.0 - (0.76  * abs_y + abs_x);
+        } else {
+            return ((abs_x - 1.0) * (abs_x - 1.0) + 
+                    (abs_y - 1.0) * (abs_y - 1.0)) - 1.0;
+        }
+    }
+}
+
+double htsc_spot_diamond2(double x, double y)
+{
+    double xy = (double) fabs(x) + (double) fabs(y);
+
+    if (xy <= 1.0) {
+        return 1.0 - xy * xy / 2.0;
+    } else {
+        return 1.0 - (2.0 * xy * xy - 4.0 * (xy - 1.0) * (xy - 1.0)) / 4.0;
+    }
+}
+
+double htsc_spot_value(spottype_t spot_type, double x, double y)
+{
+    switch (spot_type) {
+        case CIRCLE:
+            return htsc_spot_circle(x,y);
+        case REDBOOK:
+            return htsc_spot_redbook(x,y);
+        case INVERTED:
+            return htsc_spot_inverted_round(x,y);
+        case RHOMBOID:
+            return htsc_spot_rhomboid(x,y);
+        case LINE_X:
+            return htsc_spot_linex(x,y);
+        case LINE_Y:
+            return htsc_spot_liney(x,y);
+        case DIAMOND1:
+            return htsc_spot_diamond(x,y);
+        case DIAMOND2:
+            return htsc_spot_diamond2(x,y);
+        case CUSTOM:  /* A spot (pun intended) for users to define their own */
+            return htsc_spot_circle(x,y);
+        default:
+            return htsc_spot_circle(x,y);
+    }
 }
 
 #if RAW_SCREEN_DUMP
