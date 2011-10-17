@@ -23,9 +23,14 @@
 import re
 from struct import *
 import string 
+import sys
 
 DEBUG = 0
 
+# Workaround stupid windows stdout not being binary safe
+if sys.platform == "win32":
+    import os, msvcrt
+    msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
 
 # tags
 pxl_tags_dict = {                                  
