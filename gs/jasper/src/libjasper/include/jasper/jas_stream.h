@@ -76,6 +76,7 @@
 
 #include <jasper/jas_config.h>
 
+#include <limits.h>
 #include <stdio.h>
 #if defined(HAVE_FCNTL_H)
 #include <fcntl.h>
@@ -260,7 +261,7 @@ typedef struct {
 	int fd;
 	int flags;
 #ifndef _WIN32
-	char pathname[L_tmpnam + 1];
+	char pathname[PATH_MAX + 1];
 #else
 	char pathname[_MAX_PATH + 1];
 #endif
