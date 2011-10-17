@@ -49,11 +49,11 @@
 int
 display_set_callback(gs_main_instance *minst, display_callback *callback)
 {
-    i_ctx_t *i_ctx_p = minst->i_ctx_p;
+    i_ctx_t *i_ctx_p;
     bool was_open;
     int code;
     int exit_code = 0;
-    os_ptr op = osp;
+    os_ptr op;
     gx_device *dev;
     gx_device_display *ddev;
 
@@ -69,6 +69,7 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
     if (code < 0)
        return code;
 
+    i_ctx_p = minst->i_ctx_p;	/* run_string may change i_ctx_p if GC */
     op = osp;
     check_type(*op, t_boolean);
     if (op->value.boolval) {

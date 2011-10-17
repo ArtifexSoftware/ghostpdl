@@ -106,7 +106,7 @@ main(int argc, char *argv[])
             fflush(stdout);
             code = gs_main_run_string(minst, *pstr, 0,
                                       &exit_code, &error_object);
-            zflush(osp);
+            zflush(minst->i_ctx_p);
             fprintf(stdout, " => code = %d\n", code);
             fflush(stdout);
             if (code < 0) {

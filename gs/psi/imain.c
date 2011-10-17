@@ -293,6 +293,7 @@ gs_main_init2(gs_main_instance * minst)
            return code;
 #endif /* PSI_INCLUDED */
     }
+    i_ctx_p = minst->i_ctx_p; /* display_set_callback or run_string may change it */
     if (gs_debug_c(':'))
         print_resource_usage(minst, &gs_imemory, "Start");
     gp_readline_init(&minst->readline_data, imemory_system);
@@ -853,6 +854,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         "serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse .systemvar exec",
         0 , &exit_code, &error_object);
     gp_readline_finit(minst->readline_data);
+    i_ctx_p = minst->i_ctx_p;		/* get current interp context */
     if (gs_debug_c(':')) {
         print_resource_usage(minst, &gs_imemory, "Final");
         dprintf1("%% Exiting instance 0x%p\n", minst);

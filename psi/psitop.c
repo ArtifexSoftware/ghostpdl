@@ -322,6 +322,7 @@ ps_impl_set_device(
     }
 
     /* this shouldn't fail */
+    pgs = psi->minst->i_ctx_p->pgs;        /* stuff moves if a GC happens during run_string */
     code = gs_erasepage(pgs);
     if (code < 0)
         return code;

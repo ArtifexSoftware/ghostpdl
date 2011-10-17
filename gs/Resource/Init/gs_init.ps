@@ -2165,9 +2165,9 @@ currentdict /.wheredict .undef
 currentdict /.renderingintentdict .undef
 end
 
-% Clean up VM, and enable GC.
+% Clean up VM, and enable GC. Use .vmreclaim to force the GC.
 /vmreclaim where
- { pop NOGC not { 2 vmreclaim 0 vmreclaim } if
+ { pop NOGC not { 2 .vmreclaim 0 vmreclaim } if
  } if
 DELAYBIND not {
   systemdict /.forcecopynew .undef	% remove temptation
