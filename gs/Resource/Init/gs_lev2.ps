@@ -419,8 +419,14 @@ psuserparams /ProcessDSCComment {.checkprocesscomment} put
 } odef
 /vmreclaim {			% <int> vmreclaim -
   dup 0 gt {
-    .vmreclaim
+    dup 2 le 1 index type /integertype eq and {
+      pop    % ignore user requests for vmreclaim
+             % (reclaim will still happen controlled by vmthreshold)
+    }
+    { .vmreclaim }    % let internal operator handle error conditions
+    ifelse
   } {
+    % VMReclaim userparam controls enable/disable GC
     mark /VMReclaim 2 index .dicttomark .setuserparams2 pop
   } ifelse
 } odef
@@ -481,7 +487,6 @@ end		% serverdict
   clear cleardictstack
   initgraphics
   //false setglobal
-  2 vmreclaim	% Make sure GC'ed memory is reclaimed and freed.
 } bind def
 /.startjob {			% <exit_bool> <password> <finish_proc>
                                 %   .startjob <ok_bool>
@@ -510,7 +515,7 @@ end		% serverdict
   clear cleardictstack
   serverdict /.jobsave get dup //null eq { pop } { restore } ifelse
   serverdict /.jobsave //null put
-  2 vmreclaim   % recover local and global VM
+  2 .vmreclaim   % recover local and global VM
 } odef
 
 systemdict begin
