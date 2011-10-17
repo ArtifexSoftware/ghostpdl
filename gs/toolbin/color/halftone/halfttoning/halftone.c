@@ -143,10 +143,17 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 #endif
 
 int usage (void) {
-    printf ("Usage: halftone [-r resolution] [-l target_lpi] [-q target_quantization_levels] \n");
+    printf ("Usage: halftone [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
     printf ("                [-ps | -ppm]\n");
-    printf ("dot shape codes are as follows (see pdf manual for details): \n");
+    printf ("r is the device resolution in dots per inch (dpi)\n");
+    printf ("\t use a single number for r if the resolution is symmetric\n");
+    printf ("l is the desired lines per inch (lpi)\n");
+    printf ("q is the desired number of quantization (gray) levels\n");
+    printf ("a is the desired angle in degrees for the screen\n");
+    printf ("s is the desired size of the super cell\n");
+    printf ("-ps indicates postscript style output -ppm is an image file\n");
+    printf ("dot shape codes are as follows: \n");
     printf ("0  CIRCLE \n");
     printf ("1  REDBOOK CIRCLE \n");
     printf ("2  INVERTED \n");
@@ -186,7 +193,7 @@ main (int argc, char **argv)
     int code;
     int S, H, L;
     double gamma = 1;
-    int i;
+    int i, j, k, m;
     int temp_int;
     htsc_param_t params;
     htsc_matrix_t trans_matrix, trans_matrix_inv;
@@ -214,8 +221,15 @@ main (int argc, char **argv)
               params.targ_quant_spec = true;
               break;
             case 'r':
-              params.horiz_dpi = atoi(get_arg(argc, argv, &i, arg + 2));
-              params.vert_dpi = params.horiz_dpi;
+                j = sscanf( &argv[i][2], "%dx%d", &k, &m);
+                if (j < 1)
+                    goto usage_exit;
+                params.horiz_dpi = k;
+                if (j > 1) {
+                    params.vert_dpi = m;
+                } else {
+                    params.vert_dpi = k;
+                }
               break;
             case 's':
                 params.targ_size = atoi(get_arg(argc, argv, &i, arg + 2));
@@ -229,7 +243,7 @@ main (int argc, char **argv)
                     params.spot_type = temp_int;
                 break;
             default:
-              return usage();
+usage_exit:     return usage();
             }
         }
     }
