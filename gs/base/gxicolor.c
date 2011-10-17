@@ -871,7 +871,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         if (posture != image_skewed && next.all[0] == run.all[0])
                 goto inc;
         /* This needs to be sped up */
-         for ( k = 0; k < spp_cm; k++ ) {
+        for ( k = 0; k < spp_cm; k++ ) {
             conc[k] = gx_color_value_from_byte(next.v[k]);
         }
         /* Now we can do an encoding directly or we have to apply transfer
