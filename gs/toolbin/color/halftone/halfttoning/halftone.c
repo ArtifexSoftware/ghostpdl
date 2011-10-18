@@ -35,6 +35,12 @@ typedef struct htsc_point_s {
     double y;
 } htsc_point_t;
 
+typedef struct htsc_threshpoint {
+    int x;
+    int y;
+    int value;
+} htsc_threshpoint_t;
+
 typedef struct htsc_vertices_s {
     htsc_point_t lower_left;
     htsc_point_t upper_left;
@@ -71,7 +77,8 @@ typedef struct htsc_dither_pos_s {
 typedef enum {
    OUTPUT_BIN = 0,
    OUTPUT_PS = 1,
-   OUTPUT_PPM = 2
+   OUTPUT_PPM = 2,
+   OUTPUT_TOS
 } output_format_type;
 
 typedef struct htsc_param_s {
@@ -124,7 +131,7 @@ void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
                              htsc_dig_grid_t dot_grid, htsc_point_t one_index);
 void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
-void htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
+void htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     output_format_type output_format);
 void htsc_set_default_params(htsc_param_t *params);
 
@@ -145,14 +152,16 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 int usage (void) {
     printf ("Usage: halftone [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
-    printf ("                [-ps | -ppm]\n");
+    printf ("                [-ps | -ppm | -tos]\n");
     printf ("r is the device resolution in dots per inch (dpi)\n");
-    printf ("\t use a single number for r if the resolution is symmetric\n");
+    printf ("  use a single number for r if the resolution is symmetric\n");
     printf ("l is the desired lines per inch (lpi)\n");
     printf ("q is the desired number of quantization (gray) levels\n");
     printf ("a is the desired angle in degrees for the screen\n");
     printf ("s is the desired size of the super cell\n");
     printf ("-ps indicates postscript style output -ppm is an image file\n");
+    printf ("-tos indicates to output a turn on sequence which can\n");
+    printf ("     be fed into linearize_threshold to apply a linearization curve\n");
     printf ("dot shape codes are as follows: \n");
     printf ("0  CIRCLE \n");
     printf ("1  REDBOOK CIRCLE \n");
@@ -215,6 +224,9 @@ main (int argc, char **argv)
             case 'p':
               params.output_format = (arg[2] == 's') ? OUTPUT_PS :
                                 (arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
+              break;
+            case 't':
+              params.output_format = OUTPUT_TOS;
               break;
             case 'q':
               params.targ_quant = atoi(get_arg(argc, argv, &i, arg + 2));
@@ -328,7 +340,7 @@ usage_exit:     return usage();
                                     dot_grid, one_index);
         }
     }
-    htsc_save_mask(final_mask, params.holladay, S, params.output_format);
+    htsc_save_screen(final_mask, params.holladay, S, params.output_format);
     if (dot_grid.data != NULL) free(dot_grid.data);
     if (super_cell.data != NULL) free(super_cell.data);
     if (final_mask.data != NULL) free(final_mask.data);
@@ -1698,8 +1710,57 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
     free(thresholds);
 }
 
+int compare (const void * a, const void * b)
+{
+    htsc_threshpoint_t *val_a = a;
+    htsc_threshpoint_t *val_b = b;
+
+  return val_a->value - val_b->value;
+}
+
+/* Save turn on order list */
+void 
+htsc_save_tos(htsc_dig_grid_t final_mask)
+{
+    int width = final_mask.width;
+    int height = final_mask.height;
+    int *buff_ptr = final_mask.data;
+    FILE *fid;
+    htsc_threshpoint_t *values;
+    int x, y, k =0;
+    int count= height * width;
+
+    fid = fopen("turn_on_seq.out","w");
+    fprintf(fid,"# W=%d H=%d\n",width, height);
+    /* Do a sort on the values and then output the coordinates */
+    /* First get a list made with the unsorted values and coordinates */
+    values = 
+        (htsc_threshpoint_t *) malloc(sizeof(htsc_threshpoint_t) * width * height);
+    if (values == NULL) {
+        printf("ERROR! malloc failure in htsc_save_tos!\n");
+        return;
+    }
+    for (y = 0; y < height; y++) {
+        for ( x = 0; x < width; x++ ) {
+            values[k].value = *buff_ptr;
+            values[k].x = x;
+            values[k].y = y;
+            buff_ptr++;
+            k = k + 1;
+        }
+    }
+    /* Sort */
+    qsort(values, height * width, sizeof(htsc_threshpoint_t), compare);
+    /* Write out */
+    for (k = 0; k < count; k++) {
+        fprintf(fid,"%d\t%d\n", values[count - 1 - k].x, values[count - 1 - k].y); 
+    } 
+    free(values);
+    fclose(fid);
+}
+
 void
-htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
+htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                output_format_type output_format)
 {
     char full_file_name[50];
@@ -1712,56 +1773,62 @@ htsc_save_mask(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
                         ((output_format == OUTPUT_PPM) ? "ppm" : "raw");
 
-    if (use_holladay_grid) {
-        sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width,
-                height, output_extension);
+    if (output_format == OUTPUT_TOS) {
+        /* We need to figure out the turn-on sequence from the threshold 
+           array */
+        htsc_save_tos(final_mask);
     } else {
-        sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height,
-                output_extension);
-    }
-    fid = fopen(full_file_name,"wb");
-
-    if (output_format == OUTPUT_PPM)
-        fprintf(fid, "P5\n"
-                "# Halftone threshold array, %s, [%d, %d], S=%d\n"
-                "%d %d\n"
-                "255\n",
-                use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
-                S, width, height);
-
-    if (output_format != OUTPUT_PS) {
-        /* Both BIN and PPM format write the same binary data */
-        for (y = 0; y < height; y++) {
-            for ( x = 0; x < width; x++ ) {
-                data = (byte) *buff_ptr;
-                fwrite(&data,sizeof(byte),1,fid);
-                buff_ptr++;
-            }
+        if (use_holladay_grid) {
+            sprintf(full_file_name,"Screen_Holladay_Shift%d_%dx%d.%s", S, width,
+                    height, output_extension);
+        } else {
+            sprintf(full_file_name,"Screen_Dithered_%dx%d.%s",width,height,
+                    output_extension);
         }
-    } else {
-        /* Output PS HalftoneType 3 dictionary */
-        fprintf(fid, "%%!PS\n"
-                "<< /HalftoneType 3\n"
-                "   /Width  %d\n"
-                "   /Height %d\n"
-                "   /Thresholds <\n",
-                width, height);
+        fid = fopen(full_file_name,"wb");
 
-        for (y = 0; y < height; y++) {
-            for ( x = 0; x < width; x++ ) {
-                data = (byte) *buff_ptr;
-                fprintf(fid, "%02x", data);
-                buff_ptr++;
-                if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                    fprintf(fid, "\n");
+        if (output_format == OUTPUT_PPM)
+            fprintf(fid, "P5\n"
+                    "# Halftone threshold array, %s, [%d, %d], S=%d\n"
+                    "%d %d\n"
+                    "255\n",
+                    use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
+                    S, width, height);
+
+        if (output_format != OUTPUT_PS) {
+            /* Both BIN and PPM format write the same binary data */
+            for (y = 0; y < height; y++) {
+                for ( x = 0; x < width; x++ ) {
+                    data = (byte) *buff_ptr;
+                    fwrite(&data,sizeof(byte),1,fid);
+                    buff_ptr++;
+                }
             }
-            fprintf(fid, "\n");
+        } else {
+            /* Output PS HalftoneType 3 dictionary */
+            fprintf(fid, "%%!PS\n"
+                    "<< /HalftoneType 3\n"
+                    "   /Width  %d\n"
+                    "   /Height %d\n"
+                    "   /Thresholds <\n",
+                    width, height);
+
+            for (y = 0; y < height; y++) {
+                for ( x = 0; x < width; x++ ) {
+                    data = (byte) *buff_ptr;
+                    fprintf(fid, "%02x", data);
+                    buff_ptr++;
+                    if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+                        fprintf(fid, "\n");
+                }
+                fprintf(fid, "\n");
+            }
+            fprintf(fid, "   >\n"
+                    ">>\n"
+                    );
         }
-        fprintf(fid, "   >\n"
-                ">>\n"
-                );
+        fclose(fid);
     }
-    fclose(fid);
 }
 
 /* Initialize default values */
