@@ -13,7 +13,8 @@ typedef unsigned char byte;
 typedef int bool;
 #define false 0
 #define true 1
-
+#define RAW_SCREEN_DUMP 1
+#define MAXVAL 65535.0
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define ROUND( a )  ( ( (a) < 0 ) ? (int) ( (a) - 0.5 ) : \
@@ -92,12 +93,10 @@ typedef struct htsc_param_s {
     int targ_size;
     bool targ_size_spec;
     spottype_t spot_type;
+    int bit_depth;
     bool holladay;
     output_format_type output_format;
 } htsc_param_t;
-
-
-#define RAW_SCREEN_DUMP 1
 
 void htsc_determine_cell_shape(double *x, double *y, double *v, double *u, 
                                double *N, htsc_param_t params);
@@ -132,10 +131,8 @@ void htsc_create_dither_mask(htsc_dig_grid_t super_cell,
 void htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask);
 void htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-                    output_format_type output_format);
+                      htsc_param_t params);
 void htsc_set_default_params(htsc_param_t *params);
-
-
 int htsc_gcd(int a, int b);
 int  htsc_lcm(int a, int b);
 int htsc_matrix_inverse(htsc_matrix_t matrix_in, htsc_matrix_t *matrix_out);
@@ -152,16 +149,19 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 int usage (void) {
     printf ("Usage: halftone [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
-    printf ("                [-ps | -ppm | -tos]\n");
+    printf ("                [-b 8|16] [-ps | -ppm | -tos]\n");
     printf ("r is the device resolution in dots per inch (dpi)\n");
     printf ("  use a single number for r if the resolution is symmetric\n");
     printf ("l is the desired lines per inch (lpi)\n");
     printf ("q is the desired number of quantization (gray) levels\n");
     printf ("a is the desired angle in degrees for the screen\n");
     printf ("s is the desired size of the super cell\n");
+    printf ("b is the desired bit depth of the output threshold\n");
+    printf ("  valid only with -ps or the default raw output\n");
     printf ("-ps indicates postscript style output -ppm is an image file\n");
     printf ("-tos indicates to output a turn on sequence which can\n");
-    printf ("     be fed into linearize_threshold to apply a linearization curve\n");
+    printf ("     be fed into linearize_threshold to apply a linearization curve.\n");
+    printf ("     If no output type is indicate a raw binary output will be created\n");
     printf ("dot shape codes are as follows: \n");
     printf ("0  CIRCLE \n");
     printf ("1  REDBOOK CIRCLE \n");
@@ -231,6 +231,9 @@ main (int argc, char **argv)
             case 'q':
               params.targ_quant = atoi(get_arg(argc, argv, &i, arg + 2));
               params.targ_quant_spec = true;
+              break;
+            case 'b':
+              params.bit_depth = atoi(get_arg(argc, argv, &i, arg + 2));
               break;
             case 'r':
                 j = sscanf( &argv[i][2], "%dx%d", &k, &m);
@@ -340,7 +343,7 @@ usage_exit:     return usage();
                                     dot_grid, one_index);
         }
     }
-    htsc_save_screen(final_mask, params.holladay, S, params.output_format);
+    htsc_save_screen(final_mask, params.holladay, S, params);
     if (dot_grid.data != NULL) free(dot_grid.data);
     if (super_cell.data != NULL) free(super_cell.data);
     if (final_mask.data != NULL) free(final_mask.data);
@@ -599,6 +602,7 @@ htsc_determine_cell_shape(double *x_out, double *y_out, double *v_out,
     *u_out = u;
     *N_out = N;
 }
+
 void
 htsc_create_dot_profile(htsc_dig_grid_t *dig_grid, int N, int x, int y, int u, int v,
                         htsc_point_t center, double horiz_dpi, double vert_dpi,
@@ -1549,7 +1553,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 #endif
         }
         /* Create the threshold mask. */
-        step_size = 256.0 / (double) N;
+        step_size = (MAXVAL + 1.0) / (double) N;
         thresholds = (int*) malloc(sizeof(int) * N);
         for (k = 0; k < N; k++) {
             thresholds[N-1-k] = (k + 1) * step_size - (step_size / 2);
@@ -1558,8 +1562,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             (double) (thresholds[0]-thresholds[1]) / (double) (num_levels+1);
         if ( gamma != 1.0) {
             for (k = 0; k < N; k++) {
-                temp_dbl = (double) pow((double) thresholds[k]/255.0, (double) gamma);
-                thresholds[k] = ROUND(temp_dbl * 255.0);
+                temp_dbl = 
+                    (double) pow((double) thresholds[k] / MAXVAL, 
+                                 (double) gamma);
+                thresholds[k] = ROUND(temp_dbl * MAXVAL);
             }
         }
         /* Now use the indices from the large screen to look up the mask and
@@ -1612,7 +1618,7 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                         if (k_index < 0) k_index = k_index + width_supercell;
                         threshold_value = thresholds[val-1] +
                                           mag_offset * dot_level_sort[h];
-                        if (threshold_value > 255) threshold_value = 255;
+                        if (threshold_value > MAXVAL) threshold_value = MAXVAL;
                         if (threshold_value < 0) threshold_value = 0;
                         htsc_setpoint(final_mask,k_index,j_index,threshold_value);
                     }
@@ -1638,7 +1644,7 @@ void
 htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
-    double step_size = 256.0 /( (double) H * (double) L);
+    double step_size = (MAXVAL + 1.0) /( (double) H * (double) L);
     int k, j;
     double *thresholds;
     int number_points = H * L;
@@ -1646,6 +1652,7 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
     double temp;
     int index_point;
     int value;
+    double white_scale = 253.0 / 255.0; /* To ensure white is white */
 
     final_mask->height = H;
     final_mask->width = L;
@@ -1653,12 +1660,13 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     thresholds = (double *) malloc(H * L * sizeof(double));
     for (k = 0; k < number_points; k++) {
-         temp = ((k+1) * step_size - half_step) / 255.0;
+         temp = ((k+1) * step_size - half_step) / MAXVAL;
          if ( gamma != 1.0) {
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
          }
-         thresholds[number_points - k - 1] = ROUND(temp * 253.0 + 1);
+         thresholds[number_points - k - 1] = 
+                                    ROUND(temp * MAXVAL * white_scale + 1);
     }
     memset(final_mask->data, 0, H * L * sizeof(int));
 
@@ -1676,7 +1684,7 @@ void
 htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                           double gamma, htsc_dig_grid_t *final_mask)
 {
-    double step_size = 256.0 /( (double) H * (double) L);
+    double step_size = (MAXVAL +  1) /( (double) H * (double) L);
     int k, j;
     double *thresholds;
     int number_points = H * L;
@@ -1684,6 +1692,7 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
     double temp;
     int index_point;
     int value;
+    double white_scale = 253.0 / 255.0; /* To ensure white is white */
 
     final_mask->height = super_cell.height;
     final_mask->width = super_cell.width;
@@ -1691,12 +1700,13 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
                                       sizeof(int));
     thresholds = (double *) malloc(H * L * sizeof(double));
     for (k = 0; k < number_points; k++) {
-         temp = ((k+1) * step_size - half_step) / 255.0;
+         temp = ((k+1) * step_size - half_step) / MAXVAL;
          if ( gamma != 1.0) {
              /* Possible linearization */
             temp = (double) pow((double) temp, (double) gamma);
          }
-         thresholds[number_points - k - 1] = ROUND(temp * 253.0 + 1);
+         thresholds[number_points - k - 1] = 
+                                    ROUND(temp * MAXVAL * white_scale + 1);
     }
     memset(final_mask->data, 0, super_cell.height * super_cell.width *
                                 sizeof(int));
@@ -1761,15 +1771,18 @@ htsc_save_tos(htsc_dig_grid_t final_mask)
 
 void
 htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
-               output_format_type output_format)
+                htsc_param_t params)
 {
     char full_file_name[50];
-    FILE *fid;
+    FILE *fid, *fid_ps16;
     int x,y;
     int *buff_ptr = final_mask.data;
     int width = final_mask.width;
     int height = final_mask.height;
     byte data;
+    unsigned short data_short;
+    output_format_type output_format = params.output_format;
+    int bit_depth = params.bit_depth;
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
                         ((output_format == OUTPUT_PPM) ? "ppm" : "raw");
 
@@ -1794,38 +1807,76 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     "255\n",
                     use_holladay_grid ? "Holladay_Shift" : "Dithered", width, height,
                     S, width, height);
-
         if (output_format != OUTPUT_PS) {
             /* Both BIN and PPM format write the same binary data */
-            for (y = 0; y < height; y++) {
-                for ( x = 0; x < width; x++ ) {
-                    data = (byte) *buff_ptr;
-                    fwrite(&data,sizeof(byte),1,fid);
-                    buff_ptr++;
+            if (bit_depth == 8 || output_format == OUTPUT_PPM) {
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
+                        if (data_short > 255) data_short = 255;
+                        data = (byte) (data_short & 0xff);
+                        fwrite(&data, sizeof(byte), 1, fid);
+                        buff_ptr++;
+                    }
+                }
+            } else {
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        fwrite(&data_short, sizeof(short), 1, fid);
+                        buff_ptr++;
+                    }
                 }
             }
         } else {
-            /* Output PS HalftoneType 3 dictionary */
-            fprintf(fid, "%%!PS\n"
-                    "<< /HalftoneType 3\n"
-                    "   /Width  %d\n"
-                    "   /Height %d\n"
-                    "   /Thresholds <\n",
-                    width, height);
+            if (bit_depth == 8) {
+                /* Output PS HalftoneType 3 dictionary */
+                fprintf(fid, "%%!PS\n"
+                        "<< /HalftoneType 3\n"
+                        "   /Width  %d\n"
+                        "   /Height %d\n"
+                        "   /Thresholds <\n",
+                        width, height);
 
-            for (y = 0; y < height; y++) {
-                for ( x = 0; x < width; x++ ) {
-                    data = (byte) *buff_ptr;
-                    fprintf(fid, "%02x", data);
-                    buff_ptr++;
-                    if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                        fprintf(fid, "\n");
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        data_short = ROUND((double) data_short * 255.0 / MAXVAL);
+                        if (data_short > 255) data_short = 255;
+                        data = (byte) (data_short & 0xff);
+                        fprintf(fid, "%02x", data);
+                        buff_ptr++;
+                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+                            fprintf(fid, "\n");
+                    }
+                    fprintf(fid, "\n");
                 }
-                fprintf(fid, "\n");
+                fprintf(fid, "   >\n"
+                        ">>\n"
+                        );
+            } else {
+                /* Output PS HalftoneType 16 dictionary. Single array. */
+                fprintf(fid, "%%!PS\n"
+                        "<< /HalftoneType 16\n"
+                        "   /Width  %d\n"
+                        "   /Height %d\n"
+                        "   /Thresholds thresh16.out\n"
+                        ">>\n",
+                        width, height);
+                fid_ps16 = fopen("thresh16.out","wb");
+                for (y = 0; y < height; y++) {
+                    for ( x = 0; x < width; x++ ) {
+                        data_short = (byte) (*buff_ptr & 0xffff);
+                        fprintf(fid_ps16, "%04x", data_short);
+                        buff_ptr++;
+                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
+                            fprintf(fid_ps16, "\n");
+                    }
+                    fprintf(fid_ps16, "\n");
+                } 
+                fclose(fid_ps16);
             }
-            fprintf(fid, "   >\n"
-                    ">>\n"
-                    );
         }
         fclose(fid);
     }
@@ -1846,6 +1897,7 @@ void htsc_set_default_params(htsc_param_t *params)
     params->spot_type = CIRCLE;
     params->holladay = false;
     params->output_format = OUTPUT_BIN;
+    params->bit_depth = 8;
 }
 
 /* Various spot functions */
