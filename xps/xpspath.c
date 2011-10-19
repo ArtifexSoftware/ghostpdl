@@ -912,7 +912,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         {
             while (*s == ' ')
                 s++;
-            dash_array[dash_count++] = atof(s) * linewidth;
+            if (*s) /* needed in case of a space before the last quote */
+                dash_array[dash_count++] = atof(s) * linewidth;
             while (*s && *s != ' ')
                 s++;
         }
