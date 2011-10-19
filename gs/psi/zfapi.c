@@ -27,6 +27,7 @@
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxchar.h"
+#include "gzpath.h"
 #include "gxpath.h"
 #include "gxfcache.h"
 #include "gxchrout.h"
@@ -1866,19 +1867,28 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
         if (I->skip_glyph) {
             gs_point pt;
 
-            if ((code = gs_currentpoint(pgs, &pt)) < 0)
+            if ((code = gs_currentpoint(pgs->show_gstate, &pt)) < 0)
                 return code;
 
-            if ((code = gx_path_add_line_notes(pgs->show_gstate->path, (fixed)pt.x, (fixed)pt.y, 0)) < 0)
+            if (!path_position_valid(pgs->path)) {
+                if ((code = gx_path_add_point(pgs->path, (fixed)pt.x, (fixed)pt.y)) < 0)
+                    return(code);
+            }
+
+            if ((code = gx_path_add_line_notes(pgs->path, (fixed)pt.x, (fixed)pt.y, 0)) < 0)
                 return(code);
 
-            if ((code = gx_path_close_subpath_notes(pgs->show_gstate->path, 0)) < 0)
+            if ((code = gx_path_close_subpath_notes(pgs->path, 0)) < 0)
                 return(code);
         }
         else {
-            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType)) < 0)
+            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
                 return code;
         }
+
+        if ((code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path, pgs->in_charpath)) < 0)
+            return code;
+
     } else {
         int code = I->get_char_raster(I, &rast);
         if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
