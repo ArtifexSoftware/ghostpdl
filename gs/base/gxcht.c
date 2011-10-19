@@ -579,6 +579,11 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     int depth = dev->color_info.depth;
     int nplanes = dev->color_info.num_components;
 
+#ifdef MEMENTO
+    /* Pacify valgrind */
+    memset(tbits, 0, sizeof(ulong) * tile_longs_allocated);
+#endif
+
     SET_HT_COLORS_PROC((*set_ht_colors)) =
         (
 #if USE_SLOW_CODE
