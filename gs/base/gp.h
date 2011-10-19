@@ -19,6 +19,7 @@
 #  define gp_INCLUDED
 
 #include "gstypes.h"
+#include "gscdefs.h"		/* for gs_serialnumber */
 /*
  * This file defines the interface to ***ALL*** platform-specific routines,
  * with the exception of the thread/synchronization interface (gpsync.h)
@@ -94,6 +95,14 @@ const char *gp_strerror(int);
  * The use of ptr and plen as described above are the same as gp_getenv.
  */
 int gp_defaultpapersize(char *ptr, int *plen);
+
+/*
+ * Return a serialnumber. Clients that want to can modify the appropriate
+ * gp_***.c file(s) for their platform and Digital Rights Management (DRM)
+ * of choice. Default handlers for common platforms use info from the OS
+ * and unsupported or old platforms simply return GS_SERIALNUMBER.
+ */
+int gp_serialnumber(void);
 
 /* ------ Date and time ------ */
 

@@ -425,6 +425,14 @@ gp_strerror(int errnum)
     return NULL;
 }
 
+/* We don't have a good way to get a serial number here, so just */
+/* return what we always used to: GS_SERIALNUMBER. */
+int
+gp_serialnumber(void)
+{
+    return (int)(gs_serialnumber);
+}
+
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)

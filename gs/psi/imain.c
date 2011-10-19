@@ -275,7 +275,6 @@ gs_main_init2(gs_main_instance * minst)
         if (code < 0)
             return code;
         minst->init_done = 2;
-        i_ctx_p = minst->i_ctx_p; /* init file may change it */
         /* NB this is to be done with device parameters
          * both minst->display and  display_set_callback() are going away
         */

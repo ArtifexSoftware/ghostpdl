@@ -115,6 +115,14 @@ gp_strerror(int errnum)
     return NULL;
 }
 
+/* We don't have a good way to get a serial number here, so just */
+/* return what we always used to: GS_SERIALNUMBER. */
+int
+gp_serialnumber(void)
+{
+    return (int)(gs_serialnumber);
+}
+
 /* read in a MacOS 'resource' from an extended attribute. */
 /* we don't try to implemented this since it requires support */
 /* for Apple's HFS(+) filesystem */
