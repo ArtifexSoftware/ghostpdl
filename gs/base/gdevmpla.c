@@ -342,6 +342,14 @@ mem_planar_copy_color_4to1(gx_device * dev, const byte * base, int sourcex,
     uint plane_raster = bitmap_raster(w);
     int br, bw, bh, cx, cy, cw, ch, ix, iy;
 
+#ifdef MEMENTO
+    /* Pacify valgrind */
+    memset(buf0.l, 0, sizeof(ulong) * BUF_LONGS);
+    memset(buf1.l, 0, sizeof(ulong) * BUF_LONGS);
+    memset(buf2.l, 0, sizeof(ulong) * BUF_LONGS);
+    memset(buf3.l, 0, sizeof(ulong) * BUF_LONGS);
+#endif
+
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     MEM_SAVE_PARAMS(mdev, save);
     MEM_SET_PARAMS(mdev, 1);
