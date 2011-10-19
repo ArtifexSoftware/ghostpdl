@@ -18,7 +18,6 @@
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "gscdefs.h"		/* for gs_serialnumber */
 #include "gp.h"
 #include "oper.h"
 #include "ialloc.h"
@@ -167,7 +166,7 @@ zserialnumber(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     push(1);
-    make_int(op, gs_serialnumber);
+    make_int(op, gp_serialnumber());
     return 0;
 }
 

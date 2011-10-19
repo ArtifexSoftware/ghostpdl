@@ -12,13 +12,13 @@
 */
 
 /* $Id$ */
-/* MS Windows implementation of gp_getenv */
+/* MS Windows implementation of gp_getenv, and gp_serialnumber */
 
 #include "windows_.h"
 #include <stdio.h>
 #include <stdlib.h>		/* for getenv */
 #include <string.h>
-#include "gscdefs.h"		/* for gs_productfamily and gs_revision */
+#include "gscdefs.h"		/* for gs_productfamily and gs_revision and gs_serialnumber */
 
 #ifdef __WIN32__
 /*
@@ -32,19 +32,18 @@ gp_getenv_registry(HKEY hkeyroot, const char *key, const char *name,
     char *ptr, int *plen)
 {
     HKEY hkey;
-    DWORD cbData, keytype;
+    DWORD cbData;
     BYTE b;
     LONG rc;
     BYTE *bptr = (BYTE *)ptr;
 
     if (RegOpenKeyEx(hkeyroot, key, 0, KEY_READ, &hkey)
         == ERROR_SUCCESS) {
-        keytype = REG_SZ;
         cbData = *plen;
         if (bptr == (char *)NULL)
             bptr = &b;	/* Registry API won't return ERROR_MORE_DATA */
                         /* if ptr is NULL */
-        rc = RegQueryValueEx(hkey, (char *)name, 0, &keytype, bptr, &cbData);
+        rc = RegQueryValueEx(hkey, (char *)name, 0, NULL, bptr, &cbData);
         RegCloseKey(hkey);
         if (rc == ERROR_SUCCESS) {
             *plen = cbData;
@@ -57,8 +56,8 @@ gp_getenv_registry(HKEY hkeyroot, const char *key, const char *name,
     }
     return 1;	/* not found */
 }
-#else
-static int
+#else        /* ifdef WINDOWS_NO_UNICODE */
+int
 gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     char *ptr, int *plen)
 {
@@ -134,8 +133,8 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     free(wname);
     return 1;                           /* environment variable does not exist */
 }
-#endif
-#endif
+#endif        /* ifdef WINDOWS_NO_UNICODE */
+#endif    /* ifdef __WIN32__ */
 
 /* ------ Environment variables ------ */
 
@@ -208,4 +207,38 @@ gp_getenv(const char *name, char *ptr, int *plen)
         *ptr = 0;
     *plen = 1;
     return 1;
+}
+
+/* If we aren't on WIN32, We don't have a good way to get a serial */
+/* number here, so just return what we always used to */
+int
+gp_serialnumber(void)
+{
+#ifdef __WIN32__
+#define SERIALNUMBER_BUFSIZE 512
+    byte buf[SERIALNUMBER_BUFSIZE];
+    int buflen = SERIALNUMBER_BUFSIZE;
+    int code, i;
+#ifdef WINDOWS_NO_UNICODE
+    char key[256];
+
+    sprintf(key, "Software\\Microsoft\\MSLicensing\\HardwareID");
+#else        /* WINDOWS_NO_UNICODE */
+    wchar_t key[256];
+
+    wsprintfW(key, L"Software\\Microsoft\\MSLicensing\\HardwareID");
+#endif        /* WINDOWS_NO_UNICODE */
+    code = gp_getenv_registry(HKEY_LOCAL_MACHINE, key, "ClientHWID", &buf, &buflen);
+    if ( code != 0 )
+        return (int)(gs_serialnumber); 	/* error - just return the default */
+
+    /* now turn the buffer into a 31-bit (avoid negative values) integer */
+    for (i=0, code=0; i<buflen; i++)
+        code += code + (buf[i] ^ i) + (code >> 31);      /* a cheap checksum */
+
+    return code & 0x7fffffff;    /* strip the high bit */
+
+#endif    /* __WIN32__ */
+
+    return (int)(gs_serialnumber);
 }
