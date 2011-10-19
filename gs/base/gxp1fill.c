@@ -61,7 +61,6 @@ typedef struct tile_fill_state_s {
 
     /* Following are only for colored patterns */
 
-    const gx_rop_source_t *rop_source;
     gx_device *orig_dev;
     int xoff, yoff;             /* set dynamically */
 
@@ -232,15 +231,12 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
     gx_color_tile *ptile = ptfs->pdevc->colors.pattern.p_tile;
     gs_logical_operation_t lop = ptfs->lop;
     const gx_rop_source_t *source = ptfs->source;
-    const gx_rop_source_t *rop_source = ptfs->rop_source;
     gx_device *dev = ptfs->orig_dev;
     int xoff = ptfs->xoff, yoff = ptfs->yoff;
     gx_strip_bitmap *bits = &ptile->tbits;
     int plane_step = ptile->tbits.raster * ptile->tbits.rep_height;
     const byte *data = bits->data;
     bool full_transfer = (w == ptfs->w0 && h == ptfs->h0);
-    gx_bitmap_id source_id =
-    (full_transfer ? rop_source->id : gx_no_bitmap_id);
     int code = 0;
     int k;
     byte *data_plane;
@@ -264,7 +260,12 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
         }
     } else {
         gx_strip_bitmap data_tile;
+        gx_bitmap_id source_id;
+        gx_rop_source_t no_source;
 
+        if (source == NULL)
+            set_rop_no_source(source, no_source, dev);
+        source_id = (full_transfer ? source->id : gx_no_bitmap_id);
         data_tile.data = (byte *) data;         /* actually const */
         data_tile.raster = bits->raster;
         data_tile.size.x = data_tile.rep_width = ptile->tbits.size.x;
@@ -274,10 +275,10 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
         data_tile.num_planes = (ptfs->num_planes > 1 ? ptfs->num_planes : 1);
         code = (*dev_proc(dev, strip_copy_rop))
             (dev,
-             rop_source->sdata + (y - ptfs->y0) * rop_source->sraster,
-             rop_source->sourcex + (x - ptfs->x0),
-             rop_source->sraster, source_id,
-             (rop_source->use_scolors ? rop_source->scolors : NULL),
+             source->sdata + (y - ptfs->y0) * source->sraster,
+             source->sourcex + (x - ptfs->x0),
+             source->sraster, source_id,
+             (source->use_scolors ? source->scolors : NULL),
              &data_tile, NULL,
              x, y, w, h,
              imod(xoff - x, data_tile.rep_width),
@@ -363,7 +364,6 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     } else {
         state.lop = lop;
         state.source = source;
-        state.rop_source = rop_source;
         state.orig_dev = dev;
         if (ptile->cdev == NULL) {
             code = tile_by_steps(&state, x, y, w, h, ptile,
