@@ -15,6 +15,43 @@
 
 #include "ghostxps.h"
 
+char *
+xps_get_real_params(char *s, int num, float *x)
+{
+    int k = 0;
+
+    if (s != NULL && *s != 0) {
+        while (*s) 
+        {
+            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
+                s++;
+            sscanf(s, "%g", &(x[k]));
+            while (*s == '-' || *s == '+' || *s == '.' || *s == 'e' || 
+                   *s == 'E' || *s >= '0' && *s <= '9') 
+                s++;
+            while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
+                s++;
+            if (*s == ',') 
+                s++;
+            if (++k == num) 
+                break;
+        }
+        return s;
+    } else
+        return NULL;
+}
+
+void
+xps_get_point(char *s_in, float *x, float *y)
+{
+    char *s_out = s_in;
+    float xy[2];
+
+    s_out = xps_get_real_params(s_out, 2, &xy);
+    *x = xy[0];
+    *y = xy[1];
+}
+
 void
 xps_clip(xps_context_t *ctx)
 {
@@ -477,8 +514,8 @@ xps_parse_arc_segment(xps_context_t *ctx, xps_item_t *root, int stroking, int *s
     if (!is_stroked)
         *skipped_stroke = 1;
 
-    sscanf(point_att, "%g,%g", &point_x, &point_y);
-    sscanf(size_att, "%g,%g", &size_x, &size_y);
+    xps_get_point(point_att, &point_x, &point_y);
+    xps_get_point(size_att, &size_x, &size_y);
     rotation_angle = atof(rotation_angle_att);
     is_large_arc = !strcmp(is_large_arc_att, "true");
     is_clockwise = !strcmp(sweep_direction_att, "Clockwise");
@@ -520,7 +557,7 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, in
     while (*s != 0)
     {
         while (*s == ' ') s++;
-        sscanf(s, "%g,%g", &x[n], &y[n]);
+        xps_get_point(s, &x[n], &y[n]);
         while (*s != ' ' && *s != 0) s++;
         n ++;
         if (n == 2)
@@ -569,7 +606,7 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking
     while (*s != 0)
     {
         while (*s == ' ') s++;
-        sscanf(s, "%g,%g", &x[n], &y[n]);
+        xps_get_point(s, &x[n], &y[n]);
         while (*s != ' ' && *s != 0) s++;
         n ++;
         if (n == 3)
@@ -590,6 +627,7 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
     char *is_stroked_att = xps_att(root, "IsStroked");
     int is_stroked;
     float x, y;
+    float xy[2];
     char *s;
 
     if (!points_att)
@@ -607,13 +645,11 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
     s = points_att;
     while (*s != 0)
     {
-        while (*s == ' ') s++;
-        sscanf(s, "%g,%g", &x, &y);
+        s = xps_get_real_params(s, 2, &xy[0]); 
         if (stroking && !is_stroked)
-            gs_moveto(ctx->pgs, x, y);
+            gs_moveto(ctx->pgs, xy[0], xy[1]);
         else
-            gs_lineto(ctx->pgs, x, y);
-        while (*s != ' ' && *s != 0) s++;
+            gs_lineto(ctx->pgs, xy[0], xy[1]);
     }
 }
 
@@ -641,8 +677,8 @@ xps_parse_path_figure(xps_context_t *ctx, xps_item_t *root, int stroking)
         is_closed = !strcmp(is_closed_att, "true");
     if (is_filled_att)
         is_filled = !strcmp(is_filled_att, "true");
-    if (start_point_att)
-        sscanf(start_point_att, "%g,%g", &start_x, &start_y);
+    if (start_point_att) 
+        xps_get_point(start_point_att, &start_x, &start_y);
 
     if (!stroking && !is_filled) /* not filled, when filling */
         return;
