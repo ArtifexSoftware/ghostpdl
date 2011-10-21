@@ -453,6 +453,7 @@ typedef struct comp_bit_map_list_s {
  * gx_color_index value.
  */
 typedef struct compressed_color_list_s {
+    gs_memory_t * mem;   /* the allocator used for this structure */
     /*
      * The number of colorants for this level of the encoded color list.
      * Note:  Each sub level encodes one fewer colorants.
@@ -555,12 +556,11 @@ void print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_c
 /*
  * Free the elements of a compressed color list.
  */
-void free_compressed_color_list(gs_memory_t * mem,
-                compressed_color_list_t * pcomp_list);
+void free_compressed_color_list(compressed_color_list_t * pcomp_list);
 
 /*
  * Free a set of separation names
  */
-void free_separation_names(gs_memory_t * mem, gs_separations * pseparation);
+void free_separation_names(gs_memory_t *mem, gs_separations * pseparation);
 
 #endif		/* ifndef gdevdevn_INCLUDED */

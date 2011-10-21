@@ -39,7 +39,7 @@ gray_cs_to_devn_cm(gx_device * dev, int * map, frac gray, frac out[])
 {
     int i = dev->color_info.num_components - 1;
 
-    for(; i >= 0; i--)			/* Clear colors */
+    for(; i >= 0; i--)                  /* Clear colors */
         out[i] = frac_0;
     if ((i = map[3]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = frac_1 - gray;
@@ -53,7 +53,7 @@ rgb_cs_to_devn_cm(gx_device * dev, int * map,
     int i = dev->color_info.num_components - 1;
     frac cmyk[4];
 
-    for(; i >= 0; i--)			/* Clear colors */
+    for(; i >= 0; i--)                  /* Clear colors */
         out[i] = frac_0;
     color_rgb_to_cmyk(r, g, b, pis, cmyk, dev->memory);
     if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
@@ -73,7 +73,7 @@ cmyk_cs_to_devn_cm(gx_device * dev, int * map,
 {
     int i = dev->color_info.num_components - 1;
 
-    for(; i >= 0; i--)			/* Clear colors */
+    for(; i >= 0; i--)                  /* Clear colors */
         out[i] = frac_0;
     if ((i = map[0]) != GX_DEVICE_COLOR_MAX_COMPONENTS)
         out[i] = c;
@@ -93,9 +93,9 @@ cmyk_cs_to_devn_cm(gx_device * dev, int * map,
  *
  * The parameter are:
  *   ncomp - The number of components (colorants) for the device.  Valid
- * 	values are 1 to GX_DEVICE_COLOR_MAX_COMPONENTS
+ *           values are 1 to GX_DEVICE_COLOR_MAX_COMPONENTS
  *   bpc - The number of bits per component.  Valid values are 1, 2, 4, 5,
- *	and 8.
+ *         and 8.
  * Input values are not tested for validity.
  */
 int
@@ -253,7 +253,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
     if (component_type != SEPARATION_NAME ||
             auto_spot_colors == NO_AUTO_SPOT_COLORS ||
             pdevn_params->num_separation_order_names != 0)
-        return -1;	/* Do not add --> indicate colorant unknown. */
+        return -1;      /* Do not add --> indicate colorant unknown. */
     /*
      * Check if we have room for another spot colorant.
      */
@@ -321,15 +321,15 @@ devn_get_params(gx_device * pdev, gs_param_list * plist,
       case 0:\
         if ((pa).size != psize) {\
           ecode = gs_note_error(gs_error_rangecheck);\
-          (pa).data = 0;	/* mark as not filled */\
+          (pa).data = 0;        /* mark as not filled */\
         } else
 #define END_ARRAY_PARAM(pa, e)\
         goto e;\
       default:\
         ecode = code;\
-e:	param_signal_error(plist, param_name, ecode);\
+e:      param_signal_error(plist, param_name, ecode);\
       case 1:\
-        (pa).data = 0;		/* mark as not filled */\
+        (pa).data = 0;          /* mark as not filled */\
     }\
     END
 
@@ -352,8 +352,8 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     int num_order = pdevn_params->num_separation_order_names;
     int max_sep = pdevn_params->max_separations;
     int page_spot_colors = pdevn_params->page_spot_colors;
-    gs_param_string_array scna;		/* SeparationColorNames array */
-    gs_param_string_array sona;		/* SeparationOrder names array */
+    gs_param_string_array scna;         /* SeparationColorNames array */
+    gs_param_string_array sona;         /* SeparationOrder names array */
 
     /* Get the SeparationOrder names */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder",
@@ -537,7 +537,7 @@ copy_color_list(compressed_color_list_t *src_color_list,
     if (num_sub_levels > 0) {
         for (k = 0; k < num_sub_levels; k++) {
             des_color_list->u.sub_level_ptrs[k] =
-                alloc_compressed_color_list_elem(memory,
+                alloc_compressed_color_list_elem(src_color_list->mem,
                                     des_color_list->level_num_comp - 1);
             if (des_color_list->u.sub_level_ptrs[k] == NULL) {
                 return gs_rethrow(-1, "copy_color_list allocation error");
@@ -572,16 +572,19 @@ devn_free_params(gx_device *thread_cdev)
         gs_free_object(thread_cdev->memory,
                        devn_params->separations.names[k].data,
                        "devn_free_params");
+        devn_params->separations.names[k].data = NULL;
     }
-    free_compressed_color_list(thread_cdev->memory,
-                               devn_params->compressed_color_list);
+    free_compressed_color_list(devn_params->compressed_color_list);
+    devn_params->compressed_color_list = NULL;
+
     for (k = 0; k < devn_params->pdf14_separations.num_separations; k++) {
         gs_free_object(thread_cdev->memory,
                        devn_params->pdf14_separations.names[k].data,
                        "devn_free_params");
+        devn_params->pdf14_separations.names[k].data = NULL;
     }
-    free_compressed_color_list(thread_cdev->memory,
-                               devn_params->pdf14_compressed_color_list);
+    free_compressed_color_list(devn_params->pdf14_compressed_color_list);
+    devn_params->pdf14_compressed_color_list = NULL;
 }
 
 /* This is used to copy the deviceN parameters from the parent clist device to the
@@ -627,7 +630,7 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
     src_color_list = src_devn_params->compressed_color_list;
     if (src_color_list != NULL) {
         /* Take care of the initial one. Others are done recursively */
-        des_color_list = alloc_compressed_color_list_elem(pdesdev->memory,
+        des_color_list = alloc_compressed_color_list_elem(src_color_list->mem,
                                                           TOP_ENCODED_LEVEL);
         des_color_list->first_bit_map = src_color_list->first_bit_map;
         des_color_list->num_sub_level_ptrs = src_color_list->num_sub_level_ptrs;
@@ -652,7 +655,7 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
     src_color_list = src_devn_params->pdf14_compressed_color_list;
     if (src_color_list != NULL) {
         /* Take care of the initial one. Others are done recursively */
-        des_color_list = alloc_compressed_color_list_elem(pdesdev->memory,
+        des_color_list = alloc_compressed_color_list_elem(src_color_list->mem,
                                                           TOP_ENCODED_LEVEL);
         des_color_list->first_bit_map = src_color_list->first_bit_map;
         des_color_list->num_sub_level_ptrs = src_color_list->num_sub_level_ptrs;
@@ -784,14 +787,14 @@ print_compressed_color_list(compressed_color_list_t * pcomp_list, int num_comp)
         for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
             comp = colorant_present(pcomp_bit_map, colorants, comp_num);
             dlprintf1("%d", comp);
-            if ((comp_num & 7) == 0)	/* Separate into groups of 8 bits */
+            if ((comp_num & 7) == 0)    /* Separate into groups of 8 bits */
                 dlprintf(" ");
         }
         dlprintf("    ");
         for (comp_num = num_comp - 1; comp_num >= 0; comp_num--) {
             comp = colorant_present(pcomp_bit_map, solid_colorants, comp_num);
             dlprintf1("%d", comp);
-            if ((comp_num & 7) == 0)	/* Separate into groups of 8 bits */
+            if ((comp_num & 7) == 0)    /* Separate into groups of 8 bits */
                 dlprintf(" ");
         }
         dlprintf("\n");
@@ -818,6 +821,7 @@ alloc_compressed_color_list_elem(gs_memory_t * mem, int num_comps)
     if (plist != NULL) {
         /* Initialize the data in the element. */
         memset(plist, 0, size_of(*plist));
+	plist->mem = mem->stable_memory;
         plist->level_num_comp = num_comps;
         plist->first_bit_map = NUM_ENCODE_LIST_ITEMS;
     }
@@ -828,8 +832,7 @@ alloc_compressed_color_list_elem(gs_memory_t * mem, int num_comps)
  * Free the elements of a compressed color list.
  */
 void
-free_compressed_color_list(gs_memory_t * mem,
-                compressed_color_list_t * pcomp_list)
+free_compressed_color_list(compressed_color_list_t * pcomp_list)
 {
     int i;
 
@@ -839,10 +842,11 @@ free_compressed_color_list(gs_memory_t * mem,
     /* Discard the sub levels. */
     /* Allocation for this object is done in stable memory.  Make sure
        that is done here too */
-    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++)
-       free_compressed_color_list(mem->stable_memory,
-                                  pcomp_list->u.sub_level_ptrs[i]);
-    gs_free_object(mem->stable_memory, pcomp_list, "free_compressed_color_list");
+    for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
+        free_compressed_color_list(pcomp_list->u.sub_level_ptrs[i]);
+        pcomp_list->u.sub_level_ptrs[i] = NULL;
+    }
+    gs_free_object(pcomp_list->mem->stable_memory, pcomp_list, "free_compressed_color_list");
     return;
 }
 
@@ -912,7 +916,7 @@ sub_level_add_compressed_color_list(gs_memory_t * mem,
     entry_num = pcomp_list->num_sub_level_ptrs;
     if (entry_num < pcomp_list->first_bit_map) {
         pcomp_list->u.sub_level_ptrs[entry_num] =
-            alloc_compressed_color_list_elem(mem, pcomp_list->level_num_comp - 1);
+            alloc_compressed_color_list_elem(pcomp_list->mem, pcomp_list->level_num_comp - 1);
         if (pcomp_list->u.sub_level_ptrs[entry_num] != NULL) {
             pcomp_list->num_sub_level_ptrs++;
             status = sub_level_add_compressed_color_list(mem, pnew_comp_bit_map,
@@ -1046,21 +1050,21 @@ init_compressed_color_list(gs_memory_t *mem)
  * must fit into a gx_color_index value.
  */
 int num_comp_bits[MAX_ENCODED_COMPONENTS + 1] = {
-        8,	/* 0 colorants - not used */
-        8,	/* 1 colorants */
-        8,	/* 2 colorants */
-        8,	/* 3 colorants */
-        8,	/* 4 colorants */
-        8,	/* 5 colorants */
-        8,	/* 6 colorants */
-        8,	/* 7 colorants */
-        7,	/* 8 colorants */
-        6,	/* 9 colorants */
-        5,	/* 10 colorants */
-        5,	/* 11 colorants */
-        4,	/* 12 colorants */
-        4,	/* 13 colorants */
-        4	/* 14 colorants */
+        8,      /* 0 colorants - not used */
+        8,      /* 1 colorants */
+        8,      /* 2 colorants */
+        8,      /* 3 colorants */
+        8,      /* 4 colorants */
+        8,      /* 5 colorants */
+        8,      /* 6 colorants */
+        8,      /* 7 colorants */
+        7,      /* 8 colorants */
+        6,      /* 9 colorants */
+        5,      /* 10 colorants */
+        5,      /* 11 colorants */
+        4,      /* 12 colorants */
+        4,      /* 13 colorants */
+        4       /* 14 colorants */
 };
 
 /*
@@ -1074,21 +1078,21 @@ int num_comp_bits[MAX_ENCODED_COMPONENTS + 1] = {
     ((gx_max_color_value << 8) + 0xff) / ((1 << num_bits) - 1)
 
 int comp_bit_factor[MAX_ENCODED_COMPONENTS + 1] = {
-        gx_color_value_factor(8),		 /*  0 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  1 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  2 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  3 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  4 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  5 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  6 colorants (8 bits) */
-        gx_color_value_factor(8),		 /*  7 colorants (8 bits) */
-        gx_color_value_factor(7),		 /*  8 colorants (7 bits) */
-        gx_color_value_factor(6),		 /*  9 colorants (6 bits) */
-        gx_color_value_factor(5),		 /* 10 colorants (5 bits) */
-        gx_color_value_factor(5),		 /* 11 colorants (5 bits) */
-        gx_color_value_factor(4),		 /* 12 colorants (4 bits) */
-        gx_color_value_factor(4),		 /* 13 colorants (4 bits) */
-        gx_color_value_factor(4)		 /* 14 colorants (4 bits) */
+        gx_color_value_factor(8),                /*  0 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  1 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  2 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  3 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  4 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  5 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  6 colorants (8 bits) */
+        gx_color_value_factor(8),                /*  7 colorants (8 bits) */
+        gx_color_value_factor(7),                /*  8 colorants (7 bits) */
+        gx_color_value_factor(6),                /*  9 colorants (6 bits) */
+        gx_color_value_factor(5),                /* 10 colorants (5 bits) */
+        gx_color_value_factor(5),                /* 11 colorants (5 bits) */
+        gx_color_value_factor(4),                /* 12 colorants (4 bits) */
+        gx_color_value_factor(4),                /* 13 colorants (4 bits) */
+        gx_color_value_factor(4)                 /* 14 colorants (4 bits) */
 };
 #undef gx_color_value_factor
 
@@ -1104,7 +1108,7 @@ int comp_bit_factor[MAX_ENCODED_COMPONENTS + 1] = {
  *    pnew_comp_bit_map - Pointer to the bit map found to be encoded.
  *    plist_index - Pointer to 'encode bits' (return value)
  *    pcomp_bit_map - Pointer to pointer to the actual bit map found
- *    			(return value).
+ *                    (return value).
  *    returns true if the bit map is found.
  */
 static bool
@@ -1147,11 +1151,11 @@ search_compressed_color_list(int num_comp, compressed_color_list_t * pcomp_list,
             if ((pnew_comp_bit_map->colorants[j] &
                     (*pcomp_bit_map)->colorants[j]) !=
                         pnew_comp_bit_map->colorants[j])
-                break;		/* No match if a colorant is missing. */
+                break;          /* No match if a colorant is missing. */
             if ((pnew_comp_bit_map->solid_colorants[j] &
                     (*pcomp_bit_map)->solid_colorants[j]) !=
                         (*pcomp_bit_map)->solid_colorants[j])
-                break;		/* No match if extra solid colorants */
+                break;          /* No match if extra solid colorants */
         }
         if (j == num_bit_map_elem) {
 #else
@@ -1184,7 +1188,7 @@ search_compressed_color_list(int num_comp, compressed_color_list_t * pcomp_list,
      * can find a match.
      */
     if (pcomp_list->level_num_comp <= pnew_comp_bit_map->num_non_solid_comp)
-        return false;	/* Exit if not enough colorants in the sub levels */
+        return false;   /* Exit if not enough colorants in the sub levels */
 
     for (i = 0; i < pcomp_list->num_sub_level_ptrs; i++) {
         found = search_compressed_color_list(num_comp,
@@ -1231,18 +1235,18 @@ search_compressed_color_list(int num_comp, compressed_color_list_t * pcomp_list,
  * allocated to storing colorant values depends upon the number of colorant
  * being used.
  *
- * 	Number of non zero colorant	Index bits	Bits per colorant
- *		0 to 5			   24		   8
- *		   6			   16		   8
- *		   7			    8		   8
- *		   8	       		    8		   7
- *		   9			    8		   6
- *		  10			    8		   5
- *		  11			    8		   5
- *		  12			    8		   4
- *		  13			    8		   4
- *		  14			    8		   4
- *	    More than 14		Not encodeable
+ *      Number of non zero colorant     Index bits      Bits per colorant
+ *              0 to 5                     24              8
+ *                 6                       16              8
+ *                 7                        8              8
+ *                 8                        8              7
+ *                 9                        8              6
+ *                10                        8              5
+ *                11                        8              5
+ *                12                        8              4
+ *                13                        8              4
+ *                14                        8              4
+ *          More than 14                Not encodeable
  *
  * The 'index' bits can be logically divided into groups of 8 bits.  The
  * first (upper) group of 8 bits is used to select either one of 256
@@ -1341,7 +1345,7 @@ devn_encode_compressed_color(gx_device *pdev, const gx_color_value colors[],
         pdevn_params->compressed_color_list =
                 init_compressed_color_list(pdev->memory->stable_memory);
         if (pdevn_params->compressed_color_list == NULL)
-            return NON_ENCODEABLE_COLOR;	/* Unable to initialize list */
+            return NON_ENCODEABLE_COLOR;        /* Unable to initialize list */
     }
 
     /*
@@ -1628,61 +1632,61 @@ gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
  * Macro definition for DeviceN procedures
  */
 #define device_procs(get_color_mapping_procs)\
-{	spotcmyk_prn_open,\
+{       spotcmyk_prn_open,\
         gx_default_get_initial_matrix,\
-        NULL,				/* sync_output */\
-        gdev_prn_output_page,		/* output_page */\
-        gdev_prn_close,			/* close */\
-        NULL,				/* map_rgb_color - not used */\
-        NULL,				/* map_color_rgb - not used */\
-        NULL,				/* fill_rectangle */\
-        NULL,				/* tile_rectangle */\
-        NULL,				/* copy_mono */\
-        NULL,				/* copy_color */\
-        NULL,				/* draw_line */\
-        NULL,				/* get_bits */\
-        spotcmyk_get_params,		/* get_params */\
-        spotcmyk_put_params,		/* put_params */\
-        NULL,				/* map_cmyk_color - not used */\
-        NULL,				/* get_xfont_procs */\
-        NULL,				/* get_xfont_device */\
-        NULL,				/* map_rgb_alpha_color */\
-        gx_page_device_get_page_device,	/* get_page_device */\
-        NULL,				/* get_alpha_bits */\
-        NULL,				/* copy_alpha */\
-        NULL,				/* get_band */\
-        NULL,				/* copy_rop */\
-        NULL,				/* fill_path */\
-        NULL,				/* stroke_path */\
-        NULL,				/* fill_mask */\
-        NULL,				/* fill_trapezoid */\
-        NULL,				/* fill_parallelogram */\
-        NULL,				/* fill_triangle */\
-        NULL,				/* draw_thin_line */\
-        NULL,				/* begin_image */\
-        NULL,				/* image_data */\
-        NULL,				/* end_image */\
-        NULL,				/* strip_tile_rectangle */\
-        NULL,				/* strip_copy_rop */\
-        NULL,				/* get_clipping_box */\
-        NULL,				/* begin_typed_image */\
-        NULL,				/* get_bits_rectangle */\
-        NULL,				/* map_color_rgb_alpha */\
-        NULL,				/* create_compositor */\
-        NULL,				/* get_hardware_params */\
-        NULL,				/* text_begin */\
-        NULL,				/* finish_copydevice */\
-        NULL,				/* begin_transparency_group */\
-        NULL,				/* end_transparency_group */\
-        NULL,				/* begin_transparency_mask */\
-        NULL,				/* end_transparency_mask */\
-        NULL,				/* discard_transparency_layer */\
-        get_color_mapping_procs,	/* get_color_mapping_procs */\
-        spotcmyk_get_color_comp_index,	/* get_color_comp_index */\
-        spotcmyk_encode_color,		/* encode_color */\
-        spotcmyk_decode_color,		/* decode_color */\
-        NULL,				/* pattern_manage */\
-        NULL				/* fill_rectangle_hl_color */\
+        NULL,                           /* sync_output */\
+        gdev_prn_output_page,           /* output_page */\
+        gdev_prn_close,                 /* close */\
+        NULL,                           /* map_rgb_color - not used */\
+        NULL,                           /* map_color_rgb - not used */\
+        NULL,                           /* fill_rectangle */\
+        NULL,                           /* tile_rectangle */\
+        NULL,                           /* copy_mono */\
+        NULL,                           /* copy_color */\
+        NULL,                           /* draw_line */\
+        NULL,                           /* get_bits */\
+        spotcmyk_get_params,            /* get_params */\
+        spotcmyk_put_params,            /* put_params */\
+        NULL,                           /* map_cmyk_color - not used */\
+        NULL,                           /* get_xfont_procs */\
+        NULL,                           /* get_xfont_device */\
+        NULL,                           /* map_rgb_alpha_color */\
+        gx_page_device_get_page_device, /* get_page_device */\
+        NULL,                           /* get_alpha_bits */\
+        NULL,                           /* copy_alpha */\
+        NULL,                           /* get_band */\
+        NULL,                           /* copy_rop */\
+        NULL,                           /* fill_path */\
+        NULL,                           /* stroke_path */\
+        NULL,                           /* fill_mask */\
+        NULL,                           /* fill_trapezoid */\
+        NULL,                           /* fill_parallelogram */\
+        NULL,                           /* fill_triangle */\
+        NULL,                           /* draw_thin_line */\
+        NULL,                           /* begin_image */\
+        NULL,                           /* image_data */\
+        NULL,                           /* end_image */\
+        NULL,                           /* strip_tile_rectangle */\
+        NULL,                           /* strip_copy_rop */\
+        NULL,                           /* get_clipping_box */\
+        NULL,                           /* begin_typed_image */\
+        NULL,                           /* get_bits_rectangle */\
+        NULL,                           /* map_color_rgb_alpha */\
+        NULL,                           /* create_compositor */\
+        NULL,                           /* get_hardware_params */\
+        NULL,                           /* text_begin */\
+        NULL,                           /* finish_copydevice */\
+        NULL,                           /* begin_transparency_group */\
+        NULL,                           /* end_transparency_group */\
+        NULL,                           /* begin_transparency_mask */\
+        NULL,                           /* end_transparency_mask */\
+        NULL,                           /* discard_transparency_layer */\
+        get_color_mapping_procs,        /* get_color_mapping_procs */\
+        spotcmyk_get_color_comp_index,  /* get_color_comp_index */\
+        spotcmyk_encode_color,          /* encode_color */\
+        spotcmyk_decode_color,          /* decode_color */\
+        NULL,                           /* pattern_manage */\
+        NULL                            /* fill_rectangle_hl_color */\
 }
 
 fixed_colorant_name DeviceCMYKComponents[] = {
@@ -1690,7 +1694,7 @@ fixed_colorant_name DeviceCMYKComponents[] = {
         "Magenta",
         "Yellow",
         "Black",
-        0		/* List terminator */
+        0               /* List terminator */
 };
 
 #define spotcmyk_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
@@ -1699,16 +1703,16 @@ fixed_colorant_name DeviceCMYKComponents[] = {
           (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
           (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
           X_DPI, Y_DPI,\
-          GX_DEVICE_COLOR_MAX_COMPONENTS,	/* MaxComponents */\
-          ncomp,		/* NumComp */\
-          pol,			/* Polarity */\
-          depth, 0,		/* Depth, GrayIndex */\
-          mg, mc,		/* MaxGray, MaxColor */\
-          mg + 1, mc + 1,	/* DitherGray, DitherColor */\
-          GX_CINFO_SEP_LIN,	/* Linear & Separable */\
-          cn,			/* Process color model name */\
-          0, 0,			/* offsets */\
-          0, 0, 0, 0		/* margins */\
+          GX_DEVICE_COLOR_MAX_COMPONENTS,       /* MaxComponents */\
+          ncomp,                /* NumComp */\
+          pol,                  /* Polarity */\
+          depth, 0,             /* Depth, GrayIndex */\
+          mg, mc,               /* MaxGray, MaxColor */\
+          mg + 1, mc + 1,       /* DitherGray, DitherColor */\
+          GX_CINFO_SEP_LIN,     /* Linear & Separable */\
+          cn,                   /* Process color model name */\
+          0, 0,                 /* offsets */\
+          0, 0, 0, 0            /* margins */\
         ),\
         prn_device_body_rest_(spotcmyk_print_page)
 
@@ -1721,14 +1725,14 @@ const spotcmyk_device gs_spotcmyk_device =
 {
     spotcmyk_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 4, 1, 1, "DeviceCMYK"),
     /* DeviceN device specific parameters */
-    { 1,			/* Bits per color - must match ncomp, depth, etc. above */
-      DeviceCMYKComponents,	/* Names of color model colorants */
-      4,			/* Number colorants for CMYK */
-      0,			/* MaxSeparations has not been specified */
-      -1,			/* PageSpotColors has not been specified */
-      {0},			/* SeparationNames */
-      0,			/* SeparationOrder names */
-      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    { 1,                        /* Bits per color - must match ncomp, depth, etc. above */
+      DeviceCMYKComponents,     /* Names of color model colorants */
+      4,                        /* Number colorants for CMYK */
+      0,                        /* MaxSeparations has not been specified */
+      -1,                       /* PageSpotColors has not been specified */
+      {0},                      /* SeparationNames */
+      0,                        /* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
     }
 };
 
@@ -1741,14 +1745,14 @@ const spotcmyk_device gs_devicen_device =
 {
     spotcmyk_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
-    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
-      NULL,			/* No names for standard DeviceN color model */
-      0,			/* No standard colorants for DeviceN */
-      0,			/* MaxSeparations has not been specified */
-      -1,			/* PageSpotColors has not been specified */
-      {0},			/* SeparationNames */
-      0,			/* SeparationOrder names */
-      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
+      NULL,                     /* No names for standard DeviceN color model */
+      0,                        /* No standard colorants for DeviceN */
+      0,                        /* MaxSeparations has not been specified */
+      -1,                       /* PageSpotColors has not been specified */
+      {0},                      /* SeparationNames */
+      0,                        /* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 } /* Initial component SeparationOrder */
     }
 };
 
@@ -1909,8 +1913,8 @@ int
 repack_data(byte * source, byte * dest, int depth, int first_bit,
                 int bit_width, int npixel)
 {
-    int in_nbyte = depth >> 3;		/* Number of bytes per input pixel */
-    int out_nbyte = bit_width >> 3;	/* Number of bytes per output pixel */
+    int in_nbyte = depth >> 3;          /* Number of bytes per input pixel */
+    int out_nbyte = bit_width >> 3;     /* Number of bytes per output pixel */
     gx_color_index mask = 1;
     gx_color_index data;
     int i, j, length = 0;
@@ -1923,16 +1927,16 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
     mask = (mask << bit_width) - 1;
     for (i=0; i<npixel; i++) {
         /* Get the pixel data */
-        if (!in_nbyte) {		/* Multiple pixels per byte */
+        if (!in_nbyte) {                /* Multiple pixels per byte */
             data = *source;
             data >>= in_byte_loc;
             in_byte_loc -= depth;
-            if (in_byte_loc < 0) {	/* If finished with byte */
+            if (in_byte_loc < 0) {      /* If finished with byte */
                 in_byte_loc = in_bit_start;
                 source++;
             }
         }
-        else {				/* One or more bytes per pixel */
+        else {                          /* One or more bytes per pixel */
             data = *source++;
             for (j=1; j<in_nbyte; j++)
                 data = (data << 8) + *source++;
@@ -1941,16 +1945,16 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
         data &= mask;
 
         /* Put the output data */
-        if (!out_nbyte) {		/* Multiple pixels per byte */
+        if (!out_nbyte) {               /* Multiple pixels per byte */
             temp = (byte)(*out & ~(mask << out_byte_loc));
             *out = (byte)(temp | (data << out_byte_loc));
             out_byte_loc -= bit_width;
-            if (out_byte_loc < 0) {	/* If finished with byte */
+            if (out_byte_loc < 0) {     /* If finished with byte */
                 out_byte_loc = out_bit_start;
                 out++;
             }
         }
-        else {				/* One or more bytes per pixel */
+        else {                          /* One or more bytes per pixel */
             *out++ = (byte)(data >> ((out_nbyte - 1) * 8));
             for (j=1; j<out_nbyte; j++) {
                 *out++ = (byte)(data >> ((out_nbyte - 1 - j) * 8));
@@ -1958,8 +1962,8 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
         }
     }
     /* Return the number of bytes in the destination buffer. */
-    if (out_byte_loc != out_bit_start) { 	/* If partially filled last byte */
-        *out = *out & ((~0) << out_byte_loc);	/* Mask unused part of last byte */
+    if (out_byte_loc != out_bit_start) {        /* If partially filled last byte */
+        *out = *out & ((~0) << out_byte_loc);   /* Mask unused part of last byte */
         out++;
     }
     length = out - dest;
@@ -2112,49 +2116,49 @@ spotcmyk_print_page(gx_device_printer * pdev, FILE * prn_stream)
 #endif
 
 typedef struct pcx_header_s {
-    byte manuf;			/* always 0x0a */
+    byte manuf;                 /* always 0x0a */
     byte version;
-#define version_2_5			0
-#define version_2_8_with_palette	2
-#define version_2_8_without_palette	3
-#define version_3_0 /* with palette */	5
-    byte encoding;		/* 1=RLE */
-    byte bpp;			/* bits per pixel per plane */
-    ushort x1;			/* X of upper left corner */
-    ushort y1;			/* Y of upper left corner */
-    ushort x2;			/* x1 + width - 1 */
-    ushort y2;			/* y1 + height - 1 */
-    ushort hres;		/* horz. resolution (dots per inch) */
-    ushort vres;		/* vert. resolution (dots per inch) */
-    byte palette[16 * 3];	/* color palette */
+#define version_2_5                     0
+#define version_2_8_with_palette        2
+#define version_2_8_without_palette     3
+#define version_3_0 /* with palette */  5
+    byte encoding;              /* 1=RLE */
+    byte bpp;                   /* bits per pixel per plane */
+    ushort x1;                  /* X of upper left corner */
+    ushort y1;                  /* Y of upper left corner */
+    ushort x2;                  /* x1 + width - 1 */
+    ushort y2;                  /* y1 + height - 1 */
+    ushort hres;                /* horz. resolution (dots per inch) */
+    ushort vres;                /* vert. resolution (dots per inch) */
+    byte palette[16 * 3];       /* color palette */
     byte reserved;
-    byte nplanes;		/* number of color planes */
-    ushort bpl;			/* number of bytes per line (uncompressed) */
+    byte nplanes;               /* number of color planes */
+    ushort bpl;                 /* number of bytes per line (uncompressed) */
     ushort palinfo;
-#define palinfo_color	1
-#define palinfo_gray	2
-    byte xtra[58];		/* fill out header to 128 bytes */
+#define palinfo_color   1
+#define palinfo_gray    2
+    byte xtra[58];              /* fill out header to 128 bytes */
 } pcx_header;
 
 /* Define the prototype header. */
 static const pcx_header pcx_header_prototype =
 {
-    10,				/* manuf */
-    0,				/* version (variable) */
-    1,				/* encoding */
-    0,				/* bpp (variable) */
-    00, 00,			/* x1, y1 */
-    00, 00,			/* x2, y2 (variable) */
-    00, 00,			/* hres, vres (variable) */
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* palette (variable) */
+    10,                         /* manuf */
+    0,                          /* version (variable) */
+    1,                          /* encoding */
+    0,                          /* bpp (variable) */
+    00, 00,                     /* x1, y1 */
+    00, 00,                     /* x2, y2 (variable) */
+    00, 00,                     /* hres, vres (variable) */
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,        /* palette (variable) */
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-    0,				/* reserved */
-    0,				/* nplanes (variable) */
-    00,				/* bpl (variable) */
-    00,				/* palinfo (variable) */
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,	/* xtra */
+    0,                          /* reserved */
+    0,                          /* nplanes (variable) */
+    00,                         /* bpl (variable) */
+    00,                         /* palinfo (variable) */
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0,      /* xtra */
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
@@ -2213,56 +2217,56 @@ devn_setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_plane
                         memcpy((byte *) phdr->palette, "\000\000\000\377\377\377", 6);
                         planar = false;
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
                 case 4:
                         phdr->version = version_2_8_with_palette;
                         memcpy((byte *) phdr->palette, pcx_ega_palette, sizeof(pcx_ega_palette));
                         planar = true;
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
                 case 8:
                         phdr->version = version_3_0;
                         assign_ushort(phdr->palinfo, palinfo_gray);
                         planar = false;
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
         case 2:
             switch (bits_per_plane) {
-                case 1:				/* Not defined */
+                case 1:                         /* Not defined */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
-                case 8:				/* Not defined */
+                case 8:                         /* Not defined */
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
         case 3:
             switch (bits_per_plane) {
-                case 1:				/* Not defined */
+                case 1:                         /* Not defined */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
                 case 8:
                         phdr->version = version_3_0;
                         assign_ushort(phdr->palinfo, palinfo_color);
                         planar = true;
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
@@ -2276,15 +2280,15 @@ devn_setup_pcx_header(gx_device_printer * pdev, pcx_header * phdr, int num_plane
                         phdr->bpp = 4;
                         phdr->nplanes = 1;
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
-                case 8:				/* Not defined */
+                case 8:                         /* Not defined */
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
@@ -2329,66 +2333,66 @@ devn_finish_pcx_file(gx_device_printer * pdev, FILE * file, pcx_header * header,
     switch (num_planes) {
         case 1:
             switch (bits_per_plane) {
-                case 1:				/* Do nothing */
+                case 1:                         /* Do nothing */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Do nothing */
+                case 4:                         /* Do nothing */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
                 case 8:
                         fputc(0x0c, file);
                         return pc_write_mono_palette((gx_device *) pdev, 256, file);
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
         case 2:
             switch (bits_per_plane) {
-                case 1:				/* Not defined */
+                case 1:                         /* Not defined */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
-                case 8:				/* Not defined */
+                case 8:                         /* Not defined */
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
         case 3:
             switch (bits_per_plane) {
-                case 1:				/* Not defined */
+                case 1:                         /* Not defined */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
-                case 8:				/* Do nothing */
+                case 8:                         /* Do nothing */
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
         case 4:
             switch (bits_per_plane) {
-                case 1:				/* Do nothing */
+                case 1:                         /* Do nothing */
                         break;
-                case 2:				/* Not defined */
+                case 2:                         /* Not defined */
                         break;
-                case 4:				/* Not defined */
+                case 4:                         /* Not defined */
                         break;
-                case 5:				/* Not defined */
+                case 5:                         /* Not defined */
                         break;
-                case 8:				/* Not defined */
+                case 8:                         /* Not defined */
                         break;
-                case 16:			/* Not defined */
+                case 16:                        /* Not defined */
                         break;
             }
             break;
@@ -2437,15 +2441,15 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
                pcx_header * phdr, bool planar, int depth)
 {
     int raster = linesize;
-    uint rsize = ROUND_UP((pdev->width * phdr->bpp + 7) >> 3, 2);	/* PCX format requires even */
+    uint rsize = ROUND_UP((pdev->width * phdr->bpp + 7) >> 3, 2);       /* PCX format requires even */
     int height = pdev->height;
     uint lsize = raster + rsize;
     byte *line = gs_alloc_bytes(pdev->memory, lsize, "pcx file buffer");
     byte *plane = line + raster;
     int y;
-    int code = 0;		/* return code */
+    int code = 0;               /* return code */
 
-    if (line == 0)		/* can't allocate line buffer */
+    if (line == 0)              /* can't allocate line buffer */
         return_error(gs_error_VMerror);
 
     /* Fill in the other variable entries in the header struct. */
@@ -2472,8 +2476,8 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
         if (code < 0)
             break;
         end = row + raster;
-        if (!planar) {		/* Just write the bits. */
-            if (raster & 1) {	/* Round to even, with predictable padding. */
+        if (!planar) {          /* Just write the bits. */
+            if (raster & 1) {   /* Round to even, with predictable padding. */
                 *end = end[-1];
                 ++end;
             }
@@ -2519,7 +2523,7 @@ devn_pcx_write_page(gx_device_printer * pdev, FILE * infile, int linesize, FILE 
                         for (pnum = 0; pnum < 3; ++pnum) {
                             devn_pcx_write_rle(row + pnum, row + raster, 3, outfile);
                             if (pdev->width & 1)
-                                fputc(0, outfile);		/* pad to even */
+                                fputc(0, outfile);              /* pad to even */
                         }
                     }
                     break;
