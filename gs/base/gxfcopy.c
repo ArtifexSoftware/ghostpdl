@@ -2004,7 +2004,13 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
         break;
     case ft_CID_encrypted:
         procs = &copied_procs_cid0;
-        glyphs_size = ((gs_font_cid0 *)font)->cidata.common.CIDCount;
+        /* We used to use the CIDCount here, but for CIDFonts with a GlyphDirectory
+         * (dictionary form) the number of CIDs is not the same as the highest CID.
+         * Because we use the CID as the slot, we need to assign the highest possible
+         * CID, not the number of CIDs. Don't forget to add one because CIDs
+         * count from 0.
+         */
+        glyphs_size = ((gs_font_cid0 *)font)->cidata.common.MaxCID + 1;
         break;
     case ft_CID_TrueType:
         procs = &copied_procs_cid2;

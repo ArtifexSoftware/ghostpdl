@@ -48,6 +48,8 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
                                &pdata->CIDCount)) < 0
         )
         return code;
+    /* Start by assigning the highest CID to be the count of CIDs. */
+    pdata->MaxCID = pdata->CIDCount + 1;
     /*
      * If the font doesn't have a GlyphDirectory, GDBytes is required.
      * If it does have a GlyphDirectory, GDBytes may still be needed for
@@ -60,10 +62,27 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
                               &pdata->GDBytes);
     }
     if (r_has_type(pgdir, t_dictionary) || r_is_array(pgdir)) {
+        int index;
+        ref element[2];
+
         /* GlyphDirectory, GDBytes is optional. */
         *pGlyphDirectory = *pgdir;
         code = dict_int_param(op, "GDBytes", 0, MAX_GDBytes, 0,
                               &pdata->GDBytes);
+
+        /* If we have a GlyphDirectory then the maximum CID is *not* given by
+         * the number of CIDs in the font. We need to know the maximum CID
+         * when copying fonts, so calculate and store it now.
+         */
+        index = dict_first(pgdir);
+        while (index >= 0) {
+            index = dict_next(pgdir, index, (ref *)&element);
+            if (index >= 0) {
+                if (element[0].value.intval > pdata->MaxCID)
+                    pdata->MaxCID = element[0].value.intval;
+            }
+        }
+
         return code;
     } else {
         return_error(e_typecheck);

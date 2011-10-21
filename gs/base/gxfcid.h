@@ -32,6 +32,7 @@
 typedef struct gs_font_cid_data_s {
     gs_cid_system_info_t CIDSystemInfo;
     int CIDCount;
+    int MaxCID;                 /* For font with GlyphDirectory highest CID != CIDCount. */
     int GDBytes;		/* optional, for standard glyph_data */
     /*int PaintType;*/
     /*float StrokeWidth;*/
