@@ -430,11 +430,11 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  sizeof(cldev->imager_state.alpha)
         ];
         byte *bp = buf;
-
-        /* Here we assume that all the caps are the same as start_cap */
         if (unknown & cap_join_known) {
             *bp++ = (cldev->imager_state.line_params.start_cap << 3) +
                 cldev->imager_state.line_params.join;
+            *bp++ = (cldev->imager_state.line_params.end_cap << 3) +
+                cldev->imager_state.line_params.dash_cap;
         }
         if (unknown & cj_ac_sa_known) {
             *bp++ =
@@ -872,10 +872,13 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                           pis->line_params.dot_length,
                           pis->line_params.dot_length_absolute);
     }
-    /* Here we assume that all the caps are the same as start_cap */
-    if (state_neq(line_params.start_cap) || state_neq(line_params.join)) {
+
+    if (state_neq(line_params.start_cap) || state_neq(line_params.join) ||
+        state_neq(line_params.end_cap) || state_neq(line_params.dash_cap)) {
         unknown |= cap_join_known;
         state_update(line_params.start_cap);
+        state_update(line_params.end_cap);
+        state_update(line_params.dash_cap);
         state_update(line_params.join);
     }
     cmd_check_fill_known(cdev, pis, params->flatness, &pis->fill_adjust,
