@@ -72,9 +72,9 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
                  const gx_device_color * pdevc, const gx_clip_path * pcpath);
 static pdf14_mask_t *pdf14_mask_element_new(gs_memory_t *memory);
 static void pdf14_free_smask_color(pdf14_device * pdev);
-static	int compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect,
+static int compute_group_device_int_rect(pdf14_device *pdev, gs_int_rect *rect,
                               const gs_rect *pbbox, gs_imager_state *pis);
-static	int pdf14_clist_update_params(pdf14_clist_device * pdev,
+static int pdf14_clist_update_params(pdf14_clist_device * pdev,
                                       const gs_imager_state * pis,
                                       bool crop_blend_params,
                                       gs_pdf14trans_params_t *group_params);
