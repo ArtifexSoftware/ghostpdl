@@ -506,6 +506,27 @@ xps_unpredict_tiff(byte *line, int width, int comps, int bits)
 }
 
 static void
+xps_unassocalpha_tiff(byte *line, int width, int comps, int bits)
+{
+    int i, k, v, a;
+    int m = (1 << bits) - 1;
+
+    for (i = 0; i < width; i++)
+    {
+        a = getcomp(line, i * comps + (comps - 1), bits);
+        for (k = 0; k < (comps - 1); k++)
+        {
+            if (a > 0) 
+            {
+                v = getcomp(line, i * comps + k, bits);
+                v = (v * m) / a;
+                putcomp(line, i * comps + k, bits, v);
+            }
+        }
+    }
+}
+
+static void
 xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
 {
     int i, k, v;
@@ -766,6 +787,14 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     /* Premultiplied transparency */
     if (tiff->extrasamples == 1)
     {
+        /* We have to unassociate the alpha with the image data in this case */
+        /* otherwise it is applied twice */
+        byte *p = image->samples;
+        for (i = 0; i < image->height; i++)
+        {
+            xps_unassocalpha_tiff(p, image->width, image->comps, image->bits);
+            p += image->stride;
+        }
         image->hasalpha = 1;
     }
 
