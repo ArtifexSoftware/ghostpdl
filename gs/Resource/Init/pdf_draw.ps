@@ -768,42 +768,34 @@ currentdict /csncompdict undef
         currentdict end /CIEBasedABC exch 2 array astore
       } if
     } if
-    3 1 roll
+    3 1 roll  % Stack: /Indexed csp comp table 
     oforce dup type /stringtype ne {
-        % Get the steram length and save it
-        dup /Length get dup type /packedarraytype eq {
-                % Length is an indirect reference, resolve it.
-                exec
-        }if
-         6 1 roll
                 % The color lookup table is a stream.
                 % Get its contents.  Don't lose our place in PDFfile.
-                % Stack: Length /Indexed basespace hival lookup
-        PDFfile fileposition 5 1 roll //true resolvestream
-                % Stack: Length filepos /Indexed basespace hival lookupstream
-        1 index 1 add
-                % Stack: Length filepos /Indexed basespace hival lookupstream len
-        3 index csncomp mul
-        % Bring length of stream to top and copy
-        8 -1 roll dup
-        % copy calculated string length
-        2 index
-        gt {
-                % If stream length greater, use it
-                exch pop
-        }{
-                % otherwise use calculated length
-                pop
+                % Stack: /Indexed basespace hival lookup
+        PDFfile fileposition 5 1 roll 
+        dup /Filter oknown not { % For Bug691941.pdf and similar lossage
+          dup /Length knownoget not { 0 } if
+        } {
+          0 
         } ifelse
-        string dup 3 1 roll readstring pop  % the string is padded with 0s
-        length 1 index length lt {
+                % Stack: filepos /Indexed basespace hival lookup Length
+        2 index 1 add
+                % Stack: filepos /Indexed basespace hival lookup Length len
+        4 index csncomp mul .max string 
+                % Stack: filepos /Indexed basespace hival lookup (...)
+        exch //true resolvestream 
+        1 index readstring not { 
+          % The string is padded with 0s
           (   **** Warning: Short look-up table in the Indexed color space was padded with 0's.\n)
           pdfformaterror
         } if
-                % Stack: filepos /Indexed basespace hival table table'
-        5 -1 roll PDFfile exch setfileposition
-    }
-    if 4 array astore
+        pop
+                % Stack: filepos /Indexed basespace hival (...)
+        PDFfile 6 -1 roll setfileposition
+    } if 
+    4 array astore
+                % Stack: [filepos /Indexed basespace hival (...)]
                 % Replace the PDFColorSpace with the Indexed space if needed.
     dup 1 get
     dup type /arraytype eq {
