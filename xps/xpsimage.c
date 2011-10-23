@@ -318,7 +318,9 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
             return gs_rethrow(code, "cannot draw color channel image");
         }
         gs_end_transparency_group(ctx->pgs);
-
+        /* Need to remove the soft mask from the graphic state.  Otherwise
+           we may end up using it in subsequent drawings */
+        gs_pop_transparency_state(ctx->pgs);  
         code = gs_grestore(ctx->pgs);
         if (code < 0)
             return gs_rethrow(code, "cannot grestore after transparency group");

@@ -307,6 +307,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_client_pattern gspat;
         gs_client_color gscolor;
         gs_color_space *cs;
+        bool has_transparency = false;
 
         closure.ctx = ctx;
         closure.base_uri = base_uri;
@@ -321,12 +322,28 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         closure.viewbox.q.x = viewbox.q.x;
         closure.viewbox.q.y = viewbox.q.y;
 
+        /* We need to know if this tiling brush includes transparency. */
+        for (node = xps_down(root); node; node = xps_next(node))
+        {
+            if (!strcmp(xps_tag(node), "VisualBrush.Visual"))
+            {
+                if (xps_element_has_transparency(ctx, base_uri, xps_down(node)))
+                    has_transparency = true;
+            }
+        }
+        if (!strcmp(xps_tag(root), "ImageBrush"))
+        {
+            if (xps_image_brush_has_transparency(ctx, base_uri, root))
+                has_transparency = true;
+        }
         gs_pattern1_init(&gspat);
         uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
         gspat.PaintType = 1;
         gspat.TilingType = 1;
         gspat.PaintProc = xps_remap_pattern;
         gspat.client_data = &closure;
+
+        gspat.uses_transparency = has_transparency;
 
         gspat.XStep = viewbox.q.x - viewbox.p.x;
         gspat.YStep = viewbox.q.y - viewbox.p.y;
@@ -353,10 +370,13 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         cs = ctx->srgb;
         gs_setcolorspace(ctx->pgs, cs);
+        gsicc_profile_reference(cs->cmm_icc_profile_data, 1);
+
         gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
         gs_setpattern(ctx->pgs, &gscolor);
 
         xps_fill(ctx);
+        gsicc_profile_reference(cs->cmm_icc_profile_data, -1);
 
         /* gs_makepattern increments the pattern count stored in the color
          * structure. We will discard the color struct (its on the stack)

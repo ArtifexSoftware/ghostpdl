@@ -34,6 +34,7 @@
 #include "gzstate.h"
 #include "gxdevsop.h"
 #include "gdevmpla.h"
+#include "gdevp14.h"
 
 #if RAW_PATTERN_DUMP
 unsigned int global_pat_index = 0;
@@ -1330,9 +1331,26 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         return code;
     }
     if (pinst->template.uses_transparency) {
-        if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
+        /* if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
         if ((code = gs_pop_pdf14trans_device(saved, true)) < 0)
-            return code;
+            return code; */
+            if (pinst->is_clist) {
+                /* Send the compositor command to close the PDF14 device */
+                code = (gs_pop_pdf14trans_device(saved, true) < 0);
+                if (code < 0)
+                    return code;
+            } else {
+                /* Not a clist, get PDF14 buffer information */
+                code = 
+                    pdf14_get_buffer_information(saved->device,
+                                                ((gx_device_pattern_accum*)adev)->transbuff,
+                                                 saved->memory,
+                                                 true);
+                /* PDF14 device (and buffer) is destroyed when pattern cache
+                   entry is removed */
+                if (code < 0)
+                    return code;
+            }
     }
     /* We REALLY don't like the following cast.... */
     code = gx_pattern_cache_add_entry((gs_imager_state *)pis,
