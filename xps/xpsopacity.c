@@ -99,4 +99,7 @@ xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     if (!opacity_att && !opacity_mask_tag)
         return;
     gs_end_transparency_group(ctx->pgs);
+    /* Need to remove the soft mask from the graphic state.  Otherwise
+       we may end up using it in subsequent drawings */
+    gs_pop_transparency_state(ctx->pgs);
 }

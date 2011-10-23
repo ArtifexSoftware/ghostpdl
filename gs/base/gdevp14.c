@@ -63,6 +63,8 @@ unsigned int global_index = 0;
 unsigned int clist_band_count = 0;
 #endif
 
+#define DUMP_MASK_STACK 0
+
 /* Static prototypes */
 /* Used for filling rects when we are doing a fill with a pattern that
    has transparency */
@@ -106,6 +108,9 @@ static int pdf14_tile_pattern_fill(gx_device * pdev,
                 const gx_fill_params * params,
                 const gx_device_color * pdevc, const gx_clip_path * pcpath);
 static pdf14_mask_t * pdf14_mask_element_new(gs_memory_t * memory);
+#ifdef DEBUG
+static void pdf14_debug_mask_stack_state(pdf14_ctx *ctx);
+#endif
 
 /* Buffer stack	data structure */
 gs_private_st_ptrs5(st_pdf14_buf, pdf14_buf, "pdf14_buf",
@@ -778,11 +783,14 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     int num_noncolor_planes, new_num_planes;
     int num_cols, num_rows, num_newcolor_planes;
     bool icc_match;
-
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
+
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(ctx);
+#endif
     if ( mask_stack == NULL) {
         maskbuf = NULL;
     } else {
@@ -1282,7 +1290,10 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
         rc_increment(new_mask->rc_mask);
         ctx->mask_stack->previous = new_mask;
     }
- return(0);
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(pdev->ctx);
+#endif 
+    return(0);
 }
 
 static int
@@ -1315,7 +1326,10 @@ pdf14_pop_transparency_state(gx_device *dev, gs_imager_state *pis)
             }
         }
     }
-  return(0);
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(pdev->ctx);
+#endif 
+    return 0;
 }
 
 static	int
@@ -1366,6 +1380,9 @@ pdf14_get_buffer_information(const gx_device * dev,
     if ( pdev->ctx == NULL){
         return 0;  /* this can occur if the pattern is a clist */
     }
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(pdev->ctx);
+#endif
     buf = pdev->ctx->stack;
     rect = buf->rect;
     transbuff->dirty = &buf->dirty;
@@ -2801,6 +2818,8 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
+            ptempdevproto->color_info.max_gray = 255;
+            ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
@@ -3329,6 +3348,9 @@ pdf14_end_transparency_group(gx_device *dev,
     code = pdf14_pop_transparency_group(pis, pdev->ctx, pdev->blend_procs,
                                 pdev->color_info.num_components, group_profile,
                                 (gx_device *) pdev);
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(pdev->ctx);
+#endif
    /* May need to reset some color stuff related
      * to a mismatch between the parents color space
      * and the group blending space */
@@ -4004,6 +4026,9 @@ pdf14_end_transparency_mask(gx_device *dev, gs_imager_state *pis,
 
     if_debug0('v', "pdf14_end_transparency_mask\n");
     ok = pdf14_pop_transparency_mask(pdev->ctx, pis, dev);
+#ifdef DEBUG
+    pdf14_debug_mask_stack_state(pdev->ctx);
+#endif
     /* May need to reset some color stuff related
      * to a mismatch between the Smask color space
      * and the Smask blending space */
@@ -5735,6 +5760,8 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
             ptempdevproto->color_info.max_components = 1;
             ptempdevproto->color_info.num_components =
                                     ptempdevproto->color_info.max_components;
+            ptempdevproto->color_info.max_gray = 255;
+            ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
@@ -7437,3 +7464,49 @@ pdf14_free_smask_color(pdf14_device * pdev)
         pdev->smaskcolor = NULL;
     }
 }
+
+#if DUMP_MASK_STACK
+
+static void
+dump_mask_stack(pdf14_mask_t *mask_stack)
+{
+    pdf14_mask_t *curr_mask = mask_stack;
+    int level = 0;
+
+    while (curr_mask != NULL) {
+        if_debug1('v', "[v]mask_level, %d\n", level);
+        if_debug1('v', "[v]mask_buf, %x\n", curr_mask->rc_mask->mask_buf);
+        if_debug1('v', "[v]rc_count, %d\n", curr_mask->rc_mask->rc);
+        level++;
+        curr_mask = curr_mask->previous;
+    }
+}
+
+/* A function to display the current state of the mask stack */
+static void
+pdf14_debug_mask_stack_state(pdf14_ctx *ctx)
+{
+    if_debug1('v', "[v]ctx_maskstack, %x\n", ctx->mask_stack);
+    if (ctx->mask_stack != NULL) {
+        dump_mask_stack(ctx->mask_stack);
+    }
+    if_debug1('v', "[v]ctx_stack, %x\n", ctx->stack);
+    if (ctx->stack != NULL) {
+        if_debug1('v', "[v]ctx_stack_maskstack, %x\n", ctx->stack->mask_stack);
+        if (ctx->stack->mask_stack != NULL) {
+            dump_mask_stack(ctx->stack->mask_stack);
+        }
+    }
+}
+
+#else
+
+#ifdef DEBUG
+static void
+pdf14_debug_mask_stack_state(pdf14_ctx *ctx)
+{
+    return;
+}
+#endif
+
+#endif
