@@ -7255,7 +7255,7 @@ pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
         int color_component_number;
         byte * sep_name;
 
-        sep_name = gs_alloc_bytes(dev->memory,
+        sep_name = gs_alloc_bytes(dev->memory->stable_memory,
                         name_size, "pdf14_cmykspot_get_color_comp_index");
         memcpy(sep_name, pname, name_size);
         pseparations->names[sep_num].size = name_size;

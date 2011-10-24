@@ -379,7 +379,7 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
          * processing the file.
          */
         max_height = size / (bitmap_raster(width
-                * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width))
+                * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width, dev->color_info.num_components))
                 + sizeof(byte *) * max(dev->num_planes, 1));
         height = (int)min(max_height, max_int);
     } else {
