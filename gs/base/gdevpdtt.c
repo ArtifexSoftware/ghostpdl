@@ -740,7 +740,7 @@ font_cache_elem_array_sizes(gx_device_pdf *pdev, gs_font *font,
         *num_widths = *num_chars = 256; /* Assuming access to glyph_usage by character codes */
         break;
     case ft_CID_encrypted:
-        *num_widths = *num_chars = ((gs_font_cid0 *)font)->cidata.common.CIDCount;
+        *num_widths = *num_chars = ((gs_font_cid0 *)font)->cidata.common.MaxCID + 1;
         break;
     case ft_CID_TrueType:
         *num_widths = *num_chars = ((gs_font_cid2 *)font)->cidata.common.CIDCount;
