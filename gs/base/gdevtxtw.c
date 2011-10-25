@@ -170,45 +170,45 @@ const gx_device_txtwrite_t gs_txtwrite_device =
                         X_DPI, Y_DPI,
                         1, 8, 255, 0, 256, 1),
     {txtwrite_open_device,
-     NULL, //gx_upright_get_initial_matrix,
-     NULL, //gx_default_sync_output,
+     NULL, /*gx_upright_get_initial_matrix,*/
+     NULL, /*gx_default_sync_output,*/
      txtwrite_output_page,
      txtwrite_close_device,
-     NULL, //gx_default_gray_map_rgb_color,
-     NULL, //gx_default_gray_map_color_rgb,
+     NULL, /*gx_default_gray_map_rgb_color,*/
+     NULL, /*gx_default_gray_map_color_rgb,*/
      txtwrite_fill_rectangle,               /* Can't be NULL and there is no gx_default_fill_rectangle! */
-     NULL, //gx_default_tile_rectangle,
-     NULL, //gx_default_copy_mono,
-     NULL, //gx_default_copy_color,
-     NULL, //gx_default_draw_line,
-     NULL, //gx_default_get_bits,
+     NULL, /*gx_default_tile_rectangle,*/
+     NULL, /*gx_default_copy_mono,*/
+     NULL, /*gx_default_copy_color,*/
+     NULL, /*gx_default_draw_line,*/
+     NULL, /*gx_default_get_bits,*/
      txtwrite_get_params,
      txtwrite_put_params,
-     NULL, //gx_default_map_cmyk_color,
-     NULL, //gx_default_get_xfont_procs,
-     NULL, //gx_default_get_xfont_device,
-     NULL, //gx_default_map_rgb_alpha_color,
-     NULL, //gx_page_device_get_page_device,
+     NULL, /*gx_default_map_cmyk_color,*/
+     NULL, /*gx_default_get_xfont_procs,*/
+     NULL, /*gx_default_get_xfont_device,*/
+     NULL, /*gx_default_map_rgb_alpha_color,*/
+     NULL, /*gx_page_device_get_page_device,*/
      NULL,			/* get_alpha_bits */
-     NULL, //gx_default_copy_alpha,
+     NULL, /*gx_default_copy_alpha,*/
      NULL,			/* get_band */
      NULL,			/* copy_rop */
      txtwrite_fill_path,
      txtwrite_stroke_path,
-     NULL, //gx_default_fill_mask,
-     NULL, //gx_default_fill_trapezoid,
-     NULL, //gx_default_fill_parallelogram,
-     NULL, //gx_default_fill_triangle,
-     NULL, //gx_default_draw_thin_line,
+     NULL, /*gx_default_fill_mask,*/
+     NULL, /*gx_default_fill_trapezoid,*/
+     NULL, /*gx_default_fill_parallelogram,*/
+     NULL, /*gx_default_fill_triangle,*/
+     NULL, /*gx_default_draw_thin_line,*/
      NULL,                      /* begin image */
      NULL,			/* image_data */
      NULL,			/* end_image */
-     NULL, //gx_default_strip_tile_rectangle,
-     NULL, //gx_default_strip_copy_rop,
+     NULL, /*gx_default_strip_tile_rectangle,*/
+     NULL, /*gx_default_strip_copy_rop,*/
      NULL,			/* get_clipping_box */
      NULL,                      /* txtwrite_begin_typed_image */
      NULL,			/* get_bits_rectangle */
-     NULL, //gx_default_map_color_rgb_alpha,
+     NULL, /*gx_default_map_color_rgb_alpha,*/
      gx_null_create_compositor,
      NULL,			/* get_hardware_params */
      txtwrite_text_begin,
@@ -255,6 +255,7 @@ txtwrite_open_device(gx_device * dev)
     if (tdev->fname[0] == 0)
         return_error(gs_error_undefinedfilename);
 
+    tdev->TextFormat = 2;
     tdev->PageData.PageNum = 0;
     tdev->PageData.y_ordered_list = NULL;
     tdev->file = NULL;
@@ -279,6 +280,45 @@ txtwrite_close_device(gx_device * dev)
     return code;
 }
 
+static int write_simple_text(unsigned short *text, int count, gx_device_txtwrite_t *tdev)
+{
+    switch(tdev->TextFormat) {
+        case 1:
+            fwrite(text, sizeof (unsigned short), count, tdev->file);
+            break;
+        case 2:
+            {
+                int i;
+                unsigned short *UTF16 = (unsigned short *)text;
+                unsigned char UTF8[3];
+
+                for (i=0;i<count;i++) {
+                    if (*UTF16 < 0x80) {
+                        UTF8[0] = *UTF16 & 0xff;
+                        fwrite (UTF8, sizeof(unsigned char), 1, tdev->file);
+                    } else {
+                        if (*UTF16 < 0x800) {
+                            UTF8[0] = (*UTF16 >> 11) + 0xC0;
+                            UTF8[1] = (*UTF16 & 0x3F) + 0x80;
+                            fwrite (UTF8, sizeof(unsigned char), 2, tdev->file);
+                        } else {
+                            UTF8[0] = (*UTF16 >> 12) + 0xE0;
+                            UTF8[1] = ((*UTF16 >> 6) & 0x3F) + 0x80;
+                            UTF8[2] = (*UTF16 & 0x3F) + 0x80;
+                            fwrite (UTF8, sizeof(unsigned char), 3, tdev->file);
+                        }
+                    }
+                    UTF16++;
+                }
+            }
+            break;
+        default:
+            return gs_note_error(gs_error_rangecheck);
+            break;
+    }
+    return 0;
+}
+
 static int simple_text_output(gx_device_txtwrite_t *tdev)
 {
     int code, chars_wide;
@@ -293,11 +333,12 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
 
     /* Write out the page number as a unicode string */
     sprintf(PageNum, "PAGE:%d\n", tdev->PageData.PageNum++);
+    if (tdev->TextFormat == 1)
+        fwrite(&BOM, sizeof(unsigned short), 1, tdev->file);
     p = (char *)&PageNum;
-    fwrite(&BOM, sizeof(unsigned short), 1, tdev->file);
     while(*p != 0x00){
         u = *p++;
-        fwrite(&u, sizeof(unsigned short), 1, tdev->file);
+        write_simple_text(&u, 1, tdev);
     }
 
     /* First lets try and consolidate horizontal lines of text */
@@ -519,10 +560,10 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
         x_entry = y_list->x_ordered_list;
         while (x_entry) {
             while (xpos < x_entry->start.x) {
-                fwrite(&UnicodeSpace, sizeof (unsigned short), 1, tdev->file);
+                write_simple_text(&UnicodeSpace, 1, tdev);
                 xpos += char_size;
             }
-            fwrite(x_entry->Unicode_Text, sizeof (unsigned short), x_entry->Unicode_Text_Size, tdev->file);
+            write_simple_text(x_entry->Unicode_Text, x_entry->Unicode_Text_Size, tdev);
             xpos += x_entry->Unicode_Text_Size * char_size;
             if (x_entry->next) {
                 x_entry = x_entry->next;
@@ -530,7 +571,7 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
                 x_entry = NULL;
             }
         }
-        fwrite(&UnicodeEOL, sizeof(unsigned short), 2, tdev->file);
+        write_simple_text((unsigned short *)&UnicodeEOL, 2, tdev);
         if (y_list->next) {
             y_list = y_list->next;
         } else {
@@ -582,13 +623,14 @@ txtwrite_output_page(gx_device * dev, int num_copies, int flush)
 
     switch(tdev->TextFormat) {
         case 0:
-            code = simple_text_output(tdev);
+            code = decorated_text_output(tdev);
             if (code < 0)
                 return code;
             break;
 
         case 1:
-            code = decorated_text_output(tdev);
+        case 2:
+            code = simple_text_output(tdev);
             if (code < 0)
                 return code;
             break;
@@ -1520,7 +1562,7 @@ int txtwrite_process_cmap_text(gs_text_enum_t *pte)
         gs_glyph glyph;
         gs_glyph_info_t info;
         int font_code, font_index, code;
-        gs_font *subfont;//new_font = 0;
+        gs_font *subfont;
         gs_char chr;
         gs_matrix scale_c, scale_o;
         gs_font_info_t finfo;

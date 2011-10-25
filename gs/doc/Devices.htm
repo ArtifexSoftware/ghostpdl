@@ -761,11 +761,12 @@ and should not be considered as being of production quality.
 <h4>Options</h4>
 <blockquote>
 <dl>
-<dt><code>-dTextFormat=<em>0 | 1</em></code> (default is 0)
-<dd>Format 0 outputs Unicode text (with a Byte Order Mark) which approximates
-to the layout of the text in the original document. Format 1 is intended
-for use by developers and outputs Unicode along with information regarding
-the format of the text (position, font name, point size, etc).
+<dt><code>-dTextFormat=<em>0 | 1 | 2 </em></code> (default is 2)
+<dd>Format 0 is intended for use by developers and outputs Unicode along with
+information regarding the format of the text (position, font name, point size,
+etc). Format 1 outputs Unicode (UCS2) text (with a Byte Order Mark) which
+approximates to the layout of the text in the original document. Format 2 is
+the same as format 1, but the text is encoded in UTF-8.
 </dl></blockquote>
 
 <p>
