@@ -1070,6 +1070,26 @@ gx_intersect_small_bars(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, f
     return false;
 }
 
+/* gs_debug_flags handling code */
+
+const gs_debug_flag_details gs_debug_flags[] =
+{
+#define FLAG(a,b,c,d) {1, # a ,d}
+#define UNUSED(a) { 0, "", "" },
+#include "gdbflags.h"
+#undef FLAG
+#undef UNUSED
+};
+
+const byte gs_debug_flag_implies[] =
+{
+#define FLAG(a,b,c,d) c
+#define UNUSED(a) 0,
+#include "gdbflags.h"
+#undef FLAG
+#undef UNUSED
+};
+
 int gs_debug_flags_parse(gs_memory_t *heap, const char *arg)
 {
 #ifdef DEBUG
