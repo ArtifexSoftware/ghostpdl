@@ -46,6 +46,33 @@
  *        ... produce additional output within a line with dprintfN(...)
  * } */
 
+
+typedef enum {
+#define FLAG(a,b,c) gs_debug_flag_ ## a = b
+#define UNUSED(a)
+#include "gdbflags.h"
+#undef FLAG
+#undef UNUSED
+} gs_debug_flag;
+
+typedef struct {
+    int used;
+    char short_desc[20];
+    char long_desc[80];
+} gs_debug_flag_details;
+
+static gs_debug_flag_details gs_debug_flags[127] =
+{
+#define FLAG(a,b,c) {1, # a ,c}
+#define UNUSED(a) { 0, "", "" },
+#include "gdbflags.h"
+#undef FLAG
+#undef UNUSED
+};
+
+int gs_debug_flags_parse(gs_memory_t *heap, const char *arg);
+void gs_debug_flags_list(gs_memory_t *heap);
+
 /* Define the array of debugging flags, indexed by character code. */
 extern char gs_debug[128];
 bool gs_debug_c(int /*char */ );

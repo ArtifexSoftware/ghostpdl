@@ -3387,6 +3387,13 @@ storage with a marker (a1, c1, and f1 respectively)
 </dl>
 </table>
 
+<p>In addition, calling ghostscript with <code>--debug</code> will list all the currently
+defined (non visual trace) debugging flags, both in their short form (as listed
+above for use with <code>-Z</code>) and in a long form, which can be used as in:
+<code>--debug=tiling,alloc</code>. All the short form flags for <code>-Z</code>
+have an equivalent long form. Future flags may be added with a long form only
+(due to all the short form flags being used already).
+
 <h4><a name="Visual_trace"></a>Visual Trace</h4>
 
 <p>

@@ -4199,6 +4199,10 @@
 					>
 				</File>
 				<File
+					RelativePath=".\base\gdbflags.h"
+					>
+				</File>
+				<File
 					RelativePath="base\gdebug.h"
 					>
 				</File>
