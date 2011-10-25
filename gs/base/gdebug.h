@@ -68,25 +68,10 @@ typedef struct {
     char long_desc[80];
 } gs_debug_flag_details;
 
-static gs_debug_flag_details gs_debug_flags[] =
-{
-#define FLAG(a,b,c,d) {1, # a ,d}
-#define UNUSED(a) { 0, "", "" },
-#include "gdbflags.h"
-#undef FLAG
-#undef UNUSED
-};
+#define gs_debug_flags_max 127
+extern const byte gs_debug_flag_implies[gs_debug_flags_max];
+const gs_debug_flag_details gs_debug_flags[gs_debug_flags_max];
 
-static const byte gs_debug_flag_implies[] =
-{
-#define FLAG(a,b,c,d) c
-#define UNUSED(a) 0,
-#include "gdbflags.h"
-#undef FLAG
-#undef UNUSED
-};
-
-#define gs_debug_flags_max sizeof(gs_debug_flag_implies)
 
 int gs_debug_flags_parse(gs_memory_t *heap, const char *arg);
 void gs_debug_flags_list(gs_memory_t *heap);
