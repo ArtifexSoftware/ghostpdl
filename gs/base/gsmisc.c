@@ -117,12 +117,21 @@ int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 char gs_debug[128];
 
 /* Test whether a given debugging option is selected. */
-/* Upper-case letters automatically include their lower-case counterpart. */
+/* Some letters automatically imply others. */
 bool
 gs_debug_c(int c)
 {
-    return
-        (c >= 'a' && c <= 'z' ? gs_debug[c] | gs_debug[c ^ 32] : gs_debug[c]);
+    bool ret = gs_debug[c];
+
+    /* Unroll the first one, to minimise the speed hit */
+    c = gs_debug_flag_implies[c];
+    if (c == 0)
+        return ret;
+
+    do {
+        ret |= gs_debug[c];
+    } while (c = gs_debug_flag_implies[c]);
+    return ret;
 }
 
 /* Define the formats for debugging printout. */
@@ -1083,7 +1092,7 @@ int gs_debug_flags_parse(gs_memory_t *heap, const char *arg)
         }
         if (*arg == 0)
             return result;
-        for (i=0; i < 127; i++) {
+        for (i=0; i < gs_debug_flags_max; i++) {
             char c, d;
             if (!gs_debug_flags[i].used)
                 continue;
@@ -1100,7 +1109,7 @@ int gs_debug_flags_parse(gs_memory_t *heap, const char *arg)
             if ((c == 0) && (d == 0))
                 break;
         }
-        if (i < 127)
+        if (i < gs_debug_flags_max)
             gs_debug[i] = value;
         else {
             outprintf(heap, "Unknown debug flag: ");
@@ -1130,10 +1139,10 @@ gs_debug_flags_list(gs_memory_t *heap)
     int i, j;
 
     outprintf(heap, "Debugging flags are as follows:\n\n-Z  --debug=                Description\n");
-    for (i=0; i < 127; i++) {
+    for (i=0; i < gs_debug_flags_max; i++) {
         if (!gs_debug_flags[i].used)
             continue;
-        outprintf(heap, " %c  ", (i < 32 ? ' ' : i));
+        outprintf(heap, " %c  ", (i < 32 || i > 126 ? ' ' : i));
         for (j=0; j < sizeof(gs_debug_flags[i].short_desc); j++) {
             char c = gs_debug_flags[i].short_desc[j];
             if (c == 0)

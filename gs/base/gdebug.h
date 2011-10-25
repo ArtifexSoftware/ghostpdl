@@ -29,10 +29,17 @@
  * turn printout on and off during debugging.  (In fact, we even provide a
  * PostScript operator, .setdebug, that does this.)
  *
- * The debugging flags are normally indexed by character code.  This is more
- * than a convention: gs_debug_c, which tests whether a given flag is set,
- * considers that if a flag named by a given upper-case letter is set, the
- * flag named by the corresponding lower-case letter is also set.
+ * The debugging flags are normally indexed by character code.  Originally
+ * this was more than a convention: gs_debug_c, which tests whether a given
+ * flag is set, considers that if a flag named by a given upper-case letter
+ * is set, the flag named by the corresponding lower-case letter is also
+ * set.
+ *
+ * The new code uses a 'implication' table that allows us to be more general;
+ * any debug flag can now 'imply' another one. By default this is setup
+ * to give the same behaviour as before, but newly added flags are not
+ * constrained in the same way - we can have A -> B -> C etc or can have
+ * upper case flags that don't imply lower case ones.
  *
  * If the output selected by a given flag can be printed by a single
  * printf, the conventional way to produce the output is
@@ -48,7 +55,7 @@
 
 
 typedef enum {
-#define FLAG(a,b,c) gs_debug_flag_ ## a = b
+#define FLAG(a,b,c,d) gs_debug_flag_ ## a = b
 #define UNUSED(a)
 #include "gdbflags.h"
 #undef FLAG
@@ -61,14 +68,25 @@ typedef struct {
     char long_desc[80];
 } gs_debug_flag_details;
 
-static gs_debug_flag_details gs_debug_flags[127] =
+static gs_debug_flag_details gs_debug_flags[] =
 {
-#define FLAG(a,b,c) {1, # a ,c}
+#define FLAG(a,b,c,d) {1, # a ,d}
 #define UNUSED(a) { 0, "", "" },
 #include "gdbflags.h"
 #undef FLAG
 #undef UNUSED
 };
+
+static const byte gs_debug_flag_implies[] =
+{
+#define FLAG(a,b,c,d) c
+#define UNUSED(a) 0,
+#include "gdbflags.h"
+#undef FLAG
+#undef UNUSED
+};
+
+#define gs_debug_flags_max sizeof(gs_debug_flag_implies)
 
 int gs_debug_flags_parse(gs_memory_t *heap, const char *arg);
 void gs_debug_flags_list(gs_memory_t *heap);
