@@ -100,7 +100,6 @@ static void print_help(gs_main_instance *);
 static void print_revision(const gs_main_instance *);
 static void print_version(const gs_main_instance *);
 static void print_usage(const gs_main_instance *);
-static void print_debug(const gs_main_instance *);
 static void print_devices(const gs_main_instance *);
 static void print_emulators(const gs_main_instance *);
 static void print_paths(gs_main_instance *);
