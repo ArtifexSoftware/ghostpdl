@@ -100,6 +100,7 @@ static void print_help(gs_main_instance *);
 static void print_revision(const gs_main_instance *);
 static void print_version(const gs_main_instance *);
 static void print_usage(const gs_main_instance *);
+static void print_debug(const gs_main_instance *);
 static void print_devices(const gs_main_instance *);
 static void print_emulators(const gs_main_instance *);
 static void print_paths(gs_main_instance *);
@@ -172,6 +173,9 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
                 break;
             } else if (!strcmp(argv[i], "--help")) {
                 print_help(minst);
+                helping = true;
+            } else if (!strcmp(argv[i], "--debug")) {
+                gs_debug_flags_list(minst->heap);
                 helping = true;
             } else if (!strcmp(argv[i], "--version")) {
                 print_version(minst);
@@ -290,8 +294,16 @@ run_stdin:
                 return code;
             break;
         case '-':               /* run with command line args */
+            if (strncmp(arg, "debug=", 6) == 0) {
+                code = gs_debug_flags_parse(minst->heap, arg+6);
+                if (code < 0)
+                    return code;
+                break;
+            }
+            /* FALLTHROUGH */
         case '+':
             pal->expand_ats = false;
+            /* FALLTHROUGH */
         case '@':               /* ditto with @-expansion */
             {
                 const char *psarg = arg_next(pal, &code);
@@ -904,6 +916,11 @@ static const char help_usage2[] = "\
  -sDEVICE=<devname>  select device         | -dBATCH  exit after last file\n\
  -sOutputFile=<file> select output file: - for stdout, |command for pipe,\n\
                                          embed %d or %ld for page #\n";
+#ifdef DEBUG
+static const char help_debug[] = "\
+ --debug=<option>[,<option>]*  select debugging options\n\
+ --debug                       list debugging options\n";
+#endif
 static const char help_trailer[] = "\
 For more information, see %s.\n\
 Please report bugs to bugs.ghostscript.com.\n";
@@ -966,6 +983,9 @@ print_usage(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_usage1);
     outprintf(minst->heap, "%s", help_usage2);
+#ifdef DEBUG
+    outprintf(minst->heap, "%s", help_debug);
+#endif
 }
 
 /* compare function for qsort */

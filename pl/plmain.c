@@ -860,6 +860,15 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
             break;
         arg += 2;
         switch ( arg[-1] ) {
+        case '-':
+            if (strcmp(arg, "debug") == 0) {
+                gs_debug_flags_list(pmi->memory);
+                break;
+            } else if (strncmp(arg, "debug=", 6) == 0) {
+                gs_debug_flags_parse(pmi->memory, arg+6);
+                break;
+            }
+            /* FALLTHROUGH */
         default:
             dprintf1("Unrecognized switch: %s\n", arg);
             return -1;
