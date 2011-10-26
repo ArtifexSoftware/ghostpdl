@@ -2122,6 +2122,27 @@ retry_oversampling:
         FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
         gs_matrix scale_mat, scale_ctm;
 
+        /* Prepare font data
+         * This needs done here (earlier than it used to be) because FAPI/UFST has conflicting
+         * requirements in what I->get_fontmatrix() returns based on font type, so it needs to
+         * find the font type.
+         */
+        if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
+            I->ff.subfont = SubfontId->value.intval;
+        else
+            I->ff.subfont = 0;
+        I->ff.memory = pbfont->memory;
+        I->ff.font_file_path = font_file_path;
+        I->ff.client_font_data = pbfont;
+        I->ff.client_font_data2 = pdr;
+        I->ff.server_font_data = pbfont->FAPI_font_data;
+        I->ff.is_type1 = bIsType1GlyphData;
+        I->ff.is_cid = bCID;
+        I->ff.is_outline_font = pbfont->PaintType != 0;
+        I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
+        I->ff.is_vertical = bVertical;
+        I->ff.client_ctx_p = i_ctx_p;
+
         I->face.font_id = pbfont->id;
         I->face.ctm = *ctm;
         I->face.log2_scale = log2_scale;
@@ -2197,22 +2218,6 @@ retry_oversampling:
         }
         else {
 
-            /* Prepare font data : */
-            if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
-                I->ff.subfont = SubfontId->value.intval;
-            else
-                I->ff.subfont = 0;
-            I->ff.memory = pbfont->memory;
-            I->ff.font_file_path = font_file_path;
-            I->ff.client_font_data = pbfont;
-            I->ff.client_font_data2 = pdr;
-            I->ff.server_font_data = pbfont->FAPI_font_data;
-            I->ff.is_type1 = bIsType1GlyphData;
-            I->ff.is_cid = bCID;
-            I->ff.is_outline_font = pbfont->PaintType != 0;
-            I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
-            I->ff.is_vertical = bVertical;
-            I->ff.client_ctx_p = i_ctx_p;
             if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, &font_scale,
                                      NULL,
                                      (!bCID || (pbfont->FontType != ft_encrypted  &&
