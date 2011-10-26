@@ -1013,8 +1013,12 @@ static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
         prepare_typeface(r, d);
         if (ff->font_file_path != NULL || ff->is_type1) /* such fonts don't use RAW_GLYPH */
             choose_decoding(r, d, xlatmap);
-    } else
+    }
+    else {
         prepare_typeface(r, d);
+        if (ff->font_file_path != NULL || ff->is_type1) /* such fonts don't use RAW_GLYPH */
+            choose_decoding(r, d, xlatmap);
+    }
 
     r->tran_xx = font_scale->matrix[0] / scale, r->tran_xy = font_scale->matrix[1] / scale;
     r->tran_yx = font_scale->matrix[2] / scale, r->tran_yy = font_scale->matrix[3] / scale;
@@ -1177,6 +1181,40 @@ static void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
 
 static FAPI_retcode get_fontmatrix(FAPI_server *I, gs_matrix *m)
 {
+    fapi_ufst_server *r = If_to_I(I);
+    ufst_common_font_data *d = (ufst_common_font_data *)I->ff.server_font_data;
+    FAPI_retcode code = 0;
+    
+    if (d == 0) {
+        if ((code = make_font_data(r, I->ff.font_file_path, &(I->ff), &d)) != 0)
+            return (code);
+        I->ff.server_font_data = d;
+        prepare_typeface(r, d);
+    }
+    
+    /* There are PS jobs that rely on the standard fonts having
+     * a FontMatrix of [0.001 0 0 0.001 0 0], but MT fonts actually
+     * have an identity matrix. We need to compensate here. Other
+     * fonts need an identity matrix returned here, as we apply the
+     * font matrix explicitly in the scale calculation in zfapi.c
+     */
+    if (d->font_type & FC_FCO_TYPE) {
+        m->xx = 0.001;
+        m->xy = 0.0;
+        m->yx = 0.0;
+        m->yy = 0.001;
+        m->tx = 0.0;
+        m->ty = 0.0;
+    }
+    else {
+        m->xx = 1.0;
+        m->xy = 0.0;
+        m->yx = 0.0;
+        m->yy = 1.0;
+        m->tx = 0.0;
+        m->ty = 0.0;
+    }
+
 #if 0
     gs_matrix *base_font_matrix = &I->initial_FontMatrix;
     m->xx = I->initial_FontMatrix.xx;
@@ -1185,42 +1223,9 @@ static FAPI_retcode get_fontmatrix(FAPI_server *I, gs_matrix *m)
     m->yy = I->initial_FontMatrix.yy;
     m->tx = I->initial_FontMatrix.tx;
     m->ty = I->initial_FontMatrix.ty;
-#else
-    m->xx = 1;
-    m->xy = 0;
-    m->yx = 0;
-    m->yy = 1;
-    m->tx = 0;
-    m->ty = 0;
 #endif
-    return 0;
+    return (code);
 
-}
-
-static FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
-{   fapi_ufst_server *r = If_to_I(server);
-    UW16 buffer[2];
-    UW16 cc = (UW16)c->char_code;
-    WIDTH_LIST_INPUT_ENTRY li[1];
-    char PSchar_name[MAX_CHAR_NAME_LENGTH];
-    int code;
-    FSA_FROM_SERVER;
-
-#if !UFST_REENTRANT
-    static_server_ptr_for_ufst_callback = r;
-#endif
-    make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
-    r->ff = ff;
-    CGIFchIdptr(FSA &cc, PSchar_name);
-    li[0]. CharType.IF_cgnum = cc;
-    if ((code = CGIFwidth(FSA li, 1, 4, buffer)) != 0)
-        return code;
-    r->ff = 0;
-/*    CGIFhdr_font_purge (&r->fc);
-    release_glyphs(r, (ufst_common_font_data *)ff->server_font_data); */
-    metrics->escapement = buffer[0];
-    metrics->em_x = metrics->em_y = buffer[1];
-    return 0;
 }
 
 static int export_outline(fapi_ufst_server *r, PIFOUTLINE pol, FAPI_path *p)
@@ -1517,18 +1522,35 @@ static FAPI_retcode get_char_outline(FAPI_server *server, FAPI_path *p)
 }
 
 static FAPI_retcode get_char_raster_metrics(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
-{   fapi_ufst_server *r = If_to_I(server);
+{
+    fapi_ufst_server *r = If_to_I(server);
     int code;
 
     release_char_data_inline(r);
     code = get_char(r, ff, c, NULL, metrics, FC_BITMAP_TYPE);
     if (code == ERR_bm_buff || code == ERR_bm_too_big) /* Too big character ? */
-        return e_limitcheck;
+        return (e_VMerror);
     return code;
     /*	UFST cannot render enough metrics information without generating raster or outline.
         r->char_data keeps a raster after calling this function.
     */
 }
+
+static FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
+{
+    fapi_ufst_server *r = If_to_I(server);
+    int code;
+
+    release_char_data_inline(r);
+    code = get_char(r, ff, c, NULL, metrics, server->use_outline ? FC_CUBIC_TYPE : FC_BITMAP_TYPE);
+    if (code == ERR_bm_buff || code == ERR_bm_too_big) /* Too big character ? */
+        return (e_VMerror);
+    return code;
+    /*	UFST cannot render enough metrics information without generating raster or outline.
+        r->char_data keeps a raster after calling this function.
+    */
+}
+
 
 static FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
 {   fapi_ufst_server *r = If_to_I(server);
