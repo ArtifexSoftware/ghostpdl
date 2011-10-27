@@ -69,7 +69,7 @@ typedef struct {
 } gs_debug_flag_details;
 
 #define gs_debug_flags_max 127
-extern const byte gs_debug_flag_implies[gs_debug_flags_max];
+extern const byte gs_debug_flag_implied_by[gs_debug_flags_max];
 extern const gs_debug_flag_details gs_debug_flags[gs_debug_flags_max];
 
 
