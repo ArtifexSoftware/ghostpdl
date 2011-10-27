@@ -11,7 +11,7 @@
    San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 /*$Id: gdevtxtw.c 7795 2007-03-23 13:56:11Z tim $ */
-/* Device for ASCII or Unicode text extraction */
+/* Device for Unicode (UTF-8 or UCS2) text extraction */
 #include "memory_.h"
 #include "gp.h"			/* for gp_file_name_sizeof */
 #include "gx.h"
@@ -64,6 +64,7 @@ typedef struct text_list_entry_s {
     gs_point start;
     gs_point end;
     gs_point topleft, topright;
+    float *Widths;
     unsigned short *Unicode_Text;
     int Unicode_Text_Size;
     int render_mode;
@@ -149,6 +150,7 @@ typedef struct textw_text_enum_s {
     bool charproc_accum;
     bool cdevproc_callout;
     double cdevproc_result[10];
+    float *Widths;
     unsigned short *TextBuffer;
     int TextBufferIndex;
     text_list_entry_t *text_state;
@@ -223,12 +225,10 @@ const gx_device_txtwrite_t gs_txtwrite_device =
      NULL,			/* encode_color */
      NULL			/* decode_color */
     },
-    0,				/* example_data */
-    { 0 },			/* LastFont */
-    0,				/* LastSize */
-    0,				/* Page */
-    { 0 },                      /* OutputFile */
-    0                           /* FILE *file */
+    { 0 },			/* Page Data */
+    { 0 },			/* Output Filename */
+    0,				/* Output FILE * */
+    2				/* TextFormat */
 };
 
 #ifndef gx_device_textw_DEFINED
@@ -255,7 +255,6 @@ txtwrite_open_device(gx_device * dev)
     if (tdev->fname[0] == 0)
         return_error(gs_error_undefinedfilename);
 
-    tdev->TextFormat = 2;
     tdev->PageData.PageNum = 0;
     tdev->PageData.y_ordered_list = NULL;
     tdev->file = NULL;
@@ -581,25 +580,55 @@ static int simple_text_output(gx_device_txtwrite_t *tdev)
     return 0;
 }
 
+static int escaped_Unicode (unsigned short Unicode, char *Buf)
+{
+    switch (Unicode)
+    {
+    case 0x3C: sprintf(Buf, "&lt;"); break;
+    case 0x3E: sprintf(Buf, "&gt;"); break;
+    case 0x26: sprintf(Buf, "&amp;"); break;
+    case 0x22: sprintf(Buf, "&quot;"); break;
+    case 0x27: sprintf(Buf, "&apos;"); break;
+    default:
+        if (Unicode >= 32 && Unicode <= 127)
+            sprintf(Buf, "%c", Unicode);
+        else
+            sprintf(Buf, "&#x%x;", Unicode);
+        break;
+    }
+
+    return 0;
+}
+
 static int decorated_text_output(gx_device_txtwrite_t *tdev)
 {
-    int code;
+    int code, i;
     text_list_entry_t * x_entry, *next_x;
     unsigned short UnicodeEOL[2] = {0x00D, 0x0a};
-    char TextBuffer[512], Fontname[256];
+    char TextBuffer[512], Escaped[32];
     gs_font *base;
+    float xpos;
 
+    fwrite("<page>\n", sizeof(unsigned char), 7, tdev->file);
     x_entry = tdev->PageData.unsorted_text_list;
     while (x_entry) {
         next_x = x_entry->next;
-        sprintf(TextBuffer, "<FontName=%s, size=%f, render_mode=%d, WMode=%d, start=[%f,%f], end=[%f,%f]> ",
-            x_entry->FontName, x_entry->size, x_entry->render_mode, x_entry->wmode, x_entry->start.x,
-            x_entry->start.y, x_entry->end.x, x_entry->end.y);
+        sprintf(TextBuffer, "<span bbox=\"%0.0f %0.0f %0.0f %0.0f\" font=\"%s\" size=\"%0.4f\">\n", x_entry->start.x, x_entry->start.y,
+            x_entry->end.x, x_entry->end.y, x_entry->FontName,x_entry->size);
         fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
-        fwrite(x_entry->Unicode_Text, sizeof (unsigned short), x_entry->Unicode_Text_Size, tdev->file);
-        fwrite(&UnicodeEOL, sizeof(unsigned short), 2, tdev->file);
+        xpos = x_entry->start.x;
+        for (i=0;i<x_entry->Unicode_Text_Size;i++) {
+            escaped_Unicode(x_entry->Unicode_Text[i], (char *)&Escaped);
+            sprintf(TextBuffer, "<char bbox=\"%0.0f %0.0f %0.0f %0.0f\" c=\"%s\">\n", xpos,
+                x_entry->start.y, xpos + x_entry->Widths[i], x_entry->end.y, Escaped);
+            fwrite(TextBuffer, 1, strlen(TextBuffer), tdev->file);
+            xpos += x_entry->Widths[i];
+        }
+        fwrite("</span>\n", sizeof(unsigned char), 8, tdev->file);
+
         x_entry = next_x;
     }
+    fwrite("</page>\n", sizeof(unsigned char), 8, tdev->file);
     return 0;
 }
 
@@ -1602,6 +1631,7 @@ int txtwrite_process_cmap_text(gs_text_enum_t *pte)
                           &penum->text_state->matrix, &wanted);
                 pte->returned.total_width.x += wanted.x;
                 pte->returned.total_width.y += wanted.y;
+                penum->Widths[pte->index - 1] = wanted.x;
 
                 if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
                     gs_point tpt;
@@ -1623,6 +1653,7 @@ int txtwrite_process_cmap_text(gs_text_enum_t *pte)
                 pte->returned.total_width.y += dpt.y;
 
                 penum->TextBufferIndex += get_unicode((gs_font *)pte->orig_font, glyph, chr, &penum->TextBuffer[penum->TextBufferIndex]);
+                penum->Widths[pte->index - 1] += dpt.x;
                 break;
             case 2:		/* end of string */
                 return 0;
@@ -1680,6 +1711,7 @@ int txtwrite_process_plain_text(gs_text_enum_t *pte)
                           &penum->text_state->matrix, &wanted);
         pte->returned.total_width.x += wanted.x;
         pte->returned.total_width.y += wanted.y;
+        penum->Widths[pte->index - 1] = wanted.x;
 
         if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
             gs_point tpt;
@@ -1701,6 +1733,7 @@ int txtwrite_process_plain_text(gs_text_enum_t *pte)
         pte->returned.total_width.y += dpt.y;
 
         penum->TextBufferIndex += get_unicode((gs_font *)pte->orig_font, glyph, ch, &penum->TextBuffer[penum->TextBufferIndex]);
+        penum->Widths[pte->index - 1] += dpt.x;
     }
     return 0;
 }
@@ -1831,11 +1864,23 @@ int txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
         return gs_note_error(gs_error_VMerror);
     memcpy(penum->text_state->Unicode_Text, penum->TextBuffer, penum->TextBufferIndex * sizeof(unsigned short));
 
+    penum->text_state->Widths = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!penum->text_state->Widths)
+        return gs_note_error(gs_error_VMerror);
+    memcpy(penum->text_state->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
+
     unsorted_entry->Unicode_Text = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
         penum->TextBufferIndex, sizeof(unsigned short), "txtwrite alloc sorted text buffer");
     if (!unsorted_entry->Unicode_Text)
         return gs_note_error(gs_error_VMerror);
     memcpy(unsorted_entry->Unicode_Text, penum->TextBuffer, penum->TextBufferIndex * sizeof(unsigned short));
+
+    unsorted_entry->Widths = (float *)gs_malloc(tdev->memory->stable_memory,
+        penum->TextBufferIndex, sizeof(float), "txtwrite alloc widths array");
+    if (!unsorted_entry->Widths)
+        return gs_note_error(gs_error_VMerror);
+    memcpy(unsorted_entry->Widths, penum->Widths, penum->TextBufferIndex * sizeof(float));
 
     unsorted_entry->FontName = (char *)gs_malloc(tdev->memory->stable_memory,
         (strlen(penum->text_state->FontName) + 1), sizeof(unsigned short), "txtwrite alloc sorted text buffer");
@@ -1891,6 +1936,10 @@ textw_text_process(gs_text_enum_t *pte)
         penum->TextBuffer = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
             pte->text.size * 4, sizeof(unsigned short), "txtwrite temporary text buffer");
         if (!penum->TextBuffer)
+            return gs_note_error(gs_error_VMerror);
+        penum->Widths = (float *)gs_malloc(tdev->memory->stable_memory,
+            pte->text.size, sizeof(float), "txtwrite temporary widths array");
+        if (!penum->Widths)
             return gs_note_error(gs_error_VMerror);
     }
     {
@@ -1992,6 +2041,8 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
     /* Free the working buffer where the Unicode was assembled from the enumerated text */
     if (penum->TextBuffer)
         gs_free(tdev->memory, penum->TextBuffer, 1, penum->TextBufferIndex, "txtwrite free temporary text buffer");
+    if (penum->Widths)
+        gs_free(tdev->memory, penum->Widths, sizeof(float), pte->text.size, "txtwrite free temporary widths array");
     /* If this is copied away when we complete the text enumeration succesfully, then
      * we set the pointer to NULL, if we get here with it non-NULL , then there was
      * an error.
