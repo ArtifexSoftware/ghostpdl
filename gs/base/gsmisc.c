@@ -124,13 +124,13 @@ gs_debug_c(int c)
     bool ret = gs_debug[c];
 
     /* Unroll the first one, to minimise the speed hit */
-    c = gs_debug_flag_implies[c];
+    c = gs_debug_flag_implied_by[c];
     if (c == 0)
         return ret;
 
     do {
         ret |= gs_debug[c];
-    } while (c = gs_debug_flag_implies[c]);
+    } while (c = gs_debug_flag_implied_by[c]);
     return ret;
 }
 
@@ -1081,7 +1081,7 @@ const gs_debug_flag_details gs_debug_flags[] =
 #undef UNUSED
 };
 
-const byte gs_debug_flag_implies[] =
+const byte gs_debug_flag_implied_by[] =
 {
 #define FLAG(a,b,c,d) c
 #define UNUSED(a) 0,
