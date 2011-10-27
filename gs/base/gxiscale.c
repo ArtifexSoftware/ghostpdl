@@ -346,7 +346,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 /* This does some initial required decoding of index spaces and general
    decoding of odd scaled image data needed prior to interpolation or
    application of color management. */
-static int 
+static void
 initial_decode(gx_image_enum * penum, const byte * buffer, int data_x, int h,
                bool need_decode, stream_cursor_read *stream_r, bool is_icc) 
 {
