@@ -651,7 +651,6 @@ static void ppm_read(FILE          *file,
                      int            maxval,
                      unsigned char *bmp)
 {
-    int r,g,b;
     int w;
     unsigned char *out;
 
@@ -664,10 +663,13 @@ static void ppm_read(FILE          *file,
             out  = bmp + 4*width;
             bmp += 3*width;
             for (w=width; w>0; w--) {
+                unsigned char b = *--bmp;
+                unsigned char g = *--bmp;
+                unsigned char r = *--bmp;
                 *--out = 0;
-                *--out = *--bmp;
-                *--out = *--bmp;
-                *--out = *--bmp;
+                *--out = r;
+                *--out = g;
+                *--out = b;
             }
             bmp -= width<<2;
         }
@@ -677,19 +679,22 @@ static void ppm_read(FILE          *file,
             out  = bmp + 4*width;
             bmp += 3*width;
             for (w=width; w>0; w--) {
+                unsigned char b = *--bmp;
+                unsigned char g = *--bmp;
+                unsigned char r = *--bmp;
                 *--out = 0;
-                *--out = (*--bmp) * 255/maxval;
-                *--out = (*--bmp) * 255/maxval;
-                *--out = (*--bmp) * 255/maxval;
+                *--out = r * 255/maxval;
+                *--out = g * 255/maxval;
+                *--out = b * 255/maxval;
             }
             bmp -= width<<2;
         }
     } else {
         for (; height>0; height--) {
             for (w=width; w>0; w--) {
-                r = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
-                b = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                int r = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                int g = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
+                int b = ((fgetc(file)<<8) + (fgetc(file)))*255/maxval;
                 *bmp++ = b;
                 *bmp++ = g;
                 *bmp++ = r;
@@ -708,7 +713,6 @@ static void pam_read(FILE          *file,
 {
     int c,m,y,k;
     int w;
-    unsigned char *out;
 
     bmp += width*(height-1)<<2;
 
