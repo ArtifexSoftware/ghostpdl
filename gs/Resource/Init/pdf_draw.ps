@@ -1523,8 +1523,15 @@ currentdict /add-to-last-param undef
 currentdict /last-ditch-bpc-csp undef
 
 /DoImage {
-  checkaltimage dup length 6 add dict
-  1 index /SMask knownoget { 1 index exch /SMask exch put } if
+  checkaltimage dup length 6 add dict  % <<image>> <<>>
+  1 index /SMask knownoget {           % <<image>> <<>> <<sm>>  
+    dup 3 index ne {                   % <<image>> <<>> <<sm>> <<sm>>
+      1 index exch /SMask exch put
+    } {
+      pop
+      (   **** Warning: ignoring recursive /SMask attribute.\n) pdfformaterror
+    } ifelse
+  } if
   1 index /Mask knownoget { 1 index exch /Mask exch put } if
   makeimagedict doimagesmask
 } bdef
