@@ -1895,34 +1895,35 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
-
-            if ((code = gs_currentpoint(pgs, &pt)) < 0)
-                return code;
-            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
-                return code;
-            if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
-                return code;
-            if (pbfont->PaintType) {
-                float lw = gs_currentlinewidth(pgs);
-
-                gs_setlinewidth(pgs, pbfont->StrokeWidth);
-                code = gs_stroke(pgs);
-                gs_setlinewidth(pgs, lw);
-                if (code < 0)
+            if (!I->skip_glyph) {
+                if ((code = gs_currentpoint(pgs, &pt)) < 0)
                     return code;
-            } else {
-                gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
-                pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
-
-                pgs->fill_adjust.x = pgs->fill_adjust.y = 0;
-
-                if ((code = gs_fill(pgs)) < 0)
+                if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
                     return code;
+                if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
+                    return code;
+                if (pbfont->PaintType) {
+                    float lw = gs_currentlinewidth(pgs);
 
-                pgs->in_cachedevice = in_cachedevice;
+                    gs_setlinewidth(pgs, pbfont->StrokeWidth);
+                    code = gs_stroke(pgs);
+                    gs_setlinewidth(pgs, lw);
+                    if (code < 0)
+                        return code;
+                } else {
+                    gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
+                    pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
+
+                    pgs->fill_adjust.x = pgs->fill_adjust.y = 0;
+
+                    if ((code = gs_fill(pgs)) < 0)
+                        return code;
+
+                    pgs->in_cachedevice = in_cachedevice;
+                }
+                if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
+                    return code;
             }
-            if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
-                return code;
         } else {
             int rast_orig_x =   rast.orig_x;
             int rast_orig_y = - rast.orig_y;
