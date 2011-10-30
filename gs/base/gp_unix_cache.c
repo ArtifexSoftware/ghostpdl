@@ -102,6 +102,7 @@ static char *gp_cache_prefix(void)
                 prefix = path;
             } else {
                 dlprintf1("file_name_combine failed with code %d\n", result);
+                free(path);
             }
             free(home);
         }
@@ -377,6 +378,7 @@ int gp_cache_insert(int type, byte *key, int keylen, void *buffer, int buflen)
     /* save it to disk */
     path = gp_cache_itempath(prefix, &item);
     file = fopen(path, "wb");
+    free(path);
     if (file != NULL) {
         gp_cache_saveitem(file, &item);
         fclose(file);
@@ -466,6 +468,7 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
     /* look for it on the disk */
     path = gp_cache_itempath(prefix, &item);
     file = fopen(path, "rb");
+    free(path);
     if (file != NULL) {
         hit = gp_cache_loaditem(file, &item, alloc, userdata);
         fclose(file);
