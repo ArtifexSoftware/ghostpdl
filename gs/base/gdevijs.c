@@ -830,6 +830,10 @@ gsijs_open(gx_device *dev)
            platforms. In that case, this branch should be #ifdef'ed out.
         */
         fd = dup(fileno(ijsdev->file));
+	if (fd < 0) {
+	    emprintf(ijsdev->memory, "dup() failed\n");
+	    return gs_note_error(gs_error_ioerror);
+	}
     }
 
     /* WARNING: Ghostscript should be run with -dSAFER to stop
