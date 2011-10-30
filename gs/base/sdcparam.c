@@ -503,12 +503,12 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
 /* Put Huffman tables. */
 static int
 find_huff_values(JHUFF_TBL ** table_ptrs, int num_tables,
-               const UINT8 counts[16], const UINT8 * values, int codes_size)
+               const UINT8 * counts, const UINT8 * values, int codes_size)
 {
     int j;
 
     for (j = 0; j < num_tables; ++j)
-        if (!memcmp(table_ptrs[j]->bits, counts, sizeof(counts)) &&
+        if (!memcmp(table_ptrs[j]->bits, counts, 16*sizeof(counts[0])) &&
             !memcmp(table_ptrs[j]->huffval, values,
                     codes_size * sizeof(values[0])))
             break;
