@@ -1180,7 +1180,7 @@ gs_debug_flags_list(gs_memory_t *heap)
               "\nDebugging may be enabled by using -Zx (where x is one of the 1 character\n"
               "codes given above), or by using --debug=xxxxx. Multiple flags may be specified\n"
               "at once, using -Zxyz or --debug=xxxxx,yyyyy,zzzzz. -Z=-x or --debug=-xxxxx\n"
-              "disables a flag once set.");
+              "disables a flag once set.\n");
 #else
     outprintf(heap, "No debug flags supported in release builds\n");
 #endif
