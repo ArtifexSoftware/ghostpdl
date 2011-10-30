@@ -897,7 +897,13 @@ rinkj_escp_flush (RinkjEscp *z)
 
   z->vertpos = ysc;
 
-  if (status < 0) return status;
+  if (status < 0)
+    {
+      free (thisbuf);
+      if (rle)
+	free (compress_buf);
+      return status;
+    }
 
   for (i = 0; i < z->num_chan; i++)
     {
@@ -920,7 +926,13 @@ rinkj_escp_flush (RinkjEscp *z)
                                              (x >> 16) & 0xff,
                                              (x >> 24) & 0xff);
 
-          if (status < 0) return status;
+          if (status < 0)
+	    {
+	      free(thisbuf);
+	      if (rle)
+		free(compress_buf);
+	      return status;
+	    }
         }
 
       status = rinkj_byte_stream_printf (z->out, "\033i%c%c%c%c%c%c%c",
@@ -930,7 +942,13 @@ rinkj_escp_flush (RinkjEscp *z)
                                          xsb_out & 0xff,
                                          (xsb_out >> 8) & 0xff,
                                          m & 0xff, m >> 8);
-      if (status < 0) return status;
+      if (status < 0)
+	{
+	  free(thisbuf);
+	  if (rle)
+	    free(compress_buf);
+	  return status;
+	}
       for (j = 0; j < m; j++)
         {
           const char *line;
