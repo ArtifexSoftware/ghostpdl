@@ -1184,7 +1184,9 @@ adjust_stroke(gx_device *dev, pl_ptr plp, const gs_imager_state * pis,
                              pis->line_params.dash_cap :
                              pis->line_params.end_cap);
 
-    if (!pis->stroke_adjust && (plp->width.x != 0 && plp->width.y != 0)) {
+    /* If stroke_adjustment is disabled, or this isn't a horizontal or
+     * vertical line, then bale. */
+    if (!pis->stroke_adjust || (plp->width.x != 0 && plp->width.y != 0)) {
         dev->sgr.stroke_stored = false;
         return;                 /* don't adjust */
     }
