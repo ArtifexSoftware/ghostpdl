@@ -2820,6 +2820,7 @@ get_pdf14_device_proto(gx_device * dev, pdf14_device ** pdevproto,
                                     ptempdevproto->color_info.max_components;
             ptempdevproto->color_info.max_gray = 255;
             ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
+            ptempdevproto->color_info.dither_grays = 256;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
@@ -5762,6 +5763,7 @@ get_pdf14_clist_device_proto(gx_device * dev, pdf14_clist_device ** pdevproto,
                                     ptempdevproto->color_info.max_components;
             ptempdevproto->color_info.max_gray = 255;
             ptempdevproto->color_info.gray_index = 0; /* Avoid halftoning */
+            ptempdevproto->color_info.dither_grays = 256;
             *pdevproto = ptempdevproto;
             break;
         case PDF14_DeviceRGB:
