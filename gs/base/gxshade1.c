@@ -316,6 +316,56 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 /* ---------------- Radial shading ---------------- */
 
+/* Some notes on what I have struggled to understand about the following
+ * function. This function renders the 'tube' given by interpolating one
+ * circle to another.
+ *
+ * The first circle is at (x0, y0) with radius r0, and has 'color' t0.
+ * The other circle is at (x1, y1) with radius r1, and has 'color' t1.
+ *
+ * We perform this rendering by approximating each quadrant of the 'tube'
+ * by a tensor patch. The tensor patch is formed by taking a curve along
+ * 1/4 of the circumference of the first circle, a straight line to the
+ * equivalent point on the circumference of the second circle, a curve
+ * back along the circumference of the second circle, and then a straight
+ * line back to where we started.
+ *
+ * There is additional logic in this function that forms the directions of
+ * the curves differently for different quadrants. This is done to ensure
+ * that we always paint 'around' the tube from the back towards the front,
+ * so we don't get unexpected regions showing though. This is explained more
+ * below.
+ *
+ * The original code here examined the position change between the two
+ * circles dx and dy. Based upon this vector it would pick which quadrant/
+ * tensor patch to draw first. It would draw the quadrants/tensor patches
+ * in anticlockwise order. Presumably this was intended to be done so that
+ * the 'top' quadrant would be drawn last.
+ *
+ * Unfortunately this did not always work; see bug 692513. If the quadrants
+ * were rendered in the order 0,1,2,3, the rendering of 1 was leaving traces
+ * on top of 0, which was unexpected.
+ *
+ * I have therefore altered the code slightly; rather than picking a start
+ * quadrant and moving anticlockwise, we now draw the 'undermost' quadrant,
+ * then the two adjacent quadrants, then the topmost quadrant.
+ *
+ * For the purposes of explaination, we shall label the octants as below:
+ *
+ *     \2|1/       and Quadrants as:       |
+ *     3\|/0                            Q1 | Q0 
+ *    ---+---                          ----+----
+ *     4/|\7                            Q2 | Q3
+ *     /5|6\                               |
+ *
+ * We find (dx,dy), the difference between the centres of the circles.
+ * We look to see which octant this falls in. Firstly, this tells us which
+ * quadrant of the circle we need to draw first (Octant n, starts with
+ * Quadrant floor(n/2)). Secondly, it tells us which direction to form the 
+ * tensor patch in; we always want to draw from the side 'closest' to
+ * dx/dy to the side further away. This ensures that we don't overwrite
+ * pixels in the incorrect order as the patch decomposes.
+ */
 static int
 R_tensor_annulus(patch_fill_state_t *pfs,
     double x0, double y0, double r0, double t0,
@@ -324,7 +374,7 @@ R_tensor_annulus(patch_fill_state_t *pfs,
     double dx = x1 - x0, dy = y1 - y0;
     double d = hypot(dx, dy);
     gs_point p0, p1, pc0, pc1;
-    int k, j, code;
+    int k, j, code, dirn;
     bool inside = 0;
 
     /* pc0 and pc1 are the centres of the respective circles. */
@@ -336,36 +386,36 @@ R_tensor_annulus(patch_fill_state_t *pfs,
         /* One circle is inside another one.
            Use any subdivision,
            but don't depend on dx, dy, which may be too small. */
-        p0.x = 0, p0.y = -1;
+        p0.x = 0, p0.y = -1, dirn = 0;
         /* Align stripes along radii for faster triangulation : */
         inside = 1;
     } else {
         /* Must generate canonic quadrangle arcs,
            because we approximate them with curves. */
-        if(any_abs(dx) >= any_abs(dy)) {
-            if (dx > 0)
-                p0.x = 0, p0.y = -1;
+        if(dx >= 0) {
+            if (dy >= 0)
+                p0.x = 1, p0.y = 0, dirn = (dx >= dy ? 1 : 0);
             else
-                p0.x = 0, p0.y = 1;
+                p0.x = 0, p0.y = -1, dirn = (dx >= -dy ? 0 : 1);
         } else {
-            if (dy > 0)
-                p0.x = 1, p0.y = 0;
+            if (dy >= 0)
+                p0.x = 0, p0.y = 1, dirn = (-dx >= dy ? 1 : 0);
             else
-                p0.x = -1, p0.y = 0;
+                p0.x = -1, p0.y = 0, dirn = (-dx >= -dy ? 0 : 1);
         }
     }
     /* fixme: wish: cut invisible parts off.
        Note : when r0 != r1 the invisible part is not a half circle. */
-    for (k = 0; k < 4; k++, p0 = p1) {
+    for (k = 0; k < 4; k++) {
         gs_point p[12];
         patch_curve_t curve[4];
 
         /* Set p1 to be 90 degrees anticlockwise from p0 */
         p1.x = -p0.y; p1.y = p0.x;
-        if ((k & 1) == k >> 1) { /* k == 0 || k == 3 */
+        if (dirn == 0) { /* Clockwise */
             make_quadrant_arc(p + 0, &pc0, &p1, &p0, r0);
             make_quadrant_arc(p + 6, &pc1, &p0, &p1, r1);
-        } else { /* k == 1 || k == 2 */
+        } else { /* Anticlockwise */
             make_quadrant_arc(p + 0, &pc0, &p0, &p1, r0);
             make_quadrant_arc(p + 6, &pc1, &p1, &p0, r1);
         }
@@ -399,6 +449,22 @@ R_tensor_annulus(patch_fill_state_t *pfs,
         code = patch_fill(pfs, curve, NULL, NULL);
         if (code < 0)
             return code;
+        /* Move p0 to be ready for the next position */
+        if (k == 0) {
+            /* p0 moves clockwise */
+            p1 = p0;
+            p0.x = p1.y; p0.y = -p1.x;
+            dirn = 0;
+        } else if (k == 1) {
+            /* p0 flips sides */
+            p0.x = -p0.x; p0.y = -p0.y;
+            dirn = 1;
+        } else if (k == 2) {
+            /* p0 moves anti-clockwise */
+            p1 = p0;
+            p0.x = -p1.y; p0.y = p1.x;
+            dirn = 0;
+        }
     }
     return 0;
 }
