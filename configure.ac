@@ -63,7 +63,7 @@ AC_FUNC_STRTOD
 
 AC_CHECK_FUNCS([alarm dup2 floor ftruncate gethostbyaddr gethostbyname gethostname getpass gettimeofday localeconv memchr memmove memset mkdir modf nl_langinfo pow putenv regcomp select setlocale socket sqrt strcasecmp strchr strdup strerror strncasecmp strpbrk strrchr strspn strstr strtol strtoul uname])
 
-AC_CHECK_FUNCS([mkstemp], [HAVE_MKSTEMP=-DHAVE_MKSTEMP])
+AC_CHECK_FUNCS([mkstemp], [HAVE_MKSTEMP=-DHAVE_MKSTEMP=1])
 AC_SUBST(HAVE_MKSTEMP)
 
 AC_CHECK_FUNCS([fopen64], [HAVE_FILE64=-DHAVE_FILE64])
@@ -87,7 +87,7 @@ int main (int argc, char *argv[])
   __m128i input1;
   return(0);
 }
-],HAVE_SSE2="-DHAVE_SSE2", HAVE_SSE2="")
+],HAVE_SSE2="-DHAVE_SSE2=1", HAVE_SSE2="")
 
 AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
        [Do not use sse2 instrinsics]), [
@@ -108,7 +108,7 @@ int main (int argc, char *argv[])
   int a = __builtin_bswap32(argc);
   return(0);
 }
-],HAVE_BSWAP32="-DHAVE_BSWAP32", HAVE_BSWAP32="")
+],HAVE_BSWAP32="-DHAVE_BSWAP32=1", HAVE_BSWAP32="")
 
 AC_ARG_ENABLE([bswap32], AC_HELP_STRING([--disable-bswap32],
        [Do not use bswap32 instrinsic]), [
@@ -130,7 +130,7 @@ int main (int argc, char *argv[])
   int a = bswap_32(argc);
   return(0);
 }
-],HAVE_BYTESWAP_H="-DHAVE_BYTESWAP_H", HAVE_BYTESWAP_H="")
+],HAVE_BYTESWAP_H="-DHAVE_BYTESWAP_H=1", HAVE_BYTESWAP_H="")
 
 AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
        [Do not use byteswap.h functions]), [
@@ -179,6 +179,12 @@ if test -z "$no_x"; then
   XLIBS="Xt SM ICE Xext X11"
   X11DEVS='$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev'
 fi
+
+if test "x$ac_cv_header_sys_time_h" = xyes; then
+    HAVE_SYS_TIME_H="-DHAVE_SYS_TIME_H=1"
+fi
+
+AC_SUBST(HAVE_SYS_TIME_H)
 
 AC_SUBST(XINCLUDE)
 AC_SUBST(XLIBDIRS)
