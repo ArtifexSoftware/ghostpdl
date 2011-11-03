@@ -755,18 +755,22 @@ a graphic language understood by many recent laser printers.
 <h3><a name="TXT"></a>Text output</h3>
 
 <p> The txtwrite device will output the text contained in the original
-document as Unicode (UTF-16). This device is currently under development
-and should not be considered as being of production quality.
+document as Unicode.
 
 <h4>Options</h4>
 <blockquote>
 <dl>
-<dt><code>-dTextFormat=<em>0 | 1 | 2 </em></code> (default is 2)
-<dd>Format 0 is intended for use by developers and outputs Unicode along with
-information regarding the format of the text (position, font name, point size,
-etc). Format 1 outputs Unicode (UCS2) text (with a Byte Order Mark) which
-approximates to the layout of the text in the original document. Format 2 is
-the same as format 1, but the text is encoded in UTF-8.
+<dt><code>-dTextFormat=<em>0 | 1 | 2 | 3 </em></code> (default is 3)
+<dd>Format 0 is intended for use by developers and outputs XML-escaped Unicode
+along with information regarding the format of the text (position, font name,
+point size, etc). The XML output is the same format as the MuPDF output, but
+no additional processing is performed on the content, so no block detection.</dd>
+<dd>Format 1 uses the same XML output format, but attempts similar processing to
+MuPDF, and will output blocks of text. Note the alogrithm used is not the same
+as the MuPDF code, and so the results will not be identical.</dd>
+<dd>Format 2 outputs Unicode (UCS2) text (with a Byte Order Mark) which
+approximates the layout of the text in the original document.</dd>
+<dd>Format 3 is the same as format 2, but the text is encoded in UTF-8.</dd>
 </dl></blockquote>
 
 <p>
