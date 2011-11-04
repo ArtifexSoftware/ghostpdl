@@ -2013,6 +2013,10 @@ find_substring(const byte *where, int length, const char *what)
 #define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
 #define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
 
+#define MTX_EQ(mtx1,mtx2) (mtx1->xx == mtx2->xx && mtx1->xy == mtx2->xy && \
+                           mtx1->yx == mtx2->yx && mtx1->yy == mtx2->yy && \
+                           mtx1->tx == mtx2->tx && mtx1->ty == mtx2->ty)
+
 static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, char *font_file_path, bool bBuildGlyph, ref *charstring)
 {   /* Stack : <font> <code|name> --> - */
     os_ptr op = osp;
@@ -2110,10 +2114,31 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
         log2_scale.y = 0;
     }
 
+    /* Prepare font data
+     * This needs done here (earlier than it used to be) because FAPI/UFST has conflicting
+     * requirements in what I->get_fontmatrix() returns based on font type, so it needs to
+     * find the font type.
+     */
+    if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
+        I->ff.subfont = SubfontId->value.intval;
+    else
+        I->ff.subfont = 0;
+    I->ff.memory = pbfont->memory;
+    I->ff.font_file_path = font_file_path;
+    I->ff.client_font_data = pbfont;
+    I->ff.client_font_data2 = pdr;
+    I->ff.server_font_data = pbfont->FAPI_font_data;
+    I->ff.is_type1 = bIsType1GlyphData;
+    I->ff.is_cid = bCID;
+    I->ff.is_outline_font = pbfont->PaintType != 0;
+    I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
+    I->ff.is_vertical = bVertical;
+    I->ff.client_ctx_p = i_ctx_p;
+
     scale = 1 << I->frac_shift;
 retry_oversampling:
     if (I->face.font_id != pbfont->id ||
-        memcmp(&I->face.ctm, &ctm, sizeof(&I->face.ctm)) ||
+        !MTX_EQ((&I->face.ctm),ctm) ||
         I->face.log2_scale.x != log2_scale.x ||
         I->face.log2_scale.y != log2_scale.y ||
         I->face.align_to_pixels != align_to_pixels ||
@@ -2122,27 +2147,6 @@ retry_oversampling:
        ) {
         FAPI_font_scale font_scale = {{1, 0, 0, 1, 0, 0}, {0, 0}, {1, 1}, true};
         gs_matrix scale_mat, scale_ctm;
-
-        /* Prepare font data
-         * This needs done here (earlier than it used to be) because FAPI/UFST has conflicting
-         * requirements in what I->get_fontmatrix() returns based on font type, so it needs to
-         * find the font type.
-         */
-        if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
-            I->ff.subfont = SubfontId->value.intval;
-        else
-            I->ff.subfont = 0;
-        I->ff.memory = pbfont->memory;
-        I->ff.font_file_path = font_file_path;
-        I->ff.client_font_data = pbfont;
-        I->ff.client_font_data2 = pdr;
-        I->ff.server_font_data = pbfont->FAPI_font_data;
-        I->ff.is_type1 = bIsType1GlyphData;
-        I->ff.is_cid = bCID;
-        I->ff.is_outline_font = pbfont->PaintType != 0;
-        I->ff.is_mtx_skipped = (get_MetricsCount(&I->ff) != 0);
-        I->ff.is_vertical = bVertical;
-        I->ff.client_ctx_p = i_ctx_p;
 
         I->face.font_id = pbfont->id;
         I->face.ctm = *ctm;
@@ -2226,6 +2230,8 @@ retry_oversampling:
                                             ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDANT_PREPARED)))) < 0)
                 return code;
         }
+    }
+    else {
     }
 
     /* Obtain the character name : */
