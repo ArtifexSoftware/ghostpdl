@@ -1278,7 +1278,7 @@ int clist_data_size(const gx_device_clist *cdev, int select)
 
 /* Get command list data. */
 int
-clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length)
+clist_get_data(const gx_device_clist *cdev, int select, int64_t offset, byte *buf, int length)
 {
     const gx_band_page_info_t *pinfo = &cdev->common.page_info;
     clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
@@ -1295,11 +1295,11 @@ clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, i
 
 /* Put command list data. */
 int
-clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length)
+clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, const byte *buf, int length)
 {
     const gx_band_page_info_t *pinfo = &cdev->common.page_info;
     clist_file_ptr pfile = (!select ? pinfo->bfile : pinfo->cfile);
-    int code;
+    int64_t code;
 
     code = pinfo->io_procs->ftell(pfile);
     if (code < 0)

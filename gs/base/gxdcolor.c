@@ -281,7 +281,7 @@ gx_dc_no_write(
     const gx_device_color *         pdevc,      /* ignored */
     const gx_device_color_saved *   psdc,       /* ignored */
     const gx_device *               dev,        /* ignored */
-    uint			    offset,     /* ignored */
+    int64_t			    offset,     /* ignored */
     byte *                          data,       /* ignored */
     uint *                          psize )
 {
@@ -295,7 +295,7 @@ gx_dc_no_read(
     const gs_imager_state * pis,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
-    uint		    offset,             /* ignored */
+    int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
     gs_memory_t *           mem )               /* ignored */
@@ -309,7 +309,7 @@ gx_dc_cannot_write(
     const gx_device_color *         pdevc,      /* ignored */
     const gx_device_color_saved *   psdc,       /* ignored */
     const gx_device *               dev,        /* ignored */
-    uint			    offset,     /* ignored */
+    int64_t			    offset,     /* ignored */
     byte *                          data,       /* ignored */
     uint *                          psize )
 {
@@ -322,7 +322,7 @@ gx_dc_cannot_read(
     const gs_imager_state * pis,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
-    uint		    offset,             /* ignored */
+    int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
     gs_memory_t *           mem )               /* ignored */
@@ -378,7 +378,7 @@ gx_dc_null_read(
     const gs_imager_state * pis,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,                /* ignored */
-    uint		    offset,             /* ignored */
+    int64_t		    offset,             /* ignored */
     const byte *            pdata,              /* ignored */
     uint                    size,               /* ignored */
     gs_memory_t *           mem )               /* ignored */
@@ -505,7 +505,7 @@ gx_dc_pure_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,       /* ignored */
     const gx_device *               dev,
-    uint			    offset,     /* ignored */
+    int64_t			    offset,     /* ignored */
     byte *                          pdata,
     uint *                          psize )
 {
@@ -553,7 +553,7 @@ gx_dc_pure_read(
     const gs_imager_state * pis,                /* ignored */
     const gx_device_color * prior_devc,         /* ignored */
     const gx_device *       dev,
-    uint		    offset,             /* ignored */
+    int64_t		    offset,             /* ignored */
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem )               /* ignored */

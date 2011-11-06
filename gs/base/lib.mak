@@ -450,7 +450,7 @@ gxwts_h=$(GLSRC)gxwts.h
 gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
  $(gxarith_h) $(gxbitmap_h) $(gxcindex_h) $(gxhttile_h) $(gxwts_h)
 gxdcolor_h=$(GLSRC)gxdcolor.h\
- $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
+ $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h) $(stdint__h)
 gsnamecl_h=$(GLSRC)gsnamecl.h $(gsccolor_h) $(gscsel_h) $(gxcspace_h)\
  $(gxfrac_h)
 gsncdummy_h=$(GLSRC)gsncdummy.h

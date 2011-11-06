@@ -508,9 +508,9 @@ clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_
 /* Retrieve total size for cfile and bfile. */
 int clist_data_size(const gx_device_clist *cdev, int select);
 /* Get command list data. */
-int clist_get_data(const gx_device_clist *cdev, int select, int offset, byte *buf, int length);
+int clist_get_data(const gx_device_clist *cdev, int select, int64_t offset, byte *buf, int length);
 /* Put command list data. */
-int clist_put_data(const gx_device_clist *cdev, int select, int offset, const byte *buf, int length);
+int clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, const byte *buf, int length);
 
 /* ICC table prototypes */
 

@@ -21,6 +21,7 @@
 #include "gsdcolor.h"
 #include "gsropt.h"
 #include "gsstruct.h"		/* for extern_st, GC procs */
+#include "stdint_.h"		/* for int64_t */
 
 /* Define opaque types. */
 
@@ -215,12 +216,12 @@ struct gx_device_color_type_s {
      */
 #define dev_color_proc_write(proc)\
   int proc(const gx_device_color *pdevc, const gx_device_color_saved *psdc,\
-    const gx_device * dev, uint offset, byte *data, uint *psize)
+    const gx_device * dev, int64_t offset, byte *data, uint *psize)
                         dev_color_proc_write((*write));
 
 #define dev_color_proc_read(proc)\
   int proc(gx_device_color *pdevc, const gs_imager_state * pis,\
-    const gx_device_color *prior_devc, const gx_device * dev, uint offset,\
+    const gx_device_color *prior_devc, const gx_device * dev, int64_t offset,\
     const byte *data, uint size, gs_memory_t *mem)
                         dev_color_proc_read((*read));
 
