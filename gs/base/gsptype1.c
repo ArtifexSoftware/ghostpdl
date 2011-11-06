@@ -1329,13 +1329,13 @@ typedef struct gx_dc_serialized_tile_s {
 } gx_dc_serialized_tile_t;
 
 static int
-gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data, 
+gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data, 
                            uint *psize, const gx_device *dev)
 {
     int size_b, size_c;
     byte *dp = data;
     int left = *psize;
-    int offset1 = offset;
+    int64_t offset1 = offset;
 
     size_b = sizeof(gx_strip_bitmap) + 
          ptile->tbits.size.y * ptile->tbits.raster * ptile->tbits.num_planes;
@@ -1418,12 +1418,12 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, uint offset, byte *data,
    a pdf14 device that includes planar data with an alpha channel */
 
 static int
-gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, uint offset, byte *data, uint *psize)
+gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *data, uint *psize)
 {
     int size, size_h;
     byte *dp = data;
     int left = *psize;
-    int offset1 = offset;
+    int64_t offset1 = offset;
     unsigned char *ptr;
 
     size_h = sizeof(gx_dc_serialized_tile_t) + sizeof(tile_trans_clist_info_t);
@@ -1508,7 +1508,7 @@ gx_dc_pattern_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc,
     const gx_device *               dev,
-    uint                            offset,
+    int64_t                         offset,
     byte *                          data,
     uint *                          psize )
 {
@@ -1516,7 +1516,7 @@ gx_dc_pattern_write(
     int size_b, size_c;
     byte *dp = data;
     int left = *psize;
-    int offset1 = offset;
+    int64_t offset1 = offset;
     int code, l;
 
     if (ptile == NULL)
@@ -1602,11 +1602,11 @@ gx_dc_pattern_write(
 
 static int
 gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *buf,
-                          uint offset, const byte *data, uint size, gs_memory_t *mem)
+                          int64_t offset, const byte *data, uint size, gs_memory_t *mem)
 {
     const byte *dp = data;
     int left = size;
-    int offset1 = offset;
+    int64_t offset1 = offset;
     int size_b, size_c;
 
     if (buf != NULL) {
@@ -1677,12 +1677,12 @@ gx_dc_pattern_read_raster(gx_color_tile *ptile, const gx_dc_serialized_tile_t *b
 
 /* This reads in the transparency buffer from the clist */
 static int
-gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, uint offset,
+gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
                               const byte *data, uint size, gs_memory_t *mem)
 {
     const byte *dp = data;
     int left = size;
-    int offset1 = offset;
+    int64_t offset1 = offset;
     gx_pattern_trans_t *trans_pat = ptile->ttrans;
     int data_size;
 
@@ -1716,7 +1716,7 @@ gx_dc_pattern_read(
     const gs_imager_state * pis,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
-    uint                    offset,
+    int64_t                    offset,
     const byte *            data,
     uint                    size,
     gs_memory_t *           mem )
@@ -1725,7 +1725,7 @@ gx_dc_pattern_read(
     int size_b, size_c = -1;
     const byte *dp = data;
     int left = size;
-    int offset1 = offset;
+    int64_t offset1 = offset;
     gx_color_tile *ptile;
     int code, l;
     tile_trans_clist_info_t trans_info;

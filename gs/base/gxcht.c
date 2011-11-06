@@ -185,7 +185,7 @@ gx_dc_ht_colored_write(
     const gx_device_color *         pdevc,
     const gx_device_color_saved *   psdc0,
     const gx_device *               dev,
-    uint			    offset,
+    int64_t			    offset,
     byte *                          pdata,
     uint *                          psize )
 {
@@ -354,7 +354,7 @@ gx_dc_ht_colored_read(
     const gs_imager_state * pis,
     const gx_device_color * prior_devc,
     const gx_device *       dev,
-    uint		    offset,
+    int64_t		    offset,
     const byte *            pdata,
     uint                    size,
     gs_memory_t *           mem )       /* ignored */
