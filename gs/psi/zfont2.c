@@ -29,6 +29,7 @@
 #include "iname.h"   /* for CFF parser */
 #include "iddict.h"  /* for CFF parser */
 #include "store.h"   /* for CFF parser */
+#include "iscannum.h"
 
 /* Private utilities */
 static uint
@@ -1463,7 +1464,7 @@ get_int(int *v,  const cff_data_t *data, unsigned p, unsigned pe)
 }
 
 static int
-get_float(float *v, const cff_data_t *data, unsigned p, unsigned pe)
+get_float(ref *fnum, const cff_data_t *data, unsigned p, unsigned pe)
 {
     int code;
     unsigned int c, i;
@@ -1499,16 +1500,23 @@ get_float(float *v, const cff_data_t *data, unsigned p, unsigned pe)
                    *q++ = '-';
                    break;
                case 15: { /* end */
-                   int scanned;
+                   int sign = 0;
+                   char *eptr, *bptr = buf;
 
-                   *q = 0;
-                   sscanf(buf, "%f%n", v, &scanned);
-                   if (scanned == q - buf)
+                   if (buf[0] == '-'){
+                       sign = -1;
+                       bptr = &(buf[1]);
+                   }
+
+                   code = scan_number ((const byte *)bptr, (const byte *)q, sign, fnum, (const byte **)&eptr, 0);
+                   if (code < 0) {
+                       return(code);
+                   }
+                   else {
                        return p - p0 + 1;
-                   else
-                       return_error(e_rangecheck);
                    }
                    break;
+                }
             }
         }
         p++;
@@ -2244,13 +2252,12 @@ parse_dict(i_ctx_t *i_ctx_p,  ref *topdict, font_offsets_t *offsets,
             case 22: case 23: case 24: case 25: case 26: case 27: /* reserved */
                 continue;
             case 30: { /* float operand */
-                float f;
-
                 if (op_i >= MAXOP)
                     return_error(e_limitcheck);
-                if ((code = get_float(&f, data, p, pe)) < 0)
+
+                if ((code = get_float(&ops[op_i], data, p, pe)) < 0)
                     return code;
-                make_real(&ops[op_i], f);
+
                 op_i++;
                 p += code;
                 }
