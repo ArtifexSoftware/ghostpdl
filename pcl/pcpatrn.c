@@ -1016,8 +1016,11 @@ pattern_set_shade_gl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_shade(pcs, inten);
 
-    /* check if the current pen is white; if so, use the "unsolid" pattern */
-    if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
+    /* check if the current pen is white or the pattern is transparent
+       and the intensity is 0 (white) and if so use the unsolid
+       pattern */
+    if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen) ||
+        (pcs->pattern_transparent && inten == 0))
         pptrn = pcl_pattern_get_unsolid_pattern(pcs);
     else if (pptrn == 0)
         return ( inten > 0 ? pattern_set_pen(pcs, pen, false)
