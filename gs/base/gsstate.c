@@ -852,7 +852,8 @@ gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname
     if (!parts->effective_clip_shared)
         gx_cpath_free(parts->effective_clip_path, cname);
     gx_cpath_free(parts->clip_path, cname);
-    gx_path_free(parts->path, cname);
+    if (parts->path)
+	gx_path_free(parts->path, cname);
 }
 
 /* Allocate the privately allocated parts of a gstate. */
