@@ -24,6 +24,7 @@ int gs_initmatrix(gs_state *),
     gs_currentmatrix(const gs_state *, gs_matrix *),
     gs_setmatrix(gs_state *, const gs_matrix *),
     gs_translate(gs_state *, floatp, floatp),
+    gs_translate_untransformed(gs_state *, floatp, floatp),
     gs_scale(gs_state *, floatp, floatp),
     gs_rotate(gs_state *, floatp),
     gs_concat(gs_state *, const gs_matrix *);

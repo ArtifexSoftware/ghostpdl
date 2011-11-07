@@ -242,6 +242,24 @@ gs_translate(gs_state * pgs, floatp dx, floatp dy)
 }
 
 int
+gs_translate_untransformed(gs_state * pgs, floatp dx, floatp dy)
+{
+    gs_point pt;
+    int code;
+
+    pt.x = (float)dx + pgs->ctm.tx;
+    pt.y = (float)dy + pgs->ctm.ty;
+    update_ctm(pgs, pt.x, pt.y);
+#ifdef DEBUG
+    if (gs_debug_c('x'))
+        dlprintf4("[x]translate_untransformed: %f %f -> %f %f\n",
+                  dx, dy, pt.x, pt.y),
+            trace_ctm(pgs);
+#endif
+    return 0;
+}
+
+int
 gs_scale(gs_state * pgs, floatp sx, floatp sy)
 {
     pgs->ctm.xx *= sx;
