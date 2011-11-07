@@ -2644,9 +2644,10 @@ retry_oversampling:
             os_ptr op = osp;
             ref *proc;
             if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
+                push(2);
+                ref_assign(op - 1, &char_name);
                 ref_assign(op, proc);
-                push_op_estack(zexec);  /* execute the operand */
-                return o_push_estack;
+                return(zchar_exec_char_proc(i_ctx_p));
             }
         }
 
