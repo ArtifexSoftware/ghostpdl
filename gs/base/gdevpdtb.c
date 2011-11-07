@@ -46,6 +46,78 @@ gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",\
 
 #define SUBSET_PREFIX_SIZE 7	/* XXXXXX+ */
 
+typedef struct pdf_base14_font_info_s {
+    const char *urwname;
+    const char *stdname;
+} pdf_base14_font_info_t;
+
+static const pdf_base14_font_info_t base14_font_info[] = {
+    /* Standard mapping of URW fonts */
+    {"NimbusMonL-Regu",       "Courier"              },
+    {"NimbusMonL-Bold",       "Courier-Bold"         },
+    {"NimbusMonL-ReguObli",   "Courier-Oblique"      },
+    {"NimbusMonL-BoldObli",   "Courier-BoldOblique"  },
+    {"NimbusSanL-Regu",       "Helvetica"            },
+    {"NimbusSanL-Bold",       "Helvetica-Bold"       },
+    {"NimbusSanL-ReguItal",   "Helvetica-Oblique"    },
+    {"NimbusSanL-BoldItal",   "Helvetica-BoldOblique"},
+    {"StandardSymL",          "Symbol"               },
+    {"NimbusRomNo9L-Regu",    "Times-Roman"          },
+    {"NimbusRomNo9L-Medi",    "Times-Bold"           },
+    {"NimbusRomNo9L-ReguItal","Times-Italic"         },
+    {"NimbusRomNo9L-MediItal","Times-BoldItalic"     },
+    {"Dingbats",              "ZapfDingbats"         },
+    /* A few other mappings of URW fonts */
+    {"NimbusMono-Reg",        "Courier"              },
+    {"NimbusMono-Bol",        "Courier-Bold"         },
+    {"NimbusMono-Ita",        "Courier-Oblique"      },
+    {"NimbusMono-BolIta",     "Courier-BoldItalic"   },
+    {"NimbusSan-Reg",         "Helvetica"            },
+    {"NimbusSan-Bol",         "Helvetica-Bold"       },
+    {"NimbusSan-Ita",         "Helvetica-Oblique"    },
+    {"NimbusSan-BolIta",      "Helvetica-BoldOblique"},
+    {"A030-Reg",              "Helvetica"            },
+    {"A030-Bol",              "Helvetica-Bold"       },
+    {"A030-Ita",              "Helvetica-Oblique"    },
+    {"A030-BolIta",           "Helvetica-BoldOblique"},
+    {"NimbusSanNo2-Reg",      "Helvetica"            },
+    {"NimbusSanNo2-Bol",      "Helvetica-Bold"       },
+    {"NimbusSanNo2-Ita",      "Helvetica-Oblique"    },
+    {"NimbusSanNo2-BolIta",   "Helvetica-BoldOblique"},
+    {"NimbusRomanNo4-Lig",    "Times-Roman"          },
+    {"NimbusRomanNo4-Bol",    "Times-Bold"           },
+    {"NimbusRomanNo4-LigIta", "Times-Italic"         },
+    {"NimbusRomanNo4-BolIta", "Times-BoldItalic"     },
+    {"NimbusRomanNo9-Reg",    "Times-Roman"          },
+    {"NimbusRomanNo9-Med",    "Times-Bold"           },
+    {"NimbusRomanNo9-Ita",    "Times-Italic"         },
+    {"NimbusRomanNo9-MedIta", "Times-BoldItalic"     },
+    {"NimbusRom-Reg",         "Times-Roman"          },
+    {"NimbusRom-Med",         "Times-Bold"           },
+    {"NimbusRom-Ita",         "Times-Italic"         },
+    {"NimbusRom-MedIta",      "Times-BoldItalic"     },
+    {"NimbusRomNo9-Reg",      "Times-Roman"          },
+    {"NimbusRomNo9-Bol",      "Times-Bold"           },
+    {"NimbusRomNo9-Ita",      "Times-Italic"         },
+    {"NimbusRomNo9-MedIta",   "Times-BoldItalic"     },
+    {0}
+};
+
+/* Given a pointer to a font name, return a pointer to an
+ * equivalent base 14 font name, of NULL if there is no
+ * equivalent.
+ */
+const char *pdf_find_base14_name(const byte *str, uint size)
+{
+    const pdf_base14_font_info_t *ppsf;
+
+    for (ppsf = base14_font_info; ppsf->urwname; ++ppsf)
+      if (!memcmp(ppsf->urwname, (const char *)str, size))
+          return ppsf->stdname;
+    return NULL;
+}
+
+
 /*
  * Determine whether a font is a subset font by examining the name.
  */

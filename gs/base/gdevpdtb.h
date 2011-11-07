@@ -153,4 +153,6 @@ bool pdf_is_standard_font(pdf_base_font_t *bfont);
 void pdf_set_FontFile_object(pdf_base_font_t *bfont, cos_dict_t *pcd);
 const cos_dict_t * pdf_get_FontFile_object(pdf_base_font_t *bfont);
 
+const char *pdf_find_base14_name(const byte *str, uint size);
+
 #endif /* gdevpdtb_INCLUDED */
