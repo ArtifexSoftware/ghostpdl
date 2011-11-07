@@ -339,7 +339,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_pattern1_init(&gspat);
         uid_set_UniqueID(&gspat.uid, gs_next_ids(ctx->memory, 1));
         gspat.PaintType = 1;
-        gspat.TilingType = 1;
+        gspat.TilingType = 2;
         gspat.PaintProc = xps_remap_pattern;
         gspat.client_data = &closure;
 

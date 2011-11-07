@@ -255,6 +255,30 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                         gs_scale(saved, fabs(inst.size.x / inst.step_matrix.xx), 1);
                         inst.step_matrix.xx = (float)inst.size.x;
                     } else {
+#if 0
+                        /* New code from RJW, currently disabled. While
+                         * investigating an XPS pattern problem (caused by
+                         * a pattern with step 7.5 being rendered into an 8x8
+                         * tile with a fill adjust of 0 having empty edges),
+                         * I considered the following changed code, which seems
+                         * like the right thing to do. It produces many image
+                         * diffs, but none obscenely bad. We leave this
+                         * disabled for now, as the XPS problem has moved by
+                         * dint of us now using TilingType 2 instead. */
+                        /* We adjust the step matrix to an integer (as we
+                         * can't quickly tile non-integer tiles). We bend
+                         * the contents of the tile slightly so that they
+                         * completely fill the tile (rather than potentially
+                         * leaving gaps around the edge).
+                         * To allow thin lines at a cell boundary to be painted
+                         * inside the cell, we adjust the scale so that the
+                         * scaled width is fixed_1 smaller. */
+                        float newscale = (float)floor(inst.step_matrix.xx + 0.5);
+                        gs_scale(saved,
+                                 (newscale - 1.0 / fixed_scale) / inst.step_matrix.xx,
+                                 1);
+                        inst.step_matrix.xx = newscale;
+#else
                         inst.step_matrix.xx = (float)floor(inst.step_matrix.xx + 0.5);
                         /* To allow thin lines at a cell boundary
                            to be painted inside the cell,
@@ -262,15 +286,38 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                            the scaled width is in fixed_1 smaller */
                         if (bbw >= inst.size.x - 1.0 / fixed_scale)
                             gs_scale(saved, (fabs(inst.size.x) - 1.0 / fixed_scale) / fabs(inst.size.x), 1);
+#endif
                     }
                     if (inst.step_matrix.yy <= 2) {
                         gs_scale(saved, 1, fabs(inst.size.y / inst.step_matrix.yy));
                         inst.step_matrix.yy = (float)inst.size.y;
                     } else {
+#if 0
+                        /* See above comment for explaination */
+                        float newscale = (float)floor(inst.step_matrix.yy + 0.5);
+                        gs_scale(saved,
+                                 1,
+                                 (newscale - 1.0 / fixed_scale) / inst.step_matrix.yy);
+                        inst.step_matrix.yy = newscale;
+#else
                         inst.step_matrix.yy = (float)floor(inst.step_matrix.yy + 0.5);
                         if (bbh >= inst.size.y - 1.0 / fixed_scale)
                             gs_scale(saved, 1, (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
+#endif
                     }
+                    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
+                    if (code < 0)
+                        goto fsaved;
+                }
+            } else if ((inst.template.TilingType == 2) &&
+                       ((pgs->fill_adjust.x | pgs->fill_adjust.y) == 0)) {
+                if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
+                    fabs(fabs(inst.step_matrix.xx) - bbw) <= 0.5 &&
+                    fabs(fabs(inst.step_matrix.yy) - bbh) <= 0.5)
+                {
+                    gs_translate_untransformed(saved,
+                                               (bbw - inst.size.x)/2,
+                                               (bbh - inst.size.y)/2);
                     code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
                     if (code < 0)
                         goto fsaved;
