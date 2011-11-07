@@ -22,6 +22,7 @@ my %products=('abort' =>1,
 
 my $user;
 my $product="";
+my $filters="";
 my $command="";
 my $res="";
 my $t1;
@@ -32,6 +33,8 @@ while ($t1=shift) {
     $res="highres";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
+  } elseif ($t1 =~ m/filter=.*/) {
+    $filters.=$t1.' ';
   } elsif (exists $products{$t1}) {
     $product.=$t1.' ';
   } elsif ($t1 =~ m/ /) {
@@ -159,6 +162,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 open(F,">cluster_command.run");
 print F "$user $product $res\n";
 print F "$command\n";
+print F "$filters\n";
 close(F);
 
 $cmd="rsync -avxcz".
