@@ -91,7 +91,7 @@ gs_cspace_build_Pattern1(gs_color_space ** ppcspace,
     gs_color_space *pcspace = 0;
 
     if (pbase_cspace != 0) {
-        if (gs_color_space_num_components(pcspace) < 0)         /* Pattern space */
+        if (gs_color_space_num_components(pbase_cspace) < 0)         /* Pattern space */
             return_error(gs_error_rangecheck);
     }
     pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_Pattern);
