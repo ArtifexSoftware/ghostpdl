@@ -558,6 +558,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s;
     cos_dict_t *pcd_Resources = NULL;
+    char *base14_name = NULL;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
         if (pdfont->FontType == ft_composite ||
@@ -594,7 +595,11 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream_puts(s, "<<");
     if (pdfont->BaseFont.size > 0) {
         stream_puts(s, "/BaseFont");
-        pdf_put_name(pdev, pdfont->BaseFont.data, pdfont->BaseFont.size);
+        if (pdfont->FontDescriptor && !pdf_font_descriptor_embedding(pdfont->FontDescriptor)
+            && (base14_name = pdf_find_base14_name((byte *)pdfont->BaseFont.data, pdfont->BaseFont.size)))
+            pdf_put_name(pdev, base14_name, (unsigned int)strlen(base14_name));
+        else
+            pdf_put_name(pdev, pdfont->BaseFont.data, pdfont->BaseFont.size);
     }
     if (pdfont->FontDescriptor)
         pprintld1(s, "/FontDescriptor %ld 0 R",

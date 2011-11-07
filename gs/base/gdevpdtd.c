@@ -155,18 +155,27 @@ pdf_font_descriptor_common_id(const pdf_font_descriptor_common_t *pfdc)
 /* Write the common part of a FontDescriptor, aside from the final >>. */
 static int
 write_FontDescriptor_common(gx_device_pdf *pdev,
-                            const pdf_font_descriptor_common_t *pfd)
+                            const pdf_font_descriptor_common_t *pfd, bool embed)
 {
     stream *s;
     int code;
     param_printer_params_t params;
     printer_param_list_t rlist;
     gs_param_list *const plist = (gs_param_list *)&rlist;
+    char *base14_name = NULL;
 
     pdf_open_separate(pdev, pdf_font_descriptor_common_id(pfd), resourceFontDescriptor);
     s = pdev->strm;
     stream_puts(s, "<</Type/FontDescriptor/FontName");
-    pdf_put_name(pdev, pfd->values.FontName.data, pfd->values.FontName.size);
+    if (!embed) {
+        base14_name = (char *)pdf_find_base14_name(pfd->values.FontName.data, pfd->values.FontName.size);
+        if(base14_name)
+            pdf_put_name(pdev, (byte *)base14_name, strlen(base14_name));
+        else
+            pdf_put_name(pdev, pfd->values.FontName.data, pfd->values.FontName.size);
+    } else
+        pdf_put_name(pdev, pfd->values.FontName.data, pfd->values.FontName.size);
+
     pdf_write_font_bbox(pdev, &pfd->values.FontBBox);
     params = param_printer_params_default;
     code = s_init_param_printer(&rlist, &params, s);
@@ -193,6 +202,9 @@ write_FontDescriptor_common(gx_device_pdf *pdev,
 #undef DESC_INT
         int Flags = pfd->values.Flags;
         pdf_font_descriptor_t defaults;
+
+        if (base14_name)
+            Flags |=FONT_USES_STANDARD_ENCODING;
 
         code = param_write_int(plist, "Flags", &Flags);
         if (code < 0)
@@ -646,7 +658,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
             )
             fd.values.Flags =
                 (fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
-        code = write_FontDescriptor_common(pdev, &fd);
+        code = write_FontDescriptor_common(pdev, &fd, pfd->embed);
     }
     if (code < 0)
         return code;
