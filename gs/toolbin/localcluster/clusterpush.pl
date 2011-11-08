@@ -33,7 +33,7 @@ while ($t1=shift) {
     $res="highres";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
-  } elseif ($t1 =~ m/filter=.*/) {
+  } elsif ($t1 =~ m/filter=.*/) {
     $filters.=$t1.' ';
   } elsif (exists $products{$t1}) {
     $product.=$t1.' ';
