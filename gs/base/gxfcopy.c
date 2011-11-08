@@ -809,7 +809,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
                 return_error(gs_error_rangecheck); /* abnormal glyph recursion */
             if (info0.num_pieces > countof(pieces0) / 2) {
                 pieces = (gs_glyph *)gs_alloc_bytes(cfont->memory,
-                    sizeof(glyphs) * info0.num_pieces * 2, "compare_glyphs");
+                    sizeof(gs_glyph) * info0.num_pieces * 2, "compare_glyphs");
                 if (pieces == 0)
                     return_error(gs_error_VMerror);
             }
