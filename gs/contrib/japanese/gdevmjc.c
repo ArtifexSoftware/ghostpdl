@@ -401,13 +401,13 @@ mj_put_params(gx_device *pdev,  gs_param_list *plist, int ptype)
         code = put_param_int(plist, "Yellow", &yellow, 0, INT_MAX, code);
         code = put_param_int(plist, "Black", &black, 0, INT_MAX, code);
 
-        if ((code == param_read_bool(plist,
+        if ((code = param_read_bool(plist,
                                      (param_name = "Unidirectional"),
                                      &direction))< 0) {
           param_signal_error(plist, param_name, ecode = code);
         }
 
-        if ((code == param_read_bool(plist,
+        if ((code = param_read_bool(plist,
                                      (param_name = "Microweave"),
                                      &microweave))< 0) {
           param_signal_error(plist, param_name, ecode = code);
