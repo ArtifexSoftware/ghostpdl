@@ -578,7 +578,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     color_fracs run;		/* run value */
     color_fracs next;		/* next sample value */
     const unsigned short *bufend = psrc + w;
-    int code = 0, mcode = 0;
+    int code = 0;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
     unsigned short *psrc_cm, *psrc_cm_start, *psrc_decode;
@@ -610,8 +610,6 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     /* These used to be set by init clues */
     pdevc->type = gx_dc_type_none;
     pdevc_next->type = gx_dc_type_none;
-    if (h == 0)
-        return 0;
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     num_des_comps = dev_profile->device_profile[0]->num_comps;
     /* If the link is the identity, then we don't need to do any color
@@ -746,7 +744,6 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         if (code < 0)
             goto err;
         rsrc = psrc;
-        if ((code = mcode) < 0) goto err;
         /* Swap around the colors due to a change */
         ptemp = pdevc;
         pdevc = pdevc_next;
