@@ -409,7 +409,12 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
             cnext;
             goto out;
         case c2_shortint:
-            cip += 2;
+            {
+                short sint = *cip++;
+                sint = (sint << 8) + *cip++;
+                CS_CHECK_PUSH(csp, cstack);
+                *++csp = int2fixed(sint);
+            }
             break;
         case c2_hstemhm:
             hhints += ((csp - cstack) + 1) / 2;
