@@ -177,10 +177,8 @@ cp50_output_page(gx_device *pdev, int num_copies, int flush)
 
     /* Print the accumulated page description. */
     outcode = (*ppdev->printer_procs.print_page)(ppdev, ppdev->file);
-    if ( code < 0 ) return code;
 
     closecode = gdev_prn_close_printer(pdev);
-    if ( code < 0 ) return code;
 
     if ( ppdev->buffer_space ) /* reinitialize clist for writing */
       code = (*gs_clist_device_procs.output_page)(pdev, num_copies, flush);
