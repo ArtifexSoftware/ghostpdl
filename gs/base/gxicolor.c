@@ -815,7 +815,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     color_samples run;		/* run value */
     color_samples next;		/* next sample value */
     byte *bufend = NULL;
-    int code = 0, mcode = 0;
+    int code = 0;
     byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
     int k;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -933,7 +933,6 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
         if (code < 0)
             goto err;
         rsrc = psrc;
-        if ((code = mcode) < 0) goto err;
         /* Swap around the colors due to a change */
         ptemp = pdevc;
         pdevc = pdevc_next;
