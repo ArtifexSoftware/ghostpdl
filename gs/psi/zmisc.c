@@ -28,6 +28,7 @@
 #include "ivmspace.h"
 #include "store.h"
 #include "igstate.h"            /* for gs_currentcpsimode */
+#include "memento.h"
 
 /**********************************************************************/
 
@@ -385,7 +386,6 @@ zsetdebug(i_ctx_t *i_ctx_p)
 static int
 zmementolistnewblocks(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
     Memento_listNewBlocks();
     return 0;
 }
