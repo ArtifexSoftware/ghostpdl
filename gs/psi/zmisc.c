@@ -381,6 +381,15 @@ zsetdebug(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* .mementolistnew - */
+static int
+zmementolistnewblocks(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    Memento_listNewBlocks();
+    return 0;
+}
+
 /* There are a few cases where a customer/user might want CPSI behavior
  * instead of the GS default behavior. cmyk_to_rgb and Type 1 char fill
  * method are two that have come up so far. This operator allows a PS
@@ -496,6 +505,7 @@ const op_def zmisc_op_defs[] =
     {"0realtime", zrealtime},
     {"1serialnumber", zserialnumber},
     {"2.setdebug", zsetdebug},
+    {"0.mementolistnewblocks", zmementolistnewblocks},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
     {"1.setCPSImode", zsetCPSImode},
