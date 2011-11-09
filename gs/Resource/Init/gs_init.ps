@@ -561,6 +561,10 @@ odef
         0 .endpage .doneshowpage {
           .currentnumcopies //true .outputpage
           (>>showpage, press <return> to continue<<\n) .confirm
+          % Uncomment the following line, and use a Memento build to track
+          % blocks that are created and not destroyed between each successive
+          % page.
+          % 2 .vmreclaim .mementolistnewblocks
           initgraphics
           currentoverprint //false setoverprint 1 setcolor
           .fillpage
