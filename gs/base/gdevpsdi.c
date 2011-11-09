@@ -160,7 +160,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
                Replace ColorTransform with 1. */
             code = param_write_int((gs_param_list *)list, "ColorTransform", &one);
             if (code < 0)
-                return code;
+                goto error;
             goto done;
         }
 
@@ -186,7 +186,7 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
            Replace ColorTransform with 0. */
         code = param_write_int((gs_param_list *)list, "ColorTransform", &zero);
         if (code < 0)
-            return code;
+            goto error;
     } else {
         /* Unknown color space type.
            Replace /HSamples [1 1 1 1] /VSamples [1 1 1 1] to avoid quality degradation. */
@@ -198,14 +198,18 @@ choose_DCT_params(gx_device *pdev, const gs_color_space *pcs,
         a.persistent = true;
         code = param_write_string((gs_param_list *)list, "HSamples", &a);
         if (code < 0)
-            return code;
+            goto error;
         code = param_write_string((gs_param_list *)list, "VSamples", &a);
         if (code < 0)
-            return code;
+            goto error;
     }
 done:
     gs_c_param_list_read(list);
+    gx_device_finalize(pdev->memory, &mdev);
     return 0;
+error:
+    gx_device_finalize(pdev->memory, &mdev);
+    return code;
 }
 
 /* Add the appropriate image compression filter, if any. */
