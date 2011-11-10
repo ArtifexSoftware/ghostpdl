@@ -55,7 +55,7 @@ static ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {
     if (index < st_pattern1_template_max_ptrs) {
         gs_ptr_type_t ptype =
             ENUM_SUPER_ELT(gs_pattern1_instance_t, st_pattern1_template,
-                           template, 0);
+                           templat, 0);
 
         if (ptype)
             return ptype;
@@ -65,7 +65,7 @@ static ENUM_PTRS_BEGIN(pattern1_instance_enum_ptrs) {
 } ENUM_PTRS_END
 static RELOC_PTRS_BEGIN(pattern1_instance_reloc_ptrs) {
     RELOC_PREFIX(st_pattern_instance);
-    RELOC_SUPER(gs_pattern1_instance_t, st_pattern1_template, template);
+    RELOC_SUPER(gs_pattern1_instance_t, st_pattern1_template, templat);
 } RELOC_PTRS_END
 
 /* Define a PatternType 1 pattern. */
@@ -162,7 +162,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
             code = gs_note_error(gs_error_rangecheck);
             goto fsaved;
     }
-    inst.template = *pcp;
+    inst.templat = *pcp;
     code = compute_inst_matrix(&inst, saved, &bbox, dev_width, dev_height);
     if (code < 0)
         goto fsaved;
@@ -173,10 +173,10 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
        if possible.  Note that any skew or rotation matrix will make it
        neccessary to perform blending */
 
-    { float width = inst.template.BBox.q.x - inst.template.BBox.p.x;
-      float height = inst.template.BBox.q.y - inst.template.BBox.p.y;
+    { float width = inst.templat.BBox.q.x - inst.templat.BBox.p.x;
+      float height = inst.templat.BBox.q.y - inst.templat.BBox.p.y;
 
-      if ( inst.template.XStep < width || inst.template.YStep < height || ctm_only(saved).xy != 0 ||
+      if ( inst.templat.XStep < width || inst.templat.YStep < height || ctm_only(saved).xy != 0 ||
           ctm_only(saved).yx != 0 ){
 
           inst.has_overlap = true;
@@ -194,7 +194,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
               inst.step_matrix.xx, inst.step_matrix.xy, inst.step_matrix.yx,
               inst.step_matrix.yy, inst.step_matrix.tx, inst.step_matrix.ty);
     if_debug5('t', "[t]bbox=(%g,%g),(%g,%g), uses_transparency=%d\n",
-              bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.template.uses_transparency);
+              bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y, inst.templat.uses_transparency);
     {
         float bbw = bbox.q.x - bbox.p.x;
         float bbh = bbox.q.y - bbox.p.y;
@@ -245,7 +245,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                           inst.size.x, inst.size.y);
                 if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
                           bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
-            } else if ((ADJUST_AS_ADOBE) && (inst.template.TilingType != 2)) {
+            } else if ((ADJUST_AS_ADOBE) && (inst.templat.TilingType != 2)) {
                 if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
                     fabs(fabs(inst.step_matrix.xx) - bbw) < 0.5 &&
                     fabs(fabs(inst.step_matrix.yy) - bbh) < 0.5
@@ -305,11 +305,11 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                             gs_scale(saved, 1, (fabs(inst.size.y) - 1.0 / fixed_scale) / fabs(inst.size.y));
 #endif
                     }
-                    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
+                    code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
                     if (code < 0)
                         goto fsaved;
                 }
-            } else if ((inst.template.TilingType == 2) &&
+            } else if ((inst.templat.TilingType == 2) &&
                        ((pgs->fill_adjust.x | pgs->fill_adjust.y) == 0)) {
                 if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
                     fabs(fabs(inst.step_matrix.xx) - bbw) <= 0.5 &&
@@ -318,7 +318,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                     gs_translate_untransformed(saved,
                                                (bbw - inst.size.x)/2,
                                                (bbh - inst.size.y)/2);
-                    code = gs_bbox_transform(&inst.template.BBox, &ctm_only(saved), &bbox);
+                    code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
                     if (code < 0)
                         goto fsaved;
                 }
@@ -354,13 +354,13 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (!inst.is_simple) {
         code = gs_newpath(saved);
         if (code >= 0)
-            code = gs_moveto(saved, inst.template.BBox.p.x, inst.template.BBox.p.y);
+            code = gs_moveto(saved, inst.templat.BBox.p.x, inst.templat.BBox.p.y);
         if (code >= 0)
-            code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.p.y);
+            code = gs_lineto(saved, inst.templat.BBox.q.x, inst.templat.BBox.p.y);
         if (code >= 0)
-            code = gs_lineto(saved, inst.template.BBox.q.x, inst.template.BBox.q.y);
+            code = gs_lineto(saved, inst.templat.BBox.q.x, inst.templat.BBox.q.y);
         if (code >= 0)
-            code = gs_lineto(saved, inst.template.BBox.p.x, inst.template.BBox.q.y);
+            code = gs_lineto(saved, inst.templat.BBox.p.x, inst.templat.BBox.q.y);
         if (code >= 0)
             code = gs_clip(saved);
         if (code < 0)
@@ -388,8 +388,8 @@ static int
 clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
                     int width, int height, const gs_matrix * pmat)
 {
-    double xstep = pinst->template.XStep;
-    double ystep = pinst->template.YStep;
+    double xstep = pinst->templat.XStep;
+    double ystep = pinst->templat.YStep;
     double xmin = pbbox->q.x;
     double xmax = pbbox->p.x;
     double ymin = pbbox->q.y;
@@ -426,8 +426,8 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
      * pattern below and to the left of the page (in pattern space) and scan
      * until the pattern is above and right of the page.
      */
-    ixpat = (int) floor((pat_page.p.x - pinst->template.BBox.q.x) / xstep);
-    iystart = (int) floor((pat_page.p.y - pinst->template.BBox.q.y) / ystep);
+    ixpat = (int) floor((pat_page.p.x - pinst->templat.BBox.q.x) / xstep);
+    iystart = (int) floor((pat_page.p.y - pinst->templat.BBox.q.y) / ystep);
 
     /* Now do the scan */
     for (; ; ixpat++) {
@@ -461,10 +461,10 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
                 if (yupper > ymax)
                     ymax = yupper;
             }
-            if (ypat > pat_page.q.y - pinst->template.BBox.p.y)
+            if (ypat > pat_page.q.y - pinst->templat.BBox.p.y)
                 break;
         }
-        if (xpat > pat_page.q.x - pinst->template.BBox.p.x)
+        if (xpat > pat_page.q.x - pinst->templat.BBox.p.x)
             break;
     }
     /* Update the bounding box. */
@@ -490,7 +490,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_state * saved,
     float xx, xy, yx, yy, dx, dy, temp;
     int code;
 
-    code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved), pbbox);
+    code = gs_bbox_transform(&pinst->templat.BBox, &ctm_only(saved), pbbox);
     if (code < 0)
         return code;
     /*
@@ -515,10 +515,10 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, gs_state * saved,
         return code;
 
     /* The stepping matrix : */
-    xx = pinst->template.XStep * saved->ctm.xx;
-    xy = pinst->template.XStep * saved->ctm.xy;
-    yx = pinst->template.YStep * saved->ctm.yx;
-    yy = pinst->template.YStep * saved->ctm.yy;
+    xx = pinst->templat.XStep * saved->ctm.xx;
+    xy = pinst->templat.XStep * saved->ctm.xy;
+    yx = pinst->templat.YStep * saved->ctm.yx;
+    yy = pinst->templat.YStep * saved->ctm.yy;
 
     /* Adjust the stepping matrix so all coefficients are >= 0. */
     if (xx == 0 || yy == 0) { /* We know that both xy and yx are non-zero. */
@@ -561,7 +561,7 @@ static const gs_pattern_template_t *
 gs_pattern1_get_pattern(const gs_pattern_instance_t *pinst)
 {
     return (const gs_pattern_template_t *)
-        &((const gs_pattern1_instance_t *)pinst)->template;
+        &((const gs_pattern1_instance_t *)pinst)->templat;
 }
 
 /* Get transparency object pointer */
@@ -645,7 +645,7 @@ static int
 gs_pattern1_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern1_instance_t * pinst = (gs_pattern1_instance_t *)pcc->pattern;
-    gs_pattern1_template_t * ptmplt = &pinst->template;
+    gs_pattern1_template_t * ptmplt = &pinst->templat;
 
     if (ptmplt->PaintType == 2) {
         const gs_color_space *pcs = gs_currentcolorspace_inline(pgs);
@@ -667,7 +667,7 @@ gs_getpattern(const gs_client_color * pcc)
     const gs_pattern_instance_t *pinst = pcc->pattern;
 
     return (pinst == 0 || pinst->type != &gs_pattern1_type ? 0 :
-            &((const gs_pattern1_instance_t *)pinst)->template);
+            &((const gs_pattern1_instance_t *)pinst)->templat);
 }
 
 /*
@@ -729,7 +729,7 @@ free_pixmap_pattern(
 )
 {
     gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)pvpinst;
-    pixmap_info *ppmap = pinst->template.client_data;
+    pixmap_info *ppmap = pinst->templat.client_data;
 
     ppmap->free_proc(pmem, pvpinst, cname);
     gs_free_object(pmem, ppmap, cname);
@@ -1893,7 +1893,7 @@ gx_dc_pattern_read(
             memset(&inst, 0, sizeof(inst));
             /* NB: Currently PaintType 2 can't pass here. */
             state.device = (gx_device *)dev; /* Break 'const'. */
-            inst.template.PaintType = 1;
+            inst.templat.PaintType = 1;
             inst.size.x = buf.size.x;
             inst.size.y = buf.size.y;
             inst.saved = &state;

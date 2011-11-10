@@ -86,7 +86,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     int code;
     gs_matrix mat;
     float BBox[4];
-    gs_client_pattern template;
+    gs_client_pattern templat;
     int_pattern *pdata;
     gs_client_color cc_instance;
     ref *pPaintProc;
@@ -96,23 +96,23 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
         return code;
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
-    gs_pattern1_init(&template);
+    gs_pattern1_init(&templat);
 
-    code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p);
+    code = dict_uid_param(op1, &templat.uid, 1, imemory, i_ctx_p);
     if (code < 0)
         return code;
     if (code != 1)
         return_error(e_rangecheck);
 
-    code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType);
+    code = dict_int_param(op1, "PaintType", 1, 2, 0, &templat.PaintType);
     if (code < 0)
         return code;
 
-    code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType);
+    code = dict_int_param(op1, "TilingType", 1, 3, 0, &templat.TilingType);
     if (code < 0)
         return code;
 
-    code = dict_bool_param(op1, ".pattern_uses_transparency", 0, &template.uses_transparency);
+    code = dict_bool_param(op1, ".pattern_uses_transparency", 0, &templat.uses_transparency);
     if (code < 0)
         return code;
 
@@ -122,13 +122,13 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (code == 0)
        return_error(e_undefined);
 
-    code = dict_float_param(op1, "XStep", 0.0, &template.XStep);
+    code = dict_float_param(op1, "XStep", 0.0, &templat.XStep);
     if (code < 0)
         return code;
     if (code == 1)
        return_error(e_undefined);
 
-    code = dict_float_param(op1, "YStep", 0.0, &template.YStep);
+    code = dict_float_param(op1, "YStep", 0.0, &templat.YStep);
     if (code < 0)
         return code;
     if (code == 1)
@@ -147,16 +147,16 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     if (BBox[0] >= BBox[2] ||  BBox[1] >= BBox[3])
         return_error(e_rangecheck);
 
-    template.BBox.p.x = BBox[0];
-    template.BBox.p.y = BBox[1];
-    template.BBox.q.x = BBox[2];
-    template.BBox.q.y = BBox[3];
-    template.PaintProc = zPaintProc;
+    templat.BBox.p.x = BBox[0];
+    templat.BBox.p.y = BBox[1];
+    templat.BBox.q.x = BBox[2];
+    templat.BBox.q.y = BBox[3];
+    templat.PaintProc = zPaintProc;
     code = int_pattern_alloc(&pdata, op1, imemory);
     if (code < 0)
         return code;
-    template.client_data = pdata;
-    code = gs_makepattern(&cc_instance, &template, &mat, igs, imemory);
+    templat.client_data = pdata;
+    code = gs_makepattern(&cc_instance, &templat, &mat, igs, imemory);
     if (code < 0) {
         ifree_object(pdata, "int_pattern");
         return code;
@@ -196,7 +196,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     gs_state *pgs = igs;
     gs_pattern1_instance_t *pinst =
         (gs_pattern1_instance_t *)gs_currentcolor(pgs)->pattern;
-    ref *pdict = &((int_pattern *) pinst->template.client_data)->dict;
+    ref *pdict = &((int_pattern *) pinst->templat.client_data)->dict;
     gx_device_forward *pdev = NULL;
     gx_device *cdev = gs_currentdevice_inline(igs);
     int code;
@@ -239,12 +239,12 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     /* gx_set_device_only(pgs, (gx_device *) pdev); */
     if (internal_accum) {
         gs_setdevice_no_init(pgs, (gx_device *)pdev);
-        if (pinst->template.uses_transparency) {
+        if (pinst->templat.uses_transparency) {
             if_debug0('v', "   pushing the pdf14 compositor device into this graphics state\n");
             if ((code = gs_push_pdf14trans_device(pgs, true)) < 0)
                 return code;
         } else { /* not transparent */
-            if (pinst->template.PaintType == 1)
+            if (pinst->templat.PaintType == 1)
                 if ((code = gx_erase_colored_pattern(pgs)) < 0)
                     return code;
         }
@@ -255,7 +255,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
 
         dev_proc(pgs->device, get_initial_matrix)(pgs->device, &m);
         gs_setmatrix(igs, &m);
-        code = gs_bbox_transform(&pinst->template.BBox, &ctm_only(pgs), &bbox);
+        code = gs_bbox_transform(&pinst->templat.BBox, &ctm_only(pgs), &bbox);
         if (code < 0) {
             gs_grestore(pgs);
             return code;
@@ -301,7 +301,7 @@ pattern_paint_finish(i_ctx_t *i_ctx_p)
     if (pdev != NULL) {
         gx_color_tile *ctile;
         int code;
-        if (pinst->template.uses_transparency) {
+        if (pinst->templat.uses_transparency) {
             gs_state *pgs = igs;
             int code;
 

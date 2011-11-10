@@ -68,7 +68,7 @@ s_MD5E_make_stream(gs_memory_t *mem, byte *digest, int digest_size)
 
     if (ss == NULL || s == NULL)
         goto err;
-    ss->template = &s_MD5E_template;
+    ss->templat = &s_MD5E_template;
     if (s_init_filter(s, ss, digest, digest_size, NULL) < 0)
 goto err;
     s->strm = s;
@@ -112,7 +112,7 @@ s_MD5C_make_stream(gs_memory_t *mem, stream *strm)
 
     if (ss == NULL || s == NULL || buffer == NULL)
         goto err;
-    ss->template = &s_MD5C_template;
+    ss->templat = &s_MD5C_template;
     if (s_init_filter(s, ss, buffer, buffer_size, NULL) < 0)
         goto err;
     s->strm = strm;

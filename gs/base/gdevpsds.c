@@ -34,7 +34,7 @@ int
 s_1248_init(stream_1248_state *ss, int Columns, int samples_per_pixel)
 {
     ss->samples_per_row = Columns * samples_per_pixel;
-    return ss->template->init((stream_state *)ss);
+    return ss->templat->init((stream_state *)ss);
 }
 
 /* Initialize the state. */
@@ -523,7 +523,7 @@ const stream_template s_IE_template = {
 void
 test_IE(void)
 {
-    const stream_template *const template = &s_IE_template;
+    const stream_templat *const template = &s_IE_template;
     stream_IE_state state;
     stream_state *const ss = (stream_state *)&state;
     static const float decode[6] = {1, 0, 1, 0, 1, 0};
@@ -540,7 +540,7 @@ test_IE(void)
     byte table[3 * 5];
     int n;
 
-    template->set_defaults(ss);
+    templat->set_defaults(ss);
     state.BitsPerComponent = 4;
     state.NumComponents = 3;
     state.Width = 3;
@@ -561,7 +561,7 @@ test_IE(void)
         memset(table, 0xcc, sizeof(table));
         memset(out, 0xff, sizeof(out));
         dprintf1("processing %d bytes\n", n);
-        status = template->process(ss, &r, &w, true);
+        status = templat->process(ss, &r, &w, true);
         dprintf3("%d bytes read, %d bytes written, status = %d\n",
                  (int)(r.ptr + 1 - in), (int)(w.ptr + 1 - out), status);
         debug_dump_bytes(table, table + sizeof(table), "table");

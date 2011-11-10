@@ -1792,8 +1792,8 @@ static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAP
             return_error(e_VMerror);
         }
 
-        x = (floatp) (pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5);
-        y = (floatp) (pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
+        x = (int) (pgs->ctm.tx + (double)rast_orig_x / (1 << frac_pixel_shift) + 0.5);
+        y = (int) (pgs->ctm.ty + (double)rast_orig_y / (1 << frac_pixel_shift) + 0.5);
         w = rast->width;
         h = rast->height;
 

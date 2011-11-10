@@ -72,13 +72,13 @@ jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
     /* Create the jbig2encode state. */
     s_init_state((stream_state *)&state, &s_jbig2encode_template, 0);
-    if (state.template->set_defaults)
-        (*state.template->set_defaults) ((stream_state *) & state);
+    if (state.templat->set_defaults)
+        (*state.templat->set_defaults) ((stream_state *) & state);
     state.width = jdev->width;
     state.height = jdev->height;
     /* Set up the streams. */
-    fbuf_size = max(512 /* arbitrary */ , state.template->min_out_size);
-    jbuf_size = state.template->min_in_size;
+    fbuf_size = max(512 /* arbitrary */ , state.templat->min_out_size);
+    jbuf_size = state.templat->min_in_size;
     if ((fbuf = gs_alloc_bytes(mem, fbuf_size, "jbig2_print_page(fbuf)")) == 0 ||
         (jbuf = gs_alloc_bytes(mem, jbuf_size, "jbig2_print_page(jbuf)")) == 0
         ) {
@@ -91,10 +91,10 @@ jbig2_print_page(gx_device_printer * pdev, FILE * prn_stream)
     s_std_init(&cstrm, jbuf, jbuf_size, &s_filter_write_procs,
                s_mode_write);
     cstrm.state = (stream_state *) & state;
-    cstrm.procs.process = state.template->process;
+    cstrm.procs.process = state.templat->process;
     cstrm.strm = &fstrm;
-    if (state.template->init)
-        (*state.template->init) (cstrm.state);
+    if (state.templat->init)
+        (*state.templat->init) (cstrm.state);
 
     /* Copy the data to the output. */
     for (lnum = 0; lnum < jdev->height; ++lnum) {

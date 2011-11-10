@@ -1096,16 +1096,16 @@ filter_report_error(stream_state * st, const char *str)
 /* Open a file stream for a filter. */
 int
 filter_open(const char *file_access, uint buffer_size, ref * pfile,
-            const stream_procs * procs, const stream_template * template,
+            const stream_procs * procs, const stream_template * templat,
             const stream_state * st, gs_memory_t *mem)
 {
     stream *s;
-    uint ssize = gs_struct_type_size(template->stype);
+    uint ssize = gs_struct_type_size(templat->stype);
     stream_state *sst = 0;
     int code;
 
-    if (template->stype != &st_stream_state) {
-        sst = s_alloc_state(mem, template->stype, "filter_open(stream_state)");
+    if (templat->stype != &st_stream_state) {
+        sst = s_alloc_state(mem, templat->stype, "filter_open(stream_state)");
         if (sst == 0)
             return_error(e_VMerror);
     }
@@ -1117,7 +1117,7 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     }
     s_std_init(s, s->cbuf, s->bsize, procs,
                (*file_access == 'r' ? s_mode_read : s_mode_write));
-    s->procs.process = template->process;
+    s->procs.process = templat->process;
     s->save_close = s->procs.close;
     s->procs.close = file_close_file;
     if (sst == 0) {
@@ -1127,11 +1127,11 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     } else if (st != 0)         /* might not have client parameters */
         memcpy(sst, st, ssize);
     s->state = sst;
-    s_init_state(sst, template, mem);
+    s_init_state(sst, templat, mem);
     sst->report_error = filter_report_error;
 
-    if (template->init != 0) {
-        code = (*template->init)(sst);
+    if (templat->init != 0) {
+        code = (*templat->init)(sst);
         if (code < 0) {
             gs_free_object(mem, sst, "filter_open(stream_state)");
             gs_free_object(mem, s->cbuf, "filter_open(buffer)");

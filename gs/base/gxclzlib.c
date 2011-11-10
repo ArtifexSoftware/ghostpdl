@@ -36,12 +36,12 @@ clist_compressor_init(stream_state *state)
 {
     s_zlib_set_defaults(state);
     ((stream_zlib_state *)state)->no_wrapper = true;
-    state->template = &s_zlibE_template;
+    state->templat = &s_zlibE_template;
 }
 void
 clist_decompressor_init(stream_state *state)
 {
     s_zlib_set_defaults(state);
     ((stream_zlib_state *)state)->no_wrapper = true;
-    state->template = &s_zlibD_template;
+    state->templat = &s_zlibD_template;
 }

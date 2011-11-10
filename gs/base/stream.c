@@ -126,10 +126,10 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 
 /* Allocate a stream state and initialize it minimally. */
 void
-s_init_state(stream_state *st, const stream_template *template,
+s_init_state(stream_state *st, const stream_template *templat,
              gs_memory_t *mem)
 {
-    st->template = template;
+    st->templat = templat;
     st->memory = mem;
     st->report_error = s_no_report_error;
     st->min_left = 0;
@@ -155,7 +155,7 @@ void
 s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
            int modes)
 {
-    s->template = &s_no_template;
+    s->templat = &s_no_template;
     s->cbuf = ptr;
     s->srptr = s->srlimit = s->swptr = ptr - 1;
     s->swlimit = ptr - 1 + len;
@@ -300,7 +300,7 @@ s_disable(register stream * s)
     /* Clear pointers for GC */
     s->strm = 0;
     s->state = (stream_state *) s;
-    s->template = &s_no_template;
+    s->templat = &s_no_template;
     /* Free the file name. */
     if (s->file_name.data) {
         gs_free_const_string(s->memory, s->file_name.data, s->file_name.size,
@@ -421,7 +421,7 @@ sclose(register stream * s)
         return status;
     st = s->state;
     if (st != 0) {
-        stream_proc_release((*release)) = st->template->release;
+        stream_proc_release((*release)) = st->templat->release;
         if (release != 0)
             (*release) (st);
         if (st != (stream_state *) s && st->memory != 0)
@@ -518,7 +518,7 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 
             if (wanted >= s->bsize >> 2 &&
                 (st = s->state) != 0 &&
-                wanted >= st->template->min_out_size &&
+                wanted >= st->templat->min_out_size &&
                 s->end_status == 0 &&
                 left == 0
                 ) {
@@ -886,7 +886,7 @@ swritebuf(stream * s, stream_cursor_read * pbuf, bool last)
             if_debug5('s',
                       "[s]write process 0x%lx(%s), nr=%u, nw=%u, end=%d\n",
                       (ulong)curr,
-                      gs_struct_type_name(curr->state->template->stype),
+                      gs_struct_type_name(curr->state->templat->stype),
                       (uint)(pr->limit - pr->ptr),
                       (uint)(pw->limit - pw->ptr), end);
             status = curr->end_status;
@@ -1147,15 +1147,15 @@ int
 s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
               stream *target)
 {
-    const stream_template *template = fss->template;
+    const stream_template *templat = fss->templat;
 
-    if (bsize < template->min_in_size)
+    if (bsize < templat->min_in_size)
         return ERRC;
     s_std_init(fs, buf, bsize, &s_filter_write_procs, s_mode_write);
-    fs->procs.process = template->process;
+    fs->procs.process = templat->process;
     fs->state = fss;
-    if (template->init) {
-        fs->end_status = (template->init)(fss);
+    if (templat->init) {
+        fs->end_status = (templat->init)(fss);
         if (fs->end_status < 0)
             return fs->end_status;
     }
@@ -1163,19 +1163,19 @@ s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
     return 0;
 }
 stream *
-s_add_filter(stream **ps, const stream_template *template,
+s_add_filter(stream **ps, const stream_template *templat,
              stream_state *ss, gs_memory_t *mem)
 {
     stream *es;
     stream_state *ess;
-    uint bsize = max(template->min_in_size, 256);	/* arbitrary */
+    uint bsize = max(templat->min_in_size, 256);	/* arbitrary */
     byte *buf;
 
     /*
      * Ensure enough buffering.  This may require adding an additional
      * stream.
      */
-    if (bsize > (*ps)->bsize && template->process != s_NullE_template.process) {
+    if (bsize > (*ps)->bsize && templat->process != s_NullE_template.process) {
         stream_template null_template;
 
         null_template = s_NullE_template;
@@ -1191,7 +1191,7 @@ s_add_filter(stream **ps, const stream_template *template,
         return 0;
     }
     ess = (ss == 0 ? (stream_state *)es : ss);
-    ess->template = template;
+    ess->templat = templat;
     ess->memory = mem;
     es->memory = mem;
     if (s_init_filter(es, ess, buf, bsize, *ps) < 0)

@@ -167,7 +167,7 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     int min_feature_size = ((gx_device_fax *const)pdev)->MinFeatureSize;
 
     /* Initialize the common part of the encoder state. */
-    ss->template = temp;
+    ss->templat = temp;
     ss->memory = mem;
     /* Now initialize the encoder. */
     code = temp->init(ss);

@@ -51,7 +51,7 @@ typedef struct gx_device_color_s gx_device_color;
 
 typedef struct gs_pattern2_instance_s {
     gs_pattern_instance_common;
-    gs_pattern2_template_t template;
+    gs_pattern2_template_t templat;
     bool shfill;
 } gs_pattern2_instance_t;
 

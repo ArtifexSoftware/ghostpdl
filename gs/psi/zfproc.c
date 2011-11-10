@@ -74,7 +74,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
-    state->template = temp;
+    state->templat = temp;
     state->memory = mem;
     state->eof = 0;
     state->proc = *sop;

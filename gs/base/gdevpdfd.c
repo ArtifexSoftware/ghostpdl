@@ -832,13 +832,13 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
         s.ctm.ty = cvd->m.ty;
         memset(&inst, 0, sizeof(inst));
         inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
-        inst.template.PaintType = 1;
-        inst.template.TilingType = 1;
-        inst.template.BBox.p.x = inst.template.BBox.p.y = 0;
-        inst.template.BBox.q.x = cvd->mdev.width;
-        inst.template.BBox.q.y = cvd->mdev.height;
-        inst.template.XStep = (float)cvd->mdev.width;
-        inst.template.YStep = (float)cvd->mdev.height;
+        inst.templat.PaintType = 1;
+        inst.templat.TilingType = 1;
+        inst.templat.BBox.p.x = inst.templat.BBox.p.y = 0;
+        inst.templat.BBox.q.x = cvd->mdev.width;
+        inst.templat.BBox.q.y = cvd->mdev.height;
+        inst.templat.XStep = (float)cvd->mdev.width;
+        inst.templat.YStep = (float)cvd->mdev.height;
         code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
             gxdso_pattern_start_accum, &inst, id);
         if (code >= 0) {
@@ -1155,7 +1155,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
             pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
             cvd.write_matrix = false;
             if (code >= 0)
-                code = gs_shading_do_fill_rectangle(pi.template.Shading,
+                code = gs_shading_do_fill_rectangle(pi.templat.Shading,
                      NULL, (gx_device *)&cvd.mdev, (gs_imager_state *)pgs, !pi.shfill);
             if (code >= 0)
                 code = pdf_dump_converted_image(pdev, &cvd);

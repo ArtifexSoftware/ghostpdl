@@ -199,7 +199,7 @@ int
 pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
                         gs_pattern1_instance_t *pinst)
 {
-    gs_pattern1_template_t *t = &pinst->template;
+    gs_pattern1_template_t *t = &pinst->templat;
     gs_matrix smat2 = ctm_only((gs_imager_state *)pinst->saved), smat;
     double scale_x = pdev->HWResolution[0] / 72.0;
     double scale_y = pdev->HWResolution[1] / 72.0;
@@ -903,7 +903,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 {
     const gs_pattern2_instance_t *pinst =
         (gs_pattern2_instance_t *)pdc->ccolor.pattern;
-    const gs_shading_t *psh = pinst->template.Shading;
+    const gs_shading_t *psh = pinst->templat.Shading;
     cos_value_t v;
     pdf_resource_t *pres;
     pdf_resource_t *psres;

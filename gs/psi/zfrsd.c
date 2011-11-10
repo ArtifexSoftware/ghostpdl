@@ -198,7 +198,7 @@ rs:
             if (~s->modes & (s_mode_read | s_mode_seek))
                 return_error(e_ioerror);
             code = make_rfs(i_ctx_p, source_op, s, offset + stell(s), length);
-        } else if (s->state->template == &s_SFD_template) {
+        } else if (s->state->templat == &s_SFD_template) {
             /* SubFileDecode filter */
             const stream_SFD_state *const sfd_state =
                 (const stream_SFD_state *)s->state;
@@ -359,7 +359,7 @@ make_aos(i_ctx_t *i_ctx_p, os_ptr op, int blk_sz, int blk_sz_last, uint file_sz)
         return_error(e_VMerror);
     }
     ialloc_set_space(idmemory, save_space);
-    ss->template = &s_aos_template;
+    ss->templat = &s_aos_template;
     ss->blocks = *op;
     ss->s = s;
     ss->blk_sz = blk_sz;

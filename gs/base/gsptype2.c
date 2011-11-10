@@ -38,7 +38,7 @@ static ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
     if (index < st_pattern2_template_max_ptrs) {
         gs_ptr_type_t ptype =
             ENUM_SUPER_ELT(gs_pattern2_instance_t, st_pattern2_template,
-                           template, 0);
+                           templat, 0);
 
         if (ptype)
             return ptype;
@@ -49,7 +49,7 @@ static ENUM_PTRS_BEGIN(pattern2_instance_enum_ptrs) {
 ENUM_PTRS_END
 static RELOC_PTRS_BEGIN(pattern2_instance_reloc_ptrs) {
     RELOC_PREFIX(st_pattern_instance);
-    RELOC_SUPER(gs_pattern2_instance_t, st_pattern2_template, template);
+    RELOC_SUPER(gs_pattern2_instance_t, st_pattern2_template, templat);
 } RELOC_PTRS_END
 
 /* Define a PatternType 2 pattern. */
@@ -96,7 +96,7 @@ gs_pattern2_make_pattern(gs_client_color * pcc,
     if (code < 0)
         return code;
     pinst = (gs_pattern2_instance_t *)pcc->pattern;
-    pinst->template = *ptemp;
+    pinst->templat = *ptemp;
     pinst->shfill = false;
     return 0;
 }
@@ -106,7 +106,7 @@ static const gs_pattern_template_t *
 gs_pattern2_get_pattern(const gs_pattern_instance_t *pinst)
 {
     return (const gs_pattern_template_t *)
-        &((const gs_pattern2_instance_t *)pinst)->template;
+        &((const gs_pattern2_instance_t *)pinst)->templat;
 }
 
 /* Set the 'shfill' flag to a PatternType 2 pattern instance. */
@@ -196,7 +196,7 @@ static int
 gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
-    gs_color_space * pcs = pinst->template.Shading->params.ColorSpace;
+    gs_color_space * pcs = pinst->templat.Shading->params.ColorSpace;
     int code, save_overprint_mode = pgs->overprint_mode;
 
     pgs->overprint_mode = 0;
@@ -229,7 +229,7 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
         rect.p.y = int2fixed(y);
         rect.q.x = int2fixed(x + w);
         rect.q.y = int2fixed(y + h);
-        return gs_shading_do_fill_rectangle(pinst->template.Shading, &rect, dev,
+        return gs_shading_do_fill_rectangle(pinst->templat.Shading, &rect, dev,
                                     (gs_imager_state *)pinst->saved, !pinst->shfill);
     }
 }
@@ -289,10 +289,10 @@ gx_dc_pattern2_get_bbox(const gx_device_color * pdevc, gs_fixed_rect *bbox)
         (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
     int code;
 
-    if (!pinst->template.Shading->params.have_BBox)
+    if (!pinst->templat.Shading->params.have_BBox)
         return 0;
     code = gx_dc_pattern2_shade_bbox_transform2fixed(
-                &pinst->template.Shading->params.BBox, (gs_imager_state *)pinst->saved, bbox);
+                &pinst->templat.Shading->params.BBox, (gs_imager_state *)pinst->saved, bbox);
     if (code < 0)
         return code;
     return 1;
@@ -302,7 +302,7 @@ int
 gx_dc_pattern2_color_has_bbox(const gx_device_color * pdevc)
 {
     gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    const gs_shading_t *psh = pinst->template.Shading;
+    const gs_shading_t *psh = pinst->templat.Shading;
 
     return psh->params.have_BBox;
 }
@@ -312,7 +312,7 @@ static int
 gx_dc_shading_path_add_box(gx_path *ppath, const gx_device_color * pdevc)
 {
     gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    const gs_shading_t *psh = pinst->template.Shading;
+    const gs_shading_t *psh = pinst->templat.Shading;
 
     if (!psh->params.have_BBox)
         return_error(gs_error_unregistered); /* Do not call in this case. */
@@ -385,7 +385,7 @@ gx_dc_pattern2_is_rectangular_cell(const gx_device_color * pdevc, gx_device * pd
     if (gx_dc_is_pattern2_color(pdevc) && gx_dc_pattern2_color_has_bbox(pdevc) &&
             (*dev_proc(pdev, dev_spec_op))(pdev, gxdso_pattern_shading_area, NULL, 0) == 0) {
         gs_pattern2_instance_t *pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-        const gs_shading_t *psh = pinst->template.Shading;
+        const gs_shading_t *psh = pinst->templat.Shading;
         gs_fixed_point p, q;
 
         if (is_xxyy(&ctm_only(pinst->saved)))
@@ -418,7 +418,7 @@ gx_dc_pattern2_get_color_space(const gx_device_color * pdevc)
 {
     gs_pattern2_instance_t *pinst =
         (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    const gs_shading_t *psh = pinst->template.Shading;
+    const gs_shading_t *psh = pinst->templat.Shading;
 
     return psh->params.ColorSpace;
 }
@@ -432,7 +432,7 @@ gx_dc_pattern2_can_overlap(const gx_device_color *pdevc)
     if (pdevc->type != &gx_dc_pattern2)
         return false;
     pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    switch (pinst->template.Shading->head.type) {
+    switch (pinst->templat.Shading->head.type) {
         case 3: case 6: case 7:
             return true;
         default:
@@ -449,6 +449,6 @@ bool gx_dc_pattern2_has_background(const gx_device_color *pdevc)
     if (pdevc->type != &gx_dc_pattern2)
         return false;
     pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
-    Shading = pinst->template.Shading;
+    Shading = pinst->templat.Shading;
     return !pinst->shfill && Shading->params.Background != NULL;
 }

@@ -680,15 +680,15 @@ calc_access(const gs_data_source_t *psrc, ulong start, uint length,
     stream_SFD_state st;
     stream ds, bs;
     byte dbuf[200];		/* arbitrary */
-    const stream_template *const template = &s_SFD_template;
+    const stream_template *const templat = &s_SFD_template;
 
     /* Set up the stream that writes into the buffer. */
     s_init(&bs, NULL);
     swrite_string(&bs, buf, length);
     /* Set up the SubFileDecode stream. */
     s_init(&ds, NULL);
-    s_init_state((stream_state *)&st, template, NULL);
-    template->set_defaults((stream_state *)&st);
+    s_init_state((stream_state *)&st, templat, NULL);
+    templat->set_defaults((stream_state *)&st);
     st.skip_count = start;
     s_init_filter(&ds, (stream_state *)&st, dbuf, sizeof(dbuf), &bs);
     calc_put(&ds, pfn);

@@ -168,7 +168,7 @@ check_for_nontrans_pattern(gs_state *pgs, unsigned char *comp_name)
             gx_device_clist_writer *clwdev = (gx_device_clist_writer*) dev;
             const gs_pattern1_instance_t *pinst = clwdev->pinst;
 
-            if (!(pinst->template.uses_transparency)) {
+            if (!(pinst->templat.uses_transparency)) {
                 if_debug1('v',
                     "[v]%s NOT sending in pattern\n",comp_name);
                 return(1);
@@ -178,7 +178,7 @@ check_for_nontrans_pattern(gs_state *pgs, unsigned char *comp_name)
             gx_device_pattern_accum *padev = (gx_device_pattern_accum*) dev;
             const gs_pattern1_instance_t *pinst = padev->instance;
 
-            if (!(pinst->template.uses_transparency)) {
+            if (!(pinst->templat.uses_transparency)) {
                 if_debug1('v',
                     "[v]%s NOT sending in pattern\n",comp_name);
                 return(1);

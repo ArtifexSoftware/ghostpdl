@@ -205,7 +205,7 @@ s_DCTE_release(stream_state * st)
     gs_free_object(ss->data.common->memory, ss->data.compress,
                    "s_DCTE_release");
     /* Switch the template pointer back in case we still need it. */
-    st->template = &s_DCTE_template;
+    st->templat = &s_DCTE_template;
 }
 
 /* Stream template */

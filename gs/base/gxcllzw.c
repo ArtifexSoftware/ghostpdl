@@ -33,11 +33,11 @@ void
 clist_compressor_init(stream_state *state)
 {
     s_LZW_set_defaults(state);
-    state->template = &s_LZWE_template;
+    state->templat = &s_LZWE_template;
 }
 void
 clist_decompressor_init(stream_state *state)
 {
     s_LZW_set_defaults(state);
-    state->template = &s_LZWD_template;
+    state->templat = &s_LZWD_template;
 }

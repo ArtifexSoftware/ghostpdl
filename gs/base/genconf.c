@@ -472,12 +472,12 @@ main(int argc, char *argv[])
                 fputs("/* This file was generated automatically by genconf.c. */\n", out);
                 fputs("/* For documentation, see gsconfig.c. */\n", out);
                 {
-                    char template[80];
+                    char templat[80];
 
-                    sprintf(template,
+                    sprintf(templat,
                             "font_(\"0.font_%%s\",%sf_%%s,zf_%%s)\n",
                             conf.name_prefix);
-                    write_list(out, &conf.lists.named.fonts, template);
+                    write_list(out, &conf.lists.named.fonts, templat);
                 }
                 break;
             case 'h':
@@ -747,7 +747,7 @@ add_entry(config_t * pconf, char *category, const char *item, int file_index)
         return 0;
     } else {			/* add to current category */
         char str[MAX_STR];
-        char template[80];
+        char templat[80];
         const char *pat = 0;
         string_list_t *list = &pconf->lists.named.resources;
 
@@ -770,8 +770,8 @@ add_entry(config_t * pconf, char *category, const char *item, int file_index)
                 else
                     goto err;
                 list = &pconf->lists.named.devs;
-pre:		sprintf(template, pat, pconf->name_prefix);
-                pat = template;
+pre:		sprintf(templat, pat, pconf->name_prefix);
+                pat = templat;
                 break;
             case 'e':
                 if (IS_CAT("emulator")) {
@@ -828,9 +828,9 @@ pre:		sprintf(template, pat, pconf->name_prefix);
             case 'o':
                 if (IS_CAT("obj")) {
                     list = &pconf->lists.named.objs;
-                    strcpy(template, pconf->file_prefix);
-                    strcat(template, "%s");
-                    pat = template;
+                    strcpy(templat, pconf->file_prefix);
+                    strcat(templat, "%s");
+                    pat = templat;
                     break;
                 }
                 if (IS_CAT("oper")) {

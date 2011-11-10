@@ -305,7 +305,7 @@ setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
     static const pdf_filter_names_t fnames = {
         PDF_FILTER_NAMES
     };
-    const stream_template *template =
+    const stream_template *templat =
         (pdev->params.UseFlateCompression &&
          pdev->version >= psdf_version_ll3 ?
          &s_zlibE_template : &s_LZWE_template);
@@ -325,13 +325,13 @@ setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
             return_error(gs_error_VMerror);
         }
     }
-    st = s_alloc_state(mem, template->stype,
+    st = s_alloc_state(mem, templat->stype,
                             "setup_pdfmark_stream_compression");
     if (st == 0)
         return_error(gs_error_VMerror);
-    if (template->set_defaults)
-        (*template->set_defaults) (st);
-    if (s_add_filter(&pco->input_strm, template, st, mem) == 0) {
+    if (templat->set_defaults)
+        (*templat->set_defaults) (st);
+    if (s_add_filter(&pco->input_strm, templat, st, mem) == 0) {
         gs_free_object(mem, st, "setup_image_compression");
         return_error(gs_error_VMerror);
     }

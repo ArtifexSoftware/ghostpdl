@@ -90,23 +90,23 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr op2 = op - 2;
     gs_matrix mat;
-    gs_pattern2_template_t template;
+    gs_pattern2_template_t templat;
     int_pattern *pdata;
     gs_client_color cc_instance;
     int code;
 
     check_type(*op2, t_dictionary);
     check_dict_read(*op2);
-    gs_pattern2_init(&template);
+    gs_pattern2_init(&templat);
     if ((code = read_matrix(imemory, op - 1, &mat)) < 0 ||
-        (code = dict_uid_param(op2, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
-        (code = shading_param(op, &template.Shading)) < 0 ||
+        (code = dict_uid_param(op2, &templat.uid, 1, imemory, i_ctx_p)) != 1 ||
+        (code = shading_param(op, &templat.Shading)) < 0 ||
         (code = int_pattern_alloc(&pdata, op2, imemory)) < 0
         )
         return_error((code < 0 ? code : e_rangecheck));
-    template.client_data = pdata;
+    templat.client_data = pdata;
     code = gs_make_pattern(&cc_instance,
-                           (const gs_pattern_template_t *)&template,
+                           (const gs_pattern_template_t *)&templat,
                            &mat, igs, imemory);
     if (code < 0) {
         ifree_object(pdata, "int_pattern");

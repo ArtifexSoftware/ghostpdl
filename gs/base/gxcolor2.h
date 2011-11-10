@@ -70,7 +70,7 @@ typedef struct gs_pattern1_instance_s gs_pattern1_instance_t;
 
 struct gs_pattern1_instance_s {
     gs_pattern_instance_common;	/* must be first */
-    gs_pattern1_template_t template;
+    gs_pattern1_template_t templat;
     /* Following are created by makepattern */
     gs_matrix step_matrix;	/* tiling space -> device space */
     gs_rect bbox;		/* bbox of tile in tiling space */

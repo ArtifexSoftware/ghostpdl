@@ -1650,7 +1650,7 @@ cos_write_stream_alloc(cos_stream_t *pcs, gx_device_pdf *pdev,
 
     if (s == 0 || ss == 0 || buf == 0)
         goto fail;
-    ss->template = &cos_write_stream_template;
+    ss->templat = &cos_write_stream_template;
     ss->pcs = pcs;
     ss->pcs->stream_md5_valid = 0;
     gs_md5_init(&ss->pcs->md5);

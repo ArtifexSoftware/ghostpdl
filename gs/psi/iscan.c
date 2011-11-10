@@ -592,13 +592,13 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                         goto try_funny_name;
                     case '~':
                         s_A85D_init_inline(&sstate.s_ss.a85d);
-                        sstate.s_ss.st.template = &s_A85D_template;
+                        sstate.s_ss.st.templat = &s_A85D_template;
                         goto str;
                 }
                 scan_putback();
             }
             s_AXD_init_inline(&sstate.s_ss.axd);
-            sstate.s_ss.st.template = &s_AXD_template;
+            sstate.s_ss.st.templat = &s_AXD_template;
           str:scan_end_inline();
             dynamic_init(&da, imemory);
           cont_string:for (;;) {
@@ -606,7 +606,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
 
                 w.ptr = da.next - 1;
                 w.limit = da.limit - 1;
-                status = (*sstate.s_ss.st.template->process)
+                status = (*sstate.s_ss.st.templat->process)
                     (&sstate.s_ss.st, &s->cursor.r, &w,
                      s->end_status == EOFC);
                 if (!check_only)
@@ -664,7 +664,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 ((pstate->s_options & SCAN_FROM_STRING) != 0) &&
                 !scan_enable_level2;
             s_PSSD_partially_init_inline(&sstate.s_ss.pssd);
-            sstate.s_ss.st.template = &s_PSSD_template;
+            sstate.s_ss.st.templat = &s_PSSD_template;
             goto str;
         case '{':
             if (pstack == 0) {  /* outermost procedure */

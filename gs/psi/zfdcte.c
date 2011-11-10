@@ -71,16 +71,16 @@ zDCTE(i_ctx_t *i_ctx_p)
     if ((code = s_DCTE_put_params((gs_param_list *) & list, &state)) < 0)
         goto rel;
     /* Create the filter. */
-    jcdp->template = s_DCTE_template;
+    jcdp->templat = s_DCTE_template;
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *
         jcdp->cinfo.image_width;
-    jcdp->template.min_in_size =
+    jcdp->templat.min_in_size =
         max(s_DCTE_template.min_in_size, state.scan_line_size);
     /* Make sure we can write the user markers in a single go. */
-    jcdp->template.min_out_size =
+    jcdp->templat.min_out_size =
         max(s_DCTE_template.min_out_size, state.Markers.size);
-    code = filter_write(i_ctx_p, 0, &jcdp->template,
+    code = filter_write(i_ctx_p, 0, &jcdp->templat,
                         (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
         return code;
@@ -112,7 +112,7 @@ zdcteparams(i_ctx_t *i_ctx_p)
     check_write_file(s, op - 1);
     check_type(op[-2], t_dictionary);
     /* The DCT filters copy the template.... */
-    if (s->state->template->process != s_DCTE_template.process)
+    if (s->state->templat->process != s_DCTE_template.process)
         return_error(e_rangecheck);
     code = dict_param_list_write(&list, op - 2, NULL, iimemory);
     if (code < 0)

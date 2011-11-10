@@ -175,11 +175,11 @@ static int filter_ensure_buf(stream **, uint, gs_ref_memory_t *, bool, int );
 
 /* Set up an input filter. */
 int
-filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
+filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * templat,
             stream_state * st, uint space)
 {
     os_ptr op = osp;
-    uint min_size = template->min_out_size + max_min_left;
+    uint min_size = templat->min_out_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     /* PLRM3 requires the following, *not* max(space, save_space). */
     uint use_space = max(space, avm_system); /* don't alloc in foreign space */
@@ -226,8 +226,8 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
             sstrm->is_temp = 2;
           ens:
             code = filter_ensure_buf(&sstrm,
-                                     template->min_in_size +
-                                     sstrm->state->template->min_out_size,
+                                     templat->min_in_size +
+                                     sstrm->state->templat->min_out_size,
                                      iimemory, false, close);
             if (code < 0)
                 goto out;
@@ -236,7 +236,7 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     if (min_size < 128)
         min_size = file_default_buffer_size;
     code = filter_open("r", min_size, (ref *) sop,
-                       &s_filter_read_procs, template, st, imemory);
+                       &s_filter_read_procs, templat, st, imemory);
     if (code < 0)
         goto out;
     s = fptr(sop);
@@ -248,18 +248,18 @@ out:
     return code;
 }
 int
-filter_read_simple(i_ctx_t *i_ctx_p, const stream_template * template)
+filter_read_simple(i_ctx_t *i_ctx_p, const stream_template * templat)
 {
-    return filter_read(i_ctx_p, 0, template, NULL, 0);
+    return filter_read(i_ctx_p, 0, templat, NULL, 0);
 }
 
 /* Set up an output filter. */
 int
-filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
+filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * templat,
              stream_state * st, uint space)
 {
     os_ptr op = osp;
-    uint min_size = template->min_in_size + max_min_left;
+    uint min_size = templat->min_in_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
     /* PLRM3 requires the following, *not* max(space, save_space). */
     uint use_space = max(space, avm_system); /* don't alloc in foreign space */
@@ -306,8 +306,8 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
             sstrm->is_temp = 2;
           ens:
             code = filter_ensure_buf(&sstrm,
-                                     template->min_out_size +
-                                     sstrm->state->template->min_in_size,
+                                     templat->min_out_size +
+                                     sstrm->state->templat->min_in_size,
                                      iimemory, true, close);
             if (code < 0)
                 goto out;
@@ -316,7 +316,7 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     if (min_size < 128)
         min_size = file_default_buffer_size;
     code = filter_open("w", min_size, (ref *) sop,
-                       &s_filter_write_procs, template, st, imemory);
+                       &s_filter_write_procs, templat, st, imemory);
     if (code < 0)
         goto out;
     s = fptr(sop);
@@ -328,9 +328,9 @@ out:
     return code;
 }
 int
-filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * template)
+filter_write_simple(i_ctx_t *i_ctx_p, const stream_template * templat)
 {
-    return filter_write(i_ctx_p, 0, template, NULL, 0);
+    return filter_write(i_ctx_p, 0, templat, NULL, 0);
 }
 
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */

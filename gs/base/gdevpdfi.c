@@ -1013,13 +1013,13 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     s.ctm.ty = pmat->ty;
     memset(&inst, 0, sizeof(inst));
     inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
-    inst.template.PaintType = 1;
-    inst.template.TilingType = 1;
-    inst.template.BBox.p.x = inst.template.BBox.p.y = 0;
-    inst.template.BBox.q.x = 1;
-    inst.template.BBox.q.y = 1;
-    inst.template.XStep = 2; /* Set 2 times bigger step against artifacts. */
-    inst.template.YStep = 2;
+    inst.templat.PaintType = 1;
+    inst.templat.TilingType = 1;
+    inst.templat.BBox.p.x = inst.templat.BBox.p.y = 0;
+    inst.templat.BBox.q.x = 1;
+    inst.templat.BBox.q.y = 1;
+    inst.templat.XStep = 2; /* Set 2 times bigger step against artifacts. */
+    inst.templat.YStep = 2;
     code = (*dev_proc(pdev, dev_spec_op))((gx_device *)pdev,
         gxdso_pattern_start_accum, &inst, id);
     if (code >= 0)

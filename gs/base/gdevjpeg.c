@@ -421,11 +421,11 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
         goto fail;
     }
     /* Create the DCT encoder state. */
-    jcdp->template = s_DCTE_template;
-    s_init_state((stream_state *)&state, &jcdp->template, 0);
-    if (state.template->set_defaults) {
+    jcdp->templat = s_DCTE_template;
+    s_init_state((stream_state *)&state, &jcdp->templat, 0);
+    if (state.templat->set_defaults) {
         state.memory = mem;
-        (*state.template->set_defaults) ((stream_state *) & state);
+        (*state.templat->set_defaults) ((stream_state *) & state);
         state.memory = NULL;
     }
     state.QFactor = 1.0;	/* disable quality adjustment in zfdcte.c */
@@ -478,15 +478,15 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *
         jcdp->cinfo.image_width;
-    jcdp->template.min_in_size =
+    jcdp->templat.min_in_size =
         max(s_DCTE_template.min_in_size, state.scan_line_size);
     /* Make sure we can write the user markers in a single go. */
-    jcdp->template.min_out_size =
+    jcdp->templat.min_out_size =
         max(s_DCTE_template.min_out_size, state.Markers.size);
 
     /* Set up the streams. */
-    fbuf_size = max(512 /* arbitrary */ , jcdp->template.min_out_size);
-    jbuf_size = jcdp->template.min_in_size;
+    fbuf_size = max(512 /* arbitrary */ , jcdp->templat.min_out_size);
+    jbuf_size = jcdp->templat.min_in_size;
     if ((fbuf = gs_alloc_bytes(mem, fbuf_size, "jpeg_print_page(fbuf)")) == 0 ||
         (jbuf = gs_alloc_bytes(mem, jbuf_size, "jpeg_print_page(jbuf)")) == 0
         ) {
@@ -499,10 +499,10 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     s_std_init(&jstrm, jbuf, jbuf_size, &s_filter_write_procs,
                s_mode_write);
     jstrm.state = (stream_state *) & state;
-    jstrm.procs.process = state.template->process;
+    jstrm.procs.process = state.templat->process;
     jstrm.strm = &fstrm;
-    if (state.template->init)
-        (*state.template->init) (jstrm.state);
+    if (state.templat->init)
+        (*state.templat->init) (jstrm.state);
 
     /* Copy the data to the output. */
     for (lnum = 0; lnum < pdev->height; ++lnum) {

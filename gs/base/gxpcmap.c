@@ -211,11 +211,11 @@ static int
 gx_pattern_size_estimate(gs_pattern1_instance_t *pinst, int has_tags)
 {
     gx_device *tdev = pinst->saved->device;
-    int depth = (pinst->template.PaintType == 2 ? 1 : tdev->color_info.depth);
+    int depth = (pinst->templat.PaintType == 2 ? 1 : tdev->color_info.depth);
     int64_t raster;
     int64_t size;
 
-    if (pinst->template.uses_transparency) {
+    if (pinst->templat.uses_transparency) {
         raster = (pinst->size.x * ((depth/8) + 1 + has_tags));
         size = raster > max_int / pinst->size.y ? (max_int & ~0xFFFF) : raster * pinst->size.y;
     } else {
@@ -274,7 +274,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         gxdso_pattern_can_accum, pinst, 0) == 1)
         force_no_clist = 1; /* Set only for first time through */
     if (force_no_clist || (size < max_pattern_bitmap && !pinst->is_clist)
-        || pinst->template.PaintType != 1 ) {
+        || pinst->templat.PaintType != 1 ) {
         gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
                         &st_device_pattern_accum, cname);
         if (adev == 0)
@@ -364,7 +364,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->data = data;
         cwdev->data_size = data_size;
         cwdev->buf_procs = buf_procs;
-        if ( pinst->template.uses_transparency) {
+        if ( pinst->templat.uses_transparency) {
             cwdev->band_params.page_uses_transparency = true;
             cwdev->page_uses_transparency = true;
         } else {
@@ -431,7 +431,7 @@ pattern_accum_open(gx_device * dev)
     padev->color_info = target->color_info;
     /* Bug 689737: If PaintType == 2 (Uncolored tiling pattern), pattern is
      * 1bpp bitmap. No antialiasing in this case! */
-    if (pinst->template.PaintType == 2) {
+    if (pinst->templat.PaintType == 2) {
         padev->color_info.anti_alias.text_bits = 1;
         padev->color_info.anti_alias.graphics_bits = 1;
     }
@@ -439,7 +439,7 @@ pattern_accum_open(gx_device * dev)
        now so that the mem device allocates the proper
        buffer space for the pattern template.  We can
        do this since the transparency code all */
-    if (pinst->template.uses_transparency) {
+    if (pinst->templat.uses_transparency) {
         /* Allocate structure that we will use for the trans pattern */
         padev->transbuff = gs_alloc_struct(mem,gx_pattern_trans_t,&st_pattern_trans,"pattern_accum_open(trans)");
         padev->transbuff->transbytes = NULL;
@@ -471,7 +471,7 @@ pattern_accum_open(gx_device * dev)
     }
 
     if (code >= 0) {
-        if (pinst->template.uses_transparency) {
+        if (pinst->templat.uses_transparency) {
             /* In this case, we will grab the buffer created
                by the graphic state's device (which is pdf14) and
                we will be tiling that into a transparency group buffer
@@ -480,7 +480,7 @@ pattern_accum_open(gx_device * dev)
                best just to keep the data in that form */
             gx_device_set_target((gx_device_forward *)padev, target);
         } else {
-            switch (pinst->template.PaintType) {
+            switch (pinst->templat.PaintType) {
             case 2:             /* uncolored */
                 gx_device_set_target((gx_device_forward *)padev, target);
                 break;
@@ -678,7 +678,7 @@ pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
         return (*dev_proc(padev->target, get_bits_rectangle))
             (padev->target, prect, params, unread);
 
-    if (pinst->template.PaintType == 2)
+    if (pinst->templat.PaintType == 2)
         return 0;
     else
         return_error(gs_error_Fatal); /* shouldn't happen */
@@ -971,8 +971,8 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->id = id;
     ctile->is_planar = pinst->is_planar;
     ctile->depth = fdev->color_info.depth;
-    ctile->uid = pinst->template.uid;
-    ctile->tiling_type = pinst->template.TilingType;
+    ctile->uid = pinst->templat.uid;
+    ctile->tiling_type = pinst->templat.TilingType;
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
@@ -1070,8 +1070,8 @@ gx_pattern_cache_add_dummy_entry(gs_imager_state *pis,
     gx_pattern_cache_free_entry(pcache, ctile);
     ctile->id = id;
     ctile->depth = depth;
-    ctile->uid = pinst->template.uid;
-    ctile->tiling_type = pinst->template.TilingType;
+    ctile->uid = pinst->templat.uid;
+    ctile->tiling_type = pinst->templat.TilingType;
     ctile->step_matrix = pinst->step_matrix;
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
@@ -1293,7 +1293,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     if (saved->pattern_cache == 0)
         saved->pattern_cache = pis->pattern_cache;
     gs_setdevice_no_init(saved, (gx_device *)adev);
-    if (pinst->template.uses_transparency) {
+    if (pinst->templat.uses_transparency) {
         if_debug0('v', "gx_pattern_load: pushing the pdf14 compositor device into this graphics state\n");
         if ((code = gs_push_pdf14trans_device(saved, true)) < 0)
             return code;
@@ -1306,15 +1306,15 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
            make a similar change in zpcolor.c where much of this
            pattern code is duplicated to support high level stream
            patterns. */
-        if (pinst->template.PaintType == 1)
+        if (pinst->templat.PaintType == 1)
             if ((code = gx_erase_colored_pattern(saved)) < 0)
                 return code;
     }
 
-    code = (*pinst->template.PaintProc)(&pdc->ccolor, saved);
+    code = (*pinst->templat.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
         gx_device_retain(saved->device, false);         /* device no longer retained */
-        if (pinst->template.uses_transparency) {
+        if (pinst->templat.uses_transparency) {
             dev_proc(saved->device, close_device)((gx_device *)saved->device);
             dev_proc(adev, close_device)((gx_device *)adev);
             if (pinst->is_clist == 0)
@@ -1330,7 +1330,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         gs_state_free(saved);
         return code;
     }
-    if (pinst->template.uses_transparency) {
+    if (pinst->templat.uses_transparency) {
         /* if_debug0('v', "gx_pattern_load: popping the pdf14 compositor device from this graphics state\n");
         if ((code = gs_pop_pdf14trans_device(saved, true)) < 0)
             return code; */
@@ -1409,7 +1409,7 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
         color_set_null_pattern(pdc);
         return 0;
     }
-    if (pinst->template.PaintType == 2) {       /* uncolored */
+    if (pinst->templat.PaintType == 2) {       /* uncolored */
         code = (pcs->base_space->type->remap_color)
             (pc, pcs->base_space, pdc, pis, dev, select);
         if (code < 0)

@@ -193,7 +193,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
         jpeg_decompress_data *jddp = &(benum->jdd);
         /* use the graphics library support for DCT streams */
         ss->memory = benum->mem;
-        ss->template = &s_DCTD_template;
+        ss->templat = &s_DCTD_template;
         s_DCTD_template.set_defaults((stream_state *)ss);
         ss->report_error = stream_error;
         ss->data.decompress = jddp;
@@ -204,7 +204,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
         if ( gs_jpeg_create_decompress(ss) < 0 )
             return_error(errorInsufficientMemory);
         (*s_DCTD_template.init)((stream_state *)ss);
-        jddp->template = s_DCTD_template;
+        jddp->templat = s_DCTD_template;
         benum->initialized = true;
     }
     r.ptr = data - 1;
@@ -304,7 +304,7 @@ read_rle_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
     if ( !benum->initialized ) {
         ss->EndOfData = false;
-        ss->template = &s_RLD_template;
+        ss->templat = &s_RLD_template;
         s_RLD_init_inline(ss);
         benum->initialized = true;
     }

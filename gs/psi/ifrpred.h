@@ -19,7 +19,7 @@
 
 /* Exported by zfdecode.c for zfzlib.c */
 int filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
-                          const stream_template * template,
+                          const stream_template * templat,
                           stream_state * st);
 
 #endif /* ifrpred_INCLUDED */

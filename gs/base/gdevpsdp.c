@@ -87,7 +87,7 @@ CIE image  Cal/ICC Cal/ICC          Cal/ICC          CalRGB/sRGB
 
 typedef struct psdf_image_filter_name_s {
     const char *pname;
-    const stream_template *template;
+    const stream_template *templat;
     psdf_version min_version;
 } psdf_image_filter_name;
 
@@ -643,7 +643,7 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 static int
 psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
                           gs_c_param_list **pplvalue,
-                          const stream_template * template,
+                          const stream_template * templat,
                           ss_put_params_t put_params, gs_memory_t * mem)
 {
     gs_param_dict dict;
@@ -659,16 +659,16 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
             return 0;
         case 0: {
             /* Check the parameter values now. */
-            stream_state *ss = s_alloc_state(mem, template->stype, pname);
+            stream_state *ss = s_alloc_state(mem, templat->stype, pname);
 
             if (ss == 0)
                 return_error(gs_error_VMerror);
-            ss->template = template;
-            if (template->set_defaults)
-                template->set_defaults(ss);
+            ss->templat = templat;
+            if (templat->set_defaults)
+                templat->set_defaults(ss);
             code = put_params(dict.list, ss);
-            if (template->release)
-                template->release(ss);
+            if (templat->release)
+                templat->release(ss);
             gs_free_object(mem, ss, pname);
             if (code < 0) {
                 param_signal_error(plist, pname, code);
@@ -726,18 +726,18 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
     /* (AutoFilter) */
     /* (Depth) */
     if ((pname = pnames->Dict) != 0) {
-        const stream_template *template;
+        const stream_template *templat;
         ss_put_params_t put_params;
 
         /* Hack to determine what kind of a Dict we want: */
         if (pnames->Dict[0] == 'M')
-            template = &s_CFE_template,
+            templat = &s_CFE_template,
                 put_params = psdf_CF_put_params;
         else
-            template = &s_DCTE_template,
+            templat = &s_DCTE_template,
                 put_params = psdf_DCT_put_params;
         code = psdf_put_image_dict_param(plist, pname, &params->Dict,
-                                         template, put_params, mem);
+                                         templat, put_params, mem);
         if (code < 0)
             ecode = code;
     }
@@ -772,7 +772,7 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                         pn++;
                     if (pn->pname != 0 && pn->min_version <= pdev->version) {
                         params->Filter = pn->pname;
-                        params->filter_template = pn->template;
+                        params->filter_template = pn->templat;
                     }
                     break;
                 }
@@ -796,7 +796,7 @@ psdf_put_image_params(const gx_device_psdf * pdev, gs_param_list * plist,
                     goto ipe;
                 }
                 params->Filter = pn->pname;
-                params->filter_template = pn->template;
+                params->filter_template = pn->templat;
                 break;
             }
         default:

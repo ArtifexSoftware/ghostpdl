@@ -157,7 +157,7 @@ stream_proc_report_error(s_no_report_error);
  */
 #define STREAM_MAX_ERROR_STRING 79
 #define stream_state_common\
-        const stream_template *template;\
+        const stream_template *templat;\
         gs_memory_t *memory;\
         stream_proc_report_error((*report_error));\
         int min_left; /* required bytes for lookahead */ \

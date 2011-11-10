@@ -112,7 +112,7 @@ zCFD(i_ctx_t *i_ctx_p)
 
 int
 filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
-                      const stream_template * template, stream_state * st)
+                      const stream_template * templat, stream_state * st)
 {
     os_ptr op = osp;
     int predictor, code;
@@ -147,7 +147,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
     } else
         predictor = 1;
     if (predictor == 1)
-        return filter_read(i_ctx_p, npop, template, st, 0);
+        return filter_read(i_ctx_p, npop, templat, st, 0);
     {
         /* We need to cascade filters. */
         ref rsource, rdict;
@@ -156,7 +156,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
         /* Save the operands, just in case. */
         ref_assign(&rsource, op - 1);
         ref_assign(&rdict, op);
-        code = filter_read(i_ctx_p, 1, template, st, 0);
+        code = filter_read(i_ctx_p, 1, templat, st, 0);
         if (code < 0)
             return code;
         /* filter_read changed osp.... */

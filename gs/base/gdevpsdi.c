@@ -52,7 +52,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
              int bpc_in, int bpc_out)
 {
     gs_memory_t *mem = pbw->dev->v_memory;
-    const stream_template *template;
+    const stream_template *templat;
     stream_1248_state *st;
     int code;
 
@@ -64,19 +64,19 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
             0, 0, 0, 0, 0, 0, 0, &s_12_8_template
         };
 
-        template = exts[bpc_in];
+        templat = exts[bpc_in];
     } else {
         static const stream_template *const rets[5] = {
             0, &s_8_1_template, &s_8_2_template, 0, &s_8_4_template
         };
 
-        template = rets[bpc_out];
+        templat = rets[bpc_out];
     }
     st = (stream_1248_state *)
-        s_alloc_state(mem, template->stype, "pixel_resize state");
+        s_alloc_state(mem, templat->stype, "pixel_resize state");
     if (st == 0)
         return_error(gs_error_VMerror);
-    code = psdf_encode_binary(pbw, template, (stream_state *) st);
+    code = psdf_encode_binary(pbw, templat, (stream_state *) st);
     if (code < 0) {
         gs_free_object(mem, st, "pixel_resize state");
         return code;
@@ -220,7 +220,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 {
     gx_device_psdf *pdev = pbw->dev;
     gs_memory_t *mem = pdev->v_memory;
-    const stream_template *template = pdip->filter_template;
+    const stream_template *templat = pdip->filter_template;
     const stream_template *lossless_template =
         (pdev->params.UseFlateCompression &&
          pdev->version >= psdf_version_ll3 ?
@@ -251,25 +251,25 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
          * called 2 times with different values of the 'lossless' argument.
          */
         if (lossless) {
-            template = lossless_template;
-        } else if (template == NULL || template == &s_zlibE_template ||
-                   template == &s_LZWE_template) {
-            template = &s_DCTE_template;
+            templat = lossless_template;
+        } else if (templat == NULL || templat == &s_zlibE_template ||
+                   templat == &s_LZWE_template) {
+            templat = &s_DCTE_template;
         }
         dict = pdip->ACSDict;
     } else if (!lossless)
         return gs_error_rangecheck; /* Reject the alternative stream. */
-    if (pdev->version < psdf_version_ll3 && template == &s_zlibE_template)
-        template = lossless_template;
+    if (pdev->version < psdf_version_ll3 && templat == &s_zlibE_template)
+        templat = lossless_template;
     if (dict != NULL) /* Some interpreters don't supply filter parameters. */
         gs_c_param_list_read(dict);	/* ensure param list is in read mode */
-    if (template == 0)	/* no compression */
+    if (templat == 0)	/* no compression */
         return 0;
     if (pim->Width < 200 && pim->Height < 200) /* Prevent a fixed overflow. */
         if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)
             return 0;  /* not worth compressing */
     /* Only use DCTE for 8-bit, non-Indexed data. */
-    if (template == &s_DCTE_template) {
+    if (templat == &s_DCTE_template) {
         if (Indexed ||
             !(pdip->Downsample ?
               pdip->Depth == 8 ||
@@ -277,18 +277,18 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
               pim->BitsPerComponent == 8)
             ) {
             /* Use LZW/Flate instead. */
-            template = lossless_template;
+            templat = lossless_template;
         }
     }
-    st = s_alloc_state(mem, template->stype, "setup_image_compression");
+    st = s_alloc_state(mem, templat->stype, "setup_image_compression");
     if (st == 0)
         return_error(gs_error_VMerror);
-    if (template->set_defaults)
-        (*template->set_defaults) (st);
-    if (template == &s_CFE_template) {
+    if (templat->set_defaults)
+        (*templat->set_defaults) (st);
+    if (templat == &s_CFE_template) {
         stream_CFE_state *const ss = (stream_CFE_state *) st;
 
-        if (pdip->Dict != 0 && pdip->filter_template == template) {
+        if (pdip->Dict != 0 && pdip->filter_template == templat) {
             s_CF_put_params((gs_param_list *)pdip->Dict,
                             (stream_CF_state *)ss); /* ignore errors */
         } else {
@@ -297,22 +297,22 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         }
         ss->Columns = pim->Width;
         ss->Rows = (ss->EndOfBlock ? 0 : pim->Height);
-    } else if ((template == &s_LZWE_template ||
-                template == &s_zlibE_template) &&
+    } else if ((templat == &s_LZWE_template ||
+                templat == &s_zlibE_template) &&
                pdev->version >= psdf_version_ll3) {
         /* If not Indexed, add a PNGPredictor filter. */
         if (!Indexed) {
-            code = psdf_encode_binary(pbw, template, st);
+            code = psdf_encode_binary(pbw, templat, st);
             if (code < 0)
                 goto fail;
-            template = &s_PNGPE_template;
-            st = s_alloc_state(mem, template->stype, "setup_image_compression");
+            templat = &s_PNGPE_template;
+            st = s_alloc_state(mem, templat->stype, "setup_image_compression");
             if (st == 0) {
                 code = gs_note_error(gs_error_VMerror);
                 goto fail;
             }
-            if (template->set_defaults)
-                (*template->set_defaults) (st);
+            if (templat->set_defaults)
+                (*templat->set_defaults) (st);
             {
                 stream_PNGP_state *const ss = (stream_PNGP_state *) st;
 
@@ -320,7 +320,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
                 ss->Columns = pim->Width;
             }
         }
-    } else if (template == &s_DCTE_template) {
+    } else if (templat == &s_DCTE_template) {
         gs_c_param_list list, *param = dict;
 
         gs_c_param_list_write(&list, mem);
@@ -338,7 +338,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         return 0;
     } else {
 #	ifdef USE_LDF_JB2
-            if (template == &s_jbig2encode_template) {
+            if (templat == &s_jbig2encode_template) {
                 stream_jbig2encode_state *state = (stream_jbig2encode_state *)st;
 
                 state->width = pim->Width;
@@ -346,7 +346,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
             }
 #	endif
 #	ifdef USE_LWF_JP2
-            if (template == &s_jpxe_template) {
+            if (templat == &s_jpxe_template) {
                 stream_jpxe_state *state = (stream_jpxe_state *)st;
                 int ncomps = pim->ColorSpace->type->num_components(pim->ColorSpace);
 
@@ -372,7 +372,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
             }
 #	endif
     }
-    code = psdf_encode_binary(pbw, template, st);
+    code = psdf_encode_binary(pbw, templat, st);
     if (code >= 0)
         return 0;
  fail:
@@ -401,7 +401,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 {
     gx_device_psdf *pdev = pbw->dev;
     /* Note: Bicubic is currently interpreted as Average. */
-    const stream_template *template =
+    const stream_template *templat =
         (pdip->DownsampleType == ds_Subsample ?
          &s_Subsample_template : &s_Average_template);
     int factor = (int)(resolution / pdip->Resolution);
@@ -411,12 +411,12 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     stream_state *st;
     int code;
 
-    st = s_alloc_state(pdev->v_memory, template->stype,
+    st = s_alloc_state(pdev->v_memory, templat->stype,
                        "setup_downsampling");
     if (st == 0)
         return_error(gs_error_VMerror);
-    if (template->set_defaults)
-        template->set_defaults(st);
+    if (templat->set_defaults)
+        templat->set_defaults(st);
     {
         stream_Downsample_state *const ss = (stream_Downsample_state *) st;
 
@@ -428,8 +428,8 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         ss->XFactor = ss->YFactor = factor;
         ss->AntiAlias = pdip->AntiAlias;
         ss->padX = ss->padY = false; /* should be true */
-        if (template->init)
-            template->init(st);
+        if (templat->init)
+            templat->init(st);
         pim->Width = s_Downsample_size_out(pim->Width, factor, ss->padX);
         pim->Height = s_Downsample_size_out(pim->Height, factor, ss->padY);
         pim->BitsPerComponent = pdip->Depth;
@@ -440,7 +440,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
         if ((code = setup_image_compression(pbw, pdip, pim, pis, lossless)) < 0 ||
             (code = pixel_resize(pbw, pim->Width, ss->Colors,
                                  8, pdip->Depth)) < 0 ||
-            (code = psdf_encode_binary(pbw, template, st)) < 0 ||
+            (code = psdf_encode_binary(pbw, templat, st)) < 0 ||
             (code = pixel_resize(pbw, orig_width, ss->Colors,
                                  orig_bpc, 8)) < 0
             ) {
