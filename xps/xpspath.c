@@ -47,7 +47,7 @@ xps_get_point(char *s_in, float *x, float *y)
     char *s_out = s_in;
     float xy[2];
 
-    s_out = xps_get_real_params(s_out, 2, &xy);
+    s_out = xps_get_real_params(s_out, 2, xy);
     *x = xy[0];
     *y = xy[1];
 }

@@ -176,7 +176,7 @@ idownscale_y(void /*PixelOut */ *dst, const void /* PixelIn */ *tmp,
 
             for ( kc = 0; kc < kn; ++kc, pp++ ) {
                 if_debug1('W', " %d", *pp);
-                ((bits16 *)dst)[kc] = (*pp)*scale;
+                ((bits16 *)dst)[kc] = (bits16)((*pp)*scale);
             }
         } else {	/* sizeofPixelIn == 2 */
             const bits16 *pp = (bits16 *)tmp;

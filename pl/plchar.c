@@ -96,7 +96,7 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 /* Encode a character for a bitmap font.  This is simple, because */
 /* bitmap fonts are always bound. */
 static gs_glyph
-pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
+pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t not_used)
 {       return (gs_glyph)chr;
 }
 
@@ -846,7 +846,7 @@ gs_char last_char = 0;
 /* What we actually return is the TT glyph index.  Note that */
 /* we may return either gs_no_glyph or 0 for an undefined character. */
 gs_glyph
-pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
+pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used)
 {
         gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;
         uint cmap_len;
@@ -1133,7 +1133,7 @@ out:      if (bold_device_created)
 /* We don't have to do any character encoding, since Intellifonts are */
 /* indexed by character code (if bound) or MSL code (if unbound). */
 static gs_glyph
-pl_intelli_encode_char(gs_font *pfont, gs_char pchr, gs_glyph not_used)
+pl_intelli_encode_char(gs_font *pfont, gs_char pchr, gs_glyph_space_t not_used)
 {       return (gs_glyph)pchr;
 }
 
@@ -1476,8 +1476,8 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 /* Initialize the procedures for a bitmap font. */
 void
 pl_bitmap_init_procs(gs_font_base *pfont)
-{       pfont->procs.encode_char = (void *)pl_bitmap_encode_char; /* FIX ME (void *) */
-        pfont->procs.build_char = (void *)pl_bitmap_build_char; /* FIX ME (void *) */
+{       pfont->procs.encode_char = pl_bitmap_encode_char;
+        pfont->procs.build_char = pl_bitmap_build_char;
 #define plfont ((pl_font_t *)pfont->client_data)
         plfont->char_width = pl_bitmap_char_width;
         plfont->char_metrics = pl_bitmap_char_metrics;
@@ -1488,8 +1488,8 @@ pl_bitmap_init_procs(gs_font_base *pfont)
 void
 pl_tt_init_procs(gs_font_type42 *pfont)
 {
-    pfont->procs.encode_char = (void *)pl_tt_encode_char; /* FIX ME (void *) */
-    pfont->procs.build_char = (void *)pl_tt_build_char; /* FIX ME (void *) */
+    pfont->procs.encode_char = pl_tt_encode_char;
+    pfont->procs.build_char = pl_tt_build_char;
     pfont->data.string_proc = pl_tt_string_proc;
 #define plfont ((pl_font_t *)pfont->client_data)
     plfont->char_width = pl_tt_char_width;
@@ -1544,8 +1544,8 @@ pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
 
 void
 pl_intelli_init_procs(gs_font_base *pfont)
-{       pfont->procs.encode_char = (void *)pl_intelli_encode_char;  /* FIX ME (void *) */
-        pfont->procs.build_char = (void *)pl_intelli_build_char; /* FIX ME (void *) */
+{       pfont->procs.encode_char = pl_intelli_encode_char;
+        pfont->procs.build_char = pl_intelli_build_char;
 #define plfont ((pl_font_t *)pfont->client_data)
         plfont->char_width = pl_intelli_char_width;
         plfont->char_metrics = pl_intelli_char_metrics;
@@ -1733,7 +1733,7 @@ int
 pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph)
 {
     gs_glyph key = glyph;
-    gs_font_type42 *pfont = plfont->pfont;
+    gs_font_type42 *pfont = (gs_font_type42 *)plfont->pfont;
     pl_font_glyph_t *pfg;
     gs_glyph_data_t glyph_data;
     int code;
@@ -1778,7 +1778,8 @@ pl_font_disable_composite_metrics(pl_font_t *plfont, gs_glyph glyph)
             gs_matrix_fixed mat;
             byte *last_component = next_component;
             memset(&mat, 0, sizeof(mat)); /* arbitrary */
-            gs_type42_parse_component(&next_component, &flags, &mat, NULL, plfont->pfont, &mat);
+            gs_type42_parse_component(&next_component, &flags, &mat, NULL,
+                                      (const gs_font_type42 *)plfont->pfont, &mat);
             if (flags & TT_CG_USE_MY_METRICS)
                 /* bit 9 of the flags is the "use my metrics" flag
                    which is bit 1 of byte 0 big endian wise */

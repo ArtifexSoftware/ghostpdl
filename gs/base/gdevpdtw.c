@@ -597,9 +597,9 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
         stream_puts(s, "/BaseFont");
         if (pdfont->FontDescriptor && !pdf_font_descriptor_embedding(pdfont->FontDescriptor)
             && (base14_name = (char *)pdf_find_base14_name((byte *)pdfont->BaseFont.data, (unsigned int)pdfont->BaseFont.size)))
-            pdf_put_name(pdev, base14_name, (unsigned int)strlen(base14_name));
+            pdf_put_name(pdev, (byte *)base14_name, (unsigned int)strlen(base14_name));
         else
-            pdf_put_name(pdev, pdfont->BaseFont.data, pdfont->BaseFont.size);
+            pdf_put_name(pdev, (byte *)pdfont->BaseFont.data, pdfont->BaseFont.size);
     }
     if (pdfont->FontDescriptor)
         pprintld1(s, "/FontDescriptor %ld 0 R",

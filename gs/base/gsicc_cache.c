@@ -516,7 +516,7 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
     /* Got a hit, return link (ref_count for the link was already bumped */
     if (found_link != NULL) {
-        if_debug2('{',"[{]Found Link = 0x%x, hash = %I64d \n", link,
+        if_debug2('{',"[{]Found Link = 0x%x, hash = %I64d \n", found_link,
                   hash.link_hashcode);
         if_debug2('{',"[{]input_numcomps = %d, input_hash = %I64d \n",
                   gs_input_profile->num_comps, gs_input_profile->hashcode);

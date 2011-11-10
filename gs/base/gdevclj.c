@@ -436,12 +436,12 @@ clj_print_page(
      * of page size into pdev->width & height has been done. We just use
      * rotate to access the correct offsets. */
     if (pclj->rotated) {
-        imageable_width = pdev->width - (2 * psize->offsets.x) * fs_res;
-        imageable_height = pdev->height - (2 * psize->offsets.y) * ss_res;
+        imageable_width = pdev->width - (int)((2 * psize->offsets.x) * fs_res);
+        imageable_height = pdev->height - (int)((2 * psize->offsets.y) * ss_res);
     }
     else {
-        imageable_width = pdev->width - (2 * psize->offsets.y) * ss_res;
-        imageable_height = pdev->height - (2 * psize->offsets.x) * fs_res;
+        imageable_width = pdev->width - (int)((2 * psize->offsets.y) * ss_res);
+        imageable_height = pdev->height - (int)((2 * psize->offsets.x) * fs_res);
     }
 
     /* start the page.  The pcl origin (0, 150 dots by default, y

@@ -228,7 +228,7 @@ gp_serialnumber(void)
 
     wsprintfW(key, L"Software\\Microsoft\\MSLicensing\\HardwareID");
 #endif        /* WINDOWS_NO_UNICODE */
-    code = gp_getenv_registry(HKEY_LOCAL_MACHINE, key, "ClientHWID", &buf, &buflen);
+    code = gp_getenv_registry(HKEY_LOCAL_MACHINE, key, "ClientHWID", (char *)buf, &buflen);
     if ( code != 0 )
         return (int)(gs_serialnumber); 	/* error - just return the default */
 

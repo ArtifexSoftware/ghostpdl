@@ -737,7 +737,7 @@ tiffsep_encode_color(gx_device *dev, const gx_color_value colors[])
     int ncomp = dev->color_info.num_components;
     COLROUND_VARS;
 
-    COLROUND_SETUP(sizeof(gx_color_value)*8, bpc);
+    COLROUND_SETUP(bpc);
     for (; i < ncomp; i++) {
         color <<= bpc;
         color |= COLROUND_ROUND(colors[i]);

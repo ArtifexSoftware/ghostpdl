@@ -447,7 +447,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* Data is now in the proper destination color space.  Now we want
        to go ahead and get the data into the proper spatial setting and then
        threshold.  First get the data spatially sampled correctly */
-    src_size = (penum->rect.w - 1.0);
+    src_size = penum->rect.w - 1;
     switch (posture) {
         case image_portrait:
             /* Figure out our offset in the contone and threshold data
