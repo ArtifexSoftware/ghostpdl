@@ -104,28 +104,28 @@ gs_glyph_cache__alloc(gs_font_type42 *pfont, stream *s,
 int
 gs_glyph_cache__release(void *data, void *event)
 {
-    gs_glyph_cache *this = (gs_glyph_cache *)data;
-    gs_glyph_cache_elem *e = this->list;
-    gs_font_type42 *pfont = this->pfont;
+    gs_glyph_cache *self = (gs_glyph_cache *)data;
+    gs_glyph_cache_elem *e = self->list;
+    gs_font_type42 *pfont = self->pfont;
 
     while (e != NULL) {
         gs_glyph_cache_elem *next_e;
 
         next_e = e->next;
         e->gd.procs->free(&e->gd, "gs_glyph_cache__release");
-        gs_free_object(this->memory, e, "gs_glyph_cache_elem__release");
+        gs_free_object(self->memory, e, "gs_glyph_cache_elem__release");
         e = next_e;
     }
-    this->list = NULL;
-    gs_font_notify_unregister((gs_font *)pfont, gs_glyph_cache__release, (void *)this);
-    gs_free_object(this->memory, this, "gs_glyph_cache__release");
+    self->list = NULL;
+    gs_font_notify_unregister((gs_font *)pfont, gs_glyph_cache__release, (void *)self);
+    gs_free_object(self->memory, self, "gs_glyph_cache__release");
     return 0;
 }
 
 static gs_glyph_cache_elem **
-gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
+gs_glyph_cache_elem__locate(gs_glyph_cache *self, uint glyph_index)
 {   /* If not fond, returns an unlocked element. */
-    gs_glyph_cache_elem **e = &this->list, **p_unlocked = NULL;
+    gs_glyph_cache_elem **e = &self->list, **p_unlocked = NULL;
     int count = 0; /* debug purpose only */
 
     for (; *e != 0; e = &(*e)->next, count++) {
@@ -139,12 +139,12 @@ gs_glyph_cache_elem__locate(gs_glyph_cache *this, uint glyph_index)
 }
 
 static inline void
-gs_glyph_cache_elem__move_to_head(gs_glyph_cache *this, gs_glyph_cache_elem **pe)
+gs_glyph_cache_elem__move_to_head(gs_glyph_cache *self, gs_glyph_cache_elem **pe)
 {   gs_glyph_cache_elem *e = *pe;
 
     *pe = e->next;
-    e->next = this->list;
-    this->list = e;
+    e->next = self->list;
+    self->list = e;
 }
 
 /* Manage the glyph data using the font's allocator. */

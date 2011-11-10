@@ -109,14 +109,14 @@ gs_color_index_cache_destroy(gs_color_index_cache_t *pcic)
 }
 
 static inline int
-hash_paint_values(const gs_color_index_cache_t *this, const float *paint_values)
+hash_paint_values(const gs_color_index_cache_t *self, const float *paint_values)
 {
     int i;
     float v = 0;
     uint k = 0;
     const uint a_prime = 79;
 
-    for (i = 0; i < this->client_num_components; i++)
+    for (i = 0; i < self->client_num_components; i++)
         v = v * a_prime + paint_values[i];
     /* Don't know the range of v, so hash its bytes : */
     for(i = 0; i < sizeof(v); i++)
@@ -125,88 +125,88 @@ hash_paint_values(const gs_color_index_cache_t *this, const float *paint_values)
 }
 
 static inline void
-exclude_from_chain(gs_color_index_cache_t *this, uint i)
+exclude_from_chain(gs_color_index_cache_t *self, uint i)
 {
-    uint co = this->buf[i].chain;
-    uint ip = this->buf[i].prev, in = this->buf[i].next;
+    uint co = self->buf[i].chain;
+    uint ip = self->buf[i].prev, in = self->buf[i].next;
 
-    this->buf[ip].next = in;
-    this->buf[in].prev = ip;
-    if (this->chains[co] == i)
-        this->chains[co] = in;
+    self->buf[ip].next = in;
+    self->buf[in].prev = ip;
+    if (self->chains[co] == i)
+        self->chains[co] = in;
 }
 
 static inline void
-include_into_chain(gs_color_index_cache_t *this, uint i, uint c)
+include_into_chain(gs_color_index_cache_t *self, uint i, uint c)
 {
-    if (this->chains[c] != MYNULL) {
-        uint in = this->chains[c], ip = this->buf[in].prev;
+    if (self->chains[c] != MYNULL) {
+        uint in = self->chains[c], ip = self->buf[in].prev;
 
-        this->buf[i].next = in;
-        this->buf[i].prev = ip;
-        this->buf[in].prev = i;
-        this->buf[ip].next = i;
+        self->buf[i].next = in;
+        self->buf[i].prev = ip;
+        self->buf[in].prev = i;
+        self->buf[ip].next = i;
     } else
-        this->buf[i].prev = this->buf[i].next = i;
-    this->chains[c] = i;
-    this->buf[i].chain = c;
+        self->buf[i].prev = self->buf[i].next = i;
+    self->chains[c] = i;
+    self->buf[i].chain = c;
 }
 
 static inline void
-exclude_from_touch_list(gs_color_index_cache_t *this, uint i)
+exclude_from_touch_list(gs_color_index_cache_t *self, uint i)
 {
-    uint ip = this->buf[i].touch_prev, in = this->buf[i].touch_next;
+    uint ip = self->buf[i].touch_prev, in = self->buf[i].touch_next;
 
-    this->buf[ip].touch_next = in;
-    this->buf[in].touch_prev = ip;
-    if (this->recent_touch == i) {
+    self->buf[ip].touch_next = in;
+    self->buf[in].touch_prev = ip;
+    if (self->recent_touch == i) {
         if (i == in)
-            this->recent_touch = MYNULL;
+            self->recent_touch = MYNULL;
         else
-            this->recent_touch = in;
+            self->recent_touch = in;
     }
 }
 
 static inline void
-include_into_touch_list(gs_color_index_cache_t *this, uint i)
+include_into_touch_list(gs_color_index_cache_t *self, uint i)
 {
-    if (this->recent_touch != MYNULL) {
-        uint in = this->recent_touch, ip = this->buf[in].touch_prev;
+    if (self->recent_touch != MYNULL) {
+        uint in = self->recent_touch, ip = self->buf[in].touch_prev;
 
-        this->buf[i].touch_next = in;
-        this->buf[i].touch_prev = ip;
-        this->buf[in].touch_prev = i;
-        this->buf[ip].touch_next = i;
+        self->buf[i].touch_next = in;
+        self->buf[i].touch_prev = ip;
+        self->buf[in].touch_prev = i;
+        self->buf[ip].touch_next = i;
     } else
-        this->buf[i].touch_prev = this->buf[i].touch_next = i;
-    this->recent_touch = i;
+        self->buf[i].touch_prev = self->buf[i].touch_next = i;
+    self->recent_touch = i;
 }
 
 static int
-get_color_index_cache_elem(gs_color_index_cache_t *this, const float *paint_values, uint *pi)
+get_color_index_cache_elem(gs_color_index_cache_t *self, const float *paint_values, uint *pi)
 {
-    int client_num_components = this->client_num_components;
-    uint c = hash_paint_values(this, paint_values);
-    uint i = this->chains[c], j;
+    int client_num_components = self->client_num_components;
+    uint c = hash_paint_values(self, paint_values);
+    uint i = self->chains[c], j;
 
     if (i != MYNULL) {
         uint tries = 16; /* Arbitrary. */
 
-        if (!memcmp(paint_values, this->paint_values + i * client_num_components, sizeof(*paint_values) * client_num_components)) {
-            if (this->recent_touch != i) {
-                exclude_from_touch_list(this, i);
-                include_into_touch_list(this, i);
+        if (!memcmp(paint_values, self->paint_values + i * client_num_components, sizeof(*paint_values) * client_num_components)) {
+            if (self->recent_touch != i) {
+                exclude_from_touch_list(self, i);
+                include_into_touch_list(self, i);
             }
             *pi = i;
             return 1;
         }
-        for (j = this->buf[i].next; tries -- && j != i; j = this->buf[j].next) {
-            if (!memcmp(paint_values, this->paint_values + j * client_num_components, sizeof(*paint_values) * client_num_components)) {
-                exclude_from_chain(this, j);
-                include_into_chain(this, j, c);
-                if (this->recent_touch != j) {
-                    exclude_from_touch_list(this, j);
-                    include_into_touch_list(this, j);
+        for (j = self->buf[i].next; tries -- && j != i; j = self->buf[j].next) {
+            if (!memcmp(paint_values, self->paint_values + j * client_num_components, sizeof(*paint_values) * client_num_components)) {
+                exclude_from_chain(self, j);
+                include_into_chain(self, j, c);
+                if (self->recent_touch != j) {
+                    exclude_from_touch_list(self, j);
+                    include_into_touch_list(self, j);
                 }
                 *pi = j;
                 return 1;
@@ -214,80 +214,80 @@ get_color_index_cache_elem(gs_color_index_cache_t *this, const float *paint_valu
         }
         tries+=0;
     }
-    if (this->used < COLOR_INDEX_CACHE_SIZE) {
+    if (self->used < COLOR_INDEX_CACHE_SIZE) {
         /* Use a new one */
-        i = this->used++;
-        include_into_touch_list(this, i);
+        i = self->used++;
+        include_into_touch_list(self, i);
     } else {
-        i = this->recent_touch;
-        this->recent_touch = this->buf[i].touch_prev; /* Assuming the cyclic list,
+        i = self->recent_touch;
+        self->recent_touch = self->buf[i].touch_prev; /* Assuming the cyclic list,
                                                       just move the head pointer to the last element. */
-        exclude_from_chain(this, i);
+        exclude_from_chain(self, i);
     }
-    include_into_chain(this, i, c);
+    include_into_chain(self, i, c);
     *pi = i;
     return 0;
 }
 
 static inline void
-compute_frac_values(gs_color_index_cache_t *this, uint i)
+compute_frac_values(gs_color_index_cache_t *self, uint i)
 {
-    gx_color_index c = this->buf[i].cindex;
-    const gx_device_color_info *cinfo = &this->trans_dev->color_info;
-    int device_num_components = this->device_num_components;
+    gx_color_index c = self->buf[i].cindex;
+    const gx_device_color_info *cinfo = &self->trans_dev->color_info;
+    int device_num_components = self->device_num_components;
     int j;
 
     for (j = 0; j < device_num_components; j++) {
             int shift = cinfo->comp_shift[j];
             int bits = cinfo->comp_bits[j];
 
-            this->frac_values[i * device_num_components + j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
+            self->frac_values[i * device_num_components + j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
     }
-    this->buf[i].frac_values_done = true;
+    self->buf[i].frac_values_done = true;
 }
 
 int
-gs_cached_color_index(gs_color_index_cache_t *this, const float *paint_values, gx_device_color *pdevc, frac31 *frac_values)
+gs_cached_color_index(gs_color_index_cache_t *self, const float *paint_values, gx_device_color *pdevc, frac31 *frac_values)
 {
     /* Must return 2 if the color is not pure.
        See patch_color_to_device_color. */
-    const gs_color_space *pcs = this->direct_space;
-    int client_num_components = this->client_num_components;
-    int device_num_components = this->device_num_components;
+    const gs_color_space *pcs = self->direct_space;
+    int client_num_components = self->client_num_components;
+    int device_num_components = self->device_num_components;
     uint i;
     int code;
 
-    if (get_color_index_cache_elem(this, paint_values, &i)) {
+    if (get_color_index_cache_elem(self, paint_values, &i)) {
         if (pdevc != NULL) {
-            pdevc->colors.pure = this->buf[i].cindex;
+            pdevc->colors.pure = self->buf[i].cindex;
             pdevc->type = &gx_dc_type_data_pure;
             memcpy(pdevc->ccolor.paint.values, paint_values, sizeof(*paint_values) * client_num_components);
             pdevc->ccolor_valid = true;
         }
-        if (frac_values != NULL && !this->buf[i].frac_values_done)
-            compute_frac_values(this, i);
+        if (frac_values != NULL && !self->buf[i].frac_values_done)
+            compute_frac_values(self, i);
     } else {
         gx_device_color devc_local;
         gs_client_color fcc;
 
         if (pdevc == NULL)
             pdevc = &devc_local;
-        memcpy(this->paint_values + i * client_num_components, paint_values, sizeof(*paint_values) * client_num_components);
+        memcpy(self->paint_values + i * client_num_components, paint_values, sizeof(*paint_values) * client_num_components);
         memcpy(fcc.paint.values, paint_values, sizeof(*paint_values) * client_num_components);
-        code = pcs->type->remap_color(&fcc, pcs, pdevc, this->pis, this->trans_dev,
+        code = pcs->type->remap_color(&fcc, pcs, pdevc, self->pis, self->trans_dev,
                                       gs_color_select_texture);
         if (code < 0)
             return code;
         if (pdevc->type != &gx_dc_type_data_pure)
             return 2;
-        this->buf[i].cindex = pdevc->colors.pure;
+        self->buf[i].cindex = pdevc->colors.pure;
 
         if (frac_values != NULL)
-            compute_frac_values(this, i);
+            compute_frac_values(self, i);
         else
-            this->buf[i].frac_values_done = false;
+            self->buf[i].frac_values_done = false;
     }
     if (frac_values != NULL)
-        memcpy(frac_values, this->frac_values + i * device_num_components, sizeof(*frac_values) * device_num_components);
+        memcpy(frac_values, self->frac_values + i * device_num_components, sizeof(*frac_values) * device_num_components);
     return 0;
 }

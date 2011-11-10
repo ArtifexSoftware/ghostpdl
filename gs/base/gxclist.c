@@ -999,19 +999,19 @@ clist_get_band(gx_device * dev, int y, int *band_start)
  * default constructor if from == NULL
  */
 void
-clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from)
+clist_copy_band_complexity(gx_band_complexity_t *self, const gx_band_complexity_t *from)
 {
     if (from) {
-        memcpy(this, from, sizeof(gx_band_complexity_t));
+        memcpy(self, from, sizeof(gx_band_complexity_t));
     } else {
         /* default */
-        this->uses_color = false;
-        this->nontrivial_rops = false;
+        self->uses_color = false;
+        self->nontrivial_rops = false;
 #if 0
         /* todo: halftone phase */
 
-        this->x0 = 0;
-        this->y0 = 0;
+        self->x0 = 0;
+        self->y0 = 0;
 #endif
     }
 }
