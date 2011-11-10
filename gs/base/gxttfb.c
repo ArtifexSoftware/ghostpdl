@@ -58,9 +58,9 @@ static RELOC_PTRS_WITH(gx_ttfReader_reloc_ptrs, gx_ttfReader *mptr)
     RELOC_PTR(gx_ttfReader, memory);
 RELOC_PTRS_END
 
-static bool gx_ttfReader__Eof(ttfReader *this)
+static bool gx_ttfReader__Eof(ttfReader *self)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
 
     if (r->extra_glyph_index != -1)
         return r->pos >= r->glyph_data.bits.size;
@@ -69,9 +69,9 @@ static bool gx_ttfReader__Eof(ttfReader *this)
     return false;
 }
 
-static void gx_ttfReader__Read(ttfReader *this, void *p, int n)
+static void gx_ttfReader__Read(ttfReader *self, void *p, int n)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
     const byte *q;
 
     if (!r->error) {
@@ -104,30 +104,30 @@ static void gx_ttfReader__Read(ttfReader *this, void *p, int n)
     r->pos += n;
 }
 
-static void gx_ttfReader__Seek(ttfReader *this, int nPos)
+static void gx_ttfReader__Seek(ttfReader *self, int nPos)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
 
     r->pos = nPos;
 }
 
-static int gx_ttfReader__Tell(ttfReader *this)
+static int gx_ttfReader__Tell(ttfReader *self)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
 
     return r->pos;
 }
 
-static bool gx_ttfReader__Error(ttfReader *this)
+static bool gx_ttfReader__Error(ttfReader *self)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
 
     return r->error;
 }
 
-static int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte **p, int *size)
+static int gx_ttfReader__LoadGlyph(ttfReader *self, int glyph_index, const byte **p, int *size)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
     gs_font_type42 *pfont = r->pfont;
     int code;
 
@@ -152,9 +152,9 @@ static int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte 
     return 2; /* found */
 }
 
-static void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
+static void gx_ttfReader__ReleaseGlyph(ttfReader *self, int glyph_index)
 {
-    gx_ttfReader *r = (gx_ttfReader *)this;
+    gx_ttfReader *r = (gx_ttfReader *)self;
 
     if (r->extra_glyph_index != glyph_index)
         return;
@@ -162,14 +162,14 @@ static void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
     gs_glyph_data_free(&r->glyph_data, "gx_ttfReader__ReleaseExtraGlyph");
 }
 
-static void gx_ttfReader__Reset(gx_ttfReader *this)
+static void gx_ttfReader__Reset(gx_ttfReader *self)
 {
-    if (this->extra_glyph_index != -1) {
-        this->extra_glyph_index = -1;
-        gs_glyph_data_free(&this->glyph_data, "gx_ttfReader__Reset");
+    if (self->extra_glyph_index != -1) {
+        self->extra_glyph_index = -1;
+        gs_glyph_data_free(&self->glyph_data, "gx_ttfReader__Reset");
     }
-    this->error = false;
-    this->pos = 0;
+    self->error = false;
+    self->pos = 0;
 }
 
 gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem)
@@ -195,24 +195,24 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem)
     return r;
 }
 
-void gx_ttfReader__destroy(gx_ttfReader *this)
+void gx_ttfReader__destroy(gx_ttfReader *self)
 {
-    gs_free_object(this->memory, this, "gx_ttfReader__destroy");
+    gs_free_object(self->memory, self, "gx_ttfReader__destroy");
 }
 
 static int
 gx_ttfReader__default_get_metrics(const ttfReader *ttf, uint glyph_index, bool bVertical,
                                   short *sideBearing, unsigned short *nAdvance)
 {
-    gx_ttfReader *this = (gx_ttfReader *)ttf;
+    gx_ttfReader *self = (gx_ttfReader *)ttf;
     float sbw[4];
     int sbw_offset = bVertical;
     int code;
-    int factor = this->pfont->data.unitsPerEm;
+    int factor = self->pfont->data.unitsPerEm;
 
     if (bVertical)
         factor = factor; /* See simple_glyph_metrics */
-    code = this->pfont->data.get_metrics(this->pfont, glyph_index, bVertical, sbw);
+    code = self->pfont->data.get_metrics(self->pfont, glyph_index, bVertical, sbw);
     if (code < 0)
         return code;
     /* Due to an obsolete convention, simple_glyph_metrics scales
@@ -225,10 +225,10 @@ gx_ttfReader__default_get_metrics(const ttfReader *ttf, uint glyph_index, bool b
     return 0;
 }
 
-void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont)
+void gx_ttfReader__set_font(gx_ttfReader *self, gs_font_type42 *pfont)
 {
-    this->pfont = pfont;
-    this->super.get_metrics = gx_ttfReader__default_get_metrics;
+    self->pfont = pfont;
+    self->super.get_metrics = gx_ttfReader__default_get_metrics;
 }
 
 /*----------------------------------------------*/
@@ -312,23 +312,23 @@ struct gx_ttfMemory_s {
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
 
-static void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
+static void *gx_ttfMemory__alloc_bytes(ttfMemory *self, int size,  const char *cname)
 {
-    gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
+    gs_memory_t *mem = ((gx_ttfMemory *)self)->memory;
 
     return gs_alloc_bytes(mem, size, cname);
 }
 
-static void *gx_ttfMemory__alloc_struct(ttfMemory *this, const ttfMemoryDescriptor *d,  const char *cname)
+static void *gx_ttfMemory__alloc_struct(ttfMemory *self, const ttfMemoryDescriptor *d,  const char *cname)
 {
-    gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
+    gs_memory_t *mem = ((gx_ttfMemory *)self)->memory;
 
     return mem->procs.alloc_struct(mem, (const gs_memory_struct_type_t *)d, cname);
 }
 
-static void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
+static void gx_ttfMemory__free(ttfMemory *self, void *p,  const char *cname)
 {
-    gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
+    gs_memory_t *mem = ((gx_ttfMemory *)self)->memory;
 
     gs_free_object(mem, p, cname);
 }
@@ -412,12 +412,12 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     return ttf;
 }
 
-void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
+void ttfFont__destroy(ttfFont *self, gs_font_dir *dir)
 {
     gs_memory_t *mem = dir->memory->stable_memory;
 
-    ttfFont__finit(this);
-    gs_free_object(mem, this, "ttfFont__destroy");
+    ttfFont__finit(self);
+    gs_free_object(mem, self, "ttfFont__destroy");
     ttfInterpreter__release(&dir->tti);
     gx_san__release(&dir->san);
     if (dir->tti == NULL && dir->ttm != NULL) {
@@ -426,7 +426,7 @@ void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
     }
 }
 
-int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
+int ttfFont__Open_aux(ttfFont *self, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
                const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
                bool design_grid)
 {
@@ -441,7 +441,7 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
     bool dg;
 
     decompose_matrix(pfont, char_tm, log2_scale, design_grid, &char_size, &subpix_origin, &post_transform, &dg);
-    switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y, dg)) {
+    switch(ttfFont__Open(tti, self, &r->super, nTTC, char_size.x, char_size.y, dg)) {
         case fNoError:
             return 0;
         case fMemoryError:
@@ -452,9 +452,9 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
             WarnBadInstruction(pfont, -1);
             goto recover;
         case fPatented:
-            WarnPatented(pfont, this, "The font");
+            WarnPatented(pfont, self, "The font");
         recover:
-            this->patented = true;
+            self->patented = true;
             return 0;
         default:
             {	int code = r->super.Error(&r->super);
@@ -476,25 +476,25 @@ typedef struct gx_ttfExport_s {
     bool monotonize;
 } gx_ttfExport;
 
-static void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__MoveTo(ttfExport *self, FloatPoint *p)
 {
-    gx_ttfExport *e = (gx_ttfExport *)this;
+    gx_ttfExport *e = (gx_ttfExport *)self;
 
     if (!e->error)
         e->error = gx_path_add_point(e->path, float2fixed(p->x), float2fixed(p->y));
 }
 
-static void gx_ttfExport__LineTo(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__LineTo(ttfExport *self, FloatPoint *p)
 {
-    gx_ttfExport *e = (gx_ttfExport *)this;
+    gx_ttfExport *e = (gx_ttfExport *)self;
 
     if (!e->error)
         e->error = gx_path_add_line_notes(e->path, float2fixed(p->x), float2fixed(p->y), sn_none);
 }
 
-static void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *p1, FloatPoint *p2)
+static void gx_ttfExport__CurveTo(ttfExport *self, FloatPoint *p0, FloatPoint *p1, FloatPoint *p2)
 {
-    gx_ttfExport *e = (gx_ttfExport *)this;
+    gx_ttfExport *e = (gx_ttfExport *)self;
 
     if (!e->error) {
         if (e->monotonize) {
@@ -512,28 +512,28 @@ static void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *p
     }
 }
 
-static void gx_ttfExport__Close(ttfExport *this)
+static void gx_ttfExport__Close(ttfExport *self)
 {
-    gx_ttfExport *e = (gx_ttfExport *)this;
+    gx_ttfExport *e = (gx_ttfExport *)self;
 
     if (!e->error)
         e->error = gx_path_close_subpath_notes(e->path, sn_none);
 }
 
-static void gx_ttfExport__Point(ttfExport *this, FloatPoint *p, bool bOnCurve, bool bNewPath)
+static void gx_ttfExport__Point(ttfExport *self, FloatPoint *p, bool bOnCurve, bool bNewPath)
 {
     /* Never called. */
 }
 
-static void gx_ttfExport__SetWidth(ttfExport *this, FloatPoint *p)
+static void gx_ttfExport__SetWidth(ttfExport *self, FloatPoint *p)
 {
-    gx_ttfExport *e = (gx_ttfExport *)this;
+    gx_ttfExport *e = (gx_ttfExport *)self;
 
     e->w.x = float2fixed(p->x);
     e->w.y = float2fixed(p->y);
 }
 
-static void gx_ttfExport__DebugPaint(ttfExport *this)
+static void gx_ttfExport__DebugPaint(ttfExport *self)
 {
 }
 

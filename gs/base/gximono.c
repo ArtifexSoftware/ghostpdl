@@ -821,7 +821,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             flush_buff = true;
         }
     }
-    src_size = (penum->rect.w - 1.0);
+    src_size = penum->rect.w - 1;
 
     switch (posture) {
         case image_portrait:

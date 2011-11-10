@@ -39,10 +39,10 @@ static double inline bezier_area_2(fixed p0x, fixed p0y, fixed p1x, fixed p1y,
      3*((double)p1y*p2x + (double)p1y*p3x + 2.0*p2y*p3x - 2.0*p2x*p3y - (double)p1x*(p2y + p3y)))/10;
 }
 
-static void t1_hinter__reverse_contour(t1_hinter * this, int c)
+static void t1_hinter__reverse_contour(t1_hinter * self, int c)
 {
-    int b = this->contour[c];
-    int e = this->contour[c + 1] - 1; /* Skip 'close'. */
+    int b = self->contour[c];
+    int e = self->contour[c + 1] - 1; /* Skip 'close'. */
     int e2 = (b + e + 1) / 2;
     int i;
     t1_pole p;
@@ -51,9 +51,9 @@ static void t1_hinter__reverse_contour(t1_hinter * this, int c)
     for (i = b + 1; i < e2; i++) {
         int j = e - (i - b);
 
-        p = this->pole[i];
-        this->pole[i] = this->pole[j];
-        this->pole[j] = p;
+        p = self->pole[i];
+        self->pole[i] = self->pole[j];
+        self->pole[j] = p;
     }
 }
 
@@ -137,23 +137,23 @@ static double curve_winding_angle(fixed x0, fixed y0, fixed x1, fixed y1, fixed 
     return curve_winding_angle_rec(k, x0, y0, x1, y1, x2, y2, x3, y3);
 }
 
-static int t1_hinter__is_inside(t1_hinter * this, t1_glyph_space_coord gx, t1_glyph_space_coord gy, int c)
+static int t1_hinter__is_inside(t1_hinter * self, t1_glyph_space_coord gx, t1_glyph_space_coord gy, int c)
 {
-    int b = this->contour[c];
-    int e = this->contour[c + 1] - 1;
+    int b = self->contour[c];
+    int e = self->contour[c + 1] - 1;
     double a = 0, A;
     int i;
 
     for (i = b; i < e;) {
-        if (this->pole[i + 1].type != offcurve) {  /* line or close. */
-            A = bar_winding_angle(this->pole[i + 0].gx - gx, this->pole[i + 0].gy - gy,
-                                    this->pole[i + 1].gx - gx, this->pole[i + 1].gy - gy);
+        if (self->pole[i + 1].type != offcurve) {  /* line or close. */
+            A = bar_winding_angle(self->pole[i + 0].gx - gx, self->pole[i + 0].gy - gy,
+                                    self->pole[i + 1].gx - gx, self->pole[i + 1].gy - gy);
             i++;
         } else {
-            A = curve_winding_angle(this->pole[i + 0].gx - gx, this->pole[i + 0].gy - gy,
-                                    this->pole[i + 1].gx - gx, this->pole[i + 1].gy - gy,
-                                    this->pole[i + 2].gx - gx, this->pole[i + 2].gy - gy,
-                                    this->pole[i + 3].gx - gx, this->pole[i + 3].gy - gy);
+            A = curve_winding_angle(self->pole[i + 0].gx - gx, self->pole[i + 0].gy - gy,
+                                    self->pole[i + 1].gx - gx, self->pole[i + 1].gy - gy,
+                                    self->pole[i + 2].gx - gx, self->pole[i + 2].gy - gy,
+                                    self->pole[i + 3].gx - gx, self->pole[i + 3].gy - gy);
             i += 3;
         }
         if (A == CONTACT_SIGNAL)
@@ -219,16 +219,16 @@ intersect_bar_bar(fixed q0x, fixed q0y, fixed q1x, fixed q1y, fixed q2x, fixed q
 }
 
 static inline bool
-t1_hinter__intersect_bar_bar(t1_hinter * this, int i, int j)
+t1_hinter__intersect_bar_bar(t1_hinter * self, int i, int j)
 {
-    fixed q0x = this->pole[i + 0].gx;
-    fixed q0y = this->pole[i + 0].gy;
-    fixed q1x = this->pole[i + 1].gx;
-    fixed q1y = this->pole[i + 1].gy;
-    fixed q2x = this->pole[j + 0].gx;
-    fixed q2y = this->pole[j + 0].gy;
-    fixed q3x = this->pole[j + 1].gx;
-    fixed q3y = this->pole[j + 1].gy;
+    fixed q0x = self->pole[i + 0].gx;
+    fixed q0y = self->pole[i + 0].gy;
+    fixed q1x = self->pole[i + 1].gx;
+    fixed q1y = self->pole[i + 1].gy;
+    fixed q2x = self->pole[j + 0].gx;
+    fixed q2y = self->pole[j + 0].gy;
+    fixed q3x = self->pole[j + 1].gx;
+    fixed q3y = self->pole[j + 1].gy;
 
     return intersect_bar_bar(q0x, q0y, q1x, q1y, q2x, q2y, q3x, q3y);
 }
@@ -326,20 +326,20 @@ static int bar_samples(fixed dx, fixed dy)
     return m;
 }
 
-static bool t1_hinter__intersect_curve_bar(t1_hinter * this, int i, int j)
+static bool t1_hinter__intersect_curve_bar(t1_hinter * self, int i, int j)
 {
-    fixed X0 = this->pole[j].gx;
-    fixed Y0 = this->pole[j].gy;
-    fixed X1 = this->pole[j + 1].gx - X0;
-    fixed Y1 = this->pole[j + 1].gy - Y0;
-    fixed x0 = this->pole[i].gx - X0;
-    fixed y0 = this->pole[i].gy - Y0;
-    fixed x1 = this->pole[i + 1].gx - X0;
-    fixed y1 = this->pole[i + 1].gy - Y0;
-    fixed x2 = this->pole[i + 2].gx - X0;
-    fixed y2 = this->pole[i + 2].gy - Y0;
-    fixed x3 = this->pole[i + 3].gx - X0;
-    fixed y3 = this->pole[i + 3].gy - Y0;
+    fixed X0 = self->pole[j].gx;
+    fixed Y0 = self->pole[j].gy;
+    fixed X1 = self->pole[j + 1].gx - X0;
+    fixed Y1 = self->pole[j + 1].gy - Y0;
+    fixed x0 = self->pole[i].gx - X0;
+    fixed y0 = self->pole[i].gy - Y0;
+    fixed x1 = self->pole[i + 1].gx - X0;
+    fixed y1 = self->pole[i + 1].gy - Y0;
+    fixed x2 = self->pole[i + 2].gx - X0;
+    fixed y2 = self->pole[i + 2].gy - Y0;
+    fixed x3 = self->pole[i + 3].gx - X0;
+    fixed y3 = self->pole[i + 3].gy - Y0;
     int k = curve_log2_samples(0, 0, x1, y1, x2, y2, x3, y3);
     int m = bar_samples(X1, Y1);
 
@@ -456,24 +456,24 @@ static bool intersect_curve_curve_rec(int ka, int kb,
     return false;
 }
 
-static bool t1_hinter__intersect_curve_curve(t1_hinter * this, int i, int j)
+static bool t1_hinter__intersect_curve_curve(t1_hinter * self, int i, int j)
 {
-    fixed ax0 = this->pole[i].gx;
-    fixed ay0 = this->pole[i].gy;
-    fixed ax1 = this->pole[i + 1].gx;
-    fixed ay1 = this->pole[i + 1].gy;
-    fixed ax2 = this->pole[i + 2].gx;
-    fixed ay2 = this->pole[i + 2].gy;
-    fixed ax3 = this->pole[i + 3].gx;
-    fixed ay3 = this->pole[i + 3].gy;
-    fixed bx0 = this->pole[j].gx;
-    fixed by0 = this->pole[j].gy;
-    fixed bx1 = this->pole[j + 1].gx;
-    fixed by1 = this->pole[j + 1].gy;
-    fixed bx2 = this->pole[j + 2].gx;
-    fixed by2 = this->pole[j + 2].gy;
-    fixed bx3 = this->pole[j + 3].gx;
-    fixed by3 = this->pole[j + 3].gy;
+    fixed ax0 = self->pole[i].gx;
+    fixed ay0 = self->pole[i].gy;
+    fixed ax1 = self->pole[i + 1].gx;
+    fixed ay1 = self->pole[i + 1].gy;
+    fixed ax2 = self->pole[i + 2].gx;
+    fixed ay2 = self->pole[i + 2].gy;
+    fixed ax3 = self->pole[i + 3].gx;
+    fixed ay3 = self->pole[i + 3].gy;
+    fixed bx0 = self->pole[j].gx;
+    fixed by0 = self->pole[j].gy;
+    fixed bx1 = self->pole[j + 1].gx;
+    fixed by1 = self->pole[j + 1].gy;
+    fixed bx2 = self->pole[j + 2].gx;
+    fixed by2 = self->pole[j + 2].gy;
+    fixed bx3 = self->pole[j + 3].gx;
+    fixed by3 = self->pole[j + 3].gy;
     int ka = curve_log2_samples(ax0, ay0, ax1, ay1, ax2, ay2, ax3, ay3);
     int kb = curve_log2_samples(bx0, by0, bx1, by1, bx2, by2, bx3, by3);
 
@@ -482,23 +482,23 @@ static bool t1_hinter__intersect_curve_curve(t1_hinter * this, int i, int j)
                                      bx0, by0, bx1, by1, bx2, by2, bx3, by3);
 }
 
-static bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
+static bool t1_hinter__contour_intersection(t1_hinter * self, int c0, int c1)
 {
-    int b0 = this->contour[c0];
-    int e0 = this->contour[c0 + 1] - 1;
-    int b1 = this->contour[c1];
-    int e1 = this->contour[c1 + 1] - 1;
+    int b0 = self->contour[c0];
+    int e0 = self->contour[c0 + 1] - 1;
+    int b1 = self->contour[c1];
+    int e1 = self->contour[c1 + 1] - 1;
     int i, j;
 
     for (i = b0; i < e0;) {
-        if (this->pole[i + 1].type != offcurve) {  /* line or close. */
+        if (self->pole[i + 1].type != offcurve) {  /* line or close. */
             for (j = b1; j < e1;) {
-                if (this->pole[j + 1].type != offcurve) {  /* line or close. */
-                    if (t1_hinter__intersect_bar_bar(this, i, j))
+                if (self->pole[j + 1].type != offcurve) {  /* line or close. */
+                    if (t1_hinter__intersect_bar_bar(self, i, j))
                         return true;
                     j++;
                 } else {
-                    if (t1_hinter__intersect_curve_bar(this, j, i))
+                    if (t1_hinter__intersect_curve_bar(self, j, i))
                         return true;
                     j += 3;
                 }
@@ -506,12 +506,12 @@ static bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
             i++;
         } else {
             for (j = b1; j < e1;) {
-                if (this->pole[j + 1].type != offcurve) {  /* line or close. */
-                    if (t1_hinter__intersect_curve_bar(this, i, j))
+                if (self->pole[j + 1].type != offcurve) {  /* line or close. */
+                    if (t1_hinter__intersect_curve_bar(self, i, j))
                         return true;
                     j++;
                 } else {
-                    if (t1_hinter__intersect_curve_curve(this, j, i))
+                    if (t1_hinter__intersect_curve_curve(self, j, i))
                         return true;
                     j += 3;
                 }
@@ -524,7 +524,7 @@ static bool t1_hinter__contour_intersection(t1_hinter * this, int c0, int c1)
 
 #define MAX_NORMALIZING_CONTOURS 5
 
-static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_contour, int last_contour)
+static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * self, int first_contour, int last_contour)
 {
     double area[MAX_NORMALIZING_CONTOURS];
     int i, j, k, l, m;
@@ -542,15 +542,15 @@ static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_co
     /* Compute contour bboxes : */
     k = 0;
     for(i =  first_contour; i <= last_contour; i++) {
-        int b = this->contour[i];
-        int e = this->contour[i + 1] - 1;
+        int b = self->contour[i];
+        int e = self->contour[i + 1] - 1;
 
-        bbox[k].p.x = bbox[k].q.x = this->pole[b].gx;
-        bbox[k].p.y = bbox[k].q.y = this->pole[b].gy;
+        bbox[k].p.x = bbox[k].q.x = self->pole[b].gx;
+        bbox[k].p.y = bbox[k].q.y = self->pole[b].gy;
         /* 'close' has same coords as the starting point. */
         for (j = b; j < e; j++) {
-            t1_glyph_space_coord x = this->pole[j].gx;
-            t1_glyph_space_coord y = this->pole[j].gy;
+            t1_glyph_space_coord x = self->pole[j].gx;
+            t1_glyph_space_coord y = self->pole[j].gy;
 
             if (bbox[k].p.x > x)
                 bbox[k].p.x = x;
@@ -593,21 +593,21 @@ static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_co
     /* Compute contour signes : */
     for(i = 0; i < k; i++) {
         int c = isolated[i];
-        int b = this->contour[c];
-        int e = this->contour[c + 1] - 1;
+        int b = self->contour[c];
+        int e = self->contour[c + 1] - 1;
 
         a = 0;
         /* 'close' has same coords as the starting point. */
         for (j = b; j < e; ) {
-            if (this->pole[j + 1].type != offcurve) { /* line or close. */
-                a += line_area_2(this->pole[j + 0].gx, this->pole[j + 0].gy,
-                                 this->pole[j + 1].gx, this->pole[j + 1].gy);
+            if (self->pole[j + 1].type != offcurve) { /* line or close. */
+                a += line_area_2(self->pole[j + 0].gx, self->pole[j + 0].gy,
+                                 self->pole[j + 1].gx, self->pole[j + 1].gy);
                 j++;
             } else {
-                a += bezier_area_2(this->pole[j + 0].gx, this->pole[j + 0].gy,
-                                   this->pole[j + 1].gx, this->pole[j + 1].gy,
-                                   this->pole[j + 2].gx, this->pole[j + 2].gy,
-                                   this->pole[j + 3].gx, this->pole[j + 3].gy);
+                a += bezier_area_2(self->pole[j + 0].gx, self->pole[j + 0].gy,
+                                   self->pole[j + 1].gx, self->pole[j + 1].gy,
+                                   self->pole[j + 2].gx, self->pole[j + 2].gy,
+                                   self->pole[j + 3].gx, self->pole[j + 3].gy);
                 j += 3;
             }
         }
@@ -625,8 +625,8 @@ static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_co
         inside[i][i] = 0;
         for (j = 0; j < k; j++) {
             if (i != j) {
-                int b = this->contour[isolated[i]];
-                int code = t1_hinter__is_inside(this, this->pole[b].gx, this->pole[b].gy, isolated[j]);
+                int b = self->contour[isolated[i]];
+                int code = t1_hinter__is_inside(self, self->pole[b].gx, self->pole[b].gy, isolated[j]);
 
                 if (code < 0) {
                     /* Contours have a common point - don't fix. */
@@ -681,7 +681,7 @@ static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_co
     for (i = 0; i < k; i++) {
         for (j = 0; j < k; j++) {
             if (inside[i][j]) {
-                if (t1_hinter__contour_intersection(this, isolated[i], isolated[j])) {
+                if (t1_hinter__contour_intersection(self, isolated[i], isolated[j])) {
                     /* Contours intersect - don't fix. */
                     return;
                 }
@@ -691,25 +691,25 @@ static void t1_hinter__fix_subglyph_contour_signs(t1_hinter * this, int first_co
     /* Fix signs : */
     for (i = 0; i < k; i++) {
         if ((nesting[i] & 1) != (area[i] < 0))
-            t1_hinter__reverse_contour(this, isolated[i]);
+            t1_hinter__reverse_contour(self, isolated[i]);
     }
     /* Note we didn't fix negative isolated contours.
        We never meet such cases actually. */
 }
 
-void t1_hinter__fix_contour_signs(t1_hinter * this)
+void t1_hinter__fix_contour_signs(t1_hinter * self)
 {
     int i;
 
-    if (this->subglyph_count >= 3) {
+    if (self->subglyph_count >= 3) {
         /* 3 or more subglyphs.
            We didn't meet so complex characters with wrong contours signs.
            Skip it for saving the CPU time. */
         return;
     }
-    for (i = 1; i <= this->subglyph_count; i++) {
-        int first_contour = this->subglyph[i - 1];
-        int last_contour  = this->subglyph[i] - 1;
+    for (i = 1; i <= self->subglyph_count; i++) {
+        int first_contour = self->subglyph[i - 1];
+        int last_contour  = self->subglyph[i] - 1;
 
         if (last_contour - first_contour >= MAX_NORMALIZING_CONTOURS) {
             /* 4 or more contours.
@@ -717,6 +717,6 @@ void t1_hinter__fix_contour_signs(t1_hinter * this)
                Skip it for saving the CPU time. */
             continue;
         }
-        t1_hinter__fix_subglyph_contour_signs(this, first_contour, last_contour);
+        t1_hinter__fix_subglyph_contour_signs(self, first_contour, last_contour);
     }
 }
