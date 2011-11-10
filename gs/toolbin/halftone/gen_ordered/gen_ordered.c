@@ -1890,9 +1890,9 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
             } else {
                 /* Output PS HalftoneType 16 dictionary. Single array. */
                 fprintf(fid, "%%!PS\n"
-			"% Create a 'filter' from local hex data\n"
-			"{ currentfile ASCIIHexDecode filter }\n"
-			"exec\n");	/* hex data follows, 'file' object will be left on stack */
+			"%% Create a 'filter' from local hex data\n"
+			"{ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter } exec\n");
+        	/* hex data follows, 'file' object will be left on stack */
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
                         data_short = (unsigned short) (*buff_ptr & 0xffff);
@@ -1909,7 +1909,9 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                         "   /HalftoneType 16\n"
                         "   /Width  %d\n"
                         "   /Height %d\n"
-                        ">>\n", width, height);
+                        ">>\n"
+			"exch pop     %% discard ResuableStreamDecode file leaving the Halftone dict.\n",
+			width, height);
             }
         }
         fclose(fid);
