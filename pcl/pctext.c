@@ -778,8 +778,8 @@ pcl_show_chars_slow(
                        like this business of mixing floats and ints -
                        (pcs->cap and cpt). throughout this
                        function. */
-                    pcs->cap.x = cpt.x;
-                    pcs->cap.y = cpt.y;
+                    pcs->cap.x = (coord)cpt.x;
+                    pcs->cap.y = (coord)cpt.y;
                     pcl_do_CR(pcs);
                     pcl_do_LF(pcs);
                     cpt.x = pcs->cap.x;
@@ -862,8 +862,8 @@ pcl_show_chars_slow(
     pcs->last_width = width;
 
     /* update the current position */
-    pcs->cap.x = cpt.x;
-    pcs->cap.y = cpt.y;
+    pcs->cap.x = (coord)cpt.x;
+    pcs->cap.y = (coord)cpt.y;
 
 #ifdef DEBUG
     if (!read_char) {

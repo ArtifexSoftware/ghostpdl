@@ -76,7 +76,7 @@ process_font(pcl_state_t *pcs, pl_font_t *fp)
         if (code < 0)
             return gs_rethrow(code, "failed to display font");
 
-        pcl_set_cap_x(pcs, pcs->margins.right / (16.0/15.0), false, false);
+        pcl_set_cap_x(pcs, (coord)(pcs->margins.right / (16.0/15.0)), false, false);
         sprintf(buff, "%d", fp->params.pjl_font_number);
 
         code = pcl_text((byte *)buff, strlen(buff), pcs, false);

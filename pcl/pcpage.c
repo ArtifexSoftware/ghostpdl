@@ -336,8 +336,8 @@ new_page_size(
     page_size[0] = width_pts;
     page_size[1] = height_pts;
 
-    old_page_size[0] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->width : 0;
-    old_page_size[1] = pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->height : 0;
+    old_page_size[0] = (float)(pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->width : 0);
+    old_page_size[1] = (float)(pcs->xfm_state.paper_size ? pcs->xfm_state.paper_size->height : 0);
 
     put_param1_float_array(pcs, "PageSize", page_size);
 

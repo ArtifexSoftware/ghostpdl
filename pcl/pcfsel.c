@@ -237,8 +237,8 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
                 /* scalable; match is worst possible */
                 score[score_pitch] = 0;
             else {
-                int delta = pl_fp_pitch_per_inch_x100(&fp->params) -
-                    pl_fp_pitch_per_inch_x100(&pfs->params);
+                int delta = (int)(pl_fp_pitch_per_inch_x100(&fp->params) -
+                                  pl_fp_pitch_per_inch_x100(&pfs->params));
 
                 /* If within one unit, call it exact; otherwise give
                  * preference to higher pitch than requested. */

@@ -98,8 +98,8 @@ rtl_enter_pcl_mode(
 
             /* HPGL/2 uses floats for coordinates */
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
-            pcs->cap.x = round(pt.x);
-            pcs->cap.y = round(pt.y);
+            pcs->cap.x = (coord)round(pt.x);
+            pcs->cap.y = (coord)round(pt.y);
 #undef round
         }
     } else

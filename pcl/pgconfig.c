@@ -400,17 +400,17 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
         if ( i != 0 )
           {
             hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
-                              rptxy[0] / 100.0);
+                              (int32)(rptxy[0] / 100.0));
             hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
-                              rptxy[1] / 100.0);
+                              (int32)(rptxy[1] / 100.0));
           }
         if ( i == 4 )
           {
             hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
-                              rptxy[2] / 100.0);
+                              (int32)(rptxy[2] / 100.0));
 
             hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
-                              rptxy[3] / 100.0);
+                              (int32)(rptxy[3] / 100.0));
           }
         hpgl_IP( &args, pgls );
         return 0;
@@ -502,8 +502,8 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
         else if ( i != 2 )
             return e_Range;
     }
-    paper.height = plu_2_coord(page_dims[0]);
-    paper.width = plu_2_coord(page_dims[1]);
+    paper.height = (coord)plu_2_coord(page_dims[0]);
+    paper.width = (coord)plu_2_coord(page_dims[1]);
     paper.offset_portrait = 0;
     paper.offset_landscape = 0;
     new_logical_page(pgls, 0, &paper, false, false);

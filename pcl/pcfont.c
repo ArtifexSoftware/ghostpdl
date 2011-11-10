@@ -157,7 +157,7 @@ pcl_pitch(floatp cpi, pcl_state_t *pcs, int set)
         if ( cpi < 0.1 )
           cpi = 0.1;
         /* Convert characters per inch to 100ths of design units. */
-        pitch_cp = 7200.0 / cpi;
+        pitch_cp = (uint)(7200.0 / cpi);
         if ( pitch_cp > 65535 )
           return e_Range;
         if ( pitch_cp < 1 )
@@ -307,7 +307,7 @@ pcl_select_default_font(pcl_args_t *pargs, pcl_state_t *pcs, int set)
     pl_fp_set_pitch_per_inch(&pcs->font_selection[set].params,
                              pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
     pcs->font_selection[set].params.height_4ths =
-        pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+        (uint)(pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0);
 
     pcs->font_selection[set].params.style = 0;
     pcs->font_selection[set].params.stroke_weight = 0;
@@ -577,7 +577,7 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
                 pl_fp_set_pitch_per_inch(&pcs->font_selection[0].params,
                     pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "pitch")));
                 pcs->font_selection[0].params.height_4ths =
-                    pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0;
+                    (uint)(pjl_proc_vartof(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "ptsize")) * 4.0);
                 pcs->font_selection[0].font = 0;
                 pcs->font_selection[0].selected_id = (uint)-1;
                 pcs->font_selection[1] = pcs->font_selection[0];

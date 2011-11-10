@@ -248,7 +248,7 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
         pcl_args_t args;
         if ( pcs->personality == rtl )
             arg_set_uint(&args,
-                         gs_currentdevice(pcs->pgs)->HWResolution[0]);
+                         (uint)gs_currentdevice(pcs->pgs)->HWResolution[0]);
         else
             arg_set_uint(&args, 300);
         pcl_set_unit_of_measure(&args, pcs);

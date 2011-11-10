@@ -152,29 +152,29 @@ private_st_cs_base_t();
  *         chrominance space)
  */
 static const pcl_cid_minmax_t  cielab_range_default = {
-    { { 0.0, 100.0 }, { -100.0, 100.0 }, { -100.0, 100.0 } }
+    { { 0.0f, 100.0f }, { -100.0f, 100.0f }, { -100.0f, 100.0f } }
 };
 
 static const pcl_cid_minmax_t  colmet_range_default = {
-    { { 0.0, 1.0 }, { 0.0, 1.0 }, { 0.0, 1.0 } }
+    { { 0.0f, 1.0f }, { 0.0f, 1.0f }, { 0.0f, 1.0f } }
 };
 
 static const pcl_cid_minmax_t  lumchrom_range_default = {
-    { { 0.0, 1.0 }, { -0.89, 0.89 }, { -0.70, 0.70 } }
+    { { 0.0f, 1.0f }, { -0.89f, 0.89f }, { -0.70f, 0.70f } }
 };
 
 static const pcl_cid_col_common_t  chroma_default = {
     {
-        { 0.640, 0.340 },   /* "red" primary chromaticity */
-        { 0.310, 0.595 },   /* "green" primary chromaticity */
-        { 0.155, 0.070 },   /* "blue" chromaticity */
-        { 0.313, 0.329 }    /* white chromaticity */
+        { 0.640f, 0.340f },   /* "red" primary chromaticity */
+        { 0.310f, 0.595f },   /* "green" primary chromaticity */
+        { 0.155f, 0.070f },   /* "blue" chromaticity */
+        { 0.313f, 0.329f }    /* white chromaticity */
     },
-    { { 1, 1.0 }, { 1, 1.0 }, { 1, 1.0 } }
+    { { 1, 1.0f }, { 1, 1.0f }, { 1, 1.0f } }
 };
 
 static const float     lumchrom_xform_default[9] = {
-    0.30, 0.59, 0.11, -0.30, -0.59, 0.89, 0.70, -0.59, -0.11
+    0.30f, 0.59f, 0.11f, -0.30f, -0.59f, 0.89f, 0.70f, -0.59f, -0.11f
 };
 
 /* structure of default values for all color spaces */
@@ -708,7 +708,7 @@ static const gs_cie_common_proc3   lab_DecodeLMN = {
     { lab_DecodeLMN_0, lab_DecodeLMN_1, lab_DecodeLMN_2 }
 };
 
-static const gs_vector3    lab_WhitePoint = { .9504, 1.0, 1.0889 };
+static const gs_vector3    lab_WhitePoint = { .9504f, 1.0f, 1.0889f };
 
 /*
  * Finish the creation of a CIE L*a*b* color space.
