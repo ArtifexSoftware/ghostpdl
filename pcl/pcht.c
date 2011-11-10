@@ -1692,7 +1692,7 @@ pcl_ht_is_all_gray_palette(pcl_state_t *pcs)
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
 
         bool is_gray = true;
-        const char *pb = 0;
+        const byte *pb = 0;
         pcl_palette_t *     ppalet = pcs->ppalet;
         pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
         int i;

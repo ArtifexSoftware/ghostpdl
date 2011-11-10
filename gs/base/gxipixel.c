@@ -879,7 +879,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
             if (penum->pcs->params.indexed.use_proc) {
                 /* Have to do the slow way */
                 for (k = 0; k < num_entries; k++) {
-                    gs_cspace_indexed_lookup_bytes(penum->pcs, k, psrc);
+                    gs_cspace_indexed_lookup_bytes(penum->pcs, (float)k, psrc);
                     memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
                                psrc, num_des_comp);
                 }
@@ -922,7 +922,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                 if (penum->pcs->params.indexed.use_proc) {
                     /* Have to do the slow way */
                     for (k = 0; k < num_entries; k++) {
-                        gs_cspace_indexed_lookup_bytes(penum->pcs, k, psrc);
+                        gs_cspace_indexed_lookup_bytes(penum->pcs, (float)k, psrc);
                         memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
                     }
                 } else {

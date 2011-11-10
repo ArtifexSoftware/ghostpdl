@@ -237,17 +237,17 @@ rtmisc_do_reset(
         return;
 
     if ((type & mask) != 0)
-        pcs->configure_appletalk("JOB", 3, "", 0);
+        pcs->configure_appletalk((const byte *)"JOB", 3, (const byte *)"", 0);
     if ((type & pcl_reset_cold) != 0) {
         static const byte   prntr_name[] = "HP Color LaserJet 5M";
         static const byte   dev_type[] = "HP LaserJet 4";
 
-        pcs->configure_appletalk( "RENAME",
+        pcs->configure_appletalk( (const byte *)"RENAME",
                                    6,
                                    prntr_name,
                                    sizeof(prntr_name) - 1
                                    );
-        pcs->configure_appletalk("TYPE", 4, dev_type, sizeof(dev_type) - 1);
+        pcs->configure_appletalk((const byte *)"TYPE", 4, dev_type, sizeof(dev_type) - 1);
     }
 }
 

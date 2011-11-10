@@ -348,8 +348,8 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
     if ( pfont->FontType != ft_TrueType ) {
         glyph -= 29;
         if ( glyph >= 0 && glyph < 258 ) {
-            pstr->data = pl_mac_names[glyph];
-            pstr->size = strlen(pstr->data);
+            pstr->data = (const byte *)pl_mac_names[glyph];
+            pstr->size = strlen((const char *)pstr->data);
             return 0;
         } else {
             if_debug1('=', "[=]glyph index %lx out of range\n", (ulong)glyph);
@@ -395,12 +395,12 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
         /* mac easy */
         if ( glyph_name_index < 258 ) {
 
-            pstr->data = pl_mac_names[glyph_name_index];
-            pstr->size = strlen(pstr->data);
+            pstr->data = (const byte *)pl_mac_names[glyph_name_index];
+            pstr->size = strlen((const char *)pstr->data);
             return 0;
         /* not mac */
         } else {
-            char *mydata;
+            byte *mydata;
             /* and here's the tricky part */
             const byte *pascal_stringp =
                 postp + 34 + (numGlyphs * 2);
@@ -529,8 +529,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
         memcpy(plfont->header, src->header, src->header_size);
 
         if ( src->font_file ) {
-            plfont->font_file = gs_alloc_bytes(mem, strlen(src->font_file) + 1,
-                                               "pl_clone_font");
+            plfont->font_file = (char *)gs_alloc_bytes(mem, strlen(src->font_file) + 1,
+                                                       "pl_clone_font");
             if ( plfont->font_file == 0 )
                 return 0;  /* #NB errors!!! */
             strcpy(plfont->font_file, src->font_file);
@@ -683,13 +683,13 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_
         pfont->procs.glyph_outline = gs_no_glyph_outline;
         pfont->id = gs_next_ids(mem, 1);
         pfont->font_name.size = strlen(font_name);
-        strncpy(pfont->font_name.chars, font_name, pfont->font_name.size);
+        strncpy((char *)pfont->font_name.chars, font_name, pfont->font_name.size);
         /* replace spaces with '-', seems acrobat doesn't like spaces. */
         for (i = 0; i < pfont->font_name.size; i++) {
             if (pfont->font_name.chars[i] == ' ')
                 pfont->font_name.chars[i] = '-';
         }
-        strncpy(pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
+        strncpy((char *)pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
         pfont->key_name.size = strlen(font_name);
         return 0;
 }
@@ -1046,7 +1046,7 @@ pl_store_resident_font_data_in_file(char *font_file, gs_memory_t *mem, pl_font_t
     /* we don't yet have a filename for this font object. create one
        and store it in the font. */
     if ( !plfont->font_file ) {
-        plfont->font_file = gs_alloc_bytes(mem, strlen(font_file) + 1, "pl_store_resident_font_data_in_file");
+        plfont->font_file = (char *)gs_alloc_bytes(mem, strlen(font_file) + 1, "pl_store_resident_font_data_in_file");
         if ( plfont->font_file == 0 )
             return -1;
         strcpy(plfont->font_file, font_file);
