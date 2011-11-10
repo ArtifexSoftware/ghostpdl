@@ -375,7 +375,7 @@ xps_decode_tiff_jpeg(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, b
     state.jpeg_memory = ctx->memory;
     state.data.decompress = &jddp;
 
-    jddp.template = s_DCTD_template;
+    jddp.templat = s_DCTD_template;
     jddp.memory = ctx->memory;
     jddp.scanline_buffer = NULL;
 

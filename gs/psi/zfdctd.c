@@ -84,8 +84,8 @@ zDCTD(i_ctx_t *i_ctx_p)
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
         goto rel;
     /* Create the filter. */
-    jddp->template = s_DCTD_template;
-    code = filter_read(i_ctx_p, 0, &jddp->template,
+    jddp->templat = s_DCTD_template;
+    code = filter_read(i_ctx_p, 0, &jddp->templat,
                        (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
         return code;

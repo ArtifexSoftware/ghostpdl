@@ -460,10 +460,10 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 
                 /* Free any internal compressor state. */
                 if (f->compressor_initialized) {
-                    if (f->decompress_state->template->release != 0)
-                        (*f->decompress_state->template->release) (f->decompress_state);
-                    if (f->compress_state->template->release != 0)
-                        (*f->compress_state->template->release) (f->compress_state);
+                    if (f->decompress_state->templat->release != 0)
+                        (*f->decompress_state->templat->release) (f->decompress_state);
+                    if (f->compress_state->templat->release != 0)
+                        (*f->compress_state->templat->release) (f->compress_state);
                     f->compressor_initialized = false;
                 }
                 /* free the raw buffers                                           */
@@ -617,13 +617,13 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 
     bp->phys_blk = f->phys_curr;
     bp->phys_pdata = (char *)(f->wt.ptr) + 1;
-    if (f->compress_state->template->reinit != 0)
-        (*f->compress_state->template->reinit)(f->compress_state);
+    if (f->compress_state->templat->reinit != 0)
+        (*f->compress_state->templat->reinit)(f->compress_state);
     compressed_size = 0;
 
     start_ptr = f->wt.ptr;
-    status = (*f->compress_state->template->process)(f->compress_state,
-                                                     &(f->rd), &(f->wt), true);
+    status = (*f->compress_state->templat->process)(f->compress_state,
+                                                    &(f->rd), &(f->wt), true);
     bp->phys_blk->data_limit = (char *)(f->wt.ptr);
 
     if (status == 1) {          /* More output space needed (see strimpl.h) */
@@ -643,8 +643,8 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 
         start_ptr = f->wt.ptr;
         status =
-            (*f->compress_state->template->process)(f->compress_state,
-                                                    &(f->rd), &(f->wt), true);
+            (*f->compress_state->templat->process)(f->compress_state,
+                                                   &(f->rd), &(f->wt), true);
         if (status != 0) {
             /*
              * You'd think the above line is a bug, but in real life 1 src
@@ -711,8 +711,8 @@ memfile_next_blk(MEMFILE * f)
             if (!f->compressor_initialized) {
                 int code = 0;
 
-                if (f->compress_state->template->init != 0)
-                    code = (*f->compress_state->template->init) (f->compress_state);
+                if (f->compress_state->templat->init != 0)
+                    code = (*f->compress_state->templat->init) (f->compress_state);
                 if (code < 0)
                     return_error(gs_error_VMerror);  /****** BOGUS ******/
                 f->compressor_initialized = true;
@@ -890,8 +890,8 @@ memfile_get_pdata(MEMFILE * f)
             num_raw_buffers = i + 1;    /* if MALLOC failed, then OK    */
             if_debug1(':', "[:]Number of raw buffers allocated=%d\n",
                       num_raw_buffers);
-            if (f->decompress_state->template->init != 0)
-                code = (*f->decompress_state->template->init)
+            if (f->decompress_state->templat->init != 0)
+                code = (*f->decompress_state->templat->init)
                     (f->decompress_state);
             if (code < 0)
                 return_error(gs_error_VMerror);
@@ -921,8 +921,8 @@ memfile_get_pdata(MEMFILE * f)
 
             /* Decompress the data into this raw block                     */
             /* Initialize the decompressor                              */
-            if (f->decompress_state->template->reinit != 0)
-                (*f->decompress_state->template->reinit) (f->decompress_state);
+            if (f->decompress_state->templat->reinit != 0)
+                (*f->decompress_state->templat->reinit) (f->decompress_state);
             /* Set pointers and call the decompress routine             */
             f->wt.ptr = (byte *) (f->raw_head->data) - 1;
             f->wt.limit = f->wt.ptr + MEMFILE_DATA_SIZE;
@@ -934,7 +934,7 @@ memfile_get_pdata(MEMFILE * f)
             decomp_rd_ptr0 = f->rd.ptr;
             decomp_rd_limit0 = f->rd.limit;
 #endif
-            status = (*f->decompress_state->template->process)
+            status = (*f->decompress_state->templat->process)
                 (f->decompress_state, &(f->rd), &(f->wt), true);
             if (status == 0) {  /* More input data needed */
                 /* switch to next block and continue decompress             */
@@ -954,7 +954,7 @@ memfile_get_pdata(MEMFILE * f)
                 decomp_rd_ptr1 = f->rd.ptr;
                 decomp_rd_limit1 = f->rd.limit;
 #endif
-                status = (*f->decompress_state->template->process)
+                status = (*f->decompress_state->templat->process)
                     (f->decompress_state, &(f->rd), &(f->wt), true);
                 if (status == 0) {
                     emprintf(f->memory,
@@ -1180,10 +1180,10 @@ memfile_free_mem(MEMFILE * f)
 
     /* Free any internal compressor state. */
     if (f->compressor_initialized) {
-        if (f->decompress_state->template->release != 0)
-            (*f->decompress_state->template->release) (f->decompress_state);
-        if (f->compress_state->template->release != 0)
-            (*f->compress_state->template->release) (f->compress_state);
+        if (f->decompress_state->templat->release != 0)
+            (*f->decompress_state->templat->release) (f->decompress_state);
+        if (f->compress_state->templat->release != 0)
+            (*f->compress_state->templat->release) (f->compress_state);
         f->compressor_initialized = false;
     }
     /* free the raw buffers                                           */

@@ -36,7 +36,7 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 {
     uint added = 0;
     uint i;
-    const stream_template *template;
+    const stream_template *templat;
     stream_AXE_state state;
     stream_state *st = NULL;
 
@@ -76,11 +76,11 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 
     if (added < size || (print_ok & PRINT_HEX_NOT_OK)) {
         /* More efficient, or mandatory, to represent as PostScript string. */
-        template = &s_PSSE_template;
+        templat = &s_PSSE_template;
         stream_putc(s, '(');
     } else {
         /* More efficient, and permitted, to represent as hex string. */
-        template = &s_AXE_template;
+        templat = &s_AXE_template;
         st = (stream_state *) & state;
         s_AXE_init_inline(&state);
         stream_putc(s, '<');
@@ -98,7 +98,7 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
         do {
             /* One picky compiler complains if we initialize to buf - 1. */
             w.ptr = buf;  w.ptr--;
-            status = (*template->process) (st, &r, &w, true);
+            status = (*templat->process) (st, &r, &w, true);
             stream_write(s, buf, (uint) (w.ptr + 1 - buf));
         }
         while (status == 1);

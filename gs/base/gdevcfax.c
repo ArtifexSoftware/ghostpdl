@@ -120,7 +120,7 @@ cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
     bool nul = !strcmp(pdev->fname, "nul");
 
     /* Initialize the common part of the encoder state. */
-    ss->template = temp;
+    ss->templat = temp;
     ss->memory = mem;
 
     /* Allocate the buffers. */

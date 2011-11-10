@@ -277,7 +277,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
         uint rep_height = pattern->params.height;
         uint full_width, full_height;
         gs_state *pgs = pxs->pgs;
-        gs_client_pattern template;
+        gs_client_pattern templat;
 
         /*
          * If halftoning may occur, replicate the pattern so we don't get
@@ -303,18 +303,18 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
             }
         }
         /* Construct a Pattern for the library, and render it. */
-        gs_pattern1_init(&template);
-        uid_set_UniqueID(&template.uid, pattern->id);
-        template.PaintType = 1;
-        template.TilingType = 1;
-        template.BBox.p.x = 0;
-        template.BBox.p.y = 0;
-        template.BBox.q.x = full_width;
-        template.BBox.q.y = full_height;
-        template.XStep = full_width;
-        template.YStep = full_height;
-        template.PaintProc = px_paint_pattern;
-        template.client_data = (void *)pattern;
+        gs_pattern1_init(&templat);
+        uid_set_UniqueID(&templat.uid, pattern->id);
+        templat.PaintType = 1;
+        templat.TilingType = 1;
+        templat.BBox.p.x = 0;
+        templat.BBox.p.y = 0;
+        templat.BBox.q.x = full_width;
+        templat.BBox.q.y = full_height;
+        templat.XStep = full_width;
+        templat.YStep = full_height;
+        templat.PaintProc = px_paint_pattern;
+        templat.client_data = (void *)pattern;
         { gs_matrix mat;
           gs_point dsize;
           int code;
@@ -381,7 +381,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
               }
               gs_setcolorspace(pgs, pcs);
           }
-          code = gs_makepattern(pcc, &template, &mat, pgs, NULL);
+          code = gs_makepattern(pcc, &templat, &mat, pgs, NULL);
           gs_grestore(pgs);
           return code;
         }

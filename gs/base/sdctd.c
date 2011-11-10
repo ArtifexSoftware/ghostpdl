@@ -220,8 +220,8 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
             if_debug4('w', "[wdd]width=%u, components=%d, scan_line_size=%u, min_out_size=%u\n",
                       jddp->dinfo.output_width,
                       jddp->dinfo.output_components,
-                      ss->scan_line_size, jddp->template.min_out_size);
-            if (ss->scan_line_size > (uint) jddp->template.min_out_size) {
+                      ss->scan_line_size, jddp->templat.min_out_size);
+            if (ss->scan_line_size > (uint) jddp->templat.min_out_size) {
                 /* Create a spare buffer for oversize scanline */
                 jddp->scanline_buffer =
                     gs_alloc_bytes_immovable(gs_memory_stable(jddp->memory),
@@ -284,7 +284,7 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
                      * a local buffer and copy the data into it. The local
                      * buffer can be grown as required. */
                     if ((src->next_input_byte-1 == pr->ptr) &&
-                        (pr->limit - pr->ptr >= ss->template->min_in_size) &&
+                        (pr->limit - pr->ptr >= ss->templat->min_in_size) &&
                         (compact_jpeg_buffer(pr) == 0))
                         return ERRC;
                     return 0;	/* need more data */
@@ -327,7 +327,7 @@ s_DCTD_release(stream_state * st)
     gs_free_object(ss->data.common->memory, ss->data.decompress,
                    "s_DCTD_release");
     /* Switch the template pointer back in case we still need it. */
-    st->template = &s_DCTD_template;
+    st->templat = &s_DCTD_template;
 }
 
 /* Stream template */

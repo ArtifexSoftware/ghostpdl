@@ -70,7 +70,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     gs_memory_t *mem = penum->memory;
     stream_image_scale_params_t iss;
     stream_image_scale_state *pss;
-    const stream_template *template;
+    const stream_template *templat;
     byte *line;
     const gs_color_space *pcs = penum->pcs;
     gs_point dst_xy;
@@ -224,9 +224,9 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         /* Size to allocate space to store the input as frac type */
     }
 #ifdef USE_MITCHELL_FILTER
-    template = &s_IScale_template;
+    templat = &s_IScale_template;
 #else
-    template = &s_IIEncode_template;
+    templat = &s_IIEncode_template;
 #endif
     if (((penum->dev->color_info.num_components == 1 &&
           penum->dev->color_info.max_gray < 15) ||
@@ -243,7 +243,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                    to a dithered device.  The point of this non-linear
                    downsampling is to preserve dark pixels from the source
                    image to avoid dropout. The color polarity is used for this  */
-                template = &s_ISpecialDownScale_template;
+                templat = &s_ISpecialDownScale_template;
             } else {
                 penum->interpolate = false;
                 return 0;       /* no interpolation / downsampling */
@@ -268,10 +268,10 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
                               "image scale src+dst line");
     }
     pss = (stream_image_scale_state *)
-        s_alloc_state(mem, template->stype, "image scale state");
+        s_alloc_state(mem, templat->stype, "image scale state");
     if (line == 0 || pss == 0 ||
-        (pss->params = iss, pss->template = template,
-         (*pss->template->init) ((stream_state *) pss) < 0)
+        (pss->params = iss, pss->templat = templat,
+         (*pss->templat->init) ((stream_state *) pss) < 0)
         ) {
         gs_free_object(mem, pss, "image scale state");
         gs_free_object(mem, line, "image scale src+dst line");
@@ -648,7 +648,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
             psrc = (const frac *)(stream_w.ptr + 1);
             /* This is where the rescale takes place */
-            status = (*pss->template->process)
+            status = (*pss->templat->process)
                 ((stream_state *) pss, &stream_r, &stream_w, h == 0);
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
@@ -887,7 +887,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
             pinterp = (const unsigned short *)(stream_w.ptr + 1);
             /* This is where the rescale takes place */
-            status = (*pss->template->process)
+            status = (*pss->templat->process)
                 ((stream_state *) pss, &stream_r, &stream_w, h == 0);
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);

@@ -731,9 +731,9 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
             use_x = false;
         }
 
-        ftscale_mat.xx = (((double)(*xresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
+        ftscale_mat.xx = (int)(((double)(*xresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
         ftscale_mat.xy = ftscale_mat.yx = 0;
-        ftscale_mat.yy = (((double)(*yresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
+        ftscale_mat.yy = (int)(((double)(*yresp) / ((double)(use_x ? (*xresp) : (*yresp)))) * 65536);
 
         FT_Matrix_Multiply (&ftscale_mat, a_transform);
 
@@ -910,10 +910,10 @@ transform_decompose(FT_Matrix *a_transform, FT_UInt *xresp, FT_UInt *yresp,
         }
         factx = facty = fact;
     }
-    ftscale_mat.xx = (FT_Fixed)(65536.0 / scalex) * factx;
+    ftscale_mat.xx = (FT_Fixed)((65536.0 / scalex) * factx);
     ftscale_mat.xy = 0;
     ftscale_mat.yx = 0;
-    ftscale_mat.yy = (FT_Fixed)(65536.0 / scaley) * facty;
+    ftscale_mat.yy = (FT_Fixed)((65536.0 / scaley) * facty);
 
     FT_Matrix_Multiply (a_transform, &ftscale_mat);
     memcpy(a_transform, &ftscale_mat, sizeof(FT_Matrix));

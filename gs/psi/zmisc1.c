@@ -135,7 +135,7 @@ zexD(i_ctx_t *i_ctx_p)
     if (r_has_type(op - 1, t_file)) {
         stream *s = (op - 1)->value.pfile;
 
-        if (s->state != 0 && s->state->template == &s_PFBD_template) {
+        if (s->state != 0 && s->state->templat == &s_PFBD_template) {
             stream_PFBD_state *pss = (stream_PFBD_state *)s->state;
 
             state.pfb_state = pss;

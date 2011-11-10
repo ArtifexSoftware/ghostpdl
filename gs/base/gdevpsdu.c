@@ -323,7 +323,7 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
             gs_free_object(mem, buf, "psdf_begin_binary(buf)");
             return_error(gs_error_VMerror);
         }
-        ss->template = &s_A85E_template;
+        ss->templat = &s_A85E_template;
         s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
 #undef BUF_SIZE
         pbw->strm = s;
@@ -336,10 +336,10 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 /* Add an encoding filter.  The client must have allocated the stream state, */
 /* if any, using pdev->v_memory. */
 int
-psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
+psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * templat,
                    stream_state * ss)
 {
-    return (s_add_filter(&pbw->strm, template, ss, pbw->memory) == 0 ?
+    return (s_add_filter(&pbw->strm, templat, ss, pbw->memory) == 0 ?
             gs_note_error(gs_error_VMerror) : 0);
 }
 
@@ -392,17 +392,17 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
         if (code < 0)
             return code;
         /* Create the filter. */
-        jcdp->template = s_DCTE_template;
+        jcdp->templat = s_DCTE_template;
         /* Make sure we get at least a full scan line of input. */
         ss->scan_line_size = jcdp->cinfo.input_components *
             jcdp->cinfo.image_width;
-        jcdp->template.min_in_size =
+        jcdp->templat.min_in_size =
             max(s_DCTE_template.min_in_size, ss->scan_line_size);
         /* Make sure we can write the user markers in a single go. */
-        jcdp->template.min_out_size =
+        jcdp->templat.min_out_size =
             max(s_DCTE_template.min_out_size, ss->Markers.size);
         if (pbw)
-            code = psdf_encode_binary(pbw, &jcdp->template, st);
+            code = psdf_encode_binary(pbw, &jcdp->templat, st);
         if (code >= 0) {
             gs_c_param_list_release(&rcc_list);
             return 0;
@@ -421,21 +421,21 @@ int
 psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 {
     gs_memory_t *mem = pbw->memory;
-    const stream_template *template = &s_CFE_template;
+    const stream_template *templat = &s_CFE_template;
     stream_CFE_state *st =
-        gs_alloc_struct(mem, stream_CFE_state, template->stype,
+        gs_alloc_struct(mem, stream_CFE_state, templat->stype,
                         "psdf_CFE_binary");
     int code;
 
     if (st == 0)
         return_error(gs_error_VMerror);
-    (*template->set_defaults) ((stream_state *) st);
+    (*templat->set_defaults) ((stream_state *) st);
     st->K = -1;
     st->Columns = w;
     st->Rows = 0;
     st->BlackIs1 = !invert;
-    st->EndOfBlock = pbw->strm->state->template != &s_A85E_template;
-    code = psdf_encode_binary(pbw, template, (stream_state *) st);
+    st->EndOfBlock = pbw->strm->state->templat != &s_A85E_template;
+    code = psdf_encode_binary(pbw, templat, (stream_state *) st);
     if (code < 0)
         gs_free_object(mem, st, "psdf_CFE_binary");
     return code;

@@ -45,7 +45,7 @@ struct jpeg_block_s {
 #define jpeg_stream_data_common\
                 /* We put a copy of the stream template here, because */\
                 /* the minimum buffer sizes depend on the image parameters. */\
-        stream_template template;\
+        stream_template templat;\
         struct jpeg_error_mgr err;\
         gsfix_jmp_buf exit_jmpbuf;\
         gs_memory_t *memory;	/* heap for library allocations */\

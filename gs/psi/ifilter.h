@@ -34,7 +34,7 @@ int filter_read(
         /* top dictionary operand (both of which will always be popped) */
                 int npop,
         /* Template for stream */
-                const stream_template * template,
+                const stream_template * templat,
         /* Initialized s_xxx_state, 0 if no separate state */
                 stream_state * st,
         /* Max of space attributes of all parameters referenced by */
@@ -42,7 +42,7 @@ int filter_read(
                 uint space
                 );
 int filter_write(i_ctx_t *i_ctx_p, int npop,
-                 const stream_template * template,
+                 const stream_template * templat,
                  stream_state * st, uint space);
 
 /*
@@ -50,9 +50,9 @@ int filter_write(i_ctx_t *i_ctx_p, int npop,
  * an optional dictionary) or state.
  */
 int filter_read_simple(i_ctx_t *i_ctx_p,
-                       const stream_template * template);
+                       const stream_template * templat);
 int filter_write_simple(i_ctx_t *i_ctx_p,
-                        const stream_template * template);
+                        const stream_template * templat);
 
 /* Mark a filter stream as temporary. */
 /* See stream.h for the meaning of is_temp. */

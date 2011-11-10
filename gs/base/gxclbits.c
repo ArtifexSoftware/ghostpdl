@@ -77,12 +77,12 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
     r.ptr = data - 1;
     if (raster == width_bytes) {
         r.limit = r.ptr + raster * height;
-        status = (*st->template->process) (st, &r, pw, true);
+        status = (*st->templat->process) (st, &r, pw, true);
     } else {			/* Compress row-by-row. */
         uint y;
 
         for (y = 1; (r.limit = r.ptr + width_bytes), y < height; ++y) {
-            status = (*st->template->process) (st, &r, pw, false);
+            status = (*st->templat->process) (st, &r, pw, false);
             if (status)
                 break;
             if (r.ptr != r.limit) {	/* We don't attempt to handle compressors that */
@@ -93,10 +93,10 @@ cmd_compress_bitmap(stream_state * st, const byte * data, uint width_bits,
             r.ptr += raster - width_bytes;
         }
         if (status == 0)
-            status = (*st->template->process) (st, &r, pw, true);
+            status = (*st->templat->process) (st, &r, pw, true);
     }
-    if (st->template->release)
-        (*st->template->release) (st);
+    if (st->templat->release)
+        (*st->templat->release) (st);
     return status;
 }
 

@@ -460,7 +460,7 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     gs_free_object(mem, penum->clip_dev, "image clipper");
 
     if (scaler != 0) {
-        (*scaler->template->release) ((stream_state *) scaler);
+        (*scaler->templat->release) ((stream_state *) scaler);
         gs_free_object(mem, scaler, "image scaler state");
     }
     if (penum->icc_link != NULL) {

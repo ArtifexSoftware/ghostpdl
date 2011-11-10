@@ -369,7 +369,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
                s_mode_write);
     a85s.memory = 0;
     a85state.memory = 0;
-    a85state.template = &s_A85E_template;
+    a85state.templat = &s_A85E_template;
     (*s_A85E_template.init) ((stream_state *) & a85state);
     a85s.state = (stream_state *) & a85state;
     a85s.procs.process = s_A85E_template.process;
@@ -381,7 +381,7 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
                s_mode_write);
     rls.memory = 0;
     rlstate.memory = 0;
-    rlstate.template = &s_RLE_template;
+    rlstate.templat = &s_RLE_template;
     (*s_RLE_template.init) ((stream_state *) & rlstate);
     rls.state = (stream_state *) & rlstate;
     rls.procs.process = s_RLE_template.process;
