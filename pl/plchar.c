@@ -145,7 +145,7 @@ pl_bitmap_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code,
     if ( cdata[0] == 0 )
         return 0;
 
-    metrics[0] = pl_get_int16(cdata + 6);
+    metrics[0] = (float)pl_get_int16(cdata + 6);
     pl_bitmap_char_width(plfont, pgs, char_code, &width);
     metrics[2] = width.x;
     return 0;
@@ -435,9 +435,9 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                  avoid image setup overhead.  */
               float m[6];
               m[0] = delta_x; m[1] = 0;
-              m[2] = lsb; m[3] = image.Height - ascent;
+              m[2] = lsb; m[3] = (float)(image.Height - ascent);
               m[4] = image.Width + m[2];
-              m[5] = -ascent;
+              m[5] = (float)(-ascent);
               code = gs_setcachedevice(penum, pgs, m);
           }
           if ( code < 0 )
@@ -1068,8 +1068,8 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
             /* Make sure we clear the entire bitmap. */
             memset(pmdev->base, 0, bitmap_raster(pmdev->width) * pmdev->height);
             gx_set_device_color_1(pgs); /* write 1's */
-            smat.tx = -ipx;
-            smat.ty = -ipy;
+            smat.tx = (float)(-ipx);
+            smat.ty = (float)(-ipy);
             gs_setmatrix(pgs, &smat);
           }
         code = gs_type42_append(glyph, pgs, pgs->path,
@@ -1111,8 +1111,8 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           image.Width = pmdev->width;
           image.Height = pmdev->height + bold_added;
           gs_make_scaling(scale, scale, &image.ImageMatrix);
-          image.ImageMatrix.tx = -ipx;
-          image.ImageMatrix.ty = -ipy;
+          image.ImageMatrix.tx = (float)(-ipx);
+          image.ImageMatrix.ty = (float)(-ipy);
           image.adjust = true;
           code = gs_setcharwidth(penum, pgs, w2[0], w2[1]);
           if ( code < 0 )
@@ -1175,8 +1175,8 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t *plfont, gs_glyph glyph)
           int urx = pl_get_int16(metrics->charSymbolBox[2]);
           int ury = pl_get_int16(metrics->charSymbolBox[3]);
 
-          wbox[0] = pl_get_int16(metrics->charEscapementBox[2]) -
-            pl_get_int16(metrics->charEscapementBox[0]);
+          wbox[0] = (float)(pl_get_int16(metrics->charEscapementBox[2]) -
+                            pl_get_int16(metrics->charEscapementBox[0]));
           wbox[2] = min(wbox[2], llx);
           wbox[3] = min(wbox[3], lly);
           wbox[4] = max(wbox[4], urx);
@@ -1507,7 +1507,7 @@ pl_tt_get_glyph_index(gs_font_type42 *pfont42, gs_glyph glyph)
 /* Finish initializing a TrueType font. */
 void
 pl_tt_finish_init(gs_font_type42 *pfont, bool downloaded)
-{       float upem = pfont->data.unitsPerEm;
+{       float upem = (float)pfont->data.unitsPerEm;
         ulong head = tt_find_table(pfont, "head", NULL);
         const byte *hdata;
 

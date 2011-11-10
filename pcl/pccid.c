@@ -355,10 +355,10 @@ substitute_colorimetric_cs(
     pcol->minmax.val_range[2].max_val = max3;
 
     /* reasonable chroma values...  These could be paramaterized as well.  */
-    pcol->colmet.chroma[0].x = 0.640; pcol->colmet.chroma[0].y = 0.340; /* red */
-    pcol->colmet.chroma[1].x = 0.310; pcol->colmet.chroma[1].y = 0.595; /* green */
-    pcol->colmet.chroma[2].x = 0.155; pcol->colmet.chroma[2].y = 0.070; /* blue */
-    pcol->colmet.chroma[3].x = 0.313; pcol->colmet.chroma[3].y = 0.329; /* white */
+    pcol->colmet.chroma[0].x = 0.640f; pcol->colmet.chroma[0].y = 0.340f; /* red */
+    pcol->colmet.chroma[1].x = 0.310f; pcol->colmet.chroma[1].y = 0.595f; /* green */
+    pcol->colmet.chroma[2].x = 0.155f; pcol->colmet.chroma[2].y = 0.070f; /* blue */
+    pcol->colmet.chroma[3].x = 0.313f; pcol->colmet.chroma[3].y = 0.329f; /* white */
     return 0;
 }
 

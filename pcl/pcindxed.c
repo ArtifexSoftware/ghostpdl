@@ -358,14 +358,14 @@ set_CIELab_default_palette(
     float *             prange = pbase->client_data.range;
     int                 i;
     static const float  lab_default[8 * 3] = {
-                            100.0,    0.0,    0.0,  /* white */
-                             91.1,  -43.4,  -14.1,  /* cyan */
-                             61.6,   91.0,  -59.2,  /* magenta */
-                             35.3,   72.0, -100.0,  /* blue */
-                             96.6,  -21.3,   95.4,  /* yellow */
-                             87.0,  -80.7,   84.0,  /* green */
-                             53.2,   74.4,   67.7,  /* red */
-                              0.0,    0.0,    0.0   /* black */
+                            100.0f,    0.0f,    0.0f,  /* white */
+                             91.1f,  -43.4f,  -14.1f,  /* cyan */
+                             61.6f,   91.0f,  -59.2f,  /* magenta */
+                             35.3f,   72.0f, -100.0f,  /* blue */
+                             96.6f,  -21.3f,   95.4f,  /* yellow */
+                             87.0f,  -80.7f,   84.0f,  /* green */
+                             53.2f,   74.4f,   67.7f,  /* red */
+                              0.0f,    0.0f,    0.0f   /* black */
                         };
 
     for (i = start; i < start + num; i++) {
@@ -726,7 +726,7 @@ pcl_cs_indexed_set_num_entries(
 
     /* check if the Decode array must be updated */
     if (pindexed->cid.encoding < pcl_penc_direct_by_plane)
-        pindexed->Decode[1] = new_num - 1;
+        pindexed->Decode[1] = (float)(new_num - 1);
 
     /* if the palette grew, write in default colors and widths */
     if (new_num > old_num)

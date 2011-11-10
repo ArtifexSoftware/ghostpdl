@@ -120,8 +120,8 @@ pcl_set_pic_frame_anchor_point(
     pcl_xfm_to_logical_page_space(pcs, &tmp_pt);
     if ( ( tmp_pt.x != pcs->g.picture_frame.anchor_point.x ) ||
          ( tmp_pt.y != pcs->g.picture_frame.anchor_point.y ) ) {
-        pcs->g.picture_frame.anchor_point.x = tmp_pt.x;
-        pcs->g.picture_frame.anchor_point.y = tmp_pt.y;
+        pcs->g.picture_frame.anchor_point.x = (coord)tmp_pt.x;
+        pcs->g.picture_frame.anchor_point.y = (coord)tmp_pt.y;
         pcl_set_picture_frame_side_effects(pcs);
     }
     return 0;
@@ -134,7 +134,7 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcs)
     float size = float_arg(pargs) * 7200.0;
 
     if ( (coord)size == 0 ) {
-        size = pcs->g.picture_frame_width;
+        size = (float)pcs->g.picture_frame_width;
         pcs->g.plot_size_horizontal_specified = false;
     }
     else
@@ -151,7 +151,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcs)
     /* convert to centipoints as to match the picture frame */
     float size = float_arg(pargs) * 7200.0;
     if ( (coord)size == 0 ) {
-        size = pcs->g.picture_frame_height;
+        size = (float)pcs->g.picture_frame_height;
         pcs->g.plot_size_vertical_specified = false;
     }
     else

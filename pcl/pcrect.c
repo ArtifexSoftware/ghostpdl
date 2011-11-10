@@ -132,7 +132,7 @@ pcl_horiz_rect_size_decipoints(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.x = any_abs(float_arg(pargs)) * 10;
+    pcs->rectangle.x = (coord)(any_abs(float_arg(pargs)) * 10);
     return 0;
 }
 
@@ -145,7 +145,7 @@ pcl_horiz_rect_size_units(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.x = any_abs(int_arg(pargs)) * pcs->uom_cp;
+    pcs->rectangle.x = (coord)(any_abs(int_arg(pargs)) * pcs->uom_cp);
     return 0;
 }
 

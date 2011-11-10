@@ -397,8 +397,8 @@ media:	    pxs->media_size = pxs->pm->ms_enum;
              * as for the default media.  This may not be right.
              */
             pxs->pm = px_get_default_media(pxs);
-            pxs->media_height = pxs->media_dims.y / media_size_scale;
-            pxs->media_width = pxs->media_dims.x / media_size_scale;
+            pxs->media_height = (short)(pxs->media_dims.y / media_size_scale);
+            pxs->media_width = (short)(pxs->media_dims.x / media_size_scale);
         }
         if ( par->pv[5] )
           { pxs->duplex = false;

@@ -227,7 +227,7 @@ pcl_enter_graphics_mode(
     if (((int)mode & 0x1) != 0)
         gmargin_cp = cur_pt.x;
     gs_matrix_translate(&rst2lp, gmargin_cp, cur_pt.y, &rst2lp);
-    prstate->gmargin_cp = gmargin_cp;
+    prstate->gmargin_cp = (coord)gmargin_cp;
 
     /* isotropic scaling with missing parameter is based on clipped raster dimensions */
 
@@ -236,8 +236,8 @@ pcl_enter_graphics_mode(
     dwid = print_rect.q.x - print_rect.p.x;
     dhgt = print_rect.q.y - print_rect.p.y;
 
-    clip_x = pxfmst->lp_print_rect.p.x;  /* if neg then: */
-    clip_y = pxfmst->lp_print_rect.p.y;  /* = 1200centipoints */
+    clip_x = (int)pxfmst->lp_print_rect.p.x;  /* if neg then: */
+    clip_y = (int)pxfmst->lp_print_rect.p.y;  /* = 1200centipoints */
 
     /* set the matrix scale */
     if ( !prstate->scale_raster       ||
@@ -528,7 +528,7 @@ set_dest_raster_width(
 {
     if (!pcs->raster_state.graphics_mode) {
         if ( arg_is_present(pargs) ) {
-            uint    dw = 10 * fabs(float_arg(pargs));
+            uint    dw = (uint)(10 * fabs(float_arg(pargs)));
 
             pcs->raster_state.dest_width_cp = dw;
             pcs->raster_state.dest_width_set = (dw != 0);
@@ -558,7 +558,7 @@ set_dest_raster_height(
 {
     if (!pcs->raster_state.graphics_mode) {
         if ( arg_is_present(pargs) ) {
-            uint    dh = 10 * fabs(float_arg(pargs));
+            uint    dh = (uint)(10 * fabs(float_arg(pargs)));
 
             pcs->raster_state.dest_height_cp = dh;
             pcs->raster_state.dest_height_set = (dh != 0);

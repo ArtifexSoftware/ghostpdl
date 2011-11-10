@@ -107,7 +107,7 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
             floatp num_chordsf = 360 / chord;
             /* match hp 4600 rounding, precompute since regular arc rounding is different. */
             floatp intpart;
-            int num_chords = (modf(num_chordsf, &intpart) < 0.06) ? intpart : intpart+1;
+            int num_chords = (int)((modf(num_chordsf, &intpart) < 0.06) ? intpart : intpart+1);
             floatp integral_chord_angle = fabs(sweep / num_chords);
 
             hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,

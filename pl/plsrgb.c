@@ -134,29 +134,29 @@ static const gs_cie_common_proc3 pl_DecodeLMN = {
 
 /* LMN matrix for srgb. sRGB to XYZ (D65) matrix (ITU-R BT.709-2 Primaries) */
 static const gs_matrix3 pl_MatrixLMN = {
-    {0.412457, 0.212673, 0.019334},
-    {0.357576, 0.715152, 0.119192},
-    {0.180437, 0.072175, 0.950301},
+    {0.412457f, 0.212673f, 0.019334f},
+    {0.357576f, 0.715152f, 0.119192f},
+    {0.180437f, 0.072175f, 0.950301f},
     false
 };
 
 /* LMN matrix for the crd, just the inverse of the color spaces LMN. */
 static const gs_matrix3 pl_MatrixCRDLMN = {
-    {3.240449, -0.969265, 0.055643},
-    {-1.537136, 1.876011, -0.204026},
-    {-0.498531, 0.041556, 1.057229},
+    {3.240449f, -0.969265f, 0.055643f},
+    {-1.537136f, 1.876011f, -0.204026f},
+    {-0.498531f, 0.041556f, 1.057229f},
     false
 };
 
 /* D65 white point */
-static const gs_vector3 pl_WhitePoint = {0.9505, 1.0, 1.0890};
-static const gs_vector3 pl_BlackPoint = {0.0, 0.0, 0.0};
+static const gs_vector3 pl_WhitePoint = {0.9505f, 1.0f, 1.0890f};
+static const gs_vector3 pl_BlackPoint = {0.0f, 0.0f, 0.0f};
 
 /* Bradford Cone Space - www.srgb.com */
 static const gs_matrix3 pl_MatrixPQR = {
-    {0.8951, -0.7502, 0.0389},
-    {0.2664, 1.7135, -0.0685},
-    {-0.1614, 0.0367, 1.0296},
+    {0.8951f, -0.7502f, 0.0389f},
+    {0.2664f, 1.7135f, -0.0685f},
+    {-0.1614f, 0.0367f, 1.0296f},
     false
 };
 

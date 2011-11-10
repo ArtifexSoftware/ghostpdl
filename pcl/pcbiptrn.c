@@ -269,8 +269,8 @@ get_bi_pattern(pcl_state_t *pcs, int indx)
         (void)pcl_pattern_build_pattern( &(pcs->bi_pattern_array[indx]),
                                          &(bi_pixmap_array[indx]),
                                          pcl_pattern_uncolored,
-                                         pattern_res.x,
-                                         pattern_res.y,
+                                         (int)pattern_res.x,
+                                         (int)pattern_res.y,
                                          pcs->memory
                                          );
         pcs->bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
@@ -332,8 +332,8 @@ pcl_pattern_get_solid_pattern(pcl_state_t *pcs)
         (void)pcl_pattern_build_pattern( &(pcs->psolid_pattern),
                                          &solid_pattern_pixmap,
                                          pcl_pattern_uncolored,
-                                         pattern_res.x,
-                                         pattern_res.y,
+                                         (int)pattern_res.x,
+                                         (int)pattern_res.y,
                                          pcs->memory
                                          );
         pcs->psolid_pattern->ppat_data->storage = pcds_internal;
@@ -353,8 +353,8 @@ pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs)
         (void)pcl_pattern_build_pattern( &(pcs->punsolid_pattern),
                                          &unsolid_pattern_pixmap,
                                          pcl_pattern_uncolored,
-                                         pattern_res.x,
-                                         pattern_res.y,
+                                         (int)pattern_res.x,
+                                         (int)pattern_res.y,
                                          pcs->memory
                                          );
         pcs->punsolid_pattern->ppat_data->storage = pcds_internal;

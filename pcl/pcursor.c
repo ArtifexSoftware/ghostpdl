@@ -301,7 +301,7 @@ do_horiz_motion(
    bool          truncate_arg
 )
 {
-    pcl_set_cap_x(pcs, motion_args(pargs, truncate_arg) * mul, arg_is_signed(pargs), false);
+    pcl_set_cap_x(pcs, (coord)(motion_args(pargs, truncate_arg) * mul), arg_is_signed(pargs), false);
     return;
 }
 
@@ -309,7 +309,7 @@ static inline int
 do_vertical_move(pcl_state_t *pcs, pcl_args_t *pargs, float mul,
                  bool use_margins, bool by_row, bool by_row_command, bool truncate_arg)
 {
-    return pcl_set_cap_y(pcs, motion_args(pargs, truncate_arg) * mul,
+    return pcl_set_cap_y(pcs, (coord)(motion_args(pargs, truncate_arg) * mul),
                          arg_is_signed(pargs), use_margins, by_row,
                          by_row_command);
 }
@@ -403,11 +403,11 @@ pcl_updated_hmi(
     if (pl_font_is_scalable(plfont) && plfont->params.typeface_family != 0) {
         if (plfont->params.proportional_spacing)
             /* Scale the font's pitch by the requested height. */
-            hmi = pl_fp_pitch_cp(&plfont->params) / 10.0 * pfs->params.height_4ths / 4;
+            hmi = (coord)(pl_fp_pitch_cp(&plfont->params) / 10.0 * pfs->params.height_4ths / 4);
         else
-            hmi = pl_fp_pitch_cp(&(pfs->params));
+            hmi = (coord)pl_fp_pitch_cp(&(pfs->params));
     } else
-        hmi = pl_fp_pitch_cp(&(plfont->params));
+        hmi = (coord)pl_fp_pitch_cp(&(plfont->params));
 
     /*
      * Round to a multiple of the unit of measure (see the "PCL 5 Printer
@@ -458,7 +458,7 @@ set_vert_motion_index(
     /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300;
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
-    coord vcp = ((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
+    coord vcp = (coord)((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
 #ifdef HP_VERT_MOTION_NEW
     if (vcp <= pcs->xfm_state.pd_size.y)
 #endif
@@ -527,7 +527,7 @@ horiz_cursor_pos_decipoints(
     pcl_state_t *   pcs
 )
 {
-    do_horiz_motion(pargs, pcs, 10.0, false);
+    do_horiz_motion(pargs, pcs, (coord)10.0, false);
     return 0;
 }
 
@@ -568,7 +568,7 @@ cmd_BS(
     pcl_state_t *   pcs
 )
 {
-    pcl_set_cap_x(pcs, -pcs->last_width, true, true);
+    pcl_set_cap_x(pcs, (coord)-pcs->last_width, true, true);
     pcs->last_was_BS = true;
     return 0;
 }
@@ -606,7 +606,7 @@ vert_cursor_pos_rows(
     pcl_state_t *   pcs
 )
 {
-    return do_vertical_move(pcs, pargs, pcs->vmi_cp, false, true, true, false);
+    return do_vertical_move(pcs, pargs, (float)pcs->vmi_cp, false, true, true, false);
 }
 
 /*
@@ -632,7 +632,7 @@ vert_cursor_pos_units(
 {
     if ( pcs->personality == rtl )
         dprintf("Warning: device/resolution dependent units used\n" );
-    return do_vertical_move(pcs, pargs, pcs->uom_cp, false, false, false, true);
+    return do_vertical_move(pcs, pargs, (float)pcs->uom_cp, false, false, false, true);
 }
 
 /*

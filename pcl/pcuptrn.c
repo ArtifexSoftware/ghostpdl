@@ -337,8 +337,8 @@ pcl_pattern_RF(
         int code = pcl_pattern_build_pattern( &pptrn,
                                               ppixmap,
                                               type,
-                                              pdev->HWResolution[0],
-                                              pdev->HWResolution[1],
+                                              (int)pdev->HWResolution[0],
+                                              (int)pdev->HWResolution[1],
                                               pcs->memory
                                               );
 

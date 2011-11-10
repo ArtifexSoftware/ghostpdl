@@ -264,8 +264,8 @@ pjl_side_effects(pjl_parser_state_t *pst, char *variable, char *value, bool defa
         int indx = pjl_get_media_index(table[FDEF_PAPER_INDX].value);
         int page_length = (!pjl_compare(variable, "ORIENTATION") &&
                          !pjl_compare(value, "LANDSCAPE") ?
-                         pjl_media[indx].width :
-                         pjl_media[indx].height);
+                         (int)(pjl_media[indx].width) :
+                         (int)(pjl_media[indx].height));
         int formlines = pjl_calc_formlines_new_page_size(page_length);
         pjl_envir_var_t var;
         sprintf(var.value, "%d", formlines);

@@ -252,7 +252,7 @@ px_paint_pattern(const gs_client_color *pcc, gs_state *pgs)
     for ( x = 0; x < full_width; x += rep_width ) { 
         int y;
 
-        image.ImageMatrix.tx = -x;
+        image.ImageMatrix.tx = (float)-x;
         code = pl_begin_image2(&penum, &image, pgs);
         if ( code < 0 )
             break;
@@ -311,8 +311,8 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
         templat.BBox.p.y = 0;
         templat.BBox.q.x = full_width;
         templat.BBox.q.y = full_height;
-        templat.XStep = full_width;
-        templat.YStep = full_height;
+        templat.XStep = (float)full_width;
+        templat.YStep = (float)full_height;
         templat.PaintProc = px_paint_pattern;
         templat.client_data = (void *)pattern;
         { gs_matrix mat;
@@ -408,7 +408,7 @@ fraction_value(const px_value_t *pv, int i)
 
         if ( type & pxd_real32 )
           return pv->value.ra[i];
-        v = pv->value.ia[i];
+        v = (real)pv->value.ia[i];
         return (v < 0 ? 0 : v / int_type_max(type));
 }
 

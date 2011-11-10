@@ -389,7 +389,7 @@ create_mask_enumerator(
     if (prast->indexed)
         pcolor = prast->pindexed->palette.data + 3 * prast->wht_indx;
     else {
-        static const byte   cwhite[3] = { 1.0, 1.0, 1.0 };
+        static const byte   cwhite[3] = { 1, 1, 1 };
 
         pcolor = cwhite;
     }
@@ -416,7 +416,7 @@ create_mask_enumerator(
         image.i1.Decode[0] = 0.0;
         image.i1.Decode[1] = 1.0;
         if (transparent)
-            image.i4.MaskColor[0] = 0.0;
+            image.i4.MaskColor[0] = 0;
 
         code = gs_image_begin_typed( (const gs_image_common_t *)&image,
                                      pcs->pgs,
@@ -516,7 +516,7 @@ create_image_enumerator(
         if (use_image4)
             image.i4.MaskColor[0] = prast->wht_indx;
         image.i1.Decode[0] = 0.0;
-        image.i1.Decode[1] = (1 << image.i1.BitsPerComponent) - 1;
+        image.i1.Decode[1] = (float)((1 << image.i1.BitsPerComponent) - 1);
     } else {
         int     i;
 

@@ -67,7 +67,7 @@ convert_index_to_paint(
     gs_paint_color *    ppaint
 )
 {
-    ppaint->values[0] = indx;
+    ppaint->values[0] = (float)indx;
     ppaint->values[1] = 0.0;
     ppaint->values[2] = 0.0;
     ppaint->values[3] = 0.0;
