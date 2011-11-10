@@ -13,7 +13,7 @@ typedef unsigned char byte;
 typedef int bool;
 #define false 0
 #define true 1
-#define RAW_SCREEN_DUMP 1
+#define RAW_SCREEN_DUMP 0	/* Noisy output for .raw files for detailed debugging */
 #define MAXVAL 65535.0
 #define MIN(x,y) ((x)>(y)?(y):(x))
 #define MAX(x,y) ((x)>(y)?(x):(y))
@@ -76,10 +76,11 @@ typedef struct htsc_dither_pos_s {
 } htsc_dither_pos_t;
 
 typedef enum {
-   OUTPUT_BIN = 0,
+   OUTPUT_TOS = 0,
    OUTPUT_PS = 1,
    OUTPUT_PPM = 2,
-   OUTPUT_TOS
+   OUTPUT_RAW = 3,
+   OUTPUT_RAW16 = 4
 } output_format_type;
 
 typedef struct htsc_param_s {
@@ -93,7 +94,6 @@ typedef struct htsc_param_s {
     int targ_size;
     bool targ_size_spec;
     spottype_t spot_type;
-    int bit_depth;
     bool holladay;
     output_format_type output_format;
 } htsc_param_t;
@@ -147,21 +147,12 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 #endif
 
 int usage (void) {
-    printf ("Usage: gen_ordered [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
-    printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
-    printf ("                [-b 8|16] [-ps | -ppm | -tos]\n");
-    printf ("r is the device resolution in dots per inch (dpi)\n");
-    printf ("  use a single number for r if the resolution is symmetric\n");
-    printf ("l is the desired lines per inch (lpi)\n");
-    printf ("q is the desired number of quantization (gray) levels\n");
+    printf ("Usage: gen_ordered [-a target_angle] [-l target_lpi] [-q target_quantization_levels] \n");
+    printf ("                 [-r WxH] [-s size_of_supercell] [-d dot_shape_code] \n");
+    printf ("                 [ -f [ps | ppm | raw | raw16 | tos] ]\n");
     printf ("a is the desired angle in degrees for the screen\n");
-    printf ("s is the desired size of the super cell\n");
     printf ("b is the desired bit depth of the output threshold\n");
     printf ("  valid only with -ps or the default raw output\n");
-    printf ("-ps indicates postscript style output -ppm is an image file\n");
-    printf ("-tos indicates to output a turn on sequence which can\n");
-    printf ("     be fed into linearize_threshold to apply a linearization curve.\n");
-    printf ("     If no output type is indicate a raw binary output will be created\n");
     printf ("dot shape codes are as follows: \n");
     printf ("0  CIRCLE \n");
     printf ("1  REDBOOK CIRCLE \n");
@@ -171,9 +162,24 @@ int usage (void) {
     printf ("5  LINE_Y \n");
     printf ("6  DIAMOND1 \n");
     printf ("7  DIAMOND2 \n");
+    printf ("f [tos | ppm | ps | raw] is the output format\n");
+    printf ("     If no output format is indicate a turn on sequence output will be created\n");
+    printf ("   ppm is an Portable Pixmap image file\n");
+    printf ("   ps indicates postscript style output file\n");
+    printf ("   raw is a raw 8-bit binary, row major file\n");
+    printf ("   tos indicates to output a turn on sequence which can\n");
+    printf ("     be fed into linearize_threshold to apply a linearization curve.\n");
+    printf ("l is the desired lines per inch (lpi)\n");
+    printf ("q is the desired number of quantization (gray) levels\n");
+    printf ("r is the device resolution in dots per inch (dpi)\n");
+    printf ("  use a single number for r if the resolution is symmetric\n");
+    printf ("s is the desired size of the super cell\n");
     return 1;
 }
 
+/* Return the pointer to the value for an argument, either at 'arg' or the next argv */
+/* Allows for either -ovalue or -o value option syntax */
+/* Returns NULL if there is no value (at end of argc arguments) */
 static const char * get_arg (int argc, char **argv, int *pi, const char *arg) {
     if (arg[0] != 0) {
         return arg;
@@ -211,54 +217,80 @@ main (int argc, char **argv)
 
     for (i = 1; i < argc; i++) {
       const char *arg = argv[i];
+      const char *arg_value;
+
       if (arg[0] == '-') {
           switch (arg[1]) {
             case 'a':
-              params.targ_scr_ang = atoi(get_arg(argc, argv, &i, arg + 2));
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              params.targ_scr_ang = atoi(arg_value);
               params.targ_scr_ang = params.targ_scr_ang % 90;
               params.scr_ang = params.targ_scr_ang;
               break;
+            case 'f':
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+	      switch (arg_value[0]) {
+		  case 'p':
+                    params.output_format = (arg_value[1] == 's') ?
+		    		OUTPUT_PS : OUTPUT_PPM;
+		    break;
+		  case 'r':
+                    j = sscanf(arg_value, "raw%d", &k);
+		    if (j == 0 || k == 8)
+                        params.output_format = OUTPUT_RAW;
+		    else
+                        params.output_format = OUTPUT_RAW16;
+		    break;
+		  case 't':
+                    params.output_format = OUTPUT_TOS;
+		    break;
+		  default:
+		    goto usage_exit;
+	      }
+              break;
+            case 'd':
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              temp_int = atoi(arg_value);
+              if (temp_int < 0 || temp_int > CUSTOM)  
+                  params.spot_type = CIRCLE;
+              else 
+                  params.spot_type = temp_int;
+              break;
             case 'l':
-              params.targ_lpi = atoi(get_arg(argc, argv, &i, arg + 2));
-              break;
-            case 'p':
-              params.output_format = (arg[2] == 's') ? OUTPUT_PS :
-                                (arg[2] == 'p' ? OUTPUT_PPM : OUTPUT_BIN);
-              break;
-            case 't':
-              params.output_format = OUTPUT_TOS;
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              params.targ_lpi = atoi(arg_value);
               break;
             case 'q':
-              params.targ_quant = atoi(get_arg(argc, argv, &i, arg + 2));
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              params.targ_quant = atoi(arg_value);
               params.targ_quant_spec = true;
               break;
-            case 'b':
-              params.bit_depth = atoi(get_arg(argc, argv, &i, arg + 2));
-              break;
             case 'r':
-                j = sscanf( &argv[i][2], "%dx%d", &k, &m);
-                if (j < 1)
-                    goto usage_exit;
-                params.horiz_dpi = k;
-                if (j > 1) {
-                    params.vert_dpi = m;
-                } else {
-                    params.vert_dpi = k;
-                }
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              j = sscanf(arg_value, "%dx%d", &k, &m);
+              if (j < 1)
+                  goto usage_exit;
+              params.horiz_dpi = k;
+              if (j > 1) {
+                  params.vert_dpi = m;
+              } else {
+                  params.vert_dpi = k;
+              }
               break;
             case 's':
-                params.targ_size = atoi(get_arg(argc, argv, &i, arg + 2));
-                params.targ_size_spec = true;
-                break;
-            case 'd':
-                temp_int = atoi(get_arg(argc, argv, &i, arg + 2));
-                if (temp_int < 0 || temp_int > CUSTOM)  
-                    params.spot_type = CIRCLE;
-                else 
-                    params.spot_type = temp_int;
-                break;
+	      if ((arg_value = get_arg(argc, argv, &i, arg + 2)) == NULL)
+		  goto usage_exit;
+              params.targ_size = atoi(arg_value);
+              params.targ_size_spec = true;
+              break;
             default:
-usage_exit:     return usage();
+usage_exit:   return usage();
             }
         }
     }
@@ -1774,7 +1806,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                 htsc_param_t params)
 {
     char full_file_name[50];
-    FILE *fid, *fid_ps16;
+    FILE *fid;
     int x,y;
     int *buff_ptr = final_mask.data;
     int width = final_mask.width;
@@ -1782,9 +1814,9 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
     byte data;
     unsigned short data_short;
     output_format_type output_format = params.output_format;
-    int bit_depth = params.bit_depth;
     char *output_extension = (output_format == OUTPUT_PS) ? "ps" :
-                        ((output_format == OUTPUT_PPM) ? "ppm" : "raw");
+                        ((output_format == OUTPUT_PPM) ? "ppm" : 
+			((output_format == OUTPUT_RAW16 ? "16.raw" : "raw")));
 
     if (output_format == OUTPUT_TOS) {
         /* We need to figure out the turn-on sequence from the threshold 
@@ -1809,7 +1841,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     S, width, height);
         if (output_format != OUTPUT_PS) {
             /* Both BIN and PPM format write the same binary data */
-            if (bit_depth == 8 || output_format == OUTPUT_PPM) {
+            if (output_format == OUTPUT_RAW || output_format == OUTPUT_PPM) {
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
                         data_short = (unsigned short) (*buff_ptr & 0xffff);
@@ -1820,7 +1852,7 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                         buff_ptr++;
                     }
                 }
-            } else {
+            } else {	/* raw16 data */
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
                         data_short = (unsigned short) (*buff_ptr & 0xffff);
@@ -1829,8 +1861,8 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
                     }
                 }
             }
-        } else {
-            if (bit_depth == 8) {
+        } else {	/* ps output format */
+            if (params.targ_quant <= 256) {
                 /* Output PS HalftoneType 3 dictionary */
                 fprintf(fid, "%%!PS\n"
                         "<< /HalftoneType 3\n"
@@ -1858,24 +1890,26 @@ htsc_save_screen(htsc_dig_grid_t final_mask, bool use_holladay_grid, int S,
             } else {
                 /* Output PS HalftoneType 16 dictionary. Single array. */
                 fprintf(fid, "%%!PS\n"
-                        "<< /HalftoneType 16\n"
-                        "   /Width  %d\n"
-                        "   /Height %d\n"
-                        "   /Thresholds thresh16.out\n"
-                        ">>\n",
-                        width, height);
-                fid_ps16 = fopen("thresh16.out","wb");
+			"% Create a 'filter' from local hex data\n"
+			"{ currentfile ASCIIHexDecode filter }\n"
+			"exec\n");	/* hex data follows, 'file' object will be left on stack */
                 for (y = 0; y < height; y++) {
                     for ( x = 0; x < width; x++ ) {
-                        data_short = (byte) (*buff_ptr & 0xffff);
-                        fprintf(fid_ps16, "%04x", data_short);
+                        data_short = (unsigned short) (*buff_ptr & 0xffff);
+                        fprintf(fid, "%04x", data_short);
                         buff_ptr++;
-                        if ((x & 0x1f) == 0x1f && (x != (width - 1)))
-                            fprintf(fid_ps16, "\n");
+                        if ((x & 0xf) == 0x1f && (x != (width - 1)))
+                            fprintf(fid, "\n");
                     }
-                    fprintf(fid_ps16, "\n");
-                } 
-                fclose(fid_ps16);
+		    fprintf(fid, "\n");	/* end of one row */
+		}
+		fprintf(fid, ">\n");	/* ASCIIHexDecode EOF */
+                fprintf(fid, 
+                        "<< /Thresholds 2 index    %% file object for the 16-bit data\n"
+                        "   /HalftoneType 16\n"
+                        "   /Width  %d\n"
+                        "   /Height %d\n"
+                        ">>\n", width, height);
             }
         }
         fclose(fid);
@@ -1896,8 +1930,7 @@ void htsc_set_default_params(htsc_param_t *params)
     params->targ_size_spec = false;
     params->spot_type = CIRCLE;
     params->holladay = false;
-    params->output_format = OUTPUT_BIN;
-    params->bit_depth = 8;
+    params->output_format = OUTPUT_TOS;
 }
 
 /* Various spot functions */
