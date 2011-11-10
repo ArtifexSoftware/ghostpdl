@@ -1,5 +1,5 @@
 /**
- * Halftone Screen Creation Tool. Copyright 2010-2011 Artifex Software, Inc.
+ * Ordered Dither Screen Creation Tool. Copyright 2010-2011 Artifex Software, Inc.
  **/
 
 #include <stdio.h>
@@ -147,7 +147,7 @@ void htsc_dump_byte_image(byte *image, int height, int width, float max_val,
 #endif
 
 int usage (void) {
-    printf ("Usage: halftone [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
+    printf ("Usage: gen_ordered [-rWxH] [-l target_lpi] [-q target_quantization_levels] \n");
     printf ("                [-a target_angle] [-s size_of_supercell] [-d dot_shape_code] \n");
     printf ("                [-b 8|16] [-ps | -ppm | -tos]\n");
     printf ("r is the device resolution in dots per inch (dpi)\n");
