@@ -697,6 +697,7 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(pgmand_h)         \
                         $(pginit_h)         \
 			$(plmain_h)         \
+                        $(plvalue_h)        \
                         $(gsmatrix_h)       \
                         $(gsnogc_h)         \
                         $(gscoord_h)        \

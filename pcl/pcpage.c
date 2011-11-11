@@ -27,6 +27,7 @@
 #include "pgmand.h"
 #include "pginit.h"
 #include "plmain.h"             /* for finish page */
+#include "plvalue.h"
 #include "gsmatrix.h"           /* for gsdevice.h */
 #include "gsnogc.h"
 #include "gscoord.h"
@@ -971,6 +972,12 @@ typedef struct pcl_logical_page_s {
     byte Height[2];
 } pcl_logical_page_t;
 
+/*
+ * ESC & a # W
+ *
+ * Set logical page.
+ */
+
  static int
 set_logical_page(
     pcl_args_t *    pargs,
@@ -980,9 +987,27 @@ set_logical_page(
     uint count = uint_arg(pargs);
     const pcl_logical_page_t *plogpage =
         (pcl_logical_page_t *)arg_data(pargs);
+    pcl_paper_size_t *pcur_paper;
 
-    if (count != 10)
+    /* the currently selected paper size */
+    pcur_paper = (pcl_paper_size_t *)pcs->xfm_state.paper_size;
+
+    /* the command can set width, height and offsets (10) or just
+       offsets (4) */
+    if (count != 10 && count != 4)
         return e_Range;
+
+    if (count == 10) {
+        pcur_paper->width = pl_get_uint16(plogpage->Width) * 10;
+        pcur_paper->height = pl_get_uint16(plogpage->Height) * 10;
+        if (pcur_paper->width == 0 || pcur_paper->height == 0)
+            return e_Range;
+    }
+
+    pcur_paper->offset_portrait = pl_get_int16(plogpage->LeftOffset) * 10;
+    pcur_paper->offset_landscape = pl_get_int16(plogpage->TopOffset) * 10;
+
+    new_page_size(pcs, pcur_paper, false, false);
     return 0;
 }
 
