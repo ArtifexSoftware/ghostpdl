@@ -378,7 +378,7 @@ const char *px_attribute_names[] = {
   "DataOrg", 0, 0, 0, "Measure",
   0, "SourceType", "UnitsPerMeasure", 0, "StreamName",
 /*140*/
-  "StreamDataLength", 0, 0, "ErrorReport", 0,
+  "StreamDataLength", 0, 0, "ErrorReport", "PCLSelectFont",
   "VUExtension", 0, "VUAttr1", "VUAttr2", "VUAttr3",
 /*150*/
   0, 0, 0, 0, 0,

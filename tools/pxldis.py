@@ -269,7 +269,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'NumberOfPoints' : 77,
     'NumberOfScanLines' : 115,
     'Orientation' : 40,
-    'PCLSelectFont' : 173,
+    'PCLSelectFont' : 141,
     'PadBytesMultiple' : 110,
     'PageAngle' : 41,
     'PageCopies' : 49,
