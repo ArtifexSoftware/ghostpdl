@@ -55,7 +55,7 @@ install-cups: cups
 	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
 	    $(INSTALL_PROGRAM) $(GSTORASTER_XE) $(DESTDIR)$(CUPSSERVERBIN)/filter; \
 	fi
-	$(INSTALL_PROGRAM) cups/pstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
+	$(INSTALL_PROGRAM) cups/gstopxl $(DESTDIR)$(CUPSSERVERBIN)/filter
 	-mkdir -p $(DESTDIR)$(CUPSSERVERROOT)
 	if [ "$(CUPSPDFTORASTER)" = "1" ]; then \
 	    $(INSTALL_DATA) cups/gstoraster.convs $(DESTDIR)$(CUPSSERVERROOT); \

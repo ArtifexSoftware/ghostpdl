@@ -1725,7 +1725,7 @@ AC_SUBST(GCFLAGS)
 AC_OUTPUT(Makefile)
 
 if ( test -d cups ); then
-AC_OUTPUT(cups/pstopxl)
-chmod +x cups/pstopxl
+AC_OUTPUT(cups/gstopxl)
+chmod +x cups/gstopxl
 fi
 
