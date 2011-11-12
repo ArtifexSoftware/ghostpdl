@@ -973,7 +973,7 @@ currentdict /pdf_rules_dict undef
     { filtername add_A85_param filter }
   } {
     {		% Stack: parms source filtername
-      2 index 0 oget dup //null eq { pop } {
+      2 index 0 oget dup type /dicttype ne { pop } {
         exch filtername dup /JBIG2Decode eq { exch jbig2cachectx exch } if
       } ifelse add_A85_param filter
       exch dup length 1 sub 1 exch getinterval exch
