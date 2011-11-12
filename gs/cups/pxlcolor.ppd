@@ -32,8 +32,8 @@
 *Product:	"(GPL Ghostscript)"
 *cupsVersion:	1.1
 *cupsManualCopies: False
-*cupsFilter:	"application/vnd.cups-postscript 100 pstopxl"
-*cupsFilter:	"application/vnd.cups-pdf 0 pstopxl"
+*cupsFilter:	"application/vnd.cups-postscript 100 gstopxl"
+*cupsFilter:	"application/vnd.cups-pdf 0 gstopxl"
 *ModelName:     "HP Color LaserJet Series PCL 6"
 *ShortNickName: "HP Color LaserJet Series PCL 6"
 *NickName:      "HP Color LaserJet Series PCL 6 CUPS"

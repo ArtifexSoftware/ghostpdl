@@ -175,7 +175,7 @@ fi
 tempfiles=
 trap 'rm -f $tempfiles' 0 1 2 13 15
 
-ifile=$(mktemp -t pstopxl.XXXXXX)
+ifile=$(mktemp -t gstopxl.XXXXXX)
 tempfiles="$tempfiles $ifile"
 
 cat >"$ifile"
