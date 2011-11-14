@@ -2174,6 +2174,18 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
                                      (options & ~COPY_GLYPH_NO_OLD) | COPY_GLYPH_BY_INDEX);
         if (code < 0)
             return code;
+        /* if code > 0 then we already have the glyph, so no need to process further.
+         * If the original glyph was not a CID then we are copying by name, not by index.
+         * But the copy above copies by index which means we don't have an entry for
+         * the glyp-h component in the name table. If we are using names then we
+         * absolutely *must* have an entry in the name table, so go ahead and add
+         * one here. Note that the array returned by psf_add_subset_pieces has the
+         * GIDs with an offset of GS_MIN_GLYPH_INDEX added.
+         */
+        if (code == 0 && glyph < GS_MIN_CID_GLYPH && glyphs[i] > GS_MIN_GLYPH_INDEX) {
+            code = copy_glyph_name(font, glyphs[i] - GS_MIN_GLYPH_INDEX, copied,
+                               glyphs[i]);
+        }
     }
     /*
      * Because 'seac' accesses the Encoding of the font as well as the
