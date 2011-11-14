@@ -391,12 +391,10 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     byte *thresh_align;
     byte *devc_contone[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte *psrc_plane[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    byte *contone_align;
     byte *devc_contone_gray;
     const byte *psrc = buffer + data_x;
     int dest_width, dest_height, data_length;
     int spp_out = dev->color_info.num_components;
-    gx_ht_order *d_order;
     int position, k, j;
     int offset_bits = penum->ht_offset_bits;
     int contone_stride = 0;  /* Not used in landscape case */
@@ -414,7 +412,6 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     int psrc_planestride = w/penum->spp;
     gx_color_value conc;
     int num_des_comp = penum->dev->color_info.num_components;
-    bool allow_reset;
 
     if (h != 0) {
         /* Get the buffer into the device color space */
@@ -473,7 +470,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             scale_factor = float2fixed_rounded((float) src_size / (float) (dest_width - 1));
 #ifdef DEBUG
             /* Help in spotting problems */
-            memset(penum->ht_buffer, 0x00, penum->ht_stride * vdi);
+            memset(penum->ht_buffer, 0x00, penum->ht_stride * vdi * spp_out);
 #endif
             break;
         case image_landscape:
@@ -760,25 +757,9 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
        depnding upon the polarity of the device */
 flush:
     thresh_align = penum->thresh_buffer + offset_threshold;
-    for (k = 0; k < spp_out; k++) {
-        d_order = &(penum->pis->dev_ht->components[k].corder);
-        if (posture == image_portrait) {
-            contone_align = penum->line + contone_stride * k + 
-                            offset_contone[k];
-            allow_reset = true;
-        } else {
-            contone_align = penum->line + offset_contone[k] +
-                              LAND_BITS * k * contone_stride;
-            if (k == spp_out - 1) {
-                allow_reset = true;
-            } else {
-                allow_reset = false;
-            }
-        }
-        code = gxht_thresh_plane(penum, d_order, xrun, dest_width, dest_height,
-                                 thresh_align, contone_align, 
-                                 contone_stride, dev, k, allow_reset);
-    }
+    code = gxht_thresh_planes(penum, xrun, dest_width, dest_height,
+                              thresh_align, dev, offset_contone,
+                               contone_stride);
     /* Free cm buffer, if it was used */
     if (psrc_cm_start != NULL) {
         gs_free_object(penum->pis->memory, (byte *)psrc_cm_start,

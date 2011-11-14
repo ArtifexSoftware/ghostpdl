@@ -420,10 +420,16 @@ gx_dc_pure_fill_rectangle(const gx_device_color * pdevc, int x, int y,
         colors[0] = colors[1] = pdevc->colors.pure;
         if (source == NULL)
             set_rop_no_source(source, no_source, dev);
-        return (*dev_proc(dev, strip_copy_rop))
-            (dev, source->sdata, source->sourcex, source->sraster,
-             source->id, (source->use_scolors ? source->scolors : NULL),
-             NULL /*arbitrary */ , colors, x, y, w, h, 0, 0, lop);
+        if (source->planar_height == 0)
+            return (*dev_proc(dev, strip_copy_rop))
+                (dev, source->sdata, source->sourcex, source->sraster,
+                 source->id, (source->use_scolors ? source->scolors : NULL),
+                 NULL /*arbitrary */ , colors, x, y, w, h, 0, 0, lop);
+        else
+            return (*dev_proc(dev, strip_copy_rop2))
+                (dev, source->sdata, source->sourcex, source->sraster,
+                 source->id, (source->use_scolors ? source->scolors : NULL),
+                 NULL /*arbitrary */ , colors, x, y, w, h, 0, 0, lop, source->planar_height);
     }
 }
 

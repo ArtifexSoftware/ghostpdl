@@ -27,6 +27,7 @@ static dev_proc_copy_color(mask_clip_copy_color);
 static dev_proc_copy_alpha(mask_clip_copy_alpha);
 static dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
+static dev_proc_strip_copy_rop2(mask_clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(mask_clip_get_clipping_box);
 
 /* The device descriptor. */
@@ -101,7 +102,8 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_dev_spec_op,
   NULL,
   gx_forward_get_profile,
-  gx_forward_set_graphics_type_tag
+  gx_forward_set_graphics_type_tag,
+  mask_clip_strip_copy_rop2
  }
 };
 
@@ -371,6 +373,28 @@ mask_clip_strip_copy_rop(gx_device * dev,
         ccdata.tcolors = tcolors;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
     return clip_runs_enumerate(cdev, clip_call_strip_copy_rop, &ccdata);
+}
+
+static int
+mask_clip_strip_copy_rop2(gx_device * dev,
+               const byte * data, int sourcex, uint raster, gx_bitmap_id id,
+                         const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                         int x, int y, int w, int h,
+                       int phase_x, int phase_y, gs_logical_operation_t lop,
+                       uint planar_height)
+{
+    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.tdev = cdev->target;
+    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
+    ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
+    ccdata.scolors = scolors, ccdata.textures = textures,
+        ccdata.tcolors = tcolors;
+    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
+    ccdata.plane_height = planar_height;
+    return clip_runs_enumerate(cdev, clip_call_strip_copy_rop2, &ccdata);
 }
 
 static void

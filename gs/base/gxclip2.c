@@ -27,9 +27,10 @@ private_st_device_tile_clip();
 static dev_proc_fill_rectangle(tile_clip_fill_rectangle);
 static dev_proc_copy_mono(tile_clip_copy_mono);
 static dev_proc_copy_color(tile_clip_copy_color);
-static dev_proc_copy_plane(tile_clip_copy_plane);
+static dev_proc_copy_planes(tile_clip_copy_planes);
 static dev_proc_copy_alpha(tile_clip_copy_alpha);
 static dev_proc_strip_copy_rop(tile_clip_strip_copy_rop);
+static dev_proc_strip_copy_rop2(tile_clip_strip_copy_rop2);
 
 /* The device descriptor. */
 static const gx_device_tile_clip gs_tile_clip_device =
@@ -101,7 +102,10 @@ static const gx_device_tile_clip gs_tile_clip_device =
   NULL,                      /* pop_transparency_state */
   NULL,                      /* put_image */
   gx_forward_dev_spec_op,
-  tile_clip_copy_plane
+  tile_clip_copy_planes,
+  NULL,                      /* get_profile */
+  NULL,                      /* set_graphics_type_tag */
+  tile_clip_strip_copy_rop2
  }
 };
 
@@ -278,9 +282,9 @@ tile_clip_copy_color(gx_device * dev,
 
 /* Copy a color rectangle. */
 static int
-tile_clip_copy_plane(gx_device * dev,
+tile_clip_copy_planes(gx_device * dev,
                 const byte * data, int sourcex, int raster, gx_bitmap_id id,
-                     int x, int y, int w, int h, int plane)
+                     int x, int y, int w, int h, int plane_height)
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
@@ -288,9 +292,9 @@ tile_clip_copy_plane(gx_device * dev,
     {
         FOR_RUNS(data_row, txrun, tx, ty) {
             /* Copy the run. */
-            int code = (*dev_proc(cdev->target, copy_plane))
+            int code = (*dev_proc(cdev->target, copy_planes))
             (cdev->target, data_row, sourcex + txrun - x, raster,
-             gx_no_bitmap_id, txrun, ty, tx - txrun, 1, plane);
+             gx_no_bitmap_id, txrun, ty, tx - txrun, 1, plane_height);
 
             if (code < 0)
                 return code;
@@ -344,6 +348,35 @@ tile_clip_strip_copy_rop(gx_device * dev,
             (cdev->target, data_row, sourcex + txrun - x, raster,
              gx_no_bitmap_id, scolors, textures, tcolors,
              txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
+
+            if (code < 0)
+                return code;
+        }
+        END_FOR_RUNS();
+    }
+    return 0;
+}
+
+static int
+tile_clip_strip_copy_rop2(gx_device * dev,
+               const byte * data, int sourcex, uint raster, gx_bitmap_id id,
+                         const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                         int x, int y, int w, int h,
+                       int phase_x, int phase_y, gs_logical_operation_t lop,
+                       uint planar_height)
+{
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
+
+    fit_copy(dev, data, sourcex, raster, id, x, y, w, h);
+    {
+        FOR_RUNS(data_row, txrun, tx, ty) {
+            /* Copy the run. */
+            int code = (*dev_proc(cdev->target, strip_copy_rop2))
+            (cdev->target, data_row, sourcex + txrun - x, raster,
+             gx_no_bitmap_id, scolors, textures, tcolors,
+             txrun, ty, tx - txrun, 1, phase_x, phase_y, lop,
+             planar_height);
 
             if (code < 0)
                 return code;

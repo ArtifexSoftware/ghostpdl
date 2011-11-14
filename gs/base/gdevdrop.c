@@ -24,6 +24,7 @@
 #include "gxdevrop.h"
 #include "gxgetbit.h"
 #include "gdevmem.h"            /* for mem_default_strip_copy_rop prototype */
+#include "gdevmpla.h"
 #include "gdevmrop.h"
 #include "gxdevsop.h"
 
@@ -98,6 +99,24 @@ gx_default_strip_copy_rop(gx_device * dev,
                           int phase_x, int phase_y,
                           gs_logical_operation_t lop)
 {
+    return gx_default_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
+                                      scolors, textures, tcolors,
+                                      x, y, width, height,
+                                      phase_x, phase_y, lop, 0);
+}
+
+int
+gx_default_strip_copy_rop2(gx_device * dev,
+                           const byte * sdata, int sourcex,
+                           uint sraster, gx_bitmap_id id,
+                           const gx_color_index * scolors,
+                           const gx_strip_bitmap * textures,
+                           const gx_color_index * tcolors,
+                           int x, int y, int width, int height,
+                           int phase_x, int phase_y,
+                           gs_logical_operation_t lop,
+                           uint planar_height)
+{
     int depth = dev->color_info.depth;
     gs_memory_t *mem = dev->memory;
     const gx_device_memory *mdproto = gdev_mem_device_for_bits(depth);
@@ -109,6 +128,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     int block_height;
     int code;
     int py;
+    int is_planar = 0;
 
 #ifdef DEBUG
     if (gs_debug_c('b'))
@@ -129,11 +149,33 @@ gx_default_strip_copy_rop(gx_device * dev,
     if (max_height == 0)
         max_height = 1;
     block_height = min(height, max_height);
+    if (planar_height > 0)
+        block_height = planar_height;
     gs_make_mem_device_with_copydevice(&pmdev, mdproto, mem, -1, dev);
     pmdev->width = width;
     pmdev->height = block_height;
     pmdev->bitmap_memory = mem;
     pmdev->color_info = dev->color_info;
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0))
+    {
+        gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
+        int num_comp = dev->color_info.num_components;
+        int depth = dev->color_info.depth/num_comp;
+        int i;
+        for (i = 0; i < num_comp; i++)
+        {
+            planes[i].shift = depth * (num_comp - 1 - i);
+            planes[i].depth = depth;
+            planes[i].index = i;
+        }
+        /* RJW: This code, like most of ghostscripts planar support,
+         * will only work if every plane has the same depth. */
+        draster = bitmap_raster(width * planes[0].depth);
+        code = gdev_mem_set_planar(pmdev, num_comp, planes);
+        if (code < 0)
+            return code;
+        is_planar = 1;
+    }
     code = (*dev_proc(pmdev, open_device))((gx_device *)pmdev);
     pmdev->is_open = true; /* not sure why we need this, but we do. */
     if (code < 0)
@@ -172,16 +214,36 @@ gx_default_strip_copy_rop(gx_device * dev,
             if (code < 0)
                 return code;
         }
-        code = (*dev_proc(pmdev, strip_copy_rop))
-            ((gx_device *)pmdev,
-             sdata + (py - y) * sraster, sourcex, sraster,
-             gx_no_bitmap_id, scolors, textures, tcolors,
-             0, 0, width, block_height, phase_x + x, phase_y + py, lop);
+        if (planar_height == 0) {
+            code = (*dev_proc(pmdev, strip_copy_rop))
+                        ((gx_device *)pmdev,
+                         sdata + (py - y) * sraster, sourcex, sraster,
+                         gx_no_bitmap_id, scolors, textures, tcolors,
+                         0, 0, width, block_height,
+                         phase_x + x, phase_y + py,
+                         lop);
+        } else {
+            code = (*dev_proc(pmdev, strip_copy_rop2))
+                        ((gx_device *)pmdev,
+                         sdata + (py - y) * sraster, sourcex, sraster,
+                         gx_no_bitmap_id, scolors, textures, tcolors,
+                         0, 0, width, block_height,
+                         phase_x + x, phase_y + py,
+                         lop, planar_height);
+        }
         if (code < 0)
             break;
-        code = (*dev_proc(dev, copy_color))
-            (dev, scan_line_base(pmdev, 0), 0, draster, gx_no_bitmap_id,
-             x, py, width, block_height);
+        if (is_planar) {
+            code = (*dev_proc(dev, copy_planes))
+                            (dev, scan_line_base(pmdev, 0), 0,
+                             draster, gx_no_bitmap_id,
+                             x, py, width, block_height, block_height);
+        } else {
+            code = (*dev_proc(dev, copy_color))
+                            (dev, scan_line_base(pmdev, 0), 0,
+                             draster, gx_no_bitmap_id,
+                             x, py, width, block_height);
+        }
         if (code < 0)
             break;
     }
@@ -527,15 +589,31 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
  * representation, and copy_color to write the pixels back.
  */
 int
+mem_default_strip_copy_rop2(gx_device * dev,
+                            const byte * sdata, int sourcex,
+                            uint sraster, gx_bitmap_id id,
+                            const gx_color_index * scolors,
+                            const gx_strip_bitmap * textures,
+                            const gx_color_index * tcolors,
+                            int x, int y, int width, int height,
+                            int phase_x, int phase_y,
+                            gs_logical_operation_t lop,
+                            uint planar_height)
+{
+    dlprintf("mem_default_strip_copy_rop2 should never be called!\n");
+    return gs_error_Fatal;
+}
+
+int
 mem_default_strip_copy_rop(gx_device * dev,
-                          const byte * sdata, int sourcex,
-                          uint sraster, gx_bitmap_id id,
-                          const gx_color_index * scolors,
-                          const gx_strip_bitmap * textures,
-                          const gx_color_index * tcolors,
-                          int x, int y, int width, int height,
-                          int phase_x, int phase_y,
-                          gs_logical_operation_t lop)
+                           const byte * sdata, int sourcex,
+                           uint sraster, gx_bitmap_id id,
+                           const gx_color_index * scolors,
+                           const gx_strip_bitmap * textures,
+                           const gx_color_index * tcolors,
+                           int x, int y, int width, int height,
+                           int phase_x, int phase_y,
+                           gs_logical_operation_t lop)
 {
     int depth = dev->color_info.depth;
     int rop_depth = (gx_device_has_color(dev) ? 24 : 8);

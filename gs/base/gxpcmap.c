@@ -89,7 +89,7 @@ static dev_proc_close_device(pattern_accum_close);
 static dev_proc_fill_rectangle(pattern_accum_fill_rectangle);
 static dev_proc_copy_mono(pattern_accum_copy_mono);
 static dev_proc_copy_color(pattern_accum_copy_color);
-static dev_proc_copy_plane(pattern_accum_copy_plane);
+static dev_proc_copy_planes(pattern_accum_copy_planes);
 static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 
 /* The device descriptor */
@@ -165,8 +165,10 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,                              /* pop_transparency_state */
      NULL,                              /* put_image */
      NULL,                              /* dev_spec_op */
-     pattern_accum_copy_plane,          /* copy_plane */
-     NULL                               /* get_profile */
+     pattern_accum_copy_planes,         /* copy_planes */
+     NULL,                              /* get_profile */
+     NULL,                              /* set_graphics_type_tag */
+     gx_default_strip_copy_rop2
 },
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
@@ -649,15 +651,15 @@ pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
 
 /* Copy a color plane. */
 static int
-pattern_accum_copy_plane(gx_device * dev, const byte * data, int data_x,
-                         int raster, gx_bitmap_id id,
-                         int x, int y, int w, int h, int plane)
+pattern_accum_copy_planes(gx_device * dev, const byte * data, int data_x,
+                          int raster, gx_bitmap_id id,
+                          int x, int y, int w, int h, int plane_height)
 {
     gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
 
     if (padev->bits)
-        (*dev_proc(padev->target, copy_plane))
-            (padev->target, data, data_x, raster, id, x, y, w, h, plane);
+        (*dev_proc(padev->target, copy_planes))
+            (padev->target, data, data_x, raster, id, x, y, w, h, plane_height);
     if (padev->mask)
         return (*dev_proc(padev->mask, fill_rectangle))
             ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
