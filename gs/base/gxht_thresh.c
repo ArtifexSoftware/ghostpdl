@@ -174,7 +174,115 @@ threshold_16_SSE_unaligned(byte *contone_ptr, byte *thresh_ptr, byte *ht_data)
 }
 #endif
 
-/* SSE2 and non-SSE2 implememntation of thresholding a row  */
+/* SSE2 and non-SSE2 implememntation of thresholding a row. Subtractive case  
+   There is some code replication between the two of these (additive and subtractive)
+   that I need to go back and determine how we can combine them without
+   any performance loss. */
+void
+gx_ht_threshold_row_bit_sub(byte *contone,  byte *threshold_strip,  int contone_stride,
+                  byte *halftone, int dithered_stride, int width,
+                  int num_rows, int offset_bits)
+{
+#ifndef HAVE_SSE2
+    int k, j;
+    byte *contone_ptr;
+    byte *thresh_ptr;
+    byte *halftone_ptr;
+    byte bit_init;
+
+    /* For the moment just do a very slow compare until we get
+       get this working.  This could use some serious optimization */
+    width -= offset_bits;
+    for (j = 0; j < num_rows; j++) {
+        byte h;
+        contone_ptr = contone;
+        thresh_ptr = threshold_strip + contone_stride * j;
+        halftone_ptr = halftone + dithered_stride * j;
+        /* First get the left remainder portion.  Put into MSBs of first byte */
+        bit_init = 0x80;
+        h = 0;
+        k = offset_bits;
+        if (k > 0) {
+            do {
+                if (*contone_ptr++ > *thresh_ptr++) {
+                    h |=  bit_init;
+                }
+                bit_init >>= 1;
+                if (bit_init == 0) {
+                    bit_init = 0x80;
+                    *halftone_ptr++ = h;
+                    h = 0;
+                }
+                k--;
+            } while (k > 0);
+            bit_init = 0x80;
+            *halftone_ptr++ = h;
+            h = 0;
+            if (offset_bits < 8)
+                *halftone_ptr++ = 0;
+        }
+        /* Now get the rest, which will be 16 bit aligned. */
+        k = width;
+        if (k > 0) {
+            do {
+                if (*contone_ptr++ > *thresh_ptr++) {
+                    h |=  bit_init;
+                }
+                bit_init >>= 1;
+                if (bit_init == 0) {
+                    bit_init = 0x80;
+                    *halftone_ptr++ = h;
+                    h = 0;
+                }
+                k--;
+            } while (k > 0);
+            if (bit_init != 0x80) {
+                *halftone_ptr++ = h;
+            }
+            if ((width & 15) < 8)
+                *halftone_ptr++ = 0;
+        }
+    }
+#else
+    byte *contone_ptr;
+    byte *thresh_ptr;
+    byte *halftone_ptr;
+    int num_tiles = (width - offset_bits + 15)>>4;
+    int k, j;
+
+    for (j = 0; j < num_rows; j++) {
+        /* contone and thresh_ptr are 128 bit aligned.  We do need to do this in
+           two steps to ensure that we pack the bits in an aligned fashion
+           into halftone_ptr.  */
+        contone_ptr = contone;
+        thresh_ptr = threshold_strip + contone_stride * j;
+        halftone_ptr = halftone + dithered_stride * j;
+        if (offset_bits > 0) {
+            /* Since we allowed for 16 bits in our left remainder
+               we can go directly in to the destination.  threshold_16_SSE
+               requires 128 bit alignment.  contone_ptr and thresh_ptr
+               are set up so that after we move in by offset_bits elements
+               then we are 128 bit aligned.  */
+            threshold_16_SSE_unaligned(thresh_ptr, contone_ptr,
+                                       halftone_ptr);
+            halftone_ptr += 2;
+            thresh_ptr += offset_bits;
+            contone_ptr += offset_bits;
+        }
+        /* Now we should have 128 bit aligned with our input data. Iterate
+           over sets of 16 going directly into our HT buffer.  Sources and
+           halftone_ptr buffers should be padded to allow 15 bit overrun */
+        for (k = 0; k < num_tiles; k++) {
+            threshold_16_SSE(thresh_ptr, contone_ptr, halftone_ptr);
+            thresh_ptr += 16;
+            contone_ptr += 16;
+            halftone_ptr += 2;
+        }
+    }
+#endif
+}
+
+/* SSE2 and non-SSE2 implememntation of thresholding a row. additive case  */
 void
 gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stride,
                   byte *halftone, int dithered_stride, int width,
@@ -279,7 +387,99 @@ gx_ht_threshold_row_bit(byte *contone,  byte *threshold_strip,  int contone_stri
 #endif
 }
 
-/* This thresholds a buffer that is LAND_BITS wide by data_length tall. */
+/* This thresholds a buffer that is LAND_BITS wide by data_length tall. 
+   Subtractive case */
+void
+gx_ht_threshold_landscape_sub(byte *contone_align, byte *thresh_align,
+                    ht_landscape_info_t ht_landscape, byte *halftone,
+                    int data_length)
+{
+    __align16 byte contone[LAND_BITS];
+    int position_start, position, curr_position;
+    int *widths = &(ht_landscape.widths[0]);
+    int local_widths[LAND_BITS];
+    int num_contone = ht_landscape.num_contones;
+    int k, j, w, contone_out_posit;
+    byte *contone_ptr, *thresh_ptr, *halftone_ptr;
+#ifdef PACIFY_VALGRIND
+    int extra = 0;
+#endif
+
+    /* Work through chunks of 16.  */
+    /* Data may have come in left to right or right to left. */
+    if (ht_landscape.index > 0) {
+        position = position_start = 0;
+    } else {
+        position = position_start = ht_landscape.curr_pos + 1;
+    }
+    thresh_ptr = thresh_align;
+    halftone_ptr = halftone;
+    /* Copy the widths to a local array, and truncate the last one (which may
+     * be the first one!) if required. */
+    k = 0;
+    for (j = 0; j < num_contone; j++)
+        k += (local_widths[j] = widths[position_start+j]);
+    if (k > LAND_BITS) {
+        if (ht_landscape.index > 0) {
+            local_widths[num_contone-1] -= k-LAND_BITS;
+        } else {
+            local_widths[0] -= k-LAND_BITS;
+        }
+    }
+#ifdef PACIFY_VALGRIND
+    if (k < LAND_BITS) {
+        extra = LAND_BITS - k;
+    }
+#endif
+    for (k = data_length; k > 0; k--) { /* Loop on rows */
+        contone_ptr = &(contone_align[position]); /* Point us to our row start */
+        curr_position = 0; /* We use this in keeping track of widths */
+        contone_out_posit = 0; /* Our index out */
+        for (j = num_contone; j > 0; j--) {
+            byte c = *contone_ptr;
+            /* The microsoft compiler, cleverly spots that the following loop
+             * can be replaced by a memset. Unfortunately, it can't spot that
+             * the typical length values of the memset are so small that we'd
+             * be better off doing it the slow way. We therefore introduce a
+             * sneaky 'volatile' cast below that stops this optimisation. */
+            w = local_widths[curr_position];
+            do {
+                ((volatile byte *)contone)[contone_out_posit] = c;
+                contone_out_posit++;
+            } while (--w);
+#ifdef PACIFY_VALGRIND
+            if (extra)
+                memset(contone+contone_out_posit, 0, extra);
+#endif
+            curr_position++; /* Move us to the next position in our width array */
+            contone_ptr++;   /* Move us to a new location in our contone buffer */
+        }
+        /* Now we have our left justified and expanded contone data for
+           LAND_BITS/16 sets of 16 bits. Go ahead and threshold these. */
+        contone_ptr = &contone[0];
+#if LAND_BITS > 16
+        j = LAND_BITS;
+        do {
+#endif
+#ifdef HAVE_SSE2
+            threshold_16_SSE(thresh_ptr, contone_ptr, halftone_ptr);
+#else
+            threshold_16_bit(thresh_ptr, contone_ptr, halftone_ptr);
+#endif
+            thresh_ptr += 16;
+            position += 16;
+            halftone_ptr += 2;
+            contone_ptr += 16;
+#if LAND_BITS > 16
+            j -= 16;
+        } while (j > 0);
+#endif
+    }
+}
+
+/* This thresholds a buffer that is LAND_BITS wide by data_length tall.
+   Additive case.  Note I could likely do some code reduction between
+   the additive and subtractive cases */
 void
 gx_ht_threshold_landscape(byte *contone_align, byte *thresh_align,
                     ht_landscape_info_t ht_landscape, byte *halftone,
@@ -718,7 +918,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
 
                 if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
                     && is_planar_dev) {
-                    gx_ht_threshold_row_bit(thresh_align, contone_align, contone_stride,
+                    gx_ht_threshold_row_bit_sub(contone_align, thresh_align, contone_stride,
                                       halftone, dithered_stride, dest_width, vdi,
                                       offset_bits);
                 } else {
@@ -868,7 +1068,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                     /* Apply the threshold operation */
                     if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
                         && is_planar_dev) {
-                        gx_ht_threshold_landscape(thresh_align, contone_align,
+                        gx_ht_threshold_landscape_sub(contone_align, thresh_align,
                                             penum->ht_landscape, halftone, dest_height);
                     } else {
                         gx_ht_threshold_landscape(contone_align, thresh_align,
