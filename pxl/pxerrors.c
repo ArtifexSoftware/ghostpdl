@@ -274,7 +274,7 @@ px_error_page_show(const char *message, int ytop, px_state_t *pxs)
                     gs_text_release(penum, "pxtext");
             }
             gs_scale(pgs, 1 / scale, 1 / scale);
-            y += point_size * 8 / 5;
+            y += (int)(point_size * 8 / 5);
             if (code < 0)
                 break;
             if ( !*p || !p[1] )

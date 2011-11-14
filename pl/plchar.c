@@ -435,7 +435,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                  avoid image setup overhead.  */
               float m[6];
               m[0] = delta_x; m[1] = 0;
-              m[2] = lsb; m[3] = (float)(image.Height - ascent);
+              m[2] = (float)lsb; m[3] = (float)(image.Height - ascent);
               m[4] = image.Width + m[2];
               m[5] = (float)(-ascent);
               code = gs_setcachedevice(penum, pgs, m);
@@ -1163,7 +1163,7 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t *plfont, gs_glyph glyph)
             for ( i = 0; i < cdata[6]; ++i )
               found |= pl_intelli_merge_box(wbox, plfont,
                                             pl_get_uint16(cdata + 8 + i * 6));
-            wbox[0] = pl_get_int16(cdata + 4);
+            wbox[0] = (float)pl_get_int16(cdata + 4);
             return found;
           }
         /* Non-compound character. */

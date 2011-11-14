@@ -158,7 +158,7 @@ pcl_vert_rect_size_decipoints(
     pcl_state_t *   pcs
 )
 {
-    pcs->rectangle.y = any_abs(float_arg(pargs)) * 10;
+    pcs->rectangle.y = (coord)any_abs(float_arg(pargs)) * 10;
     return 0;
 }
 
