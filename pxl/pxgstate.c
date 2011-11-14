@@ -387,7 +387,7 @@ px_image_color_space(gs_image_t *pim,
     pim->ColorSpace = pcs;
     pim->BitsPerComponent = depth;
     if ( params->indexed )
-        pim->Decode[1] = (1 << depth) - 1;
+        pim->Decode[1] = (float)((1 << depth) - 1);
     /* NB - this needs investigation */
     if (cie_space && !px_is_currentcolor_pattern(pgs)) {
         code = pl_setSRGBcolor((gs_state *)pgs, 0.0, 0.0, 0.0);
@@ -1009,9 +1009,9 @@ pxSetPageScale(px_args_t *par, px_state_t *pxs)
     real sx = 1;
     real sy = 1;
     static const real units_conversion_table[3][3] = {
-        { 1, 25.4, 254 },     /* in -> in, mill, 1/10 mill */
-        { 0.0394, 1, 10 },    /* mill -> in, mill, 1/10 mill */
-        { 0.00394, .1, 1 }    /* 1/10 mill -> in, mill, 1/10 mill */
+        { 1, 25.4f, 254 },     /* in -> in, mill, 1/10 mill */
+        { 0.0394f, 1, 10 },    /* mill -> in, mill, 1/10 mill */
+        { 0.00394f, .1f, 1 }    /* 1/10 mill -> in, mill, 1/10 mill */
     };
 
     /* measuure and units of measure.  Actually session user units
