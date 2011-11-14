@@ -49,6 +49,7 @@ static dev_proc_fill_triangle(bbox_fill_triangle);
 static dev_proc_draw_thin_line(bbox_draw_thin_line);
 static dev_proc_strip_tile_rectangle(bbox_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(bbox_strip_copy_rop);
+static dev_proc_strip_copy_rop2(bbox_strip_copy_rop2);
 static dev_proc_begin_typed_image(bbox_begin_typed_image);
 static dev_proc_create_compositor(bbox_create_compositor);
 static dev_proc_text_begin(bbox_text_begin);
@@ -147,7 +148,12 @@ gx_device_bbox gs_bbox_device =
      bbox_fillpage,		/* fillpage */
      NULL,                      /* push_transparency_state */
      NULL,                      /* pop_transparency_state */
-     NULL                       /* put_image */
+     NULL,                      /* put_image */
+     NULL,                      /* dev_spec_op */
+     NULL,                      /* copy_planes */
+     NULL,                      /* get_profile */
+     NULL,                      /* set_graphics_type_tag */
+     bbox_strip_copy_rop2
     },
     0,				/* target */
     1,				/*true *//* free_standing */
@@ -489,6 +495,31 @@ bbox_strip_copy_rop(gx_device * dev,
          dev_proc(tdev, strip_copy_rop)
          (tdev, sdata, sourcex, sraster, id, scolors,
           textures, tcolors, x, y, w, h, phase_x, phase_y, lop));
+
+    BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
+    return code;
+}
+
+static int
+bbox_strip_copy_rop2(gx_device * dev,
+                    const byte * sdata, int sourcex, uint sraster,
+                    gx_bitmap_id id,
+                    const gx_color_index * scolors,
+                    const gx_strip_bitmap * textures,
+                    const gx_color_index * tcolors,
+                    int x, int y, int w, int h,
+                    int phase_x, int phase_y, gs_logical_operation_t lop,
+                    uint planar_height)
+{
+    gx_device_bbox *const bdev = (gx_device_bbox *) dev;
+    /* gx_forward_strip_copy_rop doesn't exist */
+    gx_device *tdev = bdev->target;
+    int code =
+        (tdev == 0 ? 0 :
+         dev_proc(tdev, strip_copy_rop2)
+         (tdev, sdata, sourcex, sraster, id, scolors,
+          textures, tcolors, x, y, w, h, phase_x, phase_y, lop,
+          planar_height));
 
     BBOX_ADD_INT_RECT(bdev, x, y, x + w, y + h);
     return code;

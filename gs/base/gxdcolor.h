@@ -44,6 +44,7 @@ typedef struct gx_rop_source_s {
     uint sraster;
     gx_bitmap_id id;
     gx_color_index scolors[2];
+    uint planar_height;
     bool use_scolors;
 } gx_rop_source_t;
 
@@ -53,7 +54,7 @@ typedef struct gx_rop_source_s {
  * a different null source if necessary.
  */
 #define gx_rop_no_source_body(black_pixel)\
-  NULL, 0, 0, gx_no_bitmap_id, {black_pixel, black_pixel}, true
+  NULL, 0, 0, gx_no_bitmap_id, {black_pixel, black_pixel}, 0, true
 #define gx_rop_source_set_color(prs, pixel)\
   ((prs)->scolors[0] = (prs)->scolors[1] = (pixel))
 void gx_set_rop_no_source(const gx_rop_source_t **psource,

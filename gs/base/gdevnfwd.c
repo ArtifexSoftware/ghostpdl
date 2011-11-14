@@ -110,6 +110,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fillpage, gx_forward_fillpage);
     fill_dev_proc(dev, get_profile, gx_forward_get_profile);
     fill_dev_proc(dev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
+    fill_dev_proc(dev, strip_copy_rop2, gx_forward_strip_copy_rop2);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -556,6 +557,38 @@ gx_forward_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
                 phase_x, phase_y, lop);
 }
 
+int
+gx_forward_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
+                           uint sraster, gx_bitmap_id id,
+                           const gx_color_index * scolors,
+                           const gx_strip_bitmap * textures,
+                           const gx_color_index * tcolors,
+                           int x, int y, int width, int height,
+                           int phase_x, int phase_y, gs_logical_operation_t lop,
+                           uint planar_height)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (planar_height != 0) {
+        dev_proc_strip_copy_rop2((*proc2)) =
+            (tdev == 0 ? (tdev = dev, gx_default_strip_copy_rop2) :
+             dev_proc(tdev, strip_copy_rop2));
+
+        return proc2(tdev, sdata, sourcex, sraster, id, scolors,
+                     textures, tcolors, x, y, width, height,
+                     phase_x, phase_y, lop, planar_height);
+    } else {
+        dev_proc_strip_copy_rop((*proc)) =
+            (tdev == 0 ? (tdev = dev, gx_default_strip_copy_rop) :
+             dev_proc(tdev, strip_copy_rop));
+
+        return proc(tdev, sdata, sourcex, sraster, id, scolors,
+                    textures, tcolors, x, y, width, height,
+                    phase_x, phase_y, lop);
+    }
+}
+
 void
 gx_forward_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
@@ -956,6 +989,7 @@ static dev_proc_decode_color(null_decode_color);
 /* but we can't do this, because image_data must keep track of the */
 /* Y position so it can return 1 when done. */
 static dev_proc_strip_copy_rop(null_strip_copy_rop);
+static dev_proc_strip_copy_rop2(null_strip_copy_rop2);
 
 #define null_procs(get_initial_matrix, get_page_device) {\
         gx_default_open_device,\
@@ -1023,7 +1057,11 @@ static dev_proc_strip_copy_rop(null_strip_copy_rop);
         NULL, /* push_transparency_state */\
         NULL, /* pop_transparency_state */\
         NULL, /* put_image */\
-        gx_default_dev_spec_op /* dev_spec_op */\
+        gx_default_dev_spec_op, /* dev_spec_op */\
+        NULL, /* copy_planes */\
+        NULL, /* get_profile */\
+        NULL, /* set_graphics_type_tag */\
+        null_strip_copy_rop2\
 }
 
 #define NULLD_X_RES 72
@@ -1173,6 +1211,18 @@ null_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
                     const gx_color_index * tcolors,
                     int x, int y, int width, int height,
                     int phase_x, int phase_y, gs_logical_operation_t lop)
+{
+    return 0;
+}
+static int
+null_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
+                     uint sraster, gx_bitmap_id id,
+                     const gx_color_index * scolors,
+                     const gx_strip_bitmap * textures,
+                     const gx_color_index * tcolors,
+                     int x, int y, int width, int height,
+                     int phase_x, int phase_y, gs_logical_operation_t lop,
+                     uint plane_height)
 {
     return 0;
 }

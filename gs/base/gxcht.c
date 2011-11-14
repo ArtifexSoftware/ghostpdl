@@ -695,7 +695,8 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
                                                                gx_no_color_index,
                                                                pdevc->phase.x,
                                                                pdevc->phase.y);
-            return (*dev_proc(dev, strip_copy_rop))
+            if (source->planar_height == 0)
+                return (*dev_proc(dev, strip_copy_rop))
                                (dev,
                                 source->sdata + (y - origy) * source->sraster,
                                 source->sourcex + (x - origx),
@@ -704,6 +705,17 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
                                 &tiles, NULL,
                                 x, y, w, h,
                                 pdevc->phase.x, pdevc->phase.y, lop);
+            else
+                return (*dev_proc(dev, strip_copy_rop2))
+                               (dev,
+                                source->sdata + (y - origy) * source->sraster,
+                                source->sourcex + (x - origx),
+                                source->sraster, source->id,
+                                (source->use_scolors ? source->scolors : NULL),
+                                &tiles, NULL,
+                                x, y, w, h,
+                                pdevc->phase.x, pdevc->phase.y, lop,
+                                source->planar_height);
         }
     }
     size_x = w * depth;
@@ -759,13 +771,23 @@ fit:				/* Now the tile will definitely fit. */
                      x, cy, dw, ch);
             } else {
                 tiles.rep_height = tiles.size.y = ch;
-                code = (*dev_proc(dev, strip_copy_rop))
+                if (source->planar_height == 0)
+                    code = (*dev_proc(dev, strip_copy_rop))
                           (dev, source->sdata + source->sraster * (cy-origy),
                            source->sourcex + (x - origx),
                            source->sraster,
                            source->id,
                            (source->use_scolors ? source->scolors : NULL),
                            &tiles, NULL, x, cy, dw, ch, 0, 0, lop);
+                else
+                    code = (*dev_proc(dev, strip_copy_rop2))
+                          (dev, source->sdata + source->sraster * (cy-origy),
+                           source->sourcex + (x - origx),
+                           source->sraster,
+                           source->id,
+                           (source->use_scolors ? source->scolors : NULL),
+                           &tiles, NULL, x, cy, dw, ch, 0, 0, lop,
+                           source->planar_height);
             }
             if (code < 0)
                 return code;

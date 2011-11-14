@@ -621,7 +621,7 @@ clist_copy_mono(gx_device * dev,
 copy:{
         gx_cmd_rect rect;
         int rsize;
-        byte op = (byte) cmd_op_copy_mono_plane;
+        byte op = (byte) cmd_op_copy_mono_planes;
         byte *dp;
         uint csize;
         uint compress;
@@ -629,7 +629,7 @@ copy:{
 
         rect.x = rx, rect.y = re.y;
         rect.width = w1, rect.height = re.height;
-        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(255);
+        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(0); /* planar_height 0 */
         do {
             code = cmd_put_bits(cdev, re.pcls, row, w1, re.height, raster,
                                 rsize, (orig_id == gx_no_bitmap_id ?
@@ -676,8 +676,8 @@ copy:{
             *dp++ = cmd_set_misc_data_x + dx;
         }
         *dp++ = cmd_count_op(op, csize);
-        /* Store the plane count */
-        cmd_putw(255, dp);
+        /* Store the plane_height */
+        cmd_putw(0, dp);
         cmd_put2w(rx, re.y, dp);
         cmd_put2w(w1, re.height, dp);
         re.pcls->rect = rect;
@@ -694,9 +694,9 @@ error_in_rect:
 
 /* The code duplication between this and clist_copy_mono needs to be removed */
 int
-clist_copy_plane(gx_device * dev,
-                const byte * data, int data_x, int raster, gx_bitmap_id id,
-                int rx, int ry, int rwidth, int rheight, int plane)
+clist_copy_planes(gx_device * dev,
+                  const byte * data, int data_x, int raster, gx_bitmap_id id,
+                  int rx, int ry, int rwidth, int rheight, int plane_height)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
@@ -704,8 +704,6 @@ clist_copy_plane(gx_device * dev,
     gx_bitmap_id orig_id = id;
     cmd_rects_enum_t re;
 
-    if (plane < 0)
-        return gs_error_rangecheck;
     if (rwidth <= 0 || rheight <= 0)
         return 0;
 
@@ -734,7 +732,7 @@ clist_copy_plane(gx_device * dev,
 copy:{
         gx_cmd_rect rect;
         int rsize;
-        byte op = (byte) cmd_op_copy_mono_plane;
+        byte op = (byte) cmd_op_copy_mono_planes;
         byte *dp;
         uint csize;
         uint compress;
@@ -742,13 +740,33 @@ copy:{
 
         rect.x = rx, rect.y = re.y;
         rect.width = w1, rect.height = re.height;
-        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(plane);
+        rsize = (dx ? 3 : 1) + cmd_size_rect(&rect) + cmd_sizew(plane_height);
         do {
+            int plane;
+            /* Copy the 0th plane - this is the one the op goes in. */
             code = cmd_put_bits(cdev, re.pcls, row, w1, re.height, raster,
                                 rsize, (orig_id == gx_no_bitmap_id ?
                                         1 << cmd_compress_rle :
                                         cmd_mask_compress_any),
                                 &dp, &csize);
+            if (plane_height > 0) {
+                for (plane = 1; plane < cdev->color_info.num_components && (code >= 0); plane++)
+                {
+                    byte *dummy_dp;
+                    uint csize2;
+                    /* Copy subsequent planes - 1 byte header used to send the
+                     * compression type. */
+                    code = cmd_put_bits(cdev, re.pcls, row, w1, re.height, raster,
+                                        1, (orig_id == gx_no_bitmap_id ?
+                                            1 << cmd_compress_rle :
+                                            cmd_mask_compress_any),
+                                        &dummy_dp, &csize2);
+                    if (code >= 0)
+                        *dummy_dp = code;
+
+                    csize += csize2;
+                }
+            }
         } while (RECT_RECOVER(code));
         if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
             goto error_in_rect;
@@ -768,14 +786,14 @@ copy:{
 
                 ++cdev->driver_call_nesting;
                 {
-                    code = clist_copy_plane(dev, row, dx, raster, 
-                                            gx_no_bitmap_id, rx, re.y,
-                                            w2, 1, plane);
+                    code = clist_copy_planes(dev, row, dx, raster,
+                                             gx_no_bitmap_id, rx, re.y,
+                                             w2, 1, plane_height);
                     if (code >= 0)
-                        code = clist_copy_plane(dev, row, dx + w2,
-                                               raster, gx_no_bitmap_id,
-                                               rx + w2, re.y,
-                                               w1 - w2, 1, plane);
+                        code = clist_copy_planes(dev, row, dx + w2,
+                                                 raster, gx_no_bitmap_id,
+                                                 rx + w2, re.y,
+                                                 w1 - w2, 1, plane_height);
                 }
                 --cdev->driver_call_nesting;
                 if (code < 0 && SET_BAND_CODE(code))
@@ -789,8 +807,7 @@ copy:{
             *dp++ = cmd_set_misc_data_x + dx;
         }
         *dp++ = cmd_count_op(op, csize);
-        /* Store the plane count */
-        cmd_putw(plane, dp);
+        cmd_putw(plane_height, dp);
         cmd_put2w(rx, re.y, dp);
         cmd_put2w(w1, re.height, dp);
         re.pcls->rect = rect;
@@ -1057,6 +1074,21 @@ clist_strip_copy_rop(gx_device * dev,
                      int rx, int ry, int rwidth, int rheight,
                      int phase_x, int phase_y, gs_logical_operation_t lop)
 {
+    return clist_strip_copy_rop2(dev, sdata, sourcex, sraster, id,
+                                 scolors, textures, tcolors,
+                                 rx, ry, rwidth, rheight, phase_x, phase_y,
+                                 lop, 0);
+}
+
+int
+clist_strip_copy_rop2(gx_device * dev,
+             const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+                     const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                     int rx, int ry, int rwidth, int rheight,
+                     int phase_x, int phase_y, gs_logical_operation_t lop,
+                     uint planar_height)
+{
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
     gs_rop3_t rop = lop_rop(lop);
@@ -1170,6 +1202,8 @@ clist_strip_copy_rop(gx_device * dev,
                         line_tile.size.y = 1;
                         line_tile.rep_height = 1;
                         raster = line_tile.raster;
+                        if (line_tile.num_planes > 0)
+                            line_tile.raster *= tiles->size.y;
                         /* The rasterizer assumes tile phase relatively to the rectangle origin,
                            (see x_offset in gdevmr8n.c), so compute "the tile phase in the tile space"
                            with same expression : */
@@ -1182,6 +1216,8 @@ clist_strip_copy_rop(gx_device * dev,
                             */
                             int depth = cdev->clist_color_info.depth;
 
+                            if (line_tile.num_planes > 0)
+                                depth /= line_tile.num_planes;
 #			    if 0
                             /* Align bitmap data : */
                             data_shift = ((tile_space_phase * depth) >> (log2_align_bitmap_mod + 3)) << log2_align_bitmap_mod;
@@ -1197,7 +1233,8 @@ clist_strip_copy_rop(gx_device * dev,
                                and because the bitmap height is 1.
                                The clist reader must provide the trailing bytes if the rasterizer needs them.
                              */
-                            line_tile.raster = (line_tile.rep_width * depth + 7) / 8;
+                            if (line_tile.num_planes <= 1)
+                                line_tile.raster = (line_tile.rep_width * depth + 7) / 8;
                             line_tile.size.x = line_tile.rep_width;
                             line_tile.shift = 0;
                             new_phase = (tile_space_phase - phase_shift - rx % line_tile.rep_width);
@@ -1210,13 +1247,13 @@ clist_strip_copy_rop(gx_device * dev,
                             line_tile.id = ids + (iy % rep_height);
                             ++cdev->driver_call_nesting;
                             {
-                                code = clist_strip_copy_rop(dev,
+                                code = clist_strip_copy_rop2(dev,
                                         (sdata == 0 ? 0 : row + iy * sraster),
                                         sourcex, sraster,
                                         gx_no_bitmap_id, scolors,
                                         &line_tile, tcolors,
                                         rx, re.y + iy, rwidth, 1,
-                                        new_phase, 0, lop);
+                                        new_phase, 0, lop, planar_height);
                             }
                             --cdev->driver_call_nesting;
                             if (code < 0 && SET_BAND_CODE(code))
@@ -1268,10 +1305,10 @@ clist_strip_copy_rop(gx_device * dev,
                     code = clist_copy_mono(dev, row, sourcex, sraster, id,
                                            rx, re.y, rwidth, re.height,
                                            scolors[0], scolors[1]);
-            } else if (lop & lop_planar) {
-                code = clist_copy_plane(dev, row, sourcex, sraster, id,
-                                        rx, re.y, rwidth, re.height,
-                                        (lop >> lop_planar_shift));
+            } else if (planar_height) {
+                code = clist_copy_planes(dev, row, sourcex, sraster, id,
+                                         rx, re.y, rwidth, re.height,
+                                         planar_height);
             } else {
                 code = clist_copy_color(dev, row, sourcex, sraster, id,
                                         rx, re.y, rwidth, re.height);

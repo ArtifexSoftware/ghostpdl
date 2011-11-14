@@ -280,6 +280,20 @@ trace_strip_copy_rop(gx_device * dev, const byte * sdata, int sourcex,
     return 0;
 }
 
+static int
+trace_strip_copy_rop2(gx_device * dev, const byte * sdata, int sourcex,
+                      uint sraster, gx_bitmap_id id,
+                      const gx_color_index * scolors,
+                      const gx_strip_bitmap * textures,
+                      const gx_color_index * tcolors,
+                      int x, int y, int width, int height,
+                      int phase_x, int phase_y, gs_logical_operation_t lop,
+                      uint plane_height)
+{
+    dputs("**strip_copy_rop2**\n");
+    return 0;
+}
+
 /* ---------------- High-level driver procedures ---------------- */
 
 static int
@@ -635,7 +649,33 @@ trace_text_begin(gx_device * dev, gs_imager_state * pis,
      NULL,			/* create_compositor */\
      NULL,			/* get_hardware_params */\
      trace_text_begin,\
-     NULL			/* finish_copydevice */\
+     NULL,			/* finish_copydevice */\
+     NULL,			/* begin_transparency_group */\
+     NULL,			/* end_transparency_group */\
+     NULL,			/* begin_transparency_mask */\
+     NULL,			/* end_transparency_mask */\
+     NULL,			/* discard_transparency_layer */\
+     NULL,			/* get_color_mapping_procs */\
+     NULL,			/* get_color_comp_index */\
+     NULL,			/* encode_color */\
+     NULL,			/* decode_color */\
+     NULL,			/* pattern_manage */\
+     NULL,			/* fill_rectangle_hl_color */\
+     NULL,			/* include_color_space */\
+     NULL,			/* fill_linear_color_scanline */\
+     NULL,			/* fill_linear_color_trapezoid */\
+     NULL,			/* fill_linear_color_triangle */\
+     NULL,			/* update_spot_equivalent_colors */\
+     NULL,			/* ret_devn_params */\
+     NULL,			/* fillpage */\
+     NULL,			/* push_transparency_state */\
+     NULL,			/* pop_transparency_state */\
+     NULL,			/* put_image */\
+     NULL,			/* dev_spec_op */\
+     NULL,			/* copy_planes */\
+     NULL,			/* get_profile */\
+     NULL,			/* set_graphics_type_tag */\
+     trace_strip_copy_rop2\
 }
 
 const gx_device gs_tr_mono_device = {

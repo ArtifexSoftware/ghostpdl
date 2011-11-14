@@ -280,6 +280,7 @@ dev_proc_ret_devn_params(gx_default_ret_devn_params);
 dev_proc_fillpage(gx_default_fillpage);
 dev_proc_get_profile(gx_default_get_profile);
 dev_proc_set_graphics_type_tag(gx_default_set_graphics_type_tag);
+dev_proc_strip_copy_rop2(gx_default_strip_copy_rop2);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -366,6 +367,7 @@ dev_proc_fillpage(gx_forward_fillpage);
 dev_proc_create_compositor(gx_forward_create_compositor);
 dev_proc_get_profile(gx_forward_get_profile);
 dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
+dev_proc_strip_copy_rop2(gx_forward_strip_copy_rop2);
 
 /* ---------------- Implementation utilities ---------------- */
 

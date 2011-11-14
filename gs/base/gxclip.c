@@ -31,12 +31,13 @@
 static dev_proc_open_device(clip_open);
 static dev_proc_fill_rectangle(clip_fill_rectangle);
 static dev_proc_copy_mono(clip_copy_mono);
-static dev_proc_copy_plane(clip_copy_plane);
+static dev_proc_copy_planes(clip_copy_planes);
 static dev_proc_copy_color(clip_copy_color);
 static dev_proc_copy_alpha(clip_copy_alpha);
 static dev_proc_fill_mask(clip_fill_mask);
 static dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(clip_strip_copy_rop);
+static dev_proc_strip_copy_rop2(clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(clip_get_clipping_box);
 static dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
 static dev_proc_fill_path(clip_fill_path);
@@ -111,9 +112,10 @@ static const gx_device_clip gs_clip_device =
   NULL,                      /* pop_transparency_state */
   NULL,                      /* put_image */
   gx_forward_dev_spec_op,
-  clip_copy_plane,           /* copy plane */
+  clip_copy_planes,          /* copy planes */
   gx_forward_get_profile,
-  gx_forward_set_graphics_type_tag
+  gx_forward_set_graphics_type_tag,
+  clip_strip_copy_rop2
  }
 };
 
@@ -421,17 +423,17 @@ clip_copy_mono(gx_device * dev,
 
 /* Copy a plane */
 int
-clip_call_copy_plane(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
+clip_call_copy_planes(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
 {
-    return (*dev_proc(pccd->tdev, copy_plane))
+    return (*dev_proc(pccd->tdev, copy_planes))
         (pccd->tdev, pccd->data + (yc - pccd->y) * pccd->raster,
          pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
-         xc, yc, xec - xc, yec - yc, pccd->plane);
+         xc, yc, xec - xc, yec - yc, pccd->plane_height);
 }
 static int
-clip_copy_plane(gx_device * dev,
-                const byte * data, int sourcex, int raster, gx_bitmap_id id,
-                int x, int y, int w, int h, int plane)
+clip_copy_planes(gx_device * dev,
+                 const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                 int x, int y, int w, int h, int plane_height)
 {
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
@@ -450,15 +452,15 @@ clip_copy_plane(gx_device * dev,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            return dev_proc(tdev, copy_plane)
-                (tdev, data, sourcex, raster, id, x, y, w, h, plane);
+            return dev_proc(tdev, copy_planes)
+                (tdev, data, sourcex, raster, id, x, y, w, h, plane_height);
         }
     }
     ccdata.tdev = tdev;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
-    ccdata.plane = plane;
+    ccdata.plane_height = plane_height;
     return clip_enumerate_rest(rdev, x, y, xe, ye,
-                               clip_call_copy_plane, &ccdata);
+                               clip_call_copy_planes, &ccdata);
 }
 
 /* Copy a color rectangle */
@@ -583,6 +585,37 @@ clip_strip_copy_rop(gx_device * dev,
         ccdata.tcolors = tcolors;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
     return clip_enumerate(rdev, x, y, w, h, clip_call_strip_copy_rop, &ccdata);
+}
+
+/* Copy a rectangle with RasterOp and strip texture. */
+int
+clip_call_strip_copy_rop2(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
+{
+    return (*dev_proc(pccd->tdev, strip_copy_rop2))
+        (pccd->tdev, pccd->data + (yc - pccd->y) * pccd->raster,
+         pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
+         pccd->scolors, pccd->textures, pccd->tcolors,
+         xc, yc, xec - xc, yec - yc, pccd->phase.x, pccd->phase.y,
+         pccd->lop, pccd->plane_height);
+}
+static int
+clip_strip_copy_rop2(gx_device * dev,
+              const byte * sdata, int sourcex, uint raster, gx_bitmap_id id,
+                    const gx_color_index * scolors,
+           const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+                    int x, int y, int w, int h,
+                    int phase_x, int phase_y, gs_logical_operation_t lop,
+                    uint planar_height)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.data = sdata, ccdata.sourcex = sourcex, ccdata.raster = raster;
+    ccdata.scolors = scolors, ccdata.textures = textures,
+        ccdata.tcolors = tcolors;
+    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y, ccdata.lop = lop;
+    ccdata.plane_height = planar_height;
+    return clip_enumerate(rdev, x, y, w, h, clip_call_strip_copy_rop2, &ccdata);
 }
 
 /* Get the (outer) clipping box, in client coordinates. */

@@ -45,7 +45,7 @@ typedef struct clip_callback_data_s {
     const gx_color_index *scolors;      /* strip_copy_rop */
     const gx_strip_bitmap *textures;    /* ibid. */
     const gx_color_index *tcolors;      /* ibid. */
-    int plane;                          /* copy_plane */
+    int plane_height;                   /* copy_planes, strip_copy_rop2 */
     const gs_imager_state * pis;        /* fill_path */
     gx_path * ppath;                    /* fill_path */
     const gx_fill_params * params;      /* fill_path */
@@ -57,8 +57,8 @@ int
                              int xc, int yc, int xec, int yec),
     clip_call_copy_mono(clip_callback_data_t * pccd,
                         int xc, int yc, int xec, int yec),
-    clip_call_copy_plane(clip_callback_data_t * pccd,
-                         int xc, int yc, int xec, int yec),
+    clip_call_copy_planes(clip_callback_data_t * pccd,
+                          int xc, int yc, int xec, int yec),
     clip_call_copy_color(clip_callback_data_t * pccd,
                          int xc, int yc, int xec, int yec),
     clip_call_copy_alpha(clip_callback_data_t * pccd,
@@ -68,6 +68,8 @@ int
     clip_call_strip_tile_rectangle(clip_callback_data_t * pccd,
                                    int xc, int yc, int xec, int yec),
     clip_call_strip_copy_rop(clip_callback_data_t * pccd,
-                             int xc, int yc, int xec, int yec);
+                             int xc, int yc, int xec, int yec),
+    clip_call_strip_copy_rop2(clip_callback_data_t * pccd,
+                              int xc, int yc, int xec, int yec);
 
 #endif /* gxclip_INCLUDED */

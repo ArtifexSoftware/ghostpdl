@@ -193,9 +193,10 @@ const gx_device_procs gs_clist_device_procs = {
     NULL,                      /* pop_transparency_state */
     NULL,                      /* put_image */
     clist_dev_spec_op,
-    clist_copy_plane,          /* copy plane */
+    clist_copy_planes,         /* copy planes */
     gx_default_get_profile,
-    gx_default_set_graphics_type_tag
+    gx_default_set_graphics_type_tag,
+    clist_strip_copy_rop2
 };
 
 /*------------------- Choose the implementation -----------------------

@@ -290,7 +290,8 @@ struct gx_image_enum_s {
     gx_image_color_cache_t *color_cache;  /* A cache that is con-tone values */
     byte *ht_buffer;            /* A buffer to contain halftoned data */
     int ht_stride;
-    int ht_offset_bits; /* An offset adjustement to allow aligned copies */
+    int ht_offset_bits;     /* An offset adjustement to allow aligned copies */
+    int ht_plane_height;    /* Needed during the copy_planes operation */
     byte *thresh_buffer;    /* A buffer to hold threshold values for HT */
     int thresh_stride;
     gs_image_parent_t image_parent_type;   /* Need to avoid threshold of type3 images */

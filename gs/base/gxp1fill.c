@@ -234,29 +234,39 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
     gx_device *dev = ptfs->orig_dev;
     int xoff = ptfs->xoff, yoff = ptfs->yoff;
     gx_strip_bitmap *bits = &ptile->tbits;
-    int plane_step = ptile->tbits.raster * ptile->tbits.rep_height;
     const byte *data = bits->data;
     bool full_transfer = (w == ptfs->w0 && h == ptfs->h0);
     int code = 0;
-    int k;
-    byte *data_plane;
 
-    if (source == NULL && lop_no_S_is_T(lop)) {
-        if (ptfs->num_planes < 0) {
-                code = (*dev_proc(ptfs->pcdev, copy_color))
+    if (source == NULL && lop_no_S_is_T(lop) && ptfs->num_planes < 0) {
+        /* RJW: Ideally, we'd like to remove the 'ptfs->num_planes < 0' test
+         * above, and then do:
+         *
+         * if (ptfs->num_planes >= 0) {
+         *     int plane_step = ptile->tbits.raster * ptile->tbits.rep_height;
+         *     int k;
+         *     for (k = 0; k < ptfs->num_planes; k++) {
+         *         byte *data_plane = (byte*) (data + plane_step * k);
+         *         (*dev_proc(ptfs->pcdev, copy_plane))
+         *                                 (ptfs->pcdev,
+         *                                  data_plane + bits->raster * yoff,
+         *                                  xoff, bits->raster,
+         *                                  gx_no_bitmap_id, x, y,
+         *                                  w, h, k);
+         *     }
+         * } else
+         *
+         * Unfortunately, this can cause the rop source device to be called
+         * with copy_plane. This is currently broken (and I fear cannot ever
+         * be done properly). We therefore drop back to the strip_copy_rop
+         * case below.
+         */
+        {
+            code = (*dev_proc(ptfs->pcdev, copy_color))
                     (ptfs->pcdev, data + bits->raster * yoff, xoff,
                      bits->raster,
                      (full_transfer ? bits->id : gx_no_bitmap_id),
                      x, y, w, h);
-        } else {
-            for (k = 0; k < ptfs->num_planes; k++) {
-                /* Get the proper pointer to the data plane */
-                data_plane = (byte*) (data + plane_step * k);
-                (*dev_proc(ptfs->pcdev, copy_plane)) (ptfs->pcdev, 
-                    data_plane + bits->raster * yoff, xoff, bits->raster,
-                                             gx_no_bitmap_id, x, y,
-                                             w, h, k);
-            }
         }
     } else {
         gx_strip_bitmap data_tile;
@@ -273,17 +283,32 @@ tile_colored_fill(const tile_fill_state_t * ptfs,
         data_tile.id = bits->id;
         data_tile.shift = data_tile.rep_shift = 0;
         data_tile.num_planes = (ptfs->num_planes > 1 ? ptfs->num_planes : 1);
-        code = (*dev_proc(dev, strip_copy_rop))
-            (dev,
-             source->sdata + (y - ptfs->y0) * source->sraster,
-             source->sourcex + (x - ptfs->x0),
-             source->sraster, source_id,
-             (source->use_scolors ? source->scolors : NULL),
-             &data_tile, NULL,
-             x, y, w, h,
-             imod(xoff - x, data_tile.rep_width),
-             imod(yoff - y, data_tile.rep_height),
-             lop);
+        if (source->planar_height == 0) {
+            code = (*dev_proc(ptfs->pcdev, strip_copy_rop))
+                           (ptfs->pcdev,
+                            source->sdata + (y - ptfs->y0) * source->sraster,
+                            source->sourcex + (x - ptfs->x0),
+                            source->sraster, source_id,
+                            (source->use_scolors ? source->scolors : NULL),
+                            &data_tile, NULL,
+                            x, y, w, h,
+                            imod(xoff - x, data_tile.rep_width),
+                            imod(yoff - y, data_tile.rep_height),
+                            lop);
+        } else {
+            code = (*dev_proc(ptfs->pcdev, strip_copy_rop2))
+                           (ptfs->pcdev,
+                            source->sdata + (y - ptfs->y0) * source->sraster,
+                            source->sourcex + (x - ptfs->x0),
+                            source->sraster, source_id,
+                            (source->use_scolors ? source->scolors : NULL),
+                            &data_tile, NULL,
+                            x, y, w, h,
+                            imod(xoff - x, data_tile.rep_width),
+                            imod(yoff - y, data_tile.rep_height),
+                            lop,
+                            source->planar_height);
+        }
     }
     return code;
 }
@@ -340,7 +365,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     code = tile_fill_init(&state, pdevc, dev, false);
     if (code < 0)
         return code;
-    if (ptile->is_simple && ptile->cdev == NULL && state.num_planes == -1) {
+    if (ptile->is_simple && ptile->cdev == NULL) {
         int px =
             imod(-(int)fastfloor(ptile->step_matrix.tx - state.phase.x + 0.5),
                  bits->rep_width);
@@ -350,17 +375,30 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 
         if (state.pcdev != dev)
             tile_clip_set_phase(&state.cdev, px, py);
-        if (source == NULL && lop_no_S_is_T(lop))
+        /* RJW: Can we get away with calling the simpler version? Not
+         * if we are working in planar mode because the default
+         * strip_tile_rectangle doesn't understand bits being in planar
+         * mode at the moment.
+         */
+        if (source == NULL && lop_no_S_is_T(lop) && state.num_planes == -1)
             code = (*dev_proc(state.pcdev, strip_tile_rectangle))
                 (state.pcdev, bits, x, y, w, h,
                  gx_no_color_index, gx_no_color_index, px, py);
-        else
+        else if (rop_source->planar_height == 0)
             code = (*dev_proc(state.pcdev, strip_copy_rop))
-                (state.pcdev,
-                 rop_source->sdata, rop_source->sourcex,
-                 rop_source->sraster, rop_source->id,
-                 (rop_source->use_scolors ? rop_source->scolors : NULL),
-                 bits, NULL, x, y, w, h, px, py, lop);
+                        (state.pcdev,
+                         rop_source->sdata, rop_source->sourcex,
+                         rop_source->sraster, rop_source->id,
+                         (rop_source->use_scolors ? rop_source->scolors : NULL),
+                         bits, NULL, x, y, w, h, px, py, lop);
+        else
+            code = (*dev_proc(state.pcdev, strip_copy_rop2))
+                        (state.pcdev,
+                         rop_source->sdata, rop_source->sourcex,
+                         rop_source->sraster, rop_source->id,
+                         (rop_source->use_scolors ? rop_source->scolors : NULL),
+                         bits, NULL, x, y, w, h, px, py, lop,
+                         rop_source->planar_height);
     } else {
         state.lop = lop;
         state.source = source;
@@ -411,6 +449,7 @@ tile_masked_fill(const tile_fill_state_t * ptfs,
                           source->id : gx_no_bitmap_id);
         step_source.scolors[0] = source->scolors[0];
         step_source.scolors[1] = source->scolors[1];
+        step_source.planar_height = source->planar_height;
         step_source.use_scolors = source->use_scolors;
         return (*ptfs->fill_rectangle)
             (ptfs->pdevc, x, y, w, h, ptfs->pcdev, ptfs->lop, &step_source);

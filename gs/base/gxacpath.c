@@ -122,7 +122,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   NULL, /* pop_transparency_state */
   NULL, /* put_image */
   accum_dev_spec_op,
-  NULL, /* copy_plane */
+  NULL, /* copy_planes */
   NULL, /* get_profile */
   gx_default_set_graphics_type_tag
  }

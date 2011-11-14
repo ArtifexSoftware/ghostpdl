@@ -28,9 +28,10 @@ static dev_proc_open_device(mem_planar_open);
 declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_rectangle);
 static dev_proc_copy_color(mem_planar_copy_color_24to8);
 static dev_proc_copy_color(mem_planar_copy_color_4to1);
-static dev_proc_copy_plane(mem_planar_copy_plane);
+static dev_proc_copy_planes(mem_planar_copy_planes);
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
 static dev_proc_strip_copy_rop(mem_planar_strip_copy_rop);
+static dev_proc_strip_copy_rop2(mem_planar_strip_copy_rop2);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 
 /* It's a bit nasty to have to fork the planar dev_spec_op like this, but
@@ -110,6 +111,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, copy_alpha, dev_proc(mdproto, copy_alpha));
         set_dev_proc(mdev, strip_tile_rectangle, dev_proc(mdproto, strip_tile_rectangle));
         set_dev_proc(mdev, strip_copy_rop, dev_proc(mdproto, strip_copy_rop));
+        set_dev_proc(mdev, strip_copy_rop2, dev_proc(mdproto, strip_copy_rop2));
         set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
     } else {
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
@@ -132,9 +134,10 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         } else
             set_dev_proc(mdev, copy_color, mem_planar_copy_color);
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
-        set_dev_proc(mdev, copy_plane, mem_planar_copy_plane);
+        set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
         set_dev_proc(mdev, strip_copy_rop, mem_planar_strip_copy_rop);
+        set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
     }
     return 0;
@@ -815,30 +818,33 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
 
 /* Copy a given bitmap into a bitmap. */
 static int
-mem_planar_copy_plane(gx_device * dev, const byte * base, int sourcex,
-                      int sraster, gx_bitmap_id id,
-                      int x, int y, int w, int h, int plane)
+mem_planar_copy_planes(gx_device * dev, const byte * base, int sourcex,
+                       int sraster, gx_bitmap_id id,
+                       int x, int y, int w, int h, int plane_height)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     int plane_depth;
     mem_save_params_t save;
     const gx_device_memory *mdproto;
-    int code;
+    int code = 0;
+    int plane;
 
-    if ((plane < 0) || (plane >= mdev->num_planes))
-        return gs_error_rangecheck;
     MEM_SAVE_PARAMS(mdev, save);
-    mdev->line_ptrs += mdev->height * plane;
-    plane_depth = mdev->planes[plane].depth;
-    mdproto = gdev_mem_device_for_bits(plane_depth);
-    if (plane_depth == 1)
-        code = dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
-                                            x, y, w, h,
-                                            (gx_color_index)0,
-                                            (gx_color_index)1);
-    else
-        code = dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
-                                             id, x, y, w, h);
+    for (plane = 0; plane < mdev->num_planes; plane++)
+    {
+        plane_depth = mdev->planes[plane].depth;
+        mdproto = gdev_mem_device_for_bits(plane_depth);
+        if (plane_depth == 1)
+            code = dev_proc(mdproto, copy_mono)(dev, base, sourcex, sraster, id,
+                                                x, y, w, h,
+                                                (gx_color_index)0,
+                                                (gx_color_index)1);
+        else
+            code = dev_proc(mdproto, copy_color)(dev, base, sourcex, sraster,
+                                                 id, x, y, w, h);
+        base += sraster * plane_height;
+        mdev->line_ptrs += mdev->height;
+    }
     MEM_RESTORE_PARAMS(mdev, save);
     return code;
 }
@@ -1656,8 +1662,70 @@ mem_planar_strip_copy_rop(gx_device * dev,
                           int phase_x, int phase_y,
                           gs_logical_operation_t lop)
 {
+    return mem_planar_strip_copy_rop2(dev, sdata, sourcex, sraster,
+                                      id, scolors, textures, tcolors,
+                                      x, y, width, height,
+                                      phase_x, phase_y, lop, 0);
+}
+
+static int
+mem_planar_strip_copy_rop2(gx_device * dev,
+                           const byte * sdata, int sourcex, uint sraster,
+                           gx_bitmap_id id, const gx_color_index * scolors,
+                           const gx_strip_bitmap * textures,
+                           const gx_color_index * tcolors,
+                           int x, int y, int width, int height,
+                           int phase_x, int phase_y,
+                           gs_logical_operation_t lop,
+                           uint planar_height)
+{
     gx_device_memory * const mdev = (gx_device_memory *)dev;
-    int plane, code;
+    int code;
+
+    if (planar_height != 0) {
+        /* S is in planar format; expand it to a temporary buffer, then
+         * call ourselves back with a modified rop to use it, then free
+         * the temporary buffer, and return. */
+        /* Make a temporary buffer that contains both the raster and the line
+         * pointers for the buffer. For now, for the sake of sanity, we
+         * convert whole lines of s, but only as many lines as we have to. */
+        /* We assume that scolors == NULL here */
+        int i, j;
+        uint chunky_sraster;
+        uint nbytes;
+        byte **line_ptrs;
+        byte *sbuf, *buf;
+
+        chunky_sraster = sraster * mdev->num_planes;
+        nbytes = height * chunky_sraster;
+        buf = gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(buf)");
+        if (buf == NULL) {
+            return gs_note_error(gs_error_VMerror);
+        }
+        nbytes = sizeof(byte *) * mdev->num_planes * height;
+        line_ptrs = (byte **)gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(line_ptrs)");
+        if (line_ptrs == NULL) {
+            gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
+            return gs_note_error(gs_error_VMerror);
+        }
+        for (j = 0; j < mdev->num_planes; j++) {
+            sbuf = sdata + j * sraster;
+            for (i = height; i > 0; i--) {
+                *line_ptrs++ = sbuf;
+                sbuf += sraster;
+            }
+        }
+        line_ptrs -= height * mdev->num_planes;
+        planar_to_chunky(mdev, sourcex, 0, width, height,
+                         0, chunky_sraster, buf, line_ptrs, planar_height);
+        gs_free_object(mdev->memory, line_ptrs, "mem_planar_strip_copy_rop(line_ptrs)");
+        code = mem_planar_strip_copy_rop2(dev, buf, 0, chunky_sraster,
+                                          id, scolors, textures, tcolors,
+                                          x, y, width, height, phase_x, phase_y,
+                                          lop, 0);
+        gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
+        return code;
+    }
 
     if (textures && textures->num_planes > 1) {
         /* T is in planar format; expand it to a temporary buffer, then
@@ -1713,84 +1781,77 @@ mem_planar_strip_copy_rop(gx_device * dev,
         newtex.num_planes = 1;
         newtex.size.x = textures->rep_width;
         newtex.size.y = textures->rep_height;
-        code = mem_planar_strip_copy_rop(dev, sdata, sourcex, sraster,
-                                         id, scolors, &newtex, tcolors,
-                                         x, y, width, height, phase_x, phase_y,
-                                         lop);
+        code = mem_planar_strip_copy_rop2(dev, sdata, sourcex, sraster,
+                                          id, scolors, &newtex, tcolors,
+                                          x, y, width, height, phase_x, phase_y,
+                                          lop, planar_height);
         gs_free_object(mdev->memory, buf, "mem_planar_strip_copy_rop(buf)");
         return code;
     }
 
-    if ((lop & lop_planar) == 0) {
-        /* Not doing a planar lop. If we carry on down the default path here,
-         * we'll end up doing a planar_to_chunky; we may be able to sidestep
-         * that by spotting cases where we can operate directly. */
-        if (!lop_uses_T(lop) || (tcolors && (tcolors[0] == tcolors[1]))) {
-            /* No T in use, or constant T. */
-            if ((!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
-                ((mdev->num_planes == 1) || (mdev->num_planes == 3))) {
-                /* No S in use, or constant S. And either greyscale or rgb,
-                 * so we can just do the rop on each plane in turn. */
-                for (plane=0; plane < mdev->num_planes; plane++)
-                {
-                    gx_color_index tcolors2[2], scolors2[2];
-                    int shift = mdev->planes[plane].shift;
-                    int mask = (1<<mdev->planes[plane].depth)-1;
-
-                    if (tcolors) {
-                        tcolors2[0] = (tcolors[0] >> shift) & mask;
-                        tcolors2[1] = (tcolors[1] >> shift) & mask;
-                    }
-                    if (scolors) {
-                        scolors2[0] = (scolors[0] >> shift) & mask;
-                        scolors2[1] = (scolors[1] >> shift) & mask;
-                    }
-                    code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
-                                                id, (scolors ? scolors2 : NULL),
-                                                textures, (tcolors ? tcolors2 : NULL),
-                                                x, y, width, height,
-                                                phase_x, phase_y, lop, plane);
-                    if (code < 0)
-                        return code;
-                }
-                return 0;
-            }
-            if ((mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
-                ((lop & (lop_S_transparent | lop_T_transparent)) == 0))
+    /* Not doing a planar lop. If we carry on down the default path here,
+     * we'll end up doing a planar_to_chunky; we may be able to sidestep
+     * that by spotting cases where we can operate directly. */
+    if (!lop_uses_T(lop) || (tcolors && (tcolors[0] == tcolors[1]))) {
+        /* No T in use, or constant T. */
+        if ((!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
+            ((mdev->num_planes == 1) || (mdev->num_planes == 3))) {
+            int plane;
+            /* No S in use, or constant S. And either greyscale or rgb,
+             * so we can just do the rop on each plane in turn. */
+            for (plane=0; plane < mdev->num_planes; plane++)
             {
-                lop = cmykrop[lop & 0xff] | (lop & ~0xff);
-                return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
-                                                      sraster, id, scolors,
-                                                      textures, tcolors,
-                                                      x, y, width, height,
-                                                      phase_x, phase_y, lop);
+                gx_color_index tcolors2[2], scolors2[2];
+                int shift = mdev->planes[plane].shift;
+                int mask = (1<<mdev->planes[plane].depth)-1;
+
+                if (tcolors) {
+                    tcolors2[0] = (tcolors[0] >> shift) & mask;
+                    tcolors2[1] = (tcolors[1] >> shift) & mask;
+                }
+                if (scolors) {
+                    scolors2[0] = (scolors[0] >> shift) & mask;
+                    scolors2[1] = (scolors[1] >> shift) & mask;
+                }
+                code = plane_strip_copy_rop(mdev, sdata, sourcex, sraster,
+                                            id, (scolors ? scolors2 : NULL),
+                                            textures, (tcolors ? tcolors2 : NULL),
+                                            x, y, width, height,
+                                            phase_x, phase_y, lop, plane);
+                if (code < 0)
+                    return code;
             }
+            return 0;
         }
-        if (!tcolors && !scolors &&
-            (mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
-            ((lop & (lop_S_transparent | lop_T_transparent)) == 0)) {
+        if ((mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
+            ((lop & (lop_S_transparent | lop_T_transparent)) == 0))
+        {
             lop = cmykrop[lop & 0xff] | (lop & ~0xff);
             return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
                                                   sraster, id, scolors,
                                                   textures, tcolors,
                                                   x, y, width, height,
-                                                  phase_x, phase_y, lop);
+                                                  phase_x, phase_y,
+                                                  lop);
         }
-        /* Fall back to the default implementation (the only one that
-         * guarantees to properly cope with planar data). */
-        return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster,
-                                          id, scolors, textures, tcolors,
-                                          x, y, width, height,
-                                          phase_x, phase_y, lop);
     }
-    /* Extract the plane, and sanitise the lop */
-    plane = lop>>lop_planar_shift;
-    lop &= ~((plane<<lop_planar_shift) | lop_planar);
-    if ((plane < 0) || (plane >= mdev->num_planes))
-        return gs_error_rangecheck;
-    return plane_strip_copy_rop(mdev, sdata, sourcex, sraster, id, scolors,
-                                textures, tcolors, x, y, width, height,
-                                phase_x, phase_y, lop, plane);
+    if (!tcolors && !scolors &&
+        (mdev->num_planes == 4) && (mdev->plane_depth == 1) &&
+        ((lop & (lop_S_transparent | lop_T_transparent)) == 0)) {
+        lop = cmykrop[lop & 0xff] | (lop & ~0xff);
+        return planar_cmyk4bit_strip_copy_rop(mdev, sdata, sourcex,
+                                              sraster, id, scolors,
+                                              textures, tcolors,
+                                              x, y, width, height,
+                                              phase_x, phase_y,
+                                              lop);
+    }
+    /* Fall back to the default implementation (the only one that
+     * guarantees to properly cope with D being planar). */
+    return mem_default_strip_copy_rop(dev, sdata, sourcex, sraster,
+                                      id, scolors, textures, tcolors,
+                                      x, y, width, height,
+                                      phase_x, phase_y, lop);
 }
 
 /* Copy bits back from a planar memory device. */
