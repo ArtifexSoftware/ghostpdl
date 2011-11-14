@@ -16,6 +16,7 @@
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib_.h"		/* for sdct.h */
 #include "math_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscspace.h"
@@ -235,7 +236,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     int code;
 
 #   ifdef USE_LWF_JP2
-    if (lossless && template == &s_jpxe_template && !Indexed)
+    if (lossless && templat == &s_jpxe_template && !Indexed)
         lossless_template = &s_jpxe_template;
 #   endif
     if (!pdip->Encode)		/* no compression */
