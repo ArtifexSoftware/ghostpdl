@@ -29,6 +29,12 @@ target_lpi: The desired resolution of the screen in lines/inch. [default 300dpi]
 
 target_quantization_levels:  indicates the desired number of "gray" levels
     that you wish to achieve with the screen (e.g. 256). [default 256]
+    Special note on this option.  To achieve a particular quantization
+    level, it is neccessary that the size_of_supercell is sufficiently large.
+    Since the default size of size_of_supercell is set to 1, the minimum
+    possible size is always used and the target quantization may not be 
+    achieved.  A warning is displayed to indicate this condition and a minimum
+    size is suggested.
 
 resolution: The resolution of the output device in dots/inch. Horizontal and
     vertical resolution can be different if given as -rHxV where H is the
