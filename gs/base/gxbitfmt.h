@@ -192,8 +192,7 @@ typedef ulong gx_bitmap_format_t;
 
     /*
      * Return halftoned raster.  (This requires a custom get_bit_rectangle
-     * device procedure.  See the wtsimdi device.  Most devices ignore this
-     * bit.
+     * device procedure.  Most devices ignore this bit.
      */
 #define GB_HALFTONED (1L<<31)
 #define GB_HALFTONED_NAMES\

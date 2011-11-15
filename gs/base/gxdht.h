@@ -120,16 +120,6 @@ typedef ht_mask_t ht_sample_t;
 /* The following awkward expression avoids integer overflow. */
 #define max_ht_sample (ht_sample_t)(((1 << (ht_mask_bits - 2)) - 1) * 2 + 1)
 
-#ifndef wts_screen_t_DEFINED
-#  define wts_screen_t_DEFINED
-typedef struct wts_screen_s wts_screen_t;
-#endif
-
-#ifndef gs_wts_screen_enum_t_DEFINED
-#  define gs_wts_screen_enum_t_DEFINED
-typedef struct gs_wts_screen_enum_s gs_wts_screen_enum_t;
-#endif
-
 /*
  * Define the internal representation of a halftone order.
  * Note that it may include a cached transfer function.
@@ -213,8 +203,6 @@ typedef struct gx_ht_order_screen_params_s {
 } gx_ht_order_screen_params_t;
 struct gx_ht_order_s {
     gx_ht_cell_params_t params;	/* parameters defining the cells */
-    gs_wts_screen_enum_t *wse;
-    wts_screen_t *wts;            /* if non-NULL, then rest of the structure is irrelevant */
     ushort width;
     ushort height;
     ushort raster;

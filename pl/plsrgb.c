@@ -31,7 +31,7 @@
    color conversion.  If the definition is commented out we set up an
    srgb color space and associated color rendering dictionary using
    the regular color conversion machinery in the graphics library
-   pipeline.  The wtsimdi device is an example device that does color
+   pipeline.  The wtsimdi device is an example device that did color
    conversion as a "postprocess" and requires the definition.  If
    defined all additive colors are passed through as Device RGB but
    the device assumes the triples are in fact sRGB.  NB eventually

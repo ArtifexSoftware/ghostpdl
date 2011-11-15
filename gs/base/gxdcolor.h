@@ -274,9 +274,7 @@ extern const gx_device_color_type_t
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
       gx_dc_type_data_ht_binary,	/* gxht.c */
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
-      gx_dc_type_data_ht_colored,	/* gxcht.c */
-#define gx_dc_type_wts (&gx_dc_type_data_wts)
-      gx_dc_type_data_wts;	/* gxwts.c */
+      gx_dc_type_data_ht_colored;	/* gxcht.c */
 
 /* the following are exported for the benefit of gsptype1.c */
 extern  dev_color_proc_get_nonzero_comps(gx_dc_pure_get_nonzero_comps);

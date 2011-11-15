@@ -735,10 +735,6 @@
 					>
 				</File>
 				<File
-					RelativePath="base\gswts.c"
-					>
-				</File>
-				<File
 					RelativePath="base\gxacpath.c"
 					>
 				</File>
@@ -888,10 +884,6 @@
 				</File>
 				<File
 					RelativePath="base\gxtype1.c"
-					>
-				</File>
-				<File
-					RelativePath="base\gxwts.c"
 					>
 				</File>
 				<File

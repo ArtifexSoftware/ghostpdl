@@ -24,7 +24,6 @@
 #include "gzstate.h"
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
-#include "gswts.h"
 #include "gxfmap.h"             /* For effective transfer usage in threshold */
 
 #define TRANSFER_INVERSE_SIZE 1024
@@ -47,19 +46,6 @@ static const uint32_t bit_order[32]={
 
 /* Forward declarations */
 void gx_set_effective_transfer(gs_state *);
-
-/*
- * *HACK ALERT*
- *
- * Value stored in the width field of a well-tempered screen halftone
- * order, to indicate that the wts field of this order points to the
- * same structure as an earlier order. This is used to suppress
- * multiple realeases of shared wts_screen_t orders.
- *
- * The width field is available for this purpose at it is nominally
- * unused in a well-tempered screening halftone.
- */
-static const ushort    ht_wts_suppress_release = (ushort)(-1);
 
 /* Structure types */
 public_st_ht_order();
@@ -285,17 +271,12 @@ gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
  * Internal procedure to allocate and initialize either an internally
  * generated or a client-defined halftone order.  For spot halftones,
  * the client is responsible for calling gx_compute_cell_values.
- *
- * Note: this function is used for old-style halftones only. WTS
- * halftones are allocated in gs_sethalftone_try_wts().
  */
 int
 gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
                      uint num_levels, uint num_bits, uint strip_shift,
                      const gx_ht_order_procs_t *procs, gs_memory_t * mem)
 {
-    porder->wse = NULL;
-    porder->wts = NULL;
     porder->threshold = NULL;
     porder->width = width;
     porder->height = height;
@@ -356,8 +337,6 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
     if (pdest->bit_data != 0)
         memcpy(pdest->bit_data, psrc->bit_data,
                 psrc->num_bits * psrc->procs->bit_data_elt_size);
-    pdest->wse = psrc->wse;
-    pdest->wts = psrc->wts;
     pdest->transfer = psrc->transfer;
     rc_increment(pdest->transfer);
     return 0;
@@ -373,8 +352,6 @@ gx_ht_move_ht_order(gx_ht_order * pdest, gx_ht_order * psrc)
     uint    width = psrc->width, height = psrc->height, shift = psrc->shift;
 
     pdest->params = psrc->params;
-    pdest->wse = psrc->wse;
-    pdest->wts = 0;
     pdest->width = width;
     pdest->height = height;
     pdest->raster = bitmap_raster(width);
@@ -602,13 +579,8 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
     if (free_cache) {
         if (porder->cache != 0)
             gx_ht_free_cache(mem, porder->cache);
-        else if (porder->wse != 0)
-            gs_wts_free_enum(porder->wse);
     }
     porder->cache = 0;
-    if (porder->wts != 0 && porder->width != ht_wts_suppress_release)
-        gs_wts_free_screen(porder->wts);
-    porder->wts = 0;
     rc_decrement(porder->transfer, "gx_ht_order_release(transfer)");
     porder->transfer = 0;
     if (porder->data_memory != 0) {
@@ -867,18 +839,6 @@ gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
  *                  operand device halftone; it is not set in the device
  *                  halftone in the imager state.
  *
- *  wse            Points to an "enumerator" instance, used to construct
- *                 a well-tempered screen. This is only required while
- *                 the well-tempered screen is being constructed. This
- *                 field is always a null pointer in the device halftone
- *                 in the imager state.
- *
- *  wts            Points to the "constructed" form of a well-tempered
- *                 screen. The "construction" operation occurs as part
- *                 of the installation process. Hence, this should
- *                 always be a null pointer in the operand device
- *                 halftone.
- *
  *  orig_height,   The height and shift values of the halftone cell,
  *  orig_shift     prior to any replication. These fields are currently
  *                 unused, and will always be the same as the height
@@ -996,9 +956,9 @@ gx_imager_dev_ht_install(
     int                     i, code = 0;
     bool                    used_default = false;
     int                     lcm_width = 1, lcm_height = 1;
-    gs_wts_screen_enum_t *  wse0 = pdht->order.wse;
-    wts_screen_t *          wts0 = 0;
     bool                    mem_diff = pdht->rc.memory != pis->memory;
+    uint w, h;
+    int dw, dh;
 
     /* construct the new device halftone structure */
     memset(&dht.order, 0, sizeof(dht.order));
@@ -1063,37 +1023,10 @@ gx_imager_dev_ht_install(
 
     /*
      * Copy the default order to any remaining components.
-     *
-     * For well-tempered screens, generate the wts_screen_t structure
-     * for each component that corresponds to the sample information
-     * that has been gathered.
-     *
-     * Some caution is necessary here, as multiple component orders may
-     * have wse fields pointing to the same gs_wts_creeen_enum_t
-     * structure. This structure should only be released once. If
-     * multiple components have such a wse value, it will be the same as
-     * pdht->order.wse pointer, so we can just release that pointer once
-     * when done.
-     *
-     * If serveral component orders have the same wse value, this code
-     * will create just one wts_screen_t structure. In a somewhat ugly
-     * hack, the width field (which is otherwise unused) will be set to
-     * 0xffff for all components other than the first component that
-     * makes use of a give wts_screen_t structure. gx_ht_order_release
-     * will check this field to see if it should release the structure
-     * pointed to by the wts field of a component order.
-     *
-     * Components that are not well-tempered screens require a cache.
-     * In practice, either all or non of the components will be well-
-     * tempered screens, but we ignore that fact here.
-     *
-     * While engaged in all of these other activities, also calculate
-     * the lcm_width and lcm_heigth values (only for non-well-tempered
-     * components).
      */
+
     for (i = 0; i < num_comps && code >= 0; i++) {
-        gx_ht_order *           porder = &dht.components[i].corder;
-        gs_wts_screen_enum_t *  wse;
+        gx_ht_order *porder = &dht.components[i].corder;
 
         if (dht.components[i].comp_number != i) {
             if (used_default || mem_diff)
@@ -1104,61 +1037,44 @@ gx_imager_dev_ht_install(
             }
             dht.components[i].comp_number = i;
         }
-        if ((wse = porder->wse) != 0) {
-            wts_screen_t *  wts = 0;
 
-            porder->width = 0;
-            porder->wse = 0;
-            if (wse != wse0)
-                wts = wts_screen_from_enum(wse);
-            else {
-                if (wts0 == 0)
-                    wts0 = wts_screen_from_enum(wse);
-                else
-                    porder->width = ht_wts_suppress_release;
-                wts = wts0;
-            }
-            if (wts == 0)
+        w = porder->width;
+        h = porder->full_height;
+        dw = igcd(lcm_width, w);
+        dh = igcd(lcm_height, h);
+
+        lcm_width /= dw;
+        lcm_height /= dh;
+        lcm_width = (w > max_int / lcm_width ? max_int : lcm_width * w);
+        lcm_height = (h > max_int / lcm_height ? max_int : lcm_height * h);
+
+        if (porder->cache == 0) {
+            uint            tile_bytes, num_tiles, slots_wanted, rep_raster, rep_count;
+            gx_ht_cache *   pcache;
+
+            tile_bytes = porder->raster
+                          * (porder->num_bits / porder->width);
+            num_tiles = 1 + gx_ht_cache_default_bits_size() / tile_bytes;
+            /*
+             * Limit num_tiles to a reasonable number allowing for width repition.
+             * The most we need is one cache slot per bit.
+             * This prevents allocations of large cache bits that will never
+             * be used. See rep_count limit in gxht.c
+             */
+            slots_wanted = 1 + ( porder->width * porder->height );
+            rep_raster = ((num_tiles*tile_bytes) / porder->height /
+                            slots_wanted) & ~(align_bitmap_mod - 1);
+            rep_count = rep_raster * 8 / porder->width;
+            if (rep_count > sizeof(ulong) * 8 && (num_tiles >
+                    1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count) ))
+                num_tiles = 1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count);
+            pcache = gx_ht_alloc_cache( pis->memory, num_tiles,
+                                        tile_bytes * num_tiles );
+            if (pcache == NULL)
                 code = gs_error_VMerror;
-            else
-                porder->wts = wts;
-        } else if (porder->wts == 0) {
-            uint   w = porder->width, h = porder->full_height;
-            int    dw = igcd(lcm_width, w), dh = igcd(lcm_height, h);
-
-            lcm_width /= dw;
-            lcm_height /= dh;
-            lcm_width = (w > max_int / lcm_width ? max_int : lcm_width * w);
-            lcm_height = (h > max_int / lcm_height ? max_int : lcm_height * h);
-
-            if (porder->cache == 0) {
-                uint            tile_bytes, num_tiles, slots_wanted, rep_raster, rep_count;
-                gx_ht_cache *   pcache;
-
-                tile_bytes = porder->raster
-                              * (porder->num_bits / porder->width);
-                num_tiles = 1 + gx_ht_cache_default_bits_size() / tile_bytes;
-                /*
-                 * Limit num_tiles to a reasonable number allowing for width repition.
-                 * The most we need is one cache slot per bit.
-                 * This prevents allocations of large cache bits that will never
-                 * be used. See rep_count limit in gxht.c
-                 */
-                slots_wanted = 1 + ( porder->width * porder->height );
-                rep_raster = ((num_tiles*tile_bytes) / porder->height /
-                                slots_wanted) & ~(align_bitmap_mod - 1);
-                rep_count = rep_raster * 8 / porder->width;
-                if (rep_count > sizeof(ulong) * 8 && (num_tiles >
-                        1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count) ))
-                    num_tiles = 1 + ((num_tiles * 8 * sizeof(ulong)) / rep_count);
-                pcache = gx_ht_alloc_cache( pis->memory, num_tiles,
-                                            tile_bytes * num_tiles );
-                if (pcache == NULL)
-                    code = gs_error_VMerror;
-                else {
-                    porder->cache = pcache;
-                    gx_ht_init_cache(pis->memory, pcache, porder);
-                }
+            else {
+                porder->cache = pcache;
+                gx_ht_init_cache(pis->memory, pcache, porder);
             }
         }
     }
@@ -1203,8 +1119,7 @@ gx_imager_dev_ht_install(
         /*
          * Everything worked. "Assume ownership" of the appropriate
          * portions of the source device halftone by clearing the
-         * associated references. This includes explicitly releasing
-         * any gs_wts_screen_enum_t structures. Since we might have
+         * associated references.  Since we might have
          * pdht == pis->dev_ht, this must done before updating pis->dev_ht.
          *
          * If the default order has been used for a device component, and
@@ -1224,8 +1139,6 @@ gx_imager_dev_ht_install(
 
                 if ( comp_num >= 0                            &&
                      comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS  ) {
-                    if (p_s_order->wse != 0)
-                        gs_wts_free_enum(p_s_order->wse);
                     memset(p_s_order, 0, sizeof(*p_s_order));
                 } else if ( comp_num == GX_DEVICE_COLOR_MAX_COMPONENTS &&
                             used_default                                 )
@@ -1233,8 +1146,6 @@ gx_imager_dev_ht_install(
             }
         }
         if (used_default) {
-            if (wse0 != 0)
-                gs_wts_free_enum(wse0);
             memset(&pdht->order, 0, sizeof(pdht->order));
         }
 
