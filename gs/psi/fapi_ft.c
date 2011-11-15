@@ -33,6 +33,11 @@
 #include "gxbitmap.h"
 #include "gsmchunk.h"
 
+#include "stream.h"
+#include "gxiodev.h"            /* must come after stream.h */
+
+#include "gsfname.h"
+
 /* FreeType headers */
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -71,7 +76,8 @@ typedef struct FF_face_s
 
     /* If non-null, the incremental interface object passed to FreeType. */
     FT_Incremental_InterfaceRec *ft_inc_int;
-
+    /* If non-null, we're using a custom stream object for Freetype to read the font file */
+    FT_Stream ftstrm;
     /* Non-null if font data is owned by this object. */
     unsigned char *font_data;
 } FF_face;
@@ -129,8 +135,59 @@ FF_free(FT_Memory memory, void* block)
     gs_free (mem, block, 0, 0, "FF_free");
 }
 
+/* The following three functions are used in providing a custom stream
+ * object to Freetype, so file access happens through Ghostscript's
+ * file i/o. Most importantly, this gives Freetype direct access to
+ * files in the romfs
+ */
+static stream * FF_open_read_stream (gs_memory_t *mem, char *fname)
+{
+    int code = 0;
+    gs_parsed_file_name_t pfn;
+    stream *ps = (stream *)NULL;
+
+    code = gs_parse_file_name(&pfn, (const char *)fname, strlen(fname), mem);
+    if (code < 0)
+        return ((stream *)NULL);
+
+    if (pfn.fname != NULL) {
+        gx_io_device *const iodev = pfn.iodev;
+        iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
+
+        code = open_file(iodev, pfn.fname, pfn.len, "r", &ps, mem);
+        if (code < 0)
+            return ((stream *)NULL);
+    }
+    return(ps);
+}
+
+static FT_ULong FF_stream_read (FT_Stream str, unsigned long offset, unsigned char* buffer, unsigned long count)
+{
+    stream *ps = (stream *)str->descriptor.pointer;
+    unsigned int rlen = 0;
+    int status = 0;
+
+    if (sseek(ps, offset) < 0)
+        return_error(-1);
+
+    if (count) {
+        status = sgets(ps, buffer, count, &rlen);
+
+        if (status < 0 && status != EOFC)
+            return(-1);
+    }
+    return(rlen);
+}
+
+static void FF_stream_close (FT_Stream str)
+{
+    stream *ps = (stream *)str->descriptor.pointer;
+
+    (void)sclose(ps);
+}
+
 static FF_face *
-new_face(FAPI_server *a_server, FT_Face a_ft_face, FT_Incremental_InterfaceRec *a_ft_inc_int, unsigned char *a_font_data)
+new_face(FAPI_server *a_server, FT_Face a_ft_face, FT_Incremental_InterfaceRec *a_ft_inc_int, FT_Stream ftstrm, unsigned char *a_font_data)
 {
     FF_server *s = (FF_server*)a_server;
 
@@ -140,6 +197,7 @@ new_face(FAPI_server *a_server, FT_Face a_ft_face, FT_Incremental_InterfaceRec *
         face->ft_face = a_ft_face;
         face->ft_inc_int = a_ft_inc_int;
         face->font_data = a_font_data;
+        face->ftstrm = ftstrm;
     }
     return face;
 }
@@ -154,6 +212,9 @@ delete_face(FAPI_server *a_server, FF_face *a_face)
         FT_Done_Face(a_face->ft_face);
         FF_free(s->ftmemory, a_face->ft_inc_int);
         FF_free(s->ftmemory, a_face->font_data);
+        if (a_face->ftstrm) {
+            FF_free(s->ftmemory, a_face->ftstrm);
+        }
         FF_free(s->ftmemory, a_face);
     }
 }
@@ -971,13 +1032,37 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         FT_Parameter ft_param;
         FT_Incremental_InterfaceRec *ft_inc_int = NULL;
         unsigned char *own_font_data = NULL;
+        FT_Stream ft_strm = NULL;
 
         /* dpf("get_scaled_font creating face\n"); */
 
         /* Load a typeface from a file. */
         if (a_font->font_file_path)
         {
+            stream *st;
+            FT_Open_Args args;
+
+            st = FF_open_read_stream ((gs_memory_t *)(s->ftmemory->user), (char *)a_font->font_file_path);
+            if (!st) {
+                return(e_VMerror);
+            }
+
+            ft_strm = (FT_Stream)FF_alloc(s->ftmemory, sizeof(FT_StreamRec));
+            if (!ft_strm) {
+                (void)sclose(st);
+                return(e_VMerror);
+            }
+
+            args.flags = FT_OPEN_STREAM;
+            args.stream = ft_strm;
+            args.stream->descriptor.pointer = st;
+            args.stream->read = FF_stream_read;
+            args.stream->close = FF_stream_close;
+            
+            ft_error = FT_Open_Face(s->freetype_library, &args, a_font->subfont, &ft_face);
+#if 0            
             ft_error = FT_New_Face(s->freetype_library, a_font->font_file_path, a_font->subfont, &ft_face);
+#endif
             if (!ft_error && ft_face)
                 ft_error = FT_Select_Charmap(ft_face, ft_encoding_unicode);
         }
@@ -1058,7 +1143,7 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
 
         if (ft_face)
         {
-            face = new_face(a_server, ft_face, ft_inc_int, own_font_data);
+            face = new_face(a_server, ft_face, ft_inc_int, ft_strm, own_font_data);
             if (!face)
             {
                 FF_free(s->ftmemory, own_font_data);
