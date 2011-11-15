@@ -378,7 +378,7 @@ set_linear_color_bits_mask_shift(gx_device * dev)
  * a value of zero then the bits associated with that colorant are zero.
  * These criteria allows the graphics library to build gx_color_index values
  * from the colorant values and not using the encode_color routine. This is
- * useful and necessary for overprinting, the WTS screeening, halftoning more
+ * useful and necessary for overprinting, halftoning more
  * than four colorants, and the fast shading logic.  However this information
  * is not setup by the default device macros.  Thus we attempt to derive this
  * information.

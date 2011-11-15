@@ -722,7 +722,7 @@ typedef struct gx_device_cached_colors_s {
         bool UseCIEColor;		/* for PS LL3 */\
         bool LockSafetyParams;		/* If true, prevent unsafe changes */\
         long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
-        long band_offset_y;		/* for rendering that is phase sensitive (wtsimdi) */\
+        long band_offset_y;		/* for rendering that is phase sensitive (old wtsimdi) */\
         gx_stroked_gradient_recognizer_t sgr;\
         int MaxPatternBitmap;		/* Threshold for switching to pattern_clist mode */\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\

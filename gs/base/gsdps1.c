@@ -211,8 +211,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
         (hl_color ||
          pdc->type == gx_dc_type_pure ||
          pdc->type == gx_dc_type_ht_binary ||
-         pdc->type == gx_dc_type_ht_colored
-         /* DeviceN todo: add wts case */) &&
+         pdc->type == gx_dc_type_ht_colored) &&
         gs_state_color_load(pgs) >= 0 &&
         (*dev_proc(pdev, get_alpha_bits)) (pdev, go_graphics)
         <= 1 &&

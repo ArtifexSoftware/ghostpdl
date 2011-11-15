@@ -21,7 +21,6 @@
 #include "gxdither.h"
 #include "gzht.h"
 #include "gxfrac.h"
-#include "gxwts.h"
 
 /*
  * Binary halftoning algorithms.
@@ -75,53 +74,6 @@ const gx_color_value *const fc_color_quo[8] = {
     q0, q1, q2, q3, q4, q5, q6, q7
 };
 
-/* Begin code for setting up WTS device color. This should probably
-   move into its own module. */
-
-/**
- * gx_render_device_DevN_wts: Render DeviceN color by halftoning with WTS.
- *
- * This routine is the primary constructor for WTS device colors.
- * Note that, in the WTS code path, we sample the plane_vector array
- * during device color construction, while in the legacy code path,
- * it is sampled in the set_ht_colors procedure, invoked from
- * fill_rectangle. Does it affect correctness? I don't think so, but
- * it needs to be tested.
- **/
-static int
-gx_render_device_DeviceN_wts(frac * pcolor,
-                             gx_device_color * pdevc, gx_device * dev,
-                             gx_device_halftone * pdht,
-                             const gs_int_point * ht_phase)
-{
-    int i;
-    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    int num_comp = pdht->num_comp;
-
-    for (i = 0; i < num_comp; i++) {
-        cv[i] = 0;
-    }
-
-    pdevc->type = gx_dc_type_wts;
-    pdevc->colors.wts.w_ht = pdht;
-
-    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN) {
-        /* Monochrome case may be inverted. */
-        pdevc->colors.wts.plane_vector[1] =
-            dev_proc(dev, encode_color)(dev, cv);
-    }
-    for (i = 0; i < num_comp; i++) {
-        pdevc->colors.wts.levels[i] = pcolor[i];
-        cv[i] = gx_max_color_value;
-        pdevc->colors.wts.plane_vector[i] =
-            dev_proc(dev, encode_color)(dev, cv);
-        cv[i] = 0;
-    }
-    pdevc->colors.wts.num_components = num_comp;
-    pdevc->phase = *ht_phase;
-    return 0;
-}
-
 /*
  * Render DeviceN possibly by halftoning.
  *  pcolors = pointer to an array color values (as fracs)
@@ -145,10 +97,6 @@ gx_render_device_DeviceN(frac * pcolor,
     int i;
     int num_colors = dev->color_info.num_components;
     uint l_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
-
-    if (pdht && pdht->components && pdht->components[0].corder.wts)
-        return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
-                                            ht_phase);
 
     for (i=0; i<num_colors; i++) {
         max_value[i] = (dev->color_info.gray_index == i) ?

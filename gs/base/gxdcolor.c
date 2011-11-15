@@ -182,7 +182,6 @@ static  const gx_device_color_type_t * dc_color_type_table[] = {
     gx_dc_type_pattern,         /* patterns */
     gx_dc_type_ht_binary,       /* binary halftone device colors */
     gx_dc_type_ht_colored,      /* general halftone device colors */
-    gx_dc_type_wts              /* well-tempered screen device colors */
 };
 
 int

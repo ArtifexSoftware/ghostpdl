@@ -22,7 +22,6 @@
 #include "gxbitmap.h"
 #include "gxhttile.h"
 #include "gxcindex.h"
-#include "gxwts.h"
 
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
@@ -290,14 +289,6 @@ struct gx_device_color_s {
 #endif
 #endif
         } colored;
-        struct _wts {
-            const gx_device_halftone *w_ht;
-            wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
-            ushort num_components;
-
-            /* plane_mask and base_color would be an optimization */
-            gx_color_index plane_vector[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        } wts;
         struct _pat {
             gx_color_tile *p_tile;
         } /*(colored) */ pattern;
@@ -385,9 +376,6 @@ struct gx_device_color_saved_s {
             uint    c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
             ushort  alpha;
         }               colored;
-        struct _swts {
-            wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        }               wts;
         struct _pattern {
             gs_id id;
             gs_int_point phase;
@@ -430,9 +418,6 @@ extern const gx_device_color_type_t *const gx_dc_type_ht_binary;	/* gxht.c */
 #endif
 #ifndef gx_dc_type_ht_colored
 extern const gx_device_color_type_t *const gx_dc_type_ht_colored;	/* gxcht.c */
-#endif
-#ifndef gx_dc_type_ht_colored
-extern const gx_device_color_type_t *const gx_dc_type_wts;	/* gxwts.c */
 #endif
 
 #endif /* gsdcolor_INCLUDED */

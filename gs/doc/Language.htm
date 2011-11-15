@@ -2181,31 +2181,6 @@ The reduced bytecode interpreter is based in part of the work of the
 The topological grid fitting is a new original Ghostscript method.
 </dl>
 
-<dl>
-<dt><code>UseWTS &lt;boolean&gt;</code>
-<dd>If <tt>true</tt>, and if AccurateScreens are specified (either as
-a user parameter, or as a type 1 halftone dictionary parameter), then
-the Well Tempered Screening algorithm is used for
-halftoning. Otherwise, a rational tangent algorithm is chosen, which
-will typically result in significant differences between the screen
-angle and ruling requested, and actually rendered. Currently, the
-performance of WTS is reasonably good when rendering to a full page
-buffer, but not optimized for banded mode. Thus, when using WTS,
-disable banding (setting
-<code>-dMaxBitmap=500000000</code> should work). In a future
-version, WTS will be optimized for banded mode, and
-<code>UseWTS</code> will be <tt>true</tt> by default.
-
-<p>
-<b>Note:</b> Currently, <code>UseWTS</code> can only be set using
-the PostScript user parameters mechanism, not on the command line with
-a <code>-d</code> switch. Use this code to enable it:
-
-<blockquote><pre>
-&lt;&lt; /UseWTS true &gt;&gt; setuserparams
-</pre></blockquote>
-</dl>
-
 <hr>
 
 <h2><a name="Miscellaneous_additions"></a>Miscellaneous additions</h2>

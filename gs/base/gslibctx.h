@@ -55,7 +55,6 @@ typedef struct gs_lib_ctx_s
     /* Define the default value of AccurateScreens that affects setscreen
        and setcolorscreen. */
     bool screen_accurate_screens;
-    bool screen_use_wts;
     uint screen_min_screen_levels;
     /* real time clock 'bias' value. Not strictly required, but some FTS
      * tests work better if realtime starts from 0 at boot time. */

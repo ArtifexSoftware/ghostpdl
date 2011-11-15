@@ -762,10 +762,10 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
 
         /*
          * Set the band_offset_? values in case the buffer device
-         * needs this. Example, wtsimdi device needs to adjust the
+         * needs this. Example, a device may need to adjust the
          * phase of the dithering based on the page position, NOT
          * the position within the band buffer to avoid band stitch
-         * lines in the dither pattern.
+         * lines in the dither pattern. The old wtsimdi device did this
          *
          * The band_offset_x is not important for placed pages that
          * are nested on a 'master' page (imposition) since each

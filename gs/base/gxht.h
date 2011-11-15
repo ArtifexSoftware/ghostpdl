@@ -210,12 +210,6 @@ extern_st(st_halftone);
 void gs_setaccuratescreens(gs_memory_t *, bool);
 bool gs_currentaccuratescreens(gs_memory_t *);
 
-/*
- * Set/get the value for UseWTS.
- */
-void gs_setusewts(gs_memory_t *, bool);
-bool gs_currentusewts(gs_memory_t *);
-
 /* Initiate screen sampling with optional AccurateScreens. */
 int gs_screen_init_memory(gs_screen_enum *, gs_state *,
                           gs_screen_halftone *, bool, gs_memory_t *);

@@ -23,7 +23,6 @@
 #include "gzstate.h"
 #include "gxdevice.h"           /* for gzht.h */
 #include "gzht.h"
-#include "gswts.h"
 #include "gxdhtres.h"
 #include "gsserial.h"
 #include "gxdhtserial.h"
@@ -46,12 +45,6 @@ typedef enum {
     gx_ht_tf_identity,
     gx_ht_tf_complete
 } gx_ht_tf_type_t;
-
-/* enumeration to distinguish well-tempered screening orders from others */
-typedef enum {
-    gx_ht_traditional,
-    gx_ht_wts
-} gx_ht_order_type_t;
 
 /*
  * Serialize a transfer function. These will occupy one byte if they are
@@ -146,33 +139,6 @@ gx_ht_read_tf(
     }
 }
 
-static int
-gx_ht_write_component_wts(const wts_screen_t *wts, byte *data, uint *psize)
-{
-    uint hdr_size = wts_size(wts);
-    uint cell_nsamples = wts->cell_width * wts->cell_height;
-    uint cell_size = cell_nsamples * sizeof(wts_screen_sample_t);
-    uint req_size = 1 + hdr_size + cell_size;
-
-    if (req_size > *psize) {
-        *psize = req_size;
-        return gs_error_rangecheck;
-    }
-
-    /* identify this as a wts halftone. */
-    *data++ = (byte)gx_ht_wts;
-
-    /* copy in wts header */
-    memcpy(data, wts, hdr_size);
-    ((wts_screen_t *)data)->samples = NULL;
-    data += hdr_size;
-
-    /* copy in treshold cell */
-    memcpy(data, wts->samples, cell_size);
-    *psize = req_size;
-    return 0;
-}
-
 /*
  * Serialize a halftone component. The only part that is serialized is the
  * halftone order; the other two components are only required during
@@ -210,19 +176,12 @@ gx_ht_write_component(
      * get the information from their color models).
      *
      * This leaves the order itself.
-     *
-     * Check if we are a well-tempered-screening order. Serialization of these
-     * is handled in a separate function.
      */
-    if (porder->wts != 0)
-        return gx_ht_write_component_wts(porder->wts, data, psize);
 
     /*
      * The following order fields are not transmitted:
      *
      *  params          Only required during halftone cell construction
-     *
-     *  wse, wts        Only used for well-tempered screens (see above)
      *
      *  raster          Can be re-calculated by the renderer from the width
      *
@@ -246,8 +205,7 @@ gx_ht_write_component(
      */
     levels_size = porder->num_levels * sizeof(porder->levels[0]);
     bits_size = porder->num_bits * porder->procs->bit_data_elt_size;
-    req_size =   1          /* gx_ht_type_t */
-               + enc_u_sizew(porder->width)
+    req_size =  enc_u_sizew(porder->width)
                + enc_u_sizew(porder->height)
                + enc_u_sizew(porder->shift)
                + enc_u_sizew(porder->num_levels)
@@ -263,9 +221,6 @@ gx_ht_write_component(
         *psize = req_size;
         return gs_error_rangecheck;
     }
-
-    /* identify this as a traditional halftone */
-    *data++ = (byte)gx_ht_traditional;
 
     /* write out the dimensional data */
     enc_u_putw(porder->width, data);
@@ -288,29 +243,6 @@ gx_ht_write_component(
     if ((code = gx_ht_write_tf(porder->transfer, data, &tmp_size)) == 0)
         *psize = tmp_size + (data - data0);
     return code;
-}
-
-static int
-gx_ht_read_component_wts(gx_ht_order_component *pcomp,
-                         const byte *data, uint size,
-                         gs_memory_t *mem)
-{
-    const wts_screen_t *ws = (const wts_screen_t *)data;
-    int hdr_size = wts_size(ws);
-    int cell_size = ws->cell_width * ws->cell_height *
-        sizeof(wts_screen_sample_t);
-    int bufsize = 1+hdr_size+cell_size;
-
-    memset(&pcomp->corder, 0, sizeof(pcomp->corder));
-
-    if (size < bufsize)
-        return -1;
-    pcomp->corder.wts = gs_wts_from_buf(data, bufsize);
-    pcomp->cname = 0;
-    if (pcomp->corder.wts == NULL)
-        return -1;
-
-    return bufsize;
 }
 
 /*
@@ -337,19 +269,12 @@ gx_ht_read_component(
     gx_ht_order             new_order;
     const byte *            data0 = data;
     const byte *            data_lim = data + size;
-    gx_ht_order_type_t      order_type;
     int                     i, code, levels_size, bits_size;
     const gx_dht_proc *     phtrp = gx_device_halftone_list;
 
     /* check the order type */
     if (size == 0)
         return_error(gs_error_rangecheck);
-    --size;
-    order_type = (gx_ht_order_type_t)*data++;
-
-    /* currently only the traditional halftone order are supported */
-    if (order_type != gx_ht_traditional)
-        return gx_ht_read_component_wts(pcomp, data, size, mem);
 
     /*
      * For performance reasons, the number encoding macros do not
@@ -386,8 +311,6 @@ gx_ht_read_component(
      * and allocates the levels and bit data arrays. In particular, it
      * sets all of the following fields:
      *
-     *    wse = 0,
-     *    wts = 0,
      *    width = operand width
      *    height = operand height
      *    raster = bitmap_raster(operand width)

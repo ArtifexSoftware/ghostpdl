@@ -954,17 +954,6 @@ set_OverrideICC(i_ctx_t *i_ctx_p, bool val)
     return 0;
 }
 static bool
-current_UseWTS(i_ctx_t *i_ctx_p)
-{
-    return gs_currentusewts(imemory);
-}
-static int
-set_UseWTS(i_ctx_t *i_ctx_p, bool val)
-{
-    gs_setusewts(imemory, val);
-    return 0;
-}
-static bool
 current_LockFilePermissions(i_ctx_t *i_ctx_p)
 {
     return i_ctx_p->LockFilePermissions;
@@ -992,7 +981,6 @@ set_RenderTTNotdef(i_ctx_t *i_ctx_p, bool val)
 static const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
-    {"UseWTS", current_UseWTS, set_UseWTS},
     {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions},
     {"RenderTTNotdef", current_RenderTTNotdef, set_RenderTTNotdef},
     {"OverrideICC", current_OverrideICC, set_OverrideICC},
