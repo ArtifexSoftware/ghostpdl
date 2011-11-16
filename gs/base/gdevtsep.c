@@ -1555,6 +1555,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     char name[MAX_FILE_NAME_SIZE];
     int base_filename_length = length_base_file_name(tfdev);
     int save_depth = pdev->color_info.depth;
+    int save_numcomps = pdev->color_info.num_components;
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int non_encodable_count = 0;
@@ -1629,12 +1630,14 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
         }
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
+        pdev->color_info.num_components = 1;
         if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
             return_error(gs_error_rangecheck);  /* this will overflow max_long */
 
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 8, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
+        pdev->color_info.num_components = save_numcomps;
         if (code < 0)
             return code;
     }
@@ -1729,6 +1732,7 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char name[MAX_FILE_NAME_SIZE];
     int save_depth = pdev->color_info.depth;
+    int save_numcomps = pdev->color_info.num_components;
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int non_encodable_count = 0;
@@ -1805,9 +1809,11 @@ tiffsep1_print_page(gx_device_printer * pdev, FILE * file)
         }
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
+        pdev->color_info.num_components = 1;
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 1, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
+        pdev->color_info.num_components = save_numcomps;
         if (code < 0)
             return code;
 

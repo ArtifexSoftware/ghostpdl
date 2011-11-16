@@ -367,6 +367,16 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
     TIFFSetField(tif, TIFFTAG_SUBFILETYPE, FILETYPE_PAGE);
     TIFFSetField(tif, TIFFTAG_PAGENUMBER, pdev->PageCount, 0);
 
+    /* Set the ICC profile.  Test to avoid issues with separations and also
+       if the color space is set to LAB, we do that as an enumerated type */
+    if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
+        cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
+        if (icc_profile->num_comps == pdev->color_info.num_components &&
+            icc_profile->data_cs != gsCIELAB) {
+            TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size, 
+                         icc_profile->buffer);
+        }
+    } 
     return 0;
 }
 
