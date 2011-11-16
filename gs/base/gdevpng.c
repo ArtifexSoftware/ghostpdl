@@ -604,8 +604,20 @@ do_png_print_page(gx_device_png * pdev, FILE * file, bool monod)
     info_ptr->valid |= valid;
     info_ptr->text = &text_png;
     info_ptr->num_text = 1;
+    /* Set up the ICC information */
+    if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
+        cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
+        /* PNG can only be RGB or gray.  No CIELAB :(  */
+        if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) { 
+            if (icc_profile->num_comps == pdev->color_info.num_components) {
+                info_ptr->iccp_name = icc_profile->name;
+                info_ptr->iccp_profile = icc_profile->buffer;
+                info_ptr->iccp_proflen = icc_profile->buffer_size;
+                info_ptr->valid |= PNG_INFO_iCCP;
+            }
+        }
+    } 
 #endif
-
     if (invert) {
         if (depth == 32)
             png_set_invert_alpha(png_ptr);
