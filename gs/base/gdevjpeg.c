@@ -436,14 +436,6 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     state.Markers.data = 0;
     state.Markers.size = 0;
     state.data.compress = jcdp;
-    /* Add in ICC profile */
-    state.icc_profile = NULL; /* In case it is not set here */
-    if (pdev->icc_struct != NULL && pdev->icc_struct->device_profile[0] != NULL) {
-        cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[0];
-        if (icc_profile->num_comps == pdev->color_info.num_components) {
-            state.icc_profile = icc_profile;
-        }
-    } 
     jcdp->memory = state.jpeg_memory = mem;
     if ((code = gs_jpeg_create_compress(&state)) < 0)
         goto fail;
@@ -542,4 +534,3 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gs_free_object(mem, in, "jpeg_print_page(in)");
     return code;
 }
-
