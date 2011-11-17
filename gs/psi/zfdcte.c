@@ -75,6 +75,7 @@ zDCTE(i_ctx_t *i_ctx_p)
     /* Make sure we get at least a full scan line of input. */
     state.scan_line_size = jcdp->cinfo.input_components *
         jcdp->cinfo.image_width;
+    state.icc_profile = NULL;
     jcdp->templat.min_in_size =
         max(s_DCTE_template.min_in_size, state.scan_line_size);
     /* Make sure we can write the user markers in a single go. */

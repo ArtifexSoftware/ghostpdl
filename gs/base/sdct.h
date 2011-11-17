@@ -19,6 +19,7 @@
 #  define sdct_INCLUDED
 
 #include "setjmp_.h"		/* for jmp_buf */
+#include "gscms.h"		
 
 /* ------ DCT filters ------ */
 
@@ -115,6 +116,10 @@ typedef struct stream_DCT_state_s {
         jpeg_compress_data *compress;
         jpeg_decompress_data *decompress;
     } data;
+    /* ICC Profile information */
+    cmm_profile_t *icc_profile;  /* This pointer is NOT in GC memory */
+    byte icc_marker;
+    ulong icc_position;
     /* DCTEncode sets this before initialization;
      * DCTDecode cannot set it until the JPEG headers are read.
      */
