@@ -23,6 +23,9 @@
 #include "sdct.h"
 #include "sjpeg.h"
 
+#define ICC_OVERHEAD  16		
+#define MAX_MARKER_DATA_SIZE  (65535 - ICC_OVERHEAD)
+
 public_st_jpeg_compress_data();
 
 /* ------ DCTEncode ------ */
@@ -69,6 +72,8 @@ s_DCTE_init(stream_state * st)
     ss->data.common->memory = ss->jpeg_memory;
     ss->data.compress->cinfo.dest = dest;
     ss->phase = 0;
+    ss->icc_marker = 0;
+    ss->icc_position = -1;
     return 0;
 }
 
@@ -128,7 +133,71 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
             dest->free_in_buffer = pw->limit - pw->ptr;
             ss->phase = 3;
             /* falls through */
-        case 3:		/* markers written, processing data */
+        case  3:     
+            /* If we have it, then write out the ICC profile */
+            /* Due to size limitations allowed in APP0 markers, the profile 
+               may have to be written in mutiple markers */
+	        if (ss->icc_profile != NULL) {
+		        static const char marker[2] = {0xFF, 0xE2};  /* JPEG_APP0 + 2 */
+                byte num_mark;
+
+                /* Number of markers */
+                num_mark = ss->icc_profile->buffer_size / MAX_MARKER_DATA_SIZE;
+                if (num_mark * MAX_MARKER_DATA_SIZE < ss->icc_profile->buffer_size) {
+                    num_mark++;
+                }
+		        while (ss->icc_marker < num_mark) {
+		            ulong offset = ss->icc_marker * MAX_MARKER_DATA_SIZE;
+		            ulong size;
+
+                    size = ss->icc_profile->buffer_size - offset;
+                    if (size > MAX_MARKER_DATA_SIZE)
+                      size = MAX_MARKER_DATA_SIZE;
+
+                    /* In this case we are just getting started with the 
+                       header of the marker.  Write that portion out */
+		            if (ss->icc_position == -1) {
+			            byte length_byte[2];
+			            byte curr_mark = ss->icc_marker + 1;
+			            ulong total_length;
+
+			            if ((uint) (pw->limit - pw->ptr) < (sizeof(marker) + ICC_OVERHEAD))
+		   	                return 1;
+			            total_length = size + ICC_OVERHEAD;
+			            memcpy(pw->ptr + 1, marker, sizeof(marker));
+			            length_byte[0] = total_length >> 8;
+			            length_byte[1] = total_length & 0xFF;
+			            memcpy(pw->ptr + 3, length_byte, sizeof(length_byte));
+			            memcpy(pw->ptr + 5, "ICC_PROFILE", 12); /* Null included */
+			            memcpy(pw->ptr + 17, &curr_mark, 1);
+			            memcpy(pw->ptr + 18, &num_mark, 1);
+			            pw->ptr += sizeof(marker) + ICC_OVERHEAD;
+			            ss->icc_position = 0;
+		            }
+                    /* Now write out the actual profile data */
+		            while (ss->icc_position < size) {
+			            ulong avail_bytes, num_bytes;
+
+			            avail_bytes = (ulong) (pw->limit - pw->ptr);
+			            if (avail_bytes == 0)
+			                return 1;
+			            num_bytes = (size - ss->icc_position);
+			            if (num_bytes > avail_bytes)
+			                num_bytes = avail_bytes;
+			            memcpy(pw->ptr + 1,  ss->icc_profile->buffer + offset + ss->icc_position, num_bytes);
+			            ss->icc_position += num_bytes;
+			            pw->ptr += num_bytes;
+		            }
+                    /* Move on to the next marker */
+		            ++ss->icc_marker;
+		            ss->icc_position = -1;
+	    	    }
+	            dest->next_output_byte = pw->ptr + 1;
+	            dest->free_in_buffer = pw->limit - pw->ptr;
+	        }
+	        ss->phase = 4;
+	        /* falls through */
+        case 4:		/* markers written, processing data */
             while (jcdp->cinfo.image_height > jcdp->cinfo.next_scanline) {
                 int written;
 
@@ -161,9 +230,9 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
                     return 1;	/* output full */
                 pr->ptr += ss->scan_line_size;
             }
-            ss->phase = 4;
+            ss->phase = 5;
             /* falls through */
-        case 4:		/* all data processed, finishing */
+        case 5:		/* all data processed, finishing */
             /* jpeg_finish_compress can't suspend, so write its output
              * to a fixed-size internal buffer.
              */
@@ -174,9 +243,9 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
             jcdp->fcb_size =
                 dest->next_output_byte - jcdp->finish_compress_buf;
             jcdp->fcb_pos = 0;
-            ss->phase = 5;
+            ss->phase = 6;
             /* falls through */
-        case 5:		/* copy the final data to the output */
+        case 6:		/* copy the final data to the output */
             if (jcdp->fcb_pos < jcdp->fcb_size) {
                 int count = min(jcdp->fcb_size - jcdp->fcb_pos,
                                 pw->limit - pw->ptr);
