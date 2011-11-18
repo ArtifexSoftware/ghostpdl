@@ -1008,6 +1008,8 @@ set_logical_page(
     pcur_paper->offset_landscape = pl_get_int16(plogpage->TopOffset) * 10;
 
     new_page_size(pcs, pcur_paper, false, false);
+    gs_erasepage(pcs->pgs);
+    pcs->page_marked = false;
     return 0;
 }
 
