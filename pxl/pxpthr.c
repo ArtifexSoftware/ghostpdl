@@ -34,6 +34,7 @@
 #include "pxpthr.h"
 #include "pxparse.h"
 #include "plfont.h"
+#include "pjtop.h"
 
 const byte apxPassthrough[] = {0, 0};
 
@@ -133,6 +134,18 @@ pxPassthrough_init(px_state_t *pxs)
     global_pcs->personality = 0;
     /* for now we do not support intepolation in XL passthrough mode. */
     global_pcs->interpolate = false;
+
+    {
+        char buf[100];
+        int ret;
+        stream_cursor_read r;
+        ret = sprintf(buf, "@PJL SET PAPERLENGTH = %d\n@PJL SET PAPERWIDTH = %d\n",
+                      (int)(pxs->media_dims.y * 10 + .5),
+                      (int)(pxs->media_dims.x * 10 + .5));
+        r.ptr = (byte *)buf - 1;
+        r.limit = (byte *)buf + ret - 1;
+        pjl_proc_process(pxs->pjls, &r);
+    }
 
     /* do an initial reset to set up a permanent reset.  The
        motivation here is to avoid tracking down a slew of memory
