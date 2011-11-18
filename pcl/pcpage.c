@@ -1255,6 +1255,7 @@ pcl_get_default_paper(
     /* restore default table values - this would only reset custom paper sizes */
     memcpy(pcs->ppaper_type_table, paper_types_proto, sizeof(paper_types_proto));
 
+    pcs->wide_a4 = false;
     if (*pwidth && *plength) {
         for (i = 0; i < pcl_paper_type_count; i++)
 	    if (!pjl_proc_compare(pcs->pjls, "custom", paper_sizes[i].pname)) {
@@ -1266,7 +1267,6 @@ pcl_get_default_paper(
 		return &(paper_sizes[i].psize);
 	    }
     }
-    pcs->wide_a4 = false;
     for (i = 0; i < pcl_paper_type_count; i++)
         if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
             /* set wide a4, only used if the paper is a4 */
