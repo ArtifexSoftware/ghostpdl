@@ -190,6 +190,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
     char tmp_path_copy[1024];
     char *tmp_pathp;
     bool found;
+    bool found_any = false;
     const char pattern[] = "*";
 
     if (pathname == NULL) {
@@ -319,19 +320,18 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                         }
                     }
                     found = true;
+                    found_any = true;
                 }
 
                 /* nothing found */
                 if (!found) {
-                   #ifdef DEBUG
-                   if (gs_debug_c('=')) {
-                       dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
-                       code = get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
-                       dprintf1("Windows name %s\n", buffer);
-                   }
-                   #endif
-                   continue;
-                } else {
+                    #ifdef DEBUG
+                    if (gs_debug_c('=')) {
+                        dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                        code = get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
+                        dprintf1("Windows name %s\n", buffer);
+                    }
+                    #endif
                     sfclose(in);
                 }
         }  /* next file */
@@ -340,7 +340,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
     if ( gs_debug_c('=') )
         check_resident_fonts(pfontdict, mem);
 #endif
-    return 1;
+    return found_any;
 }
 
 /* These are not implemented */
