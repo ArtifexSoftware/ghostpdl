@@ -128,3 +128,10 @@ pjl_proc_get_named_resource(pl_interp_instance_t *pli, char *name, byte *data)
     return ((pjl_implementation_t *)pli->interp->implementation)
         ->proc_get_named_resource(pli, name, data);
 }
+
+int
+pjl_proc_process(pl_interp_instance_t *pli, stream_cursor_read *pr)
+{
+    return ((pjl_implementation_t *)pli->interp->implementation)
+        ->proc_process(pli, pr);
+}

@@ -409,5 +409,6 @@ pjl_implementation_t pjl_implementation = {
   pjl_impl_register_permanent_soft_font_deletion,
   pjl_impl_register_permanent_soft_font_addition,
   pjl_impl_get_named_resource_size,
-  pjl_impl_get_named_resource
+  pjl_impl_get_named_resource,
+  pjl_impl_process
 };
