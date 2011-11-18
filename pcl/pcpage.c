@@ -439,7 +439,7 @@ new_logical_page(
 }
 
 
-#define paper_sizes pcs->ppaper_type_table
+#define PAPER_SIZES pcs->ppaper_type_table
 
 int
 pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdims)
@@ -452,7 +452,7 @@ pcl_new_logical_page_for_passthrough(pcl_state_t *pcs, int orient, gs_point *pdi
     bool found = false;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
-        psize = &(paper_sizes[i].psize);
+        psize = &(PAPER_SIZES[i].psize);
         if (psize->width == cp_width && psize->height == cp_height) {
             found = true;
             break;
@@ -639,8 +639,8 @@ set_page_size(
     pcl_home_cursor(pcs);
 
     for (i = 0; i < pcl_paper_type_count; i++) {
-        if (tag == paper_sizes[i].tag) {
-            psize = &(paper_sizes[i].psize);
+        if (tag == PAPER_SIZES[i].tag) {
+            psize = &(PAPER_SIZES[i].psize);
             break;
         }
     }
@@ -1031,8 +1031,8 @@ set_paper_width(
     pcl_paper_size_t          * psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
-        if (101 == paper_sizes[i].tag) {
-            psize = &(paper_sizes[i].psize);
+        if (101 == PAPER_SIZES[i].tag) {
+            psize = &(PAPER_SIZES[i].psize);
             found = true;
             break;
         }
@@ -1061,8 +1061,8 @@ set_paper_length(
     pcl_paper_size_t          * psize;
 
     for (i = 0; i < pcl_paper_type_count; i++) {
-        if (101 == paper_sizes[i].tag) {
-            psize = &(paper_sizes[i].psize);
+        if (101 == PAPER_SIZES[i].tag) {
+            psize = &(PAPER_SIZES[i].psize);
             break;
         }
     }
@@ -1258,24 +1258,24 @@ pcl_get_default_paper(
     pcs->wide_a4 = false;
     if (*pwidth && *plength) {
         for (i = 0; i < pcl_paper_type_count; i++)
-	    if (!pjl_proc_compare(pcs->pjls, "custom", paper_sizes[i].pname)) {
-	        paper_sizes[i].psize.width  = atol(pwidth)*10L;
-		paper_sizes[i].psize.height = atol(plength)*10L;
-		/* just a guess, values copied from letter entry in table paper_sizes */
-	        paper_sizes[i].psize.offset_portrait   = 75*24L;
-	        paper_sizes[i].psize.offset_landscape  = 60*24L;
-		return &(paper_sizes[i].psize);
+	    if (!pjl_proc_compare(pcs->pjls, "custom", PAPER_SIZES[i].pname)) {
+	        PAPER_SIZES[i].psize.width  = atol(pwidth)*10L;
+		PAPER_SIZES[i].psize.height = atol(plength)*10L;
+		/* just a guess, values copied from letter entry in table PAPER_SIZES */
+	        PAPER_SIZES[i].psize.offset_portrait   = 75*24L;
+	        PAPER_SIZES[i].psize.offset_landscape  = 60*24L;
+		return &(PAPER_SIZES[i].psize);
 	    }
     }
     for (i = 0; i < pcl_paper_type_count; i++)
-        if (!pjl_proc_compare(pcs->pjls, psize, paper_sizes[i].pname)) {
+        if (!pjl_proc_compare(pcs->pjls, psize, PAPER_SIZES[i].pname)) {
             /* set wide a4, only used if the paper is a4 */
             if (!pjl_proc_compare(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "widea4"), "YES"))
                 pcs->wide_a4 = true;
-            return &(paper_sizes[i].psize);
+            return &(PAPER_SIZES[i].psize);
         }
     dprintf("system does not support requested paper setting\n");
-    return &(paper_sizes[1].psize);
+    return &(PAPER_SIZES[1].psize);
 }
 
   static void
