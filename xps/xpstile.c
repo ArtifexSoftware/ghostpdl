@@ -308,6 +308,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_client_color gscolor;
         gs_color_space *cs;
         bool has_transparency = false;
+        bool sa;
 
         closure.ctx = ctx;
         closure.base_uri = base_uri;
@@ -372,10 +373,12 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_setcolorspace(ctx->pgs, cs);
         gsicc_profile_reference(cs->cmm_icc_profile_data, 1);
 
+        sa = gs_currentstrokeadjust(ctx->pgs);
+        gs_setstrokeadjust(ctx->pgs, false);
         gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
         gs_setpattern(ctx->pgs, &gscolor);
-
         xps_fill(ctx);
+        gs_setstrokeadjust(ctx->pgs, sa);
         gsicc_profile_reference(cs->cmm_icc_profile_data, -1);
 
         /* gs_makepattern increments the pattern count stored in the color
