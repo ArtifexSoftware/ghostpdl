@@ -103,6 +103,9 @@ long int pjl_proc_get_named_resource_size(pl_interp_instance_t *pli, char *name)
 typedef int (*pjl_proc_get_named_resource_t)(pl_interp_instance_t *pli, char *name, byte *data);
 int pjl_proc_get_named_resource(pl_interp_instance_t *pli, char *name, byte *data);
 
+typedef int (*pjl_proc_process_t)(pl_interp_instance_t *pli, stream_cursor_read *pr);
+int pjl_proc_process(pl_interp_instance_t *pli, stream_cursor_read *pr);
+
 /*
  * Define a generic interpreter implementation
  */
@@ -121,7 +124,7 @@ typedef struct pjl_implementation_s {
   pjl_proc_register_permanent_soft_font_addition_t proc_register_permanent_soft_font_addition;
   pjl_proc_get_named_resource_size_t       proc_get_named_resource_size;
   pjl_proc_get_named_resource_t            proc_get_named_resource;
-
+  pjl_proc_process_t                       proc_process;
 } pjl_implementation_t;
 
 #endif				/* pjtop_INCLUDED */
