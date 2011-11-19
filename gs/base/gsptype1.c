@@ -311,17 +311,18 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                 }
             } else if ((inst.templat.TilingType == 2) &&
                        ((pgs->fill_adjust.x | pgs->fill_adjust.y) == 0)) {
-                if (inst.step_matrix.xy == 0 && inst.step_matrix.yx == 0 &&
-                    fabs(fabs(inst.step_matrix.xx) - bbw) <= 0.5 &&
-                    fabs(fabs(inst.step_matrix.yy) - bbh) <= 0.5)
-                {
-                    gs_translate_untransformed(saved,
-                                               (bbw - inst.size.x)/2,
-                                               (bbh - inst.size.y)/2);
-                    code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
-                    if (code < 0)
-                        goto fsaved;
-                }
+                /* RJW: This codes with non-rotated cases (with or without a
+                 * skew), but won't cope with rotated ones. Find an example. */
+                float shiftx = ((inst.step_matrix.yx == 0 &&
+                                 fabs(fabs(inst.step_matrix.xx) - bbw) <= 0.5) ?
+                                (bbw - inst.size.x)/2 : 0);
+                float shifty = ((inst.step_matrix.xy == 0 &&
+                                 fabs(fabs(inst.step_matrix.yy) - bbh) <= 0.5) ?
+                                (bbh - inst.size.y)/2 : 0);
+                gs_translate_untransformed(saved, shiftx, shifty);
+                code = gs_bbox_transform(&inst.templat.BBox, &ctm_only(saved), &bbox);
+                if (code < 0)
+                    goto fsaved;
             }
         }
     }
