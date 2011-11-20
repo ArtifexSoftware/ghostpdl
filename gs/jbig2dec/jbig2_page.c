@@ -195,11 +195,11 @@ jbig2_end_of_stripe(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment
 int
 jbig2_complete_page (Jbig2Ctx *ctx)
 {
+    int code = 0;
 
     /* check for unfinished segments */
     if (ctx->segment_index != ctx->n_segments) {
       Jbig2Segment *segment = ctx->segments[ctx->segment_index];
-      int code = 0;
       /* Some versions of Xerox Workcentre generate PDF files
          with the segment data length field of the last segment
          set to -1. Try to cope with this here. */
@@ -213,9 +213,14 @@ jbig2_complete_page (Jbig2Ctx *ctx)
         ctx->segment_index++;
       }
     }
-    ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
 
-    return 0;
+    /* ensure image exists before marking page as complete */
+    if (ctx->pages[ctx->current_page].image != NULL)
+    {
+        ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
+    }
+
+    return code;
 }
 
 /**
