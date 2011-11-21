@@ -255,6 +255,95 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
             return code;
         }
     }
+
+    /* Grid fit: A common construction in postscript/PDF files is for images
+     * to be constructed as a series of 'stacked' 1 pixel high images.
+     * Furthermore, many of these are implemented as an imagemask plotted on
+     * top of thin rectangles. The different fill rules for images and line
+     * art produces problems; line art fills a pixel if any part of it is
+     * touched - images only fill a pixel if the centre of the pixel is
+     * covered. Bug 692666 is such a problem.
+     *
+     * As a workaround for this problem, the code below was introduced. The
+     * concept is that orthogonal images can be 'grid fitted' (or 'stretched')
+     * to entirely cover pixels that they touch. Initially I had this working
+     * for all images regardless of type, but as testing has proceeded, this
+     * showed more and more regressions, so I've cut the cases back in which
+     * this code is used until it now only triggers on imagemasks that are
+     * either 1 pixel high, or wide, and then not if we are rendering a
+     * glyph (such as from a type3 font).
+     */
+    if (pis != NULL && pis->is_gstate && ((gs_state *)pis)->show_gstate != NULL) {
+        /* If we're a graphics state, and we're in a text object, then we
+         * must be in a type3 font. Don't fiddle with it. */
+    } else if (!penum->masked || penum->image_parent_type != 0) {
+        /* We only grid fit for ImageMasks, currently */
+    } else if (pis != NULL && pis->fill_adjust.x == 0 && pis->fill_adjust.y == 0) {
+        /* If fill adjust is disabled, so is grid fitting */
+    } else if (mat.xy == 0 && mat.yx == 0) {
+        if (width == 1) {
+            if (mat.xx > 0) {
+                fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
+                double x1 = mat.tx + mat.xx * width;
+                fixed ix1 = int2fixed(fixed2int_ceiling(float2fixed(x1)));
+                mat.tx = (double)fixed2float(ix0);
+                mat.xx = (double)(fixed2float(ix1 - ix0)/width);
+            } else if (mat.xx < 0) {
+                fixed ix0 = int2fixed(fixed2int_ceiling(float2fixed(mat.tx)));
+                double x1 = mat.tx + mat.xx * width;
+                fixed ix1 = int2fixed(fixed2int(float2fixed(x1)));
+                mat.tx = (double)fixed2float(ix0);
+                mat.xx = (double)(fixed2float(ix1 - ix0)/width);
+            }
+        }
+        if (height == 1) {
+            if (mat.yy > 0) {
+                fixed iy0 = int2fixed(fixed2int(float2fixed(mat.ty)));
+                double y1 = mat.ty + mat.yy * height;
+                fixed iy1 = int2fixed(fixed2int_ceiling(float2fixed(y1)));
+                mat.ty = (double)fixed2float(iy0);
+                mat.yy = (double)(fixed2float(iy1 - iy0)/height);
+            } else if (mat.yy < 0) {
+                fixed iy0 = int2fixed(fixed2int_ceiling(float2fixed(mat.ty)));
+                double y1 = mat.ty + mat.yy * height;
+                fixed iy1 = int2fixed(fixed2int(float2fixed(y1)));
+                mat.ty = (double)fixed2float(iy0);
+                mat.yy = ((double)fixed2float(iy1 - iy0)/height);
+            }
+        }
+    } else if (mat.xx == 0 && mat.yy == 0) {
+        if (height == 1) {
+            if (mat.yx > 0) {
+                fixed ix0 = int2fixed(fixed2int(float2fixed(mat.tx)));
+                double x1 = mat.tx + mat.yx * height;
+                fixed ix1 = int2fixed(fixed2int_ceiling(float2fixed(x1)));
+                mat.tx = (double)fixed2float(ix0);
+                mat.yx = (double)(fixed2float(ix1 - ix0)/height);
+            } else if (mat.yx < 0) {
+                fixed ix0 = int2fixed(fixed2int_ceiling(float2fixed(mat.tx)));
+                double x1 = mat.tx + mat.yx * height;
+                fixed ix1 = int2fixed(fixed2int(float2fixed(x1)));
+                mat.tx = (double)fixed2float(ix0);
+                mat.yx = (double)(fixed2float(ix1 - ix0)/height);
+            }
+        }
+        if (width == 1) {
+            if (mat.xy > 0) {
+                fixed iy0 = int2fixed(fixed2int(float2fixed(mat.ty)));
+                double y1 = mat.ty + mat.xy * width;
+                fixed iy1 = int2fixed(fixed2int_ceiling(float2fixed(y1)));
+                mat.ty = (double)fixed2float(iy0);
+                mat.xy = (double)(fixed2float(iy1 - iy0)/width);
+            } else if (mat.xy < 0) {
+                fixed iy0 = int2fixed(fixed2int_ceiling(float2fixed(mat.ty)));
+                double y1 = mat.ty + mat.xy * width;
+                fixed iy1 = int2fixed(fixed2int(float2fixed(y1)));
+                mat.ty = (double)fixed2float(iy0);
+                mat.xy = ((double)fixed2float(iy1 - iy0)/width);
+            }
+        }
+    }
+
     /*penum->matrix = mat;*/
     penum->matrix.xx = mat.xx;
     penum->matrix.xy = mat.xy;
@@ -926,7 +1015,7 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                         memcpy(&(temp_buffer[k * num_src_comp]), psrc, num_src_comp);
                     }
                 } else {
-                    /* Use the index table dirctly. */
+                    /* Use the index table directly. */
                     gs_free_object(penum->memory, temp_buffer, "image_init_color_cache");
                     free_temp_buffer = false;
                     temp_buffer = penum->pcs->params.indexed.lookup.table.data;
