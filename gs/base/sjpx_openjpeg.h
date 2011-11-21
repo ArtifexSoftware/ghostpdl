@@ -41,6 +41,8 @@ typedef struct stream_jpxd_state_s
     const gs_memory_t *jpx_memory;
 	opj_dinfo_t *opj_dinfo_p;
 	opj_image_t *image;
+	int width, height, bpp;
+	bool samescale;
 
 	gs_jpx_cs colorspace;	/* requested output colorspace */
     bool alpha; /* return opacity channel */
@@ -49,10 +51,14 @@ typedef struct stream_jpxd_state_s
     unsigned long inbuf_size;
     unsigned long inbuf_fill;
 
-	unsigned long rowbytes; /* output row bytes */
 	unsigned long totalbytes; /* output total */
 	unsigned long out_offset; /* output bytes already returned previously */
-	unsigned long img_offset; /* offset in the image data buffer for each channel */
+	unsigned long img_offset; /* offset in the image data buffer for each channel, only used when output bpp%8 !=0 */
+
+	int **pdata; /* pointers to image data */
+	int out_numcomps; /* real number of channels to use */
+	int alpha_comp; /* input index of alpha channel */
+	int *sign_comps; /* compensate for signed data (signed => unsigned) */
 } stream_jpxd_state;
 
 extern const stream_template s_jpxd_template;

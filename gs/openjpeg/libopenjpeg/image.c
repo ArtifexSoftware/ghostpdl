@@ -58,6 +58,7 @@ opj_image_t* OPJ_CALLCONV opj_image_create(int numcmpts, opj_image_cmptparm_t *c
 			comp->prec = cmptparms[compno].prec;
 			comp->bpp = cmptparms[compno].bpp;
 			comp->sgnd = cmptparms[compno].sgnd;
+			comp->typ = 0;
 			comp->data = (int*) opj_calloc(comp->w * comp->h, sizeof(int));
 			if(!comp->data) {
 				fprintf(stderr,"Unable to allocate memory for image.\n");
