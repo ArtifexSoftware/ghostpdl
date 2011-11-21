@@ -1372,7 +1372,7 @@ static int cos_stream_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5
     if (!pco0->stream_md5_valid) {
         code = hash_cos_stream(pco0, (gs_md5_state_t *)&pco0->md5, (gs_md5_byte_t *)&pco0->stream_hash, pdev);
         if (code < 0)
-            return false;
+            return code;
         pcs0->stream_md5_valid = 1;
     }
     gs_md5_append(md5, (byte *)&pco0->stream_hash, sizeof(pco0->stream_hash));
@@ -1403,7 +1403,7 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
         return false;
     code = cos_dict_equal(pco0, pco1, pdev);
     if (code < 0)
-        return code;
+        return false;
     if (!code)
         return false;
     return true;
