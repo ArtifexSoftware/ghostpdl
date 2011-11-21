@@ -1463,7 +1463,7 @@ bool tcd_decode_tile(opj_tcd_t *tcd, unsigned char *src, int len, int tileno, op
 			for(j = res->y0; j < res->y1; ++j) {
 				for(i = res->x0; i < res->x1; ++i) {
 					float tmp = ((float*)tilec->data)[i - res->x0 + (j - res->y0) * tw];
-					int v = lrintf(tmp);
+					int v =  ((tmp>0.0f) ? (tmp + 0.5f):(tmp -0.5f));
 					v += adjust;
 					imagec->data[(i - offset_x) + (j - offset_y) * w] = int_clamp(v, min, max);
 				}

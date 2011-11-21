@@ -150,7 +150,10 @@ typedef enum COLOR_SPACE {
 	CLRSPC_UNSPECIFIED = 0, /**< not specified in the codestream */ 
 	CLRSPC_SRGB = 1,		/**< sRGB */
 	CLRSPC_GRAY = 2,		/**< grayscale */
-	CLRSPC_SYCC = 3			/**< YUV */
+	CLRSPC_SYCC = 3,		/**< YUV */
+	CLRSPC_CMYK = 4,		/* CMYK */
+	CLRSPC_ERGB = 5,		/* e-RGB */
+	CLRSPC_EYCC = 6 		/* e-YCC */
 } OPJ_COLOR_SPACE;
 
 /**
@@ -171,6 +174,16 @@ typedef enum LIMIT_DECODING {
 	LIMIT_TO_MAIN_HEADER = 1,		/**< The decoding is limited to the Main Header */
 	DECODE_ALL_BUT_PACKETS = 2	/**< Decode everything except the JPEG 2000 packets */
 } OPJ_LIMIT_DECODING;
+
+/**
+Supported component
+*/
+typedef enum COMP_TYPE {
+	CTYPE_COLOR = 0,			/* This component is regular color component */ 
+	CTYPE_OPACITY = 1,			/* 0-tranparent max-100% opaque */
+	CTYPE_PREM_OPACITY = 2,		/* Premultiplied opacity */
+	CTYPE_UNKNOWN = 0xffff		/* Unspecified */
+} OPJ_COMP_TYPE;
 
 /* 
 ==========================================================
@@ -532,6 +545,8 @@ typedef struct opj_image_comp {
 	int resno_decoded;
 	/** number of division by 2 of the out image compared to the original size of image */
 	int factor;
+	/** type of channel **/
+	unsigned short typ; /* component type COMP_TYE */
 	/** image component data */
 	int *data;
 } opj_image_comp_t;
@@ -558,6 +573,8 @@ typedef struct opj_image {
 	unsigned char *icc_profile_buf;
 	/** size of ICC profile */
 	int icc_profile_len;
+	/** whether it has palette  **/
+	bool has_palette;
 } opj_image_t;
 
 /**
@@ -834,7 +851,7 @@ Decode an image from a JPEG-2000 codestream
 @param cio Input buffer stream
 @return Returns a decoded image if successful, returns NULL otherwise
 */
-OPJ_API opj_image_t* OPJ_CALLCONV opj_decode(opj_dinfo_t *dinfo, opj_cio_t *cio);
+OPJ_API opj_image_t* OPJ_CALLCONV opj_decode(opj_dinfo_t *dinfo, opj_cio_t *cio, bool return_indexed);
 
 /**
 Decode an image from a JPEG-2000 codestream and extract the codestream information
@@ -843,7 +860,7 @@ Decode an image from a JPEG-2000 codestream and extract the codestream informati
 @param cstr_info Codestream information structure if needed afterwards, NULL otherwise
 @return Returns a decoded image if successful, returns NULL otherwise
 */
-OPJ_API opj_image_t* OPJ_CALLCONV opj_decode_with_info(opj_dinfo_t *dinfo, opj_cio_t *cio, opj_codestream_info_t *cstr_info);
+OPJ_API opj_image_t* OPJ_CALLCONV opj_decode_with_info(opj_dinfo_t *dinfo, opj_cio_t *cio, opj_codestream_info_t *cstr_info, bool return_indexed);
 /**
 Creates a J2K/JP2 compression structure
 @param format Coder to select

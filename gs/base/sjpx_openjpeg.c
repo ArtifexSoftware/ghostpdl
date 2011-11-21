@@ -48,82 +48,380 @@ s_opjd_init(stream_state * ss)
         state->jpx_memory = ss->memory->non_gc_memory;
     }
 
-	/* get a decoder handle */
-	state->opj_dinfo_p = opj_create_decompress(CODEC_JP2);
+    /* get a decoder handle */
+    state->opj_dinfo_p = opj_create_decompress(CODEC_JP2);
 
-	if (state->opj_dinfo_p == NULL)
-		return_error(gs_error_VMerror); 
+    if (state->opj_dinfo_p == NULL)
+            return_error(gs_error_VMerror);
 
-	/* catch events using our callbacks and give a local context */
-	//opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr);
+    /* catch events using our callbacks and give a local context */
+    //opj_set_event_mgr((opj_common_ptr)dinfo, &event_mgr, stderr);
 
-	/* set decoding parameters to default values */
-	opj_set_default_decoder_parameters(&parameters);
+    /* set decoding parameters to default values */
+    opj_set_default_decoder_parameters(&parameters);
 
-	/* setup the decoder decoding parameters using user parameters */
-	opj_setup_decoder(state->opj_dinfo_p, &parameters);
+    /* setup the decoder decoding parameters using user parameters */
+    opj_setup_decoder(state->opj_dinfo_p, &parameters);
 
-	state->image = NULL;
-	state->inbuf = NULL;
-	state->inbuf_size = 0;
-	state->inbuf_fill = 0;
-	state->out_offset = 0;
-	state->img_offset = 0;
+    state->image = NULL;
+    state->inbuf = NULL;
+    state->inbuf_size = 0;
+    state->inbuf_fill = 0;
+    state->out_offset = 0;
+    state->img_offset = 0;
+    state->pdata = NULL;
+    state->sign_comps = NULL;
 
     return 0;
 }
 
-/* convert state->image from YCrCb to RGBa */
+/* calculate the real component data idx after scaling */
+static inline unsigned long
+get_scaled_idx(stream_jpxd_state *state, int compno, unsigned long idx, unsigned long x, unsigned long y)
+{
+    if (state->samescale)
+	return idx;
+	
+    return (y/state->image->comps[compno].dy*state->width + x)/state->image->comps[compno].dx;
+}
+
+/* convert state->image from YCrCb to RGB */
 static int
 s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
 {
-	unsigned long image_size = state->image->comps[0].w*state->image->comps[0].h, idx;
-	unsigned int max_value = ~(-1 << state->image->comps[0].prec); /* maximum of channel value */
-	int flip_value = 1 << (state->image->comps[0].prec-1);
-	int p[3], q[3], i;
-	int sgnd[2];  /* Cr, Cb */
+    unsigned int max_value = ~(-1 << state->image->comps[0].prec); /* maximum of channel value */
+    int flip_value = 1 << (state->image->comps[0].prec-1);
+    int p[3], q[3], i;
+    int sgnd[2];  /* Cr, Cb */
+    unsigned long x, y, idx;
+    int *row_bufs[3];
 
-	if (state->image->numcomps != 3)
-        return -1;
+    if (state->out_numcomps != 3)
+    return -1;
 
-	for (i=0; i<2; i++)
-		sgnd[i] = state->image->comps[i+1].sgnd;
-   
-    for (idx = 0; idx < image_size; idx++) 
-	{
-        for (i = 0; i < 3; i++)
-			p[i] = state->image->comps[i].data[idx];
+    for (i=0; i<2; i++)
+        sgnd[i] = state->image->comps[i+1].sgnd;
 
-        if (!sgnd[0])
-            p[1] -= flip_value;
-        if (!sgnd[1])
-            p[2] -= flip_value;
+    for (i=0; i<3; i++)
+        row_bufs[i] = malloc(sizeof(int)*state->width);
 
-        /* rotate to RGB */
-#ifdef JPX_USE_IRT
-        q[1] = p[0] - ((p[1] + p[2])>>2);
-        q[0] = p[1] + q[1];
-        q[2] = p[2] + q[1];
-#else
-		q[0] = (int)((double)p[0] + 1.402 * p[2]);
-        q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-        q[2] = (int)((double)p[0] + 1.772 * p[1]);
-#endif
-        /* clamp */
-        for (i = 0; i < 3; i++){
-            if (q[i] < 0) q[i] = 0;
-            else if (q[i] > max_value) q[i] = max_value;
+    if (!row_bufs[0] || !row_bufs[1] || !row_bufs[2])
+        return_error(gs_error_VMerror);
+
+    idx=0;
+    for (y=0; y<state->height; y++)
+    {
+        /* backup one row. the real buffer might be overriden when there is scale */
+        for (i=0; i<3; i++)
+        {
+            if ((y % state->image->comps[i].dy) == 0) /* get the buffer once every dy rows */
+                memcpy(row_bufs[i], &(state->image->comps[i].data[get_scaled_idx(state, i, idx, 0, y)]), sizeof(int)*state->width/state->image->comps[i].dx);
         }
+        for (x=0; x<state->width; x++, idx++)
+        {
+            for (i = 0; i < 3; i++)
+                p[i] = row_bufs[i][x/state->image->comps[i].dx];
 
-        /* write out the pixel */
-        for (i = 0; i < 3; i++)
-            state->image->comps[i].data[idx] = q[i];
+            if (!sgnd[0])
+                p[1] -= flip_value;
+            if (!sgnd[1])
+                p[2] -= flip_value;
+
+            /* rotate to RGB */
+#ifdef JPX_USE_IRT
+            q[1] = p[0] - ((p[1] + p[2])>>2);
+            q[0] = p[1] + q[1];
+            q[2] = p[2] + q[1];
+#else
+            q[0] = (int)((double)p[0] + 1.402 * p[2]);
+            q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+            q[2] = (int)((double)p[0] + 1.772 * p[1]);
+#endif
+            /* clamp */
+            for (i = 0; i < 3; i++){
+                if (q[i] < 0) q[i] = 0;
+                else if (q[i] > max_value) q[i] = max_value;
+            }
+
+            /* write out the pixel */
+            for (i = 0; i < 3; i++)
+                state->image->comps[i].data[get_scaled_idx(state, i, idx, x, y)] = q[i];
+        }
+    }
+
+    for (i=0; i<3; i++)
+        free(row_bufs[i]);
+
+    return 0;
+}
+
+static int decode_image(stream_jpxd_state * const state)
+{
+    opj_cio_t *cio = NULL;
+    int numprimcomp = 0, alpha_comp = -1, compno;
+
+    /* open a byte stream */
+    cio = opj_cio_open((opj_common_ptr)state->opj_dinfo_p, state->inbuf, state->inbuf_fill);
+    if (cio == NULL)
+            return ERRC;
+
+    /* decode the stream and fill the image structure */
+    state->image = opj_decode(state->opj_dinfo_p, cio, state->colorspace == gs_jpx_cs_indexed);
+    if(state->image == NULL)
+    {
+        dlprintf("openjpeg: failed to decode image!\n");
+        opj_cio_close(cio);
+        return ERRC;
+    }
+
+    /* close the byte stream */
+    opj_cio_close(cio);
+
+    /* check dimension and prec */
+    if (state->image->numcomps == 0)
+            return ERRC;
+
+    state->width = state->image->comps[0].w;
+    state->height = state->image->comps[0].h;
+    state->bpp = state->image->comps[0].prec;
+    state->samescale = true;
+    for(compno = 1; compno < state->image->numcomps; compno++)
+    {
+        if (state->bpp != state->image->comps[compno].prec)
+            return ERRC; // Not supported.
+        if (state->width < state->image->comps[compno].w)
+            state->width = state->image->comps[compno].w;
+        if (state->height < state->image->comps[compno].h)
+            state->height = state->image->comps[compno].h;
+        if (state->image->comps[compno].dx != state->image->comps[0].dx ||
+                state->image->comps[compno].dy != state->image->comps[0].dy)
+            state->samescale = false;
+    }
+
+
+    /* find alpha component and regular color component by channel definition */
+    for(compno = 0; compno < state->image->numcomps; compno++)
+    {
+        if (state->image->comps[compno].typ == CTYPE_COLOR)
+            numprimcomp++;
+        else if (state->image->comps[compno].typ == CTYPE_OPACITY)
+            alpha_comp = compno;
+    }
+
+    /* color space and number of components */
+    switch(state->image->color_space)
+    {
+        case CLRSPC_GRAY:
+            state->colorspace = gs_jpx_cs_gray;
+            break;
+        case CLRSPC_CMYK:
+            state->colorspace = gs_jpx_cs_cmyk;
+            break;
+        case CLRSPC_UNKNOWN: /* make the best guess based on number of channels */
+        {
+            if (numprimcomp < 3)
+            {
+                state->colorspace = gs_jpx_cs_gray;
+            }
+            else if (numprimcomp == 4)
+            {
+                state->colorspace = gs_jpx_cs_cmyk;
+             }
+            else
+            {
+                state->colorspace = gs_jpx_cs_rgb;
+            }
+            break;
+        }
+        default: /* CLRSPC_SRGB, CLRSPC_SYCC, CLRSPC_ERGB, CLRSPC_EYCC */
+            state->colorspace = gs_jpx_cs_rgb;
+    }
+
+    state->alpha_comp = -1;
+    if (state->alpha)
+    {
+        state->alpha_comp = alpha_comp;
+        state->out_numcomps = 1;
+    }
+    else
+        state->out_numcomps = numprimcomp;
+
+    /* round up bpp to multiple of 8, eg 12->16 */
+    if ((state->colorspace != gs_jpx_cs_gray && !state->image->has_palette) || state->bpp>8)
+        state->bpp = (state->bpp+7)/8*8;
+
+    /* calculate  total data */
+    state->totalbytes = state->width*state->height*state->bpp*state->out_numcomps/8;
+
+    /* convert input from YCC to RGB */
+    if (state->image->color_space == CLRSPC_SYCC || state->image->color_space == CLRSPC_EYCC)
+        s_jpxd_ycc_to_rgb(state);
+
+    state->pdata = malloc(sizeof(int*)*state->image->numcomps);
+    if (!state->pdata)
+        return_error(gs_error_VMerror);
+
+    /* compensate for signed data (signed => unsigned) */
+    state->sign_comps = malloc(sizeof(int)*state->image->numcomps);
+    if (!state->sign_comps)
+        return_error(gs_error_VMerror);
+
+    for(compno = 0; compno < state->image->numcomps; compno++)
+    {
+        if (state->image->comps[compno].sgnd)
+            state->sign_comps[compno] = ((state->bpp%8)==0) ? 0x80 : (1<<(state->bpp-1));
+        else
+            state->sign_comps[compno] = 0;
     }
 
     return 0;
 }
 
-/* process a secton of the input and return any decoded data.
+static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_write * pw)
+{
+     /* read data from image to pw */
+     unsigned long out_size = pw->limit - pw->ptr;
+     int bytepp1 = state->bpp/8; /* bytes / pixel for one output component */
+     int bytepp = state->out_numcomps*state->bpp/8; /* bytes / pixel all compoments */
+     unsigned long write_size = min(out_size-(bytepp?(out_size%bytepp):0), state->totalbytes-state->out_offset);
+     unsigned long in_offset = state->out_offset*8/state->bpp/state->out_numcomps; /* component data offset */
+     int shift_bit = state->bpp-state->image->comps[0].prec; /*difference between input and output bit-depth*/
+     int img_numcomps = min(state->out_numcomps, state->image->numcomps), /* the actual number of channel data used */
+             compno;
+     unsigned long i; int b;
+     byte *pend = pw->ptr+write_size+1; /* end of write data */
+
+     if (state->bpp < 8)
+         in_offset = state->img_offset;
+
+     pw->ptr++;
+
+     if (state->alpha && state->alpha_comp == -1)
+     {/* return 0xff for all */
+         memset(pw->ptr, 0xff, write_size);
+         pw->ptr += write_size;
+     }
+     else if (state->samescale)
+     {
+         if (state->alpha)
+             state->pdata[0] = &(state->image->comps[state->alpha_comp].data[in_offset]);
+         else
+         {
+             for (compno=0; compno<img_numcomps; compno++)
+                 state->pdata[compno] = &(state->image->comps[compno].data[in_offset]);
+         }
+         if (shift_bit == 0 && state->bpp == 8) /* optimized for the most common case */
+         {
+             while (pw->ptr < pend)
+             {
+                 for (compno=0; compno<img_numcomps; compno++)
+                     *(pw->ptr++) = *(state->pdata[compno]++) + state->sign_comps[compno]; /* copy input buffer to output */
+             }
+         }
+         else
+         {
+             if ((state->bpp%8)==0)
+             {
+                 while (pw->ptr < pend)
+                 {
+                     for (compno=0; compno<img_numcomps; compno++)
+                     {
+                         for (b=0; b<bytepp1; b++)
+                             *(pw->ptr++) = (((*(state->pdata[compno]) << shift_bit) >> (8*(bytepp1-b-1))))
+                                                                         + (b==0 ? state->sign_comps[compno] : 0); /* split and shift input int to output bytes */
+                         state->pdata[compno]++; 
+                     }
+                 }
+             }
+             else
+             {   
+                 /* only grayscale can have such bit-depth, also shift_bit = 0, bpp < 8 */
+                 unsigned long image_total = state->width*state->height;
+                 while (pw->ptr < pend)
+                 {
+                     int bt=0;
+                     for (i=0; i<8/state->bpp; i++)
+                     {
+                         bt = bt<<state->bpp;
+                         if (state->img_offset < image_total && !(i!=0 && state->img_offset % state->width == 0))
+                         {
+                             bt += *(state->pdata[0]++) + state->sign_comps[0];
+                             state->img_offset++;
+                         }
+                      }
+                      *(pw->ptr++) = bt;
+                 }
+             }
+         }
+     }
+     else
+     {
+		 /* sampling required */
+         unsigned long y_offset = in_offset / state->width;
+         unsigned long x_offset = in_offset % state->width;
+         while (pw->ptr < pend)
+         {
+             if ((state->bpp%8)==0)
+             {
+                 if (state->alpha)
+                 {
+                     int in_offset_scaled = (y_offset/state->image->comps[state->alpha_comp].dy*state->width + x_offset)/state->image->comps[state->alpha_comp].dx;
+                     for (b=0; b<bytepp1; b++)
+                             *(pw->ptr++) = (((state->image->comps[state->alpha_comp].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
+                                                                     + (b==0 ? state->sign_comps[state->alpha_comp] : 0);
+                 }
+                 else
+                 {
+                     for (compno=0; compno<img_numcomps; compno++)
+                     {
+                         int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + x_offset)/state->image->comps[compno].dx;
+                         for (b=0; b<bytepp1; b++)
+                             *(pw->ptr++) = (((state->image->comps[compno].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
+                                                                             + (b==0 ? state->sign_comps[compno] : 0);
+                     }
+                 }
+                 x_offset++;
+                 if (x_offset >= state->width)
+                 {
+                     y_offset++;
+                     x_offset = 0;
+                 }
+             }
+             else
+             {
+                 unsigned long image_total = state->width*state->height;
+                 int compno = state->alpha ? state->alpha_comp : 0;
+                 /* only grayscale can have such bit-depth, also shift_bit = 0, bpp < 8 */
+                  int bt=0;
+                  for (i=0; i<8/state->bpp; i++)
+                  {
+                      bt = bt<<state->bpp;
+                      if (state->img_offset < image_total && !(i!=0 && state->img_offset % state->width == 0))
+                      {
+                          int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + x_offset)/state->image->comps[compno].dx;
+                          bt += state->image->comps[compno].data[in_offset_scaled] + state->sign_comps[compno];
+                          state->img_offset++;
+                          x_offset++;
+                          if (x_offset >= state->width)
+                          {
+                              y_offset++;
+                              x_offset = 0;
+                          }
+                      }
+                   }
+                  *(pw->ptr++) = bt;
+             }
+         }
+     }
+     state->out_offset += write_size;
+     pw->ptr--;
+     if (state->out_offset == state->totalbytes)
+         return EOFC; /* all data returned */
+     else
+         return 1; /* need more calls */
+ }
+
+/* process a section of the input and return any decoded data.
    see strimpl.h for return codes.
  */
 static int
@@ -131,106 +429,33 @@ s_opjd_process(stream_state * ss, stream_cursor_read * pr,
                  stream_cursor_write * pw, bool last)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
- 	opj_cio_t *cio = NULL;
-	int compno, w, h, prec, b;
-	long in_size = pr->limit - pr->ptr;
-	long out_size = pw->limit - pw->ptr;
+    long in_size = pr->limit - pr->ptr;
 
-	if (state->opj_dinfo_p == NULL)
-		return ERRC;
+    if (state->opj_dinfo_p == NULL)
+	return ERRC;
 
     if (in_size > 0) 
-	{
+    {
         /* buffer available data */
         s_opjd_accumulate_input(state, pr);
     }
 
     if (last == 1) 
-	{
-		if (state->image == NULL)
-		{
-			/* open a byte stream */
-			cio = opj_cio_open((opj_common_ptr)state->opj_dinfo_p, state->inbuf, state->inbuf_fill);
-			if (cio == NULL)
-				return ERRC;
+    {
+        if (state->image == NULL)
+        {
+            int ret = decode_image(state);
+            if (ret != 0)
+                return ret;
+        }
 
-			/* decode the stream and fill the image structure */
-			state->image = opj_decode(state->opj_dinfo_p, cio);
-			if(state->image == NULL) 
-			{
-				dlprintf("openjpeg: failed to decode image!\n");
-				opj_cio_close(cio);
-				return ERRC;
-			}
+        /* copy out available data */
+        return process_one_trunk(state, pw);
 
-			/* close the byte stream */
-			opj_cio_close(cio);
+    }
 
-			/* check dimension and prec */
-			if (state->image->numcomps == 0)
-				return ERRC;
-
-			w = state->image->comps[0].w;
-			h = state->image->comps[0].h;
-			prec = state->image->comps[0].prec;
-			for(compno = 1; compno < state->image->numcomps; compno++)
-			{
-				if (w != state->image->comps[compno].w || h != state->image->comps[compno].h 
-						|| prec != state->image->comps[compno].prec)
-						return ERRC; // To do: Add support for this.
-			}
-
-			/* round up prec to multiple of 8, eg 12->16 */
-			prec = (prec+7)/8*8;
-
-			/* calculate row byte and total data */
-			state->rowbytes = (w*prec*state->image->numcomps+7)/8;
-			state->totalbytes = state->rowbytes*h;
-
-			if (state->image->color_space == CLRSPC_SYCC)
-				s_jpxd_ycc_to_rgb(state);
-			else if (state->image->color_space == CLRSPC_GRAY)
-				state->colorspace = gs_jpx_cs_gray;
-		}
-
-		/* copy out available data */
-		w = state->image->comps[0].w;
-		h = state->image->comps[0].h;
-		prec = state->image->comps[0].prec;
-
-		/* round up prec to multiple of 8, eg 12->16 */
-		prec = (prec+7)/8*8;
-		
-		{
-			/* read data from image to outbuf */
-			int bytepp1 = prec/8, bytepp = state->image->numcomps*bytepp1;
-			unsigned long write_size = min(out_size-out_size%bytepp, state->totalbytes-state->out_offset);
-			unsigned long in_offset = state->out_offset / bytepp; /* component data offset */
-			byte *out_start = pw->ptr+1;
-			int shift_bit = prec-state->image->comps[0].prec;
-			unsigned long i; int byte;
-			pw->ptr++;
-			for (i=0; i<write_size;)
-			{
-				for (compno=0; compno<state->image->numcomps; compno++)
-				{
-					for (byte=0; byte<bytepp1; byte++)
-						*(pw->ptr++) = ((state->image->comps[compno].data[in_offset] << shift_bit) >> (8*(bytepp1-byte-1))) & 0xff;
-				}
-				state->out_offset += bytepp;
-				i+=bytepp;
-				in_offset ++;
-			}
-		}
-		pw->ptr--;
-		if (state->out_offset == state->totalbytes)
-			return EOFC; /* all data returned */
-		else
-			return 1; /* need more calls */
-	}
-
-	/* ask for more data */
-	return 0;
+    /* ask for more data */
+    return 0;
 }
 
 /* Set the defaults */
@@ -250,17 +475,23 @@ s_opjd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
- 	/* free image data structure */
-	if (state->image)
-		opj_image_destroy(state->image);
+    /* free image data structure */
+    if (state->image)
+        opj_image_destroy(state->image);
 		
-	/* free decoder handle */
-	if (state->opj_dinfo_p)
-		opj_destroy_decompress(state->opj_dinfo_p);
+    /* free decoder handle */
+    if (state->opj_dinfo_p)
+	opj_destroy_decompress(state->opj_dinfo_p);
 
-	/* free input buffer */
-	if (state->inbuf)
-		free(state->inbuf);
+    /* free input buffer */
+    if (state->inbuf)
+	free(state->inbuf);
+
+    if (state->pdata)
+	free(state->pdata);
+
+    if (state->sign_comps)
+	free(state->sign_comps);
 }
 
 
@@ -271,7 +502,7 @@ s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr)
 
     /* grow the input buffer if needed */
     if (state->inbuf_size < state->inbuf_fill + in_size) 
-	{
+    {
         unsigned char *new_buf;
         unsigned long new_size = state->inbuf_size==0 ? in_size : state->inbuf_size;
 
@@ -280,10 +511,10 @@ s_opjd_accumulate_input(stream_jpxd_state *state, stream_cursor_read * pr)
 
         if_debug1('s', "[s]opj growing input buffer to %lu bytes\n",
                 new_size);
-		if (state->inbuf == NULL)
-			new_buf = (byte *) malloc(new_size);
-		else
-			new_buf = (byte *) realloc(state->inbuf, new_size);
+	if (state->inbuf == NULL)
+            new_buf = (byte *) malloc(new_size);
+	else
+            new_buf = (byte *) realloc(state->inbuf, new_size);
         if (new_buf == NULL) return_error( gs_error_VMerror);
 
         state->inbuf = new_buf;
