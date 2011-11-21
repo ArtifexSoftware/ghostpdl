@@ -140,27 +140,6 @@ FF_free(FT_Memory memory, void* block)
  * file i/o. Most importantly, this gives Freetype direct access to
  * files in the romfs
  */
-static stream * FF_open_read_stream (gs_memory_t *mem, char *fname)
-{
-    int code = 0;
-    gs_parsed_file_name_t pfn;
-    stream *ps = (stream *)NULL;
-
-    code = gs_parse_file_name(&pfn, (const char *)fname, strlen(fname), mem);
-    if (code < 0)
-        return ((stream *)NULL);
-
-    if (pfn.fname != NULL) {
-        gx_io_device *const iodev = pfn.iodev;
-        iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
-
-        code = open_file(iodev, pfn.fname, pfn.len, "r", &ps, mem);
-        if (code < 0)
-            return ((stream *)NULL);
-    }
-    return(ps);
-}
-
 static FT_ULong FF_stream_read (FT_Stream str, unsigned long offset, unsigned char* buffer, unsigned long count)
 {
     stream *ps = (stream *)str->descriptor.pointer;
@@ -185,6 +164,54 @@ static void FF_stream_close (FT_Stream str)
 
     (void)sclose(ps);
 }
+static int FF_open_read_stream (gs_memory_t *mem, char *fname, FT_Stream *fts)
+{
+    int code = 0;
+    gs_parsed_file_name_t pfn;
+    stream *ps = (stream *)NULL;
+    long length;
+    FT_Stream ftstrm = NULL;
+
+    code = gs_parse_file_name(&pfn, (const char *)fname, strlen(fname), mem);
+    if (code < 0){
+        goto error_out;
+    }
+
+    if (pfn.fname != NULL) {
+        gx_io_device *const iodev = pfn.iodev;
+        iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
+
+        code = open_file(iodev, pfn.fname, pfn.len, "r", &ps, mem);
+        if (code < 0) {
+            goto error_out;
+        }
+    }
+
+    if ((code = savailable(ps, &length)) < 0){
+        goto error_out;
+    }
+
+    ftstrm = gs_malloc(mem, sizeof(FT_StreamRec), 1, "FF_open_read_stream");
+    if (!ftstrm){
+        code = e_VMerror;
+        goto error_out;
+    }
+    memset(ftstrm, 0x00, sizeof(FT_StreamRec));
+
+    ftstrm->descriptor.pointer = ps;
+    ftstrm->read = FF_stream_read;
+    ftstrm->close = FF_stream_close;
+    ftstrm->size = length;
+    *fts = ftstrm;
+
+error_out:
+    if (code < 0) {
+        if (ps) (void)sclose(ps);
+        if (ftstrm) gs_free(mem, ftstrm, 0, 0, "FF_open_read_stream");
+    }
+    return(code);
+}
+
 
 static FF_face *
 new_face(FAPI_server *a_server, FT_Face a_ft_face, FT_Incremental_InterfaceRec *a_ft_inc_int, FT_Stream ftstrm, unsigned char *a_font_data)
@@ -1039,30 +1066,21 @@ get_scaled_font(FAPI_server *a_server, FAPI_font *a_font,
         /* Load a typeface from a file. */
         if (a_font->font_file_path)
         {
-            stream *st;
             FT_Open_Args args;
+            int code;
 
-            st = FF_open_read_stream ((gs_memory_t *)(s->ftmemory->user), (char *)a_font->font_file_path);
-            if (!st) {
-                return(e_VMerror);
-            }
+            memset(&args, 0x00, sizeof(args));
 
-            ft_strm = (FT_Stream)FF_alloc(s->ftmemory, sizeof(FT_StreamRec));
-            if (!ft_strm) {
-                (void)sclose(st);
-                return(e_VMerror);
+            if ((code = FF_open_read_stream ((gs_memory_t *)(s->ftmemory->user),
+                        (char *)a_font->font_file_path, &ft_strm)) < 0){
+                return(code);
             }
 
             args.flags = FT_OPEN_STREAM;
             args.stream = ft_strm;
-            args.stream->descriptor.pointer = st;
-            args.stream->read = FF_stream_read;
-            args.stream->close = FF_stream_close;
-            
+
             ft_error = FT_Open_Face(s->freetype_library, &args, a_font->subfont, &ft_face);
-#if 0            
-            ft_error = FT_New_Face(s->freetype_library, a_font->font_file_path, a_font->subfont, &ft_face);
-#endif
+
             if (!ft_error && ft_face)
                 ft_error = FT_Select_Charmap(ft_face, ft_encoding_unicode);
         }
