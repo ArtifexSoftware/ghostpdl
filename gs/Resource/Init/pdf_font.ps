@@ -1068,23 +1068,20 @@ currentdict /eexec_pdf_param_dict .undef
                                           % Stack: filepos fontres cidfont
   } {
                                           % filepos fontres stream
-    1 index /Encoding knownoget {
-      dup /MacRomanEncoding eq exch /WinAnsiEncoding eq or {
-        //false  % => non-symbolic
-      } {
-        1 index /FontDescriptor oget /Flags oget
-        4 and 0 ne  % depending on the flag
-      } ifelse
+    1 index /FontDescriptor oget
+    /Flags oget 4 and 0 ne {
+       //true  %  symbolic
     } {
-      //true % no encoding => symbolic
+       1 index /Encoding oknown not  % no encoding => symbolic
     } ifelse
-  
-    dup {
-      //null
-    } {
+
+    2 index /Encoding oknown {
       StandardEncoding
       3 index getencoding
-    } ifelse                              % filepos fontres stream is_symbolic Encoding
+    } {
+      //null
+    } ifelse
+
     dup 4 index exch                      % filepos fontres stream is_symbolic Encoding fontres Encoding
     /prebuilt_encoding exch put           % filepos fontres stream is_symbolic Encoding
     .loadpdfttfont

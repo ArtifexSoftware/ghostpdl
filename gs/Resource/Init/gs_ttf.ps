@@ -1747,27 +1747,29 @@ currentdict /postalias undef
 /.pdfcharkeys {
         % The following algorithms are per the PDF 1.7 Reference.
   TTFDEBUG { (.pdfcharkeys beg) = } if
+
+  % if the flags say symbolic, *and* the font contains a symbol
+  % cmap table, ignore Encoding if there is one, treat as symbolic.
+  % If the flags say symbolic, and the font doesn't have a symbol cmap
+  % and we have an Encoding, treat it as non-symbolic
+  % if we don't have an Encoding, try the MacRoman cmap table.
+  % Finally, if none of that works, remove the Encoding, and treat it
+  % as non-symbolic.
   is_symbolic {
-    <00030000> .findcmap { //true } { <00010000> .findcmap } ifelse {
+    <00030000> .findcmap { //true } { prebuilt_encoding //null eq { <00010000> .findcmap}{//false}ifelse } ifelse {
       .pdfmapsymbolic
+      /prebuilt_encoding //null def
+      //false
     } {
-      % This is illegal with PDF spec.
-      (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1,3 Encoding=0.\n)
-      pdfformaterror
-      % Apply the default algorithm. Hopely it has 'post'.
-      .charkeys
-      % check if the CharStrings dict contains glyphs needed by the
-      % prebuilt_encoding otherwise try the 3,0 cmap.
-      prebuilt_encoding //null ne {
-        //false prebuilt_encoding {	% false means no missing glyphs
-          4 index exch known not { pop //true exit } if
-        } forall
-        {
-          (   **** Warning: Encoding derived from 'post' is incomplete.\n) pdfformaterror
-        } if
-      } if
+      /prebuilt_encoding //null def
+      //true
     } ifelse
   } {
+    //true
+  }
+  ifelse
+
+  {
     <00030001> .findcmap {
       prebuilt_encoding //null ne {
         TTFDEBUG { (Using cmap 3.1 with prebuilt_encoding for non-symbolic.) = } if
@@ -1823,7 +1825,7 @@ currentdict /postalias undef
         } if
       } ifelse
     } ifelse
-  } ifelse
+  } if
   TTFDEBUG { (.pdfcharkeys end) = } if
 } bind def
 
