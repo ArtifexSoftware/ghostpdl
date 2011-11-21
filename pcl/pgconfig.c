@@ -399,18 +399,18 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
         hpgl_args_setup(&args);
         if ( i != 0 )
           {
-            hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
-                              (int32)(rptxy[0] / 100.0));
-            hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
-                              (int32)(rptxy[1] / 100.0));
+            hpgl_args_add_int(&args, (int32) (win.p.x + (win.q.x - win.p.x) *
+                              rptxy[0] / 100.0));
+            hpgl_args_add_int(&args, (int32) (win.p.y + (win.q.y - win.p.y) *
+                              rptxy[1] / 100.0));
           }
         if ( i == 4 )
           {
-            hpgl_args_add_int(&args, win.p.x + (win.q.x - win.p.x) *
-                              (int32)(rptxy[2] / 100.0));
+            hpgl_args_add_int(&args, (int32) (win.p.x + (win.q.x - win.p.x) *
+                              rptxy[2] / 100.0));
 
-            hpgl_args_add_int(&args, win.p.y + (win.q.y - win.p.y) *
-                              (int32)(rptxy[3] / 100.0));
+            hpgl_args_add_int(&args, (int32) (win.p.y + (win.q.y - win.p.y) *
+                              rptxy[3] / 100.0));
           }
         hpgl_IP( &args, pgls );
         return 0;
