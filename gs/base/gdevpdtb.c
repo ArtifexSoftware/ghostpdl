@@ -71,7 +71,7 @@ static const pdf_base14_font_info_t base14_font_info[] = {
     {"NimbusMono-Reg",        "Courier"              },
     {"NimbusMono-Bol",        "Courier-Bold"         },
     {"NimbusMono-Ita",        "Courier-Oblique"      },
-    {"NimbusMono-BolIta",     "Courier-BoldItalic"   },
+    {"NimbusMono-BolIta",     "Courier-BoldOblique"   },
     {"NimbusSan-Reg",         "Helvetica"            },
     {"NimbusSan-Bol",         "Helvetica-Bold"       },
     {"NimbusSan-Ita",         "Helvetica-Oblique"    },
