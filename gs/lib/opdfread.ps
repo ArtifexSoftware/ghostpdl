@@ -2319,6 +2319,7 @@ end
                 % idiosyncratic fonts that start at 0xf000:
     pop
     /firstcode startc 0 getu16 16#ff00 and dup 16#f000 ne { pop 0 } if def
+    /striptopbyte false def
     /putglyph {
       glyphs code 3 -1 roll put /code code 1 add def
     } bind def
@@ -2328,14 +2329,20 @@ end
       /i2 exch def
       /scode startc i2 getu16 def
       /ecode endc i2 getu16 def
-      numcodes scode firstcode sub
-                % Hack for fonts that have only 0x0000 and 0xf000 ranges
-      %dup 16#e000 ge { 255 and } if
-      % the previous line is obstructive to CJK fonts, so it was removed
-      exch sub 0 .max ecode scode sub 1 add add
-      exch 1 index add exch
-      numcodes add /numcodes exch def
-    } for array def
+      ecode lastcode gt {
+        /lastcode ecode def
+      } if
+    } for pop
+    % If the glyph range is within 0x..00 to 0x..FF, make sure that we strip
+    % off any top bytes.
+    firstcode 16#f000 ge lastcode firstcode sub 255 le and {
+      lastcode 255 and
+      /striptopbyte true def
+    } {
+      lastcode
+    }ifelse
+    1 add
+    array def
     % prefill the array with 0's faster than a { 0 putglyph } repeat
     glyphs length 1024 ge {
       .array1024z 0 1024 glyphs length 1023 sub { glyphs exch 2 index putinterval } for
@@ -2365,9 +2372,19 @@ end
       } if
       idroff i2 getu16 dup 0 eq {
         pop scode delta add 65535 and 1 ecode delta add 65535 and
+        striptopbyte {
+          /code scode 255 and def
+        } {
+          /code scode def
+        } ifelse
         { putglyph } for
       } {       % The +2 is for the 'reserved pad'.
         /gloff exch 14 nseg2 3 mul add 2 add i2 add add def
+        striptopbyte {
+          /code scode 255 and def
+        } {
+          /code scode def
+        } ifelse
         0 1 ecode scode sub {
           2 mul gloff add etab exch getu16
           dup 0 ne { delta add 65535 and } if putglyph
