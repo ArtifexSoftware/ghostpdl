@@ -33,7 +33,7 @@
 #include "ipacked.h"
 #include "istruct.h"
 #include "store.h"
-
+#include "gsstate.h" /* for gs_currentcpsimode() */
 /* Structure descriptor and GC procedures for font_data */
 public_st_font_data();
 static
@@ -673,6 +673,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     gs_font *pfont;
     ref *pfid;
     ref *aop = dict_access_ref(op);
+    bool cpsi_mode = gs_currentcpsimode(imemory);
 
     get_font_name(imemory, &kname, op - 1);
     if (dict_find_string(op, "FontType", &pftype) <= 0 ||
@@ -691,11 +692,67 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     if (pencoding) {   /* observed Adobe behavior */
         int count = r_size(pencoding);
         int type = ftype ? t_name : t_integer;
+        bool fixit = false;
+
         while (count--) {
            ref r;
-           if (array_get(imemory, pencoding, count, &r) < 0 ||
-             !(r_has_type(&r, type) || r_has_type(&r, t_null)))
-               return_error(e_typecheck);
+           if ((code = array_get(imemory, pencoding, count, &r)) < 0 ||
+             !(r_has_type(&r, type) || r_has_type(&r, t_null))) {
+               if (!cpsi_mode && ftype == ft_user_defined) {
+                   if (code < 0 || r_has_type(&r, t_null)) {
+                       return_error(e_typecheck);
+                   }
+                   fixit = true;
+                   break;
+               }
+               else {
+                   return_error(e_typecheck);
+               }
+           }
+        }
+
+        /* For at least Type 3 fonts, Adobe Distiller will "fix" an Encoding array, as in, for example
+         * Bug 692681 where the arrays contain integers rather than names. Once the font is instantiated
+         * the integers have been converted to names.
+         * It is preferable to to this manipulation here, rather than in Postscript, because we are less
+         * restricted by read-only attributes and VM save levels.
+         */
+        if (fixit) {
+            ref penc;
+            uint size = 0;
+            char buf[32], *bptr;
+            avm_space curglob = ialloc_space(idmemory);
+            avm_space useglob = r_is_local(pencoding) ? avm_local : avm_global;
+
+            ialloc_set_space(idmemory, useglob);
+            
+            count = r_size(pencoding);
+            if ((code = ialloc_ref_array(&penc, (r_type_attrs(pencoding) & a_readonly), count, "build_gs_font")) < 0)
+                 return code;
+            
+            while (count--) {
+               ref r;
+               if (array_get(imemory, pencoding, count, &r) < 0){
+                   return_error(e_typecheck);
+               }
+               /* For type 3, we know the Encoding entries must be names */
+               if (r_has_type(&r, t_name)){
+                   ref_assign(&(penc.value.refs[count]), &r);
+               }
+               else {
+               
+                   if ((code = obj_cvs(imemory, &r, (byte *)buf, 32, &size, (const byte **)(&bptr))) < 0) {
+                       return(code);
+                   }
+                   if ((code = name_ref(imemory, (const byte *)bptr, size, &r, true)) < 0)
+                        return code;
+                   ref_assign(&(penc.value.refs[count]), &r);
+               }
+            }
+            
+            if ((code = dict_put_string(osp, "Encoding", &penc, NULL)) < 0)
+               return code;
+            ialloc_set_space(idmemory, curglob);
         }
     }
     if ((code = dict_int_param(op, "WMode", 0, 1, 0, &wmode)) < 0 ||
