@@ -890,8 +890,20 @@ currentdict end readonly def
     } if
     pop pop 3 index 3 index 2 copy                      % bw bh px0 py0 bw bh bw bh
     currentglobal false setglobal 3 1 roll              % bw bh px0 py0 bw bh bool bw bh
-    2 array astore                                      % bw bh px0 py0 bw bh bool []
-    << exch /PageSize exch >> setpagedevice             % bw bh px0 py0 bw bh bool
+    currentpagedevice dup /PageSize known {
+      /PageSize get aload pop                           % Get current page size
+    } {
+      0 0                                               % dummy page size values if not known
+    }ifelse
+                                                        % bw bh px0 py0 bw bh bool bw bh Width Height
+    round cvi 2 index round cvi                         % bw bh px0 py0 bw bh bool bw bh Width bool
+    exch round cvi 3 index round cvi eq and             % bw bh px0 py0 bw bh bool bw bh bool
+    {                                                   % Page Size unchanged, do not emit setpagedevice
+      pop pop                                           % bw bh px0 py0 bw bh bool
+    } {
+      2 array astore                                    % bw bh px0 py0 bw bh bool []
+      << exch /PageSize exch >> setpagedevice           % bw bh px0 py0 bw bh bool
+    } ifelse
     userdict /PDFR_InitialGS gstate put
     setglobal                                           % bw bh px0 py0 bw bh
   } if
