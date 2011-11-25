@@ -1905,7 +1905,26 @@ pdf_put_encoded_string_as_hex(const gx_device_pdf *pdev, const byte *str, uint s
                     oct += str[i+3] - 0x30;
                     i+=3;
                 } else {
-                    oct = str[++i];
+                    switch (str[++i]) {
+                        case 'b' :
+                            oct = 8;
+                            break;
+                        case 't' :
+                            oct = 9;
+                            break;
+                        case 'n' :
+                            oct = 10;
+                            break;
+                        case 'f' :
+                            oct = 12;
+                            break;
+                        case 'r' :
+                            oct = 13;
+                            break;
+                        default:
+                            oct = str[i];
+                            break;
+                    }
                 }
                 if (width > 252 && pdev->ForOPDFRead && pdev->ProduceDSC) {
                     stream_write(pdev->strm, "\n", 1);
