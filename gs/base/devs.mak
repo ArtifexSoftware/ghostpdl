@@ -810,7 +810,9 @@ $(DD)txtwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(txtwrite_) $(GDEV)\
 	$(SETDEV2) $(DD)txtwrite $(txtwrite_)
 
 $(GLOBJ)gdevtxtw.$(OBJ) : $(GLSRC)gdevtxtw.c $(GDEV)\
- $(math__h) $(memory__h) $(string__h) $(time__h)
+  $(memory__h) $(string__h) $(gp_h) $(gsparam_h) $(gsutil_h) \
+  $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
+  $(gxistate_h) $(gxpath_h) $(gdevagl_h)
 	$(GLCC) $(GLO_)gdevtxtw.$(OBJ) $(C_) $(GLSRC)gdevtxtw.c
 
 $(GLOBJ)gdevagl.$(OBJ) : $(GLSRC)gdevagl.c $(GDEV)\

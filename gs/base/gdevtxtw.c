@@ -13,6 +13,7 @@
 /*$Id: gdevtxtw.c 7795 2007-03-23 13:56:11Z tim $ */
 /* Device for Unicode (UTF-8 or UCS2) text extraction */
 #include "memory_.h"
+#include "string_.h"
 #include "gp.h"			/* for gp_file_name_sizeof */
 #include "gx.h"
 #include "gserrors.h"
@@ -25,8 +26,10 @@
 #include "gstext.h"
 #include "gxfcid.h"
 #include "gxistate.h"
+#include "gxpath.h"
 #include "gdevagl.h"
-#include "string.h"
+
+/* #define TRACE_TXTWRITE 1 */
 
 extern single_glyph_list_t *SingleGlyphList;
 extern double_glyph_list_t *DoubleGlyphList;
@@ -56,10 +59,9 @@ typedef struct txt_glyph_widths_s {
  * rendering mode, writing mode etc. These are stored as a series of x-ordered
  * entries in a list, using the starting x co-ordinate.
  */
-typedef struct text_list_entry_s text_list_entry_t;
 typedef struct text_list_entry_s {
-    text_list_entry_t *previous;
-    text_list_entry_t *next;
+    struct text_list_entry_s *previous;
+    struct text_list_entry_s *next;
 
     gs_point start;
     gs_point end;
@@ -76,19 +78,18 @@ typedef struct text_list_entry_s {
     int wmode;			/* WMode of font */
     double PaintType0Width;
     double size;
-};
+} text_list_entry_t;
 
 /* Structure to maintain a list of text fragments, ordered by X co-ordinate.
- * These strucutres are themselves maintained in a Y-ordered list.
+ * These structures are themselves maintained in a Y-ordered list.
  */
-typedef struct page_text_list_s page_text_list_t;
 typedef struct page_text_list_s {
-    page_text_list_t *previous;
-    page_text_list_t *next;
+    struct page_text_list_s *previous;
+    struct page_text_list_s *next;
     gs_point start;
     float MinY, MaxY;
     text_list_entry_t *x_ordered_list;
-};
+} page_text_list_t;
 
 /* A simple structure to maintain the lists of text fragments, it is also
  * a convenient place to record the page number and anything else we may
@@ -107,7 +108,7 @@ typedef struct gx_device_txtwrite_s {
     char fname[gp_file_name_sizeof];	/* OutputFile */
     FILE *file;
     int TextFormat;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     FILE *DebugFile;
 #endif
 } gx_device_txtwrite_t;
@@ -124,19 +125,8 @@ static dev_proc_output_page(txtwrite_output_page);
 static dev_proc_fill_rectangle(txtwrite_fill_rectangle);
 static dev_proc_get_params(txtwrite_get_params);
 static dev_proc_put_params(txtwrite_put_params);
-static dev_proc_copy_alpha(txtwrite_copy_alpha);
-static dev_proc_copy_mono(txtwrite_copy_mono);
-static dev_proc_copy_color(txtwrite_copy_color);
 static dev_proc_fill_path(txtwrite_fill_path);
 static dev_proc_stroke_path(txtwrite_stroke_path);
-static dev_proc_fill_mask(txtwrite_fill_mask);
-static dev_proc_fill_trapezoid(txtwrite_fill_trapezoid);
-static dev_proc_fill_parallelogram(txtwrite_fill_parallelogram);
-static dev_proc_fill_triangle(txtwrite_fill_triangle);
-static dev_proc_draw_thin_line(txtwrite_draw_thin_line);
-static dev_proc_strip_tile_rectangle(txtwrite_strip_tile_rectangle);
-static dev_proc_strip_copy_rop(txtwrite_strip_copy_rop);
-static dev_proc_begin_typed_image(txtwrite_begin_typed_image);
 static dev_proc_text_begin(txtwrite_text_begin);
 
 /* The device prototype */
@@ -248,7 +238,6 @@ static const gs_param_item_t txt_param_items[] = {
 static int
 txtwrite_open_device(gx_device * dev)
 {
-    int code;
     gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) dev;
 
     gx_device_fill_in_procs(dev);
@@ -258,7 +247,7 @@ txtwrite_open_device(gx_device * dev)
     tdev->PageData.PageNum = 0;
     tdev->PageData.y_ordered_list = NULL;
     tdev->file = NULL;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     tdev->DebugFile = fopen("/temp/txtw_dbg.txt", "wb+");
 #endif
     return 0;
@@ -273,7 +262,7 @@ txtwrite_close_device(gx_device * dev)
     if (tdev->file)
         code = gx_device_close_output_file(dev, tdev->fname, tdev->file);
 
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     fclose(tdev->DebugFile);
 #endif
     return code;
@@ -285,7 +274,7 @@ txtwrite_close_device(gx_device * dev)
  */
 static int merge_vertically(gx_device_txtwrite_t *tdev)
 {
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     text_list_entry_t *debug_x;
 #endif
     page_text_list_t *y_list = tdev->PageData.y_ordered_list;
@@ -297,7 +286,7 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
 
         if (overlap >= (y_list->MaxY - y_list->MinY) / 4) {
             /* At least a 25% overlap, lets test for x collisions */
-            text_list_entry_t *upper = y_list->x_ordered_list, *lower, *next_x;
+            text_list_entry_t *upper = y_list->x_ordered_list, *lower;
             while (upper && !collision) {
                 lower = next->x_ordered_list;
                 while (lower && !collision) {
@@ -319,11 +308,11 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                 upper = upper->next;
             }
             if (!collision) {
-                text_list_entry_t *from, *to, *new_order, *next_from, *next_to, *current;
+                text_list_entry_t *from, *to, *new_order, *current;
                 /* Consolidate y lists */
                 to = y_list->x_ordered_list;
                 from = next->x_ordered_list;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
                 fprintf(tdev->DebugFile, "\nConsolidating two horizontal lines, line 1:");
                 debug_x = from;
                 while (debug_x) {
@@ -368,7 +357,7 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
                     }
                 }
                 y_list->x_ordered_list = new_order;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
                 fprintf(tdev->DebugFile, "\nAfter:");
                 debug_x = new_order;
                 while (debug_x) {
@@ -397,10 +386,10 @@ static int merge_vertically(gx_device_txtwrite_t *tdev)
  */
 static int merge_horizontally(gx_device_txtwrite_t *tdev)
 {
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     text_list_entry_t *debug_x;
 #endif
-    unsigned short UnicodeSpace = 0x20, UnicodeTab = 0x09, BOM=0xFEFF, UnicodeEOL[2] = {0x00D, 0x0a}, u;
+    unsigned short UnicodeSpace = 0x20;
     page_text_list_t *y_list = tdev->PageData.y_ordered_list;
 
     while (y_list) {
@@ -428,7 +417,7 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                     from = from->next;
                     to = to->next;
                 } else {
-#if DEBUG
+#ifdef TRACE_TXTWRITE
                     fprintf(tdev->DebugFile, "Consolidating two horizontal fragments in one line, before:\n\t");
                     fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
                     fprintf(tdev->DebugFile, "\n\t");
@@ -446,7 +435,7 @@ static int merge_horizontally(gx_device_txtwrite_t *tdev)
                     from->Unicode_Text = NewText;
                     from->Unicode_Text_Size += to->Unicode_Text_Size;
                     from->Widths = NewWidths;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
                     fprintf(tdev->DebugFile, "After:\n\t");
                     fwrite(from->Unicode_Text, sizeof(unsigned short), from->Unicode_Text_Size, tdev->DebugFile);
 #endif
@@ -546,15 +535,14 @@ static int write_simple_text(unsigned short *text, int count, gx_device_txtwrite
 
 static int simple_text_output(gx_device_txtwrite_t *tdev)
 {
-    int code, chars_wide;
+    int chars_wide;
     float char_size, min_size, min_width_size;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     text_list_entry_t *debug_x;
 #endif
     text_list_entry_t * x_entry;
     page_text_list_t *y_list;
-    char PageNum[32], *p;
-    unsigned short UnicodeSpace = 0x20, UnicodeTab = 0x09, BOM=0xFEFF, UnicodeEOL[2] = {0x00D, 0x0a}, u;
+    unsigned short UnicodeSpace = 0x20, UnicodeEOL[2] = {0x00D, 0x0a};
 
     merge_vertically(tdev);
 
@@ -641,15 +629,12 @@ static int escaped_Unicode (unsigned short Unicode, char *Buf)
 
 static int decorated_text_output(gx_device_txtwrite_t *tdev)
 {
-    int code, i;
+    int i;
     text_list_entry_t * x_entry, *next_x;
-    unsigned short UnicodeEOL[2] = {0x00D, 0x0a};
     char TextBuffer[512], Escaped[32];
-    gs_font *base;
     float xpos;
-    unsigned short UnicodeSpace = 0x20;
     page_text_list_t *y_list;
-#if DEBUG
+#ifdef TRACE_TXTWRITE
     text_list_entry_t *debug_x;
 #endif
 
@@ -685,7 +670,7 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
         do {
             page_text_list_t *temp;
             page_text_t block;
-            page_text_list_t *block_line, *new_list_entry;
+            page_text_list_t *block_line;
             float BBox[4];
 
             memset(&block, 0x00, sizeof(page_text_t));
@@ -717,7 +702,7 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                                     if (y_list->next)
                                         y_list->next->previous = y_list->previous;
                                     else {
-                                        if (y_list->previous = 0x00) {
+                                        if (y_list->previous == 0x00) {
                                             tdev->PageData.y_ordered_list = 0x00;
                                         }
                                     }
@@ -753,7 +738,7 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                         if (y_list->next)
                             y_list->next->previous = y_list->previous;
                         else {
-                            if (y_list->previous = 0x00) {
+                            if (y_list->previous == 0x00) {
                                 tdev->PageData.y_ordered_list = 0x00;
                             }
                         }
@@ -1457,7 +1442,7 @@ get_missing_width(gs_font *font, int wmode, const gs_matrix *scale_c,
  * Return TEXT_PROCESS_CDEVPROC if a CDevProc callout is needed.
  * cdevproc_result != NULL if we restart after a CDevProc callout.
  */
-int
+static int
 txt_glyph_widths(gs_font *font, int wmode, gs_glyph glyph,
                  gs_font *orig_font, txt_glyph_widths_t *pwidths,
                  const double cdevproc_result[10])
@@ -1616,7 +1601,7 @@ txt_char_widths_to_uts(gs_font *font /* may be NULL for non-Type3 */,
 /* Simple routine to update the current point by the accumulated width of the
  * text.
  */
-int
+static int
 txt_shift_text_currentpoint(textw_text_enum_t *penum, gs_point *wpt)
 {
     gs_state *pgs;
@@ -1666,7 +1651,6 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
             }
         }
         if (unicode == GS_NO_CHAR) {
-            char *Glyph;
             int index = 0;
 
             /* Search glyph to single Unicode value table */
@@ -1751,25 +1735,22 @@ static int get_unicode(gs_font *font, gs_glyph glyph, gs_char ch, unsigned short
  * text rendering mode, writing mode, etc.
  */
 
-int txtwrite_process_cmap_text(gs_text_enum_t *pte)
+static int
+txtwrite_process_cmap_text(gs_text_enum_t *pte)
 {
     textw_text_enum_t *const penum = (textw_text_enum_t *)pte;
-    gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) pte->dev;
-    unsigned int unicode, rcode = 0;
+    unsigned int rcode = 0;
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
 
     /* Composite font using a CMap */
     for ( ; ; ) {
         gs_glyph glyph;
-        gs_glyph_info_t info;
         int font_code, font_index, code;
         gs_font *subfont;
         gs_char chr;
-        gs_matrix scale_c, scale_o;
-        gs_font_info_t finfo;
         txt_glyph_widths_t widths;
         gs_matrix m3;
-        gs_point did, wanted, tpt;	/* user space */
+        gs_point wanted;	/* user space */
         gs_point dpt = {0,0};
 
         font_code = scan.orig_font->procs.next_char_glyph
@@ -1838,24 +1819,19 @@ int txtwrite_process_cmap_text(gs_text_enum_t *pte)
     return rcode;
 }
 
-int txtwrite_process_plain_text(gs_text_enum_t *pte)
+static int
+txtwrite_process_plain_text(gs_text_enum_t *pte)
 {
     /* one byte regular font */
     textw_text_enum_t *const penum = (textw_text_enum_t *)pte;
-    gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) pte->dev;
-    uint size = pte->text.size - pte->index;
-    char *ptr;
     gs_font *font = pte->orig_font;
     const gs_glyph *gdata = NULL;
     gs_glyph glyph;
-    gs_const_string gnstr;
     gs_char ch;
-    unsigned int unicode;
     int i, code;
     uint operation = pte->text.operation;
     txt_glyph_widths_t widths;
-    gs_matrix m3;
-    gs_point did, wanted, tpt;	/* user space */
+    gs_point wanted;	/* user space */
     gs_point dpt = {0,0};
 
     for (i=0;i<pte->text.size;i++) {
@@ -1917,7 +1893,8 @@ int txtwrite_process_plain_text(gs_text_enum_t *pte)
  * properties, at least when outputting a simple representation. We won't
  * do this for languages which don't read left/right or right/left though.
  */
-int txt_add_sorted_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
+static int
+txt_add_sorted_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
 {
     if (!tdev->PageData.y_ordered_list) {
         /* first entry, no need to sort, just store it */
@@ -2009,7 +1986,8 @@ int txt_add_sorted_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum
     return 0;
 }
 
-int txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
+static int
+txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
 {
     text_list_entry_t *unsorted_entry, *t;
 
@@ -2083,19 +2061,14 @@ int txt_add_fragment(gx_device_txtwrite_t *tdev, textw_text_enum_t *penum)
  * because there are ways that regular text can be handled that aren't possible
  * with CIDFonts.
  */
-int
+static int
 textw_text_process(gs_text_enum_t *pte)
 {
     textw_text_enum_t *const penum = (textw_text_enum_t *)pte;
     gx_device_txtwrite_t *const tdev = (gx_device_txtwrite_t *) pte->dev;
-    uint operation = pte->text.operation;
-    uint size = pte->text.size - pte->index;
     gs_font *font = pte->orig_font;
     gs_font_base *font_base = (gs_font_base *)pte->current_font;
-    char *ptr;
-    unsigned short BOM=0xFEFF;
     int code = 0;
-    gs_state *pgs;
 
     if (!penum->TextBuffer) {
         /* We can get up to 4 Unicode points per glyph, and a glyph can be
