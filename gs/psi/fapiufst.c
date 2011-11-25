@@ -994,6 +994,7 @@ static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
     FAPI_retcode code = 0;
     bool use_XL_format = ff->is_mtx_skipped;
     int world_scale = 0;
+    FONT_METRICS fm;
     FSA_FROM_SERVER;
 
     if (ff->is_cid && ff->is_type1 && ff->font_file_path == NULL &&
@@ -1081,7 +1082,11 @@ static FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff,
     if (r->callback_error != 0)
         return r->callback_error;
 
-   return code;
+    code = CGIFfont_metrics(&fm);
+    if (r->callback_error != 0)
+        return r->callback_error;
+
+    return code;
 }
 
 static FAPI_retcode get_decodingID(FAPI_server *server, FAPI_font *ff, const char **decodingID_result)
