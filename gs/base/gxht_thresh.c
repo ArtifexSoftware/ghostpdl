@@ -953,19 +953,18 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             }
             if ((dest_width - offset_bits) > 0 ) {
                 /* Now the primary aligned bytes */
-                byte *curr_ptr = penum->ht_buffer;
                 int curr_width = dest_width - offset_bits;
                 int x_pos = fixed2int_var(xrun) + offset_bits;
-                if (offset_bits > 0) {
-                    curr_ptr += 2; /* If the first 2 bytes had the left part then increment */
-                }
+                /* FIXME: This assumes the allowed offset_bits will always be <= 16 */
+                int xoffs = offset_bits > 0 ? 16 : 0;
+
                 if (!is_planar_dev) {
-                    (*dev_proc(dev, copy_mono)) (dev, curr_ptr, 0, dithered_stride,
+                    (*dev_proc(dev, copy_mono)) (dev, penum->ht_buffer, xoffs, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
                                                  curr_width, vdi, dev_white, 
                                                  dev_black);
                 } else {
-                    (*dev_proc(dev, copy_planes)) (dev, curr_ptr, 0, dithered_stride,
+                    (*dev_proc(dev, copy_planes)) (dev, penum->ht_buffer, xoffs, dithered_stride,
                                                  gx_no_bitmap_id, x_pos, y_pos,
                                                  curr_width, vdi, vdi);
                 }
