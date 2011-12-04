@@ -2023,13 +2023,6 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
            int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
                       gx_color_index color, int depth)
 {
- /* Because of the way that alpha blending occurs in the pdf14 device,
-    we have to take care in doing the copy alpha operation.  We could
-    end up with some weird renderings if the blend mode is set to
-    something odd.  What we want is to go ahead and just do our own
-    blending here and now in the color planes and not mix up the
-    anti-aliasing blending with any of the transparency group blendings. */
-
     const byte *aa_row;
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
@@ -2037,7 +2030,6 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     byte *line, *dst_ptr;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES];
-    byte src_aa[PDF14_MAX_PLANES];
     gs_blend_mode_t blend_mode = pdev->blend_mode;
     bool additive = pdev->ctx->additive;
     int rowstride = buf->rowstride;
@@ -2058,8 +2050,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     byte src_alpha;
     int alpha2_aa, alpha_aa, sx;
     int alpha_aa_act;
-    byte *src_use;
-    byte white[PDF14_MAX_PLANES];
+    int xoff;
 
     if (buf->data == NULL)
         return 0;
@@ -2073,8 +2064,11 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
         shape = (byte)floor (255 * pdev->shape + 0.5);
     /* Limit the area we write to the bounding rectangle for this buffer */
     if (x < buf->rect.p.x) {
+        xoff = data_x + buf->rect.p.x - x;
         w += x - buf->rect.p.x;
         x = buf->rect.p.x;
+    } else {
+        xoff = data_x;
     }
     if (y < buf->rect.p.y) {
       h += y - buf->rect.p.y;
@@ -2089,14 +2083,9 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
 
-    memset(&(white[0]), 255, num_comp);
-    if (pdev->ctx->smask_depth > 0) {
-        memset(&(white[0]), 0, num_comp);
-    }
-
     for (j = 0; j < h; ++j, aa_row += aa_raster) {
         dst_ptr = line;
-        sx = data_x;
+        sx = xoff;
         for (i = 0; i < w; ++i, ++sx) {
             /* Complement the components for subtractive color spaces */
             if (additive) {
@@ -2114,32 +2103,23 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 alpha2_aa = aa_row[sx >> 1],
                 alpha_aa = (sx & 1 ? alpha2_aa & 0xf : alpha2_aa >> 4);
             }
-            /* Apply the alpha value if needed, updating our source color
-               Note that we probably could do this better */
-            if (!(alpha_aa == 0 || alpha_aa == 15)) {
-                if (dst[num_comp] == 0) {  /* nothing at destination yet */
+            if (alpha_aa != 0) {  /* This does happen */
+                if (!(alpha_aa == 15)) {
+                    /* We have an alpha value from aa */
                     alpha_aa_act =  (255 * alpha_aa) / 15;
-                    for (k = 0; k < num_comp; ++k) {
-                        src_aa[k] = (byte)(((float) alpha_aa_act * (float) src[k]
-                                 + (float) white[k] * (255.0 -  (float) alpha_aa_act))/255.0);
+                    if (src_alpha != 255) {
+                        /* Need to combine it with the existing alpha */
+                        int tmp = src_alpha * alpha_aa_act + 0x80;
+                        alpha_aa_act = (tmp + (tmp >> 8)) >> 8;
                     }
-                    src_use = &(src_aa[0]);
-                    src_aa[num_comp] = src_alpha;
+                    /* Set our source alpha value appropriately */
+                    src[num_comp] = alpha_aa_act;
                 } else {
-                    alpha_aa_act =  (255 * alpha_aa) / 15;
-                    for (k = 0; k < num_comp; ++k) {
-                        src_aa[k] = (byte)(((float) alpha_aa_act * (float) src[k]
-                                 + (float) dst[k] * (255.0 -  (float) alpha_aa_act))/255.0);
-                    }
-                    src_use = &(src_aa[0]);
-                    src_aa[num_comp] = src_alpha;
+                    /* We may have to reset this is it was changed as we
+                       moved across the row */
+                    src[num_comp] = src_alpha;
                 }
-            } else {
-                src_use = &(src[0]);
-            }
-            if (alpha_aa != 0) {
-                /* Then do what ever composing we need to do */
-                art_pdf_composite_pixel_alpha_8(dst, src_use, num_comp,
+                art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
                                              blend_mode, pdev->blend_procs);
                 /* Complement the results for subtractive color spaces */
                 if (additive) {
@@ -2162,7 +2142,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
                     }
                 }
                 if (has_alpha_g) {
-                    int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;
+                    int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src[num_comp]) + 0x80;
                     dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
                 }
                 if (has_shape) {
