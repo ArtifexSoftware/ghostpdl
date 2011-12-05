@@ -111,7 +111,7 @@ unsigned int gsicc_getprofilesize(unsigned char *buffer)
              (buffer[2] << 8)  +  buffer[3] );
 }
 
-static void gscms_set_icc_range(cmm_profile_t **icc_profile)
+void gscms_set_icc_range(cmm_profile_t **icc_profile)
 {
     int num_comp = (*icc_profile)->num_comps;
     int k;

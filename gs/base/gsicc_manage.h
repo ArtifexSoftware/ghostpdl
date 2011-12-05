@@ -103,6 +103,7 @@ gcmmhprofile_t gsicc_get_profile_handle_buffer(unsigned char *buffer,
 gsicc_smask_t* gsicc_new_iccsmask(gs_memory_t *memory);
 int gsicc_initialize_iccsmask(gsicc_manager_t *icc_manager);
 unsigned int gsicc_getprofilesize(unsigned char *buffer);
+void gscms_set_icc_range(cmm_profile_t **icc_profile);
 cmm_profile_t* gsicc_read_serial_icc(gx_device * dev, int64_t icc_hashcode);
 cmm_profile_t* gsicc_finddevicen(const gs_color_space *pcs,
                                  gsicc_manager_t *icc_manager);
