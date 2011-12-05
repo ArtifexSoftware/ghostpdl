@@ -2039,6 +2039,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
     bool has_tags = buf->has_tags;
+    bool knockout = buf->knockout;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
     int shape_off = num_chan * planestride;
@@ -2120,8 +2121,19 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
                        moved across the row */
                     src[num_comp] = src_alpha;
                 }
-                art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
-                                             blend_mode, pdev->blend_procs);
+                if (knockout) {
+                    if (has_shape) {
+                        art_pdf_composite_knockout_simple_8(dst,
+                            has_shape ? dst_ptr + shape_off : NULL,
+                            has_tags ? dst_ptr + tag_off : NULL,
+                            src, curr_tag, num_comp, 255);
+                    } else {
+                        art_pdf_knockoutisolated_group_8(dst, src, num_comp);
+                    }
+                } else {
+                    art_pdf_composite_pixel_alpha_8(dst, src, num_comp,
+                                                 blend_mode, pdev->blend_procs);
+                }
                 /* Complement the results for subtractive color spaces */
                 if (additive) {
                     for (k = 0; k < num_chan; ++k)
