@@ -1033,9 +1033,10 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
         gsicc_init_buffer(&output_buff_desc, num_des_comp, 1, false, false, false,
                           0, num_entries * num_des_comp,
                       1, num_entries);
-        gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
-                                    &output_buff_desc, (void*) temp_buffer,
-                                    (void*) penum->color_cache->device_contone);
+        (penum->icc_link->procs.map_buffer)(penum->dev, penum->icc_link, 
+                                            &input_buff_desc, &output_buff_desc, 
+                                            (void*) temp_buffer,
+                                            (void*) penum->color_cache->device_contone);
         /* Check if we need to apply any transfer functions.  If so then do it now */
         if (has_transfer) {
             for (k = 0; k < num_entries; k++) {

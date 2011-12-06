@@ -1,11 +1,12 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9.00"
 	Name="ghostscript"
 	ProjectGUID="{1EDA2AC3-D74F-4F4D-B4D6-AC05CC594A2F}"
 	RootNamespace="ghostscript"
 	Keyword="MakeFileProj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -39,9 +40,9 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Debug|x64"
-			OutputDirectory="debugobj64"
-			IntermediateDirectory="debugobj64"
+			Name="Release|Win32"
+			OutputDirectory="obj"
+			IntermediateDirectory="obj"
 			ConfigurationType="0"
 			>
 			<Tool
@@ -51,46 +52,6 @@
 				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
 				Output=""
 				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="obj"
-			IntermediateDirectory="obj"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;HAVE_SSE2=1"
-				IncludeSearchPath=""
-				ForcedIncludes=""
-				AssemblySearchPath=""
-				ForcedUsingAssemblies=""
-				CompileAsManaged=""
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|x64"
-			OutputDirectory="obj64"
-			IntermediateDirectory="obj64"
-			ConfigurationType="0"
-			>
-			<Tool
-				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean"
-				Output=""
-				PreprocessorDefinitions="WIN32;NDEBUG;"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -119,9 +80,29 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Profile|x64"
-			OutputDirectory="profobj64"
-			IntermediateDirectory="profobj64"
+			Name="Memento|Win32"
+			OutputDirectory="memobj"
+			IntermediateDirectory="memobj"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug|x64"
+			OutputDirectory="debugobj64"
+			IntermediateDirectory="debugobj64"
 			ConfigurationType="0"
 			>
 			<Tool
@@ -139,18 +120,38 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Memento|Win32"
-			OutputDirectory="memobj"
-			IntermediateDirectory="memobj"
+			Name="Release|x64"
+			OutputDirectory="obj64"
+			IntermediateDirectory="obj64"
 			ConfigurationType="0"
 			>
 			<Tool
 				Name="VCNMakeTool"
-				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
-				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
-				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= bsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
+				PreprocessorDefinitions="WIN32;NDEBUG;"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Profile|x64"
+			OutputDirectory="profobj64"
+			IntermediateDirectory="profobj64"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
+				Output=""
+				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
@@ -2130,6 +2131,10 @@
 						</File>
 						<File
 							RelativePath=".\base\gsicc_manage.c"
+							>
+						</File>
+						<File
+							RelativePath=".\base\gsicc_nocm.c"
 							>
 						</File>
 						<File

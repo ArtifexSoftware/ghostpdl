@@ -852,9 +852,9 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                           1, width_in);
             /* Do the transformation */
             psrc = (byte*) (stream_r.ptr + 1);
-            gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
-                                        &output_buff_desc, (void*) psrc,
-                                        (void*) p_cm_buff);
+            (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, &input_buff_desc,
+                                                &output_buff_desc, (void*) psrc,
+                                                (void*) p_cm_buff);
             /* Re-set the reading stream to use the cm data */
             stream_r.ptr = p_cm_buff - 1;
             stream_r.limit = stream_r.ptr + num_bytes_decode * width_in * spp_cm;
@@ -904,9 +904,11 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 } else {
                     /* Transform */
                     p_cm_interp = (unsigned short *) p_cm_buff;
-                    gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
-                                                &output_buff_desc, (void*) pinterp,
-                                                (void*) p_cm_interp);
+                    (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                                                        &input_buff_desc,
+                                                        &output_buff_desc, 
+                                                        (void*) pinterp,
+                                                        (void*) p_cm_interp);
                 }
                 for (x = xo; x < xe;) {
 #ifdef DEBUG

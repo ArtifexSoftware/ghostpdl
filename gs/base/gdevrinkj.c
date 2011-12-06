@@ -1087,9 +1087,8 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
                 if (cache[hash].key != color) {
 
                     /* 3 channel to CMYK */
-                    gscms_transform_color(rdev->icc_link, &cbuf,
-                        &(vbuf), 1, NULL);
-
+                    gscms_transform_color((gx_device *)rdev, rdev->icc_link, 
+                                          &cbuf, &(vbuf), 1, NULL);
                     cache[hash].key = color;
                     cache[hash].value = ((bits32 *)vbuf)[0];
 
@@ -1114,9 +1113,8 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
                     ((bits32 *)cbuf)[0] = color;
 
                     /* 4 channel to CMYK */
-                    gscms_transform_color(rdev->icc_link, &cbuf,
-                        &(vbuf), 1, NULL);
-
+                    gscms_transform_color((gx_device *)rdev, rdev->icc_link, 
+                                           &cbuf, &(vbuf), 1, NULL);
                     cache[hash].key = color;
                     cache[hash].value = ((bits32 *)vbuf)[0];
                 } else {
@@ -1147,9 +1145,8 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
                        code was still working with 4 to 4
                        conversion.  Replacing with new ICC AMP call */
 
-                    gscms_transform_color(rdev->icc_link, &cbuf,
-                        &(vbuf), 1, NULL);
-
+                    gscms_transform_color((gx_device *) rdev, rdev->icc_link, 
+                                          &cbuf, &(vbuf), 1, NULL);
                     cache[hash].key = color;
                     cache[hash].value = ((bits32 *)vbuf)[0];
                 } else {

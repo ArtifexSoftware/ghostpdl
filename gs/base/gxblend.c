@@ -194,9 +194,9 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
     }
 }
 
-void smask_icc(int num_rows, int num_cols, int n_chan, int row_stride,
-                 int plane_stride, byte *src, const byte *dst,
-                 gsicc_link_t *icclink)
+void smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan, 
+               int row_stride, int plane_stride, byte *src, const byte *dst,
+               gsicc_link_t *icclink)
 {
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
@@ -219,8 +219,8 @@ void smask_icc(int num_rows, int num_cols, int n_chan, int row_stride,
                   false, false, true, plane_stride,
                   row_stride, num_rows, num_cols);
     /* Transform the data */
-    gscms_transform_color_buffer(icclink, &input_buff_desc,
-                        &output_buff_desc, (void*) src, (void*) dst);
+    (icclink->procs.map_buffer)(dev, icclink, &input_buff_desc, &output_buff_desc, 
+                                (void*) src, (void*) dst);
 }
 
 void

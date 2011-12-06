@@ -930,7 +930,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                        does not need to worry about the cmap procs of
                        the target device.  Those are handled when we do
                        the pdf14 put image operation */
-                    gscms_transform_color_buffer(icc_link, &input_buff_desc,
+                    (icc_link->procs.map_buffer)(dev, icc_link, &input_buff_desc,
                                                  &output_buff_desc, tos->data,
                                                  new_data_buf);
                 }
@@ -1227,10 +1227,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     icc_link = gsicc_get_link_profile(pis, dev, des_profile,
                         src_profile, &rendering_params, pis->memory, false,
                         false);
-                    smask_icc(tos->rect.q.y - tos->rect.p.y ,
-                                        tos->rect.q.x - tos->rect.p.x,tos->n_chan,
-                                        tos->rowstride, tos->planestride,
-                                        tos->data, new_data_buf, icc_link);
+                    smask_icc(dev, tos->rect.q.y - tos->rect.p.y,
+                              tos->rect.q.x - tos->rect.p.x,tos->n_chan,
+                              tos->rowstride, tos->planestride,
+                              tos->data, new_data_buf, icc_link);
                     /* Release the link */
                     gsicc_release_link(icc_link);
                 }
