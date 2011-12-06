@@ -2297,7 +2297,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
     gx_path path_ttrans;
 
     if (pcpath != NULL) {
-        code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, ppath->memory);
+        code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, ppath->memory, 1);
         if (code < 0)
             return code;
     } else {

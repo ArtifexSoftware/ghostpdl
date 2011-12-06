@@ -590,7 +590,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
         gs_imager_state *pis_noconst = (gs_imager_state *)pis; /* Break const. */
 
         if (ppath != NULL) {
-            code = gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
+            code = gx_cpath_init_local_shared_nested(&cpath_intersection, pcpath, pdev->memory, 1);
             if (code < 0)
                 return code;
             if (pcpath == NULL) {
