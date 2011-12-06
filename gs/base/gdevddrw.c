@@ -1016,7 +1016,7 @@ gx_default_begin_typed_image(gx_device * dev,
         const gs_image_t *pim = (const gs_image_t *)pic;
 
         if (pmat == 0 ||
-            (pis != 0 && !memcmp(pmat, &ctm_only(pis), sizeof(*pmat)))
+            (pis != 0 && !gs_matrix_compare(pmat, &ctm_only(pis)))
             ) {
             int code = (*dev_proc(dev, begin_image))
             (dev, pis, pim, pim->format, prect, pdcolor,
