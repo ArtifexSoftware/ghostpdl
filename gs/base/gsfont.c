@@ -772,7 +772,7 @@ gs_find_font_by_id(gs_font_dir *pdir, gs_id id, gs_matrix *FontMatrix)
 
     for(; pfont != NULL; pfont = pfont->next)
         if(pfont->id == id &&
-            !memcmp(&pfont->FontMatrix, FontMatrix, sizeof(pfont->FontMatrix)))
+            !gs_matrix_compare(&pfont->FontMatrix, FontMatrix))
             return pfont;
     return NULL;
  }

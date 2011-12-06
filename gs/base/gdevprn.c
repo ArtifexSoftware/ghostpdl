@@ -60,8 +60,6 @@ int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev,
 
 extern dev_proc_open_device(pattern_clist_open_device);
 
-int compare_gdev_prn_space_params(gdev_prn_space_params sp1, gdev_prn_space_params sp2);
-
 /* ------ Open/close ------ */
 
 /* Open a generic printer device. */
@@ -1282,9 +1280,9 @@ gdev_prn_close_printer(gx_device * pdev)
 }
 
 /* compare two space_params, we can't do this with memcmp since there is padding in the structure */
-int
-compare_gdev_prn_space_params(gdev_prn_space_params sp1, 
-                              gdev_prn_space_params sp2) {
+static int
+compare_gdev_prn_space_params(const gdev_prn_space_params sp1, 
+                              const gdev_prn_space_params sp2) {
   if (sp1.MaxBitmap != sp2.MaxBitmap)
     return(1);
   if (sp1.BufferSpace != sp2.BufferSpace)

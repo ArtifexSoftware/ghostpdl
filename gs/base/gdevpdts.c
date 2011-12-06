@@ -475,7 +475,7 @@ sync_text_state(gx_device_pdf *pdev)
             return code;
     }
 
-    if (memcmp(&pts->in.matrix, &pts->out.matrix, sizeof(pts->in.matrix)) ||
+    if (gs_matrix_compare(&pts->in.matrix, &pts->out.matrix) ||
          ((pts->start.x != pts->out_pos.x || pts->start.y != pts->out_pos.y) &&
           (pts->buffer.count_chars != 0 || pts->buffer.count_moves != 0))) {
         /* pdf_set_text_matrix sets out.matrix = in.matrix */
@@ -571,8 +571,7 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
             pts->in.render_mode == ptsv->render_mode &&
             pts->in.word_spacing == ptsv->word_spacing
             ) {
-            if (!memcmp(&pts->in.matrix, &ptsv->matrix,
-                sizeof(pts->in.matrix)))
+            if (!gs_matrix_compare(&pts->in.matrix, &ptsv->matrix))
                 return 0;
             /* add_text_delta_move sets pts->in.matrix if successful */
             code = add_text_delta_move(pdev, &ptsv->matrix);

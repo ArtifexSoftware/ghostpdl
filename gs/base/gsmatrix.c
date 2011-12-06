@@ -696,3 +696,23 @@ sget_matrix(stream *s, gs_matrix *pmat)
     pmat->ty = coeff[5];
     return 0;
 }
+
+/* Compare two matrices */
+int
+gs_matrix_compare(const gs_matrix *pmat1, const gs_matrix *pmat2) {
+  if (pmat1->xx != pmat2->xx)
+    return(1);
+  if (pmat1->xy != pmat2->xy)
+    return(1);
+  if (pmat1->yx != pmat2->yx)
+    return(1);
+  if (pmat1->yy != pmat2->yy)
+    return(1);
+  if (pmat1->tx != pmat2->tx)
+    return(1);
+  if (pmat1->ty != pmat2->ty)
+    return(1);
+  return(0);
+}
+
+
