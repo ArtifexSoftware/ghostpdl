@@ -667,6 +667,28 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
     return code;
 }
 
+static int
+compare_equivalent_cmyk_color_params(const equivalent_cmyk_color_params *pequiv_colors1, const equivalent_cmyk_color_params *pequiv_colors2)
+{
+  int i;
+  if (pequiv_colors1->all_color_info_valid != pequiv_colors2->all_color_info_valid)
+    return(1);
+  for (i=0;  i<GX_DEVICE_MAX_SEPARATIONS;  i++) {
+    if (pequiv_colors1->color[i].color_info_valid != pequiv_colors2->color[i].color_info_valid)
+      return(1);
+    if (pequiv_colors1->color[i].c                != pequiv_colors2->color[i].c               )
+      return(1);
+    if (pequiv_colors1->color[i].m                != pequiv_colors2->color[i].m               )
+      return(1);
+    if (pequiv_colors1->color[i].y                != pequiv_colors2->color[i].y               )
+      return(1);
+    if (pequiv_colors1->color[i].k                != pequiv_colors2->color[i].k               )
+      return(1);
+  }
+  return(0);
+}
+
+
 /*
  * Utility routine for handling DeviceN related parameters in a
  * standard raster printer type device.
@@ -705,8 +727,7 @@ devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
         memcmp(pdevn_params, &saved_devn_params,
                                         sizeof(gs_devn_params)) ||
         (pequiv_colors != NULL &&
-            memcmp(pequiv_colors, &saved_equiv_colors,
-                                sizeof(equivalent_cmyk_color_params)))) {
+            compare_equivalent_cmyk_color_params(pequiv_colors, &saved_equiv_colors))) {
         gs_closedevice(pdev);
         /* Reset the sparable and linear shift, masks, bits. */
         set_linear_color_bits_mask_shift(pdev);

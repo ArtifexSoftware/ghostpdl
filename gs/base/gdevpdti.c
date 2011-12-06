@@ -889,8 +889,7 @@ pdf_is_charproc_compatible(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_reso
                 continue; /* Need same Encoding to generate a proper ToUnicode. */
             if (pdfont->u.simple.s.type3.bitmap_font != pcpo->font->u.simple.s.type3.bitmap_font)
                 continue;
-            if (memcmp(&pdfont->u.simple.s.type3.FontMatrix, &pcpo->font->u.simple.s.type3.FontMatrix,
-                        sizeof(pdfont->u.simple.s.type3.FontMatrix)))
+            if (gs_matrix_compare(&pdfont->u.simple.s.type3.FontMatrix, &pcpo->font->u.simple.s.type3.FontMatrix))
                 continue;
             if (data->cgp != NULL) {
                 if (!pdf_check_encoding_compatibility(pcpo->font, data->cgp->s, data->cgp->num_all_chars))

@@ -20,6 +20,9 @@
 /* See p. 65 of the PostScript manual for the semantics of */
 /* transformation matrices. */
 
+/* if you make any additions/changes to the gs_matrix_s structure or the
+   _matrix_body macro you need to make the appropriate additions/changes 
+   to the gs_matrix_compare() function in gsmatrix.c */
 /* Structure for a transformation matrix. */
 #define _matrix_body\
   float xx, xy, yx, yy, tx, ty
@@ -67,6 +70,9 @@ int gs_matrix_multiply(const gs_matrix *, const gs_matrix *, gs_matrix *),
     gs_matrix_translate(const gs_matrix *, floatp, floatp, gs_matrix *),
     gs_matrix_scale(const gs_matrix *, floatp, floatp, gs_matrix *),
     gs_matrix_rotate(const gs_matrix *, floatp, gs_matrix *);
+
+/* Matrix comparison */
+int gs_matrix_compare(const gs_matrix *, const gs_matrix *);
 
 /* Coordinate transformation */
 int gs_point_transform(floatp, floatp, const gs_matrix *, gs_point *),
