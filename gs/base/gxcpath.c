@@ -209,11 +209,14 @@ gx_cpath_alloc_shared(const gx_clip_path * shared, gs_memory_t * mem,
 
 /* Initialize a stack-allocated clipping path. */
 int
-gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
-                           gs_memory_t * mem)
+gx_cpath_init_local_shared_nested(gx_clip_path * pcpath,
+                            const gx_clip_path * shared,
+                                  gs_memory_t  * mem,
+                                  bool           safely_nested)
 {
     if (shared) {
-        if (shared->path.segments == &shared->path.local_segments) {
+        if ((shared->path.segments == &shared->path.local_segments) &&
+            !safely_nested) {
             lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
                      (ulong) shared);
             return_error(gs_error_Fatal);
@@ -234,6 +237,13 @@ gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
         cpath_init_own_contents(pcpath);
     }
     return 0;
+}
+
+int
+gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
+                           gs_memory_t * mem)
+{
+    return gx_cpath_init_local_shared_nested(pcpath, shared, mem, 0);
 }
 
 /* Unshare a clipping path. */

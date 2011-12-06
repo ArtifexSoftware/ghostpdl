@@ -317,6 +317,15 @@ int gx_cpath_init_contained_shared(gx_clip_path * pcpath,
 int gx_cpath_init_local_shared(gx_clip_path * pcpath,
                                const gx_clip_path * shared,
                                gs_memory_t * mem);
+/* Function that informs us that the usage of this cpath will be
+ * safely nested within the existence of the 'shared' one. i.e.
+ * we don't need to worry that the shared one may go away while
+ * we contain pointers to it.
+ */
+int gx_cpath_init_local_shared_nested(gx_clip_path * pcpath,
+                                      const gx_clip_path * shared,
+                                      gs_memory_t * mem,
+                                      bool safely_nested);
 
 #define gx_cpath_init_local(pcpath, mem)\
   (void)gx_cpath_init_local_shared(pcpath, NULL, mem)	/* can't fail */
