@@ -377,9 +377,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         in[2] = frac2ushort(y);
         in[3] = frac2ushort(k);
 
-        gscms_transform_color(link, &(in[0]),
-                        &(tmp[0]), 2, NULL);
-
+        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2, NULL);
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
         for (; i < n + 4; i++)
@@ -423,8 +421,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
         in[1] = frac2ushort(g);
         in[2] = frac2ushort(b);
 
-        gscms_transform_color(link, &(in[0]),
-                        &(tmp[0]), 2, NULL);
+        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2, NULL);
 
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
@@ -1275,7 +1272,7 @@ xcf_shuffle_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
 }
 
 static void
-xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
+xcf_icc_to_tile(gx_device_printer *pdev, xcf_write_ctx *xc, byte **tile_data, const byte *row,
                     int y, gcmmhlink_t link)
 {
     int tile_j = y / TILE_HEIGHT;
@@ -1305,8 +1302,9 @@ xcf_icc_to_tile(xcf_write_ctx *xc, byte **tile_data, const byte *row,
                    understand what is going on in the loop
                    with the 255^row[row_idx++] operation */
 
-            gscms_transform_color(link, (void *) (&(row[row_idx])),
-                            &(base_ptr[base_idx]), 1, NULL);
+            gscms_transform_color((gx_device*) pdev, link, 
+                                  (void *) (&(row[row_idx])),
+                                   &(base_ptr[base_idx]), 1, NULL);
 
             for (plane_idx = 0; plane_idx < n_extra_channels; plane_idx++)
                 extra_ptr[plane_idx * extra_stride + x] = 255 ^ row[row_idx++];
@@ -1351,7 +1349,7 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
             if (link == NULL)
                 xcf_shuffle_to_tile(xc, tile_data, row, y);
             else
-                xcf_icc_to_tile(xc, tile_data, row, y, link);
+                xcf_icc_to_tile(pdev, xc, tile_data, row, y, link);
         }
         for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
             int tile_idx = tile_j * xc->n_tiles_x + tile_i;

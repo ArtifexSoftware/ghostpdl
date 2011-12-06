@@ -363,16 +363,20 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                     decode_row_cie(penum, psrc, spp, *psrc_decode,
                                     (*psrc_decode)+w, penum->cie_range);
                 }
-                gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
-                                        &output_buff_desc, (void*) *psrc_decode,
-                                        (void*) *psrc_cm);
+                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                                                    &input_buff_desc,
+                                                    &output_buff_desc, 
+                                                    (void*) *psrc_decode,
+                                                    (void*) *psrc_cm);
                 gs_free_object(pis->memory, (byte *) *psrc_decode,
                                "image_render_color_icc");
             } else {
                 /* CM only. No decode */
-                gscms_transform_color_buffer(penum->icc_link, &input_buff_desc,
-                                            &output_buff_desc, (void*) psrc,
-                                            (void*) *psrc_cm);
+                (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
+                                                    &input_buff_desc,
+                                                    &output_buff_desc, 
+                                                    (void*) psrc, 
+                                                    (void*) *psrc_cm);
             }
         }
     }

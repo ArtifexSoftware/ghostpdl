@@ -1237,7 +1237,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
         for (i = 0; i < ncomps; i++) {
             psrc[i] = cv[i];
         }
-        gscms_transform_color(icc_link, &(psrc[0]), &(psrc_cm[0]), 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, &(psrc[0]), &(psrc_cm[0]), 2, 
+                                    NULL);
         gsicc_release_link(icc_link);
         for (i = 0; i < ncomps; i++) {
             cv[i] = psrc_cm[i];
@@ -1306,7 +1307,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
     } else {
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
-        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, NULL);
     }
     /* This needs to be optimized */
     for (k = 0; k < 4; k++){

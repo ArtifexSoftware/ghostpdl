@@ -73,18 +73,18 @@ const gs_color_space_type gs_color_space_type_ICC = {
 };
 
 static inline void
-gsicc_remap_fast(unsigned short *psrc, unsigned short *psrc_cm,
-                       gsicc_link_t *icc_link)
+gsicc_remap_fast(gx_device *dev, unsigned short *psrc, unsigned short *psrc_cm,
+                 gsicc_link_t *icc_link)
 {
-    gscms_transform_color(icc_link, psrc, psrc_cm, 2, NULL);
+    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_cm, 2, NULL);
 }
 
 /* ICC color mapping linearity check, a 2-points case. Check only the 1/2 point */
 static int
 gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
-                gx_device *dev,
-                const gs_client_color *c0, const gs_client_color *c1,
-                float smoothness, gsicc_link_t *icclink)
+                        gx_device *dev,
+                        const gs_client_color *c0, const gs_client_color *c1,
+                        float smoothness, gsicc_link_t *icclink)
 {
     int nsrc = cs->type->num_components(cs);
     int ndes = dev->color_info.num_components;
@@ -105,9 +105,9 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
         src01[k] = ((unsigned int) src0[k] + (unsigned int) src1[k]) >> 1;
     }
     /* Transform the end points and the interpolated point */
-    gsicc_remap_fast(&(src0[0]), &(des0[0]), icclink);
-    gsicc_remap_fast(&(src1[0]), &(des1[0]), icclink);
-    gsicc_remap_fast(&(src01[0]), &(des01[0]), icclink);
+    gsicc_remap_fast(dev, &(src0[0]), &(des0[0]), icclink);
+    gsicc_remap_fast(dev, &(src1[0]), &(des1[0]), icclink);
+    gsicc_remap_fast(dev, &(src01[0]), &(des01[0]), icclink);
     /* Interpolate 1/2 value in des space and compare */
     for (k = 0; k < ndes; k++) {
         interp_des = (des0[k] + des1[k]) >> 1;
@@ -157,13 +157,13 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
         src012[k] = (src12[k] + src0[k]) >> 1;
     }
     /* Map the points */
-    gsicc_remap_fast(&(src0[0]), &(des0[0]), icclink);
-    gsicc_remap_fast(&(src1[0]), &(des1[0]), icclink);
-    gsicc_remap_fast(&(src2[0]), &(des2[0]), icclink);
-    gsicc_remap_fast(&(src01[0]), &(des01[0]), icclink);
-    gsicc_remap_fast(&(src12[0]), &(des12[0]), icclink);
-    gsicc_remap_fast(&(src02[0]), &(des02[0]), icclink);
-    gsicc_remap_fast(&(src012[0]), &(des012[0]), icclink);
+    gsicc_remap_fast(dev, &(src0[0]), &(des0[0]), icclink);
+    gsicc_remap_fast(dev, &(src1[0]), &(des1[0]), icclink);
+    gsicc_remap_fast(dev, &(src2[0]), &(des2[0]), icclink);
+    gsicc_remap_fast(dev, &(src01[0]), &(des01[0]), icclink);
+    gsicc_remap_fast(dev, &(src12[0]), &(des12[0]), icclink);
+    gsicc_remap_fast(dev, &(src02[0]), &(des02[0]), icclink);
+    gsicc_remap_fast(dev, &(src012[0]), &(des012[0]), icclink);
     /* Interpolate in des space and check it */
     for (k = 0; k < ndes; k++){
         interp_des = (des0[k] + des1[k]) >> 1;
@@ -343,7 +343,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     } else {
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
-        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, NULL);
     }
 #ifdef DEBUG
     if (!icc_link->is_identity) {
@@ -405,9 +405,9 @@ gx_concretize_ICC(
     rendering_params.black_point_comp = BP_ON;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     rendering_params.rendering_intent = pis->renderingintent;
-    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++){
+    for (k = 0; k < pcs->cmm_icc_profile_data->num_comps; k++) {
         psrc[k] = (unsigned short) (pcc->paint.values[k]*65535.0);
-        }
+    }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory, false);
     /* Transform the color */
@@ -416,7 +416,7 @@ gx_concretize_ICC(
     } else {
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
-        gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, NULL);
     }
     /* This needs to be optimized */
     for (k = 0; k < num_des_comps; k++){

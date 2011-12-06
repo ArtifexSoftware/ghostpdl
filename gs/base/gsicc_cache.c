@@ -47,8 +47,6 @@
 
 static gsicc_link_t * gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode);
 
-static void gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory);
-
 static void gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
                                   cmm_profile_t *profile, int64_t *hash);
 
@@ -57,9 +55,6 @@ static void gsicc_compute_linkhash(gsicc_manager_t *icc_manager, gx_device *dev,
                                    cmm_profile_t *output_profile,
                                    gsicc_rendering_param_t *rendering_params,
                                    gsicc_hashlink_t *hash);
-
-static gsicc_link_t* gsicc_findcachelink(gsicc_hashlink_t hashcode,gsicc_link_cache_t *icc_link_cache,
-                                   bool includes_proof);
 
 static gsicc_link_t* gsicc_find_zeroref_cache(gsicc_link_cache_t *icc_link_cache);
 
@@ -160,6 +155,9 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
         result->next = NULL;
         result->contextptr = NULL;
         result->link_handle = NULL;
+        result->procs.map_buffer = gscms_transform_color_buffer;
+        result->procs.map_color = gscms_transform_color;
+        result->procs.free_link = gscms_release_link;
         result->hashcode.link_hashcode = hashcode.link_hashcode;
         result->hashcode.des_hash = 0;
         result->hashcode.src_hash = 0;
@@ -174,7 +172,7 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     return(result);
 }
 
-static void
+void
 gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
                gsicc_hashlink_t hashcode, gx_monitor_t *lock)
 {
@@ -201,10 +199,10 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
     gx_monitor_leave(lock);	/* done with updating, let everyone run */
 }
 
-static void
+void
 gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 {
-    gscms_release_link(icc_link);
+    icc_link->procs.free_link(icc_link);
     gx_semaphore_free(icc_link->wait);
     gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
 }
@@ -304,7 +302,7 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
     }
 }
 
-static gsicc_link_t*
+gsicc_link_t*
 gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache, bool includes_proof)
 {
     gsicc_link_t *curr, *prev;
@@ -455,14 +453,29 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                 }
             }
     }
-    if ( output_colorspace != NULL ) {
+    if (output_colorspace != NULL) {
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
         devicegraytok = false;
     } else {
         /* Use the device profile. Only use the rendering intent if override_ri
            is set. Note that this can conflict with intents set from the source
            objects so the user needs to understand what options to set.  */
+        gs_color_space_index index = 
+                            gsicc_get_default_type(gs_input_profile);
         code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        /* Check for unmanaged color case */
+        if (index < gs_color_space_index_DevicePixel && 
+            dev_profile->usefastcolor) {
+            /* Return a "link" from the source space to the device color space */
+            gsicc_link_t *link = gsicc_nocm_get_link(pis, dev, index);
+            if (link != NULL) {
+                if (gs_input_profile->num_comps == 
+                    dev_profile->device_profile[0]->num_comps) {
+                    link->is_identity = true;
+                }
+                return link;
+            }
+        }
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                &(gs_output_profile), &rendering_intent);
         /* Check if the incoming rendering itent was source based
@@ -481,6 +494,59 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
                     rendering_params, memory, include_softproof, devicegraytok));
+}
+
+/* This operation of adding in a new link entry is actually shared amongst
+   different functions that can each add an entry.  For example, entrys may
+   come from the CMM or they may come from the non color managed approach 
+   (i.e. gsicc_nocm_get_link) */
+bool
+gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache, 
+                       gsicc_link_t **ret_link, gsicc_hashlink_t hash,
+                       bool include_softproof)
+{
+    gs_memory_t *cache_mem = icc_link_cache->memory;
+    gsicc_link_t *link;
+
+    /* First see if we can add a link */
+    /* TODO: this should be based on memory usage, not just num_links */
+    gx_monitor_enter(icc_link_cache->lock);
+    while (icc_link_cache->num_links >= ICC_CACHE_MAXLINKS) {
+        /* If not, see if there is anything we can remove from cache. */
+        while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
+            icc_link_cache->num_waiting++;
+            /* safe to unlock since above will make sure semaphore is signalled */
+            gx_monitor_leave(icc_link_cache->lock);
+            /* we get signalled (released from wait) when a link goes to zero ref */
+            gx_semaphore_wait(icc_link_cache->wait);
+            /* repeat the findcachelink to see if some other thread has	*/
+            /*already started building the link	we need			*/
+            *ret_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+            /* Got a hit, return link (ref_count for the link was already bumped */
+            if (*ret_link != NULL)
+                return true;  
+            gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
+            /* we will re-test the num_links above while locked to insure */
+            /* that some other thread didn't grab the slot and max us out */
+        }
+        /* Remove the zero ref_count link profile we found.		*/
+        /* Even if we remove this link, we may still be maxed out so	*/
+        /* the outermost 'while' will check to make sure some other	*/
+        /* thread did not grab the one we remove.			*/
+        gsicc_remove_link(link, cache_mem);
+        icc_link_cache->num_links--;
+    }
+    /* insert an empty link that we will reserve so we */
+    /* can unlock while building the link contents     */
+    (*ret_link) = gsicc_alloc_link(cache_mem->stable_memory, hash);
+    (*ret_link)->icc_link_cache = icc_link_cache;
+    (*ret_link)->next = icc_link_cache->head;
+    icc_link_cache->head = *ret_link;
+    icc_link_cache->num_links++;
+    /* now that we own this link we can release 
+       the lock since it is not valid */
+    gx_monitor_leave(icc_link_cache->lock);
+    return false;
 }
 
 /* This is the main function called to obtain a linked transform from the ICC cache
@@ -524,51 +590,10 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                   gs_output_profile->num_comps, gs_output_profile->hashcode);
         return(found_link);
     }
-    /* If not, then lets create a new one if there is room or return NULL */
-    /* Caller will need to try later */
-
-    /* First see if we can add a link */
-    /* TODO: this should be based on memory usage, not just num_links */
-    gx_monitor_enter(icc_link_cache->lock);
-    while (icc_link_cache->num_links >= ICC_CACHE_MAXLINKS) {
-        /* If not, see if there is anything we can remove from cache. */
-        while ((link = gsicc_find_zeroref_cache(icc_link_cache)) == NULL) {
-            icc_link_cache->num_waiting++;
-            /* safe to unlock since above will make sure semaphore is signalled */
-            gx_monitor_leave(icc_link_cache->lock);
-            /* we get signalled (released from wait) when a link goes to zero ref */
-            gx_semaphore_wait(icc_link_cache->wait);
-            /* repeat the findcachelink to see if some other thread has	*/
-            /*already started building the link	we need			*/
-            found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
-            /* Got a hit, return link (ref_count for the link was already bumped */
-            if (found_link != NULL)
-                return(found_link);  /* TO FIX: We are really not going to want to have the members
-                                  of this object visible outside gsiccmange */
-            gx_monitor_enter(icc_link_cache->lock);	    /* restore the lock */
-            /* we will re-test the num_links above while locked to insure */
-            /* that some other thread didn't grab the slot and max us out */
-        }
-        /* Remove the zero ref_count link profile we found.		*/
-        /* Even if we remove this link, we may still be maxed out so	*/
-        /* the outermost 'while' will check to make sure some other	*/
-        /* thread did not grab the one we remove.			*/
-        gsicc_remove_link(link, cache_mem);
-        icc_link_cache->num_links--;
-    }
-    /* insert an empty link that we will reserve so we */
-    /* can unlock while building the link contents     */
-    if_debug4('{',"[{]Allocating ICC Link dev = 0x%x, link_cache = 0x%x, mem = 0x%x curr number links = %d\n",
-              dev, icc_link_cache, cache_mem->stable_memory,
-              icc_link_cache->num_links);
-    link = gsicc_alloc_link(cache_mem->stable_memory, hash);
-    link->icc_link_cache = icc_link_cache;
-    link->next = icc_link_cache->head;
-    icc_link_cache->head = link;
-    icc_link_cache->num_links++;
-    gx_monitor_leave(icc_link_cache->lock);	/* now that we own this link we can release */
-                                        /* the lock since it is not valid */
-
+    /* If not, then lets create a new one if there is room. This may actually 
+       return a link if another thread has already created it */
+    if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof)) 
+        return link;
     /* Now compute the link contents */
     cms_input_profile = gs_input_profile->profile_handle;
     if (cms_input_profile == NULL) {
@@ -927,7 +952,8 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                 } else {
                     /* Transform the color */
                     psrc_temp = &(psrc_cm[0]);
-                    gscms_transform_color(icc_link, psrc, psrc_temp, 2, NULL);
+                    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, 
+                                                NULL);
                 }
                 gsicc_release_link(icc_link);
                 for ( k = 0; k < curr_output_profile->num_comps; k++){

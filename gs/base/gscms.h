@@ -88,6 +88,25 @@ typedef struct gsicc_bufferdesc_s {
     int pixels_per_row;
 } gsicc_bufferdesc_t;
 
+/* Mapping procedures to allow easy vectoring depending upon if we are using
+   the CMM or doing "dumb" color transforms */
+typedef void (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink, 
+                                          void *inputcolor, void *outputcolor,
+                                          int num_bytes, void **contextptr);
+
+typedef void (*gscms_trans_buffer_proc_t) (gx_device * dev, gsicc_link_t *icclink,
+                                           gsicc_bufferdesc_t *input_buff_desc,
+                                           gsicc_bufferdesc_t *output_buff_desc,
+                                           void *inputbuffer, void *outputbuffer);
+
+typedef void (*gscms_link_free_proc_t) (gsicc_link_t *icclink);
+
+typedef struct gscms_procs_s {
+    gscms_trans_buffer_proc_t map_buffer;
+    gscms_trans_color_proc_t  map_color;
+    gscms_link_free_proc_t free_link;
+} gscms_procs_t;
+
 /* Enumerate the ICC rendering intents */
 typedef enum {
     gsPERCEPTUAL = 0,
@@ -135,6 +154,7 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
+        bool usefastcolor;         /* Used when we want to use no cm */
         gs_memory_t *memory;
         rc_header rc;
 } cmm_dev_profile_t;
@@ -310,6 +330,7 @@ typedef struct gsicc_hashlink_s {
 struct gsicc_link_s {
     void *link_handle;
     void *contextptr;
+    gscms_procs_t procs;   
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;
     int ref_count;

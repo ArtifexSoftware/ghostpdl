@@ -957,6 +957,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
         result->intent[k] = gsPERCEPTUAL;
     }
     result->devicegraytok = true;  /* Default is to map gray to pure K */
+    result->usefastcolor = false;  /* Default is to not use fast color */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
 }
