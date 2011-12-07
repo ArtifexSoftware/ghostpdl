@@ -28,7 +28,7 @@ s_SHA256E_init(stream_state * st)
 {
     stream_SHA256E_state *const ss = (stream_SHA256E_state *) st;
 
-    SHA256_Init(&ss->sha256);
+    pSHA256_Init(&ss->sha256);
     return 0;
 }
 
@@ -41,12 +41,12 @@ s_SHA256E_process(stream_state * st, stream_cursor_read * pr,
     int status = 0;
 
     if (pr->ptr < pr->limit) {
-        SHA256_Update(&ss->sha256, pr->ptr + 1, pr->limit - pr->ptr);
+        pSHA256_Update(&ss->sha256, pr->ptr + 1, pr->limit - pr->ptr);
         pr->ptr = pr->limit;
     }
     if (last) {
         if (pw->limit - pw->ptr >= 32) {
-            SHA256_Final(pw->ptr + 1, &ss->sha256);
+            pSHA256_Final(pw->ptr + 1, &ss->sha256);
             pw->ptr += 32;
             status = EOFC;
         } else

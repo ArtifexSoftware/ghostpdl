@@ -352,7 +352,7 @@ const static sha2_word64 sha512_initial_hash_value[8] = {
 static const char *sha2_hex_digits = "0123456789abcdef";
 
 /*** SHA-256: *********************************************************/
-void SHA256_Init(SHA256_CTX* context) {
+void pSHA256_Init(SHA256_CTX* context) {
         if (context == (SHA256_CTX*)0) {
                 return;
         }
@@ -535,7 +535,7 @@ void SHA256_Transform(SHA256_CTX* context, const sha2_word32* data) {
 
 #endif /* SHA2_UNROLL_TRANSFORM */
 
-void SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
+void pSHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
         unsigned int	freespace, usedspace;
 
         if (len == 0) {
@@ -583,7 +583,7 @@ void SHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
         usedspace = freespace = 0;
 }
 
-void SHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
+void pSHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         sha2_word32	*d = (sha2_word32*)digest;
         unsigned int	usedspace;
 
@@ -654,7 +654,7 @@ char *SHA256_End(SHA256_CTX* context, char buffer[]) {
         assert(context != (SHA256_CTX*)0);
 
         if (buffer != (char*)0) {
-                SHA256_Final(digest, context);
+                pSHA256_Final(digest, context);
 
                 for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
                         *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
@@ -672,8 +672,8 @@ char *SHA256_End(SHA256_CTX* context, char buffer[]) {
 char* SHA256_Data(const sha2_byte* data, size_t len, char digest[SHA256_DIGEST_STRING_LENGTH]) {
         SHA256_CTX	context;
 
-        SHA256_Init(&context);
-        SHA256_Update(&context, data, len);
+        pSHA256_Init(&context);
+        pSHA256_Update(&context, data, len);
         return SHA256_End(&context, digest);
 }
 

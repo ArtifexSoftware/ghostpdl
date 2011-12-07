@@ -118,34 +118,34 @@ SET_DT_SONAME="-soname="
 SO_FOR_MAC=""
 
 case `uname` in
-	Linux*|GNU*)
+        Linux*|GNU*)
         if test $ac_cv_prog_gcc = yes; then
             CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-g -O0"
         fi
-	;;
-	*BSD)
+        ;;
+        *BSD)
         if test $ac_cv_prog_gcc = yes; then
-	    CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-g -O0"
-	fi
-	;;
-	Darwin*)
+        fi
+        ;;
+        Darwin*)
         if test $ac_cv_prog_gcc = yes; then
-	    CC_OPT_FLAGS_TO_TRY="-O2"
+            CC_OPT_FLAGS_TO_TRY="-O2"
             CC_DBG_FLAGS_TO_TRY="-g -O0"
-	fi
-	SET_DT_SONAME=""
-	SO_FOR_MAC="_1"
-	;;
-	SunOS)
-	CC_OPT_FLAGS_TO_TRY="-O2"
-	# the trailing space is required!
+        fi
+        SET_DT_SONAME=""
+        SO_FOR_MAC="_1"
+        ;;
+        SunOS)
+        CC_OPT_FLAGS_TO_TRY="-O2"
+        # the trailing space is required!
         if test $ac_cv_prog_gcc = no; then
-	    SET_DT_SONAME="-h "
-	fi
+            SET_DT_SONAME="-h "
+        fi
         CC_DBG_FLAGS_TO_TRY="-g -O0"
-	;;
+        ;;
 esac
 
 AC_SUBST(SET_DT_SONAME)
@@ -179,26 +179,26 @@ echo
 for flag in $optflags_to_try; do
     CFLAGS="$CFLAGS $flag"
     AC_TRY_COMPILE(, [return 0;], [
-	echo "   $flag"
-	OPT_CFLAGS="$OPT_CFLAGS $flag"
+        echo "   $flag"
+        OPT_CFLAGS="$OPT_CFLAGS $flag"
     ])
     CFLAGS=$old_cflags
 done
 for flag in $cflags_to_try; do
-	CFLAGS="$CFLAGS $flag"
-	AC_TRY_COMPILE(, [return 0;], [
-		echo "   $flag"
-		GCFLAGS="$GCFLAGS $flag"
-	])
-	CFLAGS=$old_cflags
+        CFLAGS="$CFLAGS $flag"
+        AC_TRY_COMPILE(, [return 0;], [
+                echo "   $flag"
+                GCFLAGS="$GCFLAGS $flag"
+        ])
+        CFLAGS=$old_cflags
 done
 old_cflags=$CFLAGS
 echo
 for flag in $dbgflags_to_try; do
     CFLAGS="$CFLAGS $flag"
     AC_TRY_COMPILE(, [return 0;], [
-	echo "   $flag"
-	DBG_CFLAGS="$DBG_CFLAGS $flag"
+        echo "   $flag"
+        DBG_CFLAGS="$DBG_CFLAGS $flag"
     ])
     CFLAGS=$old_cflags
 done
@@ -221,9 +221,9 @@ dnl --------------------------------------------------
 OBJDIR_BSDMAKE_WORKAROUND=obj
 
 case `uname` in
-	*BSD)
-	OBJDIR_BSDMAKEWORKAOROUND="notobj"
-	;;
+        *BSD)
+        OBJDIR_BSDMAKEWORKAOROUND="notobj"
+        ;;
 esac
 AC_SUBST(OBJDIR_BSDMAKE_WORKAROUND)
 
@@ -249,40 +249,40 @@ if test "x$ac_cv_header_stdint_h" != xyes; then
     AC_CHECK_TYPES([int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t],,,[#include <sys/types.h>])
     if test "$ac_cv_type_uint8_t" = yes; then
         AC_DEFINE([SYS_TYPES_HAS_STDINT_TYPES])
-	GCFLAGS="$GCFLAGS -DSYS_TYPES_HAS_STDINT_TYPES"
+        GCFLAGS="$GCFLAGS -DSYS_TYPES_HAS_STDINT_TYPES"
     fi
 fi
 
 dnl we aren't interested in all of DEFS, so manually insert
 dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
-	GCFLAGS="$GCFLAGS -Dconst="
+        GCFLAGS="$GCFLAGS -Dconst="
 fi
 if test "x$ac_cv_header_stdint_h" = xyes; then
-	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H=1"
+        GCFLAGS="$GCFLAGS -DHAVE_STDINT_H=1"
 fi
 
 if test "x$ac_cv_header_sys_time_h" = xyes; then
-	GCFLAGS="$GCFLAGS -DHAVE_SYS_TIME_H=1"
+        GCFLAGS="$GCFLAGS -DHAVE_SYS_TIME_H=1"
 fi
 
 dnl try to find a 64 bit type for devicen color index
 uint64_type="none"
  AC_CHECK_SIZEOF(unsigned long int)
  if test $ac_cv_sizeof_unsigned_long_int = 8; then
-	uint64_type="unsigned long int"
+        uint64_type="unsigned long int"
  else
   AC_CHECK_SIZEOF(unsigned long long)
   if test $ac_cv_sizeof_unsigned_long_long = 8; then
-	uint64_type="unsigned long long"
+        uint64_type="unsigned long long"
   else
    AC_CHECK_SIZEOF(unsigned __int64)
    if test $ac_cv_sizeof_unsigned___int64 = 8; then
-	uint64_type="unsigned __int64"
+        uint64_type="unsigned __int64"
    else
     AC_CHECK_SIZEOF(u_int64_t)
     if test $ac_cv_sizeof_u_int64_t = 8; then
-	uint64_type="u_int64_t"
+        uint64_type="u_int64_t"
     fi
    fi
   fi
@@ -290,7 +290,7 @@ uint64_type="none"
 dnl we don't need to do anything if a 64-bit type wasn't found
 dnl the code falls back to a (probably 32-bit) default
 if test "$uint64_type" != "none"; then
-	GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
+        GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
 fi
 
 dnl --------------------------------------------------
@@ -324,7 +324,7 @@ dnl Tests for iconv (Needed for OpenPrinting Vector, "opvp" output device)
 AC_ARG_WITH(libiconv,
             [AC_HELP_STRING([--with-libiconv=@<:@no/gnu/native@:>@],
                             [use the libiconv library])],,
-	    [with_libiconv=maybe])
+            [with_libiconv=maybe])
 found_iconv=no
 case $with_libiconv in
   maybe)
@@ -365,9 +365,9 @@ esac
 
 dnl Check for libidn (needed for Unicode password support)
 AC_ARG_WITH(libidn,
-	    [AC_HELP_STRING([--without-libidn],
-		   	    [don't use libidn to support Unicode passwords])],,
-	    [with_libidn=maybe])
+            [AC_HELP_STRING([--without-libidn],
+                               [don't use libidn to support Unicode passwords])],,
+            [with_libidn=maybe])
 if test x$with_libidn != xno; then
   AC_CHECK_LIB(idn, stringprep, [
     with_libidn=no
@@ -399,7 +399,7 @@ AC_ARG_WITH([libpaper],
 if test x$with_libpaper != xno; then
     AC_CHECK_LIB(paper, systempapername, [with_libpaper=yes],
     [
-	AC_MSG_WARN([disabling support for libpaper])
+        AC_MSG_WARN([disabling support for libpaper])
         with_libpaper=no
     ])
 fi
@@ -424,28 +424,28 @@ FONTCONFIG_LIBS=""
 AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
     [Don't use fontconfig to list system fonts]))
 if test "$enable_fontconfig" != "no"; then
-	# We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
-	# autoconf macro and b) requires pkg-config on the system, which is
-	# NOT standard on ANY OS, including Linux!
-	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for fontconfig with pkg-config)
-		if $PKGCONFIG --exists fontconfig; then
-			AC_MSG_RESULT(yes)
-			FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
-			FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
-			HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
-		else
-			AC_MSG_RESULT(no)
-		fi
-	fi
-	if test -z "$HAVE_FONTCONFIG"; then
-		AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
-		  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
-		    FONTCONFIG_LIBS="-lfontconfig"
-		    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
-		  ])
-		])
-	fi
+        # We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+        # autoconf macro and b) requires pkg-config on the system, which is
+        # NOT standard on ANY OS, including Linux!
+        if test "x$PKGCONFIG" != x; then
+                AC_MSG_CHECKING(for fontconfig with pkg-config)
+                if $PKGCONFIG --exists fontconfig; then
+                        AC_MSG_RESULT(yes)
+                        FONTCONFIG_CFLAGS="$CFLAGS `$PKGCONFIG --cflags fontconfig`"
+                        FONTCONFIG_LIBS="`$PKGCONFIG --libs fontconfig`"
+                        HAVE_FONTCONFIG=-DHAVE_FONTCONFIG
+                else
+                        AC_MSG_RESULT(no)
+                fi
+        fi
+        if test -z "$HAVE_FONTCONFIG"; then
+                AC_CHECK_LIB([fontconfig], [FcInitLoadConfigAndFonts], [
+                  AC_CHECK_HEADER([fontconfig/fontconfig.h], [
+                    FONTCONFIG_LIBS="-lfontconfig"
+                    HAVE_FONTCONFIG="-DHAVE_FONTCONFIG"
+                  ])
+                ])
+        fi
 fi
 AC_SUBST(HAVE_FONTCONFIG)
 AC_SUBST(FONTCONFIG_CFLAGS)
@@ -458,25 +458,25 @@ DBUS_LIBS=""
 AC_ARG_ENABLE([dbus], AC_HELP_STRING([--disable-dbus],
     [Do not use dbus to communicate with external services]))
 if test "$enable_dbus" != "no"; then
-	if test "x$PKGCONFIG" != x; then
-		AC_MSG_CHECKING(for dbus with pkg-config)
-		if $PKGCONFIG --exists dbus-1; then
-			AC_MSG_RESULT(yes)
-			DBUS_CFLAGS="$CFLAGS `$PKGCONFIG --cflags dbus-1`"
-			DBUS_LIBS="`$PKGCONFIG --libs dbus-1`"
-			HAVE_DBUS=-DHAVE_DBUS
-		else
-			AC_MSG_RESULT(no)
-		fi
-	fi
-	if test -z "$HAVE_DBUS"; then
-		AC_CHECK_LIB([dbus], [dbus_message_iter_get_basic], [
-		  AC_CHECK_HEADER([dbus-1.0/dbus/dbus.h], [
-		    DBUS_LIBS="-ldbus-1 -lpthread -lrt"
-		    HAVE_DBUS="-DHAVE_DBUS"
-		  ])
-		])
-	fi
+        if test "x$PKGCONFIG" != x; then
+                AC_MSG_CHECKING(for dbus with pkg-config)
+                if $PKGCONFIG --exists dbus-1; then
+                        AC_MSG_RESULT(yes)
+                        DBUS_CFLAGS="$CFLAGS `$PKGCONFIG --cflags dbus-1`"
+                        DBUS_LIBS="`$PKGCONFIG --libs dbus-1`"
+                        HAVE_DBUS=-DHAVE_DBUS
+                else
+                        AC_MSG_RESULT(no)
+                fi
+        fi
+        if test -z "$HAVE_DBUS"; then
+                AC_CHECK_LIB([dbus], [dbus_message_iter_get_basic], [
+                  AC_CHECK_HEADER([dbus-1.0/dbus/dbus.h], [
+                    DBUS_LIBS="-ldbus-1 -lpthread -lrt"
+                    HAVE_DBUS="-DHAVE_DBUS"
+                  ])
+                ])
+        fi
 fi
 AC_SUBST(HAVE_DBUS)
 AC_SUBST(DBUS_CFLAGS)
@@ -485,7 +485,7 @@ AC_SUBST(DBUS_LIBS)
 AC_CHECK_LIB(dl, dlopen)
 
 AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
-	[Disable freetype for font rasterization]))
+        [Disable freetype for font rasterization]))
 FT_BRIDGE=0
 SHARE_FT=0
 FTSRCDIR=
@@ -517,28 +517,28 @@ if test x"$enable_freetype" != xno; then
   dnl the included freetype source with a checkout from upstream.
   for dir in freetype2 freetype; do
     if test -f $dir/src/base/ftbbox.c; then
-	AC_MSG_RESULT(yes)
-	SHARE_FT=0
-	FTSRCDIR="$dir"
-	FT_CFLAGS="-I$dir/include"
-	FT_BRIDGE=1
-	break;
+        AC_MSG_RESULT(yes)
+        SHARE_FT=0
+        FTSRCDIR="$dir"
+        FT_CFLAGS="-I$dir/include"
+        FT_BRIDGE=1
+        break;
     fi
   done
   if test -z $FTSRCDIR; then
     AC_MSG_RESULT([no])
     if test "x$PKGCONFIG" != x; then
-	AC_MSG_CHECKING(for system freetype with pkg-config)
-	    if $PKGCONFIG --exists freetype2; then
-		AC_MSG_RESULT(yes)
-		FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
-		FT_LIBS="`$PKGCONFIG --libs freetype2`"
-		FT_BRIDGE=1
-		SHARE_FT=1
-	    else
-		AC_MSG_RESULT(no)
-		AC_MSG_WARN([freetype library source not found...using native rasterizer])
-	    fi
+        AC_MSG_CHECKING(for system freetype with pkg-config)
+            if $PKGCONFIG --exists freetype2; then
+                AC_MSG_RESULT(yes)
+                FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
+                FT_LIBS="`$PKGCONFIG --libs freetype2`"
+                FT_BRIDGE=1
+                SHARE_FT=1
+            else
+                AC_MSG_RESULT(no)
+                AC_MSG_WARN([freetype library source not found...using native rasterizer])
+            fi
     fi
   fi
 fi
@@ -555,18 +555,18 @@ dnl A more sophisticated approach would be to test the shared lib
 dnl to see whether it has already been patched.
 LIBJPEGDIR=src
 if test -f jpeg/jpeglib.h; then
-	AC_MSG_RESULT([jpeg])
-	SHARE_LIBJPEG=0
-	LIBJPEGDIR=jpeg
+        AC_MSG_RESULT([jpeg])
+        SHARE_LIBJPEG=0
+        LIBJPEGDIR=jpeg
 elif test -f jpeg-6b/jpeglib.h; then
-	AC_MSG_RESULT([jpeg-6b])
-	SHARE_LIBJPEG=0
-	LIBJPEGDIR=jpeg-6b
+        AC_MSG_RESULT([jpeg-6b])
+        SHARE_LIBJPEG=0
+        LIBJPEGDIR=jpeg-6b
 else
-	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
-	  AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
-	])
+        AC_MSG_RESULT([no])
+        AC_CHECK_LIB(jpeg, jpeg_set_defaults, [
+          AC_CHECK_HEADERS([jpeglib.h], [SHARE_LIBJPEG=1])
+        ])
 fi
 if test -z "$SHARE_LIBJPEG"; then
   AC_MSG_ERROR([I wasn't able to find a copy
@@ -595,14 +595,14 @@ dnl zlib is needed for language level 3, and libpng
 # this seems a harmless default
 ZLIBDIR=src
 if test -d zlib; then
-	AC_MSG_RESULT([yes])
-	SHARE_ZLIB=0
-	ZLIBDIR=zlib
+        AC_MSG_RESULT([yes])
+        SHARE_ZLIB=0
+        ZLIBDIR=zlib
 else
-	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(z, deflate, [
-	  AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1])
-	])
+        AC_MSG_RESULT([no])
+        AC_CHECK_LIB(z, deflate, [
+          AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1])
+        ])
 fi
 if test -z "$SHARE_ZLIB"; then
   AC_MSG_ERROR([I did not find a copy of zlib on your system.
@@ -633,18 +633,18 @@ PNGDEVS=''
 PNGDEVS_ALL='png48 png16m pnggray pngmono png256 png16 pngalpha'
 AC_MSG_CHECKING([for local png library source])
 if test -f libpng/pngread.c; then
-	AC_MSG_RESULT([yes])
-	SHARE_LIBPNG=0
-	LIBPNGDIR=libpng
-	PNGDEVS="$PNGDEVS_ALL"
+        AC_MSG_RESULT([yes])
+        SHARE_LIBPNG=0
+        LIBPNGDIR=libpng
+        PNGDEVS="$PNGDEVS_ALL"
 else
-	AC_MSG_RESULT([no])
-	AC_CHECK_LIB(png, png_create_write_struct, [
-	  AC_CHECK_HEADERS(png.h, [
-		SHARE_LIBPNG=1
-		PNGDEVS="$PNGDEVS_ALL"
-	  ], [SHARE_LIBPNG=0])
-	], [SHARE_LIBPNG=0], [-lz])
+        AC_MSG_RESULT([no])
+        AC_CHECK_LIB(png, png_create_write_struct, [
+          AC_CHECK_HEADERS(png.h, [
+                SHARE_LIBPNG=1
+                PNGDEVS="$PNGDEVS_ALL"
+          ], [SHARE_LIBPNG=0])
+        ], [SHARE_LIBPNG=0], [-lz])
 fi
 if test -z "$PNGDEVS"; then
   AC_MSG_NOTICE([disabling png output devices])
@@ -657,25 +657,25 @@ AC_MSG_CHECKING([for local lcms library source])
 LCMSDIR=lcms
 SHARELCMS=0
 if test -f $LCMSDIR/include/lcms.h; then
-	AC_MSG_RESULT([yes])
+        AC_MSG_RESULT([yes])
 else
 
 AC_MSG_ERROR([LittleCMS source not found!])
 
 #AC_CHECK_LIB(lcms, cmsCreateXYZProfile, [
-#	  AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
-#	])
+#          AC_CHECK_HEADERS([lcms.h], [SHARELCMS=1;LCMSDIR=""])
+#        ])
 fi
 
 AC_MSG_CHECKING([for local lcms2 library source])
 LCMS2DIR=lcms2
 if test -f $LCMS2DIR/include/lcms2.h; then
-	AC_MSG_RESULT([yes])
+        AC_MSG_RESULT([yes])
 else
 AC_MSG_RESULT([no])
 # AC_CHECK_LIB(lcms2, cmsCreateXYZProfile, [
-# 	  AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR=""])
-# 	])
+#           AC_CHECK_HEADERS([lcms2.h], [LCMS2DIR=""])
+#         ])
 fi
 
 AC_SUBST(SHARELCMS)
@@ -685,53 +685,81 @@ AC_SUBST(LCMS2DIR)
 dnl look for libtiff, it also requires lib
 dnl png for the png output device; it also requires zlib
 AC_ARG_WITH([system-libtiff], AC_HELP_STRING([--with-system-libtiff],
-					     [Force using the systems libtiff]),
-	    [], [with_system_libtiff=check])
+                                             [Force using the systems libtiff]),
+            [], [with_system_libtiff=check])
 TIFFDEVS=''
 TIFFDEVS_ALL='$(DD)tiffs $(DD)tiff12nc $(DD)tiff24nc $(DD)tiff48nc $(DD)tiff32nc $(DD)tiff64nc $(DD)tiffcrle $(DD)tifflzw $(DD)tiffpack $(DD)tiffgray $(DD)tiffsep $(DD)tiffscaled'
 case "x$with_system_libtiff" in
     xcheck)
-	if test -d tiff; then
-	    LIBTIFFDIR=tiff
-	    HAVE_LOCAL_LIBTIFF=1
-	    SHARE_LIBTIFF=0
-	else
-	    AC_CHECK_LIB(tiff, TIFFOpen,
-		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
-		     [], [-ljpeg])
-	fi
-	if test "x$HAVE_LOCAL_LIBTIFF" = x && test "x$HAVE_SYSTEM_LIBTIFF" = x; then
-	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
-Disabling tiff output devices.])
-	else
-	    TIFFDEVS="$TIFFDEVS_ALL"
-	fi
-	;;
-    xyes)
-	AC_CHECK_LIB(tiff, TIFFOpen,
-		     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
-		     [], [-ljpeg])
-	if test "x$HAVE_SYSTEM_LIBTIFF" != x; then
-	    SHARE_LIBTIFF=1
-	    TIFFDEVS="$TIFFDEVS_ALL"
-	else
-	    AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
-Disabling tiff output devices.])
-	fi
-	;;
-    xno)
-	AC_MSG_CHECKING([for local libtiff source])
         if test -d tiff; then
-	    AC_MSG_RESULT([yes])
-	    LIBTIFFDIR=tiff
-	    SHARE_LIBTIFF=0
-	    TIFFDEVS="$TIFFDEVS_ALL"
-	else
-	    AC_MSG_RESULT([no])
-	    AC_MSG_NOTICE([Could not find local copy of libtiff.
+            LIBTIFFDIR=tiff
+            HAVE_LOCAL_LIBTIFF=1
+            SHARE_LIBTIFF=0
+        else
+            # We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+            # autoconf macro and b) requires pkg-config on the system, which is
+            # NOT standard on ANY OS, including Linux!
+            if test "x$PKGCONFIG" != x; then
+                AC_MSG_CHECKING(for libtiff with pkg-config)
+                if $PKGCONFIG --exists libtiff-4; then
+                        AC_MSG_RESULT(yes)
+                        CFLAGS="$CFLAGS `$PKGCONFIG --cflags libtiff-4`"
+                        LIBS="$LIBS `$PKGCONFIG --libs libtiff-4`"
+                        HAVE_SYSTEM_LIBTIFF=1
+                fi
+            fi
+            if test -z "$HAVE_SYSTEM_LIBTIFF"; then
+            AC_CHECK_LIB(tiff, TIFFOpen,
+                     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
+                     [], [-ljpeg])
+            fi
+        fi
+        if test "x$HAVE_LOCAL_LIBTIFF" = x && test "x$HAVE_SYSTEM_LIBTIFF" = x; then
+            AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
 Disabling tiff output devices.])
-	fi
-	;;
+        else
+            TIFFDEVS="$TIFFDEVS_ALL"
+        fi
+        ;;
+    xyes)
+        # We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
+        # autoconf macro and b) requires pkg-config on the system, which is
+        # NOT standard on ANY OS, including Linux!
+        if test "x$PKGCONFIG" != x; then
+                AC_MSG_CHECKING(for libtiff with pkg-config)
+                if $PKGCONFIG --exists libtiff-4; then
+                        AC_MSG_RESULT(yes)
+                        CFLAGS="$CFLAGS `$PKGCONFIG --cflags libtiff-4`"
+                        LIBS="$LIBS `$PKGCONFIG --libs libtiff-4`"
+                        HAVE_SYSTEM_LIBTIFF=1
+                fi
+        fi
+        if test -z "$HAVE_SYSTEM_LIBTIFF"; then
+        AC_CHECK_LIB(tiff, TIFFOpen,
+                     [AC_CHECK_HEADERS(tiff.h, [HAVE_SYSTEM_LIBTIFF=1;SHARE_LIBTIFF=1])],
+                     [], [-ljpeg])
+        fi
+        if test "x$HAVE_SYSTEM_LIBTIFF" != x; then
+            SHARE_LIBTIFF=1
+            TIFFDEVS="$TIFFDEVS_ALL"
+        else
+            AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
+Disabling tiff output devices.])
+        fi
+        ;;
+    xno)
+        AC_MSG_CHECKING([for local libtiff source])
+        if test -d tiff; then
+            AC_MSG_RESULT([yes])
+            LIBTIFFDIR=tiff
+            SHARE_LIBTIFF=0
+            TIFFDEVS="$TIFFDEVS_ALL"
+        else
+            AC_MSG_RESULT([no])
+            AC_MSG_NOTICE([Could not find local copy of libtiff.
+Disabling tiff output devices.])
+        fi
+        ;;
 esac
 
 if test $SHARE_LIBTIFF -eq 0; then
@@ -761,12 +789,12 @@ AC_ARG_WITH([pdftoraster], AC_HELP_STRING([--without-pdftoraster],
     [Don't include CUPS' pdftoraster filter]))
 
 AC_ARG_WITH([local-cups], AC_HELP_STRING([--with-local-cups],
-					     [Force using the GS supplied cups code - only useful for debugging]),
-	    [with_local_cups=yes], [with_local_cups=no])
+                                             [Force using the GS supplied cups code - only useful for debugging]),
+            [with_local_cups=yes], [with_local_cups=no])
 
 AC_ARG_WITH([install-cups], AC_HELP_STRING([--with-install-cups],
-					     [Install the cups conversion tools]),
-	    [CUPSINSTALL=install-cups], [CUPSINSTALL=])
+                                             [Install the cups conversion tools]),
+            [CUPSINSTALL=install-cups], [CUPSINSTALL=])
 
 AC_ARG_WITH([cups-serverbin],  AC_HELP_STRING([--with-cups-serverbin],
     [override the "cups-config --serverbin" path]), CUPS_SERVERBIN="$withval", CUPS_SERVERBIN="")
@@ -796,54 +824,54 @@ SHARELCUPSI=1
 if ( test -d cups ); then
     if test x$enable_cups != xno; then
         if test x$with_local_cups != xyes; then
-	    AC_PATH_PROG(CUPSCONFIG,cups-config)
-	    AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
-	    if test "x$CUPSCONFIG" != x; then
-	        dnl Use values from CUPS config...
-	        CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
-#	        CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
-	        CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
-	        GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
-	        GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
+            AC_PATH_PROG(CUPSCONFIG,cups-config)
+            AC_CHECK_HEADER([cups/raster.h],[],[CUPSCONFIG=""])
+            if test "x$CUPSCONFIG" != x; then
+                dnl Use values from CUPS config...
+                CUPSCFLAGS="`$CUPSCONFIG --cflags` $CFLAGS"
+#                CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --static --image --libs | sed -e '1,$s/-lssl//'` $LIBS"
+                CUPSLINK="`$CUPSCONFIG --ldflags` `$CUPSCONFIG --image --libs`"
+                GS_SPLIT_LIBS([CUPSLIBS], [$CUPSLINK])
+                GS_SPLIT_LIBPATHS([CUPSLIBDIRS],[$CUPSLINK])
 
-	        if test "x$CUPS_SERVERROOT" != "x"; then
+                if test "x$CUPS_SERVERROOT" != "x"; then
                   CUPSSERVERROOT="$CUPS_SERVERROOT"
-	        else
+                else
                   CUPSSERVERROOT="`$CUPSCONFIG --serverroot`"
                 fi
 
-	        if test "x$CUPS_SERVERBIN" != "x"; then
+                if test "x$CUPS_SERVERBIN" != "x"; then
                   CUPSSERVERBIN="$CUPS_SERVERBIN"
                 else
                   CUPSSERVERBIN="`$CUPSCONFIG --serverbin`"
-	        fi
+                fi
 
-	        if test "x$CUPS_DATADIR" != "x"; then
+                if test "x$CUPS_DATADIR" != "x"; then
                   CUPSDATA="$CUPS_DATADIR"
                 else
                   CUPSDATA="`$CUPSCONFIG --datadir`"
-	        fi
+                fi
 
                 CUPSINCLUDE="include cups/cups.mak"
-	        CUPSDEV="cups"
-	        CUPSVERSION="`$CUPSCONFIG --version`"
-	        LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
-	        LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
-	        if ( test x$with_pdftoraster != xno ); then
-	            if test "$CUPSVERSION" ">" "1.2"; then
-	                CUPSPDFTORASTER="1"
-	            fi
-	        fi
-	    fi
+                CUPSDEV="cups"
+                CUPSVERSION="`$CUPSCONFIG --version`"
+                LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
+                LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
+                if ( test x$with_pdftoraster != xno ); then
+                    if test "$CUPSVERSION" ">" "1.2"; then
+                        CUPSPDFTORASTER="1"
+                    fi
+                fi
+            fi
         else
             if test "$(uname)" = "Linux"; then
                 AC_MSG_WARN([* USING LOCAL CUPS SOURCE *])
                 SHARELCUPS=0
                 SHARELCUPSI=0
                 LCUPSBUILDTYPE=linux
-	        LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
-	        LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
-	        CUPSDEV="cups"
+                LCUPSINCLUDE="include \$(GLSRCDIR)/lcups.mak"
+                LCUPSIINCLUDE="include \$(GLSRCDIR)/lcupsi.mak"
+                CUPSDEV="cups"
                 
             fi
         fi
@@ -885,8 +913,8 @@ if test x$with_ijs != xno; then
     else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(ijs, ijs_server_init, [
-	  AC_CHECK_HEADERS(ijs/ijs.h, [SHAREIJS=1])
-	])
+          AC_CHECK_HEADERS(ijs/ijs.h, [SHAREIJS=1])
+        ])
         if test $SHAREIJS -eq 1 ; then
             IJSLIB=ijs
             # This is for safety - it prevents our header search path going outside the GS source tree
@@ -1116,25 +1144,25 @@ SOC_LOADER="dxmainc.c"
 if test "x$enable_gtk" != "xno"; then
     # Try GTK+ 2.x first...
     if test "x$PKGCONFIG" != x; then
-	AC_MSG_CHECKING(for GTK+ 2.x)
-	if $PKGCONFIG --exists gtk+-2.0; then
-	    SOC_LOADER="dxmain.c"
-	    SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
-	    SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
-	    AC_MSG_RESULT([yes])
-	else
-	    AC_MSG_RESULT([no])
-	fi
+        AC_MSG_CHECKING(for GTK+ 2.x)
+        if $PKGCONFIG --exists gtk+-2.0; then
+            SOC_LOADER="dxmain.c"
+            SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
+            SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
+            AC_MSG_RESULT([yes])
+        else
+            AC_MSG_RESULT([no])
+        fi
     fi
 
     # Then fall back on GTK+ 1.x...
     if test "x$SOC_LOADER" = x; then
-	AC_PATH_PROG(GTKCONFIG, gtk-config)
-	if test "x$GTKCONFIG" != x; then
-	    SOC_LOADER="dxmain.c"
-	    SOC_CFLAGS="`$GTKCONFIG --cflags`"
-	    SOC_LIBS="`$GTKCONFIG --libs`"
-	fi
+        AC_PATH_PROG(GTKCONFIG, gtk-config)
+        if test "x$GTKCONFIG" != x; then
+            SOC_LOADER="dxmain.c"
+            SOC_CFLAGS="`$GTKCONFIG --cflags`"
+            SOC_LIBS="`$GTKCONFIG --libs`"
+        fi
     fi
 fi
 AC_SUBST(SOC_CFLAGS)
@@ -1143,17 +1171,17 @@ AC_SUBST(SOC_LOADER)
 
 dnl look for omni implementation
 AC_ARG_WITH([omni], AC_HELP_STRING([--with-omni],
-	[enable the omni driver]))
+        [enable the omni driver]))
 dnl set safe defaults
 OMNIDEVS=''
 INCLUDEOMNI=no
 if ( ! test -z "$CONTRIBINCLUDE" ) && ( test x$with_omni = xyes ); then
-	INCLUDEOMNI=yes
+        INCLUDEOMNI=yes
         OMNIDEVS='$(DD)omni.dev'
 
-	if test -n "$GCC"; then
-		LIBS="$LIBS -lstdc++"
-	fi
+        if test -n "$GCC"; then
+                LIBS="$LIBS -lstdc++"
+        fi
 fi
 AC_SUBST(OMNIDEVS)
 
@@ -1166,43 +1194,43 @@ X_DEVS=""
 X_LIBS=""
 
 if test x$no_x != xyes; then
-	if test "$x_libraries" = "/usr/lib"; then
-		echo "Ignoring X library directory \"$x_libraries\" requested by configure."
-		x_libraries="NONE"
-	fi
-	if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
-		X_LDFLAGS="-L$x_libraries"
-		if test "$uname" = "SunOS"; then
-			X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
-		fi
-	fi
+        if test "$x_libraries" = "/usr/lib"; then
+                echo "Ignoring X library directory \"$x_libraries\" requested by configure."
+                x_libraries="NONE"
+        fi
+        if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
+                X_LDFLAGS="-L$x_libraries"
+                if test "$uname" = "SunOS"; then
+                        X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
+                fi
+        fi
 
-	if test "$x_includes" = "/usr/include"; then
-		echo "Ignoring X include directory \"$x_includes\" requested by configure."
-		x_includes="NONE"
-	fi
-	if test ! "$x_includes" = "NONE" -a ! "$x_includes" = ""; then
-		X_CFLAGS="-I$x_includes"
-	fi
+        if test "$x_includes" = "/usr/include"; then
+                echo "Ignoring X include directory \"$x_includes\" requested by configure."
+                x_includes="NONE"
+        fi
+        if test ! "$x_includes" = "NONE" -a ! "$x_includes" = ""; then
+                X_CFLAGS="-I$x_includes"
+        fi
 
-	SAVELIBS="$LIBS"
-	SAVELDFLAGS="$LDFLAGS"
-	LDFLAGS="$LDFLAGS $X_LDFLAGS"
+        SAVELIBS="$LIBS"
+        SAVELDFLAGS="$LDFLAGS"
+        LDFLAGS="$LDFLAGS $X_LDFLAGS"
 
-	AC_CHECK_LIB(X11,XOpenDisplay)
-	AC_CHECK_LIB(Xext,XdbeQueryExtension)
-	AC_CHECK_LIB(Xt,XtAppCreateShell)
+        AC_CHECK_LIB(X11,XOpenDisplay)
+        AC_CHECK_LIB(Xext,XdbeQueryExtension)
+        AC_CHECK_LIB(Xt,XtAppCreateShell)
 
-	LDFLAGS="$SAVELDFLAGS"
-	LIBS="$SAVELIBS"
+        LDFLAGS="$SAVELDFLAGS"
+        LIBS="$SAVELIBS"
 
-	if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
-		X11DEVS="x11 x11alpha x11cmyk x11mono x11_ x11alt_ x11cmyk2 x11cmyk4 x11cmyk8 x11rg16x x11rg32x x11gray2 x11gray4"
-		X_DEVS=$X11DEVS
-		# the makefile wants a list of just the library names in X_LIBS
-		GS_SPLIT_LIBS([X_LIBS], 
-			[-lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS])
-	fi
+        if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
+                X11DEVS="x11 x11alpha x11cmyk x11mono x11_ x11alt_ x11cmyk2 x11cmyk4 x11cmyk8 x11rg16x x11rg32x x11gray2 x11gray4"
+                X_DEVS=$X11DEVS
+                # the makefile wants a list of just the library names in X_LIBS
+                GS_SPLIT_LIBS([X_LIBS],
+                        [-lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS])
+        fi
 fi
 
 AC_SUBST(X_LDFLAGS)
@@ -1214,8 +1242,8 @@ AC_SUBST(XLIBS)
 
 dnl executible name
 AC_ARG_WITH([gs], AC_HELP_STRING([--with-gs=NAME],
-	[name of the Ghostscript executible [[gs]]]),
-	[GS="$with_gs"],[GS='gs'])
+        [name of the Ghostscript executible [[gs]]]),
+        [GS="$with_gs"],[GS='gs'])
 AC_SUBST(GS)
 
 dnl do we compile the postscript initialization files into Ghostscript?
@@ -1244,14 +1272,14 @@ AC_ARG_WITH(drivers,
                           JAPAN    = older japanese printers
                           LEXMARK  = all Lexmark printers
                           OKI      = all OKI printers
-			  PCLXL    = all PCL XL/6 printers
+                          PCLXL    = all PCL XL/6 printers
                           File formats:
                           BMP      = Output to bmp files
                           FAX      = Output to fax files
                           JPEG     = Output to JPEG files
                           PBM      = Output to PBM/PNM
                           PCX      = Output to PCX
-			  PNG      = Output to PNG
+                          PNG      = Output to PNG
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
                           You can mix both variants, e.g.
@@ -1266,8 +1294,8 @@ AC_ARG_WITH(driversfile,
 driversfile="$withval",driversfile="")
 
 if test "x$driversfile" != x; then
-	# Add drivers from file...
-	drivers="`tr '\n' ',' <$driversfile`"
+        # Add drivers from file...
+        drivers="`tr '\n' ',' <$driversfile`"
 fi
 
 dnl Check which drivers we'd like to support.
@@ -1310,142 +1338,147 @@ MISC_FDEVS='ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 m
 SVGDEV='svgwrite'
 
 while test -n "$drivers"; do
-	if echo $drivers |grep "," >/dev/null; then
-		THIS="`echo $drivers |sed -e 's/,.*//'`"
-		SEDCMD="s/$THIS,//"
-		drivers="`echo $drivers |sed -e $SEDCMD`"
-	else
-		THIS=$drivers
-		drivers=""
-	fi
-	case "$THIS" in
-	ALL)
-		# ALL = PRINTERS + FILES...
-		if test -z "$drivers"; then
-			drivers="PRINTERS,FILES,X11"
-		else
-			drivers="$drivers,PRINTERS,FILES,X11"
-		fi
-		;;
-	PRINTERS)
-		P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $OPVP_DEVS"
+        if echo $drivers |grep "," >/dev/null; then
+                THIS="`echo $drivers |sed -e 's/,.*//'`"
+                SEDCMD="s/$THIS,//"
+                drivers="`echo $drivers |sed -e $SEDCMD`"
+        else
+                THIS=$drivers
+                drivers=""
+        fi
+        case "$THIS" in
+        ALL)
+                # ALL = PRINTERS + FILES...
+                if test -z "$drivers"; then
+                        drivers="PRINTERS,FILES,X11"
+                else
+                        drivers="$drivers,PRINTERS,FILES,X11"
+                fi
+                ;;
+        PRINTERS)
+                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
                 IJS_DEVS0="$IJSDEVS"
-		;;
-	FILES)
-		F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
-		CUPS_DEVS0="$CUPSDEV"
-		JBIG2_DEVS="$JBIG2DEVS"
-		PNG_DEVS0="$PNGDEVS"
-		;;
-	APPLE)
-		# All Apple printers
-		P_DEVS0="$P_DEVS0 $APPLE_DEVS"
-		;;
-	BMP)
-		# BMP file format
-		F_DEVS0="$F_DEVS0 $BMP_DEVS"
-		;;
-	CANON)
-		# All Canon printers
-		P_DEVS0="$P_DEVS0 $CANON_DEVS"
-		;;
-	EPSON)
-		# All Epson printers
-		P_DEVS0="$P_DEVS0 $EPSON_DEVS"
-		;;
-	FAX)
-		# Fax file formats
-		F_DEVS0="$F_DEVS0 $FAX_DEVS"
-		;;
-	JPEG)
-		# Jpeg file formats
-		F_DEVS0="$F_DEVS0 $JPEG_DEVS"
-		;;
-	JBIG2)
-		# JBIG file formats
-		JBIG2_DEVS="$JBIG2DEVS"
-		;;
-	PNG)
-		# PNG file formats
-		PNG_DEVS0="$PNGDEVS"
-		;;
-	TIFF)
-		# TIFF file formats
-		F_DEVS0="$F_DEVS0 $TIFF_DEVS"
-		;;
-	PCLXL)
-		# PCL XL/PCL 6 drivers
-		F_DEVS0="$F_DEVS0 $PCLXL_DEVS"
-		;;
-	PCX)
-		# PCX file formats
-		F_DEVS0="$F_DEVS0 $PCX_DEVS"
-		;;
-	PBM)
-		# PBM file formats
-		F_DEVS0="$F_DEVS0 $PBM_DEVS"
-		;;
-	CUPS)
-		# CUPS file format
-		CUPS_DEVS0="$CUPSDEV"
-		;;
-	HP)
-		# All HP printers
-		P_DEVS0="$P_DEVS0 $HP_DEVS"
-		;;
-	LEXMARK)
-		# All Lexmark printers
-		P_DEVS0="$P_DEVS0 $LEXMARK_DEVS"
-		;;
-	BROTHER)
-		# All Brother printers
-		P_DEVS0="$P_DEVS0 $BROTHER_DEVS"
-		;;
-	OKI)
-		# All OKI printers
-		P_DEVS0="$P_DEVS0 $OKI_DEVS"
-		;;
-	IBM)
-		# All IBM printers
-		P_DEVS0="$P_DEVS0 $IBM_DEVS"
-		;;
-	IJS)
-		# IJS printers
-		IJS_DEVS0="$IJSDEVS"
-		;;
-	JAPAN)
-		# All old japanese printers
-		P_DEVS0="$P_DEVS0 $JAPAN_DEVS"
-		;;
-	PS)
-		# PostScript/PDF writing
-		F_DEVS0="$F_DEVS0 $PS_DEVS"
-		;;
-	SVG)
-		# PostScript/PDF writing
-		SVG_DEVS0="$SVGDEV"
-		;;
-	ETS)
-		# ETS Halftoning devices
-		F_DEVS0="$F_DEVS0 $ETS_HALFTONING_DEVS"
-		;;
-	X11)
-		# X11 display devices
-		X11_DEVS0="$X_DEVS"
-		;;
+                if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
+                        P_DEVS0="$P_DEVS0 $OPVP_DEVS"
+                else
+                        AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
+                fi
+                ;;
+        FILES)
+                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
+                CUPS_DEVS0="$CUPSDEV"
+                JBIG2_DEVS="$JBIG2DEVS"
+                PNG_DEVS0="$PNGDEVS"
+                ;;
+        APPLE)
+                # All Apple printers
+                P_DEVS0="$P_DEVS0 $APPLE_DEVS"
+                ;;
+        BMP)
+                # BMP file format
+                F_DEVS0="$F_DEVS0 $BMP_DEVS"
+                ;;
+        CANON)
+                # All Canon printers
+                P_DEVS0="$P_DEVS0 $CANON_DEVS"
+                ;;
+        EPSON)
+                # All Epson printers
+                P_DEVS0="$P_DEVS0 $EPSON_DEVS"
+                ;;
+        FAX)
+                # Fax file formats
+                F_DEVS0="$F_DEVS0 $FAX_DEVS"
+                ;;
+        JPEG)
+                # Jpeg file formats
+                F_DEVS0="$F_DEVS0 $JPEG_DEVS"
+                ;;
+        JBIG2)
+                # JBIG file formats
+                JBIG2_DEVS="$JBIG2DEVS"
+                ;;
+        PNG)
+                # PNG file formats
+                PNG_DEVS0="$PNGDEVS"
+                ;;
+        TIFF)
+                # TIFF file formats
+                F_DEVS0="$F_DEVS0 $TIFF_DEVS"
+                ;;
+        PCLXL)
+                # PCL XL/PCL 6 drivers
+                F_DEVS0="$F_DEVS0 $PCLXL_DEVS"
+                ;;
+        PCX)
+                # PCX file formats
+                F_DEVS0="$F_DEVS0 $PCX_DEVS"
+                ;;
+        PBM)
+                # PBM file formats
+                F_DEVS0="$F_DEVS0 $PBM_DEVS"
+                ;;
+        CUPS)
+                # CUPS file format
+                CUPS_DEVS0="$CUPSDEV"
+                ;;
+        HP)
+                # All HP printers
+                P_DEVS0="$P_DEVS0 $HP_DEVS"
+                ;;
+        LEXMARK)
+                # All Lexmark printers
+                P_DEVS0="$P_DEVS0 $LEXMARK_DEVS"
+                ;;
+        BROTHER)
+                # All Brother printers
+                P_DEVS0="$P_DEVS0 $BROTHER_DEVS"
+                ;;
+        OKI)
+                # All OKI printers
+                P_DEVS0="$P_DEVS0 $OKI_DEVS"
+                ;;
+        IBM)
+                # All IBM printers
+                P_DEVS0="$P_DEVS0 $IBM_DEVS"
+                ;;
+        IJS)
+                # IJS printers
+                IJS_DEVS0="$IJSDEVS"
+                ;;
+        JAPAN)
+                # All old japanese printers
+                P_DEVS0="$P_DEVS0 $JAPAN_DEVS"
+                ;;
+        PS)
+                # PostScript/PDF writing
+                F_DEVS0="$F_DEVS0 $PS_DEVS"
+                ;;
+        SVG)
+                # PostScript/PDF writing
+                SVG_DEVS0="$SVGDEV"
+                ;;
+        ETS)
+                # ETS Halftoning devices
+                F_DEVS0="$F_DEVS0 $ETS_HALFTONING_DEVS"
+                ;;
+        X11)
+                # X11 display devices
+                X11_DEVS0="$X_DEVS"
+                ;;
         opvp)
-		# Open Vector Printing driver...
-		if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
-			P_DEVS0="$P_DEVS0 $OPVP_DEVS"
-		else
-			AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
-		fi
-		;;
-	*)
-		# It's a driver name (or a user messup)
-		P_DEVS0="$P_DEVS0 `echo $THIS |sed -e 's,\.dev$,,'`"
-		;;
-	esac
+                # Open Vector Printing driver...
+                if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
+                        P_DEVS0="$P_DEVS0 $OPVP_DEVS"
+                else
+                        AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
+                fi
+                ;;
+        *)
+                # It's a driver name (or a user messup)
+                P_DEVS0="$P_DEVS0 `echo $THIS |sed -e 's,\.dev$,,'`"
+                ;;
+        esac
 done
 
 noncontribmakefiles=`find . -name '*.mak' -print | grep -v '^\./contrib/'`
@@ -1505,76 +1538,78 @@ DYNAMIC_LIBS=""
 INSTALL_SHARED=""
 
 case `uname` in
-	Linux*|GNU*)
-	DYNAMIC_CFLAGS="-fPIC"
-	DYNAMIC_LDFLAGS="-fPIC -shared"
+        Linux*|GNU*)
+        DYNAMIC_CFLAGS="-fPIC"
+        DYNAMIC_LDFLAGS="-fPIC -shared"
         if test $ac_cv_prog_gcc = yes; then
             # GCC high level flag
-	    DYNAMIC_LIBS="-rdynamic -ldl"
+            DYNAMIC_LIBS="-rdynamic -ldl"
         else
             DYNAMIC_LIBS=""
         fi
-	;;
-	*BSD)
-	DYNAMIC_CFLAGS="-fPIC"
-	DYNAMIC_LDFLAGS="-fPIC -shared"
-	DYNAMIC_LIBS=""
-	;;
-	Darwin*)
-	DYNAMIC_LDFLAGS="-dynamiclib"
-	DYNAMIC_LIBS=""
-	;;
-	SunOS)
-	if test $ac_cv_prog_gcc = yes; then
-	    DYNAMIC_CFLAGS="-fPIC"
-	else
-	    DYNAMIC_CFLAGS="-KPIC"
-	fi
-	DYNAMIC_LDFLAGS="-G"
-	DYNAMIC_LIBS=""
-	;;
+        ;;
+        *BSD)
+        DYNAMIC_CFLAGS="-fPIC"
+        DYNAMIC_LDFLAGS="-fPIC -shared"
+        DYNAMIC_LIBS=""
+        ;;
+        Darwin*)
+        DYNAMIC_LDFLAGS="-dynamiclib"
+        DYNAMIC_LIBS=""
+        ;;
+        SunOS)
+        if test $ac_cv_prog_gcc = yes; then
+            DYNAMIC_CFLAGS="-fPIC"
+        else
+            DYNAMIC_CFLAGS="-KPIC"
+        fi
+        DYNAMIC_LDFLAGS="-G"
+        DYNAMIC_LIBS=""
+        ;;
 esac
 
 AC_ARG_ENABLE([dynamic], AC_HELP_STRING([--enable-dynamic],
     [Enable dynamically loaded drivers]),
 [
-	case `uname` in
-		Linux*|GNU*)
-		INSTALL_SHARED="install-shared"
-		if test "x$X_DEVS" != x; then
-			DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-		else
-			DYNAMIC_DEVS=""
-		fi
-		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X11_DEVS=""
-		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-		;;
-		*BSD)
-		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X11_DEVS=""
-		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-		;;
-		Darwin*)
-		INSTALL_SHARED="install-shared"
-		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		X11_DEVS=""
-		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-		;;
-		SunOS)
-		DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
-		DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
-		OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
-		DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
-		;;
-		*)
-		AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
-		;;
-	esac
+        if test "x$enable_dynamic" != xno; then
+                case `uname` in
+                        Linux*|GNU*)
+                        INSTALL_SHARED="install-shared"
+                        if test "x$X_DEVS" != x; then
+                                DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+                        else
+                                DYNAMIC_DEVS=""
+                        fi
+                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+                        X11_DEVS=""
+                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+                        ;;
+                        *BSD)
+                        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+                        X11_DEVS=""
+                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+                        ;;
+                        Darwin*)
+                        INSTALL_SHARED="install-shared"
+                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+                        X11_DEVS=""
+                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+                        ;;
+                        SunOS)
+                        DYNAMIC_DEVS="\$(GLOBJDIR)/X11.so"
+                        DYNAMIC_FLAGS="-DGS_DEVS_SHARED -DGS_DEVS_SHARED_DIR=\\\"\$(gssharedir)\\\""
+                        OPT_CFLAGS="$DYNAMIC_CFLAGS $OPT_CFLAGS"
+                        DBG_CFLAGS="$DYNAMIC_CFLAGS $DBG_CFLAGS"
+                        ;;
+                        *)
+                        AC_MSG_ERROR([Sorry, dynamic driver support not available on this platform!])
+                        ;;
+                esac
+        fi
 ])
 
 AC_SUBST(DYNAMIC_CFLAGS)
@@ -1591,32 +1626,32 @@ AC_ARG_WITH([fontpath],  AC_HELP_STRING([--with-fontpath],
 
 dnl Fix "prefix" variable...
 if test "x$prefix" = xNONE; then
-	prefix=/usr/local
+        prefix=/usr/local
 fi
 
 dnl Fix "datadir" variable...
 if test "x$datadir" = 'x${prefix}/share'; then
-	datadir="$prefix/share"
+        datadir="$prefix/share"
 fi
 
 dnl Fix "fontpath" variable...
 if test "x$fontpath" = "x"; then
-	# These font directories are used by various Linux distributions...
-	fontpath="$datadir/fonts/default/ghostscript"
-	fontpath="${fontpath}:$datadir/fonts/default/Type1"
-	fontpath="${fontpath}:$datadir/fonts/default/TrueType"
+        # These font directories are used by various Linux distributions...
+        fontpath="$datadir/fonts/default/ghostscript"
+        fontpath="${fontpath}:$datadir/fonts/default/Type1"
+        fontpath="${fontpath}:$datadir/fonts/default/TrueType"
 
-	# These font directories are used by IRIX...
-	fontpath="${fontpath}:/usr/lib/DPS/outline/base"
+        # These font directories are used by IRIX...
+        fontpath="${fontpath}:/usr/lib/DPS/outline/base"
 
-	# These font directories are used by Solaris...
-	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/Type1"
-	fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/TrueType"
+        # These font directories are used by Solaris...
+        fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/Type1"
+        fontpath="${fontpath}:/usr/openwin/lib/X11/fonts/TrueType"
 
-	# This font directory is used by CUPS...
-	if test "x$CUPSCONFIG" != x; then
-	  fontpath="${fontpath}:`$CUPSCONFIG --datadir`/fonts"
-	fi
+        # This font directory is used by CUPS...
+        if test "x$CUPSCONFIG" != x; then
+          fontpath="${fontpath}:`$CUPSCONFIG --datadir`/fonts"
+        fi
 fi
 
 AC_SUBST(fontpath)
