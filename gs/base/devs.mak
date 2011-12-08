@@ -133,9 +133,6 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	bmp256		8-bit (256-color) .BMP file format
 #	bmp16m		24-bit .BMP file format
 #	bmp32b		32-bit pseudo-.BMP file format
-#	cgmmono		Monochrome (black-and-white) CGM -- LOW LEVEL OUTPUT ONLY
-#	cgm8		8-bit (256-color) CGM -- DITTO
-#	cgm24		24-bit color CGM -- DITTO
 #	jpeg		JPEG format, RGB output
 #	jpeggray	JPEG format, gray output
 #	jpegcmyk	JPEG format, cmyk output
@@ -1249,33 +1246,6 @@ $(DD)bmpa32b.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev\
  $(GDEV)
 	$(SETPDEV2) $(DD)bmpa32b $(bmpa_)
 	$(ADDMOD) $(DD)bmpa32b -include $(GLD)async
-
-### -------------------------- CGM file format ------------------------- ###
-### This driver is under development.  Use at your own risk.             ###
-### The output is very low-level, consisting only of rectangles and      ###
-### cell arrays.                                                         ###
-
-cgm_=$(GLOBJ)gdevcgm.$(OBJ) $(GLOBJ)gdevcgml.$(OBJ)
-
-gdevcgml_h=$(GLSRC)gdevcgml.h
-gdevcgmx_h=$(GLSRC)gdevcgmx.h $(gdevcgml_h)
-
-$(GLOBJ)gdevcgm.$(OBJ) : $(GLSRC)gdevcgm.c $(GDEV) $(memory__h)\
- $(gp_h) $(gsparam_h) $(gsutil_h) $(gdevpccm_h) $(gdevcgml_h)
-	$(GLCC) $(GLO_)gdevcgm.$(OBJ) $(C_) $(GLSRC)gdevcgm.c
-
-$(GLOBJ)gdevcgml.$(OBJ) : $(GLSRC)gdevcgml.c $(memory__h) $(stdio__h)\
- $(gdevcgmx_h)
-	$(GLCC) $(GLO_)gdevcgml.$(OBJ) $(C_) $(GLSRC)gdevcgml.c
-
-$(DD)cgmmono.dev : $(DEVS_MAK) $(cgm_) $(GDEV)
-	$(SETDEV) $(DD)cgmmono $(cgm_)
-
-$(DD)cgm8.dev : $(DEVS_MAK) $(cgm_) $(GDEV)
-	$(SETDEV) $(DD)cgm8 $(cgm_)
-
-$(DD)cgm24.dev : $(DEVS_MAK) $(cgm_) $(GDEV)
-	$(SETDEV) $(DD)cgm24 $(cgm_)
 
 ### ------------------------ The DeviceN device ------------------------ ###
 

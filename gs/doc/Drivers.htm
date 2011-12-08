@@ -2207,7 +2207,7 @@ In addition to the lower-level drawing operations described above, the
 driver interface provides a set of high-level operations.  Normally these
 will have their default implementation, which converts the high-level
 operation to the low-level ones just described; however, drivers that
-generate high-level output formats such as CGM, or communicate with devices
+generate high-level output formats such as pdfwrite, or communicate with devices
 that have firmware for higher-level operations such as polygon fills, may
 implement these high-level operations directly.  For more details, please
 consult the source code, specifically:

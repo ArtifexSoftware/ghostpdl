@@ -1334,7 +1334,7 @@ TIFF_DEVS='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw t
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox txtwrite'
-MISC_FDEVS='ccr cgm24 cgm8 cgmmono cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf'
+MISC_FDEVS='ccr cif inferno mag16 mag256 mgr4 mgr8 mgrgray2 mgrgray4 mgrgray8 mgrmono miff24 plan9bm sgirgb sunhmono bit bitrgb bitrgbtags bitcmyk devicen spotcmyk xcf'
 SVGDEV='svgwrite'
 
 while test -n "$drivers"; do
