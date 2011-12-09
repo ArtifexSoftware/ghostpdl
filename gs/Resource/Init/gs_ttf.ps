@@ -1731,7 +1731,7 @@ currentdict /postalias undef
     } {
       //true
     } ifelse {
-      dup 16 (01234567) cvrs cvn      % glyph char /char
+      dup (01234567) cvs cvn          % glyph char /char
       3 1 roll                        % /char glyph char
       3 index exch                    % /char glyph [] char
       3 index put                     % /char glyph
