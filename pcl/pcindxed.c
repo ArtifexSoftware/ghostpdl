@@ -133,19 +133,6 @@ alloc_indexed_cspace(
     pindexed->palette.data = bp;
     pindexed->palette.size = 3 * pcl_cs_indexed_palette_size;
 
-    /* RJW: Set the contents of the palette to a known value. This is
-     * important to avoid valgrind warnings later on. The calling code may
-     * choose to only initialise the first (say) 8 entries of a 256 entry
-     * palette. This then causes valgrind to throw a fit when the whole 256
-     * entry palette is passed into cmsDoTransform later.
-     * An alternative solution would be to actualy set pindexed->palette.size
-     * correctly. An example of this is seen with the following invocation:
-     *     valgrind --track-origins=yes --db-attach=yes main/obj/pcl6 -r75
-     *       -dMaxBitmap=10000 -sDEVICE=pbmraw -o out.pbm
-     *       ../ghostpcl/tests_private/pcl/pcl5cats/Subset/AC7Z5SCC.BIN
-     */
-    memset(bp, 0, 3*pcl_cs_indexed_palette_size);
-
     code = gs_cspace_build_Indexed( &(pindexed->pcspace),
                                     pbase->pcspace,
                                     pcl_cs_indexed_palette_size,
@@ -201,8 +188,6 @@ unshare_indexed_cspace(
     pnew->original_cspace = pindexed->original_cspace;
     pnew->num_entries = pindexed->num_entries;
     pnew->palette.size = pindexed->palette.size;
-    pnew->pcspace->params.indexed.hival = pindexed->pcspace->params.indexed.hival;
-    pnew->pcspace->params.indexed.n_comps = pindexed->pcspace->params.indexed.n_comps;
     memcpy(pnew->palette.data, pindexed->palette.data, pindexed->palette.size);
     memcpy(pnew->pen_widths, pindexed->pen_widths, num_entries * sizeof(float));
     memcpy(pnew->norm, pindexed->norm, 3 * sizeof(pindexed->norm[0]));
@@ -1121,11 +1106,6 @@ pcl_cs_indexed_build_special(
         pindexed->palette.data[i] = 255;
         pindexed->palette.data[i + 3] = pcolor1[i];
     }
-
-    /* alloc_indexed_cspace allocates space for 256 entries. We only use 2.
-     * To avoid accessing off the end of the data later on, reset the hi_val.
-     */
-    pindexed->pcspace->params.indexed.hival = 1;
 
     /* the latter are not strictly necessary */
     pindexed->pen_widths[0] = dflt_pen_width;
