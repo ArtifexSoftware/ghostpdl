@@ -594,7 +594,7 @@ end readonly def
   matrix /TextTempMatrix gput		% see settextposition
 } bdef
 /ET {
-  TextRenderingMode 4 ge { clip newpath } if
+  TextRenderingMode 4 ge { .currentfilladjust 0 .setfilladjust clip newpath .setfilladjust} if
   TextSaveMatrix setmatrix
   currentdict /TextSaveMatrix undef
 } bdef
