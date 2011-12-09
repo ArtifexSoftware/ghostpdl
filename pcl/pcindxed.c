@@ -704,6 +704,10 @@ pcl_cs_indexed_set_num_entries(
 
     pindexed->is_GL = gl2;
 
+#ifdef DEBUG
+    if_debug3('c', "pcl_cs_indexed_set_num_entries, is gl2:%d, entries old:%d, new:%d\n", gl2, old_num, new_num);
+#endif
+
     /*
      * Set new_num to the smallest larger power of 2 less than
      * pcl_cs_indexed_palette_size.
@@ -949,14 +953,22 @@ pcl_cs_indexed_build_cspace(
     if (pfixed && (pcid->u.hdr.bits_per_index == dflt_cid_hdr.bits_per_index)) {
         is_default = true;
         if (pcs->pdflt_cs_indexed != 0) {
+#ifdef DEBUG
+        if_debug0('c', "[c]build request for default color space\n");
+#endif
             pcl_cs_indexed_copy_from(*ppindexed, pcs->pdflt_cs_indexed);
             return 0;
         }
     }
 
     /* release the existing color space, if present */
-    if (pindexed != 0)
+    if (pindexed != 0) {
+#ifdef DEBUG
+        if_debug1('c', "[c]releasing index for underlying color space:%s\n",
+                  pcl_cid_cspace_get_debug_name(pindexed->pbase->type));
+#endif
         rc_decrement(pindexed, "build indexed color space");
+    }
 
     /* build the base color space */
     if ((code = pcl_cs_base_build_cspace(&pbase, pcid, pmem)) < 0)
@@ -968,6 +980,12 @@ pcl_cs_indexed_build_cspace(
         return code;
     }
     pindexed = *ppindexed;
+
+#ifdef DEBUG
+        if_debug1('c', "[c]built base and index for color space:%s\n",
+                  pcl_cid_cspace_get_debug_name(pindexed->pbase->type));
+
+#endif
 
     /* release our extra reference of the base color space */
     pcl_cs_base_release(pbase);

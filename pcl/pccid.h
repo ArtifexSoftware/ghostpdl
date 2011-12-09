@@ -165,4 +165,13 @@ int     pcl_cid_IN(pcl_state_t * pcs);
  */
 extern  const pcl_init_t    pcl_cid_init;
 
+/*
+ * Debugging routines.
+ */
+
+#ifdef DEBUG
+const char *pcl_cid_cspace_get_debug_name(int index);
+const char *pcl_cid_enc_get_debug_name(int index);
+#endif
+
 #endif		/* pccid_INCLUDED */

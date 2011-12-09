@@ -1051,9 +1051,13 @@ pcl_cs_base_build_cspace(
     int                     code = 0;
 
     /* release the existing color space, if present */
-    if (pbase != 0)
+    if (pbase != 0) {
+#ifdef DEBUG
+        if_debug1('c', "[c]releasing color space:%s\n",
+                  pcl_cid_cspace_get_debug_name(pbase->type));
+#endif
         rc_decrement(pbase, "build base pcl color space");
-
+    }
     /* build basic structure and client info. structure */
     if ((code = alloc_base_cspace(ppbase, type, pmem)) < 0)
         return code;
