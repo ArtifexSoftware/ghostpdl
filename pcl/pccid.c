@@ -53,6 +53,47 @@ pcl_cid_get_bits_per_primary(const pcl_cid_data_t *pcid, int index)
 {
     return pcid->u.hdr.bits_per_primary[index];
 }
+#ifdef DEBUG
+
+#define WHITE_CS "White"
+
+static const char * const pcl_csnames[] = {
+    "RGB", "CMY", 
+    "Colorimetric", "CIE",
+    "LumChrom"
+};
+
+static const char * const pcl_encnames[] = {
+    "Indexed By Plane", "Indexed By Pixel",
+    "Direct By Plane", "Direct By Pixel"
+};
+
+const char *
+pcl_cid_cspace_get_debug_name(int index)
+{
+    if (index == -1) 
+        return WHITE_CS;
+
+    if (index < 0 || index >= countof(pcl_csnames)) {
+        dprintf("index out of range\n");
+        return pcl_csnames[0];
+    } else {
+        return pcl_csnames[index];
+    }
+}
+
+const char *
+pcl_cid_enc_get_debug_name(int index)
+{
+    if (index < 0 || index >= countof(pcl_encnames)) {
+        dprintf("index out of range\n");
+        return pcl_encnames[0];
+    } else {
+        return pcl_encnames[index];
+    }
+}
+
+#endif
 
 /*
  * Convert a 32-bit floating point number stored in HP's big-endian form
@@ -384,8 +425,22 @@ install_cid_data(
         return e_Range;
     cid.len = len;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
+
+#ifdef DEBUG
+    if_debug2('c', "[c] cid before check color space: %s encoding: %s\n",
+              pcl_cid_cspace_get_debug_name(pcl_cid_get_cspace(&cid)), 
+              pcl_cid_enc_get_debug_name(pcl_cid_get_encoding(&cid)));
+#endif
+
     /* check the header this will also make corrections if possible */
     code = check_cid_hdr(pcs, &cid);
+
+#ifdef DEBUG
+    if_debug2('c', "[c] cid after check color space: %s encoding: %s\n",
+              pcl_cid_cspace_get_debug_name(pcl_cid_get_cspace(&cid)), 
+              pcl_cid_enc_get_debug_name(pcl_cid_get_encoding(&cid)));
+#endif
+
     if (code >= 0) {
         /* check if we should substitute colometric for a device color space */
         if ( (pcl_cid_get_cspace(&cid) >= pcl_cspace_RGB) &&

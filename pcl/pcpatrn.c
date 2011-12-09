@@ -228,6 +228,11 @@ set_unpatterned_color(
     int                     code = 0;
     pcl_ccolor_type_t       type;
 
+#ifdef DEBUG
+    if_debug3('c', "[c]set unpatterned color %f %f %f\n", ppaint->values[0],
+              ppaint->values[1], ppaint->values[2]);
+#endif
+
     if ( pcur != 0 )
         type = pcur->type;
     else
@@ -871,6 +876,10 @@ pattern_set_white(
     pcl_cs_base_t * pwhite_cs = 0;
     pcl_ht_t *      pdflt_ht = 0;
 
+#ifdef DEBUG
+    if_debug0('c', "[c]pattern_set_white\n");
+#endif
+
     if (code < 0)
         return code;
 
@@ -906,6 +915,11 @@ pattern_set_pen(
     pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
     int                 num_entries = pindexed->num_entries;
     int                 code = 0;
+
+#ifdef DEBUG
+    if_debug3('c', "[c]pattern_set_pen pen=%d, for raster=%d entries=%d\n",
+              pen, for_pcl_raster, num_entries);
+#endif
 
     /* put the pen number in the proper range */
     if ( (pen >= num_entries)                            &&
@@ -948,6 +962,10 @@ pattern_set_frgrnd(
     pcl_frgrnd_t *  pfrgrnd = pcs->pfrgrnd;
     pcl_palette_t * ppalet = pcs->ppalet;
     int             code = set_ht_crd_from_foreground(pcs);
+
+#ifdef DEBUG
+    if_debug1('c', "[c]pattern_set_frgrnd for image=%d\n", for_image);
+#endif
 
     if (code < 0)
         return code;
@@ -992,6 +1010,10 @@ pattern_set_shade_pcl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_shade(pcs, inten);
 
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_shade_pcl intensity=%d, for raster=%d\n",
+              inten, for_image);
+#endif
     if (pptrn == 0)
         return ( inten > 0 ? pattern_set_frgrnd(pcs, 0, for_image)
                             : pattern_set_white(pcs, 0, 0) );
@@ -1016,6 +1038,11 @@ pattern_set_shade_gl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_shade(pcs, inten);
 
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_shade_gl intensity=%d, pen=%d\n",
+              inten, pen);
+#endif
+
     /* check if the current pen is white or the pattern is transparent
        and the intensity is 0 (white) and if so use the unsolid
        pattern */
@@ -1039,6 +1066,11 @@ pattern_set_hatch_pcl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_cross(pcs, indx);
 
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_hatch_pcl index=%d, for raster=%d\n",
+              indx, for_image);
+#endif
+
     if (pptrn == 0)
         return pattern_set_frgrnd(pcs, 0, for_image);
     else {
@@ -1061,6 +1093,9 @@ pattern_set_hatch_gl(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_cross(pcs, indx);
 
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_hatch_gl index=%d pen=%d\n", indx, pen);
+#endif
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
         pptrn = pcl_pattern_get_unsolid_pattern(pcs);
@@ -1079,6 +1114,10 @@ pattern_set_user_pcl(
 )
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
+
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_user_pcl id=%d raster=%d\n", id, for_image);
+#endif
 
     if (pptrn == 0)
         return pattern_set_frgrnd(pcs, 0, for_image);
@@ -1103,6 +1142,10 @@ pattern_set_user_gl(
 )
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(pcs, id);
+
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_user_gl id=%d, pen=%d\n", id, pen);
+#endif
 
     if (pptrn == 0)
         return pattern_set_pen(pcs, 0, false);
@@ -1130,6 +1173,9 @@ pattern_set_gl_RF(
 {
     pcl_pattern_t * pptrn = pcl_pattern_get_gl_uptrn(pcs, indx);
 
+#ifdef DEBUG
+    if_debug2('c', "[c]pattern_set_gl_RF index=%d pen=%d\n", indx, pen);
+#endif
     /*
      * HACK - if pen 1 is to be use for actual uncolored RF patterns, the pen
      * operand will be the opposite of the current pen number. This allows us
