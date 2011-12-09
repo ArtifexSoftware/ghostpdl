@@ -164,6 +164,9 @@ static void FF_stream_close (FT_Stream str)
 
     (void)sclose(ps);
 }
+
+extern const uint file_default_buffer_size;
+
 static int FF_open_read_stream (gs_memory_t *mem, char *fname, FT_Stream *fts)
 {
     int code = 0;
@@ -176,14 +179,32 @@ static int FF_open_read_stream (gs_memory_t *mem, char *fname, FT_Stream *fts)
     if (code < 0){
         goto error_out;
     }
-
-    if (pfn.fname != NULL) {
+    
+    if (!pfn.fname) {
+        code = e_undefinedfilename;
+        goto error_out;
+    }
+    
+    if (pfn.iodev == NULL) {
+        pfn.iodev = iodev_default(mem);
+    }
+    
+    if (pfn.iodev) {
         gx_io_device *const iodev = pfn.iodev;
         iodev_proc_open_file((*open_file)) = iodev->procs.open_file;
 
-        code = open_file(iodev, pfn.fname, pfn.len, "r", &ps, mem);
-        if (code < 0) {
-            goto error_out;
+        if (open_file) {
+            code = open_file(iodev, pfn.fname, pfn.len, "r", &ps, mem);
+            if (code < 0) {
+                goto error_out;
+            }
+        }
+        else {
+            code = file_open_stream(pfn.fname, pfn.len, "r", file_default_buffer_size,
+                          &ps, pfn.iodev, pfn.iodev->procs.fopen, mem);
+            if (code < 0) {
+                goto error_out;
+            }
         }
     }
 
