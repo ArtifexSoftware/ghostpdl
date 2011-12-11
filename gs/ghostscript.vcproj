@@ -1238,6 +1238,10 @@
 						>
 					</File>
 					<File
+						RelativePath="base\gdevicov.c"
+						>
+					</File>
+					<File
 						RelativePath="base\gdevbit.c"
 						>
 					</File>
