@@ -1122,6 +1122,14 @@ $(GLOBJ)gdevhit.$(OBJ) : $(GLSRC)gdevhit.c $(AK) $(std_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevhit.$(OBJ) $(C_) $(GLSRC)gdevhit.c
 
+# ink coverage device  --  a device that records the ink coverage
+# on each page, and discards the page.
+$(GLD)inkcov.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevicov.$(OBJ)
+	$(SETDEV2) $(GLD)inkcov $(GLOBJ)gdevicov.$(OBJ)
+
+$(GLOBJ)gdevicov.$(OBJ) : $(GLSRC)gdevicov.c $(AK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gdevicov.$(OBJ) $(C_) $(GLSRC)gdevicov.c
+
 # A device that stores its data using run-length encoding.
 
 $(GLOBJ)gdevmrun.$(OBJ) : $(GLSRC)gdevmrun.c $(AK) $(gx_h)\
