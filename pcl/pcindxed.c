@@ -100,12 +100,19 @@ free_indexed_cspace(
 alloc_indexed_cspace(
     pcl_cs_indexed_t ** ppindexed,
     pcl_cs_base_t *     pbase,
+    uint                num_entries,
     gs_memory_t *       pmem
 )
 {
     pcl_cs_indexed_t *  pindexed = 0;
     int                 code = 0;
     byte *              bp = 0;
+    uint                palette_size = 3 * num_entries;
+
+#ifdef DEBUG
+    if_debug1('c', "[c]alloc_indexed_cspace entries:%d\n", num_entries);
+#endif
+
     rc_alloc_struct_1( pindexed,
                        pcl_cs_indexed_t,
                        &st_cs_indexed_t,
@@ -113,6 +120,7 @@ alloc_indexed_cspace(
                        return e_Memory,
                        "allocate pcl indexed color space"
                        );
+
     pindexed->rc.free = free_indexed_cspace;
     pindexed->pfixed = false;
     pindexed->is_GL = false;
@@ -123,7 +131,7 @@ alloc_indexed_cspace(
     pindexed->palette.size = 0;
 
     bp = gs_alloc_string( pmem,
-                          3 * pcl_cs_indexed_palette_size,
+                          palette_size,
                           "allocate pcl indexed color space"
                           );
     if (bp == 0) {
@@ -131,11 +139,11 @@ alloc_indexed_cspace(
         return e_Memory;
     }
     pindexed->palette.data = bp;
-    pindexed->palette.size = 3 * pcl_cs_indexed_palette_size;
+    pindexed->palette.size = palette_size;
 
     code = gs_cspace_build_Indexed( &(pindexed->pcspace),
                                     pbase->pcspace,
-                                    pcl_cs_indexed_palette_size,
+                                    num_entries,
                                     (gs_const_string *)&(pindexed->palette),
                                     pmem
                                     );
@@ -145,6 +153,36 @@ alloc_indexed_cspace(
     }
 
     *ppindexed = pindexed;
+    return 0;
+}
+
+/* Resize the palette of an indexed color space */
+  static int
+resize_indexed_cspace(
+    pcl_cs_indexed_t *  pindexed,
+    uint                num_entries
+)
+{
+    byte *pdata;
+    gs_memory_t *pmem = pindexed->rc.memory;
+    uint new_size = num_entries * 3;
+
+#ifdef DEBUG
+    if_debug2('c', "[c]resizing_indexed_cspace new:%d old:%d\n",
+             num_entries, pindexed->num_entries);
+#endif
+
+    pdata = gs_resize_string(pmem, pindexed->palette.data, pindexed->palette.size, new_size,
+                             "resize pcl indexed color space");
+    if (pdata == NULL)
+        return gs_error_VMerror;
+    pindexed->num_entries = num_entries;
+    pindexed->palette.data = pdata;
+    /* NB duplicate data storage */
+    pindexed->palette.size = pindexed->pcspace->params.indexed.lookup.table.size = new_size;
+    pindexed->pcspace->params.indexed.lookup.table.data = (const byte *)pdata;
+    pindexed->palette.data = pdata;
+    pindexed->pcspace->params.indexed.hival = num_entries - 1;
     return 0;
 }
 
@@ -176,6 +214,7 @@ unshare_indexed_cspace(
     /* allocate a new indexed color space */
     code = alloc_indexed_cspace( ppindexed,
                                  pindexed->pbase,
+                                 pindexed->num_entries,
                                  pindexed->rc.memory
                                  );
     if (code < 0)
@@ -501,7 +540,7 @@ set_default_entries(
        simplicity we reset all of the the remaining pallete data. */
     if (num > cnt) {
         int bytes_initialized = 3 * (start + cnt);
-        int bytes_left = (3 * pcl_cs_indexed_palette_size) - bytes_initialized;
+        int bytes_left = pindexed->palette.size - bytes_initialized;
         memset(pindexed->palette.data + bytes_initialized, 0, bytes_left);
     }
 
@@ -702,20 +741,23 @@ pcl_cs_indexed_set_num_entries(
                  : bits );
     new_num = 1L << bits;
 
-    /* check if there is anything to do */
-    if (new_num == old_num)
-        return 0;
-
     /* make sure the palette is unique */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
     pindexed = *ppindexed;
-    pindexed->num_entries = new_num;
     pindexed->cid.bits_per_index = bits;
 
     /* check if the Decode array must be updated */
     if (pindexed->cid.encoding < pcl_penc_direct_by_plane)
         pindexed->Decode[1] = (float)(new_num - 1);
+
+
+    /* resize the palette if necessary */
+    if (old_num != new_num)
+        resize_indexed_cspace(pindexed, new_num);
+    
+    /* update the number of entries in the palette */
+    pindexed->num_entries = new_num;
 
     /* if the palette grew, write in default colors and widths */
     if (new_num > old_num)
@@ -931,6 +973,7 @@ pcl_cs_indexed_build_cspace(
     pcl_cs_base_t *         pbase = 0;
     bool                    is_default = false;
     int                     code = 0;
+
     /*
      * Check if the default color space is being requested. Since there are
      * only three fixed spaces, it is sufficient to check that palette is
@@ -961,7 +1004,7 @@ pcl_cs_indexed_build_cspace(
         return code;
 
     /* build the indexed color space */
-    if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0) {
+    if ((code = alloc_indexed_cspace(ppindexed, pbase, 1L << bits, pmem)) < 0) {
         pcl_cs_base_release(pbase);
         return code;
     }
@@ -1025,7 +1068,7 @@ pcl_cs_indexed_build_cspace(
     /* now can indicate if the palette is fixed */
     pindexed->pfixed = pfixed;
 
-    /* record if this is the default */
+    /* record if this is the default. */
     if (is_default)
         pcl_cs_indexed_init_from(pcs->pdflt_cs_indexed, pindexed);
 
@@ -1089,13 +1132,12 @@ pcl_cs_indexed_build_special(
     int                         i, code = 0;
 
     /* build the indexed color space */
-    if ((code = alloc_indexed_cspace(ppindexed, pbase, pmem)) < 0)
+    if ((code = alloc_indexed_cspace(ppindexed, pbase, 2, pmem)) < 0)
         return code;
     pindexed = *ppindexed;
     pindexed->pfixed = false;
     pindexed->cid = cid;
     pindexed->num_entries = 2;
-
     /* set up the normalization information - not strictly necessary */
     pcl_cs_indexed_set_norm_and_Decode( ppindexed,
                                         wht_ref[0], wht_ref[1], wht_ref[2],
