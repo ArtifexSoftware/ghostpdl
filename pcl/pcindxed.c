@@ -719,7 +719,8 @@ pcl_cs_indexed_set_num_entries(
 
     /* if the palette grew, write in default colors and widths */
     if (new_num > old_num)
-        set_default_entries(pindexed, old_num, new_num, gl2);
+        set_default_entries(pindexed, old_num, new_num - old_num, gl2);
+
     return 0;
 }
 
