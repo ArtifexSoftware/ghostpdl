@@ -1127,7 +1127,8 @@ $(GLOBJ)gdevhit.$(OBJ) : $(GLSRC)gdevhit.c $(AK) $(std_h)\
 $(GLD)inkcov.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevicov.$(OBJ)
 	$(SETDEV2) $(GLD)inkcov $(GLOBJ)gdevicov.$(OBJ)
 
-$(GLOBJ)gdevicov.$(OBJ) : $(GLSRC)gdevicov.c $(AK) $(MAKEDIRS)
+$(GLOBJ)gdevicov.$(OBJ) : $(GLSRC)gdevicov.c $(AK) $(MAKEDIRS) \
+  $(arch_h) $(gdevprn_h) $(stdio__h)  $(stdint__h)
 	$(GLCC) $(GLO_)gdevicov.$(OBJ) $(C_) $(GLSRC)gdevicov.c
 
 # A device that stores its data using run-length encoding.
