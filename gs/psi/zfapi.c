@@ -1109,11 +1109,6 @@ static int FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf
 static bool using_transparency_pattern (gs_state *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
-    int abits = 1;
-
-    if (dev_proc(dev, get_alpha_bits)) {
-        abits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
-    }
 
     return((!gs_color_writes_pure(pgs)) && dev->procs.begin_transparency_group != NULL && dev->procs.end_transparency_group != NULL);
 }
@@ -1699,7 +1694,6 @@ static const int frac_pixel_shift = 4;
  */
 static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAPI_raster *rast, const int import_shift_v)
 {
-    gx_device *dev1;
     gx_device *dev = penum->dev;
     gs_state *pgs = (gs_state *)penum->pis;
     int code;
@@ -1713,8 +1707,6 @@ static int fapi_image_uncached_glyph (i_ctx_t *i_ctx_p, gs_show_enum *penum, FAP
     byte *src, *dst;
     int h, padbytes, cpbytes, dstr = bitmap_raster(rast->width);
     int sstr = rast->line_step;
-
-    dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
 
     /* we can only safely use the gx_image_fill_masked() "shortcut" if we're drawing
      * a "simple" colour, rather than a pattern.
@@ -1829,7 +1821,6 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     gs_state *pgs;
     gx_device *dev1;
-    gx_device *dev;
     const int import_shift_v = _fixed_shift - 32; /* we always 32.32 values for the outline interface now */
     FAPI_raster rast;
     int code;
@@ -1839,7 +1830,6 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     if(penum == NULL) {
         return_error(e_undefined);
     }
-    dev = penum_s->dev;
 
     /* Ensure that pis points to a st_gs_gstate (graphics state) structure */
     if (gs_object_type(penum->memory, penum->pis) != &st_gs_state) {
@@ -2597,7 +2587,7 @@ retry_oversampling:
         }
         memset(&metrics, 0x00, sizeof(metrics));
         /* Take metrics from font : */
-        if (SHOW_IS(penum, TEXT_DO_NONE)) {
+        if (zchar_show_width_only(penum)) {
             code = I->get_char_width(I, &I->ff, &cr, &metrics);
             /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
              * so it's worth retrying as an outline glyph

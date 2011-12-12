@@ -1327,8 +1327,8 @@ get_char_width(FAPI_server *a_server, FAPI_font *a_font, FAPI_char_ref *a_char_r
 {
     FF_server *s = (FF_server*)a_server;
     return load_glyph(a_server, a_font, a_char_ref, a_metrics,
-                      a_server->max_bitmap > 0 ? (FT_Glyph*)&s->bitmap_glyph : (FT_Glyph*)&s->outline_glyph,
-                      a_server->max_bitmap > 0 ? true : false, a_server->max_bitmap);
+                      (FT_Glyph*)&s->outline_glyph,
+                      false, a_server->max_bitmap);
 }
 
 static FAPI_retcode get_fontmatrix(FAPI_server *server, gs_matrix *m)
