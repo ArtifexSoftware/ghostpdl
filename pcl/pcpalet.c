@@ -222,7 +222,7 @@ build_default_palette(
 /*
  * Clear the palette stack.
  */
- void
+ static void
 clear_palette_stack(
     pcl_state_t *       pcs,
     gs_memory_t *       pmem
