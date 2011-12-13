@@ -108,6 +108,7 @@ alloc_indexed_cspace(
     int                 code = 0;
     byte *              bp = 0;
     uint                palette_size = 3 * num_entries;
+    int                 i;
 
 #ifdef DEBUG
     if_debug1('c', "[c]alloc_indexed_cspace entries:%d\n", num_entries);
@@ -140,7 +141,9 @@ alloc_indexed_cspace(
     }
     pindexed->palette.data = bp;
     pindexed->palette.size = palette_size;
-
+    for (i = 0; i < num_entries; i++)
+        pindexed->pen_widths[i] = dflt_pen_width;
+    
     code = gs_cspace_build_Indexed( &(pindexed->pcspace),
                                     pbase->pcspace,
                                     num_entries,
@@ -166,7 +169,8 @@ resize_indexed_cspace(
     byte *pdata;
     gs_memory_t *pmem = pindexed->rc.memory;
     uint new_size = num_entries * 3;
-
+    int i;
+    uint num_old_entries;
 #ifdef DEBUG
     if_debug2('c', "[c]resizing_indexed_cspace new:%d old:%d\n",
              num_entries, pindexed->num_entries);
@@ -176,6 +180,7 @@ resize_indexed_cspace(
                              "resize pcl indexed color space");
     if (pdata == NULL)
         return gs_error_VMerror;
+    num_old_entries = pindexed->num_entries;
     pindexed->num_entries = num_entries;
     pindexed->palette.data = pdata;
     /* NB duplicate data storage */
@@ -183,6 +188,10 @@ resize_indexed_cspace(
     pindexed->pcspace->params.indexed.lookup.table.data = (const byte *)pdata;
     pindexed->palette.data = pdata;
     pindexed->pcspace->params.indexed.hival = num_entries - 1;
+    /* if the palette has grown we have to fill in the default line
+       width values */
+    for (i = num_old_entries; i < num_entries; i++)
+        pindexed->pen_widths[i] = dflt_pen_width;
     return 0;
 }
 
@@ -536,18 +545,11 @@ set_default_entries(
                                     cnt
                                     );
 
-    /* all other entries are black (always comp. value 0).  For
-       simplicity we reset all of the the remaining pallete data. */
-    if (num > cnt) {
-        int bytes_initialized = 3 * (start + cnt);
-        int bytes_left = pindexed->palette.size - bytes_initialized;
-        memset(pindexed->palette.data + bytes_initialized, 0, bytes_left);
+    /* set the remaining entries to black */
+    for (i = (start + cnt); i < (start + num); i++) {
+        byte *bp = pindexed->palette.data + i * 3;
+        bp[0] = bp[1] = bp[2] = 0;
     }
-
-    /* set the default widths */
-    for (i = start; i < num; i++)
-        pindexed->pen_widths[i] = dflt_pen_width;
-
     return 0;
 }
 
