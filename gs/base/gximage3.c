@@ -191,6 +191,7 @@ gx_begin_image3_generic(gx_device * dev,
                         gx_image_enum_common_t **pinfo)
 {
     const gs_image3_t *pim = (const gs_image3_t *)pic;
+    gs_image3_t local_pim;
     gx_image3_enum_t *penum;
     gs_int_rect mask_rect, data_rect;
     gx_device *mdev = 0;
@@ -225,20 +226,36 @@ gx_begin_image3_generic(gx_device * dev,
             if (pim->MaskDict.BitsPerComponent != 1)
                 return_error(gs_error_rangecheck);
     }
-    if (!check_image3_extent(pim->ImageMatrix.xx,
-                             pim->MaskDict.ImageMatrix.xx) ||
-        !check_image3_extent(pim->ImageMatrix.xy,
-                             pim->MaskDict.ImageMatrix.xy) ||
-        !check_image3_extent(pim->ImageMatrix.yx,
-                             pim->MaskDict.ImageMatrix.yx) ||
-        !check_image3_extent(pim->ImageMatrix.yy,
-                             pim->MaskDict.ImageMatrix.yy)
-        )
-        return_error(gs_error_rangecheck);
-    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mi_pixel)) < 0 ||
-        (code = gs_matrix_invert(&pim->MaskDict.ImageMatrix, &mi_mask)) < 0
-        )
+    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mi_pixel)) < 0)
         return code;
+    /* For Explicit Masking, we follow Acrobats example, and completely
+     * ignore the supplied mask. Instead we generate a new one based on the
+     * image mask, adjusted for any difference in width/height. */
+    if (pim->InterleaveType == interleave_separate_source ||
+        pim->InterleaveType == interleave_scan_lines) {
+        memcpy(&local_pim, pim, sizeof(local_pim));
+        pim = &local_pim;
+        gs_matrix_scale(&mi_pixel,
+                        ((double)pim->Width)  / pim->MaskDict.Width,
+                        ((double)pim->Height) / pim->MaskDict.Height,
+                        &mi_mask);
+        if ((code = gs_matrix_invert(&mi_mask, &local_pim.MaskDict.ImageMatrix)) < 0)
+            return code;
+    } else {
+        if ((code = gs_matrix_invert(&pim->MaskDict.ImageMatrix, &mi_mask)) < 0)
+            return code;
+
+        if (!check_image3_extent(pim->ImageMatrix.xx,
+                                 pim->MaskDict.ImageMatrix.xx) ||
+            !check_image3_extent(pim->ImageMatrix.xy,
+                                 pim->MaskDict.ImageMatrix.xy) ||
+            !check_image3_extent(pim->ImageMatrix.yx,
+                                 pim->MaskDict.ImageMatrix.yx) ||
+            !check_image3_extent(pim->ImageMatrix.yy,
+                                 pim->MaskDict.ImageMatrix.yy)
+            )
+            return_error(gs_error_rangecheck);
+    }
     if (fabs(mi_pixel.tx - mi_mask.tx) >= 0.5 ||
         fabs(mi_pixel.ty - mi_mask.ty) >= 0.5
         )
