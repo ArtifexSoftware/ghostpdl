@@ -32,6 +32,7 @@
   (3.4) /Big5     % Traditional Chinese
   (3.5) /Wansung  % Korean
   (3.6) /Johab    % Korean
+  (3.10) /UCS-4   % UCS-4
   % todo : add more entries
 ]
 
