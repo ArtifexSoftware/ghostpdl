@@ -546,9 +546,13 @@ set_default_entries(
                                     );
 
     /* set the remaining entries to black */
-    for (i = (start + cnt); i < (start + num); i++) {
-        byte *bp = pindexed->palette.data + i * 3;
-        bp[0] = bp[1] = bp[2] = 0;
+    {
+        int s = start + cnt;
+        int e = start + num;
+        for (i = s; i < e; i++) {
+            byte *bp = pindexed->palette.data + i * 3;
+            bp[0] = bp[1] = bp[2] = 0;
+        }
     }
     return 0;
 }
