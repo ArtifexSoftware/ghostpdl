@@ -275,7 +275,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             penum->charproc_accum = false;
         }
     }
-    if (pdev->PS_accumulator) {
+    if (pdev->PS_accumulator && penum->pte_default) {
         if (penum->pte_default->text.operation & TEXT_DO_CHARWIDTH /* See process_cmap_text.*/)
             return gs_text_set_cache(penum->pte_default, pw, TEXT_SET_CHAR_WIDTH);
         else
