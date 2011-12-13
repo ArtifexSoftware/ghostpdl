@@ -96,8 +96,45 @@ languagelevel 2 .setlanguagelevel
 
 currentdict end def
 
+% This is the default definition of our fallback CIDFont
+/DefaultCIDFallBack
+<<
+  /Path
+  systemdict /CIDFSubstPath .knownget
+  {
+    (/) concatstrings
+  }
+  {
+      currentsystemparams /GenericResourceDir get (CIDFSubst/) concatstrings
+  } ifelse
+
+  systemdict /CIDFSubstFont .knownget not
+  {
+    (DroidSansFallback.ttf)
+  } if
+  concatstrings
+  % The CSI data just has to be valid, the substition machinery will
+  % generally overwrite it with appropriate values for the missing font.
+  /CSI  [(Identity) 0]
+  /RecordVirtualMethods //RecordVirtualMethods
+  /FileType /TrueType
+>> def
+
 /VerifyMap  % <raw_map> VerifyMap -
 { % Checks for vicious substitution cycles.
+
+  % This is where we insert the default fallback into the map
+  % checking first to see if there is a user specified alternative
+  dup /CIDFallBack known not{
+     //DefaultCIDFallBack dup /Path get status
+     {
+       pop pop pop pop
+       /CIDFallBack exch 2 index 3 1 roll put
+     }
+     {
+       pop
+     }ifelse
+  } if
   dup length dict copy                  % <<map>>
   dup length dict                       % <<map>> <<temp>>
   { % Choose a random record :

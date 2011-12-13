@@ -1223,13 +1223,50 @@ They are not found using <a href="#Font_lookup">Font lookup</a>
 on the search path or font path.
 
 <h3><a name="CIDFontSubstitution"></a>CID font substitution</h3>
-
+<h4><a name="AutomaticCIDFontSubstitution"></a>Automatic CIDFont Substitution</h4>
 <p>
-
+In general, it is highly recommended that CIDFonts used in the creation of PDF
+jobs should be embedded or available to Ghostscript as CIDFont resources, this
+ensures that the character set, and typeface style are as intended by the
+author.
 <p>
+In cases where the original CIDFont is not available, the next best option is
+to provide Ghostscript with a mapping to a suitable alternative CIDFont - see
+below for details on how this is achieved. However, Ghostscript does provide the
+ability to use a "fall back" CIDFont substitute. As shipped, this uses the
+DroidSansFallback.ttf font. This font contains a large number of glyphs covering
+several languages, but it is not comprehensive. There is, therefore, a chance
+that glyphs may be wrong, or missing in the output when this fallback is used.
+<p>
+Internally, the font is referenced as CIDFont resource called <code>CIDFallBack</code>, thus
+a different fallback from DroidSansFallback.ttf can be specified adding a
+mapping to your cidfmap file (see below for details) to map the name "CIDFallBack"
+as you prefer.
+<p>
+As with any font containing large numbers of glyphs, DroidSansFallback.ttf is
+quite large (~3.5Mb at the of writing). If this is space you cannot afford in
+your use of Ghostscript, you can simply delete the file from:
+<code>CIDFSubst/DroidSansFallback.ttf</code>. The build system will cope with the file being
+removed, and the initialization code will avoid adding the internal fall back
+mapping if the file is missing.
+<p>
+If DroidSansFallback.ttf is removed, and no other <code>CIDFallBack</code> mapping is supplied,
+the final "fall back" is to use a "dumb" bullet CIDFont, called <code>ArtifexBullet</code>. As
+the name suggests, this will result in all the glyphs from a missing CIDFont being replaced with
+a simple bullet point.
+<p>
+This type of generic fall back CIDFont substitution can be very useful for
+viewing and proofing jobs, but may not be appropriate for a "production"
+workflow, where it is expected that <b>only</b> the original font should be
+used. For this situation, you can supply Ghostscript with the command line option:
+<code>-dPDFNOCIDFALLBACK</code>. By combining <code>-dPDFNOCIDFALLBACK</code> with <code>-dPDFSTOPONERROR</code>
+a production workflow can force a PDF with missing CIDFonts to error, and avoid
+realising a CIDFont was missing only after printing.
+<p>
+<h4><a name="ExplicitCIDFontSubstitution"></a>Explicit CIDFont Substitution</h4>
 Substitution of CID font resources is controlled by the Ghostscript
-configuration file <code>lib/cidfmap</code>,
-which defines a CID font resource map.
+configuration file <code>lib/cidfmap</code>, which defines a CID font resource map.
+<p>
 The file forms a table of records, each of which should use one of three formats,
 explained below. Users may modify <code>Resource/Init/cidfmap</code> to configure
 Ghostscript for a specific need. Note that the default Ghostscript build includes

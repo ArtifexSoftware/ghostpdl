@@ -1549,7 +1549,7 @@ currentdict /CMap_read_dict undef
     concatstrings concatstrings
     cvn
     QUIET not {
-      (Substituting CID font ) print dup ==only
+      (Attempting to substitute CID font ) print dup ==only
       ( for ) print 1 index ==only (, see doc/Use.htm#CIDFontSubstitution.) = flush
     } if
     exch pop
@@ -1559,13 +1559,118 @@ currentdict /CMap_read_dict undef
     QUIET not {
       (The substitute CID font ") print dup =string cvs print
       (" is not provided either. ) print
-      PDFSTOPONERROR
-      {
+    } if
+
+    PDFNOCIDFALLBACK {
+      PDFSTOPONERROR {
         (Will exit with error.) = flush
       }
       {
-        (Will continue, but content may be missing.) = flush
+        (Will attempt to continue, but content may be missing.) = flush
       } ifelse
+      exit
+    } if
+
+    QUIET not {
+      (attempting to use fallback CIDFont.) print
+      (See doc/Use.htm#CIDFontSubstitution.) = flush
+    } if
+
+    PDFNOCIDFALLBACK not {
+      /CIDFallBack /CIDFont resourcestatus {
+        pop pop pop
+        /CIDFallBack  /CIDFont findresource
+        dup length dict copy dup
+        % We first want to attempt to create a fallback with CIDSystemInfo
+        % entries which match those originally requested. This may not work
+        % if the Ordering is not "well known" - for example, see dogville_2-layout1.pdf
+        dup /FID undef
+        dup /UID undef
+        dup /XUID undef
+        dup /Decoding undef
+        dup 8 index dup length string cvs (_FallBack) concatstrings cvn /CIDFontName exch put
+        3 dict
+        dup 4 index /CIDSystemInfo oget /Registry oget /Registry exch put
+        dup 4 index /CIDSystemInfo oget /Ordering oget /Ordering exch put
+        dup /Supplement 0 put
+        /CIDSystemInfo exch put
+        {
+          6 index exch /CIDFont defineresource
+          QUIET not {
+            flush
+            (   **** Warning: Fallback CIDFont in use - glyphs may be incorrect or missing\n) print flush
+          } if
+        } stopped
+        {
+          pop pop pop
+          % If the above fails, try using the fallback CIDFont as it comes.
+          /CIDFallBack  /CIDFont findresource
+          QUIET not {
+            flush
+            (   **** Warning: Fallback CIDFont in use - glyphs may be incorrect or missing\n) print flush
+          } if
+        } if
+        exit
+      }
+      {
+        pop /CIDFallBack
+      } ifelse
+
+      QUIET not {
+        (The fallback CID font ") print dup =string cvs print
+        (" is not provided. ) print
+        (" Finally attempting to use ArtifexBullet.\n") print
+      }if
+
+      /ArtifexBullet /CIDFont resourcestatus {
+        pop pop pop
+        /ArtifexBullet /CIDFont findresource
+        dup length dict copy dup
+        % We first want to attempt to create a fallback with CIDSystemInfo
+        % entries which match those originally requested. This may not work
+        % if the Ordering is not "well known" - for example, see dogville_2-layout1.pdf
+        dup /FID undef
+        dup /UID undef
+        dup /XUID undef
+        dup /Decoding undef
+        3 dict
+        dup 4 index /CIDSystemInfo oget /Registry oget /Registry exch put
+        dup 4 index /CIDSystemInfo oget /Ordering oget /Ordering exch put
+        dup /Supplement 0 put
+        /CIDSystemInfo exch put
+        {
+          6 index exch /CIDFont defineresource
+          QUIET not {
+            flush
+            (   **** Warning: Bullet CIDFont in use - glyphs will be replaced with bullet\n) print flush
+          } if
+        } stopped
+        {
+          pop pop pop
+          % If the above fails, try using the fallback CIDFont as it comes.
+          /CIDFallBack  /CIDFont findresource
+          QUIET not {
+            flush
+            (   **** Warning: Bullet CIDFont in use - glyphs will be replaced with bullet\n) print flush
+          } if
+        } if
+        exit
+      }
+      {
+        pop /ArtifexBullet
+      } ifelse
+
+      QUIET not {
+        (The CID font ") print dup =string cvs print
+        (" is not provided. ) print
+        PDFSTOPONERROR
+        {
+          (Will exit with error.) = flush
+        }
+        {
+          (Will continue, but content may be missing.) = flush
+        } ifelse
+      } if
     } if
     /findresource cvx /undefined signalerror
   } loop
