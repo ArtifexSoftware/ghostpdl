@@ -105,12 +105,21 @@ currentdict end def
     (/) concatstrings
   }
   {
+    (CIDFSUBSTPATH) getenv
+    {
+      (/) concatstrings
+    }
+    {
       currentsystemparams /GenericResourceDir get (CIDFSubst/) concatstrings
+    } ifelse
   } ifelse
 
   systemdict /CIDFSubstFont .knownget not
   {
-    (DroidSansFallback.ttf)
+    (CIDFSUBSTFONT) getenv not
+    {
+      (DroidSansFallback.ttf)
+    } if
   } if
   concatstrings
   % The CSI data just has to be valid, the substition machinery will
@@ -118,6 +127,11 @@ currentdict end def
   /CSI  [(Identity) 0]
   /RecordVirtualMethods //RecordVirtualMethods
   /FileType /TrueType
+
+  (CIDFSUBSTFONTID) getenv
+  {
+    /SubfontID exch cvi
+  } if
 >> def
 
 /VerifyMap  % <raw_map> VerifyMap -

@@ -1577,83 +1577,57 @@ currentdict /CMap_read_dict undef
     } if
 
     PDFNOCIDFALLBACK not {
-      /CIDFallBack /CIDFont resourcestatus {
-        pop pop pop
-        /CIDFallBack  /CIDFont findresource
-        dup length dict copy dup
-        % We first want to attempt to create a fallback with CIDSystemInfo
-        % entries which match those originally requested. This may not work
-        % if the Ordering is not "well known" - for example, see dogville_2-layout1.pdf
-        dup /FID undef
-        dup /UID undef
-        dup /XUID undef
-        dup /Decoding undef
-        dup 8 index dup length string cvs (_FallBack) concatstrings cvn /CIDFontName exch put
-        3 dict
-        dup 4 index /CIDSystemInfo oget /Registry oget /Registry exch put
-        dup 4 index /CIDSystemInfo oget /Ordering oget /Ordering exch put
-        dup /Supplement 0 put
-        /CIDSystemInfo exch put
-        {
-          6 index exch /CIDFont defineresource
-          QUIET not {
-            flush
-            (   **** Warning: Fallback CIDFont in use - glyphs may be incorrect or missing\n) print flush
-          } if
-        } stopped
-        {
-          pop pop pop
-          % If the above fails, try using the fallback CIDFont as it comes.
-          /CIDFallBack  /CIDFont findresource
-          QUIET not {
-            flush
-            (   **** Warning: Fallback CIDFont in use - glyphs may be incorrect or missing\n) print flush
+      % This previously worked by loading the substitute font, and using that
+      % as a "template" to create a new CIDFont dictionary with the CIDSystemInfo
+      % dict appropriate for the requested font.
+      % This, however, caused problems with the CIDMap and thus broke pdfwrite.
+      % Hence, we now modify the CIDFont resource .map dictionary on the fly
+      % so it includes an appropriate mapping, so the subsitute font is loaded
+      % from the beginning with the correct ordering and supplement settings.
+      /CIDFont /Category findresource /.map get dup /CIDFallBack .knownget {
+        dup type /dicttype eq {
+          dup /FileType get /TrueType eq {
+            currentglobal
+            4 1 roll
+            dup gcheck setglobal
+            dup length dict copy dup
+            6 index /CIDSystemInfo oget dup /Ordering oget exch /Supplement get
+            % we have to copy the string, for VM correctness
+            exch dup length string copy exch 2 array astore
+            /CSI exch put 2 index exch .forceput
+            exch setglobal
+            {
+              % This *should* not execute arbitrary Postscript, so we ought to
+              % be safe running in a stopped context, in knowledge we know how
+              % to clean up afterwards - this would not be safe if CIDFallBack
+              % were a "real" CIDFont.
+              /CIDFont findresource
+            }
+            % if the above fails, try just using the CIDFallBack font directly
+            stopped
+            {
+              pop pop
+              (Warning: falling back to Identity ordering\n) print flush
+              /CIDFallBack /CIDFont findresource
+            } if
+            exit
           } if
         } if
-        exit
-      }
-      {
-        pop /CIDFallBack
-      } ifelse
+      } if
+
+      pop pop pop
+      /CIDFallBack
 
       QUIET not {
         (The fallback CID font ") print dup =string cvs print
         (" is not provided. ) print
-        (" Finally attempting to use ArtifexBullet.\n") print
+        ( Finally attempting to use ArtifexBullet.\n) print flush
       }if
 
+      % We'll just use Identity for this, we have only one glyph anyway.
       /ArtifexBullet /CIDFont resourcestatus {
         pop pop pop
         /ArtifexBullet /CIDFont findresource
-        dup length dict copy dup
-        % We first want to attempt to create a fallback with CIDSystemInfo
-        % entries which match those originally requested. This may not work
-        % if the Ordering is not "well known" - for example, see dogville_2-layout1.pdf
-        dup /FID undef
-        dup /UID undef
-        dup /XUID undef
-        dup /Decoding undef
-        3 dict
-        dup 4 index /CIDSystemInfo oget /Registry oget /Registry exch put
-        dup 4 index /CIDSystemInfo oget /Ordering oget /Ordering exch put
-        dup /Supplement 0 put
-        /CIDSystemInfo exch put
-        {
-          6 index exch /CIDFont defineresource
-          QUIET not {
-            flush
-            (   **** Warning: Bullet CIDFont in use - glyphs will be replaced with bullet\n) print flush
-          } if
-        } stopped
-        {
-          pop pop pop
-          % If the above fails, try using the fallback CIDFont as it comes.
-          /CIDFallBack  /CIDFont findresource
-          QUIET not {
-            flush
-            (   **** Warning: Bullet CIDFont in use - glyphs will be replaced with bullet\n) print flush
-          } if
-        } if
         exit
       }
       {
