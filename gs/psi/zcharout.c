@@ -167,6 +167,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
     ref *pcdevproc, *valueref;
     int have_cdevproc;
     ref rpop;
+    ref cid, *cidptr;
     bool metrics2;
     bool metrics2_use_default = false;
     double w2[10];
@@ -213,17 +214,22 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 
     have_cdevproc = zchar_get_CDevProc(pbfont, &pcdevproc);
 
-    /* Obscure test. If we have replaced a CIDFont with a disk-based TrueType font, then we do *not*
-     * want to execute the CDevProc. This is beacause the CDevProc is supposed to be called wiht the
-     * original CID but what we have here is the TT GID. So the CDevProc won't do the right thing. Since
-     * the CDevProc is really rather closely tied to the font we almost certainly don't want to run it
-     * if we've replaced the font. So here we check the key_name against the font_name and if they do
-     * not match, we don't run the CDevProc because we assume that we have substituted a font.
+    /* Obscure test. The CDevProc is supposed to be called with the original CID but what we get passed
+     * here is the TT GID. So the CDevProc won't do the right thing. We need to extract the CID from the
+     * enumerator, and use that instead.
      */
+    cidptr = (ref *)pcnref;
     if (pbfont->FontType == ft_CID_TrueType && dict_find_string(&pfont_data(gs_font_parent(pbfont))->dict, "File", &valueref) > 0) {
         if (pbfont->key_name.size != pbfont->font_name.size ||
             strncmp((const char *)pbfont->key_name.chars, (const char *)pbfont->font_name.chars, pbfont->key_name.size)) {
-            have_cdevproc = 0;
+
+            if (penum->returned.current_glyph >= GS_MIN_CID_GLYPH) {
+                make_int(&cid, penum->returned.current_glyph - GS_MIN_CID_GLYPH);
+            }
+            else {
+                make_int(&cid, penum->returned.current_glyph);
+            }
+            cidptr = &cid;
         }
     }
     if (have_cdevproc || zchar_show_width_only(penum)) {
@@ -264,7 +270,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
         }
         for (i = 0; i < nparams; ++i)
             make_real(op - nparams + i, w2[i]);
-        ref_assign(op, pcnref);
+        ref_assign(op, cidptr);
         push_op_estack(cont);
         push_op_estack(zsetc);
         ++esp;
