@@ -453,7 +453,7 @@ end
     dup /BC knownoget {
       dup /Background exch 4 2 roll
       1 index /G oget /Group knownoget not {
-        (   **** Warning: Droping transparency group XObject without /Group attribute.\n)
+        (   **** Warning: Dropping transparency group XObject without /Group attribute.\n)
         pdfformaterror
         cleartomark //null exit
       } if
@@ -1097,7 +1097,11 @@ drawopdict begin
         } {
           .buildshading
         } ifelse
-        .shfill
+        { .shfill } stopped { 
+          pop 
+          (   **** Warning: Dropping incorrect smooth shading object.\n)
+          pdfformaterror
+        } if 
         //sh_save 0 get restore
       } {
         pop
