@@ -2185,6 +2185,8 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
         if (code == 0 && glyph < GS_MIN_CID_GLYPH && glyphs[i] > GS_MIN_GLYPH_INDEX) {
             code = copy_glyph_name(font, glyphs[i] - GS_MIN_GLYPH_INDEX, copied,
                                glyphs[i]);
+            if (code < 0)
+                return code;
         }
     }
     /*
