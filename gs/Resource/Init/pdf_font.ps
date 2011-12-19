@@ -1523,9 +1523,29 @@ currentdict /CMap_read_dict undef
     } if
     .remove_font_name_prefix
     dup dup length string cvs
+
     (,Bold) tailmatch {
       exch pop
-      cvn findCIDFont 0.03 makeboldfont
+      % If we're substituting a standard weight font for a
+      % "Light,Bold" font, don't artificially bolden further
+      dup (Light) tailmatch
+      {
+        pop cvn findCIDFont dup /FontName .knownget
+        {
+          (Light) tailmatch exch pop
+        }
+        {
+          //true
+        } ifelse
+
+        {
+          0.03 makeboldfont
+        } if
+      }
+      {
+        pop
+        cvn findCIDFont 0.03 makeboldfont
+      } ifelse
       exit
     } if
     (,Italic) tailmatch {
@@ -1536,7 +1556,25 @@ currentdict /CMap_read_dict undef
     } if
     (,BoldItalic) tailmatch {
       exch pop
-      cvn findCIDFont 0.03 makeboldfont
+      % see above
+      dup (Light) tailmatch
+      {
+        pop cvn findCIDFont dup /FontName .knownget
+        {
+          (Light) tailmatch exch pop
+        }
+        {
+          //true
+        } ifelse
+
+        {
+          0.03 makeboldfont
+        } if
+      }
+      {
+        pop
+        cvn findCIDFont 0.03 makeboldfont
+      } ifelse
       [ 1 0 0.3 1 0 0 ] makefont
       exit
     } if
