@@ -79,6 +79,10 @@ dnl --------------------------------------------------
 dnl check for sse2 intrinsics
 dnl --------------------------------------------------
 
+AC_MSG_CHECKING([sse2 support])
+save_cflags=$CFLAGS
+CFLAGS="$CFLAGS $OPT_CFLAGS"
+
 HAVE_SSE2=""
 AC_LINK_IFELSE([
 #include <emmintrin.h>
@@ -95,11 +99,19 @@ AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
                 HAVE_SSE2=""
              fi])
 
+if test "x$HAVE_SSE2" != x; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
 AC_SUBST(HAVE_SSE2)
+CFLAGS=$save_cflags
 
 dnl --------------------------------------------------
 dnl check for byte swap intrinsics
 dnl --------------------------------------------------
+AC_MSG_CHECKING([byteswap support])
 
 HAVE_BSWAP32=""
 AC_LINK_IFELSE([
@@ -115,12 +127,19 @@ AC_ARG_ENABLE([bswap32], AC_HELP_STRING([--disable-bswap32],
              if test "x$enable_bswap32" = xno; then
                 HAVE_BSWAP32=""
              fi])
+
+if test "x$HAVE_BSWAP32" != x; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
  
 AC_SUBST(HAVE_BSWAP32)
 
 dnl --------------------------------------------------
 dnl check for byte swap header
 dnl --------------------------------------------------
+AC_MSG_CHECKING([for byteswap.h])
 
 HAVE_BYTESWAP_H=""
 AC_COMPILE_IFELSE([
@@ -138,6 +157,12 @@ AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
                 HAVE_BYTESWAP_H=""
              fi])
  
+if test "x$HAVE_BYTESWAP_H" != x; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+
 AC_SUBST(HAVE_BYTESWAP_H)
 
 dnl --------------------------------------------------
