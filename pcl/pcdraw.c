@@ -75,6 +75,8 @@ pcl_set_drawing_color(
     /* use PCL's pattern transparency */
     pcs->pattern_transparent = pcs->pcl_pattern_transparent;
 
+    pcl_ht_set_halftone(pcs);
+
     if (type == pcl_pattern_raster_cspace)
         code = (pcl_pattern_get_proc_PCL(type))(pcs, 0, true);
     else

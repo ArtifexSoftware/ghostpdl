@@ -1049,6 +1049,8 @@ fill:
     if (code >= 0) {
         gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
     }
+    /* make sure the halftone is set */
+    pcl_ht_set_halftone(pgls);
     return code;
 }
 

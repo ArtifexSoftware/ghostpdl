@@ -350,11 +350,6 @@ int pcl_ht_build_default_ht(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-int pcl_ht_set_halftone(
-    pcl_state_t *        pcs,
-    pcl_ht_t **          ppht,
-    pcl_cspace_type_t    cstype,
-    bool                 for_image
-);
+int pcl_ht_set_halftone(pcl_state_t *pcs);
 
 #endif  	/* pcht_INCLUDED */
