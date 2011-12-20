@@ -35,10 +35,6 @@
 static int zcrd1_proc_params(const gs_memory_t *mem, os_ptr op, ref_cie_render_procs * pcprocs);
 static int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
                          ref_cie_render_procs * pcprocs, gs_memory_t * mem);
-static int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
-                                  const ref_cie_render_procs * pcprocs,
-                                  gs_ref_memory_t * imem);
-
 /* - currentcolorrendering <dict> */
 static int
 zcurrentcolorrendering(i_ctx_t *i_ctx_p)
@@ -67,10 +63,7 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
     code = zcrd1_params(op, pcrd, &procs, mem);
-    if (code < 0 ||
-    (code = cache_colorrendering1(i_ctx_p, pcrd, &procs,
-                                  (gs_ref_memory_t *) mem)) < 0
-        ) {
+    if (code < 0 ) {
         rc_free_struct(pcrd, ".buildcolorrendering1");
         esp = ep;
         return code;
@@ -247,78 +240,6 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
     pcrd->EncodeABC = Encode_default;
     pcrd->TransformPQR = TransformPQR_default;
     pcrd->RenderTable.T = RenderTableT_default;
-    return 0;
-}
-
-/* Cache the results of the color rendering procedures. */
-static int cie_cache_render_finish(i_ctx_t *);
-static int
-cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
-                      const ref_cie_render_procs * pcrprocs,
-                      gs_ref_memory_t * imem)
-{
-    es_ptr ep = esp;
-    int code = gs_cie_render_init(pcrd);	/* sets Domain values */
-    int i;
-
-    if (code < 0 ||
-        (code = cie_cache_push_finish(i_ctx_p, cie_cache_render_finish, imem, pcrd)) < 0 ||
-        (code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainLMN, pcrprocs->EncodeLMN.value.const_refs, pcrd->caches.EncodeLMN.caches, pcrd, imem, "Encode.LMN")) < 0 ||
-        (code = cie_prepare_cache3(i_ctx_p, &pcrd->DomainABC, pcrprocs->EncodeABC.value.const_refs, &pcrd->caches.EncodeABC[0], pcrd, imem, "Encode.ABC")) < 0
-        ) {
-        esp = ep;
-        return code;
-    }
-    if (pcrd->RenderTable.lookup.table != 0) {
-        bool is_identity = true;
-
-        for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
-            if (r_size(pcrprocs->RenderTableT.value.const_refs + i) != 0) {
-                is_identity = false;
-                break;
-            }
-        pcrd->caches.RenderTableT_is_identity = is_identity;
-        if (!is_identity)
-            for (i = 0; i < pcrd->RenderTable.lookup.m; i++)
-                if ((code =
-                     cie_prepare_cache(i_ctx_p, Range4_default.ranges,
-                                pcrprocs->RenderTableT.value.const_refs + i,
-                                       &pcrd->caches.RenderTableT[i].floats,
-                                       pcrd, imem, "RenderTable.T")) < 0
-                    ) {
-                    esp = ep;
-                    return code;
-                }
-    }
-    return o_push_estack;
-}
-
-/* Finish up after loading the rendering caches. */
-static int
-cie_cache_render_finish(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    gs_cie_render *pcrd = r_ptr(op, gs_cie_render);
-    int code;
-
-    if (pcrd->RenderTable.lookup.table != 0 &&
-        !pcrd->caches.RenderTableT_is_identity
-        ) {
-        /* Convert the RenderTableT cache from floats to fracs. */
-        int j;
-
-        for (j = 0; j < pcrd->RenderTable.lookup.m; j++)
-            gs_cie_cache_to_fracs(&pcrd->caches.RenderTableT[j].floats,
-                                  &pcrd->caches.RenderTableT[j].fracs);
-    }
-    pcrd->status = CIE_RENDER_STATUS_SAMPLED;
-    pcrd->EncodeLMN = EncodeLMN_from_cache;
-    pcrd->EncodeABC = EncodeABC_from_cache;
-    pcrd->RenderTable.T = RenderTableT_from_cache;
-    code = gs_cie_render_complete(pcrd);
-    if (code < 0)
-        return code;
-    pop(1);
     return 0;
 }
 
@@ -506,7 +427,6 @@ const op_def zcrd_l2_op_defs[] =
     {"1.buildcolorrendering1", zbuildcolorrendering1},
     {"1.builddevicecolorrendering1", zbuilddevicecolorrendering1},
                 /* Internal "operators" */
-    {"1%cie_render_finish", cie_cache_render_finish},
     {"3%cie_exec_tpqr", cie_exec_tpqr},
     {"2%cie_post_exec_tpqr", cie_post_exec_tpqr},
     {"1%cie_tpqr_finish", cie_tpqr_finish},
