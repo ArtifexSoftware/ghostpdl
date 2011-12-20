@@ -1968,12 +1968,7 @@ get_rendering_info(
  */
 
 int
-pcl_ht_set_halftone(
-    pcl_state_t *        pcs,
-    pcl_ht_t **          ppht,   /* NOT USED */
-    pcl_cspace_type_t    cstype, /* NOT USED */
-    bool                 for_image /* NOT USED */
-)
+pcl_ht_set_halftone(pcl_state_t *pcs)
 {
     gs_string thresh;
     int code;

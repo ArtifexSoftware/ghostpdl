@@ -74,50 +74,6 @@ convert_index_to_paint(
 }
 
 /*
- * Set the halftone and color rendering dictionary objects from the
- * current palette. This will check that the palette is complete.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-static int
-set_ht_crd_from_palette(
-    pcl_state_t *       pcs
-)
-{
-    int                 code = 0;
-    pcl_cspace_type_t   cstype = pcl_palette_get_cspace(pcs->ppalet);
-    pcl_palette_t *     ppalet = 0;
-
-    /* check that the palette is complete */
-    pcl_palette_check_complete(pcs);
-    ppalet = pcs->ppalet;
-
-    /* install ht */
-    code = pcl_ht_set_halftone(pcs, &(ppalet->pht), cstype, false);
-    return code;
-}
-
-/*
- * Set the halftone and color rendering dictionary objects from the current
- * foreground.
- *
- * Returns 0 on success, < 0 in the event of an error.
- */
-static int
-set_ht_crd_from_foreground(
-    pcl_state_t *       pcs
-)
-{
-    int                 code = 0;
-    pcl_frgrnd_t *      pfrgrnd = pcs->pfrgrnd;
-    pcl_cspace_type_t   cstype = pcl_frgrnd_get_cspace(pfrgrnd);
-
-    /* install crd and ht */
-    code = pcl_ht_set_halftone(pcs, &(pfrgrnd->pht), cstype, false);
-    return code;
-}
-
-/*
  * Free a PCL client color structure.
  */
 static void
@@ -544,11 +500,8 @@ set_frgrnd_pattern(
     pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
     gs_paint_color      paint;
     bool                colored = false;
-    int                 code = set_ht_crd_from_foreground(pcs);
+    int                 code = 0;
     int                 wht_indx = (pcs->pattern_transparent ? 0 : 2);
-
-    if (code < 0)
-        return code;
 
     if (pfrgrnd->pht == pcs->ppalet->pht)
         for_image = false;
@@ -611,10 +564,7 @@ set_uncolored_palette_pattern(
     pcl_ccolor_type_t   type = pcl_ccolor_mask_pattern;
     gs_paint_color      paint;
     bool                colored = !pcs->pattern_transparent;
-    int                 code = set_ht_crd_from_palette(pcs);
-
-    if (code < 0)
-        return code;
+    int                 code = 0;
 
     convert_index_to_paint(pen, &paint);
     if (check_pattern_rendering(pcs, pptrn, false, pen, colored, &paint))
@@ -659,10 +609,7 @@ set_colored_pattern(
 {
     pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
     pcl_gsid_t          cache_id = pcs->ppalet->id;
-    int                 code = set_ht_crd_from_palette(pcs);
-
-    if (code < 0)
-        return code;
+    int                 code = 0;
 
     if (check_pattern_rendering(pcs, pptrn, false, 0, true, NULL))
         return 0;
@@ -872,7 +819,7 @@ pattern_set_white(
     int             arg2    /* ignored */
 )
 {
-    int             code = set_ht_crd_from_foreground(pcs);
+    int             code = 0;
     pcl_cs_base_t * pwhite_cs = 0;
     pcl_ht_t *      pdflt_ht = 0;
 
@@ -880,16 +827,13 @@ pattern_set_white(
     if_debug0('c', "[c]pattern_set_white\n");
 #endif
 
-    if (code < 0)
-        return code;
-
     /* build the pure white color space and default halftone if necessary */
     if ((code = pcl_cs_base_build_white_cspace(pcs, &pwhite_cs, pcs->memory)) >= 0)
         code = pcl_ht_build_default_ht(pcs, &pdflt_ht, pcs->memory);
 
     /* set the halftone and color space */
     if (code >= 0) {
-        code = pcl_ht_set_halftone(pcs, &pdflt_ht, pcl_cspace_RGB, false);
+        code = pcl_ht_set_halftone(pcs);
         pcl_ht_release(pdflt_ht); /* decrement reference to local ptr */
     }
 
@@ -941,9 +885,7 @@ pattern_set_pen(
 
     /* set halftone and crd from the palette */
 skip_unsolid:
-     code = set_ht_crd_from_palette(pcs);
-
-    if (code >= 0) {
+    {
         gs_paint_color  paint = {0,0,0,0};
 
         convert_index_to_paint(pen, &paint);
@@ -961,21 +903,16 @@ pattern_set_frgrnd(
 {
     pcl_frgrnd_t *  pfrgrnd = pcs->pfrgrnd;
     pcl_palette_t * ppalet = pcs->ppalet;
-    int             code = set_ht_crd_from_foreground(pcs);
+    int             code = 0;
 
 #ifdef DEBUG
     if_debug1('c', "[c]pattern_set_frgrnd for image=%d\n", for_image);
 #endif
 
-    if (code < 0)
-        return code;
-
     /* check if a solid pattern should be substituted */
     if ( for_image ) {
         if (pfrgrnd->pht != ppalet->pht)  {
             code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
-            if (code >= 0)
-                code = set_ht_crd_from_palette(pcs);
             return code;
         }
         else if ( (ppalet->pindexed->original_cspace == 1 && !pfrgrnd->is_cmy ) ||
@@ -1022,9 +959,6 @@ pattern_set_shade_pcl(
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         code = set_frgrnd_pattern(pcs, pptrn, for_image);
-
-        if (for_image && (code >= 0))
-            code = set_ht_crd_from_palette(pcs);
         return code;
     }
 }
@@ -1078,8 +1012,6 @@ pattern_set_hatch_pcl(
 
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         code = set_frgrnd_pattern(pcs, pptrn, for_image);
-        if (for_image && (code >= 0))
-            code = set_ht_crd_from_palette(pcs);
         return code;
     }
 }
@@ -1125,9 +1057,6 @@ pattern_set_user_pcl(
         pcl_xfm_pcl_set_pat_ref_pt(pcs);
         if (pptrn->ppat_data->type == pcl_pattern_uncolored) {
             int     code = set_frgrnd_pattern(pcs, pptrn, for_image);
-
-            if (for_image && (code >= 0))
-                code = set_ht_crd_from_palette(pcs);
             return code;
         } else
             return set_colored_pattern(pcs, pptrn);
