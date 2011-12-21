@@ -2006,6 +2006,33 @@ end
   closepath stroke
 } bind def
 
+%% These two routines may have more general application.
+%% When executing BuildChar we need to run in the context of the font
+%% as far as resources are concerned (in case the glyph uses another font)
+%% but since we are executing a page stream, we must not lose the original
+%% context, or we won't be able to find page resources. Originally this was
+%% a simpler routine, but this failed when presented with a type 3 font
+%% whose BuildChar/CharProcs used another type 3 font
+/SaveResourcesToStack
+{
+  [
+  //PDFReader /OldResources known {
+    //PDFReader /OldResources get
+  }{
+    null
+  } ifelse
+  //PDFReader /CurrentObject get /Context get /Resources get
+  ]
+  //PDFReader /OldResources 3 -1 roll put
+}bind def
+
+/RestoreResourcesFromStack
+{
+  //PDFReader /OldResources get dup
+  0 get //PDFReader /OldResources 3 -1 roll put
+  1 get //PDFReader /CurrentObject get /Context get /Resources 3 -1 roll put
+} bind def
+
 /BuildChar  % <font> <char_code> BuildChar -
 { //PDFR_DEBUG {
     (BuildChar ) print dup //=only exec ( ) print
@@ -2017,12 +2044,24 @@ end
   } if
   dup null eq {
     pop //NotDef exec                                   %
-  } {                                                   % n
-    CharProcs exch //knownget exec {                    % cp_stream
-      //RunDelayedStream exec
-    } {
+  }
+  {                                                   % n
+    CharProcs exch//knownget exec
+    {
+      currentfont /Font get /Resources //knownget exec{       %% Does the Font have any Resources ?
+        exec                                                  %% Get them
+        SaveResourcesToStack                                  %% Save the current Resources
+        //PDFReader /CurrentObject get /Context get           %% Replace the current resources
+        /Resources 3 -1 roll put                              %% With the Font resources
+        //RunDelayedStream exec
+        RestoreResourcesFromStack                             %% Restore the previous Resources
+      } {
+        //RunDelayedStream exec
+      } ifelse
+    }
+    {
       //NotDef exec
-    } ifelse
+    }ifelse
   } ifelse                                              %
   end % font
 } bind def
