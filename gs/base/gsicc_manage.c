@@ -743,6 +743,35 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
         icc_profile->data_cs =
             gscms_get_profile_data_space(icc_profile->profile_handle);
 
+        if_debug0(gs_debug_flag_icc,"[icc] Setting ICC profile in Manager\n"); 
+#ifdef DEBUG  /* Don't want this switch in here if we are not in debug mode */
+    switch(defaulttype) {
+        case DEFAULT_GRAY:
+            if_debug0(gs_debug_flag_icc,"[icc] Default Gray\n"); 
+            break;
+        case DEFAULT_RGB:
+            if_debug0(gs_debug_flag_icc,"[icc] Default RGB\n"); 
+            break;
+        case DEFAULT_CMYK:
+            if_debug0(gs_debug_flag_icc,"[icc] Default CMYK\n"); 
+             break;
+        case NAMED_TYPE:
+            if_debug0(gs_debug_flag_icc,"[icc] Named Color\n"); 
+             break;
+        case LAB_TYPE:
+            if_debug0(gs_debug_flag_icc,"[icc] CIELAB Profile\n"); 
+             break;
+        case DEVICEN_TYPE:
+            if_debug0(gs_debug_flag_icc,"[icc] DeviceN Profile\n"); 
+            break;
+        case DEFAULT_NONE:
+        default:
+            return(0);
+            break;
+    }
+#endif
+        if_debug1(gs_debug_flag_icc,"[icc] name = %s\n", icc_profile->name); 
+        if_debug1(gs_debug_flag_icc,"[icc] num_comps = %d\n", icc_profile->num_comps); 
         /* Check that we have the proper color space for the ICC
            profiles that can be externally set */
         if (default_space != gsUNDEFINED) {
@@ -1186,7 +1215,7 @@ gsicc_profile_new(stream *s, gs_memory_t *memory, const char* pname,
         gs_free_object(mem_nongc, result, "gsicc_profile_new");
         return(NULL);
     }
-    if_debug1('}',"[}]allocating ICC profile = 0x%x\n", result);
+    if_debug1(gs_debug_flag_icc,"[icc] allocating ICC profile = 0x%x\n", result);
     return(result);
 }
 
@@ -1198,7 +1227,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     gsicc_colorname_t *curr_name, *next_name;
     gs_memory_t *mem_nongc =  profile->memory;
 
-    if_debug2('}',"[}]rc decrement profile = 0x%x rc = %ld\n",
+    if_debug2(gs_debug_flag_icc,"[icc] rc decrement profile = 0x%x rc = %ld\n",
         ptr_in, profile->rc.ref_count);
     if (profile->rc.ref_count <= 1 ) {
         /* Clear out the buffer if it is full */
@@ -1206,7 +1235,7 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             gs_free_object(mem_nongc, profile->buffer, "rc_free_icc_profile");
             profile->buffer = NULL;
         }
-        if_debug0('}',"[}]profile freed\n");
+        if_debug0(gs_debug_flag_icc,"[icc] profile freed\n");
         /* Release this handle if it has been set */
         if(profile->profile_handle != NULL) {
             gscms_release_profile(profile->profile_handle);

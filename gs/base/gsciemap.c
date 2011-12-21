@@ -199,6 +199,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *defg_caches = &(pcs->params.defg->caches_defg.DecodeDEFG[0]);
 
+    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from defg object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
@@ -469,6 +470,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
     gx_cie_scalar_cache *def_caches = &(pcs->params.def->caches_def.DecodeDEF[0]);
 
+    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from def object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory->stable_memory);
     /* record the cie alt space as the icc alternative color space */
@@ -566,6 +568,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     gx_cie_vector_cache *abc_caches = &(pcs->params.abc->caches.DecodeABC.caches[0]);
     gx_cie_scalar_cache *lmn_caches = &(pcs->params.abc->common.caches.DecodeLMN[0]);
 
+    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from abc object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     /* record the cie alt space as the icc alternative color space */
@@ -666,6 +669,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     gx_cie_vector_cache *a_cache = &(pcs->params.a->caches.DecodeA);
     gx_cie_scalar_cache    *lmn_caches = &(pcs->params.a->common.caches.DecodeLMN[0]);
 
+    if_debug0(gs_debug_flag_icc,"[icc] Creating ICC profile from CIEA object");  
     /* build the ICC color space object */
     code = gs_cspace_build_ICC(ppcs_icc, NULL, memory);
     /* record the cie alt space as the icc alternative color space */

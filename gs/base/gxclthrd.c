@@ -158,7 +158,7 @@ clist_setup_render_threads(gx_device *dev, int y)
             if (code < 0) return_error(gs_error_VMerror);
         }
         ncdev->page_uses_transparency = cdev->page_uses_transparency;
-        if_debug3('{',"[{]MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
+        if_debug3(gs_debug_flag_icc,"[icc] MT clist device = 0x%x profile = 0x%x handle = 0x%x\n", 
                   ncdev,
                   ncdev->icc_struct->device_profile[0],
                   ncdev->icc_struct->device_profile[0]->profile_handle);
