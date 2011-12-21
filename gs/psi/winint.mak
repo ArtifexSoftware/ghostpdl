@@ -21,25 +21,6 @@
 # Include the generic makefile.
 !include $(PSSRCDIR)\int.mak
 
-# Define the C++ compiler invocation for library modules.
-GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)
-
-# Define the compilation rule for Windows interpreter code.
-# This requires PS*_ to be defined, so it has to come after int.mak.
-PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
-
-# Define the name of this makefile.
-WININT_MAK=$(PSSRC)winint.mak
-
-# Define the location of the WinZip self-extracting-archive-maker.
-!ifndef WINZIPSE_XE
-!if $(BUILD_SYSTEM) == 64
-WINZIPSE_XE="C:\Program Files (x86)\WinZip Self-Extractor\WZIPSE32.EXE"
-!else
-WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
-!endif
-!endif
-
 # Define the location of the NSIS makensis installer utility
 !ifndef MAKENSIS_XE
 !if $(BUILD_SYSTEM) == 64
@@ -49,29 +30,21 @@ MAKENSIS_XE="C:\Program Files\NSIS\makensis.exe"
 !endif
 !endif
 
-# Define the name and location of the zip archive maker.
-!ifndef ZIP_XE
-ZIP_XE="zip.exe" -X
+!ifdef WIN64
+NSISTARGET=gs$(GS_VERSION)w64
+!else
+NSISTARGET=gs$(GS_VERSION)w32
 !endif
 
-# Define the setup and install programs, which are only suitable
-# for the DLL build.
-# If MAKEDLL==0, these names are never referenced.
-!ifndef SETUP_XE_NAME
-SETUP_XE_NAME=setupgs.exe
-!endif
-!ifndef SETUP_XE
-SETUP_XE=$(BINDIR)\$(SETUP_XE_NAME)
-!endif
-!ifndef UNINSTALL_XE_NAME
-UNINSTALL_XE_NAME=uninstgs.exe
-!endif
-!ifndef UNINSTALL_XE
-UNINSTALL_XE=$(BINDIR)\$(UNINSTALL_XE_NAME)
-!endif
-!ifndef MAKE_FILELIST_XE
-MAKE_FILELIST_XE=$(BINDIR)\make_filelist.exe
-!endif
+# Define the C++ compiler invocation for library modules.
+GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)
+
+# Define the compilation rule for Windows interpreter code.
+# This requires PS*_ to be defined, so it has to come after int.mak.
+PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
+
+# Define the name of this makefile.
+WININT_MAK=$(PSSRC)winint.mak
 
 # Define the RCOMP switch for including INCDIR.
 !if "$(INCDIR)"==""
@@ -204,141 +177,9 @@ $(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
  $(ghost_h) $(oper_h) $(iutil_h) $(store_h) $(windows__h)
 	$(PSCCWIN) $(PSO_)zwinutf8.$(OBJ) $(C_) $(PSSRC)zwinutf8.c
 
-
-# ---------------------- Setup and uninstall program ---------------------- #
-
-
-# Modules for setup program
-# These modules shouldn't be referenced if MAKEDDLL==0,but dependencies here
-# don't hurt.
-
-$(PSOBJ)dwsetup.res: $(PSSRC)dwsetup.rc $(PSSRC)dwsetup.h $(GLGEN)gswin.ico
-	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwsetup.res $(PSSRC)dwsetup.rc
-
-$(PSOBJ)dwsetup.obj: $(PSSRC)dwsetup.cpp $(PSSRC)dwsetup.h $(PSSRC)dwinst.h $(AK)
-	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwsetup.obj $(C_) $(PSSRC)dwsetup.cpp
-
-$(PSOBJ)dwinst.obj: $(PSSRC)dwinst.cpp $(PSSRC)dwinst.h $(AK)
-	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwinst.obj $(C_) $(PSSRC)dwinst.cpp
-
-# Modules for uninstall program
-
-$(PSOBJ)dwuninst.res: $(PSSRC)dwuninst.rc $(PSSRC)dwuninst.h $(GLGEN)gswin.ico
-	$(RCOMP) -i$(PSSRCDIR) -i$(PSGENDIR) -i$(PSOBJDIR) $(i_INCDIR) -r $(RO_)$(PSOBJ)dwuninst.res $(PSSRC)dwuninst.rc
-
-$(PSOBJ)dwuninst.obj: $(PSSRC)dwuninst.cpp $(PSSRC)dwuninst.h $(AK)
-	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwuninst.obj $(C_) $(PSSRC)dwuninst.cpp
-
-
-# ------------------------- Distribution archive -------------------------- #
-
-# The following section of this makefile was developed by, and is maintained
-# by, the developer of GSview.  If you have any questions about it, please
-# contact bug-gswin@ghostscript.com.
-
-# Create a self-extracting archive with setup program.
-# This assumes that the current directory is named gs#.## relative to its
-# parent, where #.## is the Ghostscript version, and that the files and
-# directories listed in ZIPTEMPFILE are the complete list
-# of needed files and directories relative to the current directory's parent.
-
-ZIPTEMPFILE=gs$(GS_DOT_VERSION)\$(PSOBJ)\dwfiles.rsp
-!ifdef WIN64
-ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll64.dll
-ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll64.lib
-ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin64.exe
-ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin64c.exe
-!else
-ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsdll32.dll
-ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll32.lib
-ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gswin32.exe
-ZIPPROGFILE4=gs$(GS_DOT_VERSION)\bin\gswin32c.exe
-!endif
-ZIPPROGFILE5=gs$(GS_DOT_VERSION)\doc
-ZIPPROGFILE6=gs$(GS_DOT_VERSION)\examples
-ZIPPROGFILE7=gs$(GS_DOT_VERSION)\lib
-!if $(COMPILE_INITS)
-!else
-ZIPPROGFILE8=gs$(GS_DOT_VERSION)\Resource
-!endif
-
-# Make the zip archive.
-FILELIST_TXT=filelist.txt
-!ifdef WIN64
-ZIPTARGET=gs$(GS_VERSION)w64
-!else
-ZIPTARGET=gs$(GS_VERSION)w32
-!endif
-zip: $(SETUP_XE) $(UNINSTALL_XE) $(MAKE_FILELIST_XE)
-	cd ..
-	copy gs$(GS_DOT_VERSION)\$(MAKE_FILELIST_XE) make_filelist.exe
-	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
-	copy gs$(GS_DOT_VERSION)\$(UNINSTALL_XE) .
-	echo $(ZIPPROGFILE1) >  $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE2) >> $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE3) >> $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE4) >> $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE5) >> $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE6) >> $(ZIPTEMPFILE)
-	echo $(ZIPPROGFILE7) >> $(ZIPTEMPFILE)
-!if $(COMPILE_INITS)
-!else
-	echo $(ZIPPROGFILE8) >> $(ZIPTEMPFILE)
-!endif
-	make_filelist.exe -title "GPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
-	-del $(ZIPTARGET).zip
-	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE1)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE2)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE3)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE4)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE5)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE6)
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE7)
-!if $(COMPILE_INITS)
-!else
-	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE8)
-!endif
-	-del $(ZIPTEMPFILE)
-	-del make_filelist.exe
-	-del $(SETUP_XE_NAME)
-	-del $(UNINSTALL_XE_NAME)
-	-del $(FILELIST_TXT)
-	cd gs$(GS_DOT_VERSION)
-
-# Now convert to a self extracting archive.
-# This involves making a few temporary files.
-ZIP_RSP = $(PSOBJ)setupgs.rsp
-# Note that we use ECHOGS_XE rather than echo for the .txt files
-# to avoid ANSI/OEM character mapping.
-# Use a special icon WinZip SE can't handle 48 pixel 32-bit icons 
-# as used by Windows XP.
-archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
-!ifdef WIN64
-	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win64 -setup"
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 GPL Ghostscript $(GS_DOT_VERSION) for Win64 -x 22
-!else
-	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win32 -setup"
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 GPL Ghostscript $(GS_DOT_VERSION) for Win32 -x 22
-!endif
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(PSOBJ)gswin16.ico
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(PSOBJ)about.txt
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(PSOBJ)dialog.txt
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
-	$(ECHOGS_XE) -w $(PSOBJ)about.txt "GPL Ghostscript is Copyright " -x A9 " 2011 Artifex Software, Inc."
-	$(ECHOGS_XE) -a $(PSOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\COPYING.
-	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
-	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs GPL Ghostscript $(GS_DOT_VERSION).
-	$(ECHOGS_XE) -a $(PSOBJ)dialog.txt GPL Ghostscript displays, prints and converts PostScript and PDF files.
-	$(WINZIPSE_XE) ..\$(ZIPTARGET) @$(PSOBJ)setupgs.rsp
-# Don't delete temporary files, because make continues
-# before these files are used.
-#	-del $(ZIP_RSP)
-#	-del $(PSOBJ)about.txt
-#	-del $(PSOBJ)dialog.txt
-
-nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib $(ICONS)
-	$(MAKENSIS_XE) -NOCD -DTARGET=$(ZIPTARGET) -DVERSION=$(GS_DOT_VERSION) $(PSSRC)nsisinst.nsi
+# -------------------- NSIS Installer -------------------------------- #
+nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib
+	$(MAKENSIS_XE) -NOCD -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) $(PSSRC)nsisinst.nsi
 
 # -------------------- Distribution source archive ------------------- #
 # This creates a zip file containing the files needed to build 
