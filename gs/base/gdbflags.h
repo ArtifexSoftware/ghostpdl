@@ -20,7 +20,7 @@
  */
 
 UNUSED(0) /* Never use 0, as lots of things 'imply' 0. */
-UNUSED(1)
+FLAG(icc, 1, 'c', "ICC profile"),
 UNUSED(2)
 UNUSED(3)
 UNUSED(4)
@@ -86,7 +86,7 @@ FLAG(validate_pointers, '?', 0,   "Validate pointers before/during/after garbage
 FLAG(memfill_empty,     '@', 0,   "Fill empty storage with a distinctive bit pattern for debugging"),
 FLAG(alloc_detail,      'A', 0,   "Allocator (all calls)"),
 FLAG(bitmap_detail,     'B', 0,   "Bitmap images (detail)"),
-UNUSED('C')
+FLAG(color_detail,      'C', 0,   "Color mapping (detail)"),
 FLAG(dict_detail,       'D', 0,   "Dictionary (every lookup)"),
 UNUSED('E')
 FLAG(fill_detail,       'F', 0,   "Fill algorithm (detail)"),
@@ -118,7 +118,7 @@ FLAG(high_level,        '_', 0,   "High level output"),
 FLAG(no_hl_img_banding, '`', 0,   "Don't use high_level banded images"),
 FLAG(alloc,             'a', 'A', "Allocator (large blocks)"),
 FLAG(bitmap,            'b', 'B', "Bitmap images"),
-FLAG(color_halftones,   'c', 0,   "Color Halftones"),
+FLAG(color_halftones,   'c', 'C', "Color mapping"),
 FLAG(dict,              'd', 'D', "Dictionary (put/undef)"),
 FLAG(external_calls,    'e', 0,   "External (OS related) calls"),
 FLAG(fill,              'f', 'F', "Fill algorithm"),
