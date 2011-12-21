@@ -173,7 +173,8 @@ CreateDirectory "$INSTDIR\bin"
 ; add files / whatever that need to be installed here.
 File   /r /x contrib /x lcms /x lcms2 /x expat /x jasper /x .svn doc
 File   /r /x zlib /x expat /x .svn /x lcms2 examples
-File   /r /x contrib /x expat /x luratech /x lwf_jp2 /x lcms /x lcms2 /x .svn lib
+File   /r /x contrib /x expat /x luratech /x lwf_jp2 /x lcms /x lcms2 /x .svn /x lib/gssetgs.bat lib
+File /oname=lib\gssetgs.bat .\lib\gssetgs${WINTYPE}.bat
 File /oname=bin\gsdll${WINTYPE}.dll .\bin\gsdll${WINTYPE}.dll
 File /oname=bin\gsdll${WINTYPE}.lib .\bin\gsdll${WINTYPE}.lib
 File /oname=bin\gswin${WINTYPE}.exe .\bin\gswin${WINTYPE}.exe
