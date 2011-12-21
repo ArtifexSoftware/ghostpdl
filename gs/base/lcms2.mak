@@ -20,7 +20,7 @@
 # gs.mak and friends define the following:
 #	LCMS2OBJDIR - the output obj directory
 #	LCMS2GENDIR - generated (.dev) file directory
-#	LCMS2I_ LCMS2CF_ - include and cflags for compiling the lib
+#	LCMS2I_ LCMS2_CFLAGS - include and cflags for compiling the lib
 
 # We define the lcms2.dev target and its dependencies
 #
@@ -78,7 +78,7 @@ lcms2.config-clean :
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the lcms source.
-LCMS2_CC=$(CC) $(CFLAGS) $(I_)$(LCMS2SRCDIR)$(D)include $(LCMS2CF_)
+LCMS2_CC=$(CC) $(CFLAGS) $(LCMS2_CFLAGS) $(I_)$(LCMS2SRCDIR)$(D)include $(LCMS2CF_)
 LCMS2O_=$(O_)$(LCMS2OBJ)
 
 # switch in the version of lcms2.dev we're actually using

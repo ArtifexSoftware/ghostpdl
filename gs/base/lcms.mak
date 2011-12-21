@@ -20,7 +20,7 @@
 # gs.mak and friends define the following:
 #	LCSMOBJDIR - the output obj directory
 #	LCMSGENDIR - generated (.dev) file directory
-#	LCMSI_ LCMSCF_ - include and cflags for compiling the lib
+#	LCMSI_ LCMS_CFLAGS - include and cflags for compiling the lib
 
 # We define the lcms.dev target and its dependencies
 #
@@ -78,7 +78,7 @@ LCMSCF_=$(D_)LCMS_USER_ALLOC$(_D_)1$(_D)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the lcms source.
-LCMS_CC=$(CC) $(CFLAGS) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
+LCMS_CC=$(CC) $(CFLAGS) $(LCMS_CFLAGS) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
 LCMSO_=$(O_)$(LCMSOBJ)
 
 # switch in the version of lcms.dev we're actually using
