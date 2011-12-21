@@ -1003,7 +1003,7 @@ $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
-$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(SETUP_XE) $(UNINSTALL_XE) $(GLOBJ)gp_wutf8.$(OBJ)
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
 	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
 !ifdef WIN64
 	echo /DEF:$(PSSRCDIR)\dwmain64.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
