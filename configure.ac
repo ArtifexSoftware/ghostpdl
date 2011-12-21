@@ -26,6 +26,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT
+AC_LANG(C)
 AC_CONFIG_SRCDIR([pcl/pcjob.c])
 
 # Checks for programs.
@@ -76,6 +77,33 @@ AC_CHECK_FUNCS([setlocale], [HAVE_SETLOCALE=-DHAVE_SETLOCALE])
 AC_SUBST(HAVE_SETLOCALE)
 
 dnl --------------------------------------------------
+dnl check for big/little endian for LCMS
+dnl --------------------------------------------------
+
+AC_MSG_CHECKING([for big endian])
+
+AC_RUN_IFELSE(
+  [AC_LANG_PROGRAM([#include <stdio.h>], [
+   static const int one = 1;
+   return (*(char*)&one == 0 ? 0 : 1);
+  ])],
+  [LCMS_BIGENDIAN=1],
+  [LCMS_BIGENDIAN=0])
+
+if test "x$LCMS_BIGENDIAN" != "x0"; then
+  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$LCMS_BIGENDIAN"
+  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$LCMS_BIGENDIAN"
+  AC_MSG_RESULT(yes)
+else
+  LCMS_ENDIAN=
+  LCMS2_ENDIAN=
+  AC_MSG_RESULT(no)
+fi
+
+AC_SUBST(LCMS_ENDIAN)
+AC_SUBST(LCMS2_ENDIAN)
+
+dnl --------------------------------------------------
 dnl check for sse2 intrinsics
 dnl --------------------------------------------------
 
@@ -84,14 +112,14 @@ save_cflags=$CFLAGS
 CFLAGS="$CFLAGS $OPT_CFLAGS"
 
 HAVE_SSE2=""
-AC_LINK_IFELSE([
-#include <emmintrin.h>
-int main (int argc, char *argv[])
-{
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include <emmintrin.h>], [
   __m128i input1;
+  unsigned char buf1[[128]];
+  input1 = _mm_loadu_si128((const __m128i *)buf1);
   return(0);
-}
-],HAVE_SSE2="-DHAVE_SSE2=1", HAVE_SSE2="")
+  ])],
+  [HAVE_SSE2="-DHAVE_SSE2"], [HAVE_SSE2=""])
 
 AC_ARG_ENABLE([sse2], AC_HELP_STRING([--disable-sse2],
        [Do not use sse2 instrinsics]), [
@@ -114,13 +142,13 @@ dnl --------------------------------------------------
 AC_MSG_CHECKING([byteswap support])
 
 HAVE_BSWAP32=""
-AC_LINK_IFELSE([
-int main (int argc, char *argv[])
-{
-  int a = __builtin_bswap32(argc);
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([], [
+  int a = 0;
+  int b = __builtin_bswap32(a);
   return(0);
-}
-],HAVE_BSWAP32="-DHAVE_BSWAP32=1", HAVE_BSWAP32="")
+  ])],
+  [HAVE_BSWAP32="-DHAVE_BSWAP32"], [HAVE_BSWAP32=""])
 
 AC_ARG_ENABLE([bswap32], AC_HELP_STRING([--disable-bswap32],
        [Do not use bswap32 instrinsic]), [
@@ -142,14 +170,13 @@ dnl --------------------------------------------------
 AC_MSG_CHECKING([for byteswap.h])
 
 HAVE_BYTESWAP_H=""
-AC_COMPILE_IFELSE([
-#include "byteswap.h"
-int main (int argc, char *argv[])
-{
-  int a = bswap_32(argc);
+AC_COMPILE_IFELSE(
+  [AC_LANG_PROGRAM([#include "byteswap.h"], [
+  int a = 0;
+  int b = __builtin_bswap32(a);
   return(0);
-}
-],HAVE_BYTESWAP_H="-DHAVE_BYTESWAP_H=1", HAVE_BYTESWAP_H="")
+  ])],
+  [HAVE_BYTESWAP_H="-DHAVE_BYTESWAP_H"], [HAVE_BYTESWAP_H=""])
 
 AC_ARG_ENABLE([byteswap-h], AC_HELP_STRING([--disable-byteswap-h],
        [Do not use byteswap.h functions]), [
