@@ -1040,11 +1040,11 @@ fi
 
 OPENJPEGDIR=openjpeg
 
-AC_ARG_WITH([openjpeg], AC_HELP_STRING([--with-openjpeg],
-    [Try to use OpenJPEG for JPX decoding]))
+AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
+        [Use OpenJPEG for JPX decoding]))
 
 if test "x$JPX_DECODER" = "x"; then
-  if test "x$with_openjpeg" = "xyes"; then
+  if test "x$enable_openjpeg" != "xno"; then
     AC_MSG_CHECKING([for local OpenJPEG library source])
     if test -e $OPENJPEGDIR/libopenjpeg/openjpeg.h; then
       AC_MSG_RESULT([yes])
@@ -1815,5 +1815,10 @@ AC_OUTPUT(Makefile)
 if ( test -d cups ); then
 AC_OUTPUT(cups/gstopxl)
 chmod +x cups/gstopxl
+fi
+
+if test "x$JPX_DECODER" = "xjasper"; then
+   AC_MSG_WARN([Using JasPer for PDF JPXDecode support])
+   AC_MSG_WARN([Support for JaSPER is deprecated and will be removed in a future release])
 fi
 

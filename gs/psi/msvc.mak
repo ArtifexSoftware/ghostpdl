@@ -352,14 +352,14 @@ JPX_LIB=luratech
 !endif
 !endif
 
-!if !defined(JPX_LIB) && (defined(USE_OPENJPEG))
-!if exist("openjpeg\libopenjpeg")
-JPX_LIB=openjpeg
+!if !defined(JPX_LIB) && (defined(USE_JASPER))
+!if exist("jasper\src")
+JPX_LIB=jasper
 !endif
 !endif
 
 !ifndef JPX_LIB
-JPX_LIB=jasper
+JPX_LIB=openjpeg
 !endif
 
 # Alternatively, you can build a separate DLL
