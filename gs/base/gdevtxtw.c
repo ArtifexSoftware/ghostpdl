@@ -980,6 +980,7 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
     int code;
     const char *param_name;
     gs_param_string ofs;
+    bool dummy;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
         case 0:
@@ -1006,6 +1007,18 @@ txtwrite_put_params(gx_device * dev, gs_param_list * plist)
         return ecode;
 
     code = param_read_int(plist, "TextFormat", &tdev->TextFormat);
+    if (code < 0)
+        return code;
+
+    code = param_read_bool(plist, "WantsToUnicode", &dummy);
+    if (code < 0)
+        return code;
+
+    code = param_read_bool(plist, "HighLevelDevice", &dummy);
+    if (code < 0)
+        return code;
+
+    code = param_read_bool(plist, "PreserveTrMode", &dummy);
     if (code < 0)
         return code;
 
