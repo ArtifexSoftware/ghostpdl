@@ -203,7 +203,7 @@ DEVICE_DEVS?=$(X11DEVS) \
    $(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev \
    $(DD)bit.dev $(DD)bitcmyk.dev $(DD)bitrgb.dev $(DD)bitrgbtags.dev \
    $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev\
-   $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev\
+   $(DD)txtwrite.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev\
    $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
    $(DD)tifflzw.dev $(DD)tiffpack.dev $(DD)tiffgray.dev\
    $(DD)tiffscaled.dev $(DD)tiffscaled8.dev $(DD)tiffscaled24.dev\

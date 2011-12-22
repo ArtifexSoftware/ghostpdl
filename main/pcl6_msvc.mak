@@ -443,7 +443,7 @@ DEVICE_DEVS=$(DD)\display.dev\
  $(DD)\tiff12nc.dev $(DD)\tiff24nc.dev\
  $(DD)\tiffscaled.dev $(DD)\tiffscaled8.dev $(DD)\tiffscaled24.dev\
  $(DD)\png16m.dev $(DD)\pngmono.dev $(DD)\pngmonod.dev $(DD)\jpeg.dev \
- $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev \
+ $(DD)\pdfwrite.dev $(DD)\pswrite.dev $(DD)\ps2write.dev $(DD)\txtwrite.dev \
  $(DD)\plan.dev $(DD)\planm.dev $(DD)\plang.dev $(DD)\planc.dev $(DD)\plank.dev
 !endif
 
