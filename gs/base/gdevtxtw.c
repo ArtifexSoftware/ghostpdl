@@ -1495,7 +1495,8 @@ txt_glyph_widths(gs_font *font, int wmode, gs_glyph glyph,
        to be equal to half glyph width, and AR5 takes it from W, DW.
        So make a compatibe data here.
      */
-    if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
+    if (font->FontType != ft_PCL_user_defined && font->FontType != ft_GL2_stick_user_defined
+        && (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode)))) {
         code = get_missing_width(font, wmode, &scale_c, pwidths);
         if (code < 0)
             v.y = 0;
