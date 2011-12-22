@@ -78,6 +78,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
+    gs_param_string proof_profile, link_profile;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool usefastcolor = false;  /* set for unmanaged color */
@@ -149,6 +150,19 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                 profile_intents[k] = dev_profile->intent[k];
             }
         }
+        /* The proof and link profile */
+        if (dev_profile->proof_profile == NULL) {
+            param_string_from_string(proof_profile, null_str);
+        } else {
+            param_string_from_string(proof_profile, 
+                                     dev_profile->proof_profile->name);
+        }
+        if (dev_profile->link_profile == NULL) {
+            param_string_from_string(link_profile, null_str);
+        } else {
+            param_string_from_string(link_profile, 
+                                     dev_profile->link_profile->name);
+        }
         devicegraytok = dev_profile->devicegraytok;
         usefastcolor = dev_profile->usefastcolor;
     } else {
@@ -156,9 +170,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
             param_string_from_string(profile_array[k], null_str);
             profile_intents[k] = gsPERCEPTUAL;
         }
+        param_string_from_string(proof_profile, null_str);
+        param_string_from_string(link_profile, null_str);
     }
     /* Transmit the values. */
-       if (
+    if (
         /* Standard parameters */
         (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
@@ -189,6 +205,8 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
         (code = param_write_string(plist,"ImageICCProfile", &(profile_array[2]))) < 0 ||
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
+        (code = param_write_string(plist,"ProofProfile", &(proof_profile))) < 0 ||
+        (code = param_write_string(plist,"DeviceLinkProfile", &(link_profile))) < 0 ||
         (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
         (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
@@ -814,6 +832,12 @@ nce:
     }
     if ((code = param_read_string(plist, "TextICCProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsTEXTPROFILE); 
+    }
+    if ((code = param_read_string(plist, "ProofProfile", &icc_pro)) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsPROOFPROFILE); 
+    }    
+    if ((code = param_read_string(plist, "DeviceLinkProfile", &icc_pro)) != 1) {
+        gx_default_put_icc(&icc_pro, dev, gsLINKPROFILE); 
     }
     if ((code = param_read_int(plist, (param_name = "RenderIntent"), 
                                                     &(rend_intent[0]))) < 0) {

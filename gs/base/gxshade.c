@@ -386,7 +386,7 @@ top:
     /* Grab the icc link transform that we need now */
     if (pcs->cmm_icc_profile_data != NULL) {
         pfs->icclink = gsicc_get_link(pis, pis->trans_device, pcs, NULL,
-                                      &rendering_params, pis->memory, false);
+                                      &rendering_params, pis->memory);
         if (pfs->icclink == NULL)
             return gs_error_VMerror;
     } else {
@@ -395,7 +395,7 @@ top:
                through special range adjustments in this case */
             pfs->icclink = gsicc_get_link(pis, pis->trans_device,
                                           pcs->icc_equivalent, NULL,
-                                          &rendering_params, pis->memory, false);
+                                          &rendering_params, pis->memory);
             if (pfs->icclink == NULL)
                 return gs_error_VMerror;
         } else {

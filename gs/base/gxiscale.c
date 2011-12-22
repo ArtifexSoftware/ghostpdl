@@ -328,7 +328,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
             gx_has_transfer(penum->pis, num_des_comps);
         if (penum->icc_link == NULL) {
             penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
-                &rendering_params, penum->memory, false);
+                &rendering_params, penum->memory);
         }
         /* We need to make sure that we do the proper unpacking proc if we
            are doing 16 bit */

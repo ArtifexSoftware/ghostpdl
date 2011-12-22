@@ -883,8 +883,7 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                    and the child will have the same color space anyway */
                 icc_link = gsicc_get_link_profile(pis, dev, curr_icc_profile,
                                     nos->parent_color_info_procs->icc_profile,
-                                    &rendering_params, pis->memory, false,
-                                    false);
+                                    &rendering_params, pis->memory, false);
                 /* If the link is the identity, then we don't need to do
                    any color conversions */
                 if ( !(icc_link->is_identity) ) {
@@ -1225,8 +1224,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                     rendering_params.graphics_type_tag = GS_IMAGE_TAG;
                     rendering_params.rendering_intent = gsPERCEPTUAL;
                     icc_link = gsicc_get_link_profile(pis, dev, des_profile,
-                        src_profile, &rendering_params, pis->memory, false,
-                        false);
+                        src_profile, &rendering_params, pis->memory, false);
                     smask_icc(dev, tos->rect.q.y - tos->rect.p.y,
                               tos->rect.q.x - tos->rect.p.x,tos->n_chan,
                               tos->rowstride, tos->planestride,

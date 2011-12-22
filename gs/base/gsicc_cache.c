@@ -164,6 +164,7 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
         result->hashcode.rend_hash = 0;
         result->ref_count = 1;		/* prevent it from being freed */
         result->includes_softproof = 0;
+        result->includes_devlink = 0;
         result->is_identity = false;
         result->valid = false;		/* not yet complete */
         result->num_waiting = 0;
@@ -174,7 +175,8 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
 
 void
 gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
-               gsicc_hashlink_t hashcode, gx_monitor_t *lock)
+               gsicc_hashlink_t hashcode, gx_monitor_t *lock, 
+               bool includes_softproof, bool includes_devlink)
 {
     gx_monitor_enter(lock);		/* lock the cache while changing data */
     icc_link->contextptr = contextptr;
@@ -183,7 +185,8 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
     icc_link->hashcode.des_hash = hashcode.des_hash;
     icc_link->hashcode.src_hash = hashcode.src_hash;
     icc_link->hashcode.rend_hash = hashcode.rend_hash;
-    icc_link->includes_softproof = 0;  /* Need to enable this at some point */
+    icc_link->includes_softproof = includes_softproof;
+    icc_link->includes_devlink = includes_devlink;
     if ( hashcode.src_hash == hashcode.des_hash ) {
         icc_link->is_identity = true;
     } else {
@@ -303,7 +306,8 @@ gsicc_get_cspace_hash(gsicc_manager_t *icc_manager, gx_device *dev,
 }
 
 gsicc_link_t*
-gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache, bool includes_proof)
+gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache, 
+                    bool includes_proof, bool includes_devlink)
 {
     gsicc_link_t *curr, *prev;
     int64_t hashcode = hash.link_hashcode;
@@ -317,14 +321,19 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache, b
     prev = NULL;
 
     while (curr != NULL ) {
-        if (curr->hashcode.link_hashcode == hashcode && includes_proof == curr->includes_softproof) {
-            /* move this one to the front of the list hoping we will use it again soon */
-            if (prev != NULL) {		/* if prev == NULL, curr is already the head */
+        if (curr->hashcode.link_hashcode == hashcode && 
+            includes_proof == curr->includes_softproof &&
+            includes_devlink == curr->includes_devlink) {
+            /* move this one to the front of the list hoping we will use it 
+               again soon */
+            if (prev != NULL) {		
+                /* if prev == NULL, curr is already the head */
                 prev->next = curr->next;
                 curr->next = icc_link_cache->head;
                 icc_link_cache->head = curr;
             }
-            curr->ref_count++;		/* bump the ref_count since we will be using this one */
+            curr->ref_count++;		
+            /* bump the ref_count since we will be using this one */
             while (curr->valid == false) {
                 curr->num_waiting++;
                 gx_monitor_leave(icc_link_cache->lock);
@@ -404,8 +413,7 @@ gsicc_link_t*
 gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
                const gs_color_space *pcs_in,
                gs_color_space *output_colorspace,
-               gsicc_rendering_param_t *rendering_params,
-               gs_memory_t *memory, bool include_softproof)
+               gsicc_rendering_param_t *rendering_params, gs_memory_t *memory)
 {
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_srcgtag_profile = NULL;
@@ -493,7 +501,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
        profiles */
     rendering_params->rendering_intent = rendering_params->rendering_intent & gsRI_MASK;
     return(gsicc_get_link_profile(pis, dev, gs_input_profile, gs_output_profile,
-                    rendering_params, memory, include_softproof, devicegraytok));
+                    rendering_params, memory, devicegraytok));
 }
 
 /* This operation of adding in a new link entry is actually shared amongst
@@ -503,7 +511,7 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
 bool
 gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache, 
                        gsicc_link_t **ret_link, gsicc_hashlink_t hash,
-                       bool include_softproof)
+                       bool include_softproof, bool include_devlink)
 {
     gs_memory_t *cache_mem = icc_link_cache->memory;
     gsicc_link_t *link;
@@ -521,7 +529,8 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
             gx_semaphore_wait(icc_link_cache->wait);
             /* repeat the findcachelink to see if some other thread has	*/
             /*already started building the link	we need			*/
-            *ret_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+            *ret_link = gsicc_findcachelink(hash, icc_link_cache, 
+                                            include_softproof, include_devlink);
             /* Got a hit, return link (ref_count for the link was already bumped */
             if (*ret_link != NULL)
                 return true;  
@@ -549,19 +558,17 @@ gsicc_alloc_link_entry(gsicc_link_cache_t *icc_link_cache,
     return false;
 }
 
-/* This is the main function called to obtain a linked transform from the ICC cache
-   If the cache has the link ready, it will return it.  If not, it will request
-   one from the CMS and then return it.  We may need to do some cache locking during
-   this process to avoid multi-threaded issues (e.g. someone deleting while someone
-   is updating a reference count) */
-
+/* This is the main function called to obtain a linked transform from the ICC 
+   cache If the cache has the link ready, it will return it.  If not, it will 
+   request one from the CMS and then return it.  We may need to do some cache 
+   locking during this process to avoid multi-threaded issues (e.g. someone 
+   deleting while someone is updating a reference count) */
 gsicc_link_t*
 gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                        cmm_profile_t *gs_input_profile,
                        cmm_profile_t *gs_output_profile,
                        gsicc_rendering_param_t *rendering_params,
-                       gs_memory_t *memory, bool include_softproof,
-                       bool devicegraytok)
+                       gs_memory_t *memory, bool devicegraytok)
 {
     gsicc_hashlink_t hash;
     gsicc_link_t *link, *found_link;
@@ -573,26 +580,43 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     gcmmhprofile_t *cms_input_profile;
     gcmmhprofile_t *cms_output_profile;
     int code;
+    bool include_softproof = false;
+    bool include_devicelink = false;
+    cmm_dev_profile_t *dev_profile;
+    cmm_profile_t *proof_profile = NULL;
+    cmm_profile_t *devlink_profile = NULL;
 
-    /* First compute the hash code for the incoming case */
-    /* If the output color space is NULL we will use the device profile for the output color space */
+    /* Determine if we are using a soft proof or device link profile */
+    if (dev != NULL ) {
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        if (dev_profile != NULL) {
+            proof_profile = dev_profile->proof_profile;
+            devlink_profile = dev_profile->link_profile;
+        }
+        if (proof_profile != NULL ) include_softproof = true;
+        if (devlink_profile != NULL) include_devicelink = true;
+    }
+    /* First compute the hash code for the incoming case.  If the output color 
+       space is NULL we will use the device profile for the output color space */
     gsicc_compute_linkhash(icc_manager, dev, gs_input_profile, gs_output_profile,
                             rendering_params, &hash);
     /* Check the cache for a hit.  Need to check if softproofing was used */
-    found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof);
+    found_link = gsicc_findcachelink(hash, icc_link_cache, include_softproof,
+                                     include_devicelink);
     /* Got a hit, return link (ref_count for the link was already bumped */
     if (found_link != NULL) {
-        if_debug2(gs_debug_flag_icc,"[icc] Found Link = 0x%x, hash = %I64d \n", found_link,
-                  hash.link_hashcode);
-        if_debug2(gs_debug_flag_icc,"[icc] input_numcomps = %d, input_hash = %I64d \n",
+        if_debug2(gs_debug_flag_icc, "[icc] Found Link = 0x%x, hash = %I64d \n", 
+                  found_link, hash.link_hashcode);
+        if_debug2(gs_debug_flag_icc, "[icc] input_numcomps = %d, input_hash = %I64d \n",
                   gs_input_profile->num_comps, gs_input_profile->hashcode);
-        if_debug2(gs_debug_flag_icc,"[icc] output_numcomps = %d, output_hash = %I64d \n",
+        if_debug2(gs_debug_flag_icc, "[icc] output_numcomps = %d, output_hash = %I64d \n",
                   gs_output_profile->num_comps, gs_output_profile->hashcode);
         return(found_link);
     }
     /* If not, then lets create a new one if there is room. This may actually 
        return a link if another thread has already created it */
-    if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof)) 
+    if (gsicc_alloc_link_entry(icc_link_cache, &link, hash, include_softproof,
+                               include_devicelink)) 
         return link;
     /* Now compute the link contents */
     cms_input_profile = gs_input_profile->profile_handle;
@@ -623,7 +647,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             }
         }
     }
-
     cms_output_profile = gs_output_profile->profile_handle;
     if (cms_output_profile == NULL) {
         if (gs_output_profile->buffer != NULL) {
@@ -675,15 +698,18 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         cms_output_profile = 
             icc_manager->graytok_profile->profile_handle;
     }
+    /* Get the link with the proof and or device link profile worked in if
+       they are specified and supported by the CMM */
     link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
                                     rendering_params);
     gx_monitor_leave(gs_output_profile->lock);
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
         gsicc_set_link_data(link, link_handle, contextptr, hash,
-                            icc_link_cache->lock);
-        if_debug2(gs_debug_flag_icc,"[icc] New Link = 0x%x, hash = %I64d \n", link,
-                  hash.link_hashcode);
+                            icc_link_cache->lock, include_softproof,
+                            include_devicelink);
+        if_debug2(gs_debug_flag_icc,"[icc] New Link = 0x%x, hash = %I64d \n", 
+                  link, hash.link_hashcode);
         if_debug2(gs_debug_flag_icc,"[icc] input_numcomps = %d, input_hash = %I64d \n",
                   gs_input_profile->num_comps, gs_input_profile->hashcode);
         if_debug2(gs_debug_flag_icc,"[icc] output_numcomps = %d, output_hash = %I64d \n",
@@ -945,8 +971,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                 icc_link = gsicc_get_link_profile(pis, dev,
                                                 pis->icc_manager->lab_profile,
                                                 curr_output_profile, rendering_params,
-                                                pis->memory, false, 
-                                                false);
+                                                pis->memory, false);
                 if (icc_link->is_identity) {
                     psrc_temp = &(psrc[0]);
                 } else {

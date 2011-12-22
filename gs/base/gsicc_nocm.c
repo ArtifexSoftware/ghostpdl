@@ -311,13 +311,13 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     hash.link_hashcode = src_index + hash.des_hash * 256;
 
     /* Check the cache for a hit. */
-    result = gsicc_findcachelink(hash, pis->icc_link_cache, false);
+    result = gsicc_findcachelink(hash, pis->icc_link_cache, false, false);
     if (result != NULL) {
         return result;
     }
     /* If not, then lets create a new one.  This may actually return a link if 
        another thread has already created it while we were trying to do so */ 
-    if (gsicc_alloc_link_entry(pis->icc_link_cache, &result, hash, false)) 
+    if (gsicc_alloc_link_entry(pis->icc_link_cache, &result, hash, false, false)) 
         return result;
     /* Now compute the link contents */
     result->procs.map_buffer = gsicc_nocm_transform_color_buffer;
@@ -365,8 +365,8 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
             break;
     }
     if (result != NULL) {
-        gsicc_set_link_data(result, nocm_link, NULL, hash,
-                                pis->icc_link_cache->lock);
+        gsicc_set_link_data(result, nocm_link, NULL, hash, 
+                            pis->icc_link_cache->lock, false, false);
     }
     return result;
 }

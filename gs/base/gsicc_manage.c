@@ -636,14 +636,8 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
              manager_default_profile = &(icc_manager->default_cmyk);
              default_space = gsCMYK;
              break;
-        case PROOF_TYPE:
-             manager_default_profile = &(icc_manager->proof_profile);
-             break;
         case NAMED_TYPE:
              manager_default_profile = &(icc_manager->device_named);
-             break;
-        case LINKED_TYPE:
-             manager_default_profile = &(icc_manager->output_link);
              break;
         case LAB_TYPE:
              manager_default_profile = &(icc_manager->lab_profile);
@@ -961,10 +955,20 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         /* Decrement any profiles. */
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             if (icc_struct->device_profile[k] != NULL) {
+                if_debug1(gs_debug_flag_icc,"[icc] Releasing device profile %d\n", k);
                 rc_decrement(icc_struct->device_profile[k],
                              "rc_free_profile_array");
             }
         }
+        if (icc_struct->link_profile != NULL) {
+            if_debug0(gs_debug_flag_icc,"[icc] Releasing link profile\n");
+            rc_decrement(icc_struct->link_profile, "rc_free_profile_array");
+        }
+        if (icc_struct->proof_profile != NULL) {
+            if_debug0(gs_debug_flag_icc,"[icc] Releasing proof profile\n");
+            rc_decrement(icc_struct->proof_profile, "rc_free_profile_array");
+        }
+        if_debug0(gs_debug_flag_icc,"[icc] Releasing device profile struct\n");
         gs_free_object(mem_nongc, icc_struct, "rc_free_profile_array");
     }
 }
@@ -976,6 +980,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     cmm_dev_profile_t *result;
     int k;
 
+    if_debug0(gs_debug_flag_icc,"[icc] Allocating device profile struct\n");
     result = (cmm_dev_profile_t *) gs_alloc_bytes(memory->non_gc_memory,
                                             sizeof(cmm_dev_profile_t),
                                             "gsicc_new_device_profile_array");
@@ -985,6 +990,8 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
         result->device_profile[k] = NULL;
         result->intent[k] = gsPERCEPTUAL;
     }
+    result->proof_profile = NULL;
+    result->link_profile = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
     result->usefastcolor = false;  /* Default is to not use fast color */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
@@ -1009,7 +1016,7 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
     return 0;
 }
 
-/* This sets the device profile. If the device does not have a defined
+/* This sets the device profiles. If the device does not have a defined
    profile, then a default one is selected. */
 int
 gsicc_init_device_profile_struct(gx_device * dev,
@@ -1113,27 +1120,40 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
             icc_profile =
                 gsicc_profile_new(str, mem, file_name, strlen(file_name));
             code = sfclose(str);
-            pdev->icc_struct->device_profile[pro_enum] = icc_profile;
-
+            if (pro_enum < gsPROOFPROFILE) {
+                if_debug1(gs_debug_flag_icc, "[icc] Setting device profile %d\n", pro_enum);
+                pdev->icc_struct->device_profile[pro_enum] = icc_profile;
+            } else {
+                /* The proof or the link profile */
+                if (pro_enum == gsPROOFPROFILE) {
+                    if_debug0(gs_debug_flag_icc, "[icc] Setting proof profile\n");
+                    pdev->icc_struct->proof_profile = icc_profile;
+                } else {
+                    if_debug0(gs_debug_flag_icc, "[icc] Setting link profile\n");
+                    pdev->icc_struct->link_profile = icc_profile;
+                }
+            }
             /* Get the profile handle */
             icc_profile->profile_handle =
                 gsicc_get_profile_handle_buffer(icc_profile->buffer,
                                                 icc_profile->buffer_size);
-
             /* Compute the hash code of the profile. Everything in the
                ICC manager will have it's hash code precomputed */
             gsicc_get_icc_buff_hash(icc_profile->buffer,
                                     &(icc_profile->hashcode),
                                     icc_profile->buffer_size);
             icc_profile->hash_is_valid = true;
-
             /* Get the number of channels in the output profile */
             icc_profile->num_comps =
                 gscms_get_input_channel_count(icc_profile->profile_handle);
+            if_debug1(gs_debug_flag_icc, "[icc] Profile has %d components\n", 
+                      icc_profile->num_comps);
             icc_profile->num_comps_out =
                 gscms_get_output_channel_count(icc_profile->profile_handle);
             icc_profile->data_cs =
                 gscms_get_profile_data_space(icc_profile->profile_handle);
+        if_debug1(gs_debug_flag_icc, "[icc] Profile data CS is %d\n", 
+                      icc_profile->data_cs);
         } else
             return gs_rethrow(-1, "cannot find device profile");
     }
@@ -1337,8 +1357,6 @@ gsicc_manager_new(gs_memory_t *memory)
    result->lab_profile = NULL;
    result->graytok_profile = NULL;
    result->device_named = NULL;
-   result->output_link = NULL;
-   result->proof_profile = NULL;
    result->device_n = NULL;
    result->smask_profiles = NULL;
    result->memory = memory->stable_memory;
@@ -1361,8 +1379,6 @@ rc_gsicc_manager_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
    rc_decrement(icc_manager->default_gray, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->default_rgb, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->device_named, "rc_gsicc_manager_free");
-   rc_decrement(icc_manager->output_link, "rc_gsicc_manager_free");
-   rc_decrement(icc_manager->proof_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->lab_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->graytok_profile, "rc_gsicc_manager_free");
    rc_decrement(icc_manager->srcgtag_profile, "rc_gsicc_manager_free");

@@ -79,6 +79,8 @@ cie_to_xyz(const double *in, double out[3], const gs_color_space *pcs,
     dev_profile.device_profile[1] = NULL;
     dev_profile.device_profile[2] = NULL;
     dev_profile.device_profile[3] = NULL;
+    dev_profile.link_profile = NULL;
+    dev_profile.proof_profile = NULL;
     dev.icc_struct = &(dev_profile);
 
     for (i = 0; i < ncomp; ++i)

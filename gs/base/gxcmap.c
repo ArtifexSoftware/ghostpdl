@@ -1231,8 +1231,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
 
         icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_rgb,
                                           des_profile, &rendering_params,
-                                          pis->memory, false, 
-                                          dev_profile->devicegraytok);
+                                          pis->memory, dev_profile->devicegraytok);
         /* Transform the color */
         for (i = 0; i < ncomps; i++) {
             psrc[i] = cv[i];
@@ -1299,7 +1298,7 @@ devicen_icc_cmyk(frac cm_comps[], const gs_imager_state * pis, gx_device *dev)
         psrc[k] = frac2cv(cm_comps[k]);
     }
     icc_link = gsicc_get_link_profile(pis, dev, pis->icc_manager->default_cmyk,
-                des_profile, &rendering_params, pis->memory, false, 
+                des_profile, &rendering_params, pis->memory, 
                 dev_profile->devicegraytok);
     /* Transform the color */
     if (icc_link->is_identity) {
