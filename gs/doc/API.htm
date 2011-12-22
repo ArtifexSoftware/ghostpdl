@@ -684,8 +684,43 @@ The callbacks are for device open, close, resize, sync, page,
 memory allocation and updating.
 Each callback function contains a handle can be set using
 <blockquote>
+  -sDisplayHandle=1234
+</blockquote>
+<p>
+Where "1234" is a string. The API was changed to use a string
+rather than an integer/long value when support for 64 bit systems
+arrived. A display "handle" is often a pointer, and since these
+command line options have to survive being processed by Postscript
+machinery, and Postscript only permits 32 bit number values, a
+different representation was required. Hence changing the value
+to a string, so that 64 bit values can be supported. The string
+formats allowed are:
+<blockquote>
+<code>1234</code> - implicit base 10
+</blockquote>
+<blockquote>
+<code>10#1234</code> - explicit base 10
+</blockquote>
+<blockquote>
+<code>16#04d2</code> - explicit base 16
+</blockquote>
+<p>
+The "number string" is parsed by the display device to retrieve
+the number value, and is then assigned to the void pointer
+parameter "pHandle" in the display device structure. Thus, for
+a trivial example, passing <code>-sDisplayHandle=0</code> will result
+in the first parameter passed to your display device callbacks being:
+<code>(void *)0</code>.
+<p>
+The previous API, using a number value:
+<blockquote>
   -dDisplayHandle=1234
 </blockquote>
+<p>
+is still supported on 32 bit systems, but will cause a "typecheck"
+error on 64 bit systems, and is considered deprecated. It should
+not be used in new code.
+
 <p>
 The device raster format can be configured using
 <blockquote>
