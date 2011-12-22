@@ -302,10 +302,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     /* cmsFLAGS_HIGHRESPRECALC)  cmsFLAGS_NOTPRECALC  cmsFLAGS_LOWRESPRECALC*/
 }
 
-/* Get the link from the CMS, but include proofing.
-    We need to note that as an option in the rendering params.  If we are doing
-    transparency, that would only occur at the top of the stack
-TODO:  Add error checking */
+/* Get the link from the CMS, but include proofing. */
 gcmmhlink_t
 gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
                     gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle,

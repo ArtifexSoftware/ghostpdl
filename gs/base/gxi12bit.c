@@ -170,7 +170,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
                 penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
-                    &rendering_params, penum->memory, false);
+                    &rendering_params, penum->memory);
             }
             /* Use the direct unpacking proc */
             penum->unpack = sample_unpackicc_16_proc;

@@ -142,7 +142,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
             if (penum->icc_setup.is_lab) penum->icc_setup.need_decode = false;
             if (penum->icc_link == NULL) {
                 penum->icc_link = gsicc_get_link(penum->pis, penum->dev, pcs, NULL,
-                    &rendering_params, penum->memory, false);
+                    &rendering_params, penum->memory);
             }
             /* PS CIE color spaces may have addition decoding that needs to
                be performed to ensure that the range of 0 to 1 is provided

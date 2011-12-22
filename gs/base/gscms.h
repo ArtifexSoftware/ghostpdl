@@ -128,6 +128,8 @@ typedef enum {
     gsGRAPHICPROFILE,
     gsIMAGEPROFILE,
     gsTEXTPROFILE,
+    gsPROOFPROFILE,
+    gsLINKPROFILE
 } gsicc_profile_types_t;
 
 typedef enum {
@@ -152,6 +154,8 @@ typedef struct cmm_srcgtag_profile_s {
 /* Destination profiles for different objects */
 typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
+        cmm_profile_t  *proof_profile;
+        cmm_profile_t  *link_profile;
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
@@ -193,9 +197,7 @@ typedef enum {
     DEFAULT_GRAY,   /* The default DeviceGray profile */
     DEFAULT_RGB,    /* The default DeviceRGB profile */
     DEFAULT_CMYK,   /* The default DeviceCMYK profile */
-    PROOF_TYPE,     /* The proofing profile */
     NAMED_TYPE,     /* The named color profile */
-    LINKED_TYPE,    /* The linked profile */
     LAB_TYPE,       /* The CIELAB profile */
     DEVICEN_TYPE,   /* A special device N profile */
     DEFAULT_GRAY_s, /* Same as default but a source profile from document */
@@ -338,6 +340,7 @@ struct gsicc_link_s {
     gx_semaphore_t *wait;		/* semaphore used by waiting threads */
     int num_waiting;
     bool includes_softproof;
+    bool includes_devlink;
     bool is_identity;  /* Used for noting that this is an identity profile */
     bool valid;		/* true once link is completely built and usable */
 };
@@ -403,8 +406,6 @@ typedef struct gsicc_manager_s {
     cmm_profile_t *default_gray;    /* Default gray profile for device gray */
     cmm_profile_t *default_rgb;     /* Default RGB profile for device RGB */
     cmm_profile_t *default_cmyk;    /* Default CMYK profile for device CMKY */
-    cmm_profile_t *proof_profile;   /* Proofing profile */
-    cmm_profile_t *output_link;     /* Output device Link profile */
     cmm_profile_t *lab_profile;     /* Colorspace type ICC profile from LAB to LAB */
     cmm_profile_t *graytok_profile; /* A specialized profile for mapping gray to K */
     gsicc_devicen_t *device_n;      /* A linked list of profiles used for DeviceN support */

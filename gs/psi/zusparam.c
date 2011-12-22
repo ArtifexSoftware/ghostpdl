@@ -452,48 +452,6 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 
 #undef ifont_dir
 
-/* No default for the proofing profile.  It would
-   seem that I should be able to set the default
-   operator to NULL but this introduces issues */
-
-static void
-current_proof_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
-{
-    static const char *const rfs = "";
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-
-    pval->data = (const byte *)((pis->icc_manager->proof_profile == NULL) ?
-                        rfs :
-                        pis->icc_manager->proof_profile->name);
-    pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
-}
-
-static int
-set_proof_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
-{
-    int code;
-    char *pname;
-    int namelen = (pval->size)+1;
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory;
-
-    /* Check if it was "NULL" */
-    if ( pval->size != 0 ) {
-        pname = (char *)gs_alloc_bytes(mem, namelen,
-                                     "set_proof_profile_icc");
-        memcpy(pname,pval->data,namelen-1);
-        pname[namelen-1] = 0;
-        code = gsicc_set_profile(pis->icc_manager, (const char*) pname, namelen, PROOF_TYPE);
-        gs_free_object(mem, pname,
-                "set_proof_profile_icc");
-        if (code < 0)
-            return gs_rethrow(code, "cannot find proofing icc profile");
-        return(code);
-    }
-    return(0);
-}
-
 /* No default for the deviceN profile. */
 
 static void
@@ -714,44 +672,6 @@ set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 }
 
 static void
-current_link_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
-{
-    static const char *const rfs = "";
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-
-    pval->data = (const byte *)( (pis->icc_manager->output_link == NULL) ?
-                        rfs : pis->icc_manager->output_link->name);
-    pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
-}
-
-static int
-set_link_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
-{
-    int code;
-    char* pname;
-    int namelen = (pval->size)+1;
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_memory_t *mem = pis->memory;
-
-    /* Check if it was "NULL" */
-    if (pval->size != 0) {
-        pname = (char *)gs_alloc_bytes(mem, namelen,
-                                 "set_link_profile_icc");
-        memcpy(pname,pval->data,namelen-1);
-        pname[namelen-1] = 0;
-        code = gsicc_set_profile(pis->icc_manager,
-            (const char*) pname, namelen, LINKED_TYPE);
-        gs_free_object(mem, pname,
-                "set_link_profile_icc");
-        if (code < 0)
-            return gs_rethrow(code, "cannot find linked icc profile");
-        return(code);
-    }
-    return(0);
-}
-
-static void
 current_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
     static const char *const rfs = "";
@@ -905,9 +825,7 @@ static const string_param_def_t user_string_params[] =
     {"DefaultGrayProfile", current_default_gray_icc, set_default_gray_icc},
     {"DefaultRGBProfile", current_default_rgb_icc, set_default_rgb_icc},
     {"DefaultCMYKProfile", current_default_cmyk_icc, set_default_cmyk_icc},
-    {"ProofProfile", current_proof_icc, set_proof_profile_icc},
     {"NamedProfile", current_named_icc, set_named_profile_icc},
-    {"DeviceLinkProfile", current_link_icc, set_link_profile_icc},
     {"ICCProfilesDir", current_icc_directory, set_icc_directory},
     {"LabProfile", current_lab_icc, set_lab_icc},
     {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc},
