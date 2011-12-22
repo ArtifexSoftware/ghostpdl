@@ -674,6 +674,7 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
             float BBox[4];
 
             memset(&block, 0x00, sizeof(page_text_t));
+            memset(BBox, 0x00, sizeof(float) * 4);
 
             while (y_list) {
                 if (block.y_ordered_list) {
