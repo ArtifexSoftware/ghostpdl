@@ -180,7 +180,7 @@ const gx_device_txtwrite_t gs_txtwrite_device =
      NULL, /*gx_default_get_xfont_procs,*/
      NULL, /*gx_default_get_xfont_device,*/
      NULL, /*gx_default_map_rgb_alpha_color,*/
-     NULL, /*gx_page_device_get_page_device,*/
+     gx_page_device_get_page_device, /*gx_page_device_get_page_device,*/
      NULL,			/* get_alpha_bits */
      NULL, /*gx_default_copy_alpha,*/
      NULL,			/* get_band */
