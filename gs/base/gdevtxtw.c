@@ -680,6 +680,7 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                 if (block.y_ordered_list) {
                     text_list_entry_t *x_entry = y_list->x_ordered_list;
 
+                    block_line = block.y_ordered_list;
                     while (x_entry) {
                         if (x_entry->start.x > BBox[2] || x_entry->end.x < BBox[0] ||
                             x_entry->start.y > (BBox[1] + (BBox[3] - BBox[1]))) {
