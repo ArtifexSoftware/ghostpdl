@@ -2999,7 +2999,7 @@ const char *opdfread_ps [] = {
 "dup 0 get/CalGray eq{\n",
 "1 get\n",
 "dup/Gamma//knownget exec{\n",
-"[exch/exp load]cvx\n",
+"[exch[exch/exp load]cvx dup dup]\n",
 "1 index exch/DecodeLMN exch put\n",
 "}if\n",
 "[exch/CIEBasedA exch]\n",

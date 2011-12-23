@@ -3631,7 +3631,7 @@ end
     dup 0 get /CalGray eq {
       1 get                                             % dict
       dup /Gamma //knownget exec {
-        [ exch /exp load ] cvx
+        [ exch [ exch /exp load ] cvx dup dup ]
         1 index exch /DecodeLMN exch put
       } if
       [ exch /CIEBasedA exch ]                          % []
