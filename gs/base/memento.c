@@ -294,6 +294,7 @@ static void Memento_removeBlock(Memento_Blocks    *blks,
         /* FAIL! Will have been reported to user earlier, so just exit. */
         return;
     }
+    VALGRIND_MAKE_MEM_DEFINED(blks->tail, sizeof(*blks->tail));
     if (*blks->tail == head) {
         /* Removing the tail of the list */
         if (prev == NULL) {
