@@ -145,8 +145,8 @@ gs_image_class_2_fracs(gx_image_enum * penum)
             cmm_dev_profile_t *dev_profile;
 
             code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-            num_des_comps = dev_profile->device_profile[0]->num_comps;
-             penum->icc_setup.need_decode = false;
+            num_des_comps = gsicc_get_device_profile_comps(dev_profile);
+            penum->icc_setup.need_decode = false;
             /* Check if we need to do any decoding.  If yes, then that will slow us down */
             for (k = 0; k < src_num_comp; k++) {
                 if ( penum->map[k].decoding != sd_none ) {
@@ -611,7 +611,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     pdevc->type = gx_dc_type_none;
     pdevc_next->type = gx_dc_type_none;
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* If the link is the identity, then we don't need to do any color
        conversions except for potentially a decode. */
     if (penum->icc_link->is_identity && !need_decode) {

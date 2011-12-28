@@ -103,7 +103,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
        profile output size.  For example sep device with CMYK profile should
        not go through the fast method */
     code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     if (num_des_comps != penum->dev->color_info.num_components) {
         use_icc = false;
     }
@@ -830,7 +830,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
         int num_bytes_decode = pss->params.BitsPerComponentIn / 8;
 
         code = dev_proc(dev, get_profile)(dev, &dev_profile);
-        spp_cm = dev_profile->device_profile[0]->num_comps;
+        spp_cm = gsicc_get_device_profile_comps(dev_profile);
         if (penum->matrix.yy > 0)
             dy = 1;
         else

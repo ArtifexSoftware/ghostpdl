@@ -579,6 +579,8 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     gs_memory_t *cache_mem = pis->icc_link_cache->memory;
     gcmmhprofile_t *cms_input_profile;
     gcmmhprofile_t *cms_output_profile;
+    gcmmhprofile_t *cms_proof_profile = NULL;
+    gcmmhprofile_t *cms_devlink_profile = NULL;
     int code;
     bool include_softproof = false;
     bool include_devicelink = false;
@@ -673,6 +675,40 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
             }
         }
     }
+    if (include_softproof) {
+        cms_proof_profile = proof_profile->profile_handle;
+        if (cms_proof_profile == NULL) {
+            if (proof_profile->buffer != NULL) {
+                cms_proof_profile =
+                    gsicc_get_profile_handle_buffer(proof_profile->buffer,
+                                                    proof_profile->buffer_size);
+                proof_profile->profile_handle = cms_proof_profile;
+                gx_monitor_enter(proof_profile->lock);
+            } else {
+                /* Cant create the link */
+                gsicc_remove_link(link, cache_mem);
+                icc_link_cache->num_links--;
+                return(NULL);
+            }
+        }
+    }
+    if (include_devicelink) {
+        cms_devlink_profile = devlink_profile->profile_handle;
+        if (cms_devlink_profile == NULL) {
+            if (devlink_profile->buffer != NULL) {
+                cms_devlink_profile =
+                    gsicc_get_profile_handle_buffer(devlink_profile->buffer,
+                                                    devlink_profile->buffer_size);
+                devlink_profile->profile_handle = cms_devlink_profile;
+                gx_monitor_enter(devlink_profile->lock);
+            } else {
+                /* Cant create the link */
+                gsicc_remove_link(link, cache_mem);
+                icc_link_cache->num_links--;
+                return(NULL);
+            }
+        }
+    }
     /* Profile reading of same structure not thread safe in lcms */
     gx_monitor_enter(gs_input_profile->lock);
     gx_monitor_enter(gs_output_profile->lock);
@@ -698,10 +734,23 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         cms_output_profile = 
             icc_manager->graytok_profile->profile_handle;
     }
-    /* Get the link with the proof and or device link profile worked in if
-       they are specified and supported by the CMM */
-    link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
-                                    rendering_params);
+    /* Get the link with the proof and or device link profile */
+    if (include_softproof || include_devicelink) {
+        link_handle = gscms_get_link_proof_devlink(cms_input_profile,
+                                                   cms_proof_profile,
+                                                   cms_output_profile,
+                                                   cms_devlink_profile,
+                                                   rendering_params);
+        if (include_softproof) {
+            gx_monitor_leave(proof_profile->lock);
+        }
+        if (include_devicelink) {
+            gx_monitor_leave(devlink_profile->lock);
+        }
+    } else {
+        link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
+                                        rendering_params);
+    }
     gx_monitor_leave(gs_output_profile->lock);
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
@@ -1067,3 +1116,17 @@ gsicc_init_buffer(gsicc_bufferdesc_t *buffer_desc, unsigned char num_chan, unsig
     buffer_desc->little_endian = true;
 
 }
+
+/* Return the proper component numbers based upon the profiles of the device.
+   This is in here since it is usually called when creating and using a link
+   from the link cache. */
+int 
+gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile)
+{
+    if (dev_profile->link_profile == NULL) {
+       return dev_profile->device_profile[0]->num_comps;
+    } else {
+       return dev_profile->link_profile->num_comps_out;
+    }
+}
+
