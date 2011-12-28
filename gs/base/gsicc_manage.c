@@ -250,7 +250,6 @@ gsicc_new_devicen(gsicc_manager_t *icc_manager)
 cmm_profile_t*
 gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
 {
-
     int k,j,i;
     gsicc_devicen_entry_t *curr_entry;
     int num_comps;
@@ -279,7 +278,6 @@ gsicc_finddevicen(const gs_color_space *pcs, gsicc_manager_t *icc_manager)
                 /* Get the character string and length for the component name. */
                 pcs->params.device_n.get_colorname_string(icc_manager->memory,
                                                     names[j], &pname, &name_size);
-
                 /* Compare to the jth entry in the ICC profile */
                 icc_spot_entry = curr_entry->iccprofile->spotnames->head;
                 for ( i = 0; i < num_comps; i++) {
@@ -1034,7 +1032,16 @@ gsicc_init_device_profile_struct(gx_device * dev,
     profile_struct = dev->icc_struct;
     if (profile_struct != NULL) {
         /* Get the profile of interest */
-        curr_profile = profile_struct->device_profile[profile_type];      
+        if (profile_type < gsPROOFPROFILE) {
+            curr_profile = profile_struct->device_profile[profile_type];      
+        } else {
+            /* The proof or the link profile */
+            if (profile_type == gsPROOFPROFILE) {
+                curr_profile = profile_struct->proof_profile;      
+            } else {
+                curr_profile = profile_struct->link_profile;      
+            }
+        }
         /* See if we have the same profile in this location */
         if (curr_profile != NULL) {
             /* There is something there now.  See if what we have coming in

@@ -117,7 +117,7 @@ gs_image_class_4_color(gx_image_enum * penum)
         cmm_dev_profile_t *dev_profile;
 
         code = dev_proc(penum->dev, get_profile)(penum->dev, &dev_profile);
-        des_num_comp = dev_profile->device_profile[0]->num_comps;
+        des_num_comp = gsicc_get_device_profile_comps(dev_profile);
         penum->icc_setup.need_decode = false;
         /* Check if we need to do any decoding.  If yes, then that will slow us down */
         for (k = 0; k < src_num_comp; k++) {
@@ -300,7 +300,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
     }

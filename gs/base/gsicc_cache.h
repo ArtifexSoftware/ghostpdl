@@ -59,5 +59,6 @@ int gsicc_transform_named_color(float tint_value, byte *color_name, uint name_si
                             cmm_profile_t *gs_output_profile,
                             gsicc_rendering_param_t *rendering_params,
                             bool include_softproof);
+int  gsicc_get_device_profile_comps(cmm_dev_profile_t *dev_profile);
 
 #endif

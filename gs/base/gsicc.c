@@ -273,7 +273,7 @@ gx_remap_concrete_ICC(const frac * pconc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_colorants = dev_profile->device_profile[0]->num_comps;
+    num_colorants = gsicc_get_device_profile_comps(dev_profile);
     switch( num_colorants ) {
         case 1:
             code = gx_remap_concrete_DGray(pconc, pcs, pdc, pis, dev, select);
@@ -315,7 +315,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     rendering_params.black_point_comp = BP_ON;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;
     /* Need to figure out which one rules here on rendering intent.  The
@@ -400,7 +400,7 @@ gx_concretize_ICC(
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
-    num_des_comps = dev_profile->device_profile[0]->num_comps;
+    num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     /* Define the rendering intents.  MJV to fix */
     rendering_params.black_point_comp = BP_ON;
     rendering_params.graphics_type_tag = dev->graphics_type_tag;

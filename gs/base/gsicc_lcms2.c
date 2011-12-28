@@ -357,9 +357,11 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     transparency, that would only occur at the top of the stack
 TODO:  Add error checking */
 gcmmhlink_t
-gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle, gcmmhprofile_t lcms_proofhandle,
-                    gsicc_rendering_param_t *rendering_params)
+gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
+                             gcmmhprofile_t lcms_proofhandle,
+                             gcmmhprofile_t lcms_deshandle, 
+                             gcmmhprofile_t lcms_devlinkhandle, 
+                             gsicc_rendering_param_t *rendering_params)
 {
     cmsUInt32Number src_data_type,des_data_type;
     cmsColorSpaceSignature src_color_space,des_color_space;

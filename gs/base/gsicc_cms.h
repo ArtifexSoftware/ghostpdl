@@ -51,10 +51,11 @@ void gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcol
 gcmmhlink_t gscms_get_link(gcmmhprofile_t  lcms_srchandle,
                     gcmmhprofile_t lcms_deshandle,
                     gsicc_rendering_param_t *rendering_params);
-gcmmhlink_t gscms_get_link_proof(gcmmhprofile_t  lcms_srchandle,
-                    gcmmhprofile_t lcms_deshandle, 
-                    gcmmhprofile_t lcms_proofhandle,
-                    gsicc_rendering_param_t *rendering_params);
+gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t  lcms_srchandle,
+                                         gcmmhprofile_t lcms_proofhandle,
+                                         gcmmhprofile_t lcms_deshandle, 
+                                         gcmmhprofile_t lcms_devlinkhandle,
+                                         gsicc_rendering_param_t *rendering_params);
 void gscms_create(void **contextptr);
 void gscms_destroy(void **contextptr);
 void gscms_release_link(gsicc_link_t *icclink);
