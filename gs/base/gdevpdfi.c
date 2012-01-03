@@ -544,8 +544,18 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     if (pim->Width == 0 || pim->Height == 0)
         goto nyi;
     /* PDF doesn't support images with more than 8 bits per component. */
-    if (pim->BitsPerComponent > 8)
-        goto nyi;
+    switch (pim->BitsPerComponent) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            break;
+        case 12:
+        case 16:
+            goto nyi;
+        default:
+            return_error(gs_error_rangecheck);
+    }
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
