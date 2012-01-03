@@ -3785,6 +3785,16 @@ end
     2 copy 3 exch put
     pop
   } if
+  dup 0 get/Pattern eq{
+    dup length 1 gt {
+      dup dup 1 get dup type /arraytype eq {
+        ResolveColorSpaceArray
+        1 index 1 3 -1 roll put
+      }{
+        pop
+      }ifelse
+    }if
+  }if
   PDFR_DEBUG {
     (Construcrted color space :) =
     dup ==
