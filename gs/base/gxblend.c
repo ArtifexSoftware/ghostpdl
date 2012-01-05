@@ -1463,6 +1463,31 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* during a particular band if we have a large file */
    /* if (clist_band_count != 65) return; */
     buff_ptr = Buffer;
+#ifdef RAW_DUMP_AS_PAM
+    if ((n_chan == 4) || (n_chan == 5)) {
+        int x;
+        sprintf(full_file_name,"%d)%s.pam",global_index,filename);
+        fid = fopen(full_file_name,"wb");
+        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
+                width, num_rows);
+        for(y=0; y<num_rows; y++)
+            for(x=0; x<width; x++)
+                for(z=0; z<4; z++)
+                    fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
+        fclose(fid);
+        if (n_chan == 5) {
+            sprintf(full_file_name,"%d)%s_shape.pam",global_index,filename);
+            fid = fopen(full_file_name,"wb");
+            fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
+                    width, num_rows);
+            for(y=0; y<num_rows; y++)
+                for(x=0; x<width; x++)
+                    fputc(Buffer[4*plane_stride + y*rowstride + x], fid);
+        }
+        fclose(fid);
+        return;
+    }
+#endif
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     sprintf(full_file_name,"%d)%s_%dx%dx%d.raw",global_index,filename,width,num_rows,max_bands);
     fid = fopen(full_file_name,"wb");
