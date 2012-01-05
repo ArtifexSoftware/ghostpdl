@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [gs] [bmpcmp] [lowres] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [bmpcmp] [lowres] [$user] | abort
 
 
 
@@ -18,7 +18,8 @@ my %products=('abort' =>1,
               'pcl'=>1,
               'svg'=>1,
               'xps'=>1,
-              'ls'=>1);
+              'ls'=>1,
+              'mupdf'=>1);
 
 my $user;
 my $product="";
@@ -84,7 +85,7 @@ my $directory=`pwd`;
 chomp $directory;
 
 $directory =~ s|.+/||;
-if ($directory ne 'gs' && $directory ne 'ghostpdl') {
+if ($directory ne 'gs' && $directory ne 'ghostpdl' && $directory ne 'mupdf') {
   $directory="";
   if (-d "base" && -d "Resource") {
     $directory='gs';
@@ -92,14 +93,24 @@ if ($directory ne 'gs' && $directory ne 'ghostpdl') {
   if (-d "pxl" && -d "pcl") {
     $directory='ghostpdl';
   }
+  if (-d "fitz" && -d "draw" && -d "pdf") {
+    $directory='mupdf';
+  }
 }
 
 #$directory="gs" if ($directory eq "" && $product eq "bmpcmp");
 $directory="gs" if ($directory eq "" && $product && $product eq "abort");
 
-die "can't figure out if this is a ghostpdl or gs directory" if ($directory eq "");
+die "can't figure out if this is a ghostpdl, gs, or mupdf source directory" if ($directory eq "");
 
-$product='gs pcl xps ls' if (!$product);
+if (!$product) {
+  if ($directory eq 'mupdf') {
+    $product='mupdf';
+  } else {
+    $product='gs pcl xps ls'
+  }
+}
+
 print "$user $directory $product\n" if ($verbose);
 
 
@@ -143,6 +154,7 @@ my $cmd="rsync -avxcz ".
 " --exclude ufst --exclude ufst-obj --exclude ufst-debugobj".
 " --exclude config.log --exclude .png".
 " --exclude .ppm --exclude .pkm --exclude .pgm --exclude .pbm".
+" --exclude build --exclude generated".
 " -e \"$ssh\" ".
 " .".
 " $hostpath";
