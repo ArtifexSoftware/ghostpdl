@@ -461,7 +461,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     if (icc_manager == NULL || icc_manager->srcgtag_profile != NULL) {
         return 0;
     } else {
-        mem = icc_manager->memory;
+        mem = icc_manager->memory->non_gc_memory;
         str = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
                                 mem->gs_lib_ctx->profiledir_len);
     }
