@@ -529,8 +529,10 @@ if test x"$enable_freetype" != xno; then
   if test -z $FTSRCDIR; then
     AC_MSG_RESULT([no])
     if test "x$PKGCONFIG" != x; then
-        AC_MSG_CHECKING(for system freetype with pkg-config)
-            if $PKGCONFIG --exists freetype2; then
+        AC_MSG_CHECKING(for system freetype2 >= 2.4.2 with pkg-config)
+            # pkg-config needs the libtool version, which != the freetype2 version <sigh!>
+            # There is a table of corresponding ft2<->libtool numbers in freetype/docs/VERSION.DLL
+            if $PKGCONFIG --atleast-version=12.0.6 freetype2; then
                 AC_MSG_RESULT(yes)
                 FT_CFLAGS="$CFLAGS `$PKGCONFIG --cflags freetype2`"
                 FT_LIBS="`$PKGCONFIG --libs freetype2`"
@@ -539,7 +541,35 @@ if test x"$enable_freetype" != xno; then
             else
                 AC_MSG_RESULT(no)
                 AC_MSG_WARN([freetype library source not found...using native rasterizer])
+                AFS=1
             fi
+    else        
+        AC_CHECK_HEADER([ft2build.h], [FT_BRIDGE=1], [AFS=1])
+        
+        if test "x$FT_BRIDGE" = x1; then
+          AC_CHECK_LIB(freetype, FT_Init_FreeType,
+            [FT_BRIDGE=1], [FT_BRIDGE=0; AFS=1])
+          
+          if test "x$FT_BRIDGE" = x1; then
+            AC_MSG_CHECKING(for system freetype2 library >= 2.4.2)
+            AC_COMPILE_IFELSE(
+              [AC_LANG_PROGRAM([#include "ft2build.h"
+              #include FT_FREETYPE_H], [
+                 #if FREETYPE_MAJOR < 2
+                   FAIL
+                 #endif
+                 #if FREETYPE_MINOR < 4
+                   FAIL
+                 #endif
+                 #if FREETYPE_PATCH < 2
+                   FAIL
+                 #endif
+                 return(0);
+              ])],
+              [FT_BRIDGE=1;AC_MSG_RESULT(yes)], [FT_BRIDGE=0; AFS=1;AC_MSG_RESULT(no)])
+          fi
+        fi
+        
     fi
   fi
 fi
@@ -1820,5 +1850,10 @@ fi
 if test "x$JPX_DECODER" = "xjasper"; then
    AC_MSG_WARN([Using JasPer for PDF JPXDecode support])
    AC_MSG_WARN([Support for JaSPER is deprecated and will be removed in a future release])
+fi
+
+if test "x$AFS" = "x1"; then
+   AC_MSG_WARN([Using "native" font scaler which is now deprecated (rather than freetype),])
+   AC_MSG_WARN([Support for this will be removed in a future release])
 fi
 
