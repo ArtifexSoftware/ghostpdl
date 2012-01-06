@@ -994,6 +994,7 @@ typedef struct pdf_lcvd_s {
     gx_device_memory mdev;
     gx_device_memory *mask;
     gx_device_pdf *pdev;
+    dev_t_proc_copy_color((*std_copy_color), gx_device);
     dev_t_proc_fill_rectangle((*std_fill_rectangle), gx_device);
     dev_t_proc_close_device((*std_close_device), gx_device);
     dev_t_proc_get_clipping_box((*std_get_clipping_box), gx_device);
