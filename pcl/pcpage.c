@@ -245,10 +245,10 @@ update_xfm_state(
 }
 
 /* default margins, relative to the logical page boundaries */
-#define DFLT_TOP_MARGIN     inch2coord(0.5)
+#define DFLT_TOP_MARGIN     (pcs->personality == rtl ? 0 : inch2coord(0.5))
 #define DFLT_LEFT_MARGIN    inch2coord(0.0)
 #define DFLT_RIGHT_MARGIN   inch2coord(0.0)
-#define DFLT_BOTTOM_MARGIN  inch2coord(0.5)
+#define DFLT_BOTTOM_MARGIN  (pcs->personality == rtl ? 0 : inch2coord(0.5))
 
 #define DFLT_TOP_MARGIN_PASSTHROUGH inch2coord(1.0/6.0)
 #define DFLT_BOTOM_MARGIN_PASSTHROUGH inch2coord(1.0/6.0)
