@@ -252,4 +252,6 @@ pcl_init_state(
     pcs->vmi_cp = 0;
     pcs->halftone_set = false;
     pcs->ppaper_type_table = 0;
+    
+    pcs->hpgl_mode = -1;
 }
