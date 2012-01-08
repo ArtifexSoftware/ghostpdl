@@ -93,7 +93,7 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
         hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
 
         hpgl_call(pcl_set_ctm(pgls, false));
-        if ( pgls->personality == rtl ) {
+        if ( pgls->personality == rtl && (pgls->hpgl_mode < 0) ) {
             /* If plot length >= width, y increases across the short
                edge and x increases down the plot.  Rotate the pcl
                coordinate system -90, scale and flip the x axis.  Else

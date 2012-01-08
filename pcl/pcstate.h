@@ -355,6 +355,8 @@ struct pcl_state_s {
     /* map device color spaces to srgb */
     bool useciecolor;
     bool halftone_set;
+    /* last entry mode to hpgl/2 */
+    int hpgl_mode;
 };
 
 /* accessor functions for the pcl target device.  These live in
