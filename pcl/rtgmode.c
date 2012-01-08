@@ -204,9 +204,12 @@ pcl_enter_graphics_mode(
      * Since this is a discontinuous effect, the equality checks below
      * should be made while still in centipoints.
      */
-    prstate->clip_all = ( (pcs->cap.x == pxfmst->pd_size.x) ||
-                          (pcs->cap.y == pxfmst->pd_size.y)   );
-
+    if ( pcs->personality == rtl )
+        prstate->clip_all = 0;
+    else
+        prstate->clip_all = ( (pcs->cap.x == pxfmst->pd_size.x) ||
+                              (pcs->cap.y == pxfmst->pd_size.y)   );
+    
     /* create to raster space to logical page space transformation */
     rot = pxfmst->lp_orient + pxfmst->print_dir;
     if (prstate->pres_mode_3)
@@ -735,7 +738,11 @@ gmode_do_reset(
 
         prstate->gmargin_cp = 0L;
         prstate->resolution = 75;
-        prstate->pres_mode_3 = true;
+        if ( pcs->personality == rtl ) {
+            prstate->pres_mode_3 = false;
+        } else {
+            prstate->pres_mode_3 = true;
+        }
         prstate->scale_raster = false;
         prstate->src_width_set = false;
         prstate->src_height_set = false;
