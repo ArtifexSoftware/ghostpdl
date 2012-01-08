@@ -41,6 +41,7 @@ typedef struct pl_interp_instance_s {
     vm_spaces       spaces;             /* spaces for GC */
     char *          pcl_personality;
     bool            interpolate;
+    bool            page_set_on_command_line;
 } pl_interp_instance_t;
 
 /* Param data types */

@@ -345,6 +345,12 @@ pcl_get_interpolation(pl_interp_instance_t *instance)
     return instance->interpolate;
 }
 
+static bool
+pcl_get_page_set(pl_interp_instance_t *instance)
+{
+    return instance->page_set_on_command_line;
+}
+
 #include "plmain.h"
 
 /* Set a device into an interperter instance */
@@ -363,6 +369,7 @@ pcl_impl_set_device(
     /* get ad hoc paramaters personality and interpolation */
     pcli->pcs.personality = pcl_get_personality(instance, device);
     pcli->pcs.interpolate = pcl_get_interpolation(instance);
+    pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
 
     /* Set the device into the pcl_state & gstate */
 

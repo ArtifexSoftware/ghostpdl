@@ -355,6 +355,7 @@ struct pcl_state_s {
     /* map device color spaces to srgb */
     bool useciecolor;
     bool halftone_set;
+    bool page_set_on_command_line;
     /* last entry mode to hpgl/2 */
     int hpgl_mode;
 };

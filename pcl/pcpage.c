@@ -625,8 +625,13 @@ set_page_size(
     pcl_state_t *               pcs
 )
 {
-    /* Note: not all values are implemented on all printers. */
-    uint                        tag = uint_arg(pargs);
+    /* Note: not all values are implemented on all printers.  If -g
+       has been given on the command line we use the "Custom" page
+       tag, the height and width are set to the device media values
+       which were filled in when the -g option was processed. */
+
+    uint                        tag = 
+        (pcs->page_set_on_command_line ? 101 : uint_arg(pargs));
     int                         i;
     int                         code = 0;
     const pcl_paper_size_t *    psize = 0;
@@ -1258,17 +1263,23 @@ pcl_get_default_paper(
     memcpy(pcs->ppaper_type_table, paper_types_proto, sizeof(paper_types_proto));
 
     pcs->wide_a4 = false;
-    if (*pwidth && *plength) {
+    if (pcs->page_set_on_command_line || (*pwidth && *plength)) {
         for (i = 0; i < pcl_paper_type_count; i++)
 	    if (!pjl_proc_compare(pcs->pjls, "custom", PAPER_SIZES[i].pname)) {
-	        PAPER_SIZES[i].psize.width  = atol(pwidth)*10L;
-		PAPER_SIZES[i].psize.height = atol(plength)*10L;
+                if (pcs->page_set_on_command_line) {
+                    PAPER_SIZES[i].psize.width = gs_currentdevice(pcs->pgs)->MediaSize[0] * 100;
+                    PAPER_SIZES[i].psize.height = gs_currentdevice(pcs->pgs)->MediaSize[1] * 100;
+                } else {
+                    PAPER_SIZES[i].psize.width  = atol(pwidth)*10L;
+                    PAPER_SIZES[i].psize.height = atol(plength)*10L;
+                }
 		/* just a guess, values copied from letter entry in table PAPER_SIZES */
 	        PAPER_SIZES[i].psize.offset_portrait   = 75*24L;
 	        PAPER_SIZES[i].psize.offset_landscape  = 60*24L;
 		return &(PAPER_SIZES[i].psize);
 	    }
     }
+
     for (i = 0; i < pcl_paper_type_count; i++)
         if (!pjl_proc_compare(pcs->pjls, psize, PAPER_SIZES[i].pname)) {
             /* set wide a4, only used if the paper is a4 */
