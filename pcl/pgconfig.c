@@ -502,10 +502,12 @@ hpgl_PS(hpgl_args_t *pargs, hpgl_state_t *pgls)
         else if ( i != 2 )
             return e_Range;
     }
-    paper.height = (coord)plu_2_coord(page_dims[0]);
-    paper.width = (coord)plu_2_coord(page_dims[1]);
-    paper.offset_portrait = 0;
-    paper.offset_landscape = 0;
+
+    paper.width = (coord)plu_2_coord(page_dims[0]);
+    paper.height = (coord)plu_2_coord(page_dims[1]);
+    paper.offset_portrait = (coord)0;
+    paper.offset_landscape = (coord)0;
+
     new_logical_page(pgls, 0, &paper, false, false);
     return 0;
 }

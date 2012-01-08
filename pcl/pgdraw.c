@@ -118,15 +118,28 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
                 hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_width, 0));
             hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
         } else {
+            /* NB probably needs correction for RTL */
             hpgl_call(gs_translate(pgls->pgs,
                                    pgls->g.picture_frame.anchor_point.x,
                                    pgls->g.picture_frame.anchor_point.y));
             /* move the origin */
-            hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
-            /* scale to plotter units and a flip for y */
-            hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
-            /* account for rotated coordinate system */
+            if (pgls->personality != rtl) {
+                hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
+                /* scale to plotter units and a flip for y */
+                hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
+                /* account for rotated coordinate system */
+            } else {
+                if (pgls->g.picture_frame_width > pgls->g.picture_frame_height) {
+                    hpgl_call(gs_rotate(pgls->pgs, -90));
+                    hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
+                } else {
+                    hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_height, 0));
+                    hpgl_call(gs_rotate(pgls->pgs, 180));
+                    hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
+                }
+            }
         }
+
         hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
         {
           switch (pgls->g.rotation)
@@ -135,13 +148,34 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
               hpgl_call(gs_translate(pgls->pgs, 0, 0));
               break;
             case 90 :
-              hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+                if (pgls->personality != rtl) {
+                    hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+                } else {
+                    if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                        hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+                else
+                    hpgl_call(gs_translate(pgls->pgs, 0, -fh_plu));
+                }
               break;
             case 180 :
-              hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+                if (pgls->personality != rtl) {
+                    hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+                } else {
+                    if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                        hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+                    else
+                        hpgl_call(gs_translate(pgls->pgs, -fh_plu, -fw_plu));
+                }
               break;
             case 270 :
-              hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+                if (pgls->personality != rtl) {
+                    hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+                } else {
+              if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                  hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+              else
+                  hpgl_call(gs_translate(pgls->pgs, -fw_plu, 0));
+                }
               break;
             }
         }
@@ -472,79 +506,86 @@ hpgl_polyfill_bbox(
  int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
+    gs_point pt;
     /* if we are doing vector fill a clipping path has already
        been set up using the last polygon */
     if ( render_mode == hpgl_rm_vector_fill )
         return 0;
-    else
-        {
-            gs_fixed_rect fixed_box;
-            gs_rect pcl_clip_box;
-            gs_rect dev_clip_box;
-            gs_matrix save_ctm;
-            gs_matrix pcl_ctm;
+    else {
+        gs_fixed_rect fixed_box;
+        gs_rect pcl_clip_box;
+        gs_rect dev_clip_box;
+        gs_matrix save_ctm;
+        gs_matrix pcl_ctm;
 
-            /* get pcl to device ctm and restore the current ctm */
-            hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
-            hpgl_call(pcl_set_ctm(pgls, false));
-            hpgl_call(gs_currentmatrix(pgls->pgs, &pcl_ctm));
-            hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
-            /* find the clipping region defined by the picture frame
-               which is defined in pcl coordinates */
+        /* get pcl to device ctm and restore the current ctm */
+        hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
+        hpgl_call(pcl_set_ctm(pgls, false));
+        hpgl_call(gs_currentmatrix(pgls->pgs, &pcl_ctm));
+        hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
+        /* find the clipping region defined by the picture frame
+           which is defined in pcl coordinates */
+        if (pgls->personality != rtl) {
             pcl_clip_box.p.x = pgls->g.picture_frame.anchor_point.x;
             pcl_clip_box.p.y = pgls->g.picture_frame.anchor_point.y;
             pcl_clip_box.q.x = pcl_clip_box.p.x + pgls->g.picture_frame_width;
             pcl_clip_box.q.y = pcl_clip_box.p.y + pgls->g.picture_frame_height;
-
-            hpgl_call(gs_bbox_transform(&pcl_clip_box,
-                                        &pcl_ctm,
-                                        &dev_clip_box));
-            /* HP cheats and expands the clip box's extant by at least
-               one device pixel in all directions */
-            dev_clip_box.q.x += 1.0;
-            dev_clip_box.q.y += 1.0;
-            dev_clip_box.p.x -= 1.0;
-            dev_clip_box.p.y -= 1.0;
-            /* if the clipping window is active calculate the new clip
-               box derived from IW and the intersection of the device
-               space boxes replace the current box.  Note that IW
-               coordinates are in current units and and the picture
-               frame in pcl coordinates. */
-            if ( pgls->g.soft_clip_window.active ) {
-                gs_rect dev_soft_window_box;
-                gs_matrix ctm;
-                if (pgls->g.soft_clip_window.isbound) {
-                    /* we need the plotter unit matrix */
-                    hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
-                    hpgl_call(hpgl_set_plu_ctm(pgls));
-                    hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
-                    hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
-                } else {
-                    hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
-                }
-                hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
-                                            &ctm,
-                                            &dev_soft_window_box));
-                /* Enlarge IW by 1 device dot to compensate for it's
-                   'on the line' is not clipped behavior. */
-                dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x - 1.0);
-                dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y - 1.0);
-                dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x + 1.0);
-                dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y + 1.0);
-
-            }
-            /* convert intersection box to fixed point and clip */
-            fixed_box.p.x = float2fixed(floor(dev_clip_box.p.x));
-            fixed_box.p.y = float2fixed(floor(dev_clip_box.p.y));
-            fixed_box.q.x = float2fixed(ceil(dev_clip_box.q.x));
-            fixed_box.q.y = float2fixed(ceil(dev_clip_box.q.y));
-            /* intersect with pcl clipping region */
-            fixed_box.p.x = max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
-            fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
-            fixed_box.q.x = min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
-            fixed_box.q.y = min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
-            hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
+        } else {
+            pcl_clip_box.p.x = pgls->g.picture_frame.anchor_point.y;
+            pcl_clip_box.p.y = pgls->g.picture_frame.anchor_point.x;
+            pcl_clip_box.q.x = pcl_clip_box.p.y + pgls->g.picture_frame_height;
+            pcl_clip_box.q.y = pcl_clip_box.p.x + pgls->g.picture_frame_width;
         }
+                    
+        hpgl_call(gs_bbox_transform(&pcl_clip_box,
+                                    &pcl_ctm,
+                                    &dev_clip_box));
+        /* HP cheats and expands the clip box's extant by at least
+           one device pixel in all directions */
+        dev_clip_box.q.x += 1.0;
+        dev_clip_box.q.y += 1.0;
+        dev_clip_box.p.x -= 1.0;
+        dev_clip_box.p.y -= 1.0;
+        /* if the clipping window is active calculate the new clip
+           box derived from IW and the intersection of the device
+           space boxes replace the current box.  Note that IW
+           coordinates are in current units and and the picture
+           frame in pcl coordinates. */
+        if ( pgls->g.soft_clip_window.active ) {
+            gs_rect dev_soft_window_box;
+            gs_matrix ctm;
+            if (!pgls->g.soft_clip_window.isbound) {
+                /* we need the plotter unit matrix */
+                hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
+                hpgl_call(hpgl_set_plu_ctm(pgls));
+                hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+                hpgl_call(gs_setmatrix(pgls->pgs, &save_ctm));
+            } else {
+                hpgl_call(gs_currentmatrix(pgls->pgs, &ctm));
+            }
+            hpgl_call(gs_bbox_transform(&pgls->g.soft_clip_window.rect,
+                                        &ctm,
+                                        &dev_soft_window_box));
+            /* Enlarge IW by 1 device dot to compensate for it's
+               'on the line' is not clipped behavior. */
+            dev_clip_box.p.x = max(dev_clip_box.p.x, dev_soft_window_box.p.x - 1.0);
+            dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y - 1.0);
+            dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x + 1.0);
+            dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y + 1.0);
+
+        }
+        /* convert intersection box to fixed point and clip */
+        fixed_box.p.x = float2fixed(floor(dev_clip_box.p.x));
+        fixed_box.p.y = float2fixed(floor(dev_clip_box.p.y));
+        fixed_box.q.x = float2fixed(ceil(dev_clip_box.q.x));
+        fixed_box.q.y = float2fixed(ceil(dev_clip_box.q.y));
+        /* intersect with pcl clipping region */
+        fixed_box.p.x = max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
+        fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
+        fixed_box.q.x = min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
+        fixed_box.q.y = min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
+        hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
+    }
     return 0;
 }
 

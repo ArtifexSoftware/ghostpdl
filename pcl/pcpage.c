@@ -209,16 +209,18 @@ update_xfm_state(
 
     {
         gx_device *pdev = gs_currentdevice(pcs->pgs);
-        /* We must not set up a clipping region beyond the hardware margins of
-           the device, but the pcl language definition requires hardware
-           margins to be 1/6".  We set all margins to the the maximum of the
-           PCL language defined 1/6" and the actual hardware margin.  If 1/6"
-           is not available pcl will not work correctly all of the time. */
+        /* We must not set up a clipping region beyond the hardware
+           margins of the device, but the pcl language definition
+           requires hardware margins to be 1/6".  We set all margins
+           to the the maximum of the PCL language defined 1/6" and the
+           actual hardware margin.  If 1/6" is not available pcl will
+           not work correctly all of the time.  The HPGL-2/RTL mode
+           does not use margins. */
         if ( pcs->personality == rtl ) {
-            print_rect.p.x = inch2coord(pdev->HWMargins[0] / 72.0);
-            print_rect.p.y = inch2coord(pdev->HWMargins[1]) / 72.0;
-            print_rect.q.x = psize->width - inch2coord(pdev->HWMargins[2] / 72.0);
-            print_rect.q.y = psize->height - inch2coord(pdev->HWMargins[3] / 72.0);
+            print_rect.p.x = inch2coord(pdev->HWMargins[1]) / 72.0;
+            print_rect.p.y = inch2coord(pdev->HWMargins[0] / 72.0);
+            print_rect.q.x = psize->height - inch2coord(pdev->HWMargins[3] / 72.0);
+            print_rect.q.y = psize->width - inch2coord(pdev->HWMargins[2] / 72.0);
         } else {
             print_rect.p.x = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[0] / 72.0));
             print_rect.p.y = max(PRINTABLE_MARGIN_CP, inch2coord(pdev->HWMargins[1]) / 72.0);
@@ -353,10 +355,16 @@ new_page_size(
     gs_setdefaultmatrix(pgs, NULL);
     gs_initmatrix(pgs);
     gs_currentmatrix(pgs, &mat);
-    gs_matrix_translate(&mat, 0.0, height_pts, &mat);
-    gs_matrix_scale(&mat, 0.01, -0.01, &mat);
-    gs_setdefaultmatrix(pgs, &mat);
 
+    if (pcs->personality != rtl) {
+        gs_matrix_translate(&mat, 0.0, height_pts, &mat);
+        gs_matrix_scale(&mat, 0.01, -0.01, &mat);
+     } else {
+        gs_matrix_rotate(&mat, -90, &mat);
+        gs_matrix_scale(&mat, -0.01, 0.01, &mat);
+    }
+
+    gs_setdefaultmatrix(pgs, &mat);
     pcs->xfm_state.paper_size = psize;
     pcs->overlay_enabled = false;
     update_xfm_state(pcs, reset_initial);
