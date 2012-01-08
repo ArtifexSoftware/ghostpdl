@@ -554,7 +554,7 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
         if ( pgls->g.soft_clip_window.active ) {
             gs_rect dev_soft_window_box;
             gs_matrix ctm;
-            if (!pgls->g.soft_clip_window.isbound) {
+            if (pgls->g.soft_clip_window.isbound && pgls->personality != rtl) {
                 /* we need the plotter unit matrix */
                 hpgl_call(gs_currentmatrix(pgls->pgs, &save_ctm));
                 hpgl_call(hpgl_set_plu_ctm(pgls));
