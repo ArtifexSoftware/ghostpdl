@@ -88,106 +88,80 @@ hpgl_width_scale(hpgl_state_t *pgls)
  int
 hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 {
-        hpgl_real_t swap_temp;
-        hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
-        hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
+    hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
+    hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
 
-        hpgl_call(pcl_set_ctm(pgls, false));
-        if ( pgls->personality == rtl && (pgls->hpgl_mode < 0) ) {
-            /* If plot length >= width, y increases across the short
-               edge and x increases down the plot.  Rotate the pcl
-               coordinate system -90, scale and flip the x axis.  Else
-               for plot width > length the origin is in the upper
-               right and x increases going to the left and y increases
-               going down, translate the pcl coordinate system by the
-               picture frame width, scale and flip x.
-               PLOTSIZEROTATE==OFF forces -90 rotation, top/left 0,0
-               not legal pcl default is ON */
-            if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width ||
-                 !pjl_proc_compare(pgls->pjls,
-                                   pjl_proc_get_envvar(pgls->pjls, "plotsizerotate"), "on")) {
-                hpgl_call(gs_rotate(pgls->pgs, -90));
-                /* swap picture frame height and width
-                 * for the translation portion of the next RO cmd rotation.
-                 */
-                swap_temp = fw_plu;
-                fw_plu  = fh_plu;
-                fh_plu = swap_temp;
-            }
-            else
-                hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_width, 0));
+    /* set up the default pcl ctm and from that derive the gl/2
+       transformations */
+    hpgl_call(pcl_set_ctm(pgls, false));
+    /* NB probably needs correction for RTL */
+    hpgl_call(gs_translate(pgls->pgs,
+                           pgls->g.picture_frame.anchor_point.x,
+                           pgls->g.picture_frame.anchor_point.y));
+
+    /* the gl/2 coordinate system like postscript (and unlike pcl) is
+       right-handed.   */
+    if (pgls->personality != rtl) {
+        hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
+        /* scale to plotter units and a flip for y */
+        hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
+    } else {
+        if (pgls->g.picture_frame_width > pgls->g.picture_frame_height) {
+            hpgl_call(gs_rotate(pgls->pgs, -90));
             hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
         } else {
-            /* NB probably needs correction for RTL */
-            hpgl_call(gs_translate(pgls->pgs,
-                                   pgls->g.picture_frame.anchor_point.x,
-                                   pgls->g.picture_frame.anchor_point.y));
-            /* move the origin */
-            if (pgls->personality != rtl) {
-                hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
-                /* scale to plotter units and a flip for y */
-                hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
-                /* account for rotated coordinate system */
-            } else {
-                if (pgls->g.picture_frame_width > pgls->g.picture_frame_height) {
-                    hpgl_call(gs_rotate(pgls->pgs, -90));
-                    hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
-                } else {
-                    hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_height, 0));
-                    hpgl_call(gs_rotate(pgls->pgs, 180));
-                    hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
-                }
-            }
+            hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_height, 0));
+            hpgl_call(gs_rotate(pgls->pgs, 180));
+            hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
         }
+    }
 
-        hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
-        {
-          switch (pgls->g.rotation)
-            {
-            case 0 :
-              hpgl_call(gs_translate(pgls->pgs, 0, 0));
-              break;
-            case 90 :
-                if (pgls->personality != rtl) {
-                    hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
-                } else {
-                    if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
-                        hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
-                else
-                    hpgl_call(gs_translate(pgls->pgs, 0, -fh_plu));
-                }
-              break;
-            case 180 :
-                if (pgls->personality != rtl) {
-                    hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
-                } else {
-                    if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
-                        hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
-                    else
-                        hpgl_call(gs_translate(pgls->pgs, -fh_plu, -fw_plu));
-                }
-              break;
-            case 270 :
-                if (pgls->personality != rtl) {
-                    hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
-                } else {
-              if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
-                  hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
-              else
-                  hpgl_call(gs_translate(pgls->pgs, -fw_plu, 0));
-                }
-              break;
-            }
+    hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
+
+    switch (pgls->g.rotation) {
+    case 0 :
+        hpgl_call(gs_translate(pgls->pgs, 0, 0));
+        break;
+    case 90 :
+        if (pgls->personality != rtl) {
+            hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+        } else {
+            if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+            else
+                hpgl_call(gs_translate(pgls->pgs, 0, -fh_plu));
         }
-        hpgl_call(hpgl_set_picture_frame_scaling(pgls));
-        {
-            gs_matrix mat;
-            gs_currentmatrix(pgls->pgs, &mat);
-            mat.ty = floor(mat.ty); mat.tx = floor(mat.tx);
-            gs_setmatrix(pgls->pgs, &mat);
+        break;
+    case 180 :
+        if (pgls->personality != rtl) {
+            hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+        } else {
+            if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+            else
+                hpgl_call(gs_translate(pgls->pgs, -fh_plu, -fw_plu));
         }
-        hpgl_call(gs_setdotorientation(pgls->pgs));
-        return 0;
+        break;
+    case 270 :
+        if (pgls->personality != rtl) {
+            hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+        } else {
+            if (pgls->g.picture_frame_width > pgls->g.picture_frame_height)
+                hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+            else
+                hpgl_call(gs_translate(pgls->pgs, -fw_plu, 0));
+        }
+        break;
+    }
+    hpgl_call(hpgl_set_picture_frame_scaling(pgls));
+    {
+        gs_matrix mat;
+        gs_currentmatrix(pgls->pgs, &mat);
+        mat.ty = floor(mat.ty); mat.tx = floor(mat.tx);
+        gs_setmatrix(pgls->pgs, &mat);
+    }
+    hpgl_call(gs_setdotorientation(pgls->pgs));
+    return 0;
 }
 
 /* Set the CTM to map PLU to device units, regardless of scaling. */
@@ -506,7 +480,6 @@ hpgl_polyfill_bbox(
  int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-    gs_point pt;
     /* if we are doing vector fill a clipping path has already
        been set up using the last polygon */
     if ( render_mode == hpgl_rm_vector_fill )
