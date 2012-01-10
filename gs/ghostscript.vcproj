@@ -1238,10 +1238,6 @@
 						>
 					</File>
 					<File
-						RelativePath="base\gdevicov.c"
-						>
-					</File>
-					<File
 						RelativePath="base\gdevbit.c"
 						>
 					</File>
@@ -1395,6 +1391,10 @@
 					</File>
 					<File
 						RelativePath="base\gdevhl7x.c"
+						>
+					</File>
+					<File
+						RelativePath="base\gdevicov.c"
 						>
 					</File>
 					<File
@@ -7830,6 +7830,118 @@
 				<File
 					RelativePath=".\doc\Xfonts.htm"
 					DeploymentContent="true"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="lcms2"
+				>
+				<File
+					RelativePath=".\lcms2\src\cmscam02.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmscgats.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmscnvrt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmserr.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsgamma.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsgmt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsintrp.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsio0.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsio1.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmslut.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsmd5.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsmtrx.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsnamed.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsopt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmspack.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmspcs.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsplugin.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsps2.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmssamp.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmssm.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmstypes.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsvirt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmswtpnt.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsxform.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\include\lcms2.h"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\lcms2_internal.h"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\include\lcms2_plugin.h"
 					>
 				</File>
 			</Filter>
