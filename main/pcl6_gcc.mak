@@ -213,7 +213,7 @@ DEVICE_DEVS?=$(X11DEVS) \
    $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev \
    $(DD)png16m.dev $(DD)pngmono.dev $(DD)pngmonod.dev $(DD)jpeg.dev\
    $(DD)plan.dev $(DD)planm.dev $(DD)plang.dev $(DD)planc.dev $(DD)plank.dev\
-   $(DD)romfs$(COMPILE_INITS).dev
+   $(DD)romfs$(COMPILE_INITS).dev $(DD)bbox.dev
 
 FEATURE_DEVS?=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev\
