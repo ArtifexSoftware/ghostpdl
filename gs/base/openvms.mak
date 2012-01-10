@@ -141,7 +141,7 @@ LCMS2SRCDIR=[.lcms2]
 # Which CMS are we using?
 # Options are currently lcms or lcms2
 
-WHICH_CMS=lcms
+WHICH_CMS=lcms2
 
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
