@@ -187,7 +187,7 @@ LCMS2SRCDIR=lcms2
 # Which CMS are we using?
 # Options are currently lcms or lcms2
 
-WHICH_CMS=lcms
+WHICH_CMS=lcms2
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
