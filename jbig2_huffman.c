@@ -586,8 +586,8 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             NTEMP++;
         }
         if (NTEMP != lines_max) {
-            Jbig2HuffmanLine *new_line = (Jbig2HuffmanLine *)jbig2_realloc(ctx->allocator,
-                                                    line, sizeof(Jbig2HuffmanLine) * NTEMP);
+            Jbig2HuffmanLine *new_line = jbig2_renew(ctx, line,
+                Jbig2HuffmanLine, NTEMP);
             if ( new_line == NULL ) {
                 jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                                 "Could not reallocate Huffman Table Lines");
