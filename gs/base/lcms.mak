@@ -63,7 +63,7 @@ lcms_OBJS=\
 # use of LCMS_USER_ALLOC avoids the lcms allocator. 
 lcms_HDRS=\
         $(LCMSSRCDIR)$(D)include$(D)lcms.h \
-        $(LCMSSRCDIR)$(D)include$(D)icc34.h
+        $(GLSRC)icc34.h
 
 lcms.clean : lcms.config-clean lcms.clean-not-config-clean
 
@@ -78,7 +78,7 @@ LCMSCF_=$(D_)LCMS_USER_ALLOC$(_D_)1$(_D)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the lcms source.
-LCMS_CC=$(CC) $(CFLAGS) $(LCMS_CFLAGS) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
+LCMS_CC=$(CC) $(CFLAGS) $(LCMS_CFLAGS) $(I_)$(GLSRC) $(I_)$(LCMSSRCDIR)$(D)include $(LCMSCF_)
 LCMSO_=$(O_)$(LCMSOBJ)
 
 # switch in the version of lcms.dev we're actually using

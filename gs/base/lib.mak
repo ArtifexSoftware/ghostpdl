@@ -42,7 +42,7 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 # (inline asm, including windows.h) when compiled under msvc.
 GLLCMSCC=$(CC) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMSSRCDIR)$(D)include$(_I) $(GLF_)
 lcms_h=$(LCMSSRCDIR)$(D)include$(D)lcms.h
-icc34_h=$(LCMSSRCDIR)$(D)include$(D)icc34.h
+icc34_h=$(GLSRC)icc34.h
 # We can't use $(CC_) for GLLCMS2CC becuase that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
