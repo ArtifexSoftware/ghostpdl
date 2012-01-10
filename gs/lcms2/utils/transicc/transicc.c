@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining 
 // a copy of this software and associated documentation files (the "Software"), 
@@ -26,8 +26,12 @@
 
 #include "utils.h"
 
+#ifndef _MSC_VER 
+#    include <unistd.h> 
+#endif 
+
 #ifdef CMS_IS_WINDOWS_
-#include <io.h>
+#    include <io.h>
 #endif
 
 #define MAX_INPUT_BUFFER 4096
@@ -455,6 +459,11 @@ cmsBool OpenTransforms(void)
         if (cmsIsTag(hInput, cmsSigColorantTableTag)) {
             List = cmsReadTag(hInput, cmsSigColorantTableTag);
             InputColorant = cmsDupNamedColorList(List);
+            if (cmsNamedColorCount(InputColorant) <= 3) 
+                SetRange(255, TRUE);
+            else
+                SetRange(1, TRUE);  // Inks are already divided by 100 in the formatter
+
         }
         else InputColorant = ComponentNames(InputColorSpace, TRUE);
 
@@ -1120,7 +1129,7 @@ int main(int argc, char *argv[])
 
     int nPatch = 0;
 
-    fprintf(stderr, "LittleCMS ColorSpace conversion calculator - 4.0 [LittleCMS %2.2f]\n", LCMS_VERSION / 1000.0);
+    fprintf(stderr, "LittleCMS ColorSpace conversion calculator - 4.1 [LittleCMS %2.2f]\n", LCMS_VERSION / 1000.0);
 
     InitUtils("transicc");
 

@@ -55,10 +55,10 @@ typedef struct _cmsTagTypeLinkedList_st {
 #define DUP_FN(x)   Type_##x##_Dup
 
 // Helper macro to define a handler. Callbacks do have a fixed naming convention.
-#define TYPE_HANDLER(t, x)  { (t), READ_FN(x), WRITE_FN(x), DUP_FN(x), FREE_FN(x) }
+#define TYPE_HANDLER(t, x)  { (t), READ_FN(x), WRITE_FN(x), DUP_FN(x), FREE_FN(x), NULL, 0 }
 
 // Helper macro to define a MPE handler. Callbacks do have a fixed naming convention
-#define TYPE_MPE_HANDLER(t, x)  { (t), READ_FN(x), WRITE_FN(x), GenericMPEdup, GenericMPEfree }
+#define TYPE_MPE_HANDLER(t, x)  { (t), READ_FN(x), WRITE_FN(x), GenericMPEdup, GenericMPEfree, NULL, 0 }
 
 // Register a new type handler. This routine is shared between normal types and MPE
 static
@@ -164,7 +164,7 @@ typedef cmsBool (* PositionTableEntryFn)(struct _cms_typehandler_struct* self,
                                              cmsUInt32Number n, 
                                              cmsUInt32Number SizeOfTag);
 
-// Helper function to deal with position tables as decribed in several addendums to ICC spec 4.2
+// Helper function to deal with position tables as decribed in ICC spec 4.3
 // A table of n elements is readed, where first comes n records containing offsets and sizes and
 // then a block containing the data itself. This allows to reuse same data in more than one entry
 static
@@ -1221,17 +1221,23 @@ static
 cmsBool  Type_ParametricCurve_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* io, void* Ptr, cmsUInt32Number nItems)
 {
     cmsToneCurve* Curve = (cmsToneCurve*) Ptr;
-    int i, nParams;
+    int i, nParams, typen;
     static const int ParamsByType[] = { 0, 1, 3, 4, 5, 7 };
       
+    typen = Curve -> Segments[0].Type;
 
-    if (Curve ->nSegments > 1 || Curve -> Segments[0].Type < 1) {
+    if (Curve ->nSegments > 1 || typen < 1) {
 
-        cmsSignalError(self->ContextID, 0, "Multisegment or Inverted parametric curves cannot be written");          
+        cmsSignalError(self->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Multisegment or Inverted parametric curves cannot be written");          
         return FALSE;
     }
 
-    nParams = ParamsByType[Curve ->Segments[0].Type];
+    if (typen > 5) {
+        cmsSignalError(self->ContextID, cmsERROR_UNKNOWN_EXTENSION, "Unsupported parametric curve");          
+        return FALSE;    
+    }
+
+    nParams = ParamsByType[typen];
     
     if (!_cmsWriteUInt16Number(io, (cmsUInt16Number) (Curve ->Segments[0].Type - 1))) return FALSE;
     if (!_cmsWriteUInt16Number(io, 0)) return FALSE;        // Reserved
@@ -2529,7 +2535,7 @@ cmsBool WriteSetOfCurves(struct _cms_typehandler_struct* self, cmsIOHANDLER* io,
         // If this is a table-based curve, use curve type even on V4
         CurrentType = Type;
 
-        if (Curves[i] ->nSegments == 0)
+        if ((Curves[i] ->nSegments == 0)||(Curves[i]->nSegments == 2) && (Curves[i] ->Segments[1].Type == 0))
             CurrentType = cmsSigCurveType;
         else
         if (Curves[i] ->Segments[0].Type < 0)
@@ -4291,8 +4297,8 @@ cmsBool  Type_MPEclut_Write(struct _cms_typehandler_struct* self, cmsIOHANDLER* 
 // This is the list of built-in MPE types
 static _cmsTagTypeLinkedList SupportedMPEtypes[] = {
 
-{{ (cmsTagTypeSignature) cmsSigBAcsElemType, NULL, NULL, NULL, NULL }, &SupportedMPEtypes[1] },   // Ignore those elements for now
-{{ (cmsTagTypeSignature) cmsSigEAcsElemType, NULL, NULL, NULL, NULL }, &SupportedMPEtypes[2] },   // (That's what the spec says)
+{{ (cmsTagTypeSignature) cmsSigBAcsElemType, NULL, NULL, NULL, NULL, NULL, 0 }, &SupportedMPEtypes[1] },   // Ignore those elements for now
+{{ (cmsTagTypeSignature) cmsSigEAcsElemType, NULL, NULL, NULL, NULL, NULL, 0 }, &SupportedMPEtypes[2] },   // (That's what the spec says)
 
 {TYPE_MPE_HANDLER((cmsTagTypeSignature) cmsSigCurveSetElemType,     MPEcurve),      &SupportedMPEtypes[3] },
 {TYPE_MPE_HANDLER((cmsTagTypeSignature) cmsSigMatrixElemType,       MPEmatrix),     &SupportedMPEtypes[4] },
