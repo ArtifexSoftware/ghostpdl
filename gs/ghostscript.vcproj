@@ -3606,6 +3606,10 @@
 					RelativePath=".\lcms\src\cmsxform.h"
 					>
 				</File>
+				<File
+					RelativePath=".\lcms\include\lcms.h"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="ijs"
@@ -7930,6 +7934,10 @@
 				</File>
 				<File
 					RelativePath=".\lcms2\src\cmsxform.c"
+					>
+				</File>
+				<File
+					RelativePath=".\lcms2\src\cmsxform.h"
 					>
 				</File>
 				<File
