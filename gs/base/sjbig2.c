@@ -104,6 +104,7 @@ s_jbig2decode_make_global_data(byte *data, uint length, void **result)
     /* allocate a context with which to parse our global segments */
     ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, NULL,
                             s_jbig2decode_error, NULL);
+    if (ctx == NULL) return 0;
 
     /* parse the global bitstream */
     code = jbig2_data_in(ctx, data, length);

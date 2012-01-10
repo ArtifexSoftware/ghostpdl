@@ -82,8 +82,8 @@ jbig2_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_da
             index++;
             if (index >= ctx->max_page_index) {
                 /* grow the list */
-		ctx->pages = (Jbig2Page*)jbig2_realloc(ctx->allocator, ctx->pages,
-			(ctx->max_page_index <<= 2) * sizeof(Jbig2Page));
+		ctx->pages = jbig2_renew(ctx, ctx->pages, Jbig2Page,
+                    (ctx->max_page_index <<= 2));
                 for (j=index; j < ctx->max_page_index; j++) {
                     ctx->pages[j].state = JBIG2_PAGE_FREE;
                     ctx->pages[j].number = 0;
