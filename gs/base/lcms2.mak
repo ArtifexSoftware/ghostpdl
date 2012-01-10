@@ -65,7 +65,7 @@ lcms2_OBJS=\
 
 lcms2_HDRS=\
         $(LCMS2SRCDIR)$(D)include$(D)lcms2.h \
-        $(LCMS2SRCDIR)$(D)include$(D)icc34.h
+        $(GLSRC)icc34.h
 
 lcms2.clean : lcms2.config-clean lcms2.clean-not-config-clean
 
