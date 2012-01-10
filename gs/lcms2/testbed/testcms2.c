@@ -73,10 +73,20 @@ static cmsUInt32Number SingleHit, MaxAllocated=0, TotalMemory=0;
 // I'm hidding the size before the block. This is a well-known technique and probably the blocks coming from
 // malloc are built in a way similar to that, but I do on my own to be portable.
 typedef struct { 
-    cmsUInt32Number KeepSize;
-    cmsUInt32Number Align8;
-    cmsContext WhoAllocated; // Some systems do need pointers aligned to 8-byte boundaries.
+    cmsUInt32Number KeepSize;    
+    cmsContext      WhoAllocated; 
 
+    union {
+        cmsUInt64Number HiSparc;
+
+        // '_cmsMemoryBlock' block is prepended by the
+        // allocator for any requested size. Thus, union holds
+        // "widest" type to guarantee proper '_cmsMemoryBlock'
+        // alignment for any requested size.
+
+    } alignment;
+
+   
 } _cmsMemoryBlock;
 
 #define SIZE_OF_MEM_HEADER (sizeof(_cmsMemoryBlock))
@@ -485,7 +495,7 @@ cmsHPROFILE CreateFakeCMYK(cmsFloat64Number InkLimit, cmsBool lUseAboveRGB)
     hICC = cmsCreateProfilePlaceholder(ContextID);
     if (!hICC) return NULL;
 
-    cmsSetProfileVersion(hICC, 4.2);
+    cmsSetProfileVersion(hICC, 4.3);
 
     cmsSetDeviceClass(hICC, cmsSigOutputClass);
     cmsSetColorSpace(hICC,  cmsSigCmykData);
@@ -3472,7 +3482,7 @@ cmsInt32Number CheckMLU(void)
 
     h = cmsOpenProfileFromFileTHR(DbgThread(), "mlucheck.icc", "w");
         
-    cmsSetProfileVersion(h, 4.2);
+    cmsSetProfileVersion(h, 4.3);
 
     cmsWriteTag(h, cmsSigProfileDescriptionTag, mlu2);
     cmsCloseProfile(h);
@@ -4974,7 +4984,7 @@ cmsInt32Number CheckProfileCreation(void)
     h = cmsCreateProfilePlaceholder(DbgThread());
     if (h == NULL) return 0;
 
-    cmsSetProfileVersion(h, 4.2);
+    cmsSetProfileVersion(h, 4.3);
     if (cmsGetTagCount(h) != 0) { Fail("Empty profile with nonzero number of tags"); return 0; }
     if (cmsIsTag(h, cmsSigAToB0Tag)) { Fail("Found a tag in an empty profile"); return 0; }
 
@@ -5737,7 +5747,7 @@ cmsInt32Number CheckStoredIdentities(void)
     cmsSaveProfileToFile(hLink, "abstractv2.icc");
     cmsCloseProfile(hLink);
 
-    hLink = cmsTransform2DeviceLink(xform, 4.2, 0);
+    hLink = cmsTransform2DeviceLink(xform, 4.3, 0);
     cmsSaveProfileToFile(hLink, "abstractv4.icc");
     cmsCloseProfile(hLink);
 
@@ -5975,6 +5985,7 @@ int CheckRGBPrimaries(void)
     cmsCIExyYTRIPLE tripxyY;
     cmsBool result;
 
+    cmsSetAdaptationState(0);
     hsRGB = cmsCreate_sRGBProfileTHR(DbgThread());
     if (!hsRGB) return 0;
 
@@ -6724,7 +6735,7 @@ cmsInt32Number CheckV4gamma(void)
     if (h == NULL) return 0;
 
     
-    cmsSetProfileVersion(h, 4.2);
+    cmsSetProfileVersion(h, 4.3);
 
     if (!cmsWriteTag(h, cmsSigGrayTRCTag, g)) return 0;
     cmsCloseProfile(h);

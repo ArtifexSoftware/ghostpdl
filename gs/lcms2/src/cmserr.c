@@ -256,6 +256,10 @@ _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32N
 {
     _cmsSubAllocator_chunk* chunk;
 
+    // 20K by default
+    if (Initial == 0)
+        Initial = 20*1024;
+
     // Create the container
     chunk = (_cmsSubAllocator_chunk*) _cmsMallocZero(ContextID, sizeof(_cmsSubAllocator_chunk));
     if (chunk == NULL) return NULL;
@@ -269,9 +273,7 @@ _cmsSubAllocator_chunk* _cmsCreateSubAllocChunk(cmsContext ContextID, cmsUInt32N
         return NULL;
     }
 
-    // 20K by default
-    if (Initial == 0)
-        Initial = 20*1024;
+
 
     chunk ->BlockSize = Initial;
     chunk ->Used      = 0;
@@ -325,7 +327,7 @@ void*  _cmsSubAlloc(_cmsSubAllocator* sub, cmsUInt32Number size)
     cmsUInt32Number Free = sub -> h ->BlockSize - sub -> h -> Used;
     cmsUInt8Number* ptr;
 
-    size = _cmsALIGNLONG(size);
+    size = _cmsALIGNMEM(size);
 
     // Check for memory. If there is no room, allocate a new chunk of double memory size.   
     if (size > Free) {
