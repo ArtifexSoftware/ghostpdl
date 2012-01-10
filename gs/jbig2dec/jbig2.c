@@ -336,8 +336,8 @@ jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  ctx->buf_rd_ix += header_size;
 
 	  if (ctx->n_segments == ctx->n_segments_max)
-	    ctx->segments = (Jbig2Segment **)jbig2_realloc(ctx->allocator,
-                ctx->segments, (ctx->n_segments_max <<= 2) * sizeof(Jbig2Segment *));
+              ctx->segments = jbig2_renew(ctx, ctx->segments, Jbig2Segment*,
+                  (ctx->n_segments_max <<= 2));
 
 	  ctx->segments[ctx->n_segments++] = segment;
 	  if (ctx->state == JBIG2_FILE_RANDOM_HEADERS)

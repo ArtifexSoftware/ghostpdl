@@ -421,6 +421,7 @@ cleanup2:
     if (params->SBHUFF) {
       jbig2_release_huffman_table(ctx, SBSYMCODES);
     }
+    jbig2_huffman_free(ctx, hs);
 
     return code;
 }
@@ -931,6 +932,7 @@ cleanup1:
         jbig2_release_huffman_table(ctx, params.SBHUFFRDH);
         jbig2_release_huffman_table(ctx, params.SBHUFFRSIZE);
     }
+    jbig2_free(ctx->allocator, dicts);
 
     return code;
 

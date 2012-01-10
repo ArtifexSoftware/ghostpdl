@@ -776,6 +776,7 @@ cleanup4:
   jbig2_free(ctx->allocator, GB_stats);
 
 cleanup2:
+  jbig2_sd_release(ctx, SDNEWSYMS);
   jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
   jbig2_release_huffman_table(ctx, SDHUFFRDX);
   jbig2_free(ctx->allocator, hs);
@@ -821,11 +822,6 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   params.SDREFAGG = (flags >> 1) & 1;
   params.SDTEMPLATE = (flags >> 10) & 3;
   params.SDRTEMPLATE = (flags >> 12) & 1;
-
-  params.SDHUFFDH = NULL;
-  params.SDHUFFDW = NULL;
-  params.SDHUFFBMSIZE = NULL;
-  params.SDHUFFAGGINST = NULL;
 
   if (params.SDHUFF) {
     switch ((flags & 0x000c) >> 2) {
@@ -959,10 +955,6 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	goto too_short;
       memcpy(params.sdrat, segment_data + offset, 4);
       offset += 4;
-  } else {
-      /* sdrat is meaningless if SDRTEMPLATE is 1, but set a value
-         to avoid confusion if anybody looks */
-      memset(params.sdrat, 0, 4);
   }
 
   if (offset + 8 > segment->data_length)
