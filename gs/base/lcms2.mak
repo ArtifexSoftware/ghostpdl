@@ -161,5 +161,5 @@ $(LCMS2OBJ)cmswtpnt.$(OBJ) : $(LCMS2SRC)cmswtpnt.c $(lcms2_HDRS)
 $(LCMS2OBJ)cmsvirt.$(OBJ) : $(LCMS2SRC)cmsvirt.c $(lcms2_HDRS)
 	$(LCMS2_CC) $(LCMS2O_)cmsvirt.$(OBJ) $(C_) $(LCMS2SRC)cmsvirt.c
 
-$(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2SRC)cmsxform.c $(lcms2_HDRS)
+$(LCMS2OBJ)cmsxform.$(OBJ) : $(LCMS2SRC)cmsxform.c $(LCMS2SRC)cmsxform.h $(lcms2_HDRS)
 	$(LCMS2_CC) $(LCMS2O_)cmsxform.$(OBJ) $(C_) $(LCMS2SRC)cmsxform.c

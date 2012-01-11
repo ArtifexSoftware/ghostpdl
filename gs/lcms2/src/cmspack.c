@@ -253,11 +253,10 @@ cmsUInt8Number* Unroll4BytesSwapSwapFirst(register _cmsTRANSFORM* info,
     cmsUNUSED_PARAMETER(Stride);
 }
 
-static
-cmsUInt8Number* Unroll3Bytes(register _cmsTRANSFORM* info, 
-                             register cmsUInt16Number wIn[], 
-                             register cmsUInt8Number* accum,
-                             register cmsUInt32Number Stride)
+cmsUInt8Number* _cmsUnroll3Bytes(register _cmsTRANSFORM* info,
+                                 register cmsUInt16Number wIn[],
+                                 register cmsUInt8Number* accum,
+                                 register cmsUInt32Number Stride)
 {
     wIn[0] = FROM_8_TO_16(*accum); accum++;     // R
     wIn[1] = FROM_8_TO_16(*accum); accum++;     // G
@@ -1919,11 +1918,10 @@ cmsUInt8Number* Pack3WordsAndSkip1SwapSwapFirst(register _cmsTRANSFORM* info,
 
 
 
-static
-cmsUInt8Number* Pack1Byte(register _cmsTRANSFORM* info, 
-                          register cmsUInt16Number wOut[], 
-                          register cmsUInt8Number* output,
-                          register cmsUInt32Number Stride)
+cmsUInt8Number* _cmsPack1Byte(register _cmsTRANSFORM* info,
+                              register cmsUInt16Number wOut[],
+                              register cmsUInt8Number* output,
+                              register cmsUInt32Number Stride)
 {
     *output++ = FROM_16_TO_8(wOut[0]);
 
@@ -2499,7 +2497,7 @@ static cmsFormatters16 InputFormatters16[] = {
     { TYPE_ALabV2_8,                                                  0,  UnrollALabV2_8 },
     { TYPE_LabV2_16,                                                  0,  UnrollLabV2_16 },
 
-    { CHANNELS_SH(3)|BYTES_SH(1),                              ANYSPACE,  Unroll3Bytes},
+    { CHANNELS_SH(3)|BYTES_SH(1),                              ANYSPACE,  _cmsUnroll3Bytes},
     { CHANNELS_SH(3)|BYTES_SH(1)|DOSWAP_SH(1),                 ANYSPACE,  Unroll3BytesSwap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|DOSWAP_SH(1),     ANYSPACE,  Unroll3BytesSkip1Swap},
     { CHANNELS_SH(3)|EXTRA_SH(1)|BYTES_SH(1)|SWAPFIRST_SH(1),  ANYSPACE,  Unroll3BytesSkip1SwapFirst},
@@ -2594,7 +2592,7 @@ static cmsFormatters16 OutputFormatters16[] = {
     { FLOAT_SH(1)|BYTES_SH(0),      ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackDoubleFrom16},
     { FLOAT_SH(1)|BYTES_SH(4),      ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackFloatFrom16},
 
-    { CHANNELS_SH(1)|BYTES_SH(1),                                  ANYSPACE,  Pack1Byte},   
+    { CHANNELS_SH(1)|BYTES_SH(1),                                  ANYSPACE,  _cmsPack1Byte},   
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(1),                      ANYSPACE,  Pack1ByteSkip1},
     { CHANNELS_SH(1)|BYTES_SH(1)|EXTRA_SH(1)|SWAPFIRST_SH(1),      ANYSPACE,  Pack1ByteSkip1SwapFirst},
 
