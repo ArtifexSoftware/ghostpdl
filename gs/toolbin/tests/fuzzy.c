@@ -478,8 +478,8 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   int row_bytes = width * 3;
   unsigned int out_buffer_size = (image_out ? row_bytes : 0);
   int half_win = window_size >> 1;
-  uchar **buf1 = alloc_window (row_bytes, window_size);
-  uchar **buf2 = alloc_window (row_bytes, window_size);
+  uchar **buf1 = alloc_window (row_bytes*2, window_size);
+  uchar **buf2 = alloc_window (row_bytes*2, window_size);
   uchar *out_buf = NULL;
   int x0 = -2, y0 = -2, mc = 0, mmax = 10;
   int y;
