@@ -183,27 +183,8 @@ void NullXFORM(_cmsTRANSFORM* p,
 
 
 // No gamut check, no cache, 16 bits
-static
-void PrecalculatedXFORM(_cmsTRANSFORM* p,
-                        const void* in,
-                        void* out, cmsUInt32Number Size)
-{
-    register cmsUInt8Number* accum;
-    register cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
-
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;                    
-
-    for (i=0; i < n; i++) {
-
-        accum = p -> FromInput(p, wIn, accum, Size);         
-        p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);     
-        output = p -> ToOutput(p, wOut, output, Size);
-    }
-}
+#define FUNCTION_NAME PrecalculatedXFORM
+#include "cmsxform.h"
 
 
 // Auxiliar: Handle precalculated gamut check
@@ -227,117 +208,57 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
 }
 
 // Gamut check, No caché, 16 bits.
-static
-void PrecalculatedXFORMGamutCheck(_cmsTRANSFORM* p,
-                                  const void* in,
-                                  void* out, cmsUInt32Number Size)
-{
-    cmsUInt8Number* accum;
-    cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
+#define FUNCTION_NAME PrecalculatedXFORMGamutCheck
+#define GAMUTCHECK
+#include "cmsxform.h"
 
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;                    // Buffer len
+// No gamut check, Caché, 16 bits.
+#define FUNCTION_NAME CachedXFORM
+#define CACHED
+#include "cmsxform.h"
 
-    for (i=0; i < n; i++) {
+// No gamut check, Caché, 16 bits, 4 bytes
+#define FUNCTION_NAME CachedXFORM4
+#define CACHED
+#define INBYTES 4
+#include "cmsxform.h"
 
-        accum = p -> FromInput(p, wIn, accum, Size);
-        TransformOnePixelWithGamutCheck(p, wIn, wOut);
-        output = p -> ToOutput(p, wOut, output, Size);
-    }
-}
-
-
-// No gamut check, Caché, 16 bits, 
-static
-void CachedXFORM(_cmsTRANSFORM* p,
-                 const void* in,
-                 void* out, cmsUInt32Number Size)
-{
-    cmsUInt8Number* accum;
-    cmsUInt8Number* output;
-    cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-    cmsUInt32Number i, n;
-    _cmsCACHE Cache;
-
-    accum  = (cmsUInt8Number*)  in;
-    output = (cmsUInt8Number*)  out;
-    n = Size;                    // Buffer len
-
-    // Empty buffers for quick memcmp
-    memset(wIn,  0, sizeof(wIn));
-    memset(wOut, 0, sizeof(wOut));
-
-    // Get copy of zero cache
-    memcpy(&Cache, &p ->Cache, sizeof(Cache));
-
-    for (i=0; i < n; i++) {
-
-        accum = p -> FromInput(p, wIn, accum, Size);
-
-        if (memcmp(wIn, Cache.CacheIn, sizeof(Cache.CacheIn)) == 0) {
-
-            memcpy(wOut, Cache.CacheOut, sizeof(Cache.CacheOut));
-        }
-        else {   
-
-            p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);  
-
-            memcpy(Cache.CacheIn,  wIn,  sizeof(Cache.CacheIn));
-            memcpy(Cache.CacheOut, wOut, sizeof(Cache.CacheOut));
-        }
-
-        output = p -> ToOutput(p, wOut, output, Size);            
-    }
- 
-}
-
+// No gamut check, Caché, 16 bits, 8 bytes
+#define FUNCTION_NAME CachedXFORM8
+#define CACHED
+#define INBYTES 8
+#include "cmsxform.h"
 
 // All those nice features together
-static
-void CachedXFORMGamutCheck(_cmsTRANSFORM* p,
-                           const void* in,
-                           void* out, cmsUInt32Number Size)
-{
-       cmsUInt8Number* accum;
-       cmsUInt8Number* output;
-       cmsUInt16Number wIn[cmsMAXCHANNELS], wOut[cmsMAXCHANNELS];
-       cmsUInt32Number i, n;
-       _cmsCACHE Cache;
+#define FUNCTION_NAME CachedXFORMGamutCheck
+#define CACHED
+#define GAMUTCHECK
+#include "cmsxform.h"
 
-       accum  = (cmsUInt8Number*)  in;
-       output = (cmsUInt8Number*)  out;
-       n = Size;                    // Buffer len
-
-       // Empty buffers for quick memcmp
-       memset(wIn,  0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
-       memset(wOut, 0, sizeof(cmsUInt16Number) * cmsMAXCHANNELS);
-
-       // Get copy of zero cache
-       memcpy(&Cache, &p ->Cache, sizeof(Cache));
-
-       for (i=0; i < n; i++) {
-
-            accum = p -> FromInput(p, wIn, accum, Size);
-     
-            if (memcmp(wIn, Cache.CacheIn, sizeof(Cache.CacheIn)) == 0) {
-                    memcpy(wOut, Cache.CacheOut, sizeof(Cache.CacheOut));
-            }
-            else {            
-                    TransformOnePixelWithGamutCheck(p, wIn, wOut);
-                    memcpy(Cache.CacheIn, wIn, sizeof(Cache.CacheIn));
-                    memcpy(Cache.CacheOut, wOut, sizeof(Cache.CacheOut));
-            }
-
-            output = p -> ToOutput(p, wOut, output, Size);
-       }
-       
-}
-
-
-
+// Special one for common case. Expose pack/unpack functions from cmspack.c
+// so we can recognise this case.
+cmsUInt8Number* _cmsUnroll3Bytes(_cmsTRANSFORM* info,
+                                 cmsUInt16Number wIn[],
+                                 cmsUInt8Number* accum,
+                                 cmsUInt32Number Stride);
+cmsUInt8Number* _cmsPack1Byte(_cmsTRANSFORM* info,
+                              cmsUInt16Number wOut[],
+                              cmsUInt8Number* output,
+                              cmsUInt32Number Stride);
+#define FUNCTION_NAME CachedXFORM3to1
+#define CACHED
+#define INBYTES 6
+#define UNPACK(T,D,S,Z)                                   \
+do {                                                      \
+       (D)[0] = FROM_8_TO_16(*(S)); (S)++;     /* R */    \
+       (D)[1] = FROM_8_TO_16(*(S)); (S)++;     /* G */    \
+       (D)[2] = FROM_8_TO_16(*(S)); (S)++;     /* B */    \
+} while (0)
+#define PACK(T,S,D,Z)            \
+do {                             \
+    *(D)++ = FROM_16_TO_8(*(S)); \
+} while (0);
+#include "cmsxform.h"
 
 // Allocate transform struct and set it to defaults
 static
@@ -407,9 +328,17 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsUInt32Number InputFo
 
                 if (dwFlags & cmsFLAGS_GAMUTCHECK) 
                     p ->xform = CachedXFORMGamutCheck;    // Gamut check, caché
-                else
-                    p ->xform = CachedXFORM;  // No gamut check, caché
-
+                else if ((p->FromInput == _cmsUnroll3Bytes) && (p->ToOutput == _cmsPack1Byte))
+                    p ->xform = CachedXFORM3to1;  // No gamut check, caché, 3 bytes to 1 byte
+                else {
+                    int inwords = T_CHANNELS(InputFormat);
+                    if (inwords <= 2)
+                        p ->xform = CachedXFORM4; // No gamut check, caché, 1 or 2 channels in
+                    else if (inwords <= 4)
+                        p ->xform = CachedXFORM8; // No gamut check, caché, 3 or 4 channels in
+                    else
+                        p ->xform = CachedXFORM;  // No gamut check, caché
+                }
             }
         }
     }
