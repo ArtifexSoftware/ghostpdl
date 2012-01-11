@@ -236,7 +236,7 @@ gsicc_nocm_transform_general(gx_device *dev, gsicc_link_t *icclink,
    transformations */
 static void
 gsicc_nocm_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
-                           void *outputcolor, int num_bytes, void **contextptr)
+                           void *outputcolor, int num_bytes)
 {
 
     gsicc_nocm_transform_general(dev, icclink, inputcolor, outputcolor, 

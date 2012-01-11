@@ -96,8 +96,7 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                         sample_in[i] = sample[i+1]*65535;
                     }
                     gscms_transform_color((gx_device *)(ctx->pgs->device), 
-                                          icclink, sample_in, sample_out, 2, 
-                                          NULL);
+                                          icclink, sample_in, sample_out, 2);
 
                     stops[count].color[0] = sample[0]; /* Alpha */
                     stops[count].color[1] = (float) sample_out[0] / 65535.0; /* sRGB */

@@ -92,7 +92,7 @@ typedef struct gsicc_bufferdesc_s {
    the CMM or doing "dumb" color transforms */
 typedef void (*gscms_trans_color_proc_t) (gx_device * dev, gsicc_link_t *icclink, 
                                           void *inputcolor, void *outputcolor,
-                                          int num_bytes, void **contextptr);
+                                          int num_bytes);
 
 typedef void (*gscms_trans_buffer_proc_t) (gx_device * dev, gsicc_link_t *icclink,
                                            gsicc_bufferdesc_t *input_buff_desc,
@@ -162,18 +162,6 @@ typedef struct cmm_dev_profile_s {
         gs_memory_t *memory;
         rc_header rc;
 } cmm_dev_profile_t;
-
-typedef struct cmm_dev_profile_name_s {
-    char *name;
-    unsigned int name_length;
-} cmm_dev_profile_name_t;
-
-typedef struct cmm_dev_profile_name_array_s {
-    cmm_dev_profile_name_t file_names[NUM_DEVICE_PROFILES];
-    rc_header rc; 
-    gs_memory_t *memory;
-    char *icc_output_dir;
-} cmm_dev_profile_name_array_t;
 
 /*  Doing this an an enum type for now.  There is alot going on with respect
  *  to this and V2 versus V4 profiles

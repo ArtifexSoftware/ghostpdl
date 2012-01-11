@@ -459,7 +459,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         in[3] = frac2ushort(k);
 
         gscms_transform_color(dev, link, &(in[0]),
-                        &(tmp[0]), 2, NULL);
+                        &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
@@ -503,7 +503,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
         in[2] = frac2ushort(b);
 
         gscms_transform_color(dev, link, &(in[0]),
-                        &(tmp[0]), 2, NULL);
+                        &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
@@ -1142,7 +1142,7 @@ psd_calib_row(gx_device *dev, psd_write_ctx *xc, byte **tile_data, const byte *r
                 in[plane_idx] = row[x*channels+plane_idx];
 
             gscms_transform_color(dev, link, &(in[0]),
-                &((*tile_data)[x]), 1, NULL);
+                &((*tile_data)[x]), 1);
 
         } else {
             (*tile_data)[x] = 255 ^ row[x*channels+base_bytes_pp+channel];

@@ -47,7 +47,7 @@ char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount);
 int gscms_get_numberclrtnames(gcmmhprofile_t profile);
 gsicc_colorbuffer_t gscms_get_profile_data_space(gcmmhprofile_t profile);
 void gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
-                           void *outputcolor, int num_bytes, void **contextptr);
+                           void *outputcolor, int num_bytes);
 gcmmhlink_t gscms_get_link(gcmmhprofile_t  lcms_srchandle,
                     gcmmhprofile_t lcms_deshandle,
                     gsicc_rendering_param_t *rendering_params);

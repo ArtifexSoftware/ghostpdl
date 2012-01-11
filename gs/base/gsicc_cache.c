@@ -861,8 +861,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                             gx_color_value device_values[],
                             const gs_imager_state *pis, gx_device *dev,
                             cmm_profile_t *gs_output_profile,
-                            gsicc_rendering_param_t *rendering_params,
-                            bool include_softproof)
+                            gsicc_rendering_param_t *rendering_params)
 {
 
     gsicc_namedcolor_t *namedcolor_data;
@@ -1026,8 +1025,7 @@ gsicc_transform_named_color(float tint_value, byte *color_name, uint name_size,
                 } else {
                     /* Transform the color */
                     psrc_temp = &(psrc_cm[0]);
-                    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, 
-                                                NULL);
+                    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
                 }
                 gsicc_release_link(icc_link);
                 for ( k = 0; k < curr_output_profile->num_comps; k++){
