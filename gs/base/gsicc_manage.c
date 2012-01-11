@@ -1930,17 +1930,6 @@ gsicc_setrange_lab(cmm_profile_t *profile)
     profile->Range.ranges[2].rmax = 127.0;
 }
 
-void
-gsicc_setrange_default(cmm_profile_t *profile)
-{
-    profile->Range.ranges[0].rmin = 0.0;
-    profile->Range.ranges[0].rmax = 1.0;
-    profile->Range.ranges[1].rmin = 0.0;
-    profile->Range.ranges[1].rmax = 1.0;
-    profile->Range.ranges[2].rmin = 0.0;
-    profile->Range.ranges[2].rmax = 1.0;
-}
-
 #if ICC_DUMP
 /* Debug dump of ICC buffer data */
 static void

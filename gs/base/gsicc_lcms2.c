@@ -283,8 +283,7 @@ void
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink,
                              void *inputcolor,
                              void *outputcolor,
-                             int num_bytes,
-                             void **contextptr)
+                             int num_bytes)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM)icclink->link_handle;
     cmsUInt32Number dwInputFormat,dwOutputFormat;

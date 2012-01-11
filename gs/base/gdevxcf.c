@@ -377,7 +377,7 @@ cmyk_cs_to_spotn_cm(gx_device * dev, frac c, frac m, frac y, frac k, frac out[])
         in[2] = frac2ushort(y);
         in[3] = frac2ushort(k);
 
-        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2, NULL);
+        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2);
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
         for (; i < n + 4; i++)
@@ -421,7 +421,7 @@ rgb_cs_to_spotn_cm(gx_device * dev, const gs_imager_state *pis,
         in[1] = frac2ushort(g);
         in[2] = frac2ushort(b);
 
-        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2, NULL);
+        gscms_transform_color(dev, link, &(in[0]), &(tmp[0]), 2);
 
         for (i = 0; i < outn; i++)
             out[i] = ushort2frac(tmp[i]);
@@ -1304,7 +1304,7 @@ xcf_icc_to_tile(gx_device_printer *pdev, xcf_write_ctx *xc, byte **tile_data, co
 
             gscms_transform_color((gx_device*) pdev, link, 
                                   (void *) (&(row[row_idx])),
-                                   &(base_ptr[base_idx]), 1, NULL);
+                                   &(base_ptr[base_idx]), 1);
 
             for (plane_idx = 0; plane_idx < n_extra_channels; plane_idx++)
                 extra_ptr[plane_idx * extra_stride + x] = 255 ^ row[row_idx++];

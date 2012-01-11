@@ -238,7 +238,7 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
    the proper allocations for the colors are there. */
 void
 gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcolor,
-                      void *outputcolor, int num_bytes, void **contextptr)
+                      void *outputcolor, int num_bytes)
 {
     cmsHTRANSFORM hTransform = (cmsHTRANSFORM) icclink->link_handle;
     DWORD dwInputFormat,dwOutputFormat,curr_input,curr_output;

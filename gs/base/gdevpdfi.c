@@ -671,7 +671,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             /* A minor hack to deal with CIELAB images. */
             if (pcs->cmm_icc_profile_data != NULL &&
                 pcs->cmm_icc_profile_data->islab) {
-                gsicc_setrange_default(pcs->cmm_icc_profile_data);
+                    gscms_set_icc_range(&(pcs->cmm_icc_profile_data));
             }
             code = pdf_color_space_named(pdev, &cs_value, &pranges, pcs, names, 
                                          in_line, NULL, 0);

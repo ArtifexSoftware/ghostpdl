@@ -76,7 +76,7 @@ static inline void
 gsicc_remap_fast(gx_device *dev, unsigned short *psrc, unsigned short *psrc_cm,
                  gsicc_link_t *icc_link)
 {
-    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_cm, 2, NULL);
+    (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_cm, 2);
 }
 
 /* ICC color mapping linearity check, a 2-points case. Check only the 1/2 point */
@@ -343,7 +343,7 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     } else {
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
-        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
     }
 #ifdef DEBUG
     if (!icc_link->is_identity) {
@@ -416,7 +416,7 @@ gx_concretize_ICC(
     } else {
         /* Transform the color */
         psrc_temp = &(psrc_cm[0]);
-        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2, NULL);
+        (icc_link->procs.map_color)(dev, icc_link, psrc, psrc_temp, 2);
     }
     /* This needs to be optimized */
     for (k = 0; k < num_des_comps; k++){

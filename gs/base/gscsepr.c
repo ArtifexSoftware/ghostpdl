@@ -330,7 +330,7 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
                                                 &pname, &name_size);
             code = gsicc_transform_named_color(pc->paint.values[0], pname,
                             name_size, device_values, pis, dev, NULL,
-                            &rendering_params, false);
+                            &rendering_params);
             if (code == 0) {
                 for (k = 0; k < num_des_comps; k++){
                     pconc[k] = float2frac(((float) device_values[k])/65535.0);
