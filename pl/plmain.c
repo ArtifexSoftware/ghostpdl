@@ -1014,22 +1014,33 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 stream_cursor_read cursor;
 
                 /* PJL lines have max length of 80 character + null terminator */
-                byte buf[81];
+                byte buf[512];
                 /* length of arg + newline (expected by PJL parser) + null */
                 int buf_len = strlen(arg) + 2;
                 if ( (buf_len ) > sizeof(buf) ) {
                     dprintf("pjl sequence too long\n");
                     return -1;
                 }
-                /* copy and concatenate newline */
-                strcpy((char *)buf, arg); strcat((char *)buf, "\n");
+                
+                /* replace ";" with newline for the PJL parser and
+                   concatenate NULL. */
+                {
+                    int i;
+                    for (i = 0; i < buf_len - 2; i++) {
+                        if (arg[i] == ';')
+                            buf[i] = '\n';
+                        else
+                            buf[i] = arg[i];
+                    }
+                    buf[i] = '\n'; i++; buf[i]  = '\0';
+                }
                 /* starting pos for pointer is always one position back */
                 cursor.ptr = buf - 1;
                 /* set the end of data pointer */
-                cursor.limit = cursor.ptr + strlen((char *)buf);
+                cursor.limit = cursor.ptr + buf_len;
                 /* process the pjl */
                 code = pl_process(pjl_instance, &cursor);
-                if ( code < 0 ) {
+                if ( code < 0 && code != e_ExitLanguage) {
                     dprintf("illegal pjl sequence in -J option\n");
                     return code;
                 }
