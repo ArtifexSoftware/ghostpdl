@@ -1163,7 +1163,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
                 code = gdev_vector_dopath((gx_device_vector *)pdev, ppath,
                                         gx_path_type_clip, NULL);
                 if (code >= 0)
-                    stream_puts(pdev->strm, "W n\n");
+                    stream_puts(pdev->strm, (params->rule < 0 ? "W n\n" : "W* n\n"));
             }
             pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
             cvd.write_matrix = false;
