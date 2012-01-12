@@ -1040,10 +1040,13 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 cursor.limit = cursor.ptr + buf_len;
                 /* process the pjl */
                 code = pl_process(pjl_instance, &cursor);
-                if ( code < 0 && code != e_ExitLanguage) {
-                    dprintf("illegal pjl sequence in -J option\n");
-                    return code;
-                }
+
+                /* we expect the language to exit properly otherwise
+                   there was some sort of problem */
+                if (code != e_ExitLanguage)
+                    return (code == 0 ? -1 : code);
+                else
+                    code = 0;
             }
             break;
         case 'K':               /* max memory in K */
