@@ -35,6 +35,7 @@ gscms_error(cmsContext       ContextID,
 #endif
 }
 
+static
 void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 {
     void *ptr;
@@ -46,6 +47,7 @@ void *gs_lcms2_malloc(cmsContext id, unsigned int size)
     return ptr;
 }
 
+static
 void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
 {
     void *ptr2;
@@ -57,6 +59,7 @@ void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
     return ptr2;
 }
 
+static
 void gs_lcms2_free(cmsContext id, void *ptr)
 {
     if (ptr != NULL) {

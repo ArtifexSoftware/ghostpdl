@@ -235,16 +235,7 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
 #define GAMUTCHECK
 #include "cmsxform.h"
 
-// Special one for common case. Expose pack/unpack functions from cmspack.c
-// so we can recognise this case.
-cmsUInt8Number* _cmsUnroll3Bytes(_cmsTRANSFORM* info,
-                                 cmsUInt16Number wIn[],
-                                 cmsUInt8Number* accum,
-                                 cmsUInt32Number Stride);
-cmsUInt8Number* _cmsPack1Byte(_cmsTRANSFORM* info,
-                              cmsUInt16Number wOut[],
-                              cmsUInt8Number* output,
-                              cmsUInt32Number Stride);
+// Special one for common case.
 #define FUNCTION_NAME CachedXFORM3to1
 #define CACHED
 #define INBYTES 6

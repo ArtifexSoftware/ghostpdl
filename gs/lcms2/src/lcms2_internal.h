@@ -47,7 +47,7 @@
 #endif
 
 // BorlandC 5.5, VC2003 are broken on that
-#if defined(__BORLANDC__) || (_MSC_VER < 1400) // 1400 == VC++ 8.0
+#if defined(__BORLANDC__) || (defined(_MSC_VER) && (_MSC_VER < 1400)) // 1400 == VC++ 8.0
 #define sinf(x) (float)sin((float)x)
 #define sqrtf(x) (float)sqrt((float)x)
 #endif
@@ -629,6 +629,15 @@ cmsBool   _cmsAdaptationMatrix(cmsMAT3* r, const cmsMAT3* ConeMatrix, const cmsC
 
 cmsBool   _cmsBuildRGB2XYZtransferMatrix(cmsMAT3* r, const cmsCIExyY* WhitePoint, const cmsCIExyYTRIPLE* Primaries);
 
+/* Packing/Unpacking functions exposed to enable optimised transform code */
+cmsUInt8Number* _cmsUnroll3Bytes(_cmsTRANSFORM* info,
+                                 cmsUInt16Number wIn[],
+                                 cmsUInt8Number* accum,
+                                 cmsUInt32Number Stride);
+cmsUInt8Number* _cmsPack1Byte(_cmsTRANSFORM* info,
+                              cmsUInt16Number wOut[],
+                              cmsUInt8Number* output,
+                              cmsUInt32Number Stride);
 
 #define _lcms_internal_H
 #endif
