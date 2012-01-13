@@ -253,27 +253,12 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 6: /* immediate text region */
     case 7: /* immediate lossless text region */
       return jbig2_text_region(ctx, segment, segment_data);
-#ifdef JBIG2_HALFTONE
     case 16:
       return jbig2_pattern_dictionary(ctx, segment, segment_data);
     case 20: /* intermediate halftone region */
     case 22: /* immediate halftone region */
     case 23: /* immediate lossless halftone region */
       return jbig2_halftone_region(ctx, segment, segment_data);
-#else
-    case 16:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'pattern dictionary'");
-    case 20:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'intermediate halftone region'");
-    case 22:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'immediate halftone region'");
-    case 23:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled segment type 'immediate lossless halftone region'");
-#endif
     case 36:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'intermediate generic region'");
