@@ -272,7 +272,7 @@ JPX_CFLAGS=@JPX_AUTOCONF_CFLAGS@
 ICCSRCDIR=icclib
 
 # options for lcms color management library
-SHARE_LCMS=0
+SHARE_LCMS=@SHARELCMS@
 LCMSSRCDIR=@LCMSDIR@
 LCMS2SRCDIR=@LCMS2DIR@
 LCMS_CFLAGS=@LCMS_ENDIAN@
@@ -280,7 +280,7 @@ LCMS2_CFLAGS=@LCMS2_ENDIAN@
 
 # Which CMS are we using?
 # Options are currently lcms or lcms2
-WHICH_CMS=lcms2
+WHICH_CMS=@WHICHLCMS@
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
