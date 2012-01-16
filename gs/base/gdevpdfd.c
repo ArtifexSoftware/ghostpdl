@@ -1232,7 +1232,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     if (pdf_must_put_clip_path(pdev, pcpath))
         code = pdf_unclip(pdev);
     else if ((pdev->last_charpath_op & TEXT_DO_FALSE_CHARPATH) && ppath->current_subpath &&
-        (ppath->last_charpath_segment == ppath->current_subpath->last)) {
+        (ppath->last_charpath_segment == ppath->current_subpath->last) && !pdev->ForOPDFRead) {
         bool hl_color = pdf_can_handle_hl_color((gx_device_vector *)pdev, pis, pdcolor);
         const gs_imager_state *pis_for_hl_color = (hl_color ? pis : NULL);
 
