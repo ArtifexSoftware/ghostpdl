@@ -620,7 +620,7 @@ finish:
     /* Finally, return the total width if requested. */
     if (!(text->operation & TEXT_RETURN_WIDTH))
         return 0;
-    if (text->operation & TEXT_DO_NONE && penum->pis->text_rendering_mode != 3) {
+    if (text->operation & TEXT_DO_NONE) {
         /* stringwidth needs to transform to user space. */
         gs_point p;
 
