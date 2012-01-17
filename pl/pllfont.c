@@ -322,6 +322,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                     found = true;
                     found_any = true;
                 }
+                sfclose(in);
 
                 /* nothing found */
                 if (!found) {
