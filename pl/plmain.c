@@ -724,6 +724,7 @@ pl_main_universe_select(
         universe->curr_instance->pcl_personality = pti->pcl_personality;
         universe->curr_instance->interpolate = pti->interpolate;
         universe->curr_instance->page_set_on_command_line = pti->page_set_on_command_line;
+        universe->curr_instance->res_set_on_command_line = pti->res_set_on_command_line;                
 
         /* Select curr/new device into PDL instance */
         if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
@@ -792,6 +793,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->saved_hwres = false;
     pti->interpolate = false;
     pti->page_set_on_command_line = false;
+    pti->res_set_on_command_line = false;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -1128,6 +1130,8 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 fa.size = 2;
                 fa.persistent = false;
                 code = param_write_float_array((gs_param_list *)params, "HWResolution", &fa);
+                if (code == 0)
+                    pmi->res_set_on_command_line = true;
             }
             break;
         case 's':

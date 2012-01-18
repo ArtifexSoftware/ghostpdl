@@ -54,6 +54,7 @@ typedef struct pl_main_instance_s {
                                      pcl == default.  NB doesn't belong here. */
     bool interpolate;
     bool page_set_on_command_line;
+    bool res_set_on_command_line;
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs

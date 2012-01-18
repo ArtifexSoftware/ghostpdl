@@ -24,6 +24,7 @@
 #include "pcdraw.h"
 #include "pcpage.h"
 #include "pjtop.h"
+#include <stdlib.h>             /* for atof() */
 
 /* Commands */
 
@@ -232,6 +233,19 @@ static void
 pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_initial | pcl_reset_printer) ) {
+        /* check for a resolution setting from PJL and set it right
+           away, there is no pcl command to set the resolution so a
+           state variable is not needed.  Don't override -r from the command line. */
+        if (!pcs->res_set_on_command_line) {
+            float res[2];
+            pjl_envvar_t *pres  = pjl_proc_get_envvar(pcs->pjls, "resolution");
+            /* resolution is always a single number in PJL */
+            res[0] = atof(pres); res[1] = res[0];
+
+            if (res[0] != 0)
+                put_param1_float_array(pcs, "HWResolution", res);
+        }
+
         pcs->num_copies = pjl_proc_vartoi(pcs->pjls,
             pjl_proc_get_envvar(pcs->pjls, "copies"));
         pcs->duplex = !pjl_proc_compare(pcs->pjls,
@@ -240,6 +254,7 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
             pjl_proc_get_envvar(pcs->pjls, "binding"), "longedge") ? false : true;
         pcs->back_side = false;
         pcs->output_bin = 1;
+        
     }
 
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {

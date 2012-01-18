@@ -356,6 +356,7 @@ struct pcl_state_s {
     bool useciecolor;
     bool halftone_set;
     bool page_set_on_command_line;
+    bool res_set_on_command_line;
     /* last entry mode to hpgl/2 */
     int hpgl_mode;
 };
