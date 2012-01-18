@@ -147,7 +147,7 @@ install-doc: $(PSDOCDIR)/News.htm
 # install the man pages for each locale
 MAN_LCDIRS=. de
 MAN1_LINKS_PS2PS=eps2eps
-MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13
+MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13 ps2pdf14
 MAN1_LINKS_GSLP=gsbj gsdj gsdj500 gslj
 install-man: $(PSMANDIR)/gs.1
 	$(SH) -c 'test -d $(DESTDIR)$(mandir) || mkdir -p $(DESTDIR)$(mandir)'
@@ -168,7 +168,7 @@ install-man: $(PSMANDIR)/gs.1
 			  ln -s ps2pdf.$(man1ext) $$f.$(man1ext) ) ;\
 	      done ;\
 	    fi ;\
-	    if ( test -f $$man1dir/ps2lp.$(man1ext) ) ;\
+            if ( test -f $$man1dir/gslp.$(man1ext) ) ;\
 	      then for f in $(MAN1_LINKS_GSLP) ;\
 	        do ( cd $$man1dir; rm -f $$f.$(man1ext) ;\
 			  ln -s gslp.$(man1ext) $$f.$(man1ext) ) ;\
