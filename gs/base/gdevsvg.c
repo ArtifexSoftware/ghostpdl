@@ -257,6 +257,7 @@ static int
 svg_output_page(gx_device *dev, int num_copies, int flush)
 {
     gx_device_svg *const svg = (gx_device_svg*)dev;
+    int code;
 
     svg->page_count++;
 
@@ -264,7 +265,15 @@ svg_output_page(gx_device *dev, int num_copies, int flush)
     if (ferror(svg->file))
       return gs_throw_code(gs_error_ioerror);
 
-    return gx_finish_output_page(dev, num_copies, flush);
+    if ((code=gx_finish_output_page(dev, num_copies, flush)) < 0)
+        return code;
+    /* Check if we need to change the output file for separate pages */
+    if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
+        if ((code = svg_close_device(dev)) < 0)
+            return code;
+        code = svg_open_device(dev);
+    }
+    return code;
 }
 
 /* Close the device */

@@ -278,7 +278,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
         code = gx_device_open_output_file((gx_device *)vdev, vdev->fname,
                                           binary, false, &vdev->file);
     }
-    if (code >= 0) {
+    if ((code >= 0) && (dev_proc(vdev, get_profile) != NULL)) {
         code = dev_proc(vdev, get_profile)((gx_device *)vdev, &icc_struct);
     }
 
@@ -962,6 +962,8 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     int code;
     gs_param_name param_name;
     gs_param_string ofns;
+    bool open = dev->is_open;
+
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofns)) {
         case 0:
@@ -979,18 +981,14 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
                 /* The new name is the same as the old name.  Do nothing. */
                 ofns.data = 0;
                 break;
-            } else if (dev->LockSafetyParams ||
-                        (dev->is_open && vdev->strm != 0 &&
-                       stell(vdev->strm) != 0)
-                       )
-                ecode = (dev->LockSafetyParams) ? gs_error_invalidaccess :
-                                gs_error_rangecheck;
-            else
-                break;
-            goto ofe;
+            } else if (dev->LockSafetyParams) {
+                    ecode = gs_error_invalidaccess;
+                    goto ofe;
+            }
+            break;
         default:
             ecode = code;
-          ofe:param_signal_error(plist, param_name, ecode);
+ofe:        param_signal_error(plist, param_name, ecode);
         case 1:
             ofns.data = 0;
             break;
@@ -999,8 +997,6 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     if (ecode < 0)
         return ecode;
     {
-        bool open = dev->is_open;
-
         /* Don't let gx_default_put_params close the device. */
         dev->is_open = false;
         code = gx_default_put_params(dev, plist);
@@ -1010,18 +1006,35 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
         return code;
 
     if (ofns.data != 0) {
+        /* If ofns.data is not NULL, then we have a different file name */
         memcpy(vdev->fname, ofns.data, ofns.size);
         vdev->fname[ofns.size] = 0;
-        if (vdev->file != 0) {
-            gx_device_bbox *bbdev = vdev->bbox_device;
+        if (dev->is_open && vdev->strm != 0 && stell(vdev->strm) != 0) {
+            /* we want to close and re-open the device so we can change the file */
+            ecode = gs_closedevice(dev);
+            if (ecode < 0) {
+                param_signal_error(plist, param_name, ecode);
+                return ecode;    /* THIS MAY CAUSE PROBLEMS SINCE THE DEVICE MAY BE CLOSED */
+            }
+            if (vdev->file != 0) {
+                gx_device_bbox *bbdev = vdev->bbox_device;
 
-            vdev->bbox_device = 0; /* don't let it be freed */
-            code = gdev_vector_close_file(vdev);
-            vdev->bbox_device = bbdev;
-            if (code < 0)
-                return code;
+                vdev->bbox_device = 0; /* don't let it be freed */
+                code = gdev_vector_close_file(vdev);
+                vdev->bbox_device = bbdev;
+                if (code < 0)
+                    return code;
+            }
+            ecode = gs_opendevice(dev);    /* opendevice is expected to open the new file */
+            if (ecode < 0) {
+                param_signal_error(plist, param_name, ecode);
+                return ecode;
+            }
+        }
+        /* device is open and hasn't written data yet, so open the file */
+        else if (dev->is_open) {
             return gdev_vector_open_file_options(vdev, vdev->strmbuf_size,
-                                                 vdev->open_options);
+                              vdev->open_options);
         }
     }
     return 0;

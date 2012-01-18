@@ -646,18 +646,6 @@ psw_check_erasepage(gx_device_pswrite *pdev)
       return code_;\
   END
 
-/* Check if we write each page into separate file. */
-static bool
-psw_is_separate_pages(gx_device_vector *const vdev)
-{
-    const char *fmt;
-    gs_parsed_file_name_t parsed;
-    int code = gx_parse_output_file_name(&parsed, &fmt, vdev->fname,
-                                         strlen(vdev->fname), vdev->memory);
-
-    return (code >= 0 && fmt != 0);
-}
-
 /* ---------------- Vector device implementation ---------------- */
 
 static int
@@ -678,7 +666,8 @@ psw_beginpage(gx_device_vector * vdev)
     }
 
     code = psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true,
-                          (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount + 1),
+                          (gx_outputfile_is_separate_pages(vdev->fname, vdev->memory) ?
+                          1 : vdev->PageCount + 1),
                           image_cache_size);
     if (code < 0)
          return code;
@@ -994,7 +983,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
         return_error(gs_error_ioerror);
 
     dev->PageCount ++;
-    if (psw_is_separate_pages(vdev)) {
+    if (gx_outputfile_is_separate_pages(vdev->fname, vdev->memory)) {
         code = psw_close_printer(dev);
 
         if (code < 0)
@@ -1188,7 +1177,8 @@ psw_close_printer(gx_device * dev)
         }
     }
     code = psw_end_file(f, dev, &pdev->pswrite_common, &bbox,
-                 (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount));
+                 (gx_outputfile_is_separate_pages(vdev->fname, vdev->memory) ?
+                 1 : vdev->PageCount));
     if(code < 0)
         return code;
 

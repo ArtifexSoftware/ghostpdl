@@ -963,6 +963,18 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
     return 0;
 }
 
+/* Check if we write each page into separate file. */
+bool
+gx_outputfile_is_separate_pages(const char *fname, gs_memory_t *memory)
+{
+    const char *fmt;
+    gs_parsed_file_name_t parsed;
+    int code = gx_parse_output_file_name(&parsed, &fmt, fname,
+                                         strlen(fname), memory);
+
+    return (code >= 0 && fmt != 0);
+}
+
 /* Open the output file for a device. */
 int
 gx_device_open_output_file(const gx_device * dev, char *fname,

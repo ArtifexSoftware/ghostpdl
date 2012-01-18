@@ -328,11 +328,24 @@ begins with <tt>%</tt>, you must prepend the <tt>%os%</tt> filedevice explicitly
 
 Please see <a href="Language.htm">Ghostscript and the PostScript Language</a> and the PostScript Language Reference Manual for more details on <tt>%</tt> and filedevices.
 
-<p>
-Note that on MS Windows systems, the <code>%</code> character also has a special meaning for the command processor (shell), so you will have to double it:
+<p><b>
+Note that on MS Windows systems, the <code>%</code> character also has a special meaning for the command processor (shell), so you will have to double it.</b>
 
 <blockquote>
 <code>gs -sOutputFile=%%os%%%%abc</code> (on MS Windows)
+</blockquote>
+
+<p><b>
+Note, some devices (e.g. pdfwrite, ps2write, ...) only write the output file
+upon exit, but changing the OutputFile device parameter will cause these
+devices to emit the pages received up to that point and then open the new
+file name given by OutputFile.
+</b>
+<p>
+For example, in order to create two PDF files from a single invocation of
+ghostscript the following can be used:
+<blockquote>
+<code>gs -sDEVICE=pdfwrite -o tiger.pdf examples/tiger.eps -c "<< /OutputFile (colorcir.pdf) >> setpagedevice" -f examples/colorcir.ps</code>
 </blockquote>
 
 <h4><a name="One_page_per_file"></a>One page per file</h4>
@@ -375,11 +388,9 @@ specifications. Some examples are:
 
 
 <p><b>
-Note however that the one page per file feature is not supported by all devices;
-in particular it does not work with document-oriented output devices like
-<tt>pdfwrite</tt> and <tt>pswrite</tt>. See the <tt>-dFirstPage</tt> and
-<tt>-dLastPage</tt> switches <a href="#PDF_switches">below</a> for a way to extract
-single pdf pages.
+Note, however that the one page per file feature may not supported by all devices.
+Also, since some devices write output files when opened, there may be an extra
+blank page written (pdfwrite, ps2write, pswrite, pxlmono, pxlcolor, ...).
 </b>
 
 <p>
