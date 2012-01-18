@@ -96,6 +96,7 @@ static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"viewer", "off"},            /* "on" enables unsafe viewer speed optimizations */
     {"paperwidth", ""},
     {"paperlength", ""},
+    {"resolution", "0"},
     /*    {"personality", "rtl"}, */
     {"", ""}
 };
