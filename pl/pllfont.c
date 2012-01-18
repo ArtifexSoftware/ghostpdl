@@ -329,11 +329,12 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem,
                     #ifdef DEBUG
                     if (gs_debug_c('=')) {
                         dprintf2("TrueType font %s in file %s not found in table\n", buffer, tmp_path_copy);
+                        in = sfopen(tmp_path_copy, "rb", mem);
                         code = get_name_from_tt_file(in, mem, buffer, WINDOWSNAME);
+                        sfclose(in);
                         dprintf1("Windows name %s\n", buffer);
                     }
                     #endif
-                    sfclose(in);
                 }
         }  /* next file */
     } /* next directory */
