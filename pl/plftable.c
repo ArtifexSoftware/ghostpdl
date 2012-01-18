@@ -547,7 +547,7 @@ const font_resident_t resident_table[] = {
     },
 
     {
-        fontnames("Wingdings-Regular", "Wingdings-Regular", "Dingbats"),
+        fontnames("Wingdings-Regular", "Wingdings-Regular", "New Dingbats"),
         {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
         {18540, 1, {1000.0, 720000.0/1000.0},0, REGULAR, NOBOLD, 31402, 68},
         cc_dingbats, plft_8bit
