@@ -91,7 +91,7 @@ main(int argc, char *argv[])
     FILE *in = 0;
     const char *extn = "";
     char fmode[4];
-#define FNSIZE 1000
+#define FNSIZE 4096
     char *fnparam = NULL; /* Initialisation to shut up compilers */
     char fname[FNSIZE];
     int newline = 1;
@@ -99,7 +99,8 @@ main(int argc, char *argv[])
     int (*eputc)(int, FILE *) = fputc;
     int (*eputs)(const char *, FILE *) = fputs;
 #define LINESIZE 1000+FNSIZE
-    char line[LINESIZE];
+#define LINESIZESLOP LINESIZE + 10
+    char line[LINESIZESLOP];
     char sw = 0, sp = 0, hexx = 0;
     char **argp = argv + 1;
     int nargs = argc - 1;
@@ -124,7 +125,11 @@ main(int argc, char *argv[])
         if (i == nargs)
             return 1;
         fnparam = argp[i];
-        strcpy(fmode, *argp + 1);
+        strncpy(fmode, *argp + 1, 4);
+        if (strlen(fnparam) + strlen(extn) >= FNSIZE) {
+            fputs("File param size exceeded\n", stderr);
+            return 1;
+        }
         strcpy(fname, fnparam);
         strcat(fname, extn);
         if (fmode[len - 2] == '-') {
@@ -159,16 +164,23 @@ main(int argc, char *argv[])
     }
     while (1) {
         char *arg;
+        int i;
 
         if (interact) {
-            if (fgets(line, LINESIZE, in) == NULL) {
+            if (fgets(line, LINESIZESLOP, in) == NULL) {
                 interact = 0;
                 if (in != stdin)
                     fclose(in);
                 continue;
             }
             /* Remove the terminating \n. */
-            line[strlen(line) - 1] = 0;
+            if (strlen(line) > LINESIZE) {
+                fputs("Line limit exceeded\n", stderr);
+                return 1;
+            }
+            for (i = strlen(line) - 1; i < LINESIZESLOP; i++) {
+                line[i] = 0;
+            }
             arg = line;
         } else {
             if (nargs == 0)
