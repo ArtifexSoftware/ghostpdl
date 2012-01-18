@@ -2519,17 +2519,17 @@ read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)
     }
     if (mask & op_bm_tk_known) {
         cb = *cbp++;
-        pis->renderingintent = (cb & 0xf0) >> 4;
-        cb = cb & 0x0f;
         pis->blend_mode = cb >> 3;
         pis->text_knockout = (cb & 4) != 0;
         /* the following usually have no effect; see gxclpath.c */
         pis->overprint_mode = (cb >> 1) & 1;
         pis->effective_overprint_mode = pis->overprint_mode;
         pis->overprint = cb & 1;
-        if_debug4('L', " BM=%d TK=%d OPM=%d OP=%d\n",
+        cb = *cbp++;
+        pis->renderingintent = cb;
+        if_debug5('L', " BM=%d TK=%d OPM=%d OP=%d RI=%d\n",
                   pis->blend_mode, pis->text_knockout, pis->overprint_mode,
-                  pis->overprint);
+                  pis->overprint, pis->renderingintent);
     }
     if (mask & segment_notes_known) {
         cb = *cbp++;

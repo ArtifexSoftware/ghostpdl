@@ -425,7 +425,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                  sizeof(float) +	/* flatness */
                  sizeof(float) +	/* line width */
                  sizeof(float) +	/* miter limit */
-                 1 +		/* op_bm_tk */
+                 2 +		/* op_bm_tk and rend intent */
                  sizeof(float) * 2 +  /* opacity/shape alpha */
                  sizeof(cldev->imager_state.alpha)
         ];
@@ -460,11 +460,11 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         }
         if (unknown & op_bm_tk_known) {
             *bp++ =
-                (cldev->imager_state.renderingintent << 4) +
                 ((int)cldev->imager_state.blend_mode << 3) +
                 (cldev->imager_state.text_knockout << 2) +
                 (cldev->imager_state.overprint_mode << 1) +
                 cldev->imager_state.overprint;
+            *bp++ = cldev->imager_state.renderingintent;
         }
         if (unknown & opacity_alpha_known) {
             memcpy(bp, &cldev->imager_state.opacity.alpha, sizeof(float));
