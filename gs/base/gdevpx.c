@@ -1397,6 +1397,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pclxl *const xdev = (gx_device_pclxl *)dev;
     stream *s;
+    int code;
 
     /* Note that unlike close_device, end_page must not omit blank pages. */
     if (!xdev->in_page)
@@ -1408,7 +1409,15 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
     pclxl_page_init(xdev);
     if (ferror(xdev->file))
         return_error(gs_error_ioerror);
-    return gx_finish_output_page(dev, num_copies, flush);
+    if ((code = gx_finish_output_page(dev, num_copies, flush)) < 0)
+        return code;
+    /* Check if we need to change the output file for separate pages */
+    if (gx_outputfile_is_separate_pages(((gx_device_vector *)dev)->fname, dev->memory)) {
+        if ((code = pclxl_close_device(dev)) < 0)
+            return code;
+        code = pclxl_open_device(dev);
+    }
+    return code;
 }
 
 /* Close the device. */

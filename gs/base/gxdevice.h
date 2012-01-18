@@ -435,6 +435,11 @@ int gx_parse_output_file_name(gs_parsed_file_name_t *pfn,
                               uint len, gs_memory_t *memory);
 
 /*
+ * Returns true if the outputfile requests separate pages (contains %d)
+ */
+bool gx_outputfile_is_separate_pages(const char *fname, gs_memory_t *memory);
+
+/*
  * Open the output file for a device.  Note that if the file name is empty,
  * it may be replaced with the name of a scratch file.
  */
