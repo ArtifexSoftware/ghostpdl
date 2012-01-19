@@ -994,7 +994,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     }
     pdf_print_orientation(pdev, page);
     pprintld1(s, "/Parent %ld 0 R\n", pdev->Pages->id);
-    if (pdev->ForOPDFRead) {
+    if (pdev->ForOPDFRead && pdev->DoNumCopies && !pdev->ProduceDSC) {
         if (page->NumCopies_set)
             pprintld1(s, "/NumCopies %ld\n", page->NumCopies);
     }
