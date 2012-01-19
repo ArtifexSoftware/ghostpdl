@@ -215,6 +215,11 @@ Must be <em>false</em> if <code>-dSetPageSize=true</code> or <code>-dFitPages=tr
 Only use with printers which can handle random <em>PageSize</em>.
 Must be <em>false</em> if <code>-dRotatePages=true</code>, <code>-dCenterPages=true</code> or <code>-dFitPages=true</code>.
 
+<dt><code>-dDoNumCopies=</code><em>boolean</em>.
+<dd>The PostScript emitted by ps2write will try to use copypage to create the number of copies originally requested. Note that this relies on the level 2 semantics for copypage
+and will not reliably work on language level 3 devices (such as Ghostscript itself).
+Defaults to false. This flag is not compatible with the ProduceDSC flag which will take precedence if set.
+
 </dl>
 
 <p>
