@@ -46,7 +46,7 @@ icc34_h=$(GLSRC)icc34.h
 # We can't use $(CC_) for GLLCMS2CC becuase that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions
 # (inline asm, including windows.h) when compiled under msvc.
-GLLCMS2CC=$(CC) $(GCFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)include$(_I) $(GLF_)
+GLLCMS2CC=$(CC) $(CFLAGS) $(I_)$(GLI_) $(II)$(LCMS2SRCDIR)$(D)include$(_I) $(GLF_)
 lcms2_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2.h
 lcms2_plugin_h=$(LCMS2SRCDIR)$(D)include$(D)lcms2_plugin.h
 
@@ -2761,7 +2761,7 @@ $(GLOBJ)gsicc_lcms.$(OBJ) : $(GLOBJ)gsicc_lcms_$(SHARE_LCMS).$(OBJ)
 
 
 $(GLOBJ)gsicc_lcms2_1.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
- $(gsicc_cms_h) $(lcms2_h) $(gslibctx_h) $(lcms2_plugin_h) $(gserrors_h)
+ $(gsicc_cms_h) $(gslibctx_h) $(gserrors_h)
 	$(GLLCMS2CC) $(GLO_)gsicc_lcms2_1.$(OBJ) $(C_) $(GLSRC)gsicc_lcms2.c
 
 $(GLOBJ)gsicc_lcms2_0.$(OBJ) : $(GLSRC)gsicc_lcms2.c\
