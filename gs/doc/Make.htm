@@ -1491,7 +1491,13 @@ allow you to use Ghostscript from the command line as a BSD-layer tool
 to rasterize postscript and pdf to image files, and convert between the 
 high-level formats supported by Ghostscript. See the instructions for the
 unix build below for details of how to customize this build.
-
+<p>
+NOTE: If you have MacPorts (http://www.macports.org/) installed, it can
+"confuse" the configure script because it includes some librares which
+duplicate the "system" ones. This can cause missing symbol link errors.
+In order to resolve this, you can do:<code> LDFLAGS="-L/usr/lib" ./configure</code>.
+That will force the linker to search the default directory first, and thus pick
+up the system libraries first.
 <p>
 There is also a support for building Ghostscript as a framework. This is
 a special encapsulated shared library format specific to MacOS X. To build
