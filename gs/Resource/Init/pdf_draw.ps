@@ -836,19 +836,25 @@ currentdict end readonly def
 /csnames mark
   /DeviceGray dup  /DeviceRGB dup  /DeviceCMYK dup  /Pattern dup
 .dicttomark readonly def
-/csresolve {		% <csresourcename> csresolve <cspace>
+/csresolve {		% <csresourcename> csresolve <cspace> <true> | <false>
   dup type /nametype ne {
     (\n   **** Warning: CS/cs (setcolorspace) operand not a name: ) pdfformaterror
     dup stderrfile dup 3 -1 roll write==only flushfile
     ( ****\n) pdfformaterror
     dup type /arraytype eq {	% Adobe InDesign + PDF Library has array
       resolvecolorspace
-    } if
+    } if //true
   } {
     dup Page /ColorSpace rget {
-      exch pop resolvecolorspace
+      exch pop resolvecolorspace //true
     } {
-      //csnames 1 index known not { /undefined cvx signalerror } if
+      //csnames 1 index known {
+        //true
+      } { 
+        (   **** Warning: Undefined space resource: /)
+        exch .namestring concatstrings (\n) concatstrings pdfformaterror
+        //false
+      } ifelse
     } ifelse
   } ifelse
 } bdef
@@ -863,7 +869,11 @@ currentdict end readonly def
     //csrdict exch .knownget  {
       exec dup type /nametype ne { dup length 1 eq { 0 get } if } if
     } {
-      dup type /nametype eq { csresolve } { csset exch pop } ifelse
+      dup type /nametype eq {
+        csresolve not { /DeviceRGB } if   % Arbitrary
+      } { 
+        csset exch pop 
+      } ifelse
     } ifelse
   } ifelse
 } bdef
@@ -998,7 +1008,7 @@ drawopdict begin
   /cs { .incachedevice {
           pop //ignore_color_op pdfformaterror
         } {
-          csresolve cs
+          csresolve { cs } if
         } ifelse
       } bdef
 
@@ -1035,7 +1045,7 @@ drawopdict begin
   /CS { .incachedevice {
           pop //ignore_color_op pdfformaterror
         } {
-          csresolve CS
+          csresolve { CS } if
         } ifelse
       } bdef
 
