@@ -1797,6 +1797,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
                                           &(profile_targ));
         profile_dev14->device_profile[0] = profile_targ->device_profile[0];
         dev->icc_struct->devicegraytok = profile_targ->devicegraytok;
+        dev->icc_struct->pdfx3 = profile_targ->pdfx3;
         gx_monitor_enter(profile_dev14->device_profile[0]->lock);
         rc_increment(profile_dev14->device_profile[0]);
         gx_monitor_leave(profile_dev14->device_profile[0]->lock);
