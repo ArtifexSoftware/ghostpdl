@@ -156,9 +156,11 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         cmm_profile_t  *proof_profile;
         cmm_profile_t  *link_profile;
+        cmm_profile_t  *oi_profile;
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
+        bool pdfx3;                /* To indicate use of pdfx3 output intent */
         gs_memory_t *memory;
         rc_header rc;
 } cmm_dev_profile_t;
