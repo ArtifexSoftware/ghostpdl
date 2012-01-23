@@ -637,7 +637,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
             info->v.y = fixed2float(cis.lsb.y);
             break;
         }
-        info->members |= width_members | (GLYPH_INFO_VVECTOR0 << wmode);
+        info->members |= width_members;
     }
 
     gs_glyph_data_free(&gdata, "gs_type1_glyph_info");
