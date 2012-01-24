@@ -367,7 +367,7 @@ esac
 dnl Check for libidn (needed for Unicode password support)
 AC_ARG_WITH(libidn,
             [AC_HELP_STRING([--without-libidn],
-                               [don't use libidn to support Unicode passwords])],,
+                               [Do not use libidn to support Unicode passwords])],,
             [with_libidn=maybe])
 if test x$with_libidn != xno; then
   AC_CHECK_LIB(idn, stringprep, [
@@ -423,7 +423,7 @@ HAVE_FONTCONFIG=""
 FONTCONFIG_CFLAGS=""
 FONTCONFIG_LIBS=""
 AC_ARG_ENABLE([fontconfig], AC_HELP_STRING([--disable-fontconfig],
-    [Don't use fontconfig to list system fonts]))
+    [Do not use fontconfig to list system fonts]))
 if test "$enable_fontconfig" != "no"; then
         # We MUST NOT use PKG_CHECK_MODULES since it is a) not a standard
         # autoconf macro and b) requires pkg-config on the system, which is
@@ -828,10 +828,10 @@ AC_SUBST(LIBTIFFDIR)
 
 dnl look for CUPS...
 AC_ARG_ENABLE([cups], AC_HELP_STRING([--disable-cups],
-    [Don't include CUPS support]))
+    [Do not include CUPS support]))
 
 AC_ARG_WITH([pdftoraster], AC_HELP_STRING([--without-pdftoraster],
-    [Don't include CUPS' pdftoraster filter]))
+    [Do not include CUPS' pdftoraster filter]))
 
 AC_ARG_WITH([local-cups], AC_HELP_STRING([--with-local-cups],
                                              [Force using the GS supplied cups code - only useful for debugging]),
@@ -1085,7 +1085,7 @@ fi
 OPENJPEGDIR=openjpeg
 
 AC_ARG_ENABLE([openjpeg], AC_HELP_STRING([--disable-openjpeg],
-        [Use OpenJPEG for JPX decoding]))
+        [Do not use OpenJPEG for JPX decoding]))
 
 if test "x$JPX_DECODER" = "x"; then
   if test "x$enable_openjpeg" != "xno"; then
@@ -1106,7 +1106,7 @@ fi
 if test "x$JPX_DECODER" = "x"; then
   dnl look for the jasper JPEG 2000 library
   AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
-    [don't use the JasPer library for JPEG 2000]))
+    [Do not use the JasPer library for JPEG 2000]))
   if test x$with_jasper != xno; then
     AC_MSG_CHECKING([for local jasper library source])
     for d in jasper jasper-1.7*; do
@@ -1182,7 +1182,7 @@ AC_SUBST(JPXDEVS)
 
 dnl check if we can/should build the gtk loader
 AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
-    [Don't build the gtk loader]))
+    [Do not build the gtk loader]))
 SOC_CFLAGS=""
 SOC_LIBS=""
 SOC_LOADER="dxmainc.c"
@@ -1294,7 +1294,7 @@ AC_SUBST(GS)
 dnl do we compile the postscript initialization files into Ghostscript?
 COMPILE_INITS="1"
 AC_ARG_ENABLE([compile-inits], AC_HELP_STRING([--disable-compile-inits],
-       [Don't compile in initialization files]),[
+       [Do not compile in initialization files]),[
                if test "x$enable_compile_inits" = xno; then
                        COMPILE_INITS="0"
                fi])
