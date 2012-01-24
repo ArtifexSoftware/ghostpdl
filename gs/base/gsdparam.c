@@ -82,7 +82,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool usefastcolor = false;  /* set for unmanaged color */
-    bool pdfx3 = false;         
     int k;
     gs_param_float_array msa, ibba, hwra, ma;
     gs_param_string_array scna;
@@ -166,7 +165,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         }
         devicegraytok = dev_profile->devicegraytok;
         usefastcolor = dev_profile->usefastcolor;
-        pdfx3 = dev_profile->pdfx3;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
@@ -202,7 +200,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         /* Note:  if change is made in NUM_DEVICE_PROFILES we need to name
            that profile here for the device parameter on the command line */
         (code = param_write_bool(plist, "DeviceGrayToK", &devicegraytok)) < 0 ||
-        (code = param_write_bool(plist, "UsePDFX3OI", &pdfx3)) < 0 ||
         (code = param_write_bool(plist, "UseFastColor", &usefastcolor)) < 0 ||
         (code = param_write_string(plist,"OutputICCProfile", &(profile_array[0]))) < 0 ||
         (code = param_write_string(plist,"GraphicICCProfile", &(profile_array[1]))) < 0 ||
@@ -482,36 +479,7 @@ gs_putdeviceparams(gx_device * dev, gs_param_list * plist)
     code = (*dev_proc(dev, put_params)) (dev, plist);
     return (code < 0 ? code : was_open && !dev->is_open ? 1 : code);
 }
-
-static void
-gx_default_put_pdfx3(bool pdfx3, gx_device * dev) 
-{
-    int code;
-    cmm_dev_profile_t *profile_struct;
-
-    if (dev->procs.get_profile == NULL) {
-        /* This is an odd case where the device has not yet fully been 
-           set up with its procedures yet.  We want to make sure that
-           we catch this so we assume here that we are dealing with 
-           the target device.  For now allocate the profile structure
-           but do not intialize the profile yet as the color info 
-           may not be fully set up at this time.  */
-        if (dev->icc_struct == NULL) {
-            /* Allocate at this time the structure */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
-        }
-        dev->icc_struct->pdfx3 = pdfx3;
-    } else {
-        code = dev_proc(dev, get_profile)(dev,  &profile_struct);
-        if (profile_struct == NULL) {
-            /* Create now  */
-            dev->icc_struct = gsicc_new_device_profile_array(dev->memory);
-            profile_struct =  dev->icc_struct;
-        }
-        profile_struct->pdfx3 = pdfx3;
-    }
-}
-
+  
 static void
 gx_default_put_graytok(bool graytok, gx_device * dev) 
 {
@@ -664,7 +632,6 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     int k;
     bool devicegraytok = true;
     bool usefastcolor = false;
-    bool pdfx3 = false;
 
     if (dev->icc_struct != NULL) {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
@@ -672,7 +639,6 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
         }
         devicegraytok = dev->icc_struct->devicegraytok;
         usefastcolor = dev->icc_struct->usefastcolor;
-        pdfx3 = dev->icc_struct->pdfx3;
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             rend_intent[k] = gsPERCEPTUAL;
@@ -1105,7 +1071,6 @@ nce:
     }
     gx_default_put_graytok(devicegraytok, dev);
     gx_default_put_usefastcolor(usefastcolor, dev);
-    gx_default_put_pdfx3(pdfx3, dev);
     return 0;
 }
 
