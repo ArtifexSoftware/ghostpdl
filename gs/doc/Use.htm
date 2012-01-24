@@ -679,7 +679,7 @@ conditions Acrobat does not do this, instead leaving a gap equivalent to the
 width of the missing glyph, or the width of the /.notdef glyph if no /Widths
 array is present. Ghostscript now attempts to mimic this undocumented feature
 using a user parameter <code>RenderTTNotdef</code>. The PDF interpreter sets this
-user paramter to the value of <code>RENDERTTNOTDEF</code> in systemdict,
+user parameter to the value of <code>RENDERTTNOTDEF</code> in systemdict,
 when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
 </dl>
 
@@ -1375,6 +1375,12 @@ entries is not important).
 The trailing semicolon and the space before it are both required.
 
 <p>
+<h4>NOTE: Environment Variables</h4>
+<p>It is also possible to influence the path using standard, or your own environment variables, using
+the custom Postscript operator <code>getenv</code>. Said operator takes a string parameter on the stack
+which is the environment variable to interrogate, and returns either a string, containing the value of
+the environment variable, and boolean <code>true</code> to indicate success, or just a boolean
+<code>false</code> to indicate failure. See below for an example of its use.
 
 <p>
 Examples :
@@ -1383,16 +1389,15 @@ Examples :
 <blockquote><code>
 <h5>Format 1:</h5>
 /Ryumin-Medium  /ShinGo-Bold ;<br>
-/MS-Mincho &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/msmincho.ttc) /SubfontID 0 /CSI [(Japan1) 3] &gt;&gt; ;<br>
 /Ryumin-Light /MS-Mincho ;<br>
 <h5>Format 2:</h5>
 /Batang &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/batang.ttc) /SubfontID 0 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 /Gulim &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 0 /CSI [(Korea1) 3] &gt;&gt; ;<br>
 /Dotum &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/gulim.ttc) /SubfontID 2 /CSI [(Korea1) 3] &gt;&gt; ;<br>
-/HYSMyeongJo-Medium /Batang ;<br>
-/HYRGoThic-Medium /Gulim ;<br>
-/HYGoThic-Medium /Dotum ;<br>
 <br>
+<h5>Format 2 & environment variable:</h5>
+/SimHei &lt;&lt; /FileType /TrueType /Path (windir) getenv not {(c:/windows)}if (/fonts/simhei.ttf) concatstrings /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
+<h5>Format 1 & 2</h5>
 /SimSun &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simsun.ttc) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
 /SimHei &lt;&lt; /FileType /TrueType /Path (C:/WINDOWS/fonts/simhei.ttf) /SubfontID 0 /CSI [(GB1) 2] &gt;&gt; ;<br>
 /STSong-Light /SimSun ;<br>
