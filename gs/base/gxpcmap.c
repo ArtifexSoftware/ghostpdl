@@ -1308,7 +1308,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
            make a similar change in zpcolor.c where much of this
            pattern code is duplicated to support high level stream
            patterns. */
-        if (pinst->templat.PaintType == 1)
+        if (pinst->templat.PaintType == 1 && !(pinst->is_clist))
             if ((code = gx_erase_colored_pattern(saved)) < 0)
                 return code;
     }
