@@ -60,13 +60,16 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 /* clone an image pointer by bumping its reference count */
 Jbig2Image* jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image)
 {
-	image->refcount++;
+	if (image)
+		image->refcount++;
 	return image;
 }
 
 /* release an image pointer, freeing it it appropriate */
 void jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
 {
+	if (image == NULL)
+		return;
 	image->refcount--;
 	if (!image->refcount) jbig2_image_free(ctx, image);
 }
@@ -74,7 +77,8 @@ void jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image)
 /* free a Jbig2Image structure and its associated memory */
 void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 {
-	jbig2_free(ctx->allocator, image->data);
+	if (image)
+		jbig2_free(ctx->allocator, image->data);
 	jbig2_free(ctx->allocator, image);
 }
 
