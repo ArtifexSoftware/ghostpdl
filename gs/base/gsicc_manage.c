@@ -966,10 +966,6 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             if_debug0(gs_debug_flag_icc,"[icc] Releasing proof profile\n");
             rc_decrement(icc_struct->proof_profile, "rc_free_profile_array");
         }
-        if (icc_struct->oi_profile != NULL) {
-            if_debug0(gs_debug_flag_icc,"[icc] Releasing output intent profile\n");
-            rc_decrement(icc_struct->oi_profile, "rc_free_profile_array");
-        }
         if_debug0(gs_debug_flag_icc,"[icc] Releasing device profile struct\n");
         gs_free_object(mem_nongc, icc_struct, "rc_free_profile_array");
     }
@@ -994,10 +990,8 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     }
     result->proof_profile = NULL;
     result->link_profile = NULL;
-    result->oi_profile = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
     result->usefastcolor = false;  /* Default is to not use fast color */
-    result->pdfx3 = false;
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
     return(result);
 }
