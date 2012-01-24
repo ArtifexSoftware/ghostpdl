@@ -244,7 +244,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
             if ((code = gs_push_pdf14trans_device(pgs, true)) < 0)
                 return code;
         } else { /* not transparent */
-            if (pinst->templat.PaintType == 1)
+            if (pinst->templat.PaintType == 1 && !(pinst->is_clist))
                 if ((code = gx_erase_colored_pattern(pgs)) < 0)
                     return code;
         }
