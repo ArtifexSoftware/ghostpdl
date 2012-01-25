@@ -147,9 +147,12 @@ s_aes_process(stream_state * ss, stream_cursor_read * pr,
              plaintext gives the number of bytes to discard */
           pad = temp[15];
           if (pad < 1 || pad > 16) {
-            gs_throw1(gs_error_rangecheck, "invalid aes padding byte (0x%02x)",
-                  (unsigned char)pad);
-            return ERRC;
+            /* Bug 692343 - don't error here, just warn. Take padding to be
+             * zero. This may give us a stream that's too long - preferable
+             * to the alternatives. */
+            gs_warn1("invalid aes padding byte (0x%02x)",
+                     (unsigned char)pad);
+            pad = 0;
           }
         } else {
           /* not using padding */
