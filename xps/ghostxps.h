@@ -337,7 +337,7 @@ int xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xp
 int xps_parse_element(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
 
 char * xps_get_real_params(char *s, int num, float *x);
-void xps_get_point(char *s_in, float *x, float *y);
+char * xps_get_point(char *s_in, float *x, float *y);
 void xps_clip(xps_context_t *ctx);
 void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);

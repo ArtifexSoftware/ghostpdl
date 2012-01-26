@@ -25,10 +25,7 @@ xps_get_real_params(char *s, int num, float *x)
         {
             while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
                 s++;
-            sscanf(s, "%g", &(x[k]));
-            while (*s == '-' || *s == '+' || *s == '.' || *s == 'e' || 
-                   *s == 'E' || *s >= '0' && *s <= '9') 
-                s++;
+            x[k] = (float)strtod(s, &s);
             while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a) 
                 s++;
             if (*s == ',') 
@@ -41,7 +38,7 @@ xps_get_real_params(char *s, int num, float *x)
         return NULL;
 }
 
-void
+char *
 xps_get_point(char *s_in, float *x, float *y)
 {
     char *s_out = s_in;
@@ -50,6 +47,7 @@ xps_get_point(char *s_in, float *x, float *y)
     s_out = xps_get_real_params(s_out, 2, xy);
     *x = xy[0];
     *y = xy[1];
+    return s_out;
 }
 
 void
@@ -557,8 +555,7 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, in
     while (*s != 0)
     {
         while (*s == ' ') s++;
-        xps_get_point(s, &x[n], &y[n]);
-        while (*s != ' ' && *s != 0) s++;
+        s = xps_get_point(s, &x[n], &y[n]);
         n ++;
         if (n == 2)
         {
@@ -606,8 +603,7 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking
     while (*s != 0)
     {
         while (*s == ' ') s++;
-        xps_get_point(s, &x[n], &y[n]);
-        while (*s != ' ' && *s != 0) s++;
+        s = xps_get_point(s, &x[n], &y[n]);
         n ++;
         if (n == 3)
         {
