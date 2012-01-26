@@ -100,6 +100,12 @@ AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
     [Do not include contributed drivers]))
 CONTRIBINCLUDE="include contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
+
+# This is just an arbitrary file in contrib to check
+if !(test -f contrib/gdevbjc_.c); then
+   enable_contrib=no
+fi
+
 if test x$enable_contrib = xno; then
     CONTRIBINCLUDE=""
     INSTALL_CONTRIB=""
