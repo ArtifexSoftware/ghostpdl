@@ -1525,7 +1525,7 @@ const char *opdfread_ps [] = {
 "2 copy get\n",
 "exch 3 index add\n",
 "7 index exch get\n",
-"dup null ne{\n",
+"dup dup null ne exch/.notdef ne and{\n",
 "6 index 3 1 roll exch\n",
 "6 index div\n",
 "3 copy pop//knownget exec{\n",
