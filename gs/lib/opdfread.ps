@@ -1959,7 +1959,7 @@ end
       2 copy get                                        % fr E M s mw c0 W i w
       exch 3 index add                                  % fr E M s mw c0 W w c
       7 index exch get                                  % fr E M s mw c0 W w n
-      dup null ne {
+      dup dup null ne exch /.notdef ne and {
         6 index 3 1 roll exch                           % fr E M s mw c0 W M n w
         6 index div
         3 copy pop //knownget exec {
