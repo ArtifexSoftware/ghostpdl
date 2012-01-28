@@ -213,6 +213,9 @@ currentdict /runpdfstring .undef
       QUIET not { (Page ) print dup //== exec flush } if
       pdfgetpage pdfshowpage
     } for
+  % Indicate that the number of spot colors is unknown in case the next page
+  % imaged is a PS file.
+  << /PageSpotColors -1 >> .setpagedevice
   << /PDFScanRules //null >> setuserparams	% restore scanning rules for PS
 } bind def
 
@@ -1742,9 +1745,6 @@ currentdict /PDF2PS_matrix_key undef
   % problems, for example with the pnga device.
   endpage
   end			% scratch dict
-  % Indicate that the number of spot colors is unknown in case the next page
-  % imaged is a PS file.
-  << /PageSpotColors -1 >> .setpagedevice
   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
   % to clean up any left over dicts from the dictstack
   
