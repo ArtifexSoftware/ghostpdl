@@ -2741,6 +2741,11 @@ Structuring Convention comments.
 
 <h4><a name="ICC_color_parameters"></a>ICC color parameters</h4>
 
+<dd>
+For details about the ICC controls see the document 
+<a href="GS9_Color_Management.pdf">GS9 Color Management</a>.
+</dd>
+
 <dl>
 <dt><code>-sDefaultGrayProfile=</code><em>filename</em>
 <dd>Set the ICC profile that will be associated with
@@ -2779,17 +2784,26 @@ tool for creating these source profiles is contained in
 
 <dl>
 <dt><code>-sProofProfile=</code><em>filename</em>
-<dd>Define the proofing ICC profile.  This is the profile for the
-device to which we would like the output to appear to be rendered.
-This is not fully implemented at this time.
+<dd>
+Enable the specificiation of a proofing profile that will make the
+color manegement system link multiple profiles together to emulate the
+device defined by the proofing profile.  See the document 
+<a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details about this option.
 </dl>
 
 <dl>
 <dt><code>-sDeviceLinkProfile=</code><em>filename</em>
-<dd>Define a device link profile through which the the rendered
-buffers should be remapped.  This is not fully
-implemented at this time and will be only available for a select
-few devices.
+<dd>Define a device link profile.  This profile is used following
+the output device profile.  Care should be taken to ensure that the
+output device process color model is the same as the output color
+space for the device link profile.  In addition, the color space of
+the OutputICCProfile should match the input color space of the device
+link profile.  For example, the following would be a valid specification
+-sDEVICE=tiff32nc -sOutputICCProfile=srgb.icc -sDeviceLinkProfile=linkRGBtoCMYK.icc.
+In this case, the output device's color model is CMYK (tiff32nc) and the colors
+are mapped through sRGB and through a devicelink profile that maps sRGB to
+CMYK values.  See the document 
+<a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details about this option.
 </dl>
 
 <dl>
@@ -2824,7 +2838,8 @@ device supports those colorants.
 <dt><code>-sRenderIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
 profile specified above by -sOutputICCProfile.  The 
-options for <em>intent</em> are  per, col , sat, and abs,
+options for <em>intent</em> are  
+0, 1, 2, and 3,
 which correspond to the ICC intents of Perceptual, Colorimetric,
 Saturation, and Absolute Colorimetric.
 Also see <a href="#OverrideRI">OverrideRI</a>.
@@ -2922,7 +2937,8 @@ number (0 for perceptual, 1 for colorimetric, 2 for saturation,
 Profiles to demonstrate this method of specification are also 
 included in this folder.  Note that if objects are colorimetrically
 specified through this mechanism other operations like -sImageIntent,
--dOverrideICC, have no real affect.
+-dOverrideICC, have no real affect.  See further details in the document
+<a href="GS9_Color_Management.pdf">GS9 Color Management</a>.
 </dl>
 
 <dl>
@@ -2934,6 +2950,16 @@ always be desired.  In particular, it may be desired to map
 from the gray ICC profile specified by -sDefaultGrayProfile
 to the output device profile.  To achieve this, one should 
 specify -dDeviceGrayToK=false. 
+</dl>
+
+<dl>
+<dt><code>-dUseFastColor=</code><em>true/false</em>
+<dd>
+This is used to avoid the use of ICC profiles for source colors that
+are defined by DeviceGray, DeviceRGB and DeviceCMYK definitions.  With
+UseFastColor set to true, the traditional Postscript 255 minus operations 
+are used to convert between RGB and CMYK with black generation and undercolor
+removal mappings.
 </dl>
 
 <dl>

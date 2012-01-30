@@ -338,6 +338,9 @@ gx_remap_ICC(const gs_client_color * pcc, const gs_color_space * pcs,
     }
     /* Get a link from the cache, or create if it is not there. Need to get 16 bit profile */
     icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory);
+    if (icc_link == NULL) {
+        return gs_rethrow(-1, "Could not create ICC link:  Check profiles");
+    }
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
     } else {
@@ -410,6 +413,9 @@ gx_concretize_ICC(
     }
     /* Get a link from the cache, or create if it is not there. Get 16 bit profile */
     icc_link = gsicc_get_link(pis, dev, pcs, NULL, &rendering_params, pis->memory);
+    if (icc_link == NULL) {
+        return gs_rethrow(-1, "Could not create ICC link:  Check profiles");
+    }
     /* Transform the color */
     if (icc_link->is_identity) {
         psrc_temp = &(psrc[0]);
