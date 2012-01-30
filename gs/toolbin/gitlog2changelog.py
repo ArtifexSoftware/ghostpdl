@@ -80,7 +80,7 @@ else:
       if len(logline.strip()) == 0 and marked == 0 :
         continue
 
-      sys.stdout.write (logline.replace("<", "&lt;").replace(">", "&gt;").rstrip() + "<br>\n")
+      sys.stdout.write (logline.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").rstrip() + "<br>\n")
       marked = 1
 
     sys.stdout.write ("<p>\n")
