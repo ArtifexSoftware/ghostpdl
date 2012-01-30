@@ -16,6 +16,7 @@ import sys
 import string
 import datetime
 import time
+import codecs
 
 argc = len(sys.argv)
 if argc < 3:
@@ -52,7 +53,7 @@ else:
     res = os.popen(cmd, "r")
     commit=res.readlines()
     # This assumes the order of the lines.....
-    sys.stdout.write("<p><strong><a name=")
+    sys.stdout.write("<p><strong>")
     if str.find(commit[1], "Merge:") < 0:
       nm = commit[1]
       dt = commit[2]
@@ -63,21 +64,28 @@ else:
       logidx = 4
 
     sys.stdout.write (dt.split("Date:")[1].strip())
-    sys.stdout.write ("></a>\n")
-    sys.stdout.write (dt.split("Date:")[1].strip())
-    sys.stdout.write ("</strong>\n<br>" + nm.split("Author: ")[1].strip() + "<br>\n")
+    sys.stdout.write ("\n")
+    auth_name=nm.split("Author: ")[1].strip()
+    sys.stdout.write ("</strong>\n<br>" + auth_name.replace("<", "&lt;").replace(">", "&gt;") + "<br>\n")
     sys.stdout.write ("<a href=\"http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=" + commit[0].split("commit ")[1].strip() + "\">")
     sys.stdout.write (commit[0].split("commit ")[1].strip() + "</a>\n")
 
     sys.stdout.write ("<blockquote>\n")
+    sys.stdout.write ("<p>\n")
     log = commit[logidx:]
 
+    marked = 0
+    # this loop needs to skip initial blank lines
     for logline in log:
-      sys.stdout.write (logline + "<br>\n")
+      if len(logline.strip()) == 0 and marked == 0 :
+        continue
+      sys.stdout.write (logline.replace("<", "&lt;").replace(">", "&gt;") + "<br>\n")
+      marked = 1
 
     sys.stdout.write ("<p>\n")
     sys.stdout.write ("</blockquote>\n")
-    sys.stdout.write ("<hb>\n")
+    sys.stdout.write ("<hr>\n")
 
+  sys.stdout.write ("<hr size=20>\n\n\n")
   sys.stdout.write ("</body>\n")
   sys.stdout.write ("</html>\n")
