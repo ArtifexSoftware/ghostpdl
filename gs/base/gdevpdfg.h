@@ -75,6 +75,12 @@ struct pdf_color_space_s {
  */
 int pdf_cspace_init_Device(gs_memory_t *mem, gs_color_space **ppcs, int num_components);
 
+/* test an (image) colour space to see if its ICCBased. If so we will
+ * convert to current device space
+ */
+int pdf_convert_ICC(gx_device_pdf *pdev,
+                const gs_color_space *pcs, cos_value_t *pvalue,
+                const pdf_color_space_names_t *pcsn);
 /*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
