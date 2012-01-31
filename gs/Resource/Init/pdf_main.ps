@@ -261,6 +261,35 @@ currentdict /runpdfstring .undef
   } ifelse
 } bind def
 
+% Recursively enumerate /Names entries
+% <node> pdf_collection_names /temp_file_name ...
+/pdf_collection_names {
+  dup /Names knownoget {
+    exch pop
+    { oforce
+      dup type /dicttype eq {
+        /EF knownoget {
+          /F knownoget {
+            copy_embedded_file
+          } if
+        } if
+      } {
+        pop
+      } ifelse
+    } forall
+  } {
+    /Kids knownoget {
+      { oforce 
+        dup //null ne {
+          pdf_collection_names
+        } {
+          pop
+        } ifelse
+      } forall
+    } if
+  } ifelse
+} bind def
+
 % Copy selected subfiles to temporary files and return the file names
 % as a PostScript names to protect them from restore.
 % Currently, all PDF files in the Portfolio are extracted and returned.
@@ -272,19 +301,7 @@ currentdict /runpdfstring .undef
   dup /Collection oknown {
     /Names knownoget {
       /EmbeddedFiles knownoget {
-        /Names knownoget {
-          { oforce
-            dup type /dicttype eq {
-              /EF knownoget {
-                /F knownoget {
-                  copy_embedded_file
-                } if
-              } if
-            } {
-              pop
-            } ifelse
-          } forall
-        } if
+        pdf_collection_names
       } if
     } if
   } {
