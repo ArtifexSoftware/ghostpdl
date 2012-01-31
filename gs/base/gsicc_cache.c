@@ -187,7 +187,8 @@ gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
     icc_link->hashcode.rend_hash = hashcode.rend_hash;
     icc_link->includes_softproof = includes_softproof;
     icc_link->includes_devlink = includes_devlink;
-    if ( hashcode.src_hash == hashcode.des_hash ) {
+    if ( (hashcode.src_hash == hashcode.des_hash) &&
+          !includes_softproof && !includes_devlink) {
         icc_link->is_identity = true;
     } else {
         icc_link->is_identity = false;
