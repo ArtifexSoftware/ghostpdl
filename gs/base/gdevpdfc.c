@@ -769,6 +769,9 @@ int pdf_convert_ICC(gx_device_pdf *pdev,
 
                 /* determine number of components in device space */
                 code = dev_proc((gx_device *)pdev, get_profile)((gx_device *)pdev, &dev_profile);
+                if (code < 0)
+                    return code;
+
                 num_des_comps = gsicc_get_device_profile_comps(dev_profile);
                 /* Set image color space to be device space */
                 switch( num_des_comps )  {
