@@ -723,8 +723,64 @@ setglobal
       } if
       pdffindcachedfont
                 % Stack: font-res fontname fontdesc font
+
+      3 index /FirstChar oget
+      0                                       % push an initial value for accumating the Widths
+      0 string                                % and an empty string to interrogate the font
+      7 index /Widths oget
+      0 1 2 index length 1 sub
+     {
+        dup 2 index exch get dup 0 gt         % We ignore entries of zero in the widths array
+        {
+          exch 5 index add                    % add FirstChar to the idx to get a char code
+          dup 64 gt 1 index 91 lt and         % we only want to consider A~Z and....
+          1 index 96 gt 2 index 123 lt and or % ... a~z
+          {
+            exch
+            5 -1 roll add 4 1 roll            % add the width to the accumulator on the stack
+            1 string dup 0 4 -1 roll put
+            3 -1 roll concatstrings exch      % add the char code to the string
+          }
+          {
+            pop pop
+          } ifelse
+        }
+        {
+           pop pop
+        } ifelse
+      } for
+      pop           % get rid of the Widths array
+      3 -1 roll pop % get rid of the FirstChar value
+      dup length dup 0 gt
+      {
+        3 -1 roll exch div % calculate an average width from the Widths array
+
+        gsave
+        2 index 10 scalefont setfont
+        exch dup length exch stringwidth
+        grestore
+        pop 100 mul exch div div
+        % Only make the font smaller/narrower, not larger/wider
+        dup 1.0 lt
+        {
+          0 0 2 index 0 0 6 array astore
+          exch //true .copyfontdict
+          dup /FontMatrix get 3 -1 roll matrix concatmatrix
+          exch dup 3 -1 roll /FontMatrix exch put
+          % we don't need to definfont here, we can leave that to .completefont below
+        }
+        {
+          pop
+        } ifelse
+      }
+      {
+        % no suitable Widths entries - carry on and hope for the best......
+        pop pop pop
+      } ifelse
+                % Stack: font-res fontname fontdesc font
                 % If this is a small-caps font, replace the CharString
                 % entries for a..z.
+
       exch /Flags oget 16#20000 and 0 ne {
         //true .copyfontdict
         dup /CharStrings 2 copy get dup length dict .copydict
@@ -2012,7 +2068,6 @@ currentdict /bndef undef
           pdfformaterror
           dup run-fonttypeproc            % /key res font
         } if
-
         1 index                           % /key res font res
         4 -1 roll 2 index                 % res font desc /key font
         put  % Save pointer to the font.
