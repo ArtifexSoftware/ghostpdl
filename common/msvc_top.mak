@@ -90,6 +90,7 @@ CFLAGS=$(CFLAGS) /DGX_COLOR_INDEX_TYPE="$(GX_COLOR_INDEX_TYPE)"
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\msvctail.mak
+!include $(GLSRCDIR)\version.mak
 
 !IF "$(PSICFLAGS)" == "/DPSI_INCLUDED"
 
