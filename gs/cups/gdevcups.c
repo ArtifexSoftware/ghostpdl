@@ -3332,9 +3332,9 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       {
 	if (size->length == 0 || size->width == 0) continue;
 	if (fabs(cups->MediaSize[1] - size->length)/size->length <
-	    (size->length > size->width ? 0.05 : 0.01) &&
+	    (size->length > size->width ? 0.05 : 0.02) &&
             fabs(cups->MediaSize[0] - size->width)/size->width <
-	    (size->width > size->length ? 0.05 : 0.01) &&
+	    (size->width > size->length ? 0.05 : 0.02) &&
 #ifdef CUPS_RASTER_SYNCv1
 	    ((strlen(cups->header.cupsPageSizeName) == 0) ||
 	     (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
