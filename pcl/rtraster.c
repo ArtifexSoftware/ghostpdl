@@ -14,6 +14,9 @@
 /* rtraster.c - raster transfer commands */
 
 #include "memory_.h"
+#include "strimpl.h"
+#include "scfx.h"
+#include "stream.h"
 #include "gx.h"
 #include "gsmatrix.h"
 #include "gscoord.h"
@@ -30,6 +33,7 @@
 #include "pcindxed.h"
 #include "pcwhtidx.h"
 #include "pcdraw.h"
+#include "plvalue.h"
 #include "rtgmode.h"
 #include "rtrstcmp.h"
 #include "rtraster.h"
@@ -253,7 +257,7 @@ gen_mask_1byte(
  * pixel. The only possible such case in PCL is 8-bits per primary 3 color,
  * so this routine handles only that case.
  */
-  void
+  static void
 gen_mask_multibyte(
     pcl_raster_t *  prast
 )
@@ -914,6 +918,118 @@ process_row(
 }
 
 /*
+ * Process an input data buffer using no compression with blocks (multiple rows)
+ */
+
+ static int
+process_block_nocompress(
+    gs_state *          pgs,
+    pcl_raster_t *      prast,
+    const byte *        pin,
+    uint                insize
+)
+{
+    uint32 row_bytes, nrows;
+    pcl_seed_row_t *pseed_row = prast->pseed_rows;
+    byte *p;
+
+    /* the size of the rows are stored in the first 4 bytes */
+    if (insize < 4) {
+        return gs_throw(e_Range, "Size of raster cannot be determined\n");
+    }
+
+    row_bytes = (pl_get_uint32(pin) * prast->bits_per_plane + 7) / 8;
+
+    /* the remaining data after the row size should be divisible by
+       the row length to have equal sized rows */
+    if  ((insize - 4) % row_bytes)
+        return gs_throw(e_Range, "Non integral number of rows in raster\n");
+
+    nrows = insize / row_bytes;
+    
+    for (p = (byte *)pin + 4; nrows > 0; p += row_bytes, nrows--) {
+        int code;
+        pcl_decomp_proc[0](pseed_row, p, row_bytes);
+        prast->plane_index = 1;
+        code = process_row(prast, 0);
+        if (code < 0)
+            return gs_rethrow(code, "Raster row processing failed\n");
+    }
+    return 0;
+}
+
+static int
+pcl_ccitt_error(stream_state * st, const char *str)
+{
+    (void) gs_throw1(-1, "%s", str);
+    return 0;
+}
+
+
+static int
+process_ccitt_compress(
+    gs_state *           pgs,
+    pcl_raster_t *       prast,
+    const byte *         pin,
+    uint                 insize,
+    pcl_rast_buff_type_t comp
+    
+)
+{
+    stream_CFD_state state;
+    stream_cursor_read scr;
+    stream_cursor_write scw;
+    pcl_seed_row_t *pout = prast->pseed_rows;
+
+    if (insize < 4)
+        return gs_throw(e_Range, "raster row size not specified");
+    s_init_state((stream_state*)&state, &s_CFD_template, prast->pmem);
+    state.report_error = pcl_ccitt_error;
+    s_CFD_template.set_defaults((stream_state*)&state);
+    state.EndOfLine = false;
+    state.EndOfBlock = false;
+    state.Columns = pl_get_uint32(pin);
+    state.Rows = 0; /* undetermined */
+    if (comp == CCITT_GR3_1D_COMPRESS)
+        state.K = 0;
+    else if (comp == CCITT_GR3_2D_COMPRESS)
+        state.K = 1;
+    else
+        state.K = -1;
+    s_CFD_template.init((stream_state*)&state);
+    scr.ptr = pin + 4 - 1;
+    scr.limit = scr.ptr + insize;
+    scw.ptr = pout->pdata - 1;
+    scw.limit = scw.ptr + (state.Columns + 7) / 8;
+
+    while (1) {
+        int code = s_CFD_template.process((stream_state*)&state, &scr, &scw, true);
+        switch (code) {
+
+            case 1: /* need output, process the scanline and continue. */
+                scw.ptr = pout->pdata - 1;
+                scw.limit = scw.ptr + (state.Columns + 7) / 8;
+                process_row(prast, 0);
+                break;
+            case EOFC: /* all done */
+                s_CFD_template.release((stream_state*)&state);
+                return 0;
+            case 0: /* need input is an error - we've given it all the data */
+            case ERRC: /* error */
+                s_CFD_template.release((stream_state*)&state);
+                return gs_rethrow(e_Range, "CCITT decompression failed\n");
+            default:
+                return gs_throw(e_Range, "unknown code CCITT decompression\n");
+        }
+    }
+    /* not reached */
+    return -1;
+}
+    
+    
+
+
+/*
  * Process an input data buffer using adpative compression.
  */
   static int
@@ -1050,12 +1166,16 @@ add_raster_plane(
         pcl_seed_row_t *    pseed = prast->pseed_rows + plane_index;
 
         prast->plane_index++;
-        if (comp_mode == ADAPTIVE_COMPRESS)
+        if (!PCL_BLOCK_COMP(comp_mode))
+            (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
+        else if (comp_mode == NO_COMPRESS_BLOCK)
+            return process_block_nocompress(pcs->pgs, prast, pdata, nbytes);
+        else if (comp_mode == ADAPTIVE_COMPRESS)
             return process_adaptive_compress(pcs->pgs, prast, pdata, nbytes);
         else
-            (void)pcl_decomp_proc[comp_mode](pseed, pdata, nbytes);
+            return process_ccitt_compress(pcs->pgs, prast, pdata, nbytes, comp_mode);
+            
     }
-
     return 0;
 }
 
@@ -1339,7 +1459,7 @@ transfer_raster_row(
     code = add_raster_plane(pdata, arg_data_size(pargs), true, pcs);
 
     /* complete the row (execpt for adaptive compression) */
-    if (comp_mode != ADAPTIVE_COMPRESS && code == 0)
+    if (!PCL_BLOCK_COMP(comp_mode) && code == 0)
         code = process_row((pcl_raster_t *)pcs->raster_state.pcur_raster, comp_mode);
 
     return code;
