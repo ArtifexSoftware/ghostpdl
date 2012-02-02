@@ -26,8 +26,11 @@
  *     1 - compression mode 1 (run length compression), param is size in bytes
  *     2 - compression mode 2 ("Packbits" compression), param is size in bytes
  *     3 - compression mode 3 (delta row compression), param is size in bytes
- *     4 - not used
+ *     4 - compression mode 4 (no compression blocks), param is size in bytes
  *     5 - compression mode 5 (adaptive), param is size in bytes
+ *     6 - compression mode 5 (ccitt group 3 1d), param is size in bytes
+ *     7 - compression mode 5 (ccitt group 3 2d), param is size in bytes
+ *     8 - compression mode 5 (ccitt group 4 2d), param is size in bytes
  *     9 - compression mode 9 (modified delta row), param is size in bytes
  *
  * There is no separate format for repeated rows. The desired effect can be
@@ -38,11 +41,20 @@ typedef enum {
     RUN_LEN_COMPRESS = 1,
     PACKBITS_COMPRESS = 2,
     DELTA_ROW_COMPRESS = 3,
-    /* 4 is not used, and indicated as reserved by HP */
+    NO_COMPRESS_BLOCK = 4,
     ADAPTIVE_COMPRESS = 5,
-    /* 6 - 8 unused */
+    CCITT_GR3_1D_COMPRESS = 6,
+    CCITT_GR3_2D_COMPRESS = 7,
+    CCITT_GR4_COMPRESS = 8,
     MOD_DELTA_ROW_COMPRESS = 9
 } pcl_rast_buff_type_t;
+
+/*
+ * Identify the compression schemes that are block (not scan line
+ * oriented)
+ */
+
+#define PCL_BLOCK_COMP(comp) ((comp) >= NO_COMPRESS_BLOCK && (comp) <= CCITT_GR4_COMPRESS)
 
 /*
  * A seed-row structure. These buffers are used both to pass data to the
@@ -82,8 +94,8 @@ typedef struct  pcl_seed_row_s {
  * The array of decompression functions.
  */
 extern void (*const pcl_decomp_proc[9 + 1])(pcl_seed_row_t *pout,
-                                        const byte *pin,
-                                        int in_size
-                                                 );
+                                            const byte *pin,
+                                            int in_size
+                                           );
 
 #endif			/* rtrstcmp_INCLUDED */

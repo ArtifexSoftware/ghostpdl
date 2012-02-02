@@ -506,9 +506,10 @@ set_compression_method(
 {
     uint            mode = uint_arg(pargs);
 
-    if ( (mode < count_of(pcl_decomp_proc))                                 &&
-         ((pcl_decomp_proc[mode] != 0) || (mode == (uint)ADAPTIVE_COMPRESS))  )
+    if (mode < count_of(pcl_decomp_proc))
         pcs->raster_state.compression_mode = mode;
+    else
+        return gs_throw1(e_Range, "unsupported mode %d\n", mode);
     return 0;
 }
 
