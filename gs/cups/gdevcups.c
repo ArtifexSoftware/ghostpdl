@@ -3329,8 +3329,12 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
            i > 0;
            i --, size ++)
-	if (fabs(cups->MediaSize[1] - size->length) < 5.0 &&
-            fabs(cups->MediaSize[0] - size->width) < 5.0 &&
+      {
+	if (size->length == 0 || size->width == 0) continue;
+	if (fabs(cups->MediaSize[1] - size->length)/size->length <
+	    (size->length > size->width ? 0.05 : 0.01) &&
+            fabs(cups->MediaSize[0] - size->width)/size->width <
+	    (size->width > size->length ? 0.05 : 0.01) &&
 #ifdef CUPS_RASTER_SYNCv1
 	    ((strlen(cups->header.cupsPageSizeName) == 0) ||
 	     (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
@@ -3350,6 +3354,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	       (fabs(cups->HWMargins[1] - size->length + size->top) < 1.0 &&
 		fabs(cups->HWMargins[3] - size->bottom) < 1.0)))))
 	  break;
+      }
 
       if (i > 0)
       {
@@ -3388,8 +3393,12 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	for (i = cups->PPD->num_sizes, size = cups->PPD->sizes;
              i > 0;
              i --, size ++)
-	  if (fabs(cups->MediaSize[0] - size->length) < 5.0 &&
-              fabs(cups->MediaSize[1] - size->width) < 5.0 &&
+	{
+	  if (size->length == 0 || size->width == 0) continue;
+	  if (fabs(cups->MediaSize[0] - size->length)/size->length <
+	      (size->length > size->width ? 0.05 : 0.01) &&
+	      fabs(cups->MediaSize[1] - size->width)/size->width <
+	      (size->width > size->length ? 0.05 : 0.01) &&
 #ifdef CUPS_RASTER_SYNCv1
 	      ((strlen(cups->header.cupsPageSizeName) == 0) ||
 	       (strcasecmp(cups->header.cupsPageSizeName, size->name) == 0)) &&
@@ -3409,6 +3418,7 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 		 (fabs(cups->HWMargins[0] - size->length + size->top) < 1.0 &&
 		  fabs(cups->HWMargins[2] - size->bottom) < 1.0)))))
 	    break;
+	}
 
 	if (i > 0)
 	{
@@ -3447,17 +3457,44 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	  dprintf("DEBUG: size = Custom\n");
 #endif /* CUPS_DEBUG */
 
-          cups->landscape = 0;
+	  /* Rotate page if it only fits into the printer's dimensions
+	     when rotated */
+	  if (((cups->MediaSize[0] > cups->PPD->custom_max[0]) ||
+	       (cups->MediaSize[1] > cups->PPD->custom_max[1])) &&
+	      ((cups->MediaSize[0] <= cups->PPD->custom_max[1]) &&
+	      (cups->MediaSize[1] <= cups->PPD->custom_max[0]))) {
+	    /* Do not rotate */
+	    cups->landscape = 0;
 
-	  for (i = 0; i < 4; i ++)
-            margins[i] = cups->PPD->custom_margins[i] / 72.0;
-	  if (xflip == 1)
-	  {
-	    swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
-	  }
-	  if (yflip == 1)
-	  {
-	    swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	    for (i = 0; i < 4; i ++)
+	      margins[i] = cups->PPD->custom_margins[i] / 72.0;
+	    if (xflip == 1)
+	    {
+	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    }
+	    if (yflip == 1)
+	    {
+	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	    }
+	  } else {
+	    /* Rotate */
+	    gx_device_set_media_size(pdev, cups->MediaSize[1],
+				     cups->MediaSize[0]);
+
+	    cups->landscape = 1;
+
+	    margins[0] = cups->PPD->custom_margins[3] / 72.0;
+	    margins[1] = cups->PPD->custom_margins[0] / 72.0;
+	    margins[2] = cups->PPD->custom_margins[1] / 72.0;
+	    margins[3] = cups->PPD->custom_margins[2] / 72.0;
+	    if (xflip == 1)
+	    {
+	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
+	    }
+	    if (yflip == 1)
+	    {
+	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    }
 	  }
 	}
       }
