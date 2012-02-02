@@ -351,6 +351,9 @@ $(PCLOBJ)rtmisc.$(OBJ): $(PCLSRC)rtmisc.c   \
 # Chapter 15
 $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
 			  $(memory__h)          \
+                          $(strimpl_h)          \
+                          $(scfx_h)             \
+                          $(stream_h)           \
                           $(gx_h)               \
                           $(gsmatrix_h)         \
                           $(gscoord_h)          \
@@ -367,6 +370,7 @@ $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
                           $(pcindxed_h)         \
                           $(pcwhtidx_h)         \
                           $(pcdraw_h)           \
+                          $(plvalue_h)          \
                           $(rtgmode_h)          \
                           $(rtrstcmp_h)         \
                           $(rtraster_h)
@@ -582,7 +586,7 @@ $(PCLOBJ)rtgmode.$(OBJ):  $(PCLSRC)rtgmode.c    \
 	$(PCLCCC) $(PCLSRC)rtgmode.c $(PCLO_)rtgmode.$(OBJ)
 
 $(PCLOBJ)rtrstcmp.$(OBJ): $(PCLSRC)rtrstcmp.c   \
-			  $(string__h)          \
+                          $(string__h)          \
                           $(pcstate_h)          \
                           $(rtrstcmp_h)
 	$(PCLCCC) $(PCLSRC)rtrstcmp.c $(PCLO_)rtrstcmp.$(OBJ)

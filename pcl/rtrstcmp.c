@@ -255,6 +255,6 @@ void    (*const pcl_decomp_proc[9 + 1])( pcl_seed_row_t *   pout,
     uncompress_1,
     uncompress_2,
     uncompress_3,
-    0, 0, 0, 0, 0,  /* modes 4 and 6 - 8 unused; mode 5 handled separately */
+    0, 0, 0, 0, 0,  /* modes 4 - 8 handled separately */
     uncompress_9
 };
