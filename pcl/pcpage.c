@@ -201,7 +201,7 @@ update_xfm_state(
                         );
 
     /* calculate the print direction page size */
-    if ((pxfmst->print_dir) & 0x1) {
+    if ((pxfmst->print_dir & 0x1) || (pcs->personality == rtl)) {
         pxfmst->pd_size.x = pxfmst->lp_size.y;
         pxfmst->pd_size.y = pxfmst->lp_size.x;
     } else
