@@ -119,31 +119,31 @@ sodebug:
 
 so-subtarget:
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 directories
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
 # special so-subtarget for MAC OS X
 so-subtarget_1:
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 directories
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(AUXDIR)/echogs$(XEAUX) $(AUXDIR)/genarch$(XEAUX)
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS) $(LDFLAGS_SO_MAC)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(XCFLAGS)'\
+	 CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)'\
 	 prefix=$(prefix)
 	$(MAKE) $(SODEFS) GENOPT='$(GENOPT)' LDFLAGS='$(LDFLAGS)'\
-	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)' prefix=$(prefix)\
+	 CFLAGS='$(CFLAGS_STANDARD) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)\
 	 $(GSSOC_XE) $(GSSOX_XE)
 
 
