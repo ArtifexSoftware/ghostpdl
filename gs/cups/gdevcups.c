@@ -3463,20 +3463,6 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	       (cups->MediaSize[1] > cups->PPD->custom_max[1])) &&
 	      ((cups->MediaSize[0] <= cups->PPD->custom_max[1]) &&
 	      (cups->MediaSize[1] <= cups->PPD->custom_max[0]))) {
-	    /* Do not rotate */
-	    cups->landscape = 0;
-
-	    for (i = 0; i < 4; i ++)
-	      margins[i] = cups->PPD->custom_margins[i] / 72.0;
-	    if (xflip == 1)
-	    {
-	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
-	    }
-	    if (yflip == 1)
-	    {
-	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
-	    }
-	  } else {
 	    /* Rotate */
 	    gx_device_set_media_size(pdev, cups->MediaSize[1],
 				     cups->MediaSize[0]);
@@ -3494,6 +3480,20 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
 	    if (yflip == 1)
 	    {
 	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    }
+	  } else {
+	    /* Do not rotate */
+	    cups->landscape = 0;
+
+	    for (i = 0; i < 4; i ++)
+	      margins[i] = cups->PPD->custom_margins[i] / 72.0;
+	    if (xflip == 1)
+	    {
+	      swap = margins[0]; margins[0] = margins[2]; margins[2] = swap;
+	    }
+	    if (yflip == 1)
+	    {
+	      swap = margins[1]; margins[1] = margins[3]; margins[3] = swap;
 	    }
 	  }
 	}
