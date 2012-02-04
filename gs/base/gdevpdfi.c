@@ -1447,6 +1447,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             /* Scale the coordinate system, because object handlers assume so. See none_to_stream. */
             pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
                      72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
+            pdev->PatternDepth++;
             return 1;
         case gxdso_pattern_finish_accum:
             code = pdf_add_procsets(pdev->substream_Resources, pdev->procsets);
@@ -1477,6 +1478,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 pdev->substituted_pattern_count++;
             } else if (pres->object->id < 0)
                 pdf_reserve_object_id(pdev, pres, 0);
+            pdev->PatternDepth--;
             return 1;
         case gxdso_pattern_load:
             pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, id);

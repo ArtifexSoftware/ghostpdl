@@ -234,6 +234,16 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     } else {
         smat = smat2;
     }
+    if (pdev->ForOPDFRead) {
+        if (pdev->PatternDepth) {
+            gs_matrix_multiply(&smat, &pdev->AccumulatedPatternMatrix, &smat2);
+            gs_matrix_multiply(&pdev->AccumulatedPatternMatrix, &smat, &pdev->AccumulatedPatternMatrix);
+            smat = smat2;
+        } else {
+            gs_make_identity(&pdev->AccumulatedPatternMatrix);
+            gs_matrix_multiply(&pdev->AccumulatedPatternMatrix, &smat, &pdev->AccumulatedPatternMatrix);
+        }
+    }
     if (any_abs(smat.tx) < 0.0001)  /* Noise. */
         smat.tx = 0;
     if (any_abs(smat.ty) < 0.0001)
