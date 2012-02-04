@@ -646,6 +646,15 @@ struct gx_device_pdf_s {
      */
     int FormDepth;
 
+    /* Nasty hack. OPDFread.ps resets the grpahics state to the identity before
+     * replaying the Pattern PaintProc, but if the Pattern is nested inside a
+     * previous pattern, this doesn't work. We use this to keep track of whether
+     * we are nested, and if we are (and are ps2write, not pdfwrite) we track the
+     * pattern CTM below.
+     */
+    int PatternDepth;
+    gs_matrix AccumulatedPatternMatrix;
+
     /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
     gs_color_space_index pcm_color_info_index; /* Index of the ProcessColorModel space. */
