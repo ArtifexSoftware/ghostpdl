@@ -393,17 +393,11 @@ hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_
 {
     double  run = pgls->g.character.direction.x;
     double rise = pgls->g.character.direction.y;
-    if ( rise != 0 ) {
-        double  denom = hypot(run, rise);
-        gs_point tmp_dxy = *dxy;
-        gs_matrix rmat;
-        gs_make_identity(&rmat);
-        rmat.xx = run / denom;
-        rmat.xy = rise / denom;
-        rmat.yx = -rmat.xy;
-        rmat.yy = rmat.xx;
-        hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
-    }
+    int angle = (hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5;
+    gs_point tmp_dxy = *dxy;
+    gs_matrix rmat;
+    gs_make_rotation((floatp)angle, &rmat);
+    hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
     return 0;
 }
 
@@ -728,8 +722,8 @@ hpgl_print_char(
         gs_font *       pfont = pgls->g.font->pfont;
         bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
         bool            use_show = hpgl_use_show(pgls, font);
-        gs_matrix       pre_rmat, rmat, advance_mat;
-        int             angle = -1;	/* a multiple of 90 if used */
+        gs_matrix       pre_rmat, advance_mat;
+        int             angle = 0;
         gs_text_enum_t *penum;
         byte            str[2];
         int             code;
@@ -751,40 +745,39 @@ hpgl_print_char(
             if (font->scaling_technology == plfst_bitmap)
                 rise *= -1;
 
-            if (pgls->g.character.direction_relative)
-                run *= pgls->g.P2.x - pgls->g.P1.x,
+            if (pgls->g.character.direction_relative) {
+                run *= pgls->g.P2.x - pgls->g.P1.x;
                 rise *= pgls->g.P2.y - pgls->g.P1.y;
-            gs_make_identity(&rmat);
-            if ((run < 0) || (rise != 0)) {
-                double  denom = hypot(run, rise);
-
-                rmat.xx = run / denom;
-                rmat.xy = rise / denom;
-                rmat.yx = -rmat.xy;
-                rmat.yy = rmat.xx;
-                if ( bitmaps_allowed &&
-                     (run != 0)      &&
-                     (rise != 0)       ) {  /* not a multple of 90 degrees */
-                    /*
-                     * If bitmap fonts are allowed, rotate to the nearest
-                     * multiple of 90 degrees.  We have to do something
-                     * special at the end to create the correct escapement.
-                     */
-                    gs_currentmatrix(pgs, &pre_rmat);
-                    if (run >= 0) {
-                        if (rise >= 0)
-                            angle = (run >= rise ? 0 : 90);
-                        else
-                            angle = (-rise >= run ? 270 : 0);
-                    } else {
-                        if (rise >= 0)
-                            angle = (rise >= -run ? 90 : 180);
-                        else
-                            angle = (-run >= -rise ? 180 : 270);
-                    }
-                }
-                gs_concat(pgs, &rmat);
             }
+
+            angle = (hpgl_compute_angle(run, rise) * radians_to_degrees) + 0.5;
+            gs_currentmatrix(pgs, &pre_rmat);
+            gs_rotate(pgs, angle);
+            /* we do something special if the angle is greater than
+               zero for bitmap fonts (see below) */
+            angle = -1;
+
+            if ( bitmaps_allowed &&
+                 (run != 0)      &&
+                 (rise != 0)       ) {  /* not a multple of 90 degrees */
+                /*
+                 * If bitmap fonts are allowed, rotate to the nearest
+                 * multiple of 90 degrees.  We have to do something
+                 * special at the end to create the correct escapement.
+                 */
+                if (run >= 0) {
+                    if (rise >= 0)
+                        angle = (run >= rise ? 0 : 90);
+                    else
+                        angle = (-rise >= run ? 270 : 0);
+                } else {
+                    if (rise >= 0)
+                        angle = (rise >= -run ? 90 : 180);
+                    else
+                        angle = (-run >= -rise ? 180 : 270);
+                }
+            }
+
         }
 
         /* Handle slant. */
