@@ -326,14 +326,44 @@ gx_default_fill_mask(gx_device * orig_dev,
                      const gx_drawing_color * pdcolor, int depth,
                      gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
-    gx_device *dev;
+    gx_device *dev = orig_dev;
     gx_device_clip cdev;
 
-    if (pcpath != 0) {
-        gx_make_clip_device_on_stack(&cdev, pcpath, orig_dev);
-        dev = (gx_device *) & cdev;
-    } else
-        dev = orig_dev;
+    if (w == 0 || h == 0)
+        return 0;
+
+    if (pcpath != 0)
+    {
+        gs_fixed_rect rect;
+        int tmp;
+
+        rect.p.x = int2fixed(x);
+        rect.p.y = int2fixed(y);
+        rect.q.x = int2fixed(x+w);
+        rect.q.y = int2fixed(y+h);
+        dev = gx_make_clip_device_on_stack_if_needed(&cdev, pcpath, dev, &rect);
+        if (dev == NULL)
+            return 0;
+        /* Clip region if possible */
+        tmp = fixed2int(rect.p.x);
+        if (tmp > x)
+        {
+            dx += tmp-x;
+            x = tmp;
+        }
+        tmp = fixed2int(rect.q.x);
+        if (tmp < x+w)
+            w = tmp-x;
+        tmp = fixed2int(rect.p.y);
+        if (tmp > y)
+        {
+            data += (tmp-y) * raster;
+            y = tmp;
+        }
+        tmp = fixed2int(rect.q.y);
+        if (tmp < y+h)
+            h = tmp-y;
+    }
     if (depth > 1) {
         /****** CAN'T DO ROP OR HALFTONE WITH ALPHA ******/
         return (*dev_proc(dev, copy_alpha))
