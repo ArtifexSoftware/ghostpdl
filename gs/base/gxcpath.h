@@ -110,6 +110,7 @@ extern_st(st_device_clip);
     "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs,\
     gx_device_finalize)
 void gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target);
+gx_device *gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target, gs_fixed_rect *rect);
 void gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
                               gs_memory_t *mem);
 

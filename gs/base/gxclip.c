@@ -135,6 +135,44 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
+
+gx_device *
+gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target, gs_fixed_rect *rect)
+{
+    if (pcpath->inner_box.p.x <= rect->p.x && pcpath->inner_box.p.y <= rect->p.y &&
+        pcpath->inner_box.q.x >= rect->q.x && pcpath->inner_box.q.y >= rect->q.y)
+    {
+        /* Area is trivially included. No need for clip. */
+        return target;
+    }
+    else
+    {
+        /* Reduce area if possible */
+        if (rect->p.x < pcpath->outer_box.p.x)
+            rect->p.x = pcpath->outer_box.p.x;
+        if (rect->q.x > pcpath->outer_box.q.x)
+            rect->q.x = pcpath->outer_box.q.x;
+        if (rect->p.y < pcpath->outer_box.p.y)
+            rect->p.y = pcpath->outer_box.p.y;
+        if (rect->q.y > pcpath->outer_box.q.y)
+            rect->q.y = pcpath->outer_box.q.y;
+        /* Check for area being trivially clipped away. */
+        if (rect->p.x >= rect->q.x || rect->p.y >= rect->q.y)
+            return NULL;
+    }
+    gx_device_init((gx_device *)dev, (const gx_device *)&gs_clip_device, NULL, true);
+    dev->list = *gx_cpath_list(pcpath);
+    dev->translation.x = 0;
+    dev->translation.y = 0;
+    dev->HWResolution[0] = target->HWResolution[0];
+    dev->HWResolution[1] = target->HWResolution[1];
+    dev->sgr = target->sgr;
+    dev->target = target;
+    dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
+    /* There is no finalization for device on stack so no rc increment */
+    (*dev_proc(dev, open_device)) ((gx_device *)dev);
+    return (gx_device *)dev;
+}
 void
 gx_make_clip_device_in_heap(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target,
                               gs_memory_t *mem)
