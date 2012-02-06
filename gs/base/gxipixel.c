@@ -1112,7 +1112,7 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 
     /* Clues are only used with image_mono_render */
     if (spp == 1) {
-    image_init_clues(penum, bps, spp);
+        image_init_clues(penum, bps, spp);
     }
     decode_type = 3; /* 0=custom, 1=identity, 2=inverted, 3=impossible */
     for (ci = 0; ci < spp; ci +=2 ) {
