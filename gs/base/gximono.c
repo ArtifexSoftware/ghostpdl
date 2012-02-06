@@ -197,6 +197,9 @@ not_fast_halftoning:
             if (penum->mask_color.values[1] >= 255)
                 color_set_null(penum->icolor1);
         }
+        /* Reset the clues here, rather than in image_render_mono as
+         * previously. Even doing so this often may be overzealous. */
+        image_init_clues(penum, penum->bps, penum->spp);
         return &image_render_mono;
     }
     return 0;
@@ -311,7 +314,6 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
      * for masked images with a pure color.
      */
 
-    image_init_clues(penum, penum->bps, penum->spp);
     next = penum->dda.pixel0;
     xrun = dda_current(next.x);
     if (!masked) {
