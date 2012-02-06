@@ -560,7 +560,10 @@ sstring_h=$(GLSRC)sstring.h
 strimpl_h=$(GLSRC)strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
 szlibx_h=$(GLSRC)szlibx.h
 zlib_h=$(ZSRCDIR)$(D)zlib.h
-szlibxx_h=$(GLSRC)szlibxx.h $(szlibx_h) $(zlib_h)
+# We have two of the following, for shared zlib (_1)
+# and 'local' zlib (_0)
+szlibxx_h_1=$(GLSRC)szlibxx.h $(szlibx_h)
+szlibxx_h_0=$(GLSRC)szlibxx.h $(szlibx_h) $(zlib_h)
 # Out of order
 scf_h=$(GLSRC)scf.h $(shc_h)
 scfx_h=$(GLSRC)scfx.h $(shc_h)
@@ -1776,13 +1779,13 @@ zconf_h=$(ZSRCDIR)$(D)zconf.h
 $(GLOBJ)szlibc_1.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
  $(gserrors_h) $(gsmemory_h) \
  $(gsstruct_h) $(gstypes_h)\
- $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_1) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibc_1.$(OBJ) $(C_) $(GLSRC)szlibc.c
 
 $(GLOBJ)szlibc_0.$(OBJ) : $(GLSRC)szlibc.c $(AK) $(std_h)\
  $(gserrors_h) $(gsmemory_h) $(zconf_h)\
  $(gsstruct_h) $(gstypes_h) $(zlib_h)\
- $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_0) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibc_0.$(OBJ) $(C_) $(GLSRC)szlibc.c
 
 $(GLOBJ)szlibc.$(OBJ) : $(GLOBJ)szlibc_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
@@ -1794,11 +1797,11 @@ $(GLD)szlibe.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
 	$(ADDMOD) $(GLD)szlibe -include $(ZGENDIR)$(D)zlibe.dev
 
 $(GLOBJ)szlibe_1.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
- $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_1) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibe_1.$(OBJ) $(C_) $(GLSRC)szlibe.c
 
 $(GLOBJ)szlibe_0.$(OBJ) : $(GLSRC)szlibe.c $(AK) $(std_h)\
- $(strimpl_h) $(szlibxx_h) $(zlib_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_0) $(zlib_h) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibe_0.$(OBJ) $(C_) $(GLSRC)szlibe.c
 
 $(GLOBJ)szlibe.$(OBJ) : $(GLOBJ)szlibe_$(SHARE_ZLIB).$(OBJ)  $(MAKEDIRS)
@@ -1810,11 +1813,11 @@ $(GLD)szlibd.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
 	$(ADDMOD) $(GLD)szlibd -include $(ZGENDIR)$(D)zlibd.dev
 
 $(GLOBJ)szlibd_1.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
- $(strimpl_h) $(szlibxx_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_1) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibd_1.$(OBJ) $(C_) $(GLSRC)szlibd.c
 
 $(GLOBJ)szlibd_0.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
- $(strimpl_h) $(szlibxx_h) $(zlib_h) $(MAKEDIRS)
+ $(strimpl_h) $(szlibxx_h_0) $(zlib_h) $(MAKEDIRS)
 	$(GLZCC) $(GLO_)szlibd_0.$(OBJ) $(C_) $(GLSRC)szlibd.c
 
 $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(MAKEDIRS)
