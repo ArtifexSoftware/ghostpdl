@@ -175,20 +175,6 @@ void gx_ht_free_cache(gs_memory_t *, gx_ht_cache *);
 /* Initialize a halftone cache with a given order. */
 void gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache *, const gx_ht_order *);
 
-/* Check whether the tile cache corresponds to the current order */
-bool gx_check_tile_cache_current(const gs_imager_state * pis);
-
-/* Make the cache order current, and return whether */
-/* there is room for all possible tiles in the cache. */
-bool gx_check_tile_cache(const gs_imager_state *);
-
-/* Determine whether a given (width, y, height) might fit into a */
-/* single tile. If so, return the byte offset of the appropriate row */
-/* from the beginning of the tile, and set *ppx to the x phase offset */
-/* within the tile; if not, return -1. */
-int gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
-                       gs_color_select_t select, int *ppx);
-
 /* Make a given level current in a halftone cache. */
 #define gx_render_ht(pcache, b_level)\
   ((pcache)->render_ht(pcache, b_level))

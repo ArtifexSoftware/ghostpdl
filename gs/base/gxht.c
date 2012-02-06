@@ -167,39 +167,6 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
     gs_free_object(mem, pcache, "free_ht_cache(struct)");
 }
 
-/* Check whether the tile cache corresponds to the current order */
-bool
-gx_check_tile_cache_current(const gs_imager_state * pis)
-{
-    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
-    return false;
-}
-
-/* Make the cache order current, and return whether */
-/* there is room for all possible tiles in the cache. */
-bool
-gx_check_tile_cache(const gs_imager_state * pis)
-{
-    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
-    return false;
-}
-
-/*
- * Determine whether a given (width, y, height) might fit into a single
- * (non-strip) tile. If so, return the byte offset of the appropriate row
- * from the beginning of the tile, and set *ppx to the x phase offset
- * within the tile; if not, return -1.
- *
- * This routine cannot be supported in the DeviceN code.
- */
-int
-gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
-                   gs_color_select_t select, int *ppx)
-{
-    /* TO_DO_DEVICEN - this routine is no longer used - delete. */
-    return -1;
-}
-
 /* Render a given level into a halftone cache. */
 static int render_ht(gx_ht_tile *, int, const gx_ht_order *,
                       gx_bitmap_id);
