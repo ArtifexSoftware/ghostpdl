@@ -631,6 +631,8 @@ dnl zlib is needed for language level 3, and libpng
 # we must define ZLIBDIR regardless because png.mak does a -I$(ZLIBDIR)
 # this seems a harmless default
 ZLIBDIR=src
+AUX_SHARED_ZLIB=
+
 if test -d zlib; then
         AC_MSG_RESULT([yes])
         SHARE_ZLIB=0
@@ -638,7 +640,7 @@ if test -d zlib; then
 else
         AC_MSG_RESULT([no])
         AC_CHECK_LIB(z, deflate, [
-          AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1])
+          AC_CHECK_HEADERS(zlib.h, [SHARE_ZLIB=1; AUX_SHARED_ZLIB="-l\$(ZLIB_NAME)"])
         ])
 fi
 if test -z "$SHARE_ZLIB"; then
@@ -661,6 +663,7 @@ if test x$FT_BRIDGE != x0; then
 fi
 
 AC_SUBST(SHARE_ZLIB)
+AC_SUBST(AUX_SHARED_ZLIB)
 AC_SUBST(ZLIBDIR)
 AC_SUBST(FT_SYS_ZLIB)
 
