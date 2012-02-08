@@ -55,7 +55,7 @@ zshow(i_ctx_t *i_ctx_p)
     int code = op_show_setup(i_ctx_p, op);
 
     if (code != 0 ||
-        (code = gs_show_begin(igs, op->value.bytes, r_size(op), imemory, &penum)) < 0)
+        (code = gs_show_begin(igs, op->value.bytes, r_size(op), imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_show)) < 0) {
@@ -76,7 +76,7 @@ zashow(i_ctx_t *i_ctx_p)
 
     if (code < 0 ||
         (code = op_show_setup(i_ctx_p, op)) != 0 ||
-        (code = gs_ashow_begin(igs, axy[0], axy[1], op->value.bytes, r_size(op), imemory, &penum)) < 0)
+        (code = gs_ashow_begin(igs, axy[0], axy[1], op->value.bytes, r_size(op), imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zashow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 3, finish_show)) < 0) {
@@ -110,7 +110,7 @@ zwidthshow(i_ctx_t *i_ctx_p)
     if ((code = gs_widthshow_begin(igs, cxy[0], cxy[1],
                                    (gs_char) op[-1].value.intval,
                                    op->value.bytes, r_size(op),
-                                   imemory, &penum)) < 0)
+                                   imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zwidthshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
@@ -147,7 +147,7 @@ zawidthshow(i_ctx_t *i_ctx_p)
                                     (gs_char) op[-3].value.intval,
                                     axy[0], axy[1],
                                     op->value.bytes, r_size(op),
-                                    imemory, &penum)) < 0)
+                                    imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zawidthshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
@@ -176,7 +176,7 @@ zkshow(i_ctx_t *i_ctx_p)
         return_error(e_invalidfont);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 ||
         (code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
-                               imemory, &penum)) < 0)
+                               imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zkshow;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, finish_show)) < 0) {
