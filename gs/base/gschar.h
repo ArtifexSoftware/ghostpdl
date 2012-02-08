@@ -41,22 +41,6 @@ gs_show_enum *gs_show_enum_alloc(gs_memory_t *, gs_state *, client_name_t);
 /* If the second argument is not NULL, also free the enumerator. */
 void gs_show_enum_release(gs_show_enum *, gs_memory_t *);
 
-/* Initialize a text enumeration. */
-int
-    /* PostScript operators */
-    gs_show_n_init(gs_show_enum *, gs_state *, const char *, uint),
-    gs_ashow_n_init(gs_show_enum *, gs_state *, floatp, floatp, const char *, uint),
-    gs_widthshow_n_init(gs_show_enum *, gs_state *, floatp, floatp, gs_char, const char *, uint),
-    gs_awidthshow_n_init(gs_show_enum *, gs_state *, floatp, floatp, gs_char, floatp, floatp, const char *, uint),
-    gs_kshow_n_init(gs_show_enum *, gs_state *, const char *, uint),
-    gs_xyshow_n_init(gs_show_enum *, gs_state *, const char *, uint),
-    gs_glyphshow_init(gs_show_enum *, gs_state *, gs_glyph), gs_cshow_n_init(gs_show_enum *, gs_state *, const char *, uint),
-    gs_stringwidth_n_init(gs_show_enum *, gs_state *, const char *, uint),
-    gs_charpath_n_init(gs_show_enum *, gs_state *, const char *, uint, bool),
-    /* Extensions */
-    gs_glyphpath_init(gs_show_enum *, gs_state *, gs_glyph, bool),
-    gs_glyphwidth_init(gs_show_enum *, gs_state *, gs_glyph),
-    gs_charboxpath_n_init(gs_show_enum *, gs_state *, const char *, uint, bool);
 int gs_show_use_glyph(gs_show_enum *, gs_glyph);
 
 /* After setting up the enumeration, all the string-related routines */
