@@ -348,8 +348,8 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
         NULL,	/* discard_transparency_layer */\
         NULL,  /* get_color_mapping_procs */\
         NULL,  /* get_color_comp_index */\
-        NULL,  /* encode_color */\
-        NULL,  /* decode_color */\
+        p_map_rgb_color,	/* encode_color */\
+        p_map_color_rgb,	/* decode_color */\
         NULL,  /* pattern_manage */\
         NULL,  /* fill_rectangle_hl_color */\
         NULL,  /* include_color_space */\
