@@ -29,6 +29,9 @@ pcl: tiff
 pcl-lib: tiff
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-lib # build PCL and PCLXL lib
 
+pcl-lib-shared: tiff
+	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-solib # build PCL and PCLXL shared lib
+
 pcl-debug:  tiff
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
