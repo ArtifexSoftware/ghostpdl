@@ -567,13 +567,15 @@ upattern_do_registration(
     DEFINE_CLASS('*')
     {
         'c', 'W',
-        PCL_COMMAND("Download Pattern", download_pcl_pattern, pca_bytes)
+        PCL_COMMAND("Download Pattern", download_pcl_pattern,
+                    pca_bytes | pca_in_rtl
+                    )
     },
     {
         'c', 'Q',
         PCL_COMMAND( "Pattern Control",
                      pattern_control,
-                     pca_neg_ignore | pca_big_ignore
+                     pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
     END_CLASS
