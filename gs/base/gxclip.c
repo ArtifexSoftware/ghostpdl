@@ -139,6 +139,15 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
 gx_device *
 gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target, gs_fixed_rect *rect)
 {
+    /* Reduce area if possible */
+    if (rect->p.x < pcpath->outer_box.p.x)
+        rect->p.x = pcpath->outer_box.p.x;
+    if (rect->q.x > pcpath->outer_box.q.x)
+        rect->q.x = pcpath->outer_box.q.x;
+    if (rect->p.y < pcpath->outer_box.p.y)
+        rect->p.y = pcpath->outer_box.p.y;
+    if (rect->q.y > pcpath->outer_box.q.y)
+        rect->q.y = pcpath->outer_box.q.y;
     if (pcpath->inner_box.p.x <= rect->p.x && pcpath->inner_box.p.y <= rect->p.y &&
         pcpath->inner_box.q.x >= rect->q.x && pcpath->inner_box.q.y >= rect->q.y)
     {
@@ -147,15 +156,6 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     }
     else
     {
-        /* Reduce area if possible */
-        if (rect->p.x < pcpath->outer_box.p.x)
-            rect->p.x = pcpath->outer_box.p.x;
-        if (rect->q.x > pcpath->outer_box.q.x)
-            rect->q.x = pcpath->outer_box.q.x;
-        if (rect->p.y < pcpath->outer_box.p.y)
-            rect->p.y = pcpath->outer_box.p.y;
-        if (rect->q.y > pcpath->outer_box.q.y)
-            rect->q.y = pcpath->outer_box.q.y;
         /* Check for area being trivially clipped away. */
         if (rect->p.x >= rect->q.x || rect->p.y >= rect->q.y)
             return NULL;
