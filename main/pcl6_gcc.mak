@@ -123,7 +123,19 @@ DD?=$(GLGENDIR)/
 
 TARGET_DEVS?=$(PXLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev 
 TARGET_XE?=$(GENDIR)/pcl6
-TARGET_LIB?=$(GENDIR)/pcl6.a
+TARGET_LIB?=$(GENDIR)/libpcl6.a
+
+# PCL6 shared library definitions - this pretty much follows along how
+# the gs dll is prepared.
+PCL6_SONAME_BASE?=libpcl6
+PCL6_SOEXT?=so
+PCL6_SONAME?=$(PCL6_SONAME_BASE).$(PCL6_SOEXT)
+PCL6_SONAME_MAJOR?=$(PCL6_SONAME).$(GS_VERSION_MAJOR)
+PCL6_SONAME_MAJOR_MINOR?=$(PCL6_SONAME_MAJOR).$(GS_VERSION_MINOR)
+LD_FLAGS_SO?=-shared -Wl,-soname=$(PCL6_SONAME_MAJOR) -fPIC
+
+TARGET_SOLIB?=$(GENDIR)/$(PCL6_SONAME_MAJOR_MINOR)
+
 MAIN_OBJ?=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 REALMAIN_OBJ?=$(PLOBJDIR)/realmain.$(OBJ)
 REALMAIN_SRC?=realmain
@@ -246,7 +258,10 @@ pdl-default: $(TARGET_XE)$(XE)
 	echo Done.
 
 lib: $(TARGET_LIB)
-	echo Done lib.
+	echo done building library.
+
+solib: $(TARGET_SOLIB)
+	echo done building shared library.
 
 #### Implementation stub
 $(PLOBJDIR)plimpl.$(OBJ): $(PLSRCDIR)plimpl.c \

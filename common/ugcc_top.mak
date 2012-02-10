@@ -91,6 +91,9 @@ pdl-product: UGCC_TOP_DIR
 pdl-product-lib: UGCC_TOP_DIR
 	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS)' lib
 
+pdl-product-solib: UGCC_TOP_DIR
+	$(MAKE) -f $(firstword $(MAKEFILE)) GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-fPIC -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) $(LD_FLAGS_SO)' solib
+
 pdl-clean:
 	$(RMN_) $(GENDIR)/*.dev $(GENDIR)/devs*.tr $(GENDIR)/gconfig*.h
 	$(RMN_) $(GENDIR)/gconfx*.h $(GENDIR)/j*.h
@@ -114,9 +117,18 @@ $(GENDIR)/pconf.h $(GENDIR)/ldconf.tr: $(TARGET_DEVS) $(AUXDIR)/genconf$(XE)
 $(TARGET_LIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)
 	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(AR) $(ARFLAGS)  $@
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
-	cat $(GENDIR)/ldt.tr $(GENDIR)/ldconf.tr | grep ".o" >>$(GENDIR)/ldall.tr
+	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
 	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ)
 	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
+
+$(TARGET_SOLIB): $(ld_tr) $(GENDIR)/ldconf.tr $(MAIN_OBJ) $(TOP_OBJ) $(XOBJS) $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ)
+	$(ECHOGS_XE) -w $(GENDIR)/ldall.tr -n - $(CCLD) $(LDFLAGS) -o $@
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -n -s $(TOP_OBJ) $(XOBJS) -s
+	cat $(ld_tr) $(GENDIR)/ldconf.tr >>$(GENDIR)/ldall.tr
+	$(ECHOGS_XE) -a $(GENDIR)/ldall.tr -s - $(GLOBJDIR)/gsromfs$(COMPILE_INITS).$(OBJ) $(MAIN_OBJ) $(EXTRALIBS) $(STDLIBS)
+	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; sh <$(GENDIR)/ldall.tr
+	ln -s $(PCL6_SONAME_MAJOR_MINOR) $(GENDIR)/$(PCL6_SONAME_MAJOR)
+	ln -s $(PCL6_SONAME_MAJOR_MINOR) $(GENDIR)/$(PCL6_SONAME)
 
 ifeq ($(PSICFLAGS), -DPSI_INCLUDED)
 # Link a Unix executable.  NB - XOBS is not concatenated to the link
