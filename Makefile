@@ -204,18 +204,12 @@ ls-debug-clean: tiff_clean
 
 ls-uproduct: ufst tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
-	cp *.icc ./language_switch/ufst-obj
-	cp wts_* ./language_switch/ufst-obj
 
 ls-udebug: ufst tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
-	cp *.icc ./language_switch/ufst-obj
-	cp wts_* ./language_switch/ufst-obj
 
 ls-umemento: ufst tiff
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
-	cp *.icc ./language_switch/ufst-obj
-	cp wts_* ./language_switch/ufst-obj
 
 ls-uclean: tiff_clean
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
@@ -234,18 +228,12 @@ ls-umemento-clean: tiff_clean
 
 uproduct: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
-	cp *.icc ./main/ufst-obj
-	cp wts_* ./main/ufst-obj
 
 udebug: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
-	cp *.icc ./main/ufst-debugobj
-	cp wts_* ./main/ufst-debugobj
 
 umemento: ufst tiff
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
-	cp *.icc ./main/ufst-memobj
-	cp wts_* ./main/ufst-memobj
 
 uclean: tiff_clean
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
