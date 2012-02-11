@@ -1101,7 +1101,8 @@ $(PCLOBJ)pglfill.$(OBJ): $(PCLSRC)pglfill.c \
                          $(gsrop_h)         \
                          $(gxbitmap_h)      \
                          $(pcpalet_h)       \
-                         $(pcpatrn_h)
+                         $(pcpatrn_h)       \
+                         $(pcuptrn_h)
 	$(PCLCCC) $(PCLSRC)pglfill.c $(PCLO_)pglfill.$(OBJ)
 
 # Chapter 23

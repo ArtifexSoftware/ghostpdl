@@ -27,6 +27,7 @@
 #include "gxbitmap.h"
 #include "pcpalet.h"
 #include "pcpatrn.h"
+#include "pcuptrn.h"
 
 /*
  * AC [x,y]; Anchor corner for fill offsets, note that this is
@@ -167,7 +168,8 @@ hatch:
             int32   id;
 
             if (hpgl_arg_int(pgls->memory, pargs, &id)) {
-                if ((id < 0) || (id > 0xffff))
+                if ((id < 0) || (id > 0xffff) ||
+                    !pcl_pattern_get_pcl_uptrn(pgls, id))
                     return e_Range;
                 pgls->g.fill.param.pattern_id = id;
             }
@@ -802,7 +804,9 @@ hpgl_SV(
             {
                 int32   id;
 
-                if (!hpgl_arg_int(pgls->memory, pargs, &id) || (id < 0) || (id > 0xffff))
+                if (!hpgl_arg_int(pgls->memory, pargs, &id) ||
+                    (id < 0) || (id > 0xffff) ||
+                    !pcl_pattern_get_pcl_uptrn(pgls, id))
                     return e_Range;
                 pgls->g.screen.param.pattern_id = id;
             }
