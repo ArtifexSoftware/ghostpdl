@@ -406,6 +406,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_profile.device_profile[2] = NULL;
     temp_profile.link_profile = NULL;
     temp_profile.proof_profile = NULL;
+    temp_profile.oi_profile = NULL;
     temp_device.icc_struct = &temp_profile;
     set_dev_proc(&temp_device, get_profile, gx_default_get_profile);
 

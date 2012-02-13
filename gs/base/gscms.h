@@ -129,7 +129,8 @@ typedef enum {
     gsIMAGEPROFILE,
     gsTEXTPROFILE,
     gsPROOFPROFILE,
-    gsLINKPROFILE
+    gsLINKPROFILE,
+    gsOIPROFILE
 } gsicc_profile_types_t;
 
 typedef enum {
@@ -156,6 +157,7 @@ typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
         cmm_profile_t  *proof_profile;
         cmm_profile_t  *link_profile;
+        cmm_profile_t  *oi_profile;  /* output intent profile */
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
