@@ -19,6 +19,7 @@
 #define ICC_DUMP 0
 
 /* Define the default ICC profiles in the file system */
+#define OI_PROFILE        "OIProfile" /* Keyword to indicate use of OI profile */
 #define DEFAULT_GRAY_ICC  "default_gray.icc"
 #define DEFAULT_RGB_ICC   "default_rgb.icc"
 #define DEFAULT_CMYK_ICC  "default_cmyk.icc"

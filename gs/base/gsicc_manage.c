@@ -668,14 +668,19 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
         return 0;
     }
     if ((*manager_default_profile) != NULL) {
-        /* Check if this is what we already have */
+        /* Check if this is what we already have.  Also check if it is the
+           output intent profile.  */
         icc_profile = *manager_default_profile;
-        if ( namelen == icc_profile->name_length )
+        if ( namelen == icc_profile->name_length ) {
             if( memcmp(pname, icc_profile->name, namelen) == 0)
                 return 0;
+        }
+        if (strncmp(icc_profile->name, OI_PROFILE, 
+                    strlen(icc_profile->name)) == 0) {
+                return 0;
+        }
         rc_decrement(icc_profile,"gsicc_set_profile");
     }
-
     /* We need to do a special check for DeviceN since we have a linked list of
        profiles and we can have multiple specifications */
     if ( defaulttype == DEVICEN_TYPE ) {
@@ -966,6 +971,10 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             if_debug0(gs_debug_flag_icc,"[icc] Releasing proof profile\n");
             rc_decrement(icc_struct->proof_profile, "rc_free_profile_array");
         }
+        if (icc_struct->oi_profile != NULL) {
+            if_debug0(gs_debug_flag_icc, "[icc] Releasing oi profile\n");
+            rc_decrement(icc_struct->oi_profile, "rc_free_profile_array");
+        }
         if_debug0(gs_debug_flag_icc,"[icc] Releasing device profile struct\n");
         gs_free_object(mem_nongc, icc_struct, "rc_free_profile_array");
     }
@@ -990,6 +999,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     }
     result->proof_profile = NULL;
     result->link_profile = NULL;
+    result->oi_profile = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
     result->usefastcolor = false;  /* Default is to not use fast color */
     rc_init_free(result, memory->non_gc_memory, 1, rc_free_profile_array);
@@ -1035,27 +1045,29 @@ gsicc_init_device_profile_struct(gx_device * dev,
         if (profile_type < gsPROOFPROFILE) {
             curr_profile = profile_struct->device_profile[profile_type];      
         } else {
-            /* The proof or the link profile */
+            /* The proof or link profile */
             if (profile_type == gsPROOFPROFILE) {
                 curr_profile = profile_struct->proof_profile;      
             } else {
-                curr_profile = profile_struct->link_profile;      
-            }
+                curr_profile = profile_struct->link_profile; 
+            } 
         }
         /* See if we have the same profile in this location */
         if (curr_profile != NULL) {
             /* There is something there now.  See if what we have coming in
-               is different.  If it is, then we need to free and the create
-               the new one else we just return */
+               is different and it is not the output intent.  In this  */
             if (profile_name != NULL) {
                 if (strncmp(curr_profile->name, profile_name,
-                            strlen(profile_name)) != 0 ) {
-                /* A change in the profile.  rc decrement this one as it will
-                   be replaced */
+                            strlen(profile_name)) != 0 &&
+                    strncmp(curr_profile->name, OI_PROFILE, 
+                            strlen(curr_profile->name)) != 0) {
+                    /* A change in the profile.  rc decrement this one as it 
+                       will be replaced */
                     rc_decrement(dev->icc_struct->device_profile[profile_type],
                                  "gsicc_init_device_profile_struct");
                 } else {
-                    /* Nothing to change */
+                    /* Nothing to change.  It was either the same or is the
+                       output intent */
                     return 0;
                 }
             }
@@ -1131,14 +1143,14 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 if_debug1(gs_debug_flag_icc, "[icc] Setting device profile %d\n", pro_enum);
                 pdev->icc_struct->device_profile[pro_enum] = icc_profile;
             } else {
-                /* The proof or the link profile */
+                /* The proof, link or output intent profile */
                 if (pro_enum == gsPROOFPROFILE) {
                     if_debug0(gs_debug_flag_icc, "[icc] Setting proof profile\n");
                     pdev->icc_struct->proof_profile = icc_profile;
                 } else {
                     if_debug0(gs_debug_flag_icc, "[icc] Setting link profile\n");
                     pdev->icc_struct->link_profile = icc_profile;
-                }
+                } 
             }
             /* Get the profile handle */
             icc_profile->profile_handle =
