@@ -82,7 +82,9 @@ do {						\
 #define hpgl_call_check_lost(call)\
   hpgl_call_and_check(pgls->memory, call, hpgl_limitcheck_set_lost)
 
-/* needs a better home */
+/* We don't have a header file for exporting gl/2 character routines
+   yet */
 gs_point hpgl_current_char_scale(const hpgl_state_t *pgls);
+bool hpgl_is_currentfont_stick_or_arc(const hpgl_state_t *pgls);
 
 #endif                       /* pgmisc_INCLUDED */
