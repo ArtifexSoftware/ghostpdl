@@ -67,6 +67,16 @@ hpgl_is_currentfont_stick(const hpgl_state_t *pgls)
             (plfont->params.proportional_spacing == false) );
 }
 
+bool
+hpgl_is_currentfont_stick_or_arc(const hpgl_state_t *pgls)
+{
+    pl_font_t *plfont = hpgl_currentfont(pgls);
+    if (!plfont)
+        return false;
+    return ( ((plfont->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE) ||
+             ((plfont->params.typeface_family & 0xfff) == ARC_FONT_TYPEFACE) );
+}
+
 /* convert points 2 plu - agfa uses 72.307 points per inch */
 static floatp
 hpgl_points_2_plu(const hpgl_state_t *pgls, floatp points)

@@ -1524,6 +1524,11 @@ hpgl_draw_current_path(
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
                 if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
+                if (hpgl_is_currentfont_stick_or_arc(pgls)) {
+                    hpgl_call((*fill)(pgs));
+                    break;
+                }
+
                 hpgl_call(hpgl_set_plu_ctm(pgls));
                 {
                     gs_point scale = hpgl_current_char_scale(pgls);
@@ -1557,7 +1562,8 @@ hpgl_draw_current_path(
                     hpgl_call((*fill)(pgs));
                     hpgl_call(hpgl_grestore(pgls));
                 }
-                if (pgls->g.bitmap_fonts_allowed) /* no edging */
+                if ((pgls->g.bitmap_fonts_allowed) ||
+                    (hpgl_is_currentfont_stick_or_arc(pgls))) /* no edging */
                     hpgl_call(hpgl_clear_current_path(pgls));
                 else {
                     set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
