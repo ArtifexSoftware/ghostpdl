@@ -290,13 +290,17 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
 
 /* Macro for generating procedure table */
 #define prn_procs(p_open, p_output_page, p_close)\
-  prn_color_procs(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
+  prn_color_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
 #define prn_params_procs(p_open, p_output_page, p_close, p_get_params, p_put_params)\
-  prn_color_params_procs(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, p_get_params, p_put_params)
+  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb, p_get_params, p_put_params, gdev_prn_map_rgb_color, gdev_prn_map_color_rgb)
 #define prn_color_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb)\
   prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params)
+#define prn_color_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_encode_color, p_decode_color)\
+  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, gdev_prn_get_params, gdev_prn_put_params, p_encode_color, p_decode_color)
 /* See gdev_prn_open for explanation of the NULLs below. */
-#define prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params) {\
+#define prn_color_params_procs(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params) \
+  prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, NULL, NULL)
+#define prn_color_params_procs_enc_dec(p_open, p_output_page, p_close, p_map_rgb_color, p_map_color_rgb, p_get_params, p_put_params, p_encode_color, p_decode_color) {\
         p_open,\
         NULL,	/* get_initial_matrix */\
         NULL,	/* sync_output */\
@@ -348,8 +352,8 @@ prn_dev_proc_buffer_page(gx_default_buffer_page); /* returns an error */
         NULL,	/* discard_transparency_layer */\
         NULL,  /* get_color_mapping_procs */\
         NULL,  /* get_color_comp_index */\
-        p_map_rgb_color,	/* encode_color */\
-        p_map_color_rgb,	/* decode_color */\
+        p_encode_color,	/* encode_color */\
+        p_decode_color,	/* decode_color */\
         NULL,  /* pattern_manage */\
         NULL,  /* fill_rectangle_hl_color */\
         NULL,  /* include_color_space */\
