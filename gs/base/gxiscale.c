@@ -159,6 +159,11 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.EntireHeightIn = penum->Height;
     iss.EntireWidthOut = fixed2int_pixround(any_abs(penum->dst_width));
     iss.EntireHeightOut = fixed2int_pixround(any_abs(penum->dst_height));
+    if (iss.EntireWidthOut == 0 || iss.EntireHeightOut == 0)
+    {
+        penum->interpolate = false;
+        return 0;
+    }
     /* If we are in an indexed space then we need to use the number of components
        in the base space.  Otherwise we use the number of components in the source space */
     if (pcs->type->index == gs_color_space_index_Indexed) {
