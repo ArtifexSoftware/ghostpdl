@@ -124,6 +124,9 @@ ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
     if (index == 0)
         ENUM_RETURN(pdev->devn_params.compressed_color_list);
     index--;
+    if (index == 0)
+        ENUM_RETURN(pdev->devn_params.pdf14_compressed_color_list);
+    index--;
     if (index < pdev->devn_params.separations.num_separations)
         ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     ENUM_PREFIX(st_device_printer,
@@ -143,6 +146,7 @@ static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
         }
     }
     RELOC_PTR(psd_device, devn_params.compressed_color_list);
+    RELOC_PTR(psd_device, devn_params.pdf14_compressed_color_list);
 }
 RELOC_PTRS_END
 
