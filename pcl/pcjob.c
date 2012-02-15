@@ -258,8 +258,15 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     }
 
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
+        /* rtl always uses native units for user units.  The hp
+           documentation does not say what to do if the resolution is
+           assymetric... */
         pcl_args_t args;
-        arg_set_uint(&args, 300);
+        if ( pcs->personality == rtl )
+            arg_set_uint(&args,
+                         (uint)gs_currentdevice(pcs->pgs)->HWResolution[0]);
+        else
+            arg_set_uint(&args, 300);
         pcl_set_unit_of_measure(&args, pcs);
     }
 }
