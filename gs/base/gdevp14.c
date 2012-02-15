@@ -459,7 +459,7 @@ const pdf14_device gs_pdf14_custom_device = {
 static
 ENUM_PTRS_WITH(pdf14_device_enum_ptrs, pdf14_device *pdev)
 {
-    index -= 5;
+    index -= 6;
     if (index < pdev->devn_params.separations.num_separations)
         ENUM_RETURN(pdev->devn_params.separations.names[index].data);
     index -= pdev->devn_params.separations.num_separations;
@@ -472,6 +472,7 @@ case 1: return ENUM_OBJ(pdev->trans_group_parent_cmap_procs);
 case 2: return ENUM_OBJ(pdev->smaskcolor);
 case 3:	ENUM_RETURN(gx_device_enum_ptr(pdev->target));
 case 4: ENUM_RETURN(pdev->devn_params.compressed_color_list);
+case 5: ENUM_RETURN(pdev->devn_params.pdf14_compressed_color_list);
 ENUM_PTRS_END
 
 static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
@@ -484,6 +485,7 @@ static	RELOC_PTRS_WITH(pdf14_device_reloc_ptrs, pdf14_device *pdev)
         }
     }
     RELOC_PTR(pdf14_device, devn_params.compressed_color_list);
+    RELOC_PTR(pdf14_device, devn_params.pdf14_compressed_color_list);
     RELOC_VAR(pdev->ctx);
     RELOC_VAR(pdev->smaskcolor);
     RELOC_VAR(pdev->trans_group_parent_cmap_procs);
