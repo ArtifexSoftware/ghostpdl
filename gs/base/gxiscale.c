@@ -681,16 +681,15 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                         pactual_cs = pcs;
                     }
                     pconcs = cs_concrete_space(pactual_cs, pis);
-                    if (pcs->cmm_icc_profile_data != NULL) {
+                    if (pconcs->cmm_icc_profile_data != NULL) {
                         device_color = false;
                     } else {
-                        device_color =
-                            (pactual_cs->type->concrete_space) (pactual_cs, pis) == pactual_cs;
+                        device_color = (pconcs == pactual_cs);
                     }
                     if (device_color) {
                         /* Use the underlying concrete space remap */
                         code = (*pconcs->type->remap_concrete_color)
-                        (psrc, pactual_cs, &devc, pis, dev, gs_color_select_source);
+                        (psrc, pconcs, &devc, pis, dev, gs_color_select_source);
                     } else {
                         /* if we are device dependent we need to get back to
                            float prior to remap.  This stuff needs to be
