@@ -437,7 +437,7 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs, bool intern
                     }
               }
             if ( best_font == 0 )
-                return -1;	/* no fonts */
+                return gs_throw_code(gs_error_Fatal);
 #ifdef DEBUG
             if ( gs_debug_c('=') ) {
                 dprintf_font_scoring("champion", best_font, mapp, best_match);
