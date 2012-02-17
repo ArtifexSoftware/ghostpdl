@@ -940,7 +940,7 @@ pcl_text(
         return 0;
     /* set up the current font and HMI */
     if ((pcs->font == 0) && ((code = pcl_recompute_font(pcs, false)) < 0))
-        return code;
+        return gs_rethrow_code(code);
 
     /* set up the graphic state */
     code = pcl_set_drawing_color( pcs,
