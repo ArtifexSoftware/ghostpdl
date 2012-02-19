@@ -217,6 +217,26 @@ image1_setup(i_ctx_t * i_ctx_p, bool has_alpha)
         return code;
 
     image.Alpha = (has_alpha ? gs_image_alpha_last : gs_image_alpha_none);
+        /* swap Width, Height, and ImageMatrix so that it comes out the same */
+        /* This is only for performance, so only do it for non-skew cases */
+    if (image.Width == 1 && image.Height > 1 && image.BitsPerComponent == 8 &&
+        image.ImageMatrix.xy == 0.0 && image.ImageMatrix.yx == 0.0 &&
+        image.ImageMatrix.tx == 0.0) {
+        float ftmp;
+        int   itemp;
+
+        itemp = image.Width;
+        image.Width = image.Height;
+        image.Height = itemp;
+
+        image.ImageMatrix.xy = image.ImageMatrix.xx;
+        image.ImageMatrix.yx = image.ImageMatrix.yy;
+        image.ImageMatrix.xx = 0.0;
+        image.ImageMatrix.yy = 0.0;
+        ftmp = image.ImageMatrix.tx;
+        image.ImageMatrix.tx = image.ImageMatrix.ty;
+        image.ImageMatrix.ty = ftmp;
+    }
     return zimage_setup( i_ctx_p,
                          (gs_pixel_image_t *)&image,
                          &ip.DataSource[0],
