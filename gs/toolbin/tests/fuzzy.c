@@ -472,11 +472,10 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 {
   int width = MIN(image1->width, image2->width);
   int height = MIN(image1->height, image2->height);
-  int max_width  = MAX(image1->height, image2->height);
   int max_height = MAX(image1->height, image2->height);
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
-  int row_bytes = max_width * 3;
+  int row_bytes = width * 3;
   unsigned int out_buffer_size = (image_out ? row_bytes : 0);
   int half_win = window_size >> 1;
   uchar **buf1 = alloc_window (row_bytes*2, window_size);
@@ -490,7 +489,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 
   if (image_out != NULL)
     {
-      out_buf = malloc(out_buffer_size);
+      out_buf = malloc(out_buffer_size*2);
       if (out_buf == NULL)
         printf ("Can't allocate output buffer.\n");
     }
@@ -534,7 +533,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
                 goto ex;
         }
       if (out_buf)
-        memset(out_buf, 0, out_buffer_size);
+        memset(out_buf, 0, out_buffer_size*2);
 
       if (memcmp(rowmid1, rowmid2, width * 3))
         {
