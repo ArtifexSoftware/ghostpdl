@@ -1463,7 +1463,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* during a particular band if we have a large file */
    /* if (clist_band_count != 65) return; */
     buff_ptr = Buffer;
-#ifdef RAW_DUMP_AS_PAM
+#if RAW_DUMP_AS_PAM
     if ((n_chan == 4) || (n_chan == 5)) {
         int x;
         sprintf(full_file_name,"%d)%s.pam",global_index,filename);

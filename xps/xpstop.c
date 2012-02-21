@@ -126,10 +126,11 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->zip_table = NULL;
 
     /* Gray, RGB and CMYK profiles set when color spaces installed in graphics lib */
-    ctx->gray = gs_cspace_new_DeviceGray(ctx->memory);
-    ctx->cmyk = gs_cspace_new_DeviceCMYK(ctx->memory);
-    ctx->srgb = gs_cspace_new_DeviceRGB(ctx->memory);
-    ctx->scrgb = gs_cspace_new_DeviceRGB(ctx->memory); /* This needs a different profile */
+    ctx->gray_lin = gs_cspace_new_ICC(ctx->memory, ctx->pgs, -1);
+    ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);
+    ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
+    ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
+    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3); 
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;

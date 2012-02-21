@@ -266,7 +266,6 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     range[3] = 1.0;
     range[4] = 0.0;
     range[5] = 1.0;
-    sparams.n = 3;
     sparams.Range = range;
 
     functions = xps_alloc(ctx, k * sizeof(void*));
@@ -277,6 +276,17 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     sparams.Functions = functions;
     sparams.Bounds = bounds;
     sparams.Encode = encode;
+
+    if (opacity_only) 
+    {
+        sparams.n = 1;
+        lparams.n = 1;
+    } 
+    else 
+    {
+        sparams.n = 3;
+        lparams.n = 3;
+    }
 
     for (i = 0; i < k; i++)
     {
@@ -293,7 +303,6 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
         range[3] = 1.0;
         range[4] = 0.0;
         range[5] = 1.0;
-        lparams.n = 3;
         lparams.Range = range;
 
         c0 = xps_alloc(ctx, 3 * sizeof(float));
@@ -305,12 +314,7 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
         if (opacity_only)
         {
             c0[0] = stops[i].color[0];
-            c0[1] = stops[i].color[0];
-            c0[2] = stops[i].color[0];
-
             c1[0] = stops[i+1].color[0];
-            c1[1] = stops[i+1].color[0];
-            c1[2] = stops[i+1].color[0];
         }
         else
         {
@@ -423,12 +427,16 @@ xps_reverse_function(xps_context_t *ctx, gs_function_t *func, float *fary, void 
 
     sparams.m = 1;
     sparams.Domain = domain;
-    sparams.n = 3;
     sparams.Range = range;
     sparams.k = 1;
     sparams.Functions = functions;
     sparams.Bounds = NULL;
     sparams.Encode = encode;
+
+    if (ctx->opacity_only)
+        sparams.n = 1;
+    else
+        sparams.n = 3;
 
     code = gs_function_1ItSg_init(&sfunc, &sparams, ctx->memory);
     if (code < 0)
@@ -460,7 +468,10 @@ xps_draw_one_radial_gradient(xps_context_t *ctx,
 
     gs_shading_R_params_init(&params);
     {
-        params.ColorSpace = ctx->srgb;
+        if (ctx->opacity_only)
+            params.ColorSpace = ctx->gray_lin;
+        else
+            params.ColorSpace = ctx->srgb;
 
         params.Coords[0] = x0;
         params.Coords[1] = y0;
@@ -509,7 +520,10 @@ xps_draw_one_linear_gradient(xps_context_t *ctx,
 
     gs_shading_A_params_init(&params);
     {
-        params.ColorSpace = ctx->srgb;
+        if (ctx->opacity_only)
+            params.ColorSpace = ctx->gray_lin;
+        else
+            params.ColorSpace = ctx->srgb;
 
         params.Coords[0] = x0;
         params.Coords[1] = y0;
@@ -619,12 +633,16 @@ xps_draw_radial_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
             out[1] = 0.0;
             out[2] = 0.0;
             out[3] = 0.0;
-            if (ctx->opacity_only)
+            if (ctx->opacity_only) 
+            {
                 gs_function_evaluate(func, in, out);
-            else
+                xps_set_color(ctx, ctx->gray_lin, out);
+            } 
+            else 
+            {
                 gs_function_evaluate(func, in, out + 1);
-
-            xps_set_color(ctx, ctx->srgb, out);
+                xps_set_color(ctx, ctx->srgb, out);
+            }
 
             gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
             gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
@@ -917,7 +935,12 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
             gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
             gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
+            /* I dont like this, but dont want to change interface of draw */
+            /* For the opacity case, we want to make sure the functions 
+               are set up for gray only */
+            ctx->opacity_only = true;
             code = draw(ctx, root, spread_method, opacity_func);
+            ctx->opacity_only = false;
             if (code)
             {
                 gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);

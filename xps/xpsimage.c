@@ -220,7 +220,7 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 
     if (alpha)
     {
-        colorspace = ctx->gray;
+        colorspace = ctx->gray_lin;
         samples = image->alpha;
         count = (image->width * image->bits + 7) / 8 * image->height;
         used = 0;
@@ -295,7 +295,6 @@ xps_paint_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
         if (code < 0)
             return gs_rethrow(code, "cannot gsave before transparency group");
 
-        gs_setcolorspace(ctx->pgs, ctx->gray);
         gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
         gs_begin_transparency_mask(ctx->pgs, &params, &bbox, 0);
         code = xps_paint_image_brush_imp(ctx, image, 1);

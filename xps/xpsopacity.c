@@ -57,9 +57,10 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
     if (opacity_mask_tag)
     {
         gs_trans_mask_params_init(&tmp, TRANSPARENCY_MASK_Luminosity);
+        gs_gsave(ctx->pgs);
+        gs_setcolorspace(ctx->pgs, ctx->gray_lin);
         gs_begin_transparency_mask(ctx->pgs, &tmp, &bbox, 0);
 
-        gs_gsave(ctx->pgs);
 
         /* Need a path to fill/clip for the brush */
         gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
@@ -81,8 +82,8 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
             return gs_rethrow(code, "cannot parse opacity mask brush");
         }
 
-        gs_grestore(ctx->pgs);
         gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
+        gs_grestore(ctx->pgs);
         ctx->opacity_only = save;
     }
 
