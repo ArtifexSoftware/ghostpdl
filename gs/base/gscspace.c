@@ -159,6 +159,46 @@ gs_cspace_new_DeviceCMYK(gs_memory_t *mem)
                                    &gs_color_space_type_DeviceCMYK);
 }
 
+/* For use in initializing ICC color spaces for XPS */
+gs_color_space *
+gs_cspace_new_ICC(gs_memory_t *pmem, gs_state * pgs, int components)
+{
+    gsicc_manager_t *icc_manage = pgs->icc_manager;
+    int code;
+    gs_color_space *pcspace = gs_cspace_alloc(pmem, &gs_color_space_type_ICC);
+
+    switch (components) {
+        case -1: /* alpha case */
+            if (icc_manage->smask_profiles == NULL) {
+                code = gsicc_initialize_iccsmask(icc_manage);
+            }
+            if (code == 0) {
+                pcspace->cmm_icc_profile_data = 
+                    icc_manage->smask_profiles->smask_gray;
+            } else {
+                pcspace->cmm_icc_profile_data = icc_manage->default_gray;
+            }
+            break;
+        case -3: /* alpha case.  needs linear RGB */
+            if (icc_manage->smask_profiles == NULL) {
+                code = gsicc_initialize_iccsmask(icc_manage);
+            }
+            if (code == 0) {
+                pcspace->cmm_icc_profile_data = 
+                    icc_manage->smask_profiles->smask_rgb;
+            } else {
+                pcspace->cmm_icc_profile_data = icc_manage->default_rgb;
+            }
+            break;
+        case 1: pcspace->cmm_icc_profile_data = icc_manage->default_gray; break; 
+        case 3: pcspace->cmm_icc_profile_data = icc_manage->default_rgb; break; 
+        case 4: pcspace->cmm_icc_profile_data = icc_manage->default_cmyk; break; 
+        default: rc_decrement(pcspace,"gs_cspace_new_ICC"); return NULL;
+    }
+    rc_increment(pcspace->cmm_icc_profile_data);
+    return pcspace;
+}
+
 /* ------ Accessors ------ */
 
 /* Get the index of a color space. */

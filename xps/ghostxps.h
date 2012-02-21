@@ -367,6 +367,7 @@ struct xps_context_s
     gs_state *pgs;
     gs_font_dir *fontdir;
 
+    gs_color_space *gray_lin; /* needed for transparency */
     gs_color_space *gray;
     gs_color_space *srgb;
     gs_color_space *scrgb;
