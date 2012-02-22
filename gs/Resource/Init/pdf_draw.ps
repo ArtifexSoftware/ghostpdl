@@ -1567,15 +1567,30 @@ currentdict /last-ditch-bpc-csp undef
         [ exch { 0.5 add cvi } forall ]  % following AR4, 5, 6 implementation
       } if
     } if
-        % Check elements of array are within 0::(2**BitsPerComponent)-1
-        % This is a PostScript error, but AR ignores Mask in that case
+      % Check elements of array are within 0::(2**BitsPerComponent)-1
+      % This is a PostScript error, but AR tries to fix the Mask.
     1 BitsPerComponent bitshift 1 sub //false 2 index {
       % stack: max_value result_bool value
       dup 0 lt exch 3 index gt or or
     } forall exch pop {
-      (\n   **** Warning: Some elements of Mask array are out of range.\n)
+      (   **** Warning: Some elements of Mask array are out of range.\n)
       pdfformaterror
-      [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ] % AR5 does this
+      
+      ColorSpace dup type /arraytype eq { 0 oget } if /Indexed eq 
+      BitsPerComponent 1 eq and {
+        % AR9 treats Indexed 1 bpc images specially. Bug 692852.
+        dup 0 oget
+        dup 0 lt exch 1 BitsPerComponent bitshift ge or {
+          % First component is invalid - AR9 ignores the mask
+          pop [1 0] % no-op mask
+        } {
+          % Second component is invalid; AR9 replaces it with 1.
+          [ exch 0 oget 1 ]
+        } ifelse
+      } {
+        % AR5, AR9 do this for most cases. Bug 690786.
+        [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
+      } ifelse
     } if
     /MaskColor exch def
   } {
@@ -1707,7 +1722,7 @@ currentdict /last-ditch-bpc-csp undef
    { currentdict end setfillstate { imagemask } }
    { ColorSpace setgcolorspace currentdict end setfillblend { image } }
   ifelse
-  stopped {
+  PDFSTOPONERROR { exec //false } { stopped } ifelse {
     dup type /dicttype eq { pop } if % Sometimes image fails to restore the stack
     $error /errorname get dup /ioerror eq {
       pop (\n   **** Warning: File has insufficient data for an image.\n)
