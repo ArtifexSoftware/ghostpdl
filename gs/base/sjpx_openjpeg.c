@@ -158,7 +158,7 @@ s_jpxd_ycc_to_rgb(stream_jpxd_state *state)
 static int decode_image(stream_jpxd_state * const state)
 {
     opj_cio_t *cio = NULL;
-    int numprimcomp = 0, alpha_comp = -1, compno;
+    int numprimcomp = 0, alpha_comp = -1, compno, rowbytes;
 
     /* open a byte stream */
     cio = opj_cio_open((opj_common_ptr)state->opj_dinfo_p, state->inbuf, state->inbuf_fill);
@@ -246,12 +246,13 @@ static int decode_image(stream_jpxd_state * const state)
     else
         state->out_numcomps = numprimcomp;
 
-    /* round up bpp to multiple of 8, eg 12->16 */
-    if ((state->colorspace != gs_jpx_cs_gray && !state->image->has_palette) || state->bpp>8)
-        state->bpp = (state->bpp+7)/8*8;
+    /* round up bpp 12->16 */
+    if (state->bpp == 12)
+        state->bpp = 16;
 
     /* calculate  total data */
-    state->totalbytes = state->width*state->height*state->bpp*state->out_numcomps/8;
+    rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8;
+    state->totalbytes = rowbytes*state->height;
 
     /* convert input from YCC to RGB */
     if (state->image->color_space == CLRSPC_SYCC || state->image->color_space == CLRSPC_EYCC)
@@ -282,7 +283,7 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
      /* read data from image to pw */
      unsigned long out_size = pw->limit - pw->ptr;
      int bytepp1 = state->bpp/8; /* bytes / pixel for one output component */
-     int bytepp = state->out_numcomps*state->bpp/8; /* bytes / pixel all compoments */
+     int bytepp = state->out_numcomps*state->bpp/8; /* bytes / pixel all components */
      unsigned long write_size = min(out_size-(bytepp?(out_size%bytepp):0), state->totalbytes-state->out_offset);
      unsigned long in_offset = state->out_offset*8/state->bpp/state->out_numcomps; /* component data offset */
      int shift_bit = state->bpp-state->image->comps[0].prec; /*difference between input and output bit-depth*/
@@ -335,21 +336,55 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
              }
              else
              {   
-                 /* only grayscale can have such bit-depth, also shift_bit = 0, bpp < 8 */
+                 /* shift_bit = 0, bpp < 8 */
                  unsigned long image_total = state->width*state->height;
+                 int bt=0; int bit_pos = 0;
+                 int rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8; /*row bytes */
+                 int currowcnt = state->out_offset % rowbytes; /* number of bytes filled in current row */
+                 int start_comp = (currowcnt*8) % img_numcomps; /* starting component for this round of output*/
+                 if (start_comp != 0)
+                 {
+                     for (compno=start_comp; compno<img_numcomps; compno++)
+                     {
+                         if (state->img_offset < image_total)
+                         {
+                             bt <<= state->bpp;
+                             bt += *(state->pdata[compno]-1) + state->sign_comps[compno];
+                         }
+                         bit_pos += state->bpp;
+                         if (bit_pos >= 8)
+                         {
+                             *(pw->ptr++) = bt >> (bit_pos-8);
+                             bit_pos -= 8;
+                             bt &= (1<<(bit_pos-8))-1;
+                         }
+                     }
+                 }
                  while (pw->ptr < pend)
                  {
-                     int bt=0;
-                     for (i=0; i<8/state->bpp; i++)
+                     for (compno=0; compno<img_numcomps; compno++)
                      {
-                         bt = bt<<state->bpp;
-                         if (state->img_offset < image_total && !(i!=0 && state->img_offset % state->width == 0))
+                         if (state->img_offset < image_total)
                          {
-                             bt += *(state->pdata[0]++) + state->sign_comps[0];
-                             state->img_offset++;
+                             bt <<= state->bpp;
+                             bt += *(state->pdata[compno]++) + state->sign_comps[compno];
                          }
-                      }
-                      *(pw->ptr++) = bt;
+                         bit_pos += state->bpp;
+                         if (bit_pos >= 8)
+                         {
+                             *(pw->ptr++) = bt >> (bit_pos-8);
+                             bit_pos -= 8;
+                             bt &= (1<<(bit_pos-8))-1;
+                         }
+                     }
+                     state->img_offset++;
+                     if (bit_pos != 0 && state->img_offset % state->width == 0)
+                     {
+                         /* row padding */
+                         *(pw->ptr++) = bt << (8 - bit_pos);
+                         bit_pos = 0;
+                         bt = 0;
+                     }
                  }
              }
          }
