@@ -20,6 +20,8 @@
 
 % usage: gs -dNODISPLAY -q -sFile=____.pdf [-dDumpMediaSizes] [-dDumpFontsUsed [-dShowEmbeddedFonts] ] toolbin/pdf_info.ps
 
+/QUIET true def		% in case they forgot
+
 /showoptions {
   (           where "options" are:) =
   (           -dDumpMediaSizes=false    (default true) MediaBox and CropBox for each page) =
@@ -57,51 +59,53 @@
   showoptions
   quit
 } if
-pop			% discard the dict from where
+cleartomark		% discard the dict from --where--
 
-/QUIET true def		% in case they forgot
+% ---- No more executable code on the top level after this line -----
+% ---- except 2 lines at the very end                           -----
 
-() =
-File dup (r) file runpdfbegin
-/PDFPageCount pdfpagecount def
-(        ) print print ( has ) print PDFPageCount =print ( pages.\n) =
-flush
+/dump-pdf-info {    % (fname) -> -
+  () = (        ) print print ( has ) print 
+  PDFPageCount dup =print 10 mod 1 eq { ( page.\n) } { ( pages\n) } ifelse = flush
 
-% Print out the "Info" dictionary if present
-Trailer /Info knownoget {
-   dup /Title knownoget { (Title: ) print = flush } if
-   dup /Author knownoget { (Author: ) print = flush } if
-   dup /Subject knownoget { (Subject: ) print = flush } if
-   dup /Keywords knownoget { (Keywords: ) print = flush } if
-   dup /Creator knownoget { (Creator: ) print = flush } if
-   dup /Producer knownoget { (Producer: ) print = flush } if
-   dup /CreationDate knownoget { (CreationDate: ) print = flush } if
-   dup /ModDate knownoget { (ModDate: ) print = flush } if
-   dup /Trapped knownoget { (Trapped: ) print = flush } if
-} if	% if Info known
+  % Print out the "Info" dictionary if present
+  Trailer /Info knownoget {
+     dup /Title knownoget { (Title: ) print = flush } if
+     dup /Author knownoget { (Author: ) print = flush } if
+     dup /Subject knownoget { (Subject: ) print = flush } if
+     dup /Keywords knownoget { (Keywords: ) print = flush } if
+     dup /Creator knownoget { (Creator: ) print = flush } if
+     dup /Producer knownoget { (Producer: ) print = flush } if
+     dup /CreationDate knownoget { (CreationDate: ) print = flush } if
+     dup /ModDate knownoget { (ModDate: ) print = flush } if
+     dup /Trapped knownoget { (Trapped: ) print = flush } if
+     pop
+  } if
+} bind def
 
-DumpMediaSizes
-{
-() =
-% Print out the Page Size info for each page.
-  1 1 PDFPageCount {
-    dup (Page ) print =print
-    pdfgetpage dup
-    /MediaBox pget {
-      ( MediaBox: ) print oforce_array ==only
-    } if
-    dup /CropBox pget {
-      ( CropBox: ) print oforce_array ==only
-    } if
-    dup /Rotate pget {
-       (    Rotate = ) print =print
-    } if
-    pageusestransparency {
-        (     Page uses transparency features) print
-    } if
-    () = flush
-  } for
-} if
+/dump-media-sizes {
+  DumpMediaSizes {
+  () =
+  % Print out the Page Size info for each page.
+    1 1 PDFPageCount {
+      dup (Page ) print =print
+      pdfgetpage dup
+      /MediaBox pget {
+        ( MediaBox: ) print oforce_array ==only
+      } if
+      dup /CropBox pget {
+        ( CropBox: ) print oforce_array ==only
+      } if
+      dup /Rotate pget {
+         (    Rotate = ) print =print
+      } if
+      pageusestransparency {
+          (     Page uses transparency features) print
+      } if
+      () = flush
+    } for
+  } if
+} bind def
 
 % List of standard font names for use when we are showing the FontsNeeded
 /StdFontNames [
@@ -200,7 +204,6 @@ currentdict /res-type-dict undef
 
 /getPDFfonts {	%	(filename) getPDFfonts array_of_font_names
   /FontsUsed 1000 dict def	% this will increase if needed
-  mark
   1 1 PDFPageCount {
     pdfgetpage			% get pagedict
     dup /Resources pget { get-fonts-from-res } if
@@ -246,21 +249,86 @@ currentdict /res-type-dict undef
   { 100 string cvs exch 100 string cvs exch lt } .sort
 } bind def
 
-systemdict /DumpFontsUsed known
-{
-  (\nFont or CIDFont resources used:) =
-  getPDFfonts { = } forall
-} {
-  DumpFontsNeeded {
-    getPDFfonts
-    dup length 0 gt {
-      (\nFonts Needed that are not embedded \(system fonts required\):) =
-      { (    ) print = } forall
-    } {
-      pop
-      (\nNo system fonts are needed.) =
-    } ifelse
-  } if
-} ifelse
+/dump-fonts-used {
+  systemdict /DumpFontsUsed known
+  {
+    (\nFont or CIDFont resources used:) =
+    getPDFfonts { = } forall
+  } {
+    DumpFontsNeeded {
+      getPDFfonts
+      dup length 0 gt {
+        (\nFonts Needed that are not embedded \(system fonts required\):) =
+        { (    ) print = } forall
+      } {
+        pop
+        (\nNo system fonts are needed.) =
+      } ifelse
+    } if
+  } ifelse
+} bind def
 
+% Copy selected subfiles to temporary files and return the file names
+% as a PostScript names to protect them from restore.
+% Currently, all PDF files in the Portfolio are extracted and returned.
+%
+% - pdf_collection_files [ /temp_file_name ... /temp_file_name
+/pdf_collection_files {
+  mark
+  Trailer /Root oget
+  dup /Collection oknown {
+    /Names knownoget {
+      /EmbeddedFiles knownoget {
+        pdf_collection_names
+      } if
+    } if
+  } {
+    pop
+  } ifelse
+} bind def
+
+% Output all the info about the file
+/dump {  % (title) -> -
+  /PDFPageCount pdfpagecount def
+  dump-pdf-info
+  dump-media-sizes
+  dump-fonts-used
+} bind def
+
+% Choose between collection vs plain file.
+% Enumerate collections and apply the dump procedure.
+/enum-pdfs {		% - -> -
+  File (r) file runpdfbegin
+  pdf_collection_files
+  dup mark eq {
+    pop
+    File dump
+    runpdfend
+  } {
+    runpdfend
+    ] 0 1 2 index length 1 sub {
+        2 copy get exch           %  [file ... ] file i
+        1 add (0123456789) cvs    %  [file ... ] file (i+1)
+        File exch ( part ) exch concatstrings concatstrings
+        exch                      %  [file ... ] (fname part i+1) file
+        dup type /filetype eq {
+          runpdfbegin
+          dump
+          runpdfend
+          closefile
+        } {
+          .namestring
+          dup (r) file
+          runpdfbegin
+          exch dump
+          runpdfend
+          deletefile
+        } ifelse
+    } for
+    pop
+  } ifelse
+} bind def
+
+enum-pdfs
 quit
+
