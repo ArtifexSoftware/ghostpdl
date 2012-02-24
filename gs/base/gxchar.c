@@ -531,13 +531,19 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
         cached_char *cc;
         gs_fixed_rect clip_box;
         int code;
+        gs_fixed_point cll, clr, cul, cur, cdim;
+
+        /* Reject setcachedevice arguments that are too big and, probably, invalid */
+        /* The threshold is arbitrary. A font from bug 692832 has a 1237340,       */
+        /* normal fonts should have about 1000. */
+        if (fabs(llx) > 32000. || fabs(lly) > 32000. || fabs(urx) > 32000. || fabs(ury) >= 32000.)
+            return 0;           /* don't cache */
 
         /* Compute the bounding box of the transformed character. */
         /* Since we accept arbitrary transformations, the extrema */
         /* may occur in any order; however, we can save some work */
         /* by observing that opposite corners before transforming */
         /* are still opposite afterwards. */
-        gs_fixed_point cll, clr, cul, cur, cdim;
 
         if ((code = gs_distance_transform2fixed(&pgs->ctm, llx, lly, &cll)) < 0 ||
             (code = gs_distance_transform2fixed(&pgs->ctm, llx, ury, &clr)) < 0 ||
