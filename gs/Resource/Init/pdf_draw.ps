@@ -1073,10 +1073,10 @@ currentdict /ignore_color_op undef
 drawopdict begin
                         % Path construction
   /m { moveto } bind 0 get def
-  /l { lineto } bind 0 get def
-  /c { curveto } bind 0 get def
-  /v { currentpoint 6 2 roll curveto } bdef
-  /y { 2 copy curveto } bdef
+  /l { { lineto } stopped { pop pop } if } bdef
+  /c { { curveto } stopped { pop pop pop pop pop pop } if } bdef
+  /v { { currentpoint } stopped { pop pop pop pop } { 6 2 roll curveto } ifelse } bdef
+  /y { 2 copy { curveto } stopped { pop pop pop pop pop pop } if } bdef
   /re {
    4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
    closepath
