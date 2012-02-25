@@ -459,7 +459,17 @@ run_stdin:
             return e_Info;      /* show usage info on exit */
         case 'I':               /* specify search path */
             {
-                char *path = arg_copy(arg, minst->heap);
+                const char *path;
+
+                if (arg[0] == 0) {
+                    path = arg_next(pal, &code);
+                    if (code < 0)
+                        return code;
+                } else
+                    path = arg;
+                if (path == NULL)
+                    return e_Fatal;
+                path = arg_copy(path, minst->heap);
                 if (path == NULL)
                     return e_Fatal;
                 gs_main_add_lib_path(minst, path);
