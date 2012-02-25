@@ -386,7 +386,7 @@ static int main_utf8(int argc, char *argv[])
         sprintf(ddpi, "-dDisplayResolution=%d", GetDeviceCaps(hdc, LOGPIXELSY));
         ReleaseDC(NULL, hdc);
         if (depth == 32)
-            format = DISPLAY_COLORS_RGB | DISPLAY_UNUSED_LAST |
+            format = DISPLAY_COLORS_RGB |
                 DISPLAY_DEPTH_8 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         else if (depth == 16)
             format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
