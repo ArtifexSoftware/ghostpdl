@@ -1582,7 +1582,7 @@ currentdict /last-ditch-bpc-csp undef
         dup 0 oget
         dup 0 lt exch 1 BitsPerComponent bitshift ge or {
           % First component is invalid - AR9 ignores the mask
-          pop [1 0] % no-op mask
+          pop //null
         } {
           % Second component is invalid; AR9 replaces it with 1.
           [ exch 0 oget 1 ]
@@ -1592,7 +1592,12 @@ currentdict /last-ditch-bpc-csp undef
         [ exch { 1 BitsPerComponent bitshift 1 sub and } forall ]
       } ifelse
     } if
-    /MaskColor exch def
+    dup //null ne {
+      /MaskColor exch def
+    } {
+      pop
+      /ImageType 1 def
+    } ifelse
   } {
                 % Mask is a stream, another Image XObject.
                 % Stack: datasource imagemask(false) maskstreamdict
