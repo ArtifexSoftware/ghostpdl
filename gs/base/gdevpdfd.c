@@ -260,6 +260,7 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
                     return 0;
             case gs_pe_moveto:
             case gs_pe_lineto:
+            case gs_pe_gapto:
                 if (vs0[0].x != vs1[0].x || vs0[0].y != vs1[0].y)
                     return 0;
         }

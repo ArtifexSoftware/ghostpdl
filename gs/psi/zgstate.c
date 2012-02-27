@@ -513,6 +513,20 @@ zcurrenttextrenderingmode(i_ctx_t *i_ctx_p)
     return zcurrent_uint(i_ctx_p, gs_currenttextrenderingmode);
 }
 
+/* <int> .sethpglfill - */
+static int
+zsethpglfillmode(i_ctx_t *i_ctx_p)
+{
+    return zset_uint(i_ctx_p, gs_sethpglfillmode);
+}
+
+/* - .currenttextrenderingmode <int> */
+static int
+zcurrenthpglfillmode(i_ctx_t *i_ctx_p)
+{
+    return zcurrent_uint(i_ctx_p, gs_currenthpglfillmode);
+}
+
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */
@@ -555,6 +569,8 @@ const op_def zgstate2_op_defs[] = {
 const op_def zgstate3_op_defs[] = {
     {"0.settextrenderingmode", zsettextrenderingmode},
     {"0.currenttextrenderingmode", zcurrenttextrenderingmode},
+    {"0.sethpglfillmode", zsethpglfillmode},
+    {"0.currenthpglfillmode", zcurrenthpglfillmode},
     op_def_end(0)
 };
 

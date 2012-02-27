@@ -90,7 +90,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     elt_length = dash->init_dist_left;
     x = x0, y = y0;
     pseg = (const segment *)psub;
-    while ((pseg = pseg->next) != 0 && pseg->type != s_start) {
+    while ((pseg = pseg->next) != 0 && pseg->type != s_start && pseg->type != s_gap) {
         fixed sx = pseg->pt.x, sy = pseg->pt.y;
         fixed udx = sx - x, udy = sy - y;
         double length, dx, dy;
@@ -179,7 +179,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
             const segment *pseg2 = pseg->next;
 
             end_notes = 0;
-            while (pseg2 != 0 && pseg2->type != s_start)
+            while (pseg2 != 0 && pseg2->type != s_start && pseg2->type != s_gap)
             {
                 if ((pseg2->pt.x != sx) || (pseg2->pt.x != sy)) {
                     /* Non degenerate. We aren't the last one */
@@ -216,7 +216,10 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
             code = gx_path_add_point(ppath, sx, sy);
             notes &= ~sn_not_first;
             if (elt_length < fixed2float(fixed_epsilon) &&
-                (pseg->next == 0 || pseg->next->type == s_start || elt_length == 0)) {
+                (pseg->next == 0 ||
+                 pseg->next->type == s_start ||
+                 pseg->next->type == s_gap ||
+                 elt_length == 0)) {
                 /*
                  * Ink is off, but we're within epsilon of the end
                  * of the dash element.
@@ -231,7 +234,9 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
                 if (++index == count)
                     index = 0;
                 elt_length1 = pattern[index] * scale;
-                if (pseg->next == 0 || pseg->next->type == s_start) {
+                if (pseg->next == 0 ||
+                    pseg->next->type == s_start ||
+                    pseg->next->type == s_gap) {
                     elt_length = elt_length1;
                     left = 0;
                     ink_on = true;
