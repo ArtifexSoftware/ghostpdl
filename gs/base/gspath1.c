@@ -641,6 +641,7 @@ gs_path_enum_next(gs_path_enum * penum, gs_point ppts[3])
             /* falls through */
         case gs_pe_moveto:
         case gs_pe_lineto:
+        case gs_pe_gapto:
             if ((code = gs_point_transform_inverse(
                                                       fixed2float(fpts[0].x),
                                                       fixed2float(fpts[0].y),

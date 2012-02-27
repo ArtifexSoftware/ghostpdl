@@ -146,6 +146,7 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
                 if (!(pseg->pt.x == prev.x || pseg->pt.y == prev.y))
                     goto not_exact;
                 break;
+            case s_gap:
             default:            /* other/unknown segment type */
                 goto not_exact;
             }
@@ -706,6 +707,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             /* We work with unscaled values, for speed. */
             fixed sx, udx, sy, udy;
             bool is_dash_segment = false;
+            bool is_gap_segment = pseg->type == s_gap;
 
          d1:if (pseg->type != s_dash) {
                 sx = pseg->pt.x;
@@ -739,7 +741,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                     continue;
                 /* Check for a degenerate subpath. */
                 while ((pseg = pseg->next) != 0 &&
-                       pseg->type != s_start
+                       pseg->type != s_start &&
+                       pseg->type != s_gap
                     ) {
                     if (is_dash_segment)
                         break;
@@ -793,7 +796,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                         udy = fixed_1;
                     }
                 }
-                if (sx == x && sy == y && (pseg == NULL || pseg->type == s_start)) {
+                if (sx == x && sy == y && (pseg == NULL || pseg->type == s_start || pseg->type == s_gap)) {
                     double scale = device_dot_length /
                                 hypot((double)udx, (double)udy);
                     fixed udx1, udy1;
@@ -892,14 +895,14 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                     if (index)
                         dev->sgr.stroke_stored = false;
                     adjust_stroke(dev, &pl, pis, false,
-                            (pseg->prev == 0 || pseg->prev->type == s_start) &&
-                            (pseg->next == 0 || pseg->next->type == s_start) &&
+                            (pseg->prev == 0 || pseg->prev->type == s_start || pseg->prev->type == s_gap) &&
+                            (pseg->next == 0 || pseg->next->type == s_start || pseg->next->type == s_gap) &&
                             (zero_length || !is_closed),
                             COMBINE_FLAGS(flags));
                     compute_caps(&pl);
                 }
             }
-            if (index++) {
+            if ((pseg->prev && pseg->prev->type != s_gap) && index++) {
                 gs_line_join join =
                     (pseg->notes & not_first ? curve_join : pgs_lp->join);
                 int first;
@@ -920,6 +923,8 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 if (is_dash_segment) /* Never join to a dash segment */
                     lptr = NULL;
 #endif
+                if (lptr && pseg->type == s_gap)
+                    lptr = NULL;
                 ensure_closed = ((to_path == &stroke_path_body &&
                                   lop_is_idempotent(pis->log_op)) ||
                                  (lptr == NULL ? true : lptr->thin));
@@ -955,6 +960,9 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             if (lptr && psub->type == s_dash)
                 lptr = NULL;
 #endif
+            if (psub && psub->next && psub->next->type == s_gap)
+                lptr = NULL;
+
             flags = (((notes & sn_not_first) ?
                       ((flags & nf_all_from_arc) | nf_some_from_arc) : 0) |
                      ((notes & sn_dash_head) ? nf_dash_head : 0) |

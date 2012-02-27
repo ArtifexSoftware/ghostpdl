@@ -90,5 +90,7 @@ void gs_settextrenderingmode(gs_state * pgs, uint trm);
 uint gs_currenttextrenderingmode(const gs_state * pgs);
 #include "gscpm.h"
 gs_in_cache_device_t gs_incachedevice(const gs_state *);
+void gs_sethpglpathmode(gs_state *, int);
+int gs_currenthpglpathmode(const gs_state *);
 
 #endif /* gsstate_INCLUDED */
