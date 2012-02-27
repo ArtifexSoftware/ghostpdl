@@ -146,6 +146,7 @@ gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
                 if (!(pseg->pt.x == prev.x || pseg->pt.y == prev.y))
                     goto not_exact;
                 break;
+            case s_gap:
             default:            /* other/unknown segment type */
                 goto not_exact;
             }
@@ -699,6 +700,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 
         flags = nf_all_from_arc;
 
+        /* Run through each segment in the current path, drawing each segment
+         * delayed by 1 - that is, when we're looking at segment n, we draw
+         * (or not) segment n-1. This delay allows us to always know whether
+         * to join or cap the line. */
         while ((pseg = pseg->next) != 0 &&
                pseg->type != s_start
             ) {
@@ -707,7 +712,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             fixed sx, udx, sy, udy;
             bool is_dash_segment = false;
 
-         d1:if (pseg->type != s_dash) {
+         d1:if (pseg->type != s_dash && pseg->type != s_gap) {
                 sx = pseg->pt.x;
                 sy = pseg->pt.y;
                 udx = sx - x;
@@ -729,13 +734,13 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                      ((pseg->notes & sn_dash_tail) ? nf_dash_tail : 0)    |
                      (flags & ~nf_all_from_arc));
             pl.e.p.x = sx, pl.e.p.y = sy;
-            if (!(udx | udy) || pseg->type == s_dash) { /* degenerate or short */
+            if (!(udx | udy) || pseg->type == s_dash || pseg->type == s_gap) { /* degenerate or short */
                 /*
                  * If this is the first segment of the subpath,
                  * check the entire subpath for degeneracy.
                  * Otherwise, ignore the degenerate segment.
                  */
-                if (index != 0 && pseg->type != s_dash)
+                if (index != 0 && pseg->type != s_dash && pseg->type != s_gap)
                     continue;
                 /* Check for a degenerate subpath. */
                 while ((pseg = pseg->next) != 0 &&
@@ -743,7 +748,7 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                     ) {
                     if (is_dash_segment)
                         break;
-                    if (pseg->type == s_dash)
+                    if (pseg->type == s_dash || pseg->type == s_gap)
                         goto d1;
                     sx = pseg->pt.x, udx = sx - x;
                     sy = pseg->pt.y, udy = sy - y;
@@ -920,9 +925,19 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 if (is_dash_segment) /* Never join to a dash segment */
                     lptr = NULL;
 #endif
+                if (pseg->type == s_gap)
+                {
+                    lptr = NULL;
+                    /* We are always drawing one line segment behind, so make
+                     * sure we don't draw the next one. */
+                    index = 0;
+                }
+
                 ensure_closed = ((to_path == &stroke_path_body &&
                                   lop_is_idempotent(pis->log_op)) ||
                                  (lptr == NULL ? true : lptr->thin));
+                /* Draw the PREVIOUS line segment, joining it to lptr (or
+                 * capping if lptr == NULL. */
                 code = (*line_proc) (to_path, to_path_reverse, ensure_closed,
                                      first, &pl_prev, lptr,
                                      pdevc, dev, pis, params, &cbox,
@@ -931,6 +946,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
                 if (code < 0)
                     goto exit;
                 FILL_STROKE_PATH(pdev, always_thin, pcpath, false);
+            } else if (pseg->type == s_gap) {
+                /* If this segment is a gap, then we don't want to draw it
+                 * next time! */
+                index = 0;
             } else
                 pl_first = pl;
             pl_prev = pl;
@@ -955,6 +974,10 @@ gx_stroke_path_only_aux(gx_path * ppath, gx_path * to_path, gx_device * pdev,
             if (lptr && psub->type == s_dash)
                 lptr = NULL;
 #endif
+            /* If the subpath starts with a gap, then cap, don't join! */
+            if (lptr && psub->type == s_start && psub->next && psub->next->type == s_gap)
+                lptr = NULL;
+
             flags = (((notes & sn_not_first) ?
                       ((flags & nf_all_from_arc) | nf_some_from_arc) : 0) |
                      ((notes & sn_dash_head) ? nf_dash_head : 0) |

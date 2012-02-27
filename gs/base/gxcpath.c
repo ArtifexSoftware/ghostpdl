@@ -421,6 +421,10 @@ gx_cpath_to_path_synthesize(const gx_clip_path * pcpath, gx_path * ppath)
                 code = gx_path_add_line_notes(ppath, pts[0].x, pts[0].y,
                                            gx_cpath_enum_notes(&cenum));
                 break;
+            case gs_pe_gapto:
+                code = gx_path_add_gap_notes(ppath, pts[0].x, pts[0].y,
+                                           gx_cpath_enum_notes(&cenum));
+                break;
             case gs_pe_curveto:
                 code = gx_path_add_curve_notes(ppath, pts[0].x, pts[0].y,
                                                pts[1].x, pts[1].y,

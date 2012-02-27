@@ -22,6 +22,7 @@
 #define gs_pe_lineto 2
 #define gs_pe_curveto 3
 #define gs_pe_closepath 4
+#define gs_pe_gapto 5
 
 /* Define an abstract type for the path enumerator. */
 typedef struct gs_path_enum_s gs_path_enum;

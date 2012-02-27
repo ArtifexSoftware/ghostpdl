@@ -37,7 +37,8 @@ typedef enum {
     s_line,
     s_line_close,
     s_curve,
-    s_dash /* only for internal use of the stroking algorithm */
+    s_dash, /* only for internal use of the stroking algorithm */
+    s_gap
 } segment_type;
 
 /* Define the common structure for all segments. */
@@ -282,6 +283,7 @@ typedef enum {
 typedef struct gx_path_procs_s {
     int (*add_point)(gx_path *, fixed, fixed);
     int (*add_line)(gx_path *, fixed, fixed, segment_notes);
+    int (*add_gap)(gx_path *, fixed, fixed, segment_notes);
     int (*add_curve)(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes);
     int (*close_subpath)(gx_path *, segment_notes);
     byte (*state_flags)(gx_path *, byte);

@@ -562,6 +562,7 @@ path_to_hinter(t1_hinter *h, gx_path *path)
                     code = t1_hinter__rmoveto(h, pts[0].x - p.x, pts[0].y - p.y);
                 break;
             case gs_pe_lineto:
+            case gs_pe_gapto:
                 code = t1_hinter__rlineto(h, pts[0].x - p.x, pts[0].y - p.y);
                 break;
             case gs_pe_curveto:
