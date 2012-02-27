@@ -101,6 +101,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
     sw:
         if (type & gx_path_type_optimize) {
         opt:
+            /* RJW: We fail to optimize gaptos */
             if (pe_op == gs_pe_lineto) {
                 if (!incomplete_line) {
                     line_end = vs[0];
@@ -173,6 +174,7 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
             }
             goto draw;
         case gs_pe_lineto:
+        case gs_pe_gapto:
             if (need_moveto) {	/* see gs_pe_moveto case */
                 code = gdev_vector_dopath_segment(&state, gs_pe_moveto,
                                                   &line_start);
@@ -642,6 +644,7 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
             state->prev = vp[0];
             break;
         case gs_pe_lineto:
+        case gs_pe_gapto: /* FIXME */
             code = gs_point_transform_inverse(fixed2float(vs[0].x),
                                        fixed2float(vs[0].y), pmat, &vp[0]);
             if (code < 0)

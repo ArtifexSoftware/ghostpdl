@@ -134,7 +134,7 @@ typedef enum {
     cmd_opv_closepath = 0xef,	/* (nothing) */
     cmd_op_path = 0xf0,		/* (see below) */
     cmd_opv_fill = 0xf0,
-    /* cmd_opv_htfill = 0xf1, */ /* obsolete */
+    cmd_opv_rgapto = 0xf1, 	/* dx%, dy% */ /* was cmd_opv_htfill */
     /* cmd_opv_colorfill = 0xf2, */ /* obsolete */
     cmd_opv_eofill = 0xf3,
     /* cmd_opv_hteofill = 0xf4, */ /* obsolete */
