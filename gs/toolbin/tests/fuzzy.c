@@ -747,11 +747,13 @@ main (int argc, char **argv)
       return 1;
     }
     if (image1->width != image2->width) {
-        printf("Different image width for page %d\n", page);
+        printf("Different image width for page %d (%d vs %d)\n", page,image1->width,image2->width);
         rcode = MAX(rcode, 1);
+        if (image1->width*2<image2->width)
+          return(rcode);
     }
     if (image1->height != image2->height) {
-        printf("Different image height for page %d\n", page);
+        printf("Different image height for page %d (%d vs %d)\n", page,image1->height,image2->height);
         rcode = MAX(rcode, 1);
     }
     if (out_fn != NULL) {
