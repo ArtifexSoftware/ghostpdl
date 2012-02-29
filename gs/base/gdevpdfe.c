@@ -570,7 +570,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
         cre_date_time_len = pdf_xmp_time(cre_date_time, sizeof(cre_date_time));
     else
         cre_date_time_len = pdf_xmp_convert_time(cre_date_time, cre_date_time_len, date_time_buf, sizeof(date_time_buf));
-    mod_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", mod_date_time, sizeof(mod_date_time));
+    mod_date_time_len = pdf_get_docinfo_item(pdev, "/ModDate", mod_date_time, sizeof(mod_date_time));
     if (!mod_date_time_len)
         mod_date_time_len = pdf_xmp_time(mod_date_time, sizeof(mod_date_time));
     else
