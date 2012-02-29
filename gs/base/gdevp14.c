@@ -7305,9 +7305,22 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
     gsicc_smask_t *smask_profiles = pis->icc_manager->smask_profiles;
     int k;
 
-    /* See if we have profiles already in place */
+    /* See if we have profiles already in place.   Note we also have to
+       worry about a corner case where this device does not have a
+       smaskcolor stucture to store the profiles AND the profiles were
+       already swapped out in the icc_manager.  This can occur when we
+       pushed a transparency mask and then inside the mask we have a pattern
+       which also has a transparency mask.   The state of the icc_manager
+       is that it already has done the swap and there is no need to fool
+       with any of this while dealing with the soft mask within the pattern */
+    if (pdev->smaskcolor == NULL && pis->icc_manager->smask_profiles != NULL &&
+        pis->icc_manager->smask_profiles->swapped) {
+            return 0;
+    }
     if (pdev->smaskcolor != NULL) {
         pdev->smaskcolor->ref_count++;
+        if_debug1(gs_debug_flag_icc,"[icc] Increment smask color now %d\n",
+                  pdev->smaskcolor->ref_count); 
     } else {
         /* Allocate and swap out the current profiles.  The softmask
            profiles should already be in place */
@@ -7328,6 +7341,9 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
         pis->icc_manager->default_gray = smask_profiles->smask_gray;
         pis->icc_manager->default_rgb = smask_profiles->smask_rgb;
         pis->icc_manager->default_cmyk = smask_profiles->smask_cmyk;
+        pis->icc_manager->smask_profiles->swapped = true;
+        if_debug0(gs_debug_flag_icc,
+                  "[icc] Initial creation of smask color. Ref count 1\n");
         pdev->smaskcolor->ref_count = 1;
         /* We also need to update the profile that is currently in the
            color spaces of the graphic state.  Otherwise this can be
@@ -7362,12 +7378,8 @@ pdf14_increment_smask_color(gs_imager_state * pis, gx_device * dev)
 
                             break;
                     }
-                    if (profile != pcs->cmm_icc_profile_data) {
-                        rc_decrement(pcs->cmm_icc_profile_data,
-                                     "pdf14_increment_smask_color");
-                        rc_increment(profile);
-                        pcs->cmm_icc_profile_data = profile;
-                    }
+                    rc_assign(pcs->cmm_icc_profile_data, profile, 
+                              "pdf14_increment_smask_color");
                 }
             }
         }
@@ -7383,16 +7395,25 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
     gsicc_manager_t *icc_manager = pis->icc_manager;
     int k;
 
+    /* See comment in pdf14_increment_smask_color to understand this one */
+    if (pdev->smaskcolor == NULL && pis->icc_manager->smask_profiles != NULL &&
+        pis->icc_manager->smask_profiles->swapped) {
+            return 0;
+    }
     if (smaskcolor != NULL) {
         smaskcolor->ref_count--;
+        if_debug1(gs_debug_flag_icc,"[icc] Decrement smask color.  Now %d\n",
+                  smaskcolor->ref_count); 
         if (smaskcolor->ref_count == 0) {
+            if_debug0(gs_debug_flag_icc,"[icc] Reset smask color.\n");
             /* Lets return the profiles and clean up */
             /* First see if we need to "reset" the profiles that are in
                the graphic state */
             if (pis->is_gstate) {
                 gs_state *pgs = (gs_state*) pis;
+                if_debug0(gs_debug_flag_icc, "[icc] Reseting graphic state color spaces\n"); 
                 for (k = 0; k < 2; k++) {
-                    gs_color_space *pcs     = pgs->color[k].color_space;
+                    gs_color_space *pcs = pgs->color[k].color_space;
                     cmm_profile_t  *profile = pcs->cmm_icc_profile_data;
                     if (profile != NULL) {
                         switch(profile->data_cs) {
@@ -7421,20 +7442,16 @@ pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev)
 
                                 break;
                         }
-                        if (profile != pcs->cmm_icc_profile_data) {
-                            rc_decrement(pcs->cmm_icc_profile_data,
-                                         "pdf14_decrement_smask_color");
-                            rc_increment(profile);
-                            pcs->cmm_icc_profile_data = profile;
-                        }
+                        rc_assign(pcs->cmm_icc_profile_data, profile,
+                                  "pdf14_decrement_smask_color");
                     }
                 }
             }
-
             /* Decrement handled in pdf14_free_smask_color */
             icc_manager->default_gray = smaskcolor->profiles->smask_gray;
             icc_manager->default_rgb = smaskcolor->profiles->smask_rgb;
             icc_manager->default_cmyk = smaskcolor->profiles->smask_cmyk;
+            icc_manager->smask_profiles->swapped = false;
             pdf14_free_smask_color(pdev);
         }
     }

@@ -382,11 +382,16 @@ struct gsicc_devicen_s {
     int count;
 };
 
+/* Had to add bool so that we know if things were swapped.
+   The reason is that if we are in a swapped state and 
+   there is a vmreclaim we then end up sending the user 
+   params again and we will find that there is a mismatch */
 typedef struct gsicc_smask_s {
     cmm_profile_t *smask_gray;
     cmm_profile_t *smask_rgb;
     cmm_profile_t *smask_cmyk;
     gs_memory_t *memory;
+    bool swapped;  
 } gsicc_smask_t;
 
 /* The manager object */

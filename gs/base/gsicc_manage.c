@@ -173,6 +173,7 @@ gsicc_new_iccsmask(gs_memory_t *memory)
         result->smask_rgb = NULL;
         result->smask_cmyk = NULL;
         result->memory = memory;
+        result->swapped = false;
     }
     return(result);
 }
@@ -618,41 +619,49 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
     int k;
     gsicc_colorbuffer_t default_space; /* Used to verify that we have the correct type */
 
-    /* For now only let this be set once. We could have this changed dynamically
-       in which case we need to do some deaallocations prior to replacing it */
+    /* We need to check for the smask swapped profile condition.  If we are in
+       that state, then any requests for setting the profile will be ignored.
+       This is valid, since we are in the middle of drawing right now and this
+       only would occur if we are doing a vmreclaim while in the middle of
+       soft mask rendering */
     default_space = gsUNDEFINED;
-    switch(defaulttype) {
-        case DEFAULT_GRAY:
-            manager_default_profile = &(icc_manager->default_gray);
-            default_space = gsGRAY;
-            break;
-        case DEFAULT_RGB:
-            manager_default_profile = &(icc_manager->default_rgb);
-            default_space = gsRGB;
-            break;
-        case DEFAULT_CMYK:
-             manager_default_profile = &(icc_manager->default_cmyk);
-             default_space = gsCMYK;
-             break;
-        case NAMED_TYPE:
-             manager_default_profile = &(icc_manager->device_named);
-             break;
-        case LAB_TYPE:
-             manager_default_profile = &(icc_manager->lab_profile);
-             break;
-        case DEVICEN_TYPE:
-            code = gsicc_new_devicen(icc_manager);
-            if (code == 0) {
-                manager_default_profile =
-                    &(icc_manager->device_n->final->iccprofile);
-            } else {
-                return(code);
-            }
-            break;
-        case DEFAULT_NONE:
-        default:
-            return(0);
-            break;
+    if (icc_manager->smask_profiles !=NULL &&
+        icc_manager->smask_profiles->swapped == true) {
+            return 0;
+    } else {
+        switch(defaulttype) {
+            case DEFAULT_GRAY:
+                manager_default_profile = &(icc_manager->default_gray);
+                default_space = gsGRAY;
+                break;
+            case DEFAULT_RGB:
+                manager_default_profile = &(icc_manager->default_rgb);
+                default_space = gsRGB;
+                break;
+            case DEFAULT_CMYK:
+                 manager_default_profile = &(icc_manager->default_cmyk);
+                 default_space = gsCMYK;
+                 break;
+            case NAMED_TYPE:
+                 manager_default_profile = &(icc_manager->device_named);
+                 break;
+            case LAB_TYPE:
+                 manager_default_profile = &(icc_manager->lab_profile);
+                 break;
+            case DEVICEN_TYPE:
+                code = gsicc_new_devicen(icc_manager);
+                if (code == 0) {
+                    manager_default_profile =
+                        &(icc_manager->device_n->final->iccprofile);
+                } else {
+                    return code;
+                }
+                break;
+            case DEFAULT_NONE:
+            default:
+                return 0;
+                break;
+        }
     }
     /* If it is not NULL then it has already been set. If it is different than
        what we already have then we will want to free it.  Since other imager
@@ -660,13 +669,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
        counting.  If it is the same as what we already have then we DONT
        increment, since that is done when the imager state is duplicated.  It
        could be the same, due to a resetting of the user params. To avoid
-       recreating the profile data, we compare the string names. Also, we want
-       to avoid the default blowing away the -s settings for the gray, rgb and
-       cmyk profile following a vmreclaim so test if it is one of those default
-       types */
-    if (defaulttype < DEVICEN_TYPE && (*manager_default_profile) != NULL) {
-        return 0;
-    }
+       recreating the profile data, we compare the string names. */
     if ((*manager_default_profile) != NULL) {
         /* Check if this is what we already have.  Also check if it is the
            output intent profile.  */
@@ -2266,4 +2269,3 @@ gs_setlabicc(const gs_imager_state * pis, gs_param_string * pval)
         return gs_throw(code, "cannot find default lab icc profile");
     return code;
 }
-
