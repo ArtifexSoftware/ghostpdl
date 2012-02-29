@@ -52,32 +52,6 @@ break_line_if_long(gx_path *ppath, const segment *pseg)
     }
     return 0;
 }
-static inline int
-break_gap_if_long(gx_path *ppath, const segment *pseg)
-{
-    fixed x0 = ppath->position.x;
-    fixed y0 = ppath->position.y;
-
-    if (gx_check_fixed_diff_overflow(pseg->pt.x, x0) ||
-        gx_check_fixed_diff_overflow(pseg->pt.y, y0)) {
-        fixed x, y;
-
-        if (gx_check_fixed_sum_overflow(pseg->pt.x, x0))
-            x = (pseg->pt.x >> 1) + (x0 >> 1);
-        else
-            x = (pseg->pt.x + x0) >> 1;
-        if (gx_check_fixed_sum_overflow(pseg->pt.y, y0))
-            y = (pseg->pt.y >> 1) + (y0 >> 1);
-        else
-            y = (pseg->pt.y + y0) >> 1;
-        return gx_path_add_gap_notes(ppath, x, y, pseg->notes);
-        /* WARNING: Stringly speaking, the next half segment must get
-           the sn_not_first flag. We don't bother, because that flag
-           has no important meaning with colinear segments.
-         */
-    }
-    return 0;
-}
 
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */
@@ -247,14 +221,6 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
                                        pseg->pt.x, pseg->pt.y, pseg->notes);
                 vd_lineto(pseg->pt.x, pseg->pt.y);
                 break;
-            case s_gap:
-                code = break_gap_if_long(ppath, pseg);
-                if (code < 0)
-                    break;
-                code = gx_path_add_gap_notes(ppath,
-                                       pseg->pt.x, pseg->pt.y, pseg->notes);
-                vd_lineto(pseg->pt.x, pseg->pt.y);
-                break;
             case s_dash:
                 {
                     const dash_segment *pd = (const dash_segment *)pseg;
@@ -382,7 +348,6 @@ gx_path__check_curves(const gx_path * ppath, gx_path_copy_options options, fixed
                 }
                 break;
             case s_line:
-            case s_gap:
                 if (gx_check_fixed_diff_overflow(pseg->pt.x, pt0.x) ||
                     gx_check_fixed_diff_overflow(pseg->pt.y, pt0.y))
                     return false;
@@ -732,15 +697,12 @@ find_contacting_segments(const subpath *sp0, segment *sp0last,
        Instead it either quickly finds something, or maybe not. */
     for (s0 = sp0last, count0 = 0; count0 < search_limit && s0 != (segment *)sp0; s0 = s0->prev, count0++) {
         s0s = s0->prev;
-        if ((s0->type == s_line || s0->type == s_gap) &&
-            (s0s->pt.x == s0->pt.x ||
-             (any_abs(s0s->pt.x - s0->pt.x) == 1 &&
-              any_abs(s0s->pt.y - s0->pt.y) > min_length))) {
+        if (s0->type == s_line && (s0s->pt.x == s0->pt.x ||
+            (any_abs(s0s->pt.x - s0->pt.x) == 1 && any_abs(s0s->pt.y - s0->pt.y) > min_length))) {
             for (s1 = sp1last, count1 = 0; count1 < search_limit && s1 != (segment *)sp1; s1 = s1->prev, count1++) {
                 s1s = s1->prev;
-                if ((s1->type == s_line || s1->type == s_gap) &&
-                    (s1s->pt.x == s1->pt.x ||
-                     (any_abs(s1s->pt.x - s1->pt.x) == 1 && any_abs(s1s->pt.y - s1->pt.y) > min_length))) {
+                if (s1->type == s_line && (s1s->pt.x == s1->pt.x ||
+                    (any_abs(s1s->pt.x - s1->pt.x) == 1 && any_abs(s1s->pt.y - s1->pt.y) > min_length))) {
                     if (s0s->pt.x == s1s->pt.x || s0->pt.x == s1->pt.x || s0->pt.x == s1s->pt.x || s0s->pt.x == s1->pt.x) {
                         if (s0s->pt.y < s0->pt.y && s1s->pt.y > s1->pt.y) {
                             fixed y0 = max(s0s->pt.y, s1->pt.y);
