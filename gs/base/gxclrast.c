@@ -1727,7 +1727,7 @@ idata:                  data_size = 0;
                     static const byte op_num_operands[] = {
                         cmd_segment_op_num_operands_values
                     };
-                  rgapto:
+
                     if (!in_path) {
                         ppos.x = int2fixed(state.rect.x);
                         ppos.y = int2fixed(state.rect.y);
@@ -1795,12 +1795,7 @@ idata:                  data_size = 0;
             case cmd_op_path >> 4:
                 {
                     gx_path fpath;
-                    gx_path *ppath;
-
-                    if (op == cmd_opv_rgapto)
-                        goto rgapto;
-
-                    ppath = &path;
+                    gx_path * ppath = &path;
 
                     if_debug0('L', "\n");
                     /* if in clip, flatten path first */
@@ -3119,9 +3114,6 @@ clist_decode_segment(gx_path * ppath, int op, fixed vs[6],
             break;
         case cmd_opv_rlineto:
             code = gx_path_add_line_notes(ppath, px += A, py += B, notes);
-            break;
-        case cmd_opv_rgapto:
-            code = gx_path_add_gap_notes(ppath, px += A, py += B, notes);
             break;
         case cmd_opv_hlineto:
             code = gx_path_add_line_notes(ppath, px += A, py, notes);

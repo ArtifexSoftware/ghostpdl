@@ -839,20 +839,6 @@ gs_currenttextrenderingmode(const gs_state * pgs)
     return pgs->text_rendering_mode;
 }
 
-/* sethpglpathmode */
-void
-gs_sethpglpathmode(gs_state * pgs, int path)
-{
-    pgs->hpgl_path_mode = path;
-}
-
-/* currenthpglpathmode */
-int
-gs_currenthpglpathmode(const gs_state * pgs)
-{
-    return pgs->hpgl_path_mode;
-}
-
 /* ------ Internal routines ------ */
 
 /* Free the privately allocated parts of a gstate. */

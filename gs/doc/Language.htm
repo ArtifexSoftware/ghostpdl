@@ -1,4 +1,4 @@
-st<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
@@ -736,24 +736,6 @@ array lemgth.
 <li>there's no special handling of an empty path or trailing <code>moveto</code>.
 The saved path can be restored by <code>newpath { exec } forall</code>.
 </ul>
-</dl>
-
-<dl>
-<dt><code>- .sethpglpathmode</code>
-<dd>If the single numerical parameter is non zero, then future path
-creation operations will make an HPGL-style path. HPGL style paths
-differ from postscript style paths in that moveto operations only
-begin a new subpath if there is not already an open subpath. (i.e.
-<code>a b moveto c d moveto e f lineto closepath</code> will draw
-back to (a,b), not (c,d). HPGL paths treat these non-subpath starting
-<tt>moveto</tt>s as <tt>lineto</tt> segments when filling, and as
-unstroked gaps when stroking.
-</dl>
-
-<dl>
-<dt><code>.currenthpglpathmode -</code>
-<dd>Leave the current hpglpathmode on the stack. The initial value
-of hpglpathmode is 0.
 </dl>
 
 <h4><a name="Painting"></a>Painting operators</h4>

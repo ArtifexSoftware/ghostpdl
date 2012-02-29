@@ -1201,8 +1201,6 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
 /* Put out a line segment command. */
 #define cmd_put_rmoveto(psw, operands)\
   cmd_put_segment(psw, cmd_opv_rmoveto, operands, sn_none)
-#define cmd_put_rgapto(psw, operands, notes)\
-  cmd_put_segment(psw, cmd_opv_rgapto, operands, notes)
 #define cmd_put_rlineto(psw, operands, notes)\
   cmd_put_segment(psw, cmd_opv_rlineto, operands, notes)
 
@@ -1340,48 +1338,6 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                 code = cmd_put_rmoveto(&writer, &C);
                 if_debug2('p', "[p]moveto (%g,%g)\n",
                           fixed2float(px), fixed2float(py));
-                break;
-            case gs_pe_gapto:
-                {
-                    int next_side = which_side(B);
-                    segment_notes notes =
-                    gx_path_enum_notes(&cenum) & keep_notes;
-
-                    if (next_side == side && side != 0) {	/* Skip a line completely outside the clip region. */
-                        if (open < 0)
-                            start_skip = true;
-                        out.x = A, out.y = B;
-                        out_notes = notes;
-                        if_debug3('p', "[p]skip gapto (%g,%g) side %d\n",
-                                  fixed2float(out.x), fixed2float(out.y),
-                                  side);
-                        continue;
-                    }
-                    /* If we skipped any segments, put out a moveto/lineto. */
-                    if (side && (px != out.x || py != out.y || first_point())) {
-                        C = out.x - px, D = out.y - py;
-                        if (open < 0) {
-                            first = out;
-                            code = cmd_put_rmoveto(&writer, &C);
-                        } else
-                            code = cmd_put_rlineto(&writer, &C, out_notes);
-                        if (code < 0)
-                            return code;
-                        px = out.x, py = out.y;
-                        if_debug3('p', "[p]catchup %s (%g,%g) for line\n",
-                                  (open < 0 ? "moveto" : "lineto"),
-                                  fixed2float(px), fixed2float(py));
-                    }
-                    if ((side = next_side) != 0) {	/* Note a vertex going outside the clip region. */
-                        out.x = A, out.y = B;
-                    }
-                    C = A - px, D = B - py;
-                    px = A, py = B;
-                    open = 1;
-                    code = cmd_put_rgapto(&writer, &C, notes);
-                }
-                if_debug3('p', "[p]gapto (%g,%g) side %d\n",
-                          fixed2float(px), fixed2float(py), side);
                 break;
             case gs_pe_lineto:
                 {
