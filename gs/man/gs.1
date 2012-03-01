@@ -277,7 +277,7 @@ X Windows). This may be needed if the platform fonts look undesirably
 different from the scalable fonts.
 .TP
 .B \-dSAFER
-Restricts file operations the script can perform.  Strongly recommended for
+Restricts file operations the job can perform.  Strongly recommended for
 spoolers, conversion scripts or other sensitive environments where a badly 
 written or malicious PostScript program code must be prevented from changing
 important files.
@@ -313,9 +313,10 @@ the command line is unrestricted.
 SAFER mode prevents changing the /GenericResourceDir, /FontResourceDir,
 /SystemParamsPassword, and /StartJobPassword.
 .PP
-While SAFER mode is not the default, it is the default for many wrapper jobs
-and may be the default in a subsequent release of Ghostscript.  Thus jobs or
-programs that need to open files or set restricted parameters should pass the
+While SAFER mode is not the default, it is the default for many wrapper scripts
+such as ps2pdf and may be the default in a subsequent release of Ghostscript.
+Thus when running programs that need to open files or set restricted parameters
+you should pass the
 .B \-dNOSAFER
 command line option or its synonym
 .BR \-dDELAYSAFER .
