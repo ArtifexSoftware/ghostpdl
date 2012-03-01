@@ -19,6 +19,7 @@
 
 #include "gsargs.h"
 #include "gsgc.h"
+
 /*
  * Define the parameters for running the interpreter.
  */
@@ -55,6 +56,13 @@ typedef struct pl_main_instance_s {
     bool interpolate;
     bool page_set_on_command_line;
     bool res_set_on_command_line;
+    
+    /* we have to store these in the main instance until the languages
+       state is sufficiently initialized to set the parameters. */
+    char *piccdir;
+    char *pdefault_gray_icc;
+    char *pdefault_rgb_icc;
+    char *pdefault_cmyk_icc;
 } pl_main_instance_t;
 
 /* initialize gs_stdin, gs_stdout, and gs_stderr.  Eventually the gs

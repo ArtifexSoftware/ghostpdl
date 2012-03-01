@@ -297,6 +297,35 @@ pxl_impl_set_post_page_action(
         return 0;
 }
 
+static int
+pxl_set_icc_params(pl_interp_instance_t *instance, gs_state *pgs)
+{
+    gs_param_string p;
+    int code = 0;
+
+    if (instance->pdefault_gray_icc) {
+        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+        code = gs_setdefaultgrayicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (instance->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+        code = gs_setdefaultrgbicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (instance->piccdir) {
+        param_string_from_transient_string(p, instance->piccdir);
+        code = gs_seticcdirectory(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    return code;
+}
+
 static bool
 pxl_get_interpolation(pl_interp_instance_t *instance)
 {
@@ -334,6 +363,10 @@ pxl_impl_set_device(
         stage = Sinitg;
         if ((code = px_initgraphics(pxli->pxs)) < 0)
           goto pisdEnd;
+
+        code = pxl_set_icc_params(instance, pxli->pgs);
+        if (code < 0)
+            goto pisdEnd;
 
         /* Do inits of gstate that may be reset by setdevice */
         gs_setaccuratecurves(pxli->pgs, true);	/* All H-P languages want accurate curves. */

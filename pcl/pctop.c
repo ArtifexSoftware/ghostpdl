@@ -339,6 +339,36 @@ pcl_get_personality(pl_interp_instance_t *instance, gx_device *device)
         return pcl5c;
 }
 
+static int
+pcl_set_icc_params(pl_interp_instance_t *instance, gs_state *pgs)
+{
+    gs_param_string p;
+    
+    int code = 0;
+
+    if (instance->pdefault_gray_icc) {
+        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+        code = gs_setdefaultgrayicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (instance->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+        code = gs_setdefaultrgbicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+
+    if (instance->piccdir) {
+        param_string_from_transient_string(p, instance->piccdir);
+        code = gs_seticcdirectory(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    return code;
+}
+
 static bool
 pcl_get_interpolation(pl_interp_instance_t *instance)
 {
@@ -403,6 +433,10 @@ pcl_impl_set_device(
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
 
     code = gs_setfilladjust(pcli->pcs.pgs, 0, 0);
+    if (code < 0)
+        goto pisdEnd;
+
+    code = pcl_set_icc_params(instance, pcli->pcs.pgs);
     if (code < 0)
         goto pisdEnd;
 
