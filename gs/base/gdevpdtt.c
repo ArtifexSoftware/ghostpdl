@@ -3354,7 +3354,8 @@ pdf_text_process(gs_text_enum_t *pte)
     if (code < 0 ||
             ((pte->current_font->FontType == ft_user_defined ||
             pte->current_font->FontType == ft_PCL_user_defined ||
-            pte->current_font->FontType == ft_GL2_stick_user_defined) &&
+            pte->current_font->FontType == ft_GL2_stick_user_defined ||
+            pte->current_font->FontType == ft_TrueType) &&
              code != TEXT_PROCESS_INTERVENE &&
             penum->index < penum->text.size)) {
         if (code == gs_error_unregistered) /* Debug purpose only. */
