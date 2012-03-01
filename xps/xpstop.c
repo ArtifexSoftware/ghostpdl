@@ -81,6 +81,38 @@ xps_imp_allocate_interp(pl_interp_t **ppinterp,
     return 0;
 }
 
+static int
+xps_set_icc_user_params(pl_interp_instance_t *instance, gs_state *pgs)
+{    gs_param_string p;
+    int code = 0;
+
+    if (instance->pdefault_gray_icc) {
+        param_string_from_transient_string(p, instance->pdefault_gray_icc);
+        code = gs_setdefaultgrayicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    if (instance->pdefault_rgb_icc) {
+        param_string_from_transient_string(p, instance->pdefault_rgb_icc);
+        code = gs_setdefaultrgbicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    if (instance->pdefault_cmyk_icc) {
+        param_string_from_transient_string(p, instance->pdefault_cmyk_icc);
+        code = gs_setdefaultcmykicc(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    if (instance->piccdir) {
+        param_string_from_transient_string(p, instance->piccdir);
+        code = gs_seticcdirectory(pgs, &p);
+        if (code < 0)
+            return gs_throw_code(gs_error_Fatal);
+    }
+    return code;
+}
+    
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
@@ -145,6 +177,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
     gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
+    (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
     *ppinstance = (pl_interp_instance_t *)instance;
 
     return 0;

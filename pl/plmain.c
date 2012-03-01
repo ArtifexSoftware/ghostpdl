@@ -725,6 +725,11 @@ pl_main_universe_select(
         universe->curr_instance->interpolate = pti->interpolate;
         universe->curr_instance->page_set_on_command_line = pti->page_set_on_command_line;
         universe->curr_instance->res_set_on_command_line = pti->res_set_on_command_line;                
+        universe->curr_instance->piccdir = pti->piccdir;
+        universe->curr_instance->pdefault_gray_icc = pti->pdefault_gray_icc;
+        universe->curr_instance->pdefault_rgb_icc = pti->pdefault_rgb_icc;
+        universe->curr_instance->pdefault_cmyk_icc = pti->pdefault_cmyk_icc;
+
 
         /* Select curr/new device into PDL instance */
         if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
@@ -794,6 +799,10 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->interpolate = false;
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
+    pti->piccdir = NULL;
+    pti->pdefault_gray_icc = NULL;
+    pti->pdefault_rgb_icc = NULL;
+    pti->pdefault_cmyk_icc = NULL;
     strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -1136,7 +1145,7 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
             break;
         case 's':
         case 'S':
-            { /* We're setting a device parameter to a string. */
+            { /* We're setting a device or user parameter to a string. */
                 char *eqp;
                 const char *value;
                 gs_param_string str;
@@ -1151,9 +1160,18 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                         pl_top_create_device(pmi,
                                              get_device_index(pmi->memory, value),
                                              false);
-                    if ( code < 0 ) return code;
-                }
-                else {
+                    if ( code < 0 ) 
+                        return code;
+                    /* check for icc settings */
+                } else if (!strncmp(arg, "DefaultGrayProfile", strlen("DefaultGrayProfile"))) {
+                    pmi->pdefault_gray_icc = arg_heap_copy(value);
+                } else if (!strncmp(arg, "DefaultRGBProfile", strlen("DefaultRGBProfile"))) {
+                    pmi->pdefault_rgb_icc = arg_heap_copy(value);
+                } else if (!strncmp(arg, "DefaultCMYKProfile", strlen("DefaultCMYKProfile"))) {
+                    pmi->pdefault_cmyk_icc = arg_heap_copy(value);
+                } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+                    pmi->piccdir = arg_heap_copy(value);
+                } else {
                     char buffer[128];
                     strncpy(buffer, arg, eqp - arg);
                     buffer[eqp - arg] = '\0';
