@@ -35,6 +35,9 @@
  */
 
 #include "gconfig_.h"
+
+#if SHARE_JPEG == 0
+/* Don't use the non-public insterface if we're linking to a shared lib */
 #ifdef DONT_HAVE_JMEMSYS_H
 
 void *
@@ -67,6 +70,7 @@ jpeg_mem_term(j_common_ptr cinfo);
 #else
 #include "jmemsys.h"		/* for prototypes */
 #endif
+#endif /* SHAREJPEG == 0 */
 
 private_st_jpeg_block();
 
@@ -173,6 +177,8 @@ gs_jpeg_destroy(stream_DCT_state * st)
     return 0;
 }
 
+#if SHARE_JPEG == 0
+/* Don't use the non-public insterface if we're linking to a shared lib */
 /*
  * These routines replace the low-level memory manager of the IJG library.
  * They pass malloc/free calls to the Ghostscript memory manager.
@@ -277,3 +283,4 @@ jpeg_mem_term(j_common_ptr cinfo)
 {
     /* no work */
 }
+#endif /* SHAREJPEG == 0 */
