@@ -712,7 +712,7 @@ currentdict /csncompdict undef
 
   /ICCBased {
     dup 1 get type /dicttype ne {	% don't resolve more than once
-      //ICCBased-resolve exec
+      ICCBased-resolve
     } if
   } bdef
 
@@ -862,8 +862,7 @@ currentdict end readonly def
   dup type /dicttype eq { dup /N known } { //false } ifelse {
       (   **** ICCBased color space is a bare stream dictionary\n)
       pdfformaterror
-      [ /ICCBased 3 -1 roll ]
-      //ICCBased-resolve exec
+      [ /ICCBased 3 -1 roll ] ICCBased-resolve exec
   } {
     dup dup type /arraytype eq { 0 get } if
     //csrdict exch .knownget  {
@@ -877,8 +876,6 @@ currentdict end readonly def
     } ifelse
   } ifelse
 } bdef
-
-currentdict /ICCBased-resolve undef
 
 /scresolve {	% <c0> ... scresolve <multi>
                 % We can't really make sc[n] and SC[N] work, because

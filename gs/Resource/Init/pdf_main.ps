@@ -730,6 +730,42 @@ currentdict /xref-char-dict undef
       pop
     } ifelse
   } if
+  
+  % Use OutputIntent ICC profile
+  systemdict /UsePDFX3Profile .knownget {
+    dup //false eq {
+      pop
+    } {
+      dup //true eq { pop 0 } if
+      dup type /integertype eq {
+        Trailer /Root oget /OutputIntents knownoget {
+          dup length 2 index le  % i [] bool
+          2 index 0 lt or {
+            pop pop
+            (Source file has no OutputIntent with this number.\n)
+          } {
+            exch oget dup type /dicttype ne { pop << >> } if
+            /DestOutputProfile knownoget {
+              [ /ICCBased 3 -1 roll ] ICCBased-resolve
+              1 get .set_outputintent
+              ()
+            } {
+              (This OutputputIntents dictionary has no profile.\n)
+            } ifelse
+          } ifelse
+        } {
+          pop (File has no /OutputIntents attribute\n)
+        } ifelse
+      } {
+        pop (UsePDFX3Profile must be a boolean or an integer.\n)
+      } ifelse
+      dup () eq {
+        pop
+      } {
+        (   **** ) stderrprint stderrprint
+      } ifelse
+    } ifelse
+  } if
 } bind def
 
 % Verify that each entry in the xref table is pointing at an object with

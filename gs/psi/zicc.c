@@ -242,6 +242,10 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     gsicc_manager_t         *icc_manager = pis->icc_manager;
     cmm_profile_t           *source_profile = NULL;
 
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+    if_debug0(gs_debug_flag_icc,"[icc] Using OutputIntent\n");
+
     /* Get the device structure */
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     if (dev_profile == NULL) { 
@@ -301,12 +305,14 @@ zset_outputintent(i_ctx_t * i_ctx_p)
 
     /* All is well with the profile.  Lets set the stuff that needs to be set */
     dev_profile->oi_profile = picc_profile;
-    picc_profile->name = (char *) gs_alloc_bytes(dev->memory, 
+    picc_profile->name = (char *) gs_alloc_bytes(picc_profile->memory, 
                                                  MAX_DEFAULT_ICC_LENGTH,
                                                  "zset_outputintent");
     strncpy(picc_profile->name, OI_PROFILE, strlen(OI_PROFILE));
     picc_profile->name[strlen(OI_PROFILE)] = 0;
     picc_profile->name_length = strlen(OI_PROFILE);
+    /* Set the range of the profile */
+    gscms_set_icc_range(&picc_profile);
 
     /* If the output device has a different number of componenets, then we are 
        going to set the output intent as the proofing profile, unless the 
@@ -332,12 +338,17 @@ zset_outputintent(i_ctx_t * i_ctx_p)
            color management */
         rc_assign(dev_profile->device_profile[0], picc_profile, 
                   "zset_outputintent");
+        if_debug0(gs_debug_flag_icc,"[icc] OutputIntent used for device profile\n");
     } else {
         if (dev_profile->proof_profile == NULL) {
             /* This means that we should use the OI profile as the proofing 
-               profile.*/
+               profile.  Note that if someone already has specified a 
+               proofing profile it is unclear what they are trying to do
+               with the output intent.  In this case, we will use it 
+               just for the source data below */
             dev_profile->proof_profile = picc_profile;
-            rc_increment(picc_profile);        
+            rc_increment(picc_profile);
+            if_debug0(gs_debug_flag_icc,"[icc] OutputIntent used for proof profile\n");
         }
     }
     /* Now the source colors.  See which source color space needs to use the
@@ -345,7 +356,25 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     index = gsicc_get_default_type(source_profile);
     if (index < gs_color_space_index_DevicePixel) {
         /* source_profile is currently the default.  Set it to the OI profile */
-        rc_assign(source_profile, picc_profile, "zset_outputintent");
+        switch (picc_profile->data_cs) {
+            case gsGRAY:
+                if_debug0(gs_debug_flag_icc,"[icc] OutputIntent used source Gray\n");
+                rc_assign(icc_manager->default_gray, picc_profile, 
+                          "zset_outputintent");
+                break;
+            case gsRGB:
+                if_debug0(gs_debug_flag_icc,"[icc] OutputIntent used source RGB\n");
+                rc_assign(icc_manager->default_rgb, picc_profile, 
+                          "zset_outputintent");
+                break;
+            case gsCMYK:
+                if_debug0(gs_debug_flag_icc,"[icc] OutputIntent used source CMYK\n");
+                rc_assign(icc_manager->default_cmyk, picc_profile, 
+                          "zset_outputintent");
+                break;
+            default:
+                break;
+        }
     }
     /* Remove the output intent dict from the stack */
     pop(1);

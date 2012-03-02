@@ -1174,8 +1174,36 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                 gscms_get_output_channel_count(icc_profile->profile_handle);
             icc_profile->data_cs =
                 gscms_get_profile_data_space(icc_profile->profile_handle);
-        if_debug1(gs_debug_flag_icc, "[icc] Profile data CS is %d\n", 
-                      icc_profile->data_cs);
+            /* We need to know if this is one of the "default" profiles or
+               if someone has externally set it.  The reason is that if there
+               is an output intent in the file, and someone wants to use the
+               output intent our handling of the output intent profile is
+               different depending upon if someone specified a particular
+               output profile */
+            switch (icc_profile->num_comps) {
+                case 1:
+                    if (strncmp(icc_profile->name, DEFAULT_GRAY_ICC, 
+                    strlen(icc_profile->name)) == 0) {
+                        icc_profile->default_match = DEFAULT_GRAY;
+                    }
+                    break;
+                case 3:
+                    if (strncmp(icc_profile->name, DEFAULT_RGB_ICC, 
+                    strlen(icc_profile->name)) == 0) {
+                        icc_profile->default_match = DEFAULT_RGB;
+                    }
+                    break;
+                case 4:
+                    if (strncmp(icc_profile->name, DEFAULT_CMYK_ICC, 
+                    strlen(icc_profile->name)) == 0) {
+                        icc_profile->default_match = DEFAULT_CMYK;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if_debug1(gs_debug_flag_icc, "[icc] Profile data CS is %d\n", 
+                          icc_profile->data_cs);
         } else
             return gs_rethrow(-1, "cannot find device profile");
     }
