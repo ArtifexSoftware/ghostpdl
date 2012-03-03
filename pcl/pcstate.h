@@ -148,8 +148,7 @@ struct pcl_state_s {
     int             perforation_skip;
     pcl_margins_t   margins;            /* relative to print_direction */
     pcl_xfm_state_t xfm_state;
-    bool            orientation_set;    /* the orientation command can
-                                           only be set once per page */
+
     /* Chapter 6 (pcursor.c) */
     coord           hmi_cp;
     coord           vmi_cp;
