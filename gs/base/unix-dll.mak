@@ -192,7 +192,7 @@ clean-so-subsubtarget: clean
 	$(RM_) $(BINDIR)/$(GS_SONAME_MAJOR)
 	$(RM_) $(GSSOC)
 	$(RM_) $(GSSOX)
-	@-rmdir $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR) || true 
+	$(RMN_) -r $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR)
 
 sodebugclean:
 	$(MAKE)  BUILDDIRPREFIX=$(SODEBUGDIRPREFIX) clean-sodebug-subtarget

@@ -613,12 +613,11 @@ include $(GLSRCDIR)/unixinst.mak
 # Clean up after the autotools scripts
 # configure.ac and Makefile.in are symlinks from a subdir 
 # (created by autogen.sh) and so are safe to remove
-distclean : clean config-clean soclean pgclean debugclean
+distclean : clean config-clean soclean pgclean debugclean mementoclean
 	-$(RM_) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR) $(AUXDIR)
 	-$(RM_) -r autom4te.cache
 	-$(RM_) config.log config.status
 	-$(RM_) Makefile
-	@-rmdir $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
 # The following is *very* poor - we shouldn't be creating derived files in
 # the source directory, but for now.....
 	-$(RM_) $(TIFFSRCDIR)$(D)libtiff$(D)tif_config.h $(TIFFSRCDIR)$(D)libtiff$(D)tiffconf.h

@@ -279,6 +279,7 @@ clean : mostlyclean
 	$(RM_) $(GSGEN)arch.h
 	$(RM_) $(GS_XE)
 	$(RM_) $(GS_SHARED_OBJS)
+	$(RMN_) -r $(BINDIR) $(GLGENDIR) $(GLOBJDIR) $(PSGENDIR) $(PSOBJDIR)
 
 #****** FOLLOWING IS WRONG, NEEDS TO BE PER-SUBSYSTEM ******
 mostlyclean : config-clean
