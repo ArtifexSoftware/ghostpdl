@@ -161,8 +161,18 @@ hpgl_do_reset(
     }
     /* NB check all of these */
     if ((type & pcl_reset_page_params) != 0) {
-        /* provide default anchor point, plot size and picture frame size */
+        /* provide default anchor point, plot size and picture frame
+           size.  Oddly HP does not reset the scaling parameters
+           when the page size is changed. */
+        int scale_type = pcs->g.scaling_type;
+        hpgl_scaling_params_t params = pcs->g.scaling_params;
+
         hpgl_default_coordinate_system(pcs);
+        
+        /* restore the scaling parameter. */
+        pcs->g.scaling_type = scale_type;
+        pcs->g.scaling_params = params;
+
         hpgl_args_setup(&hpgl_args);
         hpgl_IW(&hpgl_args, pcs);
         hpgl_args_set_int(&hpgl_args,0);
