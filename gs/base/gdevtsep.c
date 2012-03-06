@@ -190,8 +190,8 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
-        return_error(gs_error_rangecheck);  /* this will overflow max_long */
+    if (pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+        return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
@@ -355,8 +355,8 @@ tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
-        return_error(gs_error_rangecheck);  /* this will overflow max_long */
+    if (pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+        return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
     if (code < 0)
@@ -1585,7 +1585,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     if (pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) /* note width is never 0 in print_page */
     {
         dprintf("CMYK composite file would be too large! Reduce resolution.\n");
-        return_error(gs_error_rangecheck);  /* this will overflow max_long */
+        return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
     }
 
     if (gdev_prn_file_is_new(pdev)) {
@@ -1638,8 +1638,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
         pdev->color_info.num_components = 1;
-        if (pdev->height > (max_long - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
-            return_error(gs_error_rangecheck);  /* this will overflow max_long */
+        if (pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+            return_error(gs_error_rangecheck);  /* this will overflow aax_long */
 
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 8, tfdev->Compression, tfdev->MaxStripSize);
