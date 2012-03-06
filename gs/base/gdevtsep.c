@@ -1582,7 +1582,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
     /* Write the page directory for the CMYK equivalent file. */
     pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
-    if (pdev->height > (max_long - ftell(file))/(pdev->width*4)) /* note width is never 0 in print_page */
+    if (pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) /* note width is never 0 in print_page */
     {
         dprintf("CMYK composite file would be too large! Reduce resolution.\n");
         return_error(gs_error_rangecheck);  /* this will overflow max_long */
