@@ -150,7 +150,7 @@
 				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= memento-target &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= mementobsc"
 				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= mementoclean"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1;MEMENTO=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""

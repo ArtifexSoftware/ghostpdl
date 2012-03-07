@@ -150,7 +150,7 @@
 				ReBuildCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= MEMENTO=1 clean &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= SBR=1 MEMENTO=1 &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= MEMENTO=1 bsc"
 				CleanCommandLine="cd ..\language_switch &amp;&amp; nmake -f pspcl6_msvc.mak DEVSTUDIO= MEMENTO=1 clean"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;"
+				PreprocessorDefinitions="WIN32;_DEBUG;MEMENTO=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
