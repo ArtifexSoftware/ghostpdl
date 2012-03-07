@@ -150,7 +150,7 @@
 				ReBuildCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak clean DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f xps_msvc.mak SBR=1 DEVSTUDIO= MEMENTO=1 &amp;&amp; nmake -f xps_msvc.mak DEVSTUDIO= MEMENTO=1 bsc"
 				CleanCommandLine="cd ..\xps &amp;&amp; nmake -f xps_msvc.mak clean DEVSTUDIO= MEMENTO=1"
 				Output=""
-				PreprocessorDefinitions="WIN32;_DEBUG;"
+				PreprocessorDefinitions="WIN32;_DEBUG;MEMENTO=1"
 				IncludeSearchPath=""
 				ForcedIncludes=""
 				AssemblySearchPath=""
