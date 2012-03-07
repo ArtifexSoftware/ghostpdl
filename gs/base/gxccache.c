@@ -295,8 +295,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      * We need to map 4 bitmap bits to 2 alpha bits.
      */
     depth = (cc_depth(cc) == 3 ? 2 : cc_depth(cc));
-    if (dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
-        !lop_no_S_is_T(pgs->log_op)
+    if ((dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
+        !lop_no_S_is_T(pgs->log_op) &&
+        !gx_dc_is_pattern1_color_with_trans(pdevc))
         ) {
         gx_clip_path *pcpath;
 
