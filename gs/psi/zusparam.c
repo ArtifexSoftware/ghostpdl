@@ -455,113 +455,97 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 static void
 current_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentdevicenicc(pis, pval);
+    gs_currentdevicenicc(igs, pval);
 }
 
 static int
 set_devicen_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setdevicenprofileicc(pis, pval);
+    return gs_setdevicenprofileicc(igs, pval);
 }
 
 static void
 current_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentdefaultgrayicc(pis, pval);
+    gs_currentdefaultgrayicc(igs, pval);
 }
 
 static int
 set_default_gray_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setdefaultgrayicc(pis, pval);
+    return gs_setdefaultgrayicc(igs, pval);
 }
 
 static void
 current_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currenticcdirectory(pis, pval);
+    gs_currenticcdirectory(igs, pval);
 }
 
 static int
 set_icc_directory(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_seticcdirectory(pis, pval);
+    return gs_seticcdirectory(igs, pval);
 }
 
 static void
 current_srcgtag_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentsrcgtagicc(pis, pval);
+    gs_currentsrcgtagicc(igs, pval);
 }
 
 static int
 set_srcgtag_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setsrcgtagicc(pis, pval);
+    return gs_setsrcgtagicc(igs, pval);
 }
 
 static void
 current_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentdefaultrgbicc(pis, pval);
+    gs_currentdefaultrgbicc(igs, pval);
 }
 
 static int
 set_default_rgb_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setdefaultrgbicc(pis, pval);
+    return gs_setdefaultrgbicc(igs, pval);
 }
 
 static void
 current_named_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentnamedicc(pis, pval);
+    gs_currentnamedicc(igs, pval);
 }
 
 static int
 set_named_profile_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setnamedprofileicc(pis, pval);
+    return gs_setnamedprofileicc(igs, pval);
 }
 
 static void
 current_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentdefaultcmykicc(pis, pval);
+    gs_currentdefaultcmykicc(igs, pval);
 }
 
 static int
 set_default_cmyk_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setdefaultcmykicc(pis, pval);
+    return gs_setdefaultcmykicc(igs, pval);
 }
 
 static void
 current_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    gs_currentlabicc(pis, pval);
+    gs_currentlabicc(igs, pval);
 }
 
 static int
 set_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    const gs_imager_state * pis = (gs_imager_state *) igs;
-    return gs_setlabicc(pis, pval);
+    return gs_setlabicc(igs, pval);
 }
 
 static const long_param_def_t user_long_params[] =

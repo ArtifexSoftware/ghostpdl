@@ -1963,25 +1963,25 @@ dump_icc_buffer(int buffersize, char filename[],byte *Buffer)
 /* The following are for setting the system/user params */
 /* No default for the deviceN profile. */
 void
-gs_currentdevicenicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = "";
 
     /*FIXME: This should return the entire list !!! */
     /*       Just return the first one for now      */
-    pval->data = (const byte *)( (pis->icc_manager->device_n == NULL) ?
-                        rfs : pis->icc_manager->device_n->head->iccprofile->name);
+    pval->data = (const byte *)( (pgs->icc_manager->device_n == NULL) ?
+                        rfs : pgs->icc_manager->device_n->head->iccprofile->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setdevicenprofileicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code = 0;
     char *pname, *pstr, *pstrend;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0) {
@@ -2009,7 +2009,7 @@ gs_setdevicenprofileicc(const gs_imager_state * pis, gs_param_string * pval)
                 pstrend--;
                 namelen--;
             }
-            code = gsicc_set_profile(pis->icc_manager, (const char*) pstr, namelen, DEVICEN_TYPE);
+            code = gsicc_set_profile(pgs->icc_manager, (const char*) pstr, namelen, DEVICEN_TYPE);
             if (code < 0)
                 return gs_rethrow(code, "cannot find devicen icc profile");
             pstr = strtok(NULL, ",;");
@@ -2022,36 +2022,36 @@ gs_setdevicenprofileicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentdefaultgrayicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_GRAY_ICC;
 
-    pval->data = (const byte *)( (pis->icc_manager->default_gray == NULL) ?
-                        rfs : pis->icc_manager->default_gray->name);
+    pval->data = (const byte *)( (pgs->icc_manager->default_gray == NULL) ?
+                        rfs : pgs->icc_manager->default_gray->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setdefaultgrayicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char *pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
     bool not_initialized;
 
     /* Detect if this is our first time in here.  If so, then we need to
        reset up the default gray color spaces that are in the graphic state
        to be ICC based.  It was not possible to do it until after we get
        the profile */
-    not_initialized = (pis->icc_manager->default_gray == NULL);
+    not_initialized = (pgs->icc_manager->default_gray == NULL);
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_gray_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager,
+    code = gsicc_set_profile(pgs->icc_manager,
         (const char*) pname, namelen, DEFAULT_GRAY);
     gs_free_object(mem, pname,
         "set_default_gray_icc");
@@ -2060,7 +2060,7 @@ gs_setdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval)
     /* if this is our first time in here then we need to properly install the
        color spaces that were initialized in the graphic state at this time */
     if (not_initialized) {
-        code = gsicc_init_gs_colors((gs_state*) pis);
+        code = gsicc_init_gs_colors((gs_state*) pgs);
     }
     if (code < 0)
         return gs_rethrow(code, "error initializing gstate color spaces to icc");
@@ -2068,10 +2068,10 @@ gs_setdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currenticcdirectory(const gs_imager_state * pis, gs_param_string * pval)
+gs_currenticcdirectory(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_DIR_ICC;   /* as good as any other */
-    const gs_lib_ctx_t *lib_ctx = pis->memory->gs_lib_ctx;
+    const gs_lib_ctx_t *lib_ctx = pgs->memory->gs_lib_ctx;
 
     if (lib_ctx->profiledir == NULL) {
         pval->data = (const byte *)rfs;
@@ -2084,11 +2084,11 @@ gs_currenticcdirectory(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 int
-gs_seticcdirectory(const gs_imager_state * pis, gs_param_string * pval)
+gs_seticcdirectory(const gs_state * pgs, gs_param_string * pval)
 {
     char *pname;
     int namelen = (pval->size)+1;
-    const gs_memory_t *mem = pis->memory;
+    const gs_memory_t *mem = pgs->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0 ) {
@@ -2105,32 +2105,32 @@ gs_seticcdirectory(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentsrcgtagicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentsrcgtagicc(const gs_state * pgs, gs_param_string * pval)
 {
-    if (pis->icc_manager->srcgtag_profile == NULL) {
+    if (pgs->icc_manager->srcgtag_profile == NULL) {
         pval->data = NULL;
         pval->size = 0;
         pval->persistent = true;
     } else {
-        pval->data = (byte *)pis->icc_manager->srcgtag_profile->name;
+        pval->data = (byte *)pgs->icc_manager->srcgtag_profile->name;
         pval->size = strlen((const char *)pval->data);
         pval->persistent = true;
     }
 }
 
 int
-gs_setsrcgtagicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setsrcgtagicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char *pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     if (pval->size == 0) return 0;
     pname = (char *)gs_alloc_bytes(mem, namelen, "set_srcgtag_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_srcgtag_struct(pis->icc_manager, (const char*) pname, 
+    code = gsicc_set_srcgtag_struct(pgs->icc_manager, (const char*) pname, 
                                    namelen);
     gs_free_object(mem, pname, "set_srcgtag_icc");
     if (code < 0)
@@ -2139,29 +2139,29 @@ gs_setsrcgtagicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentdefaultrgbicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentdefaultrgbicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_RGB_ICC;
 
-    pval->data = (const byte *)( (pis->icc_manager->default_rgb == NULL) ?
-                        rfs : pis->icc_manager->default_rgb->name);
+    pval->data = (const byte *)( (pgs->icc_manager->default_rgb == NULL) ?
+                        rfs : pgs->icc_manager->default_rgb->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setdefaultrgbicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setdefaultrgbicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char *pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_rgb_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager,
+    code = gsicc_set_profile(pgs->icc_manager,
         (const char*) pname, namelen, DEFAULT_RGB);
     gs_free_object(mem, pname,
         "set_default_rgb_icc");
@@ -2171,23 +2171,23 @@ gs_setdefaultrgbicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentnamedicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentnamedicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = "";
 
-    pval->data = (const byte *)( (pis->icc_manager->device_named == NULL) ?
-                        rfs : pis->icc_manager->device_named->name);
+    pval->data = (const byte *)( (pgs->icc_manager->device_named == NULL) ?
+                        rfs : pgs->icc_manager->device_named->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setnamedprofileicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setnamedprofileicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char* pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     /* Check if it was "NULL" */
     if (pval->size != 0) {
@@ -2195,7 +2195,7 @@ gs_setnamedprofileicc(const gs_imager_state * pis, gs_param_string * pval)
                                  "set_named_profile_icc");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        code = gsicc_set_profile(pis->icc_manager,
+        code = gsicc_set_profile(pgs->icc_manager,
             (const char*) pname, namelen, NAMED_TYPE);
         gs_free_object(mem, pname,
                 "set_named_profile_icc");
@@ -2207,29 +2207,29 @@ gs_setnamedprofileicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentdefaultcmykicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentdefaultcmykicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_CMYK_ICC;
 
-    pval->data = (const byte *)( (pis->icc_manager->default_cmyk == NULL) ?
-                        rfs : pis->icc_manager->default_cmyk->name);
+    pval->data = (const byte *)( (pgs->icc_manager->default_cmyk == NULL) ?
+                        rfs : pgs->icc_manager->default_cmyk->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setdefaultcmykicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setdefaultcmykicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char* pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_default_cmyk_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager,
+    code = gsicc_set_profile(pgs->icc_manager,
         (const char*) pname, namelen, DEFAULT_CMYK);
     gs_free_object(mem, pname,
                 "set_default_cmyk_icc");
@@ -2239,29 +2239,29 @@ gs_setdefaultcmykicc(const gs_imager_state * pis, gs_param_string * pval)
 }
 
 void
-gs_currentlabicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_currentlabicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = LAB_ICC;
 
-    pval->data = (const byte *)( (pis->icc_manager->lab_profile == NULL) ?
-                        rfs : pis->icc_manager->lab_profile->name);
+    pval->data = (const byte *)( (pgs->icc_manager->lab_profile == NULL) ?
+                        rfs : pgs->icc_manager->lab_profile->name);
     pval->size = strlen((const char *)pval->data);
     pval->persistent = true;
 }
 
 int
-gs_setlabicc(const gs_imager_state * pis, gs_param_string * pval)
+gs_setlabicc(const gs_state * pgs, gs_param_string * pval)
 {
     int code;
     char* pname;
     int namelen = (pval->size)+1;
-    gs_memory_t *mem = pis->memory;
+    gs_memory_t *mem = pgs->memory;
 
     pname = (char *)gs_alloc_bytes(mem, namelen,
                              "set_lab_icc");
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_profile(pis->icc_manager,
+    code = gsicc_set_profile(pgs->icc_manager,
         (const char*) pname, namelen, LAB_TYPE);
     gs_free_object(mem, pname,
                 "set_lab_icc");
