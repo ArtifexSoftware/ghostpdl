@@ -120,22 +120,22 @@ int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
                              char *file_name, gsicc_profile_types_t defaulttype);
 void gsicc_setrange_lab(cmm_profile_t *profile);
 /* system and user params */
-void gs_currentdevicenicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setdevicenprofileicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setdefaultgrayicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currenticcdirectory(const gs_imager_state * pis, gs_param_string * pval);
-int gs_seticcdirectory(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentsrcgtagicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setsrcgtagicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentdefaultrgbicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setdefaultrgbicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentnamedicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setnamedprofileicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentdefaultcmykicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setdefaultcmykicc(const gs_imager_state * pis, gs_param_string * pval);
-void gs_currentlabicc(const gs_imager_state * pis, gs_param_string * pval);
-int gs_setlabicc(const gs_imager_state * pis, gs_param_string * pval);
+void gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setdevicenprofileicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentdefaultgrayicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setdefaultgrayicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currenticcdirectory(const gs_state * pgs, gs_param_string * pval);
+int gs_seticcdirectory(const gs_state * pgs, gs_param_string * pval);
+void gs_currentsrcgtagicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setsrcgtagicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentdefaultrgbicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setdefaultrgbicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentnamedicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setnamedprofileicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setdefaultcmykicc(const gs_state * pgs, gs_param_string * pval);
+void gs_currentlabicc(const gs_state * pgs, gs_param_string * pval);
+int gs_setlabicc(const gs_state * pgs, gs_param_string * pval);
 
 
 
