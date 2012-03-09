@@ -15,7 +15,7 @@
  *
  * Usage:
  *    First, build your project with MEMENTO defined, and include this
- *    header file whereever you use malloc, realloc or free.
+ *    header file wherever you use malloc, realloc or free.
  *    This header file will use macros to point malloc, realloc and free to
  *    point to Memento_malloc, Memento_realloc, Memento_free.
  *
@@ -58,7 +58,7 @@
  *    the the code will wait until it reaches that event and then start
  *    checking the heap after every allocation event. Assuming it is a
  *    deterministic failure, you should then find out where in your program
- *    the error is occuring (between event x-1 and event x).
+ *    the error is occurring (between event x-1 and event x).
  *
  *    Then you can rerun the program again, and call
  *    Memento_breakAt(int event); and the program will call
@@ -134,7 +134,7 @@
 
 #ifndef MEMENTO_H
 
-#include "std.h"
+#include <memory.h>
 
 #define MEMENTO_H
 
@@ -174,9 +174,11 @@ int Memento_find(void *a);
 void Memento_breakpoint(void);
 int Memento_failAt(int);
 int Memento_failThisEvent(void);
-
 void Memento_listBlocks(void);
 void Memento_listNewBlocks(void);
+size_t Memento_setMax(size_t);
+void Memento_stats(void);
+void *Memento_label(void *, const char *);
 
 void *Memento_malloc(size_t s);
 void *Memento_realloc(void *, size_t s);
@@ -212,6 +214,9 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_failThisEvent()  0
 #define Memento_listBlocks()     do {} while (0)
 #define Memento_listNewBlocks()  do {} while (0)
+#define Memento_setMax(A)        0
+#define Memento_stats()          do {} while (0)
+#define Memento_label(A,B)       (A)
 
 #endif /* MEMENTO */
 

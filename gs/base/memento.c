@@ -28,8 +28,21 @@
 #define MEMENTO_FREELIST_MAX_SINGLE_BLOCK (MEMENTO_FREELIST_MAX/4)
 
 #define COMPILING_MEMENTO_C
+
+/* We have some GS specific tweaks; more for the GS build environment than
+ * anything else. */
+#define MEMENTO_GS_HACKS
+
+#ifdef MEMENTO_GS_HACKS
 /* For GS we include malloc_.h. Anyone else would just include memento.h */
 #include "malloc_.h"
+void *memset(void *,int,size_t);
+int atexit(void (*)(void));
+#else
+#include "memento.h"
+#include <stdio.h>
+#include <stdlib.h>
+#endif
 
 #if defined(__linux__)
 #define MEMENTO_HAS_FORK
@@ -47,12 +60,28 @@ void *MEMENTO_UNDERLYING_CALLOC(size_t,size_t);
  * files, just in case they pull in unexpected others. */
 int atoi(const char *);
 char *getenv(const char *);
-void *memset(void *,int,size_t);
-int atexit(void (*)(void));
+
+/* How far to search for pointers in each block when calculating nestings */
+/* mupdf needs at least 34000ish (sizeof(fz_shade))/ */
+#define MEMENTO_PTRSEARCH 65536
+
+#ifndef MEMENTO_MAXPATTERN
+#define MEMENTO_MAXPATTERN 0
+#endif
 
 #ifdef MEMENTO
 
+#ifdef MEMENTO_GS_HACKS
 #include "valgrind.h"
+#else
+#ifdef HAVE_VALGRIND
+#include "valgrind/memcheck.h"
+#else
+#define VALGRIND_MAKE_MEM_NOACCESS(p,s)  do { } while (0==1)
+#define VALGRIND_MAKE_MEM_UNDEFINED(p,s)  do { } while (0==1)
+#define VALGRIND_MAKE_MEM_DEFINED(p,s)  do { } while (0==1)
+#endif
+#endif
 
 enum {
     Memento_PreSize  = 16,
@@ -60,8 +89,27 @@ enum {
 };
 
 enum {
-    Memento_Flag_OldBlock = 1
+    Memento_Flag_OldBlock = 1,
+    Memento_Flag_HasParent = 2
 };
+
+/* When we list leaked blocks at the end of execution, we search for pointers
+ * between blocks in order to be able to give a nice nested view.
+ * Unfortunately, if you have are running your own allocator (such as
+ * ghostscripts chunk allocator) you can often find that the header of the
+ * block always contains pointers to next or previous blocks. This tends to
+ * mean the nesting displayed is "uninteresting" at best :)
+ *
+ * As a hack to get around this, we have a define MEMENTO_SKIP_SEARCH that
+ * indicates how many bytes to skip over at the start of the chunk.
+ * This may cause us to miss true nestings, but such is life...
+ */ 
+#ifndef MEMENTO_SEARCH_SKIP
+#ifdef MEMENTO_GS_HACKS (2*sizeof(void *))
+#else
+#define MEMENTO_SEARCH_SKIP 0
+#endif
+#endif
 
 typedef struct Memento_BlkHeader Memento_BlkHeader;
 
@@ -72,6 +120,14 @@ struct Memento_BlkHeader
     int                lastCheckedOK;
     int                flags;
     Memento_BlkHeader *next;
+    Memento_BlkHeader *parent; /* Only used while printing out nested list */
+
+    const char        *label;
+
+    /* Entries for nesting display calculations */
+    Memento_BlkHeader *child;
+    Memento_BlkHeader *sibling;
+
     char               preblk[Memento_PreSize];
 };
 
@@ -98,9 +154,14 @@ static struct {
     int            breakAt;
     int            failAt;
     int            failing;
+    int            nextFailAt;
     int            squeezeAt;
     int            squeezing;
-    int            squeezed;
+    int            segv;
+    int            pattern;
+    int            nextPattern;
+    int            patternBit;
+    size_t         maxMemory;
     size_t         alloc;
     size_t         peakAlloc;
     size_t         totalAlloc;
@@ -108,7 +169,6 @@ static struct {
     size_t         numFrees;
     size_t         numReallocs;
 } globals;
-
 
 #define MEMENTO_EXTRASIZE (sizeof(Memento_BlkHeader) + Memento_PostSize)
 
@@ -392,25 +452,159 @@ static int Memento_appBlock(Memento_Blocks    *blks,
     return 0;
 }
 
+static void showBlock(Memento_BlkHeader *b, int space)
+{
+    fprintf(stderr, "0x%p:(size=%d,num=%d)",
+            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    if (b->label)
+        fprintf(stderr, "%c(%s)", space, b->label);
+}
+
+static void blockDisplay(Memento_BlkHeader *b, int n)
+{
+    n++;
+    while(n > 0)
+    {
+        int i = n;
+        if (i > 32)
+            i = 32;
+        n -= i;
+        fprintf(stderr, "%s", &"                                "[32-i]);
+    }
+    showBlock(b, '\t');
+    fprintf(stderr, "\n");
+}
+
 static int Memento_listBlock(Memento_BlkHeader *b,
                              void              *arg)
 {
     int *counts = (int *)arg;
-    fprintf(stderr, "    0x%p:(size=%d,num=%d)\n",
-            MEMBLK_TOBLK(b), (int)b->rawsize, b->sequence);
+    blockDisplay(b, 0);
     counts[0]++;
     counts[1]+= b->rawsize;
     return 0;
 }
 
-void Memento_listBlocks(void) {
-    int counts[2];
-    counts[0] = 0;
-    counts[1] = 0;
+static void doNestedDisplay(Memento_BlkHeader *b,
+                            int depth)
+{
+    blockDisplay(b, depth);
+    for (b = b->child; b; b = b->sibling)
+        doNestedDisplay(b, depth+1);
+}
+
+static int ptrcmp(const void *a_, const void *b_)
+{
+    const char **a = (const char **)a_;
+    const char **b = (const char **)b_;
+    return (int)(*a-*b);
+}
+
+int Memento_listBlocksNested(void)
+{
+    int count, size, i;
+    Memento_BlkHeader *b;
+    void **blocks, *minptr, *maxptr;
+    int mask;
+
+    /* Count the blocks */
+    count = 0;
+    size = 0;
+    for (b = globals.used.head; b; b = b->next) {
+        size += b->rawsize;
+        count++;
+    }
+
+    /* Make our block list */
+    blocks = MEMENTO_UNDERLYING_MALLOC(sizeof(void *) * count);
+    if (blocks == NULL)
+        return 1;
+
+    /* Populate our block list */
+    b = globals.used.head;
+    minptr = maxptr = MEMBLK_TOBLK(b);
+    mask = (int)minptr;
+    for (i = 0; b; b = b->next, i++) {
+        void *p = MEMBLK_TOBLK(b);
+        mask &= (int)p;
+        if (p < minptr)
+            minptr = p;
+        if (p > maxptr)
+            maxptr = p;
+        blocks[i] = p;
+        b->flags &= ~Memento_Flag_HasParent;
+        b->child   = NULL;
+        b->sibling = NULL;
+	b->parent  = NULL;
+    }
+    qsort(blocks, count, sizeof(void *), ptrcmp);
+
+    /* Now, calculate tree */
+    for (b = globals.used.head; b; b = b->next) {
+        char *p = MEMBLK_TOBLK(b);
+        int end = (b->rawsize < MEMENTO_PTRSEARCH ? b->rawsize : MEMENTO_PTRSEARCH);
+        for (i = MEMENTO_SEARCH_SKIP; i < end; i += sizeof(void *)) {
+            void *q = *(void **)(&p[i]);
+            void **r;
+
+            /* Do trivial checks on pointer */
+            if ((mask & (int)q) != mask || q < minptr || q > maxptr)
+                continue;
+
+            /* Search for pointer */
+            r = bsearch(&q, blocks, count, sizeof(void *), ptrcmp);
+            if (r) {
+                /* Found child */
+                Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
+		Memento_BlkHeader *parent;
+
+                /* We're assuming tree structure, not graph - ignore second
+                 * and subsequent pointers. */
+		if (child->parent != NULL)
+                    continue;
+                if (child->flags & Memento_Flag_HasParent)
+                    continue;
+
+                /* We're also assuming acyclicness here. If this is one of
+                 * our parents, ignore it. */
+                parent = b->parent;
+                while (parent != NULL && parent != child)
+                    parent = parent->parent;
+                if (parent == child)
+                    continue;
+
+                child->sibling = b->child;
+                b->child = child;
+		child->parent = b;
+                child->flags |= Memento_Flag_HasParent;
+            }
+        }
+    }
+
+    /* Now display with nesting */
+    for (b = globals.used.head; b; b = b->next) {
+        if ((b->flags & Memento_Flag_HasParent) == 0)
+            doNestedDisplay(b, 0);
+    }
+    fprintf(stderr, " Total number of blocks = %d\n", count);
+    fprintf(stderr, " Total size of blocks = %d\n", size);
+
+    MEMENTO_UNDERLYING_FREE(blocks);
+    return 0;
+}
+
+void Memento_listBlocks(void)
+{
     fprintf(stderr, "Allocated blocks:\n");
-    Memento_appBlocks(&globals.used, Memento_listBlock, &counts[0]);
-    fprintf(stderr, "  Total number of blocks = %d\n", counts[0]);
-    fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
+    if (Memento_listBlocksNested())
+    {
+        int counts[2];
+        counts[0] = 0;
+        counts[1] = 0;
+        Memento_appBlocks(&globals.used, Memento_listBlock, &counts[0]);
+        fprintf(stderr, " Total number of blocks = %d\n", counts[0]);
+        fprintf(stderr, " Total size of blocks = %d\n", counts[1]);
+    }
 }
 
 static int Memento_listNewBlock(Memento_BlkHeader *b,
@@ -432,21 +626,47 @@ void Memento_listNewBlocks(void) {
     fprintf(stderr, "  Total size of blocks = %d\n", counts[1]);
 }
 
+static void Memento_endStats(void)
+{
+    fprintf(stderr, "Total memory malloced = %u bytes\n", (unsigned int)globals.totalAlloc);
+    fprintf(stderr, "Peak memory malloced = %u bytes\n", (unsigned int)globals.peakAlloc);
+    fprintf(stderr, "%u mallocs, %u frees, %u reallocs\n", (unsigned int)globals.numMallocs,
+            (unsigned int)globals.numFrees, (unsigned int)globals.numReallocs);
+    fprintf(stderr, "Average allocation size %u bytes\n", (unsigned int)
+            (globals.numMallocs != 0 ? globals.totalAlloc/globals.numMallocs: 0));
+}
+
+void Memento_stats(void)
+{
+    fprintf(stderr, "Current memory malloced = %u bytes\n", (unsigned int)globals.alloc);
+    Memento_endStats();
+}
+
 static void Memento_fin(void)
 {
     Memento_checkAllMemory();
-    fprintf(stderr, "Total memory malloced = %d bytes\n", globals.totalAlloc);
-    fprintf(stderr, "Peak memory malloced = %d bytes\n", globals.peakAlloc);
-    fprintf(stderr, "%d mallocs, %d frees, %d reallocs\n", globals.numMallocs,
-            globals.numFrees, globals.numReallocs);
-    fprintf(stderr, "Average allocation size %d bytes\n",
-            globals.totalAlloc/globals.numMallocs);
+    Memento_endStats();
     if (globals.used.head != NULL) {
         Memento_listBlocks();
         Memento_breakpoint();
     }
-    if (globals.squeezed) {
-        fprintf(stderr, "Memory squeezing @ %d complete\n", globals.squeezed);
+    if (globals.segv) {
+        fprintf(stderr, "Memory dumped on SEGV while squeezing @ %d\n", globals.failAt);
+    } else if (globals.squeezing) {
+        if (globals.pattern == 0)
+            fprintf(stderr, "Memory squeezing @ %d complete\n", globals.squeezeAt);
+        else
+            fprintf(stderr, "Memory squeezing @ %d (%d) complete\n", globals.squeezeAt, globals.pattern);
+    }
+    if (globals.failing)
+    {
+        fprintf(stderr, "MEMENTO_FAILAT=%d\n", globals.failAt);
+        fprintf(stderr, "MEMENTO_PATTERN=%d\n", globals.pattern);
+    }
+    if (globals.nextFailAt != 0)
+    {
+        fprintf(stderr, "MEMENTO_NEXTFAILAT=%d\n", globals.nextFailAt);
+        fprintf(stderr, "MEMENTO_NEXTPATTERN=%d\n", globals.nextPattern);
     }
 }
 
@@ -481,44 +701,20 @@ static void Memento_init(void)
     env = getenv("MEMENTO_SQUEEZEAT");
     globals.squeezeAt = (env ? atoi(env) : 0);
 
+    env = getenv("MEMENTO_PATTERN");
+    globals.pattern = (env ? atoi(env) : 0);
+
+    env = getenv("MEMENTO_MAXMEMORY");
+    globals.maxMemory = (env ? atoi(env) : 0);
+
     atexit(Memento_fin);
 
     Memento_inited();
 }
 
-static void Memento_event(void)
-{
-    globals.sequence++;
-    if ((globals.sequence >= globals.paranoidAt) && (globals.paranoidAt != 0)) {
-        globals.paranoia = 1;
-        globals.countdown = 1;
-    }
-    if ((globals.sequence >= globals.failAt) && (globals.failAt != 0)) {
-        globals.failing = 1;
-    }
-    if ((globals.sequence >= globals.squeezeAt) && (globals.squeezeAt != 0)) {
-        globals.squeezing = 1;
-    }
-
-    if (--globals.countdown == 0) {
-        Memento_checkAllMemory();
-        globals.countdown = globals.paranoia;
-    }
-
-    if (globals.sequence == globals.breakAt)
-        Memento_breakpoint();
-}
-
-int Memento_breakAt(int event)
-{
-    globals.breakAt = event;
-    return event;
-}
-
 #ifdef MEMENTO_HAS_FORK
 #include <unistd.h>
 #include <sys/wait.h>
-#include <signal.h>
 #ifdef MEMENTO_STACKTRACE_METHOD
 #if MEMENTO_STACKTRACE_METHOD == 1
 #include <signal.h>
@@ -532,9 +728,12 @@ int Memento_breakAt(int event)
 /* stashed_map[j] = i means that filedescriptor i-1 was duplicated to j */
 int stashed_map[OPEN_MAX];
 
+extern size_t backtrace(void **, int);
+extern void backtrace_symbols_fd(void **, size_t, int);
+
 static void Memento_signal(void)
 {
-    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezed);
+    fprintf(stderr, "SEGV after Memory squeezing @ %d\n", globals.squeezeAt);
 
 #ifdef MEMENTO_STACKTRACE_METHOD
 #if MEMENTO_STACKTRACE_METHOD == 1
@@ -554,12 +753,23 @@ static void Memento_signal(void)
     exit(1);
 }
 
-static void squeeze(void)
+static int squeeze(void)
 {
     pid_t pid;
     int i, status;
 
-    fprintf(stderr, "Memory squeezing @ %d\n", globals.sequence);
+    if (globals.patternBit < 0)
+        return 1;
+    if (globals.squeezing && globals.patternBit >= MEMENTO_MAXPATTERN)
+        return 1;
+
+    if (globals.patternBit == 0)
+        globals.squeezeAt = globals.sequence;
+
+    if (!globals.squeezing) {
+        fprintf(stderr, "Memory squeezing @ %d\n", globals.squeezeAt);
+    } else
+        fprintf(stderr, "Memory squeezing @ %d (%x,%x)\n", globals.squeezeAt, globals.pattern, globals.patternBit);
 
     /* When we fork below, the child is going to snaffle all our file pointers
      * and potentially corrupt them. Let's make copies of all of them before
@@ -575,14 +785,26 @@ static void squeeze(void)
     if (pid == 0) {
         /* Child */
         signal(SIGSEGV, Memento_signal);
-        /* We must fail all new allocations from here */
-        globals.failing  = 1;
-        globals.squeezed = globals.sequence;
-        return;
+        /* In the child, we always fail the next allocation. */
+        if (globals.patternBit == 0) {
+            globals.patternBit = 1;
+        } else
+            globals.patternBit <<= 1;
+        globals.squeezing = 1;
+        return 1;
     }
+
+    /* In the parent if we hit another allocation, pass it (and record the
+     * fact we passed it in the pattern. */
+    globals.pattern |= globals.patternBit;
+    globals.patternBit <<= 1;
 
     /* Wait for pid to finish */
     waitpid(pid, &status, 0);
+
+    if (status != 0) {
+        fprintf(stderr, "Child status=%d\n", status);
+    }
 
     /* Put the files back */
     for (i = 0; i < OPEN_MAX; i++) {
@@ -592,25 +814,116 @@ static void squeeze(void)
             stashed_map[i] = 0;
         }
     }
+
+    return 0;
 }
 #else
-void squeeze(void)
+#include <signal.h>
+
+static void Memento_signal(void)
+{
+    globals.segv = 1;
+    /* If we just return from this function the SEGV will be unhandled, and
+     * we'll launch into whatever JIT debugging system the OS provides. At
+     * least output something useful first. If MEMENTO_NOJIT is set, then
+     * just exit to avoid the JIT (and get the usual atexit handling). */
+    if (getenv("MEMENTO_NOJIT"))
+        exit(1);
+    else
+        Memento_fin();
+}
+
+int squeeze(void)
 {
     fprintf(stderr, "Memento memory squeezing disabled as no fork!\n");
+    return 0;
 }
 #endif
 
+static void Memento_startFailing(void)
+{
+    if (!globals.failing) {
+        fprintf(stderr, "Starting to fail...\n");
+        fflush(stderr);
+        globals.failing = 1;
+        globals.failAt = globals.sequence;
+        globals.nextFailAt = globals.sequence+1;
+        globals.pattern = 0;
+        globals.patternBit = 0;
+        signal(SIGSEGV, Memento_signal);
+        signal(SIGABRT, Memento_signal);
+        Memento_breakpoint();
+    }
+}
+
+static void Memento_event(void)
+{
+    globals.sequence++;
+    if ((globals.sequence >= globals.paranoidAt) && (globals.paranoidAt != 0)) {
+        globals.paranoia = 1;
+        globals.countdown = 1;
+    }
+    if (--globals.countdown == 0) {
+        Memento_checkAllMemory();
+        globals.countdown = globals.paranoia;
+    }
+
+    if (globals.sequence == globals.breakAt) {
+        fprintf(stderr, "Breaking at event %d\n", globals.breakAt);
+        Memento_breakpoint();
+    }
+}
+
+int Memento_breakAt(int event)
+{
+    globals.breakAt = event;
+    return event;
+}
+
+void *Memento_label(void *ptr, const char *label)
+{
+    Memento_BlkHeader *block;
+
+    if (ptr == NULL)
+        return NULL;
+    block = MEMBLK_FROMBLK(ptr);
+    block->label = label;
+    return ptr;
+}
+
 int Memento_failThisEvent(void)
 {
+    int failThisOne;
+
     if (!globals.inited)
         Memento_init();
 
     Memento_event();
 
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
+    if ((globals.sequence >= globals.failAt) && (globals.failAt != 0))
+        Memento_startFailing();
+    if ((globals.sequence >= globals.squeezeAt) && (globals.squeezeAt != 0)) {
+        return squeeze();
+    }
 
-    return globals.failing;
+    if (!globals.failing)
+        return 0;
+    failThisOne = ((globals.patternBit & globals.pattern) == 0);
+    /* If we are failing, and we've reached the end of the pattern and we've
+     * still got bits available in the pattern word, and we haven't already
+     * set a nextPattern, then extend the pattern. */
+    if (globals.failing &&
+        ((~(globals.patternBit-1) & globals.pattern) == 0) &&
+        (globals.patternBit != 0) &&
+        globals.nextPattern == 0)
+    {
+        /* We'll fail this one, and set the 'next' one to pass it. */
+        globals.nextFailAt = globals.failAt;
+        globals.nextPattern = globals.pattern | globals.patternBit;
+    }
+    globals.patternBit = (globals.patternBit ? globals.patternBit << 1 : 1);
+
+    return failThisOne;
 }
 
 void *Memento_malloc(size_t s)
@@ -618,21 +931,16 @@ void *Memento_malloc(size_t s)
     Memento_BlkHeader *memblk;
     size_t             smem = MEMBLK_SIZE(s);
 
-    if (!globals.inited)
-        Memento_init();
-
-    Memento_event();
-
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
-
-    if (globals.failing)
+    if (Memento_failThisEvent())
         return NULL;
 
     if (s == 0)
         return NULL;
 
     globals.numMallocs++;
+
+    if (globals.maxMemory != 0 && globals.alloc + s > globals.maxMemory)
+        return NULL;
 
     memblk = MEMENTO_UNDERLYING_MALLOC(smem);
     if (memblk == NULL)
@@ -649,6 +957,9 @@ void *Memento_malloc(size_t s)
     memblk->sequence      = globals.sequence;
     memblk->lastCheckedOK = memblk->sequence;
     memblk->flags         = 0;
+    memblk->label         = 0;
+    memblk->child         = NULL;
+    memblk->sibling       = NULL;
     Memento_addBlockHead(&globals.used, memblk, 0);
     return MEMBLK_TOBLK(memblk);
 }
@@ -672,13 +983,14 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
                      &data, memblk);
     if (!data.found) {
         /* Failure! */
-        fprintf(stderr, "Attempt to %s block 0x%p(size=%d,num=%d) not on allocated list!\n",
-                action, memblk, memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "Attempt to %s block ", action);
+        showBlock(memblk, 32);
         Memento_breakpoint();
         return 1;
     } else if (data.preCorrupt || data.postCorrupt) {
-        fprintf(stderr, "Block 0x%p(size=%d,num=%d) found to be corrupted on %s!\n",
-                action, memblk->rawsize, memblk->sequence, action);
+        fprintf(stderr, "Block ");
+        showBlock(memblk, ' ');
+        fprintf(stderr, " found to be corrupted on %s!\n", action);
         if (data.preCorrupt) {
             fprintf(stderr, "Preguard corrupted\n");
         }
@@ -736,25 +1048,21 @@ void *Memento_realloc(void *blk, size_t newsize)
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
 
-    if (!globals.inited)
-        Memento_init();
-
     if (blk == NULL)
         return Memento_malloc(newsize);
     if (newsize == 0) {
         Memento_free(blk);
         return NULL;
     }
-    if ((globals.squeezing) && (!globals.squeezed))
-        squeeze();
-    if (globals.failing)
+
+    if (Memento_failThisEvent())
         return NULL;
 
     memblk     = MEMBLK_FROMBLK(blk);
-
-    Memento_event();
-
     if (checkBlock(memblk, "realloc"))
+        return NULL;
+
+    if (globals.maxMemory != 0 && globals.alloc - memblk->rawsize + newsize > globals.maxMemory)
         return NULL;
 
     newsizemem = MEMBLK_SIZE(newsize);
@@ -807,8 +1115,8 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
             fprintf(stderr, "Allocated blocks:\n");
             data->found |= 2;
         }
-        fprintf(stderr, "  Block 0x%p(size=%d,num=%d)",
-                memblk, memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "  Block ");
+        showBlock(memblk, ' ');
         if (data->preCorrupt) {
             fprintf(stderr, " Preguard ");
         }
@@ -823,6 +1131,8 @@ static int Memento_Internal_checkAllAlloced(Memento_BlkHeader *memblk, void *arg
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
     }
+    else
+        memblk->lastCheckedOK = globals.sequence;
     return 0;
 }
 
@@ -836,33 +1146,35 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
             fprintf(stderr, "Freed blocks:\n");
             data->found |= 4;
         }
-        fprintf(stderr, "  0x%p(size=%d,num=%d) ",
-                MEMBLK_TOBLK(memblk), memblk->rawsize, memblk->sequence);
+        fprintf(stderr, "  ");
+        showBlock(memblk, ' ');
         if (data->freeCorrupt) {
-            fprintf(stderr, "index %d (address 0x%p) onwards ", data->index,
+            fprintf(stderr, " index %d (address 0x%p) onwards", data->index,
                     &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
-                fprintf(stderr, "+ preguard ");
+                fprintf(stderr, "+ preguard");
             }
             if (data->postCorrupt) {
-                fprintf(stderr, "+ postguard ");
+                fprintf(stderr, "+ postguard");
             }
         } else {
             if (data->preCorrupt) {
-                fprintf(stderr, " preguard ");
+                fprintf(stderr, " preguard");
             }
             if (data->postCorrupt) {
-                fprintf(stderr, "%s Postguard ",
+                fprintf(stderr, "%s Postguard",
                         (data->preCorrupt ? "+" : ""));
             }
         }
-        fprintf(stderr, "corrupted.\n    "
-                "Block last checked OK at allocation %d. Now %d.\n",
+        fprintf(stderr, " corrupted.\n"
+                "    Block last checked OK at allocation %d. Now %d.\n",
                 memblk->lastCheckedOK, globals.sequence);
         data->preCorrupt  = 0;
         data->postCorrupt = 0;
         data->freeCorrupt = 0;
     }
+    else
+        memblk->lastCheckedOK = globals.sequence;
     return 0;
 }
 
@@ -955,22 +1267,24 @@ int Memento_find(void *a)
     data.flags = 0;
     Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address 0x%p is in %sallocated block 0x%p(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%p is in %sallocated block ",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")),
-                MEMBLK_TOBLK(data.blk), data.blk->rawsize, data.blk->sequence);
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
         return data.blk->sequence;
     }
     data.blk   = NULL;
     data.flags = 0;
     Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
     if (data.blk != NULL) {
-        fprintf(stderr, "Address 0x%p is in %sfreed block 0x%p(size=%d,num=%d)\n",
+        fprintf(stderr, "Address 0x%p is in %sfreed block ",
                 data.addr,
                 (data.flags == 1 ? "" : (data.flags == 2 ?
-                                         "preguard of " : "postguard of ")),
-                MEMBLK_TOBLK(data.blk), data.blk->rawsize, data.blk->sequence);
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
         return data.blk->sequence;
     }
     return 0;
@@ -981,8 +1295,14 @@ int Memento_failAt(int i)
     globals.failAt = i;
     if ((globals.sequence > globals.failAt) &&
         (globals.failing != 0))
-        globals.failing = 1;
+        Memento_startFailing();
     return i;
+}
+
+size_t Memento_setMax(size_t max)
+{
+    globals.maxMemory = max;
+    return max;
 }
 
 #else
@@ -1070,5 +1390,18 @@ void (Memento_listNewBlocks)(void)
 {
 }
 
+size_t (Memento_setMax)(size_t max)
+{
+    return 0;
+}
+
+void (Memento_stats)(void)
+{
+}
+
+void *(Memento_label)(void *ptr, const char *label)
+{
+    return ptr;
+}
 
 #endif
