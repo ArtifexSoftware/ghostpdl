@@ -13,6 +13,7 @@
 
 /* Inspired by Fortify by Simon P Bullen. */
 
+
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
 #undef MEMENTO_LEAKONLY
@@ -36,7 +37,11 @@
 #ifdef MEMENTO_GS_HACKS
 /* For GS we include malloc_.h. Anyone else would just include memento.h */
 #include "malloc_.h"
+#ifdef __MACH__
+#include <string.h>
+#else
 void *memset(void *,int,size_t);
+#endif
 int atexit(void (*)(void));
 #else
 #include "memento.h"
