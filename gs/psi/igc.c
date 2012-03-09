@@ -82,6 +82,8 @@ static ptr_proc_unmark(ptr_struct_unmark);
 static ptr_proc_mark(ptr_struct_mark);
 static ptr_proc_unmark(ptr_string_unmark);
 static ptr_proc_mark(ptr_string_mark);
+static ptr_proc_unmark(ptr_name_index_unmark);
+static ptr_proc_mark(ptr_name_index_mark);
 /*ptr_proc_unmark(ptr_ref_unmark); *//* in igc.h */
 /*ptr_proc_mark(ptr_ref_mark); *//* in igc.h */
 static ptr_proc_reloc(igc_reloc_struct_ptr, void);
@@ -98,7 +100,7 @@ static const gc_procs_with_refs_t igc_procs = {
 /* Pointer type descriptors. */
 /* Note that the trace/mark routine has special knowledge of ptr_ref_type */
 /* and ptr_struct_type -- it assumes that no other types have embedded */
-/* pointers.  Note also that the reloc procedures for string and ref */
+/* pointers.  Note also that the reloc procedures for string, ref and name */
 /* pointers are never called. */
 typedef ptr_proc_reloc((*ptr_proc_reloc_t), void);
 const gs_ptr_procs_t ptr_struct_procs =
@@ -109,6 +111,8 @@ const gs_ptr_procs_t ptr_const_string_procs =
 {ptr_string_unmark, ptr_string_mark, NULL};
 const gs_ptr_procs_t ptr_ref_procs =
 {ptr_ref_unmark, ptr_ref_mark, NULL};
+const gs_ptr_procs_t ptr_name_index_procs =
+{ptr_name_index_unmark, ptr_name_index_mark, NULL};
 
 /* ------ Main program ------ */
 
@@ -582,6 +586,13 @@ static void
 ptr_string_unmark(enum_ptr_t *pep, gc_state_t * gcst)
 {
     discard(gc_string_mark(pep->ptr, pep->size, false, gcst));
+}
+
+/* Unmark a single name. */
+static void
+ptr_name_index_unmark(enum_ptr_t *pep, gc_state_t * gcst)
+{
+    /* Do nothing */
 }
 
 /* Unmark the objects in a chunk. */
@@ -1079,6 +1090,13 @@ static bool
 ptr_string_mark(enum_ptr_t *pep, gc_state_t * gcst)
 {
     return gc_string_mark(pep->ptr, pep->size, true, gcst);
+}
+
+/* Mark a name.  Return true if new mark. */
+static bool
+ptr_name_index_mark(enum_ptr_t *pep, gc_state_t * gcst)
+{
+    return names_mark_index(gcst->heap->gs_lib_ctx->gs_name_table, pep->size);
 }
 
 /* Finish tracing by marking names. */

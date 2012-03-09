@@ -126,6 +126,10 @@ extern const gs_ptr_procs_t ptr_string_procs;
 extern const gs_ptr_procs_t ptr_const_string_procs;
 #define ptr_const_string_type (&ptr_const_string_procs)
 
+/* Define the pointer type for name indexes. */
+extern const gs_ptr_procs_t ptr_name_index_procs;
+#define ptr_name_index_type (&ptr_name_index_procs)
+
 /*
  * Define the type for a GC root.
  */
@@ -357,6 +361,8 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
   (pep->ptr = sdata, pep->size = ssize, ptr_const_string_type)
 #define ENUM_CONST_STRING(sptr)	/* pointer to gs_const_string */\
   ENUM_CONST_STRING2((sptr)->data, (sptr)->size)
+#define ENUM_NAME_INDEX(name) /* name (as a long index) */\
+    (pep->size = (uint)name, ptr_name_index_type)
 extern gs_ptr_type_t
     enum_bytestring(enum_ptr_t *pep, const gs_bytestring *pbs);
 #define ENUM_BYTESTRING(ptr)	/* pointer to gs_bytestring */\
@@ -374,6 +380,8 @@ extern gs_ptr_type_t
     (((const typ *)vptr)->elt.persistent ? 0 : ENUM_STRING(&((const typ *)vptr)->elt))
 #define ENUM_CONST_STRING_ELT(typ, elt)\
   ENUM_CONST_STRING(&((const typ *)vptr)->elt)
+#define ENUM_NAME_INDEX_ELT(typ, elt) /* name (as a long index) */\
+    (pep->size = (uint)(((const typ *)vptr)->elt), ptr_name_index_type)
 
 #define ENUM_PTR(i, typ, elt)\
   case i: return ENUM_OBJ_ELT(typ, elt)
