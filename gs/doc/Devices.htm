@@ -381,9 +381,10 @@ drivers that produce uncompressed output:
 <dd>Produces 64-bit CMYK output (16 bits per component).
 <a name="tiffsep"></a><dt><code>tiffsep</code>
 <dd>
-The tiffsep device creates multiple output files.  The device creates a single
-32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
-A tiffgray file compressed with LZW is created for each separation.
+The tiffsep device creates multiple output files: a single 32 bit
+composite CMYK file and multiple tiffgray files, one for each
+separation.  The default compression is <code>lzw</code> but this
+may be overridden by the <code>-sCompression=</code> option.
 
 <p>
 The file specified via the OutputFile command line parameter will contain 
@@ -590,9 +591,9 @@ devices with:
 </blockquote>
 
 <p>
-For the <code>tiffsep</code> device, it only changes the compression scheme
-of the separation files (which is <code>lzw</code> by default), not the
-composite cmyk file.  It defaults to <code>g4</code> for the
+For the <code>tiffsep</code> device, it changes the compression scheme
+of the separation files and composite cmyk file (which is 
+<code>lzw</code> by default).  It defaults to <code>g4</code> for the
 <code>tiffsep1</code> device.
 
 <p>
