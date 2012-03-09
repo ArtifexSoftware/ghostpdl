@@ -66,6 +66,7 @@ const gs_color_space_type gs_color_space_type_Separation = {
 static
 ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs) return 0;
     ENUM_PTR(0, gs_color_space, params.separation.map);
+    case 1 : return ENUM_NAME_INDEX_ELT(gs_color_space, params.separation.sep_name);
 ENUM_PTRS_END
 static RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
 {

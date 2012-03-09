@@ -60,6 +60,7 @@ void
 gs_reloc_const_string(gs_const_string *sptr, gc_state_t *gcst)
 {
 }
+const gs_ptr_procs_t ptr_name_index_procs = { NULL, NULL, NULL };
 
 /* Stub for abnormal termination */
 void

@@ -74,7 +74,14 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
 /* GC procedures */
 
 static
-ENUM_PTRS_BEGIN(cs_DeviceN_enum_ptrs) return 0;
+ENUM_PTRS_BEGIN(cs_DeviceN_enum_ptrs)
+{
+    gs_device_n_params *params = &((gs_color_space *)vptr)->params.device_n;
+    if (index-3 < params->num_components)
+        return ENUM_NAME_INDEX(params->names[index-3]);
+    else
+        return 0;
+}
 ENUM_PTR(0, gs_color_space, params.device_n.names);
 ENUM_PTR(1, gs_color_space, params.device_n.map);
 ENUM_PTR(2, gs_color_space, params.device_n.colorants);
