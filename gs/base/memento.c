@@ -105,7 +105,8 @@ enum {
  * This may cause us to miss true nestings, but such is life...
  */ 
 #ifndef MEMENTO_SEARCH_SKIP
-#ifdef MEMENTO_GS_HACKS (2*sizeof(void *))
+#ifdef MEMENTO_GS_HACKS
+#define MEMENTO_SEARCH_SKIP (2*sizeof(void *))
 #else
 #define MEMENTO_SEARCH_SKIP 0
 #endif
