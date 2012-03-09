@@ -80,6 +80,10 @@ DEBUG=0
 TDEBUG=1
 !endif
 
+!if "$(MEMENTO)"=="1"
+CFLAGS=$(CFLAGS) -DMEMENTO
+!endif
+
 # Define the name of the executable file.
 
 !ifndef GS
