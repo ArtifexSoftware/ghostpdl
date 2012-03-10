@@ -154,21 +154,12 @@ gs_moveto_aux(gs_imager_state *pis, gx_path *ppath, floatp x, floatp y)
     code = clamp_point_aux(pis->clamp_coordinates, &pt, x, y);
     if (code < 0)
         return code;
-    if (path_subpath_open(ppath) && pis->hpgl_fill_mode)
-    {
-        code = gx_path_add_gap_notes(ppath, pt.x, pt.y, 0);
-        if (code < 0)
-            return code;
-    }
-    else
-    {
-        code = gx_path_add_point(ppath, pt.x, pt.y);
-        if (code < 0)
-            return code;
-        ppath->start_flags = ppath->state_flags;
-        pis->subpath_start = pis->current_point;
-    }
+    code = gx_path_add_point(ppath, pt.x, pt.y);
+    if (code < 0)
+        return code;
+    ppath->start_flags = ppath->state_flags;
     gx_setcurrentpoint(pis, x, y);
+    pis->subpath_start = pis->current_point;
     pis->current_point_valid = true;
     return 0;
 }

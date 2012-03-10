@@ -839,20 +839,6 @@ gs_currenttextrenderingmode(const gs_state * pgs)
     return pgs->text_rendering_mode;
 }
 
-/* sethpglfillmode */
-void
-gs_sethpglfillmode(gs_state * pgs, int fill)
-{
-    pgs->hpgl_fill_mode = fill;
-}
-
-/* currenthpglfillmode */
-int
-gs_currenthpglfillmode(const gs_state * pgs)
-{
-    return pgs->hpgl_fill_mode;
-}
-
 /* ------ Internal routines ------ */
 
 /* Free the privately allocated parts of a gstate. */

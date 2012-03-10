@@ -100,10 +100,6 @@ trace_path(const gx_path *path)
             dprintf2("    %g %g lineto\n", fixed2float(pts[0].x),
                      fixed2float(pts[0].y));
             continue;
-        case gs_pe_gapto:
-            dprintf2("    %g %g gapto\n", fixed2float(pts[0].x),
-                     fixed2float(pts[0].y));
-            continue;
         case gs_pe_curveto:
             dprintf6("    %g %g %g %g %g %g curveto\n", fixed2float(pts[0].x),
                      fixed2float(pts[0].y), fixed2float(pts[1].x),
