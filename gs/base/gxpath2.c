@@ -186,7 +186,7 @@ gx_subpath_is_rectangular(const subpath * pseg0, gs_fixed_rect * pbox,
         ) {
         if ((pseg4 = pseg3->next) == 0 || pseg4->type == s_start)
             type = prt_open;	/* M, L, L, L */
-        else if (pseg4->type != s_line && pseg4->type != s_gap) /* must be s_line_close */
+        else if (pseg4->type != s_line)		/* must be s_line_close */
             type = prt_closed;	/* M, L, L, L, C */
         else if (pseg4->pt.x != pseg0->pt.x ||
                  pseg4->pt.y != pseg0->pt.y
@@ -194,7 +194,7 @@ gx_subpath_is_rectangular(const subpath * pseg0, gs_fixed_rect * pbox,
             return prt_none;
         else if (pseg4->next == 0 || pseg4->next->type == s_start)
             type = prt_fake_closed;	/* Mo, L, L, L, Lo */
-        else if (pseg4->next->type != s_line && pseg4->next->type != s_gap) /* must be s_line_close */
+        else if (pseg4->next->type != s_line)	/* must be s_line_close */
             type = prt_closed;	/* Mo, L, L, L, Lo, C */
         else
             return prt_none;
@@ -405,10 +405,6 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
                     code = gx_path_add_line_notes(ppath,
                                         prev->pt.x, prev->pt.y, prev_notes);
                     break;
-                case s_gap:
-                    code = gx_path_add_gap_notes(ppath,
-                                        prev->pt.x, prev->pt.y, prev_notes);
-                    break;
                 case s_line_close:
                     /* Skip the closing line. */
                     code = gx_path_add_point(ppath, prev->pt.x,
@@ -508,10 +504,6 @@ gx_path_append_reversed(const gx_path * ppath_old, gx_path * ppath)
                     code = gx_path_add_line_notes(ppath,
                                         prev->pt.x, prev->pt.y, prev_notes);
                     break;
-                case s_gap:
-                    code = gx_path_add_gap_notes(ppath,
-                                        prev->pt.x, prev->pt.y, prev_notes);
-                    break;
                 case s_line_close:
                     /* Skip the closing line. */
                     code = gx_path_add_point(ppath, prev->pt.x,
@@ -596,9 +588,6 @@ gx_path_enum_next(gs_path_enum * penum, gs_fixed_point ppts[3])
         case s_line:
             ppts[0] = pseg->pt;
             return gs_pe_lineto;
-        case s_gap:
-            ppts[0] = pseg->pt;
-            return gs_pe_gapto;
         case s_line_close:
             ppts[0] = pseg->pt;
             return gs_pe_closepath;

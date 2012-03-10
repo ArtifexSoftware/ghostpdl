@@ -1340,7 +1340,6 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                           fixed2float(px), fixed2float(py));
                 break;
             case gs_pe_lineto:
-            case gs_pe_gapto:
                 {
                     int next_side = which_side(B);
                     segment_notes notes =

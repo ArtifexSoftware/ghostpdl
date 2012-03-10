@@ -235,7 +235,6 @@ typedef struct gs_xstate_trans_flags {
         gs_memory_t *memory;\
         void *client_data;\
         gx_line_params line_params;\
-        bool hpgl_fill_mode;\
         gs_matrix_fixed ctm;\
         bool current_point_valid;\
         gs_point current_point;\
@@ -295,7 +294,7 @@ struct gs_imager_state_s {
 
 /* Initialization for gs_imager_state */
 #define gs_imager_state_initial(scale, is_gstate)\
-  is_gstate, 0, 0, { gx_line_params_initial }, 0,\
+  is_gstate, 0, 0, { gx_line_params_initial },\
    { (float)(scale), 0.0, 0.0, (float)(-(scale)), 0.0, 0.0 },\
   false, {0, 0}, {0, 0}, false, \
   lop_default, gx_max_color_value, BLEND_MODE_Compatible,\
