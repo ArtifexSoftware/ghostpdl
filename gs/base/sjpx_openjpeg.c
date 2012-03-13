@@ -356,7 +356,7 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                          {
                              *(pw->ptr++) = bt >> (bit_pos-8);
                              bit_pos -= 8;
-                             bt &= (1<<(bit_pos-8))-1;
+                             bt &= (1<<bit_pos)-1;
                          }
                      }
                  }
@@ -374,7 +374,7 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                          {
                              *(pw->ptr++) = bt >> (bit_pos-8);
                              bit_pos -= 8;
-                             bt &= (1<<(bit_pos-8))-1;
+                             bt &= (1<<bit_pos)-1;
                          }
                      }
                      state->img_offset++;

@@ -177,7 +177,31 @@ s_jpxd_write_data(unsigned char * pucData,
                 if (ulNum & 1)
                     *dst++ = pucData[ulNum - 1] << 4;
         } else
-            return cJP2_Error_Not_Yet_Supported;
+        {
+            unsigned int bt=0; unsigned long i;
+            int bit_pos = state->bpc * ulStart; /* starting bit position to fill for this component */
+            int bit_cnt; /* bit count for current byte */
+            unsigned char *p = &state->image[state->stride * ulRow + bit_pos/8]; /* starting byte to fill */;
+            bit_cnt = bit_pos % 8;
+            for (i = 0; i < ulNum; i++)
+            {
+                bt <<= state->bpc;
+                bt |= pucData[i];
+                bit_cnt += state->bpc;
+                if (bit_cnt >= 8)
+                {
+                    *(p++) |= bt >> (bit_cnt-8);
+                    bit_cnt -= 8;
+                    bt &= (1<<bit_cnt)-1;
+                 }
+            }
+            /* end of row */
+            if (bit_cnt > 0)
+            {
+                *p |= bt<<(8-bit_cnt);
+                bt = 0;
+            }
+         }
     }
     else if (comp >= 0) {
         unsigned long cw, ch, i, hstep, vstep, x, y;
@@ -217,8 +241,37 @@ s_jpxd_write_data(unsigned char * pucData,
                     }
                 row += state->stride;
             }
-        } else
-            return cJP2_Error_Not_Yet_Supported;
+        } else {
+            unsigned int bt=0;
+            int bit_pos = state->bpc * state->ncomp * ulStart * hstep + state->bpc * comp; /* starting bit position to fill for this component */
+            int bit_cnt; /* bit count for current byte */
+
+            row = &state->image[state->stride * ulRow * vstep + bit_pos/8]; /* starting byte to fill */
+            for (y = 0; y < vstep; y++) {
+                unsigned char *p = row;
+                bit_cnt = bit_pos % 8;
+                for (i = 0; i < ulNum; i++) {
+                    for (x = 0; x < hstep; x++) {
+                        bt <<= state->bpc * state->ncomp;
+                        bt |= pucData[i];
+                        bit_cnt += state->bpc;
+                        while (bit_cnt >= 8) {
+                            *(p++) |= bt >> (bit_cnt-8);
+                            bit_cnt -= 8;
+                            bt &= (1<<bit_cnt)-1;
+                        }
+                        bit_cnt += state->bpc * (state->ncomp - 1); /* skip other components */
+                    }
+                }
+                /* end of row */
+                bit_cnt -= state->bpc * (state->ncomp - 1); /* return the last extra count */
+                if (bit_cnt > 0) {
+                    *p |= bt<<(8-bit_cnt);
+                    bt = 0;
+                }
+                row += state->stride;
+            }
+        }
     }
     return cJP2_Error_OK;
 }
