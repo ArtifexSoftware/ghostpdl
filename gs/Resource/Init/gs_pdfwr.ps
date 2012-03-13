@@ -475,7 +475,7 @@ userdict /.pdfcvstring () put
     grestore
   } if
   dup /PS eq systemdict /PDFX .knownget not { //false } if
-             systemdict /PDFA .knownget not { //false }{pop //true} ifelse or and {
+             systemdict /PDFA .knownget not { //false }{0 eq {//false}{//true} ifelse} ifelse or and {
     % Execute it since PDF/X doesn't allow to embed it.
     pop
     { dup mark eq {

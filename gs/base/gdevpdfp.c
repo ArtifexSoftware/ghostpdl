@@ -416,6 +416,11 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * or less impossible to alter the setting in the (potentially saved) page
      * device dictionary, so we use this rather clunky method.
      */
+    if (pdev->PDFA < 0 || pdev->PDFA > 2){
+        ecode = gs_note_error(gs_error_rangecheck);
+        param_signal_error(plist, "PDFA", ecode);
+        goto fail;
+    }
     if(pdev->PDFA != 0 && pdev->AbortPDFAX)
         pdev->PDFA = 0;
     if(pdev->PDFX && pdev->AbortPDFAX)
