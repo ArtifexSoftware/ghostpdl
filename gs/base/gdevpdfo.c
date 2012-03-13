@@ -512,19 +512,19 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     for (pcae = first; pcae; ++last_index, pcae = pcae->next) {
         Element_Count++;
 
-        if(pdev->PDFA && Element_Count > 8191) {
+        if(pdev->PDFA != 0 && Element_Count > 8191) {
             switch (pdev->PDFACompatibilityPolicy) {
             case 0:
                 emprintf(pdev->memory,
                     "Too many entries in array,\n max 8191 in PDF/A, reverting to normal PDF output\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFA = false;
+                pdev->PDFA = 0;
                 break;
             case 1:
                 emprintf(pdev->memory,
                      "Too many entries in array,\n max 8191 in PDF/A. Cannot simply elide dictionary, reverting to normal output\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFA = false;
+                pdev->PDFA = 0;
                 break;
             case 2:
                 emprintf(pdev->memory,
@@ -538,7 +538,7 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
                 emprintf(pdev->memory,
                      "Too many entries in array,\n max 8191 in PDF/A. Unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFA = false;
+                pdev->PDFA = 0;
                 break;
             }
         }
@@ -550,7 +550,7 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     }
     DISCARD(cos_array_reorder(pca, first));
     stream_puts(s, "]");
-    if (pdev->PDFA)
+    if (pdev->PDFA != 0)
         stream_puts(s, "\n");
     return 0;
 }
@@ -821,19 +821,19 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
 
             Element_Count++;
 
-            if(pdev->PDFA && Element_Count > 4095) {
+            if(pdev->PDFA != 0 && Element_Count > 4095) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
                              "Too many entries in dictionary,\n max 4095 in PDF/A, reverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFA = false;
+                        pdev->PDFA = 0;
                         break;
                     case 1:
                         emprintf(pdev->memory,
                              "Too many entries in dictionary,\n max 4095 in PDF/A. Cannot simply elide dictionary, reverting to normal output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFA = false;
+                        pdev->PDFA = 0;
                         break;
                     case 2:
                         emprintf(pdev->memory,
@@ -847,7 +847,7 @@ cos_elements_write(stream *s, const cos_dict_element_t *pcde,
                         emprintf(pdev->memory,
                              "Too many entries in dictionary,\n max 4095 in PDF/A. Unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFA = false;
+                        pdev->PDFA = 0;
                         break;
                 }
             }
@@ -878,7 +878,7 @@ cos_dict_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     stream_puts(s, "<<");
     cos_elements_write(s, ((const cos_dict_t *)pco)->elements, pdev, false, object_id);
     stream_puts(s, ">>");
-    if (pdev->PDFA)
+    if (pdev->PDFA != 0)
         stream_puts(s, "\n");
     return 0;
 }

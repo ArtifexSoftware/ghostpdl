@@ -562,7 +562,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
                                   DATA_STREAM_COMPRESS : 0), 0);
     if (code < 0)
         return code;
-    if (pdev->PDFA) {
+    if (pdev->PDFA != 0) {
         stream *s = s_MD5C_make_stream(pdev->pdf_memory, writer.binary.strm);
 
         if (s == NULL)
@@ -653,7 +653,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
 #define TRUETYPE_OPTIONS (WRITE_TRUETYPE_NAME | WRITE_TRUETYPE_HVMTX)
         /* Acrobat Reader 3 doesn't handle cmap format 6 correctly. */
         const int options = TRUETYPE_OPTIONS |
-            (pdev->PDFA ? WRITE_TRUETYPE_UNICODE_CMAP : 0) |
+            (pdev->PDFA != 0 ? WRITE_TRUETYPE_UNICODE_CMAP : 0) |
             (pdev->CompatibilityLevel <= 1.2 ?
              WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0) |
             /* Generate a cmap only for incrementally downloaded fonts
@@ -697,7 +697,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
                                    (gs_font_cid2 *)out_font,
                                    CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
-        if (pdev->PDFA) {
+        if (pdev->PDFA != 0) {
             sflush(writer.binary.strm);
             s_MD5C_get_digest(writer.binary.strm, digest, sizeof(digest));
         }

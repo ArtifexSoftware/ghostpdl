@@ -1518,9 +1518,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         pdfont->mark_glyph = font->dir->ccache.mark_glyph;
     }
 
-    if (pdev->PDFA && font->FontType == ft_TrueType) {
+    if (pdev->PDFA != 0 && font->FontType == ft_TrueType) {
         /* The Adobe preflight tool for PDF/A
-           checks whether Widht or W include elements
+           checks whether Width or W include elements
            for all characters in the True Type font.
            Due to that we need to provide a width
            for .notdef glyph.

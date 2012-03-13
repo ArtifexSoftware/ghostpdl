@@ -481,7 +481,7 @@ pdf_separation_color_space(gx_device_pdf *pdev,
         csi = gsicc_get_default_type(alt_space->cmm_icc_profile_data);
     }
     if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX ||
-        (pdev->PDFA && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
+        (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
 
         /* We have a DeviceRGB alternate, but are producing either PDF/X or
          * PDF/A with a DeviceCMYK process color model. So we need to convert
@@ -530,7 +530,7 @@ pdf_separation_color_space(gx_device_pdf *pdev,
         return code;
     }
     if (csi == gs_color_space_index_DeviceCMYK &&
-        (pdev->PDFA && (pdev->pcm_color_info_index == gs_color_space_index_DeviceRGB))) {
+        (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceRGB))) {
         /* We have a DeviceCMYK alternate, but are producingPDF/A with a
          * DeviceRGB process color model. See comment above re DviceRGB.
          */

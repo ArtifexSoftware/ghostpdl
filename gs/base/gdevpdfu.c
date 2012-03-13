@@ -1021,7 +1021,7 @@ stream_to_none(gx_device_pdf * pdev)
         pdf_end_encrypt(pdev);
         s = pdev->strm;
         length = pdf_stell(pdev) - pdev->contents_pos;
-        if (pdev->PDFA)
+        if (pdev->PDFA != 0)
             stream_puts(s, "\n");
         stream_puts(s, "endstream\n");
         pdf_end_obj(pdev, resourceStream);

@@ -246,13 +246,13 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         if (code < 0 && code != gs_error_undefined)
             return code;
         if (code == gs_error_undefined) {
-            if (pdev->PDFA || pdev->PDFX) {
+            if (pdev->PDFA != 0 || pdev->PDFX) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
                              "Requested glyph not present in source font,\n not permitted in PDF/A, reverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFA = false;
+                        pdev->PDFA = 0;
                         break;
                     case 1:
                         emprintf(pdev->memory,
@@ -276,7 +276,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                         emprintf(pdev->memory,
                              "Requested glyph not present in source font,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFA = false;
+                        pdev->PDFA = 0;
                         break;
                 }
             }

@@ -713,7 +713,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     /* Annotations are only permitted in PDF/A if they have the
      * Print flag enabled, so we need to prescan for that here.
      */
-    if(pdev->PDFA) {
+    if(pdev->PDFA != 0) {
         int i, Flags = 0;
         /* Check all the keys to see if we have a /F (Flags) key/value pair defined */
         for (i = 0; i < count; i += 2) {
@@ -737,7 +737,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     emprintf(pdev->memory,
                              "Annotation set to non-printing,\n not permitted in PDF/A, reverting to normal PDF output\n");
                     pdev->AbortPDFAX = true;
-                    pdev->PDFA = false;
+                    pdev->PDFA = 0;
                     break;
                     /* Since the annotation would break PDF/A compatibility, do not
                      * include it, but warn the user that it has been dropped.
@@ -756,7 +756,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     emprintf(pdev->memory,
                              "Annotation set to non-printing,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                     pdev->AbortPDFAX = true;
-                    pdev->PDFA = false;
+                    pdev->PDFA = 0;
                     break;
             }
         }

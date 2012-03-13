@@ -704,7 +704,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      */
     if (pindex)
         *pindex = index;
-    if (pdev->PDFX || pdev->PDFA)
+    if (pdev->PDFX || pdev->PDFA != 0)
         return FONT_EMBED_YES;
     if (pdev->CompatibilityLevel < 1.3) {
         if (index >= 0 &&
@@ -1028,7 +1028,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
 int
 pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
-    if (!pdev->PDFA)
+    if (pdev->PDFA == 0)
         return 0;
     else {
         pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
