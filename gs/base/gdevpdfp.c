@@ -94,7 +94,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
     pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
     pi("PDFX", gs_param_type_bool, PDFX),
-    pi("PDFA", gs_param_type_bool, PDFA),
+    pi("PDFA", gs_param_type_int, PDFA),
     pi("DocumentUUID", gs_param_type_string, DocumentUUID),
     pi("InstanceUUID", gs_param_type_string, InstanceUUID),
     pi("DocumentTimeSeq", gs_param_type_int, DocumentTimeSeq),
@@ -416,11 +416,11 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * or less impossible to alter the setting in the (potentially saved) page
      * device dictionary, so we use this rather clunky method.
      */
-    if(pdev->PDFA && pdev->AbortPDFAX)
-        pdev->PDFA = false;
+    if(pdev->PDFA != 0 && pdev->AbortPDFAX)
+        pdev->PDFA = 0;
     if(pdev->PDFX && pdev->AbortPDFAX)
-        pdev->PDFX = false;
-    if (pdev->PDFX && pdev->PDFA) {
+        pdev->PDFX = 0;
+    if (pdev->PDFX && pdev->PDFA != 0) {
         ecode = gs_note_error(gs_error_rangecheck);
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
@@ -430,12 +430,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         param_signal_error(plist, "PDFX", ecode);
         goto fail;
     }
-    if (pdev->PDFA && pdev->ForOPDFRead) {
+    if (pdev->PDFA != 0 && pdev->ForOPDFRead) {
         ecode = gs_note_error(gs_error_rangecheck);
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
     }
-    if (pdev->PDFA)
+    if (pdev->PDFA == 1)
          pdev->HaveTransparency = false;
     /*
      * We have to set version to the new value, because the set of
@@ -444,7 +444,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      */
     if (pdev->PDFX)
         cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
-    if (pdev->PDFA && cl < 1.4)
+    if (pdev->PDFA != 0 && cl < 1.4)
         cl = (float)1.4;
     pdev->version = (cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
     if (pdev->ForOPDFRead) {

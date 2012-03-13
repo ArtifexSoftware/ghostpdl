@@ -165,7 +165,7 @@ bind def
 %
 /cs_substitute_DeviceRGB_for_PDFX_or_PDFA
 { systemdict /PDFX .knownget not { //false } if
-  systemdict /PDFA .knownget not { //false } if
+  systemdict /PDFA .knownget not { //false } {pop //true} ifelse
   or {
     dup /ColorSpace resourcestatus {
       pop pop

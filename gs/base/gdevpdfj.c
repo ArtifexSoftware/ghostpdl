@@ -132,7 +132,7 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
         }
     }
     if (pim->Interpolate) {
-        if (pdev->PDFA)
+        if (pdev->PDFA != 0)
             emprintf(pdev->memory,
                      "PDFA doesn't allow images with Interpolate true.\n");
         else

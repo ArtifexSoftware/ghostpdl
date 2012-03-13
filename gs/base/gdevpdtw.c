@@ -378,7 +378,7 @@ pdf_write_CIDFont_widths(gx_device_pdf *pdev,
                     pprintd3(s, "\n%d %d %d", width, vx, vy);
                 } else
                     pprintd1(s, "\n%d", width);
-            } else if (!pdev->PDFA && width == dw &&
+            } else if (pdev->PDFA == 0 && width == dw &&
                     (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 0] + 0.5) ==
                                 (int)(pdfont->Widths[cid] / 2 + 0.5)) &&
                     (!wmode || (int)(pdfont->u.cidfont.v[cid * 2 + 1] + 0.5) == dv))

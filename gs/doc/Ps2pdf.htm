@@ -891,12 +891,12 @@ Please also see the <code>PDFACompatibilityPolicy</code> control described under
 <h2><a name="PDFA"></a>Creating a PDF/A document</h2>
 
 <p>
-To create a PDF/A document, please follow instructions about <a href="#PDFX">creating a PDF/X-3 document</a>,
+To create a PDF/A document, please follow the instructions for <a href="#PDFX">creating a PDF/X-3 document</a>,
 with the following exceptions :
 
 <ul>
 <li> Specify the <code>pdfwrite</code> device or use the <code>ps2pdf</code> script.
-<li> Specify the <code>-dPDFA</code> option.
+<li> Specify the <code>-dPDFA</code> option to specify PDF/A-1 or PDF/A-2.
 <li> Specify <code>-sProcessColorModel=DeviceGray</code>,  <code>-sProcessColorModel=DeviceRGB</code> or <code>-sProcessColorModel=DeviceCMYK</code>
      You must specify a ProcessColorModel, even if you plan
      to create a device-independent colour PDF file using -dUseCIEColor.
@@ -929,7 +929,7 @@ depending on the nature of the PDF/A incompatibility.
 
 Here is a sample command line to invoke Ghostscript for generating a PDF/A document :
 <blockquote><code>
-gs -dPDFA -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
+gs -dPDFA=1 -dBATCH -dNOPAUSE -dNOOUTERSAVE -dUseCIEColor -sProcessColorModel=DeviceCMYK -sDEVICE=pdfwrite -sOutputFile=out-a.pdf PDFA_def.ps input.ps
 </code></blockquote>
 
 <p>

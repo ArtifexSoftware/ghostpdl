@@ -562,7 +562,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
         return code;
 
     /* PDF/A XMP reference recommends setting UUID to empty. If not empty must be a URI */
-    if (pdev->PDFA)
+    if (pdev->PDFA != 0)
         instance_uuid[0] = 0x00;
 
     cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time));
@@ -745,14 +745,17 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
             }
             pdf_xml_tag_close(s, "rdf:Description");
             pdf_xml_newline(s);
-            if (pdev->PDFA) {
+            if (pdev->PDFA != 0) {
                 pdf_xml_tag_open_beg(s, "rdf:Description");
                 pdf_xml_attribute_name(s, "rdf:about");
                 pdf_xml_attribute_value(s, instance_uuid);
                 pdf_xml_attribute_name(s, "xmlns:pdfaid");
                 pdf_xml_attribute_value(s, "http://www.aiim.org/pdfa/ns/id/");
                 pdf_xml_attribute_name(s, "pdfaid:part");
-                pdf_xml_attribute_value(s,"1");
+                if (pdev->PDFA == 1)
+                    pdf_xml_attribute_value(s,"1");
+                else
+                    pdf_xml_attribute_value(s,"2");
                 pdf_xml_attribute_name(s, "pdfaid:conformance");
                 pdf_xml_attribute_value(s,"B");
                 pdf_xml_tag_end_empty(s);
