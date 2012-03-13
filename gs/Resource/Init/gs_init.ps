@@ -1263,6 +1263,10 @@ end
 
 (END FONTDIR/ENCS) VMDEBUG
 
+% Special handling for device parameters. Must follow definition of 'type'
+% make -dPDFA equivalent to -dPDFA=1 (backwards compatible)
+currentdict /PDFA known { PDFA type /booleantype eq { /PDFA 1 def } if } if
+
 % Construct a dictionary of all available devices.
 % These are (read-only) device prototypes that can't be
 % installed or have their parameters changed.  For this reason,
