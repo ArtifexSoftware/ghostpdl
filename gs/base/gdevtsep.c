@@ -190,7 +190,8 @@ tiffgray_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (tfdev->Compression==COMPRESSION_NONE && pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+    if (tfdev->Compression==COMPRESSION_NONE && 
+        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
@@ -355,7 +356,8 @@ tiffcmyk_print_page(gx_device_printer * pdev, FILE * file)
     gx_device_tiff *const tfdev = (gx_device_tiff *)pdev;
     int code;
 
-    if (tfdev->Compression==COMPRESSION_NONE && pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+    if (tfdev->Compression==COMPRESSION_NONE && 
+        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
     code = gdev_tiff_begin_page(tfdev, file);
@@ -1582,7 +1584,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
     /* Write the page directory for the CMYK equivalent file. */
     pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
-    if (tfdev->Compression==COMPRESSION_NONE && pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) { /* note width is never 0 in print_page */
+    if (tfdev->Compression==COMPRESSION_NONE && 
+        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) { /* note width is never 0 in print_page */
         dprintf("CMYK composite file would be too large! Reduce resolution or enable compression.\n");
         return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
     }
@@ -1640,7 +1643,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
         pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
         pdev->color_info.num_components = 1;
-        if (tfdev->Compression==COMPRESSION_NONE && pdev->height > ((long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+        if (tfdev->Compression==COMPRESSION_NONE && 
+            pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
