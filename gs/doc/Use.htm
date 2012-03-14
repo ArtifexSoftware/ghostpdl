@@ -2743,7 +2743,7 @@ Structuring Convention comments.
 <h4><a name="ICC_color_parameters"></a>ICC color parameters</h4>
 
 <dd>
-For details about the ICC controls see the document 
+For details about the ICC controls see the document
 <a href="GS9_Color_Management.pdf">GS9 Color Management</a>.
 </dd>
 
@@ -2788,7 +2788,7 @@ tool for creating these source profiles is contained in
 <dd>
 Enable the specificiation of a proofing profile that will make the
 color manegement system link multiple profiles together to emulate the
-device defined by the proofing profile.  See the document 
+device defined by the proofing profile.  See the document
 <a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details about this option.
 </dl>
 
@@ -2803,7 +2803,7 @@ link profile.  For example, the following would be a valid specification
 -sDEVICE=tiff32nc -sOutputICCProfile=srgb.icc -sDeviceLinkProfile=linkRGBtoCMYK.icc.
 In this case, the output device's color model is CMYK (tiff32nc) and the colors
 are mapped through sRGB and through a devicelink profile that maps sRGB to
-CMYK values.  See the document 
+CMYK values.  See the document
 <a href="GS9_Color_Management.pdf">GS9 Color Management</a> for details about this option.
 </dl>
 
@@ -2838,8 +2838,8 @@ device supports those colorants.
 <dl>
 <dt><code>-sRenderIntent=</code><em>intent</em>
 <dd>Set the rendering intent that should be used with the
-profile specified above by -sOutputICCProfile.  The 
-options for <em>intent</em> are  
+profile specified above by -sOutputICCProfile.  The
+options for <em>intent</em> are
 0, 1, 2, and 3,
 which correspond to the ICC intents of Perceptual, Colorimetric,
 Saturation, and Absolute Colorimetric.
@@ -2849,12 +2849,12 @@ Also see <a href="#OverrideRI">OverrideRI</a>.
 <dl>
 <dt><code>-sGraphicICCProfile=</code><em>filename</em>
 <dd>Set the ICC profile that will be associated with
-the output device for vector-based graphics (e.g. Fill, 
-Stroke operations).  
+the output device for vector-based graphics (e.g. Fill,
+Stroke operations).
 Care should be taken to ensure that the
 number of colorants associated with the device is the same
 as the profile.  This can be used to obtain more saturated
-colors for graphics.  
+colors for graphics.
 </dl>
 
 <dl>
@@ -2916,10 +2916,10 @@ control in the specification of source colors see
 <dt><a name="OverrideRI"></a><code>-dOverrideRI</code>
 <dd>Override the rendering intent contained in the source
 document with the rendering intents specified by -sRenderIntent,
--sGraphicIntent,  -sTextIntent, -sGraphicIntent.  Note that 
+-sGraphicIntent,  -sTextIntent, -sGraphicIntent.  Note that
 unless -dOverrideRI is specified, the above rendering intent
 settings are essentially ignored.  For detailed control over
-rendering intent with specific object types, see 
+rendering intent with specific object types, see
 <a href="#SourceObjectICC">SourceObjectICC</a>.
 </dl>
 
@@ -2931,11 +2931,11 @@ specify the source color spaces and rendering intents to use
 with graphics, images and text for both RGB and CMYK source
 objects.  The specification is made through a file that contains
 on a line a key name to specify the object type (e.g. Image_CMYK)
-followed by an ICC profile file name and a rendering intent 
+followed by an ICC profile file name and a rendering intent
 number (0 for perceptual, 1 for colorimetric, 2 for saturation,
-3 for absolute colorimetric).  An example file is given in 
-./gs/toolbin/color/src_color/objsrc_profiles_example.txt.  
-Profiles to demonstrate this method of specification are also 
+3 for absolute colorimetric).  An example file is given in
+./gs/toolbin/color/src_color/objsrc_profiles_example.txt.
+Profiles to demonstrate this method of specification are also
 included in this folder.  Note that if objects are colorimetrically
 specified through this mechanism other operations like -sImageIntent,
 -dOverrideICC, have no real affect.  See further details in the document
@@ -2945,12 +2945,12 @@ specified through this mechanism other operations like -sImageIntent,
 <dl>
 <dt><code>-dDeviceGrayToK=</code><em>true/false</em>
 <dd>
-By default, Ghostscript will map DeviceGray color spaces to 
-pure K when the output device is CMYK based.  This may not 
+By default, Ghostscript will map DeviceGray color spaces to
+pure K when the output device is CMYK based.  This may not
 always be desired.  In particular, it may be desired to map
 from the gray ICC profile specified by -sDefaultGrayProfile
-to the output device profile.  To achieve this, one should 
-specify -dDeviceGrayToK=false. 
+to the output device profile.  To achieve this, one should
+specify -dDeviceGrayToK=false.
 </dl>
 
 <dl>
@@ -2958,9 +2958,40 @@ specify -dDeviceGrayToK=false.
 <dd>
 This is used to avoid the use of ICC profiles for source colors that
 are defined by DeviceGray, DeviceRGB and DeviceCMYK definitions.  With
-UseFastColor set to true, the traditional Postscript 255 minus operations 
+UseFastColor set to true, the traditional Postscript 255 minus operations
 are used to convert between RGB and CMYK with black generation and undercolor
 removal mappings.
+</dl>
+
+<dl>
+<dt><code>-dUsePDFX3Profile=</code><em>int</em>
+<dd>
+This option enables rendering with an output intent defined in 
+the PDF source file.   If this option is included in the command line,
+source device color values (e.g DeviceCMYK, DeviceRGB, or DeviceGray) 
+that match the color model of the output intent will be interpreted to
+be in the output intent color space.   In addition, if the output device
+color model matches the output intent color model, then the 
+destination ICC profile will be the output intent ICC profile.
+
+If there is a mismatch between the device color model and the
+output intent, the output intent profile will be used as a 
+proofing profile, since that is the intended rendering.
+
+Note that a PDF document can have multiple 
+rendering intents per the PDF specification.  As such, with 
+the option -dUsePDFX3Profile the first output intent 
+encountered will be used.   It is possible to specify 
+a particular output intent where <em>int</em> is an 
+integer (a value of 0 is the same as not specifying a number).  
+Probing of the output intents for a particular file
+is possible using extractICCprofiles.ps in ./gs/toolbin.
+
+Finally, note that the ICC profile member entry is an option in
+the output intent dictionary.   In these cases, the output intent
+specifies a registry and a standard profile (e.g. Fogra39).  Ghostscript will
+not make use of these output intents.  Instead, if desired, these standard 
+profiles should be used with the commands specified above (e.g. -sOutputICCProfile).
 </dl>
 
 <dl>
