@@ -1997,10 +1997,15 @@ gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval)
 
     /*FIXME: This should return the entire list !!! */
     /*       Just return the first one for now      */
-    pval->data = (const byte *)( (pgs->icc_manager->device_n == NULL) ?
-                        rfs : pgs->icc_manager->device_n->head->iccprofile->name);
+    if (pgs->icc_manager->device_n == NULL) {
+        pval->data = (const byte *) rfs;
+        pval->persistent = true;
+    } else {
+        pval->data = 
+            (const byte *) (pgs->icc_manager->device_n->head->iccprofile->name);
+        pval->persistent = false;
+    }
     pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
 }
 
 int
@@ -2054,10 +2059,14 @@ gs_currentdefaultgrayicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_GRAY_ICC;
 
-    pval->data = (const byte *)( (pgs->icc_manager->default_gray == NULL) ?
-                        rfs : pgs->icc_manager->default_gray->name);
+    if (pgs->icc_manager->default_gray == NULL) {
+        pval->data = (const byte *) rfs;
+        pval->persistent = true;
+    } else {
+        pval->data = (const byte *) (pgs->icc_manager->default_gray->name);
+        pval->persistent = false;
+    }
     pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
 }
 
 int
@@ -2104,11 +2113,12 @@ gs_currenticcdirectory(const gs_state * pgs, gs_param_string * pval)
     if (lib_ctx->profiledir == NULL) {
         pval->data = (const byte *)rfs;
         pval->size = strlen(rfs);
+        pval->persistent = true;
     } else {
         pval->data = (const byte *)(lib_ctx->profiledir);
         pval->size = lib_ctx->profiledir_len;
+        pval->persistent = false;
     }
-    pval->persistent = true;
 }
 
 int
@@ -2142,7 +2152,7 @@ gs_currentsrcgtagicc(const gs_state * pgs, gs_param_string * pval)
     } else {
         pval->data = (byte *)pgs->icc_manager->srcgtag_profile->name;
         pval->size = strlen((const char *)pval->data);
-        pval->persistent = true;
+        pval->persistent = false;
     }
 }
 
@@ -2171,10 +2181,14 @@ gs_currentdefaultrgbicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_RGB_ICC;
 
-    pval->data = (const byte *)( (pgs->icc_manager->default_rgb == NULL) ?
-                        rfs : pgs->icc_manager->default_rgb->name);
+    if (pgs->icc_manager->default_rgb == NULL) {
+        pval->data = (const byte *) rfs;
+        pval->persistent = true;
+    } else {
+        pval->data = (const byte *) (pgs->icc_manager->default_rgb->name);
+        pval->persistent = false;
+    }
     pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
 }
 
 int
@@ -2203,10 +2217,14 @@ gs_currentnamedicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = "";
 
-    pval->data = (const byte *)( (pgs->icc_manager->device_named == NULL) ?
-                        rfs : pgs->icc_manager->device_named->name);
+    if (pgs->icc_manager->device_named == NULL) {
+        pval->data = (const byte *) rfs;
+        pval->persistent = true;
+    } else {
+        pval->data = (const byte *) (pgs->icc_manager->device_named->name);
+        pval->persistent = false;
+    }
     pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
 }
 
 int
@@ -2239,10 +2257,14 @@ gs_currentdefaultcmykicc(const gs_state * pgs, gs_param_string * pval)
 {
     static const char *const rfs = DEFAULT_CMYK_ICC;
 
-    pval->data = (const byte *)( (pgs->icc_manager->default_cmyk == NULL) ?
-                        rfs : pgs->icc_manager->default_cmyk->name);
+    if (pgs->icc_manager->default_cmyk == NULL) {
+        pval->data = (const byte *) rfs;
+        pval->persistent = true;
+    } else {
+        pval->data = (const byte *) (pgs->icc_manager->default_cmyk->name);
+        pval->persistent = false;
+    }
     pval->size = strlen((const char *)pval->data);
-    pval->persistent = true;
 }
 
 int
