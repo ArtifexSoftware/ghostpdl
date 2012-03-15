@@ -1400,7 +1400,7 @@
 
 
       /* If the next token isn't `dup' we are done. */
-      if ( parser->root.cursor + 4 < parser->root.limit            &&
+      if ( parser->root.cursor + 4 >= parser->root.limit            ||
            ft_strncmp( (char*)parser->root.cursor, "dup", 3 ) != 0 )
         break;
 
