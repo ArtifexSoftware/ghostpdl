@@ -177,7 +177,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     gs_setaligntopixels(ctx->fontdir, 1); /* no subpixels */
     gs_setgridfittt(ctx->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
-    (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
     *ppinstance = (pl_interp_instance_t *)instance;
 
     return 0;
@@ -232,6 +231,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);
+    (void)xps_set_icc_user_params((pl_interp_instance_t *)instance, ctx->pgs);
 
     /* gsave and grestore (among other places) assume that */
     /* there are at least 2 gstates on the graphics stack. */
