@@ -61,7 +61,11 @@
                 oforce
                     % stack: CSname CSobject
                 dup type /arraytype eq {
-                  dup 0 get /ICCBased eq {
+                  dup 0 oget /Indexed eq {
+                    1 oget
+                    dup type /arraytype ne { pop { 0 } } if
+                  } if
+                  dup 0 oget /ICCBased eq {
                     dup PDFfile fileposition exch
                     1 oget
                     mark exch { oforce } forall .dicttomark
