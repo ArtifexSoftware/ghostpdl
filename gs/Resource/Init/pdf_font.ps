@@ -1215,26 +1215,23 @@ currentdict end readonly def
 % should not add one.
 % Following Acrobat we ignore everything outside
 % begincodespacerange .. endcmap.
-/read_CMap {  % <wmode> <name> <1> <stream> read_CMap <CMap>
-              % <wmode> <2> <stream> read_CMap <CMap>
+/read_CMap {  % <info> <wmode> <name> <stream> read_CMap <CMap>
   dup 0 (begincodespacerange) /SubFileDecode filter flushfile
-
   //CMap_read_dict begin
   /CIDInit /ProcSet findresource begin
   12 dict begin
-  5 2 index sub -1 roll dup //null eq {pop} {/WMode exch def} ifelse
+  4 2 roll
+  dup //null eq { pop } { /WMode exch def } ifelse
+  dup //null eq { pop } { /CIDSystemInfo exch def } ifelse
+  /CMapType 1 def
   /.last_CMap_def currentdict def % establish binding
-  /CMapType 3 -1 roll def
   mark exch % emulate 'begincodespacerange'
   0 (endcmap) /SubFileDecode filter cvx /begincmap cvx exch 2 .execn
   endcmap
-
   /.last_CMap_def load
   { currentdict end //CMap_read_dict eq { exit } if } loop
   dup /.last_CMap_def undef
-  dup /CMapType get 1 eq {
-     /CMap defineresource
-  } if
+  /CMap defineresource
 } bdef
 
 currentdict /CMap_read_dict undef
@@ -1251,10 +1248,15 @@ currentdict /CMap_read_dict undef
     } ifelse
   } {
     PDFfile fileposition exch
+    dup /CIDSystemInfo knownoget {
+      << exch { oforce } forall >>
+    } { 
+      //null
+    } ifelse exch
     dup /WMode knownoget not {//null} if exch
     dup /CMapName oget exch
     //true resolvestream
-    1 exch read_CMap
+    read_CMap
     exch PDFfile exch setfileposition
   } ifelse		% CMap
   [
