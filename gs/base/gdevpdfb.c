@@ -293,16 +293,18 @@ pdf_copy_mono(gx_device_pdf *pdev,
      * that would need to be passed.
      */
     if (pres) {
-        /*
-         * Always use CCITTFax 2-D for character bitmaps.  It takes less
-         * space to invert the data with Decode than to set BlackIs1.
-         */
-        float d0 = image.Decode[0];
+        if (!pdev->NoT3CCITT) {
+            /*
+             * Always use CCITTFax 2-D for character bitmaps.  It takes less
+             * space to invert the data with Decode than to set BlackIs1.
+             */
+            float d0 = image.Decode[0];
 
-        image.Decode[0] = image.Decode[1];
-        image.Decode[1] = d0;
-        psdf_CFE_binary(&writer.binary[0], image.Width, image.Height, true);
-        invert ^= 0xff;
+            image.Decode[0] = image.Decode[1];
+            image.Decode[1] = d0;
+            psdf_CFE_binary(&writer.binary[0], image.Width, image.Height, true);
+            invert ^= 0xff;
+        }
     } else {
         /* Use the Distiller compression parameters. */
         pdev->ParamCompatibilityLevel = pdev->CompatibilityLevel;

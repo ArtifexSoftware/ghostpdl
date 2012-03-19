@@ -268,5 +268,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
  true,				/* IsDistiller (true even for ps2write!) */
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
- !PDF_FOR_OPDFREAD		/* PreserveTrMode */
+ !PDF_FOR_OPDFREAD,		/* PreserveTrMode */
+ false                          /* NoT3CCITT */
 };

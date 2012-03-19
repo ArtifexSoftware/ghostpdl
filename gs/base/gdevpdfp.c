@@ -121,6 +121,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("IsDistiller", gs_param_type_bool, IsDistiller),
     pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
     pi("PreserveTrMode", gs_param_type_bool, PreserveTrMode),
+    pi("NoT3CCITT", gs_param_type_bool, NoT3CCITT),
 #undef pi
     gs_param_item_end
 };

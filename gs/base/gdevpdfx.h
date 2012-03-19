@@ -713,6 +713,11 @@ struct gx_device_pdf_s {
     bool IsDistiller;
     bool PreserveSMask;
     bool PreserveTrMode;
+    bool NoT3CCITT;                 /* A bug in Brother printers causes CCITTFaxDecode
+                                     * to fail, especially with small amounts of data.
+                                     * This parameter is present only to allow
+                                     * ps2write output to work on those pritners.
+                                     */
 };
 
 #define is_in_page(pdev)\
