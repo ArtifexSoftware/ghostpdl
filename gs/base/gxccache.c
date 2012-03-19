@@ -34,6 +34,7 @@
 #include "gscspace.h"		/* for gsimage.h */
 #include "gsimage.h"
 #include "gxhttile.h"
+#include "gsptype1.h"       /* for gx_dc_is_pattern1_color_with_trans */
 
 /* Forward references */
 static byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
@@ -296,9 +297,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      */
     depth = (cc_depth(cc) == 3 ? 2 : cc_depth(cc));
     if ((dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
-        !lop_no_S_is_T(pgs->log_op) &&
-        !gx_dc_is_pattern1_color_with_trans(pdevc))
-        ) {
+        !lop_no_S_is_T(pgs->log_op))) {
+
         gx_clip_path *pcpath;
 
         if (penum) {

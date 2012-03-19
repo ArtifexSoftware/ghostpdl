@@ -629,7 +629,8 @@ $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(AK) $(gx_h)\
  $(gscencs_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzstate_h) $(gzpath_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gzcpath_h) $(gxchar_h) $(gxfont_h) $(gxfcache_h)\
- $(gxxfont_h) $(gximask_h) $(gscspace_h) $(gsimage_h) $(gxhttile_h) $(MAKEDIRS)
+ $(gxxfont_h) $(gximask_h) $(gscspace_h) $(gsimage_h) $(gxhttile_h)\
+ $(gsptype1_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxccache.$(OBJ) $(C_) $(GLSRC)gxccache.c
 
 $(GLOBJ)gxccman.$(OBJ) : $(GLSRC)gxccman.c $(AK) $(gx_h) $(gserrors_h)\
