@@ -621,10 +621,10 @@ pl_main_universe_dnit(
           return -1;
       }
 
-    /* dealloc device if sel'd */
+    /* close and dealloc the device if selected. */
     if (universe->curr_device) {
+        gs_closedevice(universe->curr_device);
         gs_unregister_root(universe->curr_device->memory, &device_root, "pl_main_universe_select");
-        /* ps allocator retain's the device, pl_alloc doesn't */
         gx_device_retain(universe->curr_device, false);
         universe->curr_device = NULL;
     }
