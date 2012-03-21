@@ -585,7 +585,7 @@ svg_setfillcolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     if_debug0('_', "svg_setfillcolor\n");
 
-    if (svg->fillcolor != fill)
+    if (svg->fillcolor == fill)
       return 0; /* not a new color */
     /* update our state with the new color */
     svg->fillcolor = fill;
@@ -603,7 +603,7 @@ svg_setstrokecolor(gx_device_vector *vdev, const gs_imager_state *pis,
 
     if_debug0('_', "svg_setstrokecolor\n");
 
-    if (svg->strokecolor != stroke)
+    if (svg->strokecolor == stroke)
       return 0; /* not a new color */
 
     /* update our state with the new color */
