@@ -101,17 +101,27 @@ static int add_move(FAPI_path *I, int64_t x, int64_t y)
 
     x = import_shift(x, I->shift) + olh->x0;
     y = -import_shift(y, I->shift) + olh->y0;
-    if (x > (int64_t)max_fixed || y > (int64_t)max_fixed || x < -(int64_t)max_fixed || y < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
-    }
-    else {
 
-        if (olh->need_close && olh->close_path)
-            if ((I->gs_error = add_closepath(I)) < 0)
-                return I->gs_error;
-        olh->need_close = false;
-        I->gs_error = gx_path_add_point(olh->path, (fixed)x, (fixed)y);
+    if (x > (int64_t)max_fixed) {
+        x = (int64_t)max_fixed;
     }
+    else if (x < (int64_t)min_fixed) {
+       x = (int64_t)min_fixed;
+    }
+
+    if (y > (int64_t)max_fixed) {
+        y = (int64_t)max_fixed;
+    }
+    else if (y < (int64_t)min_fixed) {
+       y = (int64_t)min_fixed;
+    }
+
+    if (olh->need_close && olh->close_path)
+        if ((I->gs_error = add_closepath(I)) < 0)
+            return I->gs_error;
+    olh->need_close = false;
+    I->gs_error = gx_path_add_point(olh->path, (fixed)x, (fixed)y);
+
     return I->gs_error;
 }
 
@@ -120,14 +130,22 @@ static int add_line(FAPI_path *I, int64_t x, int64_t y)
 
     x = import_shift(x, I->shift) + olh->x0;
     y = -import_shift(y, I->shift) + olh->y0;
-    if (x > (int64_t)max_fixed || y > (int64_t)max_fixed || x < -(int64_t)max_fixed || y < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
+    if (x > (int64_t)max_fixed) {
+        x = (int64_t)max_fixed;
     }
-    else {
+    else if (x < (int64_t)min_fixed) {
+       x = (int64_t)min_fixed;
+    }
 
-        olh->need_close = true;
-        I->gs_error =  gx_path_add_line_notes(olh->path, (fixed)x, (fixed)y, 0);
+    if (y > (int64_t)max_fixed) {
+        y = (int64_t)max_fixed;
     }
+    else if (y < (int64_t)min_fixed) {
+       y = (int64_t)min_fixed;
+    }
+
+    olh->need_close = true;
+    I->gs_error =  gx_path_add_line_notes(olh->path, (fixed)x, (fixed)y, 0);
     return I->gs_error;
 }
 
@@ -141,16 +159,48 @@ static int add_curve(FAPI_path *I, int64_t x0, int64_t y0, int64_t x1, int64_t y
     x2 = import_shift(x2, I->shift) + olh->x0;
     y2 = -import_shift(y2, I->shift) + olh->y0;
 
-    if (x0 > (int64_t)max_fixed || y0 > (int64_t)max_fixed || x0 < -(int64_t)max_fixed || y0 < -(int64_t)max_fixed ||
-        x1 > (int64_t)max_fixed || y1 > (int64_t)max_fixed || x1 < -(int64_t)max_fixed || y1 < -(int64_t)max_fixed ||
-        x2 > (int64_t)max_fixed || y2 > (int64_t)max_fixed || x2 < -(int64_t)max_fixed || y2 < -(int64_t)max_fixed) {
-        I->gs_error = e_rangecheck;
+    if (x0 > (int64_t)max_fixed) {
+        x0 = (int64_t)max_fixed;
     }
-    else {
+    else if (x0 < (int64_t)min_fixed) {
+       x0 = (int64_t)min_fixed;
+    }
 
-        olh->need_close = true;
-        I->gs_error = gx_path_add_curve_notes(olh->path, (fixed)x0, (fixed)y0, (fixed)x1, (fixed)y1, (fixed)x2, (fixed)y2, 0);
+    if (y0 > (int64_t)max_fixed) {
+        y0 = (int64_t)max_fixed;
     }
+    else if (y0 < (int64_t)min_fixed) {
+       y0 = (int64_t)min_fixed;
+    }
+    if (x1 > (int64_t)max_fixed) {
+        x1 = (int64_t)max_fixed;
+    }
+    else if (x1 < (int64_t)min_fixed) {
+       x1 = (int64_t)min_fixed;
+    }
+
+    if (y1 > (int64_t)max_fixed) {
+        y1 = (int64_t)max_fixed;
+    }
+    else if (y1 < (int64_t)min_fixed) {
+       y1 = (int64_t)min_fixed;
+    }
+    if (x2 > (int64_t)max_fixed) {
+        x2 = (int64_t)max_fixed;
+    }
+    else if (x2 < (int64_t)min_fixed) {
+       x2 = (int64_t)min_fixed;
+    }
+
+    if (y2 > (int64_t)max_fixed) {
+        y2 = (int64_t)max_fixed;
+    }
+    else if (y2 < (int64_t)min_fixed) {
+       y2 = (int64_t)min_fixed;
+    }
+
+    olh->need_close = true;
+    I->gs_error = gx_path_add_curve_notes(olh->path, (fixed)x0, (fixed)y0, (fixed)x1, (fixed)y1, (fixed)x2, (fixed)y2, 0);
     return I->gs_error;
 }
 
