@@ -755,16 +755,25 @@ pdf_convert_truetype_font_descriptor(gx_device_pdf *pdev, pdf_font_resource_t *p
     if (pdfont->u.cidfont.CIDToGIDMap == NULL)
         return_error(gs_error_VMerror);
     memset(pdfont->u.cidfont.CIDToGIDMap, 0, length_CIDToGIDMap);
-    for (ch = FirstChar; ch <= LastChar; ch++) {
-        if (Encoding[ch].glyph != GS_NO_GLYPH) {
+    if(pdev->PDFA == 1) {
+        for (ch = FirstChar; ch <= LastChar; ch++) {
+            if (Encoding[ch].glyph != GS_NO_GLYPH) {
+                gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
+
+                pbfont->CIDSet[ch / 8] |= 0x80 >> (ch % 8);
+                pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
+            }
+        }
+        /* Set the CIDSet bit for CID 0 (the /.notdef) which must always be present */
+        pbfont->CIDSet[0] |= 0x80;
+    } else {
+        for (ch = 0; ch <= pbfont->num_glyphs; ch++) {
             gs_glyph glyph = pfont->procs.encode_char(pfont, ch, GLYPH_SPACE_INDEX);
 
             pbfont->CIDSet[ch / 8] |= 0x80 >> (ch % 8);
             pdfont->u.cidfont.CIDToGIDMap[ch] = glyph - GS_MIN_GLYPH_INDEX;
         }
     }
-    /* Set the CIDSet bit for CID 0 (the /.notdef) which must always be present */
-    pbfont->CIDSet[0] |= 0x80;
     pbfont->CIDSetLength = length_CIDSet;
     pdfont->u.cidfont.CIDToGIDMapLength = length_CIDToGIDMap / sizeof(ushort);
     pdfont->u.cidfont.Widths2 = NULL;
