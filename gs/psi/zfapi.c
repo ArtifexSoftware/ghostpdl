@@ -2074,7 +2074,7 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     FAPI_metrics metrics;
     FAPI_server *I = pbfont->FAPI;
     int client_char_code = 0;
-    ref char_name, *SubfontId;
+    ref char_name, enc_char_name, *SubfontId;
     bool is_TT_from_type42 = (pbfont->FontType == ft_TrueType && font_file_path == NULL);
     bool is_embedded_type1 = ((pbfont->FontType == ft_encrypted ||
                                pbfont->FontType == ft_encrypted2) &&
@@ -2292,6 +2292,13 @@ retry_oversampling:
             return_error(e_invalidfont);
     } else
         char_name = *op;
+        
+    /* We need to store the name as we get it (from the Encoding array), in case it's
+     * had the name extended (with "~GS~xx"), we'll remove the extension before passing
+     * it to the renderer for a disk based font. But the metrics dictionary may have
+     * been constructed using the extended name....
+     */
+     ref_assign(&enc_char_name, &char_name);
 
     /* Obtain the character code or glyph index : */
     cr.char_codes_count = 1;
@@ -2579,7 +2586,7 @@ retry_oversampling:
         }
         if (cr.metrics_type != FAPI_METRICS_REPLACE && bVertical) {
             double pwv[4];
-            code = zchar_get_metrics2(pbfont, &char_name, pwv);
+            code = zchar_get_metrics2(pbfont, &enc_char_name, pwv);
             if (code < 0)
                 return code;
             if (code == metricsNone) {
@@ -2612,7 +2619,7 @@ retry_oversampling:
             }
         }
         if (cr.metrics_type == FAPI_METRICS_NOTDEF && !bVertical) {
-            code = zchar_get_metrics(pbfont, &char_name, sbw);
+            code = zchar_get_metrics(pbfont, &enc_char_name, sbw);
             if (code < 0)
                 return code;
             if (code == metricsNone) {
