@@ -2074,6 +2074,7 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     }
     if (y < buf->rect.p.y) {
       h += y - buf->rect.p.y;
+      aa_row -= (y - buf->rect.p.y) * aa_raster;
       y = buf->rect.p.y;
     }
     if (x + w > buf->rect.q.x) w = buf->rect.q.x - x;
