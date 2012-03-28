@@ -140,7 +140,7 @@ BACKTRACE(pdev);
 open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
-    clist_init_io_procs(pclist_dev, false);
+    clist_init_io_procs(pclist_dev, ppdev->BLS_force_memory);
     clist_init_params(pclist_dev, base, space, pdev,
                       ppdev->printer_procs.buf_procs,
                       space_params->band, ppdev->is_async_renderer,
@@ -497,23 +497,38 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     int code = gx_default_get_params(pdev, plist);
     gs_param_string ofns;
+    gs_param_string bls;
 
     if (code < 0 ||
-        (code = param_write_long(plist, "MaxBitmap", &ppdev->space_params.MaxBitmap)) < 0 ||
-        (code = param_write_long(plist, "BufferSpace", &ppdev->space_params.BufferSpace)) < 0 ||
-        (code = param_write_int(plist, "BandWidth", &ppdev->space_params.band.BandWidth)) < 0 ||
-        (code = param_write_int(plist, "BandHeight", &ppdev->space_params.band.BandHeight)) < 0 ||
         (code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
+        (code = param_write_int(plist, "BandHeight", &ppdev->space_params.band.BandHeight)) < 0 ||
+        (code = param_write_int(plist, "BandWidth", &ppdev->space_params.band.BandWidth)) < 0 ||
+        (code = param_write_long(plist, "BufferSpace", &ppdev->space_params.BufferSpace)) < 0 ||
+        (ppdev->Duplex_set >= 0 &&
+        (code = (ppdev->Duplex_set ?
+                  param_write_bool(plist, "Duplex", &ppdev->Duplex) :
+                  param_write_null(plist, "Duplex"))) < 0) ||
+        (code = param_write_long(plist, "MaxBitmap", &ppdev->space_params.MaxBitmap)) < 0 ||
         (code = param_write_int(plist, "NumRenderingThreads", &ppdev->num_render_threads_requested)) < 0 ||
         (code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
-        (code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0 ||
-        (code = param_write_bool(plist, "PageUsesTransparency",
-                                &ppdev->page_uses_transparency)) < 0 ||
-        (ppdev->Duplex_set >= 0 &&
-         (code = (ppdev->Duplex_set ?
-                  param_write_bool(plist, "Duplex", &ppdev->Duplex) :
-                  param_write_null(plist, "Duplex"))) < 0)
+        (code = param_write_bool(plist, "PageUsesTransparency", &ppdev->page_uses_transparency)) < 0 ||
+        (code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0
         )
+        return code;
+
+    /* Force the default to 'memory' if clist file I/O is not included in this build */
+    if (clist_io_procs_file_global == NULL)
+        ppdev->BLS_force_memory = true;
+    if (ppdev->BLS_force_memory) {
+        bls.data = (byte *)"memory";
+        bls.size = 6;
+        bls.persistent = false;
+    } else {
+        bls.data = (byte *)"file";
+        bls.size = 4;
+        bls.persistent = false;
+    }
+    if( (code = param_write_string(plist, "BandListStorage", &bls)) < 0 )
         return code;
 
     ofns.data = (const byte *)ppdev->fname,
@@ -553,6 +568,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     int nthreads = ppdev->num_render_threads_requested;
     gdev_prn_space_params sp, save_sp;
     gs_param_string ofs;
+    gs_param_string bls;
     gs_param_dict mdict;
 
     sp = ppdev->space_params;
@@ -617,7 +633,7 @@ label:\
         break
 
     switch (code = param_read_long(plist, (param_name = "MaxBitmap"), &sp.MaxBitmap)) {
-        CHECK_PARAM_CASES(MaxBitmap, sp.MaxBitmap < 10000, mbe);
+        CHECK_PARAM_CASES(MaxBitmap, sp.MaxBitmap < 0, mbe);
     }
 
     switch (code = param_read_long(plist, (param_name = "BufferSpace"), &sp.BufferSpace)) {
@@ -634,6 +650,21 @@ label:\
 
     switch (code = param_read_long(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
         CHECK_PARAM_CASES(band.BandBufferSpace, sp.band.BandBufferSpace < 0, bbse);
+    }
+
+    switch (code = param_read_string(plist, (param_name = "BandListStorage"), &bls)) {
+        case 0:
+            /* Only accept 'file' if the file procs are include in the build */
+            if ((bls.size > 1) && (bls.data[0] == 'm' ||
+                 (clist_io_procs_file_global != NULL && bls.data[0] == 'f')))
+                break;
+            /* falls through */
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 1:
+            bls.data = 0;
+            break;
     }
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
@@ -702,6 +733,9 @@ label:\
     }
     ppdev->space_params = sp;
     ppdev->num_render_threads_requested = nthreads;
+    if (bls.data != 0) {
+        ppdev->BLS_force_memory = (bls.data[0] == 'm');
+    }
 
     /* If necessary, free and reallocate the printer memory. */
     /* Formerly, would not reallocate if device is not open: */

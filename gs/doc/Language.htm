@@ -1948,6 +1948,15 @@ full page buffer may be somewhat larger than the bitmap size alone.
 </dl>
 
 <dl>
+<dt><code>BandListStorage &lt;file|memory&gt;</code>
+<dd>The default is determined by the make file macro <code>BAND_LIST_STORAGE</code>.
+Since <code>memory</code> is always included, specifying <code>-sBandListStorage=memory</code>
+when the default is <code>file</code> will use memory based storage for the
+band list of the page. This is primarily intended for testing, but if the disk I/O is
+slow, band list storage in memory may be faster.
+</dl>
+
+<dl>
 <dt><code>BufferSpace &lt;integer&gt;</code>
 <dd>Size of the buffer space for band lists, if the full page raster image 
 (bitmap) is larger than <code>MaxBitmap</code> (see above.)

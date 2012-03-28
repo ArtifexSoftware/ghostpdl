@@ -211,6 +211,8 @@ const clist_io_procs_t *clist_io_procs_memory_global = NULL;
 void
 clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 {
+    /* if clist_io_procs_file_global is NULL, then BAND_LIST_STORAGE=memory */
+    /* was specified in the build, and "file" is not available */
     if (in_memory || clist_io_procs_file_global == NULL)
         pclist_dev->common.page_info.io_procs = clist_io_procs_memory_global;
     else

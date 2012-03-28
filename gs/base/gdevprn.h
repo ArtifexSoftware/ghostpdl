@@ -229,16 +229,17 @@ struct gdev_prn_space_params_s {
                 /* ------ before calling the device open routine. ------ */\
         gdev_prn_space_params space_params;\
         char fname[prn_fname_sizeof];	/* OutputFile */\
+        bool BLS_force_memory;\
                 /* ------ Other device parameters ------ */\
         bool OpenOutputFile;\
         bool ReopenPerPage;\
         bool page_uses_transparency; /* PDF 1.4 transparency is used on page */\
         bool Duplex;\
-          int Duplex_set;		/* -1 = not supported */\
+        int Duplex_set;		        /* -1 = not supported */\
                 /* ------ End of parameters ------ */\
         bool file_is_new;		/* true iff file just opened */\
         FILE *file;			/* output file */\
-        long buffer_space;	/* amount of space for clist buffer, */\
+        long buffer_space;	        /* amount of space for clist buffer, */\
                                         /* 0 means not using clist */\
         byte *buf;			/* buffer for rendering */\
                 /* ---- Begin async rendering support --- */\
@@ -412,6 +413,7 @@ extern const gx_device_procs prn_std_procs;
            BandingAuto	/* banding_type */\
          },\
          { 0 },		/* fname */\
+        0/*false*/,     /* BLS_force_memory */\
         0/*false*/,	/* OpenOutputFile */\
         0/*false*/,	/* ReopenPerPage */\
         0/*false*/,	/* page_uses_transparency */\
