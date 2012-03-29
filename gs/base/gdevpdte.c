@@ -378,8 +378,39 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
                                             GLYPH_INFO_WIDTH0 << WMode,
                                             &info);
 
-        if (code < 0)
-            return code;
+        /* If we got an undefined error, and its a type 1/CFF font, try to
+         * find the /.notdef glyph and use its width instead (as this is the
+         * glyph which will be rendered). We don't do this for other font types
+         * as it seems Acrobat/Distiller may not do so either.
+         */
+        /* The GL/2 stick font does not supply the enumerate_glyphs method,
+         * *and* leaves it uninitialised. But it should not be possible to
+         * get an undefiend error with this font anyway.
+         */
+        if (code < 0) {
+            if ((font->FontType == ft_encrypted ||
+            font->FontType == ft_encrypted2)) {
+                int index;
+
+                for (index = 0;
+                    (font->procs.enumerate_glyph((gs_font *)font, &index,
+                    (GLYPH_SPACE_NAME), &glyph)) >= 0 &&
+                    index != 0;) {
+
+                    if (gs_font_glyph_is_notdef(font, glyph)) {
+                        code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
+                                            GLYPH_INFO_WIDTH0 << WMode,
+                                            &info);
+
+                    if (code < 0)
+                        return code;
+                    }
+                    break;
+                }
+            }
+            if (code < 0)
+                return code;
+        }
         gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
         gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
         gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);

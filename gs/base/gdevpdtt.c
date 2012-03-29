@@ -2544,21 +2544,54 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
        to be equal to half glyph width, and AR5 takes it from W, DW.
        So make a compatibe data here.
      */
-    if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode))) {
-        code = get_missing_width(cfont, wmode, &scale_c, pwidths);
-        if (code < 0)
-            v.y = 0;
-        else
-            v.y = pwidths->Width.v.y;
-        if (wmode && pdf_is_CID_font(ofont)) {
-            pdf_glyph_widths_t widths1;
+    if ((code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode)))) {
+        /* If we got an undefined error, and its a type 1/CFF font, try to
+         * find the /.notdef glyph and use its width instead (as this is the
+         * glyph which will be rendered). We don't do this for other font types
+         * as it seems Acrobat/Distiller may not do so either.
+         */
+        if (code == gs_error_undefined && (ofont->FontType == ft_encrypted || ofont->FontType == ft_encrypted2)) {
+            int index;
+            gs_glyph notdef_glyph;
 
-            if (get_missing_width(cfont, 0, &scale_c, &widths1) < 0)
-                v.x = 0;
+            for (index = 0;
+                (ofont->procs.enumerate_glyph((gs_font *)ofont, &index,
+                (GLYPH_SPACE_NAME), &notdef_glyph)) >= 0 &&
+                index != 0;) {
+                    if (gs_font_glyph_is_notdef(ofont, notdef_glyph)) {
+                        code = ofont->procs.glyph_info((gs_font *)ofont, notdef_glyph, NULL,
+                                            GLYPH_INFO_WIDTH0 << wmode,
+                                            &info);
+
+                    if (code < 0)
+                        return code;
+                    code = store_glyph_width(&pwidths->Width, wmode, &scale_c, &info);
+                    if (code < 0)
+                        return code;
+                    rcode |= code;
+                    if (info.members  & (GLYPH_INFO_VVECTOR0 << wmode))
+                        gs_distance_transform(info.v.x, info.v.y, &scale_c, &v);
+                    else
+                        v.x = v.y = 0;
+                    break;
+                }
+            }
+        } else {
+        code = get_missing_width(cfont, wmode, &scale_c, pwidths);
+            if (code < 0)
+                v.y = 0;
             else
-                v.x = widths1.Width.w / 2;
-        } else
-            v.x = pwidths->Width.v.x;
+                v.y = pwidths->Width.v.y;
+            if (wmode) {
+                pdf_glyph_widths_t widths1;
+
+                if (get_missing_width(cfont, 0, &scale_c, &widths1) < 0)
+                    v.x = 0;
+                else
+                    v.x = widths1.Width.w / 2;
+            } else
+                v.x = pwidths->Width.v.x;
+        }
     } else if (code < 0)
         return code;
     else {
