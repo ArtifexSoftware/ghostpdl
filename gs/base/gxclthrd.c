@@ -451,7 +451,11 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
             if (thread->status == RENDER_THREAD_BUSY)
                 gx_semaphore_wait(thread->sema_this);
         }
-        crdev->thread_lookahead_direction *= -1;
+        crdev->thread_lookahead_direction *= -1;      /* reverse direction (but may be overruled below) */
+        if (band_needed == band_count-1)
+            crdev->thread_lookahead_direction = -1;   /* assume backwards if we are asking for the last band */
+        if (band_needed == 0)
+            crdev->thread_lookahead_direction = 1;    /* force forward if we are looking for band 0 */
         /* Loop creating the devices and semaphores for each thread, then start them */
         for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
                 i++, band += crdev->thread_lookahead_direction) {
