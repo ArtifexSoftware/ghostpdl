@@ -2558,7 +2558,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
                 (ofont->procs.enumerate_glyph((gs_font *)ofont, &index,
                 (GLYPH_SPACE_NAME), &notdef_glyph)) >= 0 &&
                 index != 0;) {
-                    if (gs_font_glyph_is_notdef(ofont, notdef_glyph)) {
+                    if (gs_font_glyph_is_notdef((gs_font_base *)ofont, notdef_glyph)) {
                         code = ofont->procs.glyph_info((gs_font *)ofont, notdef_glyph, NULL,
                                             GLYPH_INFO_WIDTH0 << wmode,
                                             &info);
