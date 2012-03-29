@@ -184,24 +184,63 @@ currentdict /runpdfstring .undef
 } bind def
 
 /runpdfpagerange {	% - runpdfpagerange <firstpage#> <lastpage#>
-   /FirstPage where
-    { pop FirstPage dup pdfpagecount gt
-      { (\nRequested FirstPage is greater than the number of pages in the file: ) print
-        pdfpagecount = flush
-      } if
-    } {
-      1
-    } ifelse
-   /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
-   1 index 1 index gt
-    { (   No pages will be processed \(FirstPage > LastPage\).) = flush }
-    { QUIET not
-      { (Processing pages ) print 1 index =only ( through ) print dup =only
-        (.) = flush
-      }
-     if
-    }
-   ifelse
+   /PortfolioPage where {
+     pop
+     PortfolioPage cvi dup pdfpagecount add                  % a b+1
+     /PortfolioPage dup load                                 % a b+1 /P ()
+     (          ) 1 index  copy pop
+     dup 3 index exch cvs pop                                % a b+1 /P (b+1)
+     store
+     1 sub                                                   % a b
+     /FirstPage where { pop FirstPage } { 1 } ifelse
+     /LastPage  where { pop LastPage  } {2000000000} ifelse  % a b fp lp
+     2 index 2 index lt { % b < fp
+       1e10
+     } {
+       3 index 2 index gt { % a > fp
+         1
+       } {
+         1 index 4 index sub 1 add  
+       } ifelse
+     } ifelse                                                % a b fp lp f
+     3 index 2 index lt { % b < bp
+       3 index 5 index sub 1 add  % b-a+1=count
+     } {
+       4 index 2 index gt {
+         0
+       } {
+         1 index 5 index sub 1 add
+       } ifelse
+     } ifelse                                                % a b fp lp f l
+     6 2 roll pop pop pop pop
+
+     QUIET not { 
+       1 index 1 index gt { 
+         (Skipping the subfuile.) = flush 
+       } { 
+           (Processing pages ) print 1 index =only ( through ) print dup =only
+           (.) = flush
+       } ifelse
+     } if
+   } {
+     /FirstPage where { 
+       pop FirstPage dup pdfpagecount gt {
+         (\nRequested FirstPage is greater than the number of pages in the file: ) print
+          pdfpagecount = flush
+       } if
+     } {
+        1
+     } ifelse
+     /LastPage where { pop LastPage pdfpagecount .min } { pdfpagecount } ifelse
+     1 index 1 index gt { 
+       (   No pages will be processed \(FirstPage > LastPage\).) = flush 
+     } { 
+       QUIET not { 
+         (Processing pages ) print 1 index =only ( through ) print dup =only
+         (.) = flush
+       } if
+     } ifelse
+   } ifelse
 } bind def
 
 /dopdfpages {   % firstpage# lastpage# dopdfpages -
@@ -320,9 +359,12 @@ currentdict /runpdfstring .undef
     //runpdfend exec
   } {
     //runpdfend exec
-    ] {
+    ] 
+    (1         ) 10 string copy exch
+    {
         dup type /filetype eq {
           //runpdfbegin exec
+          dup /PortfolioPage exch def
           process_trailer_attrs
           //runpdfpagerange exec
           //dopdfpages exec
@@ -331,6 +373,7 @@ currentdict /runpdfstring .undef
         } {
           .namestring dup (r) file
           //runpdfbegin exec
+          /PortfolioPage 2 index def
           process_trailer_attrs
           //runpdfpagerange exec
           //dopdfpages exec
@@ -338,6 +381,7 @@ currentdict /runpdfstring .undef
           deletefile
         } ifelse
     } forall
+    pop
   } ifelse
 } bind def
 
