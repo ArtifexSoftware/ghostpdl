@@ -1520,16 +1520,12 @@ currentdict /postalias undef
   pop
 } bind def
 
-% <dict> .definettcidfont <font>
+% <CIDSystemInfo dict> <dict> .definettcidfont <font>
 /.definettcidfont {
   dup begin
   /CIDFontName fontname def
   /CIDFontType 2 def
-  /CIDSystemInfo mark
-    /Registry (Adobe)
-    /Ordering (Japan1)		% adhoc
-    /Supplement 0
-  .dicttomark def
+  /CIDSystemInfo 4 -1 roll def
   /CharStrings mark /.notdef 0 .dicttomark def
                 % The cmap isn't of any use even if it is present.
                 % Just construct an identity CIDMap covering all the glyphs.
@@ -1553,7 +1549,7 @@ currentdict /postalias undef
   end end dup /CIDFontName get exch /CIDFont defineresource
 } bind def
 
-% <file> <Substite name> .loadttcidfont <cidtype2font>
+% <CIDSystemInfo dict> <file> <Substite name> .loadttcidfont <cidtype2font>
 /.loadttcidfont {
   exch
   //false 0 .loadttfonttables

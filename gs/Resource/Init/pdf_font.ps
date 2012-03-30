@@ -1110,6 +1110,8 @@ currentdict /eexec_pdf_param_dict .undef
   //true resolvestream readfontfilter
                 % Stack: filepos fontres stream
   1 index /CIDSystemInfo oknown {
+    1 index /CIDSystemInfo get dup type /packedarraytype eq {exec}if
+    3 1 roll
     1 index /Subtype knownoget {
       /CIDFontType2 ne {
         (   **** Warning: Subtype of a TT CID font is not /CIDFontType2\n) pdfformaterror
