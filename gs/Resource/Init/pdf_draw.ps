@@ -1093,10 +1093,20 @@ drawopdict begin
   /W* { W* } def
 
   /sh_save 1 array def
+  /sh_group  << /Subtype /Group /Isolated //true >> readonly def
   /sh {
       OFFlevels length 0 eq {
         setfillstate resolvesh
         //sh_save 0 save put
+        SoftMask //null ne {
+          //sh_group
+          1 index /BBox knownoget {
+            { oforce } forall
+          } {
+            gsave clippath pathbbox grestore
+          } ifelse
+          .begintransparencygroup
+        } if
         0 .setoverprintmode
         dup /.shading .knownget {
           exch
@@ -1108,13 +1118,14 @@ drawopdict begin
           pop 
           (   **** Warning: Dropping incorrect smooth shading object.\n)
           pdfformaterror
-        } if 
+        } if
+        SoftMask //null ne { .endtransparencygroup } if
         //sh_save 0 get restore
       } {
         pop
       } ifelse
     } bdef
-  currentdict /sh_save undef
+  currentdict dup /sh_save undef /sh_group undef
 end
 
 % ---------------- XObjects ---------------- %
