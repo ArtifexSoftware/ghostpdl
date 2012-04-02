@@ -299,9 +299,10 @@ int display_open(void *handle, void *device)
     fprintf(stdout, "display_open(0x%x, 0x%x)\n", handle, device);
 #endif
     img = image_new(handle, device);    /* create and add to list */
-    img->hmutex = CreateMutex(NULL, FALSE, NULL);
-    if (img)
+    if (img) {
+        img->hmutex = CreateMutex(NULL, FALSE, NULL);
         PostThreadMessage(thread_id, DISPLAY_OPEN, 0, (LPARAM)img);
+    }
     return 0;
 }
 

@@ -267,9 +267,10 @@ void put_bytes_padded(FILE *out, unsigned char *p, unsigned int len)
 /* clear the internal memory of an inode */
 void inode_clear(romfs_inode* node)
 {
-    int i, blocks = (node->disc_length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
+    int i, blocks;
 
     if (node) {
+        blocks = (node->disc_length+ROMFS_BLOCKSIZE-1)/ROMFS_BLOCKSIZE;
         if (node->data) {
             for (i = 0; i < blocks; i++) {
                 if (node->data[i]) free(node->data[i]);

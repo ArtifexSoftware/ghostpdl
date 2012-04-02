@@ -261,6 +261,7 @@ resource_list *read_resource_map(FILE *in, resource_header *header)
     }
 
     free(buf);
+    free(types);
 
         return list;
 }

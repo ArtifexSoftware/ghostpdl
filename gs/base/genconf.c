@@ -683,8 +683,8 @@ read_dev(config_t * pconf, const char *arg)
     const char *in;
 
 #define MAX_TOKEN 256
-    char *token = malloc(MAX_TOKEN + 1);
-    char *category = malloc(MAX_TOKEN + 1);
+    char *token;        /* Allocate after duplicate check, prevents */
+    char *category;     /* memory leak */
     int file_index;
     int len;
 
@@ -697,6 +697,8 @@ read_dev(config_t * pconf, const char *arg)
         return uniq_first;
     }
     in = item->str;
+    token = malloc(MAX_TOKEN + 1);
+    category = malloc(MAX_TOKEN + 1);
     file_index = item - pconf->file_contents.items;
     strcpy(category, "obj");
     while ((len = read_token(token, MAX_TOKEN, &in)) > 0)
