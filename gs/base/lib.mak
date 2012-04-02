@@ -26,7 +26,7 @@ GLO_=$(O_)$(GLOBJ)
 AUXO_=$(O_)$(AUX)
 GLI_=$(GLGENDIR) $(II)$(GLSRCDIR)
 GLF_=
-GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_) $(D_)WHICH_CMS="$(WHICH_CMS)"$(_D_)
+GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_) $(D_)WHICH_CMS="$(WHICH_CMS)"$(_D)
 GLCC=$(CC_) $(GLCCFLAGS)
 GLCCAUX=$(CCAUX_) $(GLCCFLAGS)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
