@@ -920,6 +920,14 @@ currentdict /no_debug_dict undef
   2 index exch knownoget {
     oforce_recursive
     exch 2 index exch knownoget {
+      dup length 0 eq {
+        pop //false
+      } {
+        //true
+      } ifelse
+    } {
+      //false
+    } ifelse {
                 % Both filters and parameters.
       oforce_recursive
       exch dup type /nametype eq {
