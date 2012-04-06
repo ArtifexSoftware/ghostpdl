@@ -1062,15 +1062,13 @@ static void *psd_read(ImageReader *im,
                       int         *bpp,
                       int         *cmyk)
 {
-    int c, ir_start, ir_len, w, h, n, x, y, z;
+    int c, ir_start, ir_len, w, h, n, x, y, z, i;
     unsigned char *bmp, *line, *ptr;
 
-    /* There is only one image in each file */
-    if (ftell(im->file) != 0)
-        return NULL;
+    *cmyk = 1;
 
-    /* Skip 8BPS */
-    c = get_int(im->file, 1);
+    if (feof(im->file))
+        return NULL;
 
     /* Skip version */
     c = get_short(im->file, 1);
@@ -1094,7 +1092,6 @@ static void *psd_read(ImageReader *im,
         exit(1);
     }
     c = get_short(im->file, 1);
-    *cmyk = c;
     if (c != 4) {
         fprintf(stderr, "We only support CMYK psd files!\n");
         exit(1);
@@ -1109,11 +1106,10 @@ static void *psd_read(ImageReader *im,
 
     /* Image Resources section */
     ir_len = get_int(im->file, 1);
-    ir_start = ftell(im->file);
-    if (ir_len != 0) {
-        /* Ignored, for now */
+    for (i = 0; i < ir_len; i++)
+    {
+        c = fgetc(im->file); /* Skip, for now */
     }
-    fseek(im->file, ir_start + ir_len, SEEK_SET);
 
     /* Skip Layer and Mask section */
     c = get_int(im->file, 1);
@@ -1149,6 +1145,17 @@ static void *psd_read(ImageReader *im,
         ptr -= *span * h - 1;
     }
     free(line);
+
+    /* Skip over any following header */
+    if (!feof(im->file))
+        c = fgetc(im->file);
+    if (!feof(im->file))
+        c = fgetc(im->file);
+    if (!feof(im->file))
+        c = fgetc(im->file);
+    if (!feof(im->file))
+        c = fgetc(im->file);
+
     return bmp;
 }
 
@@ -1196,7 +1203,6 @@ static void image_open(ImageReader *im,
             if (type == 0x53504238) { /* 8BPS */
                 /* PSD format */
                 im->read = psd_read;
-                fseek(im->file, 0, SEEK_SET);
             } else {
               fail:
                 fprintf(stderr, "%s: Unrecognised image type\n", filename);
