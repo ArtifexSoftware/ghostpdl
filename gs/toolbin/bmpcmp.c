@@ -1094,6 +1094,7 @@ static void *psd_read(ImageReader *im,
         exit(1);
     }
     c = get_short(im->file, 1);
+    *cmyk = c;
     if (c != 4) {
         fprintf(stderr, "We only support CMYK psd files!\n");
         exit(1);
