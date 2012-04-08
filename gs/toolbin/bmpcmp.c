@@ -103,7 +103,7 @@ static void *Malloc(size_t size) {
 
     block = malloc(size);
     if (block == NULL) {
-        fprintf(stderr, "Failed to malloc %u bytes\n", (unsigned int)size);
+        fprintf(stderr, "bmpcmp: Failed to malloc %u bytes\n", (unsigned int)size);
         exit(EXIT_FAILURE);
     }
     return block;
@@ -308,7 +308,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
         break;
       case 32:
         if (masks) {
-          printf("Send this file to Robin, now! (32bpp with colour masks)\n");
+          printf("bmpcmp: Send this file to Robin, now! (32bpp with colour masks)\n");
           free(dst);
           return NULL;
         } else {
@@ -331,7 +331,7 @@ static unsigned char *bmp_load_sub(unsigned char *bmp,
         break;
     }
   } else {
-    printf("Send this file to Robin, now! (compressed)\n");
+    printf("bmpcmp: Send this file to Robin, now! (compressed)\n");
     free(dst);
     return NULL;
   }
@@ -443,27 +443,27 @@ static void *cups_read(ImageReader *im,
         return NULL;
     bpc  = get_int(im->file, rev);
     if (get_int(im->file, rev) != 1) {
-        fprintf(stderr, "Only 1bpp cups files for now!\n");
+        fprintf(stderr, "bmpcmp: Only 1bpp cups files for now!\n");
         return NULL;
     }
     bpl = get_int(im->file, rev);
     if (get_int(im->file, rev) != 0) {
-        fprintf(stderr, "Only chunky cups files for now!\n");
+        fprintf(stderr, "bmpcmp: Only chunky cups files for now!\n");
         return NULL;
     }
     colspace = get_int(im->file, rev);
     if ((colspace != 0) && (colspace != 3)) {
-        fprintf(stderr, "Only gray/black cups files for now!\n");
+        fprintf(stderr, "bmpcmp: Only gray/black cups files for now!\n");
         return NULL;
     }
     if (get_int(im->file, rev) != 0) {
-        fprintf(stderr, "Only uncompressed cups files for now!\n");
+        fprintf(stderr, "bmpcmp: Only uncompressed cups files for now!\n");
         return NULL;
     }
     if (skip_bytes(im->file, 12) == EOF)
         return NULL;
     if (get_int(im->file, rev) != 1) {
-        fprintf(stderr, "Only num_colors=1 cups files for now!\n");
+        fprintf(stderr, "bmpcmp: Only num_colors=1 cups files for now!\n");
         return NULL;
     }
     if (skip_bytes(im->file, 1796-424) == EOF)
@@ -908,14 +908,14 @@ static void pam_header_read(FILE *file,
             *height = get_pnm_num(file);
         } else if (skip_string(file, "DEPTH")) {
             if (get_pnm_num(file) != 4) {
-                fprintf(stderr, "Only CMYK PAMs!\n");
+                fprintf(stderr, "bmpcmp: Only CMYK PAMs!\n");
                 exit(1);
             }
         } else if (skip_string(file, "MAXVAL")) {
             *maxval = get_pnm_num(file);
         } else if (skip_string(file, "TUPLTYPE")) {
             if (!skip_string(file, "CMYK")) {
-                fprintf(stderr, "Only CMYK PAMs!\n");
+                fprintf(stderr, "bmpcmp: Only CMYK PAMs!\n");
                 exit(1);
             }
         } else if (skip_string(file, "ENDHDR")) {
@@ -973,7 +973,7 @@ static void *pnm_read(ImageReader *im,
             break;
         default:
             /* Eh? */
-            fprintf(stderr, "Unknown PxM format!\n");
+            fprintf(stderr, "bmpcmp: Unknown PxM format!\n");
             return NULL;
     }
     if (read == pam_read) {
@@ -1016,7 +1016,7 @@ static void *png_read(ImageReader *im,
     png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
     info = png_create_info_struct(png);
     if (setjmp(png_jmpbuf(png))) {
-        fprintf(stderr, "libpng failure\n");
+        fprintf(stderr, "bmpcmp: libpng failure\n");
         exit(EXIT_FAILURE);
     }
 
@@ -1073,7 +1073,7 @@ static void *psd_read(ImageReader *im,
     /* Skip version */
     c = get_short(im->file, 1);
     if (c != 1) {
-        fprintf(stderr, "We only support v1 psd files!\n");
+        fprintf(stderr, "bmpcmp: We only support v1 psd files!\n");
         exit(1);
     }
 
@@ -1088,19 +1088,19 @@ static void *psd_read(ImageReader *im,
     w = *width = get_int(im->file, 1);
     c = get_short(im->file, 1);
     if (c != 8) {
-        fprintf(stderr, "We only support 8bpp psd files!\n");
+        fprintf(stderr, "bmpcmp: We only support 8bpp psd files!\n");
         exit(1);
     }
     c = get_short(im->file, 1);
     if (c != 4) {
-        fprintf(stderr, "We only support CMYK psd files!\n");
+        fprintf(stderr, "bmpcmp: We only support CMYK psd files!\n");
         exit(1);
     }
 
     /* Skip color data section */
     c = get_int(im->file, 1);
     if (c != 0) {
-        fprintf(stderr, "Unexpected color data found!\n");
+        fprintf(stderr, "bmpcmp: Unexpected color data found!\n");
         exit(1);
     }
 
@@ -1114,14 +1114,14 @@ static void *psd_read(ImageReader *im,
     /* Skip Layer and Mask section */
     c = get_int(im->file, 1);
     if (c != 0) {
-        fprintf(stderr, "Unexpected layer and mask section found!\n");
+        fprintf(stderr, "bmpcmp: Unexpected layer and mask section found!\n");
         exit(1);
     }
 
     /* Image data section */
     c = get_short(im->file, 1);
     if (c != 0) {
-        fprintf(stderr, "Unexpected compression method found!\n");
+        fprintf(stderr, "bmpcmp: Unexpected compression method found!\n");
         exit(1);
     }
 
@@ -1166,7 +1166,7 @@ static void image_open(ImageReader *im,
 
     im->file = fopen(filename, "rb");
     if (im->file == NULL) {
-        fprintf(stderr, "%s failed to open\n", filename);
+        fprintf(stderr, "bmpcmp: %s failed to open\n", filename);
         exit(EXIT_FAILURE);
     }
 
@@ -1205,7 +1205,7 @@ static void image_open(ImageReader *im,
                 im->read = psd_read;
             } else {
               fail:
-                fprintf(stderr, "%s: Unrecognised image type\n", filename);
+                fprintf(stderr, "bmpcmp: %s: Unrecognised image type\n", filename);
                 exit(EXIT_FAILURE);
             }
         }
@@ -2334,7 +2334,7 @@ static void diff_bmp_int(unsigned char *bmp,
                     break;
                 default:
                     fprintf(stderr,
-                            "Internal error: unexpected map type %d\n", m);
+                            "bmpcmp: Internal error: unexpected map type %d\n", m);
                     isrc++;
                     break;
             }
@@ -2416,7 +2416,7 @@ static void diff_bmp_n(unsigned char *bmp,
                     break;
                 default:
                     fprintf(stderr,
-                            "Internal error: unexpected map type %d\n", m);
+                            "bmpcmp: Internal error: unexpected map type %d\n", m);
                     break;
             }
             src += n;
@@ -2908,7 +2908,7 @@ int main(int argc, char *argv[])
             (cmyk != cmyk2))
         {
             fprintf(stderr,
-                    "Can't compare images "
+                    "bmpcmp: Can't compare images "
                     "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
                     w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
             exit(EXIT_FAILURE);
@@ -2931,7 +2931,7 @@ int main(int argc, char *argv[])
             bbox.xmax++;
             bbox.ymax++;
 
-            DEBUG_BBOX(fprintf(stderr, "Raw bbox=%d %d %d %d\n",
+            DEBUG_BBOX(fprintf(stderr, "bmpcmp: Raw bbox=%d %d %d %d\n",
                                bbox.xmin, bbox.ymin, bbox.xmax, bbox.ymax));
             /* Make bbox2.xmin/ymin be the centre of the changed area */
             bbox2.xmin = (bbox.xmin + bbox.xmax + 1)/2;
@@ -2989,7 +2989,7 @@ int main(int argc, char *argv[])
                 bbox2.ymax = h;
             }
 
-            DEBUG_BBOX(fprintf(stderr, "Expanded bbox=%d %d %d %d\n",
+            DEBUG_BBOX(fprintf(stderr, "bmpcmp: Expanded bbox=%d %d %d %d\n",
                                bbox2.xmin, bbox2.ymin, bbox2.xmax, bbox2.ymax));
 
             /* bbox */
@@ -3011,14 +3011,14 @@ int main(int argc, char *argv[])
                     boxlist->ymax = boxlist->ymin + ystep;
                     if (boxlist->ymax > bbox2.ymax)
                         boxlist->ymax = bbox2.ymax;
-                    DEBUG_BBOX(fprintf(stderr, "Retesting bbox=%d %d %d %d\n",
+                    DEBUG_BBOX(fprintf(stderr, "bmpcmp: Retesting bbox=%d %d %d %d\n",
                                        boxlist->xmin, boxlist->ymin,
                                        boxlist->xmax, boxlist->ymax));
 
                     rediff(map, boxlist, &params);
                     if (!BBox_valid(boxlist))
                         continue;
-                    DEBUG_BBOX(fprintf(stderr, "Reduced bbox=%d %d %d %d\n",
+                    DEBUG_BBOX(fprintf(stderr, "bmpcmp: Reduced bbox=%d %d %d %d\n",
                                        boxlist->xmin, boxlist->ymin,
                                        boxlist->xmax, boxlist->ymax));
                     if (cmyk)
@@ -3075,13 +3075,13 @@ done:
     /* If one loaded, and the other didn't - that's an error */
     if ((bmp2 != NULL) && (bmp == NULL))
     {
-        fprintf(stderr, "Failed to load image %d from '%s'\n",
+        fprintf(stderr, "bmpcmp: Failed to load image %d from '%s'\n",
                 imagecount+1, params.filename1);
         exit(EXIT_FAILURE);
     }
     if ((bmp != NULL) && (bmp2 == NULL))
     {
-        fprintf(stderr, "Failed to load image %d from '%s'\n",
+        fprintf(stderr, "bmpcmp: Failed to load image %d from '%s'\n",
                 imagecount+1, params.filename2);
         exit(EXIT_FAILURE);
     }
