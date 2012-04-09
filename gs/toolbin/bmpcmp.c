@@ -2886,6 +2886,7 @@ int main(int argc, char *argv[])
     ImageReader    image1, image2;
     DiffFn        *diffFn;
     Params         params;
+    int            noDifferences = 1;
 
     parseArgs(argc, argv, &params);
     if (params.window <= 1 && params.threshold == 0) {
@@ -3048,6 +3049,7 @@ int main(int argc, char *argv[])
                     sprintf(str4, "%s.%05d.meta", params.outroot, n);
                     save_meta(boxlist, str4, w, h, imagecount, params.threshold, params.window);
                     n += 3;
+                    noDifferences = 0;
                     /* If there is a maximum set */
                     if (params.maxdiffs > 0)
                     {
@@ -3088,6 +3090,9 @@ done:
 
     image_close(&image1);
     image_close(&image2);
+
+    if (noDifferences == 1)
+      fprintf(stderr, "bmpcmp: no differences detected\n");
 
     return EXIT_SUCCESS;
 }
