@@ -1315,19 +1315,21 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 
     code = (*pinst->templat.PaintProc)(&pdc->ccolor, saved);
     if (code < 0) {
+        /* RJW: At this point, in the non transparency case,
+         * saved->device == adev. So unretain it, close it, and the
+         * gs_state_free(saved) will remove it. In the transparency case,
+         * saved->device = the pdf14 device. So we need to unretain it,
+         * close adev, and finally close saved->device
+         * (which frees adev). */
         gx_device_retain(saved->device, false);         /* device no longer retained */
         if (pinst->templat.uses_transparency) {
-            dev_proc(saved->device, close_device)((gx_device *)saved->device);
-            dev_proc(adev, close_device)((gx_device *)adev);
             if (pinst->is_clist == 0)
                 gs_free_object(((gx_device_pattern_accum *)adev)->bitmap_memory,
                                ((gx_device_pattern_accum *)adev)->transbuff,
                                "gx_pattern_load");
-            // rc_decrement_only(adev, "gx_pattern_load");      /* may free the device */
-            // gs_free_object(mem, adev, "gx_pattern_load");
-        } else {
             dev_proc(adev, close_device)((gx_device *)adev);
         }
+        dev_proc(saved->device, close_device)((gx_device *)saved->device);
         /* Freeing the state should now free the device which may be the pdf14 compositor. */
         gs_state_free(saved);
         return code;
