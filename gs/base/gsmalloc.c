@@ -105,7 +105,7 @@ gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
     gs_malloc_memory_t *mem =
-        (gs_malloc_memory_t *)malloc(sizeof(gs_malloc_memory_t));
+        (gs_malloc_memory_t *)Memento_label(malloc(sizeof(gs_malloc_memory_t)), "gs_malloc_memory_t");
 
     if (mem == NULL)
         return NULL;
@@ -178,7 +178,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 
         if (mmem->limit - added < mmem->used)
             set_msg("exceeded limit");
-        else if ((ptr = (byte *) malloc(added)) == 0)
+        else if ((ptr = (byte *) Memento_label(malloc(added), cname)) == 0)
             set_msg("failed");
         else {
             gs_malloc_block_t *bp = (gs_malloc_block_t *) ptr;
