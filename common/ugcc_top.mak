@@ -99,10 +99,14 @@ pdl-clean:
 	$(RMN_) $(GENDIR)/gconfx*.h $(GENDIR)/j*.h
 	$(RMN_) $(GENDIR)/c*.tr $(GENDIR)/o*.tr $(GENDIR)/l*.tr
 	$(RMN_) $(GENDIR)/*.$(OBJ)
+	$(RMN_) $(AUXDIR)/*.$(OBJ)
 	$(RMN_) $(GENDIR)/*.h
+	$(RMN_) $(AUXDIR)/*.h
 	$(RMN_) $(GENDIR)/*.c
+	$(RMN_) $(AUXDIR)/*.c
 	$(RMN_) $(GENDIR)/*.a
-	$(RMN_) $(GENDIR)/mkromfs
+	$(RMN_) $(AUXDIR)/mkromfs
+	$(RMN_) $(AUXDIR)/mkromfs_0
 	$(RMN_) $(GENARCH_XE)
 	$(RMN_) $(ECHOGS_XE)
 	$(RMN_) $(GENCONF_XE)
