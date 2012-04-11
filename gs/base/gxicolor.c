@@ -288,7 +288,6 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_imager_state *pis = penum->pis;
-    const gs_color_space *pcs;
     bool need_decode = penum->icc_setup.need_decode;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
@@ -300,14 +299,10 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     cmm_dev_profile_t *dev_profile;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
+    if (code < 0) return code;
     num_des_comps = gsicc_get_device_profile_comps(dev_profile);
     if (penum->icc_link == NULL) {
         return gs_rethrow(-1, "ICC Link not created during image render color");
-    }
-    if (gs_color_space_is_PSCIE(penum->pcs) && penum->pcs->icc_equivalent != NULL) {
-        pcs = penum->pcs->icc_equivalent;
-    } else {
-        pcs = penum->pcs;
     }
     /* If the link is the identity, then we don't need to do any color
        conversions except for potentially a decode.  Planar out is a special
@@ -1015,9 +1010,20 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     int i;
     bits32 mask = penum->mask_color.mask;
     bits32 test = penum->mask_color.test;
+    bool lab_case = false;
 
     if (h == 0)
         return 0;
+
+    /* Decide on which remap proc to use.  If the source colors are LAB
+       then use the mapping that does not rescale the source colors */
+    if (gs_color_space_is_ICC(pcs) && pcs->cmm_icc_profile_data != NULL &&
+        pcs->cmm_icc_profile_data->islab) {
+        remap_color = gx_remap_ICC_imagelab;
+        lab_case = true;
+    } else {
+        remap_color = pcs->type->remap_color;
+    }
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* In case these are devn colors */
@@ -1068,8 +1074,13 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
             color_set_null(pdevc_next);
             goto mapped;
         }
-        for (i = 0; i < spp; ++i)
-            decode_sample(next.v[i], cc, i);
+        /* Data is already properly set up for ICC use of LAB */
+        if (lab_case)
+            for (i = 0; i < spp; ++i)
+                cc.paint.values[i] = (next.v[i]) * (1.0f / 255.0f); 
+        else
+            for (i = 0; i < spp; ++i)
+                decode_sample(next.v[i], cc, i);
 #ifdef DEBUG
         if (gs_debug_c('B')) {
             dprintf2("[B]cc[0..%d]=%g", spp - 1,

@@ -1208,7 +1208,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
            on how addivite devices should behave with the ALL option but it
            is clear from testing the AR 10 does simply do the RGB = 1 - INK
            type of mapping */
-        if (des_profile->data_cs == gsCIELAB) {
+        if (des_profile->data_cs == gsCIELAB || des_profile->islab) {
             use_rgb2dev_icc = true;
         }
     }

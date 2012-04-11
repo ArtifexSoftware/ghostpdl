@@ -36,6 +36,7 @@
 #include "gxdhtserial.h"
 #include "gsptype1.h"
 #include "gsicc_manage.h"
+#include "gsicc_cache.h"
 
 extern_gx_image_type_table();
 
@@ -535,6 +536,13 @@ clist_begin_typed_image(gx_device * dev,
                 }
                 if (renderingintent != pis_nonconst->renderingintent)
                     intent_changed = true;
+                if (!(src_profile->hash_is_valid)) {
+                    int64_t hash;
+                    gsicc_get_icc_buff_hash(src_profile->buffer, &hash,
+                                            src_profile->buffer_size);
+                    src_profile->hashcode = hash;
+                    src_profile->hash_is_valid = true;
+                }
                 pie->color_space.icc_info.icc_hash = src_profile->hashcode;
                 pie->color_space.icc_info.icc_num_components = 
                     src_profile->num_comps;

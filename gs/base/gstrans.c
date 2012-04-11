@@ -797,7 +797,8 @@ gs_push_pdf14trans_device(gs_state * pgs, bool is_pattern)
        whose profile is CIELAB then we will need to make sure that we
        do our blending in RGB and convert to CIELAB when we do the put_image
        command */
-    if (icc_profile->data_cs == gsCIELAB) {
+    if (icc_profile->data_cs == gsCIELAB ||
+        icc_profile->islab) {
         params.iccprofile = pgs->icc_manager->default_rgb;
     }
     /* Note: Other parameters not used */

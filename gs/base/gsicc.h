@@ -29,5 +29,6 @@ extern  int     gs_cspace_build_ICC( gs_color_space **   ppcspace,
                                         gs_memory_t *       pmem );
 
 extern const gs_color_space_type gs_color_space_type_ICC;
+extern cs_proc_remap_color(gx_remap_ICC_imagelab);
 
 #endif /* gsicc_INCLUDED */

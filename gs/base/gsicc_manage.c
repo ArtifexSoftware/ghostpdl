@@ -610,13 +610,13 @@ int
 gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                   gsicc_profile_t defaulttype)
 {
-
     cmm_profile_t *icc_profile;
     cmm_profile_t **manager_default_profile = NULL; /* quite compiler */
     stream *str;
     gs_memory_t *mem_gc = icc_manager->memory;
     int code;
     int k;
+    int num_comps = 0;
     gsicc_colorbuffer_t default_space; /* Used to verify that we have the correct type */
 
     /* We need to check for the smask swapped profile condition.  If we are in
@@ -633,23 +633,30 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             case DEFAULT_GRAY:
                 manager_default_profile = &(icc_manager->default_gray);
                 default_space = gsGRAY;
+                num_comps = 1;
                 break;
             case DEFAULT_RGB:
                 manager_default_profile = &(icc_manager->default_rgb);
                 default_space = gsRGB;
+                num_comps = 3;
                 break;
             case DEFAULT_CMYK:
                  manager_default_profile = &(icc_manager->default_cmyk);
                  default_space = gsCMYK;
+                 num_comps = 4;
                  break;
             case NAMED_TYPE:
                  manager_default_profile = &(icc_manager->device_named);
+                 default_space = gsNAMED;
                  break;
             case LAB_TYPE:
                  manager_default_profile = &(icc_manager->lab_profile);
+                 num_comps = 3;
+                 default_space = gsCIELAB;
                  break;
             case DEVICEN_TYPE:
                 code = gsicc_new_devicen(icc_manager);
+                 default_space = gsNCHANNEL;
                 if (code == 0) {
                     manager_default_profile =
                         &(icc_manager->device_n->final->iccprofile);
@@ -715,45 +722,84 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             code = gsicc_load_namedcolor_buffer(icc_profile, str, mem_gc);
             if (code < 0) gs_rethrow1(-1, "problems with profile %s",pname);
             *manager_default_profile = icc_profile;
-            return(0);  /* Done now, since this is not a standard ICC profile */
+            return 0;  /* Done now, since this is not a standard ICC profile */
         }
         code = sfclose(str);
         if (icc_profile == NULL) {
             return gs_rethrow1(-1, "problems with profile %s",pname);
         }
-        *manager_default_profile = icc_profile;
-
-        /* Get the profile handle */
-        icc_profile->profile_handle =
-            gsicc_get_profile_handle_buffer(icc_profile->buffer,
-                                            icc_profile->buffer_size);
-        if (icc_profile->profile_handle == NULL) {
-            return gs_rethrow1(-1, "allocation of profile %s handle failed", pname);
+         *manager_default_profile = icc_profile;
+        icc_profile->default_match = defaulttype;
+        if (defaulttype == LAB_TYPE)
+            icc_profile->islab = true;
+        if ( defaulttype == DEVICEN_TYPE ) {
+            /* Lets get the name information out of the profile.
+               The names are contained in the icSigNamedColor2Tag
+               item.  The table is in the A2B0Tag item.
+               The names are in the order such that the fastest
+               index in the table is the first name */
+            gsicc_get_devicen_names(icc_profile, icc_manager->memory);
         }
-        /* Compute the hash code of the profile. Everything in the ICC manager will have
-           it's hash code precomputed */
+        /* Delay the loading of the handle buffer until we need the profile. 
+           But set some basic stuff that we need */
+        icc_profile->num_comps = num_comps;
+        icc_profile->num_comps_out = 3;
+        gscms_set_icc_range(&icc_profile);
+        icc_profile->data_cs = default_space;
+        return 0;
+    }
+    return -1;
+}
+
+/* This is used ONLY for delayed initialization of the "default" ICC profiles
+   that are in the ICC manager.  This way we avoid getting these profile handles
+   until we actually need them. Note that defaulttype is preset.  These are
+   the *only* profiles that are delayed in this manner.  All embedded profiles
+   and internally generated profiles have their handles found immediately */
+int
+gsicc_initialize_default_profile(cmm_profile_t *icc_profile) 
+{
+    gsicc_profile_t defaulttype = icc_profile->default_match;
+    gsicc_colorbuffer_t default_space = gsUNDEFINED;
+    int num_comps, num_comps_out;
+
+    /* Get the profile handle if it is not already set */
+    if (icc_profile->profile_handle != NULL) {
+        icc_profile->profile_handle = 
+                        gsicc_get_profile_handle_buffer(icc_profile->buffer,
+                                                        icc_profile->buffer_size);
+        if (icc_profile->profile_handle == NULL) {
+            return gs_rethrow1(-1, "allocation of profile %s handle failed", 
+                               icc_profile->name);
+        }
+    }
+    if (icc_profile->buffer != NULL && icc_profile->hash_is_valid == false) {
+        /* Compute the hash code of the profile. */
         gsicc_get_icc_buff_hash(icc_profile->buffer, &(icc_profile->hashcode),
                                 icc_profile->buffer_size);
         icc_profile->hash_is_valid = true;
-        icc_profile->default_match = defaulttype;
-        icc_profile->num_comps =
-            gscms_get_input_channel_count(icc_profile->profile_handle);
-        icc_profile->num_comps_out =
-            gscms_get_output_channel_count(icc_profile->profile_handle);
-        icc_profile->data_cs =
-            gscms_get_profile_data_space(icc_profile->profile_handle);
-
-        if_debug0(gs_debug_flag_icc,"[icc] Setting ICC profile in Manager\n"); 
-#ifdef DEBUG  /* Don't want this switch in here if we are not in debug mode */
+    }
+    num_comps = icc_profile->num_comps;
+    icc_profile->num_comps =
+        gscms_get_input_channel_count(icc_profile->profile_handle);
+    num_comps_out = icc_profile->num_comps_out;
+    icc_profile->num_comps_out =
+        gscms_get_output_channel_count(icc_profile->profile_handle);
+    icc_profile->data_cs =
+        gscms_get_profile_data_space(icc_profile->profile_handle);
+    if_debug0(gs_debug_flag_icc,"[icc] Setting ICC profile in Manager\n"); 
     switch(defaulttype) {
         case DEFAULT_GRAY:
             if_debug0(gs_debug_flag_icc,"[icc] Default Gray\n"); 
+            default_space = gsGRAY;
             break;
         case DEFAULT_RGB:
-            if_debug0(gs_debug_flag_icc,"[icc] Default RGB\n"); 
+            if_debug0(gs_debug_flag_icc,"[icc] Default RGB\n");
+            default_space = gsRGB;
             break;
         case DEFAULT_CMYK:
-            if_debug0(gs_debug_flag_icc,"[icc] Default CMYK\n"); 
+            if_debug0(gs_debug_flag_icc,"[icc] Default CMYK\n");
+            default_space = gsCMYK;
              break;
         case NAMED_TYPE:
             if_debug0(gs_debug_flag_icc,"[icc] Named Color\n"); 
@@ -769,34 +815,18 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
             return(0);
             break;
     }
-#endif
-        if_debug1(gs_debug_flag_icc,"[icc] name = %s\n", icc_profile->name); 
-        if_debug1(gs_debug_flag_icc,"[icc] num_comps = %d\n", icc_profile->num_comps); 
-        /* Check that we have the proper color space for the ICC
-           profiles that can be externally set */
-        if (default_space != gsUNDEFINED) {
-            if (icc_profile->data_cs != default_space) {
-                return gs_rethrow(-1, "A default profile has an incorrect color space");
-            }
+    if_debug1(gs_debug_flag_icc,"[icc] name = %s\n", icc_profile->name); 
+    if_debug1(gs_debug_flag_icc,"[icc] num_comps = %d\n", icc_profile->num_comps); 
+    /* Check that we have the proper color space for the ICC
+       profiles that can be externally set */
+    if (default_space != gsUNDEFINED ||
+        num_comps != icc_profile->num_comps ||
+        num_comps_out != icc_profile->num_comps_out) {
+        if (icc_profile->data_cs != default_space) {
+            return gs_rethrow(-1, "A default profile has an incorrect color space");
         }
-        /* Initialize the range to default values */
-        for ( k = 0; k < icc_profile->num_comps; k++) {
-            icc_profile->Range.ranges[k].rmin = 0.0;
-            icc_profile->Range.ranges[k].rmax = 1.0;
-        }
-        if (defaulttype == LAB_TYPE)
-            icc_profile->islab = true;
-        if ( defaulttype == DEVICEN_TYPE ) {
-            /* Lets get the name information out of the profile.
-               The names are contained in the icSigNamedColor2Tag
-               item.  The table is in the A2B0Tag item.
-               The names are in the order such that the fastest
-               index in the table is the first name */
-            gsicc_get_devicen_names(icc_profile, icc_manager->memory);
-        }
-        return(0);
     }
-    return(-1);
+    return 0;
 }
 
 /* This is used to get the profile handle given a file name  */

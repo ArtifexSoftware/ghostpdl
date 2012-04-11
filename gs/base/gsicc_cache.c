@@ -658,6 +658,11 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 gsicc_get_profile_handle_buffer(gs_input_profile->buffer,
                                                 gs_input_profile->buffer_size);
             gs_input_profile->profile_handle = cms_input_profile;
+            /* This *must* be a default profile that was not set up at start-up/
+               However it could be one from the icc creator code which does not
+               do an initialization at the time of creation from CalRGB etc. */
+            code = gsicc_initialize_default_profile(gs_input_profile); 
+            if (code < 0) return (NULL);
         } else {
             /* See if we have a clist device pointer. */
             if ( gs_input_profile->dev != NULL ) {
@@ -686,6 +691,9 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
                 gsicc_get_profile_handle_buffer(gs_output_profile->buffer,
                                                 gs_output_profile->buffer_size);
             gs_output_profile->profile_handle = cms_output_profile;
+            /* This *must* be a default profile that was not set up at start-up */
+            code = gsicc_initialize_default_profile(gs_output_profile); 
+            if (code < 0) return (NULL);
         } else {
               /* See if we have a clist device pointer. */
             if ( gs_output_profile->dev != NULL ) {

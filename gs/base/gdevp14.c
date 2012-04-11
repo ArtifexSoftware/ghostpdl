@@ -4945,7 +4945,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_imager_state * pis,
        proper blending.  During put_image we will convert from RGB to
        CIELAB.  Need to check that we have a default profile, which
        will not be the case if we are coming from the clist reader */
-    if (icc_profile->data_cs == gsCIELAB
+    if ((icc_profile->data_cs == gsCIELAB || icc_profile->islab)
         && pis->icc_manager->default_rgb != NULL) {
         p14dev->icc_struct->device_profile[0] =
                                         pis->icc_manager->default_rgb;
@@ -5085,7 +5085,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                to CIELAB at the end.  To do this, we need to store the
                default RGB profile in the clist so that we can grab it
                later on during the clist read back and put image command */
-            if (icc_profile->data_cs == gsCIELAB) {
+            if (icc_profile->data_cs == gsCIELAB || icc_profile->islab) {
                 /* Get the default RGB profile.  Set the device hash code
                    so that we can extract it during the put_image operation. */
                 cdev->trans_dev_icc_hash = pparams->iccprofile->hashcode;
@@ -6022,7 +6022,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_imager_state * pis,
     /* If the target profile was CIELAB, then overide with default RGB for
        proper blending.  During put_image we will convert from RGB to
        CIELAB */
-    if (target_profile->data_cs == gsCIELAB) {
+    if (target_profile->data_cs == gsCIELAB || target_profile->islab) {
         rc_assign(pdev->icc_struct->device_profile[0],
                   pis->icc_manager->default_rgb, "pdf14_create_clist_device");
     }
@@ -7285,7 +7285,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                device.  This will occur if our source profile for our device
                happens to be something like CIELAB.  Then we will blend in
                RGB (unless a trans group is specified) */
-            if (cl_icc_profile->data_cs == gsCIELAB) {
+            if (cl_icc_profile->data_cs == gsCIELAB || cl_icc_profile->islab) {
                 cl_icc_profile =
                     gsicc_read_serial_icc(cdev, pcrdev->trans_dev_icc_hash);
                 /* Keep a pointer to the clist device */
