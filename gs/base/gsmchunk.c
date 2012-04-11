@@ -289,7 +289,11 @@ round_up_to_align(uint size)
 /* return -1 on error, 0 on success */
 static int
 chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_object_chunk,
-                        chunk_mem_node_t **newchunk)
+                        chunk_mem_node_t **newchunk
+#ifdef MEMENTO
+                        , client_name_t cname
+#endif
+                  )
 {
     chunk_mem_node_t *node;
     gs_memory_t *target = cmem->target;
@@ -306,7 +310,14 @@ chunk_mem_node_add(gs_memory_chunk_t *cmem, uint size_needed, bool is_multiple_o
         is_multiple_object_chunk = false;
 
     *newchunk = NULL;
-    node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size, "chunk_mem_node_add");
+#ifdef MEMENTO
+#define LOCAL_CNAME cname
+#else
+#define LOCAL_CNAME "chunk_mem_node_add"
+#endif
+    node = (chunk_mem_node_t *)gs_alloc_bytes_immovable(target, chunk_size,
+                                                        LOCAL_CNAME);
+#undef LOCAL_CNAME
     if (node == NULL)
         return -1;
     cmem->used += chunk_size;
@@ -418,7 +429,11 @@ chunk_obj_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_n
     }
     if (current == NULL) {
         /* No chunks with enough space or size makes this a single object, allocate one */
-        if (chunk_mem_node_add(cmem, newsize, is_multiple_object_size, &current) < 0) {
+        if (chunk_mem_node_add(cmem, newsize, is_multiple_object_size, &current
+#ifdef MEMENTO
+                               , cname
+#endif
+                              ) < 0) {
 #ifdef DEBUG
         if (gs_debug_c('a'))
             dlprintf1("[a+]chunk_obj_alloc(chunk_mem_node_add)(%u) Failed.\n", size);
