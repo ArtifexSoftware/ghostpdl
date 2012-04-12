@@ -911,15 +911,7 @@ gx_dc_pat_trans_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 }
 
 /* This fills the transparency buffer rectangles with a pattern buffer
-   that includes transparency.  NB this procedure does not properly
-   handle error codes and, consequently, does not attempt to release
-   the target reference.
-
-   tile_clip_release((gx_device_tile_clip *)&state_clist_trans.cdev)
-
-   needs to be paired with tile_fill_init() to get rid of the device
-   reference.
-*/
+   that includes transparency */
 
 int
 gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
@@ -931,7 +923,7 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
 
     tile_fill_trans_state_t state_trans;
     tile_fill_state_t state_clist_trans;
-    int code;
+    int code = 0;
 
     if (ptile == 0)             /* null pattern */
         return 0;
@@ -967,6 +959,7 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                transformed bbox */
             code = tile_by_steps_trans(&state_trans, xmin, ymin, xmax-xmin,
                                         ymax-ymin, fill_trans_buffer, ptile);
+
         } else {
             /* clist for the trans tile.  This uses the pdf14 device as a target
                and should blend directly into the buffer.  Note that the
@@ -992,9 +985,14 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
             tbits = ptile->tbits;
             tbits.size.x = crdev->width;
             tbits.size.y = crdev->height;
-            code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax,
-                                 ymax, ptile, &tbits, tile_pattern_clist);
+            if (code >= 0)
+                code = tile_by_steps(&state_clist_trans, xmin, ymin, xmax,
+                                     ymax, ptile, &tbits, tile_pattern_clist);
+
+            if (code >= 0 && (state_clist_trans.pcdev != dev))
+                tile_clip_release((gx_device_tile_clip *)&state_clist_trans.cdev);
+
         }
     }
-    return(0);
+    return(code);
 }
