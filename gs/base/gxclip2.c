@@ -126,6 +126,13 @@ tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
     return code;
 }
 
+void
+tile_clip_release(gx_device_tile_clip *cdev)
+{
+    /* release the target reference */
+    gx_device_set_target((gx_device_forward *)cdev, NULL);
+}
+
 /* Set the phase of the tile. */
 void
 tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)

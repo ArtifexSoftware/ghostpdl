@@ -41,6 +41,11 @@ int tile_clip_initialize(gx_device_tile_clip * cdev,
                          gs_memory_t *mem);
 
 /*
+ * relase the tile clipping device.
+ */
+void tile_clip_release(gx_device_tile_clip *cdev);
+
+/*
  * Set the phase of the tile -- used in the tiling loop when
  * the tile doesn't simply fill the plane.
  */
