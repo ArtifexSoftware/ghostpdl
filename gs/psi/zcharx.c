@@ -115,6 +115,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
                                 (have_y ? values : (float *)0),
                                 size, imemory_local, &penum)) < 0) {
         ifree_object(values, "moveshow");
+        penum->text.x_widths = penum->text.y_widths = NULL;
         return code;
     }
     if (CPSI_mode) {
@@ -143,11 +144,13 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
             /* falls through */
         default:
             ifree_object(values, "moveshow");
+        penum->text.x_widths = penum->text.y_widths = NULL;
             return code;
         }
     }
     if ((code = op_show_finish_setup(i_ctx_p, penum, 2, NULL)) < 0) {
         ifree_object(values, "moveshow");
+        penum->text.x_widths = penum->text.y_widths = NULL;
         return code;
     }
     pop(2);
