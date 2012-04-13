@@ -98,6 +98,11 @@ typedef void (DiffFn)(unsigned char *bmp,
                       BBox          *bbox,
                       Params        *params);
 
+/* Nasty (as if the rest of this code isn't!) global variables for holding
+ * spot color details. */
+static unsigned char spots[256*4];
+static int spotfill = 0;
+
 static void *Malloc(size_t size) {
     void *block;
 
@@ -1105,10 +1110,44 @@ static void *psd_read(ImageReader *im,
     }
 
     /* Image Resources section */
+    spotfill = 0;
     ir_len = get_int(im->file, 1);
-    for (i = 0; i < ir_len; i++)
+    while (ir_len > 0)
     {
-        c = fgetc(im->file); /* Skip, for now */
+        int data_len;
+        c  = fgetc(im->file);     if (--ir_len == 0) break;
+        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        c |= fgetc(im->file)<<16; if (--ir_len == 0) break;
+        c |= fgetc(im->file)<<24; if (--ir_len == 0) break;
+        /* c == 8BIM */
+        c  = fgetc(im->file);     if (--ir_len == 0) break;
+        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        /* Skip the padded id (which will always be 00 00) */
+        c  = fgetc(im->file);     if (--ir_len == 0) break;
+        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        /* Get the data len */
+        data_len  = fgetc(im->file)<<24; if (--ir_len == 0) break;
+        data_len |= fgetc(im->file)<<16; if (--ir_len == 0) break;
+        data_len |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        data_len |= fgetc(im->file);     if (--ir_len == 0) break;
+        if (c == 0x3ef) {
+            c  = fgetc(im->file)<<8;  if (--ir_len == 0) break;
+            c |= fgetc(im->file);     if (--ir_len == 0) break;
+            /* c == 2 = COLORSPACE = CMYK */
+            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+            c = fgetc(im->file);  if (--ir_len == 0) break;
+            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+            c = fgetc(im->file);  if (--ir_len == 0) break;
+            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+            c = fgetc(im->file);  if (--ir_len == 0) break;
+            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+            c = fgetc(im->file);  if (--ir_len == 0) break;
+            data_len -= 10;
+        }
+        while (data_len > 0)
+        {
+            c = fgetc(im->file); if (--ir_len == 0) break;
+        }
     }
 
     /* Skip Layer and Mask section */
@@ -2770,7 +2809,7 @@ static void rediff(unsigned char *map,
 
 static void unspot(unsigned char *bmp, int w, int h, int span, int bpp)
 {
-    int x, y, n = bpp>>3;
+    int x, y, z, n = bpp>>3;
     unsigned char *p = bmp;
 
     span -= w*4;
@@ -2780,12 +2819,26 @@ static void unspot(unsigned char *bmp, int w, int h, int span, int bpp)
         unsigned char *q = p;
         for (x = w; x > 0; x--)
         {
-            /* FIXME: Map spots down - don't just ignore them */
-            *p++ = *q++;
-            *p++ = *q++;
-            *p++ = *q++;
-            *p++ = *q++;
-            q += n;
+            int C = *q++;
+            int M = *q++;
+            int Y = *q++;
+            int K = *q++;
+            for (z = 0; z < n; z++)
+            {
+                int v = *q++;
+                C += spots[4*z  ]*v/0xff;
+                M += spots[4*z+1]*v/0xff;
+                Y += spots[4*z+2]*v/0xff;
+                K += spots[4*z+3]*v/0xff;
+            }
+            if (C > 255) C = 255;
+            if (M > 255) M = 255;
+            if (Y > 255) Y = 255;
+            if (K > 255) K = 255;
+            *p++ = C;
+            *p++ = M;
+            *p++ = Y;
+            *p++ = K;
         }
         p += span;
     }
