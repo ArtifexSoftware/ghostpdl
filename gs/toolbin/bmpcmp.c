@@ -2595,6 +2595,26 @@ static void save_png(unsigned char *data,
       rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin * src_bypp - 1];
     png_set_rows(png, info, rows);
 
+    if (src_bypp > 32)
+    {
+      int n = src_bypp>>3;
+      for (y = 0; y < height; y++)
+      {
+        unsigned char *p = rows[height - y - 1] + 1;
+        unsigned char *q = p;
+        int x;
+        for (x = width; x > 0; x--)
+        {
+          p[0] = q[0];
+          p[1] = q[1];
+          p[2] = q[2];
+          p[3] = q[3];
+          p += 4;
+          q += n;
+        }
+      }
+    }
+
     /* write out the image */
     png_write_png(png, info,
         PNG_TRANSFORM_STRIP_FILLER_BEFORE|
