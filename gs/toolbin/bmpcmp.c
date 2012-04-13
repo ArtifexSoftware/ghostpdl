@@ -2238,16 +2238,15 @@ static void fuzzy_diff(unsigned char *bmp,
 
 static void uncmyk_bmp(unsigned char *bmp,
                        BBox          *bbox,
-                       int            span,
-                       int            n)
+                       int            span)
 {
     int w, h;
     int x, y;
 
-    bmp  += span    *(bbox->ymin)+(bbox->xmin*n);
+    bmp  += span    *(bbox->ymin)+(bbox->xmin*4);
     w     = bbox->xmax - bbox->xmin;
     h     = bbox->ymax - bbox->ymin;
-    span -= n*w;
+    span -= 4*w;
     for (y = 0; y < h; y++)
     {
         for (x = 0; x < w; x++)
@@ -2272,17 +2271,16 @@ static void uncmyk_bmp(unsigned char *bmp,
             bmp[-2] = r;
             bmp[-3] = g;
             bmp[-4] = b;
-            bmp += n-4;
         }
         bmp += span;
     }
 }
 
-static void diff_bmp_int(unsigned char *bmp,
-                         unsigned char *map,
-                         BBox          *bbox,
-                         int            span,
-                         int            map_span)
+static void diff_bmp(unsigned char *bmp,
+                     unsigned char *map,
+                     BBox          *bbox,
+                     int            span,
+                     int            map_span)
 {
     int  w, h;
     int  x, y;
@@ -2342,101 +2340,6 @@ static void diff_bmp_int(unsigned char *bmp,
         isrc += span;
         map  += map_span;
     }
-}
-
-static void diff_bmp_n(unsigned char *bmp,
-                       unsigned char *map,
-                       BBox          *bbox,
-                       int            span,
-                       int            map_span,
-                       int            n)
-{
-    int  w, h;
-    int  x, y;
-    unsigned char *src;
-
-    src       = bmp;
-    src      += span    *(bbox->ymin)+bbox->xmin*n;
-    map      += map_span*(bbox->ymin)+bbox->xmin;
-    w         = bbox->xmax - bbox->xmin;
-    h         = bbox->ymax - bbox->ymin;
-    span     -= w*n;
-    map_span -= w;
-    for (y = 0; y < h; y++)
-    {
-        for (x = 0; x < w; x++)
-        {
-            int m = *map++;
-
-            switch (m) {
-                case 0:
-                {
-                    /* Matching pixel - greyscale it */
-                    int a;
-
-                    a  = src[0];
-                    a += src[1];
-                    a += src[2];
-                    a /= 6*2;
-
-                    src[0] = a;
-                    src[1] = a;
-                    src[2] = a;
-                    break;
-                }
-                case 1:
-                    /* Green */
-                    src[0] = 0;
-                    src[1] = 0xFF;
-                    src[2] = 0;
-                    break;
-                case 3:
-                    /* Cyan */
-                    src[0] = 0xFF;
-                    src[1] = 0xFF;
-                    src[2] = 0;
-                    break;
-                case 5:
-                    /* Yellow */
-                    src[0] = 0;
-                    src[1] = 0xFF;
-                    src[2] = 0xFF;
-                    break;
-                case 7:
-                    /* Orange */
-                    src[0] = 0;
-                    src[1] = 0x80;
-                    src[2] = 0xFF;
-                    break;
-                case 15:
-                    /* Red */
-                    src[0] = 0x00;
-                    src[1] = 0x00;
-                    src[2] = 0xFF;
-                    break;
-                default:
-                    fprintf(stderr,
-                            "bmpcmp: Internal error: unexpected map type %d\n", m);
-                    break;
-            }
-            src += n;
-        }
-        src += span;
-        map += map_span;
-    }
-}
-
-static void diff_bmp(unsigned char *bmp,
-                     unsigned char *map,
-                     BBox          *bbox,
-                     int            span,
-                     int            map_span,
-                     int            bpp)
-{
-    if (bpp <= 32)
-        diff_bmp_int(bmp, map, bbox, span, map_span);
-    else
-        diff_bmp_n(bmp, map, bbox, span, map_span, bpp>>3);
 }
 
 static void save_meta(BBox *bbox, char *str, int w, int h, int page, int threshold, int window)
@@ -2503,7 +2406,7 @@ static void save_bmp(unsigned char *data,
 
     fwrite(bmp, 1, 14+40, file);
 
-    data += bbox->xmin * n;
+    data += bbox->xmin * 4;
     data += bbox->ymin * span;
 
     if (bpp == 16)
@@ -2518,11 +2421,11 @@ static void save_bmp(unsigned char *data,
             for (x=0; x<width; x++)
             {
                 fwrite(data, 1, 3, file);
-                data += n;
+                data += 4;
             }
             if (word_width)
                 fwrite(&zero, 1, word_width, file);
-            data += span-(n*width);
+            data += span-(4*width);
         }
     }
     fclose(file);
@@ -2578,10 +2481,8 @@ static void save_png(unsigned char *data,
     /* we use bmp coordinates where the zero-th row is at the bottom */
     if (bpp == 16)
         src_bypp = 2;
-    else if (bpp <= 32)
-        src_bypp = 4;
     else
-        src_bypp = bpp>>3;
+        src_bypp = 4;
     if (bpp == 16)
         word_width = width*2;
     else
@@ -2594,26 +2495,6 @@ static void save_png(unsigned char *data,
     for (y = 0; y < height; y++)
       rows[height - y - 1] = &data[(y + bbox->ymin)*span + bbox->xmin * src_bypp - 1];
     png_set_rows(png, info, rows);
-
-    if (src_bypp > 32)
-    {
-      int n = src_bypp>>3;
-      for (y = 0; y < height; y++)
-      {
-        unsigned char *p = rows[height - y - 1] + 1;
-        unsigned char *q = p;
-        int x;
-        for (x = width; x > 0; x--)
-        {
-          p[0] = q[0];
-          p[1] = q[1];
-          p[2] = q[2];
-          p[3] = q[3];
-          p += 4;
-          q += n;
-        }
-      }
-    }
 
     /* write out the image */
     png_write_png(png, info,
@@ -2887,6 +2768,29 @@ static void rediff(unsigned char *map,
     *global = local;
 }
 
+static void unspot(unsigned char *bmp, int w, int h, int span, int bpp)
+{
+    int x, y, n = bpp>>3;
+    unsigned char *p = bmp;
+
+    span -= w*4;
+    n -= 4;
+    for (y = h; y > 0; y--)
+    {
+        unsigned char *q = p;
+        for (x = w; x > 0; x--)
+        {
+            /* FIXME: Map spots down - don't just ignore them */
+            *p++ = *q++;
+            *p++ = *q++;
+            *p++ = *q++;
+            *p++ = *q++;
+            q += n;
+        }
+        p += span;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int            w,  h,  s,  bpp,  cmyk;
@@ -3016,6 +2920,12 @@ int main(int argc, char *argv[])
             /* bbox */
             boxlist = Malloc(sizeof(*boxlist) * nx * ny);
 
+            if (bpp >= 32)
+            {
+                unspot(bmp, w, h, s, bpp);
+                unspot(bmp2, w, h, s, bpp);
+            }
+
             /* Now save the changed bmps */
             n = params.basenum;
             boxlist--;
@@ -3044,8 +2954,8 @@ int main(int argc, char *argv[])
                                        boxlist->xmax, boxlist->ymax));
                     if (cmyk)
                     {
-                        uncmyk_bmp(bmp,  boxlist, s, params.bpp>>3);
-                        uncmyk_bmp(bmp2, boxlist, s, params.bpp>>3);
+                        uncmyk_bmp(bmp,  boxlist, s);
+                        uncmyk_bmp(bmp2, boxlist, s);
                     }
 #ifdef HAVE_LIBPNG
                     sprintf(str1, "%s.%05d.png", params.outroot, n);
@@ -3060,7 +2970,7 @@ int main(int argc, char *argv[])
                     save_bmp(bmp,  boxlist, s, bpp, str1);
                     save_bmp(bmp2, boxlist, s, bpp, str2);
 #endif
-                    diff_bmp(bmp, map, boxlist, s, w, bpp);
+                    diff_bmp(bmp, map, boxlist, s, w);
 #ifdef HAVE_LIBPNG
                     save_png(bmp, boxlist, s, bpp, str3);
 #else
