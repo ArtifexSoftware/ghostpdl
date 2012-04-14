@@ -2,6 +2,10 @@
  * bmpcmp.c: BMP Comparison - utility for use with htmldiff.pl
  */
 
+/* Compile from inside ghostpdl with:
+ * gcc -Igs/libpng -Igs/zlib -o bmpcmp -DHAVE_LIBPNG gs/toolbin/bmpcmp.c gs/libpng/png.c gs/libpng/pngerror.c gs/libpng/pnggccrd.c gs/libpng/pngget.c gs/libpng/pngmem.c gs/libpng/pngpread.c gs/libpng/pngread.c gs/libpng/pngrio.c gs/libpng/pngrtran.c gs/libpng/pngrutil.c gs/libpng/pngset.c gs/libpng/pngtrans.c gs/libpng/pngvcrd.c gs/libpng/pngwio.c gs/libpng/pngwrite.c gs/libpng/pngwtran.c gs/libpng/pngwutil.c gs/zlib/adler32.c gs/zlib/crc32.c gs/zlib/infback.c gs/zlib/inflate.c gs/zlib/uncompr.c gs/zlib/compress.c gs/zlib/deflate.c gs/zlib/gzio.c gs/zlib/inffast.c gs/zlib/inftrees.c gs/zlib/trees.c gs/zlib/zutil.c -lm
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1167,7 +1171,7 @@ static void *psd_read(ImageReader *im,
     *span = (w * n + 3) & ~3;
     bmp = Malloc(*span * h);
     line = Malloc(w);
-    ptr = bmp;
+    ptr = bmp + *span * (h-1);
     for (z = 0; z < n; z++)
     {
         for (y = 0; y < h; y++)
@@ -1178,10 +1182,10 @@ static void *psd_read(ImageReader *im,
                 *ptr = 255 - *line++;
                 ptr += n;
             }
-            ptr -= w*n - *span;
+            ptr -= w*n + *span;
             line -= w;
         }
-        ptr -= *span * h - 1;
+        ptr += *span * h + 1;
     }
     free(line);
 
