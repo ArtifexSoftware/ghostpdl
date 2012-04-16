@@ -92,7 +92,7 @@ static int
 moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
 {
     os_ptr op = osp;
-    gs_text_enum_t *penum;
+    gs_text_enum_t *penum = NULL;
     int code = op_show_setup(i_ctx_p, op - 1);
     int format;
     uint i, size, widths_needed;
@@ -115,7 +115,8 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
                                 (have_y ? values : (float *)0),
                                 size, imemory_local, &penum)) < 0) {
         ifree_object(values, "moveshow");
-        penum->text.x_widths = penum->text.y_widths = NULL;
+        if (penum)	/* if there was an error, the text_enum may not have been allocated */
+            penum->text.x_widths = penum->text.y_widths = NULL;
         return code;
     }
     if (CPSI_mode) {
