@@ -118,14 +118,16 @@ djet500c_print_page(gx_device_printer *pdev, FILE *fprn)
 
             gdev_prn_copy_scan_lines(pdev, lnum, bitData, lineSize);
 
-            /* Remove trailing 0s. */
+            /* Identify and skip blank lines */
             endData = bitData + lineSize;
             while ( (endData>bitData) && (endData[-1] == 0) )
                 endData--;
             if (endData == bitData)
                 num_blank_lines++;
             else
-            {    int count, k, i, lineLen;
+            {
+                int count, k, i, lineLen;
+                endData = bitData + lineSize;
 
                 /* Pad with 0s to fill out the last */
                 /* block of 8 bytes. */
