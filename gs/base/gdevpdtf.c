@@ -805,6 +805,8 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
     default:
         break;
     }
+    if (pdfont->BaseFont.size)
+        gs_free_string(pdev->pdf_memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Replacing BaseFont string");
     pdfont->BaseFont.data = fname.data = data;
     pdfont->BaseFont.size = fname.size = size;
     /* Compute names for subset fonts. */

@@ -320,6 +320,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
                If the failed glyph will be used in the document,
                another error will hgappen when the glyph is used.
              */
+            gs_free_copied_font(complete);
             complete = copied;
         }
     } else

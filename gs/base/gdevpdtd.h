@@ -68,6 +68,8 @@ int pdf_font_descriptor_alloc(gx_device_pdf *pdev,
                               pdf_font_descriptor_t **ppfd,
                               gs_font_base *font, bool embed);
 
+int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres);
+
 /*
  * Get the object ID of a FontDescriptor.
  */

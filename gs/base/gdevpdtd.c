@@ -19,6 +19,7 @@
 #include "gserrors.h"
 #include "gsrect.h"		/* for rect_merge */
 #include "gscencs.h"
+#include "gxfcopy.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"		/* for object->written */
 #include "gdevpdtb.h"
@@ -252,6 +253,27 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
     pfd->FontType = font->FontType;
     pfd->embed = embed;
     *ppfd = pfd;
+    return 0;
+}
+
+int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
+{
+    pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
+    pdf_base_font_t *pbfont = pfd->base_font;
+    gs_font *copied = (gs_font *)pbfont->copied;
+
+    gs_free_copied_font(copied);
+    if (pbfont && pbfont->font_name.size) {
+        gs_free_string(pdev->memory, pbfont->font_name.data, pbfont->font_name.size, "Free BaseFont FontName string");
+        pbfont->font_name.data = (byte *)0L;
+        pbfont->font_name.size = 0;
+    }
+    if (pbfont)
+        gs_free_object(cos_object_memory(pres->object), pbfont, "Free base font from FontDescriptor)");
+    if (pres->object) {
+        gs_free_object(cos_object_memory(pres->object), pres->object, "free FontDescriptor object");
+        pres->object = NULL;
+    }
     return 0;
 }
 

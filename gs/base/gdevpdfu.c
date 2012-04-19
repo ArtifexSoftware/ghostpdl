@@ -1080,17 +1080,21 @@ const gs_memory_struct_type_t *const pdf_resource_type_structs[] = {
 int
 pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_type_t rtype)
 {
-    /* fixme : remove *pres from resource chain. */
+    /* fixme : Remove *pres from resource chain. */
     pres->where_used = 0;
-    pres->object->written = true;
-    if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
-        || rtype > NUM_RESOURCE_TYPES) {
-        int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
+    if (pres->object) {
+        pres->object->written = true;
+        if (rtype == resourceXObject || rtype == resourceCharProc || rtype == resourceOther
+            || rtype > NUM_RESOURCE_TYPES) {
+            int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
 
-        if (code < 0)
-            return code;
+            if (code < 0)
+                return code;
+        }
+        cos_release(pres->object, "pdf_cancel_resource");
+        gs_free_object(pdev->pdf_memory, pres->object, "pdf_cancel_resources");
+        pres->object = 0;
     }
-    cos_release(pres->object, "pdf_cancel_resource");
     return 0;
 }
 
@@ -1113,8 +1117,11 @@ pdf_forget_resource(gx_device_pdf * pdev, pdf_resource_t *pres1, pdf_resource_ty
         for (; (pres = *pprev) != 0; pprev = &pres->next)
             if (pres == pres1) {
                 *pprev = pres->next;
-                COS_RELEASE(pres->object, "pdf_forget_resource");
-                gs_free_object(pdev->pdf_memory, pres->object, "pdf_forget_resource");
+                if (pres->object) {
+                    COS_RELEASE(pres->object, "pdf_forget_resource");
+                    gs_free_object(pdev->pdf_memory, pres->object, "pdf_forget_resource");
+                    pres->object = 0;
+                }
                 gs_free_object(pdev->pdf_memory, pres, "pdf_forget_resource");
                 break;
             }
@@ -1212,7 +1219,7 @@ pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_reso
                 int code;
                 cos_object_t *pco1 = pres->object;
 
-                if (cos_type(pco0) != cos_type(pco1))
+                if (pco1 == NULL || cos_type(pco0) != cos_type(pco1))
                     continue;	    /* don't compare different types */
                 code = pco0->cos_procs->equal(pco0, pco1, pdev);
                 if (code < 0)
@@ -1256,8 +1263,11 @@ pdf_drop_resources(gx_device_pdf * pdev, pdf_resource_type_t rtype,
     for (; (pres = *pprev) != 0; )
         if (pres->next == pres) {
             *pprev = pres->prev;
-            COS_RELEASE(pres->object, "pdf_drop_resources");
-            gs_free_object(pdev->pdf_memory, pres->object, "pdf_drop_resources");
+            if (pres->object) {
+                COS_RELEASE(pres->object, "pdf_drop_resources");
+                gs_free_object(pdev->pdf_memory, pres->object, "pdf_drop_resources");
+                pres->object = 0;
+            }
             gs_free_object(pdev->pdf_memory, pres, "pdf_drop_resources");
         } else
             pprev = &pres->prev;
@@ -1457,7 +1467,7 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 
         for (; pres != 0; pres = pres->next)
             if ((!pres->named || pdev->ForOPDFRead)
-                && !pres->object->written) {
+                && pres->object && !pres->object->written) {
                     code = cos_write_object(pres->object, pdev, rtype);
             }
     }
@@ -1507,8 +1517,10 @@ pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
             if (pres->named) {	/* named, don't free */
                 prev = &pres->next;
             } else {
-                cos_free(pres->object, "pdf_free_resource_objects");
-                pres->object = 0;
+                if (pres->object) {
+                    cos_free(pres->object, "pdf_free_resource_objects");
+                    pres->object = 0;
+                }
                 *prev = pres->next;
             }
         }

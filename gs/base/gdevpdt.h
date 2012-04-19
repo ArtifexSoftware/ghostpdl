@@ -42,6 +42,8 @@ pdf_text_state_t *pdf_text_state_alloc(gs_memory_t *mem);
  */
 pdf_text_data_t *pdf_text_data_alloc(gs_memory_t *mem);	/* gdevpdts.h */
 
+int text_data_free(gs_memory_t *mem, pdf_text_data_t *ptd);
+
 /*
  * Reset the text state at the beginning of the page.
  */

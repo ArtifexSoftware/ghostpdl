@@ -335,6 +335,13 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
     return 0;
 }
 
+int gs_cmap_free(gs_cmap_t *pcmap, gs_memory_t *mem)
+{
+    gs_free_object(mem, pcmap->CIDSystemInfo, "gs_cmap_free(CIDSystemInfo)");
+    gs_free_object(mem, pcmap, "gs_cmap_free(CMap)");
+    return 0;
+}
+
 /*
  * Initialize an enumerator with convenient defaults (index = 0).
  */
@@ -573,8 +580,10 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
         return code;
     map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes,
                                   "gs_cmap_ToUnicode_alloc");
-    if (map == NULL)
+    if (map == NULL) {
+        gs_cmap_free(*ppcmap, mem);
         return_error(gs_error_VMerror);
+    }
     memset(map, 0, num_codes * gs_cmap_ToUnicode_code_bytes);
     cmap = (gs_cmap_ToUnicode_t *)*ppcmap;
     cmap->glyph_name_data = map;
@@ -584,6 +593,13 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
     cmap->num_codes = num_codes;
     cmap->ToUnicode = true;
     cmap->is_identity = true;
+    return 0;
+}
+
+int gs_cmap_ToUnicode_free(gs_memory_t *mem, gs_cmap_t *pcmap)
+{
+    gs_free_object(mem, pcmap->glyph_name_data, "Free ToUnicode glyph data");
+    gs_cmap_free(pcmap, mem);
     return 0;
 }
 

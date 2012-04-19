@@ -298,6 +298,10 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
         code = param_list_copy(dict.list, (gs_param_list *)plvalue);
     }
     param_end_write_dict(plist, pname, &dict);
+    if (dict.list) {
+        gs_c_param_list_release((gs_c_param_list *)dict.list);
+        gs_free_object(plist->memory, dict.list, "Free parameter list");
+    }
     return code;
 }
 

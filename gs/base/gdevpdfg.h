@@ -99,6 +99,8 @@ int pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
                     const pdf_color_space_names_t *pcsn,
                     bool by_name, const byte *res_name, int name_length);
 
+int free_color_space(gx_device_pdf *pdev, pdf_resource_t *pres);
+
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(gx_device_pdf *pdev, cos_value_t *pvalue);
 int pdf_cs_Pattern_uncolored(gx_device_pdf *pdev, cos_value_t *pvalue);

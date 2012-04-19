@@ -1306,6 +1306,20 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     return 0;
 }
 
+int free_color_space(gx_device_pdf *pdev, pdf_resource_t *pres)
+{
+    pdf_color_space_t *ppcs = (pdf_color_space_t *)pres;
+
+    if (ppcs->serialized)
+        gs_free_object(pdev->pdf_memory, ppcs->serialized, "free serialized colour space");
+    if (pres->object) {
+        cos_release(pres->object, "release ColorSpace object");
+        gs_free_object(pdev->pdf_memory, pres->object, "free ColorSpace object");
+        pres->object = 0;
+    }
+    return 0;
+}
+
 /* ---------------- Miscellaneous ---------------- */
 
 /* Create colored and uncolored Pattern color spaces. */

@@ -51,3 +51,14 @@ pdf_text_data_alloc(gs_memory_t *mem)
     ptd->text_state = pts;
     return ptd;
 }
+
+int text_data_free(gs_memory_t *mem, pdf_text_data_t *ptd)
+{
+    gs_free_object(mem, ptd->outline_fonts->standard_fonts, "Free text Outline standard fonts");;
+    gs_free_object(mem, ptd->outline_fonts, "Free text Outline fonts");;
+    gs_free_object(mem, ptd->bitmap_fonts, "Free text Bitmap fotns");;
+    gs_free_object(mem, ptd->text_state, "Free text state");;
+    gs_free_object(mem, ptd, "Free text");
+
+    return 0;
+}

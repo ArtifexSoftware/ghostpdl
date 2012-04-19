@@ -2139,6 +2139,41 @@ gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_f
     return code;
 }
 
+int gs_free_copied_font(gs_font *font)
+{
+    gs_copied_font_data_t *cfdata = font->client_data;
+    gs_memory_t *mem = font->memory;
+    int i;
+    gs_copied_glyph_t *pcg = 0;
+
+    /* free copied glyph data */
+    for (i=0;i < cfdata->glyphs_size;i++) {
+        pcg = &cfdata->glyphs[i];
+        if(pcg->gdata.size) {
+            gs_free_string(font->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph");
+        }
+    }
+
+    if (cfdata) {
+        uncopy_string(mem, &cfdata->info.FullName,
+                      "gs_free_copied_font(FullName)");
+        uncopy_string(mem, &cfdata->info.FamilyName,
+                      "gs_free_copied_font(FamilyName)");
+        uncopy_string(mem, &cfdata->info.Notice,
+                      "gs_free_copied_font(Notice)");
+        uncopy_string(mem, &cfdata->info.Copyright,
+                      "gs_free_copied_font(Copyright)");
+        if (cfdata->Encoding)
+            gs_free_object(mem, cfdata->Encoding, "gs_free_copied_font(Encoding)");
+        gs_free_object(mem, cfdata->glyphs, "gs_free_copied_font(glyphs)");
+        gs_free_object(mem, cfdata->names, "gs_free_copied_font(names)");
+        gs_free_object(mem, cfdata->data, "gs_free_copied_font(data)");
+        gs_free_object(mem, cfdata, "gs_free_copied_font(wrapper data)");
+    }
+    gs_free_object(mem, font, "gs_free_copied_font(copied font)");
+    return 0;
+}
+
 /*
  * Copy a glyph, including any sub-glyphs.
  */

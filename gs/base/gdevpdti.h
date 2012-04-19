@@ -66,6 +66,8 @@ int pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
 /* End a CharProc. */
 int pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos);
 
+int pdf_free_charproc_ownership(gx_device_pdf * pdev, pdf_resource_t *pres);
+
 /* Put out a reference to an image as a character in an embedded font. */
 int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
                       const gs_matrix * pimat);

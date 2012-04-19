@@ -57,6 +57,8 @@ int gs_cmap_decode_next(const gs_cmap_t *pcmap, const gs_const_string *str,
 int gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size,
                             gs_cmap_t **ppcmap);
 
+int gs_cmap_ToUnicode_free(gs_memory_t *mem, gs_cmap_t *pcmap);
+
 /*
  * Write a code pair to ToUnicode CMap.
  */

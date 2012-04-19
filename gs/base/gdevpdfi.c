@@ -796,6 +796,16 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
                                   &pie->writer.binary[1], &image[1].pixel,
                                   pmat, pis, false, in_line);
         if (code == gs_error_rangecheck) {
+
+            for (i=1;i < pie->writer.alt_writer_count; i++) {
+                stream *s = pie->writer.binary[i].strm;
+                cos_stream_t *pcos = cos_stream_from_pipeline(pie->writer.binary[i].strm);
+                s_close_filters(&s, NULL);
+//                gs_free_object(pdev->pdf_memory, s->cbuf, "compressed image buffer");
+                gs_free_object(pdev->pdf_memory, s, "compressed image stream");
+                pcos->cos_procs->release((cos_object_t *)pcos, "pdf_begin_typed_image_impl");
+                gs_free_object(pdev->pdf_memory, pcos, "compressed image cos_stream");
+            }
             /* setup_image_compression rejected the alternative compression. */
             pie->writer.alt_writer_count = 1;
             memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));

@@ -27,6 +27,11 @@
 #include "smd5.h"
 #include "sarc4.h"
 #include "gscms.h"
+#include "gdevpdtf.h"
+#include "gdevpdtx.h"
+#include "gdevpdtd.h"
+#include "gdevpdti.h"
+#include "gsfcmap.h"        /* For gs_cmap_ToUnicode_free */
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -1476,9 +1481,262 @@ pdf_close(gx_device * dev)
         stream_puts(s, ">>\n");
         pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
     }
+    /* Require special handling for Fonts, ColorSpace and Pattern resources
+     * These are tracked in pdev->last_resource, and are complex structures which may
+     * contain other memory allocations. All other resource types can be simply dicarded
+     * as above.
+     */
+    {
+        /* PDF font records and all their associated contents need to be
+         * freed by means other than the garbage collector, or the memory
+         * usage will increase with languages other than PostScript. In addition
+         * debug builds of non-PS languages take a long time to close down
+         * due to reporting the dangling memory allocations.
+         */
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceFont].chains[j];
+
+            for (; pres != 0;) {
+                pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
+
+                if(pdfont->BaseFont.size) {
+                    gs_free_string(pdev->memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Free BaseFont string");
+                    pdfont->BaseFont.data = (byte *)0L;
+                    pdfont->BaseFont.size = 0;
+                }
+                if(pdfont->Widths) {
+                    gs_free_object(pdev->memory, pdfont->Widths, "Free Widths array");
+                    pdfont->Widths = 0;
+                }
+                if(pdfont->used) {
+                    gs_free_object(pdev->memory, pdfont->used, "Free used array");
+                    pdfont->used = 0;
+                }
+                if(pdfont->res_ToUnicode) {
+                    /* ToUnicode resources are released below */
+/*                    gs_free_object(pdev->memory, pdfont->res_ToUnicode, "Free ToUnicode resource");*/
+                    pdfont->res_ToUnicode = 0;
+                }
+                if(pdfont->cmap_ToUnicode) {
+                    gs_cmap_ToUnicode_free(pdev->memory, pdfont->cmap_ToUnicode);
+                    pdfont->cmap_ToUnicode = 0;
+                }
+                switch(pdfont->FontType) {
+                    case ft_composite:
+                        break;
+                    case ft_PCL_user_defined:
+                    case ft_GL2_stick_user_defined:
+                    case ft_user_defined:
+                        if(pdfont->u.simple.Encoding) {
+                            gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
+                            pdfont->u.simple.Encoding = 0;
+                        }
+                        if(pdfont->u.simple.v) {
+                            gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
+                            pdfont->u.simple.v = 0;
+                        }
+                        if (pdfont->u.simple.s.type3.char_procs) {
+                            pdf_free_charproc_ownership(pdev, (pdf_resource_t *)pdfont->u.simple.s.type3.char_procs);
+                            pdfont->u.simple.s.type3.char_procs = 0;
+                        }
+                        break;
+                    case ft_CID_encrypted:
+                    case ft_CID_TrueType:
+                        if(pdfont->u.cidfont.used2) {
+                            gs_free_object(pdev->memory, pdfont->u.cidfont.used2, "Free CIDFont used2");
+                            pdfont->u.cidfont.used2 = 0;
+                        }
+                        if(pdfont->u.cidfont.CIDToGIDMap) {
+                            gs_free_object(pdev->memory, pdfont->u.cidfont.CIDToGIDMap, "Free CIDToGID map");
+                            pdfont->u.cidfont.CIDToGIDMap = 0;
+                        }
+                        break;
+                    default:
+                        if(pdfont->u.simple.Encoding) {
+                            gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
+                            pdfont->u.simple.Encoding = 0;
+                        }
+                        if(pdfont->u.simple.v) {
+                            gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
+                            pdfont->u.simple.v = 0;
+                        }
+                        break;
+                }
+                if (pdfont->object) {
+                    cos_release(pdfont->object, "release font resource object");
+                    gs_free_object(pdev->pdf_memory, pdfont->object, "Free font resource object");
+                    pdfont->object = 0;
+                }
+                /* We free FontDescriptor resources separately */
+                if(pdfont->FontDescriptor)
+                    pdfont->FontDescriptor = NULL;
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceFontDescriptor].chains[j];
+            for (; pres != 0;) {
+                pdf_font_descriptor_free(pdev, pres);
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceCharProc].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    gs_free_object(pdev->pdf_memory, (byte *)pres->object, "Free CharProc");
+                    pres->object = 0;
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
+            for (; pres != 0;) {
+                free_color_space(pdev, pres);
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceExtGState].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    cos_release(pres->object, "release ExtGState object");
+                    gs_free_object(pdev->pdf_memory, pres->object, "free ExtGState");
+                    pres->object = 0;
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourcePattern].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    cos_release(pres->object, "free pattern dict");
+                    gs_free_object(pdev->pdf_memory, pres->object, "free pattern resources");
+                    pres->object = 0;
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceShading].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    cos_release(pres->object, "free Shading dict");
+                    gs_free_object(pdev->pdf_memory, pres->object, "free Shading resources");
+                    pres->object = 0;
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceGroup].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    cos_release(pres->object, "free Group dict");
+                    gs_free_object(pdev->pdf_memory, pres->object, "free Group resources");
+                    pres->object = 0;
+                }
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pnext = 0, *pres = pdev->resources[resourceFunction].chains[j];
+
+            for (; pres != 0;) {
+                if (pres->object) {
+                    cos_release(pres->object, "free function dict");
+                    gs_free_object(pdev->pdf_memory, pres->object, "free function resources");
+                    pres->object = 0;
+                    pnext = pres->next;
+                    gs_free_object(pdev->pdf_memory, pres, "free function");
+                }
+                pres = pnext;
+            }
+        }
+    }
+
+    {
+        int i, j;
+
+        for (i = 0; i < NUM_RESOURCE_TYPES; i++) {
+            for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+                pdev->resources[i].chains[j] = 0;
+            }
+        }
+    }
 
     /* Release the resource records. */
-
+    /* So what exactly is stored in this list ? I believe the following types of resource:
+     *
+     * resourceCharProc
+     * resourceFont
+     * resourceCIDFont
+     * resourceFontDescriptor
+     * resourceColorSpace
+     * resourceExtGState
+     * resourceXObject
+     * resourceSoftMaskDict
+     * resourceGroup
+     * resourcePattern
+     * resourceShading
+     *
+     * resourceCMap resourcePage and resourceFunction don't appear to be tracked. I note
+     * that resourcePage and resourceCMap are freed above, as is resourceXObject and resourceSoftmaskDict.
+     * So presumably reourceFunction just leaks.
+     *
+     * It seems that all these types of resources are added when they are created
+     * in addition there are 'pdf_forget_resource' and pdf_cancel_resource which
+     * remove entries from this list.
+     */
     {
         pdf_resource_t *pres;
         pdf_resource_t *prev;
@@ -1501,11 +1759,36 @@ pdf_close(gx_device * dev)
 
     /* Wrap up. */
 
+    {
+        int i;
+        for (i=0;i < pdev->next_page;i++) {
+            cos_release((cos_object_t *)pdev->pages[i].Page, "Free page dict");
+            gs_free_object(mem, pdev->pages[i].Page, "Free Page object");
+        }
+    }
     gs_free_object(mem, pdev->pages, "pages");
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    if (pdev->ForOPDFRead) {
+    gs_free_object(mem, pdev->sbstack, "Free sbstack");
+    pdev->sbstack = 0;
+
+    text_data_free(mem, pdev->text);
+    pdev->text = 0;
+
+    cos_release((cos_object_t *)pdev->Pages, "release Pages dict");
+    gs_free_object(mem, pdev->Pages, "Free Pages dict");
+    pdev->Pages = 0;
+
+    cos_release((cos_object_t *)pdev->NI_stack, "Release Name Index stack");
+    gs_free_object(mem, pdev->NI_stack, "Free Name Index stack");
+    pdev->NI_stack = 0;
+
+    cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
+    gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");
+    pdev->Namespace_stack = 0;
+
+    {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */
         int status;

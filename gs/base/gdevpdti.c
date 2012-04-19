@@ -294,6 +294,25 @@ pdf_attach_charproc(gx_device_pdf * pdev, pdf_font_resource_t *pdfont, pdf_char_
     return 0;
 }
 
+int
+pdf_free_charproc_ownership(gx_device_pdf * pdev, pdf_resource_t *pres)
+{
+    pdf_char_proc_ownership_t *next, *pcpo = (pdf_char_proc_ownership_t *)pres;
+
+    while (pcpo) {
+        next = pcpo->char_next;
+        if(pcpo->char_name.size != 0 && pcpo->char_name.data) {
+            /* This causes PCL some trouble, don't know why yet FIXME-MEMORY
+            gs_free_string(pdev->pdf_memory, (byte *)pcpo->char_name.data, pcpo->char_name.size, "Free CharProc name");*/
+            pcpo->char_name.data = (byte *)0L;
+            pcpo->char_name.size = 0;
+        }
+        gs_free_object(pdev->pdf_memory, pcpo, "Free CharProc");
+        pcpo = next;
+    }
+    return 0;
+}
+
 /* Begin a CharProc for a synthesized (bitmap) font. */
 int
 pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,

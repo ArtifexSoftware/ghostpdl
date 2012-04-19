@@ -317,7 +317,7 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
         pprintld1(s, "/R%ld", pcv->contents.object->id);
         break;
     case COS_VALUE_OBJECT: {
-        const cos_object_t *pco = pcv->contents.object;
+        cos_object_t *pco = pcv->contents.object;
 
         if (!pco->id) {
             if (do_space &&
@@ -332,6 +332,8 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
         if (do_space)
             stream_putc(s, ' ');
         pprintld1(s, "%ld 0 R", pco->id);
+        if (pco->cos_procs == cos_type_reference)
+            pco->id = 0;
         break;
     }
     default:			/* can't happen */
@@ -397,12 +399,16 @@ static int cos_value_hash(cos_value_t *pcv0, gs_md5_state_t *md5, gs_md5_byte_t 
 
 /* ------ Generic objects ------ */
 
+static cos_proc_release(cos_reference_release);
 static cos_proc_release(cos_generic_release);
 static cos_proc_write(cos_generic_write);
 static cos_proc_equal(cos_generic_equal);
 static cos_proc_hash(cos_generic_hash);
 const cos_object_procs_t cos_generic_procs = {
     cos_generic_release, cos_generic_write, cos_generic_equal, cos_generic_hash
+};
+const cos_object_procs_t cos_reference_procs = {
+    cos_reference_release, cos_generic_write, cos_generic_equal, cos_generic_hash
 };
 
 cos_object_t *
@@ -414,6 +420,23 @@ cos_object_alloc(gx_device_pdf *pdev, client_name_t cname)
 
     cos_object_init(pco, pdev, &cos_generic_procs);
     return pco;
+}
+
+cos_object_t *
+cos_reference_alloc(gx_device_pdf *pdev, client_name_t cname)
+{
+    gs_memory_t *mem = pdev->pdf_memory;
+    cos_object_t *pco =
+        gs_alloc_struct(mem, cos_object_t, &st_cos_object, cname);
+
+    cos_object_init(pco, pdev, &cos_reference_procs);
+    return pco;
+}
+
+static void
+cos_reference_release(cos_object_t *pco, client_name_t cname)
+{
+    /* Do nothing. */
 }
 
 static void

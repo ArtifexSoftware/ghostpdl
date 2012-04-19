@@ -166,6 +166,14 @@ typedef enum {
  * for synthesized fonts, rname is A, B, ....  The string is null-terminated.
  */
 
+    /* WARNING WILL ROBINSON!
+     * these 2 pointers may *look* like a double linked list but in fact these are pointers
+     * to two *different* single-linked lists. 'next' points to the next resource
+     * of this type, which is stored in the resource chains pointed to by the array
+     * 'resources' in the device structure. 'prev' is a pointer
+     * to the list of stored resources of all types, pointed to by the
+     * 'last_resource' member of the device structure.
+     */
 #define pdf_resource_common(typ)\
     typ *next;                        /* next resource of this type */\
     pdf_resource_t *prev;        /* previously allocated resource */\
@@ -257,6 +265,10 @@ struct pdf_article_s {
 /* ---------------- The device structure ---------------- */
 
 /* Resource lists */
+/* We seem to split the resources up into 'NUM_RESOURCE_CHAINS' linked
+ * lists purely as a performance boost. Presumably it save searching very
+ * long lists.
+ */
 #define NUM_RESOURCE_CHAINS 16
 typedef struct pdf_resource_list_s {
     pdf_resource_t *chains[NUM_RESOURCE_CHAINS];

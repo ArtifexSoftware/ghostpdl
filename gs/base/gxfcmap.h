@@ -303,6 +303,8 @@ int gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
                   const gs_cid_system_info_t *pcidsi, int num_fonts,
                   const gs_cmap_procs_t *procs, gs_memory_t *mem);
 
+int gs_cmap_free(gs_cmap_t *pcmap, gs_memory_t *mem);
+
 /*
  * Initialize an enumerator with convenient defaults (index = 0).
  */
