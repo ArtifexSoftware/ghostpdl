@@ -2208,7 +2208,28 @@ end
   end
 } bdef
 
+/can-regenerate-ap { % <annot> -> <bool>
+  //false exch
+  NeedAppearances {
+    dup /FT fget {
+      /Tx eq {
+        dup /V oknown {
+          dup /DA fget {
+            pop pop not 1
+          } if
+        } if
+      } if
+    } if
+  } if
+  pop 
+} bdef
+
 /drawwidget {			% <scalefactor_x> <scalefactor_y> <annot> drawwidget -
+  dup /UpdatedAP known not {
+    dup can-regenerate-ap {
+      dup /AP undef
+    } if
+  } if
   dup /AP knownoget {
     dup /N known not {
       (   **** Appearance dictionary (AP) lacks the mandatory normal (N) appearance.\n)
@@ -2295,19 +2316,11 @@ end
       } if
       pop
     } if
-    NeedAppearances {
-      dup /FT fget {
-        /Tx eq {
-          % Stack: scalex scaley annot
-          dup /V oknown {
-            dup /DA fget {
-              pop
-              make_tx_da
-              3 copy drawwidget
-            } if
-          } if
-        } if
-      } if
+
+    dup can-regenerate-ap {
+      make_tx_da
+      dup /UpdatedAP //true put
+      3 copy drawwidget
     } if
   } ifelse
   pop pop pop
