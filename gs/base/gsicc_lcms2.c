@@ -329,7 +329,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
       when we use the transformation. */
     src_data_type = (COLORSPACE_SH(lcms_src_color_space)|
                         CHANNELS_SH(src_nChannels)|BYTES_SH(2));
-#if arch_is_big_endian
+#if 0
     src_data_type = src_data_type | ENDIAN16_SH(1);
 #endif
     if (lcms_deshandle != NULL) {
@@ -344,7 +344,7 @@ gscms_get_link(gcmmhprofile_t  lcms_srchandle,
     des_data_type = (COLORSPACE_SH(lcms_des_color_space)|
                         CHANNELS_SH(des_nChannels)|BYTES_SH(2));
     /* endian */
-#if arch_is_big_endian
+#if 0
     des_data_type = des_data_type | ENDIAN16_SH(1);
 #endif
 /* Create the link */
