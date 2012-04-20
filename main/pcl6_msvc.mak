@@ -6,6 +6,14 @@ MAKEFILE=$(MAKEFILE) ..\main\pcl6_msvc.mak
 
 # Frequently changed configuration options follow:
 
+# To try the UNICODE/UTF8 you can comment out the following
+# or specify USEUNICODE=1 when you invoke nmake
+!if !defined(USEUNICODE) || "$(USEUNICODE)" != "1"
+UNICODECFLAGS=/DWINDOWS_NO_UNICODE
+!else
+UNICODECFLAGS=
+!endif
+
 # Pick (uncomment) one font system technology
 # ufst - Agfa universal font scaler.
 # afs  - Artifex font scaler (gs native).
@@ -416,7 +424,7 @@ XCFLAGS=$(XCFLAGS) /DWIN64
 HAVE_SSE2_DEFINE=/DHAVE_SSE2
 !endif
 
-XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS) $(HAVE_SSE2_DEFINE)
+XCFLAGS=$(XCFLAGS) $(PDL_INCLUDE_FLAGS) $(HAVE_SSE2_DEFINE) $(UNICODECFLAGS)
 
 !ifdef SBR
 SBRFLAGS="/FR$(SBRDIR)\ "
