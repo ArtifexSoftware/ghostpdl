@@ -2890,10 +2890,10 @@ int main(int argc, char *argv[])
             (cmyk != cmyk2))
         {
             fprintf(stderr,
-                    "bmpcmp: Can't compare images "
+                    "bmpcmp: Page %d: Can't compare images "
                     "(w=%d,%d) (h=%d,%d) (s=%d,%d) (bpp=%d,%d) (cmyk=%d,%d)!\n",
-                    w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
-            exit(EXIT_FAILURE);
+                    imagecount, w, w2, h, h2, s, s2, bpp, bpp2, cmyk, cmyk2);
+            continue;
         }
 
         if (params.window != 0)
