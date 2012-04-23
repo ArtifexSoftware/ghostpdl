@@ -50,6 +50,7 @@
 #include "stdint_.h"
 #include "gsstate.h"            /* for gs_currentcpsimode */
 #include "gxdevsop.h"
+#include "gxscanc.h"
 /*
 #include "gxfilltr.h" - Do not remove this comment. "gxfilltr.h" is included below.
 #include "gxfillsl.h" - Do not remove this comment. "gxfillsl.h" is included below.
@@ -414,6 +415,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
      */
     fill_by_trapezoids = (!gx_path_has_curves(ppath) ||
                           params->flatness >= 1.0 || fo.is_spotan);
+
     if (fill_by_trapezoids && !fo.is_spotan && !lop_is_idempotent(lop)) {
         gs_fixed_rect rbox;
 
@@ -429,6 +431,89 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
         if (fo.adjust_left | fo.adjust_right | fo.adjust_below | fo.adjust_above)
             fill_by_trapezoids = false; /* avoid double writing pixels */
     }
+
+    if (!fo.is_spotan && gs_getscanconverter(pdev->memory) >= GS_SCANCONVERTER_EDGEBUFFER) {
+        gx_edgebuffer eb = { 0 };
+        if (fill_by_trapezoids && !lop_is_idempotent(lop))
+            fill_by_trapezoids = 0;
+        if (!fill_by_trapezoids)
+        {
+            if (adjust.x == 0 && adjust.y == 0) {
+                code = gx_scan_convert(dev,
+                                       ppath,
+                                       &ibox,
+                                       &eb,
+                                       fo.fixed_flat);
+                if (code >= 0) {
+                    code = gx_filter_edgebuffer(dev,
+                                                &eb,
+                                                params->rule);
+                }
+                if (code >= 0) {
+                    code = gx_fill_edgebuffer(dev,
+                                              pdevc,
+                                              &eb,
+                                              fo.fill_direct ? -1 : (int)pgs->log_op);
+                }
+            } else {
+                code = gx_scan_convert_app(dev,
+                                           ppath,
+                                           &ibox,
+                                           &eb,
+                                           fo.fixed_flat);
+                if (code >= 0) {
+                    code = gx_filter_edgebuffer_app(dev,
+                                                    &eb,
+                                                    params->rule);
+                }
+                if (code >= 0) {
+                    code = gx_fill_edgebuffer_app(dev,
+                                                  pdevc,
+                                                  &eb,
+                                                  fo.fill_direct ? -1 : (int)pgs->log_op);
+                }
+            }
+        } else {
+            if (adjust.x == 0 && adjust.y == 0) {
+                code = gx_scan_convert_tr(dev,
+                                          ppath,
+                                          &ibox,
+                                          &eb,
+                                          fo.fixed_flat);
+                if (code >= 0) {
+                    code = gx_filter_edgebuffer_tr(dev,
+                                                   &eb,
+                                                    params->rule);
+                }
+                if (code >= 0) {
+                    code = gx_fill_edgebuffer_tr(dev,
+                                                 pdevc,
+                                                 &eb,
+                                                 (int)pgs->log_op);
+                }
+            } else {
+                code = gx_scan_convert_tr_app(dev,
+                                              ppath,
+                                              &ibox,
+                                              &eb,
+                                              fo.fixed_flat);
+                if (code >= 0) {
+                    code = gx_filter_edgebuffer_tr_app(dev,
+                                                       &eb,
+                                                       params->rule);
+                }
+                if (code >= 0) {
+                    code = gx_fill_edgebuffer_tr_app(dev,
+                                                     pdevc,
+                                                     &eb,
+                                                     (int)pgs->log_op);
+                }
+            }
+        }
+        gx_edgebuffer_fin(dev,&eb);
+        return code;
+    }
+
     gx_path_init_local(&ffpath, ppath->memory);
     if (!big_path && !gx_path_has_curves(ppath))        /* don't need to flatten */
         pfpath = ppath;

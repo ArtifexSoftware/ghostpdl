@@ -89,7 +89,8 @@ typedef struct gs_lib_ctx_s
 
 enum {
     GS_SCANCONVERTER_OLD = 0,
-    GS_SCANCONVERTER_DEFAULT = 1
+    GS_SCANCONVERTER_DEFAULT = 1,
+    GS_SCANCONVERTER_EDGEBUFFER = 2
 };
 
 /** initializes and stores itself in the given gs_memory_t pointer.

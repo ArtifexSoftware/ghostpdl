@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
@@ -2490,6 +2490,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\base\gxscanc.c"
+				>
+			</File>
+			<File
 				RelativePath="..\base\gxstroke.c"
 				>
 			</File>
@@ -4319,6 +4323,10 @@
 			</File>
 			<File
 				RelativePath="..\base\gxsamplp.h"
+				>
+			</File>
+			<File
+				RelativePath="..\base\gxscanc.h"
 				>
 			</File>
 			<File

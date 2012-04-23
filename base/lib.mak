@@ -482,6 +482,7 @@ gxpath_h=$(GLSRC)gxpath.h $(gscpm_h) $(gslparam_h) $(gspenum_h) $(gsrect_h)
 gxpcache_h=$(GLSRC)gxpcache.h
 gxsample_h=$(GLSRC)gxsample.h
 gxsamplp_h=$(GLSRC)gxsamplp.h
+gxscanc_h=$(GLSRC)gxscanc.h
 gxstate_h=$(GLSRC)gxstate.h $(gscspace_h)
 gxtext_h=$(GLSRC)gxtext.h $(gsrefct_h) $(gstext_h)
 gxtmap_h=$(GLSRC)gxtmap.h
@@ -869,6 +870,9 @@ $(GLOBJ)gxpflat.$(OBJ) : $(GLSRC)gxpflat.c $(AK) $(gx_h)\
 $(GLOBJ)gxsample.$(OBJ) : $(GLSRC)gxsample.c $(AK) $(gx_h)\
  $(gxsample_h) $(gxfixed_h) $(gximage_h) $(gxsamplp_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxsample.$(OBJ) $(C_) $(GLSRC)gxsample.c
+
+$(GLOBJ)gxscanc.$(OBJ) : $(GLSRC)gxscanc.c $(GX) $(gxscanc_h)
+	$(GLCC) $(GLO_)gxscanc.$(OBJ) $(C_) $(GLSRC)gxscanc.c
 
 $(GLOBJ)gxstroke.$(OBJ) : $(GLSRC)gxstroke.c $(AK) $(gx_h)\
  $(gserrors_h) $(math__h) $(gpcheck_h) $(gsstate_h)\
@@ -1385,7 +1389,7 @@ LIB2d=$(GLOBJ)gdevdgbr.$(OBJ) $(GLOBJ)gdevnfwd.$(OBJ) $(GLOBJ)gdevmem.$(OBJ) $(G
 LIB3d=$(GLOBJ)gdevm1.$(OBJ) $(GLOBJ)gdevm2.$(OBJ) $(GLOBJ)gdevm4.$(OBJ) $(GLOBJ)gdevm8.$(OBJ)
 LIB4d=$(GLOBJ)gdevm16.$(OBJ) $(GLOBJ)gdevm24.$(OBJ) $(GLOBJ)gdevm32.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
 LIB5d=$(GLOBJ)gdevm40.$(OBJ) $(GLOBJ)gdevm48.$(OBJ) $(GLOBJ)gdevm56.$(OBJ) $(GLOBJ)gdevm64.$(OBJ) $(GLOBJ)gdevmx.$(OBJ)
-LIB6d=$(GLOBJ)gdevdsha.$(OBJ)
+LIB6d=$(GLOBJ)gdevdsha.$(OBJ) $(GLOBJ)gxscanc.$(OBJ)
 LIBs=$(LIB0s) $(LIB1s) $(LIB2s) $(LIB3s) $(LIB4s) $(LIB5s) $(LIB6s) $(LIB7s)\
  $(LIB8s) $(LIB9s) $(LIB10s) $(LIB11s) $(LIB12s) $(LIB13s)
 LIBx=$(LIB1x) $(LIB2x) $(LIB3x) $(LIB4x) $(LIB5x) $(LIB6x) $(LIB7x) $(LIB8x) $(LIB9x) $(LIB10x)

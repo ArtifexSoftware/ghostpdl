@@ -32,6 +32,7 @@
 #include "gzcpath.h"
 #include "gxhldevc.h"
 #include "gsutil.h"
+#include "gxscanc.h"
 #include "gxdevsop.h"
 #include "gsicc_cms.h"
 
