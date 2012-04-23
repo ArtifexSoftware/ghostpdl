@@ -88,10 +88,14 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         if (shift < 0 || plane_depth > 16 ||
             !gdev_mem_device_for_bits(plane_depth))
             return_error(gs_error_rangecheck);
-        mask = (((gx_color_index)1 << plane_depth) - 1) << shift;
-        if (covered & mask)
-            return_error(gs_error_rangecheck);
-        covered |= mask;
+        /* Don't test overlap if shift is too large to fit in the variable */
+        if (shift < 8*sizeof(gx_color_index))
+        {
+            mask = (((gx_color_index)1 << plane_depth) - 1) << shift;
+            if (covered & mask)
+                return_error(gs_error_rangecheck);
+            covered |= mask;
+        }
         if (plane_depth != same_depth)
             same_depth = 0;
         total_depth += plane_depth;
