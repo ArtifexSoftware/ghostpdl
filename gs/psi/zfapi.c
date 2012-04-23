@@ -2383,9 +2383,9 @@ retry_oversampling:
              int ccode = client_char_code;
              int gdb = 2;
              int i;
-             ref *GDBytes;
+             ref *GDBytes = NULL;
 
-             if (dict_find_string(pdr, "GDBytes", &GDBytes) && r_has_type(GDBytes, t_integer)) {
+             if ((dict_find_string(pdr, "GDBytes", &GDBytes) > 0) && r_has_type(GDBytes, t_integer)) {
                  gdb = GDBytes->value.intval;
              }
 
