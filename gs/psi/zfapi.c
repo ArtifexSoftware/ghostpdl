@@ -1379,6 +1379,7 @@ static int FAPI_prepare_font(i_ctx_t *i_ctx_p, FAPI_server *I, ref *pdr, gs_font
             pbfont1->FontBBox = pbfont->FontBBox; /* Inherit FontBBox from the type 9 font. */
             if(array_get(imemory, rFDArray, i, &f) < 0 || r_type(&f) != t_dictionary)
                 return_error(e_invalidfont);
+
             I->ff.client_font_data = pbfont1;
             pbfont1->FAPI = pbfont->FAPI;
             I->ff.client_font_data2 = &f;
@@ -1567,6 +1568,7 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+
     check_type(*op, t_boolean);
     if (pbfont->FAPI != 0) {
         /*  If the font was processed with zFAPIpassfont,
@@ -1608,8 +1610,6 @@ static int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildGlyph9", ".FAPIBuildGlyph9")) < 0)
             return code;
-        pop(1);
-        return 0;
     } else
         if ((code = build_proc_name_refs(imemory, &build, ".FAPIBuildChar", ".FAPIBuildGlyph")) < 0)
             return code;
@@ -2083,7 +2083,7 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     bool bIsType1GlyphData = IsType1GlyphData(pbfont);
     gs_log2_scale_point log2_scale = {0, 0};
     int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
-    double FontMatrix_div = (bCID && bIsType1GlyphData && font_file_path == NULL ? 1000 : 1);
+    double FontMatrix_div = 1;
     bool bVertical = (gs_rootfont(igs)->WMode != 0), bVertical0 = bVertical;
     double *sbwp, sbw[4] = {0, 0, 0, 0};
     double em_scale_x, em_scale_y;
@@ -2710,7 +2710,8 @@ retry_oversampling:
         /* We must use the FontBBox, but it seems some buggy fonts have glyphs which extend outside the
          * FontBBox, so we have to do this....
          */
-        if (pbfont->FontBBox.q.x > pbfont->FontBBox.p.x && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
+        if (!bCID && pbfont->FontBBox.q.x > pbfont->FontBBox.p.x
+                  && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
             char_bbox.p.x = min(char_bbox.p.x, pbfont->FontBBox.p.x);
             char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
             char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
@@ -2865,7 +2866,8 @@ static int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
 }
 
 static int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
-{   os_ptr op = osp;                  /* <font0> <cid> <font9> <cid> */
+{
+    os_ptr op = osp;                  /* <font0> <cid> <font9> <cid> */
     ref font9 = *pfont_dict(gs_currentfont(igs));
     ref *rFDArray, f;
     int font_index;
@@ -2886,24 +2888,27 @@ static int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
     if ((code = FAPI_char(i_ctx_p, true, op - 2)) < 0)
         return code;
                                       /* <font0> <charstring> */
-    return 0;
+    return code;
 }
 
 /* <font> <code> .FAPIBuildChar - */
 static int zFAPIBuildChar(i_ctx_t *i_ctx_p)
-{   return FAPI_char(i_ctx_p, false, NULL);
+{
+    return FAPI_char(i_ctx_p, false, NULL);
 }
 
 /* non-CID : <font> <code> .FAPIBuildGlyph - */
 /*     CID : <font> <name> .FAPIBuildGlyph - */
 static int zFAPIBuildGlyph(i_ctx_t *i_ctx_p)
-{   return FAPI_char(i_ctx_p, true, NULL);
+{
+    return FAPI_char(i_ctx_p, true, NULL);
 }
 
 /* <font> <cid> .FAPIBuildGlyph9 - */
 static int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
-{   /*  The alghorithm is taken from %Type9BuildGlyph - see gs_cidfn.ps .  */
-    os_ptr op = osp;
+{
+   /*  The alghorithm is taken from %Type9BuildGlyph - see gs_cidfn.ps .  */
+    os_ptr lop, op = osp;
     int cid, code;
     avm_space s = ialloc_space(idmemory);
 
@@ -2915,11 +2920,23 @@ static int zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
     op[0] = op[-2];                   /* <font0> <cid> <font9> <cid> */
     ialloc_set_space(idmemory, (r_is_local(op - 3) ? avm_global : avm_local)); /* for ztype9mapcid */
     code = FAPIBuildGlyph9aux(i_ctx_p);
-    if (code != 0) {                  /* <font0> <dirty> <dirty> <dirty> */
+    lop = osp;
+    if (code == 5) {
+        int i, ind = (lop - op);
+        op = osp;
+
+        for (i = ind; i >= 0; i--) {
+            op[-i - 2] = op[-i];
+        }
+        pop(2);
+    }
+    else if (code < 0) {                  /* <font0> <dirty> <dirty> <dirty> */
         /* Adjust ostack for the correct error handling : */
         make_int(op - 2, cid);
         pop(2);                       /* <font0> <cid> */
-    } else {                          /* <font0> <dirty> */
+    } else if (code != 5) {                          /* <font0> <dirty> */
+        
+        
         pop(2);                       /* */
         /*  Note that this releases the charstring, and it may be garbage-collected
             before the interpreter calls fapi_finish_render. This requires the server
