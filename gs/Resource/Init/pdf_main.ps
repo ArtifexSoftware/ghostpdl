@@ -588,6 +588,7 @@ currentdict /xref-char-dict undef
  %  In PDF 1.5, the XRef dictionary also serves as the trailer dictionary
 /readpdf15xref		% <pos> readpdf15xref <trailerdict>
  {
+   /Classic-xref //false store
    PDFfile exch setfileposition		% move to start of object
         % Get object number, revision, and 'obj' and discard
    PDFfile token pop pop
@@ -916,6 +917,7 @@ currentdict /xref-char-dict undef
      ifelse
    } loop
 
+   /Classic-xref //true def
    /PDFversion exch def
         % Read the last cross-reference table.
    count /pdfemptycount exch def
@@ -930,7 +932,10 @@ currentdict /xref-char-dict undef
         % is not defined.
      Trailer
      { /Prev knownoget not {	% If no previous xref table then ...
-         /NoVerifyXref where { pop } { verify_xref } ifelse exit
+         Classic-xref {
+           /NoVerifyXref where { pop } { verify_xref } ifelse 
+         } if  
+         exit
        } if
        { readxref } .internalstopped {
          recover_xref_data	% Read failed.  Attempt to recover xref data.
