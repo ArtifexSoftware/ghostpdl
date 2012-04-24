@@ -137,7 +137,9 @@ DOC_PAGES=PUBLIC README index.html gs.css \
 	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
 	   Psfiles.htm Public.htm Readme.htm Release.htm \
 	   Source.htm Testing.htm Unix-lpr.htm \
-	   Use.htm Xfonts.htm
+	   Use.htm Xfonts.htm thirdparty.htm WhatIsGS.htm \
+           GS9_Color_Management.pdf
+
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(DESTDIR)$(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
