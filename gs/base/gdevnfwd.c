@@ -272,6 +272,20 @@ gx_forward_copy_color(gx_device * dev, const byte * data,
 }
 
 int
+gx_forward_copy_planes(gx_device * dev, const byte * data,
+                       int dx, int raster, gx_bitmap_id id,
+                       int x, int y, int w, int h, int plane_height)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev == 0)
+        return_error(gs_error_Fatal);
+    return dev_proc(tdev, copy_planes)
+        (tdev, data, dx, raster, id, x, y, w, h, plane_height);
+}
+
+int
 gx_forward_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
