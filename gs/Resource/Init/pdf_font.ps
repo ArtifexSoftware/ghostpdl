@@ -1786,17 +1786,27 @@ currentdict /CMap_read_dict undef
 
 % Adjust a CIDFontType0 DW[2] in the font resource.
 /adjustCIDType0 {		% <font-resource> <font> adjustfont <font'>
-  addCIDmetrics
-  dup /CIDFontName get exch /CIDFont defineresource
+  dup /FontType get 1 eq {
+    (   **** Warning: Font resource has a wrong /Subtype.\n)  pdfformaterror
+    adjustfont
+  } {
+    addCIDmetrics
+    dup /CIDFontName get exch /CIDFont defineresource
+  } ifelse
 } bind def
 
 % Adjust a CIDFontType2 DW[2] and CIDToGIDMap in the font resource.
 /adjustCIDType2 {		% <font-resource> <font> adjustfont <font'>
-  addCIDmetrics
-  dup /CIDFontType get 2 eq {   % OpenType CFF font converts to CIDFontType 0
-    processCIDToGIDMap          %  that ignores CIDMap.
-  } if
-  dup /CIDFontName get exch /CIDFont defineresource
+  dup /FontType get 1 eq {
+    (   **** Warning: Font resource has a wrong /Subtype.\n)  pdfformaterror
+    adjustfont
+  } {
+    addCIDmetrics
+    dup /CIDFontType get 2 eq {   % OpenType CFF font converts to CIDFontType 0
+      processCIDToGIDMap          %  that ignores CIDMap.
+    } if
+    dup /CIDFontName get exch /CIDFont defineresource
+  } ifelse
 } bind def
 
 % ---------------- Other embedded fonts ---------------- %
