@@ -593,6 +593,7 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     case '~':
                         s_A85D_init_inline(&sstate.s_ss.a85d);
                         sstate.s_ss.st.templat = &s_A85D_template;
+                        sstate.s_ss.a85d.require_eod = true;
                         goto str;
                 }
                 scan_putback();
