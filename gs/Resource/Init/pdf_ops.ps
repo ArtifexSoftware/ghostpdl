@@ -975,43 +975,37 @@ end readonly def
              setlinewidth
            }
          } {
-           WordSpacing 0 eq
-            { {
-              % preserve current line width around possible stroke setup
-              % This *should* work the same as the others by using
-              % currentlinewidth...setlinewidth, but it doesn't. In particular
-              % Bug688796b.pdf throws an error. I am unabel to understand why.
-              /MyDict 5 dict def
-              MyDict begin
-              /SaveLW currentlinewidth def end
-
-              setstrokeforTrpreservation
-              setfillstate TextSpacing 0 Vexch 3 -1 roll ashow
-
-              MyDict begin
-              SaveLW setlinewidth
-              end
-            } }
-            {
-              TextSpacing 0 eq
-              { {
-                % preserve current line width around possible stroke setup
-                currentlinewidth exch
-                setstrokeforTrpreservation
-                setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow
-                setlinewidth
-              } }
-              { {
-                % preserve current line width around possible stroke setup
-                currentlinewidth exch
-                setstrokeforTrpreservation
-                setfillstate WordSpacing 0 Vexch 32
-                TextSpacing 0 Vexch 6 -1 roll awidthshow
-                setlinewidth
-               } }
-              ifelse
-            }
-           ifelse
+           WordSpacing 0 eq { 
+             {
+               { setstrokeforTrpreservation
+                 setfillstate TextSpacing 0 Vexch 3 -1 roll ashow
+               } 
+               currentlinewidth
+               { setlinewidth }
+               3 .execn
+             }  
+           } {
+              TextSpacing 0 eq { 
+                { % preserve current line width around possible stroke setup
+                  { setstrokeforTrpreservation
+                    setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow
+                  }
+                  currentlinewidth
+                  { setlinewidth }
+                  3 .execn
+                } 
+              } { 
+                { % preserve current line width around possible stroke setup
+                  { setstrokeforTrpreservation
+                    setfillstate WordSpacing 0 Vexch 32
+                    TextSpacing 0 Vexch 6 -1 roll awidthshow
+                  }
+                  currentlinewidth
+                  { setlinewidth }
+                  3 .execn
+                } 
+              } ifelse
+           } ifelse
          } ifelse
        }
        {
