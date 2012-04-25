@@ -805,7 +805,7 @@ end readonly def
         % if the CTM had been unity.
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy abs eq {
+          abs 2 copy exch abs eq {
             pop
           }{
             % non-square scaling reduces to Text matrix in pdfwrite , so
@@ -821,7 +821,7 @@ end readonly def
         % if the CTM had been unity.
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy abs eq {
+          abs 2 copy exch abs eq {
             pop
           }{
             % non-square scaling reduces to Text matrix in pdfwrite , so
@@ -844,7 +844,7 @@ end readonly def
         { gsave 1 .settextrenderingmode
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy abs eq {
+          abs 2 copy exch abs eq {
             pop
           }{
             % non-square scaling reduces to Text matrix in pdfwrite , so
@@ -857,7 +857,7 @@ end readonly def
         { gsave 2 .settextrenderingmode
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy abs eq {
+          abs 2 copy exch abs eq {
             pop
           }{
             % non-square scaling reduces to Text matrix in pdfwrite , so
@@ -885,7 +885,7 @@ end readonly def
           % not signs.
           currentlinewidth dup
           matrix defaultmatrix idtransform TextSaveMatrix dtransform
-          abs 2 copy abs eq {
+          abs 2 copy exch abs eq {
             pop
           }{
             % non-square scaling reduces to Text matrix in pdfwrite , so
