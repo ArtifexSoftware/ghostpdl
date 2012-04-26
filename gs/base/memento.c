@@ -95,7 +95,9 @@ enum {
 
 enum {
     Memento_Flag_OldBlock = 1,
-    Memento_Flag_HasParent = 2
+    Memento_Flag_HasParent = 2,
+    Memento_Flag_BreakOnFree = 4,
+    Memento_Flag_BreakOnRealloc = 8
 };
 
 /* When we list leaked blocks at the end of execution, we search for pointers
@@ -541,7 +543,7 @@ int Memento_listBlocksNested(void)
         b->flags &= ~Memento_Flag_HasParent;
         b->child   = NULL;
         b->sibling = NULL;
-	b->parent  = NULL;
+        b->parent  = NULL;
     }
     qsort(blocks, count, sizeof(void *), ptrcmp);
 
@@ -562,11 +564,11 @@ int Memento_listBlocksNested(void)
             if (r) {
                 /* Found child */
                 Memento_BlkHeader *child = MEMBLK_FROMBLK(*r);
-		Memento_BlkHeader *parent;
+                Memento_BlkHeader *parent;
 
                 /* We're assuming tree structure, not graph - ignore second
                  * and subsequent pointers. */
-		if (child->parent != NULL)
+                if (child->parent != NULL)
                     continue;
                 if (child->flags & Memento_Flag_HasParent)
                     continue;
@@ -581,7 +583,7 @@ int Memento_listBlocksNested(void)
 
                 child->sibling = b->child;
                 b->child = child;
-		child->parent = b;
+                child->parent = b;
                 child->flags |= Memento_Flag_HasParent;
             }
         }
@@ -1029,6 +1031,9 @@ void Memento_free(void *blk)
     if (checkBlock(memblk, "free"))
         return;
 
+    if (memblk->flags & Memento_Flag_BreakOnFree)
+        Memento_breakpoint();
+
     VALGRIND_MAKE_MEM_DEFINED(memblk, sizeof(*memblk));
     globals.alloc -= memblk->rawsize;
     globals.numFrees++;
@@ -1068,6 +1073,9 @@ void *Memento_realloc(void *blk, size_t newsize)
     if (checkBlock(memblk, "realloc"))
         return NULL;
 
+    if (memblk->flags & Memento_Flag_BreakOnRealloc)
+        Memento_breakpoint();
+
     if (globals.maxMemory != 0 && globals.alloc - memblk->rawsize + newsize > globals.maxMemory)
         return NULL;
 
@@ -1085,6 +1093,7 @@ void *Memento_realloc(void *blk, size_t newsize)
     globals.alloc      += newsize;
     if (globals.peakAlloc < globals.alloc)
         globals.peakAlloc = globals.alloc;
+    newmemblk->flags = memblk->flags;
     if (newmemblk->rawsize < newsize) {
         char *newbytes = ((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize;
 #ifndef MEMENTO_LEAKONLY
@@ -1296,6 +1305,72 @@ int Memento_find(void *a)
     return 0;
 }
 
+void Memento_breakOnFree(void *a)
+{
+    findBlkData data;
+
+    data.addr  = a;
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Will stop when address 0x%p (in %sallocated block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, ") is freed\n");
+        data.blk->flags |= Memento_Flag_BreakOnFree;
+        return;
+    }
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Can't stop on free; address 0x%p is in %sfreed block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
+        return;
+    }
+    fprintf(stderr, "Can't stop on free; address 0x%p is not in a known block.\n");
+}
+
+void Memento_breakOnRealloc(void *a)
+{
+    findBlkData data;
+
+    data.addr  = a;
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.used, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Will stop when address 0x%p (in %sallocated block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, ") is freed (or realloced)\n");
+        data.blk->flags |= Memento_Flag_BreakOnFree | Memento_Flag_BreakOnRealloc;
+        return;
+    }
+    data.blk   = NULL;
+    data.flags = 0;
+    Memento_appBlocks(&globals.free, Memento_containsAddr, &data);
+    if (data.blk != NULL) {
+        fprintf(stderr, "Can't stop on free/realloc; address 0x%p is in %sfreed block ",
+                data.addr,
+                (data.flags == 1 ? "" : (data.flags == 2 ?
+                                         "preguard of " : "postguard of ")));
+        showBlock(data.blk, ' ');
+        fprintf(stderr, "\n");
+        return;
+    }
+    fprintf(stderr, "Can't stop on free/realloc; address 0x%p is not in a known block.\n");
+}
+
 int Memento_failAt(int i)
 {
     globals.failAt = i;
@@ -1361,6 +1436,14 @@ int (Memento_find)(void *a)
 int (Memento_failAt)(int i)
 {
     return 0;
+}
+
+void (Memento_breakOnFree)(void *a)
+{
+}
+
+void (Memento_breakOnRealloc)(void *a)
+{
 }
 
 #undef Memento_malloc

@@ -169,6 +169,8 @@ int Memento_check(void);
 int Memento_setParanoia(int);
 int Memento_paranoidAt(int);
 int Memento_breakAt(int);
+void Memento_breakOnFree(void *a);
+void Memento_breakOnRealloc(void *a);
 int Memento_getBlockNum(void *);
 int Memento_find(void *a);
 void Memento_breakpoint(void);
@@ -201,22 +203,24 @@ void *Memento_calloc(size_t, size_t);
 #define Memento_realloc MEMENTO_UNDERLYING_REALLOC
 #define Memento_calloc  MEMENTO_UNDERLYING_CALLOC
 
-#define Memento_checkBlock(A)    0
-#define Memento_checkAllMemory() 0
-#define Memento_check()          0
-#define Memento_setParanoia(A)   0
-#define Memento_paranoidAt(A)    0
-#define Memento_breakAt(A)       0
-#define Memento_getBlockNum(A)   0
-#define Memento_find(A)          0
-#define Memento_breakpoint()     do {} while (0)
-#define Memento_failAt(A)        0
-#define Memento_failThisEvent()  0
-#define Memento_listBlocks()     do {} while (0)
-#define Memento_listNewBlocks()  do {} while (0)
-#define Memento_setMax(A)        0
-#define Memento_stats()          do {} while (0)
-#define Memento_label(A,B)       (A)
+#define Memento_checkBlock(A)     0
+#define Memento_checkAllMemory()  0
+#define Memento_check()           0
+#define Memento_setParanoia(A)    0
+#define Memento_paranoidAt(A)     0
+#define Memento_breakAt(A)        0
+#define Memento_breakOnFree(A)    0
+#define Memento_breakOnRealloc(A) 0
+#define Memento_getBlockNum(A)    0
+#define Memento_find(A)           0
+#define Memento_breakpoint()      do {} while (0)
+#define Memento_failAt(A)         0
+#define Memento_failThisEvent()   0
+#define Memento_listBlocks()      do {} while (0)
+#define Memento_listNewBlocks()   do {} while (0)
+#define Memento_setMax(A)         0
+#define Memento_stats()           do {} while (0)
+#define Memento_label(A,B)        (A)
 
 #endif /* MEMENTO */
 
