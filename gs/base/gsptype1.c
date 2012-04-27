@@ -999,6 +999,8 @@ static dev_color_proc_load(gx_dc_pattern_load);
 /*dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle); *//*gxp1fill.h */
 static dev_color_proc_equal(gx_dc_pattern_equal);
 static dev_color_proc_load(gx_dc_pure_masked_load);
+static dev_color_proc_load(gx_dc_devn_masked_load);
+static dev_color_proc_equal(gx_dc_devn_masked_equal);
 
 static dev_color_proc_get_dev_halftone(gx_dc_pure_masked_get_dev_halftone);
 /*dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect); *//*gxp1fill.h */
@@ -1074,6 +1076,19 @@ const gx_device_color_type_t gx_dc_colored_masked = {
     gx_dc_default_fill_masked, gx_dc_colored_masked_equal,
     gx_dc_cannot_write, gx_dc_cannot_read,
     gx_dc_ht_colored_get_nonzero_comps
+};
+
+gs_private_st_composite_only(st_dc_devn_masked, gx_device_color,
+                             "dc_devn_masked",
+                             dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
+const gx_device_color_type_t gx_dc_devn_masked = {
+    &st_dc_devn_masked,
+    gx_dc_pattern_save_dc, gx_dc_pure_masked_get_dev_halftone,
+    gx_dc_no_get_phase,
+    gx_dc_devn_masked_load, gx_dc_devn_masked_fill_rect,
+    gx_dc_devn_fill_masked, gx_dc_devn_masked_equal,
+    gx_dc_cannot_write, gx_dc_cannot_read,
+    gx_dc_devn_get_nonzero_comps
 };
 
 #undef gx_dc_type_pattern
@@ -1230,6 +1245,16 @@ gx_dc_pure_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
     FINISH_PATTERN_LOAD
 }
 static int
+gx_dc_devn_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
+                       gx_device * dev, gs_color_select_t select)
+{
+    int code = (*gx_dc_type_data_devn.load) (pdevc, pis, dev, select);
+
+    if (code < 0)
+        return code;
+    FINISH_PATTERN_LOAD
+}
+static int
 gx_dc_binary_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
                          gx_device * dev, gs_color_select_t select)
 {
@@ -1331,6 +1356,13 @@ gx_dc_pattern_get_nonzero_comps(
     return 1;
 }
 
+static bool
+gx_dc_devn_masked_equal(const gx_device_color * pdevc1,
+                        const gx_device_color * pdevc2)
+{
+    return (*gx_dc_type_devn->equal) (pdevc1, pdevc2) &&
+        pdevc1->mask.id == pdevc2->mask.id;
+}
 static bool
 gx_dc_pure_masked_equal(const gx_device_color * pdevc1,
                         const gx_device_color * pdevc2)

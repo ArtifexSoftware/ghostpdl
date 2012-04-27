@@ -33,6 +33,7 @@
 #include "gsicc_cache.h"
 #include "gscms.h"
 #include "gsicc.h"
+#include "gxdevsop.h"
 
 /* Structure descriptor */
 public_st_device_color();
@@ -975,19 +976,27 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             gx_color_load_select(pdc, pis, dev, select);
         return;
     }
-
-    for (i = 0; i < ncomps; i++)
-        cv[i] = frac2cv(cm_comps[i]);
-
-    color = dev_proc(dev, encode_color)(dev, cv);
-    if (color != gx_no_color_index)
-        color_set_pure(pdc, color);
-    else {
-        if (gx_render_device_DeviceN(cm_comps, pdc, dev,
-                    pis->dev_ht, &pis->screen_phase[select]) == 1)
-            gx_color_load_select(pdc, pis, dev, select);
-        return;
+    /* if output device supports devn, we need to make sure we send it the
+       proper color type */
+    /* if output device supports devn, we need to make sure we send it the
+       proper color type */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        for (i = 0; i < ncomps; i++)
+            pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
+        pdc->type = gx_dc_type_devn;
+    } else {
+        for (i = 0; i < ncomps; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+        color = dev_proc(dev, encode_color)(dev, cv);
+        if (color != gx_no_color_index)
+            color_set_pure(pdc, color);
+        else {
+            if (gx_render_device_DeviceN(cm_comps, pdc, dev,
+                        pis->dev_ht, &pis->screen_phase[select]) == 1)
+                gx_color_load_select(pdc, pis, dev, select);
+        }
     }
+    return;
 }
 
 static void
@@ -1242,14 +1251,23 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_imager_state * 
             cv[i] = psrc_cm[i];
         }
     }
-    /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
+    /* if output device supports devn, we need to make sure we send it the
+       proper color type */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        for (i = 0; i < ncomps; i++)
+            pdc->colors.devn.values[i] = cv[i];
+        pdc->type = gx_dc_type_devn;
+    } else {
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
 
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
-        color_set_pure(pdc, color);
-    else
-        cmap_separation_halftoned(all, pdc, pis, dev, select);
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+            color_set_pure(pdc, color);
+        else
+            cmap_separation_halftoned(all, pdc, pis, dev, select);
+    }
+    return;
 }
 
 /* Routines for handling CM of CMYK components of a DeviceN color space */
@@ -1410,22 +1428,35 @@ cmap_devicen_direct(const frac * pcc,
            in PDF and PS data. */
         code = devicen_icc_cmyk(cm_comps, pis, dev);
     }
-    /* apply the transfer function(s); convert to color values */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(gx_map_color_frac(pis,
-                                cm_comps[i], effective_transfer[i]));
-    else
-        for (i = 0; i < ncomps; i++)
-            cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
-                        (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-    /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index)
-        color_set_pure(pdc, color);
-    else
-        cmap_devicen_halftoned(pcc, pdc, pis, dev, select);
+    /* apply the transfer function(s); convert to color values.  
+       assign directly if output device supports devn */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            for (i = 0; i < ncomps; i++)
+                pdc->colors.devn.values[i] = frac2cv(gx_map_color_frac(pis,
+                                    cm_comps[i], effective_transfer[i]));
+        else
+            for (i = 0; i < ncomps; i++)
+                pdc->colors.devn.values[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
+                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+        pdc->type = gx_dc_type_devn;
+    } else {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(gx_map_color_frac(pis,
+                                    cm_comps[i], effective_transfer[i]));
+        else
+            for (i = 0; i < ncomps; i++)
+                cv[i] = frac2cv(frac_1 - gx_map_color_frac(pis,
+                            (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index)
+            color_set_pure(pdc, color);
+        else
+            cmap_devicen_halftoned(pcc, pdc, pis, dev, select);
+    }
 }
 
 /* ------ Halftoning check ----- */

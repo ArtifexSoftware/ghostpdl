@@ -292,6 +292,9 @@ struct gx_device_color_s {
         struct _pat {
             gx_color_tile *p_tile;
         } /*(colored) */ pattern;
+        struct _devn {
+            ushort values[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        } devn;
     } colors;
     gs_int_point phase;
     /*
@@ -376,6 +379,9 @@ struct gx_device_color_saved_s {
             uint    c_level[GX_DEVICE_COLOR_MAX_COMPONENTS];
             ushort  alpha;
         }               colored;
+        struct _svdevn {
+            ushort values[GX_DEVICE_COLOR_MAX_COMPONENTS];
+        } devn;
         struct _pattern {
             gs_id id;
             gs_int_point phase;
@@ -405,6 +411,9 @@ extern const gx_device_color_type_t *const gx_dc_type_null;	/* gxdcolor.c */
 #endif
 #ifndef gx_dc_type_pure
 extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
+#endif
+#ifndef gx_dc_type_devn
+extern const gx_device_color_type_t *const gx_dc_type_devn;	/* gxdcolor.c */
 #endif
                 /*
                  * We don't declare gx_dc_pattern here, so as not to create

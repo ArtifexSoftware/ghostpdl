@@ -128,8 +128,8 @@ extern const gs_color_space_type gs_color_space_type_Pattern;
  * device color type.
  */
 extern const gx_device_color_type_t
-    gx_dc_pattern,
-    gx_dc_pure_masked, gx_dc_binary_masked, gx_dc_colored_masked;
+    gx_dc_pattern, gx_dc_pure_masked, gx_dc_binary_masked, 
+    gx_dc_colored_masked, gx_dc_devn_masked;
 
 #ifndef gx_dc_type_pattern
 #define gx_dc_type_pattern (&gx_dc_pattern)

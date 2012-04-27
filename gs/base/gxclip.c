@@ -30,12 +30,14 @@
 /* all drawing operations. */
 static dev_proc_open_device(clip_open);
 static dev_proc_fill_rectangle(clip_fill_rectangle);
+static dev_proc_fill_rectangle_hl_color(clip_fill_rectangle_hl_color);
 static dev_proc_copy_mono(clip_copy_mono);
 static dev_proc_copy_planes(clip_copy_planes);
 static dev_proc_copy_color(clip_copy_color);
 static dev_proc_copy_alpha(clip_copy_alpha);
 static dev_proc_fill_mask(clip_fill_mask);
 static dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
+static dev_proc_strip_tile_rect_devn(clip_strip_tile_rect_devn);
 static dev_proc_strip_copy_rop(clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(clip_get_clipping_box);
@@ -100,7 +102,7 @@ static const gx_device_clip gs_clip_device =
   gx_forward_encode_color,
   gx_forward_decode_color,
   NULL,
-  gx_forward_fill_rectangle_hl_color,
+  clip_fill_rectangle_hl_color,
   gx_forward_include_color_space,
   gx_default_fill_linear_color_scanline,
   gx_default_fill_linear_color_trapezoid,
@@ -115,7 +117,8 @@ static const gx_device_clip gs_clip_device =
   clip_copy_planes,          /* copy planes */
   gx_forward_get_profile,
   gx_forward_set_graphics_type_tag,
-  clip_strip_copy_rop2
+  clip_strip_copy_rop2,
+  clip_strip_tile_rect_devn
  }
 };
 
@@ -416,6 +419,88 @@ clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
                                clip_call_fill_rectangle, &ccdata);
 }
 
+int
+clip_call_fill_rectangle_hl_color(clip_callback_data_t * pccd, int xc, int yc, 
+                                  int xec, int yec)
+{
+    gs_fixed_rect rect;
+
+    rect.p.x = xc;
+    rect.p.y = yc;
+    rect.q.x = xec;
+    rect.q.y = yec;
+    return (*dev_proc(pccd->tdev, fill_rectangle_hl_color))
+        (pccd->tdev, &rect, pccd->pis, pccd->pdcolor, pccd->pcpath);
+}
+
+static int
+clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+    gx_device *tdev = rdev->target;
+    gx_clip_rect *rptr = rdev->current;
+    int xe, ye;
+    int w, h, x, y;
+    gs_fixed_rect newrect;
+
+    x = rect->p.x;
+    y = rect->p.y;
+    w = rect->q.x - rect->p.x;
+    h = rect->q.y - rect->p.y;
+
+    if (w <= 0 || h <= 0)
+        return 0;
+    x += rdev->translation.x;
+    xe = x + w;
+    y += rdev->translation.y;
+    ye = y + h;
+    /* We open-code the most common cases here. */
+    if ((y >= rptr->ymin && ye <= rptr->ymax) ||
+        ((rptr = rptr->next) != 0 &&
+         y >= rptr->ymin && ye <= rptr->ymax)
+        ) {
+        rdev->current = rptr;	/* may be redundant, but awkward to avoid */
+        INCR(in_y);
+        if (x >= rptr->xmin && xe <= rptr->xmax) {
+            INCR(in);
+            newrect.p.x = x;
+            newrect.p.y = y;
+            newrect.q.x = x + w;
+            newrect.q.y = y + h;
+            return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
+                                                           pdcolor, pcpath);
+        }
+        else if ((rptr->prev == 0 || rptr->prev->ymax != rptr->ymax) &&
+                 (rptr->next == 0 || rptr->next->ymax != rptr->ymax)
+                 ) {
+            INCR(in1);
+            if (x < rptr->xmin)
+                x = rptr->xmin;
+            if (xe > rptr->xmax)
+                xe = rptr->xmax;
+            if (x >= xe)
+                return 0;
+            else {
+                newrect.p.x = x;
+                newrect.p.y = y;
+                newrect.q.x = xe;
+                newrect.q.y = y + h;
+                return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
+                                                               pdcolor, pcpath);
+            }
+        }
+    }
+    ccdata.tdev = tdev;
+    ccdata.pdcolor = pdcolor;
+    ccdata.pis = pis;
+    ccdata.pcpath = pcpath;
+    return clip_enumerate_rest(rdev, x, y, xe, ye,
+                               clip_call_fill_rectangle_hl_color, &ccdata);
+}
+
 /* Copy a monochrome rectangle */
 int
 clip_call_copy_mono(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
@@ -572,6 +657,31 @@ clip_fill_mask(gx_device * dev,
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.pdcolor = pdcolor, ccdata.depth = depth, ccdata.lop = lop;
     return clip_enumerate(rdev, x, y, w, h, clip_call_fill_mask, &ccdata);
+}
+
+/* Strip-tile a rectangle with devn colors. */
+int
+clip_call_strip_tile_rect_devn(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)
+{
+    return (*dev_proc(pccd->tdev, strip_tile_rect_devn))
+        (pccd->tdev, pccd->tiles, xc, yc, xec - xc, yec - yc,
+         pccd->pdc[0], pccd->pdc[1], pccd->phase.x, pccd->phase.y);
+}
+static int
+clip_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
+                                int x, int y, int w, int h,
+                                const gx_drawing_color *pdcolor0, 
+                                const gx_drawing_color *pdcolor1, int phase_x, 
+                                int phase_y)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.tiles = tiles;
+    ccdata.pdc[0] = pdcolor0;
+    ccdata.pdc[1] = pdcolor1;
+    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
+    return clip_enumerate(rdev, x, y, w, h, clip_call_strip_tile_rect_devn, &ccdata);
 }
 
 /* Strip-tile a rectangle. */

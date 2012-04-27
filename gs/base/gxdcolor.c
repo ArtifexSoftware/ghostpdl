@@ -78,6 +78,25 @@ const gx_device_color_type_t gx_dc_type_data_pure = {
 const gx_device_color_type_t *const gx_dc_type_pure = &gx_dc_type_data_pure;
 #define gx_dc_type_pure (&gx_dc_type_data_pure)
 
+/* This devn color type is used for handling the separation devices.
+   It essentially holds devicen and/or separation color values. */
+static dev_color_proc_save_dc(gx_dc_devn_save_dc);
+static dev_color_proc_load(gx_dc_devn_load);
+static dev_color_proc_fill_rectangle(gx_dc_devn_fill_rectangle);
+static dev_color_proc_equal(gx_dc_devn_equal);
+static dev_color_proc_write(gx_dc_devn_write);
+static dev_color_proc_read(gx_dc_devn_read);
+const gx_device_color_type_t gx_dc_type_data_devn = {
+    &st_bytes,
+    gx_dc_devn_save_dc, gx_dc_no_get_dev_halftone, gx_dc_no_get_phase,
+    gx_dc_devn_load, gx_dc_devn_fill_rectangle, gx_dc_devn_fill_masked,
+    gx_dc_devn_equal, gx_dc_devn_write, gx_dc_devn_read,
+    gx_dc_devn_get_nonzero_comps
+};
+#undef gx_dc_type_devn
+const gx_device_color_type_t *const gx_dc_type_devn = &gx_dc_type_data_devn;
+#define gx_dc_type_devn (&gx_dc_type_data_devn)
+
 /*
  * Get the black and white pixel values of a device.
  */
@@ -182,6 +201,7 @@ static  const gx_device_color_type_t * dc_color_type_table[] = {
     gx_dc_type_pattern,         /* patterns */
     gx_dc_type_ht_binary,       /* binary halftone device colors */
     gx_dc_type_ht_colored,      /* general halftone device colors */
+    gx_dc_type_devn             /* DeviceN color for planar sep devices */
 };
 
 int
@@ -384,6 +404,367 @@ gx_dc_null_read(
 {
     pdevc->type = gx_dc_type_null;
     return 0;
+}
+
+
+/* ------ DeviceN high level colors for sep devices ------ */
+
+static void
+gx_dc_devn_save_dc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
+{
+    psdc->type = pdevc->type;
+    memcpy(&(psdc->colors.devn.values[0]), &(pdevc->colors.devn.values[0]), 
+           GX_DEVICE_COLOR_MAX_COMPONENTS*sizeof(ushort));
+}
+
+static int
+gx_dc_devn_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
+                gx_device * ignore_dev, gs_color_select_t ignore_select)
+{
+    return 0;
+}
+
+/* Fill a rectangle with a devicen color. */
+static int
+gx_dc_devn_fill_rectangle(const gx_device_color * pdevc, int x, int y,
+                          int w, int h, gx_device * dev, 
+                          gs_logical_operation_t lop, 
+                          const gx_rop_source_t * source)
+{
+    gs_fixed_rect rect;
+
+    rect.p.x = x;
+    rect.p.y = y;
+    rect.q.x = w + x;
+    rect.q.y = h + y;
+    return (*dev_proc(dev, fill_rectangle_hl_color)) (dev, &rect, NULL, pdevc, NULL);
+}
+
+/* Fill a mask with a DeviceN color. */
+/* Note that there is no source in this case: the mask is the source. 
+   I would like to add a device proc that was fill_masked_hl for 
+   handling this instead of breaking this down to hl rect fills */
+int
+gx_dc_devn_fill_masked(const gx_device_color * pdevc, const byte * data,
+        int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
+                   gx_device * dev, gs_logical_operation_t lop, bool invert)
+{
+    int lbit = data_x & 7;
+    const byte *row = data + (data_x >> 3);
+    uint one = (invert ? 0 : 0xff);
+    uint zero = one ^ 0xff;
+    int iy;
+    gs_fixed_rect rect;
+
+    for (iy = 0; iy < h; ++iy, row += raster) {
+        const byte *p = row;
+        int bit = lbit;
+        int left = w;
+        int l0;
+
+        while (left) {
+            int run, code;
+
+            /* Skip a run of zeros. */
+            run = byte_bit_run_length[bit][*p ^ one];
+            if (run) {
+                if (run < 8) {
+                    if (run >= left)
+                        break;	/* end of row while skipping */
+                    bit += run, left -= run;
+                } else if ((run -= 8) >= left)
+                    break;	/* end of row while skipping */
+                else {
+                    left -= run;
+                    ++p;
+                    while (left > 8 && *p == zero)
+                        left -= 8, ++p;
+                    run = byte_bit_run_length_0[*p ^ one];
+                    if (run >= left)	/* run < 8 unless very last byte */
+                        break;	/* end of row while skipping */
+                    else
+                        bit = run & 7, left -= run;
+                }
+            }
+            l0 = left;
+            /* Scan a run of ones, and then paint it. */
+            run = byte_bit_run_length[bit][*p ^ zero];
+            if (run < 8) {
+                if (run >= left)
+                    left = 0;
+                else
+                    bit += run, left -= run;
+            } else if ((run -= 8) >= left)
+                left = 0;
+            else {
+                left -= run;
+                ++p;
+                while (left > 8 && *p == one)
+                    left -= 8, ++p;
+                run = byte_bit_run_length_0[*p ^ zero];
+                if (run >= left)	/* run < 8 unless very last byte */
+                    left = 0;
+                else
+                    bit = run & 7, left -= run;
+            }
+            rect.p.x = x + w - l0;
+            rect.p.y = y + iy;
+            rect.q.x = x + w - left;
+            rect.q.y = y + iy + 1;
+            code = (*dev_proc(dev, fill_rectangle_hl_color)) 
+                                (dev, &rect, NULL, pdevc, NULL);
+            if (code < 0)
+                return code;
+        }
+    }
+    return 0;
+}
+
+static bool
+gx_dc_devn_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
+{
+    int k;
+
+    if (pdevc1->type == gx_dc_type_devn && pdevc2->type == gx_dc_type_devn) {
+        for (k = 0; k < GX_DEVICE_COLOR_MAX_COMPONENTS; k++) {
+            if (pdevc1->colors.devn.values[k] != pdevc2->colors.devn.values[k]) {
+                return false;
+            }
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+/*
+ * Utility to write a devn color into the clist.   We should only be here
+ * if the device can handle these colors (e.g. a separation device like 
+ * tiffsep).  TODO:  Reduce the size of this by removing leading zeros in 
+ * the mask.
+ *
+ */
+static int
+gx_devn_write_color(
+    const gx_device_color *pdevc,
+    const gx_device *   dev,
+    byte *              pdata,
+    uint *              psize )
+{
+    int                 num_bytes1, num_bytes_temp, num_bytes;
+    gx_color_index      mask, mask_temp;
+    int                 count;
+    int                 i, ncomps = dev->color_info.num_components;
+
+    /* Figure out the size needed.  First find the number of non zero values */
+    count = gx_dc_devn_get_nonzero_comps(pdevc, dev, &mask);
+    num_bytes1 = sizeof(gx_color_index);
+    num_bytes = num_bytes1 + count * 2 + 1;
+    num_bytes_temp = num_bytes1;
+
+    /* check for adequate space */
+    if (*psize < num_bytes) {
+        *psize = num_bytes;
+        return_error(gs_error_rangecheck);
+    }
+    *psize = num_bytes;
+    /* write out the mask */
+    mask_temp = mask;
+    while (--num_bytes1 >= 0) {
+        pdata[num_bytes1] = mask_temp & 0xff;
+        mask_temp >>= 8;
+    }
+    /* Now the data */
+    for (i = 0; i < ncomps; i++) {
+        if (mask & 1) {
+            pdata[num_bytes_temp] = pdevc->colors.devn.values[i] & 0xff;
+            num_bytes_temp++;
+            pdata[num_bytes_temp] = (pdevc->colors.devn.values[i] >> 8) & 0xff;
+            num_bytes_temp++;
+        }
+        mask >>= 1;
+    }
+    return 0;
+}
+
+/*
+ * Serialize a DeviceN color.
+ *
+ * Operands:
+ *
+ *  pdevc       pointer to device color to be serialized
+ *
+ *  psdc        pointer ot saved version of last serialized color (for
+ *              this band); this is ignored
+ *
+ *  dev         pointer to the current device, used to retrieve process
+ *              color model information
+ *
+ *  pdata       pointer to buffer in which to write the data
+ *
+ *  psize       pointer to a location that, on entry, contains the size of
+ *              the buffer pointed to by pdata; on return, the size of
+ *              the data required or actually used will be written here.
+ *
+ * Returns:
+ *
+ *  1, with *psize set to 0, if *pdevc and *psdc represent the same color
+ *
+ *  0, with *psize set to the amount of data written, if everything OK
+ *
+ *  gs_error_rangecheck, with *psize set to the size of buffer required,
+ *  if *psize was not large enough
+ *
+ *  < 0, != gs_error_rangecheck, in the event of some other error; in this
+ *  case *psize is not changed.
+ */
+int
+gx_dc_devn_write(
+    const gx_device_color *         pdevc,
+    const gx_device_color_saved *   psdc,       /* ignored */
+    const gx_device *               dev,
+    int64_t			    offset,     /* ignored */
+    byte *                          pdata,
+    uint *                          psize )
+{
+    int k;
+
+    if (psdc != 0 && psdc->type == pdevc->type) {
+        for (k = 0; k < GX_DEVICE_COLOR_MAX_COMPONENTS; k++) {
+            if (pdevc->colors.devn.values[k] != psdc->colors.devn.values[k]) {
+                return gx_devn_write_color(pdevc, dev, pdata, psize);;
+            }
+        }
+        *psize = 0;
+        return 1;
+    } 
+    return gx_devn_write_color(pdevc, dev, pdata, psize);
+}
+
+/*
+ * Utility to reconstruct deviceN color from its serial representation.
+ *
+ * Operands:
+ *
+ *  pcolor      pointer to the location in which to write the
+ *              reconstucted color
+ *
+ *  dev         pointer to the current device, used to retrieve process
+ *              color model information
+ *
+ *  pdata       pointer to the buffer to be read
+ *
+ *  size        size of the buffer to be read; this is expected to be
+ *              large enough for the full color
+ *
+ * Returns: # of bytes read, or < 0 in the event of an error
+ */
+
+static int
+gx_devn_read_color(
+    ushort              values[],
+    const gx_device *   dev,
+    const byte *        pdata,
+    int                 size )
+{
+    gx_color_index      mask = 0;
+    int                 i;
+    int                 ncomps = dev->color_info.num_components;
+    int                 pos;
+    int                 num_bytes;
+
+    /* check that enough data has been provided */
+    if (size < 1)
+        return_error(gs_error_rangecheck);
+
+    /* First get the mask. */
+    for (i = 0; i < sizeof(gx_color_index); i++)
+        mask = (mask << 8) | pdata[i];
+    pos = i;
+    num_bytes = i;
+    /* Now the data */
+    for (i = 0; i < ncomps; i++) {
+        if (mask & 1) {
+            values[i] = pdata[pos];
+            pos++;
+            values[i] += (pdata[pos]<<8);
+            pos++;
+            num_bytes += 2;
+        } else {
+            values[i] = 0;
+        }
+        mask >>= 1;
+    } 
+    return num_bytes+1;
+}
+
+/*
+ * Reconstruct a deviceN device color from its serial representation.
+ *
+ * Operands:
+ *
+ *  pdevc       pointer to the location in which to write the
+ *              reconstructed device color
+ *
+ *  pis         pointer to the current imager state (ignored here)
+ *
+ *  prior_devc  pointer to the current device color (this is provided
+ *              separately because the device color is not part of the
+ *              imager state; it is ignored here)
+ *
+ *  dev         pointer to the current device, used to retrieve process
+ *              color model information
+ *
+ *  pdata       pointer to the buffer to be read
+ *
+ *  size        size of the buffer to be read; this should be large
+ *              enough to hold the entire color description
+ *
+ *  mem         pointer to the memory to be used for allocations
+ *              (ignored here)
+ *
+ * Returns:
+ *
+ *  # of bytes read if everthing OK, < 0 in the event of an error
+ */
+static int
+gx_dc_devn_read(
+    gx_device_color *       pdevc,
+    const gs_imager_state * pis,                /* ignored */
+    const gx_device_color * prior_devc,         /* ignored */
+    const gx_device *       dev,
+    int64_t		    offset,             /* ignored */
+    const byte *            pdata,
+    uint                    size,
+    gs_memory_t *           mem )               /* ignored */
+{
+    pdevc->type = gx_dc_type_devn;
+    return gx_devn_read_color(&(pdevc->colors.devn.values[0]), dev, pdata, size);
+}
+
+/* Remember these are 16 bit values.   Also here we return the number of 
+   nonzero entries so we can figure out the size for the clist more
+   easily.   Hopefully that does not cause any confusion in overprint
+   situations where is where this operation is also used. */
+int
+gx_dc_devn_get_nonzero_comps(
+    const gx_device_color * pdevc,
+    const gx_device *       dev,
+    gx_color_index *        pcomp_bits )
+{
+    int             i, ncomps = dev->color_info.num_components;
+    gx_color_index  mask = 0x1, comp_bits = 0;
+    int             count = 0;
+
+    for (i = 0; i < ncomps; i++, mask <<= 1) {
+        if (pdevc->colors.devn.values[i] != 0) {
+            comp_bits |= mask;
+            count++;
+        }
+    }
+    *pcomp_bits = comp_bits;
+
+    return count;
 }
 
 /* ------ Pure color ------ */

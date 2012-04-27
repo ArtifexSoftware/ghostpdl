@@ -273,6 +273,7 @@ dev_proc_dev_spec_op(gx_default_dev_spec_op);
 dev_proc_fill_rectangle_hl_color(gx_default_fill_rectangle_hl_color);
 dev_proc_include_color_space(gx_default_include_color_space);
 dev_proc_fill_linear_color_scanline(gx_default_fill_linear_color_scanline);
+dev_proc_fill_linear_color_scanline(gx_hl_fill_linear_color_scanline);
 dev_proc_fill_linear_color_trapezoid(gx_default_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(gx_default_fill_linear_color_triangle);
 dev_proc_update_spot_equivalent_colors(gx_default_update_spot_equivalent_colors);
@@ -281,6 +282,7 @@ dev_proc_fillpage(gx_default_fillpage);
 dev_proc_get_profile(gx_default_get_profile);
 dev_proc_set_graphics_type_tag(gx_default_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_default_strip_copy_rop2);
+dev_proc_strip_tile_rect_devn(gx_default_strip_tile_rect_devn);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -369,6 +371,7 @@ dev_proc_create_compositor(gx_forward_create_compositor);
 dev_proc_get_profile(gx_forward_get_profile);
 dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_forward_strip_copy_rop2);
+dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
 
 /* ---------------- Implementation utilities ---------------- */
 

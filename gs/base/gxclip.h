@@ -34,19 +34,20 @@ typedef struct clip_callback_data_s {
     int x, y, w, h;                     /* (always set) */
     gx_color_index color[2];            /* (all but copy_color) */
     const byte *data;                   /* copy_*, fill_mask */
+    const gx_drawing_color *(pdc)[2];      /* strip_tile_rect_devn */
     int sourcex;                        /* ibid. */
     uint raster;                        /* ibid. */
     int depth;                          /* copy_alpha, fill_mask */
-    const gx_drawing_color *pdcolor;    /* fill_mask */
+    const gx_drawing_color *pdcolor;    /* fill_mask, fill_rectangle_hl_color */
     gs_logical_operation_t lop;         /* fill_mask, strip_copy_rop */
-    const gx_clip_path *pcpath;         /* fill_mask */
+    const gx_clip_path *pcpath;         /* fill_mask, fill_rectangle_hl_color*/
     const gx_strip_bitmap *tiles;       /* strip_tile_rectangle */
     gs_int_point phase;                 /* strip_* */
     const gx_color_index *scolors;      /* strip_copy_rop */
     const gx_strip_bitmap *textures;    /* ibid. */
     const gx_color_index *tcolors;      /* ibid. */
     int plane_height;                   /* copy_planes, strip_copy_rop2 */
-    const gs_imager_state * pis;        /* fill_path */
+    const gs_imager_state * pis;        /* fill_path, fill_rectangle_hl_color */
     gx_path * ppath;                    /* fill_path */
     const gx_fill_params * params;      /* fill_path */
 } clip_callback_data_t;
@@ -67,9 +68,13 @@ int
                         int xc, int yc, int xec, int yec),
     clip_call_strip_tile_rectangle(clip_callback_data_t * pccd,
                                    int xc, int yc, int xec, int yec),
+    clip_call_strip_tile_rect_devn(clip_callback_data_t * pccd,
+                                   int xc, int yc, int xec, int yec),
     clip_call_strip_copy_rop(clip_callback_data_t * pccd,
                              int xc, int yc, int xec, int yec),
     clip_call_strip_copy_rop2(clip_callback_data_t * pccd,
-                              int xc, int yc, int xec, int yec);
+                              int xc, int yc, int xec, int yec),
+    clip_call_fill_rectangle_hl_color(clip_callback_data_t * pccd,
+                             int xc, int yc, int xec, int yec);
 
 #endif /* gxclip_INCLUDED */

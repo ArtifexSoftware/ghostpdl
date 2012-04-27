@@ -239,7 +239,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
              * Note:  Most device do not allow more spot colors than we can
              * image.  (See the options for auto_spot_color in gdevdevn.h.)
              */
-            if (color_component_number >= dev->color_info.num_components)
+            if (color_component_number >= dev->color_info.max_components)
                 color_component_number = GX_DEVICE_COLOR_MAX_COMPONENTS;
 
         return color_component_number;
@@ -254,17 +254,24 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
             auto_spot_colors == NO_AUTO_SPOT_COLORS ||
             pdevn_params->num_separation_order_names != 0)
         return -1;      /* Do not add --> indicate colorant unknown. */
+
+    /* Make sure the name is not "None"  this is sometimes 
+       within a DeviceN list and should not be added as one of the
+       separations.  */
+    if (strncmp(pname, "None", name_size) == 0) {
+        return -1;
+    }
+
     /*
      * Check if we have room for another spot colorant.
      */
     if (auto_spot_colors == ENABLE_AUTO_SPOT_COLORS)
-        max_spot_colors = dev->color_info.num_components -
+        max_spot_colors = dev->color_info.max_components -
             pdevn_params->num_std_colorant_names;
     if (pdevn_params->separations.num_separations < max_spot_colors) {
         byte * sep_name;
         gs_separations * separations = &pdevn_params->separations;
         int sep_num = separations->num_separations++;
-
         /* We have a new spot colorant - put in stable memory to avoid "restore" */
         sep_name = gs_alloc_bytes(dev->memory->stable_memory,
                         name_size, "devn_get_color_comp_index");
@@ -272,7 +279,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
         separations->names[sep_num].size = name_size;
         separations->names[sep_num].data = sep_name;
         color_component_number = sep_num + pdevn_params->num_std_colorant_names;
-        if (color_component_number >= dev->color_info.num_components)
+        if (color_component_number >= dev->color_info.max_components)
             color_component_number = GX_DEVICE_COLOR_MAX_COMPONENTS;
         else
             pdevn_params->separation_order_map[color_component_number] =
@@ -384,8 +391,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             int num_names = scna.size;
             fixed_colorant_names_list pcomp_names =
                 pdevn_params->std_colorant_names;
-
-            for (i = num_spot = 0; i < num_names; i++) {
+            /* Start the num_spot count after the std. colorants */
+            num_spot = pdevn_params->num_std_colorant_names;
+            for (i = 0; i < num_names; i++) {
                 /* Verify that the name is not one of our process colorants */
                 if (!check_process_color_names(pcomp_names, &scna.data[i])) {
                     byte * sep_name;
@@ -405,9 +413,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     num_spot++;
                 }
             }
-            pdevn_params->separations.num_separations = num_spot;
+            pdevn_params->separations.num_separations = num_spot - npcmcolors;
             num_spot_changed = true;
-            for (i = 0; i < num_spot + npcmcolors; i++)
+            for (i = npcmcolors; i < num_spot; i++)
                 pdevn_params->separation_order_map[i] = i;
         }
         /*
@@ -417,9 +425,6 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             int i, comp_num;
 
             num_order = sona.size;
-            for (i = 0; i < num_spot + npcmcolors; i++)
-                pdevn_params->separation_order_map[i] =
-                                        GX_DEVICE_COLOR_MAX_COMPONENTS;
             for (i = 0; i < num_order; i++) {
                 /*
                  * Check if names match either the process color model or
@@ -429,7 +434,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     (const char *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
                     return_error(gs_error_rangecheck);
                 }
-                pdevn_params->separation_order_map[comp_num] = i;
+                pdevn_params->separation_order_map[comp_num] = comp_num;
             }
         }
         /*
@@ -881,9 +886,12 @@ free_separation_names(gs_memory_t * mem,
     int i;
 
     /* Discard the sub levels. */
-    for (i = 0; i < pseparation->num_separations; i++)
+    for (i = 0; i < pseparation->num_separations; i++) {
         gs_free_object(mem->stable_memory, pseparation->names[i].data,
                                 "free_separation_names");
+        pseparation->names[i].data = NULL;
+        pseparation->names[i].size = 0;
+    }
     pseparation->num_separations = 0;
     return;
 }

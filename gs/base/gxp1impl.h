@@ -25,6 +25,7 @@
  */
 dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle);
 dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect);
+dev_color_proc_fill_rectangle(gx_dc_devn_masked_fill_rect);
 dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect);
 dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect);
 dev_color_proc_fill_rectangle(gx_dc_pat_trans_fill_rectangle);

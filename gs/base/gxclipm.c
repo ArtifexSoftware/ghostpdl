@@ -19,13 +19,16 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxclipm.h"
+#include "gxdcolor.h"
 
 /* Device procedures */
 static dev_proc_fill_rectangle(mask_clip_fill_rectangle);
+static dev_proc_fill_rectangle_hl_color(mask_clip_fill_rectangle_hl_color);
 static dev_proc_copy_mono(mask_clip_copy_mono);
 static dev_proc_copy_color(mask_clip_copy_color);
 static dev_proc_copy_alpha(mask_clip_copy_alpha);
 static dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
+static dev_proc_strip_tile_rect_devn(mask_clip_strip_tile_rect_devn);
 static dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
 static dev_proc_strip_copy_rop2(mask_clip_strip_copy_rop2);
 static dev_proc_get_clipping_box(mask_clip_get_clipping_box);
@@ -88,7 +91,7 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_encode_color,
   gx_forward_decode_color,
   NULL,                 /* pattern_manage */
-  gx_forward_fill_rectangle_hl_color,
+  mask_clip_fill_rectangle_hl_color,
   gx_forward_include_color_space,
   gx_forward_fill_linear_color_scanline,
   gx_forward_fill_linear_color_trapezoid,
@@ -103,9 +106,50 @@ const gx_device_mask_clip gs_mask_clip_device =
   NULL,
   gx_forward_get_profile,
   gx_forward_set_graphics_type_tag,
-  mask_clip_strip_copy_rop2
+  mask_clip_strip_copy_rop2,
+  mask_clip_strip_tile_rect_devn
  }
 };
+
+/* Fill a rectangle with a hl color, painting through the mask */
+static int
+mask_clip_fill_rectangle_hl_color(gx_device *dev,
+    const gs_fixed_rect *rect,
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
+    gx_device *tdev = cdev->target;
+    int x, y, w, h;
+    int mx0, mx1, my0, my1;
+
+    x = rect->p.x;
+    y = rect->p.y;
+    w = rect->q.x - x;
+    h = rect->q.y - y;
+
+    /* Clip the rectangle to the region covered by the mask. */
+    mx0 = x + cdev->phase.x;
+    my0 = y + cdev->phase.y;
+    mx1 = mx0 + w;
+    my1 = my0 + h;
+
+    if (mx0 < 0)
+        mx0 = 0;
+    if (my0 < 0)
+        my0 = 0;
+    if (mx1 > cdev->tiles.size.x)
+        mx1 = cdev->tiles.size.x;
+    if (my1 > cdev->tiles.size.y)
+        my1 = cdev->tiles.size.y;
+    /* It would be nice to have a higher level way to do this operation
+       like a copy_mono_hl_color */
+    return (pdcolor->type->fill_masked)
+            (pdcolor, cdev->tiles.data + my0 * cdev->tiles.raster, mx0, 
+             cdev->tiles.raster, cdev->tiles.id, mx0 - cdev->phase.x,
+             my0 - cdev->phase.y, mx1 - mx0, my1 - my0,
+             tdev, lop_default, false);
+}
 
 /* Fill a rectangle by painting through the mask. */
 static int
@@ -353,6 +397,24 @@ mask_clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     ccdata.color[0] = color0, ccdata.color[1] = color1;
     ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
     return clip_runs_enumerate(cdev, clip_call_strip_tile_rectangle, &ccdata);
+}
+
+static int
+mask_clip_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
+                               int x, int y, int w, int h,
+                               const gx_drawing_color *pdcolor0, 
+                               const gx_drawing_color *pdcolor1,
+                               int phase_x, int phase_y)
+{
+    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.tdev = cdev->target;
+    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
+    ccdata.tiles = tiles;
+    ccdata.pdc[0] = pdcolor0, ccdata.pdc[1] = pdcolor1;
+    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
+    return clip_runs_enumerate(cdev, clip_call_strip_tile_rect_devn, &ccdata);
 }
 
 static int

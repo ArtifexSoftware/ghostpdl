@@ -668,7 +668,7 @@ $(GLOBJ)gxcmap.$(OBJ) : $(GLSRC)gxcmap.c $(AK) $(gx_h) $(gserrors_h)\
  $(gxdcconv_h) $(gxdevice_h) $(gxcmap_h) $(gxlum_h)\
  $(gzstate_h) $(gxdither_h) $(gxcdevn_h) $(string__h)\
  $(gsicc_manage_h) $(gdevdevn_h) $(gsicc_cache_h)\
- $(gscms_h) $(gsicc_h) $(MAKEDIRS)
+ $(gscms_h) $(gsicc_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxcmap.$(OBJ) $(C_) $(GLSRC)gxcmap.c
 
 $(GLOBJ)gxcpath.$(OBJ) : $(GLSRC)gxcpath.c $(AK) $(gx_h) $(gserrors_h)\
@@ -1089,6 +1089,10 @@ $(GLOBJ)gdevm64.$(OBJ) : $(GLSRC)gdevm64.c $(AK) $(gx_h) $(memory__h)\
  $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevm64.$(OBJ) $(C_) $(GLSRC)gdevm64.c
 
+$(GLOBJ)gdevmx.$(OBJ) : $(GLSRC)gdevmx.c $(AK) $(gx_h) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gdevmx.$(OBJ) $(C_) $(GLSRC)gdevmx.c
+	
 $(GLOBJ)gdevmpla.$(OBJ) : $(GLSRC)gdevmpla.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gsbitops_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gdevmem_h) $(gdevmpla_h)\
@@ -1180,7 +1184,8 @@ $(GLOBJ)gdevddrw.$(OBJ) : $(GLSRC)gdevddrw.c $(AK) $(gx_h)\
 	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
 $(GLOBJ)gdevdsha.$(OBJ) : $(GLSRC)gdevdsha.c $(AK) $(gx_h)\
- $(gserrors_h) $(gxdevice_h) $(gxcindex_h) $(vdtrace_h) $(MAKEDIRS)
+ $(gserrors_h) $(gxdevice_h) $(gxcindex_h) $(vdtrace_h)\
+ $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevdsha.$(OBJ) $(C_) $(GLSRC)gdevdsha.c
 
 $(GLOBJ)gdevdflt.$(OBJ) : $(GLSRC)gdevdflt.c $(AK) $(gx_h)\
@@ -1248,7 +1253,7 @@ LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ) $(
 LIB2d=$(GLOBJ)gdevdgbr.$(OBJ) $(GLOBJ)gdevnfwd.$(OBJ) $(GLOBJ)gdevmem.$(OBJ) $(GLOBJ)gdevplnx.$(OBJ)
 LIB3d=$(GLOBJ)gdevm1.$(OBJ) $(GLOBJ)gdevm2.$(OBJ) $(GLOBJ)gdevm4.$(OBJ) $(GLOBJ)gdevm8.$(OBJ)
 LIB4d=$(GLOBJ)gdevm16.$(OBJ) $(GLOBJ)gdevm24.$(OBJ) $(GLOBJ)gdevm32.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
-LIB5d=$(GLOBJ)gdevm40.$(OBJ) $(GLOBJ)gdevm48.$(OBJ) $(GLOBJ)gdevm56.$(OBJ) $(GLOBJ)gdevm64.$(OBJ)
+LIB5d=$(GLOBJ)gdevm40.$(OBJ) $(GLOBJ)gdevm48.$(OBJ) $(GLOBJ)gdevm56.$(OBJ) $(GLOBJ)gdevm64.$(OBJ) $(GLOBJ)gdevmx.$(OBJ)
 LIB6d=$(GLOBJ)gdevdsha.$(OBJ)
 LIBs=$(LIB0s) $(LIB1s) $(LIB2s) $(LIB3s) $(LIB4s) $(LIB5s) $(LIB6s) $(LIB7s)\
  $(LIB8s) $(LIB9s) $(LIB10s) $(LIB11s) $(LIB12s) $(LIB13s)
@@ -1860,7 +1865,7 @@ gsiparm4_h=$(GLSRC)gsiparm4.h $(gsiparam_h)
 gximage3_h=$(GLSRC)gximage3.h $(gsiparm3_h) $(gxiparam_h)
 
 $(GLOBJ)gxclipm.$(OBJ) : $(GLSRC)gxclipm.c $(AK) $(gx_h) $(memory__h)\
- $(gsbittab_h) $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h) $(MAKEDIRS)
+ $(gsbittab_h) $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h) $(gxdcolor_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclipm.$(OBJ) $(C_) $(GLSRC)gxclipm.c
 
 $(GLOBJ)gximage3.$(OBJ) : $(GLSRC)gximage3.c $(AK) $(gx_h)\
@@ -2353,9 +2358,9 @@ $(GLOBJ)gsptype1.$(OBJ) : $(GLSRC)gsptype1.c $(AK)\
  $(gsimage_h) $(gsiparm4_h) $(gsovrc_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsptype1.$(OBJ) $(C_) $(GLSRC)gsptype1.c
 
-$(GLOBJ)gxclip2.$(OBJ) : $(GLSRC)gxclip2.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gsstruct_h) $(gxclip2_h) $(gxdevice_h) $(gxdevmem_h)\
- $(MAKEDIRS)
+$(GLOBJ)gxclip2.$(OBJ) : $(GLSRC)gxclip2.c $(AK) $(gx_h) $(gpcheck_h)\
+ $(gserrors_h) $(memory__h) $(gsstruct_h) $(gxclip2_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxdcolor_h) $(gdevmpla_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxclip2.$(OBJ) $(C_) $(GLSRC)gxclip2.c
 
 $(GLOBJ)gxp1fill.$(OBJ) : $(GLSRC)gxp1fill.c $(AK) $(gx_h)\
@@ -2597,7 +2602,7 @@ $(GLD)dps2lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(dps2lib_)
 $(GLOBJ)gsdps1.$(OBJ) : $(GLSRC)gsdps1.c $(AK) $(gx_h) $(gserrors_h)\
  $(gsmatrix_h) $(gscoord_h) $(gspaint_h) $(gxdevice_h) $(gsutil_h)\
  $(math__h) $(gxfixed_h) $(gspath_h) $(gspath2_h) $(gxhldevc_h)\
- $(gzpath_h) $(gzcpath_h) $(gzstate_h) $(gxmatrix_h) $(MAKEDIRS)
+ $(gzpath_h) $(gzcpath_h) $(gzstate_h) $(gxmatrix_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsdps1.$(OBJ) $(C_) $(GLSRC)gsdps1.c
 
 # ---------------- Functions ---------------- #

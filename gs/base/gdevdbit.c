@@ -374,6 +374,18 @@ gx_default_fill_mask(gx_device * orig_dev,
                                           x, y, w, h, dev, lop, false);
 }
 
+/* Default implementation of strip_tile_rect_devn.  With the current design
+   only devices that support devn color will be making use of this 
+   procedure and those are planar devices.  So we have an implemenation
+   for planar devices and not a default implemenetation at this time. */
+int
+gx_default_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
+   int x, int y, int w, int h, const gx_drawing_color * pdcolor0, 
+   const gx_drawing_color * pdcolor1, int px, int py)
+{
+    return_error(gs_error_unregistered); 
+}
+
 /* Default implementation of strip_tile_rectangle */
 int
 gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
@@ -450,18 +462,32 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 
         dev_proc_copy_mono((*proc_mono));
         dev_proc_copy_color((*proc_color));
+        dev_proc_copy_planes((*proc_planes));
         int code;
 
-        if (color0 == gx_no_color_index && color1 == gx_no_color_index)
-            proc_color = dev_proc(dev, copy_color), proc_mono = 0;
-        else
-            proc_color = 0, proc_mono = dev_proc(dev, copy_mono);
+        if (color0 == gx_no_color_index && color1 == gx_no_color_index) {
+            if (tiles->num_planes > 1) {
+                proc_mono = 0;
+                proc_color = 0;
+                proc_planes = dev_proc(dev, copy_planes);
+            } else {
+                proc_planes = 0;
+                proc_color = dev_proc(dev, copy_color);
+                proc_mono = 0;
+            }
+        } else {
+            proc_planes = 0;
+            proc_color = 0;
+            proc_mono = dev_proc(dev, copy_mono);
+        }
 
 #define real_copy_tile(srcx, tx, ty, tw, th, id)\
   code =\
+    (tiles->num_planes > 1 ?\
+     (*proc_planes)(dev, row, srcx, raster, id, tx, ty, tw, th, height) :\
     (proc_color != 0 ?\
      (*proc_color)(dev, row, srcx, raster, id, tx, ty, tw, th) :\
-     (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1));\
+     (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1)));\
   if (code < 0) return_error(code);\
   return_if_interrupt(dev->memory)
 #ifdef DEBUG

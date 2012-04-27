@@ -253,6 +253,7 @@ struct gx_device_color_type_s {
 
 /* Define the default implementation of fill_masked. */
 dev_color_proc_fill_masked(gx_dc_default_fill_masked);
+dev_color_proc_fill_masked(gx_dc_devn_fill_masked);
 
 extern dev_color_proc_write(gx_dc_cannot_write);
 extern dev_color_proc_read(gx_dc_cannot_read);
@@ -274,9 +275,12 @@ extern const gx_device_color_type_t
 #define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
       gx_dc_type_data_ht_binary,	/* gxht.c */
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
-      gx_dc_type_data_ht_colored;	/* gxcht.c */
+      gx_dc_type_data_ht_colored,	/* gxcht.c */
+#define gx_dc_type_devn (&gx_dc_type_data_devn)
+      gx_dc_type_data_devn;	/* gxdcolor.c */
 
 /* the following are exported for the benefit of gsptype1.c */
+extern  dev_color_proc_get_nonzero_comps(gx_dc_devn_get_nonzero_comps);
 extern  dev_color_proc_get_nonzero_comps(gx_dc_pure_get_nonzero_comps);
 extern  dev_color_proc_get_nonzero_comps(gx_dc_ht_binary_get_nonzero_comps);
 extern  dev_color_proc_get_nonzero_comps(gx_dc_ht_colored_get_nonzero_comps);

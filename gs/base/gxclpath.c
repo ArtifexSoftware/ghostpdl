@@ -100,7 +100,8 @@ cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 /* If the pattern color is big, it can write to "all" bands. */
 int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
-                      const gx_drawing_color * pdcolor, cmd_rects_enum_t *pre)
+                      const gx_drawing_color * pdcolor, cmd_rects_enum_t *pre,
+                      dc_devn_cl_type devn_type)
 {
     const gx_device_halftone * pdht = pdcolor->type->get_dev_halftone(pdcolor);
     int                        code, di;
@@ -131,6 +132,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
      *
      * The complete cmd_opv_ext_put_drawing_color consists of:
      *  comand code (2 bytes)
+     *  tile index value or non tile color (1) 
      *  device color type index (1)
      *  length of serialized device color (enc_u_sizew(dc_size))
      *  the serialized device color itself (dc_size)
@@ -144,7 +146,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                                  &dc_size );
 
     /* if the returned value is > 0, no change in the color is necessary */
-    if (code > 0)
+    if (code > 0 && devn_type == devn_not_tile)
         return 0;
     else if (code < 0 && code != gs_error_rangecheck)
         return code;
@@ -206,7 +208,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         if (code < 0)
             return code;
         dp0 = dp;
-        dp[1] = cmd_opv_ext_put_drawing_color;
+        switch (devn_type) {
+            case devn_not_tile:
+                dp[1] = cmd_opv_ext_put_drawing_color;
+                break;
+            case devn_tile0:
+                dp[1] = cmd_opv_ext_put_tile_devn_color0;
+                break;
+            case devn_tile1:
+                dp[1] = cmd_opv_ext_put_tile_devn_color1;
+                break;
+            default:
+                dp[1] = cmd_opv_ext_put_drawing_color;
+        }
         dp += 2;
         *dp++ = di | (offset > 0 ? 0x80 : 0);
         if (offset > 0)
@@ -772,7 +786,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                 (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
                 )
                 return code;
-            code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
+            code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, 
+                                         devn_not_tile);
             if (code == gs_error_unregistered)
                 return code;
             if (code < 0) {
@@ -915,7 +930,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
             (code = cmd_update_lop(cdev, re.pcls, lop)) < 0
             )
             return code;
-        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re);
+        code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile);
             if (code == gs_error_unregistered)
                 return code;
         if (code < 0) {
@@ -996,7 +1011,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     do {
         RECT_STEP_INIT(re);
         if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
-            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re)) < 0)
+            (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile)) < 0)
             goto out;
         re.pcls->colors_used.slow_rop |= slow_rop;
         code = cmd_put_path(cdev, re.pcls, &path,

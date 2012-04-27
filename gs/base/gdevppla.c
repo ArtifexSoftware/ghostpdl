@@ -84,21 +84,23 @@ static int
 gdev_prn_set_planar(gx_device_memory *mdev, const gx_device *tdev)
 {
     int num_comp = tdev->color_info.num_components;
-    gx_render_plane_t planes[4];
+    gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int depth = tdev->color_info.depth / num_comp;
+    int k;
 
-    if (num_comp < 1 || num_comp > 4)
+    if (num_comp < 1 || num_comp > GX_DEVICE_COLOR_MAX_COMPONENTS)
         return_error(gs_error_rangecheck);
     /* Round up the depth per plane to a power of 2. */
     while (depth & (depth - 1))
         --depth, depth = (depth | (depth >> 1)) + 1;
-    planes[3].depth = planes[2].depth = planes[1].depth = planes[0].depth =
-        depth;
+
     /* We want the most significant plane to come out first. */
-    planes[0].shift = depth * (num_comp - 1);
-    planes[1].shift = planes[0].shift - depth;
-    planes[2].shift = planes[1].shift - depth;
-    planes[3].shift = 0;
+    planes[num_comp-1].shift = 0;
+    planes[num_comp-1].depth = depth;
+    for (k = (num_comp - 2); k >= 0; k--) {
+        planes[k].depth = depth;
+        planes[k].shift = planes[k + 1].shift + depth;
+    }
     return gdev_mem_set_planar(mdev, num_comp, planes);
 }
 

@@ -28,6 +28,10 @@
 #include "gscms.h"
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
+#include "gxgetbit.h"
+#include "gdevppla.h"
+
+#define PSD_PLANAR 1
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED
@@ -64,10 +68,13 @@ static dev_proc_map_color_rgb(psd_map_color_rgb);
 static dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
 static dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 static dev_proc_get_color_comp_index(psd_get_color_comp_index);
+#if PSD_PLANAR
 static dev_proc_encode_color(psd_encode_color);
 static dev_proc_decode_color(psd_decode_color);
+#else
 static dev_proc_encode_color(psd_encode_compressed_color);
 static dev_proc_decode_color(psd_decode_compressed_color);
+#endif
 static dev_proc_update_spot_equivalent_colors(psd_update_spot_equivalent_colors);
 static dev_proc_ret_devn_params(psd_ret_devn_params);
 
@@ -114,6 +121,8 @@ typedef struct psd_device_s {
     char profile_out_fn[256];
     cmm_profile_t *output_profile;
     gcmmhlink_t output_icc_link;
+
+    bool warning_given;  /* Used to notify the user that max colorants reached */
 
 } psd_device;
 
@@ -341,7 +350,43 @@ const psd_device gs_psdcmyk_device =
 int
 psd_prn_open(gx_device * pdev)
 {
+#if PSD_PLANAR
+    psd_device *pdev_psd = (psd_device *) pdev;
+    int code;
+
+    pdev_psd->warning_given = false;
+    /* With planar the depth can be more than 64.  Update the color
+       info to reflect the proper depth and number of planes.  Also note
+       that the number of spot colors can change from page to page.  
+       Update things so that we only output separations for the
+       inks on that page. */
+    if (pdev_psd->devn_params.page_spot_colors >= 0) {
+        pdev->color_info.num_components = 
+            (pdev_psd->devn_params.page_spot_colors 
+                                 + pdev_psd->devn_params.num_std_colorant_names);
+        if (pdev->color_info.num_components > pdev->color_info.max_components)
+            pdev->color_info.num_components = pdev->color_info.max_components;
+    } else {
+        /* We do not know how many spots may occur on the page. 
+           For this reason we go ahead and allocate the maximum that we
+           have available.  Note, lack of knowledge only occurs in the case
+           of PS files.  With PDF we know a priori the number of spot
+           colorants.  */
+        pdev->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        pdev->color_info.max_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+    }
+    pdev->color_info.depth = pdev->color_info.num_components * 
+                             pdev_psd->devn_params.bitspercomponent;
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    pdev->icc_struct->supports_devn = true;
+    code = gdev_prn_open_planar(pdev, true);
+    return code;
+#else
     int code = gdev_prn_open(pdev);
+    psd_device *pdev_psd = (psd_device *) pdev;
+
+    pdev_psd->warning_given = false;
+#endif
 
 #if !USE_COMPRESSED_ENCODING
     /*
@@ -566,6 +611,7 @@ get_psd_color_mapping_procs(const gx_device * dev)
         return NULL;
 }
 
+#if PSD_PLANAR
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  */
@@ -605,7 +651,7 @@ psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
     }
     return 0;
 }
-
+#else
 /*
  * Encode a list of colorant values into a gx_color_index_value.
  * With 64 bit gx_color_index values, we compress the colorant values.  This
@@ -628,7 +674,7 @@ psd_decode_compressed_color(gx_device * dev, gx_color_index color, gx_color_valu
     return devn_decode_compressed_color(dev, color, out,
                     &(((psd_device *)dev)->devn_params));
 }
-
+#endif
 /*
  * Convert a gx_color_index to RGB.
  */
@@ -925,10 +971,25 @@ static int
 psd_get_color_comp_index(gx_device * dev, const char * pname,
                                         int name_size, int component_type)
 {
-    return devn_get_color_comp_index(dev,
+    int index;
+    psd_device *pdev = (psd_device *)dev;
+
+    if (strncmp(pname, "None", name_size) == 0) return -1;
+    index = devn_get_color_comp_index(dev,
                 &(((psd_device *)dev)->devn_params),
                 &(((psd_device *)dev)->equiv_cmyk_colors),
                 pname, name_size, component_type, ENABLE_AUTO_SPOT_COLORS);
+    /* This is a one shot deal.  That is it will simply post a notice once that 
+       some colorants will be converted due to a limit being reached.  It will
+       not list names of colorants since then I would need to keep track of 
+       which ones I have already mentioned */
+    if (index < 0 && component_type == SEPARATION_NAME && 
+        pdev->warning_given == false) {
+        dlprintf("**** Max spot colorants reached.\n");
+        dlprintf("**** Some colorants will be converted to equivalent CMYK values.\n");
+        pdev->warning_given = true;
+    }
+    return index;
 }
 
 /* ------ Private definitions ------ */
@@ -1200,6 +1261,94 @@ psd_prn_close(gx_device *dev)
  * data, we will write out any separation data which is specified in the
  * SeparationOrder data.
  */
+
+#if PSD_PLANAR
+static int
+psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
+{
+    int raster_plane = bitmap_raster(pdev->width * 8);
+    byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int code = 0;
+    int i, j;
+    byte *sep_line;
+    int base_bytes_pp = xc->base_bytes_pp;
+    int chan_idx;
+/*  psd_device *xdev = (psd_device *)pdev;
+    gcmmhlink_t link = xdev->output_icc_link; */
+    byte * unpacked;
+    int num_comp = xc->num_channels;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
+
+    rect.q.x = pdev->width;
+    rect.p.x = 0;
+    /* Return planar data */
+    params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |
+         GB_ALIGN_STANDARD | GB_OFFSET_0 | GB_RASTER_STANDARD |
+         GB_PACKING_PLANAR | GB_COLORS_NATIVE | GB_ALPHA_NONE);
+    params.x_offset = 0;
+    params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
+    psd_write_16(xc, 0); /* Compression */
+
+    sep_line = gs_alloc_bytes(pdev->memory, xc->width, "psd_write_sep_line");
+
+    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
+        planes[chan_idx] = gs_alloc_bytes(pdev->memory, raster_plane, 
+                                        "psd_write_sep_line");
+        params.data[chan_idx] = planes[chan_idx];
+        if (params.data[chan_idx] == NULL)
+            return_error(gs_error_VMerror);
+    }
+
+    if (sep_line == NULL)
+        return_error(gs_error_VMerror);
+
+    /* Print the output planes */
+    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
+        int data_pos = xc->chnl_to_position[chan_idx];
+        if (data_pos >= 0) {
+            for (j = 0; j < xc->height; ++j) {
+                rect.p.y = j;   
+                rect.q.y = j + 1;
+                code = dev_proc(pdev, get_bits_rectangle)
+                    ((gx_device *) pdev, &rect, &params, NULL);
+
+                unpacked = params.data[data_pos];
+                /* To do, get ICC stuff in place for planar device */
+               // if (link == NULL) {
+                    if (base_bytes_pp == 3) {
+                        /* RGB */
+                        memcpy(unpacked, sep_line, xc->width);
+                    } else {
+                        for (i = 0; i < xc->width; ++i) {
+                            /* CMYK + spots*/
+                            sep_line[i] = 255 - unpacked[i];
+                        }
+                    }
+              /*  } else {
+                    psd_calib_row((gx_device*) xdev, xc, &sep_line, unpacked, data_pos,
+                        link, xdev->output_profile->num_comps,
+                        xdev->output_profile->num_comps_out);
+                } */
+                psd_write(xc, sep_line, xc->width);
+            }
+        } else {
+            if (chan_idx < NUM_CMYK_COMPONENTS) {
+                /* Write empty process color in the area */
+                memset(sep_line,255,xc->width);
+                psd_write(xc, sep_line, xc->width);
+            }
+        }
+    }
+
+    gs_free_object(pdev->memory, sep_line, "psd_write_sep_line");
+    for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
+        gs_free_object(pdev->memory, planes[chan_idx], 
+                                        "psd_write_image_data");
+    }
+    return code;
+}
+#else
 static int
 psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 {
@@ -1262,22 +1411,25 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
             }
         }
     }
-
     gs_free_object(pdev->memory, sep_line, "psd_write_sep_line");
     gs_free_object(pdev->memory, line, "psd_write_image_data");
     return code;
 }
+#endif
 
 static int
 psd_print_page(gx_device_printer *pdev, FILE *file)
 {
     psd_write_ctx xc;
+    psd_device *psd_dev = (psd_device *)pdev;
 
     xc.f = file;
 
-    psd_setup(&xc, (psd_device *)pdev);
-    psd_write_header(&xc, (psd_device *)pdev);
+    psd_setup(&xc, psd_dev);
+    psd_write_header(&xc, psd_dev);
     psd_write_image_data(&xc, pdev);
-
+    /* Free up the list of spot names as they were only relevent to that page */
+    free_separation_names(pdev->memory, &(psd_dev->devn_params.separations));
+    psd_dev->devn_params.num_separation_order_names = 0;
     return 0;
 }

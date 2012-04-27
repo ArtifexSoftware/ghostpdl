@@ -29,10 +29,14 @@ declare_mem_procs(mem_planar_copy_mono, mem_planar_copy_color, mem_planar_fill_r
 static dev_proc_copy_color(mem_planar_copy_color_24to8);
 static dev_proc_copy_color(mem_planar_copy_color_4to1);
 static dev_proc_copy_planes(mem_planar_copy_planes);
+/* Not static due to an optimized case in tile_clip_fill_rectangle_hl_color*/
 static dev_proc_strip_tile_rectangle(mem_planar_strip_tile_rectangle);
+static dev_proc_strip_tile_rect_devn(mem_planar_strip_tile_rect_devn);
 static dev_proc_strip_copy_rop(mem_planar_strip_copy_rop);
 static dev_proc_strip_copy_rop2(mem_planar_strip_copy_rop2);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
+static dev_proc_fill_rectangle_hl_color(mem_planar_fill_rectangle_hl_color);
+static dev_proc_put_image(mem_planar_put_image);
 
 /* It's a bit nasty to have to fork the planar dev_spec_op like this, but
  * the forwarding nature of the device means that the function pointer test
@@ -42,8 +46,16 @@ static int
 mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
                        void *data, int size)
 {
+    cmm_dev_profile_t *dev_profile;
+
     if (dev_spec_op == gxdso_is_native_planar)
         return 1;
+    if (dev_spec_op == gxdso_supports_devn) {
+        dev_proc(pdev, get_profile)(pdev, &dev_profile);
+        if (dev_profile != NULL && dev_profile->supports_devn &&
+            pdev->procs.fill_rectangle_hl_color == mem_planar_fill_rectangle_hl_color) 
+            return 1;
+    }
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
 }
 
@@ -118,6 +130,15 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, strip_copy_rop2, dev_proc(mdproto, strip_copy_rop2));
         set_dev_proc(mdev, get_bits_rectangle, dev_proc(mdproto, get_bits_rectangle));
     } else {
+        /* If we are going out to a separation device or one that has more than
+           four planes then use the high level color filling procedure.  Also
+           make use of the put_image operation to go from the pdf14 device 
+           directly to the planar buffer. */
+        if (mdev->num_planes >= 4) {
+            set_dev_proc(mdev, fill_rectangle_hl_color, 
+                         mem_planar_fill_rectangle_hl_color);
+            set_dev_proc(mdev, put_image, mem_planar_put_image);
+        }
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
         set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
         set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
@@ -140,6 +161,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
         set_dev_proc(mdev, copy_alpha, gx_default_copy_alpha);
         set_dev_proc(mdev, copy_planes, mem_planar_copy_planes);
         set_dev_proc(mdev, strip_tile_rectangle, mem_planar_strip_tile_rectangle);
+        set_dev_proc(mdev, strip_tile_rect_devn, mem_planar_strip_tile_rect_devn);
         set_dev_proc(mdev, strip_copy_rop, mem_planar_strip_copy_rop);
         set_dev_proc(mdev, strip_copy_rop2, mem_planar_strip_copy_rop2);
         set_dev_proc(mdev, get_bits_rectangle, mem_planar_get_bits_rectangle);
@@ -189,6 +211,59 @@ typedef struct mem_save_params_s {
   (mdev->color_info.depth = msp.depth,\
    mdev->base = msp.base,\
    mdev->line_ptrs = msp.line_ptrs)
+
+/* Put image command for copying the planar image buffers with or without
+   alpha directly to the device buffer */
+static int
+mem_planar_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xstart,
+              int ystart, int width, int height, int row_stride,
+              int plane_stride, int alpha_plane_index, int tag_plane_index)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)pdev;
+
+    /* We don't want alpha, return 0 to ask for the pdf14 device to do the 
+       alpha composition. We also do not want chunky data coming in or to deal 
+       with planar devices that are not 8 bit per colorant */    
+    if (alpha_plane_index != 0 || plane_stride == 0 || 
+        mdev->planes[0].depth != 8)
+        return 0;  
+
+    (*dev_proc(pdev, copy_planes)) (pdev, buffer, 0, row_stride,
+                                 gx_no_bitmap_id, xstart, ystart,
+                                 width, height, plane_stride/row_stride);
+    /* we used all of the data */
+    return height;        
+}
+
+/* Fill a rectangle with a high level color.  This is used for separation 
+   devices. (e.g. tiffsep, psdcmyk) */
+static int
+mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
+    const gs_imager_state *pis, const gx_drawing_color *pdcolor,
+    const gx_clip_path *pcpath)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+    mem_save_params_t save;
+    int pi;
+
+    MEM_SAVE_PARAMS(mdev, save);
+    for (pi = 0; pi < mdev->num_planes; ++pi) {
+        int plane_depth = mdev->planes[pi].depth;
+        gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
+        int shift = 16 - plane_depth;
+        const gx_device_memory *mdproto = gdev_mem_device_for_bits(plane_depth);
+
+        MEM_SET_PARAMS(mdev, plane_depth);
+        dev_proc(mdproto, fill_rectangle)(dev, rect->p.x, rect->p.y, 
+                                          rect->q.x - rect->p.x, 
+                                          rect->q.y - rect->p.y,
+                                          (pdcolor->colors.devn.values[pi]) >>
+                                          shift & mask); 
+        mdev->line_ptrs += mdev->height;
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    return 0;
+}
 
 /* Fill a rectangle with a color. */
 static int
@@ -853,7 +928,55 @@ mem_planar_copy_planes(gx_device * dev, const byte * base, int sourcex,
     return code;
 }
 
-static int
+int
+mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
+                                int x, int y, int w, int h,
+                                const gx_drawing_color *pdcolor0, 
+                                const gx_drawing_color *pdcolor1, int px, int py)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+    mem_save_params_t save;
+    int pi;
+
+    MEM_SAVE_PARAMS(mdev, save);
+    for (pi = 0; pi < mdev->num_planes; ++pi) {
+        int plane_depth = mdev->planes[pi].depth;
+        gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
+        int shift = 16 - plane_depth;
+        const gx_device_memory *mdproto =
+            gdev_mem_device_for_bits(plane_depth);
+        gx_color_index c1, c0;
+        
+        if (pdcolor0->type == gx_dc_type_pure) {
+            c0 = gx_no_color_index;
+        } else {
+            c0 = (pdcolor0->colors.devn.values[pi]) >> shift & mask;
+        }
+        if (pdcolor1->type == gx_dc_type_pure) {
+            c1 = gx_no_color_index;
+        } else {
+            c1 = (pdcolor1->colors.devn.values[pi]) >> shift & mask;
+        }
+        MEM_SET_PARAMS(mdev, plane_depth);
+        if (c0 == c1)
+            dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h, c0);
+        else {
+            /*
+             * Temporarily replace copy_mono in case strip_tile_rectangle is
+             * defined in terms of it.
+             */
+            set_dev_proc(dev, copy_mono, dev_proc(mdproto, copy_mono));
+            dev_proc(mdproto, strip_tile_rectangle)
+                (dev, tiles, x, y, w, h, c0, c1, px, py);
+        }
+        mdev->line_ptrs += mdev->height;
+    }
+    MEM_RESTORE_PARAMS(mdev, save);
+    set_dev_proc(dev, copy_mono, mem_planar_copy_mono);
+    return 0;
+}
+
+int
 mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
                                 int x, int y, int w, int h,
                                 gx_color_index color0, gx_color_index color1,

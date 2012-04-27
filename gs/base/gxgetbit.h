@@ -41,7 +41,7 @@ typedef gx_bitmap_format_t gs_get_bits_options_t;
  */
 struct gs_get_bits_params_s {
     gs_get_bits_options_t options;
-    byte *data[32];
+    byte *data[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int x_offset;		/* in returned data */
     int original_y;
     uint raster;

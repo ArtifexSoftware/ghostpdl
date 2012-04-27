@@ -15,16 +15,20 @@
 /* Mask clipping for patterns */
 #include "memory_.h"
 #include "gx.h"
+#include "gpcheck.h"
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxclip2.h"
+#include "gxdcolor.h"
+#include "gdevmpla.h"
 
 private_st_device_tile_clip();
 
 /* Device procedures */
 static dev_proc_fill_rectangle(tile_clip_fill_rectangle);
+static dev_proc_fill_rectangle_hl_color(tile_clip_fill_rectangle_hl_color);
 static dev_proc_copy_mono(tile_clip_copy_mono);
 static dev_proc_copy_color(tile_clip_copy_color);
 static dev_proc_copy_planes(tile_clip_copy_planes);
@@ -90,7 +94,7 @@ static const gx_device_tile_clip gs_tile_clip_device =
   gx_forward_encode_color,
   gx_forward_decode_color,
   NULL,                 /* pattern_manage */
-  gx_forward_fill_rectangle_hl_color,
+  tile_clip_fill_rectangle_hl_color,
   gx_forward_include_color_space,
   gx_forward_fill_linear_color_scanline,
   gx_forward_fill_linear_color_trapezoid,
@@ -105,7 +109,8 @@ static const gx_device_tile_clip gs_tile_clip_device =
   tile_clip_copy_planes,
   NULL,                      /* get_profile */
   NULL,                      /* set_graphics_type_tag */
-  tile_clip_strip_copy_rop2
+  tile_clip_strip_copy_rop2,
+  gx_default_strip_tile_rect_devn
  }
 };
 
@@ -139,6 +144,35 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
 {
     cdev->phase.x = px;
     cdev->phase.y = py;
+}
+
+/* Fill a rectangle with high level devn color by tiling with the mask. */
+static int
+tile_clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
+                const gs_imager_state *pis, const gx_drawing_color *pdcolor, 
+                const gx_clip_path *pcpath)
+{
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
+    gx_device *tdev = cdev->target;
+    int x, y, w, h;
+    gx_device_color dcolor0, dcolor1;
+    int k;
+
+    /* Have to pack the no color index into the pure device type */
+    dcolor0.type = gx_dc_type_pure;
+    dcolor0.colors.pure = gx_no_color_index;
+    /* Have to set the dcolor1 to a none mask type */
+    dcolor1.type = gx_dc_type_devn;
+    for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
+        dcolor1.colors.devn.values[k] = pdcolor->colors.devn.values[k];
+    }
+    x = rect->p.x;
+    y = rect->p.y;
+    w = rect->q.x - x;
+    h = rect->q.y - y;
+    return (*dev_proc(tdev, strip_tile_rect_devn))(tdev, &cdev->tiles,
+                                                    x, y, w, h, &dcolor0, &dcolor1, 
+                                                    cdev->phase.x, cdev->phase.y);
 }
 
 /* Fill a rectangle by tiling with the mask. */

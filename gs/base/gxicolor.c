@@ -1012,7 +1012,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     color_samples next;		/* next sample value */
     const byte *bufend = psrc + w;
     int code = 0, mcode = 0;
-            int i;
+    int i;
     bits32 mask = penum->mask_color.mask;
     bits32 test = penum->mask_color.test;
 
@@ -1020,6 +1020,13 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
         return 0;
     pdevc = &devc1;
     pdevc_next = &devc2;
+    /* In case these are devn colors */
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        for (i = 0; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++) {
+            pdevc->colors.devn.values[i] = 0;
+            pdevc_next->colors.devn.values[i] = 0;
+        }
+    }
     /* These used to be set by init clues */
     pdevc->type = gx_dc_type_none;
     pdevc_next->type = gx_dc_type_none;

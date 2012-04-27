@@ -487,6 +487,7 @@ clist_playback_band(clist_playback_action playback_action,
     gx_device *tdev;
     gx_clist_state state;
     gx_color_index *set_colors;
+    gx_device_color *set_dev_colors;
     tile_slot *state_slot;
     gx_strip_bitmap state_tile; /* parameters for reading tiles */
     tile_slot tile_bits;        /* parameters of current tile */
@@ -561,6 +562,7 @@ clist_playback_band(clist_playback_action playback_action,
 in:                             /* Initialize for a new page. */
     tdev = target;
     set_colors = state.colors;
+    set_dev_colors = state.tile_color_devn;
     use_clip = false;
     pcpath = NULL;
     clipper_dev_open = false;
@@ -632,6 +634,7 @@ in:                             /* Initialize for a new page. */
         byte *source = NULL;  /* Initialize against indeterminizm. */
         gx_color_index colors[2];
         gx_color_index *pcolor;
+        gx_device_color *pdcolor;
         gs_logical_operation_t log_op;
 
         /* Make sure the buffer contains a full command. */
@@ -967,6 +970,7 @@ in:                             /* Initialize for a new page. */
                     uint plane_depth = depth;
                     uint pln;
                     byte compression = op & 3;
+		    uint out_bytes;
 
                     cmd_getw(state.rect.width, cbp);
                     cmd_getw(state.rect.height, cbp);
@@ -979,11 +983,18 @@ in:                             /* Initialize for a new page. */
                                                state.rect.height,
                                                op & 3, &width_bytes,
                                                (uint *)&raster);
+		    if (planes > 1)
+		    {
+			    out_bytes = raster * state.rect.height;
+			    plane_height = state.rect.height;
+		    } else {
+			    out_bytes = bytes;
+		    }
                     /* copy_mono and copy_color/alpha */
                     /* ensure that the bits will fit in a single buffer, */
                     /* even after decompression if compressed. */
 #ifdef DEBUG
-                    if (planes * bytes > cbuf_size) {
+                    if (planes * out_bytes > cbuf_size) {
                         lprintf6("bitmap size exceeds buffer!  width=%d raster=%d height=%d\n    file pos %ld buf pos %d/%d\n",
                                  state.rect.width, raster,
                                  state.rect.height,
@@ -995,9 +1006,17 @@ in:                             /* Initialize for a new page. */
 #endif
                     for (pln = 0; pln < planes; pln++)
                     {
-                        byte *plane_bits = data_bits + plane_height * raster;
+                        byte *plane_bits = data_bits + pln * plane_height * raster;
                         if (pln)
+                        {
+                            if (cbp >= cbuf.warn_limit)
+                            {
+                                code = top_up_cbuf(&cbuf, &cbp);
+                                if (code < 0)
+                                    return code;
+	                    }
                             compression = *cbp++;
+                        }
                         if (compression) {       /* Decompress the image data. */
                             stream_cursor_read r;
                             stream_cursor_write w;
@@ -1280,6 +1299,28 @@ set_phase:      /*
                             goto out;
                         }
                         break;
+                    case cmd_op_fill_rect_hl:
+                        {
+                            gs_fixed_rect rect_hl;
+
+                            cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
+                            if (dev_color.type != gx_dc_type_devn) {
+                                if_debug0('L', "hl rect fill without devn color\n");
+                                code = gs_note_error(gs_error_typecheck);
+                                goto out;
+                            }
+                            if_debug4('L', " x=%d y=%d w=%d h=%d\n",
+                                      state.rect.x, state.rect.y, 
+                                      state.rect.width,state.rect.height);
+                            rect_hl.p.x = state.rect.x - x0;
+                            rect_hl.p.y = state.rect.y - y0;
+                            rect_hl.q.x = state.rect.width + rect_hl.p.x;
+                            rect_hl.q.y = state.rect.height + rect_hl.p.y;
+                            code = dev_proc(tdev, fill_rectangle_hl_color) (tdev, 
+                                                        &rect_hl, NULL, 
+                                                        &dev_color, NULL);
+                        }
+                        continue;
                     case cmd_opv_begin_image_rect:
                         cbuf.ptr = cbp;
                         code = read_begin_image(&cbuf, &image.c, pcs);
@@ -1663,15 +1704,37 @@ idata:                  data_size = 0;
                                 if (code < 0)
                                     goto out;
                                 break;
+                            case cmd_opv_ext_tile_rect_hl:
+                                /* Strip tile with devn colors */
+                                cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
+                                if_debug4('L', " x=%d y=%d w=%d h=%d\n",
+                                          state.rect.x, state.rect.y, 
+                                          state.rect.width,state.rect.height);
+                                code = (*dev_proc(tdev, strip_tile_rect_devn))
+                                    (tdev, &state_tile,
+                                     state.rect.x - x0, state.rect.y - y0,
+                                     state.rect.width, state.rect.height,
+                                     &(state.tile_color_devn[0]), 
+                                     &(state.tile_color_devn[1]),
+                                     tile_phase.x, tile_phase.y);
+                                break;
+                            case cmd_opv_ext_put_tile_devn_color0:
+                                pdcolor = &set_dev_colors[0];
+                                goto load_dcolor;
+                            case cmd_opv_ext_put_tile_devn_color1:
+                                pdcolor = &set_dev_colors[1];
+                                goto load_dcolor;
                             case cmd_opv_ext_put_drawing_color:
-                                {
+                                pdcolor = &dev_color;
+                    load_dcolor:{
                                     uint    color_size;
                                     int left, offset, l;
                                     const gx_device_color_type_t *  pdct;
                                     byte type_and_flag = *cbp++;
                                     byte is_continuation = type_and_flag & 0x80;
 
-                                    pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
+                                   if_debug0('L', " cmd_opv_ext_put_drawing_color\n");
+                                   pdct = gx_get_dc_type_from_index(type_and_flag & 0x7F);
                                     if (pdct == 0) {
                                         code = gs_note_error(gs_error_rangecheck);
                                         goto out;
@@ -1684,9 +1747,9 @@ idata:                  data_size = 0;
                                     if (!left) {
                                         /* We still need to call pdct->read because it may change dev_color.type -
                                            see gx_dc_null_read.*/
-                                        code = pdct->read(&dev_color, &imager_state,
-                                                          &dev_color, tdev, offset, cbp,
-                                                          0, mem);
+                                        code = pdct->read(pdcolor, &imager_state,
+                                                          pdcolor, tdev, offset, 
+                                                          cbp, 0, mem);
                                         if (code < 0)
                                             goto out;
                                     }
@@ -1697,9 +1760,9 @@ idata:                  data_size = 0;
                                                 return code;
                                         }
                                         l = min(left, cbuf.end - cbp);
-                                        code = pdct->read(&dev_color, &imager_state,
-                                                          &dev_color, tdev, offset, cbp,
-                                                          l, mem);
+                                        code = pdct->read(pdcolor, &imager_state,
+                                                          pdcolor, tdev, offset, 
+                                                          cbp, l, mem);
                                         if (code < 0)
                                             goto out;
                                         l = code;
@@ -1707,8 +1770,8 @@ idata:                  data_size = 0;
                                         offset += l;
                                         left -= l;
                                     }
-                                    code = gx_color_load(&dev_color,
-                                                         &imager_state, tdev);
+                                    code = gx_color_load(pdcolor, &imager_state, 
+                                                         tdev);
                                     if (code < 0)
                                         goto out;
                                 }

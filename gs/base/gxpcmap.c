@@ -91,6 +91,7 @@ static dev_proc_copy_mono(pattern_accum_copy_mono);
 static dev_proc_copy_color(pattern_accum_copy_color);
 static dev_proc_copy_planes(pattern_accum_copy_planes);
 static dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
+static dev_proc_fill_rectangle_hl_color(pattern_accum_fill_rectangle_hl_color);
 
 /* The device descriptor */
 static const gx_device_pattern_accum gs_pattern_accum_device =
@@ -153,7 +154,7 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      NULL,                              /* encode_color */
      NULL,                              /* decode_color */
      NULL,                              /* pattern_manage */
-     NULL,                              /* fill_rectangle_hl_color */
+     pattern_accum_fill_rectangle_hl_color, /* fill_rectangle_hl_color */
      NULL,                              /* include_color_space */
      NULL,                              /* fill_linear_color_scanline */
      NULL,                              /* fill_linear_color_trapezoid */
@@ -168,7 +169,8 @@ static const gx_device_pattern_accum gs_pattern_accum_device =
      pattern_accum_copy_planes,         /* copy_planes */
      NULL,                              /* get_profile */
      NULL,                              /* set_graphics_type_tag */
-     gx_default_strip_copy_rop2
+     gx_default_strip_copy_rop2,
+     gx_default_strip_tile_rect_devn
 },
  0,                             /* target */
  0, 0, 0, 0                     /* bitmap_memory, bits, mask, instance */
@@ -336,6 +338,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         cwdev->width = pinst->size.x;
         cwdev->height = pinst->size.y;
         cwdev->LeadingEdge = tdev->LeadingEdge;
+        cwdev->is_planar = pinst->is_planar;
         /* Fields left zeroed :
         float MediaSize[2];
         float ImagingBBox[4];
@@ -582,6 +585,33 @@ pattern_accum_close(gx_device * dev)
     /* Un-retain the device now, so reference counting will free it. */
     gx_device_retain(dev, false);
     return 0;
+}
+
+/* _hl_color */
+static int
+pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
+                                      const gs_imager_state *pis, 
+                                      const gx_drawing_color *pdcolor, 
+                                      const gx_clip_path *pcpath)
+{
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
+    if (padev->bits)
+        (*dev_proc(padev->target, fill_rectangle_hl_color))
+            (padev->target, rect, pis, pdcolor, pcpath);
+    if (padev->mask) {
+        int x, y, w, h;
+
+        x = rect->p.x;
+        y = rect->p.y;
+        w = rect->q.x - x;
+        h = rect->q.y - y;
+
+        return (*dev_proc(padev->mask, fill_rectangle))
+            ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
+    }
+     else
+        return 0;
 }
 
 /* Fill a rectangle */
@@ -1119,7 +1149,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
                 width,height,max_bands);
     }
     fid = fopen(full_file_name,"wb");
-    if (depth == 8 * n_chan) {
+    if (depth >= 8) {
         /* Contone data. */
         if (is_planar) {
             for (m = 0; m < max_bands; m++) {
@@ -1424,6 +1454,8 @@ gs_pattern1_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
             pdc->type = &gx_dc_binary_masked;
         else if (pdc->type == gx_dc_type_ht_colored)
             pdc->type = &gx_dc_colored_masked;
+        else if (pdc->type == gx_dc_type_devn)
+            pdc->type = &gx_dc_devn_masked;
         else
             return_error(gs_error_unregistered);
     } else

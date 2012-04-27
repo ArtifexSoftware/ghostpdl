@@ -181,7 +181,7 @@ const gx_device_procs gs_clist_device_procs = {
     gx_forward_encode_color,
     gx_forward_decode_color,
     NULL,                       /* pattern_manage */
-    gx_default_fill_rectangle_hl_color,
+    clist_fill_rectangle_hl_color,
     gx_default_include_color_space,
     gx_default_fill_linear_color_scanline,
     clist_fill_linear_color_trapezoid,
@@ -196,7 +196,8 @@ const gx_device_procs gs_clist_device_procs = {
     clist_copy_planes,         /* copy planes */
     gx_default_get_profile,
     gx_default_set_graphics_type_tag,
-    clist_strip_copy_rop2
+    clist_strip_copy_rop2,
+    clist_strip_tile_rect_devn
 };
 
 /*------------------- Choose the implementation -----------------------

@@ -418,7 +418,8 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
         COPY_PROC(decode_color);
         COPY_PROC(update_spot_equivalent_colors);
         COPY_PROC(ret_devn_params);
-        COPY_PROC(put_image);
+        /* This can be set from the memory device (planar) or target */
+        fill_dev_proc(ppdev, put_image, ppdev->orig_procs.put_image);
 #undef COPY_PROC
         /* If using a command list, already opened the device. */
         if (is_command_list)

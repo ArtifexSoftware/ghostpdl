@@ -18,6 +18,165 @@
 #include "gxdevice.h"
 #include "gxcindex.h"
 #include "vdtrace.h"
+#include "gxdevsop.h"
+
+static bool 
+gx_devn_diff(frac31 devn1[], frac31 devn2[], int num) 
+{
+    int k;
+    
+    for (k = 0; k < num; k++) {
+        if (devn1[k] != devn2[k]) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int
+gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
+        int i0, int j, int w, const frac31 *c0, const int32_t *c0f, 
+        const int32_t *cg_num, int32_t cg_den)
+{
+    frac31 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    frac31 curr[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int i, i1 = i0 + w, bi = i0, k;
+    const gx_device_color_info *cinfo = &dev->color_info;
+    int n = cinfo->num_components;
+    int si, ei, di, code;
+    gs_fixed_rect rect;
+    gx_device_color devc;
+
+    /* Note: All the stepping math is done with frac color values */
+
+    devc.type = gx_dc_type_devn;
+    
+    if (j < fixed2int(fa->clip->p.y) ||
+            j > fixed2int_ceiling(fa->clip->q.y)) /* Must be compatible to the clipping logic. */
+        return 0;
+    for (k = 0; k < n; k++) {
+        curr[k] = c[k] = c0[k];
+        f[k] = c0f[k];
+    }
+    for (i = i0 + 1, di = 1; i < i1; i += di) {
+        if (di == 1) {
+            /* Advance colors by 1 pixel. */
+            for (k = 0; k < n; k++) {
+                if (cg_num[k]) {
+                    int32_t m = f[k] + cg_num[k];
+
+                    c[k] += m / cg_den;
+                    m -= m / cg_den * cg_den;
+                    if (m < 0) {
+                        c[k]--;
+                        m += cg_den;
+                    }
+                    f[k] = m;
+                }
+            }
+        } else {
+            /* Advance colors by di pixels. */
+            for (k = 0; k < n; k++) {
+                if (cg_num[k]) {
+                    int64_t M = f[k] + (int64_t)cg_num[k] * di;
+                    int32_t m;
+
+                    c[k] += (frac31)(M / cg_den);
+                    m = (int32_t)(M - M / cg_den * cg_den);
+                    if (m < 0) {
+                        c[k]--;
+                        m += cg_den;
+                    }
+                    f[k] = m;
+                }
+            }
+        }
+        if (gx_devn_diff(c, curr, n)) {
+            si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
+            ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
+            if (si < ei) {
+                if (fa->swap_axes) {
+                    rect.p.x = j;
+                    rect.p.y = si;
+                    rect.q.x = j + 1;
+                    rect.q.y = ei;
+                } else {
+                    rect.p.x = si;
+                    rect.p.y = j;
+                    rect.q.x = ei;
+                    rect.q.y = j + 1;
+                }
+                for (k = 0; k < n; k++) {
+                    devc.colors.devn.values[k] = frac2cv(curr[k]);
+                }
+                code = dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
+                if (code < 0)
+                    return code;
+            }
+            bi = i;
+            for (k = 0; k < n; k++) {
+                curr[k] = c[k];
+            }
+            di = 1;
+        } else if (i == i1) {
+            i++;
+            break;
+        } else {
+            /* Compute a color change pixel analitically. */
+            di = i1 - i;
+            for (k = 0; k < n; k++) {
+                int32_t a;
+                int64_t x;
+                frac31 v = 1 << (31 - cinfo->comp_bits[k]); /* Color index precision in frac31. */
+                frac31 u = c[k] & (v - 1);
+
+                if (cg_num[k] == 0) {
+                    /* No change. */
+                    continue;
+                } if (cg_num[k] > 0) {
+                    /* Solve[(f[k] + cg_num[k]*x)/cg_den == v - u, x]  */
+                    a = v - u;
+                } else {
+                    /* Solve[(f[k] + cg_num[k]*x)/cg_den == - u - 1, x]  */
+                    a = -u - 1;
+                }
+                x = ((int64_t)a * cg_den - f[k]) / cg_num[k];
+                if (i + x >= i1)
+                    continue;
+                else if (x < 0)
+                    return_error(gs_error_unregistered); /* Must not happen. */
+                else if (di > (int)x) {
+                    di = (int)x;
+                    if (di <= 1) {
+                        di = 1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    si = max(bi, fixed2int(fa->clip->p.x));	    /* Must be compatible to the clipping logic. */
+    ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
+    if (si < ei) {
+        if (fa->swap_axes) {
+            rect.p.x = j;
+            rect.p.y = si;
+            rect.q.x = j + 1;
+            rect.q.y = ei;
+        } else {
+            rect.p.x = si;
+            rect.p.y = j;
+            rect.q.x = ei;
+            rect.q.y = j + 1;
+        }
+        for (k = 0; k < n; k++) {
+            devc.colors.devn.values[k] = frac2cv(curr[k]);
+        }
+        return dev_proc(dev, fill_rectangle_hl_color) (dev, &rect, NULL, &devc, NULL);
+    }
+    return 0;
+}
 
 int
 gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
@@ -30,6 +189,8 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
        i.e. with enumerating planes first, with a direct writing to the raster,
        and with a fixed bits per component.
      */
+    /* First determine if we are doing high level style colors or pure colors */
+    bool devn = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
     frac31 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
     ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int i, i1 = i0 + w, bi = i0, k;
@@ -38,6 +199,10 @@ gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *
     int n = cinfo->num_components;
     int si, ei, di, code;
 
+    /* Todo: set this up to vector earlier */
+    if (devn && cinfo->polarity == GX_CINFO_POLARITY_SUBTRACTIVE)
+        return gx_hl_fill_linear_color_scanline(dev, fa, i0, j, w, c0, c0f, 
+                                                cg_num, cg_den);
     if (j < fixed2int(fa->clip->p.y) ||
             j > fixed2int_ceiling(fa->clip->q.y)) /* Must be compatible to the clipping logic. */
         return 0;

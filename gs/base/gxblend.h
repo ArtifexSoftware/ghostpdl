@@ -409,7 +409,7 @@ void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
 int gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, byte bg,
-                      gs_separations *pseparations);
+                      bool has_tags, gs_int_rect rect, gs_separations *pseparations);
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, byte bg);

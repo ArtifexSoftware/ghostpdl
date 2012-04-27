@@ -728,6 +728,7 @@ gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order
         bt->tiles.rep_width = width;
         bt->tiles.rep_height = height;
         bt->tiles.shift = bt->tiles.rep_shift = shift;
+        bt->tiles.num_planes = 1;
     }
     pcache->render_ht = gx_render_ht_default;
 }

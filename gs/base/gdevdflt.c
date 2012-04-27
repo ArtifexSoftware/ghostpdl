@@ -560,6 +560,7 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, strip_tile_rectangle, gx_default_strip_tile_rectangle);
     fill_dev_proc(dev, strip_copy_rop, gx_default_strip_copy_rop);
     fill_dev_proc(dev, strip_copy_rop2, gx_default_strip_copy_rop2);
+    fill_dev_proc(dev, strip_tile_rect_devn, gx_default_strip_tile_rect_devn);
     fill_dev_proc(dev, get_clipping_box, gx_default_get_clipping_box);
     fill_dev_proc(dev, begin_typed_image, gx_default_begin_typed_image);
     fill_dev_proc(dev, get_bits_rectangle, gx_default_get_bits_rectangle);
@@ -922,6 +923,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_pattern_handles_clip_path:
         case gxdso_is_pdf14_device:
         case gxdso_is_native_planar:
+        case gxdso_supports_devn:
+        case gxdso_supports_hlcolor:
             return 0;
         case gxdso_pattern_shfill_doesnt_need_path:
             return (pdev->procs.fill_path == gx_default_fill_path);

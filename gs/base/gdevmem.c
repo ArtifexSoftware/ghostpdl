@@ -81,7 +81,9 @@ const gs_const_string mem_mono_w_b_palette = {
 /* ------ Generic code ------ */
 
 /* Return the appropriate memory device for a given */
-/* number of bits per pixel (0 if none suitable). */
+/* number of bits per pixel (0 if none suitable). 
+   Greater than 64 occurs for the planar case 
+   which we will then return a mem_x_device */
 static const gx_device_memory *const mem_devices[65] = {
     0, &mem_mono_device, &mem_mapped2_device, 0, &mem_mapped4_device,
     0, 0, 0, &mem_mapped8_device,
@@ -96,7 +98,7 @@ static const gx_device_memory *const mem_devices[65] = {
 const gx_device_memory *
 gdev_mem_device_for_bits(int bits_per_pixel)
 {
-    return ((uint)bits_per_pixel > 64 ? (const gx_device_memory *)0 :
+    return ((uint)bits_per_pixel > 64 ? &mem_x_device :
             mem_devices[bits_per_pixel]);
 }
 /* Do the same for a word-oriented device. */
@@ -129,12 +131,10 @@ gs_device_is_memory(const gx_device * dev)
     int bits_per_pixel = dev->color_info.depth;
     const gx_device_memory *mdproto;
 
-    if ((uint)bits_per_pixel > 64)
-        return false;
-    mdproto = mem_devices[bits_per_pixel];
+    mdproto = gdev_mem_device_for_bits(bits_per_pixel);
     if (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line))
         return true;
-    mdproto = mem_word_devices[bits_per_pixel];
+    mdproto = gdev_mem_word_device_for_bits(bits_per_pixel);
     return (mdproto != 0 && dev_proc(dev, draw_thin_line) == dev_proc(mdproto, draw_thin_line));
 }
 

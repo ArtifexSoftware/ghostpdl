@@ -1504,6 +1504,12 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                In this case pdfwrite converts the object into rectangles,
                and the clipping device has to be set up. */
             return 0;
+        case gxdso_supports_hlcolor:
+            /* This is used due to some aliasing between the rect_hl color
+               filling used by pdfwrite vs. that used by the planar device
+               which is actually a devn vs. the pattern type for pdfwrite.
+               We use this to distingush between the two */
+            return 1;
     }
     return gx_default_dev_spec_op(pdev1, dev_spec_op, data, size);
 }

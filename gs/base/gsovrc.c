@@ -291,7 +291,8 @@ typedef struct overprint_device_s {
 
     /*
      * The set of components to be drawn. This field is used only if the
-     * target color space is not separable and linear.
+     * target color space is not separable and linear.  It is also used
+     * for the devn color values since we may need more than 8 components
      */
     gx_color_index  drawn_comps;
 
@@ -316,6 +317,7 @@ typedef struct overprint_device_s {
      * is little-endian.
      */
     gx_color_index  retain_mask;
+
 
     /* We hold 3 sets of device procedures here. These are initialised from
      * the equivalently named globals when the device is created, but are
@@ -453,6 +455,8 @@ static const gx_device_procs no_overprint_procs = {
  */
 static dev_proc_fill_rectangle(overprint_generic_fill_rectangle);
 static dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
+static dev_proc_fill_rectangle_hl_color(overprint_fill_rectangle_hl_color);
+
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 
 static const gx_device_procs generic_overprint_procs = {
@@ -510,7 +514,7 @@ static const gx_device_procs generic_overprint_procs = {
     0,                                  /* encode_color */
     0,                                  /* decode_color */
     0,                                  /* pattern_manage */
-    0,                                  /* fill_rectangle_hl_color */
+    overprint_fill_rectangle_hl_color,  /* fill_rectangle_hl_color */
     0,                                  /* include_color_space */
     0,                                  /* fill_linear_color_scanline */
     0,                                  /* fill_linear_color_trapezoid */
@@ -576,11 +580,11 @@ static const gx_device_procs sep_overprint_procs = {
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
-    overprint_get_color_comp_index,	/* get_color_comp_index */
+    overprint_get_color_comp_index,	    /* get_color_comp_index */
     0,                                  /* encode_color */
     0,                                  /* decode_color */
     0,                                  /* pattern_manage */
-    0,                                  /* fill_rectangle_hl_color */
+    overprint_fill_rectangle_hl_color,  /* fill_rectangle_hl_color */
     0,                                  /* include_color_space */
     0,                                  /* fill_linear_color_scanline */
     0,                                  /* fill_linear_color_trapezoid */
@@ -924,6 +928,102 @@ overprint_generic_fill_rectangle(
                                                     x, y, width, height,
                                                     color,
                                                     dev->memory );
+}
+
+/* Currently we really should only be here if the target device is planar
+   AND it supports devn colors AND is 8 bit. */
+static int 
+overprint_fill_rectangle_hl_color(gx_device *dev,
+    const gs_fixed_rect *rect, const gs_imager_state *pis, 
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath)
+{
+    overprint_device_t *    opdev = (overprint_device_t *)dev;
+    gx_device *             tdev = opdev->target;
+    byte *                  gb_buff = 0;
+    gs_get_bits_params_t    gb_params;
+    gs_int_rect             gb_rect;
+    int                     code = 0, raster;
+    int                     byte_depth;
+    int                     depth, num_comps;
+    int                     x,y,w,h,k,j;
+    gs_memory_t *           mem = dev->memory;
+    gx_color_index          comps = opdev->drawn_comps;
+    gx_color_index          mask;
+    int                     shift;
+
+    if (tdev == 0)
+        return 0;
+
+    depth = tdev->color_info.depth;
+    num_comps = tdev->color_info.num_components;
+
+    x = rect->p.x;
+    y = rect->p.y;
+    w = rect->q.x - x;
+    h = rect->q.y - y;
+
+    fit_fill(tdev, x, y, w, h);
+    byte_depth = depth / num_comps;
+    mask = ((gx_color_index)1 << byte_depth) - 1;
+    shift = 16 - byte_depth;
+
+    /* allocate a buffer for the returned data */
+    raster = bitmap_raster(w * byte_depth);
+    gb_buff = gs_alloc_bytes(mem, raster * num_comps , "overprint_fill_rectangle_hl_color");
+    if (gb_buff == 0)
+        return gs_note_error(gs_error_VMerror);
+
+    /* Initialize the get_bits parameters. Here we just get a plane at a  time. */
+    gb_params.options =  GB_COLORS_NATIVE
+                       | GB_ALPHA_NONE
+                       | GB_DEPTH_ALL
+                       | GB_PACKING_PLANAR
+                       | GB_RETURN_COPY
+                       | GB_ALIGN_STANDARD
+                       | GB_OFFSET_0
+                       | GB_RASTER_STANDARD
+                       | GB_SELECT_PLANES;    
+
+    gb_params.x_offset = 0;     /* for consistency */
+    gb_params.raster = raster;
+    gb_rect.p.x = x;
+    gb_rect.q.x = x + w;
+
+    /* step through the height */
+    while (h-- > 0 && code >= 0) {
+        comps = opdev->drawn_comps;
+        gb_rect.p.y = y++;
+        gb_rect.q.y = y;
+        /* And now through each plane */
+        for (k = 0; k < tdev->color_info.num_components; k++) {
+            /* First set the params to zero for all planes except the one we want */
+            for (j = 0; j < tdev->color_info.num_components; j++) 
+                gb_params.data[j] = 0;
+            gb_params.data[k] = gb_buff + k * raster;
+            code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect, 
+                                                       &gb_params, 0);
+            if (code < 0) {
+                gs_free_object(mem, gb_buff, 
+                               "overprint_fill_rectangle_hl_color" );
+                return code;
+            }
+            /* Skip the plane if this component is not to be drawn.  We have
+               to do a get bits for each plane due to the fact that we have
+               to do a copy_planes at the end.  If we had a copy_plane 
+               operation we would just get the ones need and set those. */
+            if ((comps & 0x01) == 1) {
+                /* Not sure if a loop or a memset is better here */
+                memset(gb_params.data[k], 
+                       ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
+            }
+            comps >>= 1;
+        }
+        code = dev_proc(tdev, copy_planes)(tdev, gb_buff, 0, raster, 
+                                           gs_no_bitmap_id, x, y - 1, w, 1, 1);
+    }
+    gs_free_object(mem, gb_buff,
+                    "overprint_fill_rectangle_hl_color" );
+    return code;
 }
 
 static int

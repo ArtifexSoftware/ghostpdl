@@ -210,6 +210,7 @@ extern const gx_device_memory mem_true40_device;
 extern const gx_device_memory mem_true48_device;
 extern const gx_device_memory mem_true56_device;
 extern const gx_device_memory mem_true64_device;
+extern const gx_device_memory mem_x_device;
 extern const gx_device_memory mem_planar_device;
 /*
  * We declare the RasterOp implementation procedures here because they are

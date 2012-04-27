@@ -758,7 +758,7 @@ int
 gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, byte bg,
-                      gs_separations * pseparations)
+                      bool has_tags, gs_int_rect rect, gs_separations * pseparations)
 {
     int code = 0;
     int x, y, tmp, comp_num, output_comp_num;
@@ -771,6 +771,8 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
     int num_known_comp = 0;
     int output_num_comp = target->color_info.num_components;
     int num_sep = pseparations->num_separations++;
+    bool data_blended = false;
+    int num_rows_left;
 
     /*
      * The process color model for the PDF 1.4 compositor device is CMYK plus
@@ -801,6 +803,58 @@ gx_put_blended_image_cmykspot(gx_device *target, byte *buf_ptr,
                 output_comp_num < GX_DEVICE_COLOR_MAX_COMPONENTS) {
             output_map[num_known_comp] = output_comp_num;
             input_map[num_known_comp++] = comp_num + 4;
+        }
+    }
+    /* See if the target device has a put_image command.  If
+       yes then see if it can handle the image data directly.  */
+    if (target->procs.put_image != NULL) {
+        /* See if the target device can handle the data in its current
+           form with the alpha component */
+        int alpha_offset = num_comp;
+        int tag_offset = has_tags ? num_comp+1 : 0;
+        code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                                            rect.p.x, rect.p.y, width, height,
+                                            rowstride, planestride,
+                                            num_comp,tag_offset);
+        if (code == 0) {
+            /* Device could not handle the alpha data.  Go ahead and
+               preblend now. Note that if we do this, and we end up in the
+               default below, we only need to repack in chunky not blend */
+#if RAW_DUMP
+            /* Dump before and after the blend to make sure we are doing that ok */
+            dump_raw_buffer(height, width, num_comp+1, planestride, rowstride,
+                            "pre_final_blend",buf_ptr);
+            global_index++;
+#endif
+            gx_blend_image_buffer(buf_ptr, width, height, rowstride, 
+                                  planestride, num_comp, bg);
+#if RAW_DUMP
+            /* Dump before and after the blend to make sure we are doing that ok */
+            dump_raw_buffer(height, width, num_comp, planestride, rowstride,
+                            "post_final_blend",buf_ptr);
+            global_index++;
+            /* clist_band_count++; */
+#endif
+            data_blended = true;
+            /* Try again now */
+            alpha_offset = 0;
+            code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                                                rect.p.x, rect.p.y, width, height,
+                                                rowstride, planestride,
+                                                alpha_offset, tag_offset);
+        }
+        if (code > 0) {
+            /* We processed some or all of the rows.  Continue until we are done */
+            num_rows_left = height - code;
+            while (num_rows_left > 0) {
+                code = dev_proc(target, put_image) (target, buf_ptr, num_comp,
+                                                    rect.p.x, rect.p.y+code, width,
+                                                    num_rows_left, rowstride,
+                                                    planestride,
+                                                    alpha_offset, tag_offset);
+                num_rows_left = num_rows_left - code;
+            }
+            return 0;
         }
     }
 

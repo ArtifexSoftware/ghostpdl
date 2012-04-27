@@ -161,6 +161,7 @@ typedef struct cmm_dev_profile_s {
         gsicc_rendering_intents_t intent[NUM_DEVICE_PROFILES];
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
+        bool supports_devn;        /* If the target handles devn colors */
         gs_memory_t *memory;
         rc_header rc;
 } cmm_dev_profile_t;

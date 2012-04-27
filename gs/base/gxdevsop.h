@@ -227,7 +227,16 @@ enum {
      *    Or return 0 if none do.
      */
     gxdso_device_child,
-
+    /* gxdso_supports_devn:
+     *      data = NULL
+     *      size = 0
+     * Returns 1 if the device supports devicen colors.  example tiffsep.
+     */    
+     gxdso_supports_devn,
+     /* gxdso_supports_hlcolor:
+      * for devices that can handle pattern and other high level structures
+        directly. */
+    gxdso_supports_hlcolor,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

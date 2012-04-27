@@ -535,9 +535,20 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
             pcolor_component_map->color_map[i] =
             (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1
                                                    : colorant_number;
+        } else {
+            if (strncmp((char *) pname, "None", name_size) != 0) {
+                    non_match = true;
+            } else {
+                /* Device N includes one or more None Entries. We can't reduce 
+                   the number of components in the list count, since the None Name(s)
+                   are present in the list and GCd and we may need the None
+                   entries in the alternate tint trasform calcuation.
+                   So we will detect the presence of them by setting 
+                   pcolor_component_map->color_map[i] = -1 and watching
+                   for this case later during the remap operation. */
+                pcolor_component_map->color_map[i] = -1;
+            }
         }
-        else
-            non_match = true;
     }
     pcolor_component_map->use_alt_cspace = non_match;
     return 0;

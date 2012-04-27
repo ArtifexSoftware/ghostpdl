@@ -60,15 +60,7 @@ typedef enum {
     /* cmd_opv_set_color = 0xd0, */	/* Used if base values do not fit into 1 bit */
                                 /* #flags,#base[0],...#base[num_comp-1] if flags */
                                 /* colored halftone with base colors a,b,c,d */
-    /* obsolete */
-    /* cmd_opv_set_color_short = 0xd1, */ /* Used if base values fit into 1 bit */
-                                        /* If num_comp <= 4 then use: */
-                                        /* pqrsabcd, where a = base[0] */
-                                        /* b = base[1], c= base[2], d = base[3] */
-                                        /* p = level[0], q = level[1] */
-                                        /* r = level[2], s = level[3] */
-                                        /* If num_comp > 4 then use: */
-                                        /* #flags, #bases */
+    cmd_op_fill_rect_hl = 0xd1,  /* rect fill with devn color */
     cmd_opv_set_fill_adjust = 0xd2,	/* adjust_x/y(fixed) */
     cmd_opv_set_ctm = 0xd3,	/* [per sput/sget_matrix] */
     cmd_opv_set_color_space = 0xd4,	/* base(4)Indexed?(2)0(2) */
@@ -135,7 +127,6 @@ typedef enum {
     cmd_op_path = 0xf0,		/* (see below) */
     cmd_opv_fill = 0xf0,
     cmd_opv_rgapto = 0xf1, 	/* dx%, dy% */ /* was cmd_opv_htfill */
-    /* cmd_opv_colorfill = 0xf2, */ /* obsolete */
     cmd_opv_eofill = 0xf3,
     /* cmd_opv_hteofill = 0xf4, */ /* obsolete */
     /* cmd_opv_coloreofill = 0xf5, */ /* obsolete */
@@ -148,6 +139,13 @@ typedef enum {
     cmd_opv_fill_trapezoid = 0xfc
 } gx_cmd_xop;
 
+/* This is usd for cmd_opv_ext_put_drawing_color so that we know if it
+   is assocated with a tile or not */
+typedef enum {
+    devn_not_tile = 0x00,
+    devn_tile0 = 0x01,
+    devn_tile1 = 0x02
+} dc_devn_cl_type;
 /*
  * Further extended command set. This code always occupies a byte, which
  * is the second byte of a command whose first byte is cmd_opv_extend.
@@ -161,14 +159,17 @@ typedef enum {
                                              * halftone segment data */
     cmd_opv_ext_put_drawing_color = 0x04,    /* length, color type id,
                                              * serialized color */
-    cmd_opv_ext_put_icc_profile = 0x05      /* ICC profile */
+    cmd_opv_ext_tile_rect_hl = 0x05,         /* Uses devn colors in tiling fill */
+    cmd_opv_ext_put_tile_devn_color0 = 0x6,  /* Devn color0 for tile filling */
+    cmd_opv_ext_put_tile_devn_color1 = 0x7   /* Devn color1 for tile filling */
 } gx_cmd_ext_op;
 
 #define cmd_segment_op_num_operands_values\
   2, 2, 1, 1, 4, 6, 6, 6, 4, 4, 4, 4, 2, 2, 0, 0
 
 #define cmd_misc2_op_name_strings\
-  "cmd_opv_set_color", "set_color_short", "set_fill_adjust", "set_ctm",\
+  "cmd_opv_set_color", "fill_hl_color", \
+  "set_fill_adjust", "set_ctm",\
   "set_color_space", "set_misc2", "set_dash", "enable_clip",\
   "disable_clip", "begin_clip", "end_clip", "begin_image_rect",\
   "begin_image", "image_data", "image_plane_data", "put_params"
@@ -240,7 +241,7 @@ bool cmd_slow_rop(gx_device *dev, gs_logical_operation_t lop,
 int cmd_put_drawing_color(gx_device_clist_writer * cldev,
                           gx_clist_state * pcls,
                           const gx_drawing_color * pdcolor,
-                          cmd_rects_enum_t *pre);
+                          cmd_rects_enum_t *pre, dc_devn_cl_type devn_type);
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */

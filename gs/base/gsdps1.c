@@ -29,6 +29,7 @@
 #include "gzcpath.h"
 #include "gzstate.h"
 #include "gsutil.h"
+#include "gxdevsop.h"
 
 /*
  * Define how much rounding slop setbbox should leave,
@@ -192,10 +193,9 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
     const gs_imager_state *pis = (const gs_imager_state *)pgs;
     bool hl_color_available = gx_hld_is_hl_color_available(pis, pdc);
-    gs_fixed_rect empty = {{0, 0}, {0, 0}};
     bool hl_color = (hl_color_available &&
-                dev_proc(pdev, fill_rectangle_hl_color)(pdev,
-                            &empty, pis, pdc, NULL) == 0);
+                dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor, 
+                                  NULL, 0));
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
 
     /* Processing a fill object operation */

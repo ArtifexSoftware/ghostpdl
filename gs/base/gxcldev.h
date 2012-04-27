@@ -248,6 +248,7 @@ struct gx_clist_state_s {
     gs_id pattern_id;		/* the last stored pattern id. */
     gs_int_point tile_phase;	/* most recent tile phase */
     gx_color_index tile_colors[2];	/* most recent tile colors */
+    gx_device_color tile_color_devn[2];  /* devn tile colors */
     gx_cmd_rect rect;		/* most recent rectangle */
     gs_logical_operation_t lop;	/* most recent logical op */
     short lop_enabled;		/* 0 = don't use lop, 1 = use lop, */
@@ -276,6 +277,7 @@ struct gx_clist_state_s {
         { gx_dc_type_none },\
         0, gx_no_bitmap_id, gs_no_id,\
          { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
+        { {NULL}, {NULL} },\
          { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
         { 0, 0 }, { 0, 0 }, { 0, 0 }
 
@@ -293,6 +295,7 @@ dev_proc_copy_mono(clist_copy_mono);
 dev_proc_copy_color(clist_copy_color);
 dev_proc_copy_alpha(clist_copy_alpha);
 dev_proc_strip_tile_rectangle(clist_strip_tile_rectangle);
+dev_proc_strip_tile_rect_devn(clist_strip_tile_rect_devn);
 dev_proc_strip_copy_rop(clist_strip_copy_rop);
 dev_proc_strip_copy_rop2(clist_strip_copy_rop2);
 dev_proc_fill_trapezoid(clist_fill_trapezoid);
@@ -300,6 +303,7 @@ dev_proc_fill_linear_color_trapezoid(clist_fill_linear_color_trapezoid);
 dev_proc_fill_linear_color_triangle(clist_fill_linear_color_triangle);
 dev_proc_dev_spec_op(clist_dev_spec_op);
 dev_proc_copy_planes(clist_copy_planes);
+dev_proc_fill_rectangle_hl_color(clist_fill_rectangle_hl_color);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);
@@ -473,10 +477,13 @@ typedef struct {
     byte set_op;
     byte delta_op;
     bool tile_color;
+    bool devn;
 } clist_select_color_t;
+
 extern const clist_select_color_t
       clist_select_color0, clist_select_color1, clist_select_tile_color0,
-      clist_select_tile_color1;
+      clist_select_tile_color1, clist_select_devn_color0, 
+      clist_select_devn_color1;
 
 /* See comments in gxclutil.c */
 int cmd_put_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
@@ -636,7 +643,10 @@ const byte *cmd_read_matrix(gs_matrix * pmat, const byte * cbp);
 /* Put out a fill or tile rectangle command. */
 int cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
                        int op, int x, int y, int width, int height);
-
+/* Put out a fill with a devn color */
+int cmd_write_rect_hl_cmd(gx_device_clist_writer * cldev, 
+                             gx_clist_state * pcls, int op, int x, int y, 
+                             int width, int height, bool extended_command);
 /* Put out a fill or tile rectangle command for fillpage. */
 int cmd_write_page_rect_cmd(gx_device_clist_writer * cldev, int op);
 

@@ -449,7 +449,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
      */
     colorant_number = (*dev_proc(dev, get_color_comp_index))
                 (dev, (const char *)pname, name_size, SEPARATION_NAME);
-    if (colorant_number >= 0) {		/* If valid colorant name */
+    if (colorant_number >= 0 && colorant_number < dev->color_info.max_components) {		/* If valid colorant name */
         pcolor_component_map->color_map[0] =
                     (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1
                                                            : colorant_number;

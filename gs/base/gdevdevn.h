@@ -45,7 +45,8 @@
  *
  * To disable compression of encoded colorant values, change this definition.
  */
-#define USE_COMPRESSED_ENCODING (ARCH_SIZEOF_GX_COLOR_INDEX >= 8)
+#define USE_COMPRESSED_ENCODING 0
+/* #define USE_COMPRESSED_ENCODING (ARCH_SIZEOF_GX_COLOR_INDEX >= 8) */
 
 /*
  * Type definitions associated with the fixed color model names.

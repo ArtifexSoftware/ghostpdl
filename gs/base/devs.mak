@@ -1290,7 +1290,8 @@ $(DD)psdcmyk.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 $(GLOBJ)gdevpsd.$(OBJ) : $(GLSRC)gdevpsd.c $(PDEVH) $(math__h)\
  $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h)\
  $(gstypes_h) $(gxdcconv_h) $(gdevdevn_h) $(gsequivc_h)\
- $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h)
+ $(gscms_h) $(gsicc_cache_h) $(gsicc_manage_h) $(gxgetbit_h)\
+ $(gdevppla_h)
 	$(GLCC) $(GLO_)gdevpsd.$(OBJ) $(C_) $(GLSRC)gdevpsd.c
 
 $(GLOBJ)gsequivc.$(OBJ) : $(GLSRC)gsequivc.c $(math__h)\
@@ -1694,7 +1695,8 @@ $(DD)tiffgray.dev : $(DEVS_MAK) $(libtiff_dev) $(tiffgray_) $(DD)tiffs.dev\
 	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs $(tiff_i_)
 
 $(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(stdint__h)\
- $(gdevtifs_h) $(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h) $(GDEV)
+ $(gdevtifs_h) $(gdevdevn_h) $(gsequivc_h) $(stdio__h) $(ctype__h)\
+ $(gxgetbit_h) $(gdevppla_h) $(GDEV)
 	$(GLCC) $(I_)$(TI_)$(_I) $(GLO_)gdevtsep.$(OBJ) $(C_) $(GLSRC)gdevtsep.c
 
 # TIFF Scaled (downscaled gray -> mono), configurable compression

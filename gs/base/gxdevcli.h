@@ -323,8 +323,10 @@ typedef struct gx_device_color_info_s {
     /*
      * The number of bits of gx_color_index actually used.
      * This must be <= arch_sizeof_color_index, which is usually 64.
+     * Note that we now have planar devices which can support much more.
+     * Changing this to a ushort to reflect this.
      */
-    byte depth;
+    ushort depth;
 
     /*
      * Index of the gray color component, if any. The max_gray and
@@ -1275,8 +1277,10 @@ typedef enum {
   the high level color. The device should skip such rectangles returning
   a proper code.
 
-  Currently this function is used with gs_rectfill and gs_fillpage only.
-  In future it should be called while decomposing other objects.
+  Currently this function is used with gs_rectfill and gs_fillpage.  It is
+  also used for the handling of the devn color type for supporting 
+  large number of spot colorants to planar separation devices. 
+  
 */
 
 #define dev_t_proc_fill_rectangle_hl_color(proc, dev_t)\
@@ -1449,6 +1453,14 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_strip_copy_rop2(proc)\
   dev_t_proc_strip_copy_rop2(proc, gx_device)
 
+#define dev_t_proc_strip_tile_rect_devn(proc, dev_t)\
+  int proc(dev_t *dev,\
+    const gx_strip_bitmap *tiles, int x, int y, int width, int height,\
+    const gx_drawing_color *pdcolor0, const gx_drawing_color *pdcolor1,\
+    int phase_x, int phase_y)
+#define dev_proc_strip_tile_rect_devn(proc)\
+  dev_t_proc_strip_tile_rect_devn(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1522,6 +1534,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_get_profile((*get_profile), dev_t); \
         dev_t_proc_set_graphics_type_tag((*set_graphics_type_tag), dev_t); \
         dev_t_proc_strip_copy_rop2((*strip_copy_rop2), dev_t);\
+        dev_t_proc_strip_tile_rect_devn((*strip_tile_rect_devn), dev_t);\
 }
 
 /*
