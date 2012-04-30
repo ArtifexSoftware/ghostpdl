@@ -87,7 +87,9 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
                         float smoothness, gsicc_link_t *icclink)
 {
     int nsrc = cs->type->num_components(cs);
-    int ndes = dev->color_info.num_components;
+    cmm_dev_profile_t *dev_profile;
+    int ndes;
+    int code;
     unsigned short src0[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short src1[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short src01[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -97,6 +99,9 @@ gx_icc_is_linear_in_line(const gs_color_space *cs, const gs_imager_state * pis,
     unsigned short interp_des;
     unsigned short max_diff = (unsigned short) max(1, 65535 * smoothness);
     int k;
+
+    code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    ndes = gsicc_get_device_profile_comps(dev_profile);
 
     /* Get us to ushort and get mid point */
     for (k = 0; k < nsrc; k++) {
@@ -141,10 +146,14 @@ gx_icc_is_linear_in_triangle(const gs_color_space *cs, const gs_imager_state * p
     unsigned short des02[GS_CLIENT_COLOR_MAX_COMPONENTS];
     unsigned short des012[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int nsrc = cs->type->num_components(cs);
-    int ndes = dev->color_info.num_components;
+    int ndes, code;
     unsigned short max_diff = (unsigned short) max(1, 65535 * smoothness);
     unsigned int interp_des;
     int k;
+    cmm_dev_profile_t *dev_profile;
+
+    code = dev_proc(dev, get_profile)(dev, &(dev_profile));
+    ndes = gsicc_get_device_profile_comps(dev_profile);
 
     /* This needs to be optimized. And range corrected */
     for (k = 0; k < nsrc; k++){
