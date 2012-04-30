@@ -105,7 +105,7 @@ static const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,	/* begin_transparency_mask */
   NULL,	/* end_transparency_mask */
   NULL,	/* discard_transparency_layer */
-  NULL,	/* get_color_mapping_procs */
+  gx_default_DevGray_get_color_mapping_procs,
   NULL, /* get_color_comp_index */
   NULL,	/* encode_color */
   NULL,	/* decode_color */
@@ -138,6 +138,8 @@ gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
     padev->list_memory = mem;
     padev->memory = mem; /* gx_general_fill_path may need a storage
                             for dropout prevention buffer. */
+    set_dev_proc(padev, encode_color, gx_default_gray_encode);
+    set_dev_proc(padev, decode_color, gx_default_decode_color);
     (*dev_proc(padev, open_device)) ((gx_device *) padev);
 }
 
