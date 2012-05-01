@@ -7345,9 +7345,9 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
                 code =
                     pdf14_compute_group_device_int_rect(&pdf14pct->params.ctm,
                                                     &pdf14pct->params.bbox, &rect);
-                /* We have to crop this by the parent object and worry about the
-                   BC outside the range */
-                if ( pdf14pct->params.GrayBackground == 1.0 ) {
+                /* We have to crop this by the parent object and worry about the BC outside
+                   the range, except for image SMask which don't affect areas outside the image */
+                if ( pdf14pct->params.GrayBackground == 1.0 || pdf14pct->params.mask_is_image) {
                     /* In this case there will not be a background effect to
                        worry about.  The mask will not have any effect outside
                        the bounding box.  This is NOT the default or common case. */
@@ -7693,4 +7693,4 @@ pdf14_debug_mask_stack_state(pdf14_ctx *ctx)
 }
 #endif
 
-#endif
+#endif /* DUMP_MASK_STACK */
