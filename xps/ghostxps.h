@@ -396,6 +396,7 @@ struct xps_context_s
 
     /* Global toggle for transparency */
     int use_transparency;
+    int has_transparency;
 
     /* Hack to workaround ghostscript's lack of understanding
      * the pdf 1.4 specification of Alpha only transparency groups.

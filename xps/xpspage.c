@@ -119,7 +119,6 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
     xps_resource_t *dict;
     char *width_att;
     char *height_att;
-    int has_transparency;
     char base_uri[1024];
     char *s;
     int code;
@@ -195,21 +194,21 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
 
     /* Pre-parse looking for transparency */
 
-    has_transparency = 0;
+    ctx->has_transparency = 0;
 
     for (node = xps_down(root); node; node = xps_next(node))
     {
         if (!strcmp(xps_tag(node), "FixedPage.Resources") && xps_down(node))
             if (xps_resource_dictionary_has_transparency(ctx, base_uri, xps_down(node)))
-                has_transparency = 1;
+                ctx->has_transparency = 1;
         if (xps_element_has_transparency(ctx, base_uri, node))
-            has_transparency = 1;
+            ctx->has_transparency = 1;
     }
 
     /* save the state with the original device before we push */
     gs_gsave(ctx->pgs);
 
-    if (ctx->use_transparency && has_transparency)
+    if (ctx->use_transparency && ctx->has_transparency)
     {
         code = gs_push_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
@@ -242,7 +241,7 @@ xps_parse_fixed_page(xps_context_t *ctx, xps_part_t *part)
         }
     }
 
-    if (ctx->use_transparency && has_transparency)
+    if (ctx->use_transparency && ctx->has_transparency)
     {
         code = gs_pop_pdf14trans_device(ctx->pgs, false);
         if (code < 0)
