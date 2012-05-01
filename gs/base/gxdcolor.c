@@ -629,15 +629,12 @@ gx_dc_devn_write(
 {
     int k;
 
-    if (psdc != 0 && psdc->type == pdevc->type) {
-        for (k = 0; k < GX_DEVICE_COLOR_MAX_COMPONENTS; k++) {
-            if (pdevc->colors.devn.values[k] != psdc->colors.devn.values[k]) {
-                return gx_devn_write_color(pdevc, dev, pdata, psize);;
-            }
-        }
-        *psize = 0;
-        return 1;
-    } 
+    /* Due to the fact that the devn color type can vary
+       being cmd_opv_ext_put_drawing_color, cmd_opv_ext_put_tile_devn_color0,
+       cmd_opv_ext_put_tile_devn_color1, or cmd_opv_ext_put_drawing_color
+       and these are stored in different locations during clist playback
+       (&set_dev_colors[0] &set_dev_colors[1] &dev_color) we will not check
+       if there is a change here */
     return gx_devn_write_color(pdevc, dev, pdata, psize);
 }
 
