@@ -98,6 +98,8 @@ pdfdict begin
   (#) search { name#escape } if concatstrings
 } bind def
 
+/num-chars-dict mark (0123456789-.) {dup} forall .dicttomark readonly def
+
 % Execute a file, interpreting its executable names in a given
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
@@ -105,20 +107,32 @@ pdfdict begin
   BXlevel 0 le {
     (   **** Unknown operator: ') pdfformaterror
     dup =string cvs pdfformaterror
+    (') pdfformaterror
     % Attempt a retry scan of the element after changing to PDFScanInvNum
     << /PDFScanInvNum //true >> setuserparams
     =string cvs
     token pop exch pop dup type
     dup /integertype eq exch /realtype eq or {
       exch pop exch pop
-      (', processed as number, value: ) pdfformaterror
+      (, processed as number, value: ) pdfformaterror
       dup =string cvs pdfformaterror (\n) pdfformaterror
      << /PDFScanInvNum //null >> setuserparams    % reset to default scanning rules
       //false 	% suppress any stack cleanup
     } {
-      % error was non-recoverable with modified scanning rules
-    ('\n) pdfformaterror
-      //true
+      % error was non-recoverable with modified scanning rules, continue.
+      dup type /nametype eq {
+      //true 1 index .namestring {
+        //num-chars-dict exch known and
+      } forall { % perhaps, it's a malformed number.
+        pop pop pop 0 //false
+        ( looks like a malformed number, replacing with 0.) pdfformaterror
+      } {
+        //true % punt
+      } ifelse
+    } {
+      //true   % punt
+    } ifelse
+    (\n) pdfformaterror
     } ifelse
   } {
     //true
@@ -127,6 +141,9 @@ pdfdict begin
   pop pop count exch sub { pop } repeat	% pop all the operands
   } if
 } bind def
+
+currentdict /num-chars-dict .undef
+
 /.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
   PDFDEBUG {
     pdfdict /PDFSTEPcount known not { pdfdict /PDFSTEPcount 1 .forceput } if
