@@ -391,8 +391,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             int num_names = scna.size;
             fixed_colorant_names_list pcomp_names =
                 pdevn_params->std_colorant_names;
-            /* Start the num_spot count after the std. colorants */
-            num_spot = pdevn_params->num_std_colorant_names;
+            num_spot = pdevn_params->separations.num_separations;
             for (i = 0; i < num_names; i++) {
                 /* Verify that the name is not one of our process colorants */
                 if (!check_process_color_names(pcomp_names, &scna.data[i])) {
@@ -413,10 +412,11 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     num_spot++;
                 }
             }
-            pdevn_params->separations.num_separations = num_spot - npcmcolors;
             num_spot_changed = true;
-            for (i = npcmcolors; i < num_spot; i++)
-                pdevn_params->separation_order_map[i] = i;
+            for (i = pdevn_params->separations.num_separations; i < num_spot; i++)
+                pdevn_params->separation_order_map[i + pdevn_params->num_std_colorant_names] = 
+                i + pdevn_params->num_std_colorant_names;
+            pdevn_params->separations.num_separations = num_spot;
         }
         /*
          * Process the SeparationOrder names.
@@ -430,11 +430,12 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                  * Check if names match either the process color model or
                  * SeparationColorNames.  If not then error.
                  */
-                if ((comp_num = check_pcm_and_separation_names(pdev, pdevn_params,
-                    (const char *)sona.data[i].data, sona.data[i].size, 0)) < 0) {
+                if ((comp_num = (*dev_proc(pdev, get_color_comp_index))
+                                (pdev, (const char *)sona.data[i].data,
+                                sona.data[i].size, SEPARATION_NAME)) < 0) {
                     return_error(gs_error_rangecheck);
                 }
-                pdevn_params->separation_order_map[comp_num] = comp_num;
+                pdevn_params->separation_order_map[i] = comp_num;
             }
         }
         /*
