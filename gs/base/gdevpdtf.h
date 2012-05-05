@@ -393,6 +393,8 @@ int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfre
                             pdf_font_write_contents_proc_t write_contents);
 int pdf_assign_font_object_id(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
+int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
+
 /* Resize font resource arrays. */
 int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres,
         int chars_count);

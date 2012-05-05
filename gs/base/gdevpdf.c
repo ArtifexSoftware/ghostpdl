@@ -1501,77 +1501,22 @@ pdf_close(gx_device * dev)
             for (; pres != 0;) {
                 pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
 
-                if(pdfont->BaseFont.size) {
-                    gs_free_string(pdev->memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Free BaseFont string");
-                    pdfont->BaseFont.data = (byte *)0L;
-                    pdfont->BaseFont.size = 0;
-                }
-                if(pdfont->Widths) {
-                    gs_free_object(pdev->memory, pdfont->Widths, "Free Widths array");
-                    pdfont->Widths = 0;
-                }
-                if(pdfont->used) {
-                    gs_free_object(pdev->memory, pdfont->used, "Free used array");
-                    pdfont->used = 0;
-                }
-                if(pdfont->res_ToUnicode) {
-                    /* ToUnicode resources are released below */
-/*                    gs_free_object(pdev->memory, pdfont->res_ToUnicode, "Free ToUnicode resource");*/
-                    pdfont->res_ToUnicode = 0;
-                }
-                if(pdfont->cmap_ToUnicode) {
-                    gs_cmap_ToUnicode_free(pdev->memory, pdfont->cmap_ToUnicode);
-                    pdfont->cmap_ToUnicode = 0;
-                }
-                switch(pdfont->FontType) {
-                    case ft_composite:
-                        break;
-                    case ft_PCL_user_defined:
-                    case ft_GL2_stick_user_defined:
-                    case ft_user_defined:
-                        if(pdfont->u.simple.Encoding) {
-                            gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
-                            pdfont->u.simple.Encoding = 0;
-                        }
-                        if(pdfont->u.simple.v) {
-                            gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
-                            pdfont->u.simple.v = 0;
-                        }
-                        if (pdfont->u.simple.s.type3.char_procs) {
-                            pdf_free_charproc_ownership(pdev, (pdf_resource_t *)pdfont->u.simple.s.type3.char_procs);
-                            pdfont->u.simple.s.type3.char_procs = 0;
-                        }
-                        break;
-                    case ft_CID_encrypted:
-                    case ft_CID_TrueType:
-                        if(pdfont->u.cidfont.used2) {
-                            gs_free_object(pdev->memory, pdfont->u.cidfont.used2, "Free CIDFont used2");
-                            pdfont->u.cidfont.used2 = 0;
-                        }
-                        if(pdfont->u.cidfont.CIDToGIDMap) {
-                            gs_free_object(pdev->memory, pdfont->u.cidfont.CIDToGIDMap, "Free CIDToGID map");
-                            pdfont->u.cidfont.CIDToGIDMap = 0;
-                        }
-                        break;
-                    default:
-                        if(pdfont->u.simple.Encoding) {
-                            gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
-                            pdfont->u.simple.Encoding = 0;
-                        }
-                        if(pdfont->u.simple.v) {
-                            gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
-                            pdfont->u.simple.v = 0;
-                        }
-                        break;
-                }
-                if (pdfont->object) {
-                    cos_release(pdfont->object, "release font resource object");
-                    gs_free_object(pdev->pdf_memory, pdfont->object, "Free font resource object");
-                    pdfont->object = 0;
-                }
-                /* We free FontDescriptor resources separately */
-                if(pdfont->FontDescriptor)
-                    pdfont->FontDescriptor = NULL;
+                font_resource_free(pdev, pdfont);
+                pres = pres->next;
+            }
+        }
+    }
+
+    {
+        int j, code = 0;
+
+        for (j = 0; j < NUM_RESOURCE_CHAINS && code >= 0; ++j) {
+            pdf_resource_t *pres = pdev->resources[resourceCIDFont].chains[j];
+
+            for (; pres != 0;) {
+                pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pres;
+
+                font_resource_free(pdev, pdfont);
                 pres = pres->next;
             }
         }
