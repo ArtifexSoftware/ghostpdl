@@ -2118,7 +2118,14 @@ currentdict /PDF2PS_matrix_key undef
       { { exch pop oforce 3 index colorspacespotcolors } forall } big-res-forall
     } if
     dup /Pattern knownoget {
-      { { exch pop oforce 4 copy exch pop resourcespotcolors pop pop pop } forall } big-res-forall
+      { { exch pop oforce 
+          dup /Shading knownoget {
+            exch pop
+            /ColorSpace oget 3 index colorspacespotcolors
+          } {
+            4 copy exch pop resourcespotcolors pop pop pop 
+          } ifelse
+       } forall } big-res-forall
     } if
     dup /Shading knownoget {
       { { exch pop oforce /ColorSpace oget 3 index colorspacespotcolors } forall } big-res-forall
