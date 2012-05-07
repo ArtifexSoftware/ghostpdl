@@ -3064,13 +3064,13 @@ done:
     /* If one loaded, and the other didn't - that's an error */
     if ((bmp2 != NULL) && (bmp == NULL))
     {
-        fprintf(stderr, "bmpcmp: Failed to load image %d from '%s'\n",
+        fprintf(stderr, "bmpcmp: Failed to load (candidate) image %d from '%s'\n",
                 imagecount+1, params.filename1);
         exit(EXIT_FAILURE);
     }
     if ((bmp != NULL) && (bmp2 == NULL))
     {
-        fprintf(stderr, "bmpcmp: Failed to load image %d from '%s'\n",
+        fprintf(stderr, "bmpcmp: Failed to load (reference) image %d from '%s'\n",
                 imagecount+1, params.filename2);
         exit(EXIT_FAILURE);
     }
