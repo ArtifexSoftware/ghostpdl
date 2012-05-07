@@ -829,7 +829,8 @@ static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, 
                     switch (r_btype(&Element)) {
                         case t_name:
                             name_string_ref(ff->memory, &Element, &string);
-                            strncpy(ptr, string.value.const_bytes, r_size(&string));
+
+                            strncpy(ptr, (char *)string.value.const_bytes, r_size(&string));
                             ptr += r_size(&string);
                             break;
                         case t_real:
