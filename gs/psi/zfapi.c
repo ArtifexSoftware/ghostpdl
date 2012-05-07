@@ -817,7 +817,7 @@ static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, 
 
     switch((int)var_id) {
         case FAPI_FONT_FEATURE_DollarBlend:
-            {   ref *DBlend, Element;
+            {   ref *DBlend, Element, string;
                 int i;
                 char Buf[32];
                 if (dict_find_string(pdr, "$Blend", &DBlend) <= 0)
@@ -827,6 +827,11 @@ static int FAPI_FF_get_proc(FAPI_font *ff, fapi_font_feature var_id, int index, 
                     if (array_get(ff->memory, DBlend, i, &Element) < 0)
                         return 0;
                     switch (r_btype(&Element)) {
+                        case t_name:
+                            name_string_ref(ff->memory, &Element, &string);
+                            strncpy(ptr, string.value.const_bytes, r_size(&string));
+                            ptr += r_size(&string);
+                            break;
                         case t_real:
                             sprintf(Buf, "%f", Element.value.realval);
                             strcpy(ptr, Buf);
