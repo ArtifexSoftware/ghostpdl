@@ -306,6 +306,17 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                         p += copy;
                         continue;
                     }
+#ifdef DEBUG
+                    if (gs_debug_c('i')) {
+                        int i;
+                        dprintf("Scanned Data:\n");
+                        for (i=0; i<count; i++) {
+                            dprintf2("%02x%c", pst->args.data[i],
+                                     (i % 16 == 15 || i == count - 1) ?
+                                     '\n' : ' ');
+                        }
+                    }
+#endif
                     /* Invoke the command. */
                     cdefn = pcl_get_command_definition(pst,
                                                        pst->param_class,
