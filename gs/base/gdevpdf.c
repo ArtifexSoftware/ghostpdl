@@ -1642,7 +1642,6 @@ pdf_close(gx_device * dev)
                     gs_free_object(pdev->pdf_memory, pres->object, "free function resources");
                     pres->object = 0;
                     pnext = pres->next;
-                    gs_free_object(pdev->pdf_memory, pres, "free function");
                 }
                 pres = pnext;
             }

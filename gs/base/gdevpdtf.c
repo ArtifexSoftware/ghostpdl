@@ -408,16 +408,16 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
         if(pdfont->BaseFont.size) {
-            gs_free_string(pdev->memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Free BaseFont string");
+            gs_free_string(pdev->pdf_memory, pdfont->BaseFont.data, pdfont->BaseFont.size, "Free BaseFont string");
             pdfont->BaseFont.data = (byte *)0L;
             pdfont->BaseFont.size = 0;
         }
         if(pdfont->Widths) {
-            gs_free_object(pdev->memory, pdfont->Widths, "Free Widths array");
+            gs_free_object(pdev->pdf_memory, pdfont->Widths, "Free Widths array");
             pdfont->Widths = 0;
         }
         if(pdfont->used) {
-            gs_free_object(pdev->memory, pdfont->used, "Free used array");
+            gs_free_object(pdev->pdf_memory, pdfont->used, "Free used array");
             pdfont->used = 0;
         }
         if(pdfont->res_ToUnicode) {
@@ -425,7 +425,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             pdfont->res_ToUnicode = 0;
         }
         if(pdfont->cmap_ToUnicode) {
-            gs_cmap_ToUnicode_free(pdev->memory, pdfont->cmap_ToUnicode);
+            gs_cmap_ToUnicode_free(pdev->pdf_memory, pdfont->cmap_ToUnicode);
             pdfont->cmap_ToUnicode = 0;
         }
         switch(pdfont->FontType) {
@@ -435,11 +435,11 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             case ft_GL2_stick_user_defined:
             case ft_user_defined:
                 if(pdfont->u.simple.Encoding) {
-                    gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                     pdfont->u.simple.Encoding = 0;
                 }
                 if(pdfont->u.simple.v) {
-                    gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.simple.v, "Free simple v");
                     pdfont->u.simple.v = 0;
                 }
                 if (pdfont->u.simple.s.type3.char_procs) {
@@ -450,21 +450,21 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             case ft_CID_encrypted:
             case ft_CID_TrueType:
                 if(pdfont->u.cidfont.used2) {
-                    gs_free_object(pdev->memory, pdfont->u.cidfont.used2, "Free CIDFont used2");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.cidfont.used2, "Free CIDFont used2");
                     pdfont->u.cidfont.used2 = 0;
                 }
                 if(pdfont->u.cidfont.CIDToGIDMap) {
-                    gs_free_object(pdev->memory, pdfont->u.cidfont.CIDToGIDMap, "Free CIDToGID map");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.cidfont.CIDToGIDMap, "Free CIDToGID map");
                     pdfont->u.cidfont.CIDToGIDMap = 0;
                 }
                 break;
             default:
                 if(pdfont->u.simple.Encoding) {
-                    gs_free_object(pdev->memory, pdfont->u.simple.Encoding, "Free simple Encoding");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.simple.Encoding, "Free simple Encoding");
                     pdfont->u.simple.Encoding = 0;
                 }
                 if(pdfont->u.simple.v) {
-                    gs_free_object(pdev->memory, pdfont->u.simple.v, "Free simple v");
+                    gs_free_object(pdev->pdf_memory, pdfont->u.simple.v, "Free simple v");
                     pdfont->u.simple.v = 0;
                 }
                 break;
@@ -763,7 +763,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
             len = min(gs_font_name_max, font->font_name.size);
             memcpy(name, font->font_name.chars, len);
             name[len] = 0;
-            emprintf1(pdev->memory,
+            emprintf1(pdev->pdf_memory,
                       "\nWarning: %s cannot be embedded because of licensing restrictions\n",
                       name);
             return FONT_EMBED_NO;
