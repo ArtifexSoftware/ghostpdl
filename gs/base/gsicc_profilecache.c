@@ -66,9 +66,10 @@ static void
 rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     gsicc_profile_cache_t *profile_cache = (gsicc_profile_cache_t * ) ptr_in;
-    gsicc_profile_entry_t *curr = profile_cache->head;
+    gsicc_profile_entry_t *curr = profile_cache->head, *next;
 
     while (curr != NULL ){
+        next = curr->next;
         rc_decrement(curr->color_space, "rc_gsicc_profile_cache_free");
         gs_free_object(mem->stable_memory, curr,
                        "rc_gsicc_profile_cache_free");
