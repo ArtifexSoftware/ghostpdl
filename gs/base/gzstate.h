@@ -149,10 +149,9 @@ struct gs_state_s {
     gs_state_client_procs client_procs;
 };
 
-struct_proc_finalize(gs_imager_state_finalize);
 #define public_st_gs_state()	/* in gsstate.c */\
-  gs_public_st_composite_use_final(st_gs_state, gs_state, "gs_state",\
-    gs_state_enum_ptrs, gs_state_reloc_ptrs, gs_imager_state_finalize)
+  gs_public_st_composite(st_gs_state, gs_state, "gs_state",\
+    gs_state_enum_ptrs, gs_state_reloc_ptrs)
 
 /*
  * Enumerate the pointers in a graphics state, other than the ones in the

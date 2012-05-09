@@ -305,11 +305,9 @@ struct gs_imager_state_s {
   gx_default_get_cmap_procs
 
 /* The imager state structure is public only for subclassing. */
-
-struct_proc_finalize(gs_imager_state_finalize);
 #define public_st_imager_state()	/* in gsistate.c */\
-  gs_public_st_composite_use_final(st_imager_state, gs_imager_state, "gs_imager_state",\
-    imager_state_enum_ptrs, imager_state_reloc_ptrs, gs_imager_state_finalize)
+  gs_public_st_composite(st_imager_state, gs_imager_state, "gs_imager_state",\
+    imager_state_enum_ptrs, imager_state_reloc_ptrs)
 
 /* Initialize an imager state, other than the parts covered by */
 /* gs_imager_state_initial. */

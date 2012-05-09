@@ -61,7 +61,6 @@ private_st_line_params();
  * pointers are handled in this manner.
  */
 public_st_imager_state();
-
 static
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs)
     ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
@@ -221,8 +220,7 @@ gs_imager_state_release(gs_imager_state * pis)
     gx_device_halftone *pdht = pis->dev_ht;
 
 #define RCDECR(element)\
-    rc_decrement(pis->element, cname);\
-    pis->element = NULL;    /* clear the pointer to prevent multiple decrements */
+    rc_decrement(pis->element, cname)
 
     RCDECR(cie_joint_caches);
     RCDECR(set_transfer.gray);
@@ -243,24 +241,6 @@ gs_imager_state_release(gs_imager_state * pis)
     RCDECR(halftone);
     RCDECR(devicergb_cs);
     RCDECR(devicecmyk_cs);
-    RCDECR(icc_link_cache);
-    RCDECR(icc_profile_cache);
-    RCDECR(icc_manager);
-}
-
-/* release the parts of the imager_state when it is freed */
-void
-gs_imager_state_finalize(const gs_memory_t *mem, void *ptr)
-{
-    const char *const cname = "gs_imager_state_finalize";
-    gs_imager_state *pis = (gs_imager_state *)ptr;
-
-    /* we really ought to be able to use gs_imager_state_release, but the	*/
-    /* other elements in the imager state are not properly reference counted.	*/
-    /* At least these three elements are correct in that the final free as a 	*/
-    /* part of 'alloc_restore_all' is what decrements these to 0 and frees	*/
-    /* these elements. Important since some have semaphores and we must call	*/
-    /* gx_semaphore_free to release the handles on Windows.			*/
     RCDECR(icc_link_cache);
     RCDECR(icc_profile_cache);
     RCDECR(icc_manager);

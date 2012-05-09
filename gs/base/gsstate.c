@@ -1044,6 +1044,7 @@ gstate_free_contents(gs_state * pgs)
         (*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
     gstate_free_parts(pgs, mem, cname);
+    gs_imager_state_release((gs_imager_state *)pgs);
 }
 
 /* Copy one gstate to another. */
