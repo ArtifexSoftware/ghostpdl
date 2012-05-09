@@ -50,7 +50,7 @@ static int cmd_put_path(gx_device_clist_writer * cldev,
 
 /* Compute the colors used by a colored halftone. */
 static gx_color_index
-colored_halftone_colors_used(gx_device_clist_writer *cldev,
+colored_halftone_color_usage(gx_device_clist_writer *cldev,
                              const gx_drawing_color *pdcolor)
 {
     /*
@@ -243,7 +243,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         left -= portion_size;
     } while (left);
 
-    /* should properly calculate colors_used, but for now just punt */
+    /* should properly calculate color_usage, but for now just punt */
     pcls->color_usage.or = gx_color_usage_all(cldev);
 
     /* Here we can't know whether a pattern paints colors besides
@@ -291,7 +291,7 @@ cmd_drawing_color_usage(gx_device_clist_writer *cldev,
                                     gx_color_index2usage((gx_device *)cldev, gx_dc_binary_color0(pdcolor)) |
                                     gx_color_index2usage((gx_device *)cldev, gx_dc_binary_color1(pdcolor)));
     else if (gx_dc_is_colored_halftone(pdcolor))
-        return gx_color_index2usage((gx_device *)cldev, colored_halftone_colors_used(cldev, pdcolor));
+        return gx_color_index2usage((gx_device *)cldev, colored_halftone_color_usage(cldev, pdcolor));
     else
         return gx_color_usage_all(cldev);
 }
@@ -693,7 +693,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
     uint unknown = 0;
-    int ry, rheight, y0, y1;
+    int ry, rheight, rx, rwidth, y0, y1;
     gs_logical_operation_t lop = pis->log_op;
     byte op = (byte)
         (params->rule == gx_rule_even_odd ?
@@ -718,6 +718,9 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         crop_fill_y(cdev, ry, rheight);
         if (rheight <= 0)
             return 0;
+        rx = fixed2int(bbox.p.x) - 1;
+        rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
+        fit_fill_w(cdev, rx, rwidth);
     }
     if ( (cdev->disable_mask & clist_disable_fill_path) ||
          gs_debug_c(',')
@@ -782,6 +785,18 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
             re.y += re.height;
         } while (re.y < re.yend);
     } else {
+        /* If needed, update the trans_bbox */
+        if (cdev->pdf14_needed) {
+            gs_int_rect bbox;
+
+            bbox.p.x = rx;
+            bbox.q.x = rx + rwidth - 1;
+            bbox.p.y = ry;
+            bbox.q.y = ry + rheight - 1;
+
+            clist_update_trans_bbox(cdev, &bbox);
+        }
+
         RECT_ENUM_INIT(re, ry, rheight);
         do {
             RECT_STEP_INIT(re);
@@ -926,6 +941,20 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
         cmd_clear_known(cdev, unknown);
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect trans_bbox;
+        int rx = fixed2int(bbox.p.x) - 1;
+        int rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
+
+        fit_fill_w(cdev, rx, rwidth);
+        trans_bbox.p.x = rx;
+        trans_bbox.q.x = rx + rwidth - 1;
+        trans_bbox.p.y = ry;
+        trans_bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &trans_bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int code;
@@ -1013,6 +1042,20 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
     y1 = ry + rheight;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect trans_bbox;
+        int rx = fixed2int(bbox.p.x) - 1;
+        int rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
+
+        fit_fill_w(cdev, rx, rwidth);
+        trans_bbox.p.x = rx;
+        trans_bbox.q.x = rx + rwidth - 1;
+        trans_bbox.p.y = ry;
+        trans_bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &trans_bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         RECT_STEP_INIT(re);

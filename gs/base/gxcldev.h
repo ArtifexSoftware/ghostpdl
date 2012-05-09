@@ -283,7 +283,11 @@ struct gx_clist_state_s {
          { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
         { {NULL}, {NULL} },\
          { 0, 0, 0, 0 }, lop_default, 0, 0, 0, 0, initial_known,\
-        { 0, 0 }, { 0, 0 }, { 0, 0 }
+        { 0, 0 }, /* cmd_list */ { 0, 0 }, /* band_complexity */\
+        { 0, /* or */\
+          0, /* slow rop */\
+          { { max_int, max_int }, /* p */ { min_int, min_int } /* q */ } /* trans_bbox */\
+        } /* color_usage */
 
 /* Define the size of the command buffer used for reading. */
 #define cbuf_size 4096
@@ -744,6 +748,7 @@ int cmd_put_halftone(gx_device_clist_writer * cldev,
  */
 typedef enum {
     playback_action_render,
+    playback_action_render_no_pdf14,
     playback_action_setup
 } clist_playback_action;
 

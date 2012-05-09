@@ -35,7 +35,7 @@
 /*
  * We really don't like the fact that gdevprn.h is included here, since
  * command lists are supposed to be usable for purposes other than printer
- * devices; but gdev_prn_colors_used and gdev_create_buf_device are
+ * devices; but gdev_prn_color_usage and gdev_create_buf_device are
  * currently only applicable to printer devices.
  */
 #include "gdevprn.h"

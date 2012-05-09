@@ -128,6 +128,36 @@ cmd_print_stats(const gs_memory_t *mem)
 
 /* ---------------- Writing utilities ---------------- */
 
+/* Update the 'trans_bbox' in the states for bands affected by the given rectangle */
+/* The caller has determined the the PDF 1.4 transparency will actuall be needed   */
+/* for the given rectangle (conservatively). This will allow some bands that only  */
+/* paint to the page level with full opacity to skip the pdf14 compositor during   */
+/* rendering/reading and thus run faster and with less memory for those bands.     */
+void
+clist_update_trans_bbox(gx_device_clist_writer *cldev, gs_int_rect *bbox)
+{
+    int p_y, q_y;
+    int band, first_band, last_band;
+
+    first_band = max(0, bbox->p.y / cldev->page_band_height);
+    p_y = bbox->p.y - (first_band * cldev->page_band_height);
+    last_band = min((cldev->nbands - 1), bbox->q.y / cldev->page_band_height);
+
+    for (band=first_band; band <= last_band; band++) {
+        if (cldev->states[band].color_usage.trans_bbox.p.y > p_y)
+            cldev->states[band].color_usage.trans_bbox.p.y = p_y;
+        if (cldev->states[band].color_usage.trans_bbox.p.x > bbox->p.x)
+            cldev->states[band].color_usage.trans_bbox.p.x = bbox->p.x;
+        p_y = 0;	/* will be top of next band */
+        q_y = (band == last_band) ? bbox->q.y - (last_band * cldev->page_band_height) :
+                                      cldev->page_band_height - 1;
+        if (cldev->states[band].color_usage.trans_bbox.q.y < q_y)
+            cldev->states[band].color_usage.trans_bbox.q.y = q_y;
+        if (cldev->states[band].color_usage.trans_bbox.q.x < bbox->q.x)
+            cldev->states[band].color_usage.trans_bbox.q.x = bbox->q.x;
+    }
+}
+
 /* Write the commands for one band or band range. */
 static int	/* ret 0 all ok, -ve error code, or +1 ok w/low-mem warning */
 cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,

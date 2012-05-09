@@ -2021,7 +2021,7 @@ $(GLOBJ)gxclpage.$(OBJ) : $(GLSRC)gxclpage.c $(AK)\
 $(GLOBJ)gxclrast.$(OBJ) : $(GLSRC)gxclrast.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(gp_h) $(gpcheck_h) $(gscoord_h)\
  $(gscdefs_h) $(gsbitops_h) $(gsparams_h) $(gsstate_h)\
- $(gxdcolor_h) $(gxpcolor_h) $(gxdevice_h)\
+ $(gstrans_h) $(gxdcolor_h) $(gxpcolor_h) $(gxdevice_h)\
  $(gsdevice_h) $(gsiparm4_h)\
  $(gxdevmem_h) $(gxcldev_h) $(gxclpath_h) $(gxcmap_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdhtres_h) $(gxgetbit_h)\

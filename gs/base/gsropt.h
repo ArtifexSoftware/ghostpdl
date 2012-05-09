@@ -205,20 +205,14 @@ typedef enum {
  *
  * In addition, we define a "pdf14" flag which indicates that PDF
  * transparency is in effect. This doesn't change rendering in any way,
- * but does force the lop to be considered non-idempotent.
+ * but does force the lop to be considered non-idempotent. The lop_pdf14
+ * bit is used for fill/stroke ops but even if this is clear, we still
+ * may be painting in a transparency buffer in an idempotent mode.
  */
 #define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))        /* must be low-order bits */
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
 #define lop_pdf14 0x400
-
-/* Also, we abuse the lop even further, by allowing it to specify a specific
- * plane for an operation to work on (in a planar device context). To specify
- * a particular plane, set lop_planar, and then or in the plane number
- * shifted up by lop_planar_shift.
- */
-#define lop_planar 0x800
-#define lop_planar_shift 12
 
 typedef uint gs_logical_operation_t;
 

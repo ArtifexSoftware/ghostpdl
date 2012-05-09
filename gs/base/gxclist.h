@@ -321,6 +321,12 @@ struct gx_device_clist_writer_s {
      * garbage collector.
      */
     gs_imager_state imager_state;	/* current values of imager params */
+    bool pdf14_needed;		/* if true then not page level opaque mode */
+                                /* above set when not at page level with no SMask or when */
+                                /* the page level BM, shape or opacity alpha needs tranaparency */
+    int pdf14_trans_group_level;/* 0 when at page level group -- push increments, pop decrements */
+    int pdf14_smask_level;	/* 0 when at SMask None -- push increments, pop decrements */
+
     float dash_pattern[cmd_max_dash];	/* current dash pattern */
     const gx_clip_path *clip_path;	/* current clip path, */
                                 /* only non-transient for images */
@@ -468,7 +474,7 @@ int clist_close_page_info(gx_band_page_info_t *ppi);
 /*
  * Compute the colors-used information in the page_info structure from the
  * information in the individual writer bands.  This is only useful at the
- * end of a page.  gdev_prn_colors_used calls this procedure if it hasn't
+ * end of a page.  gdev_prn_color_usage calls this procedure if it hasn't
  * been called since the page was started.  clist_end_page also calls it.
  */
 void clist_compute_color_usage(gx_device_clist_writer *cldev);
@@ -514,6 +520,10 @@ void gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
  */
 void
 clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from);
+
+/* Optimization of PDF 1.4 transparency requires a trans_bbox for each band */
+/* This function updates the clist writer states with the bbox provided. */
+void clist_update_trans_bbox(gx_device_clist_writer *dev, gs_int_rect *bbox);
 
 /* Retrieve total size for cfile and bfile. */
 int clist_data_size(const gx_device_clist *cdev, int select);

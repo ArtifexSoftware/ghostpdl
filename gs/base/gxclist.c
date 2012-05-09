@@ -506,8 +506,7 @@ clist_reset(gx_device * dev)
         gx_clist_state *states = cdev->states;
 
         for (band = 0; band < nbands; band++, states++) {
-            static const gx_clist_state cls_initial =
-            {cls_initial_values};
+            static const gx_clist_state cls_initial = { cls_initial_values };
 
             *states = cls_initial;
         }
@@ -627,11 +626,18 @@ clist_emit_page_header(gx_device *dev)
 static void
 clist_reset_page(gx_device_clist_writer *cwdev)
 {
+    int entry;
+    gs_int_rect empty_bbox = { { max_int, max_int }, { min_int, min_int } };
+
     cwdev->page_bfile_end_pos = 0;
-    /* Indicate that the colors_used information hasn't been computed. */
-    cwdev->page_info.scan_lines_per_colors_used = 0;
+    /* Indicate that the color_usage information hasn't been computed. */
+    cwdev->page_info.scan_lines_per_color_usage = 0;
     memset(cwdev->page_info.band_color_usage, 0,
            sizeof(cwdev->page_info.band_color_usage));
+
+    /* set trans_bbox to empty (not all zeroes) */
+    for (entry=0; entry < PAGE_INFO_NUM_COLORS_USED - 1; entry++);
+        cwdev->page_info.band_color_usage[entry].trans_bbox = empty_bbox;
 }
 
 /* Open the device's bandfiles */
@@ -862,6 +868,19 @@ clist_end_page(gx_device_clist_writer * cldev)
                 (unsigned long)cldev->page_bfile_end_pos);
     }
 #endif
+    if (gs_debug[':']) {
+        /* count how many bands were skipped */
+        int skip_count = 0;
+        int band;
+
+        for (band=0; band < cldev->nbands - 1; band++) {
+            if (cldev->page_info.band_color_usage[band].trans_bbox.p.y >
+                cldev->page_info.band_color_usage[band].trans_bbox.q.y)
+                skip_count++;
+        }
+        dprintf2("%d bands skipped out of %d\n", skip_count, cldev->nbands);
+    }
+
     return 0;
 }
 
@@ -890,23 +909,51 @@ void
 clist_compute_color_usage(gx_device_clist_writer *cldev)
 {
     int nbands = cldev->nbands;
-    int bands_per_colors_used =
+    int bands_per_color_usage =
         (nbands + PAGE_INFO_NUM_COLORS_USED - 1) /
         PAGE_INFO_NUM_COLORS_USED;
-    int band;
+    int band, entry;
+    gs_int_rect empty_bbox = { { max_int, max_int }, { min_int, min_int } };
 
-    cldev->page_info.scan_lines_per_colors_used =
-        cldev->page_band_height * bands_per_colors_used;
+
+    cldev->page_info.scan_lines_per_color_usage =
+        cldev->page_band_height * bands_per_color_usage;
     memset(cldev->page_info.band_color_usage, 0,
            sizeof(cldev->page_info.band_color_usage));
+
+    /* set all trans_bbox entries to empty (not all zeroes) so union below will work */
+    for (entry=0; entry < PAGE_INFO_NUM_COLORS_USED - 1; entry++) {
+        cldev->page_info.band_color_usage[entry].trans_bbox.p.x = empty_bbox.p.x;
+        cldev->page_info.band_color_usage[entry].trans_bbox.p.y = empty_bbox.p.y;
+        cldev->page_info.band_color_usage[entry].trans_bbox.q.x = empty_bbox.q.x;
+        cldev->page_info.band_color_usage[entry].trans_bbox.q.y = empty_bbox.q.y;
+    }
+
     for (band = 0; band < nbands; ++band) {
-        int entry = band / bands_per_colors_used;
+        entry = band / bands_per_color_usage;
 
         cldev->page_info.band_color_usage[entry].or |=
             cldev->states[band].color_usage.or;
         cldev->page_info.band_color_usage[entry].slow_rop |=
             cldev->states[band].color_usage.slow_rop;
 
+        /* Create the union of transparency bboxes */
+        if (cldev->page_info.band_color_usage[entry].trans_bbox.p.x >
+            cldev->states[band].color_usage.trans_bbox.p.x)
+            cldev->page_info.band_color_usage[entry].trans_bbox.p.x =
+                       cldev->states[band].color_usage.trans_bbox.p.x;
+        if (cldev->page_info.band_color_usage[entry].trans_bbox.p.y >
+            cldev->states[band].color_usage.trans_bbox.p.y)
+            cldev->page_info.band_color_usage[entry].trans_bbox.p.y =
+                       cldev->states[band].color_usage.trans_bbox.p.y;
+        if (cldev->page_info.band_color_usage[entry].trans_bbox.q.x <
+            cldev->states[band].color_usage.trans_bbox.q.x)
+            cldev->page_info.band_color_usage[entry].trans_bbox.q.x =
+                       cldev->states[band].color_usage.trans_bbox.q.x;
+        if (cldev->page_info.band_color_usage[entry].trans_bbox.q.y <
+            cldev->states[band].color_usage.trans_bbox.q.y)
+            cldev->page_info.band_color_usage[entry].trans_bbox.q.y =
+                       cldev->states[band].color_usage.trans_bbox.q.y;
     }
 }
 

@@ -113,6 +113,17 @@ clist_fill_mask(gx_device * dev,
     data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int code;
@@ -877,6 +888,17 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = (int)floor(dbox.p.x);
+        bbox.q.x = (int)ceil(dbox.q.x);
+        bbox.p.y = pie->ymin;
+        bbox.q.y = pie->ymax;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         gs_int_rect ibox;

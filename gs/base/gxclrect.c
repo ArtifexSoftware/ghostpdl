@@ -337,6 +337,17 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
         return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     color_usage = gx_color_index2usage(dev, color);
     do {
@@ -388,6 +399,17 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         RECT_STEP_INIT(re);
@@ -427,14 +449,18 @@ clist_write_fill_trapezoid(gx_device * dev,
         &((gx_device_clist *)dev)->writer;
     int code;
     cmd_rects_enum_t re;
-    int ry, rheight;
+    int ry, rheight, rx, rxe;
     bool swap_axes = (options & 1);
 
     if (options & 4) {
         if (swap_axes) {
+            rx =  fixed2int(max(min(min(left->start.y, left->end.y), right->start.y), fa->clip->p.y));
+            rxe =  fixed2int_ceiling(min(max(max(left->start.y, left->end.y), right->start.y), fa->clip->q.y));
             ry = fixed2int(max(min(min(left->start.x, left->end.x), right->start.x), fa->clip->p.x));
             rheight = fixed2int_ceiling(min(max(max(left->start.x, left->end.x), right->start.x), fa->clip->q.x)) - ry;
         } else {
+            rx = fixed2int(max(min(min(left->start.x, left->end.x), right->start.x), fa->clip->p.x));
+            rxe = fixed2int_ceiling(min(max(max(left->start.x, left->end.x), right->start.x), fa->clip->q.x));
             ry = fixed2int(max(min(min(left->start.y, left->end.y), right->start.y), fa->clip->p.y));
             rheight = fixed2int_ceiling(min(max(max(left->start.y, left->end.y), right->start.y), fa->clip->q.y)) - ry;
         }
@@ -444,9 +470,13 @@ clist_write_fill_trapezoid(gx_device * dev,
            Would like to know a better range by X
            with computing intersections of sides with ybot, ytop. */
         if (swap_axes) {
+            rx = fixed2int(ybot);
+            rxe = fixed2int_ceiling(ytop);
             ry = fixed2int(min(left->start.x, left->end.x));
             rheight = fixed2int_ceiling(max(right->start.x, right->end.x)) - ry;
         } else {
+            rx = fixed2int(min(left->start.x, left->end.x));
+            rxe = fixed2int_ceiling(max(right->start.x, right->end.x));
             ry = fixed2int(ybot);
             rheight = fixed2int_ceiling(ytop) - ry;
         }
@@ -456,6 +486,17 @@ clist_write_fill_trapezoid(gx_device * dev,
         return 0;
     if (cdev->permanent_error < 0)
         return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rxe;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         RECT_STEP_INIT(re);
@@ -606,6 +647,17 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
         return 0;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         ulong offset_temp;
@@ -686,7 +738,18 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     if (rwidth <= 0 || rheight <= 0)
         return 0;
     if (cdev->permanent_error < 0)
-      return (cdev->permanent_error);
+        return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         ulong offset_temp;
@@ -770,6 +833,17 @@ clist_copy_mono(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int dx = data_x & 7;
@@ -888,11 +962,25 @@ clist_copy_planes(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+
 #ifdef DEBUG
     if (plane_height == 0) {
         dprintf("clist_copy_planes called with plane_height == 0.\n");
     }
 #endif
+
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
+
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int code;
@@ -1025,6 +1113,17 @@ clist_copy_color(gx_device * dev,
     data_x_bit = data_x * depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int dx = (data_x_bit & 7) / depth;
@@ -1149,6 +1248,17 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int dx = (data_x_bit & 7) >> log2_depth;
@@ -1290,6 +1400,17 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     data_x_bit = data_x << log2_depth;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         int dx = (data_x_bit & 7) >> log2_depth;
@@ -1461,6 +1582,18 @@ clist_strip_copy_rop2(gx_device * dev,
     }
     if (rwidth <= 0 || rheight <= 0)
         return 0;
+
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
+    }
     /*
      * On CMYK devices, RasterOps must be executed with complete pixels
      * if the operation involves the destination.
@@ -1486,7 +1619,16 @@ clist_strip_copy_rop2(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
-    {
+    /* If needed, update the trans_bbox */
+    if (cdev->pdf14_needed) {
+        gs_int_rect bbox;
+
+        bbox.p.x = rx;
+        bbox.q.x = rx + rwidth - 1;
+        bbox.p.y = ry;
+        bbox.q.y = ry + rheight - 1;
+
+        clist_update_trans_bbox(cdev, &bbox);
     }
     RECT_ENUM_INIT(re, ry, rheight);
     do {

@@ -24,6 +24,7 @@
 #include "gsbitops.h"
 #include "gsparams.h"
 #include "gsstate.h"            /* (should only be imager state) */
+#include "gstrans.h"		/* for gs_is_pdf14trans_compositor */
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gscoord.h"            /* requires gsmatrix.h */
@@ -1559,6 +1560,13 @@ idata:                  data_size = 0;
                                         cbp = cbuf.ptr;
                                         if (pcomp == NULL)
                                             continue;
+                                        if (gs_is_pdf14trans_compositor(pcomp) &&
+                                            playback_action == playback_action_render_no_pdf14) {
+                                            /* free the compositor object */
+                                            gs_free_object(mem, pcomp, "read_create_compositor");
+                                            pcomp = NULL;
+                                            continue;
+                                        }
                                         pcomp_opening = pcomp_last;
                                         code = pcomp->type->procs.is_closing(pcomp, &pcomp_opening, tdev);
                                         if (code < 0)

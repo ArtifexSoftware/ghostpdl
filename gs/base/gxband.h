@@ -53,20 +53,22 @@ typedef struct gx_colors_usage_s {
     gx_color_usage_bits or;	/* the "or" of all the used colors */
     bool slow_rop;		/* true if any RasterOps that can't be */
                                 /* executed plane-by-plane on CMYK devices */
+    gs_int_rect trans_bbox;	/* transparency bbox allows skipping the pdf14 compositor for some bands */
+                                /* coordinates are band relative, 0 <= p.y < page_band_height */
 } gx_color_usage_t;
 
 /*
  * We want to store color usage information for each band in the page_info
  * structure, but we also want this structure to be of a fixed (and
- * reasonable) size.  We do this by allocating a fixed number of colors_used
+ * reasonable) size.  We do this by allocating a fixed number of color_usage
  * structures in the page_info structure, and if there are more bands than
  * we have allocated, we simply reduce the precision of the information by
- * letting each colors_used structure cover multiple bands.
+ * letting each color_usage structure cover multiple bands.
  *
  * 30 entries would be large enough to cover A4 paper (11.3") at 600 dpi
  * with 256-scan-line bands.  We pick 50 somewhat arbitrarily.
  */
-#define PAGE_INFO_NUM_COLORS_USED 50
+#define PAGE_INFO_NUM_COLORS_USED 100
 
 /*
  * Define the information for a saved page.
@@ -81,7 +83,7 @@ typedef struct gx_band_page_info_s {
     int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */
                                 /* (actual values, no 0s) */
-    int scan_lines_per_colors_used; /* number of scan lines per colors_used */
+    int scan_lines_per_color_usage; /* number of scan lines per color_usage */
                                 /* entry (a multiple of the band height) */
     gx_color_usage_t band_color_usage[PAGE_INFO_NUM_COLORS_USED];  /* colors used on the page */
 } gx_band_page_info_t;

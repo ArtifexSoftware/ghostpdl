@@ -1305,11 +1305,11 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
             pdf14_free_mask_stack(ctx->mask_stack, ctx->memory);
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
-	if (ctx->mask_stack == NULL)
-		return gs_note_error(gs_error_VMerror);
-    ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
-	if (ctx->mask_stack->rc_mask == NULL)
-		return gs_note_error(gs_error_VMerror);
+        if (ctx->mask_stack == NULL)
+            return gs_note_error(gs_error_VMerror);
+        ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
+        if (ctx->mask_stack->rc_mask == NULL)
+	    return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask->mask_buf = tos;
      }
     return 0;
@@ -5237,8 +5237,9 @@ c_pdf14trans_write_ctm(byte **ppbuf, const gs_pdf14trans_params_t *pparams)
 
 /*
  * Convert a PDF 1.4 transparency compositor to string form for use by the command
- * list device.
- */
+ * list device. This is also where we update the pdf14_needed. When set the clist
+ * painting procs will update the trans_bbox state for bands that are affected.
+*/
 static	int
 c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
                    gx_device_clist_writer *cdev)
@@ -5269,6 +5270,9 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
         default:			/* Should not occur. */
             break;
         case PDF14_PUSH_DEVICE:
+            cdev->pdf14_needed = false;		/* reset pdf14_needed */
+            cdev->pdf14_trans_group_level = 0;
+            cdev->pdf14_smask_level = 0;
             put_value(pbuf, pparams->num_spot_colors);
             put_value(pbuf, pparams->is_pattern);
             /* If we happen to be going to a color space like CIELAB then
@@ -5290,11 +5294,19 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_POP_DEVICE:
+            cdev->pdf14_needed = false;		/* reset pdf14_needed */
+            cdev->pdf14_trans_group_level = 0;
+            cdev->pdf14_smask_level = 0;
             put_value(pbuf, pparams->is_pattern);
             break;
         case PDF14_END_TRANS_GROUP:
+            cdev->pdf14_trans_group_level--;	/* if now at page level, pdf14_needed will be updated */
+            if (cdev->pdf14_smask_level == 0 && cdev->pdf14_trans_group_level == 0)
+                cdev->pdf14_needed = false;
             break;			/* No data */
         case PDF14_BEGIN_TRANS_GROUP:
+            cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
+            cdev->pdf14_trans_group_level++;
             code = c_pdf14trans_write_ctm(&pbuf, pparams);
             if (code < 0)
                 return code;
@@ -5327,6 +5339,8 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_BEGIN_TRANS_MASK:
+            cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
+            cdev->pdf14_smask_level++;
             code = c_pdf14trans_write_ctm(&pbuf, pparams);
             if (code < 0)
                 return code;
@@ -5369,8 +5383,16 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_END_TRANS_MASK:
+            cdev->pdf14_smask_level--;
+            if (cdev->pdf14_smask_level == 0 && cdev->pdf14_trans_group_level == 0)
+                cdev->pdf14_needed = false;
             break;
         case PDF14_SET_BLEND_PARAMS:
+            if (pparams->blend_mode != BLEND_MODE_Normal || pparams->opacity.alpha != 1.0 ||
+                pparams->shape.alpha != 1.0)
+                cdev->pdf14_needed = true;		/* the compositor will be needed while reading */
+            else if (cdev->pdf14_trans_group_level == 0)
+                cdev->pdf14_needed = false;		/* reset pdf14_needed */
             *pbuf++ = pparams->changed;
             if (pparams->changed & PDF14_SET_BLEND_MODE)
                 *pbuf++ = pparams->blend_mode;

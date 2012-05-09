@@ -990,7 +990,7 @@ gx_page_info_color_usage(const gx_device *dev,
                          gx_color_usage_t *color_usage, int *range_start)
 {
     int start, end, i;
-    int num_lines = page_info->scan_lines_per_colors_used;
+    int num_lines = page_info->scan_lines_per_color_usage;
     gx_color_usage_bits or = 0;
     bool slow_rop = false;
 
@@ -1020,7 +1020,7 @@ gdev_prn_color_usage(gx_device *dev, int y, int height,
         return dev->height;
     }
     cldev = (gx_device_clist_writer *)dev;
-    if (cldev->page_info.scan_lines_per_colors_used == 0) /* not set yet */
+    if (cldev->page_info.scan_lines_per_color_usage == 0) /* not set yet */
         clist_compute_color_usage(cldev);
     return
         gx_page_info_color_usage(dev, &cldev->page_info,
