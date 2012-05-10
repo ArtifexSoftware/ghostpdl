@@ -43,6 +43,7 @@
 #include "gscspace.h"           /* Needed for checking is space is CIE */
 #include "gsicc_cache.h"
 #include "gsicc_manage.h"
+#include "gsicc.h"
 
 static void
 decode_sample_frac_to_float(gx_image_enum *penum, frac sample_value, gs_client_color *cc, int i);
@@ -712,8 +713,19 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                                 decode_sample_frac_to_float(penum, psrc[j], &cc, j);
                             }
                         }
-                        code = (pactual_cs->type->remap_color)
-                                (&cc, pactual_cs, &devc, pis, dev, gs_color_select_source);
+                        /* If the source colors are LAB then use the mapping 
+                           that does not rescale the source colors */
+                        if (gs_color_space_is_ICC(pactual_cs) && 
+                            pactual_cs->cmm_icc_profile_data != NULL &&
+                            pactual_cs->cmm_icc_profile_data->islab) {
+                            code = gx_remap_ICC_imagelab (&cc, pactual_cs, &devc, 
+                                                          pis, dev, 
+                                                          gs_color_select_source);
+                        } else {
+                            code = (pactual_cs->type->remap_color)
+                                    (&cc, pactual_cs, &devc, pis, dev, 
+                                     gs_color_select_source);
+                        }
                     }
                     if (code < 0)
                         return code;

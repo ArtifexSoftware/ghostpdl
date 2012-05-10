@@ -2590,7 +2590,7 @@ $(GLOBJ)gxiscale.$(OBJ) : $(GLSRC)gxiscale.c $(AK) $(gx_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h) $(siinterp_h) $(siscale_h) $(stream_h) $(vdtrace_h)\
  $(gscindex_h) $(gxcolor2_h) $(gscspace_h) $(gsicc_cache_h)\
- $(gsicc_manage_h) $(MAKEDIRS)
+ $(gsicc_manage_h) $(gsicc_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxiscale.$(OBJ) $(C_) $(GLSRC)gxiscale.c
 
 # ---------------- Display Postscript / Level 2 support ---------------- #
