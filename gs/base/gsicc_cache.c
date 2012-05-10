@@ -66,12 +66,16 @@ static void rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_nam
 
 /* Structure pointer information */
 
-gs_private_st_ptrs4(st_icc_link, gsicc_link_t, "gsiccmanage_link",
-                    icc_link_enum_ptrs, icc_link_reloc_ptrs,
+struct_proc_finalize(icc_link_finalize);
+
+gs_private_st_ptrs4_final(st_icc_link, gsicc_link_t, "gsiccmanage_link",
+                    icc_link_enum_ptrs, icc_link_reloc_ptrs, icc_link_finalize,
                     contextptr, icc_link_cache, next, wait);
 
-gs_private_st_ptrs3(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
-                    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs,
+struct_proc_finalize(icc_linkcache_finalize);
+
+gs_private_st_ptrs3_final(st_icc_linkcache, gsicc_link_cache_t, "gsiccmanage_linkcache",
+                    icc_linkcache_enum_ptrs, icc_linkcache_reloc_ptrs, icc_linkcache_finalize,
                     head, lock, wait);
 
 /* These are used to construct a hash for the ICC link based upon the
@@ -129,10 +133,24 @@ rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
     }
 #endif
     gx_semaphore_free(link_cache->wait);
+    link_cache->wait = NULL;
     gx_monitor_free(link_cache->lock);
+    link_cache->lock = NULL;
     if_debug2(gs_debug_flag_icc,"[icc] Removing link cache = 0x%x memory = 0x%x\n", link_cache,
         link_cache->memory);
     gs_free_object(mem->stable_memory, link_cache, "rc_gsicc_link_cache_free");
+}
+
+/* release the semaphore and monitor of the link_cache when it is freed */
+void
+icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
+{
+    gsicc_link_cache_t *link_cache = (gsicc_link_cache_t * ) ptr;
+
+    gx_semaphore_free(link_cache->wait);
+    link_cache->wait = NULL;
+    gx_monitor_free(link_cache->lock);
+    link_cache->lock = NULL;
 }
 
 static gsicc_link_t *
@@ -208,7 +226,18 @@ gsicc_link_free(gsicc_link_t *icc_link, gs_memory_t *memory)
 {
     icc_link->procs.free_link(icc_link);
     gx_semaphore_free(icc_link->wait);
+    icc_link->wait = NULL;
     gs_free_object(memory->stable_memory, icc_link, "gsicc_link_free");
+}
+
+/* release the semaphore of the link when it is freed */
+void
+icc_link_finalize(const gs_memory_t *mem, void *ptr)
+{
+    gsicc_link_t *icc_link = (gsicc_link_t * ) ptr;
+
+    gx_semaphore_free(icc_link->wait);
+    icc_link->wait = NULL;
 }
 
 static void

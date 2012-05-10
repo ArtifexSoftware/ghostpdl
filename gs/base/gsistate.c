@@ -220,7 +220,8 @@ gs_imager_state_release(gs_imager_state * pis)
     gx_device_halftone *pdht = pis->dev_ht;
 
 #define RCDECR(element)\
-    rc_decrement(pis->element, cname)
+    rc_decrement(pis->element, cname);\
+    pis->element = NULL	/* prevent subsequent decrements from this imager state */
 
     RCDECR(cie_joint_caches);
     RCDECR(set_transfer.gray);
