@@ -1481,6 +1481,7 @@ pdf_close(gx_device * dev)
         stream_puts(s, ">>\n");
         pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
     }
+
     /* Require special handling for Fonts, ColorSpace and Pattern resources
      * These are tracked in pdev->last_resource, and are complex structures which may
      * contain other memory allocations. All other resource types can be simply dicarded
@@ -1697,21 +1698,30 @@ pdf_close(gx_device * dev)
     cos_dict_objects_delete(pdev->local_named_objects);
     COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
     pdev->local_named_objects = 0;
+
+    /* global resources include the Catalog object and apparently the Info dict */
     cos_dict_objects_delete(pdev->global_named_objects);
     COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
     pdev->global_named_objects = 0;
 
     /* Wrap up. */
 
+    pdev->font_cache = 0;
+
     {
         int i;
         for (i=0;i < pdev->next_page;i++) {
             cos_release((cos_object_t *)pdev->pages[i].Page, "Free page dict");
+            if (pdev->pages[i].Annots) {
+                cos_release((cos_object_t *)pdev->pages[i].Annots, "Release Annots dict");
+                gs_free_object(mem, pdev->pages[i].Annots, "Free Annots dict");
+            }
             gs_free_object(mem, pdev->pages[i].Page, "Free Page object");
         }
     }
     gs_free_object(mem, pdev->pages, "pages");
     pdev->pages = 0;
+
     pdev->num_pages = 0;
 
     gs_free_object(mem, pdev->sbstack, "Free sbstack");
@@ -1731,6 +1741,9 @@ pdf_close(gx_device * dev)
     cos_release((cos_object_t *)pdev->Namespace_stack, "release Name space stack");
     gs_free_object(mem, pdev->Namespace_stack, "Free Name space stack");
     pdev->Namespace_stack = 0;
+
+    pdev->Catalog = 0;
+    pdev->Info = 0;
 
     {
         /* pdf_open_dcument could set up filters for entire document.

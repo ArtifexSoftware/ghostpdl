@@ -786,6 +786,9 @@ int
 pdf_free_font_cache(gx_device_pdf *pdev)
 {
     /* fixme : release elements. */
+    /* Should not need to be fixed. The elements are released when the
+     * font is finalized by the garbage collector
+     */
     pdev->font_cache = NULL;
     return 0;
 }
