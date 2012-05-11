@@ -74,7 +74,7 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
         gs_free_object(mem->stable_memory, curr,
                        "rc_gsicc_profile_cache_free");
         profile_cache->num_entries--;
-        curr = curr->next;
+        curr = next;
     }
 #ifdef DEBUG
     if (profile_cache->num_entries != 0)
