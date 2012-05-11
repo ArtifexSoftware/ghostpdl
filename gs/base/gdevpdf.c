@@ -1745,6 +1745,8 @@ pdf_close(gx_device * dev)
     pdev->Catalog = 0;
     pdev->Info = 0;
 
+    memset(&pdev->outline_levels, 0x00, MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t));
+
     {
         /* pdf_open_dcument could set up filters for entire document.
            Removing them now. */
