@@ -25,6 +25,8 @@
 #include "jbig2_huffman.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_metadata.h"
+#include "jbig2_arith.h"
+#include "jbig2_halftone.h"
 
 Jbig2Segment *
 jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
@@ -156,6 +158,10 @@ jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment)
 	  if (segment->result != NULL)
 	    jbig2_image_release(ctx, (Jbig2Image*)segment->result);
 	  break;
+	case 16: /* pattern dictionary */
+      if (segment->result != NULL)
+        jbig2_hd_release(ctx, (Jbig2PatternDict*)segment->result);
+      break;
 	case 53: /* user-supplied huffman table */
 	  if (segment->result != NULL)
 		jbig2_table_free(ctx, (Jbig2HuffmanParams*)segment->result);

@@ -229,6 +229,9 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
 #endif
 
     leftbyte = x >> 3;
+    if (leftbyte > dst->height * dst->stride)
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
+            "preventing heap overflow in jbig2_image_compose");
     rightbyte = (x + w - 1) >> 3;
     shift = x & 7;
 
