@@ -785,10 +785,18 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 int
 pdf_free_font_cache(gx_device_pdf *pdev)
 {
-    /* fixme : release elements. */
-    /* Should not need to be fixed. The elements are released when the
-     * font is finalized by the garbage collector
+    pdf_font_cache_elem_t *e = pdev->font_cache, *next;
+
+    /* fixed! fixme : release elements.
+     * We no longer track font_cache elements in the original font, which is where
+     * the memory used to be released. So now we must release it ourselves.
      */
+
+    while (e != NULL) {
+        next = e->next;
+        pdf_remove_font_cache_elem(e);
+        e = next;
+    }
     pdev->font_cache = NULL;
     return 0;
 }
@@ -820,14 +828,6 @@ pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,
         *num_chars = (e == NULL ? 0 : (*e)->num_chars);
     if (num_widths != NULL)
         *num_widths = (e == NULL ? 0 : (*e)->num_widths);
-    return 0;
-}
-
-static int
-pdf_notify_remove_font(void *proc_data, void *event_data)
-{   /* gs_font_finalize passes event_data == NULL, so check it here. */
-    if (event_data == NULL)
-        pdf_remove_font_cache_elem((pdf_font_cache_elem_t *)proc_data);
     return 0;
 }
 
@@ -875,9 +875,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
         e->pdev = pdev;
         e->next = pdev->font_cache;
         pdev->font_cache = e;
-        code = gs_notify_register(&font->notify_list, pdf_notify_remove_font, e);
-        if (code < 0)
-            return code;
+        return 0;
     }
     return 0;
 }
