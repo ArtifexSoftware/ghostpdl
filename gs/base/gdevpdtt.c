@@ -861,7 +861,6 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
         memset(e->glyph_usage, 0, len);
         memset(e->real_widths, 0, num_widths * sizeof(*e->real_widths));
     } else {
-        int code;
         e = (pdf_font_cache_elem_t *)gs_alloc_struct(pdev->pdf_memory,
                 pdf_font_cache_elem_t, &st_pdf_font_cache_elem,
                             "pdf_attach_font_resource");
