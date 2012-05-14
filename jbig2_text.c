@@ -280,8 +280,9 @@ cleanup1:
         if (code < 0) goto cleanup2;
 	    }
 	    if (ID >= SBNUMSYMS) {
-		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                    "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
+            code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);
+            goto cleanup2;
 	    }
 
 	    /* (3c.v) / 6.4.11 - look up the symbol bitmap IB */
@@ -836,7 +837,6 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     {
         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "couldn't allocate text region image");
-        jbig2_image_release(ctx, image);
         goto cleanup2;
     }
     if (!params.SBHUFF) {
@@ -885,13 +885,12 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to decode text region image data");
-        jbig2_image_release(ctx, image);
         goto cleanup4;
     }
 
     if ((segment->flags & 63) == 4) {
         /* we have an intermediate region here. save it for later */
-        segment->result = image;
+        segment->result = jbig2_image_clone(ctx, image);
     } else {
         /* otherwise composite onto the page */
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
@@ -899,7 +898,6 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
             region_info.width, region_info.height, region_info.x, region_info.y);
         jbig2_page_add_result(ctx, &ctx->pages[ctx->current_page], image,
             region_info.x, region_info.y, region_info.op);
-        jbig2_image_release(ctx, image);
     }
 
 cleanup4:
@@ -926,6 +924,7 @@ cleanup2:
     if (!params.SBHUFF && params.SBREFINE) {
         jbig2_free(ctx->allocator, GR_stats);
     }
+    jbig2_image_release(ctx, image);
 
 cleanup1:
     if (params.SBHUFF) {

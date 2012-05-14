@@ -1068,6 +1068,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   } else {
       /* todo: free GB_stats, GR_stats */
   }
+  jbig2_free(ctx->allocator, GR_stats);
 
 cleanup:
   if (params.SDHUFF) {
@@ -1076,6 +1077,7 @@ cleanup:
       jbig2_release_huffman_table(ctx, params.SDHUFFBMSIZE);
       jbig2_release_huffman_table(ctx, params.SDHUFFAGGINST);
   }
+  jbig2_sd_release(ctx, params.SDINSYMS);
 
   return (segment->result != NULL) ? 0 : -1;
 
