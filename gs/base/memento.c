@@ -508,12 +508,13 @@ static int ptrcmp(const void *a_, const void *b_)
     return (int)(*a-*b);
 }
 
+static
 int Memento_listBlocksNested(void)
 {
     int count, size, i;
     Memento_BlkHeader *b;
     void **blocks, *minptr, *maxptr;
-    int mask;
+    long mask;
 
     /* Count the blocks */
     count = 0;
@@ -531,10 +532,10 @@ int Memento_listBlocksNested(void)
     /* Populate our block list */
     b = globals.used.head;
     minptr = maxptr = MEMBLK_TOBLK(b);
-    mask = (int)minptr;
+    mask = (long)minptr;
     for (i = 0; b; b = b->next, i++) {
         void *p = MEMBLK_TOBLK(b);
-        mask &= (int)p;
+        mask &= (long)p;
         if (p < minptr)
             minptr = p;
         if (p > maxptr)
@@ -1058,6 +1059,7 @@ void *Memento_realloc(void *blk, size_t newsize)
 {
     Memento_BlkHeader *memblk, *newmemblk;
     size_t             newsizemem;
+    int                flags;
 
     if (blk == NULL)
         return Memento_malloc(newsize);
@@ -1081,6 +1083,7 @@ void *Memento_realloc(void *blk, size_t newsize)
 
     newsizemem = MEMBLK_SIZE(newsize);
     Memento_removeBlock(&globals.used, memblk);
+    flags = memblk->flags;
     newmemblk  = MEMENTO_UNDERLYING_REALLOC(memblk, newsizemem);
     if (newmemblk == NULL)
     {
@@ -1093,7 +1096,7 @@ void *Memento_realloc(void *blk, size_t newsize)
     globals.alloc      += newsize;
     if (globals.peakAlloc < globals.alloc)
         globals.peakAlloc = globals.alloc;
-    newmemblk->flags = memblk->flags;
+    newmemblk->flags = flags;
     if (newmemblk->rawsize < newsize) {
         char *newbytes = ((char *)MEMBLK_TOBLK(newmemblk))+newmemblk->rawsize;
 #ifndef MEMENTO_LEAKONLY
@@ -1335,7 +1338,7 @@ void Memento_breakOnFree(void *a)
         fprintf(stderr, "\n");
         return;
     }
-    fprintf(stderr, "Can't stop on free; address 0x%p is not in a known block.\n");
+    fprintf(stderr, "Can't stop on free; address 0x%p is not in a known block.\n", a);
 }
 
 void Memento_breakOnRealloc(void *a)
@@ -1368,7 +1371,7 @@ void Memento_breakOnRealloc(void *a)
         fprintf(stderr, "\n");
         return;
     }
-    fprintf(stderr, "Can't stop on free/realloc; address 0x%p is not in a known block.\n");
+    fprintf(stderr, "Can't stop on free/realloc; address 0x%p is not in a known block.\n", a);
 }
 
 int Memento_failAt(int i)
