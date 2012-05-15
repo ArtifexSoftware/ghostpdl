@@ -77,6 +77,35 @@ AC_CHECK_FUNCS([setlocale], [HAVE_SETLOCALE=-DHAVE_SETLOCALE])
 AC_SUBST(HAVE_SETLOCALE)
 
 dnl --------------------------------------------------
+dnl Set options that we want to pass into all other
+dnl configure scripts we might call
+dnl --------------------------------------------------
+
+SUBCONFIG_OPTS=""
+
+if test x$build_alias != x; then
+SUBCONFIG_OPTS="$SUBCONFIG_OPTS --build=$build_alias"
+fi
+
+
+dnl --------------------------------------------------
+dnl Run subsidiary configure scripts
+dnl --------------------------------------------------
+LIBTIFFDIR=./gs/tiff
+
+echo
+echo "Running libtiff configure script..."
+olddir=`pwd`
+cd $LIBTIFFDIR && ./configure --disable-jbig $SUBCONFIG_OPTS
+status=$?
+if test "$status" -ne 0 ; then
+  AC_MSG_ERROR([libtiff configure script failed], $status)
+fi
+cd $olddir
+echo
+echo "Continuing with GhostPDL configuration..."
+
+dnl --------------------------------------------------
 dnl check for big/little endian for LCMS
 dnl --------------------------------------------------
 

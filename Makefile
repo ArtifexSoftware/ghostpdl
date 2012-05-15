@@ -23,19 +23,19 @@ product: pcl
 
 # specific front-end targets
 
-pcl: tiff
+pcl:
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product # build PCL and PCLXL. 
 
-pcl-lib: tiff
+pcl-lib:
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-lib # build PCL and PCLXL lib
 
-pcl-lib-shared: tiff
+pcl-lib-shared:
 	$(MAKE) -C main -f pcl6_gcc.mak	pdl-product-solib # build PCL and PCLXL shared lib
 
-pcl-debug:  tiff
+pcl-debug: 
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
-pcl-memento:  tiff
+pcl-memento:
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-memento GENDIR="./memobj"
 
 fonts:
@@ -43,7 +43,7 @@ fonts:
 	cp urwfonts/*.ttf /windows/fonts/	# copy the fonts. 
 	touch fonts
 
-pcl-profile: tiff
+pcl-profile:
 	$(MAKE) -C main -f pcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
 pcl-install:
@@ -59,61 +59,61 @@ pcl-test:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-pcl-clean: tiff_clean
+pcl-clean:
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean
 	rm -f fonts
 
-pcl-debug-clean: tiff_clean
+pcl-debug-clean:
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./debugobj"
 	rm -f fonts
 
-pcl-memento-clean: tiff_clean
+pcl-memento-clean:
 	$(MAKE) -C main -f pcl6_gcc.mak pdl-clean GENDIR="./memobj"
 	rm -f fonts
 
-xps-debug: tiff
+xps-debug:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-debug GENDIR="./debugobj"
 
-xps-memento: tiff
+xps-memento:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-memento GENDIR="./memobj"
 
-xps:  tiff
+xps:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product # build XPS
 
-xps-lib:  tiff
+xps-lib:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-product-lib # build XPS lib
 
-xps-clean: tiff_clean
+xps-clean:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean
 
-xps-debug-clean: tiff_clean
+xps-debug-clean:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./debugobj"
 
-xps-memento-clean: tiff_clean
+xps-memento-clean:
 	$(MAKE) -C xps -f xps_gcc.mak pdl-clean GENDIR="./memobj"
 
 xps-test:
 	./xps/obj/gxps tools/tiger.xps
 
-svg-debug: tiff
+svg-debug:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-debug GENDIR="./debugobj"
 
-svg-memento: tiff
+svg-memento:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-memento GENDIR="./memobj"
 
-svg:  tiff
+svg:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product # build SVG
 
-svg-lib:  tiff
+svg-lib:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-product-lib # build SVG lib
 
-svg-clean: tiff_clean
+svg-clean:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean
 
-svg-debug-clean: tiff_clean
+svg-debug-clean:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./debugobj"
 
-svg-memento-clean: tiff_clean
+svg-memento-clean:
 	$(MAKE) -C svg -f svg_gcc.mak pdl-clean GENDIR="./memobj"
 
 svg-test:
@@ -142,33 +142,19 @@ ufst: ufst_built
 
 ####  LANGUAGE SWITCHING PRODUCT RULES ####
 
-#### Configure the tiff library - this is poor, we shouldn't call a configure
-#### script from a makefile - once ghostpdls get their own configures, do it there.
-
-tiff:
-	cd ./gs/tiff && ./configure --disable-jbig
-	touch tiff
-
-tiff_clean:
-	# equally unpleasant, we have to explicitly delete tif_config.h
-	rm -f gs/tiff/libtiff/tif_config.h gs/tiff/libtiff/tiffconf.h
-	rm -f tiff
-
-#### tiff ####
-
-ls-profile: tiff
+ls-profile:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak GENDIR="./pgobj" pdl-pg
 
-ls-product: tiff
+ls-product:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product # build PS/PCL/XL. 
 
-ls-lib: tiff
+ls-lib:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-product-lib # build PS/PCL/XL lib.
 
-ls-debug:  tiff
+ls-debug:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-debug GENDIR="./debugobj"
 
-ls-memento:  tiff
+ls-memento:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-memento GENDIR="./memobj"
 
 ls-fonts:
@@ -193,59 +179,59 @@ check:
 # might be unexpected on some systems and we don't enumerate the font
 # names here so they could be removed individually.
 
-ls-clean: tiff_clean
+ls-clean:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean
 	#rm -f fonts /usr/local/bin/pspcl6
 
-ls-debug-clean: tiff_clean
+ls-debug-clean:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak pdl-clean GENDIR="./debugobj"
 
 # shortcuts for common build types.
 
-ls-uproduct: ufst tiff
+ls-uproduct: ufst
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 
-ls-udebug: ufst tiff
+ls-udebug: ufst
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 
-ls-umemento: ufst tiff
+ls-umemento: ufst
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
 
-ls-uclean: tiff_clean
+ls-uclean:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
-ls-udebug-clean: tiff_clean
+ls-udebug-clean:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
 	rm -f ufst_built
 
-ls-umemento-clean: tiff_clean
+ls-umemento-clean:
 	$(MAKE) -C language_switch -f pspcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex debug-clean
 	rm -f ufst_built
 
-uproduct: ufst tiff
+uproduct: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-product
 
-udebug: ufst tiff
+udebug: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-debug
 
-umemento: ufst tiff
+umemento: ufst
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-memento
 
-uclean: tiff_clean
+uclean:
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-obj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
-udebug-clean: tiff_clean
+udebug-clean:
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-debugobj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
 
-umemento-clean: tiff_clean
+umemento-clean:
 	$(MAKE) -C main -f pcl6_gcc.mak PL_SCALER=ufst GENDIR="./ufst-memobj" pdl-clean
 	$(MAKE) -C ufst/rts/lib -f makefile.artifex clean
 	rm -f ufst_built
