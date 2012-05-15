@@ -237,3 +237,10 @@ arg_copy(const char *str, gs_memory_t * mem)
     strcpy(sstr, str);
     return sstr;
 }
+
+/* Free a previously arg_copy'd string */
+void
+arg_free(char *str, gs_memory_t * mem)
+{
+    gs_free_object(mem, str, "arg_copy");
+}

@@ -76,4 +76,7 @@ const char *arg_next(arg_list * pal, int *code);
 /* Copy an argument string to the heap. */
 char *arg_copy(const char *str, gs_memory_t * mem);
 
+/* Free an argument string previously copied to the heap. */
+void arg_free(char *str, gs_memory_t * mem);
+
 #endif /* gsargs_INCLUDED */

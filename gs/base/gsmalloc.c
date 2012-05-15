@@ -467,6 +467,9 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
      */
     mmem->monitor = NULL; 	/* delete reference to this monitor */
     gx_monitor_free(mon);	/* free the monitor */
+#ifndef MEMENTO
+    /* Normally gs calls this on closedown, and it frees every block that
+     * has ever been allocated. This is not helpful for leak checking. */
     if (free_mask & FREE_ALL_DATA) {
         gs_malloc_block_t *bp = mmem->allocated;
         gs_malloc_block_t *np;
@@ -480,6 +483,7 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
             free(bp);
         }
     }
+#endif
     if (free_mask & FREE_ALL_ALLOCATOR)
         free(mem);
 }
