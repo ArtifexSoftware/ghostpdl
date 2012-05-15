@@ -16,7 +16,7 @@
 
 /* Set the following if you're only looking for leaks, not memory overwrites
  * to speed the operation */
-#undef MEMENTO_LEAKONLY
+/* #define MEMENTO_LEAKONLY */
 
 #ifndef MEMENTO_STACKTRACE_METHOD
 #ifdef __GNUC__
