@@ -150,10 +150,11 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
-
         hpgl_call(hpgl_rectangle(pargs, pgls, DO_EDGE, true));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 
@@ -165,7 +166,9 @@ hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls)
            the current path */
         hpgl_call(hpgl_gsave(pgls));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_no_close));
+        gs_sethpglpathmode(pgls->pgs, false);
         hpgl_call(hpgl_grestore(pgls));
         return 0;
 }
@@ -176,7 +179,9 @@ hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
         hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, true));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 
@@ -186,7 +191,9 @@ hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
         hpgl_call(hpgl_wedge(pargs, pgls));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 
@@ -216,8 +223,10 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
     pgls->g.fill_type = (method == 0) ?
         hpgl_even_odd_rule : hpgl_winding_number_rule;
     hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+    gs_sethpglpathmode(pgls->pgs, true);
     hpgl_call(hpgl_draw_current_path(pgls,
                                      hpgl_get_poly_render_mode(pgls)));
+    gs_sethpglpathmode(pgls->pgs, false);
     return 0;
 }
 
@@ -290,6 +299,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
             hpgl_save_pen_state(pgls,
                                 &pgls->g.polygon.pen_state,
                                 hpgl_pen_down | hpgl_pen_pos);
+            gs_sethpglpathmode(pgls->pgs, true);
             break;
           case 1 :
               hpgl_call(hpgl_close_subpolygon(pgls));
@@ -310,6 +320,7 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
                                          &pgls->g.polygon.pen_state,
                                          hpgl_pen_down | hpgl_pen_pos);
               }
+              gs_sethpglpathmode(pgls->pgs, false);
               break;
           default:
             return e_Range;
@@ -323,8 +334,10 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
         hpgl_call(hpgl_rectangle(pargs, pgls, 0, true));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls,
                                          hpgl_get_poly_render_mode(pgls)));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 
@@ -334,8 +347,10 @@ hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
         hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, true));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls,
                                          hpgl_get_poly_render_mode(pgls)));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 
@@ -348,9 +363,11 @@ hpgl_RQ(hpgl_args_t *pargs, hpgl_state_t *pgls)
     byte save_pp = pgls->pp_mode;
     pgls->pp_mode = 0;
     hpgl_call(hpgl_rectangle(pargs, pgls, DO_RELATIVE, false));
+    gs_sethpglpathmode(pgls->pgs, true);
     hpgl_call(hpgl_draw_current_path(pgls,
                                      hpgl_get_poly_render_mode(pgls)));
     /* restore saved pixel placement mode */
+    gs_sethpglpathmode(pgls->pgs, false);
     pgls->pp_mode = save_pp;
     return 0;
 }
@@ -361,8 +378,10 @@ hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
         hpgl_call(hpgl_wedge(pargs, pgls));
         hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
+        gs_sethpglpathmode(pgls->pgs, true);
         hpgl_call(hpgl_draw_current_path(pgls,
                                          hpgl_get_poly_render_mode(pgls)));
+        gs_sethpglpathmode(pgls->pgs, false);
         return 0;
 }
 

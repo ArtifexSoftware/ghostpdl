@@ -293,18 +293,13 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
             return e_Range;
 
         /* close existing path iff a draw exists in polygon path */
-        if ( pgls->g.have_drawn_in_path && pgls->g.polygon_mode )
+        if ( pgls->g.polygon_mode )
             hpgl_call(hpgl_close_subpolygon(pgls));
 
         /* center; closing subpolygon can move center */
         pos = pgls->g.pos;
 
         hpgl_arg_c_real(pgls->memory, pargs, &chord);
-        /* draw the path here for line type 0, otherwise the first dot
-           drawn in the circumference of the circle will be oriented
-           in the same direction as the center dot */
-        if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
-            hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
         /* draw the arc/circle */
         hpgl_call(hpgl_add_arc_to_path(pgls, pos.x, pos.y,
@@ -315,9 +310,6 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
         /* end path, start new path by moving back to the center */
         hpgl_call(hpgl_close_current_path(pgls));
-        hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
-                                         hpgl_plot_move_absolute,
-                                         true));
         pgls->g.have_drawn_in_path = false; /* prevent dot draw on close */
         hpgl_call(hpgl_set_current_position(pgls, &pos));
 
@@ -594,10 +586,6 @@ hpgl_PR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {
     if ( pgls->g.relative_coords != hpgl_plot_relative ) {
         pgls->g.relative_coords = hpgl_plot_relative;
-        if ( !pgls->g.polygon_mode ) {
-            hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-            hpgl_call(hpgl_clear_current_path(pgls));
-        }
     }
     return hpgl_plot(pargs, pgls,
                      pgls->g.move_or_draw | hpgl_plot_relative,

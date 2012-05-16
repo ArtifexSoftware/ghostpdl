@@ -1359,6 +1359,7 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
             hpgl_call(hpgl_set_ctm(pgls));
             hpgl_call(hpgl_set_clipping_region(pgls, hpgl_rm_vector));
             pgls->g.label.initial_pos = pgls->g.pos;
+            hpgl_call(hpgl_add_point_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y, hpgl_plot_move_absolute, true));
             GL_LB_HAVE_16BITS = true;
             GL_LB_CH = 0xff;
             GL_LB_PREV_CH = 0xff;     /* for two byte terminators */

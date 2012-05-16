@@ -541,7 +541,7 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
             pgls->g.rotation = angle;
             hpgl_call(hpgl_set_ctm(pgls));
             hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
-            hpgl_call(hpgl_set_current_position(pgls, &point));
+            hpgl_call(hpgl_add_point_to_path(pgls, point.x, point.y, hpgl_plot_move_absolute, true));
             hpgl_call(hpgl_update_carriage_return_pos(pgls));
           }
         return 0;
@@ -635,7 +635,7 @@ pxy:		scale_params.pmin.x = xy[0];
         pgls->g.scaling_type = type;
         hpgl_call(hpgl_set_ctm(pgls));
         hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
-        hpgl_call(hpgl_set_current_position(pgls, &point));
+        hpgl_call(hpgl_add_point_to_path(pgls, point.x, point.y, hpgl_plot_move_absolute, true));
         hpgl_call(gs_itransform(pgls->pgs, dev_anchor.x, dev_anchor.y,
                                 &pgls->g.anchor_corner));
 

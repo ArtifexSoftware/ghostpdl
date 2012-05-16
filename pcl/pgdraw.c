@@ -1140,14 +1140,14 @@ hpgl_add_point_to_path(
 
         if (set_ctm)
             hpgl_call(hpgl_set_ctm(pgls));
-        hpgl_call(gs_newpath(pgls->pgs));
-
-        /* moveto the current position */
-        hpgl_call(hpgl_get_current_position(pgls, &current_pt));
-        hpgl_call_check_lost( gs_moveto( pgls->pgs,
-                                         current_pt.x,
-                                         current_pt.y
-                                         ) );
+        if (func != hpgl_plot_move_absolute) {
+            /* moveto the current position */
+            hpgl_call(hpgl_get_current_position(pgls, &current_pt));
+            hpgl_call_check_lost( gs_moveto( pgls->pgs,
+                                             current_pt.x,
+                                             current_pt.y
+                                             ) );
+        }
     }
     {
         int     code = (*gs_procs[func])(pgls->pgs, x, y);
@@ -1479,6 +1479,7 @@ hpgl_draw_current_path(
     /* check if we have a current path - we don't need the current
        point */
     if (!ppath->current_subpath) {
+        /* NB this clear shouldn't be necessary. */
         hpgl_call(hpgl_clear_current_path(pgls));
         return 0;
     }
