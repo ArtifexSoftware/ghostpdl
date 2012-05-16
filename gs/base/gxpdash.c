@@ -90,12 +90,13 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
     elt_length = dash->init_dist_left;
     x = x0, y = y0;
     pseg = (const segment *)psub;
-    while ((pseg = pseg->next) != 0 && pseg->type != s_start && pseg->type != s_gap) {
+    while ((pseg = pseg->next) != 0 && pseg->type != s_start) {
         fixed sx = pseg->pt.x, sy = pseg->pt.y;
         fixed udx = sx - x, udy = sy - y;
         double length, dx, dy;
         double scale = 1;
         double left;
+        int gap = pseg->type == s_gap;
 
         if (!(udx | udy)) {	/* degenerate */
             if (pgs_lp->dot_length == 0 &&
@@ -136,7 +137,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
             fixed nx = x + fx;
             fixed ny = y + fy;
 
-            if (ink_on) {
+            if (ink_on && !gap) {
                 if (drawing >= 0) {
                     if (left >= elt_length && any_abs(fx) + any_abs(fy) < fixed_half)
                         code = gx_path_add_dash_notes(ppath, nx, ny, udx, udy,
@@ -179,7 +180,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
             const segment *pseg2 = pseg->next;
 
             end_notes = 0;
-            while (pseg2 != 0 && pseg2->type != s_start && pseg2->type != s_gap)
+            while (pseg2 != 0 && pseg2->type != s_start)
             {
                 if ((pseg2->pt.x != sx) || (pseg2->pt.x != sy)) {
                     /* Non degenerate. We aren't the last one */
@@ -189,7 +190,7 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
                 pseg2 = pseg2->next;
             }
         }
-      on:if (ink_on) {
+      on:if (ink_on && !gap) {
             if (drawing >= 0) {
                 if (pseg->type == s_line_close && drawing > 0)
                     code = gx_path_close_subpath_notes(ppath,
