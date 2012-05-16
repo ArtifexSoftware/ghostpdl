@@ -1071,10 +1071,8 @@ static void *psd_read(ImageReader *im,
                       int         *bpp,
                       int         *cmyk)
 {
-    int c, ir_start, ir_len, w, h, n, x, y, z, i;
+    int c, ir_start, ir_len, w, h, n, x, y, z, i, N;
     unsigned char *bmp, *line, *ptr;
-
-    *cmyk = 1;
 
     if (feof(im->file))
         return NULL;
@@ -1101,8 +1099,26 @@ static void *psd_read(ImageReader *im,
         exit(1);
     }
     c = get_short(im->file, 1);
-    if (c != 4) {
-        fprintf(stderr, "bmpcmp: We only support CMYK psd files!\n");
+    if (c == 4) {
+        *cmyk = 1;
+        if (n < 4) {
+            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a CMYK (+spots) PSD file!\n", n);
+            exit(1);
+        }
+    } else if (c == 3) {
+        *cmyk = 0; /* RGB */
+        if (n != 3) {
+            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a RGB PSD file!\n");
+            exit(1);
+        }
+    } else if (c == 1) {
+        *cmyk = 0; /* Greyscale */
+        if (n != 1) {
+            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a Greyscale PSD file!\n");
+            exit(1);
+        }
+    } else {
+        fprintf(stderr, "bmpcmp: We only support Grey/RGB/CMYK psd files!\n");
         exit(1);
     }
 
@@ -1118,7 +1134,7 @@ static void *psd_read(ImageReader *im,
     ir_len = get_int(im->file, 1);
     while (ir_len > 0)
     {
-        int data_len;
+        int data_len, pad;
         c  = fgetc(im->file);     if (--ir_len == 0) break;
         c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
         c |= fgetc(im->file)<<16; if (--ir_len == 0) break;
@@ -1127,26 +1143,42 @@ static void *psd_read(ImageReader *im,
         c  = fgetc(im->file);     if (--ir_len == 0) break;
         c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
         /* Skip the padded id (which will always be 00 00) */
-        c  = fgetc(im->file);     if (--ir_len == 0) break;
-        c |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
+        pad  = fgetc(im->file);     if (--ir_len == 0) break;
+        pad |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
         /* Get the data len */
         data_len  = fgetc(im->file)<<24; if (--ir_len == 0) break;
         data_len |= fgetc(im->file)<<16; if (--ir_len == 0) break;
         data_len |= fgetc(im->file)<<8;  if (--ir_len == 0) break;
         data_len |= fgetc(im->file);     if (--ir_len == 0) break;
         if (c == 0x3ef) {
-            c  = fgetc(im->file)<<8;  if (--ir_len == 0) break;
-            c |= fgetc(im->file);     if (--ir_len == 0) break;
-            /* c == 2 = COLORSPACE = CMYK */
-            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
-            c = fgetc(im->file);  if (--ir_len == 0) break;
-            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
-            c = fgetc(im->file);  if (--ir_len == 0) break;
-            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
-            c = fgetc(im->file);  if (--ir_len == 0) break;
-            spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
-            c = fgetc(im->file);  if (--ir_len == 0) break;
-            data_len -= 10;
+          while (data_len > 0) {
+                /* Read the colorspace */
+                c  = fgetc(im->file)<<8;  if (--ir_len == 0) break;
+                c |= fgetc(im->file);     if (--ir_len == 0) break;
+                /* We only support CMYK spots! */
+                if (c != 2) {
+                    fprintf(stderr, "bmpcmp: Spot color equivalent not CMYK!\n");
+                    exit(EXIT_FAILURE);
+                }
+                /* c == 2 = COLORSPACE = CMYK */
+                /* 16 bits C, 16 bits M, 16 bits Y, 16 bits K */
+                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                spots[spotfill++] = fgetc(im->file);  if (--ir_len == 0) break;
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                /* 2 bytes opacity (always seems to be 0) */
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                /* 1 byte 'kind' (0 = selected, 1 = protected) */
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                /* 1 byte padding */
+                c = fgetc(im->file);  if (--ir_len == 0) break;
+                data_len -= 14;
+            }
         }
         while (data_len > 0)
         {
@@ -1168,24 +1200,74 @@ static void *psd_read(ImageReader *im,
         exit(1);
     }
 
-    *span = (w * n + 3) & ~3;
+    N = n;
+    if (N < 4)
+        N = 4;
+    *span = (w * N + 3) & ~3;
     bmp = Malloc(*span * h);
     line = Malloc(w);
     ptr = bmp + *span * (h-1);
-    for (z = 0; z < n; z++)
-    {
+    if (n == 1) {
+        /* Greyscale */
         for (y = 0; y < h; y++)
         {
             fread(line, 1, w, im->file);
             for (x = 0; x < w; x++)
             {
-                *ptr = 255 - *line++;
-                ptr += n;
+                unsigned char val = 255 - *line++;
+                *ptr++ = val;
+                *ptr++ = val;
+                *ptr++ = val;
+                *ptr++ = 0;
             }
-            ptr -= w*n + *span;
+            ptr -= w*N + *span;
             line -= w;
         }
         ptr += *span * h + 1;
+    } else if (n == 3) {
+        /* RGB */
+        for (z = 0; z < n; z++)
+        {
+            for (y = 0; y < h; y++)
+            {
+                fread(line, 1, w, im->file);
+                for (x = 0; x < w; x++)
+                {
+                    *ptr = *line++;
+                    ptr += N;
+                }
+                ptr -= w*N + *span;
+                line -= w;
+            }
+            ptr += *span * h + 1;
+        }
+        for (y = 0; y < h; y++)
+        {
+            for (x = 0; x < w; x++)
+            {
+                *ptr = 0;
+                ptr += N;
+            }
+            ptr -= w*N + *span;
+        }
+        ptr += *span * h + 1;
+    } else {
+        /* CMYK + (maybe) spots */
+        for (z = 0; z < n; z++)
+        {
+            for (y = 0; y < h; y++)
+            {
+                fread(line, 1, w, im->file);
+                for (x = 0; x < w; x++)
+                {
+                    *ptr = 255 - *line++;
+                    ptr += n;
+                }
+                ptr -= w*n + *span;
+                line -= w;
+            }
+            ptr += *span * h + 1;
+        }
     }
     free(line);
 
