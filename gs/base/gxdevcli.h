@@ -207,7 +207,7 @@ typedef struct gs_linear_color_edge_s {
  * gx_device_color_info structure. These form an order, with lower
  * values having weaker properties.
  *
- *  GX_CINFO_SEP_LIN_UNKNOWN
+ *  GX_CINFO_UNKNOWN_SEP_LIN
  *    The properties of the color encoding are not yet known. This is
  *    always a safe default value.
  *
