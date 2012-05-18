@@ -129,7 +129,6 @@ static dev_proc_fill_path(txtwrite_fill_path);
 static dev_proc_stroke_path(txtwrite_stroke_path);
 static dev_proc_text_begin(txtwrite_text_begin);
 static dev_proc_strip_copy_rop(txtwrite_strip_copy_rop);
-static dev_proc_strip_copy_rop2(txtwrite_strip_copy_rop2);
 
 /* The device prototype */
 #define X_DPI 72
@@ -1114,6 +1113,7 @@ txtwrite_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppa
     return 0;
 }
 
+#if 0
 static int
 txtwrite_fill_mask(gx_device * dev,
                const byte * data, int dx, int raster, gx_bitmap_id id,
@@ -1134,6 +1134,7 @@ txtwrite_begin_typed_image(gx_device * dev,
 {
     return 0;
 }
+#endif
 
 /* ------ Text imaging ------ */
 
