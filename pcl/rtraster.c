@@ -986,6 +986,7 @@ process_ccitt_compress(
     s_init_state((stream_state*)&state, &s_CFD_template, prast->pmem);
     state.report_error = pcl_ccitt_error;
     s_CFD_template.set_defaults((stream_state*)&state);
+    state.BlackIs1 = true;
     state.EndOfLine = false;
     state.EndOfBlock = false;
     state.Columns = pl_get_uint32(pin);
