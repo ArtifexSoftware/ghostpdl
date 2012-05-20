@@ -1010,6 +1010,8 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   40 dict begin
   /IDict exch def
   /OFile exch def
+  % Disable check for the max object number because pdfopt adds new objects.
+  /NumObjects 16#7fffffff store 
   /starttime exch def
   /ToWrite 100 dict def
   /now {
