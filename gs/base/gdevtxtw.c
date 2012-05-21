@@ -1875,7 +1875,7 @@ txtwrite_process_plain_text(gs_text_enum_t *pte)
         if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
             ch = pte->text.data.bytes[pte->index++];
         } else if (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR)) {
-            ;
+            ch = pte->text.data.bytes[pte->index++];
         } else if (operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)) {
             if (operation & TEXT_FROM_GLYPHS) {
                 gdata = pte->text.data.glyphs + (pte->index++ * sizeof (gs_glyph));
