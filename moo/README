@@ -1,0 +1,22 @@
+Check out ghostpdl and mupdf side by side:
+
+	src/ghostpdl
+	src/mupdf
+
+Unzip the mupdf-thirdparty zip archive to create:
+
+	src/mupdf/thirdparty
+
+Build mupdf as usual:
+
+	make -C src/mupdf
+
+Build ghostscript and assemble a libgs.a manually.
+Also create src/moo/arch.h by copying from the regular build.
+
+	ar cru src/ghostpdl/moo/lib/libgs.a ...object files...
+
+Build mooscript:
+
+	make -C src/ghostpdl/moo
+

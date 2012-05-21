@@ -27,14 +27,14 @@ gs_matrix_from_fz_matrix(fz_matrix ctm)
 }
 
 static void
-fz_ghost_matrix(gs_state *pgs, fz_matrix ctm)
+fz_ghost_matrix(fz_context *ctx, gs_state *pgs, fz_matrix ctm)
 {
 	gs_matrix m = gs_matrix_from_fz_matrix(ctm);
 	gs_setmatrix(pgs, &m);
 }
 
 static void
-fz_ghost_color(gs_state *pgs, fz_colorspace *colorspace, float *color, float alpha)
+fz_ghost_color(fz_context *ctx, gs_state *pgs, fz_colorspace *colorspace, float *color, float alpha)
 {
 	gs_setopacityalpha(pgs, alpha);
 	if (colorspace == fz_device_gray)
@@ -45,13 +45,13 @@ fz_ghost_color(gs_state *pgs, fz_colorspace *colorspace, float *color, float alp
 		gs_setcmykcolor(pgs, color[0], color[1], color[2], color[3]);
 	else {
 		float rgb[3];
-		fz_convert_color(colorspace, color, fz_device_rgb, rgb);
+		fz_convert_color(ctx, colorspace, color, fz_device_rgb, rgb);
 		gs_setrgbcolor(pgs, rgb[0], rgb[1], rgb[2]);
 	}
 }
 
 static void
-fz_ghost_path(gs_state *pgs, fz_path *path, int indent)
+fz_ghost_path(fz_context *ctx, gs_state *pgs, fz_path *path, int indent)
 {
 	float x, y, x2, y2, x3, y3;
 	int i = 0;
@@ -152,10 +152,10 @@ build_char(gs_show_enum *penum, gs_state *pgs, gs_font *gsfont, gs_char cid, gs_
 }
 
 static gs_font *
-make_gs_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
+make_gs_font(fz_context *ctx, fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
 {
 	// gs_font is not safe, gxccache assumes all fonts derive from gs_font_base
-	gs_font_base *gsfont = fz_malloc(sizeof *gsfont);
+	gs_font_base *gsfont = fz_malloc(ctx, sizeof *gsfont);
 
 	gsfont->next = 0;
 	gsfont->prev = 0;
@@ -165,7 +165,7 @@ make_gs_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
 	gs_notify_init(&gsfont->notify_list, gs_memory_stable(mem));
 	gsfont->id = gs_next_ids(mem, 1);
 	gsfont->base = (gs_font*)gsfont;
-	gsfont->client_data = fz_keep_font(fzfont);
+	gsfont->client_data = fz_keep_font(ctx, fzfont);
 
 	gs_make_identity(&gsfont->FontMatrix);
 	gs_make_identity(&gsfont->orig_FontMatrix);
@@ -222,29 +222,29 @@ struct entry
 };
 
 gs_font *
-gs_font_from_fz_font(fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
+gs_font_from_fz_font(fz_context *ctx, fz_font *fzfont, gs_memory_t *mem, gs_font_dir *dir)
 {
 	static struct entry *root = NULL;
 	struct entry *entry;
 	for (entry = root; entry; entry = entry->next)
 		if (entry->fzfont == fzfont)
 			return entry->gsfont;
-	entry = fz_malloc(sizeof *entry);
+	entry = fz_malloc(ctx, sizeof *entry);
 	entry->fzfont = fzfont;
-	entry->gsfont = make_gs_font(fzfont, mem, dir);
+	entry->gsfont = make_gs_font(ctx, fzfont, mem, dir);
 	entry->next = root;
 	root = entry;
 	return entry->gsfont;
 }
 
 static void
-fz_ghost_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
+fz_ghost_fill_path(fz_device *dev, fz_path *path, int even_odd, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_ghost_device *ghost = user;
-	fz_ghost_color(ghost->pgs, colorspace, color, alpha);
-	fz_ghost_matrix(ghost->pgs, ctm);
-	fz_ghost_path(ghost->pgs, path, 0);
+	fz_ghost_device *ghost = dev->user;
+	fz_ghost_color(dev->ctx, ghost->pgs, colorspace, color, alpha);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
+	fz_ghost_path(dev->ctx, ghost->pgs, path, 0);
 	if (even_odd)
 		gs_eofill(ghost->pgs);
 	else
@@ -252,10 +252,10 @@ fz_ghost_fill_path(void *user, fz_path *path, int even_odd, fz_matrix ctm,
 }
 
 static void
-fz_ghost_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
+fz_ghost_stroke_path(fz_device *dev, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 
 	gs_setlinewidth(ghost->pgs, stroke->linewidth);
 	gs_setmiterlimit(ghost->pgs, stroke->miterlimit);
@@ -266,20 +266,20 @@ fz_ghost_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matr
 	if (stroke->dash_len)
 		gs_setdash(ghost->pgs, stroke->dash_list, stroke->dash_len, stroke->dash_phase);
 
-	fz_ghost_color(ghost->pgs, colorspace, color, alpha);
-	fz_ghost_matrix(ghost->pgs, ctm);
-	fz_ghost_path(ghost->pgs, path, 0);
+	fz_ghost_color(dev->ctx, ghost->pgs, colorspace, color, alpha);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
+	fz_ghost_path(dev->ctx, ghost->pgs, path, 0);
 
 	gs_stroke(ghost->pgs);
 }
 
 static void
-fz_ghost_clip_path(void *user, fz_path *path, int even_odd, fz_matrix ctm)
+fz_ghost_clip_path(fz_device *dev, fz_path *path, fz_rect *rect, int even_odd, fz_matrix ctm)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	gs_gsave(ghost->pgs);
-	fz_ghost_matrix(ghost->pgs, ctm);
-	fz_ghost_path(ghost->pgs, path, 0);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
+	fz_ghost_path(dev->ctx, ghost->pgs, path, 0);
 	if (even_odd)
 		gs_eoclip(ghost->pgs);
 	else
@@ -287,9 +287,9 @@ fz_ghost_clip_path(void *user, fz_path *path, int even_odd, fz_matrix ctm)
 }
 
 static void
-fz_ghost_clip_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz_matrix ctm)
+fz_ghost_clip_stroke_path(fz_device *dev, fz_path *path, fz_rect *rect, fz_stroke_state *stroke, fz_matrix ctm)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 
 	gs_gsave(ghost->pgs);
 
@@ -302,16 +302,17 @@ fz_ghost_clip_stroke_path(void *user, fz_path *path, fz_stroke_state *stroke, fz
 	if (stroke->dash_len)
 		gs_setdash(ghost->pgs, stroke->dash_list, stroke->dash_len, stroke->dash_phase);
 
-	fz_ghost_matrix(ghost->pgs, ctm);
-	fz_ghost_path(ghost->pgs, path, 0);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
+	fz_ghost_path(dev->ctx, ghost->pgs, path, 0);
 
 	gs_strokepath(ghost->pgs);
 	gs_clip(ghost->pgs);
 }
 
 static void
-fz_ghost_show_text(fz_ghost_device *ghost, fz_text *text, fz_matrix ctm, int operation)
+fz_ghost_show_text(fz_device *dev, fz_text *text, fz_matrix ctm, int operation)
 {
+	fz_ghost_device *ghost = dev->user;
 	gs_font *font;
 	gs_text_params_t params;
 	gs_text_enum_t *textenum;
@@ -320,18 +321,18 @@ fz_ghost_show_text(fz_ghost_device *ghost, fz_text *text, fz_matrix ctm, int ope
 	float *xbuf, *ybuf;
 	int i;
 
-	fz_ghost_matrix(ghost->pgs, ctm);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
 
-	font = gs_font_from_fz_font(text->font, ghost->memory, ghost->fontdir);
+	font = gs_font_from_fz_font(dev->ctx, text->font, ghost->memory, ghost->fontdir);
 	gs_setfont(ghost->pgs, font);
 
 	matrix = gs_matrix_from_fz_matrix(text->trm);
 	gs_setcharmatrix(ghost->pgs, &matrix);
 	gs_matrix_multiply(&matrix, &font->orig_FontMatrix, &font->FontMatrix);
 
-	xbuf = fz_calloc(text->len, sizeof *xbuf);
-	ybuf = fz_calloc(text->len, sizeof *ybuf);
-	gbuf = fz_calloc(text->len, sizeof *gbuf);
+	xbuf = fz_calloc(dev->ctx, text->len, sizeof *xbuf);
+	ybuf = fz_calloc(dev->ctx, text->len, sizeof *ybuf);
+	gbuf = fz_calloc(dev->ctx, text->len, sizeof *gbuf);
 
 	for (i = 0; i < text->len - 1; i++) {
 		gbuf[i] = text->items[i].gid;
@@ -354,93 +355,93 @@ fz_ghost_show_text(fz_ghost_device *ghost, fz_text *text, fz_matrix ctm, int ope
 	gs_text_process(textenum);
 	gs_text_release(textenum, "fz_ghost_fill_text");
 
-	fz_free(gbuf);
-	fz_free(ybuf);
-	fz_free(xbuf);
+	fz_free(dev->ctx, gbuf);
+	fz_free(dev->ctx, ybuf);
+	fz_free(dev->ctx, xbuf);
 }
 
 static void
-fz_ghost_fill_text(void *user, fz_text *text, fz_matrix ctm,
+fz_ghost_fill_text(fz_device *dev, fz_text *text, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_ghost_device *ghost = user;
-	fz_ghost_color(ghost->pgs, colorspace, color, alpha);
-	fz_ghost_show_text(ghost, text, ctm, TEXT_DO_DRAW);
+	fz_ghost_device *ghost = dev->user;
+	fz_ghost_color(dev->ctx, ghost->pgs, colorspace, color, alpha);
+	fz_ghost_show_text(dev, text, ctm, TEXT_DO_DRAW);
 }
 
 static void
-fz_ghost_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
+fz_ghost_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm,
 	fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	printf("<stroke_text font=\"%s\" wmode=\"%d\"\n", text->font->name, text->wmode);
-	fz_ghost_color(ghost->pgs, colorspace, color, alpha);
-	fz_ghost_show_text(ghost, text, ctm, TEXT_DO_DRAW);
+	fz_ghost_color(dev->ctx, ghost->pgs, colorspace, color, alpha);
+	fz_ghost_show_text(dev, text, ctm, TEXT_DO_DRAW);
 }
 
 static void
-fz_ghost_clip_text(void *user, fz_text *text, fz_matrix ctm, int accumulate)
+fz_ghost_clip_text(fz_device *dev, fz_text *text, fz_matrix ctm, int accumulate)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	gs_gsave(ghost->pgs);
 	printf("<clip_text font=\"%s\" wmode=\"%d\" ", text->font->name, text->wmode);
 	printf("accumulate=\"%d\"\n", accumulate);
 }
 
 static void
-fz_ghost_clip_stroke_text(void *user, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm)
+fz_ghost_clip_stroke_text(fz_device *dev, fz_text *text, fz_stroke_state *stroke, fz_matrix ctm)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	gs_gsave(ghost->pgs);
 	printf("<clip_stroke_text font=\"%s\" wmode=\"%d\"\n", text->font->name, text->wmode);
 }
 
 static void
-fz_ghost_ignore_text(void *user, fz_text *text, fz_matrix ctm)
+fz_ghost_ignore_text(fz_device *dev, fz_text *text, fz_matrix ctm)
 {
 	printf("ignore_text font=\"%s\" wmode=\"%d\"\n", text->font->name, text->wmode);
 }
 
 static void
-fz_ghost_fill_image(void *user, fz_pixmap *image, fz_matrix ctm, float alpha)
+fz_ghost_fill_image(fz_device *dev, fz_image *image, fz_matrix ctm, float alpha)
 {
-	fz_ghost_device *ghost = user;
-	fz_ghost_matrix(ghost->pgs, ctm);
+	fz_ghost_device *ghost = dev->user;
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
 }
 
 static void
-fz_ghost_fill_image_mask(void *user, fz_pixmap *image, fz_matrix ctm,
+fz_ghost_fill_image_mask(fz_device *dev, fz_image *image, fz_matrix ctm,
 fz_colorspace *colorspace, float *color, float alpha)
 {
-	fz_ghost_device *ghost = user;
-	fz_ghost_matrix(ghost->pgs, ctm);
-	fz_ghost_color(ghost->pgs, colorspace, color, alpha);
+	fz_ghost_device *ghost = dev->user;
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
+	fz_ghost_color(dev->ctx, ghost->pgs, colorspace, color, alpha);
 }
 
 static void
-fz_ghost_clip_image_mask(void *user, fz_pixmap *image, fz_matrix ctm)
+fz_ghost_clip_image_mask(fz_device *dev, fz_image *image, fz_rect *rect, fz_matrix ctm)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	gs_gsave(ghost->pgs);
-	fz_ghost_matrix(ghost->pgs, ctm);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
 }
 
 static void
-fz_ghost_fill_shade(void *user, fz_shade *shade, fz_matrix ctm, float alpha)
+fz_ghost_fill_shade(fz_device *dev, fz_shade *shade, fz_matrix ctm, float alpha)
 {
-	fz_ghost_device *ghost = user;
-	fz_ghost_matrix(ghost->pgs, ctm);
+	fz_ghost_device *ghost = dev->user;
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
 }
 
 static void
-fz_ghost_pop_clip(void *user)
+fz_ghost_pop_clip(fz_device *dev)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	gs_grestore(ghost->pgs);
 }
 
 static void
-fz_ghost_begin_mask(void *user, fz_rect bbox, int luminosity, fz_colorspace *colorspace, float *color)
+fz_ghost_begin_mask(fz_device *dev, fz_rect bbox, int luminosity, fz_colorspace *colorspace, float *color)
 {
 	printf("<mask bbox=\"%g %g %g %g\" s=\"%s\" ",
 		bbox.x0, bbox.y0, bbox.x1, bbox.y1,
@@ -449,13 +450,13 @@ fz_ghost_begin_mask(void *user, fz_rect bbox, int luminosity, fz_colorspace *col
 }
 
 static void
-fz_ghost_end_mask(void *user)
+fz_ghost_end_mask(fz_device *dev)
 {
 	printf("</mask>\n");
 }
 
 static void
-fz_ghost_begin_group(void *user, fz_rect bbox, int isolated, int knockout, int blendmode, float alpha)
+fz_ghost_begin_group(fz_device *dev, fz_rect bbox, int isolated, int knockout, int blendmode, float alpha)
 {
 	printf("<group bbox=\"%g %g %g %g\" isolated=\"%d\" knockout=\"%d\" blendmode=\"%s\" alpha=\"%g\">\n",
 		bbox.x0, bbox.y0, bbox.x1, bbox.y1,
@@ -463,40 +464,40 @@ fz_ghost_begin_group(void *user, fz_rect bbox, int isolated, int knockout, int b
 }
 
 static void
-fz_ghost_end_group(void *user)
+fz_ghost_end_group(fz_device *dev)
 {
 	printf("</group>\n");
 }
 
 static void
-fz_ghost_begin_tile(void *user, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm)
+fz_ghost_begin_tile(fz_device *dev, fz_rect area, fz_rect view, float xstep, float ystep, fz_matrix ctm)
 {
-	fz_ghost_device *ghost = user;
+	fz_ghost_device *ghost = dev->user;
 	printf("<tile ");
 	printf("area=\"%g %g %g %g\" ", area.x0, area.y0, area.x1, area.y1);
 	printf("view=\"%g %g %g %g\" ", view.x0, view.y0, view.x1, view.y1);
 	printf("xstep=\"%g\" ystep=\"%g\" ", xstep, ystep);
-	fz_ghost_matrix(ghost->pgs, ctm);
+	fz_ghost_matrix(dev->ctx, ghost->pgs, ctm);
 	printf(">\n");
 }
 
 static void
-fz_ghost_end_tile(void *user)
+fz_ghost_end_tile(fz_device *dev)
 {
 	printf("</tile>\n");
 }
 
 static void
-fz_ghost_free_user(void *user)
+fz_ghost_free_user(fz_device *dev)
 {
 	// free fontdir
 }
 
-fz_device *fz_new_ghost_device(gs_memory_t *memory, gs_state *pgs)
+fz_device *fz_new_ghost_device(fz_context *ctx, gs_memory_t *memory, gs_state *pgs)
 {
 	fz_device *dev;
 
-	fz_ghost_device *ghost = fz_malloc(sizeof *ghost);
+	fz_ghost_device *ghost = fz_malloc(ctx, sizeof *ghost);
 	ghost->memory = memory;
 	ghost->pgs = pgs;
 
@@ -504,7 +505,7 @@ fz_device *fz_new_ghost_device(gs_memory_t *memory, gs_state *pgs)
 	gs_setaligntopixels(ghost->fontdir, 1); /* no subpixels */
 	gs_setgridfittt(ghost->fontdir, 1); /* see gx_ttf_outline in gxttfn.c for values */
 
-	dev = fz_new_device(ghost);
+	dev = fz_new_device(ctx, ghost);
 	dev->free_user = fz_ghost_free_user;
 
 	dev->fill_path = fz_ghost_fill_path;

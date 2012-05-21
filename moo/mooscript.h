@@ -2,11 +2,11 @@
 #include "math_.h"
 
 #undef inline
-#define byte fz_byte
 
 #include "fitz.h"
+#include "fitz-internal.h"
 #include "mupdf.h"
-#include "muxps.h"
+#include "mupdf-internal.h"
 
 #include "gp.h"
 
@@ -20,7 +20,6 @@
 #include "gsdevice.h"
 #include "scommon.h"
 #include "gdebug.h"
-#include "gserror.h"
 #include "gserrors.h"
 #include "gspaint.h"
 #include "gspath.h"
@@ -79,4 +78,4 @@
 #undef printf
 #undef putchar
 
-fz_device *fz_new_ghost_device(gs_memory_t *memory, gs_state *pgs);
+fz_device *fz_new_ghost_device(fz_context *ctx, gs_memory_t *memory, gs_state *pgs);

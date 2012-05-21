@@ -6,6 +6,8 @@
 
 typedef struct moo_interp_instance_s moo_interp_instance_t;
 
+static fz_context *ctx = NULL;
+
 struct moo_interp_instance_s
 {
 	pl_interp_instance_t pl; /* common part: must be first */
@@ -70,17 +72,17 @@ moo_show_page(pl_interp_instance_t *pinstance, int num_copies, int flush)
 	return 0;
 }
 
-static fz_error
-moo_draw_pdf_page(pl_interp_instance_t *instance, gs_memory_t *memory, gs_state *pgs, fz_device *ghost, pdf_xref *xref, int number)
+static int
+moo_draw_pdf_page(pl_interp_instance_t *instance, gs_memory_t *memory, gs_state *pgs, fz_device *ghost, pdf_document *xref, int number)
 {
-	fz_error error;
 	pdf_page *page;
+	fz_rect mediabox;
 	gs_matrix matrix;
 	fz_matrix ctm;
 
-	error = pdf_load_page(&page, xref, number);
-	if (error)
-		return fz_rethrow(error, "cannot load page %d", number);
+	page = pdf_load_page(xref, number);
+	
+	mediabox = pdf_bound_page(xref, page);
 
 	{
 		gs_param_float_array fa;
@@ -106,55 +108,37 @@ moo_draw_pdf_page(pl_interp_instance_t *instance, gs_memory_t *memory, gs_state 
 
 	gs_currentmatrix(pgs, &matrix);
 	ctm = fz_matrix_from_gs_matrix(matrix);
+	ctm = fz_concat(fz_translate(0, page->mediabox.y1 - page->mediabox.y0), ctm);
+	ctm = fz_concat(fz_scale(1, -1), ctm);
 
-	error = pdf_run_page(xref, page, ghost, ctm);
-	if (error) {
-		pdf_free_page(page);
-		return fz_rethrow(error, "cannot interpret page %d", number);
-	}
+	pdf_run_page(xref, page, ghost, ctm, NULL);
 
-	pdf_free_page(page);
-	pdf_age_store(xref->store, 3);
-	fz_flush_warnings();
+	pdf_free_page(xref, page);
 
-	moo_show_page(instance, 1, 1);
+	fz_flush_warnings(ctx);
 
-	return fz_okay;
+	return moo_show_page(instance, 1, 1);
 }
 
 int
 moo_draw_pdf(pl_interp_instance_t *instance, gs_memory_t *memory, gs_state *pgs, char *filename)
 {
-	pdf_xref *xref;
+	pdf_document *xref;
 	fz_device *ghost;
-	char *password = "";
-	fz_error error;
 	int i;
 
-	error = pdf_open_xref(&xref, filename, password);
-	if (error) {
-		fz_catch(error, "cannot open file '%s'", filename);
-		return -1;
-	}
+	xref = pdf_open_document(ctx, filename);
 
-	error = pdf_load_page_tree(xref);
-	if (error) {
-		fz_catch(error, "cannot load page tree in '%s'", filename);
-		return -1;
-	}
-
-	ghost = fz_new_ghost_device(memory, pgs);
+	ghost = fz_new_ghost_device(ctx, memory, pgs);
 
 	for (i = 0; i < pdf_count_pages(xref); i++) {
-		error = moo_draw_pdf_page(instance, memory, pgs, ghost, xref, i);
-		if (error)
-			fz_catch(error, "cannot draw page %d in '%s'", i+1, filename);
+		moo_draw_pdf_page(instance, memory, pgs, ghost, xref, i);
 	}
 
 	fz_free_device(ghost);
 
-	pdf_free_xref(xref);
-	fz_flush_warnings();
+	pdf_close_document(xref);
+	fz_flush_warnings(ctx);
 	return 0;
 }
 
@@ -221,6 +205,8 @@ moo_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance, pl_interp_t 
 	instance->scratch_name[0] = 0;
 
 	*ppinstance = (pl_interp_instance_t *)instance;
+
+	ctx = fz_new_context(NULL, NULL, FZ_STORE_UNLIMITED);
 
 	return 0;
 }
@@ -440,6 +426,9 @@ moo_imp_deallocate_interp_instance(pl_interp_instance_t *pinstance)
 
 	// free gstate?
 	gs_free_object(mem, instance, "moo_imp_deallocate_interp_instance");
+
+	fz_free_context(ctx);
+	ctx = NULL;
 
 	return 0;
 }
