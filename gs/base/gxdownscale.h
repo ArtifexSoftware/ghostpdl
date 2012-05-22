@@ -18,6 +18,7 @@
 #include "gsmemory.h"
 #include "gstypes.h"
 #include "gxdevcli.h"
+#include "gxgetbit.h"
 
 /* The following structure definitions should really be considered
  * private, and are exposed here only because it enables us to define
@@ -28,34 +29,41 @@ typedef struct gx_downscaler_s gx_downscaler_t;
 
 typedef void (gx_downscale_core)(gx_downscaler_t *ds,
                                  byte            *out_buffer,
-                                 int              row);
+                                 byte            *in_buffer,
+                                 int              row,
+                                 int              plane,
+                                 int              span);
 
 struct gx_downscaler_s {
-    gx_device         *dev;      /* Device */
-    int                width;    /* Width (pixels) */
-    int                awidth;   /* Adjusted width (pixels) */
-    int                span;     /* Num bytes in downscale buffer scanline */
-    int                factor;   /* Factor to downscale */
-    byte              *mfs_data; /* MinFeatureSize data */
-    int               *errors;   /* Error diffusion table */
-    byte              *data;     /* Downscaling buffer */
-    gx_downscale_core *down_core;
+    gx_device            *dev;       /* Device */
+    int                   width;     /* Width (pixels) */
+    int                   awidth;    /* Adjusted width (pixels) */
+    int                   span;      /* Num bytes in downscale buffer scanline */
+    int                   factor;    /* Factor to downscale */
+    byte                 *mfs_data;  /* MinFeatureSize data */
+    int                  *errors;    /* Error diffusion table */
+    byte                 *data;      /* Downscaling buffer */
+    gx_downscale_core    *down_core; /* Core downscaling function */
+    gs_get_bits_params_t  params;    /* Params if in planar mode */
+    int                   num_planes;/* Number of planes if planar, 0 otherwise */
 };
 
 /* To use the downscaler:
  *
  *  + define a gx_downscaler_t on the stack.
- *  + initialise it with gx_downscaler_init
+ *  + initialise it with gx_downscaler_init or gx_downscaler_init_planar
  *  + repeatedly call gx_downscaler_get_lines (or
- *    gx_downscaler_copy_scan_lines)
+ *    gx_downscaler_copy_scan_lines) (for chunky mode) or
+ *    gx_downscaler_get_bits_rectangle (for planar mode)
  *  + finalise with gx_downscaler_fin
  */
  
-/* Currently only:
+/* For chunky mode, currently only:
  *   src_bpc == 8 && dst_bpc == 1 && num_comps == 1
  *   src_bpc == 8 && dst_bpc == 8 && num_comps == 1
  *   src_bpc == 8 && dst_bpc == 8 && num_comps == 3
  * are supported. mfs is ignored for all except the first of these.
+ * For planar mode, currently only src_bpp && dst_bpp == 8 are supported.
  */
 int gx_downscaler_init(gx_downscaler_t   *ds,
                        gx_device         *dev,
@@ -65,11 +73,23 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int                factor,
                        int                mfs,
                        int              (*adjust_width_proc)(int, int),
-                       int 				  adjust_width);
+                       int                adjust_width);
+
+int gx_downscaler_init_planar(gx_downscaler_t      *ds,
+                              gx_device            *dev,
+                              gs_get_bits_params_t *params,
+                              int                   num_comps,
+                              int                   factor,
+                              int                   mfs,
+                              int                   dst_bpc);
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,
                           byte            *out_data,
                           int              row);
+
+int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
+                                     gs_get_bits_params_t *params,
+                                     int                   row);
 
 /* Must only fin a device that has been inited (though you can safely
  * fin several times) */

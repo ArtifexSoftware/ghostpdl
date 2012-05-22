@@ -36,6 +36,7 @@
 #include "ctype_.h"
 #include "gxgetbit.h"
 #include "gdevppla.h"
+#include "gxdownscale.h"
 
 /*
  * Some of the code in this module is based upon the gdevtfnx.c module.
@@ -418,6 +419,9 @@ static dev_proc_output_page(tiffseps_output_page);
                                    TIFFTAG_COMPRESSION */\
     bool close_files; \
     long MaxStripSize;\
+    long DownScaleFactor;\
+    long MinFeatureSize;\
+    long BitsPerComponent;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
     equivalent_cmyk_color_params equiv_cmyk_colors\
 
@@ -588,7 +592,10 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         arch_is_big_endian      /* true = big endian; false = little endian */,\
         compr                   /* COMPRESSION_* */,\
         true,                   /* close_files */ \
-        TIFF_DEFAULT_STRIP_SIZE /* MaxStripSize */
+        TIFF_DEFAULT_STRIP_SIZE,/* MaxStripSize */\
+        1,                      /* DownScaleFactor */\
+        0,                      /* MinFeatureSize */\
+        8                       /* BitsPerComponent */
 
 /*
  * Select the default number of components based upon the number of bits
@@ -860,6 +867,12 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_long(plist, "MaxStripSize", &pdevn->MaxStripSize)) < 0)
         ecode = code;
+    if ((code = param_write_long(plist, "DownScaleFactor", &pdevn->DownScaleFactor)) < 0)
+        ecode = code;
+    if ((code = param_write_long(plist, "MinFeatureSize", &pdevn->MinFeatureSize)) < 0)
+        ecode = code;
+    if ((code = param_write_long(plist, "BitsPerComponent", &pdevn->BitsPerComponent)) < 0)
+        ecode = code;
 
     return ecode;
 }
@@ -873,6 +886,9 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     const char *param_name;
     gs_param_string comprstr;
     bool save_close_files = pdevn->close_files;
+    long downscale = pdevn->DownScaleFactor;
+    long mfs = pdevn->MinFeatureSize;
+    long bpc = pdevn->BitsPerComponent;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
@@ -915,6 +931,45 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
             return code;
         case 1:
             break;
+    }
+    switch (code = param_read_long(plist,
+                                   (param_name = "DownScaleFactor"),
+                                   &pdevn->DownScaleFactor)) {
+        case 0:
+            if (downscale <= 0)
+                downscale = 1;
+            break;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_long(plist, (param_name = "MinFeatureSize"), &mfs)) {
+        case 0:
+            if ((mfs >= 0) && (mfs <= 4)) {
+                pdevn->MinFeatureSize = mfs;
+                break;
+            }
+            code = gs_error_rangecheck;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_long(plist, (param_name = "BitsPerComponent"), &bpc)) {
+        case 0:
+            if ((bpc == 1) || (bpc == 8)) {
+                pdevn->BitsPerComponent = bpc;
+                break;
+            }
+            code = gs_error_rangecheck;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
     }
 
     pdevn->close_files = false;
@@ -1714,8 +1769,13 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     int save_numcomps = pdev->color_info.num_components;
     const char *fmt;
     gs_parsed_file_name_t parsed;
-    int non_encodable_count = 0;
     int plane_count = 0;  /* quite compiler */
+    int factor = tfdev->DownScaleFactor;
+    int mfs = tfdev->MinFeatureSize;
+    int dst_bpc = tfdev->BitsPerComponent;
+    gx_downscaler_t ds;
+    int width = tfdev->width / factor;
+    int height = tfdev->height / factor;
 
     /* Print the names of the spot colors */
     if (num_order == 0) {
@@ -1734,14 +1794,14 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                                      strlen(tfdev->fname), pdev->memory);
 
     /* Write the page directory for the CMYK equivalent file. */
-    pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
-    if (tfdev->Compression==COMPRESSION_NONE && 
-        pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) { /* note width is never 0 in print_page */
-        dprintf("CMYK composite file would be too large! Reduce resolution or enable compression.\n");
-        return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
-    }
+    if (dst_bpc == 8 && !tfdev->comp_file) {
+        pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
+        if (tfdev->Compression==COMPRESSION_NONE &&
+            height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) { /* note width is never 0 in print_page */
+            dprintf("CMYK composite file would be too large! Reduce resolution or enable compression.\n");
+            return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
+        }
     
-    if (!tfdev->comp_file) {
         code = gx_device_open_output_file((gx_device *)pdev, pdev->fname, true, true, &(tfdev->comp_file));
         if (code < 0)
             return code;
@@ -1751,11 +1811,20 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             return_error(gs_error_invalidfileaccess);
 
     }
-    code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, 1, 0);
-    if (tfdev->Compression==COMPRESSION_NONE || tfdev->Compression==COMPRESSION_LZW || tfdev->Compression==COMPRESSION_PACKBITS) 
-      tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, tfdev->Compression, tfdev->MaxStripSize);
-    else
-      tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, COMPRESSION_LZW, tfdev->MaxStripSize);
+    if (dst_bpc == 8) {
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff_comp, factor, 0);
+        if (dst_bpc == 1 && (tfdev->Compression==COMPRESSION_NONE ||
+                             tfdev->Compression==COMPRESSION_CCITTRLE ||
+                             tfdev->Compression==COMPRESSION_CCITTFAX3 ||
+                             tfdev->Compression==COMPRESSION_CCITTFAX4))
+          tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 1, tfdev->Compression, tfdev->MaxStripSize);
+        else if (dst_bpc == 8 && (tfdev->Compression==COMPRESSION_NONE ||
+                                  tfdev->Compression==COMPRESSION_LZW ||
+                                  tfdev->Compression==COMPRESSION_PACKBITS))
+          tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, tfdev->Compression, tfdev->MaxStripSize);
+        else
+          tiff_set_cmyk_fields(pdev, tfdev->tiff_comp, 8, COMPRESSION_LZW, tfdev->MaxStripSize);
+}
     pdev->color_info.depth = save_depth;
     if (code < 0)
         return code;
@@ -1789,52 +1858,52 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                 return_error(gs_error_ioerror);
         }
 
-        pdev->color_info.depth = 8;     /* Create files for 8 bit gray */
+        pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
         pdev->color_info.num_components = 1;
         if (tfdev->Compression==COMPRESSION_NONE && 
-            pdev->height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width)) /* note width is never 0 in print_page */
+            height*8/dst_bpc > ((unsigned long) 0xFFFFFFFF - ftell(file))/width) /* note width is never 0 in print_page */
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
 
-        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0);
-        tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 8, tfdev->Compression, tfdev->MaxStripSize);
+        code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], factor, 0);
+        tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         pdev->color_info.num_components = save_numcomps;
         if (code < 0)
             return code;
     }
 
-    build_cmyk_map(tfdev, num_comp, cmyk_map);
+    if (dst_bpc == 8)
+        build_cmyk_map(tfdev, num_comp, cmyk_map);
 
     {
-        int raster_plane = bitmap_raster(pdev->width * 8);
+        int raster_plane = bitmap_raster(width * 8);
         byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
-        int width = tfdev->width;
         int cmyk_raster = width * NUM_CMYK_COMPONENTS;
         int pixel, y;
         byte * sep_line;
-        int plane_index, offset_plane;
+        int plane_index;
+        int offset_plane = 0;
 
         sep_line =
             gs_alloc_bytes(pdev->memory, cmyk_raster, "tiffsep_print_page");
 
         for (comp_num = 0; comp_num < num_comp; comp_num++ )
             TIFFCheckpointDirectory(tfdev->tiff[comp_num]);
-        TIFFCheckpointDirectory(tfdev->tiff_comp);
+        if (dst_bpc == 8)
+            TIFFCheckpointDirectory(tfdev->tiff_comp);
 
         /* Write the page data. */
         {
-            gs_int_rect rect;
             gs_get_bits_params_t params;
 
-            rect.q.x = pdev->width;
-            rect.p.x = 0;
-                /* Return planar data */
+            /* Return planar data */
             params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |
                  GB_ALIGN_STANDARD | GB_OFFSET_0 | GB_RASTER_STANDARD |
                  GB_PACKING_PLANAR | GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.x_offset = 0;
-            params.raster = bitmap_raster(pdev->width * pdev->color_info.depth);
+            params.raster = bitmap_raster(width * pdev->color_info.depth);
             
+            memset(planes, 0, sizeof(*planes) * plane_count);
             if (num_order > 0) {
                 /* In this case, there was a specification for a separation
                    color order, which indicates what colorants we will
@@ -1844,10 +1913,12 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                    still create the composite CMYK output file. */
                 for (comp_num = 0; comp_num < num_std_colorants; comp_num++) {
                     planes[comp_num] = gs_alloc_bytes(pdev->memory, raster_plane, 
-                                                    "tiffsep_print_page");
+                                                      "tiffsep_print_page");
                     params.data[comp_num] = planes[comp_num];
-                    if (params.data[comp_num] == NULL)
-                        return_error(gs_error_VMerror);
+                    if (params.data[comp_num] == NULL) {
+                        code = gs_error_VMerror;
+                        goto cleanup;
+                    }
                 }
                 offset_plane = num_std_colorants;
                 /* Now we need to make sure that we do not allocate extra
@@ -1865,8 +1936,10 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                                                         "tiffsep_print_page");
                         /* Assign the new plane to the appropriate position */
                         params.data[plane_index] = planes[plane_count];
-                        if (params.data[plane_index] == NULL)
-                            return_error(gs_error_VMerror);
+                        if (params.data[plane_index] == NULL) {
+                            code = gs_error_VMerror;
+                            goto cleanup;
+                        }
                         plane_count += 1;
                     } else {
                         /* Assign params.data with the appropriate std.
@@ -1882,16 +1955,20 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                     planes[comp_num] = gs_alloc_bytes(pdev->memory, raster_plane, 
                                                     "tiffsep_print_page");
                     params.data[comp_num] = planes[comp_num];
-                    if (params.data[comp_num] == NULL)
-                        return_error(gs_error_VMerror);
+                    if (params.data[comp_num] == NULL) {
+                        code = gs_error_VMerror;
+                        goto cleanup;
+                    }
                 }
-                offset_plane = 0;
             }
-            for (y = 0; y < pdev->height; ++y) {
-                rect.p.y = y;   
-                rect.q.y = y + 1;
-                code = dev_proc(pdev, get_bits_rectangle)
-                    ((gx_device *) pdev, &rect, &params, NULL);
+            code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params,
+                                             num_comp, factor, mfs, dst_bpc);
+            if (code < 0)
+                goto cleanup;
+            for (y = 0; y < height; ++y) {
+                code = gx_downscaler_get_bits_rectangle(&ds, &params, y);
+                if (code < 0)
+                    goto cleanup;
                 /* Write separation data (tiffgray format) */
                 for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
                     byte *src;
@@ -1906,12 +1983,14 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                     TIFFWriteScanline(tfdev->tiff[comp_num], (tdata_t)sep_line, y, 0);
                 }
                 /* Write CMYK equivalent data (tiff32nc format) */
-                build_cmyk_raster_line_fromplanar(params, sep_line, width, 
-                                                  num_comp, cmyk_map, num_order,
-                                                  tfdev);
-                TIFFWriteScanline(tfdev->tiff_comp, (tdata_t)sep_line, y, 0);
+                if (dst_bpc == 8) {
+                    build_cmyk_raster_line_fromplanar(params, sep_line, width, 
+                                                      num_comp, cmyk_map, num_order,
+                                                      tfdev);
+                    TIFFWriteScanline(tfdev->tiff_comp, (tdata_t)sep_line, y, 0);
+                }
             }
-            gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");
+cleanup:
             if (num_order > 0) {
                 /* Free up the standard colorants if num_order was set. 
                    In this process, we need to make sure that none of them
@@ -1928,8 +2007,10 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                                                     "tiffsep_print_page");
                 }
             }
+            gx_downscaler_fin(&ds);
+            gs_free_object(pdev->memory, sep_line, "tiffsep_print_page");
         }
-        code1 = 0;
+        code1 = code;
         for (comp_num = 0; comp_num < num_comp; comp_num++ ) {
             TIFFWriteDirectory(tfdev->tiff[comp_num]);
             if (fmt) {
@@ -1947,7 +2028,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             }
         }
 
-        TIFFWriteDirectory(tfdev->tiff_comp);
+        if (dst_bpc == 8)
+            TIFFWriteDirectory(tfdev->tiff_comp);
         if (fmt) {
             code = tiffsep_close_comp_file(tfdev, pdev->fname);
         }
@@ -1961,13 +2043,6 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                                         max(16, num_comp));
 #endif
 
-    /*
-     * If we have any non encodable pixels then signal an error.
-     */
-    if (non_encodable_count) {
-        dlprintf1("WARNING:  Non encodable pixels = %d\n", non_encodable_count);
-        return_error(gs_error_rangecheck);
-    }
     /* After page is printed free up the separation list since we may have
        different spots on the next page */
     free_separation_names(tfdev->memory, &(tfdev->devn_params.separations));

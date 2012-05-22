@@ -37,7 +37,10 @@ enum {
 /* Mono downscale/error diffusion/min feature size code */
 static void down_core(gx_downscaler_t *ds,
                       byte            *out_buffer,
-                      int              row)
+                      byte            *in_buffer,
+                      int              row,
+                      int              plane,
+                      int              span)
 {
     int        x, xx, y, value;
     int        mask;
@@ -47,11 +50,13 @@ static void down_core(gx_downscaler_t *ds,
     int        width     = ds->width;
     int        awidth    = ds->awidth;
     int        factor    = ds->factor;
-    int        span      = ds->span;
-    int       *errors    = ds->errors;
+    int       *errors    = ds->errors + (awidth+3)*plane;
     byte      *mfs_data  = ds->mfs_data;
     const int  threshold = factor*factor*128;
     const int  max_value = factor*factor*255;
+
+    if (mfs_data)
+        mfs_data += (awidth+1)*plane;
 
     pad_white = (awidth - width) * factor;
     if (pad_white < 0)
@@ -59,7 +64,7 @@ static void down_core(gx_downscaler_t *ds,
 
     if (pad_white)
     {
-        inp = ds->data + width*factor;
+        inp = in_buffer + width*factor;
         for (y = factor; y > 0; y--)
         {
             memset(inp, 0xFF, pad_white);
@@ -67,7 +72,7 @@ static void down_core(gx_downscaler_t *ds,
         }
     }
 
-    inp = ds->data;
+    inp = in_buffer;
     if (mfs_data == NULL)
     {
         if ((row & 1) == 0)
@@ -300,23 +305,20 @@ static void down_core(gx_downscaler_t *ds,
 }
 
 /* Grey downscale code */
-#ifdef DO_STUPID_ERROR_DIFFUSION
 static void down_core8(gx_downscaler_t *ds,
                        byte            *outp,
-                       int              row)
+                       byte            *in_buffer,
+                       int              row,
+                       int              plane,
+                       int              span)
 {
-    int        x, xx, y, value;
-    int        mask;
-    int        e_downleft, e_down, e_forward = 0;
-    int        pad_white;
-    byte      *inp;
-    int        width     = ds->width;
-    int        awidth    = ds->awidth;
-    int        factor    = ds->factor;
-    int        span      = ds->span;
-    int       *errors    = ds->errors;
-    byte      *mfs_data  = ds->mfs_data;
-    int        div       = factor*factor;
+    int   x, xx, y, value;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   factor = ds->factor;
+    int   div    = factor*factor;
 
     pad_white = (awidth - width) * factor;
     if (pad_white < 0)
@@ -324,7 +326,7 @@ static void down_core8(gx_downscaler_t *ds,
 
     if (pad_white)
     {
-        inp = ds->data + width*factor;
+        inp = in_buffer + width*factor;
         for (y = factor; y > 0; y--)
         {
             memset(inp, 0xFF, pad_white);
@@ -332,104 +334,10 @@ static void down_core8(gx_downscaler_t *ds,
         }
     }
 
-    inp = ds->data;
-    if ((row & 1) == 0)
+    inp = in_buffer;
     {
         /* Left to Right pass (no min feature size) */
         const int back = span * factor -1;
-        errors += 2;
-        for (x = awidth; x > 0; x--)
-        {
-            int res;
-            value = e_forward + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            res = (value+(div>>1))/div;
-            *outp++ = res;
-            value -= res*div;
-            e_forward  = value * 7/16;
-            e_downleft = value * 3/16;
-            e_down     = value * 5/16;
-            value     -= e_forward + e_downleft + e_down;
-            errors[-2] += e_downleft;
-            errors[-1] += e_down;
-            *errors++   = value;
-        }
-    }
-    else
-    {
-        /* Right to Left pass (no min feature size) */
-        const int back = span * factor + 1;
-        errors += awidth;
-        inp += awidth*factor-1;
-        outp += awidth-1;
-        for (x = awidth; x > 0; x--)
-        {
-            int res;
-            value = e_forward + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            res = (value + (div>>1))/div;
-            *outp-- = res;
-            value -= res*div;
-            e_forward  = value * 7/16;
-            e_downleft = value * 3/16;
-            e_down     = value * 5/16;
-            value     -= e_forward + e_downleft + e_down;
-            errors[2] += e_downleft;
-            errors[1] += e_down;
-            *errors--   = value;
-        }
-    }
-}
-#else
-static void down_core8(gx_downscaler_t *ds,
-                       byte            *outp,
-                       int              row)
-{
-    int        x, xx, y, value;
-    int        pad_white;
-    byte      *inp;
-    int        width     = ds->width;
-    int        awidth    = ds->awidth;
-    int        factor    = ds->factor;
-    int        span      = ds->span;
-    int       *errors    = ds->errors;
-    int        div       = factor*factor;
-
-    pad_white = (awidth - width) * factor;
-    if (pad_white < 0)
-        pad_white = 0;
-
-    if (pad_white)
-    {
-        inp = ds->data + width*factor;
-        for (y = factor; y > 0; y--)
-        {
-            memset(inp, 0xFF, pad_white);
-            inp += span;
-        }
-    }
-
-    inp = ds->data;
-    {
-        /* Left to Right pass (no min feature size) */
-        const int back = span * factor -1;
-        errors += 2;
         for (x = awidth; x > 0; x--)
         {
             value = 0;
@@ -446,29 +354,23 @@ static void down_core8(gx_downscaler_t *ds,
         }
     }
 }
-#endif
 
-/* RGB downscale/error diffusion code */
-#ifdef DO_STUPID_ERROR_DIFFUSION
+/* RGB downscale (no error diffusion) code */
+
 static void down_core24(gx_downscaler_t *ds,
                         byte            *outp,
-                        int              row)
+                        byte            *in_buffer,
+                        int              row,
+                        int              plane,
+                        int              span)
 {
-    int        x, xx, y, value;
-    int        mask;
-    int        e_downleft, e_down;
-    int        e_forward_r = 0;
-    int        e_forward_g = 0;
-    int        e_forward_b = 0;
-    int        pad_white;
-    byte      *inp;
-    int        width     = ds->width;
-    int        awidth    = ds->awidth;
-    int        factor    = ds->factor;
-    int        span      = ds->span;
-    int       *errors    = ds->errors;
-    byte      *mfs_data  = ds->mfs_data;
-    int        div       = factor*factor;
+    int   x, xx, y, value;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   factor = ds->factor;
+    int   div    = factor*factor;
 
     pad_white = (awidth - width) * factor * 3;
     if (pad_white < 0)
@@ -476,7 +378,7 @@ static void down_core24(gx_downscaler_t *ds,
 
     if (pad_white)
     {
-        inp = ds->data + width*factor*3;
+        inp = in_buffer + width*factor*3;
         for (y = factor; y > 0; y--)
         {
             memset(inp, 0xFF, pad_white);
@@ -484,193 +386,7 @@ static void down_core24(gx_downscaler_t *ds,
         }
     }
 
-    inp = ds->data;
-    if ((row & 1) == 0)
-    {
-        /* Left to Right pass (no min feature size) */
-        const int back  = span * factor - 3;
-        const int back2 = factor * 3 - 1;
-        errors += 6;
-        for (x = awidth; x > 0; x--)
-        {
-            int res;
-            /* R */
-            value = e_forward_r + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp -= back2;
-            res = (value+(div>>1))/div;
-            *outp++ = res;
-            value -= res*div;
-            e_forward_r = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_r + e_downleft + e_down;
-            errors[-2] += e_downleft;
-            errors[-1] += e_down;
-            *errors++   = value;
-            /* G */
-            value = e_forward_g + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp -= back2;
-            res = (value+(div>>1))/div;
-            *outp++ = res;
-            value -= res*div;
-            e_forward_g = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_g + e_downleft + e_down;
-            errors[-2] += e_downleft;
-            errors[-1] += e_down;
-            *errors++   = value;
-            /* B */
-            value = e_forward_b + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp -= 2;
-            res = (value+(div>>1))/div;
-            *outp++ = res;
-            value -= res*div;
-            e_forward_b = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_b + e_downleft + e_down;
-            errors[-2] += e_downleft;
-            errors[-1] += e_down;
-            *errors++   = value;
-        }
-    }
-    else
-    {
-        /* Right to Left pass (no min feature size) */
-        const int back  = span * factor + 3;
-        const int back2 = factor * 3 - 1;
-        errors += 3*awidth;
-        inp += 3*awidth*factor-1;
-        outp += 3*awidth - 1;
-        for (x = awidth; x > 0; x--)
-        {
-            int res;
-            /* B */
-            value = e_forward_b + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp += back2;
-            res = (value + (div>>1))/div;
-            *outp-- = res;
-            value -= res*div;
-            e_forward_b = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_b + e_downleft + e_down;
-            errors[2]  += e_downleft;
-            errors[1]  += e_down;
-            *errors--   = value;
-            /* G */
-            value = e_forward_g + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp += back2;
-            res = (value + (div>>1))/div;
-            *outp-- = res;
-            value -= res*div;
-            e_forward_g = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_g + e_downleft + e_down;
-            errors[2]  += e_downleft;
-            errors[1]  += e_down;
-            *errors--   = value;
-            /* R */
-            value = e_forward_r + *errors;
-            for (xx = factor; xx > 0; xx--)
-            {
-                for (y = factor; y > 0; y--)
-                {
-                    value += *inp;
-                    inp += span;
-                }
-                inp -= back;
-            }
-            inp += 2;
-            res = (value + (div>>1))/div;
-            *outp-- = res;
-            value -= res*div;
-            e_forward_r = value * 7/16;
-            e_downleft  = value * 3/16;
-            e_down      = value * 5/16;
-            value      -= e_forward_r + e_downleft + e_down;
-            errors[2]  += e_downleft;
-            errors[1]  += e_down;
-            *errors--   = value;
-        }
-    }
-}
-#else
-static void down_core24(gx_downscaler_t *ds,
-                        byte            *outp,
-                        int              row)
-{
-    int        x, xx, y, value;
-    int        pad_white;
-    byte      *inp;
-    int        width     = ds->width;
-    int        awidth    = ds->awidth;
-    int        factor    = ds->factor;
-    int        span      = ds->span;
-    int        div       = factor*factor;
-
-    pad_white = (awidth - width) * factor * 3;
-    if (pad_white < 0)
-        pad_white = 0;
-
-    if (pad_white)
-    {
-        inp = ds->data + width*factor*3;
-        for (y = factor; y > 0; y--)
-        {
-            memset(inp, 0xFF, pad_white);
-            inp += span;
-        }
-    }
-
-    inp = ds->data;
+    inp = in_buffer;
     {
         /* Left to Right pass (no min feature size) */
         const int back  = span * factor - 3;
@@ -719,7 +435,76 @@ static void down_core24(gx_downscaler_t *ds,
         }
     }
 }
-#endif
+
+int gx_downscaler_init_planar(gx_downscaler_t      *ds,
+                              gx_device            *dev,
+                              gs_get_bits_params_t *params,
+                              int                   num_comps,
+                              int                   factor,
+                              int                   mfs,
+                              int                   dst_bpc)
+{
+    int                span = bitmap_raster(dev->width * 8);
+    int                width = dev->width/factor;
+    int                code;
+    gx_downscale_core *core;
+    int                i;
+
+    memset(ds, 0, sizeof(*ds));
+    ds->dev        = dev;
+    ds->width      = width;
+    ds->awidth     = width;
+    ds->span       = span;
+    ds->factor     = factor;
+    ds->num_planes = num_comps;
+
+    memcpy(&ds->params, params, sizeof(*params));
+    ds->params.raster = span;
+    for (i = 0; i < num_comps; i++)
+    {
+        ds->params.data[i] = gs_alloc_bytes(dev->memory, span * factor,
+                                            "gx_downscaler(planar_data)");
+        if (ds->params.data[i] == NULL)
+            goto cleanup;
+    }
+
+    if (dst_bpc == 1)
+        core = &down_core;
+    else if (factor == 1)
+        core = NULL;
+    else
+        core = &down_core8;
+    ds->down_core = core;
+
+    if (mfs > 1) {
+        ds->mfs_data = (byte *)gs_alloc_bytes(dev->memory,
+                                              (width+1) * num_comps,
+                                              "gx_downscaler(mfs)");
+        if (ds->mfs_data == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+        memset(ds->mfs_data, 0, (width+1) * num_comps);
+    }
+    if (dst_bpc == 1)
+    {
+        ds->errors = (int *)gs_alloc_bytes(dev->memory,
+                                           num_comps*(width+3)*sizeof(int),
+                                           "gx_downscaler(errors)");
+        if (ds->errors == NULL)
+        {
+            code = gs_note_error(gs_error_VMerror);
+            goto cleanup;
+        }
+        memset(ds->errors, 0, num_comps * (width+3) * sizeof(int));
+    }
+
+    return 0;
+
+  cleanup:
+    gx_downscaler_fin(ds);
+    return code;
+}
 
 int gx_downscaler_init(gx_downscaler_t   *ds,
                        gx_device         *dev,
@@ -729,7 +514,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
                        int                factor,
                        int                mfs,
                        int              (*adjust_width_proc)(int, int),
-                       int				  adjust_width)
+                       int                adjust_width)
 {
     int                size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int                span;
@@ -747,11 +532,12 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
 
     span = size + pad_white*factor*num_comps + factor-1;
     memset(ds, 0, sizeof(*ds));
-    ds->dev    = dev;
-    ds->width  = width;
-    ds->awidth = awidth;
-    ds->span   = span;
-    ds->factor = factor;
+    ds->dev        = dev;
+    ds->width      = width;
+    ds->awidth     = awidth;
+    ds->span       = span;
+    ds->factor     = factor;
+    ds->num_planes = 0;
     
     /* Choose an appropriate core */
     if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 1))
@@ -785,9 +571,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
             }
             memset(ds->mfs_data, 0, awidth+1);
         }
-#ifndef DO_STUPID_ERROR_DIFFUSION
         if (dst_bpc == 1)
-#endif
         {
             ds->errors = (int *)gs_alloc_bytes(dev->memory,
                                                num_comps*(awidth+3)*sizeof(int),
@@ -810,6 +594,14 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
 
 void gx_downscaler_fin(gx_downscaler_t *ds)
 {
+    int plane;
+    for (plane=0; plane < ds->num_planes; plane++)
+    {
+        gs_free_object(ds->dev->memory, ds->params.data[plane],
+                       "gx_downscaler(planar_data)");
+    }
+    ds->num_planes = 0;
+
     gs_free_object(ds->dev->memory, ds->mfs_data, "gx_downscaler(mfs)");
     ds->mfs_data = NULL;
     gs_free_object(ds->dev->memory, ds->errors, "gx_downscaler(errors)");
@@ -843,7 +635,78 @@ int gx_downscaler_getbits(gx_downscaler_t *ds,
         y++;
     } while (y < y_end);
     
-    (ds->down_core)(ds, out_data, row);
+    (ds->down_core)(ds, out_data, ds->data, row, 0, ds->span);
+
+    return code;
+}
+
+int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
+                                     gs_get_bits_params_t *params,
+                                     int                   row)
+{
+    int                   code;
+    gs_int_rect           rect;
+    int                   plane;
+    int                   factor = ds->factor;
+    gs_get_bits_params_t  params2;
+
+
+    rect.p.x = 0;
+    rect.p.y = row * factor;
+    rect.q.x = ds->dev->width;
+    rect.q.y = (row + 1) * factor;
+
+    /* Check for the simple case */
+    if (ds->down_core == NULL) {
+        return (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, params, NULL);
+    }
+
+    /* Copy the params, because get_bits_rectangle can helpfully overwrite
+     * them. */
+    memcpy(&params2, &ds->params, sizeof(params2));
+    /* Get factor rows worth of data */
+    code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
+    if (code == gs_error_rangecheck)
+    {
+        int i, j;
+        int copy = ds->dev->width; /* Assumes 8bpp */
+        /* At the bottom of a band, the get_bits_rectangle call can fail to be
+         * able to return us enough lines of data at the same time. We therefore
+         * drop back to reading them one at a time, and copying them into our
+         * own buffer. */
+        for (i = 0; i < factor; i++) {
+            rect.q.y = rect.p.y+1;
+            if (rect.q.y > ds->dev->height)
+                break;
+            memcpy(&params2, &ds->params, sizeof(params2));
+            code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
+            if (code < 0)
+                break;
+            for (j = 0; j < ds->num_planes; j++) {
+                memcpy(ds->params.data[j] + i*ds->span, params2.data[j], copy);
+            }
+            rect.p.y++;
+        }
+        if (i == 0)
+            return code;
+        /* If we still haven't got enough, we've hit the end of the page; just
+         * duplicate the last line we did get. */
+        for (;i < factor; i++) {
+            for (j = 0; j < ds->num_planes; j++) {
+                memcpy(ds->params.data[j] + i*ds->span, ds->params.data[j] + (i-1)*ds->span, copy);
+            }
+        }
+        for (j = 0; j < ds->num_planes; j++) {
+            params2.data[j] = ds->params.data[j];
+        }
+    }
+    if (code < 0)
+        return code;
+
+    for (plane=0; plane < ds->num_planes; plane++)
+    {
+        (ds->down_core)(ds, params->data[plane], params2.data[plane], row, plane, params2.raster);
+    }
 
     return code;
 }

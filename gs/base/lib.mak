@@ -1212,7 +1212,7 @@ $(GLOBJ)gdevemap.$(OBJ) : $(GLSRC)gdevemap.c $(AK) $(std_h) $(MAKEDIRS)
 
 # ----------- Downsampling routines ------------ #
 gxdownscale_h=$(GLSRC)gxdownscale.h $(gsmemory_h) $(gxdevcli_h) $(ctype__h) \
- $(gstypes_h)
+ $(gstypes_h) $(gxgetbit_h)
 downscale_=$(GLOBJ)gxdownscale.$(OBJ)
 
 $(GLOBJ)gxdownscale.$(OBJ) : $(GLSRC)gxdownscale.c $(AK) \

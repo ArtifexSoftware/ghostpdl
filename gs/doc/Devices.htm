@@ -458,6 +458,17 @@ It is possible to create an overall CMYK composite for more than 4 colorants
 by then adding together (via an external application like imagemagick) 
 the composite CMYK output files from the individual Ghostscript passes. 
 
+<p>The <code>tiffsep</code> device accepts a -dBitsPerComponent=
+option, which may be set to 8 (the default) or 1. In 1bpp mode, the
+device renders each component internally in 8 bits, but then converts
+down to 1bpp with error diffusion before output as described below in
+the <code>tiffscaled</code> device. No composite file is produced in
+1bpp mode, only individual separations.
+
+<p>The device also accepts the -dDownScaleFactor= and -dMinFeatureSize=
+parameters as described below in the tiffscaled device, but
+MinFeatureSize is only honoured in 1bpp mode.
+
 <a name="tiffsep1"></a><dt><code>tiffsep1</code>
 <dd>
 The tiffsep1 device creates multiple output files, one for each component
