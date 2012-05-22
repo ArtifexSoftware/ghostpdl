@@ -130,9 +130,10 @@ build_char(gs_show_enum *penum, gs_state *pgs, gs_font *gsfont, gs_char cid, gs_
 
 	gs_setcachedevice(penum, pgs, w2);
 
-	if (fzfont->ft_face) {	
+	if (fzfont->ft_face) {
 		FT_Face face = fzfont->ft_face;
 		FT_Set_Char_Size(face, 64, 64, 72, 72);
+		FT_Set_Transform(face, NULL, NULL);
 		FT_Load_Glyph(face, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
 		gs_moveto(pgs, 0, 0);
 		FT_Outline_Decompose(&face->glyph->outline, &outline_funcs, pgs);
