@@ -510,6 +510,7 @@ moo_install_halftone(gs_state *pgs, gx_device *pdevice)
 
     return 0;
 }
+
 /* Parser implementation descriptor */
 const pl_interp_implementation_t moo_implementation =
 {

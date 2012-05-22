@@ -12,9 +12,14 @@ Build mupdf as usual:
 	make -C src/mupdf
 
 Build ghostscript and assemble a libgs.a manually.
+
+	cd src/ghostpdl && ./autogen.sh && make debug
+
+	ar cru src/ghostpdl/moo/libgs.a src/ghostpdl/main/debugobj/*.o
+
 Also create src/moo/arch.h by copying from the regular build.
 
-	ar cru src/ghostpdl/moo/lib/libgs.a ...object files...
+	cp src/ghostpdl/main/debugobj/arch.h src/ghostpdl/moo
 
 Build mooscript:
 
