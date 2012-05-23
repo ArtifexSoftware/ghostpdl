@@ -934,10 +934,11 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     }
     switch (code = param_read_long(plist,
                                    (param_name = "DownScaleFactor"),
-                                   &pdevn->DownScaleFactor)) {
+                                   &downscale)) {
         case 0:
             if (downscale <= 0)
                 downscale = 1;
+            pdevn->DownScaleFactor = downscale;
             break;
         case 1:
             break;

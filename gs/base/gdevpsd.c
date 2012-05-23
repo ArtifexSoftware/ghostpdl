@@ -30,6 +30,7 @@
 #include "gsicc_manage.h"
 #include "gxgetbit.h"
 #include "gdevppla.h"
+#include "gxdownscale.h"
 
 #ifndef cmm_gcmmhlink_DEFINED
     #define cmm_gcmmhlink_DEFINED
@@ -94,6 +95,8 @@ typedef struct psd_device_s {
     equivalent_cmyk_color_params equiv_cmyk_colors;
 
     psd_color_model color_model;
+
+    long downscale_factor;
 
     /* ICC color profile objects, for color conversion.
        These are all device link profiles.  At least that
@@ -288,6 +291,7 @@ const psd_device gs_psdrgb_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
+    1                           /* downscale_factor */
 };
 
 /*
@@ -325,6 +329,7 @@ const psd_device gs_psdcmyk_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
+    1                           /* downscale_factor */
 };
 
 #undef NC
@@ -791,7 +796,12 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
         pcmyks.size = strlen(xdev->profile_cmyk_fn),
         pcmyks.persistent = false;
     code = param_write_string(plist, "ProfileCmyk", &prgbs);
+    if (code < 0)
+        return code;
 #endif
+    code = param_write_long(plist, "DownScaleFactor", &xdev->downscale_factor);
+    if (code < 0)
+        return code;
 
     return code;
 }
@@ -867,6 +877,20 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
     psd_color_model color_model = pdevn->color_model;
     gx_device_color_info save_info = pdevn->color_info;
 
+    switch (code = param_read_long(plist,
+                                   "DownScaleFactor",
+                                   &pdevn->downscale_factor)) {
+        case 0:
+            if (pdevn->downscale_factor <= 0)
+                pdevn->downscale_factor = 1;
+            break;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, "DownScaleFactor", code);
+            return code;
+    }
+
 #if ENABLE_ICC_PROFILE
     code = psd_param_read_fn(plist, "ProfileOut", &po,
                                  sizeof(pdevn->profile_out_fn));
@@ -926,7 +950,6 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
                             size_of(gx_device_color_info)) != 0)
         code = psd_open_profiles(pdevn);
 #endif
-
     return code;
 }
 
@@ -1020,8 +1043,8 @@ psd_setup(psd_write_ctx *xc, psd_device *dev)
         }
         xc->n_extra_channels = spot_count;
     }
-    xc->width = dev->width;
-    xc->height = dev->height;
+    xc->width = dev->width/dev->downscale_factor;
+    xc->height = dev->height/dev->downscale_factor;
     /*
      * Determine the order of the output components.  This is based upon
      * the SeparationOrder parameter.  This parameter can be used to select
@@ -1241,6 +1264,8 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int num_comp = xc->num_channels;
     gs_int_rect rect;
     gs_get_bits_params_t params;
+    gx_downscaler_t ds = { NULL };
+    psd_device *psd_dev = (psd_device *)pdev;
 
     rect.q.x = pdev->width;
     rect.p.x = 0;
@@ -1265,6 +1290,11 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     if (sep_line == NULL)
         return_error(gs_error_VMerror);
 
+    code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params, num_comp,
+                                     psd_dev->downscale_factor, 0, 8);
+    if (code < 0)
+        goto cleanup;
+
     /* Print the output planes */
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
         int data_pos = xc->chnl_to_position[chan_idx];
@@ -1272,8 +1302,9 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
             for (j = 0; j < xc->height; ++j) {
                 rect.p.y = j;   
                 rect.q.y = j + 1;
-                code = dev_proc(pdev, get_bits_rectangle)
-                    ((gx_device *) pdev, &rect, &params, NULL);
+                code = gx_downscaler_get_bits_rectangle(&ds, &params, j);
+                if (code < 0)
+                    goto cleanup;
 
                 unpacked = params.data[data_pos];
                 /* To do, get ICC stuff in place for planar device */
@@ -1303,6 +1334,8 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         }
     }
 
+cleanup:
+    gx_downscaler_fin(&ds);
     gs_free_object(pdev->memory, sep_line, "psd_write_sep_line");
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
         gs_free_object(pdev->memory, planes[chan_idx], 
