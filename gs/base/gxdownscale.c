@@ -65,7 +65,6 @@ static void down_core(gx_downscaler_t *ds,
                       int              span)
 {
     int        x, xx, y, value;
-    int        mask;
     int        e_downleft, e_down, e_forward = 0;
     int        pad_white;
     byte      *inp, *outp;
@@ -552,7 +551,6 @@ static void down_core_mfs(gx_downscaler_t *ds,
                           int              span)
 {
     int        x, xx, y, value;
-    int        mask;
     int        e_downleft, e_down, e_forward = 0;
     int        pad_white;
     byte      *inp, *outp;
