@@ -1102,19 +1102,19 @@ static void *psd_read(ImageReader *im,
     if (c == 4) {
         *cmyk = 1;
         if (n < 4) {
-            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a CMYK (+spots) PSD file!\n", n);
+            fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a CMYK (+spots) PSD file!\n", n);
             exit(1);
         }
     } else if (c == 3) {
         *cmyk = 0; /* RGB */
         if (n != 3) {
-            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a RGB PSD file!\n");
+            fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a RGB PSD file!\n", n);
             exit(1);
         }
     } else if (c == 1) {
         *cmyk = 0; /* Greyscale */
         if (n != 1) {
-            fprintf(stderr, "bmpcmp: Unexpected number of compoents (%d) in a Greyscale PSD file!\n");
+            fprintf(stderr, "bmpcmp: Unexpected number of components (%d) in a Greyscale PSD file!\n", n);
             exit(1);
         }
     } else {
