@@ -630,7 +630,7 @@ psd_encode_color(gx_device *dev, const gx_color_value colors[])
     COLROUND_SETUP(bpc);
     for (; i<ncomp; i++) {
         color <<= bpc;
-        color |= COLROUND_ROUND(colors[i]);
+        color |= COLROUND_ROUND(colors[ncomp-1-i]);
     }
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -649,7 +649,7 @@ psd_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
 
     COLDUP_SETUP(bpc);
     for (; i<ncomp; i++) {
-        out[ncomp - i - 1] = COLDUP_DUP(color & mask);
+        out[i] = COLDUP_DUP(color & mask);
         color >>= bpc;
     }
     return 0;
@@ -1311,7 +1311,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
                // if (link == NULL) {
                     if (base_bytes_pp == 3) {
                         /* RGB */
-                        memcpy(unpacked, sep_line, xc->width);
+                        memcpy(sep_line, unpacked, xc->width);
                     } else {
                         for (i = 0; i < xc->width; ++i) {
                             /* CMYK + spots*/
