@@ -29,6 +29,11 @@
 #include "ivmspace.h"
 #include "store.h"
 
+static int do_validate_chunk(const chunk_t * cp, gc_state_t * gcst);
+static int do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+                              gc_state_t * gcst);
+
+
 /* ================ Locating ================ */
 
 /* Locate a pointer in the chunks of a space being collected. */
@@ -245,7 +250,11 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
                   (ulong) mem, mem->space, level);
         /* Validate chunks. */
         for (cp = smem->cfirst; cp != 0; cp = cp->cnext)
-            ialloc_validate_chunk(cp, gcst);
+            if (do_validate_chunk(cp, gcst)) {
+                lprintf3("while validating memory 0x%lx, space %d, level %d\n",
+                         (ulong) mem, mem->space, level);
+                gs_abort(gcst->heap);
+            }
         /* Validate freelists. */
         for (i = 0; i < num_freelists; ++i) {
             uint free_size = i << log2_obj_align_mod;
@@ -285,24 +294,30 @@ object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
 #if IGC_PTR_STABILITY_CHECK
 void ialloc_validate_pointer_stability(const obj_header_t * ptr_from,
                                    const obj_header_t * ptr_to);
-static void ialloc_validate_ref(const ref *, gc_state_t *, const obj_header_t *pre_fr);
-static void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *, const obj_header_t *pre_fr);
+static int ialloc_validate_ref(const ref *, gc_state_t *, const obj_header_t *pre_fr);
+static int ialloc_validate_ref_packed(const ref_packed *, gc_state_t *, const obj_header_t *pre_fr);
 #else
-static void ialloc_validate_ref(const ref *, gc_state_t *);
-static void ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
+static int ialloc_validate_ref(const ref *, gc_state_t *);
+static int ialloc_validate_ref_packed(const ref_packed *, gc_state_t *);
 #endif
-void
-ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
+static int
+do_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 {
+    int ret = 0;
+
     if_debug_chunk('6', "[6]validating chunk", cp);
     SCAN_CHUNK_OBJECTS(cp);
     DO_ALL
         if (pre->o_type == &st_free) {
-            if (!object_size_valid(pre, size, cp))
+            if (!object_size_valid(pre, size, cp)) {
                 lprintf3("Bad free object 0x%lx(%lu), in chunk 0x%lx!\n",
                          (ulong) (pre + 1), (ulong) size, (ulong) cp);
-        } else
-            ialloc_validate_object(pre + 1, cp, gcst);
+                return 1;
+            }
+        } else if (do_validate_object(pre + 1, cp, gcst)) {
+            dprintf_chunk("while validating chunk", cp);
+            return 1;
+        }
     if_debug3('7', " [7]validating %s(%lu) 0x%lx\n",
               struct_type_name_string(pre->o_type),
               (ulong) size, (ulong) pre);
@@ -312,10 +327,17 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 
         while ((const char *)rp < end) {
 #	    if IGC_PTR_STABILITY_CHECK
-            ialloc_validate_ref_packed(rp, gcst, pre);
+            ret = ialloc_validate_ref_packed(rp, gcst, pre);
 #	    else
-            ialloc_validate_ref_packed(rp, gcst);
+            ret = ialloc_validate_ref_packed(rp, gcst);
 #	    endif
+            if (ret) {
+                lprintf3("while validating %s(%lu) 0x%lx\n",
+                         struct_type_name_string(pre->o_type),
+                         (ulong) size, (ulong) pre);
+                dprintf_chunk("in chunk", cp);
+                return ret;
+            }
             rp = packed_next(rp);
         }
     } else {
@@ -332,24 +354,37 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
                     DO_NOTHING;
                 /* NB check other types ptr_string_type, etc. */
                 else if (ptype == ptr_struct_type) {
-                    ialloc_validate_object(eptr.ptr, NULL, gcst);
+                    ret = do_validate_object(eptr.ptr, NULL, gcst);
 #		    if IGC_PTR_STABILITY_CHECK
                         ialloc_validate_pointer_stability(pre,
-                            (const obj_header_t *)eptr.ptr - 1);
+                                         (const obj_header_t *)eptr.ptr - 1);
 #		    endif
                 } else if (ptype == ptr_ref_type)
 #		    if IGC_PTR_STABILITY_CHECK
-                    ialloc_validate_ref_packed(eptr.ptr, gcst, pre);
+                    ret = ialloc_validate_ref_packed(eptr.ptr, gcst, pre);
 #		    else
-                    ialloc_validate_ref_packed(eptr.ptr, gcst);
+                    ret = ialloc_validate_ref_packed(eptr.ptr, gcst);
 #		    endif
+                if (ret) {
+                    dprintf_chunk("while validating chunk", cp);
+                    return ret;
+                }
             }
     }
     END_OBJECTS_SCAN
+    return ret;
 }
+
+void
+ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
+{
+    if (do_validate_chunk(cp, gcst))
+        gs_abort(gcst->heap);
+}
+
 /* Validate a ref. */
 #if IGC_PTR_STABILITY_CHECK
-static void
+static int
 ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst, const obj_header_t *pre_fr)
 {
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
@@ -358,13 +393,13 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst, const obj_h
         ref unpacked;
 
         packed_get(cmem, rp, &unpacked);
-        ialloc_validate_ref(&unpacked, gcst, pre_fr);
+        return ialloc_validate_ref(&unpacked, gcst, pre_fr);
     } else {
-        ialloc_validate_ref((const ref *)rp, gcst, pre_fr);
+        return ialloc_validate_ref((const ref *)rp, gcst, pre_fr);
     }
 }
 #else
-static void
+static int
 ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
 {
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
@@ -373,13 +408,13 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
         ref unpacked;
 
         packed_get(cmem, rp, &unpacked);
-        ialloc_validate_ref(&unpacked, gcst);
+        return ialloc_validate_ref(&unpacked, gcst);
     } else {
-        ialloc_validate_ref((const ref *)rp, gcst);
+        return ialloc_validate_ref((const ref *)rp, gcst);
     }
 }
 #endif
-static void
+static int
 ialloc_validate_ref(const ref * pref, gc_state_t * gcst
 #		    if IGC_PTR_STABILITY_CHECK
                         , const obj_header_t *pre_fr
@@ -391,11 +426,12 @@ ialloc_validate_ref(const ref * pref, gc_state_t * gcst
     const char *tname;
     uint size;
     const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
+    int ret = 0;
 
     if (!gs_debug_c('?'))
-        return;			/* no check */
+        return 0;			/* no check */
     if (r_space(pref) == avm_foreign)
-        return;
+        return 0;
     switch (r_type(pref)) {
         case t_file:
             optr = pref->value.pfile;
@@ -408,11 +444,16 @@ ialloc_validate_ref(const ref * pref, gc_state_t * gcst
         case t_astruct:
             optr = pref->value.pstruct;
 cks:	    if (optr != 0) {
-                ialloc_validate_object(optr, NULL, gcst);
+                ret = do_validate_object(optr, NULL, gcst);
 #		if IGC_PTR_STABILITY_CHECK
                     ialloc_validate_pointer_stability(pre_fr,
-                            (const obj_header_t *)optr - 1);
+                                             (const obj_header_t *)optr - 1);
 #		endif
+                if (ret) {
+                    lprintf1("while validating 0x%lx (fontID/struct/astruct)\n",
+                             pref);
+                    return ret;
+                }
             }
             break;
         case t_name:
@@ -420,6 +461,7 @@ cks:	    if (optr != 0) {
                 lprintf3("At 0x%lx, bad name %u, pname = 0x%lx\n",
                          (ulong) pref, (uint)name_index(cmem, pref),
                          (ulong) pref->value.pname);
+                ret = 1;
                 break;
             } {
                 ref sref;
@@ -432,14 +474,17 @@ cks:	    if (optr != 0) {
                              (ulong) pref, (uint) r_size(pref),
                              (ulong) pref->value.pname,
                              (ulong) sref.value.const_bytes);
+                    ret = 1;
                 }
             }
             break;
         case t_string:
-            if (r_size(pref) != 0 && !gc_locate(pref->value.bytes, gcst))
+            if (r_size(pref) != 0 && !gc_locate(pref->value.bytes, gcst)) {
                 lprintf3("At 0x%lx, string ptr 0x%lx[%u] not in any chunk\n",
                          (ulong) pref, (ulong) pref->value.bytes,
                          (uint) r_size(pref));
+                ret = 1;
+            }
             break;
         case t_array:
             if (r_size(pref) == 0)
@@ -450,6 +495,7 @@ cks:	    if (optr != 0) {
 cka:	    if (!gc_locate(rptr, gcst)) {
                 lprintf3("At 0x%lx, %s 0x%lx not in any chunk\n",
                          (ulong) pref, tname, (ulong) rptr);
+                ret = 1;
                 break;
             } {
                 uint i;
@@ -457,9 +503,11 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                 for (i = 0; i < size; ++i) {
                     const ref *elt = rptr + i;
 
-                    if (r_is_packed(elt))
+                    if (r_is_packed(elt)) {
                         lprintf5("At 0x%lx, %s 0x%lx[%u] element %u is not a ref\n",
                                  (ulong) pref, tname, (ulong) rptr, size, i);
+                        ret = 1;
+                    }
                 }
             }
             break;
@@ -468,9 +516,11 @@ cka:	    if (!gc_locate(rptr, gcst)) {
             if (r_size(pref) == 0)
                 break;
             optr = pref->value.packed;
-            if (!gc_locate(optr, gcst))
+            if (!gc_locate(optr, gcst)) {
                 lprintf2("At 0x%lx, packed array 0x%lx not in any chunk\n",
                          (ulong) pref, (ulong) optr);
+                ret = 1;
+            }
             break;
         case t_dictionary:
             {
@@ -480,15 +530,18 @@ cka:	    if (!gc_locate(rptr, gcst)) {
                     !r_is_array(&pdict->keys) ||
                     !r_has_type(&pdict->count, t_integer) ||
                     !r_has_type(&pdict->maxlength, t_integer)
-                    )
+                    ) {
                     lprintf2("At 0x%lx, invalid dict 0x%lx\n",
                              (ulong) pref, (ulong) pdict);
+                    ret = 1;
+                }
                 rptr = (const ref *)pdict;
             }
             size = sizeof(dict) / sizeof(ref);
             tname = "dict";
             goto cka;
     }
+    return ret;
 }
 
 #if IGC_PTR_STABILITY_CHECK
@@ -515,8 +568,8 @@ ialloc_validate_pointer_stability(const obj_header_t * ptr_fr,
 #endif
 
 /* Validate an object. */
-void
-ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+static int
+do_validate_object(const obj_header_t * ptr, const chunk_t * cp,
                        gc_state_t * gcst)
 {
     const obj_header_t *pre = ptr - 1;
@@ -525,7 +578,7 @@ ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
     const char *oname;
 
     if (!gs_debug_c('?'))
-        return;			/* no check */
+        return 0;			/* no check */
     if (cp == 0 && gcst != 0) {
         gc_state_t st;
 
@@ -533,13 +586,13 @@ ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
         if (!(cp = gc_locate(pre, &st))) {
             lprintf1("Object 0x%lx not in any chunk!\n",
                      (ulong) ptr);
-            return;		/*gs_abort(); */
+            return 1;		/*gs_abort(); */
         }
     }
     if (otype == &st_free) {
         lprintf3("Reference to free object 0x%lx(%lu), in chunk 0x%lx!\n",
                  (ulong) ptr, (ulong) size, (ulong) cp);
-        gs_abort(gcst->heap);
+        return 1;
     }
     if ((cp != 0 && !object_size_valid(pre, size, cp)) ||
         otype->ssize == 0 ||
@@ -551,10 +604,18 @@ ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
                  (ulong) ptr, (ulong) size);
         dprintf2(" ssize = %u, in chunk 0x%lx!\n",
                  otype->ssize, (ulong) cp);
-        gs_abort(gcst->heap);
+        return 1;
     }
+    return 0;
 }
 
+void
+ialloc_validate_object(const obj_header_t * ptr, const chunk_t * cp,
+                       gc_state_t * gcst)
+{
+    if (do_validate_object(ptr, cp, gcst))
+        gs_abort(gcst->heap);
+}
 #else /* !DEBUG */
 
 void

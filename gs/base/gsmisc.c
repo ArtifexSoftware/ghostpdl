@@ -1158,7 +1158,7 @@ gs_debug_flags_list(gs_memory_t *heap)
 #ifdef DEBUG
     int i, j;
 
-    outprintf(heap, "Debugging flags are as follows:\n\n-Z  --debug=                Description\n");
+    outprintf(heap, "Debugging flags are as follows:\n\n-Z  --debug=            Description\n");
     for (i=0; i < gs_debug_flags_max; i++) {
         if (!gs_debug_flags[i].used)
             continue;

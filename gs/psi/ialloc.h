@@ -70,6 +70,8 @@ void ialloc_validate_spaces(const gs_dual_memory_t *);
 
 #define ivalidate_spaces() ialloc_validate_spaces(idmemory)
 
+void ivalidate_clean_spaces(i_ctx_t *i_ctx_p);
+
 /*
  * Local/global VM management.
  */

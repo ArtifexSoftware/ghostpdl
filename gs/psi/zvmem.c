@@ -46,7 +46,7 @@ gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
                     vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
 
 /* Clean up the stacks and validate storage. */
-static void
+void
 ivalidate_clean_spaces(i_ctx_t *i_ctx_p)
 {
     if (gs_debug_c('?')) {

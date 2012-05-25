@@ -21,7 +21,7 @@
 
 UNUSED(0) /* Never use 0, as lots of things 'imply' 0. */
 FLAG(icc, 1, 'c', "ICC profile"),
-UNUSED(2)
+FLAG(validate_chunks, 2, 0, "Validate chunks during interpretation"),
 UNUSED(3)
 UNUSED(4)
 UNUSED(5)
