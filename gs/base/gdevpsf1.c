@@ -310,12 +310,21 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
     gs_bytestring *data = (gs_bytestring *)&gdata->bits;
     byte *source = data->data, *dest = stripped, *end = source + data->size;
     int i, dest_length = 0, CurrentNumberIndex = 0, Stack[64], written;
+    int OnlyCalcLength = 0;
+    char Buffer[16];
+
+    if (stripped == NULL) {
+        OnlyCalcLength = 1;
+        dest = (byte *)&Buffer;
+    }
 
     gs_type1_decrypt(source, source, data->size, &state);
 
     if(pfont->data.lenIV >= 0) {
-        for (i=0;i<pfont->data.lenIV;i++)
-            *dest++ = *source++;
+        for (i=0;i<pfont->data.lenIV;i++) {
+            if (!OnlyCalcLength)
+                *dest++ = *source++;
+        }
         dest_length += pfont->data.lenIV;
     }
     while (source < end) {
@@ -338,7 +347,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
                                 source += 2;
                                 break;
@@ -347,7 +357,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
                                 source += 2;
                                 break;
@@ -356,7 +367,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
                                 source += 2;
                                 break;
@@ -365,7 +377,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
                                 source += 2;
                                 break;
@@ -374,7 +387,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
                                 source += 2;
                                 break;
@@ -382,10 +396,15 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                                 for (i = 0;i < CurrentNumberIndex;i++) {
                                     written = WriteNumber(dest, Stack[i]);
                                     dest_length += written;
-                                    dest += written;
+                                    if (!OnlyCalcLength)
+                                        dest += written;
                                 }
-                                *dest++ = *source++;
-                                *dest++ = *source++;
+                                if (!OnlyCalcLength) {
+                                    *dest++ = *source++;
+                                    *dest++ = *source++;
+                                } else {
+                                    source += 2;
+                                }
                                 dest_length += 2;
                                 break;
                         }
@@ -393,10 +412,15 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                         for (i = 0;i < CurrentNumberIndex;i++) {
                             written = WriteNumber(dest, Stack[i]);
                             dest_length += written;
-                            dest += written;
+                            if (!OnlyCalcLength)
+                                dest += written;
                         }
-                        *dest++ = *source++;
-                        *dest++ = *source++;
+                        if (!OnlyCalcLength) {
+                            *dest++ = *source++;
+                            *dest++ = *source++;
+                        } else {
+                            source += 2;
+                        }
                         dest_length += 2;
                     }
                     break;
@@ -410,21 +434,27 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                         for (i=0;i < StackBase; i++) {
                             written = WriteNumber(dest, Stack[i]);
                             dest_length += written;
-                            dest += written;
+                            if (!OnlyCalcLength)
+                                dest += written;
                         }
                         for (i=0;i<SubrsWithMM[index];i++) {
                             written = WriteNumber(dest, Stack[StackBase + i]);
                             dest_length += written;
-                            dest += written;
+                            if (!OnlyCalcLength)
+                                dest += written;
                         }
                         source++;
                     } else {
                         for (i = 0;i < CurrentNumberIndex;i++) {
                             written = WriteNumber(dest, Stack[i]);
                             dest_length += written;
-                            dest += written;
+                            if (!OnlyCalcLength)
+                                dest += written;
                         }
-                        *dest++ = *source++;
+                        if (!OnlyCalcLength)
+                            *dest++ = *source++;
+                        else
+                            source++;
                         dest_length++;
                     }
                     break;
@@ -432,9 +462,13 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                     for (i = 0;i < CurrentNumberIndex;i++) {
                         written = WriteNumber(dest, Stack[i]);
                         dest_length += written;
-                        dest += written;
+                        if (!OnlyCalcLength)
+                            dest += written;
                     }
-                    *dest++ = *source++;
+                    if (!OnlyCalcLength)
+                        *dest++ = *source++;
+                    else
+                        source++;
                     dest_length++;
             }
             CurrentNumberIndex = 0;
@@ -464,8 +498,11 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
     source = data->data;
     state = crypt_charstring_seed;
     gs_type1_encrypt(source, source, data->size, &state);
-    state = crypt_charstring_seed;
-    gs_type1_encrypt(stripped, stripped, dest_length, &state);
+
+    if (!OnlyCalcLength) {
+        state = crypt_charstring_seed;
+        gs_type1_encrypt(stripped, stripped, dest_length, &state);
+    }
     return dest_length;
 }
 
@@ -597,9 +634,11 @@ write_Private(stream *s, gs_font_type1 *pfont,
                 if (gdata.bits.size) {
                     if (pfont->data.WeightVector.count != 0) {
                         byte *stripped;
+                        int length;
                         gs_bytestring *data = (gs_bytestring *)&gdata.bits;
 
-                        stripped = gs_alloc_bytes(pfont->memory, data->size, "Subrs copy for OtherSubrs");
+                        length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
+                        stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
                         code = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
                         if (code < 0) {
                             if (SubrsWithMM != 0)
