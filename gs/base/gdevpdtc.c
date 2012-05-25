@@ -153,10 +153,25 @@ process_composite_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
             }
             pte->xy_index = out.xy_index;
             if (return_width) {
-                pte->returned.total_width.x = total_width.x +=
-                    out.returned.total_width.x;
-                pte->returned.total_width.y = total_width.y +=
-                    out.returned.total_width.y;
+                /* This is silly, but its a consequence of the way pdf_process_string
+                 * works. When we have TEXT_DO_NONE (stringwidth) we add the width of the
+                 * glyph(s) to the enumerator 'returned.total_width' so we keep track
+                 * of the total width as we go. However when we are returning the width
+                 * but its NOT for a stringwidth, we set the enumerator 'retuerned'
+                 * value to just the width of the glyph(s) processed. So when we are *not*
+                 * handling a stringwidth we need to keep track of the total width
+                 * ourselves. I'd have preferred to alter pdf_process_string, but that
+                 * is used in many other places, and those places rely on this behaviour.
+                 */
+                if (pte->text.operation & TEXT_DO_NONE) {
+                    pte->returned.total_width.x = total_width.x = out.returned.total_width.x;
+                    pte->returned.total_width.y = total_width.y = out.returned.total_width.y;
+                } else {
+                    pte->returned.total_width.x = total_width.x +=
+                        out.returned.total_width.x;
+                    pte->returned.total_width.y = total_width.y +=
+                        out.returned.total_width.y;
+                }
             }
             pdf_text_release_cgp(penum);
         }
