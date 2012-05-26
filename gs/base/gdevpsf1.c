@@ -635,7 +635,6 @@ write_Private(stream *s, gs_font_type1 *pfont,
                     if (pfont->data.WeightVector.count != 0) {
                         byte *stripped;
                         int length;
-                        gs_bytestring *data = (gs_bytestring *)&gdata.bits;
 
                         length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
                         stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
