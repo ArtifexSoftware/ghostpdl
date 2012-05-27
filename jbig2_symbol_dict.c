@@ -529,7 +529,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 		      /* multiple symbols are handled as a text region */
 		      jbig2_decode_text_region(ctx, segment, tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
-			  n_refagg_dicts, image, data, size, GR_stats, as, as ? NULL : ws);
+			  n_refagg_dicts, image, data, size, GR_stats, as, ws);
 
 		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
 		      refagg_dicts[0]->glyphs[params->SDNUMINSYMS + NSYMSDECODED] = jbig2_image_clone(ctx, SDNEWSYMS->glyphs[NSYMSDECODED]);
@@ -800,7 +800,10 @@ cleanup4:
 
 cleanup2:
   jbig2_sd_release(ctx, SDNEWSYMS);
-  jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
+  if (params->SDHUFF && params->SDREFAGG)
+  {
+      jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
+  }
   jbig2_release_huffman_table(ctx, SDHUFFRDX);
   jbig2_release_huffman_table(ctx, SBHUFFRSIZE);
   jbig2_huffman_free(ctx, hs);
