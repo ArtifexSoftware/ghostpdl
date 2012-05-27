@@ -364,7 +364,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  /* check for broken symbol table */
  	  if (NSYMSDECODED > params->SDNUMNEWSYMS)
       {
-          jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+          jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
               "No OOB signalling end of height class %d", HCHEIGHT);
 	      goto cleanup4;
       }
