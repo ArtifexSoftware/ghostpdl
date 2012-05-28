@@ -709,7 +709,61 @@ static void down_core_mfs(gx_downscaler_t *ds,
     pack_8to1(out_buffer, outp, awidth);
 }
 
-/* Grey downscale code */
+/* Grey (or planar) downscale code */
+static void down_core16(gx_downscaler_t *ds,
+                        byte            *outp,
+                        byte            *in_buffer,
+                        int              row,
+                        int              plane,
+                        int              span)
+{
+    int   x, xx, y, value;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   factor = ds->factor;
+    int   div    = factor*factor;
+
+    pad_white = (awidth - width) * factor;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*2*factor;
+        for (y = factor; y > 0; y--)
+        {
+            memset(inp, 0xFF, pad_white*2);
+            inp += span;
+        }
+    }
+
+    inp = in_buffer;
+    {
+        /* Left to Right pass (no min feature size) */
+        const int back = span * factor -2;
+        for (x = awidth; x > 0; x--)
+        {
+            value = 0;
+            for (xx = factor; xx > 0; xx--)
+            {
+                for (y = factor; y > 0; y--)
+                {
+                    value += inp[0]<<8;
+                    value += inp[1];
+                    inp += span;
+                }
+                inp -= back;
+            }
+            value = (value + (div>>1))/div;
+            outp[0] = value>>8;
+            outp[1] = value;
+            outp += 2;
+        }
+    }
+}
+
 static void down_core8(gx_downscaler_t *ds,
                        byte            *outp,
                        byte            *in_buffer,
@@ -963,9 +1017,10 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               int                   num_comps,
                               int                   factor,
                               int                   mfs,
+                              int                   src_bpc,
                               int                   dst_bpc)
 {
-    int                span = bitmap_raster(dev->width * 8);
+    int                span = bitmap_raster(dev->width * src_bpc);
     int                width = dev->width/factor;
     int                code;
     gx_downscale_core *core;
@@ -978,6 +1033,7 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
     ds->span       = span;
     ds->factor     = factor;
     ds->num_planes = num_comps;
+    ds->src_bpc    = src_bpc;
 
     memcpy(&ds->params, params, sizeof(*params));
     ds->params.raster = span;
@@ -1006,6 +1062,8 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
     }
     else if (factor == 1)
         core = NULL;
+    else if (src_bpc == 16)
+        core = &down_core16;
     else if (factor == 4)
         core = &down_core8_4;
     else if (factor == 3)
@@ -1078,9 +1136,14 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     ds->span       = span;
     ds->factor     = factor;
     ds->num_planes = 0;
+    ds->src_bpc    = src_bpc;
     
     /* Choose an appropriate core */
-    if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 1))
+    if ((src_bpc == 16) && (dst_bpc == 16) && (num_comps == 1))
+    {
+        core = &down_core16;
+    }
+    else if ((src_bpc == 8) && (dst_bpc == 1) && (num_comps == 1))
     {
         if (mfs > 1)
             core = &down_core_mfs;
@@ -1231,7 +1294,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     if (code == gs_error_rangecheck)
     {
         int i, j;
-        int copy = ds->dev->width; /* Assumes 8bpp */
+        int copy = ds->dev->width * (ds->src_bpc>>3);
         /* At the bottom of a band, the get_bits_rectangle call can fail to be
          * able to return us enough lines of data at the same time. We therefore
          * drop back to reading them one at a time, and copying them into our

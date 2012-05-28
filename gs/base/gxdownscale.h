@@ -41,6 +41,7 @@ struct gx_downscaler_s {
     int                   span;      /* Num bytes in downscale buffer scanline */
     int                   factor;    /* Factor to downscale */
     byte                 *mfs_data;  /* MinFeatureSize data */
+    int                   src_bpc;   /* Source bpc */
     int                  *errors;    /* Error diffusion table */
     byte                 *data;      /* Downscaling buffer */
     gx_downscale_core    *down_core; /* Core downscaling function */
@@ -59,11 +60,16 @@ struct gx_downscaler_s {
  */
  
 /* For chunky mode, currently only:
- *   src_bpc == 8 && dst_bpc == 1 && num_comps == 1
- *   src_bpc == 8 && dst_bpc == 8 && num_comps == 1
- *   src_bpc == 8 && dst_bpc == 8 && num_comps == 3
+ *   src_bpc ==  8 && dst_bpc ==  1 && num_comps == 1
+ *   src_bpc ==  8 && dst_bpc ==  8 && num_comps == 1
+ *   src_bpc ==  8 && dst_bpc ==  8 && num_comps == 3
+ *   src_bpc == 16 && dst_bpc == 16 && num_comps == 1
  * are supported. mfs is ignored for all except the first of these.
- * For planar mode, currently only src_bpp && dst_bpp == 8 are supported.
+ * For planar mode, currently only:
+ *   src_bpp ==  8 && dst_bpp ==  1
+ *   src_bpp ==  8 && dst_bpp ==  8
+ *   src_bpp == 16 && dst_bpp == 16
+ * are supported.
  */
 int gx_downscaler_init(gx_downscaler_t   *ds,
                        gx_device         *dev,
@@ -81,6 +87,7 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               int                   num_comps,
                               int                   factor,
                               int                   mfs,
+                              int                   src_bpc,
                               int                   dst_bpc);
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,

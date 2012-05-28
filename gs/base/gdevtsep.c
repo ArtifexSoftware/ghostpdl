@@ -1963,7 +1963,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
                 }
             }
             code = gx_downscaler_init_planar(&ds, (gx_device *)pdev, &params,
-                                             num_comp, factor, mfs, dst_bpc);
+                                             num_comp, factor, mfs, 8, dst_bpc);
             if (code < 0)
                 goto cleanup;
             for (y = 0; y < height; ++y) {
