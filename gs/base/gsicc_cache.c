@@ -505,7 +505,8 @@ gsicc_get_link(const gs_imager_state *pis, gx_device *dev_in,
         if (index < gs_color_space_index_DevicePixel && 
             dev_profile->usefastcolor) {
             /* Return a "link" from the source space to the device color space */
-            gsicc_link_t *link = gsicc_nocm_get_link(pis, dev, index);
+            gsicc_link_t *link = gsicc_nocm_get_link(pis, dev, 
+                                                     gs_input_profile->num_comps);
             if (link != NULL) {
                 if (gs_input_profile->num_comps == 
                     dev_profile->device_profile[0]->num_comps) {
