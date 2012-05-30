@@ -212,8 +212,8 @@ cleanup1:
         STRIPT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
     } else {
         code = jbig2_arith_int_decode(params->IADT, as, &STRIPT);
-        if (code < 0) goto cleanup2;
     }
+    if (code < 0) goto cleanup2;
 
     /* 6.4.5 (2) */
     STRIPT *= -(params->SBSTRIPS);
@@ -227,8 +227,8 @@ cleanup1:
             DT = jbig2_huffman_get(hs, params->SBHUFFDT, &code);
         } else {
             code = jbig2_arith_int_decode(params->IADT, as, &DT);
-            if (code < 0) goto cleanup2;
         }
+        if (code < 0) goto cleanup2;
         DT *= params->SBSTRIPS;
         STRIPT += DT;
 
@@ -242,12 +242,11 @@ cleanup1:
 		    DFS = jbig2_huffman_get(hs, params->SBHUFFFS, &code);
 		} else {
 		    code = jbig2_arith_int_decode(params->IAFS, as, &DFS);
-            if (code < 0) goto cleanup2;
 		}
+                if (code < 0) goto cleanup2;
 		FIRSTS += DFS;
 		CURS = FIRSTS;
 		first_symbol = FALSE;
-
 	    } else {
 		/* (3c.ii) / 6.4.8 */
 		if (params->SBHUFF) {
@@ -256,6 +255,7 @@ cleanup1:
 		    code = jbig2_arith_int_decode(params->IADS, as, &IDS);
 		}
 		if (code) {
+                    /* decoded an OOB, reached end of stripe */
 		    break;
 		}
 		CURS += IDS + params->SBDSOFFSET;
@@ -277,8 +277,8 @@ cleanup1:
 		ID = jbig2_huffman_get(hs, SBSYMCODES, &code);
 	    } else {
 		code = jbig2_arith_iaid_decode(params->IAID, as, (int *)&ID);
-        if (code < 0) goto cleanup2;
 	    }
+            if (code < 0) goto cleanup2;
 	    if (ID >= SBNUMSYMS) {
             code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                 "symbol id out of range! (%d/%d)", ID, SBNUMSYMS);

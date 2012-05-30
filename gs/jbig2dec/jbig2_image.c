@@ -43,7 +43,7 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 
 	stride = ((width - 1) >> 3) + 1; /* generate a byte-aligned stride */
         /* check for integer multiplication overflow */
-        check = (int64_t)stride*height;
+        check = ((int64_t)stride)*((int64_t)height);
         if (check != (int)check)
         {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
