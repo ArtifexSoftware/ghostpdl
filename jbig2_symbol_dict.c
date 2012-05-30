@@ -729,33 +729,34 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   {
     int i = 0;
     int j = 0;
-    int k, m, exflag = 0;
+    int k;
+    int exflag = 0;
+    int64_t limit = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
     int32_t exrunlength;
 
-    if (params->SDINSYMS != NULL)
-      m = params->SDINSYMS->n_symbols;
-    else
-      m = 0;
-    while (j < params->SDNUMEXSYMS) {
+    while (i < limit) {
       if (params->SDHUFF)
-      	/* FIXME: implement reading from huff table B.1 */
-        exrunlength = exflag ? params->SDNUMEXSYMS : 0;
+        exrunlength = jbig2_huffman_get(hs, SBHUFFRSIZE, &code);
       else
         code = jbig2_arith_int_decode(IAEX, as, &exrunlength);
-      if (exflag && exrunlength > params->SDNUMEXSYMS - j) {
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-          "runlength too large in export symbol table (%d > %d - %d)\n",
-          exrunlength, params->SDNUMEXSYMS, j);
-        jbig2_sd_release(ctx, SDEXSYMS);
+      if (code || (exrunlength > limit - i)) {
+        if (code)
+          jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "failed to decode exrunlength for exported symbols");
+        else
+          jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "runlength too large in export symbol table (%d > %d - %d)\n",
+            exrunlength, params->SDNUMEXSYMS, j);
         /* skip to the cleanup code and return SDEXSYMS = NULL */
+        jbig2_sd_release(ctx, SDEXSYMS);
         SDEXSYMS = NULL;
         break;
       }
       for(k = 0; k < exrunlength; k++) {
         if (exflag) {
-          SDEXSYMS->glyphs[j++] = (i < m) ?
+          SDEXSYMS->glyphs[j++] = (i < params->SDNUMINSYMS) ?
             jbig2_image_clone(ctx, params->SDINSYMS->glyphs[i]) :
-            jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-m]);
+            jbig2_image_clone(ctx, SDNEWSYMS->glyphs[i-params->SDNUMINSYMS]);
         }
         i++;
       }
