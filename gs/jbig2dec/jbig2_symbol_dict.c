@@ -801,7 +801,7 @@ cleanup4:
 
 cleanup2:
   jbig2_sd_release(ctx, SDNEWSYMS);
-  if (params->SDHUFF && params->SDREFAGG)
+  if (params->SDHUFF && !params->SDREFAGG)
   {
       jbig2_free(ctx->allocator, SDNEWSYMWIDTHS);
   }
