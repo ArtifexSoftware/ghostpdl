@@ -702,10 +702,14 @@ pdf_close_aside(gx_device_pdf *pdev)
        into pdf_substream_save stack to simplify garbager descriptors.
        Use a lower level functions instead that. */
     stream *s = pdev->strm;
+    cos_stream_t *pcs = cos_stream_from_pipeline(s);
     int status = s_close_filters(&s, NULL);
+
     pdev->strm = pdev->streams.save_strm;
     if (status < 0)
          return(gs_note_error(gs_error_ioerror));
+
+    pcs->is_open = false;
     return 0;
 }
 
