@@ -724,7 +724,8 @@ pl_main_universe_select(
         universe->curr_instance->pcl_personality = pti->pcl_personality;
         universe->curr_instance->interpolate = pti->interpolate;
         universe->curr_instance->page_set_on_command_line = pti->page_set_on_command_line;
-        universe->curr_instance->res_set_on_command_line = pti->res_set_on_command_line;                
+        universe->curr_instance->res_set_on_command_line = pti->res_set_on_command_line;
+        universe->curr_instance->high_level_device = pti->high_level_device;
         universe->curr_instance->piccdir = pti->piccdir;
         universe->curr_instance->pdefault_gray_icc = pti->pdefault_gray_icc;
         universe->curr_instance->pdefault_rgb_icc = pti->pdefault_rgb_icc;
@@ -799,6 +800,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
     pti->interpolate = false;
     pti->page_set_on_command_line = false;
     pti->res_set_on_command_line = false;
+    pti->high_level_device = false;
     pti->piccdir = NULL;
     pti->pdefault_gray_icc = NULL;
     pti->pdefault_rgb_icc = NULL;
@@ -833,7 +835,10 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
         if (pti->device != NULL)
           gs_register_struct_root(pti->device_memory, &device_root,
                                   (void **)&pti->device, "pl_top_create_device");
-
+        /* NB this needs a better solution */
+        if (!strcmp(gs_devicename(pti->device), "pdfwrite") ||
+            !strcmp(gs_devicename(pti->device), "ps2write"))
+            pti->high_level_device = true;
     }
     return code;
 }

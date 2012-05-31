@@ -56,7 +56,8 @@ typedef struct pl_main_instance_s {
     bool interpolate;
     bool page_set_on_command_line;
     bool res_set_on_command_line;
-    
+    bool high_level_device;
+
     /* we have to store these in the main instance until the languages
        state is sufficiently initialized to set the parameters. */
     char *piccdir;

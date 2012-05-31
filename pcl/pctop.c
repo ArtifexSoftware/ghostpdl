@@ -387,6 +387,12 @@ pcl_get_res_set(pl_interp_instance_t *instance)
     return instance->res_set_on_command_line;
 }
 
+static bool
+pcl_get_high_level(pl_interp_instance_t *instance)
+{
+    return instance->high_level_device;
+}
+
 #include "plmain.h"
 
 /* Set a device into an interperter instance */
@@ -407,9 +413,9 @@ pcl_impl_set_device(
     pcli->pcs.interpolate = pcl_get_interpolation(instance);
     pcli->pcs.page_set_on_command_line = pcl_get_page_set(instance);
     pcli->pcs.res_set_on_command_line = pcl_get_res_set(instance);
+    pcli->pcs.high_level_device = pcl_get_high_level(instance);
 
     /* Set the device into the pcl_state & gstate */
-
     stage = Ssetdevice;
     if ((code = gs_setdevice_no_erase(pcli->pcs.pgs, device)) < 0)	/* can't erase yet */
         goto pisdEnd;

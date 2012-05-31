@@ -43,6 +43,7 @@ typedef struct pl_interp_instance_s {
     bool            interpolate;
     bool            page_set_on_command_line;
     bool            res_set_on_command_line;
+    bool            high_level_device;
     char *          piccdir;
     char *          pdefault_gray_icc;
     char *          pdefault_rgb_icc;
