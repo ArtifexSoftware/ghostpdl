@@ -253,7 +253,7 @@ jbig2_huffman_get (Jbig2HuffmanState *hs,
       entry = &table->entries[this_word >> (32 - log_table_size)];
       flags = entry->flags;
       PREFLEN = entry->PREFLEN;
-      if ((flags == (byte)-1) && (PREFLEN == (int)-1) && (entry->u.RANGELOW == -1))
+      if ((flags == (byte)-1) && (PREFLEN == (byte)-1) && (entry->u.RANGELOW == -1))
       {
           if (oob)
               *oob = -1;
