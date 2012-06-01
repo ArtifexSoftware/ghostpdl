@@ -186,6 +186,7 @@ int
 gx_overprint_generic_fill_rectangle(
     gx_device *             tdev,
     gx_color_index          drawn_comps,
+    ushort                  k_value,
     int                     x,
     int                     y,
     int                     w,
@@ -318,9 +319,21 @@ gx_overprint_generic_fill_rectangle(
 
             if ((code = dev_proc(tdev, decode_color)(tdev, *cp, dest_cvals)) < 0)
                 break;
-            for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
-                if ((comps & 0x1) != 0)
-                    dest_cvals[j] = src_cvals[j];
+            if (k_value > 0) {
+                /* Have to run through all 3 components */
+                for (j = 0, comps = drawn_comps; j < 3; j++, comps >>= 1) {
+                    if ((comps & 0x1) != 0)
+                        dest_cvals[j] = src_cvals[j];
+                    else {
+                        int temp = (dest_cvals[j] * (256 - k_value));
+                        dest_cvals[j] = temp >> 8;
+                    }
+                }
+            } else {
+                for (j = 0, comps = drawn_comps; comps != 0; ++j, comps >>= 1) {
+                    if ((comps & 0x1) != 0)
+                        dest_cvals[j] = src_cvals[j];
+                }
             }
             *cp = dev_proc(tdev, encode_color)(tdev, dest_cvals);
         }

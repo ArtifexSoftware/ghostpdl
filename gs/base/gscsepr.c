@@ -151,6 +151,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
         if (params.retain_any_comps) {
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
+            params.k_value = 0;
             if (pcs->params.separation.sep_type != SEP_NONE) {
                 int     mcomp = pcmap->color_map[0];
 

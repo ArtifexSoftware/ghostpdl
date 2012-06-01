@@ -631,6 +631,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 
             params.retain_spot_comps = false;
             params.drawn_comps = 0;
+            params.k_value = 0;
             for (i = 0; i < ncomps; i++) {
                 int     mcomp = pcmap->color_map[i];
 

@@ -26,6 +26,7 @@
 extern  int     gx_overprint_generic_fill_rectangle(
     gx_device *             tdev,
     gx_color_index          drawn_comps,
+    ushort                  k_value,
     int                     x,
     int                     y,
     int                     w,

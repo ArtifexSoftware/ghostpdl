@@ -585,7 +585,12 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_state * pgs)
          pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
         return gx_spot_colors_set_overprint(pcs, pgs);
 
-    return gx_set_overprint_cmyk(pcs, pgs);
+    if (pcinfo->opmode == GX_CINFO_OPMODE_RGB || 
+        pcinfo->opmode == GC_CINFO_OPMODE_RGB_SET) {
+        return gx_set_overprint_rgb(pcs, pgs);
+    } else {
+        return gx_set_overprint_cmyk(pcs, pgs);
+    }
 }
 
 int

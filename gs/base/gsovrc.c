@@ -147,7 +147,16 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize, gx_devi
             int     code = write_color_index( pparams->drawn_comps,
                                               data + 1,
                                               &tmp_size );
-
+            /* It would be nice to do have an If RGB OP case, then write out 
+               K value, but on the reader side, there is no way to find this
+               out so we will always write it out if we are writing the
+               drawn_comps */
+            if (code == 0) {
+                /* Actually writing not getting size */
+                int pos = tmp_size + 1;
+                memcpy(&(data[pos]), &(pparams->k_value), sizeof(pparams->k_value));
+            }   
+            used += sizeof(pparams->k_value);
             if (code < 0 && code != gs_error_rangecheck)
                 return code;
             used += tmp_size;
@@ -191,11 +200,11 @@ c_overprint_read(
         code = read_color_index(&params.drawn_comps, data + 1, size - 1);
         if (code < 0)
             return code;
-         nbytes += code;
+        nbytes += code;
+        memcpy(&(params.k_value), &(data[nbytes]), sizeof(params.k_value));
+        nbytes += sizeof(params.k_value);
     }
-
     code = gs_create_overprint(ppct, &params, mem);
-
     return code < 0 ? code : nbytes;
 }
 
@@ -295,6 +304,10 @@ typedef struct overprint_device_s {
      * for the devn color values since we may need more than 8 components
      */
     gx_color_index  drawn_comps;
+    
+    /* This is used to compensate for the use of black overprint for when
+       we are simulating CMYK overprinting with an RGB output device */
+    ushort k_value;
 
     /*
      * The mask of gx_color_index bits to be retained during a drawing
@@ -717,6 +730,7 @@ update_overprint_params(
     const gs_overprint_params_t *   pparams )
 {
     int ncomps = opdev->color_info.num_components;
+    bool degenerate_k = true; /* Used only for RGB simulation case */
 
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
@@ -739,9 +753,10 @@ update_overprint_params(
                 sizeof(opdev->generic_overprint_procs) );
 
     /* see if we need to determine the spot color components */
-    if (!pparams->retain_spot_comps)
+    if (!pparams->retain_spot_comps) {
         opdev->drawn_comps = pparams->drawn_comps;
-    else {
+        opdev->k_value = pparams->k_value;
+    } else {
         gx_device *                     dev = (gx_device *)opdev;
         const gx_cm_color_map_procs *   pprocs;
         frac                            cvals[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -777,7 +792,11 @@ update_overprint_params(
     }
 
     /* check for degenerate case */
-    if (opdev->drawn_comps == ((gx_color_index)1 << ncomps) - 1) {
+    if (ncomps == 3 && pparams->k_value != 0) {
+        degenerate_k = false;
+    }
+    if (degenerate_k && 
+        opdev->drawn_comps == ((gx_color_index)1 << ncomps) - 1) {
         memcpy( &opdev->procs,
                 &opdev->no_overprint_procs,
                 sizeof(opdev->no_overprint_procs) );
@@ -925,6 +944,7 @@ overprint_generic_fill_rectangle(
     else
         return gx_overprint_generic_fill_rectangle( tdev,
                                                     opdev->drawn_comps,
+                                                    opdev->k_value,
                                                     x, y, width, height,
                                                     color,
                                                     dev->memory );

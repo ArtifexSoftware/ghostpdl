@@ -274,6 +274,14 @@ struct gs_overprint_params_s {
      * it is to be left unaffected.
      */
     gx_color_index  drawn_comps;
+
+    /* A representation of the K value that is used for simulating CMYK
+       overprinting out to an RGB device.  While CMY map readily to RGB using
+       the simple 255-X color process, we have to know what the K value
+       was if we are overprinting with K so that we can properly reduce 
+       the RGB values with the addition of K.  We will use 8 bits for this.
+     */
+    unsigned short k_value;
 };
 
 /*
