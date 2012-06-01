@@ -1464,7 +1464,30 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
    /* if (clist_band_count != 65) return; */
     buff_ptr = Buffer;
 #if RAW_DUMP_AS_PAM
-    if ((n_chan == 4) || (n_chan == 5)) {
+    /* FIXME: GRAY + ALPHA + SHAPE + TAGS will be interpreted as RGB + ALPHA */
+    if ((n_chan == 2) || (n_chan == 3)) {
+        int x;
+        sprintf(full_file_name,"%d)%s.pam",global_index,filename);
+        fid = fopen(full_file_name,"wb");
+        fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
+                width, num_rows);
+        for(y=0; y<num_rows; y++)
+            for(x=0; x<width; x++)
+                for(z=0; z<2; z++)
+                    fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
+        fclose(fid);
+        if (n_chan == 3) {
+            sprintf(full_file_name,"%d)%s_shape.pam",global_index,filename);
+            fid = fopen(full_file_name,"wb");
+            fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
+                    width, num_rows);
+            for(y=0; y<num_rows; y++)
+                for(x=0; x<width; x++)
+                    fputc(Buffer[2*plane_stride + y*rowstride + x], fid);
+            fclose(fid);
+        }
+    }
+    if ((n_chan == 4) || (n_chan == 5) || (n_chan == 6)) {
         int x;
         sprintf(full_file_name,"%d)%s.pam",global_index,filename);
         fid = fopen(full_file_name,"wb");
@@ -1475,7 +1498,7 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
                 for(z=0; z<4; z++)
                     fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
         fclose(fid);
-        if (n_chan == 5) {
+        if (n_chan > 4) {
             sprintf(full_file_name,"%d)%s_shape.pam",global_index,filename);
             fid = fopen(full_file_name,"wb");
             fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
@@ -1483,8 +1506,18 @@ dump_raw_buffer(int num_rows, int width, int n_chan,
             for(y=0; y<num_rows; y++)
                 for(x=0; x<width; x++)
                     fputc(Buffer[4*plane_stride + y*rowstride + x], fid);
+            fclose(fid);
         }
-        fclose(fid);
+        if (n_chan == 6) {
+            sprintf(full_file_name,"%d)%s_tags.pam",global_index,filename);
+            fid = fopen(full_file_name,"wb");
+            fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 1\nMAXVAL 255\nTUPLTYPE GRAYSCALE\nENDHDR\n",
+                    width, num_rows);
+            for(y=0; y<num_rows; y++)
+                for(x=0; x<width; x++)
+                    fputc(Buffer[5*plane_stride + y*rowstride + x], fid);
+            fclose(fid);
+        }
         return;
     }
 #endif
