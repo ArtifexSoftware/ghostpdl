@@ -145,13 +145,14 @@ static dev_proc_close_device(mem_abuf_close);
 static dev_proc_copy_mono(mem_abuf_copy_mono);
 static dev_proc_fill_rectangle(mem_abuf_fill_rectangle);
 static dev_proc_get_clipping_box(mem_abuf_get_clipping_box);
+static dev_proc_fill_rectangle_hl_color(mem_abuf_fill_rectangle_hl_color);
 
 /* The device descriptor. */
 static const gx_device_memory mem_alpha_buffer_device =
-mem_device("image(alpha buffer)", 0, 1,
+mem_device_hl("image(alpha buffer)", 0, 1,
            gx_forward_map_rgb_color, gx_forward_map_color_rgb,
-         mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
-           gx_no_strip_copy_rop);
+           mem_abuf_copy_mono, gx_default_copy_color, mem_abuf_fill_rectangle,
+           gx_no_strip_copy_rop, mem_abuf_fill_rectangle_hl_color);
 
 /* Make an alpha-buffer memory device. */
 /* We use abuf instead of alpha_buffer because */
@@ -159,7 +160,7 @@ mem_device("image(alpha buffer)", 0, 1,
 void
 gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
                      gx_device * target, const gs_log2_scale_point * pscale,
-                        int alpha_bits, int mapped_x)
+                        int alpha_bits, int mapped_x, bool devn)
 {
     gs_make_mem_device(adev, &mem_alpha_buffer_device, mem, 0, target);
     adev->max_fill_band = 1 << pscale->y;
@@ -168,6 +169,10 @@ gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
     adev->mapped_x = mapped_x;
     set_dev_proc(adev, close_device, mem_abuf_close);
     set_dev_proc(adev, get_clipping_box, mem_abuf_get_clipping_box);
+    if (!devn) 
+        adev->save_hl_color = NULL; /* This is the test for when we flush the
+                                       the buffer as to what copy_alpha type
+                                       use */
     adev->color_info.anti_alias.text_bits =
       adev->color_info.anti_alias.graphics_bits =
         alpha_bits;
@@ -201,15 +206,15 @@ abuf_flush_block(gx_device_memory * adev, int y)
     if (buffer_y >= adev->height)
         buffer_y -= adev->height;
     bits = scan_line_base(adev, buffer_y);
-    {				/*
-                                 * Many bits are typically zero.  Save time by computing
-                                 * an accurate X bounding box before compressing.
-                                 * Unfortunately, in order to deal with alpha nibble swapping
-                                 * (see gsbitops.c), we can't expand the box only to pixel
-                                 * boundaries:
-                                 int alpha_mask = -1 << adev->log2_alpha_bits;
-                                 * Instead, we must expand it to byte boundaries,
-                                 */
+    {/*
+      * Many bits are typically zero.  Save time by computing
+      * an accurate X bounding box before compressing.
+      * Unfortunately, in order to deal with alpha nibble swapping
+      * (see gsbitops.c), we can't expand the box only to pixel
+      * boundaries:
+          int alpha_mask = -1 << adev->log2_alpha_bits;
+      * Instead, we must expand it to byte boundaries, 
+      */
         int alpha_mask = ~7;
         gs_int_rect bbox;
         int width;
@@ -221,13 +226,24 @@ abuf_flush_block(gx_device_memory * adev, int y)
         bits_compress_scaled(bits, bbox.p.x, width, block_height,
                              adev->raster, bits, draster, &adev->log2_scale,
                              adev->log2_alpha_bits);
-        return (*dev_proc(target, copy_alpha)) (target,
-                                          bits, 0, draster, gx_no_bitmap_id,
-                                              (adev->mapped_x + bbox.p.x) >>
-                                                adev->log2_scale.x,
-                                                y >> adev->log2_scale.y,
-                                             width >> adev->log2_scale.x, 1,
-                                              adev->save_color, alpha_bits);
+        /* Set up with NULL when adev initialized */
+        if (adev->save_hl_color == NULL) { 
+            return (*dev_proc(target, copy_alpha)) (target,
+                                              bits, 0, draster, gx_no_bitmap_id,
+                                                  (adev->mapped_x + bbox.p.x) >>
+                                                    adev->log2_scale.x,
+                                                    y >> adev->log2_scale.y,
+                                                 width >> adev->log2_scale.x, 1,
+                                                  adev->save_color, alpha_bits);
+        } else {
+            return (*dev_proc(target, copy_alpha_hl_color)) (target,
+                                              bits, 0, draster, gx_no_bitmap_id,
+                                                  (adev->mapped_x + bbox.p.x) >>
+                                                    adev->log2_scale.x,
+                                                    y >> adev->log2_scale.y,
+                                                 width >> adev->log2_scale.x, 1,
+                                                  adev->save_hl_color, alpha_bits);
+        }
     }
 }
 /* Flush the entire buffer. */
@@ -378,6 +394,38 @@ mem_abuf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     fit_fill_w(dev, x, w);	/* don't limit h */
     /* or check w <= 0, h <= 0 */
     mdev->save_color = color;
+    y_transfer_init(&yt, dev, y, h);
+    while (yt.height_left > 0) {
+        int code = y_transfer_next(&yt, dev);
+
+        if (code < 0)
+            return code;
+        (*dev_proc(&mem_mono_device, fill_rectangle)) (dev,
+                                    x, yt.transfer_y, w, yt.transfer_height,
+                                                       (gx_color_index) 1);
+    }
+    return 0;
+}
+
+/* Fill a rectangle. */
+static int
+mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
+                                 const gs_imager_state *pis,
+                                 const gx_drawing_color *pdcolor,
+                                 const gx_clip_path *pcpath)
+{
+    gx_device_memory * const mdev = (gx_device_memory *)dev;
+    y_transfer yt;
+    int x = rect->p.x;
+    int y = rect->p.y;
+    int w = rect->q.x - rect->p.x;
+    int h = rect->q.y - rect->p.y;
+
+    x -= mdev->mapped_x;
+    fit_fill_xy(dev, x, y, w, h);
+    fit_fill_w(dev, x, w);	/* don't limit h */
+    /* or check w <= 0, h <= 0 */
+    mdev->save_hl_color = pdcolor;
     y_transfer_init(&yt, dev, y, h);
     while (yt.height_left > 0) {
         int code = y_transfer_next(&yt, dev);

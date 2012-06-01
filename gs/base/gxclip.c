@@ -37,6 +37,7 @@ static dev_proc_copy_mono(clip_copy_mono);
 static dev_proc_copy_planes(clip_copy_planes);
 static dev_proc_copy_color(clip_copy_color);
 static dev_proc_copy_alpha(clip_copy_alpha);
+static dev_proc_copy_alpha_hl_color(clip_copy_alpha_hl_color);
 static dev_proc_fill_mask(clip_fill_mask);
 static dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
 static dev_proc_strip_tile_rect_devn(clip_strip_tile_rect_devn);
@@ -120,7 +121,8 @@ static const gx_device_clip gs_clip_device =
   gx_forward_get_profile,
   gx_forward_set_graphics_type_tag,
   clip_strip_copy_rop2,
-  clip_strip_tile_rect_devn
+  clip_strip_tile_rect_devn,
+  clip_copy_alpha_hl_color
  }
 };
 
@@ -630,6 +632,30 @@ clip_copy_alpha(gx_device * dev,
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.color[0] = color, ccdata.depth = depth;
     return clip_enumerate(rdev, x, y, w, h, clip_call_copy_alpha, &ccdata);
+}
+
+int
+clip_call_copy_alpha_hl_color(clip_callback_data_t * pccd, int xc, int yc, 
+                              int xec, int yec)
+{
+    return (*dev_proc(pccd->tdev, copy_alpha_hl_color))
+        (pccd->tdev, pccd->data + (yc - pccd->y) * pccd->raster,
+         pccd->sourcex + xc - pccd->x, pccd->raster, gx_no_bitmap_id,
+         xc, yc, xec - xc, yec - yc, pccd->pdcolor, pccd->depth);
+}
+
+static int
+clip_copy_alpha_hl_color(gx_device * dev,
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h,
+                const gx_drawing_color *pdcolor, int depth)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
+    ccdata.pdcolor = pdcolor, ccdata.depth = depth;
+    return clip_enumerate(rdev, x, y, w, h, clip_call_copy_alpha_hl_color, &ccdata);
 }
 
 /* Fill a region defined by a mask. */

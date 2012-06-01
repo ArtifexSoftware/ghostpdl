@@ -141,6 +141,8 @@ struct gx_device_memory_s {
     int mapped_height;		/* # of Y values mapped to buffer */
     int mapped_start;		/* local Y value corresponding to mapped_y */
     gx_color_index save_color;	/* last (only) color displayed */
+    const gx_drawing_color *save_hl_color;
+                                /* last (only) hl color displayed */
     /* Following are used only for planar devices. */
     int plane_depth;		/* if non-zero, depth of all planes */
     int band_y; /* Debug purpose only. */
@@ -232,7 +234,7 @@ void gs_make_mem_device(gx_device_memory * mdev,
 void gs_make_mem_abuf_device(gx_device_memory * adev, gs_memory_t * mem,
                              gx_device * target,
                              const gs_log2_scale_point * pscale,
-                             int alpha_bits, int mapped_x);
+                             int alpha_bits, int mapped_x, bool devn);
 void gs_make_mem_alpha_device(gx_device_memory * adev, gs_memory_t * mem,
                               gx_device * target, int alpha_bits);
 

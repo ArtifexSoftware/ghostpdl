@@ -669,6 +669,8 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, update_spot_equivalent_colors, gx_default_update_spot_equivalent_colors);
     fill_dev_proc(dev, ret_devn_params, gx_default_ret_devn_params);
     fill_dev_proc(dev, fillpage, gx_default_fillpage);
+    fill_dev_proc(dev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
+
     /* NOT push_transparency_state */
     /* NOT pop_transparency_state */
     /* NOT put_image */

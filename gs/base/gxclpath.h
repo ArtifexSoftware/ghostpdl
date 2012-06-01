@@ -163,7 +163,9 @@ typedef enum {
                                              * serialized color */
     cmd_opv_ext_tile_rect_hl = 0x05,         /* Uses devn colors in tiling fill */
     cmd_opv_ext_put_tile_devn_color0 = 0x6,  /* Devn color0 for tile filling */
-    cmd_opv_ext_put_tile_devn_color1 = 0x7   /* Devn color1 for tile filling */
+    cmd_opv_ext_put_tile_devn_color1 = 0x7,   /* Devn color1 for tile filling */
+    cmd_opv_ext_set_color_is_devn = 0x8,      /* Used for overload of copy_color_alpha */
+    cmd_opv_ext_unset_color_is_devn = 0x9     /* Used for overload of copy_color_alpha */
 } gx_cmd_ext_op;
 
 #define cmd_segment_op_num_operands_values\

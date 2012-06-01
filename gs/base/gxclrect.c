@@ -1139,6 +1139,148 @@ error_in_rect:
     return 0;
 }
 
+/* Patterned after clist_copy_alpha and sharing a command with 
+   cmd_op_copy_color_alpha.  This was done due to avoid difficult
+   to follow code in the read back logic in gxclrast.c.  Due to the 
+   recursive nature of this call, it would be a bit painful to do much 
+   sharing between clist_copy_alpha_hl_color and clist_copy_alpha */
+int
+clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
+           int raster, gx_bitmap_id id, int rx, int ry, int rwidth, int rheight,
+                 const gx_drawing_color *pdcolor, int depth)
+{
+    gx_device_clist_writer * const cdev =
+        &((gx_device_clist *)dev)->writer;
+
+    int log2_depth = ilog2(depth);
+    int y0;
+    int data_x_bit;
+    cmd_rects_enum_t re;
+
+    /* If the target can't perform copy_alpha, exit now */
+    if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
+        return_error(gs_error_unknownerror);
+
+    fit_copy(dev, data, data_x, raster, id, rx, ry, rwidth, rheight);
+    y0 = ry;
+    data_x_bit = data_x << log2_depth;
+    if (cdev->permanent_error < 0)
+      return (cdev->permanent_error);
+    RECT_ENUM_INIT(re, ry, rheight);
+    do {
+        int dx = (data_x_bit & 7) >> log2_depth;
+        int w1 = dx + rwidth;
+        const byte *row = data + (re.y - y0) * raster + (data_x_bit >> 3);
+        int code;
+
+        RECT_STEP_INIT(re);
+        re.pcls->colors_used.or = 0xffffffff;
+        re.pcls->band_complexity.uses_color = true;
+        do {
+            code = cmd_disable_lop(cdev, re.pcls);
+            if (code >= 0)
+                code = cmd_disable_clip(cdev, re.pcls);
+        } while (RECT_RECOVER(code));
+        if (code < 0 && SET_BAND_CODE(code))
+            goto error_in_rect;
+        if (!re.pcls->color_is_alpha) {
+            byte *dp;
+
+            do {
+                code =
+                    set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_set_copy_alpha, 1);
+            } while (RECT_RECOVER(code));
+            if (code < 0 && SET_BAND_CODE(code))
+                goto error_in_rect;
+            re.pcls->color_is_alpha = 1;
+        }
+        /* Set extended command for overload of copy_color_alpha with devn type */
+        if (!re.pcls->color_is_devn) {
+            byte *dp;
+
+            do {
+                code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, 2);
+                dp[1] = cmd_opv_ext_set_color_is_devn;
+                dp += 2;
+            } while (RECT_RECOVER(code));
+            if (code < 0 && SET_BAND_CODE(code))
+                goto error_in_rect;
+            re.pcls->color_is_alpha = 1;
+        }
+        /* Set the color */
+        do {
+            code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, 
+                                         devn_not_tile);
+        } while (RECT_RECOVER(code));
+copy:{
+            gx_cmd_rect rect;
+            int rsize;
+            byte op = (byte) cmd_op_copy_color_alpha;
+            byte *dp;
+            uint csize;
+            uint compress;
+
+            rect.x = rx, rect.y = re.y;
+            rect.width = w1, rect.height = re.height;
+            rsize = (dx ? 4 : 2) + cmd_size_rect(&rect);
+            do {
+                code = cmd_put_bits(cdev, re.pcls, row, w1 << log2_depth,
+                                    re.height, raster, rsize,
+                                    1 << cmd_compress_rle, &dp, &csize);
+            } while (RECT_RECOVER(code));
+            if (code < 0 && !(code == gs_error_limitcheck) && SET_BAND_CODE(code))
+                goto error_in_rect;
+            compress = (uint)code;
+            if (code < 0) {
+                /* The bitmap was too large; split up the transfer. */
+                if (re.height > 1) {
+                    /* Split the transfer by reducing the height.
+                     * See the comment above FOR_RECTS in gxcldev.h.
+                     */
+                    re.height >>= 1;
+                    goto copy;
+                } else {
+                    /* Split a single (very long) row. */
+                    int w2 = w1 >> 1;
+
+                    ++cdev->driver_call_nesting;
+                    {
+                        code = clist_copy_alpha_hl_color(dev, row, dx,
+                                                raster, gx_no_bitmap_id, rx, re.y,
+                                                w2, 1, pdcolor, depth);
+                        if (code >= 0)
+                            code = clist_copy_alpha_hl_color(dev, row, dx + w2,
+                                                    raster, gx_no_bitmap_id,
+                                                    rx + w2, re.y, w1 - w2, 1,
+                                                    pdcolor, depth);
+                    }
+                    --cdev->driver_call_nesting;
+                    if (code < 0 && SET_BAND_CODE(code))
+                        goto error_in_rect;
+                    continue;
+                }
+            }
+            op += compress;
+            if (dx) {
+                *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp++ = cmd_set_misc_data_x + dx;
+            }
+            *dp++ = cmd_count_op(op, csize);
+            *dp++ = depth;
+            cmd_put2w(rx, re.y, dp);
+            cmd_put2w(w1, re.height, dp);
+            re.pcls->rect = rect;
+        }
+        continue;
+error_in_rect:
+        if (!(cdev->error_is_retryable && cdev->driver_call_nesting == 0 &&
+                SET_BAND_CODE(clist_VMerror_recover_flush(cdev, re.band_code)) >= 0))
+            return re.band_code;
+        re.y -= re.height;
+    } while ((re.y += re.height) < re.yend);
+    return 0;
+}
+
 int
 clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
            int raster, gx_bitmap_id id, int rx, int ry, int rwidth, int rheight,
@@ -1191,6 +1333,26 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
                 goto error_in_rect;
             re.pcls->color_is_alpha = 1;
         }
+        if (re.pcls->color_is_devn) {
+            byte *dp;
+
+            do {
+                code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, 1);
+                code = set_cmd_put_op(dp, cdev, re.pcls, 
+                                      cmd_opv_ext_unset_color_is_devn, 1);
+            } while (RECT_RECOVER(code));
+            if (code < 0 && SET_BAND_CODE(code))
+                goto error_in_rect;
+            re.pcls->color_is_alpha = 1;
+        }
+
+
+
+
+
+
+
+
         if (color != re.pcls->colors[1]) {
             do {
                 code = cmd_set_color1(cdev, re.pcls, color);

@@ -173,7 +173,8 @@ scale_dash_pattern(gs_state * pgs, floatp scale)
         pgs->line_params.dot_length *= scale;
 }
 static int
-alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
+alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits, 
+                  bool devn)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
     int log2_alpha_bits = ilog2(alpha_bits);
@@ -208,7 +209,7 @@ alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
         gs_update_trans_marking_params(pgs);
     }
     gs_make_mem_abuf_device(mdev, mem, dev, &log2_scale,
-                            alpha_bits, ibox.p.x << log2_scale.x);
+                            alpha_bits, ibox.p.x << log2_scale.x, devn);
     mdev->width = width;
     mdev->height = height;
     mdev->bitmap_memory = mem;
@@ -241,6 +242,7 @@ alpha_buffer_release(gs_state * pgs, bool newpath)
 static int do_fill(gs_state *pgs, int rule)
 {
     int code, abits, acode, rcode = 0;
+    bool devn;
 
     /* Here we need to distinguish text from vectors to compute the object tag.
        Actually we need to know whether this function is called to rasterize a character,
@@ -282,13 +284,16 @@ static int do_fill(gs_state *pgs, int rule)
     code = gs_state_color_load(pgs);
     if (code < 0)
         return code;
-    abits = alpha_buffer_bits(pgs);
-    if (!color_is_pure(gs_currentdevicecolor_inline(pgs))) {
-        abits = 0;
+    abits = 0;
+    {
+        gx_device_color *col = gs_currentdevicecolor_inline(pgs);
+        devn = color_is_devn(col);
+        if (color_is_pure(col) || devn)
+            abits = alpha_buffer_bits(pgs);
     }
     if (abits > 1) {
         acode = alpha_buffer_init(pgs, pgs->fill_adjust.x,
-                                  pgs->fill_adjust.y, abits);
+                                  pgs->fill_adjust.y, abits, devn);
         if (acode < 0)
             return acode;
     } else
@@ -352,6 +357,7 @@ static int
 do_stroke(gs_state * pgs)
 {
     int code, abits, acode, rcode = 0;
+    bool devn;
 
     /* to distinguish text from vectors we hackly look at the
        target device 1 bit per component is a cache and this is
@@ -399,9 +405,12 @@ do_stroke(gs_state * pgs)
     code = gs_state_color_load(pgs);
     if (code < 0)
         return code;
-    abits = alpha_buffer_bits(pgs);
-    if (!color_is_pure(gs_currentdevicecolor_inline(pgs))) {
-        abits = 0;
+    abits = 0;
+    {
+        gx_device_color *col = gs_currentdevicecolor_inline(pgs);
+        devn = color_is_devn(col);
+        if (color_is_pure(col) || devn)
+            abits = alpha_buffer_bits(pgs);
     }
     if (abits > 1) {
         /*
@@ -425,7 +434,7 @@ do_stroke(gs_state * pgs)
         acode = alpha_buffer_init(pgs,
                                   pgs->fill_adjust.x + extra_adjust,
                                   pgs->fill_adjust.y + extra_adjust,
-                                  abits);
+                                  abits, devn);
         if (acode < 0)
             return acode;
         gs_setlinewidth(pgs, new_width);

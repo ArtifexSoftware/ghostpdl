@@ -636,7 +636,7 @@ in:                             /* Initialize for a new page. */
         byte *source = NULL;  /* Initialize against indeterminizm. */
         gx_color_index colors[2];
         gx_color_index *pcolor;
-        gx_device_color *pdcolor;
+        gx_device_color *pdcolor = NULL;
         gs_logical_operation_t log_op;
 
         /* Make sure the buffer contains a full command. */
@@ -1706,6 +1706,14 @@ idata:                  data_size = 0;
                                 if (code < 0)
                                     goto out;
                                 break;
+                            case cmd_opv_ext_set_color_is_devn:
+                                state.color_is_devn = true;
+                                if_debug0('L', " ext_set_color_is_devn\n");
+                                break;
+                            case cmd_opv_ext_unset_color_is_devn:
+                                state.color_is_devn = false;
+                                if_debug0('L', " ext_unset_color_is_devn\n");
+                                break;
                             case cmd_opv_ext_tile_rect_hl:
                                 /* Strip tile with devn colors */
                                 cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
@@ -2184,11 +2192,19 @@ idata:                  data_size = 0;
             case cmd_op_copy_color_alpha >> 4:
                 if (state.color_is_alpha) {
 /****** CAN'T DO ROP WITH ALPHA ******/
-                    code = (*dev_proc(tdev, copy_alpha))
-                        (tdev, source, data_x, raster, gx_no_bitmap_id,
-                         state.rect.x - x0, state.rect.y - y0,
-                         state.rect.width - data_x, state.rect.height,
-                         state.colors[1], depth);
+                    if (state.color_is_devn) {
+                        code = (*dev_proc(tdev, copy_alpha_hl_color))
+                            (tdev, source, data_x, raster, gx_no_bitmap_id,
+                             state.rect.x - x0, state.rect.y - y0,
+                             state.rect.width - data_x, state.rect.height,
+                             &dev_color, depth);
+                    } else {
+                        code = (*dev_proc(tdev, copy_alpha))
+                            (tdev, source, data_x, raster, gx_no_bitmap_id,
+                             state.rect.x - x0, state.rect.y - y0,
+                             state.rect.width - data_x, state.rect.height,
+                             state.colors[1], depth);
+                    }
                 } else {
                     if (state.lop_enabled) {
                         pcolor = NULL;

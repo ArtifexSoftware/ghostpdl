@@ -48,9 +48,9 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 
 /*
  * A device color consists of a base color and an optional (tiled) mask.
- * The base color may be a pure color, a binary halftone, or a colored
- * bitmap (color halftone or colored Pattern).  The mask is used for
- * both colored and uncolored Patterns.
+ * The base color may be a pure color, a devn color, a binary halftone,
+ * or a colored bitmap (color halftone or colored Pattern).  The mask is
+ * used for both colored and uncolored Patterns.
  */
 
 /* Accessing a pure color. */
@@ -60,6 +60,10 @@ typedef struct gx_device_halftone_s gx_device_halftone;
   (gx_dc_is_pure(pdc) && lop_no_S_is_T(lop))
 #define gx_dc_pure_color(pdc)\
   ((pdc)->colors.pure)
+
+/* Accessing a devn color. */
+#define gx_dc_is_devn(pdc)\
+  ((pdc)->type == gx_dc_type_devn)
 
 /* Accessing the phase of a halftone. */
 #define gx_dc_phase(pdc)\
@@ -107,6 +111,8 @@ bool gx_device_color_equal(const gx_device_color *pdevc1,
 
 #define color_is_pure(pdc) gx_dc_is_pure(pdc)
 #define color_writes_pure(pdc, lop) gx_dc_writes_pure(pdc, lop)
+
+#define color_is_devn(pdc) gx_dc_is_devn(pdc)
 /*
  * Used to define 'pure' (solid - without halftoning or patterns) colors.
  * This macro assumes the colorspace and client color information is already

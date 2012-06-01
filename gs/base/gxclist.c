@@ -199,7 +199,8 @@ const gx_device_procs gs_clist_device_procs = {
     gx_default_get_profile,
     gx_default_set_graphics_type_tag,
     clist_strip_copy_rop2,
-    clist_strip_tile_rect_devn
+    clist_strip_tile_rect_devn,
+    clist_copy_alpha_hl_color,
 };
 
 /*------------------- Choose the implementation -----------------------

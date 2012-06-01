@@ -285,6 +285,7 @@ dev_proc_get_profile(gx_default_get_profile);
 dev_proc_set_graphics_type_tag(gx_default_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_default_strip_copy_rop2);
 dev_proc_strip_tile_rect_devn(gx_default_strip_tile_rect_devn);
+dev_proc_copy_alpha_hl_color(gx_default_copy_alpha_hl_color);
 /* BACKWARD COMPATIBILITY */
 #define gx_non_imaging_create_compositor gx_null_create_compositor
 
@@ -374,6 +375,7 @@ dev_proc_get_profile(gx_forward_get_profile);
 dev_proc_set_graphics_type_tag(gx_forward_set_graphics_type_tag);
 dev_proc_strip_copy_rop2(gx_forward_strip_copy_rop2);
 dev_proc_strip_tile_rect_devn(gx_forward_strip_tile_rect_devn);
+dev_proc_copy_alpha_hl_color(gx_forward_copy_alpha_hl_color);
 
 /* ---------------- Implementation utilities ---------------- */
 

@@ -258,6 +258,7 @@ struct gx_clist_state_s {
     short clip_enabled;		/* 0 = don't clip, 1 = do clip, */
                                 /* -1 is used internally */
     bool color_is_alpha;	/* for copy_color_alpha */
+    bool color_is_devn;     /* more overload of copy_color_alpha for devn support */ 
     uint known;			/* flags for whether this band */
                                 /* knows various misc. parameters */
     /* We assign 'known' flags here from the high end; */
@@ -280,7 +281,7 @@ struct gx_clist_state_s {
         0, gx_no_bitmap_id, gs_no_id,\
          { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
         { {NULL}, {NULL} },\
-         { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
+         { 0, 0, 0, 0 }, lop_default, 0, 0, 0, 0, initial_known,\
         { 0, 0 }, { 0, 0 }, { 0, 0 }
 
 /* Define the size of the command buffer used for reading. */
@@ -306,6 +307,7 @@ dev_proc_fill_linear_color_triangle(clist_fill_linear_color_triangle);
 dev_proc_dev_spec_op(clist_dev_spec_op);
 dev_proc_copy_planes(clist_copy_planes);
 dev_proc_fill_rectangle_hl_color(clist_fill_rectangle_hl_color);
+dev_proc_copy_alpha_hl_color(clist_copy_alpha_hl_color);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);

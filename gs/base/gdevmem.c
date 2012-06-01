@@ -181,10 +181,15 @@ gs_make_mem_device(gx_device_memory * dev, const gx_device_memory * mdproto,
 #undef COPY_PROC
     }
     if (dev->color_info.depth == 1) {
-        gx_color_value cv[3];
+        gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+        int k;
 
-       cv[0] = cv[1] = cv[2] = 0;
-        gdev_mem_mono_set_inverted(dev, (target == 0 ||
+        if (target != 0) {
+            for (k = 0; k < target->color_info.num_components; k++) {
+                cv[k] = 0;
+            }
+        }
+       gdev_mem_mono_set_inverted(dev, (target == 0 || 
                                    (*dev_proc(dev, encode_color))((gx_device *)dev, cv) != 0));
     }
     check_device_separable((gx_device *)dev);

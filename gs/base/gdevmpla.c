@@ -142,6 +142,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
             set_dev_proc(mdev, put_image, mem_planar_put_image);
         }
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
+        set_dev_proc(mdev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
         set_dev_proc(mdev, copy_mono, mem_planar_copy_mono);
         set_dev_proc(mdev, dev_spec_op, mem_planar_dev_spec_op);
         if ((mdev->color_info.depth == 24) &&

@@ -118,7 +118,7 @@ dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
 #define max_value_rgb(rgb_depth, gray_depth)\
   (rgb_depth >= 8 ? 255 : rgb_depth == 4 ? 15 : rgb_depth == 2 ? 3 :\
    rgb_depth == 1 ? 1 : (1 << gray_depth) - 1)
-#define mem_full_alpha_device(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, copy_alpha, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle)\
+#define mem_full_alpha_device_hl(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, copy_alpha, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle, fill_rectangle_hl_color)\
 {	std_device_dci_body(gx_device_memory, 0, name,\
           0, 0, 72, 72,\
           (rgb_depth ? 3 : 0) + (gray_depth ? 1 : 0),	/* num_components */\
@@ -171,11 +171,25 @@ dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
                 gx_default_create_compositor,\
                 gx_default_get_hardware_params,\
                 gx_default_text_begin,\
-                gx_default_finish_copydevice\
+                gx_default_finish_copydevice,\
+                NULL, /* begin_transparency_group */\
+                NULL, /* end_transparency_group */\
+                NULL, /* begin_transparency_mask */\
+                NULL, /* end_transparency_mask */\
+                NULL, /* discard_transparency_layer */\
+                NULL, /* get_color_mapping_procs */\
+                NULL, /* get_color_comp_index */\
+                NULL, /* encode_color */\
+                NULL, /* decode_color */\
+                NULL, /* pattern_manage */\
+                fill_rectangle_hl_color /* fill_rectangle_hl_color */\
         },\
         0,			/* target */\
         mem_device_init_private	/* see gxdevmem.h */\
 }
+#define mem_full_alpha_device(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, copy_alpha, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle)\
+  mem_full_alpha_device_hl(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, copy_alpha, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle, NULL)
+
 #define mem_full_device(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle)\
   mem_full_alpha_device(name, rgb_depth, gray_depth, open, map_rgb_color,\
                         map_color_rgb, copy_mono, copy_color, fill_rectangle,\
@@ -187,6 +201,17 @@ dev_proc_strip_copy_rop2(mem_default_strip_copy_rop2);
                   map_color_rgb, copy_mono, copy_color, fill_rectangle,\
                   gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,\
                   strip_copy_rop, mem_get_bits_rectangle)
+#define mem_full_device_hl(name, rgb_depth, gray_depth, open, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, map_cmyk_color, strip_tile_rectangle, strip_copy_rop, get_bits_rectangle, fill_rectangle_hl)\
+  mem_full_alpha_device_hl(name, rgb_depth, gray_depth, open, map_rgb_color,\
+                        map_color_rgb, copy_mono, copy_color, fill_rectangle,\
+                        map_cmyk_color, gx_default_copy_alpha,\
+                        strip_tile_rectangle, strip_copy_rop,\
+                        get_bits_rectangle, fill_rectangle_hl)
+#define mem_device_hl(name, rgb_depth, gray_depth, map_rgb_color, map_color_rgb, copy_mono, copy_color, fill_rectangle, strip_copy_rop, fill_rectangle_hl)\
+  mem_full_device_hl(name, rgb_depth, gray_depth, mem_open, map_rgb_color,\
+                  map_color_rgb, copy_mono, copy_color, fill_rectangle,\
+                  gx_default_map_cmyk_color, gx_default_strip_tile_rectangle,\
+                  strip_copy_rop, mem_get_bits_rectangle, fill_rectangle_hl)
 
 /* Swap a rectangle of bytes, for converting between word- and */
 /* byte-oriented representation. */

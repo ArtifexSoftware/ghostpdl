@@ -870,6 +870,21 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
 }
 
 int
+gx_forward_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
+           int raster, gx_bitmap_id id, int x, int y, int width, int height,
+                      const gx_drawing_color *pdcolor, int depth)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev == 0)
+        return_error(gs_error_rangecheck);
+    else
+        return dev_proc(tdev, copy_alpha_hl_color)
+        (tdev, data, data_x, raster, id, x, y, width, height, pdcolor, depth);
+}
+
+int
 gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
             const byte *res_name, int name_length)
 {

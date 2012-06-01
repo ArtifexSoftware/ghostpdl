@@ -89,6 +89,10 @@ static	int pdf14_mark_fill_rectangle_ko_simple(gx_device *	dev, int x, int y,
                                                 int w, int h, gx_color_index color, 
                                                 const gx_device_color *pdc, 
                                                 bool devn);
+static int pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
+           int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
+                      gx_color_index color, const gx_device_color *pdc,
+                      int depth, bool devn);
 
 /* Functions for dealing with soft mask color */
 static int pdf14_decrement_smask_color(gs_imager_state * pis, gx_device * dev);
@@ -185,6 +189,7 @@ static	dev_proc_pop_transparency_state(pdf14_pop_transparency_state);
 static  dev_proc_ret_devn_params(pdf14_ret_devn_params);
 static  dev_proc_copy_alpha(pdf14_copy_alpha);
 static  dev_proc_copy_planes(pdf14_copy_planes);
+static  dev_proc_copy_alpha_hl_color(pdf14_copy_alpha_hl_color);
 
 static	const gx_color_map_procs *
     pdf14_get_cmap_procs(const gs_imager_state *, const gx_device *);
@@ -264,7 +269,12 @@ static	const gx_color_map_procs *
         pdf14_pop_transparency_state,   /* pop_transparency_state */\
         NULL,                           /* put_image */\
         pdf14_dev_spec_op,               /* dev_spec_op */\
-        pdf14_copy_planes               /* copy_planes */\
+        pdf14_copy_planes,               /* copy_planes */\
+        NULL,                           /*  */\
+        NULL,                           /* set_graphics_type_tag */\
+        NULL,                           /* strip_copy_rop2 */\
+        NULL,                           /* strip_tile_rect_devn */\
+        pdf14_copy_alpha_hl_color       /* copy_alpha_hl_color */\
 }
 
 static	const gx_device_procs pdf14_Gray_procs =
@@ -2041,6 +2051,25 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
            int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
                       gx_color_index color, int depth)
 {
+    return pdf14_copy_alpha_color(dev, data, data_x, aa_raster, id, x, y, w, h, 
+                                  color, NULL, depth, false);
+}
+
+static int
+pdf14_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
+           int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
+                      const gx_drawing_color *pdcolor, int depth)
+{
+    return pdf14_copy_alpha_color(dev, data, data_x, aa_raster, id, x, y, w, h, 
+                                  0, pdcolor, depth, true);
+}
+
+static int
+pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
+           int aa_raster, gx_bitmap_id id, int x, int y, int w, int h,
+                      gx_color_index color, const gx_device_color *pdc,
+                      int depth, bool devn)
+{
     const byte *aa_row;
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
@@ -2070,6 +2099,8 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     int alpha2_aa, alpha_aa, sx;
     int alpha_aa_act;
     int xoff;
+    gx_color_index mask = ((gx_color_index)1 << 8) - 1;
+    int shift = 8;
 
     if (buf->data == NULL)
         return 0;
@@ -2077,7 +2108,19 @@ pdf14_copy_alpha(gx_device * dev, const byte * data, int data_x,
     if (has_tags) {
         curr_tag = (color >> (num_comp*8)) & 0xff;
     }
-    pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
+
+    if (devn) {
+        if (additive) {
+            for (j = 0; j < num_comp; j++) {
+                src[j] = ((pdc->colors.devn.values[j]) >> shift & mask);
+            }
+        } else {
+            for (j = 0; j < num_comp; j++) {
+                src[j] = 255 - ((pdc->colors.devn.values[j]) >> shift & mask);
+            }
+        }
+    } else 
+        pdev->pdf14_procs->unpack_color(num_comp, color, pdev, src);
     src_alpha = src[num_comp] = (byte)floor (255 * pdev->alpha + 0.5);
     if (has_shape)
         shape = (byte)floor (255 * pdev->shape + 0.5);
@@ -5777,7 +5820,13 @@ send_pdf14trans(gs_imager_state	* pis, gx_device * dev,
         pdf14_push_transparency_state,\
         pdf14_pop_transparency_state,\
         NULL,                           /* put_image */\
-        pdf14_dev_spec_op\
+        pdf14_dev_spec_op,\
+        NULL,                           /* copy planes */\
+        NULL,                           /* get_profile */\
+        NULL,                           /* set_graphics_type_tag */\
+        NULL,                           /* strip_copy_rop2 */\
+        NULL,                           /* strip_tile_rect_devn */\
+        gx_forward_copy_alpha_hl_color\
 }
 
 static	dev_proc_create_compositor(pdf14_clist_create_compositor);

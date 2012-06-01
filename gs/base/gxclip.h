@@ -66,6 +66,8 @@ int
                          int xc, int yc, int xec, int yec),
     clip_call_copy_alpha(clip_callback_data_t * pccd,
                          int xc, int yc, int xec, int yec),
+    clip_call_copy_alpha_hl_color(clip_callback_data_t * pccd,
+                         int xc, int yc, int xec, int yec),
     clip_call_fill_mask(clip_callback_data_t * pccd,
                         int xc, int yc, int xec, int yec),
     clip_call_strip_tile_rectangle(clip_callback_data_t * pccd,

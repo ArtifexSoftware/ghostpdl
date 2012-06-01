@@ -544,7 +544,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
         dev2->height = iheight >> log2_yscale;
         rc = dev->rc;
         gs_make_mem_abuf_device(dev, dev->memory, (gx_device *) dev2,
-                                pscale, depth, 0);
+                                pscale, depth, 0, false);
         dev->rc = rc;
         dev->width = iwidth;
         dev->height = 2 << log2_yscale;

@@ -1472,6 +1472,13 @@ typedef struct gs_devn_params_s gs_devn_params;
 #define dev_proc_strip_tile_rect_devn(proc)\
   dev_t_proc_strip_tile_rect_devn(proc, gx_device)
 
+#define dev_t_proc_copy_alpha_hl_color(proc, dev_t)\
+  int proc(dev_t *dev, const byte *data, int data_x,\
+    int raster, gx_bitmap_id id, int x, int y, int width, int height,\
+    const gx_drawing_color *pdcolor, int depth)
+#define dev_proc_copy_alpha_hl_color(proc)\
+  dev_t_proc_copy_alpha_hl_color(proc, gx_device)
+
 /* Define the device procedure vector template proper. */
 
 #define gx_device_proc_struct(dev_t)\
@@ -1546,6 +1553,7 @@ typedef struct gs_devn_params_s gs_devn_params;
         dev_t_proc_set_graphics_type_tag((*set_graphics_type_tag), dev_t); \
         dev_t_proc_strip_copy_rop2((*strip_copy_rop2), dev_t);\
         dev_t_proc_strip_tile_rect_devn((*strip_tile_rect_devn), dev_t);\
+        dev_t_proc_copy_alpha_hl_color((*copy_alpha_hl_color), dev_t);\
 }
 
 /*

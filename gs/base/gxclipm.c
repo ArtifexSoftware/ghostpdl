@@ -29,6 +29,7 @@ static dev_proc_fill_rectangle_hl_color(mask_clip_fill_rectangle_hl_color);
 static dev_proc_copy_mono(mask_clip_copy_mono);
 static dev_proc_copy_color(mask_clip_copy_color);
 static dev_proc_copy_alpha(mask_clip_copy_alpha);
+static dev_proc_copy_alpha_hl_color(mask_clip_copy_alpha_hl_color);
 static dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
 static dev_proc_strip_tile_rect_devn(mask_clip_strip_tile_rect_devn);
 static dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
@@ -109,7 +110,8 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_forward_get_profile,
   gx_forward_set_graphics_type_tag,
   mask_clip_strip_copy_rop2,
-  mask_clip_strip_tile_rect_devn
+  mask_clip_strip_tile_rect_devn,
+  mask_clip_copy_alpha_hl_color
  }
 };
 
@@ -382,6 +384,22 @@ mask_clip_copy_alpha(gx_device * dev,
     ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.color[0] = color, ccdata.depth = depth;
     return clip_runs_enumerate(cdev, clip_call_copy_alpha, &ccdata);
+}
+
+static int
+mask_clip_copy_alpha_hl_color(gx_device * dev,
+                const byte * data, int sourcex, int raster, gx_bitmap_id id,
+                int x, int y, int w, int h, const gx_drawing_color *pdcolor, 
+                int depth)
+{
+    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.tdev = cdev->target;
+    ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
+    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
+    ccdata.pdcolor = pdcolor, ccdata.depth = depth;
+    return clip_runs_enumerate(cdev, clip_call_copy_alpha_hl_color, &ccdata);
 }
 
 static int

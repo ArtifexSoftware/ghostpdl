@@ -24,6 +24,7 @@
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gdevmem.h"
+#include "gxgetbit.h"
 #undef mdev
 #include "gxcpath.h"
 
@@ -164,6 +165,174 @@ gx_no_copy_alpha(gx_device * dev, const byte * data, int data_x,
                  gx_color_index color, int depth)
 {
     return_error(gs_error_unknownerror);
+}
+
+/* Currently we really should only be here if the target device is planar
+   AND it supports devn colors AND is 8 or 16 bit.  For example tiffsep
+   and psdcmyk may make use of this if AA is enabled.  It is basically 
+   designed for devices that need more than 64 bits for color support 
+   without compressed color encoding.
+
+   So that I can follow things and  make it readable for future generations, 
+   I am not using the macro nightmare that default_copy_alpha uses. */
+int
+gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
+           int raster, gx_bitmap_id id, int x, int y, int width, int height,
+                      const gx_drawing_color *pdcolor, int depth)
+{ 
+    const byte *row_alpha;
+    gs_memory_t *mem = dev->memory;
+    int bpp = dev->color_info.depth;
+    int ncomps = dev->color_info.num_components;
+    uint out_raster;
+    int code = 0;
+    gx_color_value src_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    gx_color_value curr_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    gx_color_value blend_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int ry;
+    int k, j;
+    gs_get_bits_params_t gb_params;
+    byte *src_planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    gs_int_rect gb_rect;
+    int byte_depth;
+    gx_color_index mask;
+    int shift, word_width;
+    gx_color_value *composite;
+    byte *gb_buff;
+    int x_curr, w_curr, gb_buff_start;
+    byte *end_ptr;
+
+    byte_depth = bpp / ncomps;
+    mask = ((gx_color_index)1 << byte_depth) - 1;
+    shift = 16 - byte_depth;
+    word_width = byte_depth >> 3;
+
+    fit_copy(dev, data, data_x, raster, id, x, y, width, height);
+    row_alpha = data;
+    out_raster = bitmap_raster(width * byte_depth);
+    gb_buff = gs_alloc_bytes(mem, out_raster * ncomps, "copy_alpha_hl_color(gb_buff)");
+    end_ptr = gb_buff + out_raster * ncomps;
+    if (gb_buff == 0) {
+        code = gs_note_error(gs_error_VMerror);
+        return code;
+    }
+    for (k = 0; k < ncomps; k++) {
+        src_cv[k] = pdcolor->colors.devn.values[k];
+    }
+    /* Initialize the get_bits parameters. Here we just get a plane at a  time. */
+    gb_params.options =  GB_COLORS_NATIVE
+                       | GB_ALPHA_NONE
+                       | GB_DEPTH_ALL
+                       | GB_PACKING_PLANAR
+                       | GB_RETURN_COPY
+                       | GB_ALIGN_STANDARD
+                       | GB_OFFSET_0
+                       | GB_RASTER_STANDARD
+                       | GB_SELECT_PLANES;    
+    gb_rect.p.x = x;
+    gb_rect.q.x = x + width;
+    for (ry = y; ry < y + height; row_alpha += raster, ++ry) {
+        int sx, rx;
+
+        gb_rect.p.y = ry;
+        gb_rect.q.y = ry+1;
+        for (k = 0; k < ncomps; k++) {
+            /* First set the params to zero for all planes except the one we want */
+            /* I am not sure why get_bits_rectangle for the planar device can
+               not hand back the data in a proper planar form.  To get the 
+               individual planes seems that I need to jump through some hoops
+               here */
+            for (j = 0; j < ncomps; j++) 
+                gb_params.data[j] = 0;
+            gb_params.data[k] = gb_buff + k * out_raster;
+            code = dev_proc(dev, get_bits_rectangle) (dev, &gb_rect, 
+                                                      &gb_params, 0);
+            src_planes[k] = gb_params.data[k];
+            if (code < 0) {
+                gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
+                return code;
+            }
+        }
+        /* At this point we have to carry around some additional variables 
+           so that we can handle any buffer flushes due to alpha == 0 values.
+           See below why this is needed */
+        x_curr = x;
+        w_curr = 0;
+        gb_buff_start = 0;
+        for (sx = data_x, rx = x; sx < data_x + width; ++sx, ++rx) {
+            int alpha2, alpha;
+
+            w_curr += 1;
+            if (depth == 2)	/* map 0 - 3 to 0 - 15 */
+                alpha = ((row_alpha[sx >> 2] >> ((3 - (sx & 3)) << 1)) & 3) * 5;
+            else
+                alpha2 = row_alpha[sx >> 1],
+                    alpha = (sx & 1 ? alpha2 & 0xf : alpha2 >> 4);
+
+            if (alpha == 0) {
+                /* With alpha 0 we want to avoid writting out this value.
+                 * While it is true that writting it out leaves the color 
+                 * unchanged,  any device that's watching what pixels are 
+                 * written (such as the pattern tile devices) may have problems. 
+                 * As in gx_default_copy_alpha the right thing to do is to write 
+                 * out what we have so far and then continue to collect when we 
+                 * get back to non zero alpha.  */
+                code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]), 
+                                                  0, out_raster, gs_no_bitmap_id, 
+                                                  x_curr, ry, w_curr-1, 1, 1);
+                /* reset ourselves */
+                gb_buff_start = gb_buff_start + w_curr;
+                w_curr = 0;
+                x_curr = rx + 1;
+            } else {
+                if (alpha == 15) {	
+                    /* Just use the new color. */
+                    composite = &(src_cv[0]);
+                } else {
+                    /* We need to do the weighting by the alpha value */
+                    /* First get the old color */
+                    for (k = 0; k < ncomps; k++) {
+                        /* We only have 8 and 16 bit depth to worry about.
+                           However, this stuff should really be done with 
+                           the device encode/decode procedure. */
+                        byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
+                        curr_cv[k] = 0;
+                        switch (word_width) {
+                            case 2:
+                                curr_cv[k] += (*ptr++ << 8);
+                                curr_cv[k] += *ptr;
+                                break;
+                            case 1:
+                                curr_cv[k] += *ptr;
+                                curr_cv[k] += curr_cv[k] << 8;
+                        }
+                        /* Now compute the new color which is a blend of 
+                           the old and the new */
+                        blend_cv[k] =  curr_cv[k] +  
+                            (((long) src_cv[k] - (long) curr_cv[k]) * alpha / 15);
+                        composite = &(blend_cv[0]);
+                    }
+                } 
+                /* Update our plane data buffers.  Just reuse the current one */
+                for (k = 0; k < ncomps; k++) {
+                    byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
+                    switch (word_width) {
+                        case 2:
+                            *ptr++ = composite[k] & mask;
+                        case 1:
+                            *ptr++ = (composite[k] >> shift) & mask;
+                    }
+                }
+            } /* else on alpha != 0 */
+        } /* loop on x */
+        /* Flush what ever we have left.  We may only have a partial due to 
+           the presence of alpha = 0 values */
+        code = dev_proc(dev, copy_planes)(dev, &(gb_buff[gb_buff_start]), 
+                                          0, out_raster, gs_no_bitmap_id, 
+                                          x_curr, ry, w_curr, 1, 1);
+    } /* loop on y */
+    gs_free_object(mem, gb_buff, "copy_alpha_hl_color");
+    return code;
 }
 
 int
