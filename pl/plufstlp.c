@@ -13,18 +13,15 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
-/* Font API interface */
-
-#ifndef ifapi_INCLUDED
-#  define ifapi_INCLUDED
-
-#include "iplugin.h"
+#include "stdio_.h"
+#include "string_.h"
+#include "gsmemory.h"
 #include "gstypes.h"
-#include "gsmatrix.h"
-#include "memory_.h"
-#include "gp.h"
-
 #include "gxfapi.h"
+#include "plufstlp.h"
 
-#endif /* ifapi_INCLUDED */
+void pl_get_ulp_character_data(byte **header, byte **character_data)
+{
+    *header = NULL;
+    *character_data = NULL;
+}

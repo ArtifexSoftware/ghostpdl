@@ -20,6 +20,7 @@
 #include "string_.h"
 #include "gsmemory.h"
 #include "gstypes.h"
+#include "gserrors.h"
 #include "gp.h"
 #include "gpgetenv.h"
 #include "plfont.h"
@@ -40,6 +41,15 @@
 #include "ufstport.h"
 #include "shareinc.h"
 #include "gxfapiu.h"
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#undef true
+#undef false
+
+#define false FALSE
+#define true TRUE
+#define UNICODE UFST_UNICODE
+#endif
 
 /* the line printer font NB FIXME use a header file. */
 #include "plulp.c"
@@ -311,7 +321,9 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                     int         err_cd;
                     if (strcmp(resident_table[j].full_font_name, pname) != 0)
                         continue;
+
                     err_cd = pl_load_mt_font(fcoHandle, pdir, mem, i, &plfont);
+ 
                     if (err_cd != 0)
                         return gs_throw1(err_cd, "An unrecoverable failure occurred while loading the resident font %s\n", pname);
                     else {

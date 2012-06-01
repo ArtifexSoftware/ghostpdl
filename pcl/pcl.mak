@@ -820,7 +820,8 @@ $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c \
                          $(gsmatrix_h)      \
                          $(gsutil_h)        \
                          $(gxfont_h)        \
-                         $(gxfont42_h)
+                         $(gxfont42_h)      \
+                         $(plfapi_h)
 	$(PCLCCC) $(PCLSRC)pcsfont.c $(PCLO_)pcsfont.$(OBJ)
 
 # Chapter 12

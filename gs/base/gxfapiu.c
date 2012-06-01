@@ -19,6 +19,7 @@
 /* GS includes : */
 #include "std.h"
 #include "gx.h"
+#include "stream.h"
 #include "strmio.h"
 #include "gsmalloc.h"
 
@@ -50,16 +51,22 @@ static gs_memory_t *gs_mem_ctx = NULL;
 
 struct IF_STATE;
 
-static LPUB8 stub_PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
-{   return NULL;
+static LPUB8
+stub_PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16 sym_code)
+{
+    return NULL;
 }
 
-static LPUB8 stub_PCLchId2ptr(FSP UW16 chId)
-{   return NULL;
+static LPUB8
+stub_PCLchId2ptr(FSP UW16 chId)
+{
+    return NULL;
 }
 
-static LPUB8 stub_PCLglyphID2Ptr(FSP UW16 glyphID)
-{   return NULL;
+static LPUB8
+stub_PCLglyphID2Ptr(FSP UW16 glyphID)
+{
+    return NULL;
 }
 
 /* This global is defined here because the UFST needs it to link against. */
@@ -73,130 +80,157 @@ They could be stored in the gs_lib_ctx but that would require casting the types
 to avoid including ufst's typedefs.
 */
 
-static LPUB8 (*m_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code) = stub_PCLEO_charptr;
-static LPUB8 (*m_PCLchId2ptr)(FSP UW16 chId) = stub_PCLchId2ptr;
-static LPUB8 (*m_PCLglyphID2Ptr)(FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
+static LPUB8(*m_PCLEO_charptr) (FSP LPUB8 pfont_hdr, UW16 sym_code) =
+    stub_PCLEO_charptr;
+static LPUB8(*m_PCLchId2ptr) (FSP UW16 chId) = stub_PCLchId2ptr;
+static LPUB8(*m_PCLglyphID2Ptr) (FSP UW16 glyphID) = stub_PCLglyphID2Ptr;
+
 #if !UFST_REENTRANT
-static fco_list_elem static_fco_list[MAX_STATIC_FCO_COUNT] = {0, 0, 0, 0};
+static fco_list_elem static_fco_list[MAX_STATIC_FCO_COUNT] = { 0, 0, 0, 0 };
 static char static_fco_paths[MAX_STATIC_FCO_COUNT][gp_file_name_sizeof];
 static int static_fco_count = 0;
 static bool ufst_initialized = FALSE;
 #endif
 
-LPUB8 PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16  sym_code)
-{   return m_PCLEO_charptr(FSA pfont_hdr, sym_code);
+LPUB8
+PCLEO_charptr(FSP LPUB8 pfont_hdr, UW16 sym_code)
+{
+    return m_PCLEO_charptr(FSA pfont_hdr, sym_code);
 }
 
-LPUB8 PCLchId2ptr(FSP UW16 chId)
-{   return m_PCLchId2ptr(FSA chId);
+LPUB8
+PCLchId2ptr(FSP UW16 chId)
+{
+    return m_PCLchId2ptr(FSA chId);
 }
 
-LPUB8 PCLglyphID2Ptr(FSP UW16 glyphID)
-{   return m_PCLglyphID2Ptr(FSA glyphID);
+LPUB8
+PCLglyphID2Ptr(FSP UW16 glyphID)
+{
+    return m_PCLglyphID2Ptr(FSA glyphID);
 }
 /* File handling intermediates */
 
-FILE * FAPIU_fopen (char *path, char *mode)
+void *
+FAPIU_fopen(char *path, char *mode)
 {
     if (!gs_mem_ctx)
         return NULL;
 
-    return((FILE *)sfopen(path, mode, gs_mem_ctx));
+    return ((void *)sfopen(path, mode, gs_mem_ctx));
 }
 
-int FAPIU_fread (void *ptr, int size, int count, FILE *s)
+int
+FAPIU_fread(void *ptr, int size, int count, void *s)
 {
-    return(sfread(ptr, size, count, (stream *)(s)));
+    return (sfread(ptr, size, count, (stream *) (s)));
 }
 
-int FAPIU_fgetc (FILE *s)
+int
+FAPIU_fgetc(void *s)
 {
-    return(sfgetc((stream *)(s)));
+    return (sfgetc((stream *) (s)));
 }
 
-int FAPIU_fseek (FILE *s, int offset, int whence)
+int
+FAPIU_fseek(void *s, int offset, int whence)
 {
-    return(sfseek((stream *)(s), offset, whence));
+    return (sfseek((stream *) (s), offset, whence));
 }
 
-int FAPIU_frewind (FILE *s)
+int
+FAPIU_frewind(void *s)
 {
-    return(srewind((stream *)(s)));
+    return (srewind((stream *) (s)));
 }
 
-int FAPIU_ftell (FILE *s)
+int
+FAPIU_ftell(void *s)
 {
-    return(sftell((stream *)(s)));
+    return (sftell((stream *) (s)));
 }
 
-int FAPIU_feof (FILE *s)
+int
+FAPIU_feof(void *s)
 {
-    return(sfeof((stream *)(s)));
+    return (sfeof((stream *) (s)));
 }
 
-int FAPIU_ferror (FILE *s)
+int
+FAPIU_ferror(void *s)
 {
-    return(sferror((stream *)(s)));
+    return (sferror((stream *) (s)));
 }
 
-int FAPIU_fclose (FILE *s)
+int
+FAPIU_fclose(void *s)
 {
-    return(sfclose((stream *)(s)));
+    return (sfclose((stream *) (s)));
 }
 
-void * FAPIU_open (char *path, int mode)
+void *
+FAPIU_open(char *path, int mode)
 {
+    void *s;
+
     if (!gs_mem_ctx)
-        return NULL;
+        return (void *)-1;
 
     /* FIXME: "mode" needs work */
-    return(sfopen(path, "r+", gs_mem_ctx));
+    s = sfopen(path, "r+", gs_mem_ctx);
+    if (!s)
+        s = (void *)-1;
+
+    return (s);
 }
 
-int FAPIU_read (void *s, void *ptr, int count)
+int
+FAPIU_read(void *s, void *ptr, int count)
 {
-    return(sfread(ptr, 1, count, (stream *)(s)));
+    return (sfread(ptr, 1, count, (stream *) (s)));
 }
 
-int FAPIU_lseek (void *s, int offset, int whence)
+int
+FAPIU_lseek(void *s, int offset, int whence)
 {
-    int pos = sfseek (s, offset, whence);
+    int pos = sfseek(s, offset, whence);
 
-    if (pos >= 0)
-    {
+    if (pos >= 0) {
         pos = sftell(s);
     }
-    return(pos);
+    return (pos);
 }
 
-int fapi_ufseek (stream *s, long offset, int whence)
+int
+fapi_ufseek(stream * s, long offset, int whence)
 {
-    int pos = sfseek (s, offset, whence);
+    int pos = sfseek(s, offset, whence);
 
-    if (pos >= 0)
-    {
+    if (pos >= 0) {
         pos = sftell(s);
     }
-    return(pos);
+    return (pos);
 }
 
-int FAPIU_close (void *s)
+int
+FAPIU_close(void *s)
 {
-    return(sfclose((stream *)(s)));
+    return (sfclose((stream *) (s)));
 }
 
 #if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
 
-GLOBAL VOID MEMinit(FSP0)
+GLOBAL VOID
+MEMinit(FSP0)
 {
-   if_state.pserver->mem_avail[CACHE_POOL]  = 16 * 1024 * 1024;
-   if_state.pserver->mem_fund[CACHE_POOL]   = 16 * 1024 * 1024;
+    if_state.pserver->mem_avail[CACHE_POOL] = 16 * 1024 * 1024;
+    if_state.pserver->mem_fund[CACHE_POOL] = 16 * 1024 * 1024;
 
-   if_state.pserver->mem_avail[BUFFER_POOL] = 4 * 1024 * 1024;
-   if_state.pserver->mem_fund[BUFFER_POOL]  = 4 * 1024 * 1024;
+    if_state.pserver->mem_avail[BUFFER_POOL] = 4 * 1024 * 1024;
+    if_state.pserver->mem_fund[BUFFER_POOL] = 4 * 1024 * 1024;
 
-   if_state.pserver->mem_avail[CHARGEN_POOL]  = 16 * 1024 * 1024;
-   if_state.pserver->mem_fund[CHARGEN_POOL]   = 16 * 1024 * 1024;
+    if_state.pserver->mem_avail[CHARGEN_POOL] = 16 * 1024 * 1024;
+    if_state.pserver->mem_fund[CHARGEN_POOL] = 16 * 1024 * 1024;
 
 }
 #ifndef UFST_MEMORY_CHECKING
@@ -208,20 +242,22 @@ static unsigned long curmem = 0;
 unsigned long maxmem = 0;
 #endif
 
-GLOBAL MEM_HANDLE MEMalloc(FSP UW16 pool, SL32 size)
+GLOBAL MEM_HANDLE
+MEMalloc(FSP UW16 pool, SL32 size)
 {
 
-    void *ptr;
+    char *ptr;
+
 #if UFST_MEMORY_CHECKING
-    void *ptr2;
+    char *ptr2;
 
     size += sizeof(long) + 2 * sizeof(void *);
 #endif
 
     size += sizeof(long);
-    ptr = gs_malloc (gs_mem_ctx, size, 1, "UFST MEMalloc");
-    if(!ptr) {
-        return(NIL_MH);
+    ptr = gs_malloc(gs_mem_ctx, size, 1, "UFST MEMalloc");
+    if (!ptr) {
+        return (NIL_MH);
     }
     else {
         *((long *)ptr) = size;
@@ -240,18 +276,21 @@ GLOBAL MEM_HANDLE MEMalloc(FSP UW16 pool, SL32 size)
         size -= 2 * sizeof(long);
         *((char *)ptr) = ptr2;
         *((char *)(ptr + size - sizeof(void *))) = ptr2;
-        ptr += sizeof(void *);
+        ptr += sizeof(char *);
 
 #endif
 
-        return((MEM_HANDLE)ptr);
+        return ((MEM_HANDLE) ptr);
     }
 }
 
-GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
+GLOBAL VOID
+MEMfree(FSP UW16 pool, MEM_HANDLE ptr0)
 {
     int size = 0;
     void *ptr1;
+    char *ptr = (char *)ptr0;
+
 #if UFST_MEMORY_CHECKING
     int size1;
     void *ptr2;
@@ -282,8 +321,8 @@ GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
     }
 #endif
 
-    memset (ptr, 0x00, size);
-    gs_free (gs_mem_ctx, ptr, 0, 0, "UFST MEMfree");
+    memset(ptr, 0x00, size);
+    gs_free(gs_mem_ctx, ptr, 0, 0, "UFST MEMfree");
 }
 
 #endif
@@ -298,12 +337,18 @@ GLOBAL VOID MEMfree(FSP UW16 pool, MEM_HANDLE ptr)
      really change on the first demand only.
      See also a comment in gs_fapiufst_finit.
    */
-void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code),
-                           LPUB8 (*p_PCLchId2ptr)(FSP UW16 chId),
-                           LPUB8 (*p_PCLglyphID2Ptr)(FSP UW16 glyphID))
-{   m_PCLEO_charptr = (p_PCLEO_charptr != NULL ? p_PCLEO_charptr : stub_PCLEO_charptr);
-    m_PCLchId2ptr = (p_PCLchId2ptr != NULL ? p_PCLchId2ptr : stub_PCLchId2ptr);
-    m_PCLglyphID2Ptr = (p_PCLglyphID2Ptr != NULL ? p_PCLglyphID2Ptr : stub_PCLglyphID2Ptr);
+void
+gx_set_UFST_Callbacks(LPUB8(*p_PCLEO_charptr)
+                      (FSP LPUB8 pfont_hdr, UW16 sym_code),
+                      LPUB8(*p_PCLchId2ptr) (FSP UW16 chId),
+                      LPUB8(*p_PCLglyphID2Ptr) (FSP UW16 glyphID))
+{
+    m_PCLEO_charptr =
+        (p_PCLEO_charptr != NULL ? p_PCLEO_charptr : stub_PCLEO_charptr);
+    m_PCLchId2ptr =
+        (p_PCLchId2ptr != NULL ? p_PCLchId2ptr : stub_PCLchId2ptr);
+    m_PCLglyphID2Ptr =
+        (p_PCLglyphID2Ptr != NULL ? p_PCLglyphID2Ptr : stub_PCLglyphID2Ptr);
 }
 
 #define MAX_OPEN_LIBRARIES  5   /* NB */
@@ -315,9 +360,9 @@ void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  s
  * <0 = error.
  */
 int
-gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
+gx_UFST_init(gs_memory_t * mem, const UB8 * ufst_root_dir)
 {
-    IFCONFIG            config_block;
+    IFCONFIG config_block;
     int status;
 
 #if !UFST_REENTRANT
@@ -327,8 +372,8 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 #endif
     strcpy(config_block.ufstPath, ufst_root_dir);
     strcpy(config_block.typePath, ufst_root_dir);
-    config_block.num_files = MAX_OPEN_LIBRARIES;  /* max open library files */
-    config_block.bit_map_width = BITMAP_WIDTH;    /* bitmap width 1, 2 or 4 */
+    config_block.num_files = MAX_OPEN_LIBRARIES;        /* max open library files */
+    config_block.bit_map_width = BITMAP_WIDTH;  /* bitmap width 1, 2 or 4 */
 
     /* These parameters were set in open_UFST() (fapiufst.c) but were left
        uninitialized in pl_load_built_in_fonts() (plulfont.c). */
@@ -344,6 +389,7 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
         gs_mem_ctx = NULL;
         return status;
     }
+    CGIFfont_access(FSA DISK_ACCESS);
     if ((status = CGIFenter(FSA0)) != 0) {
         dmprintf1(mem, "CGIFenter() error: %u\n",status);
         gs_mem_ctx = NULL;
@@ -352,7 +398,7 @@ gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir)
 #if !UFST_REENTRANT
     ufst_initialized = TRUE;
 #endif
-    return 1; /* first time, caller may have more initialization to do */
+    return 1;                   /* first time, caller may have more initialization to do */
 }
 
 int
@@ -368,7 +414,8 @@ gx_UFST_fini(void)
 
 /* Access to the static FCO list for the language switching project. */
 
-fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path)
+fco_list_elem *
+gx_UFST_find_static_fco(const char *font_file_path)
 {
 #if !UFST_REENTRANT
     int i;
@@ -380,7 +427,8 @@ fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path)
     return NULL;
 }
 
-fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle)
+fco_list_elem *
+gx_UFST_find_static_fco_handle(SW16 fcHandle)
 {
 #if !UFST_REENTRANT
     int i;
@@ -392,7 +440,8 @@ fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle)
     return NULL;
 }
 
-SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path)
+SW16
+gx_UFST_find_fco_handle_by_name(const char *font_file_path)
 {
 #if !UFST_REENTRANT
     fco_list_elem *fco = gx_UFST_find_static_fco(font_file_path);
@@ -403,7 +452,8 @@ SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path)
 #endif
 }
 
-UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
+UW16
+gx_UFST_open_static_fco(const char *font_file_path, SW16 * result_fcHandle)
 {
 #if !UFST_REENTRANT
     SW16 fcHandle;
@@ -412,7 +462,7 @@ UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
 
     if (static_fco_count >= MAX_STATIC_FCO_COUNT)
         return ERR_fco_NoMem;
-    code = CGIFfco_Open(FSA (UB8 *)font_file_path, &fcHandle);
+    code = CGIFfco_Open(FSA(UB8 *) font_file_path, &fcHandle);
     if (code != 0)
         return code;
     e = &static_fco_list[static_fco_count];
@@ -420,7 +470,7 @@ UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
             sizeof(static_fco_paths[static_fco_count]));
     e->file_path = static_fco_paths[static_fco_count];
     e->fcHandle = fcHandle;
-    e->open_count = -1; /* Unused for static FCOs. */
+    e->open_count = -1;         /* Unused for static FCOs. */
     static_fco_count++;
     *result_fcHandle = fcHandle;
     return 0;
@@ -430,7 +480,8 @@ UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle)
 #endif
 }
 
-UW16 gx_UFST_close_static_fco(SW16 fcHandle)
+UW16
+gx_UFST_close_static_fco(SW16 fcHandle)
 {
 #if !UFST_REENTRANT
     int i;
@@ -450,10 +501,11 @@ UW16 gx_UFST_close_static_fco(SW16 fcHandle)
     return 0;
 }
 
-void gx_UFST_close_static_fcos()
+void
+gx_UFST_close_static_fcos()
 {
 #if !UFST_REENTRANT
-    for(; static_fco_count; )
+    for (; static_fco_count;)
         gx_UFST_close_static_fco(static_fco_list[0].fcHandle);
 #endif
 }
@@ -464,9 +516,10 @@ void gx_UFST_close_static_fcos()
  * Returns:     VOID
  * Notes:       This is a stub implementation for graymap.
  */
-GLOBAL VOID BLACKPIX(FSP SW16 x, SW16 y )
+GLOBAL VOID
+BLACKPIX(FSP SW16 x, SW16 y)
 {
-        return;
+    return;
 }
 
 /* -------------------------------- GRAYPIX --------------------------------
@@ -474,8 +527,9 @@ GLOBAL VOID BLACKPIX(FSP SW16 x, SW16 y )
  * Returns:     VOID
  * Notes:       This is a stub implementation for graymap.
  */
-GLOBAL VOID GRAYPIX(FSP SW16 x, SW16 y, SW16 v )
+GLOBAL VOID
+GRAYPIX(FSP SW16 x, SW16 y, SW16 v)
 {
-        return;
+    return;
 }
-#endif	/* GRAYSCALING */
+#endif /* GRAYSCALING */

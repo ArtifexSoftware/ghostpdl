@@ -23,6 +23,11 @@
 
 typedef struct name_table_s *name_table_ptr;
 
+#ifndef gs_fapi_server_DEFINED
+#define gs_fapi_server_DEFINED
+typedef struct gs_fapi_server_s gs_fapi_server;
+#endif
+
 #ifndef gs_font_dir_DEFINED
 #  define gs_font_dir_DEFINED
 typedef struct gs_font_dir_s gs_font_dir;
@@ -74,6 +79,7 @@ typedef struct gs_lib_ctx_s
     char *profiledir;               /* Directory used in searching for ICC profiles */
     int profiledir_len;             /* length of directory name (allows for Unicode) */
     void *cms_context;  /* Opaque context pointer from underlying CMS in use */
+    gs_fapi_server **fapi_servers;
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

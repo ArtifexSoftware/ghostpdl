@@ -109,6 +109,7 @@ typedef struct pl_font_params_s {
 typedef struct pl_font_glyph_s {
   gs_glyph glyph;
   const byte *data;
+  int data_len;
 } pl_font_glyph_t;
 typedef struct pl_glyph_table_s {
   pl_font_glyph_t *table;
@@ -279,7 +280,7 @@ int pl_alloc_tt_fontfile_buffer(stream *in, gs_memory_t *mem, byte **pptt_font_d
 int pl_free_tt_fontfile_buffer(gs_memory_t *mem, byte *ptt_font_data);
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
-int pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *data);
+int pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata);
 
 /* Determine the escapement of a character in a font / symbol set. */
 /* If the font is bound, the symbol set is ignored. */

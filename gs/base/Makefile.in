@@ -445,7 +445,7 @@ DYNANIC_LIB_EXT =       @DYNANIC_LIB_EXT@
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(PSD)fapi.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)epsf.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev @JBIG2DEVS@ @JPXDEVS@ @UTF8DEVS@
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(GLD)pipe.dev
 # The following is strictly for testing.
@@ -587,6 +587,7 @@ include $(PSSRCDIR)/psromfs.mak
 include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/freetype.mak
+include @FAPIUFST_MAK@
 include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak

@@ -132,7 +132,7 @@ PNGCCFLAGS=-DPNG_USER_MEM_SUPPORTED
 SHARE_LIBPNG=0
 !endif
 
-# Specify the location of lcms
+# Specify the location of g
 !ifndef LCMSSRCDIR
 LCMSSRCDIR=..\gs\lcms
 !endif
@@ -258,6 +258,37 @@ SVGOBJDIR=$(GENDIR)
 SBRDIR=$(GENDIR)
 !endif
 
+!ifndef FT_BRIDGE
+FT_BRIDGE=1
+!endif
+
+SHARE_FT=0
+FTSRCDIR=$(GLSRCDIR)/../freetype
+FT_CFLAGS=-I$(GLSRCDIR)/../freetype/include
+FT_LIBS=
+FT_CONFIG_SYSTEM_ZLIB=
+
+
+# Define whether to compile in UFST. Note that freetype will/must be disabled.
+# FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
+# (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
+!ifndef UFST_BRIDGE
+UFST_BRIDGE=
+!endif
+UFST_ROOT=$(GLSRCDIR)/../ufst
+UFST_LIB_EXT=.a
+
+UFST_ROMFS_ARGS=-b \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+
+UFSTROMFONTDIR=\"%rom%fontdata/\"
+UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
+
+
+UFST_CFLAGS=-DGCCx86
+
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 !ifndef TARGET_DEVS
@@ -310,58 +341,6 @@ PCL_FONT_SCALER=$(PL_SCALER)
 !ifndef PXL_FONT_SCALER
 PXL_FONT_SCALER=$(PL_SCALER)
 !endif
-
-# flags for UFST scaler.
-!if "$(PL_SCALER)" == "ufst"
-
-!ifndef UFST_ROOT
-UFST_ROOT=..\ufst
-!endif
-
-UFST_BRIDGE=1
-
-!ifndef UFST_LIB_EXT
-UFST_LIB_EXT=.lib
-!endif
-
-!ifndef UFST_LIB
-UFST_LIB=$(UFST_ROOT)\rts\lib\
-!endif
-
-!ifndef UFST_CFLAGS
-UFST_CFLAGS= -DUFST_BRIDGE=$(UFST_BRIDGE) -DUFST_LIB_EXT=$(UFST_LIB_EXT) -DMSVC -DUFST_ROOT=$(UFST_ROOT)
-!endif
-
-!ifndef UFST_INCLUDES
-UFST_INCLUDES=$(I_)$(UFST_ROOT)\rts\inc $(I_)$(UFST_ROOT)\sys\inc $(I_)$(UFST_ROOT)\rts\fco $(I_)$(UFST_ROOT)\rts\gray $(I_)$(UFST_ROOT)\rts\tt -DAGFA_FONT_TABLE
-!endif
-
-!if "$(BUNDLE_FONTS)" == "1"
-
-!ifndef UFST_ROMFS_ARGS
-UFST_ROMFS_ARGS=-b \
--P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
--P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
--c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
-!endif
-!ifndef UFSTFONTDIR
-UFSTFONTDIR=%rom%fontdata/
-!endif
-
-!else
-
-!ifndef UFSTFONTDIR
-UFSTFONTDIR=/usr/local/fontdata5.0/
-!endif
-
-!endif
-
-!ifndef EXTRALIBS
-EXTRALIBS= $(UFST_LIB)if_lib.lib $(UFST_LIB)fco_lib.lib $(UFST_LIB)tt_lib.lib $(UFST_LIB)if_lib.lib
-!endif
-
-!endif
-# end PL_SCALER == ufst
 
 # flags for artifex scaler
 !if "$(PL_SCALER)" == "afs"

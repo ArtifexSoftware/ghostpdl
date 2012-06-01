@@ -41,6 +41,15 @@
 #include "shareinc.h"
 #include "strmio.h"
 
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#undef true
+#undef false
+
+#define false FALSE
+#define true TRUE
+#define UNICODE UFST_UNICODE
+#endif
+
 /* Structure descriptors */
 private_st_pl_font();
 

@@ -942,7 +942,10 @@ xps_init_postscript_font(xps_context_t *ctx, xps_font_t *font)
         return gs_rethrow(code, "cannot read cff file structure");
     }
 
-    gs_definefont(ctx->fontdir, font->font);
+    if ((code = gs_definefont(ctx->fontdir, font->font)) < 0) {
+        return(code);
+    }
 
-    return 0;
+    code = xps_fapi_passfont (font->font, NULL, NULL, font->data, font->length);
+    return code;
 }

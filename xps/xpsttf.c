@@ -19,6 +19,7 @@
 #include "ghostxps.h"
 
 #include <gxfont.h>
+#include "xpsfapi.h"
 
 /*
  * Some extra TTF parsing magic that isn't covered by the graphics library.
@@ -321,6 +322,8 @@ xps_true_callback_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 int
 xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
 {
+    int code = 0;
+
     font->font = (void*) gs_alloc_struct(ctx->memory, gs_font_type42, &st_gs_font_type42, "xps_font type42");
     if (!font->font)
         return gs_throw(gs_error_VMerror, "out of memory");
@@ -403,7 +406,10 @@ xps_init_truetype_font(xps_context_t *ctx, xps_font_t *font)
         p42->data.get_glyph_index = xps_true_get_glyph_index;
     }
 
-    gs_definefont(ctx->fontdir, font->font);
+    if ((code = gs_definefont(ctx->fontdir, font->font)) < 0) {
+        return(code);
+    }
 
-    return 0;
+    code = xps_fapi_passfont (font->font, NULL, NULL, font->data, font->length);
+    return code;
 }

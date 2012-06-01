@@ -35,14 +35,17 @@
     really change on the first demand only.
     See also a comment in gs_fapiufst_finit.
   */
-void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(FSP LPUB8 pfont_hdr, UW16  sym_code),
-                           LPUB8 (*p_PCLchId2ptr)(FSP UW16 chId),
-                           LPUB8 (*p_PCLglyphID2Ptr)(FSP UW16 glyphID));
+void
+gx_set_UFST_Callbacks(LPUB8(*p_PCLEO_charptr)
+                      (FSP LPUB8 pfont_hdr, UW16 sym_code),
+                      LPUB8(*p_PCLchId2ptr) (FSP UW16 chId),
+                      LPUB8(*p_PCLglyphID2Ptr) (FSP UW16 glyphID));
 
 void gx_reset_UFST_Callbacks(void);
 
 typedef struct fco_list_elem_s fco_list_elem;
-struct fco_list_elem_s {
+struct fco_list_elem_s
+{
     int open_count;
     SW16 fcHandle;
     char *file_path;
@@ -51,8 +54,10 @@ struct fco_list_elem_s {
 
 /* Access to the static FCO list for the language switching project : */
 /* For the language switch : */
-UW16 gx_UFST_open_static_fco(const char *font_file_path, SW16 *result_fcHandle);
+UW16 gx_UFST_open_static_fco(const char *font_file_path,
+                             SW16 * result_fcHandle);
 UW16 gx_UFST_close_static_fco(SW16 fcHandle);
+
 /* close all open FCO's */
 void gx_UFST_close_static_fcos(void);
 SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path);
@@ -61,22 +66,22 @@ SW16 gx_UFST_find_fco_handle_by_name(const char *font_file_path);
 fco_list_elem *gx_UFST_find_static_fco(const char *font_file_path);
 fco_list_elem *gx_UFST_find_static_fco_handle(SW16 fcHandle);
 
-int gx_UFST_init(gs_memory_t *mem, const UB8 *ufst_root_dir);
+int gx_UFST_init(gs_memory_t * mem, const UB8 * ufst_root_dir);
 
 int gx_UFST_fini(void);
 
-FILE * FAPIU_fopen (char *path, char *mode);
-void * FAPIU_open (char *path, int mode);
-int FAPIU_fread (void *ptr, int size, int count, FILE *s);
-int FAPIU_read (void *s, void *ptr, int count);
-int FAPIU_fgetc (FILE *s);
-int FAPIU_fseek (FILE *s, int offset, int whence);
-int FAPIU_lseek (void *s, int offset, int whence);
-int FAPIU_frewind (FILE *s);
-int FAPIU_ftell (FILE *s);
-int FAPIU_feof (FILE *s);
-int FAPIU_ferror (FILE *s);
-int FAPIU_fclose (FILE *s);
-int FAPIU_close (void *s);
+void *FAPIU_fopen(char *path, char *mode);
+void *FAPIU_open(char *path, int mode);
+int FAPIU_fread(void *ptr, int size, int count, void *s);
+int FAPIU_read(void *s, void *ptr, int count);
+int FAPIU_fgetc(void *s);
+int FAPIU_fseek(void *s, int offset, int whence);
+int FAPIU_lseek(void *s, int offset, int whence);
+int FAPIU_frewind(void *s);
+int FAPIU_ftell(void *s);
+int FAPIU_feof(void *s);
+int FAPIU_ferror(void *s);
+int FAPIU_fclose(void *s);
+int FAPIU_close(void *s);
 
 #endif /* gxfapiu_INCLUDED */

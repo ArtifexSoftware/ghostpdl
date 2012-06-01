@@ -83,8 +83,7 @@ FEATURE_DEVS    ?= \
           $(DD)htxlib.dev	\
 	  $(DD)ttfont.dev	\
 	  $(DD)pipe.dev         \
-          $(DD)gsnogc.dev       \
-	  $(DD)fapi.dev
+          $(DD)gsnogc.dev
 
 # extra objects.
 XOBJS?=$(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gconfig.o \

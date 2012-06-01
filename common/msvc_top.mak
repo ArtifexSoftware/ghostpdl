@@ -36,7 +36,7 @@ AK=$(GLGENDIR)\ccf32.tr
 clean_gs:
 	nmake /f $(GLSRCDIR)\msvclib.mak \
 	GLSRCDIR=$(GLSRCDIR) GLGENDIR=$(GLGENDIR) \
-	GLOBJDIR=$(GLOBJDIR) clean
+	GLOBJDIR=$(GLOBJDIR) CONTRIBDIR=$(CONTRIBDIR) clean
 	-erase $(TARGET_XE).ilk
 	-erase $(TARGET_XE).pdb
 	-erase $(TARGET_XE).exp

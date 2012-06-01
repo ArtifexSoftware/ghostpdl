@@ -32,6 +32,8 @@
 #include "plvalue.h"
 #include "plmain.h" /* for high_level_device...
                       hopefully this will go away soon */
+#include "plfapi.h"
+
 #include "gsbitops.h"
 #include "gsccode.h"
 #include "gsmatrix.h"
@@ -365,6 +367,7 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
           }
           case plfst_TrueType:
           {
+
             gs_font_type42 *pfont;
             { static const pl_font_offset_errors_t errors = {
                 gs_error_invalidfont, 0
@@ -442,7 +445,15 @@ bitmap:     pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
         pl_dict_put(&pcs->soft_fonts, current_font_id,
                     current_font_id_size, plfont);
         plfont->pfont->procs.define_font = gs_no_define_font;
-        return gs_definefont(pcs->font_dir, plfont->pfont);
+
+        if ((code = gs_definefont(pcs->font_dir, plfont->pfont)) != 0) {
+            return(code);
+        }
+        
+        if (plfont->scaling_technology == plfst_TrueType)
+            code = pl_fapi_passfont(plfont, 0, NULL, NULL, NULL, 0);
+        
+        return(code);
 }
 
 static int /* ESC * c <char_code> E */

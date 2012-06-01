@@ -29,3 +29,29 @@ X11DEVS?=@X11DEVS@
 
 LCMS_CFLAGS=@LCMS_ENDIAN@
 LCMS2_CFLAGS=@LCMS2_ENDIAN@
+
+FT_BRIDGE?=@FT_BRIDGE@
+SHARE_FT=0
+FTSRCDIR?=$(GLSRCDIR)/../freetype
+FT_CFLAGS=-I$(GLSRCDIR)/../freetype/include
+FT_LIBS=
+FT_CONFIG_SYSTEM_ZLIB=
+
+
+# Define whether to compile in UFST.
+# UFST_BRIDGE must be either "1", or empty (*never* "0")
+UFST_BRIDGE?=@UFST_BRIDGE@
+UFST_ROOT=@UFST_ROOT@
+UFST_LIB_EXT=@UFST_LIB_EXT@
+FAPIUFST_MAK=@FAPIUFST_MAK@
+
+UFST_ROMFS_ARGS?=-b \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+
+UFSTROMFONTDIR=\"%rom%fontdata/\"
+UFSTDISCFONTDIR?=\"$(UFST_ROOT)/fontdata/\"
+
+
+UFST_CFLAGS=@UFST_CFLAGS@

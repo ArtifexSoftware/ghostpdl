@@ -116,6 +116,73 @@ cd $olddir
 echo
 echo "Continuing with GhostPDL configuration..."
 
+
+dnl --------------------------------------------------
+dnl Should we use FAPI, and which server(s)
+dnl --------------------------------------------------
+
+FT_BRIDGE=0
+UFST_BRIDGE=
+UFST_ROOT=
+UFST_CFLAGS=
+UFST_LIB_EXT=
+FAPIUFST_MAK="\$(GLSRCDIR)/stub.mak"
+
+AC_ARG_ENABLE([fapi], AC_HELP_STRING([--disable-fapi],
+       [Force use of the (deprecated) Artifex font scaler/renderer]))
+
+if test x"$enable_fapi" != xno; then
+  FT_BRIDGE=1
+  AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
+        [Disable freetype for font rasterization]))
+
+  if test x"$enable_freetype" != xno; then
+    if ! test -f gs/freetype/src/base/ftbbox.c; then
+      FT_BRIDGE=0
+    fi
+  else
+    FT_BRIDGE=0
+  fi
+  
+  dnl UFST detection
+  AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
+             [Use UFST]), [], [with_ufst=no])
+
+  if test -d $with_ufst; then
+    UFST_BRIDGE=1
+    case $with_ufst in
+      /*) UFST_ROOT=$with_ufst ;;
+       *) UFST_ROOT=`pwd`/$with_ufst ;;
+    esac
+
+    FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
+
+    # Check pointer size
+    AC_CHECK_SIZEOF(char*)
+
+    if test "x$ac_cv_sizeof_charp" = "x8"; then
+      UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0"
+    else
+      if test "x$ac_cv_sizeof_charp" = "x4"; then
+        UFST_CFLAGS="-DGCCx86 -DO_BINARY=0"
+      fi
+    fi
+
+    UFST_LIB_EXT=.a
+  fi
+fi
+
+
+AC_SUBST(UFST_BRIDGE)
+AC_SUBST(UFST_ROOT)
+AC_SUBST(UFST_CFLAGS)
+AC_SUBST(UFST_LIB_EXT)
+AC_SUBST(FAPIUFST_MAK)
+
+AC_SUBST(FT_BRIDGE)
+
+
+
 dnl --------------------------------------------------
 dnl check for big/little endian for LCMS
 dnl --------------------------------------------------

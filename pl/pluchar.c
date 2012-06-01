@@ -55,8 +55,18 @@
 #include "cgconfig.h"
 #include "ufstport.h"
 #include "shareinc.h"
+
 #include "gxfapiu.h"
 #include "plchar.h"
+
+#if UFST_VERSION_MAJOR >= 6 && UFST_VERSION_MINOR >= 2
+#undef true
+#undef false
+
+#define false FALSE
+#define true TRUE
+#define UNICODE UFST_UNICODE
+#endif
 
 /* ---------------- UFST utilities ---------------- */
 
@@ -164,11 +174,22 @@ static int
 pl_set_ufst_font(const pl_font_t * plfont, FONTCONTEXT * pfc)
 {
     uint    status = CGIFfont(FSA pfc);
+    FONT_METRICS fm;
 
     if (status != 0)
         dmprintf1(plfont->pfont->memory, "CGIFfont error %d\n", status);
     else
-        plfont_last = plfont;   /* record this font for use in call-backs */
+    {
+        /* UFST 6.2 *appears* to need this to "concretize" the font
+         * we've just set.
+         */
+        status = CGIFfont_metrics(&fm);
+        if (status != 0)
+            dprintf1("CGIFfont error %d\n", status);
+        else
+            plfont_last = plfont;   /* record this font for use in call-backs */
+    }
+
     return status;
 }
 

@@ -15,7 +15,7 @@
 
 % Redefine Font and CIDFont categories with FAPI-handeled fonts.
 
-systemdict /.FAPIavailable known { .FAPIavailable } { //false } ifelse not {
+systemdict /.FAPIavailable known { //null .FAPIavailable } { //false } ifelse not {
   (%END FAPI) .skipeof
 } if
 
@@ -94,6 +94,48 @@ languagelevel 2 .setlanguagelevel
   /ServerOptions 2 dict
 >> def
 systemdict /.FAPIconfig //Config put
+
+/UFST .FAPIavailable
+{
+  systemdict /UFST_SSdir known
+  {
+      /UFSTFONTDIR UFST_SSdir def
+      systemdict /UFST_SSdir undef
+  }
+  {
+    /UFSTROMFONTDIR (%rom%fontdata/) def
+
+    UFSTROMFONTDIR (mtfonts/pcl45/mt3/plug__xi.fco) 
+    concatstrings status
+    {
+       pop pop pop pop
+       /UFSTFONTDIR UFSTROMFONTDIR def
+    }
+    {
+      /UFSTFONTDIR () def
+    } ifelse
+  } ifelse
+
+  systemdict /UFST_PlugIn known not
+  {
+    systemdict /UFST_PlugIn UFSTFONTDIR (mtfonts/pcl45/mt3/plug__xi.fco) concatstrings put
+  } if
+
+  systemdict /FCOfontfile known not
+  {
+    systemdict /FCOfontfile UFSTFONTDIR (mtfonts/pclps2/mt3/pclp2_xj.fco) concatstrings put
+  } if
+
+  systemdict /FCOfontfile2 known not
+  {
+    systemdict /FCOfontfile2 UFSTFONTDIR (mtfonts/pcl45/mt3/wd____xh.fco) concatstrings put
+  } if
+
+  systemdict /FAPIfontmap known not
+  {
+    systemdict /FAPIfontmap (FCOfontmap-PCLPS2) put
+  } if
+} if
 
 ()
 systemdict /UFST_SSdir .knownget {

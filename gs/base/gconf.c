@@ -24,6 +24,7 @@
 #include "gxiodev.h"
 #include "gxiparam.h"
 #include "gxcomp.h"
+#include "gxfapi.h"
 
 /*
  * The makefile generates the file gconfig.h, which consists of
@@ -183,6 +184,26 @@ gs_lib_device_list(const gx_device * const **plist,
       if (!gx_device_list[i])
         break;
     return i;
+}
+
+/* Font API support  */
+#define fapi_(func) extern fapi_init_func(func);
+#include "gconf.h"
+#undef fapi_
+
+gs_fapi_server_init_func gs_fapi_server_inits[] = {
+#define fapi_(init_func) init_func,
+#include "gconf.h"
+#undef fapi_
+  NULL
+};
+
+extern_gs_get_fapi_server_inits();
+
+const gs_fapi_server_init_func *
+gs_get_fapi_server_inits(void)
+{
+    return(gs_fapi_server_inits);
 }
 
 #ifdef GS_DEVS_SHARED

@@ -42,6 +42,19 @@
 #include "gzstate.h"
 #include "pxptable.h"
 
+#include "plfapi.h"
+
+/* ---------------- Initialization ---------------- */
+
+int
+pxfont_init(px_state_t *pxs)
+{       /* Allocate the font directory now. */
+        pxs->font_dir = gs_font_dir_alloc(pxs->memory);
+        if ( pxs->font_dir == 0 )
+          return_error(errorInsufficientMemory);
+        return 0;
+}
+
 /* ---------------- Operator utilities ---------------- */
 
 static const pl_symbol_map_t *
@@ -144,6 +157,7 @@ int
 px_define_font(px_font_t *pxfont, byte *header, ulong size, gs_id id, px_state_t *pxs)
 {       gs_memory_t *mem = pxs->memory;
         uint num_chars;
+        int code = 0;
 
         /* Check for a valid font. */
         if ( size < 8 /* header */ + 6 /* 1 required segment */ +
@@ -245,7 +259,15 @@ px_define_font(px_font_t *pxfont, byte *header, ulong size, gs_id id, px_state_t
             pxfont->is_xl_format = false;
         }
 
-        return gs_definefont(pxs->font_dir, pxfont->pfont);
+        if ((code = gs_definefont(pxs->font_dir, pxfont->pfont)) < 0) {
+            return(code);
+        }
+
+        if (pxfont->scaling_technology == plfst_TrueType) {
+            code = pl_fapi_passfont(pxfont, 0, NULL, NULL, NULL, 0);
+        }
+
+        return(code);
 }
 
 /* Concatenate a widened (16-bit) font name onto an error message string. */

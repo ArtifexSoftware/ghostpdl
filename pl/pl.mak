@@ -121,6 +121,7 @@ $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
 pldebug_h=$(PLSRC)pldebug.h
 pldict_h=$(PLSRC)pldict.h
 pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
+plfapi_h=$(PLSRC)plfapi.h
 pllfont_h=$(PLSRC)pllfont.h
 plmain_h=$(PLSRC)plmain.h $(gsargs_h) $(gsgc_h)
 plplatf_h=$(PLSRC)plplatf.h
@@ -180,8 +181,15 @@ $(PLOBJ)plfont.$(OBJ): $(PLSRC)plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gschar_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gsmatrix_h) $(gstypes_h) $(gsutil_h)\
  $(gsimage_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
- $(gxfache_h) $(plfont_h) $(plvalue_h) $(plchar_h)
+ $(gxfache_h) $(plfont_h) $(plvalue_h) $(plchar_h) \
+ $(plfapi_h)
 	$(PLCCC) $(PLSRC)plfont.c $(PLO_)plfont.$(OBJ)
+
+$(PLOBJ)plfapi.$(OBJ): $(PLSRC)plfapi.c $(plfapi_h) $(gxfapi_h) $(memory__h) \
+           $(gsmemory_h) $(gserrors_h) $(gxdevice_h) $(gxfont_h) $(gzstate_h) \
+           $(gxchar_h) $(gdebug_h) $(plfont_h) $(gxfapi_h) $(plchar_h) \
+           $(gsimage_h) $(gspath_h)
+	$(PLCCC) $(PLSRC)plfapi.c $(PLO_)plfapi.$(OBJ)
 
 #ufst font module.
 $(PLOBJ)plufont.$(OBJ): $(PLSRC)plufont.c $(AK) $(memory__h) $(stdio__h)\
@@ -252,7 +260,8 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(pllfont_h) $(AK)\
 	$(ctype__h) $(stdio__h) $(string__h) $(strmio_h) $(stream_h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(gxiodev_h) \
-        $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h)
+        $(plfont_h) $(pldict_h) $(plvalue_h) $(plftable_h) $(plfapi_h) \
+        $(gxfapi_h) $(plufstlp_h) $(plvocab_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ) $(PLOBJ)plsrgb.$(OBJ)
@@ -280,6 +289,19 @@ $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
 $(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE)  $(ufst_obj)
 	$(SETMOD) $(PLOBJ)ufst $(ufst_obj)
 
+plufstlp_h=$(PLSRC)plufstlp.h $(studio__h) $(string__h) $(gsmemory_h) \
+           $(gstypes_h)
+
+$(PLOBJ)plufstlp1.$(OBJ): $(PLSRC)plufstlp1.c $(plufstlp_h)
+	$(PLCCC) $(UFST_CFLAGS) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) $(PLSRC)plufstlp1.c $(PLO_)plufstlp1.$(OBJ)
+
+$(PLOBJ)plufstlp.$(OBJ): $(PLSRC)plufstlp.c $(plufstlp_h)
+	$(PLCCC) $(PLSRC)plufstlp.c $(PLO_)plufstlp.$(OBJ)
+
+fapi_objs=$(PLOBJ)plfapi.$(OBJ)
+$(PLOBJ)fapi_pl.dev: $(PL_MAK) $(ECHOGS_XE) $(fapi_objs) 
+	$(SETMOD) $(PLOBJ)fapi_pl $(fapi_objs)
+
 
 ### BROKEN #####
 # Bitstream font device
@@ -287,11 +309,14 @@ $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
 ### END BROKEN ###
 
-$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
+$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj) $(PLOBJ)fapi_pl.dev \
+                $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
-	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)$(PL_SCALER) 
+	$(ADDMOD) $(PLOBJ)pl $(PLOBJ)plufstlp$(UFST_BRIDGE).$(OBJ)
+	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)fapi_pl.dev
+	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)$(PL_SCALER)
 
 ###### Command-line driver's main program #####
 

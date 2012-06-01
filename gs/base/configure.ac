@@ -588,48 +588,69 @@ AC_CHECK_LIB(dl, dlopen)
 
 AC_ARG_ENABLE([freetype], AC_HELP_STRING([--disable-freetype],
         [Disable freetype for font rasterization]))
+
 FT_BRIDGE=0
 SHARE_FT=0
 FTSRCDIR=
 FT_CFLAGS=
 FT_LIBS=
 
-dnl UFST detection
-AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
-                                   [Use UFST]),
-            [], [with_ufst=no])
 INSERT_UFST_BRIDGE_EQUAL_ONE=
 UFST_ROOT=
 UFST_CFLAGS=
 UFST_LIB_EXT=
-if test -d $with_ufst; then
-INSERT_UFST_BRIDGE_EQUAL_ONE="UFST_BRIDGE=1"
-UFST_ROOT=$with_ufst
-UFST_CFLAGS=-DGCCx86
-UFST_LIB_EXT=.a
-fi
-AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
-AC_SUBST(UFST_ROOT)
-AC_SUBST(UFST_CFLAGS)
-AC_SUBST(UFST_LIB_EXT)
+FAPIUFST_MAK="\$(GLSRCDIR)/stub.mak"
 
-if test x"$enable_freetype" != xno; then
-  AC_MSG_CHECKING([for local freetype library source])
-  dnl We prefer freetype2 over freetype, so it is easy to override
-  dnl the included freetype source with a checkout from upstream.
-  for dir in freetype2 freetype; do
-    if test -f $dir/src/base/ftbbox.c; then
+AC_ARG_ENABLE([fapi], AC_HELP_STRING([--disable-fapi],
+       [Force use of the (deprecated) Artifex font scaler/renderer]))
+
+if test x"$enable_fapi" != xno; then
+
+  dnl UFST detection
+  AC_ARG_WITH([ufst], AC_HELP_STRING([--with-ufst=UFST_ROOT_DIR],
+                                   [Use UFST]),
+            [], [with_ufst=no])
+  if test -d $with_ufst; then
+    INSERT_UFST_BRIDGE_EQUAL_ONE="UFST_BRIDGE=1"
+    case $with_ufst in
+      /*) UFST_ROOT=$with_ufst ;;
+       *) UFST_ROOT=`pwd`/$with_ufst ;;
+    esac
+
+    FAPIUFST_MAK="\$(UFST_ROOT)/fapiufst.mak"
+
+    # Check pointer size
+    AC_CHECK_SIZEOF(char*)
+
+    if test "x$ac_cv_sizeof_charp" = "x8"; then
+      UFST_CFLAGS="-DGCCx86_64 -DO_BINARY=0"
+    else
+      if test "x$ac_cv_sizeof_charp" = "x4"; then
+        UFST_CFLAGS="-DGCCx86 -DO_BINARY=0"
+      fi
+    fi
+
+    UFST_LIB_EXT=.a
+  fi
+
+  if test x"$enable_freetype" != xno; then
+    AC_MSG_CHECKING([for local freetype library source])
+    dnl We prefer freetype2 over freetype, so it is easy to override
+    dnl the included freetype source with a checkout from upstream.
+    for dir in freetype2 freetype; do
+      if test -f $dir/src/base/ftbbox.c; then
         AC_MSG_RESULT(yes)
         SHARE_FT=0
         FTSRCDIR="$dir"
         FT_CFLAGS="-I$dir/include"
         FT_BRIDGE=1
         break;
-    fi
-  done
-  if test -z $FTSRCDIR; then
-    AC_MSG_RESULT([no])
-    if test "x$PKGCONFIG" != x; then
+      fi
+    done
+
+    if test -z $FTSRCDIR; then
+      AC_MSG_RESULT([no])
+      if test "x$PKGCONFIG" != x; then
         AC_MSG_CHECKING(for system freetype2 >= 2.4.2 with pkg-config)
             # pkg-config needs the libtool version, which != the freetype2 version <sigh!>
             # There is a table of corresponding ft2<->libtool numbers in freetype/docs/VERSION.DLL
@@ -644,7 +665,7 @@ if test x"$enable_freetype" != xno; then
                 AC_MSG_WARN([freetype library source not found...using native rasterizer])
                 AFS=1
             fi
-    else        
+      else        
         AC_CHECK_HEADER([ft2build.h], [FT_BRIDGE=1], [AFS=1])
         
         if test "x$FT_BRIDGE" = x1; then
@@ -671,9 +692,17 @@ if test x"$enable_freetype" != xno; then
           fi
         fi
         
+      fi
     fi
   fi
 fi
+
+AC_SUBST(INSERT_UFST_BRIDGE_EQUAL_ONE)
+AC_SUBST(UFST_ROOT)
+AC_SUBST(UFST_CFLAGS)
+AC_SUBST(UFST_LIB_EXT)
+AC_SUBST(FAPIUFST_MAK)
+
 AC_SUBST(FT_BRIDGE)
 AC_SUBST(SHARE_FT)
 AC_SUBST(FTSRCDIR)

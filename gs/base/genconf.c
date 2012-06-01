@@ -791,6 +791,8 @@ pre:		sprintf(templat, pat, pconf->name_prefix);
                     break;
                 } else if (IS_CAT("functiontype")) {
                     pat = "function_type_(%%s,%sbuild_function_%%s)";
+                } else if (IS_CAT("fapi")) {
+                    pat = "fapi_(%s%%s_init)";
                 } else
                     goto err;
                 goto pre;

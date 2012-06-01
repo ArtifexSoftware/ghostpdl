@@ -65,6 +65,7 @@ include $(GLSRCDIR)/unix-aux.mak
 include $(GLSRCDIR)/unix-end.mak
 include $(GLSRCDIR)/version.mak
 include $(GLSRCDIR)/freetype.mak
+include $(FAPIUFST_MAK)
 
 UGCC_TOP_DIR:
 	@if test ! -d $(GLGENDIR); then mkdir $(GLGENDIR); fi

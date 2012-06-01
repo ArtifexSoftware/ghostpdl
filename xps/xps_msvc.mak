@@ -27,6 +27,39 @@ XPS_INCLUDED=TRUE
 PL_SCALER=afs
 !endif
 
+!ifndef FT_BRIDGE
+FT_BRIDGE=1
+!endif
+
+SHARE_FT=0
+FTSRCDIR=$(GLSRCDIR)/../freetype
+FT_CFLAGS=-I$(GLSRCDIR)/../freetype/include
+FT_LIBS=
+FT_CONFIG_SYSTEM_ZLIB=
+
+
+# Define whether to compile in UFST. Note that freetype will/must be disabled.
+# FAPI/UFST depends on UFST_BRIDGE being undefined - hence the construct below.
+# (i.e. use "UFST_BRIDGE=1" or *not to define UFST_BRIDGE to anything*)
+!ifndef UFST_BRIDGE
+UFST_BRIDGE=
+!endif
+UFST_ROOT=$(GLSRCDIR)/../ufst
+UFST_LIB_EXT=.a
+
+UFST_ROMFS_ARGS=-b \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
+ -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+
+UFSTROMFONTDIR=\"%rom%fontdata/\"
+UFSTDISCFONTDIR=\"$(UFST_ROOT)/fontdata/\"
+
+
+UFST_CFLAGS=-DGCCx86
+
+
+
 # If we are building MEMENTO=1, then adjust default debug flags
 !if "$(MEMENTO)"=="1"
 !ifndef DEBUG

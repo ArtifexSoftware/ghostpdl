@@ -84,8 +84,10 @@ dmprint_font_params_t(const gs_memory_t *mem, const pl_font_params_t *pfp)
 #include "plftable.h"
 
 static void
-dmprint_font_name(const gs_memory_t *mem, const pl_font_t *pfont)
+dmprint_ufst_font_name(const gs_memory_t *mem, const pl_font_t *pfont)
 {
+#define fontnames(agfascreenfontname, agfaname, urwname) agfaname
+#include "plftable.h"
     int i;
     bool found = false;
 
@@ -106,14 +108,47 @@ dmprint_font_name(const gs_memory_t *mem, const pl_font_t *pfont)
         }
         dmprintf(mem, "external font ");
     }
+#undef fontnames
+}
+
+static void
+dmprint_font_name(const gs_memory_t *mem, const pl_font_t *pfont)
+{
+#define fontnames(agfascreenfontname, agfaname, urwname) urwname
+#include "plftable.h"
+    int i;
+    bool found = false;
+
+    for (i = 0; strlen(resident_table[i].full_font_name); i++) {
+        if (!memcmp(&resident_table[i].params,
+                    &pfont->params, sizeof(pfont->params))) {
+
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        dmprintf1(mem, "%s ", resident_table[i].full_font_name);
+    } else {
+        if (pfont->storage == pcds_internal) {
+            dmprintf(mem, "internal font not found in resident table");
+            dmprintf1(mem, "%s\n", pfont->font_file);
+        }
+        dmprintf(mem, "external font ");
+    }
+#undef fontnames
 }
 
 static void
 dmprint_font_t(const gs_memory_t *mem, const pl_font_t *pfont)
 {
-    dmprint_font_name(mem, pfont);
+    if (pfont->scaling_technology == plfst_MicroType)
+        dmprint_ufst_font_name(mem, pfont);
+    else
+        dmprint_font_name(mem, pfont);
+
     dmprintf3(mem, "storage=%d scaling=%d type=%d ",
-              pfont->storage, pfont->scaling_technology, pfont->font_type);
+             pfont->storage, pfont->scaling_technology, pfont->font_type);
     dmprint_cc(mem, pfont->character_complement);
     dmputs(mem, ";\n   ");
     dmprint_font_params_t(mem, &pfont->params);

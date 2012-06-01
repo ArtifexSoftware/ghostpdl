@@ -505,7 +505,7 @@ pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length, const byte *
 
 /* Return the vertical substitute for a glyph, if it has one; */
 /* otherwise return gs_no_glyph. */
-static gs_glyph
+gs_glyph
 pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 {       long VT = plfont->offsets.VT;
         const byte *vtseg;
@@ -846,7 +846,7 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
 /* Encode a character for a TrueType font. */
 /* What we actually return is the TT glyph index.  Note that */
 /* we may return either gs_no_glyph or 0 for an undefined character. */
-static gs_glyph
+gs_glyph
 pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph_space_t not_used)
 {
         gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;

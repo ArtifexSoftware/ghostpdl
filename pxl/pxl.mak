@@ -148,7 +148,7 @@ $(PXLOBJ)pxfont.$(OBJ): $(PXLSRC)pxfont.c $(AK) $(math__h) $(stdio__h) $(string_
  $(gspaint_h) $(gspath_h) $(gsstate_h) $(gsstruct_h) $(gsutil_h)\
  $(gxchar_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(plvalue_h)\
- $(pxfont_h) $(pxoper_h) $(pxptable_h) $(pxstate_h)
+ $(pxfont_h) $(pxoper_h) $(pxptable_h) $(pxstate_h) $(plfapi_h)
 	$(PXLCCC) $(UFST_INCLUDES) $(PXLSRC)pxfont.c $(PXLO_)pxfont.$(OBJ)
 
 $(PXLOBJ)pxgstate.$(OBJ): $(PXLSRC)pxgstate.c $(AK) $(math__h) $(memory__h) $(stdio__h)\

@@ -37,6 +37,9 @@
 #include "plvalue.h"
 #include "plchar.h"
 #include "strmio.h"
+#include "stream.h"
+
+#include "plfapi.h"
 
 /* Structure descriptors */
 private_st_pl_font();
@@ -658,41 +661,46 @@ int
 pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir, gs_memory_t *mem, const char *font_name)
 {
         int i;
+        gs_font_base *pbfont = (gs_font_base *)pfont;
+
         plfont->pfont = pfont;
         /* Initialize generic font data. */
-        gs_make_identity(&pfont->orig_FontMatrix);
-        pfont->next = pfont->prev = 0;
-        pfont->memory = mem;
-        pfont->dir = pdir;
-        pfont->is_resource = false;
-        gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
-        pfont->base = pfont;
-        pfont->client_data = plfont;
-        pfont->WMode = 0;
-        pfont->PaintType = 0;
-        pfont->StrokeWidth = 0;
-        pfont->is_cached = 0;
-        pfont->procs.init_fstack = gs_default_init_fstack;
-        pfont->procs.next_char_glyph = gs_default_next_char_glyph;
+        gs_make_identity(&pbfont->orig_FontMatrix);
+        gs_make_identity(&pbfont->FontMatrix);
+        pbfont->next = pbfont->prev = 0;
+        pbfont->memory = mem;
+        pbfont->dir = pdir;
+        pbfont->is_resource = false;
+        gs_notify_init(&pbfont->notify_list, gs_memory_stable(mem));
+        pbfont->base = pbfont;
+        pbfont->client_data = plfont;
+        pbfont->WMode = 0;
+        pbfont->PaintType = 0;
+        pbfont->StrokeWidth = 0;
+        pbfont->is_cached = 0;
+        pbfont->procs.init_fstack = gs_default_init_fstack;
+        pbfont->procs.next_char_glyph = gs_default_next_char_glyph;
+        pbfont->FAPI = NULL;
+        pbfont->FAPI_font_data = NULL;
 
-        pfont->procs.glyph_name = pl_glyph_name;
-        pfont->procs.decode_glyph = pl_decode_glyph;
-        /* NB pfont->procs.callbacks.known_encode = pl_known_encode; */
-        pfont->procs.define_font = gs_no_define_font;
-        pfont->procs.make_font = gs_no_make_font;
-        pfont->procs.font_info = gs_default_font_info;
-        pfont->procs.glyph_info = gs_default_glyph_info;
-        pfont->procs.glyph_outline = gs_no_glyph_outline;
-        pfont->id = gs_next_ids(mem, 1);
-        pfont->font_name.size = strlen(font_name);
-        strncpy((char *)pfont->font_name.chars, font_name, pfont->font_name.size);
+        pbfont->procs.glyph_name = pl_glyph_name;
+        pbfont->procs.decode_glyph = pl_decode_glyph;
+        /* NB pbfont->procs.callbacks.known_encode = pl_known_encode; */
+        pbfont->procs.define_font = gs_no_define_font;
+        pbfont->procs.make_font = gs_no_make_font;
+        pbfont->procs.font_info = gs_default_font_info;
+        pbfont->procs.glyph_info = gs_default_glyph_info;
+        pbfont->procs.glyph_outline = gs_no_glyph_outline;
+        pbfont->id = gs_next_ids(mem, 1);
+        pbfont->font_name.size = strlen(font_name);
+        strncpy((char *)pbfont->font_name.chars, font_name, pbfont->font_name.size);
         /* replace spaces with '-', seems acrobat doesn't like spaces. */
-        for (i = 0; i < pfont->font_name.size; i++) {
-            if (pfont->font_name.chars[i] == ' ')
-                pfont->font_name.chars[i] = '-';
+        for (i = 0; i < pbfont->font_name.size; i++) {
+            if (pbfont->font_name.chars[i] == ' ')
+                pbfont->font_name.chars[i] = '-';
         }
-        strncpy((char *)pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
-        pfont->key_name.size = strlen(font_name);
+        strncpy((char *)pbfont->key_name.chars, font_name, sizeof(pbfont->font_name.chars));
+        pbfont->key_name.size = strlen(font_name);
         return 0;
 }
 
@@ -958,6 +966,19 @@ pl_load_tt_font(stream *in, gs_font_dir *pdir, gs_memory_t *mem,
     int code;
     gs_font_type42 *pfont;
     pl_font_t *plfont;
+    
+    byte *file_name = NULL;
+    gs_const_string pfname;
+ 
+    if (sfilename(in, &pfname) == 0) {
+        file_name = gs_alloc_bytes(mem, pfname.size + 1, "pl_load_tt_font file_name");
+        if (!file_name) {
+            return (gs_error_VMerror);
+        }
+        /* the stream code guarantees the string is null terminated */
+        memcpy(file_name, pfname.data, pfname.size + 1);
+    }
+    
     /* get the data from the file */
     code = pl_alloc_tt_fontfile_buffer(in, mem, &tt_font_datap, &size);
     if ( code < 0 )
@@ -983,12 +1004,22 @@ pl_load_tt_font(stream *in, gs_font_dir *pdir, gs_memory_t *mem,
             code = gs_definefont(pdir, (gs_font *)pfont);
         }
     }
+
     if ( code < 0 ) {
         gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
         gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
         pl_free_tt_fontfile_buffer(mem, tt_font_datap);
         return code;
     }
+
+    code = pl_fapi_passfont(plfont, 0 , NULL, NULL, plfont->header + 6, plfont->header_size - 6);
+    if (file_name) {
+        gs_free_object(mem, file_name, "pl_load_tt_font file_name");
+    }
+    if (code < 0) {
+        return(code);
+    }
+
     *pplfont = plfont;
     return 0;
 }

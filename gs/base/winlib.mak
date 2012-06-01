@@ -136,6 +136,9 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(GLSRCDIR)\gs.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\freetype.mak
+!ifdef UFST_ROOT
+!include $(UFST_ROOT)\fapiufst.mak
+!endif
 !include $(GLSRCDIR)\jpeg.mak
 # zlib.mak must precede png.mak
 !include $(GLSRCDIR)\zlib.mak

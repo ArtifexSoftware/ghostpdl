@@ -950,7 +950,7 @@ $(GLOBJ)gsimpath.$(OBJ) : $(GLSRC)gsimpath.c $(AK) $(gx_h)\
 
 $(GLOBJ)gsinit.$(OBJ) : $(GLSRC)gsinit.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmalloc_h) $(gsmemory_h)\
- $(MAKEDIRS)
+ $(gxfapi_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsinit.$(OBJ) $(C_) $(GLSRC)gsinit.c
 
 $(GLOBJ)gsiodev.$(OBJ) : $(GLSRC)gsiodev.c $(AK) $(gx_h) $(gserrors_h)\
@@ -1203,6 +1203,79 @@ $(GLOBJ)gdevnfwd.$(OBJ) : $(GLSRC)gdevnfwd.c $(AK) $(gx_h)\
  $(MAKEDIRS)
 	$(GLCC) $(GLO_)gdevnfwd.$(OBJ) $(C_) $(GLSRC)gdevnfwd.c
 
+# ---------------- Font API ---------------- #
+
+gxfapi_h=$(GLSRC)gxfapi.h $(gsmemory_h) $(gsmatrix_h) $(gsccode_h) $(stdint__h)
+
+# stub for UFST bridge support  :
+
+$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)gxfapiu
+
+wrfont_h=$(stdpre_h) $(GLSRC)wrfont.h
+write_t1_h=$(gxfapi_h) $(GLSRC)write_t1.h
+write_t2_h=$(gxfapi_h) $(GLSRC)write_t2.h
+
+$(GLOBJ)write_t1.$(OBJ) : $(GLSRC)write_t1.c $(AK)\
+ $(wrfont_h) $(write_t1_h)
+	$(GLCC) $(FT_CFLAGS) $(GLO_)write_t1.$(OBJ) $(C_) $(GLSRC)write_t1.c
+
+$(GLOBJ)write_t2.$(OBJ) : $(GLSRC)write_t2.c $(AK)\
+ $(wrfont_h) $(write_t2_h) $(gxfont_h) $(gxfont1_h) $(gzstate_h) $(stdpre_h)
+	$(GLCC) $(FT_CFLAGS) $(GLO_)write_t2.$(OBJ) $(C_) $(GLSRC)write_t2.c
+
+$(GLOBJ)wrfont.$(OBJ) : $(GLSRC)wrfont.c $(AK)\
+ $(wrfont_h) $(stdio__h)
+	$(GLCC) $(FT_CFLAGS) $(GLO_)wrfont.$(OBJ) $(C_) $(GLSRC)wrfont.c
+
+# stub for UFST bridge :
+
+$(GLD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)fapiu
+
+# stub for Bitstream bridge (see fapi_bs.mak):
+
+$(GLD)fapib.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)fapib
+
+# FreeType bridge :
+
+# the top-level makefile should define
+# FT_CFLAGS for the include directive and other switches
+
+$(GLD)fapif1.dev : $(INT_MAK) $(ECHOGS_XE) $(GLOBJ)fapi_ft.$(OBJ) \
+ $(GLOBJ)write_t1.$(OBJ) $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ) \
+ $(GLD)freetype.dev
+	$(SETMOD) $(GLD)fapif1 $(GLOBJ)fapi_ft.$(OBJ) $(GLOBJ)write_t1.$(OBJ)
+	$(ADDMOD) $(GLD)fapif1 $(GLOBJ)write_t2.$(OBJ) $(GLOBJ)wrfont.$(OBJ)
+	$(ADDMOD) $(GLD)fapif1 -include $(GLD)freetype
+	$(ADDMOD) $(GLD)fapif1 -fapi fapi_ft
+
+$(GLOBJ)fapi_ft.$(OBJ) : $(GLSRC)fapi_ft.c $(AK)\
+ $(stdio__h) $(malloc__h) $(write_t1_h) $(write_t2_h) $(math__h) $(gserrors_h)\
+ $(gsmemory_h) $(gsmalloc_h) $(gxfixed_h) $(gdebug_h) $(gxbitmap_h) $(gsmchunk_h) \
+ $(stream_h) $(gxiodev_h) $(gsfname_h) $(gxfapi_h) 
+	$(GLCC) $(FT_CFLAGS) $(GLO_)fapi_ft.$(OBJ) $(C_) $(GLSRC)fapi_ft.c
+
+# stub for FreeType bridge :
+
+$(GLD)fapif0.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)fapif0
+
+
+$(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c $(memory__h) $(gsmemory_h) $(gserrors_h) $(gxdevice_h) \
+                 $(gxfont_h) $(gxfont1_h) $(gxpath_h) $(gxfcache_h) $(gxchrout_h) $(gximask_h) \
+                 $(gscoord_h) $(gspaint_h) $(gspath_h) $(gzstate_h) $(gxfcid_h) $(gxchar_h) \
+                 $(gdebug_h) $(gsimage_h) $(gxfapi_h) $(gsbittab_h)
+	$(GLCC) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
+
+$(GLD)gxfapi.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ) $(GLD)fapiu$(UFST_BRIDGE).dev \
+                 $(GLD)fapif$(FT_BRIDGE).dev $(GLD)fapib$(BITSTREAM_BRIDGE).dev
+	$(SETMOD) $(GLD)gxfapi $(GLOBJ)gxfapi.$(OBJ)
+	$(ADDMOD) $(GLD)gxfapi -include $(GLD)fapiu$(UFST_BRIDGE)
+	$(ADDMOD) $(GLD)gxfapi -include $(GLD)fapif$(FT_BRIDGE)
+	$(ADDMOD) $(GLD)gxfapi -include $(GLD)fapib$(BITSTREAM_BRIDGE)
+
 ### Other device support
 
 # Provide a mapping between StandardEncoding and ISOLatin1Encoding.
@@ -1263,7 +1336,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
 $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(GLD)translib.dev \
-                 $(GLD)clist.dev
+                 $(GLD)clist.dev $(GLD)gxfapi.dev
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -1284,6 +1357,8 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev $(G
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 	$(ADDMOD) $(GLD)libs -include $(GLD)translib
 	$(ADDMOD) $(GLD)libs -include $(GLD)clist
+	$(ADDMOD) $(GLD)libs $(GLD)gxfapi
+	$(ADDMOD) $(GLD)libs -init fapi
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(SETMOD) $(GLD)libx $(LIB1x)
 	$(ADDMOD) $(GLD)libx $(LIB2x)
@@ -3126,32 +3201,6 @@ $(GLOBJ)gsiomacres.$(OBJ) : $(GLSRC)gsiomacres.c $(gdebug_h) $(gp_h)\
  $(std_h) $(gstypes_h) $(gsmemory_h) $(gxiodev_h) $(ierrors_h)\
  $(malloc__h) $(stdio__h) $(stream_h) $(string__h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsiomacres.$(OBJ) $(C_) $(GLSRC)gsiomacres.c
-
-# ---------------- Font API ---------------- #
-
-# UFST bridge support :
-# This stuff dispatches UFST callbacks for a multilianual (PS, PCL) architecture.
-
-UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I)  $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I)
-UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)
-
-gxfapiu_h=$(GLSRC)gxfapiu.h $(gp_h)
-
-$(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapiu.$(OBJ)
-	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapiu.$(OBJ)
-
-$(GLOBJ)gxfapiu.$(OBJ) : $(GLSRC)gxfapiu.c\
- $(gx_h) $(gxfapiu_h) $(gsmalloc_h) $(std_h) $(strmio_h)\
- $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
- $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
- $(UFST_ROOT)$(D)sys$(D)inc$(D)ufstport.h
-	$(GLCC) $(UFST_CFLAGS) $(UFST_INC_) $(GLO_)gxfapiu.$(OBJ) $(C_) $(GLSRC)gxfapiu.c
-
-
-# stub for UFST bridge support  :
-
-$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(GLD)gxfapiu
 
 # ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is

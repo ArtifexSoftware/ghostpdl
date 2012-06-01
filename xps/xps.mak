@@ -117,6 +117,9 @@ $(XPSOBJ)xpsttf.$(OBJ): $(XPSSRC)xpsttf.c $(XPSINCLUDES)
 $(XPSOBJ)xpscff.$(OBJ): $(XPSSRC)xpscff.c $(XPSINCLUDES)
 	$(XPSCCC) $(XPSSRC)xpscff.c $(XPSO_)xpscff.$(OBJ)
 
+$(XPSOBJ)xpsfapi.$(OBJ): $(XPSSRC)xpsfapi.c $(XPSINCLUDES)
+	$(XPSCCC) $(XPSSRC)xpsfapi.c $(XPSO_)xpsfapi.$(OBJ)
+
 
 $(XPS_TOP_OBJ): $(XPSSRC)xpstop.c $(XPSGEN)pconf.h $(pltop_h) $(XPSINCLUDES)
 	$(CP_) $(XPSGEN)pconf.h $(XPSGEN)pconfig.h
@@ -149,6 +152,7 @@ XPS_OBJS=\
     $(XPSOBJ)xpsfont.$(OBJ) \
     $(XPSOBJ)xpsttf.$(OBJ) \
     $(XPSOBJ)xpscff.$(OBJ) \
+    $(XPSOBJ)xpsfapi.$(OBJ)
 
 # NB - note this is a bit squirrely.  Right now the pjl interpreter is
 # required and shouldn't be and PLOBJ==XPSGEN is required.

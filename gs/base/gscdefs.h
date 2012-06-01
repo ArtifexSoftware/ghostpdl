@@ -76,4 +76,7 @@ extern const unsigned gx_io_device_table_count;
 #define extern_gs_find_compositor() \
   const gs_composite_type_t * gs_find_compositor(int comp_id)
 
+#define extern_gs_get_fapi_server_inits() \
+  const gs_fapi_server_init_func * gs_get_fapi_server_inits(void)
+
 #endif /* gscdefs_INCLUDED */
