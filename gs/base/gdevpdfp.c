@@ -250,7 +250,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         code = param_read_string_array(plist, (param_name = "pdfmark"), &ppa);
         switch (code) {
             case 0:
-                code = pdf_open_document(pdev);
+                code = pdfwrite_pdf_open_document(pdev);
                 if (code < 0)
                     return code;
                 code = pdfmark_process(pdev, &ppa);
@@ -267,7 +267,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         code = param_read_string_array(plist, (param_name = "DSC"), &ppa);
         switch (code) {
             case 0:
-                code = pdf_open_document(pdev);
+                code = pdfwrite_pdf_open_document(pdev);
                 if (code < 0)
                     return code;
                 code = pdf_dsc_process(pdev, &ppa);

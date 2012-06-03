@@ -813,7 +813,7 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
      * before doing anything else.
      */
 
-    code = pdf_open_document(pdev);
+    code = pdfwrite_pdf_open_document(pdev);
     if (code < 0)
         return code;
     if (pdev->ForOPDFRead && pdev->context == PDF_IN_NONE) {

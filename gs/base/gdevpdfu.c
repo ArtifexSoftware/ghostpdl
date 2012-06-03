@@ -377,14 +377,14 @@ copy_procsets(stream *s, bool HaveTrueTypes, bool stripping)
 static int
 encode(stream **s, const stream_template *t, gs_memory_t *mem)
 {
-    stream_state *st = s_alloc_state(mem, t->stype, "pdf_open_document.encode");
+    stream_state *st = s_alloc_state(mem, t->stype, "pdfwrite_pdf_open_document.encode");
 
     if (st == 0)
         return_error(gs_error_VMerror);
     if (t->set_defaults)
         t->set_defaults(st);
     if (s_add_filter(s, t, st, mem) == 0) {
-        gs_free_object(mem, st, "pdf_open_document.encode");
+        gs_free_object(mem, st, "pdfwrite_pdf_open_document.encode");
         return_error(gs_error_VMerror);
     }
     return 0;
@@ -452,7 +452,7 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 
 /* Open the document if necessary. */
 int
-pdf_open_document(gx_device_pdf * pdev)
+pdfwrite_pdf_open_document(gx_device_pdf * pdev)
 {
     if (!is_in_page(pdev) && pdf_stell(pdev) == 0) {
         stream *s = pdev->strm;
@@ -1299,7 +1299,7 @@ long
 pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
 {
     int code;
-    code = pdf_open_document(pdev);
+    code = pdfwrite_pdf_open_document(pdev);
     if (code < 0)
         return code;
     pdev->asides.save_strm = pdev->strm;
@@ -1720,7 +1720,7 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 
         if (pdf_page_id(pdev, pdev->next_page + 1) == 0)
             return_error(gs_error_VMerror);
-        code = pdf_open_document(pdev);
+        code = pdfwrite_pdf_open_document(pdev);
         if (code < 0)
             return code;
     }
