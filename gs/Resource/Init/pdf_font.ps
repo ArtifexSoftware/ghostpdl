@@ -1142,6 +1142,8 @@ currentdict /eexec_pdf_param_dict .undef
 
     dup 4 index exch                      % filepos fontres stream is_symbolic Encoding fontres Encoding
     /prebuilt_encoding exch put           % filepos fontres stream is_symbolic Encoding
+    5 index /BaseFont get                 % Use the BaseFont name for the font. Otherwise we
+                                          % would use the name table, or a manufactured name.
     .loadpdfttfont
   } ifelse
   exch pop

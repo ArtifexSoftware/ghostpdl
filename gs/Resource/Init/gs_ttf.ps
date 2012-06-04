@@ -1844,8 +1844,10 @@ currentdict /postalias undef
   TTFDEBUG { (.pdfcharkeys end) = } if
 } bind def
 
-% <file> <is_symbolic> <Encoding|null> .loadpdfttfont <type42font>
+% <file> <is_symbolic> <Encoding|null> <FontName> .loadpdfttfont <type42font>
 /.loadpdfttfont {
+  TTFDEBUG { (.loadpdfttfont FontName=) print dup == } if
+  /font_name gput
   TTFDEBUG { (.loadpdfttfont Encoding=) print dup //== exec } if
   /prebuilt_encoding gput     % for .pdfcharkeys
   /is_symbolic gput
@@ -1892,6 +1894,7 @@ currentdict /postalias undef
     (numloca=) print numloca =
   } if
   .dicttomark
+  dup /FontName font_name put        % replace any definition of /FontName
   end end
   .completefont
 } bind def
