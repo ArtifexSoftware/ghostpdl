@@ -278,17 +278,17 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
 
     dump_raw_buffer(y1-y0, width, tos->n_planes,
             tos_planestride, tos->rowstride,
-            "ImageTOS",tos_ptr);
+            "bImageTOS",tos_ptr);
 
     dump_raw_buffer(y1-y0, width, nos->n_planes,
                 nos_planestride, nos->rowstride,
-                "ImageNOS",nos_ptr);
+                "cImageNOS",nos_ptr);
 
     if(mask_ptr != NULL){
 
         dump_raw_buffer(y1-y0, width, maskbuf->n_planes,
                         maskbuf->planestride, maskbuf->rowstride,
-                        "Mask",mask_ptr);
+                        "dMask",mask_ptr);
     }
 
 #endif
@@ -407,7 +407,7 @@ pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
         /* The group alpha should disappear */
     dump_raw_buffer(y1-y0, width, tos->n_planes - tos->has_alpha_g - tos->has_shape,
                 nos_planestride, nos->rowstride,
-                "Composed",composed_ptr);
+                "eComposed",composed_ptr);
 
     global_index++;
 
