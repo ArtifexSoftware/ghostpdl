@@ -1016,9 +1016,10 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
       {
           jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
               "failed to allocate symbol array in symbol dictionary");
-          jbig2_sd_release(ctx, *dicts);
+          jbig2_free(ctx->allocator, dicts);
           goto cleanup;
       }
+      jbig2_free(ctx->allocator, dicts);
     }
     if (params.SDINSYMS != NULL) {
       params.SDNUMINSYMS = params.SDINSYMS->n_symbols;
