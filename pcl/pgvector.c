@@ -189,25 +189,12 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
              current_units_out_of_range(y) )
             return e_Range;
 
-        /* move with arguments closes path */
-        if ( pargs->phase == 0
-             && (hpgl_plot_is_move(func) || pgls->g.subpolygon_started )) {
-            hpgl_call(hpgl_close_path(pgls));
-        }
         pargs->phase = 1;       /* we have arguments */
-        /* first point of a subpolygon is a pen up - absurd */
-        if ( pgls->g.subpolygon_started ) {
-            pgls->g.subpolygon_started = false;
-            pgls->g.have_drawn_in_path = false;
-            hpgl_call(hpgl_add_point_to_path(pgls, x, y,
-                                             hpgl_plot_move | pgls->g.relative_coords,
-                                             true));
-        }
-        else {
-            hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
-            if ( hpgl_plot_is_draw(func) )
-                pgls->g.have_drawn_in_path = true;
-        }
+
+        hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
+        if ( hpgl_plot_is_draw(func) )
+            pgls->g.have_drawn_in_path = true;
+
         /* Prepare for the next set of points. */
         if ( pgls->g.symbol_mode != 0 )
             hpgl_call(hpgl_print_symbol_mode_char(pgls));
@@ -292,12 +279,14 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
         if ( !hpgl_arg_units(pgls->memory, pargs, &radius) )
             return e_Range;
 
-        /* close existing path iff a draw exists in polygon path */
-        if ( pgls->g.polygon_mode )
-            hpgl_call(hpgl_close_subpolygon(pgls));
-
         /* center; closing subpolygon can move center */
         pos = pgls->g.pos;
+
+        if ( !pgls->g.polygon_mode )
+            hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+        else
+            hpgl_call(hpgl_close_current_path(pgls));
+
 
         hpgl_arg_c_real(pgls->memory, pargs, &chord);
 
@@ -308,7 +297,6 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
         if ( !pgls->g.polygon_mode )
             hpgl_call(hpgl_draw_arc(pgls));
 
-        /* end path, start new path by moving back to the center */
         hpgl_call(hpgl_close_current_path(pgls));
         pgls->g.have_drawn_in_path = false; /* prevent dot draw on close */
         hpgl_call(hpgl_set_current_position(pgls, &pos));

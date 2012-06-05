@@ -1117,6 +1117,27 @@ hpgl_set_current_position(
     return 0;
 }
 
+static int
+update_pos(hpgl_state_t *pgls, floatp x, floatp y, hpgl_plot_function_t func)
+{
+    gs_point    point;
+    
+    if (hpgl_plot_is_absolute(func))
+        hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
+
+    /* update hpgl's state position */
+    if (hpgl_plot_is_absolute(func)) {
+        point.x = x;
+        point.y = y;
+    } else {
+        hpgl_call(hpgl_get_current_position(pgls, &point));
+        point.x += x; point.y += y;
+    }
+
+    hpgl_call(hpgl_set_current_position(pgls, &point));
+    return 0;
+}
+
  int
 hpgl_add_point_to_path(
     hpgl_state_t *          pgls,
@@ -1129,18 +1150,14 @@ hpgl_add_point_to_path(
     static int              (*const gs_procs[])(gs_state *, floatp, floatp)
                                 = { hpgl_plot_function_procedures };
 
-    /*  HP lunacy... if we are starting a polygon path the path
-       machinery (hpgl_plot()) has already made sure the first point
-       is a pen up - if we are drawing for some other reason the flag
-       is moot - so we set it to false. */
-    pgls->g.subpolygon_started = false;
-    if (gx_path_is_null(gx_current_path(pgls->pgs))) {
+    gx_path *ppath = gx_current_path(pgls->pgs);
+    if (gx_path_is_null(ppath)) {
         /* Start a new GL/2 path. */
         gs_point    current_pt;
 
         if (set_ctm)
             hpgl_call(hpgl_set_ctm(pgls));
-        if (func != hpgl_plot_move_absolute) {
+        if ((func != hpgl_plot_move_absolute) && (!pgls->g.subpolygon_started)) {
             /* moveto the current position */
             hpgl_call(hpgl_get_current_position(pgls, &current_pt));
             hpgl_call_check_lost( gs_moveto( pgls->pgs,
@@ -1149,31 +1166,40 @@ hpgl_add_point_to_path(
                                              ) );
         }
     }
+        
     {
-        int     code = (*gs_procs[func])(pgls->pgs, x, y);
+        int     code;
+        if (pgls->g.subpolygon_started == true) {
+            pgls->g.subpolygon_started = false;
+            if (hpgl_plot_is_draw(func)) {
+                hpgl_plot_function_t startup_func;
+                if (hpgl_plot_is_relative(func))
+                    startup_func = hpgl_plot_move_relative;
+                else
+                    startup_func = hpgl_plot_move_absolute;
+                code = (*gs_procs[startup_func])(pgls->pgs, x, y);
+                update_pos(pgls, x, y, func);
+                return 0;
+            }
+        }
+
+        code = (*gs_procs[func])(pgls->pgs, x, y);
         if (code < 0) {
             if (code == gs_error_limitcheck)
                 hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
         } else {
-            gs_point    point;
-
-            if (hpgl_plot_is_absolute(func))
-                hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
-
-            /* update hpgl's state position */
-            if (hpgl_plot_is_absolute(func)) {
-                point.x = x;
-                point.y = y;
-            } else {
-                hpgl_call(hpgl_get_current_position(pgls, &point));
-                point.x += x; point.y += y;
-            }
-            hpgl_call(hpgl_set_current_position(pgls, &point));
+            update_pos(pgls, x, y, func);
         }
     }
     return 0;
 }
 
+void
+hpgl_set_hpgl_path_mode(hpgl_state_t *pgls, bool enable)
+{
+    if (!pgls->high_level_device)
+        gs_sethpglpathmode(pgls->pgs, enable);
+}
 /* destroy the current path. */
  int
 hpgl_clear_current_path(hpgl_state_t *pgls)
@@ -1186,8 +1212,14 @@ hpgl_clear_current_path(hpgl_state_t *pgls)
  int
 hpgl_close_current_path(hpgl_state_t *pgls)
 {
+    gx_path *ppath = gx_current_path(pgls->pgs);
+    if (ppath->subpath_count) {
+        gs_point pt;
         hpgl_call(gs_closepath(pgls->pgs));
-        return 0;
+        hpgl_call(gs_currentpoint(pgls->pgs, &pt));
+        hpgl_call(hpgl_set_current_position(pgls, &pt));
+    }
+    return 0;
 }
 
 /* converts pcl coordinate to device space and back to hpgl space */
@@ -1240,6 +1272,10 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
     (void)hpgl_compute_arc_coords(radius, center_x, center_y,
                                   start_angle,
                                   &arccoord_x, &arccoord_y);
+
+    pgls->g.pos.x = arccoord_x;
+    pgls->g.pos.y = arccoord_y;
+
     hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y,
                                      (draw && !start_moveto ?
                                       hpgl_plot_draw_absolute :

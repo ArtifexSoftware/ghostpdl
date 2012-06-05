@@ -114,4 +114,6 @@ int hpgl_close_subpolygon(hpgl_state_t *pgls);
 
 hpgl_real_t hpgl_width_scale(hpgl_state_t *pgls);
 
+void hpgl_set_hpgl_path_mode(hpgl_state_t *pgls, bool enable);
+
 #endif                          /* pgdraw_INCLUDED */
