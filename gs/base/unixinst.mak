@@ -122,23 +122,17 @@ install-resdata1 :
 install-iccdata1 :
 
 # install html documentation
-DOC_PAGES=PUBLIC README index.html gs.css \
-	   API.htm Bug-form.htm Bug-info.htm \
-	   C-style.htm Changes.htm Commprod.htm Copying.htm \
-	   Current.htm Deprecated.htm \
-	   DLL.htm Deprecated.htm Develop.htm Devices.htm Drivers.htm \
-	   Fonts.htm Helpers.htm Hershey.htm \
-	   History1.htm History2.htm History3.htm History4.htm \
-	   History5.htm History6.htm History7.htm History8.htm \
-	   History9.htm \
-	   Details.htm Details8.htm Details9.htm \
-	   Htmstyle.htm Humor.htm Issues.htm Install.htm Language.htm \
-	   Lib.htm Maintain.htm Make.htm New-user.htm \
-	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
-	   Psfiles.htm Public.htm Readme.htm Release.htm \
-	   Source.htm Testing.htm Unix-lpr.htm \
-	   Use.htm Xfonts.htm thirdparty.htm WhatIsGS.htm \
-           GS9_Color_Management.pdf
+DOC_PAGES=API.htm C-style.htm Develop.htm GS9_Color_Management.pdf Helpers.htm \
+          History4.htm History9.htm Lib.htm Ps2pdf.htm Readme.htm Use.htm \
+          AUTHORS Deprecated.htm Devices.htm GS9_Color_Management.tex\
+          Hershey.htm History5.htm index.html Make.htm Ps2ps2.htm Release.htm \
+          WhatIsGS.htm Changes.htm Details8.htm DLL.htm gs.css History1.htm \
+          History6.htm Install.htm News.htm pscet_status.txt Source.htm \
+          Xfonts.htm Commprod.htm Details9.htm Drivers.htm gsdoc.el  History2.htm \
+          History7.htm Issues.htm Projects.htm Psfiles.htm thirdparty.htm \
+          COPYING Details.htm Fonts.htm gs-vms.hlp History3.htm History8.htm\
+          Language.htm Ps2epsi.htm Ps-style.htm Unix-lpr.htm
+
 
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(DESTDIR)$(docdir)
@@ -183,9 +177,10 @@ install-man: $(PSMANDIR)/gs.1
 install-examples:
 	-mkdir -p $(DESTDIR)$(exdir)
 	for f in \
-alphabet.ps annots.pdf chess.ps colorcir.ps doretree.ps escher.ps \
-golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
-ridt91.eps ;\
+        alphabet.ps chess.ps colorcir.ps escher.ps grayalph.ps snowflak.ps \
+        text_graph_image_cmyk_rgb.pdf transparency_example.ps waterfal.ps \
+        annots.pdf doretree.ps golfer.eps ridt91.eps text_graphic_image.pdf \
+        tiger.eps vasarely.ps;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(DESTDIR)$(exdir) ;\
 	done
 	-mkdir -p $(DESTDIR)$(exdir)/cjk
