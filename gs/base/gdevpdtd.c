@@ -659,9 +659,11 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     case ft_CID_encrypted:
     case ft_CID_TrueType:
         if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)) {
-            code = pdf_write_CIDSet(pdev, pfd->base_font, &cidset_id);
-            if (code < 0)
-                return code;
+            if (pdev->PDFA < 2) {
+                code = pdf_write_CIDSet(pdev, pfd->base_font, &cidset_id);
+                if (code < 0)
+                    return code;
+            }
         }
     default:
         break;
