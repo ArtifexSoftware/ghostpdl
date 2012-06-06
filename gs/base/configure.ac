@@ -742,7 +742,9 @@ AC_ARG_WITH([system-libtiff], AC_HELP_STRING([--with-system-libtiff],
                                              [Force using the systems libtiff]),
             [], [with_system_libtiff=check])
 TIFFDEVS=''
-TIFFDEVS_ALL='$(DD)tiffs $(DD)tiff12nc $(DD)tiff24nc $(DD)tiff48nc $(DD)tiff32nc $(DD)tiff64nc $(DD)tiffcrle $(DD)tifflzw $(DD)tiffpack $(DD)tiffgray $(DD)tiffsep $(DD)tiffscaled'
+FAX_DEVS=''
+TIFFDEVS_ALL='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffscaled'
+FAX_DEVS_ALL='cfax dfaxlow dfaxhigh fax faxg3 faxg32d faxg4 tiffg3 tiffg32d tiffg4 tfax'
 case "x$with_system_libtiff" in
     xcheck)
         if test -d tiff; then
@@ -773,6 +775,7 @@ case "x$with_system_libtiff" in
 Disabling tiff output devices.])
         else
             TIFFDEVS="$TIFFDEVS_ALL"
+            FAX_DEVS="$FAX_DEVS_ALL"
         fi
         ;;
     xyes)
@@ -796,7 +799,8 @@ Disabling tiff output devices.])
         if test "x$HAVE_SYSTEM_LIBTIFF" != x; then
             SHARE_LIBTIFF=1
             TIFFDEVS="$TIFFDEVS_ALL"
-        else
+            FAX_DEVS="$FAX_DEVS_ALL"
+       else
             AC_MSG_NOTICE([Could not find a copy of libtiff on your system.
 Disabling tiff output devices.])
         fi
@@ -808,6 +812,7 @@ Disabling tiff output devices.])
             LIBTIFFDIR=tiff
             SHARE_LIBTIFF=0
             TIFFDEVS="$TIFFDEVS_ALL"
+            FAX_DEVS="$FAX_DEVS_ALL"
         else
             AC_MSG_RESULT([no])
             AC_MSG_NOTICE([Could not find local copy of libtiff.
@@ -831,7 +836,6 @@ if test $SHARE_LIBTIFF -eq 0; then
 fi
 
 AC_SUBST(SHARE_LIBTIFF)
-AC_SUBST(TIFFDEVS)
 AC_SUBST(LIBTIFFDIR)
 
 
@@ -1381,10 +1385,10 @@ ETS_HALFTONING_DEVS='rinkj'
 
 dnl Known file formats
 BMP_DEVS='bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b'
-FAX_DEVS='cfax dfaxlow dfaxhigh fax tfax tiffg3 tiffg32d tiffg4 faxg3 faxg32d faxg4'
+
 JPEG_DEVS='jpeg jpeggray jpegcmyk'
 # PNG_DEVS='png16 png16m png256 pngalpha pnggray pngmono'
-TIFF_DEVS='tiffs tiff12nc tiff24nc tiff48nc tiff32nc tiff64nc tiffcrle tifflzw tiffpack tiffgray tiffsep tiffsep1 tiffscaled tiffscaled8 tiffscaled24'
+
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk pcx2up'
 PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
 PS_DEVS='psdf psdcmyk psdrgb pdfwrite pswrite ps2write epswrite psgray psmono psrgb bbox txtwrite inkcov'
@@ -1419,7 +1423,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         FILES)
-                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFF_DEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
+                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS"
                 CUPS_DEVS0="$CUPSDEV"
                 JBIG2_DEVS="$JBIG2DEVS"
                 PNG_DEVS0="$PNGDEVS"
@@ -1458,7 +1462,7 @@ while test -n "$drivers"; do
                 ;;
         TIFF)
                 # TIFF file formats
-                F_DEVS0="$F_DEVS0 $TIFF_DEVS"
+                F_DEVS0="$F_DEVS0 $TIFFDEVS"
                 ;;
         PCLXL)
                 # PCL XL/PCL 6 drivers
