@@ -1296,7 +1296,8 @@ pdf14_push_transparency_state(gx_device *dev, gs_imager_state *pis)
         /* Duplicate and make the link */
         new_mask->rc_mask = ctx->mask_stack->rc_mask;
         rc_increment(new_mask->rc_mask);
-        ctx->mask_stack->previous = new_mask;
+        new_mask->previous = ctx->mask_stack;
+        ctx->mask_stack = new_mask;
     }
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(pdev->ctx);
