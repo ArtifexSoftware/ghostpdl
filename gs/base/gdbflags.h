@@ -22,7 +22,7 @@
 UNUSED(0) /* Never use 0, as lots of things 'imply' 0. */
 FLAG(icc, 1, 'c', "ICC profile"),
 FLAG(validate_chunks, 2, 0, "Validate chunks during interpretation"),
-UNUSED(3)
+FLAG(gc_disable, 3, 0, "Disable Garbage Collection (completely)"),
 UNUSED(4)
 UNUSED(5)
 UNUSED(6)
