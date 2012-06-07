@@ -186,14 +186,13 @@ pdf_begin_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev,
         if (code < 0)
             return code;
     }
-    pdev->image_with_SMask = false;
     if (!in_page)
         pdev->pages[pdev->next_page].group_id = group_dict->id;
     else if (pparams->image_with_SMask) {
         /* An internal group for the image implementation.
            See doimagesmask in gs/lib/pdf_draw.ps .
            Just set a flag for skipping pdf_end_transparency_group. */
-        pdev->image_with_SMask = true;
+        pdev->image_with_SMask |= 1 << ++pdev->FormDepth;
     } else {
         pdf_resource_t *pres, *pres_gstate = NULL;
 
@@ -220,10 +219,10 @@ pdf_end_transparency_group(gs_imager_state * pis, gx_device_pdf * pdev)
 
     if (!is_in_page(pdev))
         return 0;	/* corresponds to check in pdf_begin_transparency_group */
-    if (pdev->image_with_SMask) {
+    if (pdev->image_with_SMask & (1 << pdev->FormDepth)) {
         /* An internal group for the image implementation.
            See pdf_begin_transparency_group. */
-        pdev->image_with_SMask = 0;
+        pdev->image_with_SMask &= ~(1 << pdev->FormDepth--);
         return 0;
     } else if (pdev->sbstack_depth == bottom) {
         /* We're closing the page group. */
