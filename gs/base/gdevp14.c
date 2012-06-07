@@ -1244,19 +1244,23 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                 }
             }
         }
-         /* Free the old object, NULL test was above */
-          gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
-             tos->data = new_data_buf;
-         /* Data is single channel now */
-         tos->n_chan = 1;
-         tos->n_planes = 1;
+        /* Free the old object, NULL test was above */
+        gs_free_object(ctx->memory, tos->data, "pdf14_buf_free");
+        tos->data = new_data_buf;
+        /* Data is single channel now */
+        tos->n_chan = 1;
+        tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
         if (ctx->mask_stack != NULL) {
             gs_free_object(ctx->memory, ctx->mask_stack,
                            "pdf14_pop_transparency_group");
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
+	if (ctx->mask_stack == NULL)
+		return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
+	if (ctx->mask_stack->rc_mask == NULL)
+		return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask->mask_buf = tos;
      }
     return 0;
