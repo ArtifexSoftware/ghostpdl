@@ -1015,8 +1015,9 @@ static void *png_read(ImageReader *im,
 {
     png_structp png;
     png_infop info;
-    int stride, w, h, y;
+    int stride, w, h, y, x;
     unsigned char *data;
+    int expand = 0;
 
     /* There is only one image in each file */
     if (ftell(im->file) != 0)
@@ -1037,9 +1038,12 @@ static void *png_read(ImageReader *im,
     png_set_expand(png);
     png_set_packing(png);
     png_set_strip_16(png);
-    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_GRAY_ALPHA)
+    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_GRAY_ALPHA) {
         png_set_strip_alpha(png);
-    if (png_get_color_type(png, info) == PNG_COLOR_TYPE_RGB)
+        expand = 1;
+    } else if (png_get_color_type(png, info) == PNG_COLOR_TYPE_GRAY) {
+        expand = 1;
+    } else if (png_get_color_type(png, info) == PNG_COLOR_TYPE_RGB)
         png_set_add_alpha(png, 0xff, PNG_FILLER_AFTER);
 
     png_read_update_info(png, info);
@@ -1047,10 +1051,25 @@ static void *png_read(ImageReader *im,
     w = png_get_image_width(png, info);
     h = png_get_image_height(png, info);
     stride = png_get_rowbytes(png, info);
+    if (expand)
+        stride *= sizeof(int);
 
     data = malloc(h * stride);
-    for (y = 0; y < h; y++)
-        png_read_row(png, data + (h - y - 1) * stride, NULL);
+    for (y = 0; y < h; y++) {
+        unsigned char *row = data + (h - y - 1) * stride;
+        png_read_row(png, row, NULL);
+        if (expand) {
+            unsigned char *dst = row + w*sizeof(int);
+            unsigned char *src = row + w;
+            for (x = w; x > 0; x--) {
+                unsigned char c = *--src;
+                *--dst = 0;
+                *--dst = c;
+                *--dst = c;
+                *--dst = c;
+            }
+        }
+    }
 
     png_read_end(png, NULL);
     png_destroy_read_struct(&png, &info, NULL);
