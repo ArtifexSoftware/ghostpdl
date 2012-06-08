@@ -946,6 +946,7 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
     int code = gx_default_get_params(dev, plist);
     int ecode;
     gs_param_string ofns;
+    bool bool_true = 1;
 
     if (code < 0)
         return code;
@@ -953,6 +954,8 @@ gdev_vector_get_params(gx_device * dev, gs_param_list * plist)
         ofns.size = strlen(vdev->fname),
         ofns.persistent = false;
     if ((ecode = param_write_string(plist, "OutputFile", &ofns)) < 0)
+        return ecode;
+    if ((ecode = param_write_bool(plist, "HighLevelDevice", &bool_true)) < 0)
         return ecode;
     return code;
 }
@@ -965,8 +968,12 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
     int code;
     gs_param_name param_name;
     gs_param_string ofns;
-    bool open = dev->is_open;
+    bool open = dev->is_open, HighLevelDevice;
 
+
+    code = param_read_bool(plist, (param_name = "HighLevelDevice"), &HighLevelDevice);
+    if (code < 0)
+        return code;
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofns)) {
         case 0:

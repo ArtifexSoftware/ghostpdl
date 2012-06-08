@@ -722,7 +722,6 @@ struct gx_device_pdf_s {
     int PDFACompatibilityPolicy;
     bool DetectDuplicateImages;
     bool AllowIncrementalCFF;
-    bool HighLevelDevice;
     bool WantsToUnicode;
     bool AllowPSRepeatFunctions;
     bool IsDistiller;

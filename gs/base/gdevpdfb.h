@@ -263,7 +263,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* PDFACompatibilityPolicy */
  true,				/* DetectDuplicateImages */
  false,				/* AllowIncrementalCFF */
- true,				/* HighLevelDevice */
  !PDF_FOR_OPDFREAD,		/* WantsToUnicode */
  PDF_FOR_OPDFREAD,		/* AllowPSRepeatFunctions */
  true,				/* IsDistiller (true even for ps2write!) */
