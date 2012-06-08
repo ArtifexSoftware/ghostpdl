@@ -146,7 +146,13 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     int npasses;
     int pass;
     int y;
-
+    int compression = 0; /* dummy as of libpng 1.5.x */
+    char *iccname = NULL;
+    char *iccprofile = NULL;
+    unsigned int iccproflen = 0;
+    png_uint_32 xres, yres;
+    int unit;
+ 
     /*
      * Set up PNG structs and input source
      */
@@ -211,14 +217,21 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->bits = png_get_bit_depth(png, info);
 
     /* See if we have an icc profile */
-    if (info->iccp_profile != NULL)
+#if PNG_LIBPNG_VER_MINOR >= 5
+    /* ignore the return value */
+    (void)png_get_iCCP(png, info, (png_charpp)&iccname, &compression, (png_bytepp)&iccprofile, (png_uint_32 *)&iccproflen);
+#else
+    iccprofile = info->iccp_profile;
+    iccproflen = info->iccp_proflen;
+#endif
+    if (iccprofile != NULL)
     {
-        image->profilesize = info->iccp_proflen;
-        image->profile = xps_alloc(ctx, info->iccp_proflen);
+        image->profilesize = iccproflen;
+        image->profile = xps_alloc(ctx, iccproflen);
         if (image->profile)
         {
             /* If we can't create it, just ignore */
-            memcpy(image->profile, info->iccp_profile, info->iccp_proflen);
+            memcpy(image->profile, iccprofile, iccproflen);
         }
     }
 
@@ -255,11 +268,8 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->xres = 96;
     image->yres = 96;
 
-    if (info->valid & PNG_INFO_pHYs)
+    if (png_get_pHYs(png, info, &xres, &yres, &unit) & PNG_INFO_pHYs)
     {
-        png_uint_32 xres, yres;
-        int unit;
-        png_get_pHYs(png, info, &xres, &yres, &unit);
         if (unit == PNG_RESOLUTION_METER)
         {
             image->xres = xres * 0.0254 + 0.5;

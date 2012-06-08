@@ -56,7 +56,9 @@ PNGO_=$(O_)$(PNGOBJ)
 PZGEN=$(ZGENDIR)$(D)
 
 # PI_ and PF_ are defined in gs.mak.
-PNGCC=$(CC_) $(I_)$(PI_)$(_I) $(PF_) $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
+# NB: we can't use the normal $(CC_) here because msvccmd.mak
+# adds /Za which conflicts with the libpng 1.5.x source.
+PNGCC=$(CC) $(CFLAGS) $(I_)$(PI_)$(_I) $(I_)$(PNGGENDIR)$(_I) $(PF_) $(D_)PNG_NO_ASSEMBLER_CODE$(_D)
 
 # Define the name of this makefile.
 LIBPNG_MAK=$(GLSRC)png.mak
@@ -67,10 +69,16 @@ png.clean : png.config-clean png.clean-not-config-clean
 png.clean-not-config-clean :
 	$(RM_) $(PNGOBJ)*.$(OBJ)
 
+pnglibconf_h=$(PNGGENDIR)$(D)pnglibconf.h
+
 png.config-clean :
+	$(RM_) $(pnglibconf_h)
 	$(RM_) $(PNGGEN)lpg*.dev
 
-PDEP=$(AK)
+$(pnglibconf_h) : $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt
+	$(CP_)  $(PNGSRC)scripts$(D)pnglibconf.h.prebuilt $(pnglibconf_h)
+
+PDEP=$(AK) $(pnglibconf_h)
 
 png_1=$(PNGOBJ)png.$(OBJ) $(PNGOBJ)pngmem.$(OBJ) $(PNGOBJ)pngerror.$(OBJ) $(PNGOBJ)pngset.$(OBJ)
 png_2=$(PNGOBJ)pngtrans.$(OBJ) $(PNGOBJ)pngwrite.$(OBJ) $(PNGOBJ)pngwtran.$(OBJ) $(PNGOBJ)pngwutil.$(OBJ) $(PNGOBJ)pngwio.$(OBJ)
