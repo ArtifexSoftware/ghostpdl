@@ -3,7 +3,7 @@
  */
 
 /* Compile from inside ghostpdl with:
- * gcc -Igs/libpng -Igs/zlib -o bmpcmp -DHAVE_LIBPNG gs/toolbin/bmpcmp.c gs/libpng/png.c gs/libpng/pngerror.c gs/libpng/pnggccrd.c gs/libpng/pngget.c gs/libpng/pngmem.c gs/libpng/pngpread.c gs/libpng/pngread.c gs/libpng/pngrio.c gs/libpng/pngrtran.c gs/libpng/pngrutil.c gs/libpng/pngset.c gs/libpng/pngtrans.c gs/libpng/pngvcrd.c gs/libpng/pngwio.c gs/libpng/pngwrite.c gs/libpng/pngwtran.c gs/libpng/pngwutil.c gs/zlib/adler32.c gs/zlib/crc32.c gs/zlib/infback.c gs/zlib/inflate.c gs/zlib/uncompr.c gs/zlib/compress.c gs/zlib/deflate.c gs/zlib/gzio.c gs/zlib/inffast.c gs/zlib/inftrees.c gs/zlib/trees.c gs/zlib/zutil.c -lm
+ * gcc -Igs/libpng -Igs/zlib -o bmpcmp -DHAVE_LIBPNG gs/toolbin/bmpcmp.c gs/libpng/png.c gs/libpng/pngerror.c gs/libpng/pngget.c gs/libpng/pngmem.c gs/libpng/pngpread.c gs/libpng/pngread.c gs/libpng/pngrio.c gs/libpng/pngrtran.c gs/libpng/pngrutil.c gs/libpng/pngset.c gs/libpng/pngtrans.c gs/libpng/pngwio.c gs/libpng/pngwrite.c gs/libpng/pngwtran.c gs/libpng/pngwutil.c gs/zlib/adler32.c gs/zlib/crc32.c gs/zlib/infback.c gs/zlib/inflate.c gs/zlib/uncompr.c gs/zlib/compress.c gs/zlib/deflate.c gs/zlib/gzio.c gs/zlib/inffast.c gs/zlib/inftrees.c gs/zlib/trees.c gs/zlib/zutil.c -lm
  */
 
 #include <stdio.h>
