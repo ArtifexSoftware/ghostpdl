@@ -1,4 +1,4 @@
-# $Id: Makefile.vc,v 1.6 2006/10/13 10:30:21 dron Exp $
+# $Id: Makefile.vc,v 1.7 2008/01/01 15:53:10 fwarmerdam Exp $
 #
 # Copyright (C) 2004, Andrey Kiselev <dron@ak4719.spb.edu>
 #
@@ -47,7 +47,6 @@ tools:	lib
 	cd ..
 
 clean:
-	-del *.exe.manifest
 	cd port
 	$(MAKE) /f Makefile.vc clean
 	cd..
@@ -57,9 +56,3 @@ clean:
 	cd tools
 	$(MAKE) /f Makefile.vc clean
 	cd ..
-
-	-del *.ilk
-	-del *.dll.manifest
-	-del *.exe.manifest
-	-del *.exp
-	-del *.pdb

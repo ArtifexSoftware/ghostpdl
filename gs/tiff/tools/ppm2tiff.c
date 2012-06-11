@@ -1,4 +1,4 @@
-/* $Id: ppm2tiff.c,v 1.13 2006/04/20 12:36:23 dron Exp $ */
+/* $Id: ppm2tiff.c,v 1.16 2010-04-10 19:22:34 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1991-1997 Sam Leffler
@@ -41,6 +41,10 @@
 
 #ifdef HAVE_IO_H
 # include <io.h>
+#endif
+
+#ifdef NEED_LIBPORT
+# include "libport.h"
 #endif
 
 #include "tiffio.h"
@@ -169,7 +173,7 @@ main(int argc, char* argv[])
 		if (c == '#') {
 			do {
 			    c = fgetc(in);
-			} while(!strchr("\r\n", c) || feof(in));
+			} while(!(strchr("\r\n", c) || feof(in)));
 			continue;
 		}
 
@@ -353,3 +357,10 @@ usage(void)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

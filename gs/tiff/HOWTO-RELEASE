@@ -29,18 +29,29 @@ Notes on releasing.
 4. Increment the release version in configure.ac.  Put 'alpha' or
    'beta' after the version, if applicable.  For example:
 
-     3.9.1
+     4.0.0
       or
-     3.9.1beta
+     4.0.0beta7
 
    Version should be updated in two places: in the second argument of the
    AC_INIT macro and in LIBTIFF_xxx_VERSION variables.
 
-5. Add an entry to Changelog similar to:
+5. Update library ELF versioning in configure.ac (LIBTIFF_CURRENT,
+   LIBTIFF_REVISION, and LIBTIFF_AGE).  These numbers have nothing to
+   do with the libtiff release version numbers.
 
-     * libtiff 3.9.1 released.
+   Note that as of libtiff 4.X, proper ELF versioning is used so
+   please follow the rules listed in configure.ac.  At a bare minimum,
+   you should increment LIBTIFF_REVISION for each release so that
+   installed library files don't overwrite existing files.  If APIs
+   have been added, removed, or interface structures have changed,
+   then more care is required.
 
-6. In the source tree do
+6. Add an entry to Changelog similar to:
+
+     * libtiff 4.0.0 released.
+
+7. In the source tree do
 
      ./autogen.sh
 
@@ -48,7 +59,7 @@ Notes on releasing.
    maintainer build with current autoconf, automake, and libtool
    packages.  It is only needed when updating tool versions.
 
-7. It is recommended (but not required) to build outside of the source
+8. It is recommended (but not required) to build outside of the source
    tree so that the source tree is kept in a pristine state.  This
    also allows sharing the source directory on several networked
    systems.  For example:
@@ -61,17 +72,17 @@ Notes on releasing.
 
      ./configure --enable-maintainer-mode
 
-8. In the build tree do
+9. In the build tree do
 
      make release
 
    This will update "RELEASE-DATE", "VERSION", and libtiff/tiffvers.h
    in the source tree.
 
-9. In the source tree, verify that the version info in RELEASE-DATE,
+10. In the source tree, verify that the version info in RELEASE-DATE,
    VERSION and libtiff/tiffvers.h is right.
 
-10. In the build tree do
+11. In the build tree do
 
       make
       make distcheck
@@ -82,24 +93,24 @@ Notes on releasing.
     Two files with names tiff-version.tar.gz and tiff-version.zip will
     be created in the top level build directory.
 
-11. In the source tree do
+12. In the source tree do
 
       'cvs commit'.
 
-12. In the source tree do
+13. In the source tree do
 
-      cvs tag Release-v3-9-1
+      cvs tag Release-v4-0-0
 
     (or the appropriate name for the release)
 
-13. Copy release packages from the build tree to the
+14. Copy release packages from the build tree to the
     ftp.remotesensing.org ftp site.
 
       scp tiff-*.tar.gz tiff-*.zip \
     	 frankw@upload.osgeo.org:/osgeo/download/libtiff
 
-14. Announce to list, tiff@lists.maptools.org
+15. Announce to list, tiff@lists.maptools.org
 
-15. Update libtiff page on freshmeat with new version announcement.
+16. Update libtiff page on freshmeat with new version announcement.
 
 

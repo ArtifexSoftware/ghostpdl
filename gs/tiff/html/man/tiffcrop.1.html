@@ -1,5 +1,5 @@
 <!-- Creator     : groff version 1.18.1 -->
-<!-- CreationDate: Fri Jul 13 17:43:19 2007 -->
+<!-- CreationDate: Sat Feb 24 18:37:20 2007 -->
 <html>
 <head>
 <meta name="generator" content="groff -Thtml, see www.gnu.org">
@@ -25,8 +25,8 @@
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="91%">
-<p>tiffcrop &minus; copy, convert, crop, extract, or process
-a <small>TIFF</small> file</p>
+<p>tiffcrop &minus; copy (and possibly convert and crop or
+process) a <small>TIFF</small> file</p>
 </td>
 </table>
 <a name="SYNOPSIS"></a>
@@ -57,60 +57,19 @@ compressed using a different algorithm than the input files.
 image for processing with bar code recognizer or OCR
 software when that software cannot restrict the region of
 interest to a specific portion of the image or to improve
-efficiency when the regions of interest must be rotated. It
-can also be used to subdivide all or part of a processed
-image into smaller sections.</p>
+efficiency when the regions of interest must be rotated.</p>
 <!-- INDENTATION -->
-<p>Functions are applied to the input image in the following
-order:</p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="17%"></td>
-<td width="82%">
-<pre>cropping, fixed area extraction, zones, inversion, mirroring, rotation.
-</pre>
-</td>
-</table>
-<!-- INDENTATION -->
-
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
-<p>Functions are applied to the output image in the
-following order:</p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="17%"></td>
-<td width="82%">
-<p>output resolution, output margins, rows and columns
-<b>or</b> page size divisions, orientation options, strip,
-tile, byte order, and compression options.</p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
 <p>By default, <i>tiffcrop</i> will copy all the understood
 tags in a <small>TIFF</small> directory of an input file to
-the associated directory in the output file. Options can be
-used to force the resultant image to be written as strips or
-tiles of data, respectively.</p>
+the associated directory in the output file.</p>
 <!-- INDENTATION -->
 <p><i>tiffcrop</i> can be used to reorganize the storage
-characteristics of data in a file, and to reorganize,
-extract, rotate, and otherwise process the image data as
-specified at the same time whereas tiffcp does not alter the
-image data itself.</p>
+characteristics of data in a file, and it will alter or
+convert the image data content as specified at the same
+time, unlike tiffcp.</p>
+<!-- INDENTATION -->
+<p><i>tiffcrop</i> will behave exactly like tiffcp if none
+of the new options are specified.</p>
 </td>
 </table>
 <a name="OPTIONS"></a>
@@ -129,16 +88,16 @@ image data itself.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Specify one or more series or range(s) of images within
-file to process. The words <b>odd</b> or <b>even</b> may be
-used to specify all odd or even numbered images. The word
-<b>last</b> may be used in place of a number in the sequence
-to indicate the final image in the file without knowing how
-many images there are. Ranges of images may be specified
-with a dash and multiple sets can be indicated by joining
-them in a comma-separated list. eg. use <b>&minus;N
-1,5-7,last</b> to process the 1st, 5th through 7th, and
-final image in the file.</p>
+<p>sequences and ranges of images within file to process.
+The words <b>odd</b> or <b>even</b> may be used to specify
+all odd or even numbered images. The word <b>last</b> may be
+used in place of a number in the sequence to indicate the
+final image in the file without knowing how many images
+there are. Ranges of images may be specified with a dash and
+multiple sets can be indicated by joining them in a
+comma-separated list. e.g.. use <b>&minus;N 1,5-7,last</b>
+to process the 1st, 5th through 7th, and final image in the
+file.</p>
 </td>
 </table>
 <!-- INDENTATION -->
@@ -155,9 +114,8 @@ final image in the file.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Specify the top, bottom, left, or right edge as the
-reference from which to calcuate the width and length of
-crop regions or sequence of postions for zones. May be
+<p>use the top, bottom, left, or right edge as origin
+reference for width and length of crop regions. May be
 abbreviated to first letter.</p>
 </td>
 </table>
@@ -175,11 +133,10 @@ abbreviated to first letter.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Specify the type of units to apply to dimensions for
-margins and crop regions for input and output images. Inches
-or centimeters are converted to pixels using the resolution
-unit specified in the TIFF file (which defaults to inches if
-not specified in the IFD).</p>
+<p>units to apply to dimensions for margins and crop
+regions. Inches or centimeters are converted to pixels using
+the resolution unit specified in the TIFF file (which
+defaults to inches if not specified in the IFD).</p>
 </td>
 </table>
 <!-- INDENTATION -->
@@ -196,11 +153,11 @@ not specified in the IFD).</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Specify margins to be removed from the input image. The
-order must be top, left, bottom, right with only commas
-separating the elements of the list. Margins are scaled
-according to the current units and removed before any other
-extractions are computed. Captial M was in use.</p>
+<p>margins to be removed from the image. The order must be
+top, left, bottom, right with only commas separating the
+elements of the list. Margins are scaled according to the
+current units and removed before any other extractions are
+computed. Capital M was in use.</p>
 </td>
 </table>
 <!-- TABS -->
@@ -215,10 +172,10 @@ extractions are computed. Captial M was in use.</p>
 <td width="2%"></td>
 <td width="80%">
 
-<p>Set the horizontal (X-axis) dimension of a region to
-extract relative to the specified origin reference. If the
-origin is the top or bottom edge, the X axis value will be
-assumed to start at the left edge.</p>
+<p>horizontal (X-axis) dimension of a region to extract
+relative to the specified origin reference. If the origin is
+the top or bottom edge, the X axis value will be assumed to
+start at the left edge.</p>
 </td>
 <td width="0%">
 </td>
@@ -231,10 +188,10 @@ assumed to start at the left edge.</p>
 <td width="2%"></td>
 <td width="80%">
 
-<p>Set the vertical (Y-axis) dimension of a region to
-extract relative to the specified origin reference. If the
-origin is the left or right edge, the Y axis value will be
-assumed to start at the top.</p>
+<p>vertical (Y-axis) dimension of a region to extract
+relative to the specified origin reference. If the origin is
+the left or right edge, the Y axis value will be assumed to
+start at the top.</p>
 </td>
 <td width="0%">
 </td>
@@ -253,9 +210,9 @@ assumed to start at the top.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Specify zones of the image designated as position X of Y
-equal sized portions measured from the reference edge, eg
-1:3 would be first third of the image starting from the
+<p>zones of the image designated as position X of Y equal
+sized portions measured from the reference edge, e.g. 1:3
+would be first third of the image starting from the
 reference edge minus any margins specified for the confining
 edges. Multiple zones can be specified as a comma separated
 list but they must reference the same edge. To extract the
@@ -277,7 +234,7 @@ top quarter and the bottom third of an image you would use
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Flip, ie mirror, the image or extracted region
+<p>flip, i.e. mirror, the image or extracted region
 horizontally or vertically.</p>
 </td>
 </table>
@@ -295,7 +252,7 @@ horizontally or vertically.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Rotate the image or extracted region 90, 180, or 270
+<p>rotate the image or extracted region 90, 180, or 270
 degrees clockwise.</p>
 </td>
 </table>
@@ -304,76 +261,20 @@ degrees clockwise.</p>
        cols="5" cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">
 <td width="10%"></td>
-<td width="6%">
+<td width="2%">
 
 <p><b>&minus;I</b></p>
 </td>
-<td width="2%"></td>
+<td width="6%"></td>
 <td width="80%">
 
-<p>Invert the colorspace values for grayscale and bilevel
+<p>invert the colorspace values for grayscale and bi-level
 images. This would be used to correct negative images that
-have incorrect PHOTMETRIC INTERPRETATION tags. No support
+have incorrect PHOTOMETRIC INTERPRETATION tags. No support
 for color images.</p>
 </td>
 <td width="0%">
 </td>
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="6%">
-
-<p><b>&minus;H #</b></p>
-</td>
-<td width="2%"></td>
-<td width="80%">
-
-<p>Set the horizontal resolution of output images to #
-expressed in the current units.</p>
-</td>
-<td width="0%">
-</td>
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="6%">
-
-<p><b>&minus;V #</b></p>
-</td>
-<td width="2%"></td>
-<td width="80%">
-
-<p>Set the vertical resolution of the output images to #
-expressed in the current units.</p>
-</td>
-<td width="0%">
-</td>
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="6%">
-
-<p><b>&minus;J #</b></p>
-</td>
-<td width="2%"></td>
-<td width="80%">
-
-<p>Set the horizontal margin of an output page size to #
-expressed in the current units.</p>
-</td>
-<td width="0%">
-</td>
-<tr valign="top" align="left">
-<td width="10%"></td>
-<td width="6%">
-
-<p><b>&minus;K #</b></p>
-</td>
-<td width="2%"></td>
-<td width="80%">
-
-<p>Set the vertical margin of an output page size to #
-expressed in the current units.</p>
-</td>
-<td width="0%">
-</td>
 </table>
 <!-- INDENTATION -->
 <table width="100%" border=0 rules="none" frame="void"
@@ -381,7 +282,7 @@ expressed in the current units.</p>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="91%">
-<p><b>&minus;O portrait|landscape|auto</b></p></td>
+<p><b>&minus;b</b> <i>image</i></p></td>
 </table>
 <!-- INDENTATION -->
 <table width="100%" border=0 rules="none" frame="void"
@@ -389,44 +290,12 @@ expressed in the current units.</p>
 <tr valign="top" align="left">
 <td width="19%"></td>
 <td width="80%">
-<p>Set the output orientation of the pages or sections. Auto
-will use the arrangement that requires the fewest pages.</p>
-</td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
-<p><b>&minus;S cols:rows</b></p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="19%"></td>
-<td width="80%">
-<p>Divide each image into cols across and rows down equal
-sections.</p>
-</td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
-<p><b>&minus;P page</b></p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="19%"></td>
-<td width="80%">
-<p>Format the output images to fit on page size paper. Use
--P list to show the supported page sizes and dimensions.</p>
+<p>subtract the following monochrome image from all others
+processed. This can be used to remove a noise bias from a
+set of images. This bias image is typically an image of
+noise the camera saw with its shutter closed. Bias image
+support is not available with options for cropping,
+rotating, or inverting the image.</p>
 </td>
 </table>
 <!-- TABS -->
@@ -491,7 +360,7 @@ compress data according to the value of the
 <td width="17%"></td>
 <td width="82%">
 <p>The <small>CCITT</small> Group 3 and Group 4 compression
-algorithms can only be used with bilevel data.</p>
+algorithms can only be used with bi-level data.</p>
 <!-- INDENTATION -->
 <p>Group 3 compression can be specified together with
 several T.4-specific options: <b>1d</b> for 1-dimensional
@@ -607,13 +476,12 @@ images.</p>
 <td width="80%">
 
 <p>Specify the planar configuration to use in writing image
-data that has more than one 8-bit sample per pixel. By
-default, <i>tiffcrop</i> will create a new file with the
-same planar configuration as the original. Specifying
-<b>&minus;p contig</b> will force data to be written with
-multi-sample data packed together, while <b>&minus;p
-separate</b> will force samples to be written in separate
-planes.</p>
+data that has one 8-bit sample per pixel. By default,
+<i>tiffcrop</i> will create a new file with the same planar
+configuration as the original. Specifying <b>&minus;p
+contig</b> will force data to be written with multi-sample
+data packed together, while <b>&minus;p separate</b> will
+force samples to be written in separate planes.</p>
 </td>
 <td width="0%">
 </td>
@@ -630,7 +498,7 @@ planes.</p>
 data written to the output file. By default (or when value
 <b>0</b> is specified), <i>tiffcrop</i> attempts to set the
 rows/strip that no more than 8 kilobytes of data appear in a
-strip. If you specify the special value <b>-1</b> it will
+strip. If you specify special value <b>-1</b> it will
 results in infinite number of the rows per strip. The entire
 image will be the one strip in that case.</p>
 </td>
@@ -660,7 +528,9 @@ in strips (rather than tiles).</p>
 <td width="80%">
 
 <p>Force the output file to be written with data organized
-in tiles (rather than strips).</p>
+in tiles (rather than strips). options can be used to force
+the resultant image to be written as strips or tiles of
+data, respectively.</p>
 </td>
 <td width="0%">
 </td>
@@ -777,12 +647,10 @@ to &quot;result.tif&quot;:</p></td>
 <tr valign="top" align="left">
 <td width="8%"></td>
 <td width="91%">
-<p>Invert a bilevel image scan of a microfilmed document and
-crop off margins of 0.25 inches on the left and right, 0.5
-inch on the top, nad 0.75 inch on the bottom. From the
-remaining portion of the image, select the second and third
-quarters, ie, one half of the area left from the center to
-each margin.</p></td>
+<p>Given file &quot;CCD.tif&quot; whose first image is a
+noise bias followed by images which include that bias,
+subtract the noise from all those images following it (while
+decompressing) with the command:</p></td>
 </table>
 <!-- INDENTATION -->
 <table width="100%" border=0 rules="none" frame="void"
@@ -790,49 +658,14 @@ each margin.</p></td>
 <tr valign="top" align="left">
 <td width="17%"></td>
 <td width="82%">
-<pre>tiffcrop -U in -m 0.5,0.25,0.75,0.25 -E left -Z 2:4,3:4 -I MicrofilmNegative.tif MicrofilmPostiveCenter.tif
+<pre>tiffcrop -c none -b CCD.tif CCD.tif -d 2 result.tif
 </pre>
-</td>
-</table>
-<!-- INDENTATION -->
-
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
-<p>Extract only the final image of a large Architectural E
-sized multipage TIFF file and rotate it 90 degrees clockwise
-while reformatting the output to fit on tabloid sized sheets
-with one quarter of an inch on each side:</p></td>
-</table>
-<!-- INDENTATION -->
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="17%"></td>
-<td width="82%">
-<pre>tiffcrop -N last -R 90 -O auto -P tabloid -U in -J 0.25 -K 0.25 -H 300 -V 300 Big-PlatMap.tif BigPlatMap-Tabloid.tif
-</pre>
-</td>
-</table>
-<!-- INDENTATION -->
-
-<table width="100%" border=0 rules="none" frame="void"
-       cols="2" cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="8%"></td>
-<td width="91%">
-<p>The output images will have a specified resolution of 300
-dpi in both directions. The orientation of each page will be
-determined by whichever choice requires the fewest pages. To
-specify a specific orientation, use the portrait or
-landscape option.</p>
 </td>
 </table>
 <a name="SEE ALSO"></a>
 <h2>SEE ALSO</h2>
 <!-- INDENTATION -->
+
 <table width="100%" border=0 rules="none" frame="void"
        cols="2" cellspacing="0" cellpadding="0">
 <tr valign="top" align="left">

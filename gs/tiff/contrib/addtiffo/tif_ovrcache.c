@@ -1,5 +1,5 @@
 /******************************************************************************
- * $Id: tif_ovrcache.c,v 1.7 2006/03/25 17:52:37 joris Exp $
+ * $Id: tif_ovrcache.c,v 1.9 2010-06-08 18:55:15 bfriesen Exp $
  *
  * Project:  TIFF Overview Builder
  * Purpose:  Library functions to maintain two rows of tiles or two strips
@@ -40,11 +40,11 @@
 /*      existing TIFF directory.                                        */
 /************************************************************************/
 
-TIFFOvrCache *TIFFCreateOvrCache( TIFF *hTIFF, int nDirOffset )
+TIFFOvrCache *TIFFCreateOvrCache( TIFF *hTIFF, toff_t nDirOffset )
 
 {
     TIFFOvrCache	*psCache;
-    uint32		nBaseDirOffset;
+    toff_t		nBaseDirOffset;
 
     psCache = (TIFFOvrCache *) _TIFFmalloc(sizeof(TIFFOvrCache));
     psCache->nDirOffset = nDirOffset;
@@ -136,8 +136,8 @@ static void TIFFWriteOvrRow( TIFFOvrCache * psCache )
 {
     int		nRet, iTileX, iTileY = psCache->nBlockOffset;
     unsigned char *pabyData;
-    uint32	nBaseDirOffset;
-    uint32 RowsInStrip;
+    toff_t	nBaseDirOffset;
+    uint32      RowsInStrip;
 
 /* -------------------------------------------------------------------- */
 /*      If the output cache is multi-byte per sample, and the file      */
@@ -332,3 +332,10 @@ void TIFFDestroyOvrCache( TIFFOvrCache * psCache )
     _TIFFfree( psCache->pabyRow2Blocks );
     _TIFFfree( psCache );
 }
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

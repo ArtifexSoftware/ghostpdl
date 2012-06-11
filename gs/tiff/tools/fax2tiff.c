@@ -1,4 +1,4 @@
-/* $Id: fax2tiff.c,v 1.19 2006/04/20 12:36:23 dron Exp $ */
+/* $Id: fax2tiff.c,v 1.22 2010-03-10 18:56:49 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -42,6 +42,10 @@
 
 #ifdef HAVE_IO_H
 # include <io.h>
+#endif
+
+#ifdef NEED_LIBPORT
+# include "libport.h"
 #endif
 
 #include "tiffiop.h"
@@ -347,7 +351,7 @@ copyFaxFile(TIFF* tifin, TIFF* tifout)
 	uint16 badrun;
 	int ok;
 
-	tifin->tif_rawdatasize = TIFFGetFileSize(tifin);
+	tifin->tif_rawdatasize = (tmsize_t)TIFFGetFileSize(tifin);
 	tifin->tif_rawdata = _TIFFmalloc(tifin->tif_rawdatasize);
 	if (tifin->tif_rawdata == NULL) {
 		TIFFError(tifin->tif_name, "Not enough memory");
@@ -456,3 +460,10 @@ usage(void)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

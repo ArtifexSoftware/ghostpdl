@@ -77,7 +77,7 @@ void TIFFBuildOverviews( TIFF *, int, int *, int, const char *,
 /*      function is called.                                             */
 /************************************************************************/
 
-uint32 TIFF_WriteOverview( TIFF *hTIFF, int nXSize, int nYSize,
+uint32 TIFF_WriteOverview( TIFF *hTIFF, uint32 nXSize, uint32 nYSize,
                            int nBitsPerPixel, int nPlanarConfig, int nSamples, 
                            int nBlockXSize, int nBlockYSize,
                            int bTiled, int nCompressFlag, int nPhotometric,
@@ -89,8 +89,10 @@ uint32 TIFF_WriteOverview( TIFF *hTIFF, int nXSize, int nYSize,
                            int nHorSubsampling, int nVerSubsampling )
 
 {
-    uint32	nBaseDirOffset;
-    uint32	nOffset;
+    toff_t	nBaseDirOffset;
+    toff_t	nOffset;
+
+    (void) bUseSubIFDs;
 
     nBaseDirOffset = TIFFCurrentDirOffset( hTIFF );
 
@@ -161,10 +163,11 @@ uint32 TIFF_WriteOverview( TIFF *hTIFF, int nXSize, int nYSize,
 static void 
 TIFF_GetSourceSamples( double * padfSamples, unsigned char *pabySrc, 
                        int nPixelBytes, int nSampleFormat, 
-                       int nXSize, int nYSize, 
+                       uint32 nXSize, uint32 nYSize, 
                        int nPixelOffset, int nLineOffset )
 {
-    int  iXOff, iYOff, iSample;
+    uint32  iXOff, iYOff;
+    int     iSample;
 
     iSample = 0;
 
@@ -256,15 +259,16 @@ TIFF_SetSample( unsigned char * pabyData, int nPixelBytes, int nSampleFormat,
 
 static
 void TIFF_DownSample( unsigned char *pabySrcTile,
-                      int nBlockXSize, int nBlockYSize,
+                      uint32 nBlockXSize, uint32 nBlockYSize,
                       int nPixelSkewBits, int nBitsPerPixel,
                       unsigned char * pabyOTile,
-                      int nOBlockXSize, int nOBlockYSize,
-                      int nTXOff, int nTYOff, int nOMult,
+                      uint32 nOBlockXSize, uint32 nOBlockYSize,
+                      uint32 nTXOff, uint32 nTYOff, int nOMult,
                       int nSampleFormat, const char * pszResampling )
 
 {
-    int		i, j, k, nPixelBytes = (nBitsPerPixel) / 8;
+    uint32	i, j;
+    int         k, nPixelBytes = (nBitsPerPixel) / 8;
     int		nPixelGroupBytes = (nBitsPerPixel+nPixelSkewBits)/8;
     unsigned char *pabySrc, *pabyDst;
     double      *padfSamples;
@@ -324,14 +328,13 @@ void TIFF_DownSample( unsigned char *pabySrcTile,
             for( i = 0; i*nOMult < nBlockXSize; i++ )
             {
                 double   dfTotal;
-                int      iSample;
-                int      nXSize, nYSize;
+                uint32   nXSize, nYSize, iSample;
 
                 if( i + nTXOff >= nOBlockXSize )
                     break;
 
-                nXSize = MIN(nOMult,nBlockXSize-i);
-                nYSize = MIN(nOMult,nBlockYSize-j);
+                nXSize = MIN((uint32)nOMult,nBlockXSize-i);
+                nYSize = MIN((uint32)nOMult,nBlockYSize-j);
 
                 TIFF_GetSourceSamples( padfSamples, pabySrc,
                                        nPixelBytes, nSampleFormat,
@@ -362,26 +365,22 @@ void TIFF_DownSample( unsigned char *pabySrcTile,
 /************************************************************************/
 static
 void TIFF_DownSample_Subsampled( unsigned char *pabySrcTile, int nSample,
-                                 int nBlockXSize, int nBlockYSize,
+                                 uint32 nBlockXSize, uint32 nBlockYSize,
                                  unsigned char * pabyOTile,
-                                 int nOBlockXSize, int nOBlockYSize,
-                                 int nTXOff, int nTYOff, int nOMult,
-                                 const char * pszResampling,
+                                 uint32 nOBlockXSize, uint32 nOBlockYSize,
+                                 uint32 nTXOff, uint32 nTYOff, int nOMult,
+                                 const char *pszResampling,
                                  int nHorSubsampling, int nVerSubsampling )
 {
     /* TODO: test with variety of subsampling values, and incovinient tile/strip sizes */
     int nSampleBlockSize;
     int nSourceSampleRowSize;
     int nDestSampleRowSize;
-    int nSourceX, nSourceY;
-    int nSourceXSec, nSourceYSec;
-    int nSourceXSecEnd, nSourceYSecEnd;
-    int nDestX, nDestY;
+    uint32  nSourceX, nSourceY;
+    uint32  nSourceXSec, nSourceYSec;
+    uint32  nSourceXSecEnd, nSourceYSecEnd;
+    uint32  nDestX, nDestY;
     int nSampleOffsetInSampleBlock;
-    unsigned char * pSourceBase;
-    unsigned char * pDestBase;
-    int nSourceBaseInc;
-    unsigned char * pSourceBaseEnd;
     unsigned int nCummulator;
     unsigned int nCummulatorCount;
 
@@ -539,13 +538,14 @@ void TIFF_DownSample_Subsampled( unsigned char *pabySrcTile, int nSample,
 /************************************************************************/
 
 void TIFF_ProcessFullResBlock( TIFF *hTIFF, int nPlanarConfig,
-                               int bSubsampled, int nHorSubsampling, int nVerSubsampling,
+                               int bSubsampled,
+                               int nHorSubsampling, int nVerSubsampling,
                                int nOverviews, int * panOvList,
                                int nBitsPerPixel,
                                int nSamples, TIFFOvrCache ** papoRawBIs,
-                               int nSXOff, int nSYOff,
+                               uint32 nSXOff, uint32 nSYOff,
                                unsigned char *pabySrcTile,
-                               int nBlockXSize, int nBlockYSize,
+                               uint32 nBlockXSize, uint32 nBlockYSize,
                                int nSampleFormat, const char * pszResampling )
     
 {
@@ -585,10 +585,10 @@ void TIFF_ProcessFullResBlock( TIFF *hTIFF, int nPlanarConfig,
         {
             TIFFOvrCache *poRBI = papoRawBIs[iOverview];
             unsigned char *pabyOTile;
-            int	nTXOff, nTYOff, nOXOff, nOYOff, nOMult;
-            int	nOBlockXSize = poRBI->nBlockXSize;
-            int	nOBlockYSize = poRBI->nBlockYSize;
-            int	nSkewBits, nSampleByteOffset; 
+            uint32  nTXOff, nTYOff, nOXOff, nOYOff, nOMult;
+            uint32  nOBlockXSize = poRBI->nBlockXSize;
+            uint32  nOBlockYSize = poRBI->nBlockYSize;
+            int     nSkewBits, nSampleByteOffset; 
 
             /*
              * Fetch the destination overview tile
@@ -699,6 +699,9 @@ void TIFFBuildOverviews( TIFF *hTIFF, int nOverviews, int * panOvList,
     uint16		*panRedMap, *panGreenMap, *panBlueMap;
     TIFFErrorHandler    pfnWarning;
 
+    (void) pfnProgress;
+    (void) pProgressData;
+
 /* -------------------------------------------------------------------- */
 /*      Get the base raster size.                                       */
 /* -------------------------------------------------------------------- */
@@ -803,14 +806,14 @@ void TIFFBuildOverviews( TIFF *hTIFF, int nOverviews, int * panOvList,
 
     for( i = 0; i < nOverviews; i++ )
     {
-        int	nOXSize, nOYSize, nOBlockXSize, nOBlockYSize;
-        uint32  nDirOffset;
+        uint32  nOXSize, nOYSize, nOBlockXSize, nOBlockYSize;
+        toff_t  nDirOffset;
 
         nOXSize = (nXSize + panOvList[i] - 1) / panOvList[i];
         nOYSize = (nYSize + panOvList[i] - 1) / panOvList[i];
 
-        nOBlockXSize = MIN((int)nBlockXSize,nOXSize);
-        nOBlockYSize = MIN((int)nBlockYSize,nOYSize);
+        nOBlockXSize = MIN(nBlockXSize,nOXSize);
+        nOBlockYSize = MIN(nBlockYSize,nOYSize);
 
         if( bTiled )
         {
@@ -887,3 +890,10 @@ void TIFFBuildOverviews( TIFF *hTIFF, int nOverviews, int * panOvList,
 }
 
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

@@ -1,4 +1,4 @@
-.\" $Id: tiffcp.1,v 1.9 2007/02/24 11:19:33 dron Exp $
+.\" $Id: tiffcp.1,v 1.12 2010-12-23 13:38:47 dron Exp $
 .\"
 .\" Copyright (c) 1988-1997 Sam Leffler
 .\" Copyright (c) 1991-1997 Silicon Graphics, Inc.
@@ -83,10 +83,12 @@ for no compression,
 for PackBits compression,
 .B lzw
 for Lempel-Ziv & Welch compression,
-.B jpeg
-for baseline JPEG compression,
 .B zip
 for Deflate compression,
+.B lzma
+for LZMA2 compression,
+.B jpeg
+for baseline JPEG compression,
 .B g3
 for CCITT Group 3 (T.4) compression,
 and
@@ -118,20 +120,33 @@ list to the ``g3'' option; e.g.
 .B "\-c g3:2d:fill"
 to get 2D-encoded data with byte-aligned EOL codes.
 .IP
-.SM LZW
+.SM LZW, Deflate
+and
+.SM LZMA2
 compression can be specified together with a 
 .I predictor
-value.
-A predictor value of 2 causes
-each scanline of the output image to undergo horizontal
-differencing before it is encoded; a value
-of 1 forces each scanline to be encoded without differencing.
-LZW-specific options are specified by appending a ``:''-separated
-list to the ``lzw'' option; e.g.
+value. A predictor value of 2 causes each scanline of the output image to
+undergo horizontal differencing before it is encoded; a value of 1 forces each
+scanline to be encoded without differencing. A value 3 is for floating point
+predictor which you can use if the encoded data are in floating point format.
+LZW-specific options are specified by appending a ``:''-separated list to the
+``lzw'' option; e.g.
 .B "\-c lzw:2"
 for
 .SM LZW
 compression with horizontal differencing.
+.IP
+.SM Deflate
+and
+.SM LZMA2
+encoders support various compression levels (or encoder presets) set as
+character ``p'' and a preset number. ``p1'' is the fastest one with the worst
+compression ratio and ``p9'' is the slowest but with the best possible ratio;
+e.g.
+.B "\-c zip:3:p9"
+for
+.SM Deflate
+encoding with maximum compression level and floating point predictor.
 .TP
 .B \-f
 Specify the bit fill order to use in writing output data.
@@ -209,6 +224,9 @@ appear in a tile.
 .I tiffcp
 attempts to set the tile dimensions so that no more than 8 kilobytes of data
 appear in a tile.
+.TP
+.B \-x
+Force the output file to be written with PAGENUMBER value in sequence.
 .TP
 .BI \-,= character
 substitute

@@ -1,4 +1,4 @@
-/* $Id: sgisv.c,v 1.5 2006/10/13 10:26:56 dron Exp $ */
+/* $Id: sgisv.c,v 1.6 2010-03-10 18:56:49 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1990-1997 Sam Leffler
@@ -307,3 +307,10 @@ tiffsv(char* name, int x1, int x2, int y1, int y2)
 	(void) TIFFClose(tif);
 	_TIFFfree((char *)scrbuf);
 }
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

@@ -40,4 +40,5 @@ tiff_palette_LDADD = $(LIBTIFF)
 tiff_rgb_SOURCES = tiff-rgb.c
 tiff_rgb_LDADD = $(LIBTIFF)
 
-INCLUDES = -I../../libtiff -I$(top_srcdir)/libtiff
+INCLUDES = -I$(top_srcdir)/libtiff
+

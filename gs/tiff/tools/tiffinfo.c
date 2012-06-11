@@ -1,4 +1,4 @@
-/* $Id: tiffinfo.c,v 1.8 2005/12/09 14:52:48 dron Exp $ */
+/* $Id: tiffinfo.c,v 1.18 2010-10-21 19:07:32 fwarmerdam Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -38,18 +38,30 @@
 # include <unistd.h>
 #endif
 
-#include "tiffio.h"
+#ifdef NEED_LIBPORT
+# include "libport.h"
+#endif
 
-#define	streq(a,b)	(strcasecmp(a,b) == 0)
+#include "tiffiop.h"
 
-int	showdata = 0;			/* show data */
-int	rawdata = 0;			/* show raw/decoded data */
-int	showwords = 0;			/* show data as bytes/words */
-int	readdata = 0;			/* read data in file */
-int	stoponerr = 1;			/* stop on first read error */
+static TIFFErrorHandler old_error_handler = 0;
+static int status = 0;                  /* exit status */
+static int showdata = 0;		/* show data */
+static int rawdata = 0;			/* show raw/decoded data */
+static int showwords = 0;		/* show data as bytes/words */
+static int readdata = 0;		/* read data in file */
+static int stoponerr = 1;		/* stop on first read error */
 
 static	void usage(void);
 static	void tiffinfo(TIFF*, uint16, long);
+
+static void
+PrivateErrorHandler(const char* module, const char* fmt, va_list ap)
+{
+        if (old_error_handler)
+                (*old_error_handler)(module,fmt,ap);
+	status = 1;
+}
 
 int
 main(int argc, char* argv[])
@@ -60,7 +72,7 @@ main(int argc, char* argv[])
 	extern int optind;
 	extern char* optarg;
 	long flags = 0;
-	uint32 diroff = 0;
+	uint64 diroff = 0;
 	int chopstrips = 0;		/* disable strip chopping */
 
 	while ((c = getopt(argc, argv, "f:o:cdDSjilmrsvwz0123456789")) != -1)
@@ -116,6 +128,9 @@ main(int argc, char* argv[])
 		}
 	if (optind >= argc)
 		usage();
+
+	old_error_handler = TIFFSetErrorHandler(PrivateErrorHandler);
+
 	multiplefiles = (argc - optind > 1);
 	for (; optind < argc; optind++) {
 		if (multiplefiles)
@@ -130,7 +145,7 @@ main(int argc, char* argv[])
 					tiffinfo(tif, order, flags);
 			} else {
 				do {
-					uint32 offset;
+					toff_t offset;
 
 					tiffinfo(tif, order, flags);
 					if (TIFFGetField(tif, TIFFTAG_EXIFIFD,
@@ -143,7 +158,7 @@ main(int argc, char* argv[])
 			TIFFClose(tif);
 		}
 	}
-	return (0);
+	return (status);
 }
 
 char* stuff[] = {
@@ -254,7 +269,7 @@ TIFFReadSeparateStripData(TIFF* tif)
 
 static void
 ShowTile(uint32 row, uint32 col, tsample_t sample,
-    unsigned char* pp, uint32 nrow, uint32 rowsize)
+    unsigned char* pp, uint32 nrow, tsize_t rowsize)
 {
 	uint32 cc;
 
@@ -263,7 +278,7 @@ ShowTile(uint32 row, uint32 col, tsample_t sample,
 		printf(",%u", sample);
 	printf("):\n");
 	while (nrow-- > 0) {
-		for (cc = 0; cc < rowsize; cc++) {
+	  for (cc = 0; cc < (uint32) rowsize; cc++) {
 			printf(" %02x", *pp++);
 			if (((cc+1) % 24) == 0)
 				putchar('\n');
@@ -382,18 +397,18 @@ TIFFReadRawData(TIFF* tif, int bitrev)
 {
 	tstrip_t nstrips = TIFFNumberOfStrips(tif);
 	const char* what = TIFFIsTiled(tif) ? "Tile" : "Strip";
-	uint32* stripbc;
+	uint64* stripbc;
 
 	TIFFGetField(tif, TIFFTAG_STRIPBYTECOUNTS, &stripbc);
 	if (nstrips > 0) {
-		uint32 bufsize = stripbc[0];
+		uint32 bufsize = (uint32) stripbc[0];
 		tdata_t buf = _TIFFmalloc(bufsize);
 		tstrip_t s;
 
 		for (s = 0; s < nstrips; s++) {
 			if (stripbc[s] > bufsize) {
-				buf = _TIFFrealloc(buf, stripbc[s]);
-				bufsize = stripbc[s];
+				buf = _TIFFrealloc(buf, (tmsize_t)stripbc[s]);
+				bufsize = (uint32) stripbc[s];
 			}
 			if (buf == NULL) {
 				fprintf(stderr,
@@ -401,23 +416,23 @@ TIFFReadRawData(TIFF* tif, int bitrev)
 				    (unsigned long) s);
 				break;
 			}
-			if (TIFFReadRawStrip(tif, s, buf, stripbc[s]) < 0) {
+			if (TIFFReadRawStrip(tif, s, buf, (tmsize_t) stripbc[s]) < 0) {
 				fprintf(stderr, "Error reading strip %lu\n",
 				    (unsigned long) s);
 				if (stoponerr)
 					break;
 			} else if (showdata) {
 				if (bitrev) {
-					TIFFReverseBits(buf, stripbc[s]);
+					TIFFReverseBits(buf, (tmsize_t)stripbc[s]);
 					printf("%s %lu: (bit reversed)\n ",
 					    what, (unsigned long) s);
 				} else
 					printf("%s %lu:\n ", what,
 					    (unsigned long) s);
 				if (showwords)
-					ShowRawWords((uint16*) buf, stripbc[s]>>1);
+					ShowRawWords((uint16*) buf, (uint32) stripbc[s]>>1);
 				else
-					ShowRawBytes((unsigned char*) buf, stripbc[s]);
+					ShowRawBytes((unsigned char*) buf, (uint32) stripbc[s]);
 			}
 		}
 		if (buf != NULL)
@@ -447,3 +462,10 @@ tiffinfo(TIFF* tif, uint16 order, long flags)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

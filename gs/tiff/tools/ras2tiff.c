@@ -1,4 +1,4 @@
-/* $Id: ras2tiff.c,v 1.15 2006/04/20 12:36:23 dron Exp $ */
+/* $Id: ras2tiff.c,v 1.18 2010-03-10 18:56:49 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1988-1997 Sam Leffler
@@ -33,6 +33,10 @@
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
+#endif
+
+#ifdef NEED_LIBPORT
+# include "libport.h"
 #endif
 
 #include "rasterfile.h"
@@ -90,6 +94,7 @@ main(int argc, char* argv[])
 	}
 	if (fread(&h, sizeof (h), 1, in) != 1) {
 		fprintf(stderr, "%s: Can not read header.\n", argv[optind]);
+		fclose(in);
 		return (-2);
 	}
 	if (strcmp(h.ras_magic, RAS_MAGIC) == 0) {
@@ -114,11 +119,15 @@ main(int argc, char* argv[])
 #endif
 	} else {
 		fprintf(stderr, "%s: Not a rasterfile.\n", argv[optind]);
+		fclose(in);
 		return (-3);
 	}
 	out = TIFFOpen(argv[optind+1], "w");
 	if (out == NULL)
+	{
+		fclose(in);
 		return (-4);
+	}
 	TIFFSetField(out, TIFFTAG_IMAGEWIDTH, (uint32) h.ras_width);
 	TIFFSetField(out, TIFFTAG_IMAGELENGTH, (uint32) h.ras_height);
 	TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
@@ -220,6 +229,7 @@ main(int argc, char* argv[])
 			break;
 	}
 	(void) TIFFClose(out);
+	fclose(in);
 	return (0);
 }
 
@@ -297,3 +307,10 @@ usage(void)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

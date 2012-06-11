@@ -25,4 +25,3 @@
 
 EXTRA_DIST = README listtif.c maketif.c xtif_dir.c xtiffio.h xtiffiop.h
 
-INCLUDES = -I../../libtiff -I$(top_srcdir)/libtiff

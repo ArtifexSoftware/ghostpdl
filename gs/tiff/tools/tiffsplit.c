@@ -1,4 +1,4 @@
-/* $Id: tiffsplit.c,v 1.14.2.3 2009-01-21 04:49:44 fwarmerdam Exp $ */
+/* $Id: tiffsplit.c,v 1.22 2011-10-22 17:03:01 bfriesen Exp $ */
 
 /*
  * Copyright (c) 1992-1997 Sam Leffler
@@ -172,7 +172,7 @@ tiffcp(TIFF* in, TIFF* out)
 	CopyField(TIFFTAG_SAMPLESPERPIXEL, samplesperpixel);
 	CopyField(TIFFTAG_COMPRESSION, compression);
 	if (compression == COMPRESSION_JPEG) {
-		uint16 count = 0;
+		uint32 count = 0;
 		void *table = NULL;
 		if (TIFFGetField(in, TIFFTAG_JPEGTABLES, &count, &table)
 		    && count > 0 && table) {
@@ -230,23 +230,26 @@ tiffcp(TIFF* in, TIFF* out)
 static int
 cpStrips(TIFF* in, TIFF* out)
 {
-	tsize_t bufsize  = TIFFStripSize(in);
+	tmsize_t bufsize  = TIFFStripSize(in);
 	unsigned char *buf = (unsigned char *)_TIFFmalloc(bufsize);
 
 	if (buf) {
 		tstrip_t s, ns = TIFFNumberOfStrips(in);
-		uint32 *bytecounts;
+		uint64 *bytecounts;
 
-		TIFFGetField(in, TIFFTAG_STRIPBYTECOUNTS, &bytecounts);
+		if (!TIFFGetField(in, TIFFTAG_STRIPBYTECOUNTS, &bytecounts)) {
+			fprintf(stderr, "tiffsplit: strip byte counts are missing\n");
+			return (0);
+		}
 		for (s = 0; s < ns; s++) {
-			if (bytecounts[s] > (uint32)bufsize) {
-				buf = (unsigned char *)_TIFFrealloc(buf, bytecounts[s]);
+			if (bytecounts[s] > (uint64)bufsize) {
+				buf = (unsigned char *)_TIFFrealloc(buf, (tmsize_t)bytecounts[s]);
 				if (!buf)
 					return (0);
-				bufsize = bytecounts[s];
+				bufsize = (tmsize_t)bytecounts[s];
 			}
-			if (TIFFReadRawStrip(in, s, buf, bytecounts[s]) < 0 ||
-			    TIFFWriteRawStrip(out, s, buf, bytecounts[s]) < 0) {
+			if (TIFFReadRawStrip(in, s, buf, (tmsize_t)bytecounts[s]) < 0 ||
+			    TIFFWriteRawStrip(out, s, buf, (tmsize_t)bytecounts[s]) < 0) {
 				_TIFFfree(buf);
 				return (0);
 			}
@@ -260,23 +263,26 @@ cpStrips(TIFF* in, TIFF* out)
 static int
 cpTiles(TIFF* in, TIFF* out)
 {
-	tsize_t bufsize = TIFFTileSize(in);
+	tmsize_t bufsize = TIFFTileSize(in);
 	unsigned char *buf = (unsigned char *)_TIFFmalloc(bufsize);
 
 	if (buf) {
 		ttile_t t, nt = TIFFNumberOfTiles(in);
-		uint32 *bytecounts;
+		uint64 *bytecounts;
 
-		TIFFGetField(in, TIFFTAG_TILEBYTECOUNTS, &bytecounts);
+		if (!TIFFGetField(in, TIFFTAG_TILEBYTECOUNTS, &bytecounts)) {
+			fprintf(stderr, "tiffsplit: tile byte counts are missing\n");
+			return (0);
+		}
 		for (t = 0; t < nt; t++) {
-			if (bytecounts[t] > (uint32) bufsize) {
-				buf = (unsigned char *)_TIFFrealloc(buf, bytecounts[t]);
+			if (bytecounts[t] > (uint64) bufsize) {
+				buf = (unsigned char *)_TIFFrealloc(buf, (tmsize_t)bytecounts[t]);
 				if (!buf)
 					return (0);
-				bufsize = bytecounts[t];
+				bufsize = (tmsize_t)bytecounts[t];
 			}
-			if (TIFFReadRawTile(in, t, buf, bytecounts[t]) < 0 ||
-			    TIFFWriteRawTile(out, t, buf, bytecounts[t]) < 0) {
+			if (TIFFReadRawTile(in, t, buf, (tmsize_t)bytecounts[t]) < 0 ||
+			    TIFFWriteRawTile(out, t, buf, (tmsize_t)bytecounts[t]) < 0) {
 				_TIFFfree(buf);
 				return (0);
 			}
@@ -288,3 +294,10 @@ cpTiles(TIFF* in, TIFF* out)
 }
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

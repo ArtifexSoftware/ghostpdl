@@ -1,5 +1,5 @@
 /*
- * $Id: xtiff.c,v 1.2 2006/10/13 10:16:22 dron Exp $
+ * $Id: xtiff.c,v 1.3 2010-06-08 18:55:15 bfriesen Exp $
  *
  * xtiff - view a TIFF file in an X window
  *
@@ -1281,3 +1281,10 @@ Usage()
 
 /* vim: set ts=8 sts=8 sw=8 noet: */
 
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

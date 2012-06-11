@@ -1,4 +1,4 @@
-$! $Id: configure.com,v 1.1.2.2 2009-08-20 22:31:00 bfriesen Exp $
+$! $Id: configure.com,v 1.2 2007/11/23 10:01:34 dron Exp $
 $!
 $! OpenVMS configure procedure for libtiff
 $! (c) Alexey Chupahin  22-NOV-2007
@@ -170,36 +170,36 @@ $ CC/OBJECT=TEST.OBJ/INCLUDE=(ZLIB) SYS$INPUT
       #include <zlib.h>
    int main()
      {
-        printf("checking version zlib:  %s\n",zlibVersion());
+	printf("checking version zlib:  %s\n",zlibVersion());
      }
 $TMP = $STATUS
 $DEASS SYS$ERROR
 $DEAS  SYS$OUTPUT
 $!WRITE SYS$OUTPUT TMP
-$IF (TMP .NE. %X10B90001)
-$  THEN
-$       HAVE_ZLIB=0
-$       GOTO EXIT
+$IF (TMP .NE. %X10B90001) 
+$  THEN 
+$	HAVE_ZLIB=0
+$	GOTO EXIT
 $ENDIF
 $DEFINE SYS$ERROR _NLA0:
 $DEFINE SYS$OUTPUT _NLA0:
-$LINK/EXE=TEST TEST,ZLIB:LIBZ/LIB
+$LINK/EXE=TEST TEST,ZLIB:LIBZ/LIB 
 $TMP = $STATUS
 $DEAS  SYS$ERROR
 $DEAS  SYS$OUTPUT
 $!WRITE SYS$OUTPUT TMP
-$IF (TMP .NE. %X10000001)
-$  THEN
-$       HAVE_ZLIB=0
+$IF (TMP .NE. %X10000001) 
+$  THEN 
+$	HAVE_ZLIB=0
 $       GOTO EXIT
 $  ELSE
-$       HAVE_ZLIB=1
+$	HAVE_ZLIB=1
 $ENDIF
 $IF (HAVE_ZLIB.EQ.1)
 $  THEN
 $       WRITE SYS$OUTPUT "Checking for correct zlib library ...   Yes"
 $  ELSE
-$       WRITE SYS$OUTPUT "Checking for correct zlib library ...   No"
+$	WRITE SYS$OUTPUT "Checking for correct zlib library ...   No"
 $       WRITE SYS$OUTPUT "This is fatal. Please download and install good library from fafner.dyndns.org/~alexey/libsdl/public.html"
 $ENDIF
 $RUN TEST
@@ -213,11 +213,11 @@ $ CC/OBJECT=TEST.OBJ/INCLUDE=(JPEG) SYS$INPUT
       #include <stdlib.h>
       #include <stdio.h>
       #include <jpeglib.h>
-      #include <jversion.h>
+      #include <jversion.h>	
    int main()
      {
-        printf("checking version jpeg:  %s\n",JVERSION);
-        jpeg_quality_scaling(0);
+	printf("checking version jpeg:  %s\n",JVERSION);
+	jpeg_quality_scaling(0);
         return 0;
      }
 $TMP = $STATUS
@@ -227,7 +227,7 @@ $!WRITE SYS$OUTPUT TMP
 $IF (TMP .NE. %X10B90001)
 $  THEN
 $       WRITE SYS$OUTPUT "Checking for static jpeg library ...   No"
-$       HAVE_JPEG=0
+$	HAVE_JPEG=0
 $ENDIF
 $DEFINE SYS$ERROR _NLA0:
 $DEFINE SYS$OUTPUT _NLA0:
@@ -238,9 +238,9 @@ $DEAS  SYS$OUTPUT
 $!WRITE SYS$OUTPUT TMP
 $IF (TMP .NE. %X10000001)
 $  THEN
-$       HAVE_JPEG=0
+$	HAVE_JPEG=0
 $  ELSE
-$       HAVE_JPEG=1
+$	HAVE_JPEG=1
 $ENDIF
 $IF (HAVE_JPEG.EQ.1)
 $  THEN
@@ -897,7 +897,7 @@ tif_write.obj : tif_write.c
 
 tif_zip.obj : tif_zip.c
          $(CC) $(CFLAGS) $(MMS$SOURCE) /OBJ=$(MMS$TARGET)
- 
+
 
 clean :
         del *.obj;*
@@ -1314,7 +1314,7 @@ $COPY SYS$INPUT 'CURRENT'TIF_CONFIG.H
 #define PACKAGE_NAME "LibTIFF Software"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "LibTIFF Software 3.9.0 for VMS"
+#define PACKAGE_STRING "LibTIFF Software 3.9.0beta for VMS"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "tiff"

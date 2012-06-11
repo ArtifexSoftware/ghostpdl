@@ -1,4 +1,4 @@
-.\" $Id: tiffcrop.1,v 1.1.2.3 2009-09-24 21:51:46 bfriesen Exp $
+.\" $Id: tiffcrop.1,v 1.7 2010-12-12 01:45:35 faxguy Exp $
 .\" tiffcrop -- a port of tiffcp.c extended to include extended processing of images
 .\" 
 .\" Original code:
@@ -262,6 +262,8 @@ option to format an image to fit on a specific paper size.
 .B \-P page
 Format the output images to fit on page size paper. Use
 \-P list to show the supported page sizes and dimensions.
+You can define a custom page size by entering the width and length of the
+page in the current units with the following format #.#x#.#.
 .TP 
 .B \-S cols:rows
 Divide each image into cols across and rows down equal sections.
@@ -520,7 +522,7 @@ bit depts of 16, 24, 32 and 64 bits per sample.
 Not all images can be converted from one compression scheme to another.
 Data with some photometric interpretations and/or bit depths are tied to 
 specific compression schemes and vice-versa, e.g. Group 3/4 compression
-is only usable for bilevel data. JPEG compression is only useable on 8
+is only usable for bilevel data. JPEG compression is only usable on 8
 bit per sample data (or 12 bit if 
 .I LibTIFF
 was compiled with 12 bit JPEG support). Support for OJPEG compressed 

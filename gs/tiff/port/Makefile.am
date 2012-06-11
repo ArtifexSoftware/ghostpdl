@@ -23,7 +23,7 @@
 
 # Process this file with automake to produce Makefile.in.
 
-EXTRA_DIST = Makefile.vc
+EXTRA_DIST = Makefile.vc libport.h
 
 noinst_LTLIBRARIES	= libport.la
 libport_la_SOURCES	= dummy.c libport.h

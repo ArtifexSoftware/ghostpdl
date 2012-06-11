@@ -1,4 +1,4 @@
-/* $Id: tiff-rgb.c,v 1.3 2004/09/03 08:29:16 dron Exp $ */
+/* $Id: tiff-rgb.c,v 1.4 2010-06-08 18:55:15 bfriesen Exp $ */
 
 /*
  * tiff-rgb.c -- create a 24-bit Class R (rgb) TIFF file
@@ -192,3 +192,10 @@ Usage()
     fprintf(stderr, "Usage: %s -gamma gamma tiff-image\n", programName);
     exit(0);
 }
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 8
+ * fill-column: 78
+ * End:
+ */

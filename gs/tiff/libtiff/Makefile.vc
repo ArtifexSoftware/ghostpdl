@@ -1,4 +1,4 @@
-# $Id: Makefile.vc,v 1.17.2.2 2007/07/18 14:30:05 dron Exp $
+# $Id: Makefile.vc,v 1.22 2009-06-23 18:25:43 fwarmerdam Exp $
 #
 # Copyright (C) 2004, Andrey Kiselev <dron@ak4719.spb.edu>
 #
@@ -55,6 +55,7 @@ OBJ	= \
 	tif_getimage.obj \
 	tif_jbig.obj \
 	tif_jpeg.obj \
+	tif_jpeg_12.obj \
 	tif_ojpeg.obj \
 	tif_flush.obj \
 	tif_luv.obj \
@@ -75,7 +76,6 @@ OBJ	= \
 	tif_warning.obj \
 	tif_write.obj \
 	tif_zip.obj \
-	tif_jbig.obj \
 	$(OBJ_SYSDEP_MODULE)
 
 all:	libtiff.lib $(DLLNAME)
@@ -98,5 +98,5 @@ clean:
 	-del *.obj
 	-del *.lib
 	-del *.dll
-	-del *.exe
+	-del *.dll.manifest
 	-del *.pdb
