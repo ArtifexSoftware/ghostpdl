@@ -25,7 +25,6 @@ MIT Open Source License  -  http://www.opensource.org/
 
 */
 
-/* $Id$ */
 
 /* Common routines for accessing the colord CMS framework */
 

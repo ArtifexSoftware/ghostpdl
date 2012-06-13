@@ -64,7 +64,6 @@
 /*
  * Tag Tree Library
  *
- * $Id$
  */
 
 #ifndef JPC_TAGTREE_H

@@ -64,7 +64,6 @@
 /*
  * JPEG-2000 Decoder
  *
- * $Id$
  */
 
 #ifndef JPC_DEC_H

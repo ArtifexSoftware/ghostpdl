@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 
 rem Set default values for GS (gs with graphics window) and GSC
 rem (console mode gs) if the user hasn't set them.

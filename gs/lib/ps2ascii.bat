@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 
 call "%~dp0gssetgs.bat"
 if '%1'=='' goto a0

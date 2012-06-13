@@ -10,7 +10,6 @@
 #  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 #  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 #
-# $Id$
 # mkromfs macros for PostScript %rom% when COMPILE_INITS=1
 
 # The following list of files needed by the interpreter is maintained here.

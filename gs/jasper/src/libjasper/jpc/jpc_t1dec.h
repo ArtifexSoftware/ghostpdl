@@ -64,7 +64,6 @@
 /*
  * Tier 1 Decoder
  *
- * $Id$
  */
 
 #ifndef JPC_T1DEC_H

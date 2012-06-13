@@ -30,7 +30,6 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* $Id$ */
 /* AES block cipher implementation from XYSSL */
 
 #ifndef XYSSL_AES_H

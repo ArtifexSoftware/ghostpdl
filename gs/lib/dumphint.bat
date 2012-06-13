@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem Linearized PDF hint formatting utility.
 
 if %1/==/ goto usage

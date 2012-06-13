@@ -64,7 +64,6 @@
 /*
  * JP2 Library
  *
- * $Id$
  */
 
 #ifndef JP2_COD_H

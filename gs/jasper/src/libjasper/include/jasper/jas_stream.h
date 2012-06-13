@@ -64,7 +64,6 @@
 /*
  * I/O Stream Class
  *
- * $Id$
  */
 
 #ifndef JAS_STREAM_H

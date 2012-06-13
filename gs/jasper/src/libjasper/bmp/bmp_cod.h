@@ -64,7 +64,6 @@
 /*
  * Windows Bitmap File Library
  *
- * $Id$
  */
 
 #ifndef BMP_COD_H

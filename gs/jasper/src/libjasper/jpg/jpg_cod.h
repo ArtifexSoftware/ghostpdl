@@ -62,7 +62,6 @@
 /*
  * JPG Format Library
  *
- * $Id$
  */
 
 #ifndef JPG_COD_H

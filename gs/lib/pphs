@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Print the Primary Hint Stream from a linearized PDF file.  Usage:
 #	pphs filename.pdf
 # Output goes to stdout.

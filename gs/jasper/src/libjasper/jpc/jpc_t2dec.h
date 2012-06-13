@@ -64,7 +64,6 @@
 /*
  * Tier 2 Decoder
  *
- * $Id$
  */
 
 #ifndef JPC_T2DEC_H

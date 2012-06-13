@@ -9,7 +9,6 @@
 % obvious format of this file. Strings and names must not be empty
 % and must not contain null ('\0') characters.
 
-% $Id$
 
 % The map contains entries for each kind of font being handled by
 % any font rendering plugin. The key of an entry is the font type

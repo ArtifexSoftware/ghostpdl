@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 
 rem Convert PostScript to PDF 1.2 (Acrobat 3-and-later compatible).
 

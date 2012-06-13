@@ -64,7 +64,6 @@
 /*
  * Tier-2 Coding Library
  *
- * $Id$
  */
 
 #include "jasper/jas_math.h"

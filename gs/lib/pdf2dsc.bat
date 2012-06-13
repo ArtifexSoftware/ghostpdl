@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem Convert PDF to DSC
 
 if %1/==/ goto usage

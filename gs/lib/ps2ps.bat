@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem "Distill" PostScript.
 
 if %1/==/ goto usage

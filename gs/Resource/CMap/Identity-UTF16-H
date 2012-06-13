@@ -13,7 +13,6 @@
 % contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 %
-% $Id$
 % Identity-UTF16-H CMap
 % An identity mapping of UTF16 codes to CIDs.
 

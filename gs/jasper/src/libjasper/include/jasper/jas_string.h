@@ -64,7 +64,6 @@
 /*
  * String Library
  *
- * $Id$
  */
 
 #ifndef	JAS_STRING_H

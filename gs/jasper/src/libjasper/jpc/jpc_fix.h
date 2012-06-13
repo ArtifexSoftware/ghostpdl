@@ -64,7 +64,6 @@
 /*
  * Fixed-Point Number Class
  *
- * $Id$
  */
 
 #ifndef JPC_FIX_H

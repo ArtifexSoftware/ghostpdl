@@ -1,6 +1,5 @@
 *PPD-Adobe: "4.3"
 *%
-*% "$Id$"
 *%
 *%   Sample monochrome PCL XL/PCL 6 driver PPD file for the Common UNIX
 *%   Printing System (CUPS).
@@ -206,5 +205,4 @@
 *Font ZapfChancery-MediumItalic: Standard "(001.007S)" Standard ROM
 *Font ZapfDingbats: Special "(001.004S)" Standard ROM
 *%
-*% End of "$Id$".
 *%

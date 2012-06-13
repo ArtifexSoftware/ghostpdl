@@ -64,7 +64,6 @@
 /*
  * MQ Arithmetic Decoder
  *
- * $Id$
  */
 
 #ifndef JPC_MQDEC_H

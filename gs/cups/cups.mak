@@ -1,5 +1,4 @@
 #
-# "$Id$"
 #
 # CUPS driver makefile for Ghostscript.
 #
@@ -66,5 +65,4 @@ install-cups: cups
 
 
 #
-# End of "$Id$".
 #

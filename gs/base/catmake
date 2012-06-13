@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Expand 'includes' in makefiles.  Usage:
 #	catmake orig.mak > makefile
 

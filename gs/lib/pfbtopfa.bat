@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem Convert .pfb fonts to .pfa format
 
 if %1/==/ goto usage

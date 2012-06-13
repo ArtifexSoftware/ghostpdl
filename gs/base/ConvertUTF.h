@@ -20,7 +20,6 @@
  * remains attached.
  */
 
-/* $Id$*/
 
 #ifndef ConvertUTF_INCLUDED
 #define ConvertUTF_INCLUDED

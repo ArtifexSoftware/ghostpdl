@@ -62,7 +62,6 @@
 /*
  * Color Management
  *
- * $Id$
  */
 
 #include "jasper/jas_config.h"

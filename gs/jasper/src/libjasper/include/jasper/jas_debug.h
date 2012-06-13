@@ -63,7 +63,6 @@
 /*
  * Debugging-Related Code
  *
- * $Id$
  */
 
 #ifndef JAS_DEBUG_H

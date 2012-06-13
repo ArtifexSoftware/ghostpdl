@@ -1,17 +1,19 @@
-/* Copyright (C) 2001-2006 Artifex Software, Inc.
+/* Copyright (C) 2001-2012 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
    implied.
 
-   This software is distributed under license and may not be copied, modified
-   or distributed except as expressly authorized under the terms of that
-   license.  Refer to licensing information at http://www.artifex.com/
-   or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
-   San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+   CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-/* $Id$ */
+
 /* Simple hardware benchmarking suite (C and PostScript) */
 #include "stdio_.h"
 #include <stdlib.h>
@@ -379,58 +381,3 @@ main(int argc, const char *argv[])
 
    gsnd bench.c
    Aladdin Ghostscript 3.60 (1995-10-23)
-   Copyright (C) 1995 Aladdin Enterprises, Menlo Park, CA.  All rights reserved.
-   This software comes with NO WARRANTY: see the file PUBLIC for details.
-   Time for 5000 x 20 integer adds: 192 ms
-   Time for 5000 x 20 integer multiplies: 561 ms
-   Time for 5000 x 20 integer divides: 396 ms
-   Time for 5000 x 20 floating adds: 202 ms
-   Time for 5000 x 20 floating multiplies: 247 ms
-   Time for 5000 x 20 floating divides: 243 ms
-   Time for 5000 x 20 float/int conversions: 157 ms
-   Time for 1000 x 10000(byte) fast memory accesses: 136 ms
-   Time for 10 x 500 x 2000(byte) slower memory accesses: 235 ms
-   Loading Temps-RomanSH font from /opt/home/peter/gs/fonts/soho/tersh___.pfb... 1759156 432729 2564864 1251025 0 done.
-   Time for 100 x 10 (A) show (cache): 161 ms
-   Time for 10 x 10 (A) show (no cache): 449 ms
-
-   Output from 486DX/25, gs 2.6.1 compiled with wcc386 -oi[t]:
-
-   gsndt bench.c
-   Initializing... done.
-   Ghostscript 2.6.1 (5/28/93)
-   Copyright (C) 1990-1993 Aladdin Enterprises, Menlo Park, CA.
-   All rights reserved.
-   Ghostscript comes with NO WARRANTY: see the file COPYING for details.
-   Time for 5000 x 20 integer adds: 550 ms
-   Time for 5000 x 20 integer multiplies: 940 ms
-   Time for 5000 x 20 integer divides: 880 ms
-   Time for 5000 x 20 floating adds: 550 ms
-   Time for 5000 x 20 floating multiplies: 660 ms
-   Time for 5000 x 20 floating divides: 930 ms
-   Time for 5000 x 20 float/int conversions: 830 ms
-   Time for 1000 x 10000(byte) fast memory accesses: 660 ms
-   Time for 10 x 500 x 2000(byte) slower memory accesses: 540 ms
-   Loading Temps-RomanSH font from c:\gs\fonts\softhorz\tersh___.pfb... 1298792 1207949 0 done.
-   Time for 100 x 10 (A) show (cache): 13520 ms
-   Time for 10 x 10 (A) show (no cache): 1310 ms
-
-   Output from 486DX/25, gs 3.52 compiled with wcc386 -oi[t]:
-
-   Aladdin Ghostscript 3.52 (1995-10-2)
-   Copyright (c) 1995 Aladdin Enterprises, Menlo Park, CA.  All rights reserved.
-   This software comes with NO WARRANTY: see the file PUBLIC for details.
-   Time for 5000 x 20 integer adds: 660 ms
-   Time for 5000 x 20 integer multiplies: 1100 ms
-   Time for 5000 x 20 integer divides: 940 ms
-   Time for 5000 x 20 floating adds: 710 ms
-   Time for 5000 x 20 floating multiplies: 830 ms
-   Time for 5000 x 20 floating divides: 1040 ms
-   Time for 5000 x 20 float/int conversions: 820 ms
-   Time for 1000 x 10000(byte) fast memory accesses: 660 ms
-   Time for 10 x 500 x 1000(byte) slower memory accesses: 600 ms
-   Loading Temps-RomanSH font from c:\gs\fonts\softhorz\tersh___.pfb... 1678548 375231 2564864 1250964 0 done.
-   Time for 100 x 10 (A) show (cache): 2520 ms
-   Time for 10 x 10 (A) show (no cache): 1600 ms
-
- */

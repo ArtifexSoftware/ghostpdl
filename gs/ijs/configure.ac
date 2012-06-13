@@ -20,7 +20,6 @@ dnl ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 dnl CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 dnl SOFTWARE.
 
-dnl $Id$
 
 dnl Process this file with autoconf to produce a configure script.
 

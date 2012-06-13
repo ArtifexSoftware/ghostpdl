@@ -1,6 +1,5 @@
 #!/bin/sh
 #
-# "$Id$"
 #
 # CUPS PCL XL/PCL 6 filter script for Ghostscript.
 #
@@ -187,5 +186,4 @@ echo DEBUG: Running $bindir/@GS@ $gsopts $ppd_opts -sOUTPUTFILE="%stdout" -c "$p
 $bindir/@GS@ $gsopts $ppd_opts -sOUTPUTFILE="%stdout" -c "$ps_code" -f "$ifile"
 
 #
-# End of "$Id$".
 #

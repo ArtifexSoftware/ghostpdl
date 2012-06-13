@@ -64,7 +64,6 @@
 /*
  * Multicomponent Transform Code
  *
- * $Id$
  */
 
 #ifndef JPC_MCT_H

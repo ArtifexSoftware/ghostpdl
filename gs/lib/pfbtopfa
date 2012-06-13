@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Convert .pfb fonts to .pfa format
 
 # This definition is changed on install to match the

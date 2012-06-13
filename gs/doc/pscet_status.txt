@@ -1,5 +1,4 @@
 # Report of Ghostscript's conformance against the Quality Logic CET suite
-# $Id$
 #
 Test	 Status	Comments
 

@@ -62,7 +62,6 @@
 /*
  * Color Management
  *
- * $Id$
  */
 
 #ifndef JAS_CM_H

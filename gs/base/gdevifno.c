@@ -11,7 +11,6 @@
  * OF THIS SOFTWARE OR ITS FITNESS FOR ANY PARTICULAR PURPOSE.
  */
 
-/* $Id$ */
 /*
  * gs device to generate inferno bitmaps
  *

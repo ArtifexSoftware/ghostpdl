@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # "Distill" Encapsulated PostScript.
 
 # This definition is changed on install to match the

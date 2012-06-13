@@ -65,7 +65,6 @@
 /*
  * Primitive Types
  *
- * $Id$
  */
 
 #ifndef JAS_TYPES_H

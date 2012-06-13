@@ -20,7 +20,6 @@
 ## CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ## SOFTWARE.
 
-## $Id$
 
 ## Process this file with automake to produce Makefile.in.
 

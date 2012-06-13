@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 
 rem ******************************
 rem * Convert .pf? files to .gsf *

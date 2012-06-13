@@ -64,7 +64,6 @@
 /*
  * Image Class
  *
- * $Id$
  */
 
 #ifndef JAS_IMAGE_H

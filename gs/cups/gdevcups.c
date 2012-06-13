@@ -1,5 +1,4 @@
 /*
- * "$Id$"
  *
  *   GNU Ghostscript raster output driver for the Common UNIX Printing
  *   System (CUPS).
@@ -5533,5 +5532,4 @@ cups_print_planar(gx_device_printer *pdev,
 
 
 /*
- * End of "$Id$".
  */

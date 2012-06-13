@@ -1,3 +1,2 @@
 #!/bin/sh
-# $Id$
 exec $0.tcl "$@"

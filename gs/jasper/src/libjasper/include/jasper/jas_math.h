@@ -64,7 +64,6 @@
 /*
  * Math-Related Code
  *
- * $Id$
  */
 
 #ifndef	JAS_MATH_H

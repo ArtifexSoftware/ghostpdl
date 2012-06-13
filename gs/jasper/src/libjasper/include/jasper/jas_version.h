@@ -62,7 +62,6 @@
  */
 
 /*
- * $Id$
  */
 
 #ifndef JAS_VERSION_H

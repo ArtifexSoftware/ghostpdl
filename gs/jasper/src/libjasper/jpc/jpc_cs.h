@@ -64,7 +64,6 @@
 /*
  * JPEG-2000 Code Stream Library
  *
- * $Id$
  */
 
 #ifndef JPC_CS_H

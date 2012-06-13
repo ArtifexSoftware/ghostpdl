@@ -64,7 +64,6 @@
 /*
  * Tier-2 Coding Library
  *
- * $Id$
  */
 
 #ifndef JPC_T2COD_H

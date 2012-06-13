@@ -64,7 +64,6 @@
 /*
  * Sun Rasterfile Library
  *
- * $Id$
  */
 
 /* Note: There is not currently any code common to both the encoder and

@@ -64,7 +64,6 @@
 /*
  * Memory Allocator
  *
- * $Id$
  */
 
 #ifndef JAS_MALLOC_H

@@ -1,4 +1,3 @@
-@rem $Id$
 @echo off
 :next
 if '%1'=='' goto exit

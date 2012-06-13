@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # "Distill" PostScript with the Ghostscript 'ps2write' device
 # this generates a PDF-style stream with an attached 
 # PostScript program to interpret it.

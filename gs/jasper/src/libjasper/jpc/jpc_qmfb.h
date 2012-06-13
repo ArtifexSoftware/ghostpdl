@@ -64,7 +64,6 @@
 /*
  * Quadrature Mirror-Image Filter Bank (QMFB) Routines
  *
- * $Id$
  */
 
 #ifndef JPC_QMFB_H

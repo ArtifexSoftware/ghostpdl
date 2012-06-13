@@ -1,16 +1,17 @@
-dnl  Copyright (C) 2001-2007 Artifex Software, Inc.
-dnl  All Rights Reserved.
+dnl Copyright (C) 2001-2012 Artifex Software, Inc.
+dnl All Rights Reserved.
+dnl
+dnl This software is provided AS-IS with no warranty, either express or
+dnl implied.
+dnl
+dnl This software is distributed under license and may not be copied,
+dnl modified or distributed except as expressly authorized under the terms
+dnl of the license contained in the file LICENSE in this distribution.
+dnl
+dnl Refer to licensing information at http://www.artifex.com or contact
+dnl Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+dnl CA  94903, U.S.A., +1(415)492-9861, for further information.
 
-dnl  This software is provided AS-IS with no warranty, either express or
-dnl  implied.
-
-dnl  This software is distributed under license and may not be copied, modified
-dnl  or distributed except as expressly authorized under the terms of that
-dnl  license.  Refer to licensing information at http://www.artifex.com/
-dnl  or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
-dnl  San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
-
-dnl $Id$
 
 dnl Process this file with autoconf to produce a configure script
 

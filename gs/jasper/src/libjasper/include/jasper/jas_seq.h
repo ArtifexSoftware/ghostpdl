@@ -64,7 +64,6 @@
 /*
  * Sequence/Matrix Library
  *
- * $Id$
  */
 
 #ifndef JAS_SEQ_H

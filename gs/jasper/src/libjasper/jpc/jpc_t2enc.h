@@ -64,7 +64,6 @@
 /*
  * Tier 2 Encoder
  *
- * $Id$
  */
 
 #ifndef JPC_T2ENC_H

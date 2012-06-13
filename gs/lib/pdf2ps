@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Convert PDF to PostScript.
 
 # This definition is changed on install to match the

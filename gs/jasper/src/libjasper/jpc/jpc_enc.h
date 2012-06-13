@@ -62,7 +62,6 @@
  */
 
 /*
- * $Id$
  */
 
 #ifndef JPC_ENC_H

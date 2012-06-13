@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem Make an AFM file from PFB / PFA and (optionally) PFM files.
 
 if %1/==/ goto usage

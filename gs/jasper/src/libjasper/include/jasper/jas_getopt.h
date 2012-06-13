@@ -64,7 +64,6 @@
 /*
  * Command Line Option Parsing Code
  *
- * $Id$
  */
 
 #ifndef JAS_GETOPT_H

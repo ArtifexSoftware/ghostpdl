@@ -1,5 +1,4 @@
 @echo off 
-@rem $Id$
 @rem Convert PDF to "optimized" form.
 
 if %1/==/ goto usage

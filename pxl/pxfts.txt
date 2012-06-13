@@ -1,10 +1,21 @@
 
-    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
-    Unauthorized use, copying, and/or distribution prohibited.
+    Copyright (C) 2001-2012 Artifex Software, Inc.
+    All Rights Reserved.
+
+    This software is provided AS-IS with no warranty, either express or
+    implied.
+
+    This software is distributed under license and may not be copied,
+    modified or distributed except as expressly authorized under the terms
+    of the license contained in the file LICENSE in this distribution.
+
+    Refer to licensing information at http://www.artifex.com or contact
+    Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+    CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 		Report on Genoa PCL6 FTS and LaserJet 6MP
 
-This document presents the results of Aladdin's investigation of
+This document presents the results of Artifex's investigation of
 discrepancies between the Genoa PCL6 Functional Test Suite, the published
 PCL XL Feature Reference Protocol Class 1.1 specification, and the behavior
 of the H-P LaserJet 6MP printer.

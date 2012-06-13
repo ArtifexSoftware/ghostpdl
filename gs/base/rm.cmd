@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 :next
 if '%1'=='' goto exit
 if '%1'=='-f' goto sh

@@ -62,7 +62,6 @@
  */
 
 /*
- * $Id$
  */
 
 #ifndef JPC_T1COD_H

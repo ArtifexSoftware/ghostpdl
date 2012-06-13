@@ -64,7 +64,6 @@
 /*
  * Bit Stream Class
  *
- * $Id$
  */
 
 #ifndef JPC_BS_H

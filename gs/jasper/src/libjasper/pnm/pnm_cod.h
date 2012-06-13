@@ -64,7 +64,6 @@
 /*
  * Portable Pixmap/Graymap Format Support
  *
- * $Id$
  */
 
 #ifndef PNM_COD_H

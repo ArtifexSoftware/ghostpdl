@@ -1,5 +1,4 @@
 @echo off
-@rem $Id$
 @rem Converting Postscript 3 or PDF into PostScript 2.
 
 if %1/==/ goto usage

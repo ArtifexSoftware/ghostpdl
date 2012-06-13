@@ -27,7 +27,6 @@ MIT Open Source License  -  http://www.opensource.org/
 
 */
 
-/* $Id$ */
 
 /* PS/PDF to CUPS Raster filter based on Ghostscript */
 

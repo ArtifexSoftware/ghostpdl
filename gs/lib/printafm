@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Print the metrics from a font in AFM format.  Usage:
 #	printafm fontname
 # Output goes to stdout.

@@ -62,7 +62,6 @@
 /*
  * PGX Format Library
  *
- * $Id$
  */
 
 #ifndef PGX_COD_H

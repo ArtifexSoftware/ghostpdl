@@ -1,4 +1,3 @@
-@rem $Id$
 @echo off
 if "%2"=="." goto ne
 if exist _.tmp erase _.tmp

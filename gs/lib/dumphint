@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Linearized PDF hint formatting utility.
 
 # This definition is changed on install to match the

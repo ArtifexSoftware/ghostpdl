@@ -64,7 +64,6 @@
 /*
  * Fixed-Point Number Class
  *
- * $Id$
  */
 
 #ifndef JAS_FIX_H

@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 
 # This definition is changed on install to match the
 # executable name set in the makefile

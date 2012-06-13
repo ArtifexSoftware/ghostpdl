@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2002-2007 Artifex Software, Inc.
+  Copyright (C) 2002-2012 Artifex Software, Inc.
   All rights reserved.
 
   This software is provided 'as-is', without any express or implied
@@ -22,7 +22,6 @@
   ghost@aladdin.com
 
  */
-/* $Id$ */
 /*
   Independent implementation of MD5 (RFC 1321).
 

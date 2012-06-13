@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Convert PostScript to PDF.
 
 # Currently, we produce PDF 1.4 by default, but this is not guaranteed

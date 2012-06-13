@@ -1,5 +1,4 @@
 #!/bin/sh
-# $Id$
 # Extract ASCII text from a PostScript file.  Usage:
 #	ps2ascii [infile.ps [outfile.txt]]
 # If outfile is omitted, output goes to stdout.

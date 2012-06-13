@@ -64,7 +64,6 @@
 /*
  * Floating-Point Class
  *
- * $Id$
  */
 
 #ifndef JPC_FLT_H

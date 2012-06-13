@@ -62,7 +62,6 @@
 /*
  * Tag/Value Parser
  *
- * $Id$
  */
 
 #ifndef JAS_TVP_H

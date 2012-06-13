@@ -1,5 +1,5 @@
 /**
- * Ordered Dither Screen Creation Tool. Copyright 2010-2011 Artifex Software, Inc.
+ * Ordered Dither Screen Creation Tool. Copyright 2010-2012 Artifex Software, Inc.
  **/
 
 #include <stdio.h>
