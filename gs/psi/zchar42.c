@@ -53,7 +53,7 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     float sbw_bbox[8];
     float sbw_bbox_h[8];
     ref *fdict = (ref *)pbfont->client_data;
-    ref rpath;
+    ref *rpath = NULL;
     bool embedded = true;
 
     if (code < 0)
@@ -152,7 +152,7 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
                            NULL,
                            w, &bbox,
                            cont, exec_cont,
-                           gs_rootfont(igs)->WMode ? sbw : NULL);
+                           vertical ? sbw : NULL);
 }
 
 /* <font> <code|name> <name> <glyph_index> .type42execchar - */
