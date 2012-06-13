@@ -48,12 +48,20 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
     gs_rect bbox;
     int vertical = gs_rootfont(igs)->WMode;
     float sbw_bbox[8];
+    float sbw_bbox_h[8];
+    ref *fdict = (ref *)pbfont->client_data;
+    ref rpath;
+    bool embedded = true;
 
     if (code < 0)
         return code;
     present = code;
+
+    if (dict_find_string(fdict, "Path", &rpath) > 0) {
+        embedded = false;
+    }
+
     if (vertical) { /* for vertically-oriented metrics */
-        float sbw_bbox_h[8];
 
         /* Always call get_metrics because we'll need glyph bbox below in any case
            as a workaround for Dynalab fonts. We can't recognize Dynalab here. */
@@ -64,7 +72,13 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
         code = pfont42->data.get_metrics(pfont42, glyph_index,
                 gs_type42_metrics_options_WMODE1_AND_BBOX, sbw_bbox);
         /* Here code=0 means success, code<0 means no vertical metrics. */
-        if (code < 0) {
+        /* We only want to create fake vertical metrics for TTF fonts
+           being used to emulate a vertical writing CIDFont. If we have
+           a CIDType 2 font, without vertical metrics, we're supposed to
+           treat it as a horizontal writing font, regardless of the wmode
+           setting
+         */
+        if (code < 0 && !embedded) {
             /* No vertical metrics in the font,
                hewristically compose vertical metrics from bounding boxes. */
             sbw_bbox[0] = 0;
@@ -72,6 +86,11 @@ zchar42_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref,
             sbw_bbox[2] = 0;
             sbw_bbox[3] = -1;
         }
+        else {
+            vertical = false;
+        }
+    }
+    if (vertical) {
         if (present != metricsSideBearingAndWidth) {
             /* metricsNone or metricsWidthOnly. */
             /* No top side bearing (in Metrics2) in Postscript font. */
