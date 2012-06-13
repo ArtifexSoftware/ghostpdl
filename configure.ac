@@ -98,7 +98,7 @@ LIBTIFFDIR=./gs/tiff
 echo
 echo "Running libtiff configure script..."
 olddir=`pwd`
-cd $LIBTIFFDIR && ./configure --disable-jbig $SUBCONFIG_OPTS
+cd $LIBTIFFDIR && ./configure --disable-jbig --disable-lzma $SUBCONFIG_OPTS
 status=$?
 if test "$status" -ne 0 ; then
   AC_MSG_ERROR([libtiff configure script failed], $status)
