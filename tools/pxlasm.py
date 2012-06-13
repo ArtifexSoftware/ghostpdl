@@ -20,6 +20,17 @@
 # Artifex reports the file offset of each operator HP does not.
 
 # for packing and unpacking binary data
+from __future__ import print_function
+import sys
+if sys.version < '3':
+    def chr_(x):
+        return x
+    sys_stdout_write = sys.stdout.write
+else:
+    def chr_(x):
+        return chr(x)
+    sys_stdout_write = sys.stdout.buffer.write
+
 import re
 from struct import *
 import string 
@@ -180,17 +191,17 @@ pxl_enumerations_dict = {
     'FillMode' : ['eNonZeroWinding=0', 'eEvenOdd=1' ],
     'LineJoineMiterJoin' : [ 'eRoundJoin=0', 'eBevelJoin=1', 'eNoJoin=2' ],
     'MediaSource' : [ 'eDefaultSource=0', 'eAutoSelect=1', 'eManualFeed=2',
-		      'eMultiPurposeTray=3', 'eUpperCassette=4', 'eLowerCassette=5', 
-		      'eEnvelopeTray=6', 'eThirdCassette=7', 'External Trays=8-255' ],
+                      'eMultiPurposeTray=3', 'eUpperCassette=4', 'eLowerCassette=5',
+                      'eEnvelopeTray=6', 'eThirdCassette=7', 'External Trays=8-255' ],
     'MediaDestination' :  [ 'eDefaultDestination=0', 'eFaceDownBin=1', 'eFaceUpBin=2',
-			     'eJobOffsetBin=3', 'External Bins=5-255' ],
+                            'eJobOffsetBin=3', 'External Bins=5-255' ],
     'LineCapStyle' : [ 'eButtCap=0' 'eRoundCap=1', 'eSquareCap=2', 'eTriangleCap=3' ],
     'LineJoin' : [ 'eMiterJoin=0', 'eRoundJoin=1', 'eBevelJoin=2', 'eNoJoin=3' ],
     'Measure' : [ 'eInch=0', 'eMillimeter=1', 'eTenthsOfAMillimeter=2' ],
     'MediaSize' : [ 'eDefault = 96', 'eLetterPaper=0', 'eLegalPaper=1', 'eA4Paper=2',
-		    'eExecPaper=3', 'eLedgerPaper=4', 'eA3Paper=5', 
-		    'eCOM10Envelope=6', 'eMonarchEnvelope=7', 'eC5Envelope=8', 
-		    'eDLEnvelope=9', 'eJB4Paper=10', 'eJB5Paper=11', 'eB5Paper=13',
+                    'eExecPaper=3', 'eLedgerPaper=4', 'eA3Paper=5',
+                    'eCOM10Envelope=6', 'eMonarchEnvelope=7', 'eC5Envelope=8',
+                    'eDLEnvelope=9', 'eJB4Paper=10', 'eJB5Paper=11', 'eB5Paper=13',
                     'eB5Envelope=12', 'eJPostcard=14', 'eJDoublePostcard=15',
                     'eA5Paper=16', 'eA6Paper=17', 'eJBPaper=18', 'JIS8K=19',
                     'JIS16K=20', 'JISExec=21' ],
@@ -283,6 +294,7 @@ pxl_attribute_name_to_attribute_number_dict = {
     'PointType' : 80,
     'PrimaryArray' : 14,
     'PrimaryDepth' : 15,
+    'PrintableArea' : 116,
     'RGBColor' : 11,
     'ROP3' : 44,
     'RasterObjects' : 32,
@@ -320,26 +332,27 @@ class pxl_asm:
 
     def __init__(self, data):
         # ` HP-PCL XL;3;0
-        index = data.index("` HP-PCL XL;")
+        index = data.index(b"` HP-PCL XL;")
         data = data[index:]
         self.data = data
                 # parse out data order and protocol
-        self.binding = data[0]
-        self.protocol = data[12]
-        self.revision = data[14]
+        self.binding = chr_(data[0])
+        self.protocol = chr_(data[12])
+        self.revision = chr_(data[14])
 
         # pointer to data
         self.index = 0
         # NB this screws up file indexing - remove all comments
-        self.data = re.sub( '\/\/.*\n', '', self.data )
+        self.data = re.sub( b'\/\/.*\n', b'', self.data )
 
         # print out big endian protocol and revision.  NB should check
         # revisions are the same.
-        print "\033%-12345X@PJL ENTER LANGUAGE = PCLXL"
-        print ") HP-PCL XL;" + self.protocol + ";" + self.revision
+        print("\033%-12345X@PJL ENTER LANGUAGE = PCLXL")
+        print(") HP-PCL XL;" + self.protocol + ";" + self.revision)
+        sys.stdout.flush()
 
         # skip over protocol and revision
-        while( data[self.index] != '\n' ):
+        while( chr_(data[self.index]) != '\n' ):
             self.index = self.index + 1
         self.index = self.index + 1
 
@@ -348,7 +361,7 @@ class pxl_asm:
         self.pack_string = ""
 
         # dictionary of streams keyed by stream name
-	self.user_defined_streams = {}
+        self.user_defined_streams = {}
 
         # the n'th operator in the stream
         self.operator_position = 0
@@ -367,27 +380,27 @@ class pxl_asm:
     # does not consume the string
     def next_string(self):
         index = self.index
-        while self.data[index] in string.whitespace: index = index + 1
+        while chr_(self.data[index]) in string.whitespace: index = index + 1
         start = index
-        while self.data[index] not in string.whitespace: index = index + 1
+        while chr_(self.data[index]) not in string.whitespace: index = index + 1
         end = index
-        return self.data[start:end]
+        return self.data[start:end].decode()
 
     def consume_next_string(self):
-        while self.data[self.index] in string.whitespace:
+        while chr_(self.data[self.index]) in string.whitespace:
             self.index = self.index + 1
-        while self.data[self.index] not in string.whitespace:
+        while chr_(self.data[self.index]) not in string.whitespace:
             self.index = self.index + 1
 
     # redefine pack to handle endianness
     def pack(self, format, *data):
         for args in data:
             try:
-                sys.stdout.write(pack(self.assembled_binding + format, args))
+                sys_stdout_write(pack(self.assembled_binding + format, args))
             except:
                 sys.stderr.write("assemble failed at: ")
                 # dump surrounding context.
-                sys.stderr.write(self.data[self.index:self.index+40])
+                sys.stderr.write(self.data[self.index:self.index+40].decode())
                 sys.stderr.write("\n")
                 raise
     # implicitly read when parsing the tag
@@ -409,7 +422,7 @@ class pxl_asm:
         tag = self.next_string()
         if ( not self.is_Embedded(tag) ):
             self.operator_position = self.operator_position + 1
-        if ( tag in pxl_tags_dict.keys() ):
+        if ( tag in pxl_tags_dict ):
             self.pack( 'B', pxl_tags_dict[tag] )
             self.consume_next_string()
             # handle special cases
@@ -456,10 +469,10 @@ class pxl_asm:
             return 1
         return 0
 
-    def consume_to_char_plus_one(self, chr):
-        while (self.data[self.index:self.index+len(chr)] != chr):
+    def consume_to_char_plus_one(self, inchr):
+        while (self.data[self.index:self.index+len(inchr)].decode() != inchr):
             self.index = self.index + 1
-        self.index = self.index + len(chr)
+        self.index = self.index + len(inchr)
             
     def Tag_ubyte_array(self):
         if ( self.getTag( 'ubyte_array' ) ):
@@ -621,7 +634,7 @@ class pxl_asm:
 
     def Tag_attr_ubyte(self):
         tag = self.next_string()
-        if ( tag in pxl_attribute_name_to_attribute_number_dict.keys() ):
+        if ( tag in pxl_attribute_name_to_attribute_number_dict ):
             self.pack( 'B', pxl_tags_dict['attr_ubyte'] )
             self.pack( 'B', pxl_attribute_name_to_attribute_number_dict[tag] )
             self.consume_next_string()
@@ -630,13 +643,13 @@ class pxl_asm:
                 self.process_EmbeddedInfo(tag)
             return 1
         else:
-            print >> sys.stderr, "Unlisted attribute tag:", tag
-            raise(SyntaxError), "Unlisted attribute tag found in PXL disassembly"
+            print("Unlisted attribute tag:", tag, file=sys.stderr)
+            raise(SyntaxError)("Unlisted attribute tag found in PXL disassembly")
         return 0
 
     def Tag_attr_uint16(self):
         if ( self.getTag( 'attr_uint16' ) ):
-            print "Attribute tag uint16 # NOT IMPLEMENTED #", self.pack('HH', self.data[self.index] )
+            print("Attribute tag uint16 # NOT IMPLEMENTED #", self.pack('HH', self.data[self.index] ))
             self.index = self.index + 2
             return 1
         return 0
@@ -647,20 +660,20 @@ class pxl_asm:
     # return the start and end position of the next string
     def next_token(self):
         # token begins or end on a line
-        while self.data[self.index] in string.whitespace:
+        while chr_(self.data[self.index]) in string.whitespace:
             self.index = self.index + 1
         start = self.index
-        while self.data[self.index] not in string.whitespace:
+        while chr_(self.data[self.index]) not in string.whitespace:
             self.index = self.index + 1
         end = self.index
         pos = start
         # return offset within the line of the start of the token.
         # Useful for assembling hex format.
-        while (self.data[pos] != '\n'):
+        while (chr_(self.data[pos]) != '\n'):
             if pos == 0:
                 break
             pos -= 1
-        return self.data[start:end], start-pos-1
+        return self.data[start:end].decode(), start-pos-1
     
     def next_hex_num(self):
         num_str, offset = self.next_token()
@@ -673,16 +686,16 @@ class pxl_asm:
             return self.next_hex_num()
 
         # hex number
-        return string.atoi(num_str, 16)
+        return int(num_str, 16)
         
     def next_num(self):
         # no checking.
         num_str, offset = self.next_token()
         try:
-            num = string.atoi(num_str)
+            num = int(num_str)
         except ValueError:
             try:
-                num = string.atof(num_str)
+                num = float(num_str)
             except:
                 num = None
         return num
@@ -703,7 +716,7 @@ class pxl_asm:
                self.Tag_sint16_box() or self.Tag_sint32_box() or self.Tag_real32_box()
         
     def valueType(self):
-	return self.singleValueType() or self.xyValueType() or self.boxValueType()
+        return self.singleValueType() or self.xyValueType() or self.boxValueType()
 
     # don't confuse the size of the type with the size of the elements
     # in the array
@@ -779,14 +792,15 @@ class pxl_asm:
 
     def UEL(self):
         uel_string_1 = 'string*'
-        uel_string_2 = '-12345X'
+        uel_string_2 = b'-12345X'
         tag = self.next_string()
         if ( tag == uel_string_1 ):
             self.consume_next_string()
             # an approximate search
-            if ( string.find(self.data[self.index:], uel_string_2 ) >= 0 ):
+            if (self.data[self.index:].find( uel_string_2 ) >= 0 ):
                 self.consume_to_char_plus_one('X')
                 sys.stdout.write( "\033%-12345X" )
+                sys.stdout.flush()
                 return 1
         return 0
         
@@ -807,7 +821,7 @@ if __name__ == '__main__':
     import sys
 
     if not sys.argv[1:]:
-        print "Usage: %s pxl files" % sys.argv[0]
+        print("Usage: %s pxl files" % sys.argv[0])
         
     for file in sys.argv[1:]:
         try:
