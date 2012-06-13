@@ -837,7 +837,7 @@ $(PSOBJ)zchar42.$(OBJ) : $(PSSRC)zchar42.c $(OP)\
  $(gxfixed_h) $(gxfont_h) $(gxfont42_h)\
  $(gxistate_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)\
  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
- $(ifont_h) $(igstate_h) $(store_h) $(string_h) $(zchar42_h)
+ $(ifont_h) $(igstate_h) $(store_h) $(string_h) $(zchar42_h) $(idict_h) 
 	$(PSCC) $(PSO_)zchar42.$(OBJ) $(C_) $(PSSRC)zchar42.c
 
 $(PSOBJ)zfont42.$(OBJ) : $(PSSRC)zfont42.c $(OP) $(memory__h)\

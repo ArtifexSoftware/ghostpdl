@@ -37,6 +37,7 @@
 #include "store.h"
 #include "string_.h"
 #include "zchar42.h"
+#include "idict.h"
 
 /* Get a Type 42 character metrics and set the cache device. */
 int
