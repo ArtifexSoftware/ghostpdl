@@ -230,7 +230,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   Jbig2SymbolDict *SDEXSYMS = NULL;
   int32_t HCHEIGHT;
   uint32_t NSYMSDECODED;
-  int32_t SYMWIDTH, TOTWIDTH;
+  uint32_t SYMWIDTH, TOTWIDTH;
   uint32_t HCFIRSTSYM;
   uint32_t *SDNEWSYMWIDTHS = NULL;
   int SBSYMCODELEN = 0;
@@ -285,7 +285,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
           goto cleanup1;
       }
       if (params->SDREFAGG) {
-          int tmp = params->SDINSYMS->n_symbols + params->SDNUMNEWSYMS;
+          int tmp = params->SDNUMINSYMS + params->SDNUMNEWSYMS;
           for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
           IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
           IARDX = jbig2_arith_int_ctx_new(ctx);
@@ -543,7 +543,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      uint32_t ID;
 		      int32_t RDX, RDY;
 		      int BMSIZE = 0;
-		      int ninsyms = params->SDINSYMS->n_symbols;
+		      int ninsyms = params->SDNUMINSYMS;
 		      int code1 = 0;
 		      int code2 = 0;
 		      int code3 = 0;
@@ -960,17 +960,17 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   /* maybe #ifdef CONFORMANCE and a separate routine */
   if (!params.SDHUFF) {
     if (flags & 0x000c) {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
     }
     if (flags & 0x0030) {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
     }
   }
 
   if (flags & 0x0080) {
-      jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
         "bitmap coding context is used (NYI) symbol data likely to be garbage!");
   }
 

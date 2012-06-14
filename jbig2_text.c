@@ -321,6 +321,14 @@ cleanup1:
 		int code4 = 0;
 		int code5 = 0;
 
+		/* as must exist for refinement */
+		if (as == NULL)
+		{
+			code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+				"as is NULL before refinement region");
+			goto cleanup2;
+		}
+
 		/* 6.4.11 (1, 2, 3, 4) */
 		if (!params->SBHUFF) {
 		  code1 = jbig2_arith_int_decode(params->IARDW, as, &RDW);
