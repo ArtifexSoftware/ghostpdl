@@ -90,7 +90,10 @@ cleartomark		% discard the dict from --where--
     1 1 PDFPageCount {
       dup (Page ) print =print
       pdfgetpage dup
-      /MediaBox pget {
+      /UserUnit pget {
+        ( UserUnit: ) print =print
+      } if
+      dup /MediaBox pget {
         ( MediaBox: ) print oforce_array ==only
       } if
       dup /CropBox pget {
