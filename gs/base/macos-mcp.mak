@@ -158,6 +158,9 @@ STDLIBS=
 
 SYNC=nosync
 
+# define the file name extension for a shared lib
+DYNANIC_LIB_EXT=dylib
+
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.

@@ -436,6 +436,10 @@ SOC_CFLAGS	=	@SOC_CFLAGS@
 SOC_LIBS	=	@SOC_LIBS@
 SOC_LOADER	=	@SOC_LOADER@
 
+# on virtually every Unix-a-like system, this is "so",
+# but Apple just had to be different, so it's now set
+# by configure
+DYNANIC_LIB_EXT =       @DYNANIC_LIB_EXT@
 
 #CAIRO_CFLAGS	=	@CAIRO_CFLAGS@
 #CAIRO_LIBS	=	@CAIRO_LIBS@

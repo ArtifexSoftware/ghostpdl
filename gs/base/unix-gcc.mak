@@ -326,6 +326,9 @@ XLIBS=Xt Xext X11
 # the pthread library.
 #SYNC=posync
 
+# define the file name extension for a shared lib
+DYNANIC_LIB_EXT=so
+
 # Default is No sync primitives since some platforms don't have it (HP-UX)
 SYNC=nosync
 

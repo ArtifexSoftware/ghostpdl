@@ -1606,15 +1606,18 @@ case `uname` in
         else
             DYNAMIC_LIBS=""
         fi
+        DYNANIC_LIB_EXT="so"
         ;;
         *BSD)
         DYNAMIC_CFLAGS="-fPIC"
         DYNAMIC_LDFLAGS="-fPIC -shared"
         DYNAMIC_LIBS=""
+        DYNANIC_LIB_EXT="so"
         ;;
         Darwin*)
         DYNAMIC_LDFLAGS="-dynamiclib"
         DYNAMIC_LIBS=""
+        DYNANIC_LIB_EXT="dylib"
         ;;
         SunOS)
         if test $ac_cv_prog_gcc = yes; then
@@ -1624,6 +1627,7 @@ case `uname` in
         fi
         DYNAMIC_LDFLAGS="-G"
         DYNAMIC_LIBS=""
+        DYNANIC_LIB_EXT="so"
         ;;
 esac
 
@@ -1678,6 +1682,7 @@ AC_SUBST(DYNAMIC_LDFLAGS)
 AC_SUBST(DYNAMIC_LIBS)
 AC_SUBST(INSTALL_SHARED)
 AC_SUBST(X11_DEVS)
+AC_SUBST(DYNANIC_LIB_EXT)
 
 dnl look for default font path...
 AC_ARG_WITH([fontpath],  AC_HELP_STRING([--with-fontpath],
