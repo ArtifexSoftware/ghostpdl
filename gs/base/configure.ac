@@ -1595,6 +1595,7 @@ DYNAMIC_FLAGS=""
 DYNAMIC_LDFLAGS=""
 DYNAMIC_LIBS=""
 INSTALL_SHARED=""
+DYNANIC_LIB_EXT="so"
 
 case `uname` in
         Linux*|GNU*)
