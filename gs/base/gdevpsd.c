@@ -1045,8 +1045,8 @@ psd_setup(psd_write_ctx *xc, psd_device *dev)
         }
         xc->n_extra_channels = spot_count;
     }
-    xc->width = dev->width/dev->downscale_factor;
-    xc->height = dev->height/dev->downscale_factor;
+    xc->width = gx_downscaler_scale(dev->width, dev->downscale_factor);
+    xc->height = gx_downscaler_scale(dev->height, dev->downscale_factor);
     /*
      * Determine the order of the output components.  This is based upon
      * the SeparationOrder parameter.  This parameter can be used to select

@@ -1777,8 +1777,8 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     int mfs = tfdev->MinFeatureSize;
     int dst_bpc = tfdev->BitsPerComponent;
     gx_downscaler_t ds;
-    int width = tfdev->width / factor;
-    int height = tfdev->height / factor;
+    int width = gx_downscaler_scale(tfdev->width, factor);
+    int height = gx_downscaler_scale(tfdev->height, factor);
 
     /* Print the names of the spot colors */
     if (num_order == 0) {
@@ -1800,7 +1800,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
     if (dst_bpc == 8 && !tfdev->comp_file) {
         pdev->color_info.depth = 32;        /* Create directory for 32 bit cmyk */
         if (tfdev->Compression==COMPRESSION_NONE &&
-            height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(pdev->width*4)) { /* note width is never 0 in print_page */
+            height > ((unsigned long) 0xFFFFFFFF - ftell(file))/(width*4)) { /* note width is never 0 in print_page */
             dprintf("CMYK composite file would be too large! Reduce resolution or enable compression.\n");
             return_error(gs_error_rangecheck);  /* this will overflow 32 bits */
         }

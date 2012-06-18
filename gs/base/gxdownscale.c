@@ -933,6 +933,121 @@ static void down_core8_4(gx_downscaler_t *ds,
         inp += 4;
     }
 }
+
+static void down_core8_3_2(gx_downscaler_t *ds,
+                           byte            *outp,
+                           byte            *in_buffer,
+                           int              row,
+                           int              plane,
+                           int              span)
+{
+    int   x;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   dspan  = ds->scaled_span;
+
+    pad_white = (awidth - width) * 3 / 2;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*3/2;
+        for (x = 2; x > 0; x--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    inp = in_buffer;
+
+    /* Left to Right pass (no min feature size) */
+    for (x = awidth/2; x > 0; x--)
+    {
+        int a = inp[       0];
+        int b = inp[       1];
+        int c = inp[       2];
+        int d = inp[  span+0];
+        int e = inp[  span+1];
+        int f = inp[  span+2];
+        int g = inp[2*span+0];
+        int h = inp[2*span+1];
+        int i = inp[2*span+2];
+	outp[0      ] = (4*a+2*b+2*d+e+4)/9;
+	outp[1      ] = (4*c+2*b+2*f+e+4)/9;
+	outp[dspan+0] = (4*g+2*h+2*d+e+4)/9;
+	outp[dspan+1] = (4*i+2*h+2*f+e+4)/9;
+	outp += 2;
+        inp += 3;
+    }
+}
+
+static void down_core8_3_4(gx_downscaler_t *ds,
+                           byte            *outp,
+                           byte            *in_buffer,
+                           int              row,
+                           int              plane,
+                           int              span)
+{
+    int   x;
+    int   pad_white;
+    byte *inp;
+    int   width  = ds->width;
+    int   awidth = ds->awidth;
+    int   dspan  = ds->scaled_span;
+
+    pad_white = (awidth - width) * 3 / 4;
+    if (pad_white < 0)
+        pad_white = 0;
+
+    if (pad_white)
+    {
+        inp = in_buffer + width*3/4;
+        for (x = 4; x > 0; x--)
+        {
+            memset(inp, 0xFF, pad_white);
+            inp += span;
+        }
+    }
+
+    inp = in_buffer;
+
+    /* Left to Right pass (no min feature size) */
+    for (x = awidth/4; x > 0; x--)
+    {
+        int a = inp[       0];
+        int b = inp[       1];
+        int c = inp[       2];
+        int d = inp[  span+0];
+        int e = inp[  span+1];
+        int f = inp[  span+2];
+        int g = inp[2*span+0];
+        int h = inp[2*span+1];
+        int i = inp[2*span+2];
+	outp[        0] = a;
+	outp[        1] = (a+2*b+1)/3;
+	outp[        2] = (c+2*b+1)/3;
+	outp[        3] = c;
+	outp[  dspan+0] = (a+2*d+1)/3;
+	outp[  dspan+1] = (a+2*b+2*d+4*e+3)/9;
+	outp[  dspan+2] = (c+2*b+2*f+4*e+3)/9;
+	outp[  dspan+3] = (c+2*f+1)/3;
+	outp[2*dspan+0] = (g+2*d+1)/3;
+	outp[2*dspan+1] = (g+2*h+2*d+4*e+3)/9;
+	outp[2*dspan+2] = (i+2*h+2*f+4*e+3)/9;
+	outp[2*dspan+3] = (i+2*f+1)/3;
+	outp[3*dspan+0] = g;
+	outp[3*dspan+1] = (g+2*h+1)/3;
+	outp[3*dspan+2] = (i+2*h+1)/3;
+	outp[3*dspan+3] = i;
+	outp += 4;
+        inp += 3;
+    }
+}
+
 /* RGB downscale (no error diffusion) code */
 
 static void down_core24(gx_downscaler_t *ds,
@@ -1014,6 +1129,25 @@ static void down_core24(gx_downscaler_t *ds,
     }
 }
 
+static void decode_factor(int factor, int *up, int *down)
+{
+    if (factor == 32)
+        *down = 3, *up = 2;
+    else if (factor == 34)
+        *down = 3, *up = 4;
+    else
+        *down = factor, *up = 1;
+}
+
+int
+gx_downscaler_scale(int width, int factor)
+{
+    int up, down;
+
+    decode_factor(factor, &up, &down);
+    return (width*up)/down;
+}
+
 int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               gx_device            *dev,
                               gs_get_bits_params_t *params,
@@ -1024,31 +1158,58 @@ int gx_downscaler_init_planar(gx_downscaler_t      *ds,
                               int                   dst_bpc)
 {
     int                span = bitmap_raster(dev->width * src_bpc);
-    int                width = dev->width/factor;
+    int                width;
     int                code;
     gx_downscale_core *core;
     int                i;
+    int                upfactor, downfactor;
 
+    decode_factor(factor, &upfactor, &downfactor);
+
+    /* width = scaled width */
+    width = (dev->width*upfactor)/downfactor;
     memset(ds, 0, sizeof(*ds));
-    ds->dev        = dev;
-    ds->width      = width;
-    ds->awidth     = width;
-    ds->span       = span;
-    ds->factor     = factor;
-    ds->num_planes = num_comps;
-    ds->src_bpc    = src_bpc;
+    ds->dev         = dev;
+    ds->width       = width;
+    ds->awidth      = width;
+    ds->span        = span;
+    ds->factor      = factor;
+    ds->num_planes  = num_comps;
+    ds->src_bpc     = src_bpc;
+    ds->scaled_data = NULL;
+    ds->scaled_span = bitmap_raster((dst_bpc*dev->width*upfactor + downfactor-1)/downfactor);
 
     memcpy(&ds->params, params, sizeof(*params));
     ds->params.raster = span;
     for (i = 0; i < num_comps; i++)
     {
-        ds->params.data[i] = gs_alloc_bytes(dev->memory, span * factor,
+        ds->params.data[i] = gs_alloc_bytes(dev->memory, span * downfactor,
                                             "gx_downscaler(planar_data)");
         if (ds->params.data[i] == NULL)
             goto cleanup;
     }
+    if (upfactor)
+    {
+        ds->scaled_data = gs_alloc_bytes(dev->memory, ds->scaled_span * upfactor * num_comps,
+                                         "gx_downscaler(scaled_data)");
+        if (ds->scaled_data == NULL)
+            goto cleanup;
+    }
 
-    if (dst_bpc == 1)
+    if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 32))
+    {
+        core = &down_core8_3_2;
+    }
+    else if ((src_bpc == 8) && (dst_bpc == 8) && (factor == 34))
+    {
+        core = &down_core8_3_4;
+    }
+    else if (factor > 8)
+    {
+        code = gs_note_error(gs_error_rangecheck);
+        goto cleanup;
+    }
+    else if (dst_bpc == 1)
     {
         if (mfs > 1)
             core = &down_core_mfs;
@@ -1119,19 +1280,27 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
 {
     int                size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
     int                span;
-    int                width = dev->width/factor;
-    int                awidth = width;
+    int                width;
+    int                awidth;
     int                pad_white;
     int                code;
     gx_downscale_core *core;
+    int                upfactor;
+    int                downfactor;
     
+    decode_factor(factor, &upfactor, &downfactor);
+
+    /* width = scaled width */
+    width = (dev->width*upfactor)/downfactor;
+    awidth = width;
     if (adjust_width_proc != NULL)
         awidth = (*adjust_width_proc)(width, adjust_width);
     pad_white = awidth - width;
     if (pad_white < 0)
         pad_white = 0;
 
-    span = size + pad_white*factor*num_comps + factor-1;
+    /* size = unscaled size. span = unscaled size + padding */
+    span = size + pad_white*downfactor*num_comps/upfactor + downfactor-1;
     memset(ds, 0, sizeof(*ds));
     ds->dev        = dev;
     ds->width      = width;
@@ -1142,7 +1311,12 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     ds->src_bpc    = src_bpc;
     
     /* Choose an appropriate core */
-    if ((src_bpc == 16) && (dst_bpc == 16) && (num_comps == 1))
+    if (factor > 8)
+    {
+        code = gs_note_error(gs_error_rangecheck);
+        goto cleanup;
+    }
+    else if ((src_bpc == 16) && (dst_bpc == 16) && (num_comps == 1))
     {
         core = &down_core16;
     }
@@ -1184,7 +1358,7 @@ int gx_downscaler_init(gx_downscaler_t   *ds,
     
     if (core != NULL) {
         ds->data = gs_alloc_bytes(dev->memory,
-                                  span * factor,
+                                  span * downfactor,
                                   "gx_downscaler(data)");
         if (ds->data == NULL)
             return_error(gs_error_VMerror);
@@ -1236,6 +1410,8 @@ void gx_downscaler_fin(gx_downscaler_t *ds)
     ds->errors = NULL;
     gs_free_object(ds->dev->memory, ds->data, "gx_downscaler(data)");
     ds->data = NULL;
+    gs_free_object(ds->dev->memory, ds->scaled_data, "gx_downscaler(scaled_data)");
+    ds->scaled_data = NULL;
 }
 
 int gx_downscaler_getbits(gx_downscaler_t *ds,
@@ -1277,12 +1453,27 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     int                   plane;
     int                   factor = ds->factor;
     gs_get_bits_params_t  params2;
+    int                   upfactor, downfactor;
+    int                   subrow;
+    int                   copy = (ds->dev->width * ds->src_bpc + 7)>>3;
 
+    decode_factor(factor, &upfactor, &downfactor);
+
+    subrow = row % upfactor;
+    if (subrow)
+    {
+        /* Just copy a previous row from our stored buffer */
+        for (plane=0; plane < ds->num_planes; plane++)
+        {
+	    params->data[plane] = ds->scaled_data + (upfactor * plane + subrow) * ds->scaled_span;
+        }
+	return 0;
+    }
 
     rect.p.x = 0;
-    rect.p.y = row * factor;
+    rect.p.y = (row/upfactor) * downfactor;
     rect.q.x = ds->dev->width;
-    rect.q.y = (row + 1) * factor;
+    rect.q.y = ((row/upfactor) + 1) * downfactor;
 
     /* Check for the simple case */
     if (ds->down_core == NULL) {
@@ -1292,17 +1483,16 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     /* Copy the params, because get_bits_rectangle can helpfully overwrite
      * them. */
     memcpy(&params2, &ds->params, sizeof(params2));
-    /* Get factor rows worth of data */
+    /* Get downfactor rows worth of data */
     code = (*dev_proc(ds->dev, get_bits_rectangle))(ds->dev, &rect, &params2, NULL);
     if (code == gs_error_rangecheck)
     {
         int i, j;
-        int copy = ds->dev->width * (ds->src_bpc>>3);
         /* At the bottom of a band, the get_bits_rectangle call can fail to be
          * able to return us enough lines of data at the same time. We therefore
          * drop back to reading them one at a time, and copying them into our
          * own buffer. */
-        for (i = 0; i < factor; i++) {
+        for (i = 0; i < downfactor; i++) {
             rect.q.y = rect.p.y+1;
             if (rect.q.y > ds->dev->height)
                 break;
@@ -1319,7 +1509,7 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
             return code;
         /* If we still haven't got enough, we've hit the end of the page; just
          * duplicate the last line we did get. */
-        for (;i < factor; i++) {
+        for (;i < downfactor; i++) {
             for (j = 0; j < ds->num_planes; j++) {
                 memcpy(ds->params.data[j] + i*ds->span, ds->params.data[j] + (i-1)*ds->span, copy);
             }
@@ -1331,9 +1521,23 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     if (code < 0)
         return code;
 
-    for (plane=0; plane < ds->num_planes; plane++)
+    if (upfactor)
     {
-        (ds->down_core)(ds, params->data[plane], params2.data[plane], row, plane, params2.raster);
+        /* Downscale the block of lines into our output buffer */
+        for (plane=0; plane < ds->num_planes; plane++)
+        {
+            byte *scaled = ds->scaled_data + upfactor * plane * ds->scaled_span;
+            (ds->down_core)(ds, scaled, params2.data[plane], row, plane, params2.raster);
+	    params->data[plane] = scaled;
+        }
+    }
+    else
+    {
+        /* Downscale direct into output buffer */
+        for (plane=0; plane < ds->num_planes; plane++)
+        {
+            (ds->down_core)(ds, params->data[plane], params2.data[plane], row, plane, params2.raster);
+        }
     }
 
     return code;

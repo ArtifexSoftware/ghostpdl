@@ -328,16 +328,19 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 int                factor,
                                 int                adjustWidth)
 {
-    int width = pdev->width/factor;
+    int width = gx_downscaler_scale(pdev->width, factor);
+    int height = gx_downscaler_scale(pdev->height, factor);
+    int xpi = gx_downscaler_scale(pdev->x_pixels_per_inch, factor);
+    int ypi = gx_downscaler_scale(pdev->y_pixels_per_inch, factor);
     width = fax_adjusted_width(width, adjustWidth);
     TIFFSetField(tif, TIFFTAG_IMAGEWIDTH, width);
-    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, pdev->height/factor);
+    TIFFSetField(tif, TIFFTAG_IMAGELENGTH, height);
     TIFFSetField(tif, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
     TIFFSetField(tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 
     TIFFSetField(tif, TIFFTAG_RESOLUTIONUNIT, RESUNIT_INCH);
-    TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)pdev->x_pixels_per_inch/factor);
-    TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)pdev->y_pixels_per_inch/factor);
+    TIFFSetField(tif, TIFFTAG_XRESOLUTION, (float)xpi);
+    TIFFSetField(tif, TIFFTAG_YRESOLUTION, (float)ypi);
 
     {
         char revs[10];

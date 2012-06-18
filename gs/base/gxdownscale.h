@@ -38,18 +38,21 @@ typedef void (gx_downscale_core)(gx_downscaler_t *ds,
                                  int              span);
 
 struct gx_downscaler_s {
-    gx_device            *dev;       /* Device */
-    int                   width;     /* Width (pixels) */
-    int                   awidth;    /* Adjusted width (pixels) */
-    int                   span;      /* Num bytes in downscale buffer scanline */
-    int                   factor;    /* Factor to downscale */
-    byte                 *mfs_data;  /* MinFeatureSize data */
-    int                   src_bpc;   /* Source bpc */
-    int                  *errors;    /* Error diffusion table */
-    byte                 *data;      /* Downscaling buffer */
-    gx_downscale_core    *down_core; /* Core downscaling function */
-    gs_get_bits_params_t  params;    /* Params if in planar mode */
-    int                   num_planes;/* Number of planes if planar, 0 otherwise */
+    gx_device            *dev;        /* Device */
+    int                   width;      /* Width (pixels) */
+    int                   awidth;     /* Adjusted width (pixels) */
+    int                   span;       /* Num bytes in unscaled scanline */
+    int                   factor;     /* Factor to downscale */
+    byte                 *mfs_data;   /* MinFeatureSize data */
+    int                   src_bpc;    /* Source bpc */
+    int                  *errors;     /* Error diffusion table */
+    byte                 *data;       /* Downscaling buffer */
+    byte                 *scaled_data;/* Downscaled data (only used for non
+                                       * integer downscales). */
+    int                   scaled_span;/* Num bytes in scaled scanline */
+    gx_downscale_core    *down_core;  /* Core downscaling function */
+    gs_get_bits_params_t  params;     /* Params if in planar mode */
+    int                   num_planes; /* Number of planes if planar, 0 otherwise */
 };
 
 /* To use the downscaler:
@@ -110,5 +113,8 @@ void gx_downscaler_fin(gx_downscaler_t *ds);
 int
 gx_downscaler_copy_scan_lines(gx_downscaler_t *ds, int y,
                               byte *str, uint size);
+
+int
+gx_downscaler_scale(int width, int factor);
 
 #endif
