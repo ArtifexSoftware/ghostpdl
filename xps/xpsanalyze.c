@@ -122,7 +122,8 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
         opacity_att = xps_att(root, "Opacity");
         if (opacity_att)
         {
-            if (atof(opacity_att) < 1.0)
+            float opacity = atof(opacity_att);
+            if (opacity < 1.0 && opacity != 0.0)
             {
                 //dputs("page has transparency: SolidColorBrush Opacity\n");
                 return 1;
@@ -133,7 +134,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
         if (color_att)
         {
             xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
-            if (samples[0] < 1.0)
+            if (samples[0] < 1.0 && samples[0] != 0.0)
             {
                 //dputs("page has transparency: SolidColorBrush Color has alpha\n");
                 return 1;
@@ -276,7 +277,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
     if (stroke_att)
     {
         xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
-        if (samples[0] < 1.0)
+        if (samples[0] < 1.0 && samples[0] != 0.0)
         {
             //dprintf1("page has transparency: Stroke alpha=%g\n", samples[0]);
             return 1;
@@ -287,7 +288,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
     if (fill_att)
     {
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
-        if (samples[0] < 1.0)
+        if (samples[0] < 1.0 && samples[0] != 0.0)
         {
             //dprintf1("page has transparency: Fill alpha=%g\n", samples[0]);
             return 1;
@@ -297,7 +298,8 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
     opacity_att = xps_att(node, "Opacity");
     if (opacity_att)
     {
-        if (atof(opacity_att) < 1.0)
+        float opacity = atof(opacity_att);
+        if (opacity < 1.0 && opacity != 0.0)
         {
             //dprintf1("page has transparency: Opacity=%g\n", atof(opacity_att));
             return 1;
