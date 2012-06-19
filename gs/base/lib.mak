@@ -598,8 +598,6 @@ $(GLOBJ)gconfig.$(OBJ) : $(gconfig_h) $(GLSRC)gconf.c $(AK) $(gx_h)\
  $(gxdevice_h) $(gxiclass_h) $(gxiodev_h) $(gxiparam_h) $(TOP_MAKEFILES)\
  $(MAKEDDIRS)
 	$(RM_) $(GLGEN)gconfig.c
-	$(RM_) $(GLGEN)gconfig.h
-	$(CP_) $(gconfig_h) $(GLGEN)gconfig.h
 	$(CP_) $(GLSRC)gconf.c $(GLGEN)gconfig.c
 	$(GLCC) $(GLO_)gconfig.$(OBJ) $(C_) $(GLGEN)gconfig.c
 

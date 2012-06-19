@@ -274,7 +274,6 @@ $(PSOBJ)iconfig.$(OBJ) : $(gconfig_h) $(PSSRC)iconf.c $(stdio__h)\
  $(gconf_h) $(gconfigd_h) $(gsmemory_h) $(gstypes_h)\
  $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h) $(iplugin_h)
 	$(RM_) $(PSGEN)iconfig.c
-	$(CP_) $(gconfig_h) $(PSGEN)gconfig.h
 	$(CP_) $(PSSRC)iconf.c $(PSGEN)iconfig.c
 	$(PSCC) $(PSO_)iconfig.$(OBJ) $(C_) $(PSGEN)iconfig.c
 
