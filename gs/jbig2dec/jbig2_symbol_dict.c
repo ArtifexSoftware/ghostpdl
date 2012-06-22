@@ -699,6 +699,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	  if (code) {
 	    jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	      "error decoding MMR bitmap image!");
+	    jbig2_image_release(ctx, image);
 	    goto cleanup4;
 	  }
 	}
