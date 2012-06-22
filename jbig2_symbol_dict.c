@@ -368,8 +368,8 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	      DW = jbig2_huffman_get(hs, params->SDHUFFDW, &code);
 	  } else {
 	      code = jbig2_arith_int_decode(IADW, as, &DW);
-              if (code < 0) goto cleanup4;
 	  }
+          if (code < 0) goto cleanup4;
 
 	  /* 6.5.5 (4c.i) */
 	  if (code == 1) {
@@ -630,13 +630,13 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	    SDNEWSYMWIDTHS[NSYMSDECODED] = SYMWIDTH;
 	  }
 
+          /* 6.5.5 (4c.iv) */
+          NSYMSDECODED = NSYMSDECODED + 1;
+
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "decoded symbol %u of %u (%ux%u)",
 		NSYMSDECODED, params->SDNUMNEWSYMS,
 		SYMWIDTH, HCHEIGHT);
-
-	  /* 6.5.5 (4c.iv) */
-	  NSYMSDECODED = NSYMSDECODED + 1;
 
       } /* end height class decode loop */
 
@@ -650,6 +650,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	if (code || (BMSIZE < 0)) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "error decoding size of collective bitmap!");
+          jbig2_image_release(ctx, image);
 	  goto cleanup4;
 	}
 
@@ -710,6 +711,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       {
           jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
               "failed to copy the collective bitmap into symbol dictionary");
+	  jbig2_image_release(ctx, image);
           goto cleanup4;
       }
 	  jbig2_image_compose(ctx, glyph, image, -x, 0, JBIG2_COMPOSE_REPLACE);

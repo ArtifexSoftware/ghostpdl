@@ -28,10 +28,6 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 
-#ifdef JBIG2_DEBUG
-#include <stdio.h>
-#endif
-
 struct _Jbig2ArithState {
   uint32_t C;
   int A;
@@ -194,7 +190,7 @@ jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
   result->next_word_bytes = 4;
   result->offset = 4;
 
-  /* Figure G.1 */
+  /* Figure E.20 */
 #ifdef SOFTWARE_CONVENTION
   result->C = (~(result->next_word >> 8)) & 0xFF0000;
 #else
@@ -288,7 +284,7 @@ jbig2_arith_decode (Jbig2ArithState *as, Jbig2ArithCx *pcx)
   const Jbig2ArithQe *pqe = &jbig2_arith_Qe[cx & 0x7f];
   bool D;
 
-  /* Figure G.2 */
+  /* Figure E.15 */
   as->A -= pqe->Qe;
   if (
 #ifdef SOFTWARE_CONVENTION
