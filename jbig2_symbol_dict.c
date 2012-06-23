@@ -966,16 +966,19 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
     if (flags & 0x000c) {
       jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDH is not.");
+      goto cleanup;
     }
     if (flags & 0x0030) {
       jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 		  "SDHUFF is zero, but contrary to spec SDHUFFDW is not.");
+      goto cleanup;
     }
   }
 
   if (flags & 0x0080) {
       jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
         "bitmap coding context is used (NYI) symbol data likely to be garbage!");
+      goto cleanup;
   }
 
   /* 7.4.2.1.2 */
