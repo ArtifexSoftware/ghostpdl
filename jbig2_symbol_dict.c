@@ -804,7 +804,6 @@ cleanup4:
       jbig2_sd_release(ctx, refagg_dicts[0]);
       jbig2_free(ctx->allocator, refagg_dicts);
   }
-  jbig2_free(ctx->allocator, GB_stats);
 
 cleanup2:
   jbig2_sd_release(ctx, SDNEWSYMS);
@@ -1078,9 +1077,9 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
       jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
           "segment marks bitmap coding context as retained (NYI)");
   } else {
-      /* todo: free GB_stats, GR_stats */
+      jbig2_free(ctx->allocator, GR_stats);
+      jbig2_free(ctx->allocator, GB_stats);
   }
-  jbig2_free(ctx->allocator, GR_stats);
 
 cleanup:
   if (params.SDHUFF) {
