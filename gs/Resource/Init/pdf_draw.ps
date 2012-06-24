@@ -2501,7 +2501,7 @@ currentdict /set_bc_color undef
   /highlight-arc {                      % x1 y1 x0 y0 -> -
     4 2 roll                            % x0 y0 x1 y1
     dup 3 index add 2 div               % x0 y0 x1 y1 (y1+y0)/2
-    2 index 5 index sub .9375 mul add   % x0 y0 x1 y1 (y1+y0)/2+15/16*dx=yc
+    2 index 5 index sub .9375 mul sub   % x0 y0 x1 y1 (y1+y0)/2-15/16*dx=yc
     4 index 3 index add 2 div           % x0 y0 x1 y1 yc (x0+x1)/2
     2 index 5 index sub .9375 mul add   % x0 y0 x1 y1 yc xc
     exch                                % x0 y0 x1 y1 xc yc
