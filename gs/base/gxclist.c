@@ -407,7 +407,9 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     cdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 
     /* Call create_buf_device to get the memory planarity set up. */
-    cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));
+    code = cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));
+    if (code < 0)
+        return code;
     /* HACK - if the buffer device can't do copy_alpha, disallow */
     /* copy_alpha in the commmand list device as well. */
     if (dev_proc(pbdev, copy_alpha) == gx_no_copy_alpha)

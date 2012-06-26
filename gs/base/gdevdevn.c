@@ -113,7 +113,7 @@ bpc_to_depth(int ncomp, int bpc)
     if (ncomp <=4 && bpc <= 8)
         return depths[ncomp -1][bpc-1];
     else
-        return (ncomp * bpc + 7) & 0xf8;
+        return (ncomp * bpc + 7) & ~7;
 }
 
 #define compare_color_names(name, name_size, str, str_size) \
