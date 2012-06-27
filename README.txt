@@ -28,7 +28,7 @@ in the top level source directory. This will create four different
 executables: main/obj/pcl6, a build of GhostPCL with support for
 PCL5e, PCL5c, and PXL, language_switch/obj/pspcl6 a build of GhostPCL
 with additional support for PostScript and PDF, xps/obj/gxps a build
-with support for XPS and finally svn/obj/gsvg the SVG implementation.
+with support for XPS and finally svg/obj/gsvg the SVG implementation.
 
 ===
 
