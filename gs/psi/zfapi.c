@@ -1880,7 +1880,7 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
     gs_state *pgs;
     gx_device *dev1;
     const int import_shift_v = _fixed_shift - 32; /* we always 32.32 values for the outline interface now */
-    FAPI_raster rast;
+    FAPI_raster rast = {0};
     int code;
     extern_st(st_gs_show_enum);
     extern_st(st_gs_state);
@@ -1938,7 +1938,9 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
             return code;
 
     } else {
-        int code = I->get_char_raster(I, &rast);
+        int code;
+        
+        code = I->get_char_raster(I, &rast);
         if (!SHOW_IS(penum, TEXT_DO_NONE) && I->use_outline) {
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
