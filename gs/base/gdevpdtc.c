@@ -576,7 +576,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
                         rcode = TEXT_PROCESS_CDEVPROC;
                         break;
                     }
-                    if (code == 0) { /* OK to cache */
+                    if (code >= 0) {
                         if (cid > pdsubf->count)
                             return_error(gs_error_unregistered); /* Must not happen. */
                         w[cid] = widths.Width.w;
