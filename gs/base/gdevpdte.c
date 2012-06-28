@@ -721,6 +721,9 @@ pdf_char_widths(gx_device_pdf *const pdev,
         if (code == 0) {
             pdfont->Widths[ch] = pwidths->Width.w;
             real_widths[ch] = pwidths->real_width.w;
+        } else {
+            if (font->WMode == 0 && !pwidths->replaced_v)
+                pdfont->Widths[ch] = pwidths->real_width.w;
         }
     } else {
         if (font->FontType == ft_user_defined || font->FontType == ft_PCL_user_defined ||
