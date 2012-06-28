@@ -228,10 +228,18 @@ pcjob_do_registration(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem)
                          pca_neg_error|pca_big_error)},
           {'u', 'D',
              PCL_COMMAND("Set Unit of Measure", pcl_set_unit_of_measure,
-                         pca_neg_error|pca_big_error)},
+                         pca_neg_error|pca_big_error|pca_in_rtl)},
         END_CLASS
         return 0;
 }
+
+static inline float
+pcl_pjl_res(pcl_state_t *pcs)
+{
+    pjl_envvar_t *pres  = pjl_proc_get_envvar(pcs->pjls, "resolution");
+    return atof(pres);
+}
+
 static void
 pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
@@ -241,9 +249,8 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
            state variable is not needed.  Don't override -r from the command line. */
         if (!pcs->res_set_on_command_line) {
             float res[2];
-            pjl_envvar_t *pres  = pjl_proc_get_envvar(pcs->pjls, "resolution");
             /* resolution is always a single number in PJL */
-            res[0] = atof(pres); res[1] = res[0];
+            res[0] = res[1] = pcl_pjl_res(pcs);
 
             if (res[0] != 0)
                 put_param1_float_array(pcs, "HWResolution", res);
@@ -265,10 +272,17 @@ pcjob_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
            documentation does not say what to do if the resolution is
            assymetric... */
         pcl_args_t args;
-        if ( pcs->personality == rtl )
-            arg_set_uint(&args,
-                         (uint)gs_currentdevice(pcs->pgs)->HWResolution[0]);
-        else
+        if ( pcs->personality == rtl ) {
+            float res[2];
+            /* resolution is always a single number in PJL */
+            res[0] = res[1] = pcl_pjl_res(pcs);
+
+            if (res[0] != 0)
+                arg_set_uint(&args, res[0]);
+            else
+                arg_set_uint(&args,
+                             (uint)gs_currentdevice(pcs->pgs)->HWResolution[0]);
+        } else
             arg_set_uint(&args, 300);
         pcl_set_unit_of_measure(&args, pcs);
     }
