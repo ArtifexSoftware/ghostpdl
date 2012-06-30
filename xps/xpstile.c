@@ -294,7 +294,7 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
     gs_gsave(ctx->pgs);
 
-    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL, false, false);
     if (code)
     {
         gs_grestore(ctx->pgs);

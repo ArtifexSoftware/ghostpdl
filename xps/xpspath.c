@@ -835,6 +835,9 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     float samples[32];
     gs_color_space *colorspace;
 
+    bool opacity_pushed = false;
+    bool uses_stroke;
+
     gs_gsave(ctx->pgs);
 
     ctx->fill_rule = 0;
@@ -993,26 +996,34 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         gs_newpath(ctx->pgs);
     }
 #endif
-
-    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
-    if (code)
-    {
-        gs_grestore(ctx->pgs);
-        return gs_rethrow(code, "cannot create transparency group");
+    /* xps_begin_opacity put into the fill_att, etc loops so that we can
+       push groups of smaller sizes.  This makes it necessary to add a pushed
+       flag so that we don't do multiple pushes if we have a fill and stroke
+       attribute for the same group. */
+    if (stroke_att || stroke_tag) {
+        uses_stroke = true;
     }
-
     if (fill_att)
     {
-        xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
-        if (fill_opacity_att)
-            samples[0] = atof(fill_opacity_att);
-        xps_set_color(ctx, colorspace, samples);
-
         if (data_att)
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
+        code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, uses_stroke);
+        if (code)
+        {
+            gs_grestore(ctx->pgs);
+            return gs_rethrow(code, "cannot create transparency group");
+        }
+
+        /* Color must be set *after* we begin opacity */
+        xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
+        if (fill_opacity_att)
+            samples[0] = atof(fill_opacity_att);
+        xps_set_color(ctx, colorspace, samples);
+
+        opacity_pushed = true;
         xps_fill(ctx);
     }
 
@@ -1022,6 +1033,15 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 0);
+
+        if (!opacity_pushed) {
+            code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, uses_stroke);
+            if (code)
+            {
+                gs_grestore(ctx->pgs);
+                return gs_rethrow(code, "cannot create transparency group");
+            }
+        }
 
         code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
         if (code < 0)
@@ -1034,15 +1054,25 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
     if (stroke_att)
     {
-        xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
-        if (stroke_opacity_att)
-            samples[0] = atof(stroke_opacity_att);
-        xps_set_color(ctx, colorspace, samples);
-
         if (data_att)
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 1);
+        
+        if (!opacity_pushed) {
+            code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, true);
+            if (code)
+            {
+                gs_grestore(ctx->pgs);
+                return gs_rethrow(code, "cannot create transparency group");
+            }
+        }
+
+        /* Color must be set *after* the group is pushed */
+        xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
+        if (stroke_opacity_att)
+            samples[0] = atof(stroke_opacity_att);
+        xps_set_color(ctx, colorspace, samples);
 
         gs_stroke(ctx->pgs);
     }
@@ -1053,6 +1083,15 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             xps_parse_abbreviated_geometry(ctx, data_att);
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 1);
+
+        if (!opacity_pushed) {
+            code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, true);
+            if (code)
+            {
+                gs_grestore(ctx->pgs);
+                return gs_rethrow(code, "cannot create transparency group");
+            }
+        }
 
         ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
         gs_strokepath2(ctx->pgs);

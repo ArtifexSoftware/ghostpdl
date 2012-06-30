@@ -333,7 +333,7 @@ void xps_parse_rectangle(xps_context_t *ctx, char *text, gs_rect *rect);
 void xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom);
 void xps_parse_path_geometry(xps_context_t *ctx, xps_resource_t *dict, xps_item_t *root, int stroking);
 
-int xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
+int xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag, bool use_path, bool is_stroke);
 void xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, char *opacity_att, xps_item_t *opacity_mask_tag);
 
 int xps_parse_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *node);
@@ -344,6 +344,7 @@ char * xps_get_point(char *s_in, float *x, float *y);
 void xps_clip(xps_context_t *ctx);
 void xps_fill(xps_context_t *ctx);
 void xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *user);
+void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox, bool use_path, bool is_stroke);
 
 int xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);
 int xps_resource_dictionary_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *node);

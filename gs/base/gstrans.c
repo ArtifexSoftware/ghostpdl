@@ -476,7 +476,7 @@ gs_push_transparency_state(gs_state *pgs)
 }
 
 int
-gs_pop_transparency_state(gs_state *pgs)
+gs_pop_transparency_state(gs_state *pgs, bool force)
 {
     gs_pdf14trans_params_t params = { 0 };
     gs_imager_state * pis = (gs_imager_state *)pgs;
@@ -490,7 +490,7 @@ gs_pop_transparency_state(gs_state *pgs)
        an active softmask for the graphic state.  We
        need to communicate to the compositor to pop
        the softmask */
-    if ( pis->trans_flags.xstate_change ) {
+    if ( pis->trans_flags.xstate_change || force) {
         if_debug0('v', "[v]gs_pop_transparency_state sending\n");
         params.pdf14_op = PDF14_POP_TRANS_STATE;
         code = gs_state_update_pdf14trans(pgs, &params);

@@ -621,7 +621,7 @@ xps_parse_glyphs(xps_context_t *ctx,
 
     gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix, &font->font->FontMatrix);
 
-    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, false, false);
     if (code)
     {
         gs_grestore(ctx->pgs);

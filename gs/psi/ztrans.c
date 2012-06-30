@@ -491,7 +491,7 @@ static int
 zpopextendedgstate(i_ctx_t *i_ctx_p)
 {
     int code;
-    code = gs_pop_transparency_state(igs);
+    code = gs_pop_transparency_state(igs, false);
     return(code);
 }
 

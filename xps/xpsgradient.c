@@ -913,7 +913,7 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
 
     xps_bounds_in_user_space(ctx, &bbox);
 
-    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL);
+    code = xps_begin_opacity(ctx, base_uri, dict, opacity_att, NULL, false, false);
     if (code)
     {
         gs_grestore(ctx->pgs);
@@ -963,8 +963,11 @@ xps_parse_gradient_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dic
             }
             gs_end_transparency_group(ctx->pgs);
             /* Need to remove the soft mask from the graphic state.  Otherwise
-               we may end up using it in subsequent drawings */
-            gs_pop_transparency_state(ctx->pgs);  
+               we may end up using it in subsequent drawings.  Note that there
+               is not a push of the state made since there is already a soft
+               mask present from gs_end_transparency_mask.  In this case,
+               we are removing the mask with this forced pop. */
+            gs_pop_transparency_state(ctx->pgs, true);  
         }
         else
         {

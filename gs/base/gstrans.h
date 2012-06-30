@@ -208,7 +208,7 @@ int gx_discard_transparency_layer(gs_imager_state *pis);
 
 int gs_push_transparency_state(gs_state *pgs);
 
-int gs_pop_transparency_state(gs_state *pgs);
+int gs_pop_transparency_state(gs_state *pgs, bool force);
 
 int gx_push_transparency_state(gs_imager_state * pis, gx_device * pdev);
 

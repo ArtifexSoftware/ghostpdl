@@ -36,9 +36,29 @@ xps_bounds_in_user_space(xps_context_t *ctx, gs_rect *ubox)
     gs_bbox_transform_inverse(&dbox, &ctm_only(ctx->pgs), ubox);
 }
 
+/* This will get the proper bounds based upon the current path, clip path
+   and stroke width */
+void xps_bounds_in_user_space_path_clip(xps_context_t *ctx, gs_rect *ubox, 
+                                        bool use_path, bool is_stroke)
+{
+    int code;
+    gs_rect bbox;
+
+    if (!use_path)
+        code = gx_curr_bbox(ctx->pgs, &bbox, NO_PATH);
+    else {
+        if (is_stroke) 
+            code = gx_curr_bbox(ctx->pgs, &bbox, PATH_STROKE);
+        else 
+            code = gx_curr_bbox(ctx->pgs, &bbox, PATH_FILL);
+    }
+    gs_bbox_transform_inverse(&bbox, &ctm_only(ctx->pgs), ubox);
+}
+
 int
 xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
-        char *opacity_att, xps_item_t *opacity_mask_tag)
+        char *opacity_att, xps_item_t *opacity_mask_tag, bool use_path, 
+        bool is_stroke)
 {
     gs_transparency_group_params_t tgp;
     gs_transparency_mask_params_t tmp;
@@ -55,7 +75,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         opacity = atof(opacity_att);
     gs_setopacityalpha(ctx->pgs, opacity);
 
-    xps_bounds_in_user_space(ctx, &bbox);
+    xps_bounds_in_user_space_path_clip(ctx, &bbox, use_path, is_stroke);
 
     if (opacity_mask_tag)
     {
@@ -64,13 +84,18 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_setcolorspace(ctx->pgs, ctx->gray_lin);
         gs_begin_transparency_mask(ctx->pgs, &tmp, &bbox, 0);
 
-
-        /* Need a path to fill/clip for the brush */
-        gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
-        gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
-        gs_lineto(ctx->pgs, bbox.q.x, bbox.q.y);
-        gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
-        gs_closepath(ctx->pgs);
+        /* Create a path if we dont have one that defines the opacity.
+           For example if we had a canvas opacity then we need to make
+           the path for that opacity.  Otherwise we use the opacity path
+           that was defined and its intesection with the clipping path. */
+        if (!use_path) 
+        {
+            gs_moveto(ctx->pgs, bbox.p.x, bbox.p.y);
+            gs_lineto(ctx->pgs, bbox.p.x, bbox.q.y);
+            gs_lineto(ctx->pgs, bbox.q.x, bbox.q.y);
+            gs_lineto(ctx->pgs, bbox.q.x, bbox.p.y);
+            gs_closepath(ctx->pgs);
+        }
 
         /* opacity-only mode: use alpha value as gray color to create luminosity mask */
         save = ctx->opacity_only;
@@ -79,7 +104,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         code = xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
         if (code)
         {
-            gs_grestore(ctx->pgs);
+            //gs_grestore(ctx->pgs);
             gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
             ctx->opacity_only = save;
             return gs_rethrow(code, "cannot parse opacity mask brush");
@@ -87,6 +112,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
 
         gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
         gs_grestore(ctx->pgs);
+        gs_push_transparency_state(ctx->pgs);
         ctx->opacity_only = save;
     }
 
@@ -104,6 +130,10 @@ xps_end_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         return;
     gs_end_transparency_group(ctx->pgs);
     /* Need to remove the soft mask from the graphic state.  Otherwise
-       we may end up using it in subsequent drawings */
-    gs_pop_transparency_state(ctx->pgs);
+       we may end up using it in subsequent drawings.  Note that there
+       is not a push of the state made since there is already a soft
+       mask present from gs_end_transparency_mask.  In this case,
+       we are removing the mask with this forced pop. */
+    if (opacity_mask_tag != NULL)
+        gs_pop_transparency_state(ctx->pgs, true);  
 }

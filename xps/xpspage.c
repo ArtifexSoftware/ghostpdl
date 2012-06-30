@@ -84,7 +84,7 @@ xps_parse_canvas(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_i
         xps_clip(ctx);
     }
 
-    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+    code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, false, false);
     if (code)
     {
         gs_grestore(ctx->pgs);

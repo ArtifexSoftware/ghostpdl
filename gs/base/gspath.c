@@ -27,6 +27,7 @@
 #include "gxdevice.h"		/* for gxcpath.h */
 #include "gxdevmem.h"		/* for gs_device_is_memory */
 #include "gzcpath.h"
+#include "gxpaint.h"
 
 /* ------ Miscellaneous ------ */
 
@@ -320,6 +321,65 @@ gs_rcurveto(gs_state * pgs,
 
 /* Forward references */
 static int common_clip(gs_state *, int);
+
+/* Figure out the bbox for a path and a clip path with adjustment if we are
+   also doing a stroke.  This is used by the xps interpeter to deteremine
+   how big of a transparency group or softmask should be pushed.  Often in 
+   xps we fill a path with a particular softmask and some other graphic object.
+   The transparency group will be the intersection of the path and clipping
+   path */
+int
+gx_curr_bbox(gs_state * pgs, gs_rect *bbox, gs_bbox_comp_t comp_type)
+{
+    gx_clip_path *clip_path;
+    int code;
+    gs_fixed_rect path_bbox;
+    int expansion_code;
+    bool include_path = true;
+    gs_fixed_point expansion;
+
+    code = gx_effective_clip_path(pgs, &clip_path);
+        if (code < 0) return code;
+    if (comp_type == NO_PATH) {
+        bbox->p.x = fixed2float(clip_path->outer_box.p.x);
+        bbox->p.y = fixed2float(clip_path->outer_box.p.y);
+        bbox->q.x = fixed2float(clip_path->outer_box.q.x);
+        bbox->q.y = fixed2float(clip_path->outer_box.q.y);
+        return 0;
+    }
+    code = gx_path_bbox(pgs->path, &path_bbox);
+        if (code < 0) return code;
+    if (comp_type == PATH_STROKE) {
+        /* Handle any stroke expansion of our bounding box */
+        expansion_code = gx_stroke_path_expansion((const gs_imager_state *) pgs, 
+                                                   pgs->path, &expansion);
+        if (expansion_code >= 0) {
+            path_bbox.p.x -= expansion.x;
+            path_bbox.p.y -= expansion.y;
+            path_bbox.q.x += expansion.x;
+            path_bbox.q.y += expansion.y;
+        } else {
+            /* Stroke is super wide or we could not figure out the stroke bbox
+               due to wacky joints etc. Just use the clip path */
+            include_path = false;
+        }
+    }
+    if (include_path) {
+        rect_intersect(path_bbox, clip_path->outer_box);
+        /* clip path and drawing path */
+        bbox->p.x = fixed2float(path_bbox.p.x);
+        bbox->p.y = fixed2float(path_bbox.p.y);
+        bbox->q.x = fixed2float(path_bbox.q.x);
+        bbox->q.y = fixed2float(path_bbox.q.y);
+    } else {
+        /* clip path only */
+        bbox->p.x = fixed2float(clip_path->outer_box.p.x);
+        bbox->p.y = fixed2float(clip_path->outer_box.p.y);
+        bbox->q.x = fixed2float(clip_path->outer_box.q.x);
+        bbox->q.y = fixed2float(clip_path->outer_box.q.y);
+    }
+    return 0;
+}
 
 /*
  * Return the effective clipping path of a graphics state.  Sometimes this
