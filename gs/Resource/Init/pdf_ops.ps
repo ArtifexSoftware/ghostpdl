@@ -337,6 +337,7 @@ nodict readonly pop
 /setfillstate {
   FillColor FillColorSpace setgcolor setfillblend
 } def
+
 /setstrokestate {
   .swapcolors
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
@@ -906,7 +907,10 @@ end readonly def
               pdfwrite_textrenderingprocs TextRenderingMode get
       }
       {
-              TextRenderingMode 0 eq {
+              TextRenderingMode 0 eq
+              currentfont /FontType get 3 eq TextRenderingMode 3 eq not
+              and or 
+               {
                 { setfillstate show }
               } {
                 TextRenderingMode 3 eq {
@@ -946,6 +950,9 @@ end readonly def
       % a device supporting text rendering modes, then go through this route.
       %
       TextRenderingMode 0 eq TextRenderingMode 3 eq or
+      
+      currentfont /FontType get 3 eq or 
+
       currentdevice 1 dict dup /PreserveTrMode dup put .getdeviceparams
       dup type /booleantype eq not {cleartomark //false}{3 1 roll cleartomark}ifelse
       % pdfwrite can't handle rendering modes which involve clipping
@@ -1104,9 +1111,16 @@ end readonly def
 % the line width will be transformed properly.
 /Tmatrix matrix def
 /tS
- { setstrokestate
-   currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
-   setmatrix moveto
+ { 
+   currentfont /FontType get 3 eq
+   {
+     setfillstate currentpoint fill moveto
+   }
+   {
+     setstrokestate
+     currentpoint //Tmatrix currentmatrix TextSaveMatrix setmatrix .swapcolors stroke .swapcolors
+     setmatrix moveto
+   } ifelse
  } bdef
 
 % Handle transparency the same as /B operator
