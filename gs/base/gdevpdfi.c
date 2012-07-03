@@ -339,6 +339,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
     gs_color_space *pcs_device = NULL;
     gs_color_space *pcs_orig = NULL;
     pdf_lcvd_t *cvd = NULL;
+    bool force_lossless = false;
 
     /*
      * Pop the image name from the NI stack.  We must do this, to keep the
@@ -654,12 +655,14 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
         return code;
     pdf_image_writer_init(&pie->writer);
     pie->writer.alt_writer_count = (in_line ||
-                                    (pim->Width <= 64 && pim->Height <= 64) ||
-                                    pdev->transfer_not_identity ? 1 : 2);
-    if (image[0].pixel.ColorSpace != NULL &&
+                                    (pim->Width <= 64 && pim->Height <= 64)
+                                    ? 1 : 2);
+    if ((image[0].pixel.ColorSpace != NULL &&
         image[0].pixel.ColorSpace->type->index == gs_color_space_index_Indexed
-        && pdev->params.ColorImage.DownsampleType != ds_Subsample)
-        pie->writer.alt_writer_count = 1;
+        && pdev->params.ColorImage.DownsampleType != ds_Subsample) ||
+        pdev->transfer_not_identity)
+        force_lossless = true;
+
     image[1] = image[0];
     names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
     if (!is_mask) {
@@ -751,31 +754,43 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
      * this piece of code.
      */
     rc_increment_cs(image[0].pixel.ColorSpace);
-    if ((pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-                    height, pnamed, in_line)) < 0 ||
-        /*
-         * Some regrettable PostScript code (such as LanguageLevel 1 output
-         * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
-         * function to accomplish the equivalent of indexed color.
-         * Downsampling (well, only averaging) or JPEG compression are not
-         * compatible with this.  Play it safe by using only lossless
-         * filters if the transfer function(s) is/are other than the
-         * identity.
-         */
-        ((pie->writer.alt_writer_count == 1 ?
-                 psdf_setup_lossless_filters((gx_device_psdf *) pdev,
+    code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+                    height, pnamed, in_line);
+    if (code < 0)
+        goto fail;
+    if (pie->writer.alt_writer_count == 1)
+        code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
                                              &pie->writer.binary[0],
-                                             &image[0].pixel, in_line) :
-                 psdf_setup_image_filters((gx_device_psdf *) pdev,
+                                             &image[0].pixel, in_line);
+    else {
+        if (force_lossless) {
+            /*
+             * Some regrettable PostScript code (such as LanguageLevel 1 output
+             * from Microsoft's PSCRIPT.DLL driver) misuses the transfer
+             * function to accomplish the equivalent of indexed color.
+             * Downsampling (well, only averaging) or JPEG compression are not
+             * compatible with this.  Play it safe by using only lossless
+             * filters if the transfer function(s) is/are other than the
+             * identity and by setting the downsample type to Subsample..
+             */
+            int saved_downsample = pdev->params.ColorImage.DownsampleType;
+
+            pdev->params.ColorImage.DownsampleType = ds_Subsample;
+            code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                           &pie->writer.binary[0], &image[0].pixel,
-                                          pmat, pis, true, in_line))) < 0
-        ) {
+                                          pmat, pis, true, in_line);
+            pdev->params.ColorImage.DownsampleType = saved_downsample;
+        } else {
+            code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+                                          &pie->writer.binary[0], &image[0].pixel,
+                                          pmat, pis, true, in_line);
+        }
+    }
+    if (code < 0) {
         if (image[0].pixel.ColorSpace == pim->ColorSpace)
             rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
         goto fail;
     }
-    if (image[0].pixel.ColorSpace == pim->ColorSpace)
-        rc_decrement_only_cs(pim->ColorSpace, "psdf_setup_image_filters");
 
     if (convert_to_process_colors) {
         image[0].pixel.ColorSpace = pcs_orig;
@@ -796,14 +811,13 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             image[1].pixel.ColorSpace = pcs_device;
         code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[1], &image[1].pixel,
-                                  pmat, pis, false, in_line);
+                                  pmat, pis, force_lossless, in_line);
         if (code == gs_error_rangecheck) {
 
             for (i=1;i < pie->writer.alt_writer_count; i++) {
                 stream *s = pie->writer.binary[i].strm;
                 cos_stream_t *pcos = cos_stream_from_pipeline(pie->writer.binary[i].strm);
                 s_close_filters(&s, NULL);
-//                gs_free_object(pdev->pdf_memory, s->cbuf, "compressed image buffer");
                 gs_free_object(pdev->pdf_memory, s, "compressed image stream");
                 pcos->cos_procs->release((cos_object_t *)pcos, "pdf_begin_typed_image_impl");
                 gs_free_object(pdev->pdf_memory, pcos, "compressed image cos_stream");
@@ -859,7 +873,7 @@ pdf_begin_typed_image_impl(gx_device_pdf *pdev, const gs_imager_state * pis,
             goto fail;
         code = psdf_setup_image_filters((gx_device_psdf *) pdev,
                                   &pie->writer.binary[i], &image[i].pixel,
-                                  pmat, pis, true, in_line);
+                                  pmat, pis, force_lossless, in_line);
         if (code < 0)
             goto fail;
         psdf_setup_image_to_mask_filter(&pie->writer.binary[i],
