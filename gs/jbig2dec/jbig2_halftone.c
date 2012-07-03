@@ -184,7 +184,7 @@ jbig2_decode_pattern_dict(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
   }
 
-  hd = jbig2_hd_new(ctx, params, image);
+  if (code == 0) hd = jbig2_hd_new(ctx, params, image);
   jbig2_image_release(ctx, image);
 
   return hd;
@@ -335,7 +335,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment* segment,
     ws = jbig2_word_stream_buf_new(ctx, data, size);
     if (ws == NULL)
     {
-      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
         "failed to allocate ws in jbig2_decode_gray_scale_image");
       goto cleanup;
     }
@@ -343,7 +343,7 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment* segment,
     as = jbig2_arith_new(ctx, ws);
     if (as == NULL)
     {
-      code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+      jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
         "failed to allocate as in jbig2_decode_gray_scale_image");
       goto cleanup;
     }
