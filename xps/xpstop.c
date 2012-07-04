@@ -13,7 +13,6 @@
    CA  94903, U.S.A., +1(415)492-9861, for further information.
 */
 
-
 /* Top-level API implementation of XML Paper Specification */
 
 /* Language wrapper implementation (see pltop.h) */
@@ -115,7 +114,7 @@ xps_set_icc_user_params(pl_interp_instance_t *instance, gs_state *pgs)
     }
     return code;
 }
-    
+
 /* Do per-instance interpreter allocation/init. No device is set yet */
 static int
 xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
@@ -125,7 +124,6 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     xps_interp_instance_t *instance;
     xps_context_t *ctx;
     gs_state *pgs;
-    int code;
 
     instance = (xps_interp_instance_t *) gs_alloc_bytes(pmem,
             sizeof(xps_interp_instance_t), "xps_imp_allocate_interp_instance");
@@ -156,6 +154,8 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
      */
     ctx->pgs->have_pattern_streams = true;
     ctx->fontdir = NULL;
+    ctx->preserve_tr_mode = 0;
+
     ctx->file = NULL;
     ctx->zip_count = 0;
     ctx->zip_table = NULL;
@@ -165,7 +165,7 @@ xps_imp_allocate_interp_instance(pl_interp_instance_t **ppinstance,
     ctx->gray = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 1);
     ctx->cmyk = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 4);
     ctx->srgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
-    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3); 
+    ctx->scrgb = gs_cspace_new_ICC(ctx->memory, ctx->pgs, 3);
 
     instance->pre_page_action = 0;
     instance->pre_page_closure = 0;
@@ -220,6 +220,7 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
 {
     xps_interp_instance_t *instance = (xps_interp_instance_t *)pinstance;
     xps_context_t *ctx = instance->ctx;
+    gs_c_param_list list;
     int code;
 
     gs_opendevice(pdevice);
@@ -231,6 +232,17 @@ xps_imp_set_device(pl_interp_instance_t *pinstance, gx_device *pdevice)
     code = gs_setdevice_no_erase(ctx->pgs, pdevice);
     if (code < 0)
         goto cleanup_setdevice;
+
+    /* Check if the device wants PreserveTrMode (pdfwrite) */
+    gs_c_param_list_write(&list, pdevice->memory);
+    code = gs_getdeviceparams(pdevice, (gs_param_list *)&list);
+    if (code < 0)
+        return code;
+    gs_c_param_list_read(&list);
+    code = param_read_bool((gs_param_list *)&list, "PreserveTrMode", &ctx->preserve_tr_mode);
+    if (code < 0)
+        return code;
+    gs_c_param_list_release(&list);
 
     gs_setaccuratecurves(ctx->pgs, true); /* NB not sure */
     gs_setfilladjust(ctx->pgs, 0, 0);

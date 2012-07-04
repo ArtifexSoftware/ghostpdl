@@ -298,7 +298,7 @@ xps_parse_glyph_metrics(char *s, float *advance, float *uofs, float *vofs)
 static int
 xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
         float originx, float originy, int is_sideways, int bidi_level,
-        char *indices, char *unicode, int is_charpath)
+        char *indices, char *unicode, int is_charpath, int sim_bold)
 {
     xps_text_buffer_t buf;
     xps_glyph_metrics_t mtx;
@@ -382,6 +382,14 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
             u_offset = u_offset * 0.01 * size;
             v_offset = v_offset * 0.01 * size;
 
+            /* Adjust glyph offset and advance width for emboldening */
+            if (sim_bold)
+            {
+                advance *= 1.02;
+                u_offset += 0.01 * size;
+                v_offset += 0.01 * size;
+            }
+
             if (buf.count == XPS_TEXT_BUFFER_SIZE)
             {
                 code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
@@ -460,6 +468,11 @@ xps_parse_glyphs(xps_context_t *ctx,
     int subfontid = 0;
     int is_sideways = 0;
     int bidi_level = 0;
+
+    int sim_bold = 0;
+    int sim_italic = 0;
+
+    gs_matrix shear = { 1, 0, 0.36397, 1, 0, 0 }; /* shear by 20 degrees */
 
     /*
      * Extract attributes and extended attributes.
@@ -557,6 +570,16 @@ xps_parse_glyphs(xps_context_t *ctx,
         xps_free(ctx, part);
     }
 
+    if (style_att)
+    {
+        if (!strcmp(style_att, "BoldSimulation"))
+            sim_bold = 1;
+        else if (!strcmp(style_att, "ItalicSimulation"))
+            sim_italic = 1;
+        else if (!strcmp(style_att, "BoldItalicSimulation"))
+            sim_bold = sim_italic = 1;
+    }
+
     /*
      * Set up graphics state.
      */
@@ -591,6 +614,9 @@ xps_parse_glyphs(xps_context_t *ctx,
     if (is_sideways)
         gs_matrix_rotate(&matrix, 90.0, &matrix);
 
+    if (sim_italic)
+        gs_matrix_multiply(&shear, &matrix, &matrix);
+
     gs_setcharmatrix(ctx->pgs, &matrix);
 
     gs_matrix_multiply(&matrix, &font->font->orig_FontMatrix, &font->font->FontMatrix);
@@ -617,20 +643,39 @@ xps_parse_glyphs(xps_context_t *ctx,
     {
         float samples[32];
         gs_color_space *colorspace;
+
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
         if (fill_opacity_att)
             samples[0] = atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
+
+        if (sim_bold)
+        {
+            /* widening strokes by 1% of em size */
+            gs_setlinewidth(ctx->pgs, font_size * 0.02);
+            gs_settextrenderingmode(ctx->pgs, 2);
+        }
+
         code = xps_parse_glyphs_imp(ctx, font, font_size,
                 atof(origin_x_att), atof(origin_y_att),
                 is_sideways, bidi_level,
-                indices_att, unicode_att, 0);
+                indices_att, unicode_att, sim_bold && !ctx->preserve_tr_mode, sim_bold);
         if (code)
         {
             xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
             gs_grestore(ctx->pgs);
             return gs_rethrow(code, "cannot parse glyphs data");
         }
+
+        if (sim_bold && !ctx->preserve_tr_mode)
+        {
+            gs_gsave(ctx->pgs);
+            gs_fill(ctx->pgs);
+            gs_grestore(ctx->pgs);
+            gs_stroke(ctx->pgs);
+        }
+
+        gs_settextrenderingmode(ctx->pgs, 0);
     }
 
     /*
@@ -642,7 +687,7 @@ xps_parse_glyphs(xps_context_t *ctx,
         ctx->fill_rule = 1; /* always use non-zero winding rule for char paths */
         code = xps_parse_glyphs_imp(ctx, font, font_size,
                 atof(origin_x_att), atof(origin_y_att),
-                is_sideways, bidi_level, indices_att, unicode_att, 1);
+                is_sideways, bidi_level, indices_att, unicode_att, 1, sim_bold);
         if (code)
         {
             xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);

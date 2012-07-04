@@ -369,6 +369,7 @@ struct xps_context_s
     gs_memory_t *memory;
     gs_state *pgs;
     gs_font_dir *fontdir;
+    int preserve_tr_mode; /* for avoiding charpath with pdfwrite */
 
     gs_color_space *gray_lin; /* needed for transparency */
     gs_color_space *gray;
