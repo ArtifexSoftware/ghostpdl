@@ -181,6 +181,12 @@
 #define DEFAULT_Y_START(pcs) ((3L * pcs->vmi_cp) / 4L)
 #define HOME_Y(pcs) (pcs->margins.top + DEFAULT_Y_START(pcs))
 
+static inline bool
+pcl_cursor_at_home_pos(pcl_state_t *pcs)
+{
+    return ((pcs->cap.y == HOME_Y(pcs)) && (pcs->cap.x == HOME_X(pcs)));
+}
+
   void
 pcl_set_cap_x(
     pcl_state_t *   pcs,
@@ -462,10 +468,22 @@ set_vert_motion_index(
      * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
      */
     coord vcp = (coord)((fabs(float_arg(pargs)) * 7200.0 / 48.0) + 0.5);
+    bool cursor_at_home = pcl_cursor_at_home_pos(pcs);
+
 #ifdef HP_VERT_MOTION_NEW
     if (vcp <= pcs->xfm_state.pd_size.y)
 #endif
         pcs->vmi_cp = vcp;
+
+    /* If the cursor has not been set, the new default position should
+       reflect the change in vmi.  This behavior is quite unusual and
+       probably is not the way HP intended PCL devices to behave.  In
+       the spec it is reported the VMI should take effect if the
+       printer is on the first line but we've found moving the x
+       coordinate (horizontal position) cause the command to not take
+       effect. */
+    if (cursor_at_home)
+        pcl_home_cursor(pcs);
     return 0;
 }
 
@@ -484,11 +502,14 @@ set_line_spacing(
 )
 {
     uint            lpi = uint_arg(pargs);
-
+    bool cursor_at_home = pcl_cursor_at_home_pos(pcs);
+    
     if (lpi == 0)                   /* 0 ==> 12 lines per inch */
         lpi = 12;
     if ((48 % lpi) == 0)            /* lpi must divide 48 */
         pcs->vmi_cp = inch2coord(1.0 / lpi);
+    if (cursor_at_home)
+        pcl_home_cursor(pcs);
     return 0;
 }
 
