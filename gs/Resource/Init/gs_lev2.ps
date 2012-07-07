@@ -670,45 +670,15 @@ currentuserparams /WaitTimeout known
   } ifelse 	% if currentuserparams ICCProfilesDir
 } ifelse      % ICCProfilesDir set in systemdict (command line option)
 
-//systemdict /DefaultRGBProfile .knownget{
-mark exch /DefaultRGBProfile exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /DefaultGrayProfile .knownget{
-mark exch /DefaultGrayProfile exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /DefaultCMYKProfile .knownget{
-mark exch /DefaultCMYKProfile exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /DeviceNProfile .knownget{
-mark exch /DeviceNProfile exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /NamedProfile .knownget{
-mark exch /NamedProfile exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /SourceObjectICC .knownget{
-mark exch /SourceObjectICC exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /OverrideICC .knownget{
-mark exch /OverrideICC exch .dicttomark
-.setuserparams2
-} if
-
-//systemdict /OverrideRI .knownget{
-mark exch /OverrideRI exch .dicttomark
-.setuserparams2
-} if
+mark	% collect dict key value pairs for anything set in systemdict (command line options)
+[ /DefaultRGBProfile /DefaultGrayProfile /DefaultCMYKProfile /DeviceNProfile
+  /NamedProfile /SourceObjectICC /OverrideICC /OverrideRI
+]
+{ dup //systemdict exch .knownget not {
+    pop		% discard keys not in systemdict
+  } if
+} forall
+.dicttomark .setuserparams2
 
 pop		% currentsystemparams
 
