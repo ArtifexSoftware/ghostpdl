@@ -499,7 +499,10 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
     ttfSubGlyphUsage *usage = tti->usage + tti->usage_top;
     const byte *glyph = NULL;
     int glyph_size;
+    bool execute_bytecode = true;
+    int nPoints = 0;
 
+retry:
     if (r->get_metrics(r, glyphIndex, self->bVertical, &sideBearing, &nAdvance) < 0) {
         /* fixme: the error code is missing due to interface restrictions. */
         goto errex;
@@ -656,7 +659,7 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
                 gOutline->sideBearing = out.sideBearing;
             }
         }
-        if (!skip_instructions && n_ins &&
+        if (execute_bytecode && !skip_instructions && n_ins &&
                 !(pFont->inst->GS.instruct_control & 1)) {
             TT_Error code;
 
@@ -667,10 +670,10 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
                 goto errex;
             code = Set_CodeRange(exec, TT_CodeRange_Glyph, (byte *)glyph + nPos, n_ins);
             if (!code) {
-                int nPoints = gOutline->pointCount + 2;
                 int k;
                 F26Dot6 x;
 
+                nPoints = gOutline->pointCount + 2;
                 exec->pts = subglyph.zone;
                 pts->n_points = nPoints;
                 pts->n_contours = gOutline->contourCount;
@@ -700,15 +703,24 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
                     cur_to_org(nPoints, pts);
                 else if (code == TT_Err_Invalid_Engine)
                     error = fPatented;
-                else
-                    error = fBadFontData;
+                else {
+                    /* We have a range or errors that can be caused by
+                     * bad bytecode
+                     */
+                    if (error >= TT_Err_Invalid_Opcode
+                     || error <= TT_Err_Invalid_Displacement) {
+                        error = fBadInstruction;
+                    }
+                    else {
+                        error = fBadFontData;
+                    }
+                }
             }
             Unset_CodeRange(exec);
             Clear_CodeRange(exec, TT_CodeRange_Glyph);
         }
     } else if (gOutline->contourCount > 0) {
         uint16 i;
-        int nPoints;
         bool bInsOK;
         byte *onCurve, *stop, flag;
         short *endPoints;
@@ -782,7 +794,7 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
         MoveGlyphOutline(pts, 0, gOutline, m_orig);
         self->nContoursTotal += gOutline->contourCount;
         self->nPointsTotal += nPoints;
-        if (!skip_instructions &&
+        if (execute_bytecode && !skip_instructions && 
                 !r->Error(r) && n_ins && bInsOK && !(pFont->inst->GS.instruct_control & 1)) {
             TGlyph_Zone *pts = &exec->pts;
             int k;
@@ -831,6 +843,23 @@ errex:;
     error = fBadFontData;
 ex:;
     r->ReleaseGlyph(r, glyphIndex);
+
+    if (error == fBadInstruction && execute_bytecode) {
+        /* reset a load of stuff so we can try again without hinting */
+        nNextGlyphPtr = 0;
+        exec = pFont->exec;
+        pts = &exec->pts;
+        usage = tti->usage + tti->usage_top;
+        glyph = NULL;
+        self->nPointsTotal -= (nPoints + 2);
+        nPoints = 0;
+        self->nContoursTotal -= gOutline->contourCount;
+        error = fNoError;
+        execute_bytecode = false;
+        r->Seek(r, nPosBeg);
+        goto retry;
+    }
+
     return error;
 }
 
