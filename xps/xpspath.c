@@ -1041,6 +1041,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
                 gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot create transparency group");
             }
+            opacity_pushed = true;
         }
 
         code = xps_parse_brush(ctx, fill_uri, dict, fill_tag);
@@ -1066,6 +1067,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
                 gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot create transparency group");
             }
+            opacity_pushed = true;
         }
 
         /* Color must be set *after* the group is pushed */
@@ -1091,6 +1093,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
                 gs_grestore(ctx->pgs);
                 return gs_rethrow(code, "cannot create transparency group");
             }
+            opacity_pushed = true;
         }
 
         ctx->fill_rule = 1; /* over-ride fill rule when converting outline to stroked */
