@@ -2308,6 +2308,31 @@ resolution in dots per inch.
 scaled images at the expense of speed.  Note that
 <code>-dNOINTERPOLATE</code> overrides <code>-dDOINTERPOLATE</code> if
 both are specified.
+<p>
+<code>-dNOINTERPOLATE</code> does nearest neighbour scaling
+(Bresenham's line algorithm through the image, plotting the closest
+texture coord at each pixel).  If we are downscaling this results
+in some source pixels not appearing at all in the destination. If
+we are upscaling, at least some source pixels cover more than one
+destination pixel.
+
+<p>
+In all but special cases <code>-dDOINTERPOLATE</code> uses a Mitchell
+filter function to scale the contributions for each output pixel;
+upscaling, every output pixel ends up being the weighted sum of 16
+input pixels, downscaling more. Every source pixel has an effect
+on the output pixels.
+
+<p>
+Computationally, <code>-dDOINTERPOLATE</code> is much heavier work
+than <code>-dNOINTERPOLATE</code></code> (lots of floating point
+muliplies and adds for every output pixel vs simple integer additions,
+subtractions, and shifts).
+
+<p>
+The exact algorithm used is from Graphics Gems 3, Chapter I.2 General
+Filtered Image Rescaling.
+
 </dl>
 
 <dl>
