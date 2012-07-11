@@ -15,7 +15,7 @@
 
 # makefile for the lcms library code.
 # Users of this makefile must define the following:
-#	SHARE_LCMS2 - whether to compile in or link to the library
+#	SHARE_LCMS - whether to compile in or link to the library
 #	LCMS2SRCDIR - the library source directory
 #
 # gs.mak and friends define the following:

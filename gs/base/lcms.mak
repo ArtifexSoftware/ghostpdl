@@ -19,7 +19,7 @@
 #	LCMSSRCDIR - the library source directory
 #
 # gs.mak and friends define the following:
-#	LCSMOBJDIR - the output obj directory
+#	LCMSOBJDIR - the output obj directory
 #	LCMSGENDIR - generated (.dev) file directory
 #	LCMSI_ LCMS_CFLAGS - include and cflags for compiling the lib
 
