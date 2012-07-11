@@ -6820,7 +6820,6 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
     int code;
     gs_pattern2_instance_t *pinst = NULL;
     gx_device_forward * fdev = (gx_device_forward *)dev;
-    bool cs_change;
     cmm_dev_profile_t *dev_profile, *fwd_profile;
     gsicc_rendering_intents_t rendering_intent;
     cmm_profile_t *icc_profile_fwd, *icc_profile_dev;
@@ -6849,12 +6848,8 @@ pdf14_clist_fill_path(gx_device	*dev, const gs_imager_state *pis,
        color space as well as the transparency.  Some of the shading code ignores
        this, so we have to pass on the clist_writer device to enable proper
        mapping to the transparency group color space. */
-    /* Right now we only set the trans device if we are in a transparency group
-       with a color space different than the output device OR if we have a goofy
-       device output profile like CIELAB.  In the CIELAB case, the profile for the
-       PDF14 device will not match the target device profile */
-    cs_change = (icc_profile_fwd->hashcode != icc_profile_dev->hashcode);
-    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor) && cs_change) {
+
+    if (pdcolor != NULL && gx_dc_is_pattern2_color(pdcolor)) {
         pinst =
             (gs_pattern2_instance_t *)pdcolor->ccolor.pattern;
            pinst->saved->has_transparency = true;
