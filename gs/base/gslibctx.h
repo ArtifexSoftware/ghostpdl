@@ -73,6 +73,7 @@ typedef struct gs_lib_ctx_s
      * and one in the device */
     char *profiledir;               /* Directory used in searching for ICC profiles */
     int profiledir_len;             /* length of directory name (allows for Unicode) */
+    int ticks_left; /* Move gc flag here because lib context never goes out of scope */
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

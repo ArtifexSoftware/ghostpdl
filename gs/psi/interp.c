@@ -474,19 +474,20 @@ gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
     ref error_name;
     int code, ccode;
     ref saref;
-    int gc_signal = 0;
     i_ctx_t *i_ctx_p = *pi_ctx_p;
+    int *const gc_signal = &imemory->gs_lib_ctx->ticks_left;
 
     *pexit_code = 0;
+    *gc_signal = 0;
     ialloc_reset_requested(idmemory);
 again:
     /* Avoid a dangling error object that might get traced by a future GC. */
     make_null(perror_object);
     o_stack.requested = e_stack.requested = d_stack.requested = 0;
-    while (gc_signal) {         /* Some routine below triggered a GC. */
+    while (*gc_signal) {        /* Some routine below triggered a GC. */
         gs_gc_root_t epref_root;
 
-        gc_signal = 0;
+        *gc_signal = 0;
         /* Make sure that doref will get relocated properly if */
         /* a garbage collection happens with epref == &doref. */
         gs_register_ref_root(imemory_system, &epref_root,
@@ -507,7 +508,7 @@ again:
     /* Prevent a dangling reference to the GC signal in ticks_left */
     /* in the frame of interp, but be prepared to do a GC if */
     /* an allocation in this routine asks for it. */
-    set_gc_signal(i_ctx_p, &gc_signal, 1);
+    set_gc_signal(i_ctx_p, gc_signal, 1);
     if (esp < esbot)            /* popped guard entry */
         esp = esbot;
     switch (code) {
@@ -839,7 +840,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     }\
   }
 
-    int ticks_left = i_ctx_p->time_slice_ticks;
+    int *const ticks_left = &imemory->gs_lib_ctx->ticks_left;
 
 #if defined(DEBUG_TRACE_PS_OPERATORS) || defined(DEBUG)
     int (*call_operator_fn)(op_proc_t, i_ctx_t *) = do_call_operator;
@@ -849,10 +850,11 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 #endif
 
     /*
-     * If we exceed the VMThreshold, set ticks_left to -100
+     * If we exceed the VMThreshold, set *ticks_left to -100
      * to alert the interpreter that we need to garbage collect.
      */
-    set_gc_signal(i_ctx_p, &ticks_left, -100);
+    *ticks_left = i_ctx_p->time_slice_ticks;
+    set_gc_signal(i_ctx_p, ticks_left, -100);
 
     esfile_clear_cache();
     /*
@@ -1074,14 +1076,14 @@ x_ifelse:   INCR(x_ifelse);
                 if (icount < 0)
                     goto up;    /* 0-element proc */
                 SET_IREF(whichp->value.refs);   /* 1-element proc */
-                if (--ticks_left > 0)
+                if (--*ticks_left > 0)
                     goto top;
             }
             ++iesp;
             /* Do a ref_assign, but also set iref. */
             iesp->tas = whichp->tas;
             SET_IREF(iesp->value.refs = whichp->value.refs);
-            if (--ticks_left > 0)
+            if (--*ticks_left > 0)
                 goto top;
             goto slice;
         case plain_exec(tx_op_index):
@@ -1137,7 +1139,7 @@ x_sub:      INCR(x_sub);
                 if (icount < 0)
                     goto up;    /* 0-element proc */
                 SET_IREF(pvalue->value.refs);   /* 1-element proc */
-                if (--ticks_left > 0)
+                if (--*ticks_left > 0)
                     goto top;
             }
             if (iesp >= estop)
@@ -1146,12 +1148,12 @@ x_sub:      INCR(x_sub);
             /* Do a ref_assign, but also set iref. */
             iesp->tas = pvalue->tas;
             SET_IREF(iesp->value.refs = pvalue->value.refs);
-            if (--ticks_left > 0)
+            if (--*ticks_left > 0)
                 goto top;
             goto slice;
         case plain_exec(t_operator):
             INCR(exec_operator);
-            if (--ticks_left <= 0) {    /* The following doesn't work, */
+            if (--*ticks_left <= 0) {    /* The following doesn't work, */
                 /* and I can't figure out why. */
 /****** goto sst; ******/
             }
@@ -1180,7 +1182,7 @@ x_sub:      INCR(x_sub);
                     store_state(iesp);
                   opush:iosp = osp;
                     iesp = esp;
-                    if (--ticks_left > 0)
+                    if (--*ticks_left > 0)
                         goto up;
                     goto slice;
                 case o_pop_estack:      /* just go to up */
@@ -1278,7 +1280,7 @@ remap:              if (iesp + 2 >= estop) {
                     INCR(name_operator);
                     {           /* Shortcut for operators. */
                         /* See above for the logic. */
-                        if (--ticks_left <= 0) {        /* The following doesn't work, */
+                        if (--*ticks_left <= 0) {        /* The following doesn't work, */
                             /* and I can't figure out why. */
 /****** goto sst; ******/
                         }
@@ -1396,7 +1398,7 @@ remap:              if (iesp + 2 >= estop) {
                                 goto again;     /* stacks are unchanged */
                             case o_push_estack:
                                 esfile_clear_cache();
-                                if (--ticks_left > 0)
+                                if (--*ticks_left > 0)
                                     goto up;
                                 goto slice;
                         }
@@ -1496,7 +1498,7 @@ remap:              if (iesp + 2 >= estop) {
                         next();
                     case pt_executable_operator:
                         index = *iref_packed & packed_value_mask;
-                        if (--ticks_left <= 0) {        /* The following doesn't work, */
+                        if (--*ticks_left <= 0) {        /* The following doesn't work, */
                             /* and I can't figure out why. */
 /****** goto sst_short; ******/
                         }
@@ -1645,7 +1647,7 @@ remap:              if (iesp + 2 >= estop) {
         iref_packed = IREF_NEXT(iref_packed);
         goto top;
     }
-  up:if (--ticks_left < 0)
+  up:if (--*ticks_left < 0)
         goto slice;
     /* See if there is anything left on the execution stack. */
     if (!r_is_proc(iesp)) {
@@ -1696,8 +1698,8 @@ res:
     /* iref is not live, so we don't need to do a store_state. */
     osp = iosp;
     esp = iesp;
-    /* If ticks_left <= -100, we need to GC now. */
-    if (ticks_left <= -100) {   /* We need to garbage collect now. */
+    /* If *ticks_left <= -100, we need to GC now. */
+    if (*ticks_left <= -100) {   /* We need to garbage collect now. */
         *pi_ctx_p = i_ctx_p;
         code = interp_reclaim(pi_ctx_p, -1);
         i_ctx_p = *pi_ctx_p;
@@ -1707,7 +1709,7 @@ res:
         i_ctx_p = *pi_ctx_p;
     } else
         code = 0;
-    ticks_left = i_ctx_p->time_slice_ticks;
+    *ticks_left = i_ctx_p->time_slice_ticks;
     set_code_on_interrupt(imemory, &code);
     goto sched;
 
