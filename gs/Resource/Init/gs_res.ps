@@ -527,10 +527,6 @@ status {
             % also add on the Resources as specified by the GenericResourceDir
           //true [ currentsystemparams /GenericResourceDir get]
           counttomark 1 add index .generate_dir_list_templates_with_length
-            % Resource files on OpenVMS require a separate template (gs:[dir.*]*)
-          //true [ currentsystemparams /GenericResourceDir get]
-          counttomark 1 add index .file_name_separator (*)
-          concatstrings concatstrings .generate_dir_list_templates_with_length
           ] exch pop
         dup length 1 sub 0 exch 2 exch {                 % args [ l [] i
           2 copy get                                     % args [ l [] i (pt)
