@@ -39,6 +39,7 @@
 <li><a href="#GNU_readline">GNU readline</a>
 </ul>
 <li><a href="#Makefile_setup">Setting up "makefile"</a>
+<li><a href="#MSys/Mingw">MSys/Mingw</a>
 <li><a href="#Invoke_make">Invoking "make"</a>
 <li><a href="#Cross-compiling">Cross-compiling</a>
 </ul>
@@ -790,10 +791,11 @@ See the section on your particular platform for how to do that if
 necessary.
 
 <p>
-On unix systems, <code>./configure</code> (or if checked out of svn,
+On unix systems, <code>./configure</code> (or if checked out of git,
 <code>./autogen.sh</code>) should create a <code>Makefile</code> which works
 in most scenarios. Manual tempering and editing should rarely be needed
 nor recommended.
+<p>
 
 <h3><a name="Invoke_make"></a>Invoking "make"</h3>
 
@@ -1397,10 +1399,9 @@ To run the <code>make</code> program, give the commmand
 <h3><a name="Cygwin32_build"></a>Cygwin32 gcc</h3>
 
 <p>
-A user reports that it is possible to compile Ghostscript for MS Windows NT
-using the Cygwin32 gcc compiler, GNU <code>make</code>, and the
-<code>unix-gcc.mak</code> makefile, with only two small source code
-changes:
+It is possible to compile Ghostscript for MS Windows using the Cygwin32 gcc compiler,
+GNU <code>make</code>, using the "configure" generated Makefile, with only two small
+source code changes:
 
 <ul>
 <li>Add "<code>b</code>" to the call to <code>fopen</code> in <code>gp_open_scratch</code>
@@ -1421,6 +1422,15 @@ redistribution as either the GNU
 or the Aladdin <a href="Public.htm">Free Public License</a>, so read their
 license carefully if you want to redistribute the results of using their
 compiler.
+
+<h4><a name="MSys/Mingw"></a>MSys/Mingw</h3>
+The configure build can be used to build Ghostscript on MSys/Mingw systems,
+but with a caveat. The msys-dvlpr adds header files into the compiler's header
+search paths which cause a clash, and the build will fail as a result. If you
+have the msys-dvlpr package installed, and until a better solution is available
+you can work around this by temporarily renaming the "\mingw\msys\1.0\include"
+directory so those headers are no longer found by the compiler.
+
 
 <h3><a name="IntelWin32_build"></a>Intel C/C++ environment</h3>
 

@@ -29,6 +29,11 @@
 #include "unistd_.h"
 #include <stdlib.h>             /* for mkstemp/mktemp */
 
+#if defined(__MINGW32__) && __MINGW32__ == 1
+#define ftello ftell
+#define fseeko fseek
+#endif
+
 /* Provide a definition of the maximum path length in case the system
  * headers don't define it. This should be gp_file_name_sizeof from
  * gp.h once that value is properly sent in a system-dependent way.

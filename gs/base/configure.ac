@@ -102,10 +102,18 @@ AC_ARG_ENABLE([contrib], AC_HELP_STRING([--disable-contrib],
 CONTRIBINCLUDE="include contrib/contrib.mak"
 INSTALL_CONTRIB="install-contrib-extras"
 
-# This is just an arbitrary file in contrib to check
-if !(test -f contrib/gdevbjc_.c); then
-   enable_contrib=no
-fi
+case `uname` in
+    MINGW*)
+      AC_MSG_WARN([disabling contrib devices])
+      enable_contrib=no
+    ;;
+    *)
+#     This is just an arbitrary file in contrib to check
+      if !(test -f contrib/gdevbjc_.c); then
+        enable_contrib=no
+      fi
+    ;;
+esac
 
 if test x$enable_contrib = xno; then
     CONTRIBINCLUDE=""
@@ -219,7 +227,7 @@ dnl --------------------------------------------------
 
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h syslog.h unistd.h])
+AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h])
 
 dnl --------------------------------------------------
 dnl Check for *BSD and apply BSD Make workaround
@@ -270,8 +278,28 @@ if test "x$ac_cv_header_stdint_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_STDINT_H=1"
 fi
 
+if test "x$ac_cv_header_dirent_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_DIRENT_H=1"
+fi
+
+if test "x$ac_cv_header_ndir_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_NDIR_H=1"
+fi
+
+if test "x$ac_cv_header_sys_dir_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_SYS_DIR_H=1"
+fi
+
+if test "x$ac_cv_header_sys_ndir_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_SYS_NDIR_H=1"
+fi
+
 if test "x$ac_cv_header_sys_time_h" = xyes; then
         GCFLAGS="$GCFLAGS -DHAVE_SYS_TIME_H=1"
+fi
+
+if test "x$ac_cv_header_sys_times_h" = xyes; then
+        GCFLAGS="$GCFLAGS -DHAVE_SYS_TIMES_H=1"
 fi
 
 dnl try to find a 64 bit type for devicen color index
@@ -321,10 +349,19 @@ AC_CHECK_LIB(m, cos)
 
 SYNC="nosync"
 PTHREAD_LIBS=""
-AC_CHECK_LIB(pthread, pthread_create, [
-  SYNC=posync;
-  PTHREAD_LIBS="-lpthread"
-])
+
+case `uname` in
+    MINGW*)
+      AC_MSG_WARN([disabling support for pthreads......])
+    ;;
+    *)
+      AC_CHECK_LIB(pthread, pthread_create, [
+        SYNC=posync;
+        PTHREAD_LIBS="-lpthread"
+      ])
+    ;;
+esac
+
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 
@@ -959,6 +996,17 @@ AC_SUBST(CUPSPDFTORASTER)
 dnl look for IJS implementation
 AC_ARG_WITH([ijs], AC_HELP_STRING([--without-ijs],
     [disable IJS driver support]))
+
+case `uname` in
+    MINGW*)
+      AC_MSG_WARN([disabling the ijs device])
+      with_ijs=no
+    ;;
+    *)
+    ;;
+esac
+
+
 dnl set safe defaults
     IJSDIR=src
     IJSDEVS=''
@@ -1868,6 +1916,20 @@ else
 fi
 
 AC_SUBST(HAVE_BYTESWAP_H)
+
+# --------------------------------------------------
+# annoying: Windows doesn't allow "aux" as a
+# directory nor file name, so if we're building in
+# mingw, add the same prefix as the VS build uses
+# --------------------------------------------------
+AUXDIRPOSTFIX=""
+case `uname` in
+    MINGW*)
+    AUXDIRPOSTFIX="_"
+    ;;
+esac
+AC_SUBST(AUXDIRPOSTFIX)
+
 
 dnl --------------------------------------------------
 dnl Do substitutions

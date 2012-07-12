@@ -28,8 +28,13 @@ const char gp_file_name_list_separator = ':';
 const char gp_fmode_binary_suffix[] = "";
 
 /* Define the file modes for binary reading or writing. */
+#if (defined(__MINGW32__) && __MINGW32__ == 1) || (defined(__CYGWIN__) && __CYGWIN__ == 1)
+const char gp_fmode_rb[] = "rb";
+const char gp_fmode_wb[] = "wb";
+#else
 const char gp_fmode_rb[] = "r";
 const char gp_fmode_wb[] = "w";
+#endif
 
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 

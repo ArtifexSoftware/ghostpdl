@@ -33,7 +33,7 @@
  * Some System V environments don't include sys/time.h.
  * The HAVE_SYS_TIME_H switch in gconfig_.h reflects this.
  */
-#ifdef HAVE_SYS_TIME_H
+#if defined(HAVE_SYS_TIME_H) && HAVE_SYS_TIME_H == 1
 #  include <sys/time.h>
 #  if defined(Plan9) || defined(M_UNIX) || defined(_IBMR2) || \
       defined(_SEQUENT_) || defined(__GNUC__) || defined(__INTEL_COMPILER) ||\
@@ -78,7 +78,7 @@ struct timezone {
 #endif
 
 /* Some System V environments, and Posix environments, need <sys/times.h>. */
-#ifdef HAVE_SYS_TIMES_H
+#if defined(HAVE_SYS_TIMES_H) && HAVE_SYS_TIMES_H == 1
 #  include <sys/times.h>
 #  define use_times_for_usertime 1
                 /* Posix 1003.1b-1993 section 4.8.1.5 says that

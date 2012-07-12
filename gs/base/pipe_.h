@@ -21,7 +21,7 @@
 
 #include "stdio_.h"
 
-#ifdef __WIN32__
+#if defined(__WIN32__) && !(defined(__MINGW32__) && __MINGW32__ == 1)
 /*
  * MS Windows has popen and pclose in stdio.h, but under different names.
  * Unfortunately MSVC5 and 6 have a broken implementation of _popen,
