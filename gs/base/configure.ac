@@ -1199,28 +1199,31 @@ AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
     [Do not build the gtk loader]))
 SOC_CFLAGS=""
 SOC_LIBS=""
-SOC_LOADER="dxmainc.c"
+SOC_LOADER=""
 if test "x$enable_gtk" != "xno"; then
-    # Try GTK+ 2.x first...
+    # Try GTK+ 3.x first...
     if test "x$PKGCONFIG" != x; then
-        AC_MSG_CHECKING(for GTK+ 2.x)
-        if $PKGCONFIG --exists gtk+-2.0; then
+        AC_MSG_CHECKING(for GTK+ 3.x)
+        if $PKGCONFIG --exists gtk+-3.0; then
             SOC_LOADER="dxmain.c"
-            SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
-            SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
+            SOC_CFLAGS="`$PKGCONFIG gtk+-3.0 --cflags`"
+            SOC_LIBS="`$PKGCONFIG gtk+-3.0 --libs`"
             AC_MSG_RESULT([yes])
         else
             AC_MSG_RESULT([no])
         fi
-    fi
 
-    # Then fall back on GTK+ 1.x...
-    if test "x$SOC_LOADER" = x; then
-        AC_PATH_PROG(GTKCONFIG, gtk-config)
-        if test "x$GTKCONFIG" != x; then
-            SOC_LOADER="dxmain.c"
-            SOC_CFLAGS="`$GTKCONFIG --cflags`"
-            SOC_LIBS="`$GTKCONFIG --libs`"
+        # Or resort to GTK+ 2.x
+        if test "x$SOC_LOADER" = x; then
+            AC_MSG_CHECKING(for GTK+ 2.x)
+            if $PKGCONFIG --exists gtk+-2.0; then
+                SOC_LOADER="dxmain.c"
+                SOC_CFLAGS="`$PKGCONFIG gtk+-2.0 --cflags`"
+                SOC_LIBS="`$PKGCONFIG gtk+-2.0 --libs`"
+                AC_MSG_RESULT([yes])
+            else
+                AC_MSG_RESULT([no])
+            fi
         fi
     fi
 fi
