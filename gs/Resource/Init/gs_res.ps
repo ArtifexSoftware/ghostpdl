@@ -519,7 +519,7 @@ status {
         mark                                             % args [
         Category .namestring .file_name_separator concatstrings
         2 index 0 get                                    % args [ (c/) (t)
-        dup length 3 1 roll                              % args [ l (c/) (t)
+        1 index length 3 1 roll                          % args [ l (c/) (t)
         concatstrings                                    % args [ l (c/t)
         [
           //true /LIBPATH .systemvar 3 index
@@ -531,6 +531,7 @@ status {
         dup length 1 sub 0 exch 2 exch {                 % args [ l [] i
           2 copy get                                     % args [ l [] i (pt)
           exch 2 index exch 1 add get                    % args [ l [] (pt) Lp
+          3 index add
           exch                                           % args [ l [] Lp (pt)
 
           {                                              % args [ l [] Lp (pf)

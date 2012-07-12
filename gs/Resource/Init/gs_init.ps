@@ -1637,7 +1637,7 @@ setpacking
   % An internal procedure :
   {                                 % {} b [dl] (templ) (ffn) (dffn)
     dup length
-    1 sub % drop 'x', which was added above.
+    2 index length sub % drop "ffn", remaining "ldffn" = length of the "directory" part
     exch                            % {} b [dl] (templ) (ffn) ldffn (dffn)
     .makepathtemplate               % {} b [dl] (templ) (ffn) ldffn (Dffn)
     dup                             % {} b [dl] (templ) (ffn) ldffn (Dffn) (Dffn)
