@@ -62,6 +62,7 @@ typedef struct point_scale_s {
 /* when calling a CharString subroutine. */
 typedef struct {
     const byte *ip;
+    const byte *ip_end;
     crypt_state dstate;
     gs_glyph_data_t cs_data;	/* original CharString or Subr, */
                                 /* for GC */

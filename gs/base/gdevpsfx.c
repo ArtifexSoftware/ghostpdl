@@ -172,7 +172,12 @@ type1_next(gs_type1_state *pcis)
     state = ipsp->dstate;
     for (;;) {
         if (cip >= cipe)
-            return_error(gs_error_invalidfont);
+            /* We used to treat buffer overrun as a simple invalid font, now we assume that
+             * there is an implicit endchar, so we return a particular error for later
+             * interception. Returning an error allows any other code to continue as before.
+             * Part of bug #693170 where the fonts are invalid (no endchar on some glyphs).
+             */
+            return_error(gs_error_unknownerror);
         c0 = *cip++;
         charstring_next(c0, state, c, encrypted);
         if (c >= c_num1) {
@@ -481,6 +486,12 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 
         switch (c) {
         default:
+             /* We used to treat buffer overrun as a simple invalid font, now we assume that
+             * there is an implicit endchar, this is handled by looking for a specific error.
+             * Part of bug #693170 where the fonts are invalid (no endchar on some glyphs).
+             */
+           if (c == gs_error_unknownerror)
+                break;
             if (c < 0)
                 return c;
             type1_clear(&cis);
@@ -589,6 +600,14 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 
         switch (c) {
         default:
+             /* We used to treat buffer overrun as a simple invalid font, now we assume that
+             * there is an implicit endchar, this is handled by looking for a specific error.
+             * Part of bug #693170 where the fonts are invalid (no endchar on some glyphs).
+             */
+            if (c == gs_error_unknownerror) {
+                type2_put_op(s, cx_endchar);
+                return 0;
+            }
             if (c < 0)
                 return c;
             if (c >= CE_OFFSET)
