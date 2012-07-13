@@ -390,7 +390,9 @@ gx_install_DeviceCMYK(gs_color_space * pcs, gs_state * pgs)
  * at most, the spot color parameters are to be preserved.
  *
  * This routine should be used for all Device, CIEBased, and ICCBased
- * color spaces, except for DeviceCMKY. The latter color space requires a
+ * color spaces, except for DeviceCMKY. Also, it would not be used for
+ * DeviceRGB if we have simulated overprint turned on.
+ * These latter cases requires a
  * special verson that supports overprint mode.
  */
 int
@@ -402,6 +404,7 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
     if ((params.retain_any_comps = pis->overprint))
         params.retain_spot_comps = true;
     pgs->effective_overprint_mode = 0;
+    params.k_value = 0;
     return gs_state_update_overprint(pgs, &params);
 }
 
