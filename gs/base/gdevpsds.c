@@ -519,7 +519,7 @@ const stream_template s_IE_template = {
     0 /* NULL */, s_IE_set_defaults
 };
 
-#if 0
+#ifdef DEPRECATED_906
 
 /* Test code */
 void

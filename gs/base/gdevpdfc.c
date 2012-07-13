@@ -827,7 +827,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
     byte *serialized = NULL, serialized0[100];
     pdf_resource_t *pres = NULL;
     int code;
-#if 0
+#ifdef DEPRECATED_906
     bool islab = false;
 #endif
 
@@ -840,7 +840,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
            color space.  This is disabled until I add the capability to
            specify the profile version to ensure compatability with
            the PDF versions */
-#if 0
+#ifdef DEPRECATED_906
         if (pcs_in->icc_equivalent != NULL) {
             pcs = pcs_in->icc_equivalent;
         } else {

@@ -61,11 +61,13 @@ void pdf_reset_text_state(pdf_text_data_t *ptd); /* gdevpdts.h */
  */
 void pdf_close_text_page(gx_device_pdf *pdev); /* gdevpdti.h */
 
+#ifdef DEPRECATED_906
 /*
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
 int pdf_close_text_document(gx_device_pdf *pdev); /* gdevpdtw.h */
+#endif
 
 /* ---------------- Contents state (for gdevpdfu.c) ---------------- */
 

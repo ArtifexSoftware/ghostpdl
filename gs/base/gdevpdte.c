@@ -119,7 +119,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
                 key_size = 2;
             } else if (font->FontType == ft_CID_TrueType || font->FontType == ft_composite) {
                 key_size = 2;
-#if 0
+#ifdef DEPRECATED_906
                 gs_font_cid2 *pfcid = (gs_font_cid2 *)font;
 
                 num_codes = pfcid->cidata.common.CIDCount;
@@ -913,8 +913,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     return widths_differ;
 }
 
-#define RIGHT_SBW 1 /* Old code = 0, new code = 1. */
-#if !RIGHT_SBW
+#ifdef DEPRECATED_906
 /*
  * Retrieve glyph origing shift for WMode = 1 in design units.
  */
@@ -990,9 +989,7 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
         int index = pte->index;
         gs_text_enum_t pte1 = *(gs_text_enum_t *)pte;
         int FontType;
-#if RIGHT_SBW
         bool use_cached_v = true;
-#endif
         byte composite_type3_text[1];
 
         code = pte1.orig_font->procs.next_char_glyph(&pte1, &chr, &glyph);
@@ -1076,7 +1073,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
             return code;
         }
         gs_text_enum_copy_dynamic((gs_text_enum_t *)pte, &pte1, true);
-#if RIGHT_SBW
         if (composite || !use_cached_v) {
             if (cw.replaced_v) {
                 v.x = cw.real_width.v.x - cw.Width.v.x;
@@ -1094,18 +1090,6 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                The glyph shifts in same direction.  */
         }
         /* pdf_glyph_origin is not longer used. */
-#else
-        if ((pte->text.operation & TEXT_FROM_SINGLE_GLYPH) ||
-            (pte->text.operation & TEXT_FROM_GLYPHS)) {
-            v.x = v.y = 0;
-        } else if (composite) {
-            if (cw.replaced_v) {
-                v.x = cw.real_width.v.x - cw.Width.v.x;
-                v.y = cw.real_width.v.y - cw.Width.v.y;
-            }
-        } else
-            pdf_glyph_origin(ppts->values.pdfont, chr, font->WMode, &v);
-#endif
         if (v.x != 0 || v.y != 0) {
             gs_point glyph_origin_shift;
             double scale0;
@@ -1114,13 +1098,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
                 scale0 = (float)0.001;
             else
                 scale0 = 1;
-#if RIGHT_SBW
             glyph_origin_shift.x = v.x * scale0;
             glyph_origin_shift.y = v.y * scale0;
-#else
-            glyph_origin_shift.x = - v.x * scale0;
-            glyph_origin_shift.y = - v.y * scale0;
-#endif
             if (composite) {
                 gs_font *subfont = pte->fstack.items[pte->fstack.depth].font;
 

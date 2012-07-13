@@ -90,7 +90,9 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PatternImagemask", gs_param_type_bool, PatternImagemask),
     pi("MaxClipPathSize", gs_param_type_int, MaxClipPathSize),
     pi("MaxShadingBitmapSize", gs_param_type_int, MaxShadingBitmapSize),
+#ifdef DEPRECATED_906
     pi("MaxViewerMemorySize", gs_param_type_int, MaxViewerMemorySize),
+#endif
     pi("HaveTrueTypes", gs_param_type_bool, HaveTrueTypes),
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),

@@ -343,7 +343,7 @@ pdf_compute_fileID(gx_device_pdf * pdev)
         return code;
     sclose(s);
     gs_free_object(mem, s, "pdf_compute_fileID");
-#if 0
+#ifdef DEPRECATED_906
     memcpy(pdev->fileID, "xxxxxxxxxxxxxxxx", sizeof(pdev->fileID)); /* Debug */
 #endif
     return 0;
@@ -756,8 +756,8 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
             (page != NULL ? &page->text_rotation : &pdev->text_rotation);
         int angle = -1;
 
-#define Bug687800
-#ifndef Bug687800 	/* Bug 687800 together with Bug687489.ps . */
+#ifdef DEPRECATED_906
+        /* Bug 687800 together with Bug687489.ps . */
         const gs_point *pbox = &(page != NULL ? page : &pdev->pages[0])->MediaBox;
 
         if (dsc_orientation >= 0 && pbox->x > pbox->y) {
@@ -778,22 +778,11 @@ pdf_print_orientation(gx_device_pdf * pdev, pdf_page_t *page)
         }
 
         if (angle < 0) {
-#define Bug688793
-#ifdef  Bug688793
         /* If not combinable, prefer dsc rotation : */
             if (dsc_orientation >= 0)
                 angle = dsc_orientation * 90;
             else
                 angle = ptr->Rotate;
-#else
-        /* If not combinable, prefer text rotation : */
-            if (ptr->Rotate >= 0)
-                angle = ptr->Rotate;
-#ifdef Bug687800
-            else
-                angle = dsc_orientation * 90;
-#endif
-#endif
         }
 
         /* If got some, write it out : */
@@ -861,6 +850,7 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
 
         /* Save viewer's memory with cleaning resources. */
 
+#ifdef DEPRECATED_906
         if (pdev->MaxViewerMemorySize < 10000000) {
             /* fixme: the condition above and the cleaning algorithm
                 may be improved with counting stored resource size
@@ -882,6 +872,7 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
             if (code < 0)
                 return code;
         }
+#endif
 
         /* Close use of text on the page. */
 
@@ -904,11 +895,10 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
         page->dsc_info = pdev->page_dsc_info;
         if (page->dsc_info.orientation < 0)
             page->dsc_info.orientation = pdev->doc_dsc_info.orientation;
-#ifdef Bug688793
+        /* Bug 688793 */
         if (page->dsc_info.viewing_orientation < 0)
         page->dsc_info.viewing_orientation =
            pdev->doc_dsc_info.viewing_orientation;
-#endif
         if (page->dsc_info.bounding_box.p.x >= page->dsc_info.bounding_box.q.x ||
             page->dsc_info.bounding_box.p.y >= page->dsc_info.bounding_box.q.y
             )
@@ -1193,9 +1183,42 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceSoftMaskDict);
     if (code >= 0)
         code = code1;
+#ifdef DEPRECATED_906
     code1 = pdf_close_text_document(pdev);
     if (code >= 0)
         code = code1;
+#endif
+    /* This was in pdf_close_document, but that made no sense, so moved here
+     * for more consistency (and ease of fiding it). This code deals with
+     * emitting fonts and FontDescriptors
+     */
+    pdf_clean_standard_fonts(pdev);
+    code1 = pdf_free_font_cache(pdev);
+    if (code >= 0)
+        code = code1;
+    code1 = pdf_write_resource_objects(pdev, resourceCharProc);
+    if (code >= 0)
+        code = code1;
+    code1 = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font);
+    if (code >= 0)
+        code = code1;
+    code1 = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor);
+    if (code >= 0)
+        code = code1;
+    code1 = write_font_resources(pdev, &pdev->resources[resourceCIDFont]);
+    if (code >= 0)
+        code = code1;
+    code1 = write_font_resources(pdev, &pdev->resources[resourceFont]);
+    if (code >= 0)
+        code = code1;
+    code1 = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor);
+    if (code >= 0)
+        code = code1;
+    /* If required, write the Encoding for Type 3 bitmap fonts. */
+    code1 = pdf_write_bitmap_fonts_Encoding(pdev);
+    if (code >= 0)
+        code = code1;
+
     code1 = pdf_write_resource_objects(pdev, resourceCMap);
     if (code >= 0)
         code = code1;
@@ -1773,7 +1796,7 @@ pdf_close(gx_device * dev)
         emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
                   "points beyond the last page %d.\n",
                   pdev->max_referred_page, pdev->next_page);
-#if 0 /* Temporary disabled due to Bug 687686. */
+#ifdef DEPRECATED_906 /* Temporary disabled due to Bug 687686. */
         if (code >= 0)
             code = gs_note_error(gs_error_rangecheck);
 #endif

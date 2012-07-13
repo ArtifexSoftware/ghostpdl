@@ -1530,6 +1530,7 @@ pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
     return 0;
 }
 
+#ifdef DEPRECATED_906
 /* Write and free all resource objects. */
 
 int
@@ -1553,6 +1554,7 @@ pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev)
     }
     return code;
 }
+#endif
 
 /*
  * Store the resource sets for a content stream (page or XObject).

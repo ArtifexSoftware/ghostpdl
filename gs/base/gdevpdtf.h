@@ -424,11 +424,13 @@ pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
  */
 int pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool finish);
 
+#ifdef DEPRECATED_906
 /*
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
 int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
+#endif
 
 /*
  * Convert True Type fonts into CID fonts for PDF/A.

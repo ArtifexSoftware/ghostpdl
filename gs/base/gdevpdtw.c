@@ -624,7 +624,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
-static int
+int
 write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist)
 {
     int j;
@@ -666,6 +666,8 @@ pdf_finish_resources(gx_device_pdf *pdev, pdf_resource_type_t type,
         }
     return 0;
 }
+
+#ifdef DEPRECATED_906
 int
 pdf_close_text_document(gx_device_pdf *pdev)
 {
@@ -678,20 +680,39 @@ pdf_close_text_document(gx_device_pdf *pdev)
      */
 
     pdf_clean_standard_fonts(pdev);
-    if ((code = pdf_free_font_cache(pdev)) < 0 ||
-        (code = pdf_write_resource_objects(pdev, resourceCharProc)) < 0 ||
-        (code = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font)) < 0 ||
-        (code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor)) < 0 ||
-        (code = write_font_resources(pdev, &pdev->resources[resourceCIDFont])) < 0 ||
-        (code = write_font_resources(pdev, &pdev->resources[resourceFont])) < 0 ||
-        (code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor)) < 0
-        )
+    code = pdf_free_font_cache(pdev);
+    if (code < 0)
+        return code;
+
+    code = pdf_write_resource_objects(pdev, resourceCharProc);
+    if (code < 0)
+        return code;
+
+    code = pdf_finish_resources(pdev, resourceFont, pdf_convert_truetype_font);
+    if (code < 0)
+        return code;
+
+    code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_finish_FontDescriptor);
+    if (code < 0)
+        return code;
+
+    code = write_font_resources(pdev, &pdev->resources[resourceCIDFont]);
+    if (code < 0)
+        return code;
+
+    code = write_font_resources(pdev, &pdev->resources[resourceFont]);
+    if (code < 0)
+        return code;
+
+    code = pdf_finish_resources(pdev, resourceFontDescriptor, pdf_write_FontDescriptor);
+    if (code < 0)
         return code;
 
     /* If required, write the Encoding for Type 3 bitmap fonts. */
 
     return pdf_write_bitmap_fonts_Encoding(pdev);
 }
+#endif
 
 /* ================ CMap resource writing ================ */
 

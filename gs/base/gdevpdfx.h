@@ -483,7 +483,9 @@ struct gx_device_pdf_s {
     bool AbortPDFAX;            /* Abort generation of PDFA or X, produce regular PDF */
     long MaxClipPathSize;  /* The maximal number of elements of a clipping path
                               that the target viewer|printer can handle. */
+#ifdef DEPRECATED_906
     long MaxViewerMemorySize;
+#endif
     long MaxShadingBitmapSize; /* The maximal number of bytes in
                               a bitmap representation of a shading.
                               (Bigger shadings to be downsampled). */
@@ -965,9 +967,11 @@ void pdf_reverse_resource_chain(gx_device_pdf *pdev, pdf_resource_type_t rtype);
  */
 int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
 
+#ifdef DEPRECATED_906
 /* Write and free all resource objects. */
 
 int pdf_write_and_free_all_resource_objects(gx_device_pdf *pdev);
+#endif
 
 /*
  * Store the resource sets for a content stream (page or XObject).
@@ -1272,11 +1276,15 @@ int pdf_replace_names(gx_device_pdf *pdev, const gs_param_string *from,
 
 /* For gdevpdf.c */
 
+#ifdef DEPRECATED_906
 /*
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
 int pdf_close_text_document(gx_device_pdf *pdev);
+#endif
+
+int write_font_resources(gx_device_pdf *pdev, pdf_resource_list_t *prlist);
 
 /* ---------------- Exported by gdevpdft.c ---------------- */
 

@@ -654,7 +654,7 @@ private_st_pdf_font_cache_elem();
 static ulong
 pdf_font_cache_elem_id(gs_font *font)
 {
-#if 0
+#ifdef DEPRECATED_906
     /*
      *        For compatibility with Ghostscript rasterizer's
      *        cache logic we use UniqueID to identify fonts.
@@ -2622,7 +2622,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
         }
     }
     pwidths->Width.v = v;
-#if 0
+#ifdef DEPRECATED_906
     if (code > 0)
         pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
 #else /* Skip only if not paralel to the axis. */
