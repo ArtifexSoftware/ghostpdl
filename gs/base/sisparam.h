@@ -47,25 +47,42 @@
 #define MAX_ISCALE_SUPPORT (1 << LOG2_MAX_ISCALE_SUPPORT)
 
 /* Define image scaling stream parameters. */
+/* We juggle 3 concepts here. Firstly, we are conceptually dealing with an
+ * Entire image (say 256x256) - this size is EntireWidthIn by EntireHeightIn,
+ * and would scale to be EntireWidthOut by EntireHeightOut.
+ * Of this, because of the clist, we may only get data for a section of this
+ * (say 32x32) - this size is WidthIn by HeightIn, and would scale
+ * to be WidthOut by HeightOut.
+ * Finally, we may actually only be rendering a smaller 'patch' of this
+ * due to restriction by a clip path etc (say 16x16) - this size is
+ * PatchWidthIn by PatchHeightIn, and would scale to be PatchWidthOut by
+ * PatchHeightOut.
+ */
 typedef struct stream_image_scale_params_s {
     int spp_decode;		/* >= 1 */
     int spp_interp;             /* If we do CM first, may not equal spp_decode */
+                                /* 0 < MaxValueIn < 1 << BitsPerComponentIn */
+    int PatchWidthIn, PatchHeightIn;	/* The sizes we need to render > 0 */
+    int PatchWidthOut, PatchHeightOut;	/* The sizes we need to render > 0 */
     int BitsPerComponentIn;	/* bits per input value, 8 or 16 */
     uint MaxValueIn;		/* max value of input component, */
-                                /* 0 < MaxValueIn < 1 << BitsPerComponentIn */
-    int WidthIn, HeightIn;	/* > 0 */
     int BitsPerComponentOut;	/* bits per output value, 8 or 16 */
     uint MaxValueOut;		/* max value of output component, */
                                 /* 0 < MaxValueOut < 1 << BitsPerComponentOut*/
+    int WidthIn, HeightIn;	/* The sizes for which we get data > 0 */
     int WidthOut, HeightOut;	/* > 0 */
     bool ColorPolarityAdditive;	/* needed by SpecialDownScale filter */
-    int src_y_offset;		/* Offset of the subimage in the source image. */
+    int src_y_offset;		/* Offset of the subimage (data) in the source image. */
     int EntireWidthIn;		/* Height of entire input image. */
     int EntireHeightIn;		/* Height of entire input image. */
     int EntireWidthOut;		/* Height of entire output image. */
     int EntireHeightOut;	/* Height of entire output image. */
     bool early_cm;              /* If this is set, then we will perform
                                    color managment before interpolating */
+    int LeftMarginIn;
+    int LeftMarginOut;
+    int TopMargin;
+    int Active;
 } stream_image_scale_params_t;
 
 /* Define a generic image scaling stream state. */

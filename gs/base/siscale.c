@@ -164,7 +164,7 @@ calculate_contrib(
                      double scale,
         /* Start generating weights for input pixel 'starting_output_index'. */
                      int starting_output_index,
-        /* Offset of input subimage from the input image start. */
+        /* Offset of input subimage (data) from the input image start. */
                      int src_y_offset,
         /* Entire output image size. */
                      int dst_size,
@@ -282,10 +282,13 @@ calculate_contrib(
 /* Apply filter to zoom horizontally from src to tmp. */
 static void
 zoom_x(byte * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
-       int tmp_width, int WidthIn, int Colors, const CLIST * contrib,
+       int skip, int tmp_width, int Colors, const CLIST * contrib,
        const CONTRIB * items)
 {
     int c, i;
+
+    contrib += skip;
+    tmp += Colors * skip;
 
     for (c = 0; c < Colors; ++c) {
         byte *tp = tmp + c;
@@ -355,10 +358,11 @@ zoom_x(byte * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
  */
 static void
 zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
-       const byte * tmp, int WidthOut, int tmp_width,
+       const byte * tmp, int skip, int WidthOut, int Stride,
        int Colors, const CLIST * contrib, const CONTRIB * items)
 {
-    int kn = WidthOut * Colors;
+    int kn = Stride * Colors;
+    int width = WidthOut * Colors;
     int cn = contrib->n;
     int first_pixel = contrib->first_pixel;
     const CONTRIB *cbp = items + contrib->index;
@@ -367,8 +371,10 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
 
     if_debug0('W', "[W]zoom_y: ");
 
+    skip *= Colors;
+    width += skip;
     if (sizeofPixelOut == 1) {
-        for ( kc = 0; kc < kn; ++kc ) {
+        for ( kc = skip; kc < width; ++kc ) {
             double weight = 0;
             const byte *pp = &tmp[kc + first_pixel];
             int pixel, j = cn;
@@ -381,7 +387,7 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
             ((byte *)dst)[kc] = (byte)CLAMP(pixel, 0, max_weight);
         }
     } else {                    /* sizeofPixelOut == 2 */
-        for ( kc = 0; kc < kn; ++kc ) {
+        for ( kc = skip; kc < width; ++kc ) {
             double weight = 0;
             const byte *pp = &tmp[kc + first_pixel];
             int pixel, j = cn;
@@ -490,7 +496,7 @@ do_init(stream_state        *st,
     ss->tmp = (byte *) gs_alloc_byte_array(mem,
                                            ss->max_support,
                                            (ss->params.WidthOut *
-                                            ss->params.spp_interp * sizeof(float)),
+                                            ss->params.spp_interp),
                                            "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
                                                 max(ss->params.WidthOut,
@@ -580,7 +586,11 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 
     /* Check whether we need to deliver any output. */
 
-  top:while (ss->src_y > ss->dst_last_index) {  /* We have enough horizontally scaled temporary rows */
+  top:
+    ss->params.Active = (ss->src_y >= ss->params.TopMargin &&
+                         ss->src_y <= ss->params.TopMargin + ss->params.PatchHeightIn);
+
+    while (ss->src_y > ss->dst_last_index) {  /* We have enough horizontally scaled temporary rows */
         /* to generate a vertically scaled output row. */
         uint wleft = pw->limit - pw->ptr;
 
@@ -598,9 +608,16 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
                 row = ss->dst;
             }
             /* Apply filter to zoom vertically from tmp to dst. */
-            zoom_y(row, ss->sizeofPixelOut, ss->params.MaxValueOut, ss->tmp,
-                   ss->params.WidthOut, ss->params.WidthOut, 
-                   ss->params.spp_interp, &ss->dst_next_list, ss->dst_items);
+            if (ss->params.Active)
+                zoom_y(row, /* Where to scale to */
+                       ss->sizeofPixelOut, /* 1 (8 bit) or 2 (16bit) output */
+                       ss->params.MaxValueOut, /* output value scale */
+                       ss->tmp, /* Line buffer */
+                       ss->params.LeftMarginOut, /* Skip */
+                       ss->params.PatchWidthOut, /* How many pixels to produce */
+                       ss->params.WidthOut, /* Stride */
+                       ss->params.spp_interp, /* Color count */
+                       &ss->dst_next_list, ss->dst_items);
             /* Idiotic C coercion rules allow T* and void* to be */
             /* inter-assigned freely, but not compared! */
             if ((void *)row != ss->dst)         /* no buffering */
@@ -610,7 +627,8 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
             uint wcount = ss->dst_size - ss->dst_offset;
             uint ncopy = min(wleft, wcount);
 
-            memcpy(pw->ptr + 1, (byte *) ss->dst + ss->dst_offset, ncopy);
+            if (ss->params.Active)
+                memcpy(pw->ptr + 1, (byte *) ss->dst + ss->dst_offset, ncopy);
             pw->ptr += ncopy;
             ss->dst_offset += ncopy;
             if (ncopy != wcount)
@@ -648,15 +666,22 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
             /* Apply filter to zoom horizontally from src to tmp. */
             if_debug2('w', "[w]zoom_x y = %d to tmp row %d\n",
                       ss->src_y, (ss->src_y % ss->max_support));
-            zoom_x(ss->tmp + (ss->src_y % ss->max_support) *
-                   ss->params.WidthOut * ss->params.spp_interp, row,
-                   ss->sizeofPixelIn, ss->params.WidthOut, ss->params.WidthIn,
-                   ss->params.spp_interp, ss->contrib, ss->items);
+            if (ss->params.Active)
+                zoom_x(/* Where to scale to (dst line address in tmp buffer) */
+                       ss->tmp + (ss->src_y % ss->max_support) *
+                       ss->params.WidthOut * ss->params.spp_interp,
+                       row, /* Where to scale from */
+                       ss->sizeofPixelIn, /* 1 (8 bit) or 2 (16bit) */
+                       ss->params.LeftMarginOut, /* Line skip */
+                       ss->params.PatchWidthOut, /* How many pixels to produce */
+                       ss->params.spp_interp, /* Color count */
+                       ss->contrib, ss->items);
             pr->ptr += rcount;
             ++(ss->src_y);
             goto top;
         } else {                /* We don't have a complete row.  Copy data to src buffer. */
-            memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1, rleft);
+            if (ss->params.Active)
+                memcpy((byte *) ss->src + ss->src_offset, pr->ptr + 1, rleft);
             ss->src_offset += rleft;
             pr->ptr += rleft;
             return 0;

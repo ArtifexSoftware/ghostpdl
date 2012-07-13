@@ -158,11 +158,29 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.HeightOut = any_abs(iss.HeightOut);
     iss.WidthIn = penum->rect.w;
     iss.HeightIn = penum->rect.h;
+    iss.PatchWidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.x + penum->rrect.w) *
+                                                           penum->dst_width / penum->Width))
+                      - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.x *
+                                                           penum->dst_width / penum->Width));
+    iss.PatchWidthOut = any_abs(iss.PatchWidthOut);
+    iss.PatchHeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rrect.y + penum->rrect.h) *
+                                                            penum->dst_height / penum->Height))
+                       - fixed2int_pixround_perfect((fixed)((int64_t)penum->rrect.y *
+                                                            penum->dst_height / penum->Height));
+    iss.PatchHeightOut = any_abs(iss.PatchHeightOut);
+    iss.PatchWidthIn = penum->rrect.w;
+    iss.PatchHeightIn = penum->rrect.h;
+    iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
+    iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
+                                                penum->dst_width / penum->Width));
+    iss.TopMargin = penum->rrect.y - penum->rect.y;
     iss.src_y_offset = penum->rect.y;
     iss.EntireWidthIn = penum->Width;
     iss.EntireHeightIn = penum->Height;
     iss.EntireWidthOut = fixed2int_pixround(any_abs(penum->dst_width));
     iss.EntireHeightOut = fixed2int_pixround(any_abs(penum->dst_height));
+    /* For interpolator cores that don't set Active, have us always active */
+    iss.Active = 1;
     if (iss.EntireWidthOut == 0 || iss.EntireHeightOut == 0)
     {
         penum->interpolate = false;
@@ -237,6 +255,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 #else
     templat = &s_IIEncode_template;
 #endif
+    /* RJW: This is defeated by the presence of pdf14. Use a devspecop. */
     if (((penum->dev->color_info.num_components == 1 &&
           penum->dev->color_info.max_gray < 15) ||
          (penum->dev->color_info.num_components > 1 &&
@@ -296,7 +315,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         x0 = penum->dda.pixel0.x;
         if (penum->matrix.xx < 0)
             dda_advance(x0, penum->rect.w);
-        penum->xyi.x = fixed2int_pixround(dda_current(x0));
+        penum->xyi.x = fixed2int_pixround(dda_current(x0)) + pss->params.LeftMarginOut;
     }
     penum->xyi.y = penum->yi0 + fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y
                                     * penum->dst_height / penum->Height));
@@ -656,16 +675,24 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 max(spp_decode * sizeofPixelOut, arch_sizeof_color_index) - 1;
             stream_w.ptr = stream_w.limit - width * spp_decode * sizeofPixelOut;
             psrc = (const frac *)(stream_w.ptr + 1);
-            /* This is where the rescale takes place */
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indicated by pss->params.Active being
+             * set to false. */
             status = (*pss->templat->process)
                 ((stream_state *) pss, &stream_r, &stream_w, h == 0);
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + width;
+                int xe = xo + pss->params.PatchWidthOut;
 
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
                 if_debug1('B', "[B]Interpolated row %d:\n[B]",
                           penum->line_xy);
+                psrc += pss->params.LeftMarginOut * spp_decode;
                 for (x = xo; x < xe;) {
 #ifdef DEBUG
                     if (gs_debug_c('B')) {
@@ -783,6 +810,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
                 }
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1('w', "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
                 penum->line_xy++;
                 if_debug0('B', "\n");
             }
@@ -905,14 +933,21 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 max(spp_interp * sizeofPixelOut, arch_sizeof_color_index) - 1;
             stream_w.ptr = stream_w.limit - width * spp_interp * sizeofPixelOut;
             pinterp = (const unsigned short *)(stream_w.ptr + 1);
-            /* This is where the rescale takes place */
+            /* This is where the rescale takes place; this will consume the
+             * data from stream_r, and post processed data into stream_w. The
+             * data in stream_w may be bogus if we are outside the active
+             * region, and this will be indiated by pss->params.Active being
+             * set to false. */
             status = (*pss->templat->process)
                 ((stream_state *) pss, &stream_r, &stream_w, h == 0);
             if (status < 0 && status != EOFC)
                 return_error(gs_error_ioerror);
             if (stream_w.ptr == stream_w.limit) {
-                int xe = xo + width;
+                int xe = xo + pss->params.PatchWidthOut;
 
+                /* Are we active? (i.e. in the render rectangle) */
+                if (!pss->params.Active)
+                    goto inactive;
                 if_debug1('B', "[B]Interpolated row %d:\n[B]",
                           penum->line_xy);
                 /* Take care of CM on the entire interpolated row, if we 
@@ -929,6 +964,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                                                         (void*) pinterp,
                                                         (void*) p_cm_interp);
                 }
+                p_cm_interp += pss->params.LeftMarginOut * spp_cm;
                 for (x = xo; x < xe;) {
 #ifdef DEBUG
                     if (gs_debug_c('B')) {
@@ -1003,6 +1039,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                 }  /* End on x loop */
                 LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
                 /*if_debug1('w', "[w]Y=%d:\n", ry);*/ /* See siscale.c about 'w'. */
+inactive:
                 penum->line_xy++;
                 if_debug0('B', "\n");
             }
