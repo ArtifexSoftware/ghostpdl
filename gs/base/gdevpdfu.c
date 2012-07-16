@@ -402,11 +402,31 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
         char cre_date_time[41];
         int code, status, cre_date_time_len;
         char BBox[256];
-        int width = (int)(pdev->width * 72.0 / pdev->HWResolution[0] + 0.5);
-        int height = (int)(pdev->height * 72.0 / pdev->HWResolution[1] + 0.5);
 
         stream_write(s, (byte *)"%!PS-Adobe-3.0\n", 15);
-        sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", width, height);
+        /* We need to calculate the document BoundingBox which is a 'high water'
+         * mark derived from the BoundingBox of all the individual pages.
+         */
+        {
+            int pagecount = 1;
+            int urx=0, ury=0, j;
+
+            for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+                pdf_resource_t *pres = pdev->resources[resourcePage].chains[j];
+
+                for (; pres != 0; pres = pres->next)
+                    if ((!pres->named || pdev->ForOPDFRead)
+                        && !pres->object->written) {
+                        pdf_page_t *page = &pdev->pages[pagecount - 1];
+                        if ((int)ceil(page->MediaBox.x) > urx)
+                            urx = page->MediaBox.x;
+                        if ((int)ceil(page->MediaBox.y) > urx)
+                            ury = page->MediaBox.y;
+                        pagecount++;
+                    }
+            }
+            sprintf(BBox, "%%%%BoundingBox: 0 0 %d %d\n", urx, ury);
+        }
         stream_write(s, (byte *)BBox, strlen(BBox));
         cre_date_time_len = pdf_get_docinfo_item(pdev, "/CreationDate", cre_date_time, sizeof(cre_date_time) - 1);
         cre_date_time[cre_date_time_len] = 0;
