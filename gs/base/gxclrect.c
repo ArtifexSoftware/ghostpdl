@@ -955,7 +955,7 @@ copy:
                     /* Copy subsequent planes - 1 byte header used to send the
                      * compression type. */
                     code = cmd_put_bits(cdev, re.pcls,
-                                        row + plane_height * raster,
+                                        row + plane_height * raster * plane,
                                         w1*bpc, re.height, raster, 1,
                                         (bpc == 1 ?
                                          (orig_id == gx_no_bitmap_id ?

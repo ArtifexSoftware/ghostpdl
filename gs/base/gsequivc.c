@@ -28,6 +28,7 @@
 #include "gscspace.h"
 #include "gxcspace.h"
 #include "gsicc_manage.h"
+#include "gxdevsop.h"
 
 /*
  * These routines are part of the logic for determining an equivalent
@@ -173,8 +174,18 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
         pcs->params.device_n.get_colorname_string
             (pdev->memory, pcs->params.device_n.names[j],
              &pcs_sep_name, &cs_sep_name_size);
-        if (compare_color_names("None", 4, pcs_sep_name, cs_sep_name_size))
+        if (compare_color_names("None", 4, pcs_sep_name, cs_sep_name_size)) {
+            /* If we are going out to a device that supports devn colors
+               then it is possible that any preview that such a device creates
+               will be in error due to the lack of the proper mappings from
+               the full DeviceN colors (whicn can include one or more \None
+               enrties). Display a warning about this if in debug mode */
+#ifdef DEBUG
+            if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_devn, NULL, 0))
+                gs_warn("Separation preview may be inaccurate due to presence of \\None colorants");
+#endif
             return;
+        }
     }
 
     /*
