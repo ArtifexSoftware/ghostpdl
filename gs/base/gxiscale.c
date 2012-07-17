@@ -76,7 +76,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     const stream_template *templat;
     byte *line;
     const gs_color_space *pcs = penum->pcs;
-    gs_point dst_xy;
     uint in_size;
     bool use_icc = false;
     int num_des_comps;
@@ -140,9 +139,6 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         return 0;
     }
 #endif
-    /* Non-ANSI compilers require the following casts: */
-    gs_distance_transform((float)penum->rect.w, (float)penum->rect.h,
-                          &penum->matrix, &dst_xy);
     if (use_icc) {
         iss.BitsPerComponentOut = 16;
         iss.MaxValueOut = 0xffff;
@@ -150,10 +146,15 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
         iss.BitsPerComponentOut = sizeof(frac) * 8;
         iss.MaxValueOut = frac_1;
     }
-    iss.WidthOut = (int)ceil(fabs(dst_xy.x));
+    iss.WidthOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.x + penum->rect.w) *
+                                                      penum->dst_width / penum->Width))
+                 - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.x *
+                                                      penum->dst_width / penum->Width));
+    iss.WidthOut = any_abs(iss.WidthOut);
     iss.HeightOut = fixed2int_pixround_perfect((fixed)((int64_t)(penum->rect.y + penum->rect.h) *
-                                                penum->dst_height / penum->Height))
-        - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y * penum->dst_height / penum->Height));
+                                                       penum->dst_height / penum->Height))
+                  - fixed2int_pixround_perfect((fixed)((int64_t)penum->rect.y *
+                                                       penum->dst_height / penum->Height));
     iss.HeightOut = any_abs(iss.HeightOut);
     iss.WidthIn = penum->rect.w;
     iss.HeightIn = penum->rect.h;
