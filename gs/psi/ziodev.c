@@ -246,6 +246,7 @@ rd:
         sread_string(ts, buf->data, count);
 sc:
         gs_scanner_init_stream_options(&state, ts, SCAN_CHECK_ONLY);
+        ialloc_set_space(idmemory, avm_local);
         code = gs_scan_token(i_ctx_p, &ignore_value, &state);
         ref_stack_pop_to(&o_stack, depth);
         if (code < 0)
