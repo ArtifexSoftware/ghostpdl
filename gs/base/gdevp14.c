@@ -1939,8 +1939,9 @@ update_lop_for_pdf14(gs_imager_state *pis, const gx_drawing_color *pdcolor)
             hastrans = true;
         }
     }
+    /* The only idempotent blend modes are Normal, Darken and Lighten */
     if ((pis->alpha != 0xFFFF) ||
-        (pis->blend_mode != BLEND_MODE_Normal) ||
+        (pis->blend_mode != BLEND_MODE_Normal && pis->blend_mode != BLEND_MODE_Darken && pis->blend_mode != BLEND_MODE_Lighten) ||
         (pis->opacity.alpha != 1.0) ||
         (pis->shape.alpha != 1.0) ||
         (hastrans))
