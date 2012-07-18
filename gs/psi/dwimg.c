@@ -1116,6 +1116,32 @@ create_palette(IMAGE *img)
     return palette;
 }
 
+static void UpdateScrollBarX(IMAGE *img)
+{
+    SCROLLINFO si;
+    si.cbSize = sizeof(si);
+    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+    si.nPage = img->cxClient;
+    si.nMin = 0;
+    si.nMax = img->bmih.biWidth-1;
+    si.nPos = img->nHscrollPos;
+    si.nTrackPos = 0;
+    SetScrollInfo(img->hwnd, SB_HORZ, &si, TRUE);
+}
+
+static void UpdateScrollBarY(IMAGE *img)
+{
+    SCROLLINFO si;
+    si.cbSize = sizeof(si);
+    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+    si.nPage = img->cyClient;
+    si.nMin = 0;
+    si.nMax = img->bmih.biHeight-1;
+    si.nPos = img->nVscrollPos;
+    si.nTrackPos = 0;
+    SetScrollInfo(img->hwnd, SB_VERT, &si, TRUE);
+}
+
 /* image window */
 /* All accesses to img->image or dimensions must be protected by mutex */
 LRESULT CALLBACK
@@ -1211,8 +1237,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             img->nVscrollMax = max(0, img->bmih.biHeight - img->cyClient);
             img->nVscrollPos = min(img->nVscrollPos, img->nVscrollMax);
 
-            SetScrollRange(hwnd, SB_VERT, 0, img->nVscrollMax, FALSE);
-            SetScrollPos(hwnd, SB_VERT, img->nVscrollPos, TRUE);
+            UpdateScrollBarY(img);
 
             img->cxAdjust = min(img->bmih.biWidth,  img->cxClient) - img->cxClient;
             img->cxClient += img->cxAdjust;
@@ -1220,8 +1245,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             img->nHscrollMax = max(0, img->bmih.biWidth - img->cxClient);
             img->nHscrollPos = min(img->nHscrollPos, img->nHscrollMax);
 
-            SetScrollRange(hwnd, SB_HORZ, 0, img->nHscrollMax, FALSE);
-            SetScrollPos(hwnd, SB_HORZ, img->nHscrollPos, TRUE);
+            UpdateScrollBarX(img);
 
             if ((wParam==SIZENORMAL)
                 && (img->cxAdjust!=0 || img->cyAdjust!=0)) {
@@ -1265,7 +1289,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 min(nVscrollInc, img->nVscrollMax - img->nVscrollPos)))!=0) {
                 img->nVscrollPos += nVscrollInc;
                 ScrollWindow(hwnd,0,-nVscrollInc,NULL,NULL);
-                SetScrollPos(hwnd,SB_VERT,img->nVscrollPos,TRUE);
+                UpdateScrollBarY(img);
                 UpdateWindow(hwnd);
             }
             return(0);
@@ -1294,7 +1318,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 min(nHscrollInc, img->nHscrollMax - img->nHscrollPos)))!=0) {
                 img->nHscrollPos += nHscrollInc;
                 ScrollWindow(hwnd,-nHscrollInc,0,NULL,NULL);
-                SetScrollPos(hwnd,SB_HORZ,img->nHscrollPos,TRUE);
+                UpdateScrollBarX(img);
                 UpdateWindow(hwnd);
             }
             return(0);

@@ -88,6 +88,34 @@ text_error(char *message)
     MessageBoxA((HWND)NULL,message,(LPSTR)NULL, MB_ICONHAND | MB_SYSTEMMODAL);
 }
 
+static void
+UpdateScrollBarX(TW *tw)
+{
+    SCROLLINFO si;
+    si.cbSize = sizeof(si);
+    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+    si.nMin = 0;
+    si.nTrackPos = 0;
+    si.nPage = tw->ClientSize.x;
+    si.nMax = tw->CharSize.x*tw->ScreenSize.x-1;
+    si.nPos = tw->ScrollPos.x;
+    SetScrollInfo(tw->hwnd, SB_HORZ, &si, TRUE);
+}
+
+static void
+UpdateScrollBarY(TW *tw)
+{
+    SCROLLINFO si;
+    si.cbSize = sizeof(si);
+    si.fMask = SIF_PAGE | SIF_POS | SIF_RANGE;
+    si.nMin = 0;
+    si.nTrackPos = 0;
+    si.nPage = tw->ClientSize.y;
+    si.nMax = tw->CharSize.y*tw->ScreenSize.y-1;
+    si.nPos = tw->ScrollPos.y;
+    SetScrollInfo(tw->hwnd, SB_VERT, &si, TRUE);
+}
+
 /* Bring Cursor into text window */
 void
 text_to_cursor(TW *tw)
@@ -117,8 +145,8 @@ int cyCursor;
                 tw->ScrollPos.y += nYinc;
                 tw->ScrollPos.x += nXinc;
                 ScrollWindow(tw->hwnd,-nXinc,-nYinc,NULL,NULL);
-                SetScrollPos(tw->hwnd,SB_VERT,tw->ScrollPos.y,TRUE);
-                SetScrollPos(tw->hwnd,SB_HORZ,tw->ScrollPos.x,TRUE);
+                UpdateScrollBarX(tw);
+                UpdateScrollBarY(tw);
                 UpdateWindow(tw->hwnd);
         }
 }
@@ -1027,14 +1055,12 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
             tw->ScrollMax.y = max(0, tw->CharSize.y*tw->ScreenSize.y - tw->ClientSize.y);
             tw->ScrollPos.y = min(tw->ScrollPos.y, tw->ScrollMax.y);
 
-            SetScrollRange(hwnd, SB_VERT, 0, tw->ScrollMax.y, FALSE);
-            SetScrollPos(hwnd, SB_VERT, tw->ScrollPos.y, TRUE);
+            UpdateScrollBarY(tw);
 
             tw->ScrollMax.x = max(0, tw->CharSize.x*tw->ScreenSize.x - tw->ClientSize.x);
             tw->ScrollPos.x = min(tw->ScrollPos.x, tw->ScrollMax.x);
 
-            SetScrollRange(hwnd, SB_HORZ, 0, tw->ScrollMax.x, FALSE);
-            SetScrollPos(hwnd, SB_HORZ, tw->ScrollPos.x, TRUE);
+            UpdateScrollBarX(tw);
 
             if (tw->bFocus && tw->bGetCh) {
                 SetCaretPos(tw->CursorPos.x*tw->CharSize.x - tw->ScrollPos.x,
@@ -1074,7 +1100,7 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     != 0 ) {
                     tw->ScrollPos.y += nYinc;
                     ScrollWindow(hwnd,0,-nYinc,NULL,NULL);
-                    SetScrollPos(hwnd,SB_VERT,tw->ScrollPos.y,TRUE);
+                    UpdateScrollBarY(tw);
                     UpdateWindow(hwnd);
             }
             return(0);
@@ -1103,7 +1129,7 @@ WndTextProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                     != 0 ) {
                     tw->ScrollPos.x += nXinc;
                     ScrollWindow(hwnd,-nXinc,0,NULL,NULL);
-                    SetScrollPos(hwnd,SB_HORZ,tw->ScrollPos.x,TRUE);
+                    UpdateScrollBarX(tw);
                     UpdateWindow(hwnd);
             }
             return(0);
