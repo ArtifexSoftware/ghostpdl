@@ -565,21 +565,21 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
                      /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcgtag->cmyk_intent[gsSRC_GRAPPRO] = ri | gsRI_OVERRIDE;
+                    srcgtag->rgb_intent[gsSRC_GRAPPRO] = ri | gsRI_OVERRIDE;
                    break;
                 case IMAGE_RGB:
                     srcgtag->rgb_profiles[gsSRC_IMAGPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcgtag->cmyk_intent[gsSRC_IMAGPRO] = ri | gsRI_OVERRIDE;
+                    srcgtag->rgb_intent[gsSRC_IMAGPRO] = ri | gsRI_OVERRIDE;
                     break;
                 case TEXT_RGB:
                     srcgtag->rgb_profiles[gsSRC_TEXTPRO] = icc_profile;
                     /* Get the intent */
                     curr_ptr = strtok(NULL, "\t,\32\n\r");
                     count = sscanf(curr_ptr, "%d", &ri);
-                    srcgtag->cmyk_intent[gsSRC_TEXTPRO] = ri | gsRI_OVERRIDE;
+                    srcgtag->rgb_intent[gsSRC_TEXTPRO] = ri | gsRI_OVERRIDE;
                     break;
                 case GSICC_NUM_SRCGTAG_KEYS:
                     /* Failed to match the key */
