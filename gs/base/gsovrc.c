@@ -332,7 +332,8 @@ typedef struct overprint_device_s {
      * is little-endian.
      */
     gx_color_index  retain_mask;
-
+    
+    bool copy_alpha_hl;
 
     /* We hold 3 sets of device procedures here. These are initialised from
      * the equivalently named globals when the device is created, but are
@@ -471,6 +472,8 @@ static const gx_device_procs no_overprint_procs = {
 static dev_proc_fill_rectangle(overprint_generic_fill_rectangle);
 static dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
 static dev_proc_fill_rectangle_hl_color(overprint_fill_rectangle_hl_color);
+static dev_proc_copy_planes(overprint_copy_planes);
+static dev_proc_copy_alpha_hl_color(overprint_copy_alpha_hl_color);
 
 /* other low-level overprint_sep_* rendering methods prototypes go here */
 
@@ -611,7 +614,12 @@ static const gx_device_procs sep_overprint_procs = {
     0,                                  /* pop_transparency_state */
     0,                                  /* put_image */
     0,                                  /* dev_spec_op */
-    gx_forward_copy_planes
+    overprint_copy_planes,              /* copy planes */
+    0,                                  /* get profile */
+    0,                                  /* set graphics type tag */
+    0,                                  /* strip_copy_rop2 */
+    0,                                  /* strip_tile_rect_devn */
+    overprint_copy_alpha_hl_color       /* copy_alpha_hl_color */
 };
 
 /*
@@ -831,8 +839,10 @@ overprint_open_device(gx_device * dev)
     /* the overprint device must have a target */
     if (tdev == 0)
         return_error(gs_error_unknownerror);
-    if ((code = gs_opendevice(tdev)) >= 0)
+    if ((code = gs_opendevice(tdev)) >= 0) {
         gx_device_copy_params(dev, tdev);
+        opdev->copy_alpha_hl = false;
+    }
     return code;
 }
 
@@ -950,6 +960,134 @@ overprint_generic_fill_rectangle(
                                                     x, y, width, height,
                                                     color,
                                                     dev->memory );
+}
+
+static int
+overprint_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
+           int raster, gx_bitmap_id id, int x, int y, int width, int height,
+                      const gx_drawing_color *pdcolor, int depth)
+{
+    /* copy_alpha_hl_color will end up calling copy_planes which for the
+       copy alpha case we need to make sure we do in a proper overprint 
+       fashion.  Other calls of copy_alpha for example from the pattern
+       tiling call are not done with overprint control.  So we set an 
+       appopriate flag so that we know to handle this properly when we
+       get to copy_alpha */
+
+    overprint_device_t *    opdev = (overprint_device_t *)dev;
+    int code;
+
+    opdev->copy_alpha_hl = true;
+    code = gx_default_copy_alpha_hl_color(dev, data, data_x, raster, id, x, y, 
+                                          width, height, pdcolor, depth);
+    opdev->copy_alpha_hl = false;
+    return code;
+}
+
+/* Currently we really should only be here if the target device is planar
+   AND it supports devn colors AND is 8 bit.  This could use a rewrite to
+   make if more efficient but I had to get something in place that would 
+   work */
+static int
+overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster_in, 
+                  gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
+{
+    overprint_device_t *    opdev = (overprint_device_t *)dev;
+    gx_device *             tdev = opdev->target;
+    byte *                  gb_buff = 0;
+    gs_get_bits_params_t    gb_params;
+    gs_int_rect             gb_rect;
+    int                     code = 0, raster;
+    int                     byte_depth;
+    int                     depth, num_comps;
+    int                     k,j;
+    gs_memory_t *           mem = dev->memory;
+    gx_color_index          comps = opdev->drawn_comps;
+    gx_color_index          mask;
+    int                     shift;
+    byte                    *curr_data = (byte *) data + data_x;
+    int                     row, offset;
+
+    if (tdev == 0)
+        return 0;
+
+    if  (opdev->copy_alpha_hl) {
+       /* We are coming here via copy_alpha_hl_color due to the use of AA.
+          We will want to handle the overprinting here */
+
+        depth = tdev->color_info.depth;
+        num_comps = tdev->color_info.num_components;
+
+        fit_fill(tdev, x, y, w, h);
+        byte_depth = depth / num_comps;
+        mask = ((gx_color_index)1 << byte_depth) - 1;
+        shift = 16 - byte_depth;
+
+        /* allocate a buffer for the returned data */
+        raster = bitmap_raster(w * byte_depth);
+        gb_buff = gs_alloc_bytes(mem, raster * num_comps , "overprint_copy_planes");
+        if (gb_buff == 0)
+            return gs_note_error(gs_error_VMerror);
+
+        /* Initialize the get_bits parameters. Here we just get a plane at a  time. */
+        gb_params.options =  GB_COLORS_NATIVE
+                           | GB_ALPHA_NONE
+                           | GB_DEPTH_ALL
+                           | GB_PACKING_PLANAR
+                           | GB_RETURN_COPY
+                           | GB_ALIGN_STANDARD
+                           | GB_OFFSET_0
+                           | GB_RASTER_STANDARD
+                           | GB_SELECT_PLANES;    
+
+        gb_params.x_offset = 0;     
+        gb_params.raster = raster;
+        gb_rect.p.x = x;
+        gb_rect.q.x = x + w;
+        
+        /* step through the height */
+        row = 0;
+        while (h-- > 0 && code >= 0) {
+            comps = opdev->drawn_comps;
+            gb_rect.p.y = y++;
+            gb_rect.q.y = y;
+            offset = row * raster_in + data_x;  
+            row++;
+            curr_data = (byte *) data + offset; /* start us at the start of row */ 
+            /* And now through each plane */
+            for (k = 0; k < tdev->color_info.num_components; k++) {
+                /* First set the params to zero for all planes except the one we want */
+                for (j = 0; j < tdev->color_info.num_components; j++) 
+                        gb_params.data[j] = 0;
+                    gb_params.data[k] = gb_buff + k * raster;
+                    code = dev_proc(tdev, get_bits_rectangle) (tdev, &gb_rect, 
+                                                               &gb_params, 0);
+                    if (code < 0) {
+                        gs_free_object(mem, gb_buff, "overprint_copy_planes" );
+                        return code;
+                    }
+                    /* Skip the plane if this component is not to be drawn.  If
+                       its the one that we want to draw, replace it with our
+                       buffer data */
+                    if ((comps & 0x01) == 1) {
+                        memcpy(gb_params.data[k], curr_data, w);
+                    }
+                    /* Next plane */
+                    curr_data += plane_height * raster_in;
+                    comps >>= 1;
+            }
+            code = dev_proc(tdev, copy_planes)(tdev, gb_buff, 0, raster, 
+                                               gs_no_bitmap_id, x, y - 1, w, 1, 1);
+        }
+        gs_free_object(mem, gb_buff, "overprint_copy_planes" );
+        return code;
+    } else {
+        /* This is not a case where copy planes should be doing overprinting.
+           For example, if we came here via the pattern tiling code, so just
+           pass this along to the target */
+        return (*dev_proc(tdev, copy_planes)) (tdev, data, data_x, raster_in, id, 
+                                               x, y, w, h, plane_height);
+    }
 }
 
 /* Currently we really should only be here if the target device is planar
