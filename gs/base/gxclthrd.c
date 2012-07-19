@@ -28,6 +28,7 @@
 #include "gxcldev.h"
 #include "gxgetbit.h"
 #include "gdevplnx.h"
+#include "gdevppla.h"
 #include "gsmemory.h"
 #include "gsmchunk.h"
 #include "gsmemlok.h"
@@ -164,6 +165,9 @@ clist_setup_render_threads(gx_device *dev, int y)
                   ncdev,
                   ncdev->icc_struct->device_profile[0],
                   ncdev->icc_struct->device_profile[0]->profile_handle);
+        /* If the device is_planar, then set the flag in the new_device and the procs */
+        if ((ncdev->is_planar = cdev->is_planar))
+            gdev_prn_set_procs_planar(ndev);
         /* gdev_prn_allocate_memory sets the clist for writing, creating new files.
          * We need  to unlink those files and open the main thread's files, then
          * reset the clist state for reading/rendering
