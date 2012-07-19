@@ -1659,7 +1659,6 @@ static const FAPI_server If0 = {
     {0},
     0,
     false,
-    false,
     {1, 0, 0, 1, 0, 0},
     ensure_open,
     get_scaled_font,

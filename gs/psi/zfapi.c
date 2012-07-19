@@ -1909,30 +1909,8 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
      * non-cacheing, non-marking cases, we must not draw the glyph.
      */
     if (igs->in_charpath && !SHOW_IS(penum, TEXT_DO_NONE)) {
-        /* For the charpath case, if we've skiped the glyph (because x/y scale was zero)
-         * we still need to add a point to the current path.
-         */
-        if (I->skip_glyph) {
-            gs_point pt;
-
-            if ((code = gs_currentpoint(pgs->show_gstate, &pt)) < 0)
-                return code;
-
-            if (!path_position_valid(pgs->path)) {
-                if ((code = gx_path_add_point(pgs->path, (fixed)pt.x, (fixed)pt.y)) < 0)
-                    return(code);
-            }
-
-            if ((code = gx_path_add_line_notes(pgs->path, (fixed)pt.x, (fixed)pt.y, 0)) < 0)
-                return(code);
-
-            if ((code = gx_path_close_subpath_notes(pgs->path, 0)) < 0)
-                return(code);
-        }
-        else {
-            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
-                return code;
-        }
+        if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
+            return code;
 
         if ((code = gx_path_add_char_path(pgs->show_gstate->path, pgs->path, pgs->in_charpath)) < 0)
             return code;
@@ -1945,35 +1923,34 @@ static int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_s
             /* The server provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
-            if (!I->skip_glyph) {
-                if ((code = gs_currentpoint(pgs, &pt)) < 0)
-                    return code;
-                if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
-                    return code;
-                if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
-                    return code;
-                if (pbfont->PaintType) {
-                    float lw = gs_currentlinewidth(pgs);
 
-                    gs_setlinewidth(pgs, pbfont->StrokeWidth);
-                    code = gs_stroke(pgs);
-                    gs_setlinewidth(pgs, lw);
-                    if (code < 0)
-                        return code;
-                } else {
-                    gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
-                    pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
+            if ((code = gs_currentpoint(pgs, &pt)) < 0)
+                return code;
+            if ((code = outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->path, !pbfont->PaintType)) < 0)
+                return code;
+            if ((code = gs_imager_setflat((gs_imager_state *)pgs, gs_char_flatness(pis, 1.0))) < 0)
+                return code;
+            if (pbfont->PaintType) {
+                float lw = gs_currentlinewidth(pgs);
 
-                    pgs->fill_adjust.x = pgs->fill_adjust.y = 0;
-
-                    if ((code = gs_fill(pgs)) < 0)
-                        return code;
-
-                    pgs->in_cachedevice = in_cachedevice;
-                }
-                if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
+                gs_setlinewidth(pgs, pbfont->StrokeWidth);
+                code = gs_stroke(pgs);
+                gs_setlinewidth(pgs, lw);
+                if (code < 0)
                     return code;
+            } else {
+                gs_in_cache_device_t in_cachedevice = pgs->in_cachedevice;
+                pgs->in_cachedevice = CACHE_DEVICE_NOT_CACHING;
+
+                pgs->fill_adjust.x = pgs->fill_adjust.y = 0;
+
+                if ((code = gs_fill(pgs)) < 0)
+                    return code;
+
+                pgs->in_cachedevice = in_cachedevice;
             }
+            if ((code = gs_moveto(pgs, pt.x, pt.y)) < 0)
+                return code;
         } else {
             int rast_orig_x =   rast.orig_x;
             int rast_orig_y = - rast.orig_y;
@@ -2108,7 +2085,7 @@ static int FAPI_do_char(i_ctx_t *i_ctx_p, gs_font_base *pbfont, gx_device *dev, 
     } sbw_state = SBW_SCALE;
 
     I->use_outline = false;
-    I->skip_glyph = false;
+    memset(&char_bbox, 0x00, sizeof(char_bbox));
 
     I->ff = ff_stub;
     if(bBuildGlyph && !bCID) {
@@ -2268,18 +2245,17 @@ retry_oversampling:
 
         if ((hypot ((double)font_scale.matrix[0], (double)font_scale.matrix[2]) == 0.0
             || hypot ((double)font_scale.matrix[1], (double)font_scale.matrix[3]) == 0.0)) {
-            /* Don't try to render a glyph whose scale (x/y) == 0 */
-            I->skip_glyph = true;
+            /* If the matrix is degenerate, force a scale to 1 unit. */
+            if (!font_scale.matrix[0]) font_scale.matrix[0] = 1;
+            if (!font_scale.matrix[3]) font_scale.matrix[3] = 1;
         }
-        else {
 
-            if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, &font_scale,
-                                     NULL,
-                                     (!bCID || (pbfont->FontType != ft_encrypted  &&
-                                                pbfont->FontType != ft_encrypted2)
-                                            ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDANT_PREPARED)))) < 0)
+        if ((code = renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &I->ff, &font_scale,
+                                 NULL,
+                                 (!bCID || (pbfont->FontType != ft_encrypted  &&
+                                            pbfont->FontType != ft_encrypted2)
+                                        ? FAPI_TOPLEVEL_PREPARED : FAPI_DESCENDANT_PREPARED)))) < 0)
                 return code;
-        }
     }
     else {
     }
@@ -2569,223 +2545,216 @@ retry_oversampling:
 
     /* Compute the metrics replacement : */
 
-    if (!I->skip_glyph) {
+    if(bCID && !bIsType1GlyphData) {
+        gs_font_cid2 *pfcid = (gs_font_cid2 *)pbfont;
+        int MetricsCount = pfcid->cidata.MetricsCount;
 
-        if(bCID && !bIsType1GlyphData) {
-                gs_font_cid2 *pfcid = (gs_font_cid2 *)pbfont;
-                int MetricsCount = pfcid->cidata.MetricsCount;
+        if (MetricsCount > 0) {
+            const byte *data_ptr;
+            int l = get_GlyphDirectory_data_ptr(imemory, pdr, cr.char_code, &data_ptr);
 
-                if (MetricsCount > 0) {
-                const byte *data_ptr;
-                int l = get_GlyphDirectory_data_ptr(imemory, pdr, cr.char_code, &data_ptr);
-
-                if (MetricsCount == 2 && l >= 4) {
-                    if (!bVertical0) {
-                        cr.sb_x = GET_S16_MSB(data_ptr + 2) * scale;
-                        cr.aw_x = GET_U16_MSB(data_ptr + 0) * scale;
-                        cr.metrics_type = FAPI_METRICS_REPLACE;
-                    }
-                } else if (l >= 8){
-                    cr.sb_y = GET_S16_MSB(data_ptr + 2) * scale;
-                    cr.aw_y = GET_U16_MSB(data_ptr + 0) * scale;
-                    cr.sb_x = GET_S16_MSB(data_ptr + 6) * scale;
-                    cr.aw_x = GET_U16_MSB(data_ptr + 4) * scale;
+            if (MetricsCount == 2 && l >= 4) {
+                if (!bVertical0) {
+                    cr.sb_x = GET_S16_MSB(data_ptr + 2) * scale;
+                    cr.aw_x = GET_U16_MSB(data_ptr + 0) * scale;
                     cr.metrics_type = FAPI_METRICS_REPLACE;
                 }
-                }
-        }
-        if (cr.metrics_type != FAPI_METRICS_REPLACE && bVertical) {
-            double pwv[4];
-            code = zchar_get_metrics2(pbfont, &enc_char_name, pwv);
-            if (code < 0)
-                return code;
-            if (code == metricsNone) {
-                if (bCID && (!bIsType1GlyphData && font_file_path)) {
-                    cr.sb_x = fapi_round(sbw[2] / 2 * scale);
-                    cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
-                    cr.aw_y = fapi_round(- pbfont->FontBBox.q.x * scale); /* Sic ! */
-                    cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
-                    cr.metrics_type = FAPI_METRICS_REPLACE;
-                    sbw[0] = sbw[2] / 2;
-                    sbw[1] = pbfont->FontBBox.q.y;
-                    sbw[2] = 0;
-                    sbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
-                    sbw_state = SBW_DONE;
-                } else
-                    bVertical = false;
-            } else {
-                cr.sb_x = fapi_round(pwv[2] * scale);
-                cr.sb_y = fapi_round(pwv[3] * scale);
-                cr.aw_x = fapi_round(pwv[0] * scale);
-                cr.aw_y = fapi_round(pwv[1] * scale);
-                cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
-                cr.metrics_type = (code == metricsSideBearingAndWidth ?
-                                    FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
-                sbw[0] = pwv[2];
-                sbw[1] = pwv[3];
-                sbw[2] = pwv[0];
-                sbw[3] = pwv[1];
-                sbw_state = SBW_DONE;
-            }
-        }
-        if (cr.metrics_type == FAPI_METRICS_NOTDEF && !bVertical) {
-            code = zchar_get_metrics(pbfont, &enc_char_name, sbw);
-            if (code < 0)
-                return code;
-            if (code == metricsNone) {
-                sbw_state = SBW_FROM_RENDERER;
-                if (pbfont->FontType == 2) {
-                    gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
-
-                    cr.aw_x = export_shift(pfont1->data.defaultWidthX, _fixed_shift - I->frac_shift);
-                    cr.metrics_scale = 1000;
-                    cr.metrics_type = FAPI_METRICS_ADD;
-                }
-            } else {
-                cr.sb_x = fapi_round(sbw[0] * scale);
-                cr.sb_y = fapi_round(sbw[1] * scale);
-                cr.aw_x = fapi_round(sbw[2] * scale);
-                cr.aw_y = fapi_round(sbw[3] * scale);
-                cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
-                cr.metrics_type = (code == metricsSideBearingAndWidth ?
-                                    FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
-                sbw_state = SBW_DONE;
-            }
-        }
-        memset(&metrics, 0x00, sizeof(metrics));
-        /* Take metrics from font : */
-        if (zchar_show_width_only(penum)) {
-            code = I->get_char_width(I, &I->ff, &cr, &metrics);
-            /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
-             * so it's worth retrying as an outline glyph
-             */
-            if (code == e_VMerror && I->use_outline == false) {
-                I->max_bitmap = 0;
-                I->use_outline = true;
-                goto retry_oversampling;
-            }
-
-        } else if (I->use_outline) {
-
-            code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
-        } else {
-#if 0 /* Debug purpose only. */
-            code = e_limitcheck;
-#else
-            code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
-#endif
-            /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
-             * so it's worth retrying as an outline glyph
-             */
-            if (code == e_VMerror) {
-                I->use_outline = true;
-                goto retry_oversampling;
-            }
-
-            if (code == e_limitcheck) {
-                if(log2_scale.x > 0 || log2_scale.y > 0) {
-                    penum_s->fapi_log2_scale.x = log2_scale.x = penum_s->fapi_log2_scale.y = log2_scale.y = 0;
-                    I->release_char_data(I);
-                    goto retry_oversampling;
-                }
-                if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
-                    return code;
-            }
-        }
-
-        /* This handles the situation where a charstring has been replaced with a PS procedure.
-         * against the rules, but not *that* rare.
-         * It's also something that GS does internally to simulate font styles.
-         */
-        if (code > 0) {
-            os_ptr op = osp;
-            ref *proc;
-            if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
-                push(2);
-                ref_assign(op - 1, &char_name);
-                ref_assign(op, proc);
-                return(zchar_exec_char_proc(i_ctx_p));
-            }
-        }
-
-        if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
-           return code;
-
-        compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
-        char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
-        char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
-        char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
-        char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
-
-        /* We must use the FontBBox, but it seems some buggy fonts have glyphs which extend outside the
-         * FontBBox, so we have to do this....
-         */
-        if (!bCID && pbfont->FontBBox.q.x > pbfont->FontBBox.p.x
-                  && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
-            char_bbox.p.x = min(char_bbox.p.x, pbfont->FontBBox.p.x);
-            char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
-            char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
-            char_bbox.q.y = max(char_bbox.q.y, pbfont->FontBBox.q.y);
-        }
-
-        if (pbfont->PaintType != 0) {
-            float w = pbfont->StrokeWidth / 2;
-
-            char_bbox.p.x -= w;
-            char_bbox.p.y -= w;
-            char_bbox.q.x += w;
-            char_bbox.q.y += w;
-        }
-        penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
-        if (sbw_state == SBW_FROM_RENDERER) {
-            int can_replace_metrics;
-
-            if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
-                return code;
-
-            sbw[2] = metrics.escapement / em_scale_x;
-            sbw[3] = metrics.v_escapement / em_scale_y;
-            if (pbfont->FontType == 2 && !can_replace_metrics) {
-                gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
-
-                sbw[2] += fixed2float(pfont1->data.nominalWidthX);
-            }
-        } else if (sbw_state == SBW_SCALE) {
-            sbw[0] = (double)cr.sb_x / scale / em_scale_x;
-            sbw[1] = (double)cr.sb_y / scale / em_scale_y;
-            sbw[2] = (double)cr.aw_x / scale / em_scale_x;
-            sbw[3] = (double)cr.aw_y / scale / em_scale_y;
-        }
-
-        /* Setup cache and render : */
-        if (cr.metrics_type == FAPI_METRICS_REPLACE) {
-            /*
-             * Here we don't take care of replaced advance width
-             * because gs_text_setcachedevice handles it.
-             */
-            int can_replace_metrics;
-
-            if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
-                return code;
-            if (!can_replace_metrics) {
-                /*
-                 * The renderer should replace the lsb, but it can't.
-                 * To work around we compute a displacement in integral pixels
-                 * and later shift the bitmap to it. The raster will be inprecise
-                 * with non-integral pixels shift.
-                 */
-                char_bbox.q.x -= char_bbox.p.x;
-                char_bbox.p.x = 0;
-                gs_distance_transform((metrics.bbox_x0 / em_scale_x - sbw[0]),
-                                      0, ctm, &penum_s->fapi_glyph_shift);
-                penum_s->fapi_glyph_shift.x *= 1 << log2_scale.x;
-                penum_s->fapi_glyph_shift.y *= 1 << log2_scale.y;
+            } else if (l >= 8){
+                cr.sb_y = GET_S16_MSB(data_ptr + 2) * scale;
+                cr.aw_y = GET_U16_MSB(data_ptr + 0) * scale;
+                cr.sb_x = GET_S16_MSB(data_ptr + 6) * scale;
+                cr.aw_x = GET_U16_MSB(data_ptr + 4) * scale;
+                cr.metrics_type = FAPI_METRICS_REPLACE;
             }
         }
     }
-    else {
-        char_bbox.p.x = char_bbox.p.y = char_bbox.q.x = char_bbox.q.y = 0;
-        sbw[0] = sbw[1] = sbw[2] = sbw[3] = 0;
+    if (cr.metrics_type != FAPI_METRICS_REPLACE && bVertical) {
+        double pwv[4];
+        code = zchar_get_metrics2(pbfont, &enc_char_name, pwv);
+        if (code < 0)
+            return code;
+        if (code == metricsNone) {
+            if (bCID && (!bIsType1GlyphData && font_file_path)) {
+                cr.sb_x = fapi_round(sbw[2] / 2 * scale);
+                cr.sb_y = fapi_round(pbfont->FontBBox.q.y * scale);
+                cr.aw_y = fapi_round(- pbfont->FontBBox.q.x * scale); /* Sic ! */
+                cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
+                cr.metrics_type = FAPI_METRICS_REPLACE;
+                sbw[0] = sbw[2] / 2;
+                sbw[1] = pbfont->FontBBox.q.y;
+                sbw[2] = 0;
+                sbw[3] = - pbfont->FontBBox.q.x; /* Sic ! */
+                sbw_state = SBW_DONE;
+            } else
+                bVertical = false;
+        } else {
+            cr.sb_x = fapi_round(pwv[2] * scale);
+            cr.sb_y = fapi_round(pwv[3] * scale);
+            cr.aw_x = fapi_round(pwv[0] * scale);
+            cr.aw_y = fapi_round(pwv[1] * scale);
+            cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
+            cr.metrics_type = (code == metricsSideBearingAndWidth ?
+                                FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
+            sbw[0] = pwv[2];
+            sbw[1] = pwv[3];
+            sbw[2] = pwv[0];
+            sbw[3] = pwv[1];
+            sbw_state = SBW_DONE;
+        }
+    }
+    if (cr.metrics_type == FAPI_METRICS_NOTDEF && !bVertical) {
+        code = zchar_get_metrics(pbfont, &enc_char_name, sbw);
+        if (code < 0)
+            return code;
+        if (code == metricsNone) {
+            sbw_state = SBW_FROM_RENDERER;
+            if (pbfont->FontType == 2) {
+                gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+
+                cr.aw_x = export_shift(pfont1->data.defaultWidthX, _fixed_shift - I->frac_shift);
+                cr.metrics_scale = 1000;
+                cr.metrics_type = FAPI_METRICS_ADD;
+            }
+        } else {
+            cr.sb_x = fapi_round(sbw[0] * scale);
+            cr.sb_y = fapi_round(sbw[1] * scale);
+            cr.aw_x = fapi_round(sbw[2] * scale);
+            cr.aw_y = fapi_round(sbw[3] * scale);
+            cr.metrics_scale = (bIsType1GlyphData ? 1000 : 1);
+            cr.metrics_type = (code == metricsSideBearingAndWidth ?
+                                FAPI_METRICS_REPLACE : FAPI_METRICS_REPLACE_WIDTH);
+            sbw_state = SBW_DONE;
+        }
+    }
+    memset(&metrics, 0x00, sizeof(metrics));
+    /* Take metrics from font : */
+    if (zchar_show_width_only(penum)) {
+        code = I->get_char_width(I, &I->ff, &cr, &metrics);
+        /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
+         * so it's worth retrying as an outline glyph
+         */
+        if (code == e_VMerror && I->use_outline == false) {
+            I->max_bitmap = 0;
+            I->use_outline = true;
+            goto retry_oversampling;
+        }
+
+    } else if (I->use_outline) {
+
+        code = I->get_char_outline_metrics(I, &I->ff, &cr, &metrics);
+    } else {
+#if 0 /* Debug purpose only. */
+        code = e_limitcheck;
+#else
+        code = I->get_char_raster_metrics(I, &I->ff, &cr, &metrics);
+#endif
+        /* A VMerror could be a real out of memory, or the glyph being too big for a bitmap
+         * so it's worth retrying as an outline glyph
+         */
+        if (code == e_VMerror) {
+            I->use_outline = true;
+            goto retry_oversampling;
+        }
+
+        if (code == e_limitcheck) {
+            if(log2_scale.x > 0 || log2_scale.y > 0) {
+                penum_s->fapi_log2_scale.x = log2_scale.x = penum_s->fapi_log2_scale.y = log2_scale.y = 0;
+                I->release_char_data(I);
+                goto retry_oversampling;
+            }
+            if ((code = renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &I->ff, &cr, &metrics))) < 0)
+                return code;
+        }
+    }
+
+    /* This handles the situation where a charstring has been replaced with a PS procedure.
+     * against the rules, but not *that* rare.
+     * It's also something that GS does internally to simulate font styles.
+     */
+    if (code > 0) {
+        os_ptr op = osp;
+        ref *proc;
+        if ((get_charstring(&I->ff, code - 1, &proc) >= 0) && (r_has_type(proc, t_array) || r_has_type(proc, t_mixedarray))) {
+            push(2);
+            ref_assign(op - 1, &char_name);
+            ref_assign(op, proc);
+            return(zchar_exec_char_proc(i_ctx_p));
+        }
+    }
+
+    if ((code = renderer_retcode(i_ctx_p, I, code)) < 0)
+       return code;
+
+    compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
+    char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
+    char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
+    char_bbox.q.x = metrics.bbox_x1 / em_scale_x;
+    char_bbox.q.y = metrics.bbox_y1 / em_scale_y;
+
+    /* We must use the FontBBox, but it seems some buggy fonts have glyphs which extend outside the
+     * FontBBox, so we have to do this....
+     */
+    if (!bCID && pbfont->FontBBox.q.x > pbfont->FontBBox.p.x
+              && pbfont->FontBBox.q.y > pbfont->FontBBox.p.y) {
+        char_bbox.p.x = min(char_bbox.p.x, pbfont->FontBBox.p.x);
+        char_bbox.p.y = min(char_bbox.p.y, pbfont->FontBBox.p.y);
+        char_bbox.q.x = max(char_bbox.q.x, pbfont->FontBBox.q.x);
+        char_bbox.q.y = max(char_bbox.q.y, pbfont->FontBBox.q.y);
+    }
+
+    if (pbfont->PaintType != 0) {
+        float w = pbfont->StrokeWidth / 2;
+
+        char_bbox.p.x -= w;
+        char_bbox.p.y -= w;
+        char_bbox.q.x += w;
+        char_bbox.q.y += w;
+    }
+    penum_s->fapi_glyph_shift.x = penum_s->fapi_glyph_shift.y = 0;
+    if (sbw_state == SBW_FROM_RENDERER) {
+        int can_replace_metrics;
+
+        if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
+            return code;
+
+        sbw[2] = metrics.escapement / em_scale_x;
+        sbw[3] = metrics.v_escapement / em_scale_y;
+        if (pbfont->FontType == 2 && !can_replace_metrics) {
+            gs_font_type1 *pfont1 = (gs_font_type1 *)pbfont;
+
+            sbw[2] += fixed2float(pfont1->data.nominalWidthX);
+        }
+    } else if (sbw_state == SBW_SCALE) {
+        sbw[0] = (double)cr.sb_x / scale / em_scale_x;
+        sbw[1] = (double)cr.sb_y / scale / em_scale_y;
+        sbw[2] = (double)cr.aw_x / scale / em_scale_x;
+        sbw[3] = (double)cr.aw_y / scale / em_scale_y;
+    }
+
+    /* Setup cache and render : */
+    if (cr.metrics_type == FAPI_METRICS_REPLACE) {
+        /*
+         * Here we don't take care of replaced advance width
+         * because gs_text_setcachedevice handles it.
+         */
+        int can_replace_metrics;
+
+        if ((code = renderer_retcode(i_ctx_p, I, I->can_replace_metrics(I, &I->ff, &cr, &can_replace_metrics))) < 0)
+            return code;
+        if (!can_replace_metrics) {
+            /*
+             * The renderer should replace the lsb, but it can't.
+             * To work around we compute a displacement in integral pixels
+             * and later shift the bitmap to it. The raster will be inprecise
+             * with non-integral pixels shift.
+             */
+            char_bbox.q.x -= char_bbox.p.x;
+            char_bbox.p.x = 0;
+            gs_distance_transform((metrics.bbox_x0 / em_scale_x - sbw[0]),
+                                  0, ctm, &penum_s->fapi_glyph_shift);
+            penum_s->fapi_glyph_shift.x *= 1 << log2_scale.x;
+            penum_s->fapi_glyph_shift.y *= 1 << log2_scale.y;
+        }
     }
 
     /*
@@ -2853,6 +2822,7 @@ retry_oversampling:
             /* Callout to CDevProc, zsetcachedevice2, fapi_finish_render. */
         }
     }
+
     return code;
 }
 

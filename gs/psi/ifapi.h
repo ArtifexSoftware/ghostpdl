@@ -199,7 +199,6 @@ struct FAPI_server_s {
     FAPI_face face;
     FAPI_font ff;
     int max_bitmap;
-    bool skip_glyph; /* Used when the scale ends up as zero */
     bool use_outline;
     gs_matrix initial_FontMatrix; /* Font Matrix at the time the font is defined */
                                   /* Used to use the stored 'OrigFont' entry but */
