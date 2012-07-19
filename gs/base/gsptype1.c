@@ -1292,6 +1292,7 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
     if (pcache != 0) {
         gx_color_tile *ctile = &pcache->tiles[id % pcache->num_tiles];
         bool internal_accum = true;
+        bool is_p1_c;
         if (pis->have_pattern_streams) {
             int code = dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_load, NULL, id);
             internal_accum = (code == 0);
@@ -1300,13 +1301,13 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
         }
         if (ctile->id == id &&
             ctile->is_dummy == !internal_accum &&
-            (!(gx_dc_is_pattern1_color(pdevc)) ||
+            (!(is_p1_c = gx_dc_is_pattern1_color(pdevc)) ||
              ctile->depth == dev->color_info.depth)
             ) {
             int px = pis->screen_phase[select].x;
             int py = pis->screen_phase[select].y;
 
-            if (gx_dc_is_pattern1_color(pdevc)) {       /* colored */
+            if (is_p1_c) {       /* colored */
                 pdevc->colors.pattern.p_tile = ctile;
 #           if 0 /* Debugged with Bug688308.ps and applying patterns after clist.
                     Bug688308.ps has a step_matrix much bigger than pattern bbox;
@@ -1402,13 +1403,18 @@ typedef struct gx_dc_serialized_tile_s {
     gs_int_point size;
     gs_matrix step_matrix;
     gs_rect bbox;
-    byte is_clist;
-    byte uses_transparency;
-    byte depth;
-    byte tiling_type;
-    byte is_simple;
-    byte has_overlap;
+    int flags;
 } gx_dc_serialized_tile_t;
+
+enum {
+    TILE_HAS_OVERLAP = 0x80000000,
+    TILE_IS_SIMPLE   = 0x40000000,
+    TILE_USES_TRANSP = 0x20000000,
+    TILE_IS_CLIST    = 0x10000000,
+    TILE_TYPE_MASK   = 0x0F000000,
+    TILE_TYPE_SHIFT  = 24,
+    TILE_DEPTH_MASK  = 0x00FFFFFF
+};
 
 static int
 gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data, 
@@ -1430,7 +1436,6 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         gx_dc_serialized_tile_t buf;
         gx_strip_bitmap buf1;
 
-        buf.uses_transparency = 0;
         buf.id = ptile->id;
         buf.size.x = 0; /* fixme: don't write with raster patterns. */
         buf.size.y = 0; /* fixme: don't write with raster patterns. */
@@ -1438,11 +1443,10 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
         buf.size_c = size_c;
         buf.step_matrix = ptile->step_matrix;
         buf.bbox = ptile->bbox;
-        buf.is_clist = false;
-        buf.depth = ptile->depth;
-        buf.tiling_type = ptile->tiling_type;
-        buf.is_simple = ptile->is_simple;
-        buf.has_overlap = ptile->has_overlap;
+        buf.flags = ptile->depth
+                  | (ptile->tiling_type<<TILE_TYPE_SHIFT)
+                  | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
+                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0);
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1523,19 +1527,18 @@ gx_dc_pattern_trans_write_raster(gx_color_tile *ptile, int64_t offset, byte *dat
         gx_dc_serialized_tile_t buf;
         tile_trans_clist_info_t trans_info;
 
-        buf.uses_transparency = 1;
         buf.id = ptile->id;
         buf.size.x = 0; /* fixme: don't write with raster patterns. */
         buf.size.y = 0; /* fixme: don't write with raster patterns. */
         buf.size_b = size - size_h;
         buf.size_c = 0;
+        buf.flags = ptile->depth
+                  | TILE_USES_TRANSP
+                  | (ptile->tiling_type<<TILE_TYPE_SHIFT)
+                  | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
+                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0);
         buf.step_matrix = ptile->step_matrix;
         buf.bbox = ptile->bbox;
-        buf.is_clist = false;
-        buf.depth = ptile->depth;
-        buf.tiling_type = ptile->tiling_type;
-        buf.is_simple = ptile->is_simple;
-        buf.has_overlap = ptile->has_overlap;
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1649,12 +1652,12 @@ gx_dc_pattern_write(
         buf.size_c = size_c;
         buf.step_matrix = ptile->step_matrix;
         buf.bbox = ptile->bbox;
-        buf.is_clist = true;
-        buf.depth = ptile->depth;
-        buf.tiling_type = ptile->tiling_type;
-        buf.is_simple = ptile->is_simple;
-        buf.has_overlap = ptile->has_overlap;
-        buf.uses_transparency = ptile->cdev->common.page_uses_transparency;
+        buf.flags = ptile->depth
+                  | TILE_IS_CLIST
+                  | (ptile->tiling_type<<TILE_TYPE_SHIFT)
+                  | (ptile->is_simple ? TILE_IS_SIMPLE : 0)
+                  | (ptile->has_overlap ? TILE_HAS_OVERLAP : 0)
+                  | (ptile->cdev->common.page_uses_transparency ? TILE_USES_TRANSP : 0);
         if (sizeof(buf) > left) {
             /* For a while we require the client to provide enough buffer size. */
             return_error(gs_error_unregistered); /* Must not happen. */
@@ -1842,7 +1845,7 @@ gx_dc_pattern_read(
         left -= sizeof(buf);
         offset1 += sizeof(buf);
 
-        if (buf.uses_transparency && !buf.is_clist){
+        if ((buf.flags & TILE_USES_TRANSP) && !(buf.flags & TILE_IS_CLIST)){
 
             if (sizeof(buf) + sizeof(tile_trans_clist_info_t) > size) {
                 return_error(gs_error_unregistered); /* Must not happen. */
@@ -1874,15 +1877,15 @@ gx_dc_pattern_read(
         pdevc->mask.id = buf.id;
         ptile->step_matrix = buf.step_matrix;
         ptile->bbox = buf.bbox;
-        ptile->depth = buf.depth;
-        ptile->tiling_type = buf.tiling_type;
-        ptile->is_simple = buf.is_simple;
-        ptile->has_overlap = buf.has_overlap;
+        ptile->depth = buf.flags & TILE_DEPTH_MASK;
+        ptile->tiling_type = (buf.flags & TILE_TYPE_MASK)>>TILE_TYPE_SHIFT;
+        ptile->is_simple = !!(buf.flags & TILE_IS_SIMPLE);
+        ptile->has_overlap = !!(buf.flags & TILE_HAS_OVERLAP);
         ptile->is_dummy = 0;
 
-        if (!buf.is_clist) {
+        if (!(buf.flags & TILE_IS_CLIST)) {
 
-            if (buf.uses_transparency){
+            if (buf.flags & TILE_USES_TRANSP){
 
                 /* Make a new ttrans object */
 
@@ -1932,14 +1935,14 @@ gx_dc_pattern_read(
             inst.size.x = buf.size.x;
             inst.size.y = buf.size.y;
             inst.saved = &state;
-            inst.is_clist = buf.is_clist;	/* tell gx_pattern_accum_alloc to use clist */
+            inst.is_clist = !!(buf.flags & TILE_IS_CLIST);	/* tell gx_pattern_accum_alloc to use clist */
             ptile->cdev = (gx_device_clist *)gx_pattern_accum_alloc(mem, mem,
                                &inst, "gx_dc_pattern_read");
             if (ptile->cdev == NULL)
                 return_error(gs_error_VMerror);
             ptile->cdev->common.band_params.page_uses_transparency =
-                                                        buf.uses_transparency;
-            ptile->cdev->common.page_uses_transparency = buf.uses_transparency;
+                                                         !!(buf.flags & TILE_USES_TRANSP);
+            ptile->cdev->common.page_uses_transparency = !!(buf.flags & TILE_USES_TRANSP);
             code = dev_proc(&ptile->cdev->writer, open_device)((gx_device *)&ptile->cdev->writer);
             if (code < 0)
                 return code;
