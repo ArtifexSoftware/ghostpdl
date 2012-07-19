@@ -720,11 +720,19 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                variable can then be used to hold the named color
                structure that is actually search. This is created later
                when needed. */
+            char *nameptr;
+
             icc_profile = gsicc_profile_new(NULL, mem_gc, NULL, 0);
             icc_profile->data_cs = gsNAMED;
             code = gsicc_load_namedcolor_buffer(icc_profile, str, mem_gc);
-            if (code < 0) gs_rethrow1(-1, "problems with profile %s",pname);
+            if (code < 0) gs_rethrow1(-1, "problems with profile %s", pname);
             *manager_default_profile = icc_profile;
+            nameptr = (char*) gs_alloc_bytes(icc_profile->memory, namelen+1,
+                                             "gsicc_set_profile");
+            memcpy(nameptr, pname, namelen);
+            nameptr[namelen] = '\0';
+            icc_profile->name = nameptr;
+            icc_profile->name_length = namelen;
             return 0;  /* Done now, since this is not a standard ICC profile */
         }
         code = sfclose(str);
