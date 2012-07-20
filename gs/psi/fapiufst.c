@@ -1702,7 +1702,7 @@ int gs_fapiufst_instantiate(i_plugin_client_memory *client_mem, i_plugin_instanc
     i_ctx_t *i_ctx_p = NULL;
     gs_main_instance *inst;
     ref entry;
-    char tmppath[512];
+    char tmppath[gp_file_name_sizeof];
     int code = 0;
 
     if (r == 0)
@@ -1723,20 +1723,20 @@ int gs_fapiufst_instantiate(i_plugin_client_memory *client_mem, i_plugin_instanc
     /* The following entries will get overwritten if the user specifies alternative settings
      * on the command line.
      */
-    strncpy(tmppath, UFSTFONTDIR, sizeof(tmppath));
-    strncat(tmppath, UFST_PlugIn_Path, sizeof(tmppath));
+    strncpy(tmppath, UFSTFONTDIR, gp_file_name_sizeof);
+    strncat(tmppath, UFST_PlugIn_Path, gp_file_name_sizeof - strlen(tmppath));
 
     fapiu_make_string (i_ctx_p, (const char *)tmppath, &entry);
     (void)dict_put_string(systemdict, UFST_PlugIn_Str, &entry, NULL);
 
-    strncpy(tmppath, UFSTFONTDIR, sizeof(tmppath));
-    strncat(tmppath, FCOfontfilePath, sizeof(tmppath));
+    strncpy(tmppath, UFSTFONTDIR, gp_file_name_sizeof);
+    strncat(tmppath, FCOfontfilePath, gp_file_name_sizeof - strlen(tmppath));
 
     fapiu_make_string (i_ctx_p, (const char *)tmppath, &entry);
     (void)dict_put_string(systemdict, FCOfontfileStr, &entry, NULL);
 
-    strncpy(tmppath, UFSTFONTDIR, sizeof(tmppath));
-    strncat(tmppath, FCOfontfile2Path, sizeof(tmppath));
+    strncpy(tmppath, UFSTFONTDIR, gp_file_name_sizeof);
+    strncat(tmppath, FCOfontfile2Path, gp_file_name_sizeof - strlen(tmppath));
 
     fapiu_make_string (i_ctx_p, (const char *)tmppath, &entry);
     (void)dict_put_string(systemdict, FCOfontfile2Str, &entry, NULL);
