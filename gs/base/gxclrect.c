@@ -321,6 +321,7 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
         &((gx_device_clist *)dev)->writer;
     int code;
     cmd_rects_enum_t re;
+    gx_color_usage_bits color_usage;
 
     crop_fill(cdev, rx, ry, rwidth, rheight);
     if (rwidth <= 0 || rheight <= 0)
@@ -328,10 +329,11 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
     RECT_ENUM_INIT(re, ry, rheight);
+    color_usage = gx_color_index2usage(dev, color);
     do {
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or |= color;
-        re.pcls->band_complexity.uses_color |= ((color != 0xffffff) && (color != 0));
+        re.pcls->color_usage.or |= color_usage;
+        re.pcls->band_complexity.uses_color |= ((color_usage != 0) && (color_usage != gx_color_usage_all(cdev)));
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             if (code >= 0 && color != re.pcls->colors[1]) {
@@ -380,7 +382,7 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or = 0xffffffff;
+        re.pcls->color_usage.or = gx_color_usage_all(cdev);
         re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
@@ -600,7 +602,7 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
         ulong offset_temp;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or = 0xffffffff;
+        re.pcls->color_usage.or = gx_color_usage_all(cdev);
         re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
@@ -662,12 +664,12 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     int depth =
         (color1 == gx_no_color_index && color0 == gx_no_color_index ?
          cdev->clist_color_info.depth : 1);
-    gx_color_index colors_used =
+    gx_color_usage_bits color_usage =
         (color1 == gx_no_color_index && color0 == gx_no_color_index ?
          /* We can't know what colors will be used: assume the worst. */
-         ((gx_color_index)1 << depth) - 1 :
-         (color0 == gx_no_color_index ? 0 : color0) |
-         (color1 == gx_no_color_index ? 0 : color1));
+         gx_color_usage_all(dev) :
+         (color0 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color0)) |
+         (color1 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color1)));
     int code;
     cmd_rects_enum_t re;
 
@@ -681,7 +683,7 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
         ulong offset_temp;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or |= colors_used;
+        re.pcls->color_usage.or |= color_usage;
         re.pcls->band_complexity.uses_color |=
             ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
             ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
@@ -747,9 +749,9 @@ clist_copy_mono(gx_device * dev,
         &((gx_device_clist *)dev)->writer;
     int y0;
     gx_bitmap_id orig_id = id;
-    gx_color_index colors_used =
-        (color0 == gx_no_color_index ? 0 : color0) |
-        (color1 == gx_no_color_index ? 0 : color1);
+    gx_color_usage_bits color_usage =
+        (color0 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color0)) |
+        (color1 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color1));
     bool uses_color =
         ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
         ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
@@ -767,7 +769,7 @@ clist_copy_mono(gx_device * dev,
         int code;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or |= colors_used;
+        re.pcls->color_usage.or |= color_usage;
         re.pcls->band_complexity.uses_color |= uses_color;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
@@ -1035,7 +1037,7 @@ clist_copy_color(gx_device * dev,
     int y0;
     int data_x_bit;
     /* We can't know what colors will be used: assume the worst. */
-    gx_color_index colors_used = ((gx_color_index)1 << depth) - 1;
+    gx_color_usage_bits all = gx_color_usage_all(cdev);
     cmd_rects_enum_t re;
 
     fit_copy(dev, data, data_x, raster, id, rx, ry, rwidth, rheight);
@@ -1051,7 +1053,7 @@ clist_copy_color(gx_device * dev,
         int code;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or |= colors_used;
+        re.pcls->color_usage.or |= all;
         re.pcls->band_complexity.uses_color = 1;
 
         do {
@@ -1156,6 +1158,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     int y0;
     int data_x_bit;
     cmd_rects_enum_t re;
+    gx_color_usage_bits all = gx_color_usage_all(cdev);
 
     /* If the target can't perform copy_alpha, exit now */
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
@@ -1174,7 +1177,7 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
         int code;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or = 0xffffffff;
+        re.pcls->color_usage.or = all;
         re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
@@ -1296,6 +1299,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
     int y0;
     int data_x_bit;
     cmd_rects_enum_t re;
+    gx_color_usage_bits color_usage = gx_color_index2usage(dev, color);
 
     /* If the target can't perform copy_alpha, exit now */
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
@@ -1314,7 +1318,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
         int code;
 
         RECT_STEP_INIT(re);
-        re.pcls->colors_used.or |= color;
+        re.pcls->color_usage.or |= color_usage;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             if (code >= 0)
@@ -1459,12 +1463,12 @@ clist_strip_copy_rop2(gx_device * dev,
     const gx_strip_bitmap *tiles = textures;
     int y0;
     /* Compute the set of possible colors that this operation can generate. */
-    gx_color_index all = ((gx_color_index)1 << cdev->clist_color_info.depth) - 1;
+    gx_color_usage_bits all = gx_color_usage_all(cdev);
     bool subtractive = dev->color_info.num_components >= 4; /****** HACK ******/
-    gx_color_index S =
-        (scolors ? scolors[0] | scolors[1] : sdata ? all : 0);
-    gx_color_index T =
-        (tcolors ? tcolors[0] | tcolors[1] : textures ? all : 0);
+    gx_color_usage_bits S =
+        (scolors ? gx_color_index2usage(dev, scolors[0] | scolors[1]) : sdata ? all : 0);
+    gx_color_usage_bits T =
+        (tcolors ? gx_color_index2usage(dev, tcolors[0] | tcolors[1]) : textures ? all : 0);
     gs_rop3_t color_rop =
         (subtractive ? byte_reverse_bits[rop ^ 0xff] : rop);
     bool slow_rop;
@@ -1502,19 +1506,33 @@ clist_strip_copy_rop2(gx_device * dev,
     y0 = ry;
     if (cdev->permanent_error < 0)
       return (cdev->permanent_error);
+    {
+    }
     RECT_ENUM_INIT(re, ry, rheight);
     do {
         const byte *row = sdata + (re.y - y0) * sraster;
-        gx_color_index D;
         int code;
 
         RECT_STEP_INIT(re);
-        D = re.pcls->colors_used.or;
-        /* Reducing D, S, T to rop_operand (which apparently is 32 bit) appears safe
-           due to 'all' a has smaller snumber of significant bits. */
-        re.pcls->colors_used.or =
-            ((rop_proc_table[color_rop])((rop_operand)D, (rop_operand)S, (rop_operand)T) & all) | D;
-        re.pcls->colors_used.slow_rop |= slow_rop;
+        /* rops are defined to work on rop_operands, which are typically 32
+         * bits (unsigned long). We need to use gx_color_usage_bits, which
+         * are usually 64 bits. So, the following funky bit of code; although
+         * this is an if rather than a #if (as sizeof cannot be evaluated at
+         * preprocess time), it should resolve properly at compile time. */
+        if (sizeof(rop_operand) >= sizeof(gx_color_usage_bits)) {
+            gx_color_usage_bits D = re.pcls->color_usage.or;
+            re.pcls->color_usage.or =
+                    ((rop_proc_table[color_rop])((rop_operand)D, (rop_operand)S, (rop_operand)T) & all) | D;
+        } else if (2*sizeof(rop_operand) >= sizeof(gx_color_usage_bits)) {
+            rop_operand D;
+            D = (rop_operand)re.pcls->color_usage.or;
+            re.pcls->color_usage.or |=
+                    ((rop_proc_table[color_rop])(D, (rop_operand)S, (rop_operand)T) & all);
+            D = (rop_operand)(re.pcls->color_usage.or>>(8*sizeof(rop_operand)));
+            re.pcls->color_usage.or |=
+                    (((gx_color_usage_bits)(rop_proc_table[color_rop])(D, (rop_operand)(S>>(8*sizeof(rop_operand))), (rop_operand)(T>>(8*sizeof(rop_operand)))))<<(8*sizeof(rop_operand))) & all;
+        }
+        re.pcls->color_usage.slow_rop |= slow_rop;
         re.pcls->band_complexity.nontrivial_rops |= slow_rop;
         if (rop3_uses_T(rop)) {
             if (tcolors == 0 || tcolors[0] != tcolors[1]) {

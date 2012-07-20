@@ -464,7 +464,7 @@ int clist_close_page_info(gx_band_page_info_t *ppi);
  * end of a page.  gdev_prn_colors_used calls this procedure if it hasn't
  * been called since the page was started.  clist_end_page also calls it.
  */
-void clist_compute_colors_used(gx_device_clist_writer *cldev);
+void clist_compute_color_usage(gx_device_clist_writer *cldev);
 
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED

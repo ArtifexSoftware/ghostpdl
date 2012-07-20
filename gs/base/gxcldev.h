@@ -270,7 +270,7 @@ struct gx_clist_state_s {
     cmd_list list;		/* list of commands for band */
     /* Following are set when writing, read when reading */
     gx_band_complexity_t band_complexity;
-    gx_colors_used_t colors_used;
+    gx_color_usage_t color_usage;
 };
 
 /* The initial values for a band state */

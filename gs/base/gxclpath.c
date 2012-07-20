@@ -244,7 +244,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     } while (left);
 
     /* should properly calculate colors_used, but for now just punt */
-    pcls->colors_used.or = ((gx_color_index)1 << cldev->clist_color_info.depth) - 1;
+    pcls->color_usage.or = gx_color_usage_all(cldev);
 
     /* Here we can't know whether a pattern paints colors besides
        black and white, so assume that it does.
@@ -281,17 +281,19 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 /* Compute the colors used by a drawing color. */
 gx_color_index
-cmd_drawing_colors_used(gx_device_clist_writer *cldev,
+cmd_drawing_color_usage(gx_device_clist_writer *cldev,
                         const gx_drawing_color * pdcolor)
 {
     if (gx_dc_is_pure(pdcolor))
-        return gx_dc_pure_color(pdcolor);
+        return gx_color_index2usage((gx_device *)cldev, gx_dc_pure_color(pdcolor));
     else if (gx_dc_is_binary_halftone(pdcolor))
-        return gx_dc_binary_color0(pdcolor) | gx_dc_binary_color1(pdcolor);
+        return gx_color_index2usage((gx_device *)cldev,
+                                    gx_color_index2usage((gx_device *)cldev, gx_dc_binary_color0(pdcolor)) |
+                                    gx_color_index2usage((gx_device *)cldev, gx_dc_binary_color1(pdcolor)));
     else if (gx_dc_is_colored_halftone(pdcolor))
-        return colored_halftone_colors_used(cldev, pdcolor);
+        return gx_color_index2usage((gx_device *)cldev, colored_halftone_colors_used(cldev, pdcolor));
     else
-        return ((gx_color_index)1 << cldev->clist_color_info.depth) - 1;
+        return gx_color_usage_all(cldev);
 }
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
@@ -797,7 +799,7 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
                 return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
                                             pcpath);
             }
-            re.pcls->colors_used.slow_rop |= slow_rop;
+            re.pcls->color_usage.slow_rop |= slow_rop;
             code = cmd_put_path(cdev, re.pcls, ppath,
                                 int2fixed(max(re.y - 1, y0)),
                                 int2fixed(min(re.y + re.height + 1, y1)),
@@ -940,7 +942,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
             return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
                                           pcpath);
         }
-        re.pcls->colors_used.slow_rop |= slow_rop;
+        re.pcls->color_usage.slow_rop |= slow_rop;
         {
             fixed ymin, ymax;
 
@@ -1015,7 +1017,7 @@ clist_put_polyfill(gx_device *dev, fixed px, fixed py,
         if ((code = cmd_update_lop(cdev, re.pcls, lop)) < 0 ||
             (code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re, devn_not_tile)) < 0)
             goto out;
-        re.pcls->colors_used.slow_rop |= slow_rop;
+        re.pcls->color_usage.slow_rop |= slow_rop;
         code = cmd_put_path(cdev, re.pcls, &path,
                             int2fixed(max(re.y - 1, y0)),
                             int2fixed(min(re.y + re.height + 1, y1)),

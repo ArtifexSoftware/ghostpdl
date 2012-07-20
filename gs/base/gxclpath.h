@@ -229,8 +229,8 @@ dev_proc_fill_triangle(clist_fill_triangle);
 /* ------ Exported by gxclpath.c ------ */
 
 /* Compute the colors used by a drawing color. */
-gx_color_index cmd_drawing_colors_used(gx_device_clist_writer *cldev,
-                                       const gx_drawing_color *pdcolor);
+gx_color_usage_bits cmd_drawing_color_usage(gx_device_clist_writer *cldev,
+                                            const gx_drawing_color *pdcolor);
 
 /*
  * Compute whether a drawing operation will require the slow (full-pixel)

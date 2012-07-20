@@ -984,14 +984,14 @@ gdev_prn_file_is_new(const gx_device_printer *pdev)
 
 /* Determine the colors used in a range of lines. */
 int
-gx_page_info_colors_used(const gx_device *dev,
+gx_page_info_color_usage(const gx_device *dev,
                          const gx_band_page_info_t *page_info,
                          int y, int height,
-                         gx_colors_used_t *colors_used, int *range_start)
+                         gx_color_usage_t *color_usage, int *range_start)
 {
     int start, end, i;
     int num_lines = page_info->scan_lines_per_colors_used;
-    gx_color_index or = 0;
+    gx_color_usage_bits or = 0;
     bool slow_rop = false;
 
     if (y < 0 || height < 0 || height > dev->height - y)
@@ -999,32 +999,32 @@ gx_page_info_colors_used(const gx_device *dev,
     start = y / num_lines;
     end = (y + height + num_lines - 1) / num_lines;
     for (i = start; i < end; ++i) {
-        or |= page_info->band_colors_used[i].or;
-        slow_rop |= page_info->band_colors_used[i].slow_rop;
+        or |= page_info->band_color_usage[i].or;
+        slow_rop |= page_info->band_color_usage[i].slow_rop;
     }
-    colors_used->or = or;
-    colors_used->slow_rop = slow_rop;
+    color_usage->or = or;
+    color_usage->slow_rop = slow_rop;
     *range_start = start * num_lines;
     return min(end * num_lines, dev->height) - *range_start;
 }
 int
-gdev_prn_colors_used(gx_device *dev, int y, int height,
-                     gx_colors_used_t *colors_used, int *range_start)
+gdev_prn_color_usage(gx_device *dev, int y, int height,
+                     gx_color_usage_t *color_usage, int *range_start)
 {
     gx_device_clist_writer *cldev;
 
     /* If this isn't a banded device, return default values. */
     if (dev_proc(dev, open_device) != gs_clist_device_procs.open_device) {
         *range_start = 0;
-        colors_used->or = ((gx_color_index)1 << dev->color_info.depth) - 1;
+        color_usage->or = gx_color_usage_all(dev);
         return dev->height;
     }
     cldev = (gx_device_clist_writer *)dev;
     if (cldev->page_info.scan_lines_per_colors_used == 0) /* not set yet */
-        clist_compute_colors_used(cldev);
+        clist_compute_color_usage(cldev);
     return
-        gx_page_info_colors_used(dev, &cldev->page_info,
-                                 y, height, colors_used, range_start);
+        gx_page_info_color_usage(dev, &cldev->page_info,
+                                 y, height, color_usage, range_start);
 }
 
 /*

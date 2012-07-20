@@ -566,17 +566,17 @@ bool gdev_prn_file_is_new(const gx_device_printer *pdev);
  * is stored in *range_start, and the height of the range is returned.
  * If the parameters are invalid, the procedure returns -1.
  */
-int gdev_prn_colors_used(gx_device *dev, int y, int height,
-                         gx_colors_used_t *colors_used,
+int gdev_prn_color_usage(gx_device *dev, int y, int height,
+                         gx_color_usage_t *color_usage,
                          int *range_start);
 /*
  * Determine the colors used in a saved page.  We still need the device
  * in order to know the total page height.
  */
-int gx_page_info_colors_used(const gx_device *dev,
+int gx_page_info_color_usage(const gx_device *dev,
                              const gx_band_page_info_t *page_info,
                              int y, int height,
-                             gx_colors_used_t *colors_used,
+                             gx_color_usage_t *color_usage,
                              int *range_start);
 
 /*

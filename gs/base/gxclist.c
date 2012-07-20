@@ -622,8 +622,8 @@ clist_reset_page(gx_device_clist_writer *cwdev)
     cwdev->page_bfile_end_pos = 0;
     /* Indicate that the colors_used information hasn't been computed. */
     cwdev->page_info.scan_lines_per_colors_used = 0;
-    memset(cwdev->page_info.band_colors_used, 0,
-           sizeof(cwdev->page_info.band_colors_used));
+    memset(cwdev->page_info.band_color_usage, 0,
+           sizeof(cwdev->page_info.band_color_usage));
 }
 
 /* Open the device's bandfiles */
@@ -828,7 +828,7 @@ clist_end_page(gx_device_clist_writer * cldev)
             code = 0;
     }
     if (code >= 0) {
-        clist_compute_colors_used(cldev);
+        clist_compute_color_usage(cldev);
         ecode |= code;
         cldev->page_bfile_end_pos = cldev->page_info.io_procs->ftell(cldev->page_bfile);
     }
@@ -855,6 +855,20 @@ clist_end_page(gx_device_clist_writer * cldev)
     return 0;
 }
 
+gx_color_usage_bits
+gx_color_index2usage(gx_device *dev, gx_color_index color)
+{
+    gx_color_usage_bits bits = 0;
+    int i;
+
+    for (i = 0; i < dev->color_info.num_components; i++) {
+        if (color & dev->color_info.comp_mask[i])
+            bits |= (1<<i);
+    }
+
+    return bits;
+}
+
 /* Compute the set of used colors in the page_info structure.
  *
  * NB: Area for improvement, move states[band] and page_info to clist
@@ -863,7 +877,7 @@ clist_end_page(gx_device_clist_writer * cldev)
  */
 
 void
-clist_compute_colors_used(gx_device_clist_writer *cldev)
+clist_compute_color_usage(gx_device_clist_writer *cldev)
 {
     int nbands = cldev->nbands;
     int bands_per_colors_used =
@@ -873,15 +887,15 @@ clist_compute_colors_used(gx_device_clist_writer *cldev)
 
     cldev->page_info.scan_lines_per_colors_used =
         cldev->page_band_height * bands_per_colors_used;
-    memset(cldev->page_info.band_colors_used, 0,
-           sizeof(cldev->page_info.band_colors_used));
+    memset(cldev->page_info.band_color_usage, 0,
+           sizeof(cldev->page_info.band_color_usage));
     for (band = 0; band < nbands; ++band) {
         int entry = band / bands_per_colors_used;
 
-        cldev->page_info.band_colors_used[entry].or |=
-            cldev->states[band].colors_used.or;
-        cldev->page_info.band_colors_used[entry].slow_rop |=
-            cldev->states[band].colors_used.slow_rop;
+        cldev->page_info.band_color_usage[entry].or |=
+            cldev->states[band].color_usage.or;
+        cldev->page_info.band_color_usage[entry].slow_rop |=
+            cldev->states[band].color_usage.slow_rop;
 
     }
 }

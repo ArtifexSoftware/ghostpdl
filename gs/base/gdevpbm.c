@@ -1230,22 +1230,22 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
             byte *row;
 
             if (lnum == band_end) {
-                gx_colors_used_t colors_used;
+                gx_color_usage_t color_usage;
                 int band_start;
                 int band_height =
-                    gdev_prn_colors_used((gx_device *)pdev, lnum, 1,
-                                         &colors_used, &band_start);
+                    gdev_prn_color_usage((gx_device *)pdev, lnum, 1,
+                                         &color_usage, &band_start);
 
                 band_end = band_start + band_height;
-                marked = colors_used.or & (plane_mask << plane_shift);
+                marked = color_usage.or & (plane_mask << plane_shift);
                 if (!marked)
                     memset(data, 0, raster);
 #ifdef DEBUG
                 if (plane == 0)
                     if_debug4(':',
                               "[:]%4d - %4d mask = 0x%lx, slow_rop = %d\n",
-                              lnum, band_end - 1, (ulong)colors_used.or,
-                              colors_used.slow_rop);
+                              lnum, band_end - 1, (ulong)color_usage.or,
+                              color_usage.slow_rop);
 #endif
             }
             if (marked) {
