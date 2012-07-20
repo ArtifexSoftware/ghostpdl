@@ -552,17 +552,29 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
     pdf_data_writer_t writer;
     byte digest[6] = {0,0,0,0,0,0};
     int code;
+    int options=0;
 
     if (pbfont->written)
         return 0;		/* already written */
     code = copied_order_font((gs_font *)out_font);
     if (code < 0)
         return code;
-    code = pdf_begin_data_stream(pdev, &writer, DATA_STREAM_BINARY |
-                            /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
-                               See comment in pdf_begin_encrypt. */
-                                 (pdev->CompressFonts ?
-                                  DATA_STREAM_COMPRESS : 0), 0);
+    /* Since we now always ASCIIHex encode the eexec encrypted portion of a
+     * Type 1 font, such a font cannot contain any binary data, if its not being
+     * compressed then there is no reason to ASCII encode it (which will happen
+     * we set DATA_STREAM_BINARY and the device does not permit binary output)
+     * NB if HaveCFF is true then we convert type 1 to CFF which is a binary
+     * format, so we still need to set DATA_STREAM_BINARY.
+     */
+    if (pdev->CompressFonts)
+        options = DATA_STREAM_BINARY | DATA_STREAM_COMPRESS;
+    else
+         if (FontType != ft_encrypted || pdev->HaveCFF)
+            options = DATA_STREAM_BINARY;
+    /* Don't set DATA_STREAM_ENCRYPT since we write to a temporary file.
+     * See comment in pdf_begin_encrypt.
+     */
+    code = pdf_begin_data_stream(pdev, &writer, options, 0);
     if (code < 0)
         return code;
     if (pdev->PDFA != 0) {
@@ -613,8 +625,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, font_type 
 
             code = psf_write_type1_font(writer.binary.strm,
                                 (gs_font_type1 *)out_font,
-                                WRITE_TYPE1_WITH_LENIV |
-                                    WRITE_TYPE1_EEXEC | WRITE_TYPE1_EEXEC_PAD,
+                                WRITE_TYPE1_WITH_LENIV | WRITE_TYPE1_EEXEC |
+                                WRITE_TYPE1_EEXEC_PAD | WRITE_TYPE1_ASCIIHEX,
                                 NULL, 0, &fnstr, lengths);
             if (lengths[0] > 0) {
                 if (code < 0)

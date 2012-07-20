@@ -897,9 +897,12 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
         if (options & WRITE_TYPE1_ASCIIHEX) {
             s_init(&AXE_stream, s->memory);
             s_init_state((stream_state *)&AXE_state, &s_AXE_template, NULL);
-            AXE_state.EndOfData = false;
             s_init_filter(&AXE_stream, (stream_state *)&AXE_state,
                           AXE_buf, sizeof(AXE_buf), es);
+            /* We have to set this after s_init_filter() as that function
+             * sets it to true.
+             */
+            AXE_state.EndOfData = false;
             es = &AXE_stream;
         }
         s_init(&exE_stream, s->memory);
