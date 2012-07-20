@@ -330,10 +330,11 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
     if (page_num && pData->page[page_num - 1].viewing_orientation != NULL) {
         key = "PageViewingOrientation";
         pctm = pData->page[page_num - 1].viewing_orientation;
-    } else {
+    } else if (pData->viewing_orientation) {
         key = "ViewingOrientation";
         pctm = pData->viewing_orientation;
-    }
+    } else
+    	return 0; /* ignore broken comment */
     values[0] = pctm->xx;
     values[1] = pctm->xy;
     values[2] = pctm->yx;
