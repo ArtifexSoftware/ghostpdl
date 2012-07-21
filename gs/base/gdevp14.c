@@ -3359,7 +3359,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     gs_int_rect rect;
     int code;
     bool isolated;
-    bool sep_target = (strcmp(pdev->dname, "pdf14cmykspot") == 0);
+    bool sep_target;
     int group_color_numcomps;
     gs_transparency_color_t group_color;
     cmm_profile_t *curr_profile;
@@ -3367,17 +3367,15 @@ pdf14_begin_transparency_group(gx_device *dev,
     gsicc_rendering_intents_t rendering_intent;
     cmm_dev_profile_t *dev_profile;
 
+    sep_target = (strcmp(pdev->dname, "pdf14cmykspot") == 0) ||
+                 (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0));
     code = dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &group_profile,
                           &rendering_intent);
-
-
     /* If the target device supports separations, then
        we should should NOT create the group.  The exception to this
        rule would be if we just popped a transparency mask */
-
     code = compute_group_device_int_rect(pdev, &rect, pbbox, pis);
-
     if (code < 0)
         return code;
     if_debug4('v', "[v]pdf14_begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
@@ -6634,7 +6632,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                 /* Now update the device procs. Not
                    if we have a sep target though */
                 sep_target = (strcmp(pdev->dname, "pdf14clistcustom") == 0) ||
-                    (strcmp(pdev->dname, "pdf14clistcmykspot") == 0);
+                    (strcmp(pdev->dname, "pdf14clistcmykspot") == 0) ||
+                    (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0));
                 if (!sep_target)
                    code = pdf14_update_device_color_procs_push_c(dev,
                                   pdf14pct->params.group_color,
@@ -6664,7 +6663,8 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                    the group color space. */
                 /* First restore our procs */
                 sep_target = (strcmp(pdev->dname, "pdf14clistcustom") == 0) ||
-                    (strcmp(pdev->dname, "pdf14clistcmykspot") == 0);
+                    (strcmp(pdev->dname, "pdf14clistcmykspot") == 0) ||
+                    (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0));
                 if (!sep_target)
                code = pdf14_update_device_color_procs_pop_c(dev,pis);
                 /* We always do this push and pop */
