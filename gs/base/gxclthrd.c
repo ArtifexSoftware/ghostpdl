@@ -217,6 +217,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     gs_c_param_list_release(&paramlist);
     /* If the code < 0, the last thread creation failed -- clean it up */
     if (code < 0) {
+                band -= crdev->thread_lookahead_direction;	/* update for 'next_band' usage */
         /* the following relies on 'free' ignoring NULL pointers */
         gx_semaphore_free(crdev->render_threads[i].sema_group);
         gx_semaphore_free(crdev->render_threads[i].sema_this);
@@ -269,6 +270,7 @@ clist_setup_render_threads(gx_device *dev, int y)
     }
     crdev->num_render_threads = i;
     crdev->curr_render_thread = 0;
+        crdev->next_band = band;
 
     if(gs_debug[':'] != 0)
         dprintf1("%% Using %d rendering threads\n", i);
@@ -311,6 +313,11 @@ clist_teardown_render_threads(gx_device *dev)
             thread_cdev->page_info.io_procs->fclose(thread_cdev->page_bfile, thread_cdev->page_bfname, false);
             thread_cdev->page_info.io_procs->fclose(thread_cdev->page_cfile, thread_cdev->page_cfname, false);
             thread_cdev->do_not_open_or_close_bandfiles = true; /* we already closed the files */
+            /* before freeing this device's memory, swap with cdev if it was the main_thread_data */
+            if (thread_cdev->data == crdev->main_thread_data) {
+                thread_cdev->data = cdev->data;
+                cdev->data = crdev->main_thread_data;
+            }
             gdev_prn_free_memory((gx_device *)thread_cdev);
             /* Free the device copy this thread used.  Note that the
                deviceN stuff if was allocated and copied earlier for the device
@@ -326,7 +333,6 @@ clist_teardown_render_threads(gx_device *dev)
 
             gs_memory_chunk_release(thread->memory);
         }
-        cdev->data = crdev->main_thread_data;   /* restore the pointer for writing */
         gs_free_object(mem, crdev->render_threads, "clist_teardown_render_threads");
         crdev->render_threads = NULL;
 
@@ -435,7 +441,7 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
-    int i, next_band, code = 0;
+    int i, code = 0;
     int thread_index = crdev->curr_render_thread;
     clist_render_thread_control_t *thread = &(crdev->render_threads[thread_index]);
     gx_device_clist_common *thread_cdev = (gx_device_clist_common *)thread->cdev;
@@ -466,14 +472,15 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
         for (i=0; (i < crdev->num_render_threads) && (band >= 0) && (band < band_count);
                 i++, band += crdev->thread_lookahead_direction) {
             thread = &(crdev->render_threads[i]);
-
             thread->band = -1;          /* a value that won't match any valid band */
             /* Start thread 'i' to do band */
             if ((code = clist_start_render_thread(dev, i, band)) < 0)
                 break;
         }
+        crdev->next_band = i;			/* may be < 0 or == band_count, but that is handled later */
         crdev->curr_render_thread = thread_index = 0;
         thread = &(crdev->render_threads[0]);
+        thread_cdev = (gx_device_clist_common *)thread->cdev;
     }
     /* Wait for this thread */
     gx_semaphore_wait(thread->sema_this);
@@ -494,10 +501,10 @@ clist_get_band_from_thread(gx_device *dev, int band_needed)
     if (cdev->ymax > dev->height)
         cdev->ymax = dev->height;
 
-    /* If we are not at the final band, start up this thread with the next one to do */
-    next_band = band_needed + (crdev->num_render_threads * crdev->thread_lookahead_direction);
-    if (next_band >= 0 && next_band < band_count)
-        code = clist_start_render_thread(dev, thread_index, next_band);
+    if (crdev->next_band >= 0 && crdev->next_band < band_count) {
+        code = clist_start_render_thread(dev, thread_index, crdev->next_band);
+        crdev->next_band += crdev->thread_lookahead_direction;
+    }
     /* bump the 'curr' to the next thread */
     crdev->curr_render_thread = crdev->curr_render_thread == crdev->num_render_threads - 1 ?
                 0 : crdev->curr_render_thread + 1;

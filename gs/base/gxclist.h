@@ -396,6 +396,7 @@ typedef struct gx_device_clist_reader_s {
     byte *main_thread_data;		/* saved data pointer of main thread */
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
+    int next_band;			/* may be < 0 or >= num bands when no more remain to render */
 
 } gx_device_clist_reader;
 
