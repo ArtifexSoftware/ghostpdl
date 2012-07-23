@@ -1788,6 +1788,9 @@ AC_SUBST(HAVE_MKSTEMP64)
 AC_CHECK_FUNCS([setlocale], [HAVE_SETLOCALE=-DHAVE_SETLOCALE])
 AC_SUBST(HAVE_SETLOCALE)
 
+AC_CHECK_FUNCS([strerror], [HAVE_STRERROR=-DHAVE_STRERROR])
+AC_SUBST(HAVE_STRERROR)
+
 AC_PROG_GCC_TRADITIONAL
 
 dnl NB: We don't actually provide autoconf-switched fallbacks for any
@@ -1798,7 +1801,7 @@ AC_FUNC_MEMCMP
 AC_TYPE_SIGNAL
 AC_FUNC_STAT
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strerror strrchr strspn strstr])
+AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strrchr strspn strstr])
 
 dnl --------------------------------------------------
 dnl check for big/little endian for LCMS

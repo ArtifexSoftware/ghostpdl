@@ -109,12 +109,14 @@ gp_do_exit(int exit_status)
 /* ------ Miscellaneous ------ */
 
 /* Get the string corresponding to an OS error number. */
-/* Unix systems support this so inconsistently that we don't attempt */
-/* to figure out whether it's available. */
 const char *
 gp_strerror(int errnum)
 {
+#ifdef HAVE_STRERROR
+    return strerror(errnum);
+#else
     return NULL;
+#endif
 }
 
 /* We don't have a good way to get a serial number here, so just */
