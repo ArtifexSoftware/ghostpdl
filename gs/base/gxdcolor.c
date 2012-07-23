@@ -456,7 +456,6 @@ gx_dc_devn_fill_masked(const gx_device_color * pdevc, const byte * data,
     uint one = (invert ? 0 : 0xff);
     uint zero = one ^ 0xff;
     int iy;
-    gs_fixed_rect rect;
 
     for (iy = 0; iy < h; ++iy, row += raster) {
         const byte *p = row;
@@ -509,12 +508,8 @@ gx_dc_devn_fill_masked(const gx_device_color * pdevc, const byte * data,
                 else
                     bit = run & 7, left -= run;
             }
-            rect.p.x = x + w - l0;
-            rect.p.y = y + iy;
-            rect.q.x = x + w - left;
-            rect.q.y = y + iy + 1;
-            code = (*dev_proc(dev, fill_rectangle_hl_color)) 
-                                (dev, &rect, NULL, pdevc, NULL);
+            code = gx_device_color_fill_rectangle(pdevc,
+                          x + w - l0, y + iy, l0 - left, 1, dev, lop, NULL);
             if (code < 0)
                 return code;
         }
