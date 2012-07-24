@@ -20,7 +20,9 @@ command invokes \fBGhostscript\fR, an interpreter of Adobe Systems'
 \fBPostScript\fR(tm) and \fBPortable Document Format\fR (PDF) languages.
 \fBgs\fR reads "files" in sequence and executes them as Ghostscript
 programs. After doing this, it reads further input from the standard input
-stream (normally the keyboard), interpreting each line separately. The
+stream (normally the keyboard), interpreting each line separately and
+output to an output device (may be a file or an X11 window preview,
+see below). The
 interpreter exits gracefully when it encounters the "quit" command (either
 in a file or from the keyboard), at end-of-file, or at an interrupt signal
 (such as Control-C at the keyboard).
@@ -34,9 +36,18 @@ that executable, and the search path for fonts; on Unix it also shows the
 location of detailed documentation.
 .PP
 Ghostscript may be built to use many different output devices.  To see
-which devices your executable includes, run "\fBgs -h\fR".  Unless you
+which devices your executable includes, run "\fBgs -h\fR".
+.PP
+Unless you
 specify a particular device, Ghostscript normally opens the first one of
-those and directs output to it, so if the first one in the list is the one
+those and directs output to it.
+.PP
+If built with X11 support, often
+the default device is an X11 window (previewer), else ghostscript will
+typically
+use the bbox device and print on stdout the dimension of the postscript file.
+.PP
+So if the first one in the list is the one
 you want to use, just issue the command
 .PP
 .nf
