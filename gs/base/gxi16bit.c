@@ -48,7 +48,7 @@ sample_unpack_16(byte * bptr, int *pdata_x, const byte * data,
     uint sample;
     int left = dsize - dskip;
 
-    while (left > 2) {
+    while (left >= 2) {
         sample = ((uint) psrc[0] << 8) + psrc[1];
         *bufp = (frac)((frac_1 * (sample + 1)) >> 16);
         inc_bufp(bufp, spread);
