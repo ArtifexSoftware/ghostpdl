@@ -870,7 +870,8 @@ in:                             /* Initialize for a new page. */
                 else {
                     gx_color_index color = 0;
 
-                    dev_depth = tdev->color_info.depth;
+                    dev_depth = (tdev->color_info.depth < 8*sizeof(gx_color_index) ?
+                                 tdev->color_info.depth : 8*sizeof(gx_color_index));
                     dev_depth_bytes = (dev_depth + 7) >> 3;
                     switch (dev_depth_bytes - num_zero_bytes) {
                         case 8:

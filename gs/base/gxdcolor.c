@@ -556,7 +556,7 @@ gx_devn_write_color(
     /* Figure out the size needed.  First find the number of non zero values */
     count = gx_dc_devn_get_nonzero_comps(pdevc, dev, &mask);
     num_bytes1 = sizeof(gx_color_index);
-    num_bytes = num_bytes1 + count * 2 + 1;
+    num_bytes = num_bytes1 + count * 2;
     num_bytes_temp = num_bytes1;
 
     /* check for adequate space */
@@ -689,7 +689,7 @@ gx_devn_read_color(
         }
         mask >>= 1;
     } 
-    return num_bytes+1;
+    return num_bytes;
 }
 
 /*
