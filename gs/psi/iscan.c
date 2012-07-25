@@ -706,6 +706,8 @@ gs_scan_token(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                           (pstack == pdepth ? 0 :
                           ref_stack_index(&o_stack, size)->value.intval),
                           size + pstack);
+                if (size > max_array_size)
+                    sreturn(e_limitcheck);
                 myref = (pstack == pdepth ? pref : &arr);
                 if (check_only) {
                     make_empty_array(myref, 0);
