@@ -1167,7 +1167,6 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 {
     byte src_alpha;		/* $\alpha g_n$ */
     byte src_tmp[ART_MAX_CHAN + 1];
-    int i;
     int tmp;
 
     if (alpha == 255) {
@@ -1198,7 +1197,6 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 void
 art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
 {
-    int i;
     byte src_alpha;
 
     src_alpha = src[n_chan];
