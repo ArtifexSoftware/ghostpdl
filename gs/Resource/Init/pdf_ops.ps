@@ -994,7 +994,7 @@ end readonly def
               TextSpacing 0 eq { 
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
-                    setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow
+                    setfillstate WordSpacing 0 Vexch 32 4 -1 roll .pdfwidthshow
                   }
                   currentlinewidth
                   { setlinewidth }
@@ -1004,7 +1004,7 @@ end readonly def
                 { % preserve current line width around possible stroke setup
                   { setstrokeforTrpreservation
                     setfillstate WordSpacing 0 Vexch 32
-                    TextSpacing 0 Vexch 6 -1 roll awidthshow
+                    TextSpacing 0 Vexch 6 -1 roll .pdfawidthshow
                   }
                   currentlinewidth
                   { setlinewidth }

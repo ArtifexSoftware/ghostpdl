@@ -915,8 +915,13 @@ show_move(gs_show_enum * penum)
             return code;
     } else {
         double dx = 0, dy = 0;
-
-        if (SHOW_IS_ADD_TO_SPACE(penum)) {
+        /* Specifically for applying PDF word spacing, if single_byte_space == true
+           we'll only apply the delta for single byte character codes == space.s_char
+           See psi/zchar.c zpdfwidthshow and zpdfawidthshow for more detail
+         */
+        if (SHOW_IS_ADD_TO_SPACE(penum)
+            && (!penum->single_byte_space
+            || penum->fstack.depth <= 0)) {
             gs_char chr = gx_current_char((const gs_text_enum_t *)penum);
 
             if (chr == penum->text.space.s_char) {

@@ -156,6 +156,7 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
     pte->pair = 0;
     pte->device_disabled_grid_fitting = 0;
     pte->outer_CID = GS_NO_GLYPH;
+    pte->single_byte_space = false;
     return font->procs.init_fstack(pte, font);
 }
 int

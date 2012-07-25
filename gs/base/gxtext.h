@@ -107,6 +107,10 @@ rc_free_proc(rc_free_text_enum);
     gx_font_stack_t fstack;\
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
                                 /* the value returned by decode_next */\
+    /* For pdf word spacing we must only apply the extra space for a single */\
+    /* byte code of 32, not for a multi-byte code of 32. So, for example */ \
+    /* not for character code <0020>. */ \
+    bool single_byte_space; \
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
     ulong text_enum_id; /* debug purpose only - not used by algorythm. */\
     /* The following is controlled by a device. */\

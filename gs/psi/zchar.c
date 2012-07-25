@@ -48,6 +48,10 @@ static int finish_show(i_ctx_t *);
 static int op_show_cleanup(i_ctx_t *);
 static int op_show_return_width(i_ctx_t *, uint, double *);
 
+static int zawidthshow(i_ctx_t *i_ctx_p);
+static int zwidthshow(i_ctx_t *i_ctx_p);
+
+
 /* <string> show - */
 static int
 zshow(i_ctx_t *i_ctx_p)
@@ -88,9 +92,8 @@ zashow(i_ctx_t *i_ctx_p)
     return op_show_continue_pop(i_ctx_p, 3);
 }
 
-/* <cx> <cy> <char> <string> widthshow - */
 static int
-zwidthshow(i_ctx_t *i_ctx_p)
+widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
 {
     os_ptr op = osp;
     gs_text_enum_t *penum;
@@ -115,16 +118,45 @@ zwidthshow(i_ctx_t *i_ctx_p)
                                    imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zwidthshow;
+
+    penum->single_byte_space = single_byte_space;
+    
     if ((code = op_show_finish_setup(i_ctx_p, penum, 4, finish_show)) < 0) {
         ifree_object(penum, "op_show_enum_setup");
         return code;
     }
+
     return op_show_continue_pop(i_ctx_p, 4);
 }
 
-/* <cx> <cy> <char> <ax> <ay> <string> awidthshow - */
+/* <cx> <cy> <char> <string> widthshow - */
 static int
-zawidthshow(i_ctx_t *i_ctx_p)
+zwidthshow(i_ctx_t *i_ctx_p)
+{
+    return(widthshow_aux(i_ctx_p, false));
+}
+
+/* For PDF word spacing we need to identify strictly
+   single byte character codes of the value 32, and
+   this conflicts with Postscript's widthshow character
+   code matching, where any character code, regardless of
+   its length will match. For example, in widthshow, a
+   character code of <0032> will match a parameter value
+   of 32, but for PDF word spacing, <0032> will not match
+   the space character, and won't have the word spacing
+   applied, but <32> will.
+   Hence, we have a couple of custom operators to cover
+   the different requirements.
+*/
+/* <cx> <cy> <char> <string> .pdfwidthshow - */
+static int
+zpdfwidthshow(i_ctx_t *i_ctx_p)
+{
+    return(widthshow_aux(i_ctx_p, true));
+}
+
+static int
+awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
 {
     os_ptr op = osp;
     gs_text_enum_t *penum;
@@ -152,11 +184,29 @@ zawidthshow(i_ctx_t *i_ctx_p)
                                     imemory_local, &penum)) < 0)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zawidthshow;
+
+    penum->single_byte_space = single_byte_space;
+    
     if ((code = op_show_finish_setup(i_ctx_p, penum, 6, finish_show)) < 0) {
         ifree_object(penum, "op_show_enum_setup");
         return code;
     }
+
     return op_show_continue_pop(i_ctx_p, 6);
+}
+
+/* <cx> <cy> <char> <ax> <ay> <string> awidthshow - */
+static int
+zawidthshow(i_ctx_t *i_ctx_p)
+{
+    return(awidthshow_aux(i_ctx_p, false));
+}
+
+/* <cx> <cy> <char> <ax> <ay> <string> .pdfawidthshow - */
+static int
+zpdfawidthshow(i_ctx_t *i_ctx_p)
+{
+    return(awidthshow_aux(i_ctx_p, true));
 }
 
 /* <proc> <string> kshow - */
@@ -395,15 +445,18 @@ const op_def zchar_a_op_defs[] =
     {"4widthshow", zwidthshow},
                 /* Extensions */
     {"1.fontbbox", zfontbbox},
+    {"6.pdfawidthshow", zpdfawidthshow},
+    {"4.pdfwidthshow", zpdfwidthshow},
+    
                 /* Internal operators */
     {"0%finish_show", finish_show},
-    {"0%finish_stringwidth", finish_stringwidth},
-    {"0%op_show_continue", op_show_continue},
     op_def_end(0)
 };
 
 const op_def zchar_b_op_defs[] =
 {
+    {"0%finish_stringwidth", finish_stringwidth},
+    {"0%op_show_continue", op_show_continue},
     {"0.incachedevice", zincachedevice},
     op_def_end(0)
 };
