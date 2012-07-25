@@ -907,11 +907,7 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
         /* backdrop alpha is zero, just copy source pixels and avoid
            computation. */
 
-        /* this idiom is faster than memcpy (dst, src, n_chan + 1); for
-           expected small values of n_chan. */
-        for (i = 0; i <= n_chan >> 2; i++) {
-            ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
-        }
+        memcpy (dst, src, n_chan + 1);
 
         return;
     }
@@ -998,11 +994,8 @@ art_pdf_composite_pixel_knockout_8(byte *dst,
         return;
     if (src[n_chan + 1] == 255 && blend_mode == BLEND_MODE_Normal ||
         dst[n_chan] == 0) {
-        /* this idiom is faster than memcpy (dst, src, n_chan + 2); for
-           expected small values of n_chan. */
-        for (i = 0; i <= (n_chan + 1) >> 2; i++) {
-            ((bits32 *) dst)[i] = ((const bits32 *)src[i]);
-        }
+
+        memcpy (dst, src, n_chan + 2);
 
         return;
     }
@@ -1113,8 +1106,8 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
            other out. Note: if the reason that alpha == 255 is that
            there is no constant mask and no soft mask, then this
            operation should be optimized away at a higher level. */
-        for (i = 0; i <= n_chan >> 2; i++)
-            ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
+
+        memcpy(dst, src, n_chan + 1);
         if (dst_alpha_g != NULL) {
             tmp = (255 - *dst_alpha_g) * (255 - src_alpha_g) + 0x80;
             *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -1126,8 +1119,7 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 
         dst_alpha = dst[n_chan];
         if (src_alpha_g == 255 || dst_alpha == 0) {
-            for (i = 0; i < (n_chan + 3) >> 2; i++)
-                ((bits32 *) ca)[i] = ((const bits32 *)src)[i];
+            memcpy(ca, src, n_chan + 3);
         } else {
             /* Uncomposite the color. In other words, solve
                "src = (ca, src_alpha_g) over dst" for ca */
@@ -1189,8 +1181,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
         src_alpha = src[n_chan];
         if (src_alpha == 0)
             return;
-        for (i = 0; i < (n_chan + 3) >> 2; i++)
-            ((bits32 *) src_tmp)[i] = ((const bits32 *)src)[i];
+        memcpy(src_tmp, src, n_chan + 3);
         tmp = src_alpha * alpha + 0x80;
         src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
         art_pdf_composite_pixel_alpha_8(dst, src_tmp, n_chan,
@@ -1213,9 +1204,8 @@ art_pdf_knockoutisolated_group_8(byte *dst, const byte *src, int n_chan)
     src_alpha = src[n_chan];
     if (src_alpha == 0)
         return;
-    for (i = 0; i <= n_chan >> 2; i++) {
-        ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
-    }
+
+    memcpy (dst, src, n_chan + 1);
 }
 
 void
@@ -1232,8 +1222,7 @@ art_pdf_composite_knockout_simple_8(byte *dst,
     if (src_shape == 0)
         return;
     else if (src_shape == 255) {
-        for (i = 0; i < (n_chan + 3) >> 2; i++)
-            ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
+        memcpy (dst, src, n_chan + 3);
         dst[n_chan] = opacity;
         if (dst_shape != NULL)
             *dst_shape = 255;
@@ -1281,8 +1270,8 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
     if (shape == 0)
         return;
     else if ((shape & shape_mask) == 255) {
-        for (i = 0; i < (n_chan + 3) >> 2; i++)
-            ((bits32 *) dst)[i] = ((const bits32 *)src)[i];
+
+        memcpy(dst, src, n_chan + 3);
         tmp = src[n_chan] * alpha_mask + 0x80;
         dst[n_chan] = (tmp + (tmp >> 8)) >> 8;
         if (dst_shape != NULL)
