@@ -791,7 +791,8 @@ in:                             /* Initialize for a new page. */
                             gx_color_index delta = 0;
                             uint data;
 
-                            dev_depth = tdev->color_info.depth;
+                            dev_depth = (tdev->color_info.depth <= 8*sizeof(gx_color_index) ?
+                                         tdev->color_info.depth : 8*sizeof(gx_color_index));
                             dev_depth_bytes = (dev_depth + 7) >> 3;
                             switch (dev_depth_bytes) {
                                 /* For cases with an even number of bytes */
