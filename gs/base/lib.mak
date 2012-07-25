@@ -769,7 +769,7 @@ $(GLOBJ)gxi12bit.$(OBJ) : $(GLSRC)gxi12bit.c $(AK) $(gx_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h)  $(vdtrace_h) $(gsicc_h) $(gsicc_cache_h) $(gsicc_cms_h)\
- $(gxcie_h) $(gscie_h) $(MAKEDIRS)
+ $(gxcie_h) $(gscie_h) $(gxdevsop_h) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
 
 $(GLOBJ)gxi16bit.$(OBJ) : $(GLSRC)gxi16bit.c $(AK) $(gx_h)\

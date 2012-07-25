@@ -38,6 +38,7 @@
 #include "gsicc_cms.h"
 #include "gxcie.h"
 #include "gscie.h"
+#include "gxdevsop.h"
 
 /* ---------------- Unpacking procedures ---------------- */
 
@@ -256,6 +257,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     color_fracs next;		/* next sample value */
     const frac *bufend = psrc + w;
     int code = 0, mcode = 0;
+    int i;
+    bool is_devn = false;
+    bool is_sep = (gs_color_space_get_index(penum->pcs) == 
+                    gs_color_space_index_Separation);
 
     if (h == 0)
         return 0;
@@ -275,6 +280,13 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     cs_full_init_color(&cc, pcs);
     run.v[0] = ~psrc[0];	/* force remap */
 
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        for (i = 0; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++) {
+            pdevc->colors.devn.values[i] = 0;
+            pdevc_next->colors.devn.values[i] = 0;
+        }
+        is_devn = true;
+    }
     while (psrc < bufend) {
         next.v[0] = psrc[0];
         switch (spp) {
@@ -329,24 +341,38 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
                           cc.paint.values[0], cc.paint.values[1],
                           cc.paint.values[2]);
                 break;
-            case 1:		/* may be Gray */
-                psrc++;
-                if (next.v[0] == run.v[0])
-                    goto inc;
-                if (use_mask_color && mask_color12_matches(next.v, penum, 1)) {
-                    color_set_null(pdevc_next);
-                    goto f;
+            case 1:		/* may be Gray, but could be a separation */
+                if (is_devn && is_sep) {
+                    psrc++;
+                    if (next.v[0] == run.v[0])
+                        goto inc;
+                    if (use_mask_color && mask_color12_matches(next.v, penum, 1)) {
+                        color_set_null(pdevc_next);
+                        goto f;
+                    }
+                    decode_frac(next.v[0], cc, 0);
+                    if_debug1('B', "[B]cc[0]=%g\n",
+                              cc.paint.values[0]);
+                    break;
+                } else {
+                    psrc++;
+                    if (next.v[0] == run.v[0])
+                        goto inc;
+                    if (use_mask_color && mask_color12_matches(next.v, penum, 1)) {
+                        color_set_null(pdevc_next);
+                        goto f;
+                    }
+                    if (device_color) {
+                        (*map_rgb) (next.v[0], next.v[0],
+                                    next.v[0], pdevc_next, pis, dev,
+                                    gs_color_select_source);
+                        goto f;
+                    }
+                    decode_frac(next.v[0], cc, 0);
+                    if_debug1('B', "[B]cc[0]=%g\n",
+                              cc.paint.values[0]);
+                    break;
                 }
-                if (device_color) {
-                    (*map_rgb) (next.v[0], next.v[0],
-                                next.v[0], pdevc_next, pis, dev,
-                                gs_color_select_source);
-                    goto f;
-                }
-                decode_frac(next.v[0], cc, 0);
-                if_debug1('B', "[B]cc[0]=%g\n",
-                          cc.paint.values[0]);
-                break;
             default:		/* DeviceN */
                 {
                     int i;
