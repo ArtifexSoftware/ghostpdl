@@ -5853,11 +5853,19 @@ static	const gx_device_procs pdf14_clist_CMYK_procs =
                         gx_default_DevCMYK_get_color_comp_index,
                         pdf14_encode_color, pdf14_decode_color);
 
+#if USE_COMPRESSED_ENCODING
 static	const gx_device_procs pdf14_clist_CMYKspot_procs =
         pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
                         pdf14_cmykspot_get_color_comp_index,
                         pdf14_compressed_encode_color,
                         pdf14_compressed_decode_color);
+#else
+static	const gx_device_procs pdf14_clist_CMYKspot_procs =
+        pdf14_clist_procs(pdf14_cmykspot_get_color_mapping_procs,
+                        pdf14_cmykspot_get_color_comp_index,
+                        pdf14_encode_color,
+                        pdf14_decode_color);
+#endif
 
 static	const gx_device_procs pdf14_clist_custom_procs =
         pdf14_clist_procs(gx_forward_get_color_mapping_procs,
