@@ -31,10 +31,16 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * Define the maximum number of components in a client color.
  * This must be at least 4, and should be at least 6 to accommodate
  * hexachrome DeviceN color spaces. We saw 9-component (bug 691002)
- * and 13-component (bug 691425) colors in the wild.
+ * and 13-component (bug 691425) colors in the wild.   Also define
+ * the maximum number of colorants that we will support within a
+ * single DeviceN color space.  AR supports 32.
  */
 #ifndef GS_CLIENT_COLOR_MAX_COMPONENTS		/* Allow override with XCFLAGS */
 #  define GS_CLIENT_COLOR_MAX_COMPONENTS (14)
+#endif
+
+#ifndef MAX_COMPONENTS_IN_DEVN		
+#  define MAX_COMPONENTS_IN_DEVN (32)
 #endif
 
 /* Paint (non-Pattern) colors */

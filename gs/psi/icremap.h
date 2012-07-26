@@ -32,7 +32,7 @@ typedef struct int_remap_color_info_s int_remap_color_info_t;
 #endif
 struct int_remap_color_info_s {
     op_proc_t proc;		/* remapping procedure */
-    float tint[32];
+    float tint[MAX_COMPONENTS_IN_DEVN];
 };
 
 #define private_st_int_remap_color_info() /* in zgstate.c */\
