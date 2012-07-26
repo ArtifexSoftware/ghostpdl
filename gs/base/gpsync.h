@@ -54,9 +54,13 @@ int gp_semaphore_signal(gp_semaphore * sema);
 /*
  * Monitors support enter/leave semantics: at most one thread can have
  * entered and not yet left a given monitor.
+ * 32-bit Solaris also requires maximum alignment. Bug 693147.
  */
-typedef struct {
+typedef union {
     void *dummy_;
+    double dummy2;
+    long dummy3;
+    int64_t dummy4;
 } gp_monitor;
 
 uint gp_monitor_sizeof(void);
