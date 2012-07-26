@@ -932,9 +932,8 @@ copy:
         gx_cmd_rect rect;
         int rsize;
         byte op = (byte) cmd_op_copy_mono_planes;
-        byte *dp;
+        byte *dp, *dp2;
         uint csize;
-        uint compress;
         int code;
 
         rect.x = rx, rect.y = re.y;
@@ -948,7 +947,19 @@ copy:
                                                     1 << cmd_compress_rle :
                                                     cmd_mask_compress_any) : 0),
                                 &dp, &csize);
-            compress = (uint)code;
+            if (code < 0)
+                continue;
+            /* Write the command header out now, in case the following
+             * cmd_put_bits fill the buffer up. */
+            dp2 = dp;
+            if (dx) {
+                *dp2++ = cmd_count_op(cmd_opv_set_misc, 2);
+                *dp2++ = cmd_set_misc_data_x + dx;
+            }
+            *dp2++ = cmd_count_op(op + code, csize);
+            cmd_putw(plane_height, dp2);
+            cmd_put2w(rx, re.y, dp2);
+            cmd_put2w(w1, re.height, dp2);
             if (plane_height > 0) {
                 for (plane = 1; plane < cdev->color_info.num_components && (code >= 0); plane++)
                 {
@@ -1003,15 +1014,6 @@ copy:
                 continue;
             }
         }
-        op += compress;
-        if (dx) {
-            *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
-            *dp++ = cmd_set_misc_data_x + dx;
-        }
-        *dp++ = cmd_count_op(op, csize);
-        cmd_putw(plane_height, dp);
-        cmd_put2w(rx, re.y, dp);
-        cmd_put2w(w1, re.height, dp);
 
         re.pcls->rect = rect;
         }
