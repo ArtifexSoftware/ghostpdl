@@ -549,6 +549,7 @@ clist_begin_typed_image(gx_device * dev,
                 pie->color_space.icc_info.icc_num_components = 
                     src_profile->num_comps;
                 pie->color_space.icc_info.is_lab = src_profile->islab;
+                pie->color_space.icc_info.data_cs = src_profile->data_cs;
                 clist_icc_addentry(cdev, src_profile->hashcode, src_profile);
             } else {
                 pie->color_space.icc_info = icc_zero_init;
