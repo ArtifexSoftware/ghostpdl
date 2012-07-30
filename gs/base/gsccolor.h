@@ -36,7 +36,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * single DeviceN color space.  AR supports 32.
  */
 #ifndef GS_CLIENT_COLOR_MAX_COMPONENTS		/* Allow override with XCFLAGS */
-#  define GS_CLIENT_COLOR_MAX_COMPONENTS (14)
+#  define GS_CLIENT_COLOR_MAX_COMPONENTS (32)
 #endif
 
 #ifndef MAX_COMPONENTS_IN_DEVN		
