@@ -1117,10 +1117,10 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     depth = tdev->color_info.depth;
     num_comps = tdev->color_info.num_components;
 
-    x = rect->p.x;
-    y = rect->p.y;
-    w = rect->q.x - x;
-    h = rect->q.y - y;
+    x = fixed2int(rect->p.x);
+    y = fixed2int(rect->p.y);
+    w = fixed2int(rect->q.x) - x;
+    h = fixed2int(rect->q.y) - y;
 
     fit_fill(tdev, x, y, w, h);
     byte_depth = depth / num_comps;

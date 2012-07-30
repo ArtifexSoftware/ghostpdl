@@ -604,10 +604,10 @@ pattern_accum_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     if (padev->mask) {
         int x, y, w, h;
 
-        x = rect->p.x;
-        y = rect->p.y;
-        w = rect->q.x - x;
-        h = rect->q.y - y;
+        x = fixed2int(rect->p.x);
+        y = fixed2int(rect->p.y);
+        w = fixed2int(rect->q.x) - x;
+        h = fixed2int(rect->q.y) - y;
 
         return (*dev_proc(padev->mask, fill_rectangle))
             ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);

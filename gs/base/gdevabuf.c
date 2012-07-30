@@ -416,10 +416,10 @@ mem_abuf_fill_rectangle_hl_color(gx_device * dev, const gs_fixed_rect *rect,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     y_transfer yt;
-    int x = rect->p.x;
-    int y = rect->p.y;
-    int w = rect->q.x - rect->p.x;
-    int h = rect->q.y - rect->p.y;
+    int x = fixed2int(rect->p.x);
+    int y = fixed2int(rect->p.y);
+    int w = fixed2int(rect->q.x) - x;
+    int h = fixed2int(rect->q.y) - y;
 
     x -= mdev->mapped_x;
     fit_fill_xy(dev, x, y, w, h);

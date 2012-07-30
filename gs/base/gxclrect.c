@@ -369,10 +369,10 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int rx, ry, rwidth, rheight;
     cmd_rects_enum_t re;
 
-    rx = rect->p.x;
-    ry = rect->p.y;
-    rwidth = rect->q.x - rx;
-    rheight = rect->q.y - ry;
+    rx = fixed2int(rect->p.x);
+    ry = fixed2int(rect->p.y);
+    rwidth = fixed2int(rect->q.x) - rx;
+    rheight = fixed2int(rect->q.y) - ry;
 
     crop_fill(cdev, rx, ry, rwidth, rheight);
     if (rwidth <= 0 || rheight <= 0)

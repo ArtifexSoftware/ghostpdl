@@ -3280,10 +3280,10 @@ pdf14_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
-    int x = rect->p.x;
-    int y = rect->p.y;
-    int w = rect->q.x - x;
-    int h = rect->q.y -y;
+    int x = fixed2int(rect->p.x);
+    int y = fixed2int(rect->p.y);
+    int w = fixed2int(rect->q.x) - x;
+    int h = fixed2int(rect->q.y) -y;
 
     fit_fill_xywh(dev, x, y, w, h);
     if (w <= 0 || h <= 0)

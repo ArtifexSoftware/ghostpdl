@@ -127,10 +127,10 @@ mask_clip_fill_rectangle_hl_color(gx_device *dev,
     int x, y, w, h;
     int mx0, mx1, my0, my1;
 
-    x = rect->p.x;
-    y = rect->p.y;
-    w = rect->q.x - x;
-    h = rect->q.y - y;
+    x = fixed2int(rect->p.x);
+    y = fixed2int(rect->p.y);
+    w = fixed2int(rect->q.x) - x;
+    h = fixed2int(rect->q.y) - y;
 
     /* Clip the rectangle to the region covered by the mask. */
     mx0 = x + cdev->phase.x;

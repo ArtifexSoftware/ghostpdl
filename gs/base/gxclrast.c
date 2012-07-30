@@ -1316,10 +1316,10 @@ set_phase:      /*
                             if_debug4('L', " x=%d y=%d w=%d h=%d\n",
                                       state.rect.x, state.rect.y, 
                                       state.rect.width,state.rect.height);
-                            rect_hl.p.x = state.rect.x - x0;
-                            rect_hl.p.y = state.rect.y - y0;
-                            rect_hl.q.x = state.rect.width + rect_hl.p.x;
-                            rect_hl.q.y = state.rect.height + rect_hl.p.y;
+                            rect_hl.p.x = int2fixed(state.rect.x - x0);
+                            rect_hl.p.y = int2fixed(state.rect.y - y0);
+                            rect_hl.q.x = int2fixed(state.rect.width) + rect_hl.p.x;
+                            rect_hl.q.y = int2fixed(state.rect.height) + rect_hl.p.y;
                             code = dev_proc(tdev, fill_rectangle_hl_color) (tdev, 
                                                         &rect_hl, NULL, 
                                                         &dev_color, NULL);

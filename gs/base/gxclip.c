@@ -429,10 +429,10 @@ clip_call_fill_rectangle_hl_color(clip_callback_data_t * pccd, int xc, int yc,
 {
     gs_fixed_rect rect;
 
-    rect.p.x = xc;
-    rect.p.y = yc;
-    rect.q.x = xec;
-    rect.q.y = yec;
+    rect.p.x = int2fixed(xc);
+    rect.p.y = int2fixed(yc);
+    rect.q.x = int2fixed(xec);
+    rect.q.y = int2fixed(yec);
     return (*dev_proc(pccd->tdev, fill_rectangle_hl_color))
         (pccd->tdev, &rect, pccd->pis, pccd->pdcolor, pccd->pcpath);
 }
@@ -450,10 +450,10 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int w, h, x, y;
     gs_fixed_rect newrect;
 
-    x = rect->p.x;
-    y = rect->p.y;
-    w = rect->q.x - rect->p.x;
-    h = rect->q.y - rect->p.y;
+    x = fixed2int(rect->p.x);
+    y = fixed2int(rect->p.y);
+    w = fixed2int(rect->q.x) - x;
+    h = fixed2int(rect->q.y) - y;
 
     if (w <= 0 || h <= 0)
         return 0;
@@ -470,10 +470,10 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
-            newrect.p.x = x;
-            newrect.p.y = y;
-            newrect.q.x = x + w;
-            newrect.q.y = y + h;
+            newrect.p.x = int2fixed(x);
+            newrect.p.y = int2fixed(y);
+            newrect.q.x = int2fixed(x + w);
+            newrect.q.y = int2fixed(y + h);
             return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
                                                            pdcolor, pcpath);
         }
@@ -488,10 +488,10 @@ clip_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
             if (x >= xe)
                 return 0;
             else {
-                newrect.p.x = x;
-                newrect.p.y = y;
-                newrect.q.x = xe;
-                newrect.q.y = y + h;
+                newrect.p.x = int2fixed(x);
+                newrect.p.y = int2fixed(y);
+                newrect.q.x = int2fixed(xe);
+                newrect.q.y = int2fixed(y + h);
                 return dev_proc(tdev, fill_rectangle_hl_color)(tdev, &newrect, pis,
                                                                pdcolor, pcpath);
             }

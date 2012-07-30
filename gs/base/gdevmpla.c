@@ -55,7 +55,7 @@ mem_planar_dev_spec_op(gx_device *pdev, int dev_spec_op,
     if (dev_spec_op == gxdso_supports_devn) {
         dev_proc(pdev, get_profile)(pdev, &dev_profile);
         if (dev_profile != NULL && dev_profile->supports_devn &&
-            pdev->procs.fill_rectangle_hl_color == mem_planar_fill_rectangle_hl_color) 
+            pdev->procs.fill_rectangle_hl_color == mem_planar_fill_rectangle_hl_color)
             return 1;
     }
     return gx_default_dev_spec_op(pdev, dev_spec_op, data, size);
@@ -134,10 +134,10 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     } else {
         /* If we are going out to a separation device or one that has more than
            four planes then use the high level color filling procedure.  Also
-           make use of the put_image operation to go from the pdf14 device 
+           make use of the put_image operation to go from the pdf14 device
            directly to the planar buffer. */
         if (mdev->num_planes >= 4) {
-            set_dev_proc(mdev, fill_rectangle_hl_color, 
+            set_dev_proc(mdev, fill_rectangle_hl_color,
                          mem_planar_fill_rectangle_hl_color);
             set_dev_proc(mdev, put_image, mem_planar_put_image);
         }
@@ -224,21 +224,21 @@ mem_planar_put_image(gx_device *pdev, const byte *buffer, int num_chan, int xsta
 {
     gx_device_memory * const mdev = (gx_device_memory *)pdev;
 
-    /* We don't want alpha, return 0 to ask for the pdf14 device to do the 
-       alpha composition. We also do not want chunky data coming in or to deal 
-       with planar devices that are not 8 bit per colorant */    
-    if (alpha_plane_index != 0 || plane_stride == 0 || 
+    /* We don't want alpha, return 0 to ask for the pdf14 device to do the
+       alpha composition. We also do not want chunky data coming in or to deal
+       with planar devices that are not 8 bit per colorant */
+    if (alpha_plane_index != 0 || plane_stride == 0 ||
         mdev->planes[0].depth != 8)
-        return 0;  
+        return 0;
 
     (*dev_proc(pdev, copy_planes)) (pdev, buffer, 0, row_stride,
                                  gx_no_bitmap_id, xstart, ystart,
                                  width, height, plane_stride/row_stride);
     /* we used all of the data */
-    return height;        
+    return height;
 }
 
-/* Fill a rectangle with a high level color.  This is used for separation 
+/* Fill a rectangle with a high level color.  This is used for separation
    devices. (e.g. tiffsep, psdcmyk) */
 static int
 mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
@@ -248,6 +248,10 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
     int pi;
+    int x = fixed2int(rect->p.x);
+    int y = fixed2int(rect->p.y);
+    int w = fixed2int(rect->q.x) - x;
+    int h = fixed2int(rect->q.y) - y;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->num_planes; ++pi) {
@@ -257,11 +261,8 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         const gx_device_memory *mdproto = gdev_mem_device_for_bits(plane_depth);
 
         MEM_SET_PARAMS(mdev, plane_depth);
-        dev_proc(mdproto, fill_rectangle)(dev, rect->p.x, rect->p.y, 
-                                          rect->q.x - rect->p.x, 
-                                          rect->q.y - rect->p.y,
-                                          (pdcolor->colors.devn.values[pi]) >>
-                                          shift & mask); 
+        dev_proc(mdproto, fill_rectangle)(dev, x, y, w, h,
+                                          (pdcolor->colors.devn.values[pi]) >> shift & mask);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
@@ -934,7 +935,7 @@ mem_planar_copy_planes(gx_device * dev, const byte * base, int sourcex,
 int
 mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
                                 int x, int y, int w, int h,
-                                const gx_drawing_color *pdcolor0, 
+                                const gx_drawing_color *pdcolor0,
                                 const gx_drawing_color *pdcolor1, int px, int py)
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
@@ -949,7 +950,7 @@ mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
         const gx_device_memory *mdproto =
             gdev_mem_device_for_bits(plane_depth);
         gx_color_index c1, c0;
-        
+
         if (pdcolor0->type == gx_dc_type_pure) {
             c0 = gx_no_color_index;
         } else {

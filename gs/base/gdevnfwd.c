@@ -866,7 +866,7 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
         return_error(gs_error_rangecheck);
     else
         return dev_proc(tdev, fill_rectangle_hl_color)(tdev, rect,
-                                                pis, pdcolor, NULL);
+                                                pis, pdcolor, pcpath);
 }
 
 int

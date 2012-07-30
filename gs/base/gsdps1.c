@@ -272,8 +272,8 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
                 }
                 x = fixed2int(draw_rect.p.x);
                 y = fixed2int(draw_rect.p.y);
-                w = fixed2int(draw_rect.q.x - draw_rect.p.x);
-                h = fixed2int(draw_rect.q.y - draw_rect.p.y);
+                w = fixed2int(draw_rect.q.x) - x;
+                h = fixed2int(draw_rect.q.y) - y;
                 /* clients that use the "any part of pixel" rule also
                    fill 0 areas.  This is true of current graphics
                    library clients but not a general rule.  */

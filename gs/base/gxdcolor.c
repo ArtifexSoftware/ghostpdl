@@ -435,10 +435,10 @@ gx_dc_devn_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 {
     gs_fixed_rect rect;
 
-    rect.p.x = x;
-    rect.p.y = y;
-    rect.q.x = w + x;
-    rect.q.y = h + y;
+    rect.p.x = int2fixed(x);
+    rect.p.y = int2fixed(y);
+    rect.q.x = int2fixed(w + x);
+    rect.q.y = int2fixed(h + y);
     return (*dev_proc(dev, fill_rectangle_hl_color)) (dev, &rect, NULL, pdevc, NULL);
 }
 

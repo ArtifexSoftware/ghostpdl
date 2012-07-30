@@ -99,15 +99,15 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
             ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
             if (si < ei) {
                 if (fa->swap_axes) {
-                    rect.p.x = j;
-                    rect.p.y = si;
-                    rect.q.x = j + 1;
-                    rect.q.y = ei;
+                    rect.p.x = int2fixed(j);
+                    rect.p.y = int2fixed(si);
+                    rect.q.x = int2fixed(j + 1);
+                    rect.q.y = int2fixed(ei);
                 } else {
-                    rect.p.x = si;
-                    rect.p.y = j;
-                    rect.q.x = ei;
-                    rect.q.y = j + 1;
+                    rect.p.x = int2fixed(si);
+                    rect.p.y = int2fixed(j);
+                    rect.q.x = int2fixed(ei);
+                    rect.q.y = int2fixed(j + 1);
                 }
                 for (k = 0; k < n; k++) {
                     devc.colors.devn.values[k] = frac2cv(curr[k]);
@@ -162,15 +162,15 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
     ei = min(i, fixed2int_ceiling(fa->clip->q.x));  /* Must be compatible to the clipping logic. */
     if (si < ei) {
         if (fa->swap_axes) {
-            rect.p.x = j;
-            rect.p.y = si;
-            rect.q.x = j + 1;
-            rect.q.y = ei;
+            rect.p.x = int2fixed(j);
+            rect.p.y = int2fixed(si);
+            rect.q.x = int2fixed(j + 1);
+            rect.q.y = int2fixed(ei);
         } else {
-            rect.p.x = si;
-            rect.p.y = j;
-            rect.q.x = ei;
-            rect.q.y = j + 1;
+            rect.p.x = int2fixed(si);
+            rect.p.y = int2fixed(j);
+            rect.q.x = int2fixed(ei);
+            rect.q.y = int2fixed(j + 1);
         }
         for (k = 0; k < n; k++) {
             devc.colors.devn.values[k] = frac2cv(curr[k]);
