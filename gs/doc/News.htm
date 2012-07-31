@@ -56,235 +56,93 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h2><a name="Version9.04"></a>Version 9.04 (2011-08-05)</h2>
+<h2><a name="Version9.06"></a>Version 9.06 (2012-08-08)</h2>
 
-<p>This is the fourth full release in the stable 9.x series.
-
-<p>This release includes fixes and solutions for a number of serious problems
-from the earlier 9.x releases and so we <b>strongly</b> encourage those using
-earlier 9.x releases to upgrade to this new version, to reap the benefits of
-those fixes.
-
-<p>In addition, those still using Ghostscript 8.71 and earlier should begin
-migration to 9.x soon since many improvements, features and fixes from the 9.x
-versions are impractical to back-port to these legacy versions.
+<p>This is the sixth full release in the stable 9.x series.
 
 <p> Highlights in this release include:
 <ul>
 <li>
-Transition source base to git source control - not a big deal for most users,
-but an important change for those who develop Ghostscript and GhostPDL.
-</li>
-<br>
-<li>
-This release introduces flexibility for controlling color based upon the
-graphic object type.  In particular, it is now possible to specify unique
-output ICC profiles and rendering intents for vector graphic, image and text
-portions of a document.  It is also possible to override source color
-specifications and use specified ICC profiles and rendering intents for
-RGB and CMYK vector graphics, images and text portions of a document.  Finally,
-DeviceGray source colors can now easily be specified to map either to K only
-or composite CMYK when the output device supports CMYK colorants.
-</li>
-<br>
-<li>
-New tiffscaled8 and tiffscaled24 devices. Add new tiffscaled8 and tiffscaled24
-devices, copied and modified from tiffscaled. These output grayscale and 24bit rgb
-instead of tiffscaleds mono output. MinFeatureSize is ignored for these devices as
-it's meaningless for contone output. Downscaling is also now supported for png16m
-and pnggray, and a new pngmonod device has been implemented which uses grayscale
-rendering internally and then downscales/min_feature_sizes/error diffuses to monochrome.
-</li>
-<br>
-<li>
-The PDF interpreter will now try to continue interpreting a PDF after encountering
-an error in a stream. The previous bevahior can be reinstated by passing
--dPDFSTOPONERROR to Ghostscript.
-</li>
-<br>
-<li>
-Re-enable x11alpha as the default device on Unix systems, now that compatibility
-problems between anti-aliased output and transparency are resolved.
-</li>
-<br>
-<li>
-Update libjpeg to version 8c.
-</li>
-<br>
-<li>
-<u><b> Experimental Text output/extraction device</b></u>
-<p> The txtwrite device has undergone some development, and now has genuine
-functionality. It accepts any input format which GhostPDL supports, and uses a
-combination of methods to try and determine the Unicode values for any text
-contained in the document.
-
-<p>The code descends a hierarchy of methods in this process, starting with the
-most reliable and only falling back to less reliable methods when better methods
-fail. The current hierarchy is as follows:
-
-<ol>
-<li> ToUnicode CMaps (PostScript or PDF) or GlyphNamesToUnicode tables (PostScript).</li>
-<li> Glyph names of the form 'unixxxx'.</li>
-<li> Glyph names defined in the Adobe Glyph List document.</li>
-<li> Input character code.</li>
-</ol>
-
-<p>Method 1 is highly reliable, method 4 is a best guess and not terribly
-reliable, though it will work for many files. It is probably most reliable
-for PostScript and PCL files.
-
-<p> The device currently has one parameter 'TextFormat' which controls whether
-the output is Unicode text reflecting the layout of the original document
-(-dTextFormat=0) or a format intended for use by developers which includes the
-Unicode text and some formatting information, such as the size and position of
-the text, and the font in use (-dTextFormat=1).
-
-<p> Note that his device does not do OCR (Optical Character Recognition) it is
-not capable of finding 'text' which is part of an image. However it will recover
-the 'invisible' text from PDF documents which have been scanned and OCR'ed
-by Acrobat for searching. Such text has a render mode of 3.
-
-<p> This is the first release of this code and is very much an alpha release, we
-expect problems.
-
-<p> In particular the TextFormat=0 output is likely to be incorrect, and will
-only work with top-to-bottom left-to-right text. It will probably also be
-confused by landscape documents printed on portrait media.
-
-<p> TextFormat=1 should be more reliable, but there may be cases where text is
-dropped from the output. Text in PostScript documents using charpath is not yet
-supported for example.
-
-<p> We do encourage feedback on the state of this device, and would be
-interested in hearing what kind of output would be useful for developers
-using TextFormat=1. For now, however, please do not raise bugs through Bugzilla,
-instead please send feedback to the gs-devel mailing list.
-</li>
-<br>
-<li>
-<u><b>  Experimental Unicode/UTF8 Support on Windows</u></b>
-<p>This release introduces some experimental build-time optional support
-for UNICODE pathnames on Windows. Essentially this works by following
-the model that Linux (and MacOS) have followed for years.
-
-<p>If this code is enabled, then the way ghostscript handles command lines,
-registry settings, file accesses and other api calls with top bit set
-characters in (i.e. codes >= 128) will change. The net benefit of this
-change is that ghostscript will now be able to cope with accessing
-files with unicode characters (i.e. codes >= 256) in their pathnames.
-
-<p>This behavior is all completely transparent to users, with the exception
-of those calling the gsapi functions with strings including 'extended
-ascii' (i.e. characters with codes >= 128 and <= 255). These characters
-include accented latin characters, such as u + umlaut, a + grave etc.
-The changes required for code that is affected by this are relatively
-minor, but as this is a change to the current API, we are announcing
-it in advance, and inviting comments.
-
-<p>As of the 9.04 release, the code is disabled. For those who wish to
-experiment you will need to build Ghostscript from source, and either
-pass USEUNICODE=1 when you invoke nmake or edit psi/msvc.mak to remove
-the /DWINDOWS_NO_UNICODE option from CFLAGS.
-
-<p>WARNING: Our intention, subject to feedback, is to enable this by
-default in near-future releases (hopefully, the next major release).
-If you make use of the affected APIs you should be prepared for the
-change to occur - be aware, however, that the current code is
-experimental and, depending on the feedback we get, maybe subject
-to change.
-
-<p>NOTE: this whole change refers to file paths, command line parameters
-and so on - it does not imply that we have unilaterally extended
-Postscript to understand UNICODE.
-
-<p>More details:
-
-<p>To give an example, suppose we have a file 'EXAMPLE' we'd like to
-invoke ghostscript on, where 'EXAMPLE' is actually a string that
-contains some characters with codes >= 128.
-
-<p>On Linux (or MacOS X), when ghostscript is called from a shell, e.g.
-
-<p> gs EXAMPLE
-
-<p>the command is UTF8 encoded; this means that characters with codes < 128
-are left unchanged, and characters >= 128 are encoded into multiple bytes.
-This encoded string is then passed to the standard 'main' entrypoint in
-the gs executable.
-
-<p>Ghostscript proceeds internally without any special handling of these
-multibyte characters at all. When it comes to access files it therefore
-passes out the UTF8 encoded strings to the standard OS file handling
-routines. These routines are designed to take pathnames in UTF8 format,
-and thus the files are accessed as normal.
-
-<p>If the Ghostscript executable outputs these (or other) strings to its
-stdout, the shell again converts the output from UTF8 back to unicode in
-order to display it.
-
-<p>The net effect is that the caller can seamlessly pass in unicode filenames,
-has his fileaccesses work out and gets unicode output without the core
-of ghostscript ever having to worry about it.
-
-<p>The code change discussed here endeavours to make Windows follow the same
-pattern as closely as possible.
-
-<p>When Windows executables are invoked, they can either be called through
-an 'ascii' entrypoint (main), or through a unicode ('wide') entrypoint
-(wmain). The difference is invisible to the caller, except that unicode
-executables can accept characters >= 256 in their invocations.
-
-<p>The new code changes ghostscript from being an ascii executable to being
-a unicode one. The Windows specific outer layer takes the unicode
-command string and UTF8 encodes it before passing it to the ghostscript
-core.
-
-<p>Similarly, the Windows specific filing system calls are updated to
-accept utf8 encoded strings from the core, and to convert them to
-unicode before operating on them.
-
-<p>The Windows gui app (gswin32.exe, NOT gswin32c.exe) is also updated to
-convert stdin/stdout between unicode and utf8 as appropriate, allowing
-unicode strings to be copied/pasted to/from other apps.
-
-<p>All of this should be completely transparent to the user, and no code
-changes should be required. The one area where changes may be required
-are where ghostscript is invoked through the gsapi functions.
-
-<p>Currently, on Linux (and MacOS X) any strings sent over the gsapi are
-assumed to be utf8 encoded (and thus can represent any Unicode
-character). On Windows, they are assumed simply to be in extended ASCII
-(and can therefore represent any character < 256 in the current codepage).
-With the proposed change, Windows will move to be in step with Linux.
-No differences will be caused to anyone who only uses chars <= 128,
-but those people using character codes between 128 and 256 (or indeed
-wanting to use higher codes) will need to utf8 encode the strings before
-calling gsapi functions.
-
-<p>Such encoding/decoding is a very simple process, and code for both
-directions can be found in psi/dwmain.c, psi/dwmainc.c and psi/dwtext.c.
-
-<p> Again, we welcome feedback on this feature, in this case problems
-or suggestions about the implementation can be submitted via Bugzilla
-but for detailed discussion about the approach for which we opted, it
-would be more beneficial discuss it (preferably) on our IRC channel
-#ghostscript on freenode.net, or on the gs-devel mailing list.
-</li>
+<p>PDF/A-2 - pdfwrite now supports the creation of PDF/A-2 files. The 'PDFA'
+command line switch can now take a numeric parameter:
+<ul>
+<li>0 = not PDF/A compliant</li>
+<li>1 = PDF/A-1b compliant</li>
+<li>2 = PDF/A-2b compliant</li>
 </ul>
-<br><br><br>
+<p>Simply specifying &quot;-dPDFA&quot; continues to have the old behaviour of creating PDF/A-1b files.
+For PDF/A-2 the command line should include &quot;-dPDFA=2&quot;.
+<br>
+</li>
+<li>
+<p>pdfwrite &quot;Server mode&quot; - pdfwrite can now be run in &quot;server mode&quot; which allows
+the device to be closed without closing the interpreter. This means it is no
+longer necessary to terminate GS before starting a new PDF conversion. This leads on to:
+<br>
+</li>
+<li>
+<p>pdfwrite now supports the &quot;%d&quot; format in the OutputFile switch. If this is set
+then pdfwrite will output each page of input to an individual file.
+<br>
+</li>
+<li>
+<p>ps2write - recent exposure to a range of PostScript devices has thrown up some
+interesting deficiencies in those devices. ps2write now emits PostScript in
+slightly different ways in order to produce output on a wider variety of devices.
+In some cases this also results in improved print times but it is still important
+to set the resolution appropriately for the output device, especially if the
+input contains transparency.
+<br>
+</li>
+<li>
+<p>Ghostscript can now use output intents defined in PDFs by using the
+&quot;-dUsePDFX3Profile&quot; command line option. See <a href="Use.htm#ICC_color_parameters">ICC Color Parameters</a> for details.
+<br>
+</li>
+<li>
+<p>tiffsep/tiffsep1: support for large numbers of separations improved. The previous
+implementation of those devices utilised a &quot;compressed color encoding&quot; to
+represent the tints for all the plates in one 64 bit value. As the number of
+plates increased, fewer bits were available for the tint for each plate,
+ultimately resulting in an &quot;unencodable pixels&quot; error. These revisions
+remove the reliance on the compressed color encoding, thus ensuring that
+we have a consistent color bit depth, regardless of the number of plates,
+and ensuring the &quot;unencodable pixels&quot; error will never occur.
+<p>Also as a result of these changes, there are substantial performance
+improvements in jobs with separations and transparency.
+<br>
+</li>
+<li>
+<p>tiffsep, psdcmyk and psdrgb now support the &quot;downscaler&quot; functionality.
+This brings the &quot;tiffscaled&quot; style functionality to the DeviceN output devices, so
+jobs can be rendered internally in contone and at a high resolution, and the output
+optionally downsampled by a level specified by &quot;-dDownScaleFactor=n&quot;, and
+also optionally error diffused to 1bpp output.
+<br>
+</li>
+<li>
+<p>Third party libraries: libtiff, libpng, libjpeg , Freetype and zlib have all be updated.
+<br>
+</li>
+<li>
+<p>clist storage, for rendering pages in bands, is now a run-time option: -sBandListStorage={file|memory}.
+<br>
+</li>
+<li>
+<p>Plus the usual round of bug fixes, compatibility changes, and incremental improvements.
+</ul>
+
+<p>In addition, Ghostscript and GhostPDL 8.71 are now unsupported, and those
+still using those versions (or earlier ones) should migrate to 9.x as soon as
+possible since many improvements, features and fixes from the 9.x versions
+are impractical or impossible to back-port to these legacy versions.
+
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 
 <h3><a name="9.04_Incompatible_changes"></a>Incompatible changes</h3>
-
-<p> Deprecated file "gs/base/errors.h" removed, psi/ierrors.h should be used
-instead.
-
-<p> The eXternal Fonts (XFonts) functionality, marked as deprecated in 9.02
-has now been fully removed.
-
 <p>
-No other recorded incompatible changes.
+No recorded incompatible changes.
 
 <h3><a name="9.04_changelog"></a>Changelog</h3>
 
@@ -311,7 +169,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.05, 8 February 2012
+<small>Ghostscript version 9.06, 8 August 2012
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
