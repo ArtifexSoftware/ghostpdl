@@ -468,11 +468,19 @@ the <code>tiffscaled</code> device. No composite file is produced in
 parameters as described below in the tiffscaled device, but
 MinFeatureSize is only honoured in 1bpp mode.
 
+<p>When -dDownScaleFactor= is used in 8 bit mode with the tiffsep
+(and psdcmyk/psrgb) device(s) 2 additional &quot;special&quot; ratios
+are available, 32 and 34. 32 provides a 3:2 downscale (so from 300 to
+200 dpi, say). 34 produces a 3:4 upscale (so from 300 to 400 dpi, say).
+
 <a name="tiffsep1"></a><dt><code>tiffsep1</code>
 <dd>
 The tiffsep1 device creates multiple output files, one for each component
-or separation color.  The device creates multiple tiffg4 files (the compression
-can be set using -sCompression= described below).
+or separation color. The device creates multiple tiffg4 files (the compression
+can be set using -sCompression= described below). The 1 bit per component
+output is halftoned using the current screening set by  'setcolorscreen'
+or 'sethalftone' which allows for ordered dither or stochastic threshold
+array dither to be used. This is faster than error diffusion.
 
 <p>
 The file specified via the OutputFile command line parameter will not be
@@ -699,6 +707,9 @@ It is supported by the <tt>psdcmyk</tt> and <tt>psdrgb</tt> devices.
 Of special interest with the <tt>psdcmyk</tt> device is that it supports spot
 colors.  <a href="#tiffsep">See the comments under the tiffsep and tiffsep1 
 device about the maximum number of spot colors supported by Ghostscript</a>
+
+<p>
+These devices support the same -dDownScaleFactor= ratios as tiffsep.
 
 <h2><a name="High-level"></a>High-level devices</h2>
 
