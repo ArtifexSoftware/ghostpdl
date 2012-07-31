@@ -331,7 +331,7 @@ run_stdin:
                     }
                 if (code >= 0)
                     code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
-                arg_free(psarg, minst->heap);
+                arg_free((char *)psarg, minst->heap);
                 if (code >= 0)
                     code = e_Quit;
                 
@@ -610,38 +610,70 @@ run_stdin:
                     *eqp++ = 0;
                     ialloc_set_space(idmemory, avm_system);
                     if (isd) {
-                        stream astream;
-                        scanner_state state;
+                        int num, i;
 
-                        s_init(&astream, NULL);
-                        sread_string(&astream,
-                                     (const byte *)eqp, strlen(eqp));
-                        gs_scanner_init_stream(&state, &astream);
-                        code = gs_scan_token(minst->i_ctx_p, &value, &state);
-                        if (code) {
-                            puts(minst->heap, "-dname= must be followed by a valid token");
-                            return e_Fatal;
-                        }
-                        if (r_has_type_attrs(&value, t_name,
-                                             a_executable)) {
-                            ref nsref;
+                        /* Check for numbers so we can provide for suffix scalers */
+                        /* Note the check for '#' is for PS "radix" numbers such as 16#ff */
+                        /* and check for '.' and 'e' or 'E' which are 'real' numbers */
+                        if ((strchr(eqp, '#') == NULL) && (strchr(eqp, '.') == NULL) &&
+                            (strchr(eqp, 'e') == NULL) && (strchr(eqp, 'E') == NULL) &&
+                            (i = sscanf((const char *)eqp, "%d", &num) == 1)) {
+                            char suffix = eqp[strlen(eqp) - 1];
 
-                            name_string_ref(minst->heap, &value, &nsref);
-#define string_is(nsref, str, len)\
-  (r_size(&(nsref)) == (len) &&\
-   !strncmp((const char *)(nsref).value.const_bytes, str, (len)))
-                            if (string_is(nsref, "null", 4))
-                                make_null(&value);
-                            else if (string_is(nsref, "true", 4))
-                                make_true(&value);
-                            else if (string_is(nsref, "false", 5))
-                                make_false(&value);
-                            else {
-                                puts(minst->heap,
-                                     "-dvar=name requires name=null, true, or false");
+                            switch (suffix) {
+                                case 'k':
+                                case 'K':
+                                    num *= 1024;
+                                    break;
+                                case 'm':
+                                case 'M':
+                                    num *= 1024 * 1024;
+                                    break;
+                                case 'g':
+                                case 'G':
+                                    /* caveat emptor: more than 2g will overflow */
+                                    /* and really should produce a 'real', so don't do this */
+                                    num *= 1024 * 1024 * 1024;
+                                    break;
+                                default:
+                                    break;   /* not a valid suffix or last char was digit */
+                            }
+                            make_int(&value, num);
+                        } else {
+                            /* use the PS scanner to capture other valid token types */
+                            stream astream;
+                            scanner_state state;
+
+                            s_init(&astream, NULL);
+                            sread_string(&astream,
+                                         (const byte *)eqp, strlen(eqp));
+                            gs_scanner_init_stream(&state, &astream);
+                            code = gs_scan_token(minst->i_ctx_p, &value, &state);
+                            if (code) {
+                                puts(minst->heap, "-dname= must be followed by a valid token");
                                 return e_Fatal;
                             }
-#undef name_is_string
+                            if (r_has_type_attrs(&value, t_name,
+                                                 a_executable)) {
+                                ref nsref;
+
+                                name_string_ref(minst->heap, &value, &nsref);
+#undef string_is
+#define string_is(nsref, str, len)\
+       (r_size(&(nsref)) == (len) &&\
+       !strncmp((const char *)(nsref).value.const_bytes, str, (len)))
+                                if (string_is(nsref, "null", 4))
+                                    make_null(&value);
+                                else if (string_is(nsref, "true", 4))
+                                    make_true(&value);
+                                else if (string_is(nsref, "false", 5))
+                                    make_false(&value);
+                                else {
+                                    puts(minst->heap,
+                                         "-dvar=name requires name=null, true, or false");
+                                    return e_Fatal;
+                                }
+                            }
                         }
                     } else {
                         int len = strlen(eqp);

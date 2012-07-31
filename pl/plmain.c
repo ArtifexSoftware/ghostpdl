@@ -969,12 +969,33 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
                 } else if ( ( !strchr(value, '.' ) ) &&
                 /* search for an int (no decimal), if fail try a float */
                      ( sscanf(value, "%d", &vi) == 1 ) ) {
+                    /* Here we have an int -- check for a scaling suffix */
+                    char suffix = eqp[strlen(eqp) - 1];
+
+                    switch (suffix) {
+                        case 'k':
+                        case 'K':
+                            vi *= 1024;
+                            break;
+                        case 'm':
+                        case 'M':
+                            vi *= 1024 * 1024;
+                            break;
+                        case 'g':
+                        case 'G':
+                            /* caveat emptor: more than 2g will overflow */
+                            /* and really should produce a 'real', so don't do this */
+                            vi *= 1024 * 1024 * 1024;
+                            break;
+                        default:
+                            break;   /* not a valid suffix or last char was digit */
+                    }
                     if ( !strncmp(arg, "FirstPage", 9) )
                         pmi->first_page = max(vi, 1);
                     else if ( !strncmp(arg, "LastPage", 8) )
                         pmi->last_page = vi;
                     else {
-                        /* create a null terminated string */
+                        /* create a null terminated string for the key */
                         strncpy(buffer, arg, eqp - arg);
                         buffer[eqp - arg] = '\0';
                         code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
