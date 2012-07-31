@@ -1857,7 +1857,7 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
 
     {
         int raster_plane = bitmap_raster(width * 8);
-        byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
+        byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS] = { 0 };
         int cmyk_raster = width * NUM_CMYK_COMPONENTS;
         int pixel, y;
         byte * sep_line;
@@ -1883,7 +1883,6 @@ tiffsep_print_page(gx_device_printer * pdev, FILE * file)
             params.x_offset = 0;
             params.raster = bitmap_raster(width * pdev->color_info.depth);
 
-            memset(planes, 0, sizeof(*planes) * plane_count);
             if (num_order > 0) {
                 /* In this case, there was a specification for a separation
                    color order, which indicates what colorants we will
