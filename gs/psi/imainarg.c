@@ -617,7 +617,7 @@ run_stdin:
                         /* and check for '.' and 'e' or 'E' which are 'real' numbers */
                         if ((strchr(eqp, '#') == NULL) && (strchr(eqp, '.') == NULL) &&
                             (strchr(eqp, 'e') == NULL) && (strchr(eqp, 'E') == NULL) &&
-                            (i = sscanf((const char *)eqp, "%d", &num) == 1)) {
+                            ((i = sscanf((const char *)eqp, "%d", &num)) == 1)) {
                             char suffix = eqp[strlen(eqp) - 1];
 
                             switch (suffix) {
