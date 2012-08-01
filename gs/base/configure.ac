@@ -1247,7 +1247,7 @@ AC_ARG_ENABLE([gtk], AC_HELP_STRING([--disable-gtk],
     [Do not build the gtk loader]))
 SOC_CFLAGS=""
 SOC_LIBS=""
-SOC_LOADER=""
+SOC_LOADER="dxmainc.c"
 if test "x$enable_gtk" != "xno"; then
     # Try GTK+ 3.x first...
     if test "x$PKGCONFIG" != x; then
