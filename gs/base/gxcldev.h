@@ -37,8 +37,9 @@
 /*#define cmd_compress_none 0 *//* (implicit) */
 #define cmd_compress_rle 1
 #define cmd_compress_cfe 2
+#define cmd_compress_const 3
 #define cmd_mask_compress_any\
-  ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe))
+  ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe) | (1 << cmd_compress_const))
 /* Exported by gxclutil.c */
 void clist_rle_init(stream_RLE_state *ss);
 void clist_rld_init(stream_RLD_state *ss);

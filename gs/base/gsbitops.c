@@ -661,6 +661,26 @@ bytes_copy_rectangle(byte * dest, uint dest_raster,
     }
 }
 
+int
+bytes_rectangle_is_const(const byte * src, uint src_raster,
+                         int width_bytes, int height)
+{
+    int i;
+    char c;
+
+    if (width_bytes == 0 || height == 0)
+        return -1;
+    c = *src;
+    while (height-- > 0) {
+        const byte *s = src;
+        src += src_raster;
+        for (i = width_bytes; i > 0; i--)
+            if (*s++ != c)
+                return -1;
+    }
+    return c;
+}
+
 /* Copy a rectangle of bytes zeroing any padding bytes. */
 void
 bytes_copy_rectangle_zero_padding(byte * dest, uint dest_raster,

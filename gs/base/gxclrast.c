@@ -1021,7 +1021,12 @@ in:                             /* Initialize for a new page. */
 	                    }
                             compression = *cbp++;
                         }
-                        if (compression) {       /* Decompress the image data. */
+                        if (compression == cmd_compress_const) {
+                            cbp = cmd_read_data(&cbuf, plane_bits, 1, cbp);
+                            if (width_bytes > 0 && state.rect.height > 0)
+                                memset(plane_bits+1, *plane_bits, width_bytes * state.rect.height - 1);
+
+                        } else if (compression) {       /* Decompress the image data. */
                             stream_cursor_read r;
                             stream_cursor_write w;
 
@@ -2386,7 +2391,11 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 #ifdef DEBUG
     slot->index = pcls->tile_index;
 #endif
-    if (compress) {
+    if (compress == cmd_compress_const) {
+        cbp = cmd_read_data(pcb, data, 1, cbp);
+        if (width_bytes > 0 && rep_height > 0)
+            memset(data+1, *data, width_bytes * rep_height - 1);
+    } else if (compress) {
         /*
          * Decompress the image data.  We'd like to share this code with the
          * similar code in copy_*, but right now we don't see how.

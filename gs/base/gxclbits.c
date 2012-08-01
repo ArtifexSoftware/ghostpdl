@@ -130,6 +130,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     gs_memory_t *mem = cldev->memory;
     byte *dp;
     int compress = 0;
+    int code;
 
     /*
      * See if compressing the bits is possible and worthwhile.
@@ -138,7 +139,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
      * in the buffer and decompress_elsewhere isn't set.
      */
     if (short_size >= 50 &&
-        (compression_mask & cmd_mask_compress_any) != 0 &&
+        (compression_mask & ((1<<cmd_compress_rle) | (1<<cmd_compress_cfe))) != 0 &&
         (uncompressed_size <= max_size ||
          (compression_mask & decompress_elsewhere) != 0)
         ) {
@@ -147,7 +148,6 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             stream_CFE_state cf;
             stream_RLE_state rl;
         } sstate;
-        int code;
         int try_size = op_size + min(uncompressed_size, max_size);
 
         *psize = try_size;
@@ -221,8 +221,6 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     } else if (uncompressed_size > max_size)
         return_error(gs_error_limitcheck);
     else {
-        int code;
-
         *psize = op_size + short_size;
         code = (pcls != 0 ?
                 set_cmd_put_op(dp, cldev, pcls, 0, *psize) :
@@ -231,8 +229,17 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             return code;
         cmd_uncount_op(0, *psize);
     }
-    bytes_copy_rectangle(dp + op_size, short_raster, data, raster,
-                         short_raster, height);
+    if ((compression_mask & (1 << cmd_compress_const)) &&
+        (code = bytes_rectangle_is_const(data, raster, uncompressed_raster << 3, height)) >= 0) {
+        cmd_shorten_list_op(cldev,
+                            (pcls ? &pcls->list : &cldev->band_range_list),
+                            *psize - (op_size + 1));
+        *psize = op_size + 1;
+        dp[op_size] = code;
+        compress = cmd_compress_const;
+    } else
+        bytes_copy_rectangle(dp + op_size, short_raster, data, raster,
+                             short_raster, height);
 out:
     *pdp = dp;
     return compress;
