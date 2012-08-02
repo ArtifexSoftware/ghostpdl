@@ -1443,6 +1443,7 @@ pdf_close(gx_device * dev)
         if (code >= 0)
             code = code1;
         stream_puts(pdev->strm, "%%Trailer\n");
+        stream_puts(pdev->strm, "end\n");
         stream_puts(pdev->strm, "%%EOF\n");
     }
 
