@@ -99,6 +99,7 @@ typedef struct psd_device_s {
     psd_color_model color_model;
 
     long downscale_factor;
+    int max_spots;
 
     /* ICC color profile objects, for color conversion.
        These are all device link profiles.  At least that
@@ -293,7 +294,8 @@ const psd_device gs_psdrgb_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
-    1                           /* downscale_factor */
+    1,                          /* downscale_factor */
+    GS_SOFT_MAX_SPOTS           /* max_spots */
 };
 
 /*
@@ -331,7 +333,8 @@ const psd_device gs_psdcmyk_device =
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
-    1                           /* downscale_factor */
+    1,                          /* downscale_factor */
+    GS_SOFT_MAX_SPOTS           /* max_spots */
 };
 
 #undef NC
@@ -365,8 +368,11 @@ psd_prn_open(gx_device * pdev)
            have available.  Note, lack of knowledge only occurs in the case
            of PS files.  With PDF we know a priori the number of spot
            colorants.  */
-        pdev->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
-        pdev->color_info.max_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        int num_comp = pdev_psd->max_spots + 4; /* Spots + CMYK */
+        if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        pdev->color_info.num_components = num_comp;
+        pdev->color_info.max_components = num_comp;
     }
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_psd->devn_params.num_separation_order_names == 0)
@@ -804,6 +810,9 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
     code = param_write_long(plist, "DownScaleFactor", &xdev->downscale_factor);
     if (code < 0)
         return code;
+    code = param_write_int(plist, "MaxSpots", &xdev->max_spots);
+    if (code < 0)
+        return code;
 
     return code;
 }
@@ -891,6 +900,23 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             param_signal_error(plist, "DownScaleFactor", code);
             return code;
+    }
+
+    switch (code = param_read_int(plist,
+                                  "MaxSpots",
+                                  &pdevn->max_spots)) {
+        case 0:
+            if (pdevn->max_spots >= 0 && pdevn->max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4)
+                break;
+            emprintf1(pdevn->memory, "MaxSpots must be between 0 and %d\n",
+                      GS_CLIENT_COLOR_MAX_COMPONENTS-4);
+            code = gs_error_rangecheck;
+            /* fall through */
+        default:
+            param_signal_error(plist, "MaxSpots", code);
+            return code;
+        case 1:
+            break;
     }
 
 #if ENABLE_ICC_PROFILE

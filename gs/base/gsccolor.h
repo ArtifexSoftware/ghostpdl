@@ -36,11 +36,25 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
  * single DeviceN color space.  AR supports 32.
  */
 #ifndef GS_CLIENT_COLOR_MAX_COMPONENTS		/* Allow override with XCFLAGS */
-#  define GS_CLIENT_COLOR_MAX_COMPONENTS (32)
+#  define GS_CLIENT_COLOR_MAX_COMPONENTS (64)
 #endif
 
 #ifndef MAX_COMPONENTS_IN_DEVN		
 #  define MAX_COMPONENTS_IN_DEVN (32)
+#endif
+
+/* There is a speed penalty for supporting lots of spot colors, so certain
+ * devices (tiffsep, tiffsep1, psdcmyk, etc) offer -dMaxSpots. This allows
+ * us to compile in a high 'hard' limit on the number of components
+ * (GS_CLIENT_COLOR_MAX_COMPONENTS) and yet to allow runtime selection of the
+ * real number to be used.
+ *
+ * GS_SOFT_MAX_SPOTS is the maximum number of spots we allow by default;
+ * currently this is set to 10, to match the (historical) limit of 14
+ * components that Ghostscript has shipped with for years.
+ */
+#ifndef GS_SOFT_MAX_SPOTS
+#define GS_SOFT_MAX_SPOTS 10
 #endif
 
 /* Paint (non-Pattern) colors */
