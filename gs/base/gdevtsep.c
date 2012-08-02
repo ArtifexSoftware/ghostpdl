@@ -420,8 +420,9 @@ static dev_proc_output_page(tiffseps_output_page);
     long DownScaleFactor;\
     long MinFeatureSize;\
     long BitsPerComponent;\
+    int max_spots;\
     gs_devn_params devn_params;         /* DeviceN generated parameters */\
-    equivalent_cmyk_color_params equiv_cmyk_colors\
+    equivalent_cmyk_color_params equiv_cmyk_colors
 
 /*
  * A structure definition for a DeviceN type device
@@ -594,7 +595,8 @@ gs_private_st_composite_final(st_tiffsep_device, tiffsep_device,
         TIFF_DEFAULT_STRIP_SIZE,/* MaxStripSize */\
         1,                      /* DownScaleFactor */\
         0,                      /* MinFeatureSize */\
-        8                       /* BitsPerComponent */
+        8,                      /* BitsPerComponent */\
+        GS_SOFT_MAX_SPOTS	/* max_spots */
 
 #define GCIB (ARCH_SIZEOF_GX_COLOR_INDEX * 8)
 
@@ -829,6 +831,8 @@ tiffsep_get_params(gx_device * pdev, gs_param_list * plist)
         ecode = code;
     if ((code = param_write_long(plist, "BitsPerComponent", &pdevn->BitsPerComponent)) < 0)
         ecode = code;
+    if ((code = param_write_int(plist, "MaxSpots", &pdevn->max_spots)) < 0)
+        ecode = code;
 
     return ecode;
 }
@@ -845,6 +849,7 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
     long downscale = pdevn->DownScaleFactor;
     long mfs = pdevn->MinFeatureSize;
     long bpc = pdevn->BitsPerComponent;
+    int max_spots = pdevn->max_spots;
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &pdevn->BigEndian)) {
@@ -921,6 +926,21 @@ tiffsep_put_params(gx_device * pdev, gs_param_list * plist)
                 pdevn->BitsPerComponent = bpc;
                 break;
             }
+            code = gs_error_rangecheck;
+        case 1:
+            break;
+        default:
+            param_signal_error(plist, param_name, code);
+            return code;
+    }
+    switch (code = param_read_int(plist, (param_name = "MaxSpots"), &max_spots)) {
+        case 0:
+            if ((max_spots >= 0) || (max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4)) {
+                pdevn->max_spots = max_spots;
+                break;
+            }
+            emprintf1(pdev->memory, "MaxSpots must be between 0 and %d\n",
+                      GS_CLIENT_COLOR_MAX_COMPONENTS-4);
             code = gs_error_rangecheck;
         case 1:
             break;
@@ -1034,8 +1054,11 @@ tiffsep1_prn_open(gx_device * pdev)
            have available.  Note, lack of knowledge only occurs in the case
            of PS files.  With PDF we know a priori the number of spot
            colorants.  */
-        pdev->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
-        pdev->color_info.max_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        int num_comp = pdev_sep->max_spots + 4; /* Spots + CMYK */
+        if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        pdev->color_info.num_components = num_comp;
+        pdev->color_info.max_components = num_comp;
     }
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_sep->devn_params.num_separation_order_names == 0)
@@ -1385,8 +1408,11 @@ tiffsep_prn_open(gx_device * pdev)
            have available.  Note, lack of knowledge only occurs in the case
            of PS files.  With PDF we know a priori the number of spot
            colorants.  */
-        pdev->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
-        pdev->color_info.max_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        int num_comp = pdev_sep->max_spots + 4; /* Spots + CMYK */
+        if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+        pdev->color_info.num_components = num_comp;
+        pdev->color_info.max_components = num_comp;
     }
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_sep->devn_params.num_separation_order_names == 0)
