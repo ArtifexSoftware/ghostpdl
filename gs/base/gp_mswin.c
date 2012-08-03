@@ -67,7 +67,9 @@ HINSTANCE phInstance;
 BOOL is_win32s = FALSE;
 
 const LPSTR szAppName = "Ghostscript";
+#ifndef METRO
 static int is_printer(const char *name);
+#endif
 
 /* ====== Generic platform procedures ====== */
 
@@ -112,7 +114,9 @@ int gp_cache_query(int type, byte* key, int keylen, void **buffer,
 /* ------ Printer accessing ------ */
 
 /* Forward references */
+#ifndef METRO
 static int gp_printfile(const char *, const char *);
+#endif
 
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
@@ -122,6 +126,9 @@ gp_open_printer(const gs_memory_t *mem,
                       char         fname[gp_file_name_sizeof],
                       int          binary_mode)
 {
+#ifdef METRO
+    return gp_fopen(fname, (binary_mode ? "wb" : "w"));
+#else
     if (is_printer(fname)) {
         FILE *pfile;
 
@@ -136,20 +143,26 @@ gp_open_printer(const gs_memory_t *mem,
         return NULL;	/* not supported, use %printer%name instead  */
     else
         return gp_fopen(fname, (binary_mode ? "wb" : "w"));
+#endif
 }
 
 /* Close the connection to the printer. */
 void
 gp_close_printer(const gs_memory_t *mem, FILE * pfile, const char *fname)
 {
+#ifdef METRO
+    fclose(pfile);
+#else
     fclose(pfile);
     if (!is_printer(fname))
         return;			/* a file, not a printer */
 
     gp_printfile(win_prntmp, fname);
     unlink(win_prntmp);
+#endif
 }
 
+#ifndef METRO
 /* Dialog box to select printer port */
 DLGRETURN CALLBACK
 SpoolDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
@@ -223,7 +236,9 @@ is_printer(const char *name)
 /* This is messy because of past support for old version of Windows. */
 
 /* Win95, WinNT: Use OpenPrinter, WritePrinter etc. */
+#ifndef METRO
 static int gp_printfile_win32(const char *filename, char *port);
+#endif
 
 /*
  * Valid values for pmport are:
@@ -358,9 +373,13 @@ get_queuename(char *portname, const char *queue)
     free(buffer);
     return TRUE;
 }
+#endif
 
 BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
 {
+#ifdef METRO
+    return FALSE;
+#else
 #ifdef WINDOWS_NO_UNICODE
     return OpenPrinter(port, printer, NULL);
 #else
@@ -372,8 +391,10 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
     free(uni);
     return opened;
 #endif
+#endif
 }
 
+#ifndef METRO
 /* True Win32 method, using OpenPrinter, WritePrinter etc. */
 static int
 gp_printfile_win32(const char *filename, char *port)
@@ -578,6 +599,7 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     }
     return pipe;
 }
+#endif
 
 /* ------ File naming and accessing ------ */
 
@@ -762,9 +784,13 @@ FILE *gp_open_printer_64(const gs_memory_t *mem,
                                char         fname[gp_file_name_sizeof],
                                int          binary_mode)
 {
+#ifdef METRO
+    return NULL;
+#else
     /* Assuming gp_open_scratch_file_64 is same as gp_open_scratch_file -
        see the body of gp_open_printer. */
     return gp_open_printer(mem, fname, binary_mode);
+#endif
 }
 
 #if defined(_MSC_VER) && _MSC_VER < 1400

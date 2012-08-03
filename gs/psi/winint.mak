@@ -121,8 +121,12 @@ $(GLOBJ)gp_msdll.obj: $(GLSRC)gp_msdll.c $(AK) $(iapi_h)
 
 # Modules for console mode EXEs
 
-OBJC=$(PSOBJ)dwmainc.obj $(PSOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj \
-$(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
+OBJC=$(PSOBJ)dwmainc.obj $(PSOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj\
+!ifdef METRO
+ $(GLOBJ)gp_wgetv.obj \
+!else
+ $(GLOBJ)gp_wgetv.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
+!endif
 
 OBJCNO=$(PSOBJ)dwmainc.obj $(PSOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 

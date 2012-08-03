@@ -40,10 +40,12 @@
 
 GSDLL gsdll;
 void *instance;
+#ifndef METRO
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
 HWND hwndforeground;    /* our best guess for our console window handle */
+#endif
 
 char start_string[] = "systemdict /start get exec\n";
 
@@ -234,6 +236,7 @@ gsdll_stderr_utf8(void *instance, const char *utf8str, int bytelen)
 /*********************************************************************/
 /* dll device */
 
+#ifndef METRO
 /* We must run windows from another thread, since main thread */
 /* is running Ghostscript and blocks on stdin. */
 
@@ -480,6 +483,7 @@ display_callback display = {
 #endif
     display_separation
 };
+#endif /* !METRO */
 
 /*********************************************************************/
 
@@ -503,7 +507,9 @@ static int main_utf8(int argc, char *argv[])
     _setmode(fileno(stdout), _O_BINARY);
     _setmode(fileno(stderr), _O_BINARY);
 
+#ifndef METRO
     hwndforeground = GetForegroundWindow();     /* assume this is ours */
+#endif
     memset(buf, 0, sizeof(buf));
     if (load_dll(&gsdll, buf, sizeof(buf))) {
         fprintf(stderr, "Can't load Ghostscript DLL\n");
@@ -516,6 +522,7 @@ static int main_utf8(int argc, char *argv[])
         return 1;
     }
 
+#ifndef METRO
 #ifdef DEBUG
     visual_tracer_init();
     gsdll.set_visual_tracer(&visual_tracer);
@@ -539,6 +546,7 @@ static int main_utf8(int argc, char *argv[])
         if (n == 0)
             fprintf(stderr, "Can't post message to GUI thread\n");
     }
+#endif
 
 #ifdef WINDOWS_NO_UNICODE
     gsdll.set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
@@ -548,6 +556,12 @@ static int main_utf8(int argc, char *argv[])
         _isatty(fileno(stdout)) ?  gsdll_stdout_utf8 : gsdll_stdout,
         _isatty(fileno(stderr)) ?  gsdll_stderr_utf8 : gsdll_stderr);
 #endif
+#ifdef METRO
+    /* For metro, no insertion of display device args */
+    nargc = argc;
+    nargv = argv;
+    {
+#else
     gsdll.set_display_callback(instance, &display);
 
     {   int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
@@ -583,6 +597,7 @@ static int main_utf8(int argc, char *argv[])
         nargv[1] = dformat;
         nargv[2] = ddpi;
         memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
+#endif
 
 #if defined(_MSC_VER) || defined(__BORLANDC__)
         __try {
@@ -602,18 +617,24 @@ static int main_utf8(int argc, char *argv[])
 
         gsdll.delete_instance(instance);
 
+#ifndef METRO
 #ifdef DEBUG
         visual_tracer_close();
+#endif
 #endif
 
         unload_dll(&gsdll);
 
+#ifndef METRO
         free(nargv);
+#endif
     }
+#ifndef METRO
     /* close other thread */
     quitnow = TRUE;
     PostThreadMessage(thread_id, WM_QUIT, 0, (LPARAM)0);
     Sleep(0);
+#endif
 
     exit_status = 0;
     switch (code) {

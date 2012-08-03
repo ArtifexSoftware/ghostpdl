@@ -70,6 +70,9 @@ $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS)
 LIBCTR=$(GLGEN)libc32.tr
 
 $(LIBCTR): $(TOP_MAKEFILES)
+!ifdef METRO
+	echo "" >$(LIBCTR)
+!else
 	echo shell32.lib >$(LIBCTR)
 	echo comdlg32.lib >>$(LIBCTR)
 	echo gdi32.lib >>$(LIBCTR)
@@ -77,5 +80,6 @@ $(LIBCTR): $(TOP_MAKEFILES)
 	echo winspool.lib >>$(LIBCTR)
 	echo advapi32.lib >>$(LIBCTR)
 	echo ws2_32.lib >>$(LIBCTR)
+!endif
 
 # end of msvctail.mak

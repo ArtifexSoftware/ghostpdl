@@ -22,7 +22,7 @@
 #include <string.h>
 #include "gscdefs.h"		/* for gs_productfamily and gs_revision and gs_serialnumber */
 
-#ifdef __WIN32__
+#if defined(__WIN32__) && !defined(METRO)
 /*
  * Get a named registry value.
  * Key = hkeyroot\\key, named value = name.
@@ -161,7 +161,7 @@ gp_getenv(const char *name, char *ptr, int *plen)
     }
     /* environment variable was not found */
 
-#ifdef __WIN32__
+#if defined(__WIN32__) && !defined(METRO)
     {
         /* If using Win32, look in the registry for a value with
          * the given name.  The registry value will be under the key
@@ -216,7 +216,7 @@ gp_getenv(const char *name, char *ptr, int *plen)
 int
 gp_serialnumber(void)
 {
-#ifdef __WIN32__
+#if defined(__WIN32__) && !defined(METRO)
 #define SERIALNUMBER_BUFSIZE 512
     byte buf[SERIALNUMBER_BUFSIZE];
     int buflen = SERIALNUMBER_BUFSIZE;

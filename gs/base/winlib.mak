@@ -57,7 +57,11 @@ CUPS_CC=$(CC) $(CFLAGS) -DWIN32
 # Define the platform name.
 
 !ifndef PLATFORM
+!ifdef METRO
+PLATFORM=metro_
+!else
 PLATFORM=mswin32_
+!endif
 !endif
 
 # Define the auxiliary program dependency. We use this to 
@@ -196,6 +200,17 @@ $(GLOBJ)gp_wpapr.$(OBJ): $(GLSRC)gp_wpapr.c $(AK) $(gp_h)
 $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h)
 	$(GLCCWIN) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
+
+# The Metro platform
+
+metro__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ)\
+  $(GLOBJ)gp_stdia.$(OBJ)
+#$(GLOBJ)gp_wutf8.$(OBJ)
+metro_inc=$(GLD)nosync.dev $(GLD)winplat.dev
+
+$(GLGEN)metro_.dev:  $(metro__) $(ECHOGS_XE) $(metro_inc)
+	$(SETMOD) $(GLGEN)metro_ $(metro__)
+	$(ADDMOD) $(GLGEN)metro_ -include $(metro_inc)
 
 # Define MS-Windows handles (file system) as a separable feature.
 

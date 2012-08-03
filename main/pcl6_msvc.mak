@@ -32,6 +32,11 @@ BUNDLE_FONTS=1
 XCFLAGS=
 !endif
 
+# If we are building for METRO, define METRO
+!ifdef METRO
+XCFLAGS=$(XCFLAGS) -DMETRO -DTIF_PLATFORM_CONSOLE
+!endif
+
 # If we are building MEMENTO=1, then adjust default debug flags
 !if "$(MEMENTO)"=="1"
 !ifndef DEBUG
@@ -263,12 +268,16 @@ TARGET_XE=$(GENDIR)\pcl6
 
 # Main file's name
 !ifndef MAIN_OBJ
+!ifdef METRO
+MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ)
+!else
 !ifndef ALLOW_VD_TRACE
 MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwimg.$(OBJ)\
   $(PLOBJDIR)\dwreg.$(OBJ)
 !else
 MAIN_OBJ=$(PLOBJDIR)\plmain.$(OBJ) $(PLOBJDIR)\plimpl.$(OBJ) $(PLOBJDIR)\dwtrace.$(OBJ)\
  $(PLOBJDIR)\dwimg.$(OBJ) $(PLOBJDIR)\dwreg.$(OBJ)
+!endif
 !endif
 !endif
 !ifndef REALMAIN_OBJ

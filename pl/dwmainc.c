@@ -83,6 +83,7 @@
 #define e_Info (-110)
 
 void *instance;
+#ifndef METRO
 BOOL quitnow = FALSE;
 HANDLE hthread;
 DWORD thread_id;
@@ -342,6 +343,7 @@ display_callback display = {
 /* End of code copied from the Windows Ghostscript client for the display
  * device
  */
+#endif
 
 /* Our 'main' routine sets up the separate thread to look after the
  * display window, and inserts the relevant defaults for the display device.
@@ -357,14 +359,13 @@ static int main_utf8(int argc, char *argv[])
     int code, code1;
     int exit_code;
     int exit_status;
+#ifndef METRO
     int nargc;
     char **nargv;
-    char buf[256];
     char dformat[64];
     char ddpi[64];
 
     hwndforeground = GetForegroundWindow();	/* assume this is ours */
-    memset(buf, 0, sizeof(buf));
 
     if (_beginthread(winthread, 65535, NULL) == -1) {
         wprintf(L"GUI thread creation failed\n");
@@ -384,7 +385,11 @@ static int main_utf8(int argc, char *argv[])
         if (n == 0)
             wprintf(L"Can't post message to GUI thread\n");
     }
+#endif
 
+#ifdef METRO
+    code = pl_main_aux(argc, argv, NULL);
+#else
     {   int format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_1 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         HDC hdc = GetDC(NULL);	/* get hdc for desktop */
@@ -408,13 +413,13 @@ static int main_utf8(int argc, char *argv[])
             format = DISPLAY_COLORS_NATIVE | DISPLAY_ALPHA_NONE |
                 DISPLAY_DEPTH_4 | DISPLAY_BIGENDIAN | DISPLAY_BOTTOMFIRST;
         sprintf(dformat, "-dDisplayFormat=%d", format);
+        nargc = argc + 2;
+        nargv = (char **)malloc((nargc + 1) * sizeof(char *));
+        nargv[0] = argv[0];
+        nargv[1] = dformat;
+        nargv[2] = ddpi;
+        memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
     }
-    nargc = argc + 2;
-    nargv = (char **)malloc((nargc + 1) * sizeof(char *));
-    nargv[0] = argv[0];
-    nargv[1] = dformat;
-    nargv[2] = ddpi;
-    memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
     code = pl_main_aux(nargc, nargv, &display);
 
@@ -424,6 +429,7 @@ static int main_utf8(int argc, char *argv[])
     quitnow = TRUE;
     PostThreadMessage(thread_id, WM_QUIT, 0, (LPARAM)0);
     Sleep(0);
+#endif
 
     exit_status = 0;
     switch (code) {

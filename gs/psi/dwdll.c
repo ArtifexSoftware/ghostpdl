@@ -33,10 +33,18 @@
 
 #include "dwdll.h"
 
+#ifdef METRO
+#ifdef _WIN64
+static const char name[] = "gsdll64metro.dll";
+#else
+static const char name[] = "gsdll32metro.dll";
+#endif
+#else
 #ifdef _WIN64
 static const char name[] = "gsdll64.dll";
 #else
 static const char name[] = "gsdll32.dll";
+#endif
 #endif
 
 int load_dll(GSDLL *gsdll, char *last_error, int len)

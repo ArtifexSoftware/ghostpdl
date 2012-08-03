@@ -243,10 +243,18 @@ GS=gswin32
 GSCONSOLE=$(GS)c
 !endif
 !ifndef GSDLL
+!ifdef METRO
+!ifdef WIN64
+GSDLL=gsdll64metro
+!else
+GSDLL=gsdll32metro
+!endif
+!else
 !ifdef WIN64
 GSDLL=gsdll64
 !else
 GSDLL=gsdll32
+!endif
 !endif
 !endif
 
@@ -426,6 +434,12 @@ CFLAGS=
 CFLAGS=$(CFLAGS) -DMEMENTO
 !endif
 
+!ifdef METRO
+# Ideally the TIF_PLATFORM_CONSOLE define should only be for libtiff,
+# but we aren't set up to do that easily
+CFLAGS=$(CFLAGS) -DMETRO -DTIF_PLATFORM_CONSOLE
+!endif
+
 CFLAGS=$(CFLAGS) $(XCFLAGS) $(UNICODECFLAGS)
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
@@ -510,6 +524,9 @@ MSVC_VERSION=9
 !endif
 !if "$(_NMAKE_VER)" == "10.00.30319.01"
 MSVC_VERSION=10
+!endif
+!if "$(_NMAKE_VER)" == "11.00.50522.1"
+MSVC_VERSION=11
 !endif
 !endif
 
@@ -875,7 +892,10 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_OPENJPEG_JP2
 # Choose the language feature(s) to include.  See gs.mak for details.
 
 !ifndef FEATURE_DEVS
-FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)msprinter.dev $(PSD)mspoll.dev $(GLD)pipe.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev
+FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)dpsnext.dev $(PSD)ttfont.dev $(PSD)rasterop.dev $(PSD)epsf.dev $(PSD)mshandle.dev $(PSD)mspoll.dev $(PSD)fapi.dev $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)winutf8.dev
+!ifndef METRO
+FEATURE_DEVS=$(FEATURE_DEVS) $(PSD)msprinter.dev $(GLD)pipe.dev
+!endif
 !endif
 
 # Choose whether to compile the .ps initialization files into the executable.
@@ -917,7 +937,11 @@ STDIO_IMPLEMENTATION=c
 # devs.mak and contrib.mak for the list of available devices.
 
 !ifndef DEVICE_DEVS
+!ifdef METRO
+DEVICE_DEVS=
+!else
 DEVICE_DEVS=$(DD)display.dev $(DD)mswindll.dev $(DD)mswinpr2.dev
+!endif
 DEVICE_DEVS2=$(DD)epson.dev $(DD)eps9high.dev $(DD)eps9mid.dev $(DD)epsonc.dev $(DD)ibmpro.dev
 DEVICE_DEVS3=$(DD)deskjet.dev $(DD)djet500.dev $(DD)laserjet.dev $(DD)ljetplus.dev $(DD)ljet2p.dev
 DEVICE_DEVS4=$(DD)cdeskjet.dev $(DD)cdjcolor.dev $(DD)cdjmono.dev $(DD)cdj550.dev
@@ -932,13 +956,16 @@ DEVICE_DEVS12=$(DD)psmono.dev $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev
 DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev $(DD)png256.dev $(DD)png16m.dev $(DD)pngalpha.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)svgwrite.dev
-DEVICE_DEVS16=$(DD)bbox.dev $(DD)cups.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev
+DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev
+!ifndef METRO
+DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev
+!endif
 # Overflow for DEVS3,4,5,6,9
 DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
 DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev $(DD)pamcmyk32.dev $(DD)pamcmyk4.dev
-DEVICE_DEVS21= $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
 !endif
 
 # FAPI compilation options :
@@ -994,6 +1021,11 @@ $(PSGEN)lib.rsp: $(TOP_MAKEFILES)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
+!ifdef METRO
+# Avoid window usage for Metro for now. This means no GS_XE, only GSCONSOLE_XE
+$(GS_XE): $(GSDLL_DLL) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
+
+!else
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
 	echo /SUBSYSTEM:WINDOWS > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
@@ -1006,6 +1038,7 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ)
 !endif
 	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(DWOBJ) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
 	del $(PSGEN)gswin.rsp
+!endif
 
 # The console mode small EXE loader
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_wutf8.$(OBJ)
@@ -1023,6 +1056,7 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 
 # The big DLL
 $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp $(PSOBJ)gsromfs$(COMPILE_INITS).$(OBJ)
+	echo Linking $(GSDLL)  $(GSDLL_DLL) $(METRO)
 	echo /DLL /DEF:$(PSSRCDIR)\$(GSDLL).def /OUT:$(GSDLL_DLL) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /PROFILE >> $(PSGEN)gswin.rsp

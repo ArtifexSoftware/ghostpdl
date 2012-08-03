@@ -272,8 +272,11 @@ FEATURE_CORE    = \
 	  $(DD)\dpsnext.dev	\
           $(DD)\htxlib.dev	\
 	  $(DD)\ttfont.dev	\
-          $(DD)\gsnogc.dev       \
-	  $(DD)\pipe.dev
+          $(DD)\gsnogc.dev
+
+!ifndef METRO
+FEATURE_CORE = $(FEATURE_CORE) $(DD)\pipe.dev
+!endif
 
 FEATURE_DEVS    = $(FEATURE_CORE) $(DD)\fapi.dev 
 !endif
