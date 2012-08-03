@@ -935,6 +935,9 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 mediabox[2], mediabox[3]);
     if (pdev->PDFX) {
         const cos_value_t *v_trimbox = cos_dict_find_c_key(page->Page, "/TrimBox");
+        const cos_value_t *v_artbox = cos_dict_find_c_key(page->Page, "/ArtBox");
+        const cos_value_t *v_cropbox = cos_dict_find_c_key(page->Page, "/CropBox");
+        const cos_value_t *v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
         floatp trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
         bool print_bleedbox = false;
 
@@ -956,18 +959,73 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 trimbox[1] = temp[1];
                 trimbox[2] = temp[2];
                 trimbox[3] = temp[3];
+                cos_dict_delete_c_key(page->Page, "/TrimBox");
             }
-        } else if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
-                pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
-                pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
-                pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
-                pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
-            trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
-            trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
-            trimbox[2] = mediabox[2] - pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
-            trimbox[3] = mediabox[3] - pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
+            if (v_artbox != NULL && v_artbox->value_type == COS_VALUE_SCALAR)
+                cos_dict_delete_c_key(page->Page, "/ArtBox");
+
+        } else if (v_artbox != NULL && v_artbox->value_type == COS_VALUE_SCALAR) {
+            /* We have no TrimBox, but we ahve an ArtBox, set the TrimBox to be
+             * the supplied ArtBox (TrimBox is preferred for PDF/X)
+             */
+            const byte *p = v_artbox->contents.chars.data;
+            char buf[100];
+            int l = min (v_artbox->contents.chars.size, sizeof(buf) - 1);
+            float temp[4]; /* the type is float for sscanf. */
+
+            memcpy(buf, p, l);
+            buf[l] = 0;
+            if (sscanf(buf, "[ %g %g %g %g ]",
+                    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+                trimbox[0] = temp[0];
+                trimbox[1] = temp[1];
+                trimbox[2] = temp[2];
+                trimbox[3] = temp[3];
+                cos_dict_delete_c_key(page->Page, "/ArtBox");
+            }
+        } else {
+            if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
+                    pdev->PDFXTrimBoxToMediaBoxOffset.data[0] >= 0 &&
+                    pdev->PDFXTrimBoxToMediaBoxOffset.data[1] >= 0 &&
+                    pdev->PDFXTrimBoxToMediaBoxOffset.data[2] >= 0 &&
+                    pdev->PDFXTrimBoxToMediaBoxOffset.data[3] >= 0) {
+                trimbox[0] = mediabox[0] + pdev->PDFXTrimBoxToMediaBoxOffset.data[0];
+                trimbox[1] = mediabox[1] + pdev->PDFXTrimBoxToMediaBoxOffset.data[3];
+                trimbox[2] = mediabox[2] - pdev->PDFXTrimBoxToMediaBoxOffset.data[1];
+                trimbox[3] = mediabox[3] - pdev->PDFXTrimBoxToMediaBoxOffset.data[2];
+            }
         }
-        if (pdev->PDFXSetBleedBoxToMediaBox)
+
+        if (v_bleedbox != NULL && v_bleedbox->value_type == COS_VALUE_SCALAR) {
+            const byte *p = v_bleedbox->contents.chars.data;
+            char buf[100];
+            int l = min (v_bleedbox->contents.chars.size, sizeof(buf) - 1);
+            float temp[4]; /* the type is float for sscanf. */
+
+            memcpy(buf, p, l);
+            buf[l] = 0;
+            if (sscanf(buf, "[ %g %g %g %g ]",
+                    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+                if (temp[0] < mediabox[0])
+                    bleedbox[0] = mediabox[0];
+                else
+                    bleedbox[0] = temp[0];
+                if (temp[1] < mediabox[1])
+                    bleedbox[1] = mediabox[1];
+                else
+                    bleedbox[1] = temp[1];
+                if (temp[2] > mediabox[2])
+                    bleedbox[2] = mediabox[2];
+                else
+                    bleedbox[2] = temp[2];
+                if (temp[3] > mediabox[3])
+                    bleedbox[3] = mediabox[3];
+                else
+                    bleedbox[3] = temp[3];
+                print_bleedbox = true;
+                cos_dict_delete_c_key(page->Page, "/BleedBox");
+            }
+        } else if (pdev->PDFXSetBleedBoxToMediaBox)
             print_bleedbox = true;
         else if (pdev->PDFXBleedBoxToTrimBoxOffset.size >= 4 &&
                 pdev->PDFXBleedBoxToTrimBoxOffset.data[0] >= 0 &&
@@ -980,6 +1038,98 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             bleedbox[3] = trimbox[3] + pdev->PDFXBleedBoxToTrimBoxOffset.data[2];
             print_bleedbox = true;
         }
+
+        if (print_bleedbox == true) {
+            if (trimbox[0] < bleedbox[0] || trimbox[1] < bleedbox[1] ||
+                trimbox[2] > bleedbox[2] || trimbox[3] > bleedbox[3]) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                         "TrimBox does not fit inside BleedBox, not permitted in PDF/X-3, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFX = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                         "TrimBox does not fit inside BleedBox, not permitted in PDF/X-3, reducing TrimBox\n");
+                        if (trimbox[0] < bleedbox[0])
+                            trimbox[0] = bleedbox[0];
+                        if (trimbox[1] < bleedbox[1])
+                            trimbox[1] = bleedbox[1];
+                        if (trimbox[2] > bleedbox[2])
+                            trimbox[2] = bleedbox[2];
+                        if (trimbox[3] > bleedbox[3])
+                            trimbox[3] = bleedbox[3];
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                         "TrimBox does not fit inside BleedBox, not permitted in PDF/X-3, aborting conversion\n");
+                         return gs_error_unknownerror;
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                         "TrimBox does not fit inside BleedBox, not permitted in PDF/X-3\nunrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFX = 0;
+                        break;
+                }
+            }
+        }
+
+        if (v_cropbox != NULL && v_cropbox->value_type == COS_VALUE_SCALAR) {
+            const byte *p = v_cropbox->contents.chars.data;
+            char buf[100];
+            int l = min (v_cropbox->contents.chars.size, sizeof(buf) - 1);
+            float temp[4]; /* the type is float for sscanf. */
+
+            memcpy(buf, p, l);
+            buf[l] = 0;
+            if (sscanf(buf, "[ %g %g %g %g ]",
+                    &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
+                cos_dict_delete_c_key(page->Page, "/CropBox");
+                pprintg4(s, "/CropBox [%g %g %g %g]\n",
+                    temp[0], temp[1], temp[2], temp[3]);
+                /* Make sure TrimBox fits inside CropBox. Spec says 'must not extend
+                 * beyond the boundaries' but Acrobat Preflight complains if they
+                 * are the same value.
+                 */
+                if (trimbox[0] < temp[0] || trimbox[1] < temp[1] ||
+                    trimbox[2] > temp[2] || trimbox[3] > temp[3]) {
+                    switch (pdev->PDFACompatibilityPolicy) {
+                        case 0:
+                            emprintf(pdev->memory,
+                             "TrimBox does not fit inside CropBox, not permitted in PDF/X-3, reverting to normal PDF output\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                        case 1:
+                            emprintf(pdev->memory,
+                             "TrimBox does not fit inside CropBox, not permitted in PDF/X-3, reducing TrimBox\n");
+                            if (trimbox[0] < temp[0])
+                                trimbox[0] = temp[0];
+                            if (trimbox[1] < temp[1])
+                                trimbox[1] = temp[1];
+                            if (trimbox[2] > temp[2])
+                                trimbox[2] = temp[2];
+                            if (trimbox[3] > temp[3])
+                                trimbox[3] = temp[3];
+                            break;
+                        case 2:
+                            emprintf(pdev->memory,
+                             "TrimBox does not fit inside CropBox, not permitted in PDF/X-3, aborting conversion\n");
+                             return gs_error_unknownerror;
+                            break;
+                        default:
+                            emprintf(pdev->memory,
+                             "TrimBox does not fit inside CropBox, not permitted in PDF/X-3\nunrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFX = 0;
+                            break;
+                    }
+                }
+            }
+        }
+
         if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
             cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
             pprintg4(s, "/TrimBox [%g %g %g %g]\n",

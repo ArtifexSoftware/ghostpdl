@@ -812,6 +812,30 @@ cos_dict_element_free(cos_dict_t *pcd, cos_dict_element_t *pcde,
     gs_free_object(mem, pcde, cname);
 }
 
+static int
+cos_dict_delete(cos_dict_t *pcd, const byte *key_data, uint key_size)
+{
+    cos_dict_element_t *pcde = pcd->elements, *prev = 0;
+
+    for (; pcde; pcde = pcde->next) {
+        if (!bytes_compare(key_data, key_size, pcde->key.data, pcde->key.size)) {
+            cos_dict_element_free(pcd, pcde, "cos_dict_delete");
+            if (prev != 0)
+                prev->next = pcde->next;
+            else
+                pcd->elements = pcde->next;
+            return 0;
+        }
+        prev = pcde;
+    }
+    return -1;
+}
+int
+cos_dict_delete_c_key(cos_dict_t *pcd, const char *key)
+{
+    return cos_dict_delete(pcd, (const byte *)key, strlen(key));
+}
+
 static void
 cos_dict_release(cos_object_t *pco, client_name_t cname)
 {

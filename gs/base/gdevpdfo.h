@@ -275,6 +275,9 @@ int cos_stream_add_stream_contents(cos_stream_t *, stream *);
 int cos_stream_release_pieces(cos_stream_t *pcs);
 cos_dict_t *cos_stream_dict(cos_stream_t *);
 
+/* Remove an element from a cos_dict */
+int cos_dict_delete_c_key(cos_dict_t *pcd, const char *key);
+
 /*
  * Get the first / next element for enumerating an array.  Usage:
  *	const cos_array_element_t *elt = cos_array_element_first(pca);
