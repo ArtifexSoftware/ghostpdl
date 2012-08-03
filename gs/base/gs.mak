@@ -73,7 +73,7 @@
 #	    link from a local copy of the source using our custom 
 #	    makefile.
 #	JPXSRCDIR - the name of the jpeg2k library source directory
-#	    e.g. 'jasper' or 'jasper-/version/'
+#	    e.g. 'openjpeg'
 #	JPX_CFLAGS - any platform-specific flags that are required
 #	    to properly compile in the jpeg2k library source
 #	SHARE_LCMS - If set to 1, asks the linker to use a separately
@@ -334,7 +334,6 @@ ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 JB2I_=$(JBIG2SRCDIR)
 JB2CF_=$(JBIG2_CFLAGS)
 LDF_JB2I_=$(JBIG2SRCDIR)$(D)source$(D)libraries
-JPXI_=$(JPXSRCDIR)$(D)src$(D)libjasper$(D)include
 LWF_JPXI_=$(JPXSRCDIR)$(D)library$(D)source
 JPXCF_=$(JPX_CFLAGS)
 JPX_OPENJPEG_I_=$(JPXSRCDIR)$(D)libopenjpeg

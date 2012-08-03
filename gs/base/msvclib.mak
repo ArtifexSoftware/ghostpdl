@@ -160,20 +160,6 @@ JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 !endif
 
-# Define the jasper library source location.
-# See jasper.mak for more information.
-
-!ifndef JPX_LIB
-JPX_LIB=jasper
-!endif
-
-# Alternatively, you can build a separate DLL
-# and define SHARE_JPX=1 in src/winlib.mak
-
-!ifndef JPXSRCDIR
-JPXSRCDIR=jasper
-!endif
-
 # Define the directory where the lcms source is stored.
 # See lcms.mak for more information
 

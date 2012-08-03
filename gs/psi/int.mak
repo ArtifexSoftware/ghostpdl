@@ -1208,14 +1208,6 @@ $(PSOBJ)zfjbig2_luratech.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
 $(PSD)jpx.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)jpx_$(JPX_LIB).dev
 	$(CP_) $(PSD)jpx_$(JPX_LIB).dev $(PSD)jpx.dev
 
-fjpx_jasper=$(PSOBJ)zfjpx.$(OBJ)
-
-$(PSD)jpx_jasper.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_jasper) $(GLD)sjpx.dev
-	$(SETMOD) $(PSD)jpx_jasper $(fjpx_jasper)
-	$(ADDMOD) $(PSD)jpx_jasper -include $(GLD)sjpx
-	$(ADDMOD) $(PSD)jpx_jasper -include $(GLD)jasper
-	$(ADDMOD) $(PSD)jpx_jasper -oper zfjpx
-
 fjpx_luratech=$(PSOBJ)zfjpx_luratech.$(OBJ)
 
 $(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\

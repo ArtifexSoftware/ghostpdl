@@ -146,13 +146,6 @@ JBIG2SRCDIR=[.jbig2dec]
 
 # Define the jpeg2k library and source directory
 
-JPX_LIB=jasper
-.ifdef SYSLIB
-JPXSRCDIR=sys$library:
-.else
-JPXSRCDIR=[.jasper]
-.endif
-
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
 # include the ijs.mak makefile

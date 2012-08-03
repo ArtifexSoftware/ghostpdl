@@ -355,12 +355,6 @@ JPX_LIB=luratech
 !endif
 !endif
 
-!if !defined(JPX_LIB) && (defined(USE_JASPER))
-!if exist("jasper\src")
-JPX_LIB=jasper
-!endif
-!endif
-
 !ifndef JPX_LIB
 JPX_LIB=openjpeg
 !endif
@@ -875,12 +869,6 @@ JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DWIN32
 JPX_CFLAGS = $JPX_CFLAGS -DUSE_OPENJPEG_JP2
 !endif
 !endif
-
-# Use jasper if nothing else works. See jasper.mak for more information.
-!ifndef JPXSRCDIR
-JPXSRCDIR=jasper
-!endif
-
 
 # ------ Devices and features ------ #
 

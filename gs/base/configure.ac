@@ -1165,77 +1165,6 @@ if test "x$JPX_DECODER" = "x"; then
   fi
 fi
 
-if test "x$JPX_DECODER" = "x"; then
-  dnl look for the jasper JPEG 2000 library
-  AC_ARG_WITH([jasper], AC_HELP_STRING([--without-jasper],
-    [Do not use the JasPer library for JPEG 2000]))
-  if test x$with_jasper != xno; then
-    AC_MSG_CHECKING([for local jasper library source])
-    for d in jasper jasper-1.7*; do
-      test -d "$d" && JPXDIR=$d && break
-    done
-    if test "x$JPXDIR" != xsrc; then
-      AC_MSG_RESULT([$JPXDIR])
-      AC_MSG_CHECKING([for local jasper configure script])
-      if test -x $JPXDIR/configure; then
-        AC_MSG_RESULT([yes])
-        echo
-        echo "Running jasper configure script..."
-        olddir=`pwd`
-        cd $JPXDIR && ./configure $SUBCONFIG_OPTS
-        status=$?
-        if test "$status" -ne 0 ; then
-          AC_MSG_ERROR([jasper configure script failed], $status)
-        fi
-        cd $olddir
-        echo
-        echo "Continuing with Ghostscript configuration..."
-      else
-        AC_MSG_RESULT([no])
-        AC_MSG_CHECKING([for local jasper autogen.sh script])
-        if test -x $JPXDIR/autogen.sh; then
-          AC_MSG_RESULT([yes])
-          echo
-          echo "Running jasper autogen script..."
-          olddir=`pwd`
-          cd $JPXDIR && ./autogen.sh
-          status=$?
-          if test "$status" -ne 0 ; then
-            AC_MSG_ERROR([jasper autogen script failed], $status)
-          fi
-          cd $olddir
-          echo
-          echo "Continuing with Ghostscript configuration..."
-        else
-          AC_MSG_ERROR([
-Unable to find $JPXDIR/src/libjasper/include/jas_config.h,
-or generate generate such a file for this system. You will
-have to build one by hand, or configure, build and install
-the jasper library separately.
-
-You can also pass --without-jasper to configure to disable
-JPEG 2000 PDF image support entirely.
-])
-        fi
-      fi
-    else
-      AC_MSG_RESULT([no])
-      AC_CHECK_LIB([jasper], [jas_image_create], [
-          SHARE_JPX=1
-      ], [
-          AC_MSG_WARN([disabling support for JPEG 2000 images])
-          with_jasper=no
-      ])
-    fi
-  fi
-  if test x$with_jasper != xno; then
-    JPX_DECODER=jasper
-    JPX_AUTOCONF_CFLAGS="-DJAS_CONFIGURE"
-    JPXDEVS='$(PSD)jpx.dev'
-  fi
-fi
-
-
 AC_SUBST(JPX_DECODER)
 AC_SUBST(JPX_AUTOCONF_CFLAGS)
 AC_SUBST(JPXDIR)
@@ -1947,11 +1876,6 @@ AC_OUTPUT(Makefile)
 if ( test -d cups ); then
 AC_OUTPUT(cups/gstopxl)
 chmod +x cups/gstopxl
-fi
-
-if test "x$JPX_DECODER" = "xjasper"; then
-   AC_MSG_WARN([Using JasPer for PDF JPXDecode support])
-   AC_MSG_WARN([Support for JaSPER is deprecated and will be removed in a future release])
 fi
 
 if test "x$AFS" = "x1"; then

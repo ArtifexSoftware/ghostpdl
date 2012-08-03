@@ -125,9 +125,6 @@ JBIG2SRCDIR=[.jbig2dec]
 
 # Define the jpeg2k library and source location.
 
-JPX_LIB=jasper
-JPXSRCDIR=jasper
-
 # Define the directory where the lcms source is stored.
 # See lcms.mak for more information
 

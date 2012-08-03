@@ -169,7 +169,6 @@ WriteSETTINGLIST()
         echo "</SETTING>"
         echo "<SETTING><NAME>SystemSearchPaths</NAME>"
             WritePathSetting SearchPath ":jbig2dec:" MacOS Project
-            WritePathSetting SearchPath ":jasper/src/libjasper/include:" MacOS Project
             WritePathSetting SearchPath ":obj:" MacOS Project
             WritePathSetting SearchPath ":MacOS Support:" MacOS CodeWarrior
             WritePathSetting SearchPath ":MSL:MSL_C" MacOS CodeWarrior

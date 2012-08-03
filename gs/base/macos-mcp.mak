@@ -109,12 +109,6 @@ ZSRCDIR=zlib
 JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
-# Define the japser library source location.
-# See jasper.mak for more information.
-
-JPX_LIB=jasper
-JPXSRCDIR=jasper
-
 # Define the directory where the lcms source is stored.
 # See lcms.mak for more information
 
@@ -287,7 +281,6 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak
 include $(GLSRCDIR)/jbig2.mak
-include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak

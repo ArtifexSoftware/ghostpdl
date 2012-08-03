@@ -1658,15 +1658,6 @@ $(GLOBJ)sjbig2_luratech.$(OBJ) : $(GLSRC)sjbig2_luratech.c $(AK) \
 $(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sjpx_$(JPX_LIB).dev
 	$(CP_) $(GLD)sjpx_$(JPX_LIB).dev $(GLD)sjpx.dev
 
-# jasper version
-sjpx_jasper=$(GLOBJ)sjpx.$(OBJ)
-$(GLD)sjpx_jasper.dev : $(LIB_MAK) $(ECHOGS_XE) \
- $(GLD)jasper.dev $(sjpx_jasper)
-	$(SETMOD) $(GLD)sjpx_jasper $(sjpx_jasper)
-	$(ADDMOD) $(GLD)sjpx_jasper -include $(GLD)jasper.dev
-
-# jasper.dev is created in jasper.mak
-
 $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(memory__h) $(gsmalloc_h) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h) $(MAKEDIRS)
