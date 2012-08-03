@@ -40,7 +40,7 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 #endif
 
 #ifndef MAX_COMPONENTS_IN_DEVN		
-#  define MAX_COMPONENTS_IN_DEVN (32)
+#  define MAX_COMPONENTS_IN_DEVN (64)
 #endif
 
 /* There is a speed penalty for supporting lots of spot colors, so certain

@@ -4065,7 +4065,7 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
     if (r_size(&namesarray) < 1)
         return_error(e_typecheck);
     /* Make sure no more inks than we can cope with */
-    if (r_size(&namesarray) > GS_CLIENT_COLOR_MAX_COMPONENTS)
+    if (r_size(&namesarray) > MAX_COMPONENTS_IN_DEVN)    /* MUST match psi/icremap.h int_remap_color_info_s */
         return_error(e_limitcheck);
     /* Check the tint transform is a procedure */
     code = array_get(imemory, devicenspace, 3, &proc);
