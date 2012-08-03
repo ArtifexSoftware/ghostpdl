@@ -170,10 +170,6 @@ SHARE_JBIG2=0
 JBIG2_LIB=jbig2dec
 JBIG2SRCDIR=jbig2dec
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
-ICCSRCDIR=icclib
-
 # Define the directory where the lcms source is stored.
 # See lcms.mak for more information
 
@@ -407,7 +403,6 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/tiff.mak
-include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/lcms.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak

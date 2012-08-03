@@ -95,9 +95,6 @@ PLSRCDIR=..\pl
 !ifndef PXLSRCDIR
 PXLSRCDIR=..\pxl
 !endif
-!ifndef ICCSRCDIR
-ICCSRCDIR=..\gs\icclib
-!endif
 !ifndef COMMONDIR
 COMMONDIR=..\common
 !endif

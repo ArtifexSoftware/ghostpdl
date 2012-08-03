@@ -227,8 +227,6 @@ JBIG2GENDIR=$(GLGENDIR)
 JBIG2OBJDIR=$(GLOBJDIR)
 JPXGENDIR=$(GLGENDIR)
 JPXOBJDIR=$(GLOBJDIR)
-ICCGENDIR=$(GLGENDIR)
-ICCOBJDIR=$(GLOBJDIR)
 LCMSGENDIR=$(GLGENDIR)
 LCMSOBJDIR=$(GLOBJDIR)
 LCMS2GENDIR=$(GLGENDIR)
@@ -317,15 +315,6 @@ ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
 SETCOMP=$(EXP)$(ECHOGS_XE) -e .dev -w- -l-comp
 ADDCOMP=$(EXP)$(ECHOGS_XE) -e .dev -a- -l-comp
 
-# Define the search lists and compilation switches for the third-party
-# libraries, and the compilation switches for their clients.
-# The search lists must be enclosed in $(I_) and $(_I).
-# Note that we can't define the entire compilation command,
-# because this must include $(GLSRCDIR), which isn't defined yet.
-ICCI_=$(ICCSRCDIR)
-ICCF_=
-# Currently there is no option for sharing icclib.
-ICCCF_=
 IJSI_=$(IJSSRCDIR)
 IJSF_=
 # Currently there is no option for sharing ijs.

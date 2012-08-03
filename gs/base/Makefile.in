@@ -267,11 +267,6 @@ JPX_CFLAGS=@JPX_AUTOCONF_CFLAGS@
 #JPXSRCDIR=openjpeg
 #JPX_CFLAGS=-DUSE_OPENJPEG_JP2 -DOPJ_STATIC
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
-
-ICCSRCDIR=icclib
-
 # options for lcms color management library
 SHARE_LCMS=@SHARELCMS@
 LCMSSRCDIR=@LCMSDIR@
@@ -600,7 +595,6 @@ include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
-include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/$(WHICH_CMS).mak
 include $(GLSRCDIR)/ijs.mak
 @LCUPSINCLUDE@

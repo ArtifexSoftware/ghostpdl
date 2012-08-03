@@ -92,10 +92,6 @@ SVGSRCDIR=..\svg
 PSLIBDIR=..\gs\lib
 !endif
 
-!ifndef ICCSRCDIR
-ICCSRCDIR=..\gs\icclib
-!endif
-
 !ifndef EXPATSRCDIR
 EXPATSRCDIR=..\gs\expat
 !endif

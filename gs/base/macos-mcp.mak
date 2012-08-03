@@ -132,7 +132,7 @@ WHICH_CMS=lcms2
 
 # IJS has not been ported to MacOS Classic. If you do the port,
 # you'll need to set these values. You'll also need to
-# include the ijs.mak makefile (right after icclib.mak).
+# include the ijs.mak makefile
 #
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
@@ -291,7 +291,6 @@ include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/ldf_jb2.mak
 include $(GLSRCDIR)/lwf_jp2.mak
 include $(GLSRCDIR)/openjpeg.mak
-include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 #include $(GLSRCDIR)/unix-aux.mak

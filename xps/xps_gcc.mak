@@ -42,7 +42,6 @@ MAINSRCDIR?=../main
 PSSRCDIR?=../gs/psi
 XPSSRCDIR?=../xps
 PSLIBDIR?=../gs/lib
-ICCSRCDIR?=../gs/icclib
 PNGSRCDIR?=../gs/libpng
 EXPATSRCDIR?=../gs/expat
 JPEGXR_SRCDIR?=../gs/jpegxr

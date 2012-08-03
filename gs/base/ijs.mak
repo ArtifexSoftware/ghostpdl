@@ -15,7 +15,7 @@
 #
 # makefile for ijs client library code.
 # Users of this makefile must define the following:
-#	IJSSRCDIR - the icclib source directory
+#	IJSSRCDIR - the ijs source directory
 #	IJSEXECTYPE - which process control code to use
 #		in spawning the server. currently
 #		'unix' and 'win' are supported.

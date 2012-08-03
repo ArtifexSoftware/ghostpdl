@@ -96,9 +96,6 @@ MAINSRCDIR=..\main
 !ifndef PSLIBDIR
 PSLIBDIR=..\gs\lib
 !endif
-!ifndef ICCSRCDIR
-ICCSRCDIR=..\gs\icclib
-!endif
 
 !ifndef FTSRCDIR
 FTSRCDIR=..\gs\freetype
@@ -119,12 +116,6 @@ PCLOBJDIR=$(GENDIR)
 !endif
 !ifndef PXLOBJDIR
 PXLOBJDIR=$(GENDIR)
-!endif
-!ifndef ICCGENDIR
-ICCGENDIR=$(GENDIR)
-!endif
-!ifndef ICCOBJDIR
-ICCOBJDIR=$(GENDIR)
 !endif
 !ifndef PSGENDIR
 PSGENDIR=$(GENDIR)

@@ -136,7 +136,7 @@ JBIG2SRCDIR=jbig2dec
 
 # IJS has not been ported to OS/2. If you do the port,
 # you'll need to set these values. You'll also need to
-# include the ijs.mak makefile (right after icclib.mak).
+# include the ijs.mak makefile
 #
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.

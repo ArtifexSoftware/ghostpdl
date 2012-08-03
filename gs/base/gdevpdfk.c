@@ -643,9 +643,8 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     gs_vector3 white_d50;
     gs_vector3 temp_xyz;
     /*
-     * Even though Ghostscript includes icclib, icclib is unusable here,
-     * because it requires random access to the output stream.
-     * Instead, we construct the ICC profile by hand.
+     * because it requires random access to the output stream
+     * we construct the ICC profile by hand.
      */
     /* Header */
     byte header[128];

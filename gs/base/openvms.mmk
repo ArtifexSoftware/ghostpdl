@@ -153,14 +153,9 @@ JPXSRCDIR=sys$library:
 JPXSRCDIR=[.jasper]
 .endif
 
-# Define the directory where the icclib source are stored.
-# See icclib.mak for more information
-
-ICCSRCDIR=[.icclib]
-
 # IJS has not been ported to OpenVMS. If you do the port,
 # you'll need to set these values. You'll also need to
-# include the ijs.mak makefile (right after icclib.mak).
+# include the ijs.mak makefile
 #
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
@@ -434,7 +429,6 @@ all : macro [.lib]Fontmap. $(GS_XE)
 .include $(GLSRCDIR)png.mak
 JBIG2_EXTRA_OBJS=$(JBIG2OBJDIR)$(D)snprintf.$(OBJ)
 .include $(GLSRCDIR)jbig2.mak
-.include $(GLSRCDIR)icclib.mak
 .include $(GLSRCDIR)devs.mak
 .include $(GLSRCDIR)contrib.mak
 

@@ -32,7 +32,6 @@ GLSRCDIR?=../gs/base
 PCLSRCDIR?=../pcl
 PLSRCDIR?=../pl
 PXLSRCDIR?=../pxl
-ICCSRCDIR?=../gs/icclib
 COMMONDIR?=../common
 MAINSRCDIR?=../main
 PSSRCDIR?=../gs/psi

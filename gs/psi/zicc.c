@@ -454,7 +454,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
      * color space (the range may be smaller than the native range of values
      * provided by that color space).
      *
-     * Because the icclib code will perform normalization based on color
+     * Because the cms code will perform normalization based on color
      * space, we use the range values only to restrict the set of input
      * values; they are not used for normalization.
      */
