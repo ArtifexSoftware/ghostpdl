@@ -178,6 +178,46 @@
 				CompileAsManaged=""
 			/>
 		</Configuration>
+		<Configuration
+			Name="Debug-cups|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CUPS=1 debugclean"
+				Output=""
+				PreprocessorDefinitions="WIN32;_DEBUG;DEBUG=1;TDEBUG=1;HAVE_SSE2=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
+		<Configuration
+			Name="Debug-cups|x64"
+			OutputDirectory="$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="0"
+			>
+			<Tool
+				Name="VCNMakeTool"
+				BuildCommandLine="nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				ReBuildCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 debug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc"
+				CleanCommandLine="nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean"
+				Output=""
+				PreprocessorDefinitions="WIN64;_DEBUG;DEBUG=1;TDEBUG=1"
+				IncludeSearchPath=""
+				ForcedIncludes=""
+				AssemblySearchPath=""
+				ForcedUsingAssemblies=""
+				CompileAsManaged=""
+			/>
+		</Configuration>
 	</Configurations>
 	<References>
 	</References>

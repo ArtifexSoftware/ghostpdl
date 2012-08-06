@@ -265,6 +265,24 @@ GSDLL=gsdll32
 MAKEDLL=1
 !endif
 
+# Should we build in the cups device....
+!ifdef WITH_CUPS
+!if "$(WITH_CUPS)"!="0"
+WITH_CUPS=1
+!else
+WITH_CUPS=0
+!endif
+!else
+WITH_CUPS=0
+!endif
+
+# We can't build cups libraries in a Metro friendly way,
+# so if building for Metro, disable cups regardless of the
+# request
+!ifdef METRO
+WITH_CUPS=0
+!endif
+
 # Define the directory where the FreeType2 library sources are stored.
 # See freetype.mak for more information.
 
@@ -957,7 +975,7 @@ DEVICE_DEVS13=$(DD)pngmono.dev $(DD)pngmonod.dev $(DD)pnggray.dev $(DD)png16.dev
 DEVICE_DEVS14=$(DD)jpeg.dev $(DD)jpeggray.dev $(DD)jpegcmyk.dev
 DEVICE_DEVS15=$(DD)pdfwrite.dev $(DD)pswrite.dev $(DD)ps2write.dev $(DD)epswrite.dev $(DD)txtwrite.dev $(DD)pxlmono.dev $(DD)pxlcolor.dev $(DD)svgwrite.dev
 DEVICE_DEVS16=$(DD)bbox.dev $(DD)plib.dev $(DD)plibg.dev $(DD)plibm.dev $(DD)plibc.dev $(DD)plibk.dev $(DD)plan.dev $(DD)plang.dev $(DD)planm.dev $(DD)planc.dev $(DD)plank.dev
-!ifndef METRO
+!if "$(WITH_CUPS)" == "1"
 DEVICE_DEVS16=$(DEVICE_DEVS16) $(DD)cups.dev
 !endif
 # Overflow for DEVS3,4,5,6,9
