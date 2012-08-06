@@ -19,6 +19,27 @@
 
 #ifdef USE_LIBPAPER
 #include <paper.h>
+#include <stdlib.h>
+
+/* libpaper uses the std library's malloc() to allocate
+   the string, but a normal "free" call below will
+   get "hooked" if memento is in use (via malloc_.h).
+   So workaround that...
+*/
+#ifdef MEMENTO
+/* This definition *must* come before memento.h gets included
+   (in this case, via malloc_.h) so that the free() call
+   inside std_free() avoids the pre-processor (re)definition
+   to Memento_free()
+*/
+static void std_free(void *ptr)
+{
+   free(ptr);
+}
+#else
+#define std_free free
+#endif
+
 #endif
 
 #include "string_.h"
@@ -60,7 +81,7 @@ gp_defaultpapersize(char *ptr, int *plen)
         *plen = len + 1;
         paperdone();
         if (is_systempaper)
-            free(paper);
+            std_free((void *)paper);
         return rc;
     }
 #endif
