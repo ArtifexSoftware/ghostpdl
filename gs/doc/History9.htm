@@ -155,6 +155,234 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 No recorded incompatible changes.
 
 <h3><a name="9.06_Changelog"></a>Changelog</h3>
+<p><strong>2012-08-06 23:37:19 -0400
+</strong>
+<br>Alex Cherepanov &lt;alex.cherepanov@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=291872308da215e1d7e12c8375fcf10dd5e651d2">291872308da215e1d7e12c8375fcf10dd5e651d2</a>
+<blockquote>
+<p>
+    Backport patches CVE problems.<br>
+<br>
+    CVE-2009-5030 http://code.google.com/p/openjpeg/source/detail?r=1703<br>
+    CVE-2012-1499 http://code.google.com/p/openjpeg/source/detail?r=1330<br>
+    CVE-2012-3358 http://code.google.com/p/openjpeg/source/detail?r=1727<br>
+<br>
+gs/openjpeg/libopenjpeg/j2k.c<br>
+gs/openjpeg/libopenjpeg/jp2.c<br>
+gs/openjpeg/libopenjpeg/tcd.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-06 08:43:48 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=20157526924fbe59436170085a17e530d08e9807">20157526924fbe59436170085a17e530d08e9807</a>
+<blockquote>
+<p>
+    Bug 693223: remove apparently moribund dumphint tool<br>
+<br>
+    dumphint.ps and the scripts which call it seem to be of almost no value<br>
+    these days, and appear to have suffered &quot;bit rot&quot;. So remove them.<br>
+<br>
+    CLUSTER_UNTESTED<br>
+<br>
+gs/lib/dumphint<br>
+gs/lib/dumphint.bat<br>
+gs/lib/dumphint.ps<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-02 23:14:09 -0700
+</strong>
+<br>Ray Johnston &lt;ray.johnston@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=e48e87f883df0d39d1409d814c5d15444c3dca07">e48e87f883df0d39d1409d814c5d15444c3dca07</a>
+<blockquote>
+<p>
+    Bug 693185. The limitcheck in validatedevicenspace must match int_remap_color_info_s.<br>
+<br>
+    Commit e884e3 masked the failure, but since the test in validatedevicenspace<br>
+    used GS_CLIENT_COLOR_MAX_COMPONENTS, the array bounds could still be exceeded.<br>
+<br>
+    Note that the confusing error message from the PDF interpreter from comment 1<br>
+    still exists unless -dPDFSTOPONERROR is used, which gives a more meaningful<br>
+    'limitcheck' immediately following the 'Do' of the image with 17 DeviceN<br>
+    components. Bug 693185 is reopened for the error message as P3.<br>
+<br>
+gs/base/gsccolor.h<br>
+gs/psi/icremap.h<br>
+gs/psi/zcolor.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-02 20:34:26 -0700
+</strong>
+<br>Michael Vrhel &lt;michael.vrhel@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=588c2ee040526fbea470e36e7cbc8e87a503cab9">588c2ee040526fbea470e36e7cbc8e87a503cab9</a>
+<blockquote>
+<p>
+    Update documentation for tiffsep planar device<br>
+<br>
+    Add in comments about the use of -dMaxSpots as well as the fact that the device,<br>
+    and psdcmyk are planar and limited to 64 colorants per page.  Also add in a<br>
+    hint about using -dMaxSpots when we are processing a Postscript file and bump<br>
+    up to the default max limit of 10 colorants.  Tested it and it worked nicely.<br>
+    Thanks Robin Watts.<br>
+<br>
+gs/base/gdevpsd.c<br>
+gs/base/gdevtsep.c<br>
+gs/doc/Devices.htm<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-02 18:27:45 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=836a551b97dd4a8436608b6dcebe8f8fb8632bcd">836a551b97dd4a8436608b6dcebe8f8fb8632bcd</a>
+<blockquote>
+<p>
+    Add -dMaxSpots for tiffsep and psd devices.<br>
+<br>
+    psd and tiffsep devices now run with GS_SOFT_MAX_SPOTS spots enabled<br>
+    by default (ten, unless predefined differently at build time). The<br>
+    user can change this value using -dMaxSpots=X (where<br>
+    0 &lt;= X &lt;= GS_CLIENT_COLOR_MAX_COMPONENTS-4).<br>
+<br>
+gs/base/gdevpsd.c<br>
+gs/base/gdevtsep.c<br>
+gs/base/gsccolor.h<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-01 22:14:44 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=d723d72b3c9f7e171299a5ccc70a5f1ca715a50a">d723d72b3c9f7e171299a5ccc70a5f1ca715a50a</a>
+<blockquote>
+<p>
+    Fix the -disable-gtk &quot;so&quot; build option<br>
+<br>
+    No cluster differences.<br>
+<br>
+gs/base/configure.ac<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-08-01 14:07:49 -0400
+</strong>
+<br>Alex Cherepanov &lt;alex.cherepanov@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=7e7b4ae93066b841c0b1eac539c220b79d7f7a5d">7e7b4ae93066b841c0b1eac539c220b79d7f7a5d</a>
+<blockquote>
+<p>
+    Fix lcms2 64-bit value decoding on big endian systems<br>
+    that lack 64-bit types or have these types missed by configuration.<br>
+<br>
+gs/lcms2/src/cmsplugin.c<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-07-31 17:53:58 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=c832985cab3b769d460a3f3e0ae894c2a84fa1ba">c832985cab3b769d460a3f3e0ae894c2a84fa1ba</a>
+<blockquote>
+<p>
+    Update tiffsep/tiffsep1 documentation w.r.t downscaler.<br>
+<br>
+    Document 32 and 34 ratios. Add extra info to tiffsep1 to distinguish<br>
+    it from tiffsep in 1bpp mode.<br>
+<br>
+gs/doc/Devices.htm<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-07-31 15:25:13 +0100
+</strong>
+<br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=af22330035dc852635b2102353cec1a94504cb88">af22330035dc852635b2102353cec1a94504cb88</a>
+<blockquote>
+<p>
+    Update docs for 9.06 release candidate 1.<br>
+<br>
+gs/doc/API.htm<br>
+gs/doc/C-style.htm<br>
+gs/doc/Commprod.htm<br>
+gs/doc/DLL.htm<br>
+gs/doc/Deprecated.htm<br>
+gs/doc/Details8.htm<br>
+gs/doc/Details9.htm<br>
+gs/doc/Develop.htm<br>
+gs/doc/Devices.htm<br>
+gs/doc/Drivers.htm<br>
+gs/doc/Fonts.htm<br>
+gs/doc/Helpers.htm<br>
+gs/doc/History1.htm<br>
+gs/doc/History2.htm<br>
+gs/doc/History3.htm<br>
+gs/doc/History4.htm<br>
+gs/doc/History5.htm<br>
+gs/doc/History6.htm<br>
+gs/doc/History7.htm<br>
+gs/doc/History8.htm<br>
+gs/doc/History9.htm<br>
+gs/doc/Install.htm<br>
+gs/doc/Issues.htm<br>
+gs/doc/Language.htm<br>
+gs/doc/Lib.htm<br>
+gs/doc/Make.htm<br>
+gs/doc/News.htm<br>
+gs/doc/Projects.htm<br>
+gs/doc/Ps-style.htm<br>
+gs/doc/Ps2epsi.htm<br>
+gs/doc/Ps2pdf.htm<br>
+gs/doc/Ps2ps2.htm<br>
+gs/doc/Psfiles.htm<br>
+gs/doc/Readme.htm<br>
+gs/doc/Release.htm<br>
+gs/doc/Source.htm<br>
+gs/doc/Unix-lpr.htm<br>
+gs/doc/Use.htm<br>
+gs/doc/WhatIsGS.htm<br>
+gs/doc/Xfonts.htm<br>
+gs/doc/gs-vms.hlp<br>
+gs/doc/thirdparty.htm<br>
+gs/man/dvipdf.1<br>
+gs/man/font2c.1<br>
+gs/man/gs.1<br>
+gs/man/gslp.1<br>
+gs/man/gsnd.1<br>
+gs/man/pdf2dsc.1<br>
+gs/man/pdf2ps.1<br>
+gs/man/pdfopt.1<br>
+gs/man/pf2afm.1<br>
+gs/man/pfbtopfa.1<br>
+gs/man/printafm.1<br>
+gs/man/ps2ascii.1<br>
+gs/man/ps2epsi.1<br>
+gs/man/ps2pdf.1<br>
+gs/man/ps2pdfwr.1<br>
+gs/man/ps2ps.1<br>
+gs/man/wftopfa.1<br>
+<p>
+</blockquote>
+<hr>
+<p><strong>2012-07-31 10:50:43 +0100
+</strong>
+<br>Robin Watts &lt;robin.watts@artifex.com&gt;<br>
+<a href="http://git.ghostscript.com/?p=ghostpdl.git;a=commitdiff;h=76722bee735462eedf4f4c6d9dfa552e3c1f7ebc">76722bee735462eedf4f4c6d9dfa552e3c1f7ebc</a>
+<blockquote>
+<p>
+    Fix link warnings about bad memset in gdevtsep.c<br>
+<br>
+    Due to a mistake on my part, the tiffsep device had a couple of<br>
+    memsets in that did nothing; these were intended to clear an array<br>
+    of pointers before use. Not clearing the array would only have been<br>
+    a problem if we'd hit an error condition in a very small region of<br>
+    code, but nonetheless, this is a fix.<br>
+<br>
+gs/base/gdevtsep.c<br>
+<p>
+</blockquote>
+<hr>
 <p><strong>2012-07-31 08:40:18 +0100
 </strong>
 <br>Chris Liddell &lt;chris.liddell@artifex.com&gt;<br>
@@ -64572,7 +64800,7 @@ or contact Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861, for further information.
 
 <p>
-<small>Ghostscript version 9.06, 31 July 2012</small>
+<small>Ghostscript version 9.06, 8 August 2012
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
