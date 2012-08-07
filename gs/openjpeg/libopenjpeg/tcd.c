@@ -332,7 +332,7 @@ void tcd_malloc_encode(opj_tcd_t *tcd, opj_image_t * image, opj_cp_t * cp, int c
 							cblk->y0 = int_max(cblkystart, prc->y0);
 							cblk->x1 = int_min(cblkxend, prc->x1);
 							cblk->y1 = int_min(cblkyend, prc->y1);
-							cblk->data = (unsigned char*) opj_calloc(8192+2, sizeof(unsigned char));
+							cblk->data = (unsigned char*) opj_calloc(9728+2, sizeof(unsigned char));
 							/* FIXME: mqc_init_enc and mqc_byteout underrun the buffer if we don't do this. Why? */
 							cblk->data += 2;
 							cblk->layers = (opj_tcd_layer_t*) opj_calloc(100, sizeof(opj_tcd_layer_t));
