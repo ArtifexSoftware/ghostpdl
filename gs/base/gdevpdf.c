@@ -1488,8 +1488,6 @@ pdf_close(gx_device * dev)
             code = code1;
     }
 
-    linear_params.LastResource = pdev->next_id - 1;
-
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
         code = code1;
@@ -1710,7 +1708,8 @@ pdf_close(gx_device * dev)
     }
 
     if (pdev->Linearise) {
-        linear_params.Offsets = (ulong *)gs_alloc_bytes(pdev->pdf_memory, linear_params.LastResource * sizeof(ulong), "temp xref storage");
+        linear_params.LastResource = pdev->next_id - 1;
+        linear_params.Offsets = (ulong *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_id * sizeof(ulong), "temp xref storage");
         memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(ulong));
     }
 
@@ -1751,7 +1750,7 @@ pdf_close(gx_device * dev)
                   end_section - start_section);
 
         do {
-            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
+            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, NULL);
             if (end_section >= pdev->next_id)
                 break;
             start_section = end_section + 1;
