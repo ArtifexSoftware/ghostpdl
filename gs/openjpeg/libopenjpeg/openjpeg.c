@@ -153,11 +153,11 @@ void OPJ_CALLCONV opj_setup_decoder(opj_dinfo_t *dinfo, opj_dparameters_t *param
 	}
 }
 
-opj_image_t* OPJ_CALLCONV opj_decode(opj_dinfo_t *dinfo, opj_cio_t *cio) {
-	return opj_decode_with_info(dinfo, cio, NULL);
+opj_image_t* OPJ_CALLCONV opj_decode(opj_dinfo_t *dinfo, opj_cio_t *cio, opj_bool return_indexed) {
+	return opj_decode_with_info(dinfo, cio, NULL, return_indexed);
 }
 
-opj_image_t* OPJ_CALLCONV opj_decode_with_info(opj_dinfo_t *dinfo, opj_cio_t *cio, opj_codestream_info_t *cstr_info) {
+opj_image_t* OPJ_CALLCONV opj_decode_with_info(opj_dinfo_t *dinfo, opj_cio_t *cio, opj_codestream_info_t *cstr_info, opj_bool return_indexed) {
 	if(dinfo && cio) {
 		switch(dinfo->codec_format) {
 			case CODEC_J2K:
@@ -165,7 +165,7 @@ opj_image_t* OPJ_CALLCONV opj_decode_with_info(opj_dinfo_t *dinfo, opj_cio_t *ci
 			case CODEC_JPT:
 				return j2k_decode_jpt_stream((opj_j2k_t*)dinfo->j2k_handle, cio, cstr_info);
 			case CODEC_JP2:
-				return opj_jp2_decode((opj_jp2_t*)dinfo->jp2_handle, cio, cstr_info);
+				return opj_jp2_decode((opj_jp2_t*)dinfo->jp2_handle, cio, cstr_info, return_indexed);
 			case CODEC_UNKNOWN:
 			default:
 				break;

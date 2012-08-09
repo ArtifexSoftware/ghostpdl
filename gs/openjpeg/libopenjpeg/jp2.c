@@ -522,21 +522,26 @@ static void jp2_apply_cdef(opj_image_t *image, opj_jp2_color_t *color)
 	for(i = 0; i < n; ++i)
    {
 /* WATCH: acn = asoc - 1 ! */
-	if((asoc = info[i].asoc) == 0) continue;
+		if((asoc = info[i].asoc) == 0) 
+		{
+			image->comps[i].typ = info[i].typ;
+			continue;
+		}
 
-	cn = info[i].cn; typ = info[i].typ; acn = asoc - 1;
+		cn = info[i].cn; typ = info[i].typ; acn = asoc - 1;
 
-	if(cn != acn)
-  {
-	opj_image_comp_t saved;
+	   if(cn != acn)
+	  {
+		opj_image_comp_t saved;
 
-	memcpy(&saved, &image->comps[cn], sizeof(opj_image_comp_t));
-	memcpy(&image->comps[cn], &image->comps[acn], sizeof(opj_image_comp_t));
-	memcpy(&image->comps[acn], &saved, sizeof(opj_image_comp_t));
+		memcpy(&saved, &image->comps[cn], sizeof(opj_image_comp_t));
+		memcpy(&image->comps[cn], &image->comps[acn], sizeof(opj_image_comp_t));
+		memcpy(&image->comps[acn], &saved, sizeof(opj_image_comp_t));
 
-	info[i].asoc = cn + 1;
-	info[acn].asoc = info[acn].cn + 1;
-  }
+		info[i].asoc = cn + 1;
+		info[acn].asoc = info[acn].cn + 1;
+	  }
+	image->comps[cn].typ = typ;
    }
 	if(color->jp2_cdef->info) opj_free(color->jp2_cdef->info);
 
@@ -719,12 +724,12 @@ opj_bool jp2_read_jp2h(opj_jp2_t *jp2, opj_cio_t *cio, opj_jp2_color_t *color)
 	cio_seek(cio, jp2h_end);
 
 /* Part 1, I.5.3.3 : 'must contain at least one' */
-	return (color->jp2_has_colr == 1);
+	return OPJ_TRUE;//(color->jp2_has_colr == 1);
 
 }/* jp2_read_jp2h() */
 
 opj_image_t* opj_jp2_decode(opj_jp2_t *jp2, opj_cio_t *cio, 
-	opj_codestream_info_t *cstr_info) 
+	opj_codestream_info_t *cstr_info, opj_bool return_indexed) 
 {
 	opj_common_ptr cinfo;
 	opj_image_t *image = NULL;
@@ -764,6 +769,12 @@ opj_image_t* opj_jp2_decode(opj_jp2_t *jp2, opj_cio_t *cio,
 		image->color_space = CLRSPC_GRAY;
 	else if (jp2->enumcs == 18)
 		image->color_space = CLRSPC_SYCC;
+	else if (jp2->enumcs == 12)
+		image->color_space = CLRSPC_CMYK;
+	else if (jp2->enumcs == 20)
+		image->color_space = CLRSPC_ERGB;
+	else if (jp2->enumcs == 24)
+		image->color_space = CLRSPC_EYCC; 
 	else
 		image->color_space = CLRSPC_UNKNOWN;
 
@@ -771,12 +782,14 @@ opj_image_t* opj_jp2_decode(opj_jp2_t *jp2, opj_cio_t *cio,
    {
 	jp2_apply_cdef(image, &color);
    }
+        image->has_palette = OPJ_FALSE;
 	if(color.jp2_pclr)
    {
 /* Part 1, I.5.3.4: Either both or none : */
-	if( !color.jp2_pclr->cmap) 
+	if( return_indexed || !color.jp2_pclr->cmap) {
 	 jp2_free_pclr(&color);
-	else
+	 image->has_palette = OPJ_TRUE;
+	} else
 	 jp2_apply_pclr(&color, image, cinfo);
    }
 	if(color.icc_profile_buf)
