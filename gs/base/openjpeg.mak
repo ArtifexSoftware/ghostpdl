@@ -60,6 +60,11 @@ open_jpeg_OBJS = \
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)t2.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tcd.$(OBJ)			\
 	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)cidx_manager.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tpix_manager.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thix_manager.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ppix_manager.$(OBJ)			\
+	$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)phix_manager.$(OBJ)			\
 
 open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)bio.h		\
@@ -85,6 +90,8 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)t2.h	\
 	$(OPEN_JPEG_SRC)tcd.h		\
 	$(OPEN_JPEG_SRC)tgt.h	\
+	$(OPEN_JPEG_SRC)cidx_manager.h	\
+	$(OPEN_JPEG_SRC)indexbox_manager.h	\
 
 $(OPEN_JPEG_CONFIG_H): $(TOP_MAKEFILES) $(JPXSRCDIR)$(D)opj_config.h.in.user
 	$(CP_) $(JPXSRCDIR)$(D)opj_config.h.in.user $(OPEN_JPEG_CONFIG_H)
@@ -163,5 +170,20 @@ $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tcd.$(OBJ) : $(OPEN_JPEG_SRC)tcd.c $(OPEN_JPE
 
 $(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tgt.$(OBJ) : $(OPEN_JPEG_SRC)tgt.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
 	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)tgt.$(OBJ) $(C_) $(OPEN_JPEG_SRC)tgt.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)cidx_manager.$(OBJ) : $(OPEN_JPEG_SRC)cidx_manager.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)cidx_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)cidx_manager.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)tpix_manager.$(OBJ) : $(OPEN_JPEG_SRC)tpix_manager.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)tpix_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)tpix_manager.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)thix_manager.$(OBJ) : $(OPEN_JPEG_SRC)thix_manager.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)thix_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)thix_manager.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)ppix_manager.$(OBJ) : $(OPEN_JPEG_SRC)ppix_manager.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)ppix_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)ppix_manager.c
+
+$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)phix_manager.$(OBJ) : $(OPEN_JPEG_SRC)phix_manager.c $(OPEN_JPEG_DEP) $(open_jpeg_HDRS) $(OPEN_JPEG_CONFIG_H)
+	$(OPEN_JPEG_CC) $(OPEN_JPEG_O)phix_manager.$(OBJ) $(C_) $(OPEN_JPEG_SRC)phix_manager.c
 
 # end of file
