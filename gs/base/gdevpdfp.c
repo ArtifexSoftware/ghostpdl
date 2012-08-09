@@ -125,6 +125,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("PreserveSMask", gs_param_type_bool, PreserveSMask),
     pi("PreserveTrMode", gs_param_type_bool, PreserveTrMode),
     pi("NoT3CCITT", gs_param_type_bool, NoT3CCITT),
+    pi("Linearise", gs_param_type_bool, Linearise),
 #undef pi
     gs_param_item_end
 };
@@ -586,6 +587,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 emprintf(pdev->memory, "Owner Password changed mid-job, ignoring.\n");
         }
     }
+
+    if (pdev->Linearise && pdev->is_ps2write) {
+        emprintf(pdev->memory, "Can't linearise PostScript output, ignoring\n");
+        pdev->Linearise = false;
+    }
+
     return 0;
  fail:
     /* Restore all the parameters to their original state. */

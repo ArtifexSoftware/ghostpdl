@@ -808,6 +808,8 @@ pdf_document_metadata(gx_device_pdf *pdev)
         if (code < 0)
             return code;
         sprintf(buf, "%ld 0 R", pres->object->id);
+        pdf_record_usage(pdev, pres->object->id, resource_usage_part9_structure);
+
         code = cos_dict_put_c_key_object(pdev->Catalog, "/Metadata", pres->object);
         if (code < 0)
             return code;

@@ -272,5 +272,6 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,				/* IsDistiller (true even for ps2write!) */
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD,		/* PreserveTrMode */
- false                          /* NoT3CCITT */
+ false,                         /* NoT3CCITT */
+ true                          /* Linearise */
 };

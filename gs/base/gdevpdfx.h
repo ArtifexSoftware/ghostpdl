@@ -347,6 +347,19 @@ typedef struct pdf_temp_file_s {
 typedef struct gx_device_pdf_s gx_device_pdf;
 #endif
 
+typedef struct pdf_linearisation_s {
+    FILE *sfile;
+    pdf_temp_file_t Lin_File;
+    long Catalog_id;
+    long Info_id;
+    long Pages_id;
+    long Page1_High;
+    long LastResource;
+    long MainFileEnd;
+    ulong *Offsets;
+    ulong xref;
+} pdf_linearisation_t;
+
 /*
  * Define the structure for PDF font cache element.
  */
@@ -436,6 +449,12 @@ typedef enum {
     pdf_compress_LZW,        /* not currently used, thanks to Unisys */
     pdf_compress_Flate
 } pdf_compression_type;
+
+#define resource_usage_part1_structure -1
+#define resource_usage_page_shared -2
+#define resource_usage_part9_structure -3
+#define resource_usage_written -4
+#define resource_usage_not_referenced 0
 
 /* Define the device structure. */
 struct gx_device_pdf_s {
@@ -736,6 +755,16 @@ struct gx_device_pdf_s {
                                      * This parameter is present only to allow
                                      * ps2write output to work on those pritners.
                                      */
+    bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
+                                     * are only used if this is true.
+                                     */
+    int  *ResourceUsage;             /* An array, one per resource defined to date, which
+                                     * contains either -2 (shared on multiple pages), -1
+                                     * (structure object, eg catalog), 0 (not used on a page
+                                     * or the page number. This does limit us to a mere 2^31
+                                     * pages
+                                     */
+    int ResourceUsageSize;          /* Size of the above array, currently */
 };
 
 #define is_in_page(pdev)\
@@ -867,6 +896,10 @@ int pdf_close_contents(gx_device_pdf * pdev, bool last);
 
 extern const char *const pdf_resource_type_names[];
 extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
+
+/* Record usage of resoruces by pages */
+int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num);
+int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long parent);
 
 /*
  * Define the offset that indicates that a file position is in the

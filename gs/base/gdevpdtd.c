@@ -286,6 +286,18 @@ pdf_font_descriptor_id(const pdf_font_descriptor_t *pfd)
     return pdf_resource_id((const pdf_resource_t *)pfd);
 }
 
+long pdf_set_font_descriptor_usage(gx_device_pdf *pdev, int parent_id, const pdf_font_descriptor_t *pfd)
+{
+    int id = pdf_resource_id((const pdf_resource_t *)pfd);
+
+    pdf_record_usage_by_parent(pdev, id, parent_id);
+    if (pfd->base_font->FontFile) {
+        id = pfd->base_font->FontFile->id;
+        pdf_record_usage_by_parent(pdev, id, parent_id);
+    }
+    return 0;
+}
+
 /*
  * Get the FontType of a FontDescriptor.
  */
@@ -720,7 +732,8 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
     pfd->common.object->written = true;
     {	const cos_object_t *pco = (const cos_object_t *)pdf_get_FontFile_object(pfd->base_font);
         if (pco != NULL) {
-            pprintld1(s, "%%BeginResource: file (PDF FontFile obj_%ld)\n", pco->id);
+            if (pdev->is_ps2write)
+                pprintld1(s, "%%BeginResource: file (PDF FontFile obj_%ld)\n", pco->id);
             code = COS_WRITE_OBJECT(pco, pdev, resourceNone);
             if (code < 0)
                 return code;

@@ -837,6 +837,10 @@ pdf_close_page(gx_device_pdf * pdev, int num_copies)
         page->contents_id = pdev->contents_id;
         page->NumCopies_set = pdev->NumCopies_set;
         page->NumCopies = pdev->NumCopies;
+        pdf_record_usage(pdev, pdev->contents_id, pdev->next_page);
+        pdf_record_usage(pdev, pdev->contents_length_id, pdev->next_page);
+        pdf_record_usage(pdev, page->Page->id, pdev->next_page);
+
         /* pdf_store_page_resources sets procsets, resource_ids[]. */
         code = pdf_store_page_resources(pdev, page, clear_resource_use);
         if (code < 0)
@@ -1246,7 +1250,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, FILE *tfile, int64_t star
     return pdev->next_id;
 }
 
-static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, int resource_pos)
+static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, int end, int resource_pos, ulong *Offsets)
 {
     int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(ulong);
 
@@ -1266,8 +1270,96 @@ static int write_xref_section(gx_device_pdf *pdev, FILE *tfile, int64_t start, i
             pos -= pdev->OPDFRead_procset_length;
             sprintf(str, "%010ld 00000 n \n", pos);
             stream_puts(pdev->strm, str);
+            if (Offsets)
+                Offsets[i] = pos;
         }
     }
+    return 0;
+}
+
+static int
+rewrite_object(pdf_linearisation_t *linear_params, int object)
+{
+    ulong read, end, Size;
+    char c, Scratch[16384];
+    int i, code;
+
+    return 0;
+
+    end = linear_params->xref;
+    for (i=0;i<linear_params->LastResource;i++) {
+        if (linear_params->Offsets[i] > linear_params->Offsets[object] && linear_params->Offsets[i] < end)
+            end = linear_params->Offsets[i];
+    }
+    Size = end - linear_params->Offsets[object];
+
+    code = gp_fseek_64(linear_params->sfile, linear_params->Offsets[object], SEEK_SET);
+    read = 0;
+    do {
+        code = fread(&c, 1, 1, linear_params->sfile);
+        read++;
+    } while (c != '\n');
+    sprintf(Scratch, "%d 0 obj\n", linear_params->LastResource++);
+    fwrite(Scratch, strlen(Scratch), 1, linear_params->Lin_File.file);
+    Size -= read;
+    do {
+        if (Size > 16384) {
+            code = fread(Scratch, 16384, 1, linear_params->sfile);
+            fwrite(Scratch, 16384, 1, linear_params->Lin_File.file);
+            Size -= 16384;
+        } else {
+            code = fread(Scratch, Size, 1, linear_params->sfile);
+            fwrite(Scratch, Size, 1, linear_params->Lin_File.file);
+            Size = 0;
+        }
+    } while (Size);
+    return 0;
+}
+
+int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
+{
+    if (!pdev->Linearise)
+        return 0;
+
+    if (resource_id >= pdev->ResourceUsageSize) {
+        if (pdev->ResourceUsageSize == 0) {
+            pdev->ResourceUsageSize = resource_id + 1;
+            pdev->ResourceUsage = (int *)gs_alloc_bytes_immovable(pdev->pdf_memory, (resource_id + 1) * sizeof(int), "Storage of resource used by pages");
+            memset((char *)pdev->ResourceUsage, 0x00, (resource_id + 1) * sizeof(int));
+        } else {
+            int *Temp = (int *)gs_alloc_bytes_immovable(pdev->pdf_memory, (resource_id + 1) * sizeof(int), "New Storage of resource used by pages");
+            memset((char *)Temp, 0x00, (resource_id + 1) * sizeof(int));
+            memcpy((char *)Temp, pdev->ResourceUsage, pdev->ResourceUsageSize * sizeof(int));
+            pdev->ResourceUsageSize = resource_id + 1;
+            gs_free_object(pdev->pdf_memory, (byte *)pdev->ResourceUsage, "Free Old Storage of resource usage");
+            pdev->ResourceUsage = Temp;
+        }
+    }
+    if (page_num > 0) {
+        if (pdev->ResourceUsage[resource_id] == 0)
+            pdev->ResourceUsage[resource_id] = page_num;
+        else {
+            if (pdev->ResourceUsage[resource_id] > 0)
+                pdev->ResourceUsage[resource_id] = resource_usage_page_shared;
+            else {
+                /* Should not happen, raise an error */
+            }
+        }
+    } else {
+        if (pdev->ResourceUsage[resource_id] != 0)
+           /* Should not happen, raise an error */
+            ;
+        pdev->ResourceUsage[resource_id] = page_num;
+    }
+    return 0;
+}
+
+int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long parent_id)
+{
+    if (!pdev->Linearise)
+        return 0;
+
+    pdf_record_usage(pdev, resource_id, pdev->ResourceUsage[parent_id]);
     return 0;
 }
 
@@ -1279,7 +1371,7 @@ pdf_close(gx_device * dev)
     gs_memory_t *mem = pdev->pdf_memory;
     stream *s;
     FILE *tfile = pdev->xref.file;
-    long xref;
+    long xref = 0;
     long resource_pos;
     long Catalog_id = pdev->Catalog->id, Info_id = pdev->Info->id,
         Pages_id = pdev->Pages->id, Encrypt_id = 0;
@@ -1287,6 +1379,9 @@ pdf_close(gx_device * dev)
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
+
+    pdf_linearisation_t linear_params;
+    memset(&linear_params, 0x00, sizeof(linear_params));
 
     /*
      * If this is an EPS file, or if the file didn't end with a showpage for
@@ -1304,8 +1399,15 @@ pdf_close(gx_device * dev)
     if (pdev->contents_id != 0)
         pdf_close_page(pdev, 1);
 
-    /* Write the page objects. */
+    if (pdev->Linearise) {
+        for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
+            ;
+        if (pagecount == 1)
+            /* No point in linearising a 1 page file */
+            pdev->Linearise = 0;
+    }
 
+    /* Write the page objects. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
         for (pagecount = 1; pagecount <= pdev->next_page; ++pagecount)
             pdf_write_page(pdev, pagecount);
@@ -1339,7 +1441,7 @@ pdf_close(gx_device * dev)
         code = code1;
 #endif
     /* This was in pdf_close_document, but that made no sense, so moved here
-     * for more consistency (and ease of fiding it). This code deals with
+     * for more consistency (and ease of finding it). This code deals with
      * emitting fonts and FontDescriptors
      */
     pdf_clean_standard_fonts(pdev);
@@ -1386,6 +1488,8 @@ pdf_close(gx_device * dev)
             code = code1;
     }
 
+    linear_params.LastResource = pdev->next_id - 1;
+
     code1 = pdf_free_resource_objects(pdev, resourceOther);
     if (code >= 0)
         code = code1;
@@ -1393,6 +1497,8 @@ pdf_close(gx_device * dev)
     /* Create the Pages tree. */
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
         pdf_open_obj(pdev, Pages_id, resourcePagesTree);
+        pdf_record_usage(pdev, Pages_id, resource_usage_part1_structure);
+
         s = pdev->strm;
         stream_puts(s, "<< /Type /Pages /Kids [\n");
         /* Omit the last page if it was incomplete. */
@@ -1421,6 +1527,7 @@ pdf_close(gx_device * dev)
         /* Close outlines and articles. */
 
         if (pdev->outlines_id != 0) {
+            pdf_record_usage(pdev, pdev->outlines_id, resource_usage_part1_structure);
             /* depth > 0 is only possible for an incomplete outline tree. */
             while (pdev->outline_depth > 0) {
                 code1 = pdfmark_close_outline(pdev);
@@ -1483,13 +1590,17 @@ pdf_close(gx_device * dev)
             pdf_end_obj(pdev, resourceThread);
         }
         pdf_open_obj(pdev, Catalog_id, resourceCatalog);
+        pdf_record_usage(pdev, Catalog_id, resource_usage_part1_structure);
+
         s = pdev->strm;
         stream_puts(s, "<<");
         pprintld1(s, "/Type /Catalog /Pages %ld 0 R\n", Pages_id);
         if (pdev->outlines_id != 0)
             pprintld1(s, "/Outlines %ld 0 R\n", pdev->outlines_id);
-        if (Threads_id)
+        if (Threads_id) {
             pprintld1(s, "/Threads %ld 0 R\n", Threads_id);
+            pdf_record_usage(pdev, Threads_id, resource_usage_part1_structure);
+        }
         if (pdev->Dests)
             pprintld1(s, "/Dests %ld 0 R\n", pdev->Dests->id);
         if (pdev->PageLabels)
@@ -1512,6 +1623,7 @@ pdf_close(gx_device * dev)
 
         pdev->Catalog->id = 0;
         /*pdev->Info->id = 0;*/	/* Info should get written */
+        pdf_record_usage(pdev, pdev->Info->id, resource_usage_part9_structure);
         pdev->Pages->id = 0;
         {
             int i;
@@ -1597,6 +1709,11 @@ pdf_close(gx_device * dev)
         stream_puts(pdev->strm, "%%EOF\n");
     }
 
+    if (pdev->Linearise) {
+        linear_params.Offsets = (ulong *)gs_alloc_bytes(pdev->pdf_memory, linear_params.LastResource * sizeof(ulong), "temp xref storage");
+        memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(ulong));
+    }
+
     if (!(pdev->ForOPDFRead && pdev->ProduceDSC)) {
         /* Write Encrypt. */
         if (pdev->OwnerPassword.size > 0) {
@@ -1634,7 +1751,7 @@ pdf_close(gx_device * dev)
                   end_section - start_section);
 
         do {
-            write_xref_section(pdev, tfile, start_section, end_section, resource_pos);
+            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
             if (end_section >= pdev->next_id)
                 break;
             start_section = end_section + 1;
@@ -1656,6 +1773,98 @@ pdf_close(gx_device * dev)
         }
         stream_puts(s, ">>\n");
         pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
+    }
+
+    if (pdev->Linearise) {
+        char Header[32], Binary[7] = "%\307\354\217\242\n";
+        int level = (int)(pdev->CompatibilityLevel * 10 + 0.5), i, j;
+
+        /* Make sure we've written everything to the main file */
+        sflush(s);
+        linear_params.sfile = pdev->file;
+        linear_params.MainFileEnd = gp_ftell_64(pdev->file);
+        linear_params.xref = xref;
+        code = pdf_open_temp_file(pdev, &linear_params.Lin_File);
+        linear_params.Lin_File.strm = 0x0;
+
+        for (i = 0;i < pdev->ResourceUsageSize; i++) {
+            if (pdev->ResourceUsage[i] == 1)
+                linear_params.Page1_High = i;
+        }
+
+        /* Linearisation. Part 1 */
+        sprintf(Header, "%%PDF-%d.%d\n", level / 10, level % 10);
+        fwrite(Header, strlen(Header), 1, linear_params.Lin_File.file);
+        if (pdev->binary_ok)
+            fwrite(Binary, strlen(Binary), 1, linear_params.Lin_File.file);
+
+        /* Re-order document, linearization dict to follow later (Part 2)
+         * this is a FIXME
+         */
+        /* First page cross-reference table here (Part 3)
+         * this is a FIXME
+         */
+
+        /* Write document catalog (Part 4) */
+        code = rewrite_object(&linear_params, Catalog_id);
+        /* In here we need the ViewerPreferences (don't think we support this),
+         * the PaegMode entry (I think this would be direct in the catalog), The
+         * Threads entry (if any), The OpenAction (again, direct object ?) The
+         * AcroForm object (don't think we support this) and (TaDa) the Encrypt entry
+         * in the first page trailer dictionary.
+         * This is a FIXME.
+         */
+
+        /* Primary Hint Stream here (Part 5)
+         * this is a FIXME
+         */
+#if 0
+        /* First page section (Part 6) NB we do not currently support the OpenAction
+         * In the Catalogso this is always page 0, this needs to change if we ever
+         * support the OpenAction.
+         */
+        code = rewrite_object(&linear_params, pdev->pages[0].Page->id);
+        pdev->ResourceUsage[pdev->pages[0].Page->id] = resource_usage_written;
+        for (i = 0;i < pdev->ResourceUsageSize; i++) {
+            if (pdev->ResourceUsage[i] == 1) {
+                code = rewrite_object(&linear_params, i);
+                pdev->ResourceUsage[i] = resource_usage_written;
+            }
+        }
+
+        /* All remaining pages (part 7) */
+        for (i = 1;i < pdev->next_page;i++) {
+            code = rewrite_object(&linear_params, pdev->pages[i].Page->id);
+            pdev->ResourceUsage[pdev->pages[i].Page->id] = resource_usage_written;
+            for (j = 0;j < pdev->ResourceUsageSize; j++) {
+                if (pdev->ResourceUsage[j] == i) {
+                    code = rewrite_object(&linear_params, j);
+                    pdev->ResourceUsage[j] = resource_usage_written;
+                }
+            }
+        }
+
+        /* Shared objects for all pages except the first (part 8) */
+        for (i = 0;i < pdev->ResourceUsageSize; i++) {
+            if (pdev->ResourceUsage[i] == resource_usage_page_shared) {
+                code = rewrite_object(&linear_params, i);
+                pdev->ResourceUsage[i] = resource_usage_written;
+            }
+        }
+
+        /* All objects not on any page (Part 9) */
+        for (i = 0;i < pdev->ResourceUsageSize; i++) {
+            if (pdev->ResourceUsage[i] == resource_usage_not_referenced) {
+                code = rewrite_object(&linear_params, i);
+                pdev->ResourceUsage[i] = resource_usage_written;
+            }
+        }
+
+        /* We won't bother with an overflow hint stream (I Hope) (part 10) */
+
+        /* Main xref (part 11) */
+#endif
+        code = pdf_close_temp_file(pdev, &linear_params.Lin_File, code);
     }
 
     /* Require special handling for Fonts, ColorSpace and Pattern resources
@@ -1952,5 +2161,13 @@ pdf_close(gx_device * dev)
             code = gs_note_error(gs_error_rangecheck);
 #endif
     }
-    return pdf_close_files(pdev, code);
+    code = pdf_close_files(pdev, code);
+    if (code < 0)
+        return code;
+
+    if (pdev->Linearise) {
+        gs_free_object(pdev->pdf_memory, linear_params.Offsets, "free temp xref storage");
+        gs_free_object(pdev->pdf_memory, pdev->ResourceUsage, "free resource usage storage");
+    }
+    return code;
 }

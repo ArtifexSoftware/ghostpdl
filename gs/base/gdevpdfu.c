@@ -419,9 +419,9 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
                         && !pres->object->written) {
                         pdf_page_t *page = &pdev->pages[pagecount - 1];
                         if ((int)ceil(page->MediaBox.x) > urx)
-                            urx = page->MediaBox.x;
+                            urx = (int)ceil(page->MediaBox.x);
                         if ((int)ceil(page->MediaBox.y) > urx)
-                            ury = page->MediaBox.y;
+                            ury = (int)ceil(page->MediaBox.y);
                         pagecount++;
                     }
             }
@@ -1605,11 +1605,13 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
                         continue;
                     if (s == 0) {
                         page->resource_ids[i] = pdf_begin_separate(pdev, i);
+                        pdf_record_usage(pdev, page->resource_ids[i], pdev->next_page);
                         s = pdev->strm;
                         stream_puts(s, "<<");
                     }
                     pprints1(s, "/%s\n", pres->rname);
                     pprintld1(s, "%ld 0 R", id);
+                    pdf_record_usage(pdev, id, pdev->next_page);
                     if (clear_usage)
                         pres->where_used -= pdev->used_mask;
                 }
