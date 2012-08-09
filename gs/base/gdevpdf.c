@@ -1750,7 +1750,7 @@ pdf_close(gx_device * dev)
                   end_section - start_section);
 
         do {
-            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, NULL);
+            write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
             if (end_section >= pdev->next_id)
                 break;
             start_section = end_section + 1;
