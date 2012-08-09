@@ -129,6 +129,7 @@
 #include "gp.h"
 #include "gpcheck.h"
 #include "commdlg.h"
+#include "gsicc_manage.h"
 
 /* Make sure we cast to the correct structure type. */
 typedef struct gx_device_win_pr2_s gx_device_win_pr2;
@@ -147,7 +148,7 @@ static dev_proc_map_color_rgb(win_pr2_map_color_rgb);
 static dev_proc_get_params(win_pr2_get_params);
 static dev_proc_put_params(win_pr2_put_params);
 
-static void win_pr2_set_bpp(gx_device * dev, int depth);
+static int win_pr2_set_bpp(gx_device * dev, int depth);
 
 static const gx_device_procs win_pr2_procs =
 prn_color_params_procs(win_pr2_open, gdev_prn_output_page, win_pr2_close,
@@ -175,6 +176,7 @@ struct gx_device_win_pr2_s {
     float user_media_size[2];	/* width/height of media selected by user */
     char doc_name[200];		/* name of document for the spooler */
     char paper_name[64];	/* name of selected paper format */
+    bool user_icc;              /* User specified device icc profile */
     bool user_changed_settings;	/* true if user validated dialog */
     int user_paper;		/* user's choice: paper format */
     int user_orient;		/* user's choice: paper orientation */
@@ -213,6 +215,7 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     { 0.0, 0.0 },		/* user_media_size */
     { 0 },			/* doc_name */
     { 0 },			/* paper_name */
+    false,                      /* user_icc */
     0,				/* user_changed_settings */
     0,				/* user_paper */
     0,				/* user_orient */
@@ -247,7 +250,7 @@ static void win_pr2_copy_check(gx_device_win_pr2 * dev);
 static int
 win_pr2_open(gx_device * dev)
 {
-    int code;
+    int code, code1;
     int depth;
     PRINTDLG pd;
     POINT offset;
@@ -389,7 +392,7 @@ win_pr2_open(gx_device * dev)
         /* We recognize 1, 4 (but use only 3), 8 and 24 bit color devices */
         depth = GetDeviceCaps(wdev->hdcprn, PLANES) * GetDeviceCaps(wdev->hdcprn, BITSPIXEL);
     }
-    win_pr2_set_bpp(dev, depth);
+    code1 = win_pr2_set_bpp(dev, depth);
 
     /* gdev_prn_open opens a temporary file which we don't want */
     /* so we specify the name now so we can delete it later */
@@ -409,6 +412,10 @@ win_pr2_open(gx_device * dev)
                                     PARENT_WINDOW, wdev->lpfnCancelProc);
         ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
+    if (code1 < 0 && code >= 0) {
+        code = code1;
+    }
+
     return code;
 };
 
@@ -661,14 +668,35 @@ win_pr2_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
-void
+static int
 win_pr2_set_bpp(gx_device * dev, int depth)
 {
+    int code = 0;
+    gx_device_printer *pdev = (gx_device_printer *)dev;
+
     if (depth > 8) {
         static const gx_device_color_info win_pr2_24color = dci_std_color(24);
 
         dev->color_info = win_pr2_24color;
         depth = 24;
+
+        if (!wdev->user_icc && (!wdev->icc_struct || (wdev->icc_struct &&
+             wdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsRGB))) {
+
+            if (wdev->icc_struct) {
+                rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
+            }
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+
+            if (wdev->icc_struct) {
+                code = gsicc_set_device_profile(dev, dev->memory,
+                  (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+            }
+            else {
+                code = gs_error_VMerror;
+            }
+        }
+
     } else if (depth >= 8) {
         /* 8-bit (SuperVGA-style) color. */
         /* (Uses a fixed palette of 3,3,2 bits.) */
@@ -676,6 +704,23 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 
         dev->color_info = win_pr2_8color;
         depth = 8;
+
+        if (!wdev->user_icc && (!wdev->icc_struct || (wdev->icc_struct &&
+             wdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsRGB))) {
+
+            if (wdev->icc_struct) {
+                rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
+            }
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+
+            if (wdev->icc_struct) {
+                code = gsicc_set_device_profile(dev, dev->memory,
+                  (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+            }
+            else {
+                code = gs_error_VMerror;
+            }
+        }
     } else if (depth >= 3) {
         /* 3 plane printer */
         /* suitable for impact dot matrix CMYK printers */
@@ -684,14 +729,48 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 
         dev->color_info = win_pr2_4color;
         depth = 4;
+
+        if (!wdev->user_icc && (!wdev->icc_struct || (wdev->icc_struct &&
+             wdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsCMYK))) {
+
+            if (wdev->icc_struct) {
+                rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
+            }
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+
+            if (wdev->icc_struct) {
+                code = gsicc_set_device_profile(dev, dev->memory,
+                  (char *)DEFAULT_CMYK_ICC, gsDEFAULTPROFILE);
+            }
+            else {
+                code = gs_error_VMerror;
+            }
+        }
     } else {			/* default is black_and_white */
         static const gx_device_color_info win_pr2_1color = dci_std_color(1);
 
         dev->color_info = win_pr2_1color;
         depth = 1;
+
+        if (!wdev->user_icc && (!wdev->icc_struct || (wdev->icc_struct &&
+             wdev->icc_struct->device_profile[gsDEFAULTPROFILE]->data_cs != gsGRAY))) {
+
+            if (wdev->icc_struct) {
+                rc_decrement(wdev->icc_struct, "win_pr2_set_bpp");
+            }
+            wdev->icc_struct = gsicc_new_device_profile_array(wdev->memory);
+
+            if (wdev->icc_struct) {
+                code = gsicc_set_device_profile(dev, dev->memory,
+                  (char *)DEFAULT_GRAY_ICC, gsDEFAULTPROFILE);
+            }
+            else {
+                code = gs_error_VMerror;
+            }
+        }
     }
 
-    ((gx_device_win_pr2 *)dev)->selected_bpp = depth;
+    wdev->selected_bpp = depth;
 
     /* copy encode/decode procedures */
     dev->procs.encode_color = dev->procs.map_rgb_color;
@@ -708,6 +787,7 @@ win_pr2_set_bpp(gx_device * dev, int depth)
         dev->procs.get_color_comp_index =
             gx_default_DevRGB_get_color_comp_index;
     }
+    return(code);
 }
 
 /********************************************************************************/
@@ -772,7 +852,10 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
                 }
                 ecode = gs_error_rangecheck;
             } else {		/* change dev->color_info is valid before device is opened */
-                win_pr2_set_bpp(pdev, bpp);
+                code = win_pr2_set_bpp(pdev, bpp);
+                if (code < 0) {
+                    ecode = code;
+                }
                 break;
             }
             goto bppe;
@@ -825,6 +908,17 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
             param_signal_error(plist, "QueryUser", ecode);
         case 1:
             break;
+    }
+
+    /* Record if the user has specified a custom profile, so we don't replace it
+       with a default when we change color space - see win_pr2_set_bpp()
+       Here, we only want to know *if* we have a user specced profile, actually
+       setting it will be handled by gdev_prn_put_params()
+     */
+    if (!wdev->user_icc) {
+        gs_param_string icc_pro_dummy;
+
+        wdev->user_icc = param_read_string(plist, "OutputICCProfile", &icc_pro_dummy) == 0;
     }
 
     if (ecode >= 0)

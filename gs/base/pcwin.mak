@@ -70,7 +70,7 @@ $(DD)mswinpr2.dev: $(mswinpr2_) $(GLD)page.dev
 	$(SETPDEV) $(DD)mswinpr2 $(mswinpr2_)
 
 $(GLOBJ)gdevwpr2.$(OBJ): $(GLSRC)gdevwpr2.c $(PDEVH) $(windows__h)\
- $(gdevpccm_h) $(gp_h) $(gp_mswin_h)
+ $(gdevpccm_h) $(gp_h) $(gp_mswin_h) $(gsicc_manage_h)
 	$(GLCCWIN) $(GLO_)gdevwpr2.$(OBJ) $(C_) $(GLSRC)gdevwpr2.c
 
 ### --------------------------- The OS/2 printer ------------------------ ###
