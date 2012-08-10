@@ -114,7 +114,36 @@ static const gx_device_plane_extract gs_plane_extract_device = {
         NULL,
         gx_no_create_compositor, /* WRONG */
         NULL,
-        gx_default_text_begin
+        gx_default_text_begin,
+        gx_default_finish_copydevice,
+        NULL,	/* deprecated and never implemented transparency procs */
+        NULL,	/*	|	*/
+        NULL,	/*	|	*/
+        NULL,	/*	|	*/
+        NULL,	/*	V	*/
+        NULL,	/* DeviceN support color mapping procs */
+        NULL,	/*	|	*/
+        NULL,	/*	|	*/
+        NULL,	/*	|	*/
+        NULL,	/* pattern_manage */
+        gx_default_fill_rectangle_hl_color,
+        gx_default_include_color_space,
+        gx_default_fill_linear_color_scanline,
+        gx_default_fill_linear_color_trapezoid,
+        gx_default_fill_linear_color_triangle,
+        gx_default_update_spot_equivalent_colors,
+        gx_default_ret_devn_params,
+        gx_default_fillpage,
+        NULL,	/* push_transparency_state */
+        NULL,	/* pop_transparency_state */
+        NULL,	/* put_image */
+        NULL,	/* dev_spec_op */
+        NULL,	/* copy_planes */
+        NULL,	/* get_profile */
+        NULL,	/* set_graphics_type_tag */
+        gx_default_strip_copy_rop2,
+        gx_default_strip_tile_rect_devn,
+        gx_default_copy_alpha_hl_color
     },
     /* device-specific members */
     NULL,				/* target */
