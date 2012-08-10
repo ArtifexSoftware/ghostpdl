@@ -24,6 +24,19 @@
 
 /* ---------------- Macro execution ---------------- */
 
+#ifdef DEBUG
+static void
+pcl_dump_current_macro(pcl_state_t *pcs, const char *msg)
+{
+    int i;
+    dputs(msg); dputs(" ");
+    for (i=0; i < current_macro_id_size; i++)
+        dprintf1("%02x", current_macro_id[i]);
+    dputs("\n");
+    return;
+}
+#endif
+
 /* Execute a macro.  We're willing to use C recursion for this because */
 /* the PCL5 specification only allows 2 levels of call. */
 static int
@@ -48,6 +61,12 @@ pcl_execute_macro(const pcl_macro_t *pmac, pcl_state_t *pcs,
     stream_cursor_read r;
     int code;
 
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_dump_current_macro(pcs, "Starting macro execution");
+    }
+#endif
+
     if ( before ) {
         memcpy(&saved, pcs, sizeof(*pcs));
         do_copies(&saved, pcs, before);
@@ -68,6 +87,12 @@ pcl_execute_macro(const pcl_macro_t *pmac, pcl_state_t *pcs,
         do_copies(&saved, pcs, after);
         memcpy(pcs, &saved, sizeof(*pcs));
     }
+#ifdef DEBUG
+    if (gs_debug_c('i')) {
+        pcl_dump_current_macro(pcs, "Finished macro execution");
+    }
+#endif
+
     return code;
 }
 
@@ -97,6 +122,11 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcs)
                                    current_macro_id_size, pcs->macro_definition);
                 pcs->defining_macro = false;
                 pcs->macro_definition = 0;
+#ifdef DEBUG
+                if (gs_debug_c('i')) {
+                    pcl_dump_current_macro(pcs, "[i] Ending Macro");
+                }
+#endif
                 return code;
               }
           }
@@ -127,6 +157,11 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcs)
               pmac->storage = pcds_temporary;
               pcs->macro_definition = (byte *)pmac;
               pcs->defining_macro = true;
+#ifdef DEBUG
+                if (gs_debug_c('i')) {
+                    pcl_dump_current_macro(pcs, "[i] Starting Macro");
+                }
+#endif
               return 0;
             }
           case macro_end_definition: /* 1 */
