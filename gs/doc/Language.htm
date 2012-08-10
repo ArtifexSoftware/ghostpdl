@@ -231,25 +231,25 @@ shown.
 	<td>&nbsp;
 <tr valign=top>	<td>array
 	<td>&nbsp;
-	<td>65535
+	<td>16777216
 	<td>&nbsp;
 	<td>elements
 	<td>&nbsp;
-	<td>&nbsp;
+	<td>65535
 <tr valign=top>	<td>dictionary
 	<td>&nbsp;
-	<td>65534
+	<td>16777215
 	<td>&nbsp;
 	<td>elements
 	<td>&nbsp;
 	<td>65535
 <tr valign=top>	<td>string
 	<td>&nbsp;
-	<td>65535
+	<td>16777216
 	<td>&nbsp;
 	<td>characters
 	<td>&nbsp;
-	<td>&nbsp;
+	<td>65535
 <tr valign=top>	<td>name
 	<td>&nbsp;
 	<td>16383
@@ -381,9 +381,13 @@ starts with a %...% IODevice designation, or 124 characters if it does not.
 <h3><a name="VM_consumption"></a>Other differences in VM consumption</h3>
 
 <p>
-Packed array elements occupy either 2 bytes or 8 bytes.  The average
-element size is probably about 5 bytes.  Names occupy 12 bytes plus the
+In 32-bit builds packed array elements occupy either 2 bytes or 12 bytes.
+The average element size is probably about 7 bytes. Names occupy 16 bytes plus the
 space for the string.
+<p>
+In 64-bit builds packed array elements occupy either 2 bytes or 16 bytes.
+The average element size is probably about 9 bytes.
+Names occupy 24 bytes plus the space for the string.
 <p>
 The garbage collector doesn't reclaim portions of arrays obtained with 
 <tt>getinterval</tt>, rather it collects entire arrays.

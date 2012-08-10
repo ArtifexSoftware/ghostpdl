@@ -68,7 +68,6 @@ zsetpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref cont;
-
     check_type(*op, t_boolean);
     make_struct(&cont, avm_local, ref_array_packing_container);
     ref_assign_old(&cont, &ref_array_packing, op, "setpacking");
@@ -151,7 +150,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
         }
         ishort = idest += packed_per_ref;
     }
-    pad = -(int)idest & (packed_per_ref - 1);	/* padding at end */
+    pad = (packed_per_ref - idest % packed_per_ref) % packed_per_ref;	/* padding at end */
 
     /* Now we can allocate the array. */
 

@@ -745,7 +745,7 @@ refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, ui
     }
 #endif
     /* Pad to a multiple of sizeof(ref). */
-    while (new_size & (sizeof(ref) - 1))
+    while (new_size % sizeof(ref))
         *dest++ = pt_tag(pt_integer),
             new_size += sizeof(ref_packed);
     /* We want to make the newly freed space into a free block, */
