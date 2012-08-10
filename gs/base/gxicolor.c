@@ -445,7 +445,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* Data is now in the proper destination color space.  Now we want
        to go ahead and get the data into the proper spatial setting and then
        threshold.  First get the data spatially sampled correctly */
-    src_size = penum->rect.w - 1;
+    src_size = penum->rect.w;
     switch (posture) {
         case image_portrait:
             /* Figure out our offset in the contone and threshold data
@@ -468,7 +468,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                 xrun += penum->x_extent.x;
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
-            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_width - 1));
+            scale_factor = float2fixed_rounded((float) src_size / (float) dest_width);
 #ifdef DEBUG
             /* Help in spotting problems */
             memset(penum->ht_buffer, 0x00, penum->ht_stride * vdi * spp_out);
@@ -528,7 +528,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     /* Get the pointers to our buffers */
     if (flush_buff) goto flush;  /* All done */
     /* Set up the dda.  We could move this out but the cost is pretty small */
-    dda_init(dda_ht, 0, src_size, data_length-1);
+    dda_init_half(dda_ht, 0, src_size, data_length);
     /* Do conversion to device resolution in quick small loops. */
     /* For now we have 3 cases.  A CMYK (4 channel), gray, or other case
        the latter of which is not yet implemented */

@@ -813,7 +813,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             flush_buff = true;
         }
     }
-    src_size = penum->rect.w - 1;
+    src_size = penum->rect.w;
 
     switch (posture) {
         case image_portrait:
@@ -837,7 +837,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             }
             data_length = dest_width;
             dest_height = fixed2int_var_rounded(any_abs(penum->y_extent.y));
-            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_width - 1));
+            scale_factor = float2fixed_rounded((float) src_size / (float) dest_width);
 #ifdef DEBUG
             /* Help in spotting problems */
             memset(penum->ht_buffer,0x00, penum->ht_stride * vdi * spp_out);
@@ -906,7 +906,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     }
     if (flush_buff) goto flush;  /* All done */
     /* Set up the dda.  We could move this out but the cost is pretty small */
-    dda_init(dda_ht, 0, src_size, data_length-1);
+    dda_init_half(dda_ht, 0, src_size, data_length);
     devc_contone_gray = devc_contone[0];
     if (penum->color_cache == NULL) {
         /* No look-up in the cache to fill the source buffer. Still need to
