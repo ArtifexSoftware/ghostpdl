@@ -184,6 +184,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
             pdf_put_name(pdev, pcpo->char_name.data, pcpo->char_name.size);
             pprintld1(s, " %ld 0 R\n", pdf_char_proc_id(pcpo->char_proc));
         }
+        pdf_record_usage_by_parent(pdev, pdf_char_proc_id(pcpo->char_proc), pdfont->object->id);
     }
     stream_puts(s, ">>");
     pprintg6(s, "/FontMatrix[%g %g %g %g %g %g]",

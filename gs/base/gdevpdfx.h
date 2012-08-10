@@ -347,18 +347,111 @@ typedef struct pdf_temp_file_s {
 typedef struct gx_device_pdf_s gx_device_pdf;
 #endif
 
+/* Structures and definitions for linearisation */
+typedef struct linearisation_record_s {
+    int PageUsage;
+    int NumPagesUsing;
+    int *PageList;
+    uint NewObjectNumber;
+    int64_t OriginalOffset;
+    int64_t LinearisedOffset;
+    int64_t Length;
+} pdf_linearisation_record_t;
+
+#define private_st_pdf_linearisation_record()\
+  gs_private_st_ptrs1(st_pdf_linearisation_record, pdf_linearisation_record_t,\
+    "pdf_linearisation_record_t", pdf_linearisation_record_enum_ptrs, pdf_linearisation_record_reloc_ptrs,\
+    PageList)
+
+typedef struct page_hint_stream_header_s {
+    unsigned int LeastObjectsPerPage;    /* Including the page object */
+    /* Item 2 is already stored elsewhere */
+    unsigned int MostObjectsPerPage;
+    unsigned short ObjectNumBits;
+    unsigned int LeastPageLength;        /* From beginning of page object to end of last object used by page */
+    unsigned int MostPageLength;
+    unsigned short PageLengthNumBits;
+    unsigned int LeastPageOffset;
+    unsigned int MostPageOffset;
+    unsigned short PageOffsetNumBits;
+    unsigned int LeastContentLength;
+    unsigned int MostContentLength;
+    unsigned short ContentLengthNumBits;
+    unsigned int MostSharedObjects;
+    unsigned int LargestSharedObject;
+    unsigned short SharedObjectNumBits;
+} page_hint_stream_header_t;
+
+typedef struct page_hint_stream_s {
+    unsigned int NumUniqueObjects; /* biased by the least number of objects on any page */
+    unsigned int PageLength;       /* biased by the least page length*/
+    unsigned int NumSharedObjects;
+    unsigned int *SharedObjectRef; /* one for each shaed object on the page */
+    /* Item 5 we invent */
+    int64_t ContentOffset; /* biased by the least offset to the conent stream for any page */
+    int64_t ContentLength;/* biased by the least content stream length */
+} page_hint_stream_t;
+
+typedef struct shared_hint_stream_header_s {
+    unsigned int FirstSharedObject;
+    int64_t FirstObjectOffset;
+    unsigned int FirstPageEntries;
+    unsigned int NumSharedObjects;
+    /* Item 5 is always 1 as far as we are concerned */
+    unsigned int LeastObjectLength;
+    unsigned int MostObjectLength;
+    unsigned short LengthNumBits;
+} shared_hint_stream_header_t;
+
+typedef struct share_hint_stream_s {
+    unsigned int ObjectNumber;
+    int64_t ObjectOffset;
+    unsigned int ObjectLength;   /* biased by the LeastObjectLength */
+    /* item 2 is always 0 */
+    /* Which means that item 3 is never present */
+    /* Finally item 4 is always 0 (1 less than the number of objects in the group, which is always 1) */
+} shared_hint_stream_t;
+
 typedef struct pdf_linearisation_s {
     FILE *sfile;
     pdf_temp_file_t Lin_File;
+    char HintBuffer[256];
+    unsigned char HintBits;
+    unsigned char HintByte;
     long Catalog_id;
     long Info_id;
     long Pages_id;
-    long Page1_High;
+    long NumPage1Resources;
+    long NumPart1StructureResources;
+    long NumSharedResources;
+    long NumUniquePageResources;
+    long NumPart9Resources;
+    long NumNonPageResources;
     long LastResource;
     long MainFileEnd;
     ulong *Offsets;
     ulong xref;
+    int64_t FirstxrefOffset;
+    int64_t FirsttrailerOffset;
+    int64_t LDictOffset;
+    int64_t FileLength;
+    int64_t T;
+    int64_t E;
+    page_hint_stream_header_t PageHintHeader;
+    int NumPageHints;
+    page_hint_stream_t *PageHints;
+    shared_hint_stream_header_t SharedHintHeader;
+    int NumSharedHints;
+    shared_hint_stream_t *SharedHints;
 } pdf_linearisation_t;
+
+/* These are the values for 'PageUsage' above, values > 0 indicate the page number that uses the resource */
+#define resource_usage_not_referenced 0
+#define resource_usage_page_shared -1
+/* Thses need to be lower than the shared value */
+#define resource_usage_part1_structure -2
+#define resource_usage_part9_structure -3
+#define resource_usage_written -4
 
 /*
  * Define the structure for PDF font cache element.
@@ -449,12 +542,6 @@ typedef enum {
     pdf_compress_LZW,        /* not currently used, thanks to Unisys */
     pdf_compress_Flate
 } pdf_compression_type;
-
-#define resource_usage_part1_structure -1
-#define resource_usage_page_shared -2
-#define resource_usage_part9_structure -3
-#define resource_usage_written -4
-#define resource_usage_not_referenced 0
 
 /* Define the device structure. */
 struct gx_device_pdf_s {
@@ -758,7 +845,8 @@ struct gx_device_pdf_s {
     bool Linearise;                 /* Whether to Linearizse the file, the next 2 parameter
                                      * are only used if this is true.
                                      */
-    int  *ResourceUsage;             /* An array, one per resource defined to date, which
+    pdf_linearisation_record_t
+        *ResourceUsage;             /* An array, one per resource defined to date, which
                                      * contains either -2 (shared on multiple pages), -1
                                      * (structure object, eg catalog), 0 (not used on a page
                                      * or the page number. This does limit us to a mere 2^31
@@ -790,8 +878,9 @@ struct gx_device_pdf_s {
  m(31,accumulating_substream_resource) \
  m(32,pres_soft_mask_dict) m(33,PDFXTrimBoxToMediaBoxOffset.data)\
  m(34,PDFXBleedBoxToTrimBoxOffset.data) m(35, DSCEncodingToUnicode.data)\
- m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])
-#define gx_device_pdf_num_ptrs 38
+ m(36,Identity_ToUnicode_CMaps[0]) m(37,Identity_ToUnicode_CMaps[1])\
+ m(38,ResourceUsage)
+#define gx_device_pdf_num_ptrs 39
 #define gx_device_pdf_do_param_strings(m)\
     m(0, OwnerPassword) m(1, UserPassword) m(2, NoEncrypt)\
     m(3, DocumentUUID) m(4, InstanceUUID)

@@ -273,5 +273,5 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  !PDF_FOR_OPDFREAD,		/* PreserveSMask */
  !PDF_FOR_OPDFREAD,		/* PreserveTrMode */
  false,                         /* NoT3CCITT */
- true                          /* Linearise */
+ false                          /* Linearise */
 };
