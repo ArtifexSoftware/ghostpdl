@@ -883,7 +883,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
             for (j = 0; j < spp_out; j++) {
                 thresh_width = penum->pis->dev_ht->components[j].corder.width;
                 thresh_height = penum->pis->dev_ht->components[j].corder.full_height;
-                halftone = penum->ht_buffer + j * penum->ht_plane_height;
+                halftone = penum->ht_buffer + j * vdi * dithered_stride;
                 /* Compute the tiling positions with dest_width */
                 dx = fixed2int_var(xrun) % thresh_width;
                 /* Left remainder part */
