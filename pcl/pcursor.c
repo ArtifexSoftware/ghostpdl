@@ -765,6 +765,29 @@ pcursor_do_copy(pcl_state_t *psaved,
     return 0;
 }
 
+/* If PJL FORMLINES is set use we always use that value to derive VMI,
+   otherwise we use the HP documented default.  This may not be
+   exactly what HP does, the state interaction between formlines,
+   paper size, orientation each of which can have different values in
+   PJL and PCL is quite difficult to figure out, we believe this is
+   correct for the vast majority of cases. */
+coord
+pcl_vmi_default(pcl_state_t *pcs)
+{
+    coord vmi;
+    if (!pjl_proc_compare(pcs->pjls, 
+                          pjl_proc_get_envvar(pcs->pjls,
+                                              "FORMLINES_SET"),
+                          "ON")) {
+        vmi = (pcs->margins.length /
+               pjl_proc_vartoi(pcs->pjls,
+                               pjl_proc_get_envvar(pcs->pjls, "formlines")));
+    } else {
+        vmi = inch2coord(8.0/48.0);
+    }
+    return vmi;
+}
+                         
 /*
  * Initialization
  */
@@ -883,8 +906,8 @@ pcursor_do_reset(
 
     pcs->line_termination = 0;
     pcs->hmi_cp = HMI_DEFAULT;
-    pcs->vmi_cp = pcs->margins.length
-          / pjl_proc_vartoi(pcs->pjls, pjl_proc_get_envvar(pcs->pjls, "formlines"));
+    pcs->vmi_cp = VMI_DEFAULT;
+
     if ( (type & pcl_reset_overlay) == 0 ) {
         pcs->cursor_stk_size = 0;
 

@@ -73,6 +73,7 @@ typedef struct pjl_parser_state_s {
    embedded system these would be defined in ROM */
 static const pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
+    {"formlines_set", "off"},
     {"widea4", "no"},
     {"fontsource", "I"},
     {"fontnumber", "0"},
@@ -753,6 +754,14 @@ var:            defaults = (tok == DEFAULT);
                         strcpy(variable, token);
                         if (((tok = pjl_get_token(pst, token)) == EQUAL) &&
                             (tok = pjl_get_token(pst, token)) == SETTING) {
+                            /* an unfortunate side effect - we have to
+                               identify FORMLINES being set here, for
+                               the benefit of PCL, see the
+                               documentation to the function
+                               pcursor.c:pcl_vmi_default() for
+                               details. */
+                            if (!pjl_compare(variable, "FORMLINES"))
+                                pjl_set(pst, (char *)"FORMLINES_SET", (char *)"on", defaults);
                             return pjl_set(pst, variable, token, defaults);
                         } else
                             return -1; /* syntax error */

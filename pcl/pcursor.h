@@ -26,8 +26,11 @@
 /*
  * Default values for HMI and VMI. The use of -1 for HMI indicates "not set".
  */
+
+coord pcl_vmi_default(pcl_state_t *pcs);
+
 #define HMI_DEFAULT -1L
-#define VMI_DEFAULT inch2coord(8.0 / 48)
+#define VMI_DEFAULT pcl_vmi_default(pcs)
 
 /*
  * Horizontal and vertical cursor movement routines. x and y are in
