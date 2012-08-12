@@ -80,7 +80,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     bool seprs = false;
     gs_param_string dns, pcms, profile_array[NUM_DEVICE_PROFILES];
-    gs_param_string proof_profile, link_profile;
+    gs_param_string proof_profile, link_profile, icc_colorants;
     gsicc_rendering_intents_t profile_intents[NUM_DEVICE_PROFILES];
     bool devicegraytok = true;  /* Default if device profile stuct not set */
     bool usefastcolor = false;  /* set for unmanaged color */
@@ -169,6 +169,22 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         devicegraytok = dev_profile->devicegraytok;
         usefastcolor = dev_profile->usefastcolor;
         prebandthreshold = dev_profile->prebandthreshold;
+        /* With respect to Output profiles that have non-standard colorants,
+           we rely upon the default profile to give us the colorants if they do
+           exist. */
+        if (dev_profile->spotnames == NULL) {
+            param_string_from_string(icc_colorants, null_str);
+        } else {
+            char *colorant_names;
+
+            colorant_names =
+                gsicc_get_dev_icccolorants(dev_profile);
+            if (colorant_names != NULL) {
+                param_string_from_string(icc_colorants, colorant_names);
+            } else {
+                param_string_from_string(icc_colorants, null_str);
+            }
+        }
     } else {
         for (k = 0; k < NUM_DEVICE_PROFILES; k++) {
             param_string_from_string(profile_array[k], null_str);
@@ -176,10 +192,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         }
         param_string_from_string(proof_profile, null_str);
         param_string_from_string(link_profile, null_str);
+        param_string_from_string(icc_colorants, null_str);
     }
     /* Transmit the values. */
+    /* Standard parameters */
     if (
-        /* Standard parameters */
         (code = param_write_name(plist, "OutputDevice", &dns)) < 0 ||
 #ifdef PAGESIZE_IS_MEDIASIZE
         (code = param_write_float_array(plist, "PageSize", &msa)) < 0 ||
@@ -212,6 +229,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_string(plist,"TextICCProfile", &(profile_array[3]))) < 0 ||
         (code = param_write_string(plist,"ProofProfile", &(proof_profile))) < 0 ||
         (code = param_write_string(plist,"DeviceLinkProfile", &(link_profile))) < 0 ||
+        (code = param_write_string(plist,"ICCOutputColors", &(icc_colorants))) < 0 ||  
         (code = param_write_int(plist,"RenderIntent", (const int *) (&(profile_intents[0])))) < 0 ||
         (code = param_write_int(plist,"GraphicIntent", (const int *) &(profile_intents[1]))) < 0 ||
         (code = param_write_int(plist,"ImageIntent", (const int *) &(profile_intents[2]))) < 0 ||
@@ -600,6 +618,25 @@ gx_default_put_intent(gsicc_profile_types_t icc_intent, gx_device * dev,
 }
 
 static void
+gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
+{
+    char *tempstr;
+    int code;
+
+    if (colorants->size == 0) return;
+
+    /* See below about this device fill proc */
+    fill_dev_proc(dev, get_profile, gx_default_get_profile);
+    tempstr = (char *) gs_alloc_bytes(dev->memory, colorants->size+1, 
+                                      "gx_default_put_icc_colorants");
+    memcpy(tempstr, colorants->data, colorants->size);
+    /* Set last position to NULL. */
+    tempstr[colorants->size] = 0;
+    code = gsicc_set_device_profile_colorants(dev, tempstr);
+    gs_free_object(dev->memory, tempstr, "gx_default_put_icc_colorants");
+}
+
+static void
 gx_default_put_icc(gs_param_string *icc_pro, gx_device * dev,  
                    gsicc_profile_types_t index) 
 {
@@ -873,6 +910,9 @@ nce:
     }    
     if ((code = param_read_string(plist, "DeviceLinkProfile", &icc_pro)) != 1) {
         gx_default_put_icc(&icc_pro, dev, gsLINKPROFILE); 
+    }
+    if ((code = param_read_string(plist, "ICCOutputColors", &icc_pro)) != 1) {
+        gx_default_put_icc_colorants(&icc_pro, dev);
     }
     if ((code = param_read_int(plist, (param_name = "RenderIntent"), 
                                                     &(rend_intent[0]))) < 0) {

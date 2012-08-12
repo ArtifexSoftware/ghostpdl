@@ -378,10 +378,11 @@ gsicc_new_namelist(gs_memory_t *memory)
     gsicc_namelist_t *result;
 
     result = (gsicc_namelist_t *) gs_alloc_bytes(memory->non_gc_memory, sizeof(gsicc_namelist_t),
-                             "gsicc_new_namelist");
+                                                 "gsicc_new_namelist");
     result->count = 0;
     result->head = NULL;
-    return(result);
+    result->name_str = NULL;
+    return result;
 }
 
 /* Allocate new spot name.  */
@@ -990,6 +991,26 @@ gsicc_new_srcgtag_profile(gs_memory_t *memory)
     return(result);
 }
 
+static void
+gsicc_free_spotnames(gsicc_namelist_t *spotnames, gs_memory_t * mem) 
+{
+    int k;
+    gsicc_colorname_t *curr_name, *next_name;
+
+    curr_name = spotnames->head;
+    for (k = 0; k < spotnames->count; k++) {
+        next_name = curr_name->next;
+        /* Free the name */
+        gs_free_object(mem, curr_name->name, "gsicc_free_spotnames");
+        /* Free the name structure */
+        gs_free_object(mem, curr_name, "gsicc_free_spotnames");
+        curr_name = next_name;
+    }
+    if (spotnames->name_str != NULL) {
+        gs_free_object(mem, spotnames->name_str, "gsicc_free_spotnames");
+    }
+}
+
 /* Free device icc array structure.  */
 static void
 rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
@@ -1019,6 +1040,13 @@ rc_free_profile_array(gs_memory_t * mem, void *ptr_in, client_name_t cname)
             if_debug0(gs_debug_flag_icc, "[icc] Releasing oi profile\n");
             rc_decrement(icc_struct->oi_profile, "rc_free_profile_array");
         }
+        if (icc_struct->spotnames != NULL) {
+            if_debug0(gs_debug_flag_icc, "[icc] Releasing spotnames\n");
+            /* Free the linked list in this object */
+            gsicc_free_spotnames(icc_struct->spotnames, mem_nongc); 
+            /* Free the main object */
+            gs_free_object(mem_nongc, icc_struct->spotnames, "rc_free_profile_array");
+        }
         if_debug0(gs_debug_flag_icc,"[icc] Releasing device profile struct\n");
         gs_free_object(mem_nongc, icc_struct, "rc_free_profile_array");
     }
@@ -1044,6 +1072,7 @@ gsicc_new_device_profile_array(gs_memory_t *memory)
     result->proof_profile = NULL;
     result->link_profile = NULL;
     result->oi_profile = NULL;
+    result->spotnames = NULL;
     result->devicegraytok = true;  /* Default is to map gray to pure K */
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->prebandthreshold = true;
@@ -1067,6 +1096,76 @@ gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
     if (profile_struct ==  NULL)
         return 0;
     profile_struct->intent[profile_type] = intent;
+    return 0;
+}
+
+/* This sets the colorants structure up in the device profile for when 
+   we are dealing with DeviceN type output profiles.  Note
+   that this feature is only used with the tiffsep and psdcmyk devices */
+int
+gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
+{   
+    int code;
+    cmm_dev_profile_t *profile_struct;
+    gsicc_colorname_t *name_entry;
+    gsicc_colorname_t **curr_entry;
+    gs_memory_t *mem;
+    char *temp_ptr;
+    int done;
+    gsicc_namelist_t *spot_names;
+    char *pch;
+    int str_len = strlen(name_str);
+
+    code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
+    if (profile_struct != NULL) {
+        int count = 0;
+
+        if (profile_struct->spotnames != NULL &&
+            profile_struct->spotnames->name_str != NULL &&
+            strlen(profile_struct->spotnames->name_str) == str_len) {
+            if (strncmp(name_str, profile_struct->spotnames->name_str, str_len) == 0) {
+                return 0;
+            }
+        }
+        mem = dev->memory->non_gc_memory;
+
+        /* Allocate structure for managing names */
+        spot_names = gsicc_new_namelist(mem);
+        profile_struct->spotnames = spot_names;
+        spot_names->name_str = (char*) gs_alloc_bytes(mem, str_len+1, 
+                                               "gsicc_set_device_profile_colorants");
+        memcpy(spot_names->name_str, name_str, strlen(name_str));
+        spot_names->name_str[str_len] = 0;
+        curr_entry = &(spot_names->head);
+         /* Go ahead and tokenize now */
+        pch = strtok(name_str, ",");
+        count = 0;
+        while (pch != NULL) {
+            temp_ptr = pch;
+            done = 0;
+            /* Remove any leading spaces */
+            while (!done) {
+                if (*temp_ptr == 0x20) {
+                    temp_ptr++;
+                } else {
+                    done = 1;
+                }
+            }
+            /* Allocate a new name object */
+            name_entry = gsicc_new_colorname(mem);
+            /* Set our current entry to this one */
+            *curr_entry = name_entry;
+            name_entry->length = strlen(temp_ptr);
+            name_entry->name = (char *) gs_alloc_bytes(mem, name_entry->length, 
+                                        "gsicc_set_device_profile_colorants");
+            memcpy(name_entry->name, temp_ptr, name_entry->length);
+            /* Get the next entry location */
+            curr_entry = &((*curr_entry)->next);
+            count += 1;
+            pch = strtok(NULL, ",");
+        }
+        spot_names->count = count;
+    }
     return 0;
 }
 
@@ -1160,6 +1259,17 @@ gsicc_init_device_profile_struct(gx_device * dev,
                                         profile_type);
         return code;
     }
+}
+
+/* This is used in getting a list of colorant names for the intepreters 
+   device parameter list. */
+char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile)
+{
+    if (dev_profile == NULL || dev_profile->spotnames == NULL || 
+        dev_profile->spotnames->name_str == NULL) 
+        return 0;
+    else 
+        return dev_profile->spotnames->name_str;
 }
 
 /*  This computes the hash code for the device profile and assigns the profile
@@ -1336,8 +1446,6 @@ static void
 rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
 {
     cmm_profile_t *profile = (cmm_profile_t *)ptr_in;
-    int k;
-    gsicc_colorname_t *curr_name, *next_name;
     gs_memory_t *mem_nongc =  profile->memory;
 
     if_debug2(gs_debug_flag_icc,"[icc] rc decrement profile = 0x%x rc = %ld\n",
@@ -1367,15 +1475,8 @@ rc_free_icc_profile(gs_memory_t * mem, void *ptr_in, client_name_t cname)
         /* If we had a DeviceN profile with names
            deallocate that now */
         if (profile->spotnames != NULL) {
-            curr_name = profile->spotnames->head;
-            for ( k = 0; k < profile->spotnames->count; k++) {
-                next_name = curr_name->next;
-                /* Free the name */
-                gs_free_object(mem_nongc, curr_name->name, "rc_free_icc_profile");
-                /* Free the name structure */
-                gs_free_object(mem_nongc, curr_name, "rc_free_icc_profile");
-                curr_name = next_name;
-            }
+            /* Free the linked list in this object */
+            gsicc_free_spotnames(profile->spotnames, mem_nongc); 
             /* Free the main object */
             gs_free_object(mem_nongc, profile->spotnames, "rc_free_icc_profile");
         }

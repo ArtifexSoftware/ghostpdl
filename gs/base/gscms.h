@@ -155,6 +155,22 @@ typedef struct cmm_srcgtag_profile_s {
         rc_header rc;
 } cmm_srcgtag_profile_t;
 
+typedef struct gsicc_colorname_s gsicc_colorname_t;
+
+struct gsicc_colorname_s {
+    char *name;
+    int length;
+    gsicc_colorname_t *next;
+};
+
+typedef struct gsicc_namelist_s gsicc_namelist_t;
+
+struct gsicc_namelist_s {
+    int count;
+    gsicc_colorname_t *head;
+    char *name_str;
+};
+
 /* Destination profiles for different objects */
 typedef struct cmm_dev_profile_s {
         cmm_profile_t  *device_profile[NUM_DEVICE_PROFILES];
@@ -165,6 +181,7 @@ typedef struct cmm_dev_profile_s {
         bool devicegraytok;        /* Used for forcing gray to pure black */
         bool usefastcolor;         /* Used when we want to use no cm */
         bool supports_devn;        /* If the target handles devn colors */
+        gsicc_namelist_t *spotnames;  /* If our device profiles are devn */
         bool prebandthreshold;     /* Used to indicate use of HT pre-clist */
         gs_memory_t *memory;
         rc_header rc;
@@ -230,21 +247,6 @@ typedef struct gsicc_serialized_profile_s {
     gsicc_serial_data;
 } gsicc_serialized_profile_t;
 
-typedef struct gsicc_colorname_s gsicc_colorname_t;
-
-struct gsicc_colorname_s {
-    char *name;
-    int length;
-    gsicc_colorname_t *next;
-};
-
-typedef struct gsicc_namelist_s gsicc_namelist_t;
-
-struct gsicc_namelist_s {
-    int count;
-    gsicc_colorname_t *head;
-};
-
 /* A structure for holding profile information.  A member variable
  * of the ghostscript color structure.   The item is reference counted.
  */
@@ -252,7 +254,7 @@ struct cmm_profile_s {
     gsicc_serial_data;
     byte *buffer;               /* A buffer with ICC profile content */
     gx_device *dev;             /* A pointer to the clist device in which the ICC data may be contained */
-    gsicc_namelist_t *spotnames;  /* Only used with NCLR ICC input profiles with named color tag */
+    gsicc_namelist_t *spotnames;  /* Used for profiles that have non-standard colorants */
     void *profile_handle;       /* The profile handle */
     rc_header rc;               /* Reference count.  So we know when to free */
     int name_length;            /* Length of file name */

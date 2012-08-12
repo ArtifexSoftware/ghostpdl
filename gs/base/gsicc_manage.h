@@ -82,6 +82,7 @@ void  gsicc_profile_serialize(gsicc_serialized_profile_t *profile_data,
                               cmm_profile_t *iccprofile);
 int gsicc_set_device_profile_intent(gx_device *dev, gsicc_profile_types_t intent,
                                 gsicc_profile_types_t profile_type);
+int gsicc_set_device_profile_colorants(gx_device *dev, char *name_str);
 int gsicc_init_device_profile_struct(gx_device * dev,  char *profile_name,
                                      gsicc_profile_types_t profile_type);
 int gsicc_set_profile(gsicc_manager_t *icc_manager, const char *pname,
@@ -122,6 +123,7 @@ cmm_profile_t* gsicc_set_iccsmaskprofile(const char *pname, int namelen,
                                          gs_memory_t *mem);
 int gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem, 
                              char *file_name, gsicc_profile_types_t defaulttype);
+char* gsicc_get_dev_icccolorants(cmm_dev_profile_t *dev_profile);
 void gsicc_setrange_lab(cmm_profile_t *profile);
 /* system and user params */
 void gs_currentdevicenicc(const gs_state * pgs, gs_param_string * pval);
