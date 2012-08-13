@@ -377,7 +377,7 @@ typedef int (*op_proc_t)(i_ctx_t *i_ctx_p);
 struct tas_s {
 /* type_attrs is a single element for fast dispatching in the interpreter */
     ushort type_attrs;
-    uint32_t rsize;
+    ushort rsize;
 };
 struct ref_s {
 
@@ -563,7 +563,7 @@ struct ref_s {
 /* Select reasonable values for PDF interpreter */
 /* The maximum array size cannot exceed max_uint/arch_sizeof_ref */
 /* because the allocator cannot allocate a block larger than max_uint. */
-#define max_array_size  (16*1024*1024)
-#define max_string_size (16*1024*1024)
+#define max_array_size  max_ushort
+#define max_string_size max_ushort
 
 #endif /* iref_INCLUDED */
