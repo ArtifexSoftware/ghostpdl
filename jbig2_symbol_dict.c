@@ -1,17 +1,22 @@
+/* Copyright (C) 2001-2012 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+   CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
 /*
     jbig2dec
-
-    Copyright (C) 2001-2005 Artifex Software, Inc.
-
-    This software is distributed under license and may not
-    be copied, modified or distributed except as expressly
-    authorized under the terms of the license contained in
-    the file LICENSE in this distribution.
-
-    For further licensing information refer to http://artifex.com/ or
-    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
-    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
+
 
 /* symbol dictionary segment decode and support */
 
@@ -650,7 +655,6 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 	if (code || (BMSIZE < 0)) {
 	  jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
 	    "error decoding size of collective bitmap!");
-          jbig2_image_release(ctx, image);
 	  goto cleanup4;
 	}
 
@@ -712,7 +716,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       {
           jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
               "failed to copy the collective bitmap into symbol dictionary");
-	  jbig2_image_release(ctx, image);
+          jbig2_image_release(ctx, image);
           goto cleanup4;
       }
 	  jbig2_image_compose(ctx, glyph, image, -x, 0, JBIG2_COMPOSE_REPLACE);
@@ -1004,7 +1008,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   offset += 8;
 
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
-              "symbol dictionary, flags=%04x, %u exported syms, %u new syms",
+	      "symbol dictionary, flags=%04x, %u exported syms, %u new syms",
 	      flags, params.SDNUMEXSYMS, params.SDNUMNEWSYMS);
 
   /* 7.4.2.2 (2) */

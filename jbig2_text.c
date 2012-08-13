@@ -1,16 +1,20 @@
+/* Copyright (C) 2001-2012 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  7 Mt. Lassen Drive - Suite A-134, San Rafael,
+   CA  94903, U.S.A., +1(415)492-9861, for further information.
+*/
+
 /*
     jbig2dec
-
-    Copyright (C) 2002-2008 Artifex Software, Inc.
-
-    This software is distributed under license and may not
-    be copied, modified or distributed except as expressly
-    authorized under the terms of the license contained in
-    the file LICENSE in this distribution.
-
-    For further licensing information refer to http://artifex.com/ or
-    contact Artifex Software, Inc., 7 Mt. Lassen Drive - Suite A-134,
-    San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
 #ifdef HAVE_CONFIG_H
@@ -841,7 +845,7 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     ws = jbig2_word_stream_buf_new(ctx, segment_data + offset, segment->data_length - offset);
     if (ws == NULL)
     {
-         code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+        code = jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "couldn't allocate ws in text region image");
         goto cleanup2;
     }
@@ -894,8 +898,8 @@ jbig2_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data
     code = jbig2_decode_text_region(ctx, segment, &params,
         (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
         segment_data + offset, segment->data_length - offset,
-        GR_stats, as, ws);
-     if (code < 0)
+		GR_stats, as, ws);
+    if (code < 0)
     {
         jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
             "failed to decode text region image data");
