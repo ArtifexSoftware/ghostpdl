@@ -1765,16 +1765,18 @@ currentdict /PDF2PS_matrix_key undef
 
   .writepdfmarks {
 
-        % Copy the crop box.
-    dup /CropBox pget {
-        % .pdfshowpage_Install transforms the user space -
-        % do same here with the CropBox.
-      oforce_elems
-      2 { Page pdf_cached_PDF2PS_matrix transform 4 2 roll } repeat
-      normrect_elems /CropBox 5 1 roll fix_empty_rect_elems 4 array astore
-      mark /CropBox 3 -1 roll
-      /PAGE pdfmark
-    } if
+        % Copy the boxes.
+    { /CropBox /BleedBox /TrimBox /ArtBox } {
+      2 copy pget {
+        % .pdfshowpage_Install transforms the user space do same here with the boxes
+        oforce_elems
+        2 { Page pdf_cached_PDF2PS_matrix transform 4 2 roll } repeat
+        normrect_elems 4 index 5 1 roll fix_empty_rect_elems 4 array astore
+        mark 3 1 roll /PAGE pdfmark
+      } {
+        pop
+      } ifelse
+    } forall
 
         % Copy annotations and links.
     dup /Annots knownoget {
