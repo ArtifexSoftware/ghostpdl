@@ -1171,7 +1171,7 @@ gc_clear_reloc(chunk_t * cp)
 static void
 gc_objects_set_reloc(gc_state_t * gcst, chunk_t * cp)
 {
-    uint reloc = 0;
+    size_t reloc = 0;
     chunk_head_t *chead = cp->chead;
     byte *pfree = (byte *) & chead->free;	/* most recent free object */
 

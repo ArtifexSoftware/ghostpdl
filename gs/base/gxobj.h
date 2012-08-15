@@ -92,7 +92,7 @@ typedef struct obj_header_data_s {
     uint size;
     union _t {
         gs_memory_type_ptr_t type;
-        uint reloc;
+        size_t reloc;
     } t;
 #   if IGC_PTR_STABILITY_CHECK
     unsigned space_id:3; /* r_space_bits + 1 bit for "instability". */
@@ -127,7 +127,7 @@ typedef struct obj_header_data_s {
 #endif
 #define obj_align_mask (obj_align_mod-1)
 #define obj_align_round(siz)\
-  (uint)(((siz) + obj_align_mask) & -obj_align_mod)
+  (size_t)(((siz) + obj_align_mask) & -obj_align_mod)
 #define obj_size_round(siz)\
   obj_align_round((siz) + sizeof(obj_header_t))
 
