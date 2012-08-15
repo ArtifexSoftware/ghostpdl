@@ -7,7 +7,7 @@ use Data::Dumper;
 
 my $verbose=0;
 
-# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [bmpcmp] [lowres] [$user] | abort
+# bmpcmp usage: [gs] [pcl] [xps] [gs] [mupdf] [bmpcmp] [lowres] [32] [$user] | abort
 
 
 
@@ -26,12 +26,15 @@ my $product="";
 my $filters="";
 my $command="";
 my $res="";
+my $w32="";
 my $t1;
 while ($t1=shift) {
   if ($t1 eq "lowres") {
     $res="lowres";
   } elsif ($t1 eq "highres") {
     $res="highres";
+  } elsif ($t1 eq "32") {
+    $w32="32";
   } elsif ($t1=~m/^-/ || $t1=~m/^\d/) {
     $command.=$t1.' ';
   } elsif ($t1 =~ m/filter=.*/) {
@@ -172,7 +175,7 @@ if ($product ne "abort" ) { #&& $product ne "bmpcmp") {
 }
 
 open(F,">cluster_command.run");
-print F "$user $product $res\n";
+print F "$user $product $res $w32\n";
 print F "$command\n";
 print F "$filters\n";
 close(F);
