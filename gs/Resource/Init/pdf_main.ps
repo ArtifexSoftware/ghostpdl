@@ -717,7 +717,17 @@ currentdict /xref-char-dict undef
         { dup writeoutline /Next knownoget not { exit } if } loop
       } if
     } if
-  } if		% end .writepdfmarks
+    Trailer /Info knownoget {
+      mark exch
+      { /Author /Creator /Title /Subject /Keywords
+        % /Producer is Ghostscript; /CreationDate is now; /ModDate is also now.
+      } {
+        2 copy knownoget { 3 -1 roll } { pop } ifelse
+      } forall
+      pop
+      dup mark ne { /DOCINFO pdfmark } { pop } ifelse
+    } if
+  } if
   % Initialize OC groups
   Trailer /Root oget /OCProperties knownoget {
     % By default, OCGs are 'on'; mark only 'off' OCGs.

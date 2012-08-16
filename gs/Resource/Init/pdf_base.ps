@@ -184,11 +184,16 @@ currentdict /num-chars-dict .undef
     } {
       % Hackish fix to detect missing whitespace after "endobj". Yet another
       % problem that (you guessed it!) Adobe Acrobat ignores silently
-      256 string cvs (endobj) anchorsearch {
+      dup .namestring (endobj) anchorsearch {
         (   **** Missing whitespace after 'endobj'.\n) pdfformaterror
-        exch pop cvn get exch pop exec
+        pop pop pop exch pop /endobj get exec
       } {
-        .pdftokenerror
+        pop
+        1 index /m known {  % stream context, operators are possible
+          .pdftokenerror
+        } { % data context, just make the name literal
+          cvlit exch pop exch pop
+        } ifelse
       } ifelse
     } ifelse
   } ifelse
@@ -198,7 +203,7 @@ currentdict /num-chars-dict .undef
 /.pdfrun {			% <file> <opdict> .pdfrun -
         % Construct a procedure with the stack depth, file and opdict
         % bound into it.
-  1 index cvlit                  % file <<>> file                             
+  1 index cvlit                  % file <<>> file
   count 2 sub                    % file <<>> file cnt
   3 1 roll mark                  % file cnt <<>> file [
   /PDFScanRules .getuserparam //null eq {
