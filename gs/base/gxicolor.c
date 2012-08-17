@@ -66,7 +66,11 @@ gs_image_class_4_color(gx_image_enum * penum)
 {
     bool std_cmap_procs;
     int code;
+#if USE_FAST_HT_CODE
+    bool use_fast_thresh = true;
+#else
     bool use_fast_thresh = false;
+#endif
     bool is_planar_dev = false;
 
     if (penum->use_mask_color) {
@@ -285,8 +289,7 @@ decode_row(const gx_image_enum *penum, const byte *psrc, int spp, byte *pdes,
 static int
 image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                      gx_device *dev, int *spp_cm_out, byte **psrc_cm,
-                     byte **psrc_cm_start, byte **psrc_decode, byte **bufend,
-                     bool planar_out)
+                     byte **psrc_cm_start, byte **bufend, bool planar_out)
 {
     const gx_image_enum *const penum = penum_orig; /* const within proc */
     const gs_imager_state *pis = penum->pis;
@@ -299,6 +302,11 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     int num_des_comps;
     int code;
     cmm_dev_profile_t *dev_profile;
+    byte *psrc_decode;
+    const byte *planar_src;
+    byte *planar_des;
+    int k, j;
+    int width;
 
     code = dev_proc(dev, get_profile)(dev, &dev_profile);
     if (code < 0) return code;
@@ -323,12 +331,48 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
     } else {
         spp_cm = num_des_comps;
         *psrc_cm = gs_alloc_bytes(pis->memory,  w * spp_cm/spp,
-                                  "image_render_color_icc");
+                                  "image_color_icc_prep");
         *psrc_cm_start = *psrc_cm;
         *bufend = *psrc_cm +  w * spp_cm/spp;
-        if (penum->icc_link->is_identity && !force_planar) {
-            /* decode only. no CM.  This is slow but does not happen that often */
-            decode_row(penum, psrc, spp, *psrc_cm, *bufend);
+        if (penum->icc_link->is_identity) {
+            if (!force_planar) {
+                /* decode only. no CM.  This is slow but does not happen that often */
+                decode_row(penum, psrc, spp, *psrc_cm, *bufend);
+            } else {
+                /* CM is identity but we may need to do decode and then off 
+                   to planar. The planar out case is only used when coming from
+                   imager_render_color_thresh, which is limited to 8 bit case */
+                if (need_decode) {
+                    /* Need decode and then to planar */
+                    psrc_decode = gs_alloc_bytes(pis->memory,  w,
+                                                  "image_color_icc_prep");
+                    if (penum->cie_range == NULL) {
+                        decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
+                    } else {
+                        /* Decode needs to include adjustment for CIE range */
+                        decode_row_cie(penum, psrc, spp, psrc_decode,
+                                        psrc_decode + w, penum->cie_range);
+                    }
+                    planar_src = psrc_decode;
+                } else {
+                    psrc_decode = NULL;
+                    planar_src = psrc;
+                }
+                /* Now to planar */
+                width = w/spp;
+                planar_des = *psrc_cm;
+                for (k = 0; k < width; k++) {
+                    for (j = 0; j < spp; j++) {
+                        *(planar_des + j * width) = *planar_src++; 
+                    }
+                    planar_des++;
+                }
+                /* Free up decode if we used it */
+                if (psrc_decode != NULL) {
+                    gs_free_object(pis->memory, (byte *) psrc_decode,
+                                   "image_render_color_icc");
+                }
+            }
         } else {
             /* Set up the buffer descriptors. planar out always ends up here */
             num_pixels = w/spp;
@@ -351,22 +395,21 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                less than or equal to the new one.  */
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
-                *psrc_decode = gs_alloc_bytes(pis->memory,  w,
-                                              "image_render_color_icc");
+                psrc_decode = gs_alloc_bytes(pis->memory, w, 
+                                              "image_color_icc_prep");
                 if (penum->cie_range == NULL) {
-                    decode_row(penum, psrc, spp, *psrc_decode, (*psrc_decode)+w);
+                    decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
                 } else {
                     /* Decode needs to include adjustment for CIE range */
-                    decode_row_cie(penum, psrc, spp, *psrc_decode,
-                                    (*psrc_decode)+w, penum->cie_range);
+                    decode_row_cie(penum, psrc, spp, psrc_decode,
+                                    psrc_decode+w, penum->cie_range);
                 }
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
                                                     &input_buff_desc,
                                                     &output_buff_desc, 
-                                                    (void*) *psrc_decode,
+                                                    (void*) psrc_decode,
                                                     (void*) *psrc_cm);
-                gs_free_object(pis->memory, (byte *) *psrc_decode,
-                               "image_render_color_icc");
+                gs_free_object(pis->memory, psrc_decode, "image_color_icc_prep");
             } else {
                 /* CM only. No decode */
                 (penum->icc_link->procs.map_buffer)(dev, penum->icc_link, 
@@ -408,7 +451,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     gx_dda_int_t dda_ht;
     int code = 0;
     int spp_cm = 0;
-    byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
     byte *bufend = NULL, *curr_ptr;
     int psrc_planestride = w/penum->spp;
     gx_color_value conc;
@@ -417,8 +460,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
     if (h != 0) {
         /* Get the buffer into the device color space */
         code = image_color_icc_prep(penum, psrc, w, dev, &spp_cm, &psrc_cm,
-                                    &psrc_cm_start, &psrc_decode, &bufend,
-                                    true);
+                                    &psrc_cm_start,  &bufend, true);
         /* Also, if need apply the transfer function at this time.  This
            should be reworked so that we are not doing all these conversions */
         if (penum->icc_setup.has_transfer) {
@@ -798,7 +840,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     color_samples next;		/* next sample value */
     byte *bufend = NULL;
     int code = 0;
-    byte *psrc_cm = NULL, *psrc_cm_start = NULL, *psrc_decode = NULL;
+    byte *psrc_cm = NULL, *psrc_cm_start = NULL;
     int k;
     gx_color_value conc[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int spp_cm = 0;
@@ -814,7 +856,7 @@ image_render_color_icc(gx_image_enum *penum_orig, const byte *buffer, int data_x
     if (h == 0)
         return 0;
     code = image_color_icc_prep(penum_orig, psrc, w, dev, &spp_cm, &psrc_cm,
-                                &psrc_cm_start, &psrc_decode, &bufend, false);
+                                &psrc_cm_start, &bufend, false);
     if (code < 0) return code;
     /* Needed for device N */
     memset(&(conc[0]), 0, sizeof(gx_color_value[GX_DEVICE_COLOR_MAX_COMPONENTS]));

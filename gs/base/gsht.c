@@ -1550,6 +1550,12 @@ gx_ht_construct_threshold( gx_ht_order *d_order, gx_device *dev,
         l++;
     }
     d_order->threshold = thresh;
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+      for(i = 0; i < (int)d_order->height; i++ ) {
+         for( j=(int)d_order->width-1; j>=0; j-- )
+            *(thresh+j+(i*d_order->width)) = 255 - *(thresh+j+(i*d_order->width));
+      }
+    } 
 #ifdef DEBUG
    if ( gs_debug_c('h') ) {
       for( i=0; i<(int)d_order->height; i++ ) {

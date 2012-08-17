@@ -159,7 +159,6 @@ typedef struct gx_image_clue_s {
 typedef struct gx_image_color_cache_s {
     bool *is_transparent;
     byte *device_contone;
-    bool free_contone;
 } gx_image_color_cache_t;
 
 /* Main state structure */

@@ -44,7 +44,6 @@
 #include "gxdda.h"
 #include "gxdevsop.h"
 
-#define USE_FAST_CODE 1
 #define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
 
 /* Enable the following define to perform a little extra work to stop
@@ -64,7 +63,7 @@ static irender_proc(image_render_mono_ht);
 irender_proc_t
 gs_image_class_3_mono(gx_image_enum * penum)
 {
-#if USE_FAST_CODE
+#if USE_FAST_HT_CODE
     bool use_fast_code = true;
 #else
     bool use_fast_code = false;
@@ -92,7 +91,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
         /* Allow this for CMYK planar and mono binary halftoned devices */
         dev_color_ok = ((penum->dev->color_info.num_components == 1 &&
                          penum->dev->color_info.depth == 1) ||
-#if 1
+#if 0
                          /* Don't allow CMYK Planar devices just yet */
                          0);
 #else

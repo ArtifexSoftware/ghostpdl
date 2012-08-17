@@ -986,7 +986,6 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
                    num_des_comp * num_entries * sizeof(byte), "image_init_color_cache");
     penum->color_cache->is_transparent = (bool*) gs_alloc_bytes(penum->memory,
              num_entries * sizeof(bool), "image_init_color_cache");
-    penum->color_cache->free_contone = true;
     /* Initialize */
     memset(penum->color_cache->is_transparent,0,num_entries * sizeof(bool));
     /* Depending upon if we need decode and ICC CM, fill the cache a couple
@@ -1034,21 +1033,10 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
             }
         } else {
             /* Indexing only.  No CM, decode or transfer functions. */
-            if (penum->pcs->params.indexed.use_proc) {
-                /* Have to do the slow way */
-                for (k = 0; k < num_entries; k++) {
-                    gs_cspace_indexed_lookup_bytes(penum->pcs, (float)k, psrc);
-                    memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
-                               psrc, num_des_comp);
-                }
-            } else {
-                /* Possible GC issue? In this case we just use the pointer
-                   of the index table data directly for our cache */
-                gs_free_object(penum->memory, penum->color_cache->device_contone,
-                                "image_init_color_cache(device_contone)");
-                penum->color_cache->device_contone =
-                    (byte*) penum->pcs->params.indexed.lookup.table.data;
-                penum->color_cache->free_contone = false;
+            for (k = 0; k < num_entries; k++) {
+                gs_cspace_indexed_lookup_bytes(penum->pcs, (float)k, psrc);
+                memcpy(&(penum->color_cache->device_contone[k * num_des_comp]),
+                           psrc, num_des_comp);
             }
         }
     } else {

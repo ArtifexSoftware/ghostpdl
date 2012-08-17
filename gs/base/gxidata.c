@@ -469,10 +469,8 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
         gsicc_release_link(penum->icc_link);
     }
     if (penum->color_cache != NULL) {
-        if (penum->color_cache->free_contone) {
-            gs_free_object(mem, penum->color_cache->device_contone,
-                            "device_contone");
-        }
+        gs_free_object(mem, penum->color_cache->device_contone,
+                        "device_contone");
         gs_free_object(mem, penum->color_cache->is_transparent,
                        "image is_transparent");
         gs_free_object(mem, penum->color_cache, "image color cache");

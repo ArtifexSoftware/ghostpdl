@@ -99,15 +99,62 @@ gsicc_nocm_planar_to_chunky(gx_device *dev, gsicc_link_t *icclink,
 
 }
 
-/* This is not really used yet */
+/* This is used with the fast thresholding code when doing -dUseFastColor
+   and going out to a planar device */
 static void
 gsicc_nocm_chunky_to_planar(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
                                   gsicc_bufferdesc_t *output_buff_desc,
                                   void *inputbuffer, void *outputbuffer)
 {
+    int k, j, m;
+    byte *inputpos = (byte *) inputbuffer;
+    byte *outputpos = (byte *) outputbuffer;
+    byte *output_loc;
+    byte *inputcolor;
+    byte outputcolor[8];  /* 8 since we have max 4 colorants and 2 bytes/colorant */
+    unsigned short *pos_in_short, *pos_out_short;
+    int num_bytes_in = input_buff_desc->bytes_per_chan;
+    int num_bytes_out = output_buff_desc->bytes_per_chan;
+    int pixel_in_step = num_bytes_in * input_buff_desc->num_chan;
+    int plane_stride = output_buff_desc->plane_stride;
 
+    /* Do row by row. */
+    for (k = 0; k < input_buff_desc->num_rows ; k++) {
+        inputcolor = inputpos;
+        output_loc = outputpos;
 
+        /* split the 2 byte 1 byte case here to avoid decision in inner loop */
+        if (output_buff_desc->bytes_per_chan == 1) {
+            for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
+                gsicc_nocm_transform_general(dev, icclink, (void*) inputcolor, 
+                                             (void*) &(outputcolor[0]), num_bytes_in, 
+                                              num_bytes_out);
+                /* Stuff the output in the proper planar location */
+                for (m = 0; m < output_buff_desc->num_chan; m++) {
+                    *(output_loc + m * plane_stride + j) = outputcolor[m];
+                }
+                inputcolor += pixel_in_step;
+            }
+            inputpos += input_buff_desc->row_stride;
+            outputpos += output_buff_desc->row_stride;        
+        } else {
+            for (j = 0; j < input_buff_desc->pixels_per_row; j++) {
+                gsicc_nocm_transform_general(dev, icclink, (void*) inputcolor, 
+                                             (void*) &(outputcolor[0]), num_bytes_in, 
+                                              num_bytes_out);
+                /* Stuff the output in the proper planar location */
+                pos_in_short = (unsigned short*) &(outputcolor[0]);
+                pos_out_short = (unsigned short*) (output_loc);
+                for (m = 0; m < output_buff_desc->num_chan; m++) {
+                    *(pos_out_short + m * plane_stride + j) = pos_in_short[m];
+                }
+                inputcolor += pixel_in_step;
+            }
+            inputpos += input_buff_desc->row_stride;
+            outputpos += output_buff_desc->row_stride;
+        }
+    }
 }
 
 static void
