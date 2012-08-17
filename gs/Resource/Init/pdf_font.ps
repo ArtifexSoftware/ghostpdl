@@ -163,10 +163,38 @@ currentdict /known_symbolic_fonts undef
   2 index /Subtype get /TrueType eq and {
     //null
   } {
-    1 index /Encoding known {
-      dup /Encoding knownoget { 2 index getencoding } { //null } ifelse
-    } {
-      //null
+    % Acrobat appears to be always using StandardEcoding as the
+    % default encoding for some non-symbolic fonts (rather than,
+    % as the spec states, the encoding specified by the font).
+    % As this is contrary to spec, and we only have a CFF
+    % example, I've restricted this to fonts with Subtype Type1C
+    % *and* that result in a Type 2 PS font.
+    1 index /FontDescriptor knownoget
+    {
+      dup
+      % Unfortunately, Acrobat doesn't enforce the meaning of
+      % FontFile[23] so whilst, in theory, Type1C should only
+      % occur in FontFile3, we can't rely on that.
+      dup /FontFile knownoget not
+      {
+        dup /FontFile2 knownoget not
+        {
+          dup /FontFile3 knownoget not {1 dict} if
+        } if
+      } if
+      exch pop /Subtype knownoget {/Type1C eq}{//false} ifelse
+      exch /Flags knownoget {4 and 4 eq not}{false}ifelse and
+    } {//false} ifelse
+    1 index /FontType get 2 eq and
+    {
+        StandardEncoding 2 index getencoding
+    }
+    {
+      1 index /Encoding known {
+        dup /Encoding knownoget { 2 index getencoding } { //null } ifelse
+      } {
+        //null
+      } ifelse
     } ifelse
   } ifelse
 } bdef
