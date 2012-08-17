@@ -116,6 +116,8 @@ GS_INIT=gs_init.ps
 
 # Choose generic configuration options.
 
+TARGET_ARCH_FILE=@ARCH_CONF_HEADER@
+
 # -DDEBUG
 #	includes debugging features (-Z switch) in the code.
 #	  Code runs substantially slower even if no debugging switches

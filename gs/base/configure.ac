@@ -181,6 +181,19 @@ else
     dbgflags_to_try="$CC_DBG_FLAGS_TO_TRY"
 fi
 
+ARCH_CONF_HEADER=
+
+case `uname` in
+        Darwin*)
+          ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-gcc.h"
+        ;;
+        *)
+          ARCH_CONF_HEADER=
+        ;;
+esac
+
+AC_SUBST(ARCH_CONF_HEADER)
+
 # debug configurarion is available by default with "make debug"
 #AC_ARG_ENABLE([debug], AC_HELP_STRING([--enable-debug],
 #    [turn on debugging]))
