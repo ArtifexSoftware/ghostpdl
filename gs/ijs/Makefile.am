@@ -23,7 +23,7 @@
 
 ## Process this file with automake to produce Makefile.in.
 
-AUTOMAKE_OPTIONS = 1.6 foreign dist-bzip2 no-dependencies 
+AUTOMAKE_OPTIONS = 1.8 foreign dist-bzip2 no-dependencies
 
 @SET_MAKE@
 
