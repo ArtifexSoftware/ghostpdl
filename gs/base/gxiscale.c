@@ -172,7 +172,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     iss.PatchHeightIn = penum->rrect.h;
     iss.LeftMarginIn = penum->rrect.x - penum->rect.x;
     iss.LeftMarginOut = fixed2int_pixround_perfect((fixed)((int64_t)iss.LeftMarginIn *
-                                                penum->dst_width / penum->Width));
+                                                   any_abs(penum->dst_width) / penum->Width));
     iss.TopMargin = penum->rrect.y - penum->rect.y;
     iss.src_y_offset = penum->rect.y;
     iss.EntireWidthIn = penum->Width;
