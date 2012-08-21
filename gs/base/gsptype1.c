@@ -1067,9 +1067,9 @@ const gx_device_color_type_t gx_dc_binary_masked = {
     gx_dc_ht_binary_get_nonzero_comps
 };
 
-gs_private_st_composite_only(st_dc_colored_masked, gx_device_color,
-                             "dc_colored_masked",
-                             dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
+gs_private_st_composite(st_dc_colored_masked, gx_device_color,
+                        "dc_colored_masked",
+                        dc_colored_masked_enum_ptrs, dc_colored_masked_reloc_ptrs);
 const gx_device_color_type_t gx_dc_colored_masked = {
     &st_dc_colored_masked,
     gx_dc_pattern_save_dc, gx_dc_colored_masked_get_dev_halftone,
@@ -1080,9 +1080,9 @@ const gx_device_color_type_t gx_dc_colored_masked = {
     gx_dc_ht_colored_get_nonzero_comps
 };
 
-gs_private_st_composite_only(st_dc_devn_masked, gx_device_color,
-                             "dc_devn_masked",
-                             dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
+gs_private_st_composite(st_dc_devn_masked, gx_device_color,
+                        "dc_devn_masked",
+                        dc_devn_masked_enum_ptrs, dc_devn_masked_reloc_ptrs);
 const gx_device_color_type_t gx_dc_devn_masked = {
     &st_dc_devn_masked,
     gx_dc_pattern_save_dc, gx_dc_pure_masked_get_dev_halftone,
@@ -1141,6 +1141,29 @@ static RELOC_PTRS_WITH(dc_masked_reloc_ptrs, gx_device_color *cptr)
 
         RELOC_TYPED_OFFSET_PTR(gx_device_color, mask.m_tile, index);
     }
+}
+RELOC_PTRS_END
+static ENUM_PTRS_WITH(dc_colored_masked_enum_ptrs, gx_device_color *cptr)
+ENUM_SUPER(gx_device_color, st_client_color, ccolor, 1);
+case 0:
+{
+    ENUM_RETURN(cptr->colors.colored.c_ht);
+}
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(dc_colored_masked_reloc_ptrs, gx_device_color *cptr)
+{
+    RELOC_SUPER(gx_device_color, st_client_color, ccolor);
+    if (cptr->colors.colored.c_ht != 0) {
+        RELOC_PTR(gx_device_color, colors.colored.c_ht);
+    }
+}
+RELOC_PTRS_END
+static ENUM_PTRS_WITH(dc_devn_masked_enum_ptrs, gx_device_color *cptr)
+ENUM_SUPER(gx_device_color, st_client_color, ccolor, 0);
+ENUM_PTRS_END
+static RELOC_PTRS_WITH(dc_devn_masked_reloc_ptrs, gx_device_color *cptr)
+{
+    RELOC_SUPER(gx_device_color, st_client_color, ccolor);
 }
 RELOC_PTRS_END
 static ENUM_PTRS_BEGIN(dc_binary_masked_enum_ptrs)
