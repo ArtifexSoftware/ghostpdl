@@ -321,7 +321,11 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
     gs_interp_reset(i_ctx_p);
 
     {
+#ifdef PACIFY_VALGRIND
+        ref vnull = {}, vtrue = {}, vfalse = {};
+#else
         ref vnull, vtrue, vfalse;
+#endif
 
         make_null(&vnull);
         make_true(&vtrue);

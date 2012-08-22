@@ -236,7 +236,11 @@ static int
 swap_entry(i_ctx_t *i_ctx_p, ref elt[2], ref * pdict, ref * pdict2)
 {
     ref *pvalue;
+#ifdef PACIFY_VALGRIND
+    ref old_value = {};		/* current value in *pdict */
+#else
     ref old_value;		/* current value in *pdict */
+#endif
     int found = dict_find(pdict, &elt[0], &pvalue);
 
     switch (found) {
