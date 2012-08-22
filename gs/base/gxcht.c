@@ -573,7 +573,11 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
                                 gx_device * dev, gs_logical_operation_t lop,
                                 const gx_rop_source_t * source)
 {
+#if defined(PACIFY_VALGRIND) || defined(MEMENTO)
+    ulong tbits[tile_longs_allocated] = {};
+#else
     ulong tbits[tile_longs_allocated];
+#endif
     const uint tile_bytes = tile_longs * size_of(long);
     gx_strip_bitmap tiles;
     gx_rop_source_t no_source;
@@ -613,11 +617,6 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     bool no_rop;
     int i;
     int origx, origy;
-
-#ifdef MEMENTO
-    /* Pacify valgrind */
-    memset(tbits, 0, sizeof(ulong) * tile_longs_allocated);
-#endif
 
     if (w <= 0 || h <= 0)
         return 0;
