@@ -1130,7 +1130,11 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
 
     clist_file_ptr cfile = cldev->page_cfile;
     int64_t fileposit;
+#if defined(DEBUG) || defined(PACIFY_VALGRIND)
+    gsicc_serialized_profile_t profile_data = {};
+#else
     gsicc_serialized_profile_t profile_data;
+#endif
     int count1, count2;
 
     /* Get the current position */
