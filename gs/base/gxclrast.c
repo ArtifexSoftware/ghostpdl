@@ -260,7 +260,7 @@ static int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
                             gx_device *, gs_memory_t *);
 
 static const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-static const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
+static const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data, int tot_bytes,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
 static int cmd_select_map(cmd_map_index, cmd_map_contents,
@@ -1085,11 +1085,10 @@ in:                             /* Initialize for a new page. */
                                 source = data_bits;
                         } else if ((state.rect.height > 1 && width_bytes != raster) ||
                                    (plane_height != 0)) {
+                            cbp = cmd_read_short_bits(&cbuf, plane_bits, bytes, width_bytes,
+                                                      state.rect.height, raster, cbp);
                             if (pln == 0)
                                 source = data_bits;
-                            cbp = cmd_read_short_bits(&cbuf, plane_bits, width_bytes,
-                                                      state.rect.height,
-                                                      raster, cbp);
                         } else {
                             /* Never used for planar data */
                             cmd_read(cbuf.data, bytes, cbp);
@@ -1319,14 +1318,14 @@ set_phase:      /*
                                 goto out;
                             }
                             if_debug4('L', " x=%d y=%d w=%d h=%d\n",
-                                      state.rect.x, state.rect.y, 
+                                      state.rect.x, state.rect.y,
                                       state.rect.width,state.rect.height);
                             rect_hl.p.x = int2fixed(state.rect.x - x0);
                             rect_hl.p.y = int2fixed(state.rect.y - y0);
                             rect_hl.q.x = int2fixed(state.rect.width) + rect_hl.p.x;
                             rect_hl.q.y = int2fixed(state.rect.height) + rect_hl.p.y;
-                            code = dev_proc(tdev, fill_rectangle_hl_color) (tdev, 
-                                                        &rect_hl, NULL, 
+                            code = dev_proc(tdev, fill_rectangle_hl_color) (tdev,
+                                                        &rect_hl, NULL,
                                                         &dev_color, NULL);
                         }
                         continue;
@@ -1725,13 +1724,13 @@ idata:                  data_size = 0;
                                 /* Strip tile with devn colors */
                                 cbp = cmd_read_rect(op & 0xf0, &state.rect, cbp);
                                 if_debug4('L', " x=%d y=%d w=%d h=%d\n",
-                                          state.rect.x, state.rect.y, 
+                                          state.rect.x, state.rect.y,
                                           state.rect.width,state.rect.height);
                                 code = (*dev_proc(tdev, strip_tile_rect_devn))
                                     (tdev, &state_tile,
                                      state.rect.x - x0, state.rect.y - y0,
                                      state.rect.width, state.rect.height,
-                                     &(state.tile_color_devn[0]), 
+                                     &(state.tile_color_devn[0]),
                                      &(state.tile_color_devn[1]),
                                      tile_phase.x, tile_phase.y);
                                 break;
@@ -1765,7 +1764,7 @@ idata:                  data_size = 0;
                                         /* We still need to call pdct->read because it may change dev_color.type -
                                            see gx_dc_null_read.*/
                                         code = pdct->read(pdcolor, &imager_state,
-                                                          pdcolor, tdev, offset, 
+                                                          pdcolor, tdev, offset,
                                                           cbp, 0, mem);
                                         if (code < 0)
                                             goto out;
@@ -1778,7 +1777,7 @@ idata:                  data_size = 0;
                                         }
                                         l = min(left, cbuf.end - cbp);
                                         code = pdct->read(pdcolor, &imager_state,
-                                                          pdcolor, tdev, offset, 
+                                                          pdcolor, tdev, offset,
                                                           cbp, l, mem);
                                         if (code < 0)
                                             goto out;
@@ -1787,7 +1786,7 @@ idata:                  data_size = 0;
                                         offset += l;
                                         left -= l;
                                     }
-                                    code = gx_color_load(pdcolor, &imager_state, 
+                                    code = gx_color_load(pdcolor, &imager_state,
                                                          tdev);
                                     if (code < 0)
                                         goto out;
@@ -2459,7 +2458,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
         }
         cbp = r.ptr + 1;
     } else if (rep_height * bits->num_planes > 1 && width_bytes != bits->cb_raster) {
-        cbp = cmd_read_short_bits(pcb, data,
+        cbp = cmd_read_short_bits(pcb, data, bytes,
                                   width_bytes, rep_height * bits->num_planes,
                                   bits->cb_raster, cbp);
     } else {
@@ -2958,34 +2957,46 @@ static int apply_create_compositor(gx_device_clist_reader *cdev, gs_imager_state
 /* ---------------- Utilities ---------------- */
 
 /* Read and unpack a short bitmap */
+/*
+ * The 'raster' in the dest buffer may be larger than the 'width_bytes'
+ * in the src, so after reading we memmove data down to the proper
+ * alignment from the last line backwards.
+ * THIS RELIES on width_bytes <= raster to work.
+ */
 static const byte *
-cmd_read_short_bits(command_buf_t *pcb, byte *data, int width_bytes,
-                    int height, uint raster, const byte *cbp)
+cmd_read_short_bits(command_buf_t *pcb, byte *data, int tot_bytes,
+                    int width_bytes, int height, uint raster, const byte *cbp)
 {
-    uint bytes = width_bytes * height;
-    const byte *pdata = data /*src*/ + bytes;
-    byte *udata = data /*dest*/ + height * raster;
+    /* Note the following may read from the file past the end of the buffer */
+    /* leaving cbp at pcb->end. No further reading using cbp can be done    */
+    /* without top_up_cbuf to reload the buffer.                            */
+    cbp = cmd_read_data(pcb, data, tot_bytes, cbp);
 
-    cbp = cmd_read_data(pcb, data, width_bytes * height, cbp);
-    while (--height >= 0) {
-        udata -= raster, pdata -= width_bytes;
-        switch (width_bytes) {
-            default:
-                memmove(udata, pdata, width_bytes);
-                break;
-            case 6:
-                udata[5] = pdata[5];
-            case 5:
-                udata[4] = pdata[4];
-            case 4:
-                udata[3] = pdata[3];
-            case 3:
-                udata[2] = pdata[2];
-            case 2:
-                udata[1] = pdata[1];
-            case 1:
-                udata[0] = pdata[0];
-            case 0:;            /* shouldn't happen */
+    /* if needed, adjust buffer contents for dest raster > width_bytes */
+    if (width_bytes < raster) {
+        const byte *pdata = data /*src*/ + width_bytes * height;
+        byte *udata = data /*dest*/ + height * raster;
+
+        while (--height > 0) {	/* don't need to move the first line to itself */
+            udata -= raster, pdata -= width_bytes;
+            switch (width_bytes) {
+                default:
+                    memmove(udata, pdata, width_bytes);
+                    break;
+                case 6:
+                    udata[5] = pdata[5];
+                case 5:
+                    udata[4] = pdata[4];
+                case 4:
+                    udata[3] = pdata[3];
+                case 3:
+                    udata[2] = pdata[2];
+                case 2:
+                    udata[1] = pdata[1];
+                case 1:
+                    udata[0] = pdata[0];
+                case 0:;            /* shouldn't happen */
+            }
         }
     }
     return cbp;
