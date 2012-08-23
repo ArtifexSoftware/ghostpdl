@@ -212,19 +212,6 @@ gs_main_init1(gs_main_instance * minst)
     return 0;
 }
 
-/* Initialization to be done before running any files. */
-static void
-init2_make_string_array(i_ctx_t *i_ctx_p, const ref * srefs, const char *aname)
-{
-    const ref *ifp = srefs;
-    ref ifa;
-
-    for (; ifp->value.bytes != 0; ifp++);
-    make_tasv(&ifa, t_array, a_readonly | avm_foreign,
-              ifp - srefs, const_refs, srefs);
-    initial_enter_name(aname, &ifa);
-}
-
 /*
  * Invoke the interpreter. This layer doesn't do much (previously stdio
  * callouts were handled here instead of in the stream processing.
@@ -253,7 +240,7 @@ int gs_main_init2aux(gs_main_instance * minst) {
 
     if (minst->init_done < 2) {
         int code, exit_code;
-        ref error_object;
+        ref error_object, ifa;
 
         code = zop_init(i_ctx_p);
         if (code < 0)
@@ -263,9 +250,17 @@ int gs_main_init2aux(gs_main_instance * minst) {
             return code;
 
         /* Set up the array of additional initialization files. */
-        init2_make_string_array(i_ctx_p, gs_init_file_array, "INITFILES");
+        make_const_string(&ifa, a_readonly | avm_foreign, gs_init_files_sizeof - 2, gs_init_files);
+        code = initial_enter_name("INITFILES", &ifa);
+        if (code < 0)
+            return code;
+
         /* Set up the array of emulator names. */
-        init2_make_string_array(i_ctx_p, gs_emulator_name_array, "EMULATORS");
+        make_const_string(&ifa, a_readonly | avm_foreign, gs_emulators_sizeof - 2, gs_emulators);
+        code = initial_enter_name("EMULATORS", &ifa);
+        if (code < 0)
+            return code;
+
         /* Pass the search path. */
         code = initial_enter_name("LIBPATH", &minst->lib_path.list);
         if (code < 0)

@@ -25,7 +25,9 @@ extern const byte gs_init_string[];
 extern const uint gs_init_string_sizeof;
 
 /* Configuration information imported from iconf.c */
-extern const ref gs_init_file_array[];
-extern const ref gs_emulator_name_array[];
+extern const byte gs_init_files[];
+extern const uint gs_init_files_sizeof;
+extern const byte gs_emulators[];
+extern const uint gs_emulators_sizeof;
 
 #endif /* iconf_INCLUDED */

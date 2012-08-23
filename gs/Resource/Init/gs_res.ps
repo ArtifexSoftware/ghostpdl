@@ -694,7 +694,7 @@ mark
  /ColorSpaceFamily
    { }	% These must be deferred, because optional features may add some.
  /Emulator
-   mark EMULATORS { cvn } forall .packtomark
+   mark EMULATORS { <00> search { exch pop cvn exch }{ cvn exit } ifelse } .bind loop .packtomark
  /Filter
    { }	% These must be deferred, because optional features may add some.
  /IODevice

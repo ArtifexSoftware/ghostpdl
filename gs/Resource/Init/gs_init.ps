@@ -1685,7 +1685,7 @@ setpacking
 % Load the initialization files for optional features.
 %% Replace 4 INITFILES
 systemdict /INITFILES known
- { INITFILES { dup runlibfile VMDEBUG } forall
+ { INITFILES { <00> search { exch pop dup runlibfile VMDEBUG }{ dup runlibfile VMDEBUG exit } ifelse } .bind loop
  }
 if
 

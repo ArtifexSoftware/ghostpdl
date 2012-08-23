@@ -31,25 +31,21 @@
 const gs_main_instance gs_main_instance_init_values =
 {gs_main_instance_default_init_values};
 
-/* Set up the .ps file name string array. */
-/* We fill in the lengths at initialization time. */
-#define ref_(t) struct { struct tas_s tas; t value; }
-#define string_(s,len)\
- { { (t_string<<r_type_shift) + a_readonly + avm_foreign, len }, s },
-#define psfile_(fns,len) string_(fns,len)
-const ref_(const char *) gs_init_file_array[] = {
+/* Set up the .ps file name string. */
+#define psfile_(fns,len) fns "\000"
+const byte gs_init_files[] =
 #include "gconf.h"
-    string_(0, 0)
-};
+;
 #undef psfile_
+const uint gs_init_files_sizeof = sizeof(gs_init_files);
 
-/* Set up the emulator name string array similarly. */
-#define emulator_(ems,len) string_(ems,len)
-const ref_(const char *) gs_emulator_name_array[] = {
+/* Set up the emulator name string. */
+#define emulator_(ems,len) ems "\000"
+const byte gs_emulators[] =
 #include "gconf.h"
-    string_(0, 0)
-};
+;
 #undef emulator_
+const uint gs_emulators_sizeof = sizeof(gs_emulators);
 
 /* Set up the function type table similarly. */
 #define function_type_(i,proc) extern build_function_proc(proc);

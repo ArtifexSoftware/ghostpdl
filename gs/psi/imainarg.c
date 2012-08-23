@@ -1080,17 +1080,10 @@ print_emulators(const gs_main_instance *minst)
 {
     outprintf(minst->heap, "%s", help_emulators);
     {
-        const ref *pes;
+        const byte *s;
 
-        for (pes = gs_emulator_name_array;
-             pes->value.const_bytes != 0; pes++
-            )
-            /*
-             * Even though gs_emulator_name_array is declared and used as
-             * an array of string refs, each string is actually a
-             * (null terminated) C string.
-             */
-            outprintf(minst->heap, " %s", (const char *)pes->value.const_bytes);
+        for (s = gs_emulators; s[0] != 0; s += strlen((const char *)s) + 1)
+            outprintf(minst->heap, " %s", s);
     }
     outprintf(minst->heap, "\n");
 }
