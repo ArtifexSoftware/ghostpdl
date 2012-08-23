@@ -40,6 +40,18 @@ typedef uint8_t byte;
 #define NULL ((void*)0)
 #endif
 
+/* To enable Memento, either uncomment the following, or arrange to
+ * predefine MEMENTO whilst building. */
+/* #define MEMENTO */
+
+/* If we are building as part of GS then make sure we use the version
+ * of MEMENTO that is part of gs (in case of version skew) */
+#ifdef GSBUILD
+#include "../base/memento.h"
+#else
+#include "memento.h"
+#endif
+
 typedef enum {
   JBIG2_FILE_HEADER,
   JBIG2_FILE_SEQUENTIAL_HEADER,
