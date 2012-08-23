@@ -1457,8 +1457,8 @@ gx_dc_pattern_write_raster(gx_color_tile *ptile, int64_t offset, byte *data,
     }
     if (offset1 == 0) { /* Serialize tile parameters: */
 #if defined(DEBUG) || defined(PACIFY_VALGRIND) || defined(MEMENTO)
-        gx_dc_serialized_tile_t buf = {};
-        gx_strip_bitmap buf1 = {};
+        gx_dc_serialized_tile_t buf = { 0 };
+        gx_strip_bitmap buf1 = { 0 };
 #else
         gx_dc_serialized_tile_t buf;
         gx_strip_bitmap buf1;

@@ -1131,7 +1131,7 @@ clist_icc_addprofile(gx_device_clist_writer *cldev, cmm_profile_t *iccprofile, i
     clist_file_ptr cfile = cldev->page_cfile;
     int64_t fileposit;
 #if defined(DEBUG) || defined(PACIFY_VALGRIND)
-    gsicc_serialized_profile_t profile_data = {};
+    gsicc_serialized_profile_t profile_data = { 0 };
 #else
     gsicc_serialized_profile_t profile_data;
 #endif

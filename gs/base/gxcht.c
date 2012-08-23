@@ -574,7 +574,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
                                 const gx_rop_source_t * source)
 {
 #if defined(PACIFY_VALGRIND) || defined(MEMENTO)
-    ulong tbits[tile_longs_allocated] = {};
+    ulong tbits[tile_longs_allocated] = { 0 };
 #else
     ulong tbits[tile_longs_allocated];
 #endif
