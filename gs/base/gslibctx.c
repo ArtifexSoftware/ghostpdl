@@ -78,7 +78,6 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
     }
 }
 
-
 int gs_lib_ctx_init( gs_memory_t *mem )
 {
     gs_lib_ctx_t *pio = 0;
@@ -93,10 +92,9 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     if (mem->gs_lib_ctx) /* one time initialization */
         return 0;
 
-    pio = mem->gs_lib_ctx =
-        (gs_lib_ctx_t*)gs_alloc_bytes_immovable(mem,
-                                                sizeof(gs_lib_ctx_t),
-                                                "gs_lib_ctx_init");
+    pio = (gs_lib_ctx_t*)gs_alloc_bytes_immovable(mem,
+                                                  sizeof(gs_lib_ctx_t),
+                                                  "gs_lib_ctx_init");
     if( pio == 0 )
         return -1;
 
@@ -110,14 +108,30 @@ int gs_lib_ctx_init( gs_memory_t *mem )
     /* id's 1 through 4 are reserved for Device color spaces; see gscspace.h */
     pio->gs_next_id           = 5;  /* this implies that each thread has its own complete state */
 
+    /* Need to set this before calling gs_lib_ctx_set_icc_directory. */
+    mem->gs_lib_ctx = pio;
     /* Initialize our default ICCProfilesDir */
     pio->profiledir = NULL;
     pio->profiledir_len = 0;
     gs_lib_ctx_set_icc_directory(mem, DEFAULT_DIR_ICC, strlen(DEFAULT_DIR_ICC));
+
+    /* Initialise the underlying CMS. */
+    if (gscms_create(mem)) {
+        gs_free_object(mem, pio, "gsicc_set_icc_directory");
+        mem->gs_lib_ctx = NULL;
+        return -1;
+    }
  
     gp_get_realtime(pio->real_time_0);
 
     return 0;
+}
+
+void gs_lib_ctx_fin( gs_memory_t *mem )
+{
+    if (!mem || !mem->gs_lib_ctx)
+        return;
+    gscms_destroy(mem);
 }
 
 gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
@@ -125,6 +139,20 @@ gs_lib_ctx_t *gs_lib_ctx_get_interp_instance(const gs_memory_t *mem)
     if (mem == NULL)
         return NULL;
     return mem->gs_lib_ctx;
+}
+
+void *gs_lib_ctx_get_cms_context( const gs_memory_t *mem )
+{
+    if (mem == NULL)
+        return NULL;
+    return mem->gs_lib_ctx->cms_context;
+}
+
+void gs_lib_ctx_set_cms_context( const gs_memory_t *mem, void *cms_context )
+{
+    if (mem == NULL)
+        return NULL;
+    mem->gs_lib_ctx->cms_context = cms_context;
 }
 
 /* Provide a single point for all "C" stdout and stderr.

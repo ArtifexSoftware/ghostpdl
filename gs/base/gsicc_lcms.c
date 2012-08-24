@@ -361,16 +361,17 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
 }
 
 /* Do any initialization if needed to the CMS */
-void
-gscms_create(void **contextptr)
+int
+gscms_create(gs_memory_t *memory)
 {
     /* Set our own error handling function */
     cmsSetErrorHandler((cmsErrorHandlerFunction) gscms_error);
+    return 0;
 }
 
 /* Do any clean up when done with the CMS if needed */
 void
-gscms_destroy(void **contextptr)
+gscms_destroy(gs_memory_t *memory)
 {
     /* Nothing to do here for lcms */
 }

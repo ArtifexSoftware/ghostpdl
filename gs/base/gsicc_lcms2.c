@@ -53,29 +53,35 @@ void *gs_lcms2_malloc(cmsContext id, unsigned int size)
 }
 
 static
-void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
-{
-    void *ptr2;
-    gs_memory_t *mem = (gs_memory_t *)id;
-
-    ptr2 = gs_resize_object(mem, ptr, size, "lcms");
-#if DEBUG_LCMS_MEM
-    gs_warn3("lcms realloc (%x,%d) at 0x%x",ptr,size,ptr2);
-#endif
-    return ptr2;
-}
-
-static
 void gs_lcms2_free(cmsContext id, void *ptr)
 {
-  gs_memory_t *mem = (gs_memory_t *)id;
-
+    gs_memory_t *mem = (gs_memory_t *)id;
     if (ptr != NULL) {
 #if DEBUG_LCMS_MEM
         gs_warn1("lcms free at 0x%x",ptr);
 #endif
         gs_free_object(mem, ptr, "lcms");
     }
+}
+
+static
+void *gs_lcms2_realloc(cmsContext id, void *ptr, unsigned int size)
+{
+    gs_memory_t *mem = (gs_memory_t *)id;
+    void *ptr2;
+
+    if (ptr == 0)
+        return gs_lcms2_malloc(id, size);
+    if (size == 0)
+    {
+        gs_lcms2_free(id, ptr);
+        return NULL;
+    }
+    ptr2 = gs_resize_object(mem, ptr, size, "lcms");
+#if DEBUG_LCMS_MEM
+    gs_warn3("lcms realloc (%x,%d) at 0x%x",ptr,size,ptr2);
+#endif
+    return ptr2;
 }
 
 static cmsPluginMemHandler gs_cms_memhandler =
@@ -421,17 +427,24 @@ gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
 }
 
 /* Do any initialization if needed to the CMS */
-void
-gscms_create(void **contextptr)
+int
+gscms_create(gs_memory_t *memory)
 {
     /* Set our own error handling function */
     cmsSetLogErrorHandler(gscms_error);
-    cmsPlugin(&gs_cms_memhandler);
+    cmsPluginTHR(memory, &gs_cms_memhandler);
+    /* If we had created any persitent state that we needed access to in the
+     * other functions, we should store that by calling:
+     *   gs_lib_ctx_set_cms_context(memory, state);
+     * We can then retrieve it anywhere else by calling:
+     *   gs_lib_ctx_get_cms_context(memory);
+     * LCMS currently uses no such state. */
+    return 0;
 }
 
 /* Do any clean up when done with the CMS if needed */
 void
-gscms_destroy(void **contextptr)
+gscms_destroy(gs_memory_t *memory)
 {
     /* Nothing to do here for lcms */
 }

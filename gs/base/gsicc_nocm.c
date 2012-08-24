@@ -399,7 +399,7 @@ gsicc_nocm_get_link(const gs_imager_state *pis, gx_device *dev,
     nocm_link->cm_procs.map_gray = cm_procs->map_gray;
     nocm_link->num_in = src_index;
     if (result != NULL) {
-        gsicc_set_link_data(result, nocm_link, NULL, hash, 
+        gsicc_set_link_data(result, nocm_link, hash,
                             pis->icc_link_cache->lock, false, false);
     }
     return result;

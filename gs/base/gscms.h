@@ -328,7 +328,6 @@ typedef struct gsicc_hashlink_s {
 
 struct gsicc_link_s {
     void *link_handle;
-    void *contextptr;
     gscms_procs_t procs;   
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;

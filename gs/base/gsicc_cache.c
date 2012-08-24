@@ -71,9 +71,9 @@ static void rc_gsicc_link_cache_free(gs_memory_t * mem, void *ptr_in, client_nam
 
 struct_proc_finalize(icc_link_finalize);
 
-gs_private_st_ptrs4_final(st_icc_link, gsicc_link_t, "gsiccmanage_link",
+gs_private_st_ptrs3_final(st_icc_link, gsicc_link_t, "gsiccmanage_link",
                     icc_link_enum_ptrs, icc_link_reloc_ptrs, icc_link_finalize,
-                    contextptr, icc_link_cache, next, wait);
+                    icc_link_cache, next, wait);
 
 struct_proc_finalize(icc_linkcache_finalize);
 
@@ -176,7 +176,6 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
     if (result != NULL) {
         /* set up placeholder values */
         result->next = NULL;
-        result->contextptr = NULL;
         result->link_handle = NULL;
         result->procs.map_buffer = gscms_transform_color_buffer;
         result->procs.map_color = gscms_transform_color;
@@ -197,12 +196,11 @@ gsicc_alloc_link(gs_memory_t *memory, gsicc_hashlink_t hashcode)
 }
 
 void
-gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle, void *contextptr,
-               gsicc_hashlink_t hashcode, gx_monitor_t *lock, 
-               bool includes_softproof, bool includes_devlink)
+gsicc_set_link_data(gsicc_link_t *icc_link, void *link_handle,
+                    gsicc_hashlink_t hashcode, gx_monitor_t *lock,
+                    bool includes_softproof, bool includes_devlink)
 {
     gx_monitor_enter(lock);		/* lock the cache while changing data */
-    icc_link->contextptr = contextptr;
     icc_link->link_handle = link_handle;
     icc_link->hashcode.link_hashcode = hashcode.link_hashcode;
     icc_link->hashcode.des_hash = hashcode.des_hash;
@@ -610,7 +608,6 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
     gsicc_hashlink_t hash;
     gsicc_link_t *link, *found_link;
     gcmmhlink_t link_handle = NULL;
-    void **contextptr = NULL;
     gsicc_manager_t *icc_manager = pis->icc_manager;
     gsicc_link_cache_t *icc_link_cache = pis->icc_link_cache;
     gs_memory_t *cache_mem = pis->icc_link_cache->memory;
@@ -802,14 +799,13 @@ gsicc_get_link_profile(const gs_imager_state *pis, gx_device *dev,
         }
     } else {
         link_handle = gscms_get_link(cms_input_profile, cms_output_profile,
-                                     rendering_params, cache_mem);
+                                     rendering_params, cache_mem->non_gc_memory);
     }
     gx_monitor_leave(gs_output_profile->lock);
     gx_monitor_leave(gs_input_profile->lock);
     if (link_handle != NULL) {
-        gsicc_set_link_data(link, link_handle, contextptr, hash,
-                            icc_link_cache->lock, include_softproof,
-                            include_devicelink);
+        gsicc_set_link_data(link, link_handle, hash, icc_link_cache->lock,
+                            include_softproof, include_devicelink);
         if_debug2m(gs_debug_flag_icc, cache_mem,
                    "[icc] New Link = 0x%x, hash = %I64d \n", 
                    link, hash.link_hashcode);

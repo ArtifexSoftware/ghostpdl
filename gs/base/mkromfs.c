@@ -80,6 +80,9 @@
 
 #include <zlib.h>
 
+/* We need to stub some functions */
+#include "gsicc_cms.h"
+
 /*
  * The rom file system is an array of pointers to nodes, terminated by a NULL
  */
@@ -2255,4 +2258,14 @@ main(int argc, char *argv[])
     printf("Total %%rom%% structure size is %d bytes.\n", totlen);
 
     return 0;
+}
+
+/* A couple of stub functions */
+int gscms_create(gs_memory_t *mem)
+{
+    return 0;
+}
+
+void gscms_destroy(gs_memory_t *mem)
+{
 }

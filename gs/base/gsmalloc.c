@@ -586,6 +586,7 @@ gs_malloc_release(gs_memory_t *mem)
 #else
     gs_malloc_memory_t * malloc_memory_default = (gs_malloc_memory_t *)mem;
 #endif
+    gs_lib_ctx_fin((gs_memory_t *)malloc_memory_default);
 
     gs_malloc_memory_release(malloc_memory_default);
 }

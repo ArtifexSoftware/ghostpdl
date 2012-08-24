@@ -43,9 +43,9 @@ gcmmhprofile_t gscms_get_profile_handle_file(gs_memory_t *mem,
                                              const char *filename);
 void gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
                                   gsicc_bufferdesc_t *input_buff_desc,
-                             gsicc_bufferdesc_t *output_buff_desc,
-                             void *inputbuffer,
-                             void *outputbuffer);
+                                  gsicc_bufferdesc_t *output_buff_desc,
+                                  void *inputbuffer,
+                                  void *outputbuffer);
 int gscms_get_channel_count(gcmmhprofile_t profile);
 int gscms_get_pcs_channel_count(gcmmhprofile_t profile);
 char* gscms_get_clrtname(gcmmhprofile_t profile, int colorcount);
@@ -56,15 +56,15 @@ void gscms_transform_color(gx_device *dev, gsicc_link_t *icclink, void *inputcol
 gcmmhlink_t gscms_get_link(gcmmhprofile_t lcms_srchandle,
                            gcmmhprofile_t lcms_deshandle,
                            gsicc_rendering_param_t *rendering_params,
-                           gs_memory_t *mem);
+                           gs_memory_t *memory);
 gcmmhlink_t gscms_get_link_proof_devlink(gcmmhprofile_t lcms_srchandle,
                                          gcmmhprofile_t lcms_proofhandle,
                                          gcmmhprofile_t lcms_deshandle, 
                                          gcmmhprofile_t lcms_devlinkhandle,
                                          gsicc_rendering_param_t *rendering_params,
                                          gs_memory_t *memory);
-void gscms_create(void **contextptr);
-void gscms_destroy(void **contextptr);
+int gscms_create(gs_memory_t *memory);
+void gscms_destroy(gs_memory_t *memory);
 void gscms_release_link(gsicc_link_t *icclink);
 void gscms_release_profile(void *profile);
 int gscms_transform_named_color(gsicc_link_t *icclink,  float tint_value,
