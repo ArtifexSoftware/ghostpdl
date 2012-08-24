@@ -594,7 +594,7 @@ run_stdin:
                 if ((code = gs_main_init1(minst)) < 0)
                     return code;
                 if (eqp == adef) {
-                    puts(minst->heap, "Usage: -dname, -dname=token, -sname=string");
+                    puts(minst->heap, "Usage: -dNAME, -dNAME=TOKEN, -sNAME=STRING");
                     return e_Fatal;
                 }
                 if (eqp == NULL) {
@@ -650,7 +650,7 @@ run_stdin:
                             gs_scanner_init_stream(&state, &astream);
                             code = gs_scan_token(minst->i_ctx_p, &value, &state);
                             if (code) {
-                                puts(minst->heap, "-dname= must be followed by a valid token");
+                                outprintf(minst->heap, "Invalid value for option -d%s, -dNAME= must be followed by a valid token\n", arg);
                                 return e_Fatal;
                             }
                             if (r_has_type_attrs(&value, t_name,
@@ -669,8 +669,7 @@ run_stdin:
                                 else if (string_is(nsref, "false", 5))
                                     make_false(&value);
                                 else {
-                                    puts(minst->heap,
-                                         "-dvar=name requires name=null, true, or false");
+                                    outprintf(minst->heap, "Invalid value for option -d%s, use -sNAME= to define string constants\n", arg);
                                     return e_Fatal;
                                 }
                             }
