@@ -450,12 +450,16 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
           pop oforce {
             dup oforce /Subtype get /Image eq {
               dup oforce /DecodeParms .knownget {
-                oforce {
-                  exch /JBIG2Globals eq {
-                    filter_params exch dadd
-                  } {
-                    pop
-                  } ifelse
+                oforce
+                dup type /dicttype eq { 1 array astore } if
+                {
+                  {
+                    exch /JBIG2Globals eq {
+                      filter_params exch dadd
+                    } {
+                      pop
+                    } ifelse
+                  } forall
                 } forall
               } if
               images exch dadd
