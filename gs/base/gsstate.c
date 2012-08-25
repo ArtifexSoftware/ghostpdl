@@ -843,13 +843,13 @@ gs_currenttextrenderingmode(const gs_state * pgs)
 
 /* sethpglpathmode */
 void
-gs_sethpglpathmode(gs_state * pgs, int path)
+gs_sethpglpathmode(gs_state * pgs, bool path)
 {
     pgs->hpgl_path_mode = path;
 }
 
 /* currenthpglpathmode */
-int
+bool
 gs_currenthpglpathmode(const gs_state * pgs)
 {
     return pgs->hpgl_path_mode;

@@ -515,18 +515,18 @@ zcurrenttextrenderingmode(i_ctx_t *i_ctx_p)
     return zcurrent_uint(i_ctx_p, gs_currenttextrenderingmode);
 }
 
-/* <int> .sethpglpathmode - */
+/* <bool> .sethpglpathmode - */
 static int
 zsethpglpathmode(i_ctx_t *i_ctx_p)
 {
-    return zset_uint(i_ctx_p, gs_sethpglpathmode);
+    return zset_bool(i_ctx_p, gs_sethpglpathmode);
 }
 
 /* - .currenthpglpathmode <int> */
 static int
 zcurrenthpglpathmode(i_ctx_t *i_ctx_p)
 {
-    return zcurrent_uint(i_ctx_p, gs_currenthpglpathmode);
+    return zcurrent_bool(i_ctx_p, gs_currenthpglpathmode);
 }
 
 /* ------ Initialization procedure ------ */
