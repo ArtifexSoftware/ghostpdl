@@ -1086,7 +1086,7 @@ static void
 display_separation_cmyk_cs_to_cmyk_cm(gx_device * dev,
     frac c, frac m, frac y, frac k, frac out[])
 {
-    int * map =
+    const int * map =
       (int *)(&((gx_device_display *) dev)->devn_params.separation_order_map);
 
     cmyk_cs_to_devn_cm(dev, map, c, m, y, k, out);

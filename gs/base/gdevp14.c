@@ -2515,7 +2515,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_imager_state * pis,
             ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
         }
         /* pop our transparency group which will force the blending */
-        code = pdf14_pop_transparency_group(pis, p14dev->ctx, p14dev->blend_procs,
+        code = pdf14_pop_transparency_group(pis_noconst, p14dev->ctx, p14dev->blend_procs,
                             p14dev->color_info.num_components,
                             p14dev->icc_struct->device_profile[0], pdev);
     }
@@ -2621,7 +2621,7 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_imager_state * pis,
     if (code < 0) return code;
     /* That in turn will get hit by the matrix in the imager state */
     code = compute_group_device_int_rect(p14dev, &group_rect,
-                                            &bbox_out, pis);
+                                            &bbox_out, (gs_imager_state *)pis);
     if (!(pim->Width == 0 || pim->Height == 0)) {
         code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
              1, 0, 255,255,
@@ -3237,7 +3237,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
 #endif
     pdf14_buf *buf = pdev->ctx->stack;
     int num_planes = dev->color_info.num_components;
-    byte *dptr = data + data_x;
+    byte *dptr = (byte *)data + data_x;
     int yinc, xinc, pi;
     gx_drawing_color dcolor;
     int code = 0;
@@ -3268,7 +3268,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
                                                &dcolor, true);
             dptr++;
         }
-        dptr = data + raster * yinc + data_x;
+        dptr = (byte *)data + raster * yinc + data_x;
     }
     return code;
 }
@@ -6627,7 +6627,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
                    information is written.  Hence the passing of the dimensions
                    for the group. */
                 code = pdf14_clist_update_params(pdev, pis, true,
-                                                    &(pdf14pct->params));
+                                                 (gs_pdf14trans_params_t *)&(pdf14pct->params));
                 if (pdf14pct->params.Background_components != 0 &&
                     pdf14pct->params.Background_components !=
                     pdev->color_info.num_components)
@@ -6703,7 +6703,7 @@ pdf14_clist_create_compositor(gx_device	* dev, gx_device ** pcdev,
             case PDF14_SET_BLEND_PARAMS:
                 /* If there is a change we go ahead and apply it to the target */
                 code = pdf14_clist_update_params(pdev, pis, false,
-                                                 &(pdf14pct->params));
+                                                 (gs_pdf14trans_params_t *)&(pdf14pct->params));
                 *pcdev = dev;
                 return code;
                 break;
@@ -6808,7 +6808,7 @@ pdf14_clist_update_params(pdf14_clist_device * pdev, const gs_imager_state * pis
         code = gs_create_pdf14trans(&pct_new, &params, pis->memory);
         if (code < 0) return code;
         code = dev_proc(pdev->target, create_compositor)
-                    (pdev->target, &pcdev, pct_new, pis, pis->memory, NULL);
+                    (pdev->target, &pcdev, pct_new, (gs_imager_state *)pis, pis->memory, NULL);
         gs_free_object(pis->memory, pct_new, "pdf14_clist_update_params");
     }
     return code;

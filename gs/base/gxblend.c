@@ -54,17 +54,17 @@ smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
 
     global_index++;
 #endif
-    dstptr = dst;
+    dstptr = (byte *)dst;
     /* If subtype is Luminosity then we should just grab the Y channel */
     if ( SMask_SubType == TRANSPARENCY_MASK_Luminosity ){
-        memcpy(dst, &(src[plane_stride]), plane_stride);
+        memcpy(dstptr, &(src[plane_stride]), plane_stride);
         return;
     }
     /* If we are alpha type, then just grab that */
     /* We need to optimize this so that we are only drawing alpha in the rect fills */
     if ( SMask_SubType == TRANSPARENCY_MASK_Alpha ){
         mask_alpha_offset = (n_chan - 1) * plane_stride;
-        memcpy(dst, &(src[mask_alpha_offset]), plane_stride);
+        memcpy(dstptr, &(src[mask_alpha_offset]), plane_stride);
         return;
     }
     /* To avoid the if statement inside this loop,
@@ -187,7 +187,7 @@ void smask_copy(int num_rows, int num_cols, int row_stride,
     int y;
     byte *dstptr,*srcptr;
 
-    dstptr = dst;
+    dstptr = (byte *)dst;
     srcptr = src;
     for ( y = 0; y < num_rows; y++ ) {
         memcpy(dstptr,srcptr,num_cols);

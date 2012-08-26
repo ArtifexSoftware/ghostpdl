@@ -380,7 +380,7 @@ top:
     /* If the CS is PS based and we have not yet converted to the ICC form
        then go ahead and do that now */
     if (gs_color_space_is_PSCIE(pcs) && pcs->icc_equivalent == NULL) {
-        gs_colorspace_set_icc_equivalent(pcs, &(is_lab), pis->memory);
+        gs_colorspace_set_icc_equivalent((gs_color_space *)pcs, &(is_lab), pis->memory);
     }
     rendering_params.black_point_comp = BP_ON;
     rendering_params.graphics_type_tag = GS_PATH_TAG;

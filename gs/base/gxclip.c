@@ -876,7 +876,7 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
     dev_proc_fill_path((*proc));
     int code;
     gx_clip_path cpath_intersection;
-    gx_clip_path *pcpath = pccd->pcpath;
+    gx_clip_path *pcpath = (gx_clip_path *)pccd->pcpath;
 
     if (pcpath != NULL) {
         gx_path rect_path;
@@ -886,7 +886,7 @@ clip_call_fill_path(clip_callback_data_t * pccd, int xc, int yc, int xec, int ye
         gx_path_init_local(&rect_path, pccd->ppath->memory);
         gx_path_add_rectangle(&rect_path, int2fixed(xc), int2fixed(yc), int2fixed(xec), int2fixed(yec));
         code = gx_cpath_intersect(&cpath_intersection, &rect_path,
-                                  gx_rule_winding_number, pccd->pis);
+                                  gx_rule_winding_number, (gs_imager_state *)(pccd->pis));
         gx_path_free(&rect_path, "clip_call_fill_path");
     } else {
         gs_fixed_rect clip_box;

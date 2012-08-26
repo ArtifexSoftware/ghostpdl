@@ -70,7 +70,7 @@ rgb_cs_to_devn_cm(gx_device * dev, int * map,
 
 /* Convert a CMYK color space to DeviceN colorants. */
 void
-cmyk_cs_to_devn_cm(gx_device * dev, int * map,
+cmyk_cs_to_devn_cm(gx_device * dev, const int * map,
                 frac c, frac m, frac y, frac k, frac out[])
 {
     int i = dev->color_info.num_components - 1;

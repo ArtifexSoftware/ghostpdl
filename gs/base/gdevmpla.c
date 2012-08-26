@@ -1840,7 +1840,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
             return gs_note_error(gs_error_VMerror);
         }
         for (j = 0; j < mdev->num_planes; j++) {
-            sbuf = sdata + j * sraster;
+            sbuf = (byte *)sdata + j * sraster;
             for (i = height; i > 0; i--) {
                 *line_ptrs++ = sbuf;
                 sbuf += sraster;

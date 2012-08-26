@@ -861,7 +861,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
                 ctile->ttrans->fill_trans_buffer = NULL;
             } else {
                 dev_proc(ctile->ttrans->pdev14, close_device)((gx_device *)ctile->ttrans->pdev14);
-                temp_device = ctile->ttrans->pdev14;
+                temp_device = (gx_device *)(ctile->ttrans->pdev14);
                 gx_device_retain(temp_device, false);
                 rc_decrement(temp_device,"gx_pattern_cache_free_entry");
                 ctile->ttrans->pdev14 = NULL;
@@ -1307,7 +1307,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
         return 0;
 
     /* Get enough space in the cache for this pattern (estimated if it is a clist) */
-    gx_pattern_cache_ensure_space(pis, gx_pattern_size_estimate(pinst, has_tags));
+    gx_pattern_cache_ensure_space((gs_imager_state *)pis, gx_pattern_size_estimate(pinst, has_tags));
     /*
      * Note that adev is an internal device, so it will be freed when the
      * last reference to it from a graphics state is deleted.

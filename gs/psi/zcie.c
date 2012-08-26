@@ -228,7 +228,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
         }
     }
     if (code < 0) {
-        gs_free_object(mem, table, "cie_table_param");
+        gs_free_object((gs_memory_t *)mem, table, "cie_table_param");
         return code;
     }
     pclt->table = table;
@@ -666,7 +666,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, ulong dictkey)
         code = cie_a_param(imemory, CIEdict, pcie, &procs, &has_a_procs,
                                 &has_lmn_procs);
         /* Push finalize procedure on the execution stack */
-        code = cie_cache_push_finish(i_ctx_p, cie_a_finish, imem, pcie);
+        code = cie_cache_push_finish(i_ctx_p, cie_a_finish, (gs_ref_memory_t *)imem, pcie);
         if (!has_a_procs && !has_lmn_procs) {
             pcie->common.caches.DecodeLMN->floats
                 .params.is_identity = true;
