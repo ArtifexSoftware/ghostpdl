@@ -1430,11 +1430,11 @@ typedef struct gx_dc_serialized_tile_s {
 } gx_dc_serialized_tile_t;
 
 enum {
-    TILE_HAS_OVERLAP = 0x80000000,
-    TILE_IS_SIMPLE   = 0x40000000,
-    TILE_USES_TRANSP = 0x20000000,
-    TILE_IS_CLIST    = 0x10000000,
-    TILE_TYPE_MASK   = 0x0F000000,
+    TILE_HAS_OVERLAP = 0x40000000,
+    TILE_IS_SIMPLE   = 0x20000000,
+    TILE_USES_TRANSP = 0x10000000,
+    TILE_IS_CLIST    = 0x08000000,
+    TILE_TYPE_MASK   = 0x07000000,	/* TilingType values are 1, 2, 3 */
     TILE_TYPE_SHIFT  = 24,
     TILE_DEPTH_MASK  = 0x00FFFFFF
 };
