@@ -47,6 +47,15 @@ void clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem);
 void clist_cfd_init(stream_CFD_state *ss, int width, int height,
                     gs_memory_t *mem);
 
+/* Write out a block of data of arbitrary size and content to a      */
+/* specified band at the given offset PAST the last band in the page */
+/* Used for various data such as the icc profile table and the       */
+/* per band color_usage array                                        */
+/*                                                                   */
+/* If the size is not well defined, then the data itself should      */
+/* contain information for length or logical end-of-data.            */
+int cmd_write_pseudo_band(gx_device_clist_writer *cldev, unsigned char *pbuf,
+                          int data_size, int pseudo_band_offset);
 /*
  * A command always consists of an operation followed by operands;
  * the syntax of the operands depends on the operation.
@@ -229,8 +238,6 @@ typedef struct cmd_block_s {
     int band_min, band_max;
 #define cmd_band_end (-1)	/* end of band file */
     int64_t pos;		/* starting position in cfile */
-    gx_band_complexity_t band_complexity;
-
 } cmd_block;
 
 /* ---------------- Band state ---------------- */
@@ -270,7 +277,6 @@ struct gx_clist_state_s {
     /* Following are only used when writing */
     cmd_list list;		/* list of commands for band */
     /* Following are set when writing, read when reading */
-    gx_band_complexity_t band_complexity;
     gx_color_usage_t color_usage;
 };
 
@@ -283,7 +289,7 @@ struct gx_clist_state_s {
          { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
         { {NULL}, {NULL} },\
          { 0, 0, 0, 0 }, lop_default, 0, 0, 0, 0, initial_known,\
-        { 0, 0 }, /* cmd_list */ { 0, 0 }, /* band_complexity */\
+        { 0, 0 }, /* cmd_list */\
         { 0, /* or */\
           0, /* slow rop */\
           { { max_int, max_int }, /* p */ { min_int, min_int } /* q */ } /* trans_bbox */\
@@ -773,18 +779,20 @@ int clist_writer_push_cropping(gx_device_clist_writer *cdev, int ry, int rheight
 int clist_writer_pop_cropping(gx_device_clist_writer *cdev);
 int clist_writer_check_empty_cropping_stack(gx_device_clist_writer *cdev);
 int clist_read_icctable(gx_device_clist_reader *crdev);
+int clist_read_color_usage_array(gx_device_clist_reader *crdev);
 
 /* Special write out for the serialized icc profile table */
 
 int cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size);
 
 /* Enumeration of psuedo band offsets for extra c-list data.
-   This includes the ICC profile table and may later include
-   compressed image data */
+   This includes the ICC profile table and and color_usage and
+   may later include compressed image data */
 
 typedef enum {
 
-    ICC_BAND_OFFSET = 1
+    COLOR_USAGE_OFFSET = 1,
+    ICC_TABLE_OFFSET = 2
 
 } psuedoband_offset;
 

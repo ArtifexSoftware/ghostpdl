@@ -571,7 +571,8 @@ int gdev_prn_color_usage(gx_device *dev, int y, int height,
                          int *range_start);
 /*
  * Determine the colors used in a saved page.  We still need the device
- * in order to know the total page height.
+ * in order to know the total page height. Saved pages are always
+ * clist, so we will get this using clist_read_color_usage_array.
  */
 int gx_page_info_color_usage(const gx_device *dev,
                              const gx_band_page_info_t *page_info,
@@ -692,7 +693,7 @@ typedef dev_proc_create_buf_device((*create_buf_device_proc_t));
 int gdev_create_buf_device(create_buf_device_proc_t cbd_proc,
                            gx_device **pbdev, gx_device *target, int y,
                            const gx_render_plane_t *render_plane,
-                           gs_memory_t *mem, gx_band_complexity_t *band_complexity);
+                           gs_memory_t *mem, gx_color_usage_t *color_usage);
 
 /* BACKWARD COMPATIBILITY */
 #define dev_print_scan_lines(dev)\

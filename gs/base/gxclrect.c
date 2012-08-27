@@ -353,7 +353,6 @@ clist_fill_rectangle(gx_device * dev, int rx, int ry, int rwidth, int rheight,
     do {
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or |= color_usage;
-        re.pcls->band_complexity.uses_color |= ((color_usage != 0) && (color_usage != gx_color_usage_all(cdev)));
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             if (code >= 0 && color != re.pcls->colors[1]) {
@@ -414,7 +413,6 @@ clist_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     do {
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or = gx_color_usage_all(cdev);
-        re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             code = cmd_put_drawing_color(cdev, re.pcls, pdcolor, &re,
@@ -664,7 +662,6 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
 
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or = gx_color_usage_all(cdev);
-        re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
         } while (RECT_RECOVER(code));
@@ -756,10 +753,6 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
 
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or |= color_usage;
-        re.pcls->band_complexity.uses_color |=
-            ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
-            ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
-
         do {
             code = cmd_disable_lop(cdev, re.pcls);
         } while (RECT_RECOVER(code));
@@ -824,9 +817,6 @@ clist_copy_mono(gx_device * dev,
     gx_color_usage_bits color_usage =
         (color0 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color0)) |
         (color1 == gx_no_color_index ? 0 : gx_color_index2usage(dev, color1));
-    bool uses_color =
-        ((color0 != gx_no_color_index) && (color0 != 0xffffff) && (color0 != 0)) ||
-        ((color1 != gx_no_color_index) && (color1 != 0xffffff) && (color1 != 0));
     cmd_rects_enum_t re;
 
     fit_copy(dev, data, data_x, raster, id, rx, ry, rwidth, rheight);
@@ -853,7 +843,6 @@ clist_copy_mono(gx_device * dev,
 
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or |= color_usage;
-        re.pcls->band_complexity.uses_color |= uses_color;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             if (code >= 0)
@@ -1133,7 +1122,6 @@ clist_copy_color(gx_device * dev,
 
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or |= all;
-        re.pcls->band_complexity.uses_color = 1;
 
         do {
             code = cmd_disable_lop(cdev, re.pcls);
@@ -1268,7 +1256,6 @@ clist_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
 
         RECT_STEP_INIT(re);
         re.pcls->color_usage.or = all;
-        re.pcls->band_complexity.uses_color = true;
         do {
             code = cmd_disable_lop(cdev, re.pcls);
             if (code >= 0)
@@ -1655,7 +1642,6 @@ clist_strip_copy_rop2(gx_device * dev,
                     (((gx_color_usage_bits)(rop_proc_table[color_rop])(D, (rop_operand)(S>>(8*sizeof(rop_operand))), (rop_operand)(T>>(8*sizeof(rop_operand)))))<<(8*sizeof(rop_operand))) & all;
         }
         re.pcls->color_usage.slow_rop |= slow_rop;
-        re.pcls->band_complexity.nontrivial_rops |= slow_rop;
         if (rop3_uses_T(rop)) {
             if (tcolors == 0 || tcolors[0] != tcolors[1]) {
                 ulong offset_temp;

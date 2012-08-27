@@ -246,12 +246,6 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* should properly calculate color_usage, but for now just punt */
     pcls->color_usage.or = gx_color_usage_all(cldev);
 
-    /* Here we can't know whether a pattern paints colors besides
-       black and white, so assume that it does.
-       todo: provide this info with a pattern tile. */
-    pcls->band_complexity.uses_color |= is_pattern ||
-                (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
-
     /* record the color we have just serialized color */
     pdcolor->type->save_dc(pdcolor, &pcls->sdc);
     if (pattern_id) {

@@ -207,7 +207,7 @@ clist_setup_render_threads(gx_device *dev, int y)
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                 &(thread->bdev), ndev,
                                 band*crdev->page_band_height, NULL,
-                                thread->memory, clist_get_band_complexity(dev,y)) < 0))
+                                thread->memory, &(crdev->color_usage_array[0])) < 0))
             break;
         if ((thread->sema_this = gx_semaphore_alloc(thread->memory)) == NULL ||
             (thread->sema_group = gx_semaphore_alloc(thread->memory)) == NULL) {
@@ -578,7 +578,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
     mdata = crdev->data + crdev->page_tile_cache_size;
     if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                   &bdev, cdev->target, y, NULL,
-                                  mem, clist_get_band_complexity(dev,y))) < 0 ||
+                                  mem, &(crdev->color_usage_array[band]))) < 0 ||
         (code = crdev->buf_procs.setup_buf_device(bdev, mdata, raster, NULL,
                             y - crdev->ymin, line_count, crdev->ymax - crdev->ymin)) < 0)
         goto free_thread_out;
@@ -622,7 +622,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
 
         code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                       &bdev, cdev->target, y, NULL,
-                                      mem, clist_get_band_complexity(dev, y));
+                                      mem, &(crdev->color_usage_array[band]));
         if (code < 0)
             return code;
         band_params = *params;

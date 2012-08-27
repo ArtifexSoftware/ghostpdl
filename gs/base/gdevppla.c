@@ -112,7 +112,7 @@ gdev_prn_set_planar(gx_device_memory *mdev, const gx_device *tdev)
 int
 gdev_prn_create_buf_planar(gx_device **pbdev, gx_device *target, int y,
                            const gx_render_plane_t *render_plane,
-                           gs_memory_t *mem, gx_band_complexity_t *for_band)
+                           gs_memory_t *mem, gx_color_usage_t *for_band)
 {
     int code = gx_default_create_buf_device(pbdev, target, y, render_plane, mem,
                                             for_band);

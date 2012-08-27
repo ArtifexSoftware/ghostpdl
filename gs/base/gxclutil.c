@@ -161,7 +161,7 @@ clist_update_trans_bbox(gx_device_clist_writer *cldev, gs_int_rect *bbox)
 /* Write the commands for one band or band range. */
 static int	/* ret 0 all ok, -ve error code, or +1 ok w/low-mem warning */
 cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
-               cmd_list * pcl, gx_band_complexity_t *band_complexity, byte cmd_end)
+               cmd_list * pcl, byte cmd_end)
 {
     const cmd_prefix *cp = pcl->head;
     int code_b = 0;
@@ -178,9 +178,8 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
         cb.band_min = band_min;
         cb.band_max = band_max;
         cb.pos = cldev->page_info.io_procs->ftell(cfile);
-        clist_copy_band_complexity(&cb.band_complexity, band_complexity);
-        if_debug4m('l', cldev->memory, "[l]writing for bands (%d,%d) at %ld K %d \n",
-                   band_min, band_max, (long)cb.pos, cb.band_complexity.uses_color);
+        if_debug3m('l', cldev->memory, "[l]writing for bands (%d,%d) at %ld K %d \n",
+                  band_min, band_max, (long)cb.pos);
         cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
         if (cp != 0) {
             pcl->tail->next = 0;	/* terminate the list */
@@ -212,15 +211,14 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
     return code_b | code_c;
 }
 
-/* Write out the ICC profile table */
-
+/* Write out a pseudo-band block of data, using the specific pseudo_band_offset */
 int
-cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size)
+cmd_write_pseudo_band(gx_device_clist_writer * cldev, unsigned char *pbuf, int data_size, int pseudo_band_offset)
 {
 
-    /* Data is written out maxband + ICC_BAND_OFFSET */
+    /* Data is written out maxband + pseudo_band_offset */
 
-    int band = cldev->band_range_max + ICC_BAND_OFFSET;
+    int band = cldev->band_range_max + pseudo_band_offset;
     clist_file_ptr cfile = cldev->page_cfile;
     clist_file_ptr bfile = cldev->page_bfile;
     cmd_block cb;
@@ -230,25 +228,20 @@ cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data
         return_error(gs_error_ioerror);
 
     /* Set up the command block information that
-       is stored in the bfile.  Note complexity information
-       is filled in but not used. */
+       is stored in the bfile. */
 
-    cb.band_complexity.nontrivial_rops = false;
-    cb.band_complexity.uses_color = false;
     cb.band_min = band;
     cb.band_max = band;
     cb.pos = cldev->page_info.io_procs->ftell(cfile);
 
-    if_debug2m('l', cldev->memory, "[l]writing icc table band %d cb pos %ld\n",
-               band, (long)cb.pos);
+    if_debug2m('l', cldev->memory, "[l]writing pseudo band %d cb pos %ld\n",
+                  band, (long)cb.pos);
 
     cldev->page_info.io_procs->fwrite_chars(&cb, sizeof(cb), bfile);
 
-    /* Now store the ICC table information in the cfile */
-    /* Do I need to worry about having enough room here? */
-
-    if_debug1m('l', cldev->memory, "[l]writing icc table in cfile at %ld\n",
-               (long)cldev->page_info.io_procs->ftell(cfile));
+    /* Now store the information in the cfile */
+    if_debug2m('l', cldev->memory, "[l]writing %d bytes into cfile at %ld\n",
+            data_size, (long)cldev->page_info.io_procs->ftell(cfile));
 
     cldev->page_info.io_procs->fwrite_chars(pbuf, data_size, cfile);
 
@@ -262,7 +255,6 @@ cmd_write_icctable(gx_device_clist_writer * cldev, unsigned char *pbuf, int data
         return_error(code_c);
 
     return code_b | code_c;
-
 }
 
 /* Write out the buffered commands, and reset the buffer. */
@@ -275,7 +267,6 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     int code = cmd_write_band(cldev, cldev->band_range_min,
                               cldev->band_range_max,
                               &cldev->band_range_list,
-                              NULL,
                               cmd_opv_end_run);
 
     int warning = code;
@@ -283,7 +274,7 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
     for (band = 0, pcls = cldev->states;
          code >= 0 && band < nbands; band++, pcls++
          ) {
-        code = cmd_write_band(cldev, band, band, &pcls->list, &pcls->band_complexity, cmd_end);
+        code = cmd_write_band(cldev, band, band, &pcls->list, cmd_end);
         warning |= code;
     }
     /* If an error occurred, finish cleaning up the pointers. */

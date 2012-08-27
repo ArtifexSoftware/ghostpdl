@@ -401,8 +401,8 @@ typedef struct gx_device_clist_reader_s {
     gx_render_plane_t yplane;		/* current plane, index = -1 */
                                         /* means all planes */
     const gx_placed_page *pages;
+    gx_color_usage_t *color_usage_array; /* per band color_usage */
     int num_pages;
-    gx_band_complexity_t *band_complexity_array;  /* num_bands elements */
     void *offset_map; /* Just against collecting the map as garbage. */
     int num_render_threads;		/* number of threads being used */
     clist_render_thread_control_t *render_threads;	/* array of threads */
@@ -471,14 +471,6 @@ int clist_close_output_file(gx_device *dev);
  */
 int clist_close_page_info(gx_band_page_info_t *ppi);
 
-/*
- * Compute the colors-used information in the page_info structure from the
- * information in the individual writer bands.  This is only useful at the
- * end of a page.  gdev_prn_color_usage calls this procedure if it hasn't
- * been called since the page was started.  clist_end_page also calls it.
- */
-void clist_compute_color_usage(gx_device_clist_writer *cldev);
-
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED
 #  define gx_device_printer_DEFINED
@@ -504,23 +496,6 @@ int clist_render_rectangle(gx_device_clist *cdev,
                            const gx_render_plane_t *render_plane,
                            bool clear);
 
-/* A null pointer is used to denote not banding.
- * Since false == NULL the old usage of for_banding = false works even if it's hackish.
- *
- * returns the complexity for a band given the y offset from top of page.
- */
-gx_band_complexity_t *
-clist_get_band_complexity(gx_device *dev, int y);
-
-/* Free any band_complexity_array memory used by the clist reader device */
-void gx_clist_reader_free_band_complexity_array(gx_device_clist *cldev);
-
-/* deep copy constructor if from != NULL
- * default constructor if from == NULL
- */
-void
-clist_copy_band_complexity(gx_band_complexity_t *this, const gx_band_complexity_t *from);
-
 /* Optimization of PDF 1.4 transparency requires a trans_bbox for each band */
 /* This function updates the clist writer states with the bbox provided. */
 void clist_update_trans_bbox(gx_device_clist_writer *dev, gs_int_rect *bbox);
@@ -531,6 +506,14 @@ int clist_data_size(const gx_device_clist *cdev, int select);
 int clist_get_data(const gx_device_clist *cdev, int select, int64_t offset, byte *buf, int length);
 /* Put command list data. */
 int clist_put_data(const gx_device_clist *cdev, int select, int64_t offset, const byte *buf, int length);
+
+/* Write out the array of color usage entries (one per band) */
+int clist_write_color_usage_array(gx_device_clist_writer *cldev);
+
+/* get the color_usage summary over a Y range from the clist writer states */
+/* Not expected to be used */
+int clist_writer_color_usage(gx_device_clist_writer *cldev, int y, int height,
+                     gx_color_usage_t *color_usage, int *range_start);
 
 /* ICC table prototypes */
 

@@ -43,7 +43,6 @@
 #include "strimpl.h"
 
 /* forward decl */
-static int gx_clist_reader_read_band_complexity(gx_device_clist *dev);
 private_st_clist_icctable_entry();
 private_st_clist_icctable();
 
@@ -199,12 +198,10 @@ rb:
                 ss->offset_map_length++;
             }
 #	    endif
-            if_debug7m('l', ss->local_memory,
-                       "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u color %d rop %d\n",
-                       bmin, bmax,
-                       (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), /* stefan foo was: 2 * sizeof ?? */
-                       (long)pos, left, ss->b_this.band_complexity.uses_color,
-                       ss->b_this.band_complexity.nontrivial_rops);
+            if_debug5m('l', st->memory,
+                      "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
+                      bmin, bmax,
+                      (long)(io_procs->ftell(bfile) - sizeof(ss->b_this)), (long)pos, left);
         }
     }
     pw->ptr = q;
@@ -355,7 +352,11 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
         code = clist_render_init(cldev);
         if (code < 0)
             return code;
-         /* Check for and get ICC profile table */
+        /* allocate and load the color_usage_array */
+        code = clist_read_color_usage_array(crdev);
+        if (code < 0)
+            return code;
+        /* Check for and get ICC profile table */
         code = clist_read_icctable(crdev);
         if (code < 0)
             return code;
@@ -375,8 +376,8 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
 /* Used to find the command block information in the bfile
    that is related to extra information stored in a psuedo band.
    Currently application of this is storage of the ICC profile
-   table.  We may eventually use this for storing other information
-   like compressed images.   */
+   table and the per-band color_usage array.  We may eventually
+   use this for storing other information like compressed images.   */
 
 static int
 clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
@@ -422,6 +423,29 @@ clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsi
     return 0;
 }
 
+/* read the color_usage_array back from the pseudo band */
+int
+clist_read_color_usage_array(gx_device_clist_reader *crdev)
+{
+    int code, size_data = crdev->nbands * sizeof(gx_color_usage_t );
+    cmd_block cb;
+
+    if (crdev->color_usage_array != NULL)
+        gs_free_object(crdev->memory, crdev->color_usage_array,
+                       "clist reader color_usage_array");
+    crdev->color_usage_array = (gx_color_usage_t *)gs_alloc_bytes(crdev->memory, size_data,
+                       "clist reader color_usage_array");
+    if (crdev->color_usage_array == NULL)
+        return_error(gs_error_VMerror);
+
+    code = clist_find_pseudoband(crdev, crdev->nbands + COLOR_USAGE_OFFSET - 1, &cb);
+    if (code < 0)
+        return code;
+
+    code = clist_read_chunk(crdev, cb.pos, size_data, (unsigned char *)crdev->color_usage_array);
+    return code;
+}
+
 /* Unserialize the icc table information stored in the cfile and
    place it in the reader device */
 static int
@@ -450,7 +474,7 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
         return gs_rethrow(-1, "insufficient memory for icc table buffer reader");
     /* Get the data */
     clist_read_chunk(crdev, cb->pos + 4, size_data, buf);
-    icc_table = gs_alloc_struct(stable_mem, clist_icctable_t, 
+    icc_table = gs_alloc_struct(stable_mem, clist_icctable_t,
                                 &st_clist_icctable, "clist_read_icctable");
     if (icc_table == NULL) {
         gs_free_object(stable_mem, buf_start, "clist_read_icctable");
@@ -496,7 +520,7 @@ clist_read_icctable(gx_device_clist_reader *crdev)
 
     /* First get the command block which will tell us where the
        information is stored in the cfile */
-    code = clist_find_pseudoband(crdev, crdev->nbands + ICC_BAND_OFFSET - 1, &cb);
+    code = clist_find_pseudoband(crdev, crdev->nbands + ICC_TABLE_OFFSET - 1, &cb);
     if (code < 0)
         return(0);   /* No ICC information */
     /* Unserialize the icc_table from the cfile */
@@ -509,21 +533,19 @@ int
 clist_render_init(gx_device_clist *dev)
 {
     gx_device_clist_reader * const crdev = &dev->reader;
-    int code;
 
     crdev->ymin = crdev->ymax = 0;
     crdev->yplane.index = -1;
     /* For normal rasterizing, pages and num_pages are zero. */
     crdev->pages = 0;
     crdev->num_pages = 0;
-    crdev->band_complexity_array = NULL;
     crdev->offset_map = NULL;
     crdev->icc_table = NULL;
+    crdev->color_usage_array = NULL;
     crdev->icc_cache_cl = NULL;
     crdev->render_threads = NULL;
 
-    code = gx_clist_reader_read_band_complexity(dev);
-    return code;
+    return 0;
 }
 
 /* Copy a rasterized rectangle to the client, rasterizing if needed. */
@@ -532,6 +554,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
                          gs_get_bits_params_t *params, gs_int_rect **unread)
 {
     gx_device_clist *cldev = (gx_device_clist *)dev;
+    gx_device_clist_reader *crdev = &cldev->reader;
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     gs_get_bits_options_t options = params->options;
     int y = prect->p.y;
@@ -581,7 +604,8 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     clist_select_render_plane(dev, y, line_count, &render_plane, plane_index);
     code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                   &bdev, cdev->target, y, &render_plane,
-                                  dev->memory, clist_get_band_complexity(dev,y));
+                                  dev->memory,
+                                  &(crdev->color_usage_array[y/crdev->page_band_height]));
     if (code < 0)
         return code;
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
@@ -619,7 +643,8 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
 
         code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                       &bdev, cdev->target, y, &render_plane,
-                                      dev->memory, clist_get_band_complexity(dev, y));
+                                      dev->memory,
+                                      &(crdev->color_usage_array[y/crdev->page_band_height]));
         if (code < 0)
             return code;
         band_params = *params;
@@ -866,92 +891,5 @@ clist_playback_file_bands(clist_playback_action action,
     if (opened_cfile && rs.page_cfile != 0)
         crdev->page_info.io_procs->fclose(rs.page_cfile, rs.page_cfname, false);
 
-    return code;
-}
-
-/*
- * return pointer to list indexed by (y /band_height)
- * Don't free the returned pointer.
- */
-gx_band_complexity_t *
-clist_get_band_complexity(gx_device *dev, int y)
-{
-    if (dev != NULL) {
-        gx_device_clist *cldev = (gx_device_clist *)dev;
-        gx_device_clist_reader * const crdev = &cldev->reader;
-        int band_number = y / crdev->page_info.band_params.BandHeight;
-
-        if (crdev->band_complexity_array == NULL)
-            return NULL;
-
-        {
-            /* NB this is a temporary workaround until the band
-               complexity machinery can be removed entirely. */
-            gx_color_usage_t color_usage;
-            int range_ignored;
-            gdev_prn_color_usage(dev, y, 1, &color_usage, &range_ignored);
-            crdev->band_complexity_array[band_number].nontrivial_rops = (int)color_usage.slow_rop;
-            crdev->band_complexity_array[band_number].uses_color = !!color_usage.or;
-        }
-        return &crdev->band_complexity_array[band_number];
-    }
-    return NULL;
-}
-
-/* Free any band_complexity_array memory used by the clist reader device */
-void gx_clist_reader_free_band_complexity_array( gx_device_clist *cldev )
-{
-        if (cldev != NULL) {
-            gx_device_clist_reader * const crdev = &cldev->reader;
-
-            if ( crdev->band_complexity_array ) {
-                gs_free_object( crdev->memory, crdev->band_complexity_array,
-                  "gx_clist_reader_free_band_complexity_array" );
-                crdev->band_complexity_array = NULL;
-            }
-        }
-}
-
-/* call once per read page to read the band complexity from clist file
- */
-static int
-gx_clist_reader_read_band_complexity(gx_device_clist *dev)
-{
-    int code = -1;  /* no dev bad call */
-
-    if (dev) {
-        gx_device_clist *cldev = (gx_device_clist *)dev;
-        gx_device_clist_reader * const crdev = &cldev->reader;
-        int i;
-        stream_band_read_state rs;
-        cmd_block cb;
-        int64_t save_pos;
-        int pos = 0;
-
-        /* setup stream */
-        s_init_state((stream_state *)&rs, &s_band_read_template, (gs_memory_t *)0);
-        rs.band_first = 0;
-        rs.band_last = crdev->nbands;
-        rs.page_info = crdev->page_info;
-
-        save_pos = crdev->page_info.io_procs->ftell(rs.page_bfile);
-        crdev->page_info.io_procs->fseek(rs.page_bfile, pos, SEEK_SET, rs.page_bfname);
-
-        if ( crdev->band_complexity_array == NULL )
-                crdev->band_complexity_array = (gx_band_complexity_t*)
-                  gs_alloc_byte_array( crdev->memory, crdev->nbands,
-                  sizeof( gx_band_complexity_t ), "gx_clist_reader_read_band_complexity" );
-
-        if ( crdev->band_complexity_array == NULL )
-                return_error(gs_error_VMerror);
-
-        for (i=0; i < crdev->nbands; i++) {
-            crdev->page_info.io_procs->fread_chars(&cb, sizeof(cb), rs.page_bfile);
-            crdev->band_complexity_array[i] = cb.band_complexity;
-        }
-
-        crdev->page_info.io_procs->fseek(rs.page_bfile, save_pos, SEEK_SET, rs.page_bfname);
-        code = 0;
-    }
     return code;
 }

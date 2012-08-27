@@ -687,10 +687,10 @@ plib_get_bits_rectangle_mem(gx_device *pdev, const gs_int_rect *prect,
 static int
 plib_create_buf_device(gx_device **pbdev, gx_device *target, int y,
    const gx_render_plane_t *render_plane, gs_memory_t *mem,
-   gx_band_complexity_t *band_complexity)
+   gx_color_usage_t *color_usage)
 {
     int code = gdev_prn_create_buf_planar(pbdev, target, y, render_plane,
-                                          mem, band_complexity);
+                                          mem, color_usage);
     if (code < 0)
         return code;
     if ((*pbdev)->procs.get_bits_rectangle == mem_get_bits_rectangle)

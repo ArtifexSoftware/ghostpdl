@@ -194,6 +194,7 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
     gx_device_memory * const pmemdev = (gx_device_memory *)pdev;
     gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
     gx_device_clist_common * const pcldev = &pclist_dev->common;
+    gx_device_clist_reader * const pcrdev = &pclist_dev->reader;
     bool is_command_list;
 
     if (ppdev->buffer_space != 0) {
@@ -204,11 +205,11 @@ gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
         ppdev->buffer_space = 0;
         is_command_list = true;
 
-        /* If the clist is a reader clist, free any band_complexity_array
+        /* If the clist is a reader clist, free any color_usage_array
          * memory used by same.
          */
         if (!CLIST_IS_WRITER(pclist_dev))
-            gx_clist_reader_free_band_complexity_array(pclist_dev);
+            gs_free_object(pcrdev->memory, pcrdev->color_usage_array, "clist_color_usage_array");
 
     } else {
         /* point at the device bitmap, no need to close mem dev */
@@ -983,47 +984,60 @@ gdev_prn_file_is_new(const gx_device_printer *pdev)
 }
 
 /* Determine the colors used in a range of lines. */
+/* FIXME: Currently, the page_info is ignored and the page_info from
+ * the 'dev' parameter is used. For saved pages, the 'dev' may not
+ * be a clist and the page_info should be used for clist file info
+ * which may require a dummy gx_device_printer with the page_info
+ * copied from the caller's data.
+ */
 int
 gx_page_info_color_usage(const gx_device *dev,
                          const gx_band_page_info_t *page_info,
                          int y, int height,
                          gx_color_usage_t *color_usage, int *range_start)
 {
+    gx_device_clist_reader *crdev = (gx_device_clist_reader *)dev;
     int start, end, i;
-    int num_lines = page_info->scan_lines_per_color_usage;
+    int band_height = page_info->band_params.BandHeight;
     gx_color_usage_bits or = 0;
     bool slow_rop = false;
 
     if (y < 0 || height < 0 || height > dev->height - y)
         return -1;
-    start = y / num_lines;
-    end = (y + height + num_lines - 1) / num_lines;
+    start = y / band_height;
+    end = (y + height + band_height - 1) / band_height;
+    if (crdev->color_usage_array == NULL) {
+    }
     for (i = start; i < end; ++i) {
-        or |= page_info->band_color_usage[i].or;
-        slow_rop |= page_info->band_color_usage[i].slow_rop;
+        or |= crdev->color_usage_array[i].or;
+        slow_rop |= crdev->color_usage_array[i].slow_rop;
     }
     color_usage->or = or;
     color_usage->slow_rop = slow_rop;
-    *range_start = start * num_lines;
-    return min(end * num_lines, dev->height) - *range_start;
+    *range_start = start * band_height;
+    return min(end * band_height, dev->height) - *range_start;
 }
 int
 gdev_prn_color_usage(gx_device *dev, int y, int height,
                      gx_color_usage_t *color_usage, int *range_start)
 {
-    gx_device_clist_writer *cldev;
+    gx_device_printer *pdev = (gx_device_printer *)dev;
+    gx_device_clist *cdev = (gx_device_clist *)dev;
+    gx_device_clist_writer *cldev = (gx_device_clist_writer *)dev;
 
     /* If this isn't a banded device, return default values. */
-    if (dev_proc(dev, open_device) != gs_clist_device_procs.open_device) {
+    if (!PRINTER_IS_CLIST(pdev)) {
         *range_start = 0;
         color_usage->or = gx_color_usage_all(dev);
         return dev->height;
     }
-    cldev = (gx_device_clist_writer *)dev;
-    if (cldev->page_info.scan_lines_per_color_usage == 0) /* not set yet */
-        clist_compute_color_usage(cldev);
-    return
-        gx_page_info_color_usage(dev, &cldev->page_info,
+    if (y < 0 || height < 0 || height > dev->height - y)
+        return -1;
+    if (CLIST_IS_WRITER(cdev)) {
+        /* Not expected to be used since usually this is called during reading */
+        return clist_writer_color_usage(cldev, y, height, color_usage, range_start);
+    } else
+        return gx_page_info_color_usage(dev, &cldev->page_info,
                                  y, height, color_usage, range_start);
 }
 
@@ -1035,9 +1049,9 @@ int
 gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
                        gx_device *target, int y,
                        const gx_render_plane_t *render_plane,
-                       gs_memory_t *mem, gx_band_complexity_t *band_complexity)
+                       gs_memory_t *mem, gx_color_usage_t *color_usage)
 {
-    int code = cbd_proc(pbdev, target, y, render_plane, mem, band_complexity);
+    int code = cbd_proc(pbdev, target, y, render_plane, mem, color_usage);
 
     if (code < 0)
         return code;
@@ -1052,7 +1066,7 @@ gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
  */
 int
 gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
-    const gx_render_plane_t *render_plane, gs_memory_t *mem, gx_band_complexity_t *band_complexity)
+    const gx_render_plane_t *render_plane, gs_memory_t *mem, gx_color_usage_t *color_usage)
 {
     int plane_index = (render_plane ? render_plane->index : -1);
     int depth;
@@ -1081,7 +1095,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target, int y,
         check_device_separable((gx_device *)mdev);
         gx_device_fill_in_procs((gx_device *)mdev);
     } else {
-        gs_make_mem_device(mdev, mdproto, mem, (band_complexity == NULL ? 1 : 0),
+        gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),
                            (target == (gx_device *)mdev ? NULL : target));
     }
     mdev->width = target->width;
@@ -1318,7 +1332,7 @@ gdev_prn_close_printer(gx_device * pdev)
 
 /* compare two space_params, we can't do this with memcmp since there is padding in the structure */
 static int
-compare_gdev_prn_space_params(const gdev_prn_space_params sp1, 
+compare_gdev_prn_space_params(const gdev_prn_space_params sp1,
                               const gdev_prn_space_params sp2) {
   if (sp1.MaxBitmap != sp2.MaxBitmap)
     return(1);
@@ -1336,8 +1350,8 @@ compare_gdev_prn_space_params(const gdev_prn_space_params sp1,
     return(1);
   if (sp1.banding_type != sp2.banding_type)
     return(1);
- 
-  return(0); 
+
+  return(0);
 }
 
 

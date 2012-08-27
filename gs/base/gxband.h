@@ -58,19 +58,6 @@ typedef struct gx_colors_usage_s {
 } gx_color_usage_t;
 
 /*
- * We want to store color usage information for each band in the page_info
- * structure, but we also want this structure to be of a fixed (and
- * reasonable) size.  We do this by allocating a fixed number of color_usage
- * structures in the page_info structure, and if there are more bands than
- * we have allocated, we simply reduce the precision of the information by
- * letting each color_usage structure cover multiple bands.
- *
- * 30 entries would be large enough to cover A4 paper (11.3") at 600 dpi
- * with 256-scan-line bands.  We pick 50 somewhat arbitrarily.
- */
-#define PAGE_INFO_NUM_COLORS_USED 100
-
-/*
  * Define the information for a saved page.
  */
 typedef struct gx_band_page_info_s {
@@ -83,13 +70,9 @@ typedef struct gx_band_page_info_s {
     int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */
                                 /* (actual values, no 0s) */
-    int scan_lines_per_color_usage; /* number of scan lines per color_usage */
-                                /* entry (a multiple of the band height) */
-    gx_color_usage_t band_color_usage[PAGE_INFO_NUM_COLORS_USED];  /* colors used on the page */
 } gx_band_page_info_t;
 #define PAGE_INFO_NULL_VALUES\
-  { 0 }, 0, { 0 }, NULL, 0, 0, 0, { BAND_PARAMS_INITIAL_VALUES },\
-  0x3fffffff, { { 0 } }
+  { 0 }, 0, { 0 }, NULL, 0, 0, 0, { BAND_PARAMS_INITIAL_VALUES }
 
 /*
  * By convention, the structure member containing the above is called

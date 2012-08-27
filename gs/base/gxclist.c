@@ -79,13 +79,13 @@ ENUM_PTRS_WITH(device_clist_enum_ptrs, gx_device_clist *cdev)
          */
 
         if (index == 0)
-            return ENUM_OBJ(cdev->reader.band_complexity_array);
-        else if (index == 1)
             return ENUM_OBJ(cdev->reader.offset_map);
-        else if (index == 2)
+        else if (index == 1)
             return ENUM_OBJ(cdev->reader.icc_table);
-        else if (index == 3)
+        else if (index == 2)
             return ENUM_OBJ(cdev->reader.icc_cache_cl);
+        else if (index == 3)
+            return ENUM_OBJ(cdev->reader.color_usage_array);
         else
             return 0;
     }
@@ -110,10 +110,10 @@ RELOC_PTRS_WITH(device_clist_reloc_ptrs, gx_device_clist *cdev)
          * clist is reader.
          * See note above in ENUM_PTRS_WITH section.
          */
-        RELOC_VAR(cdev->reader.band_complexity_array);
         RELOC_VAR(cdev->reader.offset_map);
         RELOC_VAR(cdev->reader.icc_table);
         RELOC_VAR(cdev->reader.icc_cache_cl);
+        RELOC_VAR(cdev->reader.color_usage_array);
     }
 } RELOC_PTRS_END
 public_st_device_clist();
@@ -416,7 +416,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
     cdev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
 
     /* Call create_buf_device to get the memory planarity set up. */
-    code = cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, clist_get_band_complexity(0, 0));
+    code = cdev->buf_procs.create_buf_device(&pbdev, target, 0, NULL, NULL, NULL);
     if (code < 0)
         return code;
     /* HACK - if the buffer device can't do copy_alpha, disallow */
@@ -626,18 +626,7 @@ clist_emit_page_header(gx_device *dev)
 static void
 clist_reset_page(gx_device_clist_writer *cwdev)
 {
-    int entry;
-    gs_int_rect empty_bbox = { { max_int, max_int }, { min_int, min_int } };
-
     cwdev->page_bfile_end_pos = 0;
-    /* Indicate that the color_usage information hasn't been computed. */
-    cwdev->page_info.scan_lines_per_color_usage = 0;
-    memset(cwdev->page_info.band_color_usage, 0,
-           sizeof(cwdev->page_info.band_color_usage));
-
-    /* set trans_bbox to empty (not all zeroes) */
-    for (entry=0; entry < PAGE_INFO_NUM_COLORS_USED - 1; entry++);
-        cwdev->page_info.band_color_usage[entry].trans_bbox = empty_bbox;
 }
 
 /* Open the device's bandfiles */
@@ -767,26 +756,26 @@ clist_output_page(gx_device * dev, int num_copies, int flush)
 int
 clist_finish_page(gx_device *dev, bool flush)
 {
-    gx_device_clist_writer * const cdev =       &((gx_device_clist *)dev)->writer;
+    gx_device_clist_writer *const cdev = &((gx_device_clist *)dev)->writer;
     int code;
 
     /* If this is a reader clist, which is about to be reset to a writer,
-     * free any band_complexity_array memory used by same.
+     * free any color_usage array used by same.
      * since we have been rendering, shut down threads
+     * Also free the icc_table at this time and the icc_cache
      */
     if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
-        gx_clist_reader_free_band_complexity_array( (gx_device_clist *)dev );
-        clist_teardown_render_threads(dev);
-    }
+        gx_device_clist_reader * const crdev =  &((gx_device_clist *)dev)->reader;
 
-    /* Also free the icc_table at this time and the icc_cache */
-    if (!CLIST_IS_WRITER((gx_device_clist *)dev)) {
+        gs_free_object(cdev->memory, crdev->color_usage_array, "clist_color_usage_array");
+        crdev->color_usage_array = NULL;
+        clist_teardown_render_threads(dev);
+
        /* Free the icc table associated with this device.
            The threads that may have pointed to this were destroyed in
            the above call to clist_teardown_render_threads.  Since they
            all maintained a copy of the cache and the table there should not
            be any issues. */
-        gx_device_clist_reader * const crdev =  &((gx_device_clist *)dev)->reader;
         clist_icc_freetable(crdev->icc_table, crdev->memory);
         rc_decrement(crdev->icc_cache_cl,"clist_finish_page");
     }
@@ -831,6 +820,8 @@ clist_end_page(gx_device_clist_writer * cldev)
         clist_icc_freetable(cldev->icc_table, cldev->memory);
         cldev->icc_table = NULL;
     }
+    if (code >= 0)
+        code = clist_write_color_usage_array(cldev);
     if (code >= 0) {
         /*
          * Write the terminating entry in the block file.
@@ -844,7 +835,6 @@ clist_end_page(gx_device_clist_writer * cldev)
             code = 0;
     }
     if (code >= 0) {
-        clist_compute_color_usage(cldev);
         ecode |= code;
         cldev->page_bfile_end_pos = cldev->page_info.io_procs->ftell(cldev->page_bfile);
     }
@@ -868,14 +858,14 @@ clist_end_page(gx_device_clist_writer * cldev)
                 (unsigned long)cldev->page_bfile_end_pos);
     }
 #endif
-    if (gs_debug[':']) {
+    if (cldev->page_uses_transparency && gs_debug[':']) {
         /* count how many bands were skipped */
         int skip_count = 0;
         int band;
 
         for (band=0; band < cldev->nbands - 1; band++) {
-            if (cldev->page_info.band_color_usage[band].trans_bbox.p.y >
-                cldev->page_info.band_color_usage[band].trans_bbox.q.y)
+            if (cldev->states[band].color_usage.trans_bbox.p.y >
+                cldev->states[band].color_usage.trans_bbox.q.y)
                 skip_count++;
         }
         dprintf2("%d bands skipped out of %d\n", skip_count, cldev->nbands);
@@ -896,65 +886,6 @@ gx_color_index2usage(gx_device *dev, gx_color_index color)
     }
 
     return bits;
-}
-
-/* Compute the set of used colors in the page_info structure.
- *
- * NB: Area for improvement, move states[band] and page_info to clist
- * rather than writer device, or remove completely as this is used by the old planar devices
- * to operate on a plane at a time.
- */
-
-void
-clist_compute_color_usage(gx_device_clist_writer *cldev)
-{
-    int nbands = cldev->nbands;
-    int bands_per_color_usage =
-        (nbands + PAGE_INFO_NUM_COLORS_USED - 1) /
-        PAGE_INFO_NUM_COLORS_USED;
-    int band, entry;
-    gs_int_rect empty_bbox = { { max_int, max_int }, { min_int, min_int } };
-
-
-    cldev->page_info.scan_lines_per_color_usage =
-        cldev->page_band_height * bands_per_color_usage;
-    memset(cldev->page_info.band_color_usage, 0,
-           sizeof(cldev->page_info.band_color_usage));
-
-    /* set all trans_bbox entries to empty (not all zeroes) so union below will work */
-    for (entry=0; entry < PAGE_INFO_NUM_COLORS_USED - 1; entry++) {
-        cldev->page_info.band_color_usage[entry].trans_bbox.p.x = empty_bbox.p.x;
-        cldev->page_info.band_color_usage[entry].trans_bbox.p.y = empty_bbox.p.y;
-        cldev->page_info.band_color_usage[entry].trans_bbox.q.x = empty_bbox.q.x;
-        cldev->page_info.band_color_usage[entry].trans_bbox.q.y = empty_bbox.q.y;
-    }
-
-    for (band = 0; band < nbands; ++band) {
-        entry = band / bands_per_color_usage;
-
-        cldev->page_info.band_color_usage[entry].or |=
-            cldev->states[band].color_usage.or;
-        cldev->page_info.band_color_usage[entry].slow_rop |=
-            cldev->states[band].color_usage.slow_rop;
-
-        /* Create the union of transparency bboxes */
-        if (cldev->page_info.band_color_usage[entry].trans_bbox.p.x >
-            cldev->states[band].color_usage.trans_bbox.p.x)
-            cldev->page_info.band_color_usage[entry].trans_bbox.p.x =
-                       cldev->states[band].color_usage.trans_bbox.p.x;
-        if (cldev->page_info.band_color_usage[entry].trans_bbox.p.y >
-            cldev->states[band].color_usage.trans_bbox.p.y)
-            cldev->page_info.band_color_usage[entry].trans_bbox.p.y =
-                       cldev->states[band].color_usage.trans_bbox.p.y;
-        if (cldev->page_info.band_color_usage[entry].trans_bbox.q.x <
-            cldev->states[band].color_usage.trans_bbox.q.x)
-            cldev->page_info.band_color_usage[entry].trans_bbox.q.x =
-                       cldev->states[band].color_usage.trans_bbox.q.x;
-        if (cldev->page_info.band_color_usage[entry].trans_bbox.q.y <
-            cldev->states[band].color_usage.trans_bbox.q.y)
-            cldev->page_info.band_color_usage[entry].trans_bbox.q.y =
-                       cldev->states[band].color_usage.trans_bbox.q.y;
-    }
 }
 
 /* Recover recoverable VM error if possible without flushing */
@@ -1075,27 +1006,6 @@ clist_get_band(gx_device * dev, int y, int *band_start)
     return min(dev->height - start, band_height);
 }
 
-/* copy constructor if from != NULL
- * default constructor if from == NULL
- */
-void
-clist_copy_band_complexity(gx_band_complexity_t *self, const gx_band_complexity_t *from)
-{
-    if (from) {
-        memcpy(self, from, sizeof(gx_band_complexity_t));
-    } else {
-        /* default */
-        self->uses_color = false;
-        self->nontrivial_rops = false;
-#if 0
-        /* todo: halftone phase */
-
-        self->x0 = 0;
-        self->y0 = 0;
-#endif
-    }
-}
-
 /* ICC table operations.  See gxclist.h for details */
 /* This checks the table for a hash code entry */
 bool
@@ -1179,7 +1089,7 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
         curr_entry = curr_entry->next;
     }
     /* Now go ahead and save the table data */
-    cmd_write_icctable(cldev, buf, size_data);
+    cmd_write_pseudo_band(cldev, buf, size_data, ICC_TABLE_OFFSET);
     gs_free_object(cldev->memory, buf, "clist_icc_writetable");
     return(0);
 }
@@ -1236,7 +1146,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
     }
     if ( icc_table == NULL ) {
         entry = (clist_icctable_entry_t *) gs_alloc_struct(stable_mem,
-                               clist_icctable_entry_t, &st_clist_icctable_entry, 
+                               clist_icctable_entry_t, &st_clist_icctable_entry,
                                "clist_icc_addentry");
         if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
@@ -1247,7 +1157,7 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         entry->icc_profile = icc_profile;
         entry->render_is_valid = icc_profile->rend_is_valid;
         rc_increment(icc_profile);
-        icc_table = gs_alloc_struct(stable_mem, clist_icctable_t, 
+        icc_table = gs_alloc_struct(stable_mem, clist_icctable_t,
                                     &st_clist_icctable, "clist_icc_addentry");
         if (icc_table == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate icc table");
@@ -1268,10 +1178,10 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
             curr_entry = curr_entry->next;
         }
          /* Add a new ICC profile */
-        entry = 
-            (clist_icctable_entry_t *) gs_alloc_struct(icc_table->memory, 
+        entry =
+            (clist_icctable_entry_t *) gs_alloc_struct(icc_table->memory,
                                                        clist_icctable_entry_t,
-                                                       &st_clist_icctable_entry, 
+                                                       &st_clist_icctable_entry,
                                                        "clist_icc_addentry");
         if (entry == NULL)
             return gs_rethrow(-1, "insufficient memory to allocate entry in icc table");
@@ -1287,6 +1197,51 @@ clist_icc_addentry(gx_device_clist_writer *cdev, int64_t hashcode_in, cmm_profil
         icc_table->tablesize++;
     }
     return(0);
+}
+
+/* This writes out the color_usage_array for maxband+1 */
+int
+clist_write_color_usage_array(gx_device_clist_writer *cldev)
+{
+   gx_color_usage_t *color_usage_array;
+   int i, size_data = cldev->nbands * sizeof(gx_color_usage_t);
+
+    /* Now serialize the table data */
+    color_usage_array = (gx_color_usage_t *)gs_alloc_bytes(cldev->memory, size_data,
+                                       "clist_write_color_usage_array");
+    if (color_usage_array == NULL)
+        return gs_rethrow(-1, "insufficient memory for color_usage_array");
+    for (i = 0; i < cldev->nbands; i++) {
+        memcpy(&(color_usage_array[i]), &(cldev->states[i].color_usage), sizeof(gx_color_usage_t));
+    }
+    /* Now go ahead and save the table data */
+    cmd_write_pseudo_band(cldev, (unsigned char *)color_usage_array,
+                          size_data, COLOR_USAGE_OFFSET);
+    gs_free_object(cldev->memory, color_usage_array, "clist_write_color_usage_array");
+    return(0);
+}
+
+/* Compute color_usage over a Y range while writing clist */
+/* Sets color_usage fields and range_start.               */
+/* Returns range end (max dev->height)                    */
+/* NOT expected to be used. */
+int
+clist_writer_color_usage(gx_device_clist_writer *cldev, int y, int height,
+                     gx_color_usage_t *color_usage, int *range_start)
+{
+        gx_color_usage_bits or = 0;
+        bool slow_rop = false;
+        int i, band_height = cldev->page_band_height;
+        int start = y / band_height, end = (y + height) / band_height;
+
+        for (i = start; i < end; ++i) {
+            or |= cldev->states[i].color_usage.or;
+            slow_rop |= cldev->states[i].color_usage.slow_rop;
+        }
+        color_usage->or = or;
+        color_usage->slow_rop = slow_rop;
+        *range_start = start * band_height;
+        return min(end * band_height, cldev->height) - *range_start;
 }
 
 int

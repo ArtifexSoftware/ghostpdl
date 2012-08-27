@@ -164,8 +164,6 @@ clist_fill_mask(gx_device * dev,
         if (code < 0 && SET_BAND_CODE(code))
             goto error_in_rect;
         re.pcls->color_usage.slow_rop |= slow_rop;
-        re.pcls->band_complexity.nontrivial_rops |= slow_rop;
-        re.pcls->band_complexity.uses_color |= (pdcolor->colors.pure != 0 && pdcolor->colors.pure != 0xffffff);
         /* Put it in the cache if possible. */
         if (!cls_has_tile_id(cdev, re.pcls, id, offset_temp)) {
             gx_strip_bitmap tile;
@@ -927,12 +925,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
         }
 
         re.pcls->color_usage.or |= pie->color_usage.or;
-        re.pcls->band_complexity.nontrivial_rops |=
-                   re.pcls->color_usage.slow_rop |= pie->color_usage.slow_rop;
-        /* FIXME: Wrong! pie->colors_usage.or could == all even when color is used */
-        re.pcls->band_complexity.uses_color |=
-                            (pie->color_usage.or != 0 ||
-                             pie->color_usage.or != gx_color_usage_all(dev));
+        re.pcls->color_usage.slow_rop |= pie->color_usage.slow_rop;
 
         /* Write out begin_image & its preamble for this band */
         if (!(re.pcls->known & begin_image_known)) {
@@ -1224,7 +1217,6 @@ clist_create_compositor(gx_device * dev,
         RECT_ENUM_INIT(re, temp_cropping_min, temp_cropping_max - temp_cropping_min);
         do {
             RECT_STEP_INIT(re);
-            re.pcls->band_complexity.nontrivial_rops = true;
             do {
                 code = set_cmd_put_op(dp, cdev, re.pcls, cmd_opv_extend, size);
                 if (code >= 0) {
