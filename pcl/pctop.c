@@ -440,9 +440,6 @@ pcl_impl_set_device(
         goto pisdEnd;
 
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
-#if 0 /* Disabled until we get it fully working */
-    gs_sethpglpathmode(pcli->pcs.pgs, true);	/* Use HPGL fill, rather than postscript fill. */
-#endif
 
     code = gs_setfilladjust(pcli->pcs.pgs, 0, 0);
     if (code < 0)
