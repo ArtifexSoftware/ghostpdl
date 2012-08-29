@@ -234,6 +234,20 @@ done
 
 AC_MSG_RESULT([ ...done.])
 
+dnl ----------------------------
+dnl check for big/little endian
+dnl ----------------------------
+
+AC_MSG_CHECKING([for big endian])
+
+AC_RUN_IFELSE(
+  [AC_LANG_PROGRAM([#include <stdio.h>], [
+   static const int one = 1;
+   return (*(char*)&one == 0 ? 0 : 1);
+  ])],
+  [BIGENDIAN=1;AC_MSG_RESULT(big)],
+  [BIGENDIAN=0;AC_MSG_RESULT(little)])
+
 dnl --------------------------------------------------
 dnl Check for headers
 dnl --------------------------------------------------
@@ -1080,6 +1094,8 @@ if test x$with_luratech != xno; then
   fi
 fi
 
+JB2_STDINT_TYPES_IN=
+
 if test "x$JBIG2_DECODER" = x; then
   dnl look for jbig2dec
   AC_ARG_WITH([jbig2dec], AC_HELP_STRING([--without-jbig2dec],
@@ -1091,20 +1107,48 @@ if test "x$JBIG2_DECODER" = x; then
     done
     if test "x$JBIG2DIR" != xsrc; then
         JBIG2_DECODER=jbig2dec
-        echo "Running jbig2dec configure script..."
-        olddir=`pwd`
-        cd $JBIG2DIR && ./configure $SUBCONFIG_OPTS
-        status=$?
-        if test "$status" -ne 0 ; then
-          AC_MSG_ERROR([jbig2dec configure script failed], $status)
+        if test x$ac_cv_header_stdint_h = xyes ; then
+            JBIG2_AUTOCONF_CFLAGS="-DHAVE_STDINT_H=1"
+        else
+
+          for include in sys/types.h inttypes.h sys/inttypes.h sys/int_types.h ; do
+            AC_MSG_CHECKING([for uint32_t in $include])
+            AC_TRY_COMPILE([#include <$include>], [uint32_t canary;], [
+              AC_MSG_RESULT([yes])
+              stdint_types_in="$include"
+              break;
+              ], AC_MSG_RESULT([no])
+            )
+          done
+
+          case "$stdint_types_in" in
+            "sys/types.h")
+              JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DSTD_INT_USE_SYS_TYPES_H"
+              ;;
+            "inttypes.h")
+              JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DSTD_INT_USE_INTTYPES_H"
+              ;;
+            "sys/inttypes.h")
+              JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DSTD_INT_USE_SYS_INTTYPES_H"
+              ;;
+            "sys/int_types.h")
+              JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DSTD_INT_USE_SYS_INT_TYPES_H"
+              ;;
+            *)
+              AC_MSG_ERROR([
+                Unable to find suitable definitions of the stdint.h types (uint32_t and friends).
+                These are required by jbig2dec.
+              ])
+          esac
         fi
-        if test "$status" -eq 0 ; then
-          JBIG2_AUTOCONF_CFLAGS=-DHAVE_CONFIG_H
+
+        if test "x$BIGENDIAN" != "x0"; then
+            JBIG2_AUTOCONF_CFLAGS="$JBIG2_AUTOCONF_CFLAGS -DWORDS_BIGENDIAN"
         fi
-        cd $olddir
+
         echo
-        echo "Continuing with Ghostscript configuration..."
         AC_MSG_RESULT([$JBIG2DIR])
+        echo "Continuing with Ghostscript configuration..."
     else
       AC_MSG_RESULT([no])
       AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
@@ -1119,11 +1163,12 @@ if test "x$JBIG2_DECODER" = x; then
     fi
   fi
   if test x$with_jbig2dec != xno; then
-    if test x$ac_cv_header_stdint_h != xyes && test x$ac_cv_header_inttypes_h != xyes; then
-      AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
-    else
+# I *think* jbig2dec handles these being missing gracefully
+#    if test x$ac_cv_header_stdint_h != xyes && test x$ac_cv_header_inttypes_h != xyes; then
+#      AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
+#    else
       JBIG2DEVS='$(PSD)jbig2.dev'
-    fi
+#    fi
   fi
 fi
 
@@ -1746,32 +1791,27 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([bzero dup2 floor gettimeofday memchr memmove memset mkdir mkfifo modf pow putenv rint setenv sqrt strchr strrchr strspn strstr])
 
 dnl --------------------------------------------------
-dnl check for big/little endian for LCMS
+dnl set big/little endian for LCMS
 dnl --------------------------------------------------
 
-AC_MSG_CHECKING([for big endian])
-
-AC_RUN_IFELSE(
-  [AC_LANG_PROGRAM([#include <stdio.h>], [
-   static const int one = 1;
-   return (*(char*)&one == 0 ? 0 : 1);
-  ])],
-  [LCMS_BIGENDIAN=1],
-  [LCMS_BIGENDIAN=0])
-
-if test "x$LCMS_BIGENDIAN" != "x0"; then
-  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$LCMS_BIGENDIAN"
-  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$LCMS_BIGENDIAN"
-  AC_MSG_RESULT(yes)
+if test "x$BIGENDIAN" != "x0"; then
+  LCMS_ENDIAN="-DUSE_BIG_ENDIAN=$BIGENDIAN"
+  LCMS2_ENDIAN="-DCMS_USE_BIG_ENDIAN=$BIGENDIAN"
 else
   LCMS_ENDIAN=
   LCMS2_ENDIAN=
-  AC_MSG_RESULT(no)
 fi
-
 
 AC_SUBST(LCMS_ENDIAN)
 AC_SUBST(LCMS2_ENDIAN)
+
+dnl --------------------------------------------------
+dnl decide if we have to "hack" sqrtf() for lcms2
+dnl --------------------------------------------------
+
+AC_CHECK_FUNC([sqrtf], [SQRTF_SUBST=], [SQRTF_SUBST="-Dsqrtf=\"(float)sqrt\""])
+
+AC_SUBST(SQRTF_SUBST)
 
 dnl --------------------------------------------------
 dnl check for sse2 intrinsics
