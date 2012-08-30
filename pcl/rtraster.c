@@ -983,6 +983,8 @@ process_ccitt_compress(
     stream_cursor_read scr;
     stream_cursor_write scw;
     pcl_seed_row_t *pout = prast->pseed_rows;
+    uint wrsize;
+    byte * temp_buffer;
 
     if (insize < 4)
         return gs_throw(e_Range, "raster row size not specified");
@@ -1003,17 +1005,25 @@ process_ccitt_compress(
     s_CFD_template.init((stream_state*)&state);
     scr.ptr = pin + 4 - 1;
     scr.limit = scr.ptr + insize;
-    scw.ptr = pout->pdata - 1;
-    scw.limit = scw.ptr + (state.Columns + 7) / 8;
+
+    wrsize = (state.Columns + 7) / 8;
+    temp_buffer = gs_alloc_bytes( prast->pmem, wrsize, "CCITT temp_buffer");
+    if (temp_buffer == 0) return_error(e_Memory);
+    memset(temp_buffer, 0, wrsize);
+
+    scw.ptr = temp_buffer - 1;
+    scw.limit = scw.ptr + wrsize;
 
     while (1) {
         int code = s_CFD_template.process((stream_state*)&state, &scr, &scw, true);
         switch (code) {
 
             case 1: /* need output, process the scanline and continue. */
-                scw.ptr = pout->pdata - 1;
-                scw.limit = scw.ptr + (state.Columns + 7) / 8;
+                memcpy(pout->pdata, temp_buffer, min(pout->size, wrsize));
                 process_row(prast, 0);
+                memset(temp_buffer, 0, wrsize);
+                scw.ptr = temp_buffer - 1;
+                scw.limit = scw.ptr + wrsize;
                 break;
             case EOFC: /* all done */
                 s_CFD_template.release((stream_state*)&state);
