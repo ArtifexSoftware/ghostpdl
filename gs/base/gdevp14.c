@@ -1264,13 +1264,28 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
         tos->n_planes = 1;
         /* Assign as reference counted mask buffer */
         if (ctx->mask_stack != NULL) {
-            gs_free_object(ctx->memory, ctx->mask_stack,
-                           "pdf14_pop_transparency_group");
+            /* In this case, the source file is wacky as it already had a 
+               softmask and now is getting a replacement. We need to clean
+               up the softmask stack before doing this free and creating
+               a new stack. Bug 693312 */
+            if (ctx->mask_stack->rc_mask != NULL) {
+                pdf14_mask_t *curr_mask = ctx->mask_stack;
+                pdf14_mask_t *old_mask;
+                while (curr_mask != NULL) {
+                    rc_decrement(curr_mask->rc_mask, "pdf14_pop_transparency_group");
+                    old_mask = curr_mask;
+                    curr_mask = curr_mask->previous;
+                    gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_group");
+                }
+            } else {
+                gs_free_object(ctx->memory, ctx->mask_stack,
+                               "pdf14_pop_transparency_group");
+            }
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
 	if (ctx->mask_stack == NULL)
 		return gs_note_error(gs_error_VMerror);
-        ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
+    ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
 	if (ctx->mask_stack->rc_mask == NULL)
 		return gs_note_error(gs_error_VMerror);
         ctx->mask_stack->rc_mask->mask_buf = tos;
