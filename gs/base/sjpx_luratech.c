@@ -404,13 +404,12 @@ s_jpxd_init(stream_state * ss)
 }
 
 /* Set the defaults */
-static int
+static void
 s_jpxd_set_defaults(stream_state * ss) {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
     state->alpha = false;
     state->image_is_indexed = false;
-    return 0;
 }
 
 /* write component mapping into 'clut' and return number of used components
@@ -710,10 +709,9 @@ static void
 s_jpxd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
-    JP2_Error err;
 
     if (state) {
-        err = JP2_Decompress_End(state->handle);
+        JP2_Decompress_End(state->handle);
         if (state->inbuf) free(state->inbuf);
         if (state->image) free(state->image);
         if (state->clut) free(state->clut);
@@ -728,7 +726,8 @@ const stream_template s_jpxd_template = {
     1024, 1024,   /* min in and out buffer sizes we can handle
                      should be ~32k,64k for efficiency? */
     s_jpxd_release,
-    s_jpxd_set_defaults
+    s_jpxd_set_defaults,
+    0
 };
 
 /*** encode support **/
