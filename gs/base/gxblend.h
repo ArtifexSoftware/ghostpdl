@@ -390,7 +390,8 @@ void pdf14_preserve_backdrop(pdf14_buf *buf, pdf14_buf *tos, bool has_shape);
 
 void pdf14_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
               int x0, int x1, int y0, int y1, int n_chan, bool additive,
-              const pdf14_nonseparable_blending_procs_t * pblend_procs);
+              const pdf14_nonseparable_blending_procs_t * pblend_procs,
+              bool overprint, gx_color_index drawn_comps);
 
 gx_color_index pdf14_encode_color(gx_device *dev, const gx_color_value colors[]);
 gx_color_index pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[]);

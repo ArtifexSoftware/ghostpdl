@@ -809,6 +809,9 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
     gsicc_link_t *icc_link;
     gsicc_bufferdesc_t input_buff_desc;
     gsicc_bufferdesc_t output_buff_desc;
+    pdf14_device *pdev = (pdf14_device *)dev;
+    bool overprint = pdev->overprint;
+    gx_color_index drawn_comps = pdev->drawn_comps;		
 
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
@@ -986,16 +989,18 @@ pdf14_pop_transparency_group(gs_imager_state *pis, pdf14_ctx *ctx,
                             ctx->stack->planestride, ctx->stack->rowstride,
                             "Trans_Group_ColorConv",ctx->stack->data);
 #endif
-             /* compose */
+             /* compose. never do overprint in this case */
              pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1, nos->n_chan,
                  nos->parent_color_info_procs->isadditive,
-                 nos->parent_color_info_procs->parent_blending_procs);
+                 nos->parent_color_info_procs->parent_blending_procs,
+                 false, drawn_comps);
         }
     } else {
         /* Group color spaces are the same.  No color conversions needed */
         if (x0 < x1 && y0 < y1)
             pdf14_compose_group(tos, nos, maskbuf, x0, x1, y0, y1,nos->n_chan,
-                                ctx->additive, pblend_procs);
+                                ctx->additive, pblend_procs, overprint, 
+                                drawn_comps);
     }
 exit:
     ctx->stack = nos;
@@ -4250,7 +4255,6 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     gx_color_index mask = ((gx_color_index)1 << 8) - 1;
     int shift = 8;
 
-
     if (buf->data == NULL)
         return 0;
     /* NB: gx_color_index is 4 or 8 bytes */
@@ -4322,20 +4326,20 @@ pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
             if (additive) {
                 for (k = 0; k < num_chan; ++k)
                         dst_ptr[k * planestride] = dst[k];
-                } else {
-                    if (overprint) {
-                        for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
-                                if ((comps & 0x1) != 0) {
-                                        dst_ptr[k * planestride] = 255 - dst[k];
-                                }
+            } else {
+                if (overprint) {
+                    for (k = 0, comps = drawn_comps; comps != 0; ++k, comps >>= 1) {
+                        if ((comps & 0x1) != 0) {
+                            dst_ptr[k * planestride] = 255 - dst[k];
                         }
-                        /* The alpha channel */
-                        dst_ptr[num_comp * planestride] = dst[num_comp];
-                    } else {
-                        for (k = 0; k < num_comp; ++k)
-                                dst_ptr[k * planestride] = 255 - dst[k];
-                        dst_ptr[num_comp * planestride] = dst[num_comp];
                     }
+                    /* The alpha channel */
+                    dst_ptr[num_comp * planestride] = dst[num_comp];
+                } else {
+                    for (k = 0; k < num_comp; ++k)
+                        dst_ptr[k * planestride] = 255 - dst[k];
+                    dst_ptr[num_comp * planestride] = dst[num_comp];
+                }
             }
             if (has_alpha_g) {
                 int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src_alpha) + 0x80;

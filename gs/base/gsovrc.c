@@ -259,7 +259,7 @@ gs_create_overprint(
     gs_overprint_t *                pct;
 
     pct = gs_alloc_struct(mem, gs_overprint_t, &st_overprint,
-                             "gs_create_overprint");
+                              "gs_create_overprint");
     if (pct == NULL)
         return_error(gs_error_VMerror);
     pct->type = &gs_composite_overprint_type;
