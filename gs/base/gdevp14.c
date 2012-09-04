@@ -1100,6 +1100,22 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	byte bg_alpha,
     return 0;
 }
 
+static void pdf14_free_mask_stack(pdf14_mask_t *mask_stack, gs_memory_t *memory) 
+{
+    if (mask_stack->rc_mask != NULL) {
+        pdf14_mask_t *curr_mask = mask_stack;
+        pdf14_mask_t *old_mask;
+        while (curr_mask != NULL) {
+            rc_decrement(curr_mask->rc_mask, "pdf14_free_mask_stack");
+            old_mask = curr_mask;
+            curr_mask = curr_mask->previous;
+            gs_free_object(old_mask->memory, old_mask, "pdf14_free_mask_stack");
+        }
+    } else {
+        gs_free_object(memory, mask_stack, "pdf14_free_mask_stack");
+    }
+}
+
 static	int
 pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev)
 {
@@ -1151,16 +1167,17 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
            not intersect the current band.  It would be nice to
            catch this earlier and just avoid creating the structure
            to begin with.  For now we need to delete the structure
-           that was created.  Only delete if the alpha value is not
-           255 */
+           that was created.  Only delete if the alpha value is 255 */
         if (tos->alpha == 255) {
             pdf14_buf_free(tos, ctx->memory);
-            ctx->mask_stack = NULL;
+            if (ctx->mask_stack != NULL) {
+                pdf14_free_mask_stack(ctx->mask_stack, ctx->memory);
+                ctx->mask_stack = NULL;
+            }           
         } else {
             /* Assign as mask buffer */
             if (ctx->mask_stack != NULL) {
-                gs_free_object(ctx->memory, ctx->mask_stack,
-                               "pdf14_pop_transparency_group");
+                pdf14_free_mask_stack(ctx->mask_stack, ctx->memory);
             }
             ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
             ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
@@ -1268,19 +1285,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_imager_state *pis, gx_device *dev
                softmask and now is getting a replacement. We need to clean
                up the softmask stack before doing this free and creating
                a new stack. Bug 693312 */
-            if (ctx->mask_stack->rc_mask != NULL) {
-                pdf14_mask_t *curr_mask = ctx->mask_stack;
-                pdf14_mask_t *old_mask;
-                while (curr_mask != NULL) {
-                    rc_decrement(curr_mask->rc_mask, "pdf14_pop_transparency_group");
-                    old_mask = curr_mask;
-                    curr_mask = curr_mask->previous;
-                    gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_group");
-                }
-            } else {
-                gs_free_object(ctx->memory, ctx->mask_stack,
-                               "pdf14_pop_transparency_group");
-            }
+            pdf14_free_mask_stack(ctx->mask_stack, ctx->memory);
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
 	if (ctx->mask_stack == NULL)
