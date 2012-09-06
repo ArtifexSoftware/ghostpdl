@@ -413,6 +413,7 @@ capture_spot_equivalent_cmyk_colors(gx_device * pdev, const gs_state * pgs,
     temp_device.memory = pgs->memory; 
 
     temp_profile.usefastcolor = false;  /* This avoids a few headaches */
+    temp_profile.prebandthreshold = true;
     temp_profile.supports_devn = false;
     temp_profile.device_profile[0] = curr_output_profile;
     temp_profile.device_profile[1] = NULL;

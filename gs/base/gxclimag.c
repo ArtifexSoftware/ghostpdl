@@ -39,6 +39,7 @@
 #include "gsptype1.h"
 #include "gsicc_manage.h"
 #include "gsicc_cache.h"
+#include "gxdevsop.h"
 
 extern_gx_image_type_table();
 
@@ -362,8 +363,9 @@ clist_begin_typed_image(gx_device * dev,
     gsicc_rendering_intents_t renderingintent = pis->renderingintent;
     gs_imager_state *pis_nonconst = (gs_imager_state*) pis;   
     bool intent_changed = false;
-    cmm_dev_profile_t *dev_profile;
+    cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *gs_output_profile;
+    bool is_planar_dev = dev_proc(dev, dev_spec_op)(dev, gxdso_is_native_planar, NULL, 0);
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
@@ -579,6 +581,36 @@ clist_begin_typed_image(gx_device * dev,
                                 (int)floor(dbox.p.x), (int)floor(dbox.p.y),
                                 (int)ceil(dbox.q.x), (int)ceil(dbox.q.y)))
             goto use_default;
+
+    /* If we are going out to a halftone device and the size of the stored
+       image at device resolution and color space is going to be smaller, 
+       go ahead and do the default handler. This occurs only for planar 
+       devices where if we prerender we will end up doing the fast theshold 
+       halftone and going out as copy_planes commands into the clist.
+       There is already a test above with regard to the posture so that
+       we are only doing portrait or landscape cases if we are here.  Only
+       question is penum->image_parent_type == gs_image_type1 */
+    if (dev_profile == NULL) {
+        gsicc_rendering_intents_t temp_intent;
+        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
+        gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
+                                              &(gs_output_profile),
+                                              &(temp_intent));
+    }
+    if (gx_device_must_halftone(dev) && pim->BitsPerComponent == 8 && !masked &&
+        (dev->color_info.num_components == 1 || is_planar_dev) && 
+        dev_profile->prebandthreshold) {
+        int dev_width = dbox.q.x - dbox.p.x;
+        int dev_height = dbox.q.y - dbox.p.y;
+        
+        int src_size = pim->Height * 
+                       bitmap_raster(pim->Width * pim->BitsPerComponent * 
+                                     num_components);
+        int des_size = dev_height * bitmap_raster(dev_width * 
+                                                  dev->color_info.depth);
+        if (src_size > des_size)
+            goto use_default;        
+    }
     /* Create the begin_image command. */
     if ((pie->begin_image_command_length =
          begin_image_command(pie->begin_image_command,
