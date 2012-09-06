@@ -191,19 +191,27 @@ gs_pattern2_remap_color(const gs_client_color * pc, const gs_color_space * pcs,
 /*
  * Perform actions required at set_color time. Since PatternType 2
  * patterns specify a color space, we must update the overprint
- * information as required by that color space. We temporarily disable
- * overprint_mode, as it is never applicable when using shading patterns.
+ * information as required by that color space. We must also update
+ * any overprint information and make sure that the graphic state
+ * stored in the pattern instance has the proper color map and overprint
+ * information.
  */
 static int
 gs_pattern2_set_color(const gs_client_color * pcc, gs_state * pgs)
 {
     gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pcc->pattern;
     gs_color_space * pcs = pinst->templat.Shading->params.ColorSpace;
-    int code, save_overprint_mode = pgs->overprint_mode;
+    int code, k, num_comps;
 
-    pgs->overprint_mode = 0;
+    pinst->saved->overprint_mode = pgs->overprint_mode;
+    pinst->saved->overprint = pgs->overprint;
+    
+    num_comps = pgs->device->color_info.num_components;
+    for (k = 0; k < num_comps; k++) {
+        pgs->color_component_map.color_map[k] = 
+            pinst->saved->color_component_map.color_map[k];
+    }
     code = pcs->type->set_overprint(pcs, pgs);
-    pgs->overprint_mode = save_overprint_mode;
     return code;
 }
 
