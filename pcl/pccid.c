@@ -42,7 +42,7 @@ pcl_cid_get_cspace(const pcl_cid_data_t *pcid)
 pcl_encoding_type_t
 pcl_cid_get_encoding(const pcl_cid_data_t *pcid)
 {
-    return pcid->u.hdr.bits_per_index;
+    return pcid->u.hdr.encoding;
 }
 
 byte
