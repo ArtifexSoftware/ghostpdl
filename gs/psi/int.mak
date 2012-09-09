@@ -1995,6 +1995,11 @@ $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
  $(locale__h)
 	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
+$(PSOBJ)apitest.$(OBJ) : $(PSSRC)apitest.c $(GH)\
+ $(ierrors_h) $(iapi_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gsmalloc_h)\
+ $(locale__h)
+	$(PSCC) $(PSO_)apitest.$(OBJ) $(C_) $(PSSRC)apitest.c
+
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
  $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
  $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)
