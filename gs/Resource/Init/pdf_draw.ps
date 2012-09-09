@@ -1773,9 +1773,8 @@ currentdict /last-ditch-bpc-csp undef
   ] cvx /PaintProc exch put
     % Adjust pdfemptycount since we have an extra dictionary on the stack
   pdfemptycount countdictstack  3 -1 roll
-  /pdfemptycount count 2 sub store
-  q execform  			% gsave / grestore around the Form
-
+  /pdfemptycount count 3 sub store
+  /q cvx /execform cvx 5 -2 roll 4 .execn
   % Restore pdfemptycount
   0
   { countdictstack 
