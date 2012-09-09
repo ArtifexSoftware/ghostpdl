@@ -43,6 +43,9 @@ DEBUGDEFS=GENOPT='-DDEBUG' CFLAGS='$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)'\
 debug:
 	$(MAKE) $(DEBUGDEFS) default
 
+debug-apitest:
+	$(MAKE) $(DEBUGDEFS) apitest
+
 debugclean:
 	$(MAKE) $(DEBUGDEFS) clean
 
