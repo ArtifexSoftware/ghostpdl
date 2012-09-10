@@ -2058,6 +2058,17 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     code = pdf_close_temp_file(pdev, &linear_params->Lin_File, code);
 #endif
         /* FIXME free all the linearisation records */
+
+    for (i=0;i<pdev->next_page;i++) {
+        page_hint_stream_t *pagehint = &linear_params->PageHints[i];
+
+        if (pagehint->SharedObjectRef)
+            gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "Free Shared object references");
+    }
+
+    gs_free_object(pdev->pdf_memory, linear_params->PageHints, "Free Page Hint data");
+    gs_free_object(pdev->pdf_memory, linear_params->SharedHints, "Free Shared hint data");
+
     return 0;
 }
 
@@ -2541,7 +2552,15 @@ pdf_close(gx_device * dev)
     }
 
     if (pdev->Linearise) {
+        int i;
+
         code = pdf_linearise(pdev, &linear_params);
+        gs_free_object(pdev->pdf_memory, linear_params.Offsets, "Free linearisation offset records");
+        for (i=0; i<pdev->ResourceUsageSize; i++) {
+            if (pdev->ResourceUsage[i].PageList)
+                gs_free_object(pdev->pdf_memory, pdev->ResourceUsage[i].PageList, "Free linearisation Page Usage list records");
+        }
+        gs_free_object(pdev->pdf_memory, pdev->ResourceUsage, "Free linearisation resource usage records");
     }
 
     /* Require special handling for Fonts, ColorSpace and Pattern resources
