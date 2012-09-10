@@ -532,7 +532,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
             data_length = dest_height;
-            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_height - 1));
+            scale_factor = float2fixed_rounded((float) src_size / (float) dest_height);
             /* In the landscaped case, we want to accumulate multiple columns
                of data before sending to the device.  We want to have a full
                byte of HT data in one write.  This may not be possible at the
@@ -593,9 +593,9 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                 /* Monochrome portrait */
                 case image_portrait:
                     if (penum->dst_width > 0) {
-                        if (scale_factor == fixed_1) {
+                        if (src_size == dest_width) {
                             memcpy(devc_contone_gray, psrc_cm, data_length);
-                        } else if (scale_factor == fixed_half) {
+                        } else if (src_size * 2 == dest_width) {
                             psrc_temp = psrc_cm;
                             for (k = 0; k < data_length; k+=2,
                                  devc_contone_gray+=2, psrc_temp++) {
@@ -635,7 +635,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         /* Code up special cases for when we have no scaling
                            and 2x scaling which we will run into in 300 and
                            600dpi devices and content */
-                        if (scale_factor == fixed_1) {
+                        if (src_size == dest_height) {
                             for (k = 0; k < data_length; k++) {
                                 devc_contone_gray[position] = psrc_cm[k];
                                 position += LAND_BITS;
@@ -676,12 +676,12 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                 /* CMYK portrait */
                 case image_portrait:
                     if (penum->dst_width > 0) {
-                        if (scale_factor == fixed_1) {
+                        if (src_size == dest_width) {
                             memcpy(devc_contone[0], psrc_plane[0], data_length);
                             memcpy(devc_contone[1], psrc_plane[1], data_length);
                             memcpy(devc_contone[2], psrc_plane[2], data_length);
                             memcpy(devc_contone[3], psrc_plane[3], data_length);
-                        } else if (scale_factor == fixed_half) {
+                        } else if (src_size * 2 == dest_width) {
                             for (k = 0; k < data_length; k+=2) {
                                 *(devc_contone[0]) = *(devc_contone[0]+1) =
                                     *psrc_plane[0]++;
@@ -749,7 +749,7 @@ image_render_color_thresh(gx_image_enum *penum_orig, const byte *buffer, int dat
                         for (k = 0; k < spp_out; k++) {
                             devc_contone[k] = devc_contone[k] + position;
                         }
-                        if (scale_factor == fixed_1) {
+                        if (src_size == dest_height) {
                             for (k = 0; k < data_length; k++) {
                                 /* Is it better to unwind this?  We know it is 4 */
                                 for (j = 0; j < spp_out; j++) {

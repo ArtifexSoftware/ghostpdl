@@ -853,7 +853,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
             dest_width = fixed2int_var_rounded(any_abs(penum->y_extent.x));
             dest_height = fixed2int_var_rounded(any_abs(penum->x_extent.y));
             data_length = dest_height;
-            scale_factor = float2fixed_rounded((float) src_size / (float) (dest_height - 1));
+            scale_factor = float2fixed_rounded((float) src_size / (float) dest_height);
             offset_threshold = (-(long)(penum->thresh_buffer)) & 15;
             for (k = 0; k < spp_out; k ++) {
                 offset_contone[k] = (- ((long)(penum->line) +
@@ -916,9 +916,9 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
         switch (posture) {
             case image_portrait:
                 if (penum->dst_width > 0) {
-                    if (scale_factor == fixed_1) {
+                    if (src_size == dest_width) {
                         memcpy(devc_contone_gray, psrc, data_length);
-                    } else if (scale_factor == fixed_half) {
+                    } else if (src_size * 2 == dest_width) {
                         const byte *psrc_temp = psrc;
                         for (k = 0; k < data_length; k+=2, devc_contone_gray+=2,
                              psrc_temp++) {
@@ -955,7 +955,7 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                     /* Code up special cases for when we have no scaling
                        and 2x scaling which we will run into in 300 and
                        600dpi devices and content */
-                    if (scale_factor == fixed_1) {
+                    if (src_size == dest_height) {
                         for (k = 0; k < data_length; k++) {
                             devc_contone_gray[position] = psrc[k];
                             position += LAND_BITS;
