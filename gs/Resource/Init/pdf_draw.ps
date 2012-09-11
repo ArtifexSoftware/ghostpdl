@@ -1384,7 +1384,7 @@ currentdict /jp2_csp_dict .undef
   /Width 2 copy oget def
   /Height 2 copy oget def
                 % Handle missing BitsPerComponent later.
-  /BitsPerComponent 2 copy knownoget { def } { pop } ifelse
+  /BitsPerComponent 2 copy knownoget { cvi def } { pop } ifelse
   /Interpolate 2 copy knownoget { def } { pop } ifelse
   makeimagekeys
 } bdef
