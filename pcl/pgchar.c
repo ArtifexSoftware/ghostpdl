@@ -529,6 +529,101 @@ hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls)
         return 0;
 }
 
+/* Add a command to the DL table - pen up or pen down coordinates.
+   Resizing the table as appropriate. */
+static int
+hpgl_add_dl_char_data(hpgl_state_t *pgls, hpgl_dl_cdata_t *pcdata, short cc_data)
+{
+    /* characters stored as short */
+    int csz = sizeof(short);
+    
+    if (pcdata->index == -1) {
+        /* first element - allocate a small array which will be resized as needed */
+        pcdata->data = (short *)gs_alloc_bytes(pgls->memory, 2 * csz, "DL data");
+        if (pcdata->data == 0)
+            return e_Memory;
+    } else if (gs_object_size(pgls->memory, pcdata->data) == (pcdata->index + 1) * csz) {
+        /* new character doesn't fit - double the size of the array */
+        short *new_cdata = (short *)gs_resize_object(pgls->memory, pcdata->data,
+                                                     (pcdata->index + 1) * csz * 2,
+                                                     "DL data resize");
+        if (new_cdata == 0) {
+            return e_Memory;
+        }
+        pcdata->data = new_cdata;
+    }
+    pcdata->data[++pcdata->index] = cc_data;
+    return 0;
+}
+
+static void
+hpgl_dl_dict_free_value(gs_memory_t *mem, void *value, client_name_t cname)
+{
+    hpgl_dl_cdata_t *cdata = (hpgl_dl_cdata_t *)value;
+    if (cdata->data)
+        gs_free_object(mem, cdata->data, cname);
+    gs_free_object(mem, cdata, cname);
+}
+
+    
+static void
+hpgl_clear_dl_chars(hpgl_state_t *pgls)
+{
+    /* NB get rid of the 531 dictionary */
+    return;
+}
+
+/* DL [Character Code, Coords] */
+int
+hpgl_DL(hpgl_args_t *pargs, hpgl_state_t *pgls)
+{
+    int code;
+    hpgl_dl_cdata_t *cdata;
+
+    /* first call */
+    if (pargs->phase == 0) {
+        int32 cc;
+        /* double byte characters are not yet supported */
+        if (pgls->g.label.double_byte)
+            return e_Unimplemented;
+        /* parse the character code, no arguments clears all defined
+           characters */
+        if (!hpgl_arg_c_int(pgls->memory, pargs, &cc)) {
+            hpgl_clear_dl_chars(pgls);
+            return 0;
+        }
+
+        if (cc < 0 || cc > 255)
+            return e_Range;
+
+        cdata = (hpgl_dl_cdata_t *)gs_alloc_bytes(pgls->memory, sizeof(hpgl_dl_cdata_t), "DL header");
+        if (cdata == 0)
+            return e_Memory;
+        cdata->index = -1;
+        cdata->data = NULL;
+        id_set_value(pgls->g.current_dl_char_id, (ushort)cc);
+        pl_dict_put(&pgls->g.dl_531_fontdict, id_key(pgls->g.current_dl_char_id), 2, cdata);
+        hpgl_args_init(pargs);
+        pargs->phase = 1;
+    }
+    
+    if ( !pl_dict_find(&pgls->g.dl_531_fontdict, id_key(pgls->g.current_dl_char_id), 2, (void **)&cdata) )
+        /* this should be a failed assertion */
+        return -1;
+    do {
+        int c;
+        if (!hpgl_arg_c_int(pgls->memory, pargs, &c))
+            break;
+        code = hpgl_add_dl_char_data(pgls, cdata, c);
+        if (code < 0) {
+            pl_dict_undef(&pgls->g.dl_531_fontdict, id_key(pgls->g.current_dl_char_id), 2);
+            return code;
+        }
+        hpgl_args_init(pargs);
+    } while (1);
+    return 0;
+}
+
 /* Initialization */
 static int
 pgchar_do_registration(
@@ -539,6 +634,7 @@ pgchar_do_registration(
           HPGL_COMMAND('A', 'D', hpgl_AD, hpgl_cdf_pcl_rtl_both),		/* kind/value pairs */
           HPGL_COMMAND('C', 'F', hpgl_CF, hpgl_cdf_pcl_rtl_both),
           HPGL_COMMAND('D', 'I', hpgl_DI, hpgl_cdf_pcl_rtl_both),
+          HPGL_COMMAND('D', 'L', hpgl_DL, hpgl_cdf_pcl_rtl_both),
           HPGL_COMMAND('D', 'R', hpgl_DR, hpgl_cdf_pcl_rtl_both),
           /* DT has special argument parsing, so it must handle skipping */
           /* in polygon mode itself. */
@@ -560,6 +656,19 @@ pgchar_do_registration(
         END_HPGL_COMMANDS
         return 0;
 }
+
+static void
+pgchar_do_reset(pcl_state_t *       pcs,
+                pcl_reset_type_t    type
+)
+{
+    if (type & pcl_reset_initial)
+        pl_dict_init(&pcs->g.dl_531_fontdict, pcs->memory, hpgl_dl_dict_free_value);
+    if ( type & pcl_reset_permanent )
+        pl_dict_release(&pcs->g.dl_531_fontdict);
+    return;
+}
+
 const pcl_init_t pgchar_init = {
-  pgchar_do_registration, 0
+    pgchar_do_registration, pgchar_do_reset, 0
 };

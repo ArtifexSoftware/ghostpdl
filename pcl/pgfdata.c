@@ -24,6 +24,7 @@
 #include "gserrors.h"
 #include "gxarith.h"		/* for any_abs */
 #include "pgfdata.h"
+#include "pgmand.h" /* NB add to makefile */
 
 /* Font data consists of instructions for each character.
    Fonts are on a 1024x1024 grid. */
@@ -5079,6 +5080,35 @@ hpgl_stick_segments(const gs_memory_t *mem, void *data, uint char_index)
     /* table must be corrupt if the loop didn't stop at stop */
     if ( i != stop )
         return_error(gs_error_invalidfont);
+    return 0;
+}
+
+int
+hpgl_531_segments(const gs_memory_t *mem, void *data, void *cdata)
+{
+    /* NB why is the gstate passed as a void *?, missing graphics
+       library error checking */
+    hpgl_dl_cdata_t *cd = cdata;
+    bool pen_up = true;
+    int i = 0;
+    /* we assume the data is correct at this point - errors should
+       have been detected when the DL command was saving the data */
+    while (i < cd->index) {
+        if (cd->data[i] == -128) {
+            pen_up = true;
+            i++;
+        } else {
+            floatp x = cd->data[i];
+            floatp y = cd->data[i+1];
+            if (pen_up) {
+                gs_moveto(data, x, y);
+                pen_up = false;
+            } else {
+                gs_lineto(data, x, y);
+            }
+            i+=2;
+        }
+    }
     return 0;
 }
 

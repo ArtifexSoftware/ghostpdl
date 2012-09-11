@@ -118,6 +118,27 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, f
     return 0;
 }
 
+static int
+hpgl_dl_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
+{
+    /* just the width of the cell */
+    pwidth->x = 1024;
+    pwidth->y = 0;
+    return 0;
+}
+
+static int
+hpgl_dl_char_metrics(const pl_font_t *plfont, const void *pgs, uint uni_code, float metrics[4])
+{
+    gs_point width;
+    /* never a vertical substitute */
+    metrics[1] = metrics[3] = 0;
+    /* no lsb */
+    metrics[0] = 0;
+    metrics[2] = 1024;
+    return 0;
+}
+
 /* Add a symbol to the path. */
 static int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
@@ -130,11 +151,6 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
     /* we assert the font is present at this point */
     width = hpgl_stick_arc_width(uni_code, font_type);
 
-    /* *** incorrect comment The TRM says the stick font is based on a
-       32x32 unit cell, */
-    /* but the font we're using here is only 15x15. */
-    /* Also, per TRM 23-18, the character cell is only 2/3 the */
-    /* point size. */
     gs_setcharwidth(penum, pgs, width / 1024.0 * 0.667, 0.0);
     gs_currentmatrix(pgs, &save_ctm);
     gs_scale(pgs, 1.0 / 1024.0 * .667, 1.0 / 1024.0 * .667);
@@ -193,6 +209,84 @@ hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
         pfont->encoding_index = 1;	/****** WRONG ******/
         pfont->nearest_encoding_index = 1;	/****** WRONG ******/
 }
+
+static int
+hpgl_531_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont, gs_char ignore_chr, gs_glyph ccode)
+{
+    gs_matrix save_ctm;
+    int code;
+    pcl_id_t ckey;
+    hpgl_dl_cdata_t *cdata;
+    gs_point width;
+    pl_font_t *plfont = (pl_font_t *)pfont->client_data;
+    pl_dict_t *dl_dict = (pl_dict_t *)plfont->header;
+
+    id_set_value(ckey, (ushort)ccode);
+    if (!pl_dict_find(dl_dict, id_key(ckey), 2, (void **)&cdata))
+        /* this should be a failed assertion */
+        return -1;
+
+    /* we assert the font is present at this point */
+    if (((plfont)->char_width)(plfont, pgs, ccode, &width) < 0)
+        return -1;
+
+    /* This certainly is wrong but the advance is always explicit */
+    gs_setcharwidth(penum, pgs, width.x / 1024.0 * 0.667, 0.0);
+    gs_currentmatrix(pgs, &save_ctm);
+    
+    /* the DL fonts are defined on a 32x32 grid */
+    gs_scale(pgs, 1.0 / 32.0, 1.0 / 32.0);
+
+    gs_moveto(pgs, 0.0, 0.0);
+    code = hpgl_531_segments(pfont->memory, (void *)pgs, cdata);
+    if ( code < 0 )
+        return code;
+    gs_setdefaultmatrix(pgs, NULL);
+    gs_initmatrix(pgs);
+    /* Set predictable join and cap styles. */
+    gs_setlinejoin(pgs, gs_join_round);
+    gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
+    gs_setlinecap(pgs, gs_cap_round);
+    {
+        float pattern[1];
+        gs_setdash(pgs, pattern, 0, 0);
+    }
+    gs_stroke(pgs);
+    gs_setmatrix(pgs, &save_ctm);
+    return 0;
+}
+
+void
+hpgl_fill_in_531_font(gs_font_base *pfont, long unique_id)
+{	
+    gs_make_identity(&pfont->FontMatrix);
+    /* we'll just make this look like a stick font to the graphics
+       library */
+    pfont->FontType = ft_GL2_531;
+    pfont->PaintType = 1;		/* stroked fonts */
+    pfont->BitmapWidths = false;
+    pfont->ExactSize = fbit_use_outlines;
+    pfont->InBetweenSize = fbit_use_outlines;
+    pfont->TransformedChar = fbit_use_outlines;
+    pfont->procs.encode_char = hpgl_stick_arc_encode_char; /* FIX ME (void *) */
+    /* p.y of the FontBBox is a guess, because of descenders. */
+    /* Because of descenders, we have no real idea what the */
+    /* FontBBox should be. */
+    pfont->FontBBox.p.x = 0;
+    pfont->FontBBox.p.y = -0.333;
+    pfont->FontBBox.q.x = 0.667;
+    pfont->FontBBox.q.y = 0.667;
+    uid_set_UniqueID(&pfont->UID, unique_id);
+    pfont->encoding_index = 1;	/****** WRONG ******/
+    pfont->nearest_encoding_index = 1;	/****** WRONG ******/
+
+#define plfont ((pl_font_t *)pfont->client_data)
+    pfont->procs.build_char = hpgl_531_build_char; /* FIX ME (void *) */
+    plfont->char_width = hpgl_dl_char_width;
+    plfont->char_metrics = hpgl_dl_char_metrics;
+#undef plfont
+}
+
 void
 hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
@@ -225,4 +319,10 @@ hpgl_initialize_stick_fonts( hpgl_state_t *pcs )
         pcs->g.stick_font[0][1].font_file =
         pcs->g.stick_font[1][0].font_file =
         pcs->g.stick_font[1][1].font_file = 0;
+
+    pcs->g.dl_531_font[0].pfont =
+        pcs->g.dl_531_font[1].pfont = 0;
+
+    pcs->g.dl_531_font[0].font_file =
+        pcs->g.dl_531_font[1].font_file = 0;
 }

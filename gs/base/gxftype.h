@@ -57,7 +57,13 @@ typedef enum {
      * type 3 font, otherwise it won't know to look out for the cache entry
      * being freed, and will reuse the original definition
      */
-    ft_PCL_user_defined = 53
+    ft_PCL_user_defined = 53,
+    /* The next type has similar characteristics to the GL2 type (52)
+       sharing all attributes except Em square units and the font is
+       user defined, downloaded by the user, unfortunately that is
+       enough to make a new type desirable. NB the stick font is not
+       user defined so it is poorly named. */
+    ft_GL2_531 = 54
 } font_type;
 
 /* Define the bitmap font behaviors. */

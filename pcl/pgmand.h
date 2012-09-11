@@ -240,6 +240,7 @@ int hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DI(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_DL(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DR(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls);
 int hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls);
@@ -340,4 +341,6 @@ void hpgl_set_line_pattern_defaults(hpgl_state_t *pgls);
 void hpgl_set_line_attribute_defaults(hpgl_state_t *pgls);
 
 void hpgl_free_stick_fonts(hpgl_state_t *pgls);
+
+void hpgl_free_531_fonts(hpgl_state_t *pgls);
 #endif                                         /* pgmand_INCLUDED */

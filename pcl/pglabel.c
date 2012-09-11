@@ -222,6 +222,45 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
         return 0;
 }
 
+static int
+hpgl_select_531_font(hpgl_state_t *pgls)
+{
+    pcl_font_selection_t *pfs =
+        &pgls->g.font_selection[pgls->g.font_selected];
+    pl_font_t *font = &pgls->g.dl_531_font[pgls->g.font_selected];
+
+    gs_font_base *pfont;
+    int code;
+
+    hpgl_free_531_fonts(pgls);
+    pfont = gs_alloc_struct(pgls->memory, gs_font_base, &st_gs_font_base,
+                              "stick/arc font");
+
+    if ( pfont == 0 )
+        return_error(e_Memory);
+    code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
+                               pgls->memory, "531 font");
+    if ( code < 0 )
+        return code;
+
+    hpgl_fill_in_531_font(pfont, gs_next_ids(pgls->memory, 1));
+    font->pfont = (gs_font *)pfont;
+    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
+    font->font_type = plft_Unicode;
+    /* we pass the dictionary created during the DL command as the font header data. */
+    font->header = (void *)&pgls->g.dl_531_fontdict;
+    /* the parameters aren't used so we just fill them in with stick
+       font characteristics */
+    memcpy(font->character_complement, stick_character_complement, 8);
+    font->params = pfs->params;
+    font->params.typeface_family = STICK_FONT_TYPEFACE;
+    pl_fp_set_pitch_cp(&font->params, 1000.0*2/3);
+    pfs->font = font;
+    /* the font is mapped directly */
+    pfs->map = 0;
+    return 0;
+}
+
 /* Check whether the stick font supports a given symbol set. */
 static bool
 hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
@@ -242,27 +281,30 @@ hpgl_stick_font_supports(const pcl_state_t *pcs, uint symbol_set)
 /* Recompute the current font if necessary. */
 static int
 hpgl_recompute_font(hpgl_state_t *pgls)
-{	pcl_font_selection_t *pfs =
-          &pgls->g.font_selection[pgls->g.font_selected];
+{	
+    pcl_font_selection_t *pfs =
+        &pgls->g.font_selection[pgls->g.font_selected];
 
-       if (( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ||
-              (pfs->params.typeface_family & 0xfff) == ARC_FONT_TYPEFACE )
-             && pfs->params.style == 0 /* upright */
-             && hpgl_stick_font_supports(pgls,
-                                         pfs->params.symbol_set))
-             /* rtl only has stick fonts */
-             || ( pgls->personality == rtl )
-           )
-          hpgl_call(hpgl_select_stick_font(pgls));
-        else
-         { int code = pcl_reselect_font(pfs, pgls, false);
+    if ((pfs->params.symbol_set == 531) && (pgls->personality == rtl)) {
+        hpgl_call(hpgl_select_531_font(pgls));
+    } else if (( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ||
+                  (pfs->params.typeface_family & 0xfff) == ARC_FONT_TYPEFACE )
+                 && pfs->params.style == 0 /* upright */
+                 && hpgl_stick_font_supports(pgls,
+                                             pfs->params.symbol_set))
+               /* rtl only has stick fonts */
+               || ( pgls->personality == rtl )
+               )
+        hpgl_call(hpgl_select_stick_font(pgls));
+    else
+        { int code = pcl_reselect_font(pfs, pgls, false);
 
             if ( code < 0 )
-              return code;
-          }
-        pgls->g.font = pfs->font;
-        pgls->g.map = pfs->map;
-        return pl_load_resident_font_data_from_file(pgls->memory, pfs->font);
+                return code;
+        }
+    pgls->g.font = pfs->font;
+    pgls->g.map = pfs->map;
+    return pl_load_resident_font_data_from_file(pgls->memory, pfs->font);
 }
 
 /* ------ Position management ------ */
@@ -1435,6 +1477,18 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
           }
         pargs->source.ptr = p;
         return e_NeedData;
+}
+
+void
+hpgl_free_531_fonts(hpgl_state_t *pgls)
+{
+    pl_font_t *font = &pgls->g.dl_531_font[pgls->g.font_selected];
+
+    if ( font->pfont != 0 ) {
+        gs_free_object(pgls->memory, font->pfont, "531 font");
+        font->pfont = 0;
+    }
+    return;
 }
 
 void

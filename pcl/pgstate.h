@@ -109,6 +109,12 @@ typedef struct hpgl_hatch_params_s {
   float angle;
 } hpgl_hatch_params_t;
 
+/* define character data structure used by the command DL */
+typedef struct hpgl_dl_cdata_s {
+    short *data;
+    int index;
+} hpgl_dl_cdata_t;
+
 /*
  * Define the functions for adding points to paths.  Note that the
  * move/draw and absolute/relative alternatives can be tested, set, etc.
@@ -256,6 +262,7 @@ typedef struct pcl_hpgl_state_s {
         int font_selected;	/* 0 or 1 */
         pl_font_t *font;	/* 0 means recompute from params */
         pl_symbol_map_t *map;	/* map for current font */
+        pl_font_t dl_531_font[2];  /* fonts created by DL */
         pl_font_t stick_font[2][2];  /* stick/arc fonts */
         struct ch_ {
           gs_point direction;
@@ -316,6 +323,8 @@ typedef struct pcl_hpgl_state_s {
         hpgl_pen_state_t pen_state;
         bool subpolygon_started; /* true if we are just starting a subpolygon */
         bool have_drawn_in_path; /* true if the pen has been down during this path */
+        pl_dict_t dl_531_fontdict; /* font associated with the command DL */
+        pcl_id_t current_dl_char_id; /* the char being parsed by DL */
 } pcl_hpgl_state_t;
 
 #define hpgl_pen_relative (1)

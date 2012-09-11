@@ -29,3 +29,7 @@ int hpgl_stick_arc_segments(const gs_memory_t *mem,
 
 /* Get the unscaled width of a stick/arc character. */
 int hpgl_stick_arc_width(uint char_index, hpgl_font_type_t font_type);
+
+/* We also process the The DL (download font) format in this module,
+   but it should be separated out */
+int hpgl_531_segments(const gs_memory_t *mem, void *data, void *cdata);
