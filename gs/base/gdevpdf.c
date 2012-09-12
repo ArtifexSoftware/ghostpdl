@@ -1987,7 +1987,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     Length = 4096 - (mainxref + strlen(LDict) + strlen(Header) + LDictObj * 20);
     Pad = ' ';
 
-    while(Length >= 0) {
+    while(Length > 0) {
         fwrite(&Pad, 1, 1, linear_params->sfile);
         Length--;
     }
